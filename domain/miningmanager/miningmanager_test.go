@@ -1,7 +1,6 @@
 package miningmanager_test
 
 import (
-	"github.com/kaspanet/go-secp256k1"
 	"github.com/kaspanet/kaspad/domain/consensus/model/testapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/transactionhelper"
@@ -18,7 +17,6 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/utils/testutils"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/txscript"
 	"github.com/kaspanet/kaspad/domain/dagconfig"
-	"github.com/kaspanet/kaspad/util"
 
 	"testing"
 )
@@ -40,7 +38,7 @@ func TestValidateAndInsertTransaction(t *testing.T) {
 		miningManager := miningFactory.NewMiningManager(tc, blockMaxMass, false)
 		transactionsToInsert := make([]*externalapi.DomainTransaction, 10)
 		for i := range transactionsToInsert {
-			transactionsToInsert[i] = createTransactionWithUTXOEntry(t, params, i)
+			transactionsToInsert[i] = createTransactionWithUTXOEntry(t, i)
 			err = miningManager.ValidateAndInsertTransaction(transactionsToInsert[i], true)
 			if err != nil {
 				t.Fatalf("ValidateAndInsertTransaction: %v", err)
@@ -89,7 +87,7 @@ func TestInsertDoubleTransactionsToMempool(t *testing.T) {
 
 		miningFactory := miningmanager.NewFactory()
 		miningManager := miningFactory.NewMiningManager(tc, blockMaxMass, false)
-		transaction := createTransactionWithUTXOEntry(t, params, 0)
+		transaction := createTransactionWithUTXOEntry(t, 0)
 		err = miningManager.ValidateAndInsertTransaction(transaction, true)
 		if err != nil {
 			t.Fatalf("ValidateAndInsertTransaction: %v", err)
@@ -116,7 +114,7 @@ func TestHandleNewBlockTransactions(t *testing.T) {
 		miningManager := miningFactory.NewMiningManager(tc, blockMaxMass, false)
 		transactionsToInsert := make([]*externalapi.DomainTransaction, 10)
 		for i := range transactionsToInsert[(transactionhelper.CoinbaseTransactionIndex + 1):] {
-			transaction := createTransactionWithUTXOEntry(t, params, i)
+			transaction := createTransactionWithUTXOEntry(t, i)
 			transactionsToInsert[i+1] = transaction
 			err = miningManager.ValidateAndInsertTransaction(transaction, true)
 			if err != nil {
@@ -171,12 +169,12 @@ func TestDoubleSpends(t *testing.T) {
 
 		miningFactory := miningmanager.NewFactory()
 		miningManager := miningFactory.NewMiningManager(tc, blockMaxMass, false)
-		transactionInTheMempool := createTransactionWithUTXOEntry(t, params, 0)
+		transactionInTheMempool := createTransactionWithUTXOEntry(t, 0)
 		err = miningManager.ValidateAndInsertTransaction(transactionInTheMempool, true)
 		if err != nil {
 			t.Fatalf("ValidateAndInsertTransaction: %v", err)
 		}
-		doubleSpendTransactionInTheBlock := createTransactionWithUTXOEntry(t, params, 0)
+		doubleSpendTransactionInTheBlock := createTransactionWithUTXOEntry(t, 0)
 		doubleSpendTransactionInTheBlock.Inputs[0].PreviousOutpoint = transactionInTheMempool.Inputs[0].PreviousOutpoint
 		blockTransactions := []*externalapi.DomainTransaction{nil, doubleSpendTransactionInTheBlock}
 		_, err = miningManager.HandleNewBlockTransactions(blockTransactions)
@@ -273,32 +271,17 @@ func TestOrphanTransactions(t *testing.T) {
 	})
 }
 
-func createTransactionWithUTXOEntry(t *testing.T, params *dagconfig.Params, i int) *externalapi.DomainTransaction {
-	privateKey, err := secp256k1.GeneratePrivateKey()
-	if err != nil {
-		t.Fatalf("Failed generate a private key: %v", err)
-	}
-	publicKey, err := privateKey.SchnorrPublicKey()
-	if err != nil {
-		t.Fatalf("Failed generate a public key: %v", err)
-	}
-	publicKeySerialized, err := publicKey.Serialize()
-	if err != nil {
-		t.Fatalf("Failed serialize public key: %v", err)
-	}
-	addr, err := util.NewAddressPubKeyHashFromPublicKey(publicKeySerialized[:], params.Prefix)
-	if err != nil {
-		t.Fatalf("Failed generate p2pkh address: %v", err)
-	}
-	scriptPublicKey, err := txscript.PayToAddrScript(addr)
-	if err != nil {
-		t.Fatalf("PayToAddrScript: %v", err)
-	}
+func createTransactionWithUTXOEntry(t *testing.T, i int) *externalapi.DomainTransaction {
 	prevOutTxID := externalapi.DomainTransactionID{}
 	prevOutPoint := externalapi.DomainOutpoint{TransactionID: prevOutTxID, Index: uint32(i)}
+	scriptPublicKey, redeemScript := testutils.OpTrueScript()
+	signatureScript, err := txscript.PayToScriptHashSignatureScript(redeemScript, nil)
+	if err != nil {
+		t.Fatalf("PayToScriptHashSignatureScript: %v", err)
+	}
 	txInputWithMaxSequence := externalapi.DomainTransactionInput{
 		PreviousOutpoint: prevOutPoint,
-		SignatureScript:  []byte{},
+		SignatureScript:  signatureScript,
 		Sequence:         constants.SequenceLockTimeIsSeconds,
 		UTXOEntry: utxo.NewUTXOEntry(
 			100000000, // 1 KAS
@@ -320,11 +303,6 @@ func createTransactionWithUTXOEntry(t *testing.T, params *dagconfig.Params, i in
 		Mass:         1,
 		LockTime:     0}
 
-	signatureScript, err := txscript.SignatureScript(&tx, 0, scriptPublicKey, txscript.SigHashAll, privateKey)
-	if err != nil {
-		t.Fatalf("Failed to create a sigScript: %v", err)
-	}
-	tx.Inputs[0].SignatureScript = signatureScript
 	return &tx
 }
 
