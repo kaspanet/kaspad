@@ -54,7 +54,7 @@ func (fm *finalityManager) FinalityPoint(blockHash *externalapi.DomainHash) (*ex
 	if blockHash.Equal(model.VirtualBlockHash) {
 		return fm.VirtualFinalityPoint()
 	}
-	finalityPoint, err := fm.finalityStore.FinalityPoint(fm.databaseContext, blockHash)
+	finalityPoint, err := fm.finalityStore.FinalityPoint(fm.databaseContext, nil, blockHash)
 	if err != nil {
 		log.Debugf("%s finality point not found in store - calculating", blockHash)
 		if errors.Is(err, database.ErrNotFound) {
@@ -70,7 +70,7 @@ func (fm *finalityManager) calculateAndStageFinalityPoint(blockHash *externalapi
 	if err != nil {
 		return nil, err
 	}
-	fm.finalityStore.StageFinalityPoint(blockHash, finalityPoint)
+	fm.finalityStore.StageFinalityPoint(nil, blockHash, finalityPoint)
 	return finalityPoint, nil
 }
 
@@ -92,7 +92,7 @@ func (fm *finalityManager) calculateFinalityPoint(blockHash *externalapi.DomainH
 		return fm.genesisHash, nil
 	}
 
-	current, err := fm.finalityStore.FinalityPoint(fm.databaseContext, ghostdagData.SelectedParent())
+	current, err := fm.finalityStore.FinalityPoint(fm.databaseContext, nil, ghostdagData.SelectedParent())
 	if err != nil {
 		return nil, err
 	}

@@ -10,27 +10,26 @@ import (
 var bucket = database.MakeBucket([]byte("finality-points"))
 
 type finalityStore struct {
-	staging  map[externalapi.DomainHash]*externalapi.DomainHash
-	toDelete map[externalapi.DomainHash]struct{}
-	cache    *lrucache.LRUCache
+	cache *lrucache.LRUCache
 }
 
 // New instantiates a new FinalityStore
 func New(cacheSize int, preallocate bool) model.FinalityStore {
 	return &finalityStore{
-		staging:  make(map[externalapi.DomainHash]*externalapi.DomainHash),
-		toDelete: make(map[externalapi.DomainHash]struct{}),
-		cache:    lrucache.New(cacheSize, preallocate),
+		cache: lrucache.New(cacheSize, preallocate),
 	}
 }
 
-func (fs *finalityStore) StageFinalityPoint(blockHash *externalapi.DomainHash, finalityPointHash *externalapi.DomainHash) {
-	fs.staging[*blockHash] = finalityPointHash
+func (fs *finalityStore) StageFinalityPoint(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash, finalityPointHash *externalapi.DomainHash) {
+	stagingShard := fs.stagingShard(stagingArea)
+
+	stagingShard.toAdd[*blockHash] = finalityPointHash
 }
 
-func (fs *finalityStore) FinalityPoint(
-	dbContext model.DBReader, blockHash *externalapi.DomainHash) (*externalapi.DomainHash, error) {
-	if finalityPointHash, ok := fs.staging[*blockHash]; ok {
+func (fs *finalityStore) FinalityPoint(dbContext model.DBReader, stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) (*externalapi.DomainHash, error) {
+	stagingShard := fs.stagingShard(stagingArea)
+
+	if finalityPointHash, ok := stagingShard.toAdd[*blockHash]; ok {
 		return finalityPointHash, nil
 	}
 
@@ -51,25 +50,10 @@ func (fs *finalityStore) FinalityPoint(
 	return finalityPointHash, nil
 }
 
-func (fs *finalityStore) Discard() {
-	fs.staging = make(map[externalapi.DomainHash]*externalapi.DomainHash)
-}
+func (fs *finalityStore) IsStaged(stagingArea *model.StagingArea) bool {
+	stagingShard := fs.stagingShard(stagingArea)
 
-func (fs *finalityStore) Commit(dbTx model.DBTransaction) error {
-	for hash, finalityPointHash := range fs.staging {
-		err := dbTx.Put(fs.hashAsKey(&hash), finalityPointHash.ByteSlice())
-		if err != nil {
-			return err
-		}
-		fs.cache.Add(&hash, finalityPointHash)
-	}
-
-	fs.Discard()
-	return nil
-}
-
-func (fs *finalityStore) IsStaged() bool {
-	return len(fs.staging) == 0
+	return len(stagingShard.toAdd) == 0
 }
 
 func (fs *finalityStore) hashAsKey(hash *externalapi.DomainHash) model.DBKey {
