@@ -33,7 +33,6 @@ func TestNetAddressSerialization(t *testing.T) {
 		IP:        net.ParseIP("2602:100:abcd::102"),
 		Port:      12345,
 		Timestamp: mstime.Now(),
-		Services:  appmessage.ServiceFlag(6789),
 	}
 
 	serializedTestNetAddress := addressStore.serializeNetAddress(testAddress)

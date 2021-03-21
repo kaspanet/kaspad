@@ -440,11 +440,11 @@ func TestGetPruningPointUTXOs(t *testing.T) {
 				Version: 0,
 			},
 		}
-		blockAboveGeneis, err := testConsensus.BuildBlock(emptyCoinbase, nil)
+		blockAboveGenesis, err := testConsensus.BuildBlock(emptyCoinbase, nil)
 		if err != nil {
 			t.Fatalf("Error building block above genesis: %+v", err)
 		}
-		_, err = testConsensus.ValidateAndInsertBlock(blockAboveGeneis)
+		_, err = testConsensus.ValidateAndInsertBlock(blockAboveGenesis)
 		if err != nil {
 			t.Fatalf("Error validating and inserting block above genesis: %+v", err)
 		}
@@ -476,7 +476,7 @@ func TestGetPruningPointUTXOs(t *testing.T) {
 			Sequence:        constants.MaxTxInSequenceNum,
 		}
 
-		outputs := make([]*externalapi.DomainTransactionOutput, 1125)
+		outputs := make([]*externalapi.DomainTransactionOutput, 900)
 		for i := 0; i < len(outputs); i++ {
 			outputs[i] = &externalapi.DomainTransactionOutput{
 				ScriptPublicKey: scriptPublicKey,
@@ -524,6 +524,15 @@ func TestGetPruningPointUTXOs(t *testing.T) {
 			t.Fatalf("Error getting the pruning point: %+v", err)
 		}
 
+		pruningRelations, err := testConsensus.BlockRelationStore().BlockRelation(testConsensus.DatabaseContext(), pruningPoint)
+		if err != nil {
+			t.Fatalf("BlockRelation(): %+v", err)
+		}
+
+		if len(pruningRelations.Parents) != 1 && pruningRelations.Parents[0] != consensushashing.BlockHash(includingBlock) {
+			t.Fatalf("includingBlock should be pruning point's only parent")
+		}
+
 		// Get pruning point UTXOs in a loop
 		var allOutpointAndUTXOEntryPairs []*externalapi.OutpointAndUTXOEntryPair
 		step := 100
@@ -541,8 +550,9 @@ func TestGetPruningPointUTXOs(t *testing.T) {
 			}
 		}
 
-		// Make sure the length of the UTXOs is exactly spendingTransaction.Outputs + 2 coinbase outputs
-		if len(allOutpointAndUTXOEntryPairs) != len(outputs)+2 {
+		// Make sure the length of the UTXOs is exactly spendingTransaction.Outputs + 1 coinbase
+		// output (includingBlock's coinbase)
+		if len(allOutpointAndUTXOEntryPairs) != len(outputs)+1 {
 			t.Fatalf("Returned an unexpected amount of UTXOs. "+
 				"Want: %d, got: %d", len(outputs)+2, len(allOutpointAndUTXOEntryPairs))
 		}
@@ -609,7 +619,7 @@ func BenchmarkGetPruningPointUTXOs(b *testing.B) {
 			SignatureScript: signatureScript,
 			Sequence:        constants.MaxTxInSequenceNum,
 		}
-		outputs := make([]*externalapi.DomainTransactionOutput, 1125)
+		outputs := make([]*externalapi.DomainTransactionOutput, 900)
 		for i := 0; i < len(outputs); i++ {
 			outputs[i] = &externalapi.DomainTransactionOutput{
 				ScriptPublicKey: scriptPublicKey,

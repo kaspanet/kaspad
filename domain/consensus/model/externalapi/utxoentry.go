@@ -7,7 +7,7 @@ package externalapi
 type UTXOEntry interface {
 	Amount() uint64
 	ScriptPublicKey() *ScriptPublicKey // The public key script for the output.
-	BlockBlueScore() uint64            // Blue score of the block accepting the tx.
+	BlockDAAScore() uint64             // Blue score of the block accepting the tx.
 	IsCoinbase() bool
 	Equal(other UTXOEntry) bool
 }

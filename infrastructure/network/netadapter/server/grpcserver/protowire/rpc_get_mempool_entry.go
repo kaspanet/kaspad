@@ -40,8 +40,9 @@ func (x *KaspadMessage_GetMempoolEntryResponse) fromAppMessage(message *appmessa
 	if message.Error != nil {
 		rpcErr = &RPCError{Message: message.Error.Message}
 	}
-	entry := new(MempoolEntry)
+	var entry *MempoolEntry
 	if message.Entry != nil {
+		entry = new(MempoolEntry)
 		err := entry.fromAppMessage(message.Entry)
 		if err != nil {
 			return err

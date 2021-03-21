@@ -15,19 +15,6 @@ import (
 // backing array multiple times.
 const defaultTransactionAlloc = 2048
 
-// MaxMassAcceptedByBlock is the maximum total transaction mass a block may accept.
-const MaxMassAcceptedByBlock = 10000000
-
-// MaxMassPerTx is the maximum total mass a transaction may have.
-const MaxMassPerTx = MaxMassAcceptedByBlock / 2
-
-// MaxTxPerBlock is the maximum number of transactions that could
-// possibly fit into a block.
-const MaxTxPerBlock = (MaxMassAcceptedByBlock / minTxPayload) + 1
-
-// MaxBlockParents is the maximum allowed number of parents for block.
-const MaxBlockParents = 10
-
 // TxLoc holds locator data for the offset and length of where a transaction is
 // located within a MsgBlock data buffer.
 type TxLoc struct {

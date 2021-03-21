@@ -4,12 +4,11 @@ import (
 	"github.com/kaspanet/go-secp256k1"
 	"github.com/kaspanet/kaspad/domain/consensus"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/testutils"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/txscript"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/utxo"
 	"github.com/kaspanet/kaspad/util"
-
-	"math/big"
 
 	"testing"
 
@@ -36,7 +35,7 @@ func TestValidateTransactionInContextAndPopulateMassAndFee(t *testing.T) {
 		factory := consensus.NewFactory()
 		pastMedianManager := &mocPastMedianTimeManager{}
 		factory.SetTestPastMedianTimeManager(func(int, model.DBReader, model.DAGTraversalManager, model.BlockHeaderStore,
-			model.GHOSTDAGDataStore) model.PastMedianTimeManager {
+			model.GHOSTDAGDataStore, *externalapi.DomainHash) model.PastMedianTimeManager {
 			return pastMedianManager
 		})
 		tc, tearDown, err := factory.NewTestConsensus(params, false,
@@ -117,6 +116,16 @@ func TestValidateTransactionInContextAndPopulateMassAndFee(t *testing.T) {
 			SubnetworkID: subnetworks.SubnetworkIDRegistry,
 			Gas:          0,
 			LockTime:     0}
+
+		for i, input := range validTx.Inputs {
+			signatureScript, err := txscript.SignatureScript(&validTx, i, consensushashing.SigHashAll, privateKey,
+				&consensushashing.SighashReusedValues{})
+			if err != nil {
+				t.Fatalf("Failed to create a sigScript: %v", err)
+			}
+			input.SignatureScript = signatureScript
+		}
+
 		txWithImmatureCoinbase := externalapi.DomainTransaction{
 			Version:      constants.MaxTransactionVersion,
 			Inputs:       []*externalapi.DomainTransactionInput{&txInput},
@@ -146,30 +155,9 @@ func TestValidateTransactionInContextAndPopulateMassAndFee(t *testing.T) {
 			Gas:          0,
 			LockTime:     0}
 
-		for i, input := range validTx.Inputs {
-			signatureScript, err := txscript.SignatureScript(&validTx, i, scriptPublicKey, txscript.SigHashAll, privateKey)
-			if err != nil {
-				t.Fatalf("Failed to create a sigScript: %v", err)
-			}
-			input.SignatureScript = signatureScript
-		}
-
 		povBlockHash := externalapi.NewDomainHashFromByteArray(&[32]byte{0x01})
-		genesisHash := params.GenesisHash
-		tc.GHOSTDAGDataStore().Stage(model.VirtualBlockHash, model.NewBlockGHOSTDAGData(
-			params.BlockCoinbaseMaturity+txInput.UTXOEntry.BlockBlueScore(),
-			new(big.Int),
-			genesisHash,
-			make([]*externalapi.DomainHash, 1000),
-			make([]*externalapi.DomainHash, 1),
-			nil))
-		tc.GHOSTDAGDataStore().Stage(povBlockHash, model.NewBlockGHOSTDAGData(
-			10,
-			new(big.Int),
-			genesisHash,
-			make([]*externalapi.DomainHash, 1000),
-			make([]*externalapi.DomainHash, 1),
-			nil))
+		tc.DAABlocksStore().StageDAAScore(povBlockHash, params.BlockCoinbaseMaturity+txInput.UTXOEntry.BlockDAAScore())
+		tc.DAABlocksStore().StageDAAScore(povBlockHash, 10)
 
 		tests := []struct {
 			name                     string
@@ -188,7 +176,7 @@ func TestValidateTransactionInContextAndPopulateMassAndFee(t *testing.T) {
 				expectedError:            nil,
 			},
 			{ // The calculated block coinbase maturity is smaller than the minimum expected blockCoinbaseMaturity.
-				// The povBlockHash blue score is 10 and the UTXO blue score is 5, hence the The subtraction between
+				// The povBlockHash DAA score is 10 and the UTXO DAA score is 5, hence the The subtraction between
 				// them will yield a smaller result than the required CoinbaseMaturity (currently set to 100).
 				name:                     "checkTransactionCoinbaseMaturity",
 				tx:                       &txWithImmatureCoinbase,
@@ -238,12 +226,12 @@ func TestValidateTransactionInContextAndPopulateMassAndFee(t *testing.T) {
 			if test.isValid {
 				if err != nil {
 					t.Fatalf("Unexpected error on TestValidateTransactionInContextAndPopulateMassAndFee"+
-						" on test %v: %v", test.name, err)
+						" on test '%v': %v", test.name, err)
 				}
 			} else {
 				if err == nil || !errors.Is(err, test.expectedError) {
 					t.Fatalf("TestValidateTransactionInContextAndPopulateMassAndFee: test %v:"+
-						" Unexpected error: Expected to: %v, but got : %v", test.name, test.expectedError, err)
+						" Unexpected error: Expected to: %v, but got : %+v", test.name, test.expectedError, err)
 				}
 			}
 		}

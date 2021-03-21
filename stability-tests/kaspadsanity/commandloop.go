@@ -72,9 +72,9 @@ func commandLoop(argsChan <-chan []string) ([]commandFailure, error) {
 
 func handleDataDirArg(args []string, dataDir string) ([]string, error) {
 	for _, arg := range args {
-		if strings.HasPrefix(arg, "--datadir") {
-			return nil, errors.New("invalid argument --datadir")
+		if strings.HasPrefix(arg, "--appdir") {
+			return nil, errors.New("invalid argument --appdir")
 		}
 	}
-	return append([]string{"--datadir", dataDir}, args...), nil
+	return append([]string{"--appdir", dataDir}, args...), nil
 }

@@ -161,7 +161,11 @@ func (hscs *headersSelectedChainStore) GetIndexByHash(dbContext model.DBReader, 
 		return 0, err
 	}
 
-	index := hscs.deserializeIndex(indexBytes)
+	index, err := hscs.deserializeIndex(indexBytes)
+	if err != nil {
+		return 0, err
+	}
+
 	hscs.cacheByHash.Add(blockHash, index)
 	return index, nil
 }
@@ -193,11 +197,11 @@ func (hscs *headersSelectedChainStore) GetHashByIndex(dbContext model.DBReader, 
 }
 
 func (hscs *headersSelectedChainStore) serializeIndex(index uint64) []byte {
-	return binaryserialization.SerializeChainBlockIndex(index)
+	return binaryserialization.SerializeUint64(index)
 }
 
-func (hscs *headersSelectedChainStore) deserializeIndex(indexBytes []byte) uint64 {
-	return binaryserialization.DeserializeChainBlockIndex(indexBytes)
+func (hscs *headersSelectedChainStore) deserializeIndex(indexBytes []byte) (uint64, error) {
+	return binaryserialization.DeserializeUint64(indexBytes)
 }
 
 func (hscs *headersSelectedChainStore) hashAsKey(hash *externalapi.DomainHash) model.DBKey {
@@ -223,7 +227,11 @@ func (hscs *headersSelectedChainStore) highestChainBlockIndex(dbContext model.DB
 		return 0, false, err
 	}
 
-	index := hscs.deserializeIndex(indexBytes)
+	index, err := hscs.deserializeIndex(indexBytes)
+	if err != nil {
+		return 0, false, err
+	}
+
 	hscs.cacheHighestChainBlockIndex = index
 	return index, true, nil
 }

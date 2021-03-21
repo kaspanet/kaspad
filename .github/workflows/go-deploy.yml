@@ -37,24 +37,33 @@ jobs:
         # `-extldflags=-static` - means static link everything, `-tags netgo,osusergo` means use pure go replacements for "os/user" and "net"
         # `-s -w` strips the binary to produce smaller size binaries
         run: |
-          binary="kaspad-${{ github.event.release.tag_name }}-linux"
-          echo "binary=${binary}" >> $GITHUB_ENV
-          go build -v -ldflags="-s -w -extldflags=-static" -tags netgo,osusergo -o "${binary}"
+          go build -v -ldflags="-s -w -extldflags=-static" -tags netgo,osusergo -o ./bin/ ./...
+          archive="bin/kaspad-${{ github.event.release.tag_name }}-linux.zip"
+          asset_name="kaspad-${{ github.event.release.tag_name }}-linux.zip"
+          zip -r "${archive}" ./bin/*
+          echo "archive=${archive}" >> $GITHUB_ENV
+          echo "asset_name=${asset_name}" >> $GITHUB_ENV
 
       - name: Build on Windows
         if: runner.os == 'Windows'
         shell: bash
         run: |
-          binary="kaspad-${{ github.event.release.tag_name }}-win64.exe"
-          echo "binary=${binary}" >> $GITHUB_ENV
-          go build -v -ldflags="-s -w" -o "${binary}"
+          go build -v -ldflags="-s -w" -o bin/ ./...
+          archive="bin/kaspad-${{ github.event.release.tag_name }}-win64.zip"
+          asset_name="kaspad-${{ github.event.release.tag_name }}-win64.zip"
+          powershell "Compress-Archive bin/* \"${archive}\""
+          echo "archive=${archive}" >> $GITHUB_ENV
+          echo "asset_name=${asset_name}" >> $GITHUB_ENV
 
       - name: Build on MacOS
         if: runner.os == 'macOS'
         run: |
-          binary="kaspad-${{ github.event.release.tag_name }}-osx"
-          echo "binary=${binary}" >> $GITHUB_ENV
-          go build -v -ldflags="-s -w" -o "${binary}"
+          go build -v -ldflags="-s -w" -o ./bin/ ./...
+          archive="bin/kaspad-${{ github.event.release.tag_name }}-osx.zip"
+          asset_name="kaspad-${{ github.event.release.tag_name }}-osx.zip"
+          zip -r "${archive}" ./bin/*
+          echo "archive=${archive}" >> $GITHUB_ENV
+          echo "asset_name=${asset_name}" >> $GITHUB_ENV
 
 
       - name: Upload Release Asset
@@ -63,6 +72,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ github.event.release.upload_url }}
-          asset_path: "./${{ env.binary }}"
-          asset_name: "${{ env.binary }}"
+          asset_path: "./${{ env.archive }}"
+          asset_name: "${{ env.asset_name }}"
           asset_content_type: application/zip

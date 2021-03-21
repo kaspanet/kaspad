@@ -54,14 +54,13 @@ const (
 )
 
 var (
-	// DefaultHomeDir is the default home directory for kaspad.
-	DefaultHomeDir = util.AppDataDir("kaspad", false)
+	// DefaultAppDir is the default home directory for kaspad.
+	DefaultAppDir = util.AppDir("kaspad", false)
 
-	defaultConfigFile  = filepath.Join(DefaultHomeDir, defaultConfigFilename)
-	defaultDataDir     = filepath.Join(DefaultHomeDir, defaultDataDirname)
-	defaultRPCKeyFile  = filepath.Join(DefaultHomeDir, "rpc.key")
-	defaultRPCCertFile = filepath.Join(DefaultHomeDir, "rpc.cert")
-	defaultLogDir      = filepath.Join(DefaultHomeDir, defaultLogDirname)
+	defaultConfigFile  = filepath.Join(DefaultAppDir, defaultConfigFilename)
+	defaultDataDir     = filepath.Join(DefaultAppDir)
+	defaultRPCKeyFile  = filepath.Join(DefaultAppDir, "rpc.key")
+	defaultRPCCertFile = filepath.Join(DefaultAppDir, "rpc.cert")
 )
 
 // RunServiceCommand is only set to a real function on Windows. It is used
@@ -74,7 +73,7 @@ var RunServiceCommand func(string) error
 type Flags struct {
 	ShowVersion          bool          `short:"V" long:"version" description:"Display version information and exit"`
 	ConfigFile           string        `short:"C" long:"configfile" description:"Path to configuration file"`
-	DataDir              string        `short:"b" long:"datadir" description:"Directory to store data"`
+	AppDir               string        `short:"b" long:"appdir" description:"Directory to store data"`
 	LogDir               string        `long:"logdir" description:"Directory to log output."`
 	AddPeers             []string      `short:"a" long:"addpeer" description:"Add a peer to connect with at startup"`
 	ConnectPeers         []string      `long:"connect" description:"Connect only to the specified peers at startup"`
@@ -145,7 +144,7 @@ type ServiceOptions struct {
 func cleanAndExpandPath(path string) string {
 	// Expand initial ~ to OS specific home directory.
 	if strings.HasPrefix(path, "~") {
-		homeDir := filepath.Dir(DefaultHomeDir)
+		homeDir := filepath.Dir(DefaultAppDir)
 		path = strings.Replace(path, "~", homeDir, 1)
 	}
 
@@ -174,8 +173,7 @@ func defaultFlags() *Flags {
 		RPCMaxClients:        defaultMaxRPCClients,
 		RPCMaxWebsockets:     defaultMaxRPCWebsockets,
 		RPCMaxConcurrentReqs: defaultMaxRPCConcurrentReqs,
-		DataDir:              defaultDataDir,
-		LogDir:               defaultLogDir,
+		AppDir:               defaultDataDir,
 		RPCKey:               defaultRPCKeyFile,
 		RPCCert:              defaultRPCCertFile,
 		BlockMaxMass:         defaultBlockMaxMass,
@@ -268,7 +266,7 @@ func LoadConfig() (*Config, error) {
 
 	// Create the home directory if it doesn't already exist.
 	funcName := "loadConfig"
-	err = os.MkdirAll(DefaultHomeDir, 0700)
+	err = os.MkdirAll(DefaultAppDir, 0700)
 	if err != nil {
 		// Show a nicer error message if it's because a symlink is
 		// linked to a directory that does not exist (probably because
@@ -311,19 +309,19 @@ func LoadConfig() (*Config, error) {
 	}
 	cfg.RelayNonStd = relayNonStd
 
-	// Append the network type to the data directory so it is "namespaced"
-	// per network. In addition to the block database, there are other
-	// pieces of data that are saved to disk such as address manager state.
+	cfg.AppDir = cleanAndExpandPath(cfg.AppDir)
+	// Append the network type to the app directory so it is "namespaced"
+	// per network.
 	// All data is specific to a network, so namespacing the data directory
 	// means each individual piece of serialized data does not have to
 	// worry about changing names per network and such.
-	cfg.DataDir = cleanAndExpandPath(cfg.DataDir)
-	cfg.DataDir = filepath.Join(cfg.DataDir, cfg.NetParams().Name)
+	cfg.AppDir = filepath.Join(cfg.AppDir, cfg.NetParams().Name)
 
-	// Append the network type to the log directory so it is "namespaced"
-	// per network in the same fashion as the data directory.
+	// Logs directory is usually under the home directory, unless otherwise specified
+	if cfg.LogDir == "" {
+		cfg.LogDir = filepath.Join(cfg.AppDir, defaultLogDirname)
+	}
 	cfg.LogDir = cleanAndExpandPath(cfg.LogDir)
-	cfg.LogDir = filepath.Join(cfg.LogDir, cfg.NetParams().Name)
 
 	// Special show command to list supported subsystems and exit.
 	if cfg.LogLevel == "show" {

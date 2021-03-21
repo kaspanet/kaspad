@@ -63,7 +63,7 @@ func (v *blockValidator) validateDifficulty(blockHash *externalapi.DomainHash) e
 	// Ensure the difficulty specified in the block header matches
 	// the calculated difficulty based on the previous block and
 	// difficulty retarget rules.
-	expectedBits, err := v.difficultyManager.RequiredDifficulty(blockHash)
+	expectedBits, err := v.difficultyManager.StageDAADataAndReturnRequiredDifficulty(blockHash)
 	if err != nil {
 		return err
 	}

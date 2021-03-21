@@ -72,6 +72,8 @@ func (a *ComponentManager) Stop() {
 		log.Errorf("Error stopping the net adapter: %+v", err)
 	}
 
+	a.protocolManager.Close()
+
 	return
 }
 
@@ -155,7 +157,7 @@ func setupRPC(
 
 func (a *ComponentManager) maybeSeedFromDNS() {
 	if !a.cfg.DisableDNSSeed {
-		dnsseed.SeedFromDNS(a.cfg.NetParams(), a.cfg.DNSSeed, appmessage.SFNodeNetwork, false, nil,
+		dnsseed.SeedFromDNS(a.cfg.NetParams(), a.cfg.DNSSeed, false, nil,
 			a.cfg.Lookup, func(addresses []*appmessage.NetAddress) {
 				// Kaspad uses a lookup of the dns seeder here. Since seeder returns
 				// IPs of nodes and not its own IP, we can not know real IP of
@@ -163,7 +165,7 @@ func (a *ComponentManager) maybeSeedFromDNS() {
 				a.addressManager.AddAddresses(addresses...)
 			})
 
-		dnsseed.SeedFromGRPC(a.cfg.NetParams(), a.cfg.GRPCSeed, appmessage.SFNodeNetwork, false, nil,
+		dnsseed.SeedFromGRPC(a.cfg.NetParams(), a.cfg.GRPCSeed, false, nil,
 			func(addresses []*appmessage.NetAddress) {
 				a.addressManager.AddAddresses(addresses...)
 			})

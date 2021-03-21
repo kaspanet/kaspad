@@ -1,6 +1,7 @@
 package consensus
 
 import (
+	daablocksstore "github.com/kaspanet/kaspad/domain/consensus/datastructures/daablocksstore"
 	"io/ioutil"
 	"os"
 	"sync"
@@ -126,6 +127,7 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 	headersSelectedTipStore := headersselectedtipstore.New()
 	finalityStore := finalitystore.New(200, preallocateCaches)
 	headersSelectedChainStore := headersselectedchainstore.New(pruningWindowSizeForCaches, preallocateCaches)
+	daaBlocksStore := daablocksstore.New(pruningWindowSizeForCaches, int(dagParams.FinalityDepth()), preallocateCaches)
 
 	// Processes
 	reachabilityManager := reachabilitymanager.New(
@@ -149,13 +151,15 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 		ghostdagDataStore,
 		reachabilityDataStore,
 		ghostdagManager,
-		consensusStateStore)
+		consensusStateStore,
+		dagParams.GenesisHash)
 	pastMedianTimeManager := f.pastMedianTimeConsructor(
 		dagParams.TimestampDeviationTolerance,
 		dbManager,
 		dagTraversalManager,
 		blockHeaderStore,
-		ghostdagDataStore)
+		ghostdagDataStore,
+		dagParams.GenesisHash)
 	transactionValidator := transactionvalidator.New(dagParams.BlockCoinbaseMaturity,
 		dagParams.EnableNonNativeSubnetworks,
 		dagParams.MassPerTxByte,
@@ -164,12 +168,14 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 		dagParams.MaxCoinbasePayloadLength,
 		dbManager,
 		pastMedianTimeManager,
-		ghostdagDataStore)
+		ghostdagDataStore,
+		daaBlocksStore)
 	difficultyManager := f.difficultyConstructor(
 		dbManager,
 		ghostdagManager,
 		ghostdagDataStore,
 		blockHeaderStore,
+		daaBlocksStore,
 		dagTopologyManager,
 		dagTraversalManager,
 		dagParams.PowMax,
@@ -183,7 +189,8 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 		dagParams.BaseSubsidy,
 		dagParams.CoinbasePayloadScriptPublicKeyMaxLength,
 		ghostdagDataStore,
-		acceptanceDataStore)
+		acceptanceDataStore,
+		daaBlocksStore)
 	headerTipsManager := headersselectedtipmanager.New(dbManager, dagTopologyManager, dagTraversalManager,
 		ghostdagManager, headersSelectedTipStore, headersSelectedChainStore)
 	genesisHash := dagParams.GenesisHash
@@ -248,6 +255,7 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 		coinbaseManager,
 		mergeDepthManager,
 		finalityManager,
+		difficultyManager,
 
 		blockStatusStore,
 		ghostdagDataStore,
@@ -259,7 +267,8 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 		acceptanceDataStore,
 		blockHeaderStore,
 		headersSelectedTipStore,
-		pruningStore)
+		pruningStore,
+		daaBlocksStore)
 	if err != nil {
 		return nil, err
 	}
@@ -279,6 +288,7 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 		blockStore,
 		blockHeaderStore,
 		utxoDiffStore,
+		daaBlocksStore,
 		isArchivalNode,
 		genesisHash,
 		dagParams.FinalityDepth(),
@@ -343,7 +353,8 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 		blockHeaderStore,
 		headersSelectedTipStore,
 		finalityStore,
-		headersSelectedChainStore)
+		headersSelectedChainStore,
+		daaBlocksStore)
 
 	c := &consensus{
 		lock:            &sync.Mutex{},
@@ -381,6 +392,7 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 		utxoDiffStore:             utxoDiffStore,
 		finalityStore:             finalityStore,
 		headersSelectedChainStore: headersSelectedChainStore,
+		daaBlocksStore:            daaBlocksStore,
 	}
 
 	genesisInfo, err := c.GetBlockInfo(genesisHash)

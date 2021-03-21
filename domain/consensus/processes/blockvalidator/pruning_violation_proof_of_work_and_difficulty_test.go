@@ -246,16 +246,19 @@ func TestCheckPruningPointViolation(t *testing.T) {
 // TestValidateDifficulty verifies that in case of a block with an unexpected difficulty,
 // an appropriate error message (ErrUnexpectedDifficulty) will be returned on the
 // function ValidatePruningPointViolationAndProofOfWorkAndDifficulty. The required difficulty is
-// "calculated" by the function (dm *mocDifficultyManager) RequiredDifficulty ,
-// where mocDifficultyManager is special implementation of the type DifficultyManager for this test (defined below).
+// "calculated" by the mocDifficultyManager, where mocDifficultyManager is special implementation
+// of the type DifficultyManager for this test (defined below).
 func TestValidateDifficulty(t *testing.T) {
 	testutils.ForAllNets(t, true, func(t *testing.T, params *dagconfig.Params) {
 
 		factory := consensus.NewFactory()
 		mocDifficulty := &mocDifficultyManager{}
-		factory.SetTestDifficultyManager(func(model.DBReader, model.GHOSTDAGManager, model.GHOSTDAGDataStore,
-			model.BlockHeaderStore, model.DAGTopologyManager, model.DAGTraversalManager, *big.Int, int, bool, time.Duration,
-			*externalapi.DomainHash) model.DifficultyManager {
+		factory.SetTestDifficultyManager(func(_ model.DBReader, _ model.GHOSTDAGManager, _ model.GHOSTDAGDataStore,
+			_ model.BlockHeaderStore, daaBlocksStore model.DAABlocksStore, _ model.DAGTopologyManager,
+			_ model.DAGTraversalManager, _ *big.Int, _ int, _ bool, _ time.Duration,
+			_ *externalapi.DomainHash) model.DifficultyManager {
+
+			mocDifficulty.daaBlocksStore = daaBlocksStore
 			return mocDifficulty
 		})
 		genesisDifficulty := params.GenesisBlock.Header.Bits()
@@ -293,9 +296,19 @@ func TestValidateDifficulty(t *testing.T) {
 type mocDifficultyManager struct {
 	testDifficulty  uint32
 	testGenesisBits uint32
+	daaBlocksStore  model.DAABlocksStore
 }
 
 // RequiredDifficulty returns the difficulty required for the test
 func (dm *mocDifficultyManager) RequiredDifficulty(*externalapi.DomainHash) (uint32, error) {
+	return dm.testDifficulty, nil
+}
+
+// StageDAADataAndReturnRequiredDifficulty returns the difficulty required for the test
+func (dm *mocDifficultyManager) StageDAADataAndReturnRequiredDifficulty(blockHash *externalapi.DomainHash) (uint32, error) {
+	// Populate daaBlocksStore with fake values
+	dm.daaBlocksStore.StageDAAScore(blockHash, 0)
+	dm.daaBlocksStore.StageBlockDAAAddedBlocks(blockHash, nil)
+
 	return dm.testDifficulty, nil
 }

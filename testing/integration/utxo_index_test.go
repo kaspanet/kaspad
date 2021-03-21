@@ -2,14 +2,18 @@ package integration
 
 import (
 	"encoding/hex"
+	"testing"
+
+	"github.com/kaspanet/kaspad/domain/consensus/utils/utxo"
+
 	"github.com/kaspanet/go-secp256k1"
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/transactionid"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/txscript"
 	"github.com/kaspanet/kaspad/util"
-	"testing"
 )
 
 func TestUTXOIndex(t *testing.T) {
@@ -128,7 +132,7 @@ func TestUTXOIndex(t *testing.T) {
 				notificationEntry.Outpoint.TransactionID, notificationEntry.Outpoint.Index,
 				notificationEntry.UTXOEntry, foundResponseEntry.UTXOEntry)
 		}
-		if notificationEntry.UTXOEntry.BlockBlueScore != foundResponseEntry.UTXOEntry.BlockBlueScore {
+		if notificationEntry.UTXOEntry.BlockDAAScore != foundResponseEntry.UTXOEntry.BlockDAAScore {
 			t.Fatalf("Unexpected UTXOEntry for outpoint %s:%d. Want: %+v, got: %+v",
 				notificationEntry.Outpoint.TransactionID, notificationEntry.Outpoint.Index,
 				notificationEntry.UTXOEntry, foundResponseEntry.UTXOEntry)
@@ -170,10 +174,12 @@ func buildTransactionForUTXOIndexTest(t *testing.T, entry *appmessage.UTXOsByAdd
 
 	txOuts := []*appmessage.TxOut{appmessage.NewTxOut(entry.UTXOEntry.Amount-1000, toScript)}
 
-	fromScript, err := hex.DecodeString(entry.UTXOEntry.ScriptPublicKey.Script)
+	fromScriptCode, err := hex.DecodeString(entry.UTXOEntry.ScriptPublicKey.Script)
 	if err != nil {
 		t.Fatalf("Error decoding script public key: %s", err)
 	}
+	fromScript := &externalapi.ScriptPublicKey{Script: fromScriptCode, Version: 0}
+	fromAmount := entry.UTXOEntry.Amount
 
 	msgTx := appmessage.NewNativeMsgTx(constants.MaxTransactionVersion, txIns, txOuts)
 
@@ -186,11 +192,11 @@ func buildTransactionForUTXOIndexTest(t *testing.T, entry *appmessage.UTXOsByAdd
 		t.Fatalf("Error deserializing private key: %+v", err)
 	}
 
-	signatureScript, err := txscript.SignatureScript(appmessage.MsgTxToDomainTransaction(msgTx), 0,
-		&externalapi.ScriptPublicKey{
-			Script:  fromScript,
-			Version: 0,
-		}, txscript.SigHashAll, privateKey)
+	tx := appmessage.MsgTxToDomainTransaction(msgTx)
+	tx.Inputs[0].UTXOEntry = utxo.NewUTXOEntry(fromAmount, fromScript, false, 500)
+
+	signatureScript, err := txscript.SignatureScript(tx, 0, consensushashing.SigHashAll, privateKey,
+		&consensushashing.SighashReusedValues{})
 	if err != nil {
 		t.Fatalf("Error signing transaction: %+v", err)
 	}

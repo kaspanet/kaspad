@@ -3300,38 +3300,6 @@ func TestUnparsingInvalidOpcodes(t *testing.T) {
 			expectedErr: scriptError(ErrInternal, ""),
 		},
 		{
-			name: "OP_RIPEMD160",
-			pop: &parsedOpcode{
-				opcode: &opcodeArray[OpRipeMD160],
-				data:   nil,
-			},
-			expectedErr: nil,
-		},
-		{
-			name: "OP_RIPEMD160 long",
-			pop: &parsedOpcode{
-				opcode: &opcodeArray[OpRipeMD160],
-				data:   make([]byte, 1),
-			},
-			expectedErr: scriptError(ErrInternal, ""),
-		},
-		{
-			name: "OP_SHA1",
-			pop: &parsedOpcode{
-				opcode: &opcodeArray[OpSHA1],
-				data:   nil,
-			},
-			expectedErr: nil,
-		},
-		{
-			name: "OP_SHA1 long",
-			pop: &parsedOpcode{
-				opcode: &opcodeArray[OpSHA1],
-				data:   make([]byte, 1),
-			},
-			expectedErr: scriptError(ErrInternal, ""),
-		},
-		{
 			name: "OP_SHA256",
 			pop: &parsedOpcode{
 				opcode: &opcodeArray[OpSHA256],
@@ -3343,22 +3311,6 @@ func TestUnparsingInvalidOpcodes(t *testing.T) {
 			name: "OP_SHA256 long",
 			pop: &parsedOpcode{
 				opcode: &opcodeArray[OpSHA256],
-				data:   make([]byte, 1),
-			},
-			expectedErr: scriptError(ErrInternal, ""),
-		},
-		{
-			name: "OP_HASH160",
-			pop: &parsedOpcode{
-				opcode: &opcodeArray[OpHash160],
-				data:   nil,
-			},
-			expectedErr: nil,
-		},
-		{
-			name: "OP_HASH160 long",
-			pop: &parsedOpcode{
-				opcode: &opcodeArray[OpHash160],
 				data:   make([]byte, 1),
 			},
 			expectedErr: scriptError(ErrInternal, ""),
@@ -3686,7 +3638,7 @@ func TestPushedData(t *testing.T) {
 			true,
 		},
 		{
-			"DUP HASH160 '17VZNX1SN5NtKa8UQFxwQbFeFc3iqRYhem' EQUALVERIFY CHECKSIG",
+			"DUP BLAKE2B '17VZNX1SN5NtKa8UQFxwQbFeFc3iqRYhem' EQUALVERIFY CHECKSIG",
 			[][]byte{
 				// 17VZNX1SN5NtKa8UQFxwQbFeFc3iqRYhem
 				{
@@ -3828,7 +3780,7 @@ func TestGetPreciseSigOps(t *testing.T) {
 	// The signature in the p2sh script is nonsensical for the tests since
 	// this script will never be executed. What matters is that it matches
 	// the right pattern.
-	scriptOnly := mustParseShortForm("HASH160 DATA_20 0x433ec2ac1ffa1b7b7d0"+
+	scriptOnly := mustParseShortForm("BLAKE2B DATA_32 0x433ec2ac1ffa1b7b7d0"+
 		"27f564529c57197f9ae88 EQUAL", 0)
 	scriptPubKey := &externalapi.ScriptPublicKey{scriptOnly, 0}
 	for _, test := range tests {
