@@ -71,7 +71,7 @@ func (bp *blockProcessor) validateAndInsertBlock(block *externalapi.DomainBlock,
 	isGenesis := blockHash.Equal(bp.genesisHash)
 	if !isGenesis {
 		var err error
-		oldHeadersSelectedTip, err = bp.headersSelectedTipStore.HeadersSelectedTip(bp.databaseContext)
+		oldHeadersSelectedTip, err = bp.headersSelectedTipStore.HeadersSelectedTip(bp.databaseContext, nil)
 		if err != nil {
 			return nil, err
 		}
@@ -163,7 +163,7 @@ func isHeaderOnlyBlock(block *externalapi.DomainBlock) bool {
 }
 
 func (bp *blockProcessor) updateReachabilityReindexRoot(oldHeadersSelectedTip *externalapi.DomainHash) error {
-	headersSelectedTip, err := bp.headersSelectedTipStore.HeadersSelectedTip(bp.databaseContext)
+	headersSelectedTip, err := bp.headersSelectedTipStore.HeadersSelectedTip(bp.databaseContext, nil)
 	if err != nil {
 		return err
 	}

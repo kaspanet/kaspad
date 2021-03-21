@@ -361,7 +361,7 @@ func (pm *pruningManager) IsValidPruningPoint(blockHash *externalapi.DomainHash)
 		return true, nil
 	}
 
-	headersSelectedTip, err := pm.headerSelectedTipStore.HeadersSelectedTip(pm.databaseContext)
+	headersSelectedTip, err := pm.headerSelectedTipStore.HeadersSelectedTip(pm.databaseContext, nil)
 	if err != nil {
 		return false, err
 	}

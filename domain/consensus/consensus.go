@@ -359,7 +359,7 @@ func (s *consensus) CreateFullHeadersSelectedChainBlockLocator() (externalapi.Bl
 		return nil, err
 	}
 
-	highHash, err := s.headersSelectedTipStore.HeadersSelectedTip(s.databaseContext)
+	highHash, err := s.headersSelectedTipStore.HeadersSelectedTip(s.databaseContext, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -437,7 +437,7 @@ func (s *consensus) GetHeadersSelectedTip() (*externalapi.DomainHash, error) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	return s.headersSelectedTipStore.HeadersSelectedTip(s.databaseContext)
+	return s.headersSelectedTipStore.HeadersSelectedTip(s.databaseContext, nil)
 }
 
 func (s *consensus) Anticone(blockHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error) {

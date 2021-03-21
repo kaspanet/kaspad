@@ -74,7 +74,7 @@ func (sm *syncManager) createHeadersSelectedChainBlockLocator(lowHash,
 		return externalapi.BlockLocator{sm.genesisBlockHash}, nil
 	}
 
-	lowHashIndex, err := sm.headersSelectedChainStore.GetIndexByHash(sm.databaseContext, lowHash)
+	lowHashIndex, err := sm.headersSelectedChainStore.GetIndexByHash(sm.databaseContext, nil, lowHash)
 	if err != nil {
 		if database.IsNotFoundError(err) {
 			return nil, errors.Wrapf(model.ErrBlockNotInSelectedParentChain,
@@ -83,7 +83,7 @@ func (sm *syncManager) createHeadersSelectedChainBlockLocator(lowHash,
 		return nil, err
 	}
 
-	highHashIndex, err := sm.headersSelectedChainStore.GetIndexByHash(sm.databaseContext, highHash)
+	highHashIndex, err := sm.headersSelectedChainStore.GetIndexByHash(sm.databaseContext, nil, highHash)
 	if err != nil {
 		if database.IsNotFoundError(err) {
 			return nil, errors.Wrapf(model.ErrBlockNotInSelectedParentChain,
@@ -100,7 +100,7 @@ func (sm *syncManager) createHeadersSelectedChainBlockLocator(lowHash,
 	currentIndex := highHashIndex
 	step := uint64(1)
 	for currentIndex > lowHashIndex {
-		blockHash, err := sm.headersSelectedChainStore.GetHashByIndex(sm.databaseContext, currentIndex)
+		blockHash, err := sm.headersSelectedChainStore.GetHashByIndex(sm.databaseContext, nil, currentIndex)
 		if err != nil {
 			return nil, err
 		}

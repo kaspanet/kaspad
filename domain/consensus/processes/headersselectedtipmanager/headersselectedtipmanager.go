@@ -34,15 +34,15 @@ func New(databaseContext model.DBReader,
 }
 
 func (h *headerTipsManager) AddHeaderTip(hash *externalapi.DomainHash) error {
-	hasSelectedTip, err := h.headersSelectedTipStore.Has(h.databaseContext)
+	hasSelectedTip, err := h.headersSelectedTipStore.Has(h.databaseContext, nil)
 	if err != nil {
 		return err
 	}
 
 	if !hasSelectedTip {
-		h.headersSelectedTipStore.Stage(hash)
+		h.headersSelectedTipStore.Stage(nil, hash)
 
-		err := h.headersSelectedChainStore.Stage(h.databaseContext, &externalapi.SelectedChainPath{
+		err := h.headersSelectedChainStore.Stage(h.databaseContext, nil, &externalapi.SelectedChainPath{
 			Added:   []*externalapi.DomainHash{hash},
 			Removed: nil,
 		})
@@ -50,7 +50,7 @@ func (h *headerTipsManager) AddHeaderTip(hash *externalapi.DomainHash) error {
 			return err
 		}
 	} else {
-		headersSelectedTip, err := h.headersSelectedTipStore.HeadersSelectedTip(h.databaseContext)
+		headersSelectedTip, err := h.headersSelectedTipStore.HeadersSelectedTip(h.databaseContext, nil)
 		if err != nil {
 			return err
 		}
@@ -61,14 +61,14 @@ func (h *headerTipsManager) AddHeaderTip(hash *externalapi.DomainHash) error {
 		}
 
 		if !newHeadersSelectedTip.Equal(headersSelectedTip) {
-			h.headersSelectedTipStore.Stage(newHeadersSelectedTip)
+			h.headersSelectedTipStore.Stage(nil, newHeadersSelectedTip)
 
 			chainChanges, err := h.dagTraversalManager.CalculateChainPath(headersSelectedTip, newHeadersSelectedTip)
 			if err != nil {
 				return err
 			}
 
-			err = h.headersSelectedChainStore.Stage(h.databaseContext, chainChanges)
+			err = h.headersSelectedChainStore.Stage(h.databaseContext, nil, chainChanges)
 			if err != nil {
 				return err
 			}
