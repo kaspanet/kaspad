@@ -124,7 +124,7 @@ func addAlternatingReorgBlocks(t *testing.T, tc testapi.TestConsensus, tips []*e
 	// does not (reorgTip). The latter is expected to exist in json attack files.
 	var chainTip, reorgTip *externalapi.DomainHash
 	for _, block := range tips {
-		isRootAncestorOfTip, err := tc.ReachabilityManager().IsReachabilityTreeAncestorOf(reindexRoot, block)
+		isRootAncestorOfTip, err := tc.ReachabilityManager().IsReachabilityTreeAncestorOf(nil, reindexRoot, block)
 		if err != nil {
 			t.Fatal(err)
 		}

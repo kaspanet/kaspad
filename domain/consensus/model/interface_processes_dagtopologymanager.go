@@ -9,7 +9,7 @@ type DAGTopologyManager interface {
 	Children(blockHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error)
 	IsParentOf(blockHashA *externalapi.DomainHash, blockHashB *externalapi.DomainHash) (bool, error)
 	IsChildOf(blockHashA *externalapi.DomainHash, blockHashB *externalapi.DomainHash) (bool, error)
-	IsAncestorOf(blockHashA *externalapi.DomainHash, blockHashB *externalapi.DomainHash) (bool, error)
+	IsAncestorOf(stagingArea *StagingArea, blockHashA *externalapi.DomainHash, blockHashB *externalapi.DomainHash) (bool, error)
 	IsAncestorOfAny(blockHash *externalapi.DomainHash, potentialDescendants []*externalapi.DomainHash) (bool, error)
 	IsAnyAncestorOf(potentialAncestors []*externalapi.DomainHash, blockHash *externalapi.DomainHash) (bool, error)
 	IsInSelectedParentChainOf(blockHashA *externalapi.DomainHash, blockHashB *externalapi.DomainHash) (bool, error)

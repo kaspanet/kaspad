@@ -8,9 +8,9 @@ import (
 	"github.com/pkg/errors"
 )
 
-func (rt *reachabilityManager) reachabilityDataForInsertion(
+func (rt *reachabilityManager) reachabilityDataForInsertion(stagingArea *model.StagingArea,
 	blockHash *externalapi.DomainHash) (model.MutableReachabilityData, error) {
-	data, err := rt.reachabilityDataStore.ReachabilityData(rt.databaseContext, nil, blockHash)
+	data, err := rt.reachabilityDataStore.ReachabilityData(rt.databaseContext, stagingArea, blockHash)
 	if err == nil {
 		return data.CloneMutable(), nil
 	}
@@ -21,8 +21,8 @@ func (rt *reachabilityManager) reachabilityDataForInsertion(
 	return nil, err
 }
 
-func (rt *reachabilityManager) futureCoveringSet(blockHash *externalapi.DomainHash) (model.FutureCoveringTreeNodeSet, error) {
-	data, err := rt.reachabilityDataStore.ReachabilityData(rt.databaseContext, nil, blockHash)
+func (rt *reachabilityManager) futureCoveringSet(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) (model.FutureCoveringTreeNodeSet, error) {
+	data, err := rt.reachabilityDataStore.ReachabilityData(rt.databaseContext, stagingArea, blockHash)
 	if err != nil {
 		return nil, err
 	}
@@ -30,8 +30,8 @@ func (rt *reachabilityManager) futureCoveringSet(blockHash *externalapi.DomainHa
 	return data.FutureCoveringSet(), nil
 }
 
-func (rt *reachabilityManager) interval(blockHash *externalapi.DomainHash) (*model.ReachabilityInterval, error) {
-	data, err := rt.reachabilityDataStore.ReachabilityData(rt.databaseContext, nil, blockHash)
+func (rt *reachabilityManager) interval(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) (*model.ReachabilityInterval, error) {
+	data, err := rt.reachabilityDataStore.ReachabilityData(rt.databaseContext, stagingArea, blockHash)
 	if err != nil {
 		return nil, err
 	}
@@ -39,8 +39,10 @@ func (rt *reachabilityManager) interval(blockHash *externalapi.DomainHash) (*mod
 	return data.Interval(), nil
 }
 
-func (rt *reachabilityManager) children(blockHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error) {
-	data, err := rt.reachabilityDataStore.ReachabilityData(rt.databaseContext, nil, blockHash)
+func (rt *reachabilityManager) children(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) (
+	[]*externalapi.DomainHash, error) {
+
+	data, err := rt.reachabilityDataStore.ReachabilityData(rt.databaseContext, stagingArea, blockHash)
 	if err != nil {
 		return nil, err
 	}
@@ -48,8 +50,10 @@ func (rt *reachabilityManager) children(blockHash *externalapi.DomainHash) ([]*e
 	return data.Children(), nil
 }
 
-func (rt *reachabilityManager) parent(blockHash *externalapi.DomainHash) (*externalapi.DomainHash, error) {
-	data, err := rt.reachabilityDataStore.ReachabilityData(rt.databaseContext, nil, blockHash)
+func (rt *reachabilityManager) parent(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) (
+	*externalapi.DomainHash, error) {
+
+	data, err := rt.reachabilityDataStore.ReachabilityData(rt.databaseContext, stagingArea, blockHash)
 	if err != nil {
 		return nil, err
 	}
@@ -57,6 +61,6 @@ func (rt *reachabilityManager) parent(blockHash *externalapi.DomainHash) (*exter
 	return data.Parent(), nil
 }
 
-func (rt *reachabilityManager) reindexRoot() (*externalapi.DomainHash, error) {
-	return rt.reachabilityDataStore.ReachabilityReindexRoot(rt.databaseContext, nil)
+func (rt *reachabilityManager) reindexRoot(stagingArea *model.StagingArea) (*externalapi.DomainHash, error) {
+	return rt.reachabilityDataStore.ReachabilityReindexRoot(rt.databaseContext, stagingArea)
 }

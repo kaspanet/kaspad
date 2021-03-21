@@ -29,8 +29,10 @@ Interval helper functions
 
 */
 
-func (rt *reachabilityManager) intervalRangeForChildAllocation(node *externalapi.DomainHash) (*model.ReachabilityInterval, error) {
-	interval, err := rt.interval(node)
+func (rt *reachabilityManager) intervalRangeForChildAllocation(stagingArea *model.StagingArea,
+	node *externalapi.DomainHash) (*model.ReachabilityInterval, error) {
+
+	interval, err := rt.interval(stagingArea, node)
 	if err != nil {
 		return nil, err
 	}
@@ -40,13 +42,13 @@ func (rt *reachabilityManager) intervalRangeForChildAllocation(node *externalapi
 	return newReachabilityInterval(interval.Start, interval.End-1), nil
 }
 
-func (rt *reachabilityManager) remainingIntervalBefore(node *externalapi.DomainHash) (*model.ReachabilityInterval, error) {
-	childrenRange, err := rt.intervalRangeForChildAllocation(node)
+func (rt *reachabilityManager) remainingIntervalBefore(stagingArea *model.StagingArea, node *externalapi.DomainHash) (*model.ReachabilityInterval, error) {
+	childrenRange, err := rt.intervalRangeForChildAllocation(stagingArea, node)
 	if err != nil {
 		return nil, err
 	}
 
-	children, err := rt.children(node)
+	children, err := rt.children(stagingArea, node)
 	if err != nil {
 		return nil, err
 	}
@@ -55,7 +57,7 @@ func (rt *reachabilityManager) remainingIntervalBefore(node *externalapi.DomainH
 		return childrenRange, nil
 	}
 
-	firstChildInterval, err := rt.interval(children[0])
+	firstChildInterval, err := rt.interval(stagingArea, children[0])
 	if err != nil {
 		return nil, err
 	}
@@ -63,13 +65,13 @@ func (rt *reachabilityManager) remainingIntervalBefore(node *externalapi.DomainH
 	return newReachabilityInterval(childrenRange.Start, firstChildInterval.Start-1), nil
 }
 
-func (rt *reachabilityManager) remainingIntervalAfter(node *externalapi.DomainHash) (*model.ReachabilityInterval, error) {
-	childrenRange, err := rt.intervalRangeForChildAllocation(node)
+func (rt *reachabilityManager) remainingIntervalAfter(stagingArea *model.StagingArea, node *externalapi.DomainHash) (*model.ReachabilityInterval, error) {
+	childrenRange, err := rt.intervalRangeForChildAllocation(stagingArea, node)
 	if err != nil {
 		return nil, err
 	}
 
-	children, err := rt.children(node)
+	children, err := rt.children(stagingArea, node)
 	if err != nil {
 		return nil, err
 	}
@@ -78,7 +80,7 @@ func (rt *reachabilityManager) remainingIntervalAfter(node *externalapi.DomainHa
 		return childrenRange, nil
 	}
 
-	lastChildInterval, err := rt.interval(children[len(children)-1])
+	lastChildInterval, err := rt.interval(stagingArea, children[len(children)-1])
 	if err != nil {
 		return nil, err
 	}
@@ -86,8 +88,8 @@ func (rt *reachabilityManager) remainingIntervalAfter(node *externalapi.DomainHa
 	return newReachabilityInterval(lastChildInterval.End+1, childrenRange.End), nil
 }
 
-func (rt *reachabilityManager) remainingSlackBefore(node *externalapi.DomainHash) (uint64, error) {
-	interval, err := rt.remainingIntervalBefore(node)
+func (rt *reachabilityManager) remainingSlackBefore(stagingArea *model.StagingArea, node *externalapi.DomainHash) (uint64, error) {
+	interval, err := rt.remainingIntervalBefore(stagingArea, node)
 	if err != nil {
 		return 0, err
 	}
@@ -95,8 +97,8 @@ func (rt *reachabilityManager) remainingSlackBefore(node *externalapi.DomainHash
 	return intervalSize(interval), nil
 }
 
-func (rt *reachabilityManager) remainingSlackAfter(node *externalapi.DomainHash) (uint64, error) {
-	interval, err := rt.remainingIntervalAfter(node)
+func (rt *reachabilityManager) remainingSlackAfter(stagingArea *model.StagingArea, node *externalapi.DomainHash) (uint64, error) {
+	interval, err := rt.remainingIntervalAfter(stagingArea, node)
 	if err != nil {
 		return 0, err
 	}
@@ -104,8 +106,8 @@ func (rt *reachabilityManager) remainingSlackAfter(node *externalapi.DomainHash)
 	return intervalSize(interval), nil
 }
 
-func (rt *reachabilityManager) hasSlackIntervalBefore(node *externalapi.DomainHash) (bool, error) {
-	interval, err := rt.remainingIntervalBefore(node)
+func (rt *reachabilityManager) hasSlackIntervalBefore(stagingArea *model.StagingArea, node *externalapi.DomainHash) (bool, error) {
+	interval, err := rt.remainingIntervalBefore(stagingArea, node)
 	if err != nil {
 		return false, err
 	}
@@ -113,8 +115,8 @@ func (rt *reachabilityManager) hasSlackIntervalBefore(node *externalapi.DomainHa
 	return intervalSize(interval) > 0, nil
 }
 
-func (rt *reachabilityManager) hasSlackIntervalAfter(node *externalapi.DomainHash) (bool, error) {
-	interval, err := rt.remainingIntervalAfter(node)
+func (rt *reachabilityManager) hasSlackIntervalAfter(stagingArea *model.StagingArea, node *externalapi.DomainHash) (bool, error) {
+	interval, err := rt.remainingIntervalAfter(stagingArea, node)
 	if err != nil {
 		return false, err
 	}
@@ -131,13 +133,13 @@ ReachabilityManager API functions
 // IsReachabilityTreeAncestorOf checks if this node is a reachability tree ancestor
 // of the other node. Note that we use the graph theory convention
 // here which defines that node is also an ancestor of itself.
-func (rt *reachabilityManager) IsReachabilityTreeAncestorOf(node, other *externalapi.DomainHash) (bool, error) {
-	nodeInterval, err := rt.interval(node)
+func (rt *reachabilityManager) IsReachabilityTreeAncestorOf(stagingArea *model.StagingArea, node, other *externalapi.DomainHash) (bool, error) {
+	nodeInterval, err := rt.interval(stagingArea, node)
 	if err != nil {
 		return false, err
 	}
 
-	otherInterval, err := rt.interval(other)
+	otherInterval, err := rt.interval(stagingArea, other)
 	if err != nil {
 		return false, err
 	}
@@ -147,13 +149,15 @@ func (rt *reachabilityManager) IsReachabilityTreeAncestorOf(node, other *externa
 
 // FindNextAncestor finds the reachability tree child
 // of 'ancestor' which is also an ancestor of 'descendant'.
-func (rt *reachabilityManager) FindNextAncestor(descendant, ancestor *externalapi.DomainHash) (*externalapi.DomainHash, error) {
-	childrenOfAncestor, err := rt.children(ancestor)
+func (rt *reachabilityManager) FindNextAncestor(stagingArea *model.StagingArea,
+	descendant, ancestor *externalapi.DomainHash) (*externalapi.DomainHash, error) {
+
+	childrenOfAncestor, err := rt.children(stagingArea, ancestor)
 	if err != nil {
 		return nil, err
 	}
 
-	nextAncestor, ok := rt.findAncestorOfNode(childrenOfAncestor, descendant)
+	nextAncestor, ok := rt.findAncestorOfNode(stagingArea, childrenOfAncestor, descendant)
 	if !ok {
 		return nil, errors.Errorf("ancestor is not an ancestor of descendant")
 	}
@@ -163,9 +167,9 @@ func (rt *reachabilityManager) FindNextAncestor(descendant, ancestor *externalap
 
 // String returns a string representation of a reachability tree node
 // and its children.
-func (rt *reachabilityManager) String(node *externalapi.DomainHash) (string, error) {
+func (rt *reachabilityManager) String(stagingArea *model.StagingArea, node *externalapi.DomainHash) (string, error) {
 	queue := []*externalapi.DomainHash{node}
-	nodeInterval, err := rt.interval(node)
+	nodeInterval, err := rt.interval(stagingArea, node)
 	if err != nil {
 		return "", err
 	}
@@ -174,7 +178,7 @@ func (rt *reachabilityManager) String(node *externalapi.DomainHash) (string, err
 	for len(queue) > 0 {
 		var current *externalapi.DomainHash
 		current, queue = queue[0], queue[1:]
-		children, err := rt.children(current)
+		children, err := rt.children(stagingArea, current)
 		if err != nil {
 			return "", err
 		}
@@ -185,7 +189,7 @@ func (rt *reachabilityManager) String(node *externalapi.DomainHash) (string, err
 
 		line := ""
 		for _, child := range children {
-			childInterval, err := rt.interval(child)
+			childInterval, err := rt.interval(stagingArea, child)
 			if err != nil {
 				return "", err
 			}
@@ -204,11 +208,14 @@ Tree helper functions
 
 */
 
-func (rt *reachabilityManager) isStrictAncestorOf(node, other *externalapi.DomainHash) (bool, error) {
+func (rt *reachabilityManager) isStrictAncestorOf(stagingArea *model.StagingArea, node, other *externalapi.DomainHash) (
+	bool, error) {
+
 	if node.Equal(other) {
 		return false, nil
 	}
-	return rt.IsReachabilityTreeAncestorOf(node, other)
+
+	return rt.IsReachabilityTreeAncestorOf(stagingArea, node, other)
 }
 
 // findCommonAncestor finds the most recent reachability
@@ -216,10 +223,12 @@ func (rt *reachabilityManager) isStrictAncestorOf(node, other *externalapi.Domai
 // that we assume that almost always the chain between the reindex root
 // and the common ancestor is longer than the chain between node and the
 // common ancestor.
-func (rt *reachabilityManager) findCommonAncestor(node, root *externalapi.DomainHash) (*externalapi.DomainHash, error) {
+func (rt *reachabilityManager) findCommonAncestor(stagingArea *model.StagingArea,
+	node, root *externalapi.DomainHash) (*externalapi.DomainHash, error) {
+
 	current := node
 	for {
-		isAncestorOf, err := rt.IsReachabilityTreeAncestorOf(current, root)
+		isAncestorOf, err := rt.IsReachabilityTreeAncestorOf(stagingArea, current, root)
 		if err != nil {
 			return nil, err
 		}
@@ -228,7 +237,7 @@ func (rt *reachabilityManager) findCommonAncestor(node, root *externalapi.Domain
 			return current, nil
 		}
 
-		current, err = rt.parent(current)
+		current, err = rt.parent(stagingArea, current)
 		if err != nil {
 			return nil, err
 		}
@@ -237,10 +246,10 @@ func (rt *reachabilityManager) findCommonAncestor(node, root *externalapi.Domain
 
 // splitChildren splits `node` children into two slices: the nodes that are before
 // `pivot` and the nodes that are after.
-func (rt *reachabilityManager) splitChildren(node, pivot *externalapi.DomainHash) (
+func (rt *reachabilityManager) splitChildren(stagingArea *model.StagingArea, node, pivot *externalapi.DomainHash) (
 	nodesBeforePivot, nodesAfterPivot []*externalapi.DomainHash, err error) {
 
-	children, err := rt.children(node)
+	children, err := rt.children(stagingArea, node)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -263,19 +272,19 @@ Internal reachabilityManager API
 // remaining interval to allocate, a reindexing is triggered. When a reindexing
 // is triggered, the reindex root point is used within the
 // reindex algorithm's logic
-func (rt *reachabilityManager) addChild(node, child, reindexRoot *externalapi.DomainHash) error {
-	remaining, err := rt.remainingIntervalAfter(node)
+func (rt *reachabilityManager) addChild(stagingArea *model.StagingArea, node, child, reindexRoot *externalapi.DomainHash) error {
+	remaining, err := rt.remainingIntervalAfter(stagingArea, node)
 	if err != nil {
 		return err
 	}
 
 	// Set the parent-child relationship
-	err = rt.stageAddChild(node, child)
+	err = rt.stageAddChild(stagingArea, node, child)
 	if err != nil {
 		return err
 	}
 
-	err = rt.stageParent(child, node)
+	err = rt.stageParent(stagingArea, child, node)
 	if err != nil {
 		return err
 	}
@@ -287,7 +296,7 @@ func (rt *reachabilityManager) addChild(node, child, reindexRoot *externalapi.Do
 		// This is done since in some cases, the underlying algorithm will
 		// allocate space around this point and call intervalIncreaseEnd or
 		// intervalDecreaseStart making for intervalSize > 0
-		err = rt.stageInterval(child, remaining)
+		err = rt.stageInterval(stagingArea, child, remaining)
 		if err != nil {
 			return err
 		}
@@ -295,7 +304,7 @@ func (rt *reachabilityManager) addChild(node, child, reindexRoot *externalapi.Do
 		rc := newReindexContext(rt)
 
 		reindexStartTime := time.Now()
-		err := rc.reindexIntervals(child, reindexRoot)
+		err := rc.reindexIntervals(stagingArea, child, reindexRoot)
 		if err != nil {
 			return err
 		}
@@ -314,18 +323,19 @@ func (rt *reachabilityManager) addChild(node, child, reindexRoot *externalapi.Do
 		return err
 	}
 
-	return rt.stageInterval(child, allocated)
+	return rt.stageInterval(stagingArea, child, allocated)
 }
 
-func (rt *reachabilityManager) updateReindexRoot(selectedTip *externalapi.DomainHash) error {
+func (rt *reachabilityManager) updateReindexRoot(stagingArea *model.StagingArea,
+	selectedTip *externalapi.DomainHash) error {
 
-	currentReindexRoot, err := rt.reindexRoot()
+	currentReindexRoot, err := rt.reindexRoot(stagingArea)
 	if err != nil {
 		return err
 	}
 
 	// First, find the new root
-	reindexRootAncestor, newReindexRoot, err := rt.findNextReindexRoot(currentReindexRoot, selectedTip)
+	reindexRootAncestor, newReindexRoot, err := rt.findNextReindexRoot(stagingArea, currentReindexRoot, selectedTip)
 	if err != nil {
 		return err
 	}
@@ -341,7 +351,7 @@ func (rt *reachabilityManager) updateReindexRoot(selectedTip *externalapi.Domain
 		log.Debugf("Concentrating the intervals towards the new reindex root")
 		// Iterate from reindexRootAncestor towards newReindexRoot
 		for {
-			chosenChild, err := rt.FindNextAncestor(selectedTip, reindexRootAncestor)
+			chosenChild, err := rt.FindNextAncestor(stagingArea, selectedTip, reindexRootAncestor)
 			if err != nil {
 				return err
 			}
@@ -349,7 +359,7 @@ func (rt *reachabilityManager) updateReindexRoot(selectedTip *externalapi.Domain
 			isFinalReindexRoot := chosenChild.Equal(newReindexRoot)
 
 			// Concentrate interval from current ancestor to its chosen child
-			err = rc.concentrateInterval(reindexRootAncestor, chosenChild, isFinalReindexRoot)
+			err = rc.concentrateInterval(stagingArea, reindexRootAncestor, chosenChild, isFinalReindexRoot)
 			if err != nil {
 				return err
 			}
@@ -365,7 +375,7 @@ func (rt *reachabilityManager) updateReindexRoot(selectedTip *externalapi.Domain
 	}
 
 	// Update reindex root data store
-	rt.stageReindexRoot(newReindexRoot)
+	rt.stageReindexRoot(stagingArea, newReindexRoot)
 	log.Debugf("Updated the reindex root to %s", newReindexRoot)
 	return nil
 }
@@ -373,25 +383,25 @@ func (rt *reachabilityManager) updateReindexRoot(selectedTip *externalapi.Domain
 // findNextReindexRoot finds the new reindex root based on the current one and the new selected tip.
 // The function also returns the common ancestor between the current and new reindex roots (possibly current root itself).
 // This ancestor should be used as a starting point for concentrating the interval towards the new root.
-func (rt *reachabilityManager) findNextReindexRoot(currentReindexRoot, selectedTip *externalapi.DomainHash) (
-	reindexRootAncestor, newReindexRoot *externalapi.DomainHash, err error) {
+func (rt *reachabilityManager) findNextReindexRoot(stagingArea *model.StagingArea, currentReindexRoot,
+	selectedTip *externalapi.DomainHash) (reindexRootAncestor, newReindexRoot *externalapi.DomainHash, err error) {
 
 	reindexRootAncestor = currentReindexRoot
 	newReindexRoot = currentReindexRoot
 
-	selectedTipGHOSTDAGData, err := rt.ghostdagDataStore.Get(rt.databaseContext, nil, selectedTip)
+	selectedTipGHOSTDAGData, err := rt.ghostdagDataStore.Get(rt.databaseContext, stagingArea, selectedTip)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	isCurrentAncestorOfTip, err := rt.IsReachabilityTreeAncestorOf(currentReindexRoot, selectedTip)
+	isCurrentAncestorOfTip, err := rt.IsReachabilityTreeAncestorOf(stagingArea, currentReindexRoot, selectedTip)
 	if err != nil {
 		return nil, nil, err
 	}
 
 	// Test if current root is ancestor of selected tip - if not, this is a reorg case
 	if !isCurrentAncestorOfTip {
-		currentRootGHOSTDAGData, err := rt.ghostdagDataStore.Get(rt.databaseContext, nil, currentReindexRoot)
+		currentRootGHOSTDAGData, err := rt.ghostdagDataStore.Get(rt.databaseContext, stagingArea, currentReindexRoot)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -410,7 +420,7 @@ func (rt *reachabilityManager) findNextReindexRoot(currentReindexRoot, selectedT
 		}
 
 		// The common ancestor is where we should start concentrating the interval from
-		commonAncestor, err := rt.findCommonAncestor(selectedTip, currentReindexRoot)
+		commonAncestor, err := rt.findCommonAncestor(stagingArea, selectedTip, currentReindexRoot)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -422,7 +432,7 @@ func (rt *reachabilityManager) findNextReindexRoot(currentReindexRoot, selectedT
 	// Iterate from ancestor towards selected tip until passing the reindexWindow threshold,
 	// for finding the new reindex root
 	for {
-		chosenChild, err := rt.FindNextAncestor(selectedTip, newReindexRoot)
+		chosenChild, err := rt.FindNextAncestor(stagingArea, selectedTip, newReindexRoot)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -455,13 +465,13 @@ Test helper functions
 
 // Helper function (for testing purposes) to validate that all tree intervals
 // under a specified subtree root are allocated correctly and as expected
-func (rt *reachabilityManager) validateIntervals(root *externalapi.DomainHash) error {
+func (rt *reachabilityManager) validateIntervals(stagingArea *model.StagingArea, root *externalapi.DomainHash) error {
 	queue := []*externalapi.DomainHash{root}
 	for len(queue) > 0 {
 		var current *externalapi.DomainHash
 		current, queue = queue[0], queue[1:]
 
-		children, err := rt.children(current)
+		children, err := rt.children(stagingArea, current)
 		if err != nil {
 			return err
 		}
@@ -470,7 +480,7 @@ func (rt *reachabilityManager) validateIntervals(root *externalapi.DomainHash) e
 			queue = append(queue, children...)
 		}
 
-		currentInterval, err := rt.interval(current)
+		currentInterval, err := rt.interval(stagingArea, current)
 		if err != nil {
 			return err
 		}
@@ -481,13 +491,13 @@ func (rt *reachabilityManager) validateIntervals(root *externalapi.DomainHash) e
 		}
 
 		for i, child := range children {
-			childInterval, err := rt.interval(child)
+			childInterval, err := rt.interval(stagingArea, child)
 			if err != nil {
 				return err
 			}
 
 			if i > 0 {
-				siblingInterval, err := rt.interval(children[i-1])
+				siblingInterval, err := rt.interval(stagingArea, children[i-1])
 				if err != nil {
 					return err
 				}
@@ -514,14 +524,14 @@ func (rt *reachabilityManager) validateIntervals(root *externalapi.DomainHash) e
 }
 
 // Helper function (for testing purposes) to get all nodes under a specified subtree root
-func (rt *reachabilityManager) getAllNodes(root *externalapi.DomainHash) ([]*externalapi.DomainHash, error) {
+func (rt *reachabilityManager) getAllNodes(stagingArea *model.StagingArea, root *externalapi.DomainHash) ([]*externalapi.DomainHash, error) {
 	queue := []*externalapi.DomainHash{root}
 	nodes := []*externalapi.DomainHash{root}
 	for len(queue) > 0 {
 		var current *externalapi.DomainHash
 		current, queue = queue[0], queue[1:]
 
-		children, err := rt.children(current)
+		children, err := rt.children(stagingArea, current)
 		if err != nil {
 			return nil, err
 		}

@@ -85,7 +85,7 @@ func (v *blockValidator) checkParentBlockBodiesExist(blockHash *externalapi.Doma
 				return err
 			}
 
-			isInPastOfPruningPoint, err := v.dagTopologyManager.IsAncestorOf(parent, pruningPoint)
+			isInPastOfPruningPoint, err := v.dagTopologyManager.IsAncestorOf(nil, parent, pruningPoint)
 			if err != nil {
 				return err
 			}

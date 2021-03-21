@@ -204,7 +204,7 @@ func (pm *pruningManager) UpdatePruningPointByVirtual() error {
 }
 
 func (pm *pruningManager) isInPruningFutureOrInVirtualPast(block *externalapi.DomainHash, pruningPoint *externalapi.DomainHash, virtualParents []*externalapi.DomainHash) (bool, error) {
-	hasPruningPointInPast, err := pm.dagTopologyManager.IsAncestorOf(pruningPoint, block)
+	hasPruningPointInPast, err := pm.dagTopologyManager.IsAncestorOf(nil, pruningPoint, block)
 	if err != nil {
 		return false, err
 	}
@@ -577,7 +577,7 @@ func (pm *pruningManager) PruneAllBlocksBelow(pruningPointHash *externalapi.Doma
 		if err != nil {
 			return err
 		}
-		isInPastOfPruningPoint, err := pm.dagTopologyManager.IsAncestorOf(pruningPointHash, blockHash)
+		isInPastOfPruningPoint, err := pm.dagTopologyManager.IsAncestorOf(nil, pruningPointHash, blockHash)
 		if err != nil {
 			return err
 		}

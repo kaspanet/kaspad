@@ -41,7 +41,7 @@ func (gm *ghostdagManager) mergeSetWithoutSelectedParent(selectedParent *externa
 				continue
 			}
 
-			isAncestorOfSelectedParent, err := gm.dagTopologyManager.IsAncestorOf(parent, selectedParent)
+			isAncestorOfSelectedParent, err := gm.dagTopologyManager.IsAncestorOf(nil, parent, selectedParent)
 			if err != nil {
 				return nil, err
 			}

@@ -63,7 +63,7 @@ func (v *blockValidator) ValidateHeaderInContext(blockHash *externalapi.DomainHa
 		return err
 	}
 	if !hasReachabilityData {
-		err = v.reachabilityManager.AddBlock(blockHash)
+		err = v.reachabilityManager.AddBlock(nil, blockHash)
 		if err != nil {
 			return err
 		}
@@ -96,14 +96,14 @@ func (v *blockValidator) hasValidatedHeader(blockHash *externalapi.DomainHash) (
 }
 
 // checkParentsIncest validates that no parent is an ancestor of another parent
-func (v *blockValidator) checkParentsIncest(header externalapi.BlockHeader) error {
+func (v *blockValidator) checkParentsIncest(stagingArea *model.StagingArea, header externalapi.BlockHeader) error {
 	for _, parentA := range header.ParentHashes() {
 		for _, parentB := range header.ParentHashes() {
 			if parentA.Equal(parentB) {
 				continue
 			}
 
-			isAAncestorOfB, err := v.dagTopologyManager.IsAncestorOf(parentA, parentB)
+			isAAncestorOfB, err := v.dagTopologyManager.IsAncestorOf(stagingArea, parentA, parentB)
 			if err != nil {
 				return err
 			}

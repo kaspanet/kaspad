@@ -54,18 +54,18 @@ func (bs *blockStore) initializeCount(dbContext model.DBReader) error {
 }
 
 // Stage stages the given block for the given blockHash
-func (bs *blockStore) Stage(stagingArea model.StagingArea, blockHash *externalapi.DomainHash, block *externalapi.DomainBlock) {
+func (bs *blockStore) Stage(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash, block *externalapi.DomainBlock) {
 	stagingShard := bs.stagingShard(stagingArea)
 	stagingShard.toAdd[*blockHash] = block.Clone()
 }
 
-func (bs *blockStore) IsStaged(stagingArea model.StagingArea) bool {
+func (bs *blockStore) IsStaged(stagingArea *model.StagingArea) bool {
 	stagingShard := bs.stagingShard(stagingArea)
 	return len(stagingShard.toAdd) != 0 || len(stagingShard.toDelete) != 0
 }
 
 // Block gets the block associated with the given blockHash
-func (bs *blockStore) Block(dbContext model.DBReader, stagingArea model.StagingArea, blockHash *externalapi.DomainHash) (*externalapi.DomainBlock, error) {
+func (bs *blockStore) Block(dbContext model.DBReader, stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) (*externalapi.DomainBlock, error) {
 	stagingShard := bs.stagingShard(stagingArea)
 
 	return bs.block(dbContext, stagingShard, blockHash)
@@ -94,7 +94,7 @@ func (bs *blockStore) block(dbContext model.DBReader, stagingShard *blockStaging
 }
 
 // HasBlock returns whether a block with a given hash exists in the store.
-func (bs *blockStore) HasBlock(dbContext model.DBReader, stagingArea model.StagingArea, blockHash *externalapi.DomainHash) (bool, error) {
+func (bs *blockStore) HasBlock(dbContext model.DBReader, stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) (bool, error) {
 	stagingShard := bs.stagingShard(stagingArea)
 
 	if _, ok := stagingShard.toAdd[*blockHash]; ok {
@@ -114,7 +114,7 @@ func (bs *blockStore) HasBlock(dbContext model.DBReader, stagingArea model.Stagi
 }
 
 // Blocks gets the blocks associated with the given blockHashes
-func (bs *blockStore) Blocks(dbContext model.DBReader, stagingArea model.StagingArea, blockHashes []*externalapi.DomainHash) ([]*externalapi.DomainBlock, error) {
+func (bs *blockStore) Blocks(dbContext model.DBReader, stagingArea *model.StagingArea, blockHashes []*externalapi.DomainHash) ([]*externalapi.DomainBlock, error) {
 	stagingShard := bs.stagingShard(stagingArea)
 
 	blocks := make([]*externalapi.DomainBlock, len(blockHashes))
@@ -129,7 +129,7 @@ func (bs *blockStore) Blocks(dbContext model.DBReader, stagingArea model.Staging
 }
 
 // Delete deletes the block associated with the given blockHash
-func (bs *blockStore) Delete(stagingArea model.StagingArea, blockHash *externalapi.DomainHash) {
+func (bs *blockStore) Delete(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) {
 	stagingShard := bs.stagingShard(stagingArea)
 
 	if _, ok := stagingShard.toAdd[*blockHash]; ok {
@@ -157,7 +157,7 @@ func (bs *blockStore) hashAsKey(hash *externalapi.DomainHash) model.DBKey {
 	return bucket.Key(hash.ByteSlice())
 }
 
-func (bs *blockStore) Count(stagingArea model.StagingArea) uint64 {
+func (bs *blockStore) Count(stagingArea *model.StagingArea) uint64 {
 	stagingShard := bs.stagingShard(stagingArea)
 	return bs.count(stagingShard)
 }

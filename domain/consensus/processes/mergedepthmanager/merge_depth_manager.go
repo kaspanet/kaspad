@@ -56,7 +56,7 @@ func (mdm *mergeDepthManager) CheckBoundedMergeDepth(blockHash *externalapi.Doma
 	}
 
 	for _, red := range ghostdagData.MergeSetReds() {
-		doesRedHaveFinalityPointInPast, err := mdm.dagTopologyManager.IsAncestorOf(finalityPoint, red)
+		doesRedHaveFinalityPointInPast, err := mdm.dagTopologyManager.IsAncestorOf(nil, finalityPoint, red)
 		if err != nil {
 			return err
 		}

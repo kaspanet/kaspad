@@ -55,7 +55,7 @@ func TestHandleGetBlocks(t *testing.T) {
 			antipast := make([]*externalapi.DomainHash, 0, len(slice))
 
 			for _, blockHash := range slice {
-				isInPastOfPovBlock, err := tc.DAGTopologyManager().IsAncestorOf(blockHash, povBlock)
+				isInPastOfPovBlock, err := tc.DAGTopologyManager().IsAncestorOf(nil, blockHash, povBlock)
 				if err != nil {
 					t.Fatalf("Failed doing reachability check: '%v'", err)
 				}

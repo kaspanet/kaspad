@@ -1,11 +1,12 @@
 package reachabilitymanager_test
 
 import (
+	"testing"
+
 	"github.com/kaspanet/kaspad/domain/consensus"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/testutils"
 	"github.com/kaspanet/kaspad/domain/dagconfig"
-	"testing"
 )
 
 func TestReachabilityIsDAGAncestorOf(t *testing.T) {
@@ -97,7 +98,7 @@ func TestReachabilityIsDAGAncestorOf(t *testing.T) {
 		}
 
 		for _, test := range tests {
-			isDAGAncestorOf, err := tc.ReachabilityManager().IsDAGAncestorOf(test.firstBlockHash, test.secondBlockHash)
+			isDAGAncestorOf, err := tc.ReachabilityManager().IsDAGAncestorOf(nil, test.firstBlockHash, test.secondBlockHash)
 			if err != nil {
 				t.Fatalf("IsDAGAncestorOf: %v", err)
 			}

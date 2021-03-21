@@ -32,7 +32,7 @@ func (csm *consensusStateManager) isViolatingFinality(blockHash *externalapi.Dom
 	}
 	log.Debugf("The pruning point is: %s", pruningPoint)
 
-	isFinalityPointInPastOfPruningPoint, err := csm.dagTopologyManager.IsAncestorOf(virtualFinalityPoint, pruningPoint)
+	isFinalityPointInPastOfPruningPoint, err := csm.dagTopologyManager.IsAncestorOf(nil, virtualFinalityPoint, pruningPoint)
 	if err != nil {
 		return false, false, err
 	}

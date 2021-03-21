@@ -199,11 +199,11 @@ func (gh *ghostdagHelper) divideBlueRed(selectedParent *externalapi.DomainHash, 
 
 /* ---------------isAnticone-------------------------- */
 func (gh *ghostdagHelper) isAnticone(blockA, blockB *externalapi.DomainHash) (bool, error) {
-	isAAncestorOfAB, err := gh.dagTopologyManager.IsAncestorOf(blockA, blockB)
+	isAAncestorOfAB, err := gh.dagTopologyManager.IsAncestorOf(nil, blockA, blockB)
 	if err != nil {
 		return false, err
 	}
-	isBAncestorOfA, err := gh.dagTopologyManager.IsAncestorOf(blockB, blockA)
+	isBAncestorOfA, err := gh.dagTopologyManager.IsAncestorOf(nil, blockB, blockA)
 	if err != nil {
 		return false, err
 	}
@@ -232,7 +232,7 @@ func (gh *ghostdagHelper) validateKCluster(chain *externalapi.DomainHash, checke
 		*counter++
 		return true, nil
 	}
-	isAncestorOf, err := gh.dagTopologyManager.IsAncestorOf(checkedBlock, chain)
+	isAncestorOf, err := gh.dagTopologyManager.IsAncestorOf(nil, checkedBlock, chain)
 	if err != nil {
 		return false, err
 	}
@@ -302,7 +302,7 @@ func (gh *ghostdagHelper) findMergeSet(parents []*externalapi.DomainHash, select
 			}
 			continue
 		}
-		isancestorOf, err := gh.dagTopologyManager.IsAncestorOf(block, selectedParent)
+		isancestorOf, err := gh.dagTopologyManager.IsAncestorOf(nil, block, selectedParent)
 		if err != nil {
 			return nil, err
 		}

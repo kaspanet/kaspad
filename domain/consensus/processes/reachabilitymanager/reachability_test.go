@@ -112,8 +112,8 @@ func (th *testHelper) newNodeWithInterval(interval *model.ReachabilityInterval) 
 	return node
 }
 
-func (th *testHelper) getInterval(node *externalapi.DomainHash) *model.ReachabilityInterval {
-	interval, err := th.interval(node)
+func (th *testHelper) getInterval(stagingArea *model.StagingArea, node *externalapi.DomainHash) *model.ReachabilityInterval {
+	interval, err := th.interval(stagingArea, node)
 	if err != nil {
 		th.t.Fatalf("interval: %s", err)
 	}
@@ -281,7 +281,7 @@ func TestAddChild(t *testing.T) {
 	}
 
 	// Expect the last-added child to have an interval of 1 and remaining interval of 0 both before and after
-	lastChildInterval, err := helper.interval(lastChild)
+	lastChildInterval, err := helper.interval(stagingArea, lastChild)
 	if err != nil {
 		t.Fatalf("interval: %s", err)
 	}
@@ -686,7 +686,7 @@ func TestHasAncestorOf(t *testing.T) {
 	}
 
 	for i, test := range tests {
-		result, err := helper.futureCoveringSetHasAncestorOf(nodeWithFutureCoveringTreeNodeSet, test.treeNode)
+		result, err := helper.futureCoveringSetHasAncestorOf(nil, nodeWithFutureCoveringTreeNodeSet, test.treeNode)
 		if err != nil {
 			t.Fatalf("futureCoveringSetHasAncestorOf: %s", err)
 		}

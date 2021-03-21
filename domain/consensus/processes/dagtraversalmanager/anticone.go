@@ -23,7 +23,7 @@ func (dtm *dagTraversalManager) Anticone(blockHash *externalapi.DomainHash) ([]*
 
 		visited.Add(current)
 
-		currentIsAncestorOfBlock, err := dtm.dagTopologyManager.IsAncestorOf(current, blockHash)
+		currentIsAncestorOfBlock, err := dtm.dagTopologyManager.IsAncestorOf(nil, current, blockHash)
 		if err != nil {
 			return nil, err
 		}
@@ -32,7 +32,7 @@ func (dtm *dagTraversalManager) Anticone(blockHash *externalapi.DomainHash) ([]*
 			continue
 		}
 
-		blockIsAncestorOfCurrent, err := dtm.dagTopologyManager.IsAncestorOf(blockHash, current)
+		blockIsAncestorOfCurrent, err := dtm.dagTopologyManager.IsAncestorOf(nil, blockHash, current)
 		if err != nil {
 			return nil, err
 		}

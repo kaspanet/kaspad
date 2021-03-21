@@ -42,7 +42,7 @@ func TestIsAncestorOf(t *testing.T) {
 			t.Fatalf("AddBlock: %s", err)
 		}
 
-		isAncestorOf, err := tc.DAGTopologyManager().IsAncestorOf(blockC, blockD)
+		isAncestorOf, err := tc.DAGTopologyManager().IsAncestorOf(nil, blockC, blockD)
 		if err != nil {
 			t.Fatalf("IsAncestorOf: %s", err)
 		}

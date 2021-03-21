@@ -67,14 +67,14 @@ func (dtm *dagTopologyManager) IsChildOf(blockHashA *externalapi.DomainHash, blo
 }
 
 // IsAncestorOf returns true if blockHashA is a DAG ancestor of blockHashB
-func (dtm *dagTopologyManager) IsAncestorOf(blockHashA *externalapi.DomainHash, blockHashB *externalapi.DomainHash) (bool, error) {
-	return dtm.reachabilityManager.IsDAGAncestorOf(blockHashA, blockHashB)
+func (dtm *dagTopologyManager) IsAncestorOf(stagingArea *model.StagingArea, blockHashA *externalapi.DomainHash, blockHashB *externalapi.DomainHash) (bool, error) {
+	return dtm.reachabilityManager.IsDAGAncestorOf(stagingArea, blockHashA, blockHashB)
 }
 
 // IsAncestorOfAny returns true if `blockHash` is an ancestor of at least one of `potentialDescendants`
 func (dtm *dagTopologyManager) IsAncestorOfAny(blockHash *externalapi.DomainHash, potentialDescendants []*externalapi.DomainHash) (bool, error) {
 	for _, potentialDescendant := range potentialDescendants {
-		isAncestorOf, err := dtm.IsAncestorOf(blockHash, potentialDescendant)
+		isAncestorOf, err := dtm.IsAncestorOf(nil, blockHash, potentialDescendant)
 		if err != nil {
 			return false, err
 		}
@@ -90,7 +90,7 @@ func (dtm *dagTopologyManager) IsAncestorOfAny(blockHash *externalapi.DomainHash
 // IsAnyAncestorOf returns true if at least one of `potentialAncestors` is an ancestor of `blockHash`
 func (dtm *dagTopologyManager) IsAnyAncestorOf(potentialAncestors []*externalapi.DomainHash, blockHash *externalapi.DomainHash) (bool, error) {
 	for _, potentialAncestor := range potentialAncestors {
-		isAncestorOf, err := dtm.IsAncestorOf(potentialAncestor, blockHash)
+		isAncestorOf, err := dtm.IsAncestorOf(nil, potentialAncestor, blockHash)
 		if err != nil {
 			return false, err
 		}
@@ -105,7 +105,7 @@ func (dtm *dagTopologyManager) IsAnyAncestorOf(potentialAncestors []*externalapi
 
 // IsInSelectedParentChainOf returns true if blockHashA is in the selected parent chain of blockHashB
 func (dtm *dagTopologyManager) IsInSelectedParentChainOf(blockHashA *externalapi.DomainHash, blockHashB *externalapi.DomainHash) (bool, error) {
-	return dtm.reachabilityManager.IsReachabilityTreeAncestorOf(blockHashA, blockHashB)
+	return dtm.reachabilityManager.IsReachabilityTreeAncestorOf(nil, blockHashA, blockHashB)
 }
 
 func isHashInSlice(hash *externalapi.DomainHash, hashes []*externalapi.DomainHash) bool {
@@ -206,5 +206,5 @@ func (dtm *dagTopologyManager) ChildInSelectedParentChainOf(
 			blockHash, specifiedHighHash)
 	}
 
-	return dtm.reachabilityManager.FindNextAncestor(highHash, blockHash)
+	return dtm.reachabilityManager.FindNextAncestor(nil, highHash, blockHash)
 }

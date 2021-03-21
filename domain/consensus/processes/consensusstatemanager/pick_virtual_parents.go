@@ -114,7 +114,7 @@ func (csm *consensusStateManager) removeHashesInFutureOf(hashes []*externalapi.D
 	// Source: https://github.com/golang/go/wiki/SliceTricks#filter-in-place
 	i := 0
 	for _, hash := range hashes {
-		isInFutureOfAncestor, err := csm.dagTopologyManager.IsAncestorOf(ancestor, hash)
+		isInFutureOfAncestor, err := csm.dagTopologyManager.IsAncestorOf(nil, ancestor, hash)
 		if err != nil {
 			return nil, err
 		}
@@ -292,7 +292,7 @@ func (csm *consensusStateManager) boundedMergeBreakingParents(
 	}
 	for _, redBlock := range virtualGHOSTDAGData.MergeSetReds() {
 		log.Debugf("Check whether red block %s is kosherized", redBlock)
-		isFinalityPointInPast, err := csm.dagTopologyManager.IsAncestorOf(virtualFinalityPoint, redBlock)
+		isFinalityPointInPast, err := csm.dagTopologyManager.IsAncestorOf(nil, virtualFinalityPoint, redBlock)
 		if err != nil {
 			return nil, err
 		}
@@ -304,7 +304,7 @@ func (csm *consensusStateManager) boundedMergeBreakingParents(
 
 		isKosherized := false
 		for _, potentiallyKosherizingBlock := range potentiallyKosherizingBlocks {
-			isKosherized, err = csm.dagTopologyManager.IsAncestorOf(redBlock, potentiallyKosherizingBlock)
+			isKosherized, err = csm.dagTopologyManager.IsAncestorOf(nil, redBlock, potentiallyKosherizingBlock)
 			if err != nil {
 				return nil, err
 			}
@@ -325,7 +325,7 @@ func (csm *consensusStateManager) boundedMergeBreakingParents(
 		log.Debugf("Checking whether parent %s breaks the bounded merge set", parent)
 		isBadRedInPast := false
 		for _, badRedBlock := range badReds {
-			isBadRedInPast, err = csm.dagTopologyManager.IsAncestorOf(parent, badRedBlock)
+			isBadRedInPast, err = csm.dagTopologyManager.IsAncestorOf(nil, parent, badRedBlock)
 			if err != nil {
 				return nil, err
 			}

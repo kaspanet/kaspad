@@ -138,14 +138,14 @@ func TestPruning(t *testing.T) {
 				id := jsonBlock.ID
 				blockHash := blockIDToHash[id]
 
-				isPruningPointAncestorOfBlock, err := tc.DAGTopologyManager().IsAncestorOf(pruningPoint, blockHash)
+				isPruningPointAncestorOfBlock, err := tc.DAGTopologyManager().IsAncestorOf(nil, pruningPoint, blockHash)
 				if err != nil {
 					t.Fatalf("IsAncestorOf: %+v", err)
 				}
 
 				expectsBlock := true
 				if !isPruningPointAncestorOfBlock {
-					isBlockAncestorOfPruningPoint, err := tc.DAGTopologyManager().IsAncestorOf(blockHash, pruningPoint)
+					isBlockAncestorOfPruningPoint, err := tc.DAGTopologyManager().IsAncestorOf(nil, blockHash, pruningPoint)
 					if err != nil {
 						t.Fatalf("IsAncestorOf: %+v", err)
 					}
@@ -160,7 +160,7 @@ func TestPruning(t *testing.T) {
 
 						isInPastOfVirtual := false
 						for _, virtualParent := range virtualInfo.ParentHashes {
-							isAncestorOfVirtualParent, err := tc.DAGTopologyManager().IsAncestorOf(blockHash, virtualParent)
+							isAncestorOfVirtualParent, err := tc.DAGTopologyManager().IsAncestorOf(nil, blockHash, virtualParent)
 							if err != nil {
 								t.Fatalf("IsAncestorOf: %+v", err)
 							}

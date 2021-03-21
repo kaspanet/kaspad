@@ -8,6 +8,10 @@ type StagingArea struct {
 	shards map[string]StagingShard
 }
 
+func NewStagingArea() *StagingArea {
+	return &StagingArea{shards: map[string]StagingShard{}}
+}
+
 func (sa *StagingArea) GetOrCreateShard(shardName string, createFunc func() StagingShard) StagingShard {
 	if _, ok := sa.shards[shardName]; !ok {
 		sa.shards[shardName] = createFunc()

@@ -77,7 +77,7 @@ func (sm *syncManager) antiPastHashesBetween(lowHash, highHash *externalapi.Doma
 
 		// append to blockHashes all blocks in sortedMergeSet which are not in the past of originalLowHash
 		for _, blockHash := range sortedMergeSet {
-			isInPastOfOriginalLowHash, err := sm.dagTopologyManager.IsAncestorOf(blockHash, originalLowHash)
+			isInPastOfOriginalLowHash, err := sm.dagTopologyManager.IsAncestorOf(nil, blockHash, originalLowHash)
 			if err != nil {
 				return nil, nil, err
 			}

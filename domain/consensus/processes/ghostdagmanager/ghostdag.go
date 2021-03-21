@@ -183,7 +183,7 @@ func (gm *ghostdagManager) checkBlueCandidateWithChainBlock(newBlockData *model.
 
 	// We check if chainBlock is not the new block by checking if it has a hash.
 	if chainBlock.hash != nil {
-		isAncestorOfBlueCandidate, err := gm.dagTopologyManager.IsAncestorOf(chainBlock.hash, blueCandidate)
+		isAncestorOfBlueCandidate, err := gm.dagTopologyManager.IsAncestorOf(nil, chainBlock.hash, blueCandidate)
 		if err != nil {
 			return false, false, err
 		}
@@ -194,7 +194,7 @@ func (gm *ghostdagManager) checkBlueCandidateWithChainBlock(newBlockData *model.
 
 	for _, block := range chainBlock.blockData.MergeSetBlues() {
 		// Skip blocks that exist in the past of blueCandidate.
-		isAncestorOfBlueCandidate, err := gm.dagTopologyManager.IsAncestorOf(block, blueCandidate)
+		isAncestorOfBlueCandidate, err := gm.dagTopologyManager.IsAncestorOf(nil, block, blueCandidate)
 		if err != nil {
 			return false, false, err
 		}

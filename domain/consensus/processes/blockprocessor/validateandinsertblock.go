@@ -55,10 +55,11 @@ func (bp *blockProcessor) setBlockStatusAfterBlockValidation(block *externalapi.
 }
 
 func (bp *blockProcessor) validateAndInsertBlock(block *externalapi.DomainBlock, isPruningPoint bool) (*externalapi.BlockInsertionResult, error) {
+	stagingArea := model.NewStagingArea()
+
 	blockHash := consensushashing.HeaderHash(block.Header)
-	err := bp.validateBlock(block, isPruningPoint)
+	err := bp.validateBlock(stagingArea, block, isPruningPoint)
 	if err != nil {
-		bp.discardAllChanges()
 		return nil, err
 	}
 
@@ -113,7 +114,7 @@ func (bp *blockProcessor) validateAndInsertBlock(block *externalapi.DomainBlock,
 		}
 	}
 
-	err = bp.commitAllChanges()
+	err = bp.commitAllChanges(nil)
 	if err != nil {
 		return nil, err
 	}
@@ -172,13 +173,13 @@ func (bp *blockProcessor) updateReachabilityReindexRoot(oldHeadersSelectedTip *e
 		return nil
 	}
 
-	return bp.reachabilityManager.UpdateReindexRoot(headersSelectedTip)
+	return bp.reachabilityManager.UpdateReindexRoot(nil, headersSelectedTip)
 }
 
-func (bp *blockProcessor) checkBlockStatus(block *externalapi.DomainBlock) error {
+func (bp *blockProcessor) checkBlockStatus(stagingArea *model.StagingArea, block *externalapi.DomainBlock) error {
 	hash := consensushashing.BlockHash(block)
 	isHeaderOnlyBlock := isHeaderOnlyBlock(block)
-	exists, err := bp.blockStatusStore.Exists(bp.databaseContext, nil, hash)
+	exists, err := bp.blockStatusStore.Exists(bp.databaseContext, stagingArea, hash)
 	if err != nil {
 		return err
 	}
@@ -186,7 +187,7 @@ func (bp *blockProcessor) checkBlockStatus(block *externalapi.DomainBlock) error
 		return nil
 	}
 
-	status, err := bp.blockStatusStore.Get(bp.databaseContext, nil, hash)
+	status, err := bp.blockStatusStore.Get(bp.databaseContext, stagingArea, hash)
 	if err != nil {
 		return err
 	}
@@ -196,7 +197,7 @@ func (bp *blockProcessor) checkBlockStatus(block *externalapi.DomainBlock) error
 	}
 
 	if !isHeaderOnlyBlock {
-		hasBlock, err := bp.blockStore.HasBlock(bp.databaseContext,, hash)
+		hasBlock, err := bp.blockStore.HasBlock(bp.databaseContext,stagingArea, hash)
 		if err != nil {
 			return err
 		}
@@ -204,7 +205,7 @@ func (bp *blockProcessor) checkBlockStatus(block *externalapi.DomainBlock) error
 			return errors.Wrapf(ruleerrors.ErrDuplicateBlock, "block %s already exists", hash)
 		}
 	} else {
-		hasHeader, err := bp.blockHeaderStore.HasBlockHeader(bp.databaseContext, nil, hash)
+		hasHeader, err := bp.blockHeaderStore.HasBlockHeader(bp.databaseContext, stagingArea, hash)
 		if err != nil {
 			return err
 		}
@@ -216,10 +217,10 @@ func (bp *blockProcessor) checkBlockStatus(block *externalapi.DomainBlock) error
 	return nil
 }
 
-func (bp *blockProcessor) validatePreProofOfWork(block *externalapi.DomainBlock) error {
+func (bp *blockProcessor) validatePreProofOfWork(stagingArea *model.StagingArea, block *externalapi.DomainBlock) error {
 	blockHash := consensushashing.BlockHash(block)
 
-	hasValidatedHeader, err := bp.hasValidatedHeader(blockHash)
+	hasValidatedHeader, err := bp.hasValidatedHeader(stagingArea, blockHash)
 	if err != nil {
 		return err
 	}
@@ -229,7 +230,7 @@ func (bp *blockProcessor) validatePreProofOfWork(block *externalapi.DomainBlock)
 		return nil
 	}
 
-	err = bp.blockValidator.ValidateHeaderInIsolation(blockHash)
+	err = bp.blockValidator.ValidateHeaderInIsolation(stagingArea, blockHash)
 	if err != nil {
 		return err
 	}
@@ -248,7 +249,7 @@ func (bp *blockProcessor) validatePostProofOfWork(block *externalapi.DomainBlock
 		}
 	}
 
-	hasValidatedHeader, err := bp.hasValidatedHeader(blockHash)
+	hasValidatedHeader, err := bp.hasValidatedHeader(nil, blockHash)
 	if err != nil {
 		return err
 	}
@@ -275,8 +276,8 @@ func (bp *blockProcessor) validatePostProofOfWork(block *externalapi.DomainBlock
 // hasValidatedHeader returns whether the block header was validated. It returns
 // true in any case the block header was validated, whether it was validated as a
 // header-only block or as a block with body.
-func (bp *blockProcessor) hasValidatedHeader(blockHash *externalapi.DomainHash) (bool, error) {
-	exists, err := bp.blockStatusStore.Exists(bp.databaseContext, nil, blockHash)
+func (bp *blockProcessor) hasValidatedHeader(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) (bool, error) {
+	exists, err := bp.blockStatusStore.Exists(bp.databaseContext, stagingArea, blockHash)
 	if err != nil {
 		return false, err
 	}
@@ -285,7 +286,7 @@ func (bp *blockProcessor) hasValidatedHeader(blockHash *externalapi.DomainHash) 
 		return false, nil
 	}
 
-	status, err := bp.blockStatusStore.Get(bp.databaseContext, nil, blockHash)
+	status, err := bp.blockStatusStore.Get(bp.databaseContext, stagingArea, blockHash)
 	if err != nil {
 		return false, err
 	}
@@ -293,13 +294,7 @@ func (bp *blockProcessor) hasValidatedHeader(blockHash *externalapi.DomainHash) 
 	return status != externalapi.StatusInvalid, nil
 }
 
-func (bp *blockProcessor) discardAllChanges() {
-	for _, store := range bp.stores {
-		store.Discard()
-	}
-}
-
-func (bp *blockProcessor) commitAllChanges() error {
+func (bp *blockProcessor) commitAllChanges(stagingArea *model.StagingArea) error {
 	onEnd := logger.LogAndMeasureExecutionTime(log, "commitAllChanges")
 	defer onEnd()
 
@@ -308,12 +303,5 @@ func (bp *blockProcessor) commitAllChanges() error {
 		return err
 	}
 
-	for _, store := range bp.stores {
-		err = store.Commit(dbTx)
-		if err != nil {
-			return err
-		}
-	}
-
-	return dbTx.Commit()
+	return stagingArea.Commit(dbTx)
 }
