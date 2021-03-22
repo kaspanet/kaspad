@@ -269,7 +269,7 @@ func (s *consensus) ClearImportedPruningPointData() error {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	return s.pruningManager.ClearImportedPruningPointData()
+	return s.pruningManager.ClearImportedPruningPointData(nil)
 }
 
 func (s *consensus) AppendImportedPruningPointUTXOs(outpointAndUTXOEntryPairs []*externalapi.OutpointAndUTXOEntryPair) error {
@@ -390,7 +390,7 @@ func (s *consensus) IsValidPruningPoint(blockHash *externalapi.DomainHash) (bool
 		return false, err
 	}
 
-	return s.pruningManager.IsValidPruningPoint(blockHash)
+	return s.pruningManager.IsValidPruningPoint(nil, blockHash)
 }
 
 func (s *consensus) GetVirtualSelectedParentChainFromBlock(blockHash *externalapi.DomainHash) (*externalapi.SelectedChainPath, error) {

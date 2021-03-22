@@ -412,7 +412,7 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 	if err != nil {
 		return nil, err
 	}
-	err = pruningManager.ClearImportedPruningPointData()
+	err = pruningManager.ClearImportedPruningPointData(nil)
 	if err != nil {
 		return nil, err
 	}
