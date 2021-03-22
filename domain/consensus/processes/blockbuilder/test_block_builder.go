@@ -131,7 +131,7 @@ func (bb *testBlockBuilder) buildBlockWithParents(parentHashes []*externalapi.Do
 		return nil, nil, err
 	}
 
-	bits, err := bb.difficultyManager.StageDAADataAndReturnRequiredDifficulty(tempBlockHash)
+	bits, err := bb.difficultyManager.StageDAADataAndReturnRequiredDifficulty(nil, tempBlockHash)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -200,7 +200,7 @@ func (bb *testBlockBuilder) BuildUTXOInvalidBlock(parentHashes []*externalapi.Do
 	// We use genesis transactions so we'll have something to build merkle root and coinbase with
 	genesisTransactions := bb.testConsensus.DAGParams().GenesisBlock.Transactions
 
-	bits, err := bb.difficultyManager.RequiredDifficulty(tempBlockHash)
+	bits, err := bb.difficultyManager.RequiredDifficulty(nil, tempBlockHash)
 	if err != nil {
 		return nil, err
 	}

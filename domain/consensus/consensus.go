@@ -313,7 +313,7 @@ func (s *consensus) GetVirtualInfo() (*externalapi.VirtualInfo, error) {
 	if err != nil {
 		return nil, err
 	}
-	bits, err := s.difficultyManager.RequiredDifficulty(model.VirtualBlockHash)
+	bits, err := s.difficultyManager.RequiredDifficulty(nil, model.VirtualBlockHash)
 	if err != nil {
 		return nil, err
 	}
