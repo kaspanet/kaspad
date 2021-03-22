@@ -1,7 +1,5 @@
 package externalapi
 
-import "github.com/kaspanet/kaspad/domain/consensus/model"
-
 // Consensus maintains the current core state of the node
 type Consensus interface {
 	BuildBlock(coinbaseData *DomainCoinbaseData, transactions []*DomainTransaction) (*DomainBlock, error)
@@ -14,8 +12,8 @@ type Consensus interface {
 	GetBlockChildren(blockHash *DomainHash) ([]*DomainHash, error)
 	GetBlockAcceptanceData(blockHash *DomainHash) (AcceptanceData, error)
 
-	GetHashesBetween(stagingArea *model.StagingArea, lowHash, highHash *DomainHash, maxBlueScoreDifference uint64) (hashes []*DomainHash, actualHighHash *DomainHash, err error)
-	GetMissingBlockBodyHashes(stagingArea *model.StagingArea, highHash *DomainHash) ([]*DomainHash, error)
+	GetHashesBetween(lowHash, highHash *DomainHash, maxBlueScoreDifference uint64) (hashes []*DomainHash, actualHighHash *DomainHash, err error)
+	GetMissingBlockBodyHashes(highHash *DomainHash) ([]*DomainHash, error)
 	GetPruningPointUTXOs(expectedPruningPointHash *DomainHash, fromOutpoint *DomainOutpoint, limit int) ([]*OutpointAndUTXOEntryPair, error)
 	GetVirtualUTXOs(expectedVirtualParents []*DomainHash, fromOutpoint *DomainOutpoint, limit int) ([]*OutpointAndUTXOEntryPair, error)
 	PruningPoint() (*DomainHash, error)
@@ -23,10 +21,10 @@ type Consensus interface {
 	AppendImportedPruningPointUTXOs(outpointAndUTXOEntryPairs []*OutpointAndUTXOEntryPair) error
 	ValidateAndInsertImportedPruningPoint(newPruningPoint *DomainBlock) error
 	GetVirtualSelectedParent() (*DomainHash, error)
-	CreateBlockLocator(stagingArea *model.StagingArea, lowHash, highHash *DomainHash, limit uint32) (BlockLocator, error)
-	CreateHeadersSelectedChainBlockLocator(stagingArea *model.StagingArea, lowHash, highHash *DomainHash) (BlockLocator, error)
+	CreateBlockLocator(lowHash, highHash *DomainHash, limit uint32) (BlockLocator, error)
+	CreateHeadersSelectedChainBlockLocator(lowHash, highHash *DomainHash) (BlockLocator, error)
 	CreateFullHeadersSelectedChainBlockLocator() (BlockLocator, error)
-	GetSyncInfo(*model.StagingArea) (*SyncInfo, error)
+	GetSyncInfo() (*SyncInfo, error)
 	Tips() ([]*DomainHash, error)
 	GetVirtualInfo() (*VirtualInfo, error)
 	IsValidPruningPoint(blockHash *DomainHash) (bool, error)
