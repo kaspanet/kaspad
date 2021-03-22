@@ -13,16 +13,16 @@ import (
 
 // ValidateHeaderInContext validates block headers in the context of the current
 // consensus state
-func (v *blockValidator) ValidateHeaderInContext(blockHash *externalapi.DomainHash) error {
+func (v *blockValidator) ValidateHeaderInContext(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) error {
 	onEnd := logger.LogAndMeasureExecutionTime(log, "ValidateHeaderInContext")
 	defer onEnd()
 
-	header, err := v.blockHeaderStore.BlockHeader(v.databaseContext, nil, blockHash)
+	header, err := v.blockHeaderStore.BlockHeader(v.databaseContext, stagingArea, blockHash)
 	if err != nil {
 		return err
 	}
 
-	hasValidatedHeader, err := v.hasValidatedHeader(blockHash)
+	hasValidatedHeader, err := v.hasValidatedHeader(stagingArea, blockHash)
 	if err != nil {
 		return err
 	}
@@ -31,7 +31,7 @@ func (v *blockValidator) ValidateHeaderInContext(blockHash *externalapi.DomainHa
 		var logErr error
 		log.Debug(logger.NewLogClosure(func() string {
 			var ghostdagData *model.BlockGHOSTDAGData
-			ghostdagData, logErr = v.ghostdagDataStore.Get(v.databaseContext, nil, blockHash)
+			ghostdagData, logErr = v.ghostdagDataStore.Get(v.databaseContext, stagingArea, blockHash)
 			if err != nil {
 				return ""
 			}
@@ -44,12 +44,12 @@ func (v *blockValidator) ValidateHeaderInContext(blockHash *externalapi.DomainHa
 		}
 	}
 
-	err = v.validateMedianTime(header)
+	err = v.validateMedianTime(stagingArea, header)
 	if err != nil {
 		return err
 	}
 
-	err = v.checkMergeSizeLimit(blockHash)
+	err = v.checkMergeSizeLimit(stagingArea, blockHash)
 	if err != nil {
 		return err
 	}
@@ -58,18 +58,18 @@ func (v *blockValidator) ValidateHeaderInContext(blockHash *externalapi.DomainHa
 	// since it's used to find a block's finality point.
 	// This might not be required if this block's header has previously been received during
 	// headers-first synchronization.
-	hasReachabilityData, err := v.reachabilityStore.HasReachabilityData(v.databaseContext, nil, blockHash)
+	hasReachabilityData, err := v.reachabilityStore.HasReachabilityData(v.databaseContext, stagingArea, blockHash)
 	if err != nil {
 		return err
 	}
 	if !hasReachabilityData {
-		err = v.reachabilityManager.AddBlock(nil, blockHash)
+		err = v.reachabilityManager.AddBlock(stagingArea, blockHash)
 		if err != nil {
 			return err
 		}
 	}
 
-	err = v.mergeDepthManager.CheckBoundedMergeDepth(nil, blockHash)
+	err = v.mergeDepthManager.CheckBoundedMergeDepth(stagingArea, blockHash)
 	if err != nil {
 		return err
 	}
@@ -77,8 +77,8 @@ func (v *blockValidator) ValidateHeaderInContext(blockHash *externalapi.DomainHa
 	return nil
 }
 
-func (v *blockValidator) hasValidatedHeader(blockHash *externalapi.DomainHash) (bool, error) {
-	exists, err := v.blockStatusStore.Exists(v.databaseContext, nil, blockHash)
+func (v *blockValidator) hasValidatedHeader(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) (bool, error) {
+	exists, err := v.blockStatusStore.Exists(v.databaseContext, stagingArea, blockHash)
 	if err != nil {
 		return false, err
 	}
@@ -87,7 +87,7 @@ func (v *blockValidator) hasValidatedHeader(blockHash *externalapi.DomainHash) (
 		return false, nil
 	}
 
-	status, err := v.blockStatusStore.Get(v.databaseContext, nil, blockHash)
+	status, err := v.blockStatusStore.Get(v.databaseContext, stagingArea, blockHash)
 	if err != nil {
 		return false, err
 	}
@@ -120,7 +120,7 @@ func (v *blockValidator) checkParentsIncest(stagingArea *model.StagingArea, head
 	return nil
 }
 
-func (v *blockValidator) validateMedianTime(header externalapi.BlockHeader) error {
+func (v *blockValidator) validateMedianTime(stagingArea *model.StagingArea, header externalapi.BlockHeader) error {
 	if len(header.ParentHashes()) == 0 {
 		return nil
 	}
@@ -128,7 +128,7 @@ func (v *blockValidator) validateMedianTime(header externalapi.BlockHeader) erro
 	// Ensure the timestamp for the block header is not before the
 	// median time of the last several blocks (medianTimeBlocks).
 	hash := consensushashing.HeaderHash(header)
-	pastMedianTime, err := v.pastMedianTimeManager.PastMedianTime(hash)
+	pastMedianTime, err := v.pastMedianTimeManager.PastMedianTime(stagingArea, hash)
 	if err != nil {
 		return err
 	}
@@ -141,8 +141,8 @@ func (v *blockValidator) validateMedianTime(header externalapi.BlockHeader) erro
 	return nil
 }
 
-func (v *blockValidator) checkMergeSizeLimit(hash *externalapi.DomainHash) error {
-	ghostdagData, err := v.ghostdagDataStore.Get(v.databaseContext, nil, hash)
+func (v *blockValidator) checkMergeSizeLimit(stagingArea *model.StagingArea, hash *externalapi.DomainHash) error {
+	ghostdagData, err := v.ghostdagDataStore.Get(v.databaseContext, stagingArea, hash)
 	if err != nil {
 		return err
 	}

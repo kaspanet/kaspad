@@ -106,7 +106,7 @@ func TestCheckBlockSanity(t *testing.T) {
 
 		tc.BlockStore().Stage(
 
-		err = tc.BlockValidator().ValidateBodyInIsolation(blockHash)
+		err = tc.BlockValidator().ValidateBodyInIsolation(nil, blockHash)
 		if err != nil {
 			t.Fatalf("Failed validating block in isolation: %v", err)
 		}
@@ -114,7 +114,7 @@ func TestCheckBlockSanity(t *testing.T) {
 		// Test with block with wrong transactions sorting order
 		blockHash = consensushashing.BlockHash(&blockWithWrongTxOrder)
 		tc.BlockStore().Stage(
-		err = tc.BlockValidator().ValidateBodyInIsolation(blockHash)
+		err = tc.BlockValidator().ValidateBodyInIsolation(nil, blockHash)
 		if !errors.Is(err, ruleerrors.ErrTransactionsNotSorted) {
 			t.Errorf("CheckBlockSanity: Expected ErrTransactionsNotSorted error, instead got %v", err)
 		}
@@ -123,7 +123,7 @@ func TestCheckBlockSanity(t *testing.T) {
 		// We no longer require blocks to have ordered parents
 		blockHash = consensushashing.BlockHash(&unOrderedParentsBlock)
 		tc.BlockStore().Stage(
-		err = tc.BlockValidator().ValidateBodyInIsolation(blockHash)
+		err = tc.BlockValidator().ValidateBodyInIsolation(nil, blockHash)
 		if err != nil {
 			t.Errorf("CheckBlockSanity: Expected block to be be body in isolation valid, got error instead: %v", err)
 		}
@@ -1043,7 +1043,7 @@ func TestBlockSize(t *testing.T) {
 		blockHash := consensushashing.BlockHash(block)
 		tc.BlockStore().Stage(
 
-		err = tc.BlockValidator().ValidateBodyInIsolation(blockHash)
+		err = tc.BlockValidator().ValidateBodyInIsolation(nil, blockHash)
 		if err == nil || !errors.Is(err, ruleerrors.ErrBlockSizeTooHigh) {
 			t.Fatalf("ValidateBodyInIsolationTest: TestBlockSize:"+
 				" Unexpected error: Expected to: %v, but got : %v", ruleerrors.ErrBlockSizeTooHigh, err)
@@ -1100,7 +1100,7 @@ func TestCheckBlockDuplicateTransactions(t *testing.T) {
 		blockHash := consensushashing.BlockHash(block)
 		tc.BlockStore().Stage(
 
-		err = tc.BlockValidator().ValidateBodyInIsolation(blockHash)
+		err = tc.BlockValidator().ValidateBodyInIsolation(nil, blockHash)
 		if err == nil || !errors.Is(err, ruleerrors.ErrDuplicateTx) {
 			t.Fatalf("ValidateBodyInIsolationTest: TestCheckBlockDuplicateTransactions:"+
 				" Unexpected error: Expected to: %v, but got : %v", ruleerrors.ErrDuplicateTx, err)
@@ -1156,7 +1156,7 @@ func TestCheckBlockContainsOnlyOneCoinbase(t *testing.T) {
 		blockHash := consensushashing.BlockHash(block)
 		tc.BlockStore().Stage(
 
-		err = tc.BlockValidator().ValidateBodyInIsolation(blockHash)
+		err = tc.BlockValidator().ValidateBodyInIsolation(nil, blockHash)
 		if err == nil || !errors.Is(err, ruleerrors.ErrMultipleCoinbases) {
 			t.Fatalf("ValidateBodyInIsolationTest: TestCheckBlockContainsOnlyOneCoinbase:"+
 				" Unexpected error: Expected to: %v, but got : %v", ruleerrors.ErrMultipleCoinbases, err)
@@ -1212,7 +1212,7 @@ func TestCheckBlockDoubleSpends(t *testing.T) {
 		blockHash := consensushashing.BlockHash(block)
 		tc.BlockStore().Stage(
 
-		err = tc.BlockValidator().ValidateBodyInIsolation(blockHash)
+		err = tc.BlockValidator().ValidateBodyInIsolation(nil, blockHash)
 		if err == nil || !errors.Is(err, ruleerrors.ErrDoubleSpendInSameBlock) {
 			t.Fatalf("ValidateBodyInIsolationTest: TestCheckBlockDoubleSpends:"+
 				" Unexpected error: Expected to: %v, but got : %v", ruleerrors.ErrDoubleSpendInSameBlock, err)
@@ -1284,7 +1284,7 @@ func TestCheckFirstBlockTransactionIsCoinbase(t *testing.T) {
 		blockHash := consensushashing.BlockHash(block)
 		tc.BlockStore().Stage(
 
-		err = tc.BlockValidator().ValidateBodyInIsolation(blockHash)
+		err = tc.BlockValidator().ValidateBodyInIsolation(nil, blockHash)
 		if err == nil || !errors.Is(err, ruleerrors.ErrFirstTxNotCoinbase) {
 			t.Fatalf("ValidateBodyInIsolationTest: TestCheckFirstBlockTransactionIsCoinbase:"+
 				" Unexpected error: Expected to: %v, but got : %v", ruleerrors.ErrFirstTxNotCoinbase, err)

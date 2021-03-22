@@ -248,26 +248,26 @@ func (bp *blockProcessor) validatePostProofOfWork(stagingArea *model.StagingArea
 	isHeaderOnlyBlock := isHeaderOnlyBlock(block)
 	if !isHeaderOnlyBlock {
 		bp.blockStore.Stage(stagingArea, blockHash, block)
-		err := bp.blockValidator.ValidateBodyInIsolation(blockHash)
+		err := bp.blockValidator.ValidateBodyInIsolation(nil, blockHash)
 		if err != nil {
 			return err
 		}
 	}
 
-	hasValidatedHeader, err := bp.hasValidatedHeader(nil, blockHash)
+	hasValidatedHeader, err := bp.hasValidatedHeader(stagingArea, blockHash)
 	if err != nil {
 		return err
 	}
 
 	if !hasValidatedHeader {
-		err = bp.blockValidator.ValidateHeaderInContext(blockHash)
+		err = bp.blockValidator.ValidateHeaderInContext(stagingArea, blockHash)
 		if err != nil {
 			return err
 		}
 	}
 
 	if !isHeaderOnlyBlock {
-		err = bp.blockValidator.ValidateBodyInContext(blockHash, isPruningPoint)
+		err = bp.blockValidator.ValidateBodyInContext(stagingArea, blockHash, isPruningPoint)
 		if err != nil {
 			return err
 		}
