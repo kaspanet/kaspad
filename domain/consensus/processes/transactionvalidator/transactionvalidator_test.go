@@ -220,8 +220,7 @@ func TestValidateTransactionInContextAndPopulateMassAndFee(t *testing.T) {
 		}
 
 		for _, test := range tests {
-			err := tc.TransactionValidator().ValidateTransactionInContextAndPopulateMassAndFee(test.tx,
-				test.povBlockHash, test.selectedParentMedianTime)
+			err := tc.TransactionValidator().ValidateTransactionInContextAndPopulateMassAndFee(nil, test.tx, test.povBlockHash, test.selectedParentMedianTime)
 
 			if test.isValid {
 				if err != nil {

@@ -144,8 +144,7 @@ func (bb *blockBuilder) validateTransaction(transaction *externalapi.DomainTrans
 		return err
 	}
 
-	return bb.transactionValidator.ValidateTransactionInContextAndPopulateMassAndFee(transaction,
-		model.VirtualBlockHash, virtualSelectedParentMedianTime)
+	return bb.transactionValidator.ValidateTransactionInContextAndPopulateMassAndFee(nil, transaction, model.VirtualBlockHash, virtualSelectedParentMedianTime)
 }
 
 func (bb *blockBuilder) newBlockCoinbaseTransaction(

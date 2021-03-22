@@ -90,8 +90,7 @@ func (s *consensus) ValidateTransactionAndPopulateWithConsensusData(transaction 
 		return err
 	}
 
-	return s.transactionValidator.ValidateTransactionInContextAndPopulateMassAndFee(transaction,
-		model.VirtualBlockHash, virtualSelectedParentMedianTime)
+	return s.transactionValidator.ValidateTransactionInContextAndPopulateMassAndFee(nil, transaction, model.VirtualBlockHash, virtualSelectedParentMedianTime)
 }
 
 func (s *consensus) GetBlock(blockHash *externalapi.DomainHash) (*externalapi.DomainBlock, error) {
