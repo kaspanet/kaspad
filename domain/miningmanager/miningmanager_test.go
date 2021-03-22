@@ -52,7 +52,7 @@ func TestValidateAndInsertTransaction(t *testing.T) {
 		}
 		for _, transactionToInsert := range transactionsToInsert {
 			if !contains(transactionToInsert, transactionsFromMempool) {
-				t.Fatalf("Missing transaction %v in the mempool", transactionToInsert)
+				t.Fatalf("Missing transaction %s in the mempool", transactionToInsert.ID.String())
 			}
 		}
 
@@ -68,7 +68,7 @@ func TestValidateAndInsertTransaction(t *testing.T) {
 		}
 		transactionsFromMempool = miningManager.AllTransactions()
 		if !contains(transactionNotAnOrphan, transactionsFromMempool) {
-			t.Fatalf("Missing transaction %v in the mempool", transactionNotAnOrphan)
+			t.Fatalf("Missing transaction %s in the mempool", transactionNotAnOrphan.ID.String())
 		}
 	})
 }
@@ -113,9 +113,9 @@ func TestHandleNewBlockTransactions(t *testing.T) {
 		miningFactory := miningmanager.NewFactory()
 		miningManager := miningFactory.NewMiningManager(tc, blockMaxMass, false)
 		transactionsToInsert := make([]*externalapi.DomainTransaction, 10)
-		for i := range transactionsToInsert[(transactionhelper.CoinbaseTransactionIndex + 1):] {
+		for i := range transactionsToInsert {
 			transaction := createTransactionWithUTXOEntry(t, i)
-			transactionsToInsert[i+1] = transaction
+			transactionsToInsert[i] = transaction
 			err = miningManager.ValidateAndInsertTransaction(transaction, true)
 			if err != nil {
 				t.Fatalf("ValidateAndInsertTransaction: %v", err)
@@ -123,36 +123,46 @@ func TestHandleNewBlockTransactions(t *testing.T) {
 		}
 
 		const partialLength = 3
-		_, err = miningManager.HandleNewBlockTransactions(transactionsToInsert[0:partialLength])
+		blockWithFirstPartOfTheTransactions := append([]*externalapi.DomainTransaction{nil}, transactionsToInsert[0:partialLength]...)
+		blockWithRestOfTheTransactions := append([]*externalapi.DomainTransaction{nil}, transactionsToInsert[partialLength:]...)
+		_, err = miningManager.HandleNewBlockTransactions(blockWithFirstPartOfTheTransactions)
 		if err != nil {
 			t.Fatalf("HandleNewBlockTransactions: %v", err)
 		}
 		mempoolTransactions := miningManager.AllTransactions()
-		for _, removedTransaction := range transactionsToInsert[(transactionhelper.CoinbaseTransactionIndex + 1):partialLength] {
+		for _, removedTransaction := range blockWithFirstPartOfTheTransactions {
 			if contains(removedTransaction, mempoolTransactions) {
-				t.Fatalf("This transaction shouldnt be in mempool: %v", removedTransaction)
+				t.Fatalf("This transaction shouldnt be in mempool: %s", removedTransaction.ID.String())
 			}
 		}
 
 		// There are no chained/double-spends transactions, and hence it is expected that all the other
 		// transactions, will still be included in the mempool.
 		mempoolTransactions = miningManager.AllTransactions()
-		for i, transaction := range transactionsToInsert[partialLength:] {
+		for i, transaction := range blockWithRestOfTheTransactions[transactionhelper.CoinbaseTransactionIndex+1:] {
 			if !contains(transaction, mempoolTransactions) {
-				t.Fatalf("This transaction %d should be in mempool: %v", i, transaction)
+				t.Fatalf("This transaction %d should be in mempool: %s", i, transaction.ID.String())
 			}
 		}
-		// The first index considers as coinbase, therefore in order that all the transactions will insert into
-		// the mempool, we will start one index less (partialLength - 1).
-		// Handle all the other transactions in the transactionsToInsert array.
-		_, err = miningManager.HandleNewBlockTransactions(transactionsToInsert[(partialLength - 1):])
+		// Handle all the other transactions.
+		_, err = miningManager.HandleNewBlockTransactions(blockWithRestOfTheTransactions)
 		if err != nil {
 			t.Fatalf("HandleNewBlockTransactions: %v", err)
 		}
 		if len(miningManager.AllTransactions()) != 0 {
-			t.Fatalf("The mempool contains unexpected transactions: %v", miningManager.AllTransactions())
+			blockIDsStrings := domainBlocksToBlockIdsToStrings(miningManager.AllTransactions())
+			transactionsIDsString := strings.Join(blockIDsStrings, ", ")
+			t.Fatalf("The mempool contains unexpected transactions: %s", transactionsIDsString)
 		}
 	})
+}
+
+func domainBlocksToBlockIdsToStrings(blocks []*externalapi.DomainTransaction) []string {
+	blockIDsString := make([]string, len(blocks))
+	for i := range blockIDsString {
+		blockIDsString[i] = blocks[i].ID.String()
+	}
+	return blockIDsString
 }
 
 // TestDoubleSpends verifies that any transactions which are now double spends as a result of the block's new transactions
@@ -182,7 +192,8 @@ func TestDoubleSpends(t *testing.T) {
 			t.Fatalf("HandleNewBlockTransactions: %v", err)
 		}
 		if contains(transactionInTheMempool, miningManager.AllTransactions()) {
-			t.Fatalf("The transaction %v, shouldn't be in the mempool, since at least one output was already spent.", transactionInTheMempool)
+			t.Fatalf("The transaction %s, shouldn't be in the mempool, since at least one "+
+				"output was already spent.", transactionInTheMempool.ID.String())
 		}
 	})
 }
@@ -261,7 +272,7 @@ func TestOrphanTransactions(t *testing.T) {
 
 		for _, transaction := range transactionsMempool {
 			if !contains(transaction, childTransactions) {
-				t.Fatalf("Error: the transaction %v, should be in the mempool since its not oprhan anymore.", transaction)
+				t.Fatalf("Error: the transaction %s, should be in the mempool since its not oprhan anymore.", transaction.ID.String())
 			}
 		}
 		block, err = miningManager.GetBlockTemplate(&externalapi.DomainCoinbaseData{
@@ -279,7 +290,7 @@ func TestOrphanTransactions(t *testing.T) {
 				}
 			}
 			if !isContained {
-				t.Fatalf("Error: Unknown Transaction %v in a block.", transactionFromBlock)
+				t.Fatalf("Error: Unknown Transaction %s in a block.", transactionFromBlock.ID.String())
 			}
 		}
 	})
