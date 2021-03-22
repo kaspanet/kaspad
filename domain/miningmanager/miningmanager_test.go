@@ -399,7 +399,7 @@ func createChildTxWhenParentTxWasAddedByConsensus(params *dagconfig.Params, tc t
 
 func contains(transaction *externalapi.DomainTransaction, transactions []*externalapi.DomainTransaction) bool {
 	for _, candidateTransaction := range transactions {
-		if isEqual := candidateTransaction.Equal(transaction); isEqual {
+		if candidateTransaction.Equal(transaction) {
 			return true
 		}
 	}
