@@ -267,7 +267,7 @@ func (csm *consensusStateManager) boundedMergeBreakingParents(
 		return nil, err
 	}
 
-	err = csm.ghostdagManager.GHOSTDAG(model.VirtualBlockHash)
+	err = csm.ghostdagManager.GHOSTDAG(nil, model.VirtualBlockHash)
 	if err != nil {
 		return nil, err
 	}

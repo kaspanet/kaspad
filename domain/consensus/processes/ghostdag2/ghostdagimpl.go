@@ -38,7 +38,7 @@ func New(
 
 /* --------------------------------------------- */
 
-func (gh *ghostdagHelper) GHOSTDAG(blockCandidate *externalapi.DomainHash) error {
+func (gh *ghostdagHelper) GHOSTDAG(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) error {
 	myWork := new(big.Int)
 	maxWork := new(big.Int)
 	var myScore uint64
@@ -393,7 +393,7 @@ func (gh *ghostdagHelper) sortByBlueWork(arr []*externalapi.DomainHash) error {
 func (gh *ghostdagHelper) BlockData(blockHash *externalapi.DomainHash) (*model.BlockGHOSTDAGData, error) {
 	return gh.dataStore.Get(gh.dbAccess, nil, blockHash)
 }
-func (gh *ghostdagHelper) ChooseSelectedParent(blockHashes ...*externalapi.DomainHash) (*externalapi.DomainHash, error) {
+func (gh *ghostdagHelper) ChooseSelectedParent(stagingArea *model.StagingArea, blockHashes ...*externalapi.DomainHash) (*externalapi.DomainHash, error) {
 	panic("implement me")
 }
 

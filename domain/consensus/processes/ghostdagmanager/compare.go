@@ -5,14 +5,16 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 )
 
-func (gm *ghostdagManager) findSelectedParent(parentHashes []*externalapi.DomainHash) (*externalapi.DomainHash, error) {
+func (gm *ghostdagManager) findSelectedParent(stagingArea *model.StagingArea, parentHashes []*externalapi.DomainHash) (
+	*externalapi.DomainHash, error) {
+
 	var selectedParent *externalapi.DomainHash
 	for _, hash := range parentHashes {
 		if selectedParent == nil {
 			selectedParent = hash
 			continue
 		}
-		isHashBiggerThanSelectedParent, err := gm.less(selectedParent, hash)
+		isHashBiggerThanSelectedParent, err := gm.less(stagingArea, selectedParent, hash)
 		if err != nil {
 			return nil, err
 		}
@@ -23,22 +25,22 @@ func (gm *ghostdagManager) findSelectedParent(parentHashes []*externalapi.Domain
 	return selectedParent, nil
 }
 
-func (gm *ghostdagManager) less(blockHashA *externalapi.DomainHash, blockHashB *externalapi.DomainHash) (bool, error) {
-	chosenSelectedParent, err := gm.ChooseSelectedParent(blockHashA, blockHashB)
+func (gm *ghostdagManager) less(stagingArea *model.StagingArea, blockHashA, blockHashB *externalapi.DomainHash) (bool, error) {
+	chosenSelectedParent, err := gm.ChooseSelectedParent(stagingArea, blockHashA, blockHashB)
 	if err != nil {
 		return false, err
 	}
 	return chosenSelectedParent == blockHashB, nil
 }
 
-func (gm *ghostdagManager) ChooseSelectedParent(blockHashes ...*externalapi.DomainHash) (*externalapi.DomainHash, error) {
+func (gm *ghostdagManager) ChooseSelectedParent(stagingArea *model.StagingArea, blockHashes ...*externalapi.DomainHash) (*externalapi.DomainHash, error) {
 	selectedParent := blockHashes[0]
-	selectedParentGHOSTDAGData, err := gm.ghostdagDataStore.Get(gm.databaseContext, nil, selectedParent)
+	selectedParentGHOSTDAGData, err := gm.ghostdagDataStore.Get(gm.databaseContext, stagingArea, selectedParent)
 	if err != nil {
 		return nil, err
 	}
 	for _, blockHash := range blockHashes {
-		blockGHOSTDAGData, err := gm.ghostdagDataStore.Get(gm.databaseContext, nil, blockHash)
+		blockGHOSTDAGData, err := gm.ghostdagDataStore.Get(gm.databaseContext, stagingArea, blockHash)
 		if err != nil {
 			return nil, err
 		}

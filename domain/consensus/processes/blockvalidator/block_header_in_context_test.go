@@ -49,7 +49,7 @@ func TestValidateMedianTime(t *testing.T) {
 			})
 			defer tc.BlockRelationStore().Discard()
 
-			err = tc.GHOSTDAGManager().GHOSTDAG(&tempHash)
+			err = tc.GHOSTDAGManager().GHOSTDAG(nil, &tempHash)
 			if err != nil {
 				t.Fatalf("GHOSTDAG: %+v", err)
 			}

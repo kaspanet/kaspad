@@ -122,7 +122,7 @@ func TestGHOSTDAG(t *testing.T) {
 						0,
 					)
 
-					err := g.GHOSTDAG(blockID)
+					err := g.GHOSTDAG(nil, blockID)
 					if err != nil {
 						t.Fatalf("Test failed: \n Impl: %s,FileName: %s \n error on GHOSTDAG - block %s: %s.",
 							factory.implName, info.Name(), testBlockData.ID, err)
@@ -259,7 +259,7 @@ func TestBlueWork(t *testing.T) {
 	}
 
 	for _, blockHash := range blocksForGHOSTDAG {
-		err := manager.GHOSTDAG(blockHash)
+		err := manager.GHOSTDAG(nil, blockHash)
 		if err != nil {
 			t.Fatalf("GHOSTDAG: %+v", err)
 		}

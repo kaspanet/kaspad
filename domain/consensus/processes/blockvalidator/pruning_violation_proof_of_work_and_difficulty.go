@@ -38,7 +38,7 @@ func (v *blockValidator) ValidatePruningPointViolationAndProofOfWorkAndDifficult
 		return err
 	}
 
-	err = v.checkProofOfWork(stagingArea, header)
+	err = v.checkProofOfWork(header)
 	if err != nil {
 		return err
 	}
@@ -56,9 +56,9 @@ func (v *blockValidator) ValidatePruningPointViolationAndProofOfWorkAndDifficult
 	return nil
 }
 
-func (v *blockValidator) validateDifficulty(blockHash *externalapi.DomainHash) error {
+func (v *blockValidator) validateDifficulty(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) error {
 	// We need to calculate GHOSTDAG for the block in order to check its difficulty
-	err := v.ghostdagManager.GHOSTDAG(blockHash)
+	err := v.ghostdagManager.GHOSTDAG(stagingArea, blockHash)
 	if err != nil {
 		return err
 	}
@@ -66,12 +66,12 @@ func (v *blockValidator) validateDifficulty(blockHash *externalapi.DomainHash) e
 	// Ensure the difficulty specified in the block header matches
 	// the calculated difficulty based on the previous block and
 	// difficulty retarget rules.
-	expectedBits, err := v.difficultyManager.StageDAADataAndReturnRequiredDifficulty(blockHash)
+	expectedBits, err := v.difficultyManager.StageDAADataAndReturnRequiredDifficulty(stagingArea, blockHash)
 	if err != nil {
 		return err
 	}
 
-	header, err := v.blockHeaderStore.BlockHeader(v.databaseContext, nil, blockHash)
+	header, err := v.blockHeaderStore.BlockHeader(v.databaseContext, stagingArea, blockHash)
 	if err != nil {
 		return err
 	}

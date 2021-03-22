@@ -72,7 +72,7 @@ func (csm *consensusStateManager) importPruningPoint(newPruningPoint *externalap
 	}
 
 	log.Debugf("Calculating GHOSTDAG for the new virtual")
-	err = csm.ghostdagManager.GHOSTDAG(model.VirtualBlockHash)
+	err = csm.ghostdagManager.GHOSTDAG(nil, model.VirtualBlockHash)
 	if err != nil {
 		return err
 	}

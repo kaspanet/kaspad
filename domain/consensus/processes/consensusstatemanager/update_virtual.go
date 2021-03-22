@@ -37,7 +37,7 @@ func (csm *consensusStateManager) updateVirtual(newBlockHash *externalapi.Domain
 	}
 	log.Debugf("Set new parents for the virtual block hash")
 
-	err = csm.ghostdagManager.GHOSTDAG(model.VirtualBlockHash)
+	err = csm.ghostdagManager.GHOSTDAG(nil, model.VirtualBlockHash)
 	if err != nil {
 		return nil, nil, err
 	}

@@ -41,7 +41,7 @@ func TestDifficulty(t *testing.T) {
 		defer teardown(false)
 
 		addBlock := func(blockTime int64, parents ...*externalapi.DomainHash) (*externalapi.DomainBlock, *externalapi.DomainHash) {
-			bluestParent, err := tc.GHOSTDAGManager().ChooseSelectedParent(parents...)
+			bluestParent, err := tc.GHOSTDAGManager().ChooseSelectedParent(nil, parents...)
 			if err != nil {
 				t.Fatalf("ChooseSelectedParent: %+v", err)
 			}
@@ -79,7 +79,7 @@ func TestDifficulty(t *testing.T) {
 			})
 			defer tc.BlockRelationStore().Discard()
 
-			err = tc.GHOSTDAGManager().GHOSTDAG(&tempHash)
+			err = tc.GHOSTDAGManager().GHOSTDAG(nil, &tempHash)
 			if err != nil {
 				t.Fatalf("GHOSTDAG: %+v", err)
 			}
