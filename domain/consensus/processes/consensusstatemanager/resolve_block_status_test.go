@@ -49,11 +49,11 @@ func TestDoubleSpends(t *testing.T) {
 		fundingTransaction := fundingBlock.Transactions[transactionhelper.CoinbaseTransactionIndex]
 
 		// Create two transactions that spends the same output, but with different IDs
-		spendingTransaction1, err := testutils.CreateTransaction(fundingTransaction)
+		spendingTransaction1, err := testutils.CreateTransaction(fundingTransaction, 1)
 		if err != nil {
 			t.Fatalf("Error creating spendingTransaction1: %+v", err)
 		}
-		spendingTransaction2, err := testutils.CreateTransaction(fundingTransaction)
+		spendingTransaction2, err := testutils.CreateTransaction(fundingTransaction, 1)
 		if err != nil {
 			t.Fatalf("Error creating spendingTransaction2: %+v", err)
 		}
@@ -209,7 +209,7 @@ func TestTransactionAcceptance(t *testing.T) {
 
 		fundingTransaction2 := fundingBlock3.Transactions[transactionhelper.CoinbaseTransactionIndex]
 
-		spendingTransaction1, err := testutils.CreateTransaction(fundingTransaction1)
+		spendingTransaction1, err := testutils.CreateTransaction(fundingTransaction1, 1)
 		if err != nil {
 			t.Fatalf("Error creating spendingTransaction1: %+v", err)
 		}
@@ -219,7 +219,7 @@ func TestTransactionAcceptance(t *testing.T) {
 			t.Fatalf("Error getting UTXOEntry for spendingTransaction1: %s", err)
 		}
 
-		spendingTransaction2, err := testutils.CreateTransaction(fundingTransaction2)
+		spendingTransaction2, err := testutils.CreateTransaction(fundingTransaction2, 1)
 		if err != nil {
 			t.Fatalf("Error creating spendingTransaction1: %+v", err)
 		}

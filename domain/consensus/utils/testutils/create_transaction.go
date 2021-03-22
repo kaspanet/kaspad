@@ -10,7 +10,7 @@ import (
 // CreateTransaction create a transaction that spends the first output of provided transaction.
 // Assumes that the output being spent has opTrueScript as it's scriptPublicKey
 // Creates the value of the spent output minus 1 sompi
-func CreateTransaction(txToSpend *externalapi.DomainTransaction) (*externalapi.DomainTransaction, error) {
+func CreateTransaction(txToSpend *externalapi.DomainTransaction, fee uint64) (*externalapi.DomainTransaction, error) {
 	scriptPublicKey, redeemScript := OpTrueScript()
 
 	signatureScript, err := txscript.PayToScriptHashSignatureScript(redeemScript, nil)
@@ -27,7 +27,7 @@ func CreateTransaction(txToSpend *externalapi.DomainTransaction) (*externalapi.D
 	}
 	output := &externalapi.DomainTransactionOutput{
 		ScriptPublicKey: scriptPublicKey,
-		Value:           txToSpend.Outputs[0].Value - 1,
+		Value:           txToSpend.Outputs[0].Value - fee,
 	}
 	return &externalapi.DomainTransaction{
 		Version: constants.MaxTransactionVersion,

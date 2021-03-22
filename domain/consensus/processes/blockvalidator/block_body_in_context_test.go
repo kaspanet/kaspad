@@ -193,7 +193,7 @@ func TestIsFinalizedTransaction(t *testing.T) {
 		}
 
 		checkForLockTimeAndSequence := func(lockTime, sequence uint64, shouldPass bool) {
-			tx, err := testutils.CreateTransaction(parentToSpend.Transactions[0])
+			tx, err := testutils.CreateTransaction(parentToSpend.Transactions[0], 1)
 			if err != nil {
 				t.Fatalf("Error creating tx: %+v", err)
 			}

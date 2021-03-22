@@ -48,12 +48,12 @@ func TestChainedTransactions(t *testing.T) {
 			t.Fatalf("Error getting block1: %+v", err)
 		}
 
-		tx1, err := testutils.CreateTransaction(block1.Transactions[0])
+		tx1, err := testutils.CreateTransaction(block1.Transactions[0], 1)
 		if err != nil {
 			t.Fatalf("Error creating tx1: %+v", err)
 		}
 
-		chainedTx, err := testutils.CreateTransaction(tx1)
+		chainedTx, err := testutils.CreateTransaction(tx1, 1)
 		if err != nil {
 			t.Fatalf("Error creating chainedTx: %+v", err)
 		}
@@ -75,7 +75,7 @@ func TestChainedTransactions(t *testing.T) {
 			t.Fatalf("Error getting block2: %+v", err)
 		}
 
-		tx2, err := testutils.CreateTransaction(block2.Transactions[0])
+		tx2, err := testutils.CreateTransaction(block2.Transactions[0], 1)
 		if err != nil {
 			t.Fatalf("Error creating tx2: %+v", err)
 		}

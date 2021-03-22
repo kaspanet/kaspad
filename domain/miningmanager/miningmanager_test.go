@@ -58,7 +58,7 @@ func TestValidateAndInsertTransaction(t *testing.T) {
 
 		// The parent's transaction was inserted by consensus(AddBlock), and we want to verify that
 		// the transaction is not considered an orphan and inserted into the mempool.
-		transactionNotAnOrphan, err := createChildTxWhenParentTxWasAddedByConsensus(params, tc, 0)
+		transactionNotAnOrphan, err := createChildTxWhenParentTxWasAddedByConsensus(params, tc)
 		if err != nil {
 			t.Fatalf("Error in createParentAndChildrenTransaction: %v", err)
 		}
@@ -202,7 +202,7 @@ func TestOrphanTransactions(t *testing.T) {
 		miningFactory := miningmanager.NewFactory()
 		miningManager := miningFactory.NewMiningManager(tc, blockMaxMass, false)
 		// Before each parent transaction, We will add two blocks by consensus in order to fund the parent transactions.
-		parentTransactions, childTransactions, err := createArraysOfParentAndChildrenTransactions(params, tc)
+		parentTransactions, childTransactions, err := createArraysOfParentAndChildrenTransactions(tc)
 		if err != nil {
 			t.Fatalf("Error in createArraysOfParentAndChildrenTransactions: %v", err)
 		}
@@ -232,11 +232,20 @@ func TestOrphanTransactions(t *testing.T) {
 				}
 			}
 		}
-
-		blockParentsTransactionsHash, _, err := tc.AddBlock([]*externalapi.DomainHash{params.GenesisHash}, nil, parentTransactions)
+		tips, err := tc.Tips()
+		if err != nil {
+			t.Fatalf("Tips: %v.", err)
+		}
+		blockParentsTransactionsHash, _, err := tc.AddBlock(tips, nil, parentTransactions)
 		if err != nil {
 			t.Fatalf("AddBlock: %v", err)
 		}
+
+		_, _, err = tc.AddBlock([]*externalapi.DomainHash{blockParentsTransactionsHash}, nil, nil)
+		if err != nil {
+			t.Fatalf("AddBlock: %v", err)
+		}
+
 		blockParentsTransactions, err := tc.GetBlock(blockParentsTransactionsHash)
 		if err != nil {
 			t.Fatalf("GetBlock: %v", err)
@@ -246,6 +255,10 @@ func TestOrphanTransactions(t *testing.T) {
 			t.Fatalf("HandleNewBlockTransactions: %v", err)
 		}
 		transactionsMempool = miningManager.AllTransactions()
+		if len(transactionsMempool) != len(childTransactions) {
+			t.Fatalf("Expected %d transactions in the mempool but got %d", len(childTransactions), len(transactionsMempool))
+		}
+
 		for _, transaction := range transactionsMempool {
 			if !contains(transaction, childTransactions) {
 				t.Fatalf("Error: the transaction %v, should be in the mempool since its not oprhan anymore.", transaction)
@@ -307,7 +320,7 @@ func createTransactionWithUTXOEntry(t *testing.T, i int) *externalapi.DomainTran
 	return &tx
 }
 
-func createArraysOfParentAndChildrenTransactions(params *dagconfig.Params, tc testapi.TestConsensus) ([]*externalapi.DomainTransaction,
+func createArraysOfParentAndChildrenTransactions(tc testapi.TestConsensus) ([]*externalapi.DomainTransaction,
 	[]*externalapi.DomainTransaction, error) {
 
 	const numOfTransactions = 5
@@ -315,7 +328,7 @@ func createArraysOfParentAndChildrenTransactions(params *dagconfig.Params, tc te
 	parentTransactions := make([]*externalapi.DomainTransaction, len(transactions))
 	var err error
 	for i := range transactions {
-		parentTransactions[i], transactions[i], err = createParentAndChildrenTransactions(params, tc, i)
+		parentTransactions[i], transactions[i], err = createParentAndChildrenTransactions(tc)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -323,15 +336,26 @@ func createArraysOfParentAndChildrenTransactions(params *dagconfig.Params, tc te
 	return parentTransactions, transactions, nil
 }
 
-func createParentAndChildrenTransactions(params *dagconfig.Params, tc testapi.TestConsensus, i int) (*externalapi.DomainTransaction,
+func createParentAndChildrenTransactions(tc testapi.TestConsensus) (*externalapi.DomainTransaction,
 	*externalapi.DomainTransaction, error) {
 
 	// We will add two blocks by consensus before the parent transactions, in order to fund the parent transactions.
-	firstBlockHash, _, err := tc.AddBlock([]*externalapi.DomainHash{params.GenesisHash}, nil, nil)
+	tips, err := tc.Tips()
+	if err != nil {
+		return nil, nil, err
+	}
+
+	_, _, err = tc.AddBlock(tips, nil, nil)
 	if err != nil {
 		return nil, nil, errors.Wrapf(err, "AddBlock: %v", err)
 	}
-	fundingBlockHashForParent, _, err := tc.AddBlock([]*externalapi.DomainHash{firstBlockHash}, nil, nil)
+
+	tips, err = tc.Tips()
+	if err != nil {
+		return nil, nil, err
+	}
+
+	fundingBlockHashForParent, _, err := tc.AddBlock(tips, nil, nil)
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "AddBlock: ")
 	}
@@ -340,23 +364,18 @@ func createParentAndChildrenTransactions(params *dagconfig.Params, tc testapi.Te
 		return nil, nil, errors.Wrap(err, "GetBlock: ")
 	}
 	fundingTransactionForParent := fundingBlockForParent.Transactions[transactionhelper.CoinbaseTransactionIndex]
-	// Change the value to get different ID transactions each time.
-	fundingTransactionForParent.Outputs[0].Value -= uint64(i)
-	txParent, err := testutils.CreateTransaction(fundingTransactionForParent)
+	txParent, err := testutils.CreateTransaction(fundingTransactionForParent, 1000)
 	if err != nil {
 		return nil, nil, err
 	}
-	// Change the value for getting a valid fees.
-	txParent.Outputs[0].Value = 10000
-	txChild, err := testutils.CreateTransaction(txParent)
+	txChild, err := testutils.CreateTransaction(txParent, 1000)
 	if err != nil {
 		return nil, nil, err
 	}
 	return txParent, txChild, nil
 }
 
-func createChildTxWhenParentTxWasAddedByConsensus(params *dagconfig.Params, tc testapi.TestConsensus,
-	i int) (*externalapi.DomainTransaction, error) {
+func createChildTxWhenParentTxWasAddedByConsensus(params *dagconfig.Params, tc testapi.TestConsensus) (*externalapi.DomainTransaction, error) {
 
 	firstBlockHash, _, err := tc.AddBlock([]*externalapi.DomainHash{params.GenesisHash}, nil, nil)
 	if err != nil {
@@ -371,14 +390,10 @@ func createChildTxWhenParentTxWasAddedByConsensus(params *dagconfig.Params, tc t
 		return nil, errors.Wrap(err, "GetBlock: ")
 	}
 	parentTransaction := ParentBlock.Transactions[transactionhelper.CoinbaseTransactionIndex]
-	// Change the value to get different ID transactions each time.
-	parentTransaction.Outputs[0].Value -= uint64(i)
-	txChild, err := testutils.CreateTransaction(parentTransaction)
+	txChild, err := testutils.CreateTransaction(parentTransaction, 1000)
 	if err != nil {
 		return nil, err
 	}
-	// Change the value for getting a valid fees.
-	txChild.Outputs[0].Value = 10000
 	return txChild, nil
 }
 
