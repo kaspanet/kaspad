@@ -157,11 +157,11 @@ func TestHandleNewBlockTransactions(t *testing.T) {
 }
 
 func domainBlocksToBlockIds(blocks []*externalapi.DomainTransaction) []*externalapi.DomainTransactionID {
-	blockIDsString := make([]*externalapi.DomainTransactionID, len(blocks))
-	for i := range blockIDsString {
-		blockIDsString[i] = consensushashing.TransactionID(blocks[i])
+	blockIDs := make([]*externalapi.DomainTransactionID, len(blocks))
+	for i := range blockIDs {
+		blockIDs[i] = consensushashing.TransactionID(blocks[i])
 	}
-	return blockIDsString
+	return blockIDs
 }
 
 // TestDoubleSpends verifies that any transactions which are now double spends as a result of the block's new transactions
