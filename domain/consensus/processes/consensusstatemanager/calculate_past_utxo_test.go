@@ -82,7 +82,7 @@ func checkBlockUTXOCommitment(t *testing.T, consensus testapi.TestConsensus, blo
 
 	// Get the past UTXO set of block
 	csm := consensus.ConsensusStateManager()
-	utxoSetIterator, err := csm.RestorePastUTXOSetIterator(blockHash)
+	utxoSetIterator, err := csm.RestorePastUTXOSetIterator(nil, blockHash)
 	if err != nil {
 		t.Fatalf("Error restoring past UTXO of block %s: %+v", blockName, err)
 	}

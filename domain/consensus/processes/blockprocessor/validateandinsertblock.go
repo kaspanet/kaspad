@@ -55,8 +55,8 @@ func (bp *blockProcessor) setBlockStatusAfterBlockValidation(block *externalapi.
 	return nil
 }
 
-func (bp *blockProcessor) validateAndInsertBlock(block *externalapi.DomainBlock, isPruningPoint bool) (*externalapi.BlockInsertionResult, error) {
-	stagingArea := model.NewStagingArea()
+func (bp *blockProcessor) validateAndInsertBlock(stagingArea *model.StagingArea, block *externalapi.DomainBlock,
+	isPruningPoint bool) (*externalapi.BlockInsertionResult, error) {
 
 	blockHash := consensushashing.HeaderHash(block.Header)
 	err := bp.validateBlock(stagingArea, block, isPruningPoint)
@@ -79,7 +79,7 @@ func (bp *blockProcessor) validateAndInsertBlock(block *externalapi.DomainBlock,
 		}
 	}
 
-	err = bp.headerTipsManager.AddHeaderTip(nil, blockHash)
+	err = bp.headerTipsManager.AddHeaderTip(stagingArea, blockHash)
 	if err != nil {
 		return nil, err
 	}
@@ -93,7 +93,7 @@ func (bp *blockProcessor) validateAndInsertBlock(block *externalapi.DomainBlock,
 		// in consensusStateManager.ImportPruningPoint
 		if !isPruningPoint {
 			// Attempt to add the block to the virtual
-			selectedParentChainChanges, virtualUTXODiff, err = bp.consensusStateManager.AddBlock(blockHash)
+			selectedParentChainChanges, virtualUTXODiff, err = bp.consensusStateManager.AddBlock(stagingArea, blockHash)
 			if err != nil {
 				return nil, err
 			}
@@ -101,7 +101,7 @@ func (bp *blockProcessor) validateAndInsertBlock(block *externalapi.DomainBlock,
 	}
 
 	if !isGenesis {
-		err := bp.updateReachabilityReindexRoot(oldHeadersSelectedTip)
+		err := bp.updateReachabilityReindexRoot(stagingArea, oldHeadersSelectedTip)
 		if err != nil {
 			return nil, err
 		}
@@ -109,18 +109,18 @@ func (bp *blockProcessor) validateAndInsertBlock(block *externalapi.DomainBlock,
 
 	if !isHeaderOnlyBlock {
 		// Trigger pruning, which will check if the pruning point changed and delete the data if it did.
-		err = bp.pruningManager.UpdatePruningPointByVirtual()
+		err = bp.pruningManager.UpdatePruningPointByVirtual(stagingArea)
 		if err != nil {
 			return nil, err
 		}
 	}
 
-	err = bp.commitAllChanges(nil)
+	err = bp.commitAllChanges(stagingArea)
 	if err != nil {
 		return nil, err
 	}
 
-	err = bp.pruningManager.UpdatePruningPointUTXOSetIfRequired()
+	err = bp.pruningManager.UpdatePruningPointUTXOSetIfRequired(stagingArea)
 	if err != nil {
 		return nil, err
 	}
@@ -132,13 +132,13 @@ func (bp *blockProcessor) validateAndInsertBlock(block *externalapi.DomainBlock,
 
 	var logClosureErr error
 	log.Debug(logger.NewLogClosure(func() string {
-		virtualGhostDAGData, err := bp.ghostdagDataStore.Get(bp.databaseContext, nil, model.VirtualBlockHash)
+		virtualGhostDAGData, err := bp.ghostdagDataStore.Get(bp.databaseContext, stagingArea, model.VirtualBlockHash)
 		if err != nil {
 			logClosureErr = err
 			return fmt.Sprintf("Failed to get virtual GHOSTDAG data: %s", err)
 		}
-		headerCount := bp.blockHeaderStore.Count(nil)
-		blockCount := bp.blockStore.Count()
+		headerCount := bp.blockHeaderStore.Count(stagingArea)
+		blockCount := bp.blockStore.Count(stagingArea)
 		return fmt.Sprintf("New virtual's blue score: %d. Block count: %d. Header count: %d",
 			virtualGhostDAGData.BlueScore(), blockCount, headerCount)
 	}))
@@ -146,7 +146,7 @@ func (bp *blockProcessor) validateAndInsertBlock(block *externalapi.DomainBlock,
 		return nil, logClosureErr
 	}
 
-	virtualParents, err := bp.dagTopologyManager.Parents(nil, model.VirtualBlockHash)
+	virtualParents, err := bp.dagTopologyManager.Parents(stagingArea, model.VirtualBlockHash)
 	if err != nil {
 		return nil, err
 	}
@@ -164,8 +164,10 @@ func isHeaderOnlyBlock(block *externalapi.DomainBlock) bool {
 	return len(block.Transactions) == 0
 }
 
-func (bp *blockProcessor) updateReachabilityReindexRoot(oldHeadersSelectedTip *externalapi.DomainHash) error {
-	headersSelectedTip, err := bp.headersSelectedTipStore.HeadersSelectedTip(bp.databaseContext, nil)
+func (bp *blockProcessor) updateReachabilityReindexRoot(stagingArea *model.StagingArea,
+	oldHeadersSelectedTip *externalapi.DomainHash) error {
+
+	headersSelectedTip, err := bp.headersSelectedTipStore.HeadersSelectedTip(bp.databaseContext, stagingArea)
 	if err != nil {
 		return err
 	}
@@ -174,7 +176,7 @@ func (bp *blockProcessor) updateReachabilityReindexRoot(oldHeadersSelectedTip *e
 		return nil
 	}
 
-	return bp.reachabilityManager.UpdateReindexRoot(nil, headersSelectedTip)
+	return bp.reachabilityManager.UpdateReindexRoot(stagingArea, headersSelectedTip)
 }
 
 func (bp *blockProcessor) checkBlockStatus(stagingArea *model.StagingArea, block *externalapi.DomainBlock) error {

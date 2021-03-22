@@ -150,7 +150,7 @@ func (bb *testBlockBuilder) buildBlockWithParents(parentHashes []*externalapi.Do
 			ghostdagData.SelectedParent())
 	}
 
-	pastUTXO, acceptanceData, multiset, err := bb.consensusStateManager.CalculatePastUTXOAndAcceptanceData(tempBlockHash)
+	pastUTXO, acceptanceData, multiset, err := bb.consensusStateManager.CalculatePastUTXOAndAcceptanceData(nil, tempBlockHash)
 	if err != nil {
 		return nil, nil, err
 	}

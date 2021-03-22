@@ -1,20 +1,22 @@
 package consensusstatemanager
 
 import (
+	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
 )
 
 // PopulateTransactionWithUTXOEntries populates the transaction UTXO entries with data from the virtual's UTXO set.
-func (csm *consensusStateManager) PopulateTransactionWithUTXOEntries(transaction *externalapi.DomainTransaction) error {
-	return csm.populateTransactionWithUTXOEntriesFromVirtualOrDiff(transaction, nil)
+func (csm *consensusStateManager) PopulateTransactionWithUTXOEntries(
+	stagingArea *model.StagingArea, transaction *externalapi.DomainTransaction) error {
+	return csm.populateTransactionWithUTXOEntriesFromVirtualOrDiff(stagingArea, transaction, nil)
 }
 
 // populateTransactionWithUTXOEntriesFromVirtualOrDiff populates the transaction UTXO entries with data
 // from the virtual's UTXO set combined with the provided utxoDiff.
 // If utxoDiff == nil UTXO entries are taken from the virtual's UTXO set only
-func (csm *consensusStateManager) populateTransactionWithUTXOEntriesFromVirtualOrDiff(
+func (csm *consensusStateManager) populateTransactionWithUTXOEntriesFromVirtualOrDiff(stagingArea *model.StagingArea,
 	transaction *externalapi.DomainTransaction, utxoDiff externalapi.UTXODiff) error {
 
 	transactionID := consensushashing.TransactionID(transaction)
@@ -48,7 +50,8 @@ func (csm *consensusStateManager) populateTransactionWithUTXOEntriesFromVirtualO
 		}
 
 		// Check for the input's outpoint in virtual's UTXO set.
-		hasUTXOEntry, err := csm.consensusStateStore.HasUTXOByOutpoint(csm.databaseContext, nil, &transactionInput.PreviousOutpoint)
+		hasUTXOEntry, err := csm.consensusStateStore.HasUTXOByOutpoint(
+			csm.databaseContext, stagingArea, &transactionInput.PreviousOutpoint)
 		if err != nil {
 			return err
 		}
@@ -61,7 +64,8 @@ func (csm *consensusStateManager) populateTransactionWithUTXOEntriesFromVirtualO
 
 		log.Tracef("Populating outpoint %s:%d from the database",
 			transactionInput.PreviousOutpoint.TransactionID, transactionInput.PreviousOutpoint.Index)
-		utxoEntry, err := csm.consensusStateStore.UTXOByOutpoint(csm.databaseContext, nil, &transactionInput.PreviousOutpoint)
+		utxoEntry, err := csm.consensusStateStore.UTXOByOutpoint(
+			csm.databaseContext, stagingArea, &transactionInput.PreviousOutpoint)
 		if err != nil {
 			return err
 		}

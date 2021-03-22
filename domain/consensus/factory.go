@@ -1,10 +1,11 @@
 package consensus
 
 import (
-	daablocksstore "github.com/kaspanet/kaspad/domain/consensus/datastructures/daablocksstore"
 	"io/ioutil"
 	"os"
 	"sync"
+
+	daablocksstore "github.com/kaspanet/kaspad/domain/consensus/datastructures/daablocksstore"
 
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/headersselectedchainstore"
 
@@ -407,7 +408,7 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 		}
 	}
 
-	err = consensusStateManager.RecoverUTXOIfRequired()
+	err = consensusStateManager.RecoverUTXOIfRequired(nil)
 	if err != nil {
 		return nil, err
 	}

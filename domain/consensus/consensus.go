@@ -80,7 +80,7 @@ func (s *consensus) ValidateTransactionAndPopulateWithConsensusData(transaction 
 		return err
 	}
 
-	err = s.consensusStateManager.PopulateTransactionWithUTXOEntries(transaction)
+	err = s.consensusStateManager.PopulateTransactionWithUTXOEntries(nil, transaction)
 	if err != nil {
 		return err
 	}
@@ -403,7 +403,7 @@ func (s *consensus) GetVirtualSelectedParentChainFromBlock(blockHash *externalap
 		return nil, err
 	}
 
-	return s.consensusStateManager.GetVirtualSelectedParentChainFromBlock(blockHash)
+	return s.consensusStateManager.GetVirtualSelectedParentChainFromBlock(nil, blockHash)
 }
 
 func (s *consensus) validateBlockHashExists(blockHash *externalapi.DomainHash) error {

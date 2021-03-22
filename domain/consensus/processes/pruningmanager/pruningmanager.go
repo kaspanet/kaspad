@@ -425,7 +425,7 @@ func (pm *pruningManager) validateUTXOSetFitsCommitment(pruningPointHash *extern
 	onEnd := logger.LogAndMeasureExecutionTime(log, "pruningManager.validateUTXOSetFitsCommitment")
 	defer onEnd()
 
-	utxoSetIterator, err := pm.consensusStateManager.RestorePastUTXOSetIterator(pruningPointHash)
+	utxoSetIterator, err := pm.consensusStateManager.RestorePastUTXOSetIterator(nil, pruningPointHash)
 	if err != nil {
 		return err
 	}
@@ -545,7 +545,7 @@ func (pm *pruningManager) updatePruningPointUTXOSet() error {
 	}
 
 	log.Debugf("Restoring the pruning point UTXO set")
-	utxoSetIterator, err := pm.consensusStateManager.RestorePastUTXOSetIterator(pruningPoint)
+	utxoSetIterator, err := pm.consensusStateManager.RestorePastUTXOSetIterator(nil, pruningPoint)
 	if err != nil {
 		return err
 	}

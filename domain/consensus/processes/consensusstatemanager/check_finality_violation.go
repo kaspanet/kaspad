@@ -1,9 +1,12 @@
 package consensusstatemanager
 
-import "github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+import (
+	"github.com/kaspanet/kaspad/domain/consensus/model"
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+)
 
-func (csm *consensusStateManager) isViolatingFinality(blockHash *externalapi.DomainHash) (isViolatingFinality bool,
-	shouldSendNotification bool, err error) {
+func (csm *consensusStateManager) isViolatingFinality(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash,
+) (isViolatingFinality bool, shouldSendNotification bool, err error) {
 
 	log.Debugf("isViolatingFinality start for block %s", blockHash)
 	defer log.Debugf("isViolatingFinality end for block %s", blockHash)
@@ -15,7 +18,7 @@ func (csm *consensusStateManager) isViolatingFinality(blockHash *externalapi.Dom
 	}
 
 	var finalityPoint *externalapi.DomainHash
-	virtualFinalityPoint, err := csm.finalityManager.VirtualFinalityPoint()
+	virtualFinalityPoint, err := csm.finalityManager.VirtualFinalityPoint(stagingArea)
 	if err != nil {
 		return false, false, err
 	}
@@ -26,13 +29,13 @@ func (csm *consensusStateManager) isViolatingFinality(blockHash *externalapi.Dom
 	// finality point from the virtual point-of-view is in the past of the pruning point.
 	// In such situation we override the finality point to be the pruning point to avoid situations where
 	// the virtual selected parent chain don't include the pruning point.
-	pruningPoint, err := csm.pruningStore.PruningPoint(csm.databaseContext, nil)
+	pruningPoint, err := csm.pruningStore.PruningPoint(csm.databaseContext, stagingArea)
 	if err != nil {
 		return false, false, err
 	}
 	log.Debugf("The pruning point is: %s", pruningPoint)
 
-	isFinalityPointInPastOfPruningPoint, err := csm.dagTopologyManager.IsAncestorOf(nil, virtualFinalityPoint, pruningPoint)
+	isFinalityPointInPastOfPruningPoint, err := csm.dagTopologyManager.IsAncestorOf(stagingArea, virtualFinalityPoint, pruningPoint)
 	if err != nil {
 		return false, false, err
 	}
@@ -45,7 +48,8 @@ func (csm *consensusStateManager) isViolatingFinality(blockHash *externalapi.Dom
 		finalityPoint = pruningPoint
 	}
 
-	isInSelectedParentChainOfFinalityPoint, err := csm.dagTopologyManager.IsInSelectedParentChainOf(nil, finalityPoint, blockHash)
+	isInSelectedParentChainOfFinalityPoint, err :=
+		csm.dagTopologyManager.IsInSelectedParentChainOf(stagingArea, finalityPoint, blockHash)
 	if err != nil {
 		return false, false, err
 	}

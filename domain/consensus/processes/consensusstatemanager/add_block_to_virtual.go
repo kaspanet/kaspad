@@ -9,12 +9,12 @@ import (
 // AddBlock submits the given block to be added to the
 // current virtual. This process may result in a new virtual block
 // getting created
-func (csm *consensusStateManager) AddBlock(blockHash *externalapi.DomainHash) (*externalapi.SelectedChainPath, externalapi.UTXODiff, error) {
+func (csm *consensusStateManager) AddBlock(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) (*externalapi.SelectedChainPath, externalapi.UTXODiff, error) {
 	onEnd := logger.LogAndMeasureExecutionTime(log, "csm.AddBlock")
 	defer onEnd()
 
 	log.Debugf("Resolving whether the block %s is the next virtual selected parent", blockHash)
-	isCandidateToBeNextVirtualSelectedParent, err := csm.isCandidateToBeNextVirtualSelectedParent(blockHash)
+	isCandidateToBeNextVirtualSelectedParent, err := csm.isCandidateToBeNextVirtualSelectedParent(stagingArea, blockHash)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -25,7 +25,7 @@ func (csm *consensusStateManager) AddBlock(blockHash *externalapi.DomainHash) (*
 		// eventually try to fetch UTXO diffs from the past of the pruning point.
 		log.Debugf("Block %s is candidate to be the next virtual selected parent. Resolving whether it violates "+
 			"finality", blockHash)
-		isViolatingFinality, shouldNotify, err := csm.isViolatingFinality(blockHash)
+		isViolatingFinality, shouldNotify, err := csm.isViolatingFinality(stagingArea, blockHash)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -37,7 +37,7 @@ func (csm *consensusStateManager) AddBlock(blockHash *externalapi.DomainHash) (*
 
 		if !isViolatingFinality {
 			log.Debugf("Block %s doesn't violate finality. Resolving its block status", blockHash)
-			blockStatus, err := csm.resolveBlockStatus(blockHash)
+			blockStatus, err := csm.resolveBlockStatus(stagingArea, blockHash)
 			if err != nil {
 				return nil, nil, err
 			}
@@ -50,14 +50,14 @@ func (csm *consensusStateManager) AddBlock(blockHash *externalapi.DomainHash) (*
 	}
 
 	log.Debugf("Adding block %s to the DAG tips", blockHash)
-	newTips, err := csm.addTip(blockHash)
+	newTips, err := csm.addTip(stagingArea, blockHash)
 	if err != nil {
 		return nil, nil, err
 	}
 	log.Debugf("After adding %s, the amount of new tips are %d", blockHash, len(newTips))
 
 	log.Debugf("Updating the virtual with the new tips")
-	selectedParentChainChanges, virtualUTXODiff, err := csm.updateVirtual(blockHash, newTips)
+	selectedParentChainChanges, virtualUTXODiff, err := csm.updateVirtual(stagingArea, blockHash, newTips)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -65,7 +65,9 @@ func (csm *consensusStateManager) AddBlock(blockHash *externalapi.DomainHash) (*
 	return selectedParentChainChanges, virtualUTXODiff, nil
 }
 
-func (csm *consensusStateManager) isCandidateToBeNextVirtualSelectedParent(blockHash *externalapi.DomainHash) (bool, error) {
+func (csm *consensusStateManager) isCandidateToBeNextVirtualSelectedParent(
+	stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) (bool, error) {
+
 	log.Debugf("isCandidateToBeNextVirtualSelectedParent start for block %s", blockHash)
 	defer log.Debugf("isCandidateToBeNextVirtualSelectedParent end for block %s", blockHash)
 
@@ -75,14 +77,15 @@ func (csm *consensusStateManager) isCandidateToBeNextVirtualSelectedParent(block
 		return true, nil
 	}
 
-	virtualGhostdagData, err := csm.ghostdagDataStore.Get(csm.databaseContext, nil, model.VirtualBlockHash)
+	virtualGhostdagData, err := csm.ghostdagDataStore.Get(csm.databaseContext, stagingArea, model.VirtualBlockHash)
 	if err != nil {
 		return false, err
 	}
 
 	log.Debugf("Selecting the next selected parent between "+
 		"the block %s the current selected parent %s", blockHash, virtualGhostdagData.SelectedParent())
-	nextVirtualSelectedParent, err := csm.ghostdagManager.ChooseSelectedParent(virtualGhostdagData.SelectedParent(), blockHash)
+	nextVirtualSelectedParent, err := csm.ghostdagManager.ChooseSelectedParent(
+		stagingArea, virtualGhostdagData.SelectedParent(), blockHash)
 	if err != nil {
 		return false, err
 	}
@@ -91,23 +94,25 @@ func (csm *consensusStateManager) isCandidateToBeNextVirtualSelectedParent(block
 	return blockHash.Equal(nextVirtualSelectedParent), nil
 }
 
-func (csm *consensusStateManager) addTip(newTipHash *externalapi.DomainHash) (newTips []*externalapi.DomainHash, err error) {
+func (csm *consensusStateManager) addTip(stagingArea *model.StagingArea, newTipHash *externalapi.DomainHash) (newTips []*externalapi.DomainHash, err error) {
 	log.Debugf("addTip start for new tip %s", newTipHash)
 	defer log.Debugf("addTip end for new tip %s", newTipHash)
 
 	log.Debugf("Calculating the new tips for new tip %s", newTipHash)
-	newTips, err = csm.calculateNewTips(newTipHash)
+	newTips, err = csm.calculateNewTips(stagingArea, newTipHash)
 	if err != nil {
 		return nil, err
 	}
 
-	csm.consensusStateStore.StageTips(nil, newTips)
+	csm.consensusStateStore.StageTips(stagingArea, newTips)
 	log.Debugf("Staged the new tips, len: %d", len(newTips))
 
 	return newTips, nil
 }
 
-func (csm *consensusStateManager) calculateNewTips(newTipHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error) {
+func (csm *consensusStateManager) calculateNewTips(
+	stagingArea *model.StagingArea, newTipHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error) {
+
 	log.Debugf("calculateNewTips start for new tip %s", newTipHash)
 	defer log.Debugf("calculateNewTips end for new tip %s", newTipHash)
 
@@ -116,13 +121,13 @@ func (csm *consensusStateManager) calculateNewTips(newTipHash *externalapi.Domai
 		return []*externalapi.DomainHash{newTipHash}, nil
 	}
 
-	currentTips, err := csm.consensusStateStore.Tips(nil, csm.databaseContext)
+	currentTips, err := csm.consensusStateStore.Tips(stagingArea, csm.databaseContext)
 	if err != nil {
 		return nil, err
 	}
 	log.Debugf("The current tips are: %s", currentTips)
 
-	newTipParents, err := csm.dagTopologyManager.Parents(nil, newTipHash)
+	newTipParents, err := csm.dagTopologyManager.Parents(stagingArea, newTipHash)
 	if err != nil {
 		return nil, err
 	}

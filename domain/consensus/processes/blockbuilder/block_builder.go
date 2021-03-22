@@ -134,7 +134,7 @@ func (bb *blockBuilder) validateTransaction(transaction *externalapi.DomainTrans
 		}
 	}()
 
-	err := bb.consensusStateManager.PopulateTransactionWithUTXOEntries(transaction)
+	err := bb.consensusStateManager.PopulateTransactionWithUTXOEntries(nil, transaction)
 	if err != nil {
 		return err
 	}
