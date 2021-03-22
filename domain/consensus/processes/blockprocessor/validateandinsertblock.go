@@ -73,13 +73,13 @@ func (bp *blockProcessor) validateAndInsertBlock(block *externalapi.DomainBlock,
 	isGenesis := blockHash.Equal(bp.genesisHash)
 	if !isGenesis {
 		var err error
-		oldHeadersSelectedTip, err = bp.headersSelectedTipStore.HeadersSelectedTip(bp.databaseContext, nil)
+		oldHeadersSelectedTip, err = bp.headersSelectedTipStore.HeadersSelectedTip(bp.databaseContext, stagingArea)
 		if err != nil {
 			return nil, err
 		}
 	}
 
-	err = bp.headerTipsManager.AddHeaderTip(blockHash)
+	err = bp.headerTipsManager.AddHeaderTip(nil, blockHash)
 	if err != nil {
 		return nil, err
 	}

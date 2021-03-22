@@ -33,8 +33,8 @@ func New(databaseContext model.DBReader,
 	}
 }
 
-func (h *headerTipsManager) AddHeaderTip(hash *externalapi.DomainHash) error {
-	hasSelectedTip, err := h.headersSelectedTipStore.Has(h.databaseContext, nil)
+func (h *headerTipsManager) AddHeaderTip(stagingArea *model.StagingArea, hash *externalapi.DomainHash) error {
+	hasSelectedTip, err := h.headersSelectedTipStore.Has(h.databaseContext, stagingArea)
 	if err != nil {
 		return err
 	}
@@ -42,7 +42,7 @@ func (h *headerTipsManager) AddHeaderTip(hash *externalapi.DomainHash) error {
 	if !hasSelectedTip {
 		h.headersSelectedTipStore.Stage(nil, hash)
 
-		err := h.headersSelectedChainStore.Stage(h.databaseContext, nil, &externalapi.SelectedChainPath{
+		err := h.headersSelectedChainStore.Stage(h.databaseContext, stagingArea, &externalapi.SelectedChainPath{
 			Added:   []*externalapi.DomainHash{hash},
 			Removed: nil,
 		})
@@ -50,12 +50,12 @@ func (h *headerTipsManager) AddHeaderTip(hash *externalapi.DomainHash) error {
 			return err
 		}
 	} else {
-		headersSelectedTip, err := h.headersSelectedTipStore.HeadersSelectedTip(h.databaseContext, nil)
+		headersSelectedTip, err := h.headersSelectedTipStore.HeadersSelectedTip(h.databaseContext, stagingArea)
 		if err != nil {
 			return err
 		}
 
-		newHeadersSelectedTip, err := h.ghostdagManager.ChooseSelectedParent(headersSelectedTip, hash)
+		newHeadersSelectedTip, err := h.ghostdagManager.ChooseSelectedParent(stagingArea, headersSelectedTip, hash)
 		if err != nil {
 			return err
 		}
@@ -63,12 +63,12 @@ func (h *headerTipsManager) AddHeaderTip(hash *externalapi.DomainHash) error {
 		if !newHeadersSelectedTip.Equal(headersSelectedTip) {
 			h.headersSelectedTipStore.Stage(nil, newHeadersSelectedTip)
 
-			chainChanges, err := h.dagTraversalManager.CalculateChainPath(nil, headersSelectedTip, newHeadersSelectedTip)
+			chainChanges, err := h.dagTraversalManager.CalculateChainPath(stagingArea, headersSelectedTip, newHeadersSelectedTip)
 			if err != nil {
 				return err
 			}
 
-			err = h.headersSelectedChainStore.Stage(h.databaseContext, nil, chainChanges)
+			err = h.headersSelectedChainStore.Stage(h.databaseContext, stagingArea, chainChanges)
 			if err != nil {
 				return err
 			}
