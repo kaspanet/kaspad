@@ -132,7 +132,7 @@ func (pm *pruningManager) UpdatePruningPointByVirtual() error {
 		return err
 	}
 
-	iterator, err := pm.dagTraversalManager.SelectedChildIterator(virtual.SelectedParent(), currentCandidate)
+	iterator, err := pm.dagTraversalManager.SelectedChildIterator(nil, virtual.SelectedParent(), currentCandidate)
 	if err != nil {
 		return err
 	}
@@ -229,7 +229,7 @@ func (pm *pruningManager) deletePastBlocks(pruningPoint *externalapi.DomainHash)
 	defer onEnd()
 
 	// Go over all pruningPoint.Past and pruningPoint.Anticone that's not in virtual.Past
-	queue := pm.dagTraversalManager.NewDownHeap()
+	queue := pm.dagTraversalManager.NewDownHeap(nil)
 	virtualParents, err := pm.dagTopologyManager.Parents(nil, model.VirtualBlockHash)
 	if err != nil {
 		return err

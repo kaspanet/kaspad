@@ -1,23 +1,28 @@
 package dagtraversalmanager
 
 import (
+	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 )
 
 // BlockWindow returns a blockWindow of the given size that contains the
-// blocks in the past of startindNode, the sorting is unspecified.
+// blocks in the past of highHash, the sorting is unspecified.
 // If the number of blocks in the past of startingNode is less then windowSize,
 // the window will be padded by genesis blocks to achieve a size of windowSize.
-func (dtm *dagTraversalManager) BlockWindow(startingBlock *externalapi.DomainHash, windowSize int) ([]*externalapi.DomainHash, error) {
-	currentGHOSTDAGData, err := dtm.ghostdagDataStore.Get(dtm.databaseContext, nil, startingBlock)
+func (dtm *dagTraversalManager) BlockWindow(stagingArea *model.StagingArea, highHash *externalapi.DomainHash, windowSize int) ([]*externalapi.DomainHash, error) {
+	currentGHOSTDAGData, err := dtm.ghostdagDataStore.Get(dtm.databaseContext, stagingArea, highHash)
 	if err != nil {
 		return nil, err
 	}
 
-	windowHeap := dtm.newSizedUpHeap(windowSize)
+	windowHeap := dtm.newSizedUpHeap(stagingArea, windowSize)
 
-	for windowHeap.len() <= windowSize && currentGHOSTDAGData.SelectedParent() != nil && !currentGHOSTDAGData.SelectedParent().Equal(dtm.genesisHash) {
-		selectedParentGHOSTDAGData, err := dtm.ghostdagDataStore.Get(dtm.databaseContext, nil, currentGHOSTDAGData.SelectedParent())
+	for windowHeap.len() <= windowSize &&
+		currentGHOSTDAGData.SelectedParent() != nil &&
+		!currentGHOSTDAGData.SelectedParent().Equal(dtm.genesisHash) {
+
+		selectedParentGHOSTDAGData, err := dtm.ghostdagDataStore.Get(
+			dtm.databaseContext, stagingArea, currentGHOSTDAGData.SelectedParent())
 		if err != nil {
 			return nil, err
 		}

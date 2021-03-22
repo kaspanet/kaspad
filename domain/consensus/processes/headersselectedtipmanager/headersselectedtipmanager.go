@@ -63,7 +63,7 @@ func (h *headerTipsManager) AddHeaderTip(hash *externalapi.DomainHash) error {
 		if !newHeadersSelectedTip.Equal(headersSelectedTip) {
 			h.headersSelectedTipStore.Stage(nil, newHeadersSelectedTip)
 
-			chainChanges, err := h.dagTraversalManager.CalculateChainPath(headersSelectedTip, newHeadersSelectedTip)
+			chainChanges, err := h.dagTraversalManager.CalculateChainPath(nil, headersSelectedTip, newHeadersSelectedTip)
 			if err != nil {
 				return err
 			}

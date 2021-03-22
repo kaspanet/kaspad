@@ -42,9 +42,9 @@ func New(
 // BlockAtDepth returns the hash of the highest block with a blue score
 // lower than (highHash.blueSore - depth) in the selected-parent-chain
 // of the block with the given highHash's selected parent chain.
-func (dtm *dagTraversalManager) BlockAtDepth(highHash *externalapi.DomainHash, depth uint64) (*externalapi.DomainHash, error) {
+func (dtm *dagTraversalManager) BlockAtDepth(stagingArea *model.StagingArea, highHash *externalapi.DomainHash, depth uint64) (*externalapi.DomainHash, error) {
 	currentBlockHash := highHash
-	highBlockGHOSTDAGData, err := dtm.ghostdagDataStore.Get(dtm.databaseContext, nil, highHash)
+	highBlockGHOSTDAGData, err := dtm.ghostdagDataStore.Get(dtm.databaseContext, stagingArea, highHash)
 	if err != nil {
 		return nil, err
 	}
@@ -61,7 +61,7 @@ func (dtm *dagTraversalManager) BlockAtDepth(highHash *externalapi.DomainHash, d
 			return currentBlockHash, nil
 		}
 		currentBlockHash = currentBlockGHOSTDAGData.SelectedParent()
-		currentBlockGHOSTDAGData, err = dtm.ghostdagDataStore.Get(dtm.databaseContext, nil, currentBlockHash)
+		currentBlockGHOSTDAGData, err = dtm.ghostdagDataStore.Get(dtm.databaseContext, stagingArea, currentBlockHash)
 		if err != nil {
 			return nil, err
 		}
@@ -69,8 +69,8 @@ func (dtm *dagTraversalManager) BlockAtDepth(highHash *externalapi.DomainHash, d
 	return currentBlockHash, nil
 }
 
-func (dtm *dagTraversalManager) LowestChainBlockAboveOrEqualToBlueScore(highHash *externalapi.DomainHash, blueScore uint64) (*externalapi.DomainHash, error) {
-	highBlockGHOSTDAGData, err := dtm.ghostdagDataStore.Get(dtm.databaseContext, nil, highHash)
+func (dtm *dagTraversalManager) LowestChainBlockAboveOrEqualToBlueScore(stagingArea *model.StagingArea, highHash *externalapi.DomainHash, blueScore uint64) (*externalapi.DomainHash, error) {
+	highBlockGHOSTDAGData, err := dtm.ghostdagDataStore.Get(dtm.databaseContext, stagingArea, highHash)
 	if err != nil {
 		return nil, err
 	}
@@ -84,7 +84,8 @@ func (dtm *dagTraversalManager) LowestChainBlockAboveOrEqualToBlueScore(highHash
 	currentBlockGHOSTDAGData := highBlockGHOSTDAGData
 
 	for currentBlockGHOSTDAGData.SelectedParent() != nil {
-		selectedParentBlockGHOSTDAGData, err := dtm.ghostdagDataStore.Get(dtm.databaseContext, nil, currentBlockGHOSTDAGData.SelectedParent())
+		selectedParentBlockGHOSTDAGData, err := dtm.ghostdagDataStore.Get(dtm.databaseContext, stagingArea,
+			currentBlockGHOSTDAGData.SelectedParent())
 		if err != nil {
 			return nil, err
 		}
@@ -99,7 +100,7 @@ func (dtm *dagTraversalManager) LowestChainBlockAboveOrEqualToBlueScore(highHash
 	return currentHash, nil
 }
 
-func (dtm *dagTraversalManager) CalculateChainPath(
+func (dtm *dagTraversalManager) CalculateChainPath(stagingArea *model.StagingArea,
 	fromBlockHash, toBlockHash *externalapi.DomainHash) (*externalapi.SelectedChainPath, error) {
 
 	// Walk down from fromBlockHash until we reach the common selected
@@ -109,7 +110,8 @@ func (dtm *dagTraversalManager) CalculateChainPath(
 	var removed []*externalapi.DomainHash
 	current := fromBlockHash
 	for {
-		isCurrentInTheSelectedParentChainOfNewVirtualSelectedParent, err := dtm.dagTopologyManager.IsInSelectedParentChainOf(nil, current, toBlockHash)
+		isCurrentInTheSelectedParentChainOfNewVirtualSelectedParent, err :=
+			dtm.dagTopologyManager.IsInSelectedParentChainOf(stagingArea, current, toBlockHash)
 		if err != nil {
 			return nil, err
 		}
@@ -118,7 +120,7 @@ func (dtm *dagTraversalManager) CalculateChainPath(
 		}
 		removed = append(removed, current)
 
-		currentGHOSTDAGData, err := dtm.ghostdagDataStore.Get(dtm.databaseContext, nil, current)
+		currentGHOSTDAGData, err := dtm.ghostdagDataStore.Get(dtm.databaseContext, stagingArea, current)
 		if err != nil {
 			return nil, err
 		}
@@ -131,7 +133,7 @@ func (dtm *dagTraversalManager) CalculateChainPath(
 	current = toBlockHash
 	for !current.Equal(commonAncestor) {
 		added = append(added, current)
-		currentGHOSTDAGData, err := dtm.ghostdagDataStore.Get(dtm.databaseContext, nil, current)
+		currentGHOSTDAGData, err := dtm.ghostdagDataStore.Get(dtm.databaseContext, stagingArea, current)
 		if err != nil {
 			return nil, err
 		}

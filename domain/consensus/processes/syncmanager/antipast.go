@@ -54,7 +54,7 @@ func (sm *syncManager) antiPastHashesBetween(lowHash, highHash *externalapi.Doma
 
 	// Collect all hashes by concatenating the merge-sets of all blocks between highHash and lowHash
 	blockHashes := []*externalapi.DomainHash{}
-	iterator, err := sm.dagTraversalManager.SelectedChildIterator(highHash, lowHash)
+	iterator, err := sm.dagTraversalManager.SelectedChildIterator(nil, highHash, lowHash)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -141,7 +141,7 @@ func (sm *syncManager) findHighHashAccordingToMaxBlueScoreDifference(lowHash *ex
 		return highHash, nil
 	}
 
-	iterator, err := sm.dagTraversalManager.SelectedChildIterator(highHash, lowHash)
+	iterator, err := sm.dagTraversalManager.SelectedChildIterator(nil, highHash, lowHash)
 	if err != nil {
 		return nil, err
 	}
@@ -188,7 +188,7 @@ func (sm *syncManager) missingBlockBodyHashes(highHash *externalapi.DomainHash) 
 		return nil, err
 	}
 
-	selectedChildIterator, err := sm.dagTraversalManager.SelectedChildIterator(highHash, pruningPoint)
+	selectedChildIterator, err := sm.dagTraversalManager.SelectedChildIterator(nil, highHash, pruningPoint)
 	if err != nil {
 		return nil, err
 	}

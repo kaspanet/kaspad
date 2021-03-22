@@ -81,7 +81,7 @@ func (csm *consensusStateManager) updateVirtual(newBlockHash *externalapi.Domain
 		}
 		newVirtualSelectedParent := newVirtualGHOSTDAGData.SelectedParent()
 		selectedParentChainChanges, err = csm.dagTraversalManager.
-			CalculateChainPath(oldVirtualSelectedParent, newVirtualSelectedParent)
+			CalculateChainPath(nil, oldVirtualSelectedParent, newVirtualSelectedParent)
 		if err != nil {
 			return nil, nil, err
 		}

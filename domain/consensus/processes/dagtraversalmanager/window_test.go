@@ -340,7 +340,7 @@ func TestBlockWindow(t *testing.T) {
 			blockByIDMap[blockData.id] = block
 			idByBlockMap[*block] = blockData.id
 
-			window, err := tc.DAGTraversalManager().BlockWindow(block, windowSize)
+			window, err := tc.DAGTraversalManager().BlockWindow(nil, block, windowSize)
 			if err != nil {
 				t.Fatalf("BlockWindow: %s", err)
 			}

@@ -45,7 +45,7 @@ func TestBlockAtDepthOnChainDag(t *testing.T) {
 			}
 		}
 		expectedBlockHash := currentBlockHash
-		actualBlockHash, err := tc.DAGTraversalManager().BlockAtDepth(highHash, depth)
+		actualBlockHash, err := tc.DAGTraversalManager().BlockAtDepth(nil, highHash, depth)
 		if err != nil {
 			t.Fatalf("Failed on BlockAtDepth: %+v", err)
 		}
@@ -83,11 +83,11 @@ func TestBlockAtDepthOnDAGWhereTwoBlocksHaveSameSelectedParent(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Failed creating a DAG where two blocks have same selected parent: %+v", err)
 		}
-		actualBlockHash, err := tc.DAGTraversalManager().BlockAtDepth(firstChild, depth)
+		actualBlockHash, err := tc.DAGTraversalManager().BlockAtDepth(nil, firstChild, depth)
 		if err != nil {
 			t.Fatalf("Failed at BlockAtDepth: %+v", err)
 		}
-		expectedSameHash, err := tc.DAGTraversalManager().BlockAtDepth(secondChild, depth)
+		expectedSameHash, err := tc.DAGTraversalManager().BlockAtDepth(nil, secondChild, depth)
 		if err != nil {
 			t.Fatalf("Failed in BlockAtDepth: %+v", err)
 		}
@@ -140,11 +140,11 @@ func TestBlockAtDepthOnDAGWithTwoDifferentChains(t *testing.T) {
 			t.Fatalf("Failed creating a DAG with two different chains in BlockAtDepthTEST: %+v", err)
 		}
 
-		actualBlockHash, err := tc.DAGTraversalManager().BlockAtDepth(firstChild, sizeOfTheFirstChildSubChainDAG)
+		actualBlockHash, err := tc.DAGTraversalManager().BlockAtDepth(nil, firstChild, sizeOfTheFirstChildSubChainDAG)
 		if err != nil {
 			t.Fatalf("Failed in BlockAtDepth: %+v", err)
 		}
-		expectedSameHash, err := tc.DAGTraversalManager().BlockAtDepth(secondChild, sizeOfTheSecondChildSubChainDAG)
+		expectedSameHash, err := tc.DAGTraversalManager().BlockAtDepth(nil, secondChild, sizeOfTheSecondChildSubChainDAG)
 		if err != nil {
 			t.Fatalf("Failed in BlockAtDepth: %+v", err)
 		}
@@ -152,7 +152,7 @@ func TestBlockAtDepthOnDAGWithTwoDifferentChains(t *testing.T) {
 		if !actualBlockHash.Equal(expectedSameHash) {
 			t.Fatalf("Expected block %s but got %s", expectedSameHash, actualBlockHash)
 		}
-		expectedDiffHash, err := tc.DAGTraversalManager().BlockAtDepth(secondChild, sizeOfTheSecondChildSubChainDAG-1)
+		expectedDiffHash, err := tc.DAGTraversalManager().BlockAtDepth(nil, secondChild, sizeOfTheSecondChildSubChainDAG-1)
 		if err != nil {
 			t.Fatalf("Failed in BlockAtDepth: %+v", err)
 		}
@@ -209,7 +209,7 @@ func TestLowestChainBlockAboveOrEqualToBlueScore(t *testing.T) {
 		}
 		defer tearDown(false)
 		checkExpectedBlock := func(highHash *externalapi.DomainHash, blueScore uint64, expected *externalapi.DomainHash) {
-			blockHash, err := tc.DAGTraversalManager().LowestChainBlockAboveOrEqualToBlueScore(highHash, blueScore)
+			blockHash, err := tc.DAGTraversalManager().LowestChainBlockAboveOrEqualToBlueScore(nil, highHash, blueScore)
 			if err != nil {
 				t.Fatalf("LowestChainBlockAboveOrEqualToBlueScore: %+v", err)
 			}

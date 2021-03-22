@@ -16,7 +16,7 @@ func (csm *consensusStateManager) pickVirtualParents(tips []*externalapi.DomainH
 	log.Debugf("pickVirtualParents start for tips len: %d", len(tips))
 
 	log.Debugf("Pushing all tips into a DownHeap")
-	candidatesHeap := csm.dagTraversalManager.NewDownHeap()
+	candidatesHeap := csm.dagTraversalManager.NewDownHeap(nil)
 	for _, tip := range tips {
 		err := candidatesHeap.Push(tip)
 		if err != nil {

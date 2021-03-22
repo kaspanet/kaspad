@@ -1,13 +1,16 @@
 package dagtraversalmanager
 
 import (
+	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/hashset"
 )
 
-func (dtm *dagTraversalManager) Anticone(blockHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error) {
+func (dtm *dagTraversalManager) Anticone(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) (
+	[]*externalapi.DomainHash, error) {
+
 	anticone := []*externalapi.DomainHash{}
-	queue, err := dtm.consensusStateStore.Tips(nil, dtm.databaseContext)
+	queue, err := dtm.consensusStateStore.Tips(stagingArea, dtm.databaseContext)
 	if err != nil {
 		return nil, err
 	}
@@ -23,7 +26,7 @@ func (dtm *dagTraversalManager) Anticone(blockHash *externalapi.DomainHash) ([]*
 
 		visited.Add(current)
 
-		currentIsAncestorOfBlock, err := dtm.dagTopologyManager.IsAncestorOf(nil, current, blockHash)
+		currentIsAncestorOfBlock, err := dtm.dagTopologyManager.IsAncestorOf(stagingArea, current, blockHash)
 		if err != nil {
 			return nil, err
 		}
@@ -32,7 +35,7 @@ func (dtm *dagTraversalManager) Anticone(blockHash *externalapi.DomainHash) ([]*
 			continue
 		}
 
-		blockIsAncestorOfCurrent, err := dtm.dagTopologyManager.IsAncestorOf(nil, blockHash, current)
+		blockIsAncestorOfCurrent, err := dtm.dagTopologyManager.IsAncestorOf(stagingArea, blockHash, current)
 		if err != nil {
 			return nil, err
 		}
@@ -41,7 +44,7 @@ func (dtm *dagTraversalManager) Anticone(blockHash *externalapi.DomainHash) ([]*
 			anticone = append(anticone, current)
 		}
 
-		currentParents, err := dtm.dagTopologyManager.Parents(nil, current)
+		currentParents, err := dtm.dagTopologyManager.Parents(stagingArea, current)
 		if err != nil {
 			return nil, err
 		}

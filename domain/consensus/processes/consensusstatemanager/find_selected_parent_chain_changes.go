@@ -18,5 +18,5 @@ func (csm *consensusStateManager) GetVirtualSelectedParentChainFromBlock(
 	}
 	virtualSelectedParent := virtualGHOSTDAGData.SelectedParent()
 
-	return csm.dagTraversalManager.CalculateChainPath(blockHash, virtualSelectedParent)
+	return csm.dagTraversalManager.CalculateChainPath(nil, blockHash, virtualSelectedParent)
 }

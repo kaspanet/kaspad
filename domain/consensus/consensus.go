@@ -449,5 +449,5 @@ func (s *consensus) Anticone(blockHash *externalapi.DomainHash) ([]*externalapi.
 		return nil, err
 	}
 
-	return s.dagTraversalManager.Anticone(blockHash)
+	return s.dagTraversalManager.Anticone(nil, blockHash)
 }
