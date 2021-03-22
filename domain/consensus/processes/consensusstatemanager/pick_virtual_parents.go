@@ -284,7 +284,7 @@ func (csm *consensusStateManager) boundedMergeBreakingParents(stagingArea *model
 	}
 	log.Debugf("The potentially kosherizing blocks are: %s", potentiallyKosherizingBlocks)
 
-	virtualFinalityPoint, err := csm.finalityManager.VirtualFinalityPoint()
+	virtualFinalityPoint, err := csm.finalityManager.VirtualFinalityPoint(nil)
 	if err != nil {
 		return nil, err
 	}

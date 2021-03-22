@@ -50,7 +50,7 @@ func (mdm *mergeDepthManager) CheckBoundedMergeDepth(blockHash *externalapi.Doma
 		return nil
 	}
 
-	finalityPoint, err := mdm.finalityManager.FinalityPoint(blockHash)
+	finalityPoint, err := mdm.finalityManager.FinalityPoint(nil, blockHash)
 	if err != nil {
 		return err
 	}
@@ -86,7 +86,7 @@ func (mdm *mergeDepthManager) NonBoundedMergeDepthViolatingBlues(blockHash *exte
 
 	nonBoundedMergeDepthViolatingBlues := make([]*externalapi.DomainHash, 0, len(ghostdagData.MergeSetBlues()))
 
-	finalityPoint, err := mdm.finalityManager.FinalityPoint(blockHash)
+	finalityPoint, err := mdm.finalityManager.FinalityPoint(nil, blockHash)
 	if err != nil {
 		return nil, err
 	}
