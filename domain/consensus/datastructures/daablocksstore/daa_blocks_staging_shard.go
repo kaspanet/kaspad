@@ -15,7 +15,7 @@ type daaBlocksStagingShard struct {
 }
 
 func (daas *daaBlocksStore) stagingShard(stagingArea *model.StagingArea) *daaBlocksStagingShard {
-	return stagingArea.GetOrCreateShard("BlockStore", func() model.StagingShard {
+	return stagingArea.GetOrCreateShard("DAABlockStore", func() model.StagingShard {
 		return &daaBlocksStagingShard{
 			store:                  daas,
 			daaScoreToAdd:          make(map[externalapi.DomainHash]uint64),

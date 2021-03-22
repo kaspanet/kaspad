@@ -11,7 +11,7 @@ type finalityStagingShard struct {
 }
 
 func (fs *finalityStore) stagingShard(stagingArea *model.StagingArea) *finalityStagingShard {
-	return stagingArea.GetOrCreateShard("BlockStore", func() model.StagingShard {
+	return stagingArea.GetOrCreateShard("FinalityStore", func() model.StagingShard {
 		return &finalityStagingShard{
 			store: fs,
 			toAdd: make(map[externalapi.DomainHash]*externalapi.DomainHash),

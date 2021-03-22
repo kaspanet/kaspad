@@ -14,7 +14,7 @@ type multisetStagingShard struct {
 }
 
 func (ps *pruningStore) stagingShard(stagingArea *model.StagingArea) *multisetStagingShard {
-	return stagingArea.GetOrCreateShard("BlockStore", func() model.StagingShard {
+	return stagingArea.GetOrCreateShard("PruningStore", func() model.StagingShard {
 		return &multisetStagingShard{
 			store:                            ps,
 			newPruningPoint:                  nil,

@@ -11,7 +11,7 @@ type ghostdagDataStagingShard struct {
 }
 
 func (gds *ghostdagDataStore) stagingShard(stagingArea *model.StagingArea) *ghostdagDataStagingShard {
-	return stagingArea.GetOrCreateShard("BlockStore", func() model.StagingShard {
+	return stagingArea.GetOrCreateShard("GhostdagDataStore", func() model.StagingShard {
 		return &ghostdagDataStagingShard{
 			store: gds,
 			toAdd: make(map[externalapi.DomainHash]*model.BlockGHOSTDAGData),
