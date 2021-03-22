@@ -180,8 +180,7 @@ func (s *consensus) GetBlockAcceptanceData(blockHash *externalapi.DomainHash) (e
 	return s.acceptanceDataStore.Get(s.databaseContext, nil, blockHash)
 }
 
-func (s *consensus) GetHashesBetween(lowHash, highHash *externalapi.DomainHash,
-	maxBlueScoreDifference uint64) (hashes []*externalapi.DomainHash, actualHighHash *externalapi.DomainHash, err error) {
+func (s *consensus) GetHashesBetween(stagingArea *model.StagingArea, lowHash, highHash *externalapi.DomainHash, maxBlueScoreDifference uint64) (hashes []*externalapi.DomainHash, actualHighHash *externalapi.DomainHash, err error) {
 
 	s.lock.Lock()
 	defer s.lock.Unlock()
@@ -195,10 +194,10 @@ func (s *consensus) GetHashesBetween(lowHash, highHash *externalapi.DomainHash,
 		return nil, nil, err
 	}
 
-	return s.syncManager.GetHashesBetween(lowHash, highHash, maxBlueScoreDifference)
+	return s.syncManager.GetHashesBetween(nil, lowHash, highHash, maxBlueScoreDifference)
 }
 
-func (s *consensus) GetMissingBlockBodyHashes(highHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error) {
+func (s *consensus) GetMissingBlockBodyHashes(stagingArea *model.StagingArea, highHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
@@ -207,7 +206,7 @@ func (s *consensus) GetMissingBlockBodyHashes(highHash *externalapi.DomainHash) 
 		return nil, err
 	}
 
-	return s.syncManager.GetMissingBlockBodyHashes(highHash)
+	return s.syncManager.GetMissingBlockBodyHashes(nil, highHash)
 }
 
 func (s *consensus) GetPruningPointUTXOs(expectedPruningPointHash *externalapi.DomainHash,
@@ -333,7 +332,7 @@ func (s *consensus) GetVirtualInfo() (*externalapi.VirtualInfo, error) {
 	}, nil
 }
 
-func (s *consensus) CreateBlockLocator(lowHash, highHash *externalapi.DomainHash, limit uint32) (externalapi.BlockLocator, error) {
+func (s *consensus) CreateBlockLocator(stagingArea *model.StagingArea, lowHash, highHash *externalapi.DomainHash, limit uint32) (externalapi.BlockLocator, error) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
@@ -346,7 +345,7 @@ func (s *consensus) CreateBlockLocator(lowHash, highHash *externalapi.DomainHash
 		return nil, err
 	}
 
-	return s.syncManager.CreateBlockLocator(lowHash, highHash, limit)
+	return s.syncManager.CreateBlockLocator(nil, lowHash, highHash, limit)
 }
 
 func (s *consensus) CreateFullHeadersSelectedChainBlockLocator() (externalapi.BlockLocator, error) {
@@ -363,22 +362,21 @@ func (s *consensus) CreateFullHeadersSelectedChainBlockLocator() (externalapi.Bl
 		return nil, err
 	}
 
-	return s.syncManager.CreateHeadersSelectedChainBlockLocator(lowHash, highHash)
+	return s.syncManager.CreateHeadersSelectedChainBlockLocator(nil, lowHash, highHash)
 }
 
-func (s *consensus) CreateHeadersSelectedChainBlockLocator(lowHash,
-	highHash *externalapi.DomainHash) (externalapi.BlockLocator, error) {
+func (s *consensus) CreateHeadersSelectedChainBlockLocator(stagingArea *model.StagingArea, lowHash, highHash *externalapi.DomainHash) (externalapi.BlockLocator, error) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	return s.syncManager.CreateHeadersSelectedChainBlockLocator(lowHash, highHash)
+	return s.syncManager.CreateHeadersSelectedChainBlockLocator(nil, lowHash, highHash)
 }
 
-func (s *consensus) GetSyncInfo() (*externalapi.SyncInfo, error) {
+func (s *consensus) GetSyncInfo(*model.StagingArea) (*externalapi.SyncInfo, error) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	return s.syncManager.GetSyncInfo()
+	return s.syncManager.GetSyncInfo(nil)
 }
 
 func (s *consensus) IsValidPruningPoint(blockHash *externalapi.DomainHash) (bool, error) {

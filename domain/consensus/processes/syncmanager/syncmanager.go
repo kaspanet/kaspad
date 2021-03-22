@@ -57,41 +57,43 @@ func New(
 	}
 }
 
-func (sm *syncManager) GetHashesBetween(lowHash, highHash *externalapi.DomainHash,
+func (sm *syncManager) GetHashesBetween(stagingArea *model.StagingArea, lowHash, highHash *externalapi.DomainHash,
 	maxBlueScoreDifference uint64) (hashes []*externalapi.DomainHash, actualHighHash *externalapi.DomainHash, err error) {
 
 	onEnd := logger.LogAndMeasureExecutionTime(log, "GetHashesBetween")
 	defer onEnd()
 
-	return sm.antiPastHashesBetween(lowHash, highHash, maxBlueScoreDifference)
+	return sm.antiPastHashesBetween(stagingArea, lowHash, highHash, maxBlueScoreDifference)
 }
 
-func (sm *syncManager) GetMissingBlockBodyHashes(highHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error) {
+func (sm *syncManager) GetMissingBlockBodyHashes(stagingArea *model.StagingArea, highHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error) {
 	onEnd := logger.LogAndMeasureExecutionTime(log, "GetMissingBlockBodyHashes")
 	defer onEnd()
 
-	return sm.missingBlockBodyHashes(highHash)
+	return sm.missingBlockBodyHashes(stagingArea, highHash)
 }
 
-func (sm *syncManager) CreateBlockLocator(lowHash, highHash *externalapi.DomainHash, limit uint32) (externalapi.BlockLocator, error) {
+func (sm *syncManager) CreateBlockLocator(stagingArea *model.StagingArea,
+	lowHash, highHash *externalapi.DomainHash, limit uint32) (externalapi.BlockLocator, error) {
+
 	onEnd := logger.LogAndMeasureExecutionTime(log, "CreateBlockLocator")
 	defer onEnd()
 
-	return sm.createBlockLocator(lowHash, highHash, limit)
+	return sm.createBlockLocator(stagingArea, lowHash, highHash, limit)
 }
 
-func (sm *syncManager) CreateHeadersSelectedChainBlockLocator(lowHash,
-	highHash *externalapi.DomainHash) (externalapi.BlockLocator, error) {
+func (sm *syncManager) CreateHeadersSelectedChainBlockLocator(stagingArea *model.StagingArea,
+	lowHash, highHash *externalapi.DomainHash) (externalapi.BlockLocator, error) {
 
 	onEnd := logger.LogAndMeasureExecutionTime(log, "CreateHeadersSelectedChainBlockLocator")
 	defer onEnd()
 
-	return sm.createHeadersSelectedChainBlockLocator(lowHash, highHash)
+	return sm.createHeadersSelectedChainBlockLocator(stagingArea, lowHash, highHash)
 }
 
-func (sm *syncManager) GetSyncInfo() (*externalapi.SyncInfo, error) {
+func (sm *syncManager) GetSyncInfo(stagingArea *model.StagingArea) (*externalapi.SyncInfo, error) {
 	onEnd := logger.LogAndMeasureExecutionTime(log, "GetSyncInfo")
 	defer onEnd()
 
-	return sm.syncInfo()
+	return sm.syncInfo(stagingArea)
 }

@@ -43,7 +43,7 @@ func mineBlocks(dagParams *dagconfig.Params, rpcClient *rpc.Client, blockChan <-
 	}
 	defer tearDownFunc(true)
 
-	info, err := testConsensus.GetSyncInfo()
+	info, err := testConsensus.GetSyncInfo(nil)
 	if err != nil {
 		return err
 	}

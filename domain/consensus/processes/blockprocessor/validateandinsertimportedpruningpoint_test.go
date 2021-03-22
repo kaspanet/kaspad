@@ -164,7 +164,7 @@ func TestValidateAndInsertImportedPruningPoint(t *testing.T) {
 			t.Fatalf("GetVirtualSelectedParent: %+v", err)
 		}
 
-		missingBlockBodyHashes, err := tcSyncee.GetMissingBlockBodyHashes(virtualSelectedParent)
+		missingBlockBodyHashes, err := tcSyncee.GetMissingBlockBodyHashes(nil, virtualSelectedParent)
 		if err != nil {
 			t.Fatalf("GetMissingBlockBodyHashes: %+v", err)
 		}
@@ -298,7 +298,7 @@ func TestValidateAndInsertPruningPointWithSideBlocks(t *testing.T) {
 			t.Fatalf("GetVirtualSelectedParent: %+v", err)
 		}
 
-		missingBlockBodyHashes, err := tcSyncee.GetMissingBlockBodyHashes(virtualSelectedParent)
+		missingBlockBodyHashes, err := tcSyncee.GetMissingBlockBodyHashes(nil, virtualSelectedParent)
 		if err != nil {
 			t.Fatalf("GetMissingBlockBodyHashes: %+v", err)
 		}

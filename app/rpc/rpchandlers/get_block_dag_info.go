@@ -15,7 +15,7 @@ func HandleGetBlockDAGInfo(context *rpccontext.Context, _ *router.Router, _ appm
 	response := appmessage.NewGetBlockDAGInfoResponseMessage()
 	response.NetworkName = params.Name
 
-	syncInfo, err := consensus.GetSyncInfo()
+	syncInfo, err := consensus.GetSyncInfo(nil)
 	if err != nil {
 		return nil, err
 	}

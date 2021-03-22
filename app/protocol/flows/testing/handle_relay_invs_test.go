@@ -6,6 +6,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kaspanet/kaspad/domain/consensus/model"
+
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/app/protocol/flows/blockrelay"
 	peerpkg "github.com/kaspanet/kaspad/app/protocol/peer"
@@ -181,11 +183,11 @@ func (f *fakeRelayInvsContext) GetBlockAcceptanceData(blockHash *externalapi.Dom
 	panic(errors.Errorf("called unimplemented function from test '%s'", f.testName))
 }
 
-func (f *fakeRelayInvsContext) GetHashesBetween(lowHash, highHash *externalapi.DomainHash, maxBlueScoreDifference uint64) (hashes []*externalapi.DomainHash, actualHighHash *externalapi.DomainHash, err error) {
+func (f *fakeRelayInvsContext) GetHashesBetween(stagingArea *model.StagingArea, lowHash, highHash *externalapi.DomainHash, maxBlueScoreDifference uint64) (hashes []*externalapi.DomainHash, actualHighHash *externalapi.DomainHash, err error) {
 	panic(errors.Errorf("called unimplemented function from test '%s'", f.testName))
 }
 
-func (f *fakeRelayInvsContext) GetMissingBlockBodyHashes(highHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error) {
+func (f *fakeRelayInvsContext) GetMissingBlockBodyHashes(stagingArea *model.StagingArea, highHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error) {
 	// This is done so we can test getting invalid block during IBD.
 	return []*externalapi.DomainHash{invalidBlockHash}, nil
 }
@@ -216,11 +218,11 @@ func (f *fakeRelayInvsContext) GetVirtualSelectedParent() (*externalapi.DomainHa
 	panic(errors.Errorf("called unimplemented function from test '%s'", f.testName))
 }
 
-func (f *fakeRelayInvsContext) CreateBlockLocator(lowHash, highHash *externalapi.DomainHash, limit uint32) (externalapi.BlockLocator, error) {
+func (f *fakeRelayInvsContext) CreateBlockLocator(stagingArea *model.StagingArea, lowHash, highHash *externalapi.DomainHash, limit uint32) (externalapi.BlockLocator, error) {
 	panic(errors.Errorf("called unimplemented function from test '%s'", f.testName))
 }
 
-func (f *fakeRelayInvsContext) CreateHeadersSelectedChainBlockLocator(lowHash, highHash *externalapi.DomainHash) (externalapi.BlockLocator, error) {
+func (f *fakeRelayInvsContext) CreateHeadersSelectedChainBlockLocator(stagingArea *model.StagingArea, lowHash, highHash *externalapi.DomainHash) (externalapi.BlockLocator, error) {
 	f.rwLock.RLock()
 	defer f.rwLock.RUnlock()
 	return externalapi.BlockLocator{
@@ -236,7 +238,7 @@ func (f *fakeRelayInvsContext) CreateFullHeadersSelectedChainBlockLocator() (ext
 	}, nil
 }
 
-func (f *fakeRelayInvsContext) GetSyncInfo() (*externalapi.SyncInfo, error) {
+func (f *fakeRelayInvsContext) GetSyncInfo(*model.StagingArea) (*externalapi.SyncInfo, error) {
 	panic(errors.Errorf("called unimplemented function from test '%s'", f.testName))
 }
 
