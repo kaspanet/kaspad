@@ -150,7 +150,7 @@ func (bb *blockBuilder) validateTransaction(transaction *externalapi.DomainTrans
 func (bb *blockBuilder) newBlockCoinbaseTransaction(
 	coinbaseData *externalapi.DomainCoinbaseData) (*externalapi.DomainTransaction, error) {
 
-	return bb.coinbaseManager.ExpectedCoinbaseTransaction(model.VirtualBlockHash, coinbaseData)
+	return bb.coinbaseManager.ExpectedCoinbaseTransaction(nil, model.VirtualBlockHash, coinbaseData)
 }
 
 func (bb *blockBuilder) buildHeader(transactions []*externalapi.DomainTransaction) (externalapi.BlockHeader, error) {

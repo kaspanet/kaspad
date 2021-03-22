@@ -20,27 +20,27 @@ type coinbaseManager struct {
 	daaBlocksStore      model.DAABlocksStore
 }
 
-func (c *coinbaseManager) ExpectedCoinbaseTransaction(blockHash *externalapi.DomainHash,
+func (c *coinbaseManager) ExpectedCoinbaseTransaction(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash,
 	coinbaseData *externalapi.DomainCoinbaseData) (*externalapi.DomainTransaction, error) {
 
-	ghostdagData, err := c.ghostdagDataStore.Get(c.databaseContext, nil, blockHash)
+	ghostdagData, err := c.ghostdagDataStore.Get(c.databaseContext, stagingArea, blockHash)
 	if err != nil {
 		return nil, err
 	}
 
-	acceptanceData, err := c.acceptanceDataStore.Get(c.databaseContext, nil, blockHash)
+	acceptanceData, err := c.acceptanceDataStore.Get(c.databaseContext, stagingArea, blockHash)
 	if err != nil {
 		return nil, err
 	}
 
-	daaAddedBlocksSet, err := c.daaAddedBlocksSet(blockHash)
+	daaAddedBlocksSet, err := c.daaAddedBlocksSet(stagingArea, blockHash)
 	if err != nil {
 		return nil, err
 	}
 
 	txOuts := make([]*externalapi.DomainTransactionOutput, 0, len(ghostdagData.MergeSetBlues()))
 	for i, blue := range ghostdagData.MergeSetBlues() {
-		txOut, hasReward, err := c.coinbaseOutputForBlueBlock(blue, acceptanceData[i], daaAddedBlocksSet)
+		txOut, hasReward, err := c.coinbaseOutputForBlueBlock(stagingArea, blue, acceptanceData[i], daaAddedBlocksSet)
 		if err != nil {
 			return nil, err
 		}
@@ -50,7 +50,8 @@ func (c *coinbaseManager) ExpectedCoinbaseTransaction(blockHash *externalapi.Dom
 		}
 	}
 
-	txOut, hasReward, err := c.coinbaseOutputForRewardFromRedBlocks(ghostdagData, acceptanceData, daaAddedBlocksSet, coinbaseData)
+	txOut, hasReward, err := c.coinbaseOutputForRewardFromRedBlocks(
+		stagingArea, ghostdagData, acceptanceData, daaAddedBlocksSet, coinbaseData)
 	if err != nil {
 		return nil, err
 	}
@@ -75,8 +76,10 @@ func (c *coinbaseManager) ExpectedCoinbaseTransaction(blockHash *externalapi.Dom
 	}, nil
 }
 
-func (c *coinbaseManager) daaAddedBlocksSet(blockHash *externalapi.DomainHash) (hashset.HashSet, error) {
-	daaAddedBlocks, err := c.daaBlocksStore.DAAAddedBlocks(c.databaseContext, nil, blockHash)
+func (c *coinbaseManager) daaAddedBlocksSet(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) (
+	hashset.HashSet, error) {
+
+	daaAddedBlocks, err := c.daaBlocksStore.DAAAddedBlocks(c.databaseContext, stagingArea, blockHash)
 	if err != nil {
 		return nil, err
 	}
@@ -86,11 +89,11 @@ func (c *coinbaseManager) daaAddedBlocksSet(blockHash *externalapi.DomainHash) (
 
 // coinbaseOutputForBlueBlock calculates the output that should go into the coinbase transaction of blueBlock
 // If blueBlock gets no fee - returns nil for txOut
-func (c *coinbaseManager) coinbaseOutputForBlueBlock(blueBlock *externalapi.DomainHash,
-	blockAcceptanceData *externalapi.BlockAcceptanceData,
+func (c *coinbaseManager) coinbaseOutputForBlueBlock(stagingArea *model.StagingArea,
+	blueBlock *externalapi.DomainHash, blockAcceptanceData *externalapi.BlockAcceptanceData,
 	mergingBlockDAAAddedBlocksSet hashset.HashSet) (*externalapi.DomainTransactionOutput, bool, error) {
 
-	totalReward, err := c.calcMergedBlockReward(blueBlock, blockAcceptanceData, mergingBlockDAAAddedBlocksSet)
+	totalReward, err := c.calcMergedBlockReward(stagingArea, blueBlock, blockAcceptanceData, mergingBlockDAAAddedBlocksSet)
 	if err != nil {
 		return nil, false, err
 	}
@@ -113,14 +116,14 @@ func (c *coinbaseManager) coinbaseOutputForBlueBlock(blueBlock *externalapi.Doma
 	return txOut, true, nil
 }
 
-func (c *coinbaseManager) coinbaseOutputForRewardFromRedBlocks(ghostdagData *model.BlockGHOSTDAGData,
-	acceptanceData externalapi.AcceptanceData, daaAddedBlocksSet hashset.HashSet,
+func (c *coinbaseManager) coinbaseOutputForRewardFromRedBlocks(stagingArea *model.StagingArea,
+	ghostdagData *model.BlockGHOSTDAGData, acceptanceData externalapi.AcceptanceData, daaAddedBlocksSet hashset.HashSet,
 	coinbaseData *externalapi.DomainCoinbaseData) (*externalapi.DomainTransactionOutput, bool, error) {
 
 	totalReward := uint64(0)
 	mergeSetBluesCount := len(ghostdagData.MergeSetBlues())
 	for i, red := range ghostdagData.MergeSetReds() {
-		reward, err := c.calcMergedBlockReward(red, acceptanceData[mergeSetBluesCount+i], daaAddedBlocksSet)
+		reward, err := c.calcMergedBlockReward(stagingArea, red, acceptanceData[mergeSetBluesCount+i], daaAddedBlocksSet)
 		if err != nil {
 			return nil, false, err
 		}
@@ -148,12 +151,12 @@ func (c *coinbaseManager) coinbaseOutputForRewardFromRedBlocks(ghostdagData *mod
 //
 // At the target block generation rate for the main network, this is
 // approximately every 4 years.
-func (c *coinbaseManager) calcBlockSubsidy(blockHash *externalapi.DomainHash) (uint64, error) {
+func (c *coinbaseManager) calcBlockSubsidy(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) (uint64, error) {
 	if c.subsidyReductionInterval == 0 {
 		return c.baseSubsidy, nil
 	}
 
-	daaScore, err := c.daaBlocksStore.DAAScore(c.databaseContext, nil, blockHash)
+	daaScore, err := c.daaBlocksStore.DAAScore(c.databaseContext, stagingArea, blockHash)
 	if err != nil {
 		return 0, err
 	}
@@ -162,7 +165,7 @@ func (c *coinbaseManager) calcBlockSubsidy(blockHash *externalapi.DomainHash) (u
 	return c.baseSubsidy >> uint(daaScore/c.subsidyReductionInterval), nil
 }
 
-func (c *coinbaseManager) calcMergedBlockReward(blockHash *externalapi.DomainHash,
+func (c *coinbaseManager) calcMergedBlockReward(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash,
 	blockAcceptanceData *externalapi.BlockAcceptanceData, mergingBlockDAAAddedBlocksSet hashset.HashSet) (uint64, error) {
 
 	if !blockHash.Equal(blockAcceptanceData.BlockHash) {
@@ -181,7 +184,7 @@ func (c *coinbaseManager) calcMergedBlockReward(blockHash *externalapi.DomainHas
 		}
 	}
 
-	subsidy, err := c.calcBlockSubsidy(blockHash)
+	subsidy, err := c.calcBlockSubsidy(stagingArea, blockHash)
 	if err != nil {
 		return 0, err
 	}
