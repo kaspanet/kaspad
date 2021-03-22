@@ -23,7 +23,7 @@ func (csm *consensusStateManager) verifyUTXO(stagingArea *model.StagingArea, blo
 	defer log.Debugf("verifyUTXO end for block %s", blockHash)
 
 	log.Debugf("Validating UTXO commitment for block %s", blockHash)
-	err := csm.validateUTXOCommitment(stagingArea, block, blockHash, multiset)
+	err := csm.validateUTXOCommitment(block, blockHash, multiset)
 	if err != nil {
 		return err
 	}
@@ -84,7 +84,8 @@ func (csm *consensusStateManager) validateBlockTransactionsAgainstPastUTXO(stagi
 		}
 
 		log.Tracef("Validating transaction %s and populating it with mass and fee", transactionID)
-		err = csm.transactionValidator.ValidateTransactionInContextAndPopulateMassAndFee(selectedParentMedianTime, stagingArea, transaction, blockHash)
+		err = csm.transactionValidator.ValidateTransactionInContextAndPopulateMassAndFee(
+			stagingArea, transaction, blockHash, selectedParentMedianTime)
 		if err != nil {
 			return err
 		}

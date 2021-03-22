@@ -139,7 +139,7 @@ func (flow *handleRelayInvsFlow) findHighestSharedBlockHash(
 
 func (flow *handleRelayInvsFlow) nextBlockLocator(lowHash, highHash *externalapi.DomainHash) (externalapi.BlockLocator, error) {
 	log.Debugf("Sending a blockLocator to %s between %s and %s", flow.peer, lowHash, highHash)
-	blockLocator, err := flow.Domain().Consensus().CreateHeadersSelectedChainBlockLocator(nil, lowHash, highHash)
+	blockLocator, err := flow.Domain().Consensus().CreateHeadersSelectedChainBlockLocator(lowHash, highHash)
 	if err != nil {
 		if errors.Is(model.ErrBlockNotInSelectedParentChain, err) {
 			return nil, err
@@ -495,7 +495,7 @@ func (flow *handleRelayInvsFlow) receiveAndInsertPruningPointUTXOSet(
 }
 
 func (flow *handleRelayInvsFlow) syncMissingBlockBodies(highHash *externalapi.DomainHash) error {
-	hashes, err := flow.Domain().Consensus().GetMissingBlockBodyHashes(nil, highHash)
+	hashes, err := flow.Domain().Consensus().GetMissingBlockBodyHashes(highHash)
 	if err != nil {
 		return err
 	}

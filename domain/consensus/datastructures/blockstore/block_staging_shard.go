@@ -11,7 +11,7 @@ type blockStagingShard struct {
 	toDelete map[externalapi.DomainHash]struct{}
 }
 
-func (bs *blockStore) stagingShard(stagingArea model.StagingArea) *blockStagingShard {
+func (bs *blockStore) stagingShard(stagingArea *model.StagingArea) *blockStagingShard {
 	return stagingArea.GetOrCreateShard("BlockStore", func() model.StagingShard {
 		return &blockStagingShard{
 			store:    bs,

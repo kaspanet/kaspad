@@ -411,7 +411,7 @@ func (s *consensus) CreateHeadersSelectedChainBlockLocator(lowHash, highHash *ex
 	return s.syncManager.CreateHeadersSelectedChainBlockLocator(stagingArea, lowHash, highHash)
 }
 
-func (s *consensus) GetSyncInfo(*model.StagingArea) (*externalapi.SyncInfo, error) {
+func (s *consensus) GetSyncInfo() (*externalapi.SyncInfo, error) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 

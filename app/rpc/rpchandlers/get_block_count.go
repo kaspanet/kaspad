@@ -8,7 +8,7 @@ import (
 
 // HandleGetBlockCount handles the respectively named RPC command
 func HandleGetBlockCount(context *rpccontext.Context, _ *router.Router, _ appmessage.Message) (appmessage.Message, error) {
-	syncInfo, err := context.Domain.Consensus().GetSyncInfo(nil)
+	syncInfo, err := context.Domain.Consensus().GetSyncInfo()
 	if err != nil {
 		return nil, err
 	}

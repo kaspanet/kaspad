@@ -39,7 +39,7 @@ func (flow *handleRequestBlockLocatorFlow) start() error {
 		log.Debugf("Received getBlockLocator with lowHash: %s, highHash: %s, limit: %d",
 			lowHash, highHash, limit)
 
-		locator, err := flow.Domain().Consensus().CreateBlockLocator(nil, lowHash, highHash, limit)
+		locator, err := flow.Domain().Consensus().CreateBlockLocator(lowHash, highHash, limit)
 		if err != nil || len(locator) == 0 {
 			if err != nil {
 				log.Debugf("Received error from CreateBlockLocator: %s", err)
