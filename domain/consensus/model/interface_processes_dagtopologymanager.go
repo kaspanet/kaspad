@@ -5,15 +5,15 @@ import "github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 // DAGTopologyManager exposes methods for querying relationships
 // between blocks in the DAG
 type DAGTopologyManager interface {
-	Parents(blockHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error)
-	Children(blockHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error)
-	IsParentOf(blockHashA *externalapi.DomainHash, blockHashB *externalapi.DomainHash) (bool, error)
-	IsChildOf(blockHashA *externalapi.DomainHash, blockHashB *externalapi.DomainHash) (bool, error)
+	Parents(stagingArea *StagingArea, blockHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error)
+	Children(stagingArea *StagingArea, blockHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error)
+	IsParentOf(stagingArea *StagingArea, blockHashA *externalapi.DomainHash, blockHashB *externalapi.DomainHash) (bool, error)
+	IsChildOf(stagingArea *StagingArea, blockHashA *externalapi.DomainHash, blockHashB *externalapi.DomainHash) (bool, error)
 	IsAncestorOf(stagingArea *StagingArea, blockHashA *externalapi.DomainHash, blockHashB *externalapi.DomainHash) (bool, error)
-	IsAncestorOfAny(blockHash *externalapi.DomainHash, potentialDescendants []*externalapi.DomainHash) (bool, error)
-	IsAnyAncestorOf(potentialAncestors []*externalapi.DomainHash, blockHash *externalapi.DomainHash) (bool, error)
-	IsInSelectedParentChainOf(blockHashA *externalapi.DomainHash, blockHashB *externalapi.DomainHash) (bool, error)
-	ChildInSelectedParentChainOf(context, highHash *externalapi.DomainHash) (*externalapi.DomainHash, error)
+	IsAncestorOfAny(stagingArea *StagingArea, blockHash *externalapi.DomainHash, potentialDescendants []*externalapi.DomainHash) (bool, error)
+	IsAnyAncestorOf(stagingArea *StagingArea, potentialAncestors []*externalapi.DomainHash, blockHash *externalapi.DomainHash) (bool, error)
+	IsInSelectedParentChainOf(stagingArea *StagingArea, blockHashA *externalapi.DomainHash, blockHashB *externalapi.DomainHash) (bool, error)
+	ChildInSelectedParentChainOf(stagingArea *StagingArea, context, highHash *externalapi.DomainHash) (*externalapi.DomainHash, error)
 
-	SetParents(blockHash *externalapi.DomainHash, parentHashes []*externalapi.DomainHash) error
+	SetParents(stagingArea *StagingArea, blockHash *externalapi.DomainHash, parentHashes []*externalapi.DomainHash) error
 }

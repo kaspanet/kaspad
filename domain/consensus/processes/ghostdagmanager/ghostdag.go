@@ -48,7 +48,7 @@ func (gm *ghostdagManager) GHOSTDAG(blockHash *externalapi.DomainHash) error {
 		bluesAnticoneSizes: make(map[externalapi.DomainHash]model.KType),
 	}
 
-	blockParents, err := gm.dagTopologyManager.Parents(blockHash)
+	blockParents, err := gm.dagTopologyManager.Parents(nil, blockHash)
 	if err != nil {
 		return err
 	}

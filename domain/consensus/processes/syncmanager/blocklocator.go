@@ -36,7 +36,7 @@ func (sm *syncManager) createBlockLocator(lowHash, highHash *externalapi.DomainH
 
 		// Nothing more to add once the low node has been added.
 		if currentBlockBlueScore <= lowBlockBlueScore {
-			isCurrentHashInSelectedParentChainOfLowHash, err := sm.dagTopologyManager.IsInSelectedParentChainOf(currentHash, lowHash)
+			isCurrentHashInSelectedParentChainOfLowHash, err := sm.dagTopologyManager.IsInSelectedParentChainOf(nil, currentHash, lowHash)
 			if err != nil {
 				return nil, err
 			}

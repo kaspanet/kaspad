@@ -109,7 +109,7 @@ func (dtm *dagTraversalManager) CalculateChainPath(
 	var removed []*externalapi.DomainHash
 	current := fromBlockHash
 	for {
-		isCurrentInTheSelectedParentChainOfNewVirtualSelectedParent, err := dtm.dagTopologyManager.IsInSelectedParentChainOf(current, toBlockHash)
+		isCurrentInTheSelectedParentChainOfNewVirtualSelectedParent, err := dtm.dagTopologyManager.IsInSelectedParentChainOf(nil, current, toBlockHash)
 		if err != nil {
 			return nil, err
 		}

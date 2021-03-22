@@ -166,7 +166,7 @@ func (sm *syncManager) findHighHashAccordingToMaxBlueScoreDifference(lowHash *ex
 func (sm *syncManager) findLowHashInHighHashSelectedParentChain(
 	lowHash *externalapi.DomainHash, highHash *externalapi.DomainHash) (*externalapi.DomainHash, error) {
 	for {
-		isInSelectedParentChain, err := sm.dagTopologyManager.IsInSelectedParentChainOf(lowHash, highHash)
+		isInSelectedParentChain, err := sm.dagTopologyManager.IsInSelectedParentChainOf(nil, lowHash, highHash)
 		if err != nil {
 			return nil, err
 		}

@@ -2,6 +2,7 @@ package blockprocessor
 
 import (
 	"fmt"
+
 	"github.com/kaspanet/kaspad/util/difficulty"
 
 	"github.com/kaspanet/kaspad/domain/consensus/model"
@@ -145,7 +146,7 @@ func (bp *blockProcessor) validateAndInsertBlock(block *externalapi.DomainBlock,
 		return nil, logClosureErr
 	}
 
-	virtualParents, err := bp.dagTopologyManager.Parents(model.VirtualBlockHash)
+	virtualParents, err := bp.dagTopologyManager.Parents(nil, model.VirtualBlockHash)
 	if err != nil {
 		return nil, err
 	}
@@ -197,7 +198,7 @@ func (bp *blockProcessor) checkBlockStatus(stagingArea *model.StagingArea, block
 	}
 
 	if !isHeaderOnlyBlock {
-		hasBlock, err := bp.blockStore.HasBlock(bp.databaseContext,stagingArea, hash)
+		hasBlock, err := bp.blockStore.HasBlock(bp.databaseContext, stagingArea, hash)
 		if err != nil {
 			return err
 		}
@@ -237,12 +238,12 @@ func (bp *blockProcessor) validatePreProofOfWork(stagingArea *model.StagingArea,
 	return nil
 }
 
-func (bp *blockProcessor) validatePostProofOfWork(block *externalapi.DomainBlock, isPruningPoint bool) error {
+func (bp *blockProcessor) validatePostProofOfWork(stagingArea *model.StagingArea, block *externalapi.DomainBlock, isPruningPoint bool) error {
 	blockHash := consensushashing.BlockHash(block)
 
 	isHeaderOnlyBlock := isHeaderOnlyBlock(block)
 	if !isHeaderOnlyBlock {
-		bp.blockStore.Stage(
+		bp.blockStore.Stage(stagingArea, blockHash, block)
 		err := bp.blockValidator.ValidateBodyInIsolation(blockHash)
 		if err != nil {
 			return err

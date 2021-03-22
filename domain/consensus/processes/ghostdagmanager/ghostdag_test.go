@@ -329,7 +329,7 @@ type DAGTopologyManagerImpl struct {
 	parentsMap map[externalapi.DomainHash][]*externalapi.DomainHash
 }
 
-func (dt *DAGTopologyManagerImpl) ChildInSelectedParentChainOf(context, highHash *externalapi.DomainHash) (*externalapi.DomainHash, error) {
+func (dt *DAGTopologyManagerImpl) ChildInSelectedParentChainOf(stagingArea *model.StagingArea, context, highHash *externalapi.DomainHash) (*externalapi.DomainHash, error) {
 	panic("implement me")
 }
 
@@ -341,7 +341,7 @@ func (dt *DAGTopologyManagerImpl) AddTip(tipHash *externalapi.DomainHash) error 
 	panic("implement me")
 }
 
-func (dt *DAGTopologyManagerImpl) Parents(blockHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error) {
+func (dt *DAGTopologyManagerImpl) Parents(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error) {
 	v, ok := dt.parentsMap[*blockHash]
 	if !ok {
 		return []*externalapi.DomainHash{}, nil
@@ -350,15 +350,15 @@ func (dt *DAGTopologyManagerImpl) Parents(blockHash *externalapi.DomainHash) ([]
 	return v, nil
 }
 
-func (dt *DAGTopologyManagerImpl) Children(blockHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error) {
+func (dt *DAGTopologyManagerImpl) Children(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error) {
 	panic("unimplemented")
 }
 
-func (dt *DAGTopologyManagerImpl) IsParentOf(hashBlockA *externalapi.DomainHash, hashBlockB *externalapi.DomainHash) (bool, error) {
+func (dt *DAGTopologyManagerImpl) IsParentOf(stagingArea *model.StagingArea, blockHashA *externalapi.DomainHash, blockHashB *externalapi.DomainHash) (bool, error) {
 	panic("unimplemented")
 }
 
-func (dt *DAGTopologyManagerImpl) IsChildOf(hashBlockA *externalapi.DomainHash, hashBlockB *externalapi.DomainHash) (bool, error) {
+func (dt *DAGTopologyManagerImpl) IsChildOf(stagingArea *model.StagingArea, blockHashA *externalapi.DomainHash, blockHashB *externalapi.DomainHash) (bool, error) {
 	panic("unimplemented")
 }
 
@@ -387,17 +387,17 @@ func (dt *DAGTopologyManagerImpl) IsAncestorOf(stagingArea *model.StagingArea, b
 
 }
 
-func (dt *DAGTopologyManagerImpl) IsAncestorOfAny(blockHash *externalapi.DomainHash, potentialDescendants []*externalapi.DomainHash) (bool, error) {
+func (dt *DAGTopologyManagerImpl) IsAncestorOfAny(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash, potentialDescendants []*externalapi.DomainHash) (bool, error) {
 	panic("unimplemented")
 }
-func (dt *DAGTopologyManagerImpl) IsAnyAncestorOf([]*externalapi.DomainHash, *externalapi.DomainHash) (bool, error) {
+func (dt *DAGTopologyManagerImpl) IsAnyAncestorOf(*model.StagingArea, []*externalapi.DomainHash, *externalapi.DomainHash) (bool, error) {
 	panic("unimplemented")
 }
-func (dt *DAGTopologyManagerImpl) IsInSelectedParentChainOf(blockHashA *externalapi.DomainHash, blockHashB *externalapi.DomainHash) (bool, error) {
+func (dt *DAGTopologyManagerImpl) IsInSelectedParentChainOf(stagingArea *model.StagingArea, blockHashA *externalapi.DomainHash, blockHashB *externalapi.DomainHash) (bool, error) {
 	panic("unimplemented")
 }
 
-func (dt *DAGTopologyManagerImpl) SetParents(blockHash *externalapi.DomainHash, parentHashes []*externalapi.DomainHash) error {
+func (dt *DAGTopologyManagerImpl) SetParents(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash, parentHashes []*externalapi.DomainHash) error {
 	panic("unimplemented")
 }
 

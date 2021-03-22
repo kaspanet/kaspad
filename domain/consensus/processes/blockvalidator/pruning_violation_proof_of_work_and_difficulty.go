@@ -141,10 +141,10 @@ func (v *blockValidator) checkParentHeadersExist(stagingArea *model.StagingArea,
 
 	return nil
 }
-func (v *blockValidator) checkPruningPointViolation(header externalapi.BlockHeader) error {
+func (v *blockValidator) checkPruningPointViolation(stagingArea *model.StagingArea, header externalapi.BlockHeader) error {
 	// check if the pruning point is on past of at least one parent of the header's parents.
 
-	hasPruningPoint, err := v.pruningStore.HasPruningPoint(v.databaseContext, nil)
+	hasPruningPoint, err := v.pruningStore.HasPruningPoint(v.databaseContext, stagingArea)
 	if err != nil {
 		return err
 	}
@@ -154,12 +154,12 @@ func (v *blockValidator) checkPruningPointViolation(header externalapi.BlockHead
 		return nil
 	}
 
-	pruningPoint, err := v.pruningStore.PruningPoint(v.databaseContext, nil)
+	pruningPoint, err := v.pruningStore.PruningPoint(v.databaseContext, stagingArea)
 	if err != nil {
 		return err
 	}
 
-	isAncestorOfAny, err := v.dagTopologyManager.IsAncestorOfAny(pruningPoint, header.ParentHashes())
+	isAncestorOfAny, err := v.dagTopologyManager.IsAncestorOfAny(stagingArea, pruningPoint, header.ParentHashes())
 	if err != nil {
 		return err
 	}

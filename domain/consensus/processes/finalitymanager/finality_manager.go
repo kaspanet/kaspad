@@ -101,7 +101,7 @@ func (fm *finalityManager) calculateFinalityPoint(blockHash *externalapi.DomainH
 
 	var next *externalapi.DomainHash
 	for {
-		next, err = fm.dagTopologyManager.ChildInSelectedParentChainOf(current, blockHash)
+		next, err = fm.dagTopologyManager.ChildInSelectedParentChainOf(nil, current, blockHash)
 		if err != nil {
 			return nil, err
 		}

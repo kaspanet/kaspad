@@ -45,8 +45,7 @@ func (csm *consensusStateManager) isViolatingFinality(blockHash *externalapi.Dom
 		finalityPoint = pruningPoint
 	}
 
-	isInSelectedParentChainOfFinalityPoint, err := csm.dagTopologyManager.IsInSelectedParentChainOf(finalityPoint,
-		blockHash)
+	isInSelectedParentChainOfFinalityPoint, err := csm.dagTopologyManager.IsInSelectedParentChainOf(nil, finalityPoint, blockHash)
 	if err != nil {
 		return false, false, err
 	}

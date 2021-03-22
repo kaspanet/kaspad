@@ -213,7 +213,7 @@ func (pm *pruningManager) isInPruningFutureOrInVirtualPast(block *externalapi.Do
 	}
 	// Because virtual doesn't have reachability data, we need to check reachability
 	// using it parents.
-	isInVirtualPast, err := pm.dagTopologyManager.IsAncestorOfAny(block, virtualParents)
+	isInVirtualPast, err := pm.dagTopologyManager.IsAncestorOfAny(nil, block, virtualParents)
 	if err != nil {
 		return false, err
 	}
@@ -230,7 +230,7 @@ func (pm *pruningManager) deletePastBlocks(pruningPoint *externalapi.DomainHash)
 
 	// Go over all pruningPoint.Past and pruningPoint.Anticone that's not in virtual.Past
 	queue := pm.dagTraversalManager.NewDownHeap()
-	virtualParents, err := pm.dagTopologyManager.Parents(model.VirtualBlockHash)
+	virtualParents, err := pm.dagTopologyManager.Parents(nil, model.VirtualBlockHash)
 	if err != nil {
 		return err
 	}
@@ -246,7 +246,7 @@ func (pm *pruningManager) deletePastBlocks(pruningPoint *externalapi.DomainHash)
 	}
 
 	// Add pruningPoint.Parents to queue
-	parents, err := pm.dagTopologyManager.Parents(pruningPoint)
+	parents, err := pm.dagTopologyManager.Parents(nil, pruningPoint)
 	if err != nil {
 		return err
 	}
@@ -278,7 +278,7 @@ func (pm *pruningManager) deleteBlocksDownward(queue model.BlockHeap) error {
 			return err
 		}
 		if !alreadyPruned {
-			parents, err := pm.dagTopologyManager.Parents(current)
+			parents, err := pm.dagTopologyManager.Parents(nil, current)
 			if err != nil {
 				return err
 			}
@@ -372,8 +372,7 @@ func (pm *pruningManager) IsValidPruningPoint(blockHash *externalapi.DomainHash)
 		return false, err
 	}
 
-	isInSelectedParentChainOfHeadersSelectedTip, err := pm.dagTopologyManager.IsInSelectedParentChainOf(blockHash,
-		headersSelectedTip)
+	isInSelectedParentChainOfHeadersSelectedTip, err := pm.dagTopologyManager.IsInSelectedParentChainOf(nil, blockHash, headersSelectedTip)
 	if err != nil {
 		return false, err
 	}

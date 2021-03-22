@@ -66,7 +66,7 @@ func (csm *consensusStateManager) importPruningPoint(newPruningPoint *externalap
 	csm.consensusStateStore.StageTips(nil, newTips)
 
 	log.Debugf("Setting the pruning point as the only virtual parent")
-	err = csm.dagTopologyManager.SetParents(model.VirtualBlockHash, newTips)
+	err = csm.dagTopologyManager.SetParents(nil, model.VirtualBlockHash, newTips)
 	if err != nil {
 		return err
 	}

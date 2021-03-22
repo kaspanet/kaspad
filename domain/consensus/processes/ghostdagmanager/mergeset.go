@@ -28,7 +28,7 @@ func (gm *ghostdagManager) mergeSetWithoutSelectedParent(selectedParent *externa
 		current, queue = queue[0], queue[1:]
 		// For each parent of the current block we check whether it is in the past of the selected parent. If not,
 		// we add the it to the resulting anticone-set and queue it for further processing.
-		currentParents, err := gm.dagTopologyManager.Parents(current)
+		currentParents, err := gm.dagTopologyManager.Parents(nil, current)
 		if err != nil {
 			return nil, err
 		}

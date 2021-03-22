@@ -44,7 +44,7 @@ func (gh *ghostdagHelper) GHOSTDAG(blockCandidate *externalapi.DomainHash) error
 	var myScore uint64
 	var spScore uint64
 	/* find the selectedParent */
-	blockParents, err := gh.dagTopologyManager.Parents(blockCandidate)
+	blockParents, err := gh.dagTopologyManager.Parents(nil, blockCandidate)
 	if err != nil {
 		return err
 	}
@@ -324,7 +324,7 @@ func (gh *ghostdagHelper) findMergeSet(parents []*externalapi.DomainHash, select
 /* ----------------insertParent------------------- */
 /* Insert all parents to the queue*/
 func (gh *ghostdagHelper) insertParent(child *externalapi.DomainHash, queue *[]*externalapi.DomainHash) error {
-	parents, err := gh.dagTopologyManager.Parents(child)
+	parents, err := gh.dagTopologyManager.Parents(nil, child)
 	if err != nil {
 		return err
 	}

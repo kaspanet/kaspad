@@ -73,7 +73,7 @@ func (csm *consensusStateManager) pickVirtualParents(tips []*externalapi.DomainH
 			continue
 		}
 		// If we already have a candidate in the past of newCandidate then skip.
-		isInFutureOfCandidates, err := csm.dagTopologyManager.IsAnyAncestorOf(candidates, newCandidate)
+		isInFutureOfCandidates, err := csm.dagTopologyManager.IsAnyAncestorOf(nil, candidates, newCandidate)
 		if err != nil {
 			return nil, err
 		}
@@ -153,13 +153,13 @@ func (csm *consensusStateManager) selectVirtualSelectedParent(
 		log.Debugf("Block %s is not valid. Adding it to the disqualified set", selectedParentCandidate)
 		disqualifiedCandidates.Add(selectedParentCandidate)
 
-		candidateParents, err := csm.dagTopologyManager.Parents(selectedParentCandidate)
+		candidateParents, err := csm.dagTopologyManager.Parents(nil, selectedParentCandidate)
 		if err != nil {
 			return nil, err
 		}
 		log.Debugf("The parents of block %s are: %s", selectedParentCandidate, candidateParents)
 		for _, parent := range candidateParents {
-			allParentChildren, err := csm.dagTopologyManager.Children(parent)
+			allParentChildren, err := csm.dagTopologyManager.Children(nil, parent)
 			if err != nil {
 				return nil, err
 			}
@@ -205,7 +205,7 @@ func (csm *consensusStateManager) mergeSetIncrease(candidate *externalapi.Domain
 
 	visited := hashset.New()
 	// Start with the candidate's parents in the queue as we already know the candidate isn't an ancestor of the selectedVirtualParents.
-	parents, err := csm.dagTopologyManager.Parents(candidate)
+	parents, err := csm.dagTopologyManager.Parents(nil, candidate)
 	if err != nil {
 		return false, nil, 0, err
 	}
@@ -220,7 +220,7 @@ func (csm *consensusStateManager) mergeSetIncrease(candidate *externalapi.Domain
 		current, queue = queue[0], queue[1:]
 		log.Tracef("Attempting to increment the merge set size increase for block %s", current)
 
-		isInPastOfSelectedVirtualParents, err := csm.dagTopologyManager.IsAncestorOfAny(current, selectedVirtualParents)
+		isInPastOfSelectedVirtualParents, err := csm.dagTopologyManager.IsAncestorOfAny(nil, current, selectedVirtualParents)
 		if err != nil {
 			return false, nil, 0, err
 		}
@@ -237,7 +237,7 @@ func (csm *consensusStateManager) mergeSetIncrease(candidate *externalapi.Domain
 			return false, current, mergeSetIncrease, nil
 		}
 
-		parents, err := csm.dagTopologyManager.Parents(current)
+		parents, err := csm.dagTopologyManager.Parents(nil, current)
 		if err != nil {
 			return false, nil, 0, err
 		}
@@ -262,7 +262,7 @@ func (csm *consensusStateManager) boundedMergeBreakingParents(
 	log.Tracef("boundedMergeBreakingParents start for parents: %s", parents)
 
 	log.Debug("Temporarily setting virtual to all parents, so that we can run ghostdag on it")
-	err := csm.dagTopologyManager.SetParents(model.VirtualBlockHash, parents)
+	err := csm.dagTopologyManager.SetParents(nil, model.VirtualBlockHash, parents)
 	if err != nil {
 		return nil, err
 	}

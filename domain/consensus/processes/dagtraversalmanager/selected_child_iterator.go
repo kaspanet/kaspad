@@ -41,7 +41,7 @@ func (s *selectedChildIterator) Next() bool {
 	}
 
 	for _, child := range data.Children() {
-		isChildInSelectedParentChainOfHighHash, err := s.dagTopologyManager.IsInSelectedParentChainOf(child, s.highHash)
+		isChildInSelectedParentChainOfHighHash, err := s.dagTopologyManager.IsInSelectedParentChainOf(nil, child, s.highHash)
 		if err != nil {
 			s.current = nil
 			s.err = err
@@ -81,7 +81,7 @@ func (s *selectedChildIterator) Close() error {
 // SelectedChildIterator returns a BlockIterator that iterates from lowHash (exclusive) to highHash (inclusive) over
 // highHash's selected parent chain
 func (dtm *dagTraversalManager) SelectedChildIterator(highHash, lowHash *externalapi.DomainHash) (model.BlockIterator, error) {
-	isLowHashInSelectedParentChainOfHighHash, err := dtm.dagTopologyManager.IsInSelectedParentChainOf(lowHash, highHash)
+	isLowHashInSelectedParentChainOfHighHash, err := dtm.dagTopologyManager.IsInSelectedParentChainOf(nil, lowHash, highHash)
 	if err != nil {
 		return nil, err
 	}

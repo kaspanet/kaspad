@@ -241,7 +241,7 @@ func (s *consensus) GetVirtualUTXOs(expectedVirtualParents []*externalapi.Domain
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	virtualParents, err := s.dagTopologyManager.Parents(model.VirtualBlockHash)
+	virtualParents, err := s.dagTopologyManager.Parents(nil, model.VirtualBlockHash)
 	if err != nil {
 		return nil, err
 	}
@@ -430,7 +430,7 @@ func (s *consensus) IsInSelectedParentChainOf(blockHashA *externalapi.DomainHash
 		return false, err
 	}
 
-	return s.dagTopologyManager.IsInSelectedParentChainOf(blockHashA, blockHashB)
+	return s.dagTopologyManager.IsInSelectedParentChainOf(nil, blockHashA, blockHashB)
 }
 
 func (s *consensus) GetHeadersSelectedTip() (*externalapi.DomainHash, error) {

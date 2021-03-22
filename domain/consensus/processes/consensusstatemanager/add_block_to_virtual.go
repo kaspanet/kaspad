@@ -122,7 +122,7 @@ func (csm *consensusStateManager) calculateNewTips(newTipHash *externalapi.Domai
 	}
 	log.Debugf("The current tips are: %s", currentTips)
 
-	newTipParents, err := csm.dagTopologyManager.Parents(newTipHash)
+	newTipParents, err := csm.dagTopologyManager.Parents(nil, newTipHash)
 	if err != nil {
 		return nil, err
 	}

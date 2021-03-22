@@ -31,7 +31,7 @@ func (csm *consensusStateManager) updateVirtual(newBlockHash *externalapi.Domain
 	}
 	log.Debugf("Picked virtual parents: %s", virtualParents)
 
-	err = csm.dagTopologyManager.SetParents(model.VirtualBlockHash, virtualParents)
+	err = csm.dagTopologyManager.SetParents(nil, model.VirtualBlockHash, virtualParents)
 	if err != nil {
 		return nil, nil, err
 	}

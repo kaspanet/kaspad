@@ -54,7 +54,7 @@ func (v *blockValidator) checkBlockIsNotPruned(blockHash *externalapi.DomainHash
 		return err
 	}
 
-	isAncestorOfSomeTips, err := v.dagTopologyManager.IsAncestorOfAny(blockHash, tips)
+	isAncestorOfSomeTips, err := v.dagTopologyManager.IsAncestorOfAny(nil, blockHash, tips)
 	if err != nil {
 		return err
 	}

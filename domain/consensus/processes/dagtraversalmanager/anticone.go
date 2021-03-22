@@ -41,7 +41,7 @@ func (dtm *dagTraversalManager) Anticone(blockHash *externalapi.DomainHash) ([]*
 			anticone = append(anticone, current)
 		}
 
-		currentParents, err := dtm.dagTopologyManager.Parents(current)
+		currentParents, err := dtm.dagTopologyManager.Parents(nil, current)
 		if err != nil {
 			return nil, err
 		}
