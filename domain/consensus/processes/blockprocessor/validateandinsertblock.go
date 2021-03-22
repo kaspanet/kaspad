@@ -13,15 +13,17 @@ import (
 	"github.com/pkg/errors"
 )
 
-func (bp *blockProcessor) setBlockStatusAfterBlockValidation(block *externalapi.DomainBlock, isPruningPoint bool) error {
+func (bp *blockProcessor) setBlockStatusAfterBlockValidation(
+	stagingArea *model.StagingArea, block *externalapi.DomainBlock, isPruningPoint bool) error {
+
 	blockHash := consensushashing.BlockHash(block)
 
-	exists, err := bp.blockStatusStore.Exists(bp.databaseContext, nil, blockHash)
+	exists, err := bp.blockStatusStore.Exists(bp.databaseContext, stagingArea, blockHash)
 	if err != nil {
 		return err
 	}
 	if exists {
-		status, err := bp.blockStatusStore.Get(bp.databaseContext, nil, blockHash)
+		status, err := bp.blockStatusStore.Get(bp.databaseContext, stagingArea, blockHash)
 		if err != nil {
 			return err
 		}
@@ -45,11 +47,11 @@ func (bp *blockProcessor) setBlockStatusAfterBlockValidation(block *externalapi.
 	if isHeaderOnlyBlock {
 		log.Debugf("Block %s is a header-only block so setting its status as %s",
 			blockHash, externalapi.StatusHeaderOnly)
-		bp.blockStatusStore.Stage(nil, blockHash, externalapi.StatusHeaderOnly)
+		bp.blockStatusStore.Stage(stagingArea, blockHash, externalapi.StatusHeaderOnly)
 	} else {
 		log.Debugf("Block %s has body so setting its status as %s",
 			blockHash, externalapi.StatusUTXOPendingVerification)
-		bp.blockStatusStore.Stage(nil, blockHash, externalapi.StatusUTXOPendingVerification)
+		bp.blockStatusStore.Stage(stagingArea, blockHash, externalapi.StatusUTXOPendingVerification)
 	}
 
 	return nil
@@ -64,7 +66,7 @@ func (bp *blockProcessor) validateAndInsertBlock(stagingArea *model.StagingArea,
 		return nil, err
 	}
 
-	err = bp.setBlockStatusAfterBlockValidation(block, isPruningPoint)
+	err = bp.setBlockStatusAfterBlockValidation(stagingArea, block, isPruningPoint)
 	if err != nil {
 		return nil, err
 	}
