@@ -1,14 +1,14 @@
 package multiset
 
 import (
-	"github.com/kaspanet/go-secp256k1"
+	"github.com/kaspanet/go-muhash"
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/pkg/errors"
 )
 
 type multiset struct {
-	ms *secp256k1.MultiSet
+	ms *muhash.MuHash
 }
 
 func (m multiset) Add(data []byte) {
@@ -21,8 +21,7 @@ func (m multiset) Remove(data []byte) {
 
 func (m multiset) Hash() *externalapi.DomainHash {
 	finalizedHash := m.ms.Finalize()
-	finalizedHashAsByteArray := (*[secp256k1.HashSize]byte)(finalizedHash)
-	return externalapi.NewDomainHashFromByteArray(finalizedHashAsByteArray)
+	return externalapi.NewDomainHashFromByteArray(finalizedHash.AsArray())
 }
 
 func (m multiset) Serialize() []byte {
@@ -30,19 +29,18 @@ func (m multiset) Serialize() []byte {
 }
 
 func (m multiset) Clone() model.Multiset {
-	msClone := *m.ms
-	return &multiset{ms: &msClone}
+	return &multiset{ms: m.ms.Clone()}
 }
 
 // FromBytes deserializes the given bytes slice and returns a multiset.
 func FromBytes(multisetBytes []byte) (model.Multiset, error) {
-	serialized := &secp256k1.SerializedMultiSet{}
+	serialized := &muhash.SerializedMuHash{}
 	if len(serialized) != len(multisetBytes) {
 		return nil, errors.Errorf("mutliset bytes expected to be in length of %d but got %d",
 			len(serialized), len(multisetBytes))
 	}
 	copy(serialized[:], multisetBytes)
-	ms, err := secp256k1.DeserializeMultiSet(serialized)
+	ms, err := muhash.DeserializeMuHash(serialized)
 	if err != nil {
 		return nil, err
 	}
@@ -52,5 +50,5 @@ func FromBytes(multisetBytes []byte) (model.Multiset, error) {
 
 // New returns a new model.Multiset
 func New() model.Multiset {
-	return &multiset{ms: secp256k1.NewMultiset()}
+	return &multiset{ms: muhash.NewMuHash()}
 }
