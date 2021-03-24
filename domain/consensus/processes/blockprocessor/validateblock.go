@@ -66,7 +66,8 @@ func (bp *blockProcessor) validateBlock(stagingArea *model.StagingArea, block *e
 			if !errors.As(err, &ruleerrors.ErrMissingParents{}) &&
 				!errors.Is(err, ruleerrors.ErrBadMerkleRoot) &&
 				!errors.Is(err, ruleerrors.ErrPrunedBlock) {
-				// Discard all changes so we save only the block status
+				// Use a new stagingArea so we save only the block status
+				stagingArea := model.NewStagingArea()
 				hash := consensushashing.BlockHash(block)
 				bp.blockStatusStore.Stage(stagingArea, hash, externalapi.StatusInvalid)
 				commitErr := bp.commitAllChanges(stagingArea)

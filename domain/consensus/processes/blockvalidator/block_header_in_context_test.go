@@ -42,20 +42,19 @@ func TestValidateMedianTime(t *testing.T) {
 		}
 
 		pastMedianTime := func(parents ...*externalapi.DomainHash) int64 {
+			stagingArea := model.NewStagingArea()
 			var tempHash externalapi.DomainHash
-			tc.BlockRelationStore().StageBlockRelation(nil, &tempHash, &model.BlockRelations{
+			tc.BlockRelationStore().StageBlockRelation(stagingArea, &tempHash, &model.BlockRelations{
 				Parents:  parents,
 				Children: nil,
 			})
-			defer tc.BlockRelationStore().Discard()
 
-			err = tc.GHOSTDAGManager().GHOSTDAG(nil, &tempHash)
+			err = tc.GHOSTDAGManager().GHOSTDAG(stagingArea, &tempHash)
 			if err != nil {
 				t.Fatalf("GHOSTDAG: %+v", err)
 			}
-			defer tc.GHOSTDAGDataStore().Discard()
 
-			pastMedianTime, err := tc.PastMedianTimeManager().PastMedianTime(&tempHash)
+			pastMedianTime, err := tc.PastMedianTimeManager().PastMedianTime(stagingArea, &tempHash)
 			if err != nil {
 				t.Fatalf("PastMedianTime: %+v", err)
 			}

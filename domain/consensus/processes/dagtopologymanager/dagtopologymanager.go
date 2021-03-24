@@ -206,5 +206,5 @@ func (dtm *dagTopologyManager) ChildInSelectedParentChainOf(stagingArea *model.S
 			context, specifiedHighHash)
 	}
 
-	return dtm.reachabilityManager.FindNextAncestor(nil, highHash, context)
+	return dtm.reachabilityManager.FindNextAncestor(stagingArea, highHash, context)
 }
