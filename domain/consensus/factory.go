@@ -408,11 +408,11 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 		}
 	}
 
-	err = consensusStateManager.RecoverUTXOIfRequired(nil)
+	err = consensusStateManager.RecoverUTXOIfRequired()
 	if err != nil {
 		return nil, err
 	}
-	err = pruningManager.ClearImportedPruningPointData(nil)
+	err = pruningManager.ClearImportedPruningPointData()
 	if err != nil {
 		return nil, err
 	}

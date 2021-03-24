@@ -272,7 +272,7 @@ func TestTransactionAcceptance(t *testing.T) {
 			t.Fatalf("Error creating finalTip: %+v", err)
 		}
 
-		acceptanceData, err := testConsensus.AcceptanceDataStore().Get(testConsensus.DatabaseContext(), nil, finalTipHash)
+		acceptanceData, err := testConsensus.AcceptanceDataStore().Get(testConsensus.DatabaseContext(), stagingArea, finalTipHash)
 		if err != nil {
 			t.Fatalf("Error getting acceptance data: %+v", err)
 		}

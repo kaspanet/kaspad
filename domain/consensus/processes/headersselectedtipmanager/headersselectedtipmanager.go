@@ -61,7 +61,7 @@ func (h *headerTipsManager) AddHeaderTip(stagingArea *model.StagingArea, hash *e
 		}
 
 		if !newHeadersSelectedTip.Equal(headersSelectedTip) {
-			h.headersSelectedTipStore.Stage(nil, newHeadersSelectedTip)
+			h.headersSelectedTipStore.Stage(stagingArea, newHeadersSelectedTip)
 
 			chainChanges, err := h.dagTraversalManager.CalculateChainPath(stagingArea, headersSelectedTip, newHeadersSelectedTip)
 			if err != nil {

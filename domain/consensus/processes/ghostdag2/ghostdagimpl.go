@@ -116,7 +116,7 @@ func (gh *ghostdagHelper) GHOSTDAG(stagingArea *model.StagingArea, blockCandidat
 	}
 
 	e := model.NewBlockGHOSTDAGData(myScore, myWork, selectedParent, mergeSetBlues, mergeSetReds, nil)
-	gh.dataStore.Stage(nil, blockCandidate, e)
+	gh.dataStore.Stage(stagingArea, blockCandidate, e)
 	return nil
 }
 

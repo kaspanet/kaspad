@@ -188,7 +188,7 @@ func (csm *consensusStateManager) importVirtualUTXOSetAndPruningPointUTXOSet() e
 	return csm.consensusStateStore.FinishImportingPruningPointUTXOSet(csm.databaseContext)
 }
 
-func (csm *consensusStateManager) RecoverUTXOIfRequired(*model.StagingArea) error {
+func (csm *consensusStateManager) RecoverUTXOIfRequired() error {
 	hadStartedImportingPruningPointUTXOSet, err := csm.consensusStateStore.HadStartedImportingPruningPointUTXOSet(csm.databaseContext)
 	if err != nil {
 		return err

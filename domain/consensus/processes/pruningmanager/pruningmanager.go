@@ -474,7 +474,7 @@ func (pm *pruningManager) finalityScore(blueScore uint64) uint64 {
 	return blueScore / pm.finalityInterval
 }
 
-func (pm *pruningManager) ClearImportedPruningPointData(*model.StagingArea) error {
+func (pm *pruningManager) ClearImportedPruningPointData() error {
 	err := pm.pruningStore.ClearImportedPruningPointMultiset(pm.databaseContext)
 	if err != nil {
 		return err
@@ -526,7 +526,7 @@ func (pm *pruningManager) UpdatePruningPointUTXOSetIfRequired() error {
 	}
 
 	log.Debugf("Pruning point UTXO set update is required")
-	err = pm.updatePruningPointUTXOSet()
+	err = pm.updatePruningPointUTXOSet(model.NewStagingArea())
 	if err != nil {
 		return err
 	}
@@ -535,7 +535,7 @@ func (pm *pruningManager) UpdatePruningPointUTXOSetIfRequired() error {
 	return nil
 }
 
-func (pm *pruningManager) updatePruningPointUTXOSet() error {
+func (pm *pruningManager) updatePruningPointUTXOSet(stagingArea *model.StagingArea) error {
 	onEnd := logger.LogAndMeasureExecutionTime(log, "updatePruningPointUTXOSet")
 	defer onEnd()
 
@@ -543,13 +543,13 @@ func (pm *pruningManager) updatePruningPointUTXOSet() error {
 	defer logger.LogMemoryStats(log, "updatePruningPointUTXOSet end")
 
 	log.Debugf("Getting the pruning point")
-	pruningPoint, err := pm.pruningStore.PruningPoint(pm.databaseContext, nil)
+	pruningPoint, err := pm.pruningStore.PruningPoint(pm.databaseContext, stagingArea)
 	if err != nil {
 		return err
 	}
 
 	log.Debugf("Restoring the pruning point UTXO set")
-	utxoSetIterator, err := pm.consensusStateManager.RestorePastUTXOSetIterator(nil, pruningPoint)
+	utxoSetIterator, err := pm.consensusStateManager.RestorePastUTXOSetIterator(stagingArea, pruningPoint)
 	if err != nil {
 		return err
 	}

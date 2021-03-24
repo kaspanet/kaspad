@@ -293,9 +293,7 @@ func (s *consensus) ClearImportedPruningPointData() error {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	stagingArea := model.NewStagingArea()
-
-	return s.pruningManager.ClearImportedPruningPointData(stagingArea)
+	return s.pruningManager.ClearImportedPruningPointData()
 }
 
 func (s *consensus) AppendImportedPruningPointUTXOs(outpointAndUTXOEntryPairs []*externalapi.OutpointAndUTXOEntryPair) error {

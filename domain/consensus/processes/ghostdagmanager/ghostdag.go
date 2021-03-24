@@ -206,7 +206,7 @@ func (gm *ghostdagManager) checkBlueCandidateWithChainBlock(stagingArea *model.S
 			continue
 		}
 
-		candidateBluesAnticoneSizes[*block], err = gm.blueAnticoneSize(block, newBlockData)
+		candidateBluesAnticoneSizes[*block], err = gm.blueAnticoneSize(stagingArea, block, newBlockData)
 		if err != nil {
 			return false, false, err
 		}
@@ -235,7 +235,9 @@ func (gm *ghostdagManager) checkBlueCandidateWithChainBlock(stagingArea *model.S
 
 // blueAnticoneSize returns the blue anticone size of 'block' from the worldview of 'context'.
 // Expects 'block' to be in the blue set of 'context'
-func (gm *ghostdagManager) blueAnticoneSize(block *externalapi.DomainHash, context *model.BlockGHOSTDAGData) (model.KType, error) {
+func (gm *ghostdagManager) blueAnticoneSize(stagingArea *model.StagingArea,
+	block *externalapi.DomainHash, context *model.BlockGHOSTDAGData) (model.KType, error) {
+
 	for current := context; current != nil; {
 		if blueAnticoneSize, ok := current.BluesAnticoneSizes()[*block]; ok {
 			return blueAnticoneSize, nil
@@ -244,7 +246,7 @@ func (gm *ghostdagManager) blueAnticoneSize(block *externalapi.DomainHash, conte
 			break
 		}
 		var err error
-		current, err = gm.ghostdagDataStore.Get(gm.databaseContext, nil, current.SelectedParent())
+		current, err = gm.ghostdagDataStore.Get(gm.databaseContext, stagingArea, current.SelectedParent())
 		if err != nil {
 			return 0, err
 		}

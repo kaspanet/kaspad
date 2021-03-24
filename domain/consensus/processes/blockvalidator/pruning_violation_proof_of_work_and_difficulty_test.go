@@ -307,8 +307,8 @@ func (dm *mocDifficultyManager) RequiredDifficulty(*model.StagingArea, *external
 // StageDAADataAndReturnRequiredDifficulty returns the difficulty required for the test
 func (dm *mocDifficultyManager) StageDAADataAndReturnRequiredDifficulty(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) (uint32, error) {
 	// Populate daaBlocksStore with fake values
-	dm.daaBlocksStore.StageDAAScore(nil, blockHash, 0)
-	dm.daaBlocksStore.StageBlockDAAAddedBlocks(nil, blockHash, nil)
+	dm.daaBlocksStore.StageDAAScore(stagingArea, blockHash, 0)
+	dm.daaBlocksStore.StageBlockDAAAddedBlocks(stagingArea, blockHash, nil)
 
 	return dm.testDifficulty, nil
 }

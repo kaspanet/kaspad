@@ -437,7 +437,7 @@ func (rt *reachabilityManager) findNextReindexRoot(stagingArea *model.StagingAre
 			return nil, nil, err
 		}
 
-		chosenChildGHOSTDAGData, err := rt.ghostdagDataStore.Get(rt.databaseContext, nil, chosenChild)
+		chosenChildGHOSTDAGData, err := rt.ghostdagDataStore.Get(rt.databaseContext, stagingArea, chosenChild)
 		if err != nil {
 			return nil, nil, err
 		}

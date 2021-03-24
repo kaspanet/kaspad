@@ -158,7 +158,7 @@ func (bb *testBlockBuilder) buildBlockWithParents(stagingArea *model.StagingArea
 		return nil, nil, err
 	}
 
-	bb.acceptanceDataStore.Stage(nil, tempBlockHash, acceptanceData)
+	bb.acceptanceDataStore.Stage(stagingArea, tempBlockHash, acceptanceData)
 
 	coinbase, err := bb.coinbaseManager.ExpectedCoinbaseTransaction(stagingArea, tempBlockHash, coinbaseData)
 	if err != nil {
