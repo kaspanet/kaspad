@@ -20,9 +20,14 @@ func CreateP2PKHFromUTXOs(
 	payments []*Payment,
 	selectedUTXOs []*externalapi.OutpointAndUTXOEntryPair) (*externalapi.DomainTransaction, error) {
 
-	keyPair, publicKey, err := parsePrivateKey(privateKey)
+	keyPair, err := secp256k1.DeserializePrivateKeyFromSlice(privateKey)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "Error deserializing private key")
+	}
+
+	publicKey, err := keyPair.SchnorrPublicKey()
+	if err != nil {
+		return nil, errors.Wrap(err, "Error generating public key")
 	}
 
 	serializedPublicKey, err := publicKey.Serialize()
@@ -44,8 +49,8 @@ func CreateP2PKHFromUTXOs(
 }
 
 type Payment struct {
-	address util.Address
-	amount  uint64
+	Address util.Address
+	Amount  uint64
 }
 
 func CreateUnsignedTransaction(
@@ -62,9 +67,9 @@ func CreateUnsignedTransaction(
 }
 
 func Sign(privateKey []byte, serializedPSTx []byte) ([]byte, error) {
-	keyPair, _, err := parsePrivateKey(privateKey)
+	keyPair, err := secp256k1.DeserializePrivateKeyFromSlice(privateKey)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "Error deserializing private key")
 	}
 
 	partiallySignedTransaction, err := serialization.DeserializePartiallySignedTransaction(serializedPSTx)
@@ -104,13 +109,6 @@ func createUnsignedTransaction(
 	payments []*Payment,
 	selectedUTXOs []*externalapi.OutpointAndUTXOEntryPair) (*serialization.PartiallySignedTransaction, error) {
 
-	emptyPubKeySignaturePairs := make([]*serialization.PubKeySignaturePair, len(pubKeys))
-	for i, pubKey := range pubKeys {
-		emptyPubKeySignaturePairs[i] = &serialization.PubKeySignaturePair{
-			PubKey: pubKey,
-		}
-	}
-
 	var redeemScript []byte
 	if minimumSignatures > 1 {
 		var err error
@@ -123,6 +121,13 @@ func createUnsignedTransaction(
 	inputs := make([]*externalapi.DomainTransactionInput, len(selectedUTXOs))
 	partiallySignedInputs := make([]*serialization.PartiallySignedInput, len(selectedUTXOs))
 	for i, utxo := range selectedUTXOs {
+		emptyPubKeySignaturePairs := make([]*serialization.PubKeySignaturePair, len(pubKeys))
+		for i, pubKey := range pubKeys {
+			emptyPubKeySignaturePairs[i] = &serialization.PubKeySignaturePair{
+				PubKey: pubKey,
+			}
+		}
+
 		inputs[i] = &externalapi.DomainTransactionInput{PreviousOutpoint: *utxo.Outpoint}
 		partiallySignedInputs[i] = &serialization.PartiallySignedInput{
 			RedeeemScript: redeemScript,
@@ -137,13 +142,13 @@ func createUnsignedTransaction(
 
 	outputs := make([]*externalapi.DomainTransactionOutput, len(payments))
 	for i, payment := range payments {
-		scriptPublicKey, err := txscript.PayToAddrScript(payment.address)
+		scriptPublicKey, err := txscript.PayToAddrScript(payment.Address)
 		if err != nil {
 			return nil, err
 		}
 
 		outputs[i] = &externalapi.DomainTransactionOutput{
-			Value:           payment.amount,
+			Value:           payment.Amount,
 			ScriptPublicKey: scriptPublicKey,
 		}
 	}
@@ -177,16 +182,18 @@ func sign(keyPair *secp256k1.SchnorrKeyPair, psTx *serialization.PartiallySigned
 
 	sighashReusedValues := &consensushashing.SighashReusedValues{}
 	for i, partiallySignedInput := range psTx.PartiallySignedInputs {
+		prevOut := partiallySignedInput.PrevOutput
+		psTx.Tx.Inputs[i].UTXOEntry = utxo.NewUTXOEntry(
+			prevOut.Value,
+			prevOut.ScriptPublicKey,
+			false, // This is a fake value, because it's irrelevant for the signature
+			0,     // This is a fake value, because it's irrelevant for the signature
+		)
+	}
+
+	for i, partiallySignedInput := range psTx.PartiallySignedInputs {
 		for _, pair := range partiallySignedInput.PubKeySignaturePairs {
 			if bytes.Equal(pair.PubKey, serializedPublicKey[:]) {
-				prevOut := psTx.PartiallySignedInputs[i].PrevOutput
-				psTx.Tx.Inputs[i].UTXOEntry = utxo.NewUTXOEntry(
-					prevOut.Value,
-					prevOut.ScriptPublicKey,
-					false, // This is a fake value, because it's irrelevant for the signature
-					0,     // This is a fake value, because it's irrelevant for the signature
-				)
-
 				pair.Signature, err = txscript.RawTxInSignature(psTx.Tx, i, consensushashing.SigHashAll, keyPair, sighashReusedValues)
 				if err != nil {
 					return err
