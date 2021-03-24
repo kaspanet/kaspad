@@ -4,6 +4,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/kaspanet/kaspad/domain/consensus/model"
+
 	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/merkle"
 
@@ -27,7 +29,7 @@ func TestBlockStatus(t *testing.T) {
 		defer teardown(false)
 
 		checkStatus := func(hash *externalapi.DomainHash, expectedStatus externalapi.BlockStatus) {
-			blockStatus, err := tc.BlockStatusStore().Get(tc.DatabaseContext(), nil, hash)
+			blockStatus, err := tc.BlockStatusStore().Get(tc.DatabaseContext(), model.NewStagingArea(), hash)
 			if err != nil {
 				t.Fatalf("BlockStatusStore().Get: %+v", err)
 			}

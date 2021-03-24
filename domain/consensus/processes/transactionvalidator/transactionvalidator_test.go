@@ -155,9 +155,11 @@ func TestValidateTransactionInContextAndPopulateMassAndFee(t *testing.T) {
 			Gas:          0,
 			LockTime:     0}
 
+		stagingArea := model.NewStagingArea()
+
 		povBlockHash := externalapi.NewDomainHashFromByteArray(&[32]byte{0x01})
-		tc.DAABlocksStore().StageDAAScore(nil, povBlockHash, params.BlockCoinbaseMaturity+txInput.UTXOEntry.BlockDAAScore())
-		tc.DAABlocksStore().StageDAAScore(nil, povBlockHash, 10)
+		tc.DAABlocksStore().StageDAAScore(stagingArea, povBlockHash, params.BlockCoinbaseMaturity+txInput.UTXOEntry.BlockDAAScore())
+		tc.DAABlocksStore().StageDAAScore(stagingArea, povBlockHash, 10)
 
 		tests := []struct {
 			name                     string
@@ -220,7 +222,7 @@ func TestValidateTransactionInContextAndPopulateMassAndFee(t *testing.T) {
 		}
 
 		for _, test := range tests {
-			err := tc.TransactionValidator().ValidateTransactionInContextAndPopulateMassAndFee(nil, test.tx, test.povBlockHash, test.selectedParentMedianTime)
+			err := tc.TransactionValidator().ValidateTransactionInContextAndPopulateMassAndFee(stagingArea, test.tx, test.povBlockHash, test.selectedParentMedianTime)
 
 			if test.isValid {
 				if err != nil {

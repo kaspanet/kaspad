@@ -4,6 +4,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kaspanet/kaspad/domain/consensus/model"
+
 	"github.com/kaspanet/kaspad/domain/consensus"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/model/testapi"
@@ -525,7 +527,8 @@ func TestGetPruningPointUTXOs(t *testing.T) {
 			t.Fatalf("Error getting the pruning point: %+v", err)
 		}
 
-		pruningRelations, err := testConsensus.BlockRelationStore().BlockRelation(testConsensus.DatabaseContext(), nil, pruningPoint)
+		pruningRelations, err := testConsensus.BlockRelationStore().BlockRelation(
+			testConsensus.DatabaseContext(), model.NewStagingArea(), pruningPoint)
 		if err != nil {
 			t.Fatalf("BlockRelation(): %+v", err)
 		}

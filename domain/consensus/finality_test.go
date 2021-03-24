@@ -83,6 +83,8 @@ func TestFinality(t *testing.T) {
 			}
 		}
 
+		stagingArea := model.NewStagingArea()
+
 		// Add two more blocks in the side-chain until it becomes the selected chain
 		for i := uint64(0); i < 2; i++ {
 			sideChainTip, err = buildAndInsertBlock([]*externalapi.DomainHash{sideChainTipHash})
@@ -120,7 +122,7 @@ func TestFinality(t *testing.T) {
 			mainChainTipHash = consensushashing.BlockHash(mainChainTip)
 		}
 
-		virtualFinality, err := consensus.FinalityManager().VirtualFinalityPoint(nil)
+		virtualFinality, err := consensus.FinalityManager().VirtualFinalityPoint(stagingArea)
 		if err != nil {
 			t.Fatalf("TestFinality: Failed getting the virtual's finality point: %v", err)
 		}
@@ -145,12 +147,14 @@ func TestFinality(t *testing.T) {
 		if err != nil {
 			t.Fatalf("TestFinality: Failed getting virtual selectedParent: %v", err)
 		}
-		selectedTipGhostDagData, err := consensus.GHOSTDAGDataStore().Get(consensus.DatabaseContext(), nil, selectedTip)
+		selectedTipGhostDagData, err :=
+			consensus.GHOSTDAGDataStore().Get(consensus.DatabaseContext(), stagingArea, selectedTip)
 		if err != nil {
 			t.Fatalf("TestFinality: Failed getting the ghost dag data of the selected tip: %v", err)
 		}
 
-		sideChainTipGhostDagData, err := consensus.GHOSTDAGDataStore().Get(consensus.DatabaseContext(), nil, sideChainTipHash)
+		sideChainTipGhostDagData, err :=
+			consensus.GHOSTDAGDataStore().Get(consensus.DatabaseContext(), stagingArea, sideChainTipHash)
 		if err != nil {
 			t.Fatalf("TestFinality: Failed getting the ghost dag data of the sidechain tip: %v", err)
 		}
@@ -302,7 +306,9 @@ func TestBoundedMergeDepth(t *testing.T) {
 			t.Fatalf("TestBoundedMergeDepth: Expected blueKosherizingBlock to not violate merge depth")
 		}
 
-		virtualGhotDagData, err := consensusReal.GHOSTDAGDataStore().Get(consensusReal.DatabaseContext(), nil, model.VirtualBlockHash)
+		stagingArea := model.NewStagingArea()
+		virtualGhotDagData, err := consensusReal.GHOSTDAGDataStore().Get(consensusReal.DatabaseContext(),
+			stagingArea, model.VirtualBlockHash)
 		if err != nil {
 			t.Fatalf("TestBoundedMergeDepth: Failed getting the ghostdag data of the virtual: %v", err)
 		}
@@ -350,7 +356,8 @@ func TestBoundedMergeDepth(t *testing.T) {
 			t.Fatalf("TestBoundedMergeDepth: Expected %s to be the selectedTip but found %s instead", tip, virtualSelectedParent)
 		}
 
-		virtualGhotDagData, err = consensusReal.GHOSTDAGDataStore().Get(consensusReal.DatabaseContext(), nil, model.VirtualBlockHash)
+		virtualGhotDagData, err = consensusReal.GHOSTDAGDataStore().Get(
+			consensusReal.DatabaseContext(), stagingArea, model.VirtualBlockHash)
 		if err != nil {
 			t.Fatalf("TestBoundedMergeDepth: Failed getting the ghostdag data of the virtual: %v", err)
 		}
@@ -372,7 +379,8 @@ func TestBoundedMergeDepth(t *testing.T) {
 		}
 
 		// Now `pointAtBlueKosherizing` itself is actually still blue, so we can still point at that even though we can't point at kosherizing directly anymore
-		transitiveBlueKosherizing, isViolatingMergeDepth := checkViolatingMergeDepth(consensusReal, []*externalapi.DomainHash{consensushashing.BlockHash(pointAtBlueKosherizing), tip})
+		transitiveBlueKosherizing, isViolatingMergeDepth :=
+			checkViolatingMergeDepth(consensusReal, []*externalapi.DomainHash{consensushashing.BlockHash(pointAtBlueKosherizing), tip})
 		if isViolatingMergeDepth {
 			t.Fatalf("TestBoundedMergeDepth: Expected transitiveBlueKosherizing to not violate merge depth")
 		}

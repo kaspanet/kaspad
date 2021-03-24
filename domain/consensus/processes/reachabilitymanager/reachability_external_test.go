@@ -4,6 +4,8 @@ import (
 	"math"
 	"testing"
 
+	"github.com/kaspanet/kaspad/domain/consensus/model"
+
 	"github.com/kaspanet/kaspad/domain/consensus"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/testutils"
@@ -23,7 +25,9 @@ func TestAddChildThatPointsDirectlyToTheSelectedParentChainBelowReindexRoot(t *t
 
 		tc.ReachabilityManager().SetReachabilityReindexWindow(reachabilityReindexWindow)
 
-		reindexRoot, err := tc.ReachabilityDataStore().ReachabilityReindexRoot(tc.DatabaseContext(), nil)
+		stagingArea := model.NewStagingArea()
+
+		reindexRoot, err := tc.ReachabilityDataStore().ReachabilityReindexRoot(tc.DatabaseContext(), stagingArea)
 		if err != nil {
 			t.Fatalf("ReachabilityReindexRoot: %s", err)
 		}
@@ -49,7 +53,7 @@ func TestAddChildThatPointsDirectlyToTheSelectedParentChainBelowReindexRoot(t *t
 			chainRootBlockTipHash = chainBlock
 		}
 
-		newReindexRoot, err := tc.ReachabilityDataStore().ReachabilityReindexRoot(tc.DatabaseContext(), nil)
+		newReindexRoot, err := tc.ReachabilityDataStore().ReachabilityReindexRoot(tc.DatabaseContext(), stagingArea)
 		if err != nil {
 			t.Fatalf("ReachabilityReindexRoot: %s", err)
 		}
@@ -88,8 +92,10 @@ func TestUpdateReindexRoot(t *testing.T) {
 
 		tc.ReachabilityManager().SetReachabilityReindexWindow(reachabilityReindexWindow)
 
+		stagingArea := model.NewStagingArea()
+
 		intervalSize := func(hash *externalapi.DomainHash) uint64 {
-			data, err := tc.ReachabilityDataStore().ReachabilityData(tc.DatabaseContext(), nil, hash)
+			data, err := tc.ReachabilityDataStore().ReachabilityData(tc.DatabaseContext(), stagingArea, hash)
 			if err != nil {
 				t.Fatalf("ReachabilityData: %s", err)
 			}
@@ -121,7 +127,7 @@ func TestUpdateReindexRoot(t *testing.T) {
 				t.Fatalf("AddBlock: %+v", err)
 			}
 
-			reindexRoot, err := tc.ReachabilityDataStore().ReachabilityReindexRoot(tc.DatabaseContext(), nil)
+			reindexRoot, err := tc.ReachabilityDataStore().ReachabilityReindexRoot(tc.DatabaseContext(), stagingArea)
 			if err != nil {
 				t.Fatalf("ReachabilityReindexRoot: %s", err)
 			}
@@ -138,7 +144,7 @@ func TestUpdateReindexRoot(t *testing.T) {
 		}
 
 		// Make sure that chain1RootBlock is now the reindex root
-		reindexRoot, err := tc.ReachabilityDataStore().ReachabilityReindexRoot(tc.DatabaseContext(), nil)
+		reindexRoot, err := tc.ReachabilityDataStore().ReachabilityReindexRoot(tc.DatabaseContext(), stagingArea)
 		if err != nil {
 			t.Fatalf("ReachabilityReindexRoot: %s", err)
 		}
@@ -183,8 +189,10 @@ func TestReindexIntervalsEarlierThanReindexRoot(t *testing.T) {
 
 		tc.ReachabilityManager().SetReachabilityReindexWindow(reachabilityReindexWindow)
 
+		stagingArea := model.NewStagingArea()
+
 		intervalSize := func(hash *externalapi.DomainHash) uint64 {
-			data, err := tc.ReachabilityDataStore().ReachabilityData(tc.DatabaseContext(), nil, hash)
+			data, err := tc.ReachabilityDataStore().ReachabilityData(tc.DatabaseContext(), stagingArea, hash)
 			if err != nil {
 				t.Fatalf("ReachabilityData: %s", err)
 			}
@@ -219,7 +227,7 @@ func TestReindexIntervalsEarlierThanReindexRoot(t *testing.T) {
 		}
 
 		// Make sure that centerBlock is now the reindex root
-		reindexRoot, err := tc.ReachabilityDataStore().ReachabilityReindexRoot(tc.DatabaseContext(), nil)
+		reindexRoot, err := tc.ReachabilityDataStore().ReachabilityReindexRoot(tc.DatabaseContext(), stagingArea)
 		if err != nil {
 			t.Fatalf("ReachabilityReindexRoot: %s", err)
 		}

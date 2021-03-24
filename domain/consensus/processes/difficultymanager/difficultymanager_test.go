@@ -40,14 +40,16 @@ func TestDifficulty(t *testing.T) {
 		}
 		defer teardown(false)
 
+		stagingArea := model.NewStagingArea()
+
 		addBlock := func(blockTime int64, parents ...*externalapi.DomainHash) (*externalapi.DomainBlock, *externalapi.DomainHash) {
-			bluestParent, err := tc.GHOSTDAGManager().ChooseSelectedParent(nil, parents...)
+			bluestParent, err := tc.GHOSTDAGManager().ChooseSelectedParent(stagingArea, parents...)
 			if err != nil {
 				t.Fatalf("ChooseSelectedParent: %+v", err)
 			}
 
 			if blockTime == 0 {
-				header, err := tc.BlockHeaderStore().BlockHeader(tc.DatabaseContext(), nil, bluestParent)
+				header, err := tc.BlockHeaderStore().BlockHeader(tc.DatabaseContext(), stagingArea, bluestParent)
 				if err != nil {
 					t.Fatalf("BlockHeader: %+v", err)
 				}
@@ -73,19 +75,18 @@ func TestDifficulty(t *testing.T) {
 
 		minimumTime := func(parents ...*externalapi.DomainHash) int64 {
 			var tempHash externalapi.DomainHash
-			tc.BlockRelationStore().StageBlockRelation(nil, &tempHash, &model.BlockRelations{
+			stagingArea := model.NewStagingArea()
+			tc.BlockRelationStore().StageBlockRelation(stagingArea, &tempHash, &model.BlockRelations{
 				Parents:  parents,
 				Children: nil,
 			})
-			defer tc.BlockRelationStore().Discard()
 
-			err = tc.GHOSTDAGManager().GHOSTDAG(nil, &tempHash)
+			err = tc.GHOSTDAGManager().GHOSTDAG(stagingArea, &tempHash)
 			if err != nil {
 				t.Fatalf("GHOSTDAG: %+v", err)
 			}
-			defer tc.GHOSTDAGDataStore().Discard()
 
-			pastMedianTime, err := tc.PastMedianTimeManager().PastMedianTime(&tempHash)
+			pastMedianTime, err := tc.PastMedianTimeManager().PastMedianTime(stagingArea, &tempHash)
 			if err != nil {
 				t.Fatalf("PastMedianTime: %+v", err)
 			}
@@ -141,12 +142,13 @@ func TestDifficulty(t *testing.T) {
 		// Increase block rate to increase difficulty
 		for i := 0; i < params.DifficultyAdjustmentWindowSize; i++ {
 			tip, tipHash = addBlockWithMinimumTime(tipHash)
-			tipGHOSTDAGData, err := tc.GHOSTDAGDataStore().Get(tc.DatabaseContext(), nil, tipHash)
+			tipGHOSTDAGData, err := tc.GHOSTDAGDataStore().Get(tc.DatabaseContext(), stagingArea, tipHash)
 			if err != nil {
 				t.Fatalf("GHOSTDAGDataStore: %+v", err)
 			}
 
-			selectedParentHeader, err := tc.BlockHeaderStore().BlockHeader(tc.DatabaseContext(), nil, tipGHOSTDAGData.SelectedParent())
+			selectedParentHeader, err :=
+				tc.BlockHeaderStore().BlockHeader(tc.DatabaseContext(), stagingArea, tipGHOSTDAGData.SelectedParent())
 			if err != nil {
 				t.Fatalf("BlockHeader: %+v", err)
 			}
@@ -231,6 +233,8 @@ func TestDAAScore(t *testing.T) {
 	testutils.ForAllNets(t, true, func(t *testing.T, params *dagconfig.Params) {
 		params.DifficultyAdjustmentWindowSize = 264
 
+		stagingArea := model.NewStagingArea()
+
 		factory := consensus.NewFactory()
 		tc, teardown, err := factory.NewTestConsensus(params, false, "TestDifficulty")
 		if err != nil {
@@ -254,7 +258,7 @@ func TestDAAScore(t *testing.T) {
 		}
 
 		tipHash := blockBlueScore3
-		blockBlueScore3DAAScore, err := tc.DAABlocksStore().DAAScore(tc.DatabaseContext(), nil, tipHash)
+		blockBlueScore3DAAScore, err := tc.DAABlocksStore().DAAScore(tc.DatabaseContext(), stagingArea, tipHash)
 		if err != nil {
 			t.Fatalf("DAAScore: %+v", err)
 		}
@@ -270,7 +274,7 @@ func TestDAAScore(t *testing.T) {
 			if err != nil {
 				t.Fatalf("AddBlock: %+v", err)
 			}
-			tipDAAScore, err = tc.DAABlocksStore().DAAScore(tc.DatabaseContext(), nil, tipHash)
+			tipDAAScore, err = tc.DAABlocksStore().DAAScore(tc.DatabaseContext(), stagingArea, tipHash)
 			if err != nil {
 				t.Fatalf("DAAScore: %+v", err)
 			}
@@ -288,7 +292,7 @@ func TestDAAScore(t *testing.T) {
 			if err != nil {
 				t.Fatalf("AddBlock: %+v", err)
 			}
-			tipDAAScore, err = tc.DAABlocksStore().DAAScore(tc.DatabaseContext(), nil, tipHash)
+			tipDAAScore, err = tc.DAABlocksStore().DAAScore(tc.DatabaseContext(), stagingArea, tipHash)
 			if err != nil {
 				t.Fatalf("DAAScore: %+v", err)
 			}
@@ -319,7 +323,7 @@ func TestDAAScore(t *testing.T) {
 			t.Fatalf("AddBlock: %+v", err)
 		}
 
-		tipDAAScore, err = tc.DAABlocksStore().DAAScore(tc.DatabaseContext(), nil, tipHash)
+		tipDAAScore, err = tc.DAABlocksStore().DAAScore(tc.DatabaseContext(), stagingArea, tipHash)
 		if err != nil {
 			t.Fatalf("DAAScore: %+v", err)
 		}
@@ -331,7 +335,7 @@ func TestDAAScore(t *testing.T) {
 			t.Fatalf("DAA score is expected to be %d but got %d", expectedDAAScore, tipDAAScore)
 		}
 
-		tipDAAAddedBlocks, err := tc.DAABlocksStore().DAAAddedBlocks(tc.DatabaseContext(), nil, tipHash)
+		tipDAAAddedBlocks, err := tc.DAABlocksStore().DAAAddedBlocks(tc.DatabaseContext(), stagingArea, tipHash)
 		if err != nil {
 			t.Fatalf("DAAScore: %+v", err)
 		}

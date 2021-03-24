@@ -3,6 +3,8 @@ package headersselectedtipmanager_test
 import (
 	"testing"
 
+	"github.com/kaspanet/kaspad/domain/consensus/model"
+
 	"github.com/kaspanet/kaspad/domain/consensus"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/testutils"
@@ -20,9 +22,10 @@ func TestAddHeaderTip(t *testing.T) {
 		}
 		defer tearDown(false)
 
+		stagingArea := model.NewStagingArea()
 		checkExpectedSelectedChain := func(expectedSelectedChain []*externalapi.DomainHash) {
 			for i, blockHash := range expectedSelectedChain {
-				chainBlockHash, err := tc.HeadersSelectedChainStore().GetHashByIndex(tc.DatabaseContext(), nil, uint64(i))
+				chainBlockHash, err := tc.HeadersSelectedChainStore().GetHashByIndex(tc.DatabaseContext(), stagingArea, uint64(i))
 				if err != nil {
 					t.Fatalf("GetHashByIndex: %+v", err)
 				}
@@ -31,7 +34,7 @@ func TestAddHeaderTip(t *testing.T) {
 					t.Fatalf("chain block %d is expected to be %s but got %s", i, blockHash, chainBlockHash)
 				}
 
-				index, err := tc.HeadersSelectedChainStore().GetIndexByHash(tc.DatabaseContext(), nil, blockHash)
+				index, err := tc.HeadersSelectedChainStore().GetIndexByHash(tc.DatabaseContext(), stagingArea, blockHash)
 				if err != nil {
 					t.Fatalf("GetIndexByHash: %+v", err)
 				}
@@ -41,7 +44,7 @@ func TestAddHeaderTip(t *testing.T) {
 				}
 			}
 
-			_, err := tc.HeadersSelectedChainStore().GetHashByIndex(tc.DatabaseContext(), nil, uint64(len(expectedSelectedChain)+1))
+			_, err := tc.HeadersSelectedChainStore().GetHashByIndex(tc.DatabaseContext(), stagingArea, uint64(len(expectedSelectedChain)+1))
 			if !errors.Is(err, database.ErrNotFound) {
 				t.Fatalf("index %d is not expected to exist, but instead got error: %+v",
 					uint64(len(expectedSelectedChain)+1), err)
