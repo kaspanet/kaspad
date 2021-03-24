@@ -1,9 +1,11 @@
 package consensusstatemanager_test
 
 import (
+	"testing"
+
+	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/utxo"
-	"testing"
 
 	"github.com/kaspanet/kaspad/domain/consensus"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
@@ -41,7 +43,7 @@ func TestVirtualDiff(t *testing.T) {
 			t.Fatalf("Error adding block A: %+v", err)
 		}
 
-		blockB, err := tc.BlockStore().Block(tc.DatabaseContext(),, blockBHash)
+		blockB, err := tc.BlockStore().Block(tc.DatabaseContext(), model.NewStagingArea(), blockBHash)
 		if err != nil {
 			t.Fatalf("Block: %+v", err)
 		}

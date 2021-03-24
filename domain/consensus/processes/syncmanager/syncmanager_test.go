@@ -6,6 +6,8 @@ import (
 	"sort"
 	"testing"
 
+	"github.com/kaspanet/kaspad/domain/consensus/model"
+
 	"github.com/kaspanet/kaspad/domain/consensus"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/testutils"
@@ -14,6 +16,8 @@ import (
 
 func TestSyncManager_GetHashesBetween(t *testing.T) {
 	testutils.ForAllNets(t, true, func(t *testing.T, params *dagconfig.Params) {
+		stagingArea := model.NewStagingArea()
+
 		factory := consensus.NewFactory()
 		tc, teardown, err := factory.NewTestConsensus(params, false, "TestSyncManager_GetHashesBetween")
 		if err != nil {
@@ -42,7 +46,8 @@ func TestSyncManager_GetHashesBetween(t *testing.T) {
 				}
 				splitBlocks = append(splitBlocks, splitBlock)
 			}
-			sort.Sort(sort.Reverse(testutils.NewTestGhostDAGSorter(splitBlocks, tc, t)))
+
+			sort.Sort(sort.Reverse(testutils.NewTestGhostDAGSorter(stagingArea, splitBlocks, tc, t)))
 			restOfSplitBlocks, selectedParent := splitBlocks[:len(splitBlocks)-1], splitBlocks[len(splitBlocks)-1]
 			expectedOrder = append(expectedOrder, selectedParent)
 			expectedOrder = append(expectedOrder, restOfSplitBlocks...)
@@ -55,7 +60,7 @@ func TestSyncManager_GetHashesBetween(t *testing.T) {
 		}
 
 		for i, blockHash := range expectedOrder {
-			empty, _, err := tc.SyncManager().GetHashesBetween(blockHash, blockHash, math.MaxUint64)
+			empty, _, err := tc.SyncManager().GetHashesBetween(stagingArea, blockHash, blockHash, math.MaxUint64)
 			if err != nil {
 				t.Fatalf("TestSyncManager_GetHashesBetween failed returning 0 hashes on the %d'th block: %v", i, err)
 			}
@@ -64,7 +69,8 @@ func TestSyncManager_GetHashesBetween(t *testing.T) {
 			}
 		}
 
-		actualOrder, _, err := tc.SyncManager().GetHashesBetween(params.GenesisHash, expectedOrder[len(expectedOrder)-1], math.MaxUint64)
+		actualOrder, _, err := tc.SyncManager().GetHashesBetween(
+			stagingArea, params.GenesisHash, expectedOrder[len(expectedOrder)-1], math.MaxUint64)
 		if err != nil {
 			t.Fatalf("TestSyncManager_GetHashesBetween failed returning actualOrder: %v", err)
 		}

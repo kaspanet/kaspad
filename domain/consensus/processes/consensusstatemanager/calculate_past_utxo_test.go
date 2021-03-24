@@ -3,6 +3,8 @@ package consensusstatemanager_test
 import (
 	"testing"
 
+	"github.com/kaspanet/kaspad/domain/consensus/model"
+
 	"github.com/kaspanet/kaspad/domain/consensus/model/testapi"
 
 	"github.com/kaspanet/kaspad/domain/consensus/utils/transactionhelper"
@@ -82,7 +84,7 @@ func checkBlockUTXOCommitment(t *testing.T, consensus testapi.TestConsensus, blo
 
 	// Get the past UTXO set of block
 	csm := consensus.ConsensusStateManager()
-	utxoSetIterator, err := csm.RestorePastUTXOSetIterator(nil, blockHash)
+	utxoSetIterator, err := csm.RestorePastUTXOSetIterator(model.NewStagingArea(), blockHash)
 	if err != nil {
 		t.Fatalf("Error restoring past UTXO of block %s: %+v", blockName, err)
 	}
@@ -114,6 +116,8 @@ func checkBlockUTXOCommitment(t *testing.T, consensus testapi.TestConsensus, blo
 
 func TestPastUTXOMultiset(t *testing.T) {
 	testutils.ForAllNets(t, true, func(t *testing.T, params *dagconfig.Params) {
+		stagingArea := model.NewStagingArea()
+
 		factory := consensus.NewFactory()
 
 		consensus, teardown, err := factory.NewTestConsensus(params, false, "TestUTXOCommitment")
@@ -135,7 +139,7 @@ func TestPastUTXOMultiset(t *testing.T) {
 		testedBlockHash := currentHash
 
 		// Take testedBlock's multiset and hash
-		firstMultiset, err := consensus.MultisetStore().Get(consensus.DatabaseContext(), nil, testedBlockHash)
+		firstMultiset, err := consensus.MultisetStore().Get(consensus.DatabaseContext(), stagingArea, testedBlockHash)
 		if err != nil {
 			return
 		}
@@ -148,7 +152,7 @@ func TestPastUTXOMultiset(t *testing.T) {
 		}
 
 		// Take testedBlock's multiset and hash again
-		secondMultiset, err := consensus.MultisetStore().Get(consensus.DatabaseContext(), nil, testedBlockHash)
+		secondMultiset, err := consensus.MultisetStore().Get(consensus.DatabaseContext(), stagingArea, testedBlockHash)
 		if err != nil {
 			return
 		}
