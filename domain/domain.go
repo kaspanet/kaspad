@@ -37,7 +37,7 @@ func New(dagParams *dagconfig.Params, db infrastructuredatabase.Database, isArch
 
 	miningManagerFactory := miningmanager.NewFactory()
 	miningManager := miningManagerFactory.NewMiningManager(consensusInstance, dagParams.MaxMassAcceptedByBlock,
-		dagParams.RelayNonStdTxs)
+		dagParams.RelayNonStdTxs, dagParams)
 
 	return &domain{
 		consensus:     consensusInstance,

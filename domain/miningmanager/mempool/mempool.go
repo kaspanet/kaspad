@@ -7,6 +7,7 @@ package mempool
 import (
 	"container/list"
 	"fmt"
+	"github.com/kaspanet/kaspad/domain/dagconfig"
 	"sort"
 	"sync"
 	"time"
@@ -88,13 +89,14 @@ type mempool struct {
 	// to on an unconditional timer.
 	nextExpireScan mstime.Time
 
-	mtx    sync.RWMutex
-	policy policy
+	mtx       sync.RWMutex
+	policy    policy
+	dagParams *dagconfig.Params
 }
 
 // New returns a new memory pool for validating and storing standalone
 // transactions until they are mined into a block.
-func New(consensus consensusexternalapi.Consensus, acceptNonStd bool) miningmanagermodel.Mempool {
+func New(consensus consensusexternalapi.Consensus, acceptNonStd bool, dagParams *dagconfig.Params) miningmanagermodel.Mempool {
 	policy := policy{
 		MaxTxVersion:    constants.MaxTransactionVersion,
 		AcceptNonStd:    acceptNonStd,
@@ -113,6 +115,7 @@ func New(consensus consensusexternalapi.Consensus, acceptNonStd bool) miningmana
 		mempoolUTXOSet:                       newMempoolUTXOSet(),
 		consensus:                            consensus,
 		nextExpireScan:                       mstime.Now().Add(orphanExpireScanInterval),
+		dagParams:                            dagParams,
 	}
 }
 
@@ -721,6 +724,11 @@ func (mp *mempool) maybeAcceptTransaction(tx *consensusexternalapi.DomainTransac
 			return nil, nil, newRuleError(err)
 		}
 		return nil, nil, err
+	}
+
+	if tx.Mass > mp.dagParams.MaxMassAcceptedByBlock {
+		return nil, nil, newRuleError(errors.Errorf("The transaction mass is %d which is "+
+			"higher than the maxmimum of %d", tx.Mass, mp.dagParams.MaxMassAcceptedByBlock))
 	}
 
 	// Don't allow transactions with non-standard inputs if the network
