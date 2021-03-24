@@ -3,6 +3,8 @@ package dagtopologymanager_test
 import (
 	"testing"
 
+	"github.com/kaspanet/kaspad/domain/consensus/model"
+
 	"github.com/kaspanet/kaspad/domain/consensus"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/testutils"
@@ -42,7 +44,7 @@ func TestIsAncestorOf(t *testing.T) {
 			t.Fatalf("AddBlock: %s", err)
 		}
 
-		isAncestorOf, err := tc.DAGTopologyManager().IsAncestorOf(nil, blockC, blockD)
+		isAncestorOf, err := tc.DAGTopologyManager().IsAncestorOf(model.NewStagingArea(), blockC, blockD)
 		if err != nil {
 			t.Fatalf("IsAncestorOf: %s", err)
 		}

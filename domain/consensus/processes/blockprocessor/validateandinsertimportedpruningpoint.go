@@ -43,6 +43,9 @@ func (bp *blockProcessor) validateAndInsertImportedPruningPoint(
 		return err
 	}
 
+	// ImportPruningPoint commits the stagingArea, so create a new one
+	stagingArea = model.NewStagingArea()
+
 	log.Infof("Inserting the new pruning point %s", newPruningPointHash)
 	_, err = bp.validateAndInsertBlock(stagingArea, newPruningPoint, true)
 	if err != nil && errors.As(err, &ruleerrors.RuleError{}) {

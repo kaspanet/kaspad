@@ -105,10 +105,9 @@ func TestGHOSTDAG(t *testing.T) {
 			blockHeadersStore.dagMap[genesisHash] = genesisHeader
 
 			for _, factory := range implementationFactories {
-
 				g := factory.function(nil, dagTopology, ghostdagDataStore, blockHeadersStore, test.K)
-				for _, testBlockData := range test.Blocks {
 
+				for _, testBlockData := range test.Blocks {
 					blockID := StringToDomainHash(testBlockData.ID)
 					dagTopology.parentsMap[*blockID] = StringToDomainHashSlice(testBlockData.Parents)
 					blockHeadersStore.dagMap[*blockID] = blockheader.NewImmutableBlockHeader(

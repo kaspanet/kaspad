@@ -83,15 +83,17 @@ func TestBlockAtDepthOnDAGWhereTwoBlocksHaveSameSelectedParent(t *testing.T) {
 		}
 		defer tearDown(false)
 
+		stagingArea := model.NewStagingArea()
+
 		firstChild, secondChild, err := createADAGTwoChildrenWithSameSelectedParent(params.GenesisHash, tc)
 		if err != nil {
 			t.Fatalf("Failed creating a DAG where two blocks have same selected parent: %+v", err)
 		}
-		actualBlockHash, err := tc.DAGTraversalManager().BlockAtDepth(nil, firstChild, depth)
+		actualBlockHash, err := tc.DAGTraversalManager().BlockAtDepth(stagingArea, firstChild, depth)
 		if err != nil {
 			t.Fatalf("Failed at BlockAtDepth: %+v", err)
 		}
-		expectedSameHash, err := tc.DAGTraversalManager().BlockAtDepth(nil, secondChild, depth)
+		expectedSameHash, err := tc.DAGTraversalManager().BlockAtDepth(stagingArea, secondChild, depth)
 		if err != nil {
 			t.Fatalf("Failed in BlockAtDepth: %+v", err)
 		}
@@ -144,11 +146,13 @@ func TestBlockAtDepthOnDAGWithTwoDifferentChains(t *testing.T) {
 			t.Fatalf("Failed creating a DAG with two different chains in BlockAtDepthTEST: %+v", err)
 		}
 
-		actualBlockHash, err := tc.DAGTraversalManager().BlockAtDepth(nil, firstChild, sizeOfTheFirstChildSubChainDAG)
+		stagingArea := model.NewStagingArea()
+
+		actualBlockHash, err := tc.DAGTraversalManager().BlockAtDepth(stagingArea, firstChild, sizeOfTheFirstChildSubChainDAG)
 		if err != nil {
 			t.Fatalf("Failed in BlockAtDepth: %+v", err)
 		}
-		expectedSameHash, err := tc.DAGTraversalManager().BlockAtDepth(nil, secondChild, sizeOfTheSecondChildSubChainDAG)
+		expectedSameHash, err := tc.DAGTraversalManager().BlockAtDepth(stagingArea, secondChild, sizeOfTheSecondChildSubChainDAG)
 		if err != nil {
 			t.Fatalf("Failed in BlockAtDepth: %+v", err)
 		}
@@ -156,7 +160,7 @@ func TestBlockAtDepthOnDAGWithTwoDifferentChains(t *testing.T) {
 		if !actualBlockHash.Equal(expectedSameHash) {
 			t.Fatalf("Expected block %s but got %s", expectedSameHash, actualBlockHash)
 		}
-		expectedDiffHash, err := tc.DAGTraversalManager().BlockAtDepth(nil, secondChild, sizeOfTheSecondChildSubChainDAG-1)
+		expectedDiffHash, err := tc.DAGTraversalManager().BlockAtDepth(stagingArea, secondChild, sizeOfTheSecondChildSubChainDAG-1)
 		if err != nil {
 			t.Fatalf("Failed in BlockAtDepth: %+v", err)
 		}

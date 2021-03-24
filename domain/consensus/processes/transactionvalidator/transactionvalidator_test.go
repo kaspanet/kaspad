@@ -25,7 +25,7 @@ type mocPastMedianTimeManager struct {
 }
 
 // PastMedianTime returns the past median time for the test.
-func (mdf *mocPastMedianTimeManager) PastMedianTime(*externalapi.DomainHash) (int64, error) {
+func (mdf *mocPastMedianTimeManager) PastMedianTime(*model.StagingArea, *externalapi.DomainHash) (int64, error) {
 	return mdf.pastMedianTimeForTest, nil
 }
 

@@ -41,7 +41,7 @@ func TestCreateBlockLocator(t *testing.T) {
 		}
 
 		// Check a situation where low hash is not on the exact step blue score
-		locator, err := tc.CreateBlockLocator(nil, params.GenesisHash, tipHash, 0)
+		locator, err := tc.CreateBlockLocator(params.GenesisHash, tipHash, 0)
 		if err != nil {
 			t.Fatalf("CreateBlockLocator: %+v", err)
 		}
@@ -58,7 +58,7 @@ func TestCreateBlockLocator(t *testing.T) {
 		}
 
 		// Check a situation where low hash is on the exact step blue score
-		locator, err = tc.CreateBlockLocator(nil, chain[5], tipHash, 0)
+		locator, err = tc.CreateBlockLocator(chain[5], tipHash, 0)
 		if err != nil {
 			t.Fatalf("CreateBlockLocator: %+v", err)
 		}
@@ -74,7 +74,7 @@ func TestCreateBlockLocator(t *testing.T) {
 		}
 
 		// Check block locator with limit
-		locator, err = tc.CreateBlockLocator(nil, params.GenesisHash, tipHash, 3)
+		locator, err = tc.CreateBlockLocator(params.GenesisHash, tipHash, 3)
 		if err != nil {
 			t.Fatalf("CreateBlockLocator: %+v", err)
 		}
@@ -88,7 +88,7 @@ func TestCreateBlockLocator(t *testing.T) {
 		}
 
 		// Check a block locator from genesis to genesis
-		locator, err = tc.CreateBlockLocator(nil, params.GenesisHash, params.GenesisHash, 0)
+		locator, err = tc.CreateBlockLocator(params.GenesisHash, params.GenesisHash, 0)
 		if err != nil {
 			t.Fatalf("CreateBlockLocator: %+v", err)
 		}
@@ -100,7 +100,7 @@ func TestCreateBlockLocator(t *testing.T) {
 		}
 
 		// Check a block locator from one block to the same block
-		locator, err = tc.CreateBlockLocator(nil, chain[7], chain[7], 0)
+		locator, err = tc.CreateBlockLocator(chain[7], chain[7], 0)
 		if err != nil {
 			t.Fatalf("CreateBlockLocator: %+v", err)
 		}
@@ -112,20 +112,20 @@ func TestCreateBlockLocator(t *testing.T) {
 		}
 
 		// Check block locator with incompatible blocks
-		_, err = tc.CreateBlockLocator(nil, sideChainTipHash, tipHash, 0)
+		_, err = tc.CreateBlockLocator(sideChainTipHash, tipHash, 0)
 		expectedErr := "highHash and lowHash are not in the same selected parent chain"
 		if err == nil || !strings.Contains(err.Error(), expectedErr) {
 			t.Fatalf("expected error '%s' but got '%s'", expectedErr, err)
 		}
 
 		// Check block locator with non exist blocks
-		_, err = tc.CreateBlockLocator(nil, &externalapi.DomainHash{}, tipHash, 0)
+		_, err = tc.CreateBlockLocator(&externalapi.DomainHash{}, tipHash, 0)
 		expectedErr = "does not exist"
 		if err == nil || !strings.Contains(err.Error(), expectedErr) {
 			t.Fatalf("expected error '%s' but got '%s'", expectedErr, err)
 		}
 
-		_, err = tc.CreateBlockLocator(nil, tipHash, &externalapi.DomainHash{}, 0)
+		_, err = tc.CreateBlockLocator(tipHash, &externalapi.DomainHash{}, 0)
 		expectedErr = "does not exist"
 		if err == nil || !strings.Contains(err.Error(), expectedErr) {
 			t.Fatalf("expected error '%s' but got '%s'", expectedErr, err)
@@ -161,7 +161,7 @@ func TestCreateHeadersSelectedChainBlockLocator(t *testing.T) {
 		}
 
 		// Check a situation where low hash is not on the exact step
-		locator, err := tc.CreateHeadersSelectedChainBlockLocator(nil, params.GenesisHash, tipHash)
+		locator, err := tc.CreateHeadersSelectedChainBlockLocator(params.GenesisHash, tipHash)
 		if err != nil {
 			t.Fatalf("CreateBlockLocator: %+v", err)
 		}
@@ -178,7 +178,7 @@ func TestCreateHeadersSelectedChainBlockLocator(t *testing.T) {
 		}
 
 		// Check a situation where low hash is on the exact step
-		locator, err = tc.CreateHeadersSelectedChainBlockLocator(nil, chain[5], tipHash)
+		locator, err = tc.CreateHeadersSelectedChainBlockLocator(chain[5], tipHash)
 		if err != nil {
 			t.Fatalf("CreateBlockLocator: %+v", err)
 		}
@@ -194,7 +194,7 @@ func TestCreateHeadersSelectedChainBlockLocator(t *testing.T) {
 		}
 
 		// Check a block locator from genesis to genesis
-		locator, err = tc.CreateHeadersSelectedChainBlockLocator(nil, params.GenesisHash, params.GenesisHash)
+		locator, err = tc.CreateHeadersSelectedChainBlockLocator(params.GenesisHash, params.GenesisHash)
 		if err != nil {
 			t.Fatalf("CreateBlockLocator: %+v", err)
 		}
@@ -206,7 +206,7 @@ func TestCreateHeadersSelectedChainBlockLocator(t *testing.T) {
 		}
 
 		// Check a block locator from one block to the same block
-		locator, err = tc.CreateHeadersSelectedChainBlockLocator(nil, chain[7], chain[7])
+		locator, err = tc.CreateHeadersSelectedChainBlockLocator(chain[7], chain[7])
 		if err != nil {
 			t.Fatalf("CreateBlockLocator: %+v", err)
 		}
@@ -218,14 +218,14 @@ func TestCreateHeadersSelectedChainBlockLocator(t *testing.T) {
 		}
 
 		// Check block locator with low hash higher than high hash
-		_, err = tc.CreateHeadersSelectedChainBlockLocator(nil, chain[20], chain[19])
+		_, err = tc.CreateHeadersSelectedChainBlockLocator(chain[20], chain[19])
 		expectedErr := "cannot build block locator while highHash is lower than lowHash"
 		if err == nil || !strings.Contains(err.Error(), expectedErr) {
 			t.Fatalf("expected error '%s' but got '%s'", expectedErr, err)
 		}
 
 		// Check block locator with non chain blocks
-		_, err = tc.CreateHeadersSelectedChainBlockLocator(nil, params.GenesisHash, sideChainTipHash)
+		_, err = tc.CreateHeadersSelectedChainBlockLocator(params.GenesisHash, sideChainTipHash)
 		if !errors.Is(err, model.ErrBlockNotInSelectedParentChain) {
 			t.Fatalf("expected error '%s' but got '%s'", database.ErrNotFound, err)
 		}
