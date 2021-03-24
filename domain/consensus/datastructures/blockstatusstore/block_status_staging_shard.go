@@ -34,3 +34,7 @@ func (bsss blockStatusStagingShard) Commit(dbTx model.DBTransaction) error {
 
 	return nil
 }
+
+func (bsss blockStatusStagingShard) isStaged() bool {
+	return len(bsss.toAdd) != 0
+}

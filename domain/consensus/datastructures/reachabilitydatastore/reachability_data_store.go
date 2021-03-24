@@ -39,10 +39,8 @@ func (rds *reachabilityDataStore) StageReachabilityReindexRoot(stagingArea *mode
 	stagingShard.reachabilityReindexRoot = reachabilityReindexRoot
 }
 
-func (rds *reachabilityDataStore) IsAnythingStaged(stagingArea *model.StagingArea) bool {
-	stagingShard := rds.stagingShard(stagingArea)
-
-	return len(stagingShard.reachabilityData) != 0 || stagingShard.reachabilityReindexRoot != nil
+func (rds *reachabilityDataStore) IsStaged(stagingArea *model.StagingArea) bool {
+	return rds.stagingShard(stagingArea).isStaged()
 }
 
 // ReachabilityData returns the reachabilityData associated with the given blockHash

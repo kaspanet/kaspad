@@ -51,9 +51,7 @@ func (fs *finalityStore) FinalityPoint(dbContext model.DBReader, stagingArea *mo
 }
 
 func (fs *finalityStore) IsStaged(stagingArea *model.StagingArea) bool {
-	stagingShard := fs.stagingShard(stagingArea)
-
-	return len(stagingShard.toAdd) == 0
+	return fs.stagingShard(stagingArea).isStaged()
 }
 
 func (fs *finalityStore) hashAsKey(hash *externalapi.DomainHash) model.DBKey {

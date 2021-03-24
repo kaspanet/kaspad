@@ -68,3 +68,7 @@ func (udss utxoDiffStagingShard) Commit(dbTx model.DBTransaction) error {
 
 	return nil
 }
+
+func (udss utxoDiffStagingShard) isStaged() bool {
+	return len(udss.utxoDiffToAdd) != 0 || len(udss.utxoDiffChildToAdd) != 0 || len(udss.toDelete) != 0
+}

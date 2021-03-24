@@ -31,9 +31,7 @@ func (gds *ghostdagDataStore) Stage(stagingArea *model.StagingArea, blockHash *e
 }
 
 func (gds *ghostdagDataStore) IsStaged(stagingArea *model.StagingArea) bool {
-	stagingShard := gds.stagingShard(stagingArea)
-
-	return len(stagingShard.toAdd) != 0
+	return gds.stagingShard(stagingArea).isStaged()
 }
 
 // Get gets the blockGHOSTDAGData associated with the given blockHash

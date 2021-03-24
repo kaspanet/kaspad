@@ -30,8 +30,7 @@ func (ads *acceptanceDataStore) Stage(stagingArea *model.StagingArea, blockHash 
 }
 
 func (ads *acceptanceDataStore) IsStaged(stagingArea *model.StagingArea) bool {
-	stagingShard := ads.stagingShard(stagingArea)
-	return len(stagingShard.toAdd) != 0 || len(stagingShard.toDelete) != 0
+	return ads.stagingShard(stagingArea).isStaged()
 }
 
 // Get gets the acceptanceData associated with the given blockHash

@@ -76,9 +76,7 @@ func (ps *pruningStore) StagePruningPoint(stagingArea *model.StagingArea, prunin
 }
 
 func (ps *pruningStore) IsStaged(stagingArea *model.StagingArea) bool {
-	stagingShard := ps.stagingShard(stagingArea)
-
-	return stagingShard.newPruningPoint != nil || stagingShard.startUpdatingPruningPointUTXOSet
+	return ps.stagingShard(stagingArea).isStaged()
 }
 
 func (ps *pruningStore) UpdatePruningPointUTXOSet(dbContext model.DBWriter,

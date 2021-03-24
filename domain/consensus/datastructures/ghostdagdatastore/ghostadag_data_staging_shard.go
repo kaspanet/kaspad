@@ -34,3 +34,7 @@ func (gdss ghostdagDataStagingShard) Commit(dbTx model.DBTransaction) error {
 
 	return nil
 }
+
+func (gdss ghostdagDataStagingShard) isStaged() bool {
+	return len(gdss.toAdd) != 0
+}

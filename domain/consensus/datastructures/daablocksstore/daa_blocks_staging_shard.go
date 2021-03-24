@@ -63,3 +63,10 @@ func (daass daaBlocksStagingShard) Commit(dbTx model.DBTransaction) error {
 
 	return nil
 }
+
+func (daass daaBlocksStagingShard) isStaged() bool {
+	return len(daass.daaScoreToAdd) != 0 ||
+		len(daass.daaAddedBlocksToAdd) != 0 ||
+		len(daass.daaScoreToDelete) != 0 ||
+		len(daass.daaAddedBlocksToDelete) != 0
+}

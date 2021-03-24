@@ -44,3 +44,7 @@ func (mss multisetStagingShard) Commit(dbTx model.DBTransaction) error {
 
 	return nil
 }
+
+func (mss multisetStagingShard) isStaged() bool {
+	return len(mss.toAdd) != 0 || len(mss.toDelete) != 0
+}

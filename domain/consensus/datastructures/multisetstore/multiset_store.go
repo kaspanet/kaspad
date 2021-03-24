@@ -31,9 +31,7 @@ func (ms *multisetStore) Stage(stagingArea *model.StagingArea, blockHash *extern
 }
 
 func (ms *multisetStore) IsStaged(stagingArea *model.StagingArea) bool {
-	stagingShard := ms.stagingShard(stagingArea)
-
-	return len(stagingShard.toAdd) != 0 || len(stagingShard.toDelete) != 0
+	return ms.stagingShard(stagingArea).isStaged()
 }
 
 // Get gets the multiset associated with the given blockHash

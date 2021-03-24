@@ -39,10 +39,7 @@ func (uds *utxoDiffStore) Stage(stagingArea *model.StagingArea, blockHash *exter
 }
 
 func (uds *utxoDiffStore) IsStaged(stagingArea *model.StagingArea) bool {
-	stagingShard := uds.stagingShard(stagingArea)
-
-	return len(stagingShard.utxoDiffToAdd) != 0 || len(stagingShard.utxoDiffChildToAdd) != 0 ||
-		len(stagingShard.toDelete) != 0
+	return uds.stagingShard(stagingArea).isStaged()
 }
 
 func (uds *utxoDiffStore) isBlockHashStaged(stagingShard *utxoDiffStagingShard, blockHash *externalapi.DomainHash) bool {
@@ -107,7 +104,7 @@ func (uds *utxoDiffStore) UTXODiffChild(dbContext model.DBReader, stagingArea *m
 func (uds *utxoDiffStore) HasUTXODiffChild(dbContext model.DBReader, stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) (bool, error) {
 	stagingShard := uds.stagingShard(stagingArea)
 
-	if _, ok := stagingShard.utxoDiffToAdd[*blockHash]; ok {
+	if _, ok := stagingShard.utxoDiffChildToAdd[*blockHash]; ok {
 		return true, nil
 	}
 

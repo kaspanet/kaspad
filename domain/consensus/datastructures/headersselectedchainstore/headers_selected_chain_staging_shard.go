@@ -27,7 +27,7 @@ func (hscs *headersSelectedChainStore) stagingShard(stagingArea *model.StagingAr
 }
 
 func (hscss headersSelectedChainStagingShard) Commit(dbTx model.DBTransaction) error {
-	if !hscss.store.IsStaged(nil) {
+	if !hscss.isStaged() {
 		return nil
 	}
 
@@ -77,4 +77,11 @@ func (hscss headersSelectedChainStagingShard) Commit(dbTx model.DBTransaction) e
 	hscss.store.cacheHighestChainBlockIndex = highestIndex
 
 	return nil
+}
+
+func (hscss headersSelectedChainStagingShard) isStaged() bool {
+	return len(hscss.addedByHash) != 0 ||
+		len(hscss.removedByHash) != 0 ||
+		len(hscss.addedByIndex) != 0 ||
+		len(hscss.addedByIndex) != 0
 }

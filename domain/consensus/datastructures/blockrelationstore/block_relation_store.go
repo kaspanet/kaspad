@@ -30,9 +30,7 @@ func (brs *blockRelationStore) StageBlockRelation(stagingArea *model.StagingArea
 }
 
 func (brs *blockRelationStore) IsStaged(stagingArea *model.StagingArea) bool {
-	stagingShard := brs.stagingShard(stagingArea)
-
-	return len(stagingShard.toAdd) != 0
+	return brs.stagingShard(stagingArea).isStaged()
 }
 
 func (brs *blockRelationStore) BlockRelation(dbContext model.DBReader, stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) (*model.BlockRelations, error) {

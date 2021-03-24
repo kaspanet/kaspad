@@ -34,3 +34,7 @@ func (csss consensusStateStagingShard) Commit(dbTx model.DBTransaction) error {
 
 	return nil
 }
+
+func (csss *consensusStateStagingShard) isStaged() bool {
+	return csss.tipsStaging != nil || csss.virtualUTXODiffStaging != nil
+}

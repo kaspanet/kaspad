@@ -60,8 +60,7 @@ func (bs *blockStore) Stage(stagingArea *model.StagingArea, blockHash *externala
 }
 
 func (bs *blockStore) IsStaged(stagingArea *model.StagingArea) bool {
-	stagingShard := bs.stagingShard(stagingArea)
-	return len(stagingShard.toAdd) != 0 || len(stagingShard.toDelete) != 0
+	return bs.stagingShard(stagingArea).isStaged()
 }
 
 // Block gets the block associated with the given blockHash

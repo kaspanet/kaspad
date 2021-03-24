@@ -38,12 +38,7 @@ func (daas *daaBlocksStore) StageBlockDAAAddedBlocks(stagingArea *model.StagingA
 }
 
 func (daas *daaBlocksStore) IsStaged(stagingArea *model.StagingArea) bool {
-	stagingShard := daas.stagingShard(stagingArea)
-
-	return len(stagingShard.daaScoreToAdd) != 0 ||
-		len(stagingShard.daaAddedBlocksToAdd) != 0 ||
-		len(stagingShard.daaScoreToDelete) != 0 ||
-		len(stagingShard.daaAddedBlocksToDelete) != 0
+	return daas.stagingShard(stagingArea).isStaged()
 }
 
 func (daas *daaBlocksStore) DAAScore(dbContext model.DBReader, stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) (uint64, error) {

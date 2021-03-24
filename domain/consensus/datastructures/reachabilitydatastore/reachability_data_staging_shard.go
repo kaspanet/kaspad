@@ -47,3 +47,7 @@ func (rdss reachabilityDataStagingShard) Commit(dbTx model.DBTransaction) error 
 
 	return nil
 }
+
+func (rdss reachabilityDataStagingShard) isStaged() bool {
+	return len(rdss.reachabilityData) != 0 || rdss.reachabilityReindexRoot != nil
+}

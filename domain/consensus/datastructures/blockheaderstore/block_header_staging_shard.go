@@ -63,3 +63,7 @@ func (bhss *blockHeaderStagingShard) commitCount(dbTx model.DBTransaction) error
 	bhss.store.count = count
 	return nil
 }
+
+func (bhss *blockHeaderStagingShard) isStaged() bool {
+	return len(bhss.toAdd) != 0 || len(bhss.toDelete) != 0
+}

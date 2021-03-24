@@ -30,9 +30,7 @@ func (bss *blockStatusStore) Stage(stagingArea *model.StagingArea, blockHash *ex
 }
 
 func (bss *blockStatusStore) IsStaged(stagingArea *model.StagingArea) bool {
-	stagingShard := bss.stagingShard(stagingArea)
-
-	return len(stagingShard.toAdd) != 0
+	return bss.stagingShard(stagingArea).isStaged()
 }
 
 // Get gets the blockStatus associated with the given blockHash

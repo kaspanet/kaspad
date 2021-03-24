@@ -58,3 +58,7 @@ func (mss multisetStagingShard) Commit(dbTx model.DBTransaction) error {
 
 	return nil
 }
+
+func (mss multisetStagingShard) isStaged() bool {
+	return mss.newPruningPoint != nil || mss.startUpdatingPruningPointUTXOSet
+}

@@ -44,3 +44,7 @@ func (adss acceptanceDataStagingShard) Commit(dbTx model.DBTransaction) error {
 
 	return nil
 }
+
+func (adss acceptanceDataStagingShard) isStaged() bool {
+	return len(adss.toAdd) != 0 || len(adss.toDelete) != 0
+}

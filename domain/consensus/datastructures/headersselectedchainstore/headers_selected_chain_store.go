@@ -68,12 +68,7 @@ func (hscs *headersSelectedChainStore) Stage(dbContext model.DBReader, stagingAr
 }
 
 func (hscs *headersSelectedChainStore) IsStaged(stagingArea *model.StagingArea) bool {
-	stagingShard := hscs.stagingShard(stagingArea)
-
-	return len(stagingShard.addedByHash) != 0 ||
-		len(stagingShard.removedByHash) != 0 ||
-		len(stagingShard.addedByIndex) != 0 ||
-		len(stagingShard.addedByIndex) != 0
+	return hscs.stagingShard(stagingArea).isStaged()
 }
 
 // Get gets the chain block index for the given blockHash

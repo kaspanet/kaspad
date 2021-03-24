@@ -21,7 +21,5 @@ func New(utxoSetCacheSize int, preallocate bool) model.ConsensusStateStore {
 }
 
 func (css *consensusStateStore) IsStaged(stagingArea *model.StagingArea) bool {
-	stagingShard := css.stagingShard(stagingArea)
-
-	return stagingShard.tipsStaging != nil || stagingShard.virtualUTXODiffStaging != nil
+	return css.stagingShard(stagingArea).isStaged()
 }

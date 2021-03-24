@@ -59,8 +59,7 @@ func (bhs *blockHeaderStore) Stage(stagingArea *model.StagingArea, blockHash *ex
 }
 
 func (bhs *blockHeaderStore) IsStaged(stagingArea *model.StagingArea) bool {
-	stagingShard := bhs.stagingShard(stagingArea)
-	return len(stagingShard.toAdd) != 0 || len(stagingShard.toDelete) != 0
+	return bhs.stagingShard(stagingArea).isStaged()
 }
 
 // BlockHeader gets the block header associated with the given blockHash

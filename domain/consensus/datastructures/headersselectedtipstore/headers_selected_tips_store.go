@@ -39,9 +39,7 @@ func (hsts *headerSelectedTipStore) Stage(stagingArea *model.StagingArea, select
 }
 
 func (hsts *headerSelectedTipStore) IsStaged(stagingArea *model.StagingArea) bool {
-	stagingShard := hsts.stagingShard(stagingArea)
-
-	return stagingShard.newSelectedTip != nil
+	return hsts.stagingShard(stagingArea).isStaged()
 }
 
 func (hsts *headerSelectedTipStore) HeadersSelectedTip(dbContext model.DBReader, stagingArea *model.StagingArea) (

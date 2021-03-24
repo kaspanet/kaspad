@@ -34,7 +34,7 @@ func (r *reachabilityDataStoreMock) StageReachabilityReindexRoot(stagingArea *mo
 	r.reachabilityReindexRootStaging = reachabilityReindexRoot
 }
 
-func (r *reachabilityDataStoreMock) IsAnythingStaged(*model.StagingArea) bool {
+func (r *reachabilityDataStoreMock) IsStaged(*model.StagingArea) bool {
 	panic("implement me")
 }
 

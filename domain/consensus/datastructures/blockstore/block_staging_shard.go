@@ -63,3 +63,7 @@ func (bss *blockStagingShard) commitCount(dbTx model.DBTransaction) error {
 	bss.store.countCached = count
 	return nil
 }
+
+func (bss blockStagingShard) isStaged() bool {
+	return len(bss.toAdd) != 0 || len(bss.toDelete) != 0
+}

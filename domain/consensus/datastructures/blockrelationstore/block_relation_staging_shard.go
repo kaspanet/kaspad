@@ -34,3 +34,7 @@ func (brss blockRelationStagingShard) Commit(dbTx model.DBTransaction) error {
 
 	return nil
 }
+
+func (brss blockRelationStagingShard) isStaged() bool {
+	return len(brss.toAdd) != 0
+}
