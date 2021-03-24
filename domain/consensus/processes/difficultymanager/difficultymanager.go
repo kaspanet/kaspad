@@ -59,8 +59,8 @@ func New(databaseContext model.DBReader,
 	}
 }
 
-func (dm *difficultyManager) genesisBits() (uint32, error) {
-	header, err := dm.headerStore.BlockHeader(dm.databaseContext, nil, dm.genesisHash)
+func (dm *difficultyManager) genesisBits(stagingArea *model.StagingArea) (uint32, error) {
+	header, err := dm.headerStore.BlockHeader(dm.databaseContext, stagingArea, dm.genesisHash)
 	if err != nil {
 		return 0, err
 	}
@@ -89,7 +89,7 @@ func (dm *difficultyManager) StageDAADataAndReturnRequiredDifficulty(
 		return 0, err
 	}
 
-	return dm.requiredDifficultyFromTargetsWindow(targetsWindow)
+	return dm.requiredDifficultyFromTargetsWindow(stagingArea, targetsWindow)
 }
 
 // RequiredDifficulty returns the difficulty required for some block
@@ -100,19 +100,20 @@ func (dm *difficultyManager) RequiredDifficulty(stagingArea *model.StagingArea, 
 		return 0, err
 	}
 
-	return dm.requiredDifficultyFromTargetsWindow(targetsWindow)
+	return dm.requiredDifficultyFromTargetsWindow(stagingArea, targetsWindow)
 }
 
-func (dm *difficultyManager) requiredDifficultyFromTargetsWindow(targetsWindow blockWindow) (uint32, error) {
+func (dm *difficultyManager) requiredDifficultyFromTargetsWindow(
+	stagingArea *model.StagingArea, targetsWindow blockWindow) (uint32, error) {
 	if dm.disableDifficultyAdjustment {
-		return dm.genesisBits()
+		return dm.genesisBits(stagingArea)
 	}
 
 	// We need at least 2 blocks to get a timestamp interval
 	// We could instead clamp the timestamp difference to `targetTimePerBlock`,
 	// but then everything will cancel out and we'll get the target from the last block, which will be the same as genesis.
 	if len(targetsWindow) < 2 {
-		return dm.genesisBits()
+		return dm.genesisBits(stagingArea)
 	}
 	windowMinTimestamp, windowMaxTimeStamp, windowsMinIndex, _ := targetsWindow.minMaxTimestamps()
 	// Remove the last block from the window so to calculate the average target of dag.difficultyAdjustmentWindowSize blocks

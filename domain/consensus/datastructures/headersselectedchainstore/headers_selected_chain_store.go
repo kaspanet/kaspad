@@ -34,12 +34,12 @@ func New(cacheSize int, preallocate bool) model.HeadersSelectedChainStore {
 func (hscs *headersSelectedChainStore) Stage(dbContext model.DBReader, stagingArea *model.StagingArea, chainChanges *externalapi.SelectedChainPath) error {
 	stagingShard := hscs.stagingShard(stagingArea)
 
-	if hscs.IsStaged(nil) {
+	if hscs.IsStaged(stagingArea) {
 		return errors.Errorf("can't stage when there's already staged data")
 	}
 
 	for _, blockHash := range chainChanges.Removed {
-		index, err := hscs.GetIndexByHash(dbContext, nil, blockHash)
+		index, err := hscs.GetIndexByHash(dbContext, stagingArea, blockHash)
 		if err != nil {
 			return err
 		}

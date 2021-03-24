@@ -40,7 +40,7 @@ func (h *headerTipsManager) AddHeaderTip(stagingArea *model.StagingArea, hash *e
 	}
 
 	if !hasSelectedTip {
-		h.headersSelectedTipStore.Stage(nil, hash)
+		h.headersSelectedTipStore.Stage(stagingArea, hash)
 
 		err := h.headersSelectedChainStore.Stage(h.databaseContext, stagingArea, &externalapi.SelectedChainPath{
 			Added:   []*externalapi.DomainHash{hash},
