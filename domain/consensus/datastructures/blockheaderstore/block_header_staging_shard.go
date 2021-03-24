@@ -51,7 +51,7 @@ func (bhss *blockHeaderStagingShard) Commit(dbTx model.DBTransaction) error {
 }
 
 func (bhss *blockHeaderStagingShard) commitCount(dbTx model.DBTransaction) error {
-	count := bhss.store.Count(nil)
+	count := bhss.store.count(bhss)
 	countBytes, err := bhss.store.serializeHeaderCount(count)
 	if err != nil {
 		return err
@@ -60,7 +60,7 @@ func (bhss *blockHeaderStagingShard) commitCount(dbTx model.DBTransaction) error
 	if err != nil {
 		return err
 	}
-	bhss.store.count = count
+	bhss.store.countCached = count
 	return nil
 }
 

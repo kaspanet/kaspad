@@ -14,8 +14,8 @@ var countKey = database.MakeBucket(nil).Key([]byte("block-headers-count"))
 
 // blockHeaderStore represents a store of blocks
 type blockHeaderStore struct {
-	cache *lrucache.LRUCache
-	count uint64
+	cache       *lrucache.LRUCache
+	countCached uint64
 }
 
 // New instantiates a new BlockHeaderStore
@@ -48,7 +48,7 @@ func (bhs *blockHeaderStore) initializeCount(dbContext model.DBReader) error {
 			return err
 		}
 	}
-	bhs.count = count
+	bhs.countCached = count
 	return nil
 }
 
@@ -164,7 +164,11 @@ func (bhs *blockHeaderStore) deserializeHeader(headerBytes []byte) (externalapi.
 func (bhs *blockHeaderStore) Count(stagingArea *model.StagingArea) uint64 {
 	stagingShard := bhs.stagingShard(stagingArea)
 
-	return bhs.count + uint64(len(stagingShard.toAdd)) - uint64(len(stagingShard.toDelete))
+	return bhs.count(stagingShard)
+}
+
+func (bhs *blockHeaderStore) count(stagingShard *blockHeaderStagingShard) uint64 {
+	return bhs.countCached + uint64(len(stagingShard.toAdd)) - uint64(len(stagingShard.toDelete))
 }
 
 func (bhs *blockHeaderStore) deserializeHeaderCount(countBytes []byte) (uint64, error) {
