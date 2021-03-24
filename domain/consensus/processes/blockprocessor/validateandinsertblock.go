@@ -308,5 +308,10 @@ func (bp *blockProcessor) commitAllChanges(stagingArea *model.StagingArea) error
 		return err
 	}
 
-	return stagingArea.Commit(dbTx)
+	err = stagingArea.Commit(dbTx)
+	if err != nil {
+		return err
+	}
+
+	return dbTx.Commit()
 }
