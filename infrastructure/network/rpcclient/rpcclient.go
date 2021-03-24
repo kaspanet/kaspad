@@ -16,32 +16,73 @@ const defaultTimeout = 30 * time.Second
 type RPCClient struct {
 	*grpcclient.GRPCClient
 
-	rpcAddress string
-	rpcRouter  *rpcRouter
+	rpcAddress      string
+	rpcRouter       *rpcRouter
+	shouldReconnect bool
 
 	timeout time.Duration
 }
 
 // NewRPCClient creates a new RPC client
 func NewRPCClient(rpcAddress string) (*RPCClient, error) {
-	rpcClient, err := grpcclient.Connect(rpcAddress)
-	if err != nil {
-		return nil, errors.Wrapf(err, "error connecting to address %s", rpcAddress)
+	rpcClient := &RPCClient{
+		rpcAddress:      rpcAddress,
+		timeout:         defaultTimeout,
+		shouldReconnect: true,
 	}
+	err := rpcClient.connect()
+	if err != nil {
+		return nil, err
+	}
+	return rpcClient, nil
+}
+
+func (c *RPCClient) connect() error {
+	rpcClient, err := grpcclient.Connect(c.rpcAddress)
+	if err != nil {
+		return errors.Wrapf(err, "error connecting to address %s", c.rpcAddress)
+	}
+	rpcClient.SetOnDisconnectedHandler(c.handleClientDisconnected)
 	rpcRouter, err := buildRPCRouter()
 	if err != nil {
-		return nil, errors.Wrapf(err, "error creating the RPC router")
+		return errors.Wrapf(err, "error creating the RPC router")
 	}
 	rpcClient.AttachRouter(rpcRouter.router)
 
-	log.Infof("Connected to server %s", rpcAddress)
+	c.GRPCClient = rpcClient
+	c.rpcRouter = rpcRouter
 
-	return &RPCClient{
-		GRPCClient: rpcClient,
-		rpcAddress: rpcAddress,
-		rpcRouter:  rpcRouter,
-		timeout:    defaultTimeout,
-	}, nil
+	log.Infof("Connected to server %s", c.rpcAddress)
+	return nil
+}
+
+func (c *RPCClient) disconnect() error {
+	c.rpcRouter.router.Close()
+	return c.GRPCClient.Disconnect()
+}
+
+func (c *RPCClient) Reconnect() error {
+	err := c.disconnect()
+	if err != nil {
+		return err
+	}
+	return c.connect()
+}
+
+func (c *RPCClient) handleClientDisconnected() {
+	if c.shouldReconnect {
+		for {
+			err := c.connect()
+			if err == nil {
+				return
+			}
+			log.Warnf("Could not automatically reconnect to %s: %s", c.rpcAddress, err)
+
+			const retryDelay = 10 * time.Second
+			log.Warnf("Retrying in %s", retryDelay)
+			time.Sleep(retryDelay)
+		}
+	}
 }
 
 // SetTimeout sets the timeout by which to wait for RPC responses
@@ -51,6 +92,7 @@ func (c *RPCClient) SetTimeout(timeout time.Duration) {
 
 // Close closes the RPC client
 func (c *RPCClient) Close() {
+	c.shouldReconnect = false
 	c.rpcRouter.router.Close()
 }
 

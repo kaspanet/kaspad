@@ -120,7 +120,7 @@ func handleFoundBlock(client *minerClient, block *externalapi.DomainBlock) error
 	if err != nil {
 		if nativeerrors.Is(err, router.ErrTimeout) {
 			log.Warnf("Got timeout while submitting block %s to %s: %s", blockHash, client.safeRPCClient().Address(), err)
-			client.reconnect()
+			//client.reconnect()
 			return nil
 		}
 		if rejectReason == appmessage.RejectReasonIsInIBD {
