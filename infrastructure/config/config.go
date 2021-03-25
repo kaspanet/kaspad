@@ -5,6 +5,7 @@
 package config
 
 import (
+	// _ "embed" is necessary for the go:embed feature.
 	_ "embed"
 	"fmt"
 	"net"
