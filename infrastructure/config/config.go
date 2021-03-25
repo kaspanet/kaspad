@@ -5,6 +5,7 @@
 package config
 
 import (
+	_ "embed"
 	"fmt"
 	"net"
 	"os"
@@ -62,6 +63,9 @@ var (
 	defaultRPCKeyFile  = filepath.Join(DefaultAppDir, "rpc.key")
 	defaultRPCCertFile = filepath.Join(DefaultAppDir, "rpc.cert")
 )
+
+//go:embed sample-kaspad.conf
+var configurationKaspadSampleString string
 
 // RunServiceCommand is only set to a real function on Windows. It is used
 // to parse and execute service commands specified via the -s flag.
@@ -591,7 +595,7 @@ func createDefaultConfigFile(destinationPath string) error {
 	}
 	defer dest.Close()
 
-	_, err = dest.WriteString(sampleConfig)
+	_, err = dest.WriteString(configurationKaspadSampleString)
 
 	return err
 }
