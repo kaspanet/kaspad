@@ -11,7 +11,7 @@ type blockRelationStagingShard struct {
 }
 
 func (brs *blockRelationStore) stagingShard(stagingArea *model.StagingArea) *blockRelationStagingShard {
-	return stagingArea.GetOrCreateShard("BlockRelationsStore", func() model.StagingShard {
+	return stagingArea.GetOrCreateShard(model.StagingShardIDBlockRelation, func() model.StagingShard {
 		return &blockRelationStagingShard{
 			store: brs,
 			toAdd: make(map[externalapi.DomainHash]*model.BlockRelations),

@@ -12,7 +12,7 @@ type reachabilityDataStagingShard struct {
 }
 
 func (rds *reachabilityDataStore) stagingShard(stagingArea *model.StagingArea) *reachabilityDataStagingShard {
-	return stagingArea.GetOrCreateShard("ReachabilityDataStore", func() model.StagingShard {
+	return stagingArea.GetOrCreateShard(model.StagingShardIDReachabilityData, func() model.StagingShard {
 		return &reachabilityDataStagingShard{
 			store:                   rds,
 			reachabilityData:        make(map[externalapi.DomainHash]model.ReachabilityData),

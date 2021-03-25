@@ -5,7 +5,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 )
 
-type multisetStagingShard struct {
+type pruningStagingShard struct {
 	store *pruningStore
 
 	newPruningPoint                  *externalapi.DomainHash
@@ -13,18 +13,18 @@ type multisetStagingShard struct {
 	startUpdatingPruningPointUTXOSet bool
 }
 
-func (ps *pruningStore) stagingShard(stagingArea *model.StagingArea) *multisetStagingShard {
-	return stagingArea.GetOrCreateShard("PruningStore", func() model.StagingShard {
-		return &multisetStagingShard{
+func (ps *pruningStore) stagingShard(stagingArea *model.StagingArea) *pruningStagingShard {
+	return stagingArea.GetOrCreateShard(model.StagingShardIDPruning, func() model.StagingShard {
+		return &pruningStagingShard{
 			store:                            ps,
 			newPruningPoint:                  nil,
 			newPruningPointCandidate:         nil,
 			startUpdatingPruningPointUTXOSet: false,
 		}
-	}).(*multisetStagingShard)
+	}).(*pruningStagingShard)
 }
 
-func (mss multisetStagingShard) Commit(dbTx model.DBTransaction) error {
+func (mss pruningStagingShard) Commit(dbTx model.DBTransaction) error {
 	if mss.newPruningPoint != nil {
 		pruningPointBytes, err := mss.store.serializeHash(mss.newPruningPoint)
 		if err != nil {
@@ -59,6 +59,6 @@ func (mss multisetStagingShard) Commit(dbTx model.DBTransaction) error {
 	return nil
 }
 
-func (mss multisetStagingShard) isStaged() bool {
+func (mss pruningStagingShard) isStaged() bool {
 	return mss.newPruningPoint != nil || mss.startUpdatingPruningPointUTXOSet
 }

@@ -11,7 +11,7 @@ type headersSelectedTipStagingShard struct {
 }
 
 func (hsts *headerSelectedTipStore) stagingShard(stagingArea *model.StagingArea) *headersSelectedTipStagingShard {
-	return stagingArea.GetOrCreateShard("HeadersSelectedTipStore", func() model.StagingShard {
+	return stagingArea.GetOrCreateShard(model.StagingShardIDHeadersSelectedTip, func() model.StagingShard {
 		return &headersSelectedTipStagingShard{
 			store:          hsts,
 			newSelectedTip: nil,

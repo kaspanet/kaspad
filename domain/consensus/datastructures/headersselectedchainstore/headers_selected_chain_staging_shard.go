@@ -15,7 +15,7 @@ type headersSelectedChainStagingShard struct {
 }
 
 func (hscs *headersSelectedChainStore) stagingShard(stagingArea *model.StagingArea) *headersSelectedChainStagingShard {
-	return stagingArea.GetOrCreateShard("HeadersSelectedChainStore", func() model.StagingShard {
+	return stagingArea.GetOrCreateShard(model.StagingShardIDHeadersSelectedChain, func() model.StagingShard {
 		return &headersSelectedChainStagingShard{
 			store:          hscs,
 			addedByHash:    make(map[externalapi.DomainHash]uint64),

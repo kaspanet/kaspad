@@ -12,7 +12,7 @@ type acceptanceDataStagingShard struct {
 }
 
 func (ads *acceptanceDataStore) stagingShard(stagingArea *model.StagingArea) *acceptanceDataStagingShard {
-	return stagingArea.GetOrCreateShard("AcceptanceDataStore", func() model.StagingShard {
+	return stagingArea.GetOrCreateShard(model.StagingShardIDAcceptanceData, func() model.StagingShard {
 		return &acceptanceDataStagingShard{
 			store:    ads,
 			toAdd:    make(map[externalapi.DomainHash]externalapi.AcceptanceData),
