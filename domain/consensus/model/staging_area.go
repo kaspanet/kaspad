@@ -8,6 +8,7 @@ type StagingShard interface {
 	Commit(dbTx DBTransaction) error
 }
 
+// StagingShardID is used to identify each of the store's staging shards
 type StagingShardID byte
 
 // StagingShardID constants
