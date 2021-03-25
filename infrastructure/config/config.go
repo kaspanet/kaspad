@@ -66,7 +66,7 @@ var (
 )
 
 //go:embed sample-kaspad.conf
-var configurationSampleKaspadString string
+var sampleConfig string
 
 // RunServiceCommand is only set to a real function on Windows. It is used
 // to parse and execute service commands specified via the -s flag.
@@ -596,7 +596,7 @@ func createDefaultConfigFile(destinationPath string) error {
 	}
 	defer dest.Close()
 
-	_, err = dest.WriteString(configurationSampleKaspadString)
+	_, err = dest.WriteString(sampleConfig)
 
 	return err
 }
