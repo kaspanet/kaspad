@@ -362,13 +362,13 @@ func (dt *DAGTopologyManagerImpl) IsChildOf(stagingArea *model.StagingArea, bloc
 }
 
 func (dt *DAGTopologyManagerImpl) IsAncestorOf(stagingArea *model.StagingArea, blockHashA *externalapi.DomainHash, blockHashB *externalapi.DomainHash) (bool, error) {
-	blockBParents, isOk := dt.parentsMap[*blockHashA]
+	blockBParents, isOk := dt.parentsMap[*blockHashB]
 	if !isOk {
 		return false, nil
 	}
 
 	for _, parentOfB := range blockBParents {
-		if parentOfB.Equal(blockHashB) {
+		if parentOfB.Equal(blockHashA) {
 			return true, nil
 		}
 	}
