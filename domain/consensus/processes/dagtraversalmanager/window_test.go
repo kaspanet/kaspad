@@ -40,78 +40,6 @@ func TestBlockWindow(t *testing.T) {
 			{
 				parents:        []string{"C", "D"},
 				id:             "E",
-				expectedWindow: []string{"C", "D", "B"},
-			},
-			{
-				parents:        []string{"C", "D"},
-				id:             "F",
-				expectedWindow: []string{"C", "D", "B"},
-			},
-			{
-				parents:        []string{"A"},
-				id:             "G",
-				expectedWindow: []string{},
-			},
-			{
-				parents:        []string{"G"},
-				id:             "H",
-				expectedWindow: []string{"G"},
-			},
-			{
-				parents:        []string{"H", "F"},
-				id:             "I",
-				expectedWindow: []string{"F", "C", "H", "D", "G", "B"},
-			},
-			{
-				parents:        []string{"I"},
-				id:             "J",
-				expectedWindow: []string{"I", "F", "C", "H", "D", "G", "B"},
-			},
-			{
-				parents:        []string{"J"},
-				id:             "K",
-				expectedWindow: []string{"J", "I", "F", "C", "H", "D", "G", "B"},
-			},
-			{
-				parents:        []string{"K"},
-				id:             "L",
-				expectedWindow: []string{"K", "J", "I", "F", "C", "H", "D", "G", "B"},
-			},
-			{
-				parents:        []string{"L"},
-				id:             "M",
-				expectedWindow: []string{"L", "K", "J", "I", "F", "C", "H", "D", "G", "B"},
-			},
-			{
-				parents:        []string{"M"},
-				id:             "N",
-				expectedWindow: []string{"M", "L", "K", "J", "I", "F", "C", "H", "D", "G"},
-			},
-			{
-				parents:        []string{"N"},
-				id:             "O",
-				expectedWindow: []string{"N", "M", "L", "K", "J", "I", "F", "C", "H", "D"},
-			},
-		},
-		dagconfig.TestnetParams.Name: {
-			{
-				parents:        []string{"A"},
-				id:             "B",
-				expectedWindow: []string{},
-			},
-			{
-				parents:        []string{"B"},
-				id:             "C",
-				expectedWindow: []string{"B"},
-			},
-			{
-				parents:        []string{"B"},
-				id:             "D",
-				expectedWindow: []string{"B"},
-			},
-			{
-				parents:        []string{"C", "D"},
-				id:             "E",
 				expectedWindow: []string{"D", "C", "B"},
 			},
 			{
@@ -165,6 +93,78 @@ func TestBlockWindow(t *testing.T) {
 				expectedWindow: []string{"N", "M", "L", "K", "J", "I", "F", "D", "H", "C"},
 			},
 		},
+		dagconfig.TestnetParams.Name: {
+			{
+				parents:        []string{"A"},
+				id:             "B",
+				expectedWindow: []string{},
+			},
+			{
+				parents:        []string{"B"},
+				id:             "C",
+				expectedWindow: []string{"B"},
+			},
+			{
+				parents:        []string{"B"},
+				id:             "D",
+				expectedWindow: []string{"B"},
+			},
+			{
+				parents:        []string{"C", "D"},
+				id:             "E",
+				expectedWindow: []string{"D", "C", "B"},
+			},
+			{
+				parents:        []string{"C", "D"},
+				id:             "F",
+				expectedWindow: []string{"D", "C", "B"},
+			},
+			{
+				parents:        []string{"A"},
+				id:             "G",
+				expectedWindow: []string{},
+			},
+			{
+				parents:        []string{"G"},
+				id:             "H",
+				expectedWindow: []string{"G"},
+			},
+			{
+				parents:        []string{"H", "F"},
+				id:             "I",
+				expectedWindow: []string{"F", "D", "H", "C", "G", "B"},
+			},
+			{
+				parents:        []string{"I"},
+				id:             "J",
+				expectedWindow: []string{"I", "F", "D", "H", "C", "G", "B"},
+			},
+			{
+				parents:        []string{"J"},
+				id:             "K",
+				expectedWindow: []string{"J", "I", "F", "D", "H", "C", "G", "B"},
+			},
+			{
+				parents:        []string{"K"},
+				id:             "L",
+				expectedWindow: []string{"K", "J", "I", "F", "D", "H", "C", "G", "B"},
+			},
+			{
+				parents:        []string{"L"},
+				id:             "M",
+				expectedWindow: []string{"L", "K", "J", "I", "F", "D", "H", "C", "G", "B"},
+			},
+			{
+				parents:        []string{"M"},
+				id:             "N",
+				expectedWindow: []string{"M", "L", "K", "J", "I", "F", "D", "H", "C", "G"},
+			},
+			{
+				parents:        []string{"N"},
+				id:             "O",
+				expectedWindow: []string{"N", "M", "L", "K", "J", "I", "F", "D", "H", "C"},
+			},
+		},
 		dagconfig.DevnetParams.Name: {
 			{
 				parents:        []string{"A"},
@@ -184,82 +184,10 @@ func TestBlockWindow(t *testing.T) {
 			{
 				parents:        []string{"C", "D"},
 				id:             "E",
-				expectedWindow: []string{"C", "D", "B"},
-			},
-			{
-				parents:        []string{"C", "D"},
-				id:             "F",
-				expectedWindow: []string{"C", "D", "B"},
-			},
-			{
-				parents:        []string{"A"},
-				id:             "G",
-				expectedWindow: []string{},
-			},
-			{
-				parents:        []string{"G"},
-				id:             "H",
-				expectedWindow: []string{"G"},
-			},
-			{
-				parents:        []string{"H", "F"},
-				id:             "I",
-				expectedWindow: []string{"F", "C", "D", "H", "G", "B"},
-			},
-			{
-				parents:        []string{"I"},
-				id:             "J",
-				expectedWindow: []string{"I", "F", "C", "D", "H", "G", "B"},
-			},
-			{
-				parents:        []string{"J"},
-				id:             "K",
-				expectedWindow: []string{"J", "I", "F", "C", "D", "H", "G", "B"},
-			},
-			{
-				parents:        []string{"K"},
-				id:             "L",
-				expectedWindow: []string{"K", "J", "I", "F", "C", "D", "H", "G", "B"},
-			},
-			{
-				parents:        []string{"L"},
-				id:             "M",
-				expectedWindow: []string{"L", "K", "J", "I", "F", "C", "D", "H", "G", "B"},
-			},
-			{
-				parents:        []string{"M"},
-				id:             "N",
-				expectedWindow: []string{"M", "L", "K", "J", "I", "F", "C", "D", "H", "G"},
-			},
-			{
-				parents:        []string{"N"},
-				id:             "O",
-				expectedWindow: []string{"N", "M", "L", "K", "J", "I", "F", "C", "D", "H"},
-			},
-		},
-		dagconfig.SimnetParams.Name: {
-			{
-				parents:        []string{"A"},
-				id:             "B",
-				expectedWindow: []string{},
-			},
-			{
-				parents:        []string{"B"},
-				id:             "C",
-				expectedWindow: []string{"B"},
-			},
-			{
-				parents:        []string{"B"},
-				id:             "D",
-				expectedWindow: []string{"B"},
-			},
-			{
-				parents:        []string{"D", "C"},
-				id:             "E",
 				expectedWindow: []string{"D", "C", "B"},
 			},
 			{
-				parents:        []string{"D", "C"},
+				parents:        []string{"C", "D"},
 				id:             "F",
 				expectedWindow: []string{"D", "C", "B"},
 			},
@@ -302,6 +230,78 @@ func TestBlockWindow(t *testing.T) {
 				parents:        []string{"M"},
 				id:             "N",
 				expectedWindow: []string{"M", "L", "K", "J", "I", "F", "H", "D", "C", "G"},
+			},
+			{
+				parents:        []string{"N"},
+				id:             "O",
+				expectedWindow: []string{"N", "M", "L", "K", "J", "I", "F", "H", "D", "C"},
+			},
+		},
+		dagconfig.SimnetParams.Name: {
+			{
+				parents:        []string{"A"},
+				id:             "B",
+				expectedWindow: []string{},
+			},
+			{
+				parents:        []string{"B"},
+				id:             "C",
+				expectedWindow: []string{"B"},
+			},
+			{
+				parents:        []string{"B"},
+				id:             "D",
+				expectedWindow: []string{"B"},
+			},
+			{
+				parents:        []string{"D", "C"},
+				id:             "E",
+				expectedWindow: []string{"D", "C", "B"},
+			},
+			{
+				parents:        []string{"D", "C"},
+				id:             "F",
+				expectedWindow: []string{"D", "C", "B"},
+			},
+			{
+				parents:        []string{"A"},
+				id:             "G",
+				expectedWindow: []string{},
+			},
+			{
+				parents:        []string{"G"},
+				id:             "H",
+				expectedWindow: []string{"G"},
+			},
+			{
+				parents:        []string{"H", "F"},
+				id:             "I",
+				expectedWindow: []string{"F", "H", "D", "C", "B", "G"},
+			},
+			{
+				parents:        []string{"I"},
+				id:             "J",
+				expectedWindow: []string{"I", "F", "H", "D", "C", "B", "G"},
+			},
+			{
+				parents:        []string{"J"},
+				id:             "K",
+				expectedWindow: []string{"J", "I", "F", "H", "D", "C", "B", "G"},
+			},
+			{
+				parents:        []string{"K"},
+				id:             "L",
+				expectedWindow: []string{"K", "J", "I", "F", "H", "D", "C", "B", "G"},
+			},
+			{
+				parents:        []string{"L"},
+				id:             "M",
+				expectedWindow: []string{"L", "K", "J", "I", "F", "H", "D", "C", "B", "G"},
+			},
+			{
+				parents:        []string{"M"},
+				id:             "N",
+				expectedWindow: []string{"M", "L", "K", "J", "I", "F", "H", "D", "C", "B"},
 			},
 			{
 				parents:        []string{"N"},
