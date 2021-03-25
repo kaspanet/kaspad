@@ -10,7 +10,6 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/utils/subnetworks"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/txscript"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/utxo"
-	"github.com/kaspanet/kaspad/domain/dagconfig"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/pkg/errors"
 )
@@ -45,7 +44,7 @@ func CreateP2PKHFromUTXOs(
 		return nil, err
 	}
 
-	return ExtractTransaction(unsignedTransaction)
+	return extractTransaction(unsignedTransaction)
 }
 
 type Payment struct {
@@ -85,21 +84,14 @@ func Sign(privateKey []byte, serializedPSTx []byte) ([]byte, error) {
 	return serialization.SerializePartiallySignedTransaction(partiallySignedTransaction)
 }
 
-func MultiSigAddress(params *dagconfig.Params, pubKeys [][]byte) (util.Address, error) {
-	redeemScript, err := multiSigRedeemScript(pubKeys)
-	if err != nil {
-		return nil, err
-	}
-
-	return util.NewAddressScriptHash(redeemScript, params.Prefix)
-}
-
-func multiSigRedeemScript(pubKeys [][]byte) ([]byte, error) {
+func multiSigRedeemScript(pubKeys [][]byte, minimumSignatures uint32) ([]byte, error) {
 	scriptBuilder := txscript.NewScriptBuilder()
+	scriptBuilder.AddInt64(int64(minimumSignatures))
 	for _, key := range pubKeys {
 		scriptBuilder.AddData(key)
 	}
-	scriptBuilder.AddOp(txscript.OpCheckMultiSigVerify)
+	scriptBuilder.AddInt64(int64(len(pubKeys)))
+	scriptBuilder.AddOp(txscript.OpCheckMultiSig)
 	return scriptBuilder.Script()
 }
 
@@ -110,9 +102,9 @@ func createUnsignedTransaction(
 	selectedUTXOs []*externalapi.OutpointAndUTXOEntryPair) (*serialization.PartiallySignedTransaction, error) {
 
 	var redeemScript []byte
-	if minimumSignatures > 1 {
+	if len(pubKeys) > 1 {
 		var err error
-		redeemScript, err = multiSigRedeemScript(pubKeys)
+		redeemScript, err = multiSigRedeemScript(pubKeys, minimumSignatures)
 		if err != nil {
 			return nil, err
 		}
@@ -205,7 +197,16 @@ func sign(keyPair *secp256k1.SchnorrKeyPair, psTx *serialization.PartiallySigned
 	return nil
 }
 
-func IsTransactionFullySigned(psTx *serialization.PartiallySignedTransaction) bool {
+func IsTransactionFullySigned(psTxBytes []byte) (bool, error) {
+	partiallySignedTransaction, err := serialization.DeserializePartiallySignedTransaction(psTxBytes)
+	if err != nil {
+		return false, err
+	}
+
+	return isTransactionFullySigned(partiallySignedTransaction), nil
+}
+
+func isTransactionFullySigned(psTx *serialization.PartiallySignedTransaction) bool {
 	for _, input := range psTx.PartiallySignedInputs {
 		numSignatures := 0
 		for _, pair := range input.PubKeySignaturePairs {
@@ -220,7 +221,16 @@ func IsTransactionFullySigned(psTx *serialization.PartiallySignedTransaction) bo
 	return true
 }
 
-func ExtractTransaction(psTx *serialization.PartiallySignedTransaction) (*externalapi.DomainTransaction, error) {
+func ExtractTransaction(psTxBytes []byte) (*externalapi.DomainTransaction, error) {
+	partiallySignedTransaction, err := serialization.DeserializePartiallySignedTransaction(psTxBytes)
+	if err != nil {
+		return nil, err
+	}
+
+	return extractTransaction(partiallySignedTransaction)
+}
+
+func extractTransaction(psTx *serialization.PartiallySignedTransaction) (*externalapi.DomainTransaction, error) {
 	for i, input := range psTx.PartiallySignedInputs {
 		isMultisig := input.RedeeemScript != nil
 		scriptBuilder := txscript.NewScriptBuilder()
@@ -245,7 +255,7 @@ func ExtractTransaction(psTx *serialization.PartiallySignedTransaction) (*extern
 			psTx.Tx.Inputs[i].SignatureScript = sigScript
 		} else {
 			if len(input.PubKeySignaturePairs) > 1 {
-				return nil, errors.Errorf("Cannot sign on P2PKH when")
+				return nil, errors.Errorf("Cannot sign on P2PKH when len(input.PubKeySignaturePairs) > 1")
 			}
 
 			sigScript, err := txscript.NewScriptBuilder().

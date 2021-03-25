@@ -9,9 +9,13 @@ import (
 )
 
 const (
-	createSubCmd  = "create"
-	balanceSubCmd = "balance"
-	sendSubCmd    = "send"
+	createSubCmd                    = "create"
+	balanceSubCmd                   = "balance"
+	sendSubCmd                      = "send"
+	createUnsignedTransactionSubCmd = "createUnsignedTransaction"
+	signSubCmd                      = "sign"
+	createMultisigAddressSubCmd     = "createMultisigAddress"
+	broadcastSubCmd                 = "broadcast"
 )
 
 type configFlags struct {
@@ -36,6 +40,33 @@ type sendConfig struct {
 	config.NetworkFlags
 }
 
+type createUnsignedTransactionConfig struct {
+	RPCServer         string   `long:"rpcserver" short:"s" description:"RPC server to connect to"`
+	PublicKey         []string `long:"public-key" short:"p" description:"The public keys of the sender (encoded in hex)" required:"true"`
+	MinimumSignatures uint32   `long:"min-signatures" short:"m" description:"Minimum required signatures" required:"true"`
+	ToAddress         string   `long:"to-address" short:"t" description:"The public address to send Kaspa to" required:"true"`
+	SendAmount        float64  `long:"send-amount" short:"v" description:"An amount to send in Kaspa (e.g. 1234.12345678)" required:"true"`
+	config.NetworkFlags
+}
+
+type signConfig struct {
+	PrivateKey  string `long:"private-key" short:"k" description:"The private key of the signer (encoded in hex)" required:"true"`
+	Transaction string `long:"transaction" short:"t" description:"The unsigned transaction to sign on (encoded in hex)" required:"true"`
+	config.NetworkFlags
+}
+
+type createMultisigAddressConfig struct {
+	PublicKey         []string `long:"public-key" short:"p" description:"The public keys of the multisig participants (encoded in hex)" required:"true"`
+	MinimumSignatures uint32   `long:"min-signatures" short:"m" description:"Minimum required signatures" required:"true"`
+	config.NetworkFlags
+}
+
+type broadcastConfig struct {
+	RPCServer   string `long:"rpcserver" short:"s" description:"RPC server to connect to"`
+	Transaction string `long:"transaction" short:"t" description:"The signed transaction to broadcast (encoded in hex)" required:"true"`
+	config.NetworkFlags
+}
+
 func parseCommandLine() (subCommand string, config interface{}) {
 	cfg := &configFlags{}
 	parser := flags.NewParser(cfg, flags.PrintErrors|flags.HelpFlag)
@@ -51,6 +82,22 @@ func parseCommandLine() (subCommand string, config interface{}) {
 	sendConf := &sendConfig{}
 	parser.AddCommand(sendSubCmd, "Sends a Kaspa transaction to a public address",
 		"Sends a Kaspa transaction to a public address", sendConf)
+
+	createUnsignedTransactionConf := &createUnsignedTransactionConfig{}
+	parser.AddCommand(createUnsignedTransactionSubCmd, "Create an unsigned Kaspa transaction",
+		"Create an unsigned Kaspa transaction", createUnsignedTransactionConf)
+
+	signConf := &signConfig{}
+	parser.AddCommand(signSubCmd, "Sign the given partially signed transaction",
+		"Sign the given partially signed transaction", signConf)
+
+	createMultisigAddressConf := &createMultisigAddressConfig{}
+	parser.AddCommand(createMultisigAddressSubCmd, "Create multisig address",
+		"Create multisig address", createMultisigAddressConf)
+
+	broadcastConf := &broadcastConfig{}
+	parser.AddCommand(broadcastSubCmd, "Broadcast the given transaction",
+		"Broadcast the given transaction", broadcastConf)
 
 	_, err := parser.Parse()
 
@@ -86,6 +133,34 @@ func parseCommandLine() (subCommand string, config interface{}) {
 			printErrorAndExit(err)
 		}
 		config = sendConf
+	case createUnsignedTransactionSubCmd:
+		combineNetworkFlags(&createUnsignedTransactionConf.NetworkFlags, &cfg.NetworkFlags)
+		err := createUnsignedTransactionConf.ResolveNetwork(parser)
+		if err != nil {
+			printErrorAndExit(err)
+		}
+		config = createUnsignedTransactionConf
+	case signSubCmd:
+		combineNetworkFlags(&signConf.NetworkFlags, &cfg.NetworkFlags)
+		err := signConf.ResolveNetwork(parser)
+		if err != nil {
+			printErrorAndExit(err)
+		}
+		config = signConf
+	case createMultisigAddressSubCmd:
+		combineNetworkFlags(&createMultisigAddressConf.NetworkFlags, &cfg.NetworkFlags)
+		err := createMultisigAddressConf.ResolveNetwork(parser)
+		if err != nil {
+			printErrorAndExit(err)
+		}
+		config = createMultisigAddressConf
+	case broadcastSubCmd:
+		combineNetworkFlags(&broadcastConf.NetworkFlags, &cfg.NetworkFlags)
+		err := broadcastConf.ResolveNetwork(parser)
+		if err != nil {
+			printErrorAndExit(err)
+		}
+		config = broadcastConf
 	}
 
 	return parser.Command.Active.Name, config

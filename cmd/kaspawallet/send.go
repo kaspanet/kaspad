@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/libkaspawallet"
 	utxopkg "github.com/kaspanet/kaspad/domain/consensus/utils/utxo"
+	"github.com/kaspanet/kaspad/domain/dagconfig"
 
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
@@ -34,7 +35,7 @@ func send(conf *sendConfig) error {
 	if err != nil {
 		return err
 	}
-	utxos, err := fetchSpendableUTXOs(conf, client, fromAddress.String())
+	utxos, err := fetchSpendableUTXOs(conf.NetParams(), client, fromAddress.String())
 	if err != nil {
 		return err
 	}
@@ -69,7 +70,7 @@ func send(conf *sendConfig) error {
 	return nil
 }
 
-func fetchSpendableUTXOs(conf *sendConfig, client *rpcclient.RPCClient, address string) ([]*appmessage.UTXOsByAddressesEntry, error) {
+func fetchSpendableUTXOs(params *dagconfig.Params, client *rpcclient.RPCClient, address string) ([]*appmessage.UTXOsByAddressesEntry, error) {
 	getUTXOsByAddressesResponse, err := client.GetUTXOsByAddresses([]string{address})
 	if err != nil {
 		return nil, err
@@ -82,7 +83,7 @@ func fetchSpendableUTXOs(conf *sendConfig, client *rpcclient.RPCClient, address 
 
 	spendableUTXOs := make([]*appmessage.UTXOsByAddressesEntry, 0)
 	for _, entry := range getUTXOsByAddressesResponse.Entries {
-		if !isUTXOSpendable(entry, virtualSelectedParentBlueScore, conf.ActiveNetParams.BlockCoinbaseMaturity) {
+		if !isUTXOSpendable(entry, virtualSelectedParentBlueScore, params.BlockCoinbaseMaturity) {
 			continue
 		}
 		spendableUTXOs = append(spendableUTXOs, entry)
@@ -90,7 +91,7 @@ func fetchSpendableUTXOs(conf *sendConfig, client *rpcclient.RPCClient, address 
 	return spendableUTXOs, nil
 }
 
-func selectUTXOs(utxos []*appmessage.UTXOsByAddressesEntry, totalToSpend uint64, feePerInput uint64) (
+func selectUTXOs(utxos []*appmessage.UTXOsByAddressesEntry, spendAmount uint64, feePerInput uint64) (
 	selectedUTXOs []*externalapi.OutpointAndUTXOEntryPair, changeSompi uint64, err error) {
 
 	selectedUTXOs = []*externalapi.OutpointAndUTXOEntryPair{}
@@ -124,18 +125,20 @@ func selectUTXOs(utxos []*appmessage.UTXOsByAddressesEntry, totalToSpend uint64,
 		totalValue += utxo.UTXOEntry.Amount
 
 		fee := feePerInput * uint64(len(selectedUTXOs))
-		if totalValue >= totalToSpend+fee {
+		totalSpend := spendAmount + fee
+		if totalValue >= totalSpend {
 			break
 		}
 	}
 
-	if totalValue < totalToSpend {
+	fee := feePerInput * uint64(len(selectedUTXOs))
+	totalSpend := spendAmount + fee
+	if totalValue < totalSpend {
 		return nil, 0, errors.Errorf("Insufficient funds for send: %f required, while only %f available",
-			float64(totalToSpend)/util.SompiPerKaspa, float64(totalValue)/util.SompiPerKaspa)
+			float64(totalSpend)/util.SompiPerKaspa, float64(totalValue)/util.SompiPerKaspa)
 	}
 
-	fee := feePerInput * uint64(len(selectedUTXOs))
-	return selectedUTXOs, totalValue - totalToSpend - fee, nil
+	return selectedUTXOs, totalValue - totalSpend, nil
 }
 
 func sendTransaction(client *rpcclient.RPCClient, tx *externalapi.DomainTransaction) (string, error) {
