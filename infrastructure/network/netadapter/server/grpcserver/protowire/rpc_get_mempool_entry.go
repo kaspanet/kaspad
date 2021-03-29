@@ -84,29 +84,25 @@ func (x *MempoolEntry) toAppMessage() (*appmessage.MempoolEntry, error) {
 	if x == nil {
 		return nil, errors.Wrapf(errorNil, "MempoolEntry is nil")
 	}
-	txVerboseData, err := x.TransactionVerboseData.toAppMessage()
-	// RPCTransactionVerboseData is an optional field
-	if err != nil && !errors.Is(err, errorNil) {
+	transaction, err := x.Transaction.toAppMessage()
+	if err != nil {
 		return nil, err
 	}
 	return &appmessage.MempoolEntry{
-		Fee:                    x.Fee,
-		TransactionVerboseData: txVerboseData,
+		Fee:         x.Fee,
+		Transaction: transaction,
 	}, nil
 }
 
 func (x *MempoolEntry) fromAppMessage(message *appmessage.MempoolEntry) error {
-	var txVerboseData *TransactionVerboseData
-	if message.TransactionVerboseData != nil {
-		txVerboseData = new(TransactionVerboseData)
-		err := txVerboseData.fromAppMessage(message.TransactionVerboseData)
-		if err != nil {
-			return err
-		}
+	var transaction *RpcTransaction
+	if message.Transaction != nil {
+		transaction = new(RpcTransaction)
+		transaction.fromAppMessage(message.Transaction)
 	}
 	*x = MempoolEntry{
-		Fee:                    message.Fee,
-		TransactionVerboseData: txVerboseData,
+		Fee:         message.Fee,
+		Transaction: transaction,
 	}
 	return nil
 }
