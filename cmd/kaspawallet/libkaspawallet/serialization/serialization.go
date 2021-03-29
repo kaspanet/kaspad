@@ -9,11 +9,17 @@ import (
 	"math"
 )
 
+// PartiallySignedTransaction is a type that is intended
+// to be transferred between multiple parties so each
+// party will be able to sign the transaction before
+// it's fully signed.
 type PartiallySignedTransaction struct {
 	Tx                    *externalapi.DomainTransaction
 	PartiallySignedInputs []*PartiallySignedInput
 }
 
+// PartiallySignedInput represents an input signed
+// only by some of the relevant parties.
 type PartiallySignedInput struct {
 	RedeeemScript        []byte
 	PrevOutput           *externalapi.DomainTransactionOutput
@@ -21,11 +27,13 @@ type PartiallySignedInput struct {
 	PubKeySignaturePairs []*PubKeySignaturePair
 }
 
+// PubKeySignaturePair is a pair of public key and (potentially) its associated signature
 type PubKeySignaturePair struct {
 	PubKey    []byte
 	Signature []byte
 }
 
+// DeserializePartiallySignedTransaction deserializes a byte slice into PartiallySignedTransaction.
 func DeserializePartiallySignedTransaction(serializedPartiallySignedTransaction []byte) (*PartiallySignedTransaction, error) {
 	protoPartiallySignedTransaction := &protoserialization.PartiallySignedTransaction{}
 	err := proto.Unmarshal(serializedPartiallySignedTransaction, protoPartiallySignedTransaction)
@@ -36,6 +44,7 @@ func DeserializePartiallySignedTransaction(serializedPartiallySignedTransaction 
 	return partiallySignedTransactionFromProto(protoPartiallySignedTransaction)
 }
 
+// SerializePartiallySignedTransaction serializes a PartiallySignedTransaction.
 func SerializePartiallySignedTransaction(partiallySignedTransaction *PartiallySignedTransaction) ([]byte, error) {
 	return proto.Marshal(partiallySignedTransactionToProto(partiallySignedTransaction))
 }
@@ -121,7 +130,7 @@ func pubKeySignaturePairToProto(pubKeySignaturePair *PubKeySignaturePair) *proto
 
 func transactionFromProto(protoTransaction *protoserialization.TransactionMessage) (*externalapi.DomainTransaction, error) {
 	if protoTransaction.Version > math.MaxUint16 {
-		return nil, errors.Errorf("protoTransaction.Version is %d and is too big to be a uint16")
+		return nil, errors.Errorf("protoTransaction.Version is %d and is too big to be a uint16", protoTransaction.Version)
 	}
 
 	inputs := make([]*externalapi.DomainTransactionInput, len(protoTransaction.Inputs))
@@ -248,7 +257,7 @@ func transactionOutputToProto(output *externalapi.DomainTransactionOutput) *prot
 
 func scriptPublicKeyFromProto(protoScriptPublicKey *protoserialization.ScriptPublicKey) (*externalapi.ScriptPublicKey, error) {
 	if protoScriptPublicKey.Version > math.MaxUint16 {
-		return nil, errors.Errorf("protoOutput.ScriptPublicKey.Version is %d and is too big to be a uint16")
+		return nil, errors.Errorf("protoOutput.ScriptPublicKey.Version is %d and is too big to be a uint16", protoScriptPublicKey.Version)
 	}
 	return &externalapi.ScriptPublicKey{
 		Script:  protoScriptPublicKey.Script,

@@ -35,9 +35,9 @@ func TestMultisig(t *testing.T) {
 		}
 
 		const minimumSignatures = 2
-		address, err := libkaspawallet.MultiSigAddress(params, publicKeys, minimumSignatures)
+		address, err := libkaspawallet.Address(params, publicKeys, minimumSignatures)
 		if err != nil {
-			t.Fatalf("MultiSigAddress: %+v", err)
+			t.Fatalf("Address: %+v", err)
 		}
 
 		if _, ok := address.(*util.AddressScriptHash); !ok {
@@ -176,9 +176,9 @@ func TestP2PKH(t *testing.T) {
 		}
 
 		const minimumSignatures = 1
-		address, err := libkaspawallet.MultiSigAddress(params, publicKeys, minimumSignatures)
+		address, err := libkaspawallet.Address(params, publicKeys, minimumSignatures)
 		if err != nil {
-			t.Fatalf("MultiSigAddress: %+v", err)
+			t.Fatalf("Address: %+v", err)
 		}
 
 		if _, ok := address.(*util.AddressPubKeyHash); !ok {

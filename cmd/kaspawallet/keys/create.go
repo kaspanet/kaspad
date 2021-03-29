@@ -7,6 +7,7 @@ import (
 	"github.com/pkg/errors"
 )
 
+// CreateKeyPairs generates `numKeys` number of key pairs.
 func CreateKeyPairs(numKeys uint32) (encryptedPrivateKeys, publicKeys [][]byte, err error) {
 	password := getPassword("Enter password for the key file:")
 	confirmPassword := getPassword("Confirm password:")

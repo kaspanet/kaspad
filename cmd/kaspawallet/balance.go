@@ -20,7 +20,7 @@ func balance(conf *balanceConfig) error {
 		return err
 	}
 
-	addr, err := libkaspawallet.MultiSigAddress(conf.NetParams(), keysFile.PublicKeys, keysFile.MinimumSignatures)
+	addr, err := libkaspawallet.Address(conf.NetParams(), keysFile.PublicKeys, keysFile.MinimumSignatures)
 	if err != nil {
 		return err
 	}

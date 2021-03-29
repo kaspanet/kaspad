@@ -7,6 +7,7 @@ import (
 	"github.com/pkg/errors"
 )
 
+// CreateKeyPair generates a private-public key pair
 func CreateKeyPair() ([]byte, []byte, error) {
 	privateKey, err := secp256k1.GeneratePrivateKey()
 	if err != nil {
@@ -33,7 +34,8 @@ func addressFromPublicKey(params *dagconfig.Params, publicKeySerialized []byte) 
 	return addr, nil
 }
 
-func MultiSigAddress(params *dagconfig.Params, pubKeys [][]byte, minimumSignatures uint32) (util.Address, error) {
+// Address returns the address associated with the given public keys and minimum signatures parameters.
+func Address(params *dagconfig.Params, pubKeys [][]byte, minimumSignatures uint32) (util.Address, error) {
 	sortPublicKeys(pubKeys)
 	if uint32(len(pubKeys)) < minimumSignatures {
 		return nil, errors.Errorf("The minimum amount of signatures (%d) is greater than the amount of "+

@@ -1,4 +1,3 @@
-// Adapted from https://gist.github.com/jlinoff/e8e26b4ffa38d379c7f1891fd174a6d0#file-getpassword2-go
 package keys
 
 import (
@@ -9,6 +8,7 @@ import (
 	"syscall"
 )
 
+// getPassword was adapted from https://gist.github.com/jlinoff/e8e26b4ffa38d379c7f1891fd174a6d0#file-getpassword2-go
 func getPassword(prompt string) string {
 	// Get the initial state of the terminal.
 	initialTermState, e1 := term.GetState(syscall.Stdin)

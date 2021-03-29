@@ -27,7 +27,7 @@ func send(conf *sendConfig) error {
 		return err
 	}
 
-	fromAddress, err := libkaspawallet.MultiSigAddress(conf.NetParams(), keysFile.PublicKeys, keysFile.MinimumSignatures)
+	fromAddress, err := libkaspawallet.Address(conf.NetParams(), keysFile.PublicKeys, keysFile.MinimumSignatures)
 	if err != nil {
 		return err
 	}

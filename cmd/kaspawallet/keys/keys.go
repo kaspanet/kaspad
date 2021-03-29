@@ -26,46 +26,47 @@ type keysFileJSON struct {
 	MinimumSignatures    uint32   `json:"minimumSignatures"`
 }
 
-type KeysFile struct {
+// Data holds all the data related to the wallet keys
+type Data struct {
 	encryptedPrivateKeys [][]byte
 	PublicKeys           [][]byte
 	MinimumSignatures    uint32
 }
 
-func (kf *KeysFile) toJSON() *keysFileJSON {
-	encryptedPrivateKeysHex := make([]string, len(kf.encryptedPrivateKeys))
-	for i, encryptedPrivateKey := range kf.encryptedPrivateKeys {
+func (d *Data) toJSON() *keysFileJSON {
+	encryptedPrivateKeysHex := make([]string, len(d.encryptedPrivateKeys))
+	for i, encryptedPrivateKey := range d.encryptedPrivateKeys {
 		encryptedPrivateKeysHex[i] = hex.EncodeToString(encryptedPrivateKey)
 	}
 
-	publicKeysHex := make([]string, len(kf.PublicKeys))
-	for i, publicKey := range kf.PublicKeys {
+	publicKeysHex := make([]string, len(d.PublicKeys))
+	for i, publicKey := range d.PublicKeys {
 		publicKeysHex[i] = hex.EncodeToString(publicKey)
 	}
 
 	return &keysFileJSON{
 		EncryptedPrivateKeys: encryptedPrivateKeysHex,
 		PublicKeys:           publicKeysHex,
-		MinimumSignatures:    kf.MinimumSignatures,
+		MinimumSignatures:    d.MinimumSignatures,
 	}
 }
 
-func (kf *KeysFile) fromJSON(kfj *keysFileJSON) error {
-	kf.MinimumSignatures = kfj.MinimumSignatures
+func (d *Data) fromJSON(kfj *keysFileJSON) error {
+	d.MinimumSignatures = kfj.MinimumSignatures
 
-	kf.encryptedPrivateKeys = make([][]byte, len(kfj.EncryptedPrivateKeys))
+	d.encryptedPrivateKeys = make([][]byte, len(kfj.EncryptedPrivateKeys))
 	for i, encryptedPrivateKey := range kfj.EncryptedPrivateKeys {
 		var err error
-		kf.encryptedPrivateKeys[i], err = hex.DecodeString(encryptedPrivateKey)
+		d.encryptedPrivateKeys[i], err = hex.DecodeString(encryptedPrivateKey)
 		if err != nil {
 			return err
 		}
 	}
 
-	kf.PublicKeys = make([][]byte, len(kfj.PublicKeys))
+	d.PublicKeys = make([][]byte, len(kfj.PublicKeys))
 	for i, publicKey := range kfj.PublicKeys {
 		var err error
-		kf.PublicKeys[i], err = hex.DecodeString(publicKey)
+		d.PublicKeys[i], err = hex.DecodeString(publicKey)
 		if err != nil {
 			return err
 		}
@@ -74,15 +75,17 @@ func (kf *KeysFile) fromJSON(kfj *keysFileJSON) error {
 	return nil
 }
 
-func (kf *KeysFile) DecryptPrivateKeys() ([][]byte, error) {
+// DecryptPrivateKeys asks the user to enter the password for the private keys and
+// returns the decrypted private keys.
+func (d *Data) DecryptPrivateKeys() ([][]byte, error) {
 	password := getPassword("Password:")
 	aead, err := getAEAD(password)
 	if err != nil {
 		return nil, err
 	}
 
-	privateKeys := make([][]byte, len(kf.encryptedPrivateKeys))
-	for i, encryptedPrivateKey := range kf.encryptedPrivateKeys {
+	privateKeys := make([][]byte, len(d.encryptedPrivateKeys))
+	for i, encryptedPrivateKey := range d.encryptedPrivateKeys {
 		var err error
 		privateKeys[i], err = decryptPrivateKey(encryptedPrivateKey, aead)
 		if err != nil {
@@ -93,7 +96,8 @@ func (kf *KeysFile) DecryptPrivateKeys() ([][]byte, error) {
 	return privateKeys, nil
 }
 
-func ReadKeysFile(path string) (*KeysFile, error) {
+// ReadKeysFile returns the data related to the keys file
+func ReadKeysFile(path string) (*Data, error) {
 	if path == "" {
 		path = defaultKeysFile
 	}
@@ -111,7 +115,7 @@ func ReadKeysFile(path string) (*KeysFile, error) {
 		return nil, err
 	}
 
-	keysFile := &KeysFile{}
+	keysFile := &Data{}
 	err = keysFile.fromJSON(decodedFile)
 	if err != nil {
 		return nil, err
@@ -149,6 +153,7 @@ func pathExists(path string) (bool, error) {
 	return false, err
 }
 
+// WriteKeysFile writes a keys file with the given data
 func WriteKeysFile(path string, encryptedPrivateKeys [][]byte, publicKeys [][]byte, minimumSignatures uint32) error {
 	if path == "" {
 		path = defaultKeysFile
@@ -183,7 +188,7 @@ func WriteKeysFile(path string, encryptedPrivateKeys [][]byte, publicKeys [][]by
 	}
 	defer file.Close()
 
-	keysFile := &KeysFile{
+	keysFile := &Data{
 		encryptedPrivateKeys: encryptedPrivateKeys,
 		PublicKeys:           publicKeys,
 		MinimumSignatures:    minimumSignatures,

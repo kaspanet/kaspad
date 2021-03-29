@@ -15,6 +15,7 @@ import (
 	"sort"
 )
 
+// Payment contains a recipient payment details
 type Payment struct {
 	Address util.Address
 	Amount  uint64
@@ -26,11 +27,13 @@ func sortPublicKeys(publicKeys [][]byte) {
 	})
 }
 
+// CreateUnsignedTransaction creates an unsigned transaction
 func CreateUnsignedTransaction(
 	pubKeys [][]byte,
 	minimumSignatures uint32,
 	payments []*Payment,
 	selectedUTXOs []*externalapi.OutpointAndUTXOEntryPair) ([]byte, error) {
+
 	sortPublicKeys(pubKeys)
 	unsignedTransaction, err := createUnsignedTransaction(pubKeys, minimumSignatures, payments, selectedUTXOs)
 	if err != nil {
@@ -40,6 +43,7 @@ func CreateUnsignedTransaction(
 	return serialization.SerializePartiallySignedTransaction(unsignedTransaction)
 }
 
+// Sign signs the transaction with the given private keys
 func Sign(privateKeys [][]byte, serializedPSTx []byte) ([]byte, error) {
 	keyPairs := make([]*secp256k1.SchnorrKeyPair, len(privateKeys))
 	for i, privateKey := range privateKeys {
@@ -185,6 +189,7 @@ func sign(keyPair *secp256k1.SchnorrKeyPair, psTx *serialization.PartiallySigned
 	return nil
 }
 
+// IsTransactionFullySigned returns whether the transaction is fully signed and ready to broadcast.
 func IsTransactionFullySigned(psTxBytes []byte) (bool, error) {
 	partiallySignedTransaction, err := serialization.DeserializePartiallySignedTransaction(psTxBytes)
 	if err != nil {
@@ -209,6 +214,8 @@ func isTransactionFullySigned(psTx *serialization.PartiallySignedTransaction) bo
 	return true
 }
 
+// ExtractTransaction extracts a domain transaction from partially signed transaction after all of the
+// relevant parties have signed it.
 func ExtractTransaction(psTxBytes []byte) (*externalapi.DomainTransaction, error) {
 	partiallySignedTransaction, err := serialization.DeserializePartiallySignedTransaction(psTxBytes)
 	if err != nil {
