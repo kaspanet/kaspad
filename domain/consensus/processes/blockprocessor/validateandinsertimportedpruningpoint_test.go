@@ -1,6 +1,11 @@
 package blockprocessor_test
 
 import (
+	"testing"
+	"time"
+
+	"github.com/kaspanet/kaspad/domain/consensus/model"
+
 	"github.com/kaspanet/kaspad/domain/consensus"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/model/testapi"
@@ -12,8 +17,6 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/utils/utxo"
 	"github.com/kaspanet/kaspad/domain/dagconfig"
 	"github.com/pkg/errors"
-	"testing"
-	"time"
 )
 
 func addBlock(tcSyncer, tcSyncee testapi.TestConsensus, parentHashes []*externalapi.DomainHash, t *testing.T) *externalapi.DomainHash {
@@ -524,7 +527,8 @@ func TestGetPruningPointUTXOs(t *testing.T) {
 			t.Fatalf("Error getting the pruning point: %+v", err)
 		}
 
-		pruningRelations, err := testConsensus.BlockRelationStore().BlockRelation(testConsensus.DatabaseContext(), pruningPoint)
+		pruningRelations, err := testConsensus.BlockRelationStore().BlockRelation(
+			testConsensus.DatabaseContext(), model.NewStagingArea(), pruningPoint)
 		if err != nil {
 			t.Fatalf("BlockRelation(): %+v", err)
 		}

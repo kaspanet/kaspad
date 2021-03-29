@@ -10,9 +10,11 @@ import (
 
 var tipsKey = database.MakeBucket(nil).Key([]byte("tips"))
 
-func (css *consensusStateStore) Tips(dbContext model.DBReader) ([]*externalapi.DomainHash, error) {
-	if css.tipsStaging != nil {
-		return externalapi.CloneHashes(css.tipsStaging), nil
+func (css *consensusStateStore) Tips(stagingArea *model.StagingArea, dbContext model.DBReader) ([]*externalapi.DomainHash, error) {
+	stagingShard := css.stagingShard(stagingArea)
+
+	if stagingShard.tipsStaging != nil {
+		return externalapi.CloneHashes(stagingShard.tipsStaging), nil
 	}
 
 	if css.tipsCache != nil {
@@ -32,28 +34,10 @@ func (css *consensusStateStore) Tips(dbContext model.DBReader) ([]*externalapi.D
 	return externalapi.CloneHashes(tips), nil
 }
 
-func (css *consensusStateStore) StageTips(tipHashes []*externalapi.DomainHash) {
-	css.tipsStaging = externalapi.CloneHashes(tipHashes)
-}
+func (css *consensusStateStore) StageTips(stagingArea *model.StagingArea, tipHashes []*externalapi.DomainHash) {
+	stagingShard := css.stagingShard(stagingArea)
 
-func (css *consensusStateStore) commitTips(dbTx model.DBTransaction) error {
-	if css.tipsStaging == nil {
-		return nil
-	}
-
-	tipsBytes, err := css.serializeTips(css.tipsStaging)
-	if err != nil {
-		return err
-	}
-	err = dbTx.Put(tipsKey, tipsBytes)
-	if err != nil {
-		return err
-	}
-	css.tipsCache = css.tipsStaging
-
-	// Note: we don't discard the staging here since that's
-	// being done at the end of Commit()
-	return nil
+	stagingShard.tipsStaging = externalapi.CloneHashes(tipHashes)
 }
 
 func (css *consensusStateStore) serializeTips(tips []*externalapi.DomainHash) ([]byte, error) {
@@ -71,4 +55,22 @@ func (css *consensusStateStore) deserializeTips(tipsBytes []byte) ([]*externalap
 	}
 
 	return serialization.DBTipsToTips(dbTips)
+}
+
+func (csss *consensusStateStagingShard) commitTips(dbTx model.DBTransaction) error {
+	if csss.tipsStaging == nil {
+		return nil
+	}
+
+	tipsBytes, err := csss.store.serializeTips(csss.tipsStaging)
+	if err != nil {
+		return err
+	}
+	err = dbTx.Put(tipsKey, tipsBytes)
+	if err != nil {
+		return err
+	}
+	csss.store.tipsCache = csss.tipsStaging
+
+	return nil
 }

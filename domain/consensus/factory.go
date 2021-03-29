@@ -1,10 +1,11 @@
 package consensus
 
 import (
-	daablocksstore "github.com/kaspanet/kaspad/domain/consensus/datastructures/daablocksstore"
 	"io/ioutil"
 	"os"
 	"sync"
+
+	daablocksstore "github.com/kaspanet/kaspad/domain/consensus/datastructures/daablocksstore"
 
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/headersselectedchainstore"
 

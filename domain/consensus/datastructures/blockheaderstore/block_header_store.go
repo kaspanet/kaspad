@@ -14,18 +14,14 @@ var countKey = database.MakeBucket(nil).Key([]byte("block-headers-count"))
 
 // blockHeaderStore represents a store of blocks
 type blockHeaderStore struct {
-	staging  map[externalapi.DomainHash]externalapi.BlockHeader
-	toDelete map[externalapi.DomainHash]struct{}
-	cache    *lrucache.LRUCache
-	count    uint64
+	cache       *lrucache.LRUCache
+	countCached uint64
 }
 
 // New instantiates a new BlockHeaderStore
 func New(dbContext model.DBReader, cacheSize int, preallocate bool) (model.BlockHeaderStore, error) {
 	blockHeaderStore := &blockHeaderStore{
-		staging:  make(map[externalapi.DomainHash]externalapi.BlockHeader),
-		toDelete: make(map[externalapi.DomainHash]struct{}),
-		cache:    lrucache.New(cacheSize, preallocate),
+		cache: lrucache.New(cacheSize, preallocate),
 	}
 
 	err := blockHeaderStore.initializeCount(dbContext)
@@ -52,57 +48,33 @@ func (bhs *blockHeaderStore) initializeCount(dbContext model.DBReader) error {
 			return err
 		}
 	}
-	bhs.count = count
+	bhs.countCached = count
 	return nil
 }
 
 // Stage stages the given block header for the given blockHash
-func (bhs *blockHeaderStore) Stage(blockHash *externalapi.DomainHash, blockHeader externalapi.BlockHeader) {
-	bhs.staging[*blockHash] = blockHeader
+func (bhs *blockHeaderStore) Stage(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash, blockHeader externalapi.BlockHeader) {
+	stagingShard := bhs.stagingShard(stagingArea)
+	stagingShard.toAdd[*blockHash] = blockHeader
 }
 
-func (bhs *blockHeaderStore) IsStaged() bool {
-	return len(bhs.staging) != 0 || len(bhs.toDelete) != 0
-}
-
-func (bhs *blockHeaderStore) Discard() {
-	bhs.staging = make(map[externalapi.DomainHash]externalapi.BlockHeader)
-	bhs.toDelete = make(map[externalapi.DomainHash]struct{})
-}
-
-func (bhs *blockHeaderStore) Commit(dbTx model.DBTransaction) error {
-	for hash, header := range bhs.staging {
-		headerBytes, err := bhs.serializeHeader(header)
-		if err != nil {
-			return err
-		}
-		err = dbTx.Put(bhs.hashAsKey(&hash), headerBytes)
-		if err != nil {
-			return err
-		}
-		bhs.cache.Add(&hash, header)
-	}
-
-	for hash := range bhs.toDelete {
-		err := dbTx.Delete(bhs.hashAsKey(&hash))
-		if err != nil {
-			return err
-		}
-		bhs.cache.Remove(&hash)
-	}
-
-	err := bhs.commitCount(dbTx)
-	if err != nil {
-		return err
-	}
-
-	bhs.Discard()
-	return nil
+func (bhs *blockHeaderStore) IsStaged(stagingArea *model.StagingArea) bool {
+	return bhs.stagingShard(stagingArea).isStaged()
 }
 
 // BlockHeader gets the block header associated with the given blockHash
-func (bhs *blockHeaderStore) BlockHeader(dbContext model.DBReader, blockHash *externalapi.DomainHash) (externalapi.BlockHeader, error) {
-	if header, ok := bhs.staging[*blockHash]; ok {
+func (bhs *blockHeaderStore) BlockHeader(dbContext model.DBReader, stagingArea *model.StagingArea,
+	blockHash *externalapi.DomainHash) (externalapi.BlockHeader, error) {
+
+	stagingShard := bhs.stagingShard(stagingArea)
+
+	return bhs.blockHeader(dbContext, stagingShard, blockHash)
+}
+
+func (bhs *blockHeaderStore) blockHeader(dbContext model.DBReader, stagingShard *blockHeaderStagingShard,
+	blockHash *externalapi.DomainHash) (externalapi.BlockHeader, error) {
+
+	if header, ok := stagingShard.toAdd[*blockHash]; ok {
 		return header, nil
 	}
 
@@ -124,8 +96,10 @@ func (bhs *blockHeaderStore) BlockHeader(dbContext model.DBReader, blockHash *ex
 }
 
 // HasBlock returns whether a block header with a given hash exists in the store.
-func (bhs *blockHeaderStore) HasBlockHeader(dbContext model.DBReader, blockHash *externalapi.DomainHash) (bool, error) {
-	if _, ok := bhs.staging[*blockHash]; ok {
+func (bhs *blockHeaderStore) HasBlockHeader(dbContext model.DBReader, stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) (bool, error) {
+	stagingShard := bhs.stagingShard(stagingArea)
+
+	if _, ok := stagingShard.toAdd[*blockHash]; ok {
 		return true, nil
 	}
 
@@ -142,11 +116,15 @@ func (bhs *blockHeaderStore) HasBlockHeader(dbContext model.DBReader, blockHash 
 }
 
 // BlockHeaders gets the block headers associated with the given blockHashes
-func (bhs *blockHeaderStore) BlockHeaders(dbContext model.DBReader, blockHashes []*externalapi.DomainHash) ([]externalapi.BlockHeader, error) {
+func (bhs *blockHeaderStore) BlockHeaders(dbContext model.DBReader, stagingArea *model.StagingArea,
+	blockHashes []*externalapi.DomainHash) ([]externalapi.BlockHeader, error) {
+
+	stagingShard := bhs.stagingShard(stagingArea)
+
 	headers := make([]externalapi.BlockHeader, len(blockHashes))
 	for i, hash := range blockHashes {
 		var err error
-		headers[i], err = bhs.BlockHeader(dbContext, hash)
+		headers[i], err = bhs.blockHeader(dbContext, stagingShard, hash)
 		if err != nil {
 			return nil, err
 		}
@@ -155,12 +133,14 @@ func (bhs *blockHeaderStore) BlockHeaders(dbContext model.DBReader, blockHashes 
 }
 
 // Delete deletes the block associated with the given blockHash
-func (bhs *blockHeaderStore) Delete(blockHash *externalapi.DomainHash) {
-	if _, ok := bhs.staging[*blockHash]; ok {
-		delete(bhs.staging, *blockHash)
+func (bhs *blockHeaderStore) Delete(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) {
+	stagingShard := bhs.stagingShard(stagingArea)
+
+	if _, ok := stagingShard.toAdd[*blockHash]; ok {
+		delete(stagingShard.toAdd, *blockHash)
 		return
 	}
-	bhs.toDelete[*blockHash] = struct{}{}
+	stagingShard.toDelete[*blockHash] = struct{}{}
 }
 
 func (bhs *blockHeaderStore) hashAsKey(hash *externalapi.DomainHash) model.DBKey {
@@ -181,8 +161,14 @@ func (bhs *blockHeaderStore) deserializeHeader(headerBytes []byte) (externalapi.
 	return serialization.DbBlockHeaderToDomainBlockHeader(dbBlockHeader)
 }
 
-func (bhs *blockHeaderStore) Count() uint64 {
-	return bhs.count + uint64(len(bhs.staging)) - uint64(len(bhs.toDelete))
+func (bhs *blockHeaderStore) Count(stagingArea *model.StagingArea) uint64 {
+	stagingShard := bhs.stagingShard(stagingArea)
+
+	return bhs.count(stagingShard)
+}
+
+func (bhs *blockHeaderStore) count(stagingShard *blockHeaderStagingShard) uint64 {
+	return bhs.countCached + uint64(len(stagingShard.toAdd)) - uint64(len(stagingShard.toDelete))
 }
 
 func (bhs *blockHeaderStore) deserializeHeaderCount(countBytes []byte) (uint64, error) {
@@ -192,20 +178,6 @@ func (bhs *blockHeaderStore) deserializeHeaderCount(countBytes []byte) (uint64, 
 		return 0, err
 	}
 	return dbBlockHeaderCount.Count, nil
-}
-
-func (bhs *blockHeaderStore) commitCount(dbTx model.DBTransaction) error {
-	count := bhs.Count()
-	countBytes, err := bhs.serializeHeaderCount(count)
-	if err != nil {
-		return err
-	}
-	err = dbTx.Put(countKey, countBytes)
-	if err != nil {
-		return err
-	}
-	bhs.count = count
-	return nil
 }
 
 func (bhs *blockHeaderStore) serializeHeaderCount(count uint64) ([]byte, error) {

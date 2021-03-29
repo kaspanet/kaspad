@@ -7,6 +7,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kaspanet/kaspad/domain/consensus/model"
+
 	"github.com/kaspanet/kaspad/domain/consensus"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/testutils"
@@ -81,6 +83,8 @@ func TestPruning(t *testing.T) {
 				*params.GenesisHash: "0",
 			}
 
+			stagingArea := model.NewStagingArea()
+
 			for _, dagBlock := range test.Blocks {
 				if dagBlock.ID == "0" {
 					continue
@@ -107,7 +111,7 @@ func TestPruning(t *testing.T) {
 					return err
 				}
 
-				pruningPointCandidate, err := tc.PruningStore().PruningPointCandidate(tc.DatabaseContext())
+				pruningPointCandidate, err := tc.PruningStore().PruningPointCandidate(tc.DatabaseContext(), stagingArea)
 				if err != nil {
 					return err
 				}
@@ -138,14 +142,14 @@ func TestPruning(t *testing.T) {
 				id := jsonBlock.ID
 				blockHash := blockIDToHash[id]
 
-				isPruningPointAncestorOfBlock, err := tc.DAGTopologyManager().IsAncestorOf(pruningPoint, blockHash)
+				isPruningPointAncestorOfBlock, err := tc.DAGTopologyManager().IsAncestorOf(stagingArea, pruningPoint, blockHash)
 				if err != nil {
 					t.Fatalf("IsAncestorOf: %+v", err)
 				}
 
 				expectsBlock := true
 				if !isPruningPointAncestorOfBlock {
-					isBlockAncestorOfPruningPoint, err := tc.DAGTopologyManager().IsAncestorOf(blockHash, pruningPoint)
+					isBlockAncestorOfPruningPoint, err := tc.DAGTopologyManager().IsAncestorOf(stagingArea, blockHash, pruningPoint)
 					if err != nil {
 						t.Fatalf("IsAncestorOf: %+v", err)
 					}
@@ -160,7 +164,8 @@ func TestPruning(t *testing.T) {
 
 						isInPastOfVirtual := false
 						for _, virtualParent := range virtualInfo.ParentHashes {
-							isAncestorOfVirtualParent, err := tc.DAGTopologyManager().IsAncestorOf(blockHash, virtualParent)
+							isAncestorOfVirtualParent, err := tc.DAGTopologyManager().IsAncestorOf(
+								stagingArea, blockHash, virtualParent)
 							if err != nil {
 								t.Fatalf("IsAncestorOf: %+v", err)
 							}
@@ -178,7 +183,7 @@ func TestPruning(t *testing.T) {
 
 				}
 
-				hasBlock, err := tc.BlockStore().HasBlock(tc.DatabaseContext(), blockHash)
+				hasBlock, err := tc.BlockStore().HasBlock(tc.DatabaseContext(), stagingArea, blockHash)
 				if err != nil {
 					t.Fatalf("HasBlock: %+v", err)
 				}

@@ -195,19 +195,3 @@ func (tc *testConsensus) BuildHeaderWithParents(parentHashes []*externalapi.Doma
 
 	return tc.testBlockBuilder.BuildUTXOInvalidHeader(parentHashes)
 }
-
-func (tc *testConsensus) DiscardAllStores() {
-	tc.AcceptanceDataStore().Discard()
-	tc.BlockHeaderStore().Discard()
-	tc.BlockRelationStore().Discard()
-	tc.BlockStatusStore().Discard()
-	tc.BlockStore().Discard()
-	tc.ConsensusStateStore().Discard()
-	tc.GHOSTDAGDataStore().Discard()
-	tc.HeaderTipsStore().Discard()
-	tc.MultisetStore().Discard()
-	tc.PruningStore().Discard()
-	tc.ReachabilityDataStore().Discard()
-	tc.UTXODiffStore().Discard()
-	tc.HeadersSelectedChainStore().Discard()
-}
