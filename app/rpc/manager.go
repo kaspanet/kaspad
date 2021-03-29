@@ -69,11 +69,12 @@ func (m *Manager) NotifyBlockAddedToDAG(block *externalapi.DomainBlock, blockIns
 		return err
 	}
 
-	blockVerboseData, err := m.context.BuildBlockVerboseData(block.Header, block, false)
+	rpcBlock := appmessage.DomainBlockToRPCBlock(block)
+	err = m.context.PopulateBlockWithVerboseData(rpcBlock, block.Header, block, false)
 	if err != nil {
 		return err
 	}
-	blockAddedNotification := appmessage.NewBlockAddedNotificationMessage(blockVerboseData)
+	blockAddedNotification := appmessage.NewBlockAddedNotificationMessage(rpcBlock)
 	return m.context.NotificationManager.NotifyBlockAdded(blockAddedNotification)
 }
 

@@ -1,8 +1,8 @@
 package rpccontext
 
 import (
-	"github.com/kaspanet/kaspad/infrastructure/logger"
-	"github.com/kaspanet/kaspad/util/difficulty"
+	"encoding/hex"
+	difficultyPackage "github.com/kaspanet/kaspad/util/difficulty"
 	"github.com/pkg/errors"
 	"math"
 	"math/big"
@@ -21,75 +21,6 @@ import (
 // ErrBuildBlockVerboseDataInvalidBlock indicates that a block that was given to BuildBlockVerboseData is invalid.
 var ErrBuildBlockVerboseDataInvalidBlock = errors.New("ErrBuildBlockVerboseDataInvalidBlock")
 
-// BuildBlockVerboseData builds a RPCBlockVerboseData from the given block.
-// A block may optionally also be given if it's available in the calling context.
-func (ctx *Context) BuildBlockVerboseData(blockHeader externalapi.BlockHeader, block *externalapi.DomainBlock,
-	includeTransactionVerboseData bool) (*appmessage.RPCBlockVerboseData, error) {
-
-	onEnd := logger.LogAndMeasureExecutionTime(log, "BuildBlockVerboseData")
-	defer onEnd()
-
-	hash := consensushashing.HeaderHash(blockHeader)
-
-	blockInfo, err := ctx.Domain.Consensus().GetBlockInfo(hash)
-	if err != nil {
-		return nil, err
-	}
-
-	if blockInfo.BlockStatus == externalapi.StatusInvalid {
-		return nil, errors.Wrap(ErrBuildBlockVerboseDataInvalidBlock, "cannot build verbose data for "+
-			"invalid block")
-	}
-
-	childrenHashes, err := ctx.Domain.Consensus().GetBlockChildren(hash)
-	if err != nil {
-		return nil, err
-	}
-
-	result := &appmessage.RPCBlockVerboseData{
-		Hash:           hash.String(),
-		ChildrenHashes: hashes.ToStrings(childrenHashes),
-		Difficulty:     ctx.GetDifficultyRatio(blockHeader.Bits(), ctx.Config.ActiveNetParams),
-		BlueScore:      blockInfo.BlueScore,
-		IsHeaderOnly:   blockInfo.BlockStatus == externalapi.StatusHeaderOnly,
-	}
-
-	if blockInfo.BlockStatus == externalapi.StatusHeaderOnly {
-		block := &externalapi.DomainBlock{Header: blockHeader}
-		result.Block = appmessage.DomainBlockToRPCBlock(block)
-		return result, nil
-	}
-
-	if block == nil {
-		block, err = ctx.Domain.Consensus().GetBlock(hash)
-		if err != nil {
-			return nil, err
-		}
-	}
-	result.Block = appmessage.DomainBlockToRPCBlock(block)
-
-	txIDs := make([]string, len(block.Transactions))
-	for i, tx := range block.Transactions {
-		txIDs[i] = consensushashing.TransactionID(tx).String()
-	}
-	result.TransactionIDs = txIDs
-
-	if includeTransactionVerboseData {
-		transactionVerboseData := make([]*appmessage.RPCTransactionVerboseData, len(block.Transactions))
-		for i, tx := range block.Transactions {
-			txID := consensushashing.TransactionID(tx).String()
-			data, err := ctx.BuildTransactionVerboseData(tx, txID, blockHeader, hash.String())
-			if err != nil {
-				return nil, err
-			}
-			transactionVerboseData[i] = data
-		}
-		result.TransactionVerboseData = transactionVerboseData
-	}
-
-	return result, nil
-}
-
 // GetDifficultyRatio returns the proof-of-work difficulty as a multiple of the
 // minimum difficulty using the passed bits field from the header of a block.
 func (ctx *Context) GetDifficultyRatio(bits uint32, params *dagconfig.Params) float64 {
@@ -97,7 +28,7 @@ func (ctx *Context) GetDifficultyRatio(bits uint32, params *dagconfig.Params) fl
 	// converted back to a number. Note this is not the same as the proof of
 	// work limit directly because the block difficulty is encoded in a block
 	// with the compact form which loses precision.
-	target := difficulty.CompactToBig(bits)
+	target := difficultyPackage.CompactToBig(bits)
 
 	difficulty := new(big.Rat).SetFrac(params.PowMax, target)
 	diff, _ := difficulty.Float64()
@@ -108,76 +39,125 @@ func (ctx *Context) GetDifficultyRatio(bits uint32, params *dagconfig.Params) fl
 	return diff
 }
 
-// BuildTransactionVerboseData builds a RPCTransactionVerboseData from
-// the given parameters
-func (ctx *Context) BuildTransactionVerboseData(tx *externalapi.DomainTransaction, txID string,
-	blockHeader externalapi.BlockHeader, blockHash string) (
-	*appmessage.RPCTransactionVerboseData, error) {
+// PopulateBlockWithVerboseData populates the given `block` with verbose
+// data from `domainBlockHeader` and optionally from `domainBlock`
+func (ctx *Context) PopulateBlockWithVerboseData(block *appmessage.RPCBlock, domainBlockHeader externalapi.BlockHeader,
+	domainBlock *externalapi.DomainBlock, includeTransactionVerboseData bool) error {
 
-	onEnd := logger.LogAndMeasureExecutionTime(log, "BuildTransactionVerboseData")
-	defer onEnd()
+	blockHash := consensushashing.HeaderHash(domainBlockHeader)
 
-	txReply := &appmessage.RPCTransactionVerboseData{
-		TransactionID:             txID,
-		Hash:                      consensushashing.TransactionHash(tx).String(),
-		Size:                      estimatedsize.TransactionEstimatedSerializedSize(tx),
-		TransactionVerboseInputs:  ctx.buildTransactionVerboseInputs(tx),
-		TransactionVerboseOutputs: ctx.buildTransactionVerboseOutputs(tx, nil),
-		Transaction:               appmessage.DomainTransactionToRPCTransaction(tx),
+	blockInfo, err := ctx.Domain.Consensus().GetBlockInfo(blockHash)
+	if err != nil {
+		return err
 	}
 
-	if blockHeader != nil {
-		txReply.BlockTime = uint64(blockHeader.TimeInMilliseconds())
-		txReply.BlockHash = blockHash
+	if blockInfo.BlockStatus == externalapi.StatusInvalid {
+		return errors.Wrap(ErrBuildBlockVerboseDataInvalidBlock, "cannot build verbose data for "+
+			"invalid block")
 	}
 
-	return txReply, nil
-}
-
-func (ctx *Context) buildTransactionVerboseInputs(tx *externalapi.DomainTransaction) []*appmessage.RPCTransactionInputVerboseData {
-	inputs := make([]*appmessage.RPCTransactionInputVerboseData, len(tx.Inputs))
-	for i := range tx.Inputs {
-		inputs[i] = &appmessage.RPCTransactionInputVerboseData{}
+	childrenHashes, err := ctx.Domain.Consensus().GetBlockChildren(blockHash)
+	if err != nil {
+		return err
 	}
 
-	return inputs
-}
+	block.VerboseData = &appmessage.RPCBlockVerboseData{
+		Hash:               blockHash.String(),
+		Difficulty:         ctx.GetDifficultyRatio(domainBlockHeader.Bits(), ctx.Config.ActiveNetParams),
+		ChildrenHashes:     hashes.ToStrings(childrenHashes),
+		SelectedParentHash: "", // TODO
+		IsHeaderOnly:       blockInfo.BlockStatus == externalapi.StatusHeaderOnly,
+		BlueScore:          blockInfo.BlueScore,
+	}
 
-// buildTransactionVerboseOutputs returns a slice of JSON objects for the outputs of the passed
-// transaction.
-func (ctx *Context) buildTransactionVerboseOutputs(tx *externalapi.DomainTransaction, filterAddrMap map[string]struct{}) []*appmessage.RPCTransactionOutputVerboseData {
-	outputs := make([]*appmessage.RPCTransactionOutputVerboseData, len(tx.Outputs))
-	for i, transactionOutput := range tx.Outputs {
+	if blockInfo.BlockStatus == externalapi.StatusHeaderOnly {
+		return nil
+	}
 
-		// Ignore the error here since an error means the script
-		// couldn't parse and there is no additional information about
-		// it anyways.
-		scriptClass, addr, _ := txscript.ExtractScriptPubKeyAddress(
-			transactionOutput.ScriptPublicKey, ctx.Config.ActiveNetParams)
+	// Get the block if we didn't receive it previously
+	if domainBlock == nil {
+		domainBlock, err = ctx.Domain.Consensus().GetBlock(blockHash)
+		if err != nil {
+			return err
+		}
+	}
 
-		// Encode the addresses while checking if the address passes the
-		// filter when needed.
-		passesFilter := len(filterAddrMap) == 0
-		var encodedAddr string
-		if addr != nil {
-			encodedAddr = addr.EncodeAddress()
+	transactionIDs := make([]string, len(domainBlock.Transactions))
+	for i, transaction := range domainBlock.Transactions {
+		transactionIDs[i] = consensushashing.TransactionID(transaction).String()
+	}
+	block.VerboseData.TransactionIDs = transactionIDs
 
-			// If the filter doesn't already pass, make it pass if
-			// the address exists in the filter.
-			if _, exists := filterAddrMap[encodedAddr]; exists {
-				passesFilter = true
+	if includeTransactionVerboseData {
+		for _, transaction := range block.Transactions {
+			err := ctx.PopulateTransactionWithVerboseData(transaction, domainBlockHeader)
+			if err != nil {
+				return err
 			}
 		}
-
-		if !passesFilter {
-			continue
-		}
-
-		outputs[i] = &appmessage.RPCTransactionOutputVerboseData{
-			ScriptPublicKeyType:    scriptClass.String(),
-			ScriptPublicKeyAddress: encodedAddr,
-		}
 	}
 
-	return outputs
+	return nil
+}
+
+// PopulateTransactionWithVerboseData populates the given `transaction` with
+// verbose data from `domainTransaction`
+func (ctx *Context) PopulateTransactionWithVerboseData(
+	transaction *appmessage.RPCTransaction, domainBlockHeader externalapi.BlockHeader) error {
+
+	domainTransaction, err := appmessage.RPCTransactionToDomainTransaction(transaction)
+	if err != nil {
+		return err
+	}
+
+	transaction.VerboseData = &appmessage.RPCTransactionVerboseData{
+		TransactionID: consensushashing.TransactionID(domainTransaction).String(),
+		Hash:          consensushashing.TransactionHash(domainTransaction).String(),
+		Size:          estimatedsize.TransactionEstimatedSerializedSize(domainTransaction),
+	}
+	if domainBlockHeader != nil {
+		transaction.VerboseData.BlockHash = consensushashing.HeaderHash(domainBlockHeader).String()
+		transaction.VerboseData.BlockTime = uint64(domainBlockHeader.TimeInMilliseconds())
+	}
+	for _, input := range transaction.Inputs {
+		ctx.populateTransactionInputWithVerboseData(input)
+	}
+	for _, output := range transaction.Outputs {
+		err := ctx.populateTransactionOutputWithVerboseData(output)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (ctx *Context) populateTransactionInputWithVerboseData(transactionInput *appmessage.RPCTransactionInput) {
+	transactionInput.VerboseData = &appmessage.RPCTransactionInputVerboseData{}
+}
+
+func (ctx *Context) populateTransactionOutputWithVerboseData(transactionOutput *appmessage.RPCTransactionOutput) error {
+	scriptPublicKey, err := hex.DecodeString(transactionOutput.ScriptPublicKey.Script)
+	if err != nil {
+		return err
+	}
+	domainScriptPublicKey := &externalapi.ScriptPublicKey{
+		Script:  scriptPublicKey,
+		Version: transactionOutput.ScriptPublicKey.Version,
+	}
+
+	// Ignore the error here since an error means the script
+	// couldn't be parsed and there's no additional information about
+	// it anyways
+	scriptPublicKeyType, scriptPublicKeyAddress, _ := txscript.ExtractScriptPubKeyAddress(
+		domainScriptPublicKey, ctx.Config.ActiveNetParams)
+
+	var encodedScriptPublicKeyAddress string
+	if scriptPublicKeyAddress != nil {
+		encodedScriptPublicKeyAddress = scriptPublicKeyAddress.EncodeAddress()
+	}
+	transactionOutput.VerboseData = &appmessage.RPCTransactionOutputVerboseData{
+		ScriptPublicKeyType:    scriptPublicKeyType.String(),
+		ScriptPublicKeyAddress: encodedScriptPublicKeyAddress,
+	}
+	return nil
 }
