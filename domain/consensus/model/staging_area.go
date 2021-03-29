@@ -40,15 +40,15 @@ const (
 // When the StagingArea is being Committed, it goes over all it's shards, and commits those one-by-one.
 // Since Commit happens in a DatabaseTransaction, a StagingArea is atomic.
 type StagingArea struct {
-	shards     [StagingShardIDLen]StagingShard
-	isCommited bool
+	shards      [StagingShardIDLen]StagingShard
+	isCommitted bool
 }
 
 // NewStagingArea creates a new, empty staging area.
 func NewStagingArea() *StagingArea {
 	return &StagingArea{
-		shards:     [StagingShardIDLen]StagingShard{},
-		isCommited: false,
+		shards:      [StagingShardIDLen]StagingShard{},
+		isCommitted: false,
 	}
 }
 
@@ -65,7 +65,7 @@ func (sa *StagingArea) GetOrCreateShard(shardID StagingShardID, createFunc func(
 // Commit goes over all the Shards in the StagingArea and commits them, inside the provided database transaction.
 // Note: the transaction itself is not committed, this is the callers responsibility to commit it.
 func (sa *StagingArea) Commit(dbTx DBTransaction) error {
-	if sa.isCommited {
+	if sa.isCommitted {
 		return errors.New("Attempt to call Commit on already committed stagingArea")
 	}
 
@@ -79,7 +79,7 @@ func (sa *StagingArea) Commit(dbTx DBTransaction) error {
 		}
 	}
 
-	sa.isCommited = true
+	sa.isCommitted = true
 
 	return nil
 }
