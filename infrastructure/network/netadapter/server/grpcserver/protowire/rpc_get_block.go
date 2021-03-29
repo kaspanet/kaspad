@@ -46,20 +46,20 @@ func (x *GetBlockResponseMessage) toAppMessage() (appmessage.Message, error) {
 	if err != nil && !errors.Is(err, errorNil) {
 		return nil, err
 	}
-	var blockVerboseData *appmessage.RPCBlockVerboseData
+	var block *appmessage.RPCBlock
 	// Return verbose data only if there's no error
-	if rpcErr != nil && x.BlockVerboseData != nil {
+	if rpcErr != nil && x.Block != nil {
 		return nil, errors.New("GetBlockResponseMessage contains both an error and a response")
 	}
 	if rpcErr == nil {
-		blockVerboseData, err = x.BlockVerboseData.toAppMessage()
+		block, err = x.Block.toAppMessage()
 		if err != nil {
 			return nil, err
 		}
 	}
 	return &appmessage.GetBlockResponseMessage{
-		BlockVerboseData: blockVerboseData,
-		Error:            rpcErr,
+		Block: block,
+		Error: rpcErr,
 	}, nil
 }
 
@@ -68,76 +68,18 @@ func (x *KaspadMessage_GetBlockResponse) fromAppMessage(message *appmessage.GetB
 	if message.Error != nil {
 		err = &RPCError{Message: message.Error.Message}
 	}
-	var blockVerboseData *BlockVerboseData
-	if message.BlockVerboseData != nil {
-		protoBlockVerboseData := &BlockVerboseData{}
-		err := protoBlockVerboseData.fromAppMessage(message.BlockVerboseData)
+	var block *RpcBlock
+	if message.Block != nil {
+		protoBlock := &RpcBlock{}
+		err := protoBlock.fromAppMessage(message.Block)
 		if err != nil {
 			return err
 		}
-		blockVerboseData = protoBlockVerboseData
+		block = protoBlock
 	}
 	x.GetBlockResponse = &GetBlockResponseMessage{
-		BlockVerboseData: blockVerboseData,
-		Error:            err,
-	}
-	return nil
-}
-
-func (x *BlockVerboseData) toAppMessage() (*appmessage.RPCBlockVerboseData, error) {
-	if x == nil {
-		return nil, errors.Wrapf(errorNil, "RPCBlockVerboseData is nil")
-	}
-	block, err := x.Block.toAppMessage()
-	if err != nil {
-		return nil, err
-	}
-	transactionVerboseData := make([]*appmessage.RPCTransactionVerboseData, len(x.TransactionVerboseData))
-	for i, transactionVerboseDatum := range x.TransactionVerboseData {
-		appTransactionVerboseDatum, err := transactionVerboseDatum.toAppMessage()
-		if err != nil {
-			return nil, err
-		}
-		transactionVerboseData[i] = appTransactionVerboseDatum
-	}
-	return &appmessage.RPCBlockVerboseData{
-		Hash:                   x.Hash,
-		Block:                  block,
-		TransactionIDs:         x.TransactionIDs,
-		TransactionVerboseData: transactionVerboseData,
-		Difficulty:             x.Difficulty,
-		ChildrenHashes:         x.ChildrenHashes,
-		SelectedParentHash:     x.SelectedParentHash,
-		IsHeaderOnly:           x.IsHeaderOnly,
-		BlueScore:              x.BlueScore,
-	}, nil
-}
-
-func (x *BlockVerboseData) fromAppMessage(message *appmessage.RPCBlockVerboseData) error {
-	block := &RpcBlock{}
-	err := block.fromAppMessage(message.Block)
-	if err != nil {
-		return err
-	}
-	transactionVerboseData := make([]*TransactionVerboseData, len(message.TransactionVerboseData))
-	for i, transactionVerboseDatum := range message.TransactionVerboseData {
-		protoTransactionVerboseDatum := &TransactionVerboseData{}
-		err := protoTransactionVerboseDatum.fromAppMessage(transactionVerboseDatum)
-		if err != nil {
-			return err
-		}
-		transactionVerboseData[i] = protoTransactionVerboseDatum
-	}
-	*x = BlockVerboseData{
-		Hash:                   message.Hash,
-		Block:                  block,
-		TransactionIDs:         message.TransactionIDs,
-		TransactionVerboseData: transactionVerboseData,
-		Difficulty:             message.Difficulty,
-		ChildrenHashes:         message.ChildrenHashes,
-		SelectedParentHash:     message.SelectedParentHash,
-		IsHeaderOnly:           message.IsHeaderOnly,
-		BlueScore:              message.BlueScore,
+		Block: block,
+		Error: err,
 	}
 	return nil
 }

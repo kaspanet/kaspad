@@ -40,7 +40,7 @@ message RpcBlockVerboseData{
   string hash = 1;
   double difficulty = 11;
   string selectedParentHash = 13;
-  repeated string transactionIDs = 14;
+  repeated string transactionIds = 14;
   bool isHeaderOnly = 15;
   uint64 blueScore = 16;
   repeated string childrenHashes = 17;

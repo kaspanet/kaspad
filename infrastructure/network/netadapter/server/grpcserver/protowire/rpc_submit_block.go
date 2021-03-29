@@ -81,9 +81,18 @@ func (x *RpcBlock) toAppMessage() (*appmessage.RPCBlock, error) {
 		}
 		transactions[i] = appTransaction
 	}
+	var verboseData *appmessage.RPCBlockVerboseData
+	if x.VerboseData != nil {
+		appMessageVerboseData, err := x.VerboseData.toAppMessage()
+		if err != nil {
+			return nil, err
+		}
+		verboseData = appMessageVerboseData
+	}
 	return &appmessage.RPCBlock{
 		Header:       header,
 		Transactions: transactions,
+		VerboseData:  verboseData,
 	}, nil
 }
 
@@ -95,6 +104,11 @@ func (x *RpcBlock) fromAppMessage(message *appmessage.RPCBlock) error {
 		rpcTransaction := &RpcTransaction{}
 		rpcTransaction.fromAppMessage(transaction)
 		transactions[i] = rpcTransaction
+	}
+	var verboseData *RpcBlockVerboseData
+	if message.VerboseData != nil {
+		verboseData = &RpcBlockVerboseData{}
+		verboseData.fromAppMessage(message.VerboseData)
 	}
 	*x = RpcBlock{
 		Header:       header,
@@ -132,5 +146,32 @@ func (x *RpcBlockHeader) fromAppMessage(message *appmessage.RPCBlockHeader) {
 		Timestamp:            message.Timestamp,
 		Bits:                 message.Bits,
 		Nonce:                message.Nonce,
+	}
+}
+
+func (x *RpcBlockVerboseData) toAppMessage() (*appmessage.RPCBlockVerboseData, error) {
+	if x == nil {
+		return nil, errors.Wrapf(errorNil, "RpcBlockVerboseData is nil")
+	}
+	return &appmessage.RPCBlockVerboseData{
+		Hash:               x.Hash,
+		Difficulty:         x.Difficulty,
+		SelectedParentHash: x.SelectedParentHash,
+		TransactionIDs:     x.TransactionIds,
+		IsHeaderOnly:       x.IsHeaderOnly,
+		BlueScore:          x.BlueScore,
+		ChildrenHashes:     x.ChildrenHashes,
+	}, nil
+}
+
+func (x *RpcBlockVerboseData) fromAppMessage(message *appmessage.RPCBlockVerboseData) {
+	*x = RpcBlockVerboseData{
+		Hash:               message.Hash,
+		Difficulty:         message.Difficulty,
+		SelectedParentHash: message.SelectedParentHash,
+		TransactionIds:     message.TransactionIDs,
+		IsHeaderOnly:       message.IsHeaderOnly,
+		BlueScore:          message.BlueScore,
+		ChildrenHashes:     message.ChildrenHashes,
 	}
 }
