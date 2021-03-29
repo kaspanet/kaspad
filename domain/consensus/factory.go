@@ -1,10 +1,11 @@
 package consensus
 
 import (
-	daablocksstore "github.com/kaspanet/kaspad/domain/consensus/datastructures/daablocksstore"
 	"io/ioutil"
 	"os"
 	"sync"
+
+	daablocksstore "github.com/kaspanet/kaspad/domain/consensus/datastructures/daablocksstore"
 
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/headersselectedchainstore"
 
@@ -168,7 +169,8 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 		dagParams.MaxCoinbasePayloadLength,
 		dbManager,
 		pastMedianTimeManager,
-		ghostdagDataStore)
+		ghostdagDataStore,
+		daaBlocksStore)
 	difficultyManager := f.difficultyConstructor(
 		dbManager,
 		ghostdagManager,
@@ -188,7 +190,8 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 		dagParams.BaseSubsidy,
 		dagParams.CoinbasePayloadScriptPublicKeyMaxLength,
 		ghostdagDataStore,
-		acceptanceDataStore)
+		acceptanceDataStore,
+		daaBlocksStore)
 	headerTipsManager := headersselectedtipmanager.New(dbManager, dagTopologyManager, dagTraversalManager,
 		ghostdagManager, headersSelectedTipStore, headersSelectedChainStore)
 	genesisHash := dagParams.GenesisHash
@@ -253,6 +256,7 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 		coinbaseManager,
 		mergeDepthManager,
 		finalityManager,
+		difficultyManager,
 
 		blockStatusStore,
 		ghostdagDataStore,
@@ -264,7 +268,8 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 		acceptanceDataStore,
 		blockHeaderStore,
 		headersSelectedTipStore,
-		pruningStore)
+		pruningStore,
+		daaBlocksStore)
 	if err != nil {
 		return nil, err
 	}

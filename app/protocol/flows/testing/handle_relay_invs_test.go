@@ -181,7 +181,7 @@ func (f *fakeRelayInvsContext) GetBlockAcceptanceData(blockHash *externalapi.Dom
 	panic(errors.Errorf("called unimplemented function from test '%s'", f.testName))
 }
 
-func (f *fakeRelayInvsContext) GetHashesBetween(lowHash, highHash *externalapi.DomainHash, maxBlueScoreDifference uint64) ([]*externalapi.DomainHash, error) {
+func (f *fakeRelayInvsContext) GetHashesBetween(lowHash, highHash *externalapi.DomainHash, maxBlueScoreDifference uint64) (hashes []*externalapi.DomainHash, actualHighHash *externalapi.DomainHash, err error) {
 	panic(errors.Errorf("called unimplemented function from test '%s'", f.testName))
 }
 

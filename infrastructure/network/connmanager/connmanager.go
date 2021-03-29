@@ -158,7 +158,7 @@ func (c *ConnectionManager) BanByIP(ip net.IP) error {
 		}
 	}
 
-	return c.addressManager.Ban(appmessage.NewNetAddressIPPort(ip, 0, 0))
+	return c.addressManager.Ban(appmessage.NewNetAddressIPPort(ip, 0))
 }
 
 // IsBanned returns whether the given netConnection is banned

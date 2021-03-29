@@ -93,7 +93,7 @@ func (mud *mutableUTXODiff) ToAdd() externalapi.UTXOCollection {
 func (mud *mutableUTXODiff) ToRemove() externalapi.UTXOCollection {
 	return mud.toRemove
 }
-func (mud *mutableUTXODiff) AddTransaction(transaction *externalapi.DomainTransaction, blockBlueScore uint64) error {
+func (mud *mutableUTXODiff) AddTransaction(transaction *externalapi.DomainTransaction, blockDAAScore uint64) error {
 	mud.invalidateImmutableReferences()
 
 	for _, input := range transaction.Inputs {
@@ -110,7 +110,7 @@ func (mud *mutableUTXODiff) AddTransaction(transaction *externalapi.DomainTransa
 			TransactionID: transactionID,
 			Index:         uint32(i),
 		}
-		entry := NewUTXOEntry(output.Value, output.ScriptPublicKey, isCoinbase, blockBlueScore)
+		entry := NewUTXOEntry(output.Value, output.ScriptPublicKey, isCoinbase, blockDAAScore)
 
 		err := mud.addEntry(outpoint, entry)
 		if err != nil {
@@ -122,7 +122,7 @@ func (mud *mutableUTXODiff) AddTransaction(transaction *externalapi.DomainTransa
 }
 
 func (mud *mutableUTXODiff) addEntry(outpoint *externalapi.DomainOutpoint, entry externalapi.UTXOEntry) error {
-	if mud.toRemove.containsWithBlueScore(outpoint, entry.BlockBlueScore()) {
+	if mud.toRemove.containsWithDAAScore(outpoint, entry.BlockDAAScore()) {
 		mud.toRemove.remove(outpoint)
 	} else if mud.toAdd.Contains(outpoint) {
 		return errors.Errorf("AddEntry: Cannot add outpoint %s twice", outpoint)
@@ -133,7 +133,7 @@ func (mud *mutableUTXODiff) addEntry(outpoint *externalapi.DomainOutpoint, entry
 }
 
 func (mud *mutableUTXODiff) removeEntry(outpoint *externalapi.DomainOutpoint, entry externalapi.UTXOEntry) error {
-	if mud.toAdd.containsWithBlueScore(outpoint, entry.BlockBlueScore()) {
+	if mud.toAdd.containsWithDAAScore(outpoint, entry.BlockDAAScore()) {
 		mud.toAdd.remove(outpoint)
 	} else if mud.toRemove.Contains(outpoint) {
 		return errors.Errorf("removeEntry: Cannot remove outpoint %s twice", outpoint)

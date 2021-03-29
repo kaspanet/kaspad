@@ -83,7 +83,7 @@ message RpcOutpoint {
 message RpcUtxoEntry {
   uint64 amount = 1;
   RpcScriptPublicKey scriptPublicKey = 2;
-  uint64 blockBlueScore = 3;
+  uint64 blockDaaScore = 3;
   bool isCoinbase = 4;
 }
 

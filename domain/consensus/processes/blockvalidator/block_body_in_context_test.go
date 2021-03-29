@@ -1,6 +1,10 @@
 package blockvalidator_test
 
 import (
+	"testing"
+
+	"github.com/kaspanet/kaspad/domain/consensus/model"
+
 	"github.com/kaspanet/kaspad/domain/consensus"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
@@ -9,7 +13,6 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/utils/testutils"
 	"github.com/kaspanet/kaspad/domain/dagconfig"
 	"github.com/pkg/errors"
-	"testing"
 )
 
 func TestCheckBlockIsNotPruned(t *testing.T) {
@@ -59,7 +62,7 @@ func TestCheckBlockIsNotPruned(t *testing.T) {
 			t.Fatalf("Unexpected error: %+v", err)
 		}
 
-		beforePruningBlockBlockStatus, err := tc.BlockStatusStore().Get(tc.DatabaseContext(),
+		beforePruningBlockBlockStatus, err := tc.BlockStatusStore().Get(tc.DatabaseContext(), model.NewStagingArea(),
 			consensushashing.BlockHash(beforePruningBlock))
 		if err != nil {
 			t.Fatalf("BlockStatusStore().Get: %+v", err)
@@ -144,6 +147,8 @@ func TestCheckParentBlockBodiesExist(t *testing.T) {
 
 func TestIsFinalizedTransaction(t *testing.T) {
 	testutils.ForAllNets(t, true, func(t *testing.T, params *dagconfig.Params) {
+		stagingArea := model.NewStagingArea()
+
 		params.BlockCoinbaseMaturity = 0
 		factory := consensus.NewFactory()
 
@@ -174,7 +179,8 @@ func TestIsFinalizedTransaction(t *testing.T) {
 			}
 		}
 
-		block, err := tc.BuildBlock(&externalapi.DomainCoinbaseData{&externalapi.ScriptPublicKey{}, nil}, nil)
+		block, err := tc.BuildBlock(
+			&externalapi.DomainCoinbaseData{&externalapi.ScriptPublicKey{}, nil}, nil)
 		if err != nil {
 			t.Fatalf("Error getting block: %+v", err)
 		}
@@ -182,7 +188,7 @@ func TestIsFinalizedTransaction(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Error Inserting block: %+v", err)
 		}
-		blockGhostDAG, err := tc.GHOSTDAGDataStore().Get(tc.DatabaseContext(), consensushashing.BlockHash(block))
+		blockGhostDAG, err := tc.GHOSTDAGDataStore().Get(tc.DatabaseContext(), stagingArea, consensushashing.BlockHash(block))
 		if err != nil {
 			t.Fatalf("Error getting GhostDAG Data: %+v", err)
 		}
@@ -212,7 +218,7 @@ func TestIsFinalizedTransaction(t *testing.T) {
 		checkForLockTimeAndSequence(blockGhostDAG.BlueScore(), 0, false)
 		checkForLockTimeAndSequence(blockGhostDAG.BlueScore()-1, 0, true)
 
-		pastMedianTime, err := tc.PastMedianTimeManager().PastMedianTime(consensushashing.BlockHash(block))
+		pastMedianTime, err := tc.PastMedianTimeManager().PastMedianTime(stagingArea, consensushashing.BlockHash(block))
 		if err != nil {
 			t.Fatalf("PastMedianTime: %+v", err)
 		}

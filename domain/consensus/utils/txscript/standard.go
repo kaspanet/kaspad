@@ -6,6 +6,7 @@ package txscript
 
 import (
 	"fmt"
+
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
 	"github.com/pkg/errors"
@@ -47,8 +48,8 @@ func (t ScriptClass) String() string {
 func isPubkeyHash(pops []parsedOpcode) bool {
 	return len(pops) == 5 &&
 		pops[0].opcode.value == OpDup &&
-		pops[1].opcode.value == OpHash160 &&
-		pops[2].opcode.value == OpData20 &&
+		pops[1].opcode.value == OpBlake2b &&
+		pops[2].opcode.value == OpData32 &&
 		pops[3].opcode.value == OpEqualVerify &&
 		pops[4].opcode.value == OpCheckSig
 
@@ -172,7 +173,7 @@ func CalcScriptInfo(sigScript, scriptPubKey []byte, isP2SH bool) (*ScriptInfo, e
 // output to a 20-byte pubkey hash. It is expected that the input is a valid
 // hash.
 func payToPubKeyHashScript(pubKeyHash []byte) ([]byte, error) {
-	return NewScriptBuilder().AddOp(OpDup).AddOp(OpHash160).
+	return NewScriptBuilder().AddOp(OpDup).AddOp(OpBlake2b).
 		AddData(pubKeyHash).AddOp(OpEqualVerify).AddOp(OpCheckSig).
 		Script()
 }
@@ -180,7 +181,7 @@ func payToPubKeyHashScript(pubKeyHash []byte) ([]byte, error) {
 // payToScriptHashScript creates a new script to pay a transaction output to a
 // script hash. It is expected that the input is a valid hash.
 func payToScriptHashScript(scriptHash []byte) ([]byte, error) {
-	return NewScriptBuilder().AddOp(OpHash160).AddData(scriptHash).
+	return NewScriptBuilder().AddOp(OpBlake2b).AddData(scriptHash).
 		AddOp(OpEqual).Script()
 }
 
@@ -219,9 +220,9 @@ func PayToAddrScript(addr util.Address) (*externalapi.ScriptPublicKey, error) {
 
 // PayToScriptHashScript takes a script and returns an equivalent pay-to-script-hash script
 func PayToScriptHashScript(redeemScript []byte) ([]byte, error) {
-	redeemScriptHash := util.Hash160(redeemScript)
+	redeemScriptHash := util.HashBlake2b(redeemScript)
 	script, err := NewScriptBuilder().
-		AddOp(OpHash160).AddData(redeemScriptHash).
+		AddOp(OpBlake2b).AddData(redeemScriptHash).
 		AddOp(OpEqual).Script()
 	if err != nil {
 		return nil, err
@@ -265,7 +266,7 @@ func PushedData(script []byte) ([][]byte, error) {
 // as public keys which are invalid will return a nil address.
 func ExtractScriptPubKeyAddress(scriptPubKey *externalapi.ScriptPublicKey, dagParams *dagconfig.Params) (ScriptClass, util.Address, error) {
 	if scriptPubKey.Version > constants.MaxScriptPublicKeyVersion {
-		return NonStandardTy, nil, errors.Errorf("Script version is unkown.")
+		return NonStandardTy, nil, errors.Errorf("Script version is unknown.")
 	}
 	// No valid address if the script doesn't parse.
 	pops, err := parseScript(scriptPubKey.Script)
@@ -277,7 +278,7 @@ func ExtractScriptPubKeyAddress(scriptPubKey *externalapi.ScriptPublicKey, dagPa
 	switch scriptClass {
 	case PubKeyHashTy:
 		// A pay-to-pubkey-hash script is of the form:
-		//  OP_DUP OP_HASH160 <hash> OP_EQUALVERIFY OP_CHECKSIG
+		//  OP_DUP OP_BLAKE2B <hash> OP_EQUALVERIFY OP_CHECKSIG
 		// Therefore the pubkey hash is the 3rd item on the stack.
 		// If the pubkey hash is invalid for some reason, return a nil address.
 		addr, err := util.NewAddressPubKeyHash(pops[2].data,
@@ -289,7 +290,7 @@ func ExtractScriptPubKeyAddress(scriptPubKey *externalapi.ScriptPublicKey, dagPa
 
 	case ScriptHashTy:
 		// A pay-to-script-hash script is of the form:
-		//  OP_HASH160 <scripthash> OP_EQUAL
+		//  OP_BLAKE2B <scripthash> OP_EQUAL
 		// Therefore the script hash is the 2nd item on the stack.
 		// If the script hash ss invalid for some reason, return a nil address.
 		addr, err := util.NewAddressScriptHashFromHash(pops[1].data,
@@ -310,8 +311,8 @@ func ExtractScriptPubKeyAddress(scriptPubKey *externalapi.ScriptPublicKey, dagPa
 
 // AtomicSwapDataPushes houses the data pushes found in atomic swap contracts.
 type AtomicSwapDataPushes struct {
-	RecipientHash160 [20]byte
-	RefundHash160    [20]byte
+	RecipientBlake2b [32]byte
+	RefundBlake2b    [32]byte
 	SecretHash       [32]byte
 	SecretSize       int64
 	LockTime         uint64
@@ -345,15 +346,15 @@ func ExtractAtomicSwapDataPushes(version uint16, scriptPubKey []byte) (*AtomicSw
 		pops[5].opcode.value == OpData32 &&
 		pops[6].opcode.value == OpEqualVerify &&
 		pops[7].opcode.value == OpDup &&
-		pops[8].opcode.value == OpHash160 &&
-		pops[9].opcode.value == OpData20 &&
+		pops[8].opcode.value == OpBlake2b &&
+		pops[9].opcode.value == OpData32 &&
 		pops[10].opcode.value == OpElse &&
 		canonicalPush(pops[11]) &&
 		pops[12].opcode.value == OpCheckLockTimeVerify &&
 		pops[13].opcode.value == OpDrop &&
 		pops[14].opcode.value == OpDup &&
-		pops[15].opcode.value == OpHash160 &&
-		pops[16].opcode.value == OpData20 &&
+		pops[15].opcode.value == OpBlake2b &&
+		pops[16].opcode.value == OpData32 &&
 		pops[17].opcode.value == OpEndIf &&
 		pops[18].opcode.value == OpEqualVerify &&
 		pops[19].opcode.value == OpCheckSig
@@ -363,8 +364,8 @@ func ExtractAtomicSwapDataPushes(version uint16, scriptPubKey []byte) (*AtomicSw
 
 	pushes := new(AtomicSwapDataPushes)
 	copy(pushes.SecretHash[:], pops[5].data)
-	copy(pushes.RecipientHash160[:], pops[9].data)
-	copy(pushes.RefundHash160[:], pops[16].data)
+	copy(pushes.RecipientBlake2b[:], pops[9].data)
+	copy(pushes.RefundBlake2b[:], pops[16].data)
 	if pops[2].data != nil {
 		locktime, err := makeScriptNum(pops[2].data, 5)
 		if err != nil {

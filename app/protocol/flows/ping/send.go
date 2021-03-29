@@ -13,6 +13,7 @@ import (
 
 // SendPingsContext is the interface for the context needed for the SendPings flow.
 type SendPingsContext interface {
+	ShutdownChan() <-chan struct{}
 }
 
 type sendPingsFlow struct {
@@ -39,7 +40,13 @@ func (flow *sendPingsFlow) start() error {
 	ticker := time.NewTicker(pingInterval)
 	defer ticker.Stop()
 
-	for range ticker.C {
+	for {
+		select {
+		case <-flow.ShutdownChan():
+			return nil
+		case <-ticker.C:
+		}
+
 		nonce, err := random.Uint64()
 		if err != nil {
 			return err
@@ -62,5 +69,4 @@ func (flow *sendPingsFlow) start() error {
 		}
 		flow.peer.SetPingIdle()
 	}
-	return nil
 }

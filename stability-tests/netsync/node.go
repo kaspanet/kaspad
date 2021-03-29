@@ -15,6 +15,7 @@ import (
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/panics"
 	"github.com/pkg/errors"
+	"golang.org/x/crypto/blake2b"
 )
 
 const (
@@ -31,13 +32,15 @@ func startNode(name string, rpcAddress, listen, connect, profilePort, dataDir st
 	args := []string{
 		"kaspad",
 		common.NetworkCliArgumentFromNetParams(activeConfig().NetParams()),
-		"--datadir", dataDir,
+		"--appdir", dataDir,
 		"--logdir", dataDir,
 		"--rpclisten", rpcAddress,
 		"--listen", listen,
-		"--connect", connect,
 		"--profile", profilePort,
 		"--loglevel", "debug",
+	}
+	if connect != "" {
+		args = append(args, "--connect", connect)
 	}
 
 	if activeConfig().OverrideDAGParamsFile != "" {
@@ -132,7 +135,7 @@ func setupSyncer() (*rpc.Client, func(), error) {
 		return nil, nil, err
 	}
 
-	rpcClient, teardown, err := setupNodeWithRPC("SYNCER", syncerListen, syncerRPCAddress, syncedListen,
+	rpcClient, teardown, err := setupNodeWithRPC("SYNCER", syncerListen, syncerRPCAddress, "",
 		syncerProfilePort, syncerDataDir)
 	if err != nil {
 		return nil, nil, err
@@ -175,7 +178,7 @@ func useDirOrCreateTemp(dataDir, tempName string) (string, error) {
 }
 
 func mineOnTips(client *rpc.Client) (appmessage.RejectReason, error) {
-	fakePublicKeyHash := make([]byte, 20)
+	fakePublicKeyHash := make([]byte, blake2b.Size256)
 	addr, err := util.NewAddressPubKeyHash(fakePublicKeyHash, activeConfig().NetParams().Prefix)
 	if err != nil {
 		return appmessage.RejectReasonNone, err

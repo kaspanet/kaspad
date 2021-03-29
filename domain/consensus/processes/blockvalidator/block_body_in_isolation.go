@@ -1,6 +1,7 @@
 package blockvalidator
 
 import (
+	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
@@ -14,11 +15,11 @@ import (
 
 // ValidateBodyInIsolation validates block bodies in isolation from the current
 // consensus state
-func (v *blockValidator) ValidateBodyInIsolation(blockHash *externalapi.DomainHash) error {
+func (v *blockValidator) ValidateBodyInIsolation(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) error {
 	onEnd := logger.LogAndMeasureExecutionTime(log, "ValidateBodyInContext")
 	defer onEnd()
 
-	block, err := v.blockStore.Block(v.databaseContext, blockHash)
+	block, err := v.blockStore.Block(v.databaseContext, stagingArea, blockHash)
 	if err != nil {
 		return err
 	}

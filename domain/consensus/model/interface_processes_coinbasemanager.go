@@ -5,8 +5,7 @@ import "github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 // CoinbaseManager exposes methods for handling blocks'
 // coinbase transactions
 type CoinbaseManager interface {
-	ExpectedCoinbaseTransaction(blockHash *externalapi.DomainHash,
+	ExpectedCoinbaseTransaction(stagingArea *StagingArea, blockHash *externalapi.DomainHash,
 		coinbaseData *externalapi.DomainCoinbaseData) (*externalapi.DomainTransaction, error)
-	ExtractCoinbaseDataAndBlueScore(coinbaseTx *externalapi.DomainTransaction) (blueScore uint64,
-		coinbaseData *externalapi.DomainCoinbaseData, err error)
+	ExtractCoinbaseDataAndBlueScore(coinbaseTx *externalapi.DomainTransaction) (blueScore uint64, coinbaseData *externalapi.DomainCoinbaseData, err error)
 }

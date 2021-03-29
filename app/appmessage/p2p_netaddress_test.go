@@ -15,7 +15,7 @@ func TestNetAddress(t *testing.T) {
 	port := 16111
 
 	// Test NewNetAddress.
-	na := NewNetAddress(&net.TCPAddr{IP: ip, Port: port}, 0)
+	na := NewNetAddress(&net.TCPAddr{IP: ip, Port: port})
 
 	// Ensure we get the same ip, port, and services back out.
 	if !na.IP.Equal(ip) {
@@ -24,22 +24,5 @@ func TestNetAddress(t *testing.T) {
 	if na.Port != uint16(port) {
 		t.Errorf("NetNetAddress: wrong port - got %v, want %v", na.Port,
 			port)
-	}
-	if na.Services != 0 {
-		t.Errorf("NetNetAddress: wrong services - got %v, want %v",
-			na.Services, 0)
-	}
-	if na.HasService(SFNodeNetwork) {
-		t.Errorf("HasService: SFNodeNetwork service is set")
-	}
-
-	// Ensure adding the full service node flag works.
-	na.AddService(SFNodeNetwork)
-	if na.Services != SFNodeNetwork {
-		t.Errorf("AddService: wrong services - got %v, want %v",
-			na.Services, SFNodeNetwork)
-	}
-	if !na.HasService(SFNodeNetwork) {
-		t.Errorf("HasService: SFNodeNetwork service not set")
 	}
 }

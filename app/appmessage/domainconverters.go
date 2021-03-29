@@ -266,7 +266,7 @@ func OutpointAndUTXOEntryPairsToDomainOutpointAndUTXOEntryPairs(
 				outpointAndUTXOEntryPair.UTXOEntry.Amount,
 				outpointAndUTXOEntryPair.UTXOEntry.ScriptPublicKey,
 				outpointAndUTXOEntryPair.UTXOEntry.IsCoinbase,
-				outpointAndUTXOEntryPair.UTXOEntry.BlockBlueScore,
+				outpointAndUTXOEntryPair.UTXOEntry.BlockDAAScore,
 			),
 		}
 	}
@@ -289,7 +289,7 @@ func DomainOutpointAndUTXOEntryPairsToOutpointAndUTXOEntryPairs(
 				Amount:          outpointAndUTXOEntryPair.UTXOEntry.Amount(),
 				ScriptPublicKey: outpointAndUTXOEntryPair.UTXOEntry.ScriptPublicKey(),
 				IsCoinbase:      outpointAndUTXOEntryPair.UTXOEntry.IsCoinbase(),
-				BlockBlueScore:  outpointAndUTXOEntryPair.UTXOEntry.BlockBlueScore(),
+				BlockDAAScore:   outpointAndUTXOEntryPair.UTXOEntry.BlockDAAScore(),
 			},
 		}
 	}
