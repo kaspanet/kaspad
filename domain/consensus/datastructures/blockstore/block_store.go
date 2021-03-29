@@ -11,7 +11,7 @@ import (
 )
 
 var bucket = database.MakeBucket([]byte("blocks"))
-var countKey = database.MakeBucket(nil).Key([]byte("blocks-countCached"))
+var countKey = database.MakeBucket(nil).Key([]byte("blocks-count"))
 
 // blockStore represents a store of blocks
 type blockStore struct {
