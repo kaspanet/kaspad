@@ -3,26 +3,24 @@ package main
 import (
 	"encoding/hex"
 	"fmt"
+	"github.com/kaspanet/kaspad/cmd/kaspawallet/keys"
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/libkaspawallet"
 	"github.com/kaspanet/kaspad/infrastructure/network/rpcclient"
 	"github.com/kaspanet/kaspad/util"
 )
 
 func createUnsignedTransaction(conf *createUnsignedTransactionConfig) error {
+	keysFile, err := keys.ReadKeysFile(conf.KeysFile)
+	if err != nil {
+		return err
+	}
+
 	toAddress, err := util.DecodeAddress(conf.ToAddress, conf.NetParams().Prefix)
 	if err != nil {
 		return err
 	}
 
-	pubKeys := make([][]byte, len(conf.PublicKey))
-	for i, pubKeyHex := range conf.PublicKey {
-		pubKeys[i], err = hex.DecodeString(pubKeyHex)
-		if err != nil {
-			return err
-		}
-	}
-
-	fromAddress, err := libkaspawallet.MultiSigAddress(conf.NetParams(), pubKeys, conf.MinimumSignatures)
+	fromAddress, err := libkaspawallet.MultiSigAddress(conf.NetParams(), keysFile.PublicKeys, keysFile.MinimumSignatures)
 	if err != nil {
 		return err
 	}
@@ -44,7 +42,7 @@ func createUnsignedTransaction(conf *createUnsignedTransactionConfig) error {
 		return err
 	}
 
-	psTx, err := libkaspawallet.CreateUnsignedTransaction(pubKeys, conf.MinimumSignatures, []*libkaspawallet.Payment{{
+	psTx, err := libkaspawallet.CreateUnsignedTransaction(keysFile.PublicKeys, keysFile.MinimumSignatures, []*libkaspawallet.Payment{{
 		Address: toAddress,
 		Amount:  sendAmountSompi,
 	}, {

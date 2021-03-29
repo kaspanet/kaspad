@@ -14,39 +14,6 @@ import (
 	"github.com/pkg/errors"
 )
 
-func CreateP2PKHFromUTXOs(
-	privateKey []byte,
-	payments []*Payment,
-	selectedUTXOs []*externalapi.OutpointAndUTXOEntryPair) (*externalapi.DomainTransaction, error) {
-
-	keyPair, err := secp256k1.DeserializePrivateKeyFromSlice(privateKey)
-	if err != nil {
-		return nil, errors.Wrap(err, "Error deserializing private key")
-	}
-
-	publicKey, err := keyPair.SchnorrPublicKey()
-	if err != nil {
-		return nil, errors.Wrap(err, "Error generating public key")
-	}
-
-	serializedPublicKey, err := publicKey.Serialize()
-	if err != nil {
-		return nil, err
-	}
-
-	unsignedTransaction, err := createUnsignedTransaction([][]byte{serializedPublicKey[:]}, 1, payments, selectedUTXOs)
-	if err != nil {
-		return nil, err
-	}
-
-	err = sign(keyPair, unsignedTransaction)
-	if err != nil {
-		return nil, err
-	}
-
-	return extractTransaction(unsignedTransaction)
-}
-
 type Payment struct {
 	Address util.Address
 	Amount  uint64
@@ -65,10 +32,14 @@ func CreateUnsignedTransaction(
 	return serialization.SerializePartiallySignedTransaction(unsignedTransaction)
 }
 
-func Sign(privateKey []byte, serializedPSTx []byte) ([]byte, error) {
-	keyPair, err := secp256k1.DeserializePrivateKeyFromSlice(privateKey)
-	if err != nil {
-		return nil, errors.Wrap(err, "Error deserializing private key")
+func Sign(privateKeys [][]byte, serializedPSTx []byte) ([]byte, error) {
+	keyPairs := make([]*secp256k1.SchnorrKeyPair, len(privateKeys))
+	for i, privateKey := range privateKeys {
+		var err error
+		keyPairs[i], err = secp256k1.DeserializePrivateKeyFromSlice(privateKey)
+		if err != nil {
+			return nil, errors.Wrap(err, "Error deserializing private key")
+		}
 	}
 
 	partiallySignedTransaction, err := serialization.DeserializePartiallySignedTransaction(serializedPSTx)
@@ -76,9 +47,11 @@ func Sign(privateKey []byte, serializedPSTx []byte) ([]byte, error) {
 		return nil, err
 	}
 
-	err = sign(keyPair, partiallySignedTransaction)
-	if err != nil {
-		return nil, err
+	for _, keyPair := range keyPairs {
+		err = sign(keyPair, partiallySignedTransaction)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return serialization.SerializePartiallySignedTransaction(partiallySignedTransaction)
@@ -183,6 +156,7 @@ func sign(keyPair *secp256k1.SchnorrKeyPair, psTx *serialization.PartiallySigned
 		)
 	}
 
+	signed := false
 	for i, partiallySignedInput := range psTx.PartiallySignedInputs {
 		for _, pair := range partiallySignedInput.PubKeySignaturePairs {
 			if bytes.Equal(pair.PubKey, serializedPublicKey[:]) {
@@ -190,8 +164,14 @@ func sign(keyPair *secp256k1.SchnorrKeyPair, psTx *serialization.PartiallySigned
 				if err != nil {
 					return err
 				}
+
+				signed = true
 			}
 		}
+	}
+
+	if !signed {
+		return errors.Errorf("Public key doesn't match any of the transaction public keys")
 	}
 
 	return nil

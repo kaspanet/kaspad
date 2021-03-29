@@ -14,7 +14,6 @@ const (
 	sendSubCmd                      = "send"
 	createUnsignedTransactionSubCmd = "createUnsignedTransaction"
 	signSubCmd                      = "sign"
-	createMultisigAddressSubCmd     = "createMultisigAddress"
 	broadcastSubCmd                 = "broadcast"
 )
 
@@ -23,41 +22,38 @@ type configFlags struct {
 }
 
 type createConfig struct {
+	KeysFile          string `long:"keys-file" short:"f" description:"Keys file location (only if different from default)"`
+	MinimumSignatures uint32 `long:"min-signatures" short:"m" description:"Minimum required signatures" default:"1"`
+	NumPrivateKeys    uint32 `long:"num-private-keys" short:"k" description:"Number of private keys to generate" default:"1"`
+	NumPublicKeys     uint32 `long:"num-public-keys" short:"n" description:"Total number of keys" default:"1"`
 	config.NetworkFlags
 }
 
 type balanceConfig struct {
+	KeysFile  string `long:"keys-file" short:"f" description:"Keys file location (only if different from default)"`
 	RPCServer string `long:"rpcserver" short:"s" description:"RPC server to connect to"`
-	Address   string `long:"address" short:"d" description:"The public address to check the balance of" required:"true"`
 	config.NetworkFlags
 }
 
 type sendConfig struct {
+	KeysFile   string  `long:"keys-file" short:"f" description:"Keys file location (only if different from default)"`
 	RPCServer  string  `long:"rpcserver" short:"s" description:"RPC server to connect to"`
-	PrivateKey string  `long:"private-key" short:"k" description:"The private key of the sender (encoded in hex)" required:"true"`
 	ToAddress  string  `long:"to-address" short:"t" description:"The public address to send Kaspa to" required:"true"`
 	SendAmount float64 `long:"send-amount" short:"v" description:"An amount to send in Kaspa (e.g. 1234.12345678)" required:"true"`
 	config.NetworkFlags
 }
 
 type createUnsignedTransactionConfig struct {
-	RPCServer         string   `long:"rpcserver" short:"s" description:"RPC server to connect to"`
-	PublicKey         []string `long:"public-key" short:"p" description:"The public keys of the sender (encoded in hex)" required:"true"`
-	MinimumSignatures uint32   `long:"min-signatures" short:"m" description:"Minimum required signatures" required:"true"`
-	ToAddress         string   `long:"to-address" short:"t" description:"The public address to send Kaspa to" required:"true"`
-	SendAmount        float64  `long:"send-amount" short:"v" description:"An amount to send in Kaspa (e.g. 1234.12345678)" required:"true"`
+	KeysFile   string  `long:"keys-file" short:"f" description:"Keys file location (only if different from default)"`
+	RPCServer  string  `long:"rpcserver" short:"s" description:"RPC server to connect to"`
+	ToAddress  string  `long:"to-address" short:"t" description:"The public address to send Kaspa to" required:"true"`
+	SendAmount float64 `long:"send-amount" short:"v" description:"An amount to send in Kaspa (e.g. 1234.12345678)" required:"true"`
 	config.NetworkFlags
 }
 
 type signConfig struct {
-	PrivateKey  string `long:"private-key" short:"k" description:"The private key of the signer (encoded in hex)" required:"true"`
+	KeysFile    string `long:"keys-file" short:"f" description:"Keys file location (only if different from default)"`
 	Transaction string `long:"transaction" short:"t" description:"The unsigned transaction to sign on (encoded in hex)" required:"true"`
-	config.NetworkFlags
-}
-
-type createMultisigAddressConfig struct {
-	PublicKey         []string `long:"public-key" short:"p" description:"The public keys of the multisig participants (encoded in hex)" required:"true"`
-	MinimumSignatures uint32   `long:"min-signatures" short:"m" description:"Minimum required signatures" required:"true"`
 	config.NetworkFlags
 }
 
@@ -90,10 +86,6 @@ func parseCommandLine() (subCommand string, config interface{}) {
 	signConf := &signConfig{}
 	parser.AddCommand(signSubCmd, "Sign the given partially signed transaction",
 		"Sign the given partially signed transaction", signConf)
-
-	createMultisigAddressConf := &createMultisigAddressConfig{}
-	parser.AddCommand(createMultisigAddressSubCmd, "Create multisig address",
-		"Create multisig address", createMultisigAddressConf)
 
 	broadcastConf := &broadcastConfig{}
 	parser.AddCommand(broadcastSubCmd, "Broadcast the given transaction",
@@ -147,13 +139,6 @@ func parseCommandLine() (subCommand string, config interface{}) {
 			printErrorAndExit(err)
 		}
 		config = signConf
-	case createMultisigAddressSubCmd:
-		combineNetworkFlags(&createMultisigAddressConf.NetworkFlags, &cfg.NetworkFlags)
-		err := createMultisigAddressConf.ResolveNetwork(parser)
-		if err != nil {
-			printErrorAndExit(err)
-		}
-		config = createMultisigAddressConf
 	case broadcastSubCmd:
 		combineNetworkFlags(&broadcastConf.NetworkFlags, &cfg.NetworkFlags)
 		err := broadcastConf.ResolveNetwork(parser)

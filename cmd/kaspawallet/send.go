@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/hex"
 	"fmt"
+	"github.com/kaspanet/kaspad/cmd/kaspawallet/keys"
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/libkaspawallet"
 	utxopkg "github.com/kaspanet/kaspad/domain/consensus/utils/utxo"
 	"github.com/kaspanet/kaspad/domain/dagconfig"
@@ -16,17 +17,17 @@ import (
 )
 
 func send(conf *sendConfig) error {
+	keysFile, err := keys.ReadKeysFile(conf.KeysFile)
+	if err != nil {
+		return err
+	}
+
 	toAddress, err := util.DecodeAddress(conf.ToAddress, conf.ActiveNetParams.Prefix)
 	if err != nil {
 		return err
 	}
 
-	privateKeyBytes, err := hex.DecodeString(conf.PrivateKey)
-	if err != nil {
-		return err
-	}
-
-	fromAddress, err := libkaspawallet.AddressFromPrivateKey(conf.NetParams(), privateKeyBytes)
+	fromAddress, err := libkaspawallet.MultiSigAddress(conf.NetParams(), keysFile.PublicKeys, keysFile.MinimumSignatures)
 	if err != nil {
 		return err
 	}
@@ -48,13 +49,18 @@ func send(conf *sendConfig) error {
 		return err
 	}
 
-	tx, err := libkaspawallet.CreateP2PKHFromUTXOs(privateKeyBytes, []*libkaspawallet.Payment{{
+	psTx, err := libkaspawallet.CreateUnsignedTransaction(keysFile.PublicKeys, keysFile.MinimumSignatures, []*libkaspawallet.Payment{{
 		Address: toAddress,
 		Amount:  sendAmountSompi,
 	}, {
 		Address: fromAddress,
 		Amount:  changeSompi,
 	}}, selectedUTXOs)
+	if err != nil {
+		return err
+	}
+
+	tx, err := libkaspawallet.ExtractTransaction(psTx)
 	if err != nil {
 		return err
 	}

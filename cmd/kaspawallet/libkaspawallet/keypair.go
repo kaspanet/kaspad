@@ -29,25 +29,6 @@ func CreateKeyPair(params *dagconfig.Params) ([]byte, []byte, util.Address, erro
 	return privateKey.SerializePrivateKey()[:], publicKeySerialized[:], addr, nil
 }
 
-func AddressFromPrivateKey(params *dagconfig.Params, privateKey []byte) (util.Address, error) {
-	keyPair, err := secp256k1.DeserializePrivateKeyFromSlice(privateKey)
-	if err != nil {
-		return nil, errors.Wrap(err, "Error deserializing private key")
-	}
-
-	publicKey, err := keyPair.SchnorrPublicKey()
-	if err != nil {
-		return nil, errors.Wrap(err, "Error generating public key")
-	}
-
-	publicKeySerialized, err := publicKey.Serialize()
-	if err != nil {
-		return nil, errors.Wrap(err, "Failed to serialize public key")
-	}
-
-	return addressFromPublicKey(params, publicKeySerialized[:])
-}
-
 func addressFromPublicKey(params *dagconfig.Params, publicKeySerialized []byte) (util.Address, error) {
 	addr, err := util.NewAddressPubKeyHashFromPublicKey(publicKeySerialized[:], params.Prefix)
 	if err != nil {

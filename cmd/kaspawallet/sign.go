@@ -3,11 +3,12 @@ package main
 import (
 	"encoding/hex"
 	"fmt"
+	"github.com/kaspanet/kaspad/cmd/kaspawallet/keys"
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/libkaspawallet"
 )
 
 func sign(conf *signConfig) error {
-	privateKeyBytes, err := hex.DecodeString(conf.PrivateKey)
+	keysFile, err := keys.ReadKeysFile(conf.KeysFile)
 	if err != nil {
 		return err
 	}
@@ -17,7 +18,12 @@ func sign(conf *signConfig) error {
 		return err
 	}
 
-	updatedPSTxBytes, err := libkaspawallet.Sign(privateKeyBytes, psTxBytes)
+	privateKeys, err := keysFile.DecryptPrivateKeys()
+	if err != nil {
+		return err
+	}
+
+	updatedPSTxBytes, err := libkaspawallet.Sign(privateKeys, psTxBytes)
 	if err != nil {
 		return err
 	}
@@ -33,8 +39,6 @@ func sign(conf *signConfig) error {
 		fmt.Println("Successfully signed transaction")
 	}
 
-	fmt.Println("Transaction:")
-	fmt.Printf(hex.EncodeToString(updatedPSTxBytes))
-
+	fmt.Printf("Transaction: %x\n", updatedPSTxBytes)
 	return nil
 }

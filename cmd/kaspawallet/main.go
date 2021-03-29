@@ -17,8 +17,6 @@ func main() {
 		err = createUnsignedTransaction(config.(*createUnsignedTransactionConfig))
 	case signSubCmd:
 		err = sign(config.(*signConfig))
-	case createMultisigAddressSubCmd:
-		err = createMultisigAddress(config.(*createMultisigAddressConfig))
 	case broadcastSubCmd:
 		err = broadcast(config.(*broadcastConfig))
 	default:

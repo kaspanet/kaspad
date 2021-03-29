@@ -13,6 +13,7 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/syndtr/goleveldb v1.0.1-0.20190923125748-758128399b1d
 	golang.org/x/crypto v0.0.0-20201016220609-9e8e0b390897
+	golang.org/x/term v0.0.0-20210317153231-de623e64d2a6
 	google.golang.org/grpc v1.33.1
 	google.golang.org/protobuf v1.25.0
 )
