@@ -12,6 +12,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/utils/utxo"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/pkg/errors"
+	"sort"
 )
 
 type Payment struct {
@@ -19,11 +20,18 @@ type Payment struct {
 	Amount  uint64
 }
 
+func sortPublicKeys(publicKeys [][]byte) {
+	sort.Slice(publicKeys, func(i, j int) bool {
+		return bytes.Compare(publicKeys[i], publicKeys[j]) < 0
+	})
+}
+
 func CreateUnsignedTransaction(
 	pubKeys [][]byte,
 	minimumSignatures uint32,
 	payments []*Payment,
 	selectedUTXOs []*externalapi.OutpointAndUTXOEntryPair) ([]byte, error) {
+	sortPublicKeys(pubKeys)
 	unsignedTransaction, err := createUnsignedTransaction(pubKeys, minimumSignatures, payments, selectedUTXOs)
 	if err != nil {
 		return nil, err
@@ -236,6 +244,10 @@ func extractTransaction(psTx *serialization.PartiallySignedTransaction) (*extern
 		} else {
 			if len(input.PubKeySignaturePairs) > 1 {
 				return nil, errors.Errorf("Cannot sign on P2PKH when len(input.PubKeySignaturePairs) > 1")
+			}
+
+			if input.PubKeySignaturePairs[0].Signature == nil {
+				return nil, errors.Errorf("missing signature")
 			}
 
 			sigScript, err := txscript.NewScriptBuilder().

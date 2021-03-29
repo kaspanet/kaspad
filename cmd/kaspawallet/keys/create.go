@@ -4,11 +4,10 @@ import (
 	"crypto/cipher"
 	"crypto/rand"
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/libkaspawallet"
-	"github.com/kaspanet/kaspad/domain/dagconfig"
 	"github.com/pkg/errors"
 )
 
-func CreateKeyPairs(params *dagconfig.Params, numKeys uint32) (encryptedPrivateKeys, publicKeys [][]byte, err error) {
+func CreateKeyPairs(numKeys uint32) (encryptedPrivateKeys, publicKeys [][]byte, err error) {
 	password := getPassword("Enter password for the key file:")
 	confirmPassword := getPassword("Confirm password:")
 
@@ -23,7 +22,7 @@ func CreateKeyPairs(params *dagconfig.Params, numKeys uint32) (encryptedPrivateK
 
 	encryptedPrivateKeys = make([][]byte, 0, numKeys)
 	for i := uint32(0); i < numKeys; i++ {
-		privateKey, publicKey, _, err := libkaspawallet.CreateKeyPair(params)
+		privateKey, publicKey, err := libkaspawallet.CreateKeyPair()
 		if err != nil {
 			return nil, nil, err
 		}

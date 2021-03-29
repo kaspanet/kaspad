@@ -11,7 +11,7 @@ import (
 )
 
 func create(conf *createConfig) error {
-	encryptedPrivateKeys, publicKeys, err := keys.CreateKeyPairs(conf.NetParams(), conf.NumPrivateKeys)
+	encryptedPrivateKeys, publicKeys, err := keys.CreateKeyPairs(conf.NumPrivateKeys)
 	if err != nil {
 		return err
 	}

@@ -2,7 +2,6 @@ package keys
 
 import (
 	"bufio"
-	"bytes"
 	"crypto/cipher"
 	"encoding/hex"
 	"encoding/json"
@@ -14,7 +13,6 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
-	"sort"
 )
 
 var (
@@ -72,10 +70,6 @@ func (kf *KeysFile) fromJSON(kfj *keysFileJSON) error {
 			return err
 		}
 	}
-
-	sort.Slice(kf.PublicKeys, func(i, j int) bool {
-		return bytes.Compare(kf.PublicKeys[i], kf.PublicKeys[j]) < 0
-	})
 
 	return nil
 }
