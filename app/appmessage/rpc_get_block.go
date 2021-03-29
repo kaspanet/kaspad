@@ -25,7 +25,7 @@ func NewGetBlockRequestMessage(hash string, includeTransactionVerboseData bool) 
 // its respective RPC message
 type GetBlockResponseMessage struct {
 	baseMessage
-	BlockVerboseData *RPCBlockVerboseData
+	Block *RPCBlock
 
 	Error *RPCError
 }

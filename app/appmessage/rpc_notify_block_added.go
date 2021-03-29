@@ -37,7 +37,7 @@ func NewNotifyBlockAddedResponseMessage() *NotifyBlockAddedResponseMessage {
 // its respective RPC message
 type BlockAddedNotificationMessage struct {
 	baseMessage
-	BlockVerboseData *RPCBlockVerboseData
+	Block *RPCBlock
 }
 
 // Command returns the protocol command string for the message
@@ -46,8 +46,8 @@ func (msg *BlockAddedNotificationMessage) Command() MessageCommand {
 }
 
 // NewBlockAddedNotificationMessage returns a instance of the message
-func NewBlockAddedNotificationMessage(blockVerboseData *RPCBlockVerboseData) *BlockAddedNotificationMessage {
+func NewBlockAddedNotificationMessage(block *RPCBlock) *BlockAddedNotificationMessage {
 	return &BlockAddedNotificationMessage{
-		BlockVerboseData: blockVerboseData,
+		Block: block,
 	}
 }

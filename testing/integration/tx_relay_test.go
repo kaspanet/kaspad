@@ -29,7 +29,7 @@ func TestTxRelay(t *testing.T) {
 
 	payeeBlockAddedChan := make(chan *appmessage.RPCBlockHeader)
 	setOnBlockAddedHandler(t, payee, func(notification *appmessage.BlockAddedNotificationMessage) {
-		payeeBlockAddedChan <- notification.BlockVerboseData.Block.Header
+		payeeBlockAddedChan <- notification.Block.Block.Header
 	})
 	// skip the first block because it's paying to genesis script
 	mineNextBlock(t, payer)

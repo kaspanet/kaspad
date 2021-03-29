@@ -28,8 +28,7 @@ func NewGetBlocksRequestMessage(lowHash string, includeBlockVerboseData bool,
 // its respective RPC message
 type GetBlocksResponseMessage struct {
 	baseMessage
-	BlockHashes      []string
-	BlockVerboseData []*RPCBlockVerboseData
+	Blocks []*RPCBlock
 
 	Error *RPCError
 }
@@ -40,11 +39,8 @@ func (msg *GetBlocksResponseMessage) Command() MessageCommand {
 }
 
 // NewGetBlocksResponseMessage returns a instance of the message
-func NewGetBlocksResponseMessage(blockHashes []string, blockHexes []string,
-	blockVerboseData []*RPCBlockVerboseData) *GetBlocksResponseMessage {
-
+func NewGetBlocksResponseMessage(blocks []*RPCBlock) *GetBlocksResponseMessage {
 	return &GetBlocksResponseMessage{
-		BlockHashes:      blockHashes,
-		BlockVerboseData: blockVerboseData,
+		Blocks: blocks,
 	}
 }
