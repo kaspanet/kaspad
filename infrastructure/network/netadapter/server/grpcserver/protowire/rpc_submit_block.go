@@ -26,7 +26,6 @@ func (x *SubmitBlockRequestMessage) toAppMessage() (appmessage.Message, error) {
 	if err != nil {
 		return nil, err
 	}
-
 	return &appmessage.SubmitBlockRequestMessage{
 		Block: blockAppMessage,
 	}, nil
@@ -70,18 +69,9 @@ func (x *RpcBlock) toAppMessage() (*appmessage.RPCBlock, error) {
 	if x == nil {
 		return nil, errors.Wrapf(errorNil, "RpcBlock is nil")
 	}
-	if x.Header.Version > math.MaxUint16 {
-		return nil, errors.Errorf("Invalid block header version - bigger then uint16")
-	}
-	header := &appmessage.RPCBlockHeader{
-		Version:              x.Header.Version,
-		ParentHashes:         x.Header.ParentHashes,
-		HashMerkleRoot:       x.Header.HashMerkleRoot,
-		AcceptedIDMerkleRoot: x.Header.AcceptedIdMerkleRoot,
-		UTXOCommitment:       x.Header.UtxoCommitment,
-		Timestamp:            x.Header.Timestamp,
-		Bits:                 x.Header.Bits,
-		Nonce:                x.Header.Nonce,
+	header, err := x.Header.toAppMessage()
+	if err != nil {
+		return nil, err
 	}
 	transactions := make([]*appmessage.RPCTransaction, len(x.Transactions))
 	for i, transaction := range x.Transactions {
@@ -98,16 +88,8 @@ func (x *RpcBlock) toAppMessage() (*appmessage.RPCBlock, error) {
 }
 
 func (x *RpcBlock) fromAppMessage(message *appmessage.RPCBlock) error {
-	header := &RpcBlockHeader{
-		Version:              message.Header.Version,
-		ParentHashes:         message.Header.ParentHashes,
-		HashMerkleRoot:       message.Header.HashMerkleRoot,
-		AcceptedIdMerkleRoot: message.Header.AcceptedIDMerkleRoot,
-		UtxoCommitment:       message.Header.UTXOCommitment,
-		Timestamp:            message.Header.Timestamp,
-		Bits:                 message.Header.Bits,
-		Nonce:                message.Header.Nonce,
-	}
+	header := &RpcBlockHeader{}
+	header.fromAppMessage(message.Header)
 	transactions := make([]*RpcTransaction, len(message.Transactions))
 	for i, transaction := range message.Transactions {
 		rpcTransaction := &RpcTransaction{}
@@ -119,4 +101,36 @@ func (x *RpcBlock) fromAppMessage(message *appmessage.RPCBlock) error {
 		Transactions: transactions,
 	}
 	return nil
+}
+
+func (x *RpcBlockHeader) toAppMessage() (*appmessage.RPCBlockHeader, error) {
+	if x == nil {
+		return nil, errors.Wrapf(errorNil, "RpcBlockHeader is nil")
+	}
+	if x.Version > math.MaxUint16 {
+		return nil, errors.Errorf("Invalid block header version - bigger then uint16")
+	}
+	return &appmessage.RPCBlockHeader{
+		Version:              x.Version,
+		ParentHashes:         x.ParentHashes,
+		HashMerkleRoot:       x.HashMerkleRoot,
+		AcceptedIDMerkleRoot: x.AcceptedIdMerkleRoot,
+		UTXOCommitment:       x.UtxoCommitment,
+		Timestamp:            x.Timestamp,
+		Bits:                 x.Bits,
+		Nonce:                x.Nonce,
+	}, nil
+}
+
+func (x *RpcBlockHeader) fromAppMessage(message *appmessage.RPCBlockHeader) {
+	*x = RpcBlockHeader{
+		Version:              message.Version,
+		ParentHashes:         message.ParentHashes,
+		HashMerkleRoot:       message.HashMerkleRoot,
+		AcceptedIdMerkleRoot: message.AcceptedIDMerkleRoot,
+		UtxoCommitment:       message.UTXOCommitment,
+		Timestamp:            message.Timestamp,
+		Bits:                 message.Bits,
+		Nonce:                message.Nonce,
+	}
 }
