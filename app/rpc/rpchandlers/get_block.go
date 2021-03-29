@@ -26,20 +26,22 @@ func HandleGetBlock(context *rpccontext.Context, _ *router.Router, request appme
 		errorMessage.Error = appmessage.RPCErrorf("Block %s not found", hash)
 		return errorMessage, nil
 	}
+	block := &externalapi.DomainBlock{Header: header}
 
 	response := appmessage.NewGetBlockResponseMessage()
+	response.Block = appmessage.DomainBlockToRPCBlock(block)
 
-	blockVerboseData, err := context.BuildBlockVerboseData(header, nil, getBlockRequest.IncludeTransactionVerboseData)
-	if err != nil {
-		if errors.Is(err, rpccontext.ErrBuildBlockVerboseDataInvalidBlock) {
-			errorMessage := &appmessage.GetBlockResponseMessage{}
-			errorMessage.Error = appmessage.RPCErrorf("Block %s is invalid", hash)
-			return errorMessage, nil
+	if getBlockRequest.IncludeBlockVerboseData {
+		err = context.PopulateBlockWithVerboseData(response.Block, header, nil, getBlockRequest.IncludeTransactionVerboseData)
+		if err != nil {
+			if errors.Is(err, rpccontext.ErrBuildBlockVerboseDataInvalidBlock) {
+				errorMessage := &appmessage.GetBlockResponseMessage{}
+				errorMessage.Error = appmessage.RPCErrorf("Block %s is invalid", hash)
+				return errorMessage, nil
+			}
+			return nil, err
 		}
-		return nil, err
 	}
-
-	response.BlockVerboseData = blockVerboseData
 
 	return response, nil
 }

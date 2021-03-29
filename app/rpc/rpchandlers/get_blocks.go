@@ -4,7 +4,6 @@ import (
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/app/rpc/rpccontext"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/hashes"
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
 )
 
@@ -81,26 +80,21 @@ func HandleGetBlocks(context *rpccontext.Context, _ *router.Router, request appm
 	}
 
 	// Prepare the response
-	response := &appmessage.GetBlocksResponseMessage{
-		BlockHashes: hashes.ToStrings(blockHashes),
-	}
-
-	// Retrieve all block data in case RPCBlockVerboseData was requested
-	if getBlocksRequest.IncludeBlockVerboseData {
-		response.BlockVerboseData = make([]*appmessage.RPCBlockVerboseData, len(blockHashes))
-		for i, blockHash := range blockHashes {
-			blockHeader, err := context.Domain.Consensus().GetBlockHeader(blockHash)
+	blocks := make([]*appmessage.RPCBlock, len(blockHashes))
+	for i, blockHash := range blockHashes {
+		blockHeader, err := context.Domain.Consensus().GetBlockHeader(blockHash)
+		if err != nil {
+			return nil, err
+		}
+		block := &externalapi.DomainBlock{Header: blockHeader}
+		blocks[i] = appmessage.DomainBlockToRPCBlock(block)
+		if getBlocksRequest.IncludeBlockVerboseData {
+			err := context.PopulateBlockWithVerboseData(blocks[i], blockHeader, nil, getBlocksRequest.IncludeTransactionVerboseData)
 			if err != nil {
 				return nil, err
 			}
-			blockVerboseData, err := context.BuildBlockVerboseData(blockHeader, nil,
-				getBlocksRequest.IncludeTransactionVerboseData)
-			if err != nil {
-				return nil, err
-			}
-
-			response.BlockVerboseData[i] = blockVerboseData
 		}
 	}
+	response := appmessage.NewGetBlocksResponseMessage(blocks)
 	return response, nil
 }
