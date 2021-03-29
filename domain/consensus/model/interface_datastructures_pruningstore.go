@@ -5,15 +5,15 @@ import "github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 // PruningStore represents a store for the current pruning state
 type PruningStore interface {
 	Store
-	StagePruningPoint(pruningPointBlockHash *externalapi.DomainHash)
-	StagePruningPointCandidate(candidate *externalapi.DomainHash)
-	IsStaged() bool
-	PruningPointCandidate(dbContext DBReader) (*externalapi.DomainHash, error)
-	HasPruningPointCandidate(dbContext DBReader) (bool, error)
-	PruningPoint(dbContext DBReader) (*externalapi.DomainHash, error)
-	HasPruningPoint(dbContext DBReader) (bool, error)
+	StagePruningPoint(stagingArea *StagingArea, pruningPointBlockHash *externalapi.DomainHash)
+	StagePruningPointCandidate(stagingArea *StagingArea, candidate *externalapi.DomainHash)
+	IsStaged(stagingArea *StagingArea) bool
+	PruningPointCandidate(dbContext DBReader, stagingArea *StagingArea) (*externalapi.DomainHash, error)
+	HasPruningPointCandidate(dbContext DBReader, stagingArea *StagingArea) (bool, error)
+	PruningPoint(dbContext DBReader, stagingArea *StagingArea) (*externalapi.DomainHash, error)
+	HasPruningPoint(dbContext DBReader, stagingArea *StagingArea) (bool, error)
 
-	StageStartUpdatingPruningPointUTXOSet()
+	StageStartUpdatingPruningPointUTXOSet(stagingArea *StagingArea)
 	HadStartedUpdatingPruningPointUTXOSet(dbContext DBWriter) (bool, error)
 	FinishUpdatingPruningPointUTXOSet(dbContext DBWriter) error
 	UpdatePruningPointUTXOSet(dbContext DBWriter, utxoSetIterator externalapi.ReadOnlyUTXOSetIterator) error

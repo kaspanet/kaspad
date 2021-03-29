@@ -31,29 +31,29 @@ func New(
 }
 
 // AddBlock adds the block with the given blockHash into the reachability tree.
-func (rt *reachabilityManager) AddBlock(blockHash *externalapi.DomainHash) error {
+func (rt *reachabilityManager) AddBlock(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) error {
 	// Allocate a new reachability data
 	newReachabilityData := newReachabilityTreeData()
-	rt.stageData(blockHash, newReachabilityData)
+	rt.stageData(stagingArea, blockHash, newReachabilityData)
 
-	ghostdagData, err := rt.ghostdagDataStore.Get(rt.databaseContext, blockHash)
+	ghostdagData, err := rt.ghostdagDataStore.Get(rt.databaseContext, stagingArea, blockHash)
 	if err != nil {
 		return err
 	}
 
 	// If this is the genesis node, simply initialize it and return
 	if ghostdagData.SelectedParent() == nil {
-		rt.stageReindexRoot(blockHash)
+		rt.stageReindexRoot(stagingArea, blockHash)
 		return nil
 	}
 
-	reindexRoot, err := rt.reindexRoot()
+	reindexRoot, err := rt.reindexRoot(stagingArea)
 	if err != nil {
 		return err
 	}
 
 	// Insert the node into the selected parent's reachability tree
-	err = rt.addChild(ghostdagData.SelectedParent(), blockHash, reindexRoot)
+	err = rt.addChild(stagingArea, ghostdagData.SelectedParent(), blockHash, reindexRoot)
 	if err != nil {
 		return err
 	}
@@ -65,7 +65,7 @@ func (rt *reachabilityManager) AddBlock(blockHash *externalapi.DomainHash) error
 	copy(mergeSet[len(ghostdagData.MergeSetBlues()):], ghostdagData.MergeSetReds())
 
 	for _, current := range mergeSet {
-		err = rt.insertToFutureCoveringSet(current, blockHash)
+		err = rt.insertToFutureCoveringSet(stagingArea, current, blockHash)
 		if err != nil {
 			return err
 		}

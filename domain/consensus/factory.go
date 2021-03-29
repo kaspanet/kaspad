@@ -1,10 +1,11 @@
 package consensus
 
 import (
-	daablocksstore "github.com/kaspanet/kaspad/domain/consensus/datastructures/daablocksstore"
 	"io/ioutil"
 	"os"
 	"sync"
+
+	daablocksstore "github.com/kaspanet/kaspad/domain/consensus/datastructures/daablocksstore"
 
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/headersselectedchainstore"
 
@@ -123,7 +124,16 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 	reachabilityDataStore := reachabilitydatastore.New(pruningWindowSizePlusFinalityDepthForCache, preallocateCaches)
 	utxoDiffStore := utxodiffstore.New(200, preallocateCaches)
 	consensusStateStore := consensusstatestore.New(10_000, preallocateCaches)
-	ghostdagDataStore := ghostdagdatastore.New(pruningWindowSizeForCaches, preallocateCaches)
+
+	// Some tests artificially decrease the pruningWindowSize, thus making the GhostDagStore cache too small for a
+	// a single DifficultyAdjustmentWindow. To alleviate this problem we make sure that the cache size is at least
+	// dagParams.DifficultyAdjustmentWindowSize
+	ghostdagDataCacheSize := pruningWindowSizeForCaches
+	if ghostdagDataCacheSize < dagParams.DifficultyAdjustmentWindowSize {
+		ghostdagDataCacheSize = dagParams.DifficultyAdjustmentWindowSize
+	}
+	ghostdagDataStore := ghostdagdatastore.New(ghostdagDataCacheSize, preallocateCaches)
+
 	headersSelectedTipStore := headersselectedtipstore.New()
 	finalityStore := finalitystore.New(200, preallocateCaches)
 	headersSelectedChainStore := headersselectedchainstore.New(pruningWindowSizeForCaches, preallocateCaches)
