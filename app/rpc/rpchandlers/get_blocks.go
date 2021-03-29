@@ -85,9 +85,9 @@ func HandleGetBlocks(context *rpccontext.Context, _ *router.Router, request appm
 		BlockHashes: hashes.ToStrings(blockHashes),
 	}
 
-	// Retrieve all block data in case BlockVerboseData was requested
+	// Retrieve all block data in case RPCBlockVerboseData was requested
 	if getBlocksRequest.IncludeBlockVerboseData {
-		response.BlockVerboseData = make([]*appmessage.BlockVerboseData, len(blockHashes))
+		response.BlockVerboseData = make([]*appmessage.RPCBlockVerboseData, len(blockHashes))
 		for i, blockHash := range blockHashes {
 			blockHeader, err := context.Domain.Consensus().GetBlockHeader(blockHash)
 			if err != nil {

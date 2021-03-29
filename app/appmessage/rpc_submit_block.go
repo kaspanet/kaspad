@@ -63,6 +63,7 @@ func NewSubmitBlockResponseMessage() *SubmitBlockResponseMessage {
 type RPCBlock struct {
 	Header       *RPCBlockHeader
 	Transactions []*RPCTransaction
+	VerboseData  *RPCBlockVerboseData
 }
 
 // RPCBlockHeader is a kaspad block header representation meant to be
@@ -76,4 +77,15 @@ type RPCBlockHeader struct {
 	Timestamp            int64
 	Bits                 uint32
 	Nonce                uint64
+}
+
+// RPCBlockVerboseData holds verbose data about a block
+type RPCBlockVerboseData struct {
+	Hash               string
+	Difficulty         float64
+	SelectedParentHash string
+	TransactionIDs     []string
+	IsHeaderOnly       bool
+	BlueScore          uint64
+	ChildrenHashes     []string
 }

@@ -88,7 +88,7 @@ message RpcUtxoEntry {
 }
 
 message RpcTransactionVerboseData{
-  string txId = 1;
+  string transactionId = 1;
   string hash = 2;
   uint64 size = 3;
   string blockHash = 12;

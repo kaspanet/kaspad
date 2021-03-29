@@ -75,7 +75,7 @@ func (x *GetBlocksResponseMessage) toAppMessage() (appmessage.Message, error) {
 	if rpcErr != nil && len(x.BlockVerboseData) != 0 {
 		return nil, errors.New("GetBlocksResponseMessage contains both an error and a response")
 	}
-	blocksVerboseData := make([]*appmessage.BlockVerboseData, len(x.BlockVerboseData))
+	blocksVerboseData := make([]*appmessage.RPCBlockVerboseData, len(x.BlockVerboseData))
 	for i, blockVerboseDatum := range x.BlockVerboseData {
 		appBlockVerboseDatum, err := blockVerboseDatum.toAppMessage()
 		if err != nil {

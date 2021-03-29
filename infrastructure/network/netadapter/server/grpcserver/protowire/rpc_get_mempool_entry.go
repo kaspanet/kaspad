@@ -85,7 +85,7 @@ func (x *MempoolEntry) toAppMessage() (*appmessage.MempoolEntry, error) {
 		return nil, errors.Wrapf(errorNil, "MempoolEntry is nil")
 	}
 	txVerboseData, err := x.TransactionVerboseData.toAppMessage()
-	// TransactionVerboseData is an optional field
+	// RPCTransactionVerboseData is an optional field
 	if err != nil && !errors.Is(err, errorNil) {
 		return nil, err
 	}

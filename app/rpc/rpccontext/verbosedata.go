@@ -21,10 +21,10 @@ import (
 // ErrBuildBlockVerboseDataInvalidBlock indicates that a block that was given to BuildBlockVerboseData is invalid.
 var ErrBuildBlockVerboseDataInvalidBlock = errors.New("ErrBuildBlockVerboseDataInvalidBlock")
 
-// BuildBlockVerboseData builds a BlockVerboseData from the given block.
+// BuildBlockVerboseData builds a RPCBlockVerboseData from the given block.
 // A block may optionally also be given if it's available in the calling context.
 func (ctx *Context) BuildBlockVerboseData(blockHeader externalapi.BlockHeader, block *externalapi.DomainBlock,
-	includeTransactionVerboseData bool) (*appmessage.BlockVerboseData, error) {
+	includeTransactionVerboseData bool) (*appmessage.RPCBlockVerboseData, error) {
 
 	onEnd := logger.LogAndMeasureExecutionTime(log, "BuildBlockVerboseData")
 	defer onEnd()
@@ -46,7 +46,7 @@ func (ctx *Context) BuildBlockVerboseData(blockHeader externalapi.BlockHeader, b
 		return nil, err
 	}
 
-	result := &appmessage.BlockVerboseData{
+	result := &appmessage.RPCBlockVerboseData{
 		Hash:           hash.String(),
 		ChildrenHashes: hashes.ToStrings(childrenHashes),
 		Difficulty:     ctx.GetDifficultyRatio(blockHeader.Bits(), ctx.Config.ActiveNetParams),
@@ -72,10 +72,10 @@ func (ctx *Context) BuildBlockVerboseData(blockHeader externalapi.BlockHeader, b
 	for i, tx := range block.Transactions {
 		txIDs[i] = consensushashing.TransactionID(tx).String()
 	}
-	result.TxIDs = txIDs
+	result.TransactionIDs = txIDs
 
 	if includeTransactionVerboseData {
-		transactionVerboseData := make([]*appmessage.TransactionVerboseData, len(block.Transactions))
+		transactionVerboseData := make([]*appmessage.RPCTransactionVerboseData, len(block.Transactions))
 		for i, tx := range block.Transactions {
 			txID := consensushashing.TransactionID(tx).String()
 			data, err := ctx.BuildTransactionVerboseData(tx, txID, blockHeader, hash.String())
@@ -108,17 +108,17 @@ func (ctx *Context) GetDifficultyRatio(bits uint32, params *dagconfig.Params) fl
 	return diff
 }
 
-// BuildTransactionVerboseData builds a TransactionVerboseData from
+// BuildTransactionVerboseData builds a RPCTransactionVerboseData from
 // the given parameters
 func (ctx *Context) BuildTransactionVerboseData(tx *externalapi.DomainTransaction, txID string,
 	blockHeader externalapi.BlockHeader, blockHash string) (
-	*appmessage.TransactionVerboseData, error) {
+	*appmessage.RPCTransactionVerboseData, error) {
 
 	onEnd := logger.LogAndMeasureExecutionTime(log, "BuildTransactionVerboseData")
 	defer onEnd()
 
-	txReply := &appmessage.TransactionVerboseData{
-		TxID:                      txID,
+	txReply := &appmessage.RPCTransactionVerboseData{
+		TransactionID:             txID,
 		Hash:                      consensushashing.TransactionHash(tx).String(),
 		Size:                      estimatedsize.TransactionEstimatedSerializedSize(tx),
 		TransactionVerboseInputs:  ctx.buildTransactionVerboseInputs(tx),
@@ -134,10 +134,10 @@ func (ctx *Context) BuildTransactionVerboseData(tx *externalapi.DomainTransactio
 	return txReply, nil
 }
 
-func (ctx *Context) buildTransactionVerboseInputs(tx *externalapi.DomainTransaction) []*appmessage.TransactionVerboseInput {
-	inputs := make([]*appmessage.TransactionVerboseInput, len(tx.Inputs))
+func (ctx *Context) buildTransactionVerboseInputs(tx *externalapi.DomainTransaction) []*appmessage.RPCTransactionInputVerboseData {
+	inputs := make([]*appmessage.RPCTransactionInputVerboseData, len(tx.Inputs))
 	for i := range tx.Inputs {
-		inputs[i] = &appmessage.TransactionVerboseInput{}
+		inputs[i] = &appmessage.RPCTransactionInputVerboseData{}
 	}
 
 	return inputs
@@ -145,8 +145,8 @@ func (ctx *Context) buildTransactionVerboseInputs(tx *externalapi.DomainTransact
 
 // buildTransactionVerboseOutputs returns a slice of JSON objects for the outputs of the passed
 // transaction.
-func (ctx *Context) buildTransactionVerboseOutputs(tx *externalapi.DomainTransaction, filterAddrMap map[string]struct{}) []*appmessage.TransactionVerboseOutput {
-	outputs := make([]*appmessage.TransactionVerboseOutput, len(tx.Outputs))
+func (ctx *Context) buildTransactionVerboseOutputs(tx *externalapi.DomainTransaction, filterAddrMap map[string]struct{}) []*appmessage.RPCTransactionOutputVerboseData {
+	outputs := make([]*appmessage.RPCTransactionOutputVerboseData, len(tx.Outputs))
 	for i, transactionOutput := range tx.Outputs {
 
 		// Ignore the error here since an error means the script
@@ -173,7 +173,7 @@ func (ctx *Context) buildTransactionVerboseOutputs(tx *externalapi.DomainTransac
 			continue
 		}
 
-		outputs[i] = &appmessage.TransactionVerboseOutput{
+		outputs[i] = &appmessage.RPCTransactionOutputVerboseData{
 			ScriptPublicKeyType:    scriptClass.String(),
 			ScriptPublicKeyAddress: encodedAddr,
 		}

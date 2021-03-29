@@ -46,7 +46,7 @@ func (x *GetBlockResponseMessage) toAppMessage() (appmessage.Message, error) {
 	if err != nil && !errors.Is(err, errorNil) {
 		return nil, err
 	}
-	var blockVerboseData *appmessage.BlockVerboseData
+	var blockVerboseData *appmessage.RPCBlockVerboseData
 	// Return verbose data only if there's no error
 	if rpcErr != nil && x.BlockVerboseData != nil {
 		return nil, errors.New("GetBlockResponseMessage contains both an error and a response")
@@ -84,15 +84,15 @@ func (x *KaspadMessage_GetBlockResponse) fromAppMessage(message *appmessage.GetB
 	return nil
 }
 
-func (x *BlockVerboseData) toAppMessage() (*appmessage.BlockVerboseData, error) {
+func (x *BlockVerboseData) toAppMessage() (*appmessage.RPCBlockVerboseData, error) {
 	if x == nil {
-		return nil, errors.Wrapf(errorNil, "BlockVerboseData is nil")
+		return nil, errors.Wrapf(errorNil, "RPCBlockVerboseData is nil")
 	}
 	block, err := x.Block.toAppMessage()
 	if err != nil {
 		return nil, err
 	}
-	transactionVerboseData := make([]*appmessage.TransactionVerboseData, len(x.TransactionVerboseData))
+	transactionVerboseData := make([]*appmessage.RPCTransactionVerboseData, len(x.TransactionVerboseData))
 	for i, transactionVerboseDatum := range x.TransactionVerboseData {
 		appTransactionVerboseDatum, err := transactionVerboseDatum.toAppMessage()
 		if err != nil {
@@ -100,10 +100,10 @@ func (x *BlockVerboseData) toAppMessage() (*appmessage.BlockVerboseData, error) 
 		}
 		transactionVerboseData[i] = appTransactionVerboseDatum
 	}
-	return &appmessage.BlockVerboseData{
+	return &appmessage.RPCBlockVerboseData{
 		Hash:                   x.Hash,
 		Block:                  block,
-		TxIDs:                  x.TransactionIDs,
+		TransactionIDs:         x.TransactionIDs,
 		TransactionVerboseData: transactionVerboseData,
 		Difficulty:             x.Difficulty,
 		ChildrenHashes:         x.ChildrenHashes,
@@ -113,7 +113,7 @@ func (x *BlockVerboseData) toAppMessage() (*appmessage.BlockVerboseData, error) 
 	}, nil
 }
 
-func (x *BlockVerboseData) fromAppMessage(message *appmessage.BlockVerboseData) error {
+func (x *BlockVerboseData) fromAppMessage(message *appmessage.RPCBlockVerboseData) error {
 	block := &RpcBlock{}
 	err := block.fromAppMessage(message.Block)
 	if err != nil {
@@ -131,7 +131,7 @@ func (x *BlockVerboseData) fromAppMessage(message *appmessage.BlockVerboseData) 
 	*x = BlockVerboseData{
 		Hash:                   message.Hash,
 		Block:                  block,
-		TransactionIDs:         message.TxIDs,
+		TransactionIDs:         message.TransactionIDs,
 		TransactionVerboseData: transactionVerboseData,
 		Difficulty:             message.Difficulty,
 		ChildrenHashes:         message.ChildrenHashes,
@@ -142,27 +142,27 @@ func (x *BlockVerboseData) fromAppMessage(message *appmessage.BlockVerboseData) 
 	return nil
 }
 
-func (x *TransactionVerboseData) toAppMessage() (*appmessage.TransactionVerboseData, error) {
+func (x *TransactionVerboseData) toAppMessage() (*appmessage.RPCTransactionVerboseData, error) {
 	if x == nil {
-		return nil, errors.Wrapf(errorNil, "TransactionVerboseData is nil")
+		return nil, errors.Wrapf(errorNil, "RPCTransactionVerboseData is nil")
 	}
 	transaction, err := x.Transaction.toAppMessage()
 	if err != nil {
 		return nil, err
 	}
-	inputs := make([]*appmessage.TransactionVerboseInput, len(x.TransactionVerboseInputs))
+	inputs := make([]*appmessage.RPCTransactionInputVerboseData, len(x.TransactionVerboseInputs))
 	for j := range x.TransactionVerboseInputs {
-		inputs[j] = &appmessage.TransactionVerboseInput{}
+		inputs[j] = &appmessage.RPCTransactionInputVerboseData{}
 	}
-	outputs := make([]*appmessage.TransactionVerboseOutput, len(x.TransactionVerboseOutputs))
+	outputs := make([]*appmessage.RPCTransactionOutputVerboseData, len(x.TransactionVerboseOutputs))
 	for j, item := range x.TransactionVerboseOutputs {
-		outputs[j] = &appmessage.TransactionVerboseOutput{
+		outputs[j] = &appmessage.RPCTransactionOutputVerboseData{
 			ScriptPublicKeyType:    item.ScriptPublicKeyType,
 			ScriptPublicKeyAddress: item.ScriptPublicKeyAddress,
 		}
 	}
-	return &appmessage.TransactionVerboseData{
-		TxID:                      x.TxId,
+	return &appmessage.RPCTransactionVerboseData{
+		TransactionID:             x.TxId,
 		Hash:                      x.Hash,
 		Size:                      x.Size,
 		TransactionVerboseInputs:  inputs,
@@ -173,7 +173,7 @@ func (x *TransactionVerboseData) toAppMessage() (*appmessage.TransactionVerboseD
 	}, nil
 }
 
-func (x *TransactionVerboseData) fromAppMessage(message *appmessage.TransactionVerboseData) error {
+func (x *TransactionVerboseData) fromAppMessage(message *appmessage.RPCTransactionVerboseData) error {
 	transaction := &RpcTransaction{}
 	transaction.fromAppMessage(message.Transaction)
 	inputs := make([]*TransactionVerboseInput, len(message.TransactionVerboseInputs))
@@ -188,7 +188,7 @@ func (x *TransactionVerboseData) fromAppMessage(message *appmessage.TransactionV
 		}
 	}
 	*x = TransactionVerboseData{
-		TxId:                      message.TxID,
+		TxId:                      message.TransactionID,
 		Hash:                      message.Hash,
 		Size:                      message.Size,
 		TransactionVerboseInputs:  inputs,
