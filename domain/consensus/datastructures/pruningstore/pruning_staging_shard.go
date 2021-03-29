@@ -24,7 +24,7 @@ func (ps *pruningStore) stagingShard(stagingArea *model.StagingArea) *pruningSta
 	}).(*pruningStagingShard)
 }
 
-func (mss pruningStagingShard) Commit(dbTx model.DBTransaction) error {
+func (mss *pruningStagingShard) Commit(dbTx model.DBTransaction) error {
 	if mss.newPruningPoint != nil {
 		pruningPointBytes, err := mss.store.serializeHash(mss.newPruningPoint)
 		if err != nil {
@@ -59,6 +59,6 @@ func (mss pruningStagingShard) Commit(dbTx model.DBTransaction) error {
 	return nil
 }
 
-func (mss pruningStagingShard) isStaged() bool {
+func (mss *pruningStagingShard) isStaged() bool {
 	return mss.newPruningPoint != nil || mss.startUpdatingPruningPointUTXOSet
 }

@@ -19,7 +19,7 @@ func (bss *blockStatusStore) stagingShard(stagingArea *model.StagingArea) *block
 	}).(*blockStatusStagingShard)
 }
 
-func (bsss blockStatusStagingShard) Commit(dbTx model.DBTransaction) error {
+func (bsss *blockStatusStagingShard) Commit(dbTx model.DBTransaction) error {
 	for hash, status := range bsss.toAdd {
 		blockStatusBytes, err := bsss.store.serializeBlockStatus(status)
 		if err != nil {
@@ -35,6 +35,6 @@ func (bsss blockStatusStagingShard) Commit(dbTx model.DBTransaction) error {
 	return nil
 }
 
-func (bsss blockStatusStagingShard) isStaged() bool {
+func (bsss *blockStatusStagingShard) isStaged() bool {
 	return len(bsss.toAdd) != 0
 }

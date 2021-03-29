@@ -19,7 +19,7 @@ func (hsts *headerSelectedTipStore) stagingShard(stagingArea *model.StagingArea)
 	}).(*headersSelectedTipStagingShard)
 }
 
-func (hstss headersSelectedTipStagingShard) Commit(dbTx model.DBTransaction) error {
+func (hstss *headersSelectedTipStagingShard) Commit(dbTx model.DBTransaction) error {
 	if hstss.newSelectedTip == nil {
 		return nil
 	}
@@ -37,6 +37,6 @@ func (hstss headersSelectedTipStagingShard) Commit(dbTx model.DBTransaction) err
 	return nil
 }
 
-func (hstss headersSelectedTipStagingShard) isStaged() bool {
+func (hstss *headersSelectedTipStagingShard) isStaged() bool {
 	return hstss.newSelectedTip != nil
 }

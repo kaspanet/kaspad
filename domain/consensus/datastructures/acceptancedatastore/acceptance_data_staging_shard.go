@@ -21,7 +21,7 @@ func (ads *acceptanceDataStore) stagingShard(stagingArea *model.StagingArea) *ac
 	}).(*acceptanceDataStagingShard)
 }
 
-func (adss acceptanceDataStagingShard) Commit(dbTx model.DBTransaction) error {
+func (adss *acceptanceDataStagingShard) Commit(dbTx model.DBTransaction) error {
 	for hash, acceptanceData := range adss.toAdd {
 		acceptanceDataBytes, err := adss.store.serializeAcceptanceData(acceptanceData)
 		if err != nil {
@@ -45,6 +45,6 @@ func (adss acceptanceDataStagingShard) Commit(dbTx model.DBTransaction) error {
 	return nil
 }
 
-func (adss acceptanceDataStagingShard) isStaged() bool {
+func (adss *acceptanceDataStagingShard) isStaged() bool {
 	return len(adss.toAdd) != 0 || len(adss.toDelete) != 0
 }

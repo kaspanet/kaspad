@@ -21,7 +21,7 @@ func (rds *reachabilityDataStore) stagingShard(stagingArea *model.StagingArea) *
 	}).(*reachabilityDataStagingShard)
 }
 
-func (rdss reachabilityDataStagingShard) Commit(dbTx model.DBTransaction) error {
+func (rdss *reachabilityDataStagingShard) Commit(dbTx model.DBTransaction) error {
 	if rdss.reachabilityReindexRoot != nil {
 		reachabilityReindexRootBytes, err := rdss.store.serializeReachabilityReindexRoot(rdss.reachabilityReindexRoot)
 		if err != nil {
@@ -48,6 +48,6 @@ func (rdss reachabilityDataStagingShard) Commit(dbTx model.DBTransaction) error 
 	return nil
 }
 
-func (rdss reachabilityDataStagingShard) isStaged() bool {
+func (rdss *reachabilityDataStagingShard) isStaged() bool {
 	return len(rdss.reachabilityData) != 0 || rdss.reachabilityReindexRoot != nil
 }

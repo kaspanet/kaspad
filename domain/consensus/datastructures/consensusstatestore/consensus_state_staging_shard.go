@@ -21,7 +21,7 @@ func (bs *consensusStateStore) stagingShard(stagingArea *model.StagingArea) *con
 	}).(*consensusStateStagingShard)
 }
 
-func (csss consensusStateStagingShard) Commit(dbTx model.DBTransaction) error {
+func (csss *consensusStateStagingShard) Commit(dbTx model.DBTransaction) error {
 	err := csss.commitTips(dbTx)
 	if err != nil {
 		return err

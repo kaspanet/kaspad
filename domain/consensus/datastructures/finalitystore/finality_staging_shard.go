@@ -19,7 +19,7 @@ func (fs *finalityStore) stagingShard(stagingArea *model.StagingArea) *finalityS
 	}).(*finalityStagingShard)
 }
 
-func (fss finalityStagingShard) Commit(dbTx model.DBTransaction) error {
+func (fss *finalityStagingShard) Commit(dbTx model.DBTransaction) error {
 	for hash, finalityPointHash := range fss.toAdd {
 		err := dbTx.Put(fss.store.hashAsKey(&hash), finalityPointHash.ByteSlice())
 		if err != nil {
@@ -31,6 +31,6 @@ func (fss finalityStagingShard) Commit(dbTx model.DBTransaction) error {
 	return nil
 }
 
-func (fss finalityStagingShard) isStaged() bool {
+func (fss *finalityStagingShard) isStaged() bool {
 	return len(fss.toAdd) == 0
 }

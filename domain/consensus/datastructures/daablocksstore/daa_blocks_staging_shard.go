@@ -26,7 +26,7 @@ func (daas *daaBlocksStore) stagingShard(stagingArea *model.StagingArea) *daaBlo
 	}).(*daaBlocksStagingShard)
 }
 
-func (daass daaBlocksStagingShard) Commit(dbTx model.DBTransaction) error {
+func (daass *daaBlocksStagingShard) Commit(dbTx model.DBTransaction) error {
 	for hash, daaScore := range daass.daaScoreToAdd {
 		daaScoreBytes := binaryserialization.SerializeUint64(daaScore)
 		err := dbTx.Put(daass.store.daaScoreHashAsKey(&hash), daaScoreBytes)
@@ -64,7 +64,7 @@ func (daass daaBlocksStagingShard) Commit(dbTx model.DBTransaction) error {
 	return nil
 }
 
-func (daass daaBlocksStagingShard) isStaged() bool {
+func (daass *daaBlocksStagingShard) isStaged() bool {
 	return len(daass.daaScoreToAdd) != 0 ||
 		len(daass.daaAddedBlocksToAdd) != 0 ||
 		len(daass.daaScoreToDelete) != 0 ||

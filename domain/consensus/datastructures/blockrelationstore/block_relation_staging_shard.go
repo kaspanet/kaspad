@@ -19,7 +19,7 @@ func (brs *blockRelationStore) stagingShard(stagingArea *model.StagingArea) *blo
 	}).(*blockRelationStagingShard)
 }
 
-func (brss blockRelationStagingShard) Commit(dbTx model.DBTransaction) error {
+func (brss *blockRelationStagingShard) Commit(dbTx model.DBTransaction) error {
 	for hash, blockRelations := range brss.toAdd {
 		blockRelationBytes, err := brss.store.serializeBlockRelations(blockRelations)
 		if err != nil {
@@ -35,6 +35,6 @@ func (brss blockRelationStagingShard) Commit(dbTx model.DBTransaction) error {
 	return nil
 }
 
-func (brss blockRelationStagingShard) isStaged() bool {
+func (brss *blockRelationStagingShard) isStaged() bool {
 	return len(brss.toAdd) != 0
 }

@@ -19,7 +19,7 @@ func (gds *ghostdagDataStore) stagingShard(stagingArea *model.StagingArea) *ghos
 	}).(*ghostdagDataStagingShard)
 }
 
-func (gdss ghostdagDataStagingShard) Commit(dbTx model.DBTransaction) error {
+func (gdss *ghostdagDataStagingShard) Commit(dbTx model.DBTransaction) error {
 	for hash, blockGHOSTDAGData := range gdss.toAdd {
 		blockGhostdagDataBytes, err := gdss.store.serializeBlockGHOSTDAGData(blockGHOSTDAGData)
 		if err != nil {
@@ -35,6 +35,6 @@ func (gdss ghostdagDataStagingShard) Commit(dbTx model.DBTransaction) error {
 	return nil
 }
 
-func (gdss ghostdagDataStagingShard) isStaged() bool {
+func (gdss *ghostdagDataStagingShard) isStaged() bool {
 	return len(gdss.toAdd) != 0
 }

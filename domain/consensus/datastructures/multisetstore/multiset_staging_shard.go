@@ -21,7 +21,7 @@ func (ms *multisetStore) stagingShard(stagingArea *model.StagingArea) *multisetS
 	}).(*multisetStagingShard)
 }
 
-func (mss multisetStagingShard) Commit(dbTx model.DBTransaction) error {
+func (mss *multisetStagingShard) Commit(dbTx model.DBTransaction) error {
 	for hash, multiset := range mss.toAdd {
 		multisetBytes, err := mss.store.serializeMultiset(multiset)
 		if err != nil {
@@ -45,6 +45,6 @@ func (mss multisetStagingShard) Commit(dbTx model.DBTransaction) error {
 	return nil
 }
 
-func (mss multisetStagingShard) isStaged() bool {
+func (mss *multisetStagingShard) isStaged() bool {
 	return len(mss.toAdd) != 0 || len(mss.toDelete) != 0
 }

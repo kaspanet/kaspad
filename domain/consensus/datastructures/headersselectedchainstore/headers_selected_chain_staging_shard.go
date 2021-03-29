@@ -26,7 +26,7 @@ func (hscs *headersSelectedChainStore) stagingShard(stagingArea *model.StagingAr
 	}).(*headersSelectedChainStagingShard)
 }
 
-func (hscss headersSelectedChainStagingShard) Commit(dbTx model.DBTransaction) error {
+func (hscss *headersSelectedChainStagingShard) Commit(dbTx model.DBTransaction) error {
 	if !hscss.isStaged() {
 		return nil
 	}
@@ -79,7 +79,7 @@ func (hscss headersSelectedChainStagingShard) Commit(dbTx model.DBTransaction) e
 	return nil
 }
 
-func (hscss headersSelectedChainStagingShard) isStaged() bool {
+func (hscss *headersSelectedChainStagingShard) isStaged() bool {
 	return len(hscss.addedByHash) != 0 ||
 		len(hscss.removedByHash) != 0 ||
 		len(hscss.addedByIndex) != 0 ||

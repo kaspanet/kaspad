@@ -23,7 +23,7 @@ func (uds *utxoDiffStore) stagingShard(stagingArea *model.StagingArea) *utxoDiff
 	}).(*utxoDiffStagingShard)
 }
 
-func (udss utxoDiffStagingShard) Commit(dbTx model.DBTransaction) error {
+func (udss *utxoDiffStagingShard) Commit(dbTx model.DBTransaction) error {
 	for hash, utxoDiff := range udss.utxoDiffToAdd {
 		utxoDiffBytes, err := udss.store.serializeUTXODiff(utxoDiff)
 		if err != nil {
@@ -69,6 +69,6 @@ func (udss utxoDiffStagingShard) Commit(dbTx model.DBTransaction) error {
 	return nil
 }
 
-func (udss utxoDiffStagingShard) isStaged() bool {
+func (udss *utxoDiffStagingShard) isStaged() bool {
 	return len(udss.utxoDiffToAdd) != 0 || len(udss.utxoDiffChildToAdd) != 0 || len(udss.toDelete) != 0
 }
