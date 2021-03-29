@@ -40,6 +40,8 @@ const (
 // When the StagingArea is being Committed, it goes over all it's shards, and commits those one-by-one.
 // Since Commit happens in a DatabaseTransaction, a StagingArea is atomic.
 type StagingArea struct {
+	// shards is deliberately an array and not a map, as an optimization - since it's being read a lot of time, and
+	// reads from maps are relatively slow.
 	shards      [StagingShardIDLen]StagingShard
 	isCommitted bool
 }
@@ -70,7 +72,7 @@ func (sa *StagingArea) Commit(dbTx DBTransaction) error {
 	}
 
 	for _, shard := range sa.shards {
-		if shard == nil {
+		if shard == nil { // since sa.shards is an array and not a map, some shard slots might be empty.
 			continue
 		}
 		err := shard.Commit(dbTx)
