@@ -3,6 +3,8 @@ package blockprocessor
 import (
 	"fmt"
 
+	"github.com/kaspanet/kaspad/util/staging"
+
 	"github.com/kaspanet/kaspad/util/difficulty"
 
 	"github.com/kaspanet/kaspad/domain/consensus/model"
@@ -117,7 +119,7 @@ func (bp *blockProcessor) validateAndInsertBlock(stagingArea *model.StagingArea,
 		}
 	}
 
-	err = bp.commitAllChanges(stagingArea)
+	err = staging.CommitAllChanges(bp.databaseContext, stagingArea)
 	if err != nil {
 		return nil, err
 	}
@@ -297,21 +299,4 @@ func (bp *blockProcessor) hasValidatedHeader(stagingArea *model.StagingArea, blo
 	}
 
 	return status != externalapi.StatusInvalid, nil
-}
-
-func (bp *blockProcessor) commitAllChanges(stagingArea *model.StagingArea) error {
-	onEnd := logger.LogAndMeasureExecutionTime(log, "commitAllChanges")
-	defer onEnd()
-
-	dbTx, err := bp.databaseContext.Begin()
-	if err != nil {
-		return err
-	}
-
-	err = stagingArea.Commit(dbTx)
-	if err != nil {
-		return err
-	}
-
-	return dbTx.Commit()
 }
