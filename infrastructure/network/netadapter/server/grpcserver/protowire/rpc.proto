@@ -360,11 +360,12 @@ message GetVirtualSelectedParentChainFromBlockResponseMessage{
 // kaspad's current virtual.
 message GetBlocksRequestMessage{
   string lowHash = 1;
-  bool includeBlockVerboseData = 2;
+  bool includeBlocks = 2;
   bool includeTransactionVerboseData = 3;
 }
 
 message GetBlocksResponseMessage{
+  repeated string blockHashes = 4;
   repeated RpcBlock blocks = 3;
   RPCError error = 1000;
 }

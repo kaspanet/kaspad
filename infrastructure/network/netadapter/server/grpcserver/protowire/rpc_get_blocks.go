@@ -15,7 +15,7 @@ func (x *KaspadMessage_GetBlocksRequest) toAppMessage() (appmessage.Message, err
 func (x *KaspadMessage_GetBlocksRequest) fromAppMessage(message *appmessage.GetBlocksRequestMessage) error {
 	x.GetBlocksRequest = &GetBlocksRequestMessage{
 		LowHash:                       message.LowHash,
-		IncludeBlockVerboseData:       message.IncludeBlocks,
+		IncludeBlocks:                 message.IncludeBlocks,
 		IncludeTransactionVerboseData: message.IncludeTransactionVerboseData,
 	}
 	return nil
@@ -27,7 +27,7 @@ func (x *GetBlocksRequestMessage) toAppMessage() (appmessage.Message, error) {
 	}
 	return &appmessage.GetBlocksRequestMessage{
 		LowHash:                       x.LowHash,
-		IncludeBlocks:                 x.IncludeBlockVerboseData,
+		IncludeBlocks:                 x.IncludeBlocks,
 		IncludeTransactionVerboseData: x.IncludeTransactionVerboseData,
 	}, nil
 }
@@ -47,6 +47,7 @@ func (x *KaspadMessage_GetBlocksResponse) fromAppMessage(message *appmessage.Get
 	x.GetBlocksResponse = &GetBlocksResponseMessage{
 		Error: err,
 	}
+	x.GetBlocksResponse.BlockHashes = message.BlockHashes
 	x.GetBlocksResponse.Blocks = make([]*RpcBlock, len(message.Blocks))
 	for i, block := range message.Blocks {
 		protoBlock := &RpcBlock{}
@@ -68,7 +69,7 @@ func (x *GetBlocksResponseMessage) toAppMessage() (appmessage.Message, error) {
 	if err != nil && !errors.Is(err, errorNil) {
 		return nil, err
 	}
-	// Return verbose data only if there's no error
+	// Return data only if there's no error
 	if rpcErr != nil && len(x.Blocks) != 0 {
 		return nil, errors.New("GetBlocksResponseMessage contains both an error and a response")
 	}
@@ -81,7 +82,8 @@ func (x *GetBlocksResponseMessage) toAppMessage() (appmessage.Message, error) {
 		blocks[i] = appMessageBlock
 	}
 	return &appmessage.GetBlocksResponseMessage{
-		Blocks: blocks,
-		Error:  rpcErr,
+		BlockHashes: x.BlockHashes,
+		Blocks:      blocks,
+		Error:       rpcErr,
 	}, nil
 }
