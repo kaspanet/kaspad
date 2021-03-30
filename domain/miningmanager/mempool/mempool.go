@@ -96,10 +96,10 @@ type mempool struct {
 
 // New returns a new memory pool for validating and storing standalone
 // transactions until they are mined into a block.
-func New(consensus consensusexternalapi.Consensus, acceptNonStd bool, dagParams *dagconfig.Params) miningmanagermodel.Mempool {
+func New(consensus consensusexternalapi.Consensus, dagParams *dagconfig.Params) miningmanagermodel.Mempool {
 	policy := policy{
 		MaxTxVersion:    constants.MaxTransactionVersion,
-		AcceptNonStd:    acceptNonStd,
+		AcceptNonStd:    dagParams.RelayNonStdTxs,
 		MaxOrphanTxs:    5,
 		MaxOrphanTxSize: 100000,
 		MinRelayTxFee:   1000, // 1 sompi per byte
