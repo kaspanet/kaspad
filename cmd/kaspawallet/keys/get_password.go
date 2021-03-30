@@ -29,7 +29,7 @@ func getPassword(prompt string) []byte {
 	// Now get the password.
 	fmt.Print(prompt)
 	p, err := term.ReadPassword(syscall.Stdin)
-	fmt.Println("")
+	fmt.Println()
 	if err != nil {
 		panic(err)
 	}
