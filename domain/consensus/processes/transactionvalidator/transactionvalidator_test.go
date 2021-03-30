@@ -296,7 +296,7 @@ func TestSigningTwoInputs(t *testing.T) {
 
 		block3, err := tc.GetBlock(block3Hash)
 		if err != nil {
-			t.Fatalf("Error getting block2: %+v", err)
+			t.Fatalf("Error getting block3: %+v", err)
 		}
 
 		block2Tx := block2.Transactions[0]
