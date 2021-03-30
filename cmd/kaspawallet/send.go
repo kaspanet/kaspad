@@ -60,7 +60,17 @@ func send(conf *sendConfig) error {
 		return err
 	}
 
-	tx, err := libkaspawallet.ExtractTransaction(psTx)
+	privateKeys, err := keysFile.DecryptPrivateKeys()
+	if err != nil {
+		return err
+	}
+
+	updatedPSTx, err := libkaspawallet.Sign(privateKeys, psTx)
+	if err != nil {
+		return err
+	}
+
+	tx, err := libkaspawallet.ExtractTransaction(updatedPSTx)
 	if err != nil {
 		return err
 	}
