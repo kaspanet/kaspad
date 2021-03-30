@@ -3,6 +3,8 @@ package consensusstatemanager
 import (
 	"fmt"
 
+	"github.com/kaspanet/kaspad/util/staging"
+
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
@@ -50,19 +52,32 @@ func (csm *consensusStateManager) resolveBlockStatus(
 	for i := len(unverifiedBlocks) - 1; i >= 0; i-- {
 		unverifiedBlockHash := unverifiedBlocks[i]
 
+		stagingAreaForCurrentBlock := stagingArea
+		isCurrentBlockTopBlock := i == 0
+		if !isCurrentBlockTopBlock {
+			stagingAreaForCurrentBlock = model.NewStagingArea()
+		}
+
 		if selectedParentStatus == externalapi.StatusDisqualifiedFromChain {
 			blockStatus = externalapi.StatusDisqualifiedFromChain
 		} else {
-			blockStatus, err = csm.resolveSingleBlockStatus(stagingArea, unverifiedBlockHash)
+			blockStatus, err = csm.resolveSingleBlockStatus(stagingAreaForCurrentBlock, unverifiedBlockHash)
 			if err != nil {
 				return 0, err
 			}
 		}
 
-		csm.blockStatusStore.Stage(stagingArea, unverifiedBlockHash, blockStatus)
+		csm.blockStatusStore.Stage(stagingAreaForCurrentBlock, unverifiedBlockHash, blockStatus)
 		selectedParentStatus = blockStatus
 		log.Debugf("Block %s status resolved to `%s`, finished %d/%d of unverified blocks",
 			unverifiedBlockHash, blockStatus, len(unverifiedBlocks)-i, len(unverifiedBlocks))
+
+		if !isCurrentBlockTopBlock {
+			err := staging.CommitAllChanges(csm.databaseContext, stagingAreaForCurrentBlock)
+			if err != nil {
+				return 0, err
+			}
+		}
 	}
 
 	return blockStatus, nil
