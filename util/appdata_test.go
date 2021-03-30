@@ -15,7 +15,7 @@ import (
 	"github.com/kaspanet/kaspad/util"
 )
 
-// TestAppDataDir tests the API for AppDataDir to ensure it gives expected
+// TestAppDataDir tests the API for AppDir to ensure it gives expected
 // results for various operating systems.
 func TestAppDataDir(t *testing.T) {
 	// App name plus upper and lowercase variants.
@@ -124,7 +124,7 @@ func TestAppDataDir(t *testing.T) {
 	for i, test := range tests {
 		ret := util.TstAppDataDir(test.goos, test.appName, test.roaming)
 		if ret != test.want {
-			t.Errorf("appDataDir #%d (%s) does not match - "+
+			t.Errorf("appDir #%d (%s) does not match - "+
 				"expected got %s, want %s", i, test.goos, ret,
 				test.want)
 			continue

@@ -45,7 +45,7 @@ func TestUTXOCollection(t *testing.T) {
 			collection: utxoCollection{
 				*outpoint0: utxoEntry1,
 			},
-			expectedString: "[ (0000000000000000000000000000000000000000000000000000000000000000, 0) => 20, blueScore: 1 ]",
+			expectedString: "[ (0000000000000000000000000000000000000000000000000000000000000000, 0) => 20, daaScore: 1 ]",
 		},
 		{
 			name: "two members",
@@ -53,7 +53,7 @@ func TestUTXOCollection(t *testing.T) {
 				*outpoint0: utxoEntry0,
 				*outpoint1: utxoEntry1,
 			},
-			expectedString: "[ (0000000000000000000000000000000000000000000000000000000000000000, 0) => 10, blueScore: 0, (1111111111111111111111111111111111111111111111111111111111111111, 0) => 20, blueScore: 1 ]",
+			expectedString: "[ (0000000000000000000000000000000000000000000000000000000000000000, 0) => 10, daaScore: 0, (1111111111111111111111111111111111111111111111111111111111111111, 0) => 20, daaScore: 1 ]",
 		},
 	}
 
@@ -113,7 +113,7 @@ func TestUTXODiff(t *testing.T) {
 	}
 
 	// Test mutableUTXODiff string representation
-	expectedDiffString := "toAdd: [ (0000000000000000000000000000000000000000000000000000000000000000, 0) => 10, blueScore: 0 ]; toRemove: [ (1111111111111111111111111111111111111111111111111111111111111111, 0) => 20, blueScore: 1 ]"
+	expectedDiffString := "toAdd: [ (0000000000000000000000000000000000000000000000000000000000000000, 0) => 10, daaScore: 0 ]; toRemove: [ (1111111111111111111111111111111111111111111111111111111111111111, 0) => 20, daaScore: 1 ]"
 	diffString := clonedDiff.String()
 	if diffString != expectedDiffString {
 		t.Errorf("unexpected diff string. "+

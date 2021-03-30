@@ -19,7 +19,7 @@ func TestVersion(t *testing.T) {
 
 	// Create version message data.
 	tcpAddrMe := &net.TCPAddr{IP: net.ParseIP("127.0.0.1"), Port: 16111}
-	me := NewNetAddress(tcpAddrMe, SFNodeNetwork)
+	me := NewNetAddress(tcpAddrMe)
 	generatedID, err := id.GenerateID()
 	if err != nil {
 		t.Fatalf("id.GenerateID: %s", err)

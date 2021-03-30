@@ -111,8 +111,7 @@ func (lam *localAddressManager) bestLocalAddress(remoteAddress *appmessage.NetAd
 		} else {
 			ip = net.IPv4zero
 		}
-		services := appmessage.SFNodeNetwork | appmessage.SFNodeBloom
-		bestAddress = appmessage.NewNetAddressIPPort(ip, 0, services)
+		bestAddress = appmessage.NewNetAddressIPPort(ip, 0)
 	}
 
 	return bestAddress
@@ -149,11 +148,11 @@ func (lam *localAddressManager) addLocalAddress(addr string) error {
 				continue
 			}
 
-			netAddr := appmessage.NewNetAddressIPPort(ifaceIP, uint16(port), appmessage.DefaultServices)
+			netAddr := appmessage.NewNetAddressIPPort(ifaceIP, uint16(port))
 			lam.addLocalNetAddress(netAddr, BoundPrio)
 		}
 	} else {
-		netAddr, err := lam.hostToNetAddress(host, uint16(port), appmessage.DefaultServices)
+		netAddr, err := lam.hostToNetAddress(host, uint16(port))
 		if err != nil {
 			return err
 		}
@@ -190,7 +189,7 @@ func (lam *localAddressManager) initListeners() error {
 				}
 				eport = uint16(port)
 			}
-			na, err := lam.hostToNetAddress(host, eport, appmessage.DefaultServices)
+			na, err := lam.hostToNetAddress(host, eport)
 			if err != nil {
 				log.Warnf("Not adding %s as externalip: %s", sip, err)
 				continue
@@ -232,7 +231,7 @@ func (lam *localAddressManager) initListeners() error {
 
 // hostToNetAddress returns a netaddress given a host address. If
 // the host is not an IP address it will be resolved.
-func (lam *localAddressManager) hostToNetAddress(host string, port uint16, services appmessage.ServiceFlag) (*appmessage.NetAddress, error) {
+func (lam *localAddressManager) hostToNetAddress(host string, port uint16) (*appmessage.NetAddress, error) {
 	ip := net.ParseIP(host)
 	if ip == nil {
 		ips, err := lam.lookupFunc(host)
@@ -245,7 +244,7 @@ func (lam *localAddressManager) hostToNetAddress(host string, port uint16, servi
 		ip = ips[0]
 	}
 
-	return appmessage.NewNetAddressIPPort(ip, port, services), nil
+	return appmessage.NewNetAddressIPPort(ip, port), nil
 }
 
 // parseListeners determines whether each listen address is IPv4 and IPv6 and

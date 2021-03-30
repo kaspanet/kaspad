@@ -2,6 +2,7 @@ package headersselectedchainstore
 
 import (
 	"encoding/binary"
+
 	"github.com/kaspanet/kaspad/domain/consensus/database"
 	"github.com/kaspanet/kaspad/domain/consensus/database/binaryserialization"
 	"github.com/kaspanet/kaspad/domain/consensus/model"
@@ -16,10 +17,6 @@ var bucketChainBlockIndexByHash = database.MakeBucket([]byte("chain-block-index-
 var highestChainBlockIndexKey = database.MakeBucket(nil).Key([]byte("highest-chain-block-index"))
 
 type headersSelectedChainStore struct {
-	stagingAddedByHash          map[externalapi.DomainHash]uint64
-	stagingRemovedByHash        map[externalapi.DomainHash]struct{}
-	stagingAddedByIndex         map[uint64]*externalapi.DomainHash
-	stagingRemovedByIndex       map[uint64]struct{}
 	cacheByIndex                *lrucacheuint64tohash.LRUCache
 	cacheByHash                 *lrucache.LRUCache
 	cacheHighestChainBlockIndex uint64
@@ -28,31 +25,27 @@ type headersSelectedChainStore struct {
 // New instantiates a new HeadersSelectedChainStore
 func New(cacheSize int, preallocate bool) model.HeadersSelectedChainStore {
 	return &headersSelectedChainStore{
-		stagingAddedByHash:    make(map[externalapi.DomainHash]uint64),
-		stagingRemovedByHash:  make(map[externalapi.DomainHash]struct{}),
-		stagingAddedByIndex:   make(map[uint64]*externalapi.DomainHash),
-		stagingRemovedByIndex: make(map[uint64]struct{}),
-		cacheByIndex:          lrucacheuint64tohash.New(cacheSize, preallocate),
-		cacheByHash:           lrucache.New(cacheSize, preallocate),
+		cacheByIndex: lrucacheuint64tohash.New(cacheSize, preallocate),
+		cacheByHash:  lrucache.New(cacheSize, preallocate),
 	}
 }
 
 // Stage stages the given chain changes
-func (hscs *headersSelectedChainStore) Stage(dbContext model.DBReader,
-	chainChanges *externalapi.SelectedChainPath) error {
+func (hscs *headersSelectedChainStore) Stage(dbContext model.DBReader, stagingArea *model.StagingArea, chainChanges *externalapi.SelectedChainPath) error {
+	stagingShard := hscs.stagingShard(stagingArea)
 
-	if hscs.IsStaged() {
+	if hscs.IsStaged(stagingArea) {
 		return errors.Errorf("can't stage when there's already staged data")
 	}
 
 	for _, blockHash := range chainChanges.Removed {
-		index, err := hscs.GetIndexByHash(dbContext, blockHash)
+		index, err := hscs.GetIndexByHash(dbContext, stagingArea, blockHash)
 		if err != nil {
 			return err
 		}
 
-		hscs.stagingRemovedByIndex[index] = struct{}{}
-		hscs.stagingRemovedByHash[*blockHash] = struct{}{}
+		stagingShard.removedByIndex[index] = struct{}{}
+		stagingShard.removedByHash[*blockHash] = struct{}{}
 	}
 
 	currentIndex := uint64(0)
@@ -66,89 +59,27 @@ func (hscs *headersSelectedChainStore) Stage(dbContext model.DBReader,
 	}
 
 	for _, blockHash := range chainChanges.Added {
-		hscs.stagingAddedByIndex[currentIndex] = blockHash
-		hscs.stagingAddedByHash[*blockHash] = currentIndex
+		stagingShard.addedByIndex[currentIndex] = blockHash
+		stagingShard.addedByHash[*blockHash] = currentIndex
 		currentIndex++
 	}
 
 	return nil
 }
 
-func (hscs *headersSelectedChainStore) IsStaged() bool {
-	return len(hscs.stagingAddedByHash) != 0 ||
-		len(hscs.stagingRemovedByHash) != 0 ||
-		len(hscs.stagingAddedByIndex) != 0 ||
-		len(hscs.stagingAddedByIndex) != 0
-}
-
-func (hscs *headersSelectedChainStore) Discard() {
-	hscs.stagingAddedByHash = make(map[externalapi.DomainHash]uint64)
-	hscs.stagingRemovedByHash = make(map[externalapi.DomainHash]struct{})
-	hscs.stagingAddedByIndex = make(map[uint64]*externalapi.DomainHash)
-	hscs.stagingRemovedByIndex = make(map[uint64]struct{})
-}
-
-func (hscs *headersSelectedChainStore) Commit(dbTx model.DBTransaction) error {
-	if !hscs.IsStaged() {
-		return nil
-	}
-
-	for hash := range hscs.stagingRemovedByHash {
-		hashCopy := hash
-		err := dbTx.Delete(hscs.hashAsKey(&hashCopy))
-		if err != nil {
-			return err
-		}
-		hscs.cacheByHash.Remove(&hashCopy)
-	}
-
-	for index := range hscs.stagingRemovedByIndex {
-		err := dbTx.Delete(hscs.indexAsKey(index))
-		if err != nil {
-			return err
-		}
-		hscs.cacheByIndex.Remove(index)
-	}
-
-	highestIndex := uint64(0)
-	for hash, index := range hscs.stagingAddedByHash {
-		hashCopy := hash
-		err := dbTx.Put(hscs.hashAsKey(&hashCopy), hscs.serializeIndex(index))
-		if err != nil {
-			return err
-		}
-
-		err = dbTx.Put(hscs.indexAsKey(index), binaryserialization.SerializeHash(&hashCopy))
-		if err != nil {
-			return err
-		}
-
-		hscs.cacheByHash.Add(&hashCopy, index)
-		hscs.cacheByIndex.Add(index, &hashCopy)
-
-		if index > highestIndex {
-			highestIndex = index
-		}
-	}
-
-	err := dbTx.Put(highestChainBlockIndexKey, hscs.serializeIndex(highestIndex))
-	if err != nil {
-		return err
-	}
-
-	hscs.cacheHighestChainBlockIndex = highestIndex
-
-	hscs.Discard()
-	return nil
+func (hscs *headersSelectedChainStore) IsStaged(stagingArea *model.StagingArea) bool {
+	return hscs.stagingShard(stagingArea).isStaged()
 }
 
 // Get gets the chain block index for the given blockHash
-func (hscs *headersSelectedChainStore) GetIndexByHash(dbContext model.DBReader, blockHash *externalapi.DomainHash) (uint64, error) {
-	if index, ok := hscs.stagingAddedByHash[*blockHash]; ok {
+func (hscs *headersSelectedChainStore) GetIndexByHash(dbContext model.DBReader, stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) (uint64, error) {
+	stagingShard := hscs.stagingShard(stagingArea)
+
+	if index, ok := stagingShard.addedByHash[*blockHash]; ok {
 		return index, nil
 	}
 
-	if _, ok := hscs.stagingRemovedByHash[*blockHash]; ok {
+	if _, ok := stagingShard.removedByHash[*blockHash]; ok {
 		return 0, errors.Wrapf(database.ErrNotFound, "couldn't find block %s", blockHash)
 	}
 
@@ -170,12 +101,14 @@ func (hscs *headersSelectedChainStore) GetIndexByHash(dbContext model.DBReader, 
 	return index, nil
 }
 
-func (hscs *headersSelectedChainStore) GetHashByIndex(dbContext model.DBReader, index uint64) (*externalapi.DomainHash, error) {
-	if blockHash, ok := hscs.stagingAddedByIndex[index]; ok {
+func (hscs *headersSelectedChainStore) GetHashByIndex(dbContext model.DBReader, stagingArea *model.StagingArea, index uint64) (*externalapi.DomainHash, error) {
+	stagingShard := hscs.stagingShard(stagingArea)
+
+	if blockHash, ok := stagingShard.addedByIndex[index]; ok {
 		return blockHash, nil
 	}
 
-	if _, ok := hscs.stagingRemovedByIndex[index]; ok {
+	if _, ok := stagingShard.removedByIndex[index]; ok {
 		return nil, errors.Wrapf(database.ErrNotFound, "couldn't find chain block with index %d", index)
 	}
 

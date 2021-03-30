@@ -6,18 +6,18 @@ package txscript
 
 import (
 	"bytes"
-	"crypto/sha1"
 	"crypto/sha256"
 	"encoding/binary"
 	"fmt"
 	"hash"
+
+	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
 
 	"golang.org/x/crypto/blake2b"
 
 	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
 
 	"github.com/kaspanet/go-secp256k1"
-	"golang.org/x/crypto/ripemd160"
 )
 
 // An opcode defines the information related to a txscript opcode. opfunc, if
@@ -201,10 +201,10 @@ const (
 	OpMin                 = 0xa3 // 163
 	OpMax                 = 0xa4 // 164
 	OpWithin              = 0xa5 // 165
-	OpRipeMD160           = 0xa6 // 166
-	OpSHA1                = 0xa7 // 167
+	OpUnknown166          = 0xa6 // 166
+	OpUnknown167          = 0xa7 // 167
 	OpSHA256              = 0xa8 // 168
-	OpHash160             = 0xa9 // 169
+	OpUnknown169          = 0xa9 // 169
 	OpBlake2b             = 0xaa // 170
 	OpUnknown171          = 0xab // 171
 	OpCheckSig            = 0xac // 172
@@ -485,10 +485,7 @@ var opcodeArray = [256]opcode{
 	OpWithin:             {OpWithin, "OP_WITHIN", 1, opcodeWithin},
 
 	// Crypto opcodes.
-	OpRipeMD160:           {OpRipeMD160, "OP_RIPEMD160", 1, opcodeRipemd160},
-	OpSHA1:                {OpSHA1, "OP_SHA1", 1, opcodeSha1},
 	OpSHA256:              {OpSHA256, "OP_SHA256", 1, opcodeSha256},
-	OpHash160:             {OpHash160, "OP_HASH160", 1, opcodeHash160},
 	OpBlake2b:             {OpBlake2b, "OP_BLAKE2B", 1, opcodeBlake2b},
 	OpCheckSig:            {OpCheckSig, "OP_CHECKSIG", 1, opcodeCheckSig},
 	OpCheckSigVerify:      {OpCheckSigVerify, "OP_CHECKSIGVERIFY", 1, opcodeCheckSigVerify},
@@ -508,6 +505,9 @@ var opcodeArray = [256]opcode{
 	OpNop10: {OpNop10, "OP_NOP10", 1, opcodeNop},
 
 	// Undefined opcodes.
+	OpUnknown166: {OpUnknown166, "OP_UNKNOWN166", 1, opcodeInvalid},
+	OpUnknown167: {OpUnknown167, "OP_UNKNOWN167", 1, opcodeInvalid},
+	OpUnknown169: {OpUnknown169, "OP_UNKNOWN169", 1, opcodeInvalid},
 	OpUnknown171: {OpUnknown171, "OP_UNKNOWN171", 1, opcodeInvalid},
 	OpUnknown188: {OpUnknown188, "OP_UNKNOWN188", 1, opcodeInvalid},
 	OpUnknown189: {OpUnknown189, "OP_UNKNOWN189", 1, opcodeInvalid},
@@ -1903,35 +1903,6 @@ func calcHash(buf []byte, hasher hash.Hash) []byte {
 	return hasher.Sum(nil)
 }
 
-// opcodeRipemd160 treats the top item of the data stack as raw bytes and
-// replaces it with ripemd160(data).
-//
-// Stack transformation: [... x1] -> [... ripemd160(x1)]
-func opcodeRipemd160(op *parsedOpcode, vm *Engine) error {
-	buf, err := vm.dstack.PopByteArray()
-	if err != nil {
-		return err
-	}
-
-	vm.dstack.PushByteArray(calcHash(buf, ripemd160.New()))
-	return nil
-}
-
-// opcodeSha1 treats the top item of the data stack as raw bytes and replaces it
-// with sha1(data).
-//
-// Stack transformation: [... x1] -> [... sha1(x1)]
-func opcodeSha1(op *parsedOpcode, vm *Engine) error {
-	buf, err := vm.dstack.PopByteArray()
-	if err != nil {
-		return err
-	}
-
-	hash := sha1.Sum(buf)
-	vm.dstack.PushByteArray(hash[:])
-	return nil
-}
-
 // opcodeSha256 treats the top item of the data stack as raw bytes and replaces
 // it with sha256(data).
 //
@@ -1944,21 +1915,6 @@ func opcodeSha256(op *parsedOpcode, vm *Engine) error {
 
 	hash := sha256.Sum256(buf)
 	vm.dstack.PushByteArray(hash[:])
-	return nil
-}
-
-// opcodeHash160 treats the top item of the data stack as raw bytes and replaces
-// it with ripemd160(sha256(data)).
-//
-// Stack transformation: [... x1] -> [... ripemd160(sha256(x1))]
-func opcodeHash160(op *parsedOpcode, vm *Engine) error {
-	buf, err := vm.dstack.PopByteArray()
-	if err != nil {
-		return err
-	}
-
-	hash := sha256.Sum256(buf)
-	vm.dstack.PushByteArray(calcHash(hash[:], ripemd160.New()))
 	return nil
 }
 
@@ -2019,10 +1975,10 @@ func opcodeCheckSig(op *parsedOpcode, vm *Engine) error {
 	// the data stack. This is required because the more general script
 	// validation consensus rules do not have the new strict encoding
 	// requirements enabled by the flags.
-	hashType := SigHashType(fullSigBytes[len(fullSigBytes)-1])
+	hashType := consensushashing.SigHashType(fullSigBytes[len(fullSigBytes)-1])
 	sigBytes := fullSigBytes[:len(fullSigBytes)-1]
-	if err := vm.checkHashTypeEncoding(hashType); err != nil {
-		return err
+	if !hashType.IsStandardSigHashType() {
+		return scriptError(ErrInvalidSigHashType, fmt.Sprintf("invalid hash type 0x%x", hashType))
 	}
 	if err := vm.checkSignatureLength(sigBytes); err != nil {
 		return err
@@ -2031,10 +1987,8 @@ func opcodeCheckSig(op *parsedOpcode, vm *Engine) error {
 		return err
 	}
 
-	script := vm.currentScript()
-
 	// Generate the signature hash based on the signature hash type.
-	sigHash, err := calcSignatureHash(script, vm.scriptVersion, hashType, &vm.tx, vm.txIdx)
+	sigHash, err := consensushashing.CalculateSignatureHash(&vm.tx, vm.txIdx, hashType, vm.sigHashReusedValues)
 	if err != nil {
 		vm.dstack.PushBool(false)
 		return nil
@@ -2168,12 +2122,11 @@ func opcodeCheckMultiSig(op *parsedOpcode, vm *Engine) error {
 		signatures = append(signatures, sigInfo)
 	}
 
-	script := vm.currentScript()
-
 	success := true
 	numPubKeys++
 	pubKeyIdx := -1
 	signatureIdx := 0
+
 	for numSignatures > 0 {
 		// When there are more signatures than public keys remaining,
 		// there is no way to succeed since too many signatures are
@@ -2199,14 +2152,14 @@ func opcodeCheckMultiSig(op *parsedOpcode, vm *Engine) error {
 		}
 
 		// Split the signature into hash type and signature components.
-		hashType := SigHashType(rawSig[len(rawSig)-1])
+		hashType := consensushashing.SigHashType(rawSig[len(rawSig)-1])
 		signature := rawSig[:len(rawSig)-1]
 
 		// Only parse and check the signature encoding once.
 		var parsedSig *secp256k1.SchnorrSignature
 		if !sigInfo.parsed {
-			if err := vm.checkHashTypeEncoding(hashType); err != nil {
-				return err
+			if !hashType.IsStandardSigHashType() {
+				return scriptError(ErrInvalidSigHashType, fmt.Sprintf("invalid hash type 0x%x", hashType))
 			}
 			if err := vm.checkSignatureLength(signature); err != nil {
 				return err
@@ -2241,7 +2194,7 @@ func opcodeCheckMultiSig(op *parsedOpcode, vm *Engine) error {
 		}
 
 		// Generate the signature hash based on the signature hash type.
-		sigHash, err := calcSignatureHash(script, vm.scriptVersion, hashType, &vm.tx, vm.txIdx)
+		sigHash, err := consensushashing.CalculateSignatureHash(&vm.tx, vm.txIdx, hashType, vm.sigHashReusedValues)
 		if err != nil {
 			return err
 		}

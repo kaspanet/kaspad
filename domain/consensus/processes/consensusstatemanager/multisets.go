@@ -8,8 +8,8 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/utils/utxo"
 )
 
-func (csm *consensusStateManager) calculateMultiset(
-	acceptanceData externalapi.AcceptanceData, blockGHOSTDAGData *model.BlockGHOSTDAGData) (model.Multiset, error) {
+func (csm *consensusStateManager) calculateMultiset(stagingArea *model.StagingArea,
+	acceptanceData externalapi.AcceptanceData, blockGHOSTDAGData *model.BlockGHOSTDAGData, daaScore uint64) (model.Multiset, error) {
 
 	log.Debugf("calculateMultiset start for block with selected parent %s", blockGHOSTDAGData.SelectedParent())
 	defer log.Debugf("calculateMultiset end for block with selected parent %s", blockGHOSTDAGData.SelectedParent())
@@ -20,7 +20,7 @@ func (csm *consensusStateManager) calculateMultiset(
 		return multiset.New(), nil
 	}
 
-	ms, err := csm.multisetStore.Get(csm.databaseContext, blockGHOSTDAGData.SelectedParent())
+	ms, err := csm.multisetStore.Get(csm.databaseContext, stagingArea, blockGHOSTDAGData.SelectedParent())
 	if err != nil {
 		return nil, err
 	}
@@ -38,7 +38,7 @@ func (csm *consensusStateManager) calculateMultiset(
 			isCoinbase := i == 0
 			log.Tracef("Is transaction %s a coinbase transaction: %t", transactionID, isCoinbase)
 
-			err := addTransactionToMultiset(ms, transaction, blockGHOSTDAGData.BlueScore(), isCoinbase)
+			err := addTransactionToMultiset(ms, transaction, daaScore, isCoinbase)
 			if err != nil {
 				return nil, err
 			}
@@ -50,7 +50,7 @@ func (csm *consensusStateManager) calculateMultiset(
 }
 
 func addTransactionToMultiset(multiset model.Multiset, transaction *externalapi.DomainTransaction,
-	blockBlueScore uint64, isCoinbase bool) error {
+	blockDAAScore uint64, isCoinbase bool) error {
 
 	transactionID := consensushashing.TransactionID(transaction)
 	log.Tracef("addTransactionToMultiset start for transaction %s", transactionID)
@@ -70,7 +70,7 @@ func addTransactionToMultiset(multiset model.Multiset, transaction *externalapi.
 			TransactionID: *transactionID,
 			Index:         uint32(i),
 		}
-		utxoEntry := utxo.NewUTXOEntry(output.Value, output.ScriptPublicKey, isCoinbase, blockBlueScore)
+		utxoEntry := utxo.NewUTXOEntry(output.Value, output.ScriptPublicKey, isCoinbase, blockDAAScore)
 
 		log.Tracef("Adding input %s at index %d from the multiset", transactionID, i)
 		err := addUTXOToMultiset(multiset, utxoEntry, outpoint)

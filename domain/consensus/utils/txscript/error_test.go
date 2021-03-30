@@ -46,7 +46,6 @@ func TestErrorCodeStringer(t *testing.T) {
 		{ErrUnbalancedConditional, "ErrUnbalancedConditional"},
 		{ErrMinimalData, "ErrMinimalData"},
 		{ErrInvalidSigHashType, "ErrInvalidSigHashType"},
-		{ErrInvalidSigHashSingleIndex, "ErrInvalidSigHashSingleIndex"},
 		{ErrSigLength, "ErrSigLength"},
 		{ErrSigHighS, "ErrSigHighS"},
 		{ErrNotPushOnly, "ErrNotPushOnly"},

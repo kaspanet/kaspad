@@ -82,7 +82,7 @@ func deserializeOutpoint(r io.Reader) (*externalapi.DomainOutpoint, error) {
 }
 
 func serializeUTXOEntry(w io.Writer, entry externalapi.UTXOEntry) error {
-	err := serialization.WriteElements(w, entry.BlockBlueScore(), entry.Amount(), entry.IsCoinbase())
+	err := serialization.WriteElements(w, entry.BlockDAAScore(), entry.Amount(), entry.IsCoinbase())
 	if err != nil {
 		return err
 	}
@@ -105,10 +105,10 @@ func serializeUTXOEntry(w io.Writer, entry externalapi.UTXOEntry) error {
 }
 
 func deserializeUTXOEntry(r io.Reader) (externalapi.UTXOEntry, error) {
-	var blockBlueScore uint64
+	var blockDAAScore uint64
 	var amount uint64
 	var isCoinbase bool
-	err := serialization.ReadElements(r, &blockBlueScore, &amount, &isCoinbase)
+	err := serialization.ReadElements(r, &blockDAAScore, &amount, &isCoinbase)
 	if err != nil {
 		return nil, err
 	}
@@ -132,5 +132,5 @@ func deserializeUTXOEntry(r io.Reader) (externalapi.UTXOEntry, error) {
 	}
 	scriptPubKey := externalapi.ScriptPublicKey{scriptPubKeyScript, version}
 
-	return NewUTXOEntry(amount, &scriptPubKey, isCoinbase, blockBlueScore), nil
+	return NewUTXOEntry(amount, &scriptPubKey, isCoinbase, blockDAAScore), nil
 }
