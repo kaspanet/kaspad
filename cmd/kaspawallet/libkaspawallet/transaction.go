@@ -147,6 +147,10 @@ func createUnsignedTransaction(
 }
 
 func sign(keyPair *secp256k1.SchnorrKeyPair, psTx *serialization.PartiallySignedTransaction) error {
+	if isTransactionFullySigned(psTx) {
+		return nil
+	}
+
 	publicKey, err := keyPair.SchnorrPublicKey()
 	if err != nil {
 		return err
