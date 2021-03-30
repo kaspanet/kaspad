@@ -25,7 +25,7 @@ func NewGetBlockRequestMessage(hash string, includeTransactionVerboseData bool) 
 // its respective RPC message
 type GetBlockResponseMessage struct {
 	baseMessage
-	BlockVerboseData *BlockVerboseData
+	Block *RPCBlock
 
 	Error *RPCError
 }
@@ -38,71 +38,4 @@ func (msg *GetBlockResponseMessage) Command() MessageCommand {
 // NewGetBlockResponseMessage returns a instance of the message
 func NewGetBlockResponseMessage() *GetBlockResponseMessage {
 	return &GetBlockResponseMessage{}
-}
-
-// BlockVerboseData holds verbose data about a block
-type BlockVerboseData struct {
-	Hash                   string
-	Version                uint16
-	VersionHex             string
-	HashMerkleRoot         string
-	AcceptedIDMerkleRoot   string
-	UTXOCommitment         string
-	TxIDs                  []string
-	TransactionVerboseData []*TransactionVerboseData
-	Time                   int64
-	Nonce                  uint64
-	Bits                   string
-	Difficulty             float64
-	ParentHashes           []string
-	ChildrenHashes         []string
-	SelectedParentHash     string
-	BlueScore              uint64
-	IsHeaderOnly           bool
-}
-
-// TransactionVerboseData holds verbose data about a transaction
-type TransactionVerboseData struct {
-	TxID                      string
-	Hash                      string
-	Size                      uint64
-	Version                   uint16
-	LockTime                  uint64
-	SubnetworkID              string
-	Gas                       uint64
-	Payload                   string
-	TransactionVerboseInputs  []*TransactionVerboseInput
-	TransactionVerboseOutputs []*TransactionVerboseOutput
-	BlockHash                 string
-	Time                      uint64
-	BlockTime                 uint64
-}
-
-// TransactionVerboseInput holds data about a transaction input
-type TransactionVerboseInput struct {
-	TxID        string
-	OutputIndex uint32
-	ScriptSig   *ScriptSig
-	Sequence    uint64
-}
-
-// ScriptSig holds data about a script signature
-type ScriptSig struct {
-	Asm string
-	Hex string
-}
-
-// TransactionVerboseOutput holds data about a transaction output
-type TransactionVerboseOutput struct {
-	Value        uint64
-	Index        uint32
-	ScriptPubKey *ScriptPubKeyResult
-}
-
-// ScriptPubKeyResult holds data about a script public key
-type ScriptPubKeyResult struct {
-	Hex     string
-	Type    string
-	Address string
-	Version uint16
 }
