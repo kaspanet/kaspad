@@ -30,9 +30,9 @@ func (f *FlowContext) updateTransactionsToRebroadcast(addedBlocks []*externalapi
 	defer f.transactionsToRebroadcastLock.Unlock()
 
 	for _, block := range addedBlocks {
-		// Note: if the block is red, its transactions won't be rebroadcasted
-		// anymore, although they are not included in the UTXO set.
-		// This is probably ok, since red blocks are quite rare.
+		// Note: if a transaction is included in the DAG but not accepted,
+		// its transactions won't be rebroadcast anymore, although they
+		// are not included in the UTXO set
 		for _, tx := range block.Transactions {
 			delete(f.transactionsToRebroadcast, *consensushashing.TransactionID(tx))
 		}
