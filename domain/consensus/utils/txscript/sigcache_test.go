@@ -14,7 +14,7 @@ import (
 // public key and the public key. This function is used to generate randomized
 // test data.
 func genRandomSig() (*secp256k1.Hash, *secp256k1.SchnorrSignature, *secp256k1.SchnorrPublicKey, error) {
-	privKey, err := secp256k1.GeneratePrivateKey()
+	privKey, err := secp256k1.GenerateSchnorrKeyPair()
 	if err != nil {
 		return nil, nil, nil, err
 	}

@@ -43,12 +43,10 @@ github.com/jessevdk/go-flags v1.4.0 h1:4IU2WS7AumrZ/40jfhf4QVDMsQwqA7VEHozFRrGAR
 github.com/jessevdk/go-flags v1.4.0/go.mod h1:4FA24M0QyGHXBuZZK/XkWh8h0e1EYbRYJSGM75WSRxI=
 github.com/jrick/logrotate v1.0.0 h1:lQ1bL/n9mBNeIXoTUoYRlK4dHuNJVofX9oWqBtPnSzI=
 github.com/jrick/logrotate v1.0.0/go.mod h1:LNinyqDIJnpAur+b8yyulnQw/wDuN1+BYKlTRt3OuAQ=
-github.com/kaspanet/go-muhash v0.0.2 h1:l1cw83YPulkAQFMSTxZKiQyU/kCI4t9dvABswetd9Fw=
-github.com/kaspanet/go-muhash v0.0.2/go.mod h1:10bPW5mO1vNHPSejaAh9ZTtLZE16jzEvgaP7f3Q5s/8=
 github.com/kaspanet/go-muhash v0.0.4 h1:CQrm1RTJpQy+h4ZFjj9qq42K5fmA5QTGifzb47p4qWk=
 github.com/kaspanet/go-muhash v0.0.4/go.mod h1:10bPW5mO1vNHPSejaAh9ZTtLZE16jzEvgaP7f3Q5s/8=
-github.com/kaspanet/go-secp256k1 v0.0.3 h1:zvrKddgUm/sZ0capLUZVcn2tKoAvQaXytZYrOzLZWx4=
-github.com/kaspanet/go-secp256k1 v0.0.3/go.mod h1:cFbxhxKkxqHX5eIwUGKARkph19PehipDPJejWB+H0jM=
+github.com/kaspanet/go-secp256k1 v0.0.5 h1:WQqb65tyr8amsBkj337BVH3PTVWCrmufb68aTGpK3mM=
+github.com/kaspanet/go-secp256k1 v0.0.5/go.mod h1:cFbxhxKkxqHX5eIwUGKARkph19PehipDPJejWB+H0jM=
 github.com/onsi/ginkgo v1.6.0/go.mod h1:lLunBs/Ym6LB5Z9jYTR76FiuTmxDTDusOGeTQH+WWjE=
 github.com/onsi/ginkgo v1.7.0 h1:WSHQ+IS43OoUrWtD1/bbclrwK8TTH5hzp+umCiuxHgs=
 github.com/onsi/ginkgo v1.7.0/go.mod h1:lLunBs/Ym6LB5Z9jYTR76FiuTmxDTDusOGeTQH+WWjE=

@@ -77,7 +77,7 @@ func parsePrivateKey(privateKeyHex string) (*secp256k1.SchnorrKeyPair, *secp256k
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "Error parsing private key hex")
 	}
-	keyPair, err := secp256k1.DeserializePrivateKeyFromSlice(privateKeyBytes)
+	keyPair, err := secp256k1.DeserializeSchnorrPrivateKeyFromSlice(privateKeyBytes)
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "Error deserializing private key")
 	}
