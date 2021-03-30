@@ -15,7 +15,7 @@ func (x *KaspadMessage_GetBlocksRequest) toAppMessage() (appmessage.Message, err
 func (x *KaspadMessage_GetBlocksRequest) fromAppMessage(message *appmessage.GetBlocksRequestMessage) error {
 	x.GetBlocksRequest = &GetBlocksRequestMessage{
 		LowHash:                       message.LowHash,
-		IncludeBlockVerboseData:       message.IncludeBlockVerboseData,
+		IncludeBlocks:                 message.IncludeBlocks,
 		IncludeTransactionVerboseData: message.IncludeTransactionVerboseData,
 	}
 	return nil
@@ -27,7 +27,7 @@ func (x *GetBlocksRequestMessage) toAppMessage() (appmessage.Message, error) {
 	}
 	return &appmessage.GetBlocksRequestMessage{
 		LowHash:                       x.LowHash,
-		IncludeBlockVerboseData:       x.IncludeBlockVerboseData,
+		IncludeBlocks:                 x.IncludeBlocks,
 		IncludeTransactionVerboseData: x.IncludeTransactionVerboseData,
 	}, nil
 }
@@ -45,19 +45,17 @@ func (x *KaspadMessage_GetBlocksResponse) fromAppMessage(message *appmessage.Get
 		err = &RPCError{Message: message.Error.Message}
 	}
 	x.GetBlocksResponse = &GetBlocksResponseMessage{
-		BlockHashes: message.BlockHashes,
-		Error:       err,
+		Error: err,
 	}
-	if message.BlockVerboseData != nil {
-		x.GetBlocksResponse.BlockVerboseData = make([]*BlockVerboseData, len(message.BlockVerboseData))
-		for i, blockVerboseDatum := range message.BlockVerboseData {
-			protoBlockVerboseDatum := &BlockVerboseData{}
-			err := protoBlockVerboseDatum.fromAppMessage(blockVerboseDatum)
-			if err != nil {
-				return err
-			}
-			x.GetBlocksResponse.BlockVerboseData[i] = protoBlockVerboseDatum
+	x.GetBlocksResponse.BlockHashes = message.BlockHashes
+	x.GetBlocksResponse.Blocks = make([]*RpcBlock, len(message.Blocks))
+	for i, block := range message.Blocks {
+		protoBlock := &RpcBlock{}
+		err := protoBlock.fromAppMessage(block)
+		if err != nil {
+			return err
 		}
+		x.GetBlocksResponse.Blocks[i] = protoBlock
 	}
 	return nil
 }
@@ -71,21 +69,21 @@ func (x *GetBlocksResponseMessage) toAppMessage() (appmessage.Message, error) {
 	if err != nil && !errors.Is(err, errorNil) {
 		return nil, err
 	}
-	// Return verbose data only if there's no error
-	if rpcErr != nil && len(x.BlockVerboseData) != 0 {
+	// Return data only if there's no error
+	if rpcErr != nil && len(x.Blocks) != 0 {
 		return nil, errors.New("GetBlocksResponseMessage contains both an error and a response")
 	}
-	blocksVerboseData := make([]*appmessage.BlockVerboseData, len(x.BlockVerboseData))
-	for i, blockVerboseDatum := range x.BlockVerboseData {
-		appBlockVerboseDatum, err := blockVerboseDatum.toAppMessage()
+	blocks := make([]*appmessage.RPCBlock, len(x.Blocks))
+	for i, block := range x.Blocks {
+		appMessageBlock, err := block.toAppMessage()
 		if err != nil {
 			return nil, err
 		}
-		blocksVerboseData[i] = appBlockVerboseDatum
+		blocks[i] = appMessageBlock
 	}
 	return &appmessage.GetBlocksResponseMessage{
-		BlockVerboseData: blocksVerboseData,
-		BlockHashes:      x.BlockHashes,
-		Error:            rpcErr,
+		BlockHashes: x.BlockHashes,
+		Blocks:      blocks,
+		Error:       rpcErr,
 	}, nil
 }

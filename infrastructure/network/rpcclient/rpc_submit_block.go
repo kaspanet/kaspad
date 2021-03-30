@@ -8,7 +8,7 @@ import (
 // SubmitBlock sends an RPC request respective to the function's name and returns the RPC server's response
 func (c *RPCClient) SubmitBlock(block *externalapi.DomainBlock) (appmessage.RejectReason, error) {
 	err := c.rpcRouter.outgoingRoute().Enqueue(
-		appmessage.NewSubmitBlockRequestMessage(appmessage.DomainBlockToMsgBlock(block)))
+		appmessage.NewSubmitBlockRequestMessage(appmessage.DomainBlockToRPCBlock(block)))
 	if err != nil {
 		return appmessage.RejectReasonNone, err
 	}

@@ -4,7 +4,7 @@ package appmessage
 // its respective RPC message
 type SubmitBlockRequestMessage struct {
 	baseMessage
-	Block *MsgBlock
+	Block *RPCBlock
 }
 
 // Command returns the protocol command string for the message
@@ -13,7 +13,7 @@ func (msg *SubmitBlockRequestMessage) Command() MessageCommand {
 }
 
 // NewSubmitBlockRequestMessage returns a instance of the message
-func NewSubmitBlockRequestMessage(block *MsgBlock) *SubmitBlockRequestMessage {
+func NewSubmitBlockRequestMessage(block *RPCBlock) *SubmitBlockRequestMessage {
 	return &SubmitBlockRequestMessage{
 		Block: block,
 	}
@@ -56,4 +56,36 @@ func (msg *SubmitBlockResponseMessage) Command() MessageCommand {
 // NewSubmitBlockResponseMessage returns a instance of the message
 func NewSubmitBlockResponseMessage() *SubmitBlockResponseMessage {
 	return &SubmitBlockResponseMessage{}
+}
+
+// RPCBlock is a kaspad block representation meant to be
+// used over RPC
+type RPCBlock struct {
+	Header       *RPCBlockHeader
+	Transactions []*RPCTransaction
+	VerboseData  *RPCBlockVerboseData
+}
+
+// RPCBlockHeader is a kaspad block header representation meant to be
+// used over RPC
+type RPCBlockHeader struct {
+	Version              uint32
+	ParentHashes         []string
+	HashMerkleRoot       string
+	AcceptedIDMerkleRoot string
+	UTXOCommitment       string
+	Timestamp            int64
+	Bits                 uint32
+	Nonce                uint64
+}
+
+// RPCBlockVerboseData holds verbose data about a block
+type RPCBlockVerboseData struct {
+	Hash               string
+	Difficulty         float64
+	SelectedParentHash string
+	TransactionIDs     []string
+	IsHeaderOnly       bool
+	BlueScore          uint64
+	ChildrenHashes     []string
 }

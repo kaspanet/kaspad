@@ -31,7 +31,10 @@ func mineNextBlock(t *testing.T, harness *appHarness) *externalapi.DomainBlock {
 		t.Fatalf("Error getting block template: %+v", err)
 	}
 
-	block := appmessage.MsgBlockToDomainBlock(blockTemplate.MsgBlock)
+	block, err := appmessage.RPCBlockToDomainBlock(blockTemplate.Block)
+	if err != nil {
+		t.Fatalf("Error converting block: %s", err)
+	}
 
 	solveBlock(block)
 

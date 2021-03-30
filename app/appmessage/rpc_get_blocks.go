@@ -5,7 +5,7 @@ package appmessage
 type GetBlocksRequestMessage struct {
 	baseMessage
 	LowHash                       string
-	IncludeBlockVerboseData       bool
+	IncludeBlocks                 bool
 	IncludeTransactionVerboseData bool
 }
 
@@ -15,11 +15,11 @@ func (msg *GetBlocksRequestMessage) Command() MessageCommand {
 }
 
 // NewGetBlocksRequestMessage returns a instance of the message
-func NewGetBlocksRequestMessage(lowHash string, includeBlockVerboseData bool,
+func NewGetBlocksRequestMessage(lowHash string, includeBlocks bool,
 	includeTransactionVerboseData bool) *GetBlocksRequestMessage {
 	return &GetBlocksRequestMessage{
 		LowHash:                       lowHash,
-		IncludeBlockVerboseData:       includeBlockVerboseData,
+		IncludeBlocks:                 includeBlocks,
 		IncludeTransactionVerboseData: includeTransactionVerboseData,
 	}
 }
@@ -28,8 +28,8 @@ func NewGetBlocksRequestMessage(lowHash string, includeBlockVerboseData bool,
 // its respective RPC message
 type GetBlocksResponseMessage struct {
 	baseMessage
-	BlockHashes      []string
-	BlockVerboseData []*BlockVerboseData
+	BlockHashes []string
+	Blocks      []*RPCBlock
 
 	Error *RPCError
 }
@@ -40,11 +40,6 @@ func (msg *GetBlocksResponseMessage) Command() MessageCommand {
 }
 
 // NewGetBlocksResponseMessage returns a instance of the message
-func NewGetBlocksResponseMessage(blockHashes []string, blockHexes []string,
-	blockVerboseData []*BlockVerboseData) *GetBlocksResponseMessage {
-
-	return &GetBlocksResponseMessage{
-		BlockHashes:      blockHashes,
-		BlockVerboseData: blockVerboseData,
-	}
+func NewGetBlocksResponseMessage() *GetBlocksResponseMessage {
+	return &GetBlocksResponseMessage{}
 }
