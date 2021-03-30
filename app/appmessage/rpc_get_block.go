@@ -5,7 +5,6 @@ package appmessage
 type GetBlockRequestMessage struct {
 	baseMessage
 	Hash                          string
-	IncludeBlockVerboseData       bool
 	IncludeTransactionVerboseData bool
 }
 
@@ -15,10 +14,9 @@ func (msg *GetBlockRequestMessage) Command() MessageCommand {
 }
 
 // NewGetBlockRequestMessage returns a instance of the message
-func NewGetBlockRequestMessage(hash string, includeBlockVerboseData bool, includeTransactionVerboseData bool) *GetBlockRequestMessage {
+func NewGetBlockRequestMessage(hash string, includeTransactionVerboseData bool) *GetBlockRequestMessage {
 	return &GetBlockRequestMessage{
 		Hash:                          hash,
-		IncludeBlockVerboseData:       includeBlockVerboseData,
 		IncludeTransactionVerboseData: includeTransactionVerboseData,
 	}
 }

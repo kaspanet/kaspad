@@ -4,6 +4,7 @@ import (
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/app/rpc/rpccontext"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/hashes"
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
 )
 
@@ -17,8 +18,8 @@ const (
 func HandleGetBlocks(context *rpccontext.Context, _ *router.Router, request appmessage.Message) (appmessage.Message, error) {
 	getBlocksRequest := request.(*appmessage.GetBlocksRequestMessage)
 
-	// Validate that user didn't set IncludeTransactionVerboseData without setting IncludeBlockVerboseData
-	if !getBlocksRequest.IncludeBlockVerboseData && getBlocksRequest.IncludeTransactionVerboseData {
+	// Validate that user didn't set IncludeTransactionVerboseData without setting IncludeBlocks
+	if !getBlocksRequest.IncludeBlocks && getBlocksRequest.IncludeTransactionVerboseData {
 		return &appmessage.GetBlocksResponseMessage{
 			Error: appmessage.RPCErrorf(
 				"If includeTransactionVerboseData is set, then includeBlockVerboseData must be set as well"),
@@ -80,21 +81,23 @@ func HandleGetBlocks(context *rpccontext.Context, _ *router.Router, request appm
 	}
 
 	// Prepare the response
-	blocks := make([]*appmessage.RPCBlock, len(blockHashes))
-	for i, blockHash := range blockHashes {
-		blockHeader, err := context.Domain.Consensus().GetBlockHeader(blockHash)
-		if err != nil {
-			return nil, err
-		}
-		block := &externalapi.DomainBlock{Header: blockHeader}
-		blocks[i] = appmessage.DomainBlockToRPCBlock(block)
-		if getBlocksRequest.IncludeBlockVerboseData {
-			err := context.PopulateBlockWithVerboseData(blocks[i], blockHeader, nil, getBlocksRequest.IncludeTransactionVerboseData)
+	response := appmessage.NewGetBlocksResponseMessage()
+	response.BlockHashes = hashes.ToStrings(blockHashes)
+	if getBlocksRequest.IncludeBlocks {
+		blocks := make([]*appmessage.RPCBlock, len(blockHashes))
+		for i, blockHash := range blockHashes {
+			blockHeader, err := context.Domain.Consensus().GetBlockHeader(blockHash)
+			if err != nil {
+				return nil, err
+			}
+			block := &externalapi.DomainBlock{Header: blockHeader}
+			blocks[i] = appmessage.DomainBlockToRPCBlock(block)
+			err = context.PopulateBlockWithVerboseData(blocks[i], blockHeader, nil, getBlocksRequest.IncludeTransactionVerboseData)
 			if err != nil {
 				return nil, err
 			}
 		}
 	}
-	response := appmessage.NewGetBlocksResponseMessage(blocks)
+
 	return response, nil
 }
