@@ -274,12 +274,7 @@ func TestSigningTwoInputs(t *testing.T) {
 			ScriptPublicKey: scriptPublicKey,
 		}
 
-		fundingBlockHash, _, err := tc.AddBlock([]*externalapi.DomainHash{params.GenesisHash}, coinbaseData, nil)
-		if err != nil {
-			t.Fatalf("AddBlock: %+v", err)
-		}
-
-		block1Hash, _, err := tc.AddBlock([]*externalapi.DomainHash{fundingBlockHash}, coinbaseData, nil)
+		block1Hash, _, err := tc.AddBlock([]*externalapi.DomainHash{params.GenesisHash}, coinbaseData, nil)
 		if err != nil {
 			t.Fatalf("AddBlock: %+v", err)
 		}
@@ -289,33 +284,30 @@ func TestSigningTwoInputs(t *testing.T) {
 			t.Fatalf("AddBlock: %+v", err)
 		}
 
-		block1, err := tc.GetBlock(block1Hash)
+		block3Hash, _, err := tc.AddBlock([]*externalapi.DomainHash{block2Hash}, coinbaseData, nil)
 		if err != nil {
-			t.Fatalf("Error getting block1: %+v", err)
+			t.Fatalf("AddBlock: %+v", err)
 		}
 
 		block2, err := tc.GetBlock(block2Hash)
 		if err != nil {
-			t.Fatalf("Error getting block1: %+v", err)
+			t.Fatalf("Error getting block2: %+v", err)
 		}
 
-		block1Tx := block1.Transactions[0]
-		block1TxOut := block1Tx.Outputs[0]
+		block3, err := tc.GetBlock(block3Hash)
+		if err != nil {
+			t.Fatalf("Error getting block2: %+v", err)
+		}
 
 		block2Tx := block2.Transactions[0]
 		block2TxOut := block2Tx.Outputs[0]
 
+		block3Tx := block3.Transactions[0]
+		block3TxOut := block3Tx.Outputs[0]
+
 		tx := &externalapi.DomainTransaction{
 			Version: constants.MaxTransactionVersion,
 			Inputs: []*externalapi.DomainTransactionInput{
-				{
-					PreviousOutpoint: externalapi.DomainOutpoint{
-						TransactionID: *consensushashing.TransactionID(block1.Transactions[0]),
-						Index:         0,
-					},
-					Sequence:  constants.MaxTxInSequenceNum,
-					UTXOEntry: utxo.NewUTXOEntry(block1TxOut.Value, block1TxOut.ScriptPublicKey, true, 0),
-				},
 				{
 					PreviousOutpoint: externalapi.DomainOutpoint{
 						TransactionID: *consensushashing.TransactionID(block2.Transactions[0]),
@@ -323,6 +315,14 @@ func TestSigningTwoInputs(t *testing.T) {
 					},
 					Sequence:  constants.MaxTxInSequenceNum,
 					UTXOEntry: utxo.NewUTXOEntry(block2TxOut.Value, block2TxOut.ScriptPublicKey, true, 0),
+				},
+				{
+					PreviousOutpoint: externalapi.DomainOutpoint{
+						TransactionID: *consensushashing.TransactionID(block3.Transactions[0]),
+						Index:         0,
+					},
+					Sequence:  constants.MaxTxInSequenceNum,
+					UTXOEntry: utxo.NewUTXOEntry(block3TxOut.Value, block3TxOut.ScriptPublicKey, true, 0),
 				},
 			},
 			Outputs: []*externalapi.DomainTransactionOutput{{
@@ -347,7 +347,7 @@ func TestSigningTwoInputs(t *testing.T) {
 			input.SignatureScript = signatureScript
 		}
 
-		_, insertionResult, err := tc.AddBlock([]*externalapi.DomainHash{block2Hash}, nil, []*externalapi.DomainTransaction{tx})
+		_, insertionResult, err := tc.AddBlock([]*externalapi.DomainHash{block3Hash}, nil, []*externalapi.DomainTransaction{tx})
 		if err != nil {
 			t.Fatalf("AddBlock: %+v", err)
 		}
