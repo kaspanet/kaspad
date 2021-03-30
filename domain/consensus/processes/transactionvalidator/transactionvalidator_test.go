@@ -46,7 +46,7 @@ func TestValidateTransactionInContextAndPopulateMassAndFee(t *testing.T) {
 		defer tearDown(false)
 
 		pastMedianManager.pastMedianTimeForTest = 1
-		privateKey, err := secp256k1.GeneratePrivateKey()
+		privateKey, err := secp256k1.GenerateSchnorrKeyPair()
 		if err != nil {
 			t.Fatalf("Failed to generate a private key: %v", err)
 		}
@@ -249,7 +249,7 @@ func TestSigningTwoInputs(t *testing.T) {
 		}
 		defer teardown(false)
 
-		privateKey, err := secp256k1.GeneratePrivateKey()
+		privateKey, err := secp256k1.GenerateSchnorrKeyPair()
 		if err != nil {
 			t.Fatalf("Failed to generate a private key: %v", err)
 		}

@@ -74,7 +74,7 @@ func mineLoop(syncerRPCClient, syncedRPCClient *rpc.Client) error {
 }
 
 func generateAddress() (util.Address, error) {
-	privateKey, err := secp256k1.GeneratePrivateKey()
+	privateKey, err := secp256k1.GenerateSchnorrKeyPair()
 	if err != nil {
 		return nil, err
 	}
