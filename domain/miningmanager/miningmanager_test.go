@@ -35,7 +35,7 @@ func TestValidateAndInsertTransaction(t *testing.T) {
 		defer teardown(false)
 
 		miningFactory := miningmanager.NewFactory()
-		miningManager := miningFactory.NewMiningManager(tc, blockMaxMass, false)
+		miningManager := miningFactory.NewMiningManager(tc, params)
 		transactionsToInsert := make([]*externalapi.DomainTransaction, 10)
 		for i := range transactionsToInsert {
 			transactionsToInsert[i] = createTransactionWithUTXOEntry(t, i)
@@ -86,7 +86,7 @@ func TestInsertDoubleTransactionsToMempool(t *testing.T) {
 		defer teardown(false)
 
 		miningFactory := miningmanager.NewFactory()
-		miningManager := miningFactory.NewMiningManager(tc, blockMaxMass, false)
+		miningManager := miningFactory.NewMiningManager(tc, params)
 		transaction := createTransactionWithUTXOEntry(t, 0)
 		err = miningManager.ValidateAndInsertTransaction(transaction, true)
 		if err != nil {
@@ -111,7 +111,7 @@ func TestHandleNewBlockTransactions(t *testing.T) {
 		defer teardown(false)
 
 		miningFactory := miningmanager.NewFactory()
-		miningManager := miningFactory.NewMiningManager(tc, blockMaxMass, false)
+		miningManager := miningFactory.NewMiningManager(tc, params)
 		transactionsToInsert := make([]*externalapi.DomainTransaction, 10)
 		for i := range transactionsToInsert {
 			transaction := createTransactionWithUTXOEntry(t, i)
@@ -177,7 +177,7 @@ func TestDoubleSpends(t *testing.T) {
 		defer teardown(false)
 
 		miningFactory := miningmanager.NewFactory()
-		miningManager := miningFactory.NewMiningManager(tc, blockMaxMass, false)
+		miningManager := miningFactory.NewMiningManager(tc, params)
 		transactionInTheMempool := createTransactionWithUTXOEntry(t, 0)
 		err = miningManager.ValidateAndInsertTransaction(transactionInTheMempool, true)
 		if err != nil {
@@ -210,7 +210,7 @@ func TestOrphanTransactions(t *testing.T) {
 		defer teardown(false)
 
 		miningFactory := miningmanager.NewFactory()
-		miningManager := miningFactory.NewMiningManager(tc, blockMaxMass, false)
+		miningManager := miningFactory.NewMiningManager(tc, params)
 		// Before each parent transaction, We will add two blocks by consensus in order to fund the parent transactions.
 		parentTransactions, childTransactions, err := createArraysOfParentAndChildrenTransactions(tc)
 		if err != nil {
