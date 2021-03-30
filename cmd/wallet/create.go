@@ -9,7 +9,7 @@ import (
 )
 
 func create(conf *createConfig) error {
-	privateKey, err := secp256k1.GeneratePrivateKey()
+	privateKey, err := secp256k1.GenerateSchnorrKeyPair()
 	if err != nil {
 		return errors.Wrap(err, "Failed to generate private key")
 	}

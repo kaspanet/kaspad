@@ -109,7 +109,7 @@ func generateTx(t *testing.T, firstBlockCoinbase *externalapi.DomainTransaction,
 	if err != nil {
 		t.Fatalf("Error decoding private key: %+v", err)
 	}
-	privateKey, err := secp256k1.DeserializePrivateKeyFromSlice(privateKeyBytes)
+	privateKey, err := secp256k1.DeserializeSchnorrPrivateKeyFromSlice(privateKeyBytes)
 	if err != nil {
 		t.Fatalf("Error deserializing private key: %+v", err)
 	}
