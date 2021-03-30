@@ -105,10 +105,9 @@ func TestGHOSTDAG(t *testing.T) {
 			blockHeadersStore.dagMap[genesisHash] = genesisHeader
 
 			for _, factory := range implementationFactories {
-
 				g := factory.function(nil, dagTopology, ghostdagDataStore, blockHeadersStore, test.K)
-				for _, testBlockData := range test.Blocks {
 
+				for _, testBlockData := range test.Blocks {
 					blockID := StringToDomainHash(testBlockData.ID)
 					dagTopology.parentsMap[*blockID] = StringToDomainHashSlice(testBlockData.Parents)
 					blockHeadersStore.dagMap[*blockID] = blockheader.NewImmutableBlockHeader(
@@ -122,12 +121,12 @@ func TestGHOSTDAG(t *testing.T) {
 						0,
 					)
 
-					err := g.GHOSTDAG(blockID)
+					err := g.GHOSTDAG(nil, blockID)
 					if err != nil {
 						t.Fatalf("Test failed: \n Impl: %s,FileName: %s \n error on GHOSTDAG - block %s: %s.",
 							factory.implName, info.Name(), testBlockData.ID, err)
 					}
-					ghostdagData, err := ghostdagDataStore.Get(nil, blockID)
+					ghostdagData, err := ghostdagDataStore.Get(nil, nil, blockID)
 					if err != nil {
 						t.Fatalf("\nTEST FAILED:\n Impl: %s, FileName: %s \nBlock: %s, \nError: ghostdagDataStore error: %v.",
 							factory.implName, info.Name(), testBlockData.ID, err)
@@ -259,7 +258,7 @@ func TestBlueWork(t *testing.T) {
 	}
 
 	for _, blockHash := range blocksForGHOSTDAG {
-		err := manager.GHOSTDAG(blockHash)
+		err := manager.GHOSTDAG(nil, blockHash)
 		if err != nil {
 			t.Fatalf("GHOSTDAG: %+v", err)
 		}
@@ -301,11 +300,11 @@ type GHOSTDAGDataStoreImpl struct {
 	dagMap map[externalapi.DomainHash]*model.BlockGHOSTDAGData
 }
 
-func (ds *GHOSTDAGDataStoreImpl) Stage(blockHash *externalapi.DomainHash, blockGHOSTDAGData *model.BlockGHOSTDAGData) {
+func (ds *GHOSTDAGDataStoreImpl) Stage(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash, blockGHOSTDAGData *model.BlockGHOSTDAGData) {
 	ds.dagMap[*blockHash] = blockGHOSTDAGData
 }
 
-func (ds *GHOSTDAGDataStoreImpl) IsStaged() bool {
+func (ds *GHOSTDAGDataStoreImpl) IsStaged(*model.StagingArea) bool {
 	panic("implement me")
 }
 
@@ -317,7 +316,7 @@ func (ds *GHOSTDAGDataStoreImpl) Commit(dbTx model.DBTransaction) error {
 	panic("implement me")
 }
 
-func (ds *GHOSTDAGDataStoreImpl) Get(dbContext model.DBReader, blockHash *externalapi.DomainHash) (*model.BlockGHOSTDAGData, error) {
+func (ds *GHOSTDAGDataStoreImpl) Get(dbContext model.DBReader, stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) (*model.BlockGHOSTDAGData, error) {
 	v, ok := ds.dagMap[*blockHash]
 	if ok {
 		return v, nil
@@ -329,7 +328,7 @@ type DAGTopologyManagerImpl struct {
 	parentsMap map[externalapi.DomainHash][]*externalapi.DomainHash
 }
 
-func (dt *DAGTopologyManagerImpl) ChildInSelectedParentChainOf(context, highHash *externalapi.DomainHash) (*externalapi.DomainHash, error) {
+func (dt *DAGTopologyManagerImpl) ChildInSelectedParentChainOf(stagingArea *model.StagingArea, context, highHash *externalapi.DomainHash) (*externalapi.DomainHash, error) {
 	panic("implement me")
 }
 
@@ -341,7 +340,7 @@ func (dt *DAGTopologyManagerImpl) AddTip(tipHash *externalapi.DomainHash) error 
 	panic("implement me")
 }
 
-func (dt *DAGTopologyManagerImpl) Parents(blockHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error) {
+func (dt *DAGTopologyManagerImpl) Parents(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error) {
 	v, ok := dt.parentsMap[*blockHash]
 	if !ok {
 		return []*externalapi.DomainHash{}, nil
@@ -350,32 +349,32 @@ func (dt *DAGTopologyManagerImpl) Parents(blockHash *externalapi.DomainHash) ([]
 	return v, nil
 }
 
-func (dt *DAGTopologyManagerImpl) Children(blockHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error) {
+func (dt *DAGTopologyManagerImpl) Children(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error) {
 	panic("unimplemented")
 }
 
-func (dt *DAGTopologyManagerImpl) IsParentOf(hashBlockA *externalapi.DomainHash, hashBlockB *externalapi.DomainHash) (bool, error) {
+func (dt *DAGTopologyManagerImpl) IsParentOf(stagingArea *model.StagingArea, blockHashA *externalapi.DomainHash, blockHashB *externalapi.DomainHash) (bool, error) {
 	panic("unimplemented")
 }
 
-func (dt *DAGTopologyManagerImpl) IsChildOf(hashBlockA *externalapi.DomainHash, hashBlockB *externalapi.DomainHash) (bool, error) {
+func (dt *DAGTopologyManagerImpl) IsChildOf(stagingArea *model.StagingArea, blockHashA *externalapi.DomainHash, blockHashB *externalapi.DomainHash) (bool, error) {
 	panic("unimplemented")
 }
 
-func (dt *DAGTopologyManagerImpl) IsAncestorOf(hashBlockA *externalapi.DomainHash, hashBlockB *externalapi.DomainHash) (bool, error) {
-	blockBParents, isOk := dt.parentsMap[*hashBlockB]
+func (dt *DAGTopologyManagerImpl) IsAncestorOf(stagingArea *model.StagingArea, blockHashA *externalapi.DomainHash, blockHashB *externalapi.DomainHash) (bool, error) {
+	blockBParents, isOk := dt.parentsMap[*blockHashB]
 	if !isOk {
 		return false, nil
 	}
 
 	for _, parentOfB := range blockBParents {
-		if parentOfB.Equal(hashBlockA) {
+		if parentOfB.Equal(blockHashA) {
 			return true, nil
 		}
 	}
 
 	for _, parentOfB := range blockBParents {
-		isAncestorOf, err := dt.IsAncestorOf(hashBlockA, parentOfB)
+		isAncestorOf, err := dt.IsAncestorOf(stagingArea, blockHashA, parentOfB)
 		if err != nil {
 			return false, err
 		}
@@ -387,17 +386,17 @@ func (dt *DAGTopologyManagerImpl) IsAncestorOf(hashBlockA *externalapi.DomainHas
 
 }
 
-func (dt *DAGTopologyManagerImpl) IsAncestorOfAny(blockHash *externalapi.DomainHash, potentialDescendants []*externalapi.DomainHash) (bool, error) {
+func (dt *DAGTopologyManagerImpl) IsAncestorOfAny(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash, potentialDescendants []*externalapi.DomainHash) (bool, error) {
 	panic("unimplemented")
 }
-func (dt *DAGTopologyManagerImpl) IsAnyAncestorOf([]*externalapi.DomainHash, *externalapi.DomainHash) (bool, error) {
+func (dt *DAGTopologyManagerImpl) IsAnyAncestorOf(*model.StagingArea, []*externalapi.DomainHash, *externalapi.DomainHash) (bool, error) {
 	panic("unimplemented")
 }
-func (dt *DAGTopologyManagerImpl) IsInSelectedParentChainOf(blockHashA *externalapi.DomainHash, blockHashB *externalapi.DomainHash) (bool, error) {
+func (dt *DAGTopologyManagerImpl) IsInSelectedParentChainOf(stagingArea *model.StagingArea, blockHashA *externalapi.DomainHash, blockHashB *externalapi.DomainHash) (bool, error) {
 	panic("unimplemented")
 }
 
-func (dt *DAGTopologyManagerImpl) SetParents(blockHash *externalapi.DomainHash, parentHashes []*externalapi.DomainHash) error {
+func (dt *DAGTopologyManagerImpl) SetParents(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash, parentHashes []*externalapi.DomainHash) error {
 	panic("unimplemented")
 }
 
@@ -409,13 +408,13 @@ func (b *blockHeadersStore) Discard() { panic("unimplemented") }
 
 func (b *blockHeadersStore) Commit(_ model.DBTransaction) error { panic("unimplemented") }
 
-func (b *blockHeadersStore) Stage(blockHash *externalapi.DomainHash, blockHeader externalapi.BlockHeader) {
+func (b *blockHeadersStore) Stage(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash, blockHeader externalapi.BlockHeader) {
 	b.dagMap[*blockHash] = blockHeader
 }
 
-func (b *blockHeadersStore) IsStaged() bool { panic("unimplemented") }
+func (b *blockHeadersStore) IsStaged(*model.StagingArea) bool { panic("unimplemented") }
 
-func (b *blockHeadersStore) BlockHeader(_ model.DBReader, blockHash *externalapi.DomainHash) (externalapi.BlockHeader, error) {
+func (b *blockHeadersStore) BlockHeader(dbContext model.DBReader, stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) (externalapi.BlockHeader, error) {
 	header, ok := b.dagMap[*blockHash]
 	if ok {
 		return header, nil
@@ -423,15 +422,15 @@ func (b *blockHeadersStore) BlockHeader(_ model.DBReader, blockHash *externalapi
 	return nil, errors.New("Header isn't in the store")
 }
 
-func (b *blockHeadersStore) HasBlockHeader(_ model.DBReader, blockHash *externalapi.DomainHash) (bool, error) {
+func (b *blockHeadersStore) HasBlockHeader(dbContext model.DBReader, stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) (bool, error) {
 	_, ok := b.dagMap[*blockHash]
 	return ok, nil
 }
 
-func (b *blockHeadersStore) BlockHeaders(_ model.DBReader, blockHashes []*externalapi.DomainHash) ([]externalapi.BlockHeader, error) {
+func (b *blockHeadersStore) BlockHeaders(dbContext model.DBReader, stagingArea *model.StagingArea, blockHashes []*externalapi.DomainHash) ([]externalapi.BlockHeader, error) {
 	res := make([]externalapi.BlockHeader, 0, len(blockHashes))
 	for _, hash := range blockHashes {
-		header, err := b.BlockHeader(nil, hash)
+		header, err := b.BlockHeader(nil, nil, hash)
 		if err != nil {
 			return nil, err
 		}
@@ -440,10 +439,10 @@ func (b *blockHeadersStore) BlockHeaders(_ model.DBReader, blockHashes []*extern
 	return res, nil
 }
 
-func (b *blockHeadersStore) Delete(blockHash *externalapi.DomainHash) {
+func (b *blockHeadersStore) Delete(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) {
 	delete(b.dagMap, *blockHash)
 }
 
-func (b *blockHeadersStore) Count() uint64 {
+func (b *blockHeadersStore) Count(*model.StagingArea) uint64 {
 	return uint64(len(b.dagMap))
 }

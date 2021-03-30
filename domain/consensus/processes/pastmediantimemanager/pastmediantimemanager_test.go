@@ -3,6 +3,8 @@ package pastmediantimemanager_test
 import (
 	"testing"
 
+	"github.com/kaspanet/kaspad/domain/consensus/model"
+
 	"github.com/kaspanet/kaspad/domain/consensus"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
@@ -63,8 +65,9 @@ func TestPastMedianTime(t *testing.T) {
 			},
 		}
 
+		stagingArea := model.NewStagingArea()
 		for _, test := range tests {
-			pastMedianTime, err := tc.PastMedianTimeManager().PastMedianTime(blockHashes[test.blockNumber])
+			pastMedianTime, err := tc.PastMedianTimeManager().PastMedianTime(stagingArea, blockHashes[test.blockNumber])
 			if err != nil {
 				t.Fatalf("PastMedianTime: %s", err)
 			}
