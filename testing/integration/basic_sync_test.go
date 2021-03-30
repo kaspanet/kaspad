@@ -18,38 +18,48 @@ func TestIntegrationBasicSync(t *testing.T) {
 	connect(t, appHarness1, appHarness2)
 	connect(t, appHarness2, appHarness3)
 
-	app2OnBlockAddedChan := make(chan *appmessage.MsgBlockHeader)
+	app2OnBlockAddedChan := make(chan *appmessage.RPCBlock)
 	setOnBlockAddedHandler(t, appHarness2, func(notification *appmessage.BlockAddedNotificationMessage) {
-		app2OnBlockAddedChan <- &notification.Block.Header
+		app2OnBlockAddedChan <- notification.Block
 	})
 
-	app3OnBlockAddedChan := make(chan *appmessage.MsgBlockHeader)
+	app3OnBlockAddedChan := make(chan *appmessage.RPCBlock)
 	setOnBlockAddedHandler(t, appHarness3, func(notification *appmessage.BlockAddedNotificationMessage) {
-		app3OnBlockAddedChan <- &notification.Block.Header
+		app3OnBlockAddedChan <- notification.Block
 	})
 
 	block := mineNextBlock(t, appHarness1)
 
-	var header *appmessage.MsgBlockHeader
+	var rpcBlock *appmessage.RPCBlock
 	select {
-	case header = <-app2OnBlockAddedChan:
+	case rpcBlock = <-app2OnBlockAddedChan:
 	case <-time.After(defaultTimeout):
 		t.Fatalf("Timeout waiting for block added notification on node directly connected to miner")
 	}
+	domainBlockFromRPC, err := appmessage.RPCBlockToDomainBlock(rpcBlock)
+	if err != nil {
+		t.Fatalf("Could not convert RPC block: %s", err)
+	}
+	rpcBlockHash := consensushashing.BlockHash(domainBlockFromRPC)
 
 	blockHash := consensushashing.BlockHash(block)
-	if !header.BlockHash().Equal(blockHash) {
-		t.Errorf("Expected block with hash '%s', but got '%s'", blockHash, header.BlockHash())
+	if !rpcBlockHash.Equal(blockHash) {
+		t.Errorf("Expected block with hash '%s', but got '%s'", blockHash, rpcBlockHash)
 	}
 
 	select {
-	case header = <-app3OnBlockAddedChan:
+	case rpcBlock = <-app3OnBlockAddedChan:
 	case <-time.After(defaultTimeout):
 		t.Fatalf("Timeout waiting for block added notification on node indirectly connected to miner")
 	}
+	domainBlockFromRPC, err = appmessage.RPCBlockToDomainBlock(rpcBlock)
+	if err != nil {
+		t.Fatalf("Could not convert RPC block: %s", err)
+	}
+	rpcBlockHash = consensushashing.BlockHash(domainBlockFromRPC)
 
 	blockHash = consensushashing.BlockHash(block)
-	if !header.BlockHash().Equal(blockHash) {
-		t.Errorf("Expected block with hash '%s', but got '%s'", blockHash, header.BlockHash())
+	if !rpcBlockHash.Equal(blockHash) {
+		t.Errorf("Expected block with hash '%s', but got '%s'", blockHash, rpcBlockHash)
 	}
 }

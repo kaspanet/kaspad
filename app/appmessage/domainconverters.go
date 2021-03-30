@@ -3,6 +3,7 @@ package appmessage
 import (
 	"encoding/hex"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/blockheader"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/hashes"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/utxo"
 
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
@@ -293,4 +294,71 @@ func DomainOutpointAndUTXOEntryPairsToOutpointAndUTXOEntryPairs(
 		}
 	}
 	return domainOutpointAndUTXOEntryPairs
+}
+
+// DomainBlockToRPCBlock converts DomainBlocks to RPCBlocks
+func DomainBlockToRPCBlock(block *externalapi.DomainBlock) *RPCBlock {
+	header := &RPCBlockHeader{
+		Version:              uint32(block.Header.Version()),
+		ParentHashes:         hashes.ToStrings(block.Header.ParentHashes()),
+		HashMerkleRoot:       block.Header.HashMerkleRoot().String(),
+		AcceptedIDMerkleRoot: block.Header.AcceptedIDMerkleRoot().String(),
+		UTXOCommitment:       block.Header.UTXOCommitment().String(),
+		Timestamp:            block.Header.TimeInMilliseconds(),
+		Bits:                 block.Header.Bits(),
+		Nonce:                block.Header.Nonce(),
+	}
+	transactions := make([]*RPCTransaction, len(block.Transactions))
+	for i, transaction := range block.Transactions {
+		transactions[i] = DomainTransactionToRPCTransaction(transaction)
+	}
+	return &RPCBlock{
+		Header:       header,
+		Transactions: transactions,
+	}
+}
+
+// RPCBlockToDomainBlock converts `block` into a DomainBlock
+func RPCBlockToDomainBlock(block *RPCBlock) (*externalapi.DomainBlock, error) {
+	parentHashes := make([]*externalapi.DomainHash, len(block.Header.ParentHashes))
+	for i, parentHash := range block.Header.ParentHashes {
+		domainParentHashes, err := externalapi.NewDomainHashFromString(parentHash)
+		if err != nil {
+			return nil, err
+		}
+		parentHashes[i] = domainParentHashes
+	}
+	hashMerkleRoot, err := externalapi.NewDomainHashFromString(block.Header.HashMerkleRoot)
+	if err != nil {
+		return nil, err
+	}
+	acceptedIDMerkleRoot, err := externalapi.NewDomainHashFromString(block.Header.AcceptedIDMerkleRoot)
+	if err != nil {
+		return nil, err
+	}
+	utxoCommitment, err := externalapi.NewDomainHashFromString(block.Header.UTXOCommitment)
+	if err != nil {
+		return nil, err
+	}
+	header := blockheader.NewImmutableBlockHeader(
+		uint16(block.Header.Version),
+		parentHashes,
+		hashMerkleRoot,
+		acceptedIDMerkleRoot,
+		utxoCommitment,
+		block.Header.Timestamp,
+		block.Header.Bits,
+		block.Header.Nonce)
+	transactions := make([]*externalapi.DomainTransaction, len(block.Transactions))
+	for i, transaction := range block.Transactions {
+		domainTransaction, err := RPCTransactionToDomainTransaction(transaction)
+		if err != nil {
+			return nil, err
+		}
+		transactions[i] = domainTransaction
+	}
+	return &externalapi.DomainBlock{
+		Header:       header,
+		Transactions: transactions,
+	}, nil
 }

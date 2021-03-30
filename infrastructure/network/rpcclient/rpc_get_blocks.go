@@ -3,11 +3,11 @@ package rpcclient
 import "github.com/kaspanet/kaspad/app/appmessage"
 
 // GetBlocks sends an RPC request respective to the function's name and returns the RPC server's response
-func (c *RPCClient) GetBlocks(lowHash string, includeBlockVerboseData bool,
+func (c *RPCClient) GetBlocks(lowHash string, includeBlocks bool,
 	includeTransactionVerboseData bool) (*appmessage.GetBlocksResponseMessage, error) {
 
 	err := c.rpcRouter.outgoingRoute().Enqueue(
-		appmessage.NewGetBlocksRequestMessage(lowHash, includeBlockVerboseData, includeTransactionVerboseData))
+		appmessage.NewGetBlocksRequestMessage(lowHash, includeBlocks, includeTransactionVerboseData))
 	if err != nil {
 		return nil, err
 	}
