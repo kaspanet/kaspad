@@ -20,12 +20,12 @@ func TestIntegrationBasicSync(t *testing.T) {
 
 	app2OnBlockAddedChan := make(chan *appmessage.RPCBlock)
 	setOnBlockAddedHandler(t, appHarness2, func(notification *appmessage.BlockAddedNotificationMessage) {
-		app2OnBlockAddedChan <- notification.Block.Block
+		app2OnBlockAddedChan <- notification.Block
 	})
 
 	app3OnBlockAddedChan := make(chan *appmessage.RPCBlock)
 	setOnBlockAddedHandler(t, appHarness3, func(notification *appmessage.BlockAddedNotificationMessage) {
-		app3OnBlockAddedChan <- notification.Block.Block
+		app3OnBlockAddedChan <- notification.Block
 	})
 
 	block := mineNextBlock(t, appHarness1)
