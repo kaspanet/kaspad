@@ -31,8 +31,8 @@ func New(
 }
 
 // Parents returns the DAG parents of the given blockHash
-func (dtm *dagTopologyManager) Parents(blockHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error) {
-	blockRelations, err := dtm.blockRelationStore.BlockRelation(dtm.databaseContext, blockHash)
+func (dtm *dagTopologyManager) Parents(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error) {
+	blockRelations, err := dtm.blockRelationStore.BlockRelation(dtm.databaseContext, stagingArea, blockHash)
 	if err != nil {
 		return nil, err
 	}
@@ -40,8 +40,8 @@ func (dtm *dagTopologyManager) Parents(blockHash *externalapi.DomainHash) ([]*ex
 }
 
 // Children returns the DAG children of the given blockHash
-func (dtm *dagTopologyManager) Children(blockHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error) {
-	blockRelations, err := dtm.blockRelationStore.BlockRelation(dtm.databaseContext, blockHash)
+func (dtm *dagTopologyManager) Children(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error) {
+	blockRelations, err := dtm.blockRelationStore.BlockRelation(dtm.databaseContext, stagingArea, blockHash)
 	if err != nil {
 		return nil, err
 	}
@@ -49,8 +49,8 @@ func (dtm *dagTopologyManager) Children(blockHash *externalapi.DomainHash) ([]*e
 }
 
 // IsParentOf returns true if blockHashA is a direct DAG parent of blockHashB
-func (dtm *dagTopologyManager) IsParentOf(blockHashA *externalapi.DomainHash, blockHashB *externalapi.DomainHash) (bool, error) {
-	blockRelations, err := dtm.blockRelationStore.BlockRelation(dtm.databaseContext, blockHashB)
+func (dtm *dagTopologyManager) IsParentOf(stagingArea *model.StagingArea, blockHashA *externalapi.DomainHash, blockHashB *externalapi.DomainHash) (bool, error) {
+	blockRelations, err := dtm.blockRelationStore.BlockRelation(dtm.databaseContext, stagingArea, blockHashB)
 	if err != nil {
 		return false, err
 	}
@@ -58,8 +58,8 @@ func (dtm *dagTopologyManager) IsParentOf(blockHashA *externalapi.DomainHash, bl
 }
 
 // IsChildOf returns true if blockHashA is a direct DAG child of blockHashB
-func (dtm *dagTopologyManager) IsChildOf(blockHashA *externalapi.DomainHash, blockHashB *externalapi.DomainHash) (bool, error) {
-	blockRelations, err := dtm.blockRelationStore.BlockRelation(dtm.databaseContext, blockHashB)
+func (dtm *dagTopologyManager) IsChildOf(stagingArea *model.StagingArea, blockHashA *externalapi.DomainHash, blockHashB *externalapi.DomainHash) (bool, error) {
+	blockRelations, err := dtm.blockRelationStore.BlockRelation(dtm.databaseContext, stagingArea, blockHashB)
 	if err != nil {
 		return false, err
 	}
@@ -67,14 +67,14 @@ func (dtm *dagTopologyManager) IsChildOf(blockHashA *externalapi.DomainHash, blo
 }
 
 // IsAncestorOf returns true if blockHashA is a DAG ancestor of blockHashB
-func (dtm *dagTopologyManager) IsAncestorOf(blockHashA *externalapi.DomainHash, blockHashB *externalapi.DomainHash) (bool, error) {
-	return dtm.reachabilityManager.IsDAGAncestorOf(blockHashA, blockHashB)
+func (dtm *dagTopologyManager) IsAncestorOf(stagingArea *model.StagingArea, blockHashA *externalapi.DomainHash, blockHashB *externalapi.DomainHash) (bool, error) {
+	return dtm.reachabilityManager.IsDAGAncestorOf(stagingArea, blockHashA, blockHashB)
 }
 
 // IsAncestorOfAny returns true if `blockHash` is an ancestor of at least one of `potentialDescendants`
-func (dtm *dagTopologyManager) IsAncestorOfAny(blockHash *externalapi.DomainHash, potentialDescendants []*externalapi.DomainHash) (bool, error) {
+func (dtm *dagTopologyManager) IsAncestorOfAny(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash, potentialDescendants []*externalapi.DomainHash) (bool, error) {
 	for _, potentialDescendant := range potentialDescendants {
-		isAncestorOf, err := dtm.IsAncestorOf(blockHash, potentialDescendant)
+		isAncestorOf, err := dtm.IsAncestorOf(stagingArea, blockHash, potentialDescendant)
 		if err != nil {
 			return false, err
 		}
@@ -88,9 +88,9 @@ func (dtm *dagTopologyManager) IsAncestorOfAny(blockHash *externalapi.DomainHash
 }
 
 // IsAnyAncestorOf returns true if at least one of `potentialAncestors` is an ancestor of `blockHash`
-func (dtm *dagTopologyManager) IsAnyAncestorOf(potentialAncestors []*externalapi.DomainHash, blockHash *externalapi.DomainHash) (bool, error) {
+func (dtm *dagTopologyManager) IsAnyAncestorOf(stagingArea *model.StagingArea, potentialAncestors []*externalapi.DomainHash, blockHash *externalapi.DomainHash) (bool, error) {
 	for _, potentialAncestor := range potentialAncestors {
-		isAncestorOf, err := dtm.IsAncestorOf(potentialAncestor, blockHash)
+		isAncestorOf, err := dtm.IsAncestorOf(stagingArea, potentialAncestor, blockHash)
 		if err != nil {
 			return false, err
 		}
@@ -104,8 +104,8 @@ func (dtm *dagTopologyManager) IsAnyAncestorOf(potentialAncestors []*externalapi
 }
 
 // IsInSelectedParentChainOf returns true if blockHashA is in the selected parent chain of blockHashB
-func (dtm *dagTopologyManager) IsInSelectedParentChainOf(blockHashA *externalapi.DomainHash, blockHashB *externalapi.DomainHash) (bool, error) {
-	return dtm.reachabilityManager.IsReachabilityTreeAncestorOf(blockHashA, blockHashB)
+func (dtm *dagTopologyManager) IsInSelectedParentChainOf(stagingArea *model.StagingArea, blockHashA *externalapi.DomainHash, blockHashB *externalapi.DomainHash) (bool, error) {
+	return dtm.reachabilityManager.IsReachabilityTreeAncestorOf(stagingArea, blockHashA, blockHashB)
 }
 
 func isHashInSlice(hash *externalapi.DomainHash, hashes []*externalapi.DomainHash) bool {
@@ -117,8 +117,8 @@ func isHashInSlice(hash *externalapi.DomainHash, hashes []*externalapi.DomainHas
 	return false
 }
 
-func (dtm *dagTopologyManager) SetParents(blockHash *externalapi.DomainHash, parentHashes []*externalapi.DomainHash) error {
-	hasRelations, err := dtm.blockRelationStore.Has(dtm.databaseContext, blockHash)
+func (dtm *dagTopologyManager) SetParents(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash, parentHashes []*externalapi.DomainHash) error {
+	hasRelations, err := dtm.blockRelationStore.Has(dtm.databaseContext, stagingArea, blockHash)
 	if err != nil {
 		return err
 	}
@@ -128,20 +128,20 @@ func (dtm *dagTopologyManager) SetParents(blockHash *externalapi.DomainHash, par
 		// Note: In theory we should also remove the block from all its children, however, in practice no block
 		// ever has its relations updated after getting any children, therefore we skip this step
 
-		currentRelations, err := dtm.blockRelationStore.BlockRelation(dtm.databaseContext, blockHash)
+		currentRelations, err := dtm.blockRelationStore.BlockRelation(dtm.databaseContext, stagingArea, blockHash)
 		if err != nil {
 			return err
 		}
 
 		for _, currentParent := range currentRelations.Parents {
-			parentRelations, err := dtm.blockRelationStore.BlockRelation(dtm.databaseContext, currentParent)
+			parentRelations, err := dtm.blockRelationStore.BlockRelation(dtm.databaseContext, stagingArea, currentParent)
 			if err != nil {
 				return err
 			}
 			for i, parentChild := range parentRelations.Children {
 				if parentChild.Equal(blockHash) {
 					parentRelations.Children = append(parentRelations.Children[:i], parentRelations.Children[i+1:]...)
-					dtm.blockRelationStore.StageBlockRelation(currentParent, parentRelations)
+					dtm.blockRelationStore.StageBlockRelation(stagingArea, currentParent, parentRelations)
 					break
 				}
 			}
@@ -150,7 +150,7 @@ func (dtm *dagTopologyManager) SetParents(blockHash *externalapi.DomainHash, par
 
 	// Go over all new parents and add block as their child
 	for _, parent := range parentHashes {
-		parentRelations, err := dtm.blockRelationStore.BlockRelation(dtm.databaseContext, parent)
+		parentRelations, err := dtm.blockRelationStore.BlockRelation(dtm.databaseContext, stagingArea, parent)
 		if err != nil {
 			return err
 		}
@@ -163,12 +163,12 @@ func (dtm *dagTopologyManager) SetParents(blockHash *externalapi.DomainHash, par
 		}
 		if !isBlockAlreadyInChildren {
 			parentRelations.Children = append(parentRelations.Children, blockHash)
-			dtm.blockRelationStore.StageBlockRelation(parent, parentRelations)
+			dtm.blockRelationStore.StageBlockRelation(stagingArea, parent, parentRelations)
 		}
 	}
 
 	// Finally - create the relations for the block itself
-	dtm.blockRelationStore.StageBlockRelation(blockHash, &model.BlockRelations{
+	dtm.blockRelationStore.StageBlockRelation(stagingArea, blockHash, &model.BlockRelations{
 		Parents:  parentHashes,
 		Children: []*externalapi.DomainHash{},
 	})
@@ -177,34 +177,34 @@ func (dtm *dagTopologyManager) SetParents(blockHash *externalapi.DomainHash, par
 }
 
 // ChildInSelectedParentChainOf returns the child of `context` that is in the selected-parent-chain of `highHash`
-func (dtm *dagTopologyManager) ChildInSelectedParentChainOf(
-	blockHash, highHash *externalapi.DomainHash) (*externalapi.DomainHash, error) {
+func (dtm *dagTopologyManager) ChildInSelectedParentChainOf(stagingArea *model.StagingArea,
+	context, highHash *externalapi.DomainHash) (*externalapi.DomainHash, error) {
 
 	// Virtual doesn't have reachability data, therefore, it should be treated as a special case -
 	// use it's selected parent as highHash.
 	specifiedHighHash := highHash
 	if highHash == model.VirtualBlockHash {
-		ghostdagData, err := dtm.ghostdagStore.Get(dtm.databaseContext, highHash)
+		ghostdagData, err := dtm.ghostdagStore.Get(dtm.databaseContext, stagingArea, highHash)
 		if err != nil {
 			return nil, err
 		}
 		selectedParent := ghostdagData.SelectedParent()
 
-		// In case where `blockHash` is an immediate parent of `highHash`
-		if blockHash.Equal(selectedParent) {
+		// In case where `context` is an immediate parent of `highHash`
+		if context.Equal(selectedParent) {
 			return highHash, nil
 		}
 		highHash = selectedParent
 	}
 
-	isInSelectedParentChain, err := dtm.IsInSelectedParentChainOf(blockHash, highHash)
+	isInSelectedParentChain, err := dtm.IsInSelectedParentChainOf(stagingArea, context, highHash)
 	if err != nil {
 		return nil, err
 	}
 	if !isInSelectedParentChain {
-		return nil, errors.Errorf("blockHash(%s) is not in the selected-parent-chain of highHash(%s)",
-			blockHash, specifiedHighHash)
+		return nil, errors.Errorf("context(%s) is not in the selected-parent-chain of highHash(%s)",
+			context, specifiedHighHash)
 	}
 
-	return dtm.reachabilityManager.FindNextAncestor(highHash, blockHash)
+	return dtm.reachabilityManager.FindNextAncestor(stagingArea, highHash, context)
 }

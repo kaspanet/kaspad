@@ -21,6 +21,8 @@ func (csm *testConsensusStateManager) AddUTXOToMultiset(
 	return addUTXOToMultiset(multiset, entry, outpoint)
 }
 
-func (csm *testConsensusStateManager) ResolveBlockStatus(blockHash *externalapi.DomainHash) (externalapi.BlockStatus, error) {
-	return csm.resolveBlockStatus(blockHash)
+func (csm *testConsensusStateManager) ResolveBlockStatus(stagingArea *model.StagingArea,
+	blockHash *externalapi.DomainHash) (externalapi.BlockStatus, error) {
+
+	return csm.resolveBlockStatus(stagingArea, blockHash)
 }

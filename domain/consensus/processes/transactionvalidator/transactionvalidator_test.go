@@ -25,7 +25,7 @@ type mocPastMedianTimeManager struct {
 }
 
 // PastMedianTime returns the past median time for the test.
-func (mdf *mocPastMedianTimeManager) PastMedianTime(*externalapi.DomainHash) (int64, error) {
+func (mdf *mocPastMedianTimeManager) PastMedianTime(*model.StagingArea, *externalapi.DomainHash) (int64, error) {
 	return mdf.pastMedianTimeForTest, nil
 }
 
@@ -155,9 +155,11 @@ func TestValidateTransactionInContextAndPopulateMassAndFee(t *testing.T) {
 			Gas:          0,
 			LockTime:     0}
 
+		stagingArea := model.NewStagingArea()
+
 		povBlockHash := externalapi.NewDomainHashFromByteArray(&[32]byte{0x01})
-		tc.DAABlocksStore().StageDAAScore(povBlockHash, params.BlockCoinbaseMaturity+txInput.UTXOEntry.BlockDAAScore())
-		tc.DAABlocksStore().StageDAAScore(povBlockHash, 10)
+		tc.DAABlocksStore().StageDAAScore(stagingArea, povBlockHash, params.BlockCoinbaseMaturity+txInput.UTXOEntry.BlockDAAScore())
+		tc.DAABlocksStore().StageDAAScore(stagingArea, povBlockHash, 10)
 
 		tests := []struct {
 			name                     string
@@ -220,8 +222,7 @@ func TestValidateTransactionInContextAndPopulateMassAndFee(t *testing.T) {
 		}
 
 		for _, test := range tests {
-			err := tc.TransactionValidator().ValidateTransactionInContextAndPopulateMassAndFee(test.tx,
-				test.povBlockHash, test.selectedParentMedianTime)
+			err := tc.TransactionValidator().ValidateTransactionInContextAndPopulateMassAndFee(stagingArea, test.tx, test.povBlockHash, test.selectedParentMedianTime)
 
 			if test.isValid {
 				if err != nil {

@@ -1,16 +1,18 @@
 package reachabilitymanager_test
 
 import (
+	"testing"
+
+	"github.com/kaspanet/kaspad/domain/consensus/model"
+
 	"github.com/kaspanet/kaspad/domain/consensus"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/testutils"
 	"github.com/kaspanet/kaspad/domain/dagconfig"
-	"testing"
 )
 
 func TestReachabilityIsDAGAncestorOf(t *testing.T) {
 	testutils.ForAllNets(t, true, func(t *testing.T, params *dagconfig.Params) {
-
 		factory := consensus.NewFactory()
 		tc, teardown, err := factory.NewTestConsensus(params, false, "TestReachabilityIsDAGAncestorOf")
 		if err != nil {
@@ -96,8 +98,10 @@ func TestReachabilityIsDAGAncestorOf(t *testing.T) {
 			},
 		}
 
+		stagingArea := model.NewStagingArea()
+
 		for _, test := range tests {
-			isDAGAncestorOf, err := tc.ReachabilityManager().IsDAGAncestorOf(test.firstBlockHash, test.secondBlockHash)
+			isDAGAncestorOf, err := tc.ReachabilityManager().IsDAGAncestorOf(stagingArea, test.firstBlockHash, test.secondBlockHash)
 			if err != nil {
 				t.Fatalf("IsDAGAncestorOf: %v", err)
 			}

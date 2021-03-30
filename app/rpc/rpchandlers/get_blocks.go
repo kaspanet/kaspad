@@ -55,8 +55,7 @@ func HandleGetBlocks(context *rpccontext.Context, _ *router.Router, request appm
 	if err != nil {
 		return nil, err
 	}
-	blockHashes, highHash, err := context.Domain.Consensus().GetHashesBetween(
-		lowHash, virtualSelectedParent, maxBlocksInGetBlocksResponse)
+	blockHashes, highHash, err := context.Domain.Consensus().GetHashesBetween(lowHash, virtualSelectedParent, maxBlocksInGetBlocksResponse)
 	if err != nil {
 		return nil, err
 	}

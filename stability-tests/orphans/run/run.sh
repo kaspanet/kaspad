@@ -1,12 +1,12 @@
 #!/bin/bash
 rm -rf /tmp/kaspad-temp
 
-kaspad --devnet --appdir=/tmp/kaspad-temp --profile=6061 &
+kaspad --simnet --appdir=/tmp/kaspad-temp --profile=6061 &
 KASPAD_PID=$!
 
 sleep 1
 
-orphans --devnet -alocalhost:16611 -n20 --profile=7000
+orphans --simnet -alocalhost:16511 -n20 --profile=7000
 TEST_EXIT_CODE=$?
 
 kill $KASPAD_PID
