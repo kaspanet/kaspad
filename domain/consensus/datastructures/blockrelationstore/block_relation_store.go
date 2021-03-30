@@ -13,49 +13,30 @@ var bucket = database.MakeBucket([]byte("block-relations"))
 
 // blockRelationStore represents a store of BlockRelations
 type blockRelationStore struct {
-	staging map[externalapi.DomainHash]*model.BlockRelations
-	cache   *lrucache.LRUCache
+	cache *lrucache.LRUCache
 }
 
 // New instantiates a new BlockRelationStore
 func New(cacheSize int, preallocate bool) model.BlockRelationStore {
 	return &blockRelationStore{
-		staging: make(map[externalapi.DomainHash]*model.BlockRelations),
-		cache:   lrucache.New(cacheSize, preallocate),
+		cache: lrucache.New(cacheSize, preallocate),
 	}
 }
 
-func (brs *blockRelationStore) StageBlockRelation(blockHash *externalapi.DomainHash, blockRelations *model.BlockRelations) {
-	brs.staging[*blockHash] = blockRelations.Clone()
+func (brs *blockRelationStore) StageBlockRelation(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash, blockRelations *model.BlockRelations) {
+	stagingShard := brs.stagingShard(stagingArea)
+
+	stagingShard.toAdd[*blockHash] = blockRelations.Clone()
 }
 
-func (brs *blockRelationStore) IsStaged() bool {
-	return len(brs.staging) != 0
+func (brs *blockRelationStore) IsStaged(stagingArea *model.StagingArea) bool {
+	return brs.stagingShard(stagingArea).isStaged()
 }
 
-func (brs *blockRelationStore) Discard() {
-	brs.staging = make(map[externalapi.DomainHash]*model.BlockRelations)
-}
+func (brs *blockRelationStore) BlockRelation(dbContext model.DBReader, stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) (*model.BlockRelations, error) {
+	stagingShard := brs.stagingShard(stagingArea)
 
-func (brs *blockRelationStore) Commit(dbTx model.DBTransaction) error {
-	for hash, blockRelations := range brs.staging {
-		blockRelationBytes, err := brs.serializeBlockRelations(blockRelations)
-		if err != nil {
-			return err
-		}
-		err = dbTx.Put(brs.hashAsKey(&hash), blockRelationBytes)
-		if err != nil {
-			return err
-		}
-		brs.cache.Add(&hash, blockRelations)
-	}
-
-	brs.Discard()
-	return nil
-}
-
-func (brs *blockRelationStore) BlockRelation(dbContext model.DBReader, blockHash *externalapi.DomainHash) (*model.BlockRelations, error) {
-	if blockRelations, ok := brs.staging[*blockHash]; ok {
+	if blockRelations, ok := stagingShard.toAdd[*blockHash]; ok {
 		return blockRelations.Clone(), nil
 	}
 
@@ -76,8 +57,10 @@ func (brs *blockRelationStore) BlockRelation(dbContext model.DBReader, blockHash
 	return blockRelations.Clone(), nil
 }
 
-func (brs *blockRelationStore) Has(dbContext model.DBReader, blockHash *externalapi.DomainHash) (bool, error) {
-	if _, ok := brs.staging[*blockHash]; ok {
+func (brs *blockRelationStore) Has(dbContext model.DBReader, stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) (bool, error) {
+	stagingShard := brs.stagingShard(stagingArea)
+
+	if _, ok := stagingShard.toAdd[*blockHash]; ok {
 		return true, nil
 	}
 

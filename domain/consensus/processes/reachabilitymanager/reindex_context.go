@@ -58,7 +58,7 @@ Core (BFS) algorithms used during reindexing
 // intermediate updates from leaves via parent chains until all
 // size information is gathered at the root of the operation
 // (i.e. at node).
-func (rc *reindexContext) countSubtrees(node *externalapi.DomainHash) error {
+func (rc *reindexContext) countSubtrees(stagingArea *model.StagingArea, node *externalapi.DomainHash) error {
 
 	if _, ok := rc.subTreeSizesCache[*node]; ok {
 		return nil
@@ -69,7 +69,7 @@ func (rc *reindexContext) countSubtrees(node *externalapi.DomainHash) error {
 	for len(queue) > 0 {
 		var current *externalapi.DomainHash
 		current, queue = queue[0], queue[1:]
-		children, err := rc.manager.children(current)
+		children, err := rc.manager.children(stagingArea, current)
 		if err != nil {
 			return err
 		}
@@ -88,7 +88,7 @@ func (rc *reindexContext) countSubtrees(node *externalapi.DomainHash) error {
 		// We reached a leaf or a pre-calculated subtree.
 		// Push information up
 		for !current.Equal(node) {
-			current, err = rc.manager.parent(current)
+			current, err = rc.manager.parent(stagingArea, current)
 			if err != nil {
 				return err
 			}
@@ -102,7 +102,7 @@ func (rc *reindexContext) countSubtrees(node *externalapi.DomainHash) error {
 
 			calculatedChildrenCount[*current]++
 
-			children, err := rc.manager.children(current)
+			children, err := rc.manager.children(stagingArea, current)
 			if err != nil {
 				return err
 			}
@@ -128,10 +128,10 @@ func (rc *reindexContext) countSubtrees(node *externalapi.DomainHash) error {
 // propagateInterval propagates the new interval using a BFS traversal.
 // Subtree intervals are recursively allocated according to subtree sizes and
 // the allocation rule in splitWithExponentialBias.
-func (rc *reindexContext) propagateInterval(node *externalapi.DomainHash) error {
+func (rc *reindexContext) propagateInterval(stagingArea *model.StagingArea, node *externalapi.DomainHash) error {
 
 	// Make sure subtrees are counted before propagating
-	err := rc.countSubtrees(node)
+	err := rc.countSubtrees(stagingArea, node)
 	if err != nil {
 		return err
 	}
@@ -141,7 +141,7 @@ func (rc *reindexContext) propagateInterval(node *externalapi.DomainHash) error 
 		var current *externalapi.DomainHash
 		current, queue = queue[0], queue[1:]
 
-		children, err := rc.manager.children(current)
+		children, err := rc.manager.children(stagingArea, current)
 		if err != nil {
 			return err
 		}
@@ -152,7 +152,7 @@ func (rc *reindexContext) propagateInterval(node *externalapi.DomainHash) error 
 				sizes[i] = rc.subTreeSizesCache[*child]
 			}
 
-			interval, err := rc.manager.intervalRangeForChildAllocation(current)
+			interval, err := rc.manager.intervalRangeForChildAllocation(stagingArea, current)
 			if err != nil {
 				return err
 			}
@@ -164,7 +164,7 @@ func (rc *reindexContext) propagateInterval(node *externalapi.DomainHash) error 
 
 			for i, child := range children {
 				childInterval := intervals[i]
-				err = rc.manager.stageInterval(child, childInterval)
+				err = rc.manager.stageInterval(stagingArea, child, childInterval)
 				if err != nil {
 					return err
 				}
@@ -187,18 +187,18 @@ Functions for handling reindex triggered by adding child block
 // thereafter. It does this by traversing down the reachability
 // tree until it finds a node with a subtree size that's greater than
 // its interval size. See propagateInterval for further details.
-func (rc *reindexContext) reindexIntervals(newChild, reindexRoot *externalapi.DomainHash) error {
+func (rc *reindexContext) reindexIntervals(stagingArea *model.StagingArea, newChild, reindexRoot *externalapi.DomainHash) error {
 	current := newChild
 	// Search for the first ancestor with sufficient interval space
 	for {
-		currentInterval, err := rc.manager.interval(current)
+		currentInterval, err := rc.manager.interval(stagingArea, current)
 		if err != nil {
 			return err
 		}
 
 		currentIntervalSize := intervalSize(currentInterval)
 
-		err = rc.countSubtrees(current)
+		err = rc.countSubtrees(stagingArea, current)
 		if err != nil {
 			return err
 		}
@@ -210,7 +210,7 @@ func (rc *reindexContext) reindexIntervals(newChild, reindexRoot *externalapi.Do
 			break
 		}
 
-		parent, err := rc.manager.parent(current)
+		parent, err := rc.manager.parent(stagingArea, current)
 		if err != nil {
 			return err
 		}
@@ -235,7 +235,7 @@ func (rc *reindexContext) reindexIntervals(newChild, reindexRoot *externalapi.Do
 				"than ~2^52 blocks in the DAG.", reindexRoot.String())
 		}
 
-		isParentStrictAncestorOfRoot, err := rc.manager.isStrictAncestorOf(parent, reindexRoot)
+		isParentStrictAncestorOfRoot, err := rc.manager.isStrictAncestorOf(stagingArea, parent, reindexRoot)
 		if err != nil {
 			return err
 		}
@@ -249,51 +249,51 @@ func (rc *reindexContext) reindexIntervals(newChild, reindexRoot *externalapi.Do
 			// 1. we set requiredAllocation=currentSubtreeSize in order to double the
 			// current interval capacity
 			// 2. it might be the case that current is the `newChild` itself
-			return rc.reindexIntervalsEarlierThanRoot(current, reindexRoot, parent, currentSubtreeSize)
+			return rc.reindexIntervalsEarlierThanRoot(stagingArea, current, reindexRoot, parent, currentSubtreeSize)
 		}
 
 		current = parent
 	}
 
 	// Propagate the interval to the subtree
-	return rc.propagateInterval(current)
+	return rc.propagateInterval(stagingArea, current)
 }
 
 // reindexIntervalsEarlierThanRoot implements the reindex algorithm for the case where the
 // new child node is not in reindex root's subtree. The function is expected to allocate
 // `requiredAllocation` to be added to interval of `allocationNode`. `commonAncestor` is
 // expected to be a direct parent of `allocationNode` and an ancestor of `reindexRoot`.
-func (rc *reindexContext) reindexIntervalsEarlierThanRoot(
+func (rc *reindexContext) reindexIntervalsEarlierThanRoot(stagingArea *model.StagingArea,
 	allocationNode, reindexRoot, commonAncestor *externalapi.DomainHash, requiredAllocation uint64) error {
 
 	// The chosen child is:
 	// a. A reachability tree child of `commonAncestor`
 	// b. A reachability tree ancestor of `reindexRoot` or `reindexRoot` itself
-	chosenChild, err := rc.manager.FindNextAncestor(reindexRoot, commonAncestor)
+	chosenChild, err := rc.manager.FindNextAncestor(stagingArea, reindexRoot, commonAncestor)
 	if err != nil {
 		return err
 	}
 
-	nodeInterval, err := rc.manager.interval(allocationNode)
+	nodeInterval, err := rc.manager.interval(stagingArea, allocationNode)
 	if err != nil {
 		return err
 	}
 
-	chosenInterval, err := rc.manager.interval(chosenChild)
+	chosenInterval, err := rc.manager.interval(stagingArea, chosenChild)
 	if err != nil {
 		return err
 	}
 
 	if nodeInterval.Start < chosenInterval.Start {
 		// allocationNode is in the subtree before the chosen child
-		return rc.reclaimIntervalBefore(allocationNode, commonAncestor, chosenChild, reindexRoot, requiredAllocation)
+		return rc.reclaimIntervalBefore(stagingArea, allocationNode, commonAncestor, chosenChild, reindexRoot, requiredAllocation)
 	}
 
 	// allocationNode is in the subtree after the chosen child
-	return rc.reclaimIntervalAfter(allocationNode, commonAncestor, chosenChild, reindexRoot, requiredAllocation)
+	return rc.reclaimIntervalAfter(stagingArea, allocationNode, commonAncestor, chosenChild, reindexRoot, requiredAllocation)
 }
 
-func (rc *reindexContext) reclaimIntervalBefore(
+func (rc *reindexContext) reclaimIntervalBefore(stagingArea *model.StagingArea,
 	allocationNode, commonAncestor, chosenChild, reindexRoot *externalapi.DomainHash, requiredAllocation uint64) error {
 
 	var slackSum uint64 = 0
@@ -309,23 +309,23 @@ func (rc *reindexContext) reclaimIntervalBefore(
 			// Reached reindex root. In this case, since we reached (the unlimited) root,
 			// we also re-allocate new slack for the chain we just traversed
 
-			previousInterval, err := rc.manager.interval(current)
+			previousInterval, err := rc.manager.interval(stagingArea, current)
 			if err != nil {
 				return err
 			}
 
 			offset := requiredAllocation + rc.manager.reindexSlack*pathLen - slackSum
-			err = rc.manager.stageInterval(current, intervalIncreaseStart(previousInterval, offset))
+			err = rc.manager.stageInterval(stagingArea, current, intervalIncreaseStart(previousInterval, offset))
 			if err != nil {
 				return err
 			}
 
-			err = rc.propagateInterval(current)
+			err = rc.propagateInterval(stagingArea, current)
 			if err != nil {
 				return err
 			}
 
-			err = rc.offsetSiblingsBefore(allocationNode, current, offset)
+			err = rc.offsetSiblingsBefore(stagingArea, allocationNode, current, offset)
 			if err != nil {
 				return err
 			}
@@ -335,14 +335,14 @@ func (rc *reindexContext) reclaimIntervalBefore(
 			break
 		}
 
-		slackBeforeCurrent, err := rc.manager.remainingSlackBefore(current)
+		slackBeforeCurrent, err := rc.manager.remainingSlackBefore(stagingArea, current)
 		if err != nil {
 			return err
 		}
 		slackSum += slackBeforeCurrent
 
 		if slackSum >= requiredAllocation {
-			previousInterval, err := rc.manager.interval(current)
+			previousInterval, err := rc.manager.interval(stagingArea, current)
 			if err != nil {
 				return err
 			}
@@ -350,12 +350,12 @@ func (rc *reindexContext) reclaimIntervalBefore(
 			// Set offset to be just enough to satisfy required allocation
 			offset := slackBeforeCurrent - (slackSum - requiredAllocation)
 
-			err = rc.manager.stageInterval(current, intervalIncreaseStart(previousInterval, offset))
+			err = rc.manager.stageInterval(stagingArea, current, intervalIncreaseStart(previousInterval, offset))
 			if err != nil {
 				return err
 			}
 
-			err = rc.offsetSiblingsBefore(allocationNode, current, offset)
+			err = rc.offsetSiblingsBefore(stagingArea, allocationNode, current, offset)
 			if err != nil {
 				return err
 			}
@@ -363,7 +363,7 @@ func (rc *reindexContext) reclaimIntervalBefore(
 			break
 		}
 
-		current, err = rc.manager.FindNextAncestor(reindexRoot, current)
+		current, err = rc.manager.FindNextAncestor(stagingArea, reindexRoot, current)
 		if err != nil {
 			return err
 		}
@@ -376,7 +376,7 @@ func (rc *reindexContext) reclaimIntervalBefore(
 	// current node with an interval that is smaller.
 	// This is to make room for the required allocation.
 	for {
-		current, err = rc.manager.parent(current)
+		current, err = rc.manager.parent(stagingArea, current)
 		if err != nil {
 			return err
 		}
@@ -385,23 +385,23 @@ func (rc *reindexContext) reclaimIntervalBefore(
 			break
 		}
 
-		originalInterval, err := rc.manager.interval(current)
+		originalInterval, err := rc.manager.interval(stagingArea, current)
 		if err != nil {
 			return err
 		}
 
-		slackBeforeCurrent, err := rc.manager.remainingSlackBefore(current)
+		slackBeforeCurrent, err := rc.manager.remainingSlackBefore(stagingArea, current)
 		if err != nil {
 			return err
 		}
 
 		offset := slackBeforeCurrent - pathSlackAlloc
-		err = rc.manager.stageInterval(current, intervalIncreaseStart(originalInterval, offset))
+		err = rc.manager.stageInterval(stagingArea, current, intervalIncreaseStart(originalInterval, offset))
 		if err != nil {
 			return err
 		}
 
-		err = rc.offsetSiblingsBefore(allocationNode, current, offset)
+		err = rc.offsetSiblingsBefore(stagingArea, allocationNode, current, offset)
 		if err != nil {
 			return err
 		}
@@ -410,14 +410,15 @@ func (rc *reindexContext) reclaimIntervalBefore(
 	return nil
 }
 
-func (rc *reindexContext) offsetSiblingsBefore(allocationNode, current *externalapi.DomainHash, offset uint64) error {
+func (rc *reindexContext) offsetSiblingsBefore(stagingArea *model.StagingArea,
+	allocationNode, current *externalapi.DomainHash, offset uint64) error {
 
-	parent, err := rc.manager.parent(current)
+	parent, err := rc.manager.parent(stagingArea, current)
 	if err != nil {
 		return err
 	}
 
-	siblingsBefore, _, err := rc.manager.splitChildren(parent, current)
+	siblingsBefore, _, err := rc.manager.splitChildren(stagingArea, parent, current)
 	if err != nil {
 		return err
 	}
@@ -427,17 +428,17 @@ func (rc *reindexContext) offsetSiblingsBefore(allocationNode, current *external
 		sibling := siblingsBefore[i]
 		if sibling.Equal(allocationNode) {
 			// We reached our final destination, allocate `offset` to `allocationNode` by increasing end and break
-			previousInterval, err := rc.manager.interval(allocationNode)
+			previousInterval, err := rc.manager.interval(stagingArea, allocationNode)
 			if err != nil {
 				return err
 			}
 
-			err = rc.manager.stageInterval(allocationNode, intervalIncreaseEnd(previousInterval, offset))
+			err = rc.manager.stageInterval(stagingArea, allocationNode, intervalIncreaseEnd(previousInterval, offset))
 			if err != nil {
 				return err
 			}
 
-			err = rc.propagateInterval(allocationNode)
+			err = rc.propagateInterval(stagingArea, allocationNode)
 			if err != nil {
 				return err
 			}
@@ -445,17 +446,17 @@ func (rc *reindexContext) offsetSiblingsBefore(allocationNode, current *external
 			break
 		}
 
-		previousInterval, err := rc.manager.interval(sibling)
+		previousInterval, err := rc.manager.interval(stagingArea, sibling)
 		if err != nil {
 			return err
 		}
 
-		err = rc.manager.stageInterval(sibling, intervalIncrease(previousInterval, offset))
+		err = rc.manager.stageInterval(stagingArea, sibling, intervalIncrease(previousInterval, offset))
 		if err != nil {
 			return err
 		}
 
-		err = rc.propagateInterval(sibling)
+		err = rc.propagateInterval(stagingArea, sibling)
 		if err != nil {
 			return err
 		}
@@ -464,7 +465,7 @@ func (rc *reindexContext) offsetSiblingsBefore(allocationNode, current *external
 	return nil
 }
 
-func (rc *reindexContext) reclaimIntervalAfter(
+func (rc *reindexContext) reclaimIntervalAfter(stagingArea *model.StagingArea,
 	allocationNode, commonAncestor, chosenChild, reindexRoot *externalapi.DomainHash, requiredAllocation uint64) error {
 
 	var slackSum uint64 = 0
@@ -480,23 +481,23 @@ func (rc *reindexContext) reclaimIntervalAfter(
 			// Reached reindex root. In this case, since we reached (the unlimited) root,
 			// we also re-allocate new slack for the chain we just traversed
 
-			previousInterval, err := rc.manager.interval(current)
+			previousInterval, err := rc.manager.interval(stagingArea, current)
 			if err != nil {
 				return err
 			}
 
 			offset := requiredAllocation + rc.manager.reindexSlack*pathLen - slackSum
-			err = rc.manager.stageInterval(current, intervalDecreaseEnd(previousInterval, offset))
+			err = rc.manager.stageInterval(stagingArea, current, intervalDecreaseEnd(previousInterval, offset))
 			if err != nil {
 				return err
 			}
 
-			err = rc.propagateInterval(current)
+			err = rc.propagateInterval(stagingArea, current)
 			if err != nil {
 				return err
 			}
 
-			err = rc.offsetSiblingsAfter(allocationNode, current, offset)
+			err = rc.offsetSiblingsAfter(stagingArea, allocationNode, current, offset)
 			if err != nil {
 				return err
 			}
@@ -506,14 +507,14 @@ func (rc *reindexContext) reclaimIntervalAfter(
 			break
 		}
 
-		slackAfterCurrent, err := rc.manager.remainingSlackAfter(current)
+		slackAfterCurrent, err := rc.manager.remainingSlackAfter(stagingArea, current)
 		if err != nil {
 			return err
 		}
 		slackSum += slackAfterCurrent
 
 		if slackSum >= requiredAllocation {
-			previousInterval, err := rc.manager.interval(current)
+			previousInterval, err := rc.manager.interval(stagingArea, current)
 			if err != nil {
 				return err
 			}
@@ -521,12 +522,12 @@ func (rc *reindexContext) reclaimIntervalAfter(
 			// Set offset to be just enough to satisfy required allocation
 			offset := slackAfterCurrent - (slackSum - requiredAllocation)
 
-			err = rc.manager.stageInterval(current, intervalDecreaseEnd(previousInterval, offset))
+			err = rc.manager.stageInterval(stagingArea, current, intervalDecreaseEnd(previousInterval, offset))
 			if err != nil {
 				return err
 			}
 
-			err = rc.offsetSiblingsAfter(allocationNode, current, offset)
+			err = rc.offsetSiblingsAfter(stagingArea, allocationNode, current, offset)
 			if err != nil {
 				return err
 			}
@@ -534,7 +535,7 @@ func (rc *reindexContext) reclaimIntervalAfter(
 			break
 		}
 
-		current, err = rc.manager.FindNextAncestor(reindexRoot, current)
+		current, err = rc.manager.FindNextAncestor(stagingArea, reindexRoot, current)
 		if err != nil {
 			return err
 		}
@@ -547,7 +548,7 @@ func (rc *reindexContext) reclaimIntervalAfter(
 	// current node with an interval that is smaller.
 	// This is to make room for the required allocation.
 	for {
-		current, err = rc.manager.parent(current)
+		current, err = rc.manager.parent(stagingArea, current)
 		if err != nil {
 			return err
 		}
@@ -556,23 +557,23 @@ func (rc *reindexContext) reclaimIntervalAfter(
 			break
 		}
 
-		originalInterval, err := rc.manager.interval(current)
+		originalInterval, err := rc.manager.interval(stagingArea, current)
 		if err != nil {
 			return err
 		}
 
-		slackAfterCurrent, err := rc.manager.remainingSlackAfter(current)
+		slackAfterCurrent, err := rc.manager.remainingSlackAfter(stagingArea, current)
 		if err != nil {
 			return err
 		}
 
 		offset := slackAfterCurrent - pathSlackAlloc
-		err = rc.manager.stageInterval(current, intervalDecreaseEnd(originalInterval, offset))
+		err = rc.manager.stageInterval(stagingArea, current, intervalDecreaseEnd(originalInterval, offset))
 		if err != nil {
 			return err
 		}
 
-		err = rc.offsetSiblingsAfter(allocationNode, current, offset)
+		err = rc.offsetSiblingsAfter(stagingArea, allocationNode, current, offset)
 		if err != nil {
 			return err
 		}
@@ -581,14 +582,15 @@ func (rc *reindexContext) reclaimIntervalAfter(
 	return nil
 }
 
-func (rc *reindexContext) offsetSiblingsAfter(allocationNode, current *externalapi.DomainHash, offset uint64) error {
+func (rc *reindexContext) offsetSiblingsAfter(stagingArea *model.StagingArea,
+	allocationNode, current *externalapi.DomainHash, offset uint64) error {
 
-	parent, err := rc.manager.parent(current)
+	parent, err := rc.manager.parent(stagingArea, current)
 	if err != nil {
 		return err
 	}
 
-	_, siblingsAfter, err := rc.manager.splitChildren(parent, current)
+	_, siblingsAfter, err := rc.manager.splitChildren(stagingArea, parent, current)
 	if err != nil {
 		return err
 	}
@@ -596,17 +598,17 @@ func (rc *reindexContext) offsetSiblingsAfter(allocationNode, current *externala
 	for _, sibling := range siblingsAfter {
 		if sibling.Equal(allocationNode) {
 			// We reached our final destination, allocate `offset` to `allocationNode` by decreasing start and break
-			previousInterval, err := rc.manager.interval(allocationNode)
+			previousInterval, err := rc.manager.interval(stagingArea, allocationNode)
 			if err != nil {
 				return err
 			}
 
-			err = rc.manager.stageInterval(allocationNode, intervalDecreaseStart(previousInterval, offset))
+			err = rc.manager.stageInterval(stagingArea, allocationNode, intervalDecreaseStart(previousInterval, offset))
 			if err != nil {
 				return err
 			}
 
-			err = rc.propagateInterval(allocationNode)
+			err = rc.propagateInterval(stagingArea, allocationNode)
 			if err != nil {
 				return err
 			}
@@ -614,17 +616,17 @@ func (rc *reindexContext) offsetSiblingsAfter(allocationNode, current *externala
 			break
 		}
 
-		previousInterval, err := rc.manager.interval(sibling)
+		previousInterval, err := rc.manager.interval(stagingArea, sibling)
 		if err != nil {
 			return err
 		}
 
-		err = rc.manager.stageInterval(sibling, intervalDecrease(previousInterval, offset))
+		err = rc.manager.stageInterval(stagingArea, sibling, intervalDecrease(previousInterval, offset))
 		if err != nil {
 			return err
 		}
 
-		err = rc.propagateInterval(sibling)
+		err = rc.propagateInterval(stagingArea, sibling)
 		if err != nil {
 			return err
 		}
@@ -639,23 +641,25 @@ Functions for handling reindex triggered by moving reindex root
 
 */
 
-func (rc *reindexContext) concentrateInterval(reindexRoot, chosenChild *externalapi.DomainHash, isFinalReindexRoot bool) error {
-	siblingsBeforeChosen, siblingsAfterChosen, err := rc.manager.splitChildren(reindexRoot, chosenChild)
+func (rc *reindexContext) concentrateInterval(stagingArea *model.StagingArea,
+	reindexRoot, chosenChild *externalapi.DomainHash, isFinalReindexRoot bool) error {
+
+	siblingsBeforeChosen, siblingsAfterChosen, err := rc.manager.splitChildren(stagingArea, reindexRoot, chosenChild)
 	if err != nil {
 		return err
 	}
 
-	siblingsBeforeSizesSum, err := rc.tightenIntervalsBefore(reindexRoot, siblingsBeforeChosen)
+	siblingsBeforeSizesSum, err := rc.tightenIntervalsBefore(stagingArea, reindexRoot, siblingsBeforeChosen)
 	if err != nil {
 		return err
 	}
 
-	siblingsAfterSizesSum, err := rc.tightenIntervalsAfter(reindexRoot, siblingsAfterChosen)
+	siblingsAfterSizesSum, err := rc.tightenIntervalsAfter(stagingArea, reindexRoot, siblingsAfterChosen)
 	if err != nil {
 		return err
 	}
 
-	err = rc.expandIntervalToChosen(
+	err = rc.expandIntervalToChosen(stagingArea,
 		reindexRoot, chosenChild, siblingsBeforeSizesSum, siblingsAfterSizesSum, isFinalReindexRoot)
 	if err != nil {
 		return err
@@ -664,12 +668,12 @@ func (rc *reindexContext) concentrateInterval(reindexRoot, chosenChild *external
 	return nil
 }
 
-func (rc *reindexContext) tightenIntervalsBefore(
+func (rc *reindexContext) tightenIntervalsBefore(stagingArea *model.StagingArea,
 	reindexRoot *externalapi.DomainHash, siblingsBeforeChosen []*externalapi.DomainHash) (sizesSum uint64, err error) {
 
-	siblingSubtreeSizes, sizesSum := rc.countChildrenSubtrees(siblingsBeforeChosen)
+	siblingSubtreeSizes, sizesSum := rc.countChildrenSubtrees(stagingArea, siblingsBeforeChosen)
 
-	rootInterval, err := rc.manager.interval(reindexRoot)
+	rootInterval, err := rc.manager.interval(stagingArea, reindexRoot)
 	if err != nil {
 		return 0, err
 	}
@@ -679,7 +683,7 @@ func (rc *reindexContext) tightenIntervalsBefore(
 		rootInterval.Start+rc.manager.reindexSlack+sizesSum-1,
 	)
 
-	err = rc.propagateChildrenIntervals(intervalBeforeChosen, siblingsBeforeChosen, siblingSubtreeSizes)
+	err = rc.propagateChildrenIntervals(stagingArea, intervalBeforeChosen, siblingsBeforeChosen, siblingSubtreeSizes)
 	if err != nil {
 		return 0, err
 	}
@@ -687,12 +691,12 @@ func (rc *reindexContext) tightenIntervalsBefore(
 	return sizesSum, nil
 }
 
-func (rc *reindexContext) tightenIntervalsAfter(
+func (rc *reindexContext) tightenIntervalsAfter(stagingArea *model.StagingArea,
 	reindexRoot *externalapi.DomainHash, siblingsAfterChosen []*externalapi.DomainHash) (sizesSum uint64, err error) {
 
-	siblingSubtreeSizes, sizesSum := rc.countChildrenSubtrees(siblingsAfterChosen)
+	siblingSubtreeSizes, sizesSum := rc.countChildrenSubtrees(stagingArea, siblingsAfterChosen)
 
-	rootInterval, err := rc.manager.interval(reindexRoot)
+	rootInterval, err := rc.manager.interval(stagingArea, reindexRoot)
 	if err != nil {
 		return 0, err
 	}
@@ -702,7 +706,7 @@ func (rc *reindexContext) tightenIntervalsAfter(
 		rootInterval.End-rc.manager.reindexSlack-1,
 	)
 
-	err = rc.propagateChildrenIntervals(intervalAfterChosen, siblingsAfterChosen, siblingSubtreeSizes)
+	err = rc.propagateChildrenIntervals(stagingArea, intervalAfterChosen, siblingsAfterChosen, siblingSubtreeSizes)
 	if err != nil {
 		return 0, err
 	}
@@ -710,10 +714,10 @@ func (rc *reindexContext) tightenIntervalsAfter(
 	return sizesSum, nil
 }
 
-func (rc *reindexContext) expandIntervalToChosen(
+func (rc *reindexContext) expandIntervalToChosen(stagingArea *model.StagingArea,
 	reindexRoot, chosenChild *externalapi.DomainHash, sizesSumBefore, sizesSumAfter uint64, isFinalReindexRoot bool) error {
 
-	rootInterval, err := rc.manager.interval(reindexRoot)
+	rootInterval, err := rc.manager.interval(stagingArea, reindexRoot)
 	if err != nil {
 		return err
 	}
@@ -723,7 +727,7 @@ func (rc *reindexContext) expandIntervalToChosen(
 		rootInterval.End-sizesSumAfter-rc.manager.reindexSlack-1,
 	)
 
-	currentChosenInterval, err := rc.manager.interval(chosenChild)
+	currentChosenInterval, err := rc.manager.interval(stagingArea, chosenChild)
 	if err != nil {
 		return err
 	}
@@ -739,7 +743,7 @@ func (rc *reindexContext) expandIntervalToChosen(
 		// expandIntervalToChosen is called (next time the
 		// reindex root moves), newChosenInterval is likely to
 		// contain currentChosenInterval.
-		err := rc.manager.stageInterval(chosenChild, newReachabilityInterval(
+		err := rc.manager.stageInterval(stagingArea, chosenChild, newReachabilityInterval(
 			newChosenInterval.Start+rc.manager.reindexSlack,
 			newChosenInterval.End-rc.manager.reindexSlack,
 		))
@@ -747,13 +751,13 @@ func (rc *reindexContext) expandIntervalToChosen(
 			return err
 		}
 
-		err = rc.propagateInterval(chosenChild)
+		err = rc.propagateInterval(stagingArea, chosenChild)
 		if err != nil {
 			return err
 		}
 	}
 
-	err = rc.manager.stageInterval(chosenChild, newChosenInterval)
+	err = rc.manager.stageInterval(stagingArea, chosenChild, newChosenInterval)
 	if err != nil {
 		return err
 	}
@@ -761,13 +765,13 @@ func (rc *reindexContext) expandIntervalToChosen(
 	return nil
 }
 
-func (rc *reindexContext) countChildrenSubtrees(children []*externalapi.DomainHash) (
+func (rc *reindexContext) countChildrenSubtrees(stagingArea *model.StagingArea, children []*externalapi.DomainHash) (
 	sizes []uint64, sum uint64) {
 
 	sizes = make([]uint64, len(children))
 	sum = 0
 	for i, node := range children {
-		err := rc.countSubtrees(node)
+		err := rc.countSubtrees(stagingArea, node)
 		if err != nil {
 			return nil, 0
 		}
@@ -779,7 +783,7 @@ func (rc *reindexContext) countChildrenSubtrees(children []*externalapi.DomainHa
 	return sizes, sum
 }
 
-func (rc *reindexContext) propagateChildrenIntervals(
+func (rc *reindexContext) propagateChildrenIntervals(stagingArea *model.StagingArea,
 	interval *model.ReachabilityInterval, children []*externalapi.DomainHash, sizes []uint64) error {
 
 	childIntervals, err := intervalSplitExact(interval, sizes)
@@ -789,12 +793,12 @@ func (rc *reindexContext) propagateChildrenIntervals(
 
 	for i, child := range children {
 		childInterval := childIntervals[i]
-		err := rc.manager.stageInterval(child, childInterval)
+		err := rc.manager.stageInterval(stagingArea, child, childInterval)
 		if err != nil {
 			return err
 		}
 
-		err = rc.propagateInterval(child)
+		err = rc.propagateInterval(stagingArea, child)
 		if err != nil {
 			return err
 		}

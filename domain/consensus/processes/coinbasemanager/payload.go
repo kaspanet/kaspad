@@ -32,8 +32,7 @@ func (c *coinbaseManager) serializeCoinbasePayload(blueScore uint64, coinbaseDat
 }
 
 // ExtractCoinbaseDataAndBlueScore deserializes the coinbase payload to its component (scriptPubKey and extra data).
-func (c *coinbaseManager) ExtractCoinbaseDataAndBlueScore(coinbaseTx *externalapi.DomainTransaction) (blueScore uint64,
-	coinbaseData *externalapi.DomainCoinbaseData, err error) {
+func (c *coinbaseManager) ExtractCoinbaseDataAndBlueScore(coinbaseTx *externalapi.DomainTransaction) (blueScore uint64, coinbaseData *externalapi.DomainCoinbaseData, err error) {
 
 	minLength := uint64Len + lengthOfVersionScriptPubKey + lengthOfscriptPubKeyLength
 	if len(coinbaseTx.Payload) < minLength {

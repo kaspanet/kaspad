@@ -1,12 +1,15 @@
 package dagtraversalmanager_test
 
 import (
+	"testing"
+
+	"github.com/kaspanet/kaspad/domain/consensus/model"
+
 	"github.com/kaspanet/kaspad/domain/consensus"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/model/testapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/testutils"
 	"github.com/kaspanet/kaspad/domain/dagconfig"
-	"testing"
 )
 
 const commonChainSize = 5
@@ -15,6 +18,8 @@ const depth uint64 = 2
 //TestBlockAtDepthOnChainDag compares the result of BlockAtDepth to the result of looping over the SelectedChain on a single chain DAG.
 func TestBlockAtDepthOnChainDag(t *testing.T) {
 	testutils.ForAllNets(t, true, func(t *testing.T, params *dagconfig.Params) {
+		stagingArea := model.NewStagingArea()
+
 		factory := consensus.NewFactory()
 		tc, tearDown, err := factory.NewTestConsensus(params, false,
 			"TestBlockAtDepthOnChainDag")
@@ -28,7 +33,7 @@ func TestBlockAtDepthOnChainDag(t *testing.T) {
 			t.Fatalf("Failed creating a Chain DAG In BlockAtDepthTEST: %+v", err)
 		}
 		currentBlockHash := highHash
-		currentBlockData, err := tc.GHOSTDAGDataStore().Get(tc.DatabaseContext(), currentBlockHash)
+		currentBlockData, err := tc.GHOSTDAGDataStore().Get(tc.DatabaseContext(), stagingArea, currentBlockHash)
 		if err != nil {
 			t.Fatalf("Failed getting GHOSTDAGData for block with hash %s: %+v", currentBlockHash.String(), err)
 		}
@@ -38,13 +43,13 @@ func TestBlockAtDepthOnChainDag(t *testing.T) {
 				break
 			}
 			currentBlockHash = currentBlockData.SelectedParent()
-			currentBlockData, err = tc.GHOSTDAGDataStore().Get(tc.DatabaseContext(), currentBlockHash)
+			currentBlockData, err = tc.GHOSTDAGDataStore().Get(tc.DatabaseContext(), stagingArea, currentBlockHash)
 			if err != nil {
 				t.Fatalf("Failed getting GHOSTDAGData for block with hash %s: %+v", currentBlockHash.String(), err)
 			}
 		}
 		expectedBlockHash := currentBlockHash
-		actualBlockHash, err := tc.DAGTraversalManager().BlockAtDepth(highHash, depth)
+		actualBlockHash, err := tc.DAGTraversalManager().BlockAtDepth(stagingArea, highHash, depth)
 		if err != nil {
 			t.Fatalf("Failed on BlockAtDepth: %+v", err)
 		}
@@ -78,15 +83,17 @@ func TestBlockAtDepthOnDAGWhereTwoBlocksHaveSameSelectedParent(t *testing.T) {
 		}
 		defer tearDown(false)
 
+		stagingArea := model.NewStagingArea()
+
 		firstChild, secondChild, err := createADAGTwoChildrenWithSameSelectedParent(params.GenesisHash, tc)
 		if err != nil {
 			t.Fatalf("Failed creating a DAG where two blocks have same selected parent: %+v", err)
 		}
-		actualBlockHash, err := tc.DAGTraversalManager().BlockAtDepth(firstChild, depth)
+		actualBlockHash, err := tc.DAGTraversalManager().BlockAtDepth(stagingArea, firstChild, depth)
 		if err != nil {
 			t.Fatalf("Failed at BlockAtDepth: %+v", err)
 		}
-		expectedSameHash, err := tc.DAGTraversalManager().BlockAtDepth(secondChild, depth)
+		expectedSameHash, err := tc.DAGTraversalManager().BlockAtDepth(stagingArea, secondChild, depth)
 		if err != nil {
 			t.Fatalf("Failed in BlockAtDepth: %+v", err)
 		}
@@ -139,11 +146,13 @@ func TestBlockAtDepthOnDAGWithTwoDifferentChains(t *testing.T) {
 			t.Fatalf("Failed creating a DAG with two different chains in BlockAtDepthTEST: %+v", err)
 		}
 
-		actualBlockHash, err := tc.DAGTraversalManager().BlockAtDepth(firstChild, sizeOfTheFirstChildSubChainDAG)
+		stagingArea := model.NewStagingArea()
+
+		actualBlockHash, err := tc.DAGTraversalManager().BlockAtDepth(stagingArea, firstChild, sizeOfTheFirstChildSubChainDAG)
 		if err != nil {
 			t.Fatalf("Failed in BlockAtDepth: %+v", err)
 		}
-		expectedSameHash, err := tc.DAGTraversalManager().BlockAtDepth(secondChild, sizeOfTheSecondChildSubChainDAG)
+		expectedSameHash, err := tc.DAGTraversalManager().BlockAtDepth(stagingArea, secondChild, sizeOfTheSecondChildSubChainDAG)
 		if err != nil {
 			t.Fatalf("Failed in BlockAtDepth: %+v", err)
 		}
@@ -151,7 +160,7 @@ func TestBlockAtDepthOnDAGWithTwoDifferentChains(t *testing.T) {
 		if !actualBlockHash.Equal(expectedSameHash) {
 			t.Fatalf("Expected block %s but got %s", expectedSameHash, actualBlockHash)
 		}
-		expectedDiffHash, err := tc.DAGTraversalManager().BlockAtDepth(secondChild, sizeOfTheSecondChildSubChainDAG-1)
+		expectedDiffHash, err := tc.DAGTraversalManager().BlockAtDepth(stagingArea, secondChild, sizeOfTheSecondChildSubChainDAG-1)
 		if err != nil {
 			t.Fatalf("Failed in BlockAtDepth: %+v", err)
 		}
@@ -207,8 +216,11 @@ func TestLowestChainBlockAboveOrEqualToBlueScore(t *testing.T) {
 			t.Fatalf("NewTestConsensus: %s", err)
 		}
 		defer tearDown(false)
+
+		stagingArea := model.NewStagingArea()
+
 		checkExpectedBlock := func(highHash *externalapi.DomainHash, blueScore uint64, expected *externalapi.DomainHash) {
-			blockHash, err := tc.DAGTraversalManager().LowestChainBlockAboveOrEqualToBlueScore(highHash, blueScore)
+			blockHash, err := tc.DAGTraversalManager().LowestChainBlockAboveOrEqualToBlueScore(stagingArea, highHash, blueScore)
 			if err != nil {
 				t.Fatalf("LowestChainBlockAboveOrEqualToBlueScore: %+v", err)
 			}
@@ -219,7 +231,7 @@ func TestLowestChainBlockAboveOrEqualToBlueScore(t *testing.T) {
 		}
 
 		checkBlueScore := func(blockHash *externalapi.DomainHash, expectedBlueScoe uint64) {
-			ghostdagData, err := tc.GHOSTDAGDataStore().Get(tc.DatabaseContext(), blockHash)
+			ghostdagData, err := tc.GHOSTDAGDataStore().Get(tc.DatabaseContext(), stagingArea, blockHash)
 			if err != nil {
 				t.Fatalf("GHOSTDAGDataStore().Get: %+v", err)
 			}

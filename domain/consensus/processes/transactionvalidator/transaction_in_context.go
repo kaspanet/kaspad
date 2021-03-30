@@ -1,6 +1,7 @@
 package transactionvalidator
 
 import (
+	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
@@ -14,10 +15,10 @@ import (
 // populates its mass and fee fields.
 //
 // Note: if the function fails, there's no guarantee that the transaction mass and fee fields will remain unaffected.
-func (v *transactionValidator) ValidateTransactionInContextAndPopulateMassAndFee(tx *externalapi.DomainTransaction,
-	povBlockHash *externalapi.DomainHash, selectedParentMedianTime int64) error {
+func (v *transactionValidator) ValidateTransactionInContextAndPopulateMassAndFee(stagingArea *model.StagingArea,
+	tx *externalapi.DomainTransaction, povBlockHash *externalapi.DomainHash, selectedParentMedianTime int64) error {
 
-	err := v.checkTransactionCoinbaseMaturity(povBlockHash, tx)
+	err := v.checkTransactionCoinbaseMaturity(stagingArea, povBlockHash, tx)
 	if err != nil {
 		return err
 	}
@@ -34,7 +35,7 @@ func (v *transactionValidator) ValidateTransactionInContextAndPopulateMassAndFee
 
 	tx.Fee = totalSompiIn - totalSompiOut
 
-	err = v.checkTransactionSequenceLock(povBlockHash, tx, selectedParentMedianTime)
+	err = v.checkTransactionSequenceLock(stagingArea, povBlockHash, tx, selectedParentMedianTime)
 	if err != nil {
 		return err
 	}
@@ -52,10 +53,10 @@ func (v *transactionValidator) ValidateTransactionInContextAndPopulateMassAndFee
 	return nil
 }
 
-func (v *transactionValidator) checkTransactionCoinbaseMaturity(
+func (v *transactionValidator) checkTransactionCoinbaseMaturity(stagingArea *model.StagingArea,
 	povBlockHash *externalapi.DomainHash, tx *externalapi.DomainTransaction) error {
 
-	povDAAScore, err := v.daaBlocksStore.DAAScore(v.databaseContext, povBlockHash)
+	povDAAScore, err := v.daaBlocksStore.DAAScore(v.databaseContext, stagingArea, povBlockHash)
 	if err != nil {
 		return err
 	}
@@ -86,7 +87,6 @@ func (v *transactionValidator) checkTransactionCoinbaseMaturity(
 }
 
 func (v *transactionValidator) checkTransactionInputAmounts(tx *externalapi.DomainTransaction) (totalSompiIn uint64, err error) {
-
 	totalSompiIn = 0
 
 	var missingOutpoints []*externalapi.DomainOutpoint
@@ -150,18 +150,18 @@ func (v *transactionValidator) checkTransactionOutputAmounts(tx *externalapi.Dom
 	return totalSompiOut, nil
 }
 
-func (v *transactionValidator) checkTransactionSequenceLock(povBlockHash *externalapi.DomainHash,
-	tx *externalapi.DomainTransaction, medianTime int64) error {
+func (v *transactionValidator) checkTransactionSequenceLock(stagingArea *model.StagingArea,
+	povBlockHash *externalapi.DomainHash, tx *externalapi.DomainTransaction, medianTime int64) error {
 
 	// A transaction can only be included within a block
 	// once the sequence locks of *all* its inputs are
 	// active.
-	sequenceLock, err := v.calcTxSequenceLockFromReferencedUTXOEntries(povBlockHash, tx)
+	sequenceLock, err := v.calcTxSequenceLockFromReferencedUTXOEntries(stagingArea, povBlockHash, tx)
 	if err != nil {
 		return err
 	}
 
-	daaScore, err := v.daaBlocksStore.DAAScore(v.databaseContext, povBlockHash)
+	daaScore, err := v.daaBlocksStore.DAAScore(v.databaseContext, stagingArea, povBlockHash)
 	if err != nil {
 		return err
 	}
@@ -176,7 +176,6 @@ func (v *transactionValidator) checkTransactionSequenceLock(povBlockHash *extern
 }
 
 func (v *transactionValidator) validateTransactionScripts(tx *externalapi.DomainTransaction) error {
-
 	var missingOutpoints []*externalapi.DomainOutpoint
 	sighashReusedValues := &consensushashing.SighashReusedValues{}
 
@@ -216,7 +215,7 @@ func (v *transactionValidator) validateTransactionScripts(tx *externalapi.Domain
 	return nil
 }
 
-func (v *transactionValidator) calcTxSequenceLockFromReferencedUTXOEntries(
+func (v *transactionValidator) calcTxSequenceLockFromReferencedUTXOEntries(stagingArea *model.StagingArea,
 	povBlockHash *externalapi.DomainHash, tx *externalapi.DomainTransaction) (*sequenceLock, error) {
 
 	// A value of -1 for each relative lock type represents a relative time
@@ -259,7 +258,7 @@ func (v *transactionValidator) calcTxSequenceLockFromReferencedUTXOEntries(
 			// which this input was accepted within so we can
 			// compute the past median time for the block prior to
 			// the one which accepted this referenced output.
-			baseGHOSTDAGData, err := v.ghostdagDataStore.Get(v.databaseContext, povBlockHash)
+			baseGHOSTDAGData, err := v.ghostdagDataStore.Get(v.databaseContext, stagingArea, povBlockHash)
 			if err != nil {
 				return nil, err
 			}
@@ -267,7 +266,7 @@ func (v *transactionValidator) calcTxSequenceLockFromReferencedUTXOEntries(
 			baseHash := povBlockHash
 
 			for {
-				selectedParentDAAScore, err := v.daaBlocksStore.DAAScore(v.databaseContext, povBlockHash)
+				selectedParentDAAScore, err := v.daaBlocksStore.DAAScore(v.databaseContext, stagingArea, povBlockHash)
 				if err != nil {
 					return nil, err
 				}
@@ -276,8 +275,8 @@ func (v *transactionValidator) calcTxSequenceLockFromReferencedUTXOEntries(
 					break
 				}
 
-				selectedParentGHOSTDAGData, err := v.ghostdagDataStore.Get(v.databaseContext,
-					baseGHOSTDAGData.SelectedParent())
+				selectedParentGHOSTDAGData, err := v.ghostdagDataStore.Get(
+					v.databaseContext, stagingArea, baseGHOSTDAGData.SelectedParent())
 				if err != nil {
 					return nil, err
 				}
@@ -286,7 +285,7 @@ func (v *transactionValidator) calcTxSequenceLockFromReferencedUTXOEntries(
 				baseGHOSTDAGData = selectedParentGHOSTDAGData
 			}
 
-			medianTime, err := v.pastMedianTimeManager.PastMedianTime(baseHash)
+			medianTime, err := v.pastMedianTimeManager.PastMedianTime(stagingArea, baseHash)
 			if err != nil {
 				return nil, err
 			}
