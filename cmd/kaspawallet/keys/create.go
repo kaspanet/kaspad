@@ -1,7 +1,6 @@
 package keys
 
 import (
-	"crypto/cipher"
 	"crypto/rand"
 	"crypto/subtle"
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/libkaspawallet"
@@ -9,7 +8,7 @@ import (
 )
 
 // CreateKeyPairs generates `numKeys` number of key pairs.
-func CreateKeyPairs(numKeys uint32) (encryptedPrivateKeys, publicKeys [][]byte, err error) {
+func CreateKeyPairs(numKeys uint32) (encryptedPrivateKeys []*EncryptedPrivateKey, publicKeys [][]byte, err error) {
 	password := getPassword("Enter password for the key file:")
 	confirmPassword := getPassword("Confirm password:")
 
@@ -17,12 +16,7 @@ func CreateKeyPairs(numKeys uint32) (encryptedPrivateKeys, publicKeys [][]byte, 
 		return nil, nil, errors.New("Passwords are not identical")
 	}
 
-	aead, err := getAEAD(password)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	encryptedPrivateKeys = make([][]byte, 0, numKeys)
+	encryptedPrivateKeys = make([]*EncryptedPrivateKey, 0, numKeys)
 	for i := uint32(0); i < numKeys; i++ {
 		privateKey, publicKey, err := libkaspawallet.CreateKeyPair()
 		if err != nil {
@@ -31,7 +25,7 @@ func CreateKeyPairs(numKeys uint32) (encryptedPrivateKeys, publicKeys [][]byte, 
 
 		publicKeys = append(publicKeys, publicKey)
 
-		encryptedPrivateKey, err := encryptPrivateKey(privateKey, aead)
+		encryptedPrivateKey, err := encryptPrivateKey(privateKey, password)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -41,7 +35,27 @@ func CreateKeyPairs(numKeys uint32) (encryptedPrivateKeys, publicKeys [][]byte, 
 	return encryptedPrivateKeys, publicKeys, nil
 }
 
-func encryptPrivateKey(privateKey []byte, aead cipher.AEAD) ([]byte, error) {
+func generateSalt() ([]byte, error) {
+	salt := make([]byte, 16)
+	_, err := rand.Read(salt)
+	if err != nil {
+		return nil, err
+	}
+
+	return salt, nil
+}
+
+func encryptPrivateKey(privateKey []byte, password []byte) (*EncryptedPrivateKey, error) {
+	salt, err := generateSalt()
+	if err != nil {
+		return nil, err
+	}
+
+	aead, err := getAEAD(password, salt)
+	if err != nil {
+		return nil, err
+	}
+
 	// Select a random nonce, and leave capacity for the ciphertext.
 	nonce := make([]byte, aead.NonceSize(), aead.NonceSize()+len(privateKey)+aead.Overhead())
 	if _, err := rand.Read(nonce); err != nil {
@@ -49,5 +63,10 @@ func encryptPrivateKey(privateKey []byte, aead cipher.AEAD) ([]byte, error) {
 	}
 
 	// Encrypt the message and append the ciphertext to the nonce.
-	return aead.Seal(nonce, nonce, privateKey, nil), nil
+	cipher := aead.Seal(nonce, nonce, privateKey, nil)
+
+	return &EncryptedPrivateKey{
+		cipher: cipher,
+		salt:   salt,
+	}, nil
 }

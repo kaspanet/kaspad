@@ -20,23 +20,36 @@ var (
 	defaultKeysFile = filepath.Join(defaultAppDir, "keys.json")
 )
 
+type encryptedPrivateKeyJSON struct {
+	Cipher string `json:"cipher"`
+	Salt   string `json:"salt"`
+}
+
 type keysFileJSON struct {
-	EncryptedPrivateKeys []string `json:"encryptedPrivateKeys"`
-	PublicKeys           []string `json:"publicKeys"`
-	MinimumSignatures    uint32   `json:"minimumSignatures"`
+	EncryptedPrivateKeys []*encryptedPrivateKeyJSON `json:"encryptedPrivateKeys"`
+	PublicKeys           []string                   `json:"publicKeys"`
+	MinimumSignatures    uint32                     `json:"minimumSignatures"`
+}
+
+type EncryptedPrivateKey struct {
+	cipher []byte
+	salt   []byte
 }
 
 // Data holds all the data related to the wallet keys
 type Data struct {
-	encryptedPrivateKeys [][]byte
+	encryptedPrivateKeys []*EncryptedPrivateKey
 	PublicKeys           [][]byte
 	MinimumSignatures    uint32
 }
 
 func (d *Data) toJSON() *keysFileJSON {
-	encryptedPrivateKeysHex := make([]string, len(d.encryptedPrivateKeys))
+	encryptedPrivateKeysJSON := make([]*encryptedPrivateKeyJSON, len(d.encryptedPrivateKeys))
 	for i, encryptedPrivateKey := range d.encryptedPrivateKeys {
-		encryptedPrivateKeysHex[i] = hex.EncodeToString(encryptedPrivateKey)
+		encryptedPrivateKeysJSON[i] = &encryptedPrivateKeyJSON{
+			Cipher: hex.EncodeToString(encryptedPrivateKey.cipher),
+			Salt:   hex.EncodeToString(encryptedPrivateKey.salt),
+		}
 	}
 
 	publicKeysHex := make([]string, len(d.PublicKeys))
@@ -45,7 +58,7 @@ func (d *Data) toJSON() *keysFileJSON {
 	}
 
 	return &keysFileJSON{
-		EncryptedPrivateKeys: encryptedPrivateKeysHex,
+		EncryptedPrivateKeys: encryptedPrivateKeysJSON,
 		PublicKeys:           publicKeysHex,
 		MinimumSignatures:    d.MinimumSignatures,
 	}
@@ -54,12 +67,21 @@ func (d *Data) toJSON() *keysFileJSON {
 func (d *Data) fromJSON(kfj *keysFileJSON) error {
 	d.MinimumSignatures = kfj.MinimumSignatures
 
-	d.encryptedPrivateKeys = make([][]byte, len(kfj.EncryptedPrivateKeys))
-	for i, encryptedPrivateKey := range kfj.EncryptedPrivateKeys {
-		var err error
-		d.encryptedPrivateKeys[i], err = hex.DecodeString(encryptedPrivateKey)
+	d.encryptedPrivateKeys = make([]*EncryptedPrivateKey, len(kfj.EncryptedPrivateKeys))
+	for i, encryptedPrivateKeyJSON := range kfj.EncryptedPrivateKeys {
+		cipher, err := hex.DecodeString(encryptedPrivateKeyJSON.Cipher)
 		if err != nil {
 			return err
+		}
+
+		salt, err := hex.DecodeString(encryptedPrivateKeyJSON.Salt)
+		if err != nil {
+			return err
+		}
+
+		d.encryptedPrivateKeys[i] = &EncryptedPrivateKey{
+			cipher: cipher,
+			salt:   salt,
 		}
 	}
 
@@ -79,15 +101,10 @@ func (d *Data) fromJSON(kfj *keysFileJSON) error {
 // returns the decrypted private keys.
 func (d *Data) DecryptPrivateKeys() ([][]byte, error) {
 	password := getPassword("Password:")
-	aead, err := getAEAD(password)
-	if err != nil {
-		return nil, err
-	}
-
 	privateKeys := make([][]byte, len(d.encryptedPrivateKeys))
 	for i, encryptedPrivateKey := range d.encryptedPrivateKeys {
 		var err error
-		privateKeys[i], err = decryptPrivateKey(encryptedPrivateKey, aead)
+		privateKeys[i], err = decryptPrivateKey(encryptedPrivateKey, password)
 		if err != nil {
 			return nil, err
 		}
@@ -154,7 +171,7 @@ func pathExists(path string) (bool, error) {
 }
 
 // WriteKeysFile writes a keys file with the given data
-func WriteKeysFile(path string, encryptedPrivateKeys [][]byte, publicKeys [][]byte, minimumSignatures uint32) error {
+func WriteKeysFile(path string, encryptedPrivateKeys []*EncryptedPrivateKey, publicKeys [][]byte, minimumSignatures uint32) error {
 	if path == "" {
 		path = defaultKeysFile
 	}
@@ -204,18 +221,23 @@ func WriteKeysFile(path string, encryptedPrivateKeys [][]byte, publicKeys [][]by
 	return nil
 }
 
-func getAEAD(password []byte) (cipher.AEAD, error) {
-	key := argon2.IDKey(password, []byte("kaspawallet"), 1, 64*1024, uint8(runtime.NumCPU()), 32)
+func getAEAD(password, salt []byte) (cipher.AEAD, error) {
+	key := argon2.IDKey(password, salt, 1, 64*1024, uint8(runtime.NumCPU()), 32)
 	return chacha20poly1305.NewX(key)
 }
 
-func decryptPrivateKey(encryptedPrivateKey []byte, aead cipher.AEAD) ([]byte, error) {
-	if len(encryptedPrivateKey) < aead.NonceSize() {
+func decryptPrivateKey(encryptedPrivateKey *EncryptedPrivateKey, password []byte) ([]byte, error) {
+	aead, err := getAEAD(password, encryptedPrivateKey.salt)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(encryptedPrivateKey.cipher) < aead.NonceSize() {
 		return nil, errors.New("ciphertext too short")
 	}
 
 	// Split nonce and ciphertext.
-	nonce, ciphertext := encryptedPrivateKey[:aead.NonceSize()], encryptedPrivateKey[aead.NonceSize():]
+	nonce, ciphertext := encryptedPrivateKey.cipher[:aead.NonceSize()], encryptedPrivateKey.cipher[aead.NonceSize():]
 
 	// Decrypt the message and check it wasn't tampered with.
 	return aead.Open(nil, nonce, ciphertext, nil)
