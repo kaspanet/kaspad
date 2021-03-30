@@ -31,6 +31,7 @@ type keysFileJSON struct {
 	MinimumSignatures    uint32                     `json:"minimumSignatures"`
 }
 
+// EncryptedPrivateKey represents an encrypted private key
 type EncryptedPrivateKey struct {
 	cipher []byte
 	salt   []byte
