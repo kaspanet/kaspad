@@ -1,34 +1,35 @@
 package blockprocessor
 
 import (
+	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
+	"github.com/kaspanet/kaspad/util/staging"
 	"github.com/pkg/errors"
 )
 
 func (bp *blockProcessor) validateBlockAndDiscardChanges(block *externalapi.DomainBlock, isPruningPoint bool) error {
-	defer bp.discardAllChanges()
-	return bp.validateBlock(block, isPruningPoint)
+	return bp.validateBlock(model.NewStagingArea(), block, isPruningPoint)
 }
 
-func (bp *blockProcessor) validateBlock(block *externalapi.DomainBlock, isPruningPoint bool) error {
+func (bp *blockProcessor) validateBlock(stagingArea *model.StagingArea, block *externalapi.DomainBlock, isPruningPoint bool) error {
 	blockHash := consensushashing.HeaderHash(block.Header)
 	log.Debugf("Validating block %s", blockHash)
 
-	err := bp.checkBlockStatus(block)
+	err := bp.checkBlockStatus(stagingArea, block)
 	if err != nil {
 		return err
 	}
 
-	hasValidatedHeader, err := bp.hasValidatedHeader(blockHash)
+	hasValidatedHeader, err := bp.hasValidatedHeader(stagingArea, blockHash)
 	if err != nil {
 		return err
 	}
 
 	if !hasValidatedHeader {
 		log.Debugf("Staging block %s header", blockHash)
-		bp.blockHeaderStore.Stage(blockHash, block.Header)
+		bp.blockHeaderStore.Stage(stagingArea, blockHash, block.Header)
 	} else {
 		log.Debugf("Block %s header is already known, so no need to stage it", blockHash)
 	}
@@ -36,13 +37,13 @@ func (bp *blockProcessor) validateBlock(block *externalapi.DomainBlock, isPrunin
 	// If any validation until (included) proof-of-work fails, simply
 	// return an error without writing anything in the database.
 	// This is to prevent spamming attacks.
-	err = bp.validatePreProofOfWork(block)
+	err = bp.validatePreProofOfWork(stagingArea, block)
 	if err != nil {
 		return err
 	}
 
 	if !hasValidatedHeader {
-		err = bp.blockValidator.ValidatePruningPointViolationAndProofOfWorkAndDifficulty(blockHash)
+		err = bp.blockValidator.ValidatePruningPointViolationAndProofOfWorkAndDifficulty(stagingArea, blockHash)
 		if err != nil {
 			return err
 		}
@@ -50,7 +51,7 @@ func (bp *blockProcessor) validateBlock(block *externalapi.DomainBlock, isPrunin
 
 	// If in-context validations fail, discard all changes and store the
 	// block with StatusInvalid.
-	err = bp.validatePostProofOfWork(block, isPruningPoint)
+	err = bp.validatePostProofOfWork(stagingArea, block, isPruningPoint)
 	if err != nil {
 		if errors.As(err, &ruleerrors.RuleError{}) {
 			// We mark invalid blocks with status externalapi.StatusInvalid except in the
@@ -66,11 +67,11 @@ func (bp *blockProcessor) validateBlock(block *externalapi.DomainBlock, isPrunin
 			if !errors.As(err, &ruleerrors.ErrMissingParents{}) &&
 				!errors.Is(err, ruleerrors.ErrBadMerkleRoot) &&
 				!errors.Is(err, ruleerrors.ErrPrunedBlock) {
-				// Discard all changes so we save only the block status
-				bp.discardAllChanges()
+				// Use a new stagingArea so we save only the block status
+				stagingArea := model.NewStagingArea()
 				hash := consensushashing.BlockHash(block)
-				bp.blockStatusStore.Stage(hash, externalapi.StatusInvalid)
-				commitErr := bp.commitAllChanges()
+				bp.blockStatusStore.Stage(stagingArea, hash, externalapi.StatusInvalid)
+				commitErr := staging.CommitAllChanges(bp.databaseContext, stagingArea)
 				if commitErr != nil {
 					return commitErr
 				}

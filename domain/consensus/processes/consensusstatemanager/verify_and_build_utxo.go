@@ -15,8 +15,9 @@ import (
 	"github.com/pkg/errors"
 )
 
-func (csm *consensusStateManager) verifyUTXO(block *externalapi.DomainBlock, blockHash *externalapi.DomainHash,
-	pastUTXODiff externalapi.UTXODiff, acceptanceData externalapi.AcceptanceData, multiset model.Multiset) error {
+func (csm *consensusStateManager) verifyUTXO(stagingArea *model.StagingArea, block *externalapi.DomainBlock,
+	blockHash *externalapi.DomainHash, pastUTXODiff externalapi.UTXODiff, acceptanceData externalapi.AcceptanceData,
+	multiset model.Multiset) error {
 
 	log.Debugf("verifyUTXO start for block %s", blockHash)
 	defer log.Debugf("verifyUTXO end for block %s", blockHash)
@@ -38,14 +39,14 @@ func (csm *consensusStateManager) verifyUTXO(block *externalapi.DomainBlock, blo
 	coinbaseTransaction := block.Transactions[0]
 	log.Debugf("Validating coinbase transaction %s for block %s",
 		consensushashing.TransactionID(coinbaseTransaction), blockHash)
-	err = csm.validateCoinbaseTransaction(blockHash, coinbaseTransaction)
+	err = csm.validateCoinbaseTransaction(stagingArea, blockHash, coinbaseTransaction)
 	if err != nil {
 		return err
 	}
 	log.Debugf("Coinbase transaction validation passed for block %s", blockHash)
 
 	log.Debugf("Validating transactions against past UTXO for block %s", blockHash)
-	err = csm.validateBlockTransactionsAgainstPastUTXO(block, pastUTXODiff)
+	err = csm.validateBlockTransactionsAgainstPastUTXO(stagingArea, block, pastUTXODiff)
 	if err != nil {
 		return err
 	}
@@ -54,14 +55,14 @@ func (csm *consensusStateManager) verifyUTXO(block *externalapi.DomainBlock, blo
 	return nil
 }
 
-func (csm *consensusStateManager) validateBlockTransactionsAgainstPastUTXO(block *externalapi.DomainBlock,
-	pastUTXODiff externalapi.UTXODiff) error {
+func (csm *consensusStateManager) validateBlockTransactionsAgainstPastUTXO(stagingArea *model.StagingArea,
+	block *externalapi.DomainBlock, pastUTXODiff externalapi.UTXODiff) error {
 
 	blockHash := consensushashing.BlockHash(block)
 	log.Tracef("validateBlockTransactionsAgainstPastUTXO start for block %s", blockHash)
 	defer log.Tracef("validateBlockTransactionsAgainstPastUTXO end for block %s", blockHash)
 
-	selectedParentMedianTime, err := csm.pastMedianTimeManager.PastMedianTime(blockHash)
+	selectedParentMedianTime, err := csm.pastMedianTimeManager.PastMedianTime(stagingArea, blockHash)
 	if err != nil {
 		return err
 	}
@@ -77,14 +78,14 @@ func (csm *consensusStateManager) validateBlockTransactionsAgainstPastUTXO(block
 		}
 
 		log.Tracef("Populating transaction %s with UTXO entries", transactionID)
-		err = csm.populateTransactionWithUTXOEntriesFromVirtualOrDiff(transaction, pastUTXODiff)
+		err = csm.populateTransactionWithUTXOEntriesFromVirtualOrDiff(stagingArea, transaction, pastUTXODiff)
 		if err != nil {
 			return err
 		}
 
 		log.Tracef("Validating transaction %s and populating it with mass and fee", transactionID)
 		err = csm.transactionValidator.ValidateTransactionInContextAndPopulateMassAndFee(
-			transaction, blockHash, selectedParentMedianTime)
+			stagingArea, transaction, blockHash, selectedParentMedianTime)
 		if err != nil {
 			return err
 		}
@@ -146,8 +147,9 @@ func calculateAcceptedIDMerkleRoot(multiblockAcceptanceData externalapi.Acceptan
 
 	return merkle.CalculateIDMerkleRoot(acceptedTransactions)
 }
-func (csm *consensusStateManager) validateCoinbaseTransaction(blockHash *externalapi.DomainHash,
-	coinbaseTransaction *externalapi.DomainTransaction) error {
+
+func (csm *consensusStateManager) validateCoinbaseTransaction(stagingArea *model.StagingArea,
+	blockHash *externalapi.DomainHash, coinbaseTransaction *externalapi.DomainTransaction) error {
 
 	log.Tracef("validateCoinbaseTransaction start for block %s", blockHash)
 	defer log.Tracef("validateCoinbaseTransaction end for block %s", blockHash)
@@ -160,7 +162,8 @@ func (csm *consensusStateManager) validateCoinbaseTransaction(blockHash *externa
 	}
 
 	log.Tracef("Calculating the expected coinbase transaction for the given coinbase data and block %s", blockHash)
-	expectedCoinbaseTransaction, err := csm.coinbaseManager.ExpectedCoinbaseTransaction(blockHash, coinbaseData)
+	expectedCoinbaseTransaction, err :=
+		csm.coinbaseManager.ExpectedCoinbaseTransaction(stagingArea, blockHash, coinbaseData)
 	if err != nil {
 		return err
 	}

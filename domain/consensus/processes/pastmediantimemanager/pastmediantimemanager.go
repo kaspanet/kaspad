@@ -1,8 +1,9 @@
 package pastmediantimemanager
 
 import (
-	"github.com/kaspanet/kaspad/domain/consensus/utils/sorters"
 	"sort"
+
+	"github.com/kaspanet/kaspad/domain/consensus/utils/sorters"
 
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
@@ -45,30 +46,32 @@ func New(timestampDeviationTolerance int,
 }
 
 // PastMedianTime returns the past median time for some block
-func (pmtm *pastMedianTimeManager) PastMedianTime(blockHash *externalapi.DomainHash) (int64, error) {
-	window, err := pmtm.dagTraversalManager.BlockWindow(blockHash, 2*pmtm.timestampDeviationTolerance-1)
+func (pmtm *pastMedianTimeManager) PastMedianTime(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) (int64, error) {
+	window, err := pmtm.dagTraversalManager.BlockWindow(stagingArea, blockHash, 2*pmtm.timestampDeviationTolerance-1)
 	if err != nil {
 		return 0, err
 	}
 	if len(window) == 0 {
-		header, err := pmtm.blockHeaderStore.BlockHeader(pmtm.databaseContext, pmtm.genesisHash)
+		header, err := pmtm.blockHeaderStore.BlockHeader(pmtm.databaseContext, stagingArea, pmtm.genesisHash)
 		if err != nil {
 			return 0, err
 		}
 		return header.TimeInMilliseconds(), nil
 	}
 
-	return pmtm.windowMedianTimestamp(window)
+	return pmtm.windowMedianTimestamp(stagingArea, window)
 }
 
-func (pmtm *pastMedianTimeManager) windowMedianTimestamp(window []*externalapi.DomainHash) (int64, error) {
+func (pmtm *pastMedianTimeManager) windowMedianTimestamp(
+	stagingArea *model.StagingArea, window []*externalapi.DomainHash) (int64, error) {
+
 	if len(window) == 0 {
 		return 0, errors.New("Cannot calculate median timestamp for an empty block window")
 	}
 
 	timestamps := make([]int64, len(window))
 	for i, blockHash := range window {
-		blockHeader, err := pmtm.blockHeaderStore.BlockHeader(pmtm.databaseContext, blockHash)
+		blockHeader, err := pmtm.blockHeaderStore.BlockHeader(pmtm.databaseContext, stagingArea, blockHash)
 		if err != nil {
 			return 0, err
 		}

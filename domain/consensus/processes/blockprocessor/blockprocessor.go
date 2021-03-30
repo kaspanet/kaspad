@@ -1,11 +1,12 @@
 package blockprocessor
 
 import (
+	"time"
+
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/processes/blockprocessor/blocklogger"
 	"github.com/kaspanet/kaspad/infrastructure/logger"
-	"time"
 )
 
 // blockProcessor is responsible for processing incoming blocks
@@ -142,12 +143,14 @@ func (bp *blockProcessor) ValidateAndInsertBlock(block *externalapi.DomainBlock)
 	onEnd := logger.LogAndMeasureExecutionTime(log, "ValidateAndInsertBlock")
 	defer onEnd()
 
-	return bp.validateAndInsertBlock(block, false)
+	stagingArea := model.NewStagingArea()
+	return bp.validateAndInsertBlock(stagingArea, block, false)
 }
 
 func (bp *blockProcessor) ValidateAndInsertImportedPruningPoint(newPruningPoint *externalapi.DomainBlock) error {
 	onEnd := logger.LogAndMeasureExecutionTime(log, "ValidateAndInsertImportedPruningPoint")
 	defer onEnd()
 
-	return bp.validateAndInsertImportedPruningPoint(newPruningPoint)
+	stagingArea := model.NewStagingArea()
+	return bp.validateAndInsertImportedPruningPoint(stagingArea, newPruningPoint)
 }

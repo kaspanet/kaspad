@@ -5,6 +5,8 @@ import (
 	"sort"
 	"testing"
 
+	"github.com/kaspanet/kaspad/domain/consensus/model"
+
 	"github.com/kaspanet/kaspad/domain/consensus"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/hashset"
@@ -340,11 +342,13 @@ func TestBlockWindow(t *testing.T) {
 			blockByIDMap[blockData.id] = block
 			idByBlockMap[*block] = blockData.id
 
-			window, err := tc.DAGTraversalManager().BlockWindow(block, windowSize)
+			stagingArea := model.NewStagingArea()
+
+			window, err := tc.DAGTraversalManager().BlockWindow(stagingArea, block, windowSize)
 			if err != nil {
 				t.Fatalf("BlockWindow: %s", err)
 			}
-			sort.Sort(testutils.NewTestGhostDAGSorter(window, tc, t))
+			sort.Sort(testutils.NewTestGhostDAGSorter(stagingArea, window, tc, t))
 			if err := checkWindowIDs(window, blockData.expectedWindow, idByBlockMap); err != nil {
 				t.Errorf("Unexpected values for window for block %s: %s", blockData.id, err)
 			}

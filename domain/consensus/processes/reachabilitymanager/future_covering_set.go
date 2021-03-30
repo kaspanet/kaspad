@@ -1,6 +1,7 @@
 package reachabilitymanager
 
 import (
+	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 )
 
@@ -18,14 +19,14 @@ import (
 // * Although reindexing may change a block's interval, the
 //   is-superset relation will by definition
 //   be always preserved.
-func (rt *reachabilityManager) insertToFutureCoveringSet(node, futureNode *externalapi.DomainHash) error {
-	reachabilityData, err := rt.reachabilityDataForInsertion(node)
+func (rt *reachabilityManager) insertToFutureCoveringSet(stagingArea *model.StagingArea, node, futureNode *externalapi.DomainHash) error {
+	reachabilityData, err := rt.reachabilityDataForInsertion(stagingArea, node)
 	if err != nil {
 		return err
 	}
 	futureCoveringSet := reachabilityData.FutureCoveringSet()
 
-	ancestorIndex, ok, err := rt.findAncestorIndexOfNode(orderedTreeNodeSet(futureCoveringSet), futureNode)
+	ancestorIndex, ok, err := rt.findAncestorIndexOfNode(stagingArea, orderedTreeNodeSet(futureCoveringSet), futureNode)
 	if err != nil {
 		return err
 	}
@@ -35,7 +36,7 @@ func (rt *reachabilityManager) insertToFutureCoveringSet(node, futureNode *exter
 		newSet = append([]*externalapi.DomainHash{futureNode}, futureCoveringSet...)
 	} else {
 		candidate := futureCoveringSet[ancestorIndex]
-		candidateIsAncestorOfFutureNode, err := rt.IsReachabilityTreeAncestorOf(candidate, futureNode)
+		candidateIsAncestorOfFutureNode, err := rt.IsReachabilityTreeAncestorOf(stagingArea, candidate, futureNode)
 		if err != nil {
 			return err
 		}
@@ -45,7 +46,7 @@ func (rt *reachabilityManager) insertToFutureCoveringSet(node, futureNode *exter
 			return nil
 		}
 
-		futureNodeIsAncestorOfCandidate, err := rt.IsReachabilityTreeAncestorOf(futureNode, candidate)
+		futureNodeIsAncestorOfCandidate, err := rt.IsReachabilityTreeAncestorOf(stagingArea, futureNode, candidate)
 		if err != nil {
 			return err
 		}
@@ -56,7 +57,7 @@ func (rt *reachabilityManager) insertToFutureCoveringSet(node, futureNode *exter
 			copy(newSet, futureCoveringSet)
 			newSet[ancestorIndex] = futureNode
 
-			return rt.stageFutureCoveringSet(node, newSet)
+			return rt.stageFutureCoveringSet(stagingArea, node, newSet)
 		}
 
 		// Insert futureNode in the correct index to maintain futureCoveringTreeNodeSet as
@@ -67,7 +68,7 @@ func (rt *reachabilityManager) insertToFutureCoveringSet(node, futureNode *exter
 		newSet = append(left, right...)
 	}
 	reachabilityData.SetFutureCoveringSet(newSet)
-	rt.stageData(node, reachabilityData)
+	rt.stageData(stagingArea, node, reachabilityData)
 
 	return nil
 }
@@ -80,13 +81,15 @@ func (rt *reachabilityManager) insertToFutureCoveringSet(node, futureNode *exter
 // this.FutureCoveringSet is kept ordered by interval to efficiently perform a
 // binary search over this.FutureCoveringSet and answer the query in
 // O(log(|futureCoveringTreeNodeSet|)).
-func (rt *reachabilityManager) futureCoveringSetHasAncestorOf(this, other *externalapi.DomainHash) (bool, error) {
-	futureCoveringSet, err := rt.futureCoveringSet(this)
+func (rt *reachabilityManager) futureCoveringSetHasAncestorOf(stagingArea *model.StagingArea,
+	this, other *externalapi.DomainHash) (bool, error) {
+
+	futureCoveringSet, err := rt.futureCoveringSet(stagingArea, this)
 	if err != nil {
 		return false, err
 	}
 
-	ancestorIndex, ok, err := rt.findAncestorIndexOfNode(orderedTreeNodeSet(futureCoveringSet), other)
+	ancestorIndex, ok, err := rt.findAncestorIndexOfNode(stagingArea, orderedTreeNodeSet(futureCoveringSet), other)
 	if err != nil {
 		return false, err
 	}
@@ -98,5 +101,5 @@ func (rt *reachabilityManager) futureCoveringSetHasAncestorOf(this, other *exter
 
 	candidate := futureCoveringSet[ancestorIndex]
 
-	return rt.IsReachabilityTreeAncestorOf(candidate, other)
+	return rt.IsReachabilityTreeAncestorOf(stagingArea, candidate, other)
 }

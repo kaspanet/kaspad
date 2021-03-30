@@ -1,8 +1,10 @@
 package blockvalidator
 
 import (
-	"github.com/kaspanet/kaspad/infrastructure/logger"
 	"math"
+
+	"github.com/kaspanet/kaspad/domain/consensus/model"
+	"github.com/kaspanet/kaspad/infrastructure/logger"
 
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
@@ -13,22 +15,22 @@ import (
 
 // ValidateBodyInContext validates block bodies in the context of the current
 // consensus state
-func (v *blockValidator) ValidateBodyInContext(blockHash *externalapi.DomainHash, isPruningPoint bool) error {
+func (v *blockValidator) ValidateBodyInContext(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash, isPruningPoint bool) error {
 	onEnd := logger.LogAndMeasureExecutionTime(log, "ValidateBodyInContext")
 	defer onEnd()
 
-	err := v.checkBlockIsNotPruned(blockHash)
+	err := v.checkBlockIsNotPruned(stagingArea, blockHash)
 	if err != nil {
 		return err
 	}
 
-	err = v.checkBlockTransactionsFinalized(blockHash)
+	err = v.checkBlockTransactionsFinalized(stagingArea, blockHash)
 	if err != nil {
 		return err
 	}
 
 	if !isPruningPoint {
-		err := v.checkParentBlockBodiesExist(blockHash)
+		err := v.checkParentBlockBodiesExist(stagingArea, blockHash)
 		if err != nil {
 			return err
 		}
@@ -37,8 +39,8 @@ func (v *blockValidator) ValidateBodyInContext(blockHash *externalapi.DomainHash
 }
 
 // checkBlockIsNotPruned Checks we don't add block bodies to pruned blocks
-func (v *blockValidator) checkBlockIsNotPruned(blockHash *externalapi.DomainHash) error {
-	hasValidatedHeader, err := v.hasValidatedHeader(blockHash)
+func (v *blockValidator) checkBlockIsNotPruned(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) error {
+	hasValidatedHeader, err := v.hasValidatedHeader(stagingArea, blockHash)
 	if err != nil {
 		return err
 	}
@@ -49,12 +51,12 @@ func (v *blockValidator) checkBlockIsNotPruned(blockHash *externalapi.DomainHash
 		return nil
 	}
 
-	tips, err := v.consensusStateStore.Tips(v.databaseContext)
+	tips, err := v.consensusStateStore.Tips(stagingArea, v.databaseContext)
 	if err != nil {
 		return err
 	}
 
-	isAncestorOfSomeTips, err := v.dagTopologyManager.IsAncestorOfAny(blockHash, tips)
+	isAncestorOfSomeTips, err := v.dagTopologyManager.IsAncestorOfAny(stagingArea, blockHash, tips)
 	if err != nil {
 		return err
 	}
@@ -67,25 +69,27 @@ func (v *blockValidator) checkBlockIsNotPruned(blockHash *externalapi.DomainHash
 	return nil
 }
 
-func (v *blockValidator) checkParentBlockBodiesExist(blockHash *externalapi.DomainHash) error {
+func (v *blockValidator) checkParentBlockBodiesExist(
+	stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) error {
+
 	missingParentHashes := []*externalapi.DomainHash{}
-	header, err := v.blockHeaderStore.BlockHeader(v.databaseContext, blockHash)
+	header, err := v.blockHeaderStore.BlockHeader(v.databaseContext, stagingArea, blockHash)
 	if err != nil {
 		return err
 	}
 	for _, parent := range header.ParentHashes() {
-		hasBlock, err := v.blockStore.HasBlock(v.databaseContext, parent)
+		hasBlock, err := v.blockStore.HasBlock(v.databaseContext, stagingArea, parent)
 		if err != nil {
 			return err
 		}
 
 		if !hasBlock {
-			pruningPoint, err := v.pruningStore.PruningPoint(v.databaseContext)
+			pruningPoint, err := v.pruningStore.PruningPoint(v.databaseContext, stagingArea)
 			if err != nil {
 				return err
 			}
 
-			isInPastOfPruningPoint, err := v.dagTopologyManager.IsAncestorOf(parent, pruningPoint)
+			isInPastOfPruningPoint, err := v.dagTopologyManager.IsAncestorOf(stagingArea, parent, pruningPoint)
 			if err != nil {
 				return err
 			}
@@ -114,18 +118,20 @@ func (v *blockValidator) checkParentBlockBodiesExist(blockHash *externalapi.Doma
 	return nil
 }
 
-func (v *blockValidator) checkBlockTransactionsFinalized(blockHash *externalapi.DomainHash) error {
-	block, err := v.blockStore.Block(v.databaseContext, blockHash)
+func (v *blockValidator) checkBlockTransactionsFinalized(
+	stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) error {
+
+	block, err := v.blockStore.Block(v.databaseContext, stagingArea, blockHash)
 	if err != nil {
 		return err
 	}
 
-	ghostdagData, err := v.ghostdagDataStore.Get(v.databaseContext, blockHash)
+	ghostdagData, err := v.ghostdagDataStore.Get(v.databaseContext, stagingArea, blockHash)
 	if err != nil {
 		return err
 	}
 
-	blockTime, err := v.pastMedianTimeManager.PastMedianTime(blockHash)
+	blockTime, err := v.pastMedianTimeManager.PastMedianTime(stagingArea, blockHash)
 	if err != nil {
 		return err
 	}

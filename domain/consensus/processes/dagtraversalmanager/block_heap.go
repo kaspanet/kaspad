@@ -65,25 +65,28 @@ type blockHeap struct {
 	impl          heap.Interface
 	ghostdagStore model.GHOSTDAGDataStore
 	dbContext     model.DBReader
+	stagingArea   *model.StagingArea
 }
 
 // NewDownHeap initializes and returns a new blockHeap
-func (dtm *dagTraversalManager) NewDownHeap() model.BlockHeap {
+func (dtm *dagTraversalManager) NewDownHeap(stagingArea *model.StagingArea) model.BlockHeap {
 	h := blockHeap{
 		impl:          &downHeap{baseHeap{ghostdagManager: dtm.ghostdagManager}},
 		ghostdagStore: dtm.ghostdagDataStore,
 		dbContext:     dtm.databaseContext,
+		stagingArea:   stagingArea,
 	}
 	heap.Init(h.impl)
 	return &h
 }
 
 // NewUpHeap initializes and returns a new blockHeap
-func (dtm *dagTraversalManager) NewUpHeap() model.BlockHeap {
+func (dtm *dagTraversalManager) NewUpHeap(stagingArea *model.StagingArea) model.BlockHeap {
 	h := blockHeap{
 		impl:          &upHeap{baseHeap{ghostdagManager: dtm.ghostdagManager}},
 		ghostdagStore: dtm.ghostdagDataStore,
 		dbContext:     dtm.databaseContext,
+		stagingArea:   stagingArea,
 	}
 	heap.Init(h.impl)
 	return &h
@@ -96,7 +99,7 @@ func (bh *blockHeap) Pop() *externalapi.DomainHash {
 
 // Push pushes the block onto the heap
 func (bh *blockHeap) Push(blockHash *externalapi.DomainHash) error {
-	ghostdagData, err := bh.ghostdagStore.Get(bh.dbContext, blockHash)
+	ghostdagData, err := bh.ghostdagStore.Get(bh.dbContext, bh.stagingArea, blockHash)
 	if err != nil {
 		return err
 	}
@@ -139,14 +142,16 @@ type sizedUpBlockHeap struct {
 	impl          upHeap
 	ghostdagStore model.GHOSTDAGDataStore
 	dbContext     model.DBReader
+	stagingArea   *model.StagingArea
 }
 
 // newSizedUpHeap initializes and returns a new sizedUpBlockHeap
-func (dtm *dagTraversalManager) newSizedUpHeap(cap int) *sizedUpBlockHeap {
+func (dtm *dagTraversalManager) newSizedUpHeap(stagingArea *model.StagingArea, cap int) *sizedUpBlockHeap {
 	h := sizedUpBlockHeap{
 		impl:          upHeap{baseHeap{slice: make([]*blockHeapNode, 0, cap), ghostdagManager: dtm.ghostdagManager}},
 		ghostdagStore: dtm.ghostdagDataStore,
 		dbContext:     dtm.databaseContext,
+		stagingArea:   stagingArea,
 	}
 	heap.Init(&h.impl)
 	return &h
@@ -163,7 +168,9 @@ func (sbh *sizedUpBlockHeap) pop() *externalapi.DomainHash {
 }
 
 // tryPushWithGHOSTDAGData is just like tryPush but the caller provides the ghostdagData of the block.
-func (sbh *sizedUpBlockHeap) tryPushWithGHOSTDAGData(blockHash *externalapi.DomainHash, ghostdagData *model.BlockGHOSTDAGData) (bool, error) {
+func (sbh *sizedUpBlockHeap) tryPushWithGHOSTDAGData(blockHash *externalapi.DomainHash,
+	ghostdagData *model.BlockGHOSTDAGData) (bool, error) {
+
 	node := &blockHeapNode{
 		hash:         blockHash,
 		ghostdagData: ghostdagData,
@@ -182,7 +189,7 @@ func (sbh *sizedUpBlockHeap) tryPushWithGHOSTDAGData(blockHash *externalapi.Doma
 
 // tryPush tries to push the block onto the heap, if the heap is full and it's less than the minimum it rejects it
 func (sbh *sizedUpBlockHeap) tryPush(blockHash *externalapi.DomainHash) (bool, error) {
-	ghostdagData, err := sbh.ghostdagStore.Get(sbh.dbContext, blockHash)
+	ghostdagData, err := sbh.ghostdagStore.Get(sbh.dbContext, sbh.stagingArea, blockHash)
 	if err != nil {
 		return false, err
 	}

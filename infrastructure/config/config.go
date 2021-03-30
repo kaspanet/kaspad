@@ -5,6 +5,8 @@
 package config
 
 import (
+	// _ "embed" is necessary for the go:embed feature.
+	_ "embed"
 	"fmt"
 	"net"
 	"os"
@@ -62,6 +64,9 @@ var (
 	defaultRPCKeyFile  = filepath.Join(DefaultAppDir, "rpc.key")
 	defaultRPCCertFile = filepath.Join(DefaultAppDir, "rpc.cert")
 )
+
+//go:embed sample-kaspad.conf
+var sampleConfig string
 
 // RunServiceCommand is only set to a real function on Windows. It is used
 // to parse and execute service commands specified via the -s flag.
