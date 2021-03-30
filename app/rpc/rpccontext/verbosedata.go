@@ -56,7 +56,7 @@ func (ctx *Context) PopulateBlockWithVerboseData(block *appmessage.RPCBlock, dom
 			"invalid block")
 	}
 
-	childrenHashes, err := ctx.Domain.Consensus().GetBlockChildren(blockHash)
+	_, selectedParentHash, childrenHashes, err := ctx.Domain.Consensus().GetBlockRelations(blockHash)
 	if err != nil {
 		return err
 	}
@@ -65,7 +65,7 @@ func (ctx *Context) PopulateBlockWithVerboseData(block *appmessage.RPCBlock, dom
 		Hash:               blockHash.String(),
 		Difficulty:         ctx.GetDifficultyRatio(domainBlockHeader.Bits(), ctx.Config.ActiveNetParams),
 		ChildrenHashes:     hashes.ToStrings(childrenHashes),
-		SelectedParentHash: "", // TODO
+		SelectedParentHash: selectedParentHash.String(),
 		IsHeaderOnly:       blockInfo.BlockStatus == externalapi.StatusHeaderOnly,
 		BlueScore:          blockInfo.BlueScore,
 	}
