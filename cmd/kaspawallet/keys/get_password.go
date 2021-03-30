@@ -9,7 +9,7 @@ import (
 )
 
 // getPassword was adapted from https://gist.github.com/jlinoff/e8e26b4ffa38d379c7f1891fd174a6d0#file-getpassword2-go
-func getPassword(prompt string) string {
+func getPassword(prompt string) []byte {
 	// Get the initial state of the terminal.
 	initialTermState, e1 := term.GetState(syscall.Stdin)
 	if e1 != nil {
@@ -37,6 +37,5 @@ func getPassword(prompt string) string {
 	// Stop looking for ^C on the channel.
 	signal.Stop(c)
 
-	// Return the password as a string.
-	return string(p)
+	return p
 }

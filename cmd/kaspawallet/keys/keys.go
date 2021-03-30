@@ -204,8 +204,8 @@ func WriteKeysFile(path string, encryptedPrivateKeys [][]byte, publicKeys [][]by
 	return nil
 }
 
-func getAEAD(password string) (cipher.AEAD, error) {
-	key := argon2.IDKey([]byte(password), []byte("kaspawallet"), 1, 64*1024, uint8(runtime.NumCPU()), 32)
+func getAEAD(password []byte) (cipher.AEAD, error) {
+	key := argon2.IDKey(password, []byte("kaspawallet"), 1, 64*1024, uint8(runtime.NumCPU()), 32)
 	return chacha20poly1305.NewX(key)
 }
 

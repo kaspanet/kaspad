@@ -3,6 +3,7 @@ package keys
 import (
 	"crypto/cipher"
 	"crypto/rand"
+	"crypto/subtle"
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/libkaspawallet"
 	"github.com/pkg/errors"
 )
@@ -12,7 +13,7 @@ func CreateKeyPairs(numKeys uint32) (encryptedPrivateKeys, publicKeys [][]byte, 
 	password := getPassword("Enter password for the key file:")
 	confirmPassword := getPassword("Confirm password:")
 
-	if password != confirmPassword {
+	if subtle.ConstantTimeCompare(password, confirmPassword) != 1 {
 		return nil, nil, errors.New("Passwords are not identical")
 	}
 
