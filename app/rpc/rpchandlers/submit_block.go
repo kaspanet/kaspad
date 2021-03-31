@@ -8,7 +8,6 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
 	"github.com/pkg/errors"
-	"time"
 )
 
 // HandleSubmitBlock handles the respectively named RPC command
@@ -44,8 +43,6 @@ func HandleSubmitBlock(context *rpccontext.Context, _ *router.Router, request ap
 	}
 
 	log.Infof("Accepted block %s via submitBlock", consensushashing.BlockHash(domainBlock))
-
-	time.Sleep(4 * time.Minute)
 
 	response := appmessage.NewSubmitBlockResponseMessage()
 	return response, nil
