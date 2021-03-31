@@ -8,7 +8,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/utils/utxo"
 )
 
-func (csm *consensusStateManager) calculateMultiset(
+func (csm *consensusStateManager) calculateMultiset(stagingArea *model.StagingArea,
 	acceptanceData externalapi.AcceptanceData, blockGHOSTDAGData *model.BlockGHOSTDAGData, daaScore uint64) (model.Multiset, error) {
 
 	log.Debugf("calculateMultiset start for block with selected parent %s", blockGHOSTDAGData.SelectedParent())
@@ -20,7 +20,7 @@ func (csm *consensusStateManager) calculateMultiset(
 		return multiset.New(), nil
 	}
 
-	ms, err := csm.multisetStore.Get(csm.databaseContext, blockGHOSTDAGData.SelectedParent())
+	ms, err := csm.multisetStore.Get(csm.databaseContext, stagingArea, blockGHOSTDAGData.SelectedParent())
 	if err != nil {
 		return nil, err
 	}

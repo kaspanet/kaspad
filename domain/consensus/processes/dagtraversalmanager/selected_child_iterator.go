@@ -15,6 +15,7 @@ type selectedChildIterator struct {
 	current               *externalapi.DomainHash
 	err                   error
 	isClosed              bool
+	stagingArea           *model.StagingArea
 }
 
 func (s *selectedChildIterator) First() bool {
@@ -33,7 +34,7 @@ func (s *selectedChildIterator) Next() bool {
 		return true
 	}
 
-	data, err := s.reachabilityDataStore.ReachabilityData(s.databaseContext, s.current)
+	data, err := s.reachabilityDataStore.ReachabilityData(s.databaseContext, s.stagingArea, s.current)
 	if err != nil {
 		s.current = nil
 		s.err = err
@@ -41,7 +42,8 @@ func (s *selectedChildIterator) Next() bool {
 	}
 
 	for _, child := range data.Children() {
-		isChildInSelectedParentChainOfHighHash, err := s.dagTopologyManager.IsInSelectedParentChainOf(child, s.highHash)
+		isChildInSelectedParentChainOfHighHash, err := s.dagTopologyManager.IsInSelectedParentChainOf(
+			s.stagingArea, child, s.highHash)
 		if err != nil {
 			s.current = nil
 			s.err = err
@@ -80,8 +82,9 @@ func (s *selectedChildIterator) Close() error {
 
 // SelectedChildIterator returns a BlockIterator that iterates from lowHash (exclusive) to highHash (inclusive) over
 // highHash's selected parent chain
-func (dtm *dagTraversalManager) SelectedChildIterator(highHash, lowHash *externalapi.DomainHash) (model.BlockIterator, error) {
-	isLowHashInSelectedParentChainOfHighHash, err := dtm.dagTopologyManager.IsInSelectedParentChainOf(lowHash, highHash)
+func (dtm *dagTraversalManager) SelectedChildIterator(stagingArea *model.StagingArea, highHash, lowHash *externalapi.DomainHash) (model.BlockIterator, error) {
+	isLowHashInSelectedParentChainOfHighHash, err := dtm.dagTopologyManager.IsInSelectedParentChainOf(
+		stagingArea, lowHash, highHash)
 	if err != nil {
 		return nil, err
 	}
@@ -96,5 +99,6 @@ func (dtm *dagTraversalManager) SelectedChildIterator(highHash, lowHash *externa
 		highHash:              highHash,
 		lowHash:               lowHash,
 		current:               lowHash,
+		stagingArea:           stagingArea,
 	}, nil
 }

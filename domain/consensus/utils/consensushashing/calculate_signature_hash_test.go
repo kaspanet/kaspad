@@ -334,7 +334,7 @@ func signTx(b *testing.B, tx *externalapi.DomainTransaction, sigHashTypes []cons
 	if err != nil {
 		b.Fatalf("Error parsing private key hex: %+v", err)
 	}
-	keyPair, err := secp256k1.DeserializePrivateKeyFromSlice(privateKeyBytes)
+	keyPair, err := secp256k1.DeserializeSchnorrPrivateKeyFromSlice(privateKeyBytes)
 	if err != nil {
 		b.Fatalf("Error deserializing private key: %+v", err)
 	}

@@ -198,7 +198,11 @@ func templatesLoop(client *minerClient, miningAddr util.Address, errChan chan er
 			errChan <- errors.Wrapf(err, "Error getting block template from %s", client.safeRPCClient().Address())
 			return
 		}
-		templatemanager.Set(template)
+		err = templatemanager.Set(template)
+		if err != nil {
+			errChan <- errors.Wrapf(err, "Error setting block template from %s", client.safeRPCClient().Address())
+			return
+		}
 	}
 
 	getBlockTemplate()

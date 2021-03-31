@@ -12,13 +12,95 @@ package protowire;
 
 option go_package = "github.com/kaspanet/kaspad/protowire";
 
-import "p2p.proto";
-
 // RPCError represents a generic non-internal error.
 //
 // Receivers of any ResponseMessage are expected to check whether its error field is not null.
 message RPCError{
   string message = 1;
+}
+
+message RpcBlock {
+  RpcBlockHeader header = 1;
+  repeated RpcTransaction transactions = 2;
+  RpcBlockVerboseData verboseData = 3;
+}
+
+message RpcBlockHeader {
+  uint32 version = 1;
+  repeated string parentHashes = 2;
+  string hashMerkleRoot = 3;
+  string acceptedIdMerkleRoot = 4;
+  string utxoCommitment = 5;
+  int64 timestamp = 6;
+  uint32 bits = 7;
+  uint64 nonce = 8;
+}
+
+message RpcBlockVerboseData{
+  string hash = 1;
+  double difficulty = 11;
+  string selectedParentHash = 13;
+  repeated string transactionIds = 14;
+  bool isHeaderOnly = 15;
+  uint64 blueScore = 16;
+  repeated string childrenHashes = 17;
+}
+
+message RpcTransaction {
+  uint32 version = 1;
+  repeated RpcTransactionInput inputs = 2;
+  repeated RpcTransactionOutput outputs = 3;
+  uint64 lockTime = 4;
+  string subnetworkId = 5;
+  uint64 gas = 6;
+  string payload = 8;
+  RpcTransactionVerboseData verboseData = 9;
+}
+
+message RpcTransactionInput {
+  RpcOutpoint previousOutpoint = 1;
+  string signatureScript = 2;
+  uint64 sequence = 3;
+  RpcTransactionInputVerboseData verboseData = 4;
+}
+
+message RpcScriptPublicKey {
+  uint32 version = 1;
+  string scriptPublicKey = 2;
+}
+
+message RpcTransactionOutput {
+  uint64 amount = 1;
+  RpcScriptPublicKey scriptPublicKey = 2;
+  RpcTransactionOutputVerboseData verboseData = 3;
+}
+
+message RpcOutpoint {
+  string transactionId = 1;
+  uint32 index = 2;
+}
+
+message RpcUtxoEntry {
+  uint64 amount = 1;
+  RpcScriptPublicKey scriptPublicKey = 2;
+  uint64 blockDaaScore = 3;
+  bool isCoinbase = 4;
+}
+
+message RpcTransactionVerboseData{
+  string transactionId = 1;
+  string hash = 2;
+  uint64 size = 3;
+  string blockHash = 12;
+  uint64 blockTime = 14;
+}
+
+message RpcTransactionInputVerboseData{
+}
+
+message RpcTransactionOutputVerboseData{
+  string scriptPublicKeyType = 5;
+  string scriptPublicKeyAddress = 6;
 }
 
 // GetCurrentNetworkRequestMessage requests the network kaspad is currently running against.
@@ -37,7 +119,7 @@ message GetCurrentNetworkResponseMessage{
 //
 // See: GetBlockTemplateRequestMessage
 message SubmitBlockRequestMessage{
-  BlockMessage block = 1;
+  RpcBlock block = 2;
 }
 
 message SubmitBlockResponseMessage{
@@ -60,7 +142,7 @@ message GetBlockTemplateRequestMessage{
 }
 
 message GetBlockTemplateResponseMessage{
-  BlockMessage blockMessage = 1;
+  RpcBlock block = 3;
 
   // Whether kaspad thinks that it's synced.
   // Callers are discouraged (but not forbidden) from solving blocks when kaspad is not synced.
@@ -86,8 +168,7 @@ message NotifyBlockAddedResponseMessage{
 //
 // See: NotifyBlockAddedRequestMessage
 message BlockAddedNotificationMessage{
-  BlockMessage block = 1;
-  BlockVerboseData blockVerboseData = 2;
+  RpcBlock block = 3;
 }
 
 // GetPeerAddressesRequestMessage requests the list of known kaspad addresses in the
@@ -141,7 +222,7 @@ message GetMempoolEntriesResponseMessage{
 
 message MempoolEntry{
   uint64 fee = 1;
-  TransactionVerboseData transactionVerboseData = 2;
+  RpcTransaction transaction = 3;
 }
 
 // GetConnectedPeerInfoRequestMessage requests information about all the p2p peers
@@ -243,71 +324,8 @@ message GetBlockRequestMessage{
 }
 
 message GetBlockResponseMessage{
-  string blockHash = 1;
-  BlockVerboseData blockVerboseData = 2;
+  RpcBlock block = 3;
   RPCError error = 1000;
-}
-
-message BlockVerboseData{
-  string hash = 1;
-  uint32 version = 2;
-  string versionHex = 3;
-  string hashMerkleRoot = 4;
-  string acceptedIDMerkleRoot = 5;
-  string utxoCommitment = 6;
-  repeated TransactionVerboseData transactionVerboseData = 7;
-  int64 time = 8;
-  uint64 nonce = 9;
-  string bits = 10;
-  double difficulty = 11;
-  repeated string parentHashes = 12;
-  repeated string childrenHashes = 17;
-  string selectedParentHash = 13;
-  repeated string transactionIDs = 14;
-  bool isHeaderOnly = 15;
-  uint64 blueScore = 16;
-}
-
-message TransactionVerboseData{
-  string txId = 1;
-  string hash = 2;
-  uint64 size = 3;
-  uint32 version = 4;
-  uint64 lockTime = 5;
-  string subnetworkId = 6;
-  uint64 gas = 7;
-  string payload = 9;
-  repeated TransactionVerboseInput transactionVerboseInputs = 10;
-  repeated TransactionVerboseOutput transactionVerboseOutputs = 11;
-  string blockHash = 12;
-  uint64 time = 13;
-  uint64 blockTime = 14;
-}
-
-message TransactionVerboseInput{
-  string txId = 1;
-  uint32 outputIndex = 2;
-  ScriptSig scriptSig = 3;
-  uint64 sequence = 4;
-}
-
-message ScriptSig{
-  string asm = 1;
-  string hex = 2;
-}
-
-message TransactionVerboseOutput{
-  uint64 value = 1;
-  uint32 index = 2;
-  ScriptPublicKeyResult scriptPublicKey = 3;
-}
-
-message ScriptPublicKeyResult{
-  string asm = 1;
-  string hex = 2;
-  string type = 3;
-  string address = 4;
-  uint32 version = 5;
 }
 
 // GetSubnetworkRequestMessage requests information about a specific subnetwork
@@ -342,13 +360,13 @@ message GetVirtualSelectedParentChainFromBlockResponseMessage{
 // kaspad's current virtual.
 message GetBlocksRequestMessage{
   string lowHash = 1;
-  bool includeBlockVerboseData = 2;
+  bool includeBlocks = 2;
   bool includeTransactionVerboseData = 3;
 }
 
 message GetBlocksResponseMessage{
-  repeated string blockHashes = 1;
-  repeated BlockVerboseData blockVerboseData = 2;
+  repeated string blockHashes = 4;
+  repeated RpcBlock blocks = 3;
   RPCError error = 1000;
 }
 
@@ -464,44 +482,6 @@ message StopNotifyingUtxosChangedRequestMessage {
 
 message StopNotifyingUtxosChangedResponseMessage {
   RPCError error = 1000;
-}
-
-message RpcTransaction {
-  uint32 version = 1;
-  repeated RpcTransactionInput inputs = 2;
-  repeated RpcTransactionOutput outputs = 3;
-  uint64 lockTime = 4;
-  string subnetworkId = 5;
-  uint64 gas = 6;
-  string payload = 8;
-}
-
-message RpcTransactionInput {
-  RpcOutpoint previousOutpoint = 1;
-  string signatureScript = 2;
-  uint64 sequence = 3;
-}
-
-message RpcScriptPublicKey {
-  uint32 version = 1;
-  string scriptPublicKey = 2;
-}
-
-message RpcTransactionOutput {
-  uint64 amount = 1;
-  RpcScriptPublicKey scriptPublicKey = 2;
-}
-
-message RpcOutpoint {
-  string transactionId = 1;
-  uint32 index = 2;
-}
-
-message RpcUtxoEntry {
-  uint64 amount = 1;
-  RpcScriptPublicKey scriptPublicKey = 2;
-  uint64 blockDaaScore = 3;
-  bool isCoinbase = 4;
 }
 
 // GetUtxosByAddressesRequestMessage requests all current UTXOs for the given kaspad addresses

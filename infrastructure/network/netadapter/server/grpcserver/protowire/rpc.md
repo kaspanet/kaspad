@@ -4,30 +4,32 @@
 ## Table of Contents
 
 - [rpc.proto](#rpc.proto)
-    - [RPCError](#protowire.RPCError)
-    - [GetCurrentNetworkRequestMessage](#protowire.GetCurrentNetworkRequestMessage)
-    - [GetCurrentNetworkResponseMessage](#protowire.GetCurrentNetworkResponseMessage)
-    - [SubmitBlockRequestMessage](#protowire.SubmitBlockRequestMessage)
-    - [SubmitBlockResponseMessage](#protowire.SubmitBlockResponseMessage)
-    - [GetBlockTemplateRequestMessage](#protowire.GetBlockTemplateRequestMessage)
-    - [GetBlockTemplateResponseMessage](#protowire.GetBlockTemplateResponseMessage)
-    - [NotifyBlockAddedRequestMessage](#protowire.NotifyBlockAddedRequestMessage)
-    - [NotifyBlockAddedResponseMessage](#protowire.NotifyBlockAddedResponseMessage)
-    - [BlockAddedNotificationMessage](#protowire.BlockAddedNotificationMessage)
-    - [GetPeerAddressesRequestMessage](#protowire.GetPeerAddressesRequestMessage)
-    - [GetPeerAddressesResponseMessage](#protowire.GetPeerAddressesResponseMessage)
-    - [GetPeerAddressesKnownAddressMessage](#protowire.GetPeerAddressesKnownAddressMessage)
-    - [GetSelectedTipHashRequestMessage](#protowire.GetSelectedTipHashRequestMessage)
-    - [GetSelectedTipHashResponseMessage](#protowire.GetSelectedTipHashResponseMessage)
-    - [GetMempoolEntryRequestMessage](#protowire.GetMempoolEntryRequestMessage)
-    - [GetMempoolEntryResponseMessage](#protowire.GetMempoolEntryResponseMessage)
-    - [GetMempoolEntriesRequestMessage](#protowire.GetMempoolEntriesRequestMessage)
-    - [GetMempoolEntriesResponseMessage](#protowire.GetMempoolEntriesResponseMessage)
-    - [MempoolEntry](#protowire.MempoolEntry)
-    - [GetConnectedPeerInfoRequestMessage](#protowire.GetConnectedPeerInfoRequestMessage)
-    - [GetConnectedPeerInfoResponseMessage](#protowire.GetConnectedPeerInfoResponseMessage)
-    - [GetConnectedPeerInfoMessage](#protowire.GetConnectedPeerInfoMessage)
-    - [AddPeerRequestMessage](#protowire.AddPeerRequestMessage)
+  - [RPCError](#protowire.RPCError)
+  - [GetCurrentNetworkRequestMessage](#protowire.GetCurrentNetworkRequestMessage)
+  - [GetCurrentNetworkResponseMessage](#protowire.GetCurrentNetworkResponseMessage)
+  - [SubmitBlockRequestMessage](#protowire.SubmitBlockRequestMessage)
+  - [RpcBlock](#protowire.RpcBlock)
+  - [RpcBlockHeader](#protowire.RpcBlockHeader)
+  - [SubmitBlockResponseMessage](#protowire.SubmitBlockResponseMessage)
+  - [GetBlockTemplateRequestMessage](#protowire.GetBlockTemplateRequestMessage)
+  - [GetBlockTemplateResponseMessage](#protowire.GetBlockTemplateResponseMessage)
+  - [NotifyBlockAddedRequestMessage](#protowire.NotifyBlockAddedRequestMessage)
+  - [NotifyBlockAddedResponseMessage](#protowire.NotifyBlockAddedResponseMessage)
+  - [BlockAddedNotificationMessage](#protowire.BlockAddedNotificationMessage)
+  - [GetPeerAddressesRequestMessage](#protowire.GetPeerAddressesRequestMessage)
+  - [GetPeerAddressesResponseMessage](#protowire.GetPeerAddressesResponseMessage)
+  - [GetPeerAddressesKnownAddressMessage](#protowire.GetPeerAddressesKnownAddressMessage)
+  - [GetSelectedTipHashRequestMessage](#protowire.GetSelectedTipHashRequestMessage)
+  - [GetSelectedTipHashResponseMessage](#protowire.GetSelectedTipHashResponseMessage)
+  - [GetMempoolEntryRequestMessage](#protowire.GetMempoolEntryRequestMessage)
+  - [GetMempoolEntryResponseMessage](#protowire.GetMempoolEntryResponseMessage)
+  - [GetMempoolEntriesRequestMessage](#protowire.GetMempoolEntriesRequestMessage)
+  - [GetMempoolEntriesResponseMessage](#protowire.GetMempoolEntriesResponseMessage)
+  - [MempoolEntry](#protowire.MempoolEntry)
+  - [GetConnectedPeerInfoRequestMessage](#protowire.GetConnectedPeerInfoRequestMessage)
+  - [GetConnectedPeerInfoResponseMessage](#protowire.GetConnectedPeerInfoResponseMessage)
+  - [GetConnectedPeerInfoMessage](#protowire.GetConnectedPeerInfoMessage)
+  - [AddPeerRequestMessage](#protowire.AddPeerRequestMessage)
     - [AddPeerResponseMessage](#protowire.AddPeerResponseMessage)
     - [SubmitTransactionRequestMessage](#protowire.SubmitTransactionRequestMessage)
     - [SubmitTransactionResponseMessage](#protowire.SubmitTransactionResponseMessage)
@@ -41,9 +43,7 @@
     - [BlockVerboseData](#protowire.BlockVerboseData)
     - [TransactionVerboseData](#protowire.TransactionVerboseData)
     - [TransactionVerboseInput](#protowire.TransactionVerboseInput)
-    - [ScriptSig](#protowire.ScriptSig)
     - [TransactionVerboseOutput](#protowire.TransactionVerboseOutput)
-    - [ScriptPublicKeyResult](#protowire.ScriptPublicKeyResult)
     - [GetSubnetworkRequestMessage](#protowire.GetSubnetworkRequestMessage)
     - [GetSubnetworkResponseMessage](#protowire.GetSubnetworkResponseMessage)
     - [GetVirtualSelectedParentChainFromBlockRequestMessage](#protowire.GetVirtualSelectedParentChainFromBlockRequestMessage)
@@ -163,26 +163,43 @@ Possible networks are: Mainnet, Testnet, Simnet, Devnet
 <a name="protowire.SubmitBlockRequestMessage"></a>
 
 ### SubmitBlockRequestMessage
-SubmitBlockRequestMessage requests to submit a block into the DAG.
-Blocks are generally expected to have been generated using the getBlockTemplate call.
+
+SubmitBlockRequestMessage requests to submit a block into the DAG. Blocks are generally expected to have been generated
+using the getBlockTemplate call.
 
 See: GetBlockTemplateRequestMessage
 
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| block | [RpcBlock](#protowire.RpcBlock) |  |  |
+
+<a name="protowire.RpcBlock"></a>
+
+### RpcBlock
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| block | [BlockMessage](#protowire.BlockMessage) |  |  |
+| header | [RpcBlockHeader](#protowire.RpcBlockHeader) |  |  |
+| transactions | [RpcTransaction](#protowire.RpcTransaction) | repeated |  |
 
+<a name="protowire.RpcBlockHeader"></a>
 
+### RpcBlockHeader
 
-
-
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| version | [uint32](#uint32) |  |  |
+| parentHashes | [string](#string) | repeated |  |
+| hashMerkleRoot | [string](#string) |  |  |
+| acceptedIdMerkleRoot | [string](#string) |  |  |
+| utxoCommitment | [string](#string) |  |  |
+| timestamp | [int64](#int64) |  |  |
+| bits | [uint32](#uint32) |  |  |
+| nonce | [uint64](#uint64) |  |  |
 
 <a name="protowire.SubmitBlockResponseMessage"></a>
 
 ### SubmitBlockResponseMessage
-
-
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
@@ -220,7 +237,7 @@ See: SubmitBlockRequestMessage
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| blockMessage | [BlockMessage](#protowire.BlockMessage) |  |  |
+| block | [RpcBlock](#protowire.RpcBlock) |  |  |
 | isSynced | [bool](#bool) |  | Whether kaspad thinks that it&#39;s synced. Callers are discouraged (but not forbidden) from solving blocks when kaspad is not synced. That is because when kaspad isn&#39;t in sync with the rest of the network there&#39;s a high chance the block will never be accepted, thus the solving effort would have been wasted. |
 | error | [RPCError](#protowire.RPCError) |  |  |
 
@@ -267,7 +284,6 @@ See: NotifyBlockAddedRequestMessage
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| block | [BlockMessage](#protowire.BlockMessage) |  |  |
 | blockVerboseData | [BlockVerboseData](#protowire.BlockVerboseData) |  |  |
 
 
@@ -653,17 +669,9 @@ GetBlockRequestMessage requests information about a specific block
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | hash | [string](#string) |  |  |
-| version | [uint32](#uint32) |  |  |
-| versionHex | [string](#string) |  |  |
-| hashMerkleRoot | [string](#string) |  |  |
-| acceptedIDMerkleRoot | [string](#string) |  |  |
-| utxoCommitment | [string](#string) |  |  |
+| block | [RpcBlock](#protowire.RpcBlock) |  |  |
 | transactionVerboseData | [TransactionVerboseData](#protowire.TransactionVerboseData) | repeated |  |
-| time | [int64](#int64) |  |  |
-| nonce | [uint64](#uint64) |  |  |
-| bits | [string](#string) |  |  |
 | difficulty | [double](#double) |  |  |
-| parentHashes | [string](#string) | repeated |  |
 | childrenHashes | [string](#string) | repeated |  |
 | selectedParentHash | [string](#string) |  |  |
 | transactionIDs | [string](#string) | repeated |  |
@@ -686,16 +694,11 @@ GetBlockRequestMessage requests information about a specific block
 | txId | [string](#string) |  |  |
 | hash | [string](#string) |  |  |
 | size | [uint64](#uint64) |  |  |
-| version | [uint32](#uint32) |  |  |
-| lockTime | [uint64](#uint64) |  |  |
-| subnetworkId | [string](#string) |  |  |
-| gas | [uint64](#uint64) |  |  |
-| payload | [string](#string) |  |  |
 | transactionVerboseInputs | [TransactionVerboseInput](#protowire.TransactionVerboseInput) | repeated |  |
 | transactionVerboseOutputs | [TransactionVerboseOutput](#protowire.TransactionVerboseOutput) | repeated |  |
 | blockHash | [string](#string) |  |  |
-| time | [uint64](#uint64) |  |  |
 | blockTime | [uint64](#uint64) |  |  |
+| transaction | [RpcTransaction](#protowire.RpcTransaction) |  |  |
 
 
 
@@ -708,30 +711,6 @@ GetBlockRequestMessage requests information about a specific block
 
 
 
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| txId | [string](#string) |  |  |
-| outputIndex | [uint32](#uint32) |  |  |
-| scriptSig | [ScriptSig](#protowire.ScriptSig) |  |  |
-| sequence | [uint64](#uint64) |  |  |
-
-
-
-
-
-
-<a name="protowire.ScriptSig"></a>
-
-### ScriptSig
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| asm | [string](#string) |  |  |
-| hex | [string](#string) |  |  |
-
-
 
 
 
@@ -740,32 +719,10 @@ GetBlockRequestMessage requests information about a specific block
 
 ### TransactionVerboseOutput
 
-
-
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| value | [uint64](#uint64) |  |  |
-| index | [uint32](#uint32) |  |  |
-| scriptPublicKey | [ScriptPublicKeyResult](#protowire.ScriptPublicKeyResult) |  |  |
-
-
-
-
-
-
-<a name="protowire.ScriptPublicKeyResult"></a>
-
-### ScriptPublicKeyResult
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| asm | [string](#string) |  |  |
-| hex | [string](#string) |  |  |
-| type | [string](#string) |  |  |
-| address | [string](#string) |  |  |
-| version | [uint32](#uint32) |  |  |
+| scriptPublicKeyType | [string](#string) |  |  |
+| scriptPublicKeyAddress | [string](#string) |  |  |
 
 
 

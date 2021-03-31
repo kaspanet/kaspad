@@ -24,10 +24,6 @@ func (css *consensusStateStore) FinishImportingPruningPointUTXOSet(dbContext mod
 func (css *consensusStateStore) ImportPruningPointUTXOSetIntoVirtualUTXOSet(dbContext model.DBWriter,
 	pruningPointUTXOSetIterator externalapi.ReadOnlyUTXOSetIterator) error {
 
-	if css.virtualUTXODiffStaging != nil {
-		return errors.New("cannot import virtual UTXO set while virtual UTXO diff is staged")
-	}
-
 	hadStartedImportingPruningPointUTXOSet, err := css.HadStartedImportingPruningPointUTXOSet(dbContext)
 	if err != nil {
 		return err

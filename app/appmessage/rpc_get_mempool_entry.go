@@ -28,8 +28,8 @@ type GetMempoolEntryResponseMessage struct {
 
 // MempoolEntry represents a transaction in the mempool.
 type MempoolEntry struct {
-	Fee                    uint64
-	TransactionVerboseData *TransactionVerboseData
+	Fee         uint64
+	Transaction *RPCTransaction
 }
 
 // Command returns the protocol command string for the message
@@ -38,11 +38,11 @@ func (msg *GetMempoolEntryResponseMessage) Command() MessageCommand {
 }
 
 // NewGetMempoolEntryResponseMessage returns a instance of the message
-func NewGetMempoolEntryResponseMessage(fee uint64, transactionVerboseData *TransactionVerboseData) *GetMempoolEntryResponseMessage {
+func NewGetMempoolEntryResponseMessage(fee uint64, transaction *RPCTransaction) *GetMempoolEntryResponseMessage {
 	return &GetMempoolEntryResponseMessage{
 		Entry: &MempoolEntry{
-			Fee:                    fee,
-			TransactionVerboseData: transactionVerboseData,
+			Fee:         fee,
+			Transaction: transaction,
 		},
 	}
 }
