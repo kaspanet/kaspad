@@ -153,7 +153,7 @@ func createFileDirectoryIfDoesntExist(path string) error {
 		return nil
 	}
 
-	return os.MkdirAll(dir, 0700)
+	return os.MkdirAll(dir, 0600)
 }
 
 func pathExists(path string) (bool, error) {
