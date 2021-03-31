@@ -57,7 +57,7 @@ func TestUTXOCommitment(t *testing.T) {
 		checkBlockUTXOCommitment(t, consensus, blockCHash, "C")
 		// Block D:
 		blockDTransaction, err := testutils.CreateTransaction(
-			blockB.Transactions[transactionhelper.CoinbaseTransactionIndex])
+			blockB.Transactions[transactionhelper.CoinbaseTransactionIndex], 1)
 		if err != nil {
 			t.Fatalf("Error creating transaction: %+v", err)
 		}

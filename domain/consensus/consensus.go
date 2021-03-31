@@ -166,7 +166,10 @@ func (s *consensus) GetBlockInfo(blockHash *externalapi.DomainHash) (*externalap
 	return blockInfo, nil
 }
 
-func (s *consensus) GetBlockChildren(blockHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error) {
+func (s *consensus) GetBlockRelations(blockHash *externalapi.DomainHash) (
+	parents []*externalapi.DomainHash, selectedParent *externalapi.DomainHash,
+	children []*externalapi.DomainHash, err error) {
+
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
@@ -174,10 +177,15 @@ func (s *consensus) GetBlockChildren(blockHash *externalapi.DomainHash) ([]*exte
 
 	blockRelation, err := s.blockRelationStore.BlockRelation(s.databaseContext, stagingArea, blockHash)
 	if err != nil {
-		return nil, err
+		return nil, nil, nil, err
 	}
 
-	return blockRelation.Children, nil
+	blockGHOSTDAGData, err := s.ghostdagDataStore.Get(s.databaseContext, stagingArea, blockHash)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+
+	return blockRelation.Parents, blockGHOSTDAGData.SelectedParent(), blockRelation.Children, nil
 }
 
 func (s *consensus) GetBlockAcceptanceData(blockHash *externalapi.DomainHash) (externalapi.AcceptanceData, error) {

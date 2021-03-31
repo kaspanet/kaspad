@@ -189,7 +189,10 @@ func mineOnTips(client *rpc.Client) (appmessage.RejectReason, error) {
 		return appmessage.RejectReasonNone, err
 	}
 
-	domainBlock := appmessage.MsgBlockToDomainBlock(template.MsgBlock)
+	domainBlock, err := appmessage.RPCBlockToDomainBlock(template.Block)
+	if err != nil {
+		return appmessage.RejectReasonNone, err
+	}
 	mine.SolveBlock(domainBlock)
 
 	return client.SubmitBlock(domainBlock)

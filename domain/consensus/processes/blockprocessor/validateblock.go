@@ -5,6 +5,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
+	"github.com/kaspanet/kaspad/util/staging"
 	"github.com/pkg/errors"
 )
 
@@ -70,7 +71,7 @@ func (bp *blockProcessor) validateBlock(stagingArea *model.StagingArea, block *e
 				stagingArea := model.NewStagingArea()
 				hash := consensushashing.BlockHash(block)
 				bp.blockStatusStore.Stage(stagingArea, hash, externalapi.StatusInvalid)
-				commitErr := bp.commitAllChanges(stagingArea)
+				commitErr := staging.CommitAllChanges(bp.databaseContext, stagingArea)
 				if commitErr != nil {
 					return commitErr
 				}

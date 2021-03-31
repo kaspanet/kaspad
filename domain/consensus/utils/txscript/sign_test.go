@@ -192,7 +192,7 @@ func TestSignTxOutput(t *testing.T) {
 		for i := range tx.Inputs {
 			msg := fmt.Sprintf("%d:%d", hashType, i)
 
-			key, err := secp256k1.GeneratePrivateKey()
+			key, err := secp256k1.GenerateSchnorrKeyPair()
 			if err != nil {
 				t.Errorf("failed to make privKey for %s: %s",
 					msg, err)
@@ -243,7 +243,7 @@ func TestSignTxOutput(t *testing.T) {
 		for i := range tx.Inputs {
 			msg := fmt.Sprintf("%d:%d", hashType, i)
 
-			key, err := secp256k1.GeneratePrivateKey()
+			key, err := secp256k1.GenerateSchnorrKeyPair()
 			if err != nil {
 				t.Errorf("failed to make privKey for %s: %s",
 					msg, err)
@@ -321,7 +321,7 @@ func TestSignTxOutput(t *testing.T) {
 		for i := range tx.Inputs {
 			msg := fmt.Sprintf("%d:%d", hashType, i)
 
-			key, err := secp256k1.GeneratePrivateKey()
+			key, err := secp256k1.GenerateSchnorrKeyPair()
 			if err != nil {
 				t.Errorf("failed to make privKey for %s: %s",
 					msg, err)
@@ -386,7 +386,7 @@ func TestSignTxOutput(t *testing.T) {
 		for i := range tx.Inputs {
 			msg := fmt.Sprintf("%d:%d", hashType, i)
 
-			key, err := secp256k1.GeneratePrivateKey()
+			key, err := secp256k1.GenerateSchnorrKeyPair()
 			if err != nil {
 				t.Errorf("failed to make privKey for %s: %s",
 					msg, err)
@@ -476,7 +476,7 @@ func TestSignTxOutput(t *testing.T) {
 func generateKeys() (keyPair *secp256k1.SchnorrKeyPair, scriptPublicKey *externalapi.ScriptPublicKey,
 	addressPubKeyHash *util.AddressPubKeyHash, err error) {
 
-	key, err := secp256k1.GeneratePrivateKey()
+	key, err := secp256k1.GenerateSchnorrKeyPair()
 	if err != nil {
 		return nil, nil, nil, errors.Errorf("failed to make privKey: %s", err)
 	}
@@ -813,7 +813,7 @@ var sigScriptTests = []tstSigScript{
 func TestSignatureScript(t *testing.T) {
 	t.Parallel()
 
-	privKey, _ := secp256k1.DeserializePrivateKey(&privKeyD)
+	privKey, _ := secp256k1.DeserializeSchnorrPrivateKey(&privKeyD)
 
 nexttest:
 	for i := range sigScriptTests {
