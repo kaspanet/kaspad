@@ -120,8 +120,7 @@ func handleFoundBlock(client *minerClient, block *externalapi.DomainBlock) error
 	if err != nil {
 		if nativeerrors.Is(err, router.ErrTimeout) {
 			log.Warnf("Got timeout while submitting block %s to %s: %s", blockHash, client.safeRPCClient().Address(), err)
-			//client.reconnect()
-			return nil
+			return client.reconnect()
 		}
 		if rejectReason == appmessage.RejectReasonIsInIBD {
 			const waitTime = 1 * time.Second
@@ -191,7 +190,10 @@ func templatesLoop(client *minerClient, miningAddr util.Address, errChan chan er
 		template, err := client.safeRPCClient().GetBlockTemplate(miningAddr.String())
 		if nativeerrors.Is(err, router.ErrTimeout) {
 			log.Warnf("Got timeout while requesting block template from %s: %s", client.safeRPCClient().Address(), err)
-			client.reconnect()
+			reconnectErr := client.reconnect()
+			if reconnectErr != nil {
+				errChan <- reconnectErr
+			}
 			return
 		}
 		if err != nil {

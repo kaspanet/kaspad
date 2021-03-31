@@ -27,35 +27,17 @@ func (mc *minerClient) safeRPCClient() *rpcclient.RPCClient {
 	return mc.rpcClient
 }
 
-func (mc *minerClient) reconnect() {
+func (mc *minerClient) reconnect() error {
 	swapped := atomic.CompareAndSwapUint32(&mc.isReconnecting, 0, 1)
 	if !swapped {
-		return
+		return nil
 	}
-
 	defer atomic.StoreUint32(&mc.isReconnecting, 0)
 
 	mc.clientLock.Lock()
 	defer mc.clientLock.Unlock()
 
-	retryDuration := time.Second
-	const maxRetryDuration = time.Minute
-	log.Infof("Reconnecting RPC connection")
-	for {
-		err := mc.connect()
-		if err == nil {
-			return
-		}
-
-		if retryDuration < time.Minute {
-			retryDuration *= 2
-		} else {
-			retryDuration = maxRetryDuration
-		}
-
-		log.Errorf("Got error '%s' while reconnecting. Trying again in %s", err, retryDuration)
-		time.Sleep(retryDuration)
-	}
+	return mc.rpcClient.Reconnect()
 }
 
 func (mc *minerClient) connect() error {
