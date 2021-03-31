@@ -1,8 +1,6 @@
 package main
 
-import (
-	"github.com/pkg/errors"
-)
+import "github.com/pkg/errors"
 
 func main() {
 	subCmd, config := parseCommandLine()
@@ -15,6 +13,12 @@ func main() {
 		err = balance(config.(*balanceConfig))
 	case sendSubCmd:
 		err = send(config.(*sendConfig))
+	case createUnsignedTransactionSubCmd:
+		err = createUnsignedTransaction(config.(*createUnsignedTransactionConfig))
+	case signSubCmd:
+		err = sign(config.(*signConfig))
+	case broadcastSubCmd:
+		err = broadcast(config.(*broadcastConfig))
 	default:
 		err = errors.Errorf("Unknown sub-command '%s'\n", subCmd)
 	}
