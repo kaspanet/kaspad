@@ -16,9 +16,9 @@ const defaultTimeout = 30 * time.Second
 type RPCClient struct {
 	*grpcclient.GRPCClient
 
-	rpcAddress      string
-	rpcRouter       *rpcRouter
-	shouldReconnect bool
+	rpcAddress string
+	rpcRouter  *rpcRouter
+	isClosed   bool
 
 	timeout time.Duration
 }
@@ -26,9 +26,9 @@ type RPCClient struct {
 // NewRPCClient creates a new RPC client
 func NewRPCClient(rpcAddress string) (*RPCClient, error) {
 	rpcClient := &RPCClient{
-		rpcAddress:      rpcAddress,
-		timeout:         defaultTimeout,
-		shouldReconnect: true,
+		rpcAddress: rpcAddress,
+		timeout:    defaultTimeout,
+		isClosed:   false,
 	}
 	err := rpcClient.connect()
 	if err != nil {
@@ -62,14 +62,14 @@ func (c *RPCClient) disconnect() error {
 }
 
 func (c *RPCClient) Reconnect() error {
-	if !c.shouldReconnect {
+	if c.isClosed {
 		return errors.Errorf("Cannot reconnect to a closed client")
 	}
 	return c.disconnect()
 }
 
 func (c *RPCClient) handleClientDisconnected() {
-	if c.shouldReconnect {
+	if !c.isClosed {
 		for {
 			err := c.connect()
 			if err == nil {
@@ -91,7 +91,7 @@ func (c *RPCClient) SetTimeout(timeout time.Duration) {
 
 // Close closes the RPC client
 func (c *RPCClient) Close() {
-	c.shouldReconnect = false
+	c.isClosed = true
 	c.rpcRouter.router.Close()
 }
 
