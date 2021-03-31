@@ -5,39 +5,16 @@ import (
 	"github.com/kaspanet/kaspad/infrastructure/logger"
 	"github.com/kaspanet/kaspad/infrastructure/network/rpcclient"
 	"github.com/pkg/errors"
-	"sync"
-	"sync/atomic"
 	"time"
 )
 
 const minerTimeout = 10 * time.Second
 
 type minerClient struct {
-	isReconnecting uint32
-	clientLock     sync.RWMutex
-	rpcClient      *rpcclient.RPCClient
+	*rpcclient.RPCClient
 
 	cfg                        *configFlags
 	blockAddedNotificationChan chan struct{}
-}
-
-func (mc *minerClient) safeRPCClient() *rpcclient.RPCClient {
-	mc.clientLock.RLock()
-	defer mc.clientLock.RUnlock()
-	return mc.rpcClient
-}
-
-func (mc *minerClient) reconnect() error {
-	swapped := atomic.CompareAndSwapUint32(&mc.isReconnecting, 0, 1)
-	if !swapped {
-		return nil
-	}
-	defer atomic.StoreUint32(&mc.isReconnecting, 0)
-
-	mc.clientLock.Lock()
-	defer mc.clientLock.Unlock()
-
-	return mc.rpcClient.Reconnect()
 }
 
 func (mc *minerClient) connect() error {
@@ -45,14 +22,15 @@ func (mc *minerClient) connect() error {
 	if err != nil {
 		return err
 	}
-	mc.rpcClient, err = rpcclient.NewRPCClient(rpcAddress)
+	rpcClient, err := rpcclient.NewRPCClient(rpcAddress)
 	if err != nil {
 		return err
 	}
-	mc.rpcClient.SetTimeout(minerTimeout)
-	mc.rpcClient.SetLogger(backendLog, logger.LevelTrace)
+	mc.RPCClient = rpcClient
+	mc.SetTimeout(minerTimeout)
+	mc.SetLogger(backendLog, logger.LevelTrace)
 
-	err = mc.rpcClient.RegisterForBlockAddedNotifications(func(_ *appmessage.BlockAddedNotificationMessage) {
+	err = mc.RegisterForBlockAddedNotifications(func(_ *appmessage.BlockAddedNotificationMessage) {
 		select {
 		case mc.blockAddedNotificationChan <- struct{}{}:
 		default:
