@@ -179,9 +179,9 @@ func TestCheckTransactionStandard(t *testing.T) {
 		Sequence:         constants.MaxTxInSequenceNum,
 	}
 	addrHash := [32]byte{0x01}
-	addr, err := util.NewAddressPubKeyHash(addrHash[:], util.Bech32PrefixKaspaTest)
+	addr, err := util.NewAddressPubKey(addrHash[:], util.Bech32PrefixKaspaTest)
 	if err != nil {
-		t.Fatalf("NewAddressPubKeyHash: unexpected error: %v", err)
+		t.Fatalf("NewAddressPubKey: unexpected error: %v", err)
 	}
 	dummyScriptPublicKey, err := txscript.PayToAddrScript(addr)
 	if err != nil {

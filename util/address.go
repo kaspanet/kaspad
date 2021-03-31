@@ -79,11 +79,11 @@ func (prefix Bech32Prefix) String() string {
 }
 
 // encodeAddress returns a human-readable payment address given a network prefix
-// and a blake2b hash which encodes the kaspa network and address type. It is used
-// in both pay-to-pubkey-hash (P2PKH) and pay-to-script-hash (P2SH) address
+// and a payload which encodes the kaspa network and address type. It is used
+// in both pay-to-pubkey (P2PK) and pay-to-script-hash (P2SH) address
 // encoding.
-func encodeAddress(prefix Bech32Prefix, hash256 []byte, version byte) string {
-	return bech32.Encode(prefix.String(), hash256[:blake2b.Size256], version)
+func encodeAddress(prefix Bech32Prefix, payload []byte, version byte) string {
+	return bech32.Encode(prefix.String(), payload, version)
 }
 
 // Address is an interface type for any type of destination a transaction
@@ -139,95 +139,78 @@ func DecodeAddress(addr string, expectedPrefix Bech32Prefix) (Address, error) {
 			prefix)
 	}
 
-	// Switch on decoded length to determine the type.
-	switch len(decoded) {
-	case blake2b.Size256: // P2PKH or P2SH
-		switch version {
-		case pubKeyHashAddrID:
-			return newAddressPubKeyHash(prefix, decoded)
-		case scriptHashAddrID:
-			return newAddressScriptHashFromHash(prefix, decoded)
-		default:
-			return nil, ErrUnknownAddressType
-		}
+	switch version {
+	case pubKeyHashAddrID:
+		return newAddressPubKey(prefix, decoded)
+	case scriptHashAddrID:
+		return newAddressScriptHashFromHash(prefix, decoded)
 	default:
-		return nil, errors.New("decoded address is of unknown size")
+		return nil, ErrUnknownAddressType
 	}
 }
 
-// AddressPubKeyHash is an Address for a pay-to-pubkey-hash (P2PKH)
+const PublicKeySize = 32
+
+// AddressPubKey is an Address for a pay-to-pubkey (P2PK)
 // transaction.
-type AddressPubKeyHash struct {
+type AddressPubKey struct {
 	prefix Bech32Prefix
-	hash   [blake2b.Size256]byte
+	pubKey [PublicKeySize]byte
 }
 
-// NewAddressPubKeyHashFromPublicKey returns a new AddressPubKeyHash from given public key
-func NewAddressPubKeyHashFromPublicKey(publicKey []byte, prefix Bech32Prefix) (*AddressPubKeyHash, error) {
-	pkHash := HashBlake2b(publicKey)
-	return newAddressPubKeyHash(prefix, pkHash)
-}
-
-// NewAddressPubKeyHash returns a new AddressPubKeyHash. pkHash mustbe 20
+// NewAddressPubKey returns a new AddressPubKey. pkHash mustbe 33
 // bytes.
-func NewAddressPubKeyHash(pkHash []byte, prefix Bech32Prefix) (*AddressPubKeyHash, error) {
-	return newAddressPubKeyHash(prefix, pkHash)
+func NewAddressPubKey(publicKey []byte, prefix Bech32Prefix) (*AddressPubKey, error) {
+	return newAddressPubKey(prefix, publicKey)
 }
 
-// newAddressPubKeyHash is the internal API to create a pubkey hash address
+// newAddressPubKey is the internal API to create a pubkey address
 // with a known leading identifier byte for a network, rather than looking
 // it up through its parameters. This is useful when creating a new address
 // structure from a string encoding where the identifier byte is already
 // known.
-func newAddressPubKeyHash(prefix Bech32Prefix, pkHash []byte) (*AddressPubKeyHash, error) {
+func newAddressPubKey(prefix Bech32Prefix, publicKey []byte) (*AddressPubKey, error) {
 	// Check for a valid pubkey hash length.
-	if len(pkHash) != blake2b.Size256 {
-		return nil, errors.Errorf("pkHash must be %d bytes", blake2b.Size256)
+	if len(publicKey) != PublicKeySize {
+		return nil, errors.Errorf("publicKey must be %d bytes", PublicKeySize)
 	}
 
-	addr := &AddressPubKeyHash{prefix: prefix}
-	copy(addr.hash[:], pkHash)
+	addr := &AddressPubKey{prefix: prefix}
+	copy(addr.pubKey[:], publicKey)
 	return addr, nil
 }
 
 // EncodeAddress returns the string encoding of a pay-to-pubkey-hash
 // address. Part of the Address interface.
-func (a *AddressPubKeyHash) EncodeAddress() string {
-	return encodeAddress(a.prefix, a.hash[:], pubKeyHashAddrID)
+func (a *AddressPubKey) EncodeAddress() string {
+	return encodeAddress(a.prefix, a.pubKey[:], pubKeyHashAddrID)
 }
 
 // ScriptAddress returns the bytes to be included in a txout script to pay
-// to a pubkey hash. Part of the Address interface.
-func (a *AddressPubKeyHash) ScriptAddress() []byte {
-	return a.hash[:]
+// to a pubkey. Part of the Address interface.
+func (a *AddressPubKey) ScriptAddress() []byte {
+	return a.pubKey[:]
 }
 
-// IsForPrefix returns whether or not the pay-to-pubkey-hash address is associated
+// IsForPrefix returns whether or not the pay-to-pubkey address is associated
 // with the passed kaspa network.
-func (a *AddressPubKeyHash) IsForPrefix(prefix Bech32Prefix) bool {
+func (a *AddressPubKey) IsForPrefix(prefix Bech32Prefix) bool {
 	return a.prefix == prefix
 }
 
 // Prefix returns the prefix for this address
-func (a *AddressPubKeyHash) Prefix() Bech32Prefix {
+func (a *AddressPubKey) Prefix() Bech32Prefix {
 	return a.prefix
 }
 
-// String returns a human-readable string for the pay-to-pubkey-hash address.
+// String returns a human-readable string for the pay-to-pubkey address.
 // This is equivalent to calling EncodeAddress, but is provided so the type can
 // be used as a fmt.Stringer.
-func (a *AddressPubKeyHash) String() string {
+func (a *AddressPubKey) String() string {
 	return a.EncodeAddress()
 }
 
-// HashBlake2b returns the underlying array of the pubkey hash. This can be useful
-// when an array is more appropiate than a slice (for example, when used as map
-// keys).
-func (a *AddressPubKeyHash) HashBlake2b() *[blake2b.Size256]byte {
-	return &a.hash
-}
-
-// AddressScriptHash is an Address for a pay-to-script-hash (P2SH)
+// AddressScriptHash is an Address for a pay-to-script-pubKey (P2SH)
 // transaction.
 type AddressScriptHash struct {
 	prefix Bech32Prefix

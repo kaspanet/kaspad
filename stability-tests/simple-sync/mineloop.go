@@ -97,7 +97,7 @@ func generateAddress() (util.Address, error) {
 		return nil, err
 	}
 
-	return util.NewAddressPubKeyHashFromPublicKey(pubKeySerialized[:], activeConfig().ActiveNetParams.Prefix)
+	return util.NewAddressPubKey(pubKeySerialized[:], activeConfig().ActiveNetParams.Prefix)
 }
 
 func areTipsAreEqual(resultA, resultB *appmessage.GetBlockDAGInfoResponseMessage) bool {

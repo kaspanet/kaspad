@@ -48,16 +48,7 @@ func SignatureScript(tx *externalapi.DomainTransaction, idx int, hashType consen
 		return nil, err
 	}
 
-	pk, err := privKey.SchnorrPublicKey()
-	if err != nil {
-		return nil, err
-	}
-	pkData, err := pk.Serialize()
-	if err != nil {
-		return nil, err
-	}
-
-	return NewScriptBuilder().AddData(sig).AddData(pkData[:]).Script()
+	return NewScriptBuilder().AddData(sig).Script()
 }
 
 func sign(dagParams *dagconfig.Params, tx *externalapi.DomainTransaction, idx int,

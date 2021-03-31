@@ -32,7 +32,7 @@ func TestAddresses(t *testing.T) {
 			addr:    "kaspa:qr35ennsep3hxfe7lnz5ee7j5jgmkjswsn35ennsep3hxfe7ln35cdv0dy335",
 			encoded: "kaspa:qr35ennsep3hxfe7lnz5ee7j5jgmkjswsn35ennsep3hxfe7ln35cdv0dy335",
 			valid:   true,
-			result: util.TstAddressPubKeyHash(
+			result: util.TstAddressPubKey(
 				util.Bech32PrefixKaspa,
 				[blake2b.Size256]byte{
 					0xe3, 0x4c, 0xce, 0x70, 0xc8, 0x63, 0x73, 0x27, 0x3e, 0xfc,
@@ -46,7 +46,7 @@ func TestAddresses(t *testing.T) {
 					0xc5, 0x4c, 0xe7, 0xd2, 0xa4, 0x91, 0xbb, 0x4a, 0x0e, 0x84,
 					0xe3, 0x4c, 0xce, 0x70, 0xc8, 0x63, 0x73, 0x27, 0x3e, 0xfc,
 					0xe3, 0x4c}
-				return util.NewAddressPubKeyHash(pkHash, util.Bech32PrefixKaspa)
+				return util.NewAddressPubKey(pkHash, util.Bech32PrefixKaspa)
 			},
 			passedPrefix:   util.Bech32PrefixUnknown,
 			expectedPrefix: util.Bech32PrefixKaspa,
@@ -56,7 +56,7 @@ func TestAddresses(t *testing.T) {
 			addr:    "kaspa:qq80qvqs0lfxuzmt7sz3909ze6camq9d4t35ennsep3hxfe7ln35cvfqgz3z8",
 			encoded: "kaspa:qq80qvqs0lfxuzmt7sz3909ze6camq9d4t35ennsep3hxfe7ln35cvfqgz3z8",
 			valid:   true,
-			result: util.TstAddressPubKeyHash(
+			result: util.TstAddressPubKey(
 				util.Bech32PrefixKaspa,
 				[blake2b.Size256]byte{
 					0x0e, 0xf0, 0x30, 0x10, 0x7f, 0xd2, 0x6e, 0x0b, 0x6b, 0xf4,
@@ -71,7 +71,7 @@ func TestAddresses(t *testing.T) {
 					0xe3, 0x4c, 0xce, 0x70, 0xc8, 0x63, 0x73, 0x27, 0x3e, 0xfc,
 					0xe3, 0x4c,
 				}
-				return util.NewAddressPubKeyHash(pkHash, util.Bech32PrefixKaspa)
+				return util.NewAddressPubKey(pkHash, util.Bech32PrefixKaspa)
 			},
 			passedPrefix:   util.Bech32PrefixKaspa,
 			expectedPrefix: util.Bech32PrefixKaspa,
@@ -81,7 +81,7 @@ func TestAddresses(t *testing.T) {
 			addr:    "kaspatest:qputx94qseratdmjs0j395mq8u03er0x3l35ennsep3hxfe7ln35ckquw528z",
 			encoded: "kaspatest:qputx94qseratdmjs0j395mq8u03er0x3l35ennsep3hxfe7ln35ckquw528z",
 			valid:   true,
-			result: util.TstAddressPubKeyHash(
+			result: util.TstAddressPubKey(
 				util.Bech32PrefixKaspaTest,
 				[blake2b.Size256]byte{
 					0x78, 0xb3, 0x16, 0xa0, 0x86, 0x47, 0xd5, 0xb7, 0x72, 0x83,
@@ -96,7 +96,7 @@ func TestAddresses(t *testing.T) {
 					0xe3, 0x4c, 0xce, 0x70, 0xc8, 0x63, 0x73, 0x27, 0x3e, 0xfc,
 					0xe3, 0x4c,
 				}
-				return util.NewAddressPubKeyHash(pkHash, util.Bech32PrefixKaspaTest)
+				return util.NewAddressPubKey(pkHash, util.Bech32PrefixKaspaTest)
 			},
 			passedPrefix:   util.Bech32PrefixKaspaTest,
 			expectedPrefix: util.Bech32PrefixKaspaTest,
@@ -112,7 +112,7 @@ func TestAddresses(t *testing.T) {
 					0x00, 0x0e, 0xf0, 0x30, 0x10, 0x7f, 0xd2, 0x6e, 0x0b, 0x6b,
 					0xf4, 0x05, 0x12, 0xbc, 0xa2, 0xce, 0xb1, 0xdd, 0x80, 0xad,
 					0xaa}
-				return util.NewAddressPubKeyHash(pkHash, util.Bech32PrefixKaspa)
+				return util.NewAddressPubKey(pkHash, util.Bech32PrefixKaspa)
 			},
 			passedPrefix:   util.Bech32PrefixKaspa,
 			expectedPrefix: util.Bech32PrefixKaspa,
@@ -270,11 +270,11 @@ func TestAddresses(t *testing.T) {
 			// Perform type-specific calculations.
 			var saddr []byte
 			switch decoded.(type) {
-			case *util.AddressPubKeyHash:
-				saddr = util.TstAddressSAddr(encoded)
+			case *util.AddressPubKey:
+				saddr = util.TstAddressSAddrP2PK(encoded)
 
 			case *util.AddressScriptHash:
-				saddr = util.TstAddressSAddr(encoded)
+				saddr = util.TstAddressSAddrP2SH(encoded)
 			}
 
 			// Check script address, as well as the HashBlake2b method for P2PKH and
@@ -285,8 +285,8 @@ func TestAddresses(t *testing.T) {
 				return
 			}
 			switch a := decoded.(type) {
-			case *util.AddressPubKeyHash:
-				if h := a.HashBlake2b()[:]; !bytes.Equal(saddr, h) {
+			case *util.AddressPubKey:
+				if h := a.ScriptAddress()[:]; !bytes.Equal(saddr, h) {
 					t.Errorf("%v: hashes do not match:\n%x != \n%x",
 						test.name, saddr, h)
 					return

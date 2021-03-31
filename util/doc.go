@@ -18,7 +18,7 @@ expensive hashing operations.
 Address Overview
 
 The Address interface provides an abstraction for a kaspa address. While the
-most common type is a pay-to-pubkey-hash, kaspa already supports others and
+most common type is a pay-to-pubkey, kaspa already supports others and
 may well support more in the future. This package currently provides
 implementations for the pay-to-pubkey-hash, and pay-to-script-hash address
 types.

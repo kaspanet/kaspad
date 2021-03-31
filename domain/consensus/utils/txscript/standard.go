@@ -169,12 +169,13 @@ func CalcScriptInfo(sigScript, scriptPubKey []byte, isP2SH bool) (*ScriptInfo, e
 	return si, nil
 }
 
-// payToPubKeyHashScript creates a new script to pay a transaction
+// payToPubKeyScript creates a new script to pay a transaction
 // output to a 20-byte pubkey hash. It is expected that the input is a valid
 // hash.
-func payToPubKeyHashScript(pubKeyHash []byte) ([]byte, error) {
-	return NewScriptBuilder().AddOp(OpDup).AddOp(OpBlake2b).
-		AddData(pubKeyHash).AddOp(OpEqualVerify).AddOp(OpCheckSig).
+func payToPubKeyScript(pubKey []byte) ([]byte, error) {
+	return NewScriptBuilder().
+		AddData(pubKey).
+		AddOp(OpCheckSig).
 		Script()
 }
 
@@ -190,12 +191,12 @@ func payToScriptHashScript(scriptHash []byte) ([]byte, error) {
 func PayToAddrScript(addr util.Address) (*externalapi.ScriptPublicKey, error) {
 	const nilAddrErrStr = "unable to generate payment script for nil address"
 	switch addr := addr.(type) {
-	case *util.AddressPubKeyHash:
+	case *util.AddressPubKey:
 		if addr == nil {
 			return nil, scriptError(ErrUnsupportedAddress,
 				nilAddrErrStr)
 		}
-		script, err := payToPubKeyHashScript(addr.ScriptAddress())
+		script, err := payToPubKeyScript(addr.ScriptAddress())
 		if err != nil {
 			return nil, err
 		}
@@ -281,7 +282,7 @@ func ExtractScriptPubKeyAddress(scriptPubKey *externalapi.ScriptPublicKey, dagPa
 		//  OP_DUP OP_BLAKE2B <hash> OP_EQUALVERIFY OP_CHECKSIG
 		// Therefore the pubkey hash is the 3rd item on the stack.
 		// If the pubkey hash is invalid for some reason, return a nil address.
-		addr, err := util.NewAddressPubKeyHash(pops[2].data,
+		addr, err := util.NewAddressPubKey(pops[2].data,
 			dagParams.Prefix)
 		if err != nil {
 			return scriptClass, nil, nil

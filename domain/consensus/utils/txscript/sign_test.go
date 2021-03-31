@@ -213,7 +213,7 @@ func TestSignTxOutput(t *testing.T) {
 				break
 			}
 
-			address, err := util.NewAddressPubKeyHash(
+			address, err := util.NewAddressPubKey(
 				util.HashBlake2b(serializedPubKey[:]), util.Bech32PrefixKaspaTest)
 			if err != nil {
 				t.Errorf("failed to make address for %s: %v",
@@ -264,7 +264,7 @@ func TestSignTxOutput(t *testing.T) {
 				break
 			}
 
-			address, err := util.NewAddressPubKeyHash(
+			address, err := util.NewAddressPubKey(
 				util.HashBlake2b(serializedPubKey[:]), util.Bech32PrefixKaspaTest)
 			if err != nil {
 				t.Errorf("failed to make address for %s: %v",
@@ -342,7 +342,7 @@ func TestSignTxOutput(t *testing.T) {
 				break
 			}
 
-			address, err := util.NewAddressPubKeyHash(
+			address, err := util.NewAddressPubKey(
 				util.HashBlake2b(serializedPubKey[:]), util.Bech32PrefixKaspaTest)
 			if err != nil {
 				t.Errorf("failed to make address for %s: %v",
@@ -407,7 +407,7 @@ func TestSignTxOutput(t *testing.T) {
 				break
 			}
 
-			address, err := util.NewAddressPubKeyHash(
+			address, err := util.NewAddressPubKey(
 				util.HashBlake2b(serializedPubKey[:]), util.Bech32PrefixKaspaTest)
 			if err != nil {
 				t.Errorf("failed to make address for %s: %v",
@@ -474,7 +474,7 @@ func TestSignTxOutput(t *testing.T) {
 }
 
 func generateKeys() (keyPair *secp256k1.SchnorrKeyPair, scriptPublicKey *externalapi.ScriptPublicKey,
-	addressPubKeyHash *util.AddressPubKeyHash, err error) {
+	addressPubKeyHash *util.AddressPubKey, err error) {
 
 	key, err := secp256k1.GenerateSchnorrKeyPair()
 	if err != nil {
@@ -490,7 +490,7 @@ func generateKeys() (keyPair *secp256k1.SchnorrKeyPair, scriptPublicKey *externa
 	if err != nil {
 		return nil, nil, nil, errors.Errorf("failed to serialize a pubkey for %s: %s", pubKey, err)
 	}
-	address, err := util.NewAddressPubKeyHash(
+	address, err := util.NewAddressPubKey(
 		util.HashBlake2b(serializedPubKey[:]), util.Bech32PrefixKaspaTest)
 	if err != nil {
 		return nil, nil, nil, errors.Errorf("failed to make address for %s: %s", serializedPubKey, err)

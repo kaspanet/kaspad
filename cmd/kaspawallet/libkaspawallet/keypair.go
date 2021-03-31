@@ -26,7 +26,7 @@ func CreateKeyPair() ([]byte, []byte, error) {
 }
 
 func addressFromPublicKey(params *dagconfig.Params, publicKeySerialized []byte) (util.Address, error) {
-	addr, err := util.NewAddressPubKeyHashFromPublicKey(publicKeySerialized[:], params.Prefix)
+	addr, err := util.NewAddressPubKey(publicKeySerialized[:], params.Prefix)
 	if err != nil {
 		return nil, errors.Wrap(err, "Failed to generate p2pkh address")
 	}

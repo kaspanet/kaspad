@@ -28,12 +28,12 @@ func mustParseShortForm(script string, version uint16) []byte {
 	return s
 }
 
-// newAddressPubKeyHash returns a new util.AddressPubKeyHash from the
+// newAddressPubKeyHash returns a new util.AddressPubKey from the
 // provided hash. It panics if an error occurs. This is only used in the tests
 // as a helper since the only way it can fail is if there is an error in the
 // test source code.
 func newAddressPubKeyHash(pkHash []byte) util.Address {
-	addr, err := util.NewAddressPubKeyHash(pkHash, util.Bech32PrefixKaspa)
+	addr, err := util.NewAddressPubKey(pkHash, util.Bech32PrefixKaspa)
 	if err != nil {
 		panic("invalid public key hash in test source")
 	}
@@ -303,7 +303,7 @@ func (b *bogusAddress) Prefix() util.Bech32Prefix {
 func TestPayToAddrScript(t *testing.T) {
 	t.Parallel()
 
-	p2pkhMain, err := util.NewAddressPubKeyHash(hexToBytes("e34cce70c86"+
+	p2pkhMain, err := util.NewAddressPubKey(hexToBytes("e34cce70c86"+
 		"373273efcc54ce7d2a491bb4a0e84e34cce70c86373273efcc54c"), util.Bech32PrefixKaspa)
 	if err != nil {
 		t.Fatalf("Unable to create public key hash address: %v", err)
@@ -343,7 +343,7 @@ func TestPayToAddrScript(t *testing.T) {
 		},
 
 		// Supported address types with nil pointers.
-		{(*util.AddressPubKeyHash)(nil), "", 0, errUnsupportedAddress},
+		{(*util.AddressPubKey)(nil), "", 0, errUnsupportedAddress},
 		{(*util.AddressScriptHash)(nil), "", 0, errUnsupportedAddress},
 
 		// Unsupported address type.
