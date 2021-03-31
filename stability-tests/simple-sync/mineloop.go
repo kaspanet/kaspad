@@ -56,10 +56,16 @@ func mineLoop(syncerRPCClient, syncedRPCClient *rpc.Client) error {
 			return errors.Errorf("syncer node has tips %s but synced node has tips %s", syncerResult.TipHashes, syncedResult.TipHashes)
 		}
 	}
+
+	log.Infof("Finished to mine")
+
+	log.Infof("Getting syncer block count")
 	syncerBlockCountAfter, err := syncerRPCClient.GetBlockCount()
 	if err != nil {
 		return err
 	}
+
+	log.Infof("Getting syncee block count")
 	syncedBlockCountAfter, err := syncedRPCClient.GetBlockCount()
 	if err != nil {
 		return err
@@ -70,6 +76,8 @@ func mineLoop(syncerRPCClient, syncedRPCClient *rpc.Client) error {
 	if syncedBlockCountAfter.BlockCount-syncedBlockCountBefore.BlockCount != activeConfig().NumberOfBlocks {
 		return errors.Errorf("Expected syncer to have %d new blocks, instead have: %d", activeConfig().NumberOfBlocks, syncedBlockCountAfter.BlockCount-syncedBlockCountBefore.BlockCount)
 	}
+
+	log.Infof("Finished the mine loop successfully")
 	return nil
 }
 
