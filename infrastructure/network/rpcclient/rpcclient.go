@@ -19,6 +19,7 @@ type RPCClient struct {
 
 	rpcAddress     string
 	rpcRouter      *rpcRouter
+	isConnected    uint32
 	isClosed       uint32
 	isReconnecting uint32
 
@@ -44,10 +45,13 @@ func (c *RPCClient) connect() error {
 		return errors.Wrapf(err, "error connecting to address %s", c.rpcAddress)
 	}
 	rpcClient.SetOnDisconnectedHandler(c.handleClientDisconnected)
+	rpcClient.SetOnErrorHandler(c.handleClientError)
 	rpcRouter, err := buildRPCRouter()
 	if err != nil {
 		return errors.Wrapf(err, "error creating the RPC router")
 	}
+
+	atomic.StoreUint32(&c.isConnected, 1)
 	rpcClient.AttachRouter(rpcRouter.router)
 
 	c.GRPCClient = rpcClient
@@ -82,10 +86,15 @@ func (c *RPCClient) Reconnect() error {
 
 	log.Warnf("Attempting to reconnect to %s", c.rpcAddress)
 
-	err := c.disconnect()
-	if err != nil {
-		return err
+	// Disconnect if we're connected
+	if atomic.LoadUint32(&c.isConnected) == 1 {
+		err := c.disconnect()
+		if err != nil {
+			return err
+		}
 	}
+
+	// Attempt to connect until we succeed
 	for {
 		err := c.connect()
 		if err == nil {
@@ -100,12 +109,18 @@ func (c *RPCClient) Reconnect() error {
 }
 
 func (c *RPCClient) handleClientDisconnected() {
+	atomic.StoreUint32(&c.isConnected, 0)
 	if atomic.LoadUint32(&c.isClosed) == 0 {
 		err := c.Reconnect()
 		if err != nil {
 			panic(err)
 		}
 	}
+}
+
+func (c *RPCClient) handleClientError(err error) {
+	log.Warnf("Received error from client: %s", err)
+	c.handleClientDisconnected()
 }
 
 // SetTimeout sets the timeout by which to wait for RPC responses
