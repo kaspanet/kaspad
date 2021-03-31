@@ -56,7 +56,7 @@ func (c *GRPCClient) SetOnErrorHandler(onErrorHandler OnErrorHandler) {
 	c.onErrorHandler = onErrorHandler
 }
 
-// SetOnErrorHandler sets the client's onDisconnectedHandler
+// SetOnDisconnectedHandler sets the client's onDisconnectedHandler
 func (c *GRPCClient) SetOnDisconnectedHandler(onDisconnectedHandler OnDisconnectedHandler) {
 	c.onDisconnectedHandler = onDisconnectedHandler
 }

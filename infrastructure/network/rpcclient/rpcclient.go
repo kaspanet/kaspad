@@ -71,6 +71,8 @@ func (c *RPCClient) disconnect() error {
 	return nil
 }
 
+// Reconnect forces the client to attempt to reconnect to the address
+// this client initially was connected to
 func (c *RPCClient) Reconnect() error {
 	if atomic.LoadUint32(&c.isClosed) == 1 {
 		return errors.Errorf("Cannot reconnect from a closed client")
