@@ -1,4 +1,8 @@
 
+Kaspad v0.9.2 - 2021-03-31
+===========================
+* Increase the route capacity of InvTransaction messages. (#1603) (#1637)
+
 Kaspad v0.9.1 - 2021-03-14
 ===========================
 * Testnet network reset
