@@ -48,7 +48,7 @@ func Sign(privateKeys [][]byte, serializedPSTx []byte) ([]byte, error) {
 	keyPairs := make([]*secp256k1.SchnorrKeyPair, len(privateKeys))
 	for i, privateKey := range privateKeys {
 		var err error
-		keyPairs[i], err = secp256k1.DeserializePrivateKeyFromSlice(privateKey)
+		keyPairs[i], err = secp256k1.DeserializeSchnorrPrivateKeyFromSlice(privateKey)
 		if err != nil {
 			return nil, errors.Wrap(err, "Error deserializing private key")
 		}
