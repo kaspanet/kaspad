@@ -62,11 +62,10 @@ func (c *RPCClient) disconnect() error {
 }
 
 func (c *RPCClient) Reconnect() error {
-	err := c.disconnect()
-	if err != nil {
-		return err
+	if !c.shouldReconnect {
+		return errors.Errorf("Cannot reconnect to a closed client")
 	}
-	return c.connect()
+	return c.disconnect()
 }
 
 func (c *RPCClient) handleClientDisconnected() {
