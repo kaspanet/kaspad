@@ -32,7 +32,7 @@ func send(conf *sendConfig) error {
 		return err
 	}
 
-	client, err := rpcclient.NewRPCClient(conf.RPCServer)
+	client, err := connectToRPC(conf.NetParams(), conf.RPCServer)
 	if err != nil {
 		return err
 	}

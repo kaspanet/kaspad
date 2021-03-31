@@ -4,11 +4,10 @@ import (
 	"encoding/hex"
 	"fmt"
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/libkaspawallet"
-	"github.com/kaspanet/kaspad/infrastructure/network/rpcclient"
 )
 
 func broadcast(conf *broadcastConfig) error {
-	client, err := rpcclient.NewRPCClient(conf.RPCServer)
+	client, err := connectToRPC(conf.NetParams(), conf.RPCServer)
 	if err != nil {
 		return err
 	}

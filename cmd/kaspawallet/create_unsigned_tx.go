@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/keys"
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/libkaspawallet"
-	"github.com/kaspanet/kaspad/infrastructure/network/rpcclient"
 	"github.com/kaspanet/kaspad/util"
 )
 
@@ -25,7 +24,7 @@ func createUnsignedTransaction(conf *createUnsignedTransactionConfig) error {
 		return err
 	}
 
-	client, err := rpcclient.NewRPCClient(conf.RPCServer)
+	client, err := connectToRPC(conf.NetParams(), conf.RPCServer)
 	if err != nil {
 		return err
 	}
