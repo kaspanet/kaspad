@@ -17,11 +17,11 @@ import (
 )
 
 const (
-	payAddress             = "kaspasim:qr79e37hxdgkn4xjjmfxvqvayc5gsmsql2660d08u9ej9vnc8lzcywr265u64"
-	payAddressPrivateKey   = "0ec5d7308f65717f3f0c3e4d962d73056c1c255a16593b3989589281b51ad5bc"
-	maxTransactionsInBlock = 1000
-	transactionFee         = 60_000
-	coinbaseMaturity       = 100
+	payAddress            = "kaspasim:qr79e37hxdgkn4xjjmfxvqvayc5gsmsql2660d08u9ej9vnc8lzcywr265u64"
+	payAddressPrivateKey  = "0ec5d7308f65717f3f0c3e4d962d73056c1c255a16593b3989589281b51ad5bc"
+	outputsPerTransaction = 3
+	transactionFee        = 1000
+	coinbaseMaturity      = 100
 )
 
 var (
@@ -88,7 +88,7 @@ func generateTransactionsWithLotsOfOutputs(fundingTransaction *externalapi.Domai
 		if fundingTransactionOutput.Value < transactionFee {
 			continue
 		}
-		outputValue := (fundingTransactionOutput.Value - transactionFee) / maxTransactionsInBlock
+		outputValue := (fundingTransactionOutput.Value - transactionFee) / outputsPerTransaction
 
 		fundingTransactionID := consensushashing.TransactionID(fundingTransaction)
 		spendingTransactionInputs := []*externalapi.DomainTransactionInput{
@@ -105,8 +105,8 @@ func generateTransactionsWithLotsOfOutputs(fundingTransaction *externalapi.Domai
 			},
 		}
 
-		spendingTransactionOutputs := make([]*externalapi.DomainTransactionOutput, maxTransactionsInBlock)
-		for i := 0; i < maxTransactionsInBlock; i++ {
+		spendingTransactionOutputs := make([]*externalapi.DomainTransactionOutput, outputsPerTransaction)
+		for i := 0; i < outputsPerTransaction; i++ {
 			spendingTransactionOutputs[i] = &externalapi.DomainTransactionOutput{
 				Value:           outputValue,
 				ScriptPublicKey: payToPayAddressScript,
