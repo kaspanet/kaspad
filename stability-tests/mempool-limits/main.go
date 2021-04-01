@@ -48,6 +48,9 @@ func main() {
 	submitAnAmountOfTransactionsToTheMempool(rpcClient, 1000)
 	verifyMempoolSize(rpcClient, mempoolSizeLimit)
 
+	// Empty mempool out by continuously adding blocks to the DAG
+	emptyOutMempool(rpcClient)
+
 	log.Infof("mempool-limits passed")
 }
 
@@ -67,5 +70,27 @@ func verifyMempoolSize(rpcClient *rpcclient.RPCClient, expectedMempoolSize int) 
 	if getInfoResponse.MempoolSize != uint64(expectedMempoolSize) {
 		panic(errors.Errorf("Unexpected mempool size. Want: %d, got: %d",
 			expectedMempoolSize, getInfoResponse.MempoolSize))
+	}
+}
+
+func emptyOutMempool(rpcClient *rpcclient.RPCClient) {
+	log.Infof("Adding blocks until mempool shrinks to 0 transactions")
+	getInfoResponse, err := rpcClient.GetInfo()
+	if err != nil {
+		panic(err)
+	}
+	currentMempoolSize := getInfoResponse.MempoolSize
+	for currentMempoolSize > 0 {
+		generateCoinbaseTransaction(rpcClient)
+		getInfoResponse, err := rpcClient.GetInfo()
+		if err != nil {
+			panic(err)
+		}
+		if getInfoResponse.MempoolSize == currentMempoolSize {
+			panic(errors.Errorf("Mempool did not shrink after a block was added to the DAG"))
+		}
+		log.Infof("Mempool shrank from %d transactions to %d transactions",
+			currentMempoolSize, getInfoResponse.MempoolSize)
+		currentMempoolSize = getInfoResponse.MempoolSize
 	}
 }
