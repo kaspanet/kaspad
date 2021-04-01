@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/kaspanet/kaspad/app/appmessage"
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/infrastructure/network/rpcclient"
 	"github.com/kaspanet/kaspad/stability-tests/common"
 	"github.com/kaspanet/kaspad/stability-tests/common/mine"
@@ -9,6 +10,10 @@ import (
 	"github.com/kaspanet/kaspad/util/profiling"
 	"github.com/pkg/errors"
 	"os"
+)
+
+const (
+	payAddress = "kaspasim:qzpj2cfa9m40w9m2cmr8pvfuqpp32mzzwsuw6ukhfduqpp32mzzws59e8fapc"
 )
 
 func main() {
@@ -51,8 +56,13 @@ func fillUpMempool(rpcClient *rpcclient.RPCClient) {
 	maxTransactionsInBlock := 1_000
 	fundingBlocksToGenerate := transactionsToGenerate / maxTransactionsInBlock
 
-	payAddress := "kaspasim:qzpj2cfa9m40w9m2cmr8pvfuqpp32mzzwsuw6ukhfduqpp32mzzws59e8fapc"
-	for i := 0; i < fundingBlocksToGenerate; i++ {
+	coinbaseTransactions := generateCoinbaseTransactions(rpcClient, fundingBlocksToGenerate)
+	log.Infof("generated %d coinbase transactions", len(coinbaseTransactions))
+}
+
+func generateCoinbaseTransactions(rpcClient *rpcclient.RPCClient, coinbaseTransactionAmountToGenerate int) []*externalapi.DomainTransaction {
+	coinbaseTransactions := make([]*externalapi.DomainTransaction, coinbaseTransactionAmountToGenerate)
+	for i := 0; i < coinbaseTransactionAmountToGenerate; i++ {
 		getBlockTemplateResponse, err := rpcClient.GetBlockTemplate(payAddress)
 		if err != nil {
 			panic(err)
@@ -66,5 +76,7 @@ func fillUpMempool(rpcClient *rpcclient.RPCClient) {
 		if err != nil {
 			panic(err)
 		}
+		coinbaseTransactions[i] = templateBlock.Transactions[0]
 	}
+	return coinbaseTransactions
 }
