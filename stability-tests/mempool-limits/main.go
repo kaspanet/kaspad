@@ -9,12 +9,6 @@ import (
 	"os"
 )
 
-const (
-	payAddress = "kaspasim:qzpj2cfa9m40w9m2cmr8pvfuqpp32mzzwsuw6ukhfduqpp32mzzws59e8fapc"
-
-	maxTransactionsInBlock = 1000
-)
-
 func main() {
 	defer panics.HandlePanic(log, "mempool-limits-main", nil)
 	err := parseConfig()
@@ -38,6 +32,7 @@ func main() {
 	}()
 
 	rpcClient := buildRPCClient()
+	acceptGenesisCoinbase(rpcClient)
 	fillUpMempool(rpcClient)
 
 	log.Infof("mempool-limits passed")
@@ -51,6 +46,10 @@ func buildRPCClient() *rpcclient.RPCClient {
 	return client
 }
 
+func acceptGenesisCoinbase(rpcClient *rpcclient.RPCClient) {
+	generateCoinbaseTransaction(rpcClient)
+}
+
 func fillUpMempool(rpcClient *rpcclient.RPCClient) {
-	submitAnAmountOfTransactionsToTheMempool(rpcClient, 1_000_000)
+	submitAnAmountOfTransactionsToTheMempool(rpcClient, 10_000)
 }
