@@ -190,29 +190,38 @@ func (csm *consensusStateManager) resolveSingleBlockStatus(stagingArea *model.St
 	if err != nil {
 		return 0, err
 	}
-	oldSelectedTipUTXOSet, err := csm.restorePastUTXO(stagingArea, oldSelectedTip)
-	if err != nil {
-		return 0, err
-	}
 	if isNewSelectedTip {
-		log.Debugf("Block %s is the new SelectedTip, therefore setting it as old selectedTip's diffChild", blockHash)
-		oldSelectedTipUTXOSet, err := pastUTXODiff.DiffFrom(oldSelectedTipUTXOSet.ToImmutable())
+		oldSelectedTipUTXOSet, err := csm.restorePastUTXO(stagingArea, oldSelectedTip)
 		if err != nil {
 			return 0, err
 		}
-		csm.stageDiff(stagingArea, oldSelectedTip, oldSelectedTipUTXOSet, blockHash)
+		log.Debugf("Block %s is the new SelectedTip, therefore setting it as old selectedTip's diffChild", blockHash)
+		updatedOldSelectedTipUTXOSet, err := pastUTXODiff.DiffFrom(oldSelectedTipUTXOSet.ToImmutable())
+		if err != nil {
+			return 0, err
+		}
+		csm.stageDiff(stagingArea, oldSelectedTip, updatedOldSelectedTipUTXOSet, blockHash)
 
 		log.Tracef("Staging the utxoDiff of block %s", blockHash)
 		csm.stageDiff(stagingArea, blockHash, pastUTXODiff, nil)
 	} else {
-		log.Debugf("Block %s is not the new SelectedTip, therefore setting old selectedTip as it's diffChild", blockHash)
-		pastUTXODiff, err = oldSelectedTipUTXOSet.DiffFrom(pastUTXODiff)
+		blockGHOSTDAGData, err := csm.ghostdagDataStore.Get(csm.databaseContext, stagingArea, blockHash)
+		if err != nil {
+			return 0, err
+		}
+
+		selectedParentPastUTXO, err := csm.restorePastUTXO(stagingArea, blockGHOSTDAGData.SelectedParent())
+		if err != nil {
+			return 0, err
+		}
+		log.Debugf("Block %s is not the new SelectedTip, therefore setting selectedParent as it's diffChild", blockHash)
+		pastUTXODiff, err = selectedParentPastUTXO.DiffFrom(pastUTXODiff)
 		if err != nil {
 			return 0, err
 		}
 
 		log.Tracef("Staging the utxoDiff of block %s", blockHash)
-		csm.stageDiff(stagingArea, blockHash, pastUTXODiff, oldSelectedTip)
+		csm.stageDiff(stagingArea, blockHash, pastUTXODiff, blockGHOSTDAGData.SelectedParent())
 	}
 
 	return externalapi.StatusUTXOValid, nil
