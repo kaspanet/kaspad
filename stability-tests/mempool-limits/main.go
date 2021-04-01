@@ -51,5 +51,14 @@ func acceptGenesisCoinbase(rpcClient *rpcclient.RPCClient) {
 }
 
 func fillUpMempool(rpcClient *rpcclient.RPCClient) {
-	submitAnAmountOfTransactionsToTheMempool(rpcClient, 10_000)
+	mempoolSizeLimit := 10_000
+	submitAnAmountOfTransactionsToTheMempool(rpcClient, mempoolSizeLimit)
+	getInfoResponse, err := rpcClient.GetInfo()
+	if err != nil {
+		panic(err)
+	}
+	if getInfoResponse.MempoolSize != uint64(mempoolSizeLimit) {
+		panic(errors.Errorf("Unexpected mempool size. Want: %d, got: %d",
+			mempoolSizeLimit, getInfoResponse.MempoolSize))
+	}
 }
