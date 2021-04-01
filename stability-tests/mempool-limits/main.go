@@ -1,14 +1,14 @@
 package main
 
 import (
-	"fmt"
-	"github.com/kaspanet/kaspad/infrastructure/logger"
+	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/infrastructure/network/rpcclient"
 	"github.com/kaspanet/kaspad/stability-tests/common"
+	"github.com/kaspanet/kaspad/stability-tests/common/mine"
 	"github.com/kaspanet/kaspad/util/panics"
 	"github.com/kaspanet/kaspad/util/profiling"
 	"github.com/pkg/errors"
-	"os/exec"
+	"os"
 )
 
 func main() {
@@ -26,50 +26,45 @@ func main() {
 	}
 
 	defer func() {
-		if r := recover(); r != nil {
-			log.Criticalf("mempool-limits failed")
+		if err := recover(); err != nil {
+			log.Criticalf("mempool-limits failed: %s", err)
+			os.Exit(1)
 		}
 	}()
 
-	rpcPort := 29587
-	kaspadErrChan := runKaspad(rpcPort)
-	rpcClient := buildRPCClient(rpcPort)
-	fillUpMempool(rpcClient, kaspadErrChan)
+	rpcClient := buildRPCClient()
+	fillUpMempool(rpcClient)
 
 	log.Infof("mempool-limits passed")
 }
 
-func runKaspad(rpcPort int) chan error {
-	cmd := exec.Command("kaspad", "--devnet", fmt.Sprintf("--rpclisten=0.0.0.0:%d", rpcPort))
-	cmd.Stdout = common.NewLogWriter(log, logger.LevelTrace, "KASPAD-STDOUT")
-	cmd.Stderr = common.NewLogWriter(log, logger.LevelWarn, "KASPAD-STDERR")
-
-	log.Infof("Running `%s`", cmd)
-	errChan := make(chan error)
-	spawn("kaspad-run", func() {
-		errChan <- cmd.Run()
-	})
-	return errChan
-}
-
-func buildRPCClient(rpcPort int) *rpcclient.RPCClient {
-	rpcAddress := fmt.Sprintf("127.0.0.1:%d", rpcPort)
-	client, err := rpcclient.NewRPCClient(rpcAddress)
+func buildRPCClient() *rpcclient.RPCClient {
+	client, err := rpcclient.NewRPCClient(activeConfig().KaspadRPCAddress)
 	if err != nil {
-		panic(errors.Wrapf(err, "error connecting to %s", rpcAddress))
+		panic(errors.Wrapf(err, "error connecting to %s", activeConfig().KaspadRPCAddress))
 	}
 	return client
 }
 
-func fillUpMempool(rpcClient *rpcclient.RPCClient, kaspadErrChan chan error) {
-	blockDAGInfo, err := rpcClient.GetBlockDAGInfo()
-	if err != nil {
-		panic(errors.Wrapf(err, "error getting blockDAGInfo"))
-	}
-	log.Infof("blockDAGInfo: %v", blockDAGInfo)
+func fillUpMempool(rpcClient *rpcclient.RPCClient) {
+	transactionsToGenerate := 1_000_000
+	maxTransactionsInBlock := 1_000
+	fundingBlocksToGenerate := transactionsToGenerate / maxTransactionsInBlock
 
-	select {
-	case err := <-kaspadErrChan:
-		log.Errorf("Kaspad closed unexpectedly: %s", err)
+	payAddress := "kaspasim:qzpj2cfa9m40w9m2cmr8pvfuqpp32mzzwsuw6ukhfduqpp32mzzws59e8fapc"
+	for i := 0; i < fundingBlocksToGenerate; i++ {
+		getBlockTemplateResponse, err := rpcClient.GetBlockTemplate(payAddress)
+		if err != nil {
+			panic(err)
+		}
+		templateBlock, err := appmessage.RPCBlockToDomainBlock(getBlockTemplateResponse.Block)
+		if err != nil {
+			panic(err)
+		}
+		mine.SolveBlock(templateBlock)
+		_, err = rpcClient.SubmitBlock(templateBlock)
+		if err != nil {
+			panic(err)
+		}
 	}
 }
