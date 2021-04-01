@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"github.com/kaspanet/kaspad/infrastructure/logger"
+	"github.com/kaspanet/kaspad/infrastructure/network/rpcclient"
 	"github.com/kaspanet/kaspad/stability-tests/common"
 	"github.com/kaspanet/kaspad/util/panics"
 	"github.com/kaspanet/kaspad/util/profiling"
@@ -24,15 +25,18 @@ func main() {
 		profiling.Start(cfg.Profile, log)
 	}
 
+	defer func() {
+		if r := recover(); r != nil {
+			log.Criticalf("mempool-limits failed")
+		}
+	}()
+
 	rpcPort := 29587
 	kaspadErrChan := runKaspad(rpcPort)
+	rpcClient := buildRPCClient(rpcPort)
+	fillUpMempool(rpcClient, kaspadErrChan)
 
-	select {
-	case err := <-kaspadErrChan:
-		log.Errorf("Kaspad closed unexpectedly: %s", err)
-	}
-
-	log.Infof("All tests have passed")
+	log.Infof("mempool-limits passed")
 }
 
 func runKaspad(rpcPort int) chan error {
@@ -46,4 +50,26 @@ func runKaspad(rpcPort int) chan error {
 		errChan <- cmd.Run()
 	})
 	return errChan
+}
+
+func buildRPCClient(rpcPort int) *rpcclient.RPCClient {
+	rpcAddress := fmt.Sprintf("127.0.0.1:%d", rpcPort)
+	client, err := rpcclient.NewRPCClient(rpcAddress)
+	if err != nil {
+		panic(errors.Wrapf(err, "error connecting to %s", rpcAddress))
+	}
+	return client
+}
+
+func fillUpMempool(rpcClient *rpcclient.RPCClient, kaspadErrChan chan error) {
+	blockDAGInfo, err := rpcClient.GetBlockDAGInfo()
+	if err != nil {
+		panic(errors.Wrapf(err, "error getting blockDAGInfo"))
+	}
+	log.Infof("blockDAGInfo: %v", blockDAGInfo)
+
+	select {
+	case err := <-kaspadErrChan:
+		log.Errorf("Kaspad closed unexpectedly: %s", err)
+	}
 }
