@@ -1,11 +1,8 @@
 package main
 
 import (
-	"github.com/kaspanet/kaspad/app/appmessage"
-	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/infrastructure/network/rpcclient"
 	"github.com/kaspanet/kaspad/stability-tests/common"
-	"github.com/kaspanet/kaspad/stability-tests/common/mine"
 	"github.com/kaspanet/kaspad/util/panics"
 	"github.com/kaspanet/kaspad/util/profiling"
 	"github.com/pkg/errors"
@@ -14,6 +11,8 @@ import (
 
 const (
 	payAddress = "kaspasim:qzpj2cfa9m40w9m2cmr8pvfuqpp32mzzwsuw6ukhfduqpp32mzzws59e8fapc"
+
+	maxTransactionsInBlock = 1000
 )
 
 func main() {
@@ -33,6 +32,7 @@ func main() {
 	defer func() {
 		if err := recover(); err != nil {
 			log.Criticalf("mempool-limits failed: %s", err)
+			backendLog.Close()
 			os.Exit(1)
 		}
 	}()
@@ -52,31 +52,5 @@ func buildRPCClient() *rpcclient.RPCClient {
 }
 
 func fillUpMempool(rpcClient *rpcclient.RPCClient) {
-	transactionsToGenerate := 1_000_000
-	maxTransactionsInBlock := 1_000
-	fundingBlocksToGenerate := transactionsToGenerate / maxTransactionsInBlock
-
-	coinbaseTransactions := generateCoinbaseTransactions(rpcClient, fundingBlocksToGenerate)
-	log.Infof("generated %d coinbase transactions", len(coinbaseTransactions))
-}
-
-func generateCoinbaseTransactions(rpcClient *rpcclient.RPCClient, coinbaseTransactionAmountToGenerate int) []*externalapi.DomainTransaction {
-	coinbaseTransactions := make([]*externalapi.DomainTransaction, coinbaseTransactionAmountToGenerate)
-	for i := 0; i < coinbaseTransactionAmountToGenerate; i++ {
-		getBlockTemplateResponse, err := rpcClient.GetBlockTemplate(payAddress)
-		if err != nil {
-			panic(err)
-		}
-		templateBlock, err := appmessage.RPCBlockToDomainBlock(getBlockTemplateResponse.Block)
-		if err != nil {
-			panic(err)
-		}
-		mine.SolveBlock(templateBlock)
-		_, err = rpcClient.SubmitBlock(templateBlock)
-		if err != nil {
-			panic(err)
-		}
-		coinbaseTransactions[i] = templateBlock.Transactions[0]
-	}
-	return coinbaseTransactions
+	submitAnAmountOfTransactionsToTheMempool(rpcClient, 1_000_000)
 }
