@@ -17,24 +17,43 @@ import (
 )
 
 const (
-	payAddress            = "kaspasim:qr79e37hxdgkn4xjjmfxvqvayc5gsmsql2660d08u9ej9vnc8lzcywr265u64"
-	payAddressPrivateKey  = "0ec5d7308f65717f3f0c3e4d962d73056c1c255a16593b3989589281b51ad5bc"
-	outputsPerTransaction = 3
-	transactionFee        = 1000
-	coinbaseMaturity      = 100
+	payAddress                       = "kaspasim:qr79e37hxdgkn4xjjmfxvqvayc5gsmsql2660d08u9ej9vnc8lzcywr265u64"
+	payAddressPrivateKey             = "0ec5d7308f65717f3f0c3e4d962d73056c1c255a16593b3989589281b51ad5bc"
+	fundingCoinbaseTransactionAmount = 1000
+	outputsPerTransaction            = 3
+	transactionFee                   = 1000
+	coinbaseMaturity                 = 100
 )
 
 var (
 	payAddressKeyPair     = decodePayAddressKeyPair()
 	payToPayAddressScript = buildPayToPayAddressScript()
+
+	fundingCoinbaseTransactions = make([]*externalapi.DomainTransaction, fundingCoinbaseTransactionAmount)
 )
+
+func generateFundingCoinbaseTransactions(rpcClient *rpcclient.RPCClient) {
+	// Generate one coinbase transaction for its side effect:
+	// the block containing it accepts the empty genesis coinbase
+	generateCoinbaseTransaction(rpcClient)
+
+	log.Infof("Generating funding coinbase transactions")
+	for i := 0; i < fundingCoinbaseTransactionAmount; i++ {
+		fundingCoinbaseTransactions[i] = generateCoinbaseTransaction(rpcClient)
+	}
+
+	log.Infof("Maturing funding coinbase transactions")
+	for i := 0; i < coinbaseMaturity; i++ {
+		generateCoinbaseTransaction(rpcClient)
+	}
+}
 
 func submitAnAmountOfTransactionsToTheMempool(rpcClient *rpcclient.RPCClient, amountToSubmit int) {
 	log.Infof("Generating %d transactions", amountToSubmit)
 	transactions := make([]*externalapi.DomainTransaction, 0)
 	for len(transactions) < amountToSubmit {
-		log.Infof("Generating funding coinbase transaction")
-		coinbaseTransaction := generateCoinbaseTransaction(rpcClient)
+		var coinbaseTransaction *externalapi.DomainTransaction
+		coinbaseTransaction, fundingCoinbaseTransactions = fundingCoinbaseTransactions[0], fundingCoinbaseTransactions[1:]
 
 		unspentTransactions := []*externalapi.DomainTransaction{coinbaseTransaction}
 		for len(transactions) < amountToSubmit && len(unspentTransactions) > 0 {
@@ -45,11 +64,6 @@ func submitAnAmountOfTransactionsToTheMempool(rpcClient *rpcclient.RPCClient, am
 			unspentTransactions = append(unspentTransactions, spendingTransactions...)
 		}
 		log.Infof("Generated %d transactions", len(transactions))
-	}
-
-	log.Infof("Maturing funding coinbase transactions")
-	for i := 0; i < coinbaseMaturity; i++ {
-		generateCoinbaseTransaction(rpcClient)
 	}
 
 	transactions = transactions[:amountToSubmit]

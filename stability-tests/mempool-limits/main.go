@@ -9,6 +9,8 @@ import (
 	"os"
 )
 
+const mempoolSizeLimit = 10_000
+
 func main() {
 	defer panics.HandlePanic(log, "mempool-limits-main", nil)
 	err := parseConfig()
@@ -32,8 +34,19 @@ func main() {
 	}()
 
 	rpcClient := buildRPCClient()
-	acceptGenesisCoinbase(rpcClient)
-	fillUpMempool(rpcClient)
+
+	// Create enough funds for the test
+	generateFundingCoinbaseTransactions(rpcClient)
+
+	// Fill up the mempool to the brim
+	submitAnAmountOfTransactionsToTheMempool(rpcClient, mempoolSizeLimit)
+	verifyMempoolSize(rpcClient, mempoolSizeLimit)
+
+	// Add some more transactions to the mempool. We expect the
+	// transactions not to be rejected but the mempool not to
+	// grow
+	submitAnAmountOfTransactionsToTheMempool(rpcClient, 1000)
+	verifyMempoolSize(rpcClient, mempoolSizeLimit)
 
 	log.Infof("mempool-limits passed")
 }
@@ -46,19 +59,13 @@ func buildRPCClient() *rpcclient.RPCClient {
 	return client
 }
 
-func acceptGenesisCoinbase(rpcClient *rpcclient.RPCClient) {
-	generateCoinbaseTransaction(rpcClient)
-}
-
-func fillUpMempool(rpcClient *rpcclient.RPCClient) {
-	mempoolSizeLimit := 10_000
-	submitAnAmountOfTransactionsToTheMempool(rpcClient, mempoolSizeLimit)
+func verifyMempoolSize(rpcClient *rpcclient.RPCClient, expectedMempoolSize int) {
 	getInfoResponse, err := rpcClient.GetInfo()
 	if err != nil {
 		panic(err)
 	}
-	if getInfoResponse.MempoolSize != uint64(mempoolSizeLimit) {
+	if getInfoResponse.MempoolSize != uint64(expectedMempoolSize) {
 		panic(errors.Errorf("Unexpected mempool size. Want: %d, got: %d",
-			mempoolSizeLimit, getInfoResponse.MempoolSize))
+			expectedMempoolSize, getInfoResponse.MempoolSize))
 	}
 }
