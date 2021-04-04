@@ -30,6 +30,10 @@ echo "Running simple-sync"
 cd "${PROJECT_ROOT}/simple-sync/run" && ./run.sh || failedTests+=("simple-sync")
 echo "Done running simple-sync"
 
+echo "Running mempool-limits"
+cd "${PROJECT_ROOT}/mempool-limits/run" && ./run.sh || failedTests+=("mempool-limits")
+echo "Done running mempool-limits"
+
 echo "Running orphans"
 cd "${PROJECT_ROOT}/orphans/run" && ./run.sh || failedTests+=("orphans")
 echo "Done running orphans"
