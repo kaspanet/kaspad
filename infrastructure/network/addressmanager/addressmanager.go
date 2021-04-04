@@ -29,6 +29,11 @@ type addressKey struct {
 	address ipv6
 }
 
+type address struct {
+	netAddress            *appmessage.NetAddress
+	connectionFailedCount uint64
+}
+
 type ipv6 [net.IPv6len]byte
 
 func (i ipv6) equal(other ipv6) bool {
@@ -45,17 +50,6 @@ func netAddressKey(netAddress *appmessage.NetAddress) addressKey {
 	// all IPv4 can be represented as IPv6.
 	copy(key.address[:], netAddress.IP.To16())
 	return key
-}
-
-// netAddressKeys returns a key of the ip address to use it in maps.
-func netAddressesKeys(netAddresses []*appmessage.NetAddress) map[addressKey]bool {
-	result := make(map[addressKey]bool, len(netAddresses))
-	for _, netAddress := range netAddresses {
-		key := netAddressKey(netAddress)
-		result[key] = true
-	}
-
-	return result
 }
 
 // AddressManager provides a concurrency safe address manager for caching potential
@@ -87,12 +81,13 @@ func New(cfg *Config, database database.Database) (*AddressManager, error) {
 	}, nil
 }
 
-func (am *AddressManager) addAddressNoLock(address *appmessage.NetAddress) error {
-	if !IsRoutable(address, am.cfg.AcceptUnroutable) {
+func (am *AddressManager) addAddressNoLock(netAddress *appmessage.NetAddress) error {
+	if !IsRoutable(netAddress, am.cfg.AcceptUnroutable) {
 		return nil
 	}
 
-	key := netAddressKey(address)
+	key := netAddressKey(netAddress)
+	address := &address{netAddress: netAddress, connectionFailedCount: 0}
 	err := am.store.add(key, address)
 	if err != nil {
 		return err
@@ -147,7 +142,7 @@ func (am *AddressManager) Addresses() []*appmessage.NetAddress {
 	am.mutex.Lock()
 	defer am.mutex.Unlock()
 
-	return am.store.getAllNotBanned()
+	return am.store.getAllNotBannedNetAddresses()
 }
 
 // BannedAddresses returns all banned addresses
@@ -155,7 +150,7 @@ func (am *AddressManager) BannedAddresses() []*appmessage.NetAddress {
 	am.mutex.Lock()
 	defer am.mutex.Unlock()
 
-	return am.store.getAllBanned()
+	return am.store.getAllBannedNetAddresses()
 }
 
 // notBannedAddressesWithException returns all not banned addresses with excpetion
@@ -163,7 +158,7 @@ func (am *AddressManager) notBannedAddressesWithException(exceptions []*appmessa
 	am.mutex.Lock()
 	defer am.mutex.Unlock()
 
-	return am.store.getAllNotBannedWithout(exceptions)
+	return am.store.getAllNotBannedNetAddressesWithout(exceptions)
 }
 
 // RandomAddress returns a random address that isn't banned and isn't in exceptions
@@ -204,7 +199,8 @@ func (am *AddressManager) Ban(addressToBan *appmessage.NetAddress) error {
 		}
 	}
 
-	return am.store.addBanned(keyToBan, addressToBan)
+	address := &address{netAddress: addressToBan}
+	return am.store.addBanned(keyToBan, address)
 }
 
 // Unban unmarks the given address as banned
@@ -240,7 +236,6 @@ func (am *AddressManager) IsBanned(address *appmessage.NetAddress) (bool, error)
 	}
 
 	return true, nil
-
 }
 
 func (am *AddressManager) unbanIfOldEnough(key addressKey) error {
@@ -250,7 +245,7 @@ func (am *AddressManager) unbanIfOldEnough(key addressKey) error {
 	}
 
 	const maxBanTime = 24 * time.Hour
-	if mstime.Since(address.Timestamp) > maxBanTime {
+	if mstime.Since(address.netAddress.Timestamp) > maxBanTime {
 		err := am.store.removeBanned(key)
 		if err != nil {
 			return err
