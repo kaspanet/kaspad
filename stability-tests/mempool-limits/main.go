@@ -36,10 +36,10 @@ func main() {
 	rpcClient := buildRPCClient()
 
 	// Create enough funds for the test
-	generateFundingCoinbaseTransactions(rpcClient)
+	fundingTransactions := generateFundingCoinbaseTransactions(rpcClient)
 
 	// Fill up the mempool to the brim
-	submitAnAmountOfTransactionsToTheMempool(rpcClient, mempoolSizeLimit, false)
+	submitAnAmountOfTransactionsToTheMempool(rpcClient, fundingTransactions, mempoolSizeLimit, false)
 	verifyMempoolSizeEqualTo(rpcClient, mempoolSizeLimit)
 
 	// Add some more transactions to the mempool. We expect the
@@ -48,7 +48,7 @@ func main() {
 	// Note that we pass ignoreOrphanRejects: true because we
 	// expect some of the submitted transactions to depend on
 	// transactions that had been evicted from the mempool
-	submitAnAmountOfTransactionsToTheMempool(rpcClient, 1000, true)
+	submitAnAmountOfTransactionsToTheMempool(rpcClient, fundingTransactions, 1000, true)
 	verifyMempoolSizeEqualToOrLessThan(rpcClient, mempoolSizeLimit)
 
 	// Empty mempool out by continuously adding blocks to the DAG

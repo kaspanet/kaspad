@@ -29,34 +29,41 @@ const (
 var (
 	payAddressKeyPair     = decodePayAddressKeyPair()
 	payToPayAddressScript = buildPayToPayAddressScript()
-
-	fundingCoinbaseTransactions = make([]*externalapi.DomainTransaction, fundingCoinbaseTransactionAmount)
 )
 
-func generateFundingCoinbaseTransactions(rpcClient *rpcclient.RPCClient) {
+type fundingCoinbaseTransactions struct {
+	transactions []*externalapi.DomainTransaction
+}
+
+func generateFundingCoinbaseTransactions(rpcClient *rpcclient.RPCClient) *fundingCoinbaseTransactions {
 	// Generate one coinbase transaction for its side effect:
 	// the block containing it accepts the empty genesis coinbase
 	mineBlockAndGetCoinbaseTransaction(rpcClient)
 
 	log.Infof("Generating funding coinbase transactions")
+	fundingCoinbaseTransactions := &fundingCoinbaseTransactions{
+		transactions: make([]*externalapi.DomainTransaction, fundingCoinbaseTransactionAmount),
+	}
 	for i := 0; i < fundingCoinbaseTransactionAmount; i++ {
-		fundingCoinbaseTransactions[i] = mineBlockAndGetCoinbaseTransaction(rpcClient)
+		fundingCoinbaseTransactions.transactions[i] = mineBlockAndGetCoinbaseTransaction(rpcClient)
 	}
 
 	log.Infof("Maturing funding coinbase transactions")
 	for i := 0; i < coinbaseMaturity; i++ {
 		mineBlockAndGetCoinbaseTransaction(rpcClient)
 	}
+
+	return fundingCoinbaseTransactions
 }
 
-func submitAnAmountOfTransactionsToTheMempool(
-	rpcClient *rpcclient.RPCClient, amountToSubmit int, ignoreOrphanRejects bool) {
+func submitAnAmountOfTransactionsToTheMempool(rpcClient *rpcclient.RPCClient,
+	fundingTransactions *fundingCoinbaseTransactions, amountToSubmit int, ignoreOrphanRejects bool) {
 
 	log.Infof("Generating %d transactions", amountToSubmit)
 	transactions := make([]*externalapi.DomainTransaction, 0)
 	for len(transactions) < amountToSubmit {
 		var coinbaseTransaction *externalapi.DomainTransaction
-		coinbaseTransaction, fundingCoinbaseTransactions = fundingCoinbaseTransactions[0], fundingCoinbaseTransactions[1:]
+		coinbaseTransaction, fundingTransactions.transactions = fundingTransactions.transactions[0], fundingTransactions.transactions[1:]
 
 		unspentTransactions := []*externalapi.DomainTransaction{coinbaseTransaction}
 		for len(transactions) < amountToSubmit && len(unspentTransactions) > 0 {
