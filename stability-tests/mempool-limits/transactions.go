@@ -15,6 +15,7 @@ import (
 	"github.com/kaspanet/kaspad/stability-tests/common/mine"
 	"github.com/kaspanet/kaspad/util"
 	"strings"
+	"testing"
 )
 
 const (
@@ -26,37 +27,33 @@ const (
 	coinbaseMaturity                 = 100
 )
 
-var (
-	payAddressKeyPair     = decodePayAddressKeyPair()
-	payToPayAddressScript = buildPayToPayAddressScript()
-)
-
 type fundingCoinbaseTransactions struct {
 	transactions []*externalapi.DomainTransaction
 }
 
-func generateFundingCoinbaseTransactions(rpcClient *rpcclient.RPCClient) *fundingCoinbaseTransactions {
+func generateFundingCoinbaseTransactions(t *testing.T, rpcClient *rpcclient.RPCClient) *fundingCoinbaseTransactions {
 	// Generate one coinbase transaction for its side effect:
 	// the block containing it accepts the empty genesis coinbase
-	mineBlockAndGetCoinbaseTransaction(rpcClient)
+	mineBlockAndGetCoinbaseTransaction(t, rpcClient)
 
 	log.Infof("Generating funding coinbase transactions")
 	fundingCoinbaseTransactions := &fundingCoinbaseTransactions{
 		transactions: make([]*externalapi.DomainTransaction, fundingCoinbaseTransactionAmount),
 	}
 	for i := 0; i < fundingCoinbaseTransactionAmount; i++ {
-		fundingCoinbaseTransactions.transactions[i] = mineBlockAndGetCoinbaseTransaction(rpcClient)
+		fundingCoinbaseTransactions.transactions[i] = mineBlockAndGetCoinbaseTransaction(t, rpcClient)
 	}
 
 	log.Infof("Maturing funding coinbase transactions")
 	for i := 0; i < coinbaseMaturity; i++ {
-		mineBlockAndGetCoinbaseTransaction(rpcClient)
+		mineBlockAndGetCoinbaseTransaction(t, rpcClient)
 	}
 
 	return fundingCoinbaseTransactions
 }
 
-func submitAnAmountOfTransactionsToTheMempool(rpcClient *rpcclient.RPCClient,
+func submitAnAmountOfTransactionsToTheMempool(t *testing.T, rpcClient *rpcclient.RPCClient,
+	payAddressKeyPair *secp256k1.SchnorrKeyPair, payToPayAddressScript *externalapi.ScriptPublicKey,
 	fundingTransactions *fundingCoinbaseTransactions, amountToSubmit int, ignoreOrphanRejects bool) {
 
 	log.Infof("Generating %d transactions", amountToSubmit)
@@ -69,7 +66,7 @@ func submitAnAmountOfTransactionsToTheMempool(rpcClient *rpcclient.RPCClient,
 		for len(transactions) < amountToSubmit && len(unspentTransactions) > 0 {
 			var transactionToSpend *externalapi.DomainTransaction
 			transactionToSpend, unspentTransactions = unspentTransactions[0], unspentTransactions[1:]
-			spendingTransactions := generateTransactionsWithMultipleOutputs(transactionToSpend)
+			spendingTransactions := generateTransactionsWithMultipleOutputs(t, payAddressKeyPair, payToPayAddressScript, transactionToSpend)
 			transactions = append(transactions, spendingTransactions...)
 			unspentTransactions = append(unspentTransactions, spendingTransactions...)
 		}
@@ -86,30 +83,33 @@ func submitAnAmountOfTransactionsToTheMempool(rpcClient *rpcclient.RPCClient,
 			if ignoreOrphanRejects && strings.Contains(err.Error(), "orphan") {
 				continue
 			}
-			panic(err)
+			t.Fatalf("SubmitTransaction: %s", err)
 		}
 		log.Infof("Submitted %d transactions", i+1)
 	}
 }
 
-func mineBlockAndGetCoinbaseTransaction(rpcClient *rpcclient.RPCClient) *externalapi.DomainTransaction {
+func mineBlockAndGetCoinbaseTransaction(t *testing.T, rpcClient *rpcclient.RPCClient) *externalapi.DomainTransaction {
 	getBlockTemplateResponse, err := rpcClient.GetBlockTemplate(payAddress)
 	if err != nil {
-		panic(err)
+		t.Fatalf("GetBlockTemplate: %s", err)
 	}
 	templateBlock, err := appmessage.RPCBlockToDomainBlock(getBlockTemplateResponse.Block)
 	if err != nil {
-		panic(err)
+		t.Fatalf("RPCBlockToDomainBlock: %s", err)
 	}
 	mine.SolveBlock(templateBlock)
 	_, err = rpcClient.SubmitBlock(templateBlock)
 	if err != nil {
-		panic(err)
+		t.Fatalf("SubmitBlock: %s", err)
 	}
 	return templateBlock.Transactions[0]
 }
 
-func generateTransactionsWithMultipleOutputs(fundingTransaction *externalapi.DomainTransaction) []*externalapi.DomainTransaction {
+func generateTransactionsWithMultipleOutputs(t *testing.T,
+	payAddressKeyPair *secp256k1.SchnorrKeyPair, payToPayAddressScript *externalapi.ScriptPublicKey,
+	fundingTransaction *externalapi.DomainTransaction) []*externalapi.DomainTransaction {
+
 	var transactions []*externalapi.DomainTransaction
 	for fundingTransactionOutputIndex, fundingTransactionOutput := range fundingTransaction.Outputs {
 		if fundingTransactionOutput.Value < transactionFee {
@@ -158,7 +158,7 @@ func generateTransactionsWithMultipleOutputs(fundingTransaction *externalapi.Dom
 				payAddressKeyPair,
 				&consensushashing.SighashReusedValues{})
 			if err != nil {
-				panic(err)
+				t.Fatalf("SignatureScript: %s", err)
 			}
 			spendingTransactionInput.SignatureScript = signatureScript
 		}
@@ -168,26 +168,26 @@ func generateTransactionsWithMultipleOutputs(fundingTransaction *externalapi.Dom
 	return transactions
 }
 
-func decodePayAddressKeyPair() *secp256k1.SchnorrKeyPair {
+func decodePayAddressKeyPair(t *testing.T) *secp256k1.SchnorrKeyPair {
 	privateKeyBytes, err := hex.DecodeString(payAddressPrivateKey)
 	if err != nil {
-		panic(err)
+		t.Fatalf("DecodeString: %s", err)
 	}
 	keyPair, err := secp256k1.DeserializeSchnorrPrivateKeyFromSlice(privateKeyBytes)
 	if err != nil {
-		panic(err)
+		t.Fatalf("DeserializeSchnorrPrivateKeyFromSlice: %s", err)
 	}
 	return keyPair
 }
 
-func buildPayToPayAddressScript() *externalapi.ScriptPublicKey {
+func buildPayToPayAddressScript(t *testing.T) *externalapi.ScriptPublicKey {
 	address, err := util.DecodeAddress(payAddress, dagconfig.SimnetParams.Prefix)
 	if err != nil {
-		panic(err)
+		t.Fatalf("DecodeAddress: %s", err)
 	}
 	script, err := txscript.PayToAddrScript(address)
 	if err != nil {
-		panic(err)
+		t.Fatalf("PayToAddrScript: %s", err)
 	}
 	return script
 }

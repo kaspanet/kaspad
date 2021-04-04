@@ -5,8 +5,6 @@ import (
 	"github.com/kaspanet/kaspad/stability-tests/common"
 	"github.com/kaspanet/kaspad/util/panics"
 	"github.com/kaspanet/kaspad/util/profiling"
-	"github.com/pkg/errors"
-	"os"
 	"testing"
 )
 
@@ -16,7 +14,7 @@ func TestMempoolLimits(t *testing.T) {
 	defer panics.HandlePanic(log, "mempool-limits-main", nil)
 	err := parseConfig()
 	if err != nil {
-		panic(errors.Wrap(err, "error in parseConfig"))
+		t.Fatalf("error in parseConfig: %s", err)
 	}
 	defer backendLog.Close()
 	common.UseLogger(backendLog, log.Level())
@@ -26,22 +24,17 @@ func TestMempoolLimits(t *testing.T) {
 		profiling.Start(cfg.Profile, log)
 	}
 
-	defer func() {
-		if err := recover(); err != nil {
-			log.Criticalf("mempool-limits failed: %s", err)
-			backendLog.Close()
-			os.Exit(1)
-		}
-	}()
-
-	rpcClient := buildRPCClient()
+	payAddressKeyPair := decodePayAddressKeyPair(t)
+	payToPayAddressScript := buildPayToPayAddressScript(t)
+	rpcClient := buildRPCClient(t)
 
 	// Create enough funds for the test
-	fundingTransactions := generateFundingCoinbaseTransactions(rpcClient)
+	fundingTransactions := generateFundingCoinbaseTransactions(t, rpcClient)
 
 	// Fill up the mempool to the brim
-	submitAnAmountOfTransactionsToTheMempool(rpcClient, fundingTransactions, mempoolSizeLimit, false)
-	verifyMempoolSizeEqualTo(rpcClient, mempoolSizeLimit)
+	submitAnAmountOfTransactionsToTheMempool(t, rpcClient, payAddressKeyPair,
+		payToPayAddressScript, fundingTransactions, mempoolSizeLimit, false)
+	verifyMempoolSizeEqualTo(t, rpcClient, mempoolSizeLimit)
 
 	// Add some more transactions to the mempool. We expect the
 	// mempool to either not grow or even to shrink, since an eviction
@@ -49,60 +42,61 @@ func TestMempoolLimits(t *testing.T) {
 	// Note that we pass ignoreOrphanRejects: true because we
 	// expect some of the submitted transactions to depend on
 	// transactions that had been evicted from the mempool
-	submitAnAmountOfTransactionsToTheMempool(rpcClient, fundingTransactions, 1000, true)
-	verifyMempoolSizeEqualToOrLessThan(rpcClient, mempoolSizeLimit)
+	submitAnAmountOfTransactionsToTheMempool(t, rpcClient, payAddressKeyPair,
+		payToPayAddressScript, fundingTransactions, 1000, true)
+	verifyMempoolSizeEqualToOrLessThan(t, rpcClient, mempoolSizeLimit)
 
 	// Empty mempool out by continuously adding blocks to the DAG
-	emptyOutMempool(rpcClient)
+	emptyOutMempool(t, rpcClient)
 
 	log.Infof("mempool-limits passed")
 }
 
-func buildRPCClient() *rpcclient.RPCClient {
+func buildRPCClient(t *testing.T) *rpcclient.RPCClient {
 	client, err := rpcclient.NewRPCClient(activeConfig().KaspadRPCAddress)
 	if err != nil {
-		panic(errors.Wrapf(err, "error connecting to %s", activeConfig().KaspadRPCAddress))
+		t.Fatalf("error connecting to %s: %s", activeConfig().KaspadRPCAddress, err)
 	}
 	return client
 }
 
-func verifyMempoolSizeEqualTo(rpcClient *rpcclient.RPCClient, expectedMempoolSize int) {
+func verifyMempoolSizeEqualTo(t *testing.T, rpcClient *rpcclient.RPCClient, expectedMempoolSize int) {
 	getInfoResponse, err := rpcClient.GetInfo()
 	if err != nil {
-		panic(err)
+		t.Fatalf("GetInfo: %s", err)
 	}
 	if getInfoResponse.MempoolSize != uint64(expectedMempoolSize) {
-		panic(errors.Errorf("Unexpected mempool size. Want: %d, got: %d",
-			expectedMempoolSize, getInfoResponse.MempoolSize))
+		t.Fatalf("Unexpected mempool size. Want: %d, got: %d",
+			expectedMempoolSize, getInfoResponse.MempoolSize)
 	}
 }
 
-func verifyMempoolSizeEqualToOrLessThan(rpcClient *rpcclient.RPCClient, expectedMaxMempoolSize int) {
+func verifyMempoolSizeEqualToOrLessThan(t *testing.T, rpcClient *rpcclient.RPCClient, expectedMaxMempoolSize int) {
 	getInfoResponse, err := rpcClient.GetInfo()
 	if err != nil {
-		panic(err)
+		t.Fatalf("GetInfo: %s", err)
 	}
 	if getInfoResponse.MempoolSize > uint64(expectedMaxMempoolSize) {
-		panic(errors.Errorf("Unexpected mempool size. Want: %d, got: %d",
-			expectedMaxMempoolSize, getInfoResponse.MempoolSize))
+		t.Fatalf("Unexpected mempool size. Want: %d, got: %d",
+			expectedMaxMempoolSize, getInfoResponse.MempoolSize)
 	}
 }
 
-func emptyOutMempool(rpcClient *rpcclient.RPCClient) {
+func emptyOutMempool(t *testing.T, rpcClient *rpcclient.RPCClient) {
 	log.Infof("Adding blocks until mempool shrinks to 0 transactions")
 	getInfoResponse, err := rpcClient.GetInfo()
 	if err != nil {
-		panic(err)
+		t.Fatalf("GetInfo: %s", err)
 	}
 	currentMempoolSize := getInfoResponse.MempoolSize
 	for currentMempoolSize > 0 {
-		mineBlockAndGetCoinbaseTransaction(rpcClient)
+		mineBlockAndGetCoinbaseTransaction(t, rpcClient)
 		getInfoResponse, err := rpcClient.GetInfo()
 		if err != nil {
-			panic(err)
+			t.Fatalf("GetInfo: %s", err)
 		}
 		if getInfoResponse.MempoolSize == currentMempoolSize {
-			panic(errors.Errorf("Mempool did not shrink after a block was added to the DAG"))
+			t.Fatalf("Mempool did not shrink after a block was added to the DAG")
 		}
 		log.Infof("Mempool shrank from %d transactions to %d transactions",
 			currentMempoolSize, getInfoResponse.MempoolSize)
