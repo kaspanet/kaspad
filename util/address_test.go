@@ -357,7 +357,7 @@ func TestDecodeAddressErrorConditions(t *testing.T) {
 		{
 			"kaspasim:raskzcg58mth0an",
 			util.Bech32PrefixKaspaSim,
-			"decoded address is of unknown size",
+			"unknown address type",
 		},
 		{
 			"kaspatest:qqq65mvpxcmajeq44n2n8vfn6u9f8l4zsy0xez0tzw",

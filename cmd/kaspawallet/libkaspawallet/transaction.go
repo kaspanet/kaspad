@@ -263,7 +263,6 @@ func extractTransaction(psTx *serialization.PartiallySignedTransaction) (*extern
 
 			sigScript, err := txscript.NewScriptBuilder().
 				AddData(input.PubKeySignaturePairs[0].Signature).
-				AddData(input.PubKeySignaturePairs[0].PubKey).
 				Script()
 			if err != nil {
 				return nil, err

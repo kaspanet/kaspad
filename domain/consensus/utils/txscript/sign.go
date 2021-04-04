@@ -62,7 +62,7 @@ func sign(dagParams *dagconfig.Params, tx *externalapi.DomainTransaction, idx in
 	}
 
 	switch class {
-	case PubKeyHashTy:
+	case PubKeyTy:
 		// look up key for address
 		key, err := kdb.GetKey(address)
 		if err != nil {

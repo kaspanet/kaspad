@@ -200,7 +200,7 @@ func TestCheckTransactionStandard(t *testing.T) {
 		code       RejectCode
 	}{
 		{
-			name:       "Typical pay-to-pubkey-hash transaction",
+			name:       "Typical pay-to-pubkey transaction",
 			tx:         consensusexternalapi.DomainTransaction{Version: 0, Inputs: []*consensusexternalapi.DomainTransactionInput{&dummyTxIn}, Outputs: []*consensusexternalapi.DomainTransactionOutput{&dummyTxOut}},
 			height:     300000,
 			isStandard: true,

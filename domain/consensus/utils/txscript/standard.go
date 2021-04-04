@@ -21,7 +21,7 @@ type ScriptClass byte
 // Classes of script payment known about in the blockDAG.
 const (
 	NonStandardTy ScriptClass = iota // None of the recognized forms.
-	PubKeyHashTy                     // Pay pubkey hash.
+	PubKeyTy                         // Pay to pubkey.
 	ScriptHashTy                     // Pay to script hash.
 )
 
@@ -29,7 +29,7 @@ const (
 // script class.
 var scriptClassToName = []string{
 	NonStandardTy: "nonstandard",
-	PubKeyHashTy:  "pubkeyhash",
+	PubKeyTy:      "pubkey",
 	ScriptHashTy:  "scripthash",
 }
 
@@ -43,23 +43,20 @@ func (t ScriptClass) String() string {
 	return scriptClassToName[t]
 }
 
-// isPubkeyHash returns true if the script passed is a pay-to-pubkey-hash
+// isPayToPubkey returns true if the script passed is a pay-to-pubkey
 // transaction, false otherwise.
-func isPubkeyHash(pops []parsedOpcode) bool {
-	return len(pops) == 5 &&
-		pops[0].opcode.value == OpDup &&
-		pops[1].opcode.value == OpBlake2b &&
-		pops[2].opcode.value == OpData32 &&
-		pops[3].opcode.value == OpEqualVerify &&
-		pops[4].opcode.value == OpCheckSig
+func isPayToPubkey(pops []parsedOpcode) bool {
+	return len(pops) == 2 &&
+		pops[0].opcode.value == OpData32 &&
+		pops[1].opcode.value == OpCheckSig
 
 }
 
 // scriptType returns the type of the script being inspected from the known
 // standard types.
 func typeOfScript(pops []parsedOpcode) ScriptClass {
-	if isPubkeyHash(pops) {
-		return PubKeyHashTy
+	if isPayToPubkey(pops) {
+		return PubKeyTy
 	} else if isScriptHash(pops) {
 		return ScriptHashTy
 	}
@@ -85,8 +82,8 @@ func GetScriptClass(script []byte) ScriptClass {
 func expectedInputs(pops []parsedOpcode, class ScriptClass) int {
 	switch class {
 
-	case PubKeyHashTy:
-		return 2
+	case PubKeyTy:
+		return 1
 
 	case ScriptHashTy:
 		// Not including script. That is handled by the caller.
@@ -170,7 +167,7 @@ func CalcScriptInfo(sigScript, scriptPubKey []byte, isP2SH bool) (*ScriptInfo, e
 }
 
 // payToPubKeyScript creates a new script to pay a transaction
-// output to a 20-byte pubkey hash. It is expected that the input is a valid
+// output to a 32-byte pubkey. It is expected that the input is a valid
 // hash.
 func payToPubKeyScript(pubKey []byte) ([]byte, error) {
 	return NewScriptBuilder().
@@ -277,12 +274,12 @@ func ExtractScriptPubKeyAddress(scriptPubKey *externalapi.ScriptPublicKey, dagPa
 
 	scriptClass := typeOfScript(pops)
 	switch scriptClass {
-	case PubKeyHashTy:
-		// A pay-to-pubkey-hash script is of the form:
-		//  OP_DUP OP_BLAKE2B <hash> OP_EQUALVERIFY OP_CHECKSIG
-		// Therefore the pubkey hash is the 3rd item on the stack.
-		// If the pubkey hash is invalid for some reason, return a nil address.
-		addr, err := util.NewAddressPubKey(pops[2].data,
+	case PubKeyTy:
+		// A pay-to-pubkey script is of the form:
+		// <pubkey> OP_CHECKSIG
+		// Therefore the pubkey is the first item on the stack.
+		// If the pubkey is invalid for some reason, return a nil address.
+		addr, err := util.NewAddressPubKey(pops[0].data,
 			dagParams.Prefix)
 		if err != nil {
 			return scriptClass, nil, nil

@@ -28,14 +28,14 @@ func mustParseShortForm(script string, version uint16) []byte {
 	return s
 }
 
-// newAddressPubKeyHash returns a new util.AddressPubKey from the
-// provided hash. It panics if an error occurs. This is only used in the tests
+// newAddressPubKey returns a new util.AddressPubKey from the
+// provided public key. It panics if an error occurs. This is only used in the tests
 // as a helper since the only way it can fail is if there is an error in the
 // test source code.
-func newAddressPubKeyHash(pkHash []byte) util.Address {
-	addr, err := util.NewAddressPubKey(pkHash, util.Bech32PrefixKaspa)
+func newAddressPubKey(publicKey []byte) util.Address {
+	addr, err := util.NewAddressPubKey(publicKey, util.Bech32PrefixKaspa)
 	if err != nil {
-		panic("invalid public key hash in test source")
+		panic("invalid public key in test source")
 	}
 
 	return addr
@@ -67,15 +67,13 @@ func TestExtractScriptPubKeyAddrs(t *testing.T) {
 		class  ScriptClass
 	}{
 		{
-			name: "standard p2pkh",
+			name: "standard p2pk",
 			script: &externalapi.ScriptPublicKey{
-				Script: hexToBytes("76aa20ad06dd6ddee55cbca9a9e3713bd" +
-					"7587509a30564ad06dd6ddee55cbca9a9e37188ac"),
+				Script:  hexToBytes("202454a285d8566b0cb2792919536ee0f1b6f69b58ba59e9850ecbc91eef722daeac"),
 				Version: 0,
 			},
-			addr: newAddressPubKeyHash(hexToBytes("ad06dd6ddee5" +
-				"5cbca9a9e3713bd7587509a30564ad06dd6ddee55cbca9a9e371")),
-			class: PubKeyHashTy,
+			addr:  newAddressPubKey(hexToBytes("2454a285d8566b0cb2792919536ee0f1b6f69b58ba59e9850ecbc91eef722dae")),
+			class: PubKeyTy,
 		},
 		{
 			name: "standard p2sh",
@@ -216,8 +214,8 @@ func TestCalcScriptInfo(t *testing.T) {
 		{
 			// Invented scripts, the hashes do not match
 			name: "p2sh standard script",
-			sigScript: "1 81 DATA_37 DUP BLAKE2B DATA_32 0x010203" +
-				"0405060708090a0b0c0d0e0f1011121314fe441065b6532231de2fac56 EQUALVERIFY " +
+			sigScript: "1 81 DATA_34 DATA_32 0x010203" +
+				"0405060708090a0b0c0d0e0f1011121314fe441065b6532231de2fac56 " +
 				"CHECKSIG",
 			scriptPubKey: "BLAKE2B DATA_32 0xfe441065b6532231de2fac56" +
 				"3152205ec4f59c74fe441065b6532231de2fac56 EQUAL",
@@ -225,7 +223,7 @@ func TestCalcScriptInfo(t *testing.T) {
 			scriptInfo: ScriptInfo{
 				ScriptPubKeyClass: ScriptHashTy,
 				NumInputs:         3,
-				ExpectedInputs:    3, // nonstandard p2sh.
+				ExpectedInputs:    2, // nonstandard p2sh.
 				SigOps:            1,
 			},
 		},
@@ -303,10 +301,10 @@ func (b *bogusAddress) Prefix() util.Bech32Prefix {
 func TestPayToAddrScript(t *testing.T) {
 	t.Parallel()
 
-	p2pkhMain, err := util.NewAddressPubKey(hexToBytes("e34cce70c86"+
+	p2pkMain, err := util.NewAddressPubKey(hexToBytes("e34cce70c86"+
 		"373273efcc54ce7d2a491bb4a0e84e34cce70c86373273efcc54c"), util.Bech32PrefixKaspa)
 	if err != nil {
-		t.Fatalf("Unable to create public key hash address: %v", err)
+		t.Fatalf("Unable to create public key address: %v", err)
 	}
 
 	p2shMain, err := util.NewAddressScriptHashFromHash(hexToBytes("e8c300"+
@@ -325,11 +323,11 @@ func TestPayToAddrScript(t *testing.T) {
 		expectedVersion uint16
 		err             error
 	}{
-		// pay-to-pubkey-hash address on mainnet
+		// pay-to-pubkey address on mainnet
 		{
-			p2pkhMain,
-			"DUP BLAKE2B DATA_32 0xe34cce70c86373273efcc54ce7d2a4" +
-				"91bb4a0e84e34cce70c86373273efcc54c EQUALVERIFY CHECKSIG",
+			p2pkMain,
+			"DATA_32 0xe34cce70c86373273efcc54ce7d2a4" +
+				"91bb4a0e84e34cce70c86373273efcc54c CHECKSIG",
 			0,
 			nil,
 		},
@@ -392,17 +390,15 @@ var scriptClassTests = []struct {
 }{
 	// p2pk
 	{
-		name: "Pay Pubkey",
-		script: "DATA_65 0x0411db93e1dcdb8a016b49840f8c53bc1eb68a382e" +
-			"97b1482ecad7b148a6909a5cb2e0eaddfb84ccf9744464f82e16" +
-			"0bfa9b8b64f9d4c03f999b8643f656b412a3 CHECKSIG",
-		class: NonStandardTy,
+		name:   "Pay Pubkey",
+		script: "DATA_32 0x89ac24ea10bb751af4939623ccc5e550d96842b64e8fca0f63e94b4373fd555e CHECKSIG",
+		class:  PubKeyTy,
 	},
 	{
 		name: "Pay PubkeyHash",
 		script: "DUP BLAKE2B DATA_32 0x660d4ef3a743e3e696ad990364e55543e3e696ad990364e555e555" +
 			"c271ad504b EQUALVERIFY CHECKSIG",
-		class: PubKeyHashTy,
+		class: NonStandardTy,
 	},
 	// mutlisig
 	{
@@ -513,9 +509,9 @@ func TestStringifyClass(t *testing.T) {
 			stringed: "nonstandard",
 		},
 		{
-			name:     "pubkeyhash",
-			class:    PubKeyHashTy,
-			stringed: "pubkeyhash",
+			name:     "pubkey",
+			class:    PubKeyTy,
+			stringed: "pubkey",
 		},
 		{
 			name:     "scripthash",

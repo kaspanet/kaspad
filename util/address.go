@@ -20,8 +20,8 @@ var (
 )
 
 const (
-	// PubKeyHash addresses always have the version byte set to 0.
-	pubKeyHashAddrID = 0x00
+	// PubKey addresses always have the version byte set to 0.
+	pubKeyAddrID = 0x00
 
 	// ScriptHash addresses always have the version byte set to 8.
 	scriptHashAddrID = 0x08
@@ -87,8 +87,8 @@ func encodeAddress(prefix Bech32Prefix, payload []byte, version byte) string {
 }
 
 // Address is an interface type for any type of destination a transaction
-// output may spend to. This includes pay-to-pubkey (P2PK), pay-to-pubkey-hash
-// (P2PKH), and pay-to-script-hash (P2SH). Address is designed to be generic
+// output may spend to. This includes pay-to-pubkey (P2PK)
+// and pay-to-script-hash (P2SH). Address is designed to be generic
 // enough that other kinds of addresses may be added in the future without
 // changing the decoding and encoding API.
 type Address interface {
@@ -140,7 +140,7 @@ func DecodeAddress(addr string, expectedPrefix Bech32Prefix) (Address, error) {
 	}
 
 	switch version {
-	case pubKeyHashAddrID:
+	case pubKeyAddrID:
 		return newAddressPubKey(prefix, decoded)
 	case scriptHashAddrID:
 		return newAddressScriptHashFromHash(prefix, decoded)
@@ -170,7 +170,7 @@ func NewAddressPubKey(publicKey []byte, prefix Bech32Prefix) (*AddressPubKey, er
 // structure from a string encoding where the identifier byte is already
 // known.
 func newAddressPubKey(prefix Bech32Prefix, publicKey []byte) (*AddressPubKey, error) {
-	// Check for a valid pubkey hash length.
+	// Check for a valid pubkey length.
 	if len(publicKey) != PublicKeySize {
 		return nil, errors.Errorf("publicKey must be %d bytes", PublicKeySize)
 	}
@@ -180,10 +180,10 @@ func newAddressPubKey(prefix Bech32Prefix, publicKey []byte) (*AddressPubKey, er
 	return addr, nil
 }
 
-// EncodeAddress returns the string encoding of a pay-to-pubkey-hash
+// EncodeAddress returns the string encoding of a pay-to-pubkey
 // address. Part of the Address interface.
 func (a *AddressPubKey) EncodeAddress() string {
-	return encodeAddress(a.prefix, a.pubKey[:], pubKeyHashAddrID)
+	return encodeAddress(a.prefix, a.pubKey[:], pubKeyAddrID)
 }
 
 // ScriptAddress returns the bytes to be included in a txout script to pay
