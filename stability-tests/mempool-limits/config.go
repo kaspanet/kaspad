@@ -32,7 +32,7 @@ func activeConfig() *configFlags {
 
 func parseConfig() error {
 	cfg = &configFlags{}
-	parser := flags.NewParser(cfg, flags.PrintErrors|flags.HelpFlag)
+	parser := flags.NewParser(cfg, flags.PrintErrors|flags.HelpFlag|flags.IgnoreUnknown)
 	_, err := parser.Parse()
 	if err != nil {
 		return err

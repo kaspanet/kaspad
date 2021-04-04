@@ -7,11 +7,12 @@ import (
 	"github.com/kaspanet/kaspad/util/profiling"
 	"github.com/pkg/errors"
 	"os"
+	"testing"
 )
 
-const mempoolSizeLimit = 1_000_000
+const mempoolSizeLimit = 10_000
 
-func main() {
+func TestMempoolLimits(t *testing.T) {
 	defer panics.HandlePanic(log, "mempool-limits-main", nil)
 	err := parseConfig()
 	if err != nil {
