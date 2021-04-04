@@ -95,7 +95,7 @@ func emptyOutMempool(rpcClient *rpcclient.RPCClient) {
 	}
 	currentMempoolSize := getInfoResponse.MempoolSize
 	for currentMempoolSize > 0 {
-		generateCoinbaseTransaction(rpcClient)
+		mineBlockAndGetCoinbaseTransaction(rpcClient)
 		getInfoResponse, err := rpcClient.GetInfo()
 		if err != nil {
 			panic(err)

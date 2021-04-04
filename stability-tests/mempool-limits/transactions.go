@@ -36,16 +36,16 @@ var (
 func generateFundingCoinbaseTransactions(rpcClient *rpcclient.RPCClient) {
 	// Generate one coinbase transaction for its side effect:
 	// the block containing it accepts the empty genesis coinbase
-	generateCoinbaseTransaction(rpcClient)
+	mineBlockAndGetCoinbaseTransaction(rpcClient)
 
 	log.Infof("Generating funding coinbase transactions")
 	for i := 0; i < fundingCoinbaseTransactionAmount; i++ {
-		fundingCoinbaseTransactions[i] = generateCoinbaseTransaction(rpcClient)
+		fundingCoinbaseTransactions[i] = mineBlockAndGetCoinbaseTransaction(rpcClient)
 	}
 
 	log.Infof("Maturing funding coinbase transactions")
 	for i := 0; i < coinbaseMaturity; i++ {
-		generateCoinbaseTransaction(rpcClient)
+		mineBlockAndGetCoinbaseTransaction(rpcClient)
 	}
 }
 
@@ -85,7 +85,7 @@ func submitAnAmountOfTransactionsToTheMempool(
 	}
 }
 
-func generateCoinbaseTransaction(rpcClient *rpcclient.RPCClient) *externalapi.DomainTransaction {
+func mineBlockAndGetCoinbaseTransaction(rpcClient *rpcclient.RPCClient) *externalapi.DomainTransaction {
 	getBlockTemplateResponse, err := rpcClient.GetBlockTemplate(payAddress)
 	if err != nil {
 		panic(err)
