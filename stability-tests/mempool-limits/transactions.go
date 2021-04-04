@@ -32,8 +32,8 @@ type fundingCoinbaseTransactions struct {
 }
 
 func generateFundingCoinbaseTransactions(t *testing.T, rpcClient *rpcclient.RPCClient) *fundingCoinbaseTransactions {
-	// Generate one coinbase transaction for its side effect:
-	// the block containing it accepts the empty genesis coinbase
+	// Mine a block, since we need at least one block above the genesis
+	// to create a spendable UTXO
 	mineBlockAndGetCoinbaseTransaction(t, rpcClient)
 
 	log.Infof("Generating funding coinbase transactions")
