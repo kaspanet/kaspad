@@ -145,6 +145,8 @@ func (am *AddressManager) RemoveAddress(address *appmessage.NetAddress) error {
 	return am.removeAddressNoLock(address)
 }
 
+// MarkConnectionFailure notifies the address manager that the given address
+// has failed to connect
 func (am *AddressManager) MarkConnectionFailure(address *appmessage.NetAddress) error {
 	am.mutex.Lock()
 	defer am.mutex.Unlock()
@@ -158,6 +160,8 @@ func (am *AddressManager) MarkConnectionFailure(address *appmessage.NetAddress) 
 	return am.store.updateNotBanned(key, entry)
 }
 
+// MarkConnectionSuccess notifies the address manager that the given address
+// has successfully connected
 func (am *AddressManager) MarkConnectionSuccess(address *appmessage.NetAddress) error {
 	am.mutex.Lock()
 	defer am.mutex.Unlock()
