@@ -5,12 +5,17 @@ import (
 	"github.com/kaspanet/kaspad/stability-tests/common"
 	"github.com/kaspanet/kaspad/util/panics"
 	"github.com/kaspanet/kaspad/util/profiling"
+	"os"
 	"testing"
 )
 
 const mempoolSizeLimit = 1_000_000
 
 func TestMempoolLimits(t *testing.T) {
+	if os.Getenv("RUN_STABILITY_TESTS") == "" {
+		t.Skip()
+	}
+
 	defer panics.HandlePanic(log, "mempool-limits-main", nil)
 	err := parseConfig()
 	if err != nil {

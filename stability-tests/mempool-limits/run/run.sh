@@ -10,7 +10,7 @@ KASPAD_PID=$!
 
 sleep 1
 
-go test ../ -- --rpc-address=127.0.0.1:"${KASPAD_RPC_PORT}" --profile=7000
+RUN_STABILITY_TESTS=true go test ../ -- --rpc-address=127.0.0.1:"${KASPAD_RPC_PORT}" --profile=7000
 TEST_EXIT_CODE=$?
 
 kill $KASPAD_PID
