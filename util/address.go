@@ -149,6 +149,7 @@ func DecodeAddress(addr string, expectedPrefix Bech32Prefix) (Address, error) {
 	}
 }
 
+// PublicKeySize is the public key size for a schnorr public key
 const PublicKeySize = 32
 
 // AddressPubKey is an Address for a pay-to-pubkey (P2PK)
@@ -158,7 +159,7 @@ type AddressPubKey struct {
 	pubKey [PublicKeySize]byte
 }
 
-// NewAddressPubKey returns a new AddressPubKey. pkHash mustbe 33
+// NewAddressPubKey returns a new AddressPubKey. publicKey must be 32
 // bytes.
 func NewAddressPubKey(publicKey []byte, prefix Bech32Prefix) (*AddressPubKey, error) {
 	return newAddressPubKey(prefix, publicKey)
