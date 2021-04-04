@@ -74,7 +74,20 @@ func NewUTXODiffFromCollections(toAdd, toRemove externalapi.UTXOCollection) (ext
 }
 
 func (iud *immutableUTXODiff) CloneMutable() externalapi.MutableUTXODiff {
+	if iud.isInvalidated {
+		panic("Attempt to read from an invalidated UTXODiff")
+	}
 	return iud.cloneMutable()
+}
+
+func (iud *immutableUTXODiff) Reversed() externalapi.UTXODiff {
+	if iud.isInvalidated {
+		panic("Attempt to read from an invalidated UTXODiff")
+	}
+	return &immutableUTXODiff{
+		mutableUTXODiff: iud.mutableUTXODiff.Reversed(),
+		isInvalidated:   false,
+	}
 }
 
 func (iud *immutableUTXODiff) cloneMutable() *mutableUTXODiff {
