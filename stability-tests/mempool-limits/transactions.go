@@ -62,7 +62,7 @@ func submitAnAmountOfTransactionsToTheMempool(
 		for len(transactions) < amountToSubmit && len(unspentTransactions) > 0 {
 			var transactionToSpend *externalapi.DomainTransaction
 			transactionToSpend, unspentTransactions = unspentTransactions[0], unspentTransactions[1:]
-			spendingTransactions := generateTransactionsWithLotsOfOutputs(transactionToSpend)
+			spendingTransactions := generateTransactionsWithMultipleOutputs(transactionToSpend)
 			transactions = append(transactions, spendingTransactions...)
 			unspentTransactions = append(unspentTransactions, spendingTransactions...)
 		}
@@ -102,7 +102,7 @@ func generateCoinbaseTransaction(rpcClient *rpcclient.RPCClient) *externalapi.Do
 	return templateBlock.Transactions[0]
 }
 
-func generateTransactionsWithLotsOfOutputs(fundingTransaction *externalapi.DomainTransaction) []*externalapi.DomainTransaction {
+func generateTransactionsWithMultipleOutputs(fundingTransaction *externalapi.DomainTransaction) []*externalapi.DomainTransaction {
 	var transactions []*externalapi.DomainTransaction
 	for fundingTransactionOutputIndex, fundingTransactionOutput := range fundingTransaction.Outputs {
 		if fundingTransactionOutput.Value < transactionFee {
