@@ -8,7 +8,6 @@ import (
 	"github.com/kaspanet/kaspad/infrastructure/db/database"
 	"github.com/kaspanet/kaspad/util/mstime"
 	"net"
-	"sort"
 	"sync"
 	"time"
 
@@ -96,11 +95,16 @@ func (am *AddressManager) addAddressNoLock(netAddress *appmessage.NetAddress) er
 
 	if am.store.notBannedCount() > maxAddresses {
 		allAddresses := am.store.getAllNotBanned()
-		sort.Slice(allAddresses, func(i, j int) bool {
-			return allAddresses[i].connectionFailedCount > allAddresses[j].connectionFailedCount
-		})
 
+		maxConnectionFailedCount := uint64(0)
 		toRemove := allAddresses[0]
+		for _, address := range allAddresses[1:] {
+			if address.connectionFailedCount > maxConnectionFailedCount {
+				maxConnectionFailedCount = address.connectionFailedCount
+				toRemove = address
+			}
+		}
+
 		toRemoveKey := netAddressKey(toRemove.netAddress)
 		err := am.store.remove(toRemoveKey)
 		if err != nil {
