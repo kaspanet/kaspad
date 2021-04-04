@@ -3,6 +3,8 @@ package consensusstatemanager
 import (
 	"fmt"
 
+	"github.com/kaspanet/kaspad/domain/consensus/utils/utxo"
+
 	"github.com/kaspanet/kaspad/util/staging"
 
 	"github.com/kaspanet/kaspad/domain/consensus/model"
@@ -41,7 +43,7 @@ func (csm *consensusStateManager) resolveBlockStatus(
 	}
 
 	log.Debugf("Finding the status of the selected parent of %s", blockHash)
-	selectedParentStatus, err := csm.findSelectedParentStatus(stagingArea, unverifiedBlocks)
+	selectedParentHash, selectedParentStatus, selectedParentUTXOSet, err := csm.selectedParentInfo(stagingArea, unverifiedBlocks)
 	if err != nil {
 		return 0, err
 	}
@@ -49,6 +51,10 @@ func (csm *consensusStateManager) resolveBlockStatus(
 
 	log.Debugf("Resolving the unverified blocks' status in reverse order (past to present)")
 	var blockStatus externalapi.BlockStatus
+
+	previousBlockHash := selectedParentHash
+	previousBlockUTXOSet := selectedParentUTXOSet
+
 	for i := len(unverifiedBlocks) - 1; i >= 0; i-- {
 		unverifiedBlockHash := unverifiedBlocks[i]
 
@@ -61,7 +67,8 @@ func (csm *consensusStateManager) resolveBlockStatus(
 		if selectedParentStatus == externalapi.StatusDisqualifiedFromChain {
 			blockStatus = externalapi.StatusDisqualifiedFromChain
 		} else {
-			blockStatus, err = csm.resolveSingleBlockStatus(stagingAreaForCurrentBlock, unverifiedBlockHash)
+			blockStatus, previousBlockUTXOSet, err = csm.resolveSingleBlockStatus(
+				stagingAreaForCurrentBlock, unverifiedBlockHash, previousBlockHash, previousBlockUTXOSet)
 			if err != nil {
 				return 0, err
 			}
@@ -78,14 +85,17 @@ func (csm *consensusStateManager) resolveBlockStatus(
 				return 0, err
 			}
 		}
+		previousBlockHash = unverifiedBlockHash
 	}
 
 	return blockStatus, nil
 }
 
-// findSelectedParentStatus returns the status of the selectedParent of the last block in the unverifiedBlocks chain
-func (csm *consensusStateManager) findSelectedParentStatus(
-	stagingArea *model.StagingArea, unverifiedBlocks []*externalapi.DomainHash) (externalapi.BlockStatus, error) {
+// selectedParentInfo returns the hash and status of the selectedParent of the last block in the unverifiedBlocks
+// chain, in addition, if the status is UTXOValid, it return it's pastUTXOSet
+func (csm *consensusStateManager) selectedParentInfo(
+	stagingArea *model.StagingArea, unverifiedBlocks []*externalapi.DomainHash) (
+	*externalapi.DomainHash, externalapi.BlockStatus, externalapi.UTXODiff, error) {
 
 	log.Debugf("findSelectedParentStatus start")
 	defer log.Debugf("findSelectedParentStatus end")
@@ -94,13 +104,26 @@ func (csm *consensusStateManager) findSelectedParentStatus(
 	if lastUnverifiedBlock.Equal(csm.genesisHash) {
 		log.Debugf("the most recent unverified block is the genesis block, "+
 			"which by definition has status: %s", externalapi.StatusUTXOValid)
-		return externalapi.StatusUTXOValid, nil
+		return lastUnverifiedBlock, externalapi.StatusUTXOValid, utxo.NewUTXODiff(), nil
 	}
 	lastUnverifiedBlockGHOSTDAGData, err := csm.ghostdagDataStore.Get(csm.databaseContext, stagingArea, lastUnverifiedBlock)
 	if err != nil {
-		return 0, err
+		return nil, 0, nil, err
 	}
-	return csm.blockStatusStore.Get(csm.databaseContext, stagingArea, lastUnverifiedBlockGHOSTDAGData.SelectedParent())
+	selectedParent := lastUnverifiedBlockGHOSTDAGData.SelectedParent()
+	selectedParentStatus, err := csm.blockStatusStore.Get(csm.databaseContext, stagingArea, selectedParent)
+	if err != nil {
+		return nil, 0, nil, err
+	}
+	if selectedParentStatus != externalapi.StatusUTXOValid {
+		return selectedParent, selectedParentStatus, nil, nil
+	}
+
+	selectedParentUTXOSet, err := csm.restorePastUTXO(stagingArea, selectedParent)
+	if err != nil {
+		return nil, 0, nil, err
+	}
+	return selectedParent, selectedParentStatus, selectedParentUTXOSet, nil
 }
 
 func (csm *consensusStateManager) getUnverifiedChainBlocks(stagingArea *model.StagingArea,
@@ -142,15 +165,16 @@ func (csm *consensusStateManager) getUnverifiedChainBlocks(stagingArea *model.St
 }
 
 func (csm *consensusStateManager) resolveSingleBlockStatus(stagingArea *model.StagingArea,
-	blockHash *externalapi.DomainHash) (externalapi.BlockStatus, error) {
+	blockHash, selectedParentHash *externalapi.DomainHash, selectedParentPastUTXOSet externalapi.UTXODiff) (
+	externalapi.BlockStatus, externalapi.UTXODiff, error) {
 
 	onEnd := logger.LogAndMeasureExecutionTime(log, fmt.Sprintf("resolveSingleBlockStatus for %s", blockHash))
 	defer onEnd()
 
 	log.Tracef("Calculating pastUTXO and acceptance data and multiset for block %s", blockHash)
-	pastUTXODiff, acceptanceData, multiset, err := csm.CalculatePastUTXOAndAcceptanceData(stagingArea, blockHash)
+	pastUTXOSet, acceptanceData, multiset, err := csm.calculatePastUTXOAndAcceptanceDataWithSelectedParentUTXO(stagingArea, blockHash, selectedParentPastUTXOSet)
 	if err != nil {
-		return 0, err
+		return 0, nil, err
 	}
 
 	log.Tracef("Staging the calculated acceptance data of block %s", blockHash)
@@ -158,17 +182,17 @@ func (csm *consensusStateManager) resolveSingleBlockStatus(stagingArea *model.St
 
 	block, err := csm.blockStore.Block(csm.databaseContext, stagingArea, blockHash)
 	if err != nil {
-		return 0, err
+		return 0, nil, err
 	}
 
 	log.Tracef("verifying the UTXO of block %s", blockHash)
-	err = csm.verifyUTXO(stagingArea, block, blockHash, pastUTXODiff, acceptanceData, multiset)
+	err = csm.verifyUTXO(stagingArea, block, blockHash, pastUTXOSet, acceptanceData, multiset)
 	if err != nil {
 		if errors.As(err, &ruleerrors.RuleError{}) {
 			log.Debugf("UTXO verification for block %s failed: %s", blockHash, err)
-			return externalapi.StatusDisqualifiedFromChain, nil
+			return externalapi.StatusDisqualifiedFromChain, nil, nil
 		}
-		return 0, err
+		return 0, nil, err
 	}
 	log.Debugf("UTXO verification for block %s passed", blockHash)
 
@@ -177,54 +201,45 @@ func (csm *consensusStateManager) resolveSingleBlockStatus(stagingArea *model.St
 
 	if csm.genesisHash.Equal(blockHash) {
 		log.Tracef("Staging the utxoDiff of genesis")
-		csm.stageDiff(stagingArea, blockHash, pastUTXODiff, nil)
-		return externalapi.StatusUTXOValid, nil
+		csm.stageDiff(stagingArea, blockHash, pastUTXOSet, nil)
+		return externalapi.StatusUTXOValid, nil, nil
 	}
 
 	oldSelectedTip, err := csm.selectedTip(stagingArea)
 	if err != nil {
-		return 0, err
+		return 0, nil, err
 	}
 
 	isNewSelectedTip, err := csm.isNewSelectedTip(stagingArea, blockHash, oldSelectedTip)
 	if err != nil {
-		return 0, err
+		return 0, nil, err
 	}
 	if isNewSelectedTip {
 		oldSelectedTipUTXOSet, err := csm.restorePastUTXO(stagingArea, oldSelectedTip)
 		if err != nil {
-			return 0, err
+			return 0, nil, err
 		}
 		log.Debugf("Block %s is the new SelectedTip, therefore setting it as old selectedTip's diffChild", blockHash)
-		updatedOldSelectedTipUTXOSet, err := pastUTXODiff.DiffFrom(oldSelectedTipUTXOSet.ToImmutable())
+		updatedOldSelectedTipUTXOSet, err := pastUTXOSet.DiffFrom(oldSelectedTipUTXOSet)
 		if err != nil {
-			return 0, err
+			return 0, nil, err
 		}
 		csm.stageDiff(stagingArea, oldSelectedTip, updatedOldSelectedTipUTXOSet, blockHash)
 
 		log.Tracef("Staging the utxoDiff of block %s", blockHash)
-		csm.stageDiff(stagingArea, blockHash, pastUTXODiff, nil)
+		csm.stageDiff(stagingArea, blockHash, pastUTXOSet, nil)
 	} else {
-		blockGHOSTDAGData, err := csm.ghostdagDataStore.Get(csm.databaseContext, stagingArea, blockHash)
-		if err != nil {
-			return 0, err
-		}
-
-		selectedParentPastUTXO, err := csm.restorePastUTXO(stagingArea, blockGHOSTDAGData.SelectedParent())
-		if err != nil {
-			return 0, err
-		}
 		log.Debugf("Block %s is not the new SelectedTip, therefore setting selectedParent as it's diffChild", blockHash)
-		pastUTXODiff, err = selectedParentPastUTXO.DiffFrom(pastUTXODiff)
+		pastUTXOSet, err = selectedParentPastUTXOSet.DiffFrom(pastUTXOSet)
 		if err != nil {
-			return 0, err
+			return 0, nil, err
 		}
 
 		log.Tracef("Staging the utxoDiff of block %s", blockHash)
-		csm.stageDiff(stagingArea, blockHash, pastUTXODiff, blockGHOSTDAGData.SelectedParent())
+		csm.stageDiff(stagingArea, blockHash, pastUTXOSet, selectedParentHash)
 	}
 
-	return externalapi.StatusUTXOValid, nil
+	return externalapi.StatusUTXOValid, pastUTXOSet, nil
 }
 
 func (csm *consensusStateManager) isNewSelectedTip(stagingArea *model.StagingArea,
