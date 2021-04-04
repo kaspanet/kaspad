@@ -15,6 +15,8 @@ import (
 	"github.com/pkg/errors"
 )
 
+const maxAddresses = 4096
+
 // addressRandomizer is the interface for the randomizer needed for the AddressManager.
 type addressRandomizer interface {
 	RandomAddress(addresses []*appmessage.NetAddress) *appmessage.NetAddress
@@ -91,7 +93,23 @@ func (am *AddressManager) addAddressNoLock(address *appmessage.NetAddress) error
 	}
 
 	key := netAddressKey(address)
-	return am.store.add(key, address)
+	err := am.store.add(key, address)
+	if err != nil {
+		return err
+	}
+
+	if am.store.notBannedCount() > maxAddresses {
+		err := am.store.removeRandom()
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (am *AddressManager) removeAddressNoLock(address *appmessage.NetAddress) error {
+	key := netAddressKey(address)
+	return am.store.remove(key)
 }
 
 // AddAddress adds address to the address manager
@@ -121,8 +139,7 @@ func (am *AddressManager) RemoveAddress(address *appmessage.NetAddress) error {
 	am.mutex.Lock()
 	defer am.mutex.Unlock()
 
-	key := netAddressKey(address)
-	return am.store.remove(key)
+	return am.removeAddressNoLock(address)
 }
 
 // Addresses returns all addresses

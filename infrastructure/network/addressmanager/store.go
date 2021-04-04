@@ -86,6 +86,22 @@ func (as *addressStore) restoreBannedAddresses() error {
 	return nil
 }
 
+func (as *addressStore) notBannedCount() int {
+	return len(as.notBannedAddresses)
+}
+
+func (as *addressStore) removeRandom() error {
+	if as.notBannedCount() == 0 {
+		return nil
+	}
+
+	var randomKey addressKey
+	for key := range as.notBannedAddresses {
+		randomKey = key
+	}
+	return as.remove(randomKey)
+}
+
 func (as *addressStore) add(key addressKey, address *appmessage.NetAddress) error {
 	if _, ok := as.notBannedAddresses[key]; ok {
 		return nil
