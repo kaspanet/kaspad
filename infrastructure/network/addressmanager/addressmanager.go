@@ -8,6 +8,7 @@ import (
 	"github.com/kaspanet/kaspad/infrastructure/db/database"
 	"github.com/kaspanet/kaspad/util/mstime"
 	"net"
+	"sort"
 	"sync"
 	"time"
 
@@ -94,7 +95,14 @@ func (am *AddressManager) addAddressNoLock(netAddress *appmessage.NetAddress) er
 	}
 
 	if am.store.notBannedCount() > maxAddresses {
-		err := am.store.removeRandom()
+		allAddresses := am.store.getAllNotBanned()
+		sort.Slice(allAddresses, func(i, j int) bool {
+			return allAddresses[i].connectionFailedCount < allAddresses[j].connectionFailedCount
+		})
+
+		toRemove := allAddresses[0]
+		toRemoveKey := netAddressKey(toRemove.netAddress)
+		err := am.store.remove(toRemoveKey)
 		if err != nil {
 			return err
 		}
@@ -144,7 +152,7 @@ func (am *AddressManager) MarkConnectionFailure(address *appmessage.NetAddress) 
 	key := netAddressKey(address)
 	entry, ok := am.store.getNotBanned(key)
 	if !ok {
-		return errors.Errorf("address %s is not registered with the address manager", address)
+		return errors.Errorf("address %s is not registered with the address manager", address.TCPAddress())
 	}
 	entry.connectionFailedCount = entry.connectionFailedCount + 1
 	return am.store.updateNotBanned(key, entry)
@@ -157,7 +165,7 @@ func (am *AddressManager) MarkConnectionSuccess(address *appmessage.NetAddress) 
 	key := netAddressKey(address)
 	entry, ok := am.store.getNotBanned(key)
 	if !ok {
-		return errors.Errorf("address %s is not registered with the address manager", address)
+		return errors.Errorf("address %s is not registered with the address manager", address.TCPAddress())
 	}
 	entry.connectionFailedCount = 0
 	return am.store.updateNotBanned(key, entry)
@@ -212,7 +220,7 @@ func (am *AddressManager) Ban(addressToBan *appmessage.NetAddress) error {
 
 	keyToBan := netAddressKey(addressToBan)
 	keysToDelete := make([]addressKey, 0)
-	for _, address := range am.store.getAllNotBanned() {
+	for _, address := range am.store.getAllNotBannedNetAddresses() {
 		key := netAddressKey(address)
 		if key.address.equal(keyToBan.address) {
 			keysToDelete = append(keysToDelete, key)

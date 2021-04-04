@@ -91,18 +91,6 @@ func (as *addressStore) notBannedCount() int {
 	return len(as.notBannedAddresses)
 }
 
-func (as *addressStore) removeRandom() error {
-	if as.notBannedCount() == 0 {
-		return nil
-	}
-
-	var randomKey addressKey
-	for key := range as.notBannedAddresses {
-		randomKey = key
-	}
-	return as.remove(randomKey)
-}
-
 func (as *addressStore) add(key addressKey, address *address) error {
 	if _, ok := as.notBannedAddresses[key]; ok {
 		return nil
@@ -117,7 +105,7 @@ func (as *addressStore) add(key addressKey, address *address) error {
 
 func (as *addressStore) updateNotBanned(key addressKey, address *address) error {
 	if _, ok := as.notBannedAddresses[key]; !ok {
-		return errors.Errorf("address %s is not in the store", address.netAddress)
+		return errors.Errorf("address %s is not in the store", address.netAddress.TCPAddress())
 	}
 
 	as.notBannedAddresses[key] = address
@@ -139,10 +127,10 @@ func (as *addressStore) remove(key addressKey) error {
 	return as.database.Delete(databaseKey)
 }
 
-func (as *addressStore) getAllNotBanned() []*appmessage.NetAddress {
-	addresses := make([]*appmessage.NetAddress, 0, len(as.notBannedAddresses))
+func (as *addressStore) getAllNotBanned() []*address {
+	addresses := make([]*address, 0, len(as.notBannedAddresses))
 	for _, address := range as.notBannedAddresses {
-		addresses = append(addresses, address.netAddress)
+		addresses = append(addresses, address)
 	}
 	return addresses
 }
