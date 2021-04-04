@@ -2,7 +2,7 @@ package rpcclient
 
 import "github.com/kaspanet/kaspad/app/appmessage"
 
-// GetSubnetwork sends an RPC request respective to the function's name and returns the RPC server's response
+// GetInfo sends an RPC request respective to the function's name and returns the RPC server's response
 func (c *RPCClient) GetInfo() (*appmessage.GetInfoResponseMessage, error) {
 	err := c.rpcRouter.outgoingRoute().Enqueue(appmessage.NewGetInfoRequestMessage())
 	if err != nil {
