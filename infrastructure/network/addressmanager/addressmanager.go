@@ -97,7 +97,7 @@ func (am *AddressManager) addAddressNoLock(netAddress *appmessage.NetAddress) er
 	if am.store.notBannedCount() > maxAddresses {
 		allAddresses := am.store.getAllNotBanned()
 		sort.Slice(allAddresses, func(i, j int) bool {
-			return allAddresses[i].connectionFailedCount < allAddresses[j].connectionFailedCount
+			return allAddresses[i].connectionFailedCount > allAddresses[j].connectionFailedCount
 		})
 
 		toRemove := allAddresses[0]

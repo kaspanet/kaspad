@@ -325,9 +325,16 @@ func TestOverfillAddressManager(t *testing.T) {
 		return testAddresses
 	}
 
-	// Add `maxAddresses` addresses to the address manager
-	addresses := generateTestAddresses(maxAddresses)
-	err := addressManager.AddAddresses(addresses...)
+	// Add a single test address to the address manager
+	testAddress := &appmessage.NetAddress{IP: net.IP{5, 6, 0, 0}, Timestamp: mstime.Now()}
+	err := addressManager.AddAddress(testAddress)
+	if err != nil {
+		t.Fatalf("AddAddress: %s", err)
+	}
+
+	// Add `maxAddresses-1` addresses to the address manager
+	addresses := generateTestAddresses(maxAddresses - 1)
+	err = addressManager.AddAddresses(addresses...)
 	if err != nil {
 		t.Fatalf("AddAddresses: %s", err)
 	}
@@ -338,16 +345,29 @@ func TestOverfillAddressManager(t *testing.T) {
 		t.Fatalf("Unexpected address amount. Want: %d, got: %d", maxAddresses, len(returnedAddresses))
 	}
 
-	// Add 100 more addresses to the address manager
-	addresses = generateTestAddresses(100)
-	err = addressManager.AddAddresses(addresses...)
+	// Mark the first test address as a connection failure
+	err = addressManager.MarkConnectionFailure(testAddress)
 	if err != nil {
-		t.Fatalf("AddAddresses: %s", err)
+		t.Fatalf("MarkConnectionFailure: %s", err)
+	}
+
+	// Add one more addresses to the address manager
+	err = addressManager.AddAddress(&appmessage.NetAddress{IP: net.IP{7, 8, 0, 0}, Timestamp: mstime.Now()})
+	if err != nil {
+		t.Fatalf("AddAddress: %s", err)
 	}
 
 	// Make sure that it now still contains exactly `maxAddresses` entries
 	returnedAddresses = addressManager.Addresses()
 	if len(returnedAddresses) != maxAddresses {
 		t.Fatalf("Unexpected address amount. Want: %d, got: %d", maxAddresses, len(returnedAddresses))
+	}
+
+	// Make sure that the first address is no longer in the
+	// connection manager
+	for _, address := range returnedAddresses {
+		if address == testAddress {
+			t.Fatalf("Unexpectedly found testAddress returned addresses")
+		}
 	}
 }
