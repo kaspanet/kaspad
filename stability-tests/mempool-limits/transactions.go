@@ -14,6 +14,7 @@ import (
 	"github.com/kaspanet/kaspad/infrastructure/network/rpcclient"
 	"github.com/kaspanet/kaspad/stability-tests/common/mine"
 	"github.com/kaspanet/kaspad/util"
+	"strings"
 )
 
 const (
@@ -48,7 +49,9 @@ func generateFundingCoinbaseTransactions(rpcClient *rpcclient.RPCClient) {
 	}
 }
 
-func submitAnAmountOfTransactionsToTheMempool(rpcClient *rpcclient.RPCClient, amountToSubmit int) {
+func submitAnAmountOfTransactionsToTheMempool(
+	rpcClient *rpcclient.RPCClient, amountToSubmit int, ignoreOrphanRejects bool) {
+
 	log.Infof("Generating %d transactions", amountToSubmit)
 	transactions := make([]*externalapi.DomainTransaction, 0)
 	for len(transactions) < amountToSubmit {
@@ -73,6 +76,9 @@ func submitAnAmountOfTransactionsToTheMempool(rpcClient *rpcclient.RPCClient, am
 		rpcTransaction := appmessage.DomainTransactionToRPCTransaction(transaction)
 		_, err := rpcClient.SubmitTransaction(rpcTransaction)
 		if err != nil {
+			if ignoreOrphanRejects && strings.Contains(err.Error(), "orphan") {
+				continue
+			}
 			panic(err)
 		}
 		log.Infof("Submitted %d transactions", i+1)
