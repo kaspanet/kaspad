@@ -45,6 +45,7 @@ func (c *ConnectionManager) checkOutgoingConnections(connSet connectionSet) {
 			c.addressManager.MarkConnectionFailure(netAddress)
 			continue
 		}
+		c.addressManager.MarkConnectionSuccess(netAddress)
 
 		c.activeOutgoing[addressString] = struct{}{}
 	}
