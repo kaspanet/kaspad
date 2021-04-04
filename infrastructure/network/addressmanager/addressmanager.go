@@ -137,6 +137,19 @@ func (am *AddressManager) RemoveAddress(address *appmessage.NetAddress) error {
 	return am.removeAddressNoLock(address)
 }
 
+func (am *AddressManager) MarkConnectionFailure(address *appmessage.NetAddress) error {
+	am.mutex.Lock()
+	defer am.mutex.Unlock()
+
+	key := netAddressKey(address)
+	entry, ok := am.store.getNotBanned(key)
+	if !ok {
+		return errors.Errorf("address %s is not registered with the address manager", address)
+	}
+	entry.connectionFailedCount = entry.connectionFailedCount + 1
+	return am.store.updateNotBanned(key, entry)
+}
+
 // Addresses returns all addresses
 func (am *AddressManager) Addresses() []*appmessage.NetAddress {
 	am.mutex.Lock()

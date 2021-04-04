@@ -5,6 +5,7 @@ import (
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/infrastructure/db/database"
 	"github.com/kaspanet/kaspad/util/mstime"
+	"github.com/pkg/errors"
 	"net"
 )
 
@@ -112,6 +113,23 @@ func (as *addressStore) add(key addressKey, address *address) error {
 	databaseKey := as.notBannedDatabaseKey(key)
 	serializedAddress := as.serializeAddress(address)
 	return as.database.Put(databaseKey, serializedAddress)
+}
+
+func (as *addressStore) updateNotBanned(key addressKey, address *address) error {
+	if _, ok := as.notBannedAddresses[key]; !ok {
+		return errors.Errorf("address %s is not in the store", address.netAddress)
+	}
+
+	as.notBannedAddresses[key] = address
+
+	databaseKey := as.notBannedDatabaseKey(key)
+	serializedAddress := as.serializeAddress(address)
+	return as.database.Put(databaseKey, serializedAddress)
+}
+
+func (as *addressStore) getNotBanned(key addressKey) (*address, bool) {
+	address, ok := as.notBannedAddresses[key]
+	return address, ok
 }
 
 func (as *addressStore) remove(key addressKey) error {
