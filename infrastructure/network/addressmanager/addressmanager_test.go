@@ -303,3 +303,51 @@ func TestRestoreAddressManager(t *testing.T) {
 		t.Fatalf("Banned address %s not returned from BannedAddresses()", addressToBan.IP)
 	}
 }
+
+func TestOverfillAddressManager(t *testing.T) {
+	addressManager, teardown := newAddressManagerForTest(t, "TestAddressManager")
+	defer teardown()
+
+	generateTestAddresses := func(amount int) []*appmessage.NetAddress {
+		testAddresses := make([]*appmessage.NetAddress, 0, amount)
+		for i := byte(0); i < 128; i++ {
+			for j := byte(0); j < 128; j++ {
+				testAddress := &appmessage.NetAddress{IP: net.IP{1, 2, i, j}, Timestamp: mstime.Now()}
+				testAddresses = append(testAddresses, testAddress)
+				if len(testAddresses) == amount {
+					break
+				}
+			}
+			if len(testAddresses) == amount {
+				break
+			}
+		}
+		return testAddresses
+	}
+
+	// Add `maxAddresses` addresses to the address manager
+	addresses := generateTestAddresses(maxAddresses)
+	err := addressManager.AddAddresses(addresses...)
+	if err != nil {
+		t.Fatalf("AddAddresses: %s", err)
+	}
+
+	// Make sure that it now contains exactly `maxAddresses` entries
+	returnedAddresses := addressManager.Addresses()
+	if len(returnedAddresses) != maxAddresses {
+		t.Fatalf("Unexpected address amount. Want: %d, got: %d", maxAddresses, len(returnedAddresses))
+	}
+
+	// Add 100 more addresses to the address manager
+	addresses = generateTestAddresses(100)
+	err = addressManager.AddAddresses(addresses...)
+	if err != nil {
+		t.Fatalf("AddAddresses: %s", err)
+	}
+
+	// Make sure that it now still contains exactly `maxAddresses` entries
+	returnedAddresses = addressManager.Addresses()
+	if len(returnedAddresses) != maxAddresses {
+		t.Fatalf("Unexpected address amount. Want: %d, got: %d", maxAddresses, len(returnedAddresses))
+	}
+}
