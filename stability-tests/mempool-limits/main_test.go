@@ -8,7 +8,7 @@ import (
 	"testing"
 )
 
-const mempoolSizeLimit = 10_000
+const mempoolSizeLimit = 1_000_000
 
 func TestMempoolLimits(t *testing.T) {
 	defer panics.HandlePanic(log, "mempool-limits-main", nil)
