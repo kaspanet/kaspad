@@ -46,7 +46,7 @@ func main() {
 	// mempool to either not grow or even to shrink, since an eviction
 	// may also remove any dependant (chained) transactions.
 	// Note that we pass ignoreOrphanRejects: true because we
-	// expect some of the submitted transactions to depends on
+	// expect some of the submitted transactions to depend on
 	// transactions that had been evicted from the mempool
 	submitAnAmountOfTransactionsToTheMempool(rpcClient, 1000, true)
 	verifyMempoolSizeEqualToOrLessThan(rpcClient, mempoolSizeLimit)
