@@ -19,6 +19,8 @@ func main() {
 		err = sign(config.(*signConfig))
 	case broadcastSubCmd:
 		err = broadcast(config.(*broadcastConfig))
+	case showAddressSubCmd:
+		err = showAddress(config.(*showAddressConfig))
 	default:
 		err = errors.Errorf("Unknown sub-command '%s'\n", subCmd)
 	}

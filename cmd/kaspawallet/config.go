@@ -15,6 +15,7 @@ const (
 	createUnsignedTransactionSubCmd = "createUnsignedTransaction"
 	signSubCmd                      = "sign"
 	broadcastSubCmd                 = "broadcast"
+	showAddressSubCmd               = "show-address"
 )
 
 type configFlags struct {
@@ -63,6 +64,11 @@ type broadcastConfig struct {
 	config.NetworkFlags
 }
 
+type showAddressConfig struct {
+	KeysFile string `long:"keys-file" short:"f" description:"Keys file location (only if different from default)"`
+	config.NetworkFlags
+}
+
 func parseCommandLine() (subCommand string, config interface{}) {
 	cfg := &configFlags{}
 	parser := flags.NewParser(cfg, flags.PrintErrors|flags.HelpFlag)
@@ -90,6 +96,10 @@ func parseCommandLine() (subCommand string, config interface{}) {
 	broadcastConf := &broadcastConfig{}
 	parser.AddCommand(broadcastSubCmd, "Broadcast the given transaction",
 		"Broadcast the given transaction", broadcastConf)
+
+	showAddressConf := &showAddressConfig{}
+	parser.AddCommand(showAddressSubCmd, "Shows the public address of the current wallet",
+		"Shows the public address of the current wallet", showAddressConf)
 
 	_, err := parser.Parse()
 
@@ -146,6 +156,13 @@ func parseCommandLine() (subCommand string, config interface{}) {
 			printErrorAndExit(err)
 		}
 		config = broadcastConf
+	case showAddressSubCmd:
+		combineNetworkFlags(&showAddressConf.NetworkFlags, &cfg.NetworkFlags)
+		err := showAddressConf.ResolveNetwork(parser)
+		if err != nil {
+			printErrorAndExit(err)
+		}
+		config = showAddressConf
 	}
 
 	return parser.Command.Active.Name, config
