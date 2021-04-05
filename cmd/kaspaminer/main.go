@@ -40,7 +40,7 @@ func main() {
 	if err != nil {
 		panic(errors.Wrap(err, "error connecting to the RPC server"))
 	}
-	defer client.safeRPCClient().Disconnect()
+	defer client.Disconnect()
 
 	miningAddr, err := util.DecodeAddress(cfg.MiningAddr, cfg.ActiveNetParams.Prefix)
 	if err != nil {

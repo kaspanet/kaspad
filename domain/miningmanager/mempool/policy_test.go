@@ -179,9 +179,9 @@ func TestCheckTransactionStandard(t *testing.T) {
 		Sequence:         constants.MaxTxInSequenceNum,
 	}
 	addrHash := [32]byte{0x01}
-	addr, err := util.NewAddressPubKeyHash(addrHash[:], util.Bech32PrefixKaspaTest)
+	addr, err := util.NewAddressPublicKey(addrHash[:], util.Bech32PrefixKaspaTest)
 	if err != nil {
-		t.Fatalf("NewAddressPubKeyHash: unexpected error: %v", err)
+		t.Fatalf("NewAddressPublicKey: unexpected error: %v", err)
 	}
 	dummyScriptPublicKey, err := txscript.PayToAddrScript(addr)
 	if err != nil {
@@ -200,7 +200,7 @@ func TestCheckTransactionStandard(t *testing.T) {
 		code       RejectCode
 	}{
 		{
-			name:       "Typical pay-to-pubkey-hash transaction",
+			name:       "Typical pay-to-pubkey transaction",
 			tx:         consensusexternalapi.DomainTransaction{Version: 0, Inputs: []*consensusexternalapi.DomainTransactionInput{&dummyTxIn}, Outputs: []*consensusexternalapi.DomainTransactionOutput{&dummyTxOut}},
 			height:     300000,
 			isStandard: true,
