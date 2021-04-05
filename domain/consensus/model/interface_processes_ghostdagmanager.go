@@ -8,4 +8,5 @@ type GHOSTDAGManager interface {
 	ChooseSelectedParent(blockHashes ...*externalapi.DomainHash) (*externalapi.DomainHash, error)
 	Less(blockHashA *externalapi.DomainHash, ghostdagDataA *BlockGHOSTDAGData,
 		blockHashB *externalapi.DomainHash, ghostdagDataB *BlockGHOSTDAGData) bool
+	GetSortedMergeSet(current *externalapi.DomainHash) ([]*externalapi.DomainHash, error)
 }

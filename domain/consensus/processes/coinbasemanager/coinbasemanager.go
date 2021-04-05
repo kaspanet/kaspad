@@ -39,8 +39,9 @@ func (c *coinbaseManager) ExpectedCoinbaseTransaction(blockHash *externalapi.Dom
 	}
 
 	txOuts := make([]*externalapi.DomainTransactionOutput, 0, len(ghostdagData.MergeSetBlues()))
-	for i, blue := range ghostdagData.MergeSetBlues() {
-		txOut, hasReward, err := c.coinbaseOutputForBlueBlock(blue, acceptanceData[i], daaAddedBlocksSet)
+	acceptanceDataMap := acceptanceDataFromArrayToMap(acceptanceData)
+	for _, blue := range ghostdagData.MergeSetBlues() {
+		txOut, hasReward, err := c.coinbaseOutputForBlueBlock(blue, acceptanceDataMap[*blue], daaAddedBlocksSet)
 		if err != nil {
 			return nil, err
 		}
@@ -117,10 +118,10 @@ func (c *coinbaseManager) coinbaseOutputForRewardFromRedBlocks(ghostdagData *mod
 	acceptanceData externalapi.AcceptanceData, daaAddedBlocksSet hashset.HashSet,
 	coinbaseData *externalapi.DomainCoinbaseData) (*externalapi.DomainTransactionOutput, bool, error) {
 
+	acceptanceDataMap := acceptanceDataFromArrayToMap(acceptanceData)
 	totalReward := uint64(0)
-	mergeSetBluesCount := len(ghostdagData.MergeSetBlues())
-	for i, red := range ghostdagData.MergeSetReds() {
-		reward, err := c.calcMergedBlockReward(red, acceptanceData[mergeSetBluesCount+i], daaAddedBlocksSet)
+	for _, red := range ghostdagData.MergeSetReds() {
+		reward, err := c.calcMergedBlockReward(red, acceptanceDataMap[*red], daaAddedBlocksSet)
 		if err != nil {
 			return nil, false, err
 		}
@@ -136,6 +137,14 @@ func (c *coinbaseManager) coinbaseOutputForRewardFromRedBlocks(ghostdagData *mod
 		Value:           totalReward,
 		ScriptPublicKey: coinbaseData.ScriptPublicKey,
 	}, true, nil
+}
+
+func acceptanceDataFromArrayToMap(acceptanceData externalapi.AcceptanceData) map[externalapi.DomainHash]*externalapi.BlockAcceptanceData {
+	acceptanceDataMap := make(map[externalapi.DomainHash]*externalapi.BlockAcceptanceData)
+	for _, blockAcceptanceData := range acceptanceData {
+		acceptanceDataMap[*blockAcceptanceData.BlockHash] = blockAcceptanceData
+	}
+	return acceptanceDataMap
 }
 
 // calcBlockSubsidy returns the subsidy amount a block at the provided blue score

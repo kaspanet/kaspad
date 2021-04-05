@@ -49,7 +49,7 @@ func (csm *consensusStateManager) CalculatePastUTXOAndAcceptanceData(blockHash *
 		selectedParentPastUTXO.ToAdd().Len(), selectedParentPastUTXO.ToRemove().Len())
 
 	log.Debugf("Applying blue blocks to the selected parent past UTXO of block %s", blockHash)
-	acceptanceData, utxoDiff, err := csm.applyMergeSetBlocks(blockHash, selectedParentPastUTXO, blockGHOSTDAGData, daaScore)
+	acceptanceData, utxoDiff, err := csm.applyMergeSetBlocks(blockHash, selectedParentPastUTXO, daaScore)
 	if err != nil {
 		return nil, nil, nil, err
 	}
@@ -121,13 +121,16 @@ func (csm *consensusStateManager) restorePastUTXO(blockHash *externalapi.DomainH
 }
 
 func (csm *consensusStateManager) applyMergeSetBlocks(blockHash *externalapi.DomainHash,
-	selectedParentPastUTXODiff externalapi.MutableUTXODiff, ghostdagData *model.BlockGHOSTDAGData, daaScore uint64) (
+	selectedParentPastUTXODiff externalapi.MutableUTXODiff, daaScore uint64) (
 	externalapi.AcceptanceData, externalapi.MutableUTXODiff, error) {
 
 	log.Debugf("applyMergeSetBlocks start for block %s", blockHash)
 	defer log.Debugf("applyMergeSetBlocks end for block %s", blockHash)
 
-	mergeSetHashes := ghostdagData.MergeSet()
+	mergeSetHashes, err := csm.ghostdagManager.GetSortedMergeSet(blockHash)
+	if err != nil {
+		return nil, nil, err
+	}
 	log.Debugf("Merge set for block %s is %v", blockHash, mergeSetHashes)
 	mergeSetBlocks, err := csm.blockStore.Blocks(csm.databaseContext, mergeSetHashes)
 	if err != nil {

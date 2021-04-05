@@ -2,11 +2,10 @@ package consensusstatemanager_test
 
 import (
 	"errors"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/utxo"
 	"testing"
 
 	"github.com/kaspanet/kaspad/domain/consensus/model"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/subnetworks"
 
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
 
@@ -22,10 +21,8 @@ import (
 func TestDoubleSpends(t *testing.T) {
 	testutils.ForAllNets(t, true, func(t *testing.T, params *dagconfig.Params) {
 		params.BlockCoinbaseMaturity = 0
-
 		factory := consensus.NewFactory()
-
-		consensus, teardown, err := factory.NewTestConsensus(params, false, "TestUTXOCommitment")
+		consensus, teardown, err := factory.NewTestConsensus(params, false, "TestDoubleSpends")
 		if err != nil {
 			t.Fatalf("Error setting up consensus: %+v", err)
 		}
@@ -155,8 +152,11 @@ func TestDoubleSpends(t *testing.T) {
 	})
 }
 
-// TestTransactionAcceptance checks that blue blocks transactions are favoured above
-// red blocks transactions, and that the block reward is paid only for blue blocks.
+// TestTransactionAcceptance checks that block transactions are acceptance correctly when the mergeSet is sorted topologically.
+// DAG diagram:
+// genesis <- fundingBlock1Hash <- fundingBlock2Hash <- fundingBlock3Hash <- ..k-blocks.. <------ tip hash <- afterTip <- twoAfterTip <- finalTip
+//                             										^								  ^										|
+//																	| redBlock <----------------------| --- blueBlock <----------------------
 func TestTransactionAcceptance(t *testing.T) {
 	testutils.ForAllNets(t, true, func(t *testing.T, params *dagconfig.Params) {
 		params.BlockCoinbaseMaturity = 0
@@ -172,18 +172,14 @@ func TestTransactionAcceptance(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Error creating fundingBlock1: %+v", err)
 		}
-
 		fundingBlock2Hash, _, err := testConsensus.AddBlock([]*externalapi.DomainHash{fundingBlock1Hash}, nil, nil)
 		if err != nil {
 			t.Fatalf("Error creating fundingBlock2: %+v", err)
 		}
-
-		// Generate fundingBlock3 to pay for fundingBlock2
 		fundingBlock3Hash, _, err := testConsensus.AddBlock([]*externalapi.DomainHash{fundingBlock2Hash}, nil, nil)
 		if err != nil {
 			t.Fatalf("Error creating fundingBlock3: %+v", err)
 		}
-
 		// Add a chain of K blocks above fundingBlock3 so we'll
 		// be able to mine a red block on top of it.
 		tipHash := fundingBlock3Hash
@@ -191,83 +187,57 @@ func TestTransactionAcceptance(t *testing.T) {
 			var err error
 			tipHash, _, err = testConsensus.AddBlock([]*externalapi.DomainHash{tipHash}, nil, nil)
 			if err != nil {
-				t.Fatalf("Error creating fundingBlock1: %+v", err)
+				t.Fatalf("Error creating a block: %+v", err)
 			}
 		}
 
-		fundingBlock2, err := testConsensus.GetBlock(fundingBlock2Hash)
-		if err != nil {
-			t.Fatalf("Error getting fundingBlock: %+v", err)
-		}
-
-		fundingTransaction1 := fundingBlock2.Transactions[transactionhelper.CoinbaseTransactionIndex]
-
 		fundingBlock3, err := testConsensus.GetBlock(fundingBlock3Hash)
 		if err != nil {
-			t.Fatalf("Error getting fundingBlock: %+v", err)
+			t.Fatalf("Error getting the fundingBlock3: %+v", err)
 		}
-
-		fundingTransaction2 := fundingBlock3.Transactions[transactionhelper.CoinbaseTransactionIndex]
-
-		spendingTransaction1, err := testutils.CreateTransaction(fundingTransaction1)
+		transactionToSpend0 := fundingBlock3.Transactions[transactionhelper.CoinbaseTransactionIndex]
+		spendingTransaction0, err := testutils.CreateTransaction(transactionToSpend0)
 		if err != nil {
-			t.Fatalf("Error creating spendingTransaction1: %+v", err)
+			t.Fatalf("Error creating a transaction: %+v", err)
 		}
-		spendingTransaction1UTXOEntry, err := testConsensus.ConsensusStateStore().
-			UTXOByOutpoint(testConsensus.DatabaseContext(), &spendingTransaction1.Inputs[0].PreviousOutpoint)
+		spendingTransaction0Input0UTXOEntry, err := testConsensus.ConsensusStateStore().
+			UTXOByOutpoint(testConsensus.DatabaseContext(), &spendingTransaction0.Inputs[0].PreviousOutpoint)
 		if err != nil {
-			t.Fatalf("Error getting UTXOEntry for spendingTransaction1: %s", err)
+			t.Fatalf("Error getting UTXOEntry for spendingTransaction0Input0: %s", err)
 		}
-
-		spendingTransaction2, err := testutils.CreateTransaction(fundingTransaction2)
-		if err != nil {
-			t.Fatalf("Error creating spendingTransaction1: %+v", err)
-		}
-		spendingTransaction2UTXOEntry, err := testConsensus.ConsensusStateStore().
-			UTXOByOutpoint(testConsensus.DatabaseContext(), &spendingTransaction2.Inputs[0].PreviousOutpoint)
-		if err != nil {
-			t.Fatalf("Error getting UTXOEntry for spendingTransaction2: %s", err)
-		}
-
 		redHash, _, err := testConsensus.AddBlock([]*externalapi.DomainHash{fundingBlock3Hash}, nil,
-			[]*externalapi.DomainTransaction{spendingTransaction1, spendingTransaction2})
+			[]*externalapi.DomainTransaction{spendingTransaction0})
 		if err != nil {
 			t.Fatalf("Error creating redBlock: %+v", err)
 		}
 
-		blueScriptPublicKey := &externalapi.ScriptPublicKey{Script: []byte{1}, Version: 0}
-		blueHash, _, err := testConsensus.AddBlock([]*externalapi.DomainHash{tipHash}, &externalapi.DomainCoinbaseData{
-			ScriptPublicKey: blueScriptPublicKey,
-			ExtraData:       nil,
-		},
+		transactionToSpend1 := spendingTransaction0
+		spendingTransaction1, err := testutils.CreateTransaction(transactionToSpend1)
+		if err != nil {
+			t.Fatalf("Error creating spendingTransaction1: %+v", err)
+		}
+		spendingTransaction1Input0UTXOEntry, err := testConsensus.ConsensusStateStore().
+			UTXOByOutpoint(testConsensus.DatabaseContext(), &spendingTransaction1.Inputs[0].PreviousOutpoint)
+		if err != nil {
+			t.Fatalf("Error getting UTXOEntry for spendingTransaction1Input0: %s", err)
+		}
+		blueHash, _, err := testConsensus.AddBlock(
+			[]*externalapi.DomainHash{tipHash, redHash},
+			nil,
 			[]*externalapi.DomainTransaction{spendingTransaction1})
 		if err != nil {
-			t.Fatalf("Error creating blue: %+v", err)
+			t.Fatalf("Error creating blueBlock: %+v", err)
 		}
 
-		// Mining two blocks so tipHash will definitely be the selected tip.
-		tipHash, _, err = testConsensus.AddBlock([]*externalapi.DomainHash{tipHash}, nil, nil)
+		afterTipHash, _, err := testConsensus.AddBlock([]*externalapi.DomainHash{tipHash}, nil, nil)
 		if err != nil {
-			t.Fatalf("Error creating tip: %+v", err)
+			t.Fatalf("Error creating afterTip block: %+v", err)
 		}
-
-		finalTipSelectedParentScriptPublicKey := &externalapi.ScriptPublicKey{Script: []byte{3}, Version: 0}
-		finalTipSelectedParentHash, _, err := testConsensus.AddBlock([]*externalapi.DomainHash{tipHash},
-			&externalapi.DomainCoinbaseData{
-				ScriptPublicKey: finalTipSelectedParentScriptPublicKey,
-				ExtraData:       nil,
-			}, nil)
+		twoAfterTipHash, _, err := testConsensus.AddBlock([]*externalapi.DomainHash{afterTipHash}, nil, nil)
 		if err != nil {
-			t.Fatalf("Error creating tip: %+v", err)
+			t.Fatalf("Error creating twoAfterTip: %+v", err)
 		}
-
-		finalTipScriptPublicKey := &externalapi.ScriptPublicKey{Script: []byte{4}, Version: 0}
-		finalTipHash, _, err := testConsensus.AddBlock([]*externalapi.DomainHash{finalTipSelectedParentHash, redHash, blueHash},
-			&externalapi.DomainCoinbaseData{
-				ScriptPublicKey: finalTipScriptPublicKey,
-				ExtraData:       nil,
-			},
-			nil)
+		finalTipHash, _, err := testConsensus.AddBlock([]*externalapi.DomainHash{twoAfterTipHash, blueHash}, nil, nil)
 		if err != nil {
 			t.Fatalf("Error creating finalTip: %+v", err)
 		}
@@ -276,114 +246,75 @@ func TestTransactionAcceptance(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Error getting acceptance data: %+v", err)
 		}
-
-		finalTipSelectedParent, err := testConsensus.GetBlock(finalTipSelectedParentHash)
+		blueBlock, err := testConsensus.GetBlock(blueHash)
 		if err != nil {
-			t.Fatalf("Error getting finalTipSelectedParent: %+v", err)
+			t.Fatalf("Error getting blueBlock: %+v", err)
 		}
-
-		blue, err := testConsensus.GetBlock(blueHash)
+		twoAfterTipBlock, err := testConsensus.GetBlock(twoAfterTipHash)
 		if err != nil {
-			t.Fatalf("Error getting blue: %+v", err)
+			t.Fatalf("Error getting twoAfterTipBlock: %+v", err)
 		}
-
-		red, err := testConsensus.GetBlock(redHash)
+		redBlock, err := testConsensus.GetBlock(redHash)
 		if err != nil {
-			t.Fatalf("Error getting red: %+v", err)
+			t.Fatalf("Error getting redBlock: %+v", err)
 		}
-
-		// We expect spendingTransaction1 to be accepted by the blue block and not by the red one, because
-		// blue blocks in the merge set should always be ordered before red blocks in the merge set.
-		// We also expect spendingTransaction2 to be accepted by the red because nothing conflicts it.
+		updatedDAAScoreVirtualBlock := 25
+		// We expect the second transaction in the "blue block" to be accepted because the merge set is ordered topologically
+		// and the red block is ordered topologically before the blue block so the input is known in the UTXOSet.
 		expectedAcceptanceData := externalapi.AcceptanceData{
 			{
-				BlockHash: finalTipSelectedParentHash,
+				BlockHash: twoAfterTipHash,
 				TransactionAcceptanceData: []*externalapi.TransactionAcceptanceData{
 					{
-						Transaction:                 finalTipSelectedParent.Transactions[0],
+						Transaction:                 twoAfterTipBlock.Transactions[0],
 						Fee:                         0,
 						IsAccepted:                  true,
 						TransactionInputUTXOEntries: []externalapi.UTXOEntry{},
-					},
-				},
-			},
-			{
-				BlockHash: blueHash,
-				TransactionAcceptanceData: []*externalapi.TransactionAcceptanceData{
-					{
-						Transaction:                 blue.Transactions[0],
-						Fee:                         0,
-						IsAccepted:                  false,
-						TransactionInputUTXOEntries: []externalapi.UTXOEntry{},
-					},
-					{
-						Transaction:                 spendingTransaction1,
-						Fee:                         1,
-						IsAccepted:                  true,
-						TransactionInputUTXOEntries: []externalapi.UTXOEntry{spendingTransaction1UTXOEntry},
 					},
 				},
 			},
 			{
 				BlockHash: redHash,
 				TransactionAcceptanceData: []*externalapi.TransactionAcceptanceData{
-					{
-						Transaction:                 red.Transactions[0],
+					{ //Coinbase transaction outputs are added to the UTXO-set only if they are in the selected parent chain,
+						// and this block isn't.
+						Transaction:                 redBlock.Transactions[0],
 						Fee:                         0,
 						IsAccepted:                  false,
 						TransactionInputUTXOEntries: []externalapi.UTXOEntry{},
 					},
 					{
-						Transaction:                 spendingTransaction1,
-						Fee:                         0,
-						IsAccepted:                  false,
-						TransactionInputUTXOEntries: []externalapi.UTXOEntry{},
-					},
-					{
-						Transaction:                 spendingTransaction2,
-						Fee:                         1,
+						Transaction:                 redBlock.Transactions[1],
+						Fee:                         1, // testutils.CreateTransaction pays a fee of 1 sompi.
 						IsAccepted:                  true,
-						TransactionInputUTXOEntries: []externalapi.UTXOEntry{spendingTransaction2UTXOEntry},
+						TransactionInputUTXOEntries: []externalapi.UTXOEntry{spendingTransaction0Input0UTXOEntry},
+					},
+				},
+			},
+			{
+				BlockHash: blueHash,
+				TransactionAcceptanceData: []*externalapi.TransactionAcceptanceData{
+					{ //Coinbase transaction outputs are added to the UTXO-set only if they are in the selected parent chain,
+						// and this block isn't.
+						Transaction:                 blueBlock.Transactions[0],
+						Fee:                         0,
+						IsAccepted:                  false,
+						TransactionInputUTXOEntries: []externalapi.UTXOEntry{},
+					},
+					{ // The DAAScore was calculated by the virtual block pov. The DAAScore has changed since more blocks were added to the DAG.
+						// So we will change the DAAScore in the UTXOEntryInput to the updated virtual DAAScore.
+						Transaction: blueBlock.Transactions[1],
+						Fee:         1, // testutils.CreateTransaction pays a fee of 1 sompi.
+						IsAccepted:  true,
+						TransactionInputUTXOEntries: []externalapi.UTXOEntry{
+							utxo.NewUTXOEntry(spendingTransaction1Input0UTXOEntry.Amount(), spendingTransaction1Input0UTXOEntry.ScriptPublicKey(),
+								spendingTransaction1Input0UTXOEntry.IsCoinbase(), uint64(updatedDAAScoreVirtualBlock))},
 					},
 				},
 			},
 		}
-
 		if !acceptanceData.Equal(expectedAcceptanceData) {
 			t.Fatalf("The acceptance data is not the expected acceptance data")
-		}
-
-		finalTip, err := testConsensus.GetBlock(finalTipHash)
-		if err != nil {
-			t.Fatalf("Error getting finalTip: %+v", err)
-		}
-
-		// We expect the coinbase transaction to pay reward for the selected parent, the
-		// blue block, and bestow the red block reward to the merging block.
-		expectedCoinbase := &externalapi.DomainTransaction{
-			Version: constants.MaxTransactionVersion,
-			Inputs:  nil,
-			Outputs: []*externalapi.DomainTransactionOutput{
-				{
-					Value:           50 * constants.SompiPerKaspa,
-					ScriptPublicKey: finalTipSelectedParentScriptPublicKey,
-				},
-				{
-					Value:           50*constants.SompiPerKaspa + 1, // testutils.CreateTransaction pays a fee of 1 sompi
-					ScriptPublicKey: blueScriptPublicKey,
-				},
-				{
-					Value:           50*constants.SompiPerKaspa + 1,
-					ScriptPublicKey: finalTipScriptPublicKey,
-				},
-			},
-			LockTime:     0,
-			SubnetworkID: subnetworks.SubnetworkIDCoinbase,
-			Gas:          0,
-			Payload:      finalTip.Transactions[0].Payload,
-		}
-		if !finalTip.Transactions[transactionhelper.CoinbaseTransactionIndex].Equal(expectedCoinbase) {
-			t.Fatalf("Unexpected coinbase transaction")
 		}
 	})
 }

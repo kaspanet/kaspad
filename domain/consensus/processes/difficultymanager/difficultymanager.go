@@ -160,9 +160,13 @@ func (dm *difficultyManager) calculateDaaScoreAndAddedBlocks(blockHash *external
 	if err != nil {
 		return 0, nil, err
 	}
+	mergeSetLength := len(ghostdagData.MergeSetBlues()) + len(ghostdagData.MergeSetReds())
+	mergeSet := make(map[externalapi.DomainHash]struct{}, mergeSetLength)
+	for _, hash := range ghostdagData.MergeSetBlues() {
+		mergeSet[*hash] = struct{}{}
+	}
 
-	mergeSet := make(map[externalapi.DomainHash]struct{}, len(ghostdagData.MergeSet()))
-	for _, hash := range ghostdagData.MergeSet() {
+	for _, hash := range ghostdagData.MergeSetReds() {
 		mergeSet[*hash] = struct{}{}
 	}
 
