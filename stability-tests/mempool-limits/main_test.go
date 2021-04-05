@@ -9,7 +9,10 @@ import (
 	"testing"
 )
 
-const mempoolSizeLimit = 1_000_000
+const (
+	mempoolSizeLimit        = 1_000_000
+	overfillMempoolByAmount = 1_000
+)
 
 func TestMempoolLimits(t *testing.T) {
 	if os.Getenv("RUN_STABILITY_TESTS") == "" {
@@ -39,7 +42,13 @@ func TestMempoolLimits(t *testing.T) {
 	// Fill up the mempool to the brim
 	submitAnAmountOfTransactionsToTheMempool(t, rpcClient, payAddressKeyPair,
 		payToPayAddressScript, fundingTransactions, mempoolSizeLimit, false)
-	verifyMempoolSizeEqualTo(t, rpcClient, mempoolSizeLimit)
+
+	// Make sure that the mempool size is exactly the limit
+	mempoolSize := getMempoolSize(t, rpcClient)
+	if mempoolSize != mempoolSizeLimit {
+		t.Fatalf("Unexpected mempool size. Want: %d, got: %d",
+			mempoolSizeLimit, mempoolSize)
+	}
 
 	// Add some more transactions to the mempool. We expect the
 	// mempool to either not grow or even to shrink, since an eviction
@@ -48,8 +57,14 @@ func TestMempoolLimits(t *testing.T) {
 	// expect some of the submitted transactions to depend on
 	// transactions that had been evicted from the mempool
 	submitAnAmountOfTransactionsToTheMempool(t, rpcClient, payAddressKeyPair,
-		payToPayAddressScript, fundingTransactions, 1000, true)
-	verifyMempoolSizeEqualToOrLessThan(t, rpcClient, mempoolSizeLimit)
+		payToPayAddressScript, fundingTransactions, overfillMempoolByAmount, true)
+
+	// Make sure that the mempool size is the limit or smaller
+	mempoolSize = getMempoolSize(t, rpcClient)
+	if mempoolSize > mempoolSizeLimit {
+		t.Fatalf("Unexpected mempool size. Want at most: %d, got: %d",
+			mempoolSizeLimit, mempoolSize)
+	}
 
 	// Empty mempool out by continuously adding blocks to the DAG
 	emptyOutMempool(t, rpcClient)
@@ -65,26 +80,12 @@ func buildRPCClient(t *testing.T) *rpcclient.RPCClient {
 	return client
 }
 
-func verifyMempoolSizeEqualTo(t *testing.T, rpcClient *rpcclient.RPCClient, expectedMempoolSize int) {
+func getMempoolSize(t *testing.T, rpcClient *rpcclient.RPCClient) uint64 {
 	getInfoResponse, err := rpcClient.GetInfo()
 	if err != nil {
 		t.Fatalf("GetInfo: %s", err)
 	}
-	if getInfoResponse.MempoolSize != uint64(expectedMempoolSize) {
-		t.Fatalf("Unexpected mempool size. Want: %d, got: %d",
-			expectedMempoolSize, getInfoResponse.MempoolSize)
-	}
-}
-
-func verifyMempoolSizeEqualToOrLessThan(t *testing.T, rpcClient *rpcclient.RPCClient, expectedMaxMempoolSize int) {
-	getInfoResponse, err := rpcClient.GetInfo()
-	if err != nil {
-		t.Fatalf("GetInfo: %s", err)
-	}
-	if getInfoResponse.MempoolSize > uint64(expectedMaxMempoolSize) {
-		t.Fatalf("Unexpected mempool size. Want: %d, got: %d",
-			expectedMaxMempoolSize, getInfoResponse.MempoolSize)
-	}
+	return getInfoResponse.MempoolSize
 }
 
 func emptyOutMempool(t *testing.T, rpcClient *rpcclient.RPCClient) {
