@@ -1,6 +1,7 @@
 package hashes
 
 import (
+	"crypto/sha256"
 	"github.com/pkg/errors"
 	"golang.org/x/crypto/blake2b"
 )
@@ -39,6 +40,11 @@ func NewTransactionSigningHashWriter() HashWriter {
 		panic(errors.Wrapf(err, "this should never happen. %s is less than 64 bytes", transcationSigningDomain))
 	}
 	return HashWriter{blake}
+}
+
+// NewTransactionSigningHashECDSAWriter Returns a new HashWriter used for signing on a transaction with ECDSA
+func NewTransactionSigningHashECDSAWriter() HashWriter {
+	return HashWriter{sha256.New()}
 }
 
 // NewBlockHashWriter Returns a new HashWriter used for hashing blocks

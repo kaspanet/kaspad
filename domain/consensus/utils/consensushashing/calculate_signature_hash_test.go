@@ -196,10 +196,10 @@ func TestCalculateSignatureHash(t *testing.T) {
 			tx = test.modificationFunction(tx)
 		}
 
-		actualSignatureHash, err := consensushashing.CalculateSignatureHash(
+		actualSignatureHash, err := consensushashing.CalculateSignatureHashSchnorr(
 			tx, test.inputIndex, test.hashType, &consensushashing.SighashReusedValues{})
 		if err != nil {
-			t.Errorf("%s: Error from CalculateSignatureHash: %+v", test.name, err)
+			t.Errorf("%s: Error from CalculateSignatureHashSchnorr: %+v", test.name, err)
 			continue
 		}
 
@@ -300,9 +300,9 @@ func BenchmarkCalculateSignatureHash(b *testing.B) {
 				reusedValues := &consensushashing.SighashReusedValues{}
 				for inputIndex := range tx.Inputs {
 					sigHashType := sigHashTypes[inputIndex%len(sigHashTypes)]
-					_, err := consensushashing.CalculateSignatureHash(tx, inputIndex, sigHashType, reusedValues)
+					_, err := consensushashing.CalculateSignatureHashSchnorr(tx, inputIndex, sigHashType, reusedValues)
 					if err != nil {
-						b.Fatalf("Error from CalculateSignatureHash: %+v", err)
+						b.Fatalf("Error from CalculateSignatureHashSchnorr: %+v", err)
 					}
 				}
 			}
