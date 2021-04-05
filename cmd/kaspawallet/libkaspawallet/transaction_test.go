@@ -156,7 +156,7 @@ func TestMultisig(t *testing.T) {
 	})
 }
 
-func TestP2PKH(t *testing.T) {
+func TestP2PK(t *testing.T) {
 	testutils.ForAllNets(t, true, func(t *testing.T, params *dagconfig.Params) {
 		params.BlockCoinbaseMaturity = 0
 		tc, teardown, err := consensus.NewFactory().NewTestConsensus(params, false, "TestMultisig")
@@ -181,7 +181,7 @@ func TestP2PKH(t *testing.T) {
 			t.Fatalf("Address: %+v", err)
 		}
 
-		if _, ok := address.(*util.AddressPubKeyHash); !ok {
+		if _, ok := address.(*util.AddressPublicKey); !ok {
 			t.Fatalf("The address is of unexpected type")
 		}
 

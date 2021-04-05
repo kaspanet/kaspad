@@ -38,8 +38,8 @@ func main() {
 	// later...
 
 	// Create and print new payment address, specific to the active network.
-	pubKeyHash := make([]byte, 20)
-	addr, err := util.NewAddressPubKeyHash(pubKeyHash, dagParams)
+	pubKey := make([]byte, 32)
+	addr, err := util.NewAddressPubKey(pubKey, dagParams)
 	if err != nil {
 		log.Fatal(err)
 	}

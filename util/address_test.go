@@ -26,99 +26,99 @@ func TestAddresses(t *testing.T) {
 		passedPrefix   util.Bech32Prefix
 		expectedPrefix util.Bech32Prefix
 	}{
-		// Positive P2PKH tests.
+		// Positive P2PK tests.
 		{
-			name:    "mainnet p2pkh",
+			name:    "mainnet p2pk",
 			addr:    "kaspa:qr35ennsep3hxfe7lnz5ee7j5jgmkjswsn35ennsep3hxfe7ln35cdv0dy335",
 			encoded: "kaspa:qr35ennsep3hxfe7lnz5ee7j5jgmkjswsn35ennsep3hxfe7ln35cdv0dy335",
 			valid:   true,
-			result: util.TstAddressPubKeyHash(
+			result: util.TstAddressPubKey(
 				util.Bech32PrefixKaspa,
-				[blake2b.Size256]byte{
+				[util.PublicKeySize]byte{
 					0xe3, 0x4c, 0xce, 0x70, 0xc8, 0x63, 0x73, 0x27, 0x3e, 0xfc,
 					0xc5, 0x4c, 0xe7, 0xd2, 0xa4, 0x91, 0xbb, 0x4a, 0x0e, 0x84,
 					0xe3, 0x4c, 0xce, 0x70, 0xc8, 0x63, 0x73, 0x27, 0x3e, 0xfc,
 					0xe3, 0x4c,
 				}),
 			f: func() (util.Address, error) {
-				pkHash := []byte{
+				publicKey := []byte{
 					0xe3, 0x4c, 0xce, 0x70, 0xc8, 0x63, 0x73, 0x27, 0x3e, 0xfc,
 					0xc5, 0x4c, 0xe7, 0xd2, 0xa4, 0x91, 0xbb, 0x4a, 0x0e, 0x84,
 					0xe3, 0x4c, 0xce, 0x70, 0xc8, 0x63, 0x73, 0x27, 0x3e, 0xfc,
 					0xe3, 0x4c}
-				return util.NewAddressPubKeyHash(pkHash, util.Bech32PrefixKaspa)
+				return util.NewAddressPublicKey(publicKey, util.Bech32PrefixKaspa)
 			},
 			passedPrefix:   util.Bech32PrefixUnknown,
 			expectedPrefix: util.Bech32PrefixKaspa,
 		},
 		{
-			name:    "mainnet p2pkh 2",
+			name:    "mainnet p2pk 2",
 			addr:    "kaspa:qq80qvqs0lfxuzmt7sz3909ze6camq9d4t35ennsep3hxfe7ln35cvfqgz3z8",
 			encoded: "kaspa:qq80qvqs0lfxuzmt7sz3909ze6camq9d4t35ennsep3hxfe7ln35cvfqgz3z8",
 			valid:   true,
-			result: util.TstAddressPubKeyHash(
+			result: util.TstAddressPubKey(
 				util.Bech32PrefixKaspa,
-				[blake2b.Size256]byte{
+				[util.PublicKeySize]byte{
 					0x0e, 0xf0, 0x30, 0x10, 0x7f, 0xd2, 0x6e, 0x0b, 0x6b, 0xf4,
 					0x05, 0x12, 0xbc, 0xa2, 0xce, 0xb1, 0xdd, 0x80, 0xad, 0xaa,
 					0xe3, 0x4c, 0xce, 0x70, 0xc8, 0x63, 0x73, 0x27, 0x3e, 0xfc,
 					0xe3, 0x4c,
 				}),
 			f: func() (util.Address, error) {
-				pkHash := []byte{
+				publicKey := []byte{
 					0x0e, 0xf0, 0x30, 0x10, 0x7f, 0xd2, 0x6e, 0x0b, 0x6b, 0xf4,
 					0x05, 0x12, 0xbc, 0xa2, 0xce, 0xb1, 0xdd, 0x80, 0xad, 0xaa,
 					0xe3, 0x4c, 0xce, 0x70, 0xc8, 0x63, 0x73, 0x27, 0x3e, 0xfc,
 					0xe3, 0x4c,
 				}
-				return util.NewAddressPubKeyHash(pkHash, util.Bech32PrefixKaspa)
+				return util.NewAddressPublicKey(publicKey, util.Bech32PrefixKaspa)
 			},
 			passedPrefix:   util.Bech32PrefixKaspa,
 			expectedPrefix: util.Bech32PrefixKaspa,
 		},
 		{
-			name:    "testnet p2pkh",
+			name:    "testnet p2pk",
 			addr:    "kaspatest:qputx94qseratdmjs0j395mq8u03er0x3l35ennsep3hxfe7ln35ckquw528z",
 			encoded: "kaspatest:qputx94qseratdmjs0j395mq8u03er0x3l35ennsep3hxfe7ln35ckquw528z",
 			valid:   true,
-			result: util.TstAddressPubKeyHash(
+			result: util.TstAddressPubKey(
 				util.Bech32PrefixKaspaTest,
-				[blake2b.Size256]byte{
+				[util.PublicKeySize]byte{
 					0x78, 0xb3, 0x16, 0xa0, 0x86, 0x47, 0xd5, 0xb7, 0x72, 0x83,
 					0xe5, 0x12, 0xd3, 0x60, 0x3f, 0x1f, 0x1c, 0x8d, 0xe6, 0x8f,
 					0xe3, 0x4c, 0xce, 0x70, 0xc8, 0x63, 0x73, 0x27, 0x3e, 0xfc,
 					0xe3, 0x4c,
 				}),
 			f: func() (util.Address, error) {
-				pkHash := []byte{
+				publicKey := []byte{
 					0x78, 0xb3, 0x16, 0xa0, 0x86, 0x47, 0xd5, 0xb7, 0x72, 0x83,
 					0xe5, 0x12, 0xd3, 0x60, 0x3f, 0x1f, 0x1c, 0x8d, 0xe6, 0x8f,
 					0xe3, 0x4c, 0xce, 0x70, 0xc8, 0x63, 0x73, 0x27, 0x3e, 0xfc,
 					0xe3, 0x4c,
 				}
-				return util.NewAddressPubKeyHash(pkHash, util.Bech32PrefixKaspaTest)
+				return util.NewAddressPublicKey(publicKey, util.Bech32PrefixKaspaTest)
 			},
 			passedPrefix:   util.Bech32PrefixKaspaTest,
 			expectedPrefix: util.Bech32PrefixKaspaTest,
 		},
 
-		// Negative P2PKH tests.
+		// Negative P2PK tests.
 		{
-			name:  "p2pkh wrong hash length",
+			name:  "p2pk wrong public key length",
 			addr:  "",
 			valid: false,
 			f: func() (util.Address, error) {
-				pkHash := []byte{
+				publicKey := []byte{
 					0x00, 0x0e, 0xf0, 0x30, 0x10, 0x7f, 0xd2, 0x6e, 0x0b, 0x6b,
 					0xf4, 0x05, 0x12, 0xbc, 0xa2, 0xce, 0xb1, 0xdd, 0x80, 0xad,
 					0xaa}
-				return util.NewAddressPubKeyHash(pkHash, util.Bech32PrefixKaspa)
+				return util.NewAddressPublicKey(publicKey, util.Bech32PrefixKaspa)
 			},
 			passedPrefix:   util.Bech32PrefixKaspa,
 			expectedPrefix: util.Bech32PrefixKaspa,
 		},
 		{
-			name:           "p2pkh bad checksum",
+			name:           "p2pk bad checksum",
 			addr:           "kaspa:qr35ennsep3hxfe7lnz5ee7j5jgmkjswss74as46gx",
 			valid:          false,
 			passedPrefix:   util.Bech32PrefixKaspa,
@@ -168,12 +168,9 @@ func TestAddresses(t *testing.T) {
 			expectedPrefix: util.Bech32PrefixKaspa,
 		},
 		{
-			// Taken from transactions:
-			// output: b0539a45de13b3e0403909b8bd1a555b8cbe45fd4e3f3fda76f3a5f52835c29d
-			// input: (not yet redeemed at time test was written)
 			name:    "mainnet p2sh 2",
-			addr:    "kaspa:pr5vxqxg0xrwl2zvxlq9rxffqx00sm44ksqqqqqqqqqqqqqqqqqqq33flv3je",
-			encoded: "kaspa:pr5vxqxg0xrwl2zvxlq9rxffqx00sm44ksqqqqqqqqqqqqqqqqqqq33flv3je",
+			addr:    "kaspa:pr5vxqxg0xrwl2zvxlq9rxffqx00sm44kn5vxqxg0xrwl2zvxl5vxyhvsake2",
+			encoded: "kaspa:pr5vxqxg0xrwl2zvxlq9rxffqx00sm44kn5vxqxg0xrwl2zvxl5vxyhvsake2",
 			valid:   true,
 			result: util.TstAddressScriptHash(
 				util.Bech32PrefixKaspa,
@@ -197,8 +194,8 @@ func TestAddresses(t *testing.T) {
 		},
 		{
 			name:    "testnet p2sh",
-			addr:    "kaspatest:przhjdpv93xfygpqtckdc2zkzuzqeyj2pgqqqqqqqqqqqqqqqqqqqyjpt4duk",
-			encoded: "kaspatest:przhjdpv93xfygpqtckdc2zkzuzqeyj2pgqqqqqqqqqqqqqqqqqqqyjpt4duk",
+			addr:    "kaspatest:przhjdpv93xfygpqtckdc2zkzuzqeyj2pt5vxqxg0xrwl2zvxl5vx35yyy2h9",
+			encoded: "kaspatest:przhjdpv93xfygpqtckdc2zkzuzqeyj2pt5vxqxg0xrwl2zvxl5vx35yyy2h9",
 			valid:   true,
 			result: util.TstAddressScriptHash(
 				util.Bech32PrefixKaspaTest,
@@ -270,23 +267,22 @@ func TestAddresses(t *testing.T) {
 			// Perform type-specific calculations.
 			var saddr []byte
 			switch decoded.(type) {
-			case *util.AddressPubKeyHash:
-				saddr = util.TstAddressSAddr(encoded)
+			case *util.AddressPublicKey:
+				saddr = util.TstAddressSAddrP2PK(encoded)
 
 			case *util.AddressScriptHash:
-				saddr = util.TstAddressSAddr(encoded)
+				saddr = util.TstAddressSAddrP2SH(encoded)
 			}
 
-			// Check script address, as well as the HashBlake2b method for P2PKH and
-			// P2SH addresses.
+			// Check script address, as well as the HashBlake2b method for P2SH addresses.
 			if !bytes.Equal(saddr, decoded.ScriptAddress()) {
 				t.Errorf("%v: script addresses do not match:\n%x != \n%x",
 					test.name, saddr, decoded.ScriptAddress())
 				return
 			}
 			switch a := decoded.(type) {
-			case *util.AddressPubKeyHash:
-				if h := a.HashBlake2b()[:]; !bytes.Equal(saddr, h) {
+			case *util.AddressPublicKey:
+				if h := a.ScriptAddress()[:]; !bytes.Equal(saddr, h) {
 					t.Errorf("%v: hashes do not match:\n%x != \n%x",
 						test.name, saddr, h)
 					return
@@ -335,6 +331,12 @@ func TestAddresses(t *testing.T) {
 				test.name)
 			return
 		}
+
+		if !reflect.DeepEqual(addr, decoded) {
+			t.Errorf("%v: created address does not match the decoded address",
+				test.name)
+			return
+		}
 	}
 }
 
@@ -357,7 +359,7 @@ func TestDecodeAddressErrorConditions(t *testing.T) {
 		{
 			"kaspasim:raskzcg58mth0an",
 			util.Bech32PrefixKaspaSim,
-			"decoded address is of unknown size",
+			"unknown address type",
 		},
 		{
 			"kaspatest:qqq65mvpxcmajeq44n2n8vfn6u9f8l4zsy0xez0tzw",
