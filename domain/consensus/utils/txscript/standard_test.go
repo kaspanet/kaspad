@@ -28,11 +28,11 @@ func mustParseShortForm(script string, version uint16) []byte {
 	return s
 }
 
-// newAddressPubKey returns a new util.AddressPublicKey from the
+// newAddressPublicKey returns a new util.AddressPublicKey from the
 // provided public key. It panics if an error occurs. This is only used in the tests
 // as a helper since the only way it can fail is if there is an error in the
 // test source code.
-func newAddressPubKey(publicKey []byte) util.Address {
+func newAddressPublicKey(publicKey []byte) util.Address {
 	addr, err := util.NewAddressPublicKey(publicKey, util.Bech32PrefixKaspa)
 	if err != nil {
 		panic("invalid public key in test source")
@@ -72,7 +72,7 @@ func TestExtractScriptPubKeyAddrs(t *testing.T) {
 				Script:  hexToBytes("202454a285d8566b0cb2792919536ee0f1b6f69b58ba59e9850ecbc91eef722daeac"),
 				Version: 0,
 			},
-			addr:  newAddressPubKey(hexToBytes("2454a285d8566b0cb2792919536ee0f1b6f69b58ba59e9850ecbc91eef722dae")),
+			addr:  newAddressPublicKey(hexToBytes("2454a285d8566b0cb2792919536ee0f1b6f69b58ba59e9850ecbc91eef722dae")),
 			class: PubKeyTy,
 		},
 		{

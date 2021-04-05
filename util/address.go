@@ -155,8 +155,8 @@ const PublicKeySize = 32
 // AddressPublicKey is an Address for a pay-to-pubkey (P2PK)
 // transaction.
 type AddressPublicKey struct {
-	prefix Bech32Prefix
-	pubKey [PublicKeySize]byte
+	prefix    Bech32Prefix
+	publicKey [PublicKeySize]byte
 }
 
 // NewAddressPublicKey returns a new AddressPublicKey. publicKey must be 32
@@ -177,20 +177,20 @@ func newAddressPubKey(prefix Bech32Prefix, publicKey []byte) (*AddressPublicKey,
 	}
 
 	addr := &AddressPublicKey{prefix: prefix}
-	copy(addr.pubKey[:], publicKey)
+	copy(addr.publicKey[:], publicKey)
 	return addr, nil
 }
 
 // EncodeAddress returns the string encoding of a pay-to-pubkey
 // address. Part of the Address interface.
 func (a *AddressPublicKey) EncodeAddress() string {
-	return encodeAddress(a.prefix, a.pubKey[:], pubKeyAddrID)
+	return encodeAddress(a.prefix, a.publicKey[:], pubKeyAddrID)
 }
 
 // ScriptAddress returns the bytes to be included in a txout script to pay
 // to a pubkey. Part of the Address interface.
 func (a *AddressPublicKey) ScriptAddress() []byte {
-	return a.pubKey[:]
+	return a.publicKey[:]
 }
 
 // IsForPrefix returns whether or not the pay-to-pubkey address is associated
@@ -211,7 +211,7 @@ func (a *AddressPublicKey) String() string {
 	return a.EncodeAddress()
 }
 
-// AddressScriptHash is an Address for a pay-to-script-pubKey (P2SH)
+// AddressScriptHash is an Address for a pay-to-script-publicKey (P2SH)
 // transaction.
 type AddressScriptHash struct {
 	prefix Bech32Prefix
