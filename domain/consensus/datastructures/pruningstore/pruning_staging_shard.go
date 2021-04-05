@@ -9,6 +9,7 @@ type pruningStagingShard struct {
 	store *pruningStore
 
 	newPruningPoint                  *externalapi.DomainHash
+	oldPruningPoint                  *externalapi.DomainHash
 	newPruningPointCandidate         *externalapi.DomainHash
 	startUpdatingPruningPointUTXOSet bool
 }
@@ -18,6 +19,7 @@ func (ps *pruningStore) stagingShard(stagingArea *model.StagingArea) *pruningSta
 		return &pruningStagingShard{
 			store:                            ps,
 			newPruningPoint:                  nil,
+			oldPruningPoint:                  nil,
 			newPruningPointCandidate:         nil,
 			startUpdatingPruningPointUTXOSet: false,
 		}
@@ -35,6 +37,18 @@ func (mss *pruningStagingShard) Commit(dbTx model.DBTransaction) error {
 			return err
 		}
 		mss.store.pruningPointCache = mss.newPruningPoint
+	}
+
+	if mss.oldPruningPoint != nil {
+		oldPruningPointBytes, err := mss.store.serializeHash(mss.oldPruningPoint)
+		if err != nil {
+			return err
+		}
+		err = dbTx.Put(oldPruningBlockHashKey, oldPruningPointBytes)
+		if err != nil {
+			return err
+		}
+		mss.store.oldPruningPointCache = mss.oldPruningPoint
 	}
 
 	if mss.newPruningPointCandidate != nil {
@@ -60,5 +74,5 @@ func (mss *pruningStagingShard) Commit(dbTx model.DBTransaction) error {
 }
 
 func (mss *pruningStagingShard) isStaged() bool {
-	return mss.newPruningPoint != nil || mss.startUpdatingPruningPointUTXOSet
+	return mss.newPruningPoint != nil || mss.newPruningPointCandidate != nil || mss.oldPruningPoint != nil || mss.startUpdatingPruningPointUTXOSet
 }

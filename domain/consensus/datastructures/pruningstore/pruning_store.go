@@ -9,6 +9,7 @@ import (
 )
 
 var pruningBlockHashKey = database.MakeBucket(nil).Key([]byte("pruning-block-hash"))
+var oldPruningBlockHashKey = database.MakeBucket(nil).Key([]byte("old-pruning-block-hash"))
 var candidatePruningPointHashKey = database.MakeBucket(nil).Key([]byte("candidate-pruning-point-hash"))
 var pruningPointUTXOSetBucket = database.MakeBucket([]byte("pruning-point-utxo-set"))
 var updatingPruningPointUTXOSetKey = database.MakeBucket(nil).Key([]byte("updating-pruning-point-utxo-set"))
@@ -16,6 +17,7 @@ var updatingPruningPointUTXOSetKey = database.MakeBucket(nil).Key([]byte("updati
 // pruningStore represents a store for the current pruning state
 type pruningStore struct {
 	pruningPointCache          *externalapi.DomainHash
+	oldPruningPointCache       *externalapi.DomainHash
 	pruningPointCandidateCache *externalapi.DomainHash
 }
 
@@ -73,6 +75,11 @@ func (ps *pruningStore) StagePruningPoint(stagingArea *model.StagingArea, prunin
 	stagingShard := ps.stagingShard(stagingArea)
 
 	stagingShard.newPruningPoint = pruningPointBlockHash
+}
+
+func (ps *pruningStore) StageOldPruningPoint(stagingArea *model.StagingArea, oldPruningPointBlockHash *externalapi.DomainHash) {
+	stagingShard := ps.stagingShard(stagingArea)
+	stagingShard.oldPruningPoint = oldPruningPointBlockHash
 }
 
 func (ps *pruningStore) IsStaged(stagingArea *model.StagingArea) bool {
@@ -146,6 +153,30 @@ func (ps *pruningStore) PruningPoint(dbContext model.DBReader, stagingArea *mode
 	}
 	ps.pruningPointCache = pruningPoint
 	return pruningPoint, nil
+}
+
+// OldPruningPoint returns the pruning point *before* the current one
+func (ps *pruningStore) OldPruningPoint(dbContext model.DBReader, stagingArea *model.StagingArea) (*externalapi.DomainHash, error) {
+	stagingShard := ps.stagingShard(stagingArea)
+
+	if stagingShard.oldPruningPoint != nil {
+		return stagingShard.oldPruningPoint, nil
+	}
+	if ps.oldPruningPointCache != nil {
+		return ps.oldPruningPointCache, nil
+	}
+
+	oldPruningPointBytes, err := dbContext.Get(oldPruningBlockHashKey)
+	if err != nil {
+		return nil, err
+	}
+
+	oldPruningPoint, err := ps.deserializePruningPoint(oldPruningPointBytes)
+	if err != nil {
+		return nil, err
+	}
+	ps.oldPruningPointCache = oldPruningPoint
+	return oldPruningPoint, nil
 }
 
 func (ps *pruningStore) serializeHash(hash *externalapi.DomainHash) ([]byte, error) {

@@ -6,10 +6,12 @@ import "github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 type PruningStore interface {
 	Store
 	StagePruningPoint(stagingArea *StagingArea, pruningPointBlockHash *externalapi.DomainHash)
+	StageOldPruningPoint(stagingArea *StagingArea, oldPruningPointBlockHash *externalapi.DomainHash)
 	StagePruningPointCandidate(stagingArea *StagingArea, candidate *externalapi.DomainHash)
 	IsStaged(stagingArea *StagingArea) bool
 	PruningPointCandidate(dbContext DBReader, stagingArea *StagingArea) (*externalapi.DomainHash, error)
 	HasPruningPointCandidate(dbContext DBReader, stagingArea *StagingArea) (bool, error)
+	OldPruningPoint(dbContext DBReader, stagingArea *StagingArea) (*externalapi.DomainHash, error)
 	PruningPoint(dbContext DBReader, stagingArea *StagingArea) (*externalapi.DomainHash, error)
 	HasPruningPoint(dbContext DBReader, stagingArea *StagingArea) (bool, error)
 
