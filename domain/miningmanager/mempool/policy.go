@@ -147,7 +147,7 @@ func isDust(txOut *consensusexternalapi.DomainTransactionOutput, minRelayTxFee u
 	// minFreeTxRelayFee is in sompi/KB, so multiply by 1000 to
 	// convert to bytes.
 	//
-	// Using the typical values for a pay-to-pubkey- transaction from
+	// Using the typical values for a pay-to-pubkey transaction from
 	// the breakdown above and the default minimum free transaction relay
 	// fee of 1000, this equates to values less than 546 sompi being
 	// considered dust.
