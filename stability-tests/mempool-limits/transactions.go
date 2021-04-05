@@ -27,6 +27,12 @@ const (
 	coinbaseMaturity                 = 100
 )
 
+// fundingCoinbaseTransactions contains a collection of transactions
+// to be utilized when generating further transactions to fill up
+// the mempool.
+// It's a separate type because we modify the transactions in place
+// whenever we pass an instance of this type into
+// submitAnAmountOfTransactionsToTheMempool.
 type fundingCoinbaseTransactions struct {
 	transactions []*externalapi.DomainTransaction
 }
