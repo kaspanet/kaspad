@@ -16,10 +16,14 @@ import (
 // OnErrorHandler defines a handler function for when errors occur
 type OnErrorHandler func(err error)
 
+// OnDisconnectedHandler defines a handler function for when the client disconnected
+type OnDisconnectedHandler func()
+
 // GRPCClient is a gRPC-based RPC client
 type GRPCClient struct {
-	stream         protowire.RPC_MessageStreamClient
-	onErrorHandler OnErrorHandler
+	stream                protowire.RPC_MessageStreamClient
+	onErrorHandler        OnErrorHandler
+	onDisconnectedHandler OnDisconnectedHandler
 }
 
 // Connect connects to the RPC server with the given address
@@ -50,6 +54,11 @@ func (c *GRPCClient) Disconnect() error {
 // SetOnErrorHandler sets the client's onErrorHandler
 func (c *GRPCClient) SetOnErrorHandler(onErrorHandler OnErrorHandler) {
 	c.onErrorHandler = onErrorHandler
+}
+
+// SetOnDisconnectedHandler sets the client's onDisconnectedHandler
+func (c *GRPCClient) SetOnDisconnectedHandler(onDisconnectedHandler OnDisconnectedHandler) {
+	c.onDisconnectedHandler = onDisconnectedHandler
 }
 
 // AttachRouter attaches the given router to the client and starts
@@ -103,6 +112,9 @@ func (c *GRPCClient) receive() (appmessage.Message, error) {
 
 func (c *GRPCClient) handleError(err error) {
 	if errors.Is(err, io.EOF) {
+		if c.onDisconnectedHandler != nil {
+			c.onDisconnectedHandler()
+		}
 		return
 	}
 	if errors.Is(err, router.ErrRouteClosed) {
