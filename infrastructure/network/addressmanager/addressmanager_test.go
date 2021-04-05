@@ -366,7 +366,7 @@ func TestOverfillAddressManager(t *testing.T) {
 	// Make sure that the first address is no longer in the
 	// connection manager
 	for _, address := range returnedAddresses {
-		if address == testAddress {
+		if address.IP.Equal(testAddress.IP) {
 			t.Fatalf("Unexpectedly found testAddress returned addresses")
 		}
 	}
