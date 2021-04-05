@@ -303,3 +303,71 @@ func TestRestoreAddressManager(t *testing.T) {
 		t.Fatalf("Banned address %s not returned from BannedAddresses()", addressToBan.IP)
 	}
 }
+
+func TestOverfillAddressManager(t *testing.T) {
+	addressManager, teardown := newAddressManagerForTest(t, "TestAddressManager")
+	defer teardown()
+
+	generateTestAddresses := func(amount int) []*appmessage.NetAddress {
+		testAddresses := make([]*appmessage.NetAddress, 0, amount)
+		for i := byte(0); i < 128; i++ {
+			for j := byte(0); j < 128; j++ {
+				testAddress := &appmessage.NetAddress{IP: net.IP{1, 2, i, j}, Timestamp: mstime.Now()}
+				testAddresses = append(testAddresses, testAddress)
+				if len(testAddresses) == amount {
+					break
+				}
+			}
+			if len(testAddresses) == amount {
+				break
+			}
+		}
+		return testAddresses
+	}
+
+	// Add a single test address to the address manager
+	testAddress := &appmessage.NetAddress{IP: net.IP{5, 6, 0, 0}, Timestamp: mstime.Now()}
+	err := addressManager.AddAddress(testAddress)
+	if err != nil {
+		t.Fatalf("AddAddress: %s", err)
+	}
+
+	// Add `maxAddresses-1` addresses to the address manager
+	addresses := generateTestAddresses(maxAddresses - 1)
+	err = addressManager.AddAddresses(addresses...)
+	if err != nil {
+		t.Fatalf("AddAddresses: %s", err)
+	}
+
+	// Make sure that it now contains exactly `maxAddresses` entries
+	returnedAddresses := addressManager.Addresses()
+	if len(returnedAddresses) != maxAddresses {
+		t.Fatalf("Unexpected address amount. Want: %d, got: %d", maxAddresses, len(returnedAddresses))
+	}
+
+	// Mark the first test address as a connection failure
+	err = addressManager.MarkConnectionFailure(testAddress)
+	if err != nil {
+		t.Fatalf("MarkConnectionFailure: %s", err)
+	}
+
+	// Add one more address to the address manager
+	err = addressManager.AddAddress(&appmessage.NetAddress{IP: net.IP{7, 8, 0, 0}, Timestamp: mstime.Now()})
+	if err != nil {
+		t.Fatalf("AddAddress: %s", err)
+	}
+
+	// Make sure that it now still contains exactly `maxAddresses` entries
+	returnedAddresses = addressManager.Addresses()
+	if len(returnedAddresses) != maxAddresses {
+		t.Fatalf("Unexpected address amount. Want: %d, got: %d", maxAddresses, len(returnedAddresses))
+	}
+
+	// Make sure that the first address is no longer in the
+	// connection manager
+	for _, address := range returnedAddresses {
+		if address.IP.Equal(testAddress.IP) {
+			t.Fatalf("Unexpectedly found testAddress returned addresses")
+		}
+	}
+}
