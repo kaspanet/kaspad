@@ -351,7 +351,7 @@ func TestOverfillAddressManager(t *testing.T) {
 		t.Fatalf("MarkConnectionFailure: %s", err)
 	}
 
-	// Add one more addresses to the address manager
+	// Add one more address to the address manager
 	err = addressManager.AddAddress(&appmessage.NetAddress{IP: net.IP{7, 8, 0, 0}, Timestamp: mstime.Now()})
 	if err != nil {
 		t.Fatalf("AddAddress: %s", err)
