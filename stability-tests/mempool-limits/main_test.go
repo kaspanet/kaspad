@@ -83,7 +83,7 @@ func buildRPCClient(t *testing.T) *rpcclient.RPCClient {
 func getMempoolSize(t *testing.T, rpcClient *rpcclient.RPCClient) uint64 {
 	getInfoResponse, err := rpcClient.GetInfo()
 	if err != nil {
-		t.Fatalf("GetInfo: %s", err)
+		t.Fatalf("GetInfo: %+v", err)
 	}
 	return getInfoResponse.MempoolSize
 }
@@ -92,14 +92,14 @@ func emptyOutMempool(t *testing.T, rpcClient *rpcclient.RPCClient) {
 	log.Infof("Adding blocks until mempool shrinks to 0 transactions")
 	getInfoResponse, err := rpcClient.GetInfo()
 	if err != nil {
-		t.Fatalf("GetInfo: %s", err)
+		t.Fatalf("GetInfo: %+v", err)
 	}
 	currentMempoolSize := getInfoResponse.MempoolSize
 	for currentMempoolSize > 0 {
 		mineBlockAndGetCoinbaseTransaction(t, rpcClient)
 		getInfoResponse, err := rpcClient.GetInfo()
 		if err != nil {
-			t.Fatalf("GetInfo: %s", err)
+			t.Fatalf("GetInfo: %+v", err)
 		}
 		if getInfoResponse.MempoolSize == currentMempoolSize {
 			t.Fatalf("Mempool did not shrink after a block was added to the DAG")

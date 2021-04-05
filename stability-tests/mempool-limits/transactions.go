@@ -90,7 +90,7 @@ func submitAnAmountOfTransactionsToTheMempool(t *testing.T, rpcClient *rpcclient
 			if ignoreOrphanRejects && strings.Contains(err.Error(), "orphan") {
 				continue
 			}
-			t.Fatalf("SubmitTransaction: %s", err)
+			t.Fatalf("SubmitTransaction: %+v", err)
 		}
 		log.Infof("Submitted %d transactions", i+1)
 	}
@@ -99,16 +99,16 @@ func submitAnAmountOfTransactionsToTheMempool(t *testing.T, rpcClient *rpcclient
 func mineBlockAndGetCoinbaseTransaction(t *testing.T, rpcClient *rpcclient.RPCClient) *externalapi.DomainTransaction {
 	getBlockTemplateResponse, err := rpcClient.GetBlockTemplate(payAddress)
 	if err != nil {
-		t.Fatalf("GetBlockTemplate: %s", err)
+		t.Fatalf("GetBlockTemplate: %+v", err)
 	}
 	templateBlock, err := appmessage.RPCBlockToDomainBlock(getBlockTemplateResponse.Block)
 	if err != nil {
-		t.Fatalf("RPCBlockToDomainBlock: %s", err)
+		t.Fatalf("RPCBlockToDomainBlock: %+v", err)
 	}
 	mine.SolveBlock(templateBlock)
 	_, err = rpcClient.SubmitBlock(templateBlock)
 	if err != nil {
-		t.Fatalf("SubmitBlock: %s", err)
+		t.Fatalf("SubmitBlock: %+v", err)
 	}
 	return templateBlock.Transactions[transactionhelper.CoinbaseTransactionIndex]
 }
@@ -165,7 +165,7 @@ func generateTransactionsWithMultipleOutputs(t *testing.T,
 				payAddressKeyPair,
 				&consensushashing.SighashReusedValues{})
 			if err != nil {
-				t.Fatalf("SignatureScript: %s", err)
+				t.Fatalf("SignatureScript: %+v", err)
 			}
 			spendingTransactionInput.SignatureScript = signatureScript
 		}
@@ -178,11 +178,11 @@ func generateTransactionsWithMultipleOutputs(t *testing.T,
 func decodePayAddressKeyPair(t *testing.T) *secp256k1.SchnorrKeyPair {
 	privateKeyBytes, err := hex.DecodeString(payAddressPrivateKey)
 	if err != nil {
-		t.Fatalf("DecodeString: %s", err)
+		t.Fatalf("DecodeString: %+v", err)
 	}
 	keyPair, err := secp256k1.DeserializeSchnorrPrivateKeyFromSlice(privateKeyBytes)
 	if err != nil {
-		t.Fatalf("DeserializeSchnorrPrivateKeyFromSlice: %s", err)
+		t.Fatalf("DeserializeSchnorrPrivateKeyFromSlice: %+v", err)
 	}
 	return keyPair
 }
@@ -190,11 +190,11 @@ func decodePayAddressKeyPair(t *testing.T) *secp256k1.SchnorrKeyPair {
 func buildPayToPayAddressScript(t *testing.T) *externalapi.ScriptPublicKey {
 	address, err := util.DecodeAddress(payAddress, dagconfig.SimnetParams.Prefix)
 	if err != nil {
-		t.Fatalf("DecodeAddress: %s", err)
+		t.Fatalf("DecodeAddress: %+v", err)
 	}
 	script, err := txscript.PayToAddrScript(address)
 	if err != nil {
-		t.Fatalf("PayToAddrScript: %s", err)
+		t.Fatalf("PayToAddrScript: %+v", err)
 	}
 	return script
 }
