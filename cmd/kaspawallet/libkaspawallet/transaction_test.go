@@ -181,7 +181,7 @@ func TestP2PK(t *testing.T) {
 			t.Fatalf("Address: %+v", err)
 		}
 
-		if _, ok := address.(*util.AddressPubKey); !ok {
+		if _, ok := address.(*util.AddressPublicKey); !ok {
 			t.Fatalf("The address is of unexpected type")
 		}
 

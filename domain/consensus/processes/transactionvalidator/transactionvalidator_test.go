@@ -58,7 +58,7 @@ func TestValidateTransactionInContextAndPopulateMassAndFee(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Failed to serialize public key: %v", err)
 		}
-		addr, err := util.NewAddressPubKey(publicKeySerialized[:], params.Prefix)
+		addr, err := util.NewAddressPublicKey(publicKeySerialized[:], params.Prefix)
 		if err != nil {
 			t.Fatalf("Failed to generate p2pkh address: %v", err)
 		}
@@ -261,7 +261,7 @@ func TestSigningTwoInputs(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Failed to serialize public key: %v", err)
 		}
-		addr, err := util.NewAddressPubKey(publicKeySerialized[:], params.Prefix)
+		addr, err := util.NewAddressPublicKey(publicKeySerialized[:], params.Prefix)
 		if err != nil {
 			t.Fatalf("Failed to generate p2pkh address: %v", err)
 		}

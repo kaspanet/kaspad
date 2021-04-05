@@ -213,7 +213,7 @@ func TestSignTxOutput(t *testing.T) {
 				break
 			}
 
-			address, err := util.NewAddressPubKey(serializedPubKey[:], util.Bech32PrefixKaspaTest)
+			address, err := util.NewAddressPublicKey(serializedPubKey[:], util.Bech32PrefixKaspaTest)
 			if err != nil {
 				t.Errorf("failed to make address for %s: %v",
 					msg, err)
@@ -263,7 +263,7 @@ func TestSignTxOutput(t *testing.T) {
 				break
 			}
 
-			address, err := util.NewAddressPubKey(serializedPubKey[:], util.Bech32PrefixKaspaTest)
+			address, err := util.NewAddressPublicKey(serializedPubKey[:], util.Bech32PrefixKaspaTest)
 			if err != nil {
 				t.Errorf("failed to make address for %s: %v",
 					msg, err)
@@ -340,7 +340,7 @@ func TestSignTxOutput(t *testing.T) {
 				break
 			}
 
-			address, err := util.NewAddressPubKey(serializedPubKey[:], util.Bech32PrefixKaspaTest)
+			address, err := util.NewAddressPublicKey(serializedPubKey[:], util.Bech32PrefixKaspaTest)
 			if err != nil {
 				t.Errorf("failed to make address for %s: %v",
 					msg, err)
@@ -404,7 +404,7 @@ func TestSignTxOutput(t *testing.T) {
 				break
 			}
 
-			address, err := util.NewAddressPubKey(serializedPubKey[:], util.Bech32PrefixKaspaTest)
+			address, err := util.NewAddressPublicKey(serializedPubKey[:], util.Bech32PrefixKaspaTest)
 			if err != nil {
 				t.Errorf("failed to make address for %s: %v",
 					msg, err)
@@ -470,7 +470,7 @@ func TestSignTxOutput(t *testing.T) {
 }
 
 func generateKeys() (keyPair *secp256k1.SchnorrKeyPair, scriptPublicKey *externalapi.ScriptPublicKey,
-	addressPubKeyHash *util.AddressPubKey, err error) {
+	addressPubKeyHash *util.AddressPublicKey, err error) {
 
 	key, err := secp256k1.GenerateSchnorrKeyPair()
 	if err != nil {
@@ -486,7 +486,7 @@ func generateKeys() (keyPair *secp256k1.SchnorrKeyPair, scriptPublicKey *externa
 	if err != nil {
 		return nil, nil, nil, errors.Errorf("failed to serialize a pubkey for %s: %s", pubKey, err)
 	}
-	address, err := util.NewAddressPubKey(serializedPubKey[:], util.Bech32PrefixKaspaTest)
+	address, err := util.NewAddressPublicKey(serializedPubKey[:], util.Bech32PrefixKaspaTest)
 	if err != nil {
 		return nil, nil, nil, errors.Errorf("failed to make address for %s: %s", serializedPubKey, err)
 	}

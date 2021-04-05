@@ -17,7 +17,7 @@ func main() {
 		panic(err)
 	}
 
-	addr, err := util.NewAddressPubKey(publicKey, cfg.NetParams().Prefix)
+	addr, err := util.NewAddressPublicKey(publicKey, cfg.NetParams().Prefix)
 	if err != nil {
 		panic(err)
 	}

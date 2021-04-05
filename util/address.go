@@ -152,16 +152,16 @@ func DecodeAddress(addr string, expectedPrefix Bech32Prefix) (Address, error) {
 // PublicKeySize is the public key size for a schnorr public key
 const PublicKeySize = 32
 
-// AddressPubKey is an Address for a pay-to-pubkey (P2PK)
+// AddressPublicKey is an Address for a pay-to-pubkey (P2PK)
 // transaction.
-type AddressPubKey struct {
+type AddressPublicKey struct {
 	prefix Bech32Prefix
 	pubKey [PublicKeySize]byte
 }
 
-// NewAddressPubKey returns a new AddressPubKey. publicKey must be 32
+// NewAddressPublicKey returns a new AddressPublicKey. publicKey must be 32
 // bytes.
-func NewAddressPubKey(publicKey []byte, prefix Bech32Prefix) (*AddressPubKey, error) {
+func NewAddressPublicKey(publicKey []byte, prefix Bech32Prefix) (*AddressPublicKey, error) {
 	return newAddressPubKey(prefix, publicKey)
 }
 
@@ -170,44 +170,44 @@ func NewAddressPubKey(publicKey []byte, prefix Bech32Prefix) (*AddressPubKey, er
 // it up through its parameters. This is useful when creating a new address
 // structure from a string encoding where the identifier byte is already
 // known.
-func newAddressPubKey(prefix Bech32Prefix, publicKey []byte) (*AddressPubKey, error) {
+func newAddressPubKey(prefix Bech32Prefix, publicKey []byte) (*AddressPublicKey, error) {
 	// Check for a valid pubkey length.
 	if len(publicKey) != PublicKeySize {
 		return nil, errors.Errorf("publicKey must be %d bytes", PublicKeySize)
 	}
 
-	addr := &AddressPubKey{prefix: prefix}
+	addr := &AddressPublicKey{prefix: prefix}
 	copy(addr.pubKey[:], publicKey)
 	return addr, nil
 }
 
 // EncodeAddress returns the string encoding of a pay-to-pubkey
 // address. Part of the Address interface.
-func (a *AddressPubKey) EncodeAddress() string {
+func (a *AddressPublicKey) EncodeAddress() string {
 	return encodeAddress(a.prefix, a.pubKey[:], pubKeyAddrID)
 }
 
 // ScriptAddress returns the bytes to be included in a txout script to pay
 // to a pubkey. Part of the Address interface.
-func (a *AddressPubKey) ScriptAddress() []byte {
+func (a *AddressPublicKey) ScriptAddress() []byte {
 	return a.pubKey[:]
 }
 
 // IsForPrefix returns whether or not the pay-to-pubkey address is associated
 // with the passed kaspa network.
-func (a *AddressPubKey) IsForPrefix(prefix Bech32Prefix) bool {
+func (a *AddressPublicKey) IsForPrefix(prefix Bech32Prefix) bool {
 	return a.prefix == prefix
 }
 
 // Prefix returns the prefix for this address
-func (a *AddressPubKey) Prefix() Bech32Prefix {
+func (a *AddressPublicKey) Prefix() Bech32Prefix {
 	return a.prefix
 }
 
 // String returns a human-readable string for the pay-to-pubkey address.
 // This is equivalent to calling EncodeAddress, but is provided so the type can
 // be used as a fmt.Stringer.
-func (a *AddressPubKey) String() string {
+func (a *AddressPublicKey) String() string {
 	return a.EncodeAddress()
 }
 

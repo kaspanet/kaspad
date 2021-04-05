@@ -22,8 +22,8 @@ func TstAppDataDir(goos, appName string, roaming bool) string {
 	return appDir(goos, appName, roaming)
 }
 
-func TstAddressPubKey(prefix Bech32Prefix, hash [PublicKeySize]byte) *AddressPubKey {
-	return &AddressPubKey{
+func TstAddressPubKey(prefix Bech32Prefix, hash [PublicKeySize]byte) *AddressPublicKey {
+	return &AddressPublicKey{
 		prefix: prefix,
 		pubKey: hash,
 	}

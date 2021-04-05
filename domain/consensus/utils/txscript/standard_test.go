@@ -28,12 +28,12 @@ func mustParseShortForm(script string, version uint16) []byte {
 	return s
 }
 
-// newAddressPubKey returns a new util.AddressPubKey from the
+// newAddressPubKey returns a new util.AddressPublicKey from the
 // provided public key. It panics if an error occurs. This is only used in the tests
 // as a helper since the only way it can fail is if there is an error in the
 // test source code.
 func newAddressPubKey(publicKey []byte) util.Address {
-	addr, err := util.NewAddressPubKey(publicKey, util.Bech32PrefixKaspa)
+	addr, err := util.NewAddressPublicKey(publicKey, util.Bech32PrefixKaspa)
 	if err != nil {
 		panic("invalid public key in test source")
 	}
@@ -301,7 +301,7 @@ func (b *bogusAddress) Prefix() util.Bech32Prefix {
 func TestPayToAddrScript(t *testing.T) {
 	t.Parallel()
 
-	p2pkMain, err := util.NewAddressPubKey(hexToBytes("e34cce70c86"+
+	p2pkMain, err := util.NewAddressPublicKey(hexToBytes("e34cce70c86"+
 		"373273efcc54ce7d2a491bb4a0e84e34cce70c86373273efcc54c"), util.Bech32PrefixKaspa)
 	if err != nil {
 		t.Fatalf("Unable to create public key address: %v", err)
@@ -341,7 +341,7 @@ func TestPayToAddrScript(t *testing.T) {
 		},
 
 		// Supported address types with nil pointers.
-		{(*util.AddressPubKey)(nil), "", 0, errUnsupportedAddress},
+		{(*util.AddressPublicKey)(nil), "", 0, errUnsupportedAddress},
 		{(*util.AddressScriptHash)(nil), "", 0, errUnsupportedAddress},
 
 		// Unsupported address type.

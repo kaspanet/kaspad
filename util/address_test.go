@@ -46,7 +46,7 @@ func TestAddresses(t *testing.T) {
 					0xc5, 0x4c, 0xe7, 0xd2, 0xa4, 0x91, 0xbb, 0x4a, 0x0e, 0x84,
 					0xe3, 0x4c, 0xce, 0x70, 0xc8, 0x63, 0x73, 0x27, 0x3e, 0xfc,
 					0xe3, 0x4c}
-				return util.NewAddressPubKey(publicKey, util.Bech32PrefixKaspa)
+				return util.NewAddressPublicKey(publicKey, util.Bech32PrefixKaspa)
 			},
 			passedPrefix:   util.Bech32PrefixUnknown,
 			expectedPrefix: util.Bech32PrefixKaspa,
@@ -71,7 +71,7 @@ func TestAddresses(t *testing.T) {
 					0xe3, 0x4c, 0xce, 0x70, 0xc8, 0x63, 0x73, 0x27, 0x3e, 0xfc,
 					0xe3, 0x4c,
 				}
-				return util.NewAddressPubKey(publicKey, util.Bech32PrefixKaspa)
+				return util.NewAddressPublicKey(publicKey, util.Bech32PrefixKaspa)
 			},
 			passedPrefix:   util.Bech32PrefixKaspa,
 			expectedPrefix: util.Bech32PrefixKaspa,
@@ -96,7 +96,7 @@ func TestAddresses(t *testing.T) {
 					0xe3, 0x4c, 0xce, 0x70, 0xc8, 0x63, 0x73, 0x27, 0x3e, 0xfc,
 					0xe3, 0x4c,
 				}
-				return util.NewAddressPubKey(publicKey, util.Bech32PrefixKaspaTest)
+				return util.NewAddressPublicKey(publicKey, util.Bech32PrefixKaspaTest)
 			},
 			passedPrefix:   util.Bech32PrefixKaspaTest,
 			expectedPrefix: util.Bech32PrefixKaspaTest,
@@ -112,7 +112,7 @@ func TestAddresses(t *testing.T) {
 					0x00, 0x0e, 0xf0, 0x30, 0x10, 0x7f, 0xd2, 0x6e, 0x0b, 0x6b,
 					0xf4, 0x05, 0x12, 0xbc, 0xa2, 0xce, 0xb1, 0xdd, 0x80, 0xad,
 					0xaa}
-				return util.NewAddressPubKey(publicKey, util.Bech32PrefixKaspa)
+				return util.NewAddressPublicKey(publicKey, util.Bech32PrefixKaspa)
 			},
 			passedPrefix:   util.Bech32PrefixKaspa,
 			expectedPrefix: util.Bech32PrefixKaspa,
@@ -270,7 +270,7 @@ func TestAddresses(t *testing.T) {
 			// Perform type-specific calculations.
 			var saddr []byte
 			switch decoded.(type) {
-			case *util.AddressPubKey:
+			case *util.AddressPublicKey:
 				saddr = util.TstAddressSAddrP2PK(encoded)
 
 			case *util.AddressScriptHash:
@@ -285,7 +285,7 @@ func TestAddresses(t *testing.T) {
 				return
 			}
 			switch a := decoded.(type) {
-			case *util.AddressPubKey:
+			case *util.AddressPublicKey:
 				if h := a.ScriptAddress()[:]; !bytes.Equal(saddr, h) {
 					t.Errorf("%v: hashes do not match:\n%x != \n%x",
 						test.name, saddr, h)

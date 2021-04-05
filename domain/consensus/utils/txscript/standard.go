@@ -188,7 +188,7 @@ func payToScriptHashScript(scriptHash []byte) ([]byte, error) {
 func PayToAddrScript(addr util.Address) (*externalapi.ScriptPublicKey, error) {
 	const nilAddrErrStr = "unable to generate payment script for nil address"
 	switch addr := addr.(type) {
-	case *util.AddressPubKey:
+	case *util.AddressPublicKey:
 		if addr == nil {
 			return nil, scriptError(ErrUnsupportedAddress,
 				nilAddrErrStr)
@@ -279,7 +279,7 @@ func ExtractScriptPubKeyAddress(scriptPubKey *externalapi.ScriptPublicKey, dagPa
 		// <pubkey> OP_CHECKSIG
 		// Therefore the pubkey is the first item on the stack.
 		// If the pubkey is invalid for some reason, return a nil address.
-		addr, err := util.NewAddressPubKey(pops[0].data,
+		addr, err := util.NewAddressPublicKey(pops[0].data,
 			dagParams.Prefix)
 		if err != nil {
 			return scriptClass, nil, nil

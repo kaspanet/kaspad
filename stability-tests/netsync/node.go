@@ -178,7 +178,7 @@ func useDirOrCreateTemp(dataDir, tempName string) (string, error) {
 
 func mineOnTips(client *rpc.Client) (appmessage.RejectReason, error) {
 	fakePublicKey := make([]byte, util.PublicKeySize)
-	addr, err := util.NewAddressPubKey(fakePublicKey, activeConfig().NetParams().Prefix)
+	addr, err := util.NewAddressPublicKey(fakePublicKey, activeConfig().NetParams().Prefix)
 	if err != nil {
 		return appmessage.RejectReasonNone, err
 	}
