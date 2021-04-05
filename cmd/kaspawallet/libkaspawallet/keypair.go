@@ -1,6 +1,7 @@
 package libkaspawallet
 
 import (
+	"encoding/hex"
 	"github.com/kaspanet/go-secp256k1"
 	"github.com/kaspanet/kaspad/domain/dagconfig"
 	"github.com/kaspanet/kaspad/util"
@@ -13,7 +14,24 @@ func CreateKeyPair() ([]byte, []byte, error) {
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "Failed to generate private key")
 	}
-	publicKey, err := privateKey.SchnorrPublicKey()
+	return keyPairBytes(privateKey)
+}
+
+// KeyPairFromPrivateKeyHex decodes a private-public key pair out of `privateKeyHex`
+func KeyPairFromPrivateKeyHex(privateKeyHex string) ([]byte, []byte, error) {
+	privateKeyBytes, err := hex.DecodeString(privateKeyHex)
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "Failed to deserialized private key")
+	}
+	privateKey, err := secp256k1.DeserializeSchnorrPrivateKeyFromSlice(privateKeyBytes)
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "Failed to deserialized private key")
+	}
+	return keyPairBytes(privateKey)
+}
+
+func keyPairBytes(keyPair *secp256k1.SchnorrKeyPair) ([]byte, []byte, error) {
+	publicKey, err := keyPair.SchnorrPublicKey()
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "Failed to generate public key")
 	}
@@ -22,7 +40,7 @@ func CreateKeyPair() ([]byte, []byte, error) {
 		return nil, nil, errors.Wrap(err, "Failed to serialize public key")
 	}
 
-	return privateKey.SerializePrivateKey()[:], publicKeySerialized[:], nil
+	return keyPair.SerializePrivateKey()[:], publicKeySerialized[:], nil
 }
 
 func addressFromPublicKey(params *dagconfig.Params, publicKeySerialized []byte) (util.Address, error) {

@@ -25,8 +25,9 @@ type configFlags struct {
 type createConfig struct {
 	KeysFile          string `long:"keys-file" short:"f" description:"Keys file location (default: ~/.kaspawallet/keys.json (*nix), %USERPROFILE%\\AppData\\Local\\Kaspawallet\\key.json (Windows))"`
 	MinimumSignatures uint32 `long:"min-signatures" short:"m" description:"Minimum required signatures" default:"1"`
-	NumPrivateKeys    uint32 `long:"num-private-keys" short:"k" description:"Number of private keys to generate" default:"1"`
+	NumPrivateKeys    uint32 `long:"num-private-keys" short:"k" description:"Number of private keys" default:"1"`
 	NumPublicKeys     uint32 `long:"num-public-keys" short:"n" description:"Total number of keys" default:"1"`
+	Import            bool   `long:"import" short:"i" description:"Import private keys (as opposed to generating them)"`
 	config.NetworkFlags
 }
 

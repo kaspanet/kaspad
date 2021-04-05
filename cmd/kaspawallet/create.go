@@ -11,7 +11,14 @@ import (
 )
 
 func create(conf *createConfig) error {
-	encryptedPrivateKeys, publicKeys, err := keys.CreateKeyPairs(conf.NumPrivateKeys)
+	var encryptedPrivateKeys []*keys.EncryptedPrivateKey
+	var publicKeys [][]byte
+	var err error
+	if !conf.Import {
+		encryptedPrivateKeys, publicKeys, err = keys.CreateKeyPairs(conf.NumPrivateKeys)
+	} else {
+		encryptedPrivateKeys, publicKeys, err = keys.ImportKeyPairs(conf.NumPrivateKeys)
+	}
 	if err != nil {
 		return err
 	}
