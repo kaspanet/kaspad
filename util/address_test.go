@@ -168,12 +168,9 @@ func TestAddresses(t *testing.T) {
 			expectedPrefix: util.Bech32PrefixKaspa,
 		},
 		{
-			// Taken from transactions:
-			// output: b0539a45de13b3e0403909b8bd1a555b8cbe45fd4e3f3fda76f3a5f52835c29d
-			// input: (not yet redeemed at time test was written)
 			name:    "mainnet p2sh 2",
-			addr:    "kaspa:pr5vxqxg0xrwl2zvxlq9rxffqx00sm44ksqqqqqqqqqqqqqqqqqqq33flv3je",
-			encoded: "kaspa:pr5vxqxg0xrwl2zvxlq9rxffqx00sm44ksqqqqqqqqqqqqqqqqqqq33flv3je",
+			addr:    "kaspa:pr5vxqxg0xrwl2zvxlq9rxffqx00sm44kn5vxqxg0xrwl2zvxl5vxyhvsake2",
+			encoded: "kaspa:pr5vxqxg0xrwl2zvxlq9rxffqx00sm44kn5vxqxg0xrwl2zvxl5vxyhvsake2",
 			valid:   true,
 			result: util.TstAddressScriptHash(
 				util.Bech32PrefixKaspa,
@@ -197,8 +194,8 @@ func TestAddresses(t *testing.T) {
 		},
 		{
 			name:    "testnet p2sh",
-			addr:    "kaspatest:przhjdpv93xfygpqtckdc2zkzuzqeyj2pgqqqqqqqqqqqqqqqqqqqyjpt4duk",
-			encoded: "kaspatest:przhjdpv93xfygpqtckdc2zkzuzqeyj2pgqqqqqqqqqqqqqqqqqqqyjpt4duk",
+			addr:    "kaspatest:przhjdpv93xfygpqtckdc2zkzuzqeyj2pt5vxqxg0xrwl2zvxl5vx35yyy2h9",
+			encoded: "kaspatest:przhjdpv93xfygpqtckdc2zkzuzqeyj2pt5vxqxg0xrwl2zvxl5vx35yyy2h9",
 			valid:   true,
 			result: util.TstAddressScriptHash(
 				util.Bech32PrefixKaspaTest,
@@ -331,6 +328,12 @@ func TestAddresses(t *testing.T) {
 
 		if !reflect.DeepEqual(addr, test.result) {
 			t.Errorf("%v: created address does not match expected result",
+				test.name)
+			return
+		}
+
+		if !reflect.DeepEqual(addr, decoded) {
+			t.Errorf("%v: created address does not match the decoded address",
 				test.name)
 			return
 		}
