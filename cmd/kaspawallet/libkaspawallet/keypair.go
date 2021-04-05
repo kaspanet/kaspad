@@ -17,6 +17,7 @@ func CreateKeyPair() ([]byte, []byte, error) {
 	return keyPairBytes(privateKey)
 }
 
+// KeyPairFromPrivateKeyHex decodes a private-public key pair out of `privateKeyHex`
 func KeyPairFromPrivateKeyHex(privateKeyHex string) ([]byte, []byte, error) {
 	privateKeyBytes, err := hex.DecodeString(privateKeyHex)
 	if err != nil {
