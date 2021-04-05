@@ -23,7 +23,7 @@ type configFlags struct {
 }
 
 type createConfig struct {
-	KeysFile          string `long:"keys-file" short:"f" description:"Keys file location (only if different from default)"`
+	KeysFile          string `long:"keys-file" short:"f" description:"Keys file location (default: ~/.kaspawallet/keys.json (*nix), %USERPROFILE%\\AppData\\Local\\Kaspawallet\\key.json (Windows))"`
 	MinimumSignatures uint32 `long:"min-signatures" short:"m" description:"Minimum required signatures" default:"1"`
 	NumPrivateKeys    uint32 `long:"num-private-keys" short:"k" description:"Number of private keys to generate" default:"1"`
 	NumPublicKeys     uint32 `long:"num-public-keys" short:"n" description:"Total number of keys" default:"1"`
@@ -31,13 +31,13 @@ type createConfig struct {
 }
 
 type balanceConfig struct {
-	KeysFile  string `long:"keys-file" short:"f" description:"Keys file location (only if different from default)"`
+	KeysFile  string `long:"keys-file" short:"f" description:"Keys file location (default: ~/.kaspawallet/keys.json (*nix), %USERPROFILE%\\AppData\\Local\\Kaspawallet\\key.json (Windows))"`
 	RPCServer string `long:"rpcserver" short:"s" description:"RPC server to connect to"`
 	config.NetworkFlags
 }
 
 type sendConfig struct {
-	KeysFile   string  `long:"keys-file" short:"f" description:"Keys file location (only if different from default)"`
+	KeysFile   string  `long:"keys-file" short:"f" description:"Keys file location (default: ~/.kaspawallet/keys.json (*nix), %USERPROFILE%\\AppData\\Local\\Kaspawallet\\key.json (Windows))"`
 	RPCServer  string  `long:"rpcserver" short:"s" description:"RPC server to connect to"`
 	ToAddress  string  `long:"to-address" short:"t" description:"The public address to send Kaspa to" required:"true"`
 	SendAmount float64 `long:"send-amount" short:"v" description:"An amount to send in Kaspa (e.g. 1234.12345678)" required:"true"`
@@ -45,7 +45,7 @@ type sendConfig struct {
 }
 
 type createUnsignedTransactionConfig struct {
-	KeysFile   string  `long:"keys-file" short:"f" description:"Keys file location (only if different from default)"`
+	KeysFile   string  `long:"keys-file" short:"f" description:"Keys file location (default: ~/.kaspawallet/keys.json (*nix), %USERPROFILE%\\AppData\\Local\\Kaspawallet\\key.json (Windows))"`
 	RPCServer  string  `long:"rpcserver" short:"s" description:"RPC server to connect to"`
 	ToAddress  string  `long:"to-address" short:"t" description:"The public address to send Kaspa to" required:"true"`
 	SendAmount float64 `long:"send-amount" short:"v" description:"An amount to send in Kaspa (e.g. 1234.12345678)" required:"true"`
@@ -53,7 +53,7 @@ type createUnsignedTransactionConfig struct {
 }
 
 type signConfig struct {
-	KeysFile    string `long:"keys-file" short:"f" description:"Keys file location (only if different from default)"`
+	KeysFile    string `long:"keys-file" short:"f" description:"Keys file location (default: ~/.kaspawallet/keys.json (*nix), %USERPROFILE%\\AppData\\Local\\Kaspawallet\\key.json (Windows))"`
 	Transaction string `long:"transaction" short:"t" description:"The unsigned transaction to sign on (encoded in hex)" required:"true"`
 	config.NetworkFlags
 }
@@ -65,7 +65,7 @@ type broadcastConfig struct {
 }
 
 type showAddressConfig struct {
-	KeysFile string `long:"keys-file" short:"f" description:"Keys file location (only if different from default)"`
+	KeysFile string `long:"keys-file" short:"f" description:"Keys file location (default: ~/.kaspawallet/keys.json (*nix), %USERPROFILE%\\AppData\\Local\\Kaspawallet\\key.json (Windows))"`
 	config.NetworkFlags
 }
 
