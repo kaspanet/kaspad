@@ -103,6 +103,7 @@ func (as *addressStore) add(key addressKey, address *address) error {
 	return as.database.Put(databaseKey, serializedAddress)
 }
 
+// updateNotBanned updates the not-banned address collection
 func (as *addressStore) updateNotBanned(key addressKey, address *address) error {
 	if _, ok := as.notBannedAddresses[key]; !ok {
 		return errors.Errorf("address %s is not in the store", address.netAddress.TCPAddress())
