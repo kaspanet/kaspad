@@ -8,6 +8,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/subnetworks"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/transactionhelper"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/txscript"
 	utxopkg "github.com/kaspanet/kaspad/domain/consensus/utils/utxo"
 	"github.com/kaspanet/kaspad/domain/dagconfig"
@@ -109,7 +110,7 @@ func mineBlockAndGetCoinbaseTransaction(t *testing.T, rpcClient *rpcclient.RPCCl
 	if err != nil {
 		t.Fatalf("SubmitBlock: %s", err)
 	}
-	return templateBlock.Transactions[0]
+	return templateBlock.Transactions[transactionhelper.CoinbaseTransactionIndex]
 }
 
 func generateTransactionsWithMultipleOutputs(t *testing.T,
