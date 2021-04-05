@@ -1,14 +1,40 @@
 package keys
 
 import (
+	"bufio"
 	"crypto/rand"
 	"crypto/subtle"
+	"fmt"
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/libkaspawallet"
 	"github.com/pkg/errors"
+	"os"
 )
 
 // CreateKeyPairs generates `numKeys` number of key pairs.
 func CreateKeyPairs(numKeys uint32) (encryptedPrivateKeys []*EncryptedPrivateKey, publicKeys [][]byte, err error) {
+	return createKeyPairsFromFunction(numKeys, func(_ uint32) ([]byte, []byte, error) {
+		return libkaspawallet.CreateKeyPair()
+	})
+}
+
+func ImportKeyPairs(numKeys uint32) (encryptedPrivateKeys []*EncryptedPrivateKey, publicKeys [][]byte, err error) {
+	return createKeyPairsFromFunction(numKeys, func(keyIndex uint32) ([]byte, []byte, error) {
+		fmt.Printf("Enter private key #%d here:\n", keyIndex+1)
+		reader := bufio.NewReader(os.Stdin)
+		line, isPrefix, err := reader.ReadLine()
+		if err != nil {
+			return nil, nil, err
+		}
+		if isPrefix {
+			return nil, nil, errors.Errorf("Private key is too long")
+		}
+		return libkaspawallet.KeyPairFromPrivateKeyHex(string(line))
+	})
+}
+
+func createKeyPairsFromFunction(numKeys uint32, keyPairFunction func(keyIndex uint32) ([]byte, []byte, error)) (
+	encryptedPrivateKeys []*EncryptedPrivateKey, publicKeys [][]byte, err error) {
+
 	password := getPassword("Enter password for the key file:")
 	confirmPassword := getPassword("Confirm password:")
 
@@ -18,7 +44,7 @@ func CreateKeyPairs(numKeys uint32) (encryptedPrivateKeys []*EncryptedPrivateKey
 
 	encryptedPrivateKeys = make([]*EncryptedPrivateKey, 0, numKeys)
 	for i := uint32(0); i < numKeys; i++ {
-		privateKey, publicKey, err := libkaspawallet.CreateKeyPair()
+		privateKey, publicKey, err := keyPairFunction(i)
 		if err != nil {
 			return nil, nil, err
 		}
