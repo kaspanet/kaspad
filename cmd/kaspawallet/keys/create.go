@@ -17,7 +17,7 @@ func CreateKeyPairs(numKeys uint32) (encryptedPrivateKeys []*EncryptedPrivateKey
 	})
 }
 
-// CreateKeyPairs imports a `numKeys` of private keys and generates key pairs out of them.
+// ImportKeyPairs imports a `numKeys` of private keys and generates key pairs out of them.
 func ImportKeyPairs(numKeys uint32) (encryptedPrivateKeys []*EncryptedPrivateKey, publicKeys [][]byte, err error) {
 	return createKeyPairsFromFunction(numKeys, func(keyIndex uint32) ([]byte, []byte, error) {
 		fmt.Printf("Enter private key #%d here:\n", keyIndex+1)
