@@ -529,7 +529,7 @@ var (
 	oldCompressedScriptPubKey = &externalapi.ScriptPublicKey{[]byte{0x76, 0xa9, 0x14, 0x27, 0x4d, 0x9f, 0x7f,
 		0x61, 0x7e, 0x7c, 0x7a, 0x1c, 0x1f, 0xb2, 0x75, 0x79, 0x10,
 		0x43, 0x65, 0x68, 0x27, 0x9d, 0x86, 0x88, 0xac}, 0}
-	p2pkhScriptPubKey = &externalapi.ScriptPublicKey{[]byte{0x20, 0xb2, 0x52, 0xf0, 0x49, 0x85, 0x78, 0x03, 0x03,
+	p2pkScriptPubKey = &externalapi.ScriptPublicKey{[]byte{0x20, 0xb2, 0x52, 0xf0, 0x49, 0x85, 0x78, 0x03, 0x03,
 		0xc8, 0x7d, 0xce, 0x51, 0x7f, 0xa8, 0x69, 0x0b,
 		0x91, 0x95, 0xf4, 0xf3, 0x5c, 0x26, 0x73, 0x05,
 		0x05, 0xa2, 0xee, 0xbc, 0x09, 0x38, 0x34, 0x3a, 0xac}, 0}
@@ -631,7 +631,7 @@ var sigScriptTests = []tstSigScript{
 			{
 				txout: &externalapi.DomainTransactionOutput{
 					Value:           coinbaseVal,
-					ScriptPublicKey: p2pkhScriptPubKey,
+					ScriptPublicKey: p2pkScriptPubKey,
 				},
 				sigscriptGenerates: true,
 				inputValidates:     true,
@@ -647,7 +647,7 @@ var sigScriptTests = []tstSigScript{
 			{
 				txout: &externalapi.DomainTransactionOutput{
 					Value:           coinbaseVal,
-					ScriptPublicKey: p2pkhScriptPubKey,
+					ScriptPublicKey: p2pkScriptPubKey,
 				},
 				sigscriptGenerates: true,
 				inputValidates:     true,
@@ -656,7 +656,7 @@ var sigScriptTests = []tstSigScript{
 			{
 				txout: &externalapi.DomainTransactionOutput{
 					Value:           coinbaseVal + fee,
-					ScriptPublicKey: p2pkhScriptPubKey,
+					ScriptPublicKey: p2pkScriptPubKey,
 				},
 				sigscriptGenerates: true,
 				inputValidates:     true,
@@ -672,7 +672,7 @@ var sigScriptTests = []tstSigScript{
 			{
 				txout: &externalapi.DomainTransactionOutput{
 					Value:           coinbaseVal,
-					ScriptPublicKey: p2pkhScriptPubKey,
+					ScriptPublicKey: p2pkScriptPubKey,
 				},
 				sigscriptGenerates: true,
 				inputValidates:     true,
@@ -688,7 +688,7 @@ var sigScriptTests = []tstSigScript{
 			{
 				txout: &externalapi.DomainTransactionOutput{
 					Value:           coinbaseVal,
-					ScriptPublicKey: p2pkhScriptPubKey,
+					ScriptPublicKey: p2pkScriptPubKey,
 				},
 				sigscriptGenerates: true,
 				inputValidates:     true,
@@ -704,7 +704,7 @@ var sigScriptTests = []tstSigScript{
 			{
 				txout: &externalapi.DomainTransactionOutput{
 					Value:           coinbaseVal,
-					ScriptPublicKey: p2pkhScriptPubKey,
+					ScriptPublicKey: p2pkScriptPubKey,
 				},
 				sigscriptGenerates: true,
 				inputValidates:     true,
@@ -720,7 +720,7 @@ var sigScriptTests = []tstSigScript{
 			{
 				txout: &externalapi.DomainTransactionOutput{
 					Value:           coinbaseVal,
-					ScriptPublicKey: p2pkhScriptPubKey,
+					ScriptPublicKey: p2pkScriptPubKey,
 				},
 				sigscriptGenerates: false,
 				inputValidates:     false,
@@ -736,7 +736,7 @@ var sigScriptTests = []tstSigScript{
 			{
 				txout: &externalapi.DomainTransactionOutput{
 					Value:           coinbaseVal,
-					ScriptPublicKey: p2pkhScriptPubKey,
+					ScriptPublicKey: p2pkScriptPubKey,
 				},
 				sigscriptGenerates: false,
 				inputValidates:     false,
@@ -752,7 +752,7 @@ var sigScriptTests = []tstSigScript{
 			{
 				txout: &externalapi.DomainTransactionOutput{
 					Value:           coinbaseVal,
-					ScriptPublicKey: p2pkhScriptPubKey,
+					ScriptPublicKey: p2pkScriptPubKey,
 				},
 				sigscriptGenerates: true,
 				inputValidates:     true,
@@ -761,7 +761,7 @@ var sigScriptTests = []tstSigScript{
 			{
 				txout: &externalapi.DomainTransactionOutput{
 					Value:           coinbaseVal + fee,
-					ScriptPublicKey: p2pkhScriptPubKey,
+					ScriptPublicKey: p2pkScriptPubKey,
 				},
 				sigscriptGenerates: true,
 				inputValidates:     true,
@@ -777,7 +777,7 @@ var sigScriptTests = []tstSigScript{
 			{
 				txout: &externalapi.DomainTransactionOutput{
 					Value:           coinbaseVal,
-					ScriptPublicKey: p2pkhScriptPubKey,
+					ScriptPublicKey: p2pkScriptPubKey,
 				},
 				sigscriptGenerates: true,
 				inputValidates:     true,
@@ -786,7 +786,7 @@ var sigScriptTests = []tstSigScript{
 			{
 				txout: &externalapi.DomainTransactionOutput{
 					Value:           coinbaseVal + fee,
-					ScriptPublicKey: p2pkhScriptPubKey,
+					ScriptPublicKey: p2pkScriptPubKey,
 				},
 				sigscriptGenerates: true,
 				inputValidates:     true,

@@ -254,7 +254,7 @@ func extractTransaction(psTx *serialization.PartiallySignedTransaction) (*extern
 			psTx.Tx.Inputs[i].SignatureScript = sigScript
 		} else {
 			if len(input.PubKeySignaturePairs) > 1 {
-				return nil, errors.Errorf("Cannot sign on P2PKH when len(input.PubKeySignaturePairs) > 1")
+				return nil, errors.Errorf("Cannot sign on P2PK when len(input.PubKeySignaturePairs) > 1")
 			}
 
 			if input.PubKeySignaturePairs[0].Signature == nil {

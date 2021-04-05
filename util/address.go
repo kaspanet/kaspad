@@ -98,7 +98,7 @@ type Address interface {
 	// Please note that String differs subtly from EncodeAddress: String
 	// will return the value as a string without any conversion, while
 	// EncodeAddress may convert destination types (for example,
-	// converting pubkeys to P2PKH addresses) before encoding as a
+	// converting pubkeys to P2PK addresses) before encoding as a
 	// payment address string.
 	String() string
 

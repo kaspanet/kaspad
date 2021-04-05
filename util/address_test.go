@@ -26,9 +26,9 @@ func TestAddresses(t *testing.T) {
 		passedPrefix   util.Bech32Prefix
 		expectedPrefix util.Bech32Prefix
 	}{
-		// Positive P2PKH tests.
+		// Positive P2PK tests.
 		{
-			name:    "mainnet p2pkh",
+			name:    "mainnet p2pk",
 			addr:    "kaspa:qr35ennsep3hxfe7lnz5ee7j5jgmkjswsn35ennsep3hxfe7ln35cdv0dy335",
 			encoded: "kaspa:qr35ennsep3hxfe7lnz5ee7j5jgmkjswsn35ennsep3hxfe7ln35cdv0dy335",
 			valid:   true,
@@ -52,7 +52,7 @@ func TestAddresses(t *testing.T) {
 			expectedPrefix: util.Bech32PrefixKaspa,
 		},
 		{
-			name:    "mainnet p2pkh 2",
+			name:    "mainnet p2pk 2",
 			addr:    "kaspa:qq80qvqs0lfxuzmt7sz3909ze6camq9d4t35ennsep3hxfe7ln35cvfqgz3z8",
 			encoded: "kaspa:qq80qvqs0lfxuzmt7sz3909ze6camq9d4t35ennsep3hxfe7ln35cvfqgz3z8",
 			valid:   true,
@@ -77,7 +77,7 @@ func TestAddresses(t *testing.T) {
 			expectedPrefix: util.Bech32PrefixKaspa,
 		},
 		{
-			name:    "testnet p2pkh",
+			name:    "testnet p2pk",
 			addr:    "kaspatest:qputx94qseratdmjs0j395mq8u03er0x3l35ennsep3hxfe7ln35ckquw528z",
 			encoded: "kaspatest:qputx94qseratdmjs0j395mq8u03er0x3l35ennsep3hxfe7ln35ckquw528z",
 			valid:   true,
@@ -102,7 +102,7 @@ func TestAddresses(t *testing.T) {
 			expectedPrefix: util.Bech32PrefixKaspaTest,
 		},
 
-		// Negative P2PKH tests.
+		// Negative P2PK tests.
 		{
 			name:  "p2pk wrong public key length",
 			addr:  "",
@@ -118,7 +118,7 @@ func TestAddresses(t *testing.T) {
 			expectedPrefix: util.Bech32PrefixKaspa,
 		},
 		{
-			name:           "p2pkh bad checksum",
+			name:           "p2pk bad checksum",
 			addr:           "kaspa:qr35ennsep3hxfe7lnz5ee7j5jgmkjswss74as46gx",
 			valid:          false,
 			passedPrefix:   util.Bech32PrefixKaspa,
@@ -277,8 +277,7 @@ func TestAddresses(t *testing.T) {
 				saddr = util.TstAddressSAddrP2SH(encoded)
 			}
 
-			// Check script address, as well as the HashBlake2b method for P2PKH and
-			// P2SH addresses.
+			// Check script address, as well as the HashBlake2b method for P2SH addresses.
 			if !bytes.Equal(saddr, decoded.ScriptAddress()) {
 				t.Errorf("%v: script addresses do not match:\n%x != \n%x",
 					test.name, saddr, decoded.ScriptAddress())

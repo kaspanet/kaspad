@@ -60,7 +60,7 @@ func TestValidateTransactionInContextAndPopulateMassAndFee(t *testing.T) {
 		}
 		addr, err := util.NewAddressPublicKey(publicKeySerialized[:], params.Prefix)
 		if err != nil {
-			t.Fatalf("Failed to generate p2pkh address: %v", err)
+			t.Fatalf("Failed to generate p2pk address: %v", err)
 		}
 		scriptPublicKey, err := txscript.PayToAddrScript(addr)
 		if err != nil {
@@ -263,7 +263,7 @@ func TestSigningTwoInputs(t *testing.T) {
 		}
 		addr, err := util.NewAddressPublicKey(publicKeySerialized[:], params.Prefix)
 		if err != nil {
-			t.Fatalf("Failed to generate p2pkh address: %v", err)
+			t.Fatalf("Failed to generate p2pk address: %v", err)
 		}
 
 		scriptPublicKey, err := txscript.PayToAddrScript(addr)
