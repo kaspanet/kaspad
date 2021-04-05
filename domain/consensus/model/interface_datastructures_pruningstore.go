@@ -18,7 +18,7 @@ type PruningStore interface {
 	StageStartUpdatingPruningPointUTXOSet(stagingArea *StagingArea)
 	HadStartedUpdatingPruningPointUTXOSet(dbContext DBWriter) (bool, error)
 	FinishUpdatingPruningPointUTXOSet(dbContext DBWriter) error
-	UpdatePruningPointUTXOSet(dbContext DBWriter, utxoSetIterator externalapi.ReadOnlyUTXOSetIterator) error
+	UpdatePruningPointUTXOSet(dbContext DBWriter, diff externalapi.UTXODiff) error
 
 	ClearImportedPruningPointUTXOs(dbContext DBWriter) error
 	AppendImportedPruningPointUTXOs(dbTx DBTransaction, outpointAndUTXOEntryPairs []*externalapi.OutpointAndUTXOEntryPair) error
@@ -28,4 +28,5 @@ type PruningStore interface {
 	UpdateImportedPruningPointMultiset(dbTx DBTransaction, multiset Multiset) error
 	CommitImportedPruningPointUTXOSet(dbContext DBWriter) error
 	PruningPointUTXOs(dbContext DBReader, fromOutpoint *externalapi.DomainOutpoint, limit int) ([]*externalapi.OutpointAndUTXOEntryPair, error)
+	PruningPointUTXOIterator(dbContext DBReader) (externalapi.ReadOnlyUTXOSetIterator, error)
 }
