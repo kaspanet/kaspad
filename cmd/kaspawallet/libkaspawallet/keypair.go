@@ -1,7 +1,6 @@
 package libkaspawallet
 
 import (
-	"encoding/hex"
 	"github.com/kaspanet/go-secp256k1"
 	"github.com/kaspanet/kaspad/domain/dagconfig"
 	"github.com/kaspanet/kaspad/util"
@@ -10,24 +9,40 @@ import (
 
 // CreateKeyPair generates a private-public key pair
 func CreateKeyPair() ([]byte, []byte, error) {
-	privateKey, err := secp256k1.GenerateSchnorrKeyPair()
+	keyPair, err := secp256k1.GenerateSchnorrKeyPair()
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "Failed to generate private key")
 	}
-	return keyPairBytes(privateKey)
+	publicKey, err := keyPair.SchnorrPublicKey()
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "Failed to generate public key")
+	}
+	publicKeySerialized, err := publicKey.Serialize()
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "Failed to serialize public key")
+	}
+
+	return keyPair.SerializePrivateKey()[:], publicKeySerialized[:], nil
 }
 
-// KeyPairFromPrivateKeyHex decodes a private-public key pair out of `privateKeyHex`
-func KeyPairFromPrivateKeyHex(privateKeyHex string) ([]byte, []byte, error) {
-	privateKeyBytes, err := hex.DecodeString(privateKeyHex)
+// PublicKeyFromPrivateKey returns the public key associated with a private key
+func PublicKeyFromPrivateKey(privateKeyBytes []byte) ([]byte, error) {
+	keyPair, err := secp256k1.DeserializeSchnorrPrivateKeyFromSlice(privateKeyBytes)
 	if err != nil {
-		return nil, nil, errors.Wrap(err, "Failed to deserialized private key")
+		return nil, errors.Wrap(err, "Failed to deserialized private key")
 	}
-	privateKey, err := secp256k1.DeserializeSchnorrPrivateKeyFromSlice(privateKeyBytes)
+
+	publicKey, err := keyPair.SchnorrPublicKey()
 	if err != nil {
-		return nil, nil, errors.Wrap(err, "Failed to deserialized private key")
+		return nil, errors.Wrap(err, "Failed to generate public key")
 	}
-	return keyPairBytes(privateKey)
+
+	publicKeySerialized, err := publicKey.Serialize()
+	if err != nil {
+		return nil, errors.Wrap(err, "Failed to serialize public key")
+	}
+
+	return publicKeySerialized[:], nil
 }
 
 func keyPairBytes(keyPair *secp256k1.SchnorrKeyPair) ([]byte, []byte, error) {
