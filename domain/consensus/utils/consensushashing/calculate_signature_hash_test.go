@@ -88,7 +88,7 @@ func modifySubnetworkID(tx *externalapi.DomainTransaction) *externalapi.DomainTr
 	return clone
 }
 
-func TestCalculateSignatureHash(t *testing.T) {
+func TestCalculateSignatureHashSchnorr(t *testing.T) {
 	nativeTx, subnetworkTx, err := generateTxs()
 	if err != nil {
 		t.Fatalf("Error from generateTxs: %+v", err)
@@ -283,7 +283,7 @@ func generateTxs() (nativeTx, subnetworkTx *externalapi.DomainTransaction, err e
 	return nativeTx, subnetworkTx, nil
 }
 
-func BenchmarkCalculateSignatureHash(b *testing.B) {
+func BenchmarkCalculateSignatureHashSchnorr(b *testing.B) {
 	sigHashTypes := []consensushashing.SigHashType{
 		consensushashing.SigHashAll,
 		consensushashing.SigHashNone,
