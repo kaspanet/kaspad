@@ -25,7 +25,7 @@ const (
 	ScriptHashTy                     // Pay to script hash.
 )
 
-// Script pub key versions for address types
+// Script public key versions for address types.
 const (
 	addressPublicKeyScriptPublicKeyVersion      = 0
 	addressPublicKeyECDSAScriptPublicKeyVersion = 0
