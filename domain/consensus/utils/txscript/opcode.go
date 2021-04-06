@@ -2090,7 +2090,7 @@ func opcodeCheckSigECDSA(op *parsedOpcode, vm *Engine) error {
 
 	var valid bool
 	secpHash := secp256k1.Hash(*sigHash.ByteArray())
-	if vm.sigCache != nil {
+	if vm.sigCacheECDSA != nil {
 
 		valid = vm.sigCacheECDSA.Exists(secpHash, signature, pubKey)
 		if !valid && pubKey.ECDSAVerify(&secpHash, signature) {
