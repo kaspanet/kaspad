@@ -27,7 +27,7 @@ func send(conf *sendConfig) error {
 		return err
 	}
 
-	fromAddress, err := libkaspawallet.Address(conf.NetParams(), keysFile.PublicKeys, keysFile.MinimumSignatures)
+	fromAddress, err := libkaspawallet.Address(conf.NetParams(), keysFile.PublicKeys, keysFile.MinimumSignatures, keysFile.ECDSA)
 	if err != nil {
 		return err
 	}
@@ -49,13 +49,17 @@ func send(conf *sendConfig) error {
 		return err
 	}
 
-	psTx, err := libkaspawallet.CreateUnsignedTransaction(keysFile.PublicKeys, keysFile.MinimumSignatures, []*libkaspawallet.Payment{{
-		Address: toAddress,
-		Amount:  sendAmountSompi,
-	}, {
-		Address: fromAddress,
-		Amount:  changeSompi,
-	}}, selectedUTXOs)
+	psTx, err := libkaspawallet.CreateUnsignedTransaction(keysFile.PublicKeys,
+		keysFile.MinimumSignatures,
+		keysFile.ECDSA,
+		[]*libkaspawallet.Payment{{
+			Address: toAddress,
+			Amount:  sendAmountSompi,
+		}, {
+			Address: fromAddress,
+			Amount:  changeSompi,
+		}},
+		selectedUTXOs)
 	if err != nil {
 		return err
 	}
@@ -65,7 +69,7 @@ func send(conf *sendConfig) error {
 		return err
 	}
 
-	updatedPSTx, err := libkaspawallet.Sign(privateKeys, psTx)
+	updatedPSTx, err := libkaspawallet.Sign(privateKeys, psTx, keysFile.ECDSA)
 	if err != nil {
 		return err
 	}

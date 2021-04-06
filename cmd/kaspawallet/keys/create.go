@@ -12,9 +12,9 @@ import (
 )
 
 // CreateKeyPairs generates `numKeys` number of key pairs.
-func CreateKeyPairs(numKeys uint32) (encryptedPrivateKeys []*EncryptedPrivateKey, publicKeys [][]byte, err error) {
+func CreateKeyPairs(numKeys uint32, ecdsa bool) (encryptedPrivateKeys []*EncryptedPrivateKey, publicKeys [][]byte, err error) {
 	return createKeyPairsFromFunction(numKeys, func(_ uint32) ([]byte, []byte, error) {
-		return libkaspawallet.CreateKeyPair()
+		return libkaspawallet.CreateKeyPair(ecdsa)
 	})
 }
 

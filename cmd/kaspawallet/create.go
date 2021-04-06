@@ -15,7 +15,7 @@ func create(conf *createConfig) error {
 	var publicKeys [][]byte
 	var err error
 	if !conf.Import {
-		encryptedPrivateKeys, publicKeys, err = keys.CreateKeyPairs(conf.NumPrivateKeys)
+		encryptedPrivateKeys, publicKeys, err = keys.CreateKeyPairs(conf.NumPrivateKeys, conf.ECDSA)
 	} else {
 		encryptedPrivateKeys, publicKeys, err = keys.ImportKeyPairs(conf.NumPrivateKeys)
 	}
@@ -49,7 +49,7 @@ func create(conf *createConfig) error {
 		publicKeys = append(publicKeys, publicKey)
 	}
 
-	err = keys.WriteKeysFile(conf.KeysFile, encryptedPrivateKeys, publicKeys, conf.MinimumSignatures)
+	err = keys.WriteKeysFile(conf.KeysFile, encryptedPrivateKeys, publicKeys, conf.MinimumSignatures, conf.ECDSA)
 	if err != nil {
 		return err
 	}
@@ -59,7 +59,7 @@ func create(conf *createConfig) error {
 		return err
 	}
 
-	addr, err := libkaspawallet.Address(conf.NetParams(), keysFile.PublicKeys, keysFile.MinimumSignatures)
+	addr, err := libkaspawallet.Address(conf.NetParams(), keysFile.PublicKeys, keysFile.MinimumSignatures, keysFile.ECDSA)
 	if err != nil {
 		return err
 	}
