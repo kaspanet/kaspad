@@ -25,6 +25,13 @@ const (
 	ScriptHashTy                     // Pay to script hash.
 )
 
+// Script public key versions for address types.
+const (
+	addressPublicKeyScriptPublicKeyVersion      = 0
+	addressPublicKeyECDSAScriptPublicKeyVersion = 0
+	addressScriptHashScriptPublicKeyVersion     = 0
+)
+
 // scriptClassToName houses the human-readable strings which describe each
 // script class.
 var scriptClassToName = []string{
@@ -167,12 +174,20 @@ func CalcScriptInfo(sigScript, scriptPubKey []byte, isP2SH bool) (*ScriptInfo, e
 }
 
 // payToPubKeyScript creates a new script to pay a transaction
-// output to a 32-byte pubkey. It is expected that the input is a valid
-// hash.
+// output to a 32-byte pubkey.
 func payToPubKeyScript(pubKey []byte) ([]byte, error) {
 	return NewScriptBuilder().
 		AddData(pubKey).
 		AddOp(OpCheckSig).
+		Script()
+}
+
+// payToPubKeyScript creates a new script to pay a transaction
+// output to a 33-byte pubkey.
+func payToPubKeyScriptECDSA(pubKey []byte) ([]byte, error) {
+	return NewScriptBuilder().
+		AddData(pubKey).
+		AddOp(OpCheckSigECDSA).
 		Script()
 }
 
@@ -197,7 +212,20 @@ func PayToAddrScript(addr util.Address) (*externalapi.ScriptPublicKey, error) {
 		if err != nil {
 			return nil, err
 		}
-		return &externalapi.ScriptPublicKey{script, constants.MaxScriptPublicKeyVersion}, err
+
+		return &externalapi.ScriptPublicKey{script, addressPublicKeyScriptPublicKeyVersion}, err
+
+	case *util.AddressPublicKeyECDSA:
+		if addr == nil {
+			return nil, scriptError(ErrUnsupportedAddress,
+				nilAddrErrStr)
+		}
+		script, err := payToPubKeyScriptECDSA(addr.ScriptAddress())
+		if err != nil {
+			return nil, err
+		}
+
+		return &externalapi.ScriptPublicKey{script, addressPublicKeyECDSAScriptPublicKeyVersion}, err
 
 	case *util.AddressScriptHash:
 		if addr == nil {
@@ -208,7 +236,8 @@ func PayToAddrScript(addr util.Address) (*externalapi.ScriptPublicKey, error) {
 		if err != nil {
 			return nil, err
 		}
-		return &externalapi.ScriptPublicKey{script, constants.MaxScriptPublicKeyVersion}, err
+
+		return &externalapi.ScriptPublicKey{script, addressScriptHashScriptPublicKeyVersion}, err
 	}
 
 	str := fmt.Sprintf("unable to generate payment script for unsupported "+

@@ -29,6 +29,13 @@ func TstAddressPubKey(prefix Bech32Prefix, hash [PublicKeySize]byte) *AddressPub
 	}
 }
 
+func TstAddressPubKeyECDSA(prefix Bech32Prefix, hash [PublicKeySizeECDSA]byte) *AddressPublicKeyECDSA {
+	return &AddressPublicKeyECDSA{
+		prefix:    prefix,
+		publicKey: hash,
+	}
+}
+
 // TstAddressScriptHash makes an AddressScriptHash, setting the
 // unexported fields with the parameters hash and netID.
 func TstAddressScriptHash(prefix Bech32Prefix, hash [blake2b.Size256]byte) *AddressScriptHash {
@@ -44,6 +51,13 @@ func TstAddressScriptHash(prefix Bech32Prefix, hash [blake2b.Size256]byte) *Addr
 func TstAddressSAddrP2PK(addr string) []byte {
 	_, decoded, _, _ := bech32.Decode(addr)
 	return decoded[:PublicKeySize]
+}
+
+// TstAddressSAddr returns the expected script address bytes for
+// ECDSA P2PK kaspa addresses.
+func TstAddressSAddrP2PKECDSA(addr string) []byte {
+	_, decoded, _, _ := bech32.Decode(addr)
+	return decoded[:PublicKeySizeECDSA]
 }
 
 // TstAddressSAddrP2SH returns the expected script address bytes for

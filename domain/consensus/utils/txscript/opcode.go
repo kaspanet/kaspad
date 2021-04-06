@@ -206,7 +206,7 @@ const (
 	OpSHA256              = 0xa8 // 168
 	OpUnknown169          = 0xa9 // 169
 	OpBlake2b             = 0xaa // 170
-	OpUnknown171          = 0xab // 171
+	OpCheckSigECDSA       = 0xab // 171
 	OpCheckSig            = 0xac // 172
 	OpCheckSigVerify      = 0xad // 173
 	OpCheckMultiSig       = 0xae // 174
@@ -487,6 +487,7 @@ var opcodeArray = [256]opcode{
 	// Crypto opcodes.
 	OpSHA256:              {OpSHA256, "OP_SHA256", 1, opcodeSha256},
 	OpBlake2b:             {OpBlake2b, "OP_BLAKE2B", 1, opcodeBlake2b},
+	OpCheckSigECDSA:       {OpCheckSigECDSA, "OP_CHECKSIGECDSA", 1, opcodeCheckSigECDSA},
 	OpCheckSig:            {OpCheckSig, "OP_CHECKSIG", 1, opcodeCheckSig},
 	OpCheckSigVerify:      {OpCheckSigVerify, "OP_CHECKSIGVERIFY", 1, opcodeCheckSigVerify},
 	OpCheckMultiSig:       {OpCheckMultiSig, "OP_CHECKMULTISIG", 1, opcodeCheckMultiSig},
@@ -508,7 +509,6 @@ var opcodeArray = [256]opcode{
 	OpUnknown166: {OpUnknown166, "OP_UNKNOWN166", 1, opcodeInvalid},
 	OpUnknown167: {OpUnknown167, "OP_UNKNOWN167", 1, opcodeInvalid},
 	OpUnknown169: {OpUnknown169, "OP_UNKNOWN169", 1, opcodeInvalid},
-	OpUnknown171: {OpUnknown171, "OP_UNKNOWN171", 1, opcodeInvalid},
 	OpUnknown188: {OpUnknown188, "OP_UNKNOWN188", 1, opcodeInvalid},
 	OpUnknown189: {OpUnknown189, "OP_UNKNOWN189", 1, opcodeInvalid},
 	OpUnknown190: {OpUnknown190, "OP_UNKNOWN190", 1, opcodeInvalid},
@@ -1988,7 +1988,7 @@ func opcodeCheckSig(op *parsedOpcode, vm *Engine) error {
 	}
 
 	// Generate the signature hash based on the signature hash type.
-	sigHash, err := consensushashing.CalculateSignatureHash(&vm.tx, vm.txIdx, hashType, vm.sigHashReusedValues)
+	sigHash, err := consensushashing.CalculateSignatureHashSchnorr(&vm.tx, vm.txIdx, hashType, vm.sigHashReusedValues)
 	if err != nil {
 		vm.dstack.PushBool(false)
 		return nil
@@ -2016,6 +2016,89 @@ func opcodeCheckSig(op *parsedOpcode, vm *Engine) error {
 		}
 	} else {
 		valid = pubKey.SchnorrVerify(&secpHash, signature)
+	}
+
+	if !valid && len(sigBytes) > 0 {
+		str := "signature not empty on failed checksig"
+		return scriptError(ErrNullFail, str)
+	}
+
+	vm.dstack.PushBool(valid)
+	return nil
+}
+
+func opcodeCheckSigECDSA(op *parsedOpcode, vm *Engine) error {
+	pkBytes, err := vm.dstack.PopByteArray()
+	if err != nil {
+		return err
+	}
+
+	fullSigBytes, err := vm.dstack.PopByteArray()
+	if err != nil {
+		return err
+	}
+
+	// The signature actually needs needs to be longer than this, but at
+	// least 1 byte is needed for the hash type below. The full length is
+	// checked depending on the script flags and upon parsing the signature.
+	if len(fullSigBytes) < 1 {
+		vm.dstack.PushBool(false)
+		return nil
+	}
+
+	// Trim off hashtype from the signature string and check if the
+	// signature and pubkey conform to the strict encoding requirements
+	// depending on the flags.
+	//
+	// NOTE: When the strict encoding flags are set, any errors in the
+	// signature or public encoding here result in an immediate script error
+	// (and thus no result bool is pushed to the data stack). This differs
+	// from the logic below where any errors in parsing the signature is
+	// treated as the signature failure resulting in false being pushed to
+	// the data stack. This is required because the more general script
+	// validation consensus rules do not have the new strict encoding
+	// requirements enabled by the flags.
+	hashType := consensushashing.SigHashType(fullSigBytes[len(fullSigBytes)-1])
+	sigBytes := fullSigBytes[:len(fullSigBytes)-1]
+	if !hashType.IsStandardSigHashType() {
+		return scriptError(ErrInvalidSigHashType, fmt.Sprintf("invalid hash type 0x%x", hashType))
+	}
+	if err := vm.checkSignatureLengthECDSA(sigBytes); err != nil {
+		return err
+	}
+	if err := vm.checkPubKeyEncodingECDSA(pkBytes); err != nil {
+		return err
+	}
+
+	// Generate the signature hash based on the signature hash type.
+	sigHash, err := consensushashing.CalculateSignatureHashECDSA(&vm.tx, vm.txIdx, hashType, vm.sigHashReusedValues)
+	if err != nil {
+		vm.dstack.PushBool(false)
+		return nil
+	}
+
+	pubKey, err := secp256k1.DeserializeECDSAPubKey(pkBytes)
+	if err != nil {
+		vm.dstack.PushBool(false)
+		return nil
+	}
+	signature, err := secp256k1.DeserializeECDSASignatureFromSlice(sigBytes)
+	if err != nil {
+		vm.dstack.PushBool(false)
+		return nil
+	}
+
+	var valid bool
+	secpHash := secp256k1.Hash(*sigHash.ByteArray())
+	if vm.sigCacheECDSA != nil {
+
+		valid = vm.sigCacheECDSA.Exists(secpHash, signature, pubKey)
+		if !valid && pubKey.ECDSAVerify(&secpHash, signature) {
+			vm.sigCacheECDSA.Add(secpHash, signature, pubKey)
+			valid = true
+		}
+	} else {
+		valid = pubKey.ECDSAVerify(&secpHash, signature)
 	}
 
 	if !valid && len(sigBytes) > 0 {
@@ -2194,7 +2277,7 @@ func opcodeCheckMultiSig(op *parsedOpcode, vm *Engine) error {
 		}
 
 		// Generate the signature hash based on the signature hash type.
-		sigHash, err := consensushashing.CalculateSignatureHash(&vm.tx, vm.txIdx, hashType, vm.sigHashReusedValues)
+		sigHash, err := consensushashing.CalculateSignatureHashSchnorr(&vm.tx, vm.txIdx, hashType, vm.sigHashReusedValues)
 		if err != nil {
 			return err
 		}

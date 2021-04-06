@@ -260,8 +260,10 @@ func createSpendingTx(sigScript []byte, scriptPubKey *externalapi.ScriptPublicKe
 func testScripts(t *testing.T, tests [][]interface{}, useSigCache bool) {
 	// Create a signature cache to use only if requested.
 	var sigCache *SigCache
+	var sigCacheECDSA *SigCacheECDSA
 	if useSigCache {
 		sigCache = NewSigCache(10)
+		sigCacheECDSA = NewSigCacheECDSA(10)
 	}
 
 	for i, test := range tests {
@@ -343,7 +345,7 @@ func testScripts(t *testing.T, tests [][]interface{}, useSigCache bool) {
 		// used, then create a new engine to execute the scripts.
 		tx := createSpendingTx(scriptSig, scriptPubKey)
 
-		vm, err := NewEngine(scriptPubKey, tx, 0, flags, sigCache, &consensushashing.SighashReusedValues{})
+		vm, err := NewEngine(scriptPubKey, tx, 0, flags, sigCache, sigCacheECDSA, &consensushashing.SighashReusedValues{})
 		if err == nil {
 			err = vm.Execute()
 		}
