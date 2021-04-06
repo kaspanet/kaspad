@@ -68,12 +68,12 @@ func (d *Data) toJSON() *keysFileJSON {
 	}
 }
 
-func (d *Data) fromJSON(kfj *keysFileJSON) error {
-	d.MinimumSignatures = kfj.MinimumSignatures
-	d.ECDSA = kfj.ECDSA
+func (d *Data) fromJSON(fileJSON *keysFileJSON) error {
+	d.MinimumSignatures = fileJSON.MinimumSignatures
+	d.ECDSA = fileJSON.ECDSA
 
-	d.encryptedPrivateKeys = make([]*EncryptedPrivateKey, len(kfj.EncryptedPrivateKeys))
-	for i, encryptedPrivateKeyJSON := range kfj.EncryptedPrivateKeys {
+	d.encryptedPrivateKeys = make([]*EncryptedPrivateKey, len(fileJSON.EncryptedPrivateKeys))
+	for i, encryptedPrivateKeyJSON := range fileJSON.EncryptedPrivateKeys {
 		cipher, err := hex.DecodeString(encryptedPrivateKeyJSON.Cipher)
 		if err != nil {
 			return err
@@ -90,8 +90,8 @@ func (d *Data) fromJSON(kfj *keysFileJSON) error {
 		}
 	}
 
-	d.PublicKeys = make([][]byte, len(kfj.PublicKeys))
-	for i, publicKey := range kfj.PublicKeys {
+	d.PublicKeys = make([][]byte, len(fileJSON.PublicKeys))
+	for i, publicKey := range fileJSON.PublicKeys {
 		var err error
 		d.PublicKeys[i], err = hex.DecodeString(publicKey)
 		if err != nil {

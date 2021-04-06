@@ -54,7 +54,7 @@ func createKeyPairECDSA() ([]byte, []byte, error) {
 func PublicKeyFromPrivateKey(privateKeyBytes []byte) ([]byte, error) {
 	keyPair, err := secp256k1.DeserializeSchnorrPrivateKeyFromSlice(privateKeyBytes)
 	if err != nil {
-		return nil, errors.Wrap(err, "Failed to deserialized private key")
+		return nil, errors.Wrap(err, "Failed to deserialize private key")
 	}
 
 	publicKey, err := keyPair.SchnorrPublicKey()
