@@ -367,7 +367,7 @@ func TestSigningTwoInputsECDSA(t *testing.T) {
 	testutils.ForAllNets(t, true, func(t *testing.T, params *dagconfig.Params) {
 		params.BlockCoinbaseMaturity = 0
 		factory := consensus.NewFactory()
-		tc, teardown, err := factory.NewTestConsensus(params, false, "TestSigningTwoInputs")
+		tc, teardown, err := factory.NewTestConsensus(params, false, "TestSigningTwoInputsECDSA")
 		if err != nil {
 			t.Fatalf("Error setting up consensus: %+v", err)
 		}

@@ -232,7 +232,7 @@ func NewAddressPublicKeyECDSA(publicKey []byte, prefix Bech32Prefix) (*AddressPu
 	return newAddressPubKeyECDSA(prefix, publicKey)
 }
 
-// newAddressPubKey is the internal API to create an ECDSA pubkey address
+// newAddressPubKeyECDSA is the internal API to create an ECDSA pubkey address
 // with a known leading identifier byte for a network, rather than looking
 // it up through its parameters. This is useful when creating a new address
 // structure from a string encoding where the identifier byte is already
