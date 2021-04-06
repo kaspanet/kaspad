@@ -22,6 +22,7 @@ type ScriptClass byte
 const (
 	NonStandardTy ScriptClass = iota // None of the recognized forms.
 	PubKeyTy                         // Pay to pubkey.
+	PubKeyECDSATy                    // Pay to pubkey ECDSA.
 	ScriptHashTy                     // Pay to script hash.
 )
 
@@ -37,6 +38,7 @@ const (
 var scriptClassToName = []string{
 	NonStandardTy: "nonstandard",
 	PubKeyTy:      "pubkey",
+	PubKeyECDSATy: "pubkeyecdsa",
 	ScriptHashTy:  "scripthash",
 }
 
@@ -56,15 +58,26 @@ func isPayToPubkey(pops []parsedOpcode) bool {
 	return len(pops) == 2 &&
 		pops[0].opcode.value == OpData32 &&
 		pops[1].opcode.value == OpCheckSig
+}
+
+// isPayToPubkeyECDSA returns true if the script passed is an ECDSA pay-to-pubkey
+// transaction, false otherwise.
+func isPayToPubkeyECDSA(pops []parsedOpcode) bool {
+	return len(pops) == 2 &&
+		pops[0].opcode.value == OpData33 &&
+		pops[1].opcode.value == OpCheckSigECDSA
 
 }
 
 // scriptType returns the type of the script being inspected from the known
 // standard types.
 func typeOfScript(pops []parsedOpcode) ScriptClass {
-	if isPayToPubkey(pops) {
+	switch {
+	case isPayToPubkey(pops):
 		return PubKeyTy
-	} else if isScriptHash(pops) {
+	case isPayToPubkeyECDSA(pops):
+		return PubKeyECDSATy
+	case isScriptHash(pops):
 		return ScriptHashTy
 	}
 	return NonStandardTy
@@ -309,6 +322,18 @@ func ExtractScriptPubKeyAddress(scriptPubKey *externalapi.ScriptPublicKey, dagPa
 		// Therefore the pubkey is the first item on the stack.
 		// If the pubkey is invalid for some reason, return a nil address.
 		addr, err := util.NewAddressPublicKey(pops[0].data,
+			dagParams.Prefix)
+		if err != nil {
+			return scriptClass, nil, nil
+		}
+		return scriptClass, addr, nil
+
+	case PubKeyECDSATy:
+		// A pay-to-pubkey script is of the form:
+		// <pubkey> OP_CHECKSIGECDSA
+		// Therefore the pubkey is the first item on the stack.
+		// If the pubkey is invalid for some reason, return a nil address.
+		addr, err := util.NewAddressPublicKeyECDSA(pops[0].data,
 			dagParams.Prefix)
 		if err != nil {
 			return scriptClass, nil, nil
