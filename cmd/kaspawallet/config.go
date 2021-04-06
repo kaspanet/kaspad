@@ -28,6 +28,7 @@ type createConfig struct {
 	MinimumSignatures uint32 `long:"min-signatures" short:"m" description:"Minimum required signatures" default:"1"`
 	NumPrivateKeys    uint32 `long:"num-private-keys" short:"k" description:"Number of private keys" default:"1"`
 	NumPublicKeys     uint32 `long:"num-public-keys" short:"n" description:"Total number of keys" default:"1"`
+	ECDSA             bool   `long:"ecdsa" description:"Create an ECDSA wallet"`
 	Import            bool   `long:"import" short:"i" description:"Import private keys (as opposed to generating them)"`
 	config.NetworkFlags
 }

@@ -29,6 +29,7 @@ type keysFileJSON struct {
 	EncryptedPrivateKeys []*encryptedPrivateKeyJSON `json:"encryptedPrivateKeys"`
 	PublicKeys           []string                   `json:"publicKeys"`
 	MinimumSignatures    uint32                     `json:"minimumSignatures"`
+	ECDSA                bool                       `json:"ecdsa"`
 }
 
 // EncryptedPrivateKey represents an encrypted private key
@@ -42,6 +43,7 @@ type Data struct {
 	encryptedPrivateKeys []*EncryptedPrivateKey
 	PublicKeys           [][]byte
 	MinimumSignatures    uint32
+	ECDSA                bool
 }
 
 func (d *Data) toJSON() *keysFileJSON {
@@ -62,11 +64,13 @@ func (d *Data) toJSON() *keysFileJSON {
 		EncryptedPrivateKeys: encryptedPrivateKeysJSON,
 		PublicKeys:           publicKeysHex,
 		MinimumSignatures:    d.MinimumSignatures,
+		ECDSA:                d.ECDSA,
 	}
 }
 
 func (d *Data) fromJSON(kfj *keysFileJSON) error {
 	d.MinimumSignatures = kfj.MinimumSignatures
+	d.ECDSA = kfj.ECDSA
 
 	d.encryptedPrivateKeys = make([]*EncryptedPrivateKey, len(kfj.EncryptedPrivateKeys))
 	for i, encryptedPrivateKeyJSON := range kfj.EncryptedPrivateKeys {
@@ -172,7 +176,11 @@ func pathExists(path string) (bool, error) {
 }
 
 // WriteKeysFile writes a keys file with the given data
-func WriteKeysFile(path string, encryptedPrivateKeys []*EncryptedPrivateKey, publicKeys [][]byte, minimumSignatures uint32) error {
+func WriteKeysFile(path string,
+	encryptedPrivateKeys []*EncryptedPrivateKey,
+	publicKeys [][]byte,
+	minimumSignatures uint32,
+	ecdsa bool) error {
 	if path == "" {
 		path = defaultKeysFile
 	}
@@ -210,6 +218,7 @@ func WriteKeysFile(path string, encryptedPrivateKeys []*EncryptedPrivateKey, pub
 		encryptedPrivateKeys: encryptedPrivateKeys,
 		PublicKeys:           publicKeys,
 		MinimumSignatures:    minimumSignatures,
+		ECDSA:                ecdsa,
 	}
 
 	encoder := json.NewEncoder(file)
