@@ -25,6 +25,13 @@ const (
 	ScriptHashTy                     // Pay to script hash.
 )
 
+// Script pub key versions for address types
+const (
+	addressPublicKeyScriptPublicKeyVersion      = 0
+	addressPublicKeyECDSAScriptPublicKeyVersion = 0
+	addressScriptHashScriptPublicKeyVersion     = 0
+)
+
 // scriptClassToName houses the human-readable strings which describe each
 // script class.
 var scriptClassToName = []string{
@@ -206,8 +213,7 @@ func PayToAddrScript(addr util.Address) (*externalapi.ScriptPublicKey, error) {
 			return nil, err
 		}
 
-		const addressPublicKeyScriptVersion = 0
-		return &externalapi.ScriptPublicKey{script, addressPublicKeyScriptVersion}, err
+		return &externalapi.ScriptPublicKey{script, addressPublicKeyScriptPublicKeyVersion}, err
 
 	case *util.AddressPublicKeyECDSA:
 		if addr == nil {
@@ -219,8 +225,7 @@ func PayToAddrScript(addr util.Address) (*externalapi.ScriptPublicKey, error) {
 			return nil, err
 		}
 
-		const addressPublicKeyECDSAScriptVersion = 0
-		return &externalapi.ScriptPublicKey{script, addressPublicKeyECDSAScriptVersion}, err
+		return &externalapi.ScriptPublicKey{script, addressPublicKeyECDSAScriptPublicKeyVersion}, err
 
 	case *util.AddressScriptHash:
 		if addr == nil {
@@ -232,8 +237,7 @@ func PayToAddrScript(addr util.Address) (*externalapi.ScriptPublicKey, error) {
 			return nil, err
 		}
 
-		const addressScriptHashScriptVersion = 0
-		return &externalapi.ScriptPublicKey{script, addressScriptHashScriptVersion}, err
+		return &externalapi.ScriptPublicKey{script, addressScriptHashScriptPublicKeyVersion}, err
 	}
 
 	str := fmt.Sprintf("unable to generate payment script for unsupported "+
