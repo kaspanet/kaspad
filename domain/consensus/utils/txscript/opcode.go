@@ -204,7 +204,7 @@ const (
 	OpUnknown166          = 0xa6 // 166
 	OpUnknown167          = 0xa7 // 167
 	OpSHA256              = 0xa8 // 168
-	OpUnknown169          = 0xa9 // 169
+	OpCheckMultiSigECDSA  = 0xa9 // 169
 	OpBlake2b             = 0xaa // 170
 	OpCheckSigECDSA       = 0xab // 171
 	OpCheckSig            = 0xac // 172
@@ -485,6 +485,7 @@ var opcodeArray = [256]opcode{
 	OpWithin:             {OpWithin, "OP_WITHIN", 1, opcodeWithin},
 
 	// Crypto opcodes.
+	OpCheckMultiSigECDSA:  {OpCheckMultiSigECDSA, "OP_CHECKMULTISIGECDSA", 1, opcodeCheckMultiSigECDSA},
 	OpSHA256:              {OpSHA256, "OP_SHA256", 1, opcodeSha256},
 	OpBlake2b:             {OpBlake2b, "OP_BLAKE2B", 1, opcodeBlake2b},
 	OpCheckSigECDSA:       {OpCheckSigECDSA, "OP_CHECKSIGECDSA", 1, opcodeCheckSigECDSA},
@@ -508,7 +509,6 @@ var opcodeArray = [256]opcode{
 	// Undefined opcodes.
 	OpUnknown166: {OpUnknown166, "OP_UNKNOWN166", 1, opcodeInvalid},
 	OpUnknown167: {OpUnknown167, "OP_UNKNOWN167", 1, opcodeInvalid},
-	OpUnknown169: {OpUnknown169, "OP_UNKNOWN169", 1, opcodeInvalid},
 	OpUnknown188: {OpUnknown188, "OP_UNKNOWN188", 1, opcodeInvalid},
 	OpUnknown189: {OpUnknown189, "OP_UNKNOWN189", 1, opcodeInvalid},
 	OpUnknown190: {OpUnknown190, "OP_UNKNOWN190", 1, opcodeInvalid},
@@ -2132,6 +2132,12 @@ type parsedSigInfo struct {
 	parsed          bool
 }
 
+type parsedSigInfoECDSA struct {
+	signature       []byte
+	parsedSignature *secp256k1.ECDSASignature
+	parsed          bool
+}
+
 // opcodeCheckMultiSig treats the top item on the stack as an integer number of
 // public keys, followed by that many entries as raw data representing the public
 // keys, followed by the integer number of signatures, followed by that many
@@ -2292,6 +2298,175 @@ func opcodeCheckMultiSig(op *parsedOpcode, vm *Engine) error {
 			}
 		} else {
 			valid = parsedPubKey.SchnorrVerify(&secpHash, parsedSig)
+		}
+
+		if valid {
+			// PubKey verified, move on to the next signature.
+			signatureIdx++
+			numSignatures--
+		}
+	}
+
+	if !success {
+		for _, sig := range signatures {
+			if len(sig.signature) > 0 {
+				str := "not all signatures empty on failed checkmultisig"
+				return scriptError(ErrNullFail, str)
+			}
+		}
+	}
+
+	vm.dstack.PushBool(success)
+	return nil
+}
+
+func opcodeCheckMultiSigECDSA(op *parsedOpcode, vm *Engine) error {
+	numKeys, err := vm.dstack.PopInt()
+	if err != nil {
+		return err
+	}
+
+	numPubKeys := int(numKeys.Int32())
+	if numPubKeys < 0 {
+		str := fmt.Sprintf("number of pubkeys %d is negative",
+			numPubKeys)
+		return scriptError(ErrInvalidPubKeyCount, str)
+	}
+	if numPubKeys > MaxPubKeysPerMultiSig {
+		str := fmt.Sprintf("too many pubkeys: %d > %d",
+			numPubKeys, MaxPubKeysPerMultiSig)
+		return scriptError(ErrInvalidPubKeyCount, str)
+	}
+	vm.numOps += numPubKeys
+	if vm.numOps > MaxOpsPerScript {
+		str := fmt.Sprintf("exceeded max operation limit of %d",
+			MaxOpsPerScript)
+		return scriptError(ErrTooManyOperations, str)
+	}
+
+	pubKeys := make([][]byte, 0, numPubKeys)
+	for i := 0; i < numPubKeys; i++ {
+		pubKey, err := vm.dstack.PopByteArray()
+		if err != nil {
+			return err
+		}
+		pubKeys = append(pubKeys, pubKey)
+	}
+
+	numSigs, err := vm.dstack.PopInt()
+	if err != nil {
+		return err
+	}
+	numSignatures := int(numSigs.Int32())
+	if numSignatures < 0 {
+		str := fmt.Sprintf("number of signatures %d is negative",
+			numSignatures)
+		return scriptError(ErrInvalidSignatureCount, str)
+
+	}
+	if numSignatures > numPubKeys {
+		str := fmt.Sprintf("more signatures than pubkeys: %d > %d",
+			numSignatures, numPubKeys)
+		return scriptError(ErrInvalidSignatureCount, str)
+	}
+
+	signatures := make([]*parsedSigInfoECDSA, 0, numSignatures)
+	for i := 0; i < numSignatures; i++ {
+		signature, err := vm.dstack.PopByteArray()
+		if err != nil {
+			return err
+		}
+		sigInfo := &parsedSigInfoECDSA{signature: signature}
+		signatures = append(signatures, sigInfo)
+	}
+
+	success := true
+	numPubKeys++
+	pubKeyIdx := -1
+	signatureIdx := 0
+
+	for numSignatures > 0 {
+		// When there are more signatures than public keys remaining,
+		// there is no way to succeed since too many signatures are
+		// invalid, so exit early.
+		pubKeyIdx++
+		numPubKeys--
+		if numSignatures > numPubKeys {
+			success = false
+			break
+		}
+
+		sigInfo := signatures[signatureIdx]
+		pubKey := pubKeys[pubKeyIdx]
+
+		// The order of the signature and public key evaluation is
+		// important here since it can be distinguished by an
+		// OP_CHECKMULTISIG NOT when the strict encoding flag is set.
+
+		rawSig := sigInfo.signature
+		if len(rawSig) == 0 {
+			// Skip to the next pubkey if signature is empty.
+			continue
+		}
+
+		// Split the signature into hash type and signature components.
+		hashType := consensushashing.SigHashType(rawSig[len(rawSig)-1])
+		signature := rawSig[:len(rawSig)-1]
+
+		// Only parse and check the signature encoding once.
+		var parsedSig *secp256k1.ECDSASignature
+		if !sigInfo.parsed {
+			if !hashType.IsStandardSigHashType() {
+				return scriptError(ErrInvalidSigHashType, fmt.Sprintf("invalid hash type 0x%x", hashType))
+			}
+			if err := vm.checkSignatureLengthECDSA(signature); err != nil {
+				return err
+			}
+
+			// Parse the signature.
+			parsedSig, err = secp256k1.DeserializeECDSASignatureFromSlice(signature)
+			sigInfo.parsed = true
+			if err != nil {
+				continue
+			}
+
+			sigInfo.parsedSignature = parsedSig
+		} else {
+			// Skip to the next pubkey if the signature is invalid.
+			if sigInfo.parsedSignature == nil {
+				continue
+			}
+
+			// Use the already parsed signature.
+			parsedSig = sigInfo.parsedSignature
+		}
+
+		if err := vm.checkPubKeyEncodingECDSA(pubKey); err != nil {
+			return err
+		}
+
+		// Parse the pubkey.
+		parsedPubKey, err := secp256k1.DeserializeECDSAPubKey(pubKey)
+		if err != nil {
+			continue
+		}
+
+		// Generate the signature hash based on the signature hash type.
+		sigHash, err := consensushashing.CalculateSignatureHashECDSA(&vm.tx, vm.txIdx, hashType, vm.sigHashReusedValues)
+		if err != nil {
+			return err
+		}
+
+		secpHash := secp256k1.Hash(*sigHash.ByteArray())
+		var valid bool
+		if vm.sigCacheECDSA != nil {
+			valid = vm.sigCacheECDSA.Exists(secpHash, parsedSig, parsedPubKey)
+			if !valid && parsedPubKey.ECDSAVerify(&secpHash, parsedSig) {
+				vm.sigCacheECDSA.Add(secpHash, parsedSig, parsedPubKey)
+				valid = true
+			}
+		} else {
+			valid = parsedPubKey.ECDSAVerify(&secpHash, parsedSig)
 		}
 
 		if valid {
