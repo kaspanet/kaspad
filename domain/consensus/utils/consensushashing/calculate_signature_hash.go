@@ -84,10 +84,7 @@ func CalculateSignatureHashECDSA(tx *externalapi.DomainTransaction, inputIndex i
 	}
 
 	hashWriter := hashes.NewTransactionSigningHashECDSAWriter()
-	_, err = hashWriter.Write(hash.ByteSlice())
-	if err != nil {
-		return nil, err
-	}
+	hashWriter.InfallibleWrite(hash.ByteSlice())
 
 	return hashWriter.Finalize(), nil
 }
