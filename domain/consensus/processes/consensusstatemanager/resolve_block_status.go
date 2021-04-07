@@ -288,7 +288,7 @@ func (csm *consensusStateManager) reverseUTXODiffs(unverifiedBlocks []*externala
 	}
 
 	tip, oneBlockBeforeTip, restOfBlocks :=
-		unverifiedBlocks[blocksCount-1], unverifiedBlocks[blocksCount-2], unverifiedBlocks[:blocksCount-2]
+		unverifiedBlocks[0], unverifiedBlocks[1], unverifiedBlocks[2:]
 
 	readStagingArea := model.NewStagingArea()
 	// Set previousUTXODiff and PreviousBlock before we start touching them, since oneBlockBeforeTip's UTXOSet is
@@ -312,8 +312,7 @@ func (csm *consensusStateManager) reverseUTXODiffs(unverifiedBlocks []*externala
 	}
 
 	// Now go over the rest of the blocks and assign for every block Bi.UTXODiff = Bi+1.UTXODiff.Reversed()
-	for i := len(restOfBlocks) - 1; i >= 0; i-- {
-		currentBlock := restOfBlocks[i]
+	for _, currentBlock := range restOfBlocks {
 		currentUTXODiff := previousUTXODiff.Reversed()
 
 		// retrieve current utxoDiff for Bi, to be used by next block
