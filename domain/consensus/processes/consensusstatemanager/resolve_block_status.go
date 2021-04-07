@@ -71,7 +71,7 @@ func (csm *consensusStateManager) resolveBlockStatus(stagingArea *model.StagingA
 			oneBlockBehindUTXOSet = previousBlockUTXOSet
 
 			blockStatus, previousBlockUTXOSet, err = csm.resolveSingleBlockStatus(
-				stagingAreaForCurrentBlock, unverifiedBlockHash, previousBlockHash, previousBlockUTXOSet)
+				stagingAreaForCurrentBlock, unverifiedBlockHash, previousBlockHash, previousBlockUTXOSet, i == 0)
 			if err != nil {
 				return 0, err
 			}
@@ -91,10 +91,11 @@ func (csm *consensusStateManager) resolveBlockStatus(stagingArea *model.StagingA
 		previousBlockHash = unverifiedBlockHash
 	}
 
+	log.Debugf("Reversing UTXODiffs of blocks below the tip")
 	// During resolveSingleBlockStatus, all unverifiedBlocks (excluding the tip) were assigned their selectedParent
 	// as their UTXODiffChild.
 	// Now that the whole chain has been resolved - we can reverse the UTXODiffs, to create shorter UTXODiffChild paths.
-	err = csm.reverseUTXODiffs(unverifiedBlocks, previousBlockUTXOSet, oneBlockBehindUTXOSet)
+	err = csm.reverseUTXODiffs(stagingArea, unverifiedBlocks, previousBlockUTXOSet, oneBlockBehindUTXOSet, useSeparateStagingAreasPerBlock)
 	if err != nil {
 		return 0, err
 	}
@@ -176,14 +177,15 @@ func (csm *consensusStateManager) getUnverifiedChainBlocks(stagingArea *model.St
 }
 
 func (csm *consensusStateManager) resolveSingleBlockStatus(stagingArea *model.StagingArea,
-	blockHash, selectedParentHash *externalapi.DomainHash, selectedParentPastUTXOSet externalapi.UTXODiff) (
+	blockHash, selectedParentHash *externalapi.DomainHash, selectedParentPastUTXOSet externalapi.UTXODiff, isResolveTip bool) (
 	externalapi.BlockStatus, externalapi.UTXODiff, error) {
 
 	onEnd := logger.LogAndMeasureExecutionTime(log, fmt.Sprintf("resolveSingleBlockStatus for %s", blockHash))
 	defer onEnd()
 
 	log.Tracef("Calculating pastUTXO and acceptance data and multiset for block %s", blockHash)
-	pastUTXOSet, acceptanceData, multiset, err := csm.calculatePastUTXOAndAcceptanceDataWithSelectedParentUTXO(stagingArea, blockHash, selectedParentPastUTXOSet)
+	pastUTXOSet, acceptanceData, multiset, err := csm.calculatePastUTXOAndAcceptanceDataWithSelectedParentUTXO(
+		stagingArea, blockHash, selectedParentPastUTXOSet)
 	if err != nil {
 		return 0, nil, err
 	}
@@ -221,29 +223,40 @@ func (csm *consensusStateManager) resolveSingleBlockStatus(stagingArea *model.St
 		return 0, nil, err
 	}
 
-	isNewSelectedTip, err := csm.isNewSelectedTip(stagingArea, blockHash, oldSelectedTip)
-	if err != nil {
-		return 0, nil, err
-	}
-	if isNewSelectedTip {
+	if isResolveTip {
 		oldSelectedTipUTXOSet, err := csm.restorePastUTXO(stagingArea, oldSelectedTip)
 		if err != nil {
 			return 0, nil, err
 		}
-		log.Debugf("Block %s is the new SelectedTip, therefore setting it as old selectedTip's diffChild", blockHash)
-		updatedOldSelectedTipUTXOSet, err := pastUTXOSet.DiffFrom(oldSelectedTipUTXOSet)
+		isNewSelectedTip, err := csm.isNewSelectedTip(stagingArea, blockHash, oldSelectedTip)
 		if err != nil {
 			return 0, nil, err
 		}
-		csm.stageDiff(stagingArea, oldSelectedTip, updatedOldSelectedTipUTXOSet, blockHash)
+		if isNewSelectedTip {
+			log.Debugf("Block %s is the new SelectedTip, therefore setting it as old selectedTip's diffChild", blockHash)
+			updatedOldSelectedTipUTXOSet, err := pastUTXOSet.DiffFrom(oldSelectedTipUTXOSet)
+			if err != nil {
+				return 0, nil, err
+			}
+			csm.stageDiff(stagingArea, oldSelectedTip, updatedOldSelectedTipUTXOSet, blockHash)
 
-		log.Tracef("Staging the utxoDiff of block %s", blockHash)
-		csm.stageDiff(stagingArea, blockHash, pastUTXOSet, nil)
+			log.Tracef("Staging the utxoDiff of block %s", blockHash)
+			csm.stageDiff(stagingArea, blockHash, pastUTXOSet, nil)
+		} else {
+			log.Debugf("Block %s is the the tip of currently resolved chain, but not the new selectedTip,"+
+				"therefore setting it's utxoDiffChild to be the current selectedTip ", blockHash)
+			utxoDiff, err := oldSelectedTipUTXOSet.DiffFrom(pastUTXOSet)
+			if err != nil {
+				return 0, nil, err
+			}
+			csm.stageDiff(stagingArea, blockHash, utxoDiff, oldSelectedTip)
+		}
 	} else {
-		// If the block is not going to be the selectedTip, we set it's diffChild to be the selectedParent,
+		// If the block is not the tip of the currently resolved chain, we set it's diffChild to be the selectedParent,
 		// this is a temporary measure to ensure there's a restore path to all blocks at all times.
 		// Later down the process, the diff will be reversed in reverseUTXODiffs.
-		log.Debugf("Block %s is not the new SelectedTip, therefore temporarily setting selectedParent as it's diffChild", blockHash)
+		log.Debugf("Block %s is not the new SelectedTip, and is not the tip of the currently verified chain, "+
+			"therefore temporarily setting selectedParent as it's diffChild", blockHash)
 		pastUTXOSet, err = selectedParentPastUTXOSet.DiffFrom(pastUTXOSet)
 		if err != nil {
 			return 0, nil, err
@@ -276,8 +289,9 @@ func (csm *consensusStateManager) selectedTip(stagingArea *model.StagingArea) (*
 	return virtualGHOSTDAGData.SelectedParent(), nil
 }
 
-func (csm *consensusStateManager) reverseUTXODiffs(unverifiedBlocks []*externalapi.DomainHash,
-	tipUTXOSet, oneBlockBeforeTipUTXOSet externalapi.UTXODiff) error {
+func (csm *consensusStateManager) reverseUTXODiffs(stagingArea *model.StagingArea,
+	unverifiedBlocks []*externalapi.DomainHash, tipUTXOSet, oneBlockBeforeTipUTXOSet externalapi.UTXODiff,
+	useSeparateStagingAreasPerBlock bool) error {
 	// During the process of resolving a chain of blocks, we temporarily set all blocks' (except the tip)
 	// UTXODiffChild to be the selected parent.
 	// Once the process is complete, we can reverse said chain, to now go directly to virtual through the relevant tip
@@ -290,11 +304,10 @@ func (csm *consensusStateManager) reverseUTXODiffs(unverifiedBlocks []*externala
 	tip, oneBlockBeforeTip, restOfBlocks :=
 		unverifiedBlocks[0], unverifiedBlocks[1], unverifiedBlocks[2:]
 
-	readStagingArea := model.NewStagingArea()
 	// Set previousUTXODiff and PreviousBlock before we start touching them, since oneBlockBeforeTip's UTXOSet is
 	// going to be over-written
 	previousBlock := oneBlockBeforeTip
-	previousUTXODiff, err := csm.utxoDiffStore.UTXODiff(csm.databaseContext, readStagingArea, oneBlockBeforeTip)
+	previousUTXODiff, err := csm.utxoDiffStore.UTXODiff(csm.databaseContext, stagingArea, oneBlockBeforeTip)
 	if err != nil {
 		return err
 	}
@@ -306,9 +319,13 @@ func (csm *consensusStateManager) reverseUTXODiffs(unverifiedBlocks []*externala
 	if err != nil {
 		return err
 	}
-	err = csm.commitUTXODiffInSeparateStagingArea(oneBlockBeforeTip, oneBlockBeforeTipDiff, tip)
-	if err != nil {
-		return err
+	if useSeparateStagingAreasPerBlock {
+		err = csm.commitUTXODiffInSeparateStagingArea(oneBlockBeforeTip, oneBlockBeforeTipDiff, tip)
+		if err != nil {
+			return err
+		}
+	} else {
+		csm.utxoDiffStore.Stage(stagingArea, oneBlockBeforeTip, oneBlockBeforeTipDiff, tip)
 	}
 
 	// Now go over the rest of the blocks and assign for every block Bi.UTXODiff = Bi+1.UTXODiff.Reversed()
@@ -316,12 +333,17 @@ func (csm *consensusStateManager) reverseUTXODiffs(unverifiedBlocks []*externala
 		currentUTXODiff := previousUTXODiff.Reversed()
 
 		// retrieve current utxoDiff for Bi, to be used by next block
-		previousUTXODiff, err = csm.utxoDiffStore.UTXODiff(csm.databaseContext, readStagingArea, currentBlock)
+		previousUTXODiff, err = csm.utxoDiffStore.UTXODiff(csm.databaseContext, stagingArea, currentBlock)
 		if err != nil {
 			return err
 		}
 
 		err := csm.commitUTXODiffInSeparateStagingArea(currentBlock, currentUTXODiff, previousBlock)
+		if useSeparateStagingAreasPerBlock {
+			err = csm.commitUTXODiffInSeparateStagingArea(currentBlock, currentUTXODiff, previousBlock)
+		} else {
+			csm.utxoDiffStore.Stage(stagingArea, currentBlock, currentUTXODiff, previousBlock)
+		}
 		if err != nil {
 			return err
 		}

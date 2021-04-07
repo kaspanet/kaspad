@@ -67,7 +67,7 @@ func TestFinality(t *testing.T) {
 		for i := uint64(0); i < finalityInterval-2; i++ {
 			sideChainTip, err = buildAndInsertBlock([]*externalapi.DomainHash{sideChainTipHash})
 			if err != nil {
-				t.Fatalf("TestFinality: Failed to process sidechain Block #%d: %v", i, err)
+				t.Fatalf("TestFinality: Failed to process sidechain Block #%d: %+v", i, err)
 			}
 			sideChainTipHash = consensushashing.BlockHash(sideChainTip)
 
