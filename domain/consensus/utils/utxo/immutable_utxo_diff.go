@@ -97,3 +97,7 @@ func (iud *immutableUTXODiff) cloneMutable() *mutableUTXODiff {
 
 	return iud.mutableUTXODiff.clone()
 }
+
+func (iud immutableUTXODiff) String() string {
+	return iud.mutableUTXODiff.String()
+}

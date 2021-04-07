@@ -60,7 +60,8 @@ func (csm *consensusStateManager) resolveBlockStatus(stagingArea *model.StagingA
 		unverifiedBlockHash := unverifiedBlocks[i]
 
 		stagingAreaForCurrentBlock := stagingArea
-		useSeparateStagingArea := useSeparateStagingAreasPerBlock && (i != 0)
+		isResolveTip := i == 0
+		useSeparateStagingArea := useSeparateStagingAreasPerBlock && (!isResolveTip)
 		if useSeparateStagingArea {
 			stagingAreaForCurrentBlock = model.NewStagingArea()
 		}
@@ -71,7 +72,7 @@ func (csm *consensusStateManager) resolveBlockStatus(stagingArea *model.StagingA
 			oneBlockBehindUTXOSet = previousBlockUTXOSet
 
 			blockStatus, previousBlockUTXOSet, err = csm.resolveSingleBlockStatus(
-				stagingAreaForCurrentBlock, unverifiedBlockHash, previousBlockHash, previousBlockUTXOSet, i == 0)
+				stagingAreaForCurrentBlock, unverifiedBlockHash, previousBlockHash, previousBlockUTXOSet, isResolveTip)
 			if err != nil {
 				return 0, err
 			}
@@ -292,6 +293,7 @@ func (csm *consensusStateManager) selectedTip(stagingArea *model.StagingArea) (*
 func (csm *consensusStateManager) reverseUTXODiffs(stagingArea *model.StagingArea,
 	unverifiedBlocks []*externalapi.DomainHash, tipUTXOSet, oneBlockBeforeTipUTXOSet externalapi.UTXODiff,
 	useSeparateStagingAreasPerBlock bool) error {
+
 	// During the process of resolving a chain of blocks, we temporarily set all blocks' (except the tip)
 	// UTXODiffChild to be the selected parent.
 	// Once the process is complete, we can reverse said chain, to now go directly to virtual through the relevant tip
