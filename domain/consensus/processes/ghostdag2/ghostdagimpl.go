@@ -57,6 +57,7 @@ func (gh *ghostdagHelper) GHOSTDAG(stagingArea *model.StagingArea, blockCandidat
 	maxBlueWork := new(big.Int)
 	maxBlueWork.SetUint64(0)
 	maxBlueScore := uint64(0)
+	selectedParent = parents[0]
 	// Find the selected parent.
 	for _, parent := range parents {
 		parentBlockData, err := gh.dataStore.Get(gh.dbAccess, stagingArea, parent)
