@@ -2,10 +2,11 @@ package rpccontext
 
 import (
 	"encoding/hex"
-	difficultyPackage "github.com/kaspanet/kaspad/util/difficulty"
-	"github.com/pkg/errors"
 	"math"
 	"math/big"
+
+	difficultyPackage "github.com/kaspanet/kaspad/util/difficulty"
+	"github.com/pkg/errors"
 
 	"github.com/kaspanet/kaspad/domain/consensus/utils/hashes"
 
@@ -62,12 +63,15 @@ func (ctx *Context) PopulateBlockWithVerboseData(block *appmessage.RPCBlock, dom
 	}
 
 	block.VerboseData = &appmessage.RPCBlockVerboseData{
-		Hash:               blockHash.String(),
-		Difficulty:         ctx.GetDifficultyRatio(domainBlockHeader.Bits(), ctx.Config.ActiveNetParams),
-		ChildrenHashes:     hashes.ToStrings(childrenHashes),
-		SelectedParentHash: selectedParentHash.String(),
-		IsHeaderOnly:       blockInfo.BlockStatus == externalapi.StatusHeaderOnly,
-		BlueScore:          blockInfo.BlueScore,
+		Hash:           blockHash.String(),
+		Difficulty:     ctx.GetDifficultyRatio(domainBlockHeader.Bits(), ctx.Config.ActiveNetParams),
+		ChildrenHashes: hashes.ToStrings(childrenHashes),
+		IsHeaderOnly:   blockInfo.BlockStatus == externalapi.StatusHeaderOnly,
+		BlueScore:      blockInfo.BlueScore,
+	}
+	// selectedParentHash will be nil in the genesis block
+	if selectedParentHash != nil {
+		block.VerboseData.SelectedParentHash = selectedParentHash.String()
 	}
 
 	if blockInfo.BlockStatus == externalapi.StatusHeaderOnly {
