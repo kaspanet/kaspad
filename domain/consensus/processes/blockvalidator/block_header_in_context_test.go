@@ -4,8 +4,6 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/kaspanet/kaspad/infrastructure/logger"
-
 	"github.com/kaspanet/kaspad/domain/consensus/utils/blockheader"
 
 	"github.com/kaspanet/kaspad/domain/consensus"
@@ -157,9 +155,6 @@ func TestCheckParentsIncest(t *testing.T) {
 
 func TestCheckMergeSizeLimit(t *testing.T) {
 	testutils.ForAllNets(t, true, func(t *testing.T, params *dagconfig.Params) {
-		logger.SetLogLevelsString("debug")
-		logger.InitLogStdout(logger.LevelDebug)
-
 		params.MergeSetSizeLimit = 2 * uint64(params.K)
 		factory := consensus.NewFactory()
 		tc, teardown, err := factory.NewTestConsensus(params, false, "TestCheckParentsIncest")
