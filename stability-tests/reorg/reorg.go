@@ -19,6 +19,7 @@ import (
 func testReorg(cfg *configFlags) {
 	params := dagconfig.DevnetParams
 	params.SkipProofOfWork = true
+	params.DisableDifficultyAdjustment = true
 
 	factory := consensus.NewFactory()
 	tc, teardown, err := factory.NewTestConsensus(&params, false, "ReorgHonest")
@@ -130,7 +131,7 @@ func testReorg(cfg *configFlags) {
 		doneChan <- struct{}{}
 	})
 
-	const timeout = 10 * time.Minute
+	const timeout = 12 * time.Hour
 	select {
 	case <-doneChan:
 	case <-time.After(timeout):

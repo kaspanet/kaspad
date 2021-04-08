@@ -35,7 +35,7 @@ cd "${PROJECT_ROOT}/orphans/run" && ./run.sh || failedTests+=("orphans")
 echo "Done running orphans"
 
 echo "Running reorg"
-cd "${PROJECT_ROOT}/reorg/run" && ./run.sh || failedTests+=("reorg")
+cd "${PROJECT_ROOT}/reorg/run" && ./run-full-finality-window-reorg.sh || failedTests+=("reorg")
 echo "Done running reorg"
 
 echo "Running netsync - slow"
