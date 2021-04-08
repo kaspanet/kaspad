@@ -15,7 +15,7 @@ import (
 )
 
 func (csm *consensusStateManager) resolveBlockStatus(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash,
-	useSeparateStagingAreasPerBlock bool) (externalapi.BlockStatus, error) {
+	useSeparateStagingAreaPerBlock bool) (externalapi.BlockStatus, error) {
 
 	onEnd := logger.LogAndMeasureExecutionTime(log, fmt.Sprintf("resolveBlockStatus for %s", blockHash))
 	defer onEnd()
@@ -61,7 +61,7 @@ func (csm *consensusStateManager) resolveBlockStatus(stagingArea *model.StagingA
 
 		stagingAreaForCurrentBlock := stagingArea
 		isResolveTip := i == 0
-		useSeparateStagingArea := useSeparateStagingAreasPerBlock && (!isResolveTip)
+		useSeparateStagingArea := useSeparateStagingAreaPerBlock && (!isResolveTip)
 		if useSeparateStagingArea {
 			stagingAreaForCurrentBlock = model.NewStagingArea()
 		}
@@ -100,7 +100,7 @@ func (csm *consensusStateManager) resolveBlockStatus(stagingArea *model.StagingA
 		// During resolveSingleBlockStatus, all unverifiedBlocks (excluding the tip) were assigned their selectedParent
 		// as their UTXODiffChild.
 		// Now that the whole chain has been resolved - we can reverse the UTXODiffs, to create shorter UTXODiffChild paths.
-		err = csm.reverseUTXODiffs(stagingArea, unverifiedBlocks, previousBlockUTXOSet, oneBlockBehindUTXOSet, useSeparateStagingAreasPerBlock)
+		err = csm.reverseUTXODiffs(stagingArea, unverifiedBlocks, previousBlockUTXOSet, oneBlockBehindUTXOSet, useSeparateStagingAreaPerBlock)
 		if err != nil {
 			return 0, err
 		}
@@ -298,7 +298,7 @@ func (csm *consensusStateManager) selectedTip(stagingArea *model.StagingArea) (*
 
 func (csm *consensusStateManager) reverseUTXODiffs(stagingArea *model.StagingArea,
 	unverifiedBlocks []*externalapi.DomainHash, tipUTXOSet, oneBlockBeforeTipUTXOSet externalapi.UTXODiff,
-	useSeparateStagingAreasPerBlock bool) error {
+	useSeparateStagingAreaPerBlock bool) error {
 
 	// During the process of resolving a chain of blocks, we temporarily set all blocks' (except the tip)
 	// UTXODiffChild to be the selected parent.
@@ -327,7 +327,7 @@ func (csm *consensusStateManager) reverseUTXODiffs(stagingArea *model.StagingAre
 	if err != nil {
 		return err
 	}
-	if useSeparateStagingAreasPerBlock {
+	if useSeparateStagingAreaPerBlock {
 		err = csm.commitUTXODiffInSeparateStagingArea(oneBlockBeforeTip, oneBlockBeforeTipDiff, tip)
 		if err != nil {
 			return err
@@ -346,7 +346,7 @@ func (csm *consensusStateManager) reverseUTXODiffs(stagingArea *model.StagingAre
 			return err
 		}
 
-		if useSeparateStagingAreasPerBlock {
+		if useSeparateStagingAreaPerBlock {
 			err = csm.commitUTXODiffInSeparateStagingArea(currentBlock, currentUTXODiff, previousBlock)
 			if err != nil {
 				return err
