@@ -18,6 +18,7 @@ type ghostdagHelper struct {
 	headerStore        model.BlockHeaderStore
 }
 
+// New creates a new instance of this alternative GHOSTDAG impl
 func New(
 	databaseContext model.DBReader,
 	dagTopologyManager model.DAGTopologyManager,
