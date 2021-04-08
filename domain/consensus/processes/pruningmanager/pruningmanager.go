@@ -607,7 +607,7 @@ func (pm *pruningManager) AppendImportedPruningPointUTXOs(outpointAndUTXOEntryPa
 	return dbTx.Commit()
 }
 
-func (pm *pruningManager) UpdatePruningPointUTXOSetIfRequired() error {
+func (pm *pruningManager) UpdatePruningPointIfRequired() error {
 	hadStartedUpdatingPruningPointUTXOSet, err := pm.pruningStore.HadStartedUpdatingPruningPointUTXOSet(pm.databaseContext)
 	if err != nil {
 		return err
@@ -617,7 +617,7 @@ func (pm *pruningManager) UpdatePruningPointUTXOSetIfRequired() error {
 	}
 
 	log.Debugf("Pruning point UTXO set update is required")
-	err = pm.updatePruningPointUTXOSet()
+	err = pm.updatePruningPoint()
 	if err != nil {
 		return err
 	}
@@ -626,12 +626,12 @@ func (pm *pruningManager) UpdatePruningPointUTXOSetIfRequired() error {
 	return nil
 }
 
-func (pm *pruningManager) updatePruningPointUTXOSet() error {
-	onEnd := logger.LogAndMeasureExecutionTime(log, "updatePruningPointUTXOSet")
+func (pm *pruningManager) updatePruningPoint() error {
+	onEnd := logger.LogAndMeasureExecutionTime(log, "updatePruningPoint")
 	defer onEnd()
 
-	logger.LogMemoryStats(log, "updatePruningPointUTXOSet start")
-	defer logger.LogMemoryStats(log, "updatePruningPointUTXOSet end")
+	logger.LogMemoryStats(log, "updatePruningPoint start")
+	defer logger.LogMemoryStats(log, "updatePruningPoint end")
 
 	stagingArea := model.NewStagingArea()
 	log.Debugf("Getting the pruning point")
