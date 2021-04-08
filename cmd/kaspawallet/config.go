@@ -12,10 +12,11 @@ const (
 	createSubCmd                    = "create"
 	balanceSubCmd                   = "balance"
 	sendSubCmd                      = "send"
-	createUnsignedTransactionSubCmd = "createUnsignedTransaction"
+	createUnsignedTransactionSubCmd = "create-unsigned-transaction"
 	signSubCmd                      = "sign"
 	broadcastSubCmd                 = "broadcast"
 	showAddressSubCmd               = "show-address"
+	dumpUnencryptedDataSubCmd       = "dump-unencrypted-data"
 )
 
 type configFlags struct {
@@ -27,6 +28,7 @@ type createConfig struct {
 	MinimumSignatures uint32 `long:"min-signatures" short:"m" description:"Minimum required signatures" default:"1"`
 	NumPrivateKeys    uint32 `long:"num-private-keys" short:"k" description:"Number of private keys" default:"1"`
 	NumPublicKeys     uint32 `long:"num-public-keys" short:"n" description:"Total number of keys" default:"1"`
+	ECDSA             bool   `long:"ecdsa" description:"Create an ECDSA wallet"`
 	Import            bool   `long:"import" short:"i" description:"Import private keys (as opposed to generating them)"`
 	config.NetworkFlags
 }
@@ -70,6 +72,11 @@ type showAddressConfig struct {
 	config.NetworkFlags
 }
 
+type dumpUnencryptedDataConfig struct {
+	KeysFile string `long:"keys-file" short:"f" description:"Keys file location (default: ~/.kaspawallet/keys.json (*nix), %USERPROFILE%\\AppData\\Local\\Kaspawallet\\key.json (Windows))"`
+	config.NetworkFlags
+}
+
 func parseCommandLine() (subCommand string, config interface{}) {
 	cfg := &configFlags{}
 	parser := flags.NewParser(cfg, flags.PrintErrors|flags.HelpFlag)
@@ -101,6 +108,11 @@ func parseCommandLine() (subCommand string, config interface{}) {
 	showAddressConf := &showAddressConfig{}
 	parser.AddCommand(showAddressSubCmd, "Shows the public address of the current wallet",
 		"Shows the public address of the current wallet", showAddressConf)
+
+	dumpUnencryptedDataConf := &dumpUnencryptedDataConfig{}
+	parser.AddCommand(dumpUnencryptedDataSubCmd, "Prints the unencrypted wallet data",
+		"Prints the unencrypted wallet data including its private keys. Anyone that sees it can access "+
+			"the funds. Use only on safe environment.", dumpUnencryptedDataConf)
 
 	_, err := parser.Parse()
 
@@ -164,6 +176,13 @@ func parseCommandLine() (subCommand string, config interface{}) {
 			printErrorAndExit(err)
 		}
 		config = showAddressConf
+	case dumpUnencryptedDataSubCmd:
+		combineNetworkFlags(&dumpUnencryptedDataConf.NetworkFlags, &cfg.NetworkFlags)
+		err := dumpUnencryptedDataConf.ResolveNetwork(parser)
+		if err != nil {
+			printErrorAndExit(err)
+		}
+		config = dumpUnencryptedDataConf
 	}
 
 	return parser.Command.Active.Name, config

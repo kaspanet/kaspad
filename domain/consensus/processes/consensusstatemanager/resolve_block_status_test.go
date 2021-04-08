@@ -147,7 +147,8 @@ func TestDoubleSpends(t *testing.T) {
 			t.Fatalf("Error adding goodBlock: %+v", err)
 		}
 		//use ResolveBlockStatus, since goodBlock2 might not be the selectedTip
-		goodBlock2Status, err := consensus.ConsensusStateManager().ResolveBlockStatus(stagingArea, goodBlock2Hash)
+		goodBlock2Status, err := consensus.ConsensusStateManager().ResolveBlockStatus(
+			stagingArea, goodBlock2Hash, true)
 		if err != nil {
 			t.Fatalf("Error getting status of goodBlock: %+v", err)
 		}

@@ -12,7 +12,7 @@ func showAddress(conf *showAddressConfig) error {
 		return err
 	}
 
-	address, err := libkaspawallet.Address(conf.NetParams(), keysFile.PublicKeys, keysFile.MinimumSignatures)
+	address, err := libkaspawallet.Address(conf.NetParams(), keysFile.PublicKeys, keysFile.MinimumSignatures, keysFile.ECDSA)
 	if err != nil {
 		return err
 	}

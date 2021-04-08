@@ -41,6 +41,19 @@ func newAddressPublicKey(publicKey []byte) util.Address {
 	return addr
 }
 
+// newAddressPublicKeyECDSA returns a new util.AddressPublicKeyECDSA from the
+// provided public key. It panics if an error occurs. This is only used in the tests
+// as a helper since the only way it can fail is if there is an error in the
+// test source code.
+func newAddressPublicKeyECDSA(publicKey []byte) util.Address {
+	addr, err := util.NewAddressPublicKeyECDSA(publicKey, util.Bech32PrefixKaspa)
+	if err != nil {
+		panic("invalid public key in test source")
+	}
+
+	return addr
+}
+
 // newAddressScriptHash returns a new util.AddressScriptHash from the
 // provided hash. It panics if an error occurs. This is only used in the tests
 // as a helper since the only way it can fail is if there is an error in the
@@ -74,6 +87,15 @@ func TestExtractScriptPubKeyAddrs(t *testing.T) {
 			},
 			addr:  newAddressPublicKey(hexToBytes("2454a285d8566b0cb2792919536ee0f1b6f69b58ba59e9850ecbc91eef722dae")),
 			class: PubKeyTy,
+		},
+		{
+			name: "standard p2pk ECDSA",
+			script: &externalapi.ScriptPublicKey{
+				Script:  hexToBytes("212454a285d8566b0cb2792919536ee0f1b6f69b58ba59e9850ecbc91eef722daeaaab"),
+				Version: 0,
+			},
+			addr:  newAddressPublicKeyECDSA(hexToBytes("2454a285d8566b0cb2792919536ee0f1b6f69b58ba59e9850ecbc91eef722daeaa")),
+			class: PubKeyECDSATy,
 		},
 		{
 			name: "standard p2sh",
@@ -394,6 +416,12 @@ var scriptClassTests = []struct {
 		script: "DATA_32 0x89ac24ea10bb751af4939623ccc5e550d96842b64e8fca0f63e94b4373fd555e CHECKSIG",
 		class:  PubKeyTy,
 	},
+	// p2pk ECDSA
+	{
+		name:   "Pay Pubkey ECDSA",
+		script: "DATA_33 0x89ac24ea10bb751af4939623ccc5e550d96842b64e8fca0f63e94b4373fd555eab CHECKSIGECDSA",
+		class:  PubKeyECDSATy,
+	},
 	{
 		name: "Pay PubkeyHash",
 		script: "DUP BLAKE2B DATA_32 0x660d4ef3a743e3e696ad990364e55543e3e696ad990364e555e555" +
@@ -512,6 +540,11 @@ func TestStringifyClass(t *testing.T) {
 			name:     "pubkey",
 			class:    PubKeyTy,
 			stringed: "pubkey",
+		},
+		{
+			name:     "pubkeyecdsa",
+			class:    PubKeyECDSATy,
+			stringed: "pubkeyecdsa",
 		},
 		{
 			name:     "scripthash",

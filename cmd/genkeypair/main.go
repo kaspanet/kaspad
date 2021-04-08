@@ -12,7 +12,7 @@ func main() {
 		panic(err)
 	}
 
-	privateKey, publicKey, err := libkaspawallet.CreateKeyPair()
+	privateKey, publicKey, err := libkaspawallet.CreateKeyPair(false)
 	if err != nil {
 		panic(err)
 	}

@@ -53,6 +53,7 @@ type Engine struct {
 	numOps              int
 	flags               ScriptFlags
 	sigCache            *SigCache
+	sigCacheECDSA       *SigCacheECDSA
 	sigHashReusedValues *consensushashing.SighashReusedValues
 	isP2SH              bool     // treat execution as pay-to-script-hash
 	savedFirstStack     [][]byte // stack from first script for ps2h scripts
@@ -369,9 +370,25 @@ func (vm *Engine) checkPubKeyEncoding(pubKey []byte) error {
 	return scriptError(ErrPubKeyFormat, "unsupported public key type")
 }
 
+func (vm *Engine) checkPubKeyEncodingECDSA(pubKey []byte) error {
+	if len(pubKey) == 33 {
+		return nil
+	}
+
+	return scriptError(ErrPubKeyFormat, "unsupported public key type")
+}
+
 // checkSignatureLength returns whether or not the passed signature is
 // in the correct Schnorr format.
 func (vm *Engine) checkSignatureLength(sig []byte) error {
+	if len(sig) != 64 {
+		message := fmt.Sprintf("invalid signature length %d", len(sig))
+		return scriptError(ErrSigLength, message)
+	}
+	return nil
+}
+
+func (vm *Engine) checkSignatureLengthECDSA(sig []byte) error {
 	if len(sig) != 64 {
 		message := fmt.Sprintf("invalid signature length %d", len(sig))
 		return scriptError(ErrSigLength, message)
@@ -428,7 +445,7 @@ func (vm *Engine) SetAltStack(data [][]byte) {
 // transaction, and input index. The flags modify the behavior of the script
 // engine according to the description provided by each flag.
 func NewEngine(scriptPubKey *externalapi.ScriptPublicKey, tx *externalapi.DomainTransaction, txIdx int, flags ScriptFlags,
-	sigCache *SigCache, sighashReusedValues *consensushashing.SighashReusedValues) (*Engine, error) {
+	sigCache *SigCache, sigCacheECDSA *SigCacheECDSA, sighashReusedValues *consensushashing.SighashReusedValues) (*Engine, error) {
 
 	// The provided transaction input index must refer to a valid input.
 	if txIdx < 0 || txIdx >= len(tx.Inputs) {
@@ -446,7 +463,7 @@ func NewEngine(scriptPubKey *externalapi.ScriptPublicKey, tx *externalapi.Domain
 		return nil, scriptError(ErrEvalFalse,
 			"false stack entry at end of script execution")
 	}
-	vm := Engine{scriptVersion: scriptPubKey.Version, flags: flags, sigCache: sigCache}
+	vm := Engine{scriptVersion: scriptPubKey.Version, flags: flags, sigCache: sigCache, sigCacheECDSA: sigCacheECDSA}
 
 	if vm.scriptVersion > constants.MaxScriptPublicKeyVersion {
 		return &vm, nil

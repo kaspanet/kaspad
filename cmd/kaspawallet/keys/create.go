@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"crypto/rand"
 	"crypto/subtle"
+	"encoding/hex"
 	"fmt"
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/libkaspawallet"
 	"github.com/pkg/errors"
@@ -11,9 +12,9 @@ import (
 )
 
 // CreateKeyPairs generates `numKeys` number of key pairs.
-func CreateKeyPairs(numKeys uint32) (encryptedPrivateKeys []*EncryptedPrivateKey, publicKeys [][]byte, err error) {
+func CreateKeyPairs(numKeys uint32, ecdsa bool) (encryptedPrivateKeys []*EncryptedPrivateKey, publicKeys [][]byte, err error) {
 	return createKeyPairsFromFunction(numKeys, func(_ uint32) ([]byte, []byte, error) {
-		return libkaspawallet.CreateKeyPair()
+		return libkaspawallet.CreateKeyPair(ecdsa)
 	})
 }
 
@@ -29,7 +30,17 @@ func ImportKeyPairs(numKeys uint32) (encryptedPrivateKeys []*EncryptedPrivateKey
 		if isPrefix {
 			return nil, nil, errors.Errorf("Private key is too long")
 		}
-		return libkaspawallet.KeyPairFromPrivateKeyHex(string(line))
+		privateKey, err := hex.DecodeString(string(line))
+		if err != nil {
+			return nil, nil, err
+		}
+
+		publicKey, err := libkaspawallet.PublicKeyFromPrivateKey(privateKey)
+		if err != nil {
+			return nil, nil, err
+		}
+
+		return privateKey, publicKey, nil
 	})
 }
 

@@ -23,6 +23,9 @@ const (
 	// PubKey addresses always have the version byte set to 0.
 	pubKeyAddrID = 0x00
 
+	// PubKey addresses always have the version byte set to 1.
+	pubKeyECDSAAddrID = 0x01
+
 	// ScriptHash addresses always have the version byte set to 8.
 	scriptHashAddrID = 0x08
 )
@@ -142,6 +145,8 @@ func DecodeAddress(addr string, expectedPrefix Bech32Prefix) (Address, error) {
 	switch version {
 	case pubKeyAddrID:
 		return newAddressPubKey(prefix, decoded)
+	case pubKeyECDSAAddrID:
+		return newAddressPubKeyECDSA(prefix, decoded)
 	case scriptHashAddrID:
 		return newAddressScriptHashFromHash(prefix, decoded)
 	default:
@@ -208,6 +213,68 @@ func (a *AddressPublicKey) Prefix() Bech32Prefix {
 // This is equivalent to calling EncodeAddress, but is provided so the type can
 // be used as a fmt.Stringer.
 func (a *AddressPublicKey) String() string {
+	return a.EncodeAddress()
+}
+
+// PublicKeySizeECDSA is the public key size for an ECDSA public key
+const PublicKeySizeECDSA = 33
+
+// AddressPublicKeyECDSA is an Address for a pay-to-pubkey (P2PK)
+// ECDSA transaction.
+type AddressPublicKeyECDSA struct {
+	prefix    Bech32Prefix
+	publicKey [PublicKeySizeECDSA]byte
+}
+
+// NewAddressPublicKeyECDSA returns a new AddressPublicKeyECDSA. publicKey must be 33
+// bytes.
+func NewAddressPublicKeyECDSA(publicKey []byte, prefix Bech32Prefix) (*AddressPublicKeyECDSA, error) {
+	return newAddressPubKeyECDSA(prefix, publicKey)
+}
+
+// newAddressPubKeyECDSA is the internal API to create an ECDSA pubkey address
+// with a known leading identifier byte for a network, rather than looking
+// it up through its parameters. This is useful when creating a new address
+// structure from a string encoding where the identifier byte is already
+// known.
+func newAddressPubKeyECDSA(prefix Bech32Prefix, publicKey []byte) (*AddressPublicKeyECDSA, error) {
+	// Check for a valid pubkey length.
+	if len(publicKey) != PublicKeySizeECDSA {
+		return nil, errors.Errorf("publicKey must be %d bytes", PublicKeySizeECDSA)
+	}
+
+	addr := &AddressPublicKeyECDSA{prefix: prefix}
+	copy(addr.publicKey[:], publicKey)
+	return addr, nil
+}
+
+// EncodeAddress returns the string encoding of a pay-to-pubkey
+// address. Part of the Address interface.
+func (a *AddressPublicKeyECDSA) EncodeAddress() string {
+	return encodeAddress(a.prefix, a.publicKey[:], pubKeyECDSAAddrID)
+}
+
+// ScriptAddress returns the bytes to be included in a txout script to pay
+// to a pubkey. Part of the Address interface.
+func (a *AddressPublicKeyECDSA) ScriptAddress() []byte {
+	return a.publicKey[:]
+}
+
+// IsForPrefix returns whether or not the pay-to-pubkey address is associated
+// with the passed kaspa network.
+func (a *AddressPublicKeyECDSA) IsForPrefix(prefix Bech32Prefix) bool {
+	return a.prefix == prefix
+}
+
+// Prefix returns the prefix for this address
+func (a *AddressPublicKeyECDSA) Prefix() Bech32Prefix {
+	return a.prefix
+}
+
+// String returns a human-readable string for the pay-to-pubkey address.
+// This is equivalent to calling EncodeAddress, but is provided so the type can
+// be used as a fmt.Stringer.
+func (a *AddressPublicKeyECDSA) String() string {
 	return a.EncodeAddress()
 }
 

@@ -8,18 +8,18 @@ import (
 	"github.com/kaspanet/go-secp256k1"
 )
 
-// sigCacheEntry represents an entry in the SigCache. Entries within the
+// sigCacheEntryECDSA represents an entry in the SigCache. Entries within the
 // SigCache are keyed according to the sigHash of the signature. In the
 // scenario of a cache-hit (according to the sigHash), an additional comparison
 // of the signature, and public key will be executed in order to ensure a complete
 // match. In the occasion that two sigHashes collide, the newer sigHash will
 // simply overwrite the existing entry.
-type sigCacheEntry struct {
-	sig    *secp256k1.SchnorrSignature
-	pubKey *secp256k1.SchnorrPublicKey
+type sigCacheEntryECDSA struct {
+	sig    *secp256k1.ECDSASignature
+	pubKey *secp256k1.ECDSAPublicKey
 }
 
-// SigCache implements an Schnorr signature verification cache with a randomized
+// SigCacheECDSA implements an ECDSA signature verification cache with a randomized
 // entry eviction policy. Only valid signatures will be added to the cache. The
 // benefits of SigCache are two fold. Firstly, usage of SigCache mitigates a DoS
 // attack wherein an attack causes a victim's client to hang due to worst-case
@@ -29,19 +29,19 @@ type sigCacheEntry struct {
 // Secondly, usage of the SigCache introduces a signature verification
 // optimization which speeds up the validation of transactions within a block,
 // if they've already been seen and verified within the mempool.
-type SigCache struct {
-	validSigs  map[secp256k1.Hash]sigCacheEntry
+type SigCacheECDSA struct {
+	validSigs  map[secp256k1.Hash]sigCacheEntryECDSA
 	maxEntries uint
 }
 
-// NewSigCache creates and initializes a new instance of SigCache. Its sole
+// NewSigCacheECDSA creates and initializes a new instance of SigCache. Its sole
 // parameter 'maxEntries' represents the maximum number of entries allowed to
 // exist in the SigCache at any particular moment. Random entries are evicted
 // to make room for new entries that would cause the number of entries in the
 // cache to exceed the max.
-func NewSigCache(maxEntries uint) *SigCache {
-	return &SigCache{
-		validSigs:  make(map[secp256k1.Hash]sigCacheEntry, maxEntries),
+func NewSigCacheECDSA(maxEntries uint) *SigCacheECDSA {
+	return &SigCacheECDSA{
+		validSigs:  make(map[secp256k1.Hash]sigCacheEntryECDSA, maxEntries),
 		maxEntries: maxEntries,
 	}
 }
@@ -51,7 +51,7 @@ func NewSigCache(maxEntries uint) *SigCache {
 //
 // NOTE: This function is safe for concurrent access. Readers won't be blocked
 // unless there exists a writer, adding an entry to the SigCache.
-func (s *SigCache) Exists(sigHash secp256k1.Hash, sig *secp256k1.SchnorrSignature, pubKey *secp256k1.SchnorrPublicKey) bool {
+func (s *SigCacheECDSA) Exists(sigHash secp256k1.Hash, sig *secp256k1.ECDSASignature, pubKey *secp256k1.ECDSAPublicKey) bool {
 	entry, ok := s.validSigs[sigHash]
 
 	return ok && entry.pubKey.IsEqual(pubKey) && entry.sig.IsEqual(sig)
@@ -64,7 +64,7 @@ func (s *SigCache) Exists(sigHash secp256k1.Hash, sig *secp256k1.SchnorrSignatur
 //
 // NOTE: This function is safe for concurrent access. Writers will block
 // simultaneous readers until function execution has concluded.
-func (s *SigCache) Add(sigHash secp256k1.Hash, sig *secp256k1.SchnorrSignature, pubKey *secp256k1.SchnorrPublicKey) {
+func (s *SigCacheECDSA) Add(sigHash secp256k1.Hash, sig *secp256k1.ECDSASignature, pubKey *secp256k1.ECDSAPublicKey) {
 	if s.maxEntries == 0 {
 		return
 	}
@@ -86,5 +86,5 @@ func (s *SigCache) Add(sigHash secp256k1.Hash, sig *secp256k1.SchnorrSignature, 
 			break
 		}
 	}
-	s.validSigs[sigHash] = sigCacheEntry{sig, pubKey}
+	s.validSigs[sigHash] = sigCacheEntryECDSA{sig, pubKey}
 }
