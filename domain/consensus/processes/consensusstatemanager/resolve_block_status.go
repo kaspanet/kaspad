@@ -306,16 +306,15 @@ func (csm *consensusStateManager) reverseUTXODiffs(stagingArea *model.StagingAre
 	// UTXODiffChild to be the selected parent.
 	// Once the process is complete, we can reverse said chain, to now go directly to virtual through the relevant tip
 
-	blocksCount := len(unverifiedBlocks)
-	if blocksCount == 1 {
+	if len(unverifiedBlocks) == 1 {
 		return nil
 	}
 
 	tip, oneBlockBeforeTip, restOfBlocks :=
 		unverifiedBlocks[0], unverifiedBlocks[1], unverifiedBlocks[2:]
 
-	// Set previousUTXODiff and PreviousBlock before we start touching them, since oneBlockBeforeTip's UTXOSet is
-	// going to be over-written
+	// Set previousUTXODiff and PreviousBlock to oneBlockBeforeTip before we start touching them,
+	// since oneBlockBeforeTip's UTXOSet is going to be over-written in the next step
 	previousBlock := oneBlockBeforeTip
 	previousUTXODiff, err := csm.utxoDiffStore.UTXODiff(csm.databaseContext, stagingArea, oneBlockBeforeTip)
 	if err != nil {
