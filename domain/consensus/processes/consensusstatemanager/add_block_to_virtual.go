@@ -37,7 +37,7 @@ func (csm *consensusStateManager) AddBlock(stagingArea *model.StagingArea, block
 
 		if !isViolatingFinality {
 			log.Debugf("Block %s doesn't violate finality. Resolving its block status", blockHash)
-			blockStatus, err := csm.resolveBlockStatus(stagingArea, blockHash)
+			blockStatus, err := csm.resolveBlockStatus(stagingArea, blockHash, true)
 			if err != nil {
 				return nil, nil, err
 			}
