@@ -54,7 +54,7 @@ func (csm *consensusStateManager) resolveBlockStatus(stagingArea *model.StagingA
 
 	previousBlockHash := selectedParentHash
 	previousBlockUTXOSet := selectedParentUTXOSet
-	var oneBlockBehindUTXOSet externalapi.UTXODiff
+	var oneBlockBeforeCurrentUTXOSet externalapi.UTXODiff
 
 	for i := len(unverifiedBlocks) - 1; i >= 0; i-- {
 		unverifiedBlockHash := unverifiedBlocks[i]
@@ -69,7 +69,7 @@ func (csm *consensusStateManager) resolveBlockStatus(stagingArea *model.StagingA
 		if selectedParentStatus == externalapi.StatusDisqualifiedFromChain {
 			blockStatus = externalapi.StatusDisqualifiedFromChain
 		} else {
-			oneBlockBehindUTXOSet = previousBlockUTXOSet
+			oneBlockBeforeCurrentUTXOSet = previousBlockUTXOSet
 
 			blockStatus, previousBlockUTXOSet, err = csm.resolveSingleBlockStatus(
 				stagingAreaForCurrentBlock, unverifiedBlockHash, previousBlockHash, previousBlockUTXOSet, isResolveTip)
@@ -95,12 +95,13 @@ func (csm *consensusStateManager) resolveBlockStatus(stagingArea *model.StagingA
 		previousBlockHash = unverifiedBlockHash
 	}
 
+	tipUTXOSet := previousBlockUTXOSet
 	if blockStatus == externalapi.StatusUTXOValid {
 		log.Debugf("Reversing UTXODiffs of blocks below the tip")
 		// During resolveSingleBlockStatus, all unverifiedBlocks (excluding the tip) were assigned their selectedParent
 		// as their UTXODiffChild.
 		// Now that the whole chain has been resolved - we can reverse the UTXODiffs, to create shorter UTXODiffChild paths.
-		err = csm.reverseUTXODiffs(stagingArea, unverifiedBlocks, previousBlockUTXOSet, oneBlockBehindUTXOSet, useSeparateStagingAreaPerBlock)
+		err = csm.reverseUTXODiffs(stagingArea, unverifiedBlocks, tipUTXOSet, oneBlockBeforeCurrentUTXOSet, useSeparateStagingAreaPerBlock)
 		if err != nil {
 			return 0, err
 		}
@@ -245,12 +246,14 @@ func (csm *consensusStateManager) resolveSingleBlockStatus(stagingArea *model.St
 			if err != nil {
 				return 0, nil, err
 			}
+			log.Debugf("Setting the old SelectedTip's(%s) diffChild to be the new SelectedTip (%s)",
+				oldSelectedTip, blockHash)
 			csm.stageDiff(stagingArea, oldSelectedTip, updatedOldSelectedTipUTXOSet, blockHash)
 
-			log.Tracef("Staging the utxoDiff of block %s", blockHash)
+			log.Tracef("Staging the utxoDiff of block %s, with virtual as diffChild", blockHash)
 			csm.stageDiff(stagingArea, blockHash, pastUTXOSet, nil)
 		} else {
-			log.Debugf("Block %s is the the tip of currently resolved chain, but not the new selectedTip,"+
+			log.Debugf("Block %s is the tip of currently resolved chain, but not the new selectedTip,"+
 				"therefore setting it's utxoDiffChild to be the current selectedTip ", blockHash)
 			utxoDiff, err := oldSelectedTipUTXOSet.DiffFrom(pastUTXOSet)
 			if err != nil {
@@ -269,7 +272,6 @@ func (csm *consensusStateManager) resolveSingleBlockStatus(stagingArea *model.St
 			return 0, nil, err
 		}
 
-		log.Tracef("Staging the utxoDiff of block %s", blockHash)
 		csm.stageDiff(stagingArea, blockHash, utxoDiff, selectedParentHash)
 	}
 
