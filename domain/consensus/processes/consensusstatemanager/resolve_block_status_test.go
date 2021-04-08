@@ -20,6 +20,8 @@ import (
 
 func TestDoubleSpends(t *testing.T) {
 	testutils.ForAllNets(t, true, func(t *testing.T, params *dagconfig.Params) {
+		stagingArea := model.NewStagingArea()
+
 		params.BlockCoinbaseMaturity = 0
 		factory := consensus.NewFactory()
 		consensus, teardown, err := factory.NewTestConsensus(params, false, "TestDoubleSpends")
@@ -46,11 +48,11 @@ func TestDoubleSpends(t *testing.T) {
 		fundingTransaction := fundingBlock.Transactions[transactionhelper.CoinbaseTransactionIndex]
 
 		// Create two transactions that spends the same output, but with different IDs
-		spendingTransaction1, err := testutils.CreateTransaction(fundingTransaction)
+		spendingTransaction1, err := testutils.CreateTransaction(fundingTransaction, 1)
 		if err != nil {
 			t.Fatalf("Error creating spendingTransaction1: %+v", err)
 		}
-		spendingTransaction2, err := testutils.CreateTransaction(fundingTransaction)
+		spendingTransaction2, err := testutils.CreateTransaction(fundingTransaction, 1)
 		if err != nil {
 			t.Fatalf("Error creating spendingTransaction2: %+v", err)
 		}
@@ -67,7 +69,7 @@ func TestDoubleSpends(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Error adding goodBlock1: %+v", err)
 		}
-		goodBlock1Status, err := consensus.BlockStatusStore().Get(consensus.DatabaseContext(), goodBlock1Hash)
+		goodBlock1Status, err := consensus.BlockStatusStore().Get(consensus.DatabaseContext(), stagingArea, goodBlock1Hash)
 		if err != nil {
 			t.Fatalf("Error getting status of goodBlock1: %+v", err)
 		}
@@ -82,7 +84,7 @@ func TestDoubleSpends(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Error adding doubleSpendingBlock1: %+v", err)
 		}
-		doubleSpendingBlock1Status, err := consensus.BlockStatusStore().Get(consensus.DatabaseContext(), doubleSpendingBlock1Hash)
+		doubleSpendingBlock1Status, err := consensus.BlockStatusStore().Get(consensus.DatabaseContext(), stagingArea, doubleSpendingBlock1Hash)
 		if err != nil {
 			t.Fatalf("Error getting status of goodBlock: %+v", err)
 		}
@@ -99,7 +101,7 @@ func TestDoubleSpends(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Error adding doubleSpendingBlock2: %+v", err)
 		}
-		doubleSpendingBlock2Status, err := consensus.BlockStatusStore().Get(consensus.DatabaseContext(), doubleSpendingBlock2Hash)
+		doubleSpendingBlock2Status, err := consensus.BlockStatusStore().Get(consensus.DatabaseContext(), stagingArea, doubleSpendingBlock2Hash)
 		if err != nil {
 			t.Fatalf("Error getting status of goodBlock: %+v", err)
 		}
@@ -142,7 +144,8 @@ func TestDoubleSpends(t *testing.T) {
 			t.Fatalf("Error adding goodBlock: %+v", err)
 		}
 		//use ResolveBlockStatus, since goodBlock2 might not be the selectedTip
-		goodBlock2Status, err := consensus.ConsensusStateManager().ResolveBlockStatus(goodBlock2Hash)
+		goodBlock2Status, err := consensus.ConsensusStateManager().ResolveBlockStatus(
+			stagingArea, goodBlock2Hash, true)
 		if err != nil {
 			t.Fatalf("Error getting status of goodBlock: %+v", err)
 		}
@@ -159,6 +162,8 @@ func TestDoubleSpends(t *testing.T) {
 //																	| redBlock <----------------------| --- blueBlock <----------------------
 func TestTransactionAcceptance(t *testing.T) {
 	testutils.ForAllNets(t, true, func(t *testing.T, params *dagconfig.Params) {
+		stagingArea := model.NewStagingArea()
+
 		params.BlockCoinbaseMaturity = 0
 
 		factory := consensus.NewFactory()
@@ -195,13 +200,14 @@ func TestTransactionAcceptance(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Error getting the fundingBlock3: %+v", err)
 		}
+		fees := uint64(1)
 		transactionToSpend0 := fundingBlock3.Transactions[transactionhelper.CoinbaseTransactionIndex]
-		spendingTransaction0, err := testutils.CreateTransaction(transactionToSpend0)
+		spendingTransaction0, err := testutils.CreateTransaction(transactionToSpend0, fees)
 		if err != nil {
 			t.Fatalf("Error creating a transaction: %+v", err)
 		}
 		spendingTransaction0Input0UTXOEntry, err := testConsensus.ConsensusStateStore().
-			UTXOByOutpoint(testConsensus.DatabaseContext(), &spendingTransaction0.Inputs[0].PreviousOutpoint)
+			UTXOByOutpoint(testConsensus.DatabaseContext(), stagingArea, &spendingTransaction0.Inputs[0].PreviousOutpoint)
 		if err != nil {
 			t.Fatalf("Error getting UTXOEntry for spendingTransaction0Input0: %s", err)
 		}
@@ -212,12 +218,12 @@ func TestTransactionAcceptance(t *testing.T) {
 		}
 
 		transactionToSpend1 := spendingTransaction0
-		spendingTransaction1, err := testutils.CreateTransaction(transactionToSpend1)
+		spendingTransaction1, err := testutils.CreateTransaction(transactionToSpend1, fees)
 		if err != nil {
 			t.Fatalf("Error creating spendingTransaction1: %+v", err)
 		}
 		spendingTransaction1Input0UTXOEntry, err := testConsensus.ConsensusStateStore().
-			UTXOByOutpoint(testConsensus.DatabaseContext(), &spendingTransaction1.Inputs[0].PreviousOutpoint)
+			UTXOByOutpoint(testConsensus.DatabaseContext(), stagingArea, &spendingTransaction1.Inputs[0].PreviousOutpoint)
 		if err != nil {
 			t.Fatalf("Error getting UTXOEntry for spendingTransaction1Input0: %s", err)
 		}
@@ -242,7 +248,7 @@ func TestTransactionAcceptance(t *testing.T) {
 			t.Fatalf("Error creating finalTip: %+v", err)
 		}
 
-		acceptanceData, err := testConsensus.AcceptanceDataStore().Get(testConsensus.DatabaseContext(), finalTipHash)
+		acceptanceData, err := testConsensus.AcceptanceDataStore().Get(testConsensus.DatabaseContext(), stagingArea, finalTipHash)
 		if err != nil {
 			t.Fatalf("Error getting acceptance data: %+v", err)
 		}
@@ -285,7 +291,7 @@ func TestTransactionAcceptance(t *testing.T) {
 					},
 					{
 						Transaction:                 redBlock.Transactions[1],
-						Fee:                         1, // testutils.CreateTransaction pays a fee of 1 sompi.
+						Fee:                         fees,
 						IsAccepted:                  true,
 						TransactionInputUTXOEntries: []externalapi.UTXOEntry{spendingTransaction0Input0UTXOEntry},
 					},
@@ -304,7 +310,7 @@ func TestTransactionAcceptance(t *testing.T) {
 					{ // The DAAScore was calculated by the virtual block pov. The DAAScore has changed since more blocks were added to the DAG.
 						// So we will change the DAAScore in the UTXOEntryInput to the updated virtual DAAScore.
 						Transaction: blueBlock.Transactions[1],
-						Fee:         1, // testutils.CreateTransaction pays a fee of 1 sompi.
+						Fee:         fees,
 						IsAccepted:  true,
 						TransactionInputUTXOEntries: []externalapi.UTXOEntry{
 							utxo.NewUTXOEntry(spendingTransaction1Input0UTXOEntry.Amount(), spendingTransaction1Input0UTXOEntry.ScriptPublicKey(),
@@ -321,6 +327,8 @@ func TestTransactionAcceptance(t *testing.T) {
 
 func TestResolveBlockStatusSanity(t *testing.T) {
 	testutils.ForAllNets(t, true, func(t *testing.T, params *dagconfig.Params) {
+		stagingArea := model.NewStagingArea()
+
 		consensus, teardown, err := consensus.NewFactory().NewTestConsensus(params, false, "TestResolveBlockStatusSanity")
 		if err != nil {
 			t.Fatalf("Error setting up consensus: %+v", err)
@@ -331,7 +339,7 @@ func TestResolveBlockStatusSanity(t *testing.T) {
 		allHashes := []*externalapi.DomainHash{genesisHash}
 
 		// Make sure that the status of genesisHash is valid
-		genesisStatus, err := consensus.BlockStatusStore().Get(consensus.DatabaseContext(), genesisHash)
+		genesisStatus, err := consensus.BlockStatusStore().Get(consensus.DatabaseContext(), stagingArea, genesisHash)
 		if err != nil {
 			t.Fatalf("error getting genesis status: %s", err)
 		}
@@ -349,7 +357,7 @@ func TestResolveBlockStatusSanity(t *testing.T) {
 			if err != nil {
 				t.Fatalf("error adding block %d: %s", i, err)
 			}
-			blockStatus, err := consensus.BlockStatusStore().Get(consensus.DatabaseContext(), addedBlockHash)
+			blockStatus, err := consensus.BlockStatusStore().Get(consensus.DatabaseContext(), stagingArea, addedBlockHash)
 			if err != nil {
 				t.Fatalf("error getting block %d (%s) status: %s", i, addedBlockHash, err)
 			}
@@ -369,7 +377,7 @@ func TestResolveBlockStatusSanity(t *testing.T) {
 			if err != nil {
 				t.Fatalf("error adding block %d: %s", i, err)
 			}
-			blockStatus, err := consensus.BlockStatusStore().Get(consensus.DatabaseContext(), addedBlockHash)
+			blockStatus, err := consensus.BlockStatusStore().Get(consensus.DatabaseContext(), stagingArea, addedBlockHash)
 			if err != nil {
 				t.Fatalf("error getting block %d (%s) status: %s", i, addedBlockHash, err)
 			}
@@ -394,7 +402,7 @@ func TestResolveBlockStatusSanity(t *testing.T) {
 
 		// Make sure that all the blocks in the DAG now have StatusUTXOValid
 		for _, hash := range allHashes {
-			blockStatus, err := consensus.BlockStatusStore().Get(consensus.DatabaseContext(), hash)
+			blockStatus, err := consensus.BlockStatusStore().Get(consensus.DatabaseContext(), stagingArea, hash)
 			if err != nil {
 				t.Fatalf("error getting block %s status: %s", hash, err)
 			}

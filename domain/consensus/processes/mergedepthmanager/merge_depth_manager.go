@@ -34,13 +34,13 @@ func New(
 
 }
 
-func (mdm *mergeDepthManager) CheckBoundedMergeDepth(blockHash *externalapi.DomainHash) error {
-	nonBoundedMergeDepthViolatingBlues, err := mdm.NonBoundedMergeDepthViolatingBlues(blockHash)
+func (mdm *mergeDepthManager) CheckBoundedMergeDepth(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) error {
+	nonBoundedMergeDepthViolatingBlues, err := mdm.NonBoundedMergeDepthViolatingBlues(stagingArea, blockHash)
 	if err != nil {
 		return err
 	}
 
-	ghostdagData, err := mdm.ghostdagDataStore.Get(mdm.databaseContext, blockHash)
+	ghostdagData, err := mdm.ghostdagDataStore.Get(mdm.databaseContext, stagingArea, blockHash)
 	if err != nil {
 		return err
 	}
@@ -50,13 +50,13 @@ func (mdm *mergeDepthManager) CheckBoundedMergeDepth(blockHash *externalapi.Doma
 		return nil
 	}
 
-	finalityPoint, err := mdm.finalityManager.FinalityPoint(blockHash)
+	finalityPoint, err := mdm.finalityManager.FinalityPoint(stagingArea, blockHash)
 	if err != nil {
 		return err
 	}
 
 	for _, red := range ghostdagData.MergeSetReds() {
-		doesRedHaveFinalityPointInPast, err := mdm.dagTopologyManager.IsAncestorOf(finalityPoint, red)
+		doesRedHaveFinalityPointInPast, err := mdm.dagTopologyManager.IsAncestorOf(stagingArea, finalityPoint, red)
 		if err != nil {
 			return err
 		}
@@ -65,8 +65,8 @@ func (mdm *mergeDepthManager) CheckBoundedMergeDepth(blockHash *externalapi.Doma
 			continue
 		}
 
-		isRedInPastOfAnyNonFinalityViolatingBlue, err := mdm.dagTopologyManager.IsAncestorOfAny(red,
-			nonBoundedMergeDepthViolatingBlues)
+		isRedInPastOfAnyNonFinalityViolatingBlue, err :=
+			mdm.dagTopologyManager.IsAncestorOfAny(stagingArea, red, nonBoundedMergeDepthViolatingBlues)
 		if err != nil {
 			return err
 		}
@@ -79,20 +79,20 @@ func (mdm *mergeDepthManager) CheckBoundedMergeDepth(blockHash *externalapi.Doma
 	return nil
 }
 
-func (mdm *mergeDepthManager) NonBoundedMergeDepthViolatingBlues(blockHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error) {
-	ghostdagData, err := mdm.ghostdagDataStore.Get(mdm.databaseContext, blockHash)
+func (mdm *mergeDepthManager) NonBoundedMergeDepthViolatingBlues(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error) {
+	ghostdagData, err := mdm.ghostdagDataStore.Get(mdm.databaseContext, stagingArea, blockHash)
 	if err != nil {
 		return nil, err
 	}
 
 	nonBoundedMergeDepthViolatingBlues := make([]*externalapi.DomainHash, 0, len(ghostdagData.MergeSetBlues()))
 
-	finalityPoint, err := mdm.finalityManager.FinalityPoint(blockHash)
+	finalityPoint, err := mdm.finalityManager.FinalityPoint(stagingArea, blockHash)
 	if err != nil {
 		return nil, err
 	}
 	for _, blue := range ghostdagData.MergeSetBlues() {
-		notViolatingFinality, err := mdm.dagTopologyManager.IsInSelectedParentChainOf(finalityPoint, blue)
+		notViolatingFinality, err := mdm.dagTopologyManager.IsInSelectedParentChainOf(stagingArea, finalityPoint, blue)
 		if err != nil {
 			return nil, err
 		}

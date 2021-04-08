@@ -1,11 +1,12 @@
 package ghostdagmanager
 
 import (
+	"math/big"
+
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/util/difficulty"
 	"github.com/pkg/errors"
-	"math/big"
 )
 
 type blockGHOSTDAGData struct {
@@ -39,7 +40,7 @@ func (bg *blockGHOSTDAGData) toModel() *model.BlockGHOSTDAGData {
 //    BluesAnticoneSizes.
 //
 // For further details see the article https://eprint.iacr.org/2018/104.pdf
-func (gm *ghostdagManager) GHOSTDAG(blockHash *externalapi.DomainHash) error {
+func (gm *ghostdagManager) GHOSTDAG(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) error {
 	newBlockData := &blockGHOSTDAGData{
 		blueWork:           new(big.Int),
 		mergeSetBlues:      make([]*externalapi.DomainHash, 0),
@@ -47,14 +48,14 @@ func (gm *ghostdagManager) GHOSTDAG(blockHash *externalapi.DomainHash) error {
 		bluesAnticoneSizes: make(map[externalapi.DomainHash]model.KType),
 	}
 
-	blockParents, err := gm.dagTopologyManager.Parents(blockHash)
+	blockParents, err := gm.dagTopologyManager.Parents(stagingArea, blockHash)
 	if err != nil {
 		return err
 	}
 
 	isGenesis := len(blockParents) == 0
 	if !isGenesis {
-		selectedParent, err := gm.findSelectedParent(blockParents)
+		selectedParent, err := gm.findSelectedParent(stagingArea, blockParents)
 		if err != nil {
 			return err
 		}
@@ -64,13 +65,15 @@ func (gm *ghostdagManager) GHOSTDAG(blockHash *externalapi.DomainHash) error {
 		newBlockData.bluesAnticoneSizes[*selectedParent] = 0
 	}
 
-	mergeSetWithoutSelectedParent, err := gm.mergeSetWithoutSelectedParent(newBlockData.selectedParent, blockParents)
+	mergeSetWithoutSelectedParent, err := gm.mergeSetWithoutSelectedParent(
+		stagingArea, newBlockData.selectedParent, blockParents)
 	if err != nil {
 		return err
 	}
 
 	for _, blueCandidate := range mergeSetWithoutSelectedParent {
-		isBlue, candidateAnticoneSize, candidateBluesAnticoneSizes, err := gm.checkBlueCandidate(newBlockData.toModel(), blueCandidate)
+		isBlue, candidateAnticoneSize, candidateBluesAnticoneSizes, err := gm.checkBlueCandidate(
+			stagingArea, newBlockData.toModel(), blueCandidate)
 		if err != nil {
 			return err
 		}
@@ -88,7 +91,7 @@ func (gm *ghostdagManager) GHOSTDAG(blockHash *externalapi.DomainHash) error {
 	}
 
 	if !isGenesis {
-		selectedParentGHOSTDAGData, err := gm.ghostdagDataStore.Get(gm.databaseContext, newBlockData.selectedParent)
+		selectedParentGHOSTDAGData, err := gm.ghostdagDataStore.Get(gm.databaseContext, stagingArea, newBlockData.selectedParent)
 		if err != nil {
 			return err
 		}
@@ -97,7 +100,7 @@ func (gm *ghostdagManager) GHOSTDAG(blockHash *externalapi.DomainHash) error {
 		newBlockData.blueWork.Set(selectedParentGHOSTDAGData.BlueWork())
 		// Then we add up all the *work*(not blueWork) that all of newBlock merge set blues and selected parent did
 		for _, blue := range newBlockData.mergeSetBlues {
-			header, err := gm.headerStore.BlockHeader(gm.databaseContext, blue)
+			header, err := gm.headerStore.BlockHeader(gm.databaseContext, stagingArea, blue)
 			if err != nil {
 				return err
 			}
@@ -109,7 +112,7 @@ func (gm *ghostdagManager) GHOSTDAG(blockHash *externalapi.DomainHash) error {
 		newBlockData.blueWork.SetUint64(0)
 	}
 
-	gm.ghostdagDataStore.Stage(blockHash, newBlockData.toModel())
+	gm.ghostdagDataStore.Stage(stagingArea, blockHash, newBlockData.toModel())
 
 	return nil
 }
@@ -119,8 +122,9 @@ type chainBlockData struct {
 	blockData *model.BlockGHOSTDAGData
 }
 
-func (gm *ghostdagManager) checkBlueCandidate(newBlockData *model.BlockGHOSTDAGData, blueCandidate *externalapi.DomainHash) (
-	isBlue bool, candidateAnticoneSize model.KType, candidateBluesAnticoneSizes map[externalapi.DomainHash]model.KType, err error) {
+func (gm *ghostdagManager) checkBlueCandidate(stagingArea *model.StagingArea, newBlockData *model.BlockGHOSTDAGData,
+	blueCandidate *externalapi.DomainHash) (isBlue bool, candidateAnticoneSize model.KType,
+	candidateBluesAnticoneSizes map[externalapi.DomainHash]model.KType, err error) {
 
 	// The maximum length of node.blues can be K+1 because
 	// it contains the selected parent.
@@ -139,8 +143,8 @@ func (gm *ghostdagManager) checkBlueCandidate(newBlockData *model.BlockGHOSTDAGD
 	}
 
 	for {
-		isBlue, isRed, err := gm.checkBlueCandidateWithChainBlock(newBlockData, chainBlock, blueCandidate, candidateBluesAnticoneSizes,
-			&candidateAnticoneSize)
+		isBlue, isRed, err := gm.checkBlueCandidateWithChainBlock(stagingArea, newBlockData, chainBlock, blueCandidate,
+			candidateBluesAnticoneSizes, &candidateAnticoneSize)
 		if err != nil {
 			return false, 0, nil, err
 		}
@@ -153,7 +157,7 @@ func (gm *ghostdagManager) checkBlueCandidate(newBlockData *model.BlockGHOSTDAGD
 			return false, 0, nil, nil
 		}
 
-		selectedParentGHOSTDAGData, err := gm.ghostdagDataStore.Get(gm.databaseContext, chainBlock.blockData.SelectedParent())
+		selectedParentGHOSTDAGData, err := gm.ghostdagDataStore.Get(gm.databaseContext, stagingArea, chainBlock.blockData.SelectedParent())
 		if err != nil {
 			return false, 0, nil, err
 		}
@@ -166,8 +170,8 @@ func (gm *ghostdagManager) checkBlueCandidate(newBlockData *model.BlockGHOSTDAGD
 	return true, candidateAnticoneSize, candidateBluesAnticoneSizes, nil
 }
 
-func (gm *ghostdagManager) checkBlueCandidateWithChainBlock(newBlockData *model.BlockGHOSTDAGData,
-	chainBlock chainBlockData, blueCandidate *externalapi.DomainHash,
+func (gm *ghostdagManager) checkBlueCandidateWithChainBlock(stagingArea *model.StagingArea,
+	newBlockData *model.BlockGHOSTDAGData, chainBlock chainBlockData, blueCandidate *externalapi.DomainHash,
 	candidateBluesAnticoneSizes map[externalapi.DomainHash]model.KType,
 	candidateAnticoneSize *model.KType) (isBlue, isRed bool, err error) {
 
@@ -182,7 +186,7 @@ func (gm *ghostdagManager) checkBlueCandidateWithChainBlock(newBlockData *model.
 
 	// We check if chainBlock is not the new block by checking if it has a hash.
 	if chainBlock.hash != nil {
-		isAncestorOfBlueCandidate, err := gm.dagTopologyManager.IsAncestorOf(chainBlock.hash, blueCandidate)
+		isAncestorOfBlueCandidate, err := gm.dagTopologyManager.IsAncestorOf(stagingArea, chainBlock.hash, blueCandidate)
 		if err != nil {
 			return false, false, err
 		}
@@ -193,7 +197,7 @@ func (gm *ghostdagManager) checkBlueCandidateWithChainBlock(newBlockData *model.
 
 	for _, block := range chainBlock.blockData.MergeSetBlues() {
 		// Skip blocks that exist in the past of blueCandidate.
-		isAncestorOfBlueCandidate, err := gm.dagTopologyManager.IsAncestorOf(block, blueCandidate)
+		isAncestorOfBlueCandidate, err := gm.dagTopologyManager.IsAncestorOf(stagingArea, block, blueCandidate)
 		if err != nil {
 			return false, false, err
 		}
@@ -202,7 +206,7 @@ func (gm *ghostdagManager) checkBlueCandidateWithChainBlock(newBlockData *model.
 			continue
 		}
 
-		candidateBluesAnticoneSizes[*block], err = gm.blueAnticoneSize(block, newBlockData)
+		candidateBluesAnticoneSizes[*block], err = gm.blueAnticoneSize(stagingArea, block, newBlockData)
 		if err != nil {
 			return false, false, err
 		}
@@ -231,7 +235,9 @@ func (gm *ghostdagManager) checkBlueCandidateWithChainBlock(newBlockData *model.
 
 // blueAnticoneSize returns the blue anticone size of 'block' from the worldview of 'context'.
 // Expects 'block' to be in the blue set of 'context'
-func (gm *ghostdagManager) blueAnticoneSize(block *externalapi.DomainHash, context *model.BlockGHOSTDAGData) (model.KType, error) {
+func (gm *ghostdagManager) blueAnticoneSize(stagingArea *model.StagingArea,
+	block *externalapi.DomainHash, context *model.BlockGHOSTDAGData) (model.KType, error) {
+
 	for current := context; current != nil; {
 		if blueAnticoneSize, ok := current.BluesAnticoneSizes()[*block]; ok {
 			return blueAnticoneSize, nil
@@ -240,7 +246,7 @@ func (gm *ghostdagManager) blueAnticoneSize(block *externalapi.DomainHash, conte
 			break
 		}
 		var err error
-		current, err = gm.ghostdagDataStore.Get(gm.databaseContext, current.SelectedParent())
+		current, err = gm.ghostdagDataStore.Get(gm.databaseContext, stagingArea, current.SelectedParent())
 		if err != nil {
 			return 0, err
 		}

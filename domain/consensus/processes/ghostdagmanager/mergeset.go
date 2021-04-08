@@ -3,11 +3,13 @@ package ghostdagmanager
 import (
 	"sort"
 
+	"github.com/kaspanet/kaspad/domain/consensus/model"
+
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 )
 
-func (gm *ghostdagManager) mergeSetWithoutSelectedParent(selectedParent *externalapi.DomainHash,
-	blockParents []*externalapi.DomainHash) ([]*externalapi.DomainHash, error) {
+func (gm *ghostdagManager) mergeSetWithoutSelectedParent(stagingArea *model.StagingArea,
+	selectedParent *externalapi.DomainHash, blockParents []*externalapi.DomainHash) ([]*externalapi.DomainHash, error) {
 
 	mergeSetMap := make(map[externalapi.DomainHash]struct{}, gm.k)
 	mergeSetSlice := make([]*externalapi.DomainHash, 0, gm.k)
@@ -28,7 +30,7 @@ func (gm *ghostdagManager) mergeSetWithoutSelectedParent(selectedParent *externa
 		current, queue = queue[0], queue[1:]
 		// For each parent of the current block we check whether it is in the past of the selected parent. If not,
 		// we add the it to the resulting anticone-set and queue it for further processing.
-		currentParents, err := gm.dagTopologyManager.Parents(current)
+		currentParents, err := gm.dagTopologyManager.Parents(stagingArea, current)
 		if err != nil {
 			return nil, err
 		}
@@ -41,7 +43,7 @@ func (gm *ghostdagManager) mergeSetWithoutSelectedParent(selectedParent *externa
 				continue
 			}
 
-			isAncestorOfSelectedParent, err := gm.dagTopologyManager.IsAncestorOf(parent, selectedParent)
+			isAncestorOfSelectedParent, err := gm.dagTopologyManager.IsAncestorOf(stagingArea, parent, selectedParent)
 			if err != nil {
 				return nil, err
 			}
@@ -57,7 +59,7 @@ func (gm *ghostdagManager) mergeSetWithoutSelectedParent(selectedParent *externa
 		}
 	}
 
-	err := gm.sortMergeSet(mergeSetSlice)
+	err := gm.sortMergeSet(stagingArea, mergeSetSlice)
 	if err != nil {
 		return nil, err
 	}
@@ -65,13 +67,13 @@ func (gm *ghostdagManager) mergeSetWithoutSelectedParent(selectedParent *externa
 	return mergeSetSlice, nil
 }
 
-func (gm *ghostdagManager) sortMergeSet(mergeSetSlice []*externalapi.DomainHash) error {
+func (gm *ghostdagManager) sortMergeSet(stagingArea *model.StagingArea, mergeSetSlice []*externalapi.DomainHash) error {
 	var err error
 	sort.Slice(mergeSetSlice, func(i, j int) bool {
 		if err != nil {
 			return false
 		}
-		isLess, lessErr := gm.less(mergeSetSlice[i], mergeSetSlice[j])
+		isLess, lessErr := gm.less(stagingArea, mergeSetSlice[i], mergeSetSlice[j])
 		if lessErr != nil {
 			err = lessErr
 			return false
@@ -81,8 +83,10 @@ func (gm *ghostdagManager) sortMergeSet(mergeSetSlice []*externalapi.DomainHash)
 	return err
 }
 
-func (gm *ghostdagManager) GetSortedMergeSet(current *externalapi.DomainHash) ([]*externalapi.DomainHash, error) {
-	currentGhostdagData, err := gm.ghostdagDataStore.Get(gm.databaseContext, current)
+func (gm *ghostdagManager) GetSortedMergeSet(stagingArea *model.StagingArea,
+	current *externalapi.DomainHash) ([]*externalapi.DomainHash, error) {
+
+	currentGhostdagData, err := gm.ghostdagDataStore.Get(gm.databaseContext, stagingArea, current)
 	if err != nil {
 		return nil, err
 	}
@@ -95,12 +99,12 @@ func (gm *ghostdagManager) GetSortedMergeSet(current *externalapi.DomainHash) ([
 	i, j := 0, 0
 	for i < len(blueMergeSet) && j < len(redMergeSet) {
 		currentBlue := blueMergeSet[i]
-		currentBlueGhostdagData, err := gm.ghostdagDataStore.Get(gm.databaseContext, currentBlue)
+		currentBlueGhostdagData, err := gm.ghostdagDataStore.Get(gm.databaseContext, stagingArea, currentBlue)
 		if err != nil {
 			return nil, err
 		}
 		currentRed := redMergeSet[j]
-		currentRedGhostdagData, err := gm.ghostdagDataStore.Get(gm.databaseContext, currentRed)
+		currentRedGhostdagData, err := gm.ghostdagDataStore.Get(gm.databaseContext, stagingArea, currentRed)
 		if err != nil {
 			return nil, err
 		}

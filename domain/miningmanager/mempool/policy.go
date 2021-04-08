@@ -127,43 +127,18 @@ func isDust(txOut *consensusexternalapi.DomainTransactionOutput, minRelayTxFee u
 	// input script to redeem it. Since there is no input script
 	// to redeem it yet, use the minimum size of a typical input script.
 	//
-	// Pay-to-pubkey-hash bytes breakdown:
-	//
-	//  Output to hash (34 bytes):
-	//   8 value, 1 script len, 25 script [1 OP_DUP, 1 OP_HASH_160,
-	//   1 OP_DATA_20, 20 hash, 1 OP_EQUALVERIFY, 1 OP_CHECKSIG]
-	//
-	//  Input with compressed pubkey (148 bytes):
-	//   36 prev outpoint, 1 script len, 107 script [1 OP_DATA_72, 72 sig,
-	//   1 OP_DATA_33, 33 compressed pubkey], 4 sequence
-	//
-	//  Input with uncompressed pubkey (180 bytes):
-	//   36 prev outpoint, 1 script len, 139 script [1 OP_DATA_72, 72 sig,
-	//   1 OP_DATA_65, 65 compressed pubkey], 4 sequence
-	//
 	// Pay-to-pubkey bytes breakdown:
 	//
-	//  Output to compressed pubkey (44 bytes):
-	//   8 value, 1 script len, 35 script [1 OP_DATA_33,
-	//   33 compressed pubkey, 1 OP_CHECKSIG]
+	//  Output to pubkey (43 bytes):
+	//   8 value, 1 script len, 34 script [1 OP_DATA_32,
+	//   32 pubkey, 1 OP_CHECKSIG]
 	//
-	//  Output to uncompressed pubkey (76 bytes):
-	//   8 value, 1 script len, 67 script [1 OP_DATA_65, 65 pubkey,
-	//   1 OP_CHECKSIG]
+	//  Input (105 bytes):
+	//   36 prev outpoint, 1 script len, 64 script [1 OP_DATA_64,
+	//   64 sig], 4 sequence
 	//
-	//  Input (114 bytes):
-	//   36 prev outpoint, 1 script len, 73 script [1 OP_DATA_72,
-	//   72 sig], 4 sequence
-	//
-	// Theoretically this could examine the script type of the output script
-	// and use a different size for the typical input script size for
-	// pay-to-pubkey vs pay-to-pubkey-hash inputs per the above breakdowns,
-	// but the only combination which is less than the value chosen is
-	// a pay-to-pubkey script with a compressed pubkey, which is not very
-	// common.
-	//
-	// The most common scripts are pay-to-pubkey-hash, and as per the above
-	// breakdown, the minimum size of a p2pkh input script is 148 bytes. So
+	// The most common scripts are pay-to-pubkey, and as per the above
+	// breakdown, the minimum size of a p2pk input script is 148 bytes. So
 	// that figure is used.
 	totalSize := estimatedsize.TransactionOutputEstimatedSerializedSize(txOut) + 148
 
@@ -172,7 +147,7 @@ func isDust(txOut *consensusexternalapi.DomainTransactionOutput, minRelayTxFee u
 	// minFreeTxRelayFee is in sompi/KB, so multiply by 1000 to
 	// convert to bytes.
 	//
-	// Using the typical values for a pay-to-pubkey-hash transaction from
+	// Using the typical values for a pay-to-pubkey transaction from
 	// the breakdown above and the default minimum free transaction relay
 	// fee of 1000, this equates to values less than 546 sompi being
 	// considered dust.

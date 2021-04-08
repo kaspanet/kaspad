@@ -129,7 +129,7 @@ type fakeRelayInvsContext struct {
 	rwLock                                        sync.RWMutex
 }
 
-func (f *fakeRelayInvsContext) GetBlockChildren(blockHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error) {
+func (f *fakeRelayInvsContext) GetBlockRelations(blockHash *externalapi.DomainHash) ([]*externalapi.DomainHash, *externalapi.DomainHash, []*externalapi.DomainHash, error) {
 	panic(errors.Errorf("called unimplemented function from test '%s'", f.testName))
 }
 

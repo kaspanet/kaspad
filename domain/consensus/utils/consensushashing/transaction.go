@@ -22,28 +22,6 @@ const (
 	txEncodingExcludeSignatureScript = 1 << iota
 )
 
-// TransactionHashForSigning hashes the transaction and the given hash type in a way that is intended for
-// signatures.
-func TransactionHashForSigning(tx *externalapi.DomainTransaction, hashType uint32) *externalapi.DomainHash {
-	// Encode the header and hash everything prior to the number of
-	// transactions.
-	writer := hashes.NewTransactionSigningHashWriter()
-	err := serializeTransaction(writer, tx, txEncodingFull)
-	if err != nil {
-		// It seems like this could only happen if the writer returned an error.
-		// and this writer should never return an error (no allocations or possible failures)
-		// the only non-writer error path here is unknown types in `WriteElement`
-		panic(errors.Wrap(err, "TransactionHashForSigning() failed. this should never fail for structurally-valid transactions"))
-	}
-
-	err = serialization.WriteElement(writer, hashType)
-	if err != nil {
-		panic(errors.Wrap(err, "this should never happen. Hash digest should never return an error"))
-	}
-
-	return writer.Finalize()
-}
-
 // TransactionHash returns the transaction hash.
 func TransactionHash(tx *externalapi.DomainTransaction) *externalapi.DomainHash {
 	// Encode the header and hash everything prior to the number of

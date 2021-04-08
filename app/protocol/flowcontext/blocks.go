@@ -37,12 +37,14 @@ func (f *FlowContext) OnNewBlock(block *externalapi.DomainBlock,
 		newBlockInsertionResults = append(newBlockInsertionResults, unorphaningResult.blockInsertionResult)
 	}
 
+	allAcceptedTransactions := make([]*externalapi.DomainTransaction, 0)
 	for i, newBlock := range newBlocks {
 		log.Debugf("OnNewBlock: passing block %s transactions to mining manager", hash)
-		_, err = f.Domain().MiningManager().HandleNewBlockTransactions(newBlock.Transactions)
+		acceptedTransactions, err := f.Domain().MiningManager().HandleNewBlockTransactions(newBlock.Transactions)
 		if err != nil {
 			return err
 		}
+		allAcceptedTransactions = append(allAcceptedTransactions, acceptedTransactions...)
 
 		if f.onBlockAddedToDAGHandler != nil {
 			log.Debugf("OnNewBlock: calling f.onBlockAddedToDAGHandler for block %s", hash)
@@ -54,7 +56,7 @@ func (f *FlowContext) OnNewBlock(block *externalapi.DomainBlock,
 		}
 	}
 
-	return nil
+	return f.broadcastTransactionsAfterBlockAdded(newBlocks, allAcceptedTransactions)
 }
 
 // OnPruningPointUTXOSetOverride calls the handler function whenever the UTXO set
@@ -67,9 +69,9 @@ func (f *FlowContext) OnPruningPointUTXOSetOverride() error {
 }
 
 func (f *FlowContext) broadcastTransactionsAfterBlockAdded(
-	block *externalapi.DomainBlock, transactionsAcceptedToMempool []*externalapi.DomainTransaction) error {
+	addedBlocks []*externalapi.DomainBlock, transactionsAcceptedToMempool []*externalapi.DomainTransaction) error {
 
-	f.updateTransactionsToRebroadcast(block)
+	f.updateTransactionsToRebroadcast(addedBlocks)
 
 	// Don't relay transactions when in IBD.
 	if f.IsIBDRunning() {

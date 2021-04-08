@@ -50,6 +50,7 @@ type RPCTransaction struct {
 	SubnetworkID string
 	Gas          uint64
 	Payload      string
+	VerboseData  *RPCTransactionVerboseData
 }
 
 // RPCTransactionInput is a kaspad transaction input representation
@@ -58,6 +59,7 @@ type RPCTransactionInput struct {
 	PreviousOutpoint *RPCOutpoint
 	SignatureScript  string
 	Sequence         uint64
+	VerboseData      *RPCTransactionInputVerboseData
 }
 
 // RPCScriptPublicKey is a kaspad ScriptPublicKey representation
@@ -71,6 +73,7 @@ type RPCScriptPublicKey struct {
 type RPCTransactionOutput struct {
 	Amount          uint64
 	ScriptPublicKey *RPCScriptPublicKey
+	VerboseData     *RPCTransactionOutputVerboseData
 }
 
 // RPCOutpoint is a kaspad outpoint representation meant to be used
@@ -87,4 +90,23 @@ type RPCUTXOEntry struct {
 	ScriptPublicKey *RPCScriptPublicKey
 	BlockDAAScore   uint64
 	IsCoinbase      bool
+}
+
+// RPCTransactionVerboseData holds verbose data about a transaction
+type RPCTransactionVerboseData struct {
+	TransactionID string
+	Hash          string
+	Size          uint64
+	BlockHash     string
+	BlockTime     uint64
+}
+
+// RPCTransactionInputVerboseData holds data about a transaction input
+type RPCTransactionInputVerboseData struct {
+}
+
+// RPCTransactionOutputVerboseData holds data about a transaction output
+type RPCTransactionOutputVerboseData struct {
+	ScriptPublicKeyType    string
+	ScriptPublicKeyAddress string
 }

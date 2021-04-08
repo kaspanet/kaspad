@@ -1,24 +1,31 @@
 package testutils
 
 import (
-	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
-	"github.com/kaspanet/kaspad/domain/consensus/model/testapi"
 	"sort"
 	"testing"
+
+	"github.com/kaspanet/kaspad/domain/consensus/model"
+
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+	"github.com/kaspanet/kaspad/domain/consensus/model/testapi"
 )
 
 type testGhostDAGSorter struct {
-	slice []*externalapi.DomainHash
-	tc    testapi.TestConsensus
-	test  testing.TB
+	slice       []*externalapi.DomainHash
+	tc          testapi.TestConsensus
+	test        testing.TB
+	stagingArea *model.StagingArea
 }
 
 // NewTestGhostDAGSorter returns a sort.Interface over the slice, so you can sort it via GhostDAG ordering
-func NewTestGhostDAGSorter(slice []*externalapi.DomainHash, tc testapi.TestConsensus, t testing.TB) sort.Interface {
+func NewTestGhostDAGSorter(stagingArea *model.StagingArea, slice []*externalapi.DomainHash, tc testapi.TestConsensus,
+	t testing.TB) sort.Interface {
+
 	return testGhostDAGSorter{
-		slice: slice,
-		tc:    tc,
-		test:  t,
+		slice:       slice,
+		tc:          tc,
+		test:        t,
+		stagingArea: stagingArea,
 	}
 }
 
@@ -27,11 +34,11 @@ func (sorter testGhostDAGSorter) Len() int {
 }
 
 func (sorter testGhostDAGSorter) Less(i, j int) bool {
-	ghostdagDataI, err := sorter.tc.GHOSTDAGDataStore().Get(sorter.tc.DatabaseContext(), sorter.slice[i])
+	ghostdagDataI, err := sorter.tc.GHOSTDAGDataStore().Get(sorter.tc.DatabaseContext(), sorter.stagingArea, sorter.slice[i])
 	if err != nil {
 		sorter.test.Fatalf("TestGhostDAGSorter: Failed getting ghostdag data for %s", err)
 	}
-	ghostdagDataJ, err := sorter.tc.GHOSTDAGDataStore().Get(sorter.tc.DatabaseContext(), sorter.slice[j])
+	ghostdagDataJ, err := sorter.tc.GHOSTDAGDataStore().Get(sorter.tc.DatabaseContext(), sorter.stagingArea, sorter.slice[j])
 	if err != nil {
 		sorter.test.Fatalf("TestGhostDAGSorter: Failed getting ghostdag data for %s", err)
 	}

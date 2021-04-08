@@ -5,6 +5,8 @@ import (
 	"sort"
 	"testing"
 
+	"github.com/kaspanet/kaspad/domain/consensus/model"
+
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/app/rpc/rpccontext"
 	"github.com/kaspanet/kaspad/app/rpc/rpchandlers"
@@ -27,6 +29,8 @@ func (d fakeDomain) MiningManager() miningmanager.MiningManager { return nil }
 
 func TestHandleGetBlocks(t *testing.T) {
 	testutils.ForAllNets(t, true, func(t *testing.T, params *dagconfig.Params) {
+		stagingArea := model.NewStagingArea()
+
 		factory := consensus.NewFactory()
 		tc, teardown, err := factory.NewTestConsensus(params, false, "TestHandleGetBlocks")
 		if err != nil {
@@ -55,7 +59,7 @@ func TestHandleGetBlocks(t *testing.T) {
 			antipast := make([]*externalapi.DomainHash, 0, len(slice))
 
 			for _, blockHash := range slice {
-				isInPastOfPovBlock, err := tc.DAGTopologyManager().IsAncestorOf(blockHash, povBlock)
+				isInPastOfPovBlock, err := tc.DAGTopologyManager().IsAncestorOf(stagingArea, blockHash, povBlock)
 				if err != nil {
 					t.Fatalf("Failed doing reachability check: '%v'", err)
 				}
@@ -87,7 +91,7 @@ func TestHandleGetBlocks(t *testing.T) {
 				}
 				splitBlocks = append(splitBlocks, blockHash)
 			}
-			sort.Sort(sort.Reverse(testutils.NewTestGhostDAGSorter(splitBlocks, tc, t)))
+			sort.Sort(sort.Reverse(testutils.NewTestGhostDAGSorter(stagingArea, splitBlocks, tc, t)))
 			restOfSplitBlocks, selectedParent := splitBlocks[:len(splitBlocks)-1], splitBlocks[len(splitBlocks)-1]
 			expectedOrder = append(expectedOrder, selectedParent)
 			expectedOrder = append(expectedOrder, restOfSplitBlocks...)

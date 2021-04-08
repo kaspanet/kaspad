@@ -24,33 +24,31 @@ func (r *reachabilityDataStoreMock) Commit(_ model.DBTransaction) error {
 	panic("implement me")
 }
 
-func (r *reachabilityDataStoreMock) StageReachabilityData(
-	blockHash *externalapi.DomainHash, reachabilityData model.ReachabilityData) {
+func (r *reachabilityDataStoreMock) StageReachabilityData(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash, reachabilityData model.ReachabilityData) {
 
 	r.reachabilityDataStaging[*blockHash] = reachabilityData
 	r.recorder[*blockHash] = struct{}{}
 }
 
-func (r *reachabilityDataStoreMock) StageReachabilityReindexRoot(reachabilityReindexRoot *externalapi.DomainHash) {
+func (r *reachabilityDataStoreMock) StageReachabilityReindexRoot(stagingArea *model.StagingArea, reachabilityReindexRoot *externalapi.DomainHash) {
 	r.reachabilityReindexRootStaging = reachabilityReindexRoot
 }
 
-func (r *reachabilityDataStoreMock) IsAnythingStaged() bool {
+func (r *reachabilityDataStoreMock) IsStaged(*model.StagingArea) bool {
 	panic("implement me")
 }
 
-func (r *reachabilityDataStoreMock) ReachabilityData(_ model.DBReader, blockHash *externalapi.DomainHash) (
-	model.ReachabilityData, error) {
+func (r *reachabilityDataStoreMock) ReachabilityData(dbContext model.DBReader, stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) (model.ReachabilityData, error) {
 
 	return r.reachabilityDataStaging[*blockHash], nil
 }
 
-func (r *reachabilityDataStoreMock) HasReachabilityData(_ model.DBReader, blockHash *externalapi.DomainHash) (bool, error) {
+func (r *reachabilityDataStoreMock) HasReachabilityData(dbContext model.DBReader, stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) (bool, error) {
 	_, ok := r.reachabilityDataStaging[*blockHash]
 	return ok, nil
 }
 
-func (r *reachabilityDataStoreMock) ReachabilityReindexRoot(_ model.DBReader) (*externalapi.DomainHash, error) {
+func (r *reachabilityDataStoreMock) ReachabilityReindexRoot(dbContext model.DBReader, stagingArea *model.StagingArea) (*externalapi.DomainHash, error) {
 	return r.reachabilityReindexRootStaging, nil
 }
 
@@ -98,15 +96,15 @@ func (th *testHelper) generateHash() *externalapi.DomainHash {
 	return externalapi.NewDomainHashFromByteArray(&hashArray)
 }
 
-func (th *testHelper) newNode() *externalapi.DomainHash {
+func (th *testHelper) newNode(stagingArea *model.StagingArea) *externalapi.DomainHash {
 	node := th.generateHash()
-	th.stageData(node, newReachabilityTreeData())
+	th.stageData(stagingArea, node, newReachabilityTreeData())
 	return node
 }
 
-func (th *testHelper) newNodeWithInterval(interval *model.ReachabilityInterval) *externalapi.DomainHash {
-	node := th.newNode()
-	err := th.stageInterval(node, interval)
+func (th *testHelper) newNodeWithInterval(stagingArea *model.StagingArea, interval *model.ReachabilityInterval) *externalapi.DomainHash {
+	node := th.newNode(stagingArea)
+	err := th.stageInterval(stagingArea, node, interval)
 	if err != nil {
 		th.t.Fatalf("stageInteval: %s", err)
 	}
@@ -114,8 +112,8 @@ func (th *testHelper) newNodeWithInterval(interval *model.ReachabilityInterval) 
 	return node
 }
 
-func (th *testHelper) getInterval(node *externalapi.DomainHash) *model.ReachabilityInterval {
-	interval, err := th.interval(node)
+func (th *testHelper) getInterval(stagingArea *model.StagingArea, node *externalapi.DomainHash) *model.ReachabilityInterval {
+	interval, err := th.interval(stagingArea, node)
 	if err != nil {
 		th.t.Fatalf("interval: %s", err)
 	}
@@ -123,12 +121,14 @@ func (th *testHelper) getInterval(node *externalapi.DomainHash) *model.Reachabil
 	return interval
 }
 
-func (th *testHelper) getIntervalSize(node *externalapi.DomainHash) uint64 {
-	return intervalSize(th.getInterval(node))
+func (th *testHelper) getIntervalSize(stagingArea *model.StagingArea, node *externalapi.DomainHash) uint64 {
+	return intervalSize(th.getInterval(stagingArea, node))
 }
 
-func (th *testHelper) remainingIntervalBefore(node *externalapi.DomainHash) *model.ReachabilityInterval {
-	interval, err := th.reachabilityManager.remainingIntervalBefore(node)
+func (th *testHelper) remainingIntervalBefore(
+	stagingArea *model.StagingArea, node *externalapi.DomainHash) *model.ReachabilityInterval {
+
+	interval, err := th.reachabilityManager.remainingIntervalBefore(stagingArea, node)
 	if err != nil {
 		th.t.Fatalf("remainingIntervalBefore: %s", err)
 	}
@@ -136,8 +136,10 @@ func (th *testHelper) remainingIntervalBefore(node *externalapi.DomainHash) *mod
 	return interval
 }
 
-func (th *testHelper) remainingIntervalAfter(node *externalapi.DomainHash) *model.ReachabilityInterval {
-	interval, err := th.reachabilityManager.remainingIntervalAfter(node)
+func (th *testHelper) remainingIntervalAfter(stagingArea *model.StagingArea,
+	node *externalapi.DomainHash) *model.ReachabilityInterval {
+
+	interval, err := th.reachabilityManager.remainingIntervalAfter(stagingArea, node)
 	if err != nil {
 		th.t.Fatalf("remainingIntervalAfter: %s", err)
 	}
@@ -145,15 +147,17 @@ func (th *testHelper) remainingIntervalAfter(node *externalapi.DomainHash) *mode
 	return interval
 }
 
-func (th *testHelper) addChild(node, child, reindexRoot *externalapi.DomainHash) {
-	err := th.reachabilityManager.addChild(node, child, reindexRoot)
+func (th *testHelper) addChild(stagingArea *model.StagingArea, node, child, reindexRoot *externalapi.DomainHash) {
+	err := th.reachabilityManager.addChild(stagingArea, node, child, reindexRoot)
 	if err != nil {
 		th.t.Fatalf("addChild: %s", err)
 	}
 }
 
-func (th *testHelper) isReachabilityTreeAncestorOf(node, other *externalapi.DomainHash) bool {
-	isReachabilityTreeAncestorOf, err := th.reachabilityManager.IsReachabilityTreeAncestorOf(node, other)
+func (th *testHelper) isReachabilityTreeAncestorOf(
+	stagingArea *model.StagingArea, node, other *externalapi.DomainHash) bool {
+
+	isReachabilityTreeAncestorOf, err := th.reachabilityManager.IsReachabilityTreeAncestorOf(stagingArea, node, other)
 	if err != nil {
 		th.t.Fatalf("IsReachabilityTreeAncestorOf: %s", err)
 	}
@@ -180,11 +184,13 @@ func TestAddChild(t *testing.T) {
 	manager := New(nil, nil, reachabilityDataStore).(*reachabilityManager)
 	helper := newTestHelper(manager, t, reachabilityDataStore)
 
+	stagingArea := model.NewStagingArea()
+
 	// Scenario 1: test addChild in a chain
 	//             root -> a -> b -> c...
 	// Create the root node of a new reachability tree
-	root := helper.newNode()
-	err := helper.stageInterval(root, newReachabilityInterval(1, 100))
+	root := helper.newNode(stagingArea)
+	err := helper.stageInterval(stagingArea, root, newReachabilityInterval(1, 100))
 	if err != nil {
 		t.Fatalf("stageInterval: %s", err)
 	}
@@ -192,9 +198,9 @@ func TestAddChild(t *testing.T) {
 	// Add a chain of child nodes just before a reindex occurs (2^6=64 < 100)
 	currentTip := root
 	for i := 0; i < 6; i++ {
-		node := helper.newNode()
+		node := helper.newNode(stagingArea)
 		helper.resetRecorder()
-		helper.addChild(currentTip, node, root)
+		helper.addChild(stagingArea, currentTip, node, root)
 
 		// Expect only the node and its parent to be affected
 		helper.checkIsRecorderContainsOnly(currentTip, node)
@@ -202,9 +208,9 @@ func TestAddChild(t *testing.T) {
 	}
 
 	// Add another node to the tip of the chain to trigger a reindex (100 < 2^7=128)
-	lastChild := helper.newNode()
+	lastChild := helper.newNode(stagingArea)
 	helper.resetRecorder()
-	helper.addChild(currentTip, lastChild, root)
+	helper.addChild(stagingArea, currentTip, lastChild, root)
 
 	// Expect more than just the node and its parent to be modified but not
 	// all the nodes
@@ -213,18 +219,18 @@ func TestAddChild(t *testing.T) {
 	}
 
 	// Expect the tip to have an interval of 1 and remaining interval of 0 both before and after
-	tipIntervalSize := helper.getIntervalSize(lastChild)
+	tipIntervalSize := helper.getIntervalSize(stagingArea, lastChild)
 	if tipIntervalSize != 1 {
 		t.Fatalf("TestAddChild: unexpected tip interval size: want: 1, got: %d", tipIntervalSize)
 	}
 
-	tipRemainingIntervalBefore := helper.remainingIntervalBefore(lastChild)
+	tipRemainingIntervalBefore := helper.remainingIntervalBefore(stagingArea, lastChild)
 
 	if intervalSize(tipRemainingIntervalBefore) != 0 {
 		t.Fatalf("TestAddChild: unexpected tip interval before size: want: 0, got: %d", intervalSize(tipRemainingIntervalBefore))
 	}
 
-	tipRemainingIntervalAfter := helper.remainingIntervalAfter(lastChild)
+	tipRemainingIntervalAfter := helper.remainingIntervalAfter(stagingArea, lastChild)
 	if intervalSize(tipRemainingIntervalAfter) != 0 {
 		t.Fatalf("TestAddChild: unexpected tip interval after size: want: 0, got: %d", intervalSize(tipRemainingIntervalAfter))
 	}
@@ -232,7 +238,7 @@ func TestAddChild(t *testing.T) {
 	// Expect all nodes to be descendant nodes of root
 	currentNode := currentTip
 	for currentNode != root {
-		isReachabilityTreeAncestorOf, err := helper.IsReachabilityTreeAncestorOf(root, currentNode)
+		isReachabilityTreeAncestorOf, err := helper.IsReachabilityTreeAncestorOf(stagingArea, root, currentNode)
 		if err != nil {
 			t.Fatalf("IsReachabilityTreeAncestorOf: %s", err)
 		}
@@ -240,13 +246,13 @@ func TestAddChild(t *testing.T) {
 			t.Fatalf("TestAddChild: currentNode is not a descendant of root")
 		}
 
-		currentNode, err = helper.parent(currentNode)
+		currentNode, err = helper.parent(stagingArea, currentNode)
 		if err != nil {
 			t.Fatalf("parent: %s", err)
 		}
 	}
 
-	err = manager.validateIntervals(root)
+	err = manager.validateIntervals(stagingArea, root)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -254,8 +260,8 @@ func TestAddChild(t *testing.T) {
 	// Scenario 2: test addChild where all nodes are direct descendants of root
 	//             root -> a, b, c...
 	// Create the root node of a new reachability tree
-	root = helper.newNode()
-	err = helper.stageInterval(root, newReachabilityInterval(1, 100))
+	root = helper.newNode(stagingArea)
+	err = helper.stageInterval(stagingArea, root, newReachabilityInterval(1, 100))
 	if err != nil {
 		t.Fatalf("stageInterval: %s", err)
 	}
@@ -263,18 +269,18 @@ func TestAddChild(t *testing.T) {
 	// Add child nodes to root just before a reindex occurs (2^6=64 < 100)
 	childNodes := make([]*externalapi.DomainHash, 6)
 	for i := 0; i < len(childNodes); i++ {
-		childNodes[i] = helper.newNode()
+		childNodes[i] = helper.newNode(stagingArea)
 		helper.resetRecorder()
-		helper.addChild(root, childNodes[i], root)
+		helper.addChild(stagingArea, root, childNodes[i], root)
 
 		// Expect only the node and the root to be affected
 		helper.checkIsRecorderContainsOnly(root, childNodes[i])
 	}
 
 	// Add another node to the root to trigger a reindex (100 < 2^7=128)
-	lastChild = helper.newNode()
+	lastChild = helper.newNode(stagingArea)
 	helper.resetRecorder()
-	helper.addChild(root, lastChild, root)
+	helper.addChild(stagingArea, root, lastChild, root)
 
 	// Expect more than just the node and the root to be modified but not
 	// all the nodes
@@ -283,7 +289,7 @@ func TestAddChild(t *testing.T) {
 	}
 
 	// Expect the last-added child to have an interval of 1 and remaining interval of 0 both before and after
-	lastChildInterval, err := helper.interval(lastChild)
+	lastChildInterval, err := helper.interval(stagingArea, lastChild)
 	if err != nil {
 		t.Fatalf("interval: %s", err)
 	}
@@ -291,18 +297,18 @@ func TestAddChild(t *testing.T) {
 	if intervalSize(lastChildInterval) != 1 {
 		t.Fatalf("TestAddChild: unexpected lastChild interval size: want: 1, got: %d", intervalSize(lastChildInterval))
 	}
-	lastChildRemainingIntervalBeforeSize := intervalSize(helper.remainingIntervalBefore(lastChild))
+	lastChildRemainingIntervalBeforeSize := intervalSize(helper.remainingIntervalBefore(stagingArea, lastChild))
 	if lastChildRemainingIntervalBeforeSize != 0 {
 		t.Fatalf("TestAddChild: unexpected lastChild interval before size: want: 0, got: %d", lastChildRemainingIntervalBeforeSize)
 	}
-	lastChildRemainingIntervalAfterSize := intervalSize(helper.remainingIntervalAfter(lastChild))
+	lastChildRemainingIntervalAfterSize := intervalSize(helper.remainingIntervalAfter(stagingArea, lastChild))
 	if lastChildRemainingIntervalAfterSize != 0 {
 		t.Fatalf("TestAddChild: unexpected lastChild interval after size: want: 0, got: %d", lastChildRemainingIntervalAfterSize)
 	}
 
 	// Expect all nodes to be descendant nodes of root
 	for _, childNode := range childNodes {
-		isReachabilityTreeAncestorOf, err := helper.IsReachabilityTreeAncestorOf(root, childNode)
+		isReachabilityTreeAncestorOf, err := helper.IsReachabilityTreeAncestorOf(stagingArea, root, childNode)
 		if err != nil {
 			t.Fatalf("IsReachabilityTreeAncestorOf: %s", err)
 		}
@@ -312,7 +318,7 @@ func TestAddChild(t *testing.T) {
 		}
 	}
 
-	err = manager.validateIntervals(root)
+	err = manager.validateIntervals(stagingArea, root)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -323,29 +329,31 @@ func TestReachabilityTreeNodeIsAncestorOf(t *testing.T) {
 	manager := New(nil, nil, reachabilityDataStore).(*reachabilityManager)
 	helper := newTestHelper(manager, t, reachabilityDataStore)
 
-	root := helper.newNode()
+	stagingArea := model.NewStagingArea()
+
+	root := helper.newNode(stagingArea)
 	currentTip := root
 	const numberOfDescendants = 6
 	descendants := make([]*externalapi.DomainHash, numberOfDescendants)
 	for i := 0; i < numberOfDescendants; i++ {
-		node := helper.newNode()
-		helper.addChild(currentTip, node, root)
+		node := helper.newNode(stagingArea)
+		helper.addChild(stagingArea, currentTip, node, root)
 		descendants[i] = node
 		currentTip = node
 	}
 
 	// Expect all descendants to be in the future of root
 	for _, node := range descendants {
-		if !helper.isReachabilityTreeAncestorOf(root, node) {
+		if !helper.isReachabilityTreeAncestorOf(stagingArea, root, node) {
 			t.Fatalf("TestReachabilityTreeNodeIsAncestorOf: node is not a descendant of root")
 		}
 	}
 
-	if !helper.isReachabilityTreeAncestorOf(root, root) {
+	if !helper.isReachabilityTreeAncestorOf(stagingArea, root, root) {
 		t.Fatalf("TestReachabilityTreeNodeIsAncestorOf: root is expected to be an ancestor of root")
 	}
 
-	err := manager.validateIntervals(root)
+	err := manager.validateIntervals(stagingArea, root)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -642,17 +650,19 @@ func TestHasAncestorOf(t *testing.T) {
 	manager := New(nil, nil, reachabilityDataStore).(*reachabilityManager)
 	helper := newTestHelper(manager, t, reachabilityDataStore)
 
+	stagingArea := model.NewStagingArea()
+
 	futureCoveringTreeNodeSet := model.FutureCoveringTreeNodeSet{
-		helper.newNodeWithInterval(newReachabilityInterval(2, 3)),
-		helper.newNodeWithInterval(newReachabilityInterval(4, 67)),
-		helper.newNodeWithInterval(newReachabilityInterval(67, 77)),
-		helper.newNodeWithInterval(newReachabilityInterval(657, 789)),
-		helper.newNodeWithInterval(newReachabilityInterval(1000, 1000)),
-		helper.newNodeWithInterval(newReachabilityInterval(1920, 1921)),
+		helper.newNodeWithInterval(stagingArea, newReachabilityInterval(2, 3)),
+		helper.newNodeWithInterval(stagingArea, newReachabilityInterval(4, 67)),
+		helper.newNodeWithInterval(stagingArea, newReachabilityInterval(67, 77)),
+		helper.newNodeWithInterval(stagingArea, newReachabilityInterval(657, 789)),
+		helper.newNodeWithInterval(stagingArea, newReachabilityInterval(1000, 1000)),
+		helper.newNodeWithInterval(stagingArea, newReachabilityInterval(1920, 1921)),
 	}
 
-	nodeWithFutureCoveringTreeNodeSet := helper.newNode()
-	err := helper.stageFutureCoveringSet(nodeWithFutureCoveringTreeNodeSet, futureCoveringTreeNodeSet)
+	nodeWithFutureCoveringTreeNodeSet := helper.newNode(stagingArea)
+	err := helper.stageFutureCoveringSet(stagingArea, nodeWithFutureCoveringTreeNodeSet, futureCoveringTreeNodeSet)
 	if err != nil {
 		t.Fatalf("stageFutureCoveringSet: %s", err)
 	}
@@ -662,33 +672,33 @@ func TestHasAncestorOf(t *testing.T) {
 		expectedResult bool
 	}{
 		{
-			treeNode:       helper.newNodeWithInterval(newReachabilityInterval(1, 1)),
+			treeNode:       helper.newNodeWithInterval(stagingArea, newReachabilityInterval(1, 1)),
 			expectedResult: false,
 		},
 		{
-			treeNode:       helper.newNodeWithInterval(newReachabilityInterval(5, 7)),
+			treeNode:       helper.newNodeWithInterval(stagingArea, newReachabilityInterval(5, 7)),
 			expectedResult: true,
 		},
 		{
-			treeNode:       helper.newNodeWithInterval(newReachabilityInterval(67, 76)),
+			treeNode:       helper.newNodeWithInterval(stagingArea, newReachabilityInterval(67, 76)),
 			expectedResult: true,
 		},
 		{
-			treeNode:       helper.newNodeWithInterval(newReachabilityInterval(78, 100)),
+			treeNode:       helper.newNodeWithInterval(stagingArea, newReachabilityInterval(78, 100)),
 			expectedResult: false,
 		},
 		{
-			treeNode:       helper.newNodeWithInterval(newReachabilityInterval(1980, 2000)),
+			treeNode:       helper.newNodeWithInterval(stagingArea, newReachabilityInterval(1980, 2000)),
 			expectedResult: false,
 		},
 		{
-			treeNode:       helper.newNodeWithInterval(newReachabilityInterval(1920, 1920)),
+			treeNode:       helper.newNodeWithInterval(stagingArea, newReachabilityInterval(1920, 1920)),
 			expectedResult: true,
 		},
 	}
 
 	for i, test := range tests {
-		result, err := helper.futureCoveringSetHasAncestorOf(nodeWithFutureCoveringTreeNodeSet, test.treeNode)
+		result, err := helper.futureCoveringSetHasAncestorOf(stagingArea, nodeWithFutureCoveringTreeNodeSet, test.treeNode)
 		if err != nil {
 			t.Fatalf("futureCoveringSetHasAncestorOf: %s", err)
 		}
@@ -705,13 +715,15 @@ func TestInsertToFutureCoveringSet(t *testing.T) {
 	manager := New(nil, nil, reachabilityDataStore).(*reachabilityManager)
 	helper := newTestHelper(manager, t, reachabilityDataStore)
 
+	stagingArea := model.NewStagingArea()
+
 	nodeByIntervalMap := make(map[model.ReachabilityInterval]*externalapi.DomainHash)
 	nodeByInterval := func(interval *model.ReachabilityInterval) *externalapi.DomainHash {
 		if node, ok := nodeByIntervalMap[*interval]; ok {
 			return node
 		}
 
-		nodeByIntervalMap[*interval] = helper.newNodeWithInterval(interval)
+		nodeByIntervalMap[*interval] = helper.newNodeWithInterval(stagingArea, interval)
 		return nodeByIntervalMap[*interval]
 	}
 
@@ -791,20 +803,20 @@ func TestInsertToFutureCoveringSet(t *testing.T) {
 		futureCoveringTreeNodeSetClone := make(model.FutureCoveringTreeNodeSet, len(futureCoveringTreeNodeSet))
 		copy(futureCoveringTreeNodeSetClone, futureCoveringTreeNodeSet)
 
-		node := helper.newNode()
-		err := helper.stageFutureCoveringSet(node, futureCoveringTreeNodeSetClone)
+		node := helper.newNode(stagingArea)
+		err := helper.stageFutureCoveringSet(stagingArea, node, futureCoveringTreeNodeSetClone)
 		if err != nil {
 			t.Fatalf("stageFutureCoveringSet: %s", err)
 		}
 
 		for _, treeNode := range test.toInsert {
-			err := helper.insertToFutureCoveringSet(node, treeNode)
+			err := helper.insertToFutureCoveringSet(stagingArea, node, treeNode)
 			if err != nil {
 				t.Fatalf("insertToFutureCoveringSet: %s", err)
 			}
 		}
 
-		resultFutureCoveringTreeNodeSet, err := helper.futureCoveringSet(node)
+		resultFutureCoveringTreeNodeSet, err := helper.futureCoveringSet(stagingArea, node)
 		if err != nil {
 			t.Fatalf("futureCoveringSet: %s", err)
 		}
@@ -913,15 +925,17 @@ func TestReindexIntervalErrors(t *testing.T) {
 	manager := New(nil, nil, reachabilityDataStore).(*reachabilityManager)
 	helper := newTestHelper(manager, t, reachabilityDataStore)
 
+	stagingArea := model.NewStagingArea()
+
 	// Create a treeNode and give it size = 100
-	treeNode := helper.newNodeWithInterval(newReachabilityInterval(0, 99))
+	treeNode := helper.newNodeWithInterval(stagingArea, newReachabilityInterval(0, 99))
 
 	// Add a chain of 100 child treeNodes to treeNode
 	var err error
 	currentTreeNode := treeNode
 	for i := 0; i < 100; i++ {
-		childTreeNode := helper.newNode()
-		err = helper.reachabilityManager.addChild(currentTreeNode, childTreeNode, treeNode)
+		childTreeNode := helper.newNode(stagingArea)
+		err = helper.reachabilityManager.addChild(stagingArea, currentTreeNode, childTreeNode, treeNode)
 		if err != nil {
 			break
 		}
@@ -948,6 +962,8 @@ func BenchmarkReindexInterval(b *testing.B) {
 	manager := New(nil, nil, reachabilityDataStore).(*reachabilityManager)
 	helper := newTestHelper(manager, b, reachabilityDataStore)
 
+	stagingArea := model.NewStagingArea()
+
 	for i := 0; i < b.N; i++ {
 		b.StopTimer()
 
@@ -956,28 +972,28 @@ func BenchmarkReindexInterval(b *testing.B) {
 		// its first child gets half of the interval, so a reindex
 		// from the root should happen after adding subTreeSize
 		// nodes.
-		root := helper.newNodeWithInterval(newReachabilityInterval(0, subTreeSize*2))
+		root := helper.newNodeWithInterval(stagingArea, newReachabilityInterval(0, subTreeSize*2))
 
 		currentTreeNode := root
 		for i := 0; i < subTreeSize; i++ {
-			childTreeNode := helper.newNode()
-			helper.addChild(currentTreeNode, childTreeNode, root)
+			childTreeNode := helper.newNode(stagingArea)
+			helper.addChild(stagingArea, currentTreeNode, childTreeNode, root)
 
 			currentTreeNode = childTreeNode
 		}
 
-		originalRemainingInterval := helper.remainingIntervalAfter(root).Clone()
+		originalRemainingInterval := helper.remainingIntervalAfter(stagingArea, root).Clone()
 		// After we added subTreeSize nodes, adding the next
 		// node should lead to a reindex from root.
-		fullReindexTriggeringNode := helper.newNode()
+		fullReindexTriggeringNode := helper.newNode(stagingArea)
 		b.StartTimer()
-		err := helper.reachabilityManager.addChild(currentTreeNode, fullReindexTriggeringNode, root)
+		err := helper.reachabilityManager.addChild(stagingArea, currentTreeNode, fullReindexTriggeringNode, root)
 		b.StopTimer()
 		if err != nil {
 			b.Fatalf("addChild: %s", err)
 		}
 
-		if helper.remainingIntervalAfter(root).Equal(originalRemainingInterval) {
+		if helper.remainingIntervalAfter(stagingArea, root).Equal(originalRemainingInterval) {
 			b.Fatal("Expected a reindex from root, but it didn't happen")
 		}
 	}
@@ -988,27 +1004,29 @@ func TestReachabilityTreeNodeString(t *testing.T) {
 	manager := New(nil, nil, reachabilityDataStore).(*reachabilityManager)
 	helper := newTestHelper(manager, t, reachabilityDataStore)
 
-	treeNodeA := helper.newNodeWithInterval(newReachabilityInterval(100, 199))
-	treeNodeB1 := helper.newNodeWithInterval(newReachabilityInterval(100, 150))
-	treeNodeB2 := helper.newNodeWithInterval(newReachabilityInterval(150, 199))
-	treeNodeC := helper.newNodeWithInterval(newReachabilityInterval(100, 149))
+	stagingArea := model.NewStagingArea()
 
-	err := helper.stageAddChild(treeNodeA, treeNodeB1)
+	treeNodeA := helper.newNodeWithInterval(stagingArea, newReachabilityInterval(100, 199))
+	treeNodeB1 := helper.newNodeWithInterval(stagingArea, newReachabilityInterval(100, 150))
+	treeNodeB2 := helper.newNodeWithInterval(stagingArea, newReachabilityInterval(150, 199))
+	treeNodeC := helper.newNodeWithInterval(stagingArea, newReachabilityInterval(100, 149))
+
+	err := helper.stageAddChild(stagingArea, treeNodeA, treeNodeB1)
 	if err != nil {
 		t.Fatalf("stageAddChild: %s", err)
 	}
 
-	err = helper.stageAddChild(treeNodeA, treeNodeB2)
+	err = helper.stageAddChild(stagingArea, treeNodeA, treeNodeB2)
 	if err != nil {
 		t.Fatalf("stageAddChild: %s", err)
 	}
 
-	err = helper.stageAddChild(treeNodeB2, treeNodeC)
+	err = helper.stageAddChild(stagingArea, treeNodeB2, treeNodeC)
 	if err != nil {
 		t.Fatalf("stageAddChild: %s", err)
 	}
 
-	str, err := manager.String(treeNodeA)
+	str, err := manager.String(stagingArea, treeNodeA)
 	if err != nil {
 		t.Fatalf("String: %s", err)
 	}

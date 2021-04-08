@@ -25,14 +25,17 @@ func (f *FlowContext) AddTransaction(tx *externalapi.DomainTransaction) error {
 	return f.Broadcast(inv)
 }
 
-func (f *FlowContext) updateTransactionsToRebroadcast(block *externalapi.DomainBlock) {
+func (f *FlowContext) updateTransactionsToRebroadcast(addedBlocks []*externalapi.DomainBlock) {
 	f.transactionsToRebroadcastLock.Lock()
 	defer f.transactionsToRebroadcastLock.Unlock()
-	// Note: if the block is red, its transactions won't be rebroadcasted
-	// anymore, although they are not included in the UTXO set.
-	// This is probably ok, since red blocks are quite rare.
-	for _, tx := range block.Transactions {
-		delete(f.transactionsToRebroadcast, *consensushashing.TransactionID(tx))
+
+	for _, block := range addedBlocks {
+		// Note: if a transaction is included in the DAG but not accepted,
+		// it won't be rebroadcast anymore, although it is not included in
+		// the UTXO set
+		for _, tx := range block.Transactions {
+			delete(f.transactionsToRebroadcast, *consensushashing.TransactionID(tx))
+		}
 	}
 }
 
