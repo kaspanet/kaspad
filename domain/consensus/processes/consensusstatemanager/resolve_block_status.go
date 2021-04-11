@@ -327,6 +327,9 @@ func (csm *consensusStateManager) reverseUTXODiffs(stagingArea *model.StagingAre
 	unverifiedBlocks []*externalapi.DomainHash, tipUTXOSet, oneBlockBeforeTipUTXOSet externalapi.UTXODiff,
 	useSeparateStagingAreaPerBlock bool) error {
 
+	onEnd := logger.LogAndMeasureExecutionTime(log, "reverseUTXODiffs")
+	defer onEnd()
+
 	// During the process of resolving a chain of blocks, we temporarily set all blocks' (except the tip)
 	// UTXODiffChild to be the selected parent.
 	// Once the process is complete, we can reverse said chain, to now go directly to virtual through the relevant tip
@@ -337,6 +340,8 @@ func (csm *consensusStateManager) reverseUTXODiffs(stagingArea *model.StagingAre
 
 	tip, oneBlockBeforeTip, restOfBlocks :=
 		unverifiedBlocks[0], unverifiedBlocks[1], unverifiedBlocks[2:]
+
+	log.Debugf("Reversing %d utxoDiffs", len(restOfBlocks)+1)
 
 	// Set previousUTXODiff and PreviousBlock to oneBlockBeforeTip before we start touching them,
 	// since oneBlockBeforeTip's UTXOSet is going to be over-written in the next step
@@ -362,8 +367,10 @@ func (csm *consensusStateManager) reverseUTXODiffs(stagingArea *model.StagingAre
 		csm.utxoDiffStore.Stage(stagingArea, oneBlockBeforeTip, oneBlockBeforeTipDiff, tip)
 	}
 
+	log.Trace("Reversed 1 utxoDiff")
+
 	// Now go over the rest of the blocks and assign for every block Bi.UTXODiff = Bi+1.UTXODiff.Reversed()
-	for _, currentBlock := range restOfBlocks {
+	for i, currentBlock := range restOfBlocks {
 		currentUTXODiff := previousUTXODiff.Reversed()
 
 		// retrieve current utxoDiff for Bi, to be used by next block
@@ -382,6 +389,8 @@ func (csm *consensusStateManager) reverseUTXODiffs(stagingArea *model.StagingAre
 		}
 
 		previousBlock = currentBlock
+
+		log.Tracef("Reversed %d utxoDiffs", i+1) // +1 because the first block is separate
 	}
 
 	return nil
