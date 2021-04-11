@@ -23,11 +23,15 @@ func (t *testReachabilityManager) SetReachabilityReindexWindow(reindexWindow uin
 }
 
 func (t *testReachabilityManager) ValidateIntervals(root *externalapi.DomainHash) error {
-	return t.reachabilityManager.validateIntervals(root)
+	stagingArea := model.NewStagingArea()
+
+	return t.reachabilityManager.validateIntervals(stagingArea, root)
 }
 
 func (t *testReachabilityManager) GetAllNodes(root *externalapi.DomainHash) ([]*externalapi.DomainHash, error) {
-	return t.reachabilityManager.getAllNodes(root)
+	stagingArea := model.NewStagingArea()
+
+	return t.reachabilityManager.getAllNodes(stagingArea, root)
 }
 
 // NewTestReachabilityManager creates an instance of a TestReachabilityManager

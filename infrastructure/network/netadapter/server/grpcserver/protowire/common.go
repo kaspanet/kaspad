@@ -105,7 +105,6 @@ func (x *NetAddress) toAppMessage() (*appmessage.NetAddress, error) {
 	}
 	return &appmessage.NetAddress{
 		Timestamp: mstime.UnixMilliseconds(x.Timestamp),
-		Services:  appmessage.ServiceFlag(x.Services),
 		IP:        x.Ip,
 		Port:      uint16(x.Port),
 	}, nil
@@ -114,7 +113,6 @@ func (x *NetAddress) toAppMessage() (*appmessage.NetAddress, error) {
 func appMessageNetAddressToProto(address *appmessage.NetAddress) *NetAddress {
 	return &NetAddress{
 		Timestamp: address.Timestamp.UnixMilliseconds(),
-		Services:  uint64(address.Services),
 		Ip:        address.IP,
 		Port:      uint32(address.Port),
 	}
@@ -145,7 +143,7 @@ func (x *UtxoEntry) toAppMessage() (*appmessage.UTXOEntry, error) {
 	return &appmessage.UTXOEntry{
 		Amount:          x.Amount,
 		ScriptPublicKey: scriptPublicKey,
-		BlockBlueScore:  x.BlockBlueScore,
+		BlockDAAScore:   x.BlockDaaScore,
 		IsCoinbase:      x.IsCoinbase,
 	}, nil
 }

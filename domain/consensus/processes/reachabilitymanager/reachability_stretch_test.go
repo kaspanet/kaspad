@@ -3,15 +3,18 @@ package reachabilitymanager_test
 import (
 	"compress/gzip"
 	"fmt"
+	"math"
+	"math/rand"
+	"os"
+	"testing"
+
+	"github.com/kaspanet/kaspad/domain/consensus/model"
+
 	"github.com/kaspanet/kaspad/domain/consensus"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/model/testapi"
 	"github.com/kaspanet/kaspad/domain/dagconfig"
 	"github.com/pkg/errors"
-	"math"
-	"math/rand"
-	"os"
-	"testing"
 )
 
 // Test configuration
@@ -111,10 +114,12 @@ func addArbitraryBlocks(t *testing.T, tc testapi.TestConsensus) {
 }
 
 func addAlternatingReorgBlocks(t *testing.T, tc testapi.TestConsensus, tips []*externalapi.DomainHash) {
+	stagingArea := model.NewStagingArea()
+
 	// Create alternating reorgs to test the cases where
 	// reindex root is out of current header selected tip chain
 
-	reindexRoot, err := tc.ReachabilityDataStore().ReachabilityReindexRoot(tc.DatabaseContext())
+	reindexRoot, err := tc.ReachabilityDataStore().ReachabilityReindexRoot(tc.DatabaseContext(), stagingArea)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -123,7 +128,7 @@ func addAlternatingReorgBlocks(t *testing.T, tc testapi.TestConsensus, tips []*e
 	// does not (reorgTip). The latter is expected to exist in json attack files.
 	var chainTip, reorgTip *externalapi.DomainHash
 	for _, block := range tips {
-		isRootAncestorOfTip, err := tc.ReachabilityManager().IsReachabilityTreeAncestorOf(reindexRoot, block)
+		isRootAncestorOfTip, err := tc.ReachabilityManager().IsReachabilityTreeAncestorOf(stagingArea, reindexRoot, block)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -143,12 +148,12 @@ func addAlternatingReorgBlocks(t *testing.T, tc testapi.TestConsensus, tips []*e
 		t.Fatal(errors.Errorf("reindex root is not on any header tip chain, this is unexpected behavior"))
 	}
 
-	chainTipGHOSTDAGData, err := tc.GHOSTDAGDataStore().Get(tc.DatabaseContext(), chainTip)
+	chainTipGHOSTDAGData, err := tc.GHOSTDAGDataStore().Get(tc.DatabaseContext(), stagingArea, chainTip)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	reorgTipGHOSTDAGData, err := tc.GHOSTDAGDataStore().Get(tc.DatabaseContext(), reorgTip)
+	reorgTipGHOSTDAGData, err := tc.GHOSTDAGDataStore().Get(tc.DatabaseContext(), stagingArea, reorgTip)
 	if err != nil {
 		t.Fatal(err)
 	}

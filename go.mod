@@ -9,10 +9,11 @@ require (
 	github.com/golang/protobuf v1.4.2
 	github.com/jessevdk/go-flags v1.4.0
 	github.com/jrick/logrotate v1.0.0
+	github.com/kaspanet/go-muhash v0.0.4
 	github.com/kaspanet/go-secp256k1 v0.0.3
 	github.com/pkg/errors v0.9.1
 	github.com/syndtr/goleveldb v1.0.1-0.20190923125748-758128399b1d
-	golang.org/x/crypto v0.0.0-20201016220609-9e8e0b390897
+	golang.org/x/crypto v0.0.0-20210317152858-513c2a44f670
 	google.golang.org/grpc v1.33.1
 	google.golang.org/protobuf v1.25.0
 )

@@ -1,6 +1,7 @@
 package blockvalidator
 
 import (
+	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/model/pow"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
@@ -11,26 +12,28 @@ import (
 	"github.com/pkg/errors"
 )
 
-func (v *blockValidator) ValidatePruningPointViolationAndProofOfWorkAndDifficulty(blockHash *externalapi.DomainHash) error {
+func (v *blockValidator) ValidatePruningPointViolationAndProofOfWorkAndDifficulty(stagingArea *model.StagingArea,
+	blockHash *externalapi.DomainHash) error {
+
 	onEnd := logger.LogAndMeasureExecutionTime(log, "ValidatePruningPointViolationAndProofOfWorkAndDifficulty")
 	defer onEnd()
 
-	header, err := v.blockHeaderStore.BlockHeader(v.databaseContext, blockHash)
+	header, err := v.blockHeaderStore.BlockHeader(v.databaseContext, stagingArea, blockHash)
 	if err != nil {
 		return err
 	}
 
-	err = v.checkParentHeadersExist(header)
+	err = v.checkParentHeadersExist(stagingArea, header)
 	if err != nil {
 		return err
 	}
 
-	err = v.checkParentsIncest(header)
+	err = v.checkParentsIncest(stagingArea, header)
 	if err != nil {
 		return err
 	}
 
-	err = v.checkPruningPointViolation(header)
+	err = v.checkPruningPointViolation(stagingArea, header)
 	if err != nil {
 		return err
 	}
@@ -40,12 +43,12 @@ func (v *blockValidator) ValidatePruningPointViolationAndProofOfWorkAndDifficult
 		return err
 	}
 
-	err = v.dagTopologyManager.SetParents(blockHash, header.ParentHashes())
+	err = v.dagTopologyManager.SetParents(stagingArea, blockHash, header.ParentHashes())
 	if err != nil {
 		return err
 	}
 
-	err = v.validateDifficulty(blockHash)
+	err = v.validateDifficulty(stagingArea, blockHash)
 	if err != nil {
 		return err
 	}
@@ -53,9 +56,9 @@ func (v *blockValidator) ValidatePruningPointViolationAndProofOfWorkAndDifficult
 	return nil
 }
 
-func (v *blockValidator) validateDifficulty(blockHash *externalapi.DomainHash) error {
+func (v *blockValidator) validateDifficulty(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) error {
 	// We need to calculate GHOSTDAG for the block in order to check its difficulty
-	err := v.ghostdagManager.GHOSTDAG(blockHash)
+	err := v.ghostdagManager.GHOSTDAG(stagingArea, blockHash)
 	if err != nil {
 		return err
 	}
@@ -63,12 +66,12 @@ func (v *blockValidator) validateDifficulty(blockHash *externalapi.DomainHash) e
 	// Ensure the difficulty specified in the block header matches
 	// the calculated difficulty based on the previous block and
 	// difficulty retarget rules.
-	expectedBits, err := v.difficultyManager.RequiredDifficulty(blockHash)
+	expectedBits, err := v.difficultyManager.StageDAADataAndReturnRequiredDifficulty(stagingArea, blockHash)
 	if err != nil {
 		return err
 	}
 
-	header, err := v.blockHeaderStore.BlockHeader(v.databaseContext, blockHash)
+	header, err := v.blockHeaderStore.BlockHeader(v.databaseContext, stagingArea, blockHash)
 	if err != nil {
 		return err
 	}
@@ -110,15 +113,15 @@ func (v *blockValidator) checkProofOfWork(header externalapi.BlockHeader) error 
 	return nil
 }
 
-func (v *blockValidator) checkParentHeadersExist(header externalapi.BlockHeader) error {
+func (v *blockValidator) checkParentHeadersExist(stagingArea *model.StagingArea, header externalapi.BlockHeader) error {
 	missingParentHashes := []*externalapi.DomainHash{}
 	for _, parent := range header.ParentHashes() {
-		parentHeaderExists, err := v.blockHeaderStore.HasBlockHeader(v.databaseContext, parent)
+		parentHeaderExists, err := v.blockHeaderStore.HasBlockHeader(v.databaseContext, stagingArea, parent)
 		if err != nil {
 			return err
 		}
 		if !parentHeaderExists {
-			parentStatus, err := v.blockStatusStore.Get(v.databaseContext, parent)
+			parentStatus, err := v.blockStatusStore.Get(v.databaseContext, stagingArea, parent)
 			if err != nil {
 				if !database.IsNotFoundError(err) {
 					return err
@@ -138,10 +141,10 @@ func (v *blockValidator) checkParentHeadersExist(header externalapi.BlockHeader)
 
 	return nil
 }
-func (v *blockValidator) checkPruningPointViolation(header externalapi.BlockHeader) error {
+func (v *blockValidator) checkPruningPointViolation(stagingArea *model.StagingArea, header externalapi.BlockHeader) error {
 	// check if the pruning point is on past of at least one parent of the header's parents.
 
-	hasPruningPoint, err := v.pruningStore.HasPruningPoint(v.databaseContext)
+	hasPruningPoint, err := v.pruningStore.HasPruningPoint(v.databaseContext, stagingArea)
 	if err != nil {
 		return err
 	}
@@ -151,12 +154,12 @@ func (v *blockValidator) checkPruningPointViolation(header externalapi.BlockHead
 		return nil
 	}
 
-	pruningPoint, err := v.pruningStore.PruningPoint(v.databaseContext)
+	pruningPoint, err := v.pruningStore.PruningPoint(v.databaseContext, stagingArea)
 	if err != nil {
 		return err
 	}
 
-	isAncestorOfAny, err := v.dagTopologyManager.IsAncestorOfAny(pruningPoint, header.ParentHashes())
+	isAncestorOfAny, err := v.dagTopologyManager.IsAncestorOfAny(stagingArea, pruningPoint, header.ParentHashes())
 	if err != nil {
 		return err
 	}

@@ -1,6 +1,12 @@
 package blockvalidator_test
 
 import (
+	"math"
+	"math/big"
+	"math/rand"
+	"testing"
+	"time"
+
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/pow"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
@@ -10,11 +16,6 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/utils/merkle"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/mining"
 	"github.com/kaspanet/kaspad/util/difficulty"
-	"math"
-	"math/big"
-	"math/rand"
-	"testing"
-	"time"
 
 	"github.com/kaspanet/kaspad/domain/consensus"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
@@ -157,7 +158,8 @@ func TestCheckParentHeadersExist(t *testing.T) {
 			t.Fatalf("unexpected missing parents %s", errMissingParents.MissingParentHashes)
 		}
 
-		invalidBlock, _, err := tc.BuildBlockWithParents([]*externalapi.DomainHash{params.GenesisHash}, nil, nil)
+		invalidBlock, _, err := tc.BuildBlockWithParents(
+			[]*externalapi.DomainHash{params.GenesisHash}, nil, nil)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -246,16 +248,18 @@ func TestCheckPruningPointViolation(t *testing.T) {
 // TestValidateDifficulty verifies that in case of a block with an unexpected difficulty,
 // an appropriate error message (ErrUnexpectedDifficulty) will be returned on the
 // function ValidatePruningPointViolationAndProofOfWorkAndDifficulty. The required difficulty is
-// "calculated" by the function (dm *mocDifficultyManager) RequiredDifficulty ,
-// where mocDifficultyManager is special implementation of the type DifficultyManager for this test (defined below).
+// "calculated" by the mocDifficultyManager, where mocDifficultyManager is special implementation
+// of the type DifficultyManager for this test (defined below).
 func TestValidateDifficulty(t *testing.T) {
 	testutils.ForAllNets(t, true, func(t *testing.T, params *dagconfig.Params) {
-
 		factory := consensus.NewFactory()
 		mocDifficulty := &mocDifficultyManager{}
-		factory.SetTestDifficultyManager(func(model.DBReader, model.GHOSTDAGManager, model.GHOSTDAGDataStore,
-			model.BlockHeaderStore, model.DAABlocksStore, model.DAGTopologyManager, model.DAGTraversalManager, *big.Int, int, bool, time.Duration,
-			*externalapi.DomainHash) model.DifficultyManager {
+		factory.SetTestDifficultyManager(func(_ model.DBReader, _ model.GHOSTDAGManager, _ model.GHOSTDAGDataStore,
+			_ model.BlockHeaderStore, daaBlocksStore model.DAABlocksStore, _ model.DAGTopologyManager,
+			_ model.DAGTraversalManager, _ *big.Int, _ int, _ bool, _ time.Duration,
+			_ *externalapi.DomainHash) model.DifficultyManager {
+
+			mocDifficulty.daaBlocksStore = daaBlocksStore
 			return mocDifficulty
 		})
 		genesisDifficulty := params.GenesisBlock.Header.Bits()
@@ -278,12 +282,13 @@ func TestValidateDifficulty(t *testing.T) {
 			t.Fatalf("TestValidateDifficulty: Failed build block with parents: %v.", err)
 		}
 		blockHash := consensushashing.BlockHash(block)
-		tc.BlockStore().Stage(blockHash, block)
-		tc.BlockHeaderStore().Stage(blockHash, block.Header)
+		stagingArea := model.NewStagingArea()
+		tc.BlockStore().Stage(stagingArea, blockHash, block)
+		tc.BlockHeaderStore().Stage(stagingArea, blockHash, block.Header)
 		wrongTestDifficulty := mocDifficulty.testDifficulty + uint32(5)
 		mocDifficulty.testDifficulty = wrongTestDifficulty
 
-		err = tc.BlockValidator().ValidatePruningPointViolationAndProofOfWorkAndDifficulty(blockHash)
+		err = tc.BlockValidator().ValidatePruningPointViolationAndProofOfWorkAndDifficulty(stagingArea, blockHash)
 		if err == nil || !errors.Is(err, ruleerrors.ErrUnexpectedDifficulty) {
 			t.Fatalf("Expected block to be invalid with err: %v, instead found: %v", ruleerrors.ErrUnexpectedDifficulty, err)
 		}
@@ -293,9 +298,19 @@ func TestValidateDifficulty(t *testing.T) {
 type mocDifficultyManager struct {
 	testDifficulty  uint32
 	testGenesisBits uint32
+	daaBlocksStore  model.DAABlocksStore
 }
 
 // RequiredDifficulty returns the difficulty required for the test
-func (dm *mocDifficultyManager) RequiredDifficulty(*externalapi.DomainHash) (uint32, error) {
+func (dm *mocDifficultyManager) RequiredDifficulty(*model.StagingArea, *externalapi.DomainHash) (uint32, error) {
+	return dm.testDifficulty, nil
+}
+
+// StageDAADataAndReturnRequiredDifficulty returns the difficulty required for the test
+func (dm *mocDifficultyManager) StageDAADataAndReturnRequiredDifficulty(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) (uint32, error) {
+	// Populate daaBlocksStore with fake values
+	dm.daaBlocksStore.StageDAAScore(stagingArea, blockHash, 0)
+	dm.daaBlocksStore.StageBlockDAAAddedBlocks(stagingArea, blockHash, nil)
+
 	return dm.testDifficulty, nil
 }

@@ -49,7 +49,6 @@ type TestConsensus interface {
 		*externalapi.BlockInsertionResult, error)
 
 	MineJSON(r io.Reader, blockType MineJSONBlockType) (tips []*externalapi.DomainHash, err error)
-	DiscardAllStores()
 
 	RenderDAGToDot(filename string) error
 

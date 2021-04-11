@@ -18,21 +18,21 @@ const (
 	rpcAddress2 = "127.0.0.1:12346"
 	rpcAddress3 = "127.0.0.1:12347"
 
-	miningAddress1           = "kaspasim:qzpj2cfa9m40w9m2cmr8pvfuqpp32mzzwsuw6ukhfd"
-	miningAddress1PrivateKey = "be9e9884f03e687166479e22d21b064db7903d69b5a46878aae66521c01a6094"
+	miningAddress1           = "kaspasim:qr79e37hxdgkn4xjjmfxvqvayc5gsmsql2660d08u9ej9vnc8lzcywr265u64"
+	miningAddress1PrivateKey = "0ec5d7308f65717f3f0c3e4d962d73056c1c255a16593b3989589281b51ad5bc"
 
-	miningAddress2           = "kaspasim:qr7w7nqsdnc3zddm6u8s9fex4ysk95hm3v30q353ym"
-	miningAddress2PrivateKey = "98bd8d8e1f7078abefd017839f83edd0e3c8226ed4989e4d7a8bceb5935de193"
+	miningAddress2           = "kaspasim:qpvr825ypd2fzq779yl83zvte2r4wlgxwra625rgthk9jj96d4cxgsegwryhg"
+	miningAddress2PrivateKey = "2a2e99d4a5c3e6d4add69e7baf66b9c7a2f17e74fad86cbd36a3a6815cecc10e"
 
-	miningAddress3           = "kaspasim:qz7n8gfak3j2wt9vywy5ljhs3v3xu7lgmutfjqaay5"
-	miningAddress3PrivateKey = "eb0af684f2cdbb4ed2d85fbfe0b7f40654a7777fb2c47f142ffb5543b594d1e4"
+	miningAddress3           = "kaspasim:qpvr825ypd2fzq779yl83zvte2r4wlgxwra625rgthk9jj96d4cxgsegwryhg"
+	miningAddress3PrivateKey = "2a2e99d4a5c3e6d4add69e7baf66b9c7a2f17e74fad86cbd36a3a6815cecc10e"
 
 	defaultTimeout = 10 * time.Second
 )
 
 func setConfig(t *testing.T, harness *appHarness) {
 	harness.config = commonConfig()
-	harness.config.DataDir = randomDirectory(t)
+	harness.config.AppDir = randomDirectory(t)
 	harness.config.Listeners = []string{harness.p2pAddress}
 	harness.config.RPCListeners = []string{harness.rpcAddress}
 	harness.config.UTXOIndex = harness.utxoIndex

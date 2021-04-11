@@ -1,9 +1,11 @@
 package consensusstatemanager_test
 
 import (
+	"testing"
+
+	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/utxo"
-	"testing"
 
 	"github.com/kaspanet/kaspad/domain/consensus"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
@@ -21,17 +23,32 @@ func TestVirtualDiff(t *testing.T) {
 		defer teardown(false)
 
 		// Add block A over the genesis
-		blockHash, blockInsertionResult, err := tc.AddBlock([]*externalapi.DomainHash{params.GenesisHash}, nil, nil)
+		blockAHash, blockInsertionResult, err := tc.AddBlock([]*externalapi.DomainHash{params.GenesisHash}, nil, nil)
 		if err != nil {
 			t.Fatalf("Error adding block A: %+v", err)
 		}
 
-		block, err := tc.BlockStore().Block(tc.DatabaseContext(), blockHash)
+		virtualUTXODiff := blockInsertionResult.VirtualUTXODiff
+		if virtualUTXODiff.ToRemove().Len() != 0 {
+			t.Fatalf("Unexpected length %d for virtualUTXODiff.ToRemove()", virtualUTXODiff.ToRemove().Len())
+		}
+
+		// Because the genesis is not in block A's DAA window, block A's coinbase doesn't pay to it, so it has no outputs.
+		if virtualUTXODiff.ToAdd().Len() != 0 {
+			t.Fatalf("Unexpected length %d for virtualUTXODiff.ToAdd()", virtualUTXODiff.ToAdd().Len())
+		}
+
+		blockBHash, blockInsertionResult, err := tc.AddBlock([]*externalapi.DomainHash{blockAHash}, nil, nil)
+		if err != nil {
+			t.Fatalf("Error adding block A: %+v", err)
+		}
+
+		blockB, err := tc.BlockStore().Block(tc.DatabaseContext(), model.NewStagingArea(), blockBHash)
 		if err != nil {
 			t.Fatalf("Block: %+v", err)
 		}
 
-		virtualUTXODiff := blockInsertionResult.VirtualUTXODiff
+		virtualUTXODiff = blockInsertionResult.VirtualUTXODiff
 		if virtualUTXODiff.ToRemove().Len() != 0 {
 			t.Fatalf("Unexpected length %d for virtualUTXODiff.ToRemove()", virtualUTXODiff.ToRemove().Len())
 		}
@@ -49,17 +66,17 @@ func TestVirtualDiff(t *testing.T) {
 		}
 
 		if !outpoint.Equal(&externalapi.DomainOutpoint{
-			TransactionID: *consensushashing.TransactionID(block.Transactions[0]),
+			TransactionID: *consensushashing.TransactionID(blockB.Transactions[0]),
 			Index:         0,
 		}) {
 			t.Fatalf("Unexpected outpoint %s", outpoint)
 		}
 
 		if !entry.Equal(utxo.NewUTXOEntry(
-			block.Transactions[0].Outputs[0].Value,
-			block.Transactions[0].Outputs[0].ScriptPublicKey,
+			blockB.Transactions[0].Outputs[0].Value,
+			blockB.Transactions[0].Outputs[0].ScriptPublicKey,
 			true,
-			2, //Expected virtual blue score
+			2, //Expected virtual DAA score
 		)) {
 			t.Fatalf("Unexpected entry %s", entry)
 		}

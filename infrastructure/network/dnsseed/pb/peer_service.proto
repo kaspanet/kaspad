@@ -7,9 +7,8 @@ service PeerService {
 }
 
 message GetPeersListRequest {
-  uint64 serviceFlag = 1;
-  bytes subnetworkID = 2;
-  bool includeAllSubnetworks = 3;
+  bytes subnetworkID = 1;
+  bool includeAllSubnetworks = 2;
 }
 
 message GetPeersListResponse {
@@ -18,7 +17,6 @@ message GetPeersListResponse {
 
 message NetAddress {
   int64 timestamp = 1;
-  uint64 services = 2;
-  bytes IP = 3;
-  uint32 port = 4;
+  bytes IP = 2;
+  uint32 port = 3;
 }

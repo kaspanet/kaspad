@@ -24,7 +24,7 @@ func ConvertUTXOOutpointEntryPairsToUTXOsByAddressesEntries(address string, pair
 			UTXOEntry: &appmessage.RPCUTXOEntry{
 				Amount:          utxoEntry.Amount(),
 				ScriptPublicKey: &appmessage.RPCScriptPublicKey{Script: hex.EncodeToString(utxoEntry.ScriptPublicKey().Script), Version: utxoEntry.ScriptPublicKey().Version},
-				BlockBlueScore:  utxoEntry.BlockBlueScore(),
+				BlockDAAScore:   utxoEntry.BlockDAAScore(),
 				IsCoinbase:      utxoEntry.IsCoinbase(),
 			},
 		})

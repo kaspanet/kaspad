@@ -69,23 +69,23 @@ func TestExtractScriptPubKeyAddrs(t *testing.T) {
 		{
 			name: "standard p2pkh",
 			script: &externalapi.ScriptPublicKey{
-				Script: hexToBytes("76a914ad06dd6ddee55cbca9a9e3713bd" +
-					"7587509a3056488ac"),
+				Script: hexToBytes("76aa20ad06dd6ddee55cbca9a9e3713bd" +
+					"7587509a30564ad06dd6ddee55cbca9a9e37188ac"),
 				Version: 0,
 			},
 			addr: newAddressPubKeyHash(hexToBytes("ad06dd6ddee5" +
-				"5cbca9a9e3713bd7587509a30564")),
+				"5cbca9a9e3713bd7587509a30564ad06dd6ddee55cbca9a9e371")),
 			class: PubKeyHashTy,
 		},
 		{
 			name: "standard p2sh",
 			script: &externalapi.ScriptPublicKey{
-				Script: hexToBytes("a91463bcc565f9e68ee0189dd5cc67f1b" +
-					"0e5f02f45cb87"),
+				Script: hexToBytes("aa2063bcc565f9e68ee0189dd5cc67f1b" +
+					"0e5f02f45cbad06dd6ddee55cbca9a9e37187"),
 				Version: 0,
 			},
 			addr: newAddressScriptHash(hexToBytes("63bcc565f9e6" +
-				"8ee0189dd5cc67f1b0e5f02f45cb")),
+				"8ee0189dd5cc67f1b0e5f02f45cbad06dd6ddee55cbca9a9e371")),
 			class: ScriptHashTy,
 		},
 
@@ -198,8 +198,8 @@ func TestCalcScriptInfo(t *testing.T) {
 			name: "scriptPubKey doesn't parse",
 			sigScript: "1 81 DATA_8 2DUP EQUAL NOT VERIFY ABS " +
 				"SWAP ABS EQUAL",
-			scriptPubKey: "HASH160 DATA_20 0xfe441065b6532231de2fac56" +
-				"3152205ec4f59c",
+			scriptPubKey: "BLAKE2B DATA_32 0xfe441065b6532231de2fac56" +
+				"3152205ec4f59cfe441065b6532231de2fac56",
 			isP2SH:        true,
 			scriptInfoErr: scriptError(ErrMalformedPush, ""),
 		},
@@ -208,19 +208,19 @@ func TestCalcScriptInfo(t *testing.T) {
 			// Truncated version of p2sh script below.
 			sigScript: "1 81 DATA_8 2DUP EQUAL NOT VERIFY ABS " +
 				"SWAP ABS",
-			scriptPubKey: "HASH160 DATA_20 0xfe441065b6532231de2fac56" +
-				"3152205ec4f59c74 EQUAL",
+			scriptPubKey: "BLAKE2B DATA_32 0xfe441065b6532231de2fac56" +
+				"3152205ec4f59c74fe441065b6532231de2fac56 EQUAL",
 			isP2SH:        true,
 			scriptInfoErr: scriptError(ErrMalformedPush, ""),
 		},
 		{
 			// Invented scripts, the hashes do not match
 			name: "p2sh standard script",
-			sigScript: "1 81 DATA_25 DUP HASH160 DATA_20 0x010203" +
-				"0405060708090a0b0c0d0e0f1011121314 EQUALVERIFY " +
+			sigScript: "1 81 DATA_37 DUP BLAKE2B DATA_32 0x010203" +
+				"0405060708090a0b0c0d0e0f1011121314fe441065b6532231de2fac56 EQUALVERIFY " +
 				"CHECKSIG",
-			scriptPubKey: "HASH160 DATA_20 0xfe441065b6532231de2fac56" +
-				"3152205ec4f59c74 EQUAL",
+			scriptPubKey: "BLAKE2B DATA_32 0xfe441065b6532231de2fac56" +
+				"3152205ec4f59c74fe441065b6532231de2fac56 EQUAL",
 			isP2SH: true,
 			scriptInfo: ScriptInfo{
 				ScriptPubKeyClass: ScriptHashTy,
@@ -233,8 +233,8 @@ func TestCalcScriptInfo(t *testing.T) {
 			name: "p2sh nonstandard script",
 			sigScript: "1 81 DATA_8 2DUP EQUAL NOT VERIFY ABS " +
 				"SWAP ABS EQUAL",
-			scriptPubKey: "HASH160 DATA_20 0xfe441065b6532231de2fac56" +
-				"3152205ec4f59c74 EQUAL",
+			scriptPubKey: "BLAKE2B DATA_32 0xfe441065b6532231de2fac56" +
+				"3152205ec4f59c74fe441065b6532231de2fac56 EQUAL",
 			isP2SH: true,
 			scriptInfo: ScriptInfo{
 				ScriptPubKeyClass: ScriptHashTy,
@@ -303,17 +303,14 @@ func (b *bogusAddress) Prefix() util.Bech32Prefix {
 func TestPayToAddrScript(t *testing.T) {
 	t.Parallel()
 
-	// 1MirQ9bwyQcGVJPwKUgapu5ouK2E2Ey4gX
 	p2pkhMain, err := util.NewAddressPubKeyHash(hexToBytes("e34cce70c86"+
-		"373273efcc54ce7d2a491bb4a0e84"), util.Bech32PrefixKaspa)
+		"373273efcc54ce7d2a491bb4a0e84e34cce70c86373273efcc54c"), util.Bech32PrefixKaspa)
 	if err != nil {
 		t.Fatalf("Unable to create public key hash address: %v", err)
 	}
 
-	// Taken from transaction:
-	// b0539a45de13b3e0403909b8bd1a555b8cbe45fd4e3f3fda76f3a5f52835c29d
 	p2shMain, err := util.NewAddressScriptHashFromHash(hexToBytes("e8c300"+
-		"c87986efa84c37c0519929019ef86eb5b4"), util.Bech32PrefixKaspa)
+		"c87986efa84c37c0519929019ef86eb5b4e34cce70c86373273efcc54c"), util.Bech32PrefixKaspa)
 	if err != nil {
 		t.Fatalf("Unable to create script hash address: %v", err)
 	}
@@ -331,16 +328,16 @@ func TestPayToAddrScript(t *testing.T) {
 		// pay-to-pubkey-hash address on mainnet
 		{
 			p2pkhMain,
-			"DUP HASH160 DATA_20 0xe34cce70c86373273efcc54ce7d2a4" +
-				"91bb4a0e8488 CHECKSIG",
+			"DUP BLAKE2B DATA_32 0xe34cce70c86373273efcc54ce7d2a4" +
+				"91bb4a0e84e34cce70c86373273efcc54c EQUALVERIFY CHECKSIG",
 			0,
 			nil,
 		},
 		// pay-to-script-hash address on mainnet
 		{
 			p2shMain,
-			"HASH160 DATA_20 0xe8c300c87986efa84c37c0519929019ef8" +
-				"6eb5b4 EQUAL",
+			"BLAKE2B DATA_32 0xe8c300c87986efa84c37c0519929019ef8" +
+				"6eb5b4e34cce70c86373273efcc54c EQUAL",
 			0,
 			nil,
 		},
@@ -401,10 +398,9 @@ var scriptClassTests = []struct {
 			"0bfa9b8b64f9d4c03f999b8643f656b412a3 CHECKSIG",
 		class: NonStandardTy,
 	},
-	// tx 599e47a8114fe098103663029548811d2651991b62397e057f0c863c2bc9f9ea
 	{
 		name: "Pay PubkeyHash",
-		script: "DUP HASH160 DATA_20 0x660d4ef3a743e3e696ad990364e555" +
+		script: "DUP BLAKE2B DATA_32 0x660d4ef3a743e3e696ad990364e55543e3e696ad990364e555e555" +
 			"c271ad504b EQUALVERIFY CHECKSIG",
 		class: PubKeyHashTy,
 	},
@@ -415,10 +411,9 @@ var scriptClassTests = []struct {
 			"5329a00357b3a7886211ab414d55a 1 CHECKMULTISIG",
 		class: NonStandardTy,
 	},
-	// tx e5779b9e78f9650debc2893fd9636d827b26b4ddfa6a8172fe8708c924f5c39d
 	{
 		name: "P2SH",
-		script: "HASH160 DATA_20 0x433ec2ac1ffa1b7b7d027f564529c57197f" +
+		script: "BLAKE2B DATA_32 0x433ec2ac1ffa1b7b7d027f564529c57197fa1b7b7d027f564529c57197f" +
 			"9ae88 EQUAL",
 		class: ScriptHashTy,
 	},

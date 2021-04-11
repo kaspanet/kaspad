@@ -1,6 +1,7 @@
 package reachabilitymanager
 
 import (
+	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 )
 
@@ -12,8 +13,8 @@ type orderedTreeNodeSet []*externalapi.DomainHash
 
 // findAncestorOfNode finds the reachability tree ancestor of `node`
 // among the nodes in `tns`.
-func (rt *reachabilityManager) findAncestorOfNode(tns orderedTreeNodeSet, node *externalapi.DomainHash) (*externalapi.DomainHash, bool) {
-	ancestorIndex, ok, err := rt.findAncestorIndexOfNode(tns, node)
+func (rt *reachabilityManager) findAncestorOfNode(stagingArea *model.StagingArea, tns orderedTreeNodeSet, node *externalapi.DomainHash) (*externalapi.DomainHash, bool) {
+	ancestorIndex, ok, err := rt.findAncestorIndexOfNode(stagingArea, tns, node)
 	if err != nil {
 		return nil, false
 	}
@@ -29,8 +30,10 @@ func (rt *reachabilityManager) findAncestorOfNode(tns orderedTreeNodeSet, node *
 // ancestor of `node` among the nodes in `tns`. It does so by finding
 // the index of the block with the maximum start that is below the
 // given block.
-func (rt *reachabilityManager) findAncestorIndexOfNode(tns orderedTreeNodeSet, node *externalapi.DomainHash) (int, bool, error) {
-	blockInterval, err := rt.interval(node)
+func (rt *reachabilityManager) findAncestorIndexOfNode(stagingArea *model.StagingArea, tns orderedTreeNodeSet,
+	node *externalapi.DomainHash) (int, bool, error) {
+
+	blockInterval, err := rt.interval(stagingArea, node)
 	if err != nil {
 		return 0, false, err
 	}
@@ -40,7 +43,7 @@ func (rt *reachabilityManager) findAncestorIndexOfNode(tns orderedTreeNodeSet, n
 	high := len(tns)
 	for low < high {
 		middle := (low + high) / 2
-		middleInterval, err := rt.interval(tns[middle])
+		middleInterval, err := rt.interval(stagingArea, tns[middle])
 		if err != nil {
 			return 0, false, err
 		}

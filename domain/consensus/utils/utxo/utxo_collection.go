@@ -50,8 +50,8 @@ func (uc utxoCollection) String() string {
 
 	i := 0
 	for outpoint, utxoEntry := range uc {
-		utxoStrings[i] = fmt.Sprintf("(%s, %d) => %d, blueScore: %d",
-			outpoint.TransactionID, outpoint.Index, utxoEntry.Amount(), utxoEntry.BlockBlueScore())
+		utxoStrings[i] = fmt.Sprintf("(%s, %d) => %d, daaScore: %d",
+			outpoint.TransactionID, outpoint.Index, utxoEntry.Amount(), utxoEntry.BlockDAAScore())
 		i++
 	}
 
@@ -85,9 +85,9 @@ func (uc utxoCollection) removeMultiple(collectionToRemove utxoCollection) {
 	}
 }
 
-// containsWithBlueScore returns a boolean value indicating whether a model.UTXOEntry
-// is in the set and its blue score is equal to the given blue score.
-func (uc utxoCollection) containsWithBlueScore(outpoint *externalapi.DomainOutpoint, blueScore uint64) bool {
+// containsWithDAAScore returns a boolean value indicating whether a model.UTXOEntry
+// is in the set and its DAA score is equal to the given DAA score.
+func (uc utxoCollection) containsWithDAAScore(outpoint *externalapi.DomainOutpoint, daaScore uint64) bool {
 	entry, ok := uc.Get(outpoint)
-	return ok && entry.BlockBlueScore() == blueScore
+	return ok && entry.BlockDAAScore() == daaScore
 }
