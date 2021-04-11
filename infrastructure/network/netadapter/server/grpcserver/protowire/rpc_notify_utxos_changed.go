@@ -139,49 +139,17 @@ func (x *UtxosByAddressesEntry) toAppMessage() (*appmessage.UTXOsByAddressesEntr
 	}, nil
 }
 
-func (x *UtxosByAddressesEntry) fromAppMessage(entry *appmessage.UTXOsByAddressesEntry) {
-	outpoint := &RpcOutpoint{
-		TransactionId: entry.Outpoint.TransactionID,
-		Index:         entry.Outpoint.Index,
-	}
+func (x *UtxosByAddressesEntry) fromAppMessage(message *appmessage.UTXOsByAddressesEntry) {
+	outpoint := &RpcOutpoint{}
+	outpoint.fromAppMessage(message.Outpoint)
 	var utxoEntry *RpcUtxoEntry
-	if entry.UTXOEntry != nil {
-		utxoEntry = &RpcUtxoEntry{
-			Amount:          entry.UTXOEntry.Amount,
-			ScriptPublicKey: ConvertFromRPCScriptPubKeyToAppMsgRPCScriptPubKey(entry.UTXOEntry.ScriptPublicKey),
-			BlockDaaScore:   entry.UTXOEntry.BlockDAAScore,
-			IsCoinbase:      entry.UTXOEntry.IsCoinbase,
-		}
+	if message.UTXOEntry != nil {
+		utxoEntry = &RpcUtxoEntry{}
+		utxoEntry.fromAppMessage(message.UTXOEntry)
 	}
 	*x = UtxosByAddressesEntry{
-		Address:   entry.Address,
+		Address:   message.Address,
 		Outpoint:  outpoint,
 		UtxoEntry: utxoEntry,
 	}
-}
-
-func (x *RpcOutpoint) toAppMessage() (*appmessage.RPCOutpoint, error) {
-	if x == nil {
-		return nil, errors.Wrapf(errorNil, "RpcOutpoint is nil")
-	}
-	return &appmessage.RPCOutpoint{
-		TransactionID: x.TransactionId,
-		Index:         x.Index,
-	}, nil
-}
-
-func (x *RpcUtxoEntry) toAppMessage() (*appmessage.RPCUTXOEntry, error) {
-	if x == nil {
-		return nil, errors.Wrapf(errorNil, "RpcUtxoEntry is nil")
-	}
-	scriptPubKey, err := x.ScriptPublicKey.toAppMessage()
-	if err != nil {
-		return nil, err
-	}
-	return &appmessage.RPCUTXOEntry{
-		Amount:          x.Amount,
-		ScriptPublicKey: scriptPubKey,
-		BlockDAAScore:   x.BlockDaaScore,
-		IsCoinbase:      x.IsCoinbase,
-	}, nil
 }

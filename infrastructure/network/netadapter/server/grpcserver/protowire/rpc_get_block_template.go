@@ -37,17 +37,17 @@ func (x *KaspadMessage_GetBlockTemplateResponse) toAppMessage() (appmessage.Mess
 
 func (x *KaspadMessage_GetBlockTemplateResponse) fromAppMessage(message *appmessage.GetBlockTemplateResponseMessage) error {
 	x.GetBlockTemplateResponse = &GetBlockTemplateResponseMessage{
-		BlockMessage: &BlockMessage{},
-		IsSynced:     message.IsSynced,
+		Block:    &RpcBlock{},
+		IsSynced: message.IsSynced,
 	}
-	return x.GetBlockTemplateResponse.BlockMessage.fromAppMessage(message.MsgBlock)
+	return x.GetBlockTemplateResponse.Block.fromAppMessage(message.Block)
 }
 
 func (x *GetBlockTemplateResponseMessage) toAppMessage() (appmessage.Message, error) {
 	if x == nil {
 		return nil, errors.Wrapf(errorNil, "GetBlockTemplateResponseMessage is nil")
 	}
-	msgBlock, err := x.BlockMessage.toAppMessage()
+	msgBlock, err := x.Block.toAppMessage()
 	if err != nil {
 		return nil, err
 	}

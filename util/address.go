@@ -20,8 +20,11 @@ var (
 )
 
 const (
-	// PubKeyHash addresses always have the version byte set to 0.
-	pubKeyHashAddrID = 0x00
+	// PubKey addresses always have the version byte set to 0.
+	pubKeyAddrID = 0x00
+
+	// PubKey addresses always have the version byte set to 1.
+	pubKeyECDSAAddrID = 0x01
 
 	// ScriptHash addresses always have the version byte set to 8.
 	scriptHashAddrID = 0x08
@@ -79,16 +82,16 @@ func (prefix Bech32Prefix) String() string {
 }
 
 // encodeAddress returns a human-readable payment address given a network prefix
-// and a blake2b hash which encodes the kaspa network and address type. It is used
-// in both pay-to-pubkey-hash (P2PKH) and pay-to-script-hash (P2SH) address
+// and a payload which encodes the kaspa network and address type. It is used
+// in both pay-to-pubkey (P2PK) and pay-to-script-hash (P2SH) address
 // encoding.
-func encodeAddress(prefix Bech32Prefix, hash256 []byte, version byte) string {
-	return bech32.Encode(prefix.String(), hash256[:blake2b.Size256], version)
+func encodeAddress(prefix Bech32Prefix, payload []byte, version byte) string {
+	return bech32.Encode(prefix.String(), payload, version)
 }
 
 // Address is an interface type for any type of destination a transaction
-// output may spend to. This includes pay-to-pubkey (P2PK), pay-to-pubkey-hash
-// (P2PKH), and pay-to-script-hash (P2SH). Address is designed to be generic
+// output may spend to. This includes pay-to-pubkey (P2PK)
+// and pay-to-script-hash (P2SH). Address is designed to be generic
 // enough that other kinds of addresses may be added in the future without
 // changing the decoding and encoding API.
 type Address interface {
@@ -98,7 +101,7 @@ type Address interface {
 	// Please note that String differs subtly from EncodeAddress: String
 	// will return the value as a string without any conversion, while
 	// EncodeAddress may convert destination types (for example,
-	// converting pubkeys to P2PKH addresses) before encoding as a
+	// converting pubkeys to P2PK addresses) before encoding as a
 	// payment address string.
 	String() string
 
@@ -139,95 +142,143 @@ func DecodeAddress(addr string, expectedPrefix Bech32Prefix) (Address, error) {
 			prefix)
 	}
 
-	// Switch on decoded length to determine the type.
-	switch len(decoded) {
-	case blake2b.Size256: // P2PKH or P2SH
-		switch version {
-		case pubKeyHashAddrID:
-			return newAddressPubKeyHash(prefix, decoded)
-		case scriptHashAddrID:
-			return newAddressScriptHashFromHash(prefix, decoded)
-		default:
-			return nil, ErrUnknownAddressType
-		}
+	switch version {
+	case pubKeyAddrID:
+		return newAddressPubKey(prefix, decoded)
+	case pubKeyECDSAAddrID:
+		return newAddressPubKeyECDSA(prefix, decoded)
+	case scriptHashAddrID:
+		return newAddressScriptHashFromHash(prefix, decoded)
 	default:
-		return nil, errors.New("decoded address is of unknown size")
+		return nil, ErrUnknownAddressType
 	}
 }
 
-// AddressPubKeyHash is an Address for a pay-to-pubkey-hash (P2PKH)
+// PublicKeySize is the public key size for a schnorr public key
+const PublicKeySize = 32
+
+// AddressPublicKey is an Address for a pay-to-pubkey (P2PK)
 // transaction.
-type AddressPubKeyHash struct {
-	prefix Bech32Prefix
-	hash   [blake2b.Size256]byte
+type AddressPublicKey struct {
+	prefix    Bech32Prefix
+	publicKey [PublicKeySize]byte
 }
 
-// NewAddressPubKeyHashFromPublicKey returns a new AddressPubKeyHash from given public key
-func NewAddressPubKeyHashFromPublicKey(publicKey []byte, prefix Bech32Prefix) (*AddressPubKeyHash, error) {
-	pkHash := HashBlake2b(publicKey)
-	return newAddressPubKeyHash(prefix, pkHash)
-}
-
-// NewAddressPubKeyHash returns a new AddressPubKeyHash. pkHash mustbe 20
+// NewAddressPublicKey returns a new AddressPublicKey. publicKey must be 32
 // bytes.
-func NewAddressPubKeyHash(pkHash []byte, prefix Bech32Prefix) (*AddressPubKeyHash, error) {
-	return newAddressPubKeyHash(prefix, pkHash)
+func NewAddressPublicKey(publicKey []byte, prefix Bech32Prefix) (*AddressPublicKey, error) {
+	return newAddressPubKey(prefix, publicKey)
 }
 
-// newAddressPubKeyHash is the internal API to create a pubkey hash address
+// newAddressPubKey is the internal API to create a pubkey address
 // with a known leading identifier byte for a network, rather than looking
 // it up through its parameters. This is useful when creating a new address
 // structure from a string encoding where the identifier byte is already
 // known.
-func newAddressPubKeyHash(prefix Bech32Prefix, pkHash []byte) (*AddressPubKeyHash, error) {
-	// Check for a valid pubkey hash length.
-	if len(pkHash) != blake2b.Size256 {
-		return nil, errors.Errorf("pkHash must be %d bytes", blake2b.Size256)
+func newAddressPubKey(prefix Bech32Prefix, publicKey []byte) (*AddressPublicKey, error) {
+	// Check for a valid pubkey length.
+	if len(publicKey) != PublicKeySize {
+		return nil, errors.Errorf("publicKey must be %d bytes", PublicKeySize)
 	}
 
-	addr := &AddressPubKeyHash{prefix: prefix}
-	copy(addr.hash[:], pkHash)
+	addr := &AddressPublicKey{prefix: prefix}
+	copy(addr.publicKey[:], publicKey)
 	return addr, nil
 }
 
-// EncodeAddress returns the string encoding of a pay-to-pubkey-hash
+// EncodeAddress returns the string encoding of a pay-to-pubkey
 // address. Part of the Address interface.
-func (a *AddressPubKeyHash) EncodeAddress() string {
-	return encodeAddress(a.prefix, a.hash[:], pubKeyHashAddrID)
+func (a *AddressPublicKey) EncodeAddress() string {
+	return encodeAddress(a.prefix, a.publicKey[:], pubKeyAddrID)
 }
 
 // ScriptAddress returns the bytes to be included in a txout script to pay
-// to a pubkey hash. Part of the Address interface.
-func (a *AddressPubKeyHash) ScriptAddress() []byte {
-	return a.hash[:]
+// to a pubkey. Part of the Address interface.
+func (a *AddressPublicKey) ScriptAddress() []byte {
+	return a.publicKey[:]
 }
 
-// IsForPrefix returns whether or not the pay-to-pubkey-hash address is associated
+// IsForPrefix returns whether or not the pay-to-pubkey address is associated
 // with the passed kaspa network.
-func (a *AddressPubKeyHash) IsForPrefix(prefix Bech32Prefix) bool {
+func (a *AddressPublicKey) IsForPrefix(prefix Bech32Prefix) bool {
 	return a.prefix == prefix
 }
 
 // Prefix returns the prefix for this address
-func (a *AddressPubKeyHash) Prefix() Bech32Prefix {
+func (a *AddressPublicKey) Prefix() Bech32Prefix {
 	return a.prefix
 }
 
-// String returns a human-readable string for the pay-to-pubkey-hash address.
+// String returns a human-readable string for the pay-to-pubkey address.
 // This is equivalent to calling EncodeAddress, but is provided so the type can
 // be used as a fmt.Stringer.
-func (a *AddressPubKeyHash) String() string {
+func (a *AddressPublicKey) String() string {
 	return a.EncodeAddress()
 }
 
-// HashBlake2b returns the underlying array of the pubkey hash. This can be useful
-// when an array is more appropiate than a slice (for example, when used as map
-// keys).
-func (a *AddressPubKeyHash) HashBlake2b() *[blake2b.Size256]byte {
-	return &a.hash
+// PublicKeySizeECDSA is the public key size for an ECDSA public key
+const PublicKeySizeECDSA = 33
+
+// AddressPublicKeyECDSA is an Address for a pay-to-pubkey (P2PK)
+// ECDSA transaction.
+type AddressPublicKeyECDSA struct {
+	prefix    Bech32Prefix
+	publicKey [PublicKeySizeECDSA]byte
 }
 
-// AddressScriptHash is an Address for a pay-to-script-hash (P2SH)
+// NewAddressPublicKeyECDSA returns a new AddressPublicKeyECDSA. publicKey must be 33
+// bytes.
+func NewAddressPublicKeyECDSA(publicKey []byte, prefix Bech32Prefix) (*AddressPublicKeyECDSA, error) {
+	return newAddressPubKeyECDSA(prefix, publicKey)
+}
+
+// newAddressPubKeyECDSA is the internal API to create an ECDSA pubkey address
+// with a known leading identifier byte for a network, rather than looking
+// it up through its parameters. This is useful when creating a new address
+// structure from a string encoding where the identifier byte is already
+// known.
+func newAddressPubKeyECDSA(prefix Bech32Prefix, publicKey []byte) (*AddressPublicKeyECDSA, error) {
+	// Check for a valid pubkey length.
+	if len(publicKey) != PublicKeySizeECDSA {
+		return nil, errors.Errorf("publicKey must be %d bytes", PublicKeySizeECDSA)
+	}
+
+	addr := &AddressPublicKeyECDSA{prefix: prefix}
+	copy(addr.publicKey[:], publicKey)
+	return addr, nil
+}
+
+// EncodeAddress returns the string encoding of a pay-to-pubkey
+// address. Part of the Address interface.
+func (a *AddressPublicKeyECDSA) EncodeAddress() string {
+	return encodeAddress(a.prefix, a.publicKey[:], pubKeyECDSAAddrID)
+}
+
+// ScriptAddress returns the bytes to be included in a txout script to pay
+// to a pubkey. Part of the Address interface.
+func (a *AddressPublicKeyECDSA) ScriptAddress() []byte {
+	return a.publicKey[:]
+}
+
+// IsForPrefix returns whether or not the pay-to-pubkey address is associated
+// with the passed kaspa network.
+func (a *AddressPublicKeyECDSA) IsForPrefix(prefix Bech32Prefix) bool {
+	return a.prefix == prefix
+}
+
+// Prefix returns the prefix for this address
+func (a *AddressPublicKeyECDSA) Prefix() Bech32Prefix {
+	return a.prefix
+}
+
+// String returns a human-readable string for the pay-to-pubkey address.
+// This is equivalent to calling EncodeAddress, but is provided so the type can
+// be used as a fmt.Stringer.
+func (a *AddressPublicKeyECDSA) String() string {
+	return a.EncodeAddress()
+}
+
+// AddressScriptHash is an Address for a pay-to-script-publicKey (P2SH)
 // transaction.
 type AddressScriptHash struct {
 	prefix Bech32Prefix

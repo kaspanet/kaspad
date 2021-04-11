@@ -27,9 +27,9 @@ func TestTxRelay(t *testing.T) {
 	connect(t, payer, mediator)
 	connect(t, mediator, payee)
 
-	payeeBlockAddedChan := make(chan *appmessage.MsgBlockHeader)
+	payeeBlockAddedChan := make(chan *appmessage.RPCBlockHeader)
 	setOnBlockAddedHandler(t, payee, func(notification *appmessage.BlockAddedNotificationMessage) {
-		payeeBlockAddedChan <- &notification.Block.Header
+		payeeBlockAddedChan <- notification.Block.Header
 	})
 	// skip the first block because it's paying to genesis script
 	mineNextBlock(t, payer)
@@ -80,7 +80,7 @@ func TestTxRelay(t *testing.T) {
 	}
 }
 
-func waitForPayeeToReceiveBlock(t *testing.T, payeeBlockAddedChan chan *appmessage.MsgBlockHeader) {
+func waitForPayeeToReceiveBlock(t *testing.T, payeeBlockAddedChan chan *appmessage.RPCBlockHeader) {
 	select {
 	case <-payeeBlockAddedChan:
 	case <-time.After(defaultTimeout):
@@ -109,7 +109,7 @@ func generateTx(t *testing.T, firstBlockCoinbase *externalapi.DomainTransaction,
 	if err != nil {
 		t.Fatalf("Error decoding private key: %+v", err)
 	}
-	privateKey, err := secp256k1.DeserializePrivateKeyFromSlice(privateKeyBytes)
+	privateKey, err := secp256k1.DeserializeSchnorrPrivateKeyFromSlice(privateKeyBytes)
 	if err != nil {
 		t.Fatalf("Error deserializing private key: %+v", err)
 	}

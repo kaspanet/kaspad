@@ -189,7 +189,7 @@ func (v *transactionValidator) validateTransactionScripts(tx *externalapi.Domain
 		}
 
 		scriptPubKey := utxoEntry.ScriptPublicKey()
-		vm, err := txscript.NewEngine(scriptPubKey, tx, i, txscript.ScriptNoFlags, v.sigCache, sighashReusedValues)
+		vm, err := txscript.NewEngine(scriptPubKey, tx, i, txscript.ScriptNoFlags, v.sigCache, v.sigCacheECDSA, sighashReusedValues)
 		if err != nil {
 			return errors.Wrapf(ruleerrors.ErrScriptMalformed, "failed to parse input "+
 				"%d which references output %s - "+

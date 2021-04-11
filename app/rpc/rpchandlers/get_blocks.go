@@ -18,8 +18,8 @@ const (
 func HandleGetBlocks(context *rpccontext.Context, _ *router.Router, request appmessage.Message) (appmessage.Message, error) {
 	getBlocksRequest := request.(*appmessage.GetBlocksRequestMessage)
 
-	// Validate that user didn't set IncludeTransactionVerboseData without setting IncludeBlockVerboseData
-	if !getBlocksRequest.IncludeBlockVerboseData && getBlocksRequest.IncludeTransactionVerboseData {
+	// Validate that user didn't set IncludeTransactionVerboseData without setting IncludeBlocks
+	if !getBlocksRequest.IncludeBlocks && getBlocksRequest.IncludeTransactionVerboseData {
 		return &appmessage.GetBlocksResponseMessage{
 			Error: appmessage.RPCErrorf(
 				"If includeTransactionVerboseData is set, then includeBlockVerboseData must be set as well"),
@@ -81,26 +81,23 @@ func HandleGetBlocks(context *rpccontext.Context, _ *router.Router, request appm
 	}
 
 	// Prepare the response
-	response := &appmessage.GetBlocksResponseMessage{
-		BlockHashes: hashes.ToStrings(blockHashes),
-	}
-
-	// Retrieve all block data in case BlockVerboseData was requested
-	if getBlocksRequest.IncludeBlockVerboseData {
-		response.BlockVerboseData = make([]*appmessage.BlockVerboseData, len(blockHashes))
+	response := appmessage.NewGetBlocksResponseMessage()
+	response.BlockHashes = hashes.ToStrings(blockHashes)
+	if getBlocksRequest.IncludeBlocks {
+		blocks := make([]*appmessage.RPCBlock, len(blockHashes))
 		for i, blockHash := range blockHashes {
 			blockHeader, err := context.Domain.Consensus().GetBlockHeader(blockHash)
 			if err != nil {
 				return nil, err
 			}
-			blockVerboseData, err := context.BuildBlockVerboseData(blockHeader, nil,
-				getBlocksRequest.IncludeTransactionVerboseData)
+			block := &externalapi.DomainBlock{Header: blockHeader}
+			blocks[i] = appmessage.DomainBlockToRPCBlock(block)
+			err = context.PopulateBlockWithVerboseData(blocks[i], blockHeader, nil, getBlocksRequest.IncludeTransactionVerboseData)
 			if err != nil {
 				return nil, err
 			}
-
-			response.BlockVerboseData[i] = blockVerboseData
 		}
 	}
+
 	return response, nil
 }

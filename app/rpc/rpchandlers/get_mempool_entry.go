@@ -24,12 +24,11 @@ func HandleGetMempoolEntry(context *rpccontext.Context, _ *router.Router, reques
 		errorMessage.Error = appmessage.RPCErrorf("Transaction %s was not found", transactionID)
 		return errorMessage, nil
 	}
-
-	transactionVerboseData, err := context.BuildTransactionVerboseData(
-		transaction, getMempoolEntryRequest.TxID, nil, "")
+	rpcTransaction := appmessage.DomainTransactionToRPCTransaction(transaction)
+	err = context.PopulateTransactionWithVerboseData(rpcTransaction, nil)
 	if err != nil {
 		return nil, err
 	}
 
-	return appmessage.NewGetMempoolEntryResponseMessage(transaction.Fee, transactionVerboseData), nil
+	return appmessage.NewGetMempoolEntryResponseMessage(transaction.Fee, rpcTransaction), nil
 }

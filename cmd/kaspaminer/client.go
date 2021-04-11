@@ -5,57 +5,16 @@ import (
 	"github.com/kaspanet/kaspad/infrastructure/logger"
 	"github.com/kaspanet/kaspad/infrastructure/network/rpcclient"
 	"github.com/pkg/errors"
-	"sync"
-	"sync/atomic"
 	"time"
 )
 
 const minerTimeout = 10 * time.Second
 
 type minerClient struct {
-	isReconnecting uint32
-	clientLock     sync.RWMutex
-	rpcClient      *rpcclient.RPCClient
+	*rpcclient.RPCClient
 
 	cfg                        *configFlags
 	blockAddedNotificationChan chan struct{}
-}
-
-func (mc *minerClient) safeRPCClient() *rpcclient.RPCClient {
-	mc.clientLock.RLock()
-	defer mc.clientLock.RUnlock()
-	return mc.rpcClient
-}
-
-func (mc *minerClient) reconnect() {
-	swapped := atomic.CompareAndSwapUint32(&mc.isReconnecting, 0, 1)
-	if !swapped {
-		return
-	}
-
-	defer atomic.StoreUint32(&mc.isReconnecting, 0)
-
-	mc.clientLock.Lock()
-	defer mc.clientLock.Unlock()
-
-	retryDuration := time.Second
-	const maxRetryDuration = time.Minute
-	log.Infof("Reconnecting RPC connection")
-	for {
-		err := mc.connect()
-		if err == nil {
-			return
-		}
-
-		if retryDuration < time.Minute {
-			retryDuration *= 2
-		} else {
-			retryDuration = maxRetryDuration
-		}
-
-		log.Errorf("Got error '%s' while reconnecting. Trying again in %s", err, retryDuration)
-		time.Sleep(retryDuration)
-	}
 }
 
 func (mc *minerClient) connect() error {
@@ -63,14 +22,15 @@ func (mc *minerClient) connect() error {
 	if err != nil {
 		return err
 	}
-	mc.rpcClient, err = rpcclient.NewRPCClient(rpcAddress)
+	rpcClient, err := rpcclient.NewRPCClient(rpcAddress)
 	if err != nil {
 		return err
 	}
-	mc.rpcClient.SetTimeout(minerTimeout)
-	mc.rpcClient.SetLogger(backendLog, logger.LevelTrace)
+	mc.RPCClient = rpcClient
+	mc.SetTimeout(minerTimeout)
+	mc.SetLogger(backendLog, logger.LevelTrace)
 
-	err = mc.rpcClient.RegisterForBlockAddedNotifications(func(_ *appmessage.BlockAddedNotificationMessage) {
+	err = mc.RegisterForBlockAddedNotifications(func(_ *appmessage.BlockAddedNotificationMessage) {
 		select {
 		case mc.blockAddedNotificationChan <- struct{}{}:
 		default:

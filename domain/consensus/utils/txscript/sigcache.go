@@ -19,7 +19,7 @@ type sigCacheEntry struct {
 	pubKey *secp256k1.SchnorrPublicKey
 }
 
-// SigCache implements an ECDSA signature verification cache with a randomized
+// SigCache implements an Schnorr signature verification cache with a randomized
 // entry eviction policy. Only valid signatures will be added to the cache. The
 // benefits of SigCache are two fold. Firstly, usage of SigCache mitigates a DoS
 // attack wherein an attack causes a victim's client to hang due to worst-case

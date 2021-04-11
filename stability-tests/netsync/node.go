@@ -15,7 +15,6 @@ import (
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/panics"
 	"github.com/pkg/errors"
-	"golang.org/x/crypto/blake2b"
 )
 
 const (
@@ -178,8 +177,8 @@ func useDirOrCreateTemp(dataDir, tempName string) (string, error) {
 }
 
 func mineOnTips(client *rpc.Client) (appmessage.RejectReason, error) {
-	fakePublicKeyHash := make([]byte, blake2b.Size256)
-	addr, err := util.NewAddressPubKeyHash(fakePublicKeyHash, activeConfig().NetParams().Prefix)
+	fakePublicKey := make([]byte, util.PublicKeySize)
+	addr, err := util.NewAddressPublicKey(fakePublicKey, activeConfig().NetParams().Prefix)
 	if err != nil {
 		return appmessage.RejectReasonNone, err
 	}
@@ -189,7 +188,10 @@ func mineOnTips(client *rpc.Client) (appmessage.RejectReason, error) {
 		return appmessage.RejectReasonNone, err
 	}
 
-	domainBlock := appmessage.MsgBlockToDomainBlock(template.MsgBlock)
+	domainBlock, err := appmessage.RPCBlockToDomainBlock(template.Block)
+	if err != nil {
+		return appmessage.RejectReasonNone, err
+	}
 	mine.SolveBlock(domainBlock)
 
 	return client.SubmitBlock(domainBlock)

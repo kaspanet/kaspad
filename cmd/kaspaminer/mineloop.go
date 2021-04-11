@@ -114,13 +114,17 @@ func logHashRate() {
 
 func handleFoundBlock(client *minerClient, block *externalapi.DomainBlock) error {
 	blockHash := consensushashing.BlockHash(block)
-	log.Infof("Submitting block %s to %s", blockHash, client.safeRPCClient().Address())
+	log.Infof("Submitting block %s to %s", blockHash, client.Address())
 
-	rejectReason, err := client.safeRPCClient().SubmitBlock(block)
+	rejectReason, err := client.SubmitBlock(block)
 	if err != nil {
 		if nativeerrors.Is(err, router.ErrTimeout) {
-			log.Warnf("Got timeout while submitting block %s to %s: %s", blockHash, client.safeRPCClient().Address(), err)
-			client.reconnect()
+			log.Warnf("Got timeout while submitting block %s to %s: %s", blockHash, client.Address(), err)
+			return client.Reconnect()
+		}
+		if nativeerrors.Is(err, router.ErrRouteClosed) {
+			log.Debugf("Got route is closed while requesting block template from %s. "+
+				"The client is most likely reconnecting", client.Address())
 			return nil
 		}
 		if rejectReason == appmessage.RejectReasonIsInIBD {
@@ -129,7 +133,7 @@ func handleFoundBlock(client *minerClient, block *externalapi.DomainBlock) error
 			time.Sleep(waitTime)
 			return nil
 		}
-		return errors.Wrapf(err, "Error submitting block %s to %s", blockHash, client.safeRPCClient().Address())
+		return errors.Wrapf(err, "Error submitting block %s to %s", blockHash, client.Address())
 	}
 	return nil
 }
@@ -188,17 +192,29 @@ func getBlockForMining(mineWhenNotSynced bool) *externalapi.DomainBlock {
 
 func templatesLoop(client *minerClient, miningAddr util.Address, errChan chan error) {
 	getBlockTemplate := func() {
-		template, err := client.safeRPCClient().GetBlockTemplate(miningAddr.String())
+		template, err := client.GetBlockTemplate(miningAddr.String())
 		if nativeerrors.Is(err, router.ErrTimeout) {
-			log.Warnf("Got timeout while requesting block template from %s: %s", client.safeRPCClient().Address(), err)
-			client.reconnect()
+			log.Warnf("Got timeout while requesting block template from %s: %s", client.Address(), err)
+			reconnectErr := client.Reconnect()
+			if reconnectErr != nil {
+				errChan <- reconnectErr
+			}
+			return
+		}
+		if nativeerrors.Is(err, router.ErrRouteClosed) {
+			log.Debugf("Got route is closed while requesting block template from %s. "+
+				"The client is most likely reconnecting", client.Address())
 			return
 		}
 		if err != nil {
-			errChan <- errors.Wrapf(err, "Error getting block template from %s", client.safeRPCClient().Address())
+			errChan <- errors.Wrapf(err, "Error getting block template from %s", client.Address())
 			return
 		}
-		templatemanager.Set(template)
+		err = templatemanager.Set(template)
+		if err != nil {
+			errChan <- errors.Wrapf(err, "Error setting block template from %s", client.Address())
+			return
+		}
 	}
 
 	getBlockTemplate()

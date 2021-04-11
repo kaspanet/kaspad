@@ -1,10 +1,9 @@
 package hashes
 
 import (
-	"hash"
-
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/pkg/errors"
+	"hash"
 )
 
 // HashWriter is used to incrementally hash data without concatenating all of the data to a single buffer
