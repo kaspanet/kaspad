@@ -4,10 +4,11 @@ import (
 	"bufio"
 	"encoding/hex"
 	"fmt"
+	"os"
+
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/keys"
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/libkaspawallet"
 	"github.com/pkg/errors"
-	"os"
 )
 
 func create(conf *createConfig) error {
@@ -49,12 +50,13 @@ func create(conf *createConfig) error {
 		publicKeys = append(publicKeys, publicKey)
 	}
 
-	err = keys.WriteKeysFile(conf.KeysFile, encryptedPrivateKeys, publicKeys, conf.MinimumSignatures, conf.ECDSA)
+	err = keys.WriteKeysFile(
+		conf.NetParams(), conf.KeysFile, encryptedPrivateKeys, publicKeys, conf.MinimumSignatures, conf.ECDSA)
 	if err != nil {
 		return err
 	}
 
-	keysFile, err := keys.ReadKeysFile(conf.KeysFile)
+	keysFile, err := keys.ReadKeysFile(conf.NetParams(), conf.KeysFile)
 	if err != nil {
 		return err
 	}
