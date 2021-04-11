@@ -414,8 +414,6 @@ var DevnetParams = Params{
 	// EnableNonNativeSubnetworks enables non-native/coinbase transactions
 	EnableNonNativeSubnetworks: false,
 
-	DisableDifficultyAdjustment: false,
-
 	MaxCoinbasePayloadLength:                defaultMaxCoinbasePayloadLength,
 	MaxBlockSize:                            defaultMaxBlockSize,
 	MaxBlockParents:                         defaultMaxBlockParents,
@@ -426,6 +424,10 @@ var DevnetParams = Params{
 	MaxMassAcceptedByBlock:                  defaultMaxMassAcceptedByBlock,
 	BaseSubsidy:                             defaultBaseSubsidy,
 	CoinbasePayloadScriptPublicKeyMaxLength: defaultCoinbasePayloadScriptPublicKeyMaxLength,
+
+	// TODO: REMOVE THESE!!!!
+	SkipProofOfWork:             true,
+	DisableDifficultyAdjustment: true,
 }
 
 var (
