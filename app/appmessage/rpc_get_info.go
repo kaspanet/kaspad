@@ -11,8 +11,8 @@ func (msg *GetInfoRequestMessage) Command() MessageCommand {
 	return CmdGetInfoRequestMessage
 }
 
-// NewGeInfoRequestMessage returns a instance of the message
-func NewGeInfoRequestMessage() *GetInfoRequestMessage {
+// NewGetInfoRequestMessage returns a instance of the message
+func NewGetInfoRequestMessage() *GetInfoRequestMessage {
 	return &GetInfoRequestMessage{}
 }
 
