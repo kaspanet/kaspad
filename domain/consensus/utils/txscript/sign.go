@@ -19,7 +19,7 @@ import (
 func RawTxInSignature(tx *externalapi.DomainTransaction, idx int, hashType consensushashing.SigHashType,
 	key *secp256k1.SchnorrKeyPair, sighashReusedValues *consensushashing.SighashReusedValues) ([]byte, error) {
 
-	hash, err := consensushashing.CalculateSignatureHash(tx, idx, hashType, sighashReusedValues)
+	hash, err := consensushashing.CalculateSignatureHashSchnorr(tx, idx, hashType, sighashReusedValues)
 	if err != nil {
 		return nil, err
 	}
@@ -32,8 +32,26 @@ func RawTxInSignature(tx *externalapi.DomainTransaction, idx int, hashType conse
 	return append(signature.Serialize()[:], byte(hashType)), nil
 }
 
+// RawTxInSignatureECDSA returns the serialized ECDSA signature for the input idx of
+// the given transaction, with hashType appended to it.
+func RawTxInSignatureECDSA(tx *externalapi.DomainTransaction, idx int, hashType consensushashing.SigHashType,
+	key *secp256k1.ECDSAPrivateKey, sighashReusedValues *consensushashing.SighashReusedValues) ([]byte, error) {
+
+	hash, err := consensushashing.CalculateSignatureHashECDSA(tx, idx, hashType, sighashReusedValues)
+	if err != nil {
+		return nil, err
+	}
+	secpHash := secp256k1.Hash(*hash.ByteArray())
+	signature, err := key.ECDSASign(&secpHash)
+	if err != nil {
+		return nil, errors.Errorf("cannot sign tx input: %s", err)
+	}
+
+	return append(signature.Serialize()[:], byte(hashType)), nil
+}
+
 // SignatureScript creates an input signature script for tx to spend KAS sent
-// from a previous output to the owner of privKey. tx must include all
+// from a previous output to the owner of a Schnorr private key. tx must include all
 // transaction inputs and outputs, however txin scripts are allowed to be filled
 // or empty. The returned script is calculated to be used as the idx'th txin
 // sigscript for tx. script is the ScriptPublicKey of the previous output being used
@@ -48,16 +66,26 @@ func SignatureScript(tx *externalapi.DomainTransaction, idx int, hashType consen
 		return nil, err
 	}
 
-	pk, err := privKey.SchnorrPublicKey()
-	if err != nil {
-		return nil, err
-	}
-	pkData, err := pk.Serialize()
+	return NewScriptBuilder().AddData(sig).Script()
+}
+
+// SignatureScriptECDSA creates an input signature script for tx to spend KAS sent
+// from a previous output to the owner of an ECDSA private key. tx must include all
+// transaction inputs and outputs, however txin scripts are allowed to be filled
+// or empty. The returned script is calculated to be used as the idx'th txin
+// sigscript for tx. script is the ScriptPublicKey of the previous output being used
+// as the idx'th input. privKey is serialized in either a compressed or
+// uncompressed format based on compress. This format must match the same format
+// used to generate the payment address, or the script validation will fail.
+func SignatureScriptECDSA(tx *externalapi.DomainTransaction, idx int, hashType consensushashing.SigHashType,
+	privKey *secp256k1.ECDSAPrivateKey, sighashReusedValues *consensushashing.SighashReusedValues) ([]byte, error) {
+
+	sig, err := RawTxInSignatureECDSA(tx, idx, hashType, privKey, sighashReusedValues)
 	if err != nil {
 		return nil, err
 	}
 
-	return NewScriptBuilder().AddData(sig).AddData(pkData[:]).Script()
+	return NewScriptBuilder().AddData(sig).Script()
 }
 
 func sign(dagParams *dagconfig.Params, tx *externalapi.DomainTransaction, idx int,
@@ -71,7 +99,7 @@ func sign(dagParams *dagconfig.Params, tx *externalapi.DomainTransaction, idx in
 	}
 
 	switch class {
-	case PubKeyHashTy:
+	case PubKeyTy:
 		// look up key for address
 		key, err := kdb.GetKey(address)
 		if err != nil {

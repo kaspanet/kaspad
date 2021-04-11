@@ -58,9 +58,9 @@ func TestValidateTransactionInContextAndPopulateMassAndFee(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Failed to serialize public key: %v", err)
 		}
-		addr, err := util.NewAddressPubKeyHashFromPublicKey(publicKeySerialized[:], params.Prefix)
+		addr, err := util.NewAddressPublicKey(publicKeySerialized[:], params.Prefix)
 		if err != nil {
-			t.Fatalf("Failed to generate p2pkh address: %v", err)
+			t.Fatalf("Failed to generate p2pk address: %v", err)
 		}
 		scriptPublicKey, err := txscript.PayToAddrScript(addr)
 		if err != nil {
@@ -261,9 +261,9 @@ func TestSigningTwoInputs(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Failed to serialize public key: %v", err)
 		}
-		addr, err := util.NewAddressPubKeyHashFromPublicKey(publicKeySerialized[:], params.Prefix)
+		addr, err := util.NewAddressPublicKey(publicKeySerialized[:], params.Prefix)
 		if err != nil {
-			t.Fatalf("Failed to generate p2pkh address: %v", err)
+			t.Fatalf("Failed to generate p2pk address: %v", err)
 		}
 
 		scriptPublicKey, err := txscript.PayToAddrScript(addr)
@@ -341,6 +341,130 @@ func TestSigningTwoInputs(t *testing.T) {
 		sighashReusedValues := &consensushashing.SighashReusedValues{}
 		for i, input := range tx.Inputs {
 			signatureScript, err := txscript.SignatureScript(tx, i, consensushashing.SigHashAll, privateKey,
+				sighashReusedValues)
+			if err != nil {
+				t.Fatalf("Failed to create a sigScript: %v", err)
+			}
+			input.SignatureScript = signatureScript
+		}
+
+		_, insertionResult, err := tc.AddBlock([]*externalapi.DomainHash{block3Hash}, nil, []*externalapi.DomainTransaction{tx})
+		if err != nil {
+			t.Fatalf("AddBlock: %+v", err)
+		}
+
+		txOutpoint := &externalapi.DomainOutpoint{
+			TransactionID: *consensushashing.TransactionID(tx),
+			Index:         0,
+		}
+		if !insertionResult.VirtualUTXODiff.ToAdd().Contains(txOutpoint) {
+			t.Fatalf("tx was not accepted by the DAG")
+		}
+	})
+}
+
+func TestSigningTwoInputsECDSA(t *testing.T) {
+	testutils.ForAllNets(t, true, func(t *testing.T, params *dagconfig.Params) {
+		params.BlockCoinbaseMaturity = 0
+		factory := consensus.NewFactory()
+		tc, teardown, err := factory.NewTestConsensus(params, false, "TestSigningTwoInputsECDSA")
+		if err != nil {
+			t.Fatalf("Error setting up consensus: %+v", err)
+		}
+		defer teardown(false)
+
+		privateKey, err := secp256k1.GenerateECDSAPrivateKey()
+		if err != nil {
+			t.Fatalf("Failed to generate a private key: %v", err)
+		}
+		publicKey, err := privateKey.ECDSAPublicKey()
+		if err != nil {
+			t.Fatalf("Failed to generate a public key: %v", err)
+		}
+		publicKeySerialized, err := publicKey.Serialize()
+		if err != nil {
+			t.Fatalf("Failed to serialize public key: %v", err)
+		}
+		addr, err := util.NewAddressPublicKeyECDSA(publicKeySerialized[:], params.Prefix)
+		if err != nil {
+			t.Fatalf("Failed to generate p2pk address: %v", err)
+		}
+
+		scriptPublicKey, err := txscript.PayToAddrScript(addr)
+		if err != nil {
+			t.Fatalf("PayToAddrScript: unexpected error: %v", err)
+		}
+
+		coinbaseData := &externalapi.DomainCoinbaseData{
+			ScriptPublicKey: scriptPublicKey,
+		}
+
+		block1Hash, _, err := tc.AddBlock([]*externalapi.DomainHash{params.GenesisHash}, coinbaseData, nil)
+		if err != nil {
+			t.Fatalf("AddBlock: %+v", err)
+		}
+
+		block2Hash, _, err := tc.AddBlock([]*externalapi.DomainHash{block1Hash}, coinbaseData, nil)
+		if err != nil {
+			t.Fatalf("AddBlock: %+v", err)
+		}
+
+		block3Hash, _, err := tc.AddBlock([]*externalapi.DomainHash{block2Hash}, coinbaseData, nil)
+		if err != nil {
+			t.Fatalf("AddBlock: %+v", err)
+		}
+
+		block2, err := tc.GetBlock(block2Hash)
+		if err != nil {
+			t.Fatalf("Error getting block2: %+v", err)
+		}
+
+		block3, err := tc.GetBlock(block3Hash)
+		if err != nil {
+			t.Fatalf("Error getting block3: %+v", err)
+		}
+
+		block2Tx := block2.Transactions[0]
+		block2TxOut := block2Tx.Outputs[0]
+
+		block3Tx := block3.Transactions[0]
+		block3TxOut := block3Tx.Outputs[0]
+
+		tx := &externalapi.DomainTransaction{
+			Version: constants.MaxTransactionVersion,
+			Inputs: []*externalapi.DomainTransactionInput{
+				{
+					PreviousOutpoint: externalapi.DomainOutpoint{
+						TransactionID: *consensushashing.TransactionID(block2.Transactions[0]),
+						Index:         0,
+					},
+					Sequence:  constants.MaxTxInSequenceNum,
+					UTXOEntry: utxo.NewUTXOEntry(block2TxOut.Value, block2TxOut.ScriptPublicKey, true, 0),
+				},
+				{
+					PreviousOutpoint: externalapi.DomainOutpoint{
+						TransactionID: *consensushashing.TransactionID(block3.Transactions[0]),
+						Index:         0,
+					},
+					Sequence:  constants.MaxTxInSequenceNum,
+					UTXOEntry: utxo.NewUTXOEntry(block3TxOut.Value, block3TxOut.ScriptPublicKey, true, 0),
+				},
+			},
+			Outputs: []*externalapi.DomainTransactionOutput{{
+				Value: 1,
+				ScriptPublicKey: &externalapi.ScriptPublicKey{
+					Script:  nil,
+					Version: 0,
+				},
+			}},
+			SubnetworkID: subnetworks.SubnetworkIDNative,
+			Gas:          0,
+			LockTime:     0,
+		}
+
+		sighashReusedValues := &consensushashing.SighashReusedValues{}
+		for i, input := range tx.Inputs {
+			signatureScript, err := txscript.SignatureScriptECDSA(tx, i, consensushashing.SigHashAll, privateKey,
 				sighashReusedValues)
 			if err != nil {
 				t.Fatalf("Failed to create a sigScript: %v", err)

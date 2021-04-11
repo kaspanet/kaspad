@@ -8,12 +8,20 @@ import (
 )
 
 // CreateKeyPair generates a private-public key pair
-func CreateKeyPair() ([]byte, []byte, error) {
-	privateKey, err := secp256k1.GenerateSchnorrKeyPair()
+func CreateKeyPair(ecdsa bool) ([]byte, []byte, error) {
+	if ecdsa {
+		return createKeyPairECDSA()
+	}
+
+	return createKeyPair()
+}
+
+func createKeyPair() ([]byte, []byte, error) {
+	keyPair, err := secp256k1.GenerateSchnorrKeyPair()
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "Failed to generate private key")
 	}
-	publicKey, err := privateKey.SchnorrPublicKey()
+	publicKey, err := keyPair.SchnorrPublicKey()
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "Failed to generate public key")
 	}
@@ -22,30 +30,61 @@ func CreateKeyPair() ([]byte, []byte, error) {
 		return nil, nil, errors.Wrap(err, "Failed to serialize public key")
 	}
 
-	return privateKey.SerializePrivateKey()[:], publicKeySerialized[:], nil
+	return keyPair.SerializePrivateKey()[:], publicKeySerialized[:], nil
 }
 
-func addressFromPublicKey(params *dagconfig.Params, publicKeySerialized []byte) (util.Address, error) {
-	addr, err := util.NewAddressPubKeyHashFromPublicKey(publicKeySerialized[:], params.Prefix)
+func createKeyPairECDSA() ([]byte, []byte, error) {
+	keyPair, err := secp256k1.GenerateECDSAPrivateKey()
 	if err != nil {
-		return nil, errors.Wrap(err, "Failed to generate p2pkh address")
+		return nil, nil, errors.Wrap(err, "Failed to generate private key")
+	}
+	publicKey, err := keyPair.ECDSAPublicKey()
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "Failed to generate public key")
+	}
+	publicKeySerialized, err := publicKey.Serialize()
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "Failed to serialize public key")
 	}
 
-	return addr, nil
+	return keyPair.Serialize()[:], publicKeySerialized[:], nil
+}
+
+// PublicKeyFromPrivateKey returns the public key associated with a private key
+func PublicKeyFromPrivateKey(privateKeyBytes []byte) ([]byte, error) {
+	keyPair, err := secp256k1.DeserializeSchnorrPrivateKeyFromSlice(privateKeyBytes)
+	if err != nil {
+		return nil, errors.Wrap(err, "Failed to deserialize private key")
+	}
+
+	publicKey, err := keyPair.SchnorrPublicKey()
+	if err != nil {
+		return nil, errors.Wrap(err, "Failed to generate public key")
+	}
+
+	publicKeySerialized, err := publicKey.Serialize()
+	if err != nil {
+		return nil, errors.Wrap(err, "Failed to serialize public key")
+	}
+
+	return publicKeySerialized[:], nil
 }
 
 // Address returns the address associated with the given public keys and minimum signatures parameters.
-func Address(params *dagconfig.Params, pubKeys [][]byte, minimumSignatures uint32) (util.Address, error) {
+func Address(params *dagconfig.Params, pubKeys [][]byte, minimumSignatures uint32, ecdsa bool) (util.Address, error) {
 	sortPublicKeys(pubKeys)
 	if uint32(len(pubKeys)) < minimumSignatures {
 		return nil, errors.Errorf("The minimum amount of signatures (%d) is greater than the amount of "+
 			"provided public keys (%d)", minimumSignatures, len(pubKeys))
 	}
 	if len(pubKeys) == 1 {
-		return addressFromPublicKey(params, pubKeys[0])
+		if ecdsa {
+			return util.NewAddressPublicKeyECDSA(pubKeys[0][:], params.Prefix)
+		}
+		return util.NewAddressPublicKey(pubKeys[0][:], params.Prefix)
 	}
 
-	redeemScript, err := multiSigRedeemScript(pubKeys, minimumSignatures)
+	redeemScript, err := multiSigRedeemScript(pubKeys, minimumSignatures, ecdsa)
 	if err != nil {
 		return nil, err
 	}

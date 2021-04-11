@@ -22,10 +22,17 @@ func TstAppDataDir(goos, appName string, roaming bool) string {
 	return appDir(goos, appName, roaming)
 }
 
-func TstAddressPubKeyHash(prefix Bech32Prefix, hash [blake2b.Size256]byte) *AddressPubKeyHash {
-	return &AddressPubKeyHash{
-		prefix: prefix,
-		hash:   hash,
+func TstAddressPubKey(prefix Bech32Prefix, hash [PublicKeySize]byte) *AddressPublicKey {
+	return &AddressPublicKey{
+		prefix:    prefix,
+		publicKey: hash,
+	}
+}
+
+func TstAddressPubKeyECDSA(prefix Bech32Prefix, hash [PublicKeySizeECDSA]byte) *AddressPublicKeyECDSA {
+	return &AddressPublicKeyECDSA{
+		prefix:    prefix,
+		publicKey: hash,
 	}
 }
 
@@ -40,8 +47,22 @@ func TstAddressScriptHash(prefix Bech32Prefix, hash [blake2b.Size256]byte) *Addr
 }
 
 // TstAddressSAddr returns the expected script address bytes for
-// P2PKH and P2SH kaspa addresses.
-func TstAddressSAddr(addr string) []byte {
+// P2PK kaspa addresses.
+func TstAddressSAddrP2PK(addr string) []byte {
+	_, decoded, _, _ := bech32.Decode(addr)
+	return decoded[:PublicKeySize]
+}
+
+// TstAddressSAddr returns the expected script address bytes for
+// ECDSA P2PK kaspa addresses.
+func TstAddressSAddrP2PKECDSA(addr string) []byte {
+	_, decoded, _, _ := bech32.Decode(addr)
+	return decoded[:PublicKeySizeECDSA]
+}
+
+// TstAddressSAddrP2SH returns the expected script address bytes for
+// P2SH kaspa addresses.
+func TstAddressSAddrP2SH(addr string) []byte {
 	_, decoded, _, _ := bech32.Decode(addr)
 	return decoded[:blake2b.Size256]
 }

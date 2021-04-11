@@ -2,7 +2,6 @@ package consensushashing
 
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/hashes"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/serialization"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/subnetworks"
@@ -58,10 +57,10 @@ type SighashReusedValues struct {
 	payloadHash         *externalapi.DomainHash
 }
 
-// CalculateSignatureHash will, given a script and hash type calculate the signature hash
-// to be used for signing and verification.
+// CalculateSignatureHashSchnorr will, given a script and hash type calculate the signature hash
+// to be used for signing and verification for Schnorr.
 // This returns error only if one of the provided parameters are consensus-invalid.
-func CalculateSignatureHash(tx *externalapi.DomainTransaction, inputIndex int, hashType SigHashType,
+func CalculateSignatureHashSchnorr(tx *externalapi.DomainTransaction, inputIndex int, hashType SigHashType,
 	reusedValues *SighashReusedValues) (*externalapi.DomainHash, error) {
 
 	if !hashType.IsStandardSigHashType() {
@@ -70,16 +69,24 @@ func CalculateSignatureHash(tx *externalapi.DomainTransaction, inputIndex int, h
 
 	txIn := tx.Inputs[inputIndex]
 	prevScriptPublicKey := txIn.UTXOEntry.ScriptPublicKey()
-
-	if tx.Version > constants.MaxTransactionVersion {
-		return nil, errors.Errorf("Transaction version is unknown.")
-	}
-
-	if prevScriptPublicKey.Version > constants.MaxScriptPublicKeyVersion {
-		return nil, errors.Errorf("Script version is unknown.")
-	}
-
 	return calculateSignatureHash(tx, inputIndex, txIn, prevScriptPublicKey, hashType, reusedValues)
+}
+
+// CalculateSignatureHashECDSA will, given a script and hash type calculate the signature hash
+// to be used for signing and verification for ECDSA.
+// This returns error only if one of the provided parameters are consensus-invalid.
+func CalculateSignatureHashECDSA(tx *externalapi.DomainTransaction, inputIndex int, hashType SigHashType,
+	reusedValues *SighashReusedValues) (*externalapi.DomainHash, error) {
+
+	hash, err := CalculateSignatureHashSchnorr(tx, inputIndex, hashType, reusedValues)
+	if err != nil {
+		return nil, err
+	}
+
+	hashWriter := hashes.NewTransactionSigningHashECDSAWriter()
+	hashWriter.InfallibleWrite(hash.ByteSlice())
+
+	return hashWriter.Finalize(), nil
 }
 
 func calculateSignatureHash(tx *externalapi.DomainTransaction, inputIndex int, txIn *externalapi.DomainTransactionInput,
