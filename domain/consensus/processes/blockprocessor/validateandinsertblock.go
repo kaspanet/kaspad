@@ -124,7 +124,7 @@ func (bp *blockProcessor) validateAndInsertBlock(stagingArea *model.StagingArea,
 		return nil, err
 	}
 
-	err = bp.pruningManager.UpdatePruningPointUTXOSetIfRequired()
+	err = bp.pruningManager.UpdatePruningPointIfRequired()
 	if err != nil {
 		return nil, err
 	}

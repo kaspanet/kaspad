@@ -2,14 +2,11 @@ package libkaspawallet
 
 import (
 	"bytes"
-	"github.com/kaspanet/go-secp256k1"
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/libkaspawallet/serialization"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/subnetworks"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/txscript"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/utxo"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/pkg/errors"
 	"sort"
@@ -31,11 +28,12 @@ func sortPublicKeys(publicKeys [][]byte) {
 func CreateUnsignedTransaction(
 	pubKeys [][]byte,
 	minimumSignatures uint32,
+	ecdsa bool,
 	payments []*Payment,
 	selectedUTXOs []*externalapi.OutpointAndUTXOEntryPair) ([]byte, error) {
 
 	sortPublicKeys(pubKeys)
-	unsignedTransaction, err := createUnsignedTransaction(pubKeys, minimumSignatures, payments, selectedUTXOs)
+	unsignedTransaction, err := createUnsignedTransaction(pubKeys, minimumSignatures, ecdsa, payments, selectedUTXOs)
 	if err != nil {
 		return nil, err
 	}
@@ -43,53 +41,34 @@ func CreateUnsignedTransaction(
 	return serialization.SerializePartiallySignedTransaction(unsignedTransaction)
 }
 
-// Sign signs the transaction with the given private keys
-func Sign(privateKeys [][]byte, serializedPSTx []byte) ([]byte, error) {
-	keyPairs := make([]*secp256k1.SchnorrKeyPair, len(privateKeys))
-	for i, privateKey := range privateKeys {
-		var err error
-		keyPairs[i], err = secp256k1.DeserializeSchnorrPrivateKeyFromSlice(privateKey)
-		if err != nil {
-			return nil, errors.Wrap(err, "Error deserializing private key")
-		}
-	}
-
-	partiallySignedTransaction, err := serialization.DeserializePartiallySignedTransaction(serializedPSTx)
-	if err != nil {
-		return nil, err
-	}
-
-	for _, keyPair := range keyPairs {
-		err = sign(keyPair, partiallySignedTransaction)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	return serialization.SerializePartiallySignedTransaction(partiallySignedTransaction)
-}
-
-func multiSigRedeemScript(pubKeys [][]byte, minimumSignatures uint32) ([]byte, error) {
+func multiSigRedeemScript(pubKeys [][]byte, minimumSignatures uint32, ecdsa bool) ([]byte, error) {
 	scriptBuilder := txscript.NewScriptBuilder()
 	scriptBuilder.AddInt64(int64(minimumSignatures))
 	for _, key := range pubKeys {
 		scriptBuilder.AddData(key)
 	}
 	scriptBuilder.AddInt64(int64(len(pubKeys)))
-	scriptBuilder.AddOp(txscript.OpCheckMultiSig)
+
+	if ecdsa {
+		scriptBuilder.AddOp(txscript.OpCheckMultiSigECDSA)
+	} else {
+		scriptBuilder.AddOp(txscript.OpCheckMultiSig)
+	}
+
 	return scriptBuilder.Script()
 }
 
 func createUnsignedTransaction(
 	pubKeys [][]byte,
 	minimumSignatures uint32,
+	ecdsa bool,
 	payments []*Payment,
 	selectedUTXOs []*externalapi.OutpointAndUTXOEntryPair) (*serialization.PartiallySignedTransaction, error) {
 
 	var redeemScript []byte
 	if len(pubKeys) > 1 {
 		var err error
-		redeemScript, err = multiSigRedeemScript(pubKeys, minimumSignatures)
+		redeemScript, err = multiSigRedeemScript(pubKeys, minimumSignatures, ecdsa)
 		if err != nil {
 			return nil, err
 		}
@@ -144,53 +123,6 @@ func createUnsignedTransaction(
 		Tx:                    domainTransaction,
 		PartiallySignedInputs: partiallySignedInputs,
 	}, nil
-}
-
-func sign(keyPair *secp256k1.SchnorrKeyPair, psTx *serialization.PartiallySignedTransaction) error {
-	if isTransactionFullySigned(psTx) {
-		return nil
-	}
-
-	publicKey, err := keyPair.SchnorrPublicKey()
-	if err != nil {
-		return err
-	}
-
-	serializedPublicKey, err := publicKey.Serialize()
-	if err != nil {
-		return err
-	}
-
-	sighashReusedValues := &consensushashing.SighashReusedValues{}
-	for i, partiallySignedInput := range psTx.PartiallySignedInputs {
-		prevOut := partiallySignedInput.PrevOutput
-		psTx.Tx.Inputs[i].UTXOEntry = utxo.NewUTXOEntry(
-			prevOut.Value,
-			prevOut.ScriptPublicKey,
-			false, // This is a fake value, because it's irrelevant for the signature
-			0,     // This is a fake value, because it's irrelevant for the signature
-		)
-	}
-
-	signed := false
-	for i, partiallySignedInput := range psTx.PartiallySignedInputs {
-		for _, pair := range partiallySignedInput.PubKeySignaturePairs {
-			if bytes.Equal(pair.PubKey, serializedPublicKey[:]) {
-				pair.Signature, err = txscript.RawTxInSignature(psTx.Tx, i, consensushashing.SigHashAll, keyPair, sighashReusedValues)
-				if err != nil {
-					return err
-				}
-
-				signed = true
-			}
-		}
-	}
-
-	if !signed {
-		return errors.Errorf("Public key doesn't match any of the transaction public keys")
-	}
-
-	return nil
 }
 
 // IsTransactionFullySigned returns whether the transaction is fully signed and ready to broadcast.

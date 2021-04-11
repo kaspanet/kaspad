@@ -1,18 +1,25 @@
 package hashes
 
 import (
+	"crypto/sha256"
 	"github.com/pkg/errors"
 	"golang.org/x/crypto/blake2b"
 )
 
 const (
-	transcationHashDomain    = "TransactionHash"
-	transcationIDDomain      = "TransactionID"
-	transcationSigningDomain = "TransactionSigningHash"
-	blockDomain              = "BlockHash"
-	proofOfWorkDomain        = "ProofOfWorkHash"
-	merkleBranchDomain       = "MerkleBranchHash"
+	transcationHashDomain         = "TransactionHash"
+	transcationIDDomain           = "TransactionID"
+	transcationSigningDomain      = "TransactionSigningHash"
+	transcationSigningECDSADomain = "TransactionSigningHashECDSA"
+	blockDomain                   = "BlockHash"
+	proofOfWorkDomain             = "ProofOfWorkHash"
+	merkleBranchDomain            = "MerkleBranchHash"
 )
+
+// transactionSigningECDSADomainHash is a hashed version of transcationSigningECDSADomain that is used
+// to make it a constant size. This is needed because this domain is used by sha256 hash writer, and
+// sha256 doesn't support variable size domain separation.
+var transactionSigningECDSADomainHash = sha256.Sum256([]byte(transcationSigningECDSADomain))
 
 // NewTransactionHashWriter Returns a new HashWriter used for transaction hashes
 func NewTransactionHashWriter() HashWriter {
@@ -39,6 +46,13 @@ func NewTransactionSigningHashWriter() HashWriter {
 		panic(errors.Wrapf(err, "this should never happen. %s is less than 64 bytes", transcationSigningDomain))
 	}
 	return HashWriter{blake}
+}
+
+// NewTransactionSigningHashECDSAWriter Returns a new HashWriter used for signing on a transaction with ECDSA
+func NewTransactionSigningHashECDSAWriter() HashWriter {
+	hashWriter := HashWriter{sha256.New()}
+	hashWriter.InfallibleWrite(transactionSigningECDSADomainHash[:])
+	return hashWriter
 }
 
 // NewBlockHashWriter Returns a new HashWriter used for hashing blocks

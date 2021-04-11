@@ -54,7 +54,7 @@ func checkScripts(msg string, tx *externalapi.DomainTransaction, idx int, sigScr
 	tx.Inputs[idx].SignatureScript = sigScript
 	var flags ScriptFlags
 	vm, err := NewEngine(scriptPubKey, tx, idx,
-		flags, nil, &consensushashing.SighashReusedValues{})
+		flags, nil, nil, &consensushashing.SighashReusedValues{})
 	if err != nil {
 		return errors.Errorf("failed to make script engine for %s: %v",
 			msg, err)
@@ -870,7 +870,7 @@ nexttest:
 		// Validate tx input scripts
 		var scriptFlags ScriptFlags
 		for j := range tx.Inputs {
-			vm, err := NewEngine(sigScriptTests[i].inputs[j].txout.ScriptPublicKey, tx, j, scriptFlags, nil,
+			vm, err := NewEngine(sigScriptTests[i].inputs[j].txout.ScriptPublicKey, tx, j, scriptFlags, nil, nil,
 				&consensushashing.SighashReusedValues{})
 			if err != nil {
 				t.Errorf("cannot create script vm for test %v: %v",

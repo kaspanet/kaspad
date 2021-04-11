@@ -22,7 +22,15 @@ type ScriptClass byte
 const (
 	NonStandardTy ScriptClass = iota // None of the recognized forms.
 	PubKeyTy                         // Pay to pubkey.
+	PubKeyECDSATy                    // Pay to pubkey ECDSA.
 	ScriptHashTy                     // Pay to script hash.
+)
+
+// Script public key versions for address types.
+const (
+	addressPublicKeyScriptPublicKeyVersion      = 0
+	addressPublicKeyECDSAScriptPublicKeyVersion = 0
+	addressScriptHashScriptPublicKeyVersion     = 0
 )
 
 // scriptClassToName houses the human-readable strings which describe each
@@ -30,6 +38,7 @@ const (
 var scriptClassToName = []string{
 	NonStandardTy: "nonstandard",
 	PubKeyTy:      "pubkey",
+	PubKeyECDSATy: "pubkeyecdsa",
 	ScriptHashTy:  "scripthash",
 }
 
@@ -49,15 +58,26 @@ func isPayToPubkey(pops []parsedOpcode) bool {
 	return len(pops) == 2 &&
 		pops[0].opcode.value == OpData32 &&
 		pops[1].opcode.value == OpCheckSig
+}
+
+// isPayToPubkeyECDSA returns true if the script passed is an ECDSA pay-to-pubkey
+// transaction, false otherwise.
+func isPayToPubkeyECDSA(pops []parsedOpcode) bool {
+	return len(pops) == 2 &&
+		pops[0].opcode.value == OpData33 &&
+		pops[1].opcode.value == OpCheckSigECDSA
 
 }
 
 // scriptType returns the type of the script being inspected from the known
 // standard types.
 func typeOfScript(pops []parsedOpcode) ScriptClass {
-	if isPayToPubkey(pops) {
+	switch {
+	case isPayToPubkey(pops):
 		return PubKeyTy
-	} else if isScriptHash(pops) {
+	case isPayToPubkeyECDSA(pops):
+		return PubKeyECDSATy
+	case isScriptHash(pops):
 		return ScriptHashTy
 	}
 	return NonStandardTy
@@ -167,12 +187,20 @@ func CalcScriptInfo(sigScript, scriptPubKey []byte, isP2SH bool) (*ScriptInfo, e
 }
 
 // payToPubKeyScript creates a new script to pay a transaction
-// output to a 32-byte pubkey. It is expected that the input is a valid
-// hash.
+// output to a 32-byte pubkey.
 func payToPubKeyScript(pubKey []byte) ([]byte, error) {
 	return NewScriptBuilder().
 		AddData(pubKey).
 		AddOp(OpCheckSig).
+		Script()
+}
+
+// payToPubKeyScript creates a new script to pay a transaction
+// output to a 33-byte pubkey.
+func payToPubKeyScriptECDSA(pubKey []byte) ([]byte, error) {
+	return NewScriptBuilder().
+		AddData(pubKey).
+		AddOp(OpCheckSigECDSA).
 		Script()
 }
 
@@ -197,7 +225,20 @@ func PayToAddrScript(addr util.Address) (*externalapi.ScriptPublicKey, error) {
 		if err != nil {
 			return nil, err
 		}
-		return &externalapi.ScriptPublicKey{script, constants.MaxScriptPublicKeyVersion}, err
+
+		return &externalapi.ScriptPublicKey{script, addressPublicKeyScriptPublicKeyVersion}, err
+
+	case *util.AddressPublicKeyECDSA:
+		if addr == nil {
+			return nil, scriptError(ErrUnsupportedAddress,
+				nilAddrErrStr)
+		}
+		script, err := payToPubKeyScriptECDSA(addr.ScriptAddress())
+		if err != nil {
+			return nil, err
+		}
+
+		return &externalapi.ScriptPublicKey{script, addressPublicKeyECDSAScriptPublicKeyVersion}, err
 
 	case *util.AddressScriptHash:
 		if addr == nil {
@@ -208,7 +249,8 @@ func PayToAddrScript(addr util.Address) (*externalapi.ScriptPublicKey, error) {
 		if err != nil {
 			return nil, err
 		}
-		return &externalapi.ScriptPublicKey{script, constants.MaxScriptPublicKeyVersion}, err
+
+		return &externalapi.ScriptPublicKey{script, addressScriptHashScriptPublicKeyVersion}, err
 	}
 
 	str := fmt.Sprintf("unable to generate payment script for unsupported "+
@@ -280,6 +322,18 @@ func ExtractScriptPubKeyAddress(scriptPubKey *externalapi.ScriptPublicKey, dagPa
 		// Therefore the pubkey is the first item on the stack.
 		// If the pubkey is invalid for some reason, return a nil address.
 		addr, err := util.NewAddressPublicKey(pops[0].data,
+			dagParams.Prefix)
+		if err != nil {
+			return scriptClass, nil, nil
+		}
+		return scriptClass, addr, nil
+
+	case PubKeyECDSATy:
+		// A pay-to-pubkey script is of the form:
+		// <pubkey> OP_CHECKSIGECDSA
+		// Therefore the pubkey is the first item on the stack.
+		// If the pubkey is invalid for some reason, return a nil address.
+		addr, err := util.NewAddressPublicKeyECDSA(pops[0].data,
 			dagParams.Prefix)
 		if err != nil {
 			return scriptClass, nil, nil

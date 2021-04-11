@@ -24,21 +24,24 @@ func TestAddressKeySerialization(t *testing.T) {
 	}
 }
 
-func TestNetAddressSerialization(t *testing.T) {
-	addressManager, teardown := newAddressManagerForTest(t, "TestNetAddressSerialization")
+func TestAddressSerialization(t *testing.T) {
+	addressManager, teardown := newAddressManagerForTest(t, "TestAddressSerialization")
 	defer teardown()
 	addressStore := addressManager.store
 
-	testAddress := &appmessage.NetAddress{
-		IP:        net.ParseIP("2602:100:abcd::102"),
-		Port:      12345,
-		Timestamp: mstime.Now(),
+	testAddress := &address{
+		netAddress: &appmessage.NetAddress{
+			IP:        net.ParseIP("2602:100:abcd::102"),
+			Port:      12345,
+			Timestamp: mstime.Now(),
+		},
+		connectionFailedCount: 98465,
 	}
 
-	serializedTestNetAddress := addressStore.serializeNetAddress(testAddress)
-	deserializedTestNetAddress := addressStore.deserializeNetAddress(serializedTestNetAddress)
-	if !reflect.DeepEqual(testAddress, deserializedTestNetAddress) {
-		t.Fatalf("testAddress and deserializedTestNetAddress are not equal\n"+
-			"testAddress:%+v\ndeserializedTestNetAddress:%+v", testAddress, deserializedTestNetAddress)
+	serializedTestAddress := addressStore.serializeAddress(testAddress)
+	deserializedTestAddress := addressStore.deserializeAddress(serializedTestAddress)
+	if !reflect.DeepEqual(testAddress, deserializedTestAddress) {
+		t.Fatalf("testAddress and deserializedTestAddress are not equal\n"+
+			"testAddress:%+v\ndeserializedTestAddress:%+v", testAddress, deserializedTestAddress)
 	}
 }

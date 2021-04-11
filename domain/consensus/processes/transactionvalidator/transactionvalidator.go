@@ -21,6 +21,7 @@ type transactionValidator struct {
 	massPerSigOp               uint64
 	maxCoinbasePayloadLength   uint64
 	sigCache                   *txscript.SigCache
+	sigCacheECDSA              *txscript.SigCacheECDSA
 }
 
 // New instantiates a new TransactionValidator
@@ -47,5 +48,6 @@ func New(blockCoinbaseMaturity uint64,
 		ghostdagDataStore:          ghostdagDataStore,
 		daaBlocksStore:             daaBlocksStore,
 		sigCache:                   txscript.NewSigCache(sigCacheSize),
+		sigCacheECDSA:              txscript.NewSigCacheECDSA(sigCacheSize),
 	}
 }

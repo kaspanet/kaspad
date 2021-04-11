@@ -102,6 +102,32 @@ func TestAddresses(t *testing.T) {
 			expectedPrefix: util.Bech32PrefixKaspaTest,
 		},
 
+		// ECDSA P2PK tests.
+		{
+			name:    "mainnet ecdsa p2pk",
+			addr:    "kaspa:q835ennsep3hxfe7lnz5ee7j5jgmkjswsn35ennsep3hxfe7ln35e2sm7yrlr4w",
+			encoded: "kaspa:q835ennsep3hxfe7lnz5ee7j5jgmkjswsn35ennsep3hxfe7ln35e2sm7yrlr4w",
+			valid:   true,
+			result: util.TstAddressPubKeyECDSA(
+				util.Bech32PrefixKaspa,
+				[util.PublicKeySizeECDSA]byte{
+					0xe3, 0x4c, 0xce, 0x70, 0xc8, 0x63, 0x73, 0x27, 0x3e, 0xfc,
+					0xc5, 0x4c, 0xe7, 0xd2, 0xa4, 0x91, 0xbb, 0x4a, 0x0e, 0x84,
+					0xe3, 0x4c, 0xce, 0x70, 0xc8, 0x63, 0x73, 0x27, 0x3e, 0xfc,
+					0xe3, 0x4c, 0xaa,
+				}),
+			f: func() (util.Address, error) {
+				publicKey := []byte{
+					0xe3, 0x4c, 0xce, 0x70, 0xc8, 0x63, 0x73, 0x27, 0x3e, 0xfc,
+					0xc5, 0x4c, 0xe7, 0xd2, 0xa4, 0x91, 0xbb, 0x4a, 0x0e, 0x84,
+					0xe3, 0x4c, 0xce, 0x70, 0xc8, 0x63, 0x73, 0x27, 0x3e, 0xfc,
+					0xe3, 0x4c, 0xaa}
+				return util.NewAddressPublicKeyECDSA(publicKey, util.Bech32PrefixKaspa)
+			},
+			passedPrefix:   util.Bech32PrefixUnknown,
+			expectedPrefix: util.Bech32PrefixKaspa,
+		},
+
 		// Negative P2PK tests.
 		{
 			name:  "p2pk wrong public key length",
@@ -270,6 +296,9 @@ func TestAddresses(t *testing.T) {
 			case *util.AddressPublicKey:
 				saddr = util.TstAddressSAddrP2PK(encoded)
 
+			case *util.AddressPublicKeyECDSA:
+				saddr = util.TstAddressSAddrP2PKECDSA(encoded)
+
 			case *util.AddressScriptHash:
 				saddr = util.TstAddressSAddrP2SH(encoded)
 			}
@@ -328,6 +357,12 @@ func TestAddresses(t *testing.T) {
 
 		if !reflect.DeepEqual(addr, test.result) {
 			t.Errorf("%v: created address does not match expected result",
+				test.name)
+			return
+		}
+
+		if !reflect.DeepEqual(addr, decoded) {
+			t.Errorf("%v: created address does not match the decoded address",
 				test.name)
 			return
 		}

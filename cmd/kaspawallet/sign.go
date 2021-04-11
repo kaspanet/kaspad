@@ -23,7 +23,7 @@ func sign(conf *signConfig) error {
 		return err
 	}
 
-	updatedPSTxBytes, err := libkaspawallet.Sign(privateKeys, psTxBytes)
+	updatedPSTxBytes, err := libkaspawallet.Sign(privateKeys, psTxBytes, keysFile.ECDSA)
 	if err != nil {
 		return err
 	}
