@@ -3,6 +3,7 @@ package transactionrelay_test
 import (
 	"errors"
 	"github.com/kaspanet/kaspad/app/protocol/flows/transactionrelay"
+	"github.com/kaspanet/kaspad/app/protocol/protocolerrors"
 	"github.com/kaspanet/kaspad/domain"
 	"github.com/kaspanet/kaspad/domain/consensus"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
@@ -44,15 +45,15 @@ func (m *mocTransactionsRelayContext) Broadcast(appmessage.Message) error {
 func (m *mocTransactionsRelayContext) OnTransactionAddedToMempool() {
 }
 
-// TestHandleRelayedTransactions verifies that the flow of  HandleRelayedTransactions
-// is working as expected. The goroutine is representing the peer's actions.
-func TestHandleRelayedTransactions(t *testing.T) {
+// TestHandleRelayedTransactionsNotFound tests the flow of  HandleRelayedTransactions when the peer doesn't
+// have the requested transactions in the mempool.
+func TestHandleRelayedTransactionsNotFound(t *testing.T) {
 	testutils.ForAllNets(t, true, func(t *testing.T, params *dagconfig.Params) {
 
 		var log = logger.RegisterSubSystem("PROT")
 		var spawn = panics.GoroutineWrapperFunc(log)
 		factory := consensus.NewFactory()
-		tc, teardown, err := factory.NewTestConsensus(params, false, "TestHandleRelayedTransactions")
+		tc, teardown, err := factory.NewTestConsensus(params, false, "TestHandleRelayedTransactionsNotFound")
 		if err != nil {
 			t.Fatalf("Error setting up test consensus: %+v", err)
 		}
@@ -91,9 +92,9 @@ func TestHandleRelayedTransactions(t *testing.T) {
 		invMessage := appmessage.NewMsgInvTransaction(txIDs)
 		err = incomingRoute.Enqueue(invMessage)
 		if err != nil {
-			t.Fatalf("Enqueue: %v", err)
+			t.Fatalf("Unexpected error from incomingRoute.Enqueue: %v", err)
 		}
-
+		// The goroutine is representing the peer's actions.
 		spawn("peerResponseToTheTransactionsRequest", func() {
 			msg, err := peerIncomingRoute.Dequeue()
 			if err != nil {
@@ -107,33 +108,45 @@ func TestHandleRelayedTransactions(t *testing.T) {
 
 			for i, id := range inv.IDs {
 				if txIDs[i].String() != id.String() {
-					t.Fatalf("TestHandleRelayedTransactions: expected equal txID: expected to %s, but got %s", txIDs[i].String(), id.String())
+					t.Fatalf("TestHandleRelayedTransactions: expected equal txID: expected %s, but got %s", txIDs[i].String(), id.String())
 				}
 				err = incomingRoute.Enqueue(appmessage.NewMsgTransactionNotFound(txIDs[i]))
 				if err != nil {
-					t.Fatalf("Enqueue: %+v", err)
+					t.Fatalf("Unexpected error from incomingRoute.Enqueue: %v", err)
 				}
 			}
+			// Insert an unexpected message type to stop the infinity loop.
 			err = incomingRoute.Enqueue(&appmessage.MsgAddresses{})
 			if err != nil {
-				t.Fatalf("Enqueue: %+v", err)
+				t.Fatalf("Unexpected error from incomingRoute.Enqueue: %v", err)
 			}
 		})
 
 		err = transactionrelay.HandleRelayedTransactions(context, incomingRoute, peerIncomingRoute)
-		if err == nil || !strings.Contains(err.Error(), "unexpected Addresses") {
-			t.Fatalf("Unexpected error: %v", err)
+		// Since we inserted an unexpected message type to stop the infinity loop,
+		// we expect the error will be infected from this specific message and also the
+		// error will count as a protocol message.
+		if protocolErr := (protocolerrors.ProtocolError{}); err == nil || !errors.As(err, &protocolErr) {
+			t.Fatalf("Expected to protocol error")
+		} else {
+			if protocolErr.ShouldBan != true {
+				t.Fatalf("Exepcted shouldBan true, but got false.")
+			}
+			if !strings.Contains(err.Error(), "unexpected Addresses [code 3] message in the block relay flow while expecting an inv message") {
+				t.Fatalf("Unexpected error: expected: an error due to existence of an Addresses message "+
+					"in the block relay flow, but got: %v", protocolErr.Cause)
+			}
 		}
 	})
 }
 
-// TestOnClosedIngoingRoute verifies that an appropriate error message will raise when
+// TestOnClosedIncomingRoute verifies that an appropriate error message will be returned when
 // trying to dequeue a message from a closed route.
-func TestOnClosedIngoingRoute(t *testing.T) {
+func TestOnClosedIncomingRoute(t *testing.T) {
 	testutils.ForAllNets(t, true, func(t *testing.T, params *dagconfig.Params) {
 
 		factory := consensus.NewFactory()
-		tc, teardown, err := factory.NewTestConsensus(params, false, "TestOnClosedOutgoingRoute")
+		tc, teardown, err := factory.NewTestConsensus(params, false, "TestOnClosedIncomingRoute")
 		if err != nil {
 			t.Fatalf("Error setting up test consensus: %+v", err)
 		}
@@ -166,7 +179,7 @@ func TestOnClosedIngoingRoute(t *testing.T) {
 
 		err = incomingRoute.Enqueue(&appmessage.MsgInvTransaction{TxIDs: txIDs})
 		if err != nil {
-			t.Fatalf("Enqueue: %v", err)
+			t.Fatalf("Unexpected error from incomingRoute.Enqueue: %v", err)
 		}
 		incomingRoute.Close()
 		err = transactionrelay.HandleRelayedTransactions(context, incomingRoute, outgoingRoute)

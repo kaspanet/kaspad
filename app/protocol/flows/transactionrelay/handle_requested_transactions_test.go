@@ -17,15 +17,14 @@ import (
 	"testing"
 )
 
-// TestHandleRequestedTransactions verifies that the flow of  HandleRequestedTransactions
-// is working as expected. The goroutine is representing the peer's actions.
-func TestHandleRequestedTransactions(t *testing.T) {
+// TestHandleRequestedTransactionsNotFound tests the flow of  HandleRequestedTransactions
+// when the requested transactions don't found in the mempool.
+func TestHandleRequestedTransactionsNotFound(t *testing.T) {
 	testutils.ForAllNets(t, true, func(t *testing.T, params *dagconfig.Params) {
-
 		var log = logger.RegisterSubSystem("PROT")
 		var spawn = panics.GoroutineWrapperFunc(log)
 		factory := consensus.NewFactory()
-		tc, teardown, err := factory.NewTestConsensus(params, false, "TestHandleRequestedTransactions")
+		tc, teardown, err := factory.NewTestConsensus(params, false, "TestHandleRequestedTransactionsNotFound")
 		if err != nil {
 			t.Fatalf("Error setting up test Consensus: %+v", err)
 		}
@@ -63,9 +62,9 @@ func TestHandleRequestedTransactions(t *testing.T) {
 		msg := appmessage.NewMsgRequestTransactions(txIDs)
 		err = incomingRoute.Enqueue(msg)
 		if err != nil {
-			t.Fatalf("Enqueue: %v", err)
+			t.Fatalf("Unexpected error from incomingRoute.Enqueue: %v", err)
 		}
-
+		// The goroutine is representing the peer's actions.
 		spawn("peerResponseToTheTransactionsMessages", func() {
 			for i, id := range txIDs {
 				msg, err := outgoingRoute.Dequeue()
@@ -74,13 +73,15 @@ func TestHandleRequestedTransactions(t *testing.T) {
 				}
 				outMsg := msg.(*appmessage.MsgTransactionNotFound)
 				if txIDs[i].String() != outMsg.ID.String() {
-					t.Fatalf("TestHandleRelayedTransactions: expected equal txID: expected to %s, but got %s", txIDs[i].String(), id.String())
+					t.Fatalf("TestHandleRelayedTransactions: expected equal txID: expected %s, but got %s", txIDs[i].String(), id.String())
 				}
 			}
+			// Closed the incomingRoute for stop the infinity loop.
 			incomingRoute.Close()
 		})
 
 		err = transactionrelay.HandleRequestedTransactions(context, incomingRoute, outgoingRoute)
+		// Make sure the error is due to the closed route.
 		if err == nil || !errors.Is(err, router.ErrRouteClosed) {
 			t.Fatalf("Unexpected error: expected: %v, got : %v", router.ErrRouteClosed, err)
 		}
