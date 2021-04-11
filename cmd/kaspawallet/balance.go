@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/keys"
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/libkaspawallet"
 	"github.com/kaspanet/kaspad/util"
@@ -13,7 +14,7 @@ func balance(conf *balanceConfig) error {
 		return err
 	}
 
-	keysFile, err := keys.ReadKeysFile(conf.KeysFile)
+	keysFile, err := keys.ReadKeysFile(conf.NetParams(), conf.KeysFile)
 	if err != nil {
 		return err
 	}
