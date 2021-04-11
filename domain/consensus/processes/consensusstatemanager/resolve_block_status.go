@@ -242,7 +242,7 @@ func (csm *consensusStateManager) resolveSingleBlockStatus(stagingArea *model.St
 		if isNewSelectedTip {
 			log.Debugf("Block %s is the new SelectedTip, therefore setting it as old selectedTip's diffChild", blockHash)
 
-			updatedOldSelectedTipUTXOSet, err := pastUTXOSet.DiffFrom(oldSelectedTipUTXOSet)
+			updatedOldSelectedTipUTXOSet, err := csm.diffUpdatedOldSelectedTipUTXOSet(pastUTXOSet, oldSelectedTipUTXOSet)
 			if err != nil {
 				return 0, nil, err
 			}
@@ -255,7 +255,7 @@ func (csm *consensusStateManager) resolveSingleBlockStatus(stagingArea *model.St
 		} else {
 			log.Debugf("Block %s is the tip of currently resolved chain, but not the new selectedTip,"+
 				"therefore setting it's utxoDiffChild to be the current selectedTip ", blockHash)
-			utxoDiff, err := oldSelectedTipUTXOSet.DiffFrom(pastUTXOSet)
+			utxoDiff, err := csm.diffFromTipButNotSelectedTip(oldSelectedTipUTXOSet, pastUTXOSet)
 			if err != nil {
 				return 0, nil, err
 			}
@@ -267,7 +267,7 @@ func (csm *consensusStateManager) resolveSingleBlockStatus(stagingArea *model.St
 		// Later down the process, the diff will be reversed in reverseUTXODiffs.
 		log.Debugf("Block %s is not the new SelectedTip, and is not the tip of the currently verified chain, "+
 			"therefore temporarily setting selectedParent as it's diffChild", blockHash)
-		utxoDiff, err := selectedParentPastUTXOSet.DiffFrom(pastUTXOSet)
+		utxoDiff, err := csm.diffFromNotTipAtAll(selectedParentPastUTXOSet, pastUTXOSet)
 		if err != nil {
 			return 0, nil, err
 		}
@@ -276,6 +276,31 @@ func (csm *consensusStateManager) resolveSingleBlockStatus(stagingArea *model.St
 	}
 
 	return externalapi.StatusUTXOValid, pastUTXOSet, nil
+}
+
+// TODO: UNEXTRACT THOSE METHODS. SHOULD BE IN SEPARATE COMMIT TO EASY UNDO!!!!!
+func (csm *consensusStateManager) diffFromNotTipAtAll(selectedParentPastUTXOSet externalapi.UTXODiff, pastUTXOSet externalapi.UTXODiff) (externalapi.UTXODiff, error) {
+	utxoDiff, err := selectedParentPastUTXOSet.DiffFrom(pastUTXOSet)
+	if err != nil {
+		return nil, err
+	}
+	return utxoDiff, nil
+}
+
+func (csm *consensusStateManager) diffFromTipButNotSelectedTip(oldSelectedTipUTXOSet externalapi.UTXODiff, pastUTXOSet externalapi.UTXODiff) (externalapi.UTXODiff, error) {
+	utxoDiff, err := oldSelectedTipUTXOSet.DiffFrom(pastUTXOSet)
+	if err != nil {
+		return nil, err
+	}
+	return utxoDiff, nil
+}
+
+func (csm *consensusStateManager) diffUpdatedOldSelectedTipUTXOSet(pastUTXOSet externalapi.UTXODiff, oldSelectedTipUTXOSet externalapi.UTXODiff) (externalapi.UTXODiff, error) {
+	updatedOldSelectedTipUTXOSet, err := pastUTXOSet.DiffFrom(oldSelectedTipUTXOSet)
+	if err != nil {
+		return nil, err
+	}
+	return updatedOldSelectedTipUTXOSet, nil
 }
 
 func (csm *consensusStateManager) isNewSelectedTip(stagingArea *model.StagingArea,
