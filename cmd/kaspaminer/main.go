@@ -49,7 +49,7 @@ func main() {
 
 	doneChan := make(chan struct{})
 	spawn("mineLoop", func() {
-		err = mineLoop(client, cfg.NumberOfBlocks, *cfg.TargetBlocksPerSecond, cfg.MineWhenNotSynced, miningAddr)
+		err = mineLoop(client, cfg.NumberOfBlocks, *cfg.TargetBlocksPerSecond, cfg.MineWhenNotSynced, cfg.Delay, miningAddr)
 		if err != nil {
 			panic(errors.Wrap(err, "error in mine loop"))
 		}

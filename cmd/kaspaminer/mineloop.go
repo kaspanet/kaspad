@@ -26,7 +26,7 @@ var hashesTried uint64
 const logHashRateInterval = 10 * time.Second
 
 func mineLoop(client *minerClient, numberOfBlocks uint64, targetBlocksPerSecond float64, mineWhenNotSynced bool,
-	miningAddr util.Address) error {
+	delay int, miningAddr util.Address) error {
 	rand.Seed(time.Now().UnixNano()) // Seed the global concurrent-safe random source.
 
 	errChan := make(chan error)
@@ -79,6 +79,9 @@ func mineLoop(client *minerClient, numberOfBlocks uint64, targetBlocksPerSecond 
 	spawn("handleFoundBlock", func() {
 		for i := uint64(0); numberOfBlocks == 0 || i < numberOfBlocks; i++ {
 			block := <-foundBlockChan
+			if delay > 0 {
+				<-time.After(time.Duration(delay) * time.Second)
+			}
 			err := handleFoundBlock(client, block)
 			if err != nil {
 				errChan <- err
