@@ -143,7 +143,8 @@ func (bb *testBlockBuilder) buildBlockWithParents(stagingArea *model.StagingArea
 		return nil, nil, err
 	}
 
-	selectedParentStatus, err := bb.testConsensus.ConsensusStateManager().ResolveBlockStatus(stagingArea, ghostdagData.SelectedParent())
+	selectedParentStatus, err := bb.testConsensus.ConsensusStateManager().ResolveBlockStatus(
+		stagingArea, ghostdagData.SelectedParent(), false)
 	if err != nil {
 		return nil, nil, err
 	}

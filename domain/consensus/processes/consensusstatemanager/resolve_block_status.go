@@ -12,8 +12,8 @@ import (
 	"github.com/pkg/errors"
 )
 
-func (csm *consensusStateManager) resolveBlockStatus(
-	stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) (externalapi.BlockStatus, error) {
+func (csm *consensusStateManager) resolveBlockStatus(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash,
+	useSeparateStagingAreasPerBlock bool) (externalapi.BlockStatus, error) {
 
 	onEnd := logger.LogAndMeasureExecutionTime(log, fmt.Sprintf("resolveBlockStatus for %s", blockHash))
 	defer onEnd()
@@ -53,8 +53,8 @@ func (csm *consensusStateManager) resolveBlockStatus(
 		unverifiedBlockHash := unverifiedBlocks[i]
 
 		stagingAreaForCurrentBlock := stagingArea
-		isCurrentBlockTopBlock := i == 0
-		if !isCurrentBlockTopBlock {
+		useSeparateStagingArea := useSeparateStagingAreasPerBlock && (i != 0)
+		if useSeparateStagingArea {
 			stagingAreaForCurrentBlock = model.NewStagingArea()
 		}
 
@@ -72,7 +72,7 @@ func (csm *consensusStateManager) resolveBlockStatus(
 		log.Debugf("Block %s status resolved to `%s`, finished %d/%d of unverified blocks",
 			unverifiedBlockHash, blockStatus, len(unverifiedBlocks)-i, len(unverifiedBlocks))
 
-		if !isCurrentBlockTopBlock {
+		if useSeparateStagingArea {
 			err := staging.CommitAllChanges(csm.databaseContext, stagingAreaForCurrentBlock)
 			if err != nil {
 				return 0, err

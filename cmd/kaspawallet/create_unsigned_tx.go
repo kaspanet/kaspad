@@ -3,13 +3,14 @@ package main
 import (
 	"encoding/hex"
 	"fmt"
+
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/keys"
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/libkaspawallet"
 	"github.com/kaspanet/kaspad/util"
 )
 
 func createUnsignedTransaction(conf *createUnsignedTransactionConfig) error {
-	keysFile, err := keys.ReadKeysFile(conf.KeysFile)
+	keysFile, err := keys.ReadKeysFile(conf.NetParams(), conf.KeysFile)
 	if err != nil {
 		return err
 	}

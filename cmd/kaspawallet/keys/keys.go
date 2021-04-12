@@ -6,19 +6,24 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"os"
+	"path/filepath"
+	"runtime"
+
+	"github.com/kaspanet/kaspad/domain/dagconfig"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/pkg/errors"
 	"golang.org/x/crypto/argon2"
 	"golang.org/x/crypto/chacha20poly1305"
-	"os"
-	"path/filepath"
-	"runtime"
 )
 
 var (
-	defaultAppDir   = util.AppDir("kaspawallet", false)
-	defaultKeysFile = filepath.Join(defaultAppDir, "keys.json")
+	defaultAppDir = util.AppDir("kaspawallet", false)
 )
+
+func defaultKeysFile(netParams *dagconfig.Params) string {
+	return filepath.Join(defaultAppDir, netParams.Name, "keys.json")
+}
 
 type encryptedPrivateKeyJSON struct {
 	Cipher string `json:"cipher"`
@@ -119,9 +124,9 @@ func (d *Data) DecryptPrivateKeys() ([][]byte, error) {
 }
 
 // ReadKeysFile returns the data related to the keys file
-func ReadKeysFile(path string) (*Data, error) {
+func ReadKeysFile(netParams *dagconfig.Params, path string) (*Data, error) {
 	if path == "" {
-		path = defaultKeysFile
+		path = defaultKeysFile(netParams)
 	}
 
 	file, err := os.Open(path)
@@ -157,7 +162,7 @@ func createFileDirectoryIfDoesntExist(path string) error {
 		return nil
 	}
 
-	return os.MkdirAll(dir, 0600)
+	return os.MkdirAll(dir, 0700)
 }
 
 func pathExists(path string) (bool, error) {
@@ -176,13 +181,11 @@ func pathExists(path string) (bool, error) {
 }
 
 // WriteKeysFile writes a keys file with the given data
-func WriteKeysFile(path string,
-	encryptedPrivateKeys []*EncryptedPrivateKey,
-	publicKeys [][]byte,
-	minimumSignatures uint32,
-	ecdsa bool) error {
+func WriteKeysFile(netParams *dagconfig.Params, path string, encryptedPrivateKeys []*EncryptedPrivateKey,
+	publicKeys [][]byte, minimumSignatures uint32, ecdsa bool) error {
+
 	if path == "" {
-		path = defaultKeysFile
+		path = defaultKeysFile(netParams)
 	}
 
 	exists, err := pathExists(path)
