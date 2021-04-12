@@ -12,7 +12,7 @@ func GenerateSeed() ([]byte, error) {
 	return randBytes, nil
 }
 
-func NewMasterWithPath(seed []byte, version [4]byte, pathString string) (*ExtendedPrivateKey, error) {
+func NewMasterWithPath(seed []byte, version [4]byte, pathString string) (*ExtendedKey, error) {
 	masterKey, err := NewMaster(seed, version)
 	if err != nil {
 		return nil, err
@@ -21,7 +21,7 @@ func NewMasterWithPath(seed []byte, version [4]byte, pathString string) (*Extend
 	return masterKey.Path(pathString)
 }
 
-func NewPublicMasterWithPath(seed []byte, version [4]byte, pathString string) (*ExtendedPublicKey, error) {
+func NewPublicMasterWithPath(seed []byte, version [4]byte, pathString string) (*ExtendedKey, error) {
 	masterKey, err := NewMaster(seed, version)
 	if err != nil {
 		return nil, err

@@ -148,7 +148,7 @@ func TestBIP32SpecVectors(t *testing.T) {
 				t.Fatalf("Test (%d, %d): expected extPub %s but got %s", i, j, path.extPub, extPub.String())
 			}
 
-			decodedExtPub, err := DeserializeExtendedPublicKey(extPub.String())
+			decodedExtPub, err := DeserializeExtendedPrivateKey(extPub.String())
 			if err != nil {
 				t.Fatalf("DeserializeExtendedPublicKey: %+v", err)
 			}
@@ -178,7 +178,7 @@ func TestExtendedPublicKey_Path(t *testing.T) {
 	}
 
 	for i := 0; i < 10; i++ {
-		numIndexes := r.Intn(100)
+		numIndexes := 1 + r.Intn(100)
 		indexes := make([]string, numIndexes)
 		for i := 0; i < numIndexes; i++ {
 			index := r.Intn(hardenedIndexStart)
@@ -206,6 +206,73 @@ func TestExtendedPublicKey_Path(t *testing.T) {
 
 		if extPubFromPrv.String() != extPub.String() {
 			t.Fatalf("Path gives different result from private and public master keys")
+		}
+	}
+}
+
+// TestPublicParentPublicChildDerivation was copied and modified from https://github.com/tyler-smith/go-bip32/blob/master/bip32_test.go
+func TestPublicParentPublicChildDerivation(t *testing.T) {
+	// Generated using https://iancoleman.github.io/bip39/
+	// Root key:
+	// xprv9s21ZrQH143K2Cfj4mDZBcEecBmJmawReGwwoAou2zZzG45bM6cFPJSvobVTCB55L6Ld2y8RzC61CpvadeAnhws3CHsMFhNjozBKGNgucYm
+	// Derivation Path m/44'/60'/0'/0:
+	// xprv9zy5o7z1GMmYdaeQdmabWFhUf52Ytbpe3G5hduA4SghboqWe7aDGWseN8BJy1GU72wPjkCbBE1hvbXYqpCecAYdaivxjNnBoSNxwYD4wHpW
+	// xpub6DxSCdWu6jKqr4isjo7bsPeDD6s3J4YVQV1JSHZg12Eagdqnf7XX4fxqyW2sLhUoFWutL7tAELU2LiGZrEXtjVbvYptvTX5Eoa4Mamdjm9u
+	extendedMasterPublic, err := DeserializeExtendedPrivateKey("xpub6DxSCdWu6jKqr4isjo7bsPeDD6s3J4YVQV1JSHZg12Eagdqnf7XX4fxqyW2sLhUoFWutL7tAELU2LiGZrEXtjVbvYptvTX5Eoa4Mamdjm9u")
+	if err != nil {
+		t.Fatalf("DeserializeExtendedPublicKey: %+v", err)
+	}
+
+	type testChildKey struct {
+		pathFragment uint32
+		privKey      string
+		pubKey       string
+		hexPubKey    string
+	}
+
+	expectedChildren := []testChildKey{
+		{pathFragment: 0, hexPubKey: "0243187e1a2ba9ba824f5f81090650c8f4faa82b7baf93060d10b81f4b705afd46"},
+		{pathFragment: 1, hexPubKey: "023790d11eb715c4320d8e31fba3a09b700051dc2cdbcce03f44b11c274d1e220b"},
+		{pathFragment: 2, hexPubKey: "0302c5749c3c75cea234878ae3f4d8f65b75d584bcd7ed0943b016d6f6b59a2bad"},
+		{pathFragment: 3, hexPubKey: "03f0440c94e5b14ea5b15875934597afff541bec287c6e65dc1102cafc07f69699"},
+		{pathFragment: 4, hexPubKey: "026419d0d8996707605508ac44c5871edc7fe206a79ef615b74f2eea09c5852e2b"},
+		{pathFragment: 5, hexPubKey: "02f63c6f195eea98bdb163c4a094260dea71d264b21234bed4df3899236e6c2298"},
+		{pathFragment: 6, hexPubKey: "02d74709cd522081064858f393d009ead5a0ecd43ede3a1f57befcc942025cb5f9"},
+		{pathFragment: 7, hexPubKey: "03e54bb92630c943d38bbd8a4a2e65fca7605e672d30a0e545a7198cbb60729ceb"},
+		{pathFragment: 8, hexPubKey: "027e9d5acd14d39c4938697fba388cd2e8f31fc1c5dc02fafb93a10a280de85199"},
+		{pathFragment: 9, hexPubKey: "02a167a9f0d57468fb6abf2f3f7967e2cadf574314753a06a9ef29bc76c54638d2"},
+
+		{pathFragment: 100, hexPubKey: "020db9ba00ddf68428e3f5bfe54252bbcd75b21e42f51bf3bfc4172bf0e5fa7905"},
+		{pathFragment: 101, hexPubKey: "0299e3790956570737d6164e6fcda5a3daa304065ca95ba46bc73d436b84f34d46"},
+		{pathFragment: 102, hexPubKey: "0202e0732c4c5d2b1036af173640e01957998cfd4f9cdaefab6ffe76eb869e2c59"},
+		{pathFragment: 103, hexPubKey: "03d050adbd996c0c5d737ff638402dfbb8c08e451fef10e6d62fb57887c1ac6cb2"},
+		{pathFragment: 104, hexPubKey: "038d466399e2d68b4b16043ad4d88893b3b2f84fc443368729a973df1e66f4f530"},
+		{pathFragment: 105, hexPubKey: "034811e2f0c8c50440c08c2c9799b99c911c036e877e8325386ff61723ae3ffdce"},
+		{pathFragment: 106, hexPubKey: "026339fd5842921888e711a6ba9104a5f0c94cc0569855273cf5faefdfbcd3cc29"},
+		{pathFragment: 107, hexPubKey: "02833705c1069fab2aa92c6b0dac27807290d72e9f52378d493ac44849ca003b22"},
+		{pathFragment: 108, hexPubKey: "032d2639bde1eb7bdf8444bd4f6cc26a9d1bdecd8ea15fac3b992c3da68d9d1df5"},
+		{pathFragment: 109, hexPubKey: "02479c6d4a64b93a2f4343aa862c938fbc658c99219dd7bebb4830307cbd76c9e9"},
+	}
+
+	for i, child := range expectedChildren {
+		extPub, err := extendedMasterPublic.Child(child.pathFragment)
+		if err != nil {
+			t.Fatalf("Child: %+v", err)
+		}
+
+		publicKey, err := extPub.PublicKey()
+		if err != nil {
+			t.Fatalf("PublicKey: %+v", err)
+		}
+
+		pubKeyBytes, err := publicKey.Serialize()
+		if err != nil {
+			t.Fatalf("Serialize: %+v", err)
+		}
+
+		pubkeyHex := hex.EncodeToString(pubKeyBytes[:])
+		if child.hexPubKey != pubkeyHex {
+			t.Fatalf("Test #%d: expected public key %s but got %s", i, child.hexPubKey, pubkeyHex)
 		}
 	}
 }

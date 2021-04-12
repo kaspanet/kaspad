@@ -40,3 +40,14 @@ func toPublicVersion(version [4]byte) ([4]byte, error) {
 
 	return [4]byte{}, errors.Errorf("unknown version %x", version)
 }
+
+func isPrivateVersion(version [4]byte) bool {
+	switch version {
+	case BitcoinMainnetPrivate:
+		return true
+	case KaspaMainnetPrivate:
+		return true
+	}
+
+	return false
+}
