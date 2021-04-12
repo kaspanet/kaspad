@@ -1,4 +1,4 @@
-package main
+package mempoollimits
 
 import (
 	"github.com/kaspanet/kaspad/infrastructure/network/rpcclient"
