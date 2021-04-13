@@ -1,6 +1,8 @@
 package blockrelay
 
 import (
+	"time"
+
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/app/protocol/common"
 	peerpkg "github.com/kaspanet/kaspad/app/protocol/peer"
@@ -11,6 +13,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
 	"github.com/kaspanet/kaspad/infrastructure/config"
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
+	"github.com/kaspanet/kaspad/util/mstime"
 	"github.com/pkg/errors"
 )
 
@@ -109,6 +112,8 @@ func (flow *handleRelayInvsFlow) start() error {
 		if err != nil {
 			return err
 		}
+		msTime := mstime.UnixMilliseconds(block.Header.TimeInMilliseconds())
+		time.Sleep(time.Until(msTime.ToNativeTime().Add(config.DelayDuration)))
 
 		log.Debugf("Processing block %s", inv.Hash)
 		missingParents, blockInsertionResult, err := flow.processBlock(block)
