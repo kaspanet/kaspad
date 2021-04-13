@@ -54,7 +54,7 @@ func (csm *consensusStateManager) resolveBlockStatus(stagingArea *model.StagingA
 
 	previousBlockHash := selectedParentHash
 	previousBlockUTXOSet := selectedParentUTXOSet
-	var oneBlockBeforeCurrentUTXOSet externalapi.UTXODiff
+	var lastResolvedBlockUTXOSet externalapi.UTXODiff
 
 	for i := len(unverifiedBlocks) - 1; i >= 0; i-- {
 		unverifiedBlockHash := unverifiedBlocks[i]
@@ -69,7 +69,7 @@ func (csm *consensusStateManager) resolveBlockStatus(stagingArea *model.StagingA
 		if selectedParentStatus == externalapi.StatusDisqualifiedFromChain {
 			blockStatus = externalapi.StatusDisqualifiedFromChain
 		} else {
-			oneBlockBeforeCurrentUTXOSet = previousBlockUTXOSet
+			lastResolvedBlockUTXOSet = previousBlockUTXOSet
 
 			blockStatus, previousBlockUTXOSet, err = csm.resolveSingleBlockStatus(
 				stagingAreaForCurrentBlock, unverifiedBlockHash, previousBlockHash, previousBlockUTXOSet, isResolveTip)
@@ -101,7 +101,7 @@ func (csm *consensusStateManager) resolveBlockStatus(stagingArea *model.StagingA
 		// During resolveSingleBlockStatus, all unverifiedBlocks (excluding the tip) were assigned their selectedParent
 		// as their UTXODiffChild.
 		// Now that the whole chain has been resolved - we can reverse the UTXODiffs, to create shorter UTXODiffChild paths.
-		err = csm.reverseUTXODiffs(stagingArea, unverifiedBlocks, tipUTXOSet, oneBlockBeforeCurrentUTXOSet, useSeparateStagingAreaPerBlock)
+		err = csm.reverseUTXODiffs(stagingArea, unverifiedBlocks, tipUTXOSet, lastResolvedBlockUTXOSet, useSeparateStagingAreaPerBlock)
 		if err != nil {
 			return 0, err
 		}
