@@ -2,7 +2,9 @@ package main
 
 import (
 	nativeerrors "errors"
+	"fmt"
 	"math/rand"
+	"runtime"
 	"sync/atomic"
 	"time"
 
@@ -42,39 +44,43 @@ func mineLoop(client *minerClient, numberOfBlocks uint64, targetBlocksPerSecond 
 		templatesLoop(client, miningAddr, errChan)
 	})
 
-	spawn("blocksLoop", func() {
-		const windowSize = 10
-		var expectedDurationForWindow time.Duration
-		var windowExpectedEndTime time.Time
-		hasBlockRateTarget := targetBlocksPerSecond != 0
-		if hasBlockRateTarget {
-			expectedDurationForWindow = time.Duration(float64(windowSize)/targetBlocksPerSecond) * time.Second
-			windowExpectedEndTime = time.Now().Add(expectedDurationForWindow)
-		}
-		blockInWindowIndex := 0
-
-		sleepTime := 0 * time.Second
-
-		for {
-			foundBlockChan <- mineNextBlock(mineWhenNotSynced)
-
+	for c := 0; c < (runtime.NumCPU()/2)+1; c++ {
+		c := c
+		spawn(fmt.Sprintf("blocksLoop %d", c), func() {
+			const windowSize = 10
+			var expectedDurationForWindow time.Duration
+			var windowExpectedEndTime time.Time
+			hasBlockRateTarget := targetBlocksPerSecond != 0
 			if hasBlockRateTarget {
-				blockInWindowIndex++
-				if blockInWindowIndex == windowSize-1 {
-					deviation := windowExpectedEndTime.Sub(time.Now())
-					if deviation > 0 {
-						sleepTime = deviation / windowSize
-						log.Infof("Finished to mine %d blocks %s earlier than expected. Setting the miner "+
-							"to sleep %s between blocks to compensate",
-							windowSize, deviation, sleepTime)
-					}
-					blockInWindowIndex = 0
-					windowExpectedEndTime = time.Now().Add(expectedDurationForWindow)
-				}
-				time.Sleep(sleepTime)
+				expectedDurationForWindow = time.Duration(float64(windowSize)/targetBlocksPerSecond) * time.Second
+				windowExpectedEndTime = time.Now().Add(expectedDurationForWindow)
 			}
-		}
-	})
+			blockInWindowIndex := 0
+
+			sleepTime := 0 * time.Second
+
+			for {
+				foundBlockChan <- mineNextBlock(mineWhenNotSynced)
+
+				if hasBlockRateTarget {
+					blockInWindowIndex++
+					if blockInWindowIndex == windowSize-1 {
+						deviation := windowExpectedEndTime.Sub(time.Now())
+						if deviation > 0 {
+							sleepTime = deviation / windowSize
+							log.Infof("cpu: %d Finished to mine %d blocks %s earlier than expected. Setting the miner "+
+								"to sleep %s between blocks to compensate",
+								c, windowSize, deviation, sleepTime)
+						}
+						blockInWindowIndex = 0
+						windowExpectedEndTime = time.Now().Add(expectedDurationForWindow)
+					}
+					time.Sleep(sleepTime)
+				}
+			}
+		})
+
+	}
 
 	spawn("handleFoundBlock", func() {
 		for i := uint64(0); numberOfBlocks == 0 || i < numberOfBlocks; i++ {
