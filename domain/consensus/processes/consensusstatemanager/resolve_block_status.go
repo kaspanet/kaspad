@@ -89,9 +89,6 @@ func (csm *consensusStateManager) resolveBlockStatus(stagingArea *model.StagingA
 				return 0, err
 			}
 		}
-		if blockStatus != externalapi.StatusUTXOValid {
-			break
-		}
 		previousBlockHash = unverifiedBlockHash
 	}
 
