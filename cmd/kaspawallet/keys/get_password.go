@@ -11,7 +11,7 @@ import (
 // getPassword was adapted from https://gist.github.com/jlinoff/e8e26b4ffa38d379c7f1891fd174a6d0#file-getpassword2-go
 func getPassword(prompt string) []byte {
 	// Get the initial state of the terminal.
-	initialTermState, e1 := term.GetState(syscall.Stdin)
+	initialTermState, e1 := term.GetState(int(syscall.Stdin))
 	if e1 != nil {
 		panic(e1)
 	}
@@ -22,13 +22,13 @@ func getPassword(prompt string) []byte {
 	signal.Notify(c, os.Interrupt, os.Kill)
 	go func() {
 		<-c
-		_ = term.Restore(syscall.Stdin, initialTermState)
+		_ = term.Restore(int(syscall.Stdin), initialTermState)
 		os.Exit(1)
 	}()
 
 	// Now get the password.
 	fmt.Print(prompt)
-	p, err := term.ReadPassword(syscall.Stdin)
+	p, err := term.ReadPassword(int(syscall.Stdin))
 	fmt.Println()
 	if err != nil {
 		panic(err)

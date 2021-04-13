@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/hex"
 	"fmt"
+
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/keys"
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/libkaspawallet"
 	utxopkg "github.com/kaspanet/kaspad/domain/consensus/utils/utxo"
@@ -17,7 +18,7 @@ import (
 )
 
 func send(conf *sendConfig) error {
-	keysFile, err := keys.ReadKeysFile(conf.KeysFile)
+	keysFile, err := keys.ReadKeysFile(conf.NetParams(), conf.KeysFile)
 	if err != nil {
 		return err
 	}

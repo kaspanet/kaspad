@@ -5,14 +5,14 @@
 package addressmanager
 
 import (
-	"github.com/kaspanet/kaspad/app/appmessage"
-	"github.com/kaspanet/kaspad/infrastructure/db/database/ldb"
-	"github.com/kaspanet/kaspad/util/mstime"
 	"net"
 	"reflect"
 	"testing"
 
+	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/infrastructure/config"
+	"github.com/kaspanet/kaspad/infrastructure/db/database/ldb"
+	"github.com/kaspanet/kaspad/util/mstime"
 )
 
 func newAddressManagerForTest(t *testing.T, testName string) (addressManager *AddressManager, teardown func()) {
@@ -274,6 +274,7 @@ func TestRestoreAddressManager(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Could not create a database: %s", err)
 	}
+	defer database.Close()
 
 	// Recreate an addressManager with a the previous database
 	addressManager, err = New(NewConfig(cfg), database)
