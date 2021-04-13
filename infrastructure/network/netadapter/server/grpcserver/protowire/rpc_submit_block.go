@@ -113,6 +113,7 @@ func (x *RpcBlock) fromAppMessage(message *appmessage.RPCBlock) error {
 	*x = RpcBlock{
 		Header:       header,
 		Transactions: transactions,
+		VerboseData:  verboseData,
 	}
 	return nil
 }
