@@ -61,7 +61,7 @@ func (csm *consensusStateManager) resolveBlockStatus(stagingArea *model.StagingA
 
 		stagingAreaForCurrentBlock := stagingArea
 		isResolveTip := i == 0
-		useSeparateStagingArea := useSeparateStagingAreaPerBlock && (!isResolveTip)
+		useSeparateStagingArea := useSeparateStagingAreaPerBlock && !isResolveTip
 		if useSeparateStagingArea {
 			stagingAreaForCurrentBlock = model.NewStagingArea()
 		}
