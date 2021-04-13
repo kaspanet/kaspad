@@ -25,6 +25,8 @@ import (
 	"github.com/pkg/errors"
 )
 
+var DelayDuration time.Duration
+
 const (
 	defaultConfigFilename      = "kaspad.conf"
 	defaultDataDirname         = "data"
@@ -117,6 +119,7 @@ type Flags struct {
 	MaxUTXOCacheSize     uint64        `long:"maxutxocachesize" description:"Max size of loaded UTXO into ram from the disk in bytes"`
 	UTXOIndex            bool          `long:"utxoindex" description:"Enable the UTXO index"`
 	IsArchivalNode       bool          `long:"archival" description:"Run as an archival node: don't delete old block data when moving the pruning point (Warning: heavy disk usage)'"`
+	Delay                float32       `long:"delay" description:"Provide a delay in seconds as a floating point"`
 	NetworkFlags
 	ServiceOptions *ServiceOptions
 }
@@ -574,6 +577,7 @@ func LoadConfig() (*Config, error) {
 		log.Warnf("%s", configFileError)
 	}
 
+	DelayDuration = time.Duration(cfg.Delay * float32(time.Second))
 	return cfg, nil
 }
 
