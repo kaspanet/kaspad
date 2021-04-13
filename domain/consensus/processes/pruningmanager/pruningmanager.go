@@ -31,10 +31,11 @@ type pruningManager struct {
 	utxoDiffStore       model.UTXODiffStore
 	daaBlocksStore      model.DAABlocksStore
 
-	isArchivalNode   bool
-	genesisHash      *externalapi.DomainHash
-	finalityInterval uint64
-	pruningDepth     uint64
+	isArchivalNode                  bool
+	genesisHash                     *externalapi.DomainHash
+	finalityInterval                uint64
+	pruningDepth                    uint64
+	shouldSanityCheckPruningUTXOSet bool
 }
 
 // New instantiates a new PruningManager
@@ -61,28 +62,30 @@ func New(
 	genesisHash *externalapi.DomainHash,
 	finalityInterval uint64,
 	pruningDepth uint64,
+	shouldSanityCheckPruningUTXOSet bool,
 ) model.PruningManager {
 
 	return &pruningManager{
-		databaseContext:        databaseContext,
-		dagTraversalManager:    dagTraversalManager,
-		dagTopologyManager:     dagTopologyManager,
-		consensusStateManager:  consensusStateManager,
-		consensusStateStore:    consensusStateStore,
-		ghostdagDataStore:      ghostdagDataStore,
-		pruningStore:           pruningStore,
-		blockStatusStore:       blockStatusStore,
-		multiSetStore:          multiSetStore,
-		acceptanceDataStore:    acceptanceDataStore,
-		blocksStore:            blocksStore,
-		blockHeaderStore:       blockHeaderStore,
-		utxoDiffStore:          utxoDiffStore,
-		headerSelectedTipStore: headerSelectedTipStore,
-		daaBlocksStore:         daaBlocksStore,
-		isArchivalNode:         isArchivalNode,
-		genesisHash:            genesisHash,
-		pruningDepth:           pruningDepth,
-		finalityInterval:       finalityInterval,
+		databaseContext:                 databaseContext,
+		dagTraversalManager:             dagTraversalManager,
+		dagTopologyManager:              dagTopologyManager,
+		consensusStateManager:           consensusStateManager,
+		consensusStateStore:             consensusStateStore,
+		ghostdagDataStore:               ghostdagDataStore,
+		pruningStore:                    pruningStore,
+		blockStatusStore:                blockStatusStore,
+		multiSetStore:                   multiSetStore,
+		acceptanceDataStore:             acceptanceDataStore,
+		blocksStore:                     blocksStore,
+		blockHeaderStore:                blockHeaderStore,
+		utxoDiffStore:                   utxoDiffStore,
+		headerSelectedTipStore:          headerSelectedTipStore,
+		daaBlocksStore:                  daaBlocksStore,
+		isArchivalNode:                  isArchivalNode,
+		genesisHash:                     genesisHash,
+		pruningDepth:                    pruningDepth,
+		finalityInterval:                finalityInterval,
+		shouldSanityCheckPruningUTXOSet: shouldSanityCheckPruningUTXOSet,
 	}
 }
 
@@ -650,10 +653,11 @@ func (pm *pruningManager) updatePruningPoint() error {
 	if err != nil {
 		return err
 	}
-	// TODO: This assert should be removed before mainnet
-	err = pm.validateUTXOSetFitsCommitment(stagingArea, pruningPoint)
-	if err != nil {
-		return err
+	if pm.shouldSanityCheckPruningUTXOSet {
+		err = pm.validateUTXOSetFitsCommitment(stagingArea, pruningPoint)
+		if err != nil {
+			return err
+		}
 	}
 	err = pm.deletePastBlocks(stagingArea, pruningPoint)
 	if err != nil {
