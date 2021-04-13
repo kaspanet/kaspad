@@ -240,21 +240,21 @@ func (csm *consensusStateManager) resolveSingleBlockStatus(stagingArea *model.St
 			return 0, nil, err
 		}
 		if isNewSelectedTip {
-			log.Debugf("Block %s is the new SelectedTip, therefore setting it as old selectedTip's diffChild", blockHash)
+			log.Debugf("Block %s is the new selected tip, therefore setting it as old selected tip's diffChild", blockHash)
 
 			updatedOldSelectedTipUTXOSet, err := pastUTXOSet.DiffFrom(oldSelectedTipUTXOSet)
 			if err != nil {
 				return 0, nil, err
 			}
-			log.Debugf("Setting the old SelectedTip's(%s) diffChild to be the new SelectedTip (%s)",
+			log.Debugf("Setting the old selected tip's (%s) diffChild to be the new selected tip (%s)",
 				oldSelectedTip, blockHash)
 			csm.stageDiff(stagingArea, oldSelectedTip, updatedOldSelectedTipUTXOSet, blockHash)
 
 			log.Tracef("Staging the utxoDiff of block %s, with virtual as diffChild", blockHash)
 			csm.stageDiff(stagingArea, blockHash, pastUTXOSet, nil)
 		} else {
-			log.Debugf("Block %s is the tip of currently resolved chain, but not the new selectedTip,"+
-				"therefore setting it's utxoDiffChild to be the current selectedTip ", blockHash)
+			log.Debugf("Block %s is the tip of currently resolved chain, but not the new selected tip,"+
+				"therefore setting it's utxoDiffChild to be the current selectedTip %s", blockHash, oldSelectedTip)
 			utxoDiff, err := oldSelectedTipUTXOSet.DiffFrom(pastUTXOSet)
 			if err != nil {
 				return 0, nil, err
@@ -265,7 +265,7 @@ func (csm *consensusStateManager) resolveSingleBlockStatus(stagingArea *model.St
 		// If the block is not the tip of the currently resolved chain, we set it's diffChild to be the selectedParent,
 		// this is a temporary measure to ensure there's a restore path to all blocks at all times.
 		// Later down the process, the diff will be reversed in reverseUTXODiffs.
-		log.Debugf("Block %s is not the new SelectedTip, and is not the tip of the currently verified chain, "+
+		log.Debugf("Block %s is not the new selected tip, and is not the tip of the currently verified chain, "+
 			"therefore temporarily setting selectedParent as it's diffChild", blockHash)
 		utxoDiff, err := selectedParentPastUTXOSet.DiffFrom(pastUTXOSet)
 		if err != nil {
