@@ -16,4 +16,7 @@ type Database interface {
 
 	// Close closes the database.
 	Close() error
+
+	// Version returns the version of this database, as specified in the version file
+	//	Version() int
 }

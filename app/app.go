@@ -85,12 +85,6 @@ func (app *kaspadApp) main(startedChan chan<- struct{}) error {
 		profiling.Start(app.cfg.Profile, log)
 	}
 
-	// Perform upgrades to kaspad as new versions require it.
-	if err := doUpgrades(); err != nil {
-		log.Error(err)
-		return err
-	}
-
 	// Return now if an interrupt signal was triggered.
 	if signal.InterruptRequested(interrupt) {
 		return nil
@@ -163,12 +157,6 @@ func (app *kaspadApp) main(startedChan chan<- struct{}) error {
 	return nil
 }
 
-// doUpgrades performs upgrades to kaspad as new versions require it.
-// currently it's a placeholder we got from kaspad upstream, that does nothing
-func doUpgrades() error {
-	return nil
-}
-
 // dbPath returns the path to the block database given a database type.
 func databasePath(cfg *config.Config) string {
 	return filepath.Join(cfg.AppDir, "data")
@@ -182,5 +170,15 @@ func removeDatabase(cfg *config.Config) error {
 func openDB(cfg *config.Config) (database.Database, error) {
 	dbPath := databasePath(cfg)
 	log.Infof("Loading database from '%s'", dbPath)
-	return ldb.NewLevelDB(dbPath, leveldbCacheSizeMiB)
+	db, err := ldb.NewLevelDB(dbPath, leveldbCacheSizeMiB)
+	if err != nil {
+		return nil, err
+	}
+
+	err = checkDatabaseVersion(dbPath)
+	if err != nil {
+		return nil, err
+	}
+
+	return db, nil
 }
