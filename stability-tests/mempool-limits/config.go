@@ -1,4 +1,4 @@
-package main
+package mempoollimits
 
 import (
 	"path/filepath"
