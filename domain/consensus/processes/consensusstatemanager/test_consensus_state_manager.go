@@ -24,5 +24,6 @@ func (csm *testConsensusStateManager) AddUTXOToMultiset(
 func (csm *testConsensusStateManager) ResolveBlockStatus(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash,
 	useSeparateStagingAreaPerBlock bool) (externalapi.BlockStatus, error) {
 
-	return csm.resolveBlockStatus(stagingArea, blockHash, useSeparateStagingAreaPerBlock)
+	status, _, err := csm.resolveBlockStatus(stagingArea, blockHash, useSeparateStagingAreaPerBlock)
+	return status, err
 }
