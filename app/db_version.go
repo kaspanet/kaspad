@@ -10,33 +10,37 @@ import (
 
 const currentDatabaseVersion = 1
 
-func checkDatabaseVersion(dbPath string) (doesVersionFileExist bool, err error) {
-	dbVersionFileName := versionFilePath(dbPath)
-	versionBytes, err := os.ReadFile(dbVersionFileName)
+func checkDatabaseVersion(dbPath string) (err error) {
+	versionFileName := versionFilePath(dbPath)
+
+	versionBytes, err := os.ReadFile(versionFileName)
 	if err != nil {
 		if os.IsNotExist(err) { // If version file doesn't exist, we assume that the database is new
-			return false, nil
+			return createDatabaseVersionFile(dbPath, versionFileName)
 		}
-		return false, err
+		return err
 	}
 
 	databaseVersion, err := strconv.Atoi(string(versionBytes))
 	if err != nil {
-		return true, err
+		return err
 	}
 
 	if databaseVersion != currentDatabaseVersion {
 		// TODO: Once there's more then one database version, it might make sense to add upgrade logic at this point
-		return true, errors.Errorf("Invalid database version %d. Expected version: %d", databaseVersion, currentDatabaseVersion)
+		return errors.Errorf("Invalid database version %d. Expected version: %d", databaseVersion, currentDatabaseVersion)
 	}
 
-	return true, nil
+	return nil
 }
 
-func createDatabaseVersionFile(dbPath string) error {
-	dbVersionFileName := versionFilePath(dbPath)
+func createDatabaseVersionFile(dbPath string, versionFileName string) error {
+	err := os.MkdirAll(dbPath, 0700)
+	if err != nil {
+		return err
+	}
 
-	versionFile, err := os.Create(dbVersionFileName)
+	versionFile, err := os.Create(versionFileName)
 	if err != nil {
 		return nil
 	}

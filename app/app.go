@@ -170,7 +170,7 @@ func removeDatabase(cfg *config.Config) error {
 func openDB(cfg *config.Config) (database.Database, error) {
 	dbPath := databasePath(cfg)
 
-	doesVersionFileExist, err := checkDatabaseVersion(dbPath)
+	err := checkDatabaseVersion(dbPath)
 	if err != nil {
 		return nil, err
 	}
@@ -179,13 +179,6 @@ func openDB(cfg *config.Config) (database.Database, error) {
 	db, err := ldb.NewLevelDB(dbPath, leveldbCacheSizeMiB)
 	if err != nil {
 		return nil, err
-	}
-
-	if !doesVersionFileExist {
-		err := createDatabaseVersionFile(dbPath)
-		if err != nil {
-			return nil, err
-		}
 	}
 
 	return db, nil
