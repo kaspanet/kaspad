@@ -13,7 +13,6 @@ func (csm *consensusStateManager) ReverseUTXODiffs(tipHash *externalapi.DomainHa
 	// During the process of resolving a chain of blocks, we temporarily set all blocks' (except the tip)
 	// UTXODiffChild to be the selected parent.
 	// Once the process is complete, we can reverse said chain, to now go directly to virtual through the relevant tip
-
 	onEnd := logger.LogAndMeasureExecutionTime(log, "reverseUTXODiffs")
 	defer onEnd()
 
@@ -24,12 +23,15 @@ func (csm *consensusStateManager) ReverseUTXODiffs(tipHash *externalapi.DomainHa
 	// Set previousUTXODiff and previousBlock to oneBlockBeforeTip before we start touching them,
 	// since oneBlockBeforeTip's UTXODiff is going to be over-written in the next step
 	previousBlock := reversalData.SelectedParentHash
-	previousUTXODiff := reversalData.SelectedParentUTXODiff
+	previousUTXODiff, err := csm.utxoDiffStore.UTXODiff(csm.databaseContext, readStagingArea, previousBlock)
+	if err != nil {
+		return err
+	}
 
 	// oneBlockBeforeTip is special in the sense that we don't have it's diff available in reverse, however, we
 	// were able to calculate it when the tip's and oneBlockBeforeTip's UTXOSets were known during resolveBlockStatus.
 	// Therefore - we treat it separately
-	err := csm.commitUTXODiffInSeparateStagingArea(previousBlock, previousUTXODiff, tipHash)
+	err = csm.commitUTXODiffInSeparateStagingArea(previousBlock, reversalData.SelectedParentUTXODiff, tipHash)
 	if err != nil {
 		return err
 	}

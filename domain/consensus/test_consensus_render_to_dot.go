@@ -7,6 +7,8 @@ import (
 	"io/ioutil"
 	"os/exec"
 	"strings"
+
+	"github.com/kaspanet/kaspad/domain/consensus/model"
 )
 
 // RenderDAGToDot is a helper function for debugging tests.
@@ -28,6 +30,7 @@ func (tc *testConsensus) convertToDot() (string, error) {
 	}
 	defer blocksIterator.Close()
 
+	stagingArea := model.NewStagingArea()
 	for ok := blocksIterator.First(); ok; ok = blocksIterator.Next() {
 		hash, err := blocksIterator.Get()
 		if err != nil {
@@ -35,7 +38,7 @@ func (tc *testConsensus) convertToDot() (string, error) {
 		}
 		dotScriptBuilder.WriteString(fmt.Sprintf("\t\"%s\";\n", hash))
 
-		parents, err := tc.dagTopologyManager.Parents(nil, hash)
+		parents, err := tc.dagTopologyManager.Parents(stagingArea, hash)
 		if err != nil {
 			return "", err
 		}

@@ -245,6 +245,7 @@ func (csm *consensusStateManager) resolveSingleBlockStatus(stagingArea *model.St
 		if err != nil {
 			return 0, nil, err
 		}
+
 		if isNewSelectedTip {
 			log.Debugf("Block %s is the new selected tip, therefore setting it as old selected tip's diffChild", blockHash)
 
