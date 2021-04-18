@@ -302,7 +302,8 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 		isArchivalNode,
 		genesisHash,
 		dagParams.FinalityDepth(),
-		dagParams.PruningDepth())
+		dagParams.PruningDepth(),
+		dagParams.EnableSanityCheckPruningUTXOSet)
 
 	syncManager := syncmanager.New(
 		dbManager,
