@@ -121,7 +121,7 @@ type Flags struct {
 	MaxUTXOCacheSize                uint64        `long:"maxutxocachesize" description:"Max size of loaded UTXO into ram from the disk in bytes"`
 	UTXOIndex                       bool          `long:"utxoindex" description:"Enable the UTXO index"`
 	IsArchivalNode                  bool          `long:"archival" description:"Run as an archival node: don't delete old block data when moving the pruning point (Warning: heavy disk usage)'"`
-	EnableSanityCheckPruningUTXOSet bool          `long:"enable-sanity-check-pruning-utxo" hidden:"true" description:"Check that the utxo set of the pruning point matches the utxo commitment of that block"`
+	EnableSanityCheckPruningUTXOSet bool          `long:"enable-sanity-check-pruning-utxo" hidden:"true" description:"When moving the pruning point - check that the utxo set matches the utxo commitment"`
 	NetworkFlags
 	ServiceOptions *ServiceOptions
 }
