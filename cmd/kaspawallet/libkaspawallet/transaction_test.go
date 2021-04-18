@@ -9,7 +9,6 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/utils/testutils"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/txscript"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/utxo"
-	"github.com/kaspanet/kaspad/domain/dagconfig"
 	"github.com/kaspanet/kaspad/util"
 	"strings"
 	"testing"
@@ -26,10 +25,10 @@ func forSchnorrAndECDSA(t *testing.T, testFunc func(t *testing.T, ecdsa bool)) {
 }
 
 func TestMultisig(t *testing.T) {
-	testutils.ForAllNets(t, true, func(t *testing.T, params *dagconfig.Params) {
+	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
 		forSchnorrAndECDSA(t, func(t *testing.T, ecdsa bool) {
-			params.BlockCoinbaseMaturity = 0
-			tc, teardown, err := consensus.NewFactory().NewTestConsensus(params, false, "TestMultisig")
+			consensusConfig.BlockCoinbaseMaturity = 0
+			tc, teardown, err := consensus.NewFactory().NewTestConsensus(consensusConfig, "TestMultisig")
 			if err != nil {
 				t.Fatalf("Error setting up tc: %+v", err)
 			}
@@ -46,7 +45,7 @@ func TestMultisig(t *testing.T) {
 			}
 
 			const minimumSignatures = 2
-			address, err := libkaspawallet.Address(params, publicKeys, minimumSignatures, ecdsa)
+			address, err := libkaspawallet.Address(&consensusConfig.Params, publicKeys, minimumSignatures, ecdsa)
 			if err != nil {
 				t.Fatalf("Address: %+v", err)
 			}
@@ -65,7 +64,7 @@ func TestMultisig(t *testing.T) {
 				ExtraData:       nil,
 			}
 
-			fundingBlockHash, _, err := tc.AddBlock([]*externalapi.DomainHash{params.GenesisHash}, coinbaseData, nil)
+			fundingBlockHash, _, err := tc.AddBlock([]*externalapi.DomainHash{consensusConfig.GenesisHash}, coinbaseData, nil)
 			if err != nil {
 				t.Fatalf("AddBlock: %+v", err)
 			}
@@ -170,10 +169,10 @@ func TestMultisig(t *testing.T) {
 }
 
 func TestP2PK(t *testing.T) {
-	testutils.ForAllNets(t, true, func(t *testing.T, params *dagconfig.Params) {
+	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
 		forSchnorrAndECDSA(t, func(t *testing.T, ecdsa bool) {
-			params.BlockCoinbaseMaturity = 0
-			tc, teardown, err := consensus.NewFactory().NewTestConsensus(params, false, "TestMultisig")
+			consensusConfig.BlockCoinbaseMaturity = 0
+			tc, teardown, err := consensus.NewFactory().NewTestConsensus(consensusConfig, "TestMultisig")
 			if err != nil {
 				t.Fatalf("Error setting up tc: %+v", err)
 			}
@@ -190,7 +189,7 @@ func TestP2PK(t *testing.T) {
 			}
 
 			const minimumSignatures = 1
-			address, err := libkaspawallet.Address(params, publicKeys, minimumSignatures, ecdsa)
+			address, err := libkaspawallet.Address(&consensusConfig.Params, publicKeys, minimumSignatures, ecdsa)
 			if err != nil {
 				t.Fatalf("Address: %+v", err)
 			}
@@ -215,7 +214,7 @@ func TestP2PK(t *testing.T) {
 				ExtraData:       nil,
 			}
 
-			fundingBlockHash, _, err := tc.AddBlock([]*externalapi.DomainHash{params.GenesisHash}, coinbaseData, nil)
+			fundingBlockHash, _, err := tc.AddBlock([]*externalapi.DomainHash{consensusConfig.GenesisHash}, coinbaseData, nil)
 			if err != nil {
 				t.Fatalf("AddBlock: %+v", err)
 			}

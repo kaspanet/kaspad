@@ -10,20 +10,19 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/testutils"
-	"github.com/kaspanet/kaspad/domain/dagconfig"
 )
 
 func TestVirtualDiff(t *testing.T) {
-	testutils.ForAllNets(t, true, func(t *testing.T, params *dagconfig.Params) {
+	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
 		factory := consensus.NewFactory()
-		tc, teardown, err := factory.NewTestConsensus(params, false, "TestVirtualDiff")
+		tc, teardown, err := factory.NewTestConsensus(consensusConfig, "TestVirtualDiff")
 		if err != nil {
 			t.Fatalf("Error setting up tc: %+v", err)
 		}
 		defer teardown(false)
 
 		// Add block A over the genesis
-		blockAHash, blockInsertionResult, err := tc.AddBlock([]*externalapi.DomainHash{params.GenesisHash}, nil, nil)
+		blockAHash, blockInsertionResult, err := tc.AddBlock([]*externalapi.DomainHash{consensusConfig.GenesisHash}, nil, nil)
 		if err != nil {
 			t.Fatalf("Error adding block A: %+v", err)
 		}

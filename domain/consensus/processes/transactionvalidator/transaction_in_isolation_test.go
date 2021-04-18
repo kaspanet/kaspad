@@ -10,7 +10,6 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/utils/subnetworks"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/testutils"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/transactionhelper"
-	"github.com/kaspanet/kaspad/domain/dagconfig"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/pkg/errors"
 )
@@ -22,9 +21,9 @@ type txSubnetworkData struct {
 }
 
 func TestValidateTransactionInIsolation(t *testing.T) {
-	testutils.ForAllNets(t, true, func(t *testing.T, params *dagconfig.Params) {
+	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
 		factory := consensus.NewFactory()
-		tc, teardown, err := factory.NewTestConsensus(params, false, "TestValidateTransactionInIsolation")
+		tc, teardown, err := factory.NewTestConsensus(consensusConfig, "TestValidateTransactionInIsolation")
 		if err != nil {
 			t.Fatalf("Error setting up consensus: %+v", err)
 		}
@@ -79,7 +78,7 @@ func TestValidateTransactionInIsolation(t *testing.T) {
 				1,
 				1,
 				subnetworks.SubnetworkIDNative,
-				&txSubnetworkData{subnetworks.SubnetworkIDCoinbase, 0, make([]byte, params.MaxCoinbasePayloadLength+1)},
+				&txSubnetworkData{subnetworks.SubnetworkIDCoinbase, 0, make([]byte, consensusConfig.MaxCoinbasePayloadLength+1)},
 				nil,
 				ruleerrors.ErrBadCoinbasePayloadLen},
 			{"non-zero gas in Kaspa", 1, 1, 0,

@@ -1,41 +1,38 @@
 package miningmanager_test
 
 import (
-	"github.com/kaspanet/kaspad/domain/consensus/model/testapi"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/transactionhelper"
-	"github.com/kaspanet/kaspad/domain/miningmanager"
-	"github.com/pkg/errors"
 	"strings"
+	"testing"
 
 	"github.com/kaspanet/kaspad/domain/consensus"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/utxo"
-
+	"github.com/kaspanet/kaspad/domain/consensus/model/testapi"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/subnetworks"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/testutils"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/transactionhelper"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/txscript"
-	"github.com/kaspanet/kaspad/domain/dagconfig"
-
-	"testing"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/utxo"
+	"github.com/kaspanet/kaspad/domain/miningmanager"
+	"github.com/pkg/errors"
 )
 
 const blockMaxMass uint64 = 10000000
 
 // TestValidateAndInsertTransaction verifies that valid transactions were successfully inserted into the mempool.
 func TestValidateAndInsertTransaction(t *testing.T) {
-	testutils.ForAllNets(t, true, func(t *testing.T, params *dagconfig.Params) {
-		params.BlockCoinbaseMaturity = 0
+	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
+		consensusConfig.BlockCoinbaseMaturity = 0
 		factory := consensus.NewFactory()
-		tc, teardown, err := factory.NewTestConsensus(params, false, "TestValidateAndInsertTransaction")
+		tc, teardown, err := factory.NewTestConsensus(consensusConfig, "TestValidateAndInsertTransaction")
 		if err != nil {
 			t.Fatalf("Error setting up TestConsensus: %+v", err)
 		}
 		defer teardown(false)
 
 		miningFactory := miningmanager.NewFactory()
-		miningManager := miningFactory.NewMiningManager(tc, params)
+		miningManager := miningFactory.NewMiningManager(tc, &consensusConfig.Params)
 		transactionsToInsert := make([]*externalapi.DomainTransaction, 10)
 		for i := range transactionsToInsert {
 			transactionsToInsert[i] = createTransactionWithUTXOEntry(t, i)
@@ -58,7 +55,7 @@ func TestValidateAndInsertTransaction(t *testing.T) {
 
 		// The parent's transaction was inserted by consensus(AddBlock), and we want to verify that
 		// the transaction is not considered an orphan and inserted into the mempool.
-		transactionNotAnOrphan, err := createChildTxWhenParentTxWasAddedByConsensus(params, tc)
+		transactionNotAnOrphan, err := createChildTxWhenParentTxWasAddedByConsensus(consensusConfig, tc)
 		if err != nil {
 			t.Fatalf("Error in createParentAndChildrenTransaction: %v", err)
 		}
@@ -76,17 +73,17 @@ func TestValidateAndInsertTransaction(t *testing.T) {
 // TestInsertDoubleTransactionsToMempool verifies that an attempt to insert a transaction
 // more than once into the mempool will result in raising an appropriate error.
 func TestInsertDoubleTransactionsToMempool(t *testing.T) {
-	testutils.ForAllNets(t, true, func(t *testing.T, params *dagconfig.Params) {
+	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
 
 		factory := consensus.NewFactory()
-		tc, teardown, err := factory.NewTestConsensus(params, false, "TestInsertDoubleTransactionsToMempool")
+		tc, teardown, err := factory.NewTestConsensus(consensusConfig, "TestInsertDoubleTransactionsToMempool")
 		if err != nil {
 			t.Fatalf("Error setting up TestConsensus: %+v", err)
 		}
 		defer teardown(false)
 
 		miningFactory := miningmanager.NewFactory()
-		miningManager := miningFactory.NewMiningManager(tc, params)
+		miningManager := miningFactory.NewMiningManager(tc, &consensusConfig.Params)
 		transaction := createTransactionWithUTXOEntry(t, 0)
 		err = miningManager.ValidateAndInsertTransaction(transaction, true)
 		if err != nil {
@@ -101,17 +98,17 @@ func TestInsertDoubleTransactionsToMempool(t *testing.T) {
 
 // TestHandleNewBlockTransactions verifies that all the transactions in the block were successfully removed from the mempool.
 func TestHandleNewBlockTransactions(t *testing.T) {
-	testutils.ForAllNets(t, true, func(t *testing.T, params *dagconfig.Params) {
+	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
 
 		factory := consensus.NewFactory()
-		tc, teardown, err := factory.NewTestConsensus(params, false, "TestHandleNewBlockTransactions")
+		tc, teardown, err := factory.NewTestConsensus(consensusConfig, "TestHandleNewBlockTransactions")
 		if err != nil {
 			t.Fatalf("Error setting up TestConsensus: %+v", err)
 		}
 		defer teardown(false)
 
 		miningFactory := miningmanager.NewFactory()
-		miningManager := miningFactory.NewMiningManager(tc, params)
+		miningManager := miningFactory.NewMiningManager(tc, &consensusConfig.Params)
 		transactionsToInsert := make([]*externalapi.DomainTransaction, 10)
 		for i := range transactionsToInsert {
 			transaction := createTransactionWithUTXOEntry(t, i)
@@ -167,17 +164,17 @@ func domainBlocksToBlockIds(blocks []*externalapi.DomainTransaction) []*external
 // TestDoubleSpends verifies that any transactions which are now double spends as a result of the block's new transactions
 // will be removed from the mempool.
 func TestDoubleSpends(t *testing.T) {
-	testutils.ForAllNets(t, true, func(t *testing.T, params *dagconfig.Params) {
+	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
 
 		factory := consensus.NewFactory()
-		tc, teardown, err := factory.NewTestConsensus(params, false, "TestDoubleSpends")
+		tc, teardown, err := factory.NewTestConsensus(consensusConfig, "TestDoubleSpends")
 		if err != nil {
 			t.Fatalf("Failed setting up TestConsensus: %+v", err)
 		}
 		defer teardown(false)
 
 		miningFactory := miningmanager.NewFactory()
-		miningManager := miningFactory.NewMiningManager(tc, params)
+		miningManager := miningFactory.NewMiningManager(tc, &consensusConfig.Params)
 		transactionInTheMempool := createTransactionWithUTXOEntry(t, 0)
 		err = miningManager.ValidateAndInsertTransaction(transactionInTheMempool, true)
 		if err != nil {
@@ -199,18 +196,18 @@ func TestDoubleSpends(t *testing.T) {
 
 // TestOrphanTransactions verifies that a transaction could be a part of a new block template, only if it's not an orphan.
 func TestOrphanTransactions(t *testing.T) {
-	testutils.ForAllNets(t, true, func(t *testing.T, params *dagconfig.Params) {
+	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
 
-		params.BlockCoinbaseMaturity = 0
+		consensusConfig.BlockCoinbaseMaturity = 0
 		factory := consensus.NewFactory()
-		tc, teardown, err := factory.NewTestConsensus(params, false, "TestOrphanTransactions")
+		tc, teardown, err := factory.NewTestConsensus(consensusConfig, "TestOrphanTransactions")
 		if err != nil {
 			t.Fatalf("Error setting up TestConsensus: %+v", err)
 		}
 		defer teardown(false)
 
 		miningFactory := miningmanager.NewFactory()
-		miningManager := miningFactory.NewMiningManager(tc, params)
+		miningManager := miningFactory.NewMiningManager(tc, &consensusConfig.Params)
 		// Before each parent transaction, We will add two blocks by consensus in order to fund the parent transactions.
 		parentTransactions, childTransactions, err := createArraysOfParentAndChildrenTransactions(tc)
 		if err != nil {
@@ -386,9 +383,8 @@ func createParentAndChildrenTransactions(tc testapi.TestConsensus) (*externalapi
 	return txParent, txChild, nil
 }
 
-func createChildTxWhenParentTxWasAddedByConsensus(params *dagconfig.Params, tc testapi.TestConsensus) (*externalapi.DomainTransaction, error) {
-
-	firstBlockHash, _, err := tc.AddBlock([]*externalapi.DomainHash{params.GenesisHash}, nil, nil)
+func createChildTxWhenParentTxWasAddedByConsensus(consensusConfig *consensus.Config, tc testapi.TestConsensus) (*externalapi.DomainTransaction, error) {
+	firstBlockHash, _, err := tc.AddBlock([]*externalapi.DomainHash{consensusConfig.GenesisHash}, nil, nil)
 	if err != nil {
 		return nil, errors.Wrapf(err, "AddBlock: %v", err)
 	}

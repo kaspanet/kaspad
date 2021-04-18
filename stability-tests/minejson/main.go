@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/kaspanet/kaspad/domain/consensus"
 	"github.com/kaspanet/kaspad/stability-tests/common"
 	"github.com/kaspanet/kaspad/stability-tests/common/mine"
 	"github.com/kaspanet/kaspad/stability-tests/common/rpc"
@@ -33,7 +34,9 @@ func main() {
 		panic(err)
 	}
 
-	err = mine.FromFile(cfg.DAGFile, cfg.NetParams(), rpcClient, dataDir)
+	consensusConfig := consensus.Config{Params: *cfg.NetParams()}
+
+	err = mine.FromFile(cfg.DAGFile, &consensusConfig, rpcClient, dataDir)
 	if err != nil {
 		panic(errors.Wrap(err, "error in mine.FromFile"))
 	}

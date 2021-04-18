@@ -2,6 +2,7 @@ package difficulty_test
 
 import (
 	"fmt"
+	"github.com/kaspanet/kaspad/domain/consensus"
 	"math"
 	"math/big"
 	"testing"
@@ -18,11 +19,11 @@ func TestGetHashrateString(t *testing.T) {
 		dagconfig.DevnetParams.Name:  "131.07 KH/s",
 		dagconfig.SimnetParams.Name:  "2.00 KH/s",
 	}
-	testutils.ForAllNets(t, false, func(t *testing.T, params *dagconfig.Params) {
-		targetGenesis := difficulty.CompactToBig(params.GenesisBlock.Header.Bits())
-		hashrate := difficulty.GetHashrateString(targetGenesis, params.TargetTimePerBlock)
-		if hashrate != results[params.Name] {
-			t.Errorf("Expected %s, found %s", results[params.Name], hashrate)
+	testutils.ForAllNets(t, false, func(t *testing.T, consensusConfig *consensus.Config) {
+		targetGenesis := difficulty.CompactToBig(consensusConfig.GenesisBlock.Header.Bits())
+		hashrate := difficulty.GetHashrateString(targetGenesis, consensusConfig.TargetTimePerBlock)
+		if hashrate != results[consensusConfig.Name] {
+			t.Errorf("Expected %s, found %s", results[consensusConfig.Name], hashrate)
 		}
 	})
 }
