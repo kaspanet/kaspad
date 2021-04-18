@@ -179,9 +179,6 @@ type Params struct {
 
 	// BaseSubsidy is the starting subsidy amount for mined blocks.
 	BaseSubsidy uint64
-
-	// EnableSanityCheckPruningUTXOSet checks the full pruning point utxo set against the commitment at every pruning movement
-	EnableSanityCheckPruningUTXOSet bool
 }
 
 // NormalizeRPCServerAddress returns addr with the current network default
