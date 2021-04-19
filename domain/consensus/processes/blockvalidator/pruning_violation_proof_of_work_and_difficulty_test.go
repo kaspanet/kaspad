@@ -7,7 +7,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kaspanet/kaspad/domain/consensus"
 	"github.com/kaspanet/kaspad/domain/consensus/model"
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/model/pow"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/blockheader"
@@ -15,28 +17,24 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/merkle"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/mining"
-	"github.com/kaspanet/kaspad/util/difficulty"
-
-	"github.com/kaspanet/kaspad/domain/consensus"
-	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/testutils"
-	"github.com/kaspanet/kaspad/domain/dagconfig"
+	"github.com/kaspanet/kaspad/util/difficulty"
 	"github.com/pkg/errors"
 )
 
 // TestPOW tests the validation of the block's POW.
 func TestPOW(t *testing.T) {
 	// We set the flag "skip pow" to be false (second argument in the function) for not skipping the check of POW and validate its correctness.
-	testutils.ForAllNets(t, false, func(t *testing.T, params *dagconfig.Params) {
+	testutils.ForAllNets(t, false, func(t *testing.T, consensusConfig *consensus.Config) {
 		factory := consensus.NewFactory()
-		tc, teardown, err := factory.NewTestConsensus(params, false, "TestPOW")
+		tc, teardown, err := factory.NewTestConsensus(consensusConfig, "TestPOW")
 		if err != nil {
 			t.Fatalf("Error setting up consensus: %+v", err)
 		}
 		defer teardown(false)
 
 		// Builds and checks block with invalid POW.
-		invalidBlockWrongPOW, _, err := tc.BuildBlockWithParents([]*externalapi.DomainHash{params.GenesisHash}, nil, nil)
+		invalidBlockWrongPOW, _, err := tc.BuildBlockWithParents([]*externalapi.DomainHash{consensusConfig.GenesisHash}, nil, nil)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -46,12 +44,12 @@ func TestPOW(t *testing.T) {
 			t.Fatalf("Expected block to be invalid with err: %v, instead found: %v", ruleerrors.ErrInvalidPoW, err)
 		}
 
-		abovePowMaxBlock, _, err := tc.BuildBlockWithParents([]*externalapi.DomainHash{params.GenesisHash}, nil, nil)
+		abovePowMaxBlock, _, err := tc.BuildBlockWithParents([]*externalapi.DomainHash{consensusConfig.GenesisHash}, nil, nil)
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		abovePowMaxTarget := big.NewInt(0).Add(big.NewInt(1), params.PowMax)
+		abovePowMaxTarget := big.NewInt(0).Add(big.NewInt(1), consensusConfig.PowMax)
 		abovePowMaxBlock.Header = blockheader.NewImmutableBlockHeader(
 			abovePowMaxBlock.Header.Version(),
 			abovePowMaxBlock.Header.ParentHashes(),
@@ -68,7 +66,7 @@ func TestPOW(t *testing.T) {
 			t.Fatalf("Unexpected error: %+v", err)
 		}
 
-		negativeTargetBlock, _, err := tc.BuildBlockWithParents([]*externalapi.DomainHash{params.GenesisHash}, nil, nil)
+		negativeTargetBlock, _, err := tc.BuildBlockWithParents([]*externalapi.DomainHash{consensusConfig.GenesisHash}, nil, nil)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -90,7 +88,7 @@ func TestPOW(t *testing.T) {
 		}
 
 		// test on a valid block.
-		validBlock, _, err := tc.BuildBlockWithParents([]*externalapi.DomainHash{params.GenesisHash}, nil, nil)
+		validBlock, _, err := tc.BuildBlockWithParents([]*externalapi.DomainHash{consensusConfig.GenesisHash}, nil, nil)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -120,16 +118,16 @@ func solveBlockWithWrongPOW(block *externalapi.DomainBlock) *externalapi.DomainB
 }
 
 func TestCheckParentHeadersExist(t *testing.T) {
-	testutils.ForAllNets(t, true, func(t *testing.T, params *dagconfig.Params) {
+	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
 		factory := consensus.NewFactory()
 
-		tc, teardown, err := factory.NewTestConsensus(params, false, "TestCheckParentHeadersExist")
+		tc, teardown, err := factory.NewTestConsensus(consensusConfig, "TestCheckParentHeadersExist")
 		if err != nil {
 			t.Fatalf("Error setting up consensus: %+v", err)
 		}
 		defer teardown(false)
 
-		orphanBlock, _, err := tc.BuildBlockWithParents([]*externalapi.DomainHash{params.GenesisHash}, nil, nil)
+		orphanBlock, _, err := tc.BuildBlockWithParents([]*externalapi.DomainHash{consensusConfig.GenesisHash}, nil, nil)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -159,7 +157,7 @@ func TestCheckParentHeadersExist(t *testing.T) {
 		}
 
 		invalidBlock, _, err := tc.BuildBlockWithParents(
-			[]*externalapi.DomainHash{params.GenesisHash}, nil, nil)
+			[]*externalapi.DomainHash{consensusConfig.GenesisHash}, nil, nil)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -183,7 +181,7 @@ func TestCheckParentHeadersExist(t *testing.T) {
 
 		invalidBlockHash := consensushashing.BlockHash(invalidBlock)
 
-		invalidBlockChild, _, err := tc.BuildBlockWithParents([]*externalapi.DomainHash{params.GenesisHash}, nil, nil)
+		invalidBlockChild, _, err := tc.BuildBlockWithParents([]*externalapi.DomainHash{consensusConfig.GenesisHash}, nil, nil)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -207,21 +205,21 @@ func TestCheckParentHeadersExist(t *testing.T) {
 }
 
 func TestCheckPruningPointViolation(t *testing.T) {
-	testutils.ForAllNets(t, true, func(t *testing.T, params *dagconfig.Params) {
+	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
 		// This is done to reduce the pruning depth to 6 blocks
-		params.FinalityDuration = 2 * params.TargetTimePerBlock
-		params.K = 0
+		consensusConfig.FinalityDuration = 2 * consensusConfig.TargetTimePerBlock
+		consensusConfig.K = 0
 
 		factory := consensus.NewFactory()
 
-		tc, teardown, err := factory.NewTestConsensus(params, false, "TestCheckPruningPointViolation")
+		tc, teardown, err := factory.NewTestConsensus(consensusConfig, "TestCheckPruningPointViolation")
 		if err != nil {
 			t.Fatalf("Error setting up consensus: %+v", err)
 		}
 		defer teardown(false)
 
 		// Add blocks until the pruning point changes
-		tipHash := params.GenesisHash
+		tipHash := consensusConfig.GenesisHash
 		for {
 			tipHash, _, err = tc.AddBlock([]*externalapi.DomainHash{tipHash}, nil, nil)
 			if err != nil {
@@ -233,12 +231,12 @@ func TestCheckPruningPointViolation(t *testing.T) {
 				t.Fatalf("PruningPoint: %+v", err)
 			}
 
-			if !pruningPoint.Equal(params.GenesisHash) {
+			if !pruningPoint.Equal(consensusConfig.GenesisHash) {
 				break
 			}
 		}
 
-		_, _, err = tc.AddUTXOInvalidBlock([]*externalapi.DomainHash{params.GenesisHash})
+		_, _, err = tc.AddUTXOInvalidBlock([]*externalapi.DomainHash{consensusConfig.GenesisHash})
 		if !errors.Is(err, ruleerrors.ErrPruningPointViolation) {
 			t.Fatalf("Unexpected error: %+v", err)
 		}
@@ -251,7 +249,7 @@ func TestCheckPruningPointViolation(t *testing.T) {
 // "calculated" by the mocDifficultyManager, where mocDifficultyManager is special implementation
 // of the type DifficultyManager for this test (defined below).
 func TestValidateDifficulty(t *testing.T) {
-	testutils.ForAllNets(t, true, func(t *testing.T, params *dagconfig.Params) {
+	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
 		factory := consensus.NewFactory()
 		mocDifficulty := &mocDifficultyManager{}
 		factory.SetTestDifficultyManager(func(_ model.DBReader, _ model.GHOSTDAGManager, _ model.GHOSTDAGDataStore,
@@ -262,10 +260,10 @@ func TestValidateDifficulty(t *testing.T) {
 			mocDifficulty.daaBlocksStore = daaBlocksStore
 			return mocDifficulty
 		})
-		genesisDifficulty := params.GenesisBlock.Header.Bits()
+		genesisDifficulty := consensusConfig.GenesisBlock.Header.Bits()
 		mocDifficulty.testDifficulty = genesisDifficulty
 		mocDifficulty.testGenesisBits = genesisDifficulty
-		tc, teardown, err := factory.NewTestConsensus(params, false, "TestValidateDifficulty")
+		tc, teardown, err := factory.NewTestConsensus(consensusConfig, "TestValidateDifficulty")
 		if err != nil {
 			t.Fatalf("Error setting up consensus: %+v", err)
 		}
@@ -277,7 +275,7 @@ func TestValidateDifficulty(t *testing.T) {
 				Version: 0,
 			},
 		}
-		block, _, err := tc.BuildBlockWithParents([]*externalapi.DomainHash{params.GenesisHash}, &emptyCoinbase, nil)
+		block, _, err := tc.BuildBlockWithParents([]*externalapi.DomainHash{consensusConfig.GenesisHash}, &emptyCoinbase, nil)
 		if err != nil {
 			t.Fatalf("TestValidateDifficulty: Failed build block with parents: %v.", err)
 		}

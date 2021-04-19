@@ -577,9 +577,6 @@ func LoadConfig() (*Config, error) {
 	if configFileError != nil {
 		log.Warnf("%s", configFileError)
 	}
-
-	cfg.ActiveNetParams.EnableSanityCheckPruningUTXOSet = cfg.EnableSanityCheckPruningUTXOSet
-
 	return cfg, nil
 }
 

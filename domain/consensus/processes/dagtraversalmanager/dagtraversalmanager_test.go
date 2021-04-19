@@ -9,7 +9,6 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/model/testapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/testutils"
-	"github.com/kaspanet/kaspad/domain/dagconfig"
 )
 
 const commonChainSize = 5
@@ -17,18 +16,18 @@ const depth uint64 = 2
 
 //TestBlockAtDepthOnChainDag compares the result of BlockAtDepth to the result of looping over the SelectedChain on a single chain DAG.
 func TestBlockAtDepthOnChainDag(t *testing.T) {
-	testutils.ForAllNets(t, true, func(t *testing.T, params *dagconfig.Params) {
+	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
 		stagingArea := model.NewStagingArea()
 
 		factory := consensus.NewFactory()
-		tc, tearDown, err := factory.NewTestConsensus(params, false,
+		tc, tearDown, err := factory.NewTestConsensus(consensusConfig,
 			"TestBlockAtDepthOnChainDag")
 		if err != nil {
 			t.Fatalf("Failed creating a NewTestConsensus: %s", err)
 		}
 		defer tearDown(false)
 
-		highHash, err := createAChainDAG(params.GenesisHash, tc)
+		highHash, err := createAChainDAG(consensusConfig.GenesisHash, tc)
 		if err != nil {
 			t.Fatalf("Failed creating a Chain DAG In BlockAtDepthTEST: %+v", err)
 		}
@@ -74,9 +73,9 @@ func createAChainDAG(genesisHash *externalapi.DomainHash, tc testapi.TestConsens
 // TestBlockAtDepthOnDAGWhereTwoBlocksHaveSameSelectedParent compares the results of BlockAtDepth
 // of 2 children that have the same selectedParent.
 func TestBlockAtDepthOnDAGWhereTwoBlocksHaveSameSelectedParent(t *testing.T) {
-	testutils.ForAllNets(t, true, func(t *testing.T, params *dagconfig.Params) {
+	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
 		factory := consensus.NewFactory()
-		tc, tearDown, err := factory.NewTestConsensus(params, false,
+		tc, tearDown, err := factory.NewTestConsensus(consensusConfig,
 			"TestBlockAtDepthOnDAGWhereTwoBlocksHaveSameSelectedParent")
 		if err != nil {
 			t.Fatalf("Failed creating a NewTestConsensus: %s", err)
@@ -85,7 +84,7 @@ func TestBlockAtDepthOnDAGWhereTwoBlocksHaveSameSelectedParent(t *testing.T) {
 
 		stagingArea := model.NewStagingArea()
 
-		firstChild, secondChild, err := createADAGTwoChildrenWithSameSelectedParent(params.GenesisHash, tc)
+		firstChild, secondChild, err := createADAGTwoChildrenWithSameSelectedParent(consensusConfig.GenesisHash, tc)
 		if err != nil {
 			t.Fatalf("Failed creating a DAG where two blocks have same selected parent: %+v", err)
 		}
@@ -128,9 +127,9 @@ func createADAGTwoChildrenWithSameSelectedParent(genesisHash *externalapi.Domain
 // TestBlockAtDepthOnDAGWithTwoDifferentChains compares results of BlockAtDepth on two different chains,
 // on the same DAG, and validates they merge at the correct point.
 func TestBlockAtDepthOnDAGWithTwoDifferentChains(t *testing.T) {
-	testutils.ForAllNets(t, true, func(t *testing.T, params *dagconfig.Params) {
+	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
 		factory := consensus.NewFactory()
-		tc, tearDown, err := factory.NewTestConsensus(params, false,
+		tc, tearDown, err := factory.NewTestConsensus(consensusConfig,
 			"TestBlockAtDepthOnDAGWithTwoDifferentChains")
 		if err != nil {
 			t.Fatalf("Failed creating a NewTestConsensus: %s", err)
@@ -140,7 +139,7 @@ func TestBlockAtDepthOnDAGWithTwoDifferentChains(t *testing.T) {
 		const sizeOfTheFirstChildSubChainDAG = 3
 		const sizeOfTheSecondChildSubChainDAG = 2
 
-		firstChild, secondChild, err := createADAGWithTwoDifferentChains(params.GenesisHash, tc, sizeOfTheFirstChildSubChainDAG,
+		firstChild, secondChild, err := createADAGWithTwoDifferentChains(consensusConfig.GenesisHash, tc, sizeOfTheFirstChildSubChainDAG,
 			sizeOfTheSecondChildSubChainDAG)
 		if err != nil {
 			t.Fatalf("Failed creating a DAG with two different chains in BlockAtDepthTEST: %+v", err)
@@ -207,10 +206,10 @@ func createADAGWithTwoDifferentChains(genesisHash *externalapi.DomainHash, tc te
 }
 
 func TestLowestChainBlockAboveOrEqualToBlueScore(t *testing.T) {
-	testutils.ForAllNets(t, true, func(t *testing.T, params *dagconfig.Params) {
-		params.FinalityDuration = 10 * params.TargetTimePerBlock
+	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
+		consensusConfig.FinalityDuration = 10 * consensusConfig.TargetTimePerBlock
 		factory := consensus.NewFactory()
-		tc, tearDown, err := factory.NewTestConsensus(params, false,
+		tc, tearDown, err := factory.NewTestConsensus(consensusConfig,
 			"TestLowestChainBlockAboveOrEqualToBlueScore")
 		if err != nil {
 			t.Fatalf("NewTestConsensus: %s", err)
@@ -241,8 +240,8 @@ func TestLowestChainBlockAboveOrEqualToBlueScore(t *testing.T) {
 			}
 		}
 
-		chain := []*externalapi.DomainHash{params.GenesisHash}
-		tipHash := params.GenesisHash
+		chain := []*externalapi.DomainHash{consensusConfig.GenesisHash}
+		tipHash := consensusConfig.GenesisHash
 		for i := 0; i < 9; i++ {
 			var err error
 			tipHash, _, err = tc.AddBlock([]*externalapi.DomainHash{tipHash}, nil, nil)
@@ -253,7 +252,7 @@ func TestLowestChainBlockAboveOrEqualToBlueScore(t *testing.T) {
 			chain = append(chain, tipHash)
 		}
 
-		sideChain1TipHash, _, err := tc.AddBlock([]*externalapi.DomainHash{params.GenesisHash}, nil, nil)
+		sideChain1TipHash, _, err := tc.AddBlock([]*externalapi.DomainHash{consensusConfig.GenesisHash}, nil, nil)
 		if err != nil {
 			t.Fatalf("AddBlock: %+v", err)
 		}
@@ -277,7 +276,7 @@ func TestLowestChainBlockAboveOrEqualToBlueScore(t *testing.T) {
 			chain = append(chain, tipHash)
 		}
 
-		sideChain2TipHash, _, err := tc.AddBlock([]*externalapi.DomainHash{params.GenesisHash}, nil, nil)
+		sideChain2TipHash, _, err := tc.AddBlock([]*externalapi.DomainHash{consensusConfig.GenesisHash}, nil, nil)
 		if err != nil {
 			t.Fatalf("AddBlock: %+v", err)
 		}
@@ -302,7 +301,7 @@ func TestLowestChainBlockAboveOrEqualToBlueScore(t *testing.T) {
 		}
 
 		// Check by exact blue score
-		checkExpectedBlock(tipHash, 0, params.GenesisHash)
+		checkExpectedBlock(tipHash, 0, consensusConfig.GenesisHash)
 		checkExpectedBlock(tipHash, 5, chain[5])
 		checkExpectedBlock(tipHash, 19, chain[len(chain)-3])
 

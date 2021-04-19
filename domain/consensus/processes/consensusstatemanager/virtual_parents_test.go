@@ -10,14 +10,13 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/testapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/testutils"
-	"github.com/kaspanet/kaspad/domain/dagconfig"
 )
 
 func TestConsensusStateManager_pickVirtualParents(t *testing.T) {
-	testutils.ForAllNets(t, true, func(t *testing.T, params *dagconfig.Params) {
+	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
 		stagingArea := model.NewStagingArea()
 
-		tc, teardown, err := consensus.NewFactory().NewTestConsensus(params, false, "TestConsensusStateManager_pickVirtualParents")
+		tc, teardown, err := consensus.NewFactory().NewTestConsensus(consensusConfig, "TestConsensusStateManager_pickVirtualParents")
 		if err != nil {
 			t.Fatalf("Error setting up tc: %+v", err)
 		}
@@ -42,10 +41,10 @@ func TestConsensusStateManager_pickVirtualParents(t *testing.T) {
 			return virtualRelations.Parents
 		}
 
-		// We build 2*params.MaxBlockParents each one with blueWork higher than the other.
-		parents := make([]*externalapi.DomainHash, 0, params.MaxBlockParents)
-		for i := 0; i < 2*int(params.MaxBlockParents); i++ {
-			lastBlock := params.GenesisHash
+		// We build 2*consensusConfig.MaxBlockParents each one with blueWork higher than the other.
+		parents := make([]*externalapi.DomainHash, 0, consensusConfig.MaxBlockParents)
+		for i := 0; i < 2*int(consensusConfig.MaxBlockParents); i++ {
+			lastBlock := consensusConfig.GenesisHash
 			for j := 0; j <= i; j++ {
 				lastBlock, _, err = tc.AddBlock([]*externalapi.DomainHash{lastBlock}, nil, nil)
 				if err != nil {
@@ -60,15 +59,15 @@ func TestConsensusStateManager_pickVirtualParents(t *testing.T) {
 
 		// Make sure the first half of the blocks are with highest blueWork
 		// we use (max+1)/2 because the first "half" is rounded up, so `(dividend + (divisor - 1)) / divisor` = `(max + (2-1))/2` = `(max+1)/2`
-		for i := 0; i < int(params.MaxBlockParents+1)/2; i++ {
+		for i := 0; i < int(consensusConfig.MaxBlockParents+1)/2; i++ {
 			if !virtualParents[i].Equal(parents[i]) {
 				t.Fatalf("Expected block at %d to be equal, instead found %s != %s", i, virtualParents[i], parents[i])
 			}
 		}
 
 		// Make sure the second half is the candidates with lowest blueWork
-		end := len(parents) - int(params.MaxBlockParents)/2
-		for i := (params.MaxBlockParents + 1) / 2; i < params.MaxBlockParents; i++ {
+		end := len(parents) - int(consensusConfig.MaxBlockParents)/2
+		for i := (consensusConfig.MaxBlockParents + 1) / 2; i < consensusConfig.MaxBlockParents; i++ {
 			if !virtualParents[i].Equal(parents[end]) {
 				t.Fatalf("Expected block at %d to be equal, instead found %s != %s", i, virtualParents[i], parents[end])
 			}
@@ -94,9 +93,9 @@ func TestConsensusStateManager_pickVirtualParents(t *testing.T) {
 				break
 			}
 		}
-		// build exactly params.MaxBlockParents
-		parents = make([]*externalapi.DomainHash, 0, params.MaxBlockParents)
-		for i := 0; i < int(params.MaxBlockParents); i++ {
+		// build exactly consensusConfig.MaxBlockParents
+		parents = make([]*externalapi.DomainHash, 0, consensusConfig.MaxBlockParents)
+		for i := 0; i < int(consensusConfig.MaxBlockParents); i++ {
 			block, _, err := tc.AddBlock([]*externalapi.DomainHash{virtualSelectedParent}, nil, nil)
 			if err != nil {
 				t.Fatalf("Failed Adding block to tc: %v", err)

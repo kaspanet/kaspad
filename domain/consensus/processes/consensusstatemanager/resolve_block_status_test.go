@@ -16,25 +16,24 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/testutils"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/transactionhelper"
-	"github.com/kaspanet/kaspad/domain/dagconfig"
 )
 
 func TestDoubleSpends(t *testing.T) {
-	testutils.ForAllNets(t, true, func(t *testing.T, params *dagconfig.Params) {
+	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
 		stagingArea := model.NewStagingArea()
 
-		params.BlockCoinbaseMaturity = 0
+		consensusConfig.BlockCoinbaseMaturity = 0
 
 		factory := consensus.NewFactory()
 
-		consensus, teardown, err := factory.NewTestConsensus(params, false, "TestUTXOCommitment")
+		consensus, teardown, err := factory.NewTestConsensus(consensusConfig, "TestUTXOCommitment")
 		if err != nil {
 			t.Fatalf("Error setting up consensus: %+v", err)
 		}
 		defer teardown(false)
 
 		// Mine chain of two blocks to fund our double spend
-		firstBlockHash, _, err := consensus.AddBlock([]*externalapi.DomainHash{params.GenesisHash}, nil, nil)
+		firstBlockHash, _, err := consensus.AddBlock([]*externalapi.DomainHash{consensusConfig.GenesisHash}, nil, nil)
 		if err != nil {
 			t.Fatalf("Error creating firstBlock: %+v", err)
 		}
@@ -161,19 +160,19 @@ func TestDoubleSpends(t *testing.T) {
 // TestTransactionAcceptance checks that blue blocks transactions are favoured above
 // red blocks transactions, and that the block reward is paid only for blue blocks.
 func TestTransactionAcceptance(t *testing.T) {
-	testutils.ForAllNets(t, true, func(t *testing.T, params *dagconfig.Params) {
+	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
 		stagingArea := model.NewStagingArea()
 
-		params.BlockCoinbaseMaturity = 0
+		consensusConfig.BlockCoinbaseMaturity = 0
 
 		factory := consensus.NewFactory()
-		testConsensus, teardown, err := factory.NewTestConsensus(params, false, "TestTransactionAcceptance")
+		testConsensus, teardown, err := factory.NewTestConsensus(consensusConfig, "TestTransactionAcceptance")
 		if err != nil {
 			t.Fatalf("Error setting up testConsensus: %+v", err)
 		}
 		defer teardown(false)
 
-		fundingBlock1Hash, _, err := testConsensus.AddBlock([]*externalapi.DomainHash{params.GenesisHash}, nil, nil)
+		fundingBlock1Hash, _, err := testConsensus.AddBlock([]*externalapi.DomainHash{consensusConfig.GenesisHash}, nil, nil)
 		if err != nil {
 			t.Fatalf("Error creating fundingBlock1: %+v", err)
 		}
@@ -192,7 +191,7 @@ func TestTransactionAcceptance(t *testing.T) {
 		// Add a chain of K blocks above fundingBlock3 so we'll
 		// be able to mine a red block on top of it.
 		tipHash := fundingBlock3Hash
-		for i := model.KType(0); i < params.K; i++ {
+		for i := model.KType(0); i < consensusConfig.K; i++ {
 			var err error
 			tipHash, _, err = testConsensus.AddBlock([]*externalapi.DomainHash{tipHash}, nil, nil)
 			if err != nil {
@@ -394,16 +393,16 @@ func TestTransactionAcceptance(t *testing.T) {
 }
 
 func TestResolveBlockStatusSanity(t *testing.T) {
-	testutils.ForAllNets(t, true, func(t *testing.T, params *dagconfig.Params) {
+	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
 		stagingArea := model.NewStagingArea()
 
-		consensus, teardown, err := consensus.NewFactory().NewTestConsensus(params, false, "TestResolveBlockStatusSanity")
+		consensus, teardown, err := consensus.NewFactory().NewTestConsensus(consensusConfig, "TestResolveBlockStatusSanity")
 		if err != nil {
 			t.Fatalf("Error setting up consensus: %+v", err)
 		}
 		defer teardown(false)
 
-		genesisHash := params.GenesisHash
+		genesisHash := consensusConfig.GenesisHash
 		allHashes := []*externalapi.DomainHash{genesisHash}
 
 		// Make sure that the status of genesisHash is valid
@@ -415,7 +414,7 @@ func TestResolveBlockStatusSanity(t *testing.T) {
 			t.Fatalf("genesis is unexpectedly non-valid. Its status is: %s", genesisStatus)
 		}
 
-		chainLength := int(params.K) + 1
+		chainLength := int(consensusConfig.K) + 1
 
 		// Add a chain of blocks over the genesis and make sure all their
 		// statuses are valid

@@ -1,8 +1,9 @@
-package consensus
+package consensus_test
 
 import (
 	"testing"
 
+	"github.com/kaspanet/kaspad/domain/consensus"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/testutils"
 	"github.com/kaspanet/kaspad/domain/dagconfig"
 )
@@ -14,13 +15,13 @@ func TestPruningDepth(t *testing.T) {
 		dagconfig.DevnetParams.Name:  244838,
 		dagconfig.SimnetParams.Name:  192038,
 	}
-	testutils.ForAllNets(t, true, func(t *testing.T, params *dagconfig.Params) {
-		expected, found := expectedResult[params.Name]
+	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
+		expected, found := expectedResult[consensusConfig.Name]
 		if !found {
-			t.Fatalf("TestPruningDepth: expectedResult doesn't contain '%s'", params.Name)
+			t.Fatalf("TestPruningDepth: expectedResult doesn't contain '%s'", consensusConfig.Name)
 		}
-		if params.PruningDepth() != expected {
-			t.Errorf("pruningDepth in %s is expected to be %d but got %d", params.Name, expected, params.PruningDepth())
+		if consensusConfig.PruningDepth() != expected {
+			t.Errorf("pruningDepth in %s is expected to be %d but got %d", consensusConfig.Name, expected, consensusConfig.PruningDepth())
 		}
 	})
 }

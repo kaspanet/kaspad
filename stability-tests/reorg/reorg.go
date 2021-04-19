@@ -17,11 +17,11 @@ import (
 )
 
 func testReorg(cfg *configFlags) {
-	params := dagconfig.DevnetParams
-	params.SkipProofOfWork = true
+	consensusConfig := consensus.Config{Params: dagconfig.DevnetParams}
+	consensusConfig.SkipProofOfWork = true
 
 	factory := consensus.NewFactory()
-	tc, teardown, err := factory.NewTestConsensus(&params, false, "ReorgHonest")
+	tc, teardown, err := factory.NewTestConsensus(&consensusConfig, "ReorgHonest")
 	if err != nil {
 		panic(err)
 	}
@@ -44,7 +44,7 @@ func testReorg(cfg *configFlags) {
 		panic(err)
 	}
 
-	tcAttacker, teardownAttacker, err := factory.NewTestConsensus(&params, false, "ReorgAttacker")
+	tcAttacker, teardownAttacker, err := factory.NewTestConsensus(&consensusConfig, "ReorgAttacker")
 	if err != nil {
 		panic(err)
 	}
