@@ -21,7 +21,7 @@ func (csm *consensusStateManager) ReverseUTXODiffs(tipHash *externalapi.DomainHa
 	log.Debugf("Reversing utxoDiffs")
 
 	// Set previousUTXODiff and previousBlock to oneBlockBeforeTip before we start touching them,
-	// since oneBlockBeforeTip's UTXODiff is going to be over-written in the next step
+	// since previousBlock's UTXODiff is going to be over-written in the next step
 	previousBlock := reversalData.SelectedParentHash
 	previousUTXODiff, err := csm.utxoDiffStore.UTXODiff(csm.databaseContext, readStagingArea, previousBlock)
 	if err != nil {
