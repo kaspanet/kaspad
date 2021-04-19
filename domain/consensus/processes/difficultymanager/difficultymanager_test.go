@@ -18,23 +18,23 @@ import (
 )
 
 func TestDifficulty(t *testing.T) {
-	testutils.ForAllNets(t, true, func(t *testing.T, params *dagconfig.Params) {
-		if params.DisableDifficultyAdjustment {
+	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
+		if consensusConfig.DisableDifficultyAdjustment {
 			return
 		}
 		// This test generates 3066 blocks above genesis with at least 1 second between each block, amounting to
 		// a bit less then an hour of timestamps.
 		// To prevent rejected blocks due to timestamps in the future, the following safeguard makes sure
 		// the genesis block is at least 1 hour in the past.
-		if params.GenesisBlock.Header.TimeInMilliseconds() > mstime.ToMSTime(time.Now().Add(-time.Hour)).UnixMilliseconds() {
+		if consensusConfig.GenesisBlock.Header.TimeInMilliseconds() > mstime.ToMSTime(time.Now().Add(-time.Hour)).UnixMilliseconds() {
 			t.Fatalf("TestDifficulty requires the GenesisBlock to be at least 1 hour old to pass")
 		}
 
-		params.K = 1
-		params.DifficultyAdjustmentWindowSize = 264
+		consensusConfig.K = 1
+		consensusConfig.DifficultyAdjustmentWindowSize = 264
 
 		factory := consensus.NewFactory()
-		tc, teardown, err := factory.NewTestConsensus(params, false, "TestDifficulty")
+		tc, teardown, err := factory.NewTestConsensus(consensusConfig, "TestDifficulty")
 		if err != nil {
 			t.Fatalf("Error setting up consensus: %+v", err)
 		}
@@ -54,7 +54,7 @@ func TestDifficulty(t *testing.T) {
 					t.Fatalf("BlockHeader: %+v", err)
 				}
 
-				blockTime = header.TimeInMilliseconds() + params.TargetTimePerBlock.Milliseconds()
+				blockTime = header.TimeInMilliseconds() + consensusConfig.TargetTimePerBlock.Milliseconds()
 			}
 
 			block, _, err := tc.BuildBlockWithParents(parents, nil, nil)
@@ -99,18 +99,18 @@ func TestDifficulty(t *testing.T) {
 			return addBlock(minTime, parents...)
 		}
 
-		tipHash := params.GenesisHash
-		tip := params.GenesisBlock
-		for i := 0; i < params.DifficultyAdjustmentWindowSize; i++ {
+		tipHash := consensusConfig.GenesisHash
+		tip := consensusConfig.GenesisBlock
+		for i := 0; i < consensusConfig.DifficultyAdjustmentWindowSize; i++ {
 			tip, tipHash = addBlock(0, tipHash)
-			if tip.Header.Bits() != params.GenesisBlock.Header.Bits() {
+			if tip.Header.Bits() != consensusConfig.GenesisBlock.Header.Bits() {
 				t.Fatalf("As long as the block blue score is less then the difficulty adjustment " +
 					"window size, the difficulty should be the same as genesis'")
 			}
 		}
-		for i := 0; i < params.DifficultyAdjustmentWindowSize+100; i++ {
+		for i := 0; i < consensusConfig.DifficultyAdjustmentWindowSize+100; i++ {
 			tip, tipHash = addBlock(0, tipHash)
-			if tip.Header.Bits() != params.GenesisBlock.Header.Bits() {
+			if tip.Header.Bits() != consensusConfig.GenesisBlock.Header.Bits() {
 				t.Fatalf("As long as the block rate remains the same, the difficulty shouldn't change")
 			}
 		}
@@ -128,7 +128,7 @@ func TestDifficulty(t *testing.T) {
 		}
 
 		var expectedBits uint32
-		switch params.Name {
+		switch consensusConfig.Name {
 		case dagconfig.TestnetParams.Name, dagconfig.DevnetParams.Name:
 			expectedBits = uint32(0x1e7f83df)
 		case dagconfig.MainnetParams.Name:
@@ -140,7 +140,7 @@ func TestDifficulty(t *testing.T) {
 		}
 
 		// Increase block rate to increase difficulty
-		for i := 0; i < params.DifficultyAdjustmentWindowSize; i++ {
+		for i := 0; i < consensusConfig.DifficultyAdjustmentWindowSize; i++ {
 			tip, tipHash = addBlockWithMinimumTime(tipHash)
 			tipGHOSTDAGData, err := tc.GHOSTDAGDataStore().Get(tc.DatabaseContext(), stagingArea, tipHash)
 			if err != nil {
@@ -161,7 +161,7 @@ func TestDifficulty(t *testing.T) {
 		// Add blocks until difficulty stabilizes
 		lastBits := tip.Header.Bits()
 		sameBitsCount := 0
-		for sameBitsCount < params.DifficultyAdjustmentWindowSize+1 {
+		for sameBitsCount < consensusConfig.DifficultyAdjustmentWindowSize+1 {
 			tip, tipHash = addBlock(0, tipHash)
 			if tip.Header.Bits() == lastBits {
 				sameBitsCount++
@@ -171,7 +171,7 @@ func TestDifficulty(t *testing.T) {
 			}
 		}
 
-		slowBlockTime := tip.Header.TimeInMilliseconds() + params.TargetTimePerBlock.Milliseconds() + 1000
+		slowBlockTime := tip.Header.TimeInMilliseconds() + consensusConfig.TargetTimePerBlock.Milliseconds() + 1000
 		slowBlock, tipHash := addBlock(slowBlockTime, tipHash)
 		if slowBlock.Header.Bits() != tip.Header.Bits() {
 			t.Fatalf("The difficulty should only change when slowBlock is in the past of a block")
@@ -192,7 +192,7 @@ func TestDifficulty(t *testing.T) {
 		// blocks in its past and one without.
 		splitBlockHash := tipHash
 		blueTipHash := splitBlockHash
-		for i := 0; i < params.DifficultyAdjustmentWindowSize; i++ {
+		for i := 0; i < consensusConfig.DifficultyAdjustmentWindowSize; i++ {
 			_, blueTipHash = addBlock(0, blueTipHash)
 		}
 
@@ -212,7 +212,7 @@ func TestDifficulty(t *testing.T) {
 		// out the red blocks from the window, and check that the red blocks don't
 		// affect the difficulty.
 		blueTipHash = splitBlockHash
-		for i := 0; i < params.DifficultyAdjustmentWindowSize+redChainLength+1; i++ {
+		for i := 0; i < consensusConfig.DifficultyAdjustmentWindowSize+redChainLength+1; i++ {
 			_, blueTipHash = addBlock(0, blueTipHash)
 		}
 
@@ -230,24 +230,24 @@ func TestDifficulty(t *testing.T) {
 }
 
 func TestDAAScore(t *testing.T) {
-	testutils.ForAllNets(t, true, func(t *testing.T, params *dagconfig.Params) {
-		params.DifficultyAdjustmentWindowSize = 264
+	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
+		consensusConfig.DifficultyAdjustmentWindowSize = 264
 
 		stagingArea := model.NewStagingArea()
 
 		factory := consensus.NewFactory()
-		tc, teardown, err := factory.NewTestConsensus(params, false, "TestDifficulty")
+		tc, teardown, err := factory.NewTestConsensus(consensusConfig, "TestDifficulty")
 		if err != nil {
 			t.Fatalf("Error setting up consensus: %+v", err)
 		}
 		defer teardown(false)
 
 		// We create a small DAG in order to skip from block with blue score of 1 directly to 3
-		split1Hash, _, err := tc.AddBlock([]*externalapi.DomainHash{params.GenesisHash}, nil, nil)
+		split1Hash, _, err := tc.AddBlock([]*externalapi.DomainHash{consensusConfig.GenesisHash}, nil, nil)
 		if err != nil {
 			t.Fatalf("AddBlock: %+v", err)
 		}
-		block, _, err := tc.AddBlock([]*externalapi.DomainHash{params.GenesisHash}, nil, nil)
+		block, _, err := tc.AddBlock([]*externalapi.DomainHash{consensusConfig.GenesisHash}, nil, nil)
 		if err != nil {
 			t.Fatalf("AddBlock: %+v", err)
 		}
@@ -287,7 +287,7 @@ func TestDAAScore(t *testing.T) {
 
 		split2Hash := tipHash
 		split2DAAScore := tipDAAScore
-		for i := uint64(0); i < uint64(params.DifficultyAdjustmentWindowSize)-1; i++ {
+		for i := uint64(0); i < uint64(consensusConfig.DifficultyAdjustmentWindowSize)-1; i++ {
 			tipHash, _, err = tc.AddBlock([]*externalapi.DomainHash{tipHash}, nil, nil)
 			if err != nil {
 				t.Fatalf("AddBlock: %+v", err)
@@ -309,7 +309,7 @@ func TestDAAScore(t *testing.T) {
 			t.Fatalf("AddBlock: %+v", err)
 		}
 
-		// This block is in the anticone of params.DifficultyAdjustmentWindowSize-1 blocks, so it must be part
+		// This block is in the anticone of consensusConfig.DifficultyAdjustmentWindowSize-1 blocks, so it must be part
 		// of the DAA window of a merging block
 		blockAboveSplit2, _, err := tc.AddBlock([]*externalapi.DomainHash{split2Hash}, nil, nil)
 		if err != nil {

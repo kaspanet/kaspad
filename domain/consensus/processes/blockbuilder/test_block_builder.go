@@ -6,7 +6,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/testapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/blockheader"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/testutils"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/txscript"
 	"github.com/kaspanet/kaspad/infrastructure/logger"
 	"github.com/pkg/errors"
 )
@@ -119,7 +119,11 @@ func (bb *testBlockBuilder) buildBlockWithParents(stagingArea *model.StagingArea
 	*externalapi.DomainBlock, externalapi.UTXODiff, error) {
 
 	if coinbaseData == nil {
-		scriptPublicKey, _ := testutils.OpTrueScript()
+		scriptPublicKeyScript, err := txscript.PayToScriptHashScript([]byte{txscript.OpTrue})
+		if err != nil {
+			panic(errors.Wrapf(err, "Couldn't parse opTrueScript. This should never happen"))
+		}
+		scriptPublicKey := &externalapi.ScriptPublicKey{Script: scriptPublicKeyScript, Version: constants.MaxScriptPublicKeyVersion}
 		coinbaseData = &externalapi.DomainCoinbaseData{
 			ScriptPublicKey: scriptPublicKey,
 			ExtraData:       []byte{},

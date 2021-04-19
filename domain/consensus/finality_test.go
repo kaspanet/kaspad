@@ -1,26 +1,26 @@
-package consensus
+package consensus_test
 
 import (
+	"fmt"
+	"github.com/kaspanet/kaspad/domain/consensus"
+	"testing"
+
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/model/testapi"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/testutils"
-	"github.com/kaspanet/kaspad/domain/dagconfig"
 	"github.com/pkg/errors"
-
-	"fmt"
-	"testing"
 )
 
 func TestFinality(t *testing.T) {
-	testutils.ForAllNets(t, true, func(t *testing.T, params *dagconfig.Params) {
+	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
 		// Set finalityInterval to 50 blocks, so that test runs quickly
-		params.FinalityDuration = 50 * params.TargetTimePerBlock
+		consensusConfig.FinalityDuration = 50 * consensusConfig.TargetTimePerBlock
 
-		factory := NewFactory()
-		consensus, teardown, err := factory.NewTestConsensus(params, false, "TestFinality")
+		factory := consensus.NewFactory()
+		consensus, teardown, err := factory.NewTestConsensus(consensusConfig, "TestFinality")
 		if err != nil {
 			t.Fatalf("Error setting up consensus: %+v", err)
 		}
@@ -40,9 +40,9 @@ func TestFinality(t *testing.T) {
 		}
 
 		// Build a chain of `finalityInterval - 1` blocks
-		finalityInterval := params.FinalityDepth()
+		finalityInterval := consensusConfig.FinalityDepth()
 		var mainChainTip *externalapi.DomainBlock
-		mainChainTipHash := params.GenesisHash
+		mainChainTipHash := consensusConfig.GenesisHash
 
 		for i := uint64(0); i < finalityInterval-1; i++ {
 			mainChainTip, err = buildAndInsertBlock([]*externalapi.DomainHash{mainChainTipHash})
@@ -63,7 +63,7 @@ func TestFinality(t *testing.T) {
 
 		// Mine another chain of `finality-Interval - 2` blocks
 		var sideChainTip *externalapi.DomainBlock
-		sideChainTipHash := params.GenesisHash
+		sideChainTipHash := consensusConfig.GenesisHash
 		for i := uint64(0); i < finalityInterval-2; i++ {
 			sideChainTip, err = buildAndInsertBlock([]*externalapi.DomainHash{sideChainTipHash})
 			if err != nil {
@@ -127,7 +127,7 @@ func TestFinality(t *testing.T) {
 			t.Fatalf("TestFinality: Failed getting the virtual's finality point: %v", err)
 		}
 
-		if virtualFinality.Equal(params.GenesisHash) {
+		if virtualFinality.Equal(consensusConfig.GenesisHash) {
 			t.Fatalf("virtual's finalityPoint is still genesis after adding finalityInterval + 1 blocks to the main chain")
 		}
 
@@ -178,12 +178,12 @@ func TestFinality(t *testing.T) {
 }
 
 func TestBoundedMergeDepth(t *testing.T) {
-	testutils.ForAllNets(t, true, func(t *testing.T, params *dagconfig.Params) {
+	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
 		// Set finalityInterval to 50 blocks, so that test runs quickly
-		params.FinalityDuration = 50 * params.TargetTimePerBlock
-		finalityInterval := int(params.FinalityDepth())
+		consensusConfig.FinalityDuration = 50 * consensusConfig.TargetTimePerBlock
+		finalityInterval := int(consensusConfig.FinalityDepth())
 
-		if int(params.K) >= finalityInterval {
+		if int(consensusConfig.K) >= finalityInterval {
 			t.Fatal("K must be smaller than finality duration for this test to run")
 		}
 
@@ -235,20 +235,20 @@ func TestBoundedMergeDepth(t *testing.T) {
 			return blockInfo.BlockStatus
 		}
 
-		factory := NewFactory()
-		consensusBuild, teardownFunc1, err := factory.NewTestConsensus(params, false, "TestBoundedMergeTestBuild")
+		factory := consensus.NewFactory()
+		consensusBuild, teardownFunc1, err := factory.NewTestConsensus(consensusConfig, "TestBoundedMergeTestBuild")
 		if err != nil {
 			t.Fatalf("TestBoundedMergeDepth: Error setting up consensus: %+v", err)
 		}
 
-		consensusReal, teardownFunc2, err := factory.NewTestConsensus(params, false, "TestBoundedMergeTestReal")
+		consensusReal, teardownFunc2, err := factory.NewTestConsensus(consensusConfig, "TestBoundedMergeTestReal")
 		if err != nil {
 			t.Fatalf("TestBoundedMergeDepth: Error setting up consensus: %+v", err)
 		}
 		defer teardownFunc2(false)
 
 		// Create a block on top on genesis
-		block1 := buildAndInsertBlock(consensusBuild, []*externalapi.DomainHash{params.GenesisHash})
+		block1 := buildAndInsertBlock(consensusBuild, []*externalapi.DomainHash{consensusConfig.GenesisHash})
 
 		// Create a chain
 		selectedChain := make([]*externalapi.DomainBlock, 0, finalityInterval+1)
@@ -342,7 +342,7 @@ func TestBoundedMergeDepth(t *testing.T) {
 		// Now let's make the kosherizing block red and try to merge again
 		tip := consensushashing.BlockHash(selectedChain[len(selectedChain)-1])
 		// we use k-1 because `kosherizingBlock` points at tip-2, so 2+k-1 = k+1 anticone.
-		for i := 0; i < int(params.K)-1; i++ {
+		for i := 0; i < int(consensusConfig.K)-1; i++ {
 			block := buildAndInsertBlock(consensusReal, []*externalapi.DomainHash{tip})
 			tip = consensushashing.BlockHash(block)
 		}

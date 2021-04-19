@@ -4,25 +4,22 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/kaspanet/kaspad/domain/consensus/model"
-
-	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/merkle"
-
 	"github.com/kaspanet/kaspad/domain/consensus"
+	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/blockheader"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/merkle"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/testutils"
-	"github.com/kaspanet/kaspad/domain/dagconfig"
 	"github.com/pkg/errors"
 )
 
 func TestBlockStatus(t *testing.T) {
-	testutils.ForAllNets(t, true, func(t *testing.T, params *dagconfig.Params) {
+	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
 		factory := consensus.NewFactory()
-		tc, teardown, err := factory.NewTestConsensus(params, false, "TestBlockStatus")
+		tc, teardown, err := factory.NewTestConsensus(consensusConfig, "TestBlockStatus")
 		if err != nil {
 			t.Fatalf("Error setting up consensus: %+v", err)
 		}
@@ -39,7 +36,7 @@ func TestBlockStatus(t *testing.T) {
 			}
 		}
 
-		tipHash := params.GenesisHash
+		tipHash := consensusConfig.GenesisHash
 		for i := 0; i < 2; i++ {
 			tipHash, _, err = tc.AddBlock([]*externalapi.DomainHash{tipHash}, nil, nil)
 			if err != nil {
@@ -56,7 +53,7 @@ func TestBlockStatus(t *testing.T) {
 
 		checkStatus(headerHash, externalapi.StatusHeaderOnly)
 
-		nonChainBlockHash, _, err := tc.AddBlock([]*externalapi.DomainHash{params.GenesisHash}, nil, nil)
+		nonChainBlockHash, _, err := tc.AddBlock([]*externalapi.DomainHash{consensusConfig.GenesisHash}, nil, nil)
 		if err != nil {
 			t.Fatalf("AddBlock: %+v", err)
 		}
@@ -119,17 +116,17 @@ func TestValidateAndInsertErrors(t *testing.T) {
 	// Each test is covering the error cases in a sub-function in "validateAndInsertBlock" function.
 	// Currently, implemented only for some of the errors.
 
-	testutils.ForAllNets(t, true, func(t *testing.T, params *dagconfig.Params) {
+	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
 		factory := consensus.NewFactory()
-		tc, teardown, err := factory.NewTestConsensus(params, false, "TestBlockStatus")
+		tc, teardown, err := factory.NewTestConsensus(consensusConfig, "TestBlockStatus")
 		if err != nil {
 			t.Fatalf("Error setting up consensus: %+v", err)
 		}
 		defer teardown(false)
-		tipHash, emptyCoinbase, tx1 := initData(params)
+		tipHash, emptyCoinbase, tx1 := initData(consensusConfig)
 
 		// Tests all the error case on the function: "checkBlockStatus"(sub-function in function validateBlock)
-		blockWithStatusInvalid, _, err := tc.BuildBlockWithParents([]*externalapi.DomainHash{params.GenesisHash},
+		blockWithStatusInvalid, _, err := tc.BuildBlockWithParents([]*externalapi.DomainHash{consensusConfig.GenesisHash},
 			&emptyCoinbase, []*externalapi.DomainTransaction{tx1, tx1})
 		if err != nil {
 			t.Fatalf("AddBlock: %+v", err)
@@ -184,8 +181,8 @@ func TestValidateAndInsertErrors(t *testing.T) {
 	})
 }
 
-func initData(params *dagconfig.Params) (*externalapi.DomainHash, externalapi.DomainCoinbaseData, *externalapi.DomainTransaction) {
-	return params.GenesisHash,
+func initData(consensusConfig *consensus.Config) (*externalapi.DomainHash, externalapi.DomainCoinbaseData, *externalapi.DomainTransaction) {
+	return consensusConfig.GenesisHash,
 		externalapi.DomainCoinbaseData{
 			ScriptPublicKey: &externalapi.ScriptPublicKey{
 				Script:  nil,

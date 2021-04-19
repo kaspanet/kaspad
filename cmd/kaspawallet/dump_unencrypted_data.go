@@ -3,10 +3,11 @@ package main
 import (
 	"bufio"
 	"fmt"
+	"os"
+
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/keys"
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/libkaspawallet"
 	"github.com/pkg/errors"
-	"os"
 )
 
 func dumpUnencryptedData(conf *dumpUnencryptedDataConfig) error {
@@ -15,7 +16,7 @@ func dumpUnencryptedData(conf *dumpUnencryptedDataConfig) error {
 		return err
 	}
 
-	keysFile, err := keys.ReadKeysFile(conf.KeysFile)
+	keysFile, err := keys.ReadKeysFile(conf.NetParams(), conf.KeysFile)
 	if err != nil {
 		return err
 	}
