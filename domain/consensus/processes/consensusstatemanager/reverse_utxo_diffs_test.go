@@ -11,7 +11,6 @@ import (
 
 	"github.com/kaspanet/kaspad/domain/consensus"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/testutils"
-	"github.com/kaspanet/kaspad/domain/dagconfig"
 )
 
 func TestReverseUTXODiffs(t *testing.T) {
@@ -19,10 +18,10 @@ func TestReverseUTXODiffs(t *testing.T) {
 	// instead, it creates a situation where a reversal would defenitely happen - a reorg of 5 blocks,
 	// then verifies that the resulting utxo-diffs and utxo-diff-children are all correct.
 
-	testutils.ForAllNets(t, true, func(t *testing.T, params *dagconfig.Params) {
+	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
 		factory := consensus.NewFactory()
 
-		tc, teardown, err := factory.NewTestConsensus(params, false, "TestUTXOCommitment")
+		tc, teardown, err := factory.NewTestConsensus(consensusConfig, "TestUTXOCommitment")
 		if err != nil {
 			t.Fatalf("Error setting up consensus: %+v", err)
 		}
@@ -30,7 +29,7 @@ func TestReverseUTXODiffs(t *testing.T) {
 
 		// Create a chain of 5 blocks
 		const initialChainLength = 5
-		previousBlockHash := params.GenesisHash
+		previousBlockHash := consensusConfig.GenesisHash
 		for i := 0; i < initialChainLength; i++ {
 			previousBlockHash, _, err = tc.AddBlock([]*externalapi.DomainHash{previousBlockHash}, nil, nil)
 			if err != nil {
@@ -41,7 +40,7 @@ func TestReverseUTXODiffs(t *testing.T) {
 		// Mine a chain of 6 blocks, to re-organize the DAG
 		const reorgChainLength = initialChainLength + 1
 		reorgChain := make([]*externalapi.DomainHash, reorgChainLength)
-		previousBlockHash = params.GenesisHash
+		previousBlockHash = consensusConfig.GenesisHash
 		for i := 0; i < reorgChainLength; i++ {
 			previousBlockHash, _, err = tc.AddBlock([]*externalapi.DomainHash{previousBlockHash}, nil, nil)
 			reorgChain[i] = previousBlockHash
