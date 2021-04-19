@@ -11,6 +11,7 @@ import (
 // getting created
 func (csm *consensusStateManager) AddBlock(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) (
 	*externalapi.SelectedChainPath, externalapi.UTXODiff, *model.UTXODiffReversalData, error) {
+
 	onEnd := logger.LogAndMeasureExecutionTime(log, "csm.AddBlock")
 	defer onEnd()
 

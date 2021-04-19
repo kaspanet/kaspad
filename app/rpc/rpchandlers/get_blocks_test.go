@@ -15,7 +15,6 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/testapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/hashes"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/testutils"
-	"github.com/kaspanet/kaspad/domain/dagconfig"
 	"github.com/kaspanet/kaspad/domain/miningmanager"
 	"github.com/kaspanet/kaspad/infrastructure/config"
 )
@@ -28,18 +27,18 @@ func (d fakeDomain) Consensus() externalapi.Consensus           { return d }
 func (d fakeDomain) MiningManager() miningmanager.MiningManager { return nil }
 
 func TestHandleGetBlocks(t *testing.T) {
-	testutils.ForAllNets(t, true, func(t *testing.T, params *dagconfig.Params) {
+	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
 		stagingArea := model.NewStagingArea()
 
 		factory := consensus.NewFactory()
-		tc, teardown, err := factory.NewTestConsensus(params, false, "TestHandleGetBlocks")
+		tc, teardown, err := factory.NewTestConsensus(consensusConfig, "TestHandleGetBlocks")
 		if err != nil {
 			t.Fatalf("Error setting up consensus: %+v", err)
 		}
 		defer teardown(false)
 
 		fakeContext := rpccontext.Context{
-			Config: &config.Config{Flags: &config.Flags{NetworkFlags: config.NetworkFlags{ActiveNetParams: params}}},
+			Config: &config.Config{Flags: &config.Flags{NetworkFlags: config.NetworkFlags{ActiveNetParams: &consensusConfig.Params}}},
 			Domain: fakeDomain{tc},
 		}
 
@@ -81,7 +80,7 @@ func TestHandleGetBlocks(t *testing.T) {
 		//        \       |      /
 		//               etc.
 		expectedOrder := make([]*externalapi.DomainHash, 0, 40)
-		mergingBlock := params.GenesisHash
+		mergingBlock := consensusConfig.GenesisHash
 		for i := 0; i < 10; i++ {
 			splitBlocks := make([]*externalapi.DomainHash, 0, 3)
 			for j := 0; j < 3; j++ {
@@ -134,13 +133,13 @@ func TestHandleGetBlocks(t *testing.T) {
 				virtualSelectedParent, actualBlocks.BlockHashes)
 		}
 
-		expectedOrder = append([]*externalapi.DomainHash{params.GenesisHash}, expectedOrder...)
+		expectedOrder = append([]*externalapi.DomainHash{consensusConfig.GenesisHash}, expectedOrder...)
 		actualOrder := getBlocks(nil)
 		if !reflect.DeepEqual(actualOrder.BlockHashes, hashes.ToStrings(expectedOrder)) {
 			t.Fatalf("TestHandleGetBlocks \nexpected: %v \nactual:\n%v", expectedOrder, actualOrder.BlockHashes)
 		}
 
-		requestAllExplictly := getBlocks(params.GenesisHash)
+		requestAllExplictly := getBlocks(consensusConfig.GenesisHash)
 		if !reflect.DeepEqual(requestAllExplictly.BlockHashes, hashes.ToStrings(expectedOrder)) {
 			t.Fatalf("TestHandleGetBlocks \nexpected: \n%v\n. actual:\n%v", expectedOrder, requestAllExplictly.BlockHashes)
 		}

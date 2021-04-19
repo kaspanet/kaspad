@@ -8,13 +8,12 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/testutils"
-	"github.com/kaspanet/kaspad/domain/dagconfig"
 )
 
 func TestIsAncestorOf(t *testing.T) {
-	testutils.ForAllNets(t, true, func(t *testing.T, params *dagconfig.Params) {
+	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
 		factory := consensus.NewFactory()
-		tc, tearDown, err := factory.NewTestConsensus(params, false, "TestIsAncestorOf")
+		tc, tearDown, err := factory.NewTestConsensus(consensusConfig, "TestIsAncestorOf")
 		if err != nil {
 			t.Fatalf("NewTestConsensus: %s", err)
 		}
@@ -22,7 +21,7 @@ func TestIsAncestorOf(t *testing.T) {
 
 		// Add a chain of two blocks above the genesis. This will be the
 		// selected parent chain.
-		blockA, _, err := tc.AddBlock([]*externalapi.DomainHash{params.GenesisHash}, nil, nil)
+		blockA, _, err := tc.AddBlock([]*externalapi.DomainHash{consensusConfig.GenesisHash}, nil, nil)
 		if err != nil {
 			t.Fatalf("AddBlock: %+v", err)
 		}
@@ -33,7 +32,7 @@ func TestIsAncestorOf(t *testing.T) {
 		}
 
 		// Add another block above the genesis
-		blockC, _, err := tc.AddBlock([]*externalapi.DomainHash{params.GenesisHash}, nil, nil)
+		blockC, _, err := tc.AddBlock([]*externalapi.DomainHash{consensusConfig.GenesisHash}, nil, nil)
 		if err != nil {
 			t.Fatalf("AddBlock: %s", err)
 		}

@@ -8,13 +8,12 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/testutils"
-	"github.com/kaspanet/kaspad/domain/dagconfig"
 )
 
 func TestReachabilityIsDAGAncestorOf(t *testing.T) {
-	testutils.ForAllNets(t, true, func(t *testing.T, params *dagconfig.Params) {
+	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
 		factory := consensus.NewFactory()
-		tc, teardown, err := factory.NewTestConsensus(params, false, "TestReachabilityIsDAGAncestorOf")
+		tc, teardown, err := factory.NewTestConsensus(consensusConfig, "TestReachabilityIsDAGAncestorOf")
 		if err != nil {
 			t.Fatalf("Error setting up consensus: %+v", err)
 		}
@@ -25,7 +24,7 @@ func TestReachabilityIsDAGAncestorOf(t *testing.T) {
 		//      genesis       \              \  sharedBlock
 		//              \       \            /
 		//                C  <-  D  - - - - /
-		genesisHash := params.GenesisHash
+		genesisHash := consensusConfig.GenesisHash
 		blockHashA, _, err := tc.AddBlock([]*externalapi.DomainHash{genesisHash}, nil, nil)
 		if err != nil {
 			t.Fatalf("AddBlock: %v", err)

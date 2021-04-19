@@ -9,16 +9,15 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/kaspanet/kaspad/domain/consensus/utils/blockheader"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
-	"github.com/kaspanet/kaspad/util/difficulty"
-
+	"github.com/kaspanet/kaspad/domain/consensus"
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/processes/ghostdag2"
 	"github.com/kaspanet/kaspad/domain/consensus/processes/ghostdagmanager"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/blockheader"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/testutils"
-	"github.com/kaspanet/kaspad/domain/dagconfig"
+	"github.com/kaspanet/kaspad/util/difficulty"
 	"github.com/pkg/errors"
 )
 
@@ -58,7 +57,7 @@ func TestGHOSTDAG(t *testing.T) {
 		{ghostdagmanager.New, "Original"},
 		{ghostdag2.New, "Tal's impl"},
 	}
-	testutils.ForAllNets(t, true, func(t *testing.T, params *dagconfig.Params) {
+	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
 		dagTopology := &DAGTopologyManagerImpl{
 			parentsMap: make(map[externalapi.DomainHash][]*externalapi.DomainHash),
 		}
@@ -72,7 +71,7 @@ func TestGHOSTDAG(t *testing.T) {
 		}
 
 		blockGHOSTDAGDataGenesis := model.NewBlockGHOSTDAGData(0, new(big.Int), nil, nil, nil, nil)
-		genesisHeader := params.GenesisBlock.Header
+		genesisHeader := consensusConfig.GenesisBlock.Header
 		genesisWork := difficulty.CalcWork(genesisHeader.Bits())
 
 		var testsCounter int
@@ -95,7 +94,7 @@ func TestGHOSTDAG(t *testing.T) {
 			if err != nil {
 				t.Fatalf("TestGHOSTDAG:failed decoding json: %v", err)
 			}
-			params.K = test.K
+			consensusConfig.K = test.K
 
 			genesisHash := *StringToDomainHash(test.GenesisID)
 

@@ -3,25 +3,21 @@ package consensusstatemanager_test
 import (
 	"testing"
 
-	"github.com/kaspanet/kaspad/domain/consensus/model"
-
-	"github.com/kaspanet/kaspad/domain/consensus/model/testapi"
-
-	"github.com/kaspanet/kaspad/domain/consensus/utils/transactionhelper"
-
 	"github.com/kaspanet/kaspad/domain/consensus"
+	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+	"github.com/kaspanet/kaspad/domain/consensus/model/testapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/multiset"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/testutils"
-	"github.com/kaspanet/kaspad/domain/dagconfig"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/transactionhelper"
 )
 
 func TestUTXOCommitment(t *testing.T) {
-	testutils.ForAllNets(t, true, func(t *testing.T, params *dagconfig.Params) {
-		params.BlockCoinbaseMaturity = 0
+	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
+		consensusConfig.BlockCoinbaseMaturity = 0
 		factory := consensus.NewFactory()
 
-		consensus, teardown, err := factory.NewTestConsensus(params, false, "TestUTXOCommitment")
+		consensus, teardown, err := factory.NewTestConsensus(consensusConfig, "TestUTXOCommitment")
 		if err != nil {
 			t.Fatalf("Error setting up consensus: %+v", err)
 		}
@@ -31,7 +27,7 @@ func TestUTXOCommitment(t *testing.T) {
 		// G <- A <- B <- C <- E
 		//             <- D <-
 		// Where block D has a non-coinbase transaction
-		genesisHash := params.GenesisHash
+		genesisHash := consensusConfig.GenesisHash
 
 		// Block A:
 		blockAHash, _, err := consensus.AddBlock([]*externalapi.DomainHash{genesisHash}, nil, nil)
@@ -115,19 +111,19 @@ func checkBlockUTXOCommitment(t *testing.T, consensus testapi.TestConsensus, blo
 }
 
 func TestPastUTXOMultiset(t *testing.T) {
-	testutils.ForAllNets(t, true, func(t *testing.T, params *dagconfig.Params) {
+	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
 		stagingArea := model.NewStagingArea()
 
 		factory := consensus.NewFactory()
 
-		consensus, teardown, err := factory.NewTestConsensus(params, false, "TestUTXOCommitment")
+		consensus, teardown, err := factory.NewTestConsensus(consensusConfig, "TestUTXOCommitment")
 		if err != nil {
 			t.Fatalf("Error setting up consensus: %+v", err)
 		}
 		defer teardown(false)
 
 		// Build a short chain
-		currentHash := params.GenesisHash
+		currentHash := consensusConfig.GenesisHash
 		for i := 0; i < 3; i++ {
 			currentHash, _, err = consensus.AddBlock([]*externalapi.DomainHash{currentHash}, nil, nil)
 			if err != nil {

@@ -3,7 +3,6 @@ package domain
 import (
 	"github.com/kaspanet/kaspad/domain/consensus"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
-	"github.com/kaspanet/kaspad/domain/dagconfig"
 	"github.com/kaspanet/kaspad/domain/miningmanager"
 	infrastructuredatabase "github.com/kaspanet/kaspad/infrastructure/db/database"
 )
@@ -28,15 +27,15 @@ func (d domain) MiningManager() miningmanager.MiningManager {
 }
 
 // New instantiates a new instance of a Domain object
-func New(dagParams *dagconfig.Params, db infrastructuredatabase.Database, isArchivalNode bool) (Domain, error) {
+func New(consensusConfig *consensus.Config, db infrastructuredatabase.Database) (Domain, error) {
 	consensusFactory := consensus.NewFactory()
-	consensusInstance, err := consensusFactory.NewConsensus(dagParams, db, isArchivalNode)
+	consensusInstance, err := consensusFactory.NewConsensus(consensusConfig, db)
 	if err != nil {
 		return nil, err
 	}
 
 	miningManagerFactory := miningmanager.NewFactory()
-	miningManager := miningManagerFactory.NewMiningManager(consensusInstance, dagParams)
+	miningManager := miningManagerFactory.NewMiningManager(consensusInstance, &consensusConfig.Params)
 
 	return &domain{
 		consensus:     consensusInstance,

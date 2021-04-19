@@ -42,27 +42,27 @@ func addBlock(tcSyncer, tcSyncee testapi.TestConsensus, parentHashes []*external
 }
 
 func TestValidateAndInsertImportedPruningPoint(t *testing.T) {
-	testutils.ForAllNets(t, true, func(t *testing.T, params *dagconfig.Params) {
+	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
 		// This is done to reduce the pruning depth to 6 blocks
 		finalityDepth := 3
-		params.FinalityDuration = time.Duration(finalityDepth) * params.TargetTimePerBlock
-		params.K = 0
+		consensusConfig.FinalityDuration = time.Duration(finalityDepth) * consensusConfig.TargetTimePerBlock
+		consensusConfig.K = 0
 
 		factory := consensus.NewFactory()
 
-		tcSyncer, teardownSyncer, err := factory.NewTestConsensus(params, false, "TestValidateAndInsertPruningPointSyncer")
+		tcSyncer, teardownSyncer, err := factory.NewTestConsensus(consensusConfig, "TestValidateAndInsertPruningPointSyncer")
 		if err != nil {
 			t.Fatalf("Error setting up tcSyncer: %+v", err)
 		}
 		defer teardownSyncer(false)
 
-		tcSyncee, teardownSyncee, err := factory.NewTestConsensus(params, false, "TestValidateAndInsertPruningPointSyncee")
+		tcSyncee, teardownSyncee, err := factory.NewTestConsensus(consensusConfig, "TestValidateAndInsertPruningPointSyncee")
 		if err != nil {
 			t.Fatalf("Error setting up tcSyncee: %+v", err)
 		}
 		defer teardownSyncee(false)
 
-		tipHash := params.GenesisHash
+		tipHash := consensusConfig.GenesisHash
 		for i := 0; i < finalityDepth-2; i++ {
 			tipHash = addBlock(tcSyncer, tcSyncee, []*externalapi.DomainHash{tipHash}, t)
 		}
@@ -83,7 +83,7 @@ func TestValidateAndInsertImportedPruningPoint(t *testing.T) {
 				t.Fatalf("PruningPoint: %+v", err)
 			}
 
-			if !pruningPoint.Equal(params.GenesisHash) {
+			if !pruningPoint.Equal(consensusConfig.GenesisHash) {
 				break
 			}
 		}
@@ -212,28 +212,28 @@ func TestValidateAndInsertImportedPruningPoint(t *testing.T) {
 // IBD, while it already has a non-empty UTXO-Set originating from blocks mined on top of genesis - the resulting
 // UTXO set is correct
 func TestValidateAndInsertPruningPointWithSideBlocks(t *testing.T) {
-	testutils.ForAllNets(t, true, func(t *testing.T, params *dagconfig.Params) {
+	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
 		// This is done to reduce the pruning depth to 6 blocks
 		finalityDepth := 3
-		params.FinalityDuration = time.Duration(finalityDepth) * params.TargetTimePerBlock
-		params.K = 0
+		consensusConfig.FinalityDuration = time.Duration(finalityDepth) * consensusConfig.TargetTimePerBlock
+		consensusConfig.K = 0
 
 		factory := consensus.NewFactory()
 
-		tcSyncer, teardownSyncer, err := factory.NewTestConsensus(params, false, "TestValidateAndInsertPruningPointSyncer")
+		tcSyncer, teardownSyncer, err := factory.NewTestConsensus(consensusConfig, "TestValidateAndInsertPruningPointSyncer")
 		if err != nil {
 			t.Fatalf("Error setting up tcSyncer: %+v", err)
 		}
 		defer teardownSyncer(false)
 
-		tcSyncee, teardownSyncee, err := factory.NewTestConsensus(params, false, "TestValidateAndInsertPruningPointSyncee")
+		tcSyncee, teardownSyncee, err := factory.NewTestConsensus(consensusConfig, "TestValidateAndInsertPruningPointSyncee")
 		if err != nil {
 			t.Fatalf("Error setting up tcSyncee: %+v", err)
 		}
 		defer teardownSyncee(false)
 
 		// Mine 2 block in the syncee on top of genesis
-		side, _, err := tcSyncee.AddBlock([]*externalapi.DomainHash{params.GenesisHash}, &externalapi.DomainCoinbaseData{ScriptPublicKey: &externalapi.ScriptPublicKey{}, ExtraData: []byte{1, 2}}, nil)
+		side, _, err := tcSyncee.AddBlock([]*externalapi.DomainHash{consensusConfig.GenesisHash}, &externalapi.DomainCoinbaseData{ScriptPublicKey: &externalapi.ScriptPublicKey{}, ExtraData: []byte{1, 2}}, nil)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -242,7 +242,7 @@ func TestValidateAndInsertPruningPointWithSideBlocks(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		tipHash := params.GenesisHash
+		tipHash := consensusConfig.GenesisHash
 		for i := 0; i < finalityDepth-2; i++ {
 			tipHash = addBlock(tcSyncer, tcSyncee, []*externalapi.DomainHash{tipHash}, t)
 		}
@@ -261,7 +261,7 @@ func TestValidateAndInsertPruningPointWithSideBlocks(t *testing.T) {
 				t.Fatalf("PruningPoint: %+v", err)
 			}
 
-			if !pruningPoint.Equal(params.GenesisHash) {
+			if !pruningPoint.Equal(consensusConfig.GenesisHash) {
 				break
 			}
 		}
@@ -421,16 +421,16 @@ func makeFakeUTXOs() []*externalapi.OutpointAndUTXOEntryPair {
 }
 
 func TestGetPruningPointUTXOs(t *testing.T) {
-	testutils.ForAllNets(t, true, func(t *testing.T, params *dagconfig.Params) {
+	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
 		// This is done to reduce the pruning depth to 8 blocks
 		finalityDepth := 4
-		params.FinalityDuration = time.Duration(finalityDepth) * params.TargetTimePerBlock
-		params.K = 0
+		consensusConfig.FinalityDuration = time.Duration(finalityDepth) * consensusConfig.TargetTimePerBlock
+		consensusConfig.K = 0
 
-		params.BlockCoinbaseMaturity = 0
+		consensusConfig.BlockCoinbaseMaturity = 0
 
 		factory := consensus.NewFactory()
-		testConsensus, teardown, err := factory.NewTestConsensus(params, false, "TestGetPruningPointUTXOs")
+		testConsensus, teardown, err := factory.NewTestConsensus(consensusConfig, "TestGetPruningPointUTXOs")
 		if err != nil {
 			t.Fatalf("Error setting up testConsensus: %+v", err)
 		}
@@ -518,7 +518,7 @@ func TestGetPruningPointUTXOs(t *testing.T) {
 			if err != nil {
 				t.Fatalf("Error getting the pruning point: %+v", err)
 			}
-			if !pruningPoint.Equal(params.GenesisHash) {
+			if !pruningPoint.Equal(consensusConfig.GenesisHash) {
 				break
 			}
 		}
@@ -580,18 +580,18 @@ func TestGetPruningPointUTXOs(t *testing.T) {
 }
 
 func BenchmarkGetPruningPointUTXOs(b *testing.B) {
-	params := dagconfig.DevnetParams
+	consensusConfig := consensus.Config{Params: dagconfig.DevnetParams}
 
 	// This is done to reduce the pruning depth to 200 blocks
 	finalityDepth := 100
-	params.FinalityDuration = time.Duration(finalityDepth) * params.TargetTimePerBlock
-	params.K = 0
+	consensusConfig.FinalityDuration = time.Duration(finalityDepth) * consensusConfig.TargetTimePerBlock
+	consensusConfig.K = 0
 
-	params.SkipProofOfWork = true
-	params.BlockCoinbaseMaturity = 0
+	consensusConfig.SkipProofOfWork = true
+	consensusConfig.BlockCoinbaseMaturity = 0
 
 	factory := consensus.NewFactory()
-	testConsensus, teardown, err := factory.NewTestConsensus(&params, false, "TestGetPruningPointUTXOs")
+	testConsensus, teardown, err := factory.NewTestConsensus(&consensusConfig, "TestGetPruningPointUTXOs")
 	if err != nil {
 		b.Fatalf("Error setting up testConsensus: %+v", err)
 	}
@@ -671,7 +671,7 @@ func BenchmarkGetPruningPointUTXOs(b *testing.B) {
 		if err != nil {
 			b.Fatalf("Error getting the pruning point: %+v", err)
 		}
-		if !pruningPoint.Equal(params.GenesisHash) {
+		if !pruningPoint.Equal(consensusConfig.GenesisHash) {
 			break
 		}
 	}

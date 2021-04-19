@@ -6,18 +6,14 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/kaspanet/kaspad/cmd/kaspaminer/templatemanager"
-	"github.com/kaspanet/kaspad/domain/consensus/model/pow"
-	"github.com/kaspanet/kaspad/util/difficulty"
-
-	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
-
-	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
-
 	"github.com/kaspanet/kaspad/app/appmessage"
+	"github.com/kaspanet/kaspad/cmd/kaspaminer/templatemanager"
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/pow"
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
-
 	"github.com/kaspanet/kaspad/util"
+	"github.com/kaspanet/kaspad/util/difficulty"
 	"github.com/pkg/errors"
 )
 
