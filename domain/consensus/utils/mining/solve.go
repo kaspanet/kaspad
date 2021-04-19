@@ -1,12 +1,12 @@
 package mining
 
 import (
-	"github.com/kaspanet/kaspad/domain/consensus/model/pow"
-	"github.com/kaspanet/kaspad/util/difficulty"
 	"math"
 	"math/rand"
 
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/pow"
+	"github.com/kaspanet/kaspad/util/difficulty"
 	"github.com/pkg/errors"
 )
 
