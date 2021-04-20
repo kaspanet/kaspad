@@ -48,7 +48,7 @@ func TestConsensusStateManager_pickVirtualParents(t *testing.T) {
 			for j := 0; j <= i; j++ {
 				lastBlock, _, err = tc.AddBlock([]*externalapi.DomainHash{lastBlock}, nil, nil)
 				if err != nil {
-					t.Fatalf("Failed Adding block to tc: %v", err)
+					t.Fatalf("Failed Adding block to tc: %+v", err)
 				}
 			}
 			parents = append(parents, lastBlock)
@@ -98,7 +98,7 @@ func TestConsensusStateManager_pickVirtualParents(t *testing.T) {
 		for i := 0; i < int(consensusConfig.MaxBlockParents); i++ {
 			block, _, err := tc.AddBlock([]*externalapi.DomainHash{virtualSelectedParent}, nil, nil)
 			if err != nil {
-				t.Fatalf("Failed Adding block to tc: %v", err)
+				t.Fatalf("Failed Adding block to tc: %+v", err)
 			}
 			parents = append(parents, block)
 		}
