@@ -20,7 +20,7 @@ func (csm *consensusStateManager) ReverseUTXODiffs(tipHash *externalapi.DomainHa
 
 	log.Debugf("Reversing utxoDiffs")
 
-	// Set previousUTXODiff and previousBlock to oneBlockBeforeTip before we start touching them,
+	// Set previousUTXODiff and previousBlock to tip.SelectedParent before we start touching them,
 	// since previousBlock's UTXODiff is going to be over-written in the next step
 	previousBlock := reversalData.SelectedParentHash
 	previousUTXODiff, err := csm.utxoDiffStore.UTXODiff(csm.databaseContext, readStagingArea, previousBlock)
@@ -28,8 +28,8 @@ func (csm *consensusStateManager) ReverseUTXODiffs(tipHash *externalapi.DomainHa
 		return err
 	}
 
-	// oneBlockBeforeTip is special in the sense that we don't have it's diff available in reverse, however, we
-	// were able to calculate it when the tip's and oneBlockBeforeTip's UTXOSets were known during resolveBlockStatus.
+	// tip.selectedParent is special in the sense that we don't have it's diff available in reverse, however,
+	// we were able to calculate it when the tip's and tip.selectedParent's UTXOSets were known during resolveBlockStatus.
 	// Therefore - we treat it separately
 	err = csm.commitUTXODiffInSeparateStagingArea(previousBlock, reversalData.SelectedParentUTXODiff, tipHash)
 	if err != nil {
