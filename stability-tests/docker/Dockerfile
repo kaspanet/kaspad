@@ -1,26 +1,29 @@
-ARG KASPAD_VERSION
+ARG KASPAD_IMAGE
+ARG KASPAMINER_IMAGE
 
-FROM 578712463641.dkr.ecr.eu-central-1.amazonaws.com/kaspad-release-candidate:$KASPAD_VERSION as kaspad
-FROM 578712463641.dkr.ecr.eu-central-1.amazonaws.com/kaspaminer-release-candidate:$KASPAD_VERSION as kaspaminer
+FROM ${KASPAD_IMAGE} as kaspad
+FROM ${KASPAMINER_IMAGE} as kaspaminer
 
 FROM golang:1.16-alpine
 
+RUN mkdir -p /go/src/github.com/kaspanet/kaspad
+
+WORKDIR /go/src/github.com/kaspanet/kaspad
+
 RUN apk add bash build-base git
 
-ARG KASPAD_VERSION
+COPY go.mod .
+COPY go.sum .
+
+RUN go mod download
+
+COPY . .
 
 COPY --from=kaspad /app/ /app/
 COPY --from=kaspaminer /app/ /app/
 ENV PATH="/app:${PATH}"
 
-COPY . /tests
-
-WORKDIR /tests
-
-RUN git ls-remote https://github.com/kaspanet/kaspad.git $KASPAD_VERSION | awk '{print $1;}' > /tmp/kaspad_git_commit
-RUN go mod edit -dropreplace github.com/kaspanet/kaspad
-RUN go mod edit -replace github.com/kaspanet/kaspad=github.com/kaspanet/kaspad@`cat /tmp/kaspad_git_commit` ;
-RUN go mod download
+WORKDIR /go/src/github.com/kaspanet/kaspad/stability-tests
 
 RUN go install ./...
 
