@@ -63,7 +63,7 @@ func (extKey *ExtendedKey) Public() (*ExtendedKey, error) {
 	}, nil
 }
 
-func (extKey *ExtendedKey) Path(pathString string) (*ExtendedKey, error) {
+func (extKey *ExtendedKey) DeriveFromPath(pathString string) (*ExtendedKey, error) {
 	path, err := parsePath(pathString)
 	if err != nil {
 		return nil, err

@@ -121,7 +121,7 @@ func TestBIP32SpecVectors(t *testing.T) {
 		}
 
 		for j, path := range vector.paths {
-			extendedPrivateKey, err := masterKey.Path(path.path)
+			extendedPrivateKey, err := masterKey.DeriveFromPath(path.path)
 			if err != nil {
 				t.Fatalf("Path: %+v", err)
 			}
@@ -160,9 +160,9 @@ func TestBIP32SpecVectors(t *testing.T) {
 	}
 }
 
-// TestExtendedKey_Path checks that path that derive from extended public key and extended
+// TestExtendedKey_DeriveFromPath checks that path that derive from extended public key and extended
 // public key lead to the same public keys.
-func TestExtendedKey_Path(t *testing.T) {
+func TestExtendedKey_DeriveFromPath(t *testing.T) {
 	r := rand.New(rand.NewSource(0))
 	seed, err := GenerateSeed()
 	if err != nil {
@@ -191,7 +191,7 @@ func TestExtendedKey_Path(t *testing.T) {
 		pathPrivate := "m/" + indexesStr
 		pathPublic := "M/" + indexesStr
 
-		extendedPrivateKey, err := master.Path(pathPrivate)
+		extendedPrivateKey, err := master.DeriveFromPath(pathPrivate)
 		if err != nil {
 			t.Fatalf("Path: %+v", err)
 		}
@@ -201,7 +201,7 @@ func TestExtendedKey_Path(t *testing.T) {
 			t.Fatalf("Public: %+v", err)
 		}
 
-		extendedPublicKey, err := masterPublic.Path(pathPublic)
+		extendedPublicKey, err := masterPublic.DeriveFromPath(pathPublic)
 		if err != nil {
 			t.Fatalf("Path: %+v", err)
 		}

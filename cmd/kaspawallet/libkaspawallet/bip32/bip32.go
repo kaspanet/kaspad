@@ -18,7 +18,7 @@ func NewMasterWithPath(seed []byte, version [4]byte, pathString string) (*Extend
 		return nil, err
 	}
 
-	return masterKey.Path(pathString)
+	return masterKey.DeriveFromPath(pathString)
 }
 
 func NewPublicMasterWithPath(seed []byte, version [4]byte, pathString string) (*ExtendedKey, error) {
