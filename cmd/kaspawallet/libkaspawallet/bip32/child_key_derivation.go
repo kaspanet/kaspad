@@ -39,7 +39,7 @@ func isHardened(i uint32) bool {
 }
 
 func (extKey *ExtendedKey) Child(i uint32) (*ExtendedKey, error) {
-	I, err := calcI(extKey, i)
+	I, err := extKey.calcI(i)
 	if err != nil {
 		return nil, err
 	}
@@ -120,31 +120,30 @@ func privateKeyAdd(k *secp256k1.ECDSAPrivateKey, tweak [32]byte) (*secp256k1.ECD
 	return &kCopy, nil
 }
 
-func calcI(extKey *ExtendedKey, i uint32) ([]byte, error) {
-	if isHardened(i) {
-		if !extKey.IsPrivate() {
-			return nil, errors.Errorf("Cannot calculate hardened child for public key")
-		}
-
-		mac := newHMACWriter(extKey.ChainCode[:])
-		mac.InfallibleWrite([]byte{0x00})
-		mac.InfallibleWrite(extKey.privateKey.Serialize()[:])
-		mac.InfallibleWrite(serializeUint32(i))
-		return mac.Sum(nil), nil
+func (extKey *ExtendedKey) calcI(i uint32) ([]byte, error) {
+	if isHardened(i) && !extKey.IsPrivate() {
+		return nil, errors.Errorf("Cannot calculate hardened child for public key")
 	}
 
 	mac := newHMACWriter(extKey.ChainCode[:])
-	publicKey, err := extKey.PublicKey()
-	if err != nil {
-		return nil, err
+	if isHardened(i) {
+		mac.InfallibleWrite([]byte{0x00})
+		mac.InfallibleWrite(extKey.privateKey.Serialize()[:])
+		mac.InfallibleWrite(serializeUint32(i))
+	} else {
+		publicKey, err := extKey.PublicKey()
+		if err != nil {
+			return nil, err
+		}
+
+		serializedPublicKey, err := publicKey.Serialize()
+		if err != nil {
+			return nil, errors.Wrap(err, "error serializing public key")
+		}
+
+		mac.InfallibleWrite(serializedPublicKey[:])
 	}
 
-	serializedPublicKey, err := publicKey.Serialize()
-	if err != nil {
-		return nil, errors.Wrap(err, "error serializing public key")
-	}
-
-	mac.InfallibleWrite(serializedPublicKey[:])
 	mac.InfallibleWrite(serializeUint32(i))
 	return mac.Sum(nil), nil
 }
