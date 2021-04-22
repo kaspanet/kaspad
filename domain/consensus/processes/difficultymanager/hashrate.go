@@ -53,7 +53,7 @@ func (dm *difficultyManager) estimateNetworkHashesPerSecond(stagingArea *model.S
 	}
 
 	nominator := new(big.Int).Sub(maxWindowBlueWork, minWindowBlueWork)
-	denominator := big.NewInt(maxWindowTimestamp - minWindowTimestamp)
+	denominator := big.NewInt((maxWindowTimestamp - minWindowTimestamp) / 1000) // Divided by 1000 to convert milliseconds to seconds
 	networkHashesPerSecondBigInt := new(big.Int).Div(nominator, denominator)
 	return networkHashesPerSecondBigInt.Uint64(), nil
 }
