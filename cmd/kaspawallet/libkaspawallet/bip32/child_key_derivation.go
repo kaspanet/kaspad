@@ -129,7 +129,7 @@ func calcI(extKey *ExtendedKey, i uint32) ([]byte, error) {
 		mac := newHMACWriter(extKey.ChainCode[:])
 		mac.InfallibleWrite([]byte{0x00})
 		mac.InfallibleWrite(extKey.PrivateKey.Serialize()[:])
-		mac.InfallibleWrite(ser32(i))
+		mac.InfallibleWrite(serializeUint32(i))
 		return mac.Sum(nil), nil
 	}
 
@@ -145,11 +145,11 @@ func calcI(extKey *ExtendedKey, i uint32) ([]byte, error) {
 	}
 
 	mac.InfallibleWrite(serializedPublicKey[:])
-	mac.InfallibleWrite(ser32(i))
+	mac.InfallibleWrite(serializeUint32(i))
 	return mac.Sum(nil), nil
 }
 
-func ser32(v uint32) []byte {
+func serializeUint32(v uint32) []byte {
 	serialized := make([]byte, 4)
 	binary.BigEndian.PutUint32(serialized, v)
 	return serialized
