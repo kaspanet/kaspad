@@ -13,10 +13,6 @@ type path struct {
 
 func parsePath(pathString string) (*path, error) {
 	parts := strings.Split(pathString, "/")
-	if len(parts) == 0 {
-		return nil, errors.Errorf("path doesn't include slashes")
-	}
-
 	isPrivate := false
 	switch parts[0] {
 	case "m":
