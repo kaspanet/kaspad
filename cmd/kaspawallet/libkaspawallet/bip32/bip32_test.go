@@ -272,9 +272,9 @@ func TestPublicParentPublicChildDerivation(t *testing.T) {
 			t.Fatalf("Serialize: %+v", err)
 		}
 
-		pubkeyHex := hex.EncodeToString(pubKeyBytes[:])
-		if child.hexPubKey != pubkeyHex {
-			t.Fatalf("Test #%d: expected public key %s but got %s", i, child.hexPubKey, pubkeyHex)
+		pubKeyHex := hex.EncodeToString(pubKeyBytes[:])
+		if child.hexPubKey != pubKeyHex {
+			t.Fatalf("Test #%d: expected public key %s but got %s", i, child.hexPubKey, pubKeyHex)
 		}
 	}
 }
