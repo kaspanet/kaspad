@@ -48,12 +48,7 @@ func (extKey *ExtendedKey) Child(i uint32) (*ExtendedKey, error) {
 	copy(iL[:], I[:32])
 	copy(iR[:], I[32:])
 
-	publicKey, err := extKey.PublicKey()
-	if err != nil {
-		return nil, err
-	}
-
-	fingerPrint, err := fingerPrintFromPoint(publicKey)
+	fingerPrint, err := extKey.calcFingerprint()
 	if err != nil {
 		return nil, err
 	}
@@ -72,6 +67,11 @@ func (extKey *ExtendedKey) Child(i uint32) (*ExtendedKey, error) {
 			return nil, err
 		}
 	} else {
+		publicKey, err := extKey.PublicKey()
+		if err != nil {
+			return nil, err
+		}
+
 		childExt.publicKey, err = pointAdd(publicKey, iL)
 		if err != nil {
 			return nil, err
@@ -81,17 +81,13 @@ func (extKey *ExtendedKey) Child(i uint32) (*ExtendedKey, error) {
 	return childExt, nil
 }
 
-func fingerprintFromPrivateKey(privateKey *secp256k1.ECDSAPrivateKey) ([4]byte, error) {
-	point, err := privateKey.ECDSAPublicKey()
+func (extKey *ExtendedKey) calcFingerprint() ([4]byte, error) {
+	publicKey, err := extKey.PublicKey()
 	if err != nil {
 		return [4]byte{}, err
 	}
 
-	return fingerPrintFromPoint(point)
-}
-
-func fingerPrintFromPoint(point *secp256k1.ECDSAPublicKey) ([4]byte, error) {
-	serializedPoint, err := point.Serialize()
+	serializedPoint, err := publicKey.Serialize()
 	if err != nil {
 		return [4]byte{}, err
 	}
