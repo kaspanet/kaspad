@@ -64,7 +64,7 @@ func deserializeExtendedPrivateKey(serialized []byte) (*ExtendedKey, error) {
 			return nil, errors.Errorf("expected 0 padding for private key but got %d", privateKeyPadding)
 		}
 
-		extKey.PrivateKey, err = secp256k1.DeserializeECDSAPrivateKeyFromSlice(serialized[versionSerializationLen+
+		extKey.privateKey, err = secp256k1.DeserializeECDSAPrivateKeyFromSlice(serialized[versionSerializationLen+
 			depthSerializationLen+
 			fingerprintSerializationLen+
 			childNumberSerializationLen+
@@ -114,7 +114,7 @@ func (extKey *ExtendedKey) serialize() ([]byte, error) {
 		serialized[versionSerializationLen+depthSerializationLen+fingerprintSerializationLen+childNumberSerializationLen+chainCodeSerializationLen] = 0
 		copy(
 			serialized[versionSerializationLen+depthSerializationLen+fingerprintSerializationLen+childNumberSerializationLen+chainCodeSerializationLen+1:],
-			extKey.PrivateKey.Serialize()[:],
+			extKey.privateKey.Serialize()[:],
 		)
 	} else {
 		publicKey, err := extKey.PublicKey()

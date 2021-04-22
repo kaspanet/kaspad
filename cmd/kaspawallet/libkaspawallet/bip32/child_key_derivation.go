@@ -25,7 +25,7 @@ func NewMaster(seed []byte, version [4]byte) (*ExtendedKey, error) {
 	}
 
 	return &ExtendedKey{
-		PrivateKey:  privateKey,
+		privateKey:  privateKey,
 		Version:     version,
 		Depth:       0,
 		Fingerprint: [4]byte{},
@@ -66,8 +66,8 @@ func (extKey *ExtendedKey) Child(i uint32) (*ExtendedKey, error) {
 		ChainCode:   iR,
 	}
 
-	if extKey.PrivateKey != nil {
-		childExt.PrivateKey, err = privateKeyAdd(extKey.PrivateKey, iL)
+	if extKey.privateKey != nil {
+		childExt.privateKey, err = privateKeyAdd(extKey.privateKey, iL)
 		if err != nil {
 			return nil, err
 		}
@@ -128,7 +128,7 @@ func calcI(extKey *ExtendedKey, i uint32) ([]byte, error) {
 
 		mac := newHMACWriter(extKey.ChainCode[:])
 		mac.InfallibleWrite([]byte{0x00})
-		mac.InfallibleWrite(extKey.PrivateKey.Serialize()[:])
+		mac.InfallibleWrite(extKey.privateKey.Serialize()[:])
 		mac.InfallibleWrite(serializeUint32(i))
 		return mac.Sum(nil), nil
 	}

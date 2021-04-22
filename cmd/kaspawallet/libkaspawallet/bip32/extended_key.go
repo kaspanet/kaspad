@@ -7,7 +7,7 @@ import (
 )
 
 type ExtendedKey struct {
-	PrivateKey  *secp256k1.ECDSAPrivateKey
+	privateKey  *secp256k1.ECDSAPrivateKey
 	publicKey   *secp256k1.ECDSAPublicKey
 	Version     [4]byte
 	Depth       uint8
@@ -16,12 +16,16 @@ type ExtendedKey struct {
 	ChainCode   [32]byte
 }
 
+func (extKey *ExtendedKey) PrivateKey() *secp256k1.ECDSAPrivateKey {
+	return extKey.privateKey
+}
+
 func (extKey *ExtendedKey) PublicKey() (*secp256k1.ECDSAPublicKey, error) {
 	if extKey.publicKey != nil {
 		return extKey.publicKey, nil
 	}
 
-	publicKey, err := extKey.PrivateKey.ECDSAPublicKey()
+	publicKey, err := extKey.privateKey.ECDSAPublicKey()
 	if err != nil {
 		return nil, err
 	}
@@ -31,7 +35,7 @@ func (extKey *ExtendedKey) PublicKey() (*secp256k1.ECDSAPublicKey, error) {
 }
 
 func (extKey *ExtendedKey) IsPrivate() bool {
-	return extKey.PrivateKey != nil
+	return extKey.privateKey != nil
 }
 
 func (extKey *ExtendedKey) Public() (*ExtendedKey, error) {
