@@ -38,6 +38,8 @@ func doubleSha256(data []byte) []byte {
 	return sha2.Sum(nil)
 }
 
+// validateChecksum validates that the last checkSumLen bytes of the
+// given data are its valid checksum.
 func validateChecksum(data []byte) error {
 	checksum := data[len(data)-checkSumLen:]
 	expectedChecksum := calcChecksum(data[:len(data)-checkSumLen])
