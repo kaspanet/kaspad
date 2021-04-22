@@ -24,6 +24,7 @@ var commandTypes = []reflect.Type{
 	reflect.TypeOf(protowire.KaspadMessage_GetVirtualSelectedParentBlueScoreRequest{}),
 	reflect.TypeOf(protowire.KaspadMessage_GetVirtualSelectedParentChainFromBlockRequest{}),
 	reflect.TypeOf(protowire.KaspadMessage_ResolveFinalityConflictRequest{}),
+	reflect.TypeOf(protowire.KaspadMessage_EstimateNetworkHashesPerSecondRequest{}),
 
 	reflect.TypeOf(protowire.KaspadMessage_GetBlockTemplateRequest{}),
 	reflect.TypeOf(protowire.KaspadMessage_SubmitBlockRequest{}),
