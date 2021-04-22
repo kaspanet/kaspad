@@ -25,12 +25,12 @@ func NewMaster(seed []byte, version [4]byte) (*ExtendedKey, error) {
 	}
 
 	return &ExtendedKey{
-		privateKey:  privateKey,
-		Version:     version,
-		Depth:       0,
-		Fingerprint: [4]byte{},
-		ChildNumber: 0,
-		ChainCode:   iR,
+		privateKey:        privateKey,
+		Version:           version,
+		Depth:             0,
+		ParentFingerprint: [4]byte{},
+		ChildNumber:       0,
+		ChainCode:         iR,
 	}, nil
 }
 
@@ -59,11 +59,11 @@ func (extKey *ExtendedKey) Child(i uint32) (*ExtendedKey, error) {
 	}
 
 	childExt := &ExtendedKey{
-		Version:     extKey.Version,
-		Depth:       extKey.Depth + 1,
-		Fingerprint: fingerPrint,
-		ChildNumber: i,
-		ChainCode:   iR,
+		Version:           extKey.Version,
+		Depth:             extKey.Depth + 1,
+		ParentFingerprint: fingerPrint,
+		ChildNumber:       i,
+		ChainCode:         iR,
 	}
 
 	if extKey.privateKey != nil {

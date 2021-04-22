@@ -7,13 +7,13 @@ import (
 )
 
 type ExtendedKey struct {
-	privateKey  *secp256k1.ECDSAPrivateKey
-	publicKey   *secp256k1.ECDSAPublicKey
-	Version     [4]byte
-	Depth       uint8
-	Fingerprint [4]byte
-	ChildNumber uint32
-	ChainCode   [32]byte
+	privateKey        *secp256k1.ECDSAPrivateKey
+	publicKey         *secp256k1.ECDSAPublicKey
+	Version           [4]byte
+	Depth             uint8
+	ParentFingerprint [4]byte
+	ChildNumber       uint32
+	ChainCode         [32]byte
 }
 
 func (extKey *ExtendedKey) PrivateKey() *secp256k1.ECDSAPrivateKey {
@@ -54,12 +54,12 @@ func (extKey *ExtendedKey) Public() (*ExtendedKey, error) {
 	}
 
 	return &ExtendedKey{
-		publicKey:   publicKey,
-		Version:     version,
-		Depth:       extKey.Depth,
-		Fingerprint: extKey.Fingerprint,
-		ChildNumber: extKey.ChildNumber,
-		ChainCode:   extKey.ChainCode,
+		publicKey:         publicKey,
+		Version:           version,
+		Depth:             extKey.Depth,
+		ParentFingerprint: extKey.ParentFingerprint,
+		ChildNumber:       extKey.ChildNumber,
+		ChainCode:         extKey.ChainCode,
 	}, nil
 }
 
