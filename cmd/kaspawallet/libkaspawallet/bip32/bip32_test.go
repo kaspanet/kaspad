@@ -160,7 +160,9 @@ func TestBIP32SpecVectors(t *testing.T) {
 	}
 }
 
-func TestExtendedPublicKey_Path(t *testing.T) {
+// TestExtendedKey_Path checks that path that derive from extended public key and extended
+// public key lead to the same public keys.
+func TestExtendedKey_Path(t *testing.T) {
 	r := rand.New(rand.NewSource(0))
 	seed, err := GenerateSeed()
 	if err != nil {
