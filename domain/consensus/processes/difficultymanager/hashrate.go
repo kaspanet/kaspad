@@ -16,14 +16,18 @@ func (dm *difficultyManager) EstimateNetworkHashesPerSecond(windowSize int) (uin
 }
 
 func (dm *difficultyManager) estimateNetworkHashesPerSecond(stagingArea *model.StagingArea, windowSize int) (uint64, error) {
+	if windowSize < 2 {
+		return 0, errors.Errorf("windowSize must be equal to or greater than 2")
+	}
+
 	blockWindow, windowHashes, err := dm.blockWindow(stagingArea, model.VirtualBlockHash, windowSize)
 	if err != nil {
 		return 0, err
 	}
 
 	minWindowTimestamp, maxWindowTimestamp, _, _ := blockWindow.minMaxTimestamps()
-	if minWindowTimestamp >= maxWindowTimestamp {
-		return 0, errors.Errorf("min window timestamp is equal to or greater than the max window timestamp")
+	if minWindowTimestamp == maxWindowTimestamp {
+		return 0, errors.Errorf("min window timestamp is equal to the max window timestamp")
 	}
 
 	firstHash := windowHashes[0]
