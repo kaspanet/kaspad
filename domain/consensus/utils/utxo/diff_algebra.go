@@ -34,23 +34,6 @@ func checkIntersectionWithRule(collection1 utxoCollection, collection2 utxoColle
 	return nil, false
 }
 
-// minInt returns the smaller of x or y integer values
-func minInt(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
-}
-
-// intersectionWithRemainderHavingDAAScore calculates an intersection between two utxoCollections
-// having same DAA score, returns the result and the remainder from collection1
-func intersectionWithRemainderHavingDAAScore(collection1, collection2 utxoCollection) (result, remainder utxoCollection) {
-	result = make(utxoCollection, minInt(len(collection1), len(collection2)))
-	remainder = make(utxoCollection, len(collection1))
-	intersectionWithRemainderHavingDAAScoreInPlace(collection1, collection2, result, remainder)
-	return
-}
-
 // intersectionWithRemainderHavingDAAScoreInPlace calculates an intersection between two utxoCollections
 // having same DAA score, puts it into result and into remainder from collection1
 func intersectionWithRemainderHavingDAAScoreInPlace(collection1, collection2, result, remainder utxoCollection) {
@@ -63,15 +46,6 @@ func intersectionWithRemainderHavingDAAScoreInPlace(collection1, collection2, re
 	}
 }
 
-// subtractionHavingDAAScore calculates a subtraction between collection1 and collection2
-// having same DAA score, returns the result
-func subtractionHavingDAAScore(collection1, collection2 utxoCollection) (result utxoCollection) {
-	result = make(utxoCollection, len(collection1))
-
-	subtractionHavingDAAScoreInPlace(collection1, collection2, result)
-	return
-}
-
 // subtractionHavingDAAScoreInPlace calculates a subtraction between collection1 and collection2
 // having same DAA score, puts it into result
 func subtractionHavingDAAScoreInPlace(collection1, collection2, result utxoCollection) {
@@ -80,16 +54,6 @@ func subtractionHavingDAAScoreInPlace(collection1, collection2, result utxoColle
 			result.add(&outpoint, utxoEntry)
 		}
 	}
-}
-
-// subtractionWithRemainderHavingDAAScore calculates a subtraction between collection1 and collection2
-// having same DAA score, returns the result and the remainder from collection1
-func subtractionWithRemainderHavingDAAScore(collection1, collection2 utxoCollection) (result, remainder utxoCollection) {
-	result = make(utxoCollection, len(collection1))
-	remainder = make(utxoCollection, len(collection1))
-
-	subtractionWithRemainderHavingDAAScoreInPlace(collection1, collection2, result, remainder)
-	return
 }
 
 // subtractionWithRemainderHavingDAAScoreInPlace calculates a subtraction between collection1 and collection2
@@ -175,13 +139,13 @@ func diffFrom(this, other *mutableUTXODiff) (*mutableUTXODiff, error) {
 	}
 
 	result := &mutableUTXODiff{
-		toAdd:    make(utxoCollection, len(this.toRemove)+len(other.toAdd)),
-		toRemove: make(utxoCollection, len(this.toAdd)+len(other.toRemove)),
+		toAdd:    make(utxoCollection),
+		toRemove: make(utxoCollection),
 	}
 
 	// All transactions in this.toAdd:
 	// If they are not in other.toAdd - should be added in result.toRemove
-	inBothToAdd := make(utxoCollection, len(this.toAdd))
+	inBothToAdd := make(utxoCollection)
 	subtractionWithRemainderHavingDAAScoreInPlace(this.toAdd, other.toAdd, result.toRemove, inBothToAdd)
 	// If they are in other.toRemove - base utxoSet is not the same
 	if checkIntersection(inBothToAdd, this.toRemove) != checkIntersection(inBothToAdd, other.toRemove) {
@@ -223,13 +187,13 @@ func withDiffInPlace(this *mutableUTXODiff, other *mutableUTXODiff) error {
 			"withDiffInPlace: outpoint %s both in this.toAdd and in other.toAdd", offendingOutpoint)
 	}
 
-	intersection := make(utxoCollection, minInt(len(other.toRemove), len(this.toAdd)))
+	intersection := make(utxoCollection)
 	// If not exists neither in toAdd nor in toRemove - add to toRemove
 	intersectionWithRemainderHavingDAAScoreInPlace(other.toRemove, this.toAdd, intersection, this.toRemove)
 	// If already exists in toAdd with the same DAA score - remove from toAdd
 	this.toAdd.removeMultiple(intersection)
 
-	intersection = make(utxoCollection, minInt(len(other.toAdd), len(this.toRemove)))
+	intersection = make(utxoCollection)
 	// If not exists neither in toAdd nor in toRemove, or exists in toRemove with different DAA score - add to toAdd
 	intersectionWithRemainderHavingDAAScoreInPlace(other.toAdd, this.toRemove, intersection, this.toAdd)
 	// If already exists in toRemove with the same DAA score - remove from toRemove
