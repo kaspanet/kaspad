@@ -5,7 +5,7 @@ import (
 	"github.com/kaspanet/go-secp256k1"
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
-	"github.com/kaspanet/kaspad/domain/consensus/model/pow"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/pow"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/difficulty"
 	"math"
@@ -32,6 +32,7 @@ func main() {
 	if err != nil {
 		log.Criticalf("An error occurred: %+v", err)
 		backendLog.Close()
+		// fdsafdsfsdf
 		os.Exit(1)
 	}
 	backendLog.Close()
@@ -183,7 +184,9 @@ func mineBlockChains(rpcAddress string, miningAddress util.Address, chainLength 
 			"--numblocks", "1",
 		)
 		if err != nil {
-			return err
+			// Ignore error and instead check that the block count changed correctly.
+			// TODO: Fix the race condition in kaspaminer so it won't panic (proper shutdown handler)
+			log.Warnf("mineBlock returned an err: %s", err)
 		}
 		//return errors.Wrapf(kaspaMinerCmd.Wait(), "error with command '%s'", kaspaMinerCmd)
 		if err = kaspaMinerCmd.Wait(); err != nil {
@@ -237,7 +240,9 @@ func mineLoop(rpcAddress string, miningAddress util.Address) error {
 		"--miningaddr", miningAddress.EncodeAddress(),
 	)
 	if err != nil {
-		return err
+		// Ignore error and instead check that the block count changed correctly.
+		// TODO: Fix the race condition in kaspaminer so it won't panic (proper shutdown handler)
+		log.Warnf("mineBlock returned an err: %s", err)
 	}
 	shutdown := uint64(0)
 	processesStoppedWg := sync.WaitGroup{}

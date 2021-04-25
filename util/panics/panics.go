@@ -52,6 +52,7 @@ func Exit(log *logger.Logger, reason string) {
 // Exit prints the given reason, prints either of the given stack traces (if not nil),
 // waits for them to finish writing, and exits.
 func exit(log *logger.Logger, reason string, currentThreadStackTrace []byte, goroutineStackTrace []byte) {
+	debug.PrintStack()
 	exitHandlerDone := make(chan struct{})
 	go func() {
 		log.Criticalf("Exiting: %s", reason)
