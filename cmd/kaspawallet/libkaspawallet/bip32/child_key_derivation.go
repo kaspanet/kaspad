@@ -115,7 +115,6 @@ func (extKey *ExtendedKey) calcI(i uint32) ([]byte, error) {
 	if isHardened(i) {
 		mac.InfallibleWrite([]byte{0x00})
 		mac.InfallibleWrite(extKey.privateKey.Serialize()[:])
-		mac.InfallibleWrite(serializeUint32(i))
 	} else {
 		publicKey, err := extKey.PublicKey()
 		if err != nil {
