@@ -98,7 +98,7 @@ func deserializeExtendedPrivateKey(serialized []byte) (*ExtendedKey, error) {
 
 func (extKey *ExtendedKey) serialize() ([]byte, error) {
 	var serialized [extendedKeySerializationLen]byte
-	copy(serialized[:versionSerializationLen], extKey.Version[:])
+	copy(serialized[:], extKey.Version[:])
 	serialized[versionSerializationLen] = extKey.Depth
 	copy(serialized[versionSerializationLen+depthSerializationLen:], extKey.ParentFingerprint[:])
 	binary.BigEndian.PutUint32(
