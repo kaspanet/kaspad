@@ -32,11 +32,9 @@ func calcChecksum(data []byte) []byte {
 }
 
 func doubleSha256(data []byte) []byte {
-	sha1 := sha256.New()
-	sha2 := sha256.New()
-	sha1.Write(data)
-	sha2.Write(sha1.Sum(nil))
-	return sha2.Sum(nil)
+	inner := sha256.Sum256(data)
+	outer := sha256.Sum256(inner[:])
+	return outer[:]
 }
 
 // validateChecksum validates that the last checkSumLen bytes of the
