@@ -1,11 +1,9 @@
 package bip32
 
 import (
-	"crypto/sha256"
 	"encoding/binary"
 	"github.com/kaspanet/go-secp256k1"
 	"github.com/pkg/errors"
-	"golang.org/x/crypto/ripemd160"
 )
 
 const hardenedIndexStart = 0x80000000
@@ -96,14 +94,6 @@ func (extKey *ExtendedKey) calcFingerprint() ([4]byte, error) {
 	var fingerprint [4]byte
 	copy(fingerprint[:], hash[:4])
 	return fingerprint, nil
-}
-
-func hash160(data []byte) []byte {
-	sha := sha256.New()
-	ripe := ripemd160.New()
-	sha.Write(data)
-	ripe.Write(sha.Sum(nil))
-	return ripe.Sum(nil)
 }
 
 func privateKeyAdd(k *secp256k1.ECDSAPrivateKey, tweak [32]byte) (*secp256k1.ECDSAPrivateKey, error) {

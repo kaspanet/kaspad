@@ -6,6 +6,7 @@ import (
 	"crypto/sha256"
 	"crypto/sha512"
 	"github.com/pkg/errors"
+	"golang.org/x/crypto/ripemd160"
 	"hash"
 )
 
@@ -48,4 +49,12 @@ func validateChecksum(data []byte) error {
 	}
 
 	return nil
+}
+
+func hash160(data []byte) []byte {
+	sha := sha256.New()
+	ripe := ripemd160.New()
+	sha.Write(data)
+	ripe.Write(sha.Sum(nil))
+	return ripe.Sum(nil)
 }
