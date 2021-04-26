@@ -113,7 +113,12 @@ func (extKey *ExtendedKey) serialize() ([]byte, error) {
 	if extKey.IsPrivate() {
 		serialized[versionSerializationLen+depthSerializationLen+fingerprintSerializationLen+childNumberSerializationLen+chainCodeSerializationLen] = 0
 		copy(
-			serialized[versionSerializationLen+depthSerializationLen+fingerprintSerializationLen+childNumberSerializationLen+chainCodeSerializationLen+1:],
+			serialized[versionSerializationLen+
+				depthSerializationLen+
+				fingerprintSerializationLen+
+				childNumberSerializationLen+
+				chainCodeSerializationLen+
+				1:],
 			extKey.privateKey.Serialize()[:],
 		)
 	} else {
