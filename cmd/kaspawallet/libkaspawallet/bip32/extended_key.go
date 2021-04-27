@@ -6,6 +6,7 @@ import (
 	"github.com/pkg/errors"
 )
 
+// ExtendedKey is a bip32 extended key
 type ExtendedKey struct {
 	privateKey        *secp256k1.ECDSAPrivateKey
 	publicKey         *secp256k1.ECDSAPublicKey
@@ -16,10 +17,12 @@ type ExtendedKey struct {
 	ChainCode         [32]byte
 }
 
+// PrivateKey returns the ECDSA private key associated with the extended key
 func (extKey *ExtendedKey) PrivateKey() *secp256k1.ECDSAPrivateKey {
 	return extKey.privateKey
 }
 
+// PublicKey returns the ECDSA public key associated with the extended key
 func (extKey *ExtendedKey) PublicKey() (*secp256k1.ECDSAPublicKey, error) {
 	if extKey.publicKey != nil {
 		return extKey.publicKey, nil
@@ -34,10 +37,12 @@ func (extKey *ExtendedKey) PublicKey() (*secp256k1.ECDSAPublicKey, error) {
 	return publicKey, nil
 }
 
+// IsPrivate returns whether the extended key is private
 func (extKey *ExtendedKey) IsPrivate() bool {
 	return extKey.privateKey != nil
 }
 
+// Public returns public version of the extended key
 func (extKey *ExtendedKey) Public() (*ExtendedKey, error) {
 	if !extKey.IsPrivate() {
 		return extKey, nil
@@ -63,6 +68,7 @@ func (extKey *ExtendedKey) Public() (*ExtendedKey, error) {
 	}, nil
 }
 
+// DeriveFromPath returns the extended key derived from the given path
 func (extKey *ExtendedKey) DeriveFromPath(pathString string) (*ExtendedKey, error) {
 	path, err := parsePath(pathString)
 	if err != nil {

@@ -2,6 +2,8 @@ package bip32
 
 import "github.com/pkg/errors"
 
+// BitcoinMainnetPrivate is the version that is used for
+// bitcoin mainnet bip32 private extended keys.
 var BitcoinMainnetPrivate = [4]byte{
 	0x04,
 	0x88,
@@ -9,6 +11,8 @@ var BitcoinMainnetPrivate = [4]byte{
 	0xe4,
 }
 
+// BitcoinMainnetPublic is the version that is used for
+// bitcoin mainnet bip32 public extended keys.
 var BitcoinMainnetPublic = [4]byte{
 	0x04,
 	0x88,
@@ -16,6 +20,8 @@ var BitcoinMainnetPublic = [4]byte{
 	0x1e,
 }
 
+// KaspaMainnetPrivate is the version that is used for
+// kaspa mainnet bip32 private extended keys.
 var KaspaMainnetPrivate = [4]byte{
 	0x03,
 	0x8f,
@@ -23,6 +29,8 @@ var KaspaMainnetPrivate = [4]byte{
 	0xf4,
 }
 
+// KaspaMainnetPublic is the version that is used for
+// kaspa mainnet bip32 public extended keys.
 var KaspaMainnetPublic = [4]byte{
 	0x03,
 	0x8f,

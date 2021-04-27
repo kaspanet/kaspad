@@ -2,6 +2,7 @@ package bip32
 
 import "crypto/rand"
 
+// GenerateSeed generates seed that can be used to initialize a master key.
 func GenerateSeed() ([]byte, error) {
 	randBytes := make([]byte, 32)
 	_, err := rand.Read(randBytes)
@@ -12,6 +13,8 @@ func GenerateSeed() ([]byte, error) {
 	return randBytes, nil
 }
 
+// NewMasterWithPath returns a new master key based on the given seed and version, with a derivation
+// to the given path.
 func NewMasterWithPath(seed []byte, version [4]byte, pathString string) (*ExtendedKey, error) {
 	masterKey, err := NewMaster(seed, version)
 	if err != nil {
@@ -21,6 +24,8 @@ func NewMasterWithPath(seed []byte, version [4]byte, pathString string) (*Extend
 	return masterKey.DeriveFromPath(pathString)
 }
 
+// NewPublicMasterWithPath returns a new public master key based on the given seed and version, with a derivation
+// to the given path.
 func NewPublicMasterWithPath(seed []byte, version [4]byte, pathString string) (*ExtendedKey, error) {
 	masterKey, err := NewMaster(seed, version)
 	if err != nil {

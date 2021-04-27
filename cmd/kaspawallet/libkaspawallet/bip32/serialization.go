@@ -25,6 +25,7 @@ const extendedKeySerializationLen = versionSerializationLen +
 	keySerializationLen +
 	checkSumLen
 
+// DeserializeExtendedPrivateKey deserialized the given base58 string and returns an extended key
 func DeserializeExtendedPrivateKey(extKeyString string) (*ExtendedKey, error) {
 	serializedBytes := base58.Decode(extKeyString)
 	return deserializeExtendedPrivateKey(serializedBytes)

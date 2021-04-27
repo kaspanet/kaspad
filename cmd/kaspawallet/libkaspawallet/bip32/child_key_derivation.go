@@ -8,6 +8,7 @@ import (
 
 const hardenedIndexStart = 0x80000000
 
+// NewMaster returns a new extended private key based on the given seed and version
 func NewMaster(seed []byte, version [4]byte) (*ExtendedKey, error) {
 	mac := newHMACWriter([]byte("Bitcoin seed"))
 	mac.InfallibleWrite(seed)
@@ -36,6 +37,7 @@ func isHardened(i uint32) bool {
 	return i >= hardenedIndexStart
 }
 
+// Child return the i'th derived child of extKey.
 func (extKey *ExtendedKey) Child(i uint32) (*ExtendedKey, error) {
 	I, err := extKey.calcI(i)
 	if err != nil {
