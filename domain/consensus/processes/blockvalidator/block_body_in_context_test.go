@@ -11,26 +11,25 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/testutils"
-	"github.com/kaspanet/kaspad/domain/dagconfig"
 	"github.com/pkg/errors"
 )
 
 func TestCheckBlockIsNotPruned(t *testing.T) {
-	testutils.ForAllNets(t, true, func(t *testing.T, params *dagconfig.Params) {
+	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
 		// This is done to reduce the pruning depth to 6 blocks
-		params.FinalityDuration = 2 * params.TargetTimePerBlock
-		params.K = 0
+		consensusConfig.FinalityDuration = 2 * consensusConfig.TargetTimePerBlock
+		consensusConfig.K = 0
 
 		factory := consensus.NewFactory()
 
-		tc, teardown, err := factory.NewTestConsensus(params, false, "TestCheckBlockIsNotPruned")
+		tc, teardown, err := factory.NewTestConsensus(consensusConfig, "TestCheckBlockIsNotPruned")
 		if err != nil {
 			t.Fatalf("Error setting up consensus: %+v", err)
 		}
 		defer teardown(false)
 
 		// Add blocks until the pruning point changes
-		tipHash := params.GenesisHash
+		tipHash := consensusConfig.GenesisHash
 		tipHash, _, err = tc.AddBlock([]*externalapi.DomainHash{tipHash}, nil, nil)
 		if err != nil {
 			t.Fatalf("AddBlock: %+v", err)
@@ -52,7 +51,7 @@ func TestCheckBlockIsNotPruned(t *testing.T) {
 				t.Fatalf("PruningPoint: %+v", err)
 			}
 
-			if !pruningPoint.Equal(params.GenesisHash) {
+			if !pruningPoint.Equal(consensusConfig.GenesisHash) {
 				break
 			}
 		}
@@ -76,20 +75,20 @@ func TestCheckBlockIsNotPruned(t *testing.T) {
 }
 
 func TestCheckParentBlockBodiesExist(t *testing.T) {
-	testutils.ForAllNets(t, true, func(t *testing.T, params *dagconfig.Params) {
+	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
 		// This is done to reduce the pruning depth to 6 blocks
-		params.FinalityDuration = 2 * params.TargetTimePerBlock
-		params.K = 0
+		consensusConfig.FinalityDuration = 2 * consensusConfig.TargetTimePerBlock
+		consensusConfig.K = 0
 
 		factory := consensus.NewFactory()
 
-		tc, teardown, err := factory.NewTestConsensus(params, false, "TestCheckParentBlockBodiesExist")
+		tc, teardown, err := factory.NewTestConsensus(consensusConfig, "TestCheckParentBlockBodiesExist")
 		if err != nil {
 			t.Fatalf("Error setting up consensus: %+v", err)
 		}
 		defer teardown(false)
 
-		headerHash, _, err := tc.AddUTXOInvalidHeader([]*externalapi.DomainHash{params.GenesisHash})
+		headerHash, _, err := tc.AddUTXOInvalidHeader([]*externalapi.DomainHash{consensusConfig.GenesisHash})
 		if err != nil {
 			t.Fatalf("AddUTXOInvalidHeader: %+v", err)
 		}
@@ -105,7 +104,7 @@ func TestCheckParentBlockBodiesExist(t *testing.T) {
 		}
 
 		// Add blocks until the pruning point changes
-		tipHash := params.GenesisHash
+		tipHash := consensusConfig.GenesisHash
 		anticonePruningBlock, err := tc.BuildUTXOInvalidBlock([]*externalapi.DomainHash{tipHash})
 		if err != nil {
 			t.Fatalf("BuildUTXOInvalidBlock: %+v", err)
@@ -131,7 +130,7 @@ func TestCheckParentBlockBodiesExist(t *testing.T) {
 				t.Fatalf("PruningPoint: %+v", err)
 			}
 
-			if !pruningPoint.Equal(params.GenesisHash) {
+			if !pruningPoint.Equal(consensusConfig.GenesisHash) {
 				break
 			}
 		}
@@ -146,20 +145,20 @@ func TestCheckParentBlockBodiesExist(t *testing.T) {
 }
 
 func TestIsFinalizedTransaction(t *testing.T) {
-	testutils.ForAllNets(t, true, func(t *testing.T, params *dagconfig.Params) {
+	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
 		stagingArea := model.NewStagingArea()
 
-		params.BlockCoinbaseMaturity = 0
+		consensusConfig.BlockCoinbaseMaturity = 0
 		factory := consensus.NewFactory()
 
-		tc, teardown, err := factory.NewTestConsensus(params, false, "TestIsFinalizedTransaction")
+		tc, teardown, err := factory.NewTestConsensus(consensusConfig, "TestIsFinalizedTransaction")
 		if err != nil {
 			t.Fatalf("Error setting up consensus: %+v", err)
 		}
 		defer teardown(false)
 
 		// Build a small DAG
-		outerParents := []*externalapi.DomainHash{params.GenesisHash}
+		outerParents := []*externalapi.DomainHash{consensusConfig.GenesisHash}
 		for i := 0; i < 5; i++ {
 			var innerParents []*externalapi.DomainHash
 			for i := 0; i < 4; i++ {

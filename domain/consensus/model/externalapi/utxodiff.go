@@ -14,6 +14,7 @@ type UTXODiff interface {
 	ToRemove() UTXOCollection
 	WithDiff(other UTXODiff) (UTXODiff, error)
 	DiffFrom(other UTXODiff) (UTXODiff, error)
+	Reversed() UTXODiff
 	CloneMutable() MutableUTXODiff
 }
 

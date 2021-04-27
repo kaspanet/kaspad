@@ -7,20 +7,19 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/testutils"
-	"github.com/kaspanet/kaspad/domain/dagconfig"
 )
 
 func TestCalculateChainPath(t *testing.T) {
-	testutils.ForAllNets(t, true, func(t *testing.T, params *dagconfig.Params) {
+	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
 		factory := consensus.NewFactory()
-		consensus, teardown, err := factory.NewTestConsensus(params, false, "TestCalculateChainPath")
+		consensus, teardown, err := factory.NewTestConsensus(consensusConfig, "TestCalculateChainPath")
 		if err != nil {
 			t.Fatalf("Error setting up consensus: %+v", err)
 		}
 		defer teardown(false)
 
 		// Add block A over the genesis
-		blockAHash, blockAInsertionResult, err := consensus.AddBlock([]*externalapi.DomainHash{params.GenesisHash}, nil, nil)
+		blockAHash, blockAInsertionResult, err := consensus.AddBlock([]*externalapi.DomainHash{consensusConfig.GenesisHash}, nil, nil)
 		if err != nil {
 			t.Fatalf("Error adding block A: %+v", err)
 		}
@@ -42,7 +41,7 @@ func TestCalculateChainPath(t *testing.T) {
 		}
 
 		// Add block B over the genesis
-		blockBHash, _, err := consensus.AddBlock([]*externalapi.DomainHash{params.GenesisHash}, nil, nil)
+		blockBHash, _, err := consensus.AddBlock([]*externalapi.DomainHash{consensusConfig.GenesisHash}, nil, nil)
 		if err != nil {
 			t.Fatalf("Error adding block B: %+v", err)
 		}
@@ -93,7 +92,7 @@ func TestCalculateChainPath(t *testing.T) {
 		}
 
 		// Add block D over the genesis
-		_, blockDInsertionResult, err := consensus.AddBlock([]*externalapi.DomainHash{params.GenesisHash}, nil, nil)
+		_, blockDInsertionResult, err := consensus.AddBlock([]*externalapi.DomainHash{consensusConfig.GenesisHash}, nil, nil)
 		if err != nil {
 			t.Fatalf("Error adding block D: %+v", err)
 		}
