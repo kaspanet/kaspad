@@ -42,7 +42,7 @@ func TestPruning(t *testing.T) {
 		},
 	}
 
-	testutils.ForAllNets(t, true, func(t *testing.T, params *dagconfig.Params) {
+	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
 		err := filepath.Walk("./testdata", func(path string, info os.FileInfo, err error) error {
 			if err != nil {
 				return err
@@ -65,22 +65,22 @@ func TestPruning(t *testing.T) {
 				t.Fatalf("TestPruning: failed decoding json: %v", err)
 			}
 
-			params.FinalityDuration = time.Duration(test.FinalityDepth) * params.TargetTimePerBlock
-			params.MergeSetSizeLimit = test.MergeSetSizeLimit
+			consensusConfig.FinalityDuration = time.Duration(test.FinalityDepth) * consensusConfig.TargetTimePerBlock
+			consensusConfig.MergeSetSizeLimit = test.MergeSetSizeLimit
 
 			factory := consensus.NewFactory()
-			tc, teardown, err := factory.NewTestConsensus(params, false, "TestPruning")
+			tc, teardown, err := factory.NewTestConsensus(consensusConfig, "TestPruning")
 			if err != nil {
 				t.Fatalf("Error setting up consensus: %+v", err)
 			}
 			defer teardown(false)
 
 			blockIDToHash := map[string]*externalapi.DomainHash{
-				"0": params.GenesisHash,
+				"0": consensusConfig.GenesisHash,
 			}
 
 			blockHashToID := map[externalapi.DomainHash]string{
-				*params.GenesisHash: "0",
+				*consensusConfig.GenesisHash: "0",
 			}
 
 			stagingArea := model.NewStagingArea()
@@ -133,7 +133,7 @@ func TestPruning(t *testing.T) {
 			}
 
 			pruningPointID := blockHashToID[*pruningPoint]
-			expectedPruningPoint := expectedPruningPointByNet[info.Name()][params.Name]
+			expectedPruningPoint := expectedPruningPointByNet[info.Name()][consensusConfig.Name]
 			if expectedPruningPoint != pruningPointID {
 				t.Fatalf("%s: Expected pruning point to be %s but got %s", info.Name(), expectedPruningPoint, pruningPointID)
 			}

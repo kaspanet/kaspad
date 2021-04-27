@@ -5,13 +5,6 @@ import (
 	"os"
 	"sync"
 
-	daablocksstore "github.com/kaspanet/kaspad/domain/consensus/datastructures/daablocksstore"
-
-	"github.com/kaspanet/kaspad/domain/consensus/datastructures/headersselectedchainstore"
-
-	"github.com/kaspanet/kaspad/domain/consensus/processes/dagtraversalmanager"
-	"github.com/kaspanet/kaspad/domain/consensus/processes/finalitymanager"
-
 	consensusdatabase "github.com/kaspanet/kaspad/domain/consensus/database"
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/acceptancedatastore"
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/blockheaderstore"
@@ -19,8 +12,10 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/blockstatusstore"
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/blockstore"
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/consensusstatestore"
+	daablocksstore "github.com/kaspanet/kaspad/domain/consensus/datastructures/daablocksstore"
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/finalitystore"
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/ghostdagdatastore"
+	"github.com/kaspanet/kaspad/domain/consensus/datastructures/headersselectedchainstore"
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/headersselectedtipstore"
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/multisetstore"
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/pruningstore"
@@ -34,7 +29,9 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/processes/coinbasemanager"
 	"github.com/kaspanet/kaspad/domain/consensus/processes/consensusstatemanager"
 	"github.com/kaspanet/kaspad/domain/consensus/processes/dagtopologymanager"
+	"github.com/kaspanet/kaspad/domain/consensus/processes/dagtraversalmanager"
 	"github.com/kaspanet/kaspad/domain/consensus/processes/difficultymanager"
+	"github.com/kaspanet/kaspad/domain/consensus/processes/finalitymanager"
 	"github.com/kaspanet/kaspad/domain/consensus/processes/ghostdagmanager"
 	"github.com/kaspanet/kaspad/domain/consensus/processes/headersselectedtipmanager"
 	"github.com/kaspanet/kaspad/domain/consensus/processes/mergedepthmanager"
@@ -54,11 +51,20 @@ const (
 	defaultTestPreallocateCaches   = false
 )
 
+// Config is the full config required to run consensus
+type Config struct {
+	dagconfig.Params
+	// IsArchival tells the consensus if it should not prune old blocks
+	IsArchival bool
+	// EnableSanityCheckPruningUTXOSet checks the full pruning point utxo set against the commitment at every pruning movement
+	EnableSanityCheckPruningUTXOSet bool
+}
+
 // Factory instantiates new Consensuses
 type Factory interface {
-	NewConsensus(dagParams *dagconfig.Params, db infrastructuredatabase.Database, isArchivalNode bool) (
+	NewConsensus(config *Config, db infrastructuredatabase.Database) (
 		externalapi.Consensus, error)
-	NewTestConsensus(dagParams *dagconfig.Params, isArchivalNode bool, testName string) (
+	NewTestConsensus(config *Config, testName string) (
 		tc testapi.TestConsensus, teardown func(keepDataDir bool), err error)
 
 	SetTestDataDir(dataDir string)
@@ -88,12 +94,12 @@ func NewFactory() Factory {
 }
 
 // NewConsensus instantiates a new Consensus
-func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredatabase.Database, isArchivalNode bool) (
+func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Database) (
 	externalapi.Consensus, error) {
 
 	dbManager := consensusdatabase.New(db)
 
-	pruningWindowSizeForCaches := int(dagParams.PruningDepth())
+	pruningWindowSizeForCaches := int(config.PruningDepth())
 
 	var preallocateCaches bool
 	if f.preallocateCaches != nil {
@@ -104,7 +110,7 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 
 	// This is used for caches that are used as part of deletePastBlocks that need to traverse until
 	// the previous pruning point.
-	pruningWindowSizePlusFinalityDepthForCache := int(dagParams.PruningDepth() + dagParams.FinalityDepth())
+	pruningWindowSizePlusFinalityDepthForCache := int(config.PruningDepth() + config.FinalityDepth())
 
 	// Data Structures
 	acceptanceDataStore := acceptancedatastore.New(200, preallocateCaches)
@@ -129,15 +135,15 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 	// a single DifficultyAdjustmentWindow. To alleviate this problem we make sure that the cache size is at least
 	// dagParams.DifficultyAdjustmentWindowSize
 	ghostdagDataCacheSize := pruningWindowSizeForCaches
-	if ghostdagDataCacheSize < dagParams.DifficultyAdjustmentWindowSize {
-		ghostdagDataCacheSize = dagParams.DifficultyAdjustmentWindowSize
+	if ghostdagDataCacheSize < config.DifficultyAdjustmentWindowSize {
+		ghostdagDataCacheSize = config.DifficultyAdjustmentWindowSize
 	}
 	ghostdagDataStore := ghostdagdatastore.New(ghostdagDataCacheSize, preallocateCaches)
 
 	headersSelectedTipStore := headersselectedtipstore.New()
 	finalityStore := finalitystore.New(200, preallocateCaches)
 	headersSelectedChainStore := headersselectedchainstore.New(pruningWindowSizeForCaches, preallocateCaches)
-	daaBlocksStore := daablocksstore.New(pruningWindowSizeForCaches, int(dagParams.FinalityDepth()), preallocateCaches)
+	daaBlocksStore := daablocksstore.New(pruningWindowSizeForCaches, int(config.FinalityDepth()), preallocateCaches)
 
 	// Processes
 	reachabilityManager := reachabilitymanager.New(
@@ -154,7 +160,7 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 		dagTopologyManager,
 		ghostdagDataStore,
 		blockHeaderStore,
-		dagParams.K)
+		config.K)
 	dagTraversalManager := dagtraversalmanager.New(
 		dbManager,
 		dagTopologyManager,
@@ -162,20 +168,20 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 		reachabilityDataStore,
 		ghostdagManager,
 		consensusStateStore,
-		dagParams.GenesisHash)
+		config.GenesisHash)
 	pastMedianTimeManager := f.pastMedianTimeConsructor(
-		dagParams.TimestampDeviationTolerance,
+		config.TimestampDeviationTolerance,
 		dbManager,
 		dagTraversalManager,
 		blockHeaderStore,
 		ghostdagDataStore,
-		dagParams.GenesisHash)
-	transactionValidator := transactionvalidator.New(dagParams.BlockCoinbaseMaturity,
-		dagParams.EnableNonNativeSubnetworks,
-		dagParams.MassPerTxByte,
-		dagParams.MassPerScriptPubKeyByte,
-		dagParams.MassPerSigOp,
-		dagParams.MaxCoinbasePayloadLength,
+		config.GenesisHash)
+	transactionValidator := transactionvalidator.New(config.BlockCoinbaseMaturity,
+		config.EnableNonNativeSubnetworks,
+		config.MassPerTxByte,
+		config.MassPerScriptPubKeyByte,
+		config.MassPerSigOp,
+		config.MaxCoinbasePayloadLength,
 		dbManager,
 		pastMedianTimeManager,
 		ghostdagDataStore,
@@ -188,29 +194,29 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 		daaBlocksStore,
 		dagTopologyManager,
 		dagTraversalManager,
-		dagParams.PowMax,
-		dagParams.DifficultyAdjustmentWindowSize,
-		dagParams.DisableDifficultyAdjustment,
-		dagParams.TargetTimePerBlock,
-		dagParams.GenesisHash)
+		config.PowMax,
+		config.DifficultyAdjustmentWindowSize,
+		config.DisableDifficultyAdjustment,
+		config.TargetTimePerBlock,
+		config.GenesisHash)
 	coinbaseManager := coinbasemanager.New(
 		dbManager,
-		dagParams.SubsidyReductionInterval,
-		dagParams.BaseSubsidy,
-		dagParams.CoinbasePayloadScriptPublicKeyMaxLength,
+		config.SubsidyReductionInterval,
+		config.BaseSubsidy,
+		config.CoinbasePayloadScriptPublicKeyMaxLength,
 		ghostdagDataStore,
 		acceptanceDataStore,
 		daaBlocksStore)
 	headerTipsManager := headersselectedtipmanager.New(dbManager, dagTopologyManager, dagTraversalManager,
 		ghostdagManager, headersSelectedTipStore, headersSelectedChainStore)
-	genesisHash := dagParams.GenesisHash
+	genesisHash := config.GenesisHash
 	finalityManager := finalitymanager.New(
 		dbManager,
 		dagTopologyManager,
 		finalityStore,
 		ghostdagDataStore,
 		genesisHash,
-		dagParams.FinalityDepth())
+		config.FinalityDepth())
 	mergeDepthManager := mergedepthmanager.New(
 		dbManager,
 		dagTopologyManager,
@@ -218,15 +224,15 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 		finalityManager,
 		ghostdagDataStore)
 	blockValidator := blockvalidator.New(
-		dagParams.PowMax,
-		dagParams.SkipProofOfWork,
+		config.PowMax,
+		config.SkipProofOfWork,
 		genesisHash,
-		dagParams.EnableNonNativeSubnetworks,
-		dagParams.MaxBlockSize,
-		dagParams.MergeSetSizeLimit,
-		dagParams.MaxBlockParents,
-		dagParams.TimestampDeviationTolerance,
-		dagParams.TargetTimePerBlock,
+		config.EnableNonNativeSubnetworks,
+		config.MaxBlockSize,
+		config.MergeSetSizeLimit,
+		config.MaxBlockParents,
+		config.TimestampDeviationTolerance,
+		config.TargetTimePerBlock,
 
 		dbManager,
 		difficultyManager,
@@ -249,10 +255,10 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 	)
 	consensusStateManager, err := consensusstatemanager.New(
 		dbManager,
-		dagParams.PruningDepth(),
-		dagParams.MaxMassAcceptedByBlock,
-		dagParams.MaxBlockParents,
-		dagParams.MergeSetSizeLimit,
+		config.PruningDepth(),
+		config.MaxMassAcceptedByBlock,
+		config.MaxBlockParents,
+		config.MergeSetSizeLimit,
 		genesisHash,
 
 		ghostdagManager,
@@ -299,10 +305,11 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 		blockHeaderStore,
 		utxoDiffStore,
 		daaBlocksStore,
-		isArchivalNode,
+		config.IsArchival,
 		genesisHash,
-		dagParams.FinalityDepth(),
-		dagParams.PruningDepth())
+		config.FinalityDepth(),
+		config.PruningDepth(),
+		config.EnableSanityCheckPruningUTXOSet)
 
 	syncManager := syncmanager.New(
 		dbManager,
@@ -336,7 +343,7 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 
 	blockProcessor := blockprocessor.New(
 		genesisHash,
-		dagParams.TargetTimePerBlock,
+		config.TargetTimePerBlock,
 		dbManager,
 		consensusStateManager,
 		pruningManager,
@@ -411,7 +418,7 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 	}
 
 	if !genesisInfo.Exists {
-		_, err = c.ValidateAndInsertBlock(dagParams.GenesisBlock)
+		_, err = c.ValidateAndInsertBlock(config.GenesisBlock)
 		if err != nil {
 			return nil, err
 		}
@@ -433,7 +440,7 @@ func (f *factory) NewConsensus(dagParams *dagconfig.Params, db infrastructuredat
 	return c, nil
 }
 
-func (f *factory) NewTestConsensus(dagParams *dagconfig.Params, isArchivalNode bool, testName string) (
+func (f *factory) NewTestConsensus(config *Config, testName string) (
 	tc testapi.TestConsensus, teardown func(keepDataDir bool), err error) {
 	datadir := f.dataDir
 	if datadir == "" {
@@ -455,7 +462,7 @@ func (f *factory) NewTestConsensus(dagParams *dagconfig.Params, isArchivalNode b
 	if err != nil {
 		return nil, nil, err
 	}
-	consensusAsInterface, err := f.NewConsensus(dagParams, db, isArchivalNode)
+	consensusAsInterface, err := f.NewConsensus(config, db)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -465,7 +472,7 @@ func (f *factory) NewTestConsensus(dagParams *dagconfig.Params, isArchivalNode b
 	testTransactionValidator := transactionvalidator.NewTestTransactionValidator(consensusAsImplementation.transactionValidator)
 
 	tstConsensus := &testConsensus{
-		dagParams:                 dagParams,
+		dagParams:                 &config.Params,
 		consensus:                 consensusAsImplementation,
 		database:                  db,
 		testConsensusStateManager: testConsensusStateManager,

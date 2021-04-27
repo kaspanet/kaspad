@@ -9,14 +9,13 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/testutils"
-	"github.com/kaspanet/kaspad/domain/dagconfig"
 )
 
 func TestAddChildThatPointsDirectlyToTheSelectedParentChainBelowReindexRoot(t *testing.T) {
 	reachabilityReindexWindow := uint64(10)
-	testutils.ForAllNets(t, true, func(t *testing.T, params *dagconfig.Params) {
+	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
 		factory := consensus.NewFactory()
-		tc, tearDown, err := factory.NewTestConsensus(params, false,
+		tc, tearDown, err := factory.NewTestConsensus(consensusConfig,
 			"TestAddChildThatPointsDirectlyToTheSelectedParentChainBelowReindexRoot")
 		if err != nil {
 			t.Fatalf("NewTestConsensus: %+v", err)
@@ -32,12 +31,12 @@ func TestAddChildThatPointsDirectlyToTheSelectedParentChainBelowReindexRoot(t *t
 			t.Fatalf("ReachabilityReindexRoot: %s", err)
 		}
 
-		if !reindexRoot.Equal(params.GenesisHash) {
+		if !reindexRoot.Equal(consensusConfig.GenesisHash) {
 			t.Fatalf("reindex root is expected to initially be genesis")
 		}
 
 		// Add a block on top of the genesis block
-		chainRootBlock, _, err := tc.AddBlock([]*externalapi.DomainHash{params.GenesisHash}, nil, nil)
+		chainRootBlock, _, err := tc.AddBlock([]*externalapi.DomainHash{consensusConfig.GenesisHash}, nil, nil)
 		if err != nil {
 			t.Fatalf("AddBlock: %+v", err)
 		}
@@ -67,13 +66,13 @@ func TestAddChildThatPointsDirectlyToTheSelectedParentChainBelowReindexRoot(t *t
 		slackSize := tc.ReachabilityManager().ReachabilityReindexSlack()
 		blocksToAdd := uint64(math.Log2(float64(slackSize))) + 2
 		for i := uint64(0); i < blocksToAdd; i++ {
-			_, _, err = tc.AddBlock([]*externalapi.DomainHash{params.GenesisHash}, nil, nil)
+			_, _, err = tc.AddBlock([]*externalapi.DomainHash{consensusConfig.GenesisHash}, nil, nil)
 			if err != nil {
 				t.Fatalf("AddBlock: %+v", err)
 			}
 		}
 
-		err = tc.ReachabilityManager().ValidateIntervals(params.GenesisHash)
+		err = tc.ReachabilityManager().ValidateIntervals(consensusConfig.GenesisHash)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -82,9 +81,9 @@ func TestAddChildThatPointsDirectlyToTheSelectedParentChainBelowReindexRoot(t *t
 
 func TestUpdateReindexRoot(t *testing.T) {
 	reachabilityReindexWindow := uint64(10)
-	testutils.ForAllNets(t, true, func(t *testing.T, params *dagconfig.Params) {
+	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
 		factory := consensus.NewFactory()
-		tc, tearDown, err := factory.NewTestConsensus(params, false, "TestUpdateReindexRoot")
+		tc, tearDown, err := factory.NewTestConsensus(consensusConfig, "TestUpdateReindexRoot")
 		if err != nil {
 			t.Fatalf("NewTestConsensus: %s", err)
 		}
@@ -103,12 +102,12 @@ func TestUpdateReindexRoot(t *testing.T) {
 		}
 
 		// Add two blocks on top of the genesis block
-		chain1RootBlock, _, err := tc.AddBlock([]*externalapi.DomainHash{params.GenesisHash}, nil, nil)
+		chain1RootBlock, _, err := tc.AddBlock([]*externalapi.DomainHash{consensusConfig.GenesisHash}, nil, nil)
 		if err != nil {
 			t.Fatalf("AddBlock: %+v", err)
 		}
 
-		chain2RootBlock, _, err := tc.AddBlock([]*externalapi.DomainHash{params.GenesisHash}, nil, nil)
+		chain2RootBlock, _, err := tc.AddBlock([]*externalapi.DomainHash{consensusConfig.GenesisHash}, nil, nil)
 		if err != nil {
 			t.Fatalf("AddBlock: %+v", err)
 		}
@@ -132,7 +131,7 @@ func TestUpdateReindexRoot(t *testing.T) {
 				t.Fatalf("ReachabilityReindexRoot: %s", err)
 			}
 
-			if !reindexRoot.Equal(params.GenesisHash) {
+			if !reindexRoot.Equal(consensusConfig.GenesisHash) {
 				t.Fatalf("reindex root unexpectedly moved")
 			}
 		}
@@ -163,14 +162,14 @@ func TestUpdateReindexRoot(t *testing.T) {
 
 		// Make sure that the rest of the interval has been allocated to
 		// chain1RootNode, minus slack from both sides
-		expectedChain1RootIntervalSize := intervalSize(params.GenesisHash) - 1 -
+		expectedChain1RootIntervalSize := intervalSize(consensusConfig.GenesisHash) - 1 -
 			intervalSize(chain2RootBlock) - 2*tc.ReachabilityManager().ReachabilityReindexSlack()
 		if intervalSize(chain1RootBlock) != expectedChain1RootIntervalSize {
 			t.Fatalf("got unexpected chain1RootBlock interval. Want: %d, got: %d",
 				intervalSize(chain1RootBlock), expectedChain1RootIntervalSize)
 		}
 
-		err = tc.ReachabilityManager().ValidateIntervals(params.GenesisHash)
+		err = tc.ReachabilityManager().ValidateIntervals(consensusConfig.GenesisHash)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -179,9 +178,9 @@ func TestUpdateReindexRoot(t *testing.T) {
 
 func TestReindexIntervalsEarlierThanReindexRoot(t *testing.T) {
 	reachabilityReindexWindow := uint64(10)
-	testutils.ForAllNets(t, true, func(t *testing.T, params *dagconfig.Params) {
+	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
 		factory := consensus.NewFactory()
-		tc, tearDown, err := factory.NewTestConsensus(params, false, "TestUpdateReindexRoot")
+		tc, tearDown, err := factory.NewTestConsensus(consensusConfig, "TestUpdateReindexRoot")
 		if err != nil {
 			t.Fatalf("NewTestConsensus: %+v", err)
 		}
@@ -200,17 +199,17 @@ func TestReindexIntervalsEarlierThanReindexRoot(t *testing.T) {
 		}
 
 		// Add three children to the genesis: leftBlock, centerBlock, rightBlock
-		leftBlock, _, err := tc.AddBlock([]*externalapi.DomainHash{params.GenesisHash}, nil, nil)
+		leftBlock, _, err := tc.AddBlock([]*externalapi.DomainHash{consensusConfig.GenesisHash}, nil, nil)
 		if err != nil {
 			t.Fatalf("AddBlock: %+v", err)
 		}
 
-		centerBlock, _, err := tc.AddBlock([]*externalapi.DomainHash{params.GenesisHash}, nil, nil)
+		centerBlock, _, err := tc.AddBlock([]*externalapi.DomainHash{consensusConfig.GenesisHash}, nil, nil)
 		if err != nil {
 			t.Fatalf("AddBlock: %+v", err)
 		}
 
-		rightBlock, _, err := tc.AddBlock([]*externalapi.DomainHash{params.GenesisHash}, nil, nil)
+		rightBlock, _, err := tc.AddBlock([]*externalapi.DomainHash{consensusConfig.GenesisHash}, nil, nil)
 		if err != nil {
 			t.Fatalf("AddBlock: %+v", err)
 		}
@@ -248,7 +247,7 @@ func TestReindexIntervalsEarlierThanReindexRoot(t *testing.T) {
 			t.Fatalf("rightBlock interval not tight after reindex")
 		}
 
-		err = tc.ReachabilityManager().ValidateIntervals(params.GenesisHash)
+		err = tc.ReachabilityManager().ValidateIntervals(consensusConfig.GenesisHash)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -266,7 +265,7 @@ func TestReindexIntervalsEarlierThanReindexRoot(t *testing.T) {
 				t.Fatalf("AddBlock: %+v", err)
 			}
 
-			err = tc.ReachabilityManager().ValidateIntervals(params.GenesisHash)
+			err = tc.ReachabilityManager().ValidateIntervals(consensusConfig.GenesisHash)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -284,13 +283,13 @@ func TestReindexIntervalsEarlierThanReindexRoot(t *testing.T) {
 				t.Fatalf("AddBlock: %+v", err)
 			}
 
-			err = tc.ReachabilityManager().ValidateIntervals(params.GenesisHash)
+			err = tc.ReachabilityManager().ValidateIntervals(consensusConfig.GenesisHash)
 			if err != nil {
 				t.Fatal(err)
 			}
 		}
 
-		err = tc.ReachabilityManager().ValidateIntervals(params.GenesisHash)
+		err = tc.ReachabilityManager().ValidateIntervals(consensusConfig.GenesisHash)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -299,9 +298,9 @@ func TestReindexIntervalsEarlierThanReindexRoot(t *testing.T) {
 
 func TestTipsAfterReindexIntervalsEarlierThanReindexRoot(t *testing.T) {
 	reachabilityReindexWindow := uint64(10)
-	testutils.ForAllNets(t, true, func(t *testing.T, params *dagconfig.Params) {
+	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
 		factory := consensus.NewFactory()
-		tc, tearDown, err := factory.NewTestConsensus(params, false, "TestUpdateReindexRoot")
+		tc, tearDown, err := factory.NewTestConsensus(consensusConfig, "TestUpdateReindexRoot")
 		if err != nil {
 			t.Fatalf("NewTestConsensus: %s", err)
 		}
@@ -311,7 +310,7 @@ func TestTipsAfterReindexIntervalsEarlierThanReindexRoot(t *testing.T) {
 
 		// Add a chain of reachabilityReindexWindow + 1 blocks above the genesis.
 		// This will set the reindex root to the child of genesis
-		chainTipHash := params.GenesisHash
+		chainTipHash := consensusConfig.GenesisHash
 		for i := uint64(0); i < reachabilityReindexWindow+1; i++ {
 			chainTipHash, _, err = tc.AddBlock([]*externalapi.DomainHash{chainTipHash}, nil, nil)
 			if err != nil {
@@ -321,7 +320,7 @@ func TestTipsAfterReindexIntervalsEarlierThanReindexRoot(t *testing.T) {
 
 		// Add another block above the genesis block. This will trigger an
 		// earlier-than-reindex-root reindex
-		sideBlock, _, err := tc.AddBlock([]*externalapi.DomainHash{params.GenesisHash}, nil, nil)
+		sideBlock, _, err := tc.AddBlock([]*externalapi.DomainHash{consensusConfig.GenesisHash}, nil, nil)
 		if err != nil {
 			t.Fatalf("AddBlock: %+v", err)
 		}
@@ -333,7 +332,7 @@ func TestTipsAfterReindexIntervalsEarlierThanReindexRoot(t *testing.T) {
 			t.Fatalf("AddBlock: %+v", err)
 		}
 
-		err = tc.ReachabilityManager().ValidateIntervals(params.GenesisHash)
+		err = tc.ReachabilityManager().ValidateIntervals(consensusConfig.GenesisHash)
 		if err != nil {
 			t.Fatal(err)
 		}

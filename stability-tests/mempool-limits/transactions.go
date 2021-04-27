@@ -20,8 +20,8 @@ import (
 )
 
 const (
-	payAddress                       = "kaspasim:qr79e37hxdgkn4xjjmfxvqvayc5gsmsql2660d08u9ej9vnc8lzcywr265u64"
-	payAddressPrivateKey             = "0ec5d7308f65717f3f0c3e4d962d73056c1c255a16593b3989589281b51ad5bc"
+	payAddress                       = "kaspasim:qzuax2jhawd354e54thhpd9m9wg03pdzwjlpr4vtq3k7xrpumhhtwa2hkr3ep"
+	payAddressPrivateKey             = "05d8f681e954a550395ee2297fc1a14f6e801f554c0b9d48cd7165a7ea72ff77"
 	fundingCoinbaseTransactionAmount = 1000
 	outputsPerTransaction            = 3
 	transactionFee                   = 1000

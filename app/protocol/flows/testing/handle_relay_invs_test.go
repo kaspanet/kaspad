@@ -10,6 +10,7 @@ import (
 	"github.com/kaspanet/kaspad/app/protocol/flows/blockrelay"
 	peerpkg "github.com/kaspanet/kaspad/app/protocol/peer"
 	"github.com/kaspanet/kaspad/domain"
+	"github.com/kaspanet/kaspad/domain/consensus"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/blockheader"
@@ -127,6 +128,10 @@ type fakeRelayInvsContext struct {
 	getBlockInfoResponse                          *externalapi.BlockInfo
 	validateAndInsertBlockResponse                error
 	rwLock                                        sync.RWMutex
+}
+
+func (f *fakeRelayInvsContext) EstimateNetworkHashesPerSecond(windowSize int) (uint64, error) {
+	panic(errors.Errorf("called unimplemented function from test '%s'", f.testName))
 }
 
 func (f *fakeRelayInvsContext) GetBlockRelations(blockHash *externalapi.DomainHash) ([]*externalapi.DomainHash, *externalapi.DomainHash, []*externalapi.DomainHash, error) {
@@ -1496,7 +1501,7 @@ func TestHandleRelayInvs(t *testing.T) {
 		},
 	}
 
-	testutils.ForAllNets(t, true, func(t *testing.T, params *dagconfig.Params) {
+	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
 		for _, test := range tests {
 
 			// This is done to avoid race condition
@@ -1511,7 +1516,7 @@ func TestHandleRelayInvs(t *testing.T) {
 				errChan := make(chan error)
 				context := &fakeRelayInvsContext{
 					testName:    test.name,
-					params:      params,
+					params:      &consensusConfig.Params,
 					finishedIBD: make(chan struct{}),
 
 					trySetIBDRunningResponse:    true,

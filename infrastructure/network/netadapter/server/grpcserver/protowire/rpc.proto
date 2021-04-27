@@ -588,3 +588,14 @@ message GetInfoResponseMessage{
   uint64 mempoolSize = 2;
   RPCError error = 1000;
 }
+
+message EstimateNetworkHashesPerSecondRequestMessage{
+  uint32 windowSize = 1;
+}
+
+message EstimateNetworkHashesPerSecondResponseMessage{
+  uint64 networkHashesPerSecond = 1;
+  RPCError error = 1000;
+}
+
+
