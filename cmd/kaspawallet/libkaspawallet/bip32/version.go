@@ -17,17 +17,17 @@ var BitcoinMainnetPublic = [4]byte{
 }
 
 var KaspaMainnetPrivate = [4]byte{
-	0x01,
-	0x02,
 	0x03,
-	0x04,
+	0x8f,
+	0x2e,
+	0xf4,
 }
 
 var KaspaMainnetPublic = [4]byte{
-	0x01,
-	0x02,
-	0xfe,
-	0xff,
+	0x03,
+	0x8f,
+	0x33,
+	0x2e,
 }
 
 func toPublicVersion(version [4]byte) ([4]byte, error) {

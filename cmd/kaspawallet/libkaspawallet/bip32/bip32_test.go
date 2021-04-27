@@ -16,14 +16,16 @@ func TestBIP32SpecVectors(t *testing.T) {
 	}
 
 	type testVector struct {
-		seed  string
-		paths []testPath
+		seed    string
+		version [4]byte
+		paths   []testPath
 	}
 
 	// test vectors are copied from https://github.com/bitcoin/bips/blob/master/bip-0032.mediawiki#Test_Vectors
 	testVectors := []testVector{
 		{
-			seed: "000102030405060708090a0b0c0d0e0f",
+			seed:    "000102030405060708090a0b0c0d0e0f",
+			version: BitcoinMainnetPrivate,
 			paths: []testPath{
 				{
 					path:               "m",
@@ -58,7 +60,44 @@ func TestBIP32SpecVectors(t *testing.T) {
 			},
 		},
 		{
-			seed: "fffcf9f6f3f0edeae7e4e1dedbd8d5d2cfccc9c6c3c0bdbab7b4b1aeaba8a5a29f9c999693908d8a8784817e7b7875726f6c696663605d5a5754514e4b484542",
+			seed:    "000102030405060708090a0b0c0d0e0f",
+			version: KaspaMainnetPrivate,
+			paths: []testPath{
+				{
+					path:               "m",
+					extendedPublicKey:  "kpub2C2CKMtB3F5r4LEGRnS3o73omeQB3KJ5QfAzC5R3t9bpChBEZNitvn92JYeCTMtnR7oE1im7DhsxGqV72JErXFG9G3YnTHRnZPkGZLFE6PZ",
+					extendedPrivateKey: "kprv5y2qurMHCsXYqr9oKku3Ry75DcZgdraE3SFPPh1SKp4qKtr61qQeNypYTGztwUUiVauHWmjxaQXeUKHxj4QCuDG4ULpZHkvBoH9XX19ynXm",
+				},
+				{
+					path:               "m/0'",
+					extendedPublicKey:  "kpub2EHcK5Be8WCqCwMydYJgg99v6TxXRPn66GbtAAoArLo6ZyUQycFz3vVS5pCuCfoKRL5nsxJXxLx3FETEyKyEb8isTgM3NbL15KsprxXRXYP",
+					extendedPrivateKey: "kprv61JFuZekJ8eXzTHWXWmgK1DBYS831w4Ej3gHMnPZJ1G7hB9GS4wjW8AxEYMEMBrgCdnyt54pxmNXC5KgNegPhHLaYDVhXid5WHnNxE7Nir6",
+				},
+				{
+					path:               "m/0'/1",
+					extendedPublicKey:  "kpub2GTjWrjXXD5u3PQRMoCZGt3a9qwdRRWP2bGikSZynybJoWyYhQgJ1VPfVtfUccWfP3hqfNke4wSWqYC4Sf98GnYoktBtrELGi4Qc9xmGTUP",
+					extendedPrivateKey: "kprv63UP7MCdgqXbpuKxFmfYuk6qbp791xnXfNM7x4ANEe4KvieQ9sN3Th5BebYHx7dieiYfgtfG3UKwL1quVzUNUSq23zTRbUPwB66kV2rWPC8",
+				},
+				{
+					path:               "m/0'/1/2'",
+					extendedPublicKey:  "kpub2K51ZPZPE5wJuZCWcPbvdt5iNzp9gy6NN8WPzms8xqxkDNAfWAWiuvwb3urK4UwyjZoaGkjFSt1VHsLM9kgfLEheLnA2wBPxRkKkFDqc9zP",
+					extendedPrivateKey: "kprv665f9t2VPiP1h583WN4vGk8ypxyfHWNWzuaoCPTXQWRmLZqWxdCUN8d7CdkuvM9DABa4HMcBTt9qZDaf61PZbYGgQc1ykQdsnMqy7fTCNrm",
+				},
+				{
+					path:               "m/0'/1/2'/2",
+					extendedPublicKey:  "kpub2MJQPpgLQZcHz2gEJep1XPF2Tp6tKZQZocPhFjPcHHXMaTo2ZwD67WQWjEqhUH6iCsvkQmDCVcubrHgMF47s3qAuFZiDmNHnSSEbPpuRWiZ",
+					extendedPrivateKey: "kprv68K3zK9SaC3zmYbmCdH1AFJHunGPv6giSPU6TLyziwzNhfTt2PtqZi62sxANP1YeDyhkuGqkNhc12QV7HRvunvrior75JVTawLK8d8zN34Z",
+				},
+				{
+					path:               "m/0'/1/2'/2/1000000000",
+					extendedPublicKey:  "kpub2P2AsWHaXgzVWNTgRCNjq6F2G3gC94DbbrnFW1mkVMurHbCR6MTkNcZaN4keKYBRgaDHv7912pcCSi5NLuchu6L2878JZqsRFPrWduDKq9i",
+					extendedPrivateKey: "kprv6A2pTzkghKSCHtPDKAqjTxJHi1qhjbVkEdrehdN8w2NsQnsGYp9VppF6WowaHvfiqP71gdphDk982aVUpVwdutWG9LsJRQDJDfsVNMbtSap",
+				},
+			},
+		},
+		{
+			seed:    "fffcf9f6f3f0edeae7e4e1dedbd8d5d2cfccc9c6c3c0bdbab7b4b1aeaba8a5a29f9c999693908d8a8784817e7b7875726f6c696663605d5a5754514e4b484542",
+			version: BitcoinMainnetPrivate,
 			paths: []testPath{
 				{
 					path:               "m",
@@ -93,7 +132,44 @@ func TestBIP32SpecVectors(t *testing.T) {
 			},
 		},
 		{
-			seed: "4b381541583be4423346c643850da4b320e46a87ae3d2a4e6da11eba819cd4acba45d239319ac14f863b8d5ab5a0d0c64d2e8a1e7d1457df2e5a3c51c73235be",
+			seed:    "fffcf9f6f3f0edeae7e4e1dedbd8d5d2cfccc9c6c3c0bdbab7b4b1aeaba8a5a29f9c999693908d8a8784817e7b7875726f6c696663605d5a5754514e4b484542",
+			version: KaspaMainnetPrivate,
+			paths: []testPath{
+				{
+					path:               "m",
+					extendedPublicKey:  "kpub2C2CKMtB3F5r3wjbXwWLFJma1qYbiwYu6ExiV29srXigVgCRjXVqMgJceejBAcFkKg31vPRGcnPCzdDL9VA1fAG67ykFHmvSsmRNqKZg1po",
+					extendedPrivateKey: "kprv5y2qurMHCsXYqTf8RuyKtApqToi7KUq3j237gdkGJCBhcssHBzBaosz8oLmx7z2ojdeiG4CQrWZqZr24mUnuWaapvktoS6pvNXmkszbHsFE",
+				},
+				{
+					path:               "m/0",
+					extendedPublicKey:  "kpub2FHwb5a8XFuvaDKtfitDK7B6NoHrRv3BeQi5eqBKvwaeBeeQJnquWWssE7h4xhGBXzXBncR21sEB9ne22drRzkvNQ2UvC84q1FY3GVzjZr1",
+					extendedPrivateKey: "kprv62JbBa3EgtMdMjFRZhMCwyEMpmTN2TKLHBnUrSmiNc3fJrKFmFXexiZPNr3km3se9HtYA4c9HfyxvMetKmHxSokDvwJrpazfVwgKFEAdr1L",
+				},
+				{
+					path:               "m/0/2147483647'",
+					extendedPublicKey:  "kpub2GSzqgbeuA62k5Y56AsrnSremYWkyQCsjZncaE66agM2dwsrvgGDiafTqVwBiRsHKWSjSTGdK5empTWMoYLYiuNzw76yYrKqsdoe7KSjW9n",
+					extendedPrivateKey: "kprv63TeSB4m4nXjXbTbz9LrRJuvDWgGZwV2NLs1mqgV2Lp3m9YiP8wyAnLyzCXjVJc83XDRw5onLgV5MbPf48u627BnMfYCb6ivHj1r1gJwAAq",
+				},
+				{
+					path:               "m/0/2147483647'/1",
+					extendedPublicKey:  "kpub2KFyFhab4oPDqhDD9q2RkPnt75PG5b8941HURHkRtZhUJmk2EBnvcV3qgJ8KWJZZuguHH6MrxCxbuFmNiSmVzEquXPJpmPm3oQUbMkjZU7h",
+					extendedPrivateKey: "kprv66GcrC3hERpvdD8k3oVRPFr9Z3Ymg8QHgnMscuLpLEAVRyQsgeUg4gjMpzjMX1opMUa8gNtAkEAHgJAp72RU2b15VS51SChJmXSaVHSHVgJ",
+				},
+				{
+					path:               "m/0/2147483647'/1/2147483646'",
+					extendedPublicKey:  "kpub2LS1AfWwgCLw8eSotJqy7uV51ord8Zke5i1Mx1SqjKxim84xKriw91QwJxFphg61s8Yv5bRZzpHTYtvmQKt1hbYMoHdKKgrTfdZAtem6FS7",
+					extendedPrivateKey: "kprv67Sem9z3qpndvANLnHJxkmYLTn28j72niV5m9d3EAzRjtKjonKQgbD6TThTk9SC6u3rpzCfA8bjsVRGBcyKxiRgFKNcKaQiw77T6Z6V751r",
+				},
+				{
+					path:               "m/0/2147483647'/1/2147483646'/2",
+					extendedPublicKey:  "kpub2Mo386jTCNfAsudhcNyf6es3QsPjNtfijsdFMnoLN7pJqKQXVVehKaMwPML6qFSiPBm9MWvytXJT3KzGERZv1rPwSTTQG49CLvkMZGaHgA1",
+					extendedPrivateKey: "kprv68ogibCZN16sfRZEWMSejWvJrqZEyRwsNeheZQPionHKxX5NwxLSmn3TY78kJTHAwMiZGxHyahaZXy9hMHhBmQQy8E7pdpreoUnedk17vmK",
+				},
+			},
+		},
+		{
+			seed:    "4b381541583be4423346c643850da4b320e46a87ae3d2a4e6da11eba819cd4acba45d239319ac14f863b8d5ab5a0d0c64d2e8a1e7d1457df2e5a3c51c73235be",
+			version: BitcoinMainnetPrivate,
 			paths: []testPath{
 				{
 					path:               "m",
@@ -107,6 +183,22 @@ func TestBIP32SpecVectors(t *testing.T) {
 				},
 			},
 		},
+		{
+			seed:    "4b381541583be4423346c643850da4b320e46a87ae3d2a4e6da11eba819cd4acba45d239319ac14f863b8d5ab5a0d0c64d2e8a1e7d1457df2e5a3c51c73235be",
+			version: KaspaMainnetPrivate,
+			paths: []testPath{
+				{
+					path:               "m",
+					extendedPublicKey:  "kpub2C2CKMtB3F5r31Bm4L18TJ2btUshUoiAoajGtKBS8DoUTvRhPfjoJwY98eG9zCqPVknskPJH1TD4RvrEzCCT5VvEFDeU2LNHfUw5MkWwVFF",
+					extendedPrivateKey: "kprv5y2qurMHCsXYpX7HxJU86A5sLT3D5LzKSMog5vmpZtGVb86Yr8RYm9DfHLW851G8pLKTpytWkwJYvVdNzuwLJ465T3TSdYAtfFS7Xx2owSo",
+				},
+				{
+					path:               "m/0'",
+					extendedPublicKey:  "kpub2EPQ4KiJicTCEYHAHULdWYnGaqV5df85D4yDhYsH4XiqiwZ9yAWfPQKrSN6fiZS8h8HiXM41rQQZ4PnavS8dekCAvKbMaBs69fHz2AFgp7S",
+					extendedPrivateKey: "kprv61Q3epBQtEtu24ChBSod9QqY2oebECQDqr3cuATfWCBrr9E1RdCQqc1Nb6rUQxb4GUxsqvgPQfw1a3GXa8X63pHhtBNVNhShnGPmVHW2UAU",
+				},
+			},
+		},
 	}
 
 	for i, vector := range testVectors {
@@ -115,7 +207,7 @@ func TestBIP32SpecVectors(t *testing.T) {
 			t.Fatalf("DecodeString: %+v", err)
 		}
 
-		masterKey, err := NewMaster(seed, BitcoinMainnetPrivate)
+		masterKey, err := NewMaster(seed, vector.version)
 		if err != nil {
 			t.Fatalf("NewMaster: %+v", err)
 		}
