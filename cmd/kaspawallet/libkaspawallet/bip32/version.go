@@ -42,54 +42,54 @@ var KaspaMainnetPublic = [4]byte{
 // kaspa testnet bip32 public extended keys.
 var KaspaTestnetPrivate = [4]byte{
 	0x03,
-	144,
-	158,
-	7,
+	0x90,
+	0x9e,
+	0x07,
 }
 
 // KaspaTestnetPublic is the version that is used for
 // kaspa testnet bip32 public extended keys.
 var KaspaTestnetPublic = [4]byte{
-	3,
-	144,
-	162,
-	65,
+	0x03,
+	0x90,
+	0xa2,
+	0x41,
 }
 
 // KaspaDevnetPrivate is the version that is used for
 // kaspa devnet bip32 public extended keys.
 var KaspaDevnetPrivate = [4]byte{
-	3,
-	139,
-	61,
-	128,
+	0x03,
+	0x8b,
+	0x3d,
+	0x80,
 }
 
 // KaspaDevnetPublic is the version that is used for
 // kaspa devnet bip32 public extended keys.
 var KaspaDevnetPublic = [4]byte{
-	3,
-	139,
-	65,
-	186,
+	0x03,
+	0x8b,
+	0x41,
+	0xba,
 }
 
 // KaspaSimnetPrivate is the version that is used for
 // kaspa simnet bip32 public extended keys.
 var KaspaSimnetPrivate = [4]byte{
-	3,
-	144,
-	66,
-	66,
+	0x03,
+	0x90,
+	0x42,
+	0x42,
 }
 
 // KaspaSimnetPublic is the version that is used for
 // kaspa simnet bip32 public extended keys.
 var KaspaSimnetPublic = [4]byte{
-	3,
-	144,
-	70,
-	125,
+	0x03,
+	0x90,
+	0x46,
+	0x7d,
 }
 
 func toPublicVersion(version [4]byte) ([4]byte, error) {
