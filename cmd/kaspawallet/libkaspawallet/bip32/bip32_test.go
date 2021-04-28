@@ -199,6 +199,54 @@ func TestBIP32SpecVectors(t *testing.T) {
 				},
 			},
 		},
+		{
+			seed:    "4b381541583be4423346c643850da4b320e46a87ae3d2a4e6da11eba819cd4acba45d239319ac14f863b8d5ab5a0d0c64d2e8a1e7d1457df2e5a3c51c73235be",
+			version: KaspaTestnetPrivate,
+			paths: []testPath{
+				{
+					path:               "m",
+					extendedPublicKey:  "ktub1vi816jr1DomD4Qct6C1n3qZ98kvP4TCgq21QUVkJ1xTADT74WfStAQAv5NA5ACsLYRLiAEs2YMz91LoWXh6YY6bFd6BidfhFE7dxhSVK7H",
+					extendedPrivateKey: "ktrv5himbbCxArFTzaL9n4f1Qutpb6vRybjMKc6Qc668jgRUHR7xWyMCLN5h4mc89xdcf7wvnkq6n2TUda7wXFRym6GSTSuAKqUJEzcg8smnbs9",
+				},
+				{
+					path:               "m/0'",
+					extendedPublicKey:  "ktub1y5Kk4ZygbB7QbW27EXWqJbDqVNJXus76KFxDiBbEKspREaZe1SJxdBtDoCfoWocXuvBV7zbsVZUmUH9SmdH7nNXvj35GVAVjQUYd41EFiN",
+					extendedPrivateKey: "ktrv5k5yLZ35rDcpC7RZ1CzWUAeVHTXp8T9Fj6LMRKmyfzLqYSFR6U84QpsQNXxUVuxY7GbLohcyRm5wH7m66U1jWrU4tapD4zk7N1aL6C3rnp7",
+				},
+			},
+		},
+		{
+			seed:    "4b381541583be4423346c643850da4b320e46a87ae3d2a4e6da11eba819cd4acba45d239319ac14f863b8d5ab5a0d0c64d2e8a1e7d1457df2e5a3c51c73235be",
+			version: KaspaDevnetPrivate,
+			paths: []testPath{
+				{
+					path:               "m",
+					extendedPublicKey:  "kdub4zZ57oeuxodRE6ZjEtX6KnUpww7hSaHbRg745QUF8GSe3Y6EKZa6tkjuJvCw8cTYni4dWNgh3tr5HoER7gTzpEyQcM4VNJmxyu9H2k8C3SL",
+					extendedPrivateKey: "kdrv8mZiiJ828S581cVG8rz5xeY6PuHD37Zk4TBTH24dZvufAjm5n2FrLxRRTcSuDQtJ7HbDayGvoNwZnN1Z8QCt2o9FpAsTyWaZyfeKCvnUDsn",
+				},
+				{
+					path:               "m/0'",
+					extendedPublicKey:  "kdub52vGrmV3eAzmRdf8U2rbP3EVeHj5bRhVqALzteA64aN1JZDgu4LxyDXcce3Sry4Hz5ZUHLSRtr3ZvGAm3vQBPVFMHT1NvAGmU5WBhDEnN5e",
+					extendedPrivateKey: "kdrv8ovvTFx9ooSUD9afN1Kb1uHm6FtbBxyeTwRQ6FkUWEq2RktYMX2iRRD8mNoFZNDDZSEdbv4oT7a2RuehhcndnZLtFJnWifrP6gbyAN52eWX",
+				},
+			},
+		},
+		{
+			seed:    "4b381541583be4423346c643850da4b320e46a87ae3d2a4e6da11eba819cd4acba45d239319ac14f863b8d5ab5a0d0c64d2e8a1e7d1457df2e5a3c51c73235be",
+			version: KaspaSimnetPrivate,
+			paths: []testPath{
+				{
+					path:               "m",
+					extendedPublicKey:  "ksub8Dp9tLuSVjDpAnKQ1sEyyZfrLiYhUQ7jd5TD92tgeX7mTQdyCwZYDNuhiN2WC23BwhGKgKvoJaWSPERp5gSuV4h2QEt1JwHyrSCjoEf5VHR",
+					extendedPrivateKey: "ksrv3h87jvsCMMY9HKHc8DaPaA1jmh2mK4vq3mrRrWrPEFKNcvPCaYjx2tHqYCMLkgu1qonn9ScvgKMgeUG5pkgVdEgB579ytyAQBLrnezdttFb",
+				},
+				{
+					path:               "m/0'",
+					extendedPublicKey:  "ksub8GBMdJjaB6bANKQoF1aV2pRX35A5dFXe2Zh9xGaXaq38iRmRnSLQHqhR25s1vNdw94mATHgY9Xhw1hNA1vP64Jxy5LptrnnnLcZeTbX9Sng",
+					extendedPrivateKey: "ksrv3jVKUthL2iuVUrP1MMutdQmQU3e9TvLjTG6NfkYEAZEjswWfA3Wp7M5Yqxhh6eDwHxSCAPQoL3z9J1uEPyGFNzsoWF52e8SDJMpScP8xuRw",
+				},
+			},
+		},
 	}
 
 	for i, vector := range testVectors {

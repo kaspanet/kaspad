@@ -38,12 +38,72 @@ var KaspaMainnetPublic = [4]byte{
 	0x2e,
 }
 
+// KaspaTestnetPrivate is the version that is used for
+// kaspa testnet bip32 public extended keys.
+var KaspaTestnetPrivate = [4]byte{
+	0x03,
+	144,
+	158,
+	7,
+}
+
+// KaspaTestnetPublic is the version that is used for
+// kaspa testnet bip32 public extended keys.
+var KaspaTestnetPublic = [4]byte{
+	3,
+	144,
+	162,
+	65,
+}
+
+// KaspaDevnetPrivate is the version that is used for
+// kaspa devnet bip32 public extended keys.
+var KaspaDevnetPrivate = [4]byte{
+	3,
+	139,
+	61,
+	128,
+}
+
+// KaspaDevnetPublic is the version that is used for
+// kaspa devnet bip32 public extended keys.
+var KaspaDevnetPublic = [4]byte{
+	3,
+	139,
+	65,
+	186,
+}
+
+// KaspaSimnetPrivate is the version that is used for
+// kaspa simnet bip32 public extended keys.
+var KaspaSimnetPrivate = [4]byte{
+	3,
+	144,
+	66,
+	66,
+}
+
+// KaspaSimnetPublic is the version that is used for
+// kaspa simnet bip32 public extended keys.
+var KaspaSimnetPublic = [4]byte{
+	3,
+	144,
+	70,
+	125,
+}
+
 func toPublicVersion(version [4]byte) ([4]byte, error) {
 	switch version {
 	case BitcoinMainnetPrivate:
 		return BitcoinMainnetPublic, nil
 	case KaspaMainnetPrivate:
 		return KaspaMainnetPublic, nil
+	case KaspaTestnetPrivate:
+		return KaspaTestnetPublic, nil
+	case KaspaDevnetPrivate:
+		return KaspaDevnetPublic, nil
+	case KaspaSimnetPrivate:
+		return KaspaSimnetPublic, nil
 	}
 
 	return [4]byte{}, errors.Errorf("unknown version %x", version)
@@ -54,6 +114,12 @@ func isPrivateVersion(version [4]byte) bool {
 	case BitcoinMainnetPrivate:
 		return true
 	case KaspaMainnetPrivate:
+		return true
+	case KaspaTestnetPrivate:
+		return true
+	case KaspaDevnetPrivate:
+		return true
+	case KaspaSimnetPrivate:
 		return true
 	}
 
