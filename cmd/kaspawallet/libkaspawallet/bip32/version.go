@@ -4,6 +4,7 @@ import "github.com/pkg/errors"
 
 // BitcoinMainnetPrivate is the version that is used for
 // bitcoin mainnet bip32 private extended keys.
+// Ecnodes to xprv in base58.
 var BitcoinMainnetPrivate = [4]byte{
 	0x04,
 	0x88,
@@ -13,6 +14,7 @@ var BitcoinMainnetPrivate = [4]byte{
 
 // BitcoinMainnetPublic is the version that is used for
 // bitcoin mainnet bip32 public extended keys.
+// Ecnodes to xpub in base58.
 var BitcoinMainnetPublic = [4]byte{
 	0x04,
 	0x88,
@@ -22,6 +24,7 @@ var BitcoinMainnetPublic = [4]byte{
 
 // KaspaMainnetPrivate is the version that is used for
 // kaspa mainnet bip32 private extended keys.
+// Ecnodes to xprv in base58.
 var KaspaMainnetPrivate = [4]byte{
 	0x03,
 	0x8f,
@@ -31,6 +34,7 @@ var KaspaMainnetPrivate = [4]byte{
 
 // KaspaMainnetPublic is the version that is used for
 // kaspa mainnet bip32 public extended keys.
+// Ecnodes to kpub in base58.
 var KaspaMainnetPublic = [4]byte{
 	0x03,
 	0x8f,
@@ -40,6 +44,7 @@ var KaspaMainnetPublic = [4]byte{
 
 // KaspaTestnetPrivate is the version that is used for
 // kaspa testnet bip32 public extended keys.
+// Ecnodes to ktrv in base58.
 var KaspaTestnetPrivate = [4]byte{
 	0x03,
 	0x90,
@@ -49,6 +54,7 @@ var KaspaTestnetPrivate = [4]byte{
 
 // KaspaTestnetPublic is the version that is used for
 // kaspa testnet bip32 public extended keys.
+// Ecnodes to ktub in base58.
 var KaspaTestnetPublic = [4]byte{
 	0x03,
 	0x90,
@@ -58,6 +64,7 @@ var KaspaTestnetPublic = [4]byte{
 
 // KaspaDevnetPrivate is the version that is used for
 // kaspa devnet bip32 public extended keys.
+// Ecnodes to kdrv in base58.
 var KaspaDevnetPrivate = [4]byte{
 	0x03,
 	0x8b,
@@ -67,6 +74,7 @@ var KaspaDevnetPrivate = [4]byte{
 
 // KaspaDevnetPublic is the version that is used for
 // kaspa devnet bip32 public extended keys.
+// Ecnodes to xdub in base58.
 var KaspaDevnetPublic = [4]byte{
 	0x03,
 	0x8b,
@@ -76,6 +84,7 @@ var KaspaDevnetPublic = [4]byte{
 
 // KaspaSimnetPrivate is the version that is used for
 // kaspa simnet bip32 public extended keys.
+// Ecnodes to ksrv in base58.
 var KaspaSimnetPrivate = [4]byte{
 	0x03,
 	0x90,
@@ -85,6 +94,7 @@ var KaspaSimnetPrivate = [4]byte{
 
 // KaspaSimnetPublic is the version that is used for
 // kaspa simnet bip32 public extended keys.
+// Ecnodes to xsub in base58.
 var KaspaSimnetPublic = [4]byte{
 	0x03,
 	0x90,
