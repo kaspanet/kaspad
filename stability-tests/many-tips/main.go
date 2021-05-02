@@ -83,7 +83,7 @@ func realMain() error {
 	if err != nil {
 		return err
 	}
-	// mine block at current time
+	// mine block at the current time
 	err = mineBlock(rpcClient, miningAddress)
 	if err != nil {
 		return errors.Wrap(err, "Error in mineBlock")
