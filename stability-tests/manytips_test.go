@@ -4,16 +4,16 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/testutils"
-	"github.com/kaspanet/kaspad/domain/dagconfig"
 	"testing"
 	"time"
 )
 
-// TestManyTips checks what happens when there are 10,000 tips.
+// TestManyTips checks how much time and how many blocks need to add until we get only one
+// tip in a DAG that contains 10,000 tips.
 func TestManyTips(t *testing.T) {
-	testutils.ForAllNets(t, true, func(t *testing.T, params *dagconfig.Params) {
+	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
 		factory := consensus.NewFactory()
-		testConsensus, teardown, err := factory.NewTestConsensus(params, false, "TestManyTips")
+		testConsensus, teardown, err := factory.NewTestConsensus(consensusConfig, "TestManyTips")
 		if err != nil {
 			t.Fatalf("Error setting up testConsensus: %+v", err)
 		}
@@ -21,7 +21,7 @@ func TestManyTips(t *testing.T) {
 
 		// Mines a chain of 1k blocks
 		chainLength := 1000
-		chainHash := params.GenesisHash
+		chainHash := consensusConfig.GenesisHash
 		for i := 0; i < chainLength; i++ {
 			chainHash, _, err = testConsensus.AddBlock([]*externalapi.DomainHash{chainHash}, nil, nil)
 			if err != nil {
@@ -44,9 +44,9 @@ func TestManyTips(t *testing.T) {
 			}
 		}
 		durationCreateTips := time.Since(startTimeCreateTips)
-		t.Logf("time to create 1k tips %s\n", durationCreateTips.String())
+		t.Logf("Took %s to create 1k tips.", durationCreateTips)
 
-		// Starts mining as BuildBlock will suggest
+		// Starts mining with BuildBlock.
 		currentTips, err := testConsensus.Tips()
 		if err != nil {
 			t.Fatalf("Failed get the current tips : %v", err)
@@ -57,26 +57,26 @@ func TestManyTips(t *testing.T) {
 			addedBlock++
 			block, err := testConsensus.BuildBlock(&emptyCoinbase, nil)
 			if err != nil {
-				t.Fatalf("GetBlockTemplate: %+v", err)
+				t.Fatalf("BuildBlock: %+v", err)
 			}
 			startTimeValidate := time.Now()
 			_, err = testConsensus.ValidateAndInsertBlock(block)
 			if err != nil {
 				t.Fatalf("testConsensus.ValidateAndInsertBlock with a block "+
-					"straight from GetBlockTemplate should not fail: %v", err)
+					"straight from BuildBlock should not fail: %v", err)
 			}
 			durationValidate := time.Since(startTimeValidate)
 			if durationValidate.Seconds() > 1 {
-				t.Errorf("took %s to validate one block \n", durationValidate.String())
+				t.Errorf("Took %s to validate one block \n", durationValidate)
 			}
 			currentTips, err = testConsensus.Tips()
 		}
-		duration := time.Since(startTime)
-		t.Logf("We added %d blocks to reach a state where we have a single tip and it took %s\n", addedBlock, duration.String())
+		t.Logf("We added %d blocks to reach a state where we have a single tip(after having 10k tips),"+
+			" and it took %s\n", addedBlock, time.Since(startTime))
 	})
 }
 
-// Conclusions - TestManyTips:
+// Conclusions TestManyTips :
 // #kaspa-simnet : addedBlocks: 1111, times: 1m6.157471884s, 1m2.377676168s, 1m6.284468597s
 // #kaspa-devnet : addedBlocks: 1111, times: 1m4.256895465s, 1m1.469580168s, 1m4.663453651s
 // #kaspa-mainet : addedBlocks: 1111, times: 1m4.179190308s , 59.763526509s, 1m3.062770231s

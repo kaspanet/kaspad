@@ -10,9 +10,8 @@ import (
 
 var (
 	backendLog = logger.NewBackend()
-	//todo:tal
-	log   = backendLog.Logger("MATS")
-	spawn = panics.GoroutineWrapperFunc(log)
+	log        = backendLog.Logger("MATS")
+	spawn      = panics.GoroutineWrapperFunc(log)
 )
 
 func initLog(logFile, errLogFile string) {
@@ -27,6 +26,4 @@ func initLog(logFile, errLogFile string) {
 	}
 	log.SetLevel(level)
 	common.InitBackend(backendLog, logFile, errLogFile)
-	//logger.InitLog(logFile, errLogFile)
-	//common.UseLogger(backendLog, log.Level())
 }

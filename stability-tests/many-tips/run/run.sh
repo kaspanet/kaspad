@@ -1,6 +1,6 @@
 #!/bin/bash
 set -e
-manyTips --simnet -n=1000 --profile=7000
+many-tips --devnet -n=1000 --profile=7000
 TEST_EXIT_CODE=$?
 
 echo "Exit code: $TEST_EXIT_CODE"
