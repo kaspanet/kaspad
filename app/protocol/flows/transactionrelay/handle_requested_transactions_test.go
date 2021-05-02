@@ -7,7 +7,6 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/testutils"
-	"github.com/kaspanet/kaspad/domain/dagconfig"
 	"github.com/kaspanet/kaspad/infrastructure/config"
 	"github.com/kaspanet/kaspad/infrastructure/logger"
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter"
@@ -20,11 +19,11 @@ import (
 // TestHandleRequestedTransactionsNotFound tests the flow of  HandleRequestedTransactions
 // when the requested transactions don't found in the mempool.
 func TestHandleRequestedTransactionsNotFound(t *testing.T) {
-	testutils.ForAllNets(t, true, func(t *testing.T, params *dagconfig.Params) {
+	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
 		var log = logger.RegisterSubSystem("PROT")
 		var spawn = panics.GoroutineWrapperFunc(log)
 		factory := consensus.NewFactory()
-		tc, teardown, err := factory.NewTestConsensus(params, false, "TestHandleRequestedTransactionsNotFound")
+		tc, teardown, err := factory.NewTestConsensus(consensusConfig, "TestHandleRequestedTransactionsNotFound")
 		if err != nil {
 			t.Fatalf("Error setting up test Consensus: %+v", err)
 		}
@@ -35,7 +34,7 @@ func TestHandleRequestedTransactionsNotFound(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Failed to create a NetAdapter: %v", err)
 		}
-		domainInstance, err := domain.New(params, tc.Database(), false)
+		domainInstance, err := domain.New(consensusConfig, tc.Database())
 		if err != nil {
 			t.Fatalf("Failed to set up a domain Instance: %v", err)
 		}

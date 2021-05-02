@@ -14,7 +14,6 @@ import (
 	"testing"
 
 	"github.com/kaspanet/kaspad/app/appmessage"
-	"github.com/kaspanet/kaspad/domain/dagconfig"
 	"github.com/kaspanet/kaspad/infrastructure/config"
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter"
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
@@ -48,12 +47,12 @@ func (m *mocTransactionsRelayContext) OnTransactionAddedToMempool() {
 // TestHandleRelayedTransactionsNotFound tests the flow of  HandleRelayedTransactions when the peer doesn't
 // have the requested transactions in the mempool.
 func TestHandleRelayedTransactionsNotFound(t *testing.T) {
-	testutils.ForAllNets(t, true, func(t *testing.T, params *dagconfig.Params) {
+	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
 
 		var log = logger.RegisterSubSystem("PROT")
 		var spawn = panics.GoroutineWrapperFunc(log)
 		factory := consensus.NewFactory()
-		tc, teardown, err := factory.NewTestConsensus(params, false, "TestHandleRelayedTransactionsNotFound")
+		tc, teardown, err := factory.NewTestConsensus(consensusConfig, "TestHandleRelayedTransactionsNotFound")
 		if err != nil {
 			t.Fatalf("Error setting up test consensus: %+v", err)
 		}
@@ -64,7 +63,7 @@ func TestHandleRelayedTransactionsNotFound(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Failed to create a NetAdapter: %v", err)
 		}
-		domainInstance, err := domain.New(params, tc.Database(), false)
+		domainInstance, err := domain.New(consensusConfig, tc.Database())
 		if err != nil {
 			t.Fatalf("Failed to set up a domain instance: %v", err)
 		}
@@ -143,10 +142,10 @@ func TestHandleRelayedTransactionsNotFound(t *testing.T) {
 // TestOnClosedIncomingRoute verifies that an appropriate error message will be returned when
 // trying to dequeue a message from a closed route.
 func TestOnClosedIncomingRoute(t *testing.T) {
-	testutils.ForAllNets(t, true, func(t *testing.T, params *dagconfig.Params) {
+	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
 
 		factory := consensus.NewFactory()
-		tc, teardown, err := factory.NewTestConsensus(params, false, "TestOnClosedIncomingRoute")
+		tc, teardown, err := factory.NewTestConsensus(consensusConfig, "TestOnClosedIncomingRoute")
 		if err != nil {
 			t.Fatalf("Error setting up test consensus: %+v", err)
 		}
@@ -157,7 +156,7 @@ func TestOnClosedIncomingRoute(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Failed to creat a NetAdapter : %v", err)
 		}
-		domainInstance, err := domain.New(params, tc.Database(), false)
+		domainInstance, err := domain.New(consensusConfig, tc.Database())
 		if err != nil {
 			t.Fatalf("Failed to set up a domain instance: %v", err)
 		}
