@@ -2,39 +2,37 @@ package blockvalidator_test
 
 import (
 	"bytes"
-	"github.com/kaspanet/kaspad/domain/consensus/model"
-	"github.com/kaspanet/kaspad/domain/consensus/model/testapi"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/merkle"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/utxo"
 	"math"
 	"testing"
 
-	"github.com/kaspanet/kaspad/domain/consensus/utils/blockheader"
-
 	"github.com/kaspanet/kaspad/domain/consensus"
+	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+	"github.com/kaspanet/kaspad/domain/consensus/model/testapi"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/blockheader"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/merkle"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/subnetworks"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/testutils"
-	"github.com/kaspanet/kaspad/domain/dagconfig"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/utxo"
 	"github.com/pkg/errors"
 )
 
 func TestChainedTransactions(t *testing.T) {
-	testutils.ForAllNets(t, true, func(t *testing.T, params *dagconfig.Params) {
-		params.BlockCoinbaseMaturity = 0
+	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
+		consensusConfig.BlockCoinbaseMaturity = 0
 
 		factory := consensus.NewFactory()
 
-		tc, teardown, err := factory.NewTestConsensus(params, false, "TestChainedTransactions")
+		tc, teardown, err := factory.NewTestConsensus(consensusConfig, "TestChainedTransactions")
 		if err != nil {
 			t.Fatalf("Error setting up consensus: %+v", err)
 		}
 		defer teardown(false)
 
-		fundingBlockHash, _, err := tc.AddBlock([]*externalapi.DomainHash{params.GenesisHash}, nil, nil)
+		fundingBlockHash, _, err := tc.AddBlock([]*externalapi.DomainHash{consensusConfig.GenesisHash}, nil, nil)
 		if err != nil {
 			t.Fatalf("AddBlock: %+v", err)
 		}
@@ -93,9 +91,9 @@ func TestChainedTransactions(t *testing.T) {
 // TestCheckBlockSanity tests the CheckBlockSanity function to ensure it works
 // as expected.
 func TestCheckBlockSanity(t *testing.T) {
-	testutils.ForAllNets(t, true, func(t *testing.T, params *dagconfig.Params) {
+	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
 		factory := consensus.NewFactory()
-		tc, teardown, err := factory.NewTestConsensus(params, false, "TestCheckBlockSanity")
+		tc, teardown, err := factory.NewTestConsensus(consensusConfig, "TestCheckBlockSanity")
 		if err != nil {
 			t.Fatalf("Error setting up consensus: %+v", err)
 		}
@@ -1000,15 +998,15 @@ var blockWithWrongTxOrder = externalapi.DomainBlock{
 }
 
 func TestCheckBlockHashMerkleRoot(t *testing.T) {
-	testutils.ForAllNets(t, true, func(t *testing.T, params *dagconfig.Params) {
+	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
 		factory := consensus.NewFactory()
-		tc, teardown, err := factory.NewTestConsensus(params, false, "TestCheckBlockHashMerkleRoot")
+		tc, teardown, err := factory.NewTestConsensus(consensusConfig, "TestCheckBlockHashMerkleRoot")
 		if err != nil {
 			t.Fatalf("Error setting up tc: %+v", err)
 		}
 		defer teardown(false)
 
-		block, _, err := tc.BuildBlockWithParents([]*externalapi.DomainHash{params.GenesisHash}, nil, nil)
+		block, _, err := tc.BuildBlockWithParents([]*externalapi.DomainHash{consensusConfig.GenesisHash}, nil, nil)
 		if err != nil {
 			t.Fatalf("BuildBlockWithParents: %+v", err)
 		}
@@ -1030,16 +1028,16 @@ func TestCheckBlockHashMerkleRoot(t *testing.T) {
 }
 
 func TestBlockSize(t *testing.T) {
-	testutils.ForAllNets(t, true, func(t *testing.T, params *dagconfig.Params) {
+	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
 
 		factory := consensus.NewFactory()
-		tc, teardown, err := factory.NewTestConsensus(params, false, "TestBlockSize")
+		tc, teardown, err := factory.NewTestConsensus(consensusConfig, "TestBlockSize")
 		if err != nil {
 			t.Fatalf("Error setting up tc: %+v", err)
 		}
 		defer teardown(false)
 
-		block, _, err := initBlockWithInvalidBlockSize(params, tc)
+		block, _, err := initBlockWithInvalidBlockSize(consensusConfig, tc)
 		if err != nil {
 			t.Fatalf("Error BuildBlockWithParents : %+v", err)
 		}
@@ -1055,7 +1053,7 @@ func TestBlockSize(t *testing.T) {
 	})
 }
 
-func initBlockWithInvalidBlockSize(params *dagconfig.Params, tc testapi.TestConsensus) (*externalapi.DomainBlock, externalapi.UTXODiff, error) {
+func initBlockWithInvalidBlockSize(consensusConfig *consensus.Config, tc testapi.TestConsensus) (*externalapi.DomainBlock, externalapi.UTXODiff, error) {
 	emptyCoinbase := externalapi.DomainCoinbaseData{
 		ScriptPublicKey: &externalapi.ScriptPublicKey{
 			Script:  nil,
@@ -1084,20 +1082,20 @@ func initBlockWithInvalidBlockSize(params *dagconfig.Params, tc testapi.TestCons
 		Payload: []byte{0x01},
 	}
 
-	return tc.BuildBlockWithParents([]*externalapi.DomainHash{params.GenesisHash}, &emptyCoinbase, []*externalapi.DomainTransaction{tx})
+	return tc.BuildBlockWithParents([]*externalapi.DomainHash{consensusConfig.GenesisHash}, &emptyCoinbase, []*externalapi.DomainTransaction{tx})
 }
 
 func TestCheckBlockDuplicateTransactions(t *testing.T) {
-	testutils.ForAllNets(t, true, func(t *testing.T, params *dagconfig.Params) {
+	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
 
 		factory := consensus.NewFactory()
-		tc, teardown, err := factory.NewTestConsensus(params, false, "TestCheckBlockDuplicateTransactions")
+		tc, teardown, err := factory.NewTestConsensus(consensusConfig, "TestCheckBlockDuplicateTransactions")
 		if err != nil {
 			t.Fatalf("Error setting up tc: %+v", err)
 		}
 		defer teardown(false)
 
-		block, _, err := initBlockWithDuplicateTransaction(params, tc)
+		block, _, err := initBlockWithDuplicateTransaction(consensusConfig, tc)
 		if err != nil {
 			t.Fatalf("Error BuildBlockWithParents : %+v", err)
 		}
@@ -1113,7 +1111,7 @@ func TestCheckBlockDuplicateTransactions(t *testing.T) {
 	})
 }
 
-func initBlockWithDuplicateTransaction(params *dagconfig.Params, tc testapi.TestConsensus) (*externalapi.DomainBlock, externalapi.UTXODiff, error) {
+func initBlockWithDuplicateTransaction(consensusConfig *consensus.Config, tc testapi.TestConsensus) (*externalapi.DomainBlock, externalapi.UTXODiff, error) {
 	emptyCoinbase := externalapi.DomainCoinbaseData{
 		ScriptPublicKey: &externalapi.ScriptPublicKey{
 			Script:  nil,
@@ -1141,20 +1139,20 @@ func initBlockWithDuplicateTransaction(params *dagconfig.Params, tc testapi.Test
 		SubnetworkID: subnetworks.SubnetworkIDNative,
 	}
 
-	return tc.BuildBlockWithParents([]*externalapi.DomainHash{params.GenesisHash}, &emptyCoinbase, []*externalapi.DomainTransaction{tx, tx})
+	return tc.BuildBlockWithParents([]*externalapi.DomainHash{consensusConfig.GenesisHash}, &emptyCoinbase, []*externalapi.DomainTransaction{tx, tx})
 }
 
 func TestCheckBlockContainsOnlyOneCoinbase(t *testing.T) {
-	testutils.ForAllNets(t, true, func(t *testing.T, params *dagconfig.Params) {
+	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
 
 		factory := consensus.NewFactory()
-		tc, teardown, err := factory.NewTestConsensus(params, false, "TestCheckBlockContainsOnlyOneCoinbase")
+		tc, teardown, err := factory.NewTestConsensus(consensusConfig, "TestCheckBlockContainsOnlyOneCoinbase")
 		if err != nil {
 			t.Fatalf("Error setting up tc: %+v", err)
 		}
 		defer teardown(false)
 
-		block, _, err := initBlockWithMoreThanOneCoinbase(params, tc)
+		block, _, err := initBlockWithMoreThanOneCoinbase(consensusConfig, tc)
 		if err != nil {
 			t.Fatalf("Error BuildBlockWithParents : %+v", err)
 		}
@@ -1170,7 +1168,7 @@ func TestCheckBlockContainsOnlyOneCoinbase(t *testing.T) {
 	})
 }
 
-func initBlockWithMoreThanOneCoinbase(params *dagconfig.Params, tc testapi.TestConsensus) (*externalapi.DomainBlock, externalapi.UTXODiff, error) {
+func initBlockWithMoreThanOneCoinbase(consensusConfig *consensus.Config, tc testapi.TestConsensus) (*externalapi.DomainBlock, externalapi.UTXODiff, error) {
 	emptyCoinbase := externalapi.DomainCoinbaseData{
 		ScriptPublicKey: &externalapi.ScriptPublicKey{
 			Script:  nil,
@@ -1198,20 +1196,20 @@ func initBlockWithMoreThanOneCoinbase(params *dagconfig.Params, tc testapi.TestC
 		SubnetworkID: subnetworks.SubnetworkIDCoinbase,
 	}
 
-	return tc.BuildBlockWithParents([]*externalapi.DomainHash{params.GenesisHash}, &emptyCoinbase, []*externalapi.DomainTransaction{tx})
+	return tc.BuildBlockWithParents([]*externalapi.DomainHash{consensusConfig.GenesisHash}, &emptyCoinbase, []*externalapi.DomainTransaction{tx})
 }
 
 func TestCheckBlockDoubleSpends(t *testing.T) {
-	testutils.ForAllNets(t, true, func(t *testing.T, params *dagconfig.Params) {
+	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
 
 		factory := consensus.NewFactory()
-		tc, teardown, err := factory.NewTestConsensus(params, false, "TestCheckBlockDoubleSpends")
+		tc, teardown, err := factory.NewTestConsensus(consensusConfig, "TestCheckBlockDoubleSpends")
 		if err != nil {
 			t.Fatalf("Error setting up tc: %+v", err)
 		}
 		defer teardown(false)
 
-		block, _, err := initBlockWithDoubleSpends(params, tc)
+		block, _, err := initBlockWithDoubleSpends(consensusConfig, tc)
 		if err != nil {
 			t.Fatalf("Error BuildBlockWithParents : %+v", err)
 		}
@@ -1227,7 +1225,7 @@ func TestCheckBlockDoubleSpends(t *testing.T) {
 	})
 }
 
-func initBlockWithDoubleSpends(params *dagconfig.Params, tc testapi.TestConsensus) (*externalapi.DomainBlock, externalapi.UTXODiff, error) {
+func initBlockWithDoubleSpends(consensusConfig *consensus.Config, tc testapi.TestConsensus) (*externalapi.DomainBlock, externalapi.UTXODiff, error) {
 	emptyCoinbase := externalapi.DomainCoinbaseData{
 		ScriptPublicKey: &externalapi.ScriptPublicKey{
 			Script:  nil,
@@ -1273,21 +1271,21 @@ func initBlockWithDoubleSpends(params *dagconfig.Params, tc testapi.TestConsensu
 		SubnetworkID: subnetworks.SubnetworkIDNative,
 	}
 
-	return tc.BuildBlockWithParents([]*externalapi.DomainHash{params.GenesisHash},
+	return tc.BuildBlockWithParents([]*externalapi.DomainHash{consensusConfig.GenesisHash},
 		&emptyCoinbase, []*externalapi.DomainTransaction{tx, txSameOutpoint})
 }
 
 func TestCheckFirstBlockTransactionIsCoinbase(t *testing.T) {
-	testutils.ForAllNets(t, true, func(t *testing.T, params *dagconfig.Params) {
+	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
 
 		factory := consensus.NewFactory()
-		tc, teardown, err := factory.NewTestConsensus(params, false, "TestCheckFirstBlockTransactionIsCoinbase")
+		tc, teardown, err := factory.NewTestConsensus(consensusConfig, "TestCheckFirstBlockTransactionIsCoinbase")
 		if err != nil {
 			t.Fatalf("Error setting up tc: %+v", err)
 		}
 		defer teardown(false)
 
-		block := initBlockWithFirstTransactionDifferentThanCoinbase(params)
+		block := initBlockWithFirstTransactionDifferentThanCoinbase(consensusConfig)
 		blockHash := consensushashing.BlockHash(block)
 		stagingArea := model.NewStagingArea()
 		tc.BlockStore().Stage(stagingArea, blockHash, block)
@@ -1300,7 +1298,7 @@ func TestCheckFirstBlockTransactionIsCoinbase(t *testing.T) {
 	})
 }
 
-func initBlockWithFirstTransactionDifferentThanCoinbase(params *dagconfig.Params) *externalapi.DomainBlock {
+func initBlockWithFirstTransactionDifferentThanCoinbase(consensusConfig *consensus.Config) *externalapi.DomainBlock {
 	prevOutTxID := &externalapi.DomainTransactionID{}
 	prevOutPoint := externalapi.DomainOutpoint{TransactionID: *prevOutTxID, Index: 1}
 	txInput := externalapi.DomainTransactionInput{
@@ -1320,7 +1318,7 @@ func initBlockWithFirstTransactionDifferentThanCoinbase(params *dagconfig.Params
 	return &externalapi.DomainBlock{
 		Header: blockheader.NewImmutableBlockHeader(
 			constants.MaxBlockVersion,
-			[]*externalapi.DomainHash{params.GenesisHash},
+			[]*externalapi.DomainHash{consensusConfig.GenesisHash},
 			merkle.CalculateHashMerkleRoot([]*externalapi.DomainTransaction{tx}),
 			&externalapi.DomainHash{},
 			externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{

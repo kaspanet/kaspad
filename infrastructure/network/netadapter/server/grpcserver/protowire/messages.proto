@@ -112,6 +112,8 @@ message KaspadMessage {
     PruningPointUTXOSetOverrideNotificationMessage pruningPointUTXOSetOverrideNotification = 1069;
     StopNotifyingPruningPointUTXOSetOverrideRequestMessage stopNotifyingPruningPointUTXOSetOverrideRequest = 1070;
     StopNotifyingPruningPointUTXOSetOverrideResponseMessage stopNotifyingPruningPointUTXOSetOverrideResponse = 1071;
+    EstimateNetworkHashesPerSecondRequestMessage estimateNetworkHashesPerSecondRequest = 1072;
+    EstimateNetworkHashesPerSecondResponseMessage estimateNetworkHashesPerSecondResponse = 1073;
   }
 }
 

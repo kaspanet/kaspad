@@ -4,23 +4,19 @@ import (
 	"fmt"
 	"sync/atomic"
 
-	"github.com/kaspanet/kaspad/domain/utxoindex"
-
-	infrastructuredatabase "github.com/kaspanet/kaspad/infrastructure/db/database"
-
-	"github.com/kaspanet/kaspad/domain"
-
-	"github.com/kaspanet/kaspad/infrastructure/network/addressmanager"
-
-	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/id"
-
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/app/protocol"
 	"github.com/kaspanet/kaspad/app/rpc"
+	"github.com/kaspanet/kaspad/domain"
+	"github.com/kaspanet/kaspad/domain/consensus"
+	"github.com/kaspanet/kaspad/domain/utxoindex"
 	"github.com/kaspanet/kaspad/infrastructure/config"
+	infrastructuredatabase "github.com/kaspanet/kaspad/infrastructure/db/database"
+	"github.com/kaspanet/kaspad/infrastructure/network/addressmanager"
 	"github.com/kaspanet/kaspad/infrastructure/network/connmanager"
 	"github.com/kaspanet/kaspad/infrastructure/network/dnsseed"
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter"
+	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/id"
 	"github.com/kaspanet/kaspad/util/panics"
 )
 
@@ -82,7 +78,13 @@ func (a *ComponentManager) Stop() {
 func NewComponentManager(cfg *config.Config, db infrastructuredatabase.Database, interrupt chan<- struct{}) (
 	*ComponentManager, error) {
 
-	domain, err := domain.New(cfg.ActiveNetParams, db, cfg.IsArchivalNode)
+	consensusConfig := consensus.Config{
+		Params:                          *cfg.ActiveNetParams,
+		IsArchival:                      cfg.IsArchivalNode,
+		EnableSanityCheckPruningUTXOSet: cfg.EnableSanityCheckPruningUTXOSet,
+	}
+
+	domain, err := domain.New(&consensusConfig, db)
 	if err != nil {
 		return nil, err
 	}

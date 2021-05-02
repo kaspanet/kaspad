@@ -39,14 +39,26 @@ func (csm *consensusStateManager) CalculatePastUTXOAndAcceptanceData(stagingArea
 		return nil, nil, nil, err
 	}
 
-	daaScore, err := csm.daaBlocksStore.DAAScore(csm.databaseContext, stagingArea, blockHash)
+	log.Debugf("Restored the past UTXO of block %s with selectedParent %s. "+
+		"Diff toAdd length: %d, toRemove length: %d", blockHash, blockGHOSTDAGData.SelectedParent(),
+		selectedParentPastUTXO.ToAdd().Len(), selectedParentPastUTXO.ToRemove().Len())
+
+	return csm.calculatePastUTXOAndAcceptanceDataWithSelectedParentUTXO(stagingArea, blockHash, selectedParentPastUTXO)
+}
+
+func (csm *consensusStateManager) calculatePastUTXOAndAcceptanceDataWithSelectedParentUTXO(stagingArea *model.StagingArea,
+	blockHash *externalapi.DomainHash, selectedParentPastUTXO externalapi.UTXODiff) (
+	externalapi.UTXODiff, externalapi.AcceptanceData, model.Multiset, error) {
+
+	blockGHOSTDAGData, err := csm.ghostdagDataStore.Get(csm.databaseContext, stagingArea, blockHash)
 	if err != nil {
 		return nil, nil, nil, err
 	}
 
-	log.Debugf("Restored the past UTXO of block %s with selectedParent %s. "+
-		"Diff toAdd length: %d, toRemove length: %d", blockHash, blockGHOSTDAGData.SelectedParent(),
-		selectedParentPastUTXO.ToAdd().Len(), selectedParentPastUTXO.ToRemove().Len())
+	daaScore, err := csm.daaBlocksStore.DAAScore(csm.databaseContext, stagingArea, blockHash)
+	if err != nil {
+		return nil, nil, nil, err
+	}
 
 	log.Debugf("Applying blue blocks to the selected parent past UTXO of block %s", blockHash)
 	acceptanceData, utxoDiff, err := csm.applyMergeSetBlocks(
@@ -66,7 +78,7 @@ func (csm *consensusStateManager) CalculatePastUTXOAndAcceptanceData(stagingArea
 }
 
 func (csm *consensusStateManager) restorePastUTXO(
-	stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) (externalapi.MutableUTXODiff, error) {
+	stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) (externalapi.UTXODiff, error) {
 
 	onEnd := logger.LogAndMeasureExecutionTime(log, "restorePastUTXO")
 	defer onEnd()
@@ -120,11 +132,11 @@ func (csm *consensusStateManager) restorePastUTXO(
 	}
 	log.Tracef("The accumulated diff for block %s is: %s", blockHash, accumulatedDiff)
 
-	return accumulatedDiff, nil
+	return accumulatedDiff.ToImmutable(), nil
 }
 
 func (csm *consensusStateManager) applyMergeSetBlocks(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash,
-	selectedParentPastUTXODiff externalapi.MutableUTXODiff, ghostdagData *model.BlockGHOSTDAGData, daaScore uint64) (
+	selectedParentPastUTXODiff externalapi.UTXODiff, ghostdagData *model.BlockGHOSTDAGData, daaScore uint64) (
 	externalapi.AcceptanceData, externalapi.MutableUTXODiff, error) {
 
 	log.Debugf("applyMergeSetBlocks start for block %s", blockHash)
@@ -144,7 +156,7 @@ func (csm *consensusStateManager) applyMergeSetBlocks(stagingArea *model.Staging
 	log.Tracef("The past median time for block %s is: %d", blockHash, selectedParentMedianTime)
 
 	multiblockAcceptanceData := make(externalapi.AcceptanceData, len(mergeSetBlocks))
-	accumulatedUTXODiff := selectedParentPastUTXODiff
+	accumulatedUTXODiff := selectedParentPastUTXODiff.CloneMutable()
 	accumulatedMass := uint64(0)
 
 	for i, mergeSetBlock := range mergeSetBlocks {
@@ -277,12 +289,13 @@ func (csm *consensusStateManager) checkTransactionMass(
 }
 
 // RestorePastUTXOSetIterator restores the given block's UTXOSet iterator, and returns it as a externalapi.ReadOnlyUTXOSetIterator
-func (csm *consensusStateManager) RestorePastUTXOSetIterator(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) (externalapi.ReadOnlyUTXOSetIterator, error) {
+func (csm *consensusStateManager) RestorePastUTXOSetIterator(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) (
+	externalapi.ReadOnlyUTXOSetIterator, error) {
 
 	onEnd := logger.LogAndMeasureExecutionTime(log, "RestorePastUTXOSetIterator")
 	defer onEnd()
 
-	blockStatus, err := csm.resolveBlockStatus(stagingArea, blockHash, true)
+	blockStatus, _, err := csm.resolveBlockStatus(stagingArea, blockHash, true)
 	if err != nil {
 		return nil, err
 	}
@@ -306,5 +319,5 @@ func (csm *consensusStateManager) RestorePastUTXOSetIterator(stagingArea *model.
 		return nil, err
 	}
 
-	return utxo.IteratorWithDiff(virtualUTXOSetIterator, blockDiff.ToImmutable())
+	return utxo.IteratorWithDiff(virtualUTXOSetIterator, blockDiff)
 }

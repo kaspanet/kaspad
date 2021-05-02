@@ -137,6 +137,8 @@ const (
 	CmdPruningPointUTXOSetOverrideNotificationMessage
 	CmdStopNotifyingPruningPointUTXOSetOverrideRequestMessage
 	CmdStopNotifyingPruningPointUTXOSetOverrideResponseMessage
+	CmdEstimateNetworkHashesPerSecondRequestMessage
+	CmdEstimateNetworkHashesPerSecondResponseMessage
 )
 
 // ProtocolMessageCommandToString maps all MessageCommands to their string representation
@@ -248,6 +250,8 @@ var RPCMessageCommandToString = map[MessageCommand]string{
 	CmdPruningPointUTXOSetOverrideNotificationMessage:             "PruningPointUTXOSetOverrideNotification",
 	CmdStopNotifyingPruningPointUTXOSetOverrideRequestMessage:     "StopNotifyingPruningPointUTXOSetOverrideRequest",
 	CmdStopNotifyingPruningPointUTXOSetOverrideResponseMessage:    "StopNotifyingPruningPointUTXOSetOverrideResponse",
+	CmdEstimateNetworkHashesPerSecondRequestMessage:               "EstimateNetworkHashesPerSecondRequest",
+	CmdEstimateNetworkHashesPerSecondResponseMessage:              "EstimateNetworkHashesPerSecondResponse",
 }
 
 // Message is an interface that describes a kaspa message. A type that

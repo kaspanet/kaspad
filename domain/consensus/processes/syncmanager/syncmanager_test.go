@@ -11,15 +11,14 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/testutils"
-	"github.com/kaspanet/kaspad/domain/dagconfig"
 )
 
 func TestSyncManager_GetHashesBetween(t *testing.T) {
-	testutils.ForAllNets(t, true, func(t *testing.T, params *dagconfig.Params) {
+	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
 		stagingArea := model.NewStagingArea()
 
 		factory := consensus.NewFactory()
-		tc, teardown, err := factory.NewTestConsensus(params, false, "TestSyncManager_GetHashesBetween")
+		tc, teardown, err := factory.NewTestConsensus(consensusConfig, "TestSyncManager_GetHashesBetween")
 		if err != nil {
 			t.Fatalf("Error setting up consensus: %+v", err)
 		}
@@ -36,7 +35,7 @@ func TestSyncManager_GetHashesBetween(t *testing.T) {
 		//        \       |      /
 		//               etc.
 		expectedOrder := make([]*externalapi.DomainHash, 0, 40)
-		mergingBlock := params.GenesisHash
+		mergingBlock := consensusConfig.GenesisHash
 		for i := 0; i < 10; i++ {
 			splitBlocks := make([]*externalapi.DomainHash, 0, 3)
 			for j := 0; j < 3; j++ {
@@ -70,7 +69,7 @@ func TestSyncManager_GetHashesBetween(t *testing.T) {
 		}
 
 		actualOrder, _, err := tc.SyncManager().GetHashesBetween(
-			stagingArea, params.GenesisHash, expectedOrder[len(expectedOrder)-1], math.MaxUint64)
+			stagingArea, consensusConfig.GenesisHash, expectedOrder[len(expectedOrder)-1], math.MaxUint64)
 		if err != nil {
 			t.Fatalf("TestSyncManager_GetHashesBetween failed returning actualOrder: %v", err)
 		}

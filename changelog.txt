@@ -1,11 +1,82 @@
+Kaspad v0.10.0 - 2021-04-26
+===========================
+Major changes include:
+* Implementing a signature hashing scheme similar to BIP-143
+* Replacing HASH160 with BLAKE2B
+* Replacing ECMH with MuHash
+* Removing RIPEMD160 and SHA1 from the codebase entirely
+* Making P2PKH transactions non-standard
+* Vastly enhancing the CLI wallet
+* Restructuring kaspad's app/home directory
+* Modifying block and transaction types in the RPC to be easier to consume clientside
+
+A partial list of the more-important commits is as follows:
+* Fix data race in GetBlockChildren (#1579)
+* Remove payload hash (#1583)
+* Add the mempool size to getInfo RPC command (#1584)
+* Change the difficulty to be calculated based on the same block instead of its selected parent (#1591)
+* Adjust the difficulty in the first difficultyAdjustmentWindowSize blocks (#1592)
+* Adding DAA score (#1596)
+* Use DAA score where needed (#1602)
+* Remove the Services field from NetAddress. (#1610)
+* Fix getBlocks to not add the anticone when some blocks were filtered by GetHashesBetween (#1611)
+* Restructure the default ~/.kaspad directory layout (#1613)
+* Replace the HomeDir flag with a AppDir flag (#1615)
+* Implement BIP-143-like sighash (#1598)
+* Change --datadir to --appdir and remove symmetrical connection in stability tests (#1617)
+* Use BLAKE2B instead of HASH160, and get rid of any usage of RIPEMD160 and SHA1 (#1618)
+* Replace ECMH with Muhash (#1624)
+* Add support for multiple staging areas (#1633)
+* Make sure the ghostdagDataStore cache is at least DifficultyAdjustmentBlockWindow sized (#1635)
+* Resolve each block status in it's own staging area (#1634)
+* Add mass limit to mempool (#1627)
+* In RPC, use RPCTransactions and RPCBlocks instead of TransactionMessages and BlockMessages (#1609)
+* Use go-secp256k1 v0.0.5 (#1640)
+* Add a show-address subcommand to kaspawallet (#1653)
+* Replace p2pkh with p2pk (#1650)
+* Implement importing private keys into the wallet (#1655)
+* Add dump unencrypted data sub command to the wallet (#1661)
+* Add ECDSA support (#1657)
+* Add OpCheckMultiSigECDSA (#1663)
+* Add ECDSA support to the wallet (#1664)
+* Make moving the pruning point faster (#1660)
+* Implement new mechanism for updating UTXO Diffs (#1671)
+
+Kaspad v0.9.2 - 2021-03-31
+===========================
+* Increase the route capacity of InvTransaction messages. (#1603) (#1637)
+
+Kaspad v0.9.1 - 2021-03-14
+===========================
+* Testnet network reset
+
+Kaspad v0.9.0 - 2021-03-04
+===========================
+
+* Merge big subdags in pick virtual parents (#1574)
+* Write in the reject message the tx rejection reason (#1573)
+* Add nil checks for protowire (#1570)
+* Increase getBlocks limit to 1000 (#1572)
+* Return RPC error if getBlock's lowHash doesn't exist (#1569)
+* Add default dns-seeder to testnet (#1568)
+* Fix utxoindex deserialization (#1566)
+* Add pruning point hash to GetBlockDagInfo response (#1565)
+* Use EmitUnpopulated so that kaspactl prints all fields, even the default ones (#1561)
+* Stop logging an error whenever an RPC/P2P connection is canceled  (#1562)
+* Cleanup the logger and make it asynchronous (#1524)
+* Close all iterators (#1542)
+* Add childrenHashes to GetBlock/s RPC commands (#1560)
+* Add ScriptPublicKey.Version to RPC (#1559)
+* Fix the target block rate to create less bursty mining (#1554)
+
 Kaspad v0.8.10 - 2021-02-25
 ===========================
 
-[*] Fix bug where invalid mempool transactions were not removed (#1551)
-[*] Add RPC reconnection to the miner (#1552)
-[*] Remove virtual diff parents - only selectedTip is virtualDiffParent now (#1550)
-[*] Fix UTXO index (#1548)
-[*] Prevent fast failing (#1545)
-[*] Increase the sleep time in kaspaminer when the node is not synced (#1544)
-[*] Disallow header only blocks on RPC, relay and when requesting IBD full blocks (#1537)
-[*] Make templateManager hold a DomainBlock and isSynced bool instead of a GetBlockTemplateResponseMessage (#1538)
+* Fix bug where invalid mempool transactions were not removed (#1551)
+* Add RPC reconnection to the miner (#1552)
+* Remove virtual diff parents - only selectedTip is virtualDiffParent now (#1550)
+* Fix UTXO index (#1548)
+* Prevent fast failing (#1545)
+* Increase the sleep time in kaspaminer when the node is not synced (#1544)
+* Disallow header only blocks on RPC, relay and when requesting IBD full blocks (#1537)
+* Make templateManager hold a DomainBlock and isSynced bool instead of a GetBlockTemplateResponseMessage (#1538)

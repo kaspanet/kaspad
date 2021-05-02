@@ -8,15 +8,14 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/testutils"
-	"github.com/kaspanet/kaspad/domain/dagconfig"
 	"github.com/kaspanet/kaspad/infrastructure/db/database"
 	"github.com/pkg/errors"
 )
 
 func TestAddHeaderTip(t *testing.T) {
-	testutils.ForAllNets(t, true, func(t *testing.T, params *dagconfig.Params) {
+	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
 		factory := consensus.NewFactory()
-		tc, tearDown, err := factory.NewTestConsensus(params, false, "TestAddHeaderTip")
+		tc, tearDown, err := factory.NewTestConsensus(consensusConfig, "TestAddHeaderTip")
 		if err != nil {
 			t.Fatalf("NewTestConsensus: %s", err)
 		}
@@ -51,8 +50,8 @@ func TestAddHeaderTip(t *testing.T) {
 			}
 		}
 
-		expectedSelectedChain := []*externalapi.DomainHash{params.GenesisHash}
-		tipHash := params.GenesisHash
+		expectedSelectedChain := []*externalapi.DomainHash{consensusConfig.GenesisHash}
+		tipHash := consensusConfig.GenesisHash
 		for i := 0; i < 10; i++ {
 			var err error
 			tipHash, _, err = tc.AddBlock([]*externalapi.DomainHash{tipHash}, nil, nil)
@@ -64,8 +63,8 @@ func TestAddHeaderTip(t *testing.T) {
 			checkExpectedSelectedChain(expectedSelectedChain)
 		}
 
-		expectedSelectedChain = []*externalapi.DomainHash{params.GenesisHash}
-		tipHash = params.GenesisHash
+		expectedSelectedChain = []*externalapi.DomainHash{consensusConfig.GenesisHash}
+		tipHash = consensusConfig.GenesisHash
 		for i := 0; i < 11; i++ {
 			var err error
 			tipHash, _, err = tc.AddBlock([]*externalapi.DomainHash{tipHash}, nil, nil)

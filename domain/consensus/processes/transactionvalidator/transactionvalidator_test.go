@@ -16,7 +16,6 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/subnetworks"
-	"github.com/kaspanet/kaspad/domain/dagconfig"
 	"github.com/pkg/errors"
 )
 
@@ -30,7 +29,7 @@ func (mdf *mocPastMedianTimeManager) PastMedianTime(*model.StagingArea, *externa
 }
 
 func TestValidateTransactionInContextAndPopulateMassAndFee(t *testing.T) {
-	testutils.ForAllNets(t, true, func(t *testing.T, params *dagconfig.Params) {
+	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
 
 		factory := consensus.NewFactory()
 		pastMedianManager := &mocPastMedianTimeManager{}
@@ -38,7 +37,7 @@ func TestValidateTransactionInContextAndPopulateMassAndFee(t *testing.T) {
 			model.GHOSTDAGDataStore, *externalapi.DomainHash) model.PastMedianTimeManager {
 			return pastMedianManager
 		})
-		tc, tearDown, err := factory.NewTestConsensus(params, false,
+		tc, tearDown, err := factory.NewTestConsensus(consensusConfig,
 			"TestValidateTransactionInContextAndPopulateMassAndFee")
 		if err != nil {
 			t.Fatalf("Failed create a NewTestConsensus: %s", err)
@@ -58,7 +57,7 @@ func TestValidateTransactionInContextAndPopulateMassAndFee(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Failed to serialize public key: %v", err)
 		}
-		addr, err := util.NewAddressPublicKey(publicKeySerialized[:], params.Prefix)
+		addr, err := util.NewAddressPublicKey(publicKeySerialized[:], consensusConfig.Prefix)
 		if err != nil {
 			t.Fatalf("Failed to generate p2pk address: %v", err)
 		}
@@ -158,7 +157,7 @@ func TestValidateTransactionInContextAndPopulateMassAndFee(t *testing.T) {
 		stagingArea := model.NewStagingArea()
 
 		povBlockHash := externalapi.NewDomainHashFromByteArray(&[32]byte{0x01})
-		tc.DAABlocksStore().StageDAAScore(stagingArea, povBlockHash, params.BlockCoinbaseMaturity+txInput.UTXOEntry.BlockDAAScore())
+		tc.DAABlocksStore().StageDAAScore(stagingArea, povBlockHash, consensusConfig.BlockCoinbaseMaturity+txInput.UTXOEntry.BlockDAAScore())
 		tc.DAABlocksStore().StageDAAScore(stagingArea, povBlockHash, 10)
 
 		tests := []struct {
@@ -240,10 +239,10 @@ func TestValidateTransactionInContextAndPopulateMassAndFee(t *testing.T) {
 }
 
 func TestSigningTwoInputs(t *testing.T) {
-	testutils.ForAllNets(t, true, func(t *testing.T, params *dagconfig.Params) {
-		params.BlockCoinbaseMaturity = 0
+	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
+		consensusConfig.BlockCoinbaseMaturity = 0
 		factory := consensus.NewFactory()
-		tc, teardown, err := factory.NewTestConsensus(params, false, "TestSigningTwoInputs")
+		tc, teardown, err := factory.NewTestConsensus(consensusConfig, "TestSigningTwoInputs")
 		if err != nil {
 			t.Fatalf("Error setting up consensus: %+v", err)
 		}
@@ -261,7 +260,7 @@ func TestSigningTwoInputs(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Failed to serialize public key: %v", err)
 		}
-		addr, err := util.NewAddressPublicKey(publicKeySerialized[:], params.Prefix)
+		addr, err := util.NewAddressPublicKey(publicKeySerialized[:], consensusConfig.Prefix)
 		if err != nil {
 			t.Fatalf("Failed to generate p2pk address: %v", err)
 		}
@@ -275,7 +274,7 @@ func TestSigningTwoInputs(t *testing.T) {
 			ScriptPublicKey: scriptPublicKey,
 		}
 
-		block1Hash, _, err := tc.AddBlock([]*externalapi.DomainHash{params.GenesisHash}, coinbaseData, nil)
+		block1Hash, _, err := tc.AddBlock([]*externalapi.DomainHash{consensusConfig.GenesisHash}, coinbaseData, nil)
 		if err != nil {
 			t.Fatalf("AddBlock: %+v", err)
 		}
@@ -364,10 +363,10 @@ func TestSigningTwoInputs(t *testing.T) {
 }
 
 func TestSigningTwoInputsECDSA(t *testing.T) {
-	testutils.ForAllNets(t, true, func(t *testing.T, params *dagconfig.Params) {
-		params.BlockCoinbaseMaturity = 0
+	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
+		consensusConfig.BlockCoinbaseMaturity = 0
 		factory := consensus.NewFactory()
-		tc, teardown, err := factory.NewTestConsensus(params, false, "TestSigningTwoInputsECDSA")
+		tc, teardown, err := factory.NewTestConsensus(consensusConfig, "TestSigningTwoInputsECDSA")
 		if err != nil {
 			t.Fatalf("Error setting up consensus: %+v", err)
 		}
@@ -385,7 +384,7 @@ func TestSigningTwoInputsECDSA(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Failed to serialize public key: %v", err)
 		}
-		addr, err := util.NewAddressPublicKeyECDSA(publicKeySerialized[:], params.Prefix)
+		addr, err := util.NewAddressPublicKeyECDSA(publicKeySerialized[:], consensusConfig.Prefix)
 		if err != nil {
 			t.Fatalf("Failed to generate p2pk address: %v", err)
 		}
@@ -399,7 +398,7 @@ func TestSigningTwoInputsECDSA(t *testing.T) {
 			ScriptPublicKey: scriptPublicKey,
 		}
 
-		block1Hash, _, err := tc.AddBlock([]*externalapi.DomainHash{params.GenesisHash}, coinbaseData, nil)
+		block1Hash, _, err := tc.AddBlock([]*externalapi.DomainHash{consensusConfig.GenesisHash}, coinbaseData, nil)
 		if err != nil {
 			t.Fatalf("AddBlock: %+v", err)
 		}

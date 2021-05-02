@@ -114,6 +114,6 @@ func (s *Service) logServiceStart() {
 	var message string
 	message += fmt.Sprintf("%s version %s\n", s.description.DisplayName, version.Version())
 	message += fmt.Sprintf("Configuration file: %s\n", s.cfg.ConfigFile)
-	message += fmt.Sprintf("Data directory: %s\n", s.cfg.DataDir)
+	message += fmt.Sprintf("Application directory: %s\n", s.cfg.AppDir)
 	message += fmt.Sprintf("Logs directory: %s\n", s.cfg.LogDir)
 }

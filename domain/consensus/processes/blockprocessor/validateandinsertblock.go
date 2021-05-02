@@ -90,6 +90,7 @@ func (bp *blockProcessor) validateAndInsertBlock(stagingArea *model.StagingArea,
 
 	var selectedParentChainChanges *externalapi.SelectedChainPath
 	var virtualUTXODiff externalapi.UTXODiff
+	var reversalData *model.UTXODiffReversalData
 	isHeaderOnlyBlock := isHeaderOnlyBlock(block)
 	if !isHeaderOnlyBlock {
 		// There's no need to update the consensus state manager when
@@ -97,7 +98,7 @@ func (bp *blockProcessor) validateAndInsertBlock(stagingArea *model.StagingArea,
 		// in consensusStateManager.ImportPruningPoint
 		if !isPruningPoint {
 			// Attempt to add the block to the virtual
-			selectedParentChainChanges, virtualUTXODiff, err = bp.consensusStateManager.AddBlock(stagingArea, blockHash)
+			selectedParentChainChanges, virtualUTXODiff, reversalData, err = bp.consensusStateManager.AddBlock(stagingArea, blockHash)
 			if err != nil {
 				return nil, err
 			}
@@ -122,6 +123,13 @@ func (bp *blockProcessor) validateAndInsertBlock(stagingArea *model.StagingArea,
 	err = staging.CommitAllChanges(bp.databaseContext, stagingArea)
 	if err != nil {
 		return nil, err
+	}
+
+	if reversalData != nil {
+		err = bp.consensusStateManager.ReverseUTXODiffs(blockHash, reversalData)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	err = bp.pruningManager.UpdatePruningPointIfRequired()

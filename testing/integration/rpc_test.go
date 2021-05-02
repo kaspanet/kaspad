@@ -1,11 +1,12 @@
 package integration
 
 import (
-	"github.com/kaspanet/kaspad/infrastructure/network/rpcclient"
 	"time"
+
+	"github.com/kaspanet/kaspad/infrastructure/network/rpcclient"
 )
 
-const rpcTimeout = 1 * time.Second
+const rpcTimeout = 10 * time.Second
 
 type testRPCClient struct {
 	*rpcclient.RPCClient

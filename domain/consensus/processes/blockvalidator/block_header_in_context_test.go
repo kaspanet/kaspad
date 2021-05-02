@@ -12,13 +12,12 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/testutils"
-	"github.com/kaspanet/kaspad/domain/dagconfig"
 )
 
 func TestValidateMedianTime(t *testing.T) {
-	testutils.ForAllNets(t, true, func(t *testing.T, params *dagconfig.Params) {
+	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
 		factory := consensus.NewFactory()
-		tc, teardown, err := factory.NewTestConsensus(params, false, "TestValidateMedianTime")
+		tc, teardown, err := factory.NewTestConsensus(consensusConfig, "TestValidateMedianTime")
 		if err != nil {
 			t.Fatalf("Error setting up consensus: %+v", err)
 		}
@@ -62,8 +61,8 @@ func TestValidateMedianTime(t *testing.T) {
 			return pastMedianTime
 		}
 
-		tip := params.GenesisBlock
-		tipHash := params.GenesisHash
+		tip := consensusConfig.GenesisBlock
+		tipHash := consensusConfig.GenesisHash
 
 		blockTime := tip.Header.TimeInMilliseconds()
 
@@ -84,15 +83,15 @@ func TestValidateMedianTime(t *testing.T) {
 }
 
 func TestCheckParentsIncest(t *testing.T) {
-	testutils.ForAllNets(t, true, func(t *testing.T, params *dagconfig.Params) {
+	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
 		factory := consensus.NewFactory()
-		tc, teardown, err := factory.NewTestConsensus(params, false, "TestCheckParentsIncest")
+		tc, teardown, err := factory.NewTestConsensus(consensusConfig, "TestCheckParentsIncest")
 		if err != nil {
 			t.Fatalf("Error setting up consensus: %+v", err)
 		}
 		defer teardown(false)
 
-		a, _, err := tc.AddBlock([]*externalapi.DomainHash{params.GenesisHash}, nil, nil)
+		a, _, err := tc.AddBlock([]*externalapi.DomainHash{consensusConfig.GenesisHash}, nil, nil)
 		if err != nil {
 			t.Fatalf("AddBlock: %+v", err)
 		}
@@ -102,7 +101,7 @@ func TestCheckParentsIncest(t *testing.T) {
 			t.Fatalf("AddBlock: %+v", err)
 		}
 
-		c, _, err := tc.AddBlock([]*externalapi.DomainHash{params.GenesisHash}, nil, nil)
+		c, _, err := tc.AddBlock([]*externalapi.DomainHash{consensusConfig.GenesisHash}, nil, nil)
 		if err != nil {
 			t.Fatalf("AddBlock: %+v", err)
 		}
@@ -129,7 +128,7 @@ func TestCheckParentsIncest(t *testing.T) {
 		indirectParentsRelationBlock := &externalapi.DomainBlock{
 			Header: blockheader.NewImmutableBlockHeader(
 				0,
-				[]*externalapi.DomainHash{params.GenesisHash, b},
+				[]*externalapi.DomainHash{consensusConfig.GenesisHash, b},
 				&externalapi.DomainHash{},
 				&externalapi.DomainHash{},
 				&externalapi.DomainHash{},
@@ -154,25 +153,25 @@ func TestCheckParentsIncest(t *testing.T) {
 }
 
 func TestCheckMergeSizeLimit(t *testing.T) {
-	testutils.ForAllNets(t, true, func(t *testing.T, params *dagconfig.Params) {
-		params.MergeSetSizeLimit = 2 * uint64(params.K)
+	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
+		consensusConfig.MergeSetSizeLimit = 2 * uint64(consensusConfig.K)
 		factory := consensus.NewFactory()
-		tc, teardown, err := factory.NewTestConsensus(params, false, "TestCheckParentsIncest")
+		tc, teardown, err := factory.NewTestConsensus(consensusConfig, "TestCheckParentsIncest")
 		if err != nil {
 			t.Fatalf("Error setting up consensus: %+v", err)
 		}
 		defer teardown(false)
 
-		chain1TipHash := params.GenesisHash
-		for i := uint64(0); i < params.MergeSetSizeLimit+2; i++ {
+		chain1TipHash := consensusConfig.GenesisHash
+		for i := uint64(0); i < consensusConfig.MergeSetSizeLimit+2; i++ {
 			chain1TipHash, _, err = tc.AddBlock([]*externalapi.DomainHash{chain1TipHash}, nil, nil)
 			if err != nil {
 				t.Fatalf("AddBlock: %+v", err)
 			}
 		}
 
-		chain2TipHash := params.GenesisHash
-		for i := uint64(0); i < params.MergeSetSizeLimit+1; i++ {
+		chain2TipHash := consensusConfig.GenesisHash
+		for i := uint64(0); i < consensusConfig.MergeSetSizeLimit+1; i++ {
 			chain2TipHash, _, err = tc.AddBlock([]*externalapi.DomainHash{chain2TipHash}, nil, nil)
 			if err != nil {
 				t.Fatalf("AddBlock: %+v", err)
