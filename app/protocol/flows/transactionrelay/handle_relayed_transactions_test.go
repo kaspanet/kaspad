@@ -129,7 +129,7 @@ func TestHandleRelayedTransactionsNotFound(t *testing.T) {
 		if protocolErr := (protocolerrors.ProtocolError{}); err == nil || !errors.As(err, &protocolErr) {
 			t.Fatalf("Expected to protocol error")
 		} else {
-			if protocolErr.ShouldBan != true {
+			if !protocolErr.ShouldBan {
 				t.Fatalf("Exepcted shouldBan true, but got false.")
 			}
 			if !strings.Contains(err.Error(), "unexpected Addresses [code 3] message in the block relay flow while expecting an inv message") {
