@@ -21,7 +21,7 @@ func dumpUnencryptedData(conf *dumpUnencryptedDataConfig) error {
 		return err
 	}
 
-	privateKeys, err := keysFile.DecryptPrivateKeys()
+	privateKeys, err := keysFile.DecryptMnemonics()
 	if err != nil {
 		return err
 	}
@@ -38,7 +38,7 @@ func dumpUnencryptedData(conf *dumpUnencryptedDataConfig) error {
 	}
 
 	i := 1
-	for _, publicKey := range keysFile.PublicKeys {
+	for _, publicKey := range keysFile.ExtendedPublicKeys {
 		if _, exists := privateKeysPublicKeys[string(publicKey)]; exists {
 			continue
 		}

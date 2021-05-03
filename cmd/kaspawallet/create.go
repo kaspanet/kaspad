@@ -2,7 +2,6 @@ package main
 
 import (
 	"bufio"
-	"encoding/hex"
 	"fmt"
 	"os"
 
@@ -12,26 +11,26 @@ import (
 )
 
 func create(conf *createConfig) error {
-	var encryptedPrivateKeys []*keys.EncryptedPrivateKey
-	var publicKeys [][]byte
+	var encryptedPrivateKeys []*keys.EncryptedMnemonic
+	var extendedPublicKeys []string
 	var err error
 	if !conf.Import {
-		encryptedPrivateKeys, publicKeys, err = keys.CreateKeyPairs(conf.NumPrivateKeys, conf.ECDSA)
+		encryptedPrivateKeys, extendedPublicKeys, err = keys.CreateKeyPairs(conf.NumPrivateKeys, conf.NetParams())
 	} else {
-		encryptedPrivateKeys, publicKeys, err = keys.ImportKeyPairs(conf.NumPrivateKeys)
+		encryptedPrivateKeys, extendedPublicKeys, err = keys.ImportKeyPairs(conf.NumPrivateKeys, conf.NetParams())
 	}
 	if err != nil {
 		return err
 	}
 
-	for i, publicKey := range publicKeys {
-		fmt.Printf("Public key of private key #%d:\n%x\n\n", i+1, publicKey)
+	for i, extendedPublicKey := range extendedPublicKeys {
+		fmt.Printf("Extended public key of mnemonic #%d:\n%x\n\n", i+1, extendedPublicKey)
 	}
 
 	reader := bufio.NewReader(os.Stdin)
 	for i := conf.NumPrivateKeys; i < conf.NumPublicKeys; i++ {
 		fmt.Printf("Enter public key #%d here:\n", i+1)
-		line, isPrefix, err := reader.ReadLine()
+		extendedPublicKey, isPrefix, err := reader.ReadLine()
 		if err != nil {
 			return err
 		}
@@ -42,16 +41,11 @@ func create(conf *createConfig) error {
 			return errors.Errorf("Public key is too long")
 		}
 
-		publicKey, err := hex.DecodeString(string(line))
-		if err != nil {
-			return err
-		}
-
-		publicKeys = append(publicKeys, publicKey)
+		extendedPublicKeys = append(extendedPublicKeys, string(extendedPublicKey))
 	}
 
 	err = keys.WriteKeysFile(
-		conf.NetParams(), conf.KeysFile, encryptedPrivateKeys, publicKeys, conf.MinimumSignatures, conf.ECDSA)
+		conf.NetParams(), conf.KeysFile, encryptedPrivateKeys, extendedPublicKeys, conf.MinimumSignatures, conf.ECDSA)
 	if err != nil {
 		return err
 	}
@@ -61,7 +55,7 @@ func create(conf *createConfig) error {
 		return err
 	}
 
-	addr, err := libkaspawallet.Address(conf.NetParams(), keysFile.PublicKeys, keysFile.MinimumSignatures, keysFile.ECDSA)
+	addr, err := libkaspawallet.Address(conf.NetParams(), keysFile.ExtendedPublicKeys, keysFile.MinimumSignatures, keysFile.ECDSA)
 	if err != nil {
 		return err
 	}

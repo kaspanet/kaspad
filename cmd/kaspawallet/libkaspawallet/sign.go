@@ -1,100 +1,41 @@
 package libkaspawallet
 
 import (
-	"bytes"
-	"github.com/kaspanet/go-secp256k1"
+	"github.com/kaspanet/kaspad/cmd/kaspawallet/libkaspawallet/bip32"
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/libkaspawallet/serialization"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/txscript"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/utxo"
+	"github.com/kaspanet/kaspad/domain/dagconfig"
 	"github.com/pkg/errors"
 )
 
-type signer interface {
-	rawTxInSignature(tx *externalapi.DomainTransaction, idx int, hashType consensushashing.SigHashType,
-		sighashReusedValues *consensushashing.SighashReusedValues) ([]byte, error)
-	serializedPublicKey() ([]byte, error)
-}
+func rawTxInSignature(extendedKey *bip32.ExtendedKey, tx *externalapi.DomainTransaction, idx int, hashType consensushashing.SigHashType,
+	sighashReusedValues *consensushashing.SighashReusedValues, ecdsa bool) ([]byte, error) {
 
-type schnorrSigner secp256k1.SchnorrKeyPair
-
-func (s *schnorrSigner) rawTxInSignature(tx *externalapi.DomainTransaction, idx int, hashType consensushashing.SigHashType,
-	sighashReusedValues *consensushashing.SighashReusedValues) ([]byte, error) {
-	return txscript.RawTxInSignature(tx, idx, hashType, (*secp256k1.SchnorrKeyPair)(s), sighashReusedValues)
-}
-
-func (s *schnorrSigner) serializedPublicKey() ([]byte, error) {
-	publicKey, err := (*secp256k1.SchnorrKeyPair)(s).SchnorrPublicKey()
-	if err != nil {
-		return nil, err
-	}
-
-	serializedPublicKey, err := publicKey.Serialize()
-	if err != nil {
-		return nil, err
-	}
-
-	return serializedPublicKey[:], nil
-}
-
-type ecdsaSigner secp256k1.ECDSAPrivateKey
-
-func (e *ecdsaSigner) rawTxInSignature(tx *externalapi.DomainTransaction, idx int, hashType consensushashing.SigHashType,
-	sighashReusedValues *consensushashing.SighashReusedValues) ([]byte, error) {
-	return txscript.RawTxInSignatureECDSA(tx, idx, hashType, (*secp256k1.ECDSAPrivateKey)(e), sighashReusedValues)
-}
-
-func (e *ecdsaSigner) serializedPublicKey() ([]byte, error) {
-	publicKey, err := (*secp256k1.ECDSAPrivateKey)(e).ECDSAPublicKey()
-	if err != nil {
-		return nil, err
-	}
-
-	serializedPublicKey, err := publicKey.Serialize()
-	if err != nil {
-		return nil, err
-	}
-
-	return serializedPublicKey[:], nil
-}
-
-func deserializeECDSAPrivateKey(privateKey []byte, ecdsa bool) (signer, error) {
+	privateKey := extendedKey.PrivateKey()
 	if ecdsa {
-		keyPair, err := secp256k1.DeserializeECDSAPrivateKeyFromSlice(privateKey)
-		if err != nil {
-			return nil, errors.Wrap(err, "Error deserializing private key")
-		}
-
-		return (*ecdsaSigner)(keyPair), nil
+		return txscript.RawTxInSignatureECDSA(tx, idx, hashType, privateKey, sighashReusedValues)
 	}
 
-	keyPair, err := secp256k1.DeserializeSchnorrPrivateKeyFromSlice(privateKey)
+	schnorrKeyPair, err := privateKey.ToSchnorr()
 	if err != nil {
-		return nil, errors.Wrap(err, "Error deserializing private key")
+		return nil, err
 	}
 
-	return (*schnorrSigner)(keyPair), nil
+	return txscript.RawTxInSignature(tx, idx, hashType, schnorrKeyPair, sighashReusedValues)
 }
 
 // Sign signs the transaction with the given private keys
-func Sign(privateKeys [][]byte, serializedPSTx []byte, ecdsa bool) ([]byte, error) {
-	keyPairs := make([]signer, len(privateKeys))
-	for i, privateKey := range privateKeys {
-		var err error
-		keyPairs[i], err = deserializeECDSAPrivateKey(privateKey, ecdsa)
-		if err != nil {
-			return nil, errors.Wrap(err, "Error deserializing private key")
-		}
-	}
-
+func Sign(params *dagconfig.Params, mnemonics []string, serializedPSTx []byte, ecdsa bool) ([]byte, error) {
 	partiallySignedTransaction, err := serialization.DeserializePartiallySignedTransaction(serializedPSTx)
 	if err != nil {
 		return nil, err
 	}
 
-	for _, keyPair := range keyPairs {
-		err = sign(keyPair, partiallySignedTransaction)
+	for _, mnemonic := range mnemonics {
+		err = sign(params, mnemonic, partiallySignedTransaction, ecdsa)
 		if err != nil {
 			return nil, err
 		}
@@ -103,14 +44,9 @@ func Sign(privateKeys [][]byte, serializedPSTx []byte, ecdsa bool) ([]byte, erro
 	return serialization.SerializePartiallySignedTransaction(partiallySignedTransaction)
 }
 
-func sign(keyPair signer, psTx *serialization.PartiallySignedTransaction) error {
+func sign(params *dagconfig.Params, mnemonic string, psTx *serialization.PartiallySignedTransaction, ecdsa bool) error {
 	if isTransactionFullySigned(psTx) {
 		return nil
-	}
-
-	serializedPublicKey, err := keyPair.serializedPublicKey()
-	if err != nil {
-		return err
 	}
 
 	sighashReusedValues := &consensushashing.SighashReusedValues{}
@@ -126,9 +62,26 @@ func sign(keyPair signer, psTx *serialization.PartiallySignedTransaction) error 
 
 	signed := false
 	for i, partiallySignedInput := range psTx.PartiallySignedInputs {
+		isMultisig := len(partiallySignedInput.PubKeySignaturePairs) > 1
+		path := defaultPath(isMultisig)
+		extendedKey, err := extendedKeyFromMnemonicAndPath(mnemonic, path, params)
+		if err != nil {
+			return err
+		}
+
+		derivedKey, err := extendedKey.DeriveFromPath(partiallySignedInput.DerivationPath)
+		if err != nil {
+			return err
+		}
+
+		derivedPublicKey, err := derivedKey.Public()
+		if err != nil {
+			return err
+		}
+
 		for _, pair := range partiallySignedInput.PubKeySignaturePairs {
-			if bytes.Equal(pair.PubKey, serializedPublicKey[:]) {
-				pair.Signature, err = keyPair.rawTxInSignature(psTx.Tx, i, consensushashing.SigHashAll, sighashReusedValues)
+			if pair.ExtendedPublicKey == derivedPublicKey.String() {
+				pair.Signature, err = rawTxInSignature(derivedKey, psTx.Tx, i, consensushashing.SigHashAll, sighashReusedValues, ecdsa)
 				if err != nil {
 					return err
 				}

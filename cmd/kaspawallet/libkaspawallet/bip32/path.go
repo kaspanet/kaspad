@@ -58,3 +58,8 @@ func parseIndex(indexString string) (uint32, error) {
 
 	return uint32(index), nil
 }
+
+func PathToPublic(path string) string {
+	trimmed := strings.TrimPrefix(path, "m")
+	return "M" + trimmed
+}

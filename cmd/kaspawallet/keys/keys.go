@@ -31,43 +31,38 @@ type encryptedPrivateKeyJSON struct {
 }
 
 type keysFileJSON struct {
-	EncryptedPrivateKeys []*encryptedPrivateKeyJSON `json:"encryptedPrivateKeys"`
-	PublicKeys           []string                   `json:"publicKeys"`
+	EncryptedPrivateKeys []*encryptedPrivateKeyJSON `json:"encryptedMnemonics"`
+	ExtendedPublicKeys   []string                   `json:"publicKeys"`
 	MinimumSignatures    uint32                     `json:"minimumSignatures"`
 	ECDSA                bool                       `json:"ecdsa"`
 }
 
-// EncryptedPrivateKey represents an encrypted private key
-type EncryptedPrivateKey struct {
+// EncryptedMnemonic represents an encrypted mnemonic
+type EncryptedMnemonic struct {
 	cipher []byte
 	salt   []byte
 }
 
 // Data holds all the data related to the wallet keys
 type Data struct {
-	encryptedPrivateKeys []*EncryptedPrivateKey
-	PublicKeys           [][]byte
-	MinimumSignatures    uint32
-	ECDSA                bool
+	encryptedMnemonics []*EncryptedMnemonic
+	ExtendedPublicKeys []string
+	MinimumSignatures  uint32
+	ECDSA              bool
 }
 
 func (d *Data) toJSON() *keysFileJSON {
-	encryptedPrivateKeysJSON := make([]*encryptedPrivateKeyJSON, len(d.encryptedPrivateKeys))
-	for i, encryptedPrivateKey := range d.encryptedPrivateKeys {
+	encryptedPrivateKeysJSON := make([]*encryptedPrivateKeyJSON, len(d.encryptedMnemonics))
+	for i, encryptedPrivateKey := range d.encryptedMnemonics {
 		encryptedPrivateKeysJSON[i] = &encryptedPrivateKeyJSON{
 			Cipher: hex.EncodeToString(encryptedPrivateKey.cipher),
 			Salt:   hex.EncodeToString(encryptedPrivateKey.salt),
 		}
 	}
 
-	publicKeysHex := make([]string, len(d.PublicKeys))
-	for i, publicKey := range d.PublicKeys {
-		publicKeysHex[i] = hex.EncodeToString(publicKey)
-	}
-
 	return &keysFileJSON{
 		EncryptedPrivateKeys: encryptedPrivateKeysJSON,
-		PublicKeys:           publicKeysHex,
+		ExtendedPublicKeys:   d.ExtendedPublicKeys,
 		MinimumSignatures:    d.MinimumSignatures,
 		ECDSA:                d.ECDSA,
 	}
@@ -76,8 +71,9 @@ func (d *Data) toJSON() *keysFileJSON {
 func (d *Data) fromJSON(fileJSON *keysFileJSON) error {
 	d.MinimumSignatures = fileJSON.MinimumSignatures
 	d.ECDSA = fileJSON.ECDSA
+	d.ExtendedPublicKeys = fileJSON.ExtendedPublicKeys
 
-	d.encryptedPrivateKeys = make([]*EncryptedPrivateKey, len(fileJSON.EncryptedPrivateKeys))
+	d.encryptedMnemonics = make([]*EncryptedMnemonic, len(fileJSON.EncryptedPrivateKeys))
 	for i, encryptedPrivateKeyJSON := range fileJSON.EncryptedPrivateKeys {
 		cipher, err := hex.DecodeString(encryptedPrivateKeyJSON.Cipher)
 		if err != nil {
@@ -89,32 +85,23 @@ func (d *Data) fromJSON(fileJSON *keysFileJSON) error {
 			return err
 		}
 
-		d.encryptedPrivateKeys[i] = &EncryptedPrivateKey{
+		d.encryptedMnemonics[i] = &EncryptedMnemonic{
 			cipher: cipher,
 			salt:   salt,
-		}
-	}
-
-	d.PublicKeys = make([][]byte, len(fileJSON.PublicKeys))
-	for i, publicKey := range fileJSON.PublicKeys {
-		var err error
-		d.PublicKeys[i], err = hex.DecodeString(publicKey)
-		if err != nil {
-			return err
 		}
 	}
 
 	return nil
 }
 
-// DecryptPrivateKeys asks the user to enter the password for the private keys and
+// DecryptMnemonics asks the user to enter the password for the private keys and
 // returns the decrypted private keys.
-func (d *Data) DecryptPrivateKeys() ([][]byte, error) {
+func (d *Data) DecryptMnemonics() ([]string, error) {
 	password := getPassword("Password:")
-	privateKeys := make([][]byte, len(d.encryptedPrivateKeys))
-	for i, encryptedPrivateKey := range d.encryptedPrivateKeys {
+	privateKeys := make([]string, len(d.encryptedMnemonics))
+	for i, encryptedPrivateKey := range d.encryptedMnemonics {
 		var err error
-		privateKeys[i], err = decryptPrivateKey(encryptedPrivateKey, password)
+		privateKeys[i], err = decryptMnemonic(encryptedPrivateKey, password)
 		if err != nil {
 			return nil, err
 		}
@@ -181,8 +168,8 @@ func pathExists(path string) (bool, error) {
 }
 
 // WriteKeysFile writes a keys file with the given data
-func WriteKeysFile(netParams *dagconfig.Params, path string, encryptedPrivateKeys []*EncryptedPrivateKey,
-	publicKeys [][]byte, minimumSignatures uint32, ecdsa bool) error {
+func WriteKeysFile(netParams *dagconfig.Params, path string, encryptedPrivateKeys []*EncryptedMnemonic,
+	extendedPublicKeys []string, minimumSignatures uint32, ecdsa bool) error {
 
 	if path == "" {
 		path = defaultKeysFile(netParams)
@@ -218,10 +205,10 @@ func WriteKeysFile(netParams *dagconfig.Params, path string, encryptedPrivateKey
 	defer file.Close()
 
 	keysFile := &Data{
-		encryptedPrivateKeys: encryptedPrivateKeys,
-		PublicKeys:           publicKeys,
-		MinimumSignatures:    minimumSignatures,
-		ECDSA:                ecdsa,
+		encryptedMnemonics: encryptedPrivateKeys,
+		ExtendedPublicKeys: extendedPublicKeys,
+		MinimumSignatures:  minimumSignatures,
+		ECDSA:              ecdsa,
 	}
 
 	encoder := json.NewEncoder(file)
@@ -239,19 +226,24 @@ func getAEAD(password, salt []byte) (cipher.AEAD, error) {
 	return chacha20poly1305.NewX(key)
 }
 
-func decryptPrivateKey(encryptedPrivateKey *EncryptedPrivateKey, password []byte) ([]byte, error) {
+func decryptMnemonic(encryptedPrivateKey *EncryptedMnemonic, password []byte) (string, error) {
 	aead, err := getAEAD(password, encryptedPrivateKey.salt)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 
 	if len(encryptedPrivateKey.cipher) < aead.NonceSize() {
-		return nil, errors.New("ciphertext too short")
+		return "", errors.New("ciphertext too short")
 	}
 
 	// Split nonce and ciphertext.
 	nonce, ciphertext := encryptedPrivateKey.cipher[:aead.NonceSize()], encryptedPrivateKey.cipher[aead.NonceSize():]
 
 	// Decrypt the message and check it wasn't tampered with.
-	return aead.Open(nil, nonce, ciphertext, nil)
+	decrypted, err := aead.Open(nil, nonce, ciphertext, nil)
+	if err != nil {
+		return "", err
+	}
+
+	return string(decrypted), nil
 }

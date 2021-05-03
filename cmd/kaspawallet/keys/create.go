@@ -4,48 +4,39 @@ import (
 	"bufio"
 	"crypto/rand"
 	"crypto/subtle"
-	"encoding/hex"
 	"fmt"
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/libkaspawallet"
+	"github.com/kaspanet/kaspad/domain/dagconfig"
 	"github.com/pkg/errors"
 	"os"
 )
 
 // CreateKeyPairs generates `numKeys` number of key pairs.
-func CreateKeyPairs(numKeys uint32, ecdsa bool) (encryptedPrivateKeys []*EncryptedPrivateKey, publicKeys [][]byte, err error) {
-	return createKeyPairsFromFunction(numKeys, func(_ uint32) ([]byte, []byte, error) {
-		return libkaspawallet.CreateKeyPair(ecdsa)
+func CreateKeyPairs(numKeys uint32, params *dagconfig.Params) (encryptedPrivateKeys []*EncryptedMnemonic, extendedPublicKeys []string, err error) {
+	return createKeyPairsFromFunction(numKeys, params, func(_ uint32) (string, error) {
+		return libkaspawallet.CreateMnemonic()
 	})
 }
 
 // ImportKeyPairs imports a `numKeys` of private keys and generates key pairs out of them.
-func ImportKeyPairs(numKeys uint32) (encryptedPrivateKeys []*EncryptedPrivateKey, publicKeys [][]byte, err error) {
-	return createKeyPairsFromFunction(numKeys, func(keyIndex uint32) ([]byte, []byte, error) {
-		fmt.Printf("Enter private key #%d here:\n", keyIndex+1)
+func ImportKeyPairs(numKeys uint32, params *dagconfig.Params) (encryptedPrivateKeys []*EncryptedMnemonic, publicKeys []string, err error) {
+	return createKeyPairsFromFunction(numKeys, params, func(keyIndex uint32) (string, error) {
+		fmt.Printf("Enter mnemonic #%d here:\n", keyIndex+1)
 		reader := bufio.NewReader(os.Stdin)
-		line, isPrefix, err := reader.ReadLine()
+		mnemonic, isPrefix, err := reader.ReadLine()
 		if err != nil {
-			return nil, nil, err
+			return "", err
 		}
 		if isPrefix {
-			return nil, nil, errors.Errorf("Private key is too long")
-		}
-		privateKey, err := hex.DecodeString(string(line))
-		if err != nil {
-			return nil, nil, err
+			return "", errors.Errorf("Mnemonic is too long")
 		}
 
-		publicKey, err := libkaspawallet.PublicKeyFromPrivateKey(privateKey)
-		if err != nil {
-			return nil, nil, err
-		}
-
-		return privateKey, publicKey, nil
+		return string(mnemonic), nil
 	})
 }
 
-func createKeyPairsFromFunction(numKeys uint32, keyPairFunction func(keyIndex uint32) ([]byte, []byte, error)) (
-	encryptedPrivateKeys []*EncryptedPrivateKey, publicKeys [][]byte, err error) {
+func createKeyPairsFromFunction(numKeys uint32, params *dagconfig.Params, keyPairFunction func(keyIndex uint32) (string, error)) (
+	encryptedPrivateKeys []*EncryptedMnemonic, extendedPublicKeys []string, err error) {
 
 	password := getPassword("Enter password for the key file:")
 	confirmPassword := getPassword("Confirm password:")
@@ -54,23 +45,28 @@ func createKeyPairsFromFunction(numKeys uint32, keyPairFunction func(keyIndex ui
 		return nil, nil, errors.New("Passwords are not identical")
 	}
 
-	encryptedPrivateKeys = make([]*EncryptedPrivateKey, 0, numKeys)
+	encryptedPrivateKeys = make([]*EncryptedMnemonic, 0, numKeys)
 	for i := uint32(0); i < numKeys; i++ {
-		privateKey, publicKey, err := keyPairFunction(i)
+		mnemonic, err := keyPairFunction(i)
 		if err != nil {
 			return nil, nil, err
 		}
 
-		publicKeys = append(publicKeys, publicKey)
+		extendedPublicKey, err := libkaspawallet.ExtendedPublicKeyFromMnemonic(mnemonic, numKeys > 1, params)
+		if err != nil {
+			return nil, nil, err
+		}
 
-		encryptedPrivateKey, err := encryptPrivateKey(privateKey, password)
+		extendedPublicKeys = append(extendedPublicKeys, extendedPublicKey)
+
+		encryptedPrivateKey, err := encryptMnemonic(mnemonic, password)
 		if err != nil {
 			return nil, nil, err
 		}
 		encryptedPrivateKeys = append(encryptedPrivateKeys, encryptedPrivateKey)
 	}
 
-	return encryptedPrivateKeys, publicKeys, nil
+	return encryptedPrivateKeys, extendedPublicKeys, nil
 }
 
 func generateSalt() ([]byte, error) {
@@ -83,7 +79,9 @@ func generateSalt() ([]byte, error) {
 	return salt, nil
 }
 
-func encryptPrivateKey(privateKey []byte, password []byte) (*EncryptedPrivateKey, error) {
+func encryptMnemonic(mnemonic string, password []byte) (*EncryptedMnemonic, error) {
+	mnemonicBytes := []byte(mnemonic)
+
 	salt, err := generateSalt()
 	if err != nil {
 		return nil, err
@@ -95,15 +93,15 @@ func encryptPrivateKey(privateKey []byte, password []byte) (*EncryptedPrivateKey
 	}
 
 	// Select a random nonce, and leave capacity for the ciphertext.
-	nonce := make([]byte, aead.NonceSize(), aead.NonceSize()+len(privateKey)+aead.Overhead())
+	nonce := make([]byte, aead.NonceSize(), aead.NonceSize()+len(mnemonicBytes)+aead.Overhead())
 	if _, err := rand.Read(nonce); err != nil {
 		return nil, err
 	}
 
 	// Encrypt the message and append the ciphertext to the nonce.
-	cipher := aead.Seal(nonce, nonce, privateKey, nil)
+	cipher := aead.Seal(nonce, nonce, []byte(mnemonicBytes), nil)
 
-	return &EncryptedPrivateKey{
+	return &EncryptedMnemonic{
 		cipher: cipher,
 		salt:   salt,
 	}, nil

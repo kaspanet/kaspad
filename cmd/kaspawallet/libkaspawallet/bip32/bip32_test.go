@@ -270,9 +270,9 @@ func TestBIP32SpecVectors(t *testing.T) {
 				t.Fatalf("Test (%d, %d): expected extended private key %s but got %s", i, j, path.extendedPrivateKey, extendedPrivateKey.String())
 			}
 
-			decodedExtendedPrivateKey, err := DeserializeExtendedPrivateKey(extendedPrivateKey.String())
+			decodedExtendedPrivateKey, err := DeserializeExtendedKey(extendedPrivateKey.String())
 			if err != nil {
-				t.Fatalf("DeserializeExtendedPrivateKey: %+v", err)
+				t.Fatalf("DeserializeExtendedKey: %+v", err)
 			}
 
 			if extendedPrivateKey.String() != decodedExtendedPrivateKey.String() {
@@ -288,7 +288,7 @@ func TestBIP32SpecVectors(t *testing.T) {
 				t.Fatalf("Test (%d, %d): expected extended public key %s but got %s", i, j, path.extendedPublicKey, extendedPublicKey.String())
 			}
 
-			decodedExtendedPublicKey, err := DeserializeExtendedPrivateKey(extendedPublicKey.String())
+			decodedExtendedPublicKey, err := DeserializeExtendedKey(extendedPublicKey.String())
 			if err != nil {
 				t.Fatalf("DeserializeExtendedPublicKey: %+v", err)
 			}
@@ -360,7 +360,7 @@ func TestPublicParentPublicChildDerivation(t *testing.T) {
 	// Derivation Path m/44'/60'/0'/0:
 	// xprv9zy5o7z1GMmYdaeQdmabWFhUf52Ytbpe3G5hduA4SghboqWe7aDGWseN8BJy1GU72wPjkCbBE1hvbXYqpCecAYdaivxjNnBoSNxwYD4wHpW
 	// xpub6DxSCdWu6jKqr4isjo7bsPeDD6s3J4YVQV1JSHZg12Eagdqnf7XX4fxqyW2sLhUoFWutL7tAELU2LiGZrEXtjVbvYptvTX5Eoa4Mamdjm9u
-	extendedMasterPublic, err := DeserializeExtendedPrivateKey("xpub6DxSCdWu6jKqr4isjo7bsPeDD6s3J4YVQV1JSHZg12Eagdqnf7XX4fxqyW2sLhUoFWutL7tAELU2LiGZrEXtjVbvYptvTX5Eoa4Mamdjm9u")
+	extendedMasterPublic, err := DeserializeExtendedKey("xpub6DxSCdWu6jKqr4isjo7bsPeDD6s3J4YVQV1JSHZg12Eagdqnf7XX4fxqyW2sLhUoFWutL7tAELU2LiGZrEXtjVbvYptvTX5Eoa4Mamdjm9u")
 	if err != nil {
 		t.Fatalf("DeserializeExtendedPublicKey: %+v", err)
 	}

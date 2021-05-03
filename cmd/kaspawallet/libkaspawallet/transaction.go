@@ -1,7 +1,7 @@
 package libkaspawallet
 
 import (
-	"bytes"
+	"github.com/kaspanet/kaspad/cmd/kaspawallet/libkaspawallet/bip32"
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/libkaspawallet/serialization"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
@@ -10,6 +10,7 @@ import (
 	"github.com/kaspanet/kaspad/util"
 	"github.com/pkg/errors"
 	"sort"
+	"strings"
 )
 
 // Payment contains a recipient payment details
@@ -18,22 +19,22 @@ type Payment struct {
 	Amount  uint64
 }
 
-func sortPublicKeys(publicKeys [][]byte) {
-	sort.Slice(publicKeys, func(i, j int) bool {
-		return bytes.Compare(publicKeys[i], publicKeys[j]) < 0
+func sortPublicKeys(extendedPublicKeys []string) {
+	sort.Slice(extendedPublicKeys, func(i, j int) bool {
+		return strings.Compare(extendedPublicKeys[i], extendedPublicKeys[j]) < 0
 	})
 }
 
 // CreateUnsignedTransaction creates an unsigned transaction
 func CreateUnsignedTransaction(
-	pubKeys [][]byte,
+	extendedPublicKeys []string,
 	minimumSignatures uint32,
 	ecdsa bool,
 	payments []*Payment,
 	selectedUTXOs []*externalapi.OutpointAndUTXOEntryPair) ([]byte, error) {
 
-	sortPublicKeys(pubKeys)
-	unsignedTransaction, err := createUnsignedTransaction(pubKeys, minimumSignatures, ecdsa, payments, selectedUTXOs)
+	sortPublicKeys(extendedPublicKeys)
+	unsignedTransaction, err := createUnsignedTransaction(extendedPublicKeys, minimumSignatures, ecdsa, payments, selectedUTXOs)
 	if err != nil {
 		return nil, err
 	}
@@ -41,13 +42,49 @@ func CreateUnsignedTransaction(
 	return serialization.SerializePartiallySignedTransaction(unsignedTransaction)
 }
 
-func multiSigRedeemScript(pubKeys [][]byte, minimumSignatures uint32, ecdsa bool) ([]byte, error) {
+func multiSigRedeemScript(extendedPublicKeys []string, minimumSignatures uint32, ecdsa bool) ([]byte, error) {
 	scriptBuilder := txscript.NewScriptBuilder()
 	scriptBuilder.AddInt64(int64(minimumSignatures))
-	for _, key := range pubKeys {
-		scriptBuilder.AddData(key)
+	for _, key := range extendedPublicKeys {
+		extendedKey, err := bip32.DeserializeExtendedKey(key)
+		if err != nil {
+			return nil, err
+		}
+
+		// TODO: Implement no-reuse address policy
+		firstChild, err := extendedKey.Child(0)
+		if err != nil {
+			return nil, err
+		}
+
+		publicKey, err := firstChild.PublicKey()
+		if err != nil {
+			return nil, err
+		}
+
+		var serializedPublicKey []byte
+		if ecdsa {
+			serializedECDSAPublicKey, err := publicKey.Serialize()
+			if err != nil {
+				return nil, err
+			}
+			serializedPublicKey = serializedECDSAPublicKey[:]
+		} else {
+			schnorrPublicKey, err := publicKey.ToSchnorr()
+			if err != nil {
+				return nil, err
+			}
+
+			serializedSchnorrPublicKey, err := schnorrPublicKey.Serialize()
+			if err != nil {
+				return nil, err
+			}
+			serializedPublicKey = serializedSchnorrPublicKey[:]
+		}
+
+		scriptBuilder.AddData(serializedPublicKey)
 	}
-	scriptBuilder.AddInt64(int64(len(pubKeys)))
+	scriptBuilder.AddInt64(int64(len(extendedPublicKeys)))
 
 	if ecdsa {
 		scriptBuilder.AddOp(txscript.OpCheckMultiSigECDSA)
@@ -59,16 +96,16 @@ func multiSigRedeemScript(pubKeys [][]byte, minimumSignatures uint32, ecdsa bool
 }
 
 func createUnsignedTransaction(
-	pubKeys [][]byte,
+	extendedPublicKeys []string,
 	minimumSignatures uint32,
 	ecdsa bool,
 	payments []*Payment,
 	selectedUTXOs []*externalapi.OutpointAndUTXOEntryPair) (*serialization.PartiallySignedTransaction, error) {
 
 	var redeemScript []byte
-	if len(pubKeys) > 1 {
+	if len(extendedPublicKeys) > 1 {
 		var err error
-		redeemScript, err = multiSigRedeemScript(pubKeys, minimumSignatures, ecdsa)
+		redeemScript, err = multiSigRedeemScript(extendedPublicKeys, minimumSignatures, ecdsa)
 		if err != nil {
 			return nil, err
 		}
@@ -77,10 +114,21 @@ func createUnsignedTransaction(
 	inputs := make([]*externalapi.DomainTransactionInput, len(selectedUTXOs))
 	partiallySignedInputs := make([]*serialization.PartiallySignedInput, len(selectedUTXOs))
 	for i, utxo := range selectedUTXOs {
-		emptyPubKeySignaturePairs := make([]*serialization.PubKeySignaturePair, len(pubKeys))
-		for i, pubKey := range pubKeys {
+		emptyPubKeySignaturePairs := make([]*serialization.PubKeySignaturePair, len(extendedPublicKeys))
+		for i, extendedPublicKey := range extendedPublicKeys {
+			extendedKey, err := bip32.DeserializeExtendedKey(extendedPublicKey)
+			if err != nil {
+				return nil, err
+			}
+
+			// TODO: Implement no-reuse address policy
+			firstChild, err := extendedKey.Child(0)
+			if err != nil {
+				return nil, err
+			}
+
 			emptyPubKeySignaturePairs[i] = &serialization.PubKeySignaturePair{
-				PubKey: pubKey,
+				ExtendedPublicKey: firstChild.String(),
 			}
 		}
 
@@ -93,6 +141,7 @@ func createUnsignedTransaction(
 			},
 			MinimumSignatures:    minimumSignatures,
 			PubKeySignaturePairs: emptyPubKeySignaturePairs,
+			DerivationPath:       "m/0", // TODO: Implement no-reuse address policy
 		}
 	}
 

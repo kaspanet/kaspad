@@ -20,7 +20,7 @@ func createUnsignedTransaction(conf *createUnsignedTransactionConfig) error {
 		return err
 	}
 
-	fromAddress, err := libkaspawallet.Address(conf.NetParams(), keysFile.PublicKeys, keysFile.MinimumSignatures, keysFile.ECDSA)
+	fromAddress, err := libkaspawallet.Address(conf.NetParams(), keysFile.ExtendedPublicKeys, keysFile.MinimumSignatures, keysFile.ECDSA)
 	if err != nil {
 		return err
 	}
@@ -42,7 +42,7 @@ func createUnsignedTransaction(conf *createUnsignedTransactionConfig) error {
 		return err
 	}
 
-	psTx, err := libkaspawallet.CreateUnsignedTransaction(keysFile.PublicKeys,
+	psTx, err := libkaspawallet.CreateUnsignedTransaction(keysFile.ExtendedPublicKeys,
 		keysFile.MinimumSignatures,
 		keysFile.ECDSA,
 		[]*libkaspawallet.Payment{{

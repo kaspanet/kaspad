@@ -26,6 +26,7 @@ func forSchnorrAndECDSA(t *testing.T, testFunc func(t *testing.T, ecdsa bool)) {
 
 func TestMultisig(t *testing.T) {
 	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
+		params := &consensusConfig.Params
 		forSchnorrAndECDSA(t, func(t *testing.T, ecdsa bool) {
 			consensusConfig.BlockCoinbaseMaturity = 0
 			tc, teardown, err := consensus.NewFactory().NewTestConsensus(consensusConfig, "TestMultisig")
@@ -35,17 +36,23 @@ func TestMultisig(t *testing.T) {
 			defer teardown(false)
 
 			const numKeys = 3
-			privateKeys := make([][]byte, numKeys)
-			publicKeys := make([][]byte, numKeys)
+			privateKeys := make([]string, numKeys)
+			publicKeys := make([]string, numKeys)
 			for i := 0; i < numKeys; i++ {
-				privateKeys[i], publicKeys[i], err = libkaspawallet.CreateKeyPair(ecdsa)
+				var err error
+				privateKeys[i], err = libkaspawallet.CreateMnemonic()
 				if err != nil {
-					t.Fatalf("CreateKeyPair: %+v", err)
+					t.Fatalf("CreateMnemonic: %+v", err)
+				}
+
+				publicKeys[i], err = libkaspawallet.ExtendedPublicKeyFromMnemonic(privateKeys[i], true, &consensusConfig.Params)
+				if err != nil {
+					t.Fatalf("ExtendedPublicKeyFromMnemonic: %+v", err)
 				}
 			}
 
 			const minimumSignatures = 2
-			address, err := libkaspawallet.Address(&consensusConfig.Params, publicKeys, minimumSignatures, ecdsa)
+			address, err := libkaspawallet.Address(params, publicKeys, minimumSignatures, ecdsa)
 			if err != nil {
 				t.Fatalf("Address: %+v", err)
 			}
@@ -112,7 +119,7 @@ func TestMultisig(t *testing.T) {
 				t.Fatal("Unexpectedly succeed to extract a valid transaction out of unsigned transaction")
 			}
 
-			signedTxStep1, err := libkaspawallet.Sign(privateKeys[:1], unsignedTransaction, ecdsa)
+			signedTxStep1, err := libkaspawallet.Sign(params, privateKeys[:1], unsignedTransaction, ecdsa)
 			if err != nil {
 				t.Fatalf("IsTransactionFullySigned: %+v", err)
 			}
@@ -126,7 +133,7 @@ func TestMultisig(t *testing.T) {
 				t.Fatalf("Transaction is not expected to be fully signed")
 			}
 
-			signedTxStep2, err := libkaspawallet.Sign(privateKeys[1:2], signedTxStep1, ecdsa)
+			signedTxStep2, err := libkaspawallet.Sign(params, privateKeys[1:2], signedTxStep1, ecdsa)
 			if err != nil {
 				t.Fatalf("Sign: %+v", err)
 			}
@@ -136,7 +143,7 @@ func TestMultisig(t *testing.T) {
 				t.Fatalf("ExtractTransaction: %+v", err)
 			}
 
-			signedTxOneStep, err := libkaspawallet.Sign(privateKeys[:2], unsignedTransaction, ecdsa)
+			signedTxOneStep, err := libkaspawallet.Sign(params, privateKeys[:2], unsignedTransaction, ecdsa)
 			if err != nil {
 				t.Fatalf("Sign: %+v", err)
 			}
@@ -170,6 +177,7 @@ func TestMultisig(t *testing.T) {
 
 func TestP2PK(t *testing.T) {
 	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
+		params := &consensusConfig.Params
 		forSchnorrAndECDSA(t, func(t *testing.T, ecdsa bool) {
 			consensusConfig.BlockCoinbaseMaturity = 0
 			tc, teardown, err := consensus.NewFactory().NewTestConsensus(consensusConfig, "TestMultisig")
@@ -179,17 +187,23 @@ func TestP2PK(t *testing.T) {
 			defer teardown(false)
 
 			const numKeys = 1
-			privateKeys := make([][]byte, numKeys)
-			publicKeys := make([][]byte, numKeys)
+			privateKeys := make([]string, numKeys)
+			publicKeys := make([]string, numKeys)
 			for i := 0; i < numKeys; i++ {
-				privateKeys[i], publicKeys[i], err = libkaspawallet.CreateKeyPair(ecdsa)
+				var err error
+				privateKeys[i], err = libkaspawallet.CreateMnemonic()
 				if err != nil {
-					t.Fatalf("CreateKeyPair: %+v", err)
+					t.Fatalf("CreateMnemonic: %+v", err)
+				}
+
+				publicKeys[i], err = libkaspawallet.ExtendedPublicKeyFromMnemonic(privateKeys[i], false, &consensusConfig.Params)
+				if err != nil {
+					t.Fatalf("ExtendedPublicKeyFromMnemonic: %+v", err)
 				}
 			}
 
 			const minimumSignatures = 1
-			address, err := libkaspawallet.Address(&consensusConfig.Params, publicKeys, minimumSignatures, ecdsa)
+			address, err := libkaspawallet.Address(params, publicKeys, minimumSignatures, ecdsa)
 			if err != nil {
 				t.Fatalf("Address: %+v", err)
 			}
@@ -263,9 +277,9 @@ func TestP2PK(t *testing.T) {
 				t.Fatal("Unexpectedly succeed to extract a valid transaction out of unsigned transaction")
 			}
 
-			signedTx, err := libkaspawallet.Sign(privateKeys, unsignedTransaction, ecdsa)
+			signedTx, err := libkaspawallet.Sign(params, privateKeys, unsignedTransaction, ecdsa)
 			if err != nil {
-				t.Fatalf("IsTransactionFullySigned: %+v", err)
+				t.Fatalf("Sign: %+v", err)
 			}
 
 			tx, err := libkaspawallet.ExtractTransaction(signedTx)
