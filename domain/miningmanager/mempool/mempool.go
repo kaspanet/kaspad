@@ -418,16 +418,17 @@ func (mp *mempool) removeTransactionAndItsChainedTransactions(tx *consensusexter
 	txAndOutpointQueue = insertToTxAndOutpointQueue(txAndOutpointQueue, tx)
 	// Remove any transactions which rely on this one.
 	for len(txAndOutpointQueue) > 0 {
-		txAndOutpoint, txAndOutpointQueue := txAndOutpointQueue[0], txAndOutpointQueue[1:]
-		if txRedeemer, exists := mp.mempoolUTXOSet.poolTransactionBySpendingOutpoint(*txAndOutpoint.outpoint); exists {
+		txnAndOutpoint := txAndOutpointQueue[0]
+		txAndOutpointQueue = txAndOutpointQueue[1:]
+		if txRedeemer, exists := mp.mempoolUTXOSet.poolTransactionBySpendingOutpoint(*txnAndOutpoint.outpoint); exists {
 			txAndOutpointQueue = insertToTxAndOutpointQueue(txAndOutpointQueue, txRedeemer)
 		}
 
-		txID := txAndOutpoint.outpoint.TransactionID
+		txID := txnAndOutpoint.outpoint.TransactionID
 		if _, exists := mp.chainedTransactions[txID]; exists {
-			mp.removeChainTransaction(txAndOutpoint.tx)
+			mp.removeChainTransaction(txnAndOutpoint.tx)
 		}
-		err := mp.cleanTransactionFromSets(txAndOutpoint.tx)
+		err := mp.cleanTransactionFromSets(txnAndOutpoint.tx)
 		if err != nil {
 			return err
 		}
