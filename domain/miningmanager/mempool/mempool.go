@@ -406,32 +406,42 @@ func (mp *mempool) removeTransactionsFromPool(txs []*consensusexternalapi.Domain
 	return nil
 }
 
+type txAndOutpoint struct {
+	tx       *consensusexternalapi.DomainTransaction
+	outpoint *consensusexternalapi.DomainOutpoint
+}
+
 // removeTransactionAndItsChainedTransactions removes a transaction and all of its chained transaction from the mempool.
-//
 // This function MUST be called with the mempool lock held (for writes).
 func (mp *mempool) removeTransactionAndItsChainedTransactions(tx *consensusexternalapi.DomainTransaction) error {
-	txID := consensushashing.TransactionID(tx)
+	txAndOutpointQueue := make([]txAndOutpoint, 0)
+	txAndOutpointQueue = insertToTxAndOutpointQueue(txAndOutpointQueue, tx)
 	// Remove any transactions which rely on this one.
-	for i := uint32(0); i < uint32(len(tx.Outputs)); i++ {
-		prevOut := consensusexternalapi.DomainOutpoint{TransactionID: *txID, Index: i}
-		if txRedeemer, exists := mp.mempoolUTXOSet.poolTransactionBySpendingOutpoint(prevOut); exists {
-			err := mp.removeTransactionAndItsChainedTransactions(txRedeemer)
-			if err != nil {
-				return err
-			}
+	for len(txAndOutpointQueue) > 0 {
+		txAndOutpoint, txAndOutpointQueue := txAndOutpointQueue[0], txAndOutpointQueue[1:]
+		if txRedeemer, exists := mp.mempoolUTXOSet.poolTransactionBySpendingOutpoint(*txAndOutpoint.outpoint); exists {
+			txAndOutpointQueue = insertToTxAndOutpointQueue(txAndOutpointQueue, txRedeemer)
+		}
+
+		txID := txAndOutpoint.outpoint.TransactionID
+		if _, exists := mp.chainedTransactions[txID]; exists {
+			mp.removeChainTransaction(txAndOutpoint.tx)
+		}
+		err := mp.cleanTransactionFromSets(txAndOutpoint.tx)
+		if err != nil {
+			return err
 		}
 	}
-
-	if _, exists := mp.chainedTransactions[*txID]; exists {
-		mp.removeChainTransaction(tx)
-	}
-
-	err := mp.cleanTransactionFromSets(tx)
-	if err != nil {
-		return err
-	}
-
 	return nil
+}
+
+func insertToTxAndOutpointQueue(queue []txAndOutpoint, tx *consensusexternalapi.DomainTransaction) []txAndOutpoint {
+	txID := consensushashing.TransactionID(tx)
+	for i := uint32(0); i < uint32(len(tx.Outputs)); i++ {
+		prevOut := consensusexternalapi.DomainOutpoint{TransactionID: *txID, Index: i}
+		queue = append(queue, txAndOutpoint{tx: tx, outpoint: &prevOut})
+	}
+	return queue
 }
 
 // cleanTransactionFromSets removes the transaction from all mempool related transaction sets.
