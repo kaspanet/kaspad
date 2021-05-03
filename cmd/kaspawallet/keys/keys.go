@@ -34,6 +34,8 @@ type keysFileJSON struct {
 	EncryptedPrivateKeys []*encryptedPrivateKeyJSON `json:"encryptedMnemonics"`
 	ExtendedPublicKeys   []string                   `json:"publicKeys"`
 	MinimumSignatures    uint32                     `json:"minimumSignatures"`
+	CosignerIndex        uint32                     `json:"cosignerIndex"`
+	LastUsedIndex        uint32                     `json:"lastUsedIndex"`
 	ECDSA                bool                       `json:"ecdsa"`
 }
 
@@ -48,6 +50,8 @@ type Data struct {
 	encryptedMnemonics []*EncryptedMnemonic
 	ExtendedPublicKeys []string
 	MinimumSignatures  uint32
+	CosignerIndex      uint32
+	LastUsedIndex      uint32
 	ECDSA              bool
 }
 
@@ -65,6 +69,8 @@ func (d *Data) toJSON() *keysFileJSON {
 		ExtendedPublicKeys:   d.ExtendedPublicKeys,
 		MinimumSignatures:    d.MinimumSignatures,
 		ECDSA:                d.ECDSA,
+		CosignerIndex:        d.CosignerIndex,
+		LastUsedIndex:        d.LastUsedIndex,
 	}
 }
 
@@ -72,6 +78,8 @@ func (d *Data) fromJSON(fileJSON *keysFileJSON) error {
 	d.MinimumSignatures = fileJSON.MinimumSignatures
 	d.ECDSA = fileJSON.ECDSA
 	d.ExtendedPublicKeys = fileJSON.ExtendedPublicKeys
+	d.CosignerIndex = fileJSON.CosignerIndex
+	d.LastUsedIndex = fileJSON.LastUsedIndex
 
 	d.encryptedMnemonics = make([]*EncryptedMnemonic, len(fileJSON.EncryptedPrivateKeys))
 	for i, encryptedPrivateKeyJSON := range fileJSON.EncryptedPrivateKeys {
@@ -169,7 +177,7 @@ func pathExists(path string) (bool, error) {
 
 // WriteKeysFile writes a keys file with the given data
 func WriteKeysFile(netParams *dagconfig.Params, path string, encryptedPrivateKeys []*EncryptedMnemonic,
-	extendedPublicKeys []string, minimumSignatures uint32, ecdsa bool) error {
+	extendedPublicKeys []string, minimumSignatures uint32, cosignerIndex uint32, lastUsedIndex uint32, ecdsa bool) error {
 
 	if path == "" {
 		path = defaultKeysFile(netParams)
@@ -208,6 +216,7 @@ func WriteKeysFile(netParams *dagconfig.Params, path string, encryptedPrivateKey
 		encryptedMnemonics: encryptedPrivateKeys,
 		ExtendedPublicKeys: extendedPublicKeys,
 		MinimumSignatures:  minimumSignatures,
+		CosignerIndex:      cosignerIndex,
 		ECDSA:              ecdsa,
 	}
 

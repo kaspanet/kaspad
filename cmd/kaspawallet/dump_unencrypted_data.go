@@ -3,10 +3,10 @@ package main
 import (
 	"bufio"
 	"fmt"
-	"os"
-
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/keys"
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/libkaspawallet"
+	"os"
+
 	"github.com/pkg/errors"
 )
 
@@ -21,25 +21,25 @@ func dumpUnencryptedData(conf *dumpUnencryptedDataConfig) error {
 		return err
 	}
 
-	privateKeys, err := keysFile.DecryptMnemonics()
+	mnemonics, err := keysFile.DecryptMnemonics()
 	if err != nil {
 		return err
 	}
 
-	privateKeysPublicKeys := make(map[string]struct{})
-	for i, privateKey := range privateKeys {
-		fmt.Printf("Private key #%d:\n%x\n\n", i+1, privateKey)
-		publicKey, err := libkaspawallet.PublicKeyFromPrivateKey(privateKey)
+	mnemonicPublicKeys := make(map[string]struct{})
+	for i, privateKey := range mnemonics {
+		fmt.Printf("Mnemonic #%d:\n%x\n\n", i+1, privateKey)
+		publicKey, err := libkaspawallet.ExtendedPublicKeyFromMnemonic(conf.NetParams(), privateKey, len(keysFile.ExtendedPublicKeys) > 1)
 		if err != nil {
 			return err
 		}
 
-		privateKeysPublicKeys[string(publicKey)] = struct{}{}
+		mnemonicPublicKeys[string(publicKey)] = struct{}{}
 	}
 
 	i := 1
 	for _, publicKey := range keysFile.ExtendedPublicKeys {
-		if _, exists := privateKeysPublicKeys[string(publicKey)]; exists {
+		if _, exists := mnemonicPublicKeys[string(publicKey)]; exists {
 			continue
 		}
 

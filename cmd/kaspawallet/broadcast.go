@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/hex"
 	"fmt"
+	"github.com/kaspanet/kaspad/cmd/kaspawallet/keys"
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/libkaspawallet"
 )
 
@@ -12,12 +13,17 @@ func broadcast(conf *broadcastConfig) error {
 		return err
 	}
 
+	keysFile, err := keys.ReadKeysFile(conf.NetParams(), conf.KeysFile)
+	if err != nil {
+		return err
+	}
+
 	psTxBytes, err := hex.DecodeString(conf.Transaction)
 	if err != nil {
 		return err
 	}
 
-	tx, err := libkaspawallet.ExtractTransaction(psTxBytes)
+	tx, err := libkaspawallet.ExtractTransaction(psTxBytes, keysFile.ECDSA)
 	if err != nil {
 		return err
 	}

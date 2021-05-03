@@ -63,12 +63,14 @@ type signConfig struct {
 
 type broadcastConfig struct {
 	RPCServer   string `long:"rpcserver" short:"s" description:"RPC server to connect to"`
+	KeysFile    string `long:"keys-file" short:"f" description:"Keys file location (default: ~/.kaspawallet/keys.json (*nix), %USERPROFILE%\\AppData\\Local\\Kaspawallet\\key.json (Windows))"`
 	Transaction string `long:"transaction" short:"t" description:"The signed transaction to broadcast (encoded in hex)" required:"true"`
 	config.NetworkFlags
 }
 
 type showAddressConfig struct {
-	KeysFile string `long:"keys-file" short:"f" description:"Keys file location (default: ~/.kaspawallet/keys.json (*nix), %USERPROFILE%\\AppData\\Local\\Kaspawallet\\key.json (Windows))"`
+	KeysFile  string `long:"keys-file" short:"f" description:"Keys file location (default: ~/.kaspawallet/keys.json (*nix), %USERPROFILE%\\AppData\\Local\\Kaspawallet\\key.json (Windows))"`
+	RPCServer string `long:"rpcserver" short:"s" description:"RPC server to connect to"`
 	config.NetworkFlags
 }
 

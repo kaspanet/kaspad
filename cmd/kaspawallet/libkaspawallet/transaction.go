@@ -9,8 +9,6 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/utils/txscript"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/pkg/errors"
-	"sort"
-	"strings"
 )
 
 // Payment contains a recipient payment details
@@ -19,22 +17,20 @@ type Payment struct {
 	Amount  uint64
 }
 
-func sortPublicKeys(extendedPublicKeys []string) {
-	sort.Slice(extendedPublicKeys, func(i, j int) bool {
-		return strings.Compare(extendedPublicKeys[i], extendedPublicKeys[j]) < 0
-	})
+type UTXO struct {
+	*externalapi.OutpointAndUTXOEntryPair
+	DerivationPath string
 }
 
 // CreateUnsignedTransaction creates an unsigned transaction
 func CreateUnsignedTransaction(
 	extendedPublicKeys []string,
 	minimumSignatures uint32,
-	ecdsa bool,
 	payments []*Payment,
-	selectedUTXOs []*externalapi.OutpointAndUTXOEntryPair) ([]byte, error) {
+	selectedUTXOs []*UTXO) ([]byte, error) {
 
 	sortPublicKeys(extendedPublicKeys)
-	unsignedTransaction, err := createUnsignedTransaction(extendedPublicKeys, minimumSignatures, ecdsa, payments, selectedUTXOs)
+	unsignedTransaction, err := createUnsignedTransaction(extendedPublicKeys, minimumSignatures, payments, selectedUTXOs)
 	if err != nil {
 		return nil, err
 	}
@@ -42,7 +38,7 @@ func CreateUnsignedTransaction(
 	return serialization.SerializePartiallySignedTransaction(unsignedTransaction)
 }
 
-func multiSigRedeemScript(extendedPublicKeys []string, minimumSignatures uint32, ecdsa bool) ([]byte, error) {
+func multiSigRedeemScript(extendedPublicKeys []string, minimumSignatures uint32, path string, ecdsa bool) ([]byte, error) {
 	scriptBuilder := txscript.NewScriptBuilder()
 	scriptBuilder.AddInt64(int64(minimumSignatures))
 	for _, key := range extendedPublicKeys {
@@ -51,13 +47,12 @@ func multiSigRedeemScript(extendedPublicKeys []string, minimumSignatures uint32,
 			return nil, err
 		}
 
-		// TODO: Implement no-reuse address policy
-		firstChild, err := extendedKey.Child(0)
+		derivedKey, err := extendedKey.DeriveFromPath(path)
 		if err != nil {
 			return nil, err
 		}
 
-		publicKey, err := firstChild.PublicKey()
+		publicKey, err := derivedKey.PublicKey()
 		if err != nil {
 			return nil, err
 		}
@@ -98,18 +93,8 @@ func multiSigRedeemScript(extendedPublicKeys []string, minimumSignatures uint32,
 func createUnsignedTransaction(
 	extendedPublicKeys []string,
 	minimumSignatures uint32,
-	ecdsa bool,
 	payments []*Payment,
-	selectedUTXOs []*externalapi.OutpointAndUTXOEntryPair) (*serialization.PartiallySignedTransaction, error) {
-
-	var redeemScript []byte
-	if len(extendedPublicKeys) > 1 {
-		var err error
-		redeemScript, err = multiSigRedeemScript(extendedPublicKeys, minimumSignatures, ecdsa)
-		if err != nil {
-			return nil, err
-		}
-	}
+	selectedUTXOs []*UTXO) (*serialization.PartiallySignedTransaction, error) {
 
 	inputs := make([]*externalapi.DomainTransactionInput, len(selectedUTXOs))
 	partiallySignedInputs := make([]*serialization.PartiallySignedInput, len(selectedUTXOs))
@@ -121,27 +106,25 @@ func createUnsignedTransaction(
 				return nil, err
 			}
 
-			// TODO: Implement no-reuse address policy
-			firstChild, err := extendedKey.Child(0)
+			derivedKey, err := extendedKey.DeriveFromPath(utxo.DerivationPath)
 			if err != nil {
 				return nil, err
 			}
 
 			emptyPubKeySignaturePairs[i] = &serialization.PubKeySignaturePair{
-				ExtendedPublicKey: firstChild.String(),
+				ExtendedPublicKey: derivedKey.String(),
 			}
 		}
 
 		inputs[i] = &externalapi.DomainTransactionInput{PreviousOutpoint: *utxo.Outpoint}
 		partiallySignedInputs[i] = &serialization.PartiallySignedInput{
-			RedeeemScript: redeemScript,
 			PrevOutput: &externalapi.DomainTransactionOutput{
 				Value:           utxo.UTXOEntry.Amount(),
 				ScriptPublicKey: utxo.UTXOEntry.ScriptPublicKey(),
 			},
 			MinimumSignatures:    minimumSignatures,
 			PubKeySignaturePairs: emptyPubKeySignaturePairs,
-			DerivationPath:       "m/0", // TODO: Implement no-reuse address policy
+			DerivationPath:       utxo.DerivationPath,
 		}
 	}
 
@@ -201,18 +184,18 @@ func isTransactionFullySigned(psTx *serialization.PartiallySignedTransaction) bo
 
 // ExtractTransaction extracts a domain transaction from partially signed transaction after all of the
 // relevant parties have signed it.
-func ExtractTransaction(psTxBytes []byte) (*externalapi.DomainTransaction, error) {
+func ExtractTransaction(psTxBytes []byte, ecdsa bool) (*externalapi.DomainTransaction, error) {
 	partiallySignedTransaction, err := serialization.DeserializePartiallySignedTransaction(psTxBytes)
 	if err != nil {
 		return nil, err
 	}
 
-	return extractTransaction(partiallySignedTransaction)
+	return extractTransaction(partiallySignedTransaction, ecdsa)
 }
 
-func extractTransaction(psTx *serialization.PartiallySignedTransaction) (*externalapi.DomainTransaction, error) {
+func extractTransaction(psTx *serialization.PartiallySignedTransaction, ecdsa bool) (*externalapi.DomainTransaction, error) {
 	for i, input := range psTx.PartiallySignedInputs {
-		isMultisig := input.RedeeemScript != nil
+		isMultisig := len(input.PubKeySignaturePairs) > 1
 		scriptBuilder := txscript.NewScriptBuilder()
 		if isMultisig {
 			signatureCount := 0
@@ -226,7 +209,12 @@ func extractTransaction(psTx *serialization.PartiallySignedTransaction) (*extern
 				return nil, errors.Errorf("missing %d signatures", input.MinimumSignatures-uint32(signatureCount))
 			}
 
-			scriptBuilder.AddData(input.RedeeemScript)
+			redeemScript, err := partiallySignedInputMultisigRedeemScript(input, ecdsa)
+			if err != nil {
+				return nil, err
+			}
+
+			scriptBuilder.AddData(redeemScript)
 			sigScript, err := scriptBuilder.Script()
 			if err != nil {
 				return nil, err
@@ -252,4 +240,13 @@ func extractTransaction(psTx *serialization.PartiallySignedTransaction) (*extern
 		}
 	}
 	return psTx.Tx, nil
+}
+
+func partiallySignedInputMultisigRedeemScript(input *serialization.PartiallySignedInput, ecdsa bool) ([]byte, error) {
+	extendedPublicKeys := make([]string, len(input.PubKeySignaturePairs))
+	for i, pair := range input.PubKeySignaturePairs {
+		extendedPublicKeys[i] = pair.ExtendedPublicKey
+	}
+
+	return multiSigRedeemScript(extendedPublicKeys, input.MinimumSignatures, "m", ecdsa)
 }

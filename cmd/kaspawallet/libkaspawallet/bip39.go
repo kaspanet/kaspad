@@ -1,6 +1,7 @@
 package libkaspawallet
 
 import (
+	"fmt"
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/libkaspawallet/bip32"
 	"github.com/kaspanet/kaspad/domain/dagconfig"
 	"github.com/pkg/errors"
@@ -13,13 +14,18 @@ func CreateMnemonic() (string, error) {
 }
 
 func defaultPath(isMultisig bool) string {
+	purpose := 44
 	if isMultisig {
-		return "m/45'"
+		// Note: this is not entirely compatible to BIP 45 since
+		// BIP 45 doesn't have a coin type in its derivation path.
+		purpose = 45
 	}
-	return "m/44'/111111'/0'"
+
+	const coinType = 111111
+	return fmt.Sprintf("m/%d'/%d'/0'", coinType, purpose)
 }
 
-func ExtendedPublicKeyFromMnemonic(mnemonic string, isMultisig bool, params *dagconfig.Params) (string, error) {
+func ExtendedPublicKeyFromMnemonic(params *dagconfig.Params, mnemonic string, isMultisig bool) (string, error) {
 	path := defaultPath(isMultisig)
 	extendedKey, err := extendedKeyFromMnemonicAndPath(mnemonic, path, params)
 	if err != nil {

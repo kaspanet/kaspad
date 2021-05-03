@@ -79,10 +79,6 @@ func (extKey *ExtendedKey) DeriveFromPath(pathString string) (*ExtendedKey, erro
 }
 
 func (extKey *ExtendedKey) path(path *path) (*ExtendedKey, error) {
-	if path.isPrivate && !extKey.IsPrivate() {
-		return nil, errors.Errorf("extended public keys cannot handle a private path")
-	}
-
 	descendantExtKey := extKey
 	for _, index := range path.indexes {
 		var err error
@@ -92,7 +88,7 @@ func (extKey *ExtendedKey) path(path *path) (*ExtendedKey, error) {
 		}
 	}
 
-	if !path.isPrivate {
+	if path.isPublic {
 		return descendantExtKey.Public()
 	}
 

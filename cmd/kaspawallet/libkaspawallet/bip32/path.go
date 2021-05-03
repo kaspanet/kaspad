@@ -7,18 +7,18 @@ import (
 )
 
 type path struct {
-	isPrivate bool
-	indexes   []uint32
+	isPublic bool
+	indexes  []uint32
 }
 
 func parsePath(pathString string) (*path, error) {
 	parts := strings.Split(pathString, "/")
-	isPrivate := false
+	isPublic := false
 	switch parts[0] {
 	case "m":
-		isPrivate = true
+		isPublic = false
 	case "M":
-		isPrivate = false
+		isPublic = true
 	default:
 		return nil, errors.Errorf("%s is an invalid extended key type", parts[0])
 	}
@@ -34,8 +34,8 @@ func parsePath(pathString string) (*path, error) {
 	}
 
 	return &path{
-		isPrivate: isPrivate,
-		indexes:   indexes,
+		isPublic: isPublic,
+		indexes:  indexes,
 	}, nil
 }
 

@@ -52,7 +52,7 @@ func createKeyPairsFromFunction(numKeys uint32, params *dagconfig.Params, keyPai
 			return nil, nil, err
 		}
 
-		extendedPublicKey, err := libkaspawallet.ExtendedPublicKeyFromMnemonic(mnemonic, numKeys > 1, params)
+		extendedPublicKey, err := libkaspawallet.ExtendedPublicKeyFromMnemonic(params, mnemonic, numKeys > 1)
 		if err != nil {
 			return nil, nil, err
 		}

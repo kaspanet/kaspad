@@ -3,10 +3,10 @@ package main
 import (
 	"bufio"
 	"fmt"
+	"github.com/kaspanet/kaspad/cmd/kaspawallet/libkaspawallet"
 	"os"
 
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/keys"
-	"github.com/kaspanet/kaspad/cmd/kaspawallet/libkaspawallet"
 	"github.com/pkg/errors"
 )
 
@@ -24,9 +24,10 @@ func create(conf *createConfig) error {
 	}
 
 	for i, extendedPublicKey := range extendedPublicKeys {
-		fmt.Printf("Extended public key of mnemonic #%d:\n%x\n\n", i+1, extendedPublicKey)
+		fmt.Printf("Extended public key of mnemonic #%d:\n%s\n\n", i+1, extendedPublicKey)
 	}
 
+	signerExtendedPublicKeys := make([]string, conf.NumPrivateKeys)
 	reader := bufio.NewReader(os.Stdin)
 	for i := conf.NumPrivateKeys; i < conf.NumPublicKeys; i++ {
 		fmt.Printf("Enter public key #%d here:\n", i+1)
@@ -41,25 +42,20 @@ func create(conf *createConfig) error {
 			return errors.Errorf("Public key is too long")
 		}
 
+		signerExtendedPublicKeys[i] = string(extendedPublicKey)
 		extendedPublicKeys = append(extendedPublicKeys, string(extendedPublicKey))
 	}
 
+	cosignerIndex, err := libkaspawallet.MinimumCosignerIndex(signerExtendedPublicKeys, extendedPublicKeys)
+	if err != nil {
+		return err
+	}
+
 	err = keys.WriteKeysFile(
-		conf.NetParams(), conf.KeysFile, encryptedPrivateKeys, extendedPublicKeys, conf.MinimumSignatures, conf.ECDSA)
+		conf.NetParams(), conf.KeysFile, encryptedPrivateKeys, extendedPublicKeys, conf.MinimumSignatures, cosignerIndex, 0, conf.ECDSA)
 	if err != nil {
 		return err
 	}
 
-	keysFile, err := keys.ReadKeysFile(conf.NetParams(), conf.KeysFile)
-	if err != nil {
-		return err
-	}
-
-	addr, err := libkaspawallet.Address(conf.NetParams(), keysFile.ExtendedPublicKeys, keysFile.MinimumSignatures, keysFile.ECDSA)
-	if err != nil {
-		return err
-	}
-
-	fmt.Printf("The wallet address is:\n%s\n", addr)
 	return nil
 }

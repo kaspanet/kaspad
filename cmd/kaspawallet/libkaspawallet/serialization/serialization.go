@@ -21,7 +21,6 @@ type PartiallySignedTransaction struct {
 // PartiallySignedInput represents an input signed
 // only by some of the relevant parties.
 type PartiallySignedInput struct {
-	RedeeemScript        []byte
 	PrevOutput           *externalapi.DomainTransactionOutput
 	MinimumSignatures    uint32
 	PubKeySignaturePairs []*PubKeySignaturePair
@@ -94,7 +93,6 @@ func partiallySignedInputFromProto(protoPartiallySignedInput *protoserialization
 	}
 
 	return &PartiallySignedInput{
-		RedeeemScript:        protoPartiallySignedInput.RedeemScript,
 		PrevOutput:           output,
 		MinimumSignatures:    protoPartiallySignedInput.MinimumSignatures,
 		PubKeySignaturePairs: pubKeySignaturePairs,
@@ -109,7 +107,6 @@ func partiallySignedInputToProto(partiallySignedInput *PartiallySignedInput) *pr
 	}
 
 	return &protoserialization.PartiallySignedInput{
-		RedeemScript:         partiallySignedInput.RedeeemScript,
 		PrevOutput:           transactionOutputToProto(partiallySignedInput.PrevOutput),
 		MinimumSignatures:    partiallySignedInput.MinimumSignatures,
 		PubKeySignaturePairs: protoPairs,

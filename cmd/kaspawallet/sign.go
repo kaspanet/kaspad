@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/hex"
 	"fmt"
-
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/keys"
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/libkaspawallet"
 )
@@ -24,7 +23,7 @@ func sign(conf *signConfig) error {
 		return err
 	}
 
-	updatedPSTxBytes, err := libkaspawallet.Sign(privateKeys, psTxBytes, keysFile.ECDSA)
+	updatedPSTxBytes, err := libkaspawallet.Sign(conf.NetParams(), privateKeys, psTxBytes, keysFile.ECDSA)
 	if err != nil {
 		return err
 	}

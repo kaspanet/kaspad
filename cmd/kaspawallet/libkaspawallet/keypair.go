@@ -6,6 +6,9 @@ import (
 	"github.com/kaspanet/kaspad/domain/dagconfig"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/pkg/errors"
+	"math"
+	"sort"
+	"strings"
 )
 
 // CreateKeyPair generates a private-public key pair
@@ -72,17 +75,18 @@ func PublicKeyFromPrivateKey(privateKeyBytes []byte) ([]byte, error) {
 }
 
 // Address returns the address associated with the given public keys and minimum signatures parameters.
-func Address(params *dagconfig.Params, extendedPublicKeys []string, minimumSignatures uint32, ecdsa bool) (util.Address, error) {
+func Address(params *dagconfig.Params, extendedPublicKeys []string, minimumSignatures uint32, path string, ecdsa bool) (util.Address, error) {
 	sortPublicKeys(extendedPublicKeys)
 	if uint32(len(extendedPublicKeys)) < minimumSignatures {
 		return nil, errors.Errorf("The minimum amount of signatures (%d) is greater than the amount of "+
 			"provided public keys (%d)", minimumSignatures, len(extendedPublicKeys))
 	}
+
 	if len(extendedPublicKeys) == 1 {
-		return p2pkAddress(params, extendedPublicKeys[0], ecdsa)
+		return p2pkAddress(params, extendedPublicKeys[0], path, ecdsa)
 	}
 
-	redeemScript, err := multiSigRedeemScript(extendedPublicKeys, minimumSignatures, ecdsa)
+	redeemScript, err := multiSigRedeemScript(extendedPublicKeys, minimumSignatures, path, ecdsa)
 	if err != nil {
 		return nil, err
 	}
@@ -90,19 +94,18 @@ func Address(params *dagconfig.Params, extendedPublicKeys []string, minimumSigna
 	return util.NewAddressScriptHash(redeemScript, params.Prefix)
 }
 
-func p2pkAddress(params *dagconfig.Params, extendedPublicKey string, ecdsa bool) (util.Address, error) {
+func p2pkAddress(params *dagconfig.Params, extendedPublicKey string, path string, ecdsa bool) (util.Address, error) {
 	extendedKey, err := bip32.DeserializeExtendedKey(extendedPublicKey)
 	if err != nil {
 		return nil, err
 	}
 
-	// TODO: Implement no-reuse address policy
-	firstChild, err := extendedKey.Child(0)
+	derivedKey, err := extendedKey.DeriveFromPath(path)
 	if err != nil {
 		return nil, err
 	}
 
-	publicKey, err := firstChild.PublicKey()
+	publicKey, err := derivedKey.PublicKey()
 	if err != nil {
 		return nil, err
 	}
@@ -126,4 +129,39 @@ func p2pkAddress(params *dagconfig.Params, extendedPublicKey string, ecdsa bool)
 	}
 
 	return util.NewAddressPublicKey(serializedSchnorrPublicKey[:], params.Prefix)
+}
+
+func sortPublicKeys(extendedPublicKeys []string) {
+	sort.Slice(extendedPublicKeys, func(i, j int) bool {
+		return strings.Compare(extendedPublicKeys[i], extendedPublicKeys[j]) < 0
+	})
+}
+
+func cosignerIndex(extendedPublicKey string, sortedExtendedPublicKeys []string) (uint32, error) {
+	cosignerIndex := sort.SearchStrings(sortedExtendedPublicKeys, extendedPublicKey)
+	if cosignerIndex == len(sortedExtendedPublicKeys) {
+		return 0, errors.Errorf("couldn't find extended public key %s", extendedPublicKey)
+	}
+
+	return uint32(cosignerIndex), nil
+}
+
+func MinimumCosignerIndex(signerExtendedPublicKeys, allExtendedPublicKeys []string) (uint32, error) {
+	allExtendedPublicKeysCopy := make([]string, len(allExtendedPublicKeys))
+	copy(allExtendedPublicKeysCopy, allExtendedPublicKeys)
+	sortPublicKeys(allExtendedPublicKeysCopy)
+
+	min := uint32(math.MaxUint32)
+	for _, extendedPublicKey := range signerExtendedPublicKeys {
+		cosignerIndex, err := cosignerIndex(extendedPublicKey, allExtendedPublicKeysCopy)
+		if err != nil {
+			return 0, err
+		}
+
+		if cosignerIndex < min {
+			min = cosignerIndex
+		}
+	}
+
+	return min, nil
 }
