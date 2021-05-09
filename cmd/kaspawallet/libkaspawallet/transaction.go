@@ -18,7 +18,8 @@ type Payment struct {
 }
 
 type UTXO struct {
-	*externalapi.OutpointAndUTXOEntryPair
+	Outpoint       *externalapi.DomainOutpoint
+	UTXOEntry      externalapi.UTXOEntry
 	DerivationPath string
 }
 

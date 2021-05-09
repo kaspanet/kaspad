@@ -1,0 +1,57 @@
+syntax = "proto3";
+
+option go_package = "github.com/kaspanet/kaspad/cmd/kaspawallet/daemon/pb";
+
+service kaspawalletd {
+  rpc GetBalance (GetBalanceRequest) returns (GetBalanceResponse) {}
+  rpc CreateUnsignedTransaction (CreateUnsignedTransactionRequest) returns (CreateUnsignedTransactionResponse) {}
+  rpc GetReceiveAddress (GetReceiveAddressRequest) returns (GetReceiveAddressResponse) {}
+  rpc Shutdown (ShutdownRequest) returns (ShutdownResponse) {}
+  rpc Broadcast (BroadcastRequest) returns (BroadcastResponse) {}
+  rpc IsSynced (IsSyncedRequest) returns (IsSyncedResponse) {}
+}
+
+message GetBalanceRequest {
+}
+
+message GetBalanceResponse {
+  uint64 available = 1;
+  uint64 pending = 2;
+}
+
+message CreateUnsignedTransactionRequest {
+  string address = 1;
+  uint64 amount = 2;
+}
+
+message CreateUnsignedTransactionResponse {
+  bytes unsignedTransaction = 1;
+}
+
+message GetReceiveAddressRequest {
+}
+
+message GetReceiveAddressResponse {
+  string address = 1;
+}
+
+message BroadcastRequest {
+  bytes transaction = 1;
+}
+
+message BroadcastResponse {
+  string txID = 1;
+}
+
+message ShutdownRequest {
+}
+
+message ShutdownResponse {
+}
+
+message IsSyncedRequest {
+}
+
+message IsSyncedResponse {
+  bool isSynced = 1;
+}

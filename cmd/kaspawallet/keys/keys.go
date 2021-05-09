@@ -31,12 +31,13 @@ type encryptedPrivateKeyJSON struct {
 }
 
 type keysFileJSON struct {
-	EncryptedPrivateKeys []*encryptedPrivateKeyJSON `json:"encryptedMnemonics"`
-	ExtendedPublicKeys   []string                   `json:"publicKeys"`
-	MinimumSignatures    uint32                     `json:"minimumSignatures"`
-	CosignerIndex        uint32                     `json:"cosignerIndex"`
-	LastUsedIndex        uint32                     `json:"lastUsedIndex"`
-	ECDSA                bool                       `json:"ecdsa"`
+	EncryptedPrivateKeys  []*encryptedPrivateKeyJSON `json:"encryptedMnemonics"`
+	ExtendedPublicKeys    []string                   `json:"publicKeys"`
+	MinimumSignatures     uint32                     `json:"minimumSignatures"`
+	CosignerIndex         uint32                     `json:"cosignerIndex"`
+	LastUsedExternalIndex uint32                     `json:"lastUsedExternalIndex"`
+	LastUsedInternalIndex uint32                     `json:"lastUsedInternalIndex"`
+	ECDSA                 bool                       `json:"ecdsa"`
 }
 
 // EncryptedMnemonic represents an encrypted mnemonic
@@ -47,12 +48,14 @@ type EncryptedMnemonic struct {
 
 // Data holds all the data related to the wallet keys
 type Data struct {
-	encryptedMnemonics []*EncryptedMnemonic
-	ExtendedPublicKeys []string
-	MinimumSignatures  uint32
-	CosignerIndex      uint32
-	LastUsedIndex      uint32
-	ECDSA              bool
+	encryptedMnemonics    []*EncryptedMnemonic
+	ExtendedPublicKeys    []string
+	MinimumSignatures     uint32
+	CosignerIndex         uint32
+	LastUsedExternalIndex uint32
+	LastUsedInternalIndex uint32
+	ECDSA                 bool
+	pathToFile            string
 }
 
 func (d *Data) toJSON() *keysFileJSON {
@@ -65,12 +68,13 @@ func (d *Data) toJSON() *keysFileJSON {
 	}
 
 	return &keysFileJSON{
-		EncryptedPrivateKeys: encryptedPrivateKeysJSON,
-		ExtendedPublicKeys:   d.ExtendedPublicKeys,
-		MinimumSignatures:    d.MinimumSignatures,
-		ECDSA:                d.ECDSA,
-		CosignerIndex:        d.CosignerIndex,
-		LastUsedIndex:        d.LastUsedIndex,
+		EncryptedPrivateKeys:  encryptedPrivateKeysJSON,
+		ExtendedPublicKeys:    d.ExtendedPublicKeys,
+		MinimumSignatures:     d.MinimumSignatures,
+		ECDSA:                 d.ECDSA,
+		CosignerIndex:         d.CosignerIndex,
+		LastUsedExternalIndex: d.LastUsedExternalIndex,
+		LastUsedInternalIndex: d.LastUsedInternalIndex,
 	}
 }
 
@@ -79,7 +83,8 @@ func (d *Data) fromJSON(fileJSON *keysFileJSON) error {
 	d.ECDSA = fileJSON.ECDSA
 	d.ExtendedPublicKeys = fileJSON.ExtendedPublicKeys
 	d.CosignerIndex = fileJSON.CosignerIndex
-	d.LastUsedIndex = fileJSON.LastUsedIndex
+	d.LastUsedExternalIndex = fileJSON.LastUsedExternalIndex
+	d.LastUsedInternalIndex = fileJSON.LastUsedInternalIndex
 
 	d.encryptedMnemonics = make([]*EncryptedMnemonic, len(fileJSON.EncryptedPrivateKeys))
 	for i, encryptedPrivateKeyJSON := range fileJSON.EncryptedPrivateKeys {
@@ -137,7 +142,9 @@ func ReadKeysFile(netParams *dagconfig.Params, path string) (*Data, error) {
 		return nil, err
 	}
 
-	keysFile := &Data{}
+	keysFile := &Data{
+		pathToFile: path,
+	}
 	err = keysFile.fromJSON(decodedFile)
 	if err != nil {
 		return nil, err
@@ -175,22 +182,15 @@ func pathExists(path string) (bool, error) {
 	return false, err
 }
 
-// WriteKeysFile writes a keys file with the given data
-func WriteKeysFile(netParams *dagconfig.Params, path string, encryptedPrivateKeys []*EncryptedMnemonic,
-	extendedPublicKeys []string, minimumSignatures uint32, cosignerIndex uint32, lastUsedIndex uint32, ecdsa bool) error {
-
-	if path == "" {
-		path = defaultKeysFile(netParams)
-	}
-
-	exists, err := pathExists(path)
+func (d *Data) Sync() error {
+	exists, err := pathExists(d.pathToFile)
 	if err != nil {
 		return err
 	}
 
 	if exists {
 		reader := bufio.NewReader(os.Stdin)
-		fmt.Printf("The file %s already exists. Are you sure you want to override it (type 'y' to approve)? ", path)
+		fmt.Printf("The file %s already exists. Are you sure you want to override it (type 'y' to approve)? ", d.pathToFile)
 		line, _, err := reader.ReadLine()
 		if err != nil {
 			return err
@@ -201,32 +201,24 @@ func WriteKeysFile(netParams *dagconfig.Params, path string, encryptedPrivateKey
 		}
 	}
 
-	err = createFileDirectoryIfDoesntExist(path)
+	err = createFileDirectoryIfDoesntExist(d.pathToFile)
 	if err != nil {
 		return err
 	}
 
-	file, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE, 0600)
+	file, err := os.OpenFile(d.pathToFile, os.O_WRONLY|os.O_CREATE, 0600)
 	if err != nil {
 		return err
 	}
 	defer file.Close()
 
-	keysFile := &Data{
-		encryptedMnemonics: encryptedPrivateKeys,
-		ExtendedPublicKeys: extendedPublicKeys,
-		MinimumSignatures:  minimumSignatures,
-		CosignerIndex:      cosignerIndex,
-		ECDSA:              ecdsa,
-	}
-
 	encoder := json.NewEncoder(file)
-	err = encoder.Encode(keysFile.toJSON())
+	err = encoder.Encode(d.toJSON())
 	if err != nil {
 		return err
 	}
 
-	fmt.Printf("Wrote the keys into %s\n", path)
+	fmt.Printf("Wrote the keys into %s\n", d.pathToFile)
 	return nil
 }
 
