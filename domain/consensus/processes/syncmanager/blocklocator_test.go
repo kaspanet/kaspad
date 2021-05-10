@@ -8,23 +8,22 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/testutils"
-	"github.com/kaspanet/kaspad/domain/dagconfig"
 	"github.com/kaspanet/kaspad/infrastructure/db/database"
 	"github.com/pkg/errors"
 )
 
 func TestCreateBlockLocator(t *testing.T) {
-	testutils.ForAllNets(t, true, func(t *testing.T, params *dagconfig.Params) {
+	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
 		factory := consensus.NewFactory()
-		tc, tearDown, err := factory.NewTestConsensus(params, false,
+		tc, tearDown, err := factory.NewTestConsensus(consensusConfig,
 			"TestCreateBlockLocator")
 		if err != nil {
 			t.Fatalf("NewTestConsensus: %+v", err)
 		}
 		defer tearDown(false)
 
-		chain := []*externalapi.DomainHash{params.GenesisHash}
-		tipHash := params.GenesisHash
+		chain := []*externalapi.DomainHash{consensusConfig.GenesisHash}
+		tipHash := consensusConfig.GenesisHash
 		for i := 0; i < 20; i++ {
 			var err error
 			tipHash, _, err = tc.AddBlock([]*externalapi.DomainHash{tipHash}, nil, nil)
@@ -35,13 +34,13 @@ func TestCreateBlockLocator(t *testing.T) {
 			chain = append(chain, tipHash)
 		}
 
-		sideChainTipHash, _, err := tc.AddBlock([]*externalapi.DomainHash{params.GenesisHash}, nil, nil)
+		sideChainTipHash, _, err := tc.AddBlock([]*externalapi.DomainHash{consensusConfig.GenesisHash}, nil, nil)
 		if err != nil {
 			t.Fatalf("AddBlock: %+v", err)
 		}
 
 		// Check a situation where low hash is not on the exact step blue score
-		locator, err := tc.CreateBlockLocator(params.GenesisHash, tipHash, 0)
+		locator, err := tc.CreateBlockLocator(consensusConfig.GenesisHash, tipHash, 0)
 		if err != nil {
 			t.Fatalf("CreateBlockLocator: %+v", err)
 		}
@@ -74,7 +73,7 @@ func TestCreateBlockLocator(t *testing.T) {
 		}
 
 		// Check block locator with limit
-		locator, err = tc.CreateBlockLocator(params.GenesisHash, tipHash, 3)
+		locator, err = tc.CreateBlockLocator(consensusConfig.GenesisHash, tipHash, 3)
 		if err != nil {
 			t.Fatalf("CreateBlockLocator: %+v", err)
 		}
@@ -88,13 +87,13 @@ func TestCreateBlockLocator(t *testing.T) {
 		}
 
 		// Check a block locator from genesis to genesis
-		locator, err = tc.CreateBlockLocator(params.GenesisHash, params.GenesisHash, 0)
+		locator, err = tc.CreateBlockLocator(consensusConfig.GenesisHash, consensusConfig.GenesisHash, 0)
 		if err != nil {
 			t.Fatalf("CreateBlockLocator: %+v", err)
 		}
 
 		if !externalapi.HashesEqual(locator, []*externalapi.DomainHash{
-			params.GenesisHash,
+			consensusConfig.GenesisHash,
 		}) {
 			t.Fatalf("unexpected block locator %s", locator)
 		}
@@ -134,17 +133,17 @@ func TestCreateBlockLocator(t *testing.T) {
 }
 
 func TestCreateHeadersSelectedChainBlockLocator(t *testing.T) {
-	testutils.ForAllNets(t, true, func(t *testing.T, params *dagconfig.Params) {
+	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
 		factory := consensus.NewFactory()
-		tc, tearDown, err := factory.NewTestConsensus(params, false,
+		tc, tearDown, err := factory.NewTestConsensus(consensusConfig,
 			"TestCreateHeadersSelectedChainBlockLocator")
 		if err != nil {
 			t.Fatalf("NewTestConsensus: %+v", err)
 		}
 		defer tearDown(false)
 
-		chain := []*externalapi.DomainHash{params.GenesisHash}
-		tipHash := params.GenesisHash
+		chain := []*externalapi.DomainHash{consensusConfig.GenesisHash}
+		tipHash := consensusConfig.GenesisHash
 		for i := 0; i < 20; i++ {
 			var err error
 			tipHash, _, err = tc.AddBlock([]*externalapi.DomainHash{tipHash}, nil, nil)
@@ -155,13 +154,13 @@ func TestCreateHeadersSelectedChainBlockLocator(t *testing.T) {
 			chain = append(chain, tipHash)
 		}
 
-		sideChainTipHash, _, err := tc.AddBlock([]*externalapi.DomainHash{params.GenesisHash}, nil, nil)
+		sideChainTipHash, _, err := tc.AddBlock([]*externalapi.DomainHash{consensusConfig.GenesisHash}, nil, nil)
 		if err != nil {
 			t.Fatalf("AddBlock: %+v", err)
 		}
 
 		// Check a situation where low hash is not on the exact step
-		locator, err := tc.CreateHeadersSelectedChainBlockLocator(params.GenesisHash, tipHash)
+		locator, err := tc.CreateHeadersSelectedChainBlockLocator(consensusConfig.GenesisHash, tipHash)
 		if err != nil {
 			t.Fatalf("CreateBlockLocator: %+v", err)
 		}
@@ -194,13 +193,13 @@ func TestCreateHeadersSelectedChainBlockLocator(t *testing.T) {
 		}
 
 		// Check a block locator from genesis to genesis
-		locator, err = tc.CreateHeadersSelectedChainBlockLocator(params.GenesisHash, params.GenesisHash)
+		locator, err = tc.CreateHeadersSelectedChainBlockLocator(consensusConfig.GenesisHash, consensusConfig.GenesisHash)
 		if err != nil {
 			t.Fatalf("CreateBlockLocator: %+v", err)
 		}
 
 		if !externalapi.HashesEqual(locator, []*externalapi.DomainHash{
-			params.GenesisHash,
+			consensusConfig.GenesisHash,
 		}) {
 			t.Fatalf("unexpected block locator %s", locator)
 		}
@@ -225,7 +224,7 @@ func TestCreateHeadersSelectedChainBlockLocator(t *testing.T) {
 		}
 
 		// Check block locator with non chain blocks
-		_, err = tc.CreateHeadersSelectedChainBlockLocator(params.GenesisHash, sideChainTipHash)
+		_, err = tc.CreateHeadersSelectedChainBlockLocator(consensusConfig.GenesisHash, sideChainTipHash)
 		if !errors.Is(err, model.ErrBlockNotInSelectedParentChain) {
 			t.Fatalf("expected error '%s' but got '%s'", database.ErrNotFound, err)
 		}

@@ -1,24 +1,21 @@
 package blockbuilder_test
 
 import (
-	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/subnetworks"
+	"github.com/pkg/errors"
 	"testing"
-
-	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
 
 	"github.com/kaspanet/kaspad/domain/consensus"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/subnetworks"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/testutils"
-	"github.com/kaspanet/kaspad/domain/dagconfig"
-	"github.com/pkg/errors"
 )
 
 func TestBuildBlockErrorCases(t *testing.T) {
-	testutils.ForAllNets(t, true, func(t *testing.T, params *dagconfig.Params) {
+	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
 		factory := consensus.NewFactory()
-		testConsensus, teardown, err := factory.NewTestConsensus(
-			params, false, "TestBlockBuilderErrorCases")
+		testConsensus, teardown, err := factory.NewTestConsensus(consensusConfig, "TestBlockBuilderErrorCases")
 		if err != nil {
 			t.Fatalf("Error initializing consensus for: %+v", err)
 		}
@@ -36,7 +33,7 @@ func TestBuildBlockErrorCases(t *testing.T) {
 				"scriptPublicKey too long",
 				&externalapi.DomainCoinbaseData{
 					ScriptPublicKey: &externalapi.ScriptPublicKey{
-						Script:  make([]byte, params.CoinbasePayloadScriptPublicKeyMaxLength+1),
+						Script:  make([]byte, consensusConfig.CoinbasePayloadScriptPublicKeyMaxLength+1),
 						Version: 0,
 					},
 					ExtraData: nil,

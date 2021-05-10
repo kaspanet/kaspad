@@ -24,7 +24,7 @@ func prepareBlocks() (blocks []*externalapi.DomainBlock, topBlock *externalapi.D
 	}
 	defer db.Close()
 
-	testConsensus, tearDownFunc, err := consensus.NewFactory().NewTestConsensus(config.ActiveNetParams, false, "prepareBlocks")
+	testConsensus, tearDownFunc, err := consensus.NewFactory().NewTestConsensus(&consensus.Config{Params: *config.ActiveNetParams}, "prepareBlocks")
 	if err != nil {
 		return nil, nil, err
 	}

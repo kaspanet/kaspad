@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/kaspanet/kaspad/domain/consensus"
 	"os/exec"
 	"strings"
 	"sync/atomic"
@@ -151,7 +152,7 @@ func setupSyncer() (*rpc.Client, func(), error) {
 		return nil, nil, err
 	}
 
-	err = mine.FromFile(cfg.DAGFile, activeConfig().NetParams(), rpcClient, miningDataDir)
+	err = mine.FromFile(cfg.DAGFile, &consensus.Config{Params: *activeConfig().NetParams()}, rpcClient, miningDataDir)
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "error in mine.FromFile")
 	}

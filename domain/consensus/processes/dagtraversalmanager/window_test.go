@@ -132,37 +132,37 @@ func TestBlockWindow(t *testing.T) {
 			{
 				parents:        []string{"H", "F"},
 				id:             "I",
-				expectedWindow: []string{"F", "D", "H", "C", "G", "B"},
+				expectedWindow: []string{"F", "D", "C", "H", "G", "B"},
 			},
 			{
 				parents:        []string{"I"},
 				id:             "J",
-				expectedWindow: []string{"I", "F", "D", "H", "C", "G", "B"},
+				expectedWindow: []string{"I", "F", "D", "C", "H", "G", "B"},
 			},
 			{
 				parents:        []string{"J"},
 				id:             "K",
-				expectedWindow: []string{"J", "I", "F", "D", "H", "C", "G", "B"},
+				expectedWindow: []string{"J", "I", "F", "D", "C", "H", "G", "B"},
 			},
 			{
 				parents:        []string{"K"},
 				id:             "L",
-				expectedWindow: []string{"K", "J", "I", "F", "D", "H", "C", "G", "B"},
+				expectedWindow: []string{"K", "J", "I", "F", "D", "C", "H", "G", "B"},
 			},
 			{
 				parents:        []string{"L"},
 				id:             "M",
-				expectedWindow: []string{"L", "K", "J", "I", "F", "D", "H", "C", "G", "B"},
+				expectedWindow: []string{"L", "K", "J", "I", "F", "D", "C", "H", "G", "B"},
 			},
 			{
 				parents:        []string{"M"},
 				id:             "N",
-				expectedWindow: []string{"M", "L", "K", "J", "I", "F", "D", "H", "C", "G"},
+				expectedWindow: []string{"M", "L", "K", "J", "I", "F", "D", "C", "H", "G"},
 			},
 			{
 				parents:        []string{"N"},
 				id:             "O",
-				expectedWindow: []string{"N", "M", "L", "K", "J", "I", "F", "D", "H", "C"},
+				expectedWindow: []string{"N", "M", "L", "K", "J", "I", "F", "D", "C", "H"},
 			},
 		},
 		dagconfig.DevnetParams.Name: {
@@ -310,10 +310,10 @@ func TestBlockWindow(t *testing.T) {
 			},
 		},
 	}
-	testutils.ForAllNets(t, true, func(t *testing.T, params *dagconfig.Params) {
-		params.K = 1
+	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
+		consensusConfig.K = 1
 		factory := consensus.NewFactory()
-		tc, tearDown, err := factory.NewTestConsensus(params, false, "TestBlockWindow")
+		tc, tearDown, err := factory.NewTestConsensus(consensusConfig, "TestBlockWindow")
 		if err != nil {
 			t.Fatalf("NewTestConsensus: %s", err)
 		}
@@ -322,10 +322,10 @@ func TestBlockWindow(t *testing.T) {
 		windowSize := 10
 		blockByIDMap := make(map[string]*externalapi.DomainHash)
 		idByBlockMap := make(map[externalapi.DomainHash]string)
-		blockByIDMap["A"] = params.GenesisHash
-		idByBlockMap[*params.GenesisHash] = "A"
+		blockByIDMap["A"] = consensusConfig.GenesisHash
+		idByBlockMap[*consensusConfig.GenesisHash] = "A"
 
-		blocksData := tests[params.Name]
+		blocksData := tests[consensusConfig.Name]
 
 		for _, blockData := range blocksData {
 			parents := hashset.New()

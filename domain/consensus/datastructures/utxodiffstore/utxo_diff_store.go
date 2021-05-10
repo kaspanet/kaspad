@@ -28,7 +28,9 @@ func New(cacheSize int, preallocate bool) model.UTXODiffStore {
 }
 
 // Stage stages the given utxoDiff for the given blockHash
-func (uds *utxoDiffStore) Stage(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash, utxoDiff externalapi.UTXODiff, utxoDiffChild *externalapi.DomainHash) {
+func (uds *utxoDiffStore) Stage(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash,
+	utxoDiff externalapi.UTXODiff, utxoDiffChild *externalapi.DomainHash) {
+
 	stagingShard := uds.stagingShard(stagingArea)
 
 	stagingShard.utxoDiffToAdd[*blockHash] = utxoDiff

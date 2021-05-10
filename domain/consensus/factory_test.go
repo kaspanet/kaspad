@@ -11,7 +11,7 @@ import (
 func TestNewConsensus(t *testing.T) {
 	f := NewFactory()
 
-	dagParams := &dagconfig.DevnetParams
+	config := &Config{Params: dagconfig.DevnetParams}
 
 	tmpDir, err := ioutil.TempDir("", "TestNewConsensus")
 	if err != nil {
@@ -23,7 +23,7 @@ func TestNewConsensus(t *testing.T) {
 		t.Fatalf("error in NewLevelDB: %s", err)
 	}
 
-	_, err = f.NewConsensus(dagParams, db, false)
+	_, err = f.NewConsensus(config, db)
 	if err != nil {
 		t.Fatalf("error in NewConsensus: %+v", err)
 	}

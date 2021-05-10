@@ -779,6 +779,20 @@ func toRPCPayload(message appmessage.Message) (isKaspadMessage_Payload, error) {
 			return nil, err
 		}
 		return payload, nil
+	case *appmessage.EstimateNetworkHashesPerSecondRequestMessage:
+		payload := new(KaspadMessage_EstimateNetworkHashesPerSecondRequest)
+		err := payload.fromAppMessage(message)
+		if err != nil {
+			return nil, err
+		}
+		return payload, nil
+	case *appmessage.EstimateNetworkHashesPerSecondResponseMessage:
+		payload := new(KaspadMessage_EstimateNetworkHashesPerSecondResponse)
+		err := payload.fromAppMessage(message)
+		if err != nil {
+			return nil, err
+		}
+		return payload, nil
 	default:
 		return nil, nil
 	}

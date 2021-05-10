@@ -7,6 +7,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/utils/utxo"
 	"github.com/kaspanet/kaspad/infrastructure/db/database"
 	"github.com/kaspanet/kaspad/infrastructure/logger"
+	"github.com/kaspanet/kaspad/util/staging"
 	"github.com/pkg/errors"
 )
 
@@ -30,10 +31,11 @@ type pruningManager struct {
 	utxoDiffStore       model.UTXODiffStore
 	daaBlocksStore      model.DAABlocksStore
 
-	isArchivalNode   bool
-	genesisHash      *externalapi.DomainHash
-	finalityInterval uint64
-	pruningDepth     uint64
+	isArchivalNode                  bool
+	genesisHash                     *externalapi.DomainHash
+	finalityInterval                uint64
+	pruningDepth                    uint64
+	shouldSanityCheckPruningUTXOSet bool
 }
 
 // New instantiates a new PruningManager
@@ -60,28 +62,30 @@ func New(
 	genesisHash *externalapi.DomainHash,
 	finalityInterval uint64,
 	pruningDepth uint64,
+	shouldSanityCheckPruningUTXOSet bool,
 ) model.PruningManager {
 
 	return &pruningManager{
-		databaseContext:        databaseContext,
-		dagTraversalManager:    dagTraversalManager,
-		dagTopologyManager:     dagTopologyManager,
-		consensusStateManager:  consensusStateManager,
-		consensusStateStore:    consensusStateStore,
-		ghostdagDataStore:      ghostdagDataStore,
-		pruningStore:           pruningStore,
-		blockStatusStore:       blockStatusStore,
-		multiSetStore:          multiSetStore,
-		acceptanceDataStore:    acceptanceDataStore,
-		blocksStore:            blocksStore,
-		blockHeaderStore:       blockHeaderStore,
-		utxoDiffStore:          utxoDiffStore,
-		headerSelectedTipStore: headerSelectedTipStore,
-		daaBlocksStore:         daaBlocksStore,
-		isArchivalNode:         isArchivalNode,
-		genesisHash:            genesisHash,
-		pruningDepth:           pruningDepth,
-		finalityInterval:       finalityInterval,
+		databaseContext:                 databaseContext,
+		dagTraversalManager:             dagTraversalManager,
+		dagTopologyManager:              dagTopologyManager,
+		consensusStateManager:           consensusStateManager,
+		consensusStateStore:             consensusStateStore,
+		ghostdagDataStore:               ghostdagDataStore,
+		pruningStore:                    pruningStore,
+		blockStatusStore:                blockStatusStore,
+		multiSetStore:                   multiSetStore,
+		acceptanceDataStore:             acceptanceDataStore,
+		blocksStore:                     blocksStore,
+		blockHeaderStore:                blockHeaderStore,
+		utxoDiffStore:                   utxoDiffStore,
+		headerSelectedTipStore:          headerSelectedTipStore,
+		daaBlocksStore:                  daaBlocksStore,
+		isArchivalNode:                  isArchivalNode,
+		genesisHash:                     genesisHash,
+		pruningDepth:                    pruningDepth,
+		finalityInterval:                finalityInterval,
+		shouldSanityCheckPruningUTXOSet: shouldSanityCheckPruningUTXOSet,
 	}
 }
 
@@ -197,7 +201,6 @@ func (pm *pruningManager) UpdatePruningPointByVirtual(stagingArea *model.Staging
 		if err != nil {
 			return err
 		}
-		return pm.deletePastBlocks(stagingArea, newPruningPoint)
 	}
 
 	return nil
@@ -323,13 +326,14 @@ func (pm *pruningManager) savePruningPoint(stagingArea *model.StagingArea, pruni
 	onEnd := logger.LogAndMeasureExecutionTime(log, "pruningManager.savePruningPoint")
 	defer onEnd()
 
-	// TODO: This is an assert that takes ~30 seconds to run
-	// It must be removed or optimized before launching testnet
-	err := pm.validateUTXOSetFitsCommitment(stagingArea, pruningPointHash)
-	if err != nil {
-		return err
+	// If pruningPointHash is the genesis then there's no pruning point set right now.
+	if !pruningPointHash.Equal(pm.genesisHash) {
+		previousPruningPoint, err := pm.pruningStore.PruningPoint(pm.databaseContext, stagingArea)
+		if err != nil {
+			return err
+		}
+		pm.pruningStore.StagePreviousPruningPoint(stagingArea, previousPruningPoint)
 	}
-
 	pm.pruningStore.StagePruningPoint(stagingArea, pruningPointHash)
 	pm.pruningStore.StageStartUpdatingPruningPointUTXOSet(stagingArea)
 
@@ -431,7 +435,7 @@ func (pm *pruningManager) validateUTXOSetFitsCommitment(stagingArea *model.Stagi
 	onEnd := logger.LogAndMeasureExecutionTime(log, "pruningManager.validateUTXOSetFitsCommitment")
 	defer onEnd()
 
-	utxoSetIterator, err := pm.consensusStateManager.RestorePastUTXOSetIterator(stagingArea, pruningPointHash)
+	utxoSetIterator, err := pm.pruningStore.PruningPointUTXOIterator(pm.databaseContext)
 	if err != nil {
 		return err
 	}
@@ -466,6 +470,96 @@ func (pm *pruningManager) validateUTXOSetFitsCommitment(stagingArea *model.Stagi
 	log.Debugf("Validated the pruning point %s UTXO commitment: %s", pruningPointHash, utxoSetHash)
 
 	return nil
+}
+
+// This function takes 2 points (currentPruningHash, previousPruningHash) and traverses the UTXO diff children DAG
+// until it finds a common descendant, at the worse case this descendant will be the current SelectedTip.
+// it then creates 2 diffs, one from that descendant to previousPruningHash and another from that descendant to currentPruningHash
+// then using `DiffFrom` it converts these 2 diffs to a single diff from previousPruningHash to currentPruningHash.
+// this way should be the fastest way to get the difference between the 2 points, and should perform much better than restoring the full UTXO set.
+func (pm *pruningManager) calculateDiffBetweenPreviousAndCurrentPruningPoints(stagingArea *model.StagingArea, currentPruningHash *externalapi.DomainHash) (externalapi.UTXODiff, error) {
+	onEnd := logger.LogAndMeasureExecutionTime(log, "pruningManager.calculateDiffBetweenPreviousAndCurrentPruningPoints")
+	defer onEnd()
+	if currentPruningHash.Equal(pm.genesisHash) {
+		return utxo.NewUTXODiff(), nil
+	}
+
+	previousPruningHash, err := pm.pruningStore.PreviousPruningPoint(pm.databaseContext, stagingArea)
+	if err != nil {
+		return nil, err
+	}
+	currentPruningGhostDAG, err := pm.ghostdagDataStore.Get(pm.databaseContext, stagingArea, currentPruningHash)
+	if err != nil {
+		return nil, err
+	}
+	previousPruningGhostDAG, err := pm.ghostdagDataStore.Get(pm.databaseContext, stagingArea, previousPruningHash)
+	if err != nil {
+		return nil, err
+	}
+
+	currentPruningCurrentDiffChild := currentPruningHash
+	previousPruningCurrentDiffChild := previousPruningHash
+	// We need to use BlueWork because it's the only thing that's monotonic in the whole DAG
+	// We use the BlueWork to know which point is currently lower on the DAG so we can keep climbing its children,
+	// that way we keep climbing on the lowest point until they both reach the exact same descendant
+	currentPruningCurrentDiffChildBlueWork := currentPruningGhostDAG.BlueWork()
+	previousPruningCurrentDiffChildBlueWork := previousPruningGhostDAG.BlueWork()
+
+	var diffsFromPrevious []externalapi.UTXODiff
+	var diffsFromCurrent []externalapi.UTXODiff
+	for {
+		// if currentPruningCurrentDiffChildBlueWork > previousPruningCurrentDiffChildBlueWork
+		if currentPruningCurrentDiffChildBlueWork.Cmp(previousPruningCurrentDiffChildBlueWork) == 1 {
+			utxoDiff, err := pm.utxoDiffStore.UTXODiff(pm.databaseContext, stagingArea, previousPruningCurrentDiffChild)
+			if err != nil {
+				return nil, err
+			}
+			diffsFromPrevious = append(diffsFromPrevious, utxoDiff)
+			previousPruningCurrentDiffChild, err = pm.utxoDiffStore.UTXODiffChild(pm.databaseContext, stagingArea, previousPruningCurrentDiffChild)
+			if err != nil {
+				return nil, err
+			}
+			diffChildGhostDag, err := pm.ghostdagDataStore.Get(pm.databaseContext, stagingArea, previousPruningCurrentDiffChild)
+			if err != nil {
+				return nil, err
+			}
+			previousPruningCurrentDiffChildBlueWork = diffChildGhostDag.BlueWork()
+		} else if currentPruningCurrentDiffChild.Equal(previousPruningCurrentDiffChild) {
+			break
+		} else {
+			utxoDiff, err := pm.utxoDiffStore.UTXODiff(pm.databaseContext, stagingArea, currentPruningCurrentDiffChild)
+			if err != nil {
+				return nil, err
+			}
+			diffsFromCurrent = append(diffsFromCurrent, utxoDiff)
+			currentPruningCurrentDiffChild, err = pm.utxoDiffStore.UTXODiffChild(pm.databaseContext, stagingArea, currentPruningCurrentDiffChild)
+			if err != nil {
+				return nil, err
+			}
+			diffChildGhostDag, err := pm.ghostdagDataStore.Get(pm.databaseContext, stagingArea, currentPruningCurrentDiffChild)
+			if err != nil {
+				return nil, err
+			}
+			currentPruningCurrentDiffChildBlueWork = diffChildGhostDag.BlueWork()
+		}
+	}
+	// The order in which we apply the diffs should be from top to bottom, but we traversed from bottom to top
+	// so we apply the diffs in reverse order.
+	oldDiff := utxo.NewMutableUTXODiff()
+	for i := len(diffsFromPrevious) - 1; i >= 0; i-- {
+		err = oldDiff.WithDiffInPlace(diffsFromPrevious[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	newDiff := utxo.NewMutableUTXODiff()
+	for i := len(diffsFromCurrent) - 1; i >= 0; i-- {
+		err = newDiff.WithDiffInPlace(diffsFromCurrent[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return oldDiff.DiffFrom(newDiff.ToImmutable())
 }
 
 // finalityScore is the number of finality intervals passed since
@@ -516,7 +610,7 @@ func (pm *pruningManager) AppendImportedPruningPointUTXOs(outpointAndUTXOEntryPa
 	return dbTx.Commit()
 }
 
-func (pm *pruningManager) UpdatePruningPointUTXOSetIfRequired() error {
+func (pm *pruningManager) UpdatePruningPointIfRequired() error {
 	hadStartedUpdatingPruningPointUTXOSet, err := pm.pruningStore.HadStartedUpdatingPruningPointUTXOSet(pm.databaseContext)
 	if err != nil {
 		return err
@@ -526,7 +620,7 @@ func (pm *pruningManager) UpdatePruningPointUTXOSetIfRequired() error {
 	}
 
 	log.Debugf("Pruning point UTXO set update is required")
-	err = pm.updatePruningPointUTXOSet(model.NewStagingArea())
+	err = pm.updatePruningPoint()
 	if err != nil {
 		return err
 	}
@@ -535,13 +629,14 @@ func (pm *pruningManager) UpdatePruningPointUTXOSetIfRequired() error {
 	return nil
 }
 
-func (pm *pruningManager) updatePruningPointUTXOSet(stagingArea *model.StagingArea) error {
-	onEnd := logger.LogAndMeasureExecutionTime(log, "updatePruningPointUTXOSet")
+func (pm *pruningManager) updatePruningPoint() error {
+	onEnd := logger.LogAndMeasureExecutionTime(log, "updatePruningPoint")
 	defer onEnd()
 
-	logger.LogMemoryStats(log, "updatePruningPointUTXOSet start")
-	defer logger.LogMemoryStats(log, "updatePruningPointUTXOSet end")
+	logger.LogMemoryStats(log, "updatePruningPoint start")
+	defer logger.LogMemoryStats(log, "updatePruningPoint end")
 
+	stagingArea := model.NewStagingArea()
 	log.Debugf("Getting the pruning point")
 	pruningPoint, err := pm.pruningStore.PruningPoint(pm.databaseContext, stagingArea)
 	if err != nil {
@@ -549,14 +644,27 @@ func (pm *pruningManager) updatePruningPointUTXOSet(stagingArea *model.StagingAr
 	}
 
 	log.Debugf("Restoring the pruning point UTXO set")
-	utxoSetIterator, err := pm.consensusStateManager.RestorePastUTXOSetIterator(stagingArea, pruningPoint)
+	utxoSetDiff, err := pm.calculateDiffBetweenPreviousAndCurrentPruningPoints(stagingArea, pruningPoint)
 	if err != nil {
 		return err
 	}
-	defer utxoSetIterator.Close()
-
 	log.Debugf("Updating the pruning point UTXO set")
-	err = pm.pruningStore.UpdatePruningPointUTXOSet(pm.databaseContext, utxoSetIterator)
+	err = pm.pruningStore.UpdatePruningPointUTXOSet(pm.databaseContext, utxoSetDiff)
+	if err != nil {
+		return err
+	}
+	if pm.shouldSanityCheckPruningUTXOSet {
+		err = pm.validateUTXOSetFitsCommitment(stagingArea, pruningPoint)
+		if err != nil {
+			return err
+		}
+	}
+	err = pm.deletePastBlocks(stagingArea, pruningPoint)
+	if err != nil {
+		return err
+	}
+
+	err = staging.CommitAllChanges(pm.databaseContext, stagingArea)
 	if err != nil {
 		return err
 	}

@@ -157,3 +157,11 @@ func (mud *mutableUTXODiff) clone() *mutableUTXODiff {
 func (mud *mutableUTXODiff) String() string {
 	return fmt.Sprintf("toAdd: %s; toRemove: %s", mud.toAdd, mud.toRemove)
 }
+
+func (mud *mutableUTXODiff) Reversed() *mutableUTXODiff {
+	return &mutableUTXODiff{
+		toAdd:               mud.toRemove,
+		toRemove:            mud.toAdd,
+		immutableReferences: mud.immutableReferences,
+	}
+}

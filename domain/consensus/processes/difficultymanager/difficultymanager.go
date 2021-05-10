@@ -78,6 +78,9 @@ func (dm *difficultyManager) genesisBits(stagingArea *model.StagingArea) (uint32
 func (dm *difficultyManager) StageDAADataAndReturnRequiredDifficulty(
 	stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) (uint32, error) {
 
+	onEnd := logger.LogAndMeasureExecutionTime(log, "StageDAADataAndReturnRequiredDifficulty")
+	defer onEnd()
+
 	// Fetch window of dag.difficultyAdjustmentWindowSize + 1 so we can have dag.difficultyAdjustmentWindowSize block intervals
 	targetsWindow, windowHashes, err := dm.blockWindow(stagingArea, blockHash, dm.difficultyAdjustmentWindowSize+1)
 	if err != nil {

@@ -35,8 +35,12 @@ cd "${PROJECT_ROOT}/orphans/run" && ./run.sh || failedTests+=("orphans")
 echo "Done running orphans"
 
 echo "Running reorg"
-cd "${PROJECT_ROOT}/reorg/run" && ./run.sh || failedTests+=("reorg")
+cd "${PROJECT_ROOT}/reorg/run" && ./run-full-finality-window-reorg.sh || failedTests+=("reorg")
 echo "Done running reorg"
+
+echo "Running mempool-limits"
+cd "${PROJECT_ROOT}/mempool-limits/run" && ./run.sh || failedTests+=("mempool-limits")
+echo "Done running mempool-limits"
 
 echo "Running netsync - slow"
 cd ${PROJECT_ROOT}/netsync/run"" && ./run.sh || failedTests+=("netsync")

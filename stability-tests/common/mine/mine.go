@@ -12,23 +12,22 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/testapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/mining"
-	"github.com/kaspanet/kaspad/domain/dagconfig"
 	"github.com/kaspanet/kaspad/stability-tests/common/rpc"
 	"github.com/pkg/errors"
 )
 
 // FromFile mines all blocks as described by `jsonFile`
-func FromFile(jsonFile string, dagParams *dagconfig.Params, rpcClient *rpc.Client, dataDir string) error {
+func FromFile(jsonFile string, consensusConfig *consensus.Config, rpcClient *rpc.Client, dataDir string) error {
 	log.Infof("Mining blocks from JSON file %s from data directory %s", jsonFile, dataDir)
 	blockChan, err := readBlocks(jsonFile)
 	if err != nil {
 		return err
 	}
 
-	return mineBlocks(dagParams, rpcClient, blockChan, dataDir)
+	return mineBlocks(consensusConfig, rpcClient, blockChan, dataDir)
 }
 
-func mineBlocks(dagParams *dagconfig.Params, rpcClient *rpc.Client, blockChan <-chan JSONBlock, dataDir string) error {
+func mineBlocks(consensusConfig *consensus.Config, rpcClient *rpc.Client, blockChan <-chan JSONBlock, dataDir string) error {
 	mdb, err := newMiningDB(dataDir)
 	if err != nil {
 		return err
@@ -37,7 +36,7 @@ func mineBlocks(dagParams *dagconfig.Params, rpcClient *rpc.Client, blockChan <-
 	dbPath := filepath.Join(dataDir, "db")
 	factory := consensus.NewFactory()
 	factory.SetTestDataDir(dbPath)
-	testConsensus, tearDownFunc, err := factory.NewTestConsensus(dagParams, false, "minejson")
+	testConsensus, tearDownFunc, err := factory.NewTestConsensus(consensusConfig, "minejson")
 	if err != nil {
 		return err
 	}
@@ -50,7 +49,7 @@ func mineBlocks(dagParams *dagconfig.Params, rpcClient *rpc.Client, blockChan <-
 
 	log.Infof("Starting with data directory with %d headers and %d blocks", info.HeaderCount, info.BlockCount)
 
-	err = mdb.putID("0", dagParams.GenesisHash)
+	err = mdb.putID("0", consensusConfig.GenesisHash)
 	if err != nil {
 		return err
 	}
