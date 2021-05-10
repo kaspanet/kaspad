@@ -56,7 +56,17 @@ func (s *server) selectUTXOs(spendAmount uint64, feePerInput uint64) (
 	selectedUTXOs = []*libkaspawallet.UTXO{}
 	totalValue := uint64(0)
 
+	virtualSelectedParentBlueScoreResponse, err := s.rpcClient.GetVirtualSelectedParentBlueScore()
+	if err != nil {
+		return nil, 0, err
+	}
+	virtualSelectedParentBlueScore := virtualSelectedParentBlueScoreResponse.BlueScore
+
 	for _, utxo := range s.utxos {
+		if !isUTXOSpendable(utxo, virtualSelectedParentBlueScore, s.params.BlockCoinbaseMaturity) {
+			continue
+		}
+
 		selectedUTXOs = append(selectedUTXOs, &libkaspawallet.UTXO{
 			Outpoint:       utxo.Outpoint,
 			UTXOEntry:      utxo.UTXOEntry,
