@@ -94,6 +94,10 @@ func (gm *ghostdagManager) GetSortedMergeSet(stagingArea *model.StagingArea,
 	blueMergeSet := currentGhostdagData.MergeSetBlues()
 	redMergeSet := currentGhostdagData.MergeSetReds()
 	sortedMergeSet := make([]*externalapi.DomainHash, 0, len(blueMergeSet)+len(redMergeSet))
+	// If the current block is the genesis block:
+	if len(blueMergeSet) == 0 {
+		return sortedMergeSet, nil
+	}
 	selectedParent, blueMergeSet := blueMergeSet[0], blueMergeSet[1:]
 	sortedMergeSet = append(sortedMergeSet, selectedParent)
 	i, j := 0, 0
