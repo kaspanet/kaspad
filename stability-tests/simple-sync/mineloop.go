@@ -32,7 +32,6 @@ func mineLoop(syncerRPCClient, syncedRPCClient *rpc.Client) error {
 		if err != nil {
 			// Ignore error and instead check that the block count changed correctly.
 			// TODO: Fix the race condition in kaspaminer so it won't panic (proper shutdown handler)
-			// Fix also in Many_tips stability test.
 			log.Warnf("mineBlock returned an err: %s", err)
 		}
 

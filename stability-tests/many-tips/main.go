@@ -90,12 +90,12 @@ func realMain() error {
 	}
 	// Mine on top of it 10k tips.
 	numOfTips := 10000
-	err = mineTips(numOfTips, miningAddress)
+	err = mineTips(numOfTips, miningAddress, rpcClient)
 	if err != nil {
 		return errors.Wrap(err, "Error in mineTips")
 	}
 	// Mines until the DAG will have only one tip.
-	err = mineLoopUntilHavingOnlyOneTipInDAG(rpcAddress, miningAddress)
+	err = mineLoopUntilHavingOnlyOneTipInDAG(rpcClient, miningAddress)
 	if err != nil {
 		return errors.Wrap(err, "Error in mineLoop")
 	}
@@ -190,15 +190,7 @@ func mineBlock(rpcClient *rpc.Client, miningAddress util.Address) error {
 	return nil
 }
 
-func mineTips(numOfTips int, miningAddress util.Address) error {
-	rpcClient, err := rpc.ConnectToRPC(&rpc.Config{
-		RPCServer: rpcAddress,
-	}, activeConfig().NetParams())
-	if err != nil {
-		return errors.Wrap(err, "Error connecting to RPC server")
-	}
-	defer rpcClient.Disconnect()
-
+func mineTips(numOfTips int, miningAddress util.Address, rpcClient *rpc.Client) error {
 	blockTemplate, err := rpcClient.GetBlockTemplate(miningAddress.EncodeAddress())
 	if err != nil {
 		return err
@@ -214,7 +206,7 @@ func mineTips(numOfTips int, miningAddress util.Address) error {
 			return err
 		}
 		if (i%1000 == 0) && (i != 0) {
-			log.Infof("Already mined %d blocks.", i)
+			log.Infof("Mined %d blocks.", i)
 		}
 	}
 	dagInfo, err := rpcClient.GetBlockDAGInfo()
@@ -226,15 +218,7 @@ func mineTips(numOfTips int, miningAddress util.Address) error {
 }
 
 // Checks how many blocks were mined and how long it took to get only one tip in the DAG (after having 10k tips in the DAG).
-func mineLoopUntilHavingOnlyOneTipInDAG(rpcAddress string, miningAddress util.Address) error {
-	rpcClient, err := rpc.ConnectToRPC(&rpc.Config{
-		RPCServer: rpcAddress,
-	}, activeConfig().NetParams())
-	if err != nil {
-		panic("Failed create new RPC client")
-	}
-	defer rpcClient.Disconnect()
-
+func mineLoopUntilHavingOnlyOneTipInDAG(rpcClient *rpc.Client, miningAddress util.Address) error {
 	dagInfo, err := rpcClient.GetBlockDAGInfo()
 	if err != nil {
 		return errors.Wrapf(err, "error in GetBlockDAGInfo")
@@ -271,12 +255,22 @@ func mineLoopUntilHavingOnlyOneTipInDAG(rpcAddress string, miningAddress util.Ad
 	if err != nil {
 		return errors.Wrapf(err, "Error in getCurrentTipsLength")
 	}
-	for numOfTips > 1 {
+	hasTimedOut := false
+	for numOfTips > 1 && !hasTimedOut {
 		time.Sleep(1 * time.Second)
 		numOfTips, err = getCurrentTipsLength(rpcClient)
 		if err != nil {
 			return errors.Wrapf(err, "Error in getCurrentTipsLength")
 		}
+	}
+	spawn("ChecksIfTimeIsUp", func() {
+		timer := time.NewTimer(20 * time.Minute)
+		<-timer.C
+		hasTimedOut = true
+	})
+
+	if hasTimedOut {
+		return errors.Errorf("Out of time - the graph still has more than one tip.")
 	}
 	duration := time.Since(startMiningTime)
 	log.Infof("It took %s until there was only one tip in the DAG after having 10k tips.", duration)
