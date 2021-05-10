@@ -505,3 +505,10 @@ func (s *consensus) Anticone(blockHash *externalapi.DomainHash) ([]*externalapi.
 
 	return s.dagTraversalManager.Anticone(stagingArea, blockHash)
 }
+
+func (s *consensus) EstimateNetworkHashesPerSecond(windowSize int) (uint64, error) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	return s.difficultyManager.EstimateNetworkHashesPerSecond(windowSize)
+}
