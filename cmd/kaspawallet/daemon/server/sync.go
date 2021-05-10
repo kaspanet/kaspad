@@ -23,7 +23,12 @@ func (s *server) sync() error {
 	defer ticker.Stop()
 
 	for range ticker.C {
-		err := s.collectUTXOs()
+		err := s.collectCloseUTXOs()
+		if err != nil {
+			return err
+		}
+
+		err = s.collectFarUTXOs()
 		if err != nil {
 			return err
 		}
@@ -76,11 +81,11 @@ func (was walletAddressSet) strings() []string {
 	return addresses
 }
 
-const numAddressToQuery = 100
+const numIndexesToQuery = 100
 
-func (s *server) addressesToQuery() (walletAddressSet, error) {
-	addresses := make(walletAddressSet, numAddressToQuery)
-	for index := s.nextSyncStartIndex; len(addresses) < numAddressToQuery; index++ {
+func (s *server) addressesToQuery(start, end uint32) (walletAddressSet, error) {
+	addresses := make(walletAddressSet)
+	for index := start; index < end; index++ {
 		for cosignerIndex := uint32(0); cosignerIndex < uint32(len(s.keysFile.ExtendedPublicKeys)); cosignerIndex++ {
 			for _, keychain := range keyChains {
 				path := fmt.Sprintf("m/%d/%d/%d", cosignerIndex, keychain, index)
@@ -101,11 +106,51 @@ func (s *server) addressesToQuery() (walletAddressSet, error) {
 	return addresses, nil
 }
 
-func (s *server) collectUTXOs() error {
+func (s *server) collectFarUTXOs() error {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+	err := s.collectUTXOs(s.nextSyncStartIndex, s.nextSyncStartIndex+numIndexesToQuery)
+	if err != nil {
+		return err
+	}
+
+	s.nextSyncStartIndex += numIndexesToQuery
+	return nil
+}
+
+func (s *server) maxUsedIndex() uint32 {
+	s.lock.RLock()
+	defer s.lock.RUnlock()
+
+	maxUsedIndex := s.keysFile.LastUsedExternalIndex
+	if s.keysFile.LastUsedInternalIndex > maxUsedIndex {
+		maxUsedIndex = s.keysFile.LastUsedInternalIndex
+	}
+
+	return maxUsedIndex
+}
+
+func (s *server) collectCloseUTXOs() error {
+	maxUsedIndex := s.maxUsedIndex()
+	for i := uint32(0); i < maxUsedIndex+1000; i += numIndexesToQuery {
+		err := s.collectUTXOsWithLock(i, i+numIndexesToQuery)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (s *server) collectUTXOsWithLock(start, end uint32) error {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	addressSet, err := s.addressesToQuery()
+	return s.collectUTXOs(start, end)
+}
+
+func (s *server) collectUTXOs(start, end uint32) error {
+	addressSet, err := s.addressesToQuery(start, end)
 	if err != nil {
 		return err
 	}
@@ -160,7 +205,6 @@ func (s *server) collectUTXOs() error {
 		}
 	}
 
-	s.nextSyncStartIndex += numAddressToQuery
 	return nil
 }
 
