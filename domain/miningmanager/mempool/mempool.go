@@ -443,7 +443,8 @@ func appendTransactionToTransactionAndOutpointQueue(queue []*transactionAndOutpo
 	queueWithAddedTransactionAndOutpoint := queue
 	for i := uint32(0); i < uint32(len(transaction.Outputs)); i++ {
 		previousOutpoint := consensusexternalapi.DomainOutpoint{TransactionID: *transactionID, Index: i}
-		queueWithAddedTransactionAndOutpoint = append(queue, &transactionAndOutpoint{transaction: transaction, outpoint: &previousOutpoint})
+		queueWithAddedTransactionAndOutpoint = append(queueWithAddedTransactionAndOutpoint,
+			&transactionAndOutpoint{transaction: transaction, outpoint: &previousOutpoint})
 	}
 	return queueWithAddedTransactionAndOutpoint
 }
