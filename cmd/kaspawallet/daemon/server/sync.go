@@ -46,7 +46,7 @@ func (s *server) syncKeysFile() error {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	return s.keysFile.Sync()
+	return s.keysFile.Sync(true)
 }
 
 type walletUTXO struct {

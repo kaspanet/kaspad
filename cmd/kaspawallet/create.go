@@ -61,5 +61,5 @@ func create(conf *createConfig) error {
 		ECDSA:                 conf.ECDSA,
 	}
 	file.SetPath(conf.NetParams(), conf.KeysFile)
-	return file.Sync()
+	return file.Sync(false)
 }

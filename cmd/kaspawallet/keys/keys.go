@@ -190,13 +190,13 @@ func pathExists(path string) (bool, error) {
 	return false, err
 }
 
-func (d *File) Sync() error {
+func (d *File) Sync(forceOverride bool) error {
 	exists, err := pathExists(d.pathToFile)
 	if err != nil {
 		return err
 	}
 
-	if exists {
+	if !forceOverride && exists {
 		reader := bufio.NewReader(os.Stdin)
 		fmt.Printf("The file %s already exists. Are you sure you want to override it (type 'y' to approve)? ", d.pathToFile)
 		line, _, err := reader.ReadLine()
