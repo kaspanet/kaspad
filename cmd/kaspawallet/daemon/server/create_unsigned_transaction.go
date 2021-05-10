@@ -22,11 +22,9 @@ func (s *server) CreateUnsignedTransaction(_ context.Context, request *pb.Create
 		return nil, err
 	}
 
-	sendAmountSompi := request.Amount * util.SompiPerKaspa
-
 	// TODO: Implement a better fee estimation mechanism
 	const feePerInput = 1000
-	selectedUTXOs, changeSompi, err := s.selectUTXOs(sendAmountSompi, feePerInput)
+	selectedUTXOs, changeSompi, err := s.selectUTXOs(request.Amount, feePerInput)
 	if err != nil {
 		return nil, err
 	}
@@ -40,7 +38,7 @@ func (s *server) CreateUnsignedTransaction(_ context.Context, request *pb.Create
 		s.keysFile.MinimumSignatures,
 		[]*libkaspawallet.Payment{{
 			Address: toAddress,
-			Amount:  sendAmountSompi,
+			Amount:  request.Amount,
 		}, {
 			Address: changeAddress,
 			Amount:  changeSompi,
