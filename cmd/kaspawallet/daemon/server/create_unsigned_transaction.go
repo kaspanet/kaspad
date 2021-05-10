@@ -1,4 +1,4 @@
-package main
+package server
 
 import (
 	"context"
@@ -17,7 +17,7 @@ func (s *server) CreateUnsignedTransaction(_ context.Context, request *pb.Create
 		return nil, err
 	}
 
-	toAddress, err := util.DecodeAddress(request.Address, s.cfg.NetParams().Prefix)
+	toAddress, err := util.DecodeAddress(request.Address, s.params.Prefix)
 	if err != nil {
 		return nil, err
 	}

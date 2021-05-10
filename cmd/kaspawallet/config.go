@@ -17,6 +17,12 @@ const (
 	broadcastSubCmd                 = "broadcast"
 	showAddressSubCmd               = "show-address"
 	dumpUnencryptedDataSubCmd       = "dump-unencrypted-data"
+	startDaemonSubCmd               = "start-daemon"
+)
+
+const (
+	defaultListen    = "localhost:8082"
+	defaultRPCServer = "localhost"
 )
 
 type configFlags struct {
@@ -34,24 +40,22 @@ type createConfig struct {
 }
 
 type balanceConfig struct {
-	KeysFile  string `long:"keys-file" short:"f" description:"Keys file location (default: ~/.kaspawallet/keys.json (*nix), %USERPROFILE%\\AppData\\Local\\Kaspawallet\\key.json (Windows))"`
-	RPCServer string `long:"rpcserver" short:"s" description:"RPC server to connect to"`
+	ServerAddress string `long:"walletserver" short:"s" description:"Wallet server to connect to"`
 	config.NetworkFlags
 }
 
 type sendConfig struct {
-	KeysFile   string  `long:"keys-file" short:"f" description:"Keys file location (default: ~/.kaspawallet/keys.json (*nix), %USERPROFILE%\\AppData\\Local\\Kaspawallet\\key.json (Windows))"`
-	RPCServer  string  `long:"rpcserver" short:"s" description:"RPC server to connect to"`
-	ToAddress  string  `long:"to-address" short:"t" description:"The public address to send Kaspa to" required:"true"`
-	SendAmount float64 `long:"send-amount" short:"v" description:"An amount to send in Kaspa (e.g. 1234.12345678)" required:"true"`
+	KeysFile      string  `long:"keys-file" short:"f" description:"Keys file location (default: ~/.kaspawallet/keys.json (*nix), %USERPROFILE%\\AppData\\Local\\Kaspawallet\\key.json (Windows))"`
+	ServerAddress string  `long:"walletserver" short:"s" description:"Wallet server to connect to"`
+	ToAddress     string  `long:"to-address" short:"t" description:"The public address to send Kaspa to" required:"true"`
+	SendAmount    float64 `long:"send-amount" short:"v" description:"An amount to send in Kaspa (e.g. 1234.12345678)" required:"true"`
 	config.NetworkFlags
 }
 
 type createUnsignedTransactionConfig struct {
-	KeysFile   string  `long:"keys-file" short:"f" description:"Keys file location (default: ~/.kaspawallet/keys.json (*nix), %USERPROFILE%\\AppData\\Local\\Kaspawallet\\key.json (Windows))"`
-	RPCServer  string  `long:"rpcserver" short:"s" description:"RPC server to connect to"`
-	ToAddress  string  `long:"to-address" short:"t" description:"The public address to send Kaspa to" required:"true"`
-	SendAmount float64 `long:"send-amount" short:"v" description:"An amount to send in Kaspa (e.g. 1234.12345678)" required:"true"`
+	ServerAddress string  `long:"walletserver" short:"s" description:"Wallet server to connect to"`
+	ToAddress     string  `long:"to-address" short:"t" description:"The public address to send Kaspa to" required:"true"`
+	SendAmount    float64 `long:"send-amount" short:"v" description:"An amount to send in Kaspa (e.g. 1234.12345678)" required:"true"`
 	config.NetworkFlags
 }
 
@@ -62,15 +66,20 @@ type signConfig struct {
 }
 
 type broadcastConfig struct {
-	RPCServer   string `long:"rpcserver" short:"s" description:"RPC server to connect to"`
-	KeysFile    string `long:"keys-file" short:"f" description:"Keys file location (default: ~/.kaspawallet/keys.json (*nix), %USERPROFILE%\\AppData\\Local\\Kaspawallet\\key.json (Windows))"`
-	Transaction string `long:"transaction" short:"t" description:"The signed transaction to broadcast (encoded in hex)" required:"true"`
+	ServerAddress string `long:"walletserver" short:"s" description:"Wallet server to connect to"`
+	Transaction   string `long:"transaction" short:"t" description:"The signed transaction to broadcast (encoded in hex)" required:"true"`
 	config.NetworkFlags
 }
 
 type showAddressConfig struct {
+	ServerAddress string `long:"walletserver" short:"s" description:"Wallet server to connect to"`
+	config.NetworkFlags
+}
+
+type startDaemonConfig struct {
 	KeysFile  string `long:"keys-file" short:"f" description:"Keys file location (default: ~/.kaspawallet/keys.json (*nix), %USERPROFILE%\\AppData\\Local\\Kaspawallet\\key.json (Windows))"`
 	RPCServer string `long:"rpcserver" short:"s" description:"RPC server to connect to"`
+	Listen    string `short:"l" long:"listen" description:"Address to listen on (default: 0.0.0.0:8082)"`
 	config.NetworkFlags
 }
 
@@ -87,15 +96,15 @@ func parseCommandLine() (subCommand string, config interface{}) {
 	parser.AddCommand(createSubCmd, "Creates a new wallet",
 		"Creates a private key and 3 public addresses, one for each of MainNet, TestNet and DevNet", createConf)
 
-	balanceConf := &balanceConfig{}
+	balanceConf := &balanceConfig{ServerAddress: defaultListen}
 	parser.AddCommand(balanceSubCmd, "Shows the balance of a public address",
 		"Shows the balance for a public address in Kaspa", balanceConf)
 
-	sendConf := &sendConfig{}
+	sendConf := &sendConfig{ServerAddress: defaultListen}
 	parser.AddCommand(sendSubCmd, "Sends a Kaspa transaction to a public address",
 		"Sends a Kaspa transaction to a public address", sendConf)
 
-	createUnsignedTransactionConf := &createUnsignedTransactionConfig{}
+	createUnsignedTransactionConf := &createUnsignedTransactionConfig{ServerAddress: defaultListen}
 	parser.AddCommand(createUnsignedTransactionSubCmd, "Create an unsigned Kaspa transaction",
 		"Create an unsigned Kaspa transaction", createUnsignedTransactionConf)
 
@@ -103,11 +112,11 @@ func parseCommandLine() (subCommand string, config interface{}) {
 	parser.AddCommand(signSubCmd, "Sign the given partially signed transaction",
 		"Sign the given partially signed transaction", signConf)
 
-	broadcastConf := &broadcastConfig{}
+	broadcastConf := &broadcastConfig{ServerAddress: defaultListen}
 	parser.AddCommand(broadcastSubCmd, "Broadcast the given transaction",
 		"Broadcast the given transaction", broadcastConf)
 
-	showAddressConf := &showAddressConfig{}
+	showAddressConf := &showAddressConfig{ServerAddress: defaultListen}
 	parser.AddCommand(showAddressSubCmd, "Shows the public address of the current wallet",
 		"Shows the public address of the current wallet", showAddressConf)
 
@@ -115,6 +124,12 @@ func parseCommandLine() (subCommand string, config interface{}) {
 	parser.AddCommand(dumpUnencryptedDataSubCmd, "Prints the unencrypted wallet data",
 		"Prints the unencrypted wallet data including its private keys. Anyone that sees it can access "+
 			"the funds. Use only on safe environment.", dumpUnencryptedDataConf)
+
+	startDaemonConf := &startDaemonConfig{
+		RPCServer: defaultRPCServer,
+		Listen:    defaultListen,
+	}
+	parser.AddCommand(startDaemonSubCmd, "Start the wallet daemon", "Start the wallet daemon", startDaemonConf)
 
 	_, err := parser.Parse()
 
@@ -185,6 +200,13 @@ func parseCommandLine() (subCommand string, config interface{}) {
 			printErrorAndExit(err)
 		}
 		config = dumpUnencryptedDataConf
+	case startDaemonSubCmd:
+		combineNetworkFlags(&startDaemonConf.NetworkFlags, &cfg.NetworkFlags)
+		err := startDaemonConf.ResolveNetwork(parser)
+		if err != nil {
+			printErrorAndExit(err)
+		}
+		config = startDaemonConf
 	}
 
 	return parser.Command.Active.Name, config

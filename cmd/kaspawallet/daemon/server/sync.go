@@ -1,4 +1,4 @@
-package main
+package server
 
 import (
 	"context"
@@ -84,7 +84,7 @@ func (s *server) addressesToQuery() (walletAddressSet, error) {
 		for cosignerIndex := uint32(0); cosignerIndex < uint32(len(s.keysFile.ExtendedPublicKeys)); cosignerIndex++ {
 			for _, keychain := range keyChains {
 				path := fmt.Sprintf("m/%d/%d/%d", cosignerIndex, keychain, index)
-				addr, err := libkaspawallet.Address(s.cfg.NetParams(), s.keysFile.ExtendedPublicKeys, s.keysFile.MinimumSignatures, path, s.keysFile.ECDSA)
+				addr, err := libkaspawallet.Address(s.params, s.keysFile.ExtendedPublicKeys, s.keysFile.MinimumSignatures, path, s.keysFile.ECDSA)
 				if err != nil {
 					return nil, err
 				}

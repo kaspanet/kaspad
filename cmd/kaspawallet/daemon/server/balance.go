@@ -1,4 +1,4 @@
-package main
+package server
 
 import (
 	"context"
@@ -17,7 +17,7 @@ func (s *server) GetBalance(_ context.Context, _ *pb.GetBalanceRequest) (*pb.Get
 
 	var availableBalance, pendingBalance uint64
 	for _, entry := range s.utxos {
-		if isUTXOSpendable(entry, virtualSelectedParentBlueScore, s.cfg.NetParams().BlockCoinbaseMaturity) {
+		if isUTXOSpendable(entry, virtualSelectedParentBlueScore, s.params.BlockCoinbaseMaturity) {
 			availableBalance += entry.UTXOEntry.Amount()
 		} else {
 			pendingBalance += entry.UTXOEntry.Amount()

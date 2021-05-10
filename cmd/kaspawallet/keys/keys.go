@@ -46,9 +46,9 @@ type EncryptedMnemonic struct {
 	salt   []byte
 }
 
-// Data holds all the data related to the wallet keys
-type Data struct {
-	encryptedMnemonics    []*EncryptedMnemonic
+// File holds all the data related to the wallet keys
+type File struct {
+	EncryptedMnemonics    []*EncryptedMnemonic
 	ExtendedPublicKeys    []string
 	MinimumSignatures     uint32
 	CosignerIndex         uint32
@@ -58,9 +58,9 @@ type Data struct {
 	pathToFile            string
 }
 
-func (d *Data) toJSON() *keysFileJSON {
-	encryptedPrivateKeysJSON := make([]*encryptedPrivateKeyJSON, len(d.encryptedMnemonics))
-	for i, encryptedPrivateKey := range d.encryptedMnemonics {
+func (d *File) toJSON() *keysFileJSON {
+	encryptedPrivateKeysJSON := make([]*encryptedPrivateKeyJSON, len(d.EncryptedMnemonics))
+	for i, encryptedPrivateKey := range d.EncryptedMnemonics {
 		encryptedPrivateKeysJSON[i] = &encryptedPrivateKeyJSON{
 			Cipher: hex.EncodeToString(encryptedPrivateKey.cipher),
 			Salt:   hex.EncodeToString(encryptedPrivateKey.salt),
@@ -78,7 +78,7 @@ func (d *Data) toJSON() *keysFileJSON {
 	}
 }
 
-func (d *Data) fromJSON(fileJSON *keysFileJSON) error {
+func (d *File) fromJSON(fileJSON *keysFileJSON) error {
 	d.MinimumSignatures = fileJSON.MinimumSignatures
 	d.ECDSA = fileJSON.ECDSA
 	d.ExtendedPublicKeys = fileJSON.ExtendedPublicKeys
@@ -86,7 +86,7 @@ func (d *Data) fromJSON(fileJSON *keysFileJSON) error {
 	d.LastUsedExternalIndex = fileJSON.LastUsedExternalIndex
 	d.LastUsedInternalIndex = fileJSON.LastUsedInternalIndex
 
-	d.encryptedMnemonics = make([]*EncryptedMnemonic, len(fileJSON.EncryptedPrivateKeys))
+	d.EncryptedMnemonics = make([]*EncryptedMnemonic, len(fileJSON.EncryptedPrivateKeys))
 	for i, encryptedPrivateKeyJSON := range fileJSON.EncryptedPrivateKeys {
 		cipher, err := hex.DecodeString(encryptedPrivateKeyJSON.Cipher)
 		if err != nil {
@@ -98,7 +98,7 @@ func (d *Data) fromJSON(fileJSON *keysFileJSON) error {
 			return err
 		}
 
-		d.encryptedMnemonics[i] = &EncryptedMnemonic{
+		d.EncryptedMnemonics[i] = &EncryptedMnemonic{
 			cipher: cipher,
 			salt:   salt,
 		}
@@ -107,12 +107,20 @@ func (d *Data) fromJSON(fileJSON *keysFileJSON) error {
 	return nil
 }
 
+func (d *File) SetPath(params *dagconfig.Params, path string) {
+	if path == "" {
+		path = defaultKeysFile(params)
+	}
+
+	d.pathToFile = path
+}
+
 // DecryptMnemonics asks the user to enter the password for the private keys and
 // returns the decrypted private keys.
-func (d *Data) DecryptMnemonics() ([]string, error) {
+func (d *File) DecryptMnemonics() ([]string, error) {
 	password := getPassword("Password:")
-	privateKeys := make([]string, len(d.encryptedMnemonics))
-	for i, encryptedPrivateKey := range d.encryptedMnemonics {
+	privateKeys := make([]string, len(d.EncryptedMnemonics))
+	for i, encryptedPrivateKey := range d.EncryptedMnemonics {
 		var err error
 		privateKeys[i], err = decryptMnemonic(encryptedPrivateKey, password)
 		if err != nil {
@@ -124,7 +132,7 @@ func (d *Data) DecryptMnemonics() ([]string, error) {
 }
 
 // ReadKeysFile returns the data related to the keys file
-func ReadKeysFile(netParams *dagconfig.Params, path string) (*Data, error) {
+func ReadKeysFile(netParams *dagconfig.Params, path string) (*File, error) {
 	if path == "" {
 		path = defaultKeysFile(netParams)
 	}
@@ -142,7 +150,7 @@ func ReadKeysFile(netParams *dagconfig.Params, path string) (*Data, error) {
 		return nil, err
 	}
 
-	keysFile := &Data{
+	keysFile := &File{
 		pathToFile: path,
 	}
 	err = keysFile.fromJSON(decodedFile)
@@ -182,7 +190,7 @@ func pathExists(path string) (bool, error) {
 	return false, err
 }
 
-func (d *Data) Sync() error {
+func (d *File) Sync() error {
 	exists, err := pathExists(d.pathToFile)
 	if err != nil {
 		return err

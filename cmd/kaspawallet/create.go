@@ -11,13 +11,13 @@ import (
 )
 
 func create(conf *createConfig) error {
-	var encryptedPrivateKeys []*keys.EncryptedMnemonic
+	var encryptedMnemonics []*keys.EncryptedMnemonic
 	var extendedPublicKeys []string
 	var err error
 	if !conf.Import {
-		encryptedPrivateKeys, extendedPublicKeys, err = keys.CreateKeyPairs(conf.NumPrivateKeys, conf.NetParams())
+		encryptedMnemonics, extendedPublicKeys, err = keys.CreateKeyPairs(conf.NumPrivateKeys, conf.NetParams())
 	} else {
-		encryptedPrivateKeys, extendedPublicKeys, err = keys.ImportKeyPairs(conf.NumPrivateKeys, conf.NetParams())
+		encryptedMnemonics, extendedPublicKeys, err = keys.ImportKeyPairs(conf.NumPrivateKeys, conf.NetParams())
 	}
 	if err != nil {
 		return err
@@ -51,11 +51,15 @@ func create(conf *createConfig) error {
 		return err
 	}
 
-	err = keys.WriteKeysFile(
-		conf.NetParams(), conf.KeysFile, encryptedPrivateKeys, extendedPublicKeys, conf.MinimumSignatures, cosignerIndex, 0, conf.ECDSA)
-	if err != nil {
-		return err
+	file := keys.File{
+		EncryptedMnemonics:    encryptedMnemonics,
+		ExtendedPublicKeys:    extendedPublicKeys,
+		MinimumSignatures:     conf.MinimumSignatures,
+		CosignerIndex:         cosignerIndex,
+		LastUsedExternalIndex: 0,
+		LastUsedInternalIndex: 0,
+		ECDSA:                 conf.ECDSA,
 	}
-
-	return nil
+	file.SetPath(conf.NetParams(), conf.KeysFile)
+	return file.Sync()
 }

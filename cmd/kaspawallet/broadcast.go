@@ -1,40 +1,35 @@
 package main
 
 import (
+	"context"
 	"encoding/hex"
 	"fmt"
-	"github.com/kaspanet/kaspad/cmd/kaspawallet/keys"
-	"github.com/kaspanet/kaspad/cmd/kaspawallet/libkaspawallet"
+	"github.com/kaspanet/kaspad/cmd/kaspawallet/daemon/client"
+	"github.com/kaspanet/kaspad/cmd/kaspawallet/daemon/pb"
 )
 
 func broadcast(conf *broadcastConfig) error {
-	client, err := connectToRPC(conf.NetParams(), conf.RPCServer)
+	daemonClient, tearDown, err := client.Connect(conf.ServerAddress)
+	if err != nil {
+		return err
+	}
+	defer tearDown()
+
+	ctx, cancel := context.WithTimeout(context.Background(), daemonTimeout)
+	defer cancel()
+
+	transaction, err := hex.DecodeString(conf.Transaction)
 	if err != nil {
 		return err
 	}
 
-	keysFile, err := keys.ReadKeysFile(conf.NetParams(), conf.KeysFile)
-	if err != nil {
-		return err
-	}
-
-	psTxBytes, err := hex.DecodeString(conf.Transaction)
-	if err != nil {
-		return err
-	}
-
-	tx, err := libkaspawallet.ExtractTransaction(psTxBytes, keysFile.ECDSA)
-	if err != nil {
-		return err
-	}
-
-	transactionID, err := sendTransaction(client, tx)
+	response, err := daemonClient.Broadcast(ctx, &pb.BroadcastRequest{Transaction: transaction})
 	if err != nil {
 		return err
 	}
 
 	fmt.Println("Transaction was sent successfully")
-	fmt.Printf("Transaction ID: \t%s\n", transactionID)
+	fmt.Printf("Transaction ID: \t%s\n", response.TxID)
 
 	return nil
 }

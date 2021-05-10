@@ -1,10 +1,11 @@
-package main
+package server
 
 import (
 	"fmt"
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/daemon/pb"
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/keys"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+	"github.com/kaspanet/kaspad/domain/dagconfig"
 	"github.com/kaspanet/kaspad/infrastructure/network/rpcclient"
 	"github.com/kaspanet/kaspad/infrastructure/os/signal"
 	"github.com/kaspanet/kaspad/util/panics"
@@ -21,46 +22,40 @@ type server struct {
 	pb.UnimplementedKaspawalletdServer
 
 	rpcClient *rpcclient.RPCClient
+	params    *dagconfig.Params
 
 	lock               sync.RWMutex
 	utxos              map[externalapi.DomainOutpoint]*walletUTXO
 	nextSyncStartIndex uint32
-	keysFile           *keys.Data
-	cfg                *configFlags
+	keysFile           *keys.File
 	shutdown           chan struct{}
 }
 
-func main() {
+func Start(params *dagconfig.Params, listen, rpcServer string, keysFilePath string) error {
 	defer panics.HandlePanic(log, "MAIN", nil)
 	interrupt := signal.InterruptListener()
 
-	cfg, err := parseConfig()
+	listener, err := net.Listen("tcp", listen)
 	if err != nil {
-		printErrorAndExit(errors.Wrap(err, "Error parsing command-line arguments"))
-	}
-	defer backendLog.Close()
-
-	listener, err := net.Listen("tcp", cfg.Listen)
-	if err != nil {
-		printErrorAndExit(errors.Wrapf(err, "Error listening to tcp at %s", cfg.Listen))
+		return (errors.Wrapf(err, "Error listening to tcp at %s", listen))
 	}
 
-	rpcClient, err := connectToRPC(cfg.NetParams(), cfg.RPCServer)
+	rpcClient, err := connectToRPC(params, rpcServer)
 	if err != nil {
-		printErrorAndExit(errors.Wrapf(err, "Error connecting to RPC server %s", cfg.RPCServer))
+		return (errors.Wrapf(err, "Error connecting to RPC server %s", rpcServer))
 	}
 
-	keysFile, err := keys.ReadKeysFile(cfg.NetParams(), cfg.KeysFile)
+	keysFile, err := keys.ReadKeysFile(params, keysFilePath)
 	if err != nil {
-		return
+		return (errors.Wrapf(err, "Error connecting to RPC server %s", rpcServer))
 	}
 
 	serverInstance := &server{
 		rpcClient:          rpcClient,
+		params:             params,
 		utxos:              make(map[externalapi.DomainOutpoint]*walletUTXO),
 		nextSyncStartIndex: 0,
 		keysFile:           keysFile,
-		cfg:                cfg,
 		shutdown:           make(chan struct{}),
 	}
 
@@ -99,6 +94,8 @@ func main() {
 			grpcServer.Stop()
 		}
 	}
+
+	return nil
 }
 
 func printErrorAndExit(err error) {
