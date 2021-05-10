@@ -256,6 +256,11 @@ func mineLoopUntilHavingOnlyOneTipInDAG(rpcClient *rpc.Client, miningAddress uti
 		return errors.Wrapf(err, "Error in getCurrentTipsLength")
 	}
 	hasTimedOut := false
+	spawn("ChecksIfTimeIsUp", func() {
+		timer := time.NewTimer(20 * time.Minute)
+		<-timer.C
+		hasTimedOut = true
+	})
 	for numOfTips > 1 && !hasTimedOut {
 		time.Sleep(1 * time.Second)
 		numOfTips, err = getCurrentTipsLength(rpcClient)
@@ -263,11 +268,6 @@ func mineLoopUntilHavingOnlyOneTipInDAG(rpcClient *rpc.Client, miningAddress uti
 			return errors.Wrapf(err, "Error in getCurrentTipsLength")
 		}
 	}
-	spawn("ChecksIfTimeIsUp", func() {
-		timer := time.NewTimer(20 * time.Minute)
-		<-timer.C
-		hasTimedOut = true
-	})
 
 	if hasTimedOut {
 		return errors.Errorf("Out of time - the graph still has more than one tip.")
@@ -280,9 +280,6 @@ func mineLoopUntilHavingOnlyOneTipInDAG(rpcClient *rpc.Client, miningAddress uti
 	}
 	numOfAddedBlocks := dagInfo.BlockCount - numOfBlocksBeforeMining
 	log.Infof("Added %d blocks to reach this.", numOfAddedBlocks)
-	if duration >= 20*time.Minute {
-		return errors.Errorf("Error: Took %s to get only one tip.", duration)
-	}
 	atomic.StoreUint64(&shutdown, 1)
 	killWithSigterm(kaspaMinerCmd, "kaspaMinerCmd")
 	return nil
