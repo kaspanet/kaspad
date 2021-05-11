@@ -12,22 +12,23 @@ import (
 
 func create(conf *createConfig) error {
 	var encryptedMnemonics []*keys.EncryptedMnemonic
-	var extendedPublicKeys []string
+	var signerExtendedPublicKeys []string
 	var err error
 	if !conf.Import {
-		encryptedMnemonics, extendedPublicKeys, err = keys.CreateKeyPairs(conf.NumPrivateKeys, conf.NetParams())
+		encryptedMnemonics, signerExtendedPublicKeys, err = keys.CreateKeyPairs(conf.NumPrivateKeys, conf.NetParams())
 	} else {
-		encryptedMnemonics, extendedPublicKeys, err = keys.ImportKeyPairs(conf.NumPrivateKeys, conf.NetParams())
+		encryptedMnemonics, signerExtendedPublicKeys, err = keys.ImportKeyPairs(conf.NumPrivateKeys, conf.NetParams())
 	}
 	if err != nil {
 		return err
 	}
 
-	for i, extendedPublicKey := range extendedPublicKeys {
+	for i, extendedPublicKey := range signerExtendedPublicKeys {
 		fmt.Printf("Extended public key of mnemonic #%d:\n%s\n\n", i+1, extendedPublicKey)
 	}
 
-	signerExtendedPublicKeys := make([]string, conf.NumPrivateKeys)
+	extendedPublicKeys := make([]string, conf.NumPrivateKeys, conf.NumPrivateKeys+conf.NumPublicKeys)
+	copy(extendedPublicKeys, signerExtendedPublicKeys)
 	reader := bufio.NewReader(os.Stdin)
 	for i := conf.NumPrivateKeys; i < conf.NumPublicKeys; i++ {
 		fmt.Printf("Enter public key #%d here:\n", i+1)
@@ -42,7 +43,6 @@ func create(conf *createConfig) error {
 			return errors.Errorf("Public key is too long")
 		}
 
-		signerExtendedPublicKeys[i] = string(extendedPublicKey)
 		extendedPublicKeys = append(extendedPublicKeys, string(extendedPublicKey))
 	}
 
@@ -61,5 +61,11 @@ func create(conf *createConfig) error {
 		ECDSA:                 conf.ECDSA,
 	}
 	file.SetPath(conf.NetParams(), conf.KeysFile)
-	return file.Sync(false)
+	err = file.Sync(false)
+	if err != nil {
+		return err
+	}
+
+	fmt.Printf("Wrote the keys into %s\n", file.Path())
+	return nil
 }

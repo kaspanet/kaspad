@@ -115,6 +115,10 @@ func (d *File) SetPath(params *dagconfig.Params, path string) {
 	d.pathToFile = path
 }
 
+func (d *File) Path() string {
+	return d.pathToFile
+}
+
 // DecryptMnemonics asks the user to enter the password for the private keys and
 // returns the decrypted private keys.
 func (d *File) DecryptMnemonics() ([]string, error) {
@@ -226,7 +230,6 @@ func (d *File) Sync(forceOverride bool) error {
 		return err
 	}
 
-	fmt.Printf("Wrote the keys into %s\n", d.pathToFile)
 	return nil
 }
 
