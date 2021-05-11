@@ -2,10 +2,8 @@ package server
 
 import (
 	"context"
-	"fmt"
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/daemon/pb"
-	"github.com/kaspanet/kaspad/cmd/kaspawallet/libkaspawallet"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/pkg/errors"
 	"time"
@@ -61,14 +59,9 @@ type walletUTXO struct {
 }
 
 type walletAddress struct {
-	address       string
 	index         uint32
 	cosignerIndex uint32
 	keyChain      uint8
-}
-
-func (wa *walletAddress) path() string {
-	return fmt.Sprintf("m/%d/%d/%d", wa.cosignerIndex, wa.keyChain, wa.index)
 }
 
 type walletAddressSet map[string]*walletAddress
@@ -88,17 +81,16 @@ func (s *server) addressesToQuery(start, end uint32) (walletAddressSet, error) {
 	for index := start; index < end; index++ {
 		for cosignerIndex := uint32(0); cosignerIndex < uint32(len(s.keysFile.ExtendedPublicKeys)); cosignerIndex++ {
 			for _, keychain := range keyChains {
-				path := fmt.Sprintf("m/%d/%d/%d", cosignerIndex, keychain, index)
-				addr, err := libkaspawallet.Address(s.params, s.keysFile.ExtendedPublicKeys, s.keysFile.MinimumSignatures, path, s.keysFile.ECDSA)
-				if err != nil {
-					return nil, err
-				}
-				addresses[addr.String()] = &walletAddress{
-					address:       addr.String(),
+				address := &walletAddress{
 					index:         index,
 					cosignerIndex: cosignerIndex,
 					keyChain:      keychain,
 				}
+				addressString, err := s.walletAddressString(address)
+				if err != nil {
+					return nil, err
+				}
+				addresses[addressString] = address
 			}
 		}
 	}
@@ -195,7 +187,7 @@ func (s *server) collectUTXOs(start, end uint32) error {
 
 		address, ok := addressSet[entry.Address]
 		if !ok {
-			return errors.Errorf("Got result from address %s even though it wasn't requested", address.address)
+			return errors.Errorf("Got result from address %s even though it wasn't requested", entry.Address)
 		}
 
 		s.utxos[*outpoint] = &walletUTXO{
@@ -218,7 +210,12 @@ func (s *server) refreshExistingUTXOsWithLock() error {
 func (s *server) refreshExistingUTXOs() error {
 	addressSet := make(walletAddressSet, len(s.utxos))
 	for _, utxo := range s.utxos {
-		addressSet[utxo.address.address] = utxo.address
+		addressString, err := s.walletAddressString(utxo.address)
+		if err != nil {
+			return err
+		}
+
+		addressSet[addressString] = utxo.address
 	}
 
 	getUTXOsByAddressesResponse, err := s.rpcClient.GetUTXOsByAddresses(addressSet.strings())
@@ -240,7 +237,7 @@ func (s *server) refreshExistingUTXOs() error {
 
 		address, ok := addressSet[entry.Address]
 		if !ok {
-			return errors.Errorf("Got result from address %s even though it wasn't requested", address.address)
+			return errors.Errorf("Got result from address %s even though it wasn't requested", entry.Address)
 		}
 
 		s.utxos[*outpoint] = &walletUTXO{

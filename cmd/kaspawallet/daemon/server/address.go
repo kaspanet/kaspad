@@ -9,7 +9,12 @@ import (
 )
 
 func (s *server) changeAddress() (util.Address, error) {
-	path := fmt.Sprintf("m/%d/%d/%d", s.keysFile.CosignerIndex, internalKeychain, s.keysFile.LastUsedInternalIndex+1)
+	walletAddr := &walletAddress{
+		index:         s.keysFile.LastUsedInternalIndex + 1,
+		cosignerIndex: s.keysFile.CosignerIndex,
+		keyChain:      internalKeychain,
+	}
+	path := s.walletAddressPath(walletAddr)
 	s.keysFile.LastUsedInternalIndex++
 	return libkaspawallet.Address(s.params, s.keysFile.ExtendedPublicKeys, s.keysFile.MinimumSignatures, path, s.keysFile.ECDSA)
 }
@@ -18,7 +23,12 @@ func (s *server) GetReceiveAddress(_ context.Context, request *pb.GetReceiveAddr
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	path := fmt.Sprintf("m/%d/%d/%d", s.keysFile.CosignerIndex, externalKeychain, s.keysFile.LastUsedExternalIndex+1)
+	walletAddr := &walletAddress{
+		index:         s.keysFile.LastUsedExternalIndex + 1,
+		cosignerIndex: s.keysFile.CosignerIndex,
+		keyChain:      externalKeychain,
+	}
+	path := s.walletAddressPath(walletAddr)
 	s.keysFile.LastUsedExternalIndex++
 	address, err := libkaspawallet.Address(s.params, s.keysFile.ExtendedPublicKeys, s.keysFile.MinimumSignatures, path, s.keysFile.ECDSA)
 	if err != nil {
@@ -26,4 +36,25 @@ func (s *server) GetReceiveAddress(_ context.Context, request *pb.GetReceiveAddr
 	}
 
 	return &pb.GetReceiveAddressResponse{Address: address.String()}, nil
+}
+
+func (s *server) walletAddressString(wAddr *walletAddress) (string, error) {
+	path := s.walletAddressPath(wAddr)
+	addr, err := libkaspawallet.Address(s.params, s.keysFile.ExtendedPublicKeys, s.keysFile.MinimumSignatures, path, s.keysFile.ECDSA)
+	if err != nil {
+		return "", err
+	}
+
+	return addr.String(), nil
+}
+
+func (s *server) walletAddressPath(wAddr *walletAddress) string {
+	if s.isMultisig() {
+		return fmt.Sprintf("m/%d/%d/%d", wAddr.cosignerIndex, wAddr.keyChain, wAddr.index)
+	}
+	return fmt.Sprintf("m/%d/%d", wAddr.keyChain, wAddr.index)
+}
+
+func (s *server) isMultisig() bool {
+	return len(s.keysFile.ExtendedPublicKeys) > 1
 }

@@ -70,7 +70,7 @@ func (s *server) selectUTXOs(spendAmount uint64, feePerInput uint64) (
 		selectedUTXOs = append(selectedUTXOs, &libkaspawallet.UTXO{
 			Outpoint:       utxo.Outpoint,
 			UTXOEntry:      utxo.UTXOEntry,
-			DerivationPath: utxo.address.path(),
+			DerivationPath: s.walletAddressPath(utxo.address),
 		})
 		totalValue += utxo.UTXOEntry.Amount()
 
