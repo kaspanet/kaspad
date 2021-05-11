@@ -14,10 +14,11 @@ func create(conf *createConfig) error {
 	var encryptedMnemonics []*keys.EncryptedMnemonic
 	var signerExtendedPublicKeys []string
 	var err error
+	isMultisig := conf.NumPublicKeys > 1
 	if !conf.Import {
-		encryptedMnemonics, signerExtendedPublicKeys, err = keys.CreateKeyPairs(conf.NumPrivateKeys, conf.NetParams())
+		encryptedMnemonics, signerExtendedPublicKeys, err = keys.CreateKeyPairs(conf.NetParams(), conf.NumPrivateKeys, isMultisig)
 	} else {
-		encryptedMnemonics, signerExtendedPublicKeys, err = keys.ImportKeyPairs(conf.NumPrivateKeys, conf.NetParams())
+		encryptedMnemonics, signerExtendedPublicKeys, err = keys.ImportKeyPairs(conf.NetParams(), conf.NumPrivateKeys, isMultisig)
 	}
 	if err != nil {
 		return err

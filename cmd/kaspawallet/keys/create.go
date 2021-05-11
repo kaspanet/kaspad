@@ -12,15 +12,15 @@ import (
 )
 
 // CreateKeyPairs generates `numKeys` number of key pairs.
-func CreateKeyPairs(numKeys uint32, params *dagconfig.Params) (encryptedPrivateKeys []*EncryptedMnemonic, extendedPublicKeys []string, err error) {
-	return createKeyPairsFromFunction(numKeys, params, func(_ uint32) (string, error) {
+func CreateKeyPairs(params *dagconfig.Params, numKeys uint32, isMultisig bool) (encryptedPrivateKeys []*EncryptedMnemonic, extendedPublicKeys []string, err error) {
+	return createKeyPairsFromFunction(params, numKeys, isMultisig, func(_ uint32) (string, error) {
 		return libkaspawallet.CreateMnemonic()
 	})
 }
 
 // ImportKeyPairs imports a `numKeys` of private keys and generates key pairs out of them.
-func ImportKeyPairs(numKeys uint32, params *dagconfig.Params) (encryptedPrivateKeys []*EncryptedMnemonic, publicKeys []string, err error) {
-	return createKeyPairsFromFunction(numKeys, params, func(keyIndex uint32) (string, error) {
+func ImportKeyPairs(params *dagconfig.Params, numKeys uint32, isMultisig bool) (encryptedPrivateKeys []*EncryptedMnemonic, publicKeys []string, err error) {
+	return createKeyPairsFromFunction(params, numKeys, isMultisig, func(keyIndex uint32) (string, error) {
 		fmt.Printf("Enter mnemonic #%d here:\n", keyIndex+1)
 		reader := bufio.NewReader(os.Stdin)
 		mnemonic, isPrefix, err := reader.ReadLine()
@@ -35,7 +35,7 @@ func ImportKeyPairs(numKeys uint32, params *dagconfig.Params) (encryptedPrivateK
 	})
 }
 
-func createKeyPairsFromFunction(numKeys uint32, params *dagconfig.Params, keyPairFunction func(keyIndex uint32) (string, error)) (
+func createKeyPairsFromFunction(params *dagconfig.Params, numKeys uint32, isMultisig bool, keyPairFunction func(keyIndex uint32) (string, error)) (
 	encryptedPrivateKeys []*EncryptedMnemonic, extendedPublicKeys []string, err error) {
 
 	password := getPassword("Enter password for the key file:")
@@ -52,7 +52,7 @@ func createKeyPairsFromFunction(numKeys uint32, params *dagconfig.Params, keyPai
 			return nil, nil, err
 		}
 
-		extendedPublicKey, err := libkaspawallet.MasterPublicKeyFromMnemonic(params, mnemonic, numKeys > 1)
+		extendedPublicKey, err := libkaspawallet.MasterPublicKeyFromMnemonic(params, mnemonic, isMultisig)
 		if err != nil {
 			return nil, nil, err
 		}
