@@ -22,7 +22,6 @@ type KaspawalletdClient interface {
 	GetReceiveAddress(ctx context.Context, in *GetReceiveAddressRequest, opts ...grpc.CallOption) (*GetReceiveAddressResponse, error)
 	Shutdown(ctx context.Context, in *ShutdownRequest, opts ...grpc.CallOption) (*ShutdownResponse, error)
 	Broadcast(ctx context.Context, in *BroadcastRequest, opts ...grpc.CallOption) (*BroadcastResponse, error)
-	IsSynced(ctx context.Context, in *IsSyncedRequest, opts ...grpc.CallOption) (*IsSyncedResponse, error)
 }
 
 type kaspawalletdClient struct {
@@ -78,15 +77,6 @@ func (c *kaspawalletdClient) Broadcast(ctx context.Context, in *BroadcastRequest
 	return out, nil
 }
 
-func (c *kaspawalletdClient) IsSynced(ctx context.Context, in *IsSyncedRequest, opts ...grpc.CallOption) (*IsSyncedResponse, error) {
-	out := new(IsSyncedResponse)
-	err := c.cc.Invoke(ctx, "/kaspawalletd/IsSynced", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 // KaspawalletdServer is the server API for Kaspawalletd service.
 // All implementations must embed UnimplementedKaspawalletdServer
 // for forward compatibility
@@ -96,7 +86,6 @@ type KaspawalletdServer interface {
 	GetReceiveAddress(context.Context, *GetReceiveAddressRequest) (*GetReceiveAddressResponse, error)
 	Shutdown(context.Context, *ShutdownRequest) (*ShutdownResponse, error)
 	Broadcast(context.Context, *BroadcastRequest) (*BroadcastResponse, error)
-	IsSynced(context.Context, *IsSyncedRequest) (*IsSyncedResponse, error)
 	mustEmbedUnimplementedKaspawalletdServer()
 }
 
@@ -118,9 +107,6 @@ func (*UnimplementedKaspawalletdServer) Shutdown(context.Context, *ShutdownReque
 }
 func (*UnimplementedKaspawalletdServer) Broadcast(context.Context, *BroadcastRequest) (*BroadcastResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Broadcast not implemented")
-}
-func (*UnimplementedKaspawalletdServer) IsSynced(context.Context, *IsSyncedRequest) (*IsSyncedResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method IsSynced not implemented")
 }
 func (*UnimplementedKaspawalletdServer) mustEmbedUnimplementedKaspawalletdServer() {}
 
@@ -218,24 +204,6 @@ func _Kaspawalletd_Broadcast_Handler(srv interface{}, ctx context.Context, dec f
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Kaspawalletd_IsSynced_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(IsSyncedRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(KaspawalletdServer).IsSynced(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/kaspawalletd/IsSynced",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(KaspawalletdServer).IsSynced(ctx, req.(*IsSyncedRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 var _Kaspawalletd_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "kaspawalletd",
 	HandlerType: (*KaspawalletdServer)(nil),
@@ -259,10 +227,6 @@ var _Kaspawalletd_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Broadcast",
 			Handler:    _Kaspawalletd_Broadcast_Handler,
-		},
-		{
-			MethodName: "IsSynced",
-			Handler:    _Kaspawalletd_IsSynced_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

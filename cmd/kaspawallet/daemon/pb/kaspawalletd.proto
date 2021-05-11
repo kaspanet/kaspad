@@ -8,7 +8,6 @@ service kaspawalletd {
   rpc GetReceiveAddress (GetReceiveAddressRequest) returns (GetReceiveAddressResponse) {}
   rpc Shutdown (ShutdownRequest) returns (ShutdownResponse) {}
   rpc Broadcast (BroadcastRequest) returns (BroadcastResponse) {}
-  rpc IsSynced (IsSyncedRequest) returns (IsSyncedResponse) {}
 }
 
 message GetBalanceRequest {
@@ -47,11 +46,4 @@ message ShutdownRequest {
 }
 
 message ShutdownResponse {
-}
-
-message IsSyncedRequest {
-}
-
-message IsSyncedResponse {
-  bool isSynced = 1;
 }

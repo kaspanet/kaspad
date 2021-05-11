@@ -1,9 +1,7 @@
 package server
 
 import (
-	"context"
 	"github.com/kaspanet/kaspad/app/appmessage"
-	"github.com/kaspanet/kaspad/cmd/kaspawallet/daemon/pb"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/pkg/errors"
 	"time"
@@ -249,10 +247,11 @@ func (s *server) refreshExistingUTXOs() error {
 	return nil
 }
 
-func (s *server) IsSynced(_ context.Context, _ *pb.IsSyncedRequest) (*pb.IsSyncedResponse, error) {
-	s.lock.RLock()
-	defer s.lock.RUnlock()
-
+func (s *server) validateIsSynced() error {
 	isSynced := s.nextSyncStartIndex > s.keysFile.LastUsedInternalIndex && s.nextSyncStartIndex > s.keysFile.LastUsedExternalIndex
-	return &pb.IsSyncedResponse{IsSynced: isSynced}, nil
+	if !isSynced {
+		return errors.New("server is not synced")
+	}
+
+	return nil
 }

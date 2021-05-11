@@ -12,7 +12,12 @@ func (s *server) CreateUnsignedTransaction(_ context.Context, request *pb.Create
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	err := s.refreshExistingUTXOs()
+	err := s.validateIsSynced()
+	if err != nil {
+		return nil, err
+	}
+
+	err = s.refreshExistingUTXOs()
 	if err != nil {
 		return nil, err
 	}

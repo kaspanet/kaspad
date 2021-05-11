@@ -31,6 +31,7 @@ type server struct {
 	shutdown           chan struct{}
 }
 
+// Start starts the kaspawalletd server
 func Start(params *dagconfig.Params, listen, rpcServer string, keysFilePath string) error {
 	defer panics.HandlePanic(log, "MAIN", nil)
 	interrupt := signal.InterruptListener()

@@ -23,6 +23,11 @@ func (s *server) GetReceiveAddress(_ context.Context, request *pb.GetReceiveAddr
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
+	err := s.validateIsSynced()
+	if err != nil {
+		return nil, err
+	}
+
 	walletAddr := &walletAddress{
 		index:         s.keysFile.LastUsedExternalIndex + 1,
 		cosignerIndex: s.keysFile.CosignerIndex,
