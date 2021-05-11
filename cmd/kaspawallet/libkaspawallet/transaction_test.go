@@ -52,8 +52,8 @@ func TestMultisig(t *testing.T) {
 			}
 
 			const minimumSignatures = 2
-			// TODO: Use different index than 0
-			address, err := libkaspawallet.Address(params, publicKeys, minimumSignatures, "m/0", ecdsa)
+			path := "m/1/2/3"
+			address, err := libkaspawallet.Address(params, publicKeys, minimumSignatures, path, ecdsa)
 			if err != nil {
 				t.Fatalf("Address: %+v", err)
 			}
@@ -91,14 +91,12 @@ func TestMultisig(t *testing.T) {
 			block1TxOut := block1Tx.Outputs[0]
 			selectedUTXOs := []*libkaspawallet.UTXO{
 				{
-					OutpointAndUTXOEntryPair: &externalapi.OutpointAndUTXOEntryPair{
-						Outpoint: &externalapi.DomainOutpoint{
-							TransactionID: *consensushashing.TransactionID(block1.Transactions[0]),
-							Index:         0,
-						},
-						UTXOEntry: utxo.NewUTXOEntry(block1TxOut.Value, block1TxOut.ScriptPublicKey, true, 0),
+					Outpoint: &externalapi.DomainOutpoint{
+						TransactionID: *consensushashing.TransactionID(block1.Transactions[0]),
+						Index:         0,
 					},
-					DerivationPath: "m/0",
+					UTXOEntry:      utxo.NewUTXOEntry(block1TxOut.Value, block1TxOut.ScriptPublicKey, true, 0),
+					DerivationPath: path,
 				},
 			}
 
@@ -209,8 +207,8 @@ func TestP2PK(t *testing.T) {
 			}
 
 			const minimumSignatures = 1
-			// TODO: Use different index than 0
-			address, err := libkaspawallet.Address(params, publicKeys, minimumSignatures, "m/0", ecdsa)
+			path := "m/1/2/3"
+			address, err := libkaspawallet.Address(params, publicKeys, minimumSignatures, path, ecdsa)
 			if err != nil {
 				t.Fatalf("Address: %+v", err)
 			}
@@ -254,14 +252,12 @@ func TestP2PK(t *testing.T) {
 			block1TxOut := block1Tx.Outputs[0]
 			selectedUTXOs := []*libkaspawallet.UTXO{
 				{
-					OutpointAndUTXOEntryPair: &externalapi.OutpointAndUTXOEntryPair{
-						Outpoint: &externalapi.DomainOutpoint{
-							TransactionID: *consensushashing.TransactionID(block1.Transactions[0]),
-							Index:         0,
-						},
-						UTXOEntry: utxo.NewUTXOEntry(block1TxOut.Value, block1TxOut.ScriptPublicKey, true, 0),
+					Outpoint: &externalapi.DomainOutpoint{
+						TransactionID: *consensushashing.TransactionID(block1.Transactions[0]),
+						Index:         0,
 					},
-					DerivationPath: "m/0",
+					UTXOEntry:      utxo.NewUTXOEntry(block1TxOut.Value, block1TxOut.ScriptPublicKey, true, 0),
+					DerivationPath: path,
 				},
 			}
 
