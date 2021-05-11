@@ -45,9 +45,9 @@ func TestMultisig(t *testing.T) {
 					t.Fatalf("CreateMnemonic: %+v", err)
 				}
 
-				publicKeys[i], err = libkaspawallet.ExtendedPublicKeyFromMnemonic(&consensusConfig.Params, mnemonics[i], true)
+				publicKeys[i], err = libkaspawallet.MasterPublicKeyFromMnemonic(&consensusConfig.Params, mnemonics[i], true)
 				if err != nil {
-					t.Fatalf("ExtendedPublicKeyFromMnemonic: %+v", err)
+					t.Fatalf("MasterPublicKeyFromMnemonic: %+v", err)
 				}
 			}
 
@@ -200,9 +200,9 @@ func TestP2PK(t *testing.T) {
 					t.Fatalf("CreateMnemonic: %+v", err)
 				}
 
-				publicKeys[i], err = libkaspawallet.ExtendedPublicKeyFromMnemonic(&consensusConfig.Params, mnemonics[i], false)
+				publicKeys[i], err = libkaspawallet.MasterPublicKeyFromMnemonic(&consensusConfig.Params, mnemonics[i], false)
 				if err != nil {
-					t.Fatalf("ExtendedPublicKeyFromMnemonic: %+v", err)
+					t.Fatalf("MasterPublicKeyFromMnemonic: %+v", err)
 				}
 			}
 

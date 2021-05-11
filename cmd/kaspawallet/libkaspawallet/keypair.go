@@ -146,13 +146,14 @@ func cosignerIndex(extendedPublicKey string, sortedExtendedPublicKeys []string) 
 	return uint32(cosignerIndex), nil
 }
 
-func MinimumCosignerIndex(signerExtendedPublicKeys, allExtendedPublicKeys []string) (uint32, error) {
+// MinimumCosignerIndex returns the minimum index for the cosigner from the set of all extended public keys.
+func MinimumCosignerIndex(cosignerExtendedPublicKeys, allExtendedPublicKeys []string) (uint32, error) {
 	allExtendedPublicKeysCopy := make([]string, len(allExtendedPublicKeys))
 	copy(allExtendedPublicKeysCopy, allExtendedPublicKeys)
 	sortPublicKeys(allExtendedPublicKeysCopy)
 
 	min := uint32(math.MaxUint32)
-	for _, extendedPublicKey := range signerExtendedPublicKeys {
+	for _, extendedPublicKey := range cosignerExtendedPublicKeys {
 		cosignerIndex, err := cosignerIndex(extendedPublicKey, allExtendedPublicKeysCopy)
 		if err != nil {
 			return 0, err

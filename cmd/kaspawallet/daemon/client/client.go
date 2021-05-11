@@ -5,6 +5,7 @@ import (
 	"google.golang.org/grpc"
 )
 
+// Connect connects to the kaspawalletd server, and returns the client instance
 func Connect(address string) (pb.KaspawalletdClient, func(), error) {
 	conn, err := grpc.Dial(address, grpc.WithInsecure(), grpc.WithBlock())
 	if err != nil {

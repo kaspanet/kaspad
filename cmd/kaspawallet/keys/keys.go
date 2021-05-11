@@ -55,7 +55,7 @@ type File struct {
 	LastUsedExternalIndex uint32
 	LastUsedInternalIndex uint32
 	ECDSA                 bool
-	pathToFile            string
+	path                  string
 }
 
 func (d *File) toJSON() *keysFileJSON {
@@ -107,16 +107,18 @@ func (d *File) fromJSON(fileJSON *keysFileJSON) error {
 	return nil
 }
 
+// SetPath sets the path where the file is saved to.
 func (d *File) SetPath(params *dagconfig.Params, path string) {
 	if path == "" {
 		path = defaultKeysFile(params)
 	}
 
-	d.pathToFile = path
+	d.path = path
 }
 
+// Path returns the file path.
 func (d *File) Path() string {
-	return d.pathToFile
+	return d.path
 }
 
 // DecryptMnemonics asks the user to enter the password for the private keys and
@@ -155,7 +157,7 @@ func ReadKeysFile(netParams *dagconfig.Params, path string) (*File, error) {
 	}
 
 	keysFile := &File{
-		pathToFile: path,
+		path: path,
 	}
 	err = keysFile.fromJSON(decodedFile)
 	if err != nil {
@@ -194,15 +196,16 @@ func pathExists(path string) (bool, error) {
 	return false, err
 }
 
+// Sync writes the file contents to the disk.
 func (d *File) Sync(forceOverride bool) error {
-	exists, err := pathExists(d.pathToFile)
+	exists, err := pathExists(d.path)
 	if err != nil {
 		return err
 	}
 
 	if !forceOverride && exists {
 		reader := bufio.NewReader(os.Stdin)
-		fmt.Printf("The file %s already exists. Are you sure you want to override it (type 'y' to approve)? ", d.pathToFile)
+		fmt.Printf("The file %s already exists. Are you sure you want to override it (type 'y' to approve)? ", d.path)
 		line, _, err := reader.ReadLine()
 		if err != nil {
 			return err
@@ -213,12 +216,12 @@ func (d *File) Sync(forceOverride bool) error {
 		}
 	}
 
-	err = createFileDirectoryIfDoesntExist(d.pathToFile)
+	err = createFileDirectoryIfDoesntExist(d.path)
 	if err != nil {
 		return err
 	}
 
-	file, err := os.OpenFile(d.pathToFile, os.O_WRONLY|os.O_CREATE, 0600)
+	file, err := os.OpenFile(d.path, os.O_WRONLY|os.O_CREATE, 0600)
 	if err != nil {
 		return err
 	}

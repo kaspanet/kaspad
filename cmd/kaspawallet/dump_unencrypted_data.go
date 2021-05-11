@@ -29,7 +29,7 @@ func dumpUnencryptedData(conf *dumpUnencryptedDataConfig) error {
 	mnemonicPublicKeys := make(map[string]struct{})
 	for i, privateKey := range mnemonics {
 		fmt.Printf("Mnemonic #%d:\n%x\n\n", i+1, privateKey)
-		publicKey, err := libkaspawallet.ExtendedPublicKeyFromMnemonic(conf.NetParams(), privateKey, len(keysFile.ExtendedPublicKeys) > 1)
+		publicKey, err := libkaspawallet.MasterPublicKeyFromMnemonic(conf.NetParams(), privateKey, len(keysFile.ExtendedPublicKeys) > 1)
 		if err != nil {
 			return err
 		}

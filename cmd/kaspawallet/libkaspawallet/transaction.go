@@ -17,6 +17,9 @@ type Payment struct {
 	Amount  uint64
 }
 
+// UTXO is a type that stores a UTXO and meta data
+// that is needed in order to sign it and create
+// transactions with it.
 type UTXO struct {
 	Outpoint       *externalapi.DomainOutpoint
 	UTXOEntry      externalapi.UTXOEntry

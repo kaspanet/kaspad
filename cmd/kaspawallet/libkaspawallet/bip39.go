@@ -8,6 +8,7 @@ import (
 	"github.com/tyler-smith/go-bip39"
 )
 
+// CreateMnemonic creates a new bio-39 compatible mnemonic
 func CreateMnemonic() (string, error) {
 	entropy, _ := bip39.NewEntropy(256)
 	return bip39.NewMnemonic(entropy)
@@ -25,7 +26,8 @@ func defaultPath(isMultisig bool) string {
 	return fmt.Sprintf("m/%d'/%d'/0'", coinType, purpose)
 }
 
-func ExtendedPublicKeyFromMnemonic(params *dagconfig.Params, mnemonic string, isMultisig bool) (string, error) {
+// MasterPublicKeyFromMnemonic returns the master public key with the correct derivation for the given mnemonic.
+func MasterPublicKeyFromMnemonic(params *dagconfig.Params, mnemonic string, isMultisig bool) (string, error) {
 	path := defaultPath(isMultisig)
 	extendedKey, err := extendedKeyFromMnemonicAndPath(mnemonic, path, params)
 	if err != nil {

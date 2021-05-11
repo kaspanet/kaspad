@@ -209,6 +209,7 @@ func RPCTransactionToDomainTransaction(rpcTransaction *RPCTransaction) (*externa
 	}, nil
 }
 
+// RPCOutpointToDomainOutpoint converts RPCOutpoint to  DomainOutpoint
 func RPCOutpointToDomainOutpoint(outpoint *RPCOutpoint) (*externalapi.DomainOutpoint, error) {
 	transactionID, err := transactionid.FromString(outpoint.TransactionID)
 	if err != nil {
@@ -220,6 +221,7 @@ func RPCOutpointToDomainOutpoint(outpoint *RPCOutpoint) (*externalapi.DomainOutp
 	}, nil
 }
 
+// RPCUTXOEntryToUTXOEntry converts RPCUTXOEntry to UTXOEntry
 func RPCUTXOEntryToUTXOEntry(entry *RPCUTXOEntry) (externalapi.UTXOEntry, error) {
 	script, err := hex.DecodeString(entry.ScriptPublicKey.Script)
 	if err != nil {
