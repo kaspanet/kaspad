@@ -1,3 +1,6 @@
+Kaspad v0.10.1 0 2021-05-11
+* Calculate virtual's acceptance data and multiset after importing a new pruning point (#1700)
+
 Kaspad v0.10.0 - 2021-04-26
 ===========================
 Major changes include:
