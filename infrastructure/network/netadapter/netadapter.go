@@ -3,6 +3,7 @@ package netadapter
 import (
 	"sync"
 	"sync/atomic"
+	"time"
 
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/infrastructure/config"
@@ -175,18 +176,20 @@ func (na *NetAdapter) ID() *id.ID {
 // P2PBroadcast sends the given `message` to every peer corresponding
 // to each NetConnection in the given netConnections
 func (na *NetAdapter) P2PBroadcast(netConnections []*NetConnection, message appmessage.Message) error {
-	na.p2pConnectionsLock.RLock()
-	defer na.p2pConnectionsLock.RUnlock()
-
-	for _, netConnection := range netConnections {
-		err := netConnection.router.OutgoingRoute().Enqueue(message)
-		if err != nil {
-			if errors.Is(err, routerpkg.ErrRouteClosed) {
-				log.Debugf("Cannot enqueue message to %s: router is closed", netConnection)
-				continue
+	go func() {
+		time.Sleep(config.DelayDuration)
+		na.p2pConnectionsLock.RLock()
+		defer na.p2pConnectionsLock.RUnlock()
+		for _, netConnection := range netConnections {
+			err := netConnection.router.OutgoingRoute().Enqueue(message)
+			if err != nil {
+				if errors.Is(err, routerpkg.ErrRouteClosed) {
+					log.Debugf("Cannot enqueue message to %s: router is closed", netConnection)
+					continue
+				}
+				log.Error(err)
 			}
-			return err
 		}
-	}
+	}()
 	return nil
 }

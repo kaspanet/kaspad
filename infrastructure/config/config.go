@@ -27,6 +27,8 @@ import (
 	"github.com/pkg/errors"
 )
 
+var DelayDuration time.Duration
+
 const (
 	defaultConfigFilename      = "kaspad.conf"
 	defaultDataDirname         = "data"
@@ -122,6 +124,7 @@ type Flags struct {
 	UTXOIndex                       bool          `long:"utxoindex" description:"Enable the UTXO index"`
 	IsArchivalNode                  bool          `long:"archival" description:"Run as an archival node: don't delete old block data when moving the pruning point (Warning: heavy disk usage)'"`
 	EnableSanityCheckPruningUTXOSet bool          `long:"enable-sanity-check-pruning-utxo" hidden:"true" description:"When moving the pruning point - check that the utxo set matches the utxo commitment"`
+	Delay                           float32       `long:"delay" description:"Provide a delay in seconds as a floating point"`
 	NetworkFlags
 	ServiceOptions *ServiceOptions
 }
@@ -577,6 +580,8 @@ func LoadConfig() (*Config, error) {
 	if configFileError != nil {
 		log.Warnf("%s", configFileError)
 	}
+
+	DelayDuration = time.Duration(cfg.Delay * float32(time.Second))
 	return cfg, nil
 }
 
