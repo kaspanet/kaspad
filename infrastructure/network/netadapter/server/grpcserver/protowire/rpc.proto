@@ -320,7 +320,7 @@ message GetBlockRequestMessage{
   string hash = 1;
 
   // Whether to include transaction data in the response
-  bool includeTransactionVerboseData = 3;
+  bool includeTransactions = 3;
 }
 
 message GetBlockResponseMessage{
@@ -361,7 +361,7 @@ message GetVirtualSelectedParentChainFromBlockResponseMessage{
 message GetBlocksRequestMessage{
   string lowHash = 1;
   bool includeBlocks = 2;
-  bool includeTransactionVerboseData = 3;
+  bool includeTransactions = 3;
 }
 
 message GetBlocksResponseMessage{
