@@ -112,6 +112,30 @@ func (s *consensus) GetBlock(blockHash *externalapi.DomainHash) (*externalapi.Do
 	return block, nil
 }
 
+func (s *consensus) GetBlockEvenIfHeaderOnly(blockHash *externalapi.DomainHash) (*externalapi.DomainBlock, error) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	stagingArea := model.NewStagingArea()
+
+	block, err := s.blockStore.Block(s.databaseContext, stagingArea, blockHash)
+	if err == nil {
+		return block, nil
+	}
+	if !errors.Is(err, database.ErrNotFound) {
+		return nil, err
+	}
+
+	header, err := s.blockHeaderStore.BlockHeader(s.databaseContext, stagingArea, blockHash)
+	if err != nil {
+		if errors.Is(err, database.ErrNotFound) {
+			return nil, errors.Wrapf(err, "block %s does not exist", blockHash)
+		}
+		return nil, err
+	}
+	return &externalapi.DomainBlock{Header: header}, nil
+}
+
 func (s *consensus) GetBlockHeader(blockHash *externalapi.DomainHash) (externalapi.BlockHeader, error) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
