@@ -1,6 +1,7 @@
 package miningmanager_test
 
 import (
+	"github.com/kaspanet/kaspad/domain/miningmanager/mempool"
 	"strings"
 	"testing"
 
@@ -66,6 +67,30 @@ func TestValidateAndInsertTransaction(t *testing.T) {
 		transactionsFromMempool = miningManager.AllTransactions()
 		if !contains(transactionNotAnOrphan, transactionsFromMempool) {
 			t.Fatalf("Missing transaction %s in the mempool", consensushashing.TransactionID(transactionNotAnOrphan))
+		}
+	})
+}
+
+func TestImmatureSpend(t *testing.T) {
+	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
+		factory := consensus.NewFactory()
+		tc, teardown, err := factory.NewTestConsensus(consensusConfig, "TestValidateAndInsertTransaction")
+		if err != nil {
+			t.Fatalf("Error setting up TestConsensus: %+v", err)
+		}
+		defer teardown(false)
+
+		miningFactory := miningmanager.NewFactory()
+		miningManager := miningFactory.NewMiningManager(tc, &consensusConfig.Params)
+		tx := createTransactionWithUTXOEntry(t, 0)
+		err = miningManager.ValidateAndInsertTransaction(tx, false)
+		txRuleError := &mempool.TxRuleError{}
+		if !errors.As(err, txRuleError) || txRuleError.RejectCode != mempool.RejectImmatureSpend {
+			t.Fatalf("Unexpected error %+v", err)
+		}
+		transactionsFromMempool := miningManager.AllTransactions()
+		if contains(tx, transactionsFromMempool) {
+			t.Fatalf("Mempool contains a transaction with immature coinbase")
 		}
 	})
 }
