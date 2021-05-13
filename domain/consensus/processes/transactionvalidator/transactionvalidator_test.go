@@ -78,7 +78,17 @@ func TestValidateTransactionInContextAndPopulateMassAndFee(t *testing.T) {
 				true,
 				uint64(5)),
 		}
-		txInputWithMaxSequence := externalapi.DomainTransactionInput{
+		immatureInput := externalapi.DomainTransactionInput{
+			PreviousOutpoint: prevOutPoint,
+			SignatureScript:  []byte{},
+			Sequence:         constants.MaxTxInSequenceNum,
+			UTXOEntry: utxo.NewUTXOEntry(
+				100_000_000, // 1 KAS
+				scriptPublicKey,
+				true,
+				uint64(6)),
+		}
+		txInputWithSequenceLockTimeIsSeconds := externalapi.DomainTransactionInput{
 			PreviousOutpoint: prevOutPoint,
 			SignatureScript:  []byte{},
 			Sequence:         constants.SequenceLockTimeIsSeconds,
@@ -110,7 +120,7 @@ func TestValidateTransactionInContextAndPopulateMassAndFee(t *testing.T) {
 
 		validTx := externalapi.DomainTransaction{
 			Version:      constants.MaxTransactionVersion,
-			Inputs:       []*externalapi.DomainTransactionInput{&txInputWithMaxSequence},
+			Inputs:       []*externalapi.DomainTransactionInput{&txInputWithSequenceLockTimeIsSeconds},
 			Outputs:      []*externalapi.DomainTransactionOutput{&txOut},
 			SubnetworkID: subnetworks.SubnetworkIDRegistry,
 			Gas:          0,
@@ -127,7 +137,7 @@ func TestValidateTransactionInContextAndPopulateMassAndFee(t *testing.T) {
 
 		txWithImmatureCoinbase := externalapi.DomainTransaction{
 			Version:      constants.MaxTransactionVersion,
-			Inputs:       []*externalapi.DomainTransactionInput{&txInput},
+			Inputs:       []*externalapi.DomainTransactionInput{&immatureInput},
 			Outputs:      []*externalapi.DomainTransactionOutput{&txOut},
 			SubnetworkID: subnetworks.SubnetworkIDRegistry,
 			Gas:          0,
@@ -158,7 +168,15 @@ func TestValidateTransactionInContextAndPopulateMassAndFee(t *testing.T) {
 
 		povBlockHash := externalapi.NewDomainHashFromByteArray(&[32]byte{0x01})
 		tc.DAABlocksStore().StageDAAScore(stagingArea, povBlockHash, consensusConfig.BlockCoinbaseMaturity+txInput.UTXOEntry.BlockDAAScore())
-		tc.DAABlocksStore().StageDAAScore(stagingArea, povBlockHash, 10)
+
+		// Just use some stub ghostdag data
+		tc.GHOSTDAGDataStore().Stage(stagingArea, povBlockHash, model.NewBlockGHOSTDAGData(
+			0,
+			nil,
+			consensusConfig.GenesisHash,
+			nil,
+			nil,
+			nil))
 
 		tests := []struct {
 			name                     string
@@ -171,7 +189,7 @@ func TestValidateTransactionInContextAndPopulateMassAndFee(t *testing.T) {
 			{
 				name:                     "Valid transaction",
 				tx:                       &validTx,
-				povBlockHash:             model.VirtualBlockHash,
+				povBlockHash:             povBlockHash,
 				selectedParentMedianTime: 1,
 				isValid:                  true,
 				expectedError:            nil,
@@ -189,7 +207,7 @@ func TestValidateTransactionInContextAndPopulateMassAndFee(t *testing.T) {
 			{ // The total inputs amount is bigger than the allowed maximum (constants.MaxSompi)
 				name:                     "checkTransactionInputAmounts",
 				tx:                       &txWithLargeAmount,
-				povBlockHash:             model.VirtualBlockHash,
+				povBlockHash:             povBlockHash,
 				selectedParentMedianTime: 1,
 				isValid:                  false,
 				expectedError:            ruleerrors.ErrBadTxOutValue,
@@ -197,7 +215,7 @@ func TestValidateTransactionInContextAndPopulateMassAndFee(t *testing.T) {
 			{ // The total SompiIn (sum of inputs amount) is smaller than the total SompiOut (sum of outputs value) and hence invalid.
 				name:                     "checkTransactionOutputAmounts",
 				tx:                       &txWithBigValue,
-				povBlockHash:             model.VirtualBlockHash,
+				povBlockHash:             povBlockHash,
 				selectedParentMedianTime: 1,
 				isValid:                  false,
 				expectedError:            ruleerrors.ErrSpendTooHigh,
@@ -205,15 +223,15 @@ func TestValidateTransactionInContextAndPopulateMassAndFee(t *testing.T) {
 			{ // the selectedParentMedianTime is negative and hence invalid.
 				name:                     "checkTransactionSequenceLock",
 				tx:                       &validTx,
-				povBlockHash:             model.VirtualBlockHash,
+				povBlockHash:             povBlockHash,
 				selectedParentMedianTime: -1,
 				isValid:                  false,
 				expectedError:            ruleerrors.ErrUnfinalizedTx,
 			},
-			{ // The SignatureScript (in the txInput) is empty and hence invalid.
+			{ // The SignatureScript (in the immatureInput) is empty and hence invalid.
 				name:                     "checkTransactionScripts",
 				tx:                       &txWithInvalidSignature,
-				povBlockHash:             model.VirtualBlockHash,
+				povBlockHash:             povBlockHash,
 				selectedParentMedianTime: 1,
 				isValid:                  false,
 				expectedError:            ruleerrors.ErrScriptValidation,
@@ -226,7 +244,7 @@ func TestValidateTransactionInContextAndPopulateMassAndFee(t *testing.T) {
 			if test.isValid {
 				if err != nil {
 					t.Fatalf("Unexpected error on TestValidateTransactionInContextAndPopulateMassAndFee"+
-						" on test '%v': %v", test.name, err)
+						" on test '%v': %+v", test.name, err)
 				}
 			} else {
 				if err == nil || !errors.Is(err, test.expectedError) {

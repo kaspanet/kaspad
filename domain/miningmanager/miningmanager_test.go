@@ -99,7 +99,7 @@ func TestImmatureSpend(t *testing.T) {
 // more than once into the mempool will result in raising an appropriate error.
 func TestInsertDoubleTransactionsToMempool(t *testing.T) {
 	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
-
+		consensusConfig.BlockCoinbaseMaturity = 0
 		factory := consensus.NewFactory()
 		tc, teardown, err := factory.NewTestConsensus(consensusConfig, "TestInsertDoubleTransactionsToMempool")
 		if err != nil {
@@ -124,7 +124,7 @@ func TestInsertDoubleTransactionsToMempool(t *testing.T) {
 // TestHandleNewBlockTransactions verifies that all the transactions in the block were successfully removed from the mempool.
 func TestHandleNewBlockTransactions(t *testing.T) {
 	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
-
+		consensusConfig.BlockCoinbaseMaturity = 0
 		factory := consensus.NewFactory()
 		tc, teardown, err := factory.NewTestConsensus(consensusConfig, "TestHandleNewBlockTransactions")
 		if err != nil {
@@ -190,7 +190,7 @@ func domainBlocksToBlockIds(blocks []*externalapi.DomainTransaction) []*external
 // will be removed from the mempool.
 func TestDoubleSpends(t *testing.T) {
 	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
-
+		consensusConfig.BlockCoinbaseMaturity = 0
 		factory := consensus.NewFactory()
 		tc, teardown, err := factory.NewTestConsensus(consensusConfig, "TestDoubleSpends")
 		if err != nil {
@@ -334,7 +334,7 @@ func createTransactionWithUTXOEntry(t *testing.T, i int) *externalapi.DomainTran
 			100000000, // 1 KAS
 			scriptPublicKey,
 			true,
-			uint64(5)),
+			uint64(0)),
 	}
 	txOut := externalapi.DomainTransactionOutput{
 		Value:           10000,
