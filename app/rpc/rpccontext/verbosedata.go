@@ -80,7 +80,7 @@ func (ctx *Context) PopulateBlockWithVerboseData(block *appmessage.RPCBlock, dom
 
 	// Get the block if we didn't receive it previously
 	if domainBlock == nil {
-		domainBlock, err = ctx.Domain.Consensus().GetBlock(blockHash)
+		domainBlock, err = ctx.Domain.Consensus().GetBlockEvenIfHeaderOnly(blockHash)
 		if err != nil {
 			return err
 		}
