@@ -130,6 +130,10 @@ type fakeRelayInvsContext struct {
 	rwLock                                        sync.RWMutex
 }
 
+func (f *fakeRelayInvsContext) GetBlockEvenIfHeaderOnly(blockHash *externalapi.DomainHash) (*externalapi.DomainBlock, error) {
+	panic("implement me")
+}
+
 func (f *fakeRelayInvsContext) GetBlockRelations(blockHash *externalapi.DomainHash) ([]*externalapi.DomainHash, *externalapi.DomainHash, []*externalapi.DomainHash, error) {
 	panic(errors.Errorf("called unimplemented function from test '%s'", f.testName))
 }
