@@ -243,7 +243,7 @@ func (as *addressStore) serializeAddress(address *address) []byte {
 	serializedSize := 16 + 2 + 8 + 8 // ipv6 + port + timestamp + connectionFailedCount
 	serializedNetAddress := make([]byte, serializedSize)
 
-	copy(serializedNetAddress[:], address.netAddress.IP[:])
+	copy(serializedNetAddress[:], address.netAddress.IP.To16()[:])
 	binary.LittleEndian.PutUint16(serializedNetAddress[16:], address.netAddress.Port)
 	binary.LittleEndian.PutUint64(serializedNetAddress[18:], uint64(address.netAddress.Timestamp.UnixMilliseconds()))
 	binary.LittleEndian.PutUint64(serializedNetAddress[26:], uint64(address.connectionFailedCount))
