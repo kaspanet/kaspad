@@ -96,15 +96,15 @@ func fetchSpendableUTXOs(params *dagconfig.Params, client *rpcclient.RPCClient, 
 	if err != nil {
 		return nil, err
 	}
-	virtualSelectedParentBlueScoreResponse, err := client.GetVirtualSelectedParentBlueScore()
+
+	blockDAGInfo, err := client.GetBlockDAGInfo()
 	if err != nil {
 		return nil, err
 	}
-	virtualSelectedParentBlueScore := virtualSelectedParentBlueScoreResponse.BlueScore
 
 	spendableUTXOs := make([]*appmessage.UTXOsByAddressesEntry, 0)
 	for _, entry := range getUTXOsByAddressesResponse.Entries {
-		if !isUTXOSpendable(entry, virtualSelectedParentBlueScore, params.BlockCoinbaseMaturity) {
+		if !isUTXOSpendable(entry, blockDAGInfo.VirtualDAAScore, params.BlockCoinbaseMaturity) {
 			continue
 		}
 		spendableUTXOs = append(spendableUTXOs, entry)

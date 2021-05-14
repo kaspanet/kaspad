@@ -28,15 +28,14 @@ func balance(conf *balanceConfig) error {
 	if err != nil {
 		return err
 	}
-	virtualSelectedParentBlueScoreResponse, err := client.GetVirtualSelectedParentBlueScore()
+	blockDAGInfo, err := client.GetBlockDAGInfo()
 	if err != nil {
 		return err
 	}
-	virtualSelectedParentBlueScore := virtualSelectedParentBlueScoreResponse.BlueScore
 
 	var availableBalance, pendingBalance uint64
 	for _, entry := range getUTXOsByAddressesResponse.Entries {
-		if isUTXOSpendable(entry, virtualSelectedParentBlueScore, conf.ActiveNetParams.BlockCoinbaseMaturity) {
+		if isUTXOSpendable(entry, blockDAGInfo.VirtualDAAScore, conf.ActiveNetParams.BlockCoinbaseMaturity) {
 			availableBalance += entry.UTXOEntry.Amount
 		} else {
 			pendingBalance += entry.UTXOEntry.Amount

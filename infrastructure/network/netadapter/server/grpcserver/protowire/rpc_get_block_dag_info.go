@@ -45,6 +45,7 @@ func (x *GetBlockDagInfoResponseMessage) toAppMessage() (appmessage.Message, err
 		Difficulty:          x.Difficulty,
 		PastMedianTime:      x.PastMedianTime,
 		PruningPointHash:    x.PruningPointHash,
+		VirtualDAAScore:     x.VirtualDaaScore,
 		Error:               rpcErr,
 	}, nil
 }
@@ -63,6 +64,7 @@ func (x *KaspadMessage_GetBlockDagInfoResponse) fromAppMessage(message *appmessa
 		Difficulty:          message.Difficulty,
 		PastMedianTime:      message.PastMedianTime,
 		PruningPointHash:    message.PruningPointHash,
+		VirtualDaaScore:     message.VirtualDAAScore,
 		Error:               err,
 	}
 	return nil
