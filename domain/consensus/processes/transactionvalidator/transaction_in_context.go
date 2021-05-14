@@ -266,7 +266,7 @@ func (v *transactionValidator) calcTxSequenceLockFromReferencedUTXOEntries(stagi
 			baseHash := povBlockHash
 
 			for {
-				selectedParentDAAScore, err := v.daaBlocksStore.DAAScore(v.databaseContext, stagingArea, povBlockHash)
+				selectedParentDAAScore, err := v.daaBlocksStore.DAAScore(v.databaseContext, stagingArea, baseHash)
 				if err != nil {
 					return nil, err
 				}
