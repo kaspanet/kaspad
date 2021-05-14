@@ -68,8 +68,7 @@ func (v *transactionValidator) checkTransactionCoinbaseMaturity(stagingArea *mod
 			missingOutpoints = append(missingOutpoints, &input.PreviousOutpoint)
 		} else if utxoEntry.IsCoinbase() {
 			originDAAScore := utxoEntry.BlockDAAScore()
-			daaScoreSincePrev := povDAAScore - originDAAScore
-			if daaScoreSincePrev < v.blockCoinbaseMaturity {
+			if originDAAScore+v.blockCoinbaseMaturity > povDAAScore {
 				return errors.Wrapf(ruleerrors.ErrImmatureSpend, "tried to spend coinbase "+
 					"transaction output %s from DAA score %d "+
 					"to DAA score %d before required maturity "+
