@@ -720,6 +720,9 @@ func (mp *mempool) maybeAcceptTransaction(tx *consensusexternalapi.DomainTransac
 		if errors.As(err, &missingOutpoints) {
 			return missingOutpoints.MissingOutpoints, nil, nil
 		}
+		if errors.Is(err, ruleerrors.ErrImmatureSpend) {
+			return nil, nil, txRuleError(RejectImmatureSpend, "one of the transaction inputs spends an immature UTXO")
+		}
 		if errors.As(err, &ruleerrors.RuleError{}) {
 			return nil, nil, newRuleError(err)
 		}
