@@ -8,9 +8,19 @@ import (
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/keys"
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/libkaspawallet"
 	"github.com/kaspanet/kaspad/util"
+	"github.com/pkg/errors"
 )
 
 func send(conf *sendConfig) error {
+	keysFile, err := keys.ReadKeysFile(conf.NetParams(), conf.KeysFile)
+	if err != nil {
+		return err
+	}
+
+	if len(keysFile.ExtendedPublicKeys) > len(keysFile.EncryptedMnemonics) {
+		return errors.Errorf("Cannot use 'send' command for multisig wallet without all of the keys")
+	}
+
 	daemonClient, tearDown, err := client.Connect(conf.DaemonAddress)
 	if err != nil {
 		return err
@@ -29,17 +39,12 @@ func send(conf *sendConfig) error {
 		return err
 	}
 
-	keysFile, err := keys.ReadKeysFile(conf.NetParams(), conf.KeysFile)
-	if err != nil {
-		return err
-	}
-
 	mnemonics, err := keysFile.DecryptMnemonics()
 	if err != nil {
 		return err
 	}
 
-	updatedPSTx, err := libkaspawallet.Sign(conf.NetParams(), mnemonics, createUnsignedTransactionResponse.UnsignedTransaction, keysFile.ECDSA)
+	signedTransaction, err := libkaspawallet.Sign(conf.NetParams(), mnemonics, createUnsignedTransactionResponse.UnsignedTransaction, keysFile.ECDSA)
 	if err != nil {
 		return err
 	}
@@ -47,7 +52,7 @@ func send(conf *sendConfig) error {
 	ctx2, cancel2 := context.WithTimeout(context.Background(), daemonTimeout)
 	defer cancel2()
 	broadcastResponse, err := daemonClient.Broadcast(ctx2, &pb.BroadcastRequest{
-		Transaction: updatedPSTx,
+		Transaction: signedTransaction,
 	})
 	if err != nil {
 		return err
