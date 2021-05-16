@@ -10,6 +10,11 @@ import (
 
 func (s *server) changeAddress() (util.Address, error) {
 	s.keysFile.LastUsedInternalIndex++
+	err := s.keysFile.Sync(true)
+	if err != nil {
+		return nil, err
+	}
+
 	walletAddr := &walletAddress{
 		index:         s.keysFile.LastUsedInternalIndex,
 		cosignerIndex: s.keysFile.CosignerIndex,
@@ -29,6 +34,11 @@ func (s *server) GetReceiveAddress(_ context.Context, request *pb.GetReceiveAddr
 	}
 
 	s.keysFile.LastUsedExternalIndex++
+	err = s.keysFile.Sync(true)
+	if err != nil {
+		return nil, err
+	}
+
 	walletAddr := &walletAddress{
 		index:         s.keysFile.LastUsedExternalIndex,
 		cosignerIndex: s.keysFile.CosignerIndex,

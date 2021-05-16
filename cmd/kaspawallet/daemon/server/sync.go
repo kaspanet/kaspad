@@ -33,21 +33,9 @@ func (s *server) sync() error {
 		if err != nil {
 			return err
 		}
-
-		err = s.syncKeysFile()
-		if err != nil {
-			return err
-		}
 	}
 
 	return nil
-}
-
-func (s *server) syncKeysFile() error {
-	s.lock.Lock()
-	defer s.lock.Unlock()
-
-	return s.keysFile.Sync(true)
 }
 
 type walletUTXO struct {
@@ -193,6 +181,12 @@ func (s *server) collectUTXOs(start, end uint32) error {
 			UTXOEntry: utxoEntry,
 			address:   address,
 		}
+	}
+
+	// Save the file after changes in LastUsedExternalIndex and LastUsedInternalIndex
+	err = s.keysFile.Sync(true)
+	if err != nil {
+		return err
 	}
 
 	return nil
