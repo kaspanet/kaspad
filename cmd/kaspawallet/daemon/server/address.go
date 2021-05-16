@@ -6,6 +6,7 @@ import (
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/daemon/pb"
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/libkaspawallet"
 	"github.com/kaspanet/kaspad/util"
+	"github.com/pkg/errors"
 )
 
 func (s *server) changeAddress() (util.Address, error) {
@@ -28,13 +29,12 @@ func (s *server) GetReceiveAddress(_ context.Context, request *pb.GetReceiveAddr
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	err := s.validateIsSynced()
-	if err != nil {
-		return nil, err
+	if !s.isSynced() {
+		return nil, errors.New("server is not synced")
 	}
 
 	s.keysFile.LastUsedExternalIndex++
-	err = s.keysFile.Sync(true)
+	err := s.keysFile.Sync(true)
 	if err != nil {
 		return nil, err
 	}

@@ -252,11 +252,6 @@ func (s *server) refreshExistingUTXOs() error {
 	return nil
 }
 
-func (s *server) validateIsSynced() error {
-	isSynced := s.nextSyncStartIndex > s.keysFile.LastUsedInternalIndex && s.nextSyncStartIndex > s.keysFile.LastUsedExternalIndex
-	if !isSynced {
-		return errors.New("server is not synced")
-	}
-
-	return nil
+func (s *server) isSynced() bool {
+	return s.nextSyncStartIndex > s.keysFile.LastUsedInternalIndex && s.nextSyncStartIndex > s.keysFile.LastUsedExternalIndex
 }
