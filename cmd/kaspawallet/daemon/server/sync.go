@@ -139,27 +139,21 @@ func (s *server) collectUTXOs(start, end uint32) error {
 		return err
 	}
 
-	for _, entry := range getUTXOsByAddressesResponse.Entries {
-		walletAddress, ok := addressSet[entry.Address]
-		if !ok {
-			continue
-		}
-
-		if walletAddress.cosignerIndex != s.keysFile.CosignerIndex {
-			continue
-		}
-
-		if walletAddress.keyChain == externalKeychain {
-			if walletAddress.index > s.keysFile.LastUsedExternalIndex {
-				s.keysFile.LastUsedExternalIndex = walletAddress.index
-			}
-			continue
-		}
-
-		if walletAddress.index > s.keysFile.LastUsedInternalIndex {
-			s.keysFile.LastUsedInternalIndex = walletAddress.index
-		}
+	err = s.updateLastUsedIndexes(addressSet, getUTXOsByAddressesResponse)
+	if err != nil {
+		return err
 	}
+
+	err = s.updateUTXOs(addressSet, getUTXOsByAddressesResponse)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *server) updateUTXOs(addressSet walletAddressSet,
+	getUTXOsByAddressesResponse *appmessage.GetUTXOsByAddressesResponseMessage) error {
 
 	for _, entry := range getUTXOsByAddressesResponse.Entries {
 		outpoint, err := appmessage.RPCOutpointToDomainOutpoint(entry.Outpoint)
@@ -184,13 +178,36 @@ func (s *server) collectUTXOs(start, end uint32) error {
 		}
 	}
 
-	// Save the file after changes in LastUsedExternalIndex and LastUsedInternalIndex
-	err = s.keysFile.Sync(true)
-	if err != nil {
-		return err
+	return nil
+}
+
+func (s *server) updateLastUsedIndexes(addressSet walletAddressSet,
+	getUTXOsByAddressesResponse *appmessage.GetUTXOsByAddressesResponseMessage) error {
+
+	for _, entry := range getUTXOsByAddressesResponse.Entries {
+		walletAddress, ok := addressSet[entry.Address]
+		if !ok {
+			continue
+		}
+
+		if walletAddress.cosignerIndex != s.keysFile.CosignerIndex {
+			continue
+		}
+
+		if walletAddress.keyChain == externalKeychain {
+			if walletAddress.index > s.keysFile.LastUsedExternalIndex {
+				s.keysFile.LastUsedExternalIndex = walletAddress.index
+			}
+			continue
+		}
+
+		if walletAddress.index > s.keysFile.LastUsedInternalIndex {
+			s.keysFile.LastUsedInternalIndex = walletAddress.index
+		}
 	}
 
-	return nil
+	// Save the file after changes in LastUsedExternalIndex and LastUsedInternalIndex
+	return s.keysFile.Sync(true)
 }
 
 func (s *server) refreshExistingUTXOsWithLock() error {
