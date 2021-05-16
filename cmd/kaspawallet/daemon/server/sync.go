@@ -156,25 +156,9 @@ func (s *server) updateUTXOs(addressSet walletAddressSet,
 	getUTXOsByAddressesResponse *appmessage.GetUTXOsByAddressesResponseMessage) error {
 
 	for _, entry := range getUTXOsByAddressesResponse.Entries {
-		outpoint, err := appmessage.RPCOutpointToDomainOutpoint(entry.Outpoint)
+		err := s.addEntryToUTXOSet(entry, addressSet)
 		if err != nil {
 			return err
-		}
-
-		utxoEntry, err := appmessage.RPCUTXOEntryToUTXOEntry(entry.UTXOEntry)
-		if err != nil {
-			return err
-		}
-
-		address, ok := addressSet[entry.Address]
-		if !ok {
-			return errors.Errorf("Got result from address %s even though it wasn't requested", entry.Address)
-		}
-
-		s.utxos[*outpoint] = &walletUTXO{
-			Outpoint:  outpoint,
-			UTXOEntry: utxoEntry,
-			address:   address,
 		}
 	}
 
@@ -217,6 +201,31 @@ func (s *server) refreshExistingUTXOsWithLock() error {
 	return s.refreshExistingUTXOs()
 }
 
+func (s *server) addEntryToUTXOSet(entry *appmessage.UTXOsByAddressesEntry, addressSet walletAddressSet) error {
+	outpoint, err := appmessage.RPCOutpointToDomainOutpoint(entry.Outpoint)
+	if err != nil {
+		return err
+	}
+
+	utxoEntry, err := appmessage.RPCUTXOEntryToUTXOEntry(entry.UTXOEntry)
+	if err != nil {
+		return err
+	}
+
+	address, ok := addressSet[entry.Address]
+	if !ok {
+		return errors.Errorf("Got result from address %s even though it wasn't requested", entry.Address)
+	}
+
+	s.utxos[*outpoint] = &walletUTXO{
+		Outpoint:  outpoint,
+		UTXOEntry: utxoEntry,
+		address:   address,
+	}
+
+	return nil
+}
+
 func (s *server) refreshExistingUTXOs() error {
 	addressSet := make(walletAddressSet, len(s.utxos))
 	for _, utxo := range s.utxos {
@@ -235,25 +244,9 @@ func (s *server) refreshExistingUTXOs() error {
 
 	s.utxos = make(map[externalapi.DomainOutpoint]*walletUTXO, len(getUTXOsByAddressesResponse.Entries))
 	for _, entry := range getUTXOsByAddressesResponse.Entries {
-		outpoint, err := appmessage.RPCOutpointToDomainOutpoint(entry.Outpoint)
+		err := s.addEntryToUTXOSet(entry, addressSet)
 		if err != nil {
 			return err
-		}
-
-		utxoEntry, err := appmessage.RPCUTXOEntryToUTXOEntry(entry.UTXOEntry)
-		if err != nil {
-			return err
-		}
-
-		address, ok := addressSet[entry.Address]
-		if !ok {
-			return errors.Errorf("Got result from address %s even though it wasn't requested", entry.Address)
-		}
-
-		s.utxos[*outpoint] = &walletUTXO{
-			Outpoint:  outpoint,
-			UTXOEntry: utxoEntry,
-			address:   address,
 		}
 	}
 	return nil
