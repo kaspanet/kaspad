@@ -100,6 +100,6 @@ func Start(params *dagconfig.Params, listen, rpcServer string, keysFilePath stri
 }
 
 func printErrorAndExit(err error) {
-	fmt.Fprintf(os.Stderr, "%s\n", err)
+	fmt.Fprintf(os.Stderr, "%+v\n", err)
 	os.Exit(1)
 }
