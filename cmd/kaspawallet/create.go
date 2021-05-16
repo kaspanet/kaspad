@@ -4,6 +4,8 @@ import (
 	"bufio"
 	"fmt"
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/libkaspawallet"
+	"github.com/kaspanet/kaspad/cmd/kaspawallet/libkaspawallet/bip32"
+	"github.com/pkg/errors"
 	"os"
 
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/keys"
@@ -35,6 +37,11 @@ func create(conf *createConfig) error {
 		extendedPublicKey, err := reader.ReadBytes('\n')
 		if err != nil {
 			return err
+		}
+
+		_, err = bip32.DeserializeExtendedKey(string(extendedPublicKey))
+		if err != nil {
+			return errors.Wrapf(err, "%s is invalid extended public key", string(extendedPublicKey))
 		}
 
 		fmt.Println()

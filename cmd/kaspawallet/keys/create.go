@@ -8,6 +8,7 @@ import (
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/libkaspawallet"
 	"github.com/kaspanet/kaspad/domain/dagconfig"
 	"github.com/pkg/errors"
+	"github.com/tyler-smith/go-bip39"
 	"os"
 )
 
@@ -26,6 +27,10 @@ func ImportKeyPairs(params *dagconfig.Params, numKeys uint32, isMultisig bool) (
 		mnemonic, err := reader.ReadBytes('\n')
 		if err != nil {
 			return "", err
+		}
+
+		if !bip39.IsMnemonicValid(string(mnemonic)) {
+			return "", errors.Errorf("mnemonic is invalid")
 		}
 
 		return string(mnemonic), nil
