@@ -196,8 +196,8 @@ func pathExists(path string) (bool, error) {
 	return false, err
 }
 
-// Sync writes the file contents to the disk.
-func (d *File) Sync(forceOverride bool) error {
+// Save writes the file contents to the disk.
+func (d *File) Save(forceOverride bool) error {
 	exists, err := pathExists(d.path)
 	if err != nil {
 		return err

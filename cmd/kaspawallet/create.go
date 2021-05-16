@@ -64,7 +64,7 @@ func create(conf *createConfig) error {
 		ECDSA:                 conf.ECDSA,
 	}
 	file.SetPath(conf.NetParams(), conf.KeysFile)
-	err = file.Sync(false)
+	err = file.Save(false)
 	if err != nil {
 		return err
 	}

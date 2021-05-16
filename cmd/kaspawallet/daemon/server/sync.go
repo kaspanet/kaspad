@@ -191,7 +191,7 @@ func (s *server) updateLastUsedIndexes(addressSet walletAddressSet,
 	}
 
 	// Save the file after changes in LastUsedExternalIndex and LastUsedInternalIndex
-	return s.keysFile.Sync(true)
+	return s.keysFile.Save(true)
 }
 
 func (s *server) refreshExistingUTXOsWithLock() error {

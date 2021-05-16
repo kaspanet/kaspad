@@ -11,7 +11,7 @@ import (
 
 func (s *server) changeAddress() (util.Address, error) {
 	s.keysFile.LastUsedInternalIndex++
-	err := s.keysFile.Sync(true)
+	err := s.keysFile.Save(true)
 	if err != nil {
 		return nil, err
 	}
@@ -34,7 +34,7 @@ func (s *server) GetReceiveAddress(_ context.Context, request *pb.GetReceiveAddr
 	}
 
 	s.keysFile.LastUsedExternalIndex++
-	err := s.keysFile.Sync(true)
+	err := s.keysFile.Save(true)
 	if err != nil {
 		return nil, err
 	}
