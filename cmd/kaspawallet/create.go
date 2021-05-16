@@ -28,7 +28,7 @@ func create(conf *createConfig) error {
 		fmt.Printf("Extended public key of mnemonic #%d:\n%s\n\n", i+1, extendedPublicKey)
 	}
 
-	extendedPublicKeys := make([]string, conf.NumPrivateKeys, conf.NumPrivateKeys+conf.NumPublicKeys)
+	extendedPublicKeys := make([]string, conf.NumPrivateKeys, conf.NumPublicKeys)
 	copy(extendedPublicKeys, signerExtendedPublicKeys)
 	reader := bufio.NewReader(os.Stdin)
 	for i := conf.NumPrivateKeys; i < conf.NumPublicKeys; i++ {
