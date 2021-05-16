@@ -8,7 +8,9 @@ import (
 )
 
 const (
+	// externalKeychain is the key chain that is used to create receive addresses
 	externalKeychain = 0
+	// internalKeychain is used to create change addresses
 	internalKeychain = 1
 )
 
@@ -50,6 +52,10 @@ func (s *server) sync() error {
 
 const numIndexesToQuery = 100
 
+// addressesToQuery scans the addresses in the given range. Because
+// each cosigner in a multisig has its own unique path for generating
+// addresses it goes over all the cosigners and add their addresses
+// for each key chain.
 func (s *server) addressesToQuery(start, end uint32) (walletAddressSet, error) {
 	addresses := make(walletAddressSet)
 	for index := start; index < end; index++ {
