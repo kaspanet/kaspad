@@ -16,13 +16,20 @@ func CreateMnemonic() (string, error) {
 }
 
 func defaultPath(isMultisig bool) string {
-	purpose := 44
-	if isMultisig {
+	const (
+		singleSignerPurpose = 44
+
 		// Note: this is not entirely compatible to BIP 45 since
 		// BIP 45 doesn't have a coin type in its derivation path.
-		purpose = 45
+		multiSigPurpose = 45
+	)
+
+	purpose := singleSignerPurpose
+	if isMultisig {
+		purpose = multiSigPurpose
 	}
 
+	// TODO: Register the coin type in https://github.com/satoshilabs/slips/blob/master/slip-0044.md
 	const coinType = 111111
 	return fmt.Sprintf("m/%d'/%d'/0'", coinType, purpose)
 }
