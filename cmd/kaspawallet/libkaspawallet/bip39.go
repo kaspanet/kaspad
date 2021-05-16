@@ -8,7 +8,7 @@ import (
 	"github.com/tyler-smith/go-bip39"
 )
 
-// CreateMnemonic creates a new bio-39 compatible mnemonic
+// CreateMnemonic creates a new bip-39 compatible mnemonic
 func CreateMnemonic() (string, error) {
 	entropy, _ := bip39.NewEntropy(256)
 	return bip39.NewMnemonic(entropy)
