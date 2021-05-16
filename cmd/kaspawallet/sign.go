@@ -23,12 +23,12 @@ func sign(conf *signConfig) error {
 		return err
 	}
 
-	updatedPSTxBytes, err := libkaspawallet.Sign(conf.NetParams(), privateKeys, psTxBytes, keysFile.ECDSA)
+	partiallySignedTransaction, err := libkaspawallet.Sign(conf.NetParams(), privateKeys, psTxBytes, keysFile.ECDSA)
 	if err != nil {
 		return err
 	}
 
-	isFullySigned, err := libkaspawallet.IsTransactionFullySigned(updatedPSTxBytes)
+	isFullySigned, err := libkaspawallet.IsTransactionFullySigned(partiallySignedTransaction)
 	if err != nil {
 		return err
 	}
@@ -39,6 +39,6 @@ func sign(conf *signConfig) error {
 		fmt.Println("Successfully signed transaction")
 	}
 
-	fmt.Printf("Transaction: %x\n", updatedPSTxBytes)
+	fmt.Printf("Transaction: %x\n", partiallySignedTransaction)
 	return nil
 }
