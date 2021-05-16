@@ -14,6 +14,16 @@ const (
 
 var keyChains = []uint8{externalKeychain, internalKeychain}
 
+type walletAddressSet map[string]*walletAddress
+
+func (was walletAddressSet) strings() []string {
+	addresses := make([]string, 0, len(was))
+	for addr := range was {
+		addresses = append(addresses, addr)
+	}
+	return addresses
+}
+
 func (s *server) sync() error {
 	ticker := time.NewTicker(time.Second)
 	defer ticker.Stop()
@@ -36,28 +46,6 @@ func (s *server) sync() error {
 	}
 
 	return nil
-}
-
-type walletUTXO struct {
-	Outpoint  *externalapi.DomainOutpoint
-	UTXOEntry externalapi.UTXOEntry
-	address   *walletAddress
-}
-
-type walletAddress struct {
-	index         uint32
-	cosignerIndex uint32
-	keyChain      uint8
-}
-
-type walletAddressSet map[string]*walletAddress
-
-func (was walletAddressSet) strings() []string {
-	addresses := make([]string, 0, len(was))
-	for addr := range was {
-		addresses = append(addresses, addr)
-	}
-	return addresses
 }
 
 const numIndexesToQuery = 100
