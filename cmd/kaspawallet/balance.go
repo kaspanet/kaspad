@@ -16,7 +16,7 @@ const (
 var keychains = []uint8{externalKeychain, internalKeychain}
 
 func balance(conf *balanceConfig) error {
-	daemonClient, tearDown, err := client.Connect(conf.ServerAddress)
+	daemonClient, tearDown, err := client.Connect(conf.DaemonAddress)
 	if err != nil {
 		return err
 	}

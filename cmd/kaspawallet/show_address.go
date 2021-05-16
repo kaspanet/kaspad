@@ -8,7 +8,7 @@ import (
 )
 
 func showAddress(conf *showAddressConfig) error {
-	daemonClient, tearDown, err := client.Connect(conf.ServerAddress)
+	daemonClient, tearDown, err := client.Connect(conf.DaemonAddress)
 	if err != nil {
 		return err
 	}

@@ -40,20 +40,20 @@ type createConfig struct {
 }
 
 type balanceConfig struct {
-	ServerAddress string `long:"walletserver" short:"s" description:"Wallet server to connect to"`
+	DaemonAddress string `long:"daemonaddress" short:"d" description:"Wallet daemon server to connect to (default: localhost:8082)"`
 	config.NetworkFlags
 }
 
 type sendConfig struct {
 	KeysFile      string  `long:"keys-file" short:"f" description:"Keys file location (default: ~/.kaspawallet/keys.json (*nix), %USERPROFILE%\\AppData\\Local\\Kaspawallet\\key.json (Windows))"`
-	ServerAddress string  `long:"walletserver" short:"s" description:"Wallet server to connect to"`
+	DaemonAddress string  `long:"daemonaddress" short:"d" description:"Wallet daemon server to connect to (default: localhost:8082)"`
 	ToAddress     string  `long:"to-address" short:"t" description:"The public address to send Kaspa to" required:"true"`
 	SendAmount    float64 `long:"send-amount" short:"v" description:"An amount to send in Kaspa (e.g. 1234.12345678)" required:"true"`
 	config.NetworkFlags
 }
 
 type createUnsignedTransactionConfig struct {
-	ServerAddress string  `long:"walletserver" short:"s" description:"Wallet server to connect to"`
+	DaemonAddress string  `long:"daemonaddress" short:"d" description:"Wallet daemon server to connect to (default: localhost:8082)"`
 	ToAddress     string  `long:"to-address" short:"t" description:"The public address to send Kaspa to" required:"true"`
 	SendAmount    float64 `long:"send-amount" short:"v" description:"An amount to send in Kaspa (e.g. 1234.12345678)" required:"true"`
 	config.NetworkFlags
@@ -66,13 +66,13 @@ type signConfig struct {
 }
 
 type broadcastConfig struct {
-	ServerAddress string `long:"walletserver" short:"s" description:"Wallet server to connect to"`
+	DaemonAddress string `long:"walletserver" short:"s" description:"Wallet server to connect to"`
 	Transaction   string `long:"transaction" short:"t" description:"The signed transaction to broadcast (encoded in hex)" required:"true"`
 	config.NetworkFlags
 }
 
 type showAddressConfig struct {
-	ServerAddress string `long:"walletserver" short:"s" description:"Wallet server to connect to"`
+	DaemonAddress string `long:"walletserver" short:"s" description:"Wallet server to connect to"`
 	config.NetworkFlags
 }
 
@@ -96,15 +96,15 @@ func parseCommandLine() (subCommand string, config interface{}) {
 	parser.AddCommand(createSubCmd, "Creates a new wallet",
 		"Creates a private key and 3 public addresses, one for each of MainNet, TestNet and DevNet", createConf)
 
-	balanceConf := &balanceConfig{ServerAddress: defaultListen}
+	balanceConf := &balanceConfig{DaemonAddress: defaultListen}
 	parser.AddCommand(balanceSubCmd, "Shows the balance of a public address",
 		"Shows the balance for a public address in Kaspa", balanceConf)
 
-	sendConf := &sendConfig{ServerAddress: defaultListen}
+	sendConf := &sendConfig{DaemonAddress: defaultListen}
 	parser.AddCommand(sendSubCmd, "Sends a Kaspa transaction to a public address",
 		"Sends a Kaspa transaction to a public address", sendConf)
 
-	createUnsignedTransactionConf := &createUnsignedTransactionConfig{ServerAddress: defaultListen}
+	createUnsignedTransactionConf := &createUnsignedTransactionConfig{DaemonAddress: defaultListen}
 	parser.AddCommand(createUnsignedTransactionSubCmd, "Create an unsigned Kaspa transaction",
 		"Create an unsigned Kaspa transaction", createUnsignedTransactionConf)
 
@@ -112,11 +112,11 @@ func parseCommandLine() (subCommand string, config interface{}) {
 	parser.AddCommand(signSubCmd, "Sign the given partially signed transaction",
 		"Sign the given partially signed transaction", signConf)
 
-	broadcastConf := &broadcastConfig{ServerAddress: defaultListen}
+	broadcastConf := &broadcastConfig{DaemonAddress: defaultListen}
 	parser.AddCommand(broadcastSubCmd, "Broadcast the given transaction",
 		"Broadcast the given transaction", broadcastConf)
 
-	showAddressConf := &showAddressConfig{ServerAddress: defaultListen}
+	showAddressConf := &showAddressConfig{DaemonAddress: defaultListen}
 	parser.AddCommand(showAddressSubCmd, "Shows the public address of the current wallet",
 		"Shows the public address of the current wallet", showAddressConf)
 
