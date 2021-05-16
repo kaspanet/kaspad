@@ -7,7 +7,6 @@ import (
 	"os"
 
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/keys"
-	"github.com/pkg/errors"
 )
 
 func create(conf *createConfig) error {
@@ -33,16 +32,12 @@ func create(conf *createConfig) error {
 	reader := bufio.NewReader(os.Stdin)
 	for i := conf.NumPrivateKeys; i < conf.NumPublicKeys; i++ {
 		fmt.Printf("Enter public key #%d here:\n", i+1)
-		extendedPublicKey, isPrefix, err := reader.ReadLine()
+		extendedPublicKey, err := reader.ReadBytes('\n')
 		if err != nil {
 			return err
 		}
 
 		fmt.Println()
-
-		if isPrefix {
-			return errors.Errorf("Public key is too long")
-		}
 
 		extendedPublicKeys = append(extendedPublicKeys, string(extendedPublicKey))
 	}

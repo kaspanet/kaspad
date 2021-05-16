@@ -23,12 +23,9 @@ func ImportKeyPairs(params *dagconfig.Params, numKeys uint32, isMultisig bool) (
 	return createKeyPairsFromFunction(params, numKeys, isMultisig, func(keyIndex uint32) (string, error) {
 		fmt.Printf("Enter mnemonic #%d here:\n", keyIndex+1)
 		reader := bufio.NewReader(os.Stdin)
-		mnemonic, isPrefix, err := reader.ReadLine()
+		mnemonic, err := reader.ReadBytes('\n')
 		if err != nil {
 			return "", err
-		}
-		if isPrefix {
-			return "", errors.Errorf("Mnemonic is too long")
 		}
 
 		return string(mnemonic), nil

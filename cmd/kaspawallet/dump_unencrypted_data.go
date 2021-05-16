@@ -55,14 +55,14 @@ func confirmDump() error {
 	reader := bufio.NewReader(os.Stdin)
 	fmt.Printf("This operation will print your unencrypted keys on the screen. Anyone that sees this information " +
 		"will be able to steal your funds. Are you sure you want to proceed (y/N)? ")
-	line, isPrefix, err := reader.ReadLine()
+	line, err := reader.ReadBytes('\n')
 	if err != nil {
 		return err
 	}
 
 	fmt.Println()
 
-	if isPrefix || string(line) != "y" {
+	if string(line) != "y" {
 		return errors.Errorf("Dump aborted by user")
 	}
 

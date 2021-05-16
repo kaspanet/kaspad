@@ -206,7 +206,7 @@ func (d *File) Sync(forceOverride bool) error {
 	if !forceOverride && exists {
 		reader := bufio.NewReader(os.Stdin)
 		fmt.Printf("The file %s already exists. Are you sure you want to override it (type 'y' to approve)? ", d.path)
-		line, _, err := reader.ReadLine()
+		line, err := reader.ReadBytes('\n')
 		if err != nil {
 			return err
 		}
