@@ -19,12 +19,12 @@ func (s *server) sync() error {
 	defer ticker.Stop()
 
 	for range ticker.C {
-		err := s.collectCloseUTXOs()
+		err := s.collectUTXOsFromRecentAddresses()
 		if err != nil {
 			return err
 		}
 
-		err = s.collectFarUTXOs()
+		err = s.collectUTXOsFromFarAddresses()
 		if err != nil {
 			return err
 		}
@@ -84,7 +84,10 @@ func (s *server) addressesToQuery(start, end uint32) (walletAddressSet, error) {
 	return addresses, nil
 }
 
-func (s *server) collectFarUTXOs() error {
+// collectUTXOsFromFarAddresses collects UTXOs
+// from s.nextSyncStartIndex to s.nextSyncStartIndex+numIndexesToQuery
+// and increases s.nextSyncStartIndex to the last address it scanned.
+func (s *server) collectUTXOsFromFarAddresses() error {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 	err := s.collectUTXOs(s.nextSyncStartIndex, s.nextSyncStartIndex+numIndexesToQuery)
@@ -108,7 +111,9 @@ func (s *server) maxUsedIndex() uint32 {
 	return maxUsedIndex
 }
 
-func (s *server) collectCloseUTXOs() error {
+// collectUTXOsFromRecentAddresses collects UTXOs from used addresses until
+// the address with the index of the last used address + 1000.
+func (s *server) collectUTXOsFromRecentAddresses() error {
 	maxUsedIndex := s.maxUsedIndex()
 	for i := uint32(0); i < maxUsedIndex+1000; i += numIndexesToQuery {
 		err := s.collectUTXOsWithLock(i, i+numIndexesToQuery)
