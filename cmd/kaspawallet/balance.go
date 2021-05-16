@@ -8,13 +8,6 @@ import (
 	"github.com/kaspanet/kaspad/util"
 )
 
-const (
-	externalKeychain = 0
-	internalKeychain = 1
-)
-
-var keychains = []uint8{externalKeychain, internalKeychain}
-
 func balance(conf *balanceConfig) error {
 	daemonClient, tearDown, err := client.Connect(conf.DaemonAddress)
 	if err != nil {
