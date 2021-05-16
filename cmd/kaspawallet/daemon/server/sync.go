@@ -107,6 +107,8 @@ func (s *server) maxUsedIndex() uint32 {
 
 // collectUTXOsFromRecentAddresses collects UTXOs from used addresses until
 // the address with the index of the last used address + 1000.
+// collectUTXOsFromRecentAddresses scans addresses in batches of numIndexesToQuery,
+// and releases the lock between scans.
 func (s *server) collectUTXOsFromRecentAddresses() error {
 	maxUsedIndex := s.maxUsedIndex()
 	for i := uint32(0); i < maxUsedIndex+1000; i += numIndexesToQuery {
