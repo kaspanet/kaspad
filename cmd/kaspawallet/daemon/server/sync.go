@@ -187,7 +187,7 @@ func (s *server) updateLastUsedIndexes(addressSet walletAddressSet,
 	for _, entry := range getUTXOsByAddressesResponse.Entries {
 		walletAddress, ok := addressSet[entry.Address]
 		if !ok {
-			continue
+			return errors.Errorf("Got result from address %s even though it wasn't requested", entry.Address)
 		}
 
 		if walletAddress.cosignerIndex != s.keysFile.CosignerIndex {
