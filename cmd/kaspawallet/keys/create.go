@@ -12,32 +12,41 @@ import (
 	"os"
 )
 
-// CreateKeyPairs generates `numKeys` number of key pairs.
-func CreateKeyPairs(params *dagconfig.Params, numKeys uint32, isMultisig bool) (encryptedPrivateKeys []*EncryptedMnemonic, extendedPublicKeys []string, err error) {
-	return createKeyPairsFromFunction(params, numKeys, isMultisig, func(_ uint32) (string, error) {
-		return libkaspawallet.CreateMnemonic()
-	})
+// CreateMnemonics generates `numKeys` number of mnemonics.
+func CreateMnemonics(params *dagconfig.Params, numKeys uint32, isMultisig bool) (encryptedPrivateKeys []*EncryptedMnemonic, extendedPublicKeys []string, err error) {
+	mnemonics := make([]string, numKeys)
+	for i := uint32(0); i < numKeys; i++ {
+		var err error
+		mnemonics[i], err = libkaspawallet.CreateMnemonic()
+		if err != nil {
+			return nil, nil, err
+		}
+	}
+
+	return encryptedMnemonicExtendedPublicKeyPairs(params, mnemonics, isMultisig)
 }
 
-// ImportKeyPairs imports a `numKeys` of private keys and generates key pairs out of them.
-func ImportKeyPairs(params *dagconfig.Params, numKeys uint32, isMultisig bool) (encryptedPrivateKeys []*EncryptedMnemonic, publicKeys []string, err error) {
-	return createKeyPairsFromFunction(params, numKeys, isMultisig, func(keyIndex uint32) (string, error) {
-		fmt.Printf("Enter mnemonic #%d here:\n", keyIndex+1)
+// ImportMnemonics imports a `numKeys` of mnemonics.
+func ImportMnemonics(params *dagconfig.Params, numKeys uint32, isMultisig bool) (encryptedPrivateKeys []*EncryptedMnemonic, extendedPublicKeys []string, err error) {
+	mnemonics := make([]string, numKeys)
+	for i := uint32(0); i < numKeys; i++ {
+		fmt.Printf("Enter mnemonic #%d here:\n", i+1)
 		reader := bufio.NewReader(os.Stdin)
 		mnemonic, err := reader.ReadBytes('\n')
 		if err != nil {
-			return "", err
+			return nil, nil, err
 		}
 
 		if !bip39.IsMnemonicValid(string(mnemonic)) {
-			return "", errors.Errorf("mnemonic is invalid")
+			return nil, nil, errors.Errorf("mnemonic is invalid")
 		}
 
-		return string(mnemonic), nil
-	})
+		mnemonics[i] = string(mnemonic)
+	}
+	return encryptedMnemonicExtendedPublicKeyPairs(params, mnemonics, isMultisig)
 }
 
-func createKeyPairsFromFunction(params *dagconfig.Params, numKeys uint32, isMultisig bool, keyPairFunction func(keyIndex uint32) (string, error)) (
+func encryptedMnemonicExtendedPublicKeyPairs(params *dagconfig.Params, mnemonics []string, isMultisig bool) (
 	encryptedPrivateKeys []*EncryptedMnemonic, extendedPublicKeys []string, err error) {
 
 	password := getPassword("Enter password for the key file:")
@@ -47,13 +56,8 @@ func createKeyPairsFromFunction(params *dagconfig.Params, numKeys uint32, isMult
 		return nil, nil, errors.New("Passwords are not identical")
 	}
 
-	encryptedPrivateKeys = make([]*EncryptedMnemonic, 0, numKeys)
-	for i := uint32(0); i < numKeys; i++ {
-		mnemonic, err := keyPairFunction(i)
-		if err != nil {
-			return nil, nil, err
-		}
-
+	encryptedPrivateKeys = make([]*EncryptedMnemonic, 0, len(mnemonics))
+	for _, mnemonic := range mnemonics {
 		extendedPublicKey, err := libkaspawallet.MasterPublicKeyFromMnemonic(params, mnemonic, isMultisig)
 		if err != nil {
 			return nil, nil, err
