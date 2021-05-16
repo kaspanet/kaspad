@@ -9,13 +9,13 @@ import (
 )
 
 func (s *server) changeAddress() (util.Address, error) {
+	s.keysFile.LastUsedInternalIndex++
 	walletAddr := &walletAddress{
-		index:         s.keysFile.LastUsedInternalIndex + 1,
+		index:         s.keysFile.LastUsedInternalIndex,
 		cosignerIndex: s.keysFile.CosignerIndex,
 		keyChain:      internalKeychain,
 	}
 	path := s.walletAddressPath(walletAddr)
-	s.keysFile.LastUsedInternalIndex++
 	return libkaspawallet.Address(s.params, s.keysFile.ExtendedPublicKeys, s.keysFile.MinimumSignatures, path, s.keysFile.ECDSA)
 }
 
@@ -28,13 +28,13 @@ func (s *server) GetReceiveAddress(_ context.Context, request *pb.GetReceiveAddr
 		return nil, err
 	}
 
+	s.keysFile.LastUsedExternalIndex++
 	walletAddr := &walletAddress{
-		index:         s.keysFile.LastUsedExternalIndex + 1,
+		index:         s.keysFile.LastUsedExternalIndex,
 		cosignerIndex: s.keysFile.CosignerIndex,
 		keyChain:      externalKeychain,
 	}
 	path := s.walletAddressPath(walletAddr)
-	s.keysFile.LastUsedExternalIndex++
 	address, err := libkaspawallet.Address(s.params, s.keysFile.ExtendedPublicKeys, s.keysFile.MinimumSignatures, path, s.keysFile.ECDSA)
 	if err != nil {
 		return nil, err
