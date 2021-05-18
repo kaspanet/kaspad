@@ -60,14 +60,13 @@ func (s *server) selectUTXOs(spendAmount uint64, feePerInput uint64) (
 	selectedUTXOs = []*libkaspawallet.UTXO{}
 	totalValue := uint64(0)
 
-	virtualSelectedParentBlueScoreResponse, err := s.rpcClient.GetVirtualSelectedParentBlueScore()
+	dagInfo, err := s.rpcClient.GetBlockDAGInfo()
 	if err != nil {
 		return nil, 0, err
 	}
-	virtualSelectedParentBlueScore := virtualSelectedParentBlueScoreResponse.BlueScore
 
 	for _, utxo := range s.utxos {
-		if !isUTXOSpendable(utxo, virtualSelectedParentBlueScore, s.params.BlockCoinbaseMaturity) {
+		if !isUTXOSpendable(utxo, dagInfo.VirtualDAAScore, s.params.BlockCoinbaseMaturity) {
 			continue
 		}
 
