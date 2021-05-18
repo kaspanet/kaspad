@@ -78,9 +78,8 @@ func (s *server) addressesToQuery(start, end uint32) (walletAddressSet, error) {
 	return addresses, nil
 }
 
-// collectUTXOsFromFarAddresses collects UTXOs
-// from s.nextSyncStartIndex to s.nextSyncStartIndex+numIndexesToQuery
-// and increases s.nextSyncStartIndex to the last address it scanned.
+// collectUTXOsFromFarAddresses collects numIndexesToQuery UTXOs
+// from the last point it stopped in the previous call.
 func (s *server) collectUTXOsFromFarAddresses() error {
 	s.lock.Lock()
 	defer s.lock.Unlock()
