@@ -143,7 +143,7 @@ func (c *coinbaseManager) coinbaseOutputForRewardFromRedBlocks(stagingArea *mode
 }
 
 func acceptanceDataFromArrayToMap(acceptanceData externalapi.AcceptanceData) map[externalapi.DomainHash]*externalapi.BlockAcceptanceData {
-	acceptanceDataMap := make(map[externalapi.DomainHash]*externalapi.BlockAcceptanceData)
+	acceptanceDataMap := make(map[externalapi.DomainHash]*externalapi.BlockAcceptanceData, len(acceptanceData))
 	for _, blockAcceptanceData := range acceptanceData {
 		acceptanceDataMap[*blockAcceptanceData.BlockHash] = blockAcceptanceData
 	}

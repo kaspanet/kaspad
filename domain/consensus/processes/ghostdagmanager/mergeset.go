@@ -83,6 +83,7 @@ func (gm *ghostdagManager) sortMergeSet(stagingArea *model.StagingArea, mergeSet
 	return err
 }
 
+// GetSortedMergeSet return the merge set sorted in a toplogical order.
 func (gm *ghostdagManager) GetSortedMergeSet(stagingArea *model.StagingArea,
 	current *externalapi.DomainHash) ([]*externalapi.DomainHash, error) {
 
