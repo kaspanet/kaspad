@@ -59,6 +59,22 @@ func (bp *blockProcessor) setBlockStatusAfterBlockValidation(
 	return nil
 }
 
+func (bp *blockProcessor) updateVirtualAcceptanceDataAfterImportingPruningPoint(stagingArea *model.StagingArea) error {
+
+	_, virtualAcceptanceData, virtualMultiset, err :=
+		bp.consensusStateManager.CalculatePastUTXOAndAcceptanceData(stagingArea, model.VirtualBlockHash)
+	if err != nil {
+		return err
+	}
+
+	log.Debugf("Staging virtual acceptance data after importing the pruning point")
+	bp.acceptanceDataStore.Stage(stagingArea, model.VirtualBlockHash, virtualAcceptanceData)
+
+	log.Debugf("Staging virtual multiset after importing the pruning point")
+	bp.multisetStore.Stage(stagingArea, model.VirtualBlockHash, virtualMultiset)
+	return nil
+}
+
 func (bp *blockProcessor) validateAndInsertBlock(stagingArea *model.StagingArea, block *externalapi.DomainBlock,
 	isPruningPoint bool) (*externalapi.BlockInsertionResult, error) {
 
@@ -99,6 +115,11 @@ func (bp *blockProcessor) validateAndInsertBlock(stagingArea *model.StagingArea,
 		if !isPruningPoint {
 			// Attempt to add the block to the virtual
 			selectedParentChainChanges, virtualUTXODiff, reversalData, err = bp.consensusStateManager.AddBlock(stagingArea, blockHash)
+			if err != nil {
+				return nil, err
+			}
+		} else {
+			err := bp.updateVirtualAcceptanceDataAfterImportingPruningPoint(stagingArea)
 			if err != nil {
 				return nil, err
 			}

@@ -7,6 +7,7 @@ type Consensus interface {
 	ValidateTransactionAndPopulateWithConsensusData(transaction *DomainTransaction) error
 
 	GetBlock(blockHash *DomainHash) (*DomainBlock, error)
+	GetBlockEvenIfHeaderOnly(blockHash *DomainHash) (*DomainBlock, error)
 	GetBlockHeader(blockHash *DomainHash) (BlockHeader, error)
 	GetBlockInfo(blockHash *DomainHash) (*BlockInfo, error)
 	GetBlockRelations(blockHash *DomainHash) (parents []*DomainHash, selectedParent *DomainHash, children []*DomainHash, err error)
