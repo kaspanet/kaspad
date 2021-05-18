@@ -113,12 +113,12 @@ func (d *File) SetPath(params *dagconfig.Params, path string) error {
 		path = defaultKeysFile(params)
 	}
 
-	exists, err := pathExists(d.path)
+	exists, err := pathExists(path)
 	if err != nil {
 		return err
 	}
 
-	if !exists {
+	if exists {
 		reader := bufio.NewReader(os.Stdin)
 		fmt.Printf("The file %s already exists. Are you sure you want to override it (type 'y' to approve)? ", d.path)
 		line, err := reader.ReadBytes('\n')
