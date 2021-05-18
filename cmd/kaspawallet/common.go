@@ -8,13 +8,12 @@ import (
 	"os"
 )
 
-func isUTXOSpendable(entry *appmessage.UTXOsByAddressesEntry, virtualSelectedParentBlueScore uint64, coinbaseMaturity uint64) bool {
+func isUTXOSpendable(entry *appmessage.UTXOsByAddressesEntry, virtualDAAScore uint64, coinbaseMaturity uint64) bool {
 	if !entry.UTXOEntry.IsCoinbase {
 		return true
 	}
 	blockBlueScore := entry.UTXOEntry.BlockDAAScore
-	// TODO: Check for a better alternative than virtualSelectedParentBlueScore
-	return blockBlueScore+coinbaseMaturity < virtualSelectedParentBlueScore
+	return blockBlueScore+coinbaseMaturity < virtualDAAScore
 }
 
 func printErrorAndExit(err error) {

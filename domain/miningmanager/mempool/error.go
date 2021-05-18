@@ -49,6 +49,7 @@ const (
 	RejectInsufficientFee RejectCode = 0x42
 	RejectFinality        RejectCode = 0x43
 	RejectDifficulty      RejectCode = 0x44
+	RejectImmatureSpend   RejectCode = 0x45
 )
 
 // Map of reject codes back strings for pretty printing.
@@ -63,6 +64,7 @@ var rejectCodeStrings = map[RejectCode]string{
 	RejectFinality:        "REJECT_FINALITY",
 	RejectDifficulty:      "REJECT_DIFFICULTY",
 	RejectNotRequested:    "REJECT_NOTREQUESTED",
+	RejectImmatureSpend:   "REJECT_IMMATURESPEND",
 }
 
 // String returns the RejectCode in human-readable form.
