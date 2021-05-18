@@ -52,8 +52,8 @@ type File struct {
 	ExtendedPublicKeys    []string
 	MinimumSignatures     uint32
 	CosignerIndex         uint32
-	LastUsedExternalIndex uint32
-	LastUsedInternalIndex uint32
+	lastUsedExternalIndex uint32
+	lastUsedInternalIndex uint32
 	ECDSA                 bool
 	path                  string
 }
@@ -73,8 +73,8 @@ func (d *File) toJSON() *keysFileJSON {
 		MinimumSignatures:     d.MinimumSignatures,
 		ECDSA:                 d.ECDSA,
 		CosignerIndex:         d.CosignerIndex,
-		LastUsedExternalIndex: d.LastUsedExternalIndex,
-		LastUsedInternalIndex: d.LastUsedInternalIndex,
+		LastUsedExternalIndex: d.lastUsedExternalIndex,
+		LastUsedInternalIndex: d.lastUsedInternalIndex,
 	}
 }
 
@@ -83,8 +83,8 @@ func (d *File) fromJSON(fileJSON *keysFileJSON) error {
 	d.ECDSA = fileJSON.ECDSA
 	d.ExtendedPublicKeys = fileJSON.ExtendedPublicKeys
 	d.CosignerIndex = fileJSON.CosignerIndex
-	d.LastUsedExternalIndex = fileJSON.LastUsedExternalIndex
-	d.LastUsedInternalIndex = fileJSON.LastUsedInternalIndex
+	d.lastUsedExternalIndex = fileJSON.LastUsedExternalIndex
+	d.lastUsedInternalIndex = fileJSON.LastUsedInternalIndex
 
 	d.EncryptedMnemonics = make([]*EncryptedMnemonic, len(fileJSON.EncryptedPrivateKeys))
 	for i, encryptedPrivateKeyJSON := range fileJSON.EncryptedPrivateKeys {
@@ -108,17 +108,68 @@ func (d *File) fromJSON(fileJSON *keysFileJSON) error {
 }
 
 // SetPath sets the path where the file is saved to.
-func (d *File) SetPath(params *dagconfig.Params, path string) {
+func (d *File) SetPath(params *dagconfig.Params, path string) error {
 	if path == "" {
 		path = defaultKeysFile(params)
 	}
 
+	exists, err := pathExists(d.path)
+	if err != nil {
+		return err
+	}
+
+	if !exists {
+		reader := bufio.NewReader(os.Stdin)
+		fmt.Printf("The file %s already exists. Are you sure you want to override it (type 'y' to approve)? ", d.path)
+		line, err := reader.ReadBytes('\n')
+		if err != nil {
+			return err
+		}
+
+		if string(line) != "y" {
+			return errors.Errorf("aborted setting the file path to %s", path)
+		}
+	}
+
 	d.path = path
+	return nil
 }
 
 // Path returns the file path.
 func (d *File) Path() string {
 	return d.path
+}
+
+// SetLastUsedExternalIndex sets the last used index in the external key
+// chain, and saves the file with the updated data.
+func (d *File) SetLastUsedExternalIndex(index uint32) error {
+	if d.lastUsedExternalIndex == index {
+		return nil
+	}
+
+	d.lastUsedExternalIndex = index
+	return d.Save()
+}
+
+// LastUsedExternalIndex returns the last used index in the external key
+// chain and saves the file with the updated data.
+func (d *File) LastUsedExternalIndex() uint32 {
+	return d.lastUsedExternalIndex
+}
+
+// SetLastUsedInternalIndex sets the last used index in the internal key chain, and saves the file.
+func (d *File) SetLastUsedInternalIndex(index uint32) error {
+	if d.lastUsedInternalIndex == index {
+		return nil
+	}
+
+	d.lastUsedInternalIndex = index
+	return d.Save()
+}
+
+// LastUsedInternalIndex returns the last used index in the internal key chain
+func (d *File) LastUsedInternalIndex() uint32 {
+	return d.lastUsedInternalIndex
 }
 
 // DecryptMnemonics asks the user to enter the password for the private keys and
@@ -197,26 +248,12 @@ func pathExists(path string) (bool, error) {
 }
 
 // Save writes the file contents to the disk.
-func (d *File) Save(forceOverride bool) error {
-	exists, err := pathExists(d.path)
-	if err != nil {
-		return err
+func (d *File) Save() error {
+	if d.path == "" {
+		return errors.New("cannot save a file with uninitialized path")
 	}
 
-	if !forceOverride && exists {
-		reader := bufio.NewReader(os.Stdin)
-		fmt.Printf("The file %s already exists. Are you sure you want to override it (type 'y' to approve)? ", d.path)
-		line, err := reader.ReadBytes('\n')
-		if err != nil {
-			return err
-		}
-
-		if string(line) != "y" {
-			return errors.Errorf("aborted keys file creation")
-		}
-	}
-
-	err = createFileDirectoryIfDoesntExist(d.path)
+	err := createFileDirectoryIfDoesntExist(d.path)
 	if err != nil {
 		return err
 	}

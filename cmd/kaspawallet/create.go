@@ -55,16 +55,19 @@ func create(conf *createConfig) error {
 	}
 
 	file := keys.File{
-		EncryptedMnemonics:    encryptedMnemonics,
-		ExtendedPublicKeys:    extendedPublicKeys,
-		MinimumSignatures:     conf.MinimumSignatures,
-		CosignerIndex:         cosignerIndex,
-		LastUsedExternalIndex: 0,
-		LastUsedInternalIndex: 0,
-		ECDSA:                 conf.ECDSA,
+		EncryptedMnemonics: encryptedMnemonics,
+		ExtendedPublicKeys: extendedPublicKeys,
+		MinimumSignatures:  conf.MinimumSignatures,
+		CosignerIndex:      cosignerIndex,
+		ECDSA:              conf.ECDSA,
 	}
-	file.SetPath(conf.NetParams(), conf.KeysFile)
-	err = file.Save(false)
+
+	err = file.SetPath(conf.NetParams(), conf.KeysFile)
+	if err != nil {
+		return err
+	}
+
+	err = file.Save()
 	if err != nil {
 		return err
 	}

@@ -96,9 +96,9 @@ func (s *server) maxUsedIndex() uint32 {
 	s.lock.RLock()
 	defer s.lock.RUnlock()
 
-	maxUsedIndex := s.keysFile.LastUsedExternalIndex
-	if s.keysFile.LastUsedInternalIndex > maxUsedIndex {
-		maxUsedIndex = s.keysFile.LastUsedInternalIndex
+	maxUsedIndex := s.keysFile.LastUsedExternalIndex()
+	if s.keysFile.LastUsedInternalIndex() > maxUsedIndex {
+		maxUsedIndex = s.keysFile.LastUsedInternalIndex()
 	}
 
 	return maxUsedIndex
@@ -167,6 +167,9 @@ func (s *server) updateUTXOs(addressSet walletAddressSet,
 func (s *server) updateLastUsedIndexes(addressSet walletAddressSet,
 	getUTXOsByAddressesResponse *appmessage.GetUTXOsByAddressesResponseMessage) error {
 
+	lastUsedExternalIndex := s.keysFile.LastUsedExternalIndex()
+	lastUsedInternalIndex := s.keysFile.LastUsedInternalIndex()
+
 	for _, entry := range getUTXOsByAddressesResponse.Entries {
 		walletAddress, ok := addressSet[entry.Address]
 		if !ok {
@@ -178,19 +181,23 @@ func (s *server) updateLastUsedIndexes(addressSet walletAddressSet,
 		}
 
 		if walletAddress.keyChain == externalKeychain {
-			if walletAddress.index > s.keysFile.LastUsedExternalIndex {
-				s.keysFile.LastUsedExternalIndex = walletAddress.index
+			if walletAddress.index > lastUsedExternalIndex {
+				lastUsedExternalIndex = walletAddress.index
 			}
 			continue
 		}
 
-		if walletAddress.index > s.keysFile.LastUsedInternalIndex {
-			s.keysFile.LastUsedInternalIndex = walletAddress.index
+		if walletAddress.index > lastUsedInternalIndex {
+			lastUsedInternalIndex = walletAddress.index
 		}
 	}
 
-	// Save the file after changes in LastUsedExternalIndex and LastUsedInternalIndex
-	return s.keysFile.Save(true)
+	err := s.keysFile.SetLastUsedExternalIndex(lastUsedExternalIndex)
+	if err != nil {
+		return err
+	}
+
+	return s.keysFile.SetLastUsedInternalIndex(lastUsedInternalIndex)
 }
 
 func (s *server) refreshExistingUTXOsWithLock() error {
@@ -252,5 +259,5 @@ func (s *server) refreshExistingUTXOs() error {
 }
 
 func (s *server) isSynced() bool {
-	return s.nextSyncStartIndex > s.keysFile.LastUsedInternalIndex && s.nextSyncStartIndex > s.keysFile.LastUsedExternalIndex
+	return s.nextSyncStartIndex > s.keysFile.LastUsedInternalIndex() && s.nextSyncStartIndex > s.keysFile.LastUsedExternalIndex()
 }
