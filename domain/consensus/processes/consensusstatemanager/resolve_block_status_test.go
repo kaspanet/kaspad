@@ -188,15 +188,15 @@ func TestTransactionAcceptance(t *testing.T) {
 		}
 		// Add a chain of K blocks above blockHashC so we'll
 		// be able to mine a red block on top of it.
-		chainHash := blockHashC
+		chainTipHash := blockHashC
 		for i := model.KType(0); i < consensusConfig.K; i++ {
 			var err error
-			chainHash, _, err = testConsensus.AddBlock([]*externalapi.DomainHash{chainHash}, nil, nil)
+			chainTipHash, _, err = testConsensus.AddBlock([]*externalapi.DomainHash{chainTipHash}, nil, nil)
 			if err != nil {
 				t.Fatalf("Error creating a block: %+v", err)
 			}
 		}
-		lastBlockInChain := chainHash
+		lastBlockInChain := chainTipHash
 		blockC, err := testConsensus.GetBlock(blockHashC)
 		if err != nil {
 			t.Fatalf("Error getting blockC: %+v", err)
@@ -229,7 +229,8 @@ func TestTransactionAcceptance(t *testing.T) {
 			t.Fatalf("Error getting UTXOEntry for transactionFromBlueBlockInput: %s", err)
 		}
 		blueBlockScriptPublicKey := &externalapi.ScriptPublicKey{Script: []byte{3}, Version: 0}
-		blueHash, _, err := testConsensus.AddBlock([]*externalapi.DomainHash{lastBlockInChain, redHash},
+		// blueblockHashContainTransactionThatSpentOutputFromRedBlock
+		hashBlueChildOfRedBlock, _, err := testConsensus.AddBlock([]*externalapi.DomainHash{lastBlockInChain, redHash},
 			&externalapi.DomainCoinbaseData{
 				ScriptPublicKey: blueBlockScriptPublicKey,
 				ExtraData:       nil,
@@ -253,7 +254,7 @@ func TestTransactionAcceptance(t *testing.T) {
 			t.Fatalf("Error creating blockE: %+v", err)
 		}
 		blockFScriptPublicKey := &externalapi.ScriptPublicKey{Script: []byte{5}, Version: 0}
-		blockHashF, _, err := testConsensus.AddBlock([]*externalapi.DomainHash{blockHashE, blueHash},
+		blockHashF, _, err := testConsensus.AddBlock([]*externalapi.DomainHash{blockHashE, hashBlueChildOfRedBlock},
 			&externalapi.DomainCoinbaseData{
 				ScriptPublicKey: blockFScriptPublicKey,
 				ExtraData:       nil,
@@ -266,7 +267,7 @@ func TestTransactionAcceptance(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Error getting acceptance data: %+v", err)
 		}
-		blueBlock, err := testConsensus.GetBlock(blueHash)
+		blueChildOfRedBlock, err := testConsensus.GetBlock(hashBlueChildOfRedBlock)
 		if err != nil {
 			t.Fatalf("Error getting blueBlock: %+v", err)
 		}
@@ -316,18 +317,18 @@ func TestTransactionAcceptance(t *testing.T) {
 				},
 			},
 			{
-				BlockHash: blueHash,
+				BlockHash: hashBlueChildOfRedBlock,
 				TransactionAcceptanceData: []*externalapi.TransactionAcceptanceData{
 					{ //Coinbase transaction outputs are added to the UTXO-set only if they are in the selected parent chain,
 						// and this block isn't.
-						Transaction:                 blueBlock.Transactions[0],
+						Transaction:                 blueChildOfRedBlock.Transactions[0],
 						Fee:                         0,
 						IsAccepted:                  false,
 						TransactionInputUTXOEntries: []externalapi.UTXOEntry{},
 					},
 					{ // The DAAScore was calculated by the virtual block pov. The DAAScore has changed since more blocks were added to the DAG.
 						// So we will change the DAAScore in the UTXOEntryInput to the updated virtual DAAScore.
-						Transaction: blueBlock.Transactions[1],
+						Transaction: blueChildOfRedBlock.Transactions[1],
 						Fee:         fees,
 						IsAccepted:  true,
 						TransactionInputUTXOEntries: []externalapi.UTXOEntry{
@@ -351,7 +352,7 @@ func TestTransactionAcceptance(t *testing.T) {
 					ScriptPublicKey: blockEScriptPublicKey,
 				},
 				{
-					Value:           50*constants.SompiPerKaspa + fees, // testutils.CreateTransaction pays a fee
+					Value:           50*constants.SompiPerKaspa + fees, // testutils.CreateTransaction pays fees
 					ScriptPublicKey: blueBlockScriptPublicKey,
 				},
 				{
