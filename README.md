@@ -63,6 +63,8 @@ Join our discord server using the following link: https://discord.gg/YNYnNN5Pf2
 The [integrated github issue tracker](https://github.com/kaspanet/kaspad/issues)
 is used for this project.
 
+Issue priorities may be seen at https://github.com/orgs/kaspanet/projects/4
+
 ## Documentation
 
 The [documentation](https://github.com/kaspanet/docs) is a work-in-progress

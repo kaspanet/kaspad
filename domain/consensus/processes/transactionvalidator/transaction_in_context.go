@@ -68,8 +68,7 @@ func (v *transactionValidator) checkTransactionCoinbaseMaturity(stagingArea *mod
 			missingOutpoints = append(missingOutpoints, &input.PreviousOutpoint)
 		} else if utxoEntry.IsCoinbase() {
 			originDAAScore := utxoEntry.BlockDAAScore()
-			daaScoreSincePrev := povDAAScore - originDAAScore
-			if daaScoreSincePrev < v.blockCoinbaseMaturity {
+			if originDAAScore+v.blockCoinbaseMaturity > povDAAScore {
 				return errors.Wrapf(ruleerrors.ErrImmatureSpend, "tried to spend coinbase "+
 					"transaction output %s from DAA score %d "+
 					"to DAA score %d before required maturity "+
@@ -266,7 +265,7 @@ func (v *transactionValidator) calcTxSequenceLockFromReferencedUTXOEntries(stagi
 			baseHash := povBlockHash
 
 			for {
-				selectedParentDAAScore, err := v.daaBlocksStore.DAAScore(v.databaseContext, stagingArea, povBlockHash)
+				selectedParentDAAScore, err := v.daaBlocksStore.DAAScore(v.databaseContext, stagingArea, baseHash)
 				if err != nil {
 					return nil, err
 				}

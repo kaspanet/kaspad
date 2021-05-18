@@ -6,4 +6,5 @@ type VirtualInfo struct {
 	Bits           uint32
 	PastMedianTime int64
 	BlueScore      uint64
+	DAAScore       uint64
 }

@@ -395,6 +395,7 @@ message GetBlockDagInfoResponseMessage{
   int64 pastMedianTime = 6;
   repeated string virtualParentHashes = 7;
   string pruningPointHash = 8;
+  uint64 virtualDaaScore = 9;
   RPCError error = 1000;
 }
 
