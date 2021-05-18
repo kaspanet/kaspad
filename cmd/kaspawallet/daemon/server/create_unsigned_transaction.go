@@ -38,7 +38,7 @@ func (s *server) CreateUnsignedTransaction(_ context.Context, request *pb.Create
 		return nil, err
 	}
 
-	psTx, err := libkaspawallet.CreateUnsignedTransaction(s.keysFile.ExtendedPublicKeys,
+	unsignedTransaction, err := libkaspawallet.CreateUnsignedTransaction(s.keysFile.ExtendedPublicKeys,
 		s.keysFile.MinimumSignatures,
 		[]*libkaspawallet.Payment{{
 			Address: toAddress,
@@ -51,7 +51,7 @@ func (s *server) CreateUnsignedTransaction(_ context.Context, request *pb.Create
 		return nil, err
 	}
 
-	return &pb.CreateUnsignedTransactionResponse{UnsignedTransaction: psTx}, nil
+	return &pb.CreateUnsignedTransactionResponse{UnsignedTransaction: unsignedTransaction}, nil
 }
 
 func (s *server) selectUTXOs(spendAmount uint64, feePerInput uint64) (

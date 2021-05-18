@@ -44,15 +44,15 @@ func Sign(params *dagconfig.Params, mnemonics []string, serializedPSTx []byte, e
 	return serialization.SerializePartiallySignedTransaction(partiallySignedTransaction)
 }
 
-func sign(params *dagconfig.Params, mnemonic string, psTx *serialization.PartiallySignedTransaction, ecdsa bool) error {
-	if isTransactionFullySigned(psTx) {
+func sign(params *dagconfig.Params, mnemonic string, partiallySignedTransaction *serialization.PartiallySignedTransaction, ecdsa bool) error {
+	if isTransactionFullySigned(partiallySignedTransaction) {
 		return nil
 	}
 
 	sighashReusedValues := &consensushashing.SighashReusedValues{}
-	for i, partiallySignedInput := range psTx.PartiallySignedInputs {
+	for i, partiallySignedInput := range partiallySignedTransaction.PartiallySignedInputs {
 		prevOut := partiallySignedInput.PrevOutput
-		psTx.Tx.Inputs[i].UTXOEntry = utxo.NewUTXOEntry(
+		partiallySignedTransaction.Tx.Inputs[i].UTXOEntry = utxo.NewUTXOEntry(
 			prevOut.Value,
 			prevOut.ScriptPublicKey,
 			false, // This is a fake value, because it's irrelevant for the signature
@@ -61,7 +61,7 @@ func sign(params *dagconfig.Params, mnemonic string, psTx *serialization.Partial
 	}
 
 	signed := false
-	for i, partiallySignedInput := range psTx.PartiallySignedInputs {
+	for i, partiallySignedInput := range partiallySignedTransaction.PartiallySignedInputs {
 		isMultisig := len(partiallySignedInput.PubKeySignaturePairs) > 1
 		path := defaultPath(isMultisig)
 		extendedKey, err := extendedKeyFromMnemonicAndPath(mnemonic, path, params)
@@ -81,7 +81,7 @@ func sign(params *dagconfig.Params, mnemonic string, psTx *serialization.Partial
 
 		for _, pair := range partiallySignedInput.PubKeySignaturePairs {
 			if pair.ExtendedPublicKey == derivedPublicKey.String() {
-				pair.Signature, err = rawTxInSignature(derivedKey, psTx.Tx, i, consensushashing.SigHashAll, sighashReusedValues, ecdsa)
+				pair.Signature, err = rawTxInSignature(derivedKey, partiallySignedTransaction.Tx, i, consensushashing.SigHashAll, sighashReusedValues, ecdsa)
 				if err != nil {
 					return err
 				}

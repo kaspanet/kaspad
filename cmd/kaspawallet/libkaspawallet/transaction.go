@@ -162,8 +162,8 @@ func createUnsignedTransaction(
 }
 
 // IsTransactionFullySigned returns whether the transaction is fully signed and ready to broadcast.
-func IsTransactionFullySigned(psTxBytes []byte) (bool, error) {
-	partiallySignedTransaction, err := serialization.DeserializePartiallySignedTransaction(psTxBytes)
+func IsTransactionFullySigned(partiallySignedTransactionBytes []byte) (bool, error) {
+	partiallySignedTransaction, err := serialization.DeserializePartiallySignedTransaction(partiallySignedTransactionBytes)
 	if err != nil {
 		return false, err
 	}
@@ -171,8 +171,8 @@ func IsTransactionFullySigned(psTxBytes []byte) (bool, error) {
 	return isTransactionFullySigned(partiallySignedTransaction), nil
 }
 
-func isTransactionFullySigned(psTx *serialization.PartiallySignedTransaction) bool {
-	for _, input := range psTx.PartiallySignedInputs {
+func isTransactionFullySigned(partiallySignedTransaction *serialization.PartiallySignedTransaction) bool {
+	for _, input := range partiallySignedTransaction.PartiallySignedInputs {
 		numSignatures := 0
 		for _, pair := range input.PubKeySignaturePairs {
 			if pair.Signature != nil {
@@ -188,8 +188,8 @@ func isTransactionFullySigned(psTx *serialization.PartiallySignedTransaction) bo
 
 // ExtractTransaction extracts a domain transaction from partially signed transaction after all of the
 // relevant parties have signed it.
-func ExtractTransaction(psTxBytes []byte, ecdsa bool) (*externalapi.DomainTransaction, error) {
-	partiallySignedTransaction, err := serialization.DeserializePartiallySignedTransaction(psTxBytes)
+func ExtractTransaction(partiallySignedTransactionBytes []byte, ecdsa bool) (*externalapi.DomainTransaction, error) {
+	partiallySignedTransaction, err := serialization.DeserializePartiallySignedTransaction(partiallySignedTransactionBytes)
 	if err != nil {
 		return nil, err
 	}
@@ -197,8 +197,8 @@ func ExtractTransaction(psTxBytes []byte, ecdsa bool) (*externalapi.DomainTransa
 	return extractTransaction(partiallySignedTransaction, ecdsa)
 }
 
-func extractTransaction(psTx *serialization.PartiallySignedTransaction, ecdsa bool) (*externalapi.DomainTransaction, error) {
-	for i, input := range psTx.PartiallySignedInputs {
+func extractTransaction(partiallySignedTransaction *serialization.PartiallySignedTransaction, ecdsa bool) (*externalapi.DomainTransaction, error) {
+	for i, input := range partiallySignedTransaction.PartiallySignedInputs {
 		isMultisig := len(input.PubKeySignaturePairs) > 1
 		scriptBuilder := txscript.NewScriptBuilder()
 		if isMultisig {
@@ -224,7 +224,7 @@ func extractTransaction(psTx *serialization.PartiallySignedTransaction, ecdsa bo
 				return nil, err
 			}
 
-			psTx.Tx.Inputs[i].SignatureScript = sigScript
+			partiallySignedTransaction.Tx.Inputs[i].SignatureScript = sigScript
 		} else {
 			if len(input.PubKeySignaturePairs) > 1 {
 				return nil, errors.Errorf("Cannot sign on P2PK when len(input.PubKeySignaturePairs) > 1")
@@ -240,10 +240,10 @@ func extractTransaction(psTx *serialization.PartiallySignedTransaction, ecdsa bo
 			if err != nil {
 				return nil, err
 			}
-			psTx.Tx.Inputs[i].SignatureScript = sigScript
+			partiallySignedTransaction.Tx.Inputs[i].SignatureScript = sigScript
 		}
 	}
-	return psTx.Tx, nil
+	return partiallySignedTransaction.Tx, nil
 }
 
 func partiallySignedInputMultisigRedeemScript(input *serialization.PartiallySignedInput, ecdsa bool) ([]byte, error) {
