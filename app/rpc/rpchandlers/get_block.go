@@ -29,13 +29,13 @@ func HandleGetBlock(context *rpccontext.Context, _ *router.Router, request appme
 
 	response := appmessage.NewGetBlockResponseMessage()
 
-	if getBlockRequest.IncludeTransactionVerboseData {
+	if getBlockRequest.IncludeTransactions {
 		response.Block = appmessage.DomainBlockToRPCBlock(block)
 	} else {
 		response.Block = appmessage.DomainBlockToRPCBlock(&externalapi.DomainBlock{Header: block.Header})
 	}
 
-	err = context.PopulateBlockWithVerboseData(response.Block, block.Header, block, getBlockRequest.IncludeTransactionVerboseData)
+	err = context.PopulateBlockWithVerboseData(response.Block, block.Header, block, getBlockRequest.IncludeTransactions)
 	if err != nil {
 		if errors.Is(err, rpccontext.ErrBuildBlockVerboseDataInvalidBlock) {
 			errorMessage := &appmessage.GetBlockResponseMessage{}
