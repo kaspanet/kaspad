@@ -6,6 +6,7 @@ import (
 	"crypto/subtle"
 	"fmt"
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/libkaspawallet"
+	"github.com/kaspanet/kaspad/cmd/kaspawallet/utils"
 	"github.com/kaspanet/kaspad/domain/dagconfig"
 	"github.com/pkg/errors"
 	"github.com/tyler-smith/go-bip39"
@@ -32,7 +33,7 @@ func ImportMnemonics(params *dagconfig.Params, numKeys uint32, isMultisig bool) 
 	for i := uint32(0); i < numKeys; i++ {
 		fmt.Printf("Enter mnemonic #%d here:\n", i+1)
 		reader := bufio.NewReader(os.Stdin)
-		mnemonic, err := reader.ReadBytes('\n')
+		mnemonic, err := utils.ReadLine(reader)
 		if err != nil {
 			return nil, nil, err
 		}

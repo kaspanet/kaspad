@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/keys"
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/libkaspawallet"
+	"github.com/kaspanet/kaspad/cmd/kaspawallet/utils"
 	"os"
 
 	"github.com/pkg/errors"
@@ -55,7 +56,7 @@ func confirmDump() error {
 	reader := bufio.NewReader(os.Stdin)
 	fmt.Printf("This operation will print your unencrypted keys on the screen. Anyone that sees this information " +
 		"will be able to steal your funds. Are you sure you want to proceed (y/N)? ")
-	line, err := reader.ReadBytes('\n')
+	line, err := utils.ReadLine(reader)
 	if err != nil {
 		return err
 	}

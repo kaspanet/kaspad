@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"github.com/kaspanet/kaspad/cmd/kaspawallet/utils"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -121,7 +122,7 @@ func (d *File) SetPath(params *dagconfig.Params, path string) error {
 	if exists {
 		reader := bufio.NewReader(os.Stdin)
 		fmt.Printf("The file %s already exists. Are you sure you want to override it (type 'y' to approve)? ", d.path)
-		line, err := reader.ReadBytes('\n')
+		line, err := utils.ReadLine(reader)
 		if err != nil {
 			return err
 		}

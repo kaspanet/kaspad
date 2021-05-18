@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/libkaspawallet"
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/libkaspawallet/bip32"
+	"github.com/kaspanet/kaspad/cmd/kaspawallet/utils"
 	"github.com/pkg/errors"
 	"os"
 
@@ -34,7 +35,7 @@ func create(conf *createConfig) error {
 	reader := bufio.NewReader(os.Stdin)
 	for i := conf.NumPrivateKeys; i < conf.NumPublicKeys; i++ {
 		fmt.Printf("Enter public key #%d here:\n", i+1)
-		extendedPublicKey, err := reader.ReadBytes('\n')
+		extendedPublicKey, err := utils.ReadLine(reader)
 		if err != nil {
 			return err
 		}
