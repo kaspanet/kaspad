@@ -38,8 +38,10 @@ func (csm *consensusStateManager) pickVirtualParents(stagingArea *model.StagingA
 	// Limit to maxBlockParents*3 candidates, that way we don't go over thousands of tips when the network isn't healthy.
 	// There's no specific reason for a factor of 3, and its not a consensus rule, just an estimation saying we probably
 	// don't want to consider and calculate 3 times the amount of candidates for the set of parents.
-	candidates := make([]*externalapi.DomainHash, 0, math.MinInt(int(csm.maxBlockParents)*3, candidatesHeap.Len()))
-	for len(candidates) < int(csm.maxBlockParents)*3 && candidatesHeap.Len() > 0 {
+	maxCandidates := int(csm.maxBlockParents) * 3
+	candidateAllocationSize := math.MinInt(maxCandidates, candidatesHeap.Len())
+	candidates := make([]*externalapi.DomainHash, 0, candidateAllocationSize)
+	for len(candidates) < maxCandidates && candidatesHeap.Len() > 0 {
 		candidates = append(candidates, candidatesHeap.Pop())
 	}
 
