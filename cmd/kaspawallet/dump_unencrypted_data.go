@@ -3,10 +3,11 @@ package main
 import (
 	"bufio"
 	"fmt"
-	"os"
-
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/keys"
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/libkaspawallet"
+	"github.com/kaspanet/kaspad/cmd/kaspawallet/utils"
+	"os"
+
 	"github.com/pkg/errors"
 )
 
@@ -21,29 +22,29 @@ func dumpUnencryptedData(conf *dumpUnencryptedDataConfig) error {
 		return err
 	}
 
-	privateKeys, err := keysFile.DecryptPrivateKeys()
+	mnemonics, err := keysFile.DecryptMnemonics()
 	if err != nil {
 		return err
 	}
 
-	privateKeysPublicKeys := make(map[string]struct{})
-	for i, privateKey := range privateKeys {
-		fmt.Printf("Private key #%d:\n%x\n\n", i+1, privateKey)
-		publicKey, err := libkaspawallet.PublicKeyFromPrivateKey(privateKey)
+	mnemonicPublicKeys := make(map[string]struct{})
+	for i, mnemonic := range mnemonics {
+		fmt.Printf("Mnemonic #%d:\n%s\n\n", i+1, mnemonic)
+		publicKey, err := libkaspawallet.MasterPublicKeyFromMnemonic(conf.NetParams(), mnemonic, len(keysFile.ExtendedPublicKeys) > 1)
 		if err != nil {
 			return err
 		}
 
-		privateKeysPublicKeys[string(publicKey)] = struct{}{}
+		mnemonicPublicKeys[publicKey] = struct{}{}
 	}
 
 	i := 1
-	for _, publicKey := range keysFile.PublicKeys {
-		if _, exists := privateKeysPublicKeys[string(publicKey)]; exists {
+	for _, extendedPublicKey := range keysFile.ExtendedPublicKeys {
+		if _, exists := mnemonicPublicKeys[extendedPublicKey]; exists {
 			continue
 		}
 
-		fmt.Printf("Public key #%d:\n%x\n\n", i, publicKey)
+		fmt.Printf("Extended Public key #%d:\n%s\n\n", i, extendedPublicKey)
 		i++
 	}
 
@@ -55,14 +56,14 @@ func confirmDump() error {
 	reader := bufio.NewReader(os.Stdin)
 	fmt.Printf("This operation will print your unencrypted keys on the screen. Anyone that sees this information " +
 		"will be able to steal your funds. Are you sure you want to proceed (y/N)? ")
-	line, isPrefix, err := reader.ReadLine()
+	line, err := utils.ReadLine(reader)
 	if err != nil {
 		return err
 	}
 
 	fmt.Println()
 
-	if isPrefix || string(line) != "y" {
+	if string(line) != "y" {
 		return errors.Errorf("Dump aborted by user")
 	}
 

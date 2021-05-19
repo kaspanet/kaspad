@@ -1,18 +1,12 @@
 package main
 
 import (
-	"encoding/hex"
+	"context"
 	"fmt"
-
+	"github.com/kaspanet/kaspad/cmd/kaspawallet/daemon/client"
+	"github.com/kaspanet/kaspad/cmd/kaspawallet/daemon/pb"
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/keys"
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/libkaspawallet"
-	utxopkg "github.com/kaspanet/kaspad/domain/consensus/utils/utxo"
-	"github.com/kaspanet/kaspad/domain/dagconfig"
-
-	"github.com/kaspanet/kaspad/app/appmessage"
-	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/transactionid"
-	"github.com/kaspanet/kaspad/infrastructure/network/rpcclient"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/pkg/errors"
 )
@@ -23,149 +17,49 @@ func send(conf *sendConfig) error {
 		return err
 	}
 
-	toAddress, err := util.DecodeAddress(conf.ToAddress, conf.ActiveNetParams.Prefix)
-	if err != nil {
-		return err
+	if len(keysFile.ExtendedPublicKeys) > len(keysFile.EncryptedMnemonics) {
+		return errors.Errorf("Cannot use 'send' command for multisig wallet without all of the keys")
 	}
 
-	fromAddress, err := libkaspawallet.Address(conf.NetParams(), keysFile.PublicKeys, keysFile.MinimumSignatures, keysFile.ECDSA)
+	daemonClient, tearDown, err := client.Connect(conf.DaemonAddress)
 	if err != nil {
 		return err
 	}
+	defer tearDown()
 
-	client, err := connectToRPC(conf.NetParams(), conf.RPCServer)
-	if err != nil {
-		return err
-	}
-	utxos, err := fetchSpendableUTXOs(conf.NetParams(), client, fromAddress.String())
-	if err != nil {
-		return err
-	}
+	ctx, cancel := context.WithTimeout(context.Background(), daemonTimeout)
+	defer cancel()
 
 	sendAmountSompi := uint64(conf.SendAmount * util.SompiPerKaspa)
-
-	const feePerInput = 1000
-	selectedUTXOs, changeSompi, err := selectUTXOs(utxos, sendAmountSompi, feePerInput)
+	createUnsignedTransactionResponse, err := daemonClient.CreateUnsignedTransaction(ctx, &pb.CreateUnsignedTransactionRequest{
+		Address: conf.ToAddress,
+		Amount:  sendAmountSompi,
+	})
 	if err != nil {
 		return err
 	}
 
-	psTx, err := libkaspawallet.CreateUnsignedTransaction(keysFile.PublicKeys,
-		keysFile.MinimumSignatures,
-		keysFile.ECDSA,
-		[]*libkaspawallet.Payment{{
-			Address: toAddress,
-			Amount:  sendAmountSompi,
-		}, {
-			Address: fromAddress,
-			Amount:  changeSompi,
-		}},
-		selectedUTXOs)
+	mnemonics, err := keysFile.DecryptMnemonics()
 	if err != nil {
 		return err
 	}
 
-	privateKeys, err := keysFile.DecryptPrivateKeys()
+	signedTransaction, err := libkaspawallet.Sign(conf.NetParams(), mnemonics, createUnsignedTransactionResponse.UnsignedTransaction, keysFile.ECDSA)
 	if err != nil {
 		return err
 	}
 
-	updatedPSTx, err := libkaspawallet.Sign(privateKeys, psTx, keysFile.ECDSA)
-	if err != nil {
-		return err
-	}
-
-	tx, err := libkaspawallet.ExtractTransaction(updatedPSTx)
-	if err != nil {
-		return err
-	}
-
-	transactionID, err := sendTransaction(client, tx)
+	ctx2, cancel2 := context.WithTimeout(context.Background(), daemonTimeout)
+	defer cancel2()
+	broadcastResponse, err := daemonClient.Broadcast(ctx2, &pb.BroadcastRequest{
+		Transaction: signedTransaction,
+	})
 	if err != nil {
 		return err
 	}
 
 	fmt.Println("Transaction was sent successfully")
-	fmt.Printf("Transaction ID: \t%s\n", transactionID)
+	fmt.Printf("Transaction ID: \t%s\n", broadcastResponse.TxID)
 
 	return nil
-}
-
-func fetchSpendableUTXOs(params *dagconfig.Params, client *rpcclient.RPCClient, address string) ([]*appmessage.UTXOsByAddressesEntry, error) {
-	getUTXOsByAddressesResponse, err := client.GetUTXOsByAddresses([]string{address})
-	if err != nil {
-		return nil, err
-	}
-
-	blockDAGInfo, err := client.GetBlockDAGInfo()
-	if err != nil {
-		return nil, err
-	}
-
-	spendableUTXOs := make([]*appmessage.UTXOsByAddressesEntry, 0)
-	for _, entry := range getUTXOsByAddressesResponse.Entries {
-		if !isUTXOSpendable(entry, blockDAGInfo.VirtualDAAScore, params.BlockCoinbaseMaturity) {
-			continue
-		}
-		spendableUTXOs = append(spendableUTXOs, entry)
-	}
-	return spendableUTXOs, nil
-}
-
-func selectUTXOs(utxos []*appmessage.UTXOsByAddressesEntry, spendAmount uint64, feePerInput uint64) (
-	selectedUTXOs []*externalapi.OutpointAndUTXOEntryPair, changeSompi uint64, err error) {
-
-	selectedUTXOs = []*externalapi.OutpointAndUTXOEntryPair{}
-	totalValue := uint64(0)
-
-	for _, utxo := range utxos {
-		txID, err := transactionid.FromString(utxo.Outpoint.TransactionID)
-		if err != nil {
-			return nil, 0, err
-		}
-
-		rpcUTXOEntry := utxo.UTXOEntry
-		scriptPublicKeyScript, err := hex.DecodeString(rpcUTXOEntry.ScriptPublicKey.Script)
-		if err != nil {
-			return nil, 0, err
-		}
-
-		scriptPublicKey := &externalapi.ScriptPublicKey{
-			Script:  scriptPublicKeyScript,
-			Version: rpcUTXOEntry.ScriptPublicKey.Version,
-		}
-
-		utxoEntry := utxopkg.NewUTXOEntry(rpcUTXOEntry.Amount, scriptPublicKey, rpcUTXOEntry.IsCoinbase, rpcUTXOEntry.BlockDAAScore)
-		selectedUTXOs = append(selectedUTXOs, &externalapi.OutpointAndUTXOEntryPair{
-			Outpoint: &externalapi.DomainOutpoint{
-				TransactionID: *txID,
-				Index:         utxo.Outpoint.Index,
-			},
-			UTXOEntry: utxoEntry,
-		})
-		totalValue += utxo.UTXOEntry.Amount
-
-		fee := feePerInput * uint64(len(selectedUTXOs))
-		totalSpend := spendAmount + fee
-		if totalValue >= totalSpend {
-			break
-		}
-	}
-
-	fee := feePerInput * uint64(len(selectedUTXOs))
-	totalSpend := spendAmount + fee
-	if totalValue < totalSpend {
-		return nil, 0, errors.Errorf("Insufficient funds for send: %f required, while only %f available",
-			float64(totalSpend)/util.SompiPerKaspa, float64(totalValue)/util.SompiPerKaspa)
-	}
-
-	return selectedUTXOs, totalValue - totalSpend, nil
-}
-
-func sendTransaction(client *rpcclient.RPCClient, tx *externalapi.DomainTransaction) (string, error) {
-	submitTransactionResponse, err := client.SubmitTransaction(appmessage.DomainTransactionToRPCTransaction(tx))
-	if err != nil {
-		return "", errors.Wrapf(err, "error submitting transaction")
-	}
-	return submitTransactionResponse.TransactionID, nil
 }

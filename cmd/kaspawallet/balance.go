@@ -1,50 +1,30 @@
 package main
 
 import (
+	"context"
 	"fmt"
-
-	"github.com/kaspanet/kaspad/cmd/kaspawallet/keys"
-	"github.com/kaspanet/kaspad/cmd/kaspawallet/libkaspawallet"
+	"github.com/kaspanet/kaspad/cmd/kaspawallet/daemon/client"
+	"github.com/kaspanet/kaspad/cmd/kaspawallet/daemon/pb"
 	"github.com/kaspanet/kaspad/util"
 )
 
 func balance(conf *balanceConfig) error {
-	client, err := connectToRPC(conf.NetParams(), conf.RPCServer)
+	daemonClient, tearDown, err := client.Connect(conf.DaemonAddress)
+	if err != nil {
+		return err
+	}
+	defer tearDown()
+
+	ctx, cancel := context.WithTimeout(context.Background(), daemonTimeout)
+	defer cancel()
+	response, err := daemonClient.GetBalance(ctx, &pb.GetBalanceRequest{})
 	if err != nil {
 		return err
 	}
 
-	keysFile, err := keys.ReadKeysFile(conf.NetParams(), conf.KeysFile)
-	if err != nil {
-		return err
-	}
-
-	addr, err := libkaspawallet.Address(conf.NetParams(), keysFile.PublicKeys, keysFile.MinimumSignatures, keysFile.ECDSA)
-	if err != nil {
-		return err
-	}
-
-	getUTXOsByAddressesResponse, err := client.GetUTXOsByAddresses([]string{addr.String()})
-	if err != nil {
-		return err
-	}
-	blockDAGInfo, err := client.GetBlockDAGInfo()
-	if err != nil {
-		return err
-	}
-
-	var availableBalance, pendingBalance uint64
-	for _, entry := range getUTXOsByAddressesResponse.Entries {
-		if isUTXOSpendable(entry, blockDAGInfo.VirtualDAAScore, conf.ActiveNetParams.BlockCoinbaseMaturity) {
-			availableBalance += entry.UTXOEntry.Amount
-		} else {
-			pendingBalance += entry.UTXOEntry.Amount
-		}
-	}
-
-	fmt.Printf("Balance:\t\tKAS %f\n", float64(availableBalance)/util.SompiPerKaspa)
-	if pendingBalance > 0 {
-		fmt.Printf("Pending balance:\tKAS %f\n", float64(pendingBalance)/util.SompiPerKaspa)
+	fmt.Printf("Balance:\t\tKAS %f\n", float64(response.Available)/util.SompiPerKaspa)
+	if response.Pending > 0 {
+		fmt.Printf("Pending balance:\tKAS %f\n", float64(response.Pending)/util.SompiPerKaspa)
 	}
 
 	return nil

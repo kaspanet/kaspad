@@ -21,16 +21,16 @@ type PartiallySignedTransaction struct {
 // PartiallySignedInput represents an input signed
 // only by some of the relevant parties.
 type PartiallySignedInput struct {
-	RedeeemScript        []byte
 	PrevOutput           *externalapi.DomainTransactionOutput
 	MinimumSignatures    uint32
 	PubKeySignaturePairs []*PubKeySignaturePair
+	DerivationPath       string
 }
 
 // PubKeySignaturePair is a pair of public key and (potentially) its associated signature
 type PubKeySignaturePair struct {
-	PubKey    []byte
-	Signature []byte
+	ExtendedPublicKey string
+	Signature         []byte
 }
 
 // DeserializePartiallySignedTransaction deserializes a byte slice into PartiallySignedTransaction.
@@ -93,10 +93,10 @@ func partiallySignedInputFromProto(protoPartiallySignedInput *protoserialization
 	}
 
 	return &PartiallySignedInput{
-		RedeeemScript:        protoPartiallySignedInput.RedeemScript,
 		PrevOutput:           output,
 		MinimumSignatures:    protoPartiallySignedInput.MinimumSignatures,
 		PubKeySignaturePairs: pubKeySignaturePairs,
+		DerivationPath:       protoPartiallySignedInput.DerivationPath,
 	}, nil
 }
 
@@ -107,24 +107,24 @@ func partiallySignedInputToProto(partiallySignedInput *PartiallySignedInput) *pr
 	}
 
 	return &protoserialization.PartiallySignedInput{
-		RedeemScript:         partiallySignedInput.RedeeemScript,
 		PrevOutput:           transactionOutputToProto(partiallySignedInput.PrevOutput),
 		MinimumSignatures:    partiallySignedInput.MinimumSignatures,
 		PubKeySignaturePairs: protoPairs,
+		DerivationPath:       partiallySignedInput.DerivationPath,
 	}
 }
 
 func pubKeySignaturePairFromProto(protoPubKeySignaturePair *protoserialization.PubKeySignaturePair) *PubKeySignaturePair {
 	return &PubKeySignaturePair{
-		PubKey:    protoPubKeySignaturePair.PubKey,
-		Signature: protoPubKeySignaturePair.Signature,
+		ExtendedPublicKey: protoPubKeySignaturePair.ExtendedPubKey,
+		Signature:         protoPubKeySignaturePair.Signature,
 	}
 }
 
 func pubKeySignaturePairToProto(pubKeySignaturePair *PubKeySignaturePair) *protoserialization.PubKeySignaturePair {
 	return &protoserialization.PubKeySignaturePair{
-		PubKey:    pubKeySignaturePair.PubKey,
-		Signature: pubKeySignaturePair.Signature,
+		ExtendedPubKey: pubKeySignaturePair.ExtendedPublicKey,
+		Signature:      pubKeySignaturePair.Signature,
 	}
 }
 

@@ -1,23 +1,27 @@
 package main
 
 import (
+	"context"
 	"fmt"
-
-	"github.com/kaspanet/kaspad/cmd/kaspawallet/keys"
-	"github.com/kaspanet/kaspad/cmd/kaspawallet/libkaspawallet"
+	"github.com/kaspanet/kaspad/cmd/kaspawallet/daemon/client"
+	"github.com/kaspanet/kaspad/cmd/kaspawallet/daemon/pb"
 )
 
 func showAddress(conf *showAddressConfig) error {
-	keysFile, err := keys.ReadKeysFile(conf.NetParams(), conf.KeysFile)
+	daemonClient, tearDown, err := client.Connect(conf.DaemonAddress)
+	if err != nil {
+		return err
+	}
+	defer tearDown()
+
+	ctx, cancel := context.WithTimeout(context.Background(), daemonTimeout)
+	defer cancel()
+
+	response, err := daemonClient.GetReceiveAddress(ctx, &pb.GetReceiveAddressRequest{})
 	if err != nil {
 		return err
 	}
 
-	address, err := libkaspawallet.Address(conf.NetParams(), keysFile.PublicKeys, keysFile.MinimumSignatures, keysFile.ECDSA)
-	if err != nil {
-		return err
-	}
-
-	fmt.Printf("The wallet address is:\n%s\n", address)
+	fmt.Printf("Address:\n%s\n", response.Address)
 	return nil
 }

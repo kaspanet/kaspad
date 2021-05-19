@@ -13,10 +13,11 @@ message PartiallySignedInput{
   TransactionOutput prevOutput = 2;
   uint32 minimumSignatures = 3;
   repeated PubKeySignaturePair pubKeySignaturePairs = 4;
+  string DerivationPath = 5;
 }
 
 message PubKeySignaturePair{
-  bytes pubKey = 1;
+  string extendedPubKey = 1;
   bytes signature = 2;
 }
 
