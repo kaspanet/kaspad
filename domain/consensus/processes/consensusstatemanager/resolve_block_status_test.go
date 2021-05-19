@@ -162,7 +162,7 @@ func TestDoubleSpends(t *testing.T) {
 // DAG diagram:
 // genesis <- blockA <- blockB <- blockC   <- ..(chain of k-blocks).. lastBlockInChain <- blockD <- blockE <- blockF
 //                                ^								           ^									|
-//								  | redBlock <------------------------ BlueChildOfRedBlock <-------------------------------
+//								  | redBlock <------------------------ blueChildOfRedBlock <--------------------
 func TestTransactionAcceptance(t *testing.T) {
 	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
 		stagingArea := model.NewStagingArea()
@@ -186,7 +186,7 @@ func TestTransactionAcceptance(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Error creating blockC: %+v", err)
 		}
-		// Add a chain of K blocks above blockHashC so we'll
+		// Add a chain of K blocks above blockC so we'll
 		// be able to mine a red block on top of it.
 		chainTipHash := blockHashC
 		for i := model.KType(0); i < consensusConfig.K; i++ {
@@ -219,24 +219,24 @@ func TestTransactionAcceptance(t *testing.T) {
 			t.Fatalf("Error creating redBlock: %+v", err)
 		}
 
-		transactionFromBlueBlock, err := testutils.CreateTransaction(transactionFromRedBlock, fees)
+		transactionFromBlueChildOfRedBlock, err := testutils.CreateTransaction(transactionFromRedBlock, fees)
 		if err != nil {
-			t.Fatalf("Error creating transactionFromBlueBlock: %+v", err)
+			t.Fatalf("Error creating transactionFromBlueChildOfRedBlock: %+v", err)
 		}
-		transactionFromBlueBlockInput0UTXOEntry, err := testConsensus.ConsensusStateStore().
-			UTXOByOutpoint(testConsensus.DatabaseContext(), stagingArea, &transactionFromBlueBlock.Inputs[0].PreviousOutpoint)
+		transactionFromBlueChildOfRedBlockInput0UTXOEntry, err := testConsensus.ConsensusStateStore().
+			UTXOByOutpoint(testConsensus.DatabaseContext(), stagingArea, &transactionFromBlueChildOfRedBlock.Inputs[0].PreviousOutpoint)
 		if err != nil {
-			t.Fatalf("Error getting UTXOEntry for transactionFromBlueBlockInput: %s", err)
+			t.Fatalf("Error getting UTXOEntry for transactionFromBlueChildOfRedBlockInput: %s", err)
 		}
-		blueBlockScriptPublicKey := &externalapi.ScriptPublicKey{Script: []byte{3}, Version: 0}
-		// The BlueChildOfRedBlock contain transaction that spent an output from the red block.
+		blueChildOfRedBlockScriptPublicKey := &externalapi.ScriptPublicKey{Script: []byte{3}, Version: 0}
+		// The blueChildOfRedBlock contains a transaction that spent an output from the red block.
 		hashBlueChildOfRedBlock, _, err := testConsensus.AddBlock([]*externalapi.DomainHash{lastBlockInChain, redHash},
 			&externalapi.DomainCoinbaseData{
-				ScriptPublicKey: blueBlockScriptPublicKey,
+				ScriptPublicKey: blueChildOfRedBlockScriptPublicKey,
 				ExtraData:       nil,
-			}, []*externalapi.DomainTransaction{transactionFromBlueBlock})
+			}, []*externalapi.DomainTransaction{transactionFromBlueChildOfRedBlock})
 		if err != nil {
-			t.Fatalf("Error creating blueBlock: %+v", err)
+			t.Fatalf("Error creating blueChildOfRedBlock: %+v", err)
 		}
 
 		// K blocks minded between blockC and blockD.
@@ -285,7 +285,7 @@ func TestTransactionAcceptance(t *testing.T) {
 		}
 		updatedDAAScoreVirtualBlock := 25
 		//We expect the second transaction in the "blue block" (blueChildOfRedBlock) to be accepted because the merge set is ordered topologically
-		//and the red block is ordered topologically before the blue block so the input is known in the UTXOSet.
+		//and the red block is ordered topologically before the "blue block" so the input is known in the UTXOSet.
 		expectedAcceptanceData := externalapi.AcceptanceData{
 			{
 				BlockHash: blockHashE,
@@ -332,9 +332,9 @@ func TestTransactionAcceptance(t *testing.T) {
 						Fee:         fees,
 						IsAccepted:  true,
 						TransactionInputUTXOEntries: []externalapi.UTXOEntry{
-							utxo.NewUTXOEntry(transactionFromBlueBlockInput0UTXOEntry.Amount(),
-								transactionFromBlueBlockInput0UTXOEntry.ScriptPublicKey(),
-								transactionFromBlueBlockInput0UTXOEntry.IsCoinbase(), uint64(updatedDAAScoreVirtualBlock))},
+							utxo.NewUTXOEntry(transactionFromBlueChildOfRedBlockInput0UTXOEntry.Amount(),
+								transactionFromBlueChildOfRedBlockInput0UTXOEntry.ScriptPublicKey(),
+								transactionFromBlueChildOfRedBlockInput0UTXOEntry.IsCoinbase(), uint64(updatedDAAScoreVirtualBlock))},
 					},
 				},
 			},
@@ -354,10 +354,10 @@ func TestTransactionAcceptance(t *testing.T) {
 				},
 				{
 					Value:           50*constants.SompiPerKaspa + fees, // testutils.CreateTransaction pays fees
-					ScriptPublicKey: blueBlockScriptPublicKey,
+					ScriptPublicKey: blueChildOfRedBlockScriptPublicKey,
 				},
 				{
-					Value:           50*constants.SompiPerKaspa + fees,
+					Value:           50*constants.SompiPerKaspa + fees, // testutils.CreateTransaction pays fees
 					ScriptPublicKey: blockFScriptPublicKey,
 				},
 			},
