@@ -26,6 +26,7 @@ func forSchnorrAndECDSA(t *testing.T, testFunc func(t *testing.T, ecdsa bool)) {
 
 func TestMultisig(t *testing.T) {
 	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
+		params := &consensusConfig.Params
 		forSchnorrAndECDSA(t, func(t *testing.T, ecdsa bool) {
 			consensusConfig.BlockCoinbaseMaturity = 0
 			tc, teardown, err := consensus.NewFactory().NewTestConsensus(consensusConfig, "TestMultisig")
@@ -35,17 +36,24 @@ func TestMultisig(t *testing.T) {
 			defer teardown(false)
 
 			const numKeys = 3
-			privateKeys := make([][]byte, numKeys)
-			publicKeys := make([][]byte, numKeys)
+			mnemonics := make([]string, numKeys)
+			publicKeys := make([]string, numKeys)
 			for i := 0; i < numKeys; i++ {
-				privateKeys[i], publicKeys[i], err = libkaspawallet.CreateKeyPair(ecdsa)
+				var err error
+				mnemonics[i], err = libkaspawallet.CreateMnemonic()
 				if err != nil {
-					t.Fatalf("CreateKeyPair: %+v", err)
+					t.Fatalf("CreateMnemonic: %+v", err)
+				}
+
+				publicKeys[i], err = libkaspawallet.MasterPublicKeyFromMnemonic(&consensusConfig.Params, mnemonics[i], true)
+				if err != nil {
+					t.Fatalf("MasterPublicKeyFromMnemonic: %+v", err)
 				}
 			}
 
 			const minimumSignatures = 2
-			address, err := libkaspawallet.Address(&consensusConfig.Params, publicKeys, minimumSignatures, ecdsa)
+			path := "m/1/2/3"
+			address, err := libkaspawallet.Address(params, publicKeys, minimumSignatures, path, ecdsa)
 			if err != nil {
 				t.Fatalf("Address: %+v", err)
 			}
@@ -81,15 +89,18 @@ func TestMultisig(t *testing.T) {
 
 			block1Tx := block1.Transactions[0]
 			block1TxOut := block1Tx.Outputs[0]
-			selectedUTXOs := []*externalapi.OutpointAndUTXOEntryPair{{
-				Outpoint: &externalapi.DomainOutpoint{
-					TransactionID: *consensushashing.TransactionID(block1.Transactions[0]),
-					Index:         0,
+			selectedUTXOs := []*libkaspawallet.UTXO{
+				{
+					Outpoint: &externalapi.DomainOutpoint{
+						TransactionID: *consensushashing.TransactionID(block1.Transactions[0]),
+						Index:         0,
+					},
+					UTXOEntry:      utxo.NewUTXOEntry(block1TxOut.Value, block1TxOut.ScriptPublicKey, true, 0),
+					DerivationPath: path,
 				},
-				UTXOEntry: utxo.NewUTXOEntry(block1TxOut.Value, block1TxOut.ScriptPublicKey, true, 0),
-			}}
+			}
 
-			unsignedTransaction, err := libkaspawallet.CreateUnsignedTransaction(publicKeys, minimumSignatures, ecdsa,
+			unsignedTransaction, err := libkaspawallet.CreateUnsignedTransaction(publicKeys, minimumSignatures,
 				[]*libkaspawallet.Payment{{
 					Address: address,
 					Amount:  10,
@@ -107,14 +118,14 @@ func TestMultisig(t *testing.T) {
 				t.Fatalf("Transaction is not expected to be signed")
 			}
 
-			_, err = libkaspawallet.ExtractTransaction(unsignedTransaction)
+			_, err = libkaspawallet.ExtractTransaction(unsignedTransaction, ecdsa)
 			if err == nil || !strings.Contains(err.Error(), fmt.Sprintf("missing %d signatures", minimumSignatures)) {
 				t.Fatal("Unexpectedly succeed to extract a valid transaction out of unsigned transaction")
 			}
 
-			signedTxStep1, err := libkaspawallet.Sign(privateKeys[:1], unsignedTransaction, ecdsa)
+			signedTxStep1, err := libkaspawallet.Sign(params, mnemonics[:1], unsignedTransaction, ecdsa)
 			if err != nil {
-				t.Fatalf("IsTransactionFullySigned: %+v", err)
+				t.Fatalf("Sign: %+v", err)
 			}
 
 			isFullySigned, err = libkaspawallet.IsTransactionFullySigned(signedTxStep1)
@@ -126,22 +137,22 @@ func TestMultisig(t *testing.T) {
 				t.Fatalf("Transaction is not expected to be fully signed")
 			}
 
-			signedTxStep2, err := libkaspawallet.Sign(privateKeys[1:2], signedTxStep1, ecdsa)
+			signedTxStep2, err := libkaspawallet.Sign(params, mnemonics[1:2], signedTxStep1, ecdsa)
 			if err != nil {
 				t.Fatalf("Sign: %+v", err)
 			}
 
-			extractedSignedTxStep2, err := libkaspawallet.ExtractTransaction(signedTxStep2)
+			extractedSignedTxStep2, err := libkaspawallet.ExtractTransaction(signedTxStep2, ecdsa)
 			if err != nil {
 				t.Fatalf("ExtractTransaction: %+v", err)
 			}
 
-			signedTxOneStep, err := libkaspawallet.Sign(privateKeys[:2], unsignedTransaction, ecdsa)
+			signedTxOneStep, err := libkaspawallet.Sign(params, mnemonics[:2], unsignedTransaction, ecdsa)
 			if err != nil {
 				t.Fatalf("Sign: %+v", err)
 			}
 
-			extractedSignedTxOneStep, err := libkaspawallet.ExtractTransaction(signedTxOneStep)
+			extractedSignedTxOneStep, err := libkaspawallet.ExtractTransaction(signedTxOneStep, ecdsa)
 			if err != nil {
 				t.Fatalf("ExtractTransaction: %+v", err)
 			}
@@ -170,6 +181,7 @@ func TestMultisig(t *testing.T) {
 
 func TestP2PK(t *testing.T) {
 	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
+		params := &consensusConfig.Params
 		forSchnorrAndECDSA(t, func(t *testing.T, ecdsa bool) {
 			consensusConfig.BlockCoinbaseMaturity = 0
 			tc, teardown, err := consensus.NewFactory().NewTestConsensus(consensusConfig, "TestMultisig")
@@ -179,17 +191,24 @@ func TestP2PK(t *testing.T) {
 			defer teardown(false)
 
 			const numKeys = 1
-			privateKeys := make([][]byte, numKeys)
-			publicKeys := make([][]byte, numKeys)
+			mnemonics := make([]string, numKeys)
+			publicKeys := make([]string, numKeys)
 			for i := 0; i < numKeys; i++ {
-				privateKeys[i], publicKeys[i], err = libkaspawallet.CreateKeyPair(ecdsa)
+				var err error
+				mnemonics[i], err = libkaspawallet.CreateMnemonic()
 				if err != nil {
-					t.Fatalf("CreateKeyPair: %+v", err)
+					t.Fatalf("CreateMnemonic: %+v", err)
+				}
+
+				publicKeys[i], err = libkaspawallet.MasterPublicKeyFromMnemonic(&consensusConfig.Params, mnemonics[i], false)
+				if err != nil {
+					t.Fatalf("MasterPublicKeyFromMnemonic: %+v", err)
 				}
 			}
 
 			const minimumSignatures = 1
-			address, err := libkaspawallet.Address(&consensusConfig.Params, publicKeys, minimumSignatures, ecdsa)
+			path := "m/1/2/3"
+			address, err := libkaspawallet.Address(params, publicKeys, minimumSignatures, path, ecdsa)
 			if err != nil {
 				t.Fatalf("Address: %+v", err)
 			}
@@ -231,16 +250,18 @@ func TestP2PK(t *testing.T) {
 
 			block1Tx := block1.Transactions[0]
 			block1TxOut := block1Tx.Outputs[0]
-			selectedUTXOs := []*externalapi.OutpointAndUTXOEntryPair{{
-				Outpoint: &externalapi.DomainOutpoint{
-					TransactionID: *consensushashing.TransactionID(block1.Transactions[0]),
-					Index:         0,
+			selectedUTXOs := []*libkaspawallet.UTXO{
+				{
+					Outpoint: &externalapi.DomainOutpoint{
+						TransactionID: *consensushashing.TransactionID(block1.Transactions[0]),
+						Index:         0,
+					},
+					UTXOEntry:      utxo.NewUTXOEntry(block1TxOut.Value, block1TxOut.ScriptPublicKey, true, 0),
+					DerivationPath: path,
 				},
-				UTXOEntry: utxo.NewUTXOEntry(block1TxOut.Value, block1TxOut.ScriptPublicKey, true, 0),
-			}}
+			}
 
 			unsignedTransaction, err := libkaspawallet.CreateUnsignedTransaction(publicKeys, minimumSignatures,
-				ecdsa,
 				[]*libkaspawallet.Payment{{
 					Address: address,
 					Amount:  10,
@@ -258,17 +279,17 @@ func TestP2PK(t *testing.T) {
 				t.Fatalf("Transaction is not expected to be signed")
 			}
 
-			_, err = libkaspawallet.ExtractTransaction(unsignedTransaction)
+			_, err = libkaspawallet.ExtractTransaction(unsignedTransaction, ecdsa)
 			if err == nil || !strings.Contains(err.Error(), "missing signature") {
 				t.Fatal("Unexpectedly succeed to extract a valid transaction out of unsigned transaction")
 			}
 
-			signedTx, err := libkaspawallet.Sign(privateKeys, unsignedTransaction, ecdsa)
+			signedTx, err := libkaspawallet.Sign(params, mnemonics, unsignedTransaction, ecdsa)
 			if err != nil {
-				t.Fatalf("IsTransactionFullySigned: %+v", err)
+				t.Fatalf("Sign: %+v", err)
 			}
 
-			tx, err := libkaspawallet.ExtractTransaction(signedTx)
+			tx, err := libkaspawallet.ExtractTransaction(signedTx, ecdsa)
 			if err != nil {
 				t.Fatalf("ExtractTransaction: %+v", err)
 			}

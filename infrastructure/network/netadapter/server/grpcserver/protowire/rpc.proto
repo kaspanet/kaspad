@@ -320,7 +320,7 @@ message GetBlockRequestMessage{
   string hash = 1;
 
   // Whether to include transaction data in the response
-  bool includeTransactionVerboseData = 3;
+  bool includeTransactions = 3;
 }
 
 message GetBlockResponseMessage{
@@ -361,7 +361,7 @@ message GetVirtualSelectedParentChainFromBlockResponseMessage{
 message GetBlocksRequestMessage{
   string lowHash = 1;
   bool includeBlocks = 2;
-  bool includeTransactionVerboseData = 3;
+  bool includeTransactions = 3;
 }
 
 message GetBlocksResponseMessage{
@@ -395,6 +395,7 @@ message GetBlockDagInfoResponseMessage{
   int64 pastMedianTime = 6;
   repeated string virtualParentHashes = 7;
   string pruningPointHash = 8;
+  uint64 virtualDaaScore = 9;
   RPCError error = 1000;
 }
 

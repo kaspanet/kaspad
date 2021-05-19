@@ -163,13 +163,9 @@ func outpointToDomainOutpoint(outpoint *Outpoint) *externalapi.DomainOutpoint {
 func RPCTransactionToDomainTransaction(rpcTransaction *RPCTransaction) (*externalapi.DomainTransaction, error) {
 	inputs := make([]*externalapi.DomainTransactionInput, len(rpcTransaction.Inputs))
 	for i, input := range rpcTransaction.Inputs {
-		transactionID, err := transactionid.FromString(input.PreviousOutpoint.TransactionID)
+		previousOutpoint, err := RPCOutpointToDomainOutpoint(input.PreviousOutpoint)
 		if err != nil {
 			return nil, err
-		}
-		previousOutpoint := &externalapi.DomainOutpoint{
-			TransactionID: *transactionID,
-			Index:         input.PreviousOutpoint.Index,
 		}
 		signatureScript, err := hex.DecodeString(input.SignatureScript)
 		if err != nil {
@@ -211,6 +207,36 @@ func RPCTransactionToDomainTransaction(rpcTransaction *RPCTransaction) (*externa
 		Gas:          rpcTransaction.LockTime,
 		Payload:      payload,
 	}, nil
+}
+
+// RPCOutpointToDomainOutpoint converts RPCOutpoint to  DomainOutpoint
+func RPCOutpointToDomainOutpoint(outpoint *RPCOutpoint) (*externalapi.DomainOutpoint, error) {
+	transactionID, err := transactionid.FromString(outpoint.TransactionID)
+	if err != nil {
+		return nil, err
+	}
+	return &externalapi.DomainOutpoint{
+		TransactionID: *transactionID,
+		Index:         outpoint.Index,
+	}, nil
+}
+
+// RPCUTXOEntryToUTXOEntry converts RPCUTXOEntry to UTXOEntry
+func RPCUTXOEntryToUTXOEntry(entry *RPCUTXOEntry) (externalapi.UTXOEntry, error) {
+	script, err := hex.DecodeString(entry.ScriptPublicKey.Script)
+	if err != nil {
+		return nil, err
+	}
+
+	return utxo.NewUTXOEntry(
+		entry.Amount,
+		&externalapi.ScriptPublicKey{
+			Script:  script,
+			Version: entry.ScriptPublicKey.Version,
+		},
+		entry.IsCoinbase,
+		entry.BlockDAAScore,
+	), nil
 }
 
 // DomainTransactionToRPCTransaction converts DomainTransactions to RPCTransactions
@@ -257,20 +283,25 @@ func OutpointAndUTXOEntryPairsToDomainOutpointAndUTXOEntryPairs(
 
 	domainOutpointAndUTXOEntryPairs := make([]*externalapi.OutpointAndUTXOEntryPair, len(outpointAndUTXOEntryPairs))
 	for i, outpointAndUTXOEntryPair := range outpointAndUTXOEntryPairs {
-		domainOutpointAndUTXOEntryPairs[i] = &externalapi.OutpointAndUTXOEntryPair{
-			Outpoint: &externalapi.DomainOutpoint{
-				TransactionID: outpointAndUTXOEntryPair.Outpoint.TxID,
-				Index:         outpointAndUTXOEntryPair.Outpoint.Index,
-			},
-			UTXOEntry: utxo.NewUTXOEntry(
-				outpointAndUTXOEntryPair.UTXOEntry.Amount,
-				outpointAndUTXOEntryPair.UTXOEntry.ScriptPublicKey,
-				outpointAndUTXOEntryPair.UTXOEntry.IsCoinbase,
-				outpointAndUTXOEntryPair.UTXOEntry.BlockDAAScore,
-			),
-		}
+		domainOutpointAndUTXOEntryPairs[i] = outpointAndUTXOEntryPairToDomainOutpointAndUTXOEntryPair(outpointAndUTXOEntryPair)
 	}
 	return domainOutpointAndUTXOEntryPairs
+}
+
+func outpointAndUTXOEntryPairToDomainOutpointAndUTXOEntryPair(
+	outpointAndUTXOEntryPair *OutpointAndUTXOEntryPair) *externalapi.OutpointAndUTXOEntryPair {
+	return &externalapi.OutpointAndUTXOEntryPair{
+		Outpoint: &externalapi.DomainOutpoint{
+			TransactionID: outpointAndUTXOEntryPair.Outpoint.TxID,
+			Index:         outpointAndUTXOEntryPair.Outpoint.Index,
+		},
+		UTXOEntry: utxo.NewUTXOEntry(
+			outpointAndUTXOEntryPair.UTXOEntry.Amount,
+			outpointAndUTXOEntryPair.UTXOEntry.ScriptPublicKey,
+			outpointAndUTXOEntryPair.UTXOEntry.IsCoinbase,
+			outpointAndUTXOEntryPair.UTXOEntry.BlockDAAScore,
+		),
+	}
 }
 
 // DomainOutpointAndUTXOEntryPairsToOutpointAndUTXOEntryPairs converts
