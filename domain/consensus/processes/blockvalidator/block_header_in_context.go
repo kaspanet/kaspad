@@ -147,7 +147,7 @@ func (v *blockValidator) checkMergeSizeLimit(stagingArea *model.StagingArea, has
 		return err
 	}
 
-	mergeSetSize := len(ghostdagData.MergeSet())
+	mergeSetSize := len(ghostdagData.MergeSetBlues()) + len(ghostdagData.MergeSetReds())
 
 	if uint64(mergeSetSize) > v.mergeSetSizeLimit {
 		return errors.Wrapf(ruleerrors.ErrViolatingMergeLimit,

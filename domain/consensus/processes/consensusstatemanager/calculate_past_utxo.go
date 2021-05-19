@@ -61,8 +61,7 @@ func (csm *consensusStateManager) calculatePastUTXOAndAcceptanceDataWithSelected
 	}
 
 	log.Debugf("Applying blue blocks to the selected parent past UTXO of block %s", blockHash)
-	acceptanceData, utxoDiff, err := csm.applyMergeSetBlocks(
-		stagingArea, blockHash, selectedParentPastUTXO, blockGHOSTDAGData, daaScore)
+	acceptanceData, utxoDiff, err := csm.applyMergeSetBlocks(stagingArea, blockHash, selectedParentPastUTXO, daaScore)
 	if err != nil {
 		return nil, nil, nil, err
 	}
@@ -136,13 +135,16 @@ func (csm *consensusStateManager) restorePastUTXO(
 }
 
 func (csm *consensusStateManager) applyMergeSetBlocks(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash,
-	selectedParentPastUTXODiff externalapi.UTXODiff, ghostdagData *model.BlockGHOSTDAGData, daaScore uint64) (
+	selectedParentPastUTXODiff externalapi.UTXODiff, daaScore uint64) (
 	externalapi.AcceptanceData, externalapi.MutableUTXODiff, error) {
 
 	log.Debugf("applyMergeSetBlocks start for block %s", blockHash)
 	defer log.Debugf("applyMergeSetBlocks end for block %s", blockHash)
 
-	mergeSetHashes := ghostdagData.MergeSet()
+	mergeSetHashes, err := csm.ghostdagManager.GetSortedMergeSet(stagingArea, blockHash)
+	if err != nil {
+		return nil, nil, err
+	}
 	log.Debugf("Merge set for block %s is %v", blockHash, mergeSetHashes)
 	mergeSetBlocks, err := csm.blockStore.Blocks(csm.databaseContext, stagingArea, mergeSetHashes)
 	if err != nil {
@@ -266,8 +268,7 @@ func (csm *consensusStateManager) maybeAcceptTransaction(stagingArea *model.Stag
 	return true, accumulatedMassAfter, nil
 }
 
-func (csm *consensusStateManager) checkTransactionMass(
-	transaction *externalapi.DomainTransaction, accumulatedMassBefore uint64) (
+func (csm *consensusStateManager) checkTransactionMass(transaction *externalapi.DomainTransaction, accumulatedMassBefore uint64) (
 	isAccepted bool, accumulatedMassAfter uint64) {
 
 	transactionID := consensushashing.TransactionID(transaction)
