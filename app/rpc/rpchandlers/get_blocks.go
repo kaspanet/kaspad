@@ -18,11 +18,11 @@ const (
 func HandleGetBlocks(context *rpccontext.Context, _ *router.Router, request appmessage.Message) (appmessage.Message, error) {
 	getBlocksRequest := request.(*appmessage.GetBlocksRequestMessage)
 
-	// Validate that user didn't set IncludeTransactionVerboseData without setting IncludeBlocks
-	if !getBlocksRequest.IncludeBlocks && getBlocksRequest.IncludeTransactionVerboseData {
+	// Validate that user didn't set IncludeTransactions without setting IncludeBlocks
+	if !getBlocksRequest.IncludeBlocks && getBlocksRequest.IncludeTransactions {
 		return &appmessage.GetBlocksResponseMessage{
 			Error: appmessage.RPCErrorf(
-				"If includeTransactionVerboseData is set, then includeBlockVerboseData must be set as well"),
+				"If includeTransactions is set, then includeBlockVerboseData must be set as well"),
 		}, nil
 	}
 
@@ -91,12 +91,12 @@ func HandleGetBlocks(context *rpccontext.Context, _ *router.Router, request appm
 				return nil, err
 			}
 
-			if getBlocksRequest.IncludeTransactionVerboseData {
+			if getBlocksRequest.IncludeTransactions {
 				rpcBlocks[i] = appmessage.DomainBlockToRPCBlock(block)
 			} else {
 				rpcBlocks[i] = appmessage.DomainBlockToRPCBlock(&externalapi.DomainBlock{Header: block.Header})
 			}
-			err = context.PopulateBlockWithVerboseData(rpcBlocks[i], block.Header, nil, getBlocksRequest.IncludeTransactionVerboseData)
+			err = context.PopulateBlockWithVerboseData(rpcBlocks[i], block.Header, nil, getBlocksRequest.IncludeTransactions)
 			if err != nil {
 				return nil, err
 			}

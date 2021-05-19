@@ -4,8 +4,8 @@ package appmessage
 // its respective RPC message
 type GetBlockRequestMessage struct {
 	baseMessage
-	Hash                          string
-	IncludeTransactionVerboseData bool
+	Hash                string
+	IncludeTransactions bool
 }
 
 // Command returns the protocol command string for the message
@@ -14,10 +14,10 @@ func (msg *GetBlockRequestMessage) Command() MessageCommand {
 }
 
 // NewGetBlockRequestMessage returns a instance of the message
-func NewGetBlockRequestMessage(hash string, includeTransactionVerboseData bool) *GetBlockRequestMessage {
+func NewGetBlockRequestMessage(hash string, includeTransactions bool) *GetBlockRequestMessage {
 	return &GetBlockRequestMessage{
-		Hash:                          hash,
-		IncludeTransactionVerboseData: includeTransactionVerboseData,
+		Hash:                hash,
+		IncludeTransactions: includeTransactions,
 	}
 }
 

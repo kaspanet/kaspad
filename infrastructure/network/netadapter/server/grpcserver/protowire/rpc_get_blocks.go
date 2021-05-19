@@ -14,9 +14,9 @@ func (x *KaspadMessage_GetBlocksRequest) toAppMessage() (appmessage.Message, err
 
 func (x *KaspadMessage_GetBlocksRequest) fromAppMessage(message *appmessage.GetBlocksRequestMessage) error {
 	x.GetBlocksRequest = &GetBlocksRequestMessage{
-		LowHash:                       message.LowHash,
-		IncludeBlocks:                 message.IncludeBlocks,
-		IncludeTransactionVerboseData: message.IncludeTransactionVerboseData,
+		LowHash:             message.LowHash,
+		IncludeBlocks:       message.IncludeBlocks,
+		IncludeTransactions: message.IncludeTransactions,
 	}
 	return nil
 }
@@ -26,9 +26,9 @@ func (x *GetBlocksRequestMessage) toAppMessage() (appmessage.Message, error) {
 		return nil, errors.Wrapf(errorNil, "GetBlocksRequestMessage is nil")
 	}
 	return &appmessage.GetBlocksRequestMessage{
-		LowHash:                       x.LowHash,
-		IncludeBlocks:                 x.IncludeBlocks,
-		IncludeTransactionVerboseData: x.IncludeTransactionVerboseData,
+		LowHash:             x.LowHash,
+		IncludeBlocks:       x.IncludeBlocks,
+		IncludeTransactions: x.IncludeTransactions,
 	}, nil
 }
 
