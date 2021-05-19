@@ -129,7 +129,8 @@ func (csm *consensusStateManager) calculateNewTips(
 	if err != nil {
 		return nil, err
 	}
-	log.Debugf("The current tips are: %s", currentTips)
+	log.Debugf("The number of tips is: %d", len(currentTips))
+	log.Tracef("The current tips are: %s", currentTips)
 
 	newTipParents, err := csm.dagTopologyManager.Parents(stagingArea, newTipHash)
 	if err != nil {
@@ -151,7 +152,8 @@ func (csm *consensusStateManager) calculateNewTips(
 			newTips = append(newTips, currentTip)
 		}
 	}
-	log.Debugf("The calculated new tips are: %s", newTips)
+	log.Debugf("The new number of tips is: %d", len(newTips))
+	log.Tracef("The new tips are: %s", newTips)
 
 	return newTips, nil
 }
