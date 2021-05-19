@@ -34,7 +34,14 @@ func (csm *consensusStateManager) pickVirtualParents(stagingArea *model.StagingA
 	}
 	log.Debugf("The selected parent of the virtual is: %s", virtualSelectedParent)
 
-	candidates := candidatesHeap.ToSlice()
+	// Limit to maxBlockParents*3 candidates, that way we don't go over thousands of tips when the network isn't healthy.
+	// There's no specific reason for a factor of 3, and its not a consensus rule, just an estimation saying we probably
+	// don't want to consider and calculate 3 times the amount of candidates for the set of parents.
+	candidates := make([]*externalapi.DomainHash, 0, candidatesHeap.Len())
+	for len(candidates) < int(csm.maxBlockParents)*3 && candidatesHeap.Len() > 0 {
+		candidates = append(candidates, candidatesHeap.Pop())
+	}
+
 	// prioritize half the blocks with highest blueWork and half with lowest, so the network will merge splits faster.
 	if len(candidates) >= int(csm.maxBlockParents) {
 		// We already have the selectedParent, so we're left with csm.maxBlockParents-1.
@@ -44,12 +51,6 @@ func (csm *consensusStateManager) pickVirtualParents(stagingArea *model.StagingA
 			candidates[i], candidates[end] = candidates[end], candidates[i]
 			end--
 		}
-	}
-	// Limit to maxBlockParents*3 candidates, that way we don't go over thousands of tips when the network isn't healthy.
-	// There's no specific reason for a factor of 3, and its not a consensus rule, just an estimation saying we probably
-	// don't want to consider and calculate 3 times the amount of candidates for the set of parents.
-	if len(candidates) > int(csm.maxBlockParents)*3 {
-		candidates = candidates[:int(csm.maxBlockParents)*3]
 	}
 
 	selectedVirtualParents := []*externalapi.DomainHash{virtualSelectedParent}
