@@ -409,3 +409,7 @@ func (gh *ghostdagHelper) ChooseSelectedParent(stagingArea *model.StagingArea, b
 func (gh *ghostdagHelper) Less(blockHashA *externalapi.DomainHash, ghostdagDataA *model.BlockGHOSTDAGData, blockHashB *externalapi.DomainHash, ghostdagDataB *model.BlockGHOSTDAGData) bool {
 	panic("implement me")
 }
+
+func (gh *ghostdagHelper) GetSortedMergeSet(*model.StagingArea, *externalapi.DomainHash) ([]*externalapi.DomainHash, error) {
+	panic("implement me")
+}
