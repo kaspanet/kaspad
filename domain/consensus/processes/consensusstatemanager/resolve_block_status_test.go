@@ -162,7 +162,7 @@ func TestDoubleSpends(t *testing.T) {
 // DAG diagram:
 // genesis <- blockA <- blockB <- blockC   <- ..(chain of k-blocks).. lastBlockInChain <- blockD <- blockE <- blockF
 //                                ^								           ^									|
-//								  | redBlock <------------------------ blueBlock <-------------------------------
+//								  | redBlock <------------------------ BlueChildOfRedBlock <-------------------------------
 func TestTransactionAcceptance(t *testing.T) {
 	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
 		stagingArea := model.NewStagingArea()
@@ -229,7 +229,7 @@ func TestTransactionAcceptance(t *testing.T) {
 			t.Fatalf("Error getting UTXOEntry for transactionFromBlueBlockInput: %s", err)
 		}
 		blueBlockScriptPublicKey := &externalapi.ScriptPublicKey{Script: []byte{3}, Version: 0}
-		// blueblockHashContainTransactionThatSpentOutputFromRedBlock
+		// The BlueChildOfRedBlock contain transaction that spent an output from the red block.
 		hashBlueChildOfRedBlock, _, err := testConsensus.AddBlock([]*externalapi.DomainHash{lastBlockInChain, redHash},
 			&externalapi.DomainCoinbaseData{
 				ScriptPublicKey: blueBlockScriptPublicKey,
@@ -269,7 +269,7 @@ func TestTransactionAcceptance(t *testing.T) {
 		}
 		blueChildOfRedBlock, err := testConsensus.GetBlock(hashBlueChildOfRedBlock)
 		if err != nil {
-			t.Fatalf("Error getting blueBlock: %+v", err)
+			t.Fatalf("Error getting blueChildOfRedBlock: %+v", err)
 		}
 		blockE, err := testConsensus.GetBlock(blockHashE)
 		if err != nil {
@@ -284,8 +284,8 @@ func TestTransactionAcceptance(t *testing.T) {
 			t.Fatalf("Error getting blockF: %+v", err)
 		}
 		updatedDAAScoreVirtualBlock := 25
-		// We expect the second transaction in the "blue block" to be accepted because the merge set is ordered topologically
-		// and the red block is ordered topologically before the blue block so the input is known in the UTXOSet.
+		//We expect the second transaction in the "blue block" (blueChildOfRedBlock) to be accepted because the merge set is ordered topologically
+		//and the red block is ordered topologically before the blue block so the input is known in the UTXOSet.
 		expectedAcceptanceData := externalapi.AcceptanceData{
 			{
 				BlockHash: blockHashE,
@@ -332,7 +332,8 @@ func TestTransactionAcceptance(t *testing.T) {
 						Fee:         fees,
 						IsAccepted:  true,
 						TransactionInputUTXOEntries: []externalapi.UTXOEntry{
-							utxo.NewUTXOEntry(transactionFromBlueBlockInput0UTXOEntry.Amount(), transactionFromBlueBlockInput0UTXOEntry.ScriptPublicKey(),
+							utxo.NewUTXOEntry(transactionFromBlueBlockInput0UTXOEntry.Amount(),
+								transactionFromBlueBlockInput0UTXOEntry.ScriptPublicKey(),
 								transactionFromBlueBlockInput0UTXOEntry.IsCoinbase(), uint64(updatedDAAScoreVirtualBlock))},
 					},
 				},
@@ -341,8 +342,8 @@ func TestTransactionAcceptance(t *testing.T) {
 		if !acceptanceData.Equal(expectedAcceptanceData) {
 			t.Fatalf("The acceptance data is not the expected acceptance data")
 		}
-		// We expect the coinbase transaction to pay reward for the selected parent, the
-		// blue block, and bestow the red block reward to the merging block.
+		// We expect the coinbase transaction to pay reward for the selected parent(block E), the
+		// blueChildOfRedBlock, and bestow the red block reward to the merging block.
 		expectedCoinbase := &externalapi.DomainTransaction{
 			Version: constants.MaxTransactionVersion,
 			Inputs:  nil,
