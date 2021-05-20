@@ -1,9 +1,10 @@
 package main
 
 import (
+	"os"
+
 	"github.com/kaspanet/kaspad/infrastructure/config"
 	"github.com/pkg/errors"
-	"os"
 
 	"github.com/jessevdk/go-flags"
 )
@@ -72,7 +73,8 @@ type broadcastConfig struct {
 }
 
 type showAddressConfig struct {
-	DaemonAddress string `long:"daemonaddress" short:"d" description:"Wallet daemon server to connect to (default: localhost:8082)"`
+	DaemonAddress      string `long:"daemonaddress" short:"d" description:"Wallet daemon server to connect to (default: localhost:8082)"`
+	WithDerivationPath bool   `long:"with-derivation-path" description:"Print the derivation path of the returned address"`
 	config.NetworkFlags
 }
 

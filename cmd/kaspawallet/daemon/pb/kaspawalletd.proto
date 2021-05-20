@@ -32,6 +32,7 @@ message GetReceiveAddressRequest {
 
 message GetReceiveAddressResponse {
   string address = 1;
+  string derivationPath = 2;
 }
 
 message BroadcastRequest {

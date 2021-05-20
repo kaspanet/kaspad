@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"fmt"
+
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/daemon/pb"
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/libkaspawallet"
 	"github.com/kaspanet/kaspad/util"
@@ -58,7 +59,11 @@ func (s *server) GetReceiveAddress(_ context.Context, request *pb.GetReceiveAddr
 		return nil, err
 	}
 
-	return &pb.GetReceiveAddressResponse{Address: address.String()}, nil
+	return &pb.GetReceiveAddressResponse{
+		Address:        address.String(),
+		DerivationPath: path,
+	}, nil
+
 }
 
 func (s *server) walletAddressString(wAddr *walletAddress) (string, error) {

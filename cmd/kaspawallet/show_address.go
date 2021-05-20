@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/daemon/client"
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/daemon/pb"
 )
@@ -23,5 +24,9 @@ func showAddress(conf *showAddressConfig) error {
 	}
 
 	fmt.Printf("Address:\n%s\n", response.Address)
+	if conf.WithDerivationPath {
+		fmt.Printf("Derivation path:\n%s\n", response.DerivationPath)
+	}
+
 	return nil
 }
