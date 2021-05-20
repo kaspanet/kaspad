@@ -2,6 +2,7 @@ package libkaspawallet
 
 import (
 	"fmt"
+
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/libkaspawallet/bip32"
 	"github.com/kaspanet/kaspad/domain/dagconfig"
 	"github.com/pkg/errors"
@@ -31,7 +32,7 @@ func defaultPath(isMultisig bool) string {
 
 	// TODO: Register the coin type in https://github.com/satoshilabs/slips/blob/master/slip-0044.md
 	const coinType = 111111
-	return fmt.Sprintf("m/%d'/%d'/0'", coinType, purpose)
+	return fmt.Sprintf("m/%d'/%d'/0'", purpose, coinType)
 }
 
 // MasterPublicKeyFromMnemonic returns the master public key with the correct derivation for the given mnemonic.
