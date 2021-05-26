@@ -63,7 +63,7 @@ func sign(params *dagconfig.Params, mnemonic string, partiallySignedTransaction 
 	signed := false
 	for i, partiallySignedInput := range partiallySignedTransaction.PartiallySignedInputs {
 		isMultisig := len(partiallySignedInput.PubKeySignaturePairs) > 1
-		path := DefaultPath(isMultisig)
+		path := defaultPath(isMultisig)
 		extendedKey, err := extendedKeyFromMnemonicAndPath(mnemonic, path, params)
 		if err != nil {
 			return err
