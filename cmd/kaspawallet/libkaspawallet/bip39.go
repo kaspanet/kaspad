@@ -16,23 +16,23 @@ func CreateMnemonic() (string, error) {
 	return bip39.NewMnemonic(entropy)
 }
 
+// Purpose and CoinType constants
+const (
+	SingleSignerPurpose = 44
+	// Note: this is not entirely compatible to BIP 45 since
+	// BIP 45 doesn't have a coin type in its derivation path.
+	MultiSigPurpose = 45
+	// TODO: Register the coin type in https://github.com/satoshilabs/slips/blob/master/slip-0044.md
+	CoinType = 111111
+)
+
 func defaultPath(isMultisig bool) string {
-	const (
-		singleSignerPurpose = 44
-
-		// Note: this is not entirely compatible to BIP 45 since
-		// BIP 45 doesn't have a coin type in its derivation path.
-		multiSigPurpose = 45
-	)
-
-	purpose := singleSignerPurpose
+	purpose := SingleSignerPurpose
 	if isMultisig {
-		purpose = multiSigPurpose
+		purpose = MultiSigPurpose
 	}
 
-	// TODO: Register the coin type in https://github.com/satoshilabs/slips/blob/master/slip-0044.md
-	const coinType = 111111
-	return fmt.Sprintf("m/%d'/%d'/0'", purpose, coinType)
+	return fmt.Sprintf("m/%d'/%d'/0'", purpose, CoinType)
 }
 
 // MasterPublicKeyFromMnemonic returns the master public key with the correct derivation for the given mnemonic.
