@@ -22,7 +22,8 @@ const (
 	// Note: this is not entirely compatible to BIP 45 since
 	// BIP 45 doesn't have a coin type in its derivation path.
 	MultiSigPurpose = 45
-	CoinType        = 111111
+	// TODO: Register the coin type in https://github.com/satoshilabs/slips/blob/master/slip-0044.md
+	CoinType = 111111
 )
 
 func defaultPath(isMultisig bool) string {
@@ -31,7 +32,6 @@ func defaultPath(isMultisig bool) string {
 		purpose = MultiSigPurpose
 	}
 
-	// TODO: Register the coin type in https://github.com/satoshilabs/slips/blob/master/slip-0044.md
 	return fmt.Sprintf("m/%d'/%d'/0'", purpose, CoinType)
 }
 
