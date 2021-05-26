@@ -1,14 +1,15 @@
 package libkaspawallet
 
 import (
+	"math"
+	"sort"
+	"strings"
+
 	"github.com/kaspanet/go-secp256k1"
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/libkaspawallet/bip32"
 	"github.com/kaspanet/kaspad/domain/dagconfig"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/pkg/errors"
-	"math"
-	"sort"
-	"strings"
 )
 
 // CreateKeyPair generates a private-public key pair

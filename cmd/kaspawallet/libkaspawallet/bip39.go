@@ -16,7 +16,8 @@ func CreateMnemonic() (string, error) {
 	return bip39.NewMnemonic(entropy)
 }
 
-func defaultPath(isMultisig bool) string {
+// DefaultPath returns the
+func DefaultPath(isMultisig bool) string {
 	const (
 		singleSignerPurpose = 44
 
@@ -37,7 +38,7 @@ func defaultPath(isMultisig bool) string {
 
 // MasterPublicKeyFromMnemonic returns the master public key with the correct derivation for the given mnemonic.
 func MasterPublicKeyFromMnemonic(params *dagconfig.Params, mnemonic string, isMultisig bool) (string, error) {
-	path := defaultPath(isMultisig)
+	path := DefaultPath(isMultisig)
 	extendedKey, err := extendedKeyFromMnemonicAndPath(mnemonic, path, params)
 	if err != nil {
 		return "", err

@@ -2,6 +2,11 @@ package server
 
 import (
 	"fmt"
+	"net"
+	"os"
+	"sync"
+	"time"
+
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/daemon/pb"
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/keys"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
@@ -10,10 +15,6 @@ import (
 	"github.com/kaspanet/kaspad/infrastructure/os/signal"
 	"github.com/kaspanet/kaspad/util/panics"
 	"github.com/pkg/errors"
-	"net"
-	"os"
-	"sync"
-	"time"
 
 	"google.golang.org/grpc"
 )
@@ -33,6 +34,8 @@ type server struct {
 
 // Start starts the kaspawalletd server
 func Start(params *dagconfig.Params, listen, rpcServer string, keysFilePath string) error {
+	initLog(defaultLogFile, defaultErrLogFile)
+
 	defer panics.HandlePanic(log, "MAIN", nil)
 	interrupt := signal.InterruptListener()
 
@@ -40,6 +43,7 @@ func Start(params *dagconfig.Params, listen, rpcServer string, keysFilePath stri
 	if err != nil {
 		return (errors.Wrapf(err, "Error listening to tcp at %s", listen))
 	}
+	log.Infof("Listening on %s", listen)
 
 	rpcClient, err := connectToRPC(params, rpcServer)
 	if err != nil {
