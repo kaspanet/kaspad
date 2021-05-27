@@ -1,26 +1,30 @@
 package difficultymanager
 
 import (
+	"math/big"
+
 	"github.com/kaspanet/kaspad/domain/consensus/model"
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/infrastructure/logger"
 	"github.com/pkg/errors"
-	"math/big"
 )
 
-func (dm *difficultyManager) EstimateNetworkHashesPerSecond(windowSize int) (uint64, error) {
+func (dm *difficultyManager) EstimateNetworkHashesPerSecond(blockHash *externalapi.DomainHash, windowSize int) (uint64, error) {
 	onEnd := logger.LogAndMeasureExecutionTime(log, "EstimateNetworkHashesPerSecond")
 	defer onEnd()
 
 	stagingArea := model.NewStagingArea()
-	return dm.estimateNetworkHashesPerSecond(stagingArea, windowSize)
+	return dm.estimateNetworkHashesPerSecond(stagingArea, blockHash, windowSize)
 }
 
-func (dm *difficultyManager) estimateNetworkHashesPerSecond(stagingArea *model.StagingArea, windowSize int) (uint64, error) {
+func (dm *difficultyManager) estimateNetworkHashesPerSecond(stagingArea *model.StagingArea,
+	blockHash *externalapi.DomainHash, windowSize int) (uint64, error) {
+
 	if windowSize < 2 {
 		return 0, errors.Errorf("windowSize must be equal to or greater than 2")
 	}
 
-	blockWindow, windowHashes, err := dm.blockWindow(stagingArea, model.VirtualBlockHash, windowSize)
+	blockWindow, windowHashes, err := dm.blockWindow(stagingArea, blockHash, windowSize)
 	if err != nil {
 		return 0, err
 	}

@@ -9,5 +9,5 @@ import (
 type DifficultyManager interface {
 	StageDAADataAndReturnRequiredDifficulty(stagingArea *StagingArea, blockHash *externalapi.DomainHash) (uint32, error)
 	RequiredDifficulty(stagingArea *StagingArea, blockHash *externalapi.DomainHash) (uint32, error)
-	EstimateNetworkHashesPerSecond(windowSize int) (uint64, error)
+	EstimateNetworkHashesPerSecond(blockHash *externalapi.DomainHash, windowSize int) (uint64, error)
 }

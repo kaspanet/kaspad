@@ -5,6 +5,7 @@ package appmessage
 type EstimateNetworkHashesPerSecondRequestMessage struct {
 	baseMessage
 	WindowSize uint32
+	BlockHash  string
 }
 
 // Command returns the protocol command string for the message
