@@ -20,8 +20,9 @@ func (dm *difficultyManager) EstimateNetworkHashesPerSecond(blockHash *externala
 func (dm *difficultyManager) estimateNetworkHashesPerSecond(stagingArea *model.StagingArea,
 	blockHash *externalapi.DomainHash, windowSize int) (uint64, error) {
 
-	if windowSize < 2 {
-		return 0, errors.Errorf("windowSize must be equal to or greater than 2")
+	const minWindowSize = 1000
+	if windowSize < minWindowSize {
+		return 0, errors.Errorf("windowSize must be equal to or greater than %d", minWindowSize)
 	}
 
 	blockWindow, windowHashes, err := dm.blockWindow(stagingArea, blockHash, windowSize)
@@ -61,8 +62,13 @@ func (dm *difficultyManager) estimateNetworkHashesPerSecond(stagingArea *model.S
 		}
 	}
 
+	windowsDiff := (maxWindowTimestamp - minWindowTimestamp) / 1000 // Divided by 1000 to convert milliseconds to seconds
+	if windowsDiff == 0 {
+		return 0, nil
+	}
+
 	nominator := new(big.Int).Sub(maxWindowBlueWork, minWindowBlueWork)
-	denominator := big.NewInt((maxWindowTimestamp - minWindowTimestamp) / 1000) // Divided by 1000 to convert milliseconds to seconds
+	denominator := big.NewInt(windowsDiff)
 	networkHashesPerSecondBigInt := new(big.Int).Div(nominator, denominator)
 	return networkHashesPerSecondBigInt.Uint64(), nil
 }
