@@ -15,7 +15,7 @@ func (x *KaspadMessage_EstimateNetworkHashesPerSecondRequest) toAppMessage() (ap
 func (x *KaspadMessage_EstimateNetworkHashesPerSecondRequest) fromAppMessage(message *appmessage.EstimateNetworkHashesPerSecondRequestMessage) error {
 	x.EstimateNetworkHashesPerSecondRequest = &EstimateNetworkHashesPerSecondRequestMessage{
 		WindowSize: message.WindowSize,
-		BlockHash:  message.BlockHash,
+		StartHash:  message.StartHash,
 	}
 	return nil
 }
@@ -26,7 +26,7 @@ func (x *EstimateNetworkHashesPerSecondRequestMessage) toAppMessage() (appmessag
 	}
 	return &appmessage.EstimateNetworkHashesPerSecondRequestMessage{
 		WindowSize: x.WindowSize,
-		BlockHash:  x.BlockHash,
+		StartHash:  x.StartHash,
 	}, nil
 }
 

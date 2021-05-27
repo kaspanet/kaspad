@@ -33,5 +33,5 @@ type Consensus interface {
 	IsInSelectedParentChainOf(blockHashA *DomainHash, blockHashB *DomainHash) (bool, error)
 	GetHeadersSelectedTip() (*DomainHash, error)
 	Anticone(blockHash *DomainHash) ([]*DomainHash, error)
-	EstimateNetworkHashesPerSecond(blockHash *DomainHash, windowSize int) (uint64, error)
+	EstimateNetworkHashesPerSecond(startHash *DomainHash, windowSize int) (uint64, error)
 }

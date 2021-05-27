@@ -17,11 +17,12 @@
 package protowire
 
 import (
+	reflect "reflect"
+	sync "sync"
+
 	proto "github.com/golang/protobuf/proto"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
-	reflect "reflect"
-	sync "sync"
 )
 
 const (
@@ -5008,7 +5009,7 @@ type EstimateNetworkHashesPerSecondRequestMessage struct {
 	unknownFields protoimpl.UnknownFields
 
 	WindowSize uint32 `protobuf:"varint,1,opt,name=windowSize,proto3" json:"windowSize,omitempty"`
-	BlockHash  string `protobuf:"bytes,2,opt,name=blockHash,proto3" json:"blockHash,omitempty"`
+	StartHash  string `protobuf:"bytes,2,opt,name=blockHash,proto3" json:"blockHash,omitempty"`
 }
 
 func (x *EstimateNetworkHashesPerSecondRequestMessage) Reset() {
@@ -5052,7 +5053,7 @@ func (x *EstimateNetworkHashesPerSecondRequestMessage) GetWindowSize() uint32 {
 
 func (x *EstimateNetworkHashesPerSecondRequestMessage) GetBlockHash() string {
 	if x != nil {
-		return x.BlockHash
+		return x.StartHash
 	}
 	return ""
 }

@@ -9,23 +9,23 @@ import (
 	"github.com/pkg/errors"
 )
 
-func (dm *difficultyManager) EstimateNetworkHashesPerSecond(blockHash *externalapi.DomainHash, windowSize int) (uint64, error) {
+func (dm *difficultyManager) EstimateNetworkHashesPerSecond(startHash *externalapi.DomainHash, windowSize int) (uint64, error) {
 	onEnd := logger.LogAndMeasureExecutionTime(log, "EstimateNetworkHashesPerSecond")
 	defer onEnd()
 
 	stagingArea := model.NewStagingArea()
-	return dm.estimateNetworkHashesPerSecond(stagingArea, blockHash, windowSize)
+	return dm.estimateNetworkHashesPerSecond(stagingArea, startHash, windowSize)
 }
 
 func (dm *difficultyManager) estimateNetworkHashesPerSecond(stagingArea *model.StagingArea,
-	blockHash *externalapi.DomainHash, windowSize int) (uint64, error) {
+	startHash *externalapi.DomainHash, windowSize int) (uint64, error) {
 
 	const minWindowSize = 1000
 	if windowSize < minWindowSize {
 		return 0, errors.Errorf("windowSize must be equal to or greater than %d", minWindowSize)
 	}
 
-	blockWindow, windowHashes, err := dm.blockWindow(stagingArea, blockHash, windowSize)
+	blockWindow, windowHashes, err := dm.blockWindow(stagingArea, startHash, windowSize)
 	if err != nil {
 		return 0, err
 	}

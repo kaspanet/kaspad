@@ -13,16 +13,16 @@ func HandleEstimateNetworkHashesPerSecond(context *rpccontext.Context, _ *router
 	estimateNetworkHashesPerSecondRequest := request.(*appmessage.EstimateNetworkHashesPerSecondRequestMessage)
 
 	windowSize := int(estimateNetworkHashesPerSecondRequest.WindowSize)
-	blockHash := model.VirtualBlockHash
-	if estimateNetworkHashesPerSecondRequest.BlockHash != "" {
+	startHash := model.VirtualBlockHash
+	if estimateNetworkHashesPerSecondRequest.StartHash != "" {
 		var err error
-		blockHash, err = externalapi.NewDomainHashFromString(estimateNetworkHashesPerSecondRequest.BlockHash)
+		startHash, err = externalapi.NewDomainHashFromString(estimateNetworkHashesPerSecondRequest.StartHash)
 		if err != nil {
 			return nil, err
 		}
 	}
 
-	networkHashesPerSecond, err := context.Domain.Consensus().EstimateNetworkHashesPerSecond(blockHash, windowSize)
+	networkHashesPerSecond, err := context.Domain.Consensus().EstimateNetworkHashesPerSecond(startHash, windowSize)
 	if err != nil {
 		response := &appmessage.EstimateNetworkHashesPerSecondResponseMessage{}
 		response.Error = appmessage.RPCErrorf("could not resolve network hashes per "+
