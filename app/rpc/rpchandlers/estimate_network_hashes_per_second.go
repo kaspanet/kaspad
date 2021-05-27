@@ -9,7 +9,9 @@ import (
 )
 
 // HandleEstimateNetworkHashesPerSecond handles the respectively named RPC command
-func HandleEstimateNetworkHashesPerSecond(context *rpccontext.Context, _ *router.Router, request appmessage.Message) (appmessage.Message, error) {
+func HandleEstimateNetworkHashesPerSecond(
+	context *rpccontext.Context, _ *router.Router, request appmessage.Message) (appmessage.Message, error) {
+
 	estimateNetworkHashesPerSecondRequest := request.(*appmessage.EstimateNetworkHashesPerSecondRequestMessage)
 
 	windowSize := int(estimateNetworkHashesPerSecondRequest.WindowSize)
@@ -18,7 +20,10 @@ func HandleEstimateNetworkHashesPerSecond(context *rpccontext.Context, _ *router
 		var err error
 		startHash, err = externalapi.NewDomainHashFromString(estimateNetworkHashesPerSecondRequest.StartHash)
 		if err != nil {
-			return nil, err
+			response := &appmessage.EstimateNetworkHashesPerSecondResponseMessage{}
+			response.Error = appmessage.RPCErrorf("StartHash '%s' is not a valid block hash",
+				estimateNetworkHashesPerSecondRequest.StartHash)
+			return response, nil
 		}
 	}
 
@@ -26,7 +31,7 @@ func HandleEstimateNetworkHashesPerSecond(context *rpccontext.Context, _ *router
 	if err != nil {
 		response := &appmessage.EstimateNetworkHashesPerSecondResponseMessage{}
 		response.Error = appmessage.RPCErrorf("could not resolve network hashes per "+
-			"second for window size %d: %s", windowSize, err)
+			"second for startHash %s and window size %d: %s", startHash, windowSize, err)
 		return response, nil
 	}
 
