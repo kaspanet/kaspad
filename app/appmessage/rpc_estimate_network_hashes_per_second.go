@@ -4,6 +4,7 @@ package appmessage
 // its respective RPC message
 type EstimateNetworkHashesPerSecondRequestMessage struct {
 	baseMessage
+	StartHash  string
 	WindowSize uint32
 }
 
@@ -13,8 +14,9 @@ func (msg *EstimateNetworkHashesPerSecondRequestMessage) Command() MessageComman
 }
 
 // NewEstimateNetworkHashesPerSecondRequestMessage returns a instance of the message
-func NewEstimateNetworkHashesPerSecondRequestMessage(windowSize uint32) *EstimateNetworkHashesPerSecondRequestMessage {
+func NewEstimateNetworkHashesPerSecondRequestMessage(startHash string, windowSize uint32) *EstimateNetworkHashesPerSecondRequestMessage {
 	return &EstimateNetworkHashesPerSecondRequestMessage{
+		StartHash:  startHash,
 		WindowSize: windowSize,
 	}
 }

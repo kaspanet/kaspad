@@ -27,7 +27,8 @@ func parseConfig() (*configFlags, error) {
 	}
 	parser := flags.NewParser(cfg, flags.HelpFlag)
 	parser.Usage = "kaspactl [OPTIONS] [COMMAND] [COMMAND PARAMETERS].\n\nCommand can be supplied only if --json is not used." +
-		"\n\nUse `kaspactl --list-commands` to get a list of all commands and their parameters"
+		"\n\nUse `kaspactl --list-commands` to get a list of all commands and their parameters." +
+		"\nFor optional parameters- use '-' without quotes to not pass the parameter.\n"
 	remainingArgs, err := parser.Parse()
 	if err != nil {
 		return nil, err

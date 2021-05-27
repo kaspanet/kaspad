@@ -130,7 +130,7 @@ type fakeRelayInvsContext struct {
 	rwLock                                        sync.RWMutex
 }
 
-func (f *fakeRelayInvsContext) EstimateNetworkHashesPerSecond(windowSize int) (uint64, error) {
+func (f *fakeRelayInvsContext) EstimateNetworkHashesPerSecond(startHash *externalapi.DomainHash, windowSize int) (uint64, error) {
 	panic(errors.Errorf("called unimplemented function from test '%s'", f.testName))
 }
 
