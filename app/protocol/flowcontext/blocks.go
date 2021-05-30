@@ -80,7 +80,11 @@ func (f *FlowContext) broadcastTransactionsAfterBlockAdded(
 
 	var txIDsToRebroadcast []*externalapi.DomainTransactionID
 	if f.shouldRebroadcastTransactions() {
-		txIDsToRebroadcast = f.txIDsToRebroadcast()
+		var err error
+		txIDsToRebroadcast, err = f.txIDsToRebroadcast()
+		if err != nil {
+			return err
+		}
 	}
 
 	txIDsToBroadcast := make([]*externalapi.DomainTransactionID, len(transactionsAcceptedToMempool)+len(txIDsToRebroadcast))

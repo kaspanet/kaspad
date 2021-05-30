@@ -14,4 +14,5 @@ type Mempool interface {
 	GetTransaction(transactionID *consensusexternalapi.DomainTransactionID) (*consensusexternalapi.DomainTransaction, bool)
 	AllTransactions() []*consensusexternalapi.DomainTransaction
 	TransactionCount() int
+	RevalidateTransaction(tx *consensusexternalapi.DomainTransaction) (isValid bool, err error)
 }

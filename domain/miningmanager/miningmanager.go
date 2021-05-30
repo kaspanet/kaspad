@@ -14,6 +14,7 @@ type MiningManager interface {
 	TransactionCount() int
 	HandleNewBlockTransactions(txs []*consensusexternalapi.DomainTransaction) ([]*consensusexternalapi.DomainTransaction, error)
 	ValidateAndInsertTransaction(transaction *consensusexternalapi.DomainTransaction, allowOrphan bool) error
+	RevalidateTransaction(tx *consensusexternalapi.DomainTransaction) (isValid bool, err error)
 }
 
 type miningManager struct {
@@ -50,4 +51,8 @@ func (mm *miningManager) AllTransactions() []*consensusexternalapi.DomainTransac
 
 func (mm *miningManager) TransactionCount() int {
 	return mm.mempool.TransactionCount()
+}
+
+func (mm *miningManager) RevalidateTransaction(tx *consensusexternalapi.DomainTransaction) (isValid bool, err error) {
+	return mm.mempool.RevalidateTransaction(tx)
 }

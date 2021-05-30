@@ -7,22 +7,19 @@ package mempool
 import (
 	"container/list"
 	"fmt"
-	"github.com/kaspanet/kaspad/domain/dagconfig"
 	"sort"
 	"sync"
 	"time"
 
-	"github.com/kaspanet/kaspad/infrastructure/logger"
-
-	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
-
-	"github.com/kaspanet/kaspad/domain/consensus/utils/transactionhelper"
-
 	consensusexternalapi "github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/estimatedsize"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/transactionhelper"
+	"github.com/kaspanet/kaspad/domain/dagconfig"
 	miningmanagermodel "github.com/kaspanet/kaspad/domain/miningmanager/model"
+	"github.com/kaspanet/kaspad/infrastructure/logger"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/mstime"
 	"github.com/pkg/errors"
@@ -164,6 +161,10 @@ type txDescriptor struct {
 	// one that is accepted to pool, but cannot be mined in next block because it
 	// depends on outputs of accepted, but still not mined transaction
 	depCount int
+
+	// expirationDAAScore is the virtual DAA score at which this transaction is expired
+	// if expirationDAAScore == 0 - the transaction never expires.
+	expirationDAAScore uint64
 }
 
 // orphanTx is normal transaction that references an ancestor transaction
@@ -409,6 +410,13 @@ func (mp *mempool) removeTransactionsFromPool(txs []*consensusexternalapi.Domain
 type transactionAndOutpoint struct {
 	transaction *consensusexternalapi.DomainTransaction
 	outpoint    *consensusexternalapi.DomainOutpoint
+}
+
+func (mp *mempool) removeTransactionAndItsChainedTransactionsWithLock(transaction *consensusexternalapi.DomainTransaction) error {
+	mp.mtx.Lock()
+	defer mp.mtx.Unlock()
+
+	return mp.removeTransactionAndItsChainedTransactions(transaction)
 }
 
 // removeTransactionAndItsChainedTransactions removes a transaction and all of its chained transaction from the mempool.
@@ -899,7 +907,9 @@ func (mp *mempool) processOrphans(acceptedTx *consensusexternalapi.DomainTransac
 // the passed one being accepted.
 //
 // This function is safe for concurrent access.
-func (mp *mempool) ValidateAndInsertTransaction(tx *consensusexternalapi.DomainTransaction, allowOrphan bool) error {
+func (mp *mempool) ValidateAndInsertTransaction(
+	tx *consensusexternalapi.DomainTransaction, expirationDAAScore uint64, allowOrphan bool) error {
+
 	log.Tracef("Processing transaction %s", consensushashing.TransactionID(tx))
 
 	// Protect concurrent access.
@@ -1041,4 +1051,26 @@ func (mp *mempool) RemoveTransactions(txs []*consensusexternalapi.DomainTransact
 	defer mp.mtx.Unlock()
 
 	return mp.removeTransactionsFromPool(txs)
+}
+
+// RevalidateTransaction revalidates given transaction, and removes from mempool if it isn't valid
+func (mp *mempool) RevalidateTransaction(tx *consensusexternalapi.DomainTransaction) (isValid bool, err error) {
+	tx = tx.Clone()
+
+	_ = mp.mempoolUTXOSet.populateUTXOEntries(tx)
+
+	err = mp.consensus.ValidateTransactionAndPopulateWithConsensusData(tx)
+	if err != nil {
+		if errors.As(err, &ruleerrors.RuleError{}) {
+			log.Debugf("Transaction %s was found invalid during revalidate and therefore is being removed from mempool",
+				consensushashing.TransactionID(tx))
+			err := mp.removeTransactionAndItsChainedTransactionsWithLock(tx)
+			if err != nil {
+				return false, err
+			}
+			return false, nil
+		}
+		return false, err
+	}
+	return true, nil
 }

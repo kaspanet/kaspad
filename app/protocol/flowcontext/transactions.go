@@ -44,17 +44,25 @@ func (f *FlowContext) shouldRebroadcastTransactions() bool {
 	return time.Since(f.lastRebroadcastTime) > rebroadcastInterval
 }
 
-func (f *FlowContext) txIDsToRebroadcast() []*externalapi.DomainTransactionID {
+func (f *FlowContext) txIDsToRebroadcast() ([]*externalapi.DomainTransactionID, error) {
 	f.transactionsToRebroadcastLock.Lock()
 	defer f.transactionsToRebroadcastLock.Unlock()
 
-	txIDs := make([]*externalapi.DomainTransactionID, len(f.transactionsToRebroadcast))
+	txIDs := make([]*externalapi.DomainTransactionID, 0, len(f.transactionsToRebroadcast))
 	i := 0
 	for _, tx := range f.transactionsToRebroadcast {
-		txIDs[i] = consensushashing.TransactionID(tx)
+		isValid, err := f.Domain().MiningManager().RevalidateTransaction(tx)
+		if err != nil {
+			return nil, err
+		}
+		if !isValid {
+			continue
+		}
+
+		txIDs = append(txIDs, consensushashing.TransactionID(tx))
 		i++
 	}
-	return txIDs
+	return txIDs, nil
 }
 
 // SharedRequestedTransactions returns a *transactionrelay.SharedRequestedTransactions for sharing
