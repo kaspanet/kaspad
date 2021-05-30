@@ -43,12 +43,12 @@ func TestCheckLockTimeVerifyConditionedByBlockHeight(t *testing.T) {
 			t.Fatalf("Failed getting blockC: %v", err)
 		}
 		fees := uint64(1)
-		foundingTransaction, err := testutils.CreateTransaction(blockC.Transactions[transactionhelper.CoinbaseTransactionIndex], fees)
+		fundingTransaction, err := testutils.CreateTransaction(blockC.Transactions[transactionhelper.CoinbaseTransactionIndex], fees)
 		if err != nil {
-			t.Fatalf("Error creating foundingTransaction: %v", err)
+			t.Fatalf("Error creating fundingTransaction: %v", err)
 		}
 		blockDHash, _, err := testConsensus.AddBlock([]*externalapi.DomainHash{blockCHash}, nil,
-			[]*externalapi.DomainTransaction{foundingTransaction})
+			[]*externalapi.DomainTransaction{fundingTransaction})
 		if err != nil {
 			t.Fatalf("Error creating blockD: %v", err)
 		}
@@ -67,7 +67,7 @@ func TestCheckLockTimeVerifyConditionedByBlockHeight(t *testing.T) {
 			Version: constants.MaxScriptPublicKeyVersion,
 			Script:  p2shScriptCLTV,
 		}
-		transactionWithLockedOutput, err := createTransactionWithLockedOutput(foundingTransaction, fees, &scriptPublicKeyCLTV)
+		transactionWithLockedOutput, err := createTransactionWithLockedOutput(fundingTransaction, fees, &scriptPublicKeyCLTV)
 		if err != nil {
 			t.Fatalf("Error in createTransactionWithLockedOutput: %v", err)
 		}
@@ -139,12 +139,12 @@ func TestCheckLockTimeVerifyConditionedByAbsoluteTime(t *testing.T) {
 			t.Fatalf("Failed getting blockC: %v", err)
 		}
 		fees := uint64(1)
-		foundingTransaction, err := testutils.CreateTransaction(blockC.Transactions[transactionhelper.CoinbaseTransactionIndex], fees)
+		fundingTransaction, err := testutils.CreateTransaction(blockC.Transactions[transactionhelper.CoinbaseTransactionIndex], fees)
 		if err != nil {
-			t.Fatalf("Error creating foundingTransaction: %v", err)
+			t.Fatalf("Error creating fundingTransaction: %v", err)
 		}
 		blockDHash, _, err := testConsensus.AddBlock([]*externalapi.DomainHash{blockCHash}, nil,
-			[]*externalapi.DomainTransaction{foundingTransaction})
+			[]*externalapi.DomainTransaction{fundingTransaction})
 		if err != nil {
 			t.Fatalf("Error creating blockD: %v", err)
 		}
@@ -167,7 +167,7 @@ func TestCheckLockTimeVerifyConditionedByAbsoluteTime(t *testing.T) {
 			Version: constants.MaxScriptPublicKeyVersion,
 			Script:  p2shScriptCLTV,
 		}
-		transactionWithLockedOutput, err := createTransactionWithLockedOutput(foundingTransaction, fees, &scriptPublicKeyCLTV)
+		transactionWithLockedOutput, err := createTransactionWithLockedOutput(fundingTransaction, fees, &scriptPublicKeyCLTV)
 		if err != nil {
 			t.Fatalf("Error in createTransactionWithLockedOutput: %v", err)
 		}
