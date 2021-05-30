@@ -592,6 +592,7 @@ message GetInfoResponseMessage{
 
 message EstimateNetworkHashesPerSecondRequestMessage{
   uint32 windowSize = 1;
+  string blockHash = 2;
 }
 
 message EstimateNetworkHashesPerSecondResponseMessage{

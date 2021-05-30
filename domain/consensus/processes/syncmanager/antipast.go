@@ -71,7 +71,7 @@ func (sm *syncManager) antiPastHashesBetween(stagingArea *model.StagingArea, low
 		// Since the rest of the merge set is in the anticone of selectedParent, it's position in the list does not
 		// matter, even though it's blue score is the highest, we can arbitrarily decide it comes first.
 		// Therefore we first append the selectedParent, then the rest of blocks in ghostdag order.
-		sortedMergeSet, err := sm.getSortedMergeSet(stagingArea, current)
+		sortedMergeSet, err := sm.ghostdagManager.GetSortedMergeSet(stagingArea, current)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -97,49 +97,9 @@ func (sm *syncManager) antiPastHashesBetween(stagingArea *model.StagingArea, low
 	return blockHashes, highHash, nil
 }
 
-func (sm *syncManager) getSortedMergeSet(stagingArea *model.StagingArea, current *externalapi.DomainHash) (
-	[]*externalapi.DomainHash, error) {
-
-	currentGhostdagData, err := sm.ghostdagDataStore.Get(sm.databaseContext, stagingArea, current)
-	if err != nil {
-		return nil, err
-	}
-
-	blueMergeSet := currentGhostdagData.MergeSetBlues()
-	redMergeSet := currentGhostdagData.MergeSetReds()
-	sortedMergeSet := make([]*externalapi.DomainHash, 0, len(blueMergeSet)+len(redMergeSet))
-	selectedParent, blueMergeSet := blueMergeSet[0], blueMergeSet[1:]
-	sortedMergeSet = append(sortedMergeSet, selectedParent)
-	i, j := 0, 0
-	for i < len(blueMergeSet) && j < len(redMergeSet) {
-		currentBlue := blueMergeSet[i]
-		currentBlueGhostdagData, err := sm.ghostdagDataStore.Get(sm.databaseContext, stagingArea, currentBlue)
-		if err != nil {
-			return nil, err
-		}
-		currentRed := redMergeSet[j]
-		currentRedGhostdagData, err := sm.ghostdagDataStore.Get(sm.databaseContext, stagingArea, currentRed)
-		if err != nil {
-			return nil, err
-		}
-		if sm.ghostdagManager.Less(currentBlue, currentBlueGhostdagData, currentRed, currentRedGhostdagData) {
-			sortedMergeSet = append(sortedMergeSet, currentBlue)
-			i++
-		} else {
-			sortedMergeSet = append(sortedMergeSet, currentRed)
-			j++
-		}
-	}
-	sortedMergeSet = append(sortedMergeSet, blueMergeSet[i:]...)
-	sortedMergeSet = append(sortedMergeSet, redMergeSet[j:]...)
-
-	return sortedMergeSet, nil
-}
-
-func (sm *syncManager) findHighHashAccordingToMaxBlueScoreDifference(stagingArea *model.StagingArea,
-	lowHash *externalapi.DomainHash, highHash *externalapi.DomainHash, maxBlueScoreDifference uint64,
-	highBlockGHOSTDAGData *model.BlockGHOSTDAGData, lowBlockGHOSTDAGData *model.BlockGHOSTDAGData) (
-	*externalapi.DomainHash, error) {
+func (sm *syncManager) findHighHashAccordingToMaxBlueScoreDifference(stagingArea *model.StagingArea, lowHash *externalapi.DomainHash,
+	highHash *externalapi.DomainHash, maxBlueScoreDifference uint64, highBlockGHOSTDAGData *model.BlockGHOSTDAGData,
+	lowBlockGHOSTDAGData *model.BlockGHOSTDAGData) (*externalapi.DomainHash, error) {
 
 	if highBlockGHOSTDAGData.BlueScore()-lowBlockGHOSTDAGData.BlueScore() <= maxBlueScoreDifference {
 		return highHash, nil

@@ -48,6 +48,10 @@ func setField(commandValue reflect.Value, parameterValue reflect.Value, paramete
 }
 
 func stringToValue(parameterDesc *parameterDescription, valueStr string) (reflect.Value, error) {
+	if valueStr == "-" {
+		return reflect.Zero(parameterDesc.typeof), nil
+	}
+
 	var value interface{}
 	var err error
 	switch parameterDesc.typeof.Kind() {
