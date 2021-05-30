@@ -39,7 +39,7 @@ func send(conf *sendConfig) error {
 		return err
 	}
 
-	mnemonics, err := keysFile.DecryptMnemonics()
+	mnemonics, err := keysFile.DecryptMnemonics(conf.Password)
 	if err != nil {
 		return err
 	}

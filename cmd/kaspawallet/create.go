@@ -18,7 +18,7 @@ func create(conf *createConfig) error {
 	var err error
 	isMultisig := conf.NumPublicKeys > 1
 	if !conf.Import {
-		encryptedMnemonics, signerExtendedPublicKeys, err = keys.CreateMnemonics(conf.NetParams(), conf.NumPrivateKeys, isMultisig)
+		encryptedMnemonics, signerExtendedPublicKeys, err = keys.CreateMnemonics(conf.NetParams(), conf.NumPrivateKeys, conf.Password, isMultisig)
 	} else {
 		encryptedMnemonics, signerExtendedPublicKeys, err = keys.ImportMnemonics(conf.NetParams(), conf.NumPrivateKeys, isMultisig)
 	}
@@ -63,7 +63,7 @@ func create(conf *createConfig) error {
 		ECDSA:              conf.ECDSA,
 	}
 
-	err = file.SetPath(conf.NetParams(), conf.KeysFile)
+	err = file.SetPath(conf.NetParams(), conf.KeysFile, conf.Yes)
 	if err != nil {
 		return err
 	}
