@@ -68,6 +68,9 @@ func TestCheckLockTimeVerifyConditionedByBlockHeight(t *testing.T) {
 			Script:  p2shScriptCLTV,
 		}
 		transactionWithLockedOutput, err := createTransactionWithLockedOutput(foundingTransaction, fees, &scriptPublicKeyCLTV)
+		if err != nil {
+			t.Fatalf("Error in createTransactionWithLockedOutput: %v", err)
+		}
 		// BlockE contains the locked output (locked by CLTV).
 		// This block should be valid since CLTV script locked only the output.
 		blockEHash, _, err := testConsensus.AddBlock([]*externalapi.DomainHash{blockDHash}, nil,
@@ -147,7 +150,7 @@ func TestCheckLockTimeVerifyConditionedByAbsoluteTime(t *testing.T) {
 		}
 		blockD, err := testConsensus.GetBlock(blockDHash)
 		if err != nil {
-			t.Fatalf("Failed getting blockC: %v", err)
+			t.Fatalf("Failed getting blockD: %v", err)
 		}
 		//Create a CLTV script:
 		numOfSecondsToWait := int64(12 * 1000)
@@ -165,6 +168,9 @@ func TestCheckLockTimeVerifyConditionedByAbsoluteTime(t *testing.T) {
 			Script:  p2shScriptCLTV,
 		}
 		transactionWithLockedOutput, err := createTransactionWithLockedOutput(foundingTransaction, fees, &scriptPublicKeyCLTV)
+		if err != nil {
+			t.Fatalf("Error in createTransactionWithLockedOutput: %v", err)
+		}
 		// BlockE contains the locked output (locked by CLTV).
 		// This block should be valid since CLTV script locked only the output.
 		blockEHash, _, err := testConsensus.AddBlock([]*externalapi.DomainHash{blockDHash}, nil,
