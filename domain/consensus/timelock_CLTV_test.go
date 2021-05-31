@@ -26,18 +26,22 @@ func TestCheckLockTimeVerifyConditionedByBlockHeight(t *testing.T) {
 		}
 		defer teardown(false)
 
+		currentBlockHeight := int64(0)
 		blockAHash, _, err := testConsensus.AddBlock([]*externalapi.DomainHash{testConsensus.DAGParams().GenesisHash}, nil, nil)
 		if err != nil {
 			t.Fatalf("Error creating blockA: %v", err)
 		}
+		currentBlockHeight++
 		blockBHash, _, err := testConsensus.AddBlock([]*externalapi.DomainHash{blockAHash}, nil, nil)
 		if err != nil {
 			t.Fatalf("Error creating blockB: %v", err)
 		}
+		currentBlockHeight++
 		blockCHash, _, err := testConsensus.AddBlock([]*externalapi.DomainHash{blockBHash}, nil, nil)
 		if err != nil {
 			t.Fatalf("Error creating blockC: %v", err)
 		}
+		currentBlockHeight++
 		blockC, err := testConsensus.GetBlock(blockCHash)
 		if err != nil {
 			t.Fatalf("Failed getting blockC: %v", err)
@@ -52,10 +56,10 @@ func TestCheckLockTimeVerifyConditionedByBlockHeight(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Error creating blockD: %v", err)
 		}
-
+		currentBlockHeight++
 		//Create a CLTV script:
-		numOfBlocksToWait := int64(30)
-		redeemScriptCLTV, err := createScriptCLTV(numOfBlocksToWait)
+		targetBlockHeight := int64(30)
+		redeemScriptCLTV, err := createScriptCLTV(targetBlockHeight)
 		if err != nil {
 			t.Fatalf("Failed to create a script using createScriptCLTV: %v", err)
 		}
@@ -78,27 +82,30 @@ func TestCheckLockTimeVerifyConditionedByBlockHeight(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Error creating blockE: %v", err)
 		}
+		currentBlockHeight++
 		// Create a transaction that tries to spend the locked output.
 		transactionThatSpentTheLockedOutput, err := createTransactionThatSpentTheLockedOutput(transactionWithLockedOutput,
-			fees, redeemScriptCLTV, numOfBlocksToWait)
+			fees, redeemScriptCLTV, targetBlockHeight)
 		if err != nil {
 			t.Fatalf("Error creating transactionThatSpentTheLockedOutput: %v", err)
 		}
 		// Add a block that contains a transaction that spends the locked output before the time, and therefore should be failed.
-		// (x blocks should be added before the output will be spendable, where x = 'numOfBlocksToWait' ).
+		// (The block height should be x, before the output will be spendable, where x = 'targetBlockHeight' ).
 		_, _, err = testConsensus.AddBlock([]*externalapi.DomainHash{blockEHash}, nil,
 			[]*externalapi.DomainTransaction{transactionThatSpentTheLockedOutput})
 		if err == nil || !errors.Is(err, ruleerrors.ErrUnfinalizedTx) {
 			t.Fatalf("Expected block to be invalid with err: %v, instead found: %v", ruleerrors.ErrUnfinalizedTx, err)
 		}
 
-		// Add x blocks to release the locked output, where x = 'numOfBlocksToWait'.
+		// Add blocks to release the locked output, the block height should be 'numOfBlocksToWait'.
 		tipHash := blockEHash
-		for i := int64(0); i < numOfBlocksToWait; i++ {
+		numOfBlocksToAdd := targetBlockHeight - currentBlockHeight
+		for i := int64(0); i < numOfBlocksToAdd; i++ {
 			tipHash, _, err = testConsensus.AddBlock([]*externalapi.DomainHash{tipHash}, nil, nil)
 			if err != nil {
 				t.Fatalf("Error creating tip: %v", err)
 			}
+
 		}
 		// Tries to spend the output that should be no longer locked
 		_, _, err = testConsensus.AddBlock([]*externalapi.DomainHash{tipHash}, nil,
@@ -154,8 +161,8 @@ func TestCheckLockTimeVerifyConditionedByAbsoluteTime(t *testing.T) {
 		}
 		//Create a CLTV script:
 		numOfSecondsToWait := int64(12 * 1000)
-		lockTimeStamp := blockD.Header.TimeInMilliseconds() + numOfSecondsToWait
-		redeemScriptCLTV, err := createScriptCLTV(lockTimeStamp)
+		lockTimeTarget := blockD.Header.TimeInMilliseconds() + numOfSecondsToWait
+		redeemScriptCLTV, err := createScriptCLTV(lockTimeTarget)
 		if err != nil {
 			t.Fatalf("Failed to create a script using createScriptCLTV: %v", err)
 		}
@@ -184,7 +191,7 @@ func TestCheckLockTimeVerifyConditionedByAbsoluteTime(t *testing.T) {
 		}
 		// Create a transaction that tries to spend the locked output.
 		transactionThatSpentTheLockedOutput, err := createTransactionThatSpentTheLockedOutput(transactionWithLockedOutput,
-			fees, redeemScriptCLTV, lockTimeStamp)
+			fees, redeemScriptCLTV, lockTimeTarget)
 		if err != nil {
 			t.Fatalf("Error creating transactionThatSpentTheLockedOutput: %v", err)
 		}
@@ -222,7 +229,7 @@ func TestCheckLockTimeVerifyConditionedByAbsoluteTime(t *testing.T) {
 			if err != nil {
 				t.Fatalf("Failed getting pastMedianTime: %v", err)
 			}
-			if pastMedianTime > lockTimeStamp {
+			if pastMedianTime > lockTimeTarget {
 				break
 			}
 		}
@@ -235,9 +242,9 @@ func TestCheckLockTimeVerifyConditionedByAbsoluteTime(t *testing.T) {
 	})
 }
 
-func createScriptCLTV(blockHeightOrAbsoluteTime int64) ([]byte, error) {
+func createScriptCLTV(blockHeightOrAbsoluteTimeTarget int64) ([]byte, error) {
 	scriptBuilder := txscript.NewScriptBuilder()
-	scriptBuilder.AddInt64(blockHeightOrAbsoluteTime)
+	scriptBuilder.AddInt64(blockHeightOrAbsoluteTimeTarget)
 	scriptBuilder.AddOp(txscript.OpCheckLockTimeVerify)
 	scriptBuilder.AddOp(txscript.OpTrue)
 	return scriptBuilder.Script()
