@@ -112,6 +112,9 @@ message KaspadMessage {
     PruningPointUTXOSetOverrideNotificationMessage pruningPointUTXOSetOverrideNotification = 1069;
     StopNotifyingPruningPointUTXOSetOverrideRequestMessage stopNotifyingPruningPointUTXOSetOverrideRequest = 1070;
     StopNotifyingPruningPointUTXOSetOverrideResponseMessage stopNotifyingPruningPointUTXOSetOverrideResponse = 1071;
+    NotifyVirtualDaaScoreChangedRequestMessage notifyVirtualDaaScoreChangedRequest = 1072;
+    NotifyVirtualDaaScoreChangedResponseMessage notifyVirtualDaaScoreChangedResponse = 1073;
+    VirtualDaaScoreChangedNotificationMessage virtualDaaScoreChangedNotification = 1074;
   }
 }
 

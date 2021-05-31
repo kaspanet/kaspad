@@ -30,6 +30,7 @@ type NotificationListener struct {
 	propagateFinalityConflictResolvedNotifications              bool
 	propagateUTXOsChangedNotifications                          bool
 	propagateVirtualSelectedParentBlueScoreChangedNotifications bool
+	propagateVirtualDaaScoreChangedNotifications                bool
 	propagatePruningPointUTXOSetOverrideNotifications           bool
 
 	propagateUTXOsChangedNotificationAddresses map[utxoindex.ScriptPublicKeyString]*UTXOsChangedNotificationAddress
@@ -181,6 +182,25 @@ func (nm *NotificationManager) NotifyVirtualSelectedParentBlueScoreChanged(
 	return nil
 }
 
+// NotifyVirtualDaaScoreChanged notifies the notification manager that the DAG's
+// virtual DAA score has changed
+func (nm *NotificationManager) NotifyVirtualDaaScoreChanged(
+	notification *appmessage.VirtualDaaScoreChangedNotificationMessage) error {
+
+	nm.RLock()
+	defer nm.RUnlock()
+
+	for router, listener := range nm.listeners {
+		if listener.propagateVirtualDaaScoreChangedNotifications {
+			err := router.OutgoingRoute().Enqueue(notification)
+			if err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
 // NotifyPruningPointUTXOSetOverride notifies the notification manager that the UTXO index
 // reset due to pruning point change via IBD.
 func (nm *NotificationManager) NotifyPruningPointUTXOSetOverride() error {
@@ -306,6 +326,12 @@ func (nl *NotificationListener) convertUTXOChangesToUTXOsChangedNotification(
 // virtual selected parent blue score notifications to the remote listener
 func (nl *NotificationListener) PropagateVirtualSelectedParentBlueScoreChangedNotifications() {
 	nl.propagateVirtualSelectedParentBlueScoreChangedNotifications = true
+}
+
+// PropagateVirtualDaaScoreChangedNotifications instructs the listener to send
+// virtual DAA score notifications to the remote listener
+func (nl *NotificationListener) PropagateVirtualDaaScoreChangedNotifications() {
+	nl.propagateVirtualDaaScoreChangedNotifications = true
 }
 
 // PropagatePruningPointUTXOSetOverrideNotifications instructs the listener to send pruning point UTXO set override notifications
