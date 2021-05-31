@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-func TestVirtualSelectedParentBlueScore(t *testing.T) {
+func TestVirtualSelectedParentBlueScoreAndVirtualDAAScore(t *testing.T) {
 	// Setup a single kaspad instance
 	harnessParams := &harnessParams{
 		p2pAddress:              p2pAddress1,
