@@ -528,6 +528,25 @@ message VirtualSelectedParentBlueScoreChangedNotificationMessage {
   uint64 virtualSelectedParentBlueScore = 1;
 }
 
+// NotifyVirtualDaaScoreChangedRequestMessage registers this connection for
+// virtualDaaScoreChanged notifications.
+//
+// See: VirtualDaaScoreChangedNotificationMessage
+message NotifyVirtualDaaScoreChangedRequestMessage {
+}
+
+message NotifyVirtualDaaScoreChangedResponseMessage {
+  RPCError error = 1000;
+}
+
+// VirtualDaaScoreChangedNotificationMessage is sent whenever the DAA score
+// of the virtual changes.
+//
+// See NotifyVirtualDaaScoreChangedRequestMessage
+message VirtualDaaScoreChangedNotificationMessage {
+  uint64 virtualDaaScore = 1;
+}
+
 // NotifyPruningPointUTXOSetOverrideRequestMessage registers this connection for
 // pruning point UTXO set override notifications.
 //
