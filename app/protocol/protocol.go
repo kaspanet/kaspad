@@ -1,8 +1,6 @@
 package protocol
 
 import (
-	"github.com/kaspanet/kaspad/app/protocol/flows/rejects"
-	"github.com/kaspanet/kaspad/infrastructure/network/connmanager"
 	"sync"
 	"sync/atomic"
 
@@ -11,10 +9,12 @@ import (
 	"github.com/kaspanet/kaspad/app/protocol/flows/blockrelay"
 	"github.com/kaspanet/kaspad/app/protocol/flows/handshake"
 	"github.com/kaspanet/kaspad/app/protocol/flows/ping"
+	"github.com/kaspanet/kaspad/app/protocol/flows/rejects"
 	"github.com/kaspanet/kaspad/app/protocol/flows/transactionrelay"
 	peerpkg "github.com/kaspanet/kaspad/app/protocol/peer"
 	"github.com/kaspanet/kaspad/app/protocol/protocolerrors"
 	"github.com/kaspanet/kaspad/infrastructure/network/addressmanager"
+	"github.com/kaspanet/kaspad/infrastructure/network/connmanager"
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter"
 	routerpkg "github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
 	"github.com/pkg/errors"
@@ -106,7 +106,7 @@ func (m *Manager) handleError(err error, netConnection *netadapter.NetConnection
 			log.Warnf("Banning %s (reason: %s)", netConnection, protocolErr.Cause)
 
 			err := m.context.ConnectionManager().Ban(netConnection)
-			if !errors.Is(err, connmanager.ErrCannotBanPermanent) {
+			if err != nil && !errors.Is(err, connmanager.ErrCannotBanPermanent) {
 				panic(err)
 			}
 
