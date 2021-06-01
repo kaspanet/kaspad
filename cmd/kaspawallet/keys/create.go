@@ -14,7 +14,7 @@ import (
 )
 
 // CreateMnemonics generates `numKeys` number of mnemonics.
-func CreateMnemonics(params *dagconfig.Params, numKeys uint32, confPassword string, isMultisig bool) (encryptedPrivateKeys []*EncryptedMnemonic, extendedPublicKeys []string, err error) {
+func CreateMnemonics(params *dagconfig.Params, numKeys uint32, cmdLinePassword string, isMultisig bool) (encryptedPrivateKeys []*EncryptedMnemonic, extendedPublicKeys []string, err error) {
 	mnemonics := make([]string, numKeys)
 	for i := uint32(0); i < numKeys; i++ {
 		var err error
@@ -24,11 +24,11 @@ func CreateMnemonics(params *dagconfig.Params, numKeys uint32, confPassword stri
 		}
 	}
 
-	return encryptedMnemonicExtendedPublicKeyPairs(params, mnemonics, confPassword, isMultisig)
+	return encryptedMnemonicExtendedPublicKeyPairs(params, mnemonics, cmdLinePassword, isMultisig)
 }
 
 // ImportMnemonics imports a `numKeys` of mnemonics.
-func ImportMnemonics(params *dagconfig.Params, numKeys uint32, isMultisig bool) (encryptedPrivateKeys []*EncryptedMnemonic, extendedPublicKeys []string, err error) {
+func ImportMnemonics(params *dagconfig.Params, numKeys uint32, cmdLinePassword string, isMultisig bool) (encryptedPrivateKeys []*EncryptedMnemonic, extendedPublicKeys []string, err error) {
 	mnemonics := make([]string, numKeys)
 	for i := uint32(0); i < numKeys; i++ {
 		fmt.Printf("Enter mnemonic #%d here:\n", i+1)
@@ -44,12 +44,12 @@ func ImportMnemonics(params *dagconfig.Params, numKeys uint32, isMultisig bool) 
 
 		mnemonics[i] = string(mnemonic)
 	}
-	return encryptedMnemonicExtendedPublicKeyPairs(params, mnemonics, "", isMultisig)
+	return encryptedMnemonicExtendedPublicKeyPairs(params, mnemonics, cmdLinePassword, isMultisig)
 }
 
-func encryptedMnemonicExtendedPublicKeyPairs(params *dagconfig.Params, mnemonics []string, confPassword string, isMultisig bool) (
+func encryptedMnemonicExtendedPublicKeyPairs(params *dagconfig.Params, mnemonics []string, cmdLinePassword string, isMultisig bool) (
 	encryptedPrivateKeys []*EncryptedMnemonic, extendedPublicKeys []string, err error) {
-	password := []byte(confPassword)
+	password := []byte(cmdLinePassword)
 	if len(password) == 0 {
 
 		password = getPassword("Enter password for the key file:")

@@ -109,12 +109,12 @@ func (d *File) fromJSON(fileJSON *keysFileJSON) error {
 }
 
 // SetPath sets the path where the file is saved to.
-func (d *File) SetPath(params *dagconfig.Params, path string, yes bool) error {
+func (d *File) SetPath(params *dagconfig.Params, path string, forceOverride bool) error {
 	if path == "" {
 		path = defaultKeysFile(params)
 	}
 
-	if !yes {
+	if !forceOverride {
 		exists, err := pathExists(path)
 		if err != nil {
 			return err
@@ -176,8 +176,8 @@ func (d *File) LastUsedInternalIndex() uint32 {
 
 // DecryptMnemonics asks the user to enter the password for the private keys and
 // returns the decrypted private keys.
-func (d *File) DecryptMnemonics(confPassword string) ([]string, error) {
-	password := []byte(confPassword)
+func (d *File) DecryptMnemonics(cmdLinePassword string) ([]string, error) {
+	password := []byte(cmdLinePassword)
 	if len(password) == 0 {
 		password = getPassword("Password:")
 	}
