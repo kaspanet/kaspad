@@ -793,6 +793,27 @@ func toRPCPayload(message appmessage.Message) (isKaspadMessage_Payload, error) {
 			return nil, err
 		}
 		return payload, nil
+	case *appmessage.NotifyVirtualDaaScoreChangedRequestMessage:
+		payload := new(KaspadMessage_NotifyVirtualDaaScoreChangedRequest)
+		err := payload.fromAppMessage(message)
+		if err != nil {
+			return nil, err
+		}
+		return payload, nil
+	case *appmessage.NotifyVirtualDaaScoreChangedResponseMessage:
+		payload := new(KaspadMessage_NotifyVirtualDaaScoreChangedResponse)
+		err := payload.fromAppMessage(message)
+		if err != nil {
+			return nil, err
+		}
+		return payload, nil
+	case *appmessage.VirtualDaaScoreChangedNotificationMessage:
+		payload := new(KaspadMessage_VirtualDaaScoreChangedNotification)
+		err := payload.fromAppMessage(message)
+		if err != nil {
+			return nil, err
+		}
+		return payload, nil
 	default:
 		return nil, nil
 	}
