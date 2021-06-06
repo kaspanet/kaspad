@@ -2,10 +2,11 @@
 // Use of this source code is governed by an ISC
 // license that can be found in the LICENSE file.
 
-package mempool
+package mempool_old
 
 import (
 	"fmt"
+
 	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
 
 	consensusexternalapi "github.com/kaspanet/kaspad/domain/consensus/model/externalapi"

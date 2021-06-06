@@ -1,9 +1,10 @@
 package miningmanager_test
 
 import (
-	"github.com/kaspanet/kaspad/domain/miningmanager/mempool"
 	"strings"
 	"testing"
+
+	"github.com/kaspanet/kaspad/domain/miningmanager/mempool_old"
 
 	"github.com/kaspanet/kaspad/domain/consensus"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
@@ -84,8 +85,8 @@ func TestImmatureSpend(t *testing.T) {
 		miningManager := miningFactory.NewMiningManager(tc, &consensusConfig.Params)
 		tx := createTransactionWithUTXOEntry(t, 0)
 		err = miningManager.ValidateAndInsertTransaction(tx, false)
-		txRuleError := &mempool.TxRuleError{}
-		if !errors.As(err, txRuleError) || txRuleError.RejectCode != mempool.RejectImmatureSpend {
+		txRuleError := &mempool_old.TxRuleError{}
+		if !errors.As(err, txRuleError) || txRuleError.RejectCode != mempool_old.RejectImmatureSpend {
 			t.Fatalf("Unexpected error %+v", err)
 		}
 		transactionsFromMempool := miningManager.AllTransactions()
