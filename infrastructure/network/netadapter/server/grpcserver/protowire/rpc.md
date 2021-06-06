@@ -83,6 +83,9 @@
     - [NotifyVirtualSelectedParentBlueScoreChangedRequestMessage](#protowire.NotifyVirtualSelectedParentBlueScoreChangedRequestMessage)
     - [NotifyVirtualSelectedParentBlueScoreChangedResponseMessage](#protowire.NotifyVirtualSelectedParentBlueScoreChangedResponseMessage)
     - [VirtualSelectedParentBlueScoreChangedNotificationMessage](#protowire.VirtualSelectedParentBlueScoreChangedNotificationMessage)
+    - [NotifyVirtualDaaScoreChangedRequestMessage](#protowire.NotifyVirtualDaaScoreChangedRequestMessage)
+    - [NotifyVirtualDaaScoreChangedResponseMessage](#protowire.NotifyVirtualDaaScoreChangedResponseMessage)
+    - [VirtualDaaScoreChangedNotificationMessage](#protowire.VirtualDaaScoreChangedNotificationMessage)
     - [NotifyPruningPointUTXOSetOverrideRequestMessage](#protowire.NotifyPruningPointUTXOSetOverrideRequestMessage)
     - [NotifyPruningPointUTXOSetOverrideResponseMessage](#protowire.NotifyPruningPointUTXOSetOverrideResponseMessage)
     - [PruningPointUTXOSetOverrideNotificationMessage](#protowire.PruningPointUTXOSetOverrideNotificationMessage)
@@ -1375,6 +1378,52 @@ See NotifyVirtualSelectedParentBlueScoreChangedRequestMessage
 
 
 
+<a name="protowire.NotifyVirtualDaaScoreChangedRequestMessage"></a>
+
+### NotifyVirtualDaaScoreChangedRequestMessage
+NotifyVirtualDaaScoreChangedRequestMessage registers this connection for
+virtualDaaScoreChanged notifications.
+
+See: VirtualDaaScoreChangedNotificationMessage
+
+
+
+
+
+
+<a name="protowire.NotifyVirtualDaaScoreChangedResponseMessage"></a>
+
+### NotifyVirtualDaaScoreChangedResponseMessage
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| error | [RPCError](#protowire.RPCError) |  |  |
+
+
+
+
+
+
+<a name="protowire.VirtualDaaScoreChangedNotificationMessage"></a>
+
+### VirtualDaaScoreChangedNotificationMessage
+VirtualDaaScoreChangedNotificationMessage is sent whenever the DAA score
+of the virtual changes.
+
+See NotifyVirtualDaaScoreChangedRequestMessage
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| virtualDaaScore | [uint64](#uint64) |  |  |
+
+
+
+
+
+
 <a name="protowire.NotifyPruningPointUTXOSetOverrideRequestMessage"></a>
 
 ### NotifyPruningPointUTXOSetOverrideRequestMessage
@@ -1544,6 +1593,7 @@ GetInfoRequestMessage returns info about the node.
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | windowSize | [uint32](#uint32) |  |  |
+| startHash | [string](#string) |  |  |
 
 
 
