@@ -27,7 +27,7 @@ func newMempool(consensus externalapi.Consensus, dagParams *dagconfig.Params) *m
 	return mp
 }
 
-func (mp *mempool) ValidateAndInsertTransaction(transaction *externalapi.DomainTransaction, isHighPriority bool) (
+func (mp *mempool) ValidateAndInsertTransaction(transaction *externalapi.DomainTransaction, neverExpires bool) (
 	acceptedTransactions []*externalapi.DomainTransaction, err error) {
 
 	panic("mempool.ValidateAndInsertTransaction not implemented") // TODO (Mike)
