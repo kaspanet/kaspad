@@ -3,6 +3,19 @@ package mempool
 import "github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 
 type mempool struct {
+	mempoolUTXOSet   *mempoolUTXOSet
+	transactionsPool *transactionsPool
+	orphansPool      *orphansPool
+}
+
+func newMempool() *mempool {
+	mp := &mempool{}
+
+	mp.mempoolUTXOSet = newMempoolUTXOSet(mp)
+	mp.transactionsPool = newTransactionsPool(mp)
+	mp.orphansPool = newOrphansPool(mp)
+
+	return mp
 }
 
 func (mp *mempool) ValidateAndInsertTransaction(transaction *externalapi.DomainTransaction, isHighPriority bool) (

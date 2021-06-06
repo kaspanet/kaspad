@@ -2,12 +2,22 @@ package mempool
 
 import "github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 
-type orphanByPreviousOutpoint map[externalapi.DomainOutpoint]idToTransaction
+type previousOutpointToOrphans map[externalapi.DomainOutpoint]idToTransaction
 
 type orphansPool struct {
+	mempool                  *mempool
 	allOrphans               idToTransaction
-	orphanByPreviousOutpoint orphanByPreviousOutpoint
+	orphanByPreviousOutpoint previousOutpointToOrphans
 	previousExpireScan       uint64
+}
+
+func newOrphansPool(mp *mempool) *orphansPool {
+	return &orphansPool{
+		mempool:                  mp,
+		allOrphans:               idToTransaction{},
+		orphanByPreviousOutpoint: previousOutpointToOrphans{},
+		previousExpireScan:       0,
+	}
 }
 
 func (op *orphansPool) maybeAddOrphan(transaction *externalapi.DomainTransaction,
