@@ -34,8 +34,8 @@ func (mp *mempool) RemoveTransaction(transactionID *externalapi.DomainTransactio
 	panic("mempool.RemoveTransaction not implemented") // TODO (Mike)
 }
 
-func (mp *mempool) BlockCandidateTransactions() ([]*externalapi.DomainTransaction, error) {
-	panic("mempool.BlockCandidateTransactions not implemented") // TODO (Mike)
+func (mp *mempool) BlockCandidateTransactions() []*externalapi.DomainTransaction {
+	return mp.transactionsPool.allReadyTransactions()
 }
 
 func (mp *mempool) RevalidateHighPriorityTransactions() (validTransactions []*externalapi.DomainTransaction, err error) {

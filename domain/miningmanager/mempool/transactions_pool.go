@@ -35,3 +35,15 @@ func (tp *transactionsPool) addMempoolTransaction(transaction mempoolTransaction
 func (tp *transactionsPool) expireOldTransactions() error {
 	panic("transactionsPool.expireOldTransactions not implemented") // TODO (Mike)
 }
+
+func (tp *transactionsPool) allReadyTransactions() []*externalapi.DomainTransaction {
+	result := []*externalapi.DomainTransaction{}
+
+	for _, mempoolTransaction := range tp.allTransactions {
+		if len(mempoolTransaction.parentsInPool) == 0 {
+			result = append(result, mempoolTransaction.transaction)
+		}
+	}
+
+	return result
+}

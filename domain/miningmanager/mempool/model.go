@@ -5,7 +5,7 @@ import "github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 type idToTransaction map[externalapi.DomainTransactionID]*mempoolTransaction
 
 type mempoolTransaction struct {
-	transaction    externalapi.DomainTransaction
+	transaction    *externalapi.DomainTransaction
 	parentsInPool  idToTransaction
 	isHighPriority bool
 	addAtDAAScore  uint64
