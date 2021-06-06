@@ -192,26 +192,53 @@ func TestCheckSequenceVerifyConditionedByAbsoluteTime(t *testing.T) {
 			t.Fatalf("Error creating transactionThatSpentTheLockedOutput: %v", err)
 		}
 		// Add a block that contains a transaction that spends the locked output before the time, and therefore should be failed.
-		// (x blocks should be added before the output will be spendable, where x = 'numOfBlocksToWait' ).
 		_, _, err = testConsensus.AddBlock([]*externalapi.DomainHash{blockEHash}, nil,
 			[]*externalapi.DomainTransaction{transactionThatSpentTheLockedOutput})
 		if err == nil || !errors.Is(err, ruleerrors.ErrUnfinalizedTx) {
 			t.Fatalf("Expected block to be invalid with err: %v, instead found: %v", ruleerrors.ErrUnfinalizedTx, err)
 		}
-		//Add x blocks to release the locked output, where x = 'numOfBlocksToWait'.
-		//tipHash := blockEHash
-		//for i := int64(0); i < numOfBlocksToWait; i++ {
-		//	tipHash, _, err = testConsensus.AddBlock([]*externalapi.DomainHash{tipHash}, nil, nil)
-		//	if err != nil {
-		//		t.Fatalf("Error creating tip: %v", err)
-		//	}
-		//}
+		emptyCoinbase := externalapi.DomainCoinbaseData{
+			ScriptPublicKey: &externalapi.ScriptPublicKey{
+				Script:  nil,
+				Version: 0,
+			},
+		}
+		var tipHash *externalapi.DomainHash
+		blockE, err := testConsensus.GetBlock(blockEHash)
+		if err != nil {
+			t.Fatalf("Failed to get blockE: %v", err)
+		}
+		timeStampBlockE := blockE.Header.TimeInMilliseconds()
+		stagingArea := model.NewStagingArea()
+		// Make sure the time limitation has passed.
+		lockTimeTarget := blockE.Header.TimeInMilliseconds() + timeToWait
+		for i := int64(0); ; i++ {
+			tipBlock, err := testConsensus.BuildBlock(&emptyCoinbase, nil)
+			if err != nil {
+				t.Fatalf("Error creating tip using BuildBlock: %v", err)
+			}
+			blockHeader := tipBlock.Header.ToMutable()
+			blockHeader.SetTimeInMilliseconds(timeStampBlockE + i*1000)
+			tipBlock.Header = blockHeader.ToImmutable()
+			_, err = testConsensus.ValidateAndInsertBlock(tipBlock)
+			if err != nil {
+				t.Fatalf("Error validating and inserting tip block: %v", err)
+			}
+			tipHash = consensushashing.BlockHash(tipBlock)
+			pastMedianTime, err := testConsensus.PastMedianTimeManager().PastMedianTime(stagingArea, tipHash)
+			if err != nil {
+				t.Fatalf("Failed getting pastMedianTime: %v", err)
+			}
+			if pastMedianTime > lockTimeTarget {
+				break
+			}
+		}
 		// Tries to spend the output that should be no longer locked
-		//_, _, err = testConsensus.AddBlock([]*externalapi.DomainHash{tipHash}, nil,
-		//	[]*externalapi.DomainTransaction{transactionThatSpentTheLockedOutput})
-		//if err != nil {
-		//	t.Fatalf("The block should be valid since the output is not locked anymore. but got an error: %v", err)
-		//}
+		_, _, err = testConsensus.AddBlock([]*externalapi.DomainHash{tipHash}, nil,
+			[]*externalapi.DomainTransaction{transactionThatSpentTheLockedOutput})
+		if err != nil {
+			t.Fatalf("The block should be valid since the output is not locked anymore. but got an error: %v", err)
+		}
 	})
 }
 
@@ -289,10 +316,6 @@ func TestRelativeTimeOnCheckSequenceVerify(t *testing.T) {
 		currentNumOfBlocks++
 		// The 23-bit of sequence defines if it's conditioned by block height(set to 0) or by time (set to 1).
 		blockHeightBitFlag := 0
-		blockEDAAScore, err := testConsensus.DAABlocksStore().DAAScore(testConsensus.DatabaseContext(), model.NewStagingArea(), blockEHash)
-		if err != nil {
-			t.Fatalf("Failed to get DAAScore: %v", err)
-		}
 		// Create a transaction that tries to spend the locked output.
 		transactionThatSpentTheLockedOutput, err := createTransactionThatSpentTheLockedOutput(transactionWithLockedOutput,
 			fees, redeemScriptCSV, uint64(numOfBlocksToWait), blockHeightBitFlag, blockEHash, &testConsensus)
@@ -356,7 +379,7 @@ func createTransactionWithLockedOutput(txToSpend *externalapi.DomainTransaction,
 
 func createTransactionThatSpentTheLockedOutput(txToSpend *externalapi.DomainTransaction, fee uint64,
 	redeemScript []byte, lockTime uint64, flag23Bit int, lockedOutputBlockHash *externalapi.DomainHash,
-	testConsensus testapi.TestConsensus) (*externalapi.DomainTransaction, error) {
+	testConsensus *testapi.TestConsensus) (*externalapi.DomainTransaction, error) {
 
 	// the 31bit is off since its relative timelock.
 	sequence := uint64(0)
@@ -364,14 +387,14 @@ func createTransactionThatSpentTheLockedOutput(txToSpend *externalapi.DomainTran
 	// conditioned by absolute time:
 	if flag23Bit == 1 {
 		sequence |= 1 << 23
-		lockedOutputBlock, err := testConsensus.GetBlock(lockedOutputBlockHash)
+		lockedOutputBlock, err := (*testConsensus).GetBlock(lockedOutputBlockHash)
 		if err != nil {
 			return nil, err
 		}
 		lockTime += uint64(lockedOutputBlock.Header.TimeInMilliseconds())
 	} else {
 		// conditioned by block height:
-		blockDAAScore, err := testConsensus.DAABlocksStore().DAAScore(testConsensus.DatabaseContext(),
+		blockDAAScore, err := (*testConsensus).DAABlocksStore().DAAScore((*testConsensus).DatabaseContext(),
 			model.NewStagingArea(), lockedOutputBlockHash)
 		if err != nil {
 			return nil, err
@@ -394,9 +417,6 @@ func createTransactionThatSpentTheLockedOutput(txToSpend *externalapi.DomainTran
 	output := &externalapi.DomainTransactionOutput{
 		ScriptPublicKey: scriptPublicKeyOutput,
 		Value:           txToSpend.Outputs[0].Value - fee,
-	}
-	// If its conditioned by block height than
-	if flag23Bit == 0 {
 	}
 	return &externalapi.DomainTransaction{
 		Version:  constants.MaxTransactionVersion,
