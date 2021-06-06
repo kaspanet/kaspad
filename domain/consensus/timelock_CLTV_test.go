@@ -160,8 +160,8 @@ func TestCheckLockTimeVerifyConditionedByAbsoluteTime(t *testing.T) {
 			t.Fatalf("Failed getting blockD: %v", err)
 		}
 		//Create a CLTV script:
-		numOfSecondsToWait := int64(12 * 1000)
-		lockTimeTarget := blockD.Header.TimeInMilliseconds() + numOfSecondsToWait
+		timeToWait := int64(12 * 1000)
+		lockTimeTarget := blockD.Header.TimeInMilliseconds() + timeToWait
 		redeemScriptCLTV, err := createScriptCLTV(lockTimeTarget)
 		if err != nil {
 			t.Fatalf("Failed to create a script using createScriptCLTV: %v", err)
