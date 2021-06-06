@@ -8,7 +8,7 @@ type orphansPool struct {
 	mempool                  *mempool
 	allOrphans               idToTransaction
 	orphanByPreviousOutpoint previousOutpointToOrphans
-	previousExpireScan       uint64
+	lastExpireScan           uint64
 }
 
 func newOrphansPool(mp *mempool) *orphansPool {
@@ -16,7 +16,7 @@ func newOrphansPool(mp *mempool) *orphansPool {
 		mempool:                  mp,
 		allOrphans:               idToTransaction{},
 		orphanByPreviousOutpoint: previousOutpointToOrphans{},
-		previousExpireScan:       0,
+		lastExpireScan:           0,
 	}
 }
 
@@ -41,5 +41,30 @@ func (op *orphansPool) removeOrphan(orphanTransactionID *externalapi.DomainTrans
 }
 
 func (op *orphansPool) expireOrphanTransactions() error {
-	panic("orphansPool.expireOrphanTransactions not implemented") // TODO (Mike)
+	virtualDAAScore, err := op.mempool.virtualDAAScore()
+	if err != nil {
+		return err
+	}
+
+	if virtualDAAScore-op.lastExpireScan < op.mempool.config.orphanExpireScanIntervalDAAScore {
+		return nil
+	}
+
+	for _, orphanTransaction := range op.allOrphans {
+		// Never expire high priority transactions
+		if orphanTransaction.isHighPriority {
+			continue
+		}
+
+		// Remove all transactions whose addedAtDAAScore is older then transactionExpireIntervalDAAScore
+		if virtualDAAScore-orphanTransaction.addAtDAAScore > op.mempool.config.orphanExpireIntervalDAAScore {
+			err = op.removeOrphan(orphanTransaction.transactionID())
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	op.lastExpireScan = virtualDAAScore
+	return nil
 }

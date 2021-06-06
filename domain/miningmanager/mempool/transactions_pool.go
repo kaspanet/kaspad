@@ -1,6 +1,8 @@
 package mempool
 
-import "github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+import (
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+)
 
 type outpointToTransaction map[externalapi.DomainOutpoint]*mempoolTransaction
 
@@ -12,6 +14,7 @@ type transactionsPool struct {
 	highPriorityTransactions              idToTransaction
 	chainedTransactionsByPreviousOutpoint outpointToTransaction
 	transactionsByFeeRate                 transactionsByFeeHeap
+	lastExpireScan                        uint64
 }
 
 func newTransactionsPool(mp *mempool) *transactionsPool {
@@ -21,6 +24,7 @@ func newTransactionsPool(mp *mempool) *transactionsPool {
 		highPriorityTransactions:              idToTransaction{},
 		chainedTransactionsByPreviousOutpoint: outpointToTransaction{},
 		transactionsByFeeRate:                 transactionsByFeeHeap{},
+		lastExpireScan:                        0,
 	}
 }
 
@@ -33,7 +37,32 @@ func (tp *transactionsPool) addMempoolTransaction(transaction mempoolTransaction
 }
 
 func (tp *transactionsPool) expireOldTransactions() error {
-	panic("transactionsPool.expireOldTransactions not implemented") // TODO (Mike)
+	virtualDAAScore, err := tp.mempool.virtualDAAScore()
+	if err != nil {
+		return err
+	}
+
+	if virtualDAAScore-tp.lastExpireScan < tp.mempool.config.transactionExpireScanIntervalDAAScore {
+		return nil
+	}
+
+	for _, mempoolTransaction := range tp.allTransactions {
+		// Never expire high priority transactions
+		if mempoolTransaction.isHighPriority {
+			continue
+		}
+
+		// Remove all transactions whose addedAtDAAScore is older then transactionExpireIntervalDAAScore
+		if virtualDAAScore-mempoolTransaction.addAtDAAScore > tp.mempool.config.transactionExpireIntervalDAAScore {
+			err = tp.mempool.RemoveTransaction(mempoolTransaction.transactionID())
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	tp.lastExpireScan = virtualDAAScore
+	return nil
 }
 
 func (tp *transactionsPool) allReadyTransactions() []*externalapi.DomainTransaction {

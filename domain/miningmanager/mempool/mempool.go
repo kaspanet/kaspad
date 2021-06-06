@@ -1,15 +1,24 @@
 package mempool
 
-import "github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+import (
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+	"github.com/kaspanet/kaspad/domain/dagconfig"
+)
 
 type mempool struct {
+	config    *config
+	consensus externalapi.Consensus
+
 	mempoolUTXOSet   *mempoolUTXOSet
 	transactionsPool *transactionsPool
 	orphansPool      *orphansPool
 }
 
-func newMempool() *mempool {
-	mp := &mempool{}
+func newMempool(consensus externalapi.Consensus, dagParams *dagconfig.Params) *mempool {
+	mp := &mempool{
+		config:    defaultConfig(dagParams),
+		consensus: consensus,
+	}
 
 	mp.mempoolUTXOSet = newMempoolUTXOSet(mp)
 	mp.transactionsPool = newTransactionsPool(mp)
