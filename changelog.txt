@@ -1,3 +1,8 @@
+Kaspad v0.10.3 - 2021-06-06
+===========================
+Non-breaking changes:
+* Implement NotifyVirtualDaaScoreChanged (#1737)
+
 Kaspad v0.10.2 - 2021-05-18
 ===========================
 Non-breaking changes:
