@@ -105,7 +105,7 @@ func (c *ConnectionManager) initiateConnection(address string) error {
 const connectionsLoopInterval = 30 * time.Second
 
 func (c *ConnectionManager) connectionsLoop() {
-	cfg := c.cfg
+
 	for atomic.LoadUint32(&c.stop) == 0 {
 		connections := c.netAdapter.P2PConnections()
 
@@ -121,22 +121,7 @@ func (c *ConnectionManager) connectionsLoop() {
 
 		c.checkIncomingConnections(connSet)
 
-		if len(connSet) == 0 && !cfg.DisableDNSSeed {
-			log.Infof("No addresses left, trying to get new from seed...")
-
-			dnsseed.SeedFromDNS(cfg.NetParams(), cfg.DNSSeed, false, nil,
-				cfg.Lookup, func(addresses []*appmessage.NetAddress) {
-					// Kaspad uses a lookup of the dns seeder here. Since seeder returns
-					// IPs of nodes and not its own IP, we can not know real IP of
-					// source. So we'll take first returned address as source.
-					_ = c.addressManager.AddAddresses(addresses...)
-				})
-
-			dnsseed.SeedFromGRPC(cfg.NetParams(), cfg.GRPCSeed, false, nil,
-				func(addresses []*appmessage.NetAddress) {
-					_ = c.addressManager.AddAddresses(addresses...)
-				})
-		}
+		c.seedFromDNS()
 
 		c.waitTillNextIteration()
 	}
@@ -265,4 +250,24 @@ func (c *ConnectionManager) extractAddressIPs(address string) ([]net.IP, error) 
 	}
 
 	return []net.IP{ip}, nil
+}
+
+func (c *ConnectionManager) seedFromDNS() {
+	cfg := c.cfg
+	if len(c.activeOutgoing) == 0 && !cfg.DisableDNSSeed {
+		log.Infof("No ongoing connections, trying to get new addresses from seed...")
+
+		dnsseed.SeedFromDNS(cfg.NetParams(), cfg.DNSSeed, false, nil,
+			cfg.Lookup, func(addresses []*appmessage.NetAddress) {
+				// Kaspad uses a lookup of the dns seeder here. Since seeder returns
+				// IPs of nodes and not its own IP, we can not know real IP of
+				// source. So we'll take first returned address as source.
+				_ = c.addressManager.AddAddresses(addresses...)
+			})
+
+		dnsseed.SeedFromGRPC(cfg.NetParams(), cfg.GRPCSeed, false, nil,
+			func(addresses []*appmessage.NetAddress) {
+				_ = c.addressManager.AddAddresses(addresses...)
+			})
+	}
 }
