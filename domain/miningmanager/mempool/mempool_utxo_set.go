@@ -23,3 +23,7 @@ func (mpus *mempoolUTXOSet) getParentsInPool(transaction *mempoolTransaction) ([
 func (mpus *mempoolUTXOSet) addTransaction(transaction *mempoolTransaction) error {
 	panic("mempoolUTXOSet.addTransaction not implemented") // TODO (Mike)
 }
+
+func (mpus *mempoolUTXOSet) checkDoubleSpends(transaction *mempoolTransaction) error {
+	panic("mempoolUTXOSet.checkDoubleSpends not implemented") // TODO (Mike)
+}
