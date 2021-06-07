@@ -180,10 +180,10 @@ func (flow *handleRelayedTransactionsFlow) receiveTransactions(requestedTransact
 				return errors.Wrapf(err, "failed to process transaction %s", txID)
 			}
 
-			shouldBan := true
+			shouldBan := false
 			if txRuleErr := (&mempool_old.TxRuleError{}); errors.As(ruleErr.Err, txRuleErr) {
-				if txRuleErr.RejectCode != mempool_old.RejectInvalid {
-					shouldBan = false
+				if txRuleErr.RejectCode == mempool_old.RejectInvalid {
+					shouldBan = true
 				}
 			}
 
