@@ -6,13 +6,12 @@ import (
 )
 
 type idToTransaction map[externalapi.DomainTransactionID]*mempoolTransaction
-type idToOrphan map[externalapi.DomainTransactionID]*orphanTransaction
 
 type mempoolTransaction struct {
-	transaction   *externalapi.DomainTransaction
-	parentsInPool idToTransaction
-	neverExpires  bool
-	addAtDAAScore uint64
+	transaction    *externalapi.DomainTransaction
+	parentsInPool  idToTransaction
+	isHighPriority bool
+	addAtDAAScore  uint64
 }
 
 func (mt *mempoolTransaction) transactionID() *externalapi.DomainTransactionID {
@@ -21,7 +20,7 @@ func (mt *mempoolTransaction) transactionID() *externalapi.DomainTransactionID {
 
 type orphanTransaction struct {
 	transaction     *externalapi.DomainTransaction
-	neverExpires    bool
+	isHighPriority  bool
 	addedAtDAAScore uint64
 }
 

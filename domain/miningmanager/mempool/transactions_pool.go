@@ -48,7 +48,7 @@ func (tp *transactionsPool) expireOldTransactions() error {
 
 	for _, mempoolTransaction := range tp.allTransactions {
 		// Never expire high priority transactions
-		if mempoolTransaction.neverExpires {
+		if mempoolTransaction.isHighPriority {
 			continue
 		}
 
