@@ -8,10 +8,10 @@ import (
 type idToTransaction map[externalapi.DomainTransactionID]*mempoolTransaction
 
 type mempoolTransaction struct {
-	transaction    *externalapi.DomainTransaction
-	parentsInPool  idToTransaction
-	isHighPriority bool
-	addAtDAAScore  uint64
+	transaction     *externalapi.DomainTransaction
+	parentsInPool   idToTransaction
+	isHighPriority  bool
+	addedAtDAAScore uint64
 }
 
 func (mt *mempoolTransaction) transactionID() *externalapi.DomainTransactionID {

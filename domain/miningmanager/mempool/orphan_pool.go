@@ -2,11 +2,12 @@ package mempool
 
 import "github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 
-type previousOutpointToOrphans map[externalapi.DomainOutpoint]idToTransaction
+type idToOrphan map[externalapi.DomainTransactionID]*orphanTransaction
+type previousOutpointToOrphans map[externalapi.DomainOutpoint]idToOrphan
 
 type orphansPool struct {
 	mempool                  *mempool
-	allOrphans               idToTransaction
+	allOrphans               idToOrphan
 	orphanByPreviousOutpoint previousOutpointToOrphans
 	lastExpireScan           uint64
 }
@@ -14,7 +15,7 @@ type orphansPool struct {
 func newOrphansPool(mp *mempool) *orphansPool {
 	return &orphansPool{
 		mempool:                  mp,
-		allOrphans:               idToTransaction{},
+		allOrphans:               idToOrphan{},
 		orphanByPreviousOutpoint: previousOutpointToOrphans{},
 		lastExpireScan:           0,
 	}
@@ -57,7 +58,7 @@ func (op *orphansPool) expireOrphanTransactions() error {
 		}
 
 		// Remove all transactions whose addedAtDAAScore is older then transactionExpireIntervalDAAScore
-		if virtualDAAScore-orphanTransaction.addAtDAAScore > op.mempool.config.orphanExpireIntervalDAAScore {
+		if virtualDAAScore-orphanTransaction.addedAtDAAScore > op.mempool.config.orphanExpireIntervalDAAScore {
 			err = op.removeOrphan(orphanTransaction.transactionID())
 			if err != nil {
 				return err
