@@ -6,14 +6,12 @@ import (
 
 type outpointToTransaction map[externalapi.DomainOutpoint]*mempoolTransaction
 
-type transactionsByFeeHeap []*mempoolTransaction
-
 type transactionsPool struct {
 	mempool                               *mempool
 	allTransactions                       idToTransaction
 	highPriorityTransactions              idToTransaction
 	chainedTransactionsByPreviousOutpoint outpointToTransaction
-	transactionsByFeeRate                 transactionsByFeeHeap
+	transactionsByFeeRate                 transactionsOrderedByFee
 	lastExpireScan                        uint64
 }
 
@@ -23,7 +21,7 @@ func newTransactionsPool(mp *mempool) *transactionsPool {
 		allTransactions:                       idToTransaction{},
 		highPriorityTransactions:              idToTransaction{},
 		chainedTransactionsByPreviousOutpoint: outpointToTransaction{},
-		transactionsByFeeRate:                 transactionsByFeeHeap{},
+		transactionsByFeeRate:                 transactionsOrderedByFee{},
 		lastExpireScan:                        0,
 	}
 }
