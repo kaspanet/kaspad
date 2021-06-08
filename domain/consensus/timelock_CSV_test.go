@@ -15,11 +15,8 @@ import (
 	"testing"
 )
 
-//todo: Fix the relative block, open an issue on the isFinalized that should be with daa score instead of the blue score, add a test
-// with CSV with time.
-
-// TestCheckSequenceVerifyConditionedByBlockHeight verifies that locked output (by CSV script) is spendable only after
-// a certain number of blocks have added relative to the time the UTXO was mined.
+// TestCheckSequenceVerifyConditionedByBlockHeight verifies that locked output (by CSV script) is spendable
+// only after a certain number of blocks have been added relative to the time the UTXO was mined.
 // CSV - check sequence verify.
 func TestCheckSequenceVerifyConditionedByBlockHeight(t *testing.T) {
 	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
@@ -86,15 +83,14 @@ func TestCheckSequenceVerifyConditionedByBlockHeight(t *testing.T) {
 			t.Fatalf("Error creating blockE: %v", err)
 		}
 		// The 23-bit of sequence defines if it's conditioned by block height(set to 0) or by time (set to 1).
-		blockHeightBitFlag := 0
+		sequenceFlag := 0
 		// Create a transaction that tries to spend the locked output.
 		transactionThatSpentTheLockedOutput, err := createTransactionThatSpentTheLockedOutput(transactionWithLockedOutput,
-			fees, redeemScriptCSV, uint64(numOfBlocksToWait), blockHeightBitFlag, blockEHash, &testConsensus)
+			fees, redeemScriptCSV, uint64(numOfBlocksToWait), sequenceFlag, blockEHash, &testConsensus)
 		if err != nil {
 			t.Fatalf("Error creating transactionThatSpentTheLockedOutput: %v", err)
 		}
 		// Add a block that contains a transaction that spends the locked output before the time, and therefore should be failed.
-		// (x blocks should be added before the output will be spendable, where x = 'numOfBlocksToWait' ).
 		_, _, err = testConsensus.AddBlock([]*externalapi.DomainHash{blockEHash}, nil,
 			[]*externalapi.DomainTransaction{transactionThatSpentTheLockedOutput})
 		if err == nil || !errors.Is(err, ruleerrors.ErrUnfinalizedTx) {
@@ -108,7 +104,7 @@ func TestCheckSequenceVerifyConditionedByBlockHeight(t *testing.T) {
 				t.Fatalf("Error creating tip: %v", err)
 			}
 		}
-		// Tries to spend the output that should be no longer locked
+		// Tries to spend the output that should be no longer locked.
 		_, _, err = testConsensus.AddBlock([]*externalapi.DomainHash{tipHash}, nil,
 			[]*externalapi.DomainTransaction{transactionThatSpentTheLockedOutput})
 		if err != nil {
@@ -117,13 +113,13 @@ func TestCheckSequenceVerifyConditionedByBlockHeight(t *testing.T) {
 	})
 }
 
-// TestCheckSequenceVerifyConditionedByAbsoluteTime verifies that locked output (by CSV script) is spendable only after
+// TestCheckSequenceVerifyConditionedByRelativeTime verifies that locked output (by CSV script) is spendable only after
 // the time is reached to the set target relative to the time the UTXO was mined (compared to the past median time).
-func TestCheckSequenceVerifyConditionedByAbsoluteTime(t *testing.T) {
+func TestCheckSequenceVerifyConditionedByRelativeTime(t *testing.T) {
 	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
 		consensusConfig.BlockCoinbaseMaturity = 0
 		factory := consensus.NewFactory()
-		testConsensus, teardown, err := factory.NewTestConsensus(consensusConfig, "TestCheckSequenceVerifyConditionedByAbsoluteTime")
+		testConsensus, teardown, err := factory.NewTestConsensus(consensusConfig, "TestCheckSequenceVerifyConditionedByRelativeTime")
 		if err != nil {
 			t.Fatalf("Error setting up consensus: %+v", err)
 		}
@@ -158,7 +154,7 @@ func TestCheckSequenceVerifyConditionedByAbsoluteTime(t *testing.T) {
 		//create a CSV script
 		timeToWait := int64(14 * 1000)
 		if timeToWait > 0xffff {
-			t.Fatalf("More than the allowed time")
+			t.Fatalf("More than the allowed time to set.")
 		}
 		redeemScriptCSV, err := createCheckSequenceVerifyScript(timeToWait)
 		if err != nil {
@@ -184,10 +180,10 @@ func TestCheckSequenceVerifyConditionedByAbsoluteTime(t *testing.T) {
 			t.Fatalf("Error creating blockE: %v", err)
 		}
 		// The 23-bit of sequence defines if it's conditioned by block height(set to 0) or by time (set to 1).
-		blockHeightBitFlag := 1
+		sequenceFlag := 1
 		// Create a transaction that tries to spend the locked output.
 		transactionThatSpentTheLockedOutput, err := createTransactionThatSpentTheLockedOutput(transactionWithLockedOutput,
-			fees, redeemScriptCSV, uint64(timeToWait), blockHeightBitFlag, blockEHash, &testConsensus)
+			fees, redeemScriptCSV, uint64(timeToWait), sequenceFlag, blockEHash, &testConsensus)
 		if err != nil {
 			t.Fatalf("Error creating transactionThatSpentTheLockedOutput: %v", err)
 		}
@@ -242,8 +238,8 @@ func TestCheckSequenceVerifyConditionedByAbsoluteTime(t *testing.T) {
 	})
 }
 
-//TestRelativeTimeOnCheckSequenceVerify verifies that if the relative target is set to X blocks to wait and the absolute height
-// will be X before adding all the blocks then the output will remain locked( until all the X blocks are added).
+//TestRelativeTimeOnCheckSequenceVerify verifies that if the relative target is set to X blocks to wait, and the absolute height
+// will be X before adding all the blocks, then the output will remain locked( until all the X blocks are added above the locked output).
 func TestRelativeTimeOnCheckSequenceVerify(t *testing.T) {
 	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
 		consensusConfig.BlockCoinbaseMaturity = 0
@@ -315,23 +311,23 @@ func TestRelativeTimeOnCheckSequenceVerify(t *testing.T) {
 		}
 		currentNumOfBlocks++
 		// The 23-bit of sequence defines if it's conditioned by block height(set to 0) or by time (set to 1).
-		blockHeightBitFlag := 0
+		sequenceFlag := 0
 		// Create a transaction that tries to spend the locked output.
 		transactionThatSpentTheLockedOutput, err := createTransactionThatSpentTheLockedOutput(transactionWithLockedOutput,
-			fees, redeemScriptCSV, uint64(numOfBlocksToWait), blockHeightBitFlag, blockEHash, &testConsensus)
+			fees, redeemScriptCSV, uint64(numOfBlocksToWait), sequenceFlag, blockEHash, &testConsensus)
 		if err != nil {
 			t.Fatalf("Error creating transactionThatSpentTheLockedOutput: %v", err)
 		}
 		// Mines blocks so the block height will be the same as the relative number(but not enough to reach the relative target)
 		// and verify that the output is still locked.
-		// The blocks should be count from the block that contains the locked output and not as an absolute height.
-		// If changing the numbers in this test, please verifies this for loop is still valid.
+		// For unlocked the output the blocks should be count from the block that contains the locked output and not as an absolute height.
 		tipHash := blockEHash
-		for i := int64(0); i < numOfBlocksToWait-currentNumOfBlocks; i++ {
+		for currentNumOfBlocks == numOfBlocksToWait {
 			tipHash, _, err = testConsensus.AddBlock([]*externalapi.DomainHash{tipHash}, nil, nil)
 			if err != nil {
 				t.Fatalf("Error creating tip: %v", err)
 			}
+			currentNumOfBlocks++
 		}
 		_, _, err = testConsensus.AddBlock([]*externalapi.DomainHash{tipHash}, nil,
 			[]*externalapi.DomainTransaction{transactionThatSpentTheLockedOutput})
@@ -378,14 +374,14 @@ func createTransactionWithLockedOutput(txToSpend *externalapi.DomainTransaction,
 }
 
 func createTransactionThatSpentTheLockedOutput(txToSpend *externalapi.DomainTransaction, fee uint64,
-	redeemScript []byte, lockTime uint64, flag23Bit int, lockedOutputBlockHash *externalapi.DomainHash,
+	redeemScript []byte, lockTime uint64, sequenceFlag23Bit int, lockedOutputBlockHash *externalapi.DomainHash,
 	testConsensus *testapi.TestConsensus) (*externalapi.DomainTransaction, error) {
 
 	// the 31bit is off since its relative timelock.
 	sequence := uint64(0)
 	sequence |= lockTime
 	// conditioned by absolute time:
-	if flag23Bit == 1 {
+	if sequenceFlag23Bit == 1 {
 		sequence |= 1 << 23
 		lockedOutputBlock, err := (*testConsensus).GetBlock(lockedOutputBlockHash)
 		if err != nil {
