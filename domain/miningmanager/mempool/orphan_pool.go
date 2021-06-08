@@ -146,10 +146,10 @@ func (op *orphansPool) unorphanTransaction(orphanTransaction *model.MempoolTrans
 		return nil, err
 	}
 	mempoolTransaction := &model.MempoolTransaction{
-		Transaction:     orphanTransaction.Transaction,
-		ParentsInPool:   op.mempool.mempoolUTXOSet.getParentsInPool(orphanTransaction.Transaction),
-		IsHighPriority:  false,
-		AddedAtDAAScore: virtualDAAScore,
+		Transaction:              orphanTransaction.Transaction,
+		ParentTransactionsInPool: op.mempool.transactionsPool.getParentTransactionsInPool(orphanTransaction.Transaction),
+		IsHighPriority:           false,
+		AddedAtDAAScore:          virtualDAAScore,
 	}
 	err = op.mempool.transactionsPool.addMempoolTransaction(mempoolTransaction)
 	if err != nil {
@@ -165,7 +165,7 @@ func (op *orphansPool) removeOrphan(orphanTransactionID *externalapi.DomainTrans
 		return nil
 	}
 
-	delete(op.allOrphans, orphanTransactionID)
+	delete(op.allOrphans, *orphanTransactionID)
 
 	for i, input := range orphanTransaction.Transaction.Inputs {
 		orphans, ok := op.orphansByPreviousOutpoint[input.PreviousOutpoint]

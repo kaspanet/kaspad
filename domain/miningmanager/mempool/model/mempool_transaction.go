@@ -7,10 +7,10 @@ import (
 
 // MempoolTransaction represents a transaction inside the main TransactionPool
 type MempoolTransaction struct {
-	Transaction     *externalapi.DomainTransaction
-	ParentsInPool   ParentUTXOsInPool
-	IsHighPriority  bool
-	AddedAtDAAScore uint64
+	Transaction              *externalapi.DomainTransaction
+	ParentTransactionsInPool OutpointToTransaction
+	IsHighPriority           bool
+	AddedAtDAAScore          uint64
 }
 
 // TransactionID returns the ID of this MempoolTransaction

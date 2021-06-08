@@ -25,12 +25,43 @@ func newTransactionsPool(mp *mempool) *transactionsPool {
 	}
 }
 
-func (tp *transactionsPool) addTransaction(transaction *externalapi.DomainTransaction, parentsInPool []*model.MempoolTransaction) error {
-	panic("transactionsPool.addTransaction not implemented") // TODO (Mike)
+func (tp *transactionsPool) addTransaction(transaction *externalapi.DomainTransaction,
+	parentTransactionsInPool model.OutpointToTransaction, isHighPriority bool) error {
+
+	virtualDAAScore, err := tp.mempool.virtualDAAScore()
+	if err != nil {
+		return err
+	}
+
+	mempoolTransaction := &model.MempoolTransaction{
+		Transaction:              transaction,
+		ParentTransactionsInPool: parentTransactionsInPool,
+		IsHighPriority:           isHighPriority,
+		AddedAtDAAScore:          virtualDAAScore,
+	}
+
+	return tp.addMempoolTransaction(mempoolTransaction)
 }
 
 func (tp *transactionsPool) addMempoolTransaction(transaction *model.MempoolTransaction) error {
-	panic("transactionsPool.addMempoolTransaction not implemented") // TODO (Mike)
+	tp.allTransactions[*transaction.TransactionID()] = transaction
+
+	for outpoint, parentTransactionInPool := range transaction.ParentTransactionsInPool {
+		tp.chainedTransactionsByPreviousOutpoint[outpoint] = parentTransactionInPool
+	}
+
+	tp.mempool.mempoolUTXOSet.addTransaction(transaction)
+
+	err := tp.transactionsByFeeRate.Push(transaction)
+	if err != nil {
+		return err
+	}
+
+	if transaction.IsHighPriority {
+		tp.highPriorityTransactions[*transaction.TransactionID()] = transaction
+	}
+
+	return nil
 }
 
 func (tp *transactionsPool) expireOldTransactions() error {
@@ -66,10 +97,23 @@ func (tp *transactionsPool) allReadyTransactions() []*externalapi.DomainTransact
 	result := []*externalapi.DomainTransaction{}
 
 	for _, mempoolTransaction := range tp.allTransactions {
-		if len(mempoolTransaction.ParentsInPool) == 0 {
+		if len(mempoolTransaction.ParentTransactionsInPool) == 0 {
 			result = append(result, mempoolTransaction.Transaction)
 		}
 	}
 
 	return result
+}
+
+func (tp *transactionsPool) getParentTransactionsInPool(
+	transaction *externalapi.DomainTransaction) model.OutpointToTransaction {
+
+	parentsTransactionsInPool := model.OutpointToTransaction{}
+
+	for _, input := range transaction.Inputs {
+		transaction := tp.allTransactions[input.PreviousOutpoint.TransactionID]
+		parentsTransactionsInPool[input.PreviousOutpoint] = transaction
+	}
+
+	return parentsTransactionsInPool
 }
