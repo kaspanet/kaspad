@@ -3,6 +3,8 @@ package mempool
 import (
 	"fmt"
 
+	"github.com/kaspanet/kaspad/domain/consensus/utils/utxo"
+
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/estimatedsize"
 	"github.com/kaspanet/kaspad/domain/miningmanager/mempool/model"
@@ -78,15 +80,58 @@ func (op *orphansPool) addOrphan(transaction *externalapi.DomainTransaction, isH
 func (op *orphansPool) processOrphansAfterAcceptedTransaction(acceptedTransaction *model.MempoolTransaction) (
 	acceptedOrphans []*model.MempoolTransaction, err error) {
 
-	panic("orphansPool.processOrphansAfterAcceptedTransaction not implemented") // TODO (Mike)
+	acceptedOrphans = []*model.MempoolTransaction{}
+	queue := []*model.MempoolTransaction{acceptedTransaction}
+
+	for len(queue) > 0 {
+		var current *model.MempoolTransaction
+		current, queue = queue[0], queue[1:]
+
+		outpoint := externalapi.DomainOutpoint{TransactionID: *current.TransactionID()}
+		for i, output := range current.Transaction.Outputs {
+			outpoint.Index = uint32(i)
+			orphans, ok := op.orphansByPreviousOutpoint[outpoint]
+			if !ok {
+				continue
+			}
+			for _, orphan := range orphans {
+				for _, input := range orphan.Transaction.Inputs {
+					if input.PreviousOutpoint.Equal(&outpoint) {
+						input.UTXOEntry = utxo.NewUTXOEntry(output.Value, output.ScriptPublicKey, false,
+							model.UnacceptedDAAScore)
+						break
+					}
+				}
+				if countUnfilledInputs(orphan) == 0 {
+					unorphanedTransaction, err := op.unorphanTransaction(current)
+					if err != nil {
+						if errors.As(err, &RuleError{}) {
+							log.Infof("Failed to unorphan transaction %s due to rule error: %s", err)
+							continue
+						}
+						return nil, err
+					}
+					acceptedOrphans = append(acceptedOrphans, unorphanedTransaction)
+				}
+			}
+		}
+	}
+
+	return acceptedOrphans, nil
 }
 
-func (op *orphansPool) unorphanTransaction(orphanTransactionID *externalapi.DomainTransactionID) (*model.MempoolTransaction, error) {
-	orphanTransaction, ok := op.allOrphans[*orphanTransactionID]
-	if !ok {
-		return nil, errors.Errorf("Transaction %s is not an orphan", orphanTransactionID)
+func countUnfilledInputs(orphan *model.OrphanTransaction) int {
+	unfilledInputs := 0
+	for _, input := range orphan.Transaction.Inputs {
+		if input.UTXOEntry == nil {
+			unfilledInputs++
+		}
 	}
-	err := op.removeOrphan(orphanTransactionID, false)
+	return unfilledInputs
+}
+
+func (op *orphansPool) unorphanTransaction(orphanTransaction *model.MempoolTransaction) (*model.MempoolTransaction, error) {
+	err := op.removeOrphan(orphanTransaction.TransactionID(), false)
 	if err != nil {
 		return nil, err
 	}
