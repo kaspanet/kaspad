@@ -3,6 +3,7 @@ package mempool
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/dagconfig"
+	"github.com/kaspanet/kaspad/domain/miningmanager/mempool/model"
 )
 
 type mempool struct {
@@ -60,7 +61,7 @@ func (mp *mempool) validateTransactionInContext(transaction *externalapi.DomainT
 }
 
 func (mp *mempool) fillInputsAndGetMissingParents(transaction *externalapi.DomainTransaction) (
-	parents []*mempoolTransaction, missingParents []externalapi.DomainTransactionID, err error) {
+	parents []*model.MempoolTransaction, missingParents []externalapi.DomainTransactionID, err error) {
 
 	panic("mempool.fillInputsAndGetMissingParents not implemented") // TODO (Mike)
 }

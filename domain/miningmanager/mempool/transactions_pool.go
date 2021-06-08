@@ -2,35 +2,34 @@ package mempool
 
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+	"github.com/kaspanet/kaspad/domain/miningmanager/mempool/model"
 )
-
-type outpointToTransaction map[externalapi.DomainOutpoint]*mempoolTransaction
 
 type transactionsPool struct {
 	mempool                               *mempool
-	allTransactions                       idToTransaction
-	highPriorityTransactions              idToTransaction
-	chainedTransactionsByPreviousOutpoint outpointToTransaction
-	transactionsByFeeRate                 transactionsOrderedByFee
+	allTransactions                       model.IDToTransaction
+	highPriorityTransactions              model.IDToTransaction
+	chainedTransactionsByPreviousOutpoint model.OutpointToTransaction
+	transactionsByFeeRate                 model.TransactionsOrderedByFeeRate
 	lastExpireScan                        uint64
 }
 
 func newTransactionsPool(mp *mempool) *transactionsPool {
 	return &transactionsPool{
 		mempool:                               mp,
-		allTransactions:                       idToTransaction{},
-		highPriorityTransactions:              idToTransaction{},
-		chainedTransactionsByPreviousOutpoint: outpointToTransaction{},
-		transactionsByFeeRate:                 transactionsOrderedByFee{},
+		allTransactions:                       model.IDToTransaction{},
+		highPriorityTransactions:              model.IDToTransaction{},
+		chainedTransactionsByPreviousOutpoint: model.OutpointToTransaction{},
+		transactionsByFeeRate:                 model.TransactionsOrderedByFeeRate{},
 		lastExpireScan:                        0,
 	}
 }
 
-func (tp *transactionsPool) addTransaction(transaction *externalapi.DomainTransaction, parentsInPool []*mempoolTransaction) error {
+func (tp *transactionsPool) addTransaction(transaction *externalapi.DomainTransaction, parentsInPool []*model.MempoolTransaction) error {
 	panic("transactionsPool.addTransaction not implemented") // TODO (Mike)
 }
 
-func (tp *transactionsPool) addMempoolTransaction(transaction mempoolTransaction) error {
+func (tp *transactionsPool) addMempoolTransaction(transaction model.MempoolTransaction) error {
 	panic("transactionsPool.addMempoolTransaction not implemented") // TODO (Mike)
 }
 
@@ -46,13 +45,13 @@ func (tp *transactionsPool) expireOldTransactions() error {
 
 	for _, mempoolTransaction := range tp.allTransactions {
 		// Never expire high priority transactions
-		if mempoolTransaction.isHighPriority {
+		if mempoolTransaction.IsHighPriority {
 			continue
 		}
 
 		// Remove all transactions whose addedAtDAAScore is older then transactionExpireIntervalDAAScore
-		if virtualDAAScore-mempoolTransaction.addedAtDAAScore > tp.mempool.config.transactionExpireIntervalDAAScore {
-			err = tp.mempool.RemoveTransaction(mempoolTransaction.transactionID())
+		if virtualDAAScore-mempoolTransaction.AddedAtDAAScore > tp.mempool.config.transactionExpireIntervalDAAScore {
+			err = tp.mempool.RemoveTransaction(mempoolTransaction.TransactionID())
 			if err != nil {
 				return err
 			}
@@ -67,8 +66,8 @@ func (tp *transactionsPool) allReadyTransactions() []*externalapi.DomainTransact
 	result := []*externalapi.DomainTransaction{}
 
 	for _, mempoolTransaction := range tp.allTransactions {
-		if len(mempoolTransaction.parentsInPool) == 0 {
-			result = append(result, mempoolTransaction.transaction)
+		if len(mempoolTransaction.ParentsInPool) == 0 {
+			result = append(result, mempoolTransaction.Transaction)
 		}
 	}
 
