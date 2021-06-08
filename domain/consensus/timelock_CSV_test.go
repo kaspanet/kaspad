@@ -239,7 +239,7 @@ func TestCheckSequenceVerifyConditionedByRelativeTime(t *testing.T) {
 }
 
 //TestRelativeTimeOnCheckSequenceVerify verifies that if the relative target is set to X blocks to wait, and the absolute height
-// will be X before adding all the blocks, then the output will remain locked( until all the X blocks are added above the locked output).
+// will be X before adding all the blocks, then the output will remain locked.
 func TestRelativeTimeOnCheckSequenceVerify(t *testing.T) {
 	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
 		consensusConfig.BlockCoinbaseMaturity = 0
