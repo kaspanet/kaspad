@@ -1,6 +1,8 @@
 package mempool
 
 import (
+	"fmt"
+
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/utxo"
 	"github.com/kaspanet/kaspad/domain/miningmanager/mempool/model"
@@ -28,7 +30,7 @@ func (mpus *mempoolUTXOSet) getParentsInPool(transaction *model.MempoolTransacti
 	}
 	for i := range transaction.Transaction.Inputs {
 		outpoint.Index = uint32(i)
-		utxo, ok := mpus.getOutpoint(outpoint)
+		utxo, ok := mpus.poolUnspentOutputs[*outpoint]
 		if ok {
 			parentsInPool.Set(i, utxo)
 		}
@@ -70,10 +72,17 @@ func (mpus *mempoolUTXOSet) removeTransaction(transaction *model.MempoolTransact
 }
 
 func (mpus *mempoolUTXOSet) checkDoubleSpends(transaction *model.MempoolTransaction) error {
-	panic("mempoolUTXOSet.checkDoubleSpends not implemented") // TODO (Mike)
-}
+	outpoint := externalapi.DomainOutpoint{TransactionID: *transaction.TransactionID()}
 
-func (mpus *mempoolUTXOSet) getOutpoint(outpoint *externalapi.DomainOutpoint) (externalapi.UTXOEntry, bool) {
-	utxo, ok := mpus.poolUnspentOutputs[*outpoint]
-	return utxo, ok
+	for i, input := range transaction.Transaction.Inputs {
+		outpoint.Index = uint32(i)
+
+		if existingTransaction, exists := mpus.transactionsByPreviousOutpoint[input.PreviousOutpoint]; exists {
+			str := fmt.Sprintf("output %s already spent by transaction %s in the memory pool",
+				input.PreviousOutpoint, existingTransaction.TransactionID())
+			return txRuleError(RejectDuplicate, str)
+		}
+	}
+
+	return nil
 }
