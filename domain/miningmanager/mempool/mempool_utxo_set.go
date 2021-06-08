@@ -19,18 +19,21 @@ func newMempoolUTXOSet(mp *mempool) *mempoolUTXOSet {
 	}
 }
 
-func (mpus *mempoolUTXOSet) getParentsInPool(transaction *model.MempoolTransaction) (model.ParentUTXOsInPool, error) {
-	//parents := model.ParentUTXOsInPool{}
+func (mpus *mempoolUTXOSet) getParentsInPool(transaction *model.MempoolTransaction) model.ParentUTXOsInPool {
+	parentsInPool := model.ParentUTXOsInPool{}
 
-	//outpoint := &externalapi.DomainOutpoint{
-	//	TransactionID: *transaction.TransactionID(),
-	//}
-	//for i, input := transaction.Transaction.Inputs{
-	//	outpoint.Index = i
-	//	utxo, ok := mpus.getOutpoint(outpoint)
-	//}
+	outpoint := &externalapi.DomainOutpoint{
+		TransactionID: *transaction.TransactionID(),
+	}
+	for i := range transaction.Transaction.Inputs {
+		outpoint.Index = uint32(i)
+		utxo, ok := mpus.getOutpoint(outpoint)
+		if ok {
+			parentsInPool.Set(i, utxo)
+		}
+	}
 
-	panic("mempoolUTXOSet.getParentsInPool not implemented") // TODO (Mike)
+	return parentsInPool
 }
 
 func (mpus *mempoolUTXOSet) addTransaction(transaction *model.MempoolTransaction) error {

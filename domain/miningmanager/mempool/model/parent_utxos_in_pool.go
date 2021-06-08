@@ -6,11 +6,11 @@ import "github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 // The utxos are indexed by transaction output index, for convenient access.
 type ParentUTXOsInPool map[int]externalapi.UTXOEntry
 
-func (pip ParentUTXOsInPool) GetForIndex(index int) (externalapi.UTXOEntry, bool) {
+func (pip ParentUTXOsInPool) Get(index int) (externalapi.UTXOEntry, bool) {
 	utxoEntry, ok := pip[index]
 	return utxoEntry, ok
 }
 
-func (pip ParentUTXOsInPool) SetIndex(index int, utxoEntry externalapi.UTXOEntry) {
+func (pip ParentUTXOsInPool) Set(index int, utxoEntry externalapi.UTXOEntry) {
 	pip[index] = utxoEntry
 }
