@@ -40,8 +40,36 @@ func (mp *mempool) HandleNewBlockTransactions(transactions []*externalapi.Domain
 	panic("mempool.HandleNewBlockTransactions not implemented") // TODO (Mike)
 }
 
-func (mp *mempool) RemoveTransaction(transactionID *externalapi.DomainTransactionID) error {
-	panic("mempool.RemoveTransaction not implemented") // TODO (Mike)
+func (mp *mempool) RemoveTransaction(transactionID *externalapi.DomainTransactionID, removeRedeemers bool) error {
+	if _, ok := mp.orphansPool.allOrphans[*transactionID]; ok {
+		return mp.orphansPool.removeOrphan(transactionID, true)
+	}
+
+	mempoolTransaction, ok := mp.transactionsPool.allTransactions[*transactionID]
+	if !ok {
+		return nil
+	}
+
+	transactionsToRemove := []*model.MempoolTransaction{mempoolTransaction}
+	if removeRedeemers {
+		redeemers := mp.transactionsPool.getRedeemers(mempoolTransaction)
+		transactionsToRemove = append(transactionsToRemove, redeemers...)
+	}
+
+	for _, transactionToRemove := range transactionsToRemove {
+		return mp.removeTransaction(transactionToRemove)
+	}
+}
+
+func (mp *mempool) removeTransaction(mempoolTransaction *model.MempoolTransaction) error {
+	mp.mempoolUTXOSet.removeTransaction(mempoolTransaction)
+
+	err := mp.transactionsPool.removeTransaction(mempoolTransaction)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (mp *mempool) BlockCandidateTransactions() []*externalapi.DomainTransaction {

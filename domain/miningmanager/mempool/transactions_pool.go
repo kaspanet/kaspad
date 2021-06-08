@@ -10,7 +10,7 @@ type transactionsPool struct {
 	allTransactions                       model.IDToTransaction
 	highPriorityTransactions              model.IDToTransaction
 	chainedTransactionsByPreviousOutpoint model.OutpointToTransaction
-	transactionsByFeeRate                 model.TransactionsOrderedByFeeRate
+	transactionsOrderedByFeeRate          model.TransactionsOrderedByFeeRate
 	lastExpireScan                        uint64
 }
 
@@ -20,7 +20,7 @@ func newTransactionsPool(mp *mempool) *transactionsPool {
 		allTransactions:                       model.IDToTransaction{},
 		highPriorityTransactions:              model.IDToTransaction{},
 		chainedTransactionsByPreviousOutpoint: model.OutpointToTransaction{},
-		transactionsByFeeRate:                 model.TransactionsOrderedByFeeRate{},
+		transactionsOrderedByFeeRate:          model.TransactionsOrderedByFeeRate{},
 		lastExpireScan:                        0,
 	}
 }
@@ -52,13 +52,30 @@ func (tp *transactionsPool) addMempoolTransaction(transaction *model.MempoolTran
 
 	tp.mempool.mempoolUTXOSet.addTransaction(transaction)
 
-	err := tp.transactionsByFeeRate.Push(transaction)
+	err := tp.transactionsOrderedByFeeRate.Push(transaction)
 	if err != nil {
 		return err
 	}
 
 	if transaction.IsHighPriority {
 		tp.highPriorityTransactions[*transaction.TransactionID()] = transaction
+	}
+
+	return nil
+}
+
+func (tp *transactionsPool) removeTransaction(transaction *model.MempoolTransaction) error {
+	delete(tp.allTransactions, *transaction.TransactionID())
+
+	err := tp.transactionsOrderedByFeeRate.Remove(transaction)
+	if err != nil {
+		return err
+	}
+
+	delete(tp.highPriorityTransactions, *transaction.TransactionID())
+
+	for outpoint := range transaction.ParentTransactionsInPool {
+		delete(tp.chainedTransactionsByPreviousOutpoint, outpoint)
 	}
 
 	return nil
@@ -116,4 +133,23 @@ func (tp *transactionsPool) getParentTransactionsInPool(
 	}
 
 	return parentsTransactionsInPool
+}
+
+func (tp *transactionsPool) getRedeemers(transaction *model.MempoolTransaction) []*model.MempoolTransaction {
+	queue := []*model.MempoolTransaction{transaction}
+	redeemers := []*model.MempoolTransaction{}
+	for len(queue) > 0 {
+		var current *model.MempoolTransaction
+		current, queue = queue[0], queue[1:]
+
+		outpoint := externalapi.DomainOutpoint{TransactionID: *current.TransactionID()}
+		for i := range current.Transaction.Outputs {
+			outpoint.Index = uint32(i)
+			if redeemerTransaction, ok := tp.chainedTransactionsByPreviousOutpoint[outpoint]; ok {
+				queue = append(queue, redeemerTransaction)
+				redeemers = append(redeemers, redeemerTransaction)
+			}
+		}
+	}
+	return redeemers
 }
