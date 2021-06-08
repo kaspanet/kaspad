@@ -1,7 +1,10 @@
 package mempool
 
 import (
+	"fmt"
+
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/estimatedsize"
 	"github.com/kaspanet/kaspad/domain/miningmanager/mempool/model"
 	"github.com/pkg/errors"
 )
@@ -25,10 +28,51 @@ func newOrphansPool(mp *mempool) *orphansPool {
 	}
 }
 
-func (op *orphansPool) maybeAddOrphan(transaction *externalapi.DomainTransaction,
-	missingParents []*externalapi.DomainTransactionID, isHighPriority bool) error {
+func (op *orphansPool) maybeAddOrphan(transaction *externalapi.DomainTransaction, isHighPriority bool) error {
+	serializedLength := estimatedsize.TransactionEstimatedSerializedSize(transaction)
+	if serializedLength > uint64(op.mempool.config.maximumOrphanTransactionSize) {
+		str := fmt.Sprintf("orphan transaction size of %d bytes is "+
+			"larger than max allowed size of %d bytes",
+			serializedLength, op.mempool.config.maximumOrphanTransactionSize)
+		return txRuleError(RejectIncompatibleOrphan, str)
+	}
+	if op.mempool.config.maximumOrphanTransactionSize <= 0 {
+		return nil
+	}
+	for len(op.allOrphans) >= op.mempool.config.maximumOrphanTransactionSize {
+		// Don't remove redeemers in the case of a random eviction since
+		// it is quite possible it might be needed again shortly.
+		err := op.removeOrphan(op.randomOrphan().TransactionID(), false)
+		if err != nil {
+			return err
+		}
+	}
 
-	panic("orphansPool.maybeAddOrphan not implemented") // TODO (Mike)
+	return op.addOrphan(transaction, isHighPriority)
+}
+
+func (op *orphansPool) addOrphan(transaction *externalapi.DomainTransaction, isHighPriority bool) error {
+	virtualDAAScore, err := op.mempool.virtualDAAScore()
+	if err != nil {
+		return err
+	}
+	orphanTransaction := &model.OrphanTransaction{
+		Transaction:     transaction,
+		IsHighPriority:  isHighPriority,
+		AddedAtDAAScore: virtualDAAScore,
+	}
+
+	op.allOrphans[*orphanTransaction.TransactionID()] = orphanTransaction
+	for _, input := range transaction.Inputs {
+		if input.UTXOEntry == nil {
+			if _, ok := op.orphansByPreviousOutpoint[input.PreviousOutpoint]; !ok {
+				op.orphansByPreviousOutpoint[input.PreviousOutpoint] = idToOrphan{}
+			}
+			op.orphansByPreviousOutpoint[input.PreviousOutpoint][*orphanTransaction.TransactionID()] = orphanTransaction
+		}
+	}
+
+	return nil
 }
 
 func (op *orphansPool) processOrphansAfterAcceptedTransaction(acceptedTransaction *model.MempoolTransaction) (
@@ -125,9 +169,7 @@ func (op *orphansPool) expireOrphanTransactions() error {
 
 		// Remove all transactions whose addedAtDAAScore is older then transactionExpireIntervalDAAScore
 		if virtualDAAScore-orphanTransaction.AddedAtDAAScore > op.mempool.config.orphanExpireIntervalDAAScore {
-			// Don't remove redeemers in the case of a random eviction since
-			// it is quite possible it might be needed again shortly.
-			err = op.removeOrphan(orphanTransaction.TransactionID(), false)
+			err = op.removeOrphan(orphanTransaction.TransactionID(), true)
 			if err != nil {
 				return err
 			}
@@ -135,5 +177,13 @@ func (op *orphansPool) expireOrphanTransactions() error {
 	}
 
 	op.lastExpireScan = virtualDAAScore
+	return nil
+}
+
+func (op *orphansPool) randomOrphan() *model.OrphanTransaction {
+	for _, orphan := range op.allOrphans {
+		return orphan
+	}
+
 	return nil
 }
