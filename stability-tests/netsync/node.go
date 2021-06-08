@@ -193,7 +193,10 @@ func mineOnTips(client *rpc.Client) (appmessage.RejectReason, error) {
 	if err != nil {
 		return appmessage.RejectReasonNone, err
 	}
-	mine.SolveBlock(domainBlock)
+
+	if !activeConfig().NetParams().SkipProofOfWork {
+		mine.SolveBlock(domainBlock)
+	}
 
 	return client.SubmitBlock(domainBlock)
 }
