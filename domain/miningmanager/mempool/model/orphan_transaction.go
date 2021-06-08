@@ -7,12 +7,12 @@ import (
 
 // OrphanTransaction represents a transaction in the OrphanPool
 type OrphanTransaction struct {
-	transaction     *externalapi.DomainTransaction
+	Transaction     *externalapi.DomainTransaction
 	IsHighPriority  bool
 	AddedAtDAAScore uint64
 }
 
 // TransactionID returns the ID of this OrphanTransaction
 func (ot *OrphanTransaction) TransactionID() *externalapi.DomainTransactionID {
-	return consensushashing.TransactionID(ot.transaction)
+	return consensushashing.TransactionID(ot.Transaction)
 }

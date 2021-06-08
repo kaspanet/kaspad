@@ -3,24 +3,25 @@ package mempool
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/miningmanager/mempool/model"
+	"github.com/pkg/errors"
 )
 
 type idToOrphan map[externalapi.DomainTransactionID]*model.OrphanTransaction
 type previousOutpointToOrphans map[externalapi.DomainOutpoint]idToOrphan
 
 type orphansPool struct {
-	mempool                  *mempool
-	allOrphans               idToOrphan
-	orphanByPreviousOutpoint previousOutpointToOrphans
-	lastExpireScan           uint64
+	mempool                   *mempool
+	allOrphans                idToOrphan
+	orphansByPreviousOutpoint previousOutpointToOrphans
+	lastExpireScan            uint64
 }
 
 func newOrphansPool(mp *mempool) *orphansPool {
 	return &orphansPool{
-		mempool:                  mp,
-		allOrphans:               idToOrphan{},
-		orphanByPreviousOutpoint: previousOutpointToOrphans{},
-		lastExpireScan:           0,
+		mempool:                   mp,
+		allOrphans:                idToOrphan{},
+		orphansByPreviousOutpoint: previousOutpointToOrphans{},
+		lastExpireScan:            0,
 	}
 }
 
@@ -40,8 +41,41 @@ func (op *orphansPool) unorphanTransaction(orphanTransactionID *externalapi.Doma
 	panic("orphansPool.unorphanTransaction not implemented") // TODO (Mike)
 }
 
-func (op *orphansPool) removeOrphan(orphanTransactionID *externalapi.DomainTransactionID) error {
-	panic("orphansPool.removeOrphan not implemented") // TODO (Mike)
+func (op *orphansPool) removeOrphan(orphanTransactionID *externalapi.DomainTransactionID, removeRedeemers bool) error {
+	orphanTransaction, ok := op.allOrphans[*orphanTransactionID]
+	if !ok {
+		return nil
+	}
+
+	delete(op.allOrphans, orphanTransactionID)
+
+	for i, input := range orphanTransaction.Transaction.Inputs {
+		orphans, ok := op.orphansByPreviousOutpoint[input.PreviousOutpoint]
+		if !ok {
+			return errors.Errorf("Input No. %d of %s (%s) doesn't exist in orphansByPreviousOutpoint",
+				i, orphanTransactionID, input.PreviousOutpoint)
+		}
+		delete(orphans, *orphanTransactionID)
+		if len(orphans) == 0 {
+			delete(op.orphansByPreviousOutpoint, input.PreviousOutpoint)
+		}
+	}
+
+	if removeRedeemers {
+		outpoint := externalapi.DomainOutpoint{TransactionID: *orphanTransactionID}
+		for i := range orphanTransaction.Transaction.Outputs {
+			outpoint.Index = uint32(i)
+			for _, orphan := range op.orphansByPreviousOutpoint[outpoint] {
+				// Recursive call is bound by size of orphan pool (which is very small)
+				err := op.removeOrphan(orphan.TransactionID(), true)
+				if err != nil {
+					return err
+				}
+			}
+		}
+	}
+
+	return nil
 }
 
 func (op *orphansPool) expireOrphanTransactions() error {

@@ -38,8 +38,7 @@ func (tobf *TransactionsOrderedByFeeRate) Remove(transaction *MempoolTransaction
 		return errors.Errorf("Couldn't find %s in mp.orderedTransactionsByFeeRate", txID)
 	}
 
-	tobf.RemoveAtIndex(index)
-	return nil
+	return tobf.RemoveAtIndex(index)
 }
 
 // RemoveAtIndex removes the transaction at the given index.
