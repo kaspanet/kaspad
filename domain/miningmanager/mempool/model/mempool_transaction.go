@@ -8,7 +8,7 @@ import (
 // MempoolTransaction represents a transaction inside the main TransactionPool
 type MempoolTransaction struct {
 	Transaction     *externalapi.DomainTransaction
-	ParentsInPool   IDToTransaction
+	ParentsInPool   ParentUTXOsInPool
 	IsHighPriority  bool
 	AddedAtDAAScore uint64
 }

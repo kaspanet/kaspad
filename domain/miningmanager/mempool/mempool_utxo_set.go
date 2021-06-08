@@ -3,6 +3,8 @@ package mempool
 import (
 	"fmt"
 
+	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
+
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/utxo"
 	"github.com/kaspanet/kaspad/domain/miningmanager/mempool/model"
@@ -22,13 +24,13 @@ func newMempoolUTXOSet(mp *mempool) *mempoolUTXOSet {
 	}
 }
 
-func (mpus *mempoolUTXOSet) getParentsInPool(transaction *model.MempoolTransaction) model.ParentUTXOsInPool {
+func (mpus *mempoolUTXOSet) getParentsInPool(transaction *externalapi.DomainTransaction) model.ParentUTXOsInPool {
 	parentsInPool := model.ParentUTXOsInPool{}
 
 	outpoint := &externalapi.DomainOutpoint{
-		TransactionID: *transaction.TransactionID(),
+		TransactionID: *consensushashing.TransactionID(transaction),
 	}
-	for i := range transaction.Transaction.Inputs {
+	for i := range transaction.Inputs {
 		outpoint.Index = uint32(i)
 		utxo, ok := mpus.poolUnspentOutputs[*outpoint]
 		if ok {

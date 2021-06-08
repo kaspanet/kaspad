@@ -37,8 +37,37 @@ func (op *orphansPool) processOrphansAfterAcceptedTransaction(acceptedTransactio
 	panic("orphansPool.processOrphansAfterAcceptedTransaction not implemented") // TODO (Mike)
 }
 
-func (op *orphansPool) unorphanTransaction(orphanTransactionID *externalapi.DomainTransactionID) (model.MempoolTransaction, error) {
-	panic("orphansPool.unorphanTransaction not implemented") // TODO (Mike)
+func (op *orphansPool) unorphanTransaction(orphanTransactionID *externalapi.DomainTransactionID) (*model.MempoolTransaction, error) {
+	orphanTransaction, ok := op.allOrphans[*orphanTransactionID]
+	if !ok {
+		return nil, errors.Errorf("Transaction %s is not an orphan", orphanTransactionID)
+	}
+	err := op.removeOrphan(orphanTransactionID, false)
+	if err != nil {
+		return nil, err
+	}
+
+	err = op.mempool.validateTransactionInContext(orphanTransaction.Transaction)
+	if err != nil {
+		return nil, err
+	}
+
+	virtualDAAScore, err := op.mempool.virtualDAAScore()
+	if err != nil {
+		return nil, err
+	}
+	mempoolTransaction := &model.MempoolTransaction{
+		Transaction:     orphanTransaction.Transaction,
+		ParentsInPool:   op.mempool.mempoolUTXOSet.getParentsInPool(orphanTransaction.Transaction),
+		IsHighPriority:  false,
+		AddedAtDAAScore: virtualDAAScore,
+	}
+	err = op.mempool.transactionsPool.addMempoolTransaction(mempoolTransaction)
+	if err != nil {
+		return nil, err
+	}
+
+	return mempoolTransaction, nil
 }
 
 func (op *orphansPool) removeOrphan(orphanTransactionID *externalapi.DomainTransactionID, removeRedeemers bool) error {
@@ -96,7 +125,9 @@ func (op *orphansPool) expireOrphanTransactions() error {
 
 		// Remove all transactions whose addedAtDAAScore is older then transactionExpireIntervalDAAScore
 		if virtualDAAScore-orphanTransaction.AddedAtDAAScore > op.mempool.config.orphanExpireIntervalDAAScore {
-			err = op.removeOrphan(orphanTransaction.TransactionID())
+			// Don't remove redeemers in the case of a random eviction since
+			// it is quite possible it might be needed again shortly.
+			err = op.removeOrphan(orphanTransaction.TransactionID(), false)
 			if err != nil {
 				return err
 			}

@@ -29,7 +29,7 @@ func (tp *transactionsPool) addTransaction(transaction *externalapi.DomainTransa
 	panic("transactionsPool.addTransaction not implemented") // TODO (Mike)
 }
 
-func (tp *transactionsPool) addMempoolTransaction(transaction model.MempoolTransaction) error {
+func (tp *transactionsPool) addMempoolTransaction(transaction *model.MempoolTransaction) error {
 	panic("transactionsPool.addMempoolTransaction not implemented") // TODO (Mike)
 }
 
