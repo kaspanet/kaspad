@@ -130,8 +130,12 @@ type fakeRelayInvsContext struct {
 	rwLock                                        sync.RWMutex
 }
 
-func (f *fakeRelayInvsContext) EstimateNetworkHashesPerSecond(windowSize int) (uint64, error) {
+func (f *fakeRelayInvsContext) EstimateNetworkHashesPerSecond(startHash *externalapi.DomainHash, windowSize int) (uint64, error) {
 	panic(errors.Errorf("called unimplemented function from test '%s'", f.testName))
+}
+
+func (f *fakeRelayInvsContext) GetBlockEvenIfHeaderOnly(blockHash *externalapi.DomainHash) (*externalapi.DomainBlock, error) {
+	panic("implement me")
 }
 
 func (f *fakeRelayInvsContext) GetBlockRelations(blockHash *externalapi.DomainHash) ([]*externalapi.DomainHash, *externalapi.DomainHash, []*externalapi.DomainHash, error) {

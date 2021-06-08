@@ -18,11 +18,11 @@ const (
 func HandleGetBlocks(context *rpccontext.Context, _ *router.Router, request appmessage.Message) (appmessage.Message, error) {
 	getBlocksRequest := request.(*appmessage.GetBlocksRequestMessage)
 
-	// Validate that user didn't set IncludeTransactionVerboseData without setting IncludeBlocks
-	if !getBlocksRequest.IncludeBlocks && getBlocksRequest.IncludeTransactionVerboseData {
+	// Validate that user didn't set IncludeTransactions without setting IncludeBlocks
+	if !getBlocksRequest.IncludeBlocks && getBlocksRequest.IncludeTransactions {
 		return &appmessage.GetBlocksResponseMessage{
 			Error: appmessage.RPCErrorf(
-				"If includeTransactionVerboseData is set, then includeBlockVerboseData must be set as well"),
+				"If includeTransactions is set, then includeBlockVerboseData must be set as well"),
 		}, nil
 	}
 
@@ -84,19 +84,24 @@ func HandleGetBlocks(context *rpccontext.Context, _ *router.Router, request appm
 	response := appmessage.NewGetBlocksResponseMessage()
 	response.BlockHashes = hashes.ToStrings(blockHashes)
 	if getBlocksRequest.IncludeBlocks {
-		blocks := make([]*appmessage.RPCBlock, len(blockHashes))
+		rpcBlocks := make([]*appmessage.RPCBlock, len(blockHashes))
 		for i, blockHash := range blockHashes {
-			blockHeader, err := context.Domain.Consensus().GetBlockHeader(blockHash)
+			block, err := context.Domain.Consensus().GetBlockEvenIfHeaderOnly(blockHash)
 			if err != nil {
 				return nil, err
 			}
-			block := &externalapi.DomainBlock{Header: blockHeader}
-			blocks[i] = appmessage.DomainBlockToRPCBlock(block)
-			err = context.PopulateBlockWithVerboseData(blocks[i], blockHeader, nil, getBlocksRequest.IncludeTransactionVerboseData)
+
+			if getBlocksRequest.IncludeTransactions {
+				rpcBlocks[i] = appmessage.DomainBlockToRPCBlock(block)
+			} else {
+				rpcBlocks[i] = appmessage.DomainBlockToRPCBlock(&externalapi.DomainBlock{Header: block.Header})
+			}
+			err = context.PopulateBlockWithVerboseData(rpcBlocks[i], block.Header, nil, getBlocksRequest.IncludeTransactions)
 			if err != nil {
 				return nil, err
 			}
 		}
+		response.Blocks = rpcBlocks
 	}
 
 	return response, nil

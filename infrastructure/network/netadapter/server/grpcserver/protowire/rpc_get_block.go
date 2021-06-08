@@ -17,15 +17,15 @@ func (x *GetBlockRequestMessage) toAppMessage() (appmessage.Message, error) {
 		return nil, errors.Wrapf(errorNil, "GetBlockRequestMessage is nil")
 	}
 	return &appmessage.GetBlockRequestMessage{
-		Hash:                          x.Hash,
-		IncludeTransactionVerboseData: x.IncludeTransactionVerboseData,
+		Hash:                x.Hash,
+		IncludeTransactions: x.IncludeTransactions,
 	}, nil
 }
 
 func (x *KaspadMessage_GetBlockRequest) fromAppMessage(message *appmessage.GetBlockRequestMessage) error {
 	x.GetBlockRequest = &GetBlockRequestMessage{
-		Hash:                          message.Hash,
-		IncludeTransactionVerboseData: message.IncludeTransactionVerboseData,
+		Hash:                message.Hash,
+		IncludeTransactions: message.IncludeTransactions,
 	}
 	return nil
 }

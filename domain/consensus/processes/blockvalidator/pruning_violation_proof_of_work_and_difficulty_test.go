@@ -313,6 +313,6 @@ func (dm *mocDifficultyManager) StageDAADataAndReturnRequiredDifficulty(stagingA
 	return dm.testDifficulty, nil
 }
 
-func (dm *mocDifficultyManager) EstimateNetworkHashesPerSecond(windowSize int) (uint64, error) {
+func (dm *mocDifficultyManager) EstimateNetworkHashesPerSecond(startHash *externalapi.DomainHash, windowSize int) (uint64, error) {
 	return 0, nil
 }

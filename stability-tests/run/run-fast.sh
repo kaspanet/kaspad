@@ -38,6 +38,10 @@ echo "Running reorg"
 cd "${PROJECT_ROOT}/reorg/run" && ./run.sh || failedTests+=("reorg")
 echo "Done running reorg"
 
+echo "Running many-tips"
+cd "${PROJECT_ROOT}/many-tips/run" && ./run.sh || failedTests+=("many-tips")
+echo "Done running many-tips"
+
 echo "Running netsync - fast"
 cd "${PROJECT_ROOT}/netsync/run" && ./run-fast.sh || failedTests+=("netsync")
 echo "Done running netsync - fast"

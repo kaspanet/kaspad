@@ -64,6 +64,11 @@ func (m *Manager) NotifyBlockAddedToDAG(block *externalapi.DomainBlock, blockIns
 		return err
 	}
 
+	err = m.notifyVirtualDaaScoreChanged()
+	if err != nil {
+		return err
+	}
+
 	err = m.notifyVirtualSelectedParentChainChanged(blockInsertionResult)
 	if err != nil {
 		return err
@@ -151,6 +156,19 @@ func (m *Manager) notifyVirtualSelectedParentBlueScoreChanged() error {
 
 	notification := appmessage.NewVirtualSelectedParentBlueScoreChangedNotificationMessage(blockInfo.BlueScore)
 	return m.context.NotificationManager.NotifyVirtualSelectedParentBlueScoreChanged(notification)
+}
+
+func (m *Manager) notifyVirtualDaaScoreChanged() error {
+	onEnd := logger.LogAndMeasureExecutionTime(log, "RPCManager.NotifyVirtualDaaScoreChanged")
+	defer onEnd()
+
+	virtualInfo, err := m.context.Domain.Consensus().GetVirtualInfo()
+	if err != nil {
+		return err
+	}
+
+	notification := appmessage.NewVirtualDaaScoreChangedNotificationMessage(virtualInfo.DAAScore)
+	return m.context.NotificationManager.NotifyVirtualDaaScoreChanged(notification)
 }
 
 func (m *Manager) notifyVirtualSelectedParentChainChanged(blockInsertionResult *externalapi.BlockInsertionResult) error {

@@ -23,6 +23,8 @@ func main() {
 		err = showAddress(config.(*showAddressConfig))
 	case dumpUnencryptedDataSubCmd:
 		err = dumpUnencryptedData(config.(*dumpUnencryptedDataConfig))
+	case startDaemonSubCmd:
+		err = startDaemon(config.(*startDaemonConfig))
 	default:
 		err = errors.Errorf("Unknown sub-command '%s'\n", subCmd)
 	}

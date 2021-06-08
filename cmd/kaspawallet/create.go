@@ -2,70 +2,77 @@ package main
 
 import (
 	"bufio"
-	"encoding/hex"
 	"fmt"
+	"github.com/kaspanet/kaspad/cmd/kaspawallet/libkaspawallet"
+	"github.com/kaspanet/kaspad/cmd/kaspawallet/libkaspawallet/bip32"
+	"github.com/kaspanet/kaspad/cmd/kaspawallet/utils"
+	"github.com/pkg/errors"
 	"os"
 
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/keys"
-	"github.com/kaspanet/kaspad/cmd/kaspawallet/libkaspawallet"
-	"github.com/pkg/errors"
 )
 
 func create(conf *createConfig) error {
-	var encryptedPrivateKeys []*keys.EncryptedPrivateKey
-	var publicKeys [][]byte
+	var encryptedMnemonics []*keys.EncryptedMnemonic
+	var signerExtendedPublicKeys []string
 	var err error
+	isMultisig := conf.NumPublicKeys > 1
 	if !conf.Import {
-		encryptedPrivateKeys, publicKeys, err = keys.CreateKeyPairs(conf.NumPrivateKeys, conf.ECDSA)
+		encryptedMnemonics, signerExtendedPublicKeys, err = keys.CreateMnemonics(conf.NetParams(), conf.NumPrivateKeys, conf.Password, isMultisig)
 	} else {
-		encryptedPrivateKeys, publicKeys, err = keys.ImportKeyPairs(conf.NumPrivateKeys)
+		encryptedMnemonics, signerExtendedPublicKeys, err = keys.ImportMnemonics(conf.NetParams(), conf.NumPrivateKeys, conf.Password, isMultisig)
 	}
 	if err != nil {
 		return err
 	}
 
-	for i, publicKey := range publicKeys {
-		fmt.Printf("Public key of private key #%d:\n%x\n\n", i+1, publicKey)
+	for i, extendedPublicKey := range signerExtendedPublicKeys {
+		fmt.Printf("Extended public key of mnemonic #%d:\n%s\n\n", i+1, extendedPublicKey)
 	}
 
+	extendedPublicKeys := make([]string, conf.NumPrivateKeys, conf.NumPublicKeys)
+	copy(extendedPublicKeys, signerExtendedPublicKeys)
 	reader := bufio.NewReader(os.Stdin)
 	for i := conf.NumPrivateKeys; i < conf.NumPublicKeys; i++ {
 		fmt.Printf("Enter public key #%d here:\n", i+1)
-		line, isPrefix, err := reader.ReadLine()
+		extendedPublicKey, err := utils.ReadLine(reader)
 		if err != nil {
 			return err
+		}
+
+		_, err = bip32.DeserializeExtendedKey(string(extendedPublicKey))
+		if err != nil {
+			return errors.Wrapf(err, "%s is invalid extended public key", string(extendedPublicKey))
 		}
 
 		fmt.Println()
 
-		if isPrefix {
-			return errors.Errorf("Public key is too long")
-		}
-
-		publicKey, err := hex.DecodeString(string(line))
-		if err != nil {
-			return err
-		}
-
-		publicKeys = append(publicKeys, publicKey)
+		extendedPublicKeys = append(extendedPublicKeys, string(extendedPublicKey))
 	}
 
-	err = keys.WriteKeysFile(
-		conf.NetParams(), conf.KeysFile, encryptedPrivateKeys, publicKeys, conf.MinimumSignatures, conf.ECDSA)
+	cosignerIndex, err := libkaspawallet.MinimumCosignerIndex(signerExtendedPublicKeys, extendedPublicKeys)
 	if err != nil {
 		return err
 	}
 
-	keysFile, err := keys.ReadKeysFile(conf.NetParams(), conf.KeysFile)
+	file := keys.File{
+		EncryptedMnemonics: encryptedMnemonics,
+		ExtendedPublicKeys: extendedPublicKeys,
+		MinimumSignatures:  conf.MinimumSignatures,
+		CosignerIndex:      cosignerIndex,
+		ECDSA:              conf.ECDSA,
+	}
+
+	err = file.SetPath(conf.NetParams(), conf.KeysFile, conf.Yes)
 	if err != nil {
 		return err
 	}
 
-	addr, err := libkaspawallet.Address(conf.NetParams(), keysFile.PublicKeys, keysFile.MinimumSignatures, keysFile.ECDSA)
+	err = file.Save()
 	if err != nil {
 		return err
 	}
 
-	fmt.Printf("The wallet address is:\n%s\n", addr)
+	fmt.Printf("Wrote the keys into %s\n", file.Path())
 	return nil
 }

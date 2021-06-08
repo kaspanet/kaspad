@@ -82,3 +82,47 @@ func (gm *ghostdagManager) sortMergeSet(stagingArea *model.StagingArea, mergeSet
 	})
 	return err
 }
+
+// GetSortedMergeSet return the merge set sorted in a toplogical order.
+func (gm *ghostdagManager) GetSortedMergeSet(stagingArea *model.StagingArea,
+	current *externalapi.DomainHash) ([]*externalapi.DomainHash, error) {
+
+	currentGhostdagData, err := gm.ghostdagDataStore.Get(gm.databaseContext, stagingArea, current)
+	if err != nil {
+		return nil, err
+	}
+
+	blueMergeSet := currentGhostdagData.MergeSetBlues()
+	redMergeSet := currentGhostdagData.MergeSetReds()
+	sortedMergeSet := make([]*externalapi.DomainHash, 0, len(blueMergeSet)+len(redMergeSet))
+	// If the current block is the genesis block:
+	if len(blueMergeSet) == 0 {
+		return sortedMergeSet, nil
+	}
+	selectedParent, blueMergeSet := blueMergeSet[0], blueMergeSet[1:]
+	sortedMergeSet = append(sortedMergeSet, selectedParent)
+	i, j := 0, 0
+	for i < len(blueMergeSet) && j < len(redMergeSet) {
+		currentBlue := blueMergeSet[i]
+		currentBlueGhostdagData, err := gm.ghostdagDataStore.Get(gm.databaseContext, stagingArea, currentBlue)
+		if err != nil {
+			return nil, err
+		}
+		currentRed := redMergeSet[j]
+		currentRedGhostdagData, err := gm.ghostdagDataStore.Get(gm.databaseContext, stagingArea, currentRed)
+		if err != nil {
+			return nil, err
+		}
+		if gm.Less(currentBlue, currentBlueGhostdagData, currentRed, currentRedGhostdagData) {
+			sortedMergeSet = append(sortedMergeSet, currentBlue)
+			i++
+		} else {
+			sortedMergeSet = append(sortedMergeSet, currentRed)
+			j++
+		}
+	}
+	sortedMergeSet = append(sortedMergeSet, blueMergeSet[i:]...)
+	sortedMergeSet = append(sortedMergeSet, redMergeSet[j:]...)
+
+	return sortedMergeSet, nil
+}

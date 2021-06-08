@@ -4,52 +4,52 @@
 ## Table of Contents
 
 - [rpc.proto](#rpc.proto)
-  - [RPCError](#protowire.RPCError)
-  - [RpcBlock](#protowire.RpcBlock)
-  - [RpcBlockHeader](#protowire.RpcBlockHeader)
-  - [RpcBlockVerboseData](#protowire.RpcBlockVerboseData)
-  - [RpcTransaction](#protowire.RpcTransaction)
-  - [RpcTransactionInput](#protowire.RpcTransactionInput)
-  - [RpcScriptPublicKey](#protowire.RpcScriptPublicKey)
-  - [RpcTransactionOutput](#protowire.RpcTransactionOutput)
-  - [RpcOutpoint](#protowire.RpcOutpoint)
-  - [RpcUtxoEntry](#protowire.RpcUtxoEntry)
-  - [RpcTransactionVerboseData](#protowire.RpcTransactionVerboseData)
-  - [RpcTransactionInputVerboseData](#protowire.RpcTransactionInputVerboseData)
-  - [RpcTransactionOutputVerboseData](#protowire.RpcTransactionOutputVerboseData)
-  - [GetCurrentNetworkRequestMessage](#protowire.GetCurrentNetworkRequestMessage)
-  - [GetCurrentNetworkResponseMessage](#protowire.GetCurrentNetworkResponseMessage)
-  - [SubmitBlockRequestMessage](#protowire.SubmitBlockRequestMessage)
-  - [SubmitBlockResponseMessage](#protowire.SubmitBlockResponseMessage)
-  - [GetBlockTemplateRequestMessage](#protowire.GetBlockTemplateRequestMessage)
-  - [GetBlockTemplateResponseMessage](#protowire.GetBlockTemplateResponseMessage)
-  - [NotifyBlockAddedRequestMessage](#protowire.NotifyBlockAddedRequestMessage)
-  - [NotifyBlockAddedResponseMessage](#protowire.NotifyBlockAddedResponseMessage)
-  - [BlockAddedNotificationMessage](#protowire.BlockAddedNotificationMessage)
-  - [GetPeerAddressesRequestMessage](#protowire.GetPeerAddressesRequestMessage)
-  - [GetPeerAddressesResponseMessage](#protowire.GetPeerAddressesResponseMessage)
-  - [GetPeerAddressesKnownAddressMessage](#protowire.GetPeerAddressesKnownAddressMessage)
-  - [GetSelectedTipHashRequestMessage](#protowire.GetSelectedTipHashRequestMessage)
-  - [GetSelectedTipHashResponseMessage](#protowire.GetSelectedTipHashResponseMessage)
-  - [GetMempoolEntryRequestMessage](#protowire.GetMempoolEntryRequestMessage)
-  - [GetMempoolEntryResponseMessage](#protowire.GetMempoolEntryResponseMessage)
-  - [GetMempoolEntriesRequestMessage](#protowire.GetMempoolEntriesRequestMessage)
-  - [GetMempoolEntriesResponseMessage](#protowire.GetMempoolEntriesResponseMessage)
-  - [MempoolEntry](#protowire.MempoolEntry)
-  - [GetConnectedPeerInfoRequestMessage](#protowire.GetConnectedPeerInfoRequestMessage)
-  - [GetConnectedPeerInfoResponseMessage](#protowire.GetConnectedPeerInfoResponseMessage)
-  - [GetConnectedPeerInfoMessage](#protowire.GetConnectedPeerInfoMessage)
-  - [AddPeerRequestMessage](#protowire.AddPeerRequestMessage)
-  - [AddPeerResponseMessage](#protowire.AddPeerResponseMessage)
-  - [SubmitTransactionRequestMessage](#protowire.SubmitTransactionRequestMessage)
-  - [SubmitTransactionResponseMessage](#protowire.SubmitTransactionResponseMessage)
-  - [NotifyVirtualSelectedParentChainChangedRequestMessage](#protowire.NotifyVirtualSelectedParentChainChangedRequestMessage)
-  - [NotifyVirtualSelectedParentChainChangedResponseMessage](#protowire.NotifyVirtualSelectedParentChainChangedResponseMessage)
-  - [VirtualSelectedParentChainChangedNotificationMessage](#protowire.VirtualSelectedParentChainChangedNotificationMessage)
-  - [ChainBlock](#protowire.ChainBlock)
-  - [AcceptedBlock](#protowire.AcceptedBlock)
-  - [GetBlockRequestMessage](#protowire.GetBlockRequestMessage)
-  - [GetBlockResponseMessage](#protowire.GetBlockResponseMessage)
+    - [RPCError](#protowire.RPCError)
+    - [RpcBlock](#protowire.RpcBlock)
+    - [RpcBlockHeader](#protowire.RpcBlockHeader)
+    - [RpcBlockVerboseData](#protowire.RpcBlockVerboseData)
+    - [RpcTransaction](#protowire.RpcTransaction)
+    - [RpcTransactionInput](#protowire.RpcTransactionInput)
+    - [RpcScriptPublicKey](#protowire.RpcScriptPublicKey)
+    - [RpcTransactionOutput](#protowire.RpcTransactionOutput)
+    - [RpcOutpoint](#protowire.RpcOutpoint)
+    - [RpcUtxoEntry](#protowire.RpcUtxoEntry)
+    - [RpcTransactionVerboseData](#protowire.RpcTransactionVerboseData)
+    - [RpcTransactionInputVerboseData](#protowire.RpcTransactionInputVerboseData)
+    - [RpcTransactionOutputVerboseData](#protowire.RpcTransactionOutputVerboseData)
+    - [GetCurrentNetworkRequestMessage](#protowire.GetCurrentNetworkRequestMessage)
+    - [GetCurrentNetworkResponseMessage](#protowire.GetCurrentNetworkResponseMessage)
+    - [SubmitBlockRequestMessage](#protowire.SubmitBlockRequestMessage)
+    - [SubmitBlockResponseMessage](#protowire.SubmitBlockResponseMessage)
+    - [GetBlockTemplateRequestMessage](#protowire.GetBlockTemplateRequestMessage)
+    - [GetBlockTemplateResponseMessage](#protowire.GetBlockTemplateResponseMessage)
+    - [NotifyBlockAddedRequestMessage](#protowire.NotifyBlockAddedRequestMessage)
+    - [NotifyBlockAddedResponseMessage](#protowire.NotifyBlockAddedResponseMessage)
+    - [BlockAddedNotificationMessage](#protowire.BlockAddedNotificationMessage)
+    - [GetPeerAddressesRequestMessage](#protowire.GetPeerAddressesRequestMessage)
+    - [GetPeerAddressesResponseMessage](#protowire.GetPeerAddressesResponseMessage)
+    - [GetPeerAddressesKnownAddressMessage](#protowire.GetPeerAddressesKnownAddressMessage)
+    - [GetSelectedTipHashRequestMessage](#protowire.GetSelectedTipHashRequestMessage)
+    - [GetSelectedTipHashResponseMessage](#protowire.GetSelectedTipHashResponseMessage)
+    - [GetMempoolEntryRequestMessage](#protowire.GetMempoolEntryRequestMessage)
+    - [GetMempoolEntryResponseMessage](#protowire.GetMempoolEntryResponseMessage)
+    - [GetMempoolEntriesRequestMessage](#protowire.GetMempoolEntriesRequestMessage)
+    - [GetMempoolEntriesResponseMessage](#protowire.GetMempoolEntriesResponseMessage)
+    - [MempoolEntry](#protowire.MempoolEntry)
+    - [GetConnectedPeerInfoRequestMessage](#protowire.GetConnectedPeerInfoRequestMessage)
+    - [GetConnectedPeerInfoResponseMessage](#protowire.GetConnectedPeerInfoResponseMessage)
+    - [GetConnectedPeerInfoMessage](#protowire.GetConnectedPeerInfoMessage)
+    - [AddPeerRequestMessage](#protowire.AddPeerRequestMessage)
+    - [AddPeerResponseMessage](#protowire.AddPeerResponseMessage)
+    - [SubmitTransactionRequestMessage](#protowire.SubmitTransactionRequestMessage)
+    - [SubmitTransactionResponseMessage](#protowire.SubmitTransactionResponseMessage)
+    - [NotifyVirtualSelectedParentChainChangedRequestMessage](#protowire.NotifyVirtualSelectedParentChainChangedRequestMessage)
+    - [NotifyVirtualSelectedParentChainChangedResponseMessage](#protowire.NotifyVirtualSelectedParentChainChangedResponseMessage)
+    - [VirtualSelectedParentChainChangedNotificationMessage](#protowire.VirtualSelectedParentChainChangedNotificationMessage)
+    - [ChainBlock](#protowire.ChainBlock)
+    - [AcceptedBlock](#protowire.AcceptedBlock)
+    - [GetBlockRequestMessage](#protowire.GetBlockRequestMessage)
+    - [GetBlockResponseMessage](#protowire.GetBlockResponseMessage)
     - [GetSubnetworkRequestMessage](#protowire.GetSubnetworkRequestMessage)
     - [GetSubnetworkResponseMessage](#protowire.GetSubnetworkResponseMessage)
     - [GetVirtualSelectedParentChainFromBlockRequestMessage](#protowire.GetVirtualSelectedParentChainFromBlockRequestMessage)
@@ -83,21 +83,24 @@
     - [NotifyVirtualSelectedParentBlueScoreChangedRequestMessage](#protowire.NotifyVirtualSelectedParentBlueScoreChangedRequestMessage)
     - [NotifyVirtualSelectedParentBlueScoreChangedResponseMessage](#protowire.NotifyVirtualSelectedParentBlueScoreChangedResponseMessage)
     - [VirtualSelectedParentBlueScoreChangedNotificationMessage](#protowire.VirtualSelectedParentBlueScoreChangedNotificationMessage)
+    - [NotifyVirtualDaaScoreChangedRequestMessage](#protowire.NotifyVirtualDaaScoreChangedRequestMessage)
+    - [NotifyVirtualDaaScoreChangedResponseMessage](#protowire.NotifyVirtualDaaScoreChangedResponseMessage)
+    - [VirtualDaaScoreChangedNotificationMessage](#protowire.VirtualDaaScoreChangedNotificationMessage)
     - [NotifyPruningPointUTXOSetOverrideRequestMessage](#protowire.NotifyPruningPointUTXOSetOverrideRequestMessage)
-  - [NotifyPruningPointUTXOSetOverrideResponseMessage](#protowire.NotifyPruningPointUTXOSetOverrideResponseMessage)
-  - [PruningPointUTXOSetOverrideNotificationMessage](#protowire.PruningPointUTXOSetOverrideNotificationMessage)
-  - [StopNotifyingPruningPointUTXOSetOverrideRequestMessage](#protowire.StopNotifyingPruningPointUTXOSetOverrideRequestMessage)
-  - [StopNotifyingPruningPointUTXOSetOverrideResponseMessage](#protowire.StopNotifyingPruningPointUTXOSetOverrideResponseMessage)
-  - [BanRequestMessage](#protowire.BanRequestMessage)
-  - [BanResponseMessage](#protowire.BanResponseMessage)
-  - [UnbanRequestMessage](#protowire.UnbanRequestMessage)
-  - [UnbanResponseMessage](#protowire.UnbanResponseMessage)
-  - [GetInfoRequestMessage](#protowire.GetInfoRequestMessage)
-  - [GetInfoResponseMessage](#protowire.GetInfoResponseMessage)
-  - [EstimateNetworkHashesPerSecondRequestMessage](#protowire.EstimateNetworkHashesPerSecondRequestMessage)
-  - [EstimateNetworkHashesPerSecondResponseMessage](#protowire.EstimateNetworkHashesPerSecondResponseMessage)
-
-  - [SubmitBlockResponseMessage.RejectReason](#protowire.SubmitBlockResponseMessage.RejectReason)
+    - [NotifyPruningPointUTXOSetOverrideResponseMessage](#protowire.NotifyPruningPointUTXOSetOverrideResponseMessage)
+    - [PruningPointUTXOSetOverrideNotificationMessage](#protowire.PruningPointUTXOSetOverrideNotificationMessage)
+    - [StopNotifyingPruningPointUTXOSetOverrideRequestMessage](#protowire.StopNotifyingPruningPointUTXOSetOverrideRequestMessage)
+    - [StopNotifyingPruningPointUTXOSetOverrideResponseMessage](#protowire.StopNotifyingPruningPointUTXOSetOverrideResponseMessage)
+    - [BanRequestMessage](#protowire.BanRequestMessage)
+    - [BanResponseMessage](#protowire.BanResponseMessage)
+    - [UnbanRequestMessage](#protowire.UnbanRequestMessage)
+    - [UnbanResponseMessage](#protowire.UnbanResponseMessage)
+    - [GetInfoRequestMessage](#protowire.GetInfoRequestMessage)
+    - [GetInfoResponseMessage](#protowire.GetInfoResponseMessage)
+    - [EstimateNetworkHashesPerSecondRequestMessage](#protowire.EstimateNetworkHashesPerSecondRequestMessage)
+    - [EstimateNetworkHashesPerSecondResponseMessage](#protowire.EstimateNetworkHashesPerSecondResponseMessage)
+  
+    - [SubmitBlockResponseMessage.RejectReason](#protowire.SubmitBlockResponseMessage.RejectReason)
   
 - [Scalar Value Types](#scalar-value-types)
 
@@ -129,9 +132,16 @@ Receivers of any ResponseMessage are expected to check whether its error field i
 | ----- | ---- | ----- | ----------- |
 | message | [string](#string) |  |  |
 
+
+
+
+
+
 <a name="protowire.RpcBlock"></a>
 
 ### RpcBlock
+
+
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
@@ -139,9 +149,16 @@ Receivers of any ResponseMessage are expected to check whether its error field i
 | transactions | [RpcTransaction](#protowire.RpcTransaction) | repeated |  |
 | verboseData | [RpcBlockVerboseData](#protowire.RpcBlockVerboseData) |  |  |
 
+
+
+
+
+
 <a name="protowire.RpcBlockHeader"></a>
 
 ### RpcBlockHeader
+
+
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
@@ -154,9 +171,16 @@ Receivers of any ResponseMessage are expected to check whether its error field i
 | bits | [uint32](#uint32) |  |  |
 | nonce | [uint64](#uint64) |  |  |
 
+
+
+
+
+
 <a name="protowire.RpcBlockVerboseData"></a>
 
 ### RpcBlockVerboseData
+
+
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
@@ -168,9 +192,16 @@ Receivers of any ResponseMessage are expected to check whether its error field i
 | blueScore | [uint64](#uint64) |  |  |
 | childrenHashes | [string](#string) | repeated |  |
 
+
+
+
+
+
 <a name="protowire.RpcTransaction"></a>
 
 ### RpcTransaction
+
+
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
@@ -183,9 +214,16 @@ Receivers of any ResponseMessage are expected to check whether its error field i
 | payload | [string](#string) |  |  |
 | verboseData | [RpcTransactionVerboseData](#protowire.RpcTransactionVerboseData) |  |  |
 
+
+
+
+
+
 <a name="protowire.RpcTransactionInput"></a>
 
 ### RpcTransactionInput
+
+
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
@@ -194,18 +232,32 @@ Receivers of any ResponseMessage are expected to check whether its error field i
 | sequence | [uint64](#uint64) |  |  |
 | verboseData | [RpcTransactionInputVerboseData](#protowire.RpcTransactionInputVerboseData) |  |  |
 
+
+
+
+
+
 <a name="protowire.RpcScriptPublicKey"></a>
 
 ### RpcScriptPublicKey
+
+
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | version | [uint32](#uint32) |  |  |
 | scriptPublicKey | [string](#string) |  |  |
 
+
+
+
+
+
 <a name="protowire.RpcTransactionOutput"></a>
 
 ### RpcTransactionOutput
+
+
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
@@ -213,18 +265,32 @@ Receivers of any ResponseMessage are expected to check whether its error field i
 | scriptPublicKey | [RpcScriptPublicKey](#protowire.RpcScriptPublicKey) |  |  |
 | verboseData | [RpcTransactionOutputVerboseData](#protowire.RpcTransactionOutputVerboseData) |  |  |
 
+
+
+
+
+
 <a name="protowire.RpcOutpoint"></a>
 
 ### RpcOutpoint
+
+
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | transactionId | [string](#string) |  |  |
 | index | [uint32](#uint32) |  |  |
 
+
+
+
+
+
 <a name="protowire.RpcUtxoEntry"></a>
 
 ### RpcUtxoEntry
+
+
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
@@ -233,9 +299,16 @@ Receivers of any ResponseMessage are expected to check whether its error field i
 | blockDaaScore | [uint64](#uint64) |  |  |
 | isCoinbase | [bool](#bool) |  |  |
 
+
+
+
+
+
 <a name="protowire.RpcTransactionVerboseData"></a>
 
 ### RpcTransactionVerboseData
+
+
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
@@ -245,52 +318,88 @@ Receivers of any ResponseMessage are expected to check whether its error field i
 | blockHash | [string](#string) |  |  |
 | blockTime | [uint64](#uint64) |  |  |
 
+
+
+
+
+
 <a name="protowire.RpcTransactionInputVerboseData"></a>
 
 ### RpcTransactionInputVerboseData
 
+
+
+
+
+
+
 <a name="protowire.RpcTransactionOutputVerboseData"></a>
 
 ### RpcTransactionOutputVerboseData
+
+
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | scriptPublicKeyType | [string](#string) |  |  |
 | scriptPublicKeyAddress | [string](#string) |  |  |
 
+
+
+
+
+
 <a name="protowire.GetCurrentNetworkRequestMessage"></a>
 
 ### GetCurrentNetworkRequestMessage
-
 GetCurrentNetworkRequestMessage requests the network kaspad is currently running against.
 
 Possible networks are: Mainnet, Testnet, Simnet, Devnet
 
+
+
+
+
+
 <a name="protowire.GetCurrentNetworkResponseMessage"></a>
 
 ### GetCurrentNetworkResponseMessage
+
+
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | currentNetwork | [string](#string) |  |  |
 | error | [RPCError](#protowire.RPCError) |  |  |
 
+
+
+
+
+
 <a name="protowire.SubmitBlockRequestMessage"></a>
 
 ### SubmitBlockRequestMessage
-
-SubmitBlockRequestMessage requests to submit a block into the DAG. Blocks are generally expected to have been generated
-using the getBlockTemplate call.
+SubmitBlockRequestMessage requests to submit a block into the DAG.
+Blocks are generally expected to have been generated using the getBlockTemplate call.
 
 See: GetBlockTemplateRequestMessage
+
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | block | [RpcBlock](#protowire.RpcBlock) |  |  |
 
+
+
+
+
+
 <a name="protowire.SubmitBlockResponseMessage"></a>
 
 ### SubmitBlockResponseMessage
+
+
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
@@ -727,7 +836,7 @@ GetBlockRequestMessage requests information about a specific block
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | hash | [string](#string) |  | The hash of the requested block |
-| includeTransactionVerboseData | [bool](#bool) |  | Whether to include transaction data in the response |
+| includeTransactions | [bool](#bool) |  | Whether to include transaction data in the response |
 
 
 
@@ -827,7 +936,7 @@ kaspad&#39;s current virtual.
 | ----- | ---- | ----- | ----------- |
 | lowHash | [string](#string) |  |  |
 | includeBlocks | [bool](#bool) |  |  |
-| includeTransactionVerboseData | [bool](#bool) |  |  |
+| includeTransactions | [bool](#bool) |  |  |
 
 
 
@@ -906,6 +1015,7 @@ of this kaspad&#39;s DAG.
 | pastMedianTime | [int64](#int64) |  |  |
 | virtualParentHashes | [string](#string) | repeated |  |
 | pruningPointHash | [string](#string) |  |  |
+| virtualDaaScore | [uint64](#uint64) |  |  |
 | error | [RPCError](#protowire.RPCError) |  |  |
 
 
@@ -1268,6 +1378,52 @@ See NotifyVirtualSelectedParentBlueScoreChangedRequestMessage
 
 
 
+<a name="protowire.NotifyVirtualDaaScoreChangedRequestMessage"></a>
+
+### NotifyVirtualDaaScoreChangedRequestMessage
+NotifyVirtualDaaScoreChangedRequestMessage registers this connection for
+virtualDaaScoreChanged notifications.
+
+See: VirtualDaaScoreChangedNotificationMessage
+
+
+
+
+
+
+<a name="protowire.NotifyVirtualDaaScoreChangedResponseMessage"></a>
+
+### NotifyVirtualDaaScoreChangedResponseMessage
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| error | [RPCError](#protowire.RPCError) |  |  |
+
+
+
+
+
+
+<a name="protowire.VirtualDaaScoreChangedNotificationMessage"></a>
+
+### VirtualDaaScoreChangedNotificationMessage
+VirtualDaaScoreChangedNotificationMessage is sent whenever the DAA score
+of the virtual changes.
+
+See NotifyVirtualDaaScoreChangedRequestMessage
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| virtualDaaScore | [uint64](#uint64) |  |  |
+
+
+
+
+
+
 <a name="protowire.NotifyPruningPointUTXOSetOverrideRequestMessage"></a>
 
 ### NotifyPruningPointUTXOSetOverrideRequestMessage
@@ -1415,32 +1571,57 @@ GetInfoRequestMessage returns info about the node.
 
 ### GetInfoResponseMessage
 
+
+
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | p2pId | [string](#string) |  |  |
 | mempoolSize | [uint64](#uint64) |  |  |
 | error | [RPCError](#protowire.RPCError) |  |  |
 
+
+
+
+
+
 <a name="protowire.EstimateNetworkHashesPerSecondRequestMessage"></a>
 
 ### EstimateNetworkHashesPerSecondRequestMessage
 
+
+
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | windowSize | [uint32](#uint32) |  |  |
+| startHash | [string](#string) |  |  |
+
+
+
+
+
 
 <a name="protowire.EstimateNetworkHashesPerSecondResponseMessage"></a>
 
 ### EstimateNetworkHashesPerSecondResponseMessage
+
+
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | networkHashesPerSecond | [uint64](#uint64) |  |  |
 | error | [RPCError](#protowire.RPCError) |  |  |
 
+
+
+
+
+ 
+
+
 <a name="protowire.SubmitBlockResponseMessage.RejectReason"></a>
 
 ### SubmitBlockResponseMessage.RejectReason
+
 
 | Name | Number | Description |
 | ---- | ------ | ----------- |

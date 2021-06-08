@@ -7,6 +7,7 @@ type Consensus interface {
 	ValidateTransactionAndPopulateWithConsensusData(transaction *DomainTransaction) error
 
 	GetBlock(blockHash *DomainHash) (*DomainBlock, error)
+	GetBlockEvenIfHeaderOnly(blockHash *DomainHash) (*DomainBlock, error)
 	GetBlockHeader(blockHash *DomainHash) (BlockHeader, error)
 	GetBlockInfo(blockHash *DomainHash) (*BlockInfo, error)
 	GetBlockRelations(blockHash *DomainHash) (parents []*DomainHash, selectedParent *DomainHash, children []*DomainHash, err error)
@@ -32,5 +33,5 @@ type Consensus interface {
 	IsInSelectedParentChainOf(blockHashA *DomainHash, blockHashB *DomainHash) (bool, error)
 	GetHeadersSelectedTip() (*DomainHash, error)
 	Anticone(blockHash *DomainHash) ([]*DomainHash, error)
-	EstimateNetworkHashesPerSecond(windowSize int) (uint64, error)
+	EstimateNetworkHashesPerSecond(startHash *DomainHash, windowSize int) (uint64, error)
 }

@@ -112,6 +112,30 @@ func (s *consensus) GetBlock(blockHash *externalapi.DomainHash) (*externalapi.Do
 	return block, nil
 }
 
+func (s *consensus) GetBlockEvenIfHeaderOnly(blockHash *externalapi.DomainHash) (*externalapi.DomainBlock, error) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	stagingArea := model.NewStagingArea()
+
+	block, err := s.blockStore.Block(s.databaseContext, stagingArea, blockHash)
+	if err == nil {
+		return block, nil
+	}
+	if !errors.Is(err, database.ErrNotFound) {
+		return nil, err
+	}
+
+	header, err := s.blockHeaderStore.BlockHeader(s.databaseContext, stagingArea, blockHash)
+	if err != nil {
+		if errors.Is(err, database.ErrNotFound) {
+			return nil, errors.Wrapf(err, "block %s does not exist", blockHash)
+		}
+		return nil, err
+	}
+	return &externalapi.DomainBlock{Header: header}, nil
+}
+
 func (s *consensus) GetBlockHeader(blockHash *externalapi.DomainHash) (externalapi.BlockHeader, error) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
@@ -363,11 +387,17 @@ func (s *consensus) GetVirtualInfo() (*externalapi.VirtualInfo, error) {
 		return nil, err
 	}
 
+	daaScore, err := s.daaBlocksStore.DAAScore(s.databaseContext, stagingArea, model.VirtualBlockHash)
+	if err != nil {
+		return nil, err
+	}
+
 	return &externalapi.VirtualInfo{
 		ParentHashes:   blockRelations.Parents,
 		Bits:           bits,
 		PastMedianTime: pastMedianTime,
 		BlueScore:      virtualGHOSTDAGData.BlueScore(),
+		DAAScore:       daaScore,
 	}, nil
 }
 
@@ -506,9 +536,9 @@ func (s *consensus) Anticone(blockHash *externalapi.DomainHash) ([]*externalapi.
 	return s.dagTraversalManager.Anticone(stagingArea, blockHash)
 }
 
-func (s *consensus) EstimateNetworkHashesPerSecond(windowSize int) (uint64, error) {
+func (s *consensus) EstimateNetworkHashesPerSecond(startHash *externalapi.DomainHash, windowSize int) (uint64, error) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	return s.difficultyManager.EstimateNetworkHashesPerSecond(windowSize)
+	return s.difficultyManager.EstimateNetworkHashesPerSecond(startHash, windowSize)
 }

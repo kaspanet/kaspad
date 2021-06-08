@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"github.com/kaspanet/kaspad/cmd/kaspawallet/utils"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -31,53 +32,62 @@ type encryptedPrivateKeyJSON struct {
 }
 
 type keysFileJSON struct {
-	EncryptedPrivateKeys []*encryptedPrivateKeyJSON `json:"encryptedPrivateKeys"`
-	PublicKeys           []string                   `json:"publicKeys"`
-	MinimumSignatures    uint32                     `json:"minimumSignatures"`
-	ECDSA                bool                       `json:"ecdsa"`
+	EncryptedPrivateKeys  []*encryptedPrivateKeyJSON `json:"encryptedMnemonics"`
+	ExtendedPublicKeys    []string                   `json:"publicKeys"`
+	MinimumSignatures     uint32                     `json:"minimumSignatures"`
+	CosignerIndex         uint32                     `json:"cosignerIndex"`
+	LastUsedExternalIndex uint32                     `json:"lastUsedExternalIndex"`
+	LastUsedInternalIndex uint32                     `json:"lastUsedInternalIndex"`
+	ECDSA                 bool                       `json:"ecdsa"`
 }
 
-// EncryptedPrivateKey represents an encrypted private key
-type EncryptedPrivateKey struct {
+// EncryptedMnemonic represents an encrypted mnemonic
+type EncryptedMnemonic struct {
 	cipher []byte
 	salt   []byte
 }
 
-// Data holds all the data related to the wallet keys
-type Data struct {
-	encryptedPrivateKeys []*EncryptedPrivateKey
-	PublicKeys           [][]byte
-	MinimumSignatures    uint32
-	ECDSA                bool
+// File holds all the data related to the wallet keys
+type File struct {
+	EncryptedMnemonics    []*EncryptedMnemonic
+	ExtendedPublicKeys    []string
+	MinimumSignatures     uint32
+	CosignerIndex         uint32
+	lastUsedExternalIndex uint32
+	lastUsedInternalIndex uint32
+	ECDSA                 bool
+	path                  string
 }
 
-func (d *Data) toJSON() *keysFileJSON {
-	encryptedPrivateKeysJSON := make([]*encryptedPrivateKeyJSON, len(d.encryptedPrivateKeys))
-	for i, encryptedPrivateKey := range d.encryptedPrivateKeys {
+func (d *File) toJSON() *keysFileJSON {
+	encryptedPrivateKeysJSON := make([]*encryptedPrivateKeyJSON, len(d.EncryptedMnemonics))
+	for i, encryptedPrivateKey := range d.EncryptedMnemonics {
 		encryptedPrivateKeysJSON[i] = &encryptedPrivateKeyJSON{
 			Cipher: hex.EncodeToString(encryptedPrivateKey.cipher),
 			Salt:   hex.EncodeToString(encryptedPrivateKey.salt),
 		}
 	}
 
-	publicKeysHex := make([]string, len(d.PublicKeys))
-	for i, publicKey := range d.PublicKeys {
-		publicKeysHex[i] = hex.EncodeToString(publicKey)
-	}
-
 	return &keysFileJSON{
-		EncryptedPrivateKeys: encryptedPrivateKeysJSON,
-		PublicKeys:           publicKeysHex,
-		MinimumSignatures:    d.MinimumSignatures,
-		ECDSA:                d.ECDSA,
+		EncryptedPrivateKeys:  encryptedPrivateKeysJSON,
+		ExtendedPublicKeys:    d.ExtendedPublicKeys,
+		MinimumSignatures:     d.MinimumSignatures,
+		ECDSA:                 d.ECDSA,
+		CosignerIndex:         d.CosignerIndex,
+		LastUsedExternalIndex: d.lastUsedExternalIndex,
+		LastUsedInternalIndex: d.lastUsedInternalIndex,
 	}
 }
 
-func (d *Data) fromJSON(fileJSON *keysFileJSON) error {
+func (d *File) fromJSON(fileJSON *keysFileJSON) error {
 	d.MinimumSignatures = fileJSON.MinimumSignatures
 	d.ECDSA = fileJSON.ECDSA
+	d.ExtendedPublicKeys = fileJSON.ExtendedPublicKeys
+	d.CosignerIndex = fileJSON.CosignerIndex
+	d.lastUsedExternalIndex = fileJSON.LastUsedExternalIndex
+	d.lastUsedInternalIndex = fileJSON.LastUsedInternalIndex
 
-	d.encryptedPrivateKeys = make([]*EncryptedPrivateKey, len(fileJSON.EncryptedPrivateKeys))
+	d.EncryptedMnemonics = make([]*EncryptedMnemonic, len(fileJSON.EncryptedPrivateKeys))
 	for i, encryptedPrivateKeyJSON := range fileJSON.EncryptedPrivateKeys {
 		cipher, err := hex.DecodeString(encryptedPrivateKeyJSON.Cipher)
 		if err != nil {
@@ -89,32 +99,92 @@ func (d *Data) fromJSON(fileJSON *keysFileJSON) error {
 			return err
 		}
 
-		d.encryptedPrivateKeys[i] = &EncryptedPrivateKey{
+		d.EncryptedMnemonics[i] = &EncryptedMnemonic{
 			cipher: cipher,
 			salt:   salt,
-		}
-	}
-
-	d.PublicKeys = make([][]byte, len(fileJSON.PublicKeys))
-	for i, publicKey := range fileJSON.PublicKeys {
-		var err error
-		d.PublicKeys[i], err = hex.DecodeString(publicKey)
-		if err != nil {
-			return err
 		}
 	}
 
 	return nil
 }
 
-// DecryptPrivateKeys asks the user to enter the password for the private keys and
+// SetPath sets the path where the file is saved to.
+func (d *File) SetPath(params *dagconfig.Params, path string, forceOverride bool) error {
+	if path == "" {
+		path = defaultKeysFile(params)
+	}
+
+	if !forceOverride {
+		exists, err := pathExists(path)
+		if err != nil {
+			return err
+		}
+
+		if exists {
+			reader := bufio.NewReader(os.Stdin)
+			fmt.Printf("The file %s already exists. Are you sure you want to override it (type 'y' to approve)? ", d.path)
+			line, err := utils.ReadLine(reader)
+			if err != nil {
+				return err
+			}
+
+			if string(line) != "y" {
+				return errors.Errorf("aborted setting the file path to %s", path)
+			}
+		}
+	}
+	d.path = path
+	return nil
+}
+
+// Path returns the file path.
+func (d *File) Path() string {
+	return d.path
+}
+
+// SetLastUsedExternalIndex sets the last used index in the external key
+// chain, and saves the file with the updated data.
+func (d *File) SetLastUsedExternalIndex(index uint32) error {
+	if d.lastUsedExternalIndex == index {
+		return nil
+	}
+
+	d.lastUsedExternalIndex = index
+	return d.Save()
+}
+
+// LastUsedExternalIndex returns the last used index in the external key
+// chain and saves the file with the updated data.
+func (d *File) LastUsedExternalIndex() uint32 {
+	return d.lastUsedExternalIndex
+}
+
+// SetLastUsedInternalIndex sets the last used index in the internal key chain, and saves the file.
+func (d *File) SetLastUsedInternalIndex(index uint32) error {
+	if d.lastUsedInternalIndex == index {
+		return nil
+	}
+
+	d.lastUsedInternalIndex = index
+	return d.Save()
+}
+
+// LastUsedInternalIndex returns the last used index in the internal key chain
+func (d *File) LastUsedInternalIndex() uint32 {
+	return d.lastUsedInternalIndex
+}
+
+// DecryptMnemonics asks the user to enter the password for the private keys and
 // returns the decrypted private keys.
-func (d *Data) DecryptPrivateKeys() ([][]byte, error) {
-	password := getPassword("Password:")
-	privateKeys := make([][]byte, len(d.encryptedPrivateKeys))
-	for i, encryptedPrivateKey := range d.encryptedPrivateKeys {
+func (d *File) DecryptMnemonics(cmdLinePassword string) ([]string, error) {
+	password := []byte(cmdLinePassword)
+	if len(password) == 0 {
+		password = getPassword("Password:")
+	}
+	privateKeys := make([]string, len(d.EncryptedMnemonics))
+	for i, encryptedPrivateKey := range d.EncryptedMnemonics {
 		var err error
-		privateKeys[i], err = decryptPrivateKey(encryptedPrivateKey, password)
+		privateKeys[i], err = decryptMnemonic(encryptedPrivateKey, password)
 		if err != nil {
 			return nil, err
 		}
@@ -124,7 +194,7 @@ func (d *Data) DecryptPrivateKeys() ([][]byte, error) {
 }
 
 // ReadKeysFile returns the data related to the keys file
-func ReadKeysFile(netParams *dagconfig.Params, path string) (*Data, error) {
+func ReadKeysFile(netParams *dagconfig.Params, path string) (*File, error) {
 	if path == "" {
 		path = defaultKeysFile(netParams)
 	}
@@ -142,7 +212,9 @@ func ReadKeysFile(netParams *dagconfig.Params, path string) (*Data, error) {
 		return nil, err
 	}
 
-	keysFile := &Data{}
+	keysFile := &File{
+		path: path,
+	}
 	err = keysFile.fromJSON(decodedFile)
 	if err != nil {
 		return nil, err
@@ -180,57 +252,29 @@ func pathExists(path string) (bool, error) {
 	return false, err
 }
 
-// WriteKeysFile writes a keys file with the given data
-func WriteKeysFile(netParams *dagconfig.Params, path string, encryptedPrivateKeys []*EncryptedPrivateKey,
-	publicKeys [][]byte, minimumSignatures uint32, ecdsa bool) error {
-
-	if path == "" {
-		path = defaultKeysFile(netParams)
+// Save writes the file contents to the disk.
+func (d *File) Save() error {
+	if d.path == "" {
+		return errors.New("cannot save a file with uninitialized path")
 	}
 
-	exists, err := pathExists(path)
+	err := createFileDirectoryIfDoesntExist(d.path)
 	if err != nil {
 		return err
 	}
 
-	if exists {
-		reader := bufio.NewReader(os.Stdin)
-		fmt.Printf("The file %s already exists. Are you sure you want to override it (type 'y' to approve)? ", path)
-		line, _, err := reader.ReadLine()
-		if err != nil {
-			return err
-		}
-
-		if string(line) != "y" {
-			return errors.Errorf("aborted keys file creation")
-		}
-	}
-
-	err = createFileDirectoryIfDoesntExist(path)
-	if err != nil {
-		return err
-	}
-
-	file, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE, 0600)
+	file, err := os.OpenFile(d.path, os.O_WRONLY|os.O_CREATE, 0600)
 	if err != nil {
 		return err
 	}
 	defer file.Close()
 
-	keysFile := &Data{
-		encryptedPrivateKeys: encryptedPrivateKeys,
-		PublicKeys:           publicKeys,
-		MinimumSignatures:    minimumSignatures,
-		ECDSA:                ecdsa,
-	}
-
 	encoder := json.NewEncoder(file)
-	err = encoder.Encode(keysFile.toJSON())
+	err = encoder.Encode(d.toJSON())
 	if err != nil {
 		return err
 	}
 
-	fmt.Printf("Wrote the keys into %s\n", path)
 	return nil
 }
 
@@ -239,19 +283,24 @@ func getAEAD(password, salt []byte) (cipher.AEAD, error) {
 	return chacha20poly1305.NewX(key)
 }
 
-func decryptPrivateKey(encryptedPrivateKey *EncryptedPrivateKey, password []byte) ([]byte, error) {
+func decryptMnemonic(encryptedPrivateKey *EncryptedMnemonic, password []byte) (string, error) {
 	aead, err := getAEAD(password, encryptedPrivateKey.salt)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 
 	if len(encryptedPrivateKey.cipher) < aead.NonceSize() {
-		return nil, errors.New("ciphertext too short")
+		return "", errors.New("ciphertext too short")
 	}
 
 	// Split nonce and ciphertext.
 	nonce, ciphertext := encryptedPrivateKey.cipher[:aead.NonceSize()], encryptedPrivateKey.cipher[aead.NonceSize():]
 
 	// Decrypt the message and check it wasn't tampered with.
-	return aead.Open(nil, nonce, ciphertext, nil)
+	decrypted, err := aead.Open(nil, nonce, ciphertext, nil)
+	if err != nil {
+		return "", err
+	}
+
+	return string(decrypted), nil
 }
