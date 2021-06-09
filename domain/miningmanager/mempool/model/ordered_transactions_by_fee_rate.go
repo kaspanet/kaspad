@@ -52,16 +52,16 @@ func (tobf *TransactionsOrderedByFeeRate) RemoveAtIndex(index int) error {
 }
 
 func (tobf *TransactionsOrderedByFeeRate) findTransactionIndex(transaction *MempoolTransaction) (int, error) {
-	if transaction.Transaction.Fee == 0 || transaction.Transaction.Mass == 0 {
+	if transaction.Transaction().Fee == 0 || transaction.Transaction().Mass == 0 {
 		return 0, errors.Errorf("findTxIndexInOrderedTransactionsByFeeRate expects a transaction with " +
 			"populated fee and mass")
 	}
 	txID := transaction.TransactionID()
-	txFeeRate := float64(transaction.Transaction.Fee) / float64(transaction.Transaction.Mass)
+	txFeeRate := float64(transaction.Transaction().Fee) / float64(transaction.Transaction().Mass)
 
 	return sort.Search(len(tobf.slice), func(i int) bool {
 		iElement := tobf.slice[i]
-		elementFeeRate := float64(iElement.Transaction.Fee) / float64(iElement.Transaction.Mass)
+		elementFeeRate := float64(iElement.Transaction().Fee) / float64(iElement.Transaction().Mass)
 		if elementFeeRate > txFeeRate {
 			return true
 		}

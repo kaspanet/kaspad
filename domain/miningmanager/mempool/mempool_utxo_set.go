@@ -25,14 +25,14 @@ func newMempoolUTXOSet(mp *mempool) *mempoolUTXOSet {
 func (mpus *mempoolUTXOSet) addTransaction(transaction *model.MempoolTransaction) {
 	outpoint := &externalapi.DomainOutpoint{TransactionID: *transaction.TransactionID()}
 
-	for i, input := range transaction.Transaction.Inputs {
+	for i, input := range transaction.Transaction().Inputs {
 		outpoint.Index = uint32(i)
 
 		delete(mpus.poolUnspentOutputs, *outpoint)
 		mpus.transactionsByPreviousOutpoint[input.PreviousOutpoint] = transaction
 	}
 
-	for i, output := range transaction.Transaction.Outputs {
+	for i, output := range transaction.Transaction().Outputs {
 		outpoint := externalapi.DomainOutpoint{TransactionID: *transaction.TransactionID(), Index: uint32(i)}
 
 		mpus.poolUnspentOutputs[outpoint] =
@@ -41,13 +41,13 @@ func (mpus *mempoolUTXOSet) addTransaction(transaction *model.MempoolTransaction
 }
 
 func (mpus *mempoolUTXOSet) removeTransaction(transaction *model.MempoolTransaction) {
-	for _, input := range transaction.Transaction.Inputs {
+	for _, input := range transaction.Transaction().Inputs {
 		mpus.poolUnspentOutputs[input.PreviousOutpoint] = input.UTXOEntry
 		delete(mpus.transactionsByPreviousOutpoint, input.PreviousOutpoint)
 	}
 
 	outpoint := externalapi.DomainOutpoint{TransactionID: *transaction.TransactionID()}
-	for i := range transaction.Transaction.Outputs {
+	for i := range transaction.Transaction().Outputs {
 		outpoint.Index = uint32(i)
 
 		delete(mpus.poolUnspentOutputs, outpoint)
@@ -57,7 +57,7 @@ func (mpus *mempoolUTXOSet) removeTransaction(transaction *model.MempoolTransact
 func (mpus *mempoolUTXOSet) checkDoubleSpends(transaction *model.MempoolTransaction) error {
 	outpoint := externalapi.DomainOutpoint{TransactionID: *transaction.TransactionID()}
 
-	for i, input := range transaction.Transaction.Inputs {
+	for i, input := range transaction.Transaction().Inputs {
 		outpoint.Index = uint32(i)
 
 		if existingTransaction, exists := mpus.transactionsByPreviousOutpoint[input.PreviousOutpoint]; exists {

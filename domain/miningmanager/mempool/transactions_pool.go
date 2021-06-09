@@ -33,12 +33,8 @@ func (tp *transactionsPool) addTransaction(transaction *externalapi.DomainTransa
 		return err
 	}
 
-	mempoolTransaction := &model.MempoolTransaction{
-		Transaction:              transaction,
-		ParentTransactionsInPool: parentTransactionsInPool,
-		IsHighPriority:           isHighPriority,
-		AddedAtDAAScore:          virtualDAAScore,
-	}
+	mempoolTransaction := model.NewMempoolTransaction(
+		transaction, parentTransactionsInPool, isHighPriority, virtualDAAScore)
 
 	return tp.addMempoolTransaction(mempoolTransaction)
 }
@@ -46,7 +42,7 @@ func (tp *transactionsPool) addTransaction(transaction *externalapi.DomainTransa
 func (tp *transactionsPool) addMempoolTransaction(transaction *model.MempoolTransaction) error {
 	tp.allTransactions[*transaction.TransactionID()] = transaction
 
-	for outpoint, parentTransactionInPool := range transaction.ParentTransactionsInPool {
+	for outpoint, parentTransactionInPool := range transaction.ParentTransactionsInPool() {
 		tp.chainedTransactionsByPreviousOutpoint[outpoint] = parentTransactionInPool
 	}
 
@@ -57,7 +53,7 @@ func (tp *transactionsPool) addMempoolTransaction(transaction *model.MempoolTran
 		return err
 	}
 
-	if transaction.IsHighPriority {
+	if transaction.IsHighPriority() {
 		tp.highPriorityTransactions[*transaction.TransactionID()] = transaction
 	}
 
@@ -74,7 +70,7 @@ func (tp *transactionsPool) removeTransaction(transaction *model.MempoolTransact
 
 	delete(tp.highPriorityTransactions, *transaction.TransactionID())
 
-	for outpoint := range transaction.ParentTransactionsInPool {
+	for outpoint := range transaction.ParentTransactionsInPool() {
 		delete(tp.chainedTransactionsByPreviousOutpoint, outpoint)
 	}
 
@@ -93,13 +89,13 @@ func (tp *transactionsPool) expireOldTransactions() error {
 
 	for _, mempoolTransaction := range tp.allTransactions {
 		// Never expire high priority transactions
-		if mempoolTransaction.IsHighPriority {
+		if mempoolTransaction.IsHighPriority() {
 			continue
 		}
 
 		// Remove all transactions whose addedAtDAAScore is older then transactionExpireIntervalDAAScore
-		if virtualDAAScore-mempoolTransaction.AddedAtDAAScore > tp.mempool.config.transactionExpireIntervalDAAScore {
-			err = tp.mempool.RemoveTransaction(mempoolTransaction.TransactionID())
+		if virtualDAAScore-mempoolTransaction.AddedAtDAAScore() > tp.mempool.config.transactionExpireIntervalDAAScore {
+			err = tp.mempool.RemoveTransaction(mempoolTransaction.TransactionID(), true)
 			if err != nil {
 				return err
 			}
@@ -114,8 +110,8 @@ func (tp *transactionsPool) allReadyTransactions() []*externalapi.DomainTransact
 	result := []*externalapi.DomainTransaction{}
 
 	for _, mempoolTransaction := range tp.allTransactions {
-		if len(mempoolTransaction.ParentTransactionsInPool) == 0 {
-			result = append(result, mempoolTransaction.Transaction)
+		if len(mempoolTransaction.ParentTransactionsInPool()) == 0 {
+			result = append(result, mempoolTransaction.Transaction())
 		}
 	}
 
@@ -143,7 +139,7 @@ func (tp *transactionsPool) getRedeemers(transaction *model.MempoolTransaction) 
 		current, queue = queue[0], queue[1:]
 
 		outpoint := externalapi.DomainOutpoint{TransactionID: *current.TransactionID()}
-		for i := range current.Transaction.Outputs {
+		for i := range current.Transaction().Outputs {
 			outpoint.Index = uint32(i)
 			if redeemerTransaction, ok := tp.chainedTransactionsByPreviousOutpoint[outpoint]; ok {
 				queue = append(queue, redeemerTransaction)

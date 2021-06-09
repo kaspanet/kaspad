@@ -58,11 +58,7 @@ func (op *orphansPool) addOrphan(transaction *externalapi.DomainTransaction, isH
 	if err != nil {
 		return err
 	}
-	orphanTransaction := &model.OrphanTransaction{
-		Transaction:     transaction,
-		IsHighPriority:  isHighPriority,
-		AddedAtDAAScore: virtualDAAScore,
-	}
+	orphanTransaction := model.NewOrphanTransaction(transaction, isHighPriority, virtualDAAScore)
 
 	op.allOrphans[*orphanTransaction.TransactionID()] = orphanTransaction
 	for _, input := range transaction.Inputs {
@@ -88,14 +84,14 @@ func (op *orphansPool) processOrphansAfterAcceptedTransaction(acceptedTransactio
 		current, queue = queue[0], queue[1:]
 
 		outpoint := externalapi.DomainOutpoint{TransactionID: *current.TransactionID()}
-		for i, output := range current.Transaction.Outputs {
+		for i, output := range current.Transaction().Outputs {
 			outpoint.Index = uint32(i)
 			orphans, ok := op.orphansByPreviousOutpoint[outpoint]
 			if !ok {
 				continue
 			}
 			for _, orphan := range orphans {
-				for _, input := range orphan.Transaction.Inputs {
+				for _, input := range orphan.Transaction().Inputs {
 					if input.PreviousOutpoint.Equal(&outpoint) {
 						input.UTXOEntry = utxo.NewUTXOEntry(output.Value, output.ScriptPublicKey, false,
 							model.UnacceptedDAAScore)
@@ -122,7 +118,7 @@ func (op *orphansPool) processOrphansAfterAcceptedTransaction(acceptedTransactio
 
 func countUnfilledInputs(orphan *model.OrphanTransaction) int {
 	unfilledInputs := 0
-	for _, input := range orphan.Transaction.Inputs {
+	for _, input := range orphan.Transaction().Inputs {
 		if input.UTXOEntry == nil {
 			unfilledInputs++
 		}
@@ -136,7 +132,7 @@ func (op *orphansPool) unorphanTransaction(orphanTransaction *model.MempoolTrans
 		return nil, err
 	}
 
-	err = op.mempool.validateTransactionInContext(orphanTransaction.Transaction)
+	err = op.mempool.validateTransactionInContext(orphanTransaction.Transaction())
 	if err != nil {
 		return nil, err
 	}
@@ -145,12 +141,12 @@ func (op *orphansPool) unorphanTransaction(orphanTransaction *model.MempoolTrans
 	if err != nil {
 		return nil, err
 	}
-	mempoolTransaction := &model.MempoolTransaction{
-		Transaction:              orphanTransaction.Transaction,
-		ParentTransactionsInPool: op.mempool.transactionsPool.getParentTransactionsInPool(orphanTransaction.Transaction),
-		IsHighPriority:           false,
-		AddedAtDAAScore:          virtualDAAScore,
-	}
+	mempoolTransaction := model.NewMempoolTransaction(
+		orphanTransaction.Transaction(),
+		op.mempool.transactionsPool.getParentTransactionsInPool(orphanTransaction.Transaction()),
+		false,
+		virtualDAAScore,
+	)
 	err = op.mempool.transactionsPool.addMempoolTransaction(mempoolTransaction)
 	if err != nil {
 		return nil, err
@@ -167,7 +163,7 @@ func (op *orphansPool) removeOrphan(orphanTransactionID *externalapi.DomainTrans
 
 	delete(op.allOrphans, *orphanTransactionID)
 
-	for i, input := range orphanTransaction.Transaction.Inputs {
+	for i, input := range orphanTransaction.Transaction().Inputs {
 		orphans, ok := op.orphansByPreviousOutpoint[input.PreviousOutpoint]
 		if !ok {
 			return errors.Errorf("Input No. %d of %s (%s) doesn't exist in orphansByPreviousOutpoint",
@@ -180,19 +176,27 @@ func (op *orphansPool) removeOrphan(orphanTransactionID *externalapi.DomainTrans
 	}
 
 	if removeRedeemers {
-		outpoint := externalapi.DomainOutpoint{TransactionID: *orphanTransactionID}
-		for i := range orphanTransaction.Transaction.Outputs {
-			outpoint.Index = uint32(i)
-			for _, orphan := range op.orphansByPreviousOutpoint[outpoint] {
-				// Recursive call is bound by size of orphan pool (which is very small)
-				err := op.removeOrphan(orphan.TransactionID(), true)
-				if err != nil {
-					return err
-				}
-			}
+		err := op.removeRedeemersOf(orphanTransaction)
+		if err != nil {
+			return err
 		}
 	}
 
+	return nil
+}
+
+func (op *orphansPool) removeRedeemersOf(transaction model.Transaction) error {
+	outpoint := externalapi.DomainOutpoint{TransactionID: *transaction.TransactionID()}
+	for i := range transaction.Transaction().Outputs {
+		outpoint.Index = uint32(i)
+		for _, orphan := range op.orphansByPreviousOutpoint[outpoint] {
+			// Recursive call is bound by size of orphan pool (which is very small)
+			err := op.removeOrphan(orphan.TransactionID(), true)
+			if err != nil {
+				return err
+			}
+		}
+	}
 	return nil
 }
 
@@ -208,12 +212,12 @@ func (op *orphansPool) expireOrphanTransactions() error {
 
 	for _, orphanTransaction := range op.allOrphans {
 		// Never expire high priority transactions
-		if orphanTransaction.IsHighPriority {
+		if orphanTransaction.IsHighPriority() {
 			continue
 		}
 
 		// Remove all transactions whose addedAtDAAScore is older then transactionExpireIntervalDAAScore
-		if virtualDAAScore-orphanTransaction.AddedAtDAAScore > op.mempool.config.orphanExpireIntervalDAAScore {
+		if virtualDAAScore-orphanTransaction.AddedAtDAAScore() > op.mempool.config.orphanExpireIntervalDAAScore {
 			err = op.removeOrphan(orphanTransaction.TransactionID(), true)
 			if err != nil {
 				return err
@@ -222,6 +226,28 @@ func (op *orphansPool) expireOrphanTransactions() error {
 	}
 
 	op.lastExpireScan = virtualDAAScore
+	return nil
+}
+
+func (op *orphansPool) updateOrphansAfterTransactionRemoved(
+	removedTransaction *model.MempoolTransaction, removeRedeemers bool) error {
+
+	if removeRedeemers {
+		return op.removeRedeemersOf(removedTransaction)
+	}
+
+	outpoint := externalapi.DomainOutpoint{TransactionID: *removedTransaction.TransactionID()}
+	for i := range removedTransaction.Transaction().Outputs {
+		outpoint.Index = uint32(i)
+		for _, orphan := range op.orphansByPreviousOutpoint[outpoint] {
+			for _, input := range orphan.Transaction().Inputs {
+				if input.PreviousOutpoint.TransactionID.Equal(removedTransaction.TransactionID()) {
+					input.UTXOEntry = nil
+				}
+			}
+		}
+	}
+
 	return nil
 }
 

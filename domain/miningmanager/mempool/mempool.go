@@ -57,14 +57,23 @@ func (mp *mempool) RemoveTransaction(transactionID *externalapi.DomainTransactio
 	}
 
 	for _, transactionToRemove := range transactionsToRemove {
-		return mp.removeTransaction(transactionToRemove)
+		err := mp.removeTransaction(transactionToRemove, removeRedeemers)
+		if err != nil {
+			return err
+		}
 	}
+	return nil
 }
 
-func (mp *mempool) removeTransaction(mempoolTransaction *model.MempoolTransaction) error {
+func (mp *mempool) removeTransaction(mempoolTransaction *model.MempoolTransaction, removeRedeemers bool) error {
 	mp.mempoolUTXOSet.removeTransaction(mempoolTransaction)
 
 	err := mp.transactionsPool.removeTransaction(mempoolTransaction)
+	if err != nil {
+		return err
+	}
+
+	err = mp.orphansPool.updateOrphansAfterTransactionRemoved(mempoolTransaction, removeRedeemers)
 	if err != nil {
 		return err
 	}
