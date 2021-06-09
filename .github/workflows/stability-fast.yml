@@ -19,15 +19,6 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Run fast stability test
-        timeout-minutes: 720
-        #working-directory: stability-tests
-        run: |
-          pwd
-          ls -la
-          cd stability-tests
-          install_and_test.sh
-
       - name: Install kaspad
         run: |
           git status
@@ -35,3 +26,8 @@ jobs:
 
       - name: Install golint
         run: go get -u golang.org/x/lint/golint
+
+      - name: Run fast stability test
+        timeout-minutes: 720
+        working-directory: stability-tests
+        run: ./install_and_test.sh
