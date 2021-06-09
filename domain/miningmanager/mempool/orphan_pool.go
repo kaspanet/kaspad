@@ -38,10 +38,10 @@ func (op *orphansPool) maybeAddOrphan(transaction *externalapi.DomainTransaction
 			serializedLength, op.mempool.config.maximumOrphanTransactionSize)
 		return txRuleError(RejectIncompatibleOrphan, str)
 	}
-	if op.mempool.config.maximumOrphanTransactionSize <= 0 {
+	if op.mempool.config.maximumOrphanTransactionCount <= 0 {
 		return nil
 	}
-	for len(op.allOrphans) >= op.mempool.config.maximumOrphanTransactionSize {
+	for len(op.allOrphans) >= op.mempool.config.maximumOrphanTransactionCount {
 		// Don't remove redeemers in the case of a random eviction since
 		// it is quite possible it might be needed again shortly.
 		err := op.removeOrphan(op.randomOrphan().TransactionID(), false)

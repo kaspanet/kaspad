@@ -12,8 +12,8 @@ const (
 	defaultOrphanExpireIntervalSeconds          uint64 = 60
 	defaultOrphanExpireScanIntervalSeconds      uint64 = 10
 
-	defaultMaximumOrphanTransactionSize = 100000
-	defaultMaximumOrphanTransactions    = 50
+	defaultMaximumOrphanTransactionSize  = 100000
+	defaultMaximumOrphanTransactionCount = 50
 )
 
 type config struct {
@@ -22,6 +22,7 @@ type config struct {
 	orphanExpireIntervalDAAScore          uint64
 	orphanExpireScanIntervalDAAScore      uint64
 	maximumOrphanTransactionSize          int
+	maximumOrphanTransactionCount         int
 }
 
 func defaultConfig(dagParams *dagconfig.Params) *config {
@@ -33,5 +34,6 @@ func defaultConfig(dagParams *dagconfig.Params) *config {
 		orphanExpireIntervalDAAScore:          defaultOrphanExpireIntervalSeconds / targetBlocksPerSecond,
 		orphanExpireScanIntervalDAAScore:      defaultOrphanExpireScanIntervalSeconds / targetBlocksPerSecond,
 		maximumOrphanTransactionSize:          defaultMaximumOrphanTransactionSize,
+		maximumOrphanTransactionCount:         defaultMaximumOrphanTransactionCount,
 	}
 }
