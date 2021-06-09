@@ -6,21 +6,8 @@ on:
 jobs:
   race_test:
     runs-on: ubuntu-20.04
-    strategy:
-      fail-fast: false
-      matrix:
-        branch:
-          # - master
-          - latest
     name: Fast stability tests on ${{ matrix.branch }}
     steps:
-
-      - name: Check out code into the Go module directory
-        uses: actions/checkout@v2
-        with:
-          fetch-depth: 0
-          repository: kaspanet/kaspad
-          path: kaspad
 
       - name: Set up Go 1.x
         uses: actions/setup-go@v2
@@ -31,13 +18,8 @@ jobs:
         shell: bash
         working-directory: ./kaspad
         run: |
-          if [ "${{ matrix.branch }}" == "master" ]; then
-            echo "run_on=master" >> $GITHUB_ENV
-          fi
-          if [ "${{ matrix.branch }}" == "latest" ]; then
-            branch=$(git branch -r | grep 'v\([0-9]\+\.\)\([0-9]\+\.\)\([0-9]\+\)-dev' | sort -Vr | head -1 | xargs)
-            echo "run_on=${branch}" >> $GITHUB_ENV
-          fi
+          branch=$(git branch -r | grep 'v\([0-9]\+\.\)\([0-9]\+\.\)\([0-9]\+\)-dev' | sort -Vr | head -1 | xargs)
+          echo "run_on=${branch}" >> $GITHUB_ENV
 
       - name: Install kaspad
         shell: bash
@@ -45,8 +27,6 @@ jobs:
         run: |
           git checkout "${{ env.run_on }}"
           git status
-          go install ./...
-
 
       - name: Install golint
         shell: bash
