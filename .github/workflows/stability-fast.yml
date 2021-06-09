@@ -20,17 +20,11 @@ jobs:
           fetch-depth: 0
 
       - name: Install kaspad
-        #working-directory: kaspad
         run: |
-          echo $PWD
-          ls -la
-          cd kaspad
-          ls -la
           git status
-          #echo git checkout "${GITHUB_REF##*/}"
-          #git checkout "${GITHUB_REF##*/}"
-          #git status
-          #go install ./...
+          git checkout "${GITHUB_REF##*/}"
+          git status
+          go install ./...
 
       - name: Install golint
         run: go get -u golang.org/x/lint/golint
