@@ -20,7 +20,7 @@ jobs:
           fetch-depth: 0
 
       - name: Install kaspad
-        working-directory: kaspad
+        #working-directory: kaspad
         run: |
           echo $PWD
           ls -la
