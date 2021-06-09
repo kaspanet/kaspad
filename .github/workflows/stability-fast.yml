@@ -16,7 +16,7 @@ jobs:
 
       - name: Install kaspad
         shell: bash
-        working-directory: ./kaspad
+        #working-directory: ./kaspad
         run: |
           echo $PWD
           git status
