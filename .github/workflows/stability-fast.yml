@@ -20,10 +20,10 @@ jobs:
         run: |
           echo $PWD
           git status
-          echo git checkout "${GITHUB_REF##*/}"
-          git checkout "${GITHUB_REF##*/}"
-          git status
-          go install ./...
+          #echo git checkout "${GITHUB_REF##*/}"
+          #git checkout "${GITHUB_REF##*/}"
+          #git status
+          #go install ./...
 
 
       - name: Install golint
