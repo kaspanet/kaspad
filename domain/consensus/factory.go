@@ -1,6 +1,8 @@
 package consensus
 
 import (
+	"github.com/kaspanet/kaspad/domain/consensus/model"
+	"github.com/pkg/errors"
 	"io/ioutil"
 	"os"
 	"sync"
@@ -418,6 +420,9 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 	}
 
 	if !genesisInfo.Exists {
+		if c.blockStore.Count(model.NewStagingArea()) > 0 {
+			return nil, errors.Errorf("Genesis hash is not relevant to database: wrong config or appdir?")
+		}
 		_, err = c.ValidateAndInsertBlock(config.GenesisBlock)
 		if err != nil {
 			return nil, err
