@@ -22,13 +22,11 @@ jobs:
       - name: Install kaspad
         run: |
           git status
-          git checkout "${GITHUB_REF##*/}"
-          git status
           go install ./...
 
       - name: Install golint
         run: go get -u golang.org/x/lint/golint
 
-      - name: Stability fast test
+      - name: Run fast stability test
         timeout-minutes: 720
-        run: kaspad/stability-tests/install_and_test.sh
+        run: stability-tests/install_and_test.sh
