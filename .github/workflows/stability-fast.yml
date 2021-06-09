@@ -19,6 +19,9 @@ jobs:
         #working-directory: ./kaspad
         run: |
           echo $PWD
+          ls -la
+          cd kaspad
+          ls -la
           git status
           #echo git checkout "${GITHUB_REF##*/}"
           #git checkout "${GITHUB_REF##*/}"
