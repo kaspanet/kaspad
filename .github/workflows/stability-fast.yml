@@ -4,7 +4,7 @@ on:
   push:
 
 jobs:
-  race_test:
+  stability-test-fast:
     runs-on: ubuntu-20.04
     name: Fast stability tests on ${{ github.ref }}
     steps:
