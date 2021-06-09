@@ -2,8 +2,12 @@ package mempool
 
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/transactionhelper"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/utxo"
 	"github.com/kaspanet/kaspad/domain/dagconfig"
 	"github.com/kaspanet/kaspad/domain/miningmanager/mempool/model"
+	"github.com/pkg/errors"
 )
 
 type mempool struct {
@@ -90,7 +94,39 @@ func (mp *mempool) RevalidateHighPriorityTransactions() (validTransactions []*ex
 }
 
 func (mp *mempool) fillInputsAndGetMissingParents(transaction *externalapi.DomainTransaction) (
-	parents []*model.MempoolTransaction, missingParents []externalapi.DomainTransactionID, err error) {
+	parents model.OutpointToTransaction, missingOutpoints []*externalapi.DomainOutpoint, err error) {
 
-	panic("mempool.fillInputsAndGetMissingParents not implemented") // TODO (Mike)
+	parentsInPool := mp.transactionsPool.getParentTransactionsInPool(transaction)
+
+	fillInputs(transaction, parentsInPool)
+
+	err = mp.consensus.ValidateTransactionAndPopulateWithConsensusData(transaction)
+	if err != nil {
+		errMissingOutpoints := ruleerrors.ErrMissingTxOut{}
+		if errors.As(err, &errMissingOutpoints) {
+			return parentsInPool, errMissingOutpoints.MissingOutpoints, nil
+		}
+		if errors.Is(err, ruleerrors.ErrImmatureSpend) {
+			return nil, nil, transactionRuleError(
+				RejectImmatureSpend, "one of the transaction inputs spends an immature UTXO")
+		}
+		if errors.As(err, &ruleerrors.RuleError{}) {
+			return nil, nil, newRuleError(err)
+		}
+		return nil, nil, err
+	}
+
+	return parentsInPool, nil, nil
+}
+
+func fillInputs(transaction *externalapi.DomainTransaction, parentsInPool model.OutpointToTransaction) {
+	for _, input := range transaction.Inputs {
+		parent, ok := parentsInPool[input.PreviousOutpoint]
+		if !ok {
+			continue
+		}
+		relevantOutput := parent.Transaction().Outputs[input.PreviousOutpoint.Index]
+		input.UTXOEntry = utxo.NewUTXOEntry(relevantOutput.Value, relevantOutput.ScriptPublicKey,
+			transactionhelper.IsCoinBase(transaction), model.UnacceptedDAAScore)
+	}
 }
