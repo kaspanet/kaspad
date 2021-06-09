@@ -101,7 +101,7 @@ func (app *kaspadApp) main(startedChan chan<- struct{}) error {
 	// Open the database
 	databaseContext, err := openDB(app.cfg)
 	if err != nil {
-		log.Error("Loading database failed:", err)
+		log.Errorf("Loading database failed: %+v", err)
 		return err
 	}
 
