@@ -9,7 +9,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        branch: [ master, latest ]
+        branch:
+          - master
+          - latest
     name: Fast stability tests on ${{ matrix.branch }}
     steps:
 
