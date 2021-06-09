@@ -25,7 +25,7 @@ jobs:
         shell: bash
         working-directory: ./kaspad
         run: |
-          git checkout "${{ github.ref }}"
+          git checkout "${GITHUB_REF##*/}"
           git status
           go install ./...
 
