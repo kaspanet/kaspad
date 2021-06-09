@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"sync/atomic"
 
-	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/app/protocol"
 	"github.com/kaspanet/kaspad/app/rpc"
 	"github.com/kaspanet/kaspad/domain"
@@ -14,7 +13,6 @@ import (
 	infrastructuredatabase "github.com/kaspanet/kaspad/infrastructure/db/database"
 	"github.com/kaspanet/kaspad/infrastructure/network/addressmanager"
 	"github.com/kaspanet/kaspad/infrastructure/network/connmanager"
-	"github.com/kaspanet/kaspad/infrastructure/network/dnsseed"
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter"
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/id"
 	"github.com/kaspanet/kaspad/util/panics"
@@ -45,8 +43,6 @@ func (a *ComponentManager) Start() {
 	if err != nil {
 		panics.Exit(log, fmt.Sprintf("Error starting the net adapter: %+v", err))
 	}
-
-	a.maybeSeedFromDNS()
 
 	a.connectionManager.Start()
 }
@@ -155,23 +151,6 @@ func setupRPC(
 	protocolManager.SetOnPruningPointUTXOSetOverrideHandler(rpcManager.NotifyPruningPointUTXOSetOverride)
 
 	return rpcManager
-}
-
-func (a *ComponentManager) maybeSeedFromDNS() {
-	if !a.cfg.DisableDNSSeed {
-		dnsseed.SeedFromDNS(a.cfg.NetParams(), a.cfg.DNSSeed, false, nil,
-			a.cfg.Lookup, func(addresses []*appmessage.NetAddress) {
-				// Kaspad uses a lookup of the dns seeder here. Since seeder returns
-				// IPs of nodes and not its own IP, we can not know real IP of
-				// source. So we'll take first returned address as source.
-				a.addressManager.AddAddresses(addresses...)
-			})
-
-		dnsseed.SeedFromGRPC(a.cfg.NetParams(), a.cfg.GRPCSeed, false, nil,
-			func(addresses []*appmessage.NetAddress) {
-				a.addressManager.AddAddresses(addresses...)
-			})
-	}
 }
 
 // P2PNodeID returns the network ID associated with this ComponentManager
