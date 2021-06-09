@@ -10,7 +10,7 @@ jobs:
       fail-fast: false
       matrix:
         branch:
-          - master
+          # - master
           - latest
     name: Fast stability tests on ${{ matrix.branch }}
     steps:
