@@ -20,9 +20,7 @@ jobs:
           fetch-depth: 0
 
       - name: Install kaspad
-        run: |
-          git status
-          go install ./...
+        run: go install ./...
 
       - name: Install golint
         run: go get -u golang.org/x/lint/golint
