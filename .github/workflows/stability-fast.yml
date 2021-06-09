@@ -21,18 +21,11 @@ jobs:
         with:
           go-version: 1.16
 
-      - name: Set scheduled branch name
-        shell: bash
-        working-directory: ./kaspad
-        run: |
-          branch= $(git branch -r | grep 'v\([0-9]\+\.\)\([0-9]\+\.\)\([0-9]\+\)-dev' | sort -Vr | head -1 | xargs)
-          echo "run_on=${branch}" >> $GITHUB_ENV
-
       - name: Install kaspad
         shell: bash
         working-directory: ./kaspad
         run: |
-          git checkout "${{ env.run_on }}"
+          #git checkout "${{ env.run_on }}"
           git status
           go install ./...
 
