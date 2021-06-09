@@ -29,4 +29,5 @@ jobs:
 
       - name: Run fast stability test
         timeout-minutes: 720
-        run: stability-tests/install_and_test.sh
+        working-directory: stability-tests
+        run: install_and_test.sh
