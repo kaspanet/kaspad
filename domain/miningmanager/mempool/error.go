@@ -93,12 +93,10 @@ func (e TxRuleError) Error() string {
 	return e.Description
 }
 
-// txRuleError creates an underlying TxRuleError with the given a set of
+// transactionRuleError creates an underlying TxRuleError with the given a set of
 // arguments and returns a RuleError that encapsulates it.
-func txRuleError(c RejectCode, desc string) RuleError {
-	return RuleError{
-		Err: TxRuleError{RejectCode: c, Description: desc},
-	}
+func transactionRuleError(c RejectCode, desc string) RuleError {
+	return newRuleError(TxRuleError{RejectCode: c, Description: desc})
 }
 
 func newRuleError(err error) RuleError {

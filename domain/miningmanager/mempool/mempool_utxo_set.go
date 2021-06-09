@@ -3,6 +3,8 @@ package mempool
 import (
 	"fmt"
 
+	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
+
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/utxo"
 	"github.com/kaspanet/kaspad/domain/miningmanager/mempool/model"
@@ -54,16 +56,16 @@ func (mpus *mempoolUTXOSet) removeTransaction(transaction *model.MempoolTransact
 	}
 }
 
-func (mpus *mempoolUTXOSet) checkDoubleSpends(transaction *model.MempoolTransaction) error {
-	outpoint := externalapi.DomainOutpoint{TransactionID: *transaction.TransactionID()}
+func (mpus *mempoolUTXOSet) checkDoubleSpends(transaction *externalapi.DomainTransaction) error {
+	outpoint := externalapi.DomainOutpoint{TransactionID: *consensushashing.TransactionID(transaction)}
 
-	for i, input := range transaction.Transaction().Inputs {
+	for i, input := range transaction.Inputs {
 		outpoint.Index = uint32(i)
 
 		if existingTransaction, exists := mpus.transactionsByPreviousOutpoint[input.PreviousOutpoint]; exists {
 			str := fmt.Sprintf("output %s already spent by transaction %s in the memory pool",
 				input.PreviousOutpoint, existingTransaction.TransactionID())
-			return txRuleError(RejectDuplicate, str)
+			return transactionRuleError(RejectDuplicate, str)
 		}
 	}
 

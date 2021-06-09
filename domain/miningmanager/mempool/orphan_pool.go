@@ -36,7 +36,7 @@ func (op *orphansPool) maybeAddOrphan(transaction *externalapi.DomainTransaction
 		str := fmt.Sprintf("orphan transaction size of %d bytes is "+
 			"larger than max allowed size of %d bytes",
 			serializedLength, op.mempool.config.maximumOrphanTransactionSize)
-		return txRuleError(RejectIncompatibleOrphan, str)
+		return transactionRuleError(RejectIncompatibleOrphan, str)
 	}
 	if op.mempool.config.maximumOrphanTransactionCount <= 0 {
 		return nil

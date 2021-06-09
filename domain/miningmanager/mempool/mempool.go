@@ -89,14 +89,6 @@ func (mp *mempool) RevalidateHighPriorityTransactions() (validTransactions []*ex
 	panic("mempool.RevalidateHighPriorityTransactions not implemented") // TODO (Mike)
 }
 
-func (mp *mempool) validateTransactionInIsolation(transaction *externalapi.DomainTransaction) error {
-	panic("mempool.validateTransactionInIsolation not implemented") // TODO (Mike)
-}
-
-func (mp *mempool) validateTransactionInContext(transaction *externalapi.DomainTransaction) error {
-	panic("mempool.validateTransactionInContext not implemented") // TODO (Mike)
-}
-
 func (mp *mempool) fillInputsAndGetMissingParents(transaction *externalapi.DomainTransaction) (
 	parents []*model.MempoolTransaction, missingParents []externalapi.DomainTransactionID, err error) {
 
