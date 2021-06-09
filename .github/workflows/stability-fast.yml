@@ -6,17 +6,21 @@ on:
 jobs:
   race_test:
     runs-on: ubuntu-20.04
-    name: Fast stability tests on ${{ matrix.branch }}
+    name: Fast stability tests on ${{ github.ref }}
     steps:
 
-      - name: Set up Go 1.x
+      - name: Set up Go 1.16
         uses: actions/setup-go@v2
         with:
           go-version: 1.16
 
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+
       - name: Install kaspad
-        shell: bash
-        #working-directory: ./kaspad
+        working-directory: kaspad
         run: |
           echo $PWD
           ls -la
@@ -28,14 +32,9 @@ jobs:
           #git status
           #go install ./...
 
-
       - name: Install golint
-        shell: bash
-        run: |
-          go get -u golang.org/x/lint/golint
+        run: go get -u golang.org/x/lint/golint
 
       - name: Stability fast test
-        shell: bash
-        working-directory: ./kaspad/stability-tests
         timeout-minutes: 720
-        run: ./install_and_test.sh
+        run: kaspad/stability-tests/install_and_test.sh
