@@ -18,8 +18,7 @@ jobs:
         shell: bash
         working-directory: ./kaspad
         run: |
-          branch=$(git branch -r | grep 'v\([0-9]\+\.\)\([0-9]\+\.\)\([0-9]\+\)-dev' | sort -Vr | head -1 | xargs)
-          echo "run_on=${branch}" >> $GITHUB_ENV
+          echo "run_on=$(git branch -r | grep 'v\([0-9]\+\.\)\([0-9]\+\.\)\([0-9]\+\)-dev' | sort -Vr | head -1 | xargs)" >> $GITHUB_ENV
 
       - name: Install kaspad
         shell: bash
