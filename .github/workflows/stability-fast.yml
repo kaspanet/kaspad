@@ -32,7 +32,6 @@ jobs:
         shell: bash
         working-directory: ./kaspad
         run: |
-          git checkout "${{ env.run_on }}"
           git status
           go install ./...
 
