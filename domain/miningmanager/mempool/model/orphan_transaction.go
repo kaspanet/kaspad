@@ -12,6 +12,7 @@ type OrphanTransaction struct {
 	addedAtDAAScore uint64
 }
 
+// NewOrphanTransaction constructs a new OrphanTransaction
 func NewOrphanTransaction(
 	transaction *externalapi.DomainTransaction,
 	isHighPriority bool,
@@ -29,13 +30,17 @@ func (ot *OrphanTransaction) TransactionID() *externalapi.DomainTransactionID {
 	return consensushashing.TransactionID(ot.transaction)
 }
 
+// Transaction return the DomainTransaction associated with this OrphanTransaction:
 func (ot *OrphanTransaction) Transaction() *externalapi.DomainTransaction {
 	return ot.transaction
 }
+
+// IsHighPriority returns whether this OrphanTransaction is a high-priority one
 func (ot *OrphanTransaction) IsHighPriority() bool {
 	return ot.isHighPriority
 }
 
+// AddedAtDAAScore returns the virtual DAA score at which this OrphanTransaction was added to the mempool
 func (ot *OrphanTransaction) AddedAtDAAScore() uint64 {
 	return ot.addedAtDAAScore
 }

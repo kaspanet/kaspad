@@ -11,6 +11,7 @@ type TransactionsOrderedByFeeRate struct {
 	slice []*MempoolTransaction
 }
 
+// GetByIndex returns the transaction in the given index
 func (tobf *TransactionsOrderedByFeeRate) GetByIndex(index int) *MempoolTransaction {
 	return tobf.slice[index]
 }
