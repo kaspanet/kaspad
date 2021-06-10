@@ -3,12 +3,13 @@ package mempool
 import (
 	"fmt"
 
+	"github.com/kaspanet/kaspad/domain/dagconfig"
+
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/transactionhelper"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/utxo"
-	"github.com/kaspanet/kaspad/domain/dagconfig"
 	"github.com/kaspanet/kaspad/domain/miningmanager/mempool/model"
 	"github.com/pkg/errors"
 )
@@ -33,6 +34,33 @@ func newMempool(consensus externalapi.Consensus, dagParams *dagconfig.Params) *m
 	mp.orphansPool = newOrphansPool(mp)
 
 	return mp
+}
+
+func (mp *mempool) RemoveTransactions(transactions []*externalapi.DomainTransaction, removeRedeemers bool) error {
+	for _, transaction := range transactions {
+		err := mp.RemoveTransaction(consensushashing.TransactionID(transaction), removeRedeemers)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (mp *mempool) GetTransaction(transactionID *externalapi.DomainTransactionID) (*externalapi.DomainTransaction, bool) {
+	mempoolTransaction, ok := mp.transactionsPool.allTransactions[*transactionID]
+	return mempoolTransaction.Transaction(), ok
+}
+
+func (mp *mempool) AllTransactions() []*externalapi.DomainTransaction {
+	allTransactions := make([]*externalapi.DomainTransaction, 0, len(mp.transactionsPool.allTransactions))
+	for _, mempoolTransaction := range mp.transactionsPool.allTransactions {
+		allTransactions = append(allTransactions, mempoolTransaction.Transaction())
+	}
+	return allTransactions
+}
+
+func (mp *mempool) TransactionCount() int {
+	return len(mp.transactionsPool.allTransactions)
 }
 
 func (mp *mempool) ValidateAndInsertTransaction(transaction *externalapi.DomainTransaction, isHighPriority bool, allowOrphan bool) (
