@@ -39,34 +39,34 @@ type RejectCode uint8
 
 // These constants define the various supported reject codes.
 const (
-	RejectMalformed          RejectCode = 0x01
-	RejectInvalid            RejectCode = 0x10
-	RejectObsolete           RejectCode = 0x11
-	RejectDuplicate          RejectCode = 0x12
-	RejectNotRequested       RejectCode = 0x13
-	RejectNonstandard        RejectCode = 0x40
-	RejectDust               RejectCode = 0x41
-	RejectInsufficientFee    RejectCode = 0x42
-	RejectFinality           RejectCode = 0x43
-	RejectDifficulty         RejectCode = 0x44
-	RejectImmatureSpend      RejectCode = 0x45
-	RejectIncompatibleOrphan RejectCode = 0x64
+	RejectMalformed       RejectCode = 0x01
+	RejectInvalid         RejectCode = 0x10
+	RejectObsolete        RejectCode = 0x11
+	RejectDuplicate       RejectCode = 0x12
+	RejectNotRequested    RejectCode = 0x13
+	RejectNonstandard     RejectCode = 0x40
+	RejectDust            RejectCode = 0x41
+	RejectInsufficientFee RejectCode = 0x42
+	RejectFinality        RejectCode = 0x43
+	RejectDifficulty      RejectCode = 0x44
+	RejectImmatureSpend   RejectCode = 0x45
+	RejectBadOrphan       RejectCode = 0x64
 )
 
 // Map of reject codes back strings for pretty printing.
 var rejectCodeStrings = map[RejectCode]string{
-	RejectMalformed:          "REJECT_MALFORMED",
-	RejectInvalid:            "REJECT_INVALID",
-	RejectObsolete:           "REJECT_OBSOLETE",
-	RejectDuplicate:          "REJECT_DUPLICATE",
-	RejectNonstandard:        "REJECT_NON_STANDARD",
-	RejectDust:               "REJECT_DUST",
-	RejectInsufficientFee:    "REJECT_INSUFFICIENT_FEE",
-	RejectFinality:           "REJECT_FINALITY",
-	RejectDifficulty:         "REJECT_DIFFICULTY",
-	RejectNotRequested:       "REJECT_NOT_REQUESTED",
-	RejectImmatureSpend:      "REJECT_IMMATURE_SPEND",
-	RejectIncompatibleOrphan: "REJECT_INCOMPATIBLE_ORPHAN",
+	RejectMalformed:       "REJECT_MALFORMED",
+	RejectInvalid:         "REJECT_INVALID",
+	RejectObsolete:        "REJECT_OBSOLETE",
+	RejectDuplicate:       "REJECT_DUPLICATE",
+	RejectNonstandard:     "REJECT_NON_STANDARD",
+	RejectDust:            "REJECT_DUST",
+	RejectInsufficientFee: "REJECT_INSUFFICIENT_FEE",
+	RejectFinality:        "REJECT_FINALITY",
+	RejectDifficulty:      "REJECT_DIFFICULTY",
+	RejectNotRequested:    "REJECT_NOT_REQUESTED",
+	RejectImmatureSpend:   "REJECT_IMMATURE_SPEND",
+	RejectBadOrphan:       "REJECT_BAD_ORPHAN",
 }
 
 // String returns the RejectCode in human-readable form.

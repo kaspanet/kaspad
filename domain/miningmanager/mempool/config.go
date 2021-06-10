@@ -7,6 +7,8 @@ import (
 )
 
 const (
+	defaultMaximumTransactionCount = 1_000_000
+
 	defaultTransactionExpireIntervalSeconds     uint64 = 60
 	defaultTransactionExpireScanIntervalSeconds uint64 = 10
 	defaultOrphanExpireIntervalSeconds          uint64 = 60
@@ -19,6 +21,7 @@ const (
 )
 
 type config struct {
+	maximumTransactionCount               int
 	transactionExpireIntervalDAAScore     uint64
 	transactionExpireScanIntervalDAAScore uint64
 	orphanExpireIntervalDAAScore          uint64
@@ -33,6 +36,7 @@ func defaultConfig(dagParams *dagconfig.Params) *config {
 	targetBlocksPerSecond := uint64(dagParams.TargetTimePerBlock / time.Second)
 
 	return &config{
+		maximumTransactionCount:               defaultMaximumTransactionCount,
 		transactionExpireIntervalDAAScore:     defaultTransactionExpireIntervalSeconds / targetBlocksPerSecond,
 		transactionExpireScanIntervalDAAScore: defaultTransactionExpireScanIntervalSeconds / targetBlocksPerSecond,
 		orphanExpireIntervalDAAScore:          defaultOrphanExpireIntervalSeconds / targetBlocksPerSecond,

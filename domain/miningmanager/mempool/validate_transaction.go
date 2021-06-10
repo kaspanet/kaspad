@@ -3,8 +3,6 @@ package mempool
 import (
 	"fmt"
 
-	"github.com/pkg/errors"
-
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
 )
@@ -31,7 +29,7 @@ func (mp *mempool) validateTransactionInIsolation(transaction *externalapi.Domai
 
 func (mp *mempool) validateTransactionInContext(transaction *externalapi.DomainTransaction) error {
 	if transaction.Mass > mp.config.maximumMassAcceptedByBlock {
-		return newRuleError(errors.Errorf("transaction %s mass is %d which is "+
+		return transactionRuleError(RejectInvalid, fmt.Sprintf("transaction %s mass is %d which is "+
 			"higher than the maxmimum of %d", consensushashing.TransactionID(transaction),
 			transaction.Mass, mp.config.maximumMassAcceptedByBlock))
 	}

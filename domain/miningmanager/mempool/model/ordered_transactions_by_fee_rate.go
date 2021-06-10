@@ -11,6 +11,10 @@ type TransactionsOrderedByFeeRate struct {
 	slice []*MempoolTransaction
 }
 
+func (tobf *TransactionsOrderedByFeeRate) GetByIndex(index int) *MempoolTransaction {
+	return tobf.slice[index]
+}
+
 // Push inserts a transaction into the set, placing it in the correct place to preserve order
 func (tobf *TransactionsOrderedByFeeRate) Push(transaction *MempoolTransaction) error {
 	index, err := tobf.findTransactionIndex(transaction)

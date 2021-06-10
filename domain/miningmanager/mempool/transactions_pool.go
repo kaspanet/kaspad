@@ -26,17 +26,22 @@ func newTransactionsPool(mp *mempool) *transactionsPool {
 }
 
 func (tp *transactionsPool) addTransaction(transaction *externalapi.DomainTransaction,
-	parentTransactionsInPool model.OutpointToTransaction, isHighPriority bool) error {
+	parentTransactionsInPool model.OutpointToTransaction, isHighPriority bool) (*model.MempoolTransaction, error) {
 
 	virtualDAAScore, err := tp.mempool.virtualDAAScore()
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	mempoolTransaction := model.NewMempoolTransaction(
 		transaction, parentTransactionsInPool, isHighPriority, virtualDAAScore)
 
-	return tp.addMempoolTransaction(mempoolTransaction)
+	err = tp.addMempoolTransaction(mempoolTransaction)
+	if err != nil {
+		return nil, err
+	}
+
+	return mempoolTransaction, nil
 }
 
 func (tp *transactionsPool) addMempoolTransaction(transaction *model.MempoolTransaction) error {
@@ -148,4 +153,13 @@ func (tp *transactionsPool) getRedeemers(transaction *model.MempoolTransaction) 
 		}
 	}
 	return redeemers
+}
+
+func (tp *transactionsPool) limitTransactionCount() {
+	for len(tp.allTransactions) > tp.mempool.config.maximumOrphanTransactionCount {
+		err := tp.removeTransaction(tp.transactionsOrderedByFeeRate.GetByIndex(0))
+		if err != nil {
+			return
+		}
+	}
 }
