@@ -37,7 +37,7 @@ func (css *consensusStateStore) ImportPruningPointUTXOSetIntoVirtualUTXOSet(dbCo
 	css.virtualUTXOSetCache.Clear()
 
 	// Delete all the old UTXOs from the database
-	deleteCursor, err := dbContext.Cursor(utxoSetBucket)
+	deleteCursor, err := dbContext.Cursor(css.utxoSetBucket)
 	if err != nil {
 		return err
 	}
@@ -60,7 +60,7 @@ func (css *consensusStateStore) ImportPruningPointUTXOSetIntoVirtualUTXOSet(dbCo
 			return err
 		}
 
-		key, err := utxoKey(outpoint)
+		key, err := css.utxoKey(outpoint)
 		if err != nil {
 			return err
 		}

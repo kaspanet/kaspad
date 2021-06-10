@@ -12,21 +12,27 @@ import (
 	"github.com/pkg/errors"
 )
 
-var bucketChainBlockHashByIndex = database.MakeBucket([]byte("chain-block-hash-by-index"))
-var bucketChainBlockIndexByHash = database.MakeBucket([]byte("chain-block-index-by-hash"))
-var highestChainBlockIndexKey = database.MakeBucket(nil).Key([]byte("highest-chain-block-index"))
+var bucketChainBlockHashByIndexName = []byte("chain-block-hash-by-index")
+var bucketChainBlockIndexByHashName = []byte("chain-block-index-by-hash")
+var highestChainBlockIndexKeyName = []byte("highest-chain-block-index")
 
 type headersSelectedChainStore struct {
 	cacheByIndex                *lrucacheuint64tohash.LRUCache
 	cacheByHash                 *lrucache.LRUCache
 	cacheHighestChainBlockIndex uint64
+	bucketChainBlockHashByIndex model.DBBucket
+	bucketChainBlockIndexByHash model.DBBucket
+	highestChainBlockIndexKey   model.DBKey
 }
 
 // New instantiates a new HeadersSelectedChainStore
-func New(cacheSize int, preallocate bool) model.HeadersSelectedChainStore {
+func New(prefix byte, cacheSize int, preallocate bool) model.HeadersSelectedChainStore {
 	return &headersSelectedChainStore{
-		cacheByIndex: lrucacheuint64tohash.New(cacheSize, preallocate),
-		cacheByHash:  lrucache.New(cacheSize, preallocate),
+		cacheByIndex:                lrucacheuint64tohash.New(cacheSize, preallocate),
+		cacheByHash:                 lrucache.New(cacheSize, preallocate),
+		bucketChainBlockHashByIndex: database.MakeBucket([]byte{prefix}).Bucket(bucketChainBlockHashByIndexName),
+		bucketChainBlockIndexByHash: database.MakeBucket([]byte{prefix}).Bucket(bucketChainBlockIndexByHashName),
+		highestChainBlockIndexKey:   database.MakeBucket([]byte{prefix}).Key(highestChainBlockIndexKeyName),
 	}
 }
 
@@ -138,13 +144,13 @@ func (hscs *headersSelectedChainStore) deserializeIndex(indexBytes []byte) (uint
 }
 
 func (hscs *headersSelectedChainStore) hashAsKey(hash *externalapi.DomainHash) model.DBKey {
-	return bucketChainBlockIndexByHash.Key(hash.ByteSlice())
+	return hscs.bucketChainBlockIndexByHash.Key(hash.ByteSlice())
 }
 
 func (hscs *headersSelectedChainStore) indexAsKey(index uint64) model.DBKey {
 	var keyBytes [8]byte
 	binary.BigEndian.PutUint64(keyBytes[:], index)
-	return bucketChainBlockHashByIndex.Key(keyBytes[:])
+	return hscs.bucketChainBlockHashByIndex.Key(keyBytes[:])
 }
 
 func (hscs *headersSelectedChainStore) highestChainBlockIndex(dbContext model.DBReader) (uint64, bool, error) {
@@ -152,7 +158,7 @@ func (hscs *headersSelectedChainStore) highestChainBlockIndex(dbContext model.DB
 		return hscs.cacheHighestChainBlockIndex, true, nil
 	}
 
-	indexBytes, err := dbContext.Get(highestChainBlockIndexKey)
+	indexBytes, err := dbContext.Get(hscs.highestChainBlockIndexKey)
 	if err != nil {
 		if errors.Is(err, database.ErrNotFound) {
 			return 0, false, nil

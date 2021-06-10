@@ -10,19 +10,21 @@ import (
 	"github.com/pkg/errors"
 )
 
-var bucket = database.MakeBucket([]byte("blocks"))
+var bucketName = []byte("blocks")
 var countKey = database.MakeBucket(nil).Key([]byte("blocks-count"))
 
 // blockStore represents a store of blocks
 type blockStore struct {
 	cache       *lrucache.LRUCache
 	countCached uint64
+	bucket      model.DBBucket
 }
 
 // New instantiates a new BlockStore
-func New(dbContext model.DBReader, cacheSize int, preallocate bool) (model.BlockStore, error) {
+func New(dbContext model.DBReader, prefix byte, cacheSize int, preallocate bool) (model.BlockStore, error) {
 	blockStore := &blockStore{
-		cache: lrucache.New(cacheSize, preallocate),
+		cache:  lrucache.New(cacheSize, preallocate),
+		bucket: database.MakeBucket([]byte{prefix}).Bucket(bucketName),
 	}
 
 	err := blockStore.initializeCount(dbContext)
@@ -153,7 +155,7 @@ func (bs *blockStore) deserializeBlock(blockBytes []byte) (*externalapi.DomainBl
 }
 
 func (bs *blockStore) hashAsKey(hash *externalapi.DomainHash) model.DBKey {
-	return bucket.Key(hash.ByteSlice())
+	return bs.bucket.Key(hash.ByteSlice())
 }
 
 func (bs *blockStore) Count(stagingArea *model.StagingArea) uint64 {
@@ -225,7 +227,7 @@ func (a allBlockHashesIterator) Close() error {
 }
 
 func (bs *blockStore) AllBlockHashesIterator(dbContext model.DBReader) (model.BlockIterator, error) {
-	cursor, err := dbContext.Cursor(bucket)
+	cursor, err := dbContext.Cursor(bs.bucket)
 	if err != nil {
 		return nil, err
 	}

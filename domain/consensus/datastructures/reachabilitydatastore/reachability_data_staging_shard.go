@@ -27,7 +27,7 @@ func (rdss *reachabilityDataStagingShard) Commit(dbTx model.DBTransaction) error
 		if err != nil {
 			return err
 		}
-		err = dbTx.Put(reachabilityReindexRootKey, reachabilityReindexRootBytes)
+		err = dbTx.Put(rdss.store.reachabilityReindexRootKey, reachabilityReindexRootBytes)
 		if err != nil {
 			return err
 		}

@@ -9,17 +9,19 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/utils/lrucache"
 )
 
-var bucket = database.MakeBucket([]byte("block-relations"))
+var bucketName = []byte("block-relations")
 
 // blockRelationStore represents a store of BlockRelations
 type blockRelationStore struct {
-	cache *lrucache.LRUCache
+	cache  *lrucache.LRUCache
+	bucket model.DBBucket
 }
 
 // New instantiates a new BlockRelationStore
-func New(cacheSize int, preallocate bool) model.BlockRelationStore {
+func New(prefix byte, cacheSize int, preallocate bool) model.BlockRelationStore {
 	return &blockRelationStore{
-		cache: lrucache.New(cacheSize, preallocate),
+		cache:  lrucache.New(cacheSize, preallocate),
+		bucket: database.MakeBucket([]byte{prefix}).Bucket(bucketName),
 	}
 }
 
@@ -72,7 +74,7 @@ func (brs *blockRelationStore) Has(dbContext model.DBReader, stagingArea *model.
 }
 
 func (brs *blockRelationStore) hashAsKey(hash *externalapi.DomainHash) model.DBKey {
-	return bucket.Key(hash.ByteSlice())
+	return brs.bucket.Key(hash.ByteSlice())
 }
 
 func (brs *blockRelationStore) serializeBlockRelations(blockRelations *model.BlockRelations) ([]byte, error) {

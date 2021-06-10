@@ -10,20 +10,24 @@ import (
 	"github.com/pkg/errors"
 )
 
-var utxoDiffBucket = database.MakeBucket([]byte("utxo-diffs"))
-var utxoDiffChildBucket = database.MakeBucket([]byte("utxo-diff-children"))
+var utxoDiffBucketName = []byte("utxo-diffs")
+var utxoDiffChildBucketName = []byte("utxo-diff-children")
 
 // utxoDiffStore represents a store of UTXODiffs
 type utxoDiffStore struct {
-	utxoDiffCache      *lrucache.LRUCache
-	utxoDiffChildCache *lrucache.LRUCache
+	utxoDiffCache       *lrucache.LRUCache
+	utxoDiffChildCache  *lrucache.LRUCache
+	utxoDiffBucket      model.DBBucket
+	utxoDiffChildBucket model.DBBucket
 }
 
 // New instantiates a new UTXODiffStore
-func New(cacheSize int, preallocate bool) model.UTXODiffStore {
+func New(prefix byte, cacheSize int, preallocate bool) model.UTXODiffStore {
 	return &utxoDiffStore{
-		utxoDiffCache:      lrucache.New(cacheSize, preallocate),
-		utxoDiffChildCache: lrucache.New(cacheSize, preallocate),
+		utxoDiffCache:       lrucache.New(cacheSize, preallocate),
+		utxoDiffChildCache:  lrucache.New(cacheSize, preallocate),
+		utxoDiffBucket:      database.MakeBucket([]byte{prefix}).Bucket(utxoDiffBucketName),
+		utxoDiffChildBucket: database.MakeBucket([]byte{prefix}).Bucket(utxoDiffChildBucketName),
 	}
 }
 
@@ -134,11 +138,11 @@ func (uds *utxoDiffStore) Delete(stagingArea *model.StagingArea, blockHash *exte
 }
 
 func (uds *utxoDiffStore) utxoDiffHashAsKey(hash *externalapi.DomainHash) model.DBKey {
-	return utxoDiffBucket.Key(hash.ByteSlice())
+	return uds.utxoDiffBucket.Key(hash.ByteSlice())
 }
 
 func (uds *utxoDiffStore) utxoDiffChildHashAsKey(hash *externalapi.DomainHash) model.DBKey {
-	return utxoDiffChildBucket.Key(hash.ByteSlice())
+	return uds.utxoDiffChildBucket.Key(hash.ByteSlice())
 }
 
 func (uds *utxoDiffStore) serializeUTXODiff(utxoDiff externalapi.UTXODiff) ([]byte, error) {

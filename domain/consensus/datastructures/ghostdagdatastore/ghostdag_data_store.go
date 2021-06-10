@@ -9,17 +9,19 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/utils/lrucache"
 )
 
-var bucket = database.MakeBucket([]byte("block-ghostdag-data"))
+var bucketName = []byte("block-ghostdag-data")
 
 // ghostdagDataStore represents a store of BlockGHOSTDAGData
 type ghostdagDataStore struct {
-	cache *lrucache.LRUCache
+	cache  *lrucache.LRUCache
+	bucket model.DBBucket
 }
 
 // New instantiates a new GHOSTDAGDataStore
-func New(cacheSize int, preallocate bool) model.GHOSTDAGDataStore {
+func New(prefix byte, cacheSize int, preallocate bool) model.GHOSTDAGDataStore {
 	return &ghostdagDataStore{
-		cache: lrucache.New(cacheSize, preallocate),
+		cache:  lrucache.New(cacheSize, preallocate),
+		bucket: database.MakeBucket([]byte{prefix}).Bucket(bucketName),
 	}
 }
 
@@ -60,7 +62,7 @@ func (gds *ghostdagDataStore) Get(dbContext model.DBReader, stagingArea *model.S
 }
 
 func (gds *ghostdagDataStore) hashAsKey(hash *externalapi.DomainHash) model.DBKey {
-	return bucket.Key(hash.ByteSlice())
+	return gds.bucket.Key(hash.ByteSlice())
 }
 
 func (gds *ghostdagDataStore) serializeBlockGHOSTDAGData(blockGHOSTDAGData *model.BlockGHOSTDAGData) ([]byte, error) {

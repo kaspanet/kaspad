@@ -69,7 +69,7 @@ func (hscss *headersSelectedChainStagingShard) Commit(dbTx model.DBTransaction) 
 		}
 	}
 
-	err := dbTx.Put(highestChainBlockIndexKey, hscss.store.serializeIndex(highestIndex))
+	err := dbTx.Put(hscss.store.highestChainBlockIndexKey, hscss.store.serializeIndex(highestIndex))
 	if err != nil {
 		return err
 	}

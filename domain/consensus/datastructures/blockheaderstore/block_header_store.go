@@ -9,19 +9,21 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/utils/lrucache"
 )
 
-var bucket = database.MakeBucket([]byte("block-headers"))
+var bucketName = []byte("block-headers")
 var countKey = database.MakeBucket(nil).Key([]byte("block-headers-count"))
 
 // blockHeaderStore represents a store of blocks
 type blockHeaderStore struct {
 	cache       *lrucache.LRUCache
 	countCached uint64
+	bucket      model.DBBucket
 }
 
 // New instantiates a new BlockHeaderStore
-func New(dbContext model.DBReader, cacheSize int, preallocate bool) (model.BlockHeaderStore, error) {
+func New(dbContext model.DBReader, prefix byte, cacheSize int, preallocate bool) (model.BlockHeaderStore, error) {
 	blockHeaderStore := &blockHeaderStore{
-		cache: lrucache.New(cacheSize, preallocate),
+		cache:  lrucache.New(cacheSize, preallocate),
+		bucket: database.MakeBucket([]byte{prefix}).Bucket(bucketName),
 	}
 
 	err := blockHeaderStore.initializeCount(dbContext)
@@ -144,7 +146,7 @@ func (bhs *blockHeaderStore) Delete(stagingArea *model.StagingArea, blockHash *e
 }
 
 func (bhs *blockHeaderStore) hashAsKey(hash *externalapi.DomainHash) model.DBKey {
-	return bucket.Key(hash.ByteSlice())
+	return bhs.bucket.Key(hash.ByteSlice())
 }
 
 func (bhs *blockHeaderStore) serializeHeader(header externalapi.BlockHeader) ([]byte, error) {

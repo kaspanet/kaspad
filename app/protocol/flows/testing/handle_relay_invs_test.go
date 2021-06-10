@@ -130,6 +130,18 @@ type fakeRelayInvsContext struct {
 	rwLock                                        sync.RWMutex
 }
 
+func (f *fakeRelayInvsContext) TemporaryConsensus() externalapi.Consensus {
+	panic("implement me")
+}
+
+func (f *fakeRelayInvsContext) CreateTemporaryConsensus() error {
+	panic("implement me")
+}
+
+func (f *fakeRelayInvsContext) CommitTemporaryConsensus() error {
+	panic("implement me")
+}
+
 func (f *fakeRelayInvsContext) EstimateNetworkHashesPerSecond(startHash *externalapi.DomainHash, windowSize int) (uint64, error) {
 	panic(errors.Errorf("called unimplemented function from test '%s'", f.testName))
 }

@@ -23,6 +23,18 @@ type fakeDomain struct {
 	testapi.TestConsensus
 }
 
+func (d fakeDomain) TemporaryConsensus() externalapi.Consensus {
+	panic("implement me")
+}
+
+func (d fakeDomain) CreateTemporaryConsensus() error {
+	panic("implement me")
+}
+
+func (d fakeDomain) CommitTemporaryConsensus() error {
+	panic("implement me")
+}
+
 func (d fakeDomain) Consensus() externalapi.Consensus           { return d }
 func (d fakeDomain) MiningManager() miningmanager.MiningManager { return nil }
 

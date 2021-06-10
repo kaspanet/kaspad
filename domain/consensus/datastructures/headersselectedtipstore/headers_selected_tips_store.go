@@ -8,15 +8,18 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 )
 
-var headerSelectedTipKey = database.MakeBucket(nil).Key([]byte("headers-selected-tip"))
+var keyName = []byte("headers-selected-tip")
 
 type headerSelectedTipStore struct {
 	cache *externalapi.DomainHash
+	key   model.DBKey
 }
 
 // New instantiates a new HeaderSelectedTipStore
-func New() model.HeaderSelectedTipStore {
-	return &headerSelectedTipStore{}
+func New(prefix byte) model.HeaderSelectedTipStore {
+	return &headerSelectedTipStore{
+		key: database.MakeBucket([]byte{prefix}).Key(keyName),
+	}
 }
 
 func (hsts *headerSelectedTipStore) Has(dbContext model.DBReader, stagingArea *model.StagingArea) (bool, error) {
@@ -30,7 +33,7 @@ func (hsts *headerSelectedTipStore) Has(dbContext model.DBReader, stagingArea *m
 		return true, nil
 	}
 
-	return dbContext.Has(headerSelectedTipKey)
+	return dbContext.Has(hsts.key)
 }
 
 func (hsts *headerSelectedTipStore) Stage(stagingArea *model.StagingArea, selectedTip *externalapi.DomainHash) {
@@ -55,7 +58,7 @@ func (hsts *headerSelectedTipStore) HeadersSelectedTip(dbContext model.DBReader,
 		return hsts.cache, nil
 	}
 
-	selectedTipBytes, err := dbContext.Get(headerSelectedTipKey)
+	selectedTipBytes, err := dbContext.Get(hsts.key)
 	if err != nil {
 		return nil, err
 	}

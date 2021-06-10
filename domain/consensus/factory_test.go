@@ -23,7 +23,7 @@ func TestNewConsensus(t *testing.T) {
 		t.Fatalf("error in NewLevelDB: %s", err)
 	}
 
-	_, err = f.NewConsensus(config, db)
+	_, err = f.NewConsensus(config, db, 0)
 	if err != nil {
 		t.Fatalf("error in NewConsensus: %+v", err)
 	}

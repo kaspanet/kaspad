@@ -9,17 +9,19 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/utils/lrucache"
 )
 
-var bucket = database.MakeBucket([]byte("block-statuses"))
+var bucketName = []byte("block-statuses")
 
 // blockStatusStore represents a store of BlockStatuses
 type blockStatusStore struct {
-	cache *lrucache.LRUCache
+	cache  *lrucache.LRUCache
+	bucket model.DBBucket
 }
 
 // New instantiates a new BlockStatusStore
-func New(cacheSize int, preallocate bool) model.BlockStatusStore {
+func New(prefix byte, cacheSize int, preallocate bool) model.BlockStatusStore {
 	return &blockStatusStore{
-		cache: lrucache.New(cacheSize, preallocate),
+		cache:  lrucache.New(cacheSize, preallocate),
+		bucket: database.MakeBucket([]byte{prefix}).Bucket(bucketName),
 	}
 }
 
@@ -93,5 +95,5 @@ func (bss *blockStatusStore) deserializeBlockStatus(statusBytes []byte) (externa
 }
 
 func (bss *blockStatusStore) hashAsKey(hash *externalapi.DomainHash) model.DBKey {
-	return bucket.Key(hash.ByteSlice())
+	return bss.bucket.Key(hash.ByteSlice())
 }
