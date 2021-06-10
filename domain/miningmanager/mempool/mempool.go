@@ -68,7 +68,7 @@ func (mp *mempool) ValidateAndInsertTransaction(transaction *externalapi.DomainT
 		return nil, err
 	}
 
-	acceptedOrphans, err := mp.orphansPool.processOrphansAfterAcceptedTransaction(mempoolTransaction)
+	acceptedOrphans, err := mp.orphansPool.processOrphansAfterAcceptedTransaction(mempoolTransaction.Transaction())
 	if err != nil {
 		return nil, err
 	}
@@ -76,7 +76,7 @@ func (mp *mempool) ValidateAndInsertTransaction(transaction *externalapi.DomainT
 	acceptedTransactions = make([]*externalapi.DomainTransaction, 0, len(acceptedOrphans)+1)
 	acceptedTransactions = append(acceptedTransactions, transaction)
 	for _, acceptedOrphan := range acceptedOrphans {
-		acceptedTransactions = append(acceptedTransactions, acceptedOrphan.Transaction())
+		acceptedTransactions = append(acceptedTransactions, acceptedOrphan)
 	}
 
 	mp.transactionsPool.limitTransactionCount()
@@ -87,7 +87,41 @@ func (mp *mempool) ValidateAndInsertTransaction(transaction *externalapi.DomainT
 func (mp *mempool) HandleNewBlockTransactions(transactions []*externalapi.DomainTransaction) (
 	acceptedOrphans []*externalapi.DomainTransaction, err error) {
 
-	panic("mempool.HandleNewBlockTransactions not implemented") // TODO (Mike)
+	acceptedOrphans = []*externalapi.DomainTransaction{}
+	for _, transaction := range transactions {
+		transactionID := consensushashing.TransactionID(transaction)
+		err := mp.RemoveTransaction(transactionID, false)
+		if err != nil {
+			return nil, err
+		}
+
+		err = mp.removeDoubleSpends(transaction)
+		if err != nil {
+			return nil, err
+		}
+
+		err = mp.orphansPool.removeOrphan(transactionID, false)
+		if err != nil {
+			return nil, err
+		}
+
+		acceptedOrphansFromThisTransaction, err := mp.orphansPool.processOrphansAfterAcceptedTransaction(transaction)
+		if err != nil {
+			return nil, err
+		}
+
+		acceptedOrphans = append(acceptedOrphans, acceptedOrphansFromThisTransaction...)
+	}
+	err = mp.orphansPool.expireOrphanTransactions()
+	if err != nil {
+		return nil, err
+	}
+	err = mp.transactionsPool.expireOldTransactions()
+	if err != nil {
+		return nil, err
+	}
+
+	return acceptedOrphans, nil
 }
 
 func (mp *mempool) RemoveTransaction(transactionID *externalapi.DomainTransactionID, removeRedeemers bool) error {
@@ -163,6 +197,18 @@ func (mp *mempool) fillInputsAndGetMissingParents(transaction *externalapi.Domai
 	}
 
 	return parentsInPool, nil, nil
+}
+
+func (mp *mempool) removeDoubleSpends(transaction *externalapi.DomainTransaction) error {
+	for _, input := range transaction.Inputs {
+		if redeemer, ok := mp.mempoolUTXOSet.transactionByPreviousOutpoint[input.PreviousOutpoint]; ok {
+			err := mp.RemoveTransaction(redeemer.TransactionID(), true)
+			if err != nil {
+				return err
+			}
+		}
+	}
+	return nil
 }
 
 func fillInputs(transaction *externalapi.DomainTransaction, parentsInPool model.OutpointToTransaction) {

@@ -11,16 +11,16 @@ import (
 )
 
 type mempoolUTXOSet struct {
-	mempool                        *mempool
-	poolUnspentOutputs             model.OutpointToUTXOEntry
-	transactionsByPreviousOutpoint model.OutpointToTransaction
+	mempool                       *mempool
+	poolUnspentOutputs            model.OutpointToUTXOEntry
+	transactionByPreviousOutpoint model.OutpointToTransaction
 }
 
 func newMempoolUTXOSet(mp *mempool) *mempoolUTXOSet {
 	return &mempoolUTXOSet{
-		mempool:                        mp,
-		poolUnspentOutputs:             model.OutpointToUTXOEntry{},
-		transactionsByPreviousOutpoint: model.OutpointToTransaction{},
+		mempool:                       mp,
+		poolUnspentOutputs:            model.OutpointToUTXOEntry{},
+		transactionByPreviousOutpoint: model.OutpointToTransaction{},
 	}
 }
 
@@ -31,7 +31,7 @@ func (mpus *mempoolUTXOSet) addTransaction(transaction *model.MempoolTransaction
 		outpoint.Index = uint32(i)
 
 		delete(mpus.poolUnspentOutputs, *outpoint)
-		mpus.transactionsByPreviousOutpoint[input.PreviousOutpoint] = transaction
+		mpus.transactionByPreviousOutpoint[input.PreviousOutpoint] = transaction
 	}
 
 	for i, output := range transaction.Transaction().Outputs {
@@ -45,7 +45,7 @@ func (mpus *mempoolUTXOSet) addTransaction(transaction *model.MempoolTransaction
 func (mpus *mempoolUTXOSet) removeTransaction(transaction *model.MempoolTransaction) {
 	for _, input := range transaction.Transaction().Inputs {
 		mpus.poolUnspentOutputs[input.PreviousOutpoint] = input.UTXOEntry
-		delete(mpus.transactionsByPreviousOutpoint, input.PreviousOutpoint)
+		delete(mpus.transactionByPreviousOutpoint, input.PreviousOutpoint)
 	}
 
 	outpoint := externalapi.DomainOutpoint{TransactionID: *transaction.TransactionID()}
@@ -62,7 +62,7 @@ func (mpus *mempoolUTXOSet) checkDoubleSpends(transaction *externalapi.DomainTra
 	for i, input := range transaction.Inputs {
 		outpoint.Index = uint32(i)
 
-		if existingTransaction, exists := mpus.transactionsByPreviousOutpoint[input.PreviousOutpoint]; exists {
+		if existingTransaction, exists := mpus.transactionByPreviousOutpoint[input.PreviousOutpoint]; exists {
 			str := fmt.Sprintf("output %s already spent by transaction %s in the memory pool",
 				input.PreviousOutpoint, existingTransaction.TransactionID())
 			return transactionRuleError(RejectDuplicate, str)

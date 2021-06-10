@@ -3,6 +3,8 @@ package mempool
 import (
 	"fmt"
 
+	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
+
 	"github.com/kaspanet/kaspad/domain/consensus/utils/utxo"
 
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
@@ -73,18 +75,19 @@ func (op *orphansPool) addOrphan(transaction *externalapi.DomainTransaction, isH
 	return nil
 }
 
-func (op *orphansPool) processOrphansAfterAcceptedTransaction(acceptedTransaction *model.MempoolTransaction) (
-	acceptedOrphans []*model.MempoolTransaction, err error) {
+func (op *orphansPool) processOrphansAfterAcceptedTransaction(acceptedTransaction *externalapi.DomainTransaction) (
+	acceptedOrphans []*externalapi.DomainTransaction, err error) {
 
-	acceptedOrphans = []*model.MempoolTransaction{}
-	queue := []*model.MempoolTransaction{acceptedTransaction}
+	acceptedOrphans = []*externalapi.DomainTransaction{}
+	queue := []*externalapi.DomainTransaction{acceptedTransaction}
 
 	for len(queue) > 0 {
-		var current *model.MempoolTransaction
+		var current *externalapi.DomainTransaction
 		current, queue = queue[0], queue[1:]
 
-		outpoint := externalapi.DomainOutpoint{TransactionID: *current.TransactionID()}
-		for i, output := range current.Transaction().Outputs {
+		currentTransactionID := consensushashing.TransactionID(current)
+		outpoint := externalapi.DomainOutpoint{TransactionID: *currentTransactionID}
+		for i, output := range current.Outputs {
 			outpoint.Index = uint32(i)
 			orphans, ok := op.orphansByPreviousOutpoint[outpoint]
 			if !ok {
@@ -99,7 +102,7 @@ func (op *orphansPool) processOrphansAfterAcceptedTransaction(acceptedTransactio
 					}
 				}
 				if countUnfilledInputs(orphan) == 0 {
-					unorphanedTransaction, err := op.unorphanTransaction(current)
+					err := op.unorphanTransaction(current)
 					if err != nil {
 						if errors.As(err, &RuleError{}) {
 							log.Infof("Failed to unorphan transaction %s due to rule error: %s", err)
@@ -107,7 +110,7 @@ func (op *orphansPool) processOrphansAfterAcceptedTransaction(acceptedTransactio
 						}
 						return nil, err
 					}
-					acceptedOrphans = append(acceptedOrphans, unorphanedTransaction)
+					acceptedOrphans = append(acceptedOrphans, current)
 				}
 			}
 		}
@@ -126,33 +129,34 @@ func countUnfilledInputs(orphan *model.OrphanTransaction) int {
 	return unfilledInputs
 }
 
-func (op *orphansPool) unorphanTransaction(orphanTransaction *model.MempoolTransaction) (*model.MempoolTransaction, error) {
-	err := op.removeOrphan(orphanTransaction.TransactionID(), false)
+func (op *orphansPool) unorphanTransaction(transaction *externalapi.DomainTransaction) error {
+	transactionID := consensushashing.TransactionID(transaction)
+	err := op.removeOrphan(transactionID, false)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	err = op.mempool.validateTransactionInContext(orphanTransaction.Transaction())
+	err = op.mempool.validateTransactionInContext(transaction)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	virtualDAAScore, err := op.mempool.virtualDAAScore()
 	if err != nil {
-		return nil, err
+		return err
 	}
 	mempoolTransaction := model.NewMempoolTransaction(
-		orphanTransaction.Transaction(),
-		op.mempool.transactionsPool.getParentTransactionsInPool(orphanTransaction.Transaction()),
+		transaction,
+		op.mempool.transactionsPool.getParentTransactionsInPool(transaction),
 		false,
 		virtualDAAScore,
 	)
 	err = op.mempool.transactionsPool.addMempoolTransaction(mempoolTransaction)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	return mempoolTransaction, nil
+	return nil
 }
 
 func (op *orphansPool) removeOrphan(orphanTransactionID *externalapi.DomainTransactionID, removeRedeemers bool) error {
