@@ -66,7 +66,7 @@ func (mp *mempool) TransactionCount() int {
 func (mp *mempool) ValidateAndInsertTransaction(transaction *externalapi.DomainTransaction, isHighPriority bool, allowOrphan bool) (
 	acceptedTransactions []*externalapi.DomainTransaction, err error) {
 
-	err = mp.validateTransactionInContext(transaction)
+	err = mp.validateTransactionInIsolation(transaction)
 	if err != nil {
 		return nil, err
 	}
