@@ -198,7 +198,31 @@ func (mp *mempool) BlockCandidateTransactions() []*externalapi.DomainTransaction
 }
 
 func (mp *mempool) RevalidateHighPriorityTransactions() (validTransactions []*externalapi.DomainTransaction, err error) {
-	panic("mempool.RevalidateHighPriorityTransactions not implemented") // TODO (Mike)
+	validTransactions = []*externalapi.DomainTransaction{}
+
+	for _, transaction := range mp.transactionsPool.highPriorityTransactions {
+		clearInputs(transaction)
+		_, missingParents, err := mp.fillInputsAndGetMissingParents(transaction.Transaction())
+		if err != nil {
+			return nil, err
+		}
+		if len(missingParents) > 0 {
+			err := mp.RemoveTransaction(transaction.TransactionID(), true)
+			if err != nil {
+				return nil, err
+			}
+			continue
+		}
+		validTransactions = append(validTransactions, transaction.Transaction())
+	}
+
+	return validTransactions, nil
+}
+
+func clearInputs(transaction *model.MempoolTransaction) {
+	for _, input := range transaction.Transaction().Inputs {
+		input.UTXOEntry = nil
+	}
 }
 
 func (mp *mempool) fillInputsAndGetMissingParents(transaction *externalapi.DomainTransaction) (
