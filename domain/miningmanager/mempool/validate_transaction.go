@@ -7,6 +7,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
 )
 
+// this function MUST be called with the mempool mutex locked for reads
 func (mp *mempool) validateTransactionInIsolation(transaction *externalapi.DomainTransaction) error {
 	transactionID := consensushashing.TransactionID(transaction)
 	if _, ok := mp.transactionsPool.allTransactions[*transactionID]; ok {
@@ -15,7 +16,7 @@ func (mp *mempool) validateTransactionInIsolation(transaction *externalapi.Domai
 	}
 
 	if !mp.config.acceptNonStandard {
-		if err := mp.checkTransactionStandard(transaction); err != nil {
+		if err := checkTransactionStandard(transaction); err != nil {
 			// Attempt to extract a reject code from the error so
 			// it can be retained. When not possible, fall back to
 			// a non standard error.
@@ -35,6 +36,7 @@ func (mp *mempool) validateTransactionInIsolation(transaction *externalapi.Domai
 	return nil
 }
 
+// this function MUST be called with the mempool mutex locked for writes
 func (mp *mempool) validateTransactionInContext(transaction *externalapi.DomainTransaction) error {
 	if transaction.Mass > mp.config.maximumMassAcceptedByBlock {
 		return transactionRuleError(RejectInvalid, fmt.Sprintf("transaction %s mass is %d which is "+

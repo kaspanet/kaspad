@@ -47,7 +47,7 @@ const (
 	minimumRelayTransactionFee = util.Amount(1000)
 )
 
-func (mp *mempool) checkTransactionStandard(transaction *externalapi.DomainTransaction) error {
+func checkTransactionStandard(transaction *externalapi.DomainTransaction) error {
 	// The transaction must be a currently supported version.
 	if transaction.Version > constants.MaxTransactionVersion {
 		str := fmt.Sprintf("transaction version %d is not in the valid range of %d-%d",

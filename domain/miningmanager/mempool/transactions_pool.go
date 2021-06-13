@@ -25,6 +25,7 @@ func newTransactionsPool(mp *mempool) *transactionsPool {
 	}
 }
 
+// this function MUST be called with the mempool mutex locked for writes
 func (tp *transactionsPool) addTransaction(transaction *externalapi.DomainTransaction,
 	parentTransactionsInPool model.OutpointToTransaction, isHighPriority bool) (*model.MempoolTransaction, error) {
 
@@ -44,6 +45,7 @@ func (tp *transactionsPool) addTransaction(transaction *externalapi.DomainTransa
 	return mempoolTransaction, nil
 }
 
+// this function MUST be called with the mempool mutex locked for writes
 func (tp *transactionsPool) addMempoolTransaction(transaction *model.MempoolTransaction) error {
 	tp.allTransactions[*transaction.TransactionID()] = transaction
 
@@ -65,6 +67,7 @@ func (tp *transactionsPool) addMempoolTransaction(transaction *model.MempoolTran
 	return nil
 }
 
+// this function MUST be called with the mempool mutex locked for writes
 func (tp *transactionsPool) removeTransaction(transaction *model.MempoolTransaction) error {
 	delete(tp.allTransactions, *transaction.TransactionID())
 
@@ -82,6 +85,7 @@ func (tp *transactionsPool) removeTransaction(transaction *model.MempoolTransact
 	return nil
 }
 
+// this function MUST be called with the mempool mutex locked for writes
 func (tp *transactionsPool) expireOldTransactions() error {
 	virtualDAAScore, err := tp.mempool.virtualDAAScore()
 	if err != nil {
@@ -111,6 +115,7 @@ func (tp *transactionsPool) expireOldTransactions() error {
 	return nil
 }
 
+// this function MUST be called with the mempool mutex locked for reads
 func (tp *transactionsPool) allReadyTransactions() []*externalapi.DomainTransaction {
 	result := []*externalapi.DomainTransaction{}
 
@@ -123,6 +128,7 @@ func (tp *transactionsPool) allReadyTransactions() []*externalapi.DomainTransact
 	return result
 }
 
+// this function MUST be called with the mempool mutex locked for reads
 func (tp *transactionsPool) getParentTransactionsInPool(
 	transaction *externalapi.DomainTransaction) model.OutpointToTransaction {
 
@@ -136,6 +142,7 @@ func (tp *transactionsPool) getParentTransactionsInPool(
 	return parentsTransactionsInPool
 }
 
+// this function MUST be called with the mempool mutex locked for reads
 func (tp *transactionsPool) getRedeemers(transaction *model.MempoolTransaction) []*model.MempoolTransaction {
 	queue := []*model.MempoolTransaction{transaction}
 	redeemers := []*model.MempoolTransaction{}
@@ -155,6 +162,7 @@ func (tp *transactionsPool) getRedeemers(transaction *model.MempoolTransaction) 
 	return redeemers
 }
 
+// this function MUST be called with the mempool mutex locked for writes
 func (tp *transactionsPool) limitTransactionCount() {
 	for len(tp.allTransactions) > tp.mempool.config.maximumOrphanTransactionCount {
 		err := tp.removeTransaction(tp.transactionsOrderedByFeeRate.GetByIndex(0))

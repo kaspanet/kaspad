@@ -32,6 +32,7 @@ func newOrphansPool(mp *mempool) *orphansPool {
 	}
 }
 
+// this function MUST be called with the mempool mutex locked for writes
 func (op *orphansPool) maybeAddOrphan(transaction *externalapi.DomainTransaction, isHighPriority bool) error {
 	serializedLength := estimatedsize.TransactionEstimatedSerializedSize(transaction)
 	if serializedLength > uint64(op.mempool.config.maximumOrphanTransactionSize) {
@@ -55,6 +56,7 @@ func (op *orphansPool) maybeAddOrphan(transaction *externalapi.DomainTransaction
 	return op.addOrphan(transaction, isHighPriority)
 }
 
+// this function MUST be called with the mempool mutex locked for writes
 func (op *orphansPool) addOrphan(transaction *externalapi.DomainTransaction, isHighPriority bool) error {
 	virtualDAAScore, err := op.mempool.virtualDAAScore()
 	if err != nil {
@@ -75,6 +77,7 @@ func (op *orphansPool) addOrphan(transaction *externalapi.DomainTransaction, isH
 	return nil
 }
 
+// this function MUST be called with the mempool mutex locked for writes
 func (op *orphansPool) processOrphansAfterAcceptedTransaction(acceptedTransaction *externalapi.DomainTransaction) (
 	acceptedOrphans []*externalapi.DomainTransaction, err error) {
 
@@ -129,6 +132,7 @@ func countUnfilledInputs(orphan *model.OrphanTransaction) int {
 	return unfilledInputs
 }
 
+// this function MUST be called with the mempool mutex locked for writes
 func (op *orphansPool) unorphanTransaction(transaction *externalapi.DomainTransaction) error {
 	transactionID := consensushashing.TransactionID(transaction)
 	err := op.removeOrphan(transactionID, false)
@@ -159,6 +163,7 @@ func (op *orphansPool) unorphanTransaction(transaction *externalapi.DomainTransa
 	return nil
 }
 
+// this function MUST be called with the mempool mutex locked for writes
 func (op *orphansPool) removeOrphan(orphanTransactionID *externalapi.DomainTransactionID, removeRedeemers bool) error {
 	orphanTransaction, ok := op.allOrphans[*orphanTransactionID]
 	if !ok {
@@ -189,6 +194,7 @@ func (op *orphansPool) removeOrphan(orphanTransactionID *externalapi.DomainTrans
 	return nil
 }
 
+// this function MUST be called with the mempool mutex locked for writes
 func (op *orphansPool) removeRedeemersOf(transaction model.Transaction) error {
 	outpoint := externalapi.DomainOutpoint{TransactionID: *transaction.TransactionID()}
 	for i := range transaction.Transaction().Outputs {
@@ -204,6 +210,7 @@ func (op *orphansPool) removeRedeemersOf(transaction model.Transaction) error {
 	return nil
 }
 
+// this function MUST be called with the mempool mutex locked for writes
 func (op *orphansPool) expireOrphanTransactions() error {
 	virtualDAAScore, err := op.mempool.virtualDAAScore()
 	if err != nil {
@@ -233,6 +240,7 @@ func (op *orphansPool) expireOrphanTransactions() error {
 	return nil
 }
 
+// this function MUST be called with the mempool mutex locked for writes
 func (op *orphansPool) updateOrphansAfterTransactionRemoved(
 	removedTransaction *model.MempoolTransaction, removeRedeemers bool) error {
 
@@ -255,6 +263,7 @@ func (op *orphansPool) updateOrphansAfterTransactionRemoved(
 	return nil
 }
 
+// this function MUST be called with the mempool mutex locked for reads
 func (op *orphansPool) randomOrphan() *model.OrphanTransaction {
 	for _, orphan := range op.allOrphans {
 		return orphan
