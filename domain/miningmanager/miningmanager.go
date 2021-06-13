@@ -15,6 +15,7 @@ type MiningManager interface {
 	HandleNewBlockTransactions(txs []*externalapi.DomainTransaction) ([]*externalapi.DomainTransaction, error)
 	ValidateAndInsertTransaction(transaction *externalapi.DomainTransaction, isHighPriority bool, allowOrphan bool) (
 		acceptedTransactions []*externalapi.DomainTransaction, err error)
+	RevalidateHighPriorityTransactions() (validTransactions []*externalapi.DomainTransaction, err error)
 }
 
 type miningManager struct {
@@ -53,4 +54,10 @@ func (mm *miningManager) AllTransactions() []*externalapi.DomainTransaction {
 
 func (mm *miningManager) TransactionCount() int {
 	return mm.mempool.TransactionCount()
+}
+
+func (mm *miningManager) RevalidateHighPriorityTransactions() (
+	validTransactions []*externalapi.DomainTransaction, err error) {
+
+	return mm.mempool.RevalidateHighPriorityTransactions()
 }

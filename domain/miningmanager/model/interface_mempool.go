@@ -15,4 +15,5 @@ type Mempool interface {
 	GetTransaction(transactionID *externalapi.DomainTransactionID) (*externalapi.DomainTransaction, bool)
 	AllTransactions() []*externalapi.DomainTransaction
 	TransactionCount() int
+	RevalidateHighPriorityTransactions() (validTransactions []*externalapi.DomainTransaction, err error)
 }
