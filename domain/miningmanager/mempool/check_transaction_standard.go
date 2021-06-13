@@ -3,6 +3,8 @@ package mempool
 import (
 	"fmt"
 
+	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
+
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/estimatedsize"
@@ -34,12 +36,12 @@ const (
 	// (1 + 15*74 + 3) + (15*34 + 3) + 23 = 1650
 	maximumStandardSignatureScriptSize = 1650
 
-	// MaxStandardTxSize is the maximum size allowed for transactions that
+	// maximumStandardTransactionSize  is the maximum size allowed for transactions that
 	// are considered standard and will therefore be relayed and considered
 	// for mining.
-	maxStandardTransactionSize = 100000
+	maximumStandardTransactionSize = 100000
 
-	// DefaultMinRelayTxFee is the minimum fee in sompi that is required
+	// minimumRelayTransactionFee is the minimum fee in sompi that is required
 	// for a transaction to be treated as free for relay and mining
 	// purposes. It is also used to help determine if a transaction is
 	// considered dust and as a base for calculating minimum required fees
@@ -47,7 +49,7 @@ const (
 	minimumRelayTransactionFee = util.Amount(1000)
 )
 
-func checkTransactionStandard(transaction *externalapi.DomainTransaction) error {
+func checkTransactionStandardInIsolation(transaction *externalapi.DomainTransaction) error {
 	// The transaction must be a currently supported version.
 	if transaction.Version > constants.MaxTransactionVersion {
 		str := fmt.Sprintf("transaction version %d is not in the valid range of %d-%d",
@@ -60,9 +62,9 @@ func checkTransactionStandard(transaction *externalapi.DomainTransaction) error 
 	// size of a transaction. This also helps mitigate CPU exhaustion
 	// attacks.
 	serializedLength := estimatedsize.TransactionEstimatedSerializedSize(transaction)
-	if serializedLength > maxStandardTransactionSize {
+	if serializedLength > maximumStandardTransactionSize {
 		str := fmt.Sprintf("transaction size of %d is larger than max allowed size of %d",
-			serializedLength, maxStandardTransactionSize)
+			serializedLength, maximumStandardTransactionSize)
 		return transactionRuleError(RejectNonstandard, str)
 	}
 
@@ -144,12 +146,14 @@ func isDust(output *externalapi.DomainTransactionOutput) bool {
 	return output.Value*1000/(3*totalSerializedSize) < uint64(minimumRelayTransactionFee)
 }
 
-// checkInputsStandard performs a series of checks on a transaction's inputs
-// to ensure they are "standard". A standard transaction input within the
+// checkTransactionStandardInContext performs a series of checks on a transaction's
+// inputs to ensure they are "standard". A standard transaction input within the
 // context of this function is one whose referenced public key script is of a
 // standard form and, for pay-to-script-hash, does not have more than
 // maxStandardP2SHSigOps signature operations.
-func checkInputsStandard(transaction *externalapi.DomainTransaction) error {
+// In addition, makes sure that the transaction's fee is above the minimum for acceptance
+// into the mempool and relay
+func checkTransactionStandardInContext(transaction *externalapi.DomainTransaction) error {
 	for i, input := range transaction.Inputs {
 		// It is safe to elide existence and index checks here since
 		// they have already been checked prior to calling this
@@ -172,5 +176,36 @@ func checkInputsStandard(transaction *externalapi.DomainTransaction) error {
 		}
 	}
 
+	serializedSize := estimatedsize.TransactionEstimatedSerializedSize(transaction)
+	minimumFee := minimumRequiredTransactionRelayFee(serializedSize, minimumRelayTransactionFee)
+	if transaction.Fee < minimumFee {
+		str := fmt.Sprintf("transaction %s has %d fees which is under the required amount of %d",
+			consensushashing.TransactionID(transaction), transaction.Fee, minimumFee)
+		return transactionRuleError(RejectInsufficientFee, str)
+	}
+
 	return nil
+}
+
+// minimumRequiredTransactionRelayFee returns the minimum transaction fee required for a
+// transaction with the passed serialized size to be accepted into the memory
+// pool and relayed.
+func minimumRequiredTransactionRelayFee(serializedSize uint64, minimumRelayTxFee util.Amount) uint64 {
+	// Calculate the minimum fee for a transaction to be allowed into the
+	// mempool and relayed by scaling the base fee. minTxRelayFee is in
+	// sompi/kB so multiply by serializedSize (which is in bytes) and
+	// divide by 1000 to get minimum sompis.
+	minimumFee := (serializedSize * uint64(minimumRelayTxFee)) / 1000
+
+	if minimumFee == 0 && minimumRelayTxFee > 0 {
+		minimumFee = uint64(minimumRelayTxFee)
+	}
+
+	// Set the minimum fee to the maximum possible value if the calculated
+	// fee is not in the valid range for monetary amounts.
+	if minimumFee < 0 || minimumFee > util.MaxSompi {
+		minimumFee = util.MaxSompi
+	}
+
+	return minimumFee
 }

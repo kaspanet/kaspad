@@ -3,6 +3,8 @@ package mempool
 import (
 	"time"
 
+	"github.com/kaspanet/kaspad/util"
+
 	"github.com/kaspanet/kaspad/domain/dagconfig"
 )
 
@@ -30,6 +32,7 @@ type config struct {
 	maximumOrphanTransactionCount         int
 	acceptNonStandard                     bool
 	maximumMassAcceptedByBlock            uint64
+	minimumRelayTransactionFee            util.Amount
 }
 
 func defaultConfig(dagParams *dagconfig.Params) *config {
