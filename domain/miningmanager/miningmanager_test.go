@@ -285,7 +285,7 @@ func TestOrphanTransactions(t *testing.T) {
 		}
 		_, err = miningManager.HandleNewBlockTransactions(blockParentsTransactions.Transactions)
 		if err != nil {
-			t.Fatalf("HandleNewBlockTransactions: %v", err)
+			t.Fatalf("HandleNewBlockTransactions: %+v", err)
 		}
 		transactionsMempool = miningManager.AllTransactions()
 		if len(transactionsMempool) != len(childTransactions) {

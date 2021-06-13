@@ -3,6 +3,8 @@ package mempool
 import (
 	"fmt"
 
+	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
+
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
 
 	"github.com/kaspanet/kaspad/domain/consensus/utils/utxo"
@@ -137,6 +139,17 @@ func countUnfilledInputs(orphan *model.OrphanTransaction) int {
 func (op *orphansPool) unorphanTransaction(transaction *model.OrphanTransaction) error {
 	err := op.removeOrphan(transaction.TransactionID(), false)
 	if err != nil {
+		return err
+	}
+
+	err = op.mempool.consensus.ValidateTransactionAndPopulateWithConsensusData(transaction.Transaction())
+	if err != nil {
+		if errors.Is(err, ruleerrors.ErrImmatureSpend) {
+			return transactionRuleError(RejectImmatureSpend, "one of the transaction inputs spends an immature UTXO")
+		}
+		if errors.As(err, &ruleerrors.RuleError{}) {
+			return newRuleError(err)
+		}
 		return err
 	}
 
