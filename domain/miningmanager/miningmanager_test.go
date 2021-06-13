@@ -116,7 +116,7 @@ func TestInsertDoubleTransactionsToMempool(t *testing.T) {
 			t.Fatalf("ValidateAndInsertTransaction: %v", err)
 		}
 		_, err = miningManager.ValidateAndInsertTransaction(transaction, false, true)
-		if err == nil || !strings.Contains(err.Error(), "already have transaction") {
+		if err == nil || !strings.Contains(err.Error(), "is already in the mempool") {
 			t.Fatalf("ValidateAndInsertTransaction: %v", err)
 		}
 	})
