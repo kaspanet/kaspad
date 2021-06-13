@@ -16,7 +16,15 @@ func (mp *mempool) validateTransactionInIsolation(transaction *externalapi.Domai
 
 	if !mp.config.acceptNonStandard {
 		if err := mp.checkTransactionStandard(transaction); err != nil {
-			return err
+			// Attempt to extract a reject code from the error so
+			// it can be retained. When not possible, fall back to
+			// a non standard error.
+			rejectCode, found := extractRejectCode(err)
+			if !found {
+				rejectCode = RejectNonstandard
+			}
+			str := fmt.Sprintf("transaction %s is not standard: %s", transactionID, err)
+			return transactionRuleError(rejectCode, str)
 		}
 	}
 
@@ -37,7 +45,16 @@ func (mp *mempool) validateTransactionInContext(transaction *externalapi.DomainT
 	if !mp.config.acceptNonStandard {
 		err := checkInputsStandard(transaction)
 		if err != nil {
-			return err
+			// Attempt to extract a reject code from the error so
+			// it can be retained. When not possible, fall back to
+			// a non standard error.
+			rejectCode, found := extractRejectCode(err)
+			if !found {
+				rejectCode = RejectNonstandard
+			}
+			str := fmt.Sprintf("transaction inputs %s are not standard: %s",
+				consensushashing.TransactionID(transaction), err)
+			return transactionRuleError(rejectCode, str)
 		}
 	}
 
