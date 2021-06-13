@@ -135,8 +135,9 @@ func (tp *transactionsPool) getParentTransactionsInPool(
 	parentsTransactionsInPool := model.OutpointToTransaction{}
 
 	for _, input := range transaction.Inputs {
-		transaction := tp.allTransactions[input.PreviousOutpoint.TransactionID]
-		parentsTransactionsInPool[input.PreviousOutpoint] = transaction
+		if transaction, ok := tp.allTransactions[input.PreviousOutpoint.TransactionID]; ok {
+			parentsTransactionsInPool[input.PreviousOutpoint] = transaction
+		}
 	}
 
 	return parentsTransactionsInPool

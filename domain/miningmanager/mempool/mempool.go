@@ -11,6 +11,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/utils/transactionhelper"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/utxo"
 	"github.com/kaspanet/kaspad/domain/miningmanager/mempool/model"
+	miningmanagermodel "github.com/kaspanet/kaspad/domain/miningmanager/model"
 	"github.com/pkg/errors"
 )
 
@@ -25,7 +26,8 @@ type mempool struct {
 	orphansPool      *orphansPool
 }
 
-func New(consensus externalapi.Consensus, dagParams *dagconfig.Params) *mempool {
+// New constructs a new mempool
+func New(consensus externalapi.Consensus, dagParams *dagconfig.Params) miningmanagermodel.Mempool {
 	mp := &mempool{
 		config:    defaultConfig(dagParams),
 		consensus: consensus,
@@ -69,10 +71,13 @@ func (mp *mempool) TransactionCount() int {
 func (mp *mempool) HandleNewBlockTransactions(transactions []*externalapi.DomainTransaction) (
 	acceptedOrphans []*externalapi.DomainTransaction, err error) {
 
+	mp.mtx.Lock()
+	defer mp.mtx.Unlock()
+
 	acceptedOrphans = []*externalapi.DomainTransaction{}
 	for _, transaction := range transactions {
 		transactionID := consensushashing.TransactionID(transaction)
-		err := mp.RemoveTransaction(transactionID, false)
+		err := mp.removeTransaction(transactionID, false)
 		if err != nil {
 			return nil, err
 		}
@@ -107,11 +112,17 @@ func (mp *mempool) HandleNewBlockTransactions(transactions []*externalapi.Domain
 }
 
 func (mp *mempool) BlockCandidateTransactions() []*externalapi.DomainTransaction {
+	mp.mtx.RLock()
+	defer mp.mtx.RUnlock()
+
 	return mp.transactionsPool.allReadyTransactions()
 }
 
 func (mp *mempool) RevalidateHighPriorityTransactions() (validTransactions []*externalapi.DomainTransaction, err error) {
 	validTransactions = []*externalapi.DomainTransaction{}
+
+	mp.mtx.Lock()
+	defer mp.mtx.Unlock()
 
 	for _, transaction := range mp.transactionsPool.highPriorityTransactions {
 		clearInputs(transaction)

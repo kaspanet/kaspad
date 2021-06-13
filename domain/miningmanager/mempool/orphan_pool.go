@@ -108,7 +108,8 @@ func (op *orphansPool) processOrphansAfterAcceptedTransaction(acceptedTransactio
 					err := op.unorphanTransaction(current)
 					if err != nil {
 						if errors.As(err, &RuleError{}) {
-							log.Infof("Failed to unorphan transaction %s due to rule error: %s", err)
+							log.Infof("Failed to unorphan transaction %s due to rule error: %s",
+								currentTransactionID, err)
 							continue
 						}
 						return nil, err
