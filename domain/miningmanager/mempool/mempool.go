@@ -42,8 +42,10 @@ func (mp *mempool) GetTransaction(transactionID *externalapi.DomainTransactionID
 	mp.mtx.RLock()
 	defer mp.mtx.RUnlock()
 
-	mempoolTransaction, ok := mp.transactionsPool.allTransactions[*transactionID]
-	return mempoolTransaction.Transaction(), ok
+	if mempoolTransaction, ok := mp.transactionsPool.allTransactions[*transactionID]; ok {
+		return mempoolTransaction.Transaction(), true
+	}
+	return nil, false
 }
 
 func (mp *mempool) AllTransactions() []*externalapi.DomainTransaction {
