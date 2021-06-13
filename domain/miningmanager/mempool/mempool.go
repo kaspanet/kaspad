@@ -23,7 +23,7 @@ type mempool struct {
 	orphansPool      *orphansPool
 }
 
-func newMempool(consensus externalapi.Consensus, dagParams *dagconfig.Params) *mempool {
+func New(consensus externalapi.Consensus, dagParams *dagconfig.Params) *mempool {
 	mp := &mempool{
 		config:    defaultConfig(dagParams),
 		consensus: consensus,

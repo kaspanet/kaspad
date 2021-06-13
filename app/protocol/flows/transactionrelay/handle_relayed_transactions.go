@@ -7,7 +7,7 @@ import (
 	"github.com/kaspanet/kaspad/domain"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
-	"github.com/kaspanet/kaspad/domain/miningmanager/mempool_old"
+	"github.com/kaspanet/kaspad/domain/miningmanager/mempool"
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter"
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
 	"github.com/pkg/errors"
@@ -173,16 +173,17 @@ func (flow *handleRelayedTransactionsFlow) receiveTransactions(requestedTransact
 				expectedID, txID)
 		}
 
-		err = flow.Domain().MiningManager().ValidateAndInsertTransaction(tx, true)
+		acceptedTransactions, err :=
+			flow.Domain().MiningManager().ValidateAndInsertTransaction(tx, false, true)
 		if err != nil {
-			ruleErr := &mempool_old.RuleError{}
+			ruleErr := &mempool.RuleError{}
 			if !errors.As(err, ruleErr) {
 				return errors.Wrapf(err, "failed to process transaction %s", txID)
 			}
 
 			shouldBan := false
-			if txRuleErr := (&mempool_old.TxRuleError{}); errors.As(ruleErr.Err, txRuleErr) {
-				if txRuleErr.RejectCode == mempool_old.RejectInvalid {
+			if txRuleErr := (&mempool.TxRuleError{}); errors.As(ruleErr.Err, txRuleErr) {
+				if txRuleErr.RejectCode == mempool.RejectInvalid {
 					shouldBan = true
 				}
 			}
@@ -193,7 +194,7 @@ func (flow *handleRelayedTransactionsFlow) receiveTransactions(requestedTransact
 
 			return protocolerrors.Errorf(true, "rejected transaction %s: %s", txID, ruleErr)
 		}
-		err = flow.broadcastAcceptedTransactions([]*externalapi.DomainTransactionID{txID})
+		err = flow.broadcastAcceptedTransactions(consensushashing.TransactionIDs(acceptedTransactions))
 		if err != nil {
 			return err
 		}

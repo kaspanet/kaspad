@@ -4,7 +4,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/dagconfig"
 	"github.com/kaspanet/kaspad/domain/miningmanager/blocktemplatebuilder"
-	mempoolpkg "github.com/kaspanet/kaspad/domain/miningmanager/mempool_old"
+	mempoolpkg "github.com/kaspanet/kaspad/domain/miningmanager/mempool"
 )
 
 // Factory instantiates new mining managers
