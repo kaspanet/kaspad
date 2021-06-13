@@ -105,7 +105,7 @@ func (op *orphansPool) processOrphansAfterAcceptedTransaction(acceptedTransactio
 					}
 				}
 				if countUnfilledInputs(orphan) == 0 {
-					err := op.unorphanTransaction(current)
+					err := op.unorphanTransaction(orphan)
 					if err != nil {
 						if errors.As(err, &RuleError{}) {
 							log.Infof("Failed to unorphan transaction %s due to rule error: %s",
@@ -134,14 +134,13 @@ func countUnfilledInputs(orphan *model.OrphanTransaction) int {
 }
 
 // this function MUST be called with the mempool mutex locked for writes
-func (op *orphansPool) unorphanTransaction(transaction *externalapi.DomainTransaction) error {
-	transactionID := consensushashing.TransactionID(transaction)
-	err := op.removeOrphan(transactionID, false)
+func (op *orphansPool) unorphanTransaction(transaction *model.OrphanTransaction) error {
+	err := op.removeOrphan(transaction.TransactionID(), false)
 	if err != nil {
 		return err
 	}
 
-	err = op.mempool.validateTransactionInContext(transaction)
+	err = op.mempool.validateTransactionInContext(transaction.Transaction())
 	if err != nil {
 		return err
 	}
@@ -151,8 +150,8 @@ func (op *orphansPool) unorphanTransaction(transaction *externalapi.DomainTransa
 		return err
 	}
 	mempoolTransaction := model.NewMempoolTransaction(
-		transaction,
-		op.mempool.transactionsPool.getParentTransactionsInPool(transaction),
+		transaction.Transaction(),
+		op.mempool.transactionsPool.getParentTransactionsInPool(transaction.Transaction()),
 		false,
 		virtualDAAScore,
 	)
