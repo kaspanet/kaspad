@@ -74,6 +74,9 @@ func (mp *mempool) HandleNewBlockTransactions(transactions []*externalapi.Domain
 	mp.mtx.Lock()
 	defer mp.mtx.Unlock()
 
+	// Skip the coinbase transaction
+	transactions = transactions[transactionhelper.CoinbaseTransactionIndex+1:]
+
 	acceptedOrphans = []*externalapi.DomainTransaction{}
 	for _, transaction := range transactions {
 		transactionID := consensushashing.TransactionID(transaction)
