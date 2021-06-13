@@ -33,7 +33,7 @@ type config struct {
 }
 
 func defaultConfig(dagParams *dagconfig.Params) *config {
-	targetBlocksPerSecond := uint64(dagParams.TargetTimePerBlock / time.Second)
+	targetBlocksPerSecond := uint64(time.Second / dagParams.TargetTimePerBlock)
 
 	return &config{
 		maximumTransactionCount:               defaultMaximumTransactionCount,
