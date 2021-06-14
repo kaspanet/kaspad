@@ -1,9 +1,10 @@
 package protowire
 
 import (
+	"math"
+
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/pkg/errors"
-	"math"
 )
 
 func (x *KaspadMessage_SubmitTransactionRequest) toAppMessage() (appmessage.Message, error) {
@@ -16,6 +17,7 @@ func (x *KaspadMessage_SubmitTransactionRequest) toAppMessage() (appmessage.Mess
 func (x *KaspadMessage_SubmitTransactionRequest) fromAppMessage(message *appmessage.SubmitTransactionRequestMessage) error {
 	x.SubmitTransactionRequest = &SubmitTransactionRequestMessage{
 		Transaction: &RpcTransaction{},
+		AllowOrphan: message.AllowOrphan,
 	}
 	x.SubmitTransactionRequest.Transaction.fromAppMessage(message.Transaction)
 	return nil
@@ -31,6 +33,7 @@ func (x *SubmitTransactionRequestMessage) toAppMessage() (appmessage.Message, er
 	}
 	return &appmessage.SubmitTransactionRequestMessage{
 		Transaction: rpcTransaction,
+		AllowOrphan: x.AllowOrphan,
 	}, nil
 }
 

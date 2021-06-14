@@ -10,8 +10,8 @@ import (
 )
 
 // AddTransaction adds transaction to the mempool and propagates it.
-func (f *FlowContext) AddTransaction(tx *externalapi.DomainTransaction) error {
-	_, err := f.Domain().MiningManager().ValidateAndInsertTransaction(tx, true, false)
+func (f *FlowContext) AddTransaction(tx *externalapi.DomainTransaction, allowOrphan bool) error {
+	_, err := f.Domain().MiningManager().ValidateAndInsertTransaction(tx, true, allowOrphan)
 	if err != nil {
 		return err
 	}
