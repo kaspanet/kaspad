@@ -1,24 +1,21 @@
 package consensusstatestore
 
 import (
-	"github.com/kaspanet/kaspad/domain/consensus/database"
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/pkg/errors"
 )
 
-var importingPruningPointUTXOSetKey = database.MakeBucket(nil).Key([]byte("importing-pruning-point-utxo-set"))
-
 func (css *consensusStateStore) StartImportingPruningPointUTXOSet(dbContext model.DBWriter) error {
-	return dbContext.Put(importingPruningPointUTXOSetKey, []byte{0})
+	return dbContext.Put(css.importingPruningPointUTXOSetKey, []byte{0})
 }
 
 func (css *consensusStateStore) HadStartedImportingPruningPointUTXOSet(dbContext model.DBWriter) (bool, error) {
-	return dbContext.Has(importingPruningPointUTXOSetKey)
+	return dbContext.Has(css.importingPruningPointUTXOSetKey)
 }
 
 func (css *consensusStateStore) FinishImportingPruningPointUTXOSet(dbContext model.DBWriter) error {
-	return dbContext.Delete(importingPruningPointUTXOSetKey)
+	return dbContext.Delete(css.importingPruningPointUTXOSetKey)
 }
 
 func (css *consensusStateStore) ImportPruningPointUTXOSetIntoVirtualUTXOSet(dbContext model.DBWriter,

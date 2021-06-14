@@ -11,20 +11,21 @@ import (
 )
 
 var bucketName = []byte("blocks")
-var countKey = database.MakeBucket(nil).Key([]byte("blocks-count"))
 
 // blockStore represents a store of blocks
 type blockStore struct {
 	cache       *lrucache.LRUCache
 	countCached uint64
 	bucket      model.DBBucket
+	countKey    model.DBKey
 }
 
 // New instantiates a new BlockStore
 func New(dbContext model.DBReader, prefix byte, cacheSize int, preallocate bool) (model.BlockStore, error) {
 	blockStore := &blockStore{
-		cache:  lrucache.New(cacheSize, preallocate),
-		bucket: database.MakeBucket([]byte{prefix}).Bucket(bucketName),
+		cache:    lrucache.New(cacheSize, preallocate),
+		bucket:   database.MakeBucket([]byte{prefix}).Bucket(bucketName),
+		countKey: database.MakeBucket([]byte{prefix}).Key([]byte("blocks-count")),
 	}
 
 	err := blockStore.initializeCount(dbContext)
@@ -37,12 +38,12 @@ func New(dbContext model.DBReader, prefix byte, cacheSize int, preallocate bool)
 
 func (bs *blockStore) initializeCount(dbContext model.DBReader) error {
 	count := uint64(0)
-	hasCountBytes, err := dbContext.Has(countKey)
+	hasCountBytes, err := dbContext.Has(bs.countKey)
 	if err != nil {
 		return err
 	}
 	if hasCountBytes {
-		countBytes, err := dbContext.Get(countKey)
+		countBytes, err := dbContext.Get(bs.countKey)
 		if err != nil {
 			return err
 		}

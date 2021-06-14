@@ -20,21 +20,25 @@ type pruningStore struct {
 	oldPruningPointCache       *externalapi.DomainHash
 	pruningPointCandidateCache *externalapi.DomainHash
 
-	pruningBlockHashKey            model.DBKey
-	previousPruningBlockHashKey    model.DBKey
-	candidatePruningPointHashKey   model.DBKey
-	pruningPointUTXOSetBucket      model.DBBucket
-	updatingPruningPointUTXOSetKey model.DBKey
+	pruningBlockHashKey             model.DBKey
+	previousPruningBlockHashKey     model.DBKey
+	candidatePruningPointHashKey    model.DBKey
+	pruningPointUTXOSetBucket       model.DBBucket
+	updatingPruningPointUTXOSetKey  model.DBKey
+	importedPruningPointUTXOsBucket model.DBBucket
+	importedPruningPointMultisetKey model.DBKey
 }
 
 // New instantiates a new PruningStore
 func New(prefix byte) model.PruningStore {
 	return &pruningStore{
-		pruningBlockHashKey:            database.MakeBucket([]byte{prefix}).Key(pruningBlockHashKeyName),
-		previousPruningBlockHashKey:    database.MakeBucket([]byte{prefix}).Key(previousPruningBlockHashKeyName),
-		candidatePruningPointHashKey:   database.MakeBucket([]byte{prefix}).Key(candidatePruningPointHashKeyName),
-		pruningPointUTXOSetBucket:      database.MakeBucket([]byte{prefix}).Bucket(pruningPointUTXOSetBucketName),
-		updatingPruningPointUTXOSetKey: database.MakeBucket([]byte{prefix}).Key(updatingPruningPointUTXOSetKeyName),
+		pruningBlockHashKey:             database.MakeBucket([]byte{prefix}).Key(pruningBlockHashKeyName),
+		previousPruningBlockHashKey:     database.MakeBucket([]byte{prefix}).Key(previousPruningBlockHashKeyName),
+		candidatePruningPointHashKey:    database.MakeBucket([]byte{prefix}).Key(candidatePruningPointHashKeyName),
+		pruningPointUTXOSetBucket:       database.MakeBucket([]byte{prefix}).Bucket(pruningPointUTXOSetBucketName),
+		importedPruningPointUTXOsBucket: database.MakeBucket([]byte{prefix}).Bucket(importedPruningPointUTXOsBucketName),
+		updatingPruningPointUTXOSetKey:  database.MakeBucket([]byte{prefix}).Key(updatingPruningPointUTXOSetKeyName),
+		importedPruningPointMultisetKey: database.MakeBucket([]byte{prefix}).Key(importedPruningPointMultisetKeyName),
 	}
 }
 

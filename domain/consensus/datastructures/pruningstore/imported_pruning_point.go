@@ -2,18 +2,17 @@ package pruningstore
 
 import (
 	"github.com/golang/protobuf/proto"
-	"github.com/kaspanet/kaspad/domain/consensus/database"
 	"github.com/kaspanet/kaspad/domain/consensus/database/serialization"
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/pkg/errors"
 )
 
-var importedPruningPointUTXOsBucket = database.MakeBucket([]byte("imported-pruning-point-utxos"))
-var importedPruningPointMultiset = database.MakeBucket(nil).Key([]byte("imported-pruning-point-multiset"))
+var importedPruningPointUTXOsBucketName = []byte("imported-pruning-point-utxos")
+var importedPruningPointMultisetKeyName = []byte("imported-pruning-point-multiset")
 
 func (ps *pruningStore) ClearImportedPruningPointUTXOs(dbContext model.DBWriter) error {
-	cursor, err := dbContext.Cursor(importedPruningPointUTXOsBucket)
+	cursor, err := dbContext.Cursor(ps.importedPruningPointUTXOsBucket)
 	if err != nil {
 		return err
 	}
@@ -54,7 +53,7 @@ func (ps *pruningStore) AppendImportedPruningPointUTXOs(dbTx model.DBTransaction
 }
 
 func (ps *pruningStore) ImportedPruningPointUTXOIterator(dbContext model.DBReader) (externalapi.ReadOnlyUTXOSetIterator, error) {
-	cursor, err := dbContext.Cursor(importedPruningPointUTXOsBucket)
+	cursor, err := dbContext.Cursor(ps.importedPruningPointUTXOsBucket)
 	if err != nil {
 		return nil, err
 	}
@@ -130,7 +129,7 @@ func (ps *pruningStore) importedPruningPointUTXOKey(outpoint *externalapi.Domain
 		return nil, err
 	}
 
-	return importedPruningPointUTXOsBucket.Key(serializedOutpoint), nil
+	return ps.importedPruningPointUTXOsBucket.Key(serializedOutpoint), nil
 }
 
 func serializeOutpoint(outpoint *externalapi.DomainOutpoint) ([]byte, error) {
@@ -161,11 +160,11 @@ func deserializeUTXOEntry(entryBytes []byte) (externalapi.UTXOEntry, error) {
 }
 
 func (ps *pruningStore) ClearImportedPruningPointMultiset(dbContext model.DBWriter) error {
-	return dbContext.Delete(importedPruningPointMultiset)
+	return dbContext.Delete(ps.importedPruningPointMultisetKey)
 }
 
 func (ps *pruningStore) ImportedPruningPointMultiset(dbContext model.DBReader) (model.Multiset, error) {
-	multisetBytes, err := dbContext.Get(importedPruningPointMultiset)
+	multisetBytes, err := dbContext.Get(ps.importedPruningPointMultisetKey)
 	if err != nil {
 		return nil, err
 	}
@@ -177,7 +176,7 @@ func (ps *pruningStore) UpdateImportedPruningPointMultiset(dbTx model.DBTransact
 	if err != nil {
 		return err
 	}
-	return dbTx.Put(importedPruningPointMultiset, multisetBytes)
+	return dbTx.Put(ps.importedPruningPointMultisetKey, multisetBytes)
 }
 
 func (ps *pruningStore) serializeMultiset(multiset model.Multiset) ([]byte, error) {
@@ -213,7 +212,7 @@ func (ps *pruningStore) CommitImportedPruningPointUTXOSet(dbContext model.DBWrit
 	}
 
 	// Insert all the new UTXOs into the database
-	insertCursor, err := dbContext.Cursor(importedPruningPointUTXOsBucket)
+	insertCursor, err := dbContext.Cursor(ps.importedPruningPointUTXOsBucket)
 	if err != nil {
 		return err
 	}
