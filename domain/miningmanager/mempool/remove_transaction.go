@@ -54,6 +54,14 @@ func (mp *mempool) removeTransaction(transactionID *externalapi.DomainTransactio
 			return err
 		}
 	}
+
+	if removeRedeemers {
+		err := mp.orphansPool.removeRedeemersOf(mempoolTransaction)
+		if err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 
