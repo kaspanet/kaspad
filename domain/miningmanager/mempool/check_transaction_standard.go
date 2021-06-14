@@ -91,7 +91,7 @@ func checkTransactionStandardInIsolation(transaction *externalapi.DomainTransact
 			return transactionRuleError(RejectNonstandard, str)
 		}
 
-		if isDust(output) {
+		if IsTransactionOutputDust(output) {
 			str := fmt.Sprintf("transaction output %d: payment "+
 				"of %d is dust", i, output.Value)
 			return transactionRuleError(RejectDust, str)
@@ -101,12 +101,14 @@ func checkTransactionStandardInIsolation(transaction *externalapi.DomainTransact
 	return nil
 }
 
-// isDust returns whether or not the passed transaction output amount is
-// considered dust or not based on the passed minimum transaction relay fee.
+// IsTransactionOutputDust returns whether or not the passed transaction output amount
+// is considered dust or not based on the passed minimum transaction relay fee.
 // Dust is defined in terms of the minimum transaction relay fee. In
 // particular, if the cost to the network to spend coins is more than 1/3 of the
 // minimum transaction relay fee, it is considered dust.
-func isDust(output *externalapi.DomainTransactionOutput) bool {
+//
+// It is exported for use by transaction generators and wallets
+func IsTransactionOutputDust(output *externalapi.DomainTransactionOutput) bool {
 	// Unspendable outputs are considered dust.
 	if txscript.IsUnspendable(output.ScriptPublicKey.Script) {
 		return true
