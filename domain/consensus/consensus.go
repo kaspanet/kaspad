@@ -187,6 +187,10 @@ func (s *consensus) GetBlockInfo(blockHash *externalapi.DomainHash) (*externalap
 
 	blockInfo.BlueScore = ghostdagData.BlueScore()
 
+	{
+		panic("TODO: FILL BLUE WORK")
+	}
+
 	return blockInfo, nil
 }
 

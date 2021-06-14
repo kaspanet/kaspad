@@ -199,3 +199,34 @@ message IbdBlockLocatorHighestHashNotFoundMessage {
 message BlockHeadersMessage {
   repeated BlockHeaderMessage blockHeaders = 1;
 }
+
+message BlockWithMetaDataMessage {
+  BlockMessage block = 1;
+  uint64 daaScore = 2;
+  GhostdagData ghostdagData = 3;
+}
+
+message GhostdagData {
+  uint64 blueScore = 1;
+  bytes blueWork = 2;
+  Hash selectedParent = 3;
+  repeated Hash mergeSetBlues = 4;
+  repeated Hash mergeSetReds = 5;
+  repeated BluesAnticoneSizes bluesAnticoneSizes = 6;
+}
+
+message BluesAnticoneSizes {
+  Hash blueHash = 1;
+  uint32 anticoneSize = 2;
+}
+
+message DoneBlocksWithMetaDataMessage {
+}
+
+message RequestBlockBlueWorkMessage {
+  Hash block = 1;
+}
+
+message BlockBlueWorkMessage {
+  repeated bytes blueWork = 1;
+}

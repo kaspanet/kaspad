@@ -126,7 +126,7 @@ func (flow *handleRelayInvsFlow) start() error {
 		}
 		if len(missingParents) > 0 {
 			log.Debugf("Block %s is orphan and has missing parents: %s", inv.Hash, missingParents)
-			err := flow.processOrphan(block, missingParents)
+			err := flow.processOrphan(block)
 			if err != nil {
 				return err
 			}
@@ -249,7 +249,7 @@ func (flow *handleRelayInvsFlow) relayBlock(block *externalapi.DomainBlock) erro
 	return flow.Broadcast(appmessage.NewMsgInvBlock(blockHash))
 }
 
-func (flow *handleRelayInvsFlow) processOrphan(block *externalapi.DomainBlock, missingParents []*externalapi.DomainHash) error {
+func (flow *handleRelayInvsFlow) processOrphan(block *externalapi.DomainBlock) error {
 	blockHash := consensushashing.BlockHash(block)
 
 	// Return if the block has been orphaned from elsewhere already

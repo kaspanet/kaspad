@@ -73,38 +73,6 @@ func (flow *handleRelayInvsFlow) logIBDFinished(isFinishedSuccessfully bool) {
 	log.Infof("IBD finished %s", successString)
 }
 
-// syncHeaders attempts to sync headers from the peer. This method may fail
-// because the peer and us have conflicting pruning points. In that case we
-// return (false, nil) so that we may stop IBD gracefully.
-func (flow *handleRelayInvsFlow) syncHeaders(highHash *externalapi.DomainHash) (bool, error) {
-	log.Debugf("Trying to find highest shared chain block with peer %s with high hash %s", flow.peer, highHash)
-	highestSharedBlockHash, highestSharedBlockFound, err := flow.findHighestSharedBlockHash(highHash)
-	if err != nil {
-		return false, err
-	}
-	if !highestSharedBlockFound {
-		return false, nil
-	}
-	log.Debugf("Found highest shared chain block %s with peer %s", highestSharedBlockHash, flow.peer)
-
-	err = flow.downloadHeaders(highestSharedBlockHash, highHash)
-	if err != nil {
-		return false, err
-	}
-
-	// If the highHash has not been received, the peer is misbehaving
-	highHashBlockInfo, err := flow.Domain().Consensus().GetBlockInfo(highHash)
-	if err != nil {
-		return false, err
-	}
-	if !highHashBlockInfo.Exists {
-		return false, protocolerrors.Errorf(true, "did not receive "+
-			"highHash header %s from peer %s during header download", highHash, flow.peer)
-	}
-	log.Debugf("Headers downloaded from peer %s", flow.peer)
-	return true, nil
-}
-
 // findHighestSharedBlock attempts to find the highest shared block between the peer
 // and this node. This method may fail because the peer and us have conflicting pruning
 // points. In that case we return (nil, false, nil) so that we may stop IBD gracefully.
@@ -315,7 +283,7 @@ func (flow *handleRelayInvsFlow) processHeader(msgBlockHeader *appmessage.MsgBlo
 		log.Debugf("Block header %s is already in the DAG. Skipping...", blockHash)
 		return nil
 	}
-	_, err = flow.Domain().Consensus().ValidateAndInsertBlock(block)
+	_, err = flow.Domain().StagingConsensus().ValidateAndInsertBlock(block)
 	if err != nil {
 		if !errors.As(err, &ruleerrors.RuleError{}) {
 			return errors.Wrapf(err, "failed to process header %s during IBD", blockHash)
