@@ -29,8 +29,8 @@ func TestCreateTemporaryConsensus(t *testing.T) {
 		}
 
 		err = domainInstance.CreateTemporaryConsensus()
-		if !strings.Contains(err.Error(), "cannot have more than one inactive prefix") {
-			t.Fatalf("unexpected error %+v", err)
+		if !strings.Contains(err.Error(), "cannot create temporary consensus when a temporary consensus already exists") {
+			t.Fatalf("unexpected error: %+v", err)
 		}
 
 		coinbaseData := &externalapi.DomainCoinbaseData{

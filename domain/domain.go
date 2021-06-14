@@ -46,7 +46,7 @@ func (d *domain) CreateTemporaryConsensus() error {
 	}
 
 	if hasInactivePrefix {
-		return errors.Errorf("cannot have more than one inactive prefix")
+		return errors.Errorf("cannot create temporary consensus when a temporary consensus already exists")
 	}
 
 	activePrefix, exists, err := prefixmanager.ActivePrefix(d.db)
