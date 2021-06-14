@@ -203,7 +203,7 @@ func minimumRequiredTransactionRelayFee(serializedSize uint64, minimumRelayTxFee
 
 	// Set the minimum fee to the maximum possible value if the calculated
 	// fee is not in the valid range for monetary amounts.
-	if minimumFee < 0 || minimumFee > util.MaxSompi {
+	if minimumFee > util.MaxSompi {
 		minimumFee = util.MaxSompi
 	}
 
