@@ -7,15 +7,6 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
 )
 
-func (mp *mempool) ValidateAndInsertTransaction(transaction *externalapi.DomainTransaction, isHighPriority bool, allowOrphan bool) (
-	acceptedTransactions []*externalapi.DomainTransaction, err error) {
-
-	mp.mtx.Lock()
-	defer mp.mtx.Unlock()
-
-	return mp.validateAndInsertTransaction(transaction, isHighPriority, allowOrphan)
-}
-
 func (mp *mempool) validateAndInsertTransaction(transaction *externalapi.DomainTransaction, isHighPriority bool,
 	allowOrphan bool) (acceptedTransactions []*externalapi.DomainTransaction, err error) {
 

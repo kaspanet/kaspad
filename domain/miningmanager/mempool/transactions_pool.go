@@ -172,3 +172,22 @@ func (tp *transactionsPool) limitTransactionCount() {
 		}
 	}
 }
+
+func (tp *transactionsPool) getTransaction(transactionID *externalapi.DomainTransactionID) (*externalapi.DomainTransaction, bool) {
+	if mempoolTransaction, ok := tp.allTransactions[*transactionID]; ok {
+		return mempoolTransaction.Transaction(), true
+	}
+	return nil, false
+}
+
+func (tp *transactionsPool) getAllTransactions() []*externalapi.DomainTransaction {
+	allTransactions := make([]*externalapi.DomainTransaction, 0, len(tp.allTransactions))
+	for _, mempoolTransaction := range tp.allTransactions {
+		allTransactions = append(allTransactions, mempoolTransaction.Transaction())
+	}
+	return allTransactions
+}
+
+func (tp *transactionsPool) transactionCount() int {
+	return len(tp.allTransactions)
+}

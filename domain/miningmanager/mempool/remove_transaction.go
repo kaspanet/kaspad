@@ -6,20 +6,6 @@ import (
 	"github.com/kaspanet/kaspad/domain/miningmanager/mempool/model"
 )
 
-func (mp *mempool) RemoveTransactions(transactions []*externalapi.DomainTransaction, removeRedeemers bool) error {
-	mp.mtx.Lock()
-	defer mp.mtx.Unlock()
-
-	return mp.removeTransactions(transactions, removeRedeemers)
-}
-
-func (mp *mempool) RemoveTransaction(transactionID *externalapi.DomainTransactionID, removeRedeemers bool) error {
-	mp.mtx.Lock()
-	defer mp.mtx.Unlock()
-
-	return mp.removeTransaction(transactionID, removeRedeemers)
-}
-
 // this function MUST be called with the mempool mutex locked for writes
 func (mp *mempool) removeTransactions(transactions []*externalapi.DomainTransaction, removeRedeemers bool) error {
 	for _, transaction := range transactions {

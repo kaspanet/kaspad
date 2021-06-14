@@ -6,13 +6,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/dagconfig"
 
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
-	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/transactionhelper"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/utxo"
-	"github.com/kaspanet/kaspad/domain/miningmanager/mempool/model"
 	miningmanagermodel "github.com/kaspanet/kaspad/domain/miningmanager/model"
-	"github.com/pkg/errors"
 )
 
 type mempool struct {
@@ -40,32 +34,34 @@ func New(consensus externalapi.Consensus, dagParams *dagconfig.Params) miningman
 	return mp
 }
 
+func (mp *mempool) ValidateAndInsertTransaction(transaction *externalapi.DomainTransaction, isHighPriority bool, allowOrphan bool) (
+	acceptedTransactions []*externalapi.DomainTransaction, err error) {
+
+	mp.mtx.Lock()
+	defer mp.mtx.Unlock()
+
+	return mp.validateAndInsertTransaction(transaction, isHighPriority, allowOrphan)
+}
+
 func (mp *mempool) GetTransaction(transactionID *externalapi.DomainTransactionID) (*externalapi.DomainTransaction, bool) {
 	mp.mtx.RLock()
 	defer mp.mtx.RUnlock()
 
-	if mempoolTransaction, ok := mp.transactionsPool.allTransactions[*transactionID]; ok {
-		return mempoolTransaction.Transaction(), true
-	}
-	return nil, false
+	return mp.transactionsPool.getTransaction(transactionID)
 }
 
 func (mp *mempool) AllTransactions() []*externalapi.DomainTransaction {
 	mp.mtx.RLock()
 	defer mp.mtx.RUnlock()
 
-	allTransactions := make([]*externalapi.DomainTransaction, 0, len(mp.transactionsPool.allTransactions))
-	for _, mempoolTransaction := range mp.transactionsPool.allTransactions {
-		allTransactions = append(allTransactions, mempoolTransaction.Transaction())
-	}
-	return allTransactions
+	return mp.transactionsPool.getAllTransactions()
 }
 
 func (mp *mempool) TransactionCount() int {
 	mp.mtx.RLock()
 	defer mp.mtx.RUnlock()
 
-	return len(mp.transactionsPool.allTransactions)
+	return mp.transactionsPool.transactionCount()
 }
 
 func (mp *mempool) HandleNewBlockTransactions(transactions []*externalapi.DomainTransaction) (
@@ -74,44 +70,7 @@ func (mp *mempool) HandleNewBlockTransactions(transactions []*externalapi.Domain
 	mp.mtx.Lock()
 	defer mp.mtx.Unlock()
 
-	// Skip the coinbase transaction
-	transactions = transactions[transactionhelper.CoinbaseTransactionIndex+1:]
-
-	acceptedOrphans = []*externalapi.DomainTransaction{}
-	for _, transaction := range transactions {
-		transactionID := consensushashing.TransactionID(transaction)
-		err := mp.removeTransaction(transactionID, false)
-		if err != nil {
-			return nil, err
-		}
-
-		err = mp.removeDoubleSpends(transaction)
-		if err != nil {
-			return nil, err
-		}
-
-		err = mp.orphansPool.removeOrphan(transactionID, false)
-		if err != nil {
-			return nil, err
-		}
-
-		acceptedOrphansFromThisTransaction, err := mp.orphansPool.processOrphansAfterAcceptedTransaction(transaction)
-		if err != nil {
-			return nil, err
-		}
-
-		acceptedOrphans = append(acceptedOrphans, acceptedOrphansFromThisTransaction...)
-	}
-	err = mp.orphansPool.expireOrphanTransactions()
-	if err != nil {
-		return nil, err
-	}
-	err = mp.transactionsPool.expireOldTransactions()
-	if err != nil {
-		return nil, err
-	}
-
-	return acceptedOrphans, nil
+	return mp.handleNewBlockTransactions(transactions, acceptedOrphans)
 }
 
 func (mp *mempool) BlockCandidateTransactions() []*externalapi.DomainTransaction {
@@ -122,84 +81,22 @@ func (mp *mempool) BlockCandidateTransactions() []*externalapi.DomainTransaction
 }
 
 func (mp *mempool) RevalidateHighPriorityTransactions() (validTransactions []*externalapi.DomainTransaction, err error) {
-	validTransactions = []*externalapi.DomainTransaction{}
-
 	mp.mtx.Lock()
 	defer mp.mtx.Unlock()
 
-	for _, transaction := range mp.transactionsPool.highPriorityTransactions {
-		clearInputs(transaction)
-		_, missingParents, err := mp.fillInputsAndGetMissingParents(transaction.Transaction())
-		if err != nil {
-			return nil, err
-		}
-		if len(missingParents) > 0 {
-			err := mp.removeTransaction(transaction.TransactionID(), true)
-			if err != nil {
-				return nil, err
-			}
-			continue
-		}
-		validTransactions = append(validTransactions, transaction.Transaction())
-	}
-
-	return validTransactions, nil
+	return mp.revalidateHighPriorityTransactions()
 }
 
-func clearInputs(transaction *model.MempoolTransaction) {
-	for _, input := range transaction.Transaction().Inputs {
-		input.UTXOEntry = nil
-	}
+func (mp *mempool) RemoveTransactions(transactions []*externalapi.DomainTransaction, removeRedeemers bool) error {
+	mp.mtx.Lock()
+	defer mp.mtx.Unlock()
+
+	return mp.removeTransactions(transactions, removeRedeemers)
 }
 
-// this function MUST be called with the mempool mutex locked for reads
-func (mp *mempool) fillInputsAndGetMissingParents(transaction *externalapi.DomainTransaction) (
-	parents model.OutpointToTransaction, missingOutpoints []*externalapi.DomainOutpoint, err error) {
+func (mp *mempool) RemoveTransaction(transactionID *externalapi.DomainTransactionID, removeRedeemers bool) error {
+	mp.mtx.Lock()
+	defer mp.mtx.Unlock()
 
-	parentsInPool := mp.transactionsPool.getParentTransactionsInPool(transaction)
-
-	fillInputs(transaction, parentsInPool)
-
-	err = mp.consensus.ValidateTransactionAndPopulateWithConsensusData(transaction)
-	if err != nil {
-		errMissingOutpoints := ruleerrors.ErrMissingTxOut{}
-		if errors.As(err, &errMissingOutpoints) {
-			return parentsInPool, errMissingOutpoints.MissingOutpoints, nil
-		}
-		if errors.Is(err, ruleerrors.ErrImmatureSpend) {
-			return nil, nil, transactionRuleError(
-				RejectImmatureSpend, "one of the transaction inputs spends an immature UTXO")
-		}
-		if errors.As(err, &ruleerrors.RuleError{}) {
-			return nil, nil, newRuleError(err)
-		}
-		return nil, nil, err
-	}
-
-	return parentsInPool, nil, nil
-}
-
-// this function MUST be called with the mempool mutex locked for writes
-func (mp *mempool) removeDoubleSpends(transaction *externalapi.DomainTransaction) error {
-	for _, input := range transaction.Inputs {
-		if redeemer, ok := mp.mempoolUTXOSet.transactionByPreviousOutpoint[input.PreviousOutpoint]; ok {
-			err := mp.removeTransaction(redeemer.TransactionID(), true)
-			if err != nil {
-				return err
-			}
-		}
-	}
-	return nil
-}
-
-func fillInputs(transaction *externalapi.DomainTransaction, parentsInPool model.OutpointToTransaction) {
-	for _, input := range transaction.Inputs {
-		parent, ok := parentsInPool[input.PreviousOutpoint]
-		if !ok {
-			continue
-		}
-		relevantOutput := parent.Transaction().Outputs[input.PreviousOutpoint.Index]
-		input.UTXOEntry = utxo.NewUTXOEntry(relevantOutput.Value, relevantOutput.ScriptPublicKey,
-			transactionhelper.IsCoinBase(transaction), model.UnacceptedDAAScore)
-	}
+	return mp.removeTransaction(transactionID, removeRedeemers)
 }

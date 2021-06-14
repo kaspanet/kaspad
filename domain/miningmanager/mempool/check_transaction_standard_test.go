@@ -158,7 +158,7 @@ func TestDust(t *testing.T) {
 		},
 	}
 	for _, test := range tests {
-		res := isDust(&test.txOut)
+		res := IsTransactionOutputDust(&test.txOut)
 		if res != test.isDust {
 			t.Fatalf("Dust test '%s' failed: want %v got %v",
 				test.name, test.isDust, res)
