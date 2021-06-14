@@ -7,6 +7,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/lrucache"
+	"github.com/kaspanet/kaspad/domain/prefixmanager"
 )
 
 var bucketName = []byte("block-statuses")
@@ -18,10 +19,10 @@ type blockStatusStore struct {
 }
 
 // New instantiates a new BlockStatusStore
-func New(prefix byte, cacheSize int, preallocate bool) model.BlockStatusStore {
+func New(prefix *prefixmanager.Prefix, cacheSize int, preallocate bool) model.BlockStatusStore {
 	return &blockStatusStore{
 		cache:  lrucache.New(cacheSize, preallocate),
-		bucket: database.MakeBucket([]byte{prefix}).Bucket(bucketName),
+		bucket: database.MakeBucket(prefix.Serialize()).Bucket(bucketName),
 	}
 }
 

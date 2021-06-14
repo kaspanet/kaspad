@@ -7,6 +7,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/lrucache"
+	"github.com/kaspanet/kaspad/domain/prefixmanager"
 )
 
 var bucketName = []byte("block-headers")
@@ -20,11 +21,11 @@ type blockHeaderStore struct {
 }
 
 // New instantiates a new BlockHeaderStore
-func New(dbContext model.DBReader, prefix byte, cacheSize int, preallocate bool) (model.BlockHeaderStore, error) {
+func New(dbContext model.DBReader, prefix *prefixmanager.Prefix, cacheSize int, preallocate bool) (model.BlockHeaderStore, error) {
 	blockHeaderStore := &blockHeaderStore{
 		cache:    lrucache.New(cacheSize, preallocate),
-		bucket:   database.MakeBucket([]byte{prefix}).Bucket(bucketName),
-		countKey: database.MakeBucket([]byte{prefix}).Key([]byte("block-headers-count")),
+		bucket:   database.MakeBucket(prefix.Serialize()).Bucket(bucketName),
+		countKey: database.MakeBucket(prefix.Serialize()).Key([]byte("block-headers-count")),
 	}
 
 	err := blockHeaderStore.initializeCount(dbContext)

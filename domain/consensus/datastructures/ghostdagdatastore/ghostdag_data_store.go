@@ -7,6 +7,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/lrucache"
+	"github.com/kaspanet/kaspad/domain/prefixmanager"
 )
 
 var bucketName = []byte("block-ghostdag-data")
@@ -18,10 +19,10 @@ type ghostdagDataStore struct {
 }
 
 // New instantiates a new GHOSTDAGDataStore
-func New(prefix byte, cacheSize int, preallocate bool) model.GHOSTDAGDataStore {
+func New(prefix *prefixmanager.Prefix, cacheSize int, preallocate bool) model.GHOSTDAGDataStore {
 	return &ghostdagDataStore{
 		cache:  lrucache.New(cacheSize, preallocate),
-		bucket: database.MakeBucket([]byte{prefix}).Bucket(bucketName),
+		bucket: database.MakeBucket(prefix.Serialize()).Bucket(bucketName),
 	}
 }
 

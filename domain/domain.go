@@ -59,9 +59,9 @@ func (d *domain) CreateTemporaryConsensus() error {
 			"no active consensus")
 	}
 
-	var inactivePrefix byte = 0
-	if activePrefix == 0 {
-		inactivePrefix = 1
+	inactivePrefix := prefixmanager.NewPrefix(0)
+	if activePrefix.Equal(prefixmanager.NewPrefix(0)) {
+		inactivePrefix = prefixmanager.NewPrefix(1)
 	}
 
 	err = prefixmanager.SetPrefixAsInactive(d.db, inactivePrefix)
@@ -158,7 +158,7 @@ func New(consensusConfig *consensus.Config, db infrastructuredatabase.Database) 
 
 	if !exists {
 		const defaultActivePrefix = 0
-		activePrefix = defaultActivePrefix
+		activePrefix = prefixmanager.NewPrefix(defaultActivePrefix)
 		err = prefixmanager.SetPrefixAsActive(db, activePrefix)
 		if err != nil {
 			return nil, err

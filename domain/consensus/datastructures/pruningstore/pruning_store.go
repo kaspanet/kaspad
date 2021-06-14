@@ -6,6 +6,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/database/serialization"
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+	"github.com/kaspanet/kaspad/domain/prefixmanager"
 )
 
 var pruningBlockHashKeyName = []byte("pruning-block-hash")
@@ -30,15 +31,15 @@ type pruningStore struct {
 }
 
 // New instantiates a new PruningStore
-func New(prefix byte) model.PruningStore {
+func New(prefix *prefixmanager.Prefix) model.PruningStore {
 	return &pruningStore{
-		pruningBlockHashKey:             database.MakeBucket([]byte{prefix}).Key(pruningBlockHashKeyName),
-		previousPruningBlockHashKey:     database.MakeBucket([]byte{prefix}).Key(previousPruningBlockHashKeyName),
-		candidatePruningPointHashKey:    database.MakeBucket([]byte{prefix}).Key(candidatePruningPointHashKeyName),
-		pruningPointUTXOSetBucket:       database.MakeBucket([]byte{prefix}).Bucket(pruningPointUTXOSetBucketName),
-		importedPruningPointUTXOsBucket: database.MakeBucket([]byte{prefix}).Bucket(importedPruningPointUTXOsBucketName),
-		updatingPruningPointUTXOSetKey:  database.MakeBucket([]byte{prefix}).Key(updatingPruningPointUTXOSetKeyName),
-		importedPruningPointMultisetKey: database.MakeBucket([]byte{prefix}).Key(importedPruningPointMultisetKeyName),
+		pruningBlockHashKey:             database.MakeBucket(prefix.Serialize()).Key(pruningBlockHashKeyName),
+		previousPruningBlockHashKey:     database.MakeBucket(prefix.Serialize()).Key(previousPruningBlockHashKeyName),
+		candidatePruningPointHashKey:    database.MakeBucket(prefix.Serialize()).Key(candidatePruningPointHashKeyName),
+		pruningPointUTXOSetBucket:       database.MakeBucket(prefix.Serialize()).Bucket(pruningPointUTXOSetBucketName),
+		importedPruningPointUTXOsBucket: database.MakeBucket(prefix.Serialize()).Bucket(importedPruningPointUTXOsBucketName),
+		updatingPruningPointUTXOSetKey:  database.MakeBucket(prefix.Serialize()).Key(updatingPruningPointUTXOSetKeyName),
+		importedPruningPointMultisetKey: database.MakeBucket(prefix.Serialize()).Key(importedPruningPointMultisetKeyName),
 	}
 }
 

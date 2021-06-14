@@ -6,6 +6,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/database/serialization"
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+	"github.com/kaspanet/kaspad/domain/prefixmanager"
 )
 
 var keyName = []byte("headers-selected-tip")
@@ -16,9 +17,9 @@ type headerSelectedTipStore struct {
 }
 
 // New instantiates a new HeaderSelectedTipStore
-func New(prefix byte) model.HeaderSelectedTipStore {
+func New(prefix *prefixmanager.Prefix) model.HeaderSelectedTipStore {
 	return &headerSelectedTipStore{
-		key: database.MakeBucket([]byte{prefix}).Key(keyName),
+		key: database.MakeBucket(prefix.Serialize()).Key(keyName),
 	}
 }
 

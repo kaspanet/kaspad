@@ -7,6 +7,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/lrucache"
+	"github.com/kaspanet/kaspad/domain/prefixmanager"
 	"github.com/pkg/errors"
 )
 
@@ -21,11 +22,11 @@ type blockStore struct {
 }
 
 // New instantiates a new BlockStore
-func New(dbContext model.DBReader, prefix byte, cacheSize int, preallocate bool) (model.BlockStore, error) {
+func New(dbContext model.DBReader, prefix *prefixmanager.Prefix, cacheSize int, preallocate bool) (model.BlockStore, error) {
 	blockStore := &blockStore{
 		cache:    lrucache.New(cacheSize, preallocate),
-		bucket:   database.MakeBucket([]byte{prefix}).Bucket(bucketName),
-		countKey: database.MakeBucket([]byte{prefix}).Key([]byte("blocks-count")),
+		bucket:   database.MakeBucket(prefix.Serialize()).Bucket(bucketName),
+		countKey: database.MakeBucket(prefix.Serialize()).Key([]byte("blocks-count")),
 	}
 
 	err := blockStore.initializeCount(dbContext)

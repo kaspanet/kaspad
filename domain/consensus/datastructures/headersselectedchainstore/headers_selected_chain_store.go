@@ -2,6 +2,7 @@ package headersselectedchainstore
 
 import (
 	"encoding/binary"
+	"github.com/kaspanet/kaspad/domain/prefixmanager"
 
 	"github.com/kaspanet/kaspad/domain/consensus/database"
 	"github.com/kaspanet/kaspad/domain/consensus/database/binaryserialization"
@@ -26,13 +27,13 @@ type headersSelectedChainStore struct {
 }
 
 // New instantiates a new HeadersSelectedChainStore
-func New(prefix byte, cacheSize int, preallocate bool) model.HeadersSelectedChainStore {
+func New(prefix *prefixmanager.Prefix, cacheSize int, preallocate bool) model.HeadersSelectedChainStore {
 	return &headersSelectedChainStore{
 		cacheByIndex:                lrucacheuint64tohash.New(cacheSize, preallocate),
 		cacheByHash:                 lrucache.New(cacheSize, preallocate),
-		bucketChainBlockHashByIndex: database.MakeBucket([]byte{prefix}).Bucket(bucketChainBlockHashByIndexName),
-		bucketChainBlockIndexByHash: database.MakeBucket([]byte{prefix}).Bucket(bucketChainBlockIndexByHashName),
-		highestChainBlockIndexKey:   database.MakeBucket([]byte{prefix}).Key(highestChainBlockIndexKeyName),
+		bucketChainBlockHashByIndex: database.MakeBucket(prefix.Serialize()).Bucket(bucketChainBlockHashByIndexName),
+		bucketChainBlockIndexByHash: database.MakeBucket(prefix.Serialize()).Bucket(bucketChainBlockIndexByHashName),
+		highestChainBlockIndexKey:   database.MakeBucket(prefix.Serialize()).Key(highestChainBlockIndexKeyName),
 	}
 }
 

@@ -6,6 +6,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/lrucache"
+	"github.com/kaspanet/kaspad/domain/prefixmanager"
 )
 
 var daaScoreBucketName = []byte("daa-score")
@@ -20,12 +21,12 @@ type daaBlocksStore struct {
 }
 
 // New instantiates a new DAABlocksStore
-func New(prefix byte, daaScoreCacheSize int, daaAddedBlocksCacheSize int, preallocate bool) model.DAABlocksStore {
+func New(prefix *prefixmanager.Prefix, daaScoreCacheSize int, daaAddedBlocksCacheSize int, preallocate bool) model.DAABlocksStore {
 	return &daaBlocksStore{
 		daaScoreLRUCache:       lrucache.New(daaScoreCacheSize, preallocate),
 		daaAddedBlocksLRUCache: lrucache.New(daaAddedBlocksCacheSize, preallocate),
-		daaScoreBucket:         database.MakeBucket([]byte{prefix}).Bucket(daaScoreBucketName),
-		daaAddedBlocksBucket:   database.MakeBucket([]byte{prefix}).Bucket(daaAddedBlocksBucketName),
+		daaScoreBucket:         database.MakeBucket(prefix.Serialize()).Bucket(daaScoreBucketName),
+		daaAddedBlocksBucket:   database.MakeBucket(prefix.Serialize()).Bucket(daaAddedBlocksBucketName),
 	}
 }
 
