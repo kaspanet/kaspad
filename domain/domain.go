@@ -80,11 +80,11 @@ func (d *domain) CreateTemporaryConsensus() error {
 }
 
 func (d *domain) CommitTemporaryConsensus() error {
-	transaction, err := d.db.Begin()
+	dbTx, err := d.db.Begin()
 	if err != nil {
 		return err
 	}
-	defer transaction.RollbackUnlessClosed()
+	defer dbTx.RollbackUnlessClosed()
 
 	inactivePrefix, hasInactivePrefix, err := prefixmanager.InactivePrefix(d.db)
 	if err != nil {
@@ -95,7 +95,7 @@ func (d *domain) CommitTemporaryConsensus() error {
 		return errors.Errorf("there's no inactive prefix to commit")
 	}
 
-	activePrefix, exists, err := prefixmanager.ActivePrefix(transaction)
+	activePrefix, exists, err := prefixmanager.ActivePrefix(dbTx)
 	if err != nil {
 		return err
 	}
@@ -105,17 +105,17 @@ func (d *domain) CommitTemporaryConsensus() error {
 			"no active consensus")
 	}
 
-	err = prefixmanager.SetPrefixAsActive(transaction, inactivePrefix)
+	err = prefixmanager.SetPrefixAsActive(dbTx, inactivePrefix)
 	if err != nil {
 		return err
 	}
 
-	err = prefixmanager.SetPrefixAsInactive(transaction, activePrefix)
+	err = prefixmanager.SetPrefixAsInactive(dbTx, activePrefix)
 	if err != nil {
 		return err
 	}
 
-	err = transaction.Commit()
+	err = dbTx.Commit()
 	if err != nil {
 		return err
 	}
