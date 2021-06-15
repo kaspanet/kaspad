@@ -56,7 +56,7 @@ func (bss *blockStagingShard) commitCount(dbTx model.DBTransaction) error {
 	if err != nil {
 		return err
 	}
-	err = dbTx.Put(countKey, countBytes)
+	err = dbTx.Put(bss.store.countKey, countBytes)
 	if err != nil {
 		return err
 	}
