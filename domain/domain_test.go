@@ -1,19 +1,28 @@
 package domain_test
 
 import (
+	"fmt"
 	"github.com/kaspanet/kaspad/domain"
 	"github.com/kaspanet/kaspad/domain/consensus"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/testutils"
 	"github.com/kaspanet/kaspad/infrastructure/db/database/ldb"
+	"io/ioutil"
+	"os"
 	"strings"
 	"testing"
 )
 
 func TestCreateStagingConsensus(t *testing.T) {
 	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
-		db, err := ldb.NewLevelDB(t.TempDir(), 8)
+		dataDir, err := ioutil.TempDir("", fmt.Sprintf("TestCreateStagingConsensus-%s", consensusConfig.Name))
+		if err != nil {
+			t.Fatalf("ioutil.TempDir: %+v", err)
+		}
+		defer os.RemoveAll(dataDir)
+
+		db, err := ldb.NewLevelDB(dataDir, 8)
 		if err != nil {
 			t.Fatalf("NewLevelDB: %+v", err)
 		}
