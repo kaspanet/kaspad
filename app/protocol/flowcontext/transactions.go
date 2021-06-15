@@ -11,13 +11,13 @@ import (
 
 // AddTransaction adds transaction to the mempool and propagates it.
 func (f *FlowContext) AddTransaction(tx *externalapi.DomainTransaction, allowOrphan bool) error {
-	_, err := f.Domain().MiningManager().ValidateAndInsertTransaction(tx, true, allowOrphan)
+	acceptedTransactions, err := f.Domain().MiningManager().ValidateAndInsertTransaction(tx, true, allowOrphan)
 	if err != nil {
 		return err
 	}
 
-	transactionID := consensushashing.TransactionID(tx)
-	inv := appmessage.NewMsgInvTransaction([]*externalapi.DomainTransactionID{transactionID})
+	acceptedTransactionIDs := consensushashing.TransactionIDs(acceptedTransactions)
+	inv := appmessage.NewMsgInvTransaction(acceptedTransactionIDs)
 
 	return f.Broadcast(inv)
 }
