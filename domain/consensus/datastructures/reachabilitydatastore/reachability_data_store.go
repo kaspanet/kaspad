@@ -7,7 +7,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/lrucache"
-	"github.com/kaspanet/kaspad/domain/prefixmanager"
+	"github.com/kaspanet/kaspad/domain/prefixmanager/prefix"
 )
 
 var reachabilityDataBucketName = []byte("reachability-data")
@@ -23,7 +23,7 @@ type reachabilityDataStore struct {
 }
 
 // New instantiates a new ReachabilityDataStore
-func New(prefix *prefixmanager.Prefix, cacheSize int, preallocate bool) model.ReachabilityDataStore {
+func New(prefix *prefix.Prefix, cacheSize int, preallocate bool) model.ReachabilityDataStore {
 	return &reachabilityDataStore{
 		reachabilityDataCache:      lrucache.New(cacheSize, preallocate),
 		reachabilityDataBucket:     database.MakeBucket(prefix.Serialize()).Bucket(reachabilityDataBucketName),

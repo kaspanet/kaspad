@@ -7,7 +7,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/lrucache"
-	"github.com/kaspanet/kaspad/domain/prefixmanager"
+	"github.com/kaspanet/kaspad/domain/prefixmanager/prefix"
 )
 
 var bucketName = []byte("multisets")
@@ -19,7 +19,7 @@ type multisetStore struct {
 }
 
 // New instantiates a new MultisetStore
-func New(prefix *prefixmanager.Prefix, cacheSize int, preallocate bool) model.MultisetStore {
+func New(prefix *prefix.Prefix, cacheSize int, preallocate bool) model.MultisetStore {
 	return &multisetStore{
 		cache:  lrucache.New(cacheSize, preallocate),
 		bucket: database.MakeBucket(prefix.Serialize()).Bucket(bucketName),

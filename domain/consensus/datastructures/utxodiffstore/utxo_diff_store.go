@@ -7,7 +7,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/lrucache"
-	"github.com/kaspanet/kaspad/domain/prefixmanager"
+	"github.com/kaspanet/kaspad/domain/prefixmanager/prefix"
 	"github.com/pkg/errors"
 )
 
@@ -23,7 +23,7 @@ type utxoDiffStore struct {
 }
 
 // New instantiates a new UTXODiffStore
-func New(prefix *prefixmanager.Prefix, cacheSize int, preallocate bool) model.UTXODiffStore {
+func New(prefix *prefix.Prefix, cacheSize int, preallocate bool) model.UTXODiffStore {
 	return &utxoDiffStore{
 		utxoDiffCache:       lrucache.New(cacheSize, preallocate),
 		utxoDiffChildCache:  lrucache.New(cacheSize, preallocate),

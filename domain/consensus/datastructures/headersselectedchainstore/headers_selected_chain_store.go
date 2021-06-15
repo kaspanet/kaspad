@@ -2,7 +2,7 @@ package headersselectedchainstore
 
 import (
 	"encoding/binary"
-	"github.com/kaspanet/kaspad/domain/prefixmanager"
+	"github.com/kaspanet/kaspad/domain/prefixmanager/prefix"
 
 	"github.com/kaspanet/kaspad/domain/consensus/database"
 	"github.com/kaspanet/kaspad/domain/consensus/database/binaryserialization"
@@ -27,7 +27,7 @@ type headersSelectedChainStore struct {
 }
 
 // New instantiates a new HeadersSelectedChainStore
-func New(prefix *prefixmanager.Prefix, cacheSize int, preallocate bool) model.HeadersSelectedChainStore {
+func New(prefix *prefix.Prefix, cacheSize int, preallocate bool) model.HeadersSelectedChainStore {
 	return &headersSelectedChainStore{
 		cacheByIndex:                lrucacheuint64tohash.New(cacheSize, preallocate),
 		cacheByHash:                 lrucache.New(cacheSize, preallocate),

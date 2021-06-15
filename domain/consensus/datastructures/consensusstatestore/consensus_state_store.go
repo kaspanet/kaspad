@@ -5,7 +5,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/utxolrucache"
-	"github.com/kaspanet/kaspad/domain/prefixmanager"
+	"github.com/kaspanet/kaspad/domain/prefixmanager/prefix"
 )
 
 var importingPruningPointUTXOSetKeyName = []byte("importing-pruning-point-utxo-set")
@@ -20,7 +20,7 @@ type consensusStateStore struct {
 }
 
 // New instantiates a new ConsensusStateStore
-func New(prefix *prefixmanager.Prefix, utxoSetCacheSize int, preallocate bool) model.ConsensusStateStore {
+func New(prefix *prefix.Prefix, utxoSetCacheSize int, preallocate bool) model.ConsensusStateStore {
 	return &consensusStateStore{
 		virtualUTXOSetCache:             utxolrucache.New(utxoSetCacheSize, preallocate),
 		tipsKey:                         database.MakeBucket(prefix.Serialize()).Key(tipsKeyName),

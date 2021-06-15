@@ -6,7 +6,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/database/serialization"
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
-	"github.com/kaspanet/kaspad/domain/prefixmanager"
+	"github.com/kaspanet/kaspad/domain/prefixmanager/prefix"
 )
 
 var pruningBlockHashKeyName = []byte("pruning-block-hash")
@@ -31,7 +31,7 @@ type pruningStore struct {
 }
 
 // New instantiates a new PruningStore
-func New(prefix *prefixmanager.Prefix) model.PruningStore {
+func New(prefix *prefix.Prefix) model.PruningStore {
 	return &pruningStore{
 		pruningBlockHashKey:             database.MakeBucket(prefix.Serialize()).Key(pruningBlockHashKeyName),
 		previousPruningBlockHashKey:     database.MakeBucket(prefix.Serialize()).Key(previousPruningBlockHashKeyName),

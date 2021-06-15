@@ -5,6 +5,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/miningmanager"
 	"github.com/kaspanet/kaspad/domain/prefixmanager"
+	"github.com/kaspanet/kaspad/domain/prefixmanager/prefix"
 	infrastructuredatabase "github.com/kaspanet/kaspad/infrastructure/db/database"
 	"github.com/pkg/errors"
 	"sync"
@@ -68,11 +69,7 @@ func (d *domain) InitStagingConsensus() error {
 			"no active consensus")
 	}
 
-	inactivePrefix := prefixmanager.NewPrefix(0)
-	if activePrefix.Equal(prefixmanager.NewPrefix(0)) {
-		inactivePrefix = prefixmanager.NewPrefix(1)
-	}
-
+	inactivePrefix := activePrefix.Flip()
 	err = prefixmanager.SetPrefixAsInactive(d.db, inactivePrefix)
 	if err != nil {
 		return err
@@ -172,8 +169,7 @@ func New(consensusConfig *consensus.Config, db infrastructuredatabase.Database) 
 	}
 
 	if !exists {
-		const defaultActivePrefix = 0
-		activePrefix = prefixmanager.NewPrefix(defaultActivePrefix)
+		activePrefix = &prefix.Prefix{}
 		err = prefixmanager.SetPrefixAsActive(db, activePrefix)
 		if err != nil {
 			return nil, err

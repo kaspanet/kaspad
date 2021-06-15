@@ -2,7 +2,7 @@ package consensus
 
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
-	"github.com/kaspanet/kaspad/domain/prefixmanager"
+	"github.com/kaspanet/kaspad/domain/prefixmanager/prefix"
 	"github.com/pkg/errors"
 	"io/ioutil"
 	"os"
@@ -65,7 +65,7 @@ type Config struct {
 
 // Factory instantiates new Consensuses
 type Factory interface {
-	NewConsensus(config *Config, db infrastructuredatabase.Database, dbPrefix *prefixmanager.Prefix) (
+	NewConsensus(config *Config, db infrastructuredatabase.Database, dbPrefix *prefix.Prefix) (
 		externalapi.Consensus, error)
 	NewTestConsensus(config *Config, testName string) (
 		tc testapi.TestConsensus, teardown func(keepDataDir bool), err error)
@@ -97,7 +97,7 @@ func NewFactory() Factory {
 }
 
 // NewConsensus instantiates a new Consensus
-func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Database, dbPrefix *prefixmanager.Prefix) (
+func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Database, dbPrefix *prefix.Prefix) (
 	externalapi.Consensus, error) {
 
 	dbManager := consensusdatabase.New(db)
@@ -471,7 +471,7 @@ func (f *factory) NewTestConsensus(config *Config, testName string) (
 		return nil, nil, err
 	}
 
-	testConsensusDBPrefix := prefixmanager.NewPrefix(0)
+	testConsensusDBPrefix := &prefix.Prefix{}
 	consensusAsInterface, err := f.NewConsensus(config, db, testConsensusDBPrefix)
 	if err != nil {
 		return nil, nil, err
