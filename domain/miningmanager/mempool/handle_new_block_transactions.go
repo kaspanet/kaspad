@@ -6,13 +6,13 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/utils/transactionhelper"
 )
 
-func (mp *mempool) handleNewBlockTransactions(blockTransactions []*externalapi.DomainTransaction,
-	acceptedOrphans []*externalapi.DomainTransaction) ([]*externalapi.DomainTransaction, error) {
+func (mp *mempool) handleNewBlockTransactions(blockTransactions []*externalapi.DomainTransaction) (
+	[]*externalapi.DomainTransaction, error) {
 
 	// Skip the coinbase transaction
 	blockTransactions = blockTransactions[transactionhelper.CoinbaseTransactionIndex+1:]
 
-	acceptedOrphans = []*externalapi.DomainTransaction{}
+	acceptedOrphans := []*externalapi.DomainTransaction{}
 	for _, transaction := range blockTransactions {
 		transactionID := consensushashing.TransactionID(transaction)
 		err := mp.removeTransaction(transactionID, false)

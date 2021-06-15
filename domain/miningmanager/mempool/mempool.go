@@ -70,7 +70,7 @@ func (mp *mempool) HandleNewBlockTransactions(transactions []*externalapi.Domain
 	mp.mtx.Lock()
 	defer mp.mtx.Unlock()
 
-	return mp.handleNewBlockTransactions(transactions, acceptedOrphans)
+	return mp.handleNewBlockTransactions(transactions)
 }
 
 func (mp *mempool) BlockCandidateTransactions() []*externalapi.DomainTransaction {
