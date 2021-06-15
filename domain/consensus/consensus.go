@@ -387,7 +387,7 @@ func (s *consensus) GetVirtualInfo() (*externalapi.VirtualInfo, error) {
 		return nil, err
 	}
 
-	daaScore, err := s.GetVirtualDAAScore()
+	daaScore, err := s.daaBlocksStore.DAAScore(s.databaseContext, stagingArea, model.VirtualBlockHash)
 	if err != nil {
 		return nil, err
 	}
