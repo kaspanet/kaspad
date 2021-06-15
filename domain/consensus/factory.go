@@ -1,6 +1,8 @@
 package consensus
 
 import (
+	"github.com/kaspanet/kaspad/domain/consensus/model"
+	"github.com/pkg/errors"
 	"io/ioutil"
 	"os"
 	"sync"
@@ -418,6 +420,11 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 	}
 
 	if !genesisInfo.Exists {
+		if c.blockStore.Count(model.NewStagingArea()) > 0 {
+			return nil, errors.Errorf(
+				"expected genesis block %s is not found in the non-empty DAG \"%s\": wrong config or appdir?",
+				genesisHash, config.Params.Name)
+		}
 		_, err = c.ValidateAndInsertBlock(config.GenesisBlock)
 		if err != nil {
 			return nil, err
