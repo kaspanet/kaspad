@@ -23,6 +23,10 @@ type fakeDomain struct {
 	testapi.TestConsensus
 }
 
+func (d fakeDomain) DeleteStagingConsensus() error {
+	panic("implement me")
+}
+
 func (d fakeDomain) StagingConsensus() externalapi.Consensus {
 	panic("implement me")
 }

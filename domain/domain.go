@@ -18,6 +18,7 @@ type Domain interface {
 	StagingConsensus() externalapi.Consensus
 	InitStagingConsensus() error
 	CommitStagingConsensus() error
+	DeleteStagingConsensus() error
 }
 
 type domain struct {
@@ -47,7 +48,7 @@ func (d *domain) InitStagingConsensus() error {
 	}
 
 	if hasInactivePrefix {
-		return errors.Errorf("cannot create temporary consensus when a staging consensus already exists")
+		return errors.Errorf("cannot create staging consensus when a staging consensus already exists")
 	}
 
 	activePrefix, exists, err := prefixmanager.ActivePrefix(d.db)
@@ -56,7 +57,7 @@ func (d *domain) InitStagingConsensus() error {
 	}
 
 	if !exists {
-		return errors.Errorf("cannot create a temporary consensus when there's " +
+		return errors.Errorf("cannot create a staging consensus when there's " +
 			"no active consensus")
 	}
 
