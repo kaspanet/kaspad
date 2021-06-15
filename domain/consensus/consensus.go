@@ -387,7 +387,7 @@ func (s *consensus) GetVirtualInfo() (*externalapi.VirtualInfo, error) {
 		return nil, err
 	}
 
-	daaScore, err := s.daaBlocksStore.DAAScore(s.databaseContext, stagingArea, model.VirtualBlockHash)
+	daaScore, err := s.GetVirtualDAAScore()
 	if err != nil {
 		return nil, err
 	}
@@ -399,6 +399,15 @@ func (s *consensus) GetVirtualInfo() (*externalapi.VirtualInfo, error) {
 		BlueScore:      virtualGHOSTDAGData.BlueScore(),
 		DAAScore:       daaScore,
 	}, nil
+}
+
+func (s *consensus) GetVirtualDAAScore() (uint64, error) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	stagingArea := model.NewStagingArea()
+
+	return s.daaBlocksStore.DAAScore(s.databaseContext, stagingArea, model.VirtualBlockHash)
 }
 
 func (s *consensus) CreateBlockLocator(lowHash, highHash *externalapi.DomainHash, limit uint32) (externalapi.BlockLocator, error) {

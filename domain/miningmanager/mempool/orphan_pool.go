@@ -60,7 +60,7 @@ func (op *orphansPool) maybeAddOrphan(transaction *externalapi.DomainTransaction
 
 // this function MUST be called with the mempool mutex locked for writes
 func (op *orphansPool) addOrphan(transaction *externalapi.DomainTransaction, isHighPriority bool) error {
-	virtualDAAScore, err := op.mempool.virtualDAAScore()
+	virtualDAAScore, err := op.mempool.consensus.GetVirtualDAAScore()
 	if err != nil {
 		return err
 	}
@@ -158,7 +158,7 @@ func (op *orphansPool) unorphanTransaction(transaction *model.OrphanTransaction)
 		return err
 	}
 
-	virtualDAAScore, err := op.mempool.virtualDAAScore()
+	virtualDAAScore, err := op.mempool.consensus.GetVirtualDAAScore()
 	if err != nil {
 		return err
 	}
@@ -225,7 +225,7 @@ func (op *orphansPool) removeRedeemersOf(transaction model.Transaction) error {
 
 // this function MUST be called with the mempool mutex locked for writes
 func (op *orphansPool) expireOrphanTransactions() error {
-	virtualDAAScore, err := op.mempool.virtualDAAScore()
+	virtualDAAScore, err := op.mempool.consensus.GetVirtualDAAScore()
 	if err != nil {
 		return err
 	}

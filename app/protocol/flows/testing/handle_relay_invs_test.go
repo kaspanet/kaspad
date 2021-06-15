@@ -257,6 +257,10 @@ func (f *fakeRelayInvsContext) GetVirtualInfo() (*externalapi.VirtualInfo, error
 	panic(errors.Errorf("called unimplemented function from test '%s'", f.testName))
 }
 
+func (f *fakeRelayInvsContext) GetVirtualDAAScore() (uint64, error) {
+	panic(errors.Errorf("called unimplemented function from test '%s'", f.testName))
+}
+
 func (f *fakeRelayInvsContext) IsValidPruningPoint(blockHash *externalapi.DomainHash) (bool, error) {
 	f.rwLock.RLock()
 	defer f.rwLock.RUnlock()

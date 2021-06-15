@@ -29,7 +29,7 @@ func newTransactionsPool(mp *mempool) *transactionsPool {
 func (tp *transactionsPool) addTransaction(transaction *externalapi.DomainTransaction,
 	parentTransactionsInPool model.OutpointToTransaction, isHighPriority bool) (*model.MempoolTransaction, error) {
 
-	virtualDAAScore, err := tp.mempool.virtualDAAScore()
+	virtualDAAScore, err := tp.mempool.consensus.GetVirtualDAAScore()
 	if err != nil {
 		return nil, err
 	}
@@ -87,7 +87,7 @@ func (tp *transactionsPool) removeTransaction(transaction *model.MempoolTransact
 
 // this function MUST be called with the mempool mutex locked for writes
 func (tp *transactionsPool) expireOldTransactions() error {
-	virtualDAAScore, err := tp.mempool.virtualDAAScore()
+	virtualDAAScore, err := tp.mempool.consensus.GetVirtualDAAScore()
 	if err != nil {
 		return err
 	}
