@@ -7,6 +7,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/prefixmanager"
 	infrastructuredatabase "github.com/kaspanet/kaspad/infrastructure/db/database"
 	"github.com/pkg/errors"
+	"sync"
 	"sync/atomic"
 	"unsafe"
 )
@@ -22,11 +23,12 @@ type Domain interface {
 }
 
 type domain struct {
-	miningManager    miningmanager.MiningManager
-	consensus        *externalapi.Consensus
-	stagingConsensus *externalapi.Consensus // We assume there's no concurrent access to stagingConsensus
-	consensusConfig  *consensus.Config
-	db               infrastructuredatabase.Database
+	miningManager        miningmanager.MiningManager
+	consensus            *externalapi.Consensus
+	stagingConsensus     *externalapi.Consensus
+	stagingConsensusLock sync.RWMutex
+	consensusConfig      *consensus.Config
+	db                   infrastructuredatabase.Database
 }
 
 func (d *domain) Consensus() externalapi.Consensus {
@@ -34,6 +36,8 @@ func (d *domain) Consensus() externalapi.Consensus {
 }
 
 func (d *domain) StagingConsensus() externalapi.Consensus {
+	d.stagingConsensusLock.RLock()
+	defer d.stagingConsensusLock.RUnlock()
 	return *d.stagingConsensus
 }
 
@@ -42,6 +46,9 @@ func (d *domain) MiningManager() miningmanager.MiningManager {
 }
 
 func (d *domain) InitStagingConsensus() error {
+	d.stagingConsensusLock.Lock()
+	defer d.stagingConsensusLock.Unlock()
+
 	_, hasInactivePrefix, err := prefixmanager.InactivePrefix(d.db)
 	if err != nil {
 		return err
@@ -82,6 +89,9 @@ func (d *domain) InitStagingConsensus() error {
 }
 
 func (d *domain) CommitStagingConsensus() error {
+	d.stagingConsensusLock.Lock()
+	defer d.stagingConsensusLock.Unlock()
+
 	dbTx, err := d.db.Begin()
 	if err != nil {
 		return err
@@ -137,6 +147,9 @@ func (d *domain) CommitStagingConsensus() error {
 }
 
 func (d *domain) DeleteStagingConsensus() error {
+	d.stagingConsensusLock.Lock()
+	defer d.stagingConsensusLock.Unlock()
+
 	err := prefixmanager.DeleteInactivePrefix(d.db)
 	if err != nil {
 		return err
