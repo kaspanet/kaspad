@@ -103,57 +103,43 @@ func TestDust(t *testing.T) {
 			0xba, 0x5e}, 0}
 
 	tests := []struct {
-		name     string // test description
-		txOut    externalapi.DomainTransactionOutput
-		relayFee util.Amount // minimum relay transaction fee.
-		isDust   bool
+		name   string // test description
+		txOut  externalapi.DomainTransactionOutput
+		isDust bool
 	}{
 		{
-			// Any value is allowed with a zero relay fee.
-			"zero value with zero relay fee",
+			// Zero value is dust"
+			"zero value",
 			externalapi.DomainTransactionOutput{Value: 0, ScriptPublicKey: scriptPublicKey},
-			0,
-			false,
-		},
-		{
-			// Zero value is dust with any relay fee"
-			"zero value with very small tx fee",
-			externalapi.DomainTransactionOutput{Value: 0, ScriptPublicKey: scriptPublicKey},
-			1,
 			true,
 		},
 		{
 			"36 byte public key script with value 605",
 			externalapi.DomainTransactionOutput{Value: 605, ScriptPublicKey: scriptPublicKey},
-			1000,
 			true,
 		},
 		{
 			"36 byte public key script with value 606",
 			externalapi.DomainTransactionOutput{Value: 606, ScriptPublicKey: scriptPublicKey},
-			1000,
 			false,
 		},
 		{
 			// Maximum allowed value is never dust.
 			"max sompi amount is never dust",
 			externalapi.DomainTransactionOutput{Value: util.MaxSompi, ScriptPublicKey: scriptPublicKey},
-			util.MaxSompi,
 			false,
 		},
 		{
-			// Maximum int64 value causes overflow.
+			// Maximum int64 value.
 			"maximum int64 value",
 			externalapi.DomainTransactionOutput{Value: 1<<63 - 1, ScriptPublicKey: scriptPublicKey},
-			1<<63 - 1,
-			true,
+			false,
 		},
 		{
 			// Unspendable ScriptPublicKey due to an invalid public key
 			// script.
 			"unspendable ScriptPublicKey",
 			externalapi.DomainTransactionOutput{Value: 5000, ScriptPublicKey: &externalapi.ScriptPublicKey{[]byte{0x01}, 0}},
-			0, // no relay fee
 			true,
 		},
 	}
