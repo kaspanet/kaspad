@@ -130,15 +130,15 @@ type fakeRelayInvsContext struct {
 	rwLock                                        sync.RWMutex
 }
 
-func (f *fakeRelayInvsContext) TemporaryConsensus() externalapi.Consensus {
+func (f *fakeRelayInvsContext) StagingConsensus() externalapi.Consensus {
 	panic("implement me")
 }
 
-func (f *fakeRelayInvsContext) CreateTemporaryConsensus() error {
+func (f *fakeRelayInvsContext) InitStagingConsensus() error {
 	panic("implement me")
 }
 
-func (f *fakeRelayInvsContext) CommitTemporaryConsensus() error {
+func (f *fakeRelayInvsContext) CommitStagingConsensus() error {
 	panic("implement me")
 }
 

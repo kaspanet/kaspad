@@ -15,38 +15,39 @@ import (
 type Domain interface {
 	MiningManager() miningmanager.MiningManager
 	Consensus() externalapi.Consensus
-	TemporaryConsensus() externalapi.Consensus
-	CreateTemporaryConsensus() error
-	CommitTemporaryConsensus() error
+	StagingConsensus() externalapi.Consensus
+	InitStagingConsensus() error
+	CommitStagingConsensus() error
 }
+
 type domain struct {
-	miningManager   miningmanager.MiningManager
-	consensus       *externalapi.Consensus
-	tempConsensus   *externalapi.Consensus // We assume there's no concurrent access to tempConsensus
-	consensusConfig *consensus.Config
-	db              infrastructuredatabase.Database
+	miningManager    miningmanager.MiningManager
+	consensus        *externalapi.Consensus
+	stagingConsensus *externalapi.Consensus // We assume there's no concurrent access to stagingConsensus
+	consensusConfig  *consensus.Config
+	db               infrastructuredatabase.Database
 }
 
 func (d *domain) Consensus() externalapi.Consensus {
 	return *d.consensus
 }
 
-func (d *domain) TemporaryConsensus() externalapi.Consensus {
-	return *d.tempConsensus
+func (d *domain) StagingConsensus() externalapi.Consensus {
+	return *d.stagingConsensus
 }
 
 func (d *domain) MiningManager() miningmanager.MiningManager {
 	return d.miningManager
 }
 
-func (d *domain) CreateTemporaryConsensus() error {
+func (d *domain) InitStagingConsensus() error {
 	_, hasInactivePrefix, err := prefixmanager.InactivePrefix(d.db)
 	if err != nil {
 		return err
 	}
 
 	if hasInactivePrefix {
-		return errors.Errorf("cannot create temporary consensus when a temporary consensus already exists")
+		return errors.Errorf("cannot create temporary consensus when a staging consensus already exists")
 	}
 
 	activePrefix, exists, err := prefixmanager.ActivePrefix(d.db)
@@ -75,11 +76,11 @@ func (d *domain) CreateTemporaryConsensus() error {
 		return err
 	}
 
-	d.tempConsensus = &consensusInstance
+	d.stagingConsensus = &consensusInstance
 	return nil
 }
 
-func (d *domain) CommitTemporaryConsensus() error {
+func (d *domain) CommitStagingConsensus() error {
 	dbTx, err := d.db.Begin()
 	if err != nil {
 		return err
@@ -101,7 +102,7 @@ func (d *domain) CommitTemporaryConsensus() error {
 	}
 
 	if !exists {
-		return errors.Errorf("cannot commit a temporary consensus when there's " +
+		return errors.Errorf("cannot commit a staging consensus when there's " +
 			"no active consensus")
 	}
 
@@ -127,20 +128,20 @@ func (d *domain) CommitTemporaryConsensus() error {
 		return err
 	}
 
-	tempConsensusPointer := unsafe.Pointer(d.tempConsensus)
+	tempConsensusPointer := unsafe.Pointer(d.stagingConsensus)
 	consensusPointer := (*unsafe.Pointer)(unsafe.Pointer(&d.consensus))
 	atomic.StorePointer(consensusPointer, tempConsensusPointer)
-	d.tempConsensus = nil
+	d.stagingConsensus = nil
 	return nil
 }
 
-func (d *domain) DeleteTemporaryConsensus() error {
+func (d *domain) DeleteStagingConsensus() error {
 	err := prefixmanager.DeleteInactivePrefix(d.db)
 	if err != nil {
 		return err
 	}
 
-	d.tempConsensus = nil
+	d.stagingConsensus = nil
 	return nil
 }
 

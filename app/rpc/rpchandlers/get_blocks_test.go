@@ -23,15 +23,15 @@ type fakeDomain struct {
 	testapi.TestConsensus
 }
 
-func (d fakeDomain) TemporaryConsensus() externalapi.Consensus {
+func (d fakeDomain) StagingConsensus() externalapi.Consensus {
 	panic("implement me")
 }
 
-func (d fakeDomain) CreateTemporaryConsensus() error {
+func (d fakeDomain) InitStagingConsensus() error {
 	panic("implement me")
 }
 
-func (d fakeDomain) CommitTemporaryConsensus() error {
+func (d fakeDomain) CommitStagingConsensus() error {
 	panic("implement me")
 }
 

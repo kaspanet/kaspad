@@ -11,7 +11,7 @@ import (
 	"testing"
 )
 
-func TestCreateTemporaryConsensus(t *testing.T) {
+func TestCreateStagingConsensus(t *testing.T) {
 	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
 		db, err := ldb.NewLevelDB(t.TempDir(), 8)
 		if err != nil {
@@ -23,13 +23,13 @@ func TestCreateTemporaryConsensus(t *testing.T) {
 			t.Fatalf("New: %+v", err)
 		}
 
-		err = domainInstance.CreateTemporaryConsensus()
+		err = domainInstance.InitStagingConsensus()
 		if err != nil {
-			t.Fatalf("CreateTemporaryConsensus: %+v", err)
+			t.Fatalf("InitStagingConsensus: %+v", err)
 		}
 
-		err = domainInstance.CreateTemporaryConsensus()
-		if !strings.Contains(err.Error(), "cannot create temporary consensus when a temporary consensus already exists") {
+		err = domainInstance.InitStagingConsensus()
+		if !strings.Contains(err.Error(), "cannot create staging consensus when a staging consensus already exists") {
 			t.Fatalf("unexpected error: %+v", err)
 		}
 
@@ -37,24 +37,24 @@ func TestCreateTemporaryConsensus(t *testing.T) {
 			ScriptPublicKey: &externalapi.ScriptPublicKey{},
 			ExtraData:       []byte{},
 		}
-		block, err := domainInstance.TemporaryConsensus().BuildBlock(coinbaseData, nil)
+		block, err := domainInstance.StagingConsensus().BuildBlock(coinbaseData, nil)
 		if err != nil {
 			t.Fatalf("BuildBlock: %+v", err)
 		}
 
-		_, err = domainInstance.TemporaryConsensus().ValidateAndInsertBlock(block)
+		_, err = domainInstance.StagingConsensus().ValidateAndInsertBlock(block)
 		if err != nil {
 			t.Fatalf("ValidateAndInsertBlock: %+v", err)
 		}
 
 		blockHash := consensushashing.BlockHash(block)
-		blockInfo, err := domainInstance.TemporaryConsensus().GetBlockInfo(blockHash)
+		blockInfo, err := domainInstance.StagingConsensus().GetBlockInfo(blockHash)
 		if err != nil {
 			t.Fatalf("GetBlockInfo: %+v", err)
 		}
 
 		if !blockInfo.Exists {
-			t.Fatalf("block not found on temporary consensus")
+			t.Fatalf("block not found on staging consensus")
 		}
 
 		blockInfo, err = domainInstance.Consensus().GetBlockInfo(blockHash)
@@ -63,12 +63,12 @@ func TestCreateTemporaryConsensus(t *testing.T) {
 		}
 
 		if blockInfo.Exists {
-			t.Fatalf("a block from temporary consensus was found on consensus")
+			t.Fatalf("a block from staging consensus was found on consensus")
 		}
 
-		err = domainInstance.CommitTemporaryConsensus()
+		err = domainInstance.CommitStagingConsensus()
 		if err != nil {
-			t.Fatalf("CommitTemporaryConsensus: %+v", err)
+			t.Fatalf("CommitStagingConsensus: %+v", err)
 		}
 
 		blockInfo, err = domainInstance.Consensus().GetBlockInfo(blockHash)
@@ -77,17 +77,17 @@ func TestCreateTemporaryConsensus(t *testing.T) {
 		}
 
 		if !blockInfo.Exists {
-			t.Fatalf("a block from temporary consensus was not found on consensus after commit")
+			t.Fatalf("a block from staging consensus was not found on consensus after commit")
 		}
 
-		// Now we create a new temporary consensus and check that it's deleted once we init a new domain. We also
+		// Now we create a new staging consensus and check that it's deleted once we init a new domain. We also
 		// validate that the main consensus persisted the data from the committed temp consensus.
-		err = domainInstance.CreateTemporaryConsensus()
+		err = domainInstance.InitStagingConsensus()
 		if err != nil {
-			t.Fatalf("CreateTemporaryConsensus: %+v", err)
+			t.Fatalf("InitStagingConsensus: %+v", err)
 		}
 
-		_, err = domainInstance.TemporaryConsensus().ValidateAndInsertBlock(block)
+		_, err = domainInstance.StagingConsensus().ValidateAndInsertBlock(block)
 		if err != nil {
 			t.Fatalf("ValidateAndInsertBlock: %+v", err)
 		}
@@ -103,15 +103,15 @@ func TestCreateTemporaryConsensus(t *testing.T) {
 		}
 
 		if !blockInfo.Exists {
-			t.Fatalf("a block from committed temporary consensus was not persisted to the active consensus")
+			t.Fatalf("a block from committed staging consensus was not persisted to the active consensus")
 		}
 
-		err = domainInstance2.CreateTemporaryConsensus()
+		err = domainInstance2.InitStagingConsensus()
 		if err != nil {
-			t.Fatalf("CreateTemporaryConsensus: %+v", err)
+			t.Fatalf("InitStagingConsensus: %+v", err)
 		}
 
-		blockInfo, err = domainInstance2.TemporaryConsensus().GetBlockInfo(blockHash)
+		blockInfo, err = domainInstance2.StagingConsensus().GetBlockInfo(blockHash)
 		if err != nil {
 			t.Fatalf("GetBlockInfo: %+v", err)
 		}
