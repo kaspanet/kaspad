@@ -11,6 +11,7 @@ import (
 )
 
 var bucketName = []byte("block-headers")
+var countKeyName = []byte("block-headers-count")
 
 // blockHeaderStore represents a store of blocks
 type blockHeaderStore struct {
@@ -25,7 +26,7 @@ func New(dbContext model.DBReader, prefix *prefixmanager.Prefix, cacheSize int, 
 	blockHeaderStore := &blockHeaderStore{
 		cache:    lrucache.New(cacheSize, preallocate),
 		bucket:   database.MakeBucket(prefix.Serialize()).Bucket(bucketName),
-		countKey: database.MakeBucket(prefix.Serialize()).Key([]byte("block-headers-count")),
+		countKey: database.MakeBucket(prefix.Serialize()).Key(countKeyName),
 	}
 
 	err := blockHeaderStore.initializeCount(dbContext)
