@@ -152,7 +152,7 @@ func (f *FlowContext) TrySetIBDRunning(ibdPeer *peerpkg.Peer) bool {
 }
 
 // UnsetIBDRunning unsets isInIBD
-func (f *FlowContext) UnsetIBDRunning() {
+func (f *FlowContext) UnsetIBDRunning(isFinishedSuccessfully bool) {
 	f.ibdPeerMutex.Lock()
 	defer f.ibdPeerMutex.Unlock()
 
@@ -161,7 +161,11 @@ func (f *FlowContext) UnsetIBDRunning() {
 	}
 
 	f.ibdPeer = nil
-	log.Infof("IBD finished")
+	successString := "successfully"
+	if !isFinishedSuccessfully {
+		successString = "ahead of time"
+	}
+	log.Infof("IBD finished %s", successString)
 }
 
 // IBDPeer returns the current IBD peer or null if the node is not

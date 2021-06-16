@@ -23,7 +23,8 @@ func (flow *handleRelayInvsFlow) runIBDIfNotRunning(highHash *externalapi.Domain
 		log.Debugf("IBD is already running")
 		return nil
 	}
-	defer flow.UnsetIBDRunning()
+	isFinishedSuccessfully := false
+	defer flow.UnsetIBDRunning(isFinishedSuccessfully)
 
 	log.Debugf("IBD started with peer %s and highHash %s", flow.peer, highHash)
 
@@ -55,6 +56,8 @@ func (flow *handleRelayInvsFlow) runIBDIfNotRunning(highHash *externalapi.Domain
 		return err
 	}
 	log.Debugf("Finished downloading block bodies up to %s", highHash)
+
+	isFinishedSuccessfully = true
 
 	return nil
 }

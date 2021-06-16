@@ -32,7 +32,7 @@ type RelayInvsContext interface {
 	IsOrphan(blockHash *externalapi.DomainHash) bool
 	IsIBDRunning() bool
 	TrySetIBDRunning(ibdPeer *peerpkg.Peer) bool
-	UnsetIBDRunning()
+	UnsetIBDRunning(isFinishedSuccessfully bool)
 }
 
 type handleRelayInvsFlow struct {
