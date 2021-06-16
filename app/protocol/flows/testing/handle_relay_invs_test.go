@@ -349,7 +349,7 @@ func (f *fakeRelayInvsContext) TrySetIBDRunning(ibdPeer *peerpkg.Peer) bool {
 	return f.trySetIBDRunningResponse
 }
 
-func (f *fakeRelayInvsContext) UnsetIBDRunning(bool) {
+func (f *fakeRelayInvsContext) UnsetIBDRunning() {
 	f.rwLock.RLock()
 	defer f.rwLock.RUnlock()
 	close(f.finishedIBD)

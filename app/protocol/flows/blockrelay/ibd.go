@@ -23,11 +23,14 @@ func (flow *handleRelayInvsFlow) runIBDIfNotRunning(highHash *externalapi.Domain
 		log.Debugf("IBD is already running")
 		return nil
 	}
+
 	isFinishedSuccessfully := false
-	defer flow.UnsetIBDRunning(isFinishedSuccessfully)
+	defer func() {
+		flow.UnsetIBDRunning()
+		flow.logIBDFinished(isFinishedSuccessfully)
+	}()
 
 	log.Debugf("IBD started with peer %s and highHash %s", flow.peer, highHash)
-
 	log.Debugf("Syncing headers up to %s", highHash)
 	headersSynced, err := flow.syncHeaders(highHash)
 	if err != nil {
@@ -60,6 +63,14 @@ func (flow *handleRelayInvsFlow) runIBDIfNotRunning(highHash *externalapi.Domain
 	isFinishedSuccessfully = true
 
 	return nil
+}
+
+func (flow *handleRelayInvsFlow) logIBDFinished(isFinishedSuccessfully bool) {
+	successString := "successfully"
+	if !isFinishedSuccessfully {
+		successString = "ahead of time"
+	}
+	log.Infof("IBD finished %s", successString)
 }
 
 // syncHeaders attempts to sync headers from the peer. This method may fail
