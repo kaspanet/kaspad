@@ -3,6 +3,8 @@ package mempool
 import (
 	"time"
 
+	"github.com/kaspanet/kaspad/util"
+
 	"github.com/kaspanet/kaspad/domain/dagconfig"
 )
 
@@ -17,33 +19,35 @@ const (
 	defaultMaximumOrphanTransactionSize  = 100000
 	defaultMaximumOrphanTransactionCount = 50
 
-	defaultAcceptNonStandard = false
+	defaultMinimumRelayFee = util.Amount(1000)
 )
 
-type config struct {
-	maximumTransactionCount               int
-	transactionExpireIntervalDAAScore     uint64
-	transactionExpireScanIntervalDAAScore uint64
-	orphanExpireIntervalDAAScore          uint64
-	orphanExpireScanIntervalDAAScore      uint64
-	maximumOrphanTransactionSize          int
-	maximumOrphanTransactionCount         int
-	acceptNonStandard                     bool
-	maximumMassAcceptedByBlock            uint64
+type Config struct {
+	MaximumTransactionCount               int
+	TransactionExpireIntervalDAAScore     uint64
+	TransactionExpireScanIntervalDAAScore uint64
+	OrphanExpireIntervalDAAScore          uint64
+	OrphanExpireScanIntervalDAAScore      uint64
+	MaximumOrphanTransactionSize          int
+	MaximumOrphanTransactionCount         int
+	AcceptNonStandard                     bool
+	MaximumMassAcceptedByBlock            uint64
+	MinimumRelayTransactionFee            util.Amount
 }
 
-func defaultConfig(dagParams *dagconfig.Params) *config {
+func DefaultConfig(dagParams *dagconfig.Params) *Config {
 	targetBlocksPerSecond := uint64(time.Second / dagParams.TargetTimePerBlock)
 
-	return &config{
-		maximumTransactionCount:               defaultMaximumTransactionCount,
-		transactionExpireIntervalDAAScore:     defaultTransactionExpireIntervalSeconds / targetBlocksPerSecond,
-		transactionExpireScanIntervalDAAScore: defaultTransactionExpireScanIntervalSeconds / targetBlocksPerSecond,
-		orphanExpireIntervalDAAScore:          defaultOrphanExpireIntervalSeconds / targetBlocksPerSecond,
-		orphanExpireScanIntervalDAAScore:      defaultOrphanExpireScanIntervalSeconds / targetBlocksPerSecond,
-		maximumOrphanTransactionSize:          defaultMaximumOrphanTransactionSize,
-		maximumOrphanTransactionCount:         defaultMaximumOrphanTransactionCount,
-		acceptNonStandard:                     defaultAcceptNonStandard,
-		maximumMassAcceptedByBlock:            dagParams.MaxMassAcceptedByBlock,
+	return &Config{
+		MaximumTransactionCount:               defaultMaximumTransactionCount,
+		TransactionExpireIntervalDAAScore:     defaultTransactionExpireIntervalSeconds / targetBlocksPerSecond,
+		TransactionExpireScanIntervalDAAScore: defaultTransactionExpireScanIntervalSeconds / targetBlocksPerSecond,
+		OrphanExpireIntervalDAAScore:          defaultOrphanExpireIntervalSeconds / targetBlocksPerSecond,
+		OrphanExpireScanIntervalDAAScore:      defaultOrphanExpireScanIntervalSeconds / targetBlocksPerSecond,
+		MaximumOrphanTransactionSize:          defaultMaximumOrphanTransactionSize,
+		MaximumOrphanTransactionCount:         defaultMaximumOrphanTransactionCount,
+		AcceptNonStandard:                     dagParams.RelayNonStdTxs,
+		MaximumMassAcceptedByBlock:            dagParams.MaxMassAcceptedByBlock,
+		MinimumRelayTransactionFee:            minimumRelayTransactionFee,
 	}
 }

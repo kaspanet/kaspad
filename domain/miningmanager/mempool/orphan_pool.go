@@ -37,16 +37,16 @@ func newOrphansPool(mp *mempool) *orphansPool {
 // this function MUST be called with the mempool mutex locked for writes
 func (op *orphansPool) maybeAddOrphan(transaction *externalapi.DomainTransaction, isHighPriority bool) error {
 	serializedLength := estimatedsize.TransactionEstimatedSerializedSize(transaction)
-	if serializedLength > uint64(op.mempool.config.maximumOrphanTransactionSize) {
+	if serializedLength > uint64(op.mempool.config.MaximumOrphanTransactionSize) {
 		str := fmt.Sprintf("orphan transaction size of %d bytes is "+
 			"larger than max allowed size of %d bytes",
-			serializedLength, op.mempool.config.maximumOrphanTransactionSize)
+			serializedLength, op.mempool.config.MaximumOrphanTransactionSize)
 		return transactionRuleError(RejectBadOrphan, str)
 	}
-	if op.mempool.config.maximumOrphanTransactionCount <= 0 {
+	if op.mempool.config.MaximumOrphanTransactionCount <= 0 {
 		return nil
 	}
-	for len(op.allOrphans) >= op.mempool.config.maximumOrphanTransactionCount {
+	for len(op.allOrphans) >= op.mempool.config.MaximumOrphanTransactionCount {
 		// Don't remove redeemers in the case of a random eviction since
 		// it is quite possible it might be needed again shortly.
 		err := op.removeOrphan(op.randomOrphan().TransactionID(), false)
@@ -230,7 +230,7 @@ func (op *orphansPool) expireOrphanTransactions() error {
 		return err
 	}
 
-	if virtualDAAScore-op.lastExpireScan < op.mempool.config.orphanExpireScanIntervalDAAScore {
+	if virtualDAAScore-op.lastExpireScan < op.mempool.config.OrphanExpireScanIntervalDAAScore {
 		return nil
 	}
 
@@ -240,8 +240,8 @@ func (op *orphansPool) expireOrphanTransactions() error {
 			continue
 		}
 
-		// Remove all transactions whose addedAtDAAScore is older then transactionExpireIntervalDAAScore
-		if virtualDAAScore-orphanTransaction.AddedAtDAAScore() > op.mempool.config.orphanExpireIntervalDAAScore {
+		// Remove all transactions whose addedAtDAAScore is older then TransactionExpireIntervalDAAScore
+		if virtualDAAScore-orphanTransaction.AddedAtDAAScore() > op.mempool.config.OrphanExpireIntervalDAAScore {
 			err = op.removeOrphan(orphanTransaction.TransactionID(), true)
 			if err != nil {
 				return err

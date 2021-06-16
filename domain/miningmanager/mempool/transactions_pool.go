@@ -92,7 +92,7 @@ func (tp *transactionsPool) expireOldTransactions() error {
 		return err
 	}
 
-	if virtualDAAScore-tp.lastExpireScan < tp.mempool.config.transactionExpireScanIntervalDAAScore {
+	if virtualDAAScore-tp.lastExpireScan < tp.mempool.config.TransactionExpireScanIntervalDAAScore {
 		return nil
 	}
 
@@ -102,8 +102,8 @@ func (tp *transactionsPool) expireOldTransactions() error {
 			continue
 		}
 
-		// Remove all transactions whose addedAtDAAScore is older then transactionExpireIntervalDAAScore
-		if virtualDAAScore-mempoolTransaction.AddedAtDAAScore() > tp.mempool.config.transactionExpireIntervalDAAScore {
+		// Remove all transactions whose addedAtDAAScore is older then TransactionExpireIntervalDAAScore
+		if virtualDAAScore-mempoolTransaction.AddedAtDAAScore() > tp.mempool.config.TransactionExpireIntervalDAAScore {
 			err = tp.mempool.RemoveTransaction(mempoolTransaction.TransactionID(), true)
 			if err != nil {
 				return err
@@ -165,7 +165,7 @@ func (tp *transactionsPool) getRedeemers(transaction *model.MempoolTransaction) 
 
 // this function MUST be called with the mempool mutex locked for writes
 func (tp *transactionsPool) limitTransactionCount() {
-	for len(tp.allTransactions) > tp.mempool.config.maximumTransactionCount {
+	for len(tp.allTransactions) > tp.mempool.config.MaximumTransactionCount {
 		err := tp.removeTransaction(tp.transactionsOrderedByFeeRate.GetByIndex(0))
 		if err != nil {
 			return

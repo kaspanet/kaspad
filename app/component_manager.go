@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"sync/atomic"
 
+	"github.com/kaspanet/kaspad/domain/miningmanager/mempool"
+
 	"github.com/kaspanet/kaspad/app/protocol"
 	"github.com/kaspanet/kaspad/app/rpc"
 	"github.com/kaspanet/kaspad/domain"
@@ -79,8 +81,11 @@ func NewComponentManager(cfg *config.Config, db infrastructuredatabase.Database,
 		IsArchival:                      cfg.IsArchivalNode,
 		EnableSanityCheckPruningUTXOSet: cfg.EnableSanityCheckPruningUTXOSet,
 	}
+	mempoolConfig := mempool.DefaultConfig(&consensusConfig.Params)
+	mempoolConfig.MaximumOrphanTransactionCount = cfg.MaxOrphanTxs
+	mempoolConfig.MinimumRelayTransactionFee = cfg.MinRelayTxFee
 
-	domain, err := domain.New(&consensusConfig, db)
+	domain, err := domain.New(&consensusConfig, mempoolConfig, db)
 	if err != nil {
 		return nil, err
 	}

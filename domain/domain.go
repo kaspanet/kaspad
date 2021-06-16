@@ -4,6 +4,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/miningmanager"
+	"github.com/kaspanet/kaspad/domain/miningmanager/mempool"
 	infrastructuredatabase "github.com/kaspanet/kaspad/infrastructure/db/database"
 )
 
@@ -27,7 +28,9 @@ func (d domain) MiningManager() miningmanager.MiningManager {
 }
 
 // New instantiates a new instance of a Domain object
-func New(consensusConfig *consensus.Config, db infrastructuredatabase.Database) (Domain, error) {
+func New(consensusConfig *consensus.Config, mempoolConfig *mempool.Config,
+	db infrastructuredatabase.Database) (Domain, error) {
+
 	consensusFactory := consensus.NewFactory()
 	consensusInstance, err := consensusFactory.NewConsensus(consensusConfig, db)
 	if err != nil {
@@ -35,7 +38,7 @@ func New(consensusConfig *consensus.Config, db infrastructuredatabase.Database) 
 	}
 
 	miningManagerFactory := miningmanager.NewFactory()
-	miningManager := miningManagerFactory.NewMiningManager(consensusInstance, &consensusConfig.Params)
+	miningManager := miningManagerFactory.NewMiningManager(consensusInstance, &consensusConfig.Params, mempoolConfig)
 
 	return &domain{
 		consensus:     consensusInstance,

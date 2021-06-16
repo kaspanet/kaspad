@@ -15,7 +15,7 @@ func (mp *mempool) validateTransactionInIsolation(transaction *externalapi.Domai
 			fmt.Sprintf("transaction %s is already in the mempool", transactionID))
 	}
 
-	if !mp.config.acceptNonStandard {
+	if !mp.config.AcceptNonStandard {
 		if err := checkTransactionStandardInIsolation(transaction); err != nil {
 			// Attempt to extract a reject code from the error so
 			// it can be retained. When not possible, fall back to
@@ -39,13 +39,13 @@ func (mp *mempool) validateTransactionInIsolation(transaction *externalapi.Domai
 // this function MUST be called with the mempool mutex locked for writes
 func (mp *mempool) validateTransactionInContext(transaction *externalapi.DomainTransaction) error {
 	transactionID := consensushashing.TransactionID(transaction)
-	if transaction.Mass > mp.config.maximumMassAcceptedByBlock {
+	if transaction.Mass > mp.config.MaximumMassAcceptedByBlock {
 		return transactionRuleError(RejectInvalid, fmt.Sprintf("transaction %s mass is %d which is "+
 			"higher than the maxmimum of %d", transactionID,
-			transaction.Mass, mp.config.maximumMassAcceptedByBlock))
+			transaction.Mass, mp.config.MaximumMassAcceptedByBlock))
 	}
 
-	if !mp.config.acceptNonStandard {
+	if !mp.config.AcceptNonStandard {
 		err := checkTransactionStandardInContext(transaction)
 		if err != nil {
 			// Attempt to extract a reject code from the error so

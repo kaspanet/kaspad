@@ -12,7 +12,7 @@ import (
 type mempool struct {
 	mtx sync.RWMutex
 
-	config    *config
+	config    *Config
 	consensus externalapi.Consensus
 
 	mempoolUTXOSet   *mempoolUTXOSet
@@ -21,9 +21,9 @@ type mempool struct {
 }
 
 // New constructs a new mempool
-func New(consensus externalapi.Consensus, dagParams *dagconfig.Params) miningmanagermodel.Mempool {
+func New(config *Config, consensus externalapi.Consensus, dagParams *dagconfig.Params) miningmanagermodel.Mempool {
 	mp := &mempool{
-		config:    defaultConfig(dagParams),
+		config:    config,
 		consensus: consensus,
 	}
 
