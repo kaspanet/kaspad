@@ -68,7 +68,7 @@ func (flow *handleRelayInvsFlow) runIBDIfNotRunning(highHash *externalapi.Domain
 func (flow *handleRelayInvsFlow) logIBDFinished(isFinishedSuccessfully bool) {
 	successString := "successfully"
 	if !isFinishedSuccessfully {
-		successString = "ahead of time"
+		successString = "(interrupted)"
 	}
 	log.Infof("IBD finished %s", successString)
 }
