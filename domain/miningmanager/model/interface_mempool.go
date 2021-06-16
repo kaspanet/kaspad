@@ -16,4 +16,5 @@ type Mempool interface {
 	AllTransactions() []*externalapi.DomainTransaction
 	TransactionCount() int
 	RevalidateHighPriorityTransactions() (validTransactions []*externalapi.DomainTransaction, err error)
+	IsTransactionOutputDust(output *externalapi.DomainTransactionOutput) bool
 }

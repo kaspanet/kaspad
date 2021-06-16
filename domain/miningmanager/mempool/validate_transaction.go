@@ -16,7 +16,7 @@ func (mp *mempool) validateTransactionInIsolation(transaction *externalapi.Domai
 	}
 
 	if !mp.config.AcceptNonStandard {
-		if err := checkTransactionStandardInIsolation(transaction); err != nil {
+		if err := mp.checkTransactionStandardInIsolation(transaction); err != nil {
 			// Attempt to extract a reject code from the error so
 			// it can be retained. When not possible, fall back to
 			// a non standard error.
@@ -46,7 +46,7 @@ func (mp *mempool) validateTransactionInContext(transaction *externalapi.DomainT
 	}
 
 	if !mp.config.AcceptNonStandard {
-		err := checkTransactionStandardInContext(transaction)
+		err := mp.checkTransactionStandardInContext(transaction)
 		if err != nil {
 			// Attempt to extract a reject code from the error so
 			// it can be retained. When not possible, fall back to

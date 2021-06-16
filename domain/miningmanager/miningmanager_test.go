@@ -34,7 +34,7 @@ func TestValidateAndInsertTransaction(t *testing.T) {
 		defer teardown(false)
 
 		miningFactory := miningmanager.NewFactory()
-		miningManager := miningFactory.NewMiningManager(tc, &consensusConfig.Params)
+		miningManager := miningFactory.NewMiningManager(tc, &consensusConfig.Params, mempool.DefaultConfig(&consensusConfig.Params))
 		transactionsToInsert := make([]*externalapi.DomainTransaction, 10)
 		for i := range transactionsToInsert {
 			transactionsToInsert[i] = createTransactionWithUTXOEntry(t, i)
@@ -82,7 +82,7 @@ func TestImmatureSpend(t *testing.T) {
 		defer teardown(false)
 
 		miningFactory := miningmanager.NewFactory()
-		miningManager := miningFactory.NewMiningManager(tc, &consensusConfig.Params)
+		miningManager := miningFactory.NewMiningManager(tc, &consensusConfig.Params, mempool.DefaultConfig(&consensusConfig.Params))
 		tx := createTransactionWithUTXOEntry(t, 0)
 		_, err = miningManager.ValidateAndInsertTransaction(tx, false, false)
 		txRuleError := &mempool.TxRuleError{}
@@ -109,7 +109,7 @@ func TestInsertDoubleTransactionsToMempool(t *testing.T) {
 		defer teardown(false)
 
 		miningFactory := miningmanager.NewFactory()
-		miningManager := miningFactory.NewMiningManager(tc, &consensusConfig.Params)
+		miningManager := miningFactory.NewMiningManager(tc, &consensusConfig.Params, mempool.DefaultConfig(&consensusConfig.Params))
 		transaction := createTransactionWithUTXOEntry(t, 0)
 		_, err = miningManager.ValidateAndInsertTransaction(transaction, false, true)
 		if err != nil {
@@ -134,7 +134,7 @@ func TestHandleNewBlockTransactions(t *testing.T) {
 		defer teardown(false)
 
 		miningFactory := miningmanager.NewFactory()
-		miningManager := miningFactory.NewMiningManager(tc, &consensusConfig.Params)
+		miningManager := miningFactory.NewMiningManager(tc, &consensusConfig.Params, mempool.DefaultConfig(&consensusConfig.Params))
 		transactionsToInsert := make([]*externalapi.DomainTransaction, 10)
 		for i := range transactionsToInsert {
 			transaction := createTransactionWithUTXOEntry(t, i)
@@ -200,7 +200,7 @@ func TestDoubleSpends(t *testing.T) {
 		defer teardown(false)
 
 		miningFactory := miningmanager.NewFactory()
-		miningManager := miningFactory.NewMiningManager(tc, &consensusConfig.Params)
+		miningManager := miningFactory.NewMiningManager(tc, &consensusConfig.Params, mempool.DefaultConfig(&consensusConfig.Params))
 		transactionInTheMempool := createTransactionWithUTXOEntry(t, 0)
 		_, err = miningManager.ValidateAndInsertTransaction(transactionInTheMempool, false, true)
 		if err != nil {
@@ -233,7 +233,7 @@ func TestOrphanTransactions(t *testing.T) {
 		defer teardown(false)
 
 		miningFactory := miningmanager.NewFactory()
-		miningManager := miningFactory.NewMiningManager(tc, &consensusConfig.Params)
+		miningManager := miningFactory.NewMiningManager(tc, &consensusConfig.Params, mempool.DefaultConfig(&consensusConfig.Params))
 		// Before each parent transaction, We will add two blocks by consensus in order to fund the parent transactions.
 		parentTransactions, childTransactions, err := createArraysOfParentAndChildrenTransactions(tc)
 		if err != nil {

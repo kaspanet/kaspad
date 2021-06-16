@@ -18,7 +18,7 @@ type factory struct{}
 func (f *factory) NewMiningManager(consensus externalapi.Consensus, params *dagconfig.Params,
 	mempoolConfig *mempoolpkg.Config) MiningManager {
 
-	mempool := mempoolpkg.New(mempoolConfig, consensus, params)
+	mempool := mempoolpkg.New(mempoolConfig, consensus)
 	blockTemplateBuilder := blocktemplatebuilder.New(consensus, mempool, params.MaxMassAcceptedByBlock)
 
 	return &miningManager{

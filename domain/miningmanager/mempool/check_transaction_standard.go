@@ -40,16 +40,9 @@ const (
 	// are considered standard and will therefore be relayed and considered
 	// for mining.
 	maximumStandardTransactionSize = 100000
-
-	// minimumRelayTransactionFee is the minimum fee in sompi that is required
-	// for a transaction to be treated as free for relay and mining
-	// purposes. It is also used to help determine if a transaction is
-	// considered dust and as a base for calculating minimum required fees
-	// for larger transactions. This value is in sompi/1000 bytes.
-	minimumRelayTransactionFee = util.Amount(1000)
 )
 
-func checkTransactionStandardInIsolation(transaction *externalapi.DomainTransaction) error {
+func (mp *mempool) checkTransactionStandardInIsolation(transaction *externalapi.DomainTransaction) error {
 	// The transaction must be a currently supported version.
 	if transaction.Version > constants.MaxTransactionVersion {
 		str := fmt.Sprintf("transaction version %d is not in the valid range of %d-%d",
@@ -91,7 +84,7 @@ func checkTransactionStandardInIsolation(transaction *externalapi.DomainTransact
 			return transactionRuleError(RejectNonstandard, str)
 		}
 
-		if IsTransactionOutputDust(output) {
+		if mp.IsTransactionOutputDust(output) {
 			str := fmt.Sprintf("transaction output %d: payment "+
 				"of %d is dust", i, output.Value)
 			return transactionRuleError(RejectDust, str)
@@ -108,7 +101,7 @@ func checkTransactionStandardInIsolation(transaction *externalapi.DomainTransact
 // minimum transaction relay fee, it is considered dust.
 //
 // It is exported for use by transaction generators and wallets
-func IsTransactionOutputDust(output *externalapi.DomainTransactionOutput) bool {
+func (mp *mempool) IsTransactionOutputDust(output *externalapi.DomainTransactionOutput) bool {
 	// Unspendable outputs are considered dust.
 	if txscript.IsUnspendable(output.ScriptPublicKey.Script) {
 		return true
@@ -145,7 +138,7 @@ func IsTransactionOutputDust(output *externalapi.DomainTransactionOutput) bool {
 	//
 	// The following is equivalent to (value/totalSerializedSize) * (1/3) * 1000
 	// without needing to do floating point math.
-	return output.Value*1000/(3*totalSerializedSize) < uint64(minimumRelayTransactionFee)
+	return output.Value*1000/(3*totalSerializedSize) < uint64(mp.config.MinimumRelayTransactionFee)
 }
 
 // checkTransactionStandardInContext performs a series of checks on a transaction's
@@ -155,7 +148,7 @@ func IsTransactionOutputDust(output *externalapi.DomainTransactionOutput) bool {
 // maxStandardP2SHSigOps signature operations.
 // In addition, makes sure that the transaction's fee is above the minimum for acceptance
 // into the mempool and relay
-func checkTransactionStandardInContext(transaction *externalapi.DomainTransaction) error {
+func (mp *mempool) checkTransactionStandardInContext(transaction *externalapi.DomainTransaction) error {
 	for i, input := range transaction.Inputs {
 		// It is safe to elide existence and index checks here since
 		// they have already been checked prior to calling this
@@ -179,7 +172,7 @@ func checkTransactionStandardInContext(transaction *externalapi.DomainTransactio
 	}
 
 	serializedSize := estimatedsize.TransactionEstimatedSerializedSize(transaction)
-	minimumFee := minimumRequiredTransactionRelayFee(serializedSize, minimumRelayTransactionFee)
+	minimumFee := mp.minimumRequiredTransactionRelayFee(serializedSize)
 	if transaction.Fee < minimumFee {
 		str := fmt.Sprintf("transaction %s has %d fees which is under the required amount of %d",
 			consensushashing.TransactionID(transaction), transaction.Fee, minimumFee)
@@ -192,15 +185,15 @@ func checkTransactionStandardInContext(transaction *externalapi.DomainTransactio
 // minimumRequiredTransactionRelayFee returns the minimum transaction fee required for a
 // transaction with the passed serialized size to be accepted into the memory
 // pool and relayed.
-func minimumRequiredTransactionRelayFee(serializedSize uint64, minimumRelayTxFee util.Amount) uint64 {
+func (mp *mempool) minimumRequiredTransactionRelayFee(serializedSize uint64) uint64 {
 	// Calculate the minimum fee for a transaction to be allowed into the
 	// mempool and relayed by scaling the base fee. minTxRelayFee is in
 	// sompi/kB so multiply by serializedSize (which is in bytes) and
 	// divide by 1000 to get minimum sompis.
-	minimumFee := (serializedSize * uint64(minimumRelayTxFee)) / 1000
+	minimumFee := (serializedSize * uint64(mp.config.MinimumRelayTransactionFee)) / 1000
 
-	if minimumFee == 0 && minimumRelayTxFee > 0 {
-		minimumFee = uint64(minimumRelayTxFee)
+	if minimumFee == 0 && mp.config.MinimumRelayTransactionFee > 0 {
+		minimumFee = uint64(mp.config.MinimumRelayTransactionFee)
 	}
 
 	// Set the minimum fee to the maximum possible value if the calculated

@@ -19,9 +19,10 @@ const (
 	defaultMaximumOrphanTransactionSize  = 100000
 	defaultMaximumOrphanTransactionCount = 50
 
-	defaultMinimumRelayFee = util.Amount(1000)
+	defaultMinimumRelayTransactionFee = util.Amount(1000)
 )
 
+// Config represents a mempool configuration
 type Config struct {
 	MaximumTransactionCount               int
 	TransactionExpireIntervalDAAScore     uint64
@@ -35,6 +36,7 @@ type Config struct {
 	MinimumRelayTransactionFee            util.Amount
 }
 
+// DefaultConfig returns the default mempool configuration
 func DefaultConfig(dagParams *dagconfig.Params) *Config {
 	targetBlocksPerSecond := uint64(time.Second / dagParams.TargetTimePerBlock)
 
@@ -48,6 +50,6 @@ func DefaultConfig(dagParams *dagconfig.Params) *Config {
 		MaximumOrphanTransactionCount:         defaultMaximumOrphanTransactionCount,
 		AcceptNonStandard:                     dagParams.RelayNonStdTxs,
 		MaximumMassAcceptedByBlock:            dagParams.MaxMassAcceptedByBlock,
-		MinimumRelayTransactionFee:            minimumRelayTransactionFee,
+		MinimumRelayTransactionFee:            defaultMinimumRelayTransactionFee,
 	}
 }

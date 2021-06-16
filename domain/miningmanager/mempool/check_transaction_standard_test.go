@@ -8,6 +8,10 @@ import (
 	"bytes"
 	"testing"
 
+	"github.com/kaspanet/kaspad/domain/consensus/utils/testutils"
+
+	"github.com/kaspanet/kaspad/domain/consensus"
+
 	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
 
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
@@ -16,13 +20,12 @@ import (
 	"github.com/pkg/errors"
 )
 
-// TestCalcMinRequiredTxRelayFee tests the minimumRequiredTransactionRelayFee API.
 func TestCalcMinRequiredTxRelayFee(t *testing.T) {
 	tests := []struct {
-		name     string      // test description.
-		size     uint64      // Transaction size in bytes.
-		relayFee util.Amount // minimum relay transaction fee.
-		want     uint64      // Expected fee.
+		name                       string      // test description.
+		size                       uint64      // Transaction size in bytes.
+		minimumRelayTransactionFee util.Amount // minimum relay transaction fee.
+		want                       uint64      // Expected fee.
 	}{
 		{
 			// Ensure combination of size and fee that are less than 1000
@@ -35,13 +38,13 @@ func TestCalcMinRequiredTxRelayFee(t *testing.T) {
 		{
 			"100 bytes with default minimum relay fee",
 			100,
-			minimumRelayTransactionFee,
+			defaultMinimumRelayTransactionFee,
 			100,
 		},
 		{
 			"max standard tx size with default minimum relay fee",
 			maximumStandardTransactionSize,
-			minimumRelayTransactionFee,
+			defaultMinimumRelayTransactionFee,
 			100000,
 		},
 		{
@@ -82,19 +85,30 @@ func TestCalcMinRequiredTxRelayFee(t *testing.T) {
 		},
 	}
 
-	for _, test := range tests {
-		got := minimumRequiredTransactionRelayFee(test.size, test.relayFee)
-		if got != test.want {
-			t.Errorf("TestCalcMinRequiredTxRelayFee test '%s' "+
-				"failed: got %v want %v", test.name, got,
-				test.want)
-			continue
+	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
+		factory := consensus.NewFactory()
+		tc, teardown, err := factory.NewTestConsensus(consensusConfig, "TestCalcMinRequiredTxRelayFee")
+		if err != nil {
+			t.Fatalf("Error setting up consensus: %+v", err)
 		}
-	}
+		defer teardown(false)
+
+		for _, test := range tests {
+			mempoolConfig := DefaultConfig(tc.DAGParams())
+			mempoolConfig.MinimumRelayTransactionFee = test.minimumRelayTransactionFee
+			mempool := New(mempoolConfig, tc).(*mempool)
+
+			got := mempool.minimumRequiredTransactionRelayFee(test.size)
+			if got != test.want {
+				t.Errorf("TestCalcMinRequiredTxRelayFee test '%s' "+
+					"failed: got %v want %v", test.name, got,
+					test.want)
+			}
+		}
+	})
 }
 
-// TestDust tests the isDust API.
-func TestDust(t *testing.T) {
+func TestIsTransactionOutputDust(t *testing.T) {
 	scriptPublicKey := &externalapi.ScriptPublicKey{
 		[]byte{0x76, 0xa9, 0x21, 0x03, 0x2f, 0x7e, 0x43,
 			0x0a, 0xa4, 0xc9, 0xd1, 0x59, 0x43, 0x7e, 0x84, 0xb9,
@@ -103,54 +117,81 @@ func TestDust(t *testing.T) {
 			0xba, 0x5e}, 0}
 
 	tests := []struct {
-		name   string // test description
-		txOut  externalapi.DomainTransactionOutput
-		isDust bool
+		name                       string // test description
+		txOut                      externalapi.DomainTransactionOutput
+		minimumRelayTransactionFee util.Amount // minimum relay transaction fee.
+		isDust                     bool
 	}{
 		{
-			// Zero value is dust"
-			"zero value",
+			// Any value is allowed with a zero relay fee.
+			"zero value with zero relay fee",
 			externalapi.DomainTransactionOutput{Value: 0, ScriptPublicKey: scriptPublicKey},
+			0,
+			false,
+		},
+		{
+			// Zero value is dust with any relay fee"
+			"zero value with very small tx fee",
+			externalapi.DomainTransactionOutput{Value: 0, ScriptPublicKey: scriptPublicKey},
+			1,
 			true,
 		},
 		{
 			"36 byte public key script with value 605",
 			externalapi.DomainTransactionOutput{Value: 605, ScriptPublicKey: scriptPublicKey},
+			1000,
 			true,
 		},
 		{
 			"36 byte public key script with value 606",
 			externalapi.DomainTransactionOutput{Value: 606, ScriptPublicKey: scriptPublicKey},
+			1000,
 			false,
 		},
 		{
 			// Maximum allowed value is never dust.
 			"max sompi amount is never dust",
 			externalapi.DomainTransactionOutput{Value: util.MaxSompi, ScriptPublicKey: scriptPublicKey},
+			util.MaxSompi,
 			false,
 		},
 		{
-			// Maximum int64 value.
+			// Maximum int64 value causes overflow.
 			"maximum int64 value",
 			externalapi.DomainTransactionOutput{Value: 1<<63 - 1, ScriptPublicKey: scriptPublicKey},
-			false,
+			1<<63 - 1,
+			true,
 		},
 		{
 			// Unspendable ScriptPublicKey due to an invalid public key
 			// script.
 			"unspendable ScriptPublicKey",
 			externalapi.DomainTransactionOutput{Value: 5000, ScriptPublicKey: &externalapi.ScriptPublicKey{[]byte{0x01}, 0}},
+			0, // no relay fee
 			true,
 		},
 	}
-	for _, test := range tests {
-		res := IsTransactionOutputDust(&test.txOut)
-		if res != test.isDust {
-			t.Errorf("Dust test '%s' failed: want %v got %v",
-				test.name, test.isDust, res)
-			continue
+
+	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
+		factory := consensus.NewFactory()
+		tc, teardown, err := factory.NewTestConsensus(consensusConfig, "TestIsTransactionOutputDust")
+		if err != nil {
+			t.Fatalf("Error setting up consensus: %+v", err)
 		}
-	}
+		defer teardown(false)
+
+		for _, test := range tests {
+			mempoolConfig := DefaultConfig(tc.DAGParams())
+			mempoolConfig.MinimumRelayTransactionFee = test.minimumRelayTransactionFee
+			mempool := New(mempoolConfig, tc).(*mempool)
+
+			res := mempool.IsTransactionOutputDust(&test.txOut)
+			if res != test.isDust {
+				t.Errorf("Dust test '%s' failed: want %v got %v",
+					test.name, test.isDust, res)
+			}
+		}
+	})
 }
 
 func TestCheckTransactionStandardInIsolation(t *testing.T) {
@@ -251,45 +292,57 @@ func TestCheckTransactionStandardInIsolation(t *testing.T) {
 		},
 	}
 
-	for _, test := range tests {
-		// Ensure standardness is as expected.
-		err := checkTransactionStandardInIsolation(test.tx)
-		if err == nil && test.isStandard {
-			// Test passes since function returned standard for a
-			// transaction which is intended to be standard.
-			continue
+	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
+		factory := consensus.NewFactory()
+		tc, teardown, err := factory.NewTestConsensus(consensusConfig, "TestCheckTransactionStandardInIsolation")
+		if err != nil {
+			t.Fatalf("Error setting up consensus: %+v", err)
 		}
-		if err == nil && !test.isStandard {
-			t.Errorf("checkTransactionStandardInIsolation (%s): standard when "+
-				"it should not be", test.name)
-			continue
-		}
-		if err != nil && test.isStandard {
-			t.Errorf("checkTransactionStandardInIsolation (%s): nonstandard "+
-				"when it should not be: %v", test.name, err)
-			continue
-		}
+		defer teardown(false)
 
-		// Ensure error type is a TxRuleError inside of a RuleError.
-		var ruleErr RuleError
-		if !errors.As(err, &ruleErr) {
-			t.Errorf("checkTransactionStandardInIsolation (%s): unexpected "+
-				"error type - got %T", test.name, err)
-			continue
-		}
-		txRuleErr, ok := ruleErr.Err.(TxRuleError)
-		if !ok {
-			t.Errorf("checkTransactionStandardInIsolation (%s): unexpected "+
-				"error type - got %T", test.name, ruleErr.Err)
-			continue
-		}
+		for _, test := range tests {
+			mempoolConfig := DefaultConfig(tc.DAGParams())
+			mempool := New(mempoolConfig, tc).(*mempool)
 
-		// Ensure the reject code is the expected one.
-		if txRuleErr.RejectCode != test.code {
-			t.Errorf("checkTransactionStandardInIsolation (%s): unexpected "+
-				"error code - got %v, want %v", test.name,
-				txRuleErr.RejectCode, test.code)
-			continue
+			// Ensure standardness is as expected.
+			err := mempool.checkTransactionStandardInIsolation(test.tx)
+			if err == nil && test.isStandard {
+				// Test passes since function returned standard for a
+				// transaction which is intended to be standard.
+				continue
+			}
+			if err == nil && !test.isStandard {
+				t.Errorf("checkTransactionStandardInIsolation (%s): standard when "+
+					"it should not be", test.name)
+				continue
+			}
+			if err != nil && test.isStandard {
+				t.Errorf("checkTransactionStandardInIsolation (%s): nonstandard "+
+					"when it should not be: %v", test.name, err)
+				continue
+			}
+
+			// Ensure error type is a TxRuleError inside of a RuleError.
+			var ruleErr RuleError
+			if !errors.As(err, &ruleErr) {
+				t.Errorf("checkTransactionStandardInIsolation (%s): unexpected "+
+					"error type - got %T", test.name, err)
+				continue
+			}
+			txRuleErr, ok := ruleErr.Err.(TxRuleError)
+			if !ok {
+				t.Errorf("checkTransactionStandardInIsolation (%s): unexpected "+
+					"error type - got %T", test.name, ruleErr.Err)
+				continue
+			}
+
+			// Ensure the reject code is the expected one.
+			if txRuleErr.RejectCode != test.code {
+				t.Errorf("checkTransactionStandardInIsolation (%s): unexpected "+
+					"error code - got %v, want %v", test.name,
+					txRuleErr.RejectCode, test.code)
+				continue
+			}
 		}
-	}
+	})
 }

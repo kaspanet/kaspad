@@ -3,8 +3,6 @@ package mempool
 import (
 	"sync"
 
-	"github.com/kaspanet/kaspad/domain/dagconfig"
-
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	miningmanagermodel "github.com/kaspanet/kaspad/domain/miningmanager/model"
 )
@@ -21,7 +19,7 @@ type mempool struct {
 }
 
 // New constructs a new mempool
-func New(config *Config, consensus externalapi.Consensus, dagParams *dagconfig.Params) miningmanagermodel.Mempool {
+func New(config *Config, consensus externalapi.Consensus) miningmanagermodel.Mempool {
 	mp := &mempool{
 		config:    config,
 		consensus: consensus,
