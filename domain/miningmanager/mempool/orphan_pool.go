@@ -47,8 +47,8 @@ func (op *orphansPool) maybeAddOrphan(transaction *externalapi.DomainTransaction
 		return nil
 	}
 	for len(op.allOrphans) >= op.mempool.config.MaximumOrphanTransactionCount {
-		// Don't remove redeemers in the case of a random eviction since
-		// it is quite possible it might be needed again shortly.
+		// Don't remove redeemers in the case of a random eviction since the evicted transaction is
+		// not invalid, therefore it's redeemers are as good as any orphan that just arrived.
 		err := op.removeOrphan(op.randomOrphan().TransactionID(), false)
 		if err != nil {
 			return err
