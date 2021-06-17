@@ -10,7 +10,7 @@ import (
 func (mp *mempool) validateAndInsertTransaction(transaction *externalapi.DomainTransaction, isHighPriority bool,
 	allowOrphan bool) (acceptedTransactions []*externalapi.DomainTransaction, err error) {
 
-	err = mp.validateTransactionInIsolation(transaction)
+	err = mp.validateTransactionPreUTXOEntry(transaction)
 	if err != nil {
 		return nil, err
 	}

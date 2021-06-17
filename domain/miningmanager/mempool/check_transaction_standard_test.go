@@ -6,6 +6,7 @@ package mempool
 
 import (
 	"bytes"
+	"math"
 	"testing"
 
 	"github.com/kaspanet/kaspad/domain/consensus/utils/testutils"
@@ -156,10 +157,10 @@ func TestIsTransactionOutputDust(t *testing.T) {
 			false,
 		},
 		{
-			// Maximum int64 value causes overflow.
-			"maximum int64 value",
-			externalapi.DomainTransactionOutput{Value: 1<<63 - 1, ScriptPublicKey: scriptPublicKey},
-			1<<63 - 1,
+			// Maximum uint64 value causes overflow.
+			"maximum uint64 value",
+			externalapi.DomainTransactionOutput{Value: math.MaxUint64, ScriptPublicKey: scriptPublicKey},
+			math.MaxUint64,
 			true,
 		},
 		{

@@ -7,6 +7,18 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
 )
 
+func (mp *mempool) validateTransactionPreUTXOEntry(transaction *externalapi.DomainTransaction) error {
+	err := mp.validateTransactionInIsolation(transaction)
+	if err != nil {
+		return err
+	}
+
+	if err := mp.mempoolUTXOSet.checkDoubleSpends(transaction); err != nil {
+		return err
+	}
+	return nil
+}
+
 // this function MUST be called with the mempool mutex locked for reads
 func (mp *mempool) validateTransactionInIsolation(transaction *externalapi.DomainTransaction) error {
 	transactionID := consensushashing.TransactionID(transaction)
@@ -27,10 +39,6 @@ func (mp *mempool) validateTransactionInIsolation(transaction *externalapi.Domai
 			str := fmt.Sprintf("transaction %s is not standard: %s", transactionID, err)
 			return transactionRuleError(rejectCode, str)
 		}
-	}
-
-	if err := mp.mempoolUTXOSet.checkDoubleSpends(transaction); err != nil {
-		return err
 	}
 
 	return nil
