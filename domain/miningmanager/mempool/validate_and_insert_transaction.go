@@ -45,11 +45,7 @@ func (mp *mempool) validateAndInsertTransaction(transaction *externalapi.DomainT
 		return nil, err
 	}
 
-	acceptedTransactions = make([]*externalapi.DomainTransaction, 0, len(acceptedOrphans)+1)
-	acceptedTransactions = append(acceptedTransactions, transaction)
-	for _, acceptedOrphan := range acceptedOrphans {
-		acceptedTransactions = append(acceptedTransactions, acceptedOrphan)
-	}
+	acceptedTransactions = append([]*externalapi.DomainTransaction{transaction}, acceptedOrphans...)
 
 	mp.transactionsPool.limitTransactionCount()
 
