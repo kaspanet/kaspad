@@ -99,7 +99,7 @@ func (mp *mempool) checkTransactionStandardInIsolation(transaction *externalapi.
 }
 
 // IsTransactionOutputDust returns whether or not the passed transaction output amount
-// is considered dust or not based on the passed minimum transaction relay fee.
+// is considered dust or not based on the configured minimum transaction relay fee.
 // Dust is defined in terms of the minimum transaction relay fee. In
 // particular, if the cost to the network to spend coins is more than 1/3 of the
 // minimum transaction relay fee, it is considered dust.
@@ -132,7 +132,7 @@ func (mp *mempool) IsTransactionOutputDust(output *externalapi.DomainTransaction
 
 	// The output is considered dust if the cost to the network to spend the
 	// coins is more than 1/3 of the minimum free transaction relay fee.
-	// minFreeTxRelayFee is in sompi/KB, so multiply by 1000 to
+	// minimumRelayTransactionFee is in sompi/KB, so multiply by 1000 to
 	// convert to bytes.
 	//
 	// Using the typical values for a pay-to-pubkey transaction from
@@ -191,7 +191,7 @@ func (mp *mempool) checkTransactionStandardInContext(transaction *externalapi.Do
 // pool and relayed.
 func (mp *mempool) minimumRequiredTransactionRelayFee(serializedSize uint64) uint64 {
 	// Calculate the minimum fee for a transaction to be allowed into the
-	// mempool and relayed by scaling the base fee. minTxRelayFee is in
+	// mempool and relayed by scaling the base fee. MinimumRelayTransactionFee is in
 	// sompi/kB so multiply by serializedSize (which is in bytes) and
 	// divide by 1000 to get minimum sompis.
 	minimumFee := (serializedSize * uint64(mp.config.MinimumRelayTransactionFee)) / 1000
