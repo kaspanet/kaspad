@@ -44,6 +44,10 @@ const (
 
 func (mp *mempool) checkTransactionStandardInIsolation(transaction *externalapi.DomainTransaction) error {
 	// The transaction must be a currently supported version.
+	//
+	// This check is currently mirrored in consensus.
+	// However, in a later version of Kaspa the consensus-valid transaction version range might diverge from the
+	// standard transaction version range, and thus the validation should happen in both levels.
 	if transaction.Version > constants.MaxTransactionVersion {
 		str := fmt.Sprintf("transaction version %d is not in the valid range of %d-%d",
 			transaction.Version, 0, constants.MaxTransactionVersion)
