@@ -122,6 +122,36 @@ func TestInsertDoubleTransactionsToMempool(t *testing.T) {
 	})
 }
 
+// TestDoubleSpendInMempool verifies that an attempt to insert a transaction double-spending
+// another transactio already in  the mempool will result in raising an appropriate error.
+func TestDoubleSpendInMempool(t *testing.T) {
+	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
+		consensusConfig.BlockCoinbaseMaturity = 0
+		factory := consensus.NewFactory()
+		tc, teardown, err := factory.NewTestConsensus(consensusConfig, "TestDoubleSpendInMempool")
+		if err != nil {
+			t.Fatalf("Error setting up TestConsensus: %+v", err)
+		}
+		defer teardown(false)
+
+		miningFactory := miningmanager.NewFactory()
+		miningManager := miningFactory.NewMiningManager(tc, &consensusConfig.Params, mempool.DefaultConfig(&consensusConfig.Params))
+		transaction := createTransactionWithUTXOEntry(t, 0)
+		_, err = miningManager.ValidateAndInsertTransaction(transaction, false, true)
+		if err != nil {
+			t.Fatalf("ValidateAndInsertTransaction: %v", err)
+		}
+
+		doubleSpendingTransaction := createTransactionWithUTXOEntry(t, 0)
+		doubleSpendingTransaction.Outputs[0].Value-- // do some minor change so that txID is different
+
+		_, err = miningManager.ValidateAndInsertTransaction(doubleSpendingTransaction, false, true)
+		if err == nil || !strings.Contains(err.Error(), "already spent by transaction") {
+			t.Fatalf("ValidateAndInsertTransaction: %v", err)
+		}
+	})
+}
+
 // TestHandleNewBlockTransactions verifies that all the transactions in the block were successfully removed from the mempool.
 func TestHandleNewBlockTransactions(t *testing.T) {
 	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
@@ -187,13 +217,13 @@ func domainBlocksToBlockIds(blocks []*externalapi.DomainTransaction) []*external
 	return blockIDs
 }
 
-// TestDoubleSpends verifies that any transactions which are now double spends as a result of the block's new transactions
+// TestDoubleSpendWithBlock verifies that any transactions which are now double spends as a result of the block's new transactions
 // will be removed from the mempool.
-func TestDoubleSpends(t *testing.T) {
+func TestDoubleSpendWithBlock(t *testing.T) {
 	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
 		consensusConfig.BlockCoinbaseMaturity = 0
 		factory := consensus.NewFactory()
-		tc, teardown, err := factory.NewTestConsensus(consensusConfig, "TestDoubleSpends")
+		tc, teardown, err := factory.NewTestConsensus(consensusConfig, "TestDoubleSpendWithBlock")
 		if err != nil {
 			t.Fatalf("Failed setting up TestConsensus: %+v", err)
 		}
