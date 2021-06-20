@@ -164,7 +164,7 @@ func (tp *transactionsPool) getRedeemers(transaction *model.MempoolTransaction) 
 }
 
 // this function MUST be called with the mempool mutex locked for writes
-func (tp *transactionsPool) limitTransactionCount() {
+func (tp *transactionsPool) limitTransactionCount() error {
 	currentIndex := 0
 
 	for len(tp.allTransactions) > tp.mempool.config.MaximumTransactionCount {
@@ -179,15 +179,16 @@ func (tp *transactionsPool) limitTransactionCount() {
 				log.Warnf(
 					"Number of high-priority transactions in mempool (%d) is higher than maximum allowed (%d)",
 					len(tp.allTransactions), tp.mempool.config.MaximumTransactionCount)
-				return
+				return nil
 			}
 		}
 
 		err := tp.mempool.removeTransaction(transactionToRemove.TransactionID(), true)
 		if err != nil {
-			return
+			return err
 		}
 	}
+	return nil
 }
 
 func (tp *transactionsPool) getTransaction(transactionID *externalapi.DomainTransactionID) (*externalapi.DomainTransaction, bool) {

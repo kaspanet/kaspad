@@ -47,7 +47,10 @@ func (mp *mempool) validateAndInsertTransaction(transaction *externalapi.DomainT
 
 	acceptedTransactions = append([]*externalapi.DomainTransaction{transaction}, acceptedOrphans...)
 
-	mp.transactionsPool.limitTransactionCount()
+	err = mp.transactionsPool.limitTransactionCount()
+	if err != nil {
+		return nil, err
+	}
 
 	return acceptedTransactions, nil
 }
