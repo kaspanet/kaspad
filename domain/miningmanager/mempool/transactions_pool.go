@@ -165,8 +165,25 @@ func (tp *transactionsPool) getRedeemers(transaction *model.MempoolTransaction) 
 
 // this function MUST be called with the mempool mutex locked for writes
 func (tp *transactionsPool) limitTransactionCount() {
+	currentIndex := 0
+
 	for len(tp.allTransactions) > tp.mempool.config.MaximumTransactionCount {
-		err := tp.removeTransaction(tp.transactionsOrderedByFeeRate.GetByIndex(0))
+		var transactionToRemove *model.MempoolTransaction
+		for {
+			transactionToRemove = tp.transactionsOrderedByFeeRate.GetByIndex(currentIndex)
+			if !transactionToRemove.IsHighPriority() {
+				break
+			}
+			currentIndex++
+			if currentIndex > len(tp.allTransactions) {
+				log.Warnf(
+					"Number of high-priority transactions in mempool (%d) is higher than maximum allowed (%d)",
+					len(tp.allTransactions), tp.mempool.config.MaximumTransactionCount)
+				return
+			}
+		}
+
+		err := tp.removeTransaction(transactionToRemove)
 		if err != nil {
 			return
 		}
