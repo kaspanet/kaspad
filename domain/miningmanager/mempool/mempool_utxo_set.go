@@ -12,15 +12,15 @@ import (
 
 type mempoolUTXOSet struct {
 	mempool                       *mempool
-	poolUnspentOutputs            model.OutpointToUTXOEntry
-	transactionByPreviousOutpoint model.OutpointToTransaction
+	poolUnspentOutputs            model.OutpointsToUTXOEntries
+	transactionByPreviousOutpoint model.OutpointsToTransactions
 }
 
 func newMempoolUTXOSet(mp *mempool) *mempoolUTXOSet {
 	return &mempoolUTXOSet{
 		mempool:                       mp,
-		poolUnspentOutputs:            model.OutpointToUTXOEntry{},
-		transactionByPreviousOutpoint: model.OutpointToTransaction{},
+		poolUnspentOutputs:            model.OutpointsToUTXOEntries{},
+		transactionByPreviousOutpoint: model.OutpointsToTransactions{},
 	}
 }
 

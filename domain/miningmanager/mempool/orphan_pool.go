@@ -15,12 +15,12 @@ import (
 	"github.com/pkg/errors"
 )
 
-type idToOrphan map[externalapi.DomainTransactionID]*model.OrphanTransaction
-type previousOutpointToOrphans map[externalapi.DomainOutpoint]idToOrphan
+type idsToOrphans map[externalapi.DomainTransactionID]*model.OrphanTransaction
+type previousOutpointToOrphans map[externalapi.DomainOutpoint]idsToOrphans
 
 type orphansPool struct {
 	mempool                   *mempool
-	allOrphans                idToOrphan
+	allOrphans                idsToOrphans
 	orphansByPreviousOutpoint previousOutpointToOrphans
 	lastExpireScan            uint64
 }
@@ -28,7 +28,7 @@ type orphansPool struct {
 func newOrphansPool(mp *mempool) *orphansPool {
 	return &orphansPool{
 		mempool:                   mp,
-		allOrphans:                idToOrphan{},
+		allOrphans:                idsToOrphans{},
 		orphansByPreviousOutpoint: previousOutpointToOrphans{},
 		lastExpireScan:            0,
 	}
@@ -70,7 +70,7 @@ func (op *orphansPool) addOrphan(transaction *externalapi.DomainTransaction, isH
 	for _, input := range transaction.Inputs {
 		if input.UTXOEntry == nil {
 			if _, ok := op.orphansByPreviousOutpoint[input.PreviousOutpoint]; !ok {
-				op.orphansByPreviousOutpoint[input.PreviousOutpoint] = idToOrphan{}
+				op.orphansByPreviousOutpoint[input.PreviousOutpoint] = idsToOrphans{}
 			}
 			op.orphansByPreviousOutpoint[input.PreviousOutpoint][*orphanTransaction.TransactionID()] = orphanTransaction
 		}

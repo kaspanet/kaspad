@@ -9,7 +9,7 @@ import (
 )
 
 func (mp *mempool) fillInputsAndGetMissingParents(transaction *externalapi.DomainTransaction) (
-	parents model.OutpointToTransaction, missingOutpoints []*externalapi.DomainOutpoint, err error) {
+	parents model.OutpointsToTransactions, missingOutpoints []*externalapi.DomainOutpoint, err error) {
 
 	parentsInPool := mp.transactionsPool.getParentTransactionsInPool(transaction)
 
@@ -35,7 +35,7 @@ func (mp *mempool) fillInputsAndGetMissingParents(transaction *externalapi.Domai
 }
 
 // this function MUST be called with the mempool mutex locked for reads
-func fillInputs(transaction *externalapi.DomainTransaction, parentsInPool model.OutpointToTransaction) {
+func fillInputs(transaction *externalapi.DomainTransaction, parentsInPool model.OutpointsToTransactions) {
 	for _, input := range transaction.Inputs {
 		parent, ok := parentsInPool[input.PreviousOutpoint]
 		if !ok {
