@@ -31,29 +31,11 @@ func (bp *blockProcessor) validateAndInsertImportedPruningPoint(
 		return err
 	}
 
-	log.Info("Deleting block data for all blocks in blockStore")
-	err = bp.pruningManager.PruneAllBlocksBelow(stagingArea, newPruningPointHash)
-	if err != nil {
-		return err
-	}
-
 	log.Infof("Updating consensus state manager according to the new pruning point %s", newPruningPointHash)
 	err = bp.consensusStateManager.ImportPruningPoint(stagingArea, newPruningPoint)
 	if err != nil {
 		return err
 	}
 
-	// ImportPruningPoint commits the stagingArea, so create a new one
-	stagingArea = model.NewStagingArea()
-
-	log.Infof("Inserting the new pruning point %s", newPruningPointHash)
-	_, err = bp.validateAndInsertBlock(stagingArea, newPruningPoint, true)
-	if err != nil && errors.As(err, &ruleerrors.RuleError{}) {
-		// This should never happen because we already validated the block with bp.validateBlockAndDiscardChanges.
-		// We use Errorf so it won't be identified later on to be a rule error and will eventually cause
-		// the program to panic.
-		return errors.Errorf("validateAndInsertBlock returned unexpected rule error while processing "+
-			"the pruning point: %+v", err)
-	}
-	return err
+	return nil
 }

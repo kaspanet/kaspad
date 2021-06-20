@@ -19,7 +19,7 @@ func (x *KaspadMessage_RequestHeaders) toAppMessage() (appmessage.Message, error
 		return nil, err
 	}
 
-	return &appmessage.MsgRequestHeaders{
+	return &appmessage.MsgRequestIBDBlocks{
 		LowHash:  lowHash,
 		HighHash: highHash,
 	}, nil
@@ -38,14 +38,14 @@ func (x *RequestHeadersMessage) toAppMessage() (appmessage.Message, error) {
 		return nil, err
 	}
 
-	return &appmessage.MsgRequestHeaders{
+	return &appmessage.MsgRequestIBDBlocks{
 		LowHash:  lowHash,
 		HighHash: highHash,
 	}, nil
 
 }
 
-func (x *KaspadMessage_RequestHeaders) fromAppMessage(msgRequestHeaders *appmessage.MsgRequestHeaders) error {
+func (x *KaspadMessage_RequestHeaders) fromAppMessage(msgRequestHeaders *appmessage.MsgRequestIBDBlocks) error {
 	x.RequestHeaders = &RequestHeadersMessage{
 		LowHash:  domainHashToProto(msgRequestHeaders.LowHash),
 		HighHash: domainHashToProto(msgRequestHeaders.HighHash),

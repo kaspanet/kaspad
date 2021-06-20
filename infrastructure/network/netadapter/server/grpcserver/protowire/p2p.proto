@@ -200,8 +200,12 @@ message BlockHeadersMessage {
   repeated BlockHeaderMessage blockHeaders = 1;
 }
 
-message BlockWithMetaDataMessage {
-  BlockMessage block = 1;
+message RequestPruningPointAndItsAnticoneHeaders {
+  repeated BlockHeaderWithMetaDataMessage headers = 1;
+}
+
+message BlockHeaderWithMetaDataMessage {
+  BlockHeaderMessage block = 1;
   uint64 daaScore = 2;
   GhostdagData ghostdagData = 3;
 }
@@ -220,7 +224,7 @@ message BluesAnticoneSizes {
   uint32 anticoneSize = 2;
 }
 
-message DoneBlocksWithMetaDataMessage {
+message DoneBlockHeadersWithMetaDataMessage {
 }
 
 message RequestBlockBlueWorkMessage {

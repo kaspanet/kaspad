@@ -228,7 +228,7 @@ func (flow *handleRelayInvsFlow) readMsgBlock() (msgBlock *appmessage.MsgBlock, 
 
 func (flow *handleRelayInvsFlow) processBlock(block *externalapi.DomainBlock) ([]*externalapi.DomainHash, *externalapi.BlockInsertionResult, error) {
 	blockHash := consensushashing.BlockHash(block)
-	blockInsertionResult, err := flow.Domain().Consensus().ValidateAndInsertBlock(block)
+	blockInsertionResult, err := flow.Domain().Consensus().ValidateAndInsertBlock(block, true)
 	if err != nil {
 		if !errors.As(err, &ruleerrors.RuleError{}) {
 			return nil, nil, errors.Wrapf(err, "failed to process block %s", blockHash)

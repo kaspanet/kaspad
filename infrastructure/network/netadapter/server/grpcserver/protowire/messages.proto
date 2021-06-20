@@ -40,8 +40,8 @@ message KaspadMessage {
     RequestNextPruningPointUtxoSetChunkMessage requestNextPruningPointUtxoSetChunk = 33;
     DonePruningPointUtxoSetChunksMessage donePruningPointUtxoSetChunks = 34;
     IbdBlockLocatorHighestHashNotFoundMessage ibdBlockLocatorHighestHashNotFound = 35;
-    BlockWithMetaDataMessage blockWithMetaData = 36;
-    DoneBlocksWithMetaDataMessage doneBlocksWithMetaData = 37;
+    BlockHeaderWithMetaDataMessage blockWithMetaData = 36;
+    DoneBlockHeadersWithMetaDataMessage doneBlocksWithMetaData = 37;
     RequestBlockBlueWorkMessage requestBlockBlueWork = 38;
     BlockBlueWorkMessage blockBlueWork = 39;
 

@@ -9,9 +9,9 @@ func (x *KaspadMessage_RequestNextHeaders) toAppMessage() (appmessage.Message, e
 	if x == nil {
 		return nil, errors.Wrapf(errorNil, "KaspadMessage_RequestNextHeaders is nil")
 	}
-	return &appmessage.MsgRequestNextHeaders{}, nil
+	return &appmessage.MsgRequestNextIBDBlocks{}, nil
 }
 
-func (x *KaspadMessage_RequestNextHeaders) fromAppMessage(_ *appmessage.MsgRequestNextHeaders) error {
+func (x *KaspadMessage_RequestNextHeaders) fromAppMessage(_ *appmessage.MsgRequestNextIBDBlocks) error {
 	return nil
 }

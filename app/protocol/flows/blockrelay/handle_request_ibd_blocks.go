@@ -12,22 +12,22 @@ import (
 
 const ibdBatchSize = router.DefaultMaxMessages
 
-// RequestIBDBlocksContext is the interface for the context needed for the HandleRequestHeaders flow.
+// RequestIBDBlocksContext is the interface for the context needed for the HandleRequestIBDBlocks flow.
 type RequestIBDBlocksContext interface {
 	Domain() domain.Domain
 }
 
-type handleRequestHeadersFlow struct {
+type handleRequestIBDBlocksFlow struct {
 	RequestIBDBlocksContext
 	incomingRoute, outgoingRoute *router.Route
 	peer                         *peer.Peer
 }
 
-// HandleRequestHeaders handles RequestHeaders messages
-func HandleRequestHeaders(context RequestIBDBlocksContext, incomingRoute *router.Route,
+// HandleRequestIBDBlocks handles RequestIBDBlocks messages
+func HandleRequestIBDBlocks(context RequestIBDBlocksContext, incomingRoute *router.Route,
 	outgoingRoute *router.Route, peer *peer.Peer) error {
 
-	flow := &handleRequestHeadersFlow{
+	flow := &handleRequestIBDBlocksFlow{
 		RequestIBDBlocksContext: context,
 		incomingRoute:           incomingRoute,
 		outgoingRoute:           outgoingRoute,
@@ -36,13 +36,13 @@ func HandleRequestHeaders(context RequestIBDBlocksContext, incomingRoute *router
 	return flow.start()
 }
 
-func (flow *handleRequestHeadersFlow) start() error {
+func (flow *handleRequestIBDBlocksFlow) start() error {
 	for {
-		lowHash, highHash, err := receiveRequestHeaders(flow.incomingRoute)
+		lowHash, highHash, err := receiveRequestIBDBlocks(flow.incomingRoute)
 		if err != nil {
 			return err
 		}
-		log.Debugf("Recieved requestHeaders with lowHash: %s, highHash: %s", lowHash, highHash)
+		log.Debugf("Received requestHeaders with lowHash: %s, highHash: %s", lowHash, highHash)
 
 		for !lowHash.Equal(highHash) {
 			log.Debugf("Getting block headers between %s and %s to %s", lowHash, highHash, flow.peer)
@@ -56,16 +56,16 @@ func (flow *handleRequestHeadersFlow) start() error {
 			}
 			log.Debugf("Got %d header hashes above lowHash %s", len(blockHashes), lowHash)
 
-			blockHeaders := make([]*appmessage.MsgBlockHeader, len(blockHashes))
+			blocks := make([]*appmessage.MsgBlock, len(blockHashes))
 			for i, blockHash := range blockHashes {
-				blockHeader, err := flow.Domain().Consensus().GetBlockHeader(blockHash)
+				blockHeader, err := flow.Domain().Consensus().GetBlock(blockHash)
 				if err != nil {
 					return err
 				}
-				blockHeaders[i] = appmessage.DomainBlockHeaderToBlockHeader(blockHeader)
+				blocks[i] = appmessage.DomainBlockToMsgBlock(blockHeader)
 			}
 
-			blockHeadersMessage := appmessage.NewBlockHeadersMessage(blockHeaders)
+			blockHeadersMessage := appmessage.NewBlockHeadersMessage(blocks)
 			err = flow.outgoingRoute.Enqueue(blockHeadersMessage)
 			if err != nil {
 				return err
@@ -75,30 +75,30 @@ func (flow *handleRequestHeadersFlow) start() error {
 			if err != nil {
 				return err
 			}
-			if _, ok := message.(*appmessage.MsgRequestNextHeaders); !ok {
+			if _, ok := message.(*appmessage.MsgRequestNextIBDBlocks); !ok {
 				return protocolerrors.Errorf(true, "received unexpected message type. "+
-					"expected: %s, got: %s", appmessage.CmdRequestNextHeaders, message.Command())
+					"expected: %s, got: %s", appmessage.CmdRequestNextIBDBlocks, message.Command())
 			}
 
 			// The next lowHash is the last element in blockHashes
 			lowHash = blockHashes[len(blockHashes)-1]
 		}
 
-		err = flow.outgoingRoute.Enqueue(appmessage.NewMsgDoneHeaders())
+		err = flow.outgoingRoute.Enqueue(appmessage.NewMsgDoneIBDBlocks())
 		if err != nil {
 			return err
 		}
 	}
 }
 
-func receiveRequestHeaders(incomingRoute *router.Route) (lowHash *externalapi.DomainHash,
+func receiveRequestIBDBlocks(incomingRoute *router.Route) (lowHash *externalapi.DomainHash,
 	highHash *externalapi.DomainHash, err error) {
 
 	message, err := incomingRoute.Dequeue()
 	if err != nil {
 		return nil, nil, err
 	}
-	msgRequestIBDBlocks := message.(*appmessage.MsgRequestHeaders)
+	msgRequestIBDBlocks := message.(*appmessage.MsgRequestIBDBlocks)
 
 	return msgRequestIBDBlocks.LowHash, msgRequestIBDBlocks.HighHash, nil
 }

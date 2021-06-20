@@ -20,11 +20,11 @@ func (x *RequestPruningPointUTXOSetAndBlockMessage) toAppMessage() (appmessage.M
 	if err != nil {
 		return nil, err
 	}
-	return &appmessage.MsgRequestPruningPointUTXOSetAndBlock{PruningPointHash: pruningPointHash}, nil
+	return &appmessage.MsgRequestPruningPointUTXOSet{PruningPointHash: pruningPointHash}, nil
 }
 
 func (x *KaspadMessage_RequestPruningPointUTXOSetAndBlock) fromAppMessage(
-	msgRequestPruningPointUTXOSetAndBlock *appmessage.MsgRequestPruningPointUTXOSetAndBlock) error {
+	msgRequestPruningPointUTXOSetAndBlock *appmessage.MsgRequestPruningPointUTXOSet) error {
 
 	x.RequestPruningPointUTXOSetAndBlock = &RequestPruningPointUTXOSetAndBlockMessage{}
 	x.RequestPruningPointUTXOSetAndBlock.PruningPointHash = domainHashToProto(msgRequestPruningPointUTXOSetAndBlock.PruningPointHash)

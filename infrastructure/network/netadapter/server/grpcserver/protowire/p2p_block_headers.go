@@ -13,14 +13,14 @@ func (x *KaspadMessage_BlockHeaders) toAppMessage() (appmessage.Message, error) 
 	if err != nil {
 		return nil, err
 	}
-	return &appmessage.BlockHeadersMessage{
-		BlockHeaders: blockHeaders,
+	return &appmessage.IBDBlocksMessage{
+		Blocks: blockHeaders,
 	}, nil
 }
 
 func (x *BlockHeadersMessage) toAppMessage() ([]*appmessage.MsgBlockHeader, error) {
 	if x == nil {
-		return nil, errors.Wrapf(errorNil, "BlockHeadersMessage is nil")
+		return nil, errors.Wrapf(errorNil, "IBDBlocksMessage is nil")
 	}
 	blockHeaders := make([]*appmessage.MsgBlockHeader, len(x.BlockHeaders))
 	for i, blockHeader := range x.BlockHeaders {
@@ -34,9 +34,9 @@ func (x *BlockHeadersMessage) toAppMessage() ([]*appmessage.MsgBlockHeader, erro
 	return blockHeaders, nil
 }
 
-func (x *KaspadMessage_BlockHeaders) fromAppMessage(blockHeadersMessage *appmessage.BlockHeadersMessage) error {
-	blockHeaders := make([]*BlockHeaderMessage, len(blockHeadersMessage.BlockHeaders))
-	for i, blockHeader := range blockHeadersMessage.BlockHeaders {
+func (x *KaspadMessage_BlockHeaders) fromAppMessage(blockHeadersMessage *appmessage.IBDBlocksMessage) error {
+	blockHeaders := make([]*BlockHeaderMessage, len(blockHeadersMessage.Blocks))
+	for i, blockHeader := range blockHeadersMessage.Blocks {
 		blockHeaders[i] = &BlockHeaderMessage{}
 		err := blockHeaders[i].fromAppMessage(blockHeader)
 		if err != nil {

@@ -7,7 +7,7 @@ import (
 )
 
 // KType defines the size of GHOSTDAG consensus algorithm K parameter.
-type KType byte
+type KType byte // TODO: Move to externalapi
 
 // BlockGHOSTDAGData represents GHOSTDAG data for some block
 type BlockGHOSTDAGData struct {

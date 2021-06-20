@@ -12,7 +12,7 @@ type MsgRequestBlockBlueWork struct {
 
 // Command returns the protocol command string for the message
 func (msg *MsgRequestBlockBlueWork) Command() MessageCommand {
-	panic("unimplemented")
+	return CmdRequestBlockBlueWork
 }
 
 // NewRequestBlockBlueWork returns a new kaspa RequestBlockBlueWork message

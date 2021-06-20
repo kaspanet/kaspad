@@ -3,8 +3,10 @@ package externalapi
 // Consensus maintains the current core state of the node
 type Consensus interface {
 	BuildBlock(coinbaseData *DomainCoinbaseData, transactions []*DomainTransaction) (*DomainBlock, error)
-	ValidateAndInsertBlock(block *DomainBlock) (*BlockInsertionResult, error)
+	ValidateAndInsertBlock(block *DomainBlock, validateUTXO bool) (*BlockInsertionResult, error)
+	ValidateAndInsertBlockWithMetaData(block *BlockWithMetaData) (*BlockInsertionResult, error)
 	ValidateTransactionAndPopulateWithConsensusData(transaction *DomainTransaction) error
+	ResolveVirtual() error
 
 	GetBlock(blockHash *DomainHash) (*DomainBlock, error)
 	GetBlockEvenIfHeaderOnly(blockHash *DomainHash) (*DomainBlock, error)
@@ -18,9 +20,10 @@ type Consensus interface {
 	GetPruningPointUTXOs(expectedPruningPointHash *DomainHash, fromOutpoint *DomainOutpoint, limit int) ([]*OutpointAndUTXOEntryPair, error)
 	GetVirtualUTXOs(expectedVirtualParents []*DomainHash, fromOutpoint *DomainOutpoint, limit int) ([]*OutpointAndUTXOEntryPair, error)
 	PruningPoint() (*DomainHash, error)
+	PruningPointAndItsAnticoneWithMetaData() ([]*BlockWithMetaData, error)
 	ClearImportedPruningPointData() error
 	AppendImportedPruningPointUTXOs(outpointAndUTXOEntryPairs []*OutpointAndUTXOEntryPair) error
-	ValidateAndInsertImportedPruningPoint(newPruningPoint *DomainBlock) error
+	ValidateAndInsertImportedPruningPoint(newPruningPoint *DomainHash) error
 	GetVirtualSelectedParent() (*DomainHash, error)
 	CreateBlockLocator(lowHash, highHash *DomainHash, limit uint32) (BlockLocator, error)
 	CreateHeadersSelectedChainBlockLocator(lowHash, highHash *DomainHash) (BlockLocator, error)
