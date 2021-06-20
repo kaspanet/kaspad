@@ -47,9 +47,18 @@ func (op *orphansPool) maybeAddOrphan(transaction *externalapi.DomainTransaction
 		return nil
 	}
 	for len(op.allOrphans) >= op.mempool.config.MaximumOrphanTransactionCount {
+		orphanToRemove := op.randomNonHighPriorityOrphan()
+		if orphanToRemove == nil { // this means all orphans are HighPriority
+			log.Warnf(
+				"Number of high-priority transactions in orphanPool (%d) is higher than maximum allowed (%d)",
+				len(op.allOrphans)+1, // Add + 1 because the current orphan hasn't been added yet
+				op.mempool.config.MaximumOrphanTransactionCount)
+			break
+		}
+
 		// Don't remove redeemers in the case of a random eviction since the evicted transaction is
 		// not invalid, therefore it's redeemers are as good as any orphan that just arrived.
-		err := op.removeOrphan(op.randomOrphan().TransactionID(), false)
+		err := op.removeOrphan(orphanToRemove.TransactionID(), false)
 		if err != nil {
 			return err
 		}
@@ -277,9 +286,11 @@ func (op *orphansPool) updateOrphansAfterTransactionRemoved(
 }
 
 // this function MUST be called with the mempool mutex locked for reads
-func (op *orphansPool) randomOrphan() *model.OrphanTransaction {
+func (op *orphansPool) randomNonHighPriorityOrphan() *model.OrphanTransaction {
 	for _, orphan := range op.allOrphans {
-		return orphan
+		if !orphan.IsHighPriority() {
+			return orphan
+		}
 	}
 
 	return nil
