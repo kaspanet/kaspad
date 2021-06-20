@@ -12,5 +12,5 @@ func HandleGetVirtualSelectedParentBlueScore(context *rpccontext.Context, _ *rou
 	if err != nil {
 		return nil, err
 	}
-	return appmessage.NewGetVirtualSelectedParentBlueScoreResponseMessage(virtualInfo.BlueScore), nil
+	return appmessage.NewGetVirtualSelectedParentBlueScoreResponseMessage(virtualInfo.SelectedParentBlueScore), nil
 }

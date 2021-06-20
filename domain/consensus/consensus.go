@@ -386,6 +386,10 @@ func (s *consensus) GetVirtualInfo() (*externalapi.VirtualInfo, error) {
 	if err != nil {
 		return nil, err
 	}
+	virtualSelectedParentGHOSTDAGData, err := s.ghostdagDataStore.Get(s.databaseContext, stagingArea, virtualGHOSTDAGData.SelectedParent())
+	if err != nil {
+		return nil, err
+	}
 
 	daaScore, err := s.daaBlocksStore.DAAScore(s.databaseContext, stagingArea, model.VirtualBlockHash)
 	if err != nil {
@@ -393,11 +397,11 @@ func (s *consensus) GetVirtualInfo() (*externalapi.VirtualInfo, error) {
 	}
 
 	return &externalapi.VirtualInfo{
-		ParentHashes:   blockRelations.Parents,
-		Bits:           bits,
-		PastMedianTime: pastMedianTime,
-		BlueScore:      virtualGHOSTDAGData.BlueScore(),
-		DAAScore:       daaScore,
+		ParentHashes:            blockRelations.Parents,
+		Bits:                    bits,
+		PastMedianTime:          pastMedianTime,
+		SelectedParentBlueScore: virtualSelectedParentGHOSTDAGData.BlueScore(),
+		DAAScore:                daaScore,
 	}, nil
 }
 
