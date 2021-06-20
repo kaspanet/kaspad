@@ -183,7 +183,7 @@ func (tp *transactionsPool) limitTransactionCount() {
 			}
 		}
 
-		err := tp.removeTransaction(transactionToRemove)
+		err := tp.mempool.removeTransaction(transactionToRemove.TransactionID(), true)
 		if err != nil {
 			return
 		}
