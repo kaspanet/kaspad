@@ -46,7 +46,10 @@ func (mpus *mempoolUTXOSet) addTransaction(transaction *model.MempoolTransaction
 // this function MUST be called with the mempool mutex locked for writes
 func (mpus *mempoolUTXOSet) removeTransaction(transaction *model.MempoolTransaction) {
 	for _, input := range transaction.Transaction().Inputs {
-		mpus.poolUnspentOutputs[input.PreviousOutpoint] = input.UTXOEntry
+		// If the transaction creating the output spent by this input is in the mempool - restore it's UTXO
+		if _, ok := mpus.mempool.GetTransaction(&input.PreviousOutpoint.TransactionID); ok {
+			mpus.poolUnspentOutputs[input.PreviousOutpoint] = input.UTXOEntry
+		}
 		delete(mpus.transactionByPreviousOutpoint, input.PreviousOutpoint)
 	}
 
