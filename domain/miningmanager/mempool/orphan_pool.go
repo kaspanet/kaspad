@@ -16,7 +16,7 @@ import (
 )
 
 type idsToOrphans map[externalapi.DomainTransactionID]*model.OrphanTransaction
-type previousOutpointToOrphans map[externalapi.DomainOutpoint]idsToOrphans
+type previousOutpointToOrphans map[externalapi.DomainOutpoint]*model.OrphanTransaction
 
 type orphansPool struct {
 	mempool                   *mempool
@@ -36,16 +36,26 @@ func newOrphansPool(mp *mempool) *orphansPool {
 
 // this function MUST be called with the mempool mutex locked for writes
 func (op *orphansPool) maybeAddOrphan(transaction *externalapi.DomainTransaction, isHighPriority bool) error {
-	serializedLength := estimatedsize.TransactionEstimatedSerializedSize(transaction)
-	if serializedLength > uint64(op.mempool.config.MaximumOrphanTransactionSize) {
-		str := fmt.Sprintf("orphan transaction size of %d bytes is "+
-			"larger than max allowed size of %d bytes",
-			serializedLength, op.mempool.config.MaximumOrphanTransactionSize)
-		return transactionRuleError(RejectBadOrphan, str)
+	err := op.checkOrphanSize(transaction)
+	if err != nil {
+		return err
 	}
 	if op.mempool.config.MaximumOrphanTransactionCount <= 0 {
 		return nil
 	}
+	err = op.checkOrphanDoubleSpend(transaction)
+	if err != nil {
+		return err
+	}
+	err = op.limitOrphanPoolSize()
+	if err != nil {
+		return err
+	}
+
+	return op.addOrphan(transaction, isHighPriority)
+}
+
+func (op *orphansPool) limitOrphanPoolSize() error {
 	for len(op.allOrphans) >= op.mempool.config.MaximumOrphanTransactionCount {
 		orphanToRemove := op.randomNonHighPriorityOrphan()
 		if orphanToRemove == nil { // this means all orphans are HighPriority
@@ -63,8 +73,30 @@ func (op *orphansPool) maybeAddOrphan(transaction *externalapi.DomainTransaction
 			return err
 		}
 	}
+	return nil
+}
 
-	return op.addOrphan(transaction, isHighPriority)
+func (op *orphansPool) checkOrphanSize(transaction *externalapi.DomainTransaction) error {
+	serializedLength := estimatedsize.TransactionEstimatedSerializedSize(transaction)
+	if serializedLength > uint64(op.mempool.config.MaximumOrphanTransactionSize) {
+		str := fmt.Sprintf("orphan transaction size of %d bytes is "+
+			"larger than max allowed size of %d bytes",
+			serializedLength, op.mempool.config.MaximumOrphanTransactionSize)
+		return transactionRuleError(RejectBadOrphan, str)
+	}
+	return nil
+}
+
+func (op *orphansPool) checkOrphanDoubleSpend(transaction *externalapi.DomainTransaction) error {
+	for _, input := range transaction.Inputs {
+		if doubleSpendOrphan, ok := op.orphansByPreviousOutpoint[input.PreviousOutpoint]; ok {
+			str := fmt.Sprintf("Orphan transacion %s is double spending an input from already existing orphan %s",
+				consensushashing.TransactionID(transaction), doubleSpendOrphan.TransactionID())
+			return transactionRuleError(RejectDuplicate, str)
+		}
+	}
+
+	return nil
 }
 
 // this function MUST be called with the mempool mutex locked for writes
@@ -78,10 +110,7 @@ func (op *orphansPool) addOrphan(transaction *externalapi.DomainTransaction, isH
 	op.allOrphans[*orphanTransaction.TransactionID()] = orphanTransaction
 	for _, input := range transaction.Inputs {
 		if input.UTXOEntry == nil {
-			if _, ok := op.orphansByPreviousOutpoint[input.PreviousOutpoint]; !ok {
-				op.orphansByPreviousOutpoint[input.PreviousOutpoint] = idsToOrphans{}
-			}
-			op.orphansByPreviousOutpoint[input.PreviousOutpoint][*orphanTransaction.TransactionID()] = orphanTransaction
+			op.orphansByPreviousOutpoint[input.PreviousOutpoint] = orphanTransaction
 		}
 	}
 
@@ -103,30 +132,28 @@ func (op *orphansPool) processOrphansAfterAcceptedTransaction(acceptedTransactio
 		outpoint := externalapi.DomainOutpoint{TransactionID: *currentTransactionID}
 		for i, output := range current.Outputs {
 			outpoint.Index = uint32(i)
-			orphans, ok := op.orphansByPreviousOutpoint[outpoint]
+			orphan, ok := op.orphansByPreviousOutpoint[outpoint]
 			if !ok {
 				continue
 			}
-			for _, orphan := range orphans {
-				for _, input := range orphan.Transaction().Inputs {
-					if input.PreviousOutpoint.Equal(&outpoint) {
-						input.UTXOEntry = utxo.NewUTXOEntry(output.Value, output.ScriptPublicKey, false,
-							model.UnacceptedDAAScore)
-						break
-					}
+			for _, input := range orphan.Transaction().Inputs {
+				if input.PreviousOutpoint.Equal(&outpoint) {
+					input.UTXOEntry = utxo.NewUTXOEntry(output.Value, output.ScriptPublicKey, false,
+						model.UnacceptedDAAScore)
+					break
 				}
-				if countUnfilledInputs(orphan) == 0 {
-					err := op.unorphanTransaction(orphan)
-					if err != nil {
-						if errors.As(err, &RuleError{}) {
-							log.Infof("Failed to unorphan transaction %s due to rule error: %s",
-								currentTransactionID, err)
-							continue
-						}
-						return nil, err
+			}
+			if countUnfilledInputs(orphan) == 0 {
+				err := op.unorphanTransaction(orphan)
+				if err != nil {
+					if errors.As(err, &RuleError{}) {
+						log.Infof("Failed to unorphan transaction %s due to rule error: %s",
+							currentTransactionID, err)
+						continue
 					}
-					acceptedOrphans = append(acceptedOrphans, current)
+					return nil, err
 				}
+				acceptedOrphans = append(acceptedOrphans, current)
 			}
 		}
 	}
@@ -195,15 +222,11 @@ func (op *orphansPool) removeOrphan(orphanTransactionID *externalapi.DomainTrans
 	delete(op.allOrphans, *orphanTransactionID)
 
 	for i, input := range orphanTransaction.Transaction().Inputs {
-		orphans, ok := op.orphansByPreviousOutpoint[input.PreviousOutpoint]
-		if !ok {
+		if _, ok := op.orphansByPreviousOutpoint[input.PreviousOutpoint]; !ok {
 			return errors.Errorf("Input No. %d of %s (%s) doesn't exist in orphansByPreviousOutpoint",
 				i, orphanTransactionID, input.PreviousOutpoint)
 		}
-		delete(orphans, *orphanTransactionID)
-		if len(orphans) == 0 {
-			delete(op.orphansByPreviousOutpoint, input.PreviousOutpoint)
-		}
+		delete(op.orphansByPreviousOutpoint, input.PreviousOutpoint)
 	}
 
 	if removeRedeemers {
@@ -221,7 +244,7 @@ func (op *orphansPool) removeRedeemersOf(transaction model.Transaction) error {
 	outpoint := externalapi.DomainOutpoint{TransactionID: *transaction.TransactionID()}
 	for i := range transaction.Transaction().Outputs {
 		outpoint.Index = uint32(i)
-		for _, orphan := range op.orphansByPreviousOutpoint[outpoint] {
+		if orphan, ok := op.orphansByPreviousOutpoint[outpoint]; ok {
 			// Recursive call is bound by size of orphan pool (which is very small)
 			err := op.removeOrphan(orphan.TransactionID(), true)
 			if err != nil {
@@ -273,7 +296,7 @@ func (op *orphansPool) updateOrphansAfterTransactionRemoved(
 	outpoint := externalapi.DomainOutpoint{TransactionID: *removedTransaction.TransactionID()}
 	for i := range removedTransaction.Transaction().Outputs {
 		outpoint.Index = uint32(i)
-		for _, orphan := range op.orphansByPreviousOutpoint[outpoint] {
+		if orphan, ok := op.orphansByPreviousOutpoint[outpoint]; ok {
 			for _, input := range orphan.Transaction().Inputs {
 				if input.PreviousOutpoint.TransactionID.Equal(removedTransaction.TransactionID()) {
 					input.UTXOEntry = nil
