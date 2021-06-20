@@ -104,7 +104,7 @@ func (tp *transactionsPool) expireOldTransactions() error {
 
 		// Remove all transactions whose addedAtDAAScore is older then TransactionExpireIntervalDAAScore
 		if virtualDAAScore-mempoolTransaction.AddedAtDAAScore() > tp.mempool.config.TransactionExpireIntervalDAAScore {
-			err = tp.mempool.RemoveTransaction(mempoolTransaction.TransactionID(), true)
+			err = tp.mempool.removeTransaction(mempoolTransaction.TransactionID(), true)
 			if err != nil {
 				return err
 			}

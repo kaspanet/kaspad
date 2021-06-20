@@ -47,7 +47,7 @@ func (mpus *mempoolUTXOSet) addTransaction(transaction *model.MempoolTransaction
 func (mpus *mempoolUTXOSet) removeTransaction(transaction *model.MempoolTransaction) {
 	for _, input := range transaction.Transaction().Inputs {
 		// If the transaction creating the output spent by this input is in the mempool - restore it's UTXO
-		if _, ok := mpus.mempool.GetTransaction(&input.PreviousOutpoint.TransactionID); ok {
+		if _, ok := mpus.mempool.transactionsPool.getTransaction(&input.PreviousOutpoint.TransactionID); ok {
 			mpus.poolUnspentOutputs[input.PreviousOutpoint] = input.UTXOEntry
 		}
 		delete(mpus.transactionByPreviousOutpoint, input.PreviousOutpoint)
