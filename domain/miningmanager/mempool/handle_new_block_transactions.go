@@ -6,6 +6,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/utils/transactionhelper"
 )
 
+// this function MUST be called with the mempool mutex locked for writes
 func (mp *mempool) handleNewBlockTransactions(blockTransactions []*externalapi.DomainTransaction) (
 	[]*externalapi.DomainTransaction, error) {
 
