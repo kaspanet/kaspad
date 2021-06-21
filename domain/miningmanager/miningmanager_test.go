@@ -1,6 +1,7 @@
 package miningmanager_test
 
 import (
+	"reflect"
 	"strings"
 	"testing"
 
@@ -57,7 +58,7 @@ func TestValidateAndInsertTransaction(t *testing.T) {
 
 		// The parent's transaction was inserted by consensus(AddBlock), and we want to verify that
 		// the transaction is not considered an orphan and inserted into the mempool.
-		transactionNotAnOrphan, err := createChildTxWhenParentTxWasAddedByConsensus(consensusConfig, tc)
+		transactionNotAnOrphan, err := createChildTxWhenParentTxWasAddedByConsensus(tc)
 		if err != nil {
 			t.Fatalf("Error in createParentAndChildrenTransaction: %v", err)
 		}
@@ -253,7 +254,6 @@ func TestDoubleSpendWithBlock(t *testing.T) {
 // TestOrphanTransactions verifies that a transaction could be a part of a new block template, only if it's not an orphan.
 func TestOrphanTransactions(t *testing.T) {
 	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
-
 		consensusConfig.BlockCoinbaseMaturity = 0
 		factory := consensus.NewFactory()
 		tc, teardown, err := factory.NewTestConsensus(consensusConfig, "TestOrphanTransactions")
@@ -349,6 +349,106 @@ func TestOrphanTransactions(t *testing.T) {
 	})
 }
 
+func TestHighPriorityTransactions(t *testing.T) {
+	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
+		consensusConfig.BlockCoinbaseMaturity = 0
+		factory := consensus.NewFactory()
+		tc, teardown, err := factory.NewTestConsensus(consensusConfig, "TestDoubleSpendWithBlock")
+		if err != nil {
+			t.Fatalf("Failed setting up TestConsensus: %+v", err)
+		}
+		defer teardown(false)
+
+		miningFactory := miningmanager.NewFactory()
+		mempoolConfig := mempool.DefaultConfig(&consensusConfig.Params)
+		mempoolConfig.MaximumTransactionCount = 1
+		mempoolConfig.MaximumOrphanTransactionCount = 1
+		miningManager := miningFactory.NewMiningManager(tc, &consensusConfig.Params, mempoolConfig)
+
+		// Create 3 pairs of transaction parent-and-child pairs: 1 low priority and 2 high priority
+		lowPriorityParentTransaction, lowPriorityChildTransaction, err := createParentAndChildrenTransactions(tc)
+		if err != nil {
+			t.Fatalf("error creating low-priority transaction pair: %+v", err)
+		}
+		t.Logf("~~~~~ lowPriorityParentTransaction: %s, lowPriorityChildTransaction: %s",
+			consensushashing.TransactionID(lowPriorityParentTransaction),
+			consensushashing.TransactionID(lowPriorityChildTransaction))
+		firstHighPriorityParentTransaction, firstHighPriorityChildTransaction, err := createParentAndChildrenTransactions(tc)
+		if err != nil {
+			t.Fatalf("error creating first high-priority transaction pair: %+v", err)
+		}
+		t.Logf("~~~~~ firstHighPriorityParentTransaction: %s, firstHighPriorityChildTransaction: %s",
+			consensushashing.TransactionID(firstHighPriorityParentTransaction),
+			consensushashing.TransactionID(firstHighPriorityChildTransaction))
+		secondHighPriorityParentTransaction, secondHighPriorityChildTransaction, err := createParentAndChildrenTransactions(tc)
+		if err != nil {
+			t.Fatalf("error creating second high-priority transaction pair: %+v", err)
+		}
+		t.Logf("~~~~~ secondHighPriorityParentTransaction: %s, secondHighPriorityChildTransaction: %s",
+			consensushashing.TransactionID(secondHighPriorityParentTransaction),
+			consensushashing.TransactionID(secondHighPriorityChildTransaction))
+
+		// Submit all the children, make sure the 2 highPriority ones remain in the orphan pool
+		_, err = miningManager.ValidateAndInsertTransaction(lowPriorityChildTransaction, false, true)
+		if err != nil {
+			t.Fatalf("error submitting low-priority transaction: %+v", err)
+		}
+		_, err = miningManager.ValidateAndInsertTransaction(firstHighPriorityChildTransaction, true, true)
+		if err != nil {
+			t.Fatalf("error submitting first high-priority transaction: %+v", err)
+		}
+		_, err = miningManager.ValidateAndInsertTransaction(secondHighPriorityChildTransaction, true, true)
+		if err != nil {
+			t.Fatalf("error submitting second high-priority transaction: %+v", err)
+		}
+		// There's no API to check what stayed in the orphan pool, but we'll find it out when we begin to unorphan
+
+		// Submit all the parents.
+		// Low priority transaction will only accept the parent, since the child was evicted from orphanPool
+		lowPriorityAcceptedTransactions, err :=
+			miningManager.ValidateAndInsertTransaction(lowPriorityParentTransaction, false, true)
+		if err != nil {
+			t.Fatalf("error submitting low-priority transaction: %+v", err)
+		}
+		expectedLowPriorityAcceptedTransactions := []*externalapi.DomainTransaction{lowPriorityParentTransaction}
+		if !reflect.DeepEqual(lowPriorityAcceptedTransactions, expectedLowPriorityAcceptedTransactions) {
+			t.Errorf("Expected only lowPriorityParent (%v) to be in lowPriorityAcceptedTransactions, but got %v",
+				consensushashing.TransactionIDs(expectedLowPriorityAcceptedTransactions),
+				consensushashing.TransactionIDs(lowPriorityAcceptedTransactions))
+		}
+
+		// Both high priority transactions should accept parent and child
+		// first
+		firstHighPriorityAcceptedTransactions, err :=
+			miningManager.ValidateAndInsertTransaction(firstHighPriorityParentTransaction, true, true)
+		if err != nil {
+			t.Fatalf("error submitting first high-priority transaction: %+v", err)
+		}
+		expectedFirstHighPriorityAcceptedTransactions :=
+			[]*externalapi.DomainTransaction{firstHighPriorityParentTransaction, firstHighPriorityChildTransaction}
+		if !reflect.DeepEqual(firstHighPriorityAcceptedTransactions, expectedFirstHighPriorityAcceptedTransactions) {
+			t.Errorf(
+				"Expected both firstHighPriority transaction (%v) to be in firstHighPriorityAcceptedTransactions, but got %v",
+				consensushashing.TransactionIDs(firstHighPriorityAcceptedTransactions),
+				consensushashing.TransactionIDs(expectedFirstHighPriorityAcceptedTransactions))
+		}
+		// second
+		secondHighPriorityAcceptedTransactions, err :=
+			miningManager.ValidateAndInsertTransaction(secondHighPriorityParentTransaction, true, true)
+		if err != nil {
+			t.Fatalf("error submitting second high-priority transaction: %+v", err)
+		}
+		expectedSecondHighPriorityAcceptedTransactions :=
+			[]*externalapi.DomainTransaction{secondHighPriorityParentTransaction, secondHighPriorityChildTransaction}
+		if !reflect.DeepEqual(secondHighPriorityAcceptedTransactions, expectedSecondHighPriorityAcceptedTransactions) {
+			t.Errorf(
+				"Expected both secondHighPriority transaction (%v) to be in secondHighPriorityAcceptedTransactions, but got %v",
+				consensushashing.TransactionIDs(secondHighPriorityAcceptedTransactions),
+				consensushashing.TransactionIDs(expectedSecondHighPriorityAcceptedTransactions))
+		}
+	})
+}
+
 func createTransactionWithUTXOEntry(t *testing.T, i int) *externalapi.DomainTransaction {
 	prevOutTxID := externalapi.DomainTransactionID{}
 	prevOutPoint := externalapi.DomainOutpoint{TransactionID: prevOutTxID, Index: uint32(i)}
@@ -400,8 +500,8 @@ func createArraysOfParentAndChildrenTransactions(tc testapi.TestConsensus) ([]*e
 	return parentTransactions, transactions, nil
 }
 
-func createParentAndChildrenTransactions(tc testapi.TestConsensus) (*externalapi.DomainTransaction,
-	*externalapi.DomainTransaction, error) {
+func createParentAndChildrenTransactions(tc testapi.TestConsensus) (txChild *externalapi.DomainTransaction,
+	txParent *externalapi.DomainTransaction, err error) {
 
 	// We will add two blocks by consensus before the parent transactions, in order to fund the parent transactions.
 	tips, err := tc.Tips()
@@ -428,19 +528,19 @@ func createParentAndChildrenTransactions(tc testapi.TestConsensus) (*externalapi
 		return nil, nil, errors.Wrap(err, "GetBlock: ")
 	}
 	fundingTransactionForParent := fundingBlockForParent.Transactions[transactionhelper.CoinbaseTransactionIndex]
-	txParent, err := testutils.CreateTransaction(fundingTransactionForParent, 1000)
+	txParent, err = testutils.CreateTransaction(fundingTransactionForParent, 1000)
 	if err != nil {
 		return nil, nil, err
 	}
-	txChild, err := testutils.CreateTransaction(txParent, 1000)
+	txChild, err = testutils.CreateTransaction(txParent, 1000)
 	if err != nil {
 		return nil, nil, err
 	}
 	return txParent, txChild, nil
 }
 
-func createChildTxWhenParentTxWasAddedByConsensus(consensusConfig *consensus.Config, tc testapi.TestConsensus) (*externalapi.DomainTransaction, error) {
-	firstBlockHash, _, err := tc.AddBlock([]*externalapi.DomainHash{consensusConfig.GenesisHash}, nil, nil)
+func createChildTxWhenParentTxWasAddedByConsensus(tc testapi.TestConsensus) (*externalapi.DomainTransaction, error) {
+	firstBlockHash, _, err := tc.AddBlock([]*externalapi.DomainHash{tc.DAGParams().GenesisHash}, nil, nil)
 	if err != nil {
 		return nil, errors.Wrapf(err, "AddBlock: %v", err)
 	}
