@@ -6,20 +6,23 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/lrucache"
+	"github.com/kaspanet/kaspad/domain/prefixmanager/prefix"
 	"google.golang.org/protobuf/proto"
 )
 
-var bucket = database.MakeBucket([]byte("acceptance-data"))
+var bucketName = []byte("acceptance-data")
 
 // acceptanceDataStore represents a store of AcceptanceData
 type acceptanceDataStore struct {
-	cache *lrucache.LRUCache
+	cache  *lrucache.LRUCache
+	bucket model.DBBucket
 }
 
 // New instantiates a new AcceptanceDataStore
-func New(cacheSize int, preallocate bool) model.AcceptanceDataStore {
+func New(prefix *prefix.Prefix, cacheSize int, preallocate bool) model.AcceptanceDataStore {
 	return &acceptanceDataStore{
-		cache: lrucache.New(cacheSize, preallocate),
+		cache:  lrucache.New(cacheSize, preallocate),
+		bucket: database.MakeBucket(prefix.Serialize()).Bucket(bucketName),
 	}
 }
 
@@ -84,5 +87,5 @@ func (ads *acceptanceDataStore) deserializeAcceptanceData(acceptanceDataBytes []
 }
 
 func (ads *acceptanceDataStore) hashAsKey(hash *externalapi.DomainHash) model.DBKey {
-	return bucket.Key(hash.ByteSlice())
+	return ads.bucket.Key(hash.ByteSlice())
 }

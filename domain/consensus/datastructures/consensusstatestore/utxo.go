@@ -1,22 +1,21 @@
 package consensusstatestore
 
 import (
-	"github.com/kaspanet/kaspad/domain/consensus/database"
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/utxo"
 	"github.com/pkg/errors"
 )
 
-var utxoSetBucket = database.MakeBucket([]byte("virtual-utxo-set"))
+var utxoSetBucketName = []byte("virtual-utxo-set")
 
-func utxoKey(outpoint *externalapi.DomainOutpoint) (model.DBKey, error) {
+func (css *consensusStateStore) utxoKey(outpoint *externalapi.DomainOutpoint) (model.DBKey, error) {
 	serializedOutpoint, err := serializeOutpoint(outpoint)
 	if err != nil {
 		return nil, err
 	}
 
-	return utxoSetBucket.Key(serializedOutpoint), nil
+	return css.utxoSetBucket.Key(serializedOutpoint), nil
 }
 
 func (css *consensusStateStore) StageVirtualUTXODiff(stagingArea *model.StagingArea, virtualUTXODiff externalapi.UTXODiff) {
@@ -48,7 +47,7 @@ func (csss *consensusStateStagingShard) commitVirtualUTXODiff(dbTx model.DBTrans
 
 		csss.store.virtualUTXOSetCache.Remove(toRemoveOutpoint)
 
-		dbKey, err := utxoKey(toRemoveOutpoint)
+		dbKey, err := csss.store.utxoKey(toRemoveOutpoint)
 		if err != nil {
 			return err
 		}
@@ -68,7 +67,7 @@ func (csss *consensusStateStagingShard) commitVirtualUTXODiff(dbTx model.DBTrans
 
 		csss.store.virtualUTXOSetCache.Add(toAddOutpoint, toAddEntry)
 
-		dbKey, err := utxoKey(toAddOutpoint)
+		dbKey, err := csss.store.utxoKey(toAddOutpoint)
 		if err != nil {
 			return err
 		}
@@ -111,7 +110,7 @@ func (css *consensusStateStore) utxoByOutpointFromStagedVirtualUTXODiff(dbContex
 		return entry, nil
 	}
 
-	key, err := utxoKey(outpoint)
+	key, err := css.utxoKey(outpoint)
 	if err != nil {
 		return nil, err
 	}
@@ -150,7 +149,7 @@ func (css *consensusStateStore) hasUTXOByOutpointFromStagedVirtualUTXODiff(dbCon
 		}
 	}
 
-	key, err := utxoKey(outpoint)
+	key, err := css.utxoKey(outpoint)
 	if err != nil {
 		return false, err
 	}
@@ -161,7 +160,7 @@ func (css *consensusStateStore) hasUTXOByOutpointFromStagedVirtualUTXODiff(dbCon
 func (css *consensusStateStore) VirtualUTXOs(dbContext model.DBReader, fromOutpoint *externalapi.DomainOutpoint, limit int) (
 	[]*externalapi.OutpointAndUTXOEntryPair, error) {
 
-	cursor, err := dbContext.Cursor(utxoSetBucket)
+	cursor, err := dbContext.Cursor(css.utxoSetBucket)
 	if err != nil {
 		return nil, err
 	}
@@ -172,7 +171,7 @@ func (css *consensusStateStore) VirtualUTXOs(dbContext model.DBReader, fromOutpo
 		if err != nil {
 			return nil, err
 		}
-		seekKey := utxoSetBucket.Key(serializedFromOutpoint)
+		seekKey := css.utxoSetBucket.Key(serializedFromOutpoint)
 		err = cursor.Seek(seekKey)
 		if err != nil {
 			return nil, err
@@ -201,7 +200,7 @@ func (css *consensusStateStore) VirtualUTXOSetIterator(dbContext model.DBReader,
 
 	stagingShard := css.stagingShard(stagingArea)
 
-	cursor, err := dbContext.Cursor(utxoSetBucket)
+	cursor, err := dbContext.Cursor(css.utxoSetBucket)
 	if err != nil {
 		return nil, err
 	}

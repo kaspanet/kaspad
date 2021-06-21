@@ -7,19 +7,22 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/lrucache"
+	"github.com/kaspanet/kaspad/domain/prefixmanager/prefix"
 )
 
-var bucket = database.MakeBucket([]byte("multisets"))
+var bucketName = []byte("multisets")
 
 // multisetStore represents a store of Multisets
 type multisetStore struct {
-	cache *lrucache.LRUCache
+	cache  *lrucache.LRUCache
+	bucket model.DBBucket
 }
 
 // New instantiates a new MultisetStore
-func New(cacheSize int, preallocate bool) model.MultisetStore {
+func New(prefix *prefix.Prefix, cacheSize int, preallocate bool) model.MultisetStore {
 	return &multisetStore{
-		cache: lrucache.New(cacheSize, preallocate),
+		cache:  lrucache.New(cacheSize, preallocate),
+		bucket: database.MakeBucket(prefix.Serialize()).Bucket(bucketName),
 	}
 }
 
@@ -71,7 +74,7 @@ func (ms *multisetStore) Delete(stagingArea *model.StagingArea, blockHash *exter
 }
 
 func (ms *multisetStore) hashAsKey(hash *externalapi.DomainHash) model.DBKey {
-	return bucket.Key(hash.ByteSlice())
+	return ms.bucket.Key(hash.ByteSlice())
 }
 
 func (ms *multisetStore) serializeMultiset(multiset model.Multiset) ([]byte, error) {

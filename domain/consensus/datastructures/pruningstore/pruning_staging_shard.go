@@ -32,7 +32,7 @@ func (mss *pruningStagingShard) Commit(dbTx model.DBTransaction) error {
 		if err != nil {
 			return err
 		}
-		err = dbTx.Put(pruningBlockHashKey, pruningPointBytes)
+		err = dbTx.Put(mss.store.pruningBlockHashKey, pruningPointBytes)
 		if err != nil {
 			return err
 		}
@@ -44,7 +44,7 @@ func (mss *pruningStagingShard) Commit(dbTx model.DBTransaction) error {
 		if err != nil {
 			return err
 		}
-		err = dbTx.Put(previousPruningBlockHashKey, oldPruningPointBytes)
+		err = dbTx.Put(mss.store.previousPruningBlockHashKey, oldPruningPointBytes)
 		if err != nil {
 			return err
 		}
@@ -56,7 +56,7 @@ func (mss *pruningStagingShard) Commit(dbTx model.DBTransaction) error {
 		if err != nil {
 			return err
 		}
-		err = dbTx.Put(candidatePruningPointHashKey, candidateBytes)
+		err = dbTx.Put(mss.store.candidatePruningPointHashKey, candidateBytes)
 		if err != nil {
 			return err
 		}
@@ -64,7 +64,7 @@ func (mss *pruningStagingShard) Commit(dbTx model.DBTransaction) error {
 	}
 
 	if mss.startUpdatingPruningPointUTXOSet {
-		err := dbTx.Put(updatingPruningPointUTXOSetKey, []byte{0})
+		err := dbTx.Put(mss.store.updatingPruningPointUTXOSetKey, []byte{0})
 		if err != nil {
 			return err
 		}

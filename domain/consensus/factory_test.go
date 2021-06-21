@@ -1,6 +1,7 @@
 package consensus
 
 import (
+	"github.com/kaspanet/kaspad/domain/prefixmanager/prefix"
 	"io/ioutil"
 	"testing"
 
@@ -23,7 +24,7 @@ func TestNewConsensus(t *testing.T) {
 		t.Fatalf("error in NewLevelDB: %s", err)
 	}
 
-	_, err = f.NewConsensus(config, db)
+	_, err = f.NewConsensus(config, db, &prefix.Prefix{})
 	if err != nil {
 		t.Fatalf("error in NewConsensus: %+v", err)
 	}

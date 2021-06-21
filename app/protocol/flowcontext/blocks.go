@@ -162,7 +162,6 @@ func (f *FlowContext) UnsetIBDRunning() {
 	}
 
 	f.ibdPeer = nil
-	log.Infof("IBD finished")
 }
 
 // IBDPeer returns the current IBD peer or null if the node is not

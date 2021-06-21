@@ -28,7 +28,7 @@ func (hstss *headersSelectedTipStagingShard) Commit(dbTx model.DBTransaction) er
 	if err != nil {
 		return err
 	}
-	err = dbTx.Put(headerSelectedTipKey, selectedTipBytes)
+	err = dbTx.Put(hstss.store.key, selectedTipBytes)
 	if err != nil {
 		return err
 	}
