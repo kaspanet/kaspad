@@ -150,7 +150,6 @@ func (op *orphansPool) processOrphansAfterAcceptedTransaction(acceptedTransactio
 			if !ok {
 				continue
 			}
-			fmt.Printf("~~~~~ Orphan: %s\n", orphan.TransactionID())
 			for _, input := range orphan.Transaction().Inputs {
 				if input.PreviousOutpoint.Equal(&outpoint) {
 					input.UTXOEntry = utxo.NewUTXOEntry(output.Value, output.ScriptPublicKey, false,

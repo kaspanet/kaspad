@@ -175,7 +175,7 @@ func (tp *transactionsPool) limitTransactionCount() error {
 				break
 			}
 			currentIndex++
-			if currentIndex > len(tp.allTransactions) {
+			if currentIndex >= len(tp.allTransactions) {
 				log.Warnf(
 					"Number of high-priority transactions in mempool (%d) is higher than maximum allowed (%d)",
 					len(tp.allTransactions), tp.mempool.config.MaximumTransactionCount)
