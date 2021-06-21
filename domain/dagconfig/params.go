@@ -8,8 +8,6 @@ import (
 	"math/big"
 	"time"
 
-	"github.com/kaspanet/kaspad/domain/consensus/model"
-
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 
 	"github.com/kaspanet/kaspad/app/appmessage"
@@ -54,7 +52,7 @@ type KType uint8
 type Params struct {
 	// K defines the K parameter for GHOSTDAG consensus algorithm.
 	// See ghostdag.go for further details.
-	K model.KType
+	K externalapi.KType
 
 	// Name defines a human-readable identifier for the network.
 	Name string
@@ -154,7 +152,7 @@ type Params struct {
 	MaxBlockSize uint64
 
 	// MaxBlockParents is the maximum number of blocks a block is allowed to point to
-	MaxBlockParents model.KType
+	MaxBlockParents externalapi.KType
 
 	// MassPerTxByte is the number of grams that any byte
 	// adds to a transaction.

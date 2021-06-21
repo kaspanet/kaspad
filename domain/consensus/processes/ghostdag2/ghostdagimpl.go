@@ -12,7 +12,7 @@ import (
 )
 
 type ghostdagHelper struct {
-	k                  model.KType
+	k                  externalapi.KType
 	dataStore          model.GHOSTDAGDataStore
 	dbAccess           model.DBReader
 	dagTopologyManager model.DAGTopologyManager
@@ -25,7 +25,7 @@ func New(
 	dagTopologyManager model.DAGTopologyManager,
 	ghostdagDataStore model.GHOSTDAGDataStore,
 	headerStore model.BlockHeaderStore,
-	k model.KType) model.GHOSTDAGManager {
+	k externalapi.KType) model.GHOSTDAGManager {
 
 	return &ghostdagHelper{
 		dbAccess:           databaseContext,
@@ -115,7 +115,7 @@ func (gh *ghostdagHelper) GHOSTDAG(stagingArea *model.StagingArea, blockCandidat
 		myWork.Add(myWork, difficulty.CalcWork(header.Bits()))
 	}
 
-	e := model.NewBlockGHOSTDAGData(myScore, myWork, selectedParent, mergeSetBlues, mergeSetReds, nil)
+	e := externalapi.NewBlockGHOSTDAGData(myScore, myWork, selectedParent, mergeSetBlues, mergeSetReds, nil)
 	gh.dataStore.Stage(stagingArea, blockCandidate, e)
 	return nil
 }
@@ -399,14 +399,14 @@ func (gh *ghostdagHelper) sortByBlueWork(stagingArea *model.StagingArea, arr []*
 
 /* --------------------------------------------- */
 
-func (gh *ghostdagHelper) BlockData(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) (*model.BlockGHOSTDAGData, error) {
+func (gh *ghostdagHelper) BlockData(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) (*externalapi.BlockGHOSTDAGData, error) {
 	return gh.dataStore.Get(gh.dbAccess, stagingArea, blockHash)
 }
 func (gh *ghostdagHelper) ChooseSelectedParent(stagingArea *model.StagingArea, blockHashes ...*externalapi.DomainHash) (*externalapi.DomainHash, error) {
 	panic("implement me")
 }
 
-func (gh *ghostdagHelper) Less(blockHashA *externalapi.DomainHash, ghostdagDataA *model.BlockGHOSTDAGData, blockHashB *externalapi.DomainHash, ghostdagDataB *model.BlockGHOSTDAGData) bool {
+func (gh *ghostdagHelper) Less(blockHashA *externalapi.DomainHash, ghostdagDataA *externalapi.BlockGHOSTDAGData, blockHashB *externalapi.DomainHash, ghostdagDataB *externalapi.BlockGHOSTDAGData) bool {
 	panic("implement me")
 }
 

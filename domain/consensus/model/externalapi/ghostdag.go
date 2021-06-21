@@ -1,32 +1,30 @@
-package model
+package externalapi
 
 import (
 	"math/big"
-
-	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 )
 
 // KType defines the size of GHOSTDAG consensus algorithm K parameter.
-type KType byte // TODO: Move to externalapi
+type KType byte
 
 // BlockGHOSTDAGData represents GHOSTDAG data for some block
 type BlockGHOSTDAGData struct {
 	blueScore          uint64
 	blueWork           *big.Int
-	selectedParent     *externalapi.DomainHash
-	mergeSetBlues      []*externalapi.DomainHash
-	mergeSetReds       []*externalapi.DomainHash
-	bluesAnticoneSizes map[externalapi.DomainHash]KType
+	selectedParent     *DomainHash
+	mergeSetBlues      []*DomainHash
+	mergeSetReds       []*DomainHash
+	bluesAnticoneSizes map[DomainHash]KType
 }
 
 // NewBlockGHOSTDAGData creates a new instance of BlockGHOSTDAGData
 func NewBlockGHOSTDAGData(
 	blueScore uint64,
 	blueWork *big.Int,
-	selectedParent *externalapi.DomainHash,
-	mergeSetBlues []*externalapi.DomainHash,
-	mergeSetReds []*externalapi.DomainHash,
-	bluesAnticoneSizes map[externalapi.DomainHash]KType) *BlockGHOSTDAGData {
+	selectedParent *DomainHash,
+	mergeSetBlues []*DomainHash,
+	mergeSetReds []*DomainHash,
+	bluesAnticoneSizes map[DomainHash]KType) *BlockGHOSTDAGData {
 
 	return &BlockGHOSTDAGData{
 		blueScore:          blueScore,
@@ -49,21 +47,21 @@ func (bgd *BlockGHOSTDAGData) BlueWork() *big.Int {
 }
 
 // SelectedParent returns the SelectedParent of the block
-func (bgd *BlockGHOSTDAGData) SelectedParent() *externalapi.DomainHash {
+func (bgd *BlockGHOSTDAGData) SelectedParent() *DomainHash {
 	return bgd.selectedParent
 }
 
 // MergeSetBlues returns the MergeSetBlues of the block (not a copy)
-func (bgd *BlockGHOSTDAGData) MergeSetBlues() []*externalapi.DomainHash {
+func (bgd *BlockGHOSTDAGData) MergeSetBlues() []*DomainHash {
 	return bgd.mergeSetBlues
 }
 
 // MergeSetReds returns the MergeSetReds of the block (not a copy)
-func (bgd *BlockGHOSTDAGData) MergeSetReds() []*externalapi.DomainHash {
+func (bgd *BlockGHOSTDAGData) MergeSetReds() []*DomainHash {
 	return bgd.mergeSetReds
 }
 
 // BluesAnticoneSizes returns a map between the blocks in its MergeSetBlues and the size of their anticone
-func (bgd *BlockGHOSTDAGData) BluesAnticoneSizes() map[externalapi.DomainHash]KType {
+func (bgd *BlockGHOSTDAGData) BluesAnticoneSizes() map[DomainHash]KType {
 	return bgd.bluesAnticoneSizes
 }

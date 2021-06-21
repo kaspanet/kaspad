@@ -16,5 +16,6 @@ func (bi *BlockInfo) Clone() *BlockInfo {
 		Exists:      bi.Exists,
 		BlockStatus: bi.BlockStatus.Clone(),
 		BlueScore:   bi.BlueScore,
+		BlueWork:    new(big.Int).Set(bi.BlueWork),
 	}
 }

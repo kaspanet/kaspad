@@ -75,7 +75,7 @@ func TestBlockStatus(t *testing.T) {
 			disqualifiedBlock.Header.Nonce(),
 		)
 
-		_, err = tc.ValidateAndInsertBlock(disqualifiedBlock)
+		_, err = tc.ValidateAndInsertBlock(disqualifiedBlock, true)
 		if err != nil {
 			t.Fatalf("ValidateAndInsertBlock: %+v", err)
 		}
@@ -98,9 +98,9 @@ func TestBlockStatus(t *testing.T) {
 			disqualifiedBlock.Header.Nonce(),
 		)
 
-		_, err = tc.ValidateAndInsertBlock(invalidBlock)
+		_, err = tc.ValidateAndInsertBlock(invalidBlock, true)
 		if err == nil {
-			t.Fatalf("block is expected to be invalid")
+			t.Fatalf("block is expected to be invalid", true)
 		}
 		if !errors.As(err, &ruleerrors.RuleError{}) {
 			t.Fatalf("ValidateAndInsertBlock: %+v", err)
@@ -131,11 +131,11 @@ func TestValidateAndInsertErrors(t *testing.T) {
 		if err != nil {
 			t.Fatalf("AddBlock: %+v", err)
 		}
-		_, err = tc.ValidateAndInsertBlock(blockWithStatusInvalid)
+		_, err = tc.ValidateAndInsertBlock(blockWithStatusInvalid, true)
 		if err == nil {
 			t.Fatalf("Test ValidateAndInsertBlock: Expected an error, because the block is invalid.")
 		}
-		_, err = tc.ValidateAndInsertBlock(blockWithStatusInvalid)
+		_, err = tc.ValidateAndInsertBlock(blockWithStatusInvalid, true)
 		if err == nil || !errors.Is(err, ruleerrors.ErrKnownInvalid) {
 			t.Fatalf("Expected block to be invalid with err: %v, instead found: %v", ruleerrors.ErrKnownInvalid, err)
 		}
@@ -147,12 +147,12 @@ func TestValidateAndInsertErrors(t *testing.T) {
 		if err != nil {
 			t.Fatalf("AddBlock: %+v", err)
 		}
-		_, err = tc.ValidateAndInsertBlock(block)
+		_, err = tc.ValidateAndInsertBlock(block, true)
 		if err != nil {
 			t.Fatalf("ValidateAndInsertBlock: %+v", err)
 		}
 		// resend the same block.
-		_, err = tc.ValidateAndInsertBlock(block)
+		_, err = tc.ValidateAndInsertBlock(block, true)
 		if err == nil || !errors.Is(err, ruleerrors.ErrDuplicateBlock) {
 			t.Fatalf("Expected block to be invalid with err: %v, instead found: %v", ruleerrors.ErrDuplicateBlock, err)
 		}
@@ -165,12 +165,12 @@ func TestValidateAndInsertErrors(t *testing.T) {
 			t.Fatalf("AddBlock: %+v", err)
 		}
 		onlyHeader.Transactions = []*externalapi.DomainTransaction{}
-		_, err = tc.ValidateAndInsertBlock(onlyHeader)
+		_, err = tc.ValidateAndInsertBlock(onlyHeader, true)
 		if err != nil {
 			t.Fatalf("AddBlock: %+v", err)
 		}
 		// resend the same header.
-		_, err = tc.ValidateAndInsertBlock(onlyHeader)
+		_, err = tc.ValidateAndInsertBlock(onlyHeader, true)
 		if err == nil || !errors.Is(err, ruleerrors.ErrDuplicateBlock) {
 			t.Fatalf("Expected block to be invalid with err: %v, instead found: %v", ruleerrors.ErrDuplicateBlock, err)
 		}

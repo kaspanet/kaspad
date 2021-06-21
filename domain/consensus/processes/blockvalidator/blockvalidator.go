@@ -19,7 +19,7 @@ type blockValidator struct {
 	powMaxBits                  uint32
 	maxBlockSize                uint64
 	mergeSetSizeLimit           uint64
-	maxBlockParents             model.KType
+	maxBlockParents             externalapi.KType
 	timestampDeviationTolerance int
 	targetTimePerBlock          time.Duration
 
@@ -50,7 +50,7 @@ func New(powMax *big.Int,
 	enableNonNativeSubnetworks bool,
 	maxBlockSize uint64,
 	mergeSetSizeLimit uint64,
-	maxBlockParents model.KType,
+	maxBlockParents externalapi.KType,
 	timestampDeviationTolerance int,
 	targetTimePerBlock time.Duration,
 

@@ -9,7 +9,7 @@ import (
 
 type blockHeapNode struct {
 	hash         *externalapi.DomainHash
-	ghostdagData *model.BlockGHOSTDAGData
+	ghostdagData *externalapi.BlockGHOSTDAGData
 }
 
 func (left *blockHeapNode) less(right *blockHeapNode, gm model.GHOSTDAGManager) bool {
@@ -169,7 +169,7 @@ func (sbh *sizedUpBlockHeap) pop() *externalapi.DomainHash {
 
 // tryPushWithGHOSTDAGData is just like tryPush but the caller provides the ghostdagData of the block.
 func (sbh *sizedUpBlockHeap) tryPushWithGHOSTDAGData(blockHash *externalapi.DomainHash,
-	ghostdagData *model.BlockGHOSTDAGData) (bool, error) {
+	ghostdagData *externalapi.BlockGHOSTDAGData) (bool, error) {
 
 	node := &blockHeapNode{
 		hash:         blockHash,

@@ -54,8 +54,8 @@ func (gm *ghostdagManager) ChooseSelectedParent(stagingArea *model.StagingArea, 
 	return selectedParent, nil
 }
 
-func (gm *ghostdagManager) Less(blockHashA *externalapi.DomainHash, ghostdagDataA *model.BlockGHOSTDAGData,
-	blockHashB *externalapi.DomainHash, ghostdagDataB *model.BlockGHOSTDAGData) bool {
+func (gm *ghostdagManager) Less(blockHashA *externalapi.DomainHash, ghostdagDataA *externalapi.BlockGHOSTDAGData,
+	blockHashB *externalapi.DomainHash, ghostdagDataB *externalapi.BlockGHOSTDAGData) bool {
 	switch ghostdagDataA.BlueWork().Cmp(ghostdagDataB.BlueWork()) {
 	case -1:
 		return true

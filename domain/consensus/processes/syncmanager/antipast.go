@@ -98,8 +98,8 @@ func (sm *syncManager) antiPastHashesBetween(stagingArea *model.StagingArea, low
 }
 
 func (sm *syncManager) findHighHashAccordingToMaxBlueScoreDifference(stagingArea *model.StagingArea, lowHash *externalapi.DomainHash,
-	highHash *externalapi.DomainHash, maxBlueScoreDifference uint64, highBlockGHOSTDAGData *model.BlockGHOSTDAGData,
-	lowBlockGHOSTDAGData *model.BlockGHOSTDAGData) (*externalapi.DomainHash, error) {
+	highHash *externalapi.DomainHash, maxBlueScoreDifference uint64, highBlockGHOSTDAGData *externalapi.BlockGHOSTDAGData,
+	lowBlockGHOSTDAGData *externalapi.BlockGHOSTDAGData) (*externalapi.DomainHash, error) {
 
 	if highBlockGHOSTDAGData.BlueScore()-lowBlockGHOSTDAGData.BlueScore() <= maxBlueScoreDifference {
 		return highHash, nil

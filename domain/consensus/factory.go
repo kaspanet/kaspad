@@ -426,7 +426,7 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 				"expected genesis block %s is not found in the non-empty DAG \"%s\": wrong config or appdir?",
 				genesisHash, config.Params.Name)
 		}
-		_, err = c.ValidateAndInsertBlock(config.GenesisBlock)
+		_, err = c.ValidateAndInsertBlock(config.GenesisBlock, true) // TODO: Don't always add genesis
 		if err != nil {
 			return nil, err
 		}

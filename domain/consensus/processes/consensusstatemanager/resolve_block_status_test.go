@@ -189,7 +189,7 @@ func TestTransactionAcceptance(t *testing.T) {
 		// Add a chain of K blocks above blockC so we'll
 		// be able to mine a red block on top of it.
 		chainTipHash := blockHashC
-		for i := model.KType(0); i < consensusConfig.K; i++ {
+		for i := externalapi.KType(0); i < consensusConfig.K; i++ {
 			var err error
 			chainTipHash, _, err = testConsensus.AddBlock([]*externalapi.DomainHash{chainTipHash}, nil, nil)
 			if err != nil {

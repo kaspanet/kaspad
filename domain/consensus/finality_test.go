@@ -32,7 +32,7 @@ func TestFinality(t *testing.T) {
 				return nil, err
 			}
 
-			_, err = consensus.ValidateAndInsertBlock(block)
+			_, err = consensus.ValidateAndInsertBlock(block, true)
 			if err != nil {
 				return nil, err
 			}
@@ -194,7 +194,7 @@ func TestBoundedMergeDepth(t *testing.T) {
 				return nil, false // fo some reason go doesn't recognize that t.Fatalf never returns
 			}
 
-			_, err = consensus.ValidateAndInsertBlock(block)
+			_, err = consensus.ValidateAndInsertBlock(block, true)
 			if err == nil {
 				return block, false
 			} else if errors.Is(err, ruleerrors.ErrViolatingBoundedMergeDepth) {
@@ -206,7 +206,7 @@ func TestBoundedMergeDepth(t *testing.T) {
 		}
 
 		processBlock := func(consensus testapi.TestConsensus, block *externalapi.DomainBlock, name string) {
-			_, err := consensus.ValidateAndInsertBlock(block)
+			_, err := consensus.ValidateAndInsertBlock(block, true)
 			if err != nil {
 				t.Fatalf("TestBoundedMergeDepth: %s got unexpected error from ProcessBlock: %+v", name, err)
 
@@ -218,7 +218,7 @@ func TestBoundedMergeDepth(t *testing.T) {
 			if err != nil {
 				t.Fatalf("TestBoundedMergeDepth: Failed building block: %v", err)
 			}
-			_, err = consensus.ValidateAndInsertBlock(block)
+			_, err = consensus.ValidateAndInsertBlock(block, true)
 			if err != nil {
 				t.Fatalf("TestBoundedMergeDepth: Failed Inserting block to consensus: %v", err)
 			}

@@ -86,7 +86,7 @@ func testReorg(cfg *configFlags) {
 			block.Header = mutableHeader.ToImmutable()
 		}
 
-		_, err = tcAttacker.ValidateAndInsertBlock(block)
+		_, err = tcAttacker.ValidateAndInsertBlock(block, true)
 		if err != nil {
 			panic(err)
 		}
@@ -122,7 +122,7 @@ func testReorg(cfg *configFlags) {
 			if i%100 == 0 {
 				log.Infof("Validated %d blocks from the attacker chain", i)
 			}
-			_, err := tc.ValidateAndInsertBlock(block)
+			_, err := tc.ValidateAndInsertBlock(block, true)
 			if err != nil {
 				panic(err)
 			}

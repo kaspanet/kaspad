@@ -30,7 +30,7 @@ func (v *blockValidator) ValidateHeaderInContext(stagingArea *model.StagingArea,
 	if !hasValidatedHeader {
 		var logErr error
 		log.Debug(logger.NewLogClosure(func() string {
-			var ghostdagData *model.BlockGHOSTDAGData
+			var ghostdagData *externalapi.BlockGHOSTDAGData
 			ghostdagData, logErr = v.ghostdagDataStore.Get(v.databaseContext, stagingArea, blockHash)
 			if err != nil {
 				return ""

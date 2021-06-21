@@ -1,7 +1,6 @@
 package appmessage
 
 import (
-	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"math/big"
 )
@@ -40,5 +39,5 @@ type GHOSTDAGData struct {
 
 type BluesAnticoneSizes struct {
 	BlueHash     *externalapi.DomainHash
-	AnticoneSize model.KType
+	AnticoneSize externalapi.KType
 }

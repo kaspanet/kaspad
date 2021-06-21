@@ -49,6 +49,18 @@ type consensus struct {
 	daaBlocksStore            model.DAABlocksStore
 }
 
+func (s *consensus) ValidateAndInsertBlockWithMetaData(block *externalapi.BlockWithMetaData) (*externalapi.BlockInsertionResult, error) {
+	panic("implement me")
+}
+
+func (s *consensus) ResolveVirtual() error {
+	panic("implement me")
+}
+
+func (s *consensus) PruningPointAndItsAnticoneWithMetaData() ([]*externalapi.BlockWithMetaData, error) {
+	panic("implement me")
+}
+
 // BuildBlock builds a block over the current state, with the transactions
 // selected by the given transactionSelector
 func (s *consensus) BuildBlock(coinbaseData *externalapi.DomainCoinbaseData,
@@ -62,11 +74,11 @@ func (s *consensus) BuildBlock(coinbaseData *externalapi.DomainCoinbaseData,
 
 // ValidateAndInsertBlock validates the given block and, if valid, applies it
 // to the current state
-func (s *consensus) ValidateAndInsertBlock(block *externalapi.DomainBlock) (*externalapi.BlockInsertionResult, error) {
+func (s *consensus) ValidateAndInsertBlock(block *externalapi.DomainBlock, validateUTXO bool) (*externalapi.BlockInsertionResult, error) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	return s.blockProcessor.ValidateAndInsertBlock(block)
+	return s.blockProcessor.ValidateAndInsertBlock(block, validateUTXO)
 }
 
 // ValidateTransactionAndPopulateWithConsensusData validates the given transaction
@@ -186,10 +198,7 @@ func (s *consensus) GetBlockInfo(blockHash *externalapi.DomainHash) (*externalap
 	}
 
 	blockInfo.BlueScore = ghostdagData.BlueScore()
-
-	{
-		panic("TODO: FILL BLUE WORK")
-	}
+	blockInfo.BlueWork = ghostdagData.BlueWork()
 
 	return blockInfo, nil
 }
@@ -339,7 +348,7 @@ func (s *consensus) AppendImportedPruningPointUTXOs(outpointAndUTXOEntryPairs []
 	return s.pruningManager.AppendImportedPruningPointUTXOs(outpointAndUTXOEntryPairs)
 }
 
-func (s *consensus) ValidateAndInsertImportedPruningPoint(newPruningPoint *externalapi.DomainBlock) error {
+func (s *consensus) ValidateAndInsertImportedPruningPoint(newPruningPoint *externalapi.DomainHash) error {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 

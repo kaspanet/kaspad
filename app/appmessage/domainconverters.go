@@ -2,7 +2,6 @@ package appmessage
 
 import (
 	"encoding/hex"
-	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/blockheader"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/hashes"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/utxo"
@@ -396,7 +395,7 @@ func RPCBlockToDomainBlock(block *RPCBlock) (*externalapi.DomainBlock, error) {
 }
 
 func BlockWithMetaDataToDomainBlockWithMetaData(block *MsgBlockWithMetaData) *externalapi.BlockWithMetaData {
-	bluesAnticoneSizes := make(map[externalapi.DomainHash]model.KType, len(block.GHOSTDAGData.BluesAnticoneSizes))
+	bluesAnticoneSizes := make(map[externalapi.DomainHash]externalapi.KType, len(block.GHOSTDAGData.BluesAnticoneSizes))
 	for _, blueAnticoneSizes := range block.GHOSTDAGData.BluesAnticoneSizes {
 		bluesAnticoneSizes[*blueAnticoneSizes.BlueHash] = blueAnticoneSizes.AnticoneSize
 	}
@@ -404,7 +403,7 @@ func BlockWithMetaDataToDomainBlockWithMetaData(block *MsgBlockWithMetaData) *ex
 	return &externalapi.BlockWithMetaData{
 		Block:    MsgBlockToDomainBlock(block.Block),
 		DAAScore: block.DAAScore,
-		GHOSTDAGData: model.NewBlockGHOSTDAGData(
+		GHOSTDAGData: externalapi.NewBlockGHOSTDAGData(
 			block.GHOSTDAGData.BlueScore,
 			block.GHOSTDAGData.BlueWork,
 			block.GHOSTDAGData.SelectedParent,

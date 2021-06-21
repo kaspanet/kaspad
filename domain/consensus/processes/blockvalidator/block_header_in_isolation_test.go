@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	"github.com/kaspanet/kaspad/domain/consensus"
-	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/blockheader"
@@ -24,7 +23,7 @@ func TestCheckParentsLimit(t *testing.T) {
 		}
 		defer teardown(false)
 
-		for i := model.KType(0); i < consensusConfig.MaxBlockParents+1; i++ {
+		for i := externalapi.KType(0); i < consensusConfig.MaxBlockParents+1; i++ {
 			_, _, err = tc.AddBlock([]*externalapi.DomainHash{consensusConfig.GenesisHash}, nil, nil)
 			if err != nil {
 				t.Fatalf("AddBlock: %+v", err)
@@ -69,7 +68,7 @@ func TestCheckBlockVersion(t *testing.T) {
 			block.Header.Nonce(),
 		)
 
-		_, err = tc.ValidateAndInsertBlock(block)
+		_, err = tc.ValidateAndInsertBlock(block, true)
 		if !errors.Is(err, ruleerrors.ErrBlockVersionIsUnknown) {
 			t.Fatalf("Unexpected error: %+v", err)
 		}
@@ -106,7 +105,7 @@ func TestCheckBlockTimestampInIsolation(t *testing.T) {
 			block.Header.Nonce(),
 		)
 
-		_, err = tc.ValidateAndInsertBlock(block)
+		_, err = tc.ValidateAndInsertBlock(block, true)
 		if !errors.Is(err, ruleerrors.ErrTimeTooMuchInTheFuture) {
 			t.Fatalf("Unexpected error: %+v", err)
 		}

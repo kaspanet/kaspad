@@ -25,7 +25,7 @@ func addBlock(tcSyncer, tcSyncee testapi.TestConsensus, parentHashes []*external
 		t.Fatalf("BuildBlockWithParents: %+v", err)
 	}
 
-	_, err = tcSyncer.ValidateAndInsertBlock(block)
+	_, err = tcSyncer.ValidateAndInsertBlock(block, true)
 	if err != nil {
 		t.Fatalf("ValidateAndInsertBlock: %+v", err)
 	}
@@ -33,7 +33,7 @@ func addBlock(tcSyncer, tcSyncee testapi.TestConsensus, parentHashes []*external
 	_, err = tcSyncee.ValidateAndInsertBlock(&externalapi.DomainBlock{
 		Header:       block.Header,
 		Transactions: nil,
-	})
+	}, true)
 	if err != nil {
 		t.Fatalf("ValidateAndInsertBlock: %+v", err)
 	}

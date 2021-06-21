@@ -4,16 +4,14 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
 	"github.com/pkg/errors"
 )
 
 func (bp *blockProcessor) validateAndInsertImportedPruningPoint(
-	stagingArea *model.StagingArea, newPruningPoint *externalapi.DomainBlock) error {
+	stagingArea *model.StagingArea, newPruningPointHash *externalapi.DomainHash) error {
 
 	log.Info("Checking that the given pruning point is the expected pruning point")
 
-	newPruningPointHash := consensushashing.BlockHash(newPruningPoint)
 	isValidPruningPoint, err := bp.pruningManager.IsValidPruningPoint(stagingArea, newPruningPointHash)
 	if err != nil {
 		return err
@@ -24,15 +22,18 @@ func (bp *blockProcessor) validateAndInsertImportedPruningPoint(
 			newPruningPointHash)
 	}
 
-	// We have to validate the pruning point block before we set the new pruning point in consensusStateManager.
-	log.Infof("Validating the new pruning point %s", newPruningPointHash)
-	err = bp.validateBlockAndDiscardChanges(newPruningPoint, true)
+	log.Infof("Updating consensus state manager according to the new pruning point %s", newPruningPointHash)
+	newPruningPoint, err := bp.blockStore.Block(bp.databaseContext, stagingArea, newPruningPointHash)
 	if err != nil {
 		return err
 	}
 
-	log.Infof("Updating consensus state manager according to the new pruning point %s", newPruningPointHash)
 	err = bp.consensusStateManager.ImportPruningPoint(stagingArea, newPruningPoint)
+	if err != nil {
+		return err
+	}
+
+	err = bp.updateVirtualAcceptanceDataAfterImportingPruningPoint(stagingArea)
 	if err != nil {
 		return err
 	}

@@ -9,7 +9,7 @@ import (
 type consensusStateManager struct {
 	pruningDepth           uint64
 	maxMassAcceptedByBlock uint64
-	maxBlockParents        model.KType
+	maxBlockParents        externalapi.KType
 	mergeSetSizeLimit      uint64
 	genesisHash            *externalapi.DomainHash
 	databaseContext        model.DBManager
@@ -47,7 +47,7 @@ func New(
 	databaseContext model.DBManager,
 	pruningDepth uint64,
 	maxMassAcceptedByBlock uint64,
-	maxBlockParents model.KType,
+	maxBlockParents externalapi.KType,
 	mergeSetSizeLimit uint64,
 	genesisHash *externalapi.DomainHash,
 

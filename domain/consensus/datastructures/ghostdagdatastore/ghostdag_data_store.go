@@ -27,7 +27,7 @@ func New(prefix *prefix.Prefix, cacheSize int, preallocate bool) model.GHOSTDAGD
 }
 
 // Stage stages the given blockGHOSTDAGData for the given blockHash
-func (gds *ghostdagDataStore) Stage(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash, blockGHOSTDAGData *model.BlockGHOSTDAGData) {
+func (gds *ghostdagDataStore) Stage(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash, blockGHOSTDAGData *externalapi.BlockGHOSTDAGData) {
 	stagingShard := gds.stagingShard(stagingArea)
 
 	stagingShard.toAdd[*blockHash] = blockGHOSTDAGData
@@ -38,7 +38,7 @@ func (gds *ghostdagDataStore) IsStaged(stagingArea *model.StagingArea) bool {
 }
 
 // Get gets the blockGHOSTDAGData associated with the given blockHash
-func (gds *ghostdagDataStore) Get(dbContext model.DBReader, stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) (*model.BlockGHOSTDAGData, error) {
+func (gds *ghostdagDataStore) Get(dbContext model.DBReader, stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) (*externalapi.BlockGHOSTDAGData, error) {
 	stagingShard := gds.stagingShard(stagingArea)
 
 	if blockGHOSTDAGData, ok := stagingShard.toAdd[*blockHash]; ok {
@@ -46,7 +46,7 @@ func (gds *ghostdagDataStore) Get(dbContext model.DBReader, stagingArea *model.S
 	}
 
 	if blockGHOSTDAGData, ok := gds.cache.Get(blockHash); ok {
-		return blockGHOSTDAGData.(*model.BlockGHOSTDAGData), nil
+		return blockGHOSTDAGData.(*externalapi.BlockGHOSTDAGData), nil
 	}
 
 	blockGHOSTDAGDataBytes, err := dbContext.Get(gds.hashAsKey(blockHash))
@@ -66,11 +66,11 @@ func (gds *ghostdagDataStore) hashAsKey(hash *externalapi.DomainHash) model.DBKe
 	return gds.bucket.Key(hash.ByteSlice())
 }
 
-func (gds *ghostdagDataStore) serializeBlockGHOSTDAGData(blockGHOSTDAGData *model.BlockGHOSTDAGData) ([]byte, error) {
+func (gds *ghostdagDataStore) serializeBlockGHOSTDAGData(blockGHOSTDAGData *externalapi.BlockGHOSTDAGData) ([]byte, error) {
 	return proto.Marshal(serialization.BlockGHOSTDAGDataToDBBlockGHOSTDAGData(blockGHOSTDAGData))
 }
 
-func (gds *ghostdagDataStore) deserializeBlockGHOSTDAGData(blockGHOSTDAGDataBytes []byte) (*model.BlockGHOSTDAGData, error) {
+func (gds *ghostdagDataStore) deserializeBlockGHOSTDAGData(blockGHOSTDAGDataBytes []byte) (*externalapi.BlockGHOSTDAGData, error) {
 	dbBlockGHOSTDAGData := &serialization.DbBlockGhostdagData{}
 	err := proto.Unmarshal(blockGHOSTDAGDataBytes, dbBlockGHOSTDAGData)
 	if err != nil {

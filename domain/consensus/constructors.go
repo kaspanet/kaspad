@@ -9,7 +9,7 @@ import (
 
 // GHOSTDAGManagerConstructor is the function signature for a constructor of a type implementing model.GHOSTDAGManager
 type GHOSTDAGManagerConstructor func(model.DBReader, model.DAGTopologyManager,
-	model.GHOSTDAGDataStore, model.BlockHeaderStore, model.KType) model.GHOSTDAGManager
+	model.GHOSTDAGDataStore, model.BlockHeaderStore, externalapi.KType) model.GHOSTDAGManager
 
 // DifficultyManagerConstructor is the function signature for a constructor of a type implementing model.DifficultyManager
 type DifficultyManagerConstructor func(model.DBReader, model.GHOSTDAGManager, model.GHOSTDAGDataStore,
