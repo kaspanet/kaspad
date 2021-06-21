@@ -370,23 +370,14 @@ func TestHighPriorityTransactions(t *testing.T) {
 		if err != nil {
 			t.Fatalf("error creating low-priority transaction pair: %+v", err)
 		}
-		t.Logf("~~~~~ lowPriorityParentTransaction: %s, lowPriorityChildTransaction: %s",
-			consensushashing.TransactionID(lowPriorityParentTransaction),
-			consensushashing.TransactionID(lowPriorityChildTransaction))
 		firstHighPriorityParentTransaction, firstHighPriorityChildTransaction, err := createParentAndChildrenTransactions(tc)
 		if err != nil {
 			t.Fatalf("error creating first high-priority transaction pair: %+v", err)
 		}
-		t.Logf("~~~~~ firstHighPriorityParentTransaction: %s, firstHighPriorityChildTransaction: %s",
-			consensushashing.TransactionID(firstHighPriorityParentTransaction),
-			consensushashing.TransactionID(firstHighPriorityChildTransaction))
 		secondHighPriorityParentTransaction, secondHighPriorityChildTransaction, err := createParentAndChildrenTransactions(tc)
 		if err != nil {
 			t.Fatalf("error creating second high-priority transaction pair: %+v", err)
 		}
-		t.Logf("~~~~~ secondHighPriorityParentTransaction: %s, secondHighPriorityChildTransaction: %s",
-			consensushashing.TransactionID(secondHighPriorityParentTransaction),
-			consensushashing.TransactionID(secondHighPriorityChildTransaction))
 
 		// Submit all the children, make sure the 2 highPriority ones remain in the orphan pool
 		_, err = miningManager.ValidateAndInsertTransaction(lowPriorityChildTransaction, false, true)
@@ -464,18 +455,18 @@ func TestRevalidateHighPriorityTransactions(t *testing.T) {
 		miningManager := miningFactory.NewMiningManager(tc, &consensusConfig.Params, mempoolConfig)
 
 		// Create two valid transactions that double-spend each other (childTransaction1, childTransaction2)
-		childTransaction1, parentTransaction, err := createParentAndChildrenTransactions(tc)
+		parentTransaction, childTransaction1, err := createParentAndChildrenTransactions(tc)
 		if err != nil {
-			return
+			t.Fatalf("Error creating parentTransaction and childTransaction1: %+v", err)
 		}
 		tips, err := tc.Tips()
 		if err != nil {
-			return
+			t.Fatalf("Error getting tips: %+v", err)
 		}
 
 		fundingBlock, _, err := tc.AddBlock(tips, nil, []*externalapi.DomainTransaction{parentTransaction})
 		if err != nil {
-			return
+			t.Fatalf("Error getting function block: %+v", err)
 		}
 
 		childTransaction2 := childTransaction1.Clone()
@@ -486,33 +477,32 @@ func TestRevalidateHighPriorityTransactions(t *testing.T) {
 		tip1, _, err := tc.AddBlock([]*externalapi.DomainHash{fundingBlock}, nil,
 			[]*externalapi.DomainTransaction{childTransaction1})
 		if err != nil {
-			return
+			t.Fatalf("Error adding tip1: %+v", err)
 		}
 		tip2, _, err := tc.AddBlock([]*externalapi.DomainHash{fundingBlock}, nil,
 			[]*externalapi.DomainTransaction{childTransaction2})
 		if err != nil {
-			return
+			t.Fatalf("Error adding tip2: %+v", err)
 		}
-		_, _, err = tc.AddBlock([]*externalapi.DomainHash{tip2}, nil,
-			[]*externalapi.DomainTransaction{childTransaction2})
+		_, _, err = tc.AddBlock([]*externalapi.DomainHash{tip2}, nil, nil)
 		if err != nil {
-			return
+			t.Fatalf("Error mining on top of tip2: %+v", err)
 		}
 
 		// Add to mempool transaction that spends childTransaction2 (as high priority)
 		spendingTransaction, err := testutils.CreateTransaction(childTransaction2, 1000)
 		if err != nil {
-			return
+			t.Fatalf("Error creating spendingTransaction: %+v", err)
 		}
 		_, err = miningManager.ValidateAndInsertTransaction(spendingTransaction, true, false)
 		if err != nil {
-			return
+			t.Fatalf("Error inserting spendingTransaction: %+v", err)
 		}
 
 		// Revalidate, to make sure spendingTransaction is still valid
 		validTransactions, err := miningManager.RevalidateHighPriorityTransactions()
 		if err != nil {
-			return
+			t.Fatalf("Error from first RevalidateHighPriorityTransactions: %+v", err)
 		}
 		if len(validTransactions) != 1 || !validTransactions[0].Equal(spendingTransaction) {
 			t.Fatalf("Expected to have spendingTransaction as only validTransaction returned from "+
@@ -520,26 +510,24 @@ func TestRevalidateHighPriorityTransactions(t *testing.T) {
 		}
 
 		// Mine 2 more blocks on top of tip1, to re-org out childTransaction1, thus making spendingTransaction invalid
-		tip1, _, err = tc.AddBlock([]*externalapi.DomainHash{tip1}, nil, nil)
-		if err != nil {
-			return
-		}
-		_, _, err = tc.AddBlock([]*externalapi.DomainHash{tip1}, nil, nil)
-		if err != nil {
-			return
+		for i := 0; i < 2; i++ {
+			tip1, _, err = tc.AddBlock([]*externalapi.DomainHash{tip1}, nil, nil)
+			if err != nil {
+				t.Fatalf("Error mining on top of tip1: %+v", err)
+			}
 		}
 
-		// Make sure validTransaction is still in mempool
+		// Make sure spendingTransaction is still in mempool
 		allTransactions := miningManager.AllTransactions()
-		if len(allTransactions) != 0 {
-			t.Fatalf("Expected to have spendingTransaction as only transaction returned from "+
-				"AllTransactions, but got %v instead", allTransactions)
+		if len(allTransactions) != 1 || !allTransactions[0].Equal(spendingTransaction) {
+			t.Fatalf("Expected to have spendingTransaction as only validTransaction returned from "+
+				"RevalidateHighPriorityTransactions, but got %v instead", validTransactions)
 		}
 
 		// Revalidate again, this time validTransactions should be empty
 		validTransactions, err = miningManager.RevalidateHighPriorityTransactions()
 		if err != nil {
-			return
+			t.Fatalf("Error from first RevalidateHighPriorityTransactions: %+v", err)
 		}
 		if len(validTransactions) != 0 {
 			t.Fatalf("Expected to have empty validTransactions, but got %v instead", validTransactions)
@@ -603,8 +591,8 @@ func createArraysOfParentAndChildrenTransactions(tc testapi.TestConsensus) ([]*e
 	return parentTransactions, transactions, nil
 }
 
-func createParentAndChildrenTransactions(tc testapi.TestConsensus) (txChild *externalapi.DomainTransaction,
-	txParent *externalapi.DomainTransaction, err error) {
+func createParentAndChildrenTransactions(tc testapi.TestConsensus) (txParent *externalapi.DomainTransaction,
+	txChild *externalapi.DomainTransaction, err error) {
 
 	// We will add two blocks by consensus before the parent transactions, in order to fund the parent transactions.
 	tips, err := tc.Tips()
