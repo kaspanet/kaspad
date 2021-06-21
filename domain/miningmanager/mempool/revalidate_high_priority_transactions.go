@@ -3,7 +3,6 @@ package mempool
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/miningmanager/mempool/model"
-	"github.com/pkg/errors"
 )
 
 func (mp *mempool) revalidateHighPriorityTransactions() ([]*externalapi.DomainTransaction, error) {
@@ -26,17 +25,6 @@ func (mp *mempool) revalidateHighPriorityTransactions() ([]*externalapi.DomainTr
 
 func (mp *mempool) revalidateTransaction(transaction *model.MempoolTransaction) (isValid bool, err error) {
 	clearInputs(transaction)
-	err = mp.mempoolUTXOSet.checkDoubleSpends(transaction.Transaction())
-	if err != nil {
-		if errors.As(err, &RuleError{}) {
-			err := mp.removeTransaction(transaction.TransactionID(), true)
-			if err != nil {
-				return false, err
-			}
-			return false, nil
-		}
-		return false, err
-	}
 
 	_, missingParents, err := mp.fillInputsAndGetMissingParents(transaction.Transaction())
 	if err != nil {
