@@ -36,7 +36,12 @@ func newOrphansPool(mp *mempool) *orphansPool {
 
 // this function MUST be called with the mempool mutex locked for writes
 func (op *orphansPool) maybeAddOrphan(transaction *externalapi.DomainTransaction, isHighPriority bool) error {
-	err := op.checkOrphanSize(transaction)
+	err := op.checkOrphanDuplicate(transaction)
+	if err != nil {
+		return err
+	}
+
+	err = op.checkOrphanSize(transaction)
 	if err != nil {
 		return err
 	}
@@ -83,6 +88,15 @@ func (op *orphansPool) checkOrphanSize(transaction *externalapi.DomainTransactio
 			"larger than max allowed size of %d bytes",
 			serializedLength, op.mempool.config.MaximumOrphanTransactionSize)
 		return transactionRuleError(RejectBadOrphan, str)
+	}
+	return nil
+}
+
+func (op *orphansPool) checkOrphanDuplicate(transaction *externalapi.DomainTransaction) error {
+	if _, ok := op.allOrphans[*consensushashing.TransactionID(transaction)]; ok {
+		str := fmt.Sprintf("Orphan transacion %s is already in the orphan pool",
+			consensushashing.TransactionID(transaction))
+		return transactionRuleError(RejectDuplicate, str)
 	}
 	return nil
 }
