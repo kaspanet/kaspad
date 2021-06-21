@@ -449,6 +449,109 @@ func TestHighPriorityTransactions(t *testing.T) {
 	})
 }
 
+func TestRevalidateHighPriorityTransactions(t *testing.T) {
+	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
+		consensusConfig.BlockCoinbaseMaturity = 0
+		factory := consensus.NewFactory()
+		tc, teardown, err := factory.NewTestConsensus(consensusConfig, "TestDoubleSpendWithBlock")
+		if err != nil {
+			t.Fatalf("Failed setting up TestConsensus: %+v", err)
+		}
+		defer teardown(false)
+
+		miningFactory := miningmanager.NewFactory()
+		mempoolConfig := mempool.DefaultConfig(&consensusConfig.Params)
+		miningManager := miningFactory.NewMiningManager(tc, &consensusConfig.Params, mempoolConfig)
+
+		// Create two valid transactions that double-spend each other (childTransaction1, childTransaction2)
+		childTransaction1, parentTransaction, err := createParentAndChildrenTransactions(tc)
+		if err != nil {
+			return
+		}
+		tips, err := tc.Tips()
+		if err != nil {
+			return
+		}
+
+		fundingBlock, _, err := tc.AddBlock(tips, nil, []*externalapi.DomainTransaction{parentTransaction})
+		if err != nil {
+			return
+		}
+
+		childTransaction2 := childTransaction1.Clone()
+		childTransaction2.Outputs[0].Value-- // decrement value to change id
+
+		// Mine 1 block with confirming childTransaction1 and 2 blocks confirming childTransaction2, so that
+		// childTransaction2 is accepted
+		tip1, _, err := tc.AddBlock([]*externalapi.DomainHash{fundingBlock}, nil,
+			[]*externalapi.DomainTransaction{childTransaction1})
+		if err != nil {
+			return
+		}
+		tip2, _, err := tc.AddBlock([]*externalapi.DomainHash{fundingBlock}, nil,
+			[]*externalapi.DomainTransaction{childTransaction2})
+		if err != nil {
+			return
+		}
+		_, _, err = tc.AddBlock([]*externalapi.DomainHash{tip2}, nil,
+			[]*externalapi.DomainTransaction{childTransaction2})
+		if err != nil {
+			return
+		}
+
+		// Add to mempool transaction that spends childTransaction2 (as high priority)
+		spendingTransaction, err := testutils.CreateTransaction(childTransaction2, 1000)
+		if err != nil {
+			return
+		}
+		_, err = miningManager.ValidateAndInsertTransaction(spendingTransaction, true, false)
+		if err != nil {
+			return
+		}
+
+		// Revalidate, to make sure spendingTransaction is still valid
+		validTransactions, err := miningManager.RevalidateHighPriorityTransactions()
+		if err != nil {
+			return
+		}
+		if len(validTransactions) != 1 || !validTransactions[0].Equal(spendingTransaction) {
+			t.Fatalf("Expected to have spendingTransaction as only validTransaction returned from "+
+				"RevalidateHighPriorityTransactions, but got %v instead", validTransactions)
+		}
+
+		// Mine 2 more blocks on top of tip1, to re-org out childTransaction1, thus making spendingTransaction invalid
+		tip1, _, err = tc.AddBlock([]*externalapi.DomainHash{tip1}, nil, nil)
+		if err != nil {
+			return
+		}
+		_, _, err = tc.AddBlock([]*externalapi.DomainHash{tip1}, nil, nil)
+		if err != nil {
+			return
+		}
+
+		// Make sure validTransaction is still in mempool
+		allTransactions := miningManager.AllTransactions()
+		if len(allTransactions) != 0 {
+			t.Fatalf("Expected to have spendingTransaction as only transaction returned from "+
+				"AllTransactions, but got %v instead", allTransactions)
+		}
+
+		// Revalidate again, this time validTransactions should be empty
+		validTransactions, err = miningManager.RevalidateHighPriorityTransactions()
+		if err != nil {
+			return
+		}
+		if len(validTransactions) != 0 {
+			t.Fatalf("Expected to have empty validTransactions, but got %v instead", validTransactions)
+		}
+		// And also AllTransactions should be empty as well
+		allTransactions = miningManager.AllTransactions()
+		if len(allTransactions) != 0 {
+			t.Fatalf("Expected to have empty allTransactions, but got %v instead", allTransactions)
+		}
+	})
+}
+
 func createTransactionWithUTXOEntry(t *testing.T, i int) *externalapi.DomainTransaction {
 	prevOutTxID := externalapi.DomainTransactionID{}
 	prevOutPoint := externalapi.DomainOutpoint{TransactionID: prevOutTxID, Index: uint32(i)}
