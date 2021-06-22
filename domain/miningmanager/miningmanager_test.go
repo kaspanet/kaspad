@@ -124,7 +124,7 @@ func TestInsertDoubleTransactionsToMempool(t *testing.T) {
 }
 
 // TestDoubleSpendInMempool verifies that an attempt to insert a transaction double-spending
-// another transactio already in  the mempool will result in raising an appropriate error.
+// another transaction already in  the mempool will result in raising an appropriate error.
 func TestDoubleSpendInMempool(t *testing.T) {
 	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
 		consensusConfig.BlockCoinbaseMaturity = 0
@@ -137,13 +137,17 @@ func TestDoubleSpendInMempool(t *testing.T) {
 
 		miningFactory := miningmanager.NewFactory()
 		miningManager := miningFactory.NewMiningManager(tc, &consensusConfig.Params, mempool.DefaultConfig(&consensusConfig.Params))
-		transaction := createTransactionWithUTXOEntry(t, 0)
+		transaction, err := createChildTxWhenParentTxWasAddedByConsensus(tc)
+		if err != nil {
+			return
+		}
 		_, err = miningManager.ValidateAndInsertTransaction(transaction, false, true)
 		if err != nil {
 			t.Fatalf("ValidateAndInsertTransaction: %v", err)
 		}
 
-		doubleSpendingTransaction := createTransactionWithUTXOEntry(t, 0)
+		doubleSpendingTransaction := transaction.Clone()
+		doubleSpendingTransaction.ID = nil
 		doubleSpendingTransaction.Outputs[0].Value-- // do some minor change so that txID is different
 
 		_, err = miningManager.ValidateAndInsertTransaction(doubleSpendingTransaction, false, true)
