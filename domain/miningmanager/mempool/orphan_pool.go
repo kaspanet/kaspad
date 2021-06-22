@@ -15,21 +15,21 @@ import (
 	"github.com/pkg/errors"
 )
 
-type idsToOrphans map[externalapi.DomainTransactionID]*model.OrphanTransaction
-type previousOutpointToOrphans map[externalapi.DomainOutpoint]*model.OrphanTransaction
+type idToOrphanMap map[externalapi.DomainTransactionID]*model.OrphanTransaction
+type previousOutpointToOrphanMap map[externalapi.DomainOutpoint]*model.OrphanTransaction
 
 type orphansPool struct {
 	mempool                   *mempool
-	allOrphans                idsToOrphans
-	orphansByPreviousOutpoint previousOutpointToOrphans
+	allOrphans                idToOrphanMap
+	orphansByPreviousOutpoint previousOutpointToOrphanMap
 	lastExpireScan            uint64
 }
 
 func newOrphansPool(mp *mempool) *orphansPool {
 	return &orphansPool{
 		mempool:                   mp,
-		allOrphans:                idsToOrphans{},
-		orphansByPreviousOutpoint: previousOutpointToOrphans{},
+		allOrphans:                idToOrphanMap{},
+		orphansByPreviousOutpoint: previousOutpointToOrphanMap{},
 		lastExpireScan:            0,
 	}
 }

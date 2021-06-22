@@ -7,9 +7,9 @@ import (
 
 type transactionsPool struct {
 	mempool                               *mempool
-	allTransactions                       model.IDsToTransactions
-	highPriorityTransactions              model.IDsToTransactions
-	chainedTransactionsByPreviousOutpoint model.OutpointsToTransactions
+	allTransactions                       model.IDToTransactionMap
+	highPriorityTransactions              model.IDToTransactionMap
+	chainedTransactionsByPreviousOutpoint model.OutpointToTransactionMap
 	transactionsOrderedByFeeRate          model.TransactionsOrderedByFeeRate
 	lastExpireScan                        uint64
 }
@@ -17,9 +17,9 @@ type transactionsPool struct {
 func newTransactionsPool(mp *mempool) *transactionsPool {
 	return &transactionsPool{
 		mempool:                               mp,
-		allTransactions:                       model.IDsToTransactions{},
-		highPriorityTransactions:              model.IDsToTransactions{},
-		chainedTransactionsByPreviousOutpoint: model.OutpointsToTransactions{},
+		allTransactions:                       model.IDToTransactionMap{},
+		highPriorityTransactions:              model.IDToTransactionMap{},
+		chainedTransactionsByPreviousOutpoint: model.OutpointToTransactionMap{},
 		transactionsOrderedByFeeRate:          model.TransactionsOrderedByFeeRate{},
 		lastExpireScan:                        0,
 	}
@@ -27,7 +27,7 @@ func newTransactionsPool(mp *mempool) *transactionsPool {
 
 // this function MUST be called with the mempool mutex locked for writes
 func (tp *transactionsPool) addTransaction(transaction *externalapi.DomainTransaction,
-	parentTransactionsInPool model.OutpointsToTransactions, isHighPriority bool) (*model.MempoolTransaction, error) {
+	parentTransactionsInPool model.OutpointToTransactionMap, isHighPriority bool) (*model.MempoolTransaction, error) {
 
 	virtualDAAScore, err := tp.mempool.consensus.GetVirtualDAAScore()
 	if err != nil {
@@ -130,9 +130,9 @@ func (tp *transactionsPool) allReadyTransactions() []*externalapi.DomainTransact
 
 // this function MUST be called with the mempool mutex locked for reads
 func (tp *transactionsPool) getParentTransactionsInPool(
-	transaction *externalapi.DomainTransaction) model.OutpointsToTransactions {
+	transaction *externalapi.DomainTransaction) model.OutpointToTransactionMap {
 
-	parentsTransactionsInPool := model.OutpointsToTransactions{}
+	parentsTransactionsInPool := model.OutpointToTransactionMap{}
 
 	for _, input := range transaction.Inputs {
 		if transaction, ok := tp.allTransactions[input.PreviousOutpoint.TransactionID]; ok {
