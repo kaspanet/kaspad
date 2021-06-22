@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/kaspanet/kaspad/util/panics"
 	"os"
 
 	"github.com/kaspanet/kaspad/infrastructure/logger"
@@ -11,6 +12,7 @@ import (
 var (
 	backendLog = logger.NewBackend()
 	log        = backendLog.Logger("DAAT")
+	spawn      = panics.GoroutineWrapperFunc(log)
 )
 
 func initLog(logFile, errLogFile string) {
