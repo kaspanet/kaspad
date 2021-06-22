@@ -1,4 +1,4 @@
-package daa
+package main
 
 import (
 	"fmt"

@@ -1,4 +1,4 @@
-package daa
+package main
 
 import (
 	"path/filepath"
