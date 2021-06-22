@@ -53,21 +53,27 @@ func (op *orphansPool) maybeAddOrphan(transaction *externalapi.DomainTransaction
 	if err != nil {
 		return err
 	}
+
+	err = op.addOrphan(transaction, isHighPriority)
+	if err != nil {
+		return err
+	}
+
 	err = op.limitOrphanPoolSize()
 	if err != nil {
 		return err
 	}
 
-	return op.addOrphan(transaction, isHighPriority)
+	return nil
 }
 
 func (op *orphansPool) limitOrphanPoolSize() error {
-	for len(op.allOrphans) >= op.mempool.config.MaximumOrphanTransactionCount {
+	for len(op.allOrphans) > op.mempool.config.MaximumOrphanTransactionCount {
 		orphanToRemove := op.randomNonHighPriorityOrphan()
 		if orphanToRemove == nil { // this means all orphans are HighPriority
 			log.Warnf(
 				"Number of high-priority transactions in orphanPool (%d) is higher than maximum allowed (%d)",
-				len(op.allOrphans)+1, // Add + 1 because the current orphan hasn't been added yet
+				len(op.allOrphans),
 				op.mempool.config.MaximumOrphanTransactionCount)
 			break
 		}
