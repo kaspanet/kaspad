@@ -167,7 +167,7 @@ func (tp *transactionsPool) getRedeemers(transaction *model.MempoolTransaction) 
 func (tp *transactionsPool) limitTransactionCount() error {
 	currentIndex := 0
 
-	for len(tp.allTransactions) > tp.mempool.config.MaximumTransactionCount {
+	for uint64(len(tp.allTransactions)) > tp.mempool.config.MaximumTransactionCount {
 		var transactionToRemove *model.MempoolTransaction
 		for {
 			transactionToRemove = tp.transactionsOrderedByFeeRate.GetByIndex(currentIndex)

@@ -35,13 +35,13 @@ const (
 
 // Config represents a mempool configuration
 type Config struct {
-	MaximumTransactionCount               int
+	MaximumTransactionCount               uint64
 	TransactionExpireIntervalDAAScore     uint64
 	TransactionExpireScanIntervalDAAScore uint64
 	OrphanExpireIntervalDAAScore          uint64
 	OrphanExpireScanIntervalDAAScore      uint64
-	MaximumOrphanTransactionSize          int
-	MaximumOrphanTransactionCount         int
+	MaximumOrphanTransactionSize          uint64
+	MaximumOrphanTransactionCount         uint64
 	AcceptNonStandard                     bool
 	MaximumMassAcceptedByBlock            uint64
 	MinimumRelayTransactionFee            util.Amount

@@ -36,7 +36,7 @@ func newOrphansPool(mp *mempool) *orphansPool {
 
 // this function MUST be called with the mempool mutex locked for writes
 func (op *orphansPool) maybeAddOrphan(transaction *externalapi.DomainTransaction, isHighPriority bool) error {
-	if op.mempool.config.MaximumOrphanTransactionCount <= 0 {
+	if op.mempool.config.MaximumOrphanTransactionCount == 0 {
 		return nil
 	}
 
@@ -68,7 +68,7 @@ func (op *orphansPool) maybeAddOrphan(transaction *externalapi.DomainTransaction
 }
 
 func (op *orphansPool) limitOrphanPoolSize() error {
-	for len(op.allOrphans) > op.mempool.config.MaximumOrphanTransactionCount {
+	for uint64(len(op.allOrphans)) > op.mempool.config.MaximumOrphanTransactionCount {
 		orphanToRemove := op.randomNonHighPriorityOrphan()
 		if orphanToRemove == nil { // this means all orphans are HighPriority
 			log.Warnf(
@@ -90,7 +90,7 @@ func (op *orphansPool) limitOrphanPoolSize() error {
 
 func (op *orphansPool) checkOrphanSize(transaction *externalapi.DomainTransaction) error {
 	serializedLength := estimatedsize.TransactionEstimatedSerializedSize(transaction)
-	if serializedLength > uint64(op.mempool.config.MaximumOrphanTransactionSize) {
+	if serializedLength > op.mempool.config.MaximumOrphanTransactionSize {
 		str := fmt.Sprintf("orphan transaction size of %d bytes is "+
 			"larger than max allowed size of %d bytes",
 			serializedLength, op.mempool.config.MaximumOrphanTransactionSize)
