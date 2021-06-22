@@ -58,7 +58,7 @@ func TestValidateAndInsertTransaction(t *testing.T) {
 
 		// The parent's transaction was inserted by consensus(AddBlock), and we want to verify that
 		// the transaction is not considered an orphan and inserted into the mempool.
-		transactionNotAnOrphan, err := createChildTxWhereParentTxWasAddedByConsensus(tc)
+		transactionNotAnOrphan, err := createChildAndParentTxsAndAddParentToConsensus(tc)
 		if err != nil {
 			t.Fatalf("Error in createParentAndChildrenTransaction: %v", err)
 		}
@@ -137,7 +137,7 @@ func TestDoubleSpendInMempool(t *testing.T) {
 
 		miningFactory := miningmanager.NewFactory()
 		miningManager := miningFactory.NewMiningManager(tc, &consensusConfig.Params, mempool.DefaultConfig(&consensusConfig.Params))
-		transaction, err := createChildTxWhereParentTxWasAddedByConsensus(tc)
+		transaction, err := createChildAndParentTxsAndAddParentToConsensus(tc)
 		if err != nil {
 			t.Fatalf("Error creating transaction: %+v", err)
 		}
@@ -635,7 +635,7 @@ func createParentAndChildrenTransactions(tc testapi.TestConsensus) (txParent *ex
 	return txParent, txChild, nil
 }
 
-func createChildTxWhereParentTxWasAddedByConsensus(tc testapi.TestConsensus) (*externalapi.DomainTransaction, error) {
+func createChildAndParentTxsAndAddParentToConsensus(tc testapi.TestConsensus) (*externalapi.DomainTransaction, error) {
 	firstBlockHash, _, err := tc.AddBlock([]*externalapi.DomainHash{tc.DAGParams().GenesisHash}, nil, nil)
 	if err != nil {
 		return nil, errors.Wrapf(err, "AddBlock: %v", err)
