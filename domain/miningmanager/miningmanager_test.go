@@ -413,7 +413,8 @@ func TestHighPriorityTransactions(t *testing.T) {
 		}
 
 		// Both high priority transactions should accept parent and child
-		// first
+
+		// Insert firstHighPriorityParentTransaction
 		firstHighPriorityAcceptedTransactions, err :=
 			miningManager.ValidateAndInsertTransaction(firstHighPriorityParentTransaction, true, true)
 		if err != nil {
@@ -427,7 +428,7 @@ func TestHighPriorityTransactions(t *testing.T) {
 				consensushashing.TransactionIDs(firstHighPriorityAcceptedTransactions),
 				consensushashing.TransactionIDs(expectedFirstHighPriorityAcceptedTransactions))
 		}
-		// second
+		// Insert secondHighPriorityParentTransaction
 		secondHighPriorityAcceptedTransactions, err :=
 			miningManager.ValidateAndInsertTransaction(secondHighPriorityParentTransaction, true, true)
 		if err != nil {
@@ -448,7 +449,7 @@ func TestRevalidateHighPriorityTransactions(t *testing.T) {
 	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
 		consensusConfig.BlockCoinbaseMaturity = 0
 		factory := consensus.NewFactory()
-		tc, teardown, err := factory.NewTestConsensus(consensusConfig, "TestDoubleSpendWithBlock")
+		tc, teardown, err := factory.NewTestConsensus(consensusConfig, "TestRevalidateHighPriorityTransactions")
 		if err != nil {
 			t.Fatalf("Failed setting up TestConsensus: %+v", err)
 		}
