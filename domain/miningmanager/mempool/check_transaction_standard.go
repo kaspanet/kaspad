@@ -133,8 +133,8 @@ func (mp *mempool) IsTransactionOutputDust(output *externalapi.DomainTransaction
 
 	// The output is considered dust if the cost to the network to spend the
 	// coins is more than 1/3 of the minimum free transaction relay fee.
-	// minimumRelayTransactionFee is in sompi/KB, so multiply by 1000 to
-	// convert to bytes.
+	// mp.config.MinimumRelayTransactionFee is in sompi/KB, so multiply
+	// by 1000 to convert to bytes.
 	//
 	// Using the typical values for a pay-to-pubkey transaction from
 	// the breakdown above and the default minimum free transaction relay
