@@ -139,7 +139,7 @@ func TestDoubleSpendInMempool(t *testing.T) {
 		miningManager := miningFactory.NewMiningManager(tc, &consensusConfig.Params, mempool.DefaultConfig(&consensusConfig.Params))
 		transaction, err := createChildTxWhereParentTxWasAddedByConsensus(tc)
 		if err != nil {
-			return
+			t.Fatalf("Error creating transaction: %+v", err)
 		}
 		_, err = miningManager.ValidateAndInsertTransaction(transaction, false, true)
 		if err != nil {
