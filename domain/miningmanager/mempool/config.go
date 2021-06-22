@@ -18,7 +18,9 @@ const (
 	defaultOrphanExpireIntervalSeconds          uint64 = 60
 	defaultOrphanExpireScanIntervalSeconds      uint64 = 10
 
-	defaultMaximumOrphanTransactionSize  = 100000
+	defaultMaximumOrphanTransactionSize = 100000
+	// defaultMaximumOrphanTransactionCount should remain small as long as we have recursion in
+	// removeOrphans when removeRedeemers = true
 	defaultMaximumOrphanTransactionCount = 50
 
 	defaultMinimumRelayTransactionFee = util.Amount(1000)
