@@ -100,7 +100,7 @@ func TestBlockStatus(t *testing.T) {
 
 		_, err = tc.ValidateAndInsertBlock(invalidBlock, true)
 		if err == nil {
-			t.Fatalf("block is expected to be invalid", true)
+			t.Fatalf("block is expected to be invalid")
 		}
 		if !errors.As(err, &ruleerrors.RuleError{}) {
 			t.Fatalf("ValidateAndInsertBlock: %+v", err)

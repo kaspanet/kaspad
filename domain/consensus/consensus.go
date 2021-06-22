@@ -109,59 +109,6 @@ func (s *consensus) PruningPointAndItsAnticoneWithMetaData() ([]*externalapi.Blo
 	return s.pruningManager.PruningPointAndItsAnticoneWithMetaData()
 }
 
-func (s *consensus) blockWithMetaData(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) (*externalapi.BlockWithMetaData, error) {
-	block, err := s.blockStore.Block(s.databaseContext, stagingArea, blockHash)
-	if err != nil {
-		return nil, err
-	}
-
-	daaScore, err := s.daaBlocksStore.DAAScore(s.databaseContext, stagingArea, blockHash)
-	if err != nil {
-		return nil, err
-	}
-
-	windowSize := 2640 // TODO: Change to dm.difficultyAdjustmentWindowSize+1
-	window, err := s.dagTraversalManager.BlockWindow(stagingArea, blockHash, windowSize, false)
-	if err != nil {
-		return nil, err
-	}
-
-	windowPairs := make([]*externalapi.BlockGHOSTDAGDataHeaderPair, len(window))
-	for i, blockHash := range window {
-		header, err := s.blockHeaderStore.BlockHeader(s.databaseContext, stagingArea, blockHash)
-		if err != nil {
-			return nil, err
-		}
-
-		ghostdagData, err := s.ghostdagDataStore.Get(s.databaseContext, stagingArea, blockHash)
-		if err != nil {
-			return nil, err
-		}
-
-		windowPairs[i] = &externalapi.BlockGHOSTDAGDataHeaderPair{
-			Header:       header,
-			GHOSTDAGData: ghostdagData,
-		}
-	}
-
-	var k externalapi.KType = 18 // TODO: Replace with real constant
-	ghostdagDataHashPairs := make([]*externalapi.BlockGHOSTDAGDataHashPair, 0, k)
-	current := blockHash
-	for i := externalapi.KType(0); i < k; i++ {
-		ghostdagData, err := s.ghostdagDataStore.Get(s.databaseContext, stagingArea, current)
-		if err != nil {
-			return nil, err
-		}
-
-		ghostdagDataHashPairs = append(ghostdagDataHashPairs, &externalapi.BlockGHOSTDAGDataHashPair{
-			Hash:         current,
-			GHOSTDAGData: ghostdagData,
-		})
-
-		current = ghostdagData.SelectedParent()
-	}
-}
-
 // BuildBlock builds a block over the current state, with the transactions
 // selected by the given transactionSelector
 func (s *consensus) BuildBlock(coinbaseData *externalapi.DomainCoinbaseData,
@@ -358,20 +305,6 @@ func (s *consensus) GetHashesBetween(lowHash, highHash *externalapi.DomainHash, 
 	}
 
 	return s.syncManager.GetHashesBetween(stagingArea, lowHash, highHash, maxBlueScoreDifference)
-}
-
-func (s *consensus) GetMissingBlockBodyHashes(highHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error) {
-	s.lock.Lock()
-	defer s.lock.Unlock()
-
-	stagingArea := model.NewStagingArea()
-
-	err := s.validateBlockHashExists(stagingArea, highHash)
-	if err != nil {
-		return nil, err
-	}
-
-	return s.syncManager.GetMissingBlockBodyHashes(stagingArea, highHash)
 }
 
 func (s *consensus) GetPruningPointUTXOs(expectedPruningPointHash *externalapi.DomainHash,
