@@ -217,7 +217,7 @@ func TestIsFinalizedTransaction(t *testing.T) {
 		checkForLockTimeAndSequence(blockGhostDAG.BlueScore(), 0, false)
 		checkForLockTimeAndSequence(blockGhostDAG.BlueScore()-1, 0, true)
 
-		pastMedianTime, err := tc.PastMedianTimeManager().PastMedianTime(stagingArea, consensushashing.BlockHash(block))
+		pastMedianTime, err := tc.PastMedianTimeManager().PastMedianTime(stagingArea, consensushashing.BlockHash(block), false)
 		if err != nil {
 			t.Fatalf("PastMedianTime: %+v", err)
 		}

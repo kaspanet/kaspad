@@ -286,7 +286,7 @@ func TestValidateDifficulty(t *testing.T) {
 		wrongTestDifficulty := mocDifficulty.testDifficulty + uint32(5)
 		mocDifficulty.testDifficulty = wrongTestDifficulty
 
-		err = tc.BlockValidator().ValidatePruningPointViolationAndProofOfWorkAndDifficulty(stagingArea, blockHash)
+		err = tc.BlockValidator().ValidatePruningPointViolationAndProofOfWorkAndDifficulty(stagingArea, blockHash, false)
 		if err == nil || !errors.Is(err, ruleerrors.ErrUnexpectedDifficulty) {
 			t.Fatalf("Expected block to be invalid with err: %v, instead found: %v", ruleerrors.ErrUnexpectedDifficulty, err)
 		}
@@ -305,7 +305,7 @@ func (dm *mocDifficultyManager) RequiredDifficulty(*model.StagingArea, *external
 }
 
 // StageDAADataAndReturnRequiredDifficulty returns the difficulty required for the test
-func (dm *mocDifficultyManager) StageDAADataAndReturnRequiredDifficulty(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) (uint32, error) {
+func (dm *mocDifficultyManager) StageDAADataAndReturnRequiredDifficulty(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash, isBlockWithPrefilledData bool) (uint32, error) {
 	// Populate daaBlocksStore with fake values
 	dm.daaBlocksStore.StageDAAScore(stagingArea, blockHash, 0)
 	dm.daaBlocksStore.StageBlockDAAAddedBlocks(stagingArea, blockHash, nil)

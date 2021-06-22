@@ -191,6 +191,8 @@ var (
 	ErrPrunedBlock = newRuleError("ErrPrunedBlock")
 
 	ErrGetVirtualUTXOsWrongVirtualParents = newRuleError("ErrGetVirtualUTXOsWrongVirtualParents")
+
+	ErrBlockWindowMissingBlocks = newRuleError("ErrBlockWindowMissingBlocks")
 )
 
 // RuleError identifies a rule violation. It is used to indicate that

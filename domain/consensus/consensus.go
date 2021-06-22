@@ -1,6 +1,8 @@
 package consensus
 
 import (
+	"github.com/kaspanet/kaspad/infrastructure/logger"
+	"github.com/kaspanet/kaspad/util/staging"
 	"sync"
 
 	"github.com/kaspanet/kaspad/domain/consensus/database"
@@ -49,15 +51,62 @@ type consensus struct {
 	daaBlocksStore            model.DAABlocksStore
 }
 
-func (s *consensus) ValidateAndInsertBlockWithMetaData(block *externalapi.BlockWithMetaData) (*externalapi.BlockInsertionResult, error) {
-	panic("implement me")
+func (s *consensus) ValidateAndInsertBlockWithMetaData(block *externalapi.BlockWithMetaData, validateUTXO bool) (*externalapi.BlockInsertionResult, error) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	return s.blockProcessor.ValidateAndInsertBlockWithMetaData(block, validateUTXO)
+}
+
+func (s *consensus) Init() error {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	onEnd := logger.LogAndMeasureExecutionTime(log, "ValidateAndInsertBlockWithMetaData")
+	defer onEnd()
+
+	stagingArea := model.NewStagingArea()
+
+	exists, err := s.blockStatusStore.Exists(s.databaseContext, stagingArea, model.VirtualGenesisBlockHash)
+	if err != nil {
+		return err
+	}
+
+	if exists {
+		return nil
+	}
+
+	s.blockStatusStore.Stage(stagingArea, model.VirtualGenesisBlockHash, externalapi.StatusUTXOValid)
+	//s.ghostdagDataStore.Stage(stagingArea, model.VirtualGenesisBlockHash, externalapi.NewBlockGHOSTDAGData(0,nil,nil, nil, ))
+	err = s.reachabilityManager.Init(stagingArea)
+	if err != nil {
+		return err
+	}
+
+	err = s.dagTopologyManager.SetParents(stagingArea, model.VirtualGenesisBlockHash, nil)
+	if err != nil {
+		return err
+	}
+
+	err = staging.CommitAllChanges(s.databaseContext, stagingArea)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (s *consensus) ResolveVirtual() error {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
 	panic("implement me")
 }
 
 func (s *consensus) PruningPointAndItsAnticoneWithMetaData() ([]*externalapi.BlockWithMetaData, error) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
 	panic("implement me")
 }
 
@@ -99,7 +148,7 @@ func (s *consensus) ValidateTransactionAndPopulateWithConsensusData(transaction 
 		return err
 	}
 
-	virtualSelectedParentMedianTime, err := s.pastMedianTimeManager.PastMedianTime(stagingArea, model.VirtualBlockHash)
+	virtualSelectedParentMedianTime, err := s.pastMedianTimeManager.PastMedianTime(stagingArea, model.VirtualBlockHash, false)
 	if err != nil {
 		return err
 	}
@@ -391,7 +440,7 @@ func (s *consensus) GetVirtualInfo() (*externalapi.VirtualInfo, error) {
 	if err != nil {
 		return nil, err
 	}
-	pastMedianTime, err := s.pastMedianTimeManager.PastMedianTime(stagingArea, model.VirtualBlockHash)
+	pastMedianTime, err := s.pastMedianTimeManager.PastMedianTime(stagingArea, model.VirtualBlockHash, false)
 	if err != nil {
 		return nil, err
 	}

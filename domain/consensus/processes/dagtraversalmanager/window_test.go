@@ -344,7 +344,7 @@ func TestBlockWindow(t *testing.T) {
 
 			stagingArea := model.NewStagingArea()
 
-			window, err := tc.DAGTraversalManager().BlockWindow(stagingArea, block, windowSize)
+			window, err := tc.DAGTraversalManager().BlockWindow(stagingArea, block, windowSize, false)
 			if err != nil {
 				t.Fatalf("BlockWindow: %s", err)
 			}

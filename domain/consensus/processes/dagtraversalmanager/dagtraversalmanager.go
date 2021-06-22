@@ -83,7 +83,7 @@ func (dtm *dagTraversalManager) LowestChainBlockAboveOrEqualToBlueScore(stagingA
 	currentHash := highHash
 	currentBlockGHOSTDAGData := highBlockGHOSTDAGData
 
-	for currentBlockGHOSTDAGData.SelectedParent() != nil {
+	for !currentHash.Equal(dtm.genesisHash) {
 		selectedParentBlockGHOSTDAGData, err := dtm.ghostdagDataStore.Get(dtm.databaseContext, stagingArea,
 			currentBlockGHOSTDAGData.SelectedParent())
 		if err != nil {

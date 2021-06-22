@@ -76,10 +76,10 @@ func (bp *blockProcessor) updateVirtualAcceptanceDataAfterImportingPruningPoint(
 }
 
 func (bp *blockProcessor) validateAndInsertBlock(stagingArea *model.StagingArea, block *externalapi.DomainBlock,
-	isPruningPoint bool, validateUTXO bool) (*externalapi.BlockInsertionResult, error) {
+	isPruningPoint bool, validateUTXO bool, isBlockWithPrefilledData bool) (*externalapi.BlockInsertionResult, error) {
 
 	blockHash := consensushashing.HeaderHash(block.Header)
-	err := bp.validateBlock(stagingArea, block, isPruningPoint)
+	err := bp.validateBlock(stagingArea, block, isPruningPoint, isBlockWithPrefilledData)
 	if err != nil {
 		return nil, err
 	}
@@ -123,7 +123,7 @@ func (bp *blockProcessor) validateAndInsertBlock(stagingArea *model.StagingArea,
 		}
 	}
 
-	if !isHeaderOnlyBlock {
+	if !isHeaderOnlyBlock && validateUTXO {
 		// Trigger pruning, which will check if the pruning point changed and delete the data if it did.
 		err = bp.pruningManager.UpdatePruningPointByVirtual(stagingArea)
 		if err != nil {
@@ -263,7 +263,7 @@ func (bp *blockProcessor) validatePreProofOfWork(stagingArea *model.StagingArea,
 	return nil
 }
 
-func (bp *blockProcessor) validatePostProofOfWork(stagingArea *model.StagingArea, block *externalapi.DomainBlock, isPruningPoint bool) error {
+func (bp *blockProcessor) validatePostProofOfWork(stagingArea *model.StagingArea, block *externalapi.DomainBlock, isBlockWithPrefilledData bool) error {
 	blockHash := consensushashing.BlockHash(block)
 
 	isHeaderOnlyBlock := isHeaderOnlyBlock(block)
@@ -281,14 +281,14 @@ func (bp *blockProcessor) validatePostProofOfWork(stagingArea *model.StagingArea
 	}
 
 	if !hasValidatedHeader {
-		err = bp.blockValidator.ValidateHeaderInContext(stagingArea, blockHash)
+		err = bp.blockValidator.ValidateHeaderInContext(stagingArea, blockHash, isBlockWithPrefilledData)
 		if err != nil {
 			return err
 		}
 	}
 
 	if !isHeaderOnlyBlock {
-		err = bp.blockValidator.ValidateBodyInContext(stagingArea, blockHash, isPruningPoint)
+		err = bp.blockValidator.ValidateBodyInContext(stagingArea, blockHash, isBlockWithPrefilledData)
 		if err != nil {
 			return err
 		}

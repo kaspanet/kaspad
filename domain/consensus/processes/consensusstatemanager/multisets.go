@@ -9,12 +9,15 @@ import (
 )
 
 func (csm *consensusStateManager) calculateMultiset(stagingArea *model.StagingArea,
-	acceptanceData externalapi.AcceptanceData, blockGHOSTDAGData *externalapi.BlockGHOSTDAGData, daaScore uint64) (model.Multiset, error) {
+	blockHash *externalapi.DomainHash,
+	acceptanceData externalapi.AcceptanceData,
+	blockGHOSTDAGData *externalapi.BlockGHOSTDAGData,
+	daaScore uint64) (model.Multiset, error) {
 
 	log.Debugf("calculateMultiset start for block with selected parent %s", blockGHOSTDAGData.SelectedParent())
 	defer log.Debugf("calculateMultiset end for block with selected parent %s", blockGHOSTDAGData.SelectedParent())
 
-	if blockGHOSTDAGData.SelectedParent() == nil {
+	if blockHash.Equal(csm.genesisHash) {
 		log.Debugf("Selected parent is nil, which could only happen for the genesis. " +
 			"The genesis, by definition, has an empty multiset")
 		return multiset.New(), nil

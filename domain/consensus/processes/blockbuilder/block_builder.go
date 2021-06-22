@@ -145,7 +145,7 @@ func (bb *blockBuilder) validateTransaction(
 		return err
 	}
 
-	virtualSelectedParentMedianTime, err := bb.pastMedianTimeManager.PastMedianTime(stagingArea, model.VirtualBlockHash)
+	virtualSelectedParentMedianTime, err := bb.pastMedianTimeManager.PastMedianTime(stagingArea, model.VirtualBlockHash, false)
 	if err != nil {
 		return err
 	}
@@ -225,7 +225,7 @@ func (bb *blockBuilder) newBlockTime(stagingArea *model.StagingArea) (int64, err
 }
 
 func (bb *blockBuilder) minBlockTime(stagingArea *model.StagingArea, hash *externalapi.DomainHash) (int64, error) {
-	pastMedianTime, err := bb.pastMedianTimeManager.PastMedianTime(stagingArea, hash)
+	pastMedianTime, err := bb.pastMedianTimeManager.PastMedianTime(stagingArea, hash, false)
 	if err != nil {
 		return 0, err
 	}

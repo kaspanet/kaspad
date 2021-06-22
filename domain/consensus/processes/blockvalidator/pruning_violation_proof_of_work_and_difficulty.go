@@ -13,7 +13,7 @@ import (
 )
 
 func (v *blockValidator) ValidatePruningPointViolationAndProofOfWorkAndDifficulty(stagingArea *model.StagingArea,
-	blockHash *externalapi.DomainHash) error {
+	blockHash *externalapi.DomainHash, isBlockWithPrefilledData bool) error {
 
 	onEnd := logger.LogAndMeasureExecutionTime(log, "ValidatePruningPointViolationAndProofOfWorkAndDifficulty")
 	defer onEnd()
@@ -23,7 +23,7 @@ func (v *blockValidator) ValidatePruningPointViolationAndProofOfWorkAndDifficult
 		return err
 	}
 
-	err = v.checkParentHeadersExist(stagingArea, header)
+	err = v.checkParentHeadersExist(stagingArea, header, isBlockWithPrefilledData)
 	if err != nil {
 		return err
 	}
@@ -43,12 +43,12 @@ func (v *blockValidator) ValidatePruningPointViolationAndProofOfWorkAndDifficult
 		return err
 	}
 
-	err = v.dagTopologyManager.SetParents(stagingArea, blockHash, header.ParentHashes())
+	err = v.setParents(stagingArea, blockHash, header, isBlockWithPrefilledData)
 	if err != nil {
 		return err
 	}
 
-	err = v.validateDifficulty(stagingArea, blockHash)
+	err = v.validateDifficulty(stagingArea, blockHash, isBlockWithPrefilledData)
 	if err != nil {
 		return err
 	}
@@ -56,17 +56,51 @@ func (v *blockValidator) ValidatePruningPointViolationAndProofOfWorkAndDifficult
 	return nil
 }
 
-func (v *blockValidator) validateDifficulty(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) error {
-	// We need to calculate GHOSTDAG for the block in order to check its difficulty
-	err := v.ghostdagManager.GHOSTDAG(stagingArea, blockHash)
-	if err != nil {
-		return err
+func (v *blockValidator) setParents(stagingArea *model.StagingArea,
+	blockHash *externalapi.DomainHash,
+	header externalapi.BlockHeader,
+	isBlockWithPrefilledData bool) error {
+
+	parents := make([]*externalapi.DomainHash, 0, len(header.ParentHashes()))
+	for _, currentParent := range header.ParentHashes() {
+		exists, err := v.blockStatusStore.Exists(v.databaseContext, stagingArea, currentParent)
+		if err != nil {
+			return err
+		}
+
+		if !exists {
+			if !isBlockWithPrefilledData {
+				return errors.Errorf("only block with prefilled information can have some missing parents")
+			}
+			continue
+		}
+
+		parents = append(parents, currentParent)
+	}
+
+	if len(parents) == 0 {
+		parents = append(parents, model.VirtualGenesisBlockHash)
+	}
+
+	return v.dagTopologyManager.SetParents(stagingArea, blockHash, parents)
+}
+
+func (v *blockValidator) validateDifficulty(stagingArea *model.StagingArea,
+	blockHash *externalapi.DomainHash,
+	isBlockWithPrefilledData bool) error {
+
+	if !isBlockWithPrefilledData {
+		// We need to calculate GHOSTDAG for the block in order to check its difficulty
+		err := v.ghostdagManager.GHOSTDAG(stagingArea, blockHash)
+		if err != nil {
+			return err
+		}
 	}
 
 	// Ensure the difficulty specified in the block header matches
 	// the calculated difficulty based on the previous block and
 	// difficulty retarget rules.
-	expectedBits, err := v.difficultyManager.StageDAADataAndReturnRequiredDifficulty(stagingArea, blockHash)
+	expectedBits, err := v.difficultyManager.StageDAADataAndReturnRequiredDifficulty(stagingArea, blockHash, isBlockWithPrefilledData)
 	if err != nil {
 		return err
 	}
@@ -113,7 +147,14 @@ func (v *blockValidator) checkProofOfWork(header externalapi.BlockHeader) error 
 	return nil
 }
 
-func (v *blockValidator) checkParentHeadersExist(stagingArea *model.StagingArea, header externalapi.BlockHeader) error {
+func (v *blockValidator) checkParentHeadersExist(stagingArea *model.StagingArea,
+	header externalapi.BlockHeader,
+	isBlockWithPrefilledData bool) error {
+
+	if isBlockWithPrefilledData {
+		return nil
+	}
+
 	missingParentHashes := []*externalapi.DomainHash{}
 	for _, parent := range header.ParentHashes() {
 		parentHeaderExists, err := v.blockHeaderStore.HasBlockHeader(v.databaseContext, stagingArea, parent)

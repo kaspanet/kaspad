@@ -255,9 +255,13 @@ func (pm *pruningManager) deletePastBlocks(stagingArea *model.StagingArea, pruni
 	if err != nil {
 		return err
 	}
-	err = queue.PushSlice(parents)
-	if err != nil {
-		return err
+
+	isChildOfVirtualGenesis := len(parents) == 1 && parents[0].Equal(model.VirtualGenesisBlockHash)
+	if !isChildOfVirtualGenesis {
+		err = queue.PushSlice(parents)
+		if err != nil {
+			return err
+		}
 	}
 
 	err = pm.deleteBlocksDownward(stagingArea, queue)
@@ -287,9 +291,13 @@ func (pm *pruningManager) deleteBlocksDownward(stagingArea *model.StagingArea, q
 			if err != nil {
 				return err
 			}
-			err = queue.PushSlice(parents)
-			if err != nil {
-				return err
+
+			isChildOfVirtualGenesis := len(parents) == 1 && parents[0].Equal(model.VirtualGenesisBlockHash)
+			if !isChildOfVirtualGenesis {
+				err = queue.PushSlice(parents)
+				if err != nil {
+					return err
+				}
 			}
 		}
 	}

@@ -5,6 +5,7 @@ import "github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 // ReachabilityManager maintains a structure that allows to answer
 // reachability queries in sub-linear time
 type ReachabilityManager interface {
+	Init(stagingArea *StagingArea) error
 	AddBlock(stagingArea *StagingArea, blockHash *externalapi.DomainHash) error
 	IsReachabilityTreeAncestorOf(stagingArea *StagingArea, blockHashA *externalapi.DomainHash, blockHashB *externalapi.DomainHash) (bool, error)
 	IsDAGAncestorOf(stagingArea *StagingArea, blockHashA *externalapi.DomainHash, blockHashB *externalapi.DomainHash) (bool, error)

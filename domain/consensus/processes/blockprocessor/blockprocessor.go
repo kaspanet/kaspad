@@ -144,7 +144,7 @@ func (bp *blockProcessor) ValidateAndInsertBlock(block *externalapi.DomainBlock,
 	defer onEnd()
 
 	stagingArea := model.NewStagingArea()
-	return bp.validateAndInsertBlock(stagingArea, block, false, validateUTXO)
+	return bp.validateAndInsertBlock(stagingArea, block, false, validateUTXO, false)
 }
 
 func (bp *blockProcessor) ValidateAndInsertImportedPruningPoint(newPruningPoint *externalapi.DomainHash) error {
@@ -153,4 +153,13 @@ func (bp *blockProcessor) ValidateAndInsertImportedPruningPoint(newPruningPoint 
 
 	stagingArea := model.NewStagingArea()
 	return bp.validateAndInsertImportedPruningPoint(stagingArea, newPruningPoint)
+}
+
+func (bp *blockProcessor) ValidateAndInsertBlockWithMetaData(block *externalapi.BlockWithMetaData, validateUTXO bool) (*externalapi.BlockInsertionResult, error) {
+	onEnd := logger.LogAndMeasureExecutionTime(log, "ValidateAndInsertBlockWithMetaData")
+	defer onEnd()
+
+	stagingArea := model.NewStagingArea()
+
+	return bp.validateAndInsertBlockWithMetaData(stagingArea, block, validateUTXO)
 }

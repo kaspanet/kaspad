@@ -41,12 +41,6 @@ func (rt *reachabilityManager) AddBlock(stagingArea *model.StagingArea, blockHas
 		return err
 	}
 
-	// If this is the genesis node, simply initialize it and return
-	if ghostdagData.SelectedParent() == nil {
-		rt.stageReindexRoot(stagingArea, blockHash)
-		return nil
-	}
-
 	reindexRoot, err := rt.reindexRoot(stagingArea)
 	if err != nil {
 		return err
@@ -70,6 +64,23 @@ func (rt *reachabilityManager) AddBlock(stagingArea *model.StagingArea, blockHas
 			return err
 		}
 	}
+
+	return nil
+}
+
+func (rt *reachabilityManager) Init(stagingArea *model.StagingArea) error {
+	hasReachabilityData, err := rt.reachabilityDataStore.HasReachabilityData(rt.databaseContext, stagingArea, model.VirtualGenesisBlockHash)
+	if err != nil {
+		return err
+	}
+
+	if hasReachabilityData {
+		return nil
+	}
+
+	newReachabilityData := newReachabilityTreeData()
+	rt.stageData(stagingArea, model.VirtualGenesisBlockHash, newReachabilityData)
+	rt.stageReindexRoot(stagingArea, model.VirtualGenesisBlockHash)
 
 	return nil
 }

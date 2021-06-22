@@ -53,7 +53,7 @@ func TestValidateMedianTime(t *testing.T) {
 				t.Fatalf("GHOSTDAG: %+v", err)
 			}
 
-			pastMedianTime, err := tc.PastMedianTimeManager().PastMedianTime(stagingArea, &tempHash)
+			pastMedianTime, err := tc.PastMedianTimeManager().PastMedianTime(stagingArea, &tempHash, false)
 			if err != nil {
 				t.Fatalf("PastMedianTime: %+v", err)
 			}

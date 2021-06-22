@@ -5,6 +5,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/prefixmanager/prefix"
 	"github.com/pkg/errors"
 	"io/ioutil"
+	"math/big"
 	"os"
 	"sync"
 
@@ -415,6 +416,11 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 		daaBlocksStore:            daaBlocksStore,
 	}
 
+	err = c.Init()
+	if err != nil {
+		return nil, err
+	}
+
 	genesisInfo, err := c.GetBlockInfo(genesisHash)
 	if err != nil {
 		return nil, err
@@ -426,7 +432,18 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 				"expected genesis block %s is not found in the non-empty DAG \"%s\": wrong config or appdir?",
 				genesisHash, config.Params.Name)
 		}
-		_, err = c.ValidateAndInsertBlock(config.GenesisBlock, true) // TODO: Don't always add genesis
+		genesisWithMetaData := &externalapi.BlockWithMetaData{
+			Block:     config.GenesisBlock,
+			DAAScore:  0,
+			DAAWindow: nil,
+			GHOSTDAGData: []*externalapi.BlockGHOSTDAGDataHashPair{
+				{
+					GHOSTDAGData: externalapi.NewBlockGHOSTDAGData(0, big.NewInt(0), model.VirtualGenesisBlockHash, nil, nil, make(map[externalapi.DomainHash]externalapi.KType)),
+					Hash:         genesisHash,
+				},
+			},
+		}
+		_, err = c.ValidateAndInsertBlockWithMetaData(genesisWithMetaData, true) // TODO: Don't always add genesis
 		if err != nil {
 			return nil, err
 		}

@@ -13,7 +13,7 @@ import (
 
 // ValidateHeaderInContext validates block headers in the context of the current
 // consensus state
-func (v *blockValidator) ValidateHeaderInContext(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) error {
+func (v *blockValidator) ValidateHeaderInContext(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash, isBlockWithPrefilledData bool) error {
 	onEnd := logger.LogAndMeasureExecutionTime(log, "ValidateHeaderInContext")
 	defer onEnd()
 
@@ -44,7 +44,7 @@ func (v *blockValidator) ValidateHeaderInContext(stagingArea *model.StagingArea,
 		}
 	}
 
-	err = v.validateMedianTime(stagingArea, header)
+	err = v.validateMedianTime(stagingArea, header, isBlockWithPrefilledData)
 	if err != nil {
 		return err
 	}
@@ -120,7 +120,7 @@ func (v *blockValidator) checkParentsIncest(stagingArea *model.StagingArea, head
 	return nil
 }
 
-func (v *blockValidator) validateMedianTime(stagingArea *model.StagingArea, header externalapi.BlockHeader) error {
+func (v *blockValidator) validateMedianTime(stagingArea *model.StagingArea, header externalapi.BlockHeader, isBlockWithPrefilledData bool) error {
 	if len(header.ParentHashes()) == 0 {
 		return nil
 	}
@@ -128,7 +128,7 @@ func (v *blockValidator) validateMedianTime(stagingArea *model.StagingArea, head
 	// Ensure the timestamp for the block header is not before the
 	// median time of the last several blocks (medianTimeBlocks).
 	hash := consensushashing.HeaderHash(header)
-	pastMedianTime, err := v.pastMedianTimeManager.PastMedianTime(stagingArea, hash)
+	pastMedianTime, err := v.pastMedianTimeManager.PastMedianTime(stagingArea, hash, isBlockWithPrefilledData)
 	if err != nil {
 		return err
 	}

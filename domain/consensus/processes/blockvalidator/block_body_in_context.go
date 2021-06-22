@@ -15,7 +15,7 @@ import (
 
 // ValidateBodyInContext validates block bodies in the context of the current
 // consensus state
-func (v *blockValidator) ValidateBodyInContext(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash, isPruningPoint bool) error {
+func (v *blockValidator) ValidateBodyInContext(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash, isBlockWithPrefilledData bool) error {
 	onEnd := logger.LogAndMeasureExecutionTime(log, "ValidateBodyInContext")
 	defer onEnd()
 
@@ -24,12 +24,12 @@ func (v *blockValidator) ValidateBodyInContext(stagingArea *model.StagingArea, b
 		return err
 	}
 
-	err = v.checkBlockTransactionsFinalized(stagingArea, blockHash)
+	err = v.checkBlockTransactionsFinalized(stagingArea, blockHash, isBlockWithPrefilledData)
 	if err != nil {
 		return err
 	}
 
-	if !isPruningPoint {
+	if !isBlockWithPrefilledData {
 		err := v.checkParentBlockBodiesExist(stagingArea, blockHash)
 		if err != nil {
 			return err
@@ -119,7 +119,7 @@ func (v *blockValidator) checkParentBlockBodiesExist(
 }
 
 func (v *blockValidator) checkBlockTransactionsFinalized(
-	stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) error {
+	stagingArea *model.StagingArea, blockHash *externalapi.DomainHash, isBlockWithPrefilledData bool) error {
 
 	block, err := v.blockStore.Block(v.databaseContext, stagingArea, blockHash)
 	if err != nil {
@@ -131,7 +131,7 @@ func (v *blockValidator) checkBlockTransactionsFinalized(
 		return err
 	}
 
-	blockTime, err := v.pastMedianTimeManager.PastMedianTime(stagingArea, blockHash)
+	blockTime, err := v.pastMedianTimeManager.PastMedianTime(stagingArea, blockHash, isBlockWithPrefilledData)
 	if err != nil {
 		return err
 	}

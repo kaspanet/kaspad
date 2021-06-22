@@ -3,13 +3,36 @@ package dagtraversalmanager
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
+	"github.com/kaspanet/kaspad/infrastructure/db/database"
+	"github.com/pkg/errors"
 )
 
 // BlockWindow returns a blockWindow of the given size that contains the
 // blocks in the past of highHash, the sorting is unspecified.
 // If the number of blocks in the past of startingNode is less then windowSize,
-// the window will be padded by genesis blocks to achieve a size of windowSize.
-func (dtm *dagTraversalManager) BlockWindow(stagingArea *model.StagingArea, highHash *externalapi.DomainHash, windowSize int) ([]*externalapi.DomainHash, error) {
+func (dtm *dagTraversalManager) BlockWindow(stagingArea *model.StagingArea,
+	highHash *externalapi.DomainHash,
+	windowSize int,
+	isBlockWithPrefilledData bool) ([]*externalapi.DomainHash, error) {
+
+	window, err := dtm.blockWindow(stagingArea, highHash, windowSize)
+	if isBlockWithPrefilledData && database.IsNotFoundError(err) {
+		return nil, errors.Wrapf(ruleerrors.ErrBlockWindowMissingBlocks, "some blocks are missing from the block window")
+	}
+
+	if err != nil {
+		return nil, err
+	}
+
+	return window, nil
+}
+
+func (dtm *dagTraversalManager) blockWindow(stagingArea *model.StagingArea, highHash *externalapi.DomainHash, windowSize int) ([]*externalapi.DomainHash, error) {
+	if highHash.Equal(dtm.genesisHash) {
+		return nil, nil
+	}
+
 	currentGHOSTDAGData, err := dtm.ghostdagDataStore.Get(dtm.databaseContext, stagingArea, highHash)
 	if err != nil {
 		return nil, err
@@ -42,6 +65,8 @@ func (dtm *dagTraversalManager) BlockWindow(stagingArea *model.StagingArea, high
 		mergeSetBlues := currentGHOSTDAGData.MergeSetBlues()[1:]
 		// Go over the merge set in reverse because it's ordered in reverse by blueWork.
 		for i := len(mergeSetBlues) - 1; i >= 0; i-- {
+			// TODO: What if merge set blues is not found on isBlockWithPrefilledData because it's not part of the final DAA window?
+			// The easiest way to solve it is to probably send the full merge set of each chain block in the DAA window.
 			added, err := windowHeap.tryPush(mergeSetBlues[i])
 			if err != nil {
 				return nil, err

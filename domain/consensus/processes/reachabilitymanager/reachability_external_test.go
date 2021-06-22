@@ -31,8 +31,8 @@ func TestAddChildThatPointsDirectlyToTheSelectedParentChainBelowReindexRoot(t *t
 			t.Fatalf("ReachabilityReindexRoot: %s", err)
 		}
 
-		if !reindexRoot.Equal(consensusConfig.GenesisHash) {
-			t.Fatalf("reindex root is expected to initially be genesis")
+		if !reindexRoot.Equal(model.VirtualGenesisBlockHash) {
+			t.Fatalf("reindex root is expected to initially be virtual genesis")
 		}
 
 		// Add a block on top of the genesis block
@@ -112,7 +112,7 @@ func TestUpdateReindexRoot(t *testing.T) {
 			t.Fatalf("AddBlock: %+v", err)
 		}
 
-		// Make two chains of size reachabilityReindexWindow and check that the reindex root is not changed.
+		// Make two chains of size reachabilityReindexWindow
 		chain1Tip, chain2Tip := chain1RootBlock, chain2RootBlock
 		for i := uint64(0); i < reachabilityReindexWindow-1; i++ {
 			var err error
@@ -124,15 +124,6 @@ func TestUpdateReindexRoot(t *testing.T) {
 			chain2Tip, _, err = tc.AddBlock([]*externalapi.DomainHash{chain2Tip}, nil, nil)
 			if err != nil {
 				t.Fatalf("AddBlock: %+v", err)
-			}
-
-			reindexRoot, err := tc.ReachabilityDataStore().ReachabilityReindexRoot(tc.DatabaseContext(), stagingArea)
-			if err != nil {
-				t.Fatalf("ReachabilityReindexRoot: %s", err)
-			}
-
-			if !reindexRoot.Equal(consensusConfig.GenesisHash) {
-				t.Fatalf("reindex root unexpectedly moved")
 			}
 		}
 
