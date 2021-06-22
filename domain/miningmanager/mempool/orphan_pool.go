@@ -36,6 +36,10 @@ func newOrphansPool(mp *mempool) *orphansPool {
 
 // this function MUST be called with the mempool mutex locked for writes
 func (op *orphansPool) maybeAddOrphan(transaction *externalapi.DomainTransaction, isHighPriority bool) error {
+	if op.mempool.config.MaximumOrphanTransactionCount <= 0 {
+		return nil
+	}
+
 	err := op.checkOrphanDuplicate(transaction)
 	if err != nil {
 		return err
@@ -44,9 +48,6 @@ func (op *orphansPool) maybeAddOrphan(transaction *externalapi.DomainTransaction
 	err = op.checkOrphanSize(transaction)
 	if err != nil {
 		return err
-	}
-	if op.mempool.config.MaximumOrphanTransactionCount <= 0 {
-		return nil
 	}
 	err = op.checkOrphanDoubleSpend(transaction)
 	if err != nil {
