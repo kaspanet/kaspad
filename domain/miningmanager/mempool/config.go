@@ -3,6 +3,8 @@ package mempool
 import (
 	"time"
 
+	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
+
 	"github.com/kaspanet/kaspad/util"
 
 	"github.com/kaspanet/kaspad/domain/dagconfig"
@@ -20,6 +22,13 @@ const (
 	defaultMaximumOrphanTransactionCount = 50
 
 	defaultMinimumRelayTransactionFee = util.Amount(1000)
+
+	// Standard transaction version range might be different from what consensus accepts, therefore
+	// we define separate values in mempool.
+	// However, currently there's exactly one transaction version, so mempool accepts the same version
+	// as consensus.
+	defaultMinimumStandardTransactionVersion = constants.MaxTransactionVersion
+	defaultMaximumStandardTransactionVersion = constants.MaxTransactionVersion
 )
 
 // Config represents a mempool configuration
@@ -34,6 +43,8 @@ type Config struct {
 	AcceptNonStandard                     bool
 	MaximumMassAcceptedByBlock            uint64
 	MinimumRelayTransactionFee            util.Amount
+	MinimumStandardTransactionVersion     uint16
+	MaximumStandardTransactionVersion     uint16
 }
 
 // DefaultConfig returns the default mempool configuration
@@ -51,5 +62,7 @@ func DefaultConfig(dagParams *dagconfig.Params) *Config {
 		AcceptNonStandard:                     dagParams.RelayNonStdTxs,
 		MaximumMassAcceptedByBlock:            dagParams.MaxMassAcceptedByBlock,
 		MinimumRelayTransactionFee:            defaultMinimumRelayTransactionFee,
+		MinimumStandardTransactionVersion:     defaultMinimumStandardTransactionVersion,
+		MaximumStandardTransactionVersion:     defaultMaximumStandardTransactionVersion,
 	}
 }
