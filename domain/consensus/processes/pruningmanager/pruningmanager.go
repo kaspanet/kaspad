@@ -711,3 +711,102 @@ func (pm *pruningManager) PruneAllBlocksBelow(stagingArea *model.StagingArea, pr
 
 	return nil
 }
+
+func (pm *pruningManager) PruningPointAndItsAnticoneWithMetaData() ([]*externalapi.BlockWithMetaData, error) {
+	onEnd := logger.LogAndMeasureExecutionTime(log, "PruningPointAndItsAnticoneWithMetaData")
+	defer onEnd()
+
+	stagingArea := model.NewStagingArea()
+	pruningPoint, err := pm.pruningStore.PruningPoint(pm.databaseContext, stagingArea)
+	if err != nil {
+		return nil, err
+	}
+
+	pruningPointAnticone, err := pm.dagTraversalManager.AnticoneFromVirtual(stagingArea, pruningPoint)
+	if err != nil {
+		return nil, err
+	}
+
+	blocks := make([]*externalapi.BlockWithMetaData, 0, len(pruningPointAnticone)+1)
+
+	pruningPointWithMetaData, err := pm.blockWithMetaData(stagingArea, pruningPoint)
+	if err != nil {
+		return nil, err
+	}
+
+	blocks = append(blocks, pruningPointWithMetaData)
+	for _, blockHash := range pruningPointAnticone {
+		blockWithMetaData, err := pm.blockWithMetaData(stagingArea, blockHash)
+		if err != nil {
+			return nil, err
+		}
+
+		blocks = append(blocks, blockWithMetaData)
+	}
+
+	return blocks, nil
+}
+
+func (pm *pruningManager) blockWithMetaData(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) (*externalapi.BlockWithMetaData, error) {
+	block, err := pm.blocksStore.Block(pm.databaseContext, stagingArea, blockHash)
+	if err != nil {
+		return nil, err
+	}
+
+	daaScore, err := pm.daaBlocksStore.DAAScore(pm.databaseContext, stagingArea, blockHash)
+	if err != nil {
+		return nil, err
+	}
+
+	windowSize := 2640 // TODO: Change to dm.difficultyAdjustmentWindowSize+1
+	window, err := pm.dagTraversalManager.BlockWindow(stagingArea, blockHash, windowSize, false)
+	if err != nil {
+		return nil, err
+	}
+
+	windowPairs := make([]*externalapi.BlockGHOSTDAGDataHeaderPair, len(window))
+	for i, blockHash := range window {
+		header, err := pm.blockHeaderStore.BlockHeader(pm.databaseContext, stagingArea, blockHash)
+		if err != nil {
+			return nil, err
+		}
+
+		ghostdagData, err := pm.ghostdagDataStore.Get(pm.databaseContext, stagingArea, blockHash)
+		if err != nil {
+			return nil, err
+		}
+
+		windowPairs[i] = &externalapi.BlockGHOSTDAGDataHeaderPair{
+			Header:       header,
+			GHOSTDAGData: ghostdagData,
+		}
+	}
+
+	var k externalapi.KType = 18 // TODO: Replace with real constant
+	ghostdagDataHashPairs := make([]*externalapi.BlockGHOSTDAGDataHashPair, 0, k)
+	current := blockHash
+	for i := externalapi.KType(0); i < k; i++ {
+		ghostdagData, err := pm.ghostdagDataStore.Get(pm.databaseContext, stagingArea, current)
+		if err != nil {
+			return nil, err
+		}
+
+		ghostdagDataHashPairs = append(ghostdagDataHashPairs, &externalapi.BlockGHOSTDAGDataHashPair{
+			Hash:         current,
+			GHOSTDAGData: ghostdagData,
+		})
+
+		if ghostdagData.SelectedParent().Equal(pm.genesisHash) {
+			break
+		}
+
+		current = ghostdagData.SelectedParent()
+	}
+
+	return &externalapi.BlockWithMetaData{
+		Block:        block,
+		DAAScore:     daaScore,
+		DAAWindow:    windowPairs,
+		GHOSTDAGData: ghostdagDataHashPairs,
+	}, nil
+}

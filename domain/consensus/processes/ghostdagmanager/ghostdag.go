@@ -41,6 +41,7 @@ func (bg *blockGHOSTDAGData) toModel() *externalapi.BlockGHOSTDAGData {
 //
 // For further details see the article https://eprint.iacr.org/2018/104.pdf
 func (gm *ghostdagManager) GHOSTDAG(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) error {
+	// TODO: If it a not-found error on prefilled block, return a rule error
 	newBlockData := &blockGHOSTDAGData{
 		blueWork:           new(big.Int),
 		mergeSetBlues:      make([]*externalapi.DomainHash, 0),

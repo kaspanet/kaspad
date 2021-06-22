@@ -62,7 +62,7 @@ func (s *consensus) Init() error {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	onEnd := logger.LogAndMeasureExecutionTime(log, "ValidateAndInsertBlockWithMetaData")
+	onEnd := logger.LogAndMeasureExecutionTime(log, "Init")
 	defer onEnd()
 
 	stagingArea := model.NewStagingArea()
@@ -77,7 +77,6 @@ func (s *consensus) Init() error {
 	}
 
 	s.blockStatusStore.Stage(stagingArea, model.VirtualGenesisBlockHash, externalapi.StatusUTXOValid)
-	//s.ghostdagDataStore.Stage(stagingArea, model.VirtualGenesisBlockHash, externalapi.NewBlockGHOSTDAGData(0,nil,nil, nil, ))
 	err = s.reachabilityManager.Init(stagingArea)
 	if err != nil {
 		return err
@@ -107,7 +106,60 @@ func (s *consensus) PruningPointAndItsAnticoneWithMetaData() ([]*externalapi.Blo
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	panic("implement me")
+	return s.pruningManager.PruningPointAndItsAnticoneWithMetaData()
+}
+
+func (s *consensus) blockWithMetaData(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) (*externalapi.BlockWithMetaData, error) {
+	block, err := s.blockStore.Block(s.databaseContext, stagingArea, blockHash)
+	if err != nil {
+		return nil, err
+	}
+
+	daaScore, err := s.daaBlocksStore.DAAScore(s.databaseContext, stagingArea, blockHash)
+	if err != nil {
+		return nil, err
+	}
+
+	windowSize := 2640 // TODO: Change to dm.difficultyAdjustmentWindowSize+1
+	window, err := s.dagTraversalManager.BlockWindow(stagingArea, blockHash, windowSize, false)
+	if err != nil {
+		return nil, err
+	}
+
+	windowPairs := make([]*externalapi.BlockGHOSTDAGDataHeaderPair, len(window))
+	for i, blockHash := range window {
+		header, err := s.blockHeaderStore.BlockHeader(s.databaseContext, stagingArea, blockHash)
+		if err != nil {
+			return nil, err
+		}
+
+		ghostdagData, err := s.ghostdagDataStore.Get(s.databaseContext, stagingArea, blockHash)
+		if err != nil {
+			return nil, err
+		}
+
+		windowPairs[i] = &externalapi.BlockGHOSTDAGDataHeaderPair{
+			Header:       header,
+			GHOSTDAGData: ghostdagData,
+		}
+	}
+
+	var k externalapi.KType = 18 // TODO: Replace with real constant
+	ghostdagDataHashPairs := make([]*externalapi.BlockGHOSTDAGDataHashPair, 0, k)
+	current := blockHash
+	for i := externalapi.KType(0); i < k; i++ {
+		ghostdagData, err := s.ghostdagDataStore.Get(s.databaseContext, stagingArea, current)
+		if err != nil {
+			return nil, err
+		}
+
+		ghostdagDataHashPairs = append(ghostdagDataHashPairs, &externalapi.BlockGHOSTDAGDataHashPair{
+			Hash:         current,
+			GHOSTDAGData: ghostdagData,
+		})
+
+		current = ghostdagData.SelectedParent()
+	}
 }
 
 // BuildBlock builds a block over the current state, with the transactions
