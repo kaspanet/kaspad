@@ -162,12 +162,12 @@ func (m *Manager) notifyVirtualDaaScoreChanged() error {
 	onEnd := logger.LogAndMeasureExecutionTime(log, "RPCManager.NotifyVirtualDaaScoreChanged")
 	defer onEnd()
 
-	virtualInfo, err := m.context.Domain.Consensus().GetVirtualInfo()
+	virtualDAAScore, err := m.context.Domain.Consensus().GetVirtualDAAScore()
 	if err != nil {
 		return err
 	}
 
-	notification := appmessage.NewVirtualDaaScoreChangedNotificationMessage(virtualInfo.DAAScore)
+	notification := appmessage.NewVirtualDaaScoreChangedNotificationMessage(virtualDAAScore)
 	return m.context.NotificationManager.NotifyVirtualDaaScoreChanged(notification)
 }
 

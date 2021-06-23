@@ -5,6 +5,7 @@ package appmessage
 type SubmitTransactionRequestMessage struct {
 	baseMessage
 	Transaction *RPCTransaction
+	AllowOrphan bool
 }
 
 // Command returns the protocol command string for the message

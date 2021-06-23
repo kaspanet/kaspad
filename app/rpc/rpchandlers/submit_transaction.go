@@ -21,7 +21,7 @@ func HandleSubmitTransaction(context *rpccontext.Context, _ *router.Router, requ
 	}
 
 	transactionID := consensushashing.TransactionID(domainTransaction)
-	err = context.ProtocolManager.AddTransaction(domainTransaction)
+	err = context.ProtocolManager.AddTransaction(domainTransaction, submitTransactionRequest.AllowOrphan)
 	if err != nil {
 		if !errors.As(err, &mempool.RuleError{}) {
 			return nil, err

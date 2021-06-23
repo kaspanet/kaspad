@@ -1,19 +1,21 @@
 package transactionrelay_test
 
 import (
+	"testing"
+
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/app/protocol/flows/transactionrelay"
 	"github.com/kaspanet/kaspad/domain"
 	"github.com/kaspanet/kaspad/domain/consensus"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/testutils"
+	"github.com/kaspanet/kaspad/domain/miningmanager/mempool"
 	"github.com/kaspanet/kaspad/infrastructure/config"
 	"github.com/kaspanet/kaspad/infrastructure/logger"
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter"
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
 	"github.com/kaspanet/kaspad/util/panics"
 	"github.com/pkg/errors"
-	"testing"
 )
 
 // TestHandleRequestedTransactionsNotFound tests the flow of  HandleRequestedTransactions
@@ -34,7 +36,7 @@ func TestHandleRequestedTransactionsNotFound(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Failed to create a NetAdapter: %v", err)
 		}
-		domainInstance, err := domain.New(consensusConfig, tc.Database())
+		domainInstance, err := domain.New(consensusConfig, mempool.DefaultConfig(&consensusConfig.Params), tc.Database())
 		if err != nil {
 			t.Fatalf("Failed to set up a domain Instance: %v", err)
 		}
