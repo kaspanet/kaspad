@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/pow"
 	"github.com/kaspanet/kaspad/domain/dagconfig"
@@ -28,8 +29,7 @@ func main() {
 	machineHashNanoseconds := measureMachineHashNanoseconds()
 	log.Infof("Machine hashes per second: %d", hashNanosecondsToHashesPerSecond(machineHashNanoseconds))
 
-	targetHashNanoseconds := machineHashNanoseconds * 10
-	testConstantHashRate(targetHashNanoseconds, 10*time.Second)
+	testConstantHashRate(machineHashNanoseconds, 5*time.Minute)
 }
 
 func hashNanosecondsToHashesPerSecond(hashNanoseconds int64) int64 {
@@ -52,9 +52,11 @@ func measureMachineHashNanoseconds() int64 {
 	return machineHashesPerSecondMeasurementDuration.Nanoseconds() / hashes
 }
 
-func testConstantHashRate(targetHashNanoseconds int64, runDuration time.Duration) {
+func testConstantHashRate(machineHashNanoseconds int64, runDuration time.Duration) {
 	log.Infof("testConstantHashRate STARTED")
 	defer log.Infof("testConstantHashRate FINISHED")
+
+	targetHashNanoseconds := machineHashNanoseconds * 2
 
 	tearDownKaspad := runKaspad()
 	defer tearDownKaspad()
@@ -63,6 +65,8 @@ func testConstantHashRate(targetHashNanoseconds int64, runDuration time.Duration
 	if err != nil {
 		panic(err)
 	}
+
+	var miningDurations []time.Duration
 
 	hashes := int64(0)
 	startTime := time.Now()
@@ -77,6 +81,8 @@ func testConstantHashRate(targetHashNanoseconds int64, runDuration time.Duration
 		}
 		targetDifficulty := difficulty.CompactToBig(templateBlock.Header.Bits())
 		headerForMining := templateBlock.Header.ToMutable()
+
+		miningStartTime := time.Now()
 		for i := rand.Uint64(); i < math.MaxUint64; i++ {
 			targetElapsedTime := hashes * targetHashNanoseconds
 			elapsedTime := time.Since(startTime).Nanoseconds()
@@ -91,13 +97,33 @@ func testConstantHashRate(targetHashNanoseconds int64, runDuration time.Duration
 				break
 			}
 		}
+		miningDuration := time.Since(miningStartTime)
+		miningDurations = append(miningDurations, miningDuration)
+
 		_, err = rpcClient.SubmitBlock(templateBlock)
 		if err != nil {
 			panic(err)
 		}
 	})
 
-	log.Infof("aaaa %f", float64(hashes)/runDuration.Seconds())
+	log.Infof("Actual hash rate: %f", float64(hashes)/runDuration.Seconds())
+	log.Infof("Mined %d blocks", len(miningDurations))
+
+	lastMiningDurationSampleSize := 60
+	sumOfLastMiningDurations := time.Duration(0)
+	for _, miningDuration := range miningDurations[len(miningDurations)-lastMiningDurationSampleSize:] {
+		sumOfLastMiningDurations += miningDuration
+	}
+	averageOfLastMiningDurations := sumOfLastMiningDurations / time.Duration(lastMiningDurationSampleSize)
+	log.Infof("Average: %s", averageOfLastMiningDurations)
+
+	expectedAverageBlocksPerSecond := float64(1)
+	deviation := math.Abs(expectedAverageBlocksPerSecond - averageOfLastMiningDurations.Seconds())
+	thresholdDeviation := 0.1
+	if deviation > thresholdDeviation {
+		panic(fmt.Errorf("block rate deviation %f is higher than threshold %f. Want: %f, got: %f",
+			deviation, thresholdDeviation, expectedAverageBlocksPerSecond, averageOfLastMiningDurations.Seconds()))
+	}
 }
 
 func runForDuration(duration time.Duration, runFunction func()) {
