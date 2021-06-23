@@ -19,7 +19,6 @@ func (mp *mempool) validateTransactionPreUTXOEntry(transaction *externalapi.Doma
 	return nil
 }
 
-// this function MUST be called with the mempool mutex locked for reads
 func (mp *mempool) validateTransactionInIsolation(transaction *externalapi.DomainTransaction) error {
 	transactionID := consensushashing.TransactionID(transaction)
 	if _, ok := mp.transactionsPool.allTransactions[*transactionID]; ok {
@@ -44,7 +43,6 @@ func (mp *mempool) validateTransactionInIsolation(transaction *externalapi.Domai
 	return nil
 }
 
-// this function MUST be called with the mempool mutex locked for writes
 func (mp *mempool) validateTransactionInContext(transaction *externalapi.DomainTransaction) error {
 	transactionID := consensushashing.TransactionID(transaction)
 	if transaction.Mass > mp.config.MaximumMassAcceptedByBlock {

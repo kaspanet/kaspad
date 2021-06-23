@@ -6,7 +6,6 @@ import (
 	"github.com/kaspanet/kaspad/domain/miningmanager/mempool/model"
 )
 
-// this function MUST be called with the mempool mutex locked for writes
 func (mp *mempool) removeTransactions(transactions []*externalapi.DomainTransaction, removeRedeemers bool) error {
 	for _, transaction := range transactions {
 		err := mp.removeTransaction(consensushashing.TransactionID(transaction), removeRedeemers)
@@ -17,7 +16,6 @@ func (mp *mempool) removeTransactions(transactions []*externalapi.DomainTransact
 	return nil
 }
 
-// this function MUST be called with the mempool mutex locked for writes
 func (mp *mempool) removeTransaction(transactionID *externalapi.DomainTransactionID, removeRedeemers bool) error {
 	if _, ok := mp.orphansPool.allOrphans[*transactionID]; ok {
 		return mp.orphansPool.removeOrphan(transactionID, true)
@@ -51,7 +49,6 @@ func (mp *mempool) removeTransaction(transactionID *externalapi.DomainTransactio
 	return nil
 }
 
-// this function MUST be called with the mempool mutex locked for writes
 func (mp *mempool) removeTransactionFromSets(mempoolTransaction *model.MempoolTransaction, removeRedeemers bool) error {
 	mp.mempoolUTXOSet.removeTransaction(mempoolTransaction)
 

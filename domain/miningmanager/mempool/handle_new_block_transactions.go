@@ -6,7 +6,6 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/utils/transactionhelper"
 )
 
-// this function MUST be called with the mempool mutex locked for writes
 func (mp *mempool) handleNewBlockTransactions(blockTransactions []*externalapi.DomainTransaction) (
 	[]*externalapi.DomainTransaction, error) {
 
@@ -50,7 +49,6 @@ func (mp *mempool) handleNewBlockTransactions(blockTransactions []*externalapi.D
 	return acceptedOrphans, nil
 }
 
-// this function MUST be called with the mempool mutex locked for writes
 func (mp *mempool) removeDoubleSpends(transaction *externalapi.DomainTransaction) error {
 	for _, input := range transaction.Inputs {
 		if redeemer, ok := mp.mempoolUTXOSet.transactionByPreviousOutpoint[input.PreviousOutpoint]; ok {

@@ -24,7 +24,6 @@ func newMempoolUTXOSet(mp *mempool) *mempoolUTXOSet {
 	}
 }
 
-// this function MUST be called with the mempool mutex locked for writes
 func (mpus *mempoolUTXOSet) addTransaction(transaction *model.MempoolTransaction) {
 	outpoint := &externalapi.DomainOutpoint{TransactionID: *transaction.TransactionID()}
 
@@ -47,7 +46,6 @@ func (mpus *mempoolUTXOSet) addTransaction(transaction *model.MempoolTransaction
 	}
 }
 
-// this function MUST be called with the mempool mutex locked for writes
 func (mpus *mempoolUTXOSet) removeTransaction(transaction *model.MempoolTransaction) {
 	for _, input := range transaction.Transaction().Inputs {
 		// If the transaction creating the output spent by this input is in the mempool - restore it's UTXO
@@ -65,7 +63,6 @@ func (mpus *mempoolUTXOSet) removeTransaction(transaction *model.MempoolTransact
 	}
 }
 
-// this function MUST be called with the mempool mutex locked for reads
 func (mpus *mempoolUTXOSet) checkDoubleSpends(transaction *externalapi.DomainTransaction) error {
 	outpoint := externalapi.DomainOutpoint{TransactionID: *consensushashing.TransactionID(transaction)}
 

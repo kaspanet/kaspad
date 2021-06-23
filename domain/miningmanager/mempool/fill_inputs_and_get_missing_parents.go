@@ -34,7 +34,6 @@ func (mp *mempool) fillInputsAndGetMissingParents(transaction *externalapi.Domai
 	return parentsInPool, nil, nil
 }
 
-// this function MUST be called with the mempool mutex locked for reads
 func fillInputs(transaction *externalapi.DomainTransaction, parentsInPool model.OutpointToTransactionMap) {
 	for _, input := range transaction.Inputs {
 		parent, ok := parentsInPool[input.PreviousOutpoint]
