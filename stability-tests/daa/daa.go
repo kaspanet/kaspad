@@ -16,6 +16,8 @@ import (
 
 const rpcAddress = "localhost:9000"
 const miningAddress = "kaspadev:qrcqat6l9zcjsu7swnaztqzrv0s7hu04skpaezxk43y4etj8ncwfkuhy0zmax"
+const hashRateDeviationThreshold = 10
+const blockRateDeviationThreshold = 0.5
 
 func main() {
 	defer panics.HandlePanic(log, "daa-main", nil)
@@ -106,8 +108,14 @@ func testConstantHashRate(machineHashNanoseconds int64, runDuration time.Duratio
 		}
 	})
 
-	log.Infof("Actual hash rate: %f", float64(hashes)/runDuration.Seconds())
-	log.Infof("Mined %d blocks", len(miningDurations))
+	averageHashNanoseconds := runDuration.Nanoseconds() / hashes
+	hashesPerSecond := hashNanosecondsToHashesPerSecond(averageHashNanoseconds)
+	targetHashesPerSecond := hashNanosecondsToHashesPerSecond(targetHashNanoseconds)
+	hashRateDeviation := math.Abs(float64(hashesPerSecond - targetHashesPerSecond))
+	if hashRateDeviation > hashRateDeviationThreshold {
+		panic(fmt.Errorf("hash rate deviation %f is higher than threshold %f. Want: %d, got: %d",
+			hashRateDeviation, blockRateDeviationThreshold, targetHashesPerSecond, hashesPerSecond))
+	}
 
 	lastMiningDurationSampleSize := 60
 	sumOfLastMiningDurations := time.Duration(0)
@@ -115,14 +123,12 @@ func testConstantHashRate(machineHashNanoseconds int64, runDuration time.Duratio
 		sumOfLastMiningDurations += miningDuration
 	}
 	averageOfLastMiningDurations := sumOfLastMiningDurations / time.Duration(lastMiningDurationSampleSize)
-	log.Infof("Average: %s", averageOfLastMiningDurations)
 
 	expectedAverageBlocksPerSecond := float64(1)
 	deviation := math.Abs(expectedAverageBlocksPerSecond - averageOfLastMiningDurations.Seconds())
-	thresholdDeviation := 0.1
-	if deviation > thresholdDeviation {
+	if deviation > blockRateDeviationThreshold {
 		panic(fmt.Errorf("block rate deviation %f is higher than threshold %f. Want: %f, got: %f",
-			deviation, thresholdDeviation, expectedAverageBlocksPerSecond, averageOfLastMiningDurations.Seconds()))
+			deviation, blockRateDeviationThreshold, expectedAverageBlocksPerSecond, averageOfLastMiningDurations.Seconds()))
 	}
 }
 
