@@ -21,6 +21,7 @@ const rpcAddress = "localhost:9000"
 const miningAddress = "kaspadev:qrcqat6l9zcjsu7swnaztqzrv0s7hu04skpaezxk43y4etj8ncwfkuhy0zmax"
 const blockRateDeviationThreshold = 0.5
 const averageBlockRateSampleSize = 60
+const averageHashRateSampleSize = 100_000
 
 func TestDAA(t *testing.T) {
 	machineHashNanoseconds := measureMachineHashNanoseconds(t)
@@ -33,16 +34,16 @@ func TestDAA(t *testing.T) {
 	}{
 		{
 			name:        "constant hash rate",
-			runDuration: 5 * time.Minute,
+			runDuration: 10 * time.Minute,
 			targetHashNanosecondsFunction: func(hashes int64, totalElapsedTime time.Duration) int64 {
 				return machineHashNanoseconds * 2
 			},
 		},
 		{
 			name:        "sudden hash rate drop",
-			runDuration: 5 * time.Minute,
+			runDuration: 15 * time.Minute,
 			targetHashNanosecondsFunction: func(hashes int64, totalElapsedTime time.Duration) int64 {
-				if totalElapsedTime < 3*time.Minute {
+				if totalElapsedTime < 5*time.Minute {
 					return machineHashNanoseconds * 2
 				} else {
 					return machineHashNanoseconds * 10
@@ -51,9 +52,9 @@ func TestDAA(t *testing.T) {
 		},
 		{
 			name:        "sudden hash rate jump",
-			runDuration: 5 * time.Minute,
+			runDuration: 15 * time.Minute,
 			targetHashNanosecondsFunction: func(hashes int64, totalElapsedTime time.Duration) int64 {
-				if totalElapsedTime < 3*time.Minute {
+				if totalElapsedTime < 5*time.Minute {
 					return machineHashNanoseconds * 10
 				} else {
 					return machineHashNanoseconds * 2
@@ -100,6 +101,7 @@ func runDAATest(t *testing.T, testName string, runDuration time.Duration,
 		t.Fatalf("NewRPCClient: %s", err)
 	}
 
+	var hashDurations []time.Duration
 	var miningDurations []time.Duration
 
 	hashes := int64(0)
@@ -136,14 +138,24 @@ func runDAATest(t *testing.T, testName string, runDuration time.Duration,
 				}
 			}
 			hashes++
+
+			hashDuration := time.Since(hashStartTime)
+			hashDurations = append(hashDurations, hashDuration)
+			if len(hashDurations) > averageHashRateSampleSize {
+				hashDurations = hashDurations[1:]
+			}
 		}
 		miningDuration := time.Since(miningStartTime)
 		miningDurations = append(miningDurations, miningDuration)
+		if len(miningDurations) > averageBlockRateSampleSize {
+			miningDurations = miningDurations[1:]
+		}
 
-		averageBlocksPerSecond := calculateAverageBlocksPerSecond(miningDurations)
-		hashesPerSecond := float64(hashes) / time.Since(startTime).Seconds()
-		t.Logf("Mined block. Took: %s, average blocks per second: %f, hashes per second: %f, time elapsed: %s",
-			miningDuration, averageBlocksPerSecond, hashesPerSecond, time.Since(startTime))
+		averageMiningDuration := calculateAverageDuration(miningDurations)
+		averageHashNanoseconds := calculateAverageDuration(hashDurations).Nanoseconds()
+		averageHashesPerSecond := hashNanosecondsToHashesPerSecond(averageHashNanoseconds)
+		t.Logf("Mined block. Took: %s, average block mining duration: %s, average hashes per second: %d, time elapsed: %s",
+			miningDuration, averageMiningDuration, averageHashesPerSecond, time.Since(startTime))
 
 		_, err = rpcClient.SubmitBlock(templateBlock)
 		if err != nil {
@@ -151,7 +163,7 @@ func runDAATest(t *testing.T, testName string, runDuration time.Duration,
 		}
 	})
 
-	averageBlocksPerSecond := calculateAverageBlocksPerSecond(miningDurations)
+	averageBlocksPerSecond := calculateAverageDuration(miningDurations).Seconds()
 	expectedAverageBlocksPerSecond := float64(1)
 	deviation := math.Abs(expectedAverageBlocksPerSecond - averageBlocksPerSecond)
 	if deviation > blockRateDeviationThreshold {
@@ -218,19 +230,11 @@ func runKaspad(t *testing.T) func() {
 	}
 }
 
-func calculateAverageBlocksPerSecond(miningDurations []time.Duration) float64 {
-	sumOfLastMiningDurations := time.Duration(0)
-	startIndex := max(0, len(miningDurations)-averageBlockRateSampleSize)
-	for _, miningDuration := range miningDurations[startIndex:] {
-		sumOfLastMiningDurations += miningDuration
+func calculateAverageDuration(durations []time.Duration) time.Duration {
+	sumOfDurations := time.Duration(0)
+	for _, duration := range durations {
+		sumOfDurations += duration
 	}
-	averageOfMiningDurations := sumOfLastMiningDurations / time.Duration(averageBlockRateSampleSize)
-	return averageOfMiningDurations.Seconds()
-}
-
-func max(left int, right int) int {
-	if left > right {
-		return left
-	}
-	return right
+	averageOfDurations := sumOfDurations / time.Duration(len(durations))
+	return averageOfDurations
 }
