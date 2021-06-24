@@ -24,6 +24,10 @@ const averageBlockRateSampleSize = 60
 const averageHashRateSampleSize = 100_000
 
 func TestDAA(t *testing.T) {
+	if os.Getenv("RUN_STABILITY_TESTS") == "" {
+		t.Skip()
+	}
+
 	machineHashNanoseconds := measureMachineHashNanoseconds(t)
 	t.Logf("Machine hashes per second: %d", hashNanosecondsToHashesPerSecond(machineHashNanoseconds))
 
