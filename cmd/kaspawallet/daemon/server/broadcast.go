@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/daemon/pb"
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/libkaspawallet"
@@ -25,7 +26,7 @@ func (s *server) Broadcast(_ context.Context, request *pb.BroadcastRequest) (*pb
 }
 
 func sendTransaction(client *rpcclient.RPCClient, tx *externalapi.DomainTransaction) (string, error) {
-	submitTransactionResponse, err := client.SubmitTransaction(appmessage.DomainTransactionToRPCTransaction(tx))
+	submitTransactionResponse, err := client.SubmitTransaction(appmessage.DomainTransactionToRPCTransaction(tx), false)
 	if err != nil {
 		return "", errors.Wrapf(err, "error submitting transaction")
 	}

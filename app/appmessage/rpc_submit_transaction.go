@@ -14,9 +14,10 @@ func (msg *SubmitTransactionRequestMessage) Command() MessageCommand {
 }
 
 // NewSubmitTransactionRequestMessage returns a instance of the message
-func NewSubmitTransactionRequestMessage(transaction *RPCTransaction) *SubmitTransactionRequestMessage {
+func NewSubmitTransactionRequestMessage(transaction *RPCTransaction, allowOrphan bool) *SubmitTransactionRequestMessage {
 	return &SubmitTransactionRequestMessage{
 		Transaction: transaction,
+		AllowOrphan: allowOrphan,
 	}
 }
 
