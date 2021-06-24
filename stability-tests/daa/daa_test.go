@@ -121,12 +121,12 @@ func TestDAA(t *testing.T) {
 		},
 		{
 			name:        "constant exponential hash rate decrease",
-			runDuration: 1 * time.Minute,
+			runDuration: 10 * time.Minute,
 			targetHashNanosecondsFunction: func(totalElapsedTime time.Duration) int64 {
 				fromHashNanoseconds := machineHashNanoseconds * 2
 				toHashNanoseconds := machineHashNanoseconds * 10
 
-				totalTime := 1 * time.Minute
+				totalTime := 10 * time.Minute
 				timeElapsedFraction := float64(totalElapsedTime.Nanoseconds()) / float64(totalTime.Nanoseconds())
 
 				return fromHashNanoseconds +
