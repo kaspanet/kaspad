@@ -1,4 +1,4 @@
-# Mempool Limits tool
+# DAA tool
 
 This tool simulates various hashrate patterns to stress-test the DAA algorithm 
 
