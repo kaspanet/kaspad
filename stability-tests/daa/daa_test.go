@@ -27,23 +27,43 @@ func TestDAA(t *testing.T) {
 	t.Logf("Machine hashes per second: %d", hashNanosecondsToHashesPerSecond(machineHashNanoseconds))
 
 	tests := []struct {
-		name                     string
-		runDuration              time.Duration
-		throttleDurationFunction func(hashes int64, elapsedTimeNanoseconds int64) int64
+		name                          string
+		runDuration                   time.Duration
+		targetHashNanosecondsFunction func(hashes int64, elapsedTimeNanoseconds int64) int64
 	}{
 		{
 			name:        "constant hash rate",
 			runDuration: 5 * time.Minute,
-			throttleDurationFunction: func(hashes int64, elapsedTimeNanoseconds int64) int64 {
-				targetHashNanoseconds := machineHashNanoseconds * 2
-				targetElapsedTimeNanoseconds := hashes * targetHashNanoseconds
-				return targetElapsedTimeNanoseconds - elapsedTimeNanoseconds
+			targetHashNanosecondsFunction: func(hashes int64, elapsedTimeNanoseconds int64) int64 {
+				return machineHashNanoseconds * 2
+			},
+		},
+		{
+			name:        "sudden hash rate drop",
+			runDuration: 5 * time.Minute,
+			targetHashNanosecondsFunction: func(hashes int64, elapsedTimeNanoseconds int64) int64 {
+				if time.Duration(elapsedTimeNanoseconds) < 3*time.Minute {
+					return machineHashNanoseconds * 2
+				} else {
+					return machineHashNanoseconds * 10
+				}
+			},
+		},
+		{
+			name:        "sudden hash rate jump",
+			runDuration: 5 * time.Minute,
+			targetHashNanosecondsFunction: func(hashes int64, elapsedTimeNanoseconds int64) int64 {
+				if time.Duration(elapsedTimeNanoseconds) < 3*time.Minute {
+					return machineHashNanoseconds * 10
+				} else {
+					return machineHashNanoseconds * 2
+				}
 			},
 		},
 	}
 
 	for _, test := range tests {
-		runDAATest(t, test.name, test.runDuration, test.throttleDurationFunction)
+		runDAATest(t, test.name, test.runDuration, test.targetHashNanosecondsFunction)
 	}
 }
 
@@ -67,7 +87,7 @@ func measureMachineHashNanoseconds(t *testing.T) int64 {
 }
 
 func runDAATest(t *testing.T, testName string, runDuration time.Duration,
-	throttleDurationFunction func(hashes int64, elapsedTimeNanoseconds int64) int64) {
+	targetHashNanosecondsFunction func(hashes int64, elapsedTimeNanoseconds int64) int64) {
 
 	t.Logf("TEST STARTED: %s", testName)
 	defer t.Logf("TEST FINISHED: %s", testName)
@@ -98,23 +118,34 @@ func runDAATest(t *testing.T, testName string, runDuration time.Duration,
 
 		miningStartTime := time.Now()
 		for i := rand.Uint64(); i < math.MaxUint64; i++ {
-			elapsedTimeNanoseconds := time.Since(startTime).Nanoseconds()
-			throttleDuration := throttleDurationFunction(hashes, elapsedTimeNanoseconds)
-			time.Sleep(time.Duration(throttleDuration))
-			hashes++
+			hashStartTime := time.Now()
 
 			headerForMining.SetNonce(i)
 			if pow.CheckProofOfWorkWithTarget(headerForMining, targetDifficulty) {
 				templateBlock.Header = headerForMining.ToImmutable()
 				break
 			}
+
+			// Yielding a thread in Go takes up to a few milliseconds whereas hashing once
+			// takes a few hundred nanoseconds, so we spin in place instead of e.g. calling time.Sleep()
+			for {
+				totalTimeElapsedNanoseconds := time.Since(startTime).Nanoseconds()
+				targetHashNanoseconds := targetHashNanosecondsFunction(hashes, totalTimeElapsedNanoseconds)
+
+				hashElapsedTimeNanoseconds := time.Since(hashStartTime).Nanoseconds()
+				if hashElapsedTimeNanoseconds >= targetHashNanoseconds {
+					break
+				}
+			}
+			hashes++
 		}
 		miningDuration := time.Since(miningStartTime)
 		miningDurations = append(miningDurations, miningDuration)
 
 		averageBlocksPerSecond := calculateAverageBlocksPerSecond(miningDurations)
-		t.Logf("Mined block. Took: %s, average blocks per second: %f, time elapsed: %s",
-			miningDuration, averageBlocksPerSecond, time.Since(startTime))
+		hashesPerSecond := float64(hashes) / time.Since(startTime).Seconds()
+		t.Logf("Mined block. Took: %s, average blocks per second: %f, hashes per second: %f, time elapsed: %s",
+			miningDuration, averageBlocksPerSecond, hashesPerSecond, time.Since(startTime))
 
 		_, err = rpcClient.SubmitBlock(templateBlock)
 		if err != nil {
