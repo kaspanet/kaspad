@@ -107,30 +107,40 @@ func TestDAA(t *testing.T) {
 		},
 		{
 			name:        "constant exponential hash rate increase",
-			runDuration: 10 * time.Minute,
+			runDuration: 15 * time.Minute,
 			targetHashNanosecondsFunction: func(totalElapsedTime time.Duration) int64 {
 				fromHashNanoseconds := machineHashNanoseconds * 10
 				toHashNanoseconds := machineHashNanoseconds * 2
 
-				totalTime := 10 * time.Minute
-				timeElapsedFraction := float64(totalElapsedTime.Nanoseconds()) / float64(totalTime.Nanoseconds())
+				if totalElapsedTime < 10*time.Minute {
+					totalTime := 10 * time.Minute
+					timeElapsedFraction := float64(totalElapsedTime.Nanoseconds()) / float64(totalTime.Nanoseconds())
 
-				return fromHashNanoseconds -
-					int64(math.Pow(float64(fromHashNanoseconds-toHashNanoseconds), timeElapsedFraction))
+					return fromHashNanoseconds -
+						int64(math.Pow(float64(fromHashNanoseconds-toHashNanoseconds), timeElapsedFraction))
+				} else {
+					// 5 minute cooldown
+					return toHashNanoseconds
+				}
 			},
 		},
 		{
 			name:        "constant exponential hash rate decrease",
-			runDuration: 10 * time.Minute,
+			runDuration: 15 * time.Minute,
 			targetHashNanosecondsFunction: func(totalElapsedTime time.Duration) int64 {
 				fromHashNanoseconds := machineHashNanoseconds * 2
 				toHashNanoseconds := machineHashNanoseconds * 10
 
-				totalTime := 10 * time.Minute
-				timeElapsedFraction := float64(totalElapsedTime.Nanoseconds()) / float64(totalTime.Nanoseconds())
+				if totalElapsedTime < 10*time.Minute {
+					totalTime := 10 * time.Minute
+					timeElapsedFraction := float64(totalElapsedTime.Nanoseconds()) / float64(totalTime.Nanoseconds())
 
-				return fromHashNanoseconds +
-					int64(math.Pow(float64(toHashNanoseconds-fromHashNanoseconds), timeElapsedFraction))
+					return fromHashNanoseconds +
+						int64(math.Pow(float64(toHashNanoseconds-fromHashNanoseconds), timeElapsedFraction))
+				} else {
+					// 5 minute cooldown
+					return toHashNanoseconds
+				}
 			},
 		},
 	}
