@@ -19,21 +19,38 @@ import (
 
 const rpcAddress = "localhost:9000"
 const miningAddress = "kaspadev:qrcqat6l9zcjsu7swnaztqzrv0s7hu04skpaezxk43y4etj8ncwfkuhy0zmax"
-const hashRateDeviationThreshold = 500
 const blockRateDeviationThreshold = 0.5
+const averageBlockRateSampleSize = 60
 
 func TestDAA(t *testing.T) {
-	machineHashNanoseconds := measureMachineHashNanoseconds()
+	machineHashNanoseconds := measureMachineHashNanoseconds(t)
 	t.Logf("Machine hashes per second: %d", hashNanosecondsToHashesPerSecond(machineHashNanoseconds))
 
-	testConstantHashRate(t, machineHashNanoseconds, 5*time.Minute)
+	tests := []struct {
+		name                     string
+		runDuration              time.Duration
+		throttleDurationFunction func(hashes int64, elapsedTimeNanoseconds int64) int64
+	}{
+		{
+			name:        "constant hash rate",
+			runDuration: 5 * time.Minute,
+			throttleDurationFunction: func(hashes int64, elapsedTimeNanoseconds int64) int64 {
+				targetHashNanoseconds := machineHashNanoseconds * 2
+				targetElapsedTimeNanoseconds := hashes * targetHashNanoseconds
+				return targetElapsedTimeNanoseconds - elapsedTimeNanoseconds
+			},
+		},
+	}
+
+	for _, test := range tests {
+		runDAATest(t, test.name, test.runDuration, test.throttleDurationFunction)
+	}
 }
 
-func hashNanosecondsToHashesPerSecond(hashNanoseconds int64) int64 {
-	return time.Second.Nanoseconds() / hashNanoseconds
-}
+func measureMachineHashNanoseconds(t *testing.T) int64 {
+	t.Logf("Measuring machine hash rate")
+	defer t.Logf("Finished measuring machine hash rate")
 
-func measureMachineHashNanoseconds() int64 {
 	genesisBlock := dagconfig.DevnetParams.GenesisBlock
 	targetDifficulty := difficulty.CompactToBig(genesisBlock.Header.Bits())
 	headerForMining := genesisBlock.Header.ToMutable()
@@ -49,11 +66,11 @@ func measureMachineHashNanoseconds() int64 {
 	return machineHashesPerSecondMeasurementDuration.Nanoseconds() / hashes
 }
 
-func testConstantHashRate(t *testing.T, machineHashNanoseconds int64, runDuration time.Duration) {
-	t.Logf("testConstantHashRate STARTED")
-	defer t.Logf("testConstantHashRate FINISHED")
+func runDAATest(t *testing.T, testName string, runDuration time.Duration,
+	throttleDurationFunction func(hashes int64, elapsedTimeNanoseconds int64) int64) {
 
-	targetHashNanoseconds := machineHashNanoseconds * 2
+	t.Logf("TEST STARTED: %s", testName)
+	defer t.Logf("TEST FINISHED: %s", testName)
 
 	tearDownKaspad := runKaspad(t)
 	defer tearDownKaspad()
@@ -81,11 +98,9 @@ func testConstantHashRate(t *testing.T, machineHashNanoseconds int64, runDuratio
 
 		miningStartTime := time.Now()
 		for i := rand.Uint64(); i < math.MaxUint64; i++ {
-			targetElapsedTime := hashes * targetHashNanoseconds
-			elapsedTime := time.Since(startTime).Nanoseconds()
-			if elapsedTime < targetElapsedTime {
-				time.Sleep(time.Duration(targetElapsedTime - elapsedTime))
-			}
+			elapsedTimeNanoseconds := time.Since(startTime).Nanoseconds()
+			throttleDuration := throttleDurationFunction(hashes, elapsedTimeNanoseconds)
+			time.Sleep(time.Duration(throttleDuration))
 			hashes++
 
 			headerForMining.SetNonce(i)
@@ -97,34 +112,27 @@ func testConstantHashRate(t *testing.T, machineHashNanoseconds int64, runDuratio
 		miningDuration := time.Since(miningStartTime)
 		miningDurations = append(miningDurations, miningDuration)
 
+		averageBlocksPerSecond := calculateAverageBlocksPerSecond(miningDurations)
+		t.Logf("Mined block. Took: %s, average blocks per second: %f, time elapsed: %s",
+			miningDuration, averageBlocksPerSecond, time.Since(startTime))
+
 		_, err = rpcClient.SubmitBlock(templateBlock)
 		if err != nil {
 			t.Fatalf("SubmitBlock: %s", err)
 		}
 	})
 
-	averageHashNanoseconds := runDuration.Nanoseconds() / hashes
-	hashesPerSecond := hashNanosecondsToHashesPerSecond(averageHashNanoseconds)
-	targetHashesPerSecond := hashNanosecondsToHashesPerSecond(targetHashNanoseconds)
-	hashRateDeviation := math.Abs(float64(hashesPerSecond - targetHashesPerSecond))
-	if hashRateDeviation > hashRateDeviationThreshold {
-		t.Fatalf("Hash rate deviation %f is higher than threshold %f. Want: %d, got: %d",
-			hashRateDeviation, blockRateDeviationThreshold, targetHashesPerSecond, hashesPerSecond)
-	}
-
-	lastMiningDurationSampleSize := 60
-	sumOfLastMiningDurations := time.Duration(0)
-	for _, miningDuration := range miningDurations[len(miningDurations)-lastMiningDurationSampleSize:] {
-		sumOfLastMiningDurations += miningDuration
-	}
-	averageOfLastMiningDurations := sumOfLastMiningDurations / time.Duration(lastMiningDurationSampleSize)
-
+	averageBlocksPerSecond := calculateAverageBlocksPerSecond(miningDurations)
 	expectedAverageBlocksPerSecond := float64(1)
-	deviation := math.Abs(expectedAverageBlocksPerSecond - averageOfLastMiningDurations.Seconds())
+	deviation := math.Abs(expectedAverageBlocksPerSecond - averageBlocksPerSecond)
 	if deviation > blockRateDeviationThreshold {
 		t.Fatalf("Block rate deviation %f is higher than threshold %f. Want: %f, got: %f",
-			deviation, blockRateDeviationThreshold, expectedAverageBlocksPerSecond, averageOfLastMiningDurations.Seconds())
+			deviation, blockRateDeviationThreshold, expectedAverageBlocksPerSecond, averageBlocksPerSecond)
 	}
+}
+
+func hashNanosecondsToHashesPerSecond(hashNanoseconds int64) int64 {
+	return time.Second.Nanoseconds() / hashNanoseconds
 }
 
 func runForDuration(duration time.Duration, runFunction func()) {
@@ -179,4 +187,21 @@ func runKaspad(t *testing.T) func() {
 		atomic.StoreUint64(&isShutdown, 1)
 		t.Logf("Kaspad stopped")
 	}
+}
+
+func calculateAverageBlocksPerSecond(miningDurations []time.Duration) float64 {
+	sumOfLastMiningDurations := time.Duration(0)
+	startIndex := max(0, len(miningDurations)-averageBlockRateSampleSize)
+	for _, miningDuration := range miningDurations[startIndex:] {
+		sumOfLastMiningDurations += miningDuration
+	}
+	averageOfMiningDurations := sumOfLastMiningDurations / time.Duration(averageBlockRateSampleSize)
+	return averageOfMiningDurations.Seconds()
+}
+
+func max(left int, right int) int {
+	if left > right {
+		return left
+	}
+	return right
 }
