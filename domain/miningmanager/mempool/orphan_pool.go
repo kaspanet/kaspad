@@ -128,9 +128,9 @@ func (op *orphansPool) addOrphan(transaction *externalapi.DomainTransaction, isH
 
 	op.allOrphans[*orphanTransaction.TransactionID()] = orphanTransaction
 	for _, input := range transaction.Inputs {
-		if input.UTXOEntry == nil {
-			op.orphansByPreviousOutpoint[input.PreviousOutpoint] = orphanTransaction
-		}
+		op.orphansByPreviousOutpoint[input.PreviousOutpoint] = orphanTransaction
+		log.Debugf("~~~~~ op.orphansByPreviousOutpoint[%s] = %s",
+			input.PreviousOutpoint, consensushashing.TransactionID(transaction))
 	}
 
 	return nil
