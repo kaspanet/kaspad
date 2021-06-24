@@ -1,17 +1,20 @@
 package model
 
 import (
-	consensusexternalapi "github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 )
 
 // Mempool maintains a set of known transactions that
 // are intended to be mined into new blocks
 type Mempool interface {
-	HandleNewBlockTransactions(txs []*consensusexternalapi.DomainTransaction) ([]*consensusexternalapi.DomainTransaction, error)
-	BlockCandidateTransactions() []*consensusexternalapi.DomainTransaction
-	ValidateAndInsertTransaction(transaction *consensusexternalapi.DomainTransaction, allowOrphan bool) error
-	RemoveTransactions(txs []*consensusexternalapi.DomainTransaction) error
-	GetTransaction(transactionID *consensusexternalapi.DomainTransactionID) (*consensusexternalapi.DomainTransaction, bool)
-	AllTransactions() []*consensusexternalapi.DomainTransaction
+	HandleNewBlockTransactions(txs []*externalapi.DomainTransaction) ([]*externalapi.DomainTransaction, error)
+	BlockCandidateTransactions() []*externalapi.DomainTransaction
+	ValidateAndInsertTransaction(transaction *externalapi.DomainTransaction, isHighPriority bool, allowOrphan bool) (
+		acceptedTransactions []*externalapi.DomainTransaction, err error)
+	RemoveTransactions(txs []*externalapi.DomainTransaction, removeRedeemers bool) error
+	GetTransaction(transactionID *externalapi.DomainTransactionID) (*externalapi.DomainTransaction, bool)
+	AllTransactions() []*externalapi.DomainTransaction
 	TransactionCount() int
+	RevalidateHighPriorityTransactions() (validTransactions []*externalapi.DomainTransaction, err error)
+	IsTransactionOutputDust(output *externalapi.DomainTransactionOutput) bool
 }

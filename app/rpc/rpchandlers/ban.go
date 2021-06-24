@@ -12,8 +12,12 @@ func HandleBan(context *rpccontext.Context, _ *router.Router, request appmessage
 	banRequest := request.(*appmessage.BanRequestMessage)
 	ip := net.ParseIP(banRequest.IP)
 	if ip == nil {
+		hint := ""
+		if banRequest.IP[0] == '[' {
+			hint = " (try to remove “[” and “]” symbols)"
+		}
 		errorMessage := &appmessage.BanResponseMessage{}
-		errorMessage.Error = appmessage.RPCErrorf("Could not parse IP %s", banRequest.IP)
+		errorMessage.Error = appmessage.RPCErrorf("Could not parse IP%s: %s", hint, banRequest.IP)
 		return errorMessage, nil
 	}
 

@@ -28,6 +28,7 @@ type Consensus interface {
 	GetSyncInfo() (*SyncInfo, error)
 	Tips() ([]*DomainHash, error)
 	GetVirtualInfo() (*VirtualInfo, error)
+	GetVirtualDAAScore() (uint64, error)
 	IsValidPruningPoint(blockHash *DomainHash) (bool, error)
 	GetVirtualSelectedParentChainFromBlock(blockHash *DomainHash) (*SelectedChainPath, error)
 	IsInSelectedParentChainOf(blockHashA *DomainHash, blockHashB *DomainHash) (bool, error)

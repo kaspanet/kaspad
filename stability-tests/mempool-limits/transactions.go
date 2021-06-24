@@ -2,6 +2,9 @@ package mempoollimits
 
 import (
 	"encoding/hex"
+	"strings"
+	"testing"
+
 	"github.com/kaspanet/go-secp256k1"
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
@@ -15,8 +18,6 @@ import (
 	"github.com/kaspanet/kaspad/infrastructure/network/rpcclient"
 	"github.com/kaspanet/kaspad/stability-tests/common/mine"
 	"github.com/kaspanet/kaspad/util"
-	"strings"
-	"testing"
 )
 
 const (
@@ -85,7 +86,7 @@ func submitAnAmountOfTransactionsToTheMempool(t *testing.T, rpcClient *rpcclient
 
 	for i, transaction := range transactions {
 		rpcTransaction := appmessage.DomainTransactionToRPCTransaction(transaction)
-		_, err := rpcClient.SubmitTransaction(rpcTransaction)
+		_, err := rpcClient.SubmitTransaction(rpcTransaction, false)
 		if err != nil {
 			if ignoreOrphanRejects && strings.Contains(err.Error(), "orphan") {
 				continue
