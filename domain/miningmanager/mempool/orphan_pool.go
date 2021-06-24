@@ -128,9 +128,7 @@ func (op *orphansPool) addOrphan(transaction *externalapi.DomainTransaction, isH
 
 	op.allOrphans[*orphanTransaction.TransactionID()] = orphanTransaction
 	for _, input := range transaction.Inputs {
-		if input.UTXOEntry == nil {
-			op.orphansByPreviousOutpoint[input.PreviousOutpoint] = orphanTransaction
-		}
+		op.orphansByPreviousOutpoint[input.PreviousOutpoint] = orphanTransaction
 	}
 
 	return nil
@@ -155,7 +153,7 @@ func (op *orphansPool) processOrphansAfterAcceptedTransaction(acceptedTransactio
 				continue
 			}
 			for _, input := range orphan.Transaction().Inputs {
-				if input.PreviousOutpoint.Equal(&outpoint) {
+				if input.PreviousOutpoint.Equal(&outpoint) && input.UTXOEntry == nil {
 					input.UTXOEntry = utxo.NewUTXOEntry(output.Value, output.ScriptPublicKey, false,
 						model.UnacceptedDAAScore)
 					break
@@ -288,7 +286,7 @@ func (op *orphansPool) expireOrphanTransactions() error {
 
 		// Remove all transactions whose addedAtDAAScore is older then TransactionExpireIntervalDAAScore
 		if virtualDAAScore-orphanTransaction.AddedAtDAAScore() > op.mempool.config.OrphanExpireIntervalDAAScore {
-			err = op.removeOrphan(orphanTransaction.TransactionID(), true)
+			err = op.removeOrphan(orphanTransaction.TransactionID(), false)
 			if err != nil {
 				return err
 			}
