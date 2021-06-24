@@ -49,9 +49,8 @@ func TestDAA(t *testing.T) {
 			targetHashNanosecondsFunction: func(totalElapsedTime time.Duration) int64 {
 				if totalElapsedTime < 5*time.Minute {
 					return machineHashNanoseconds * 2
-				} else {
-					return machineHashNanoseconds * 10
 				}
+				return machineHashNanoseconds * 10
 			},
 		},
 		{
@@ -60,9 +59,8 @@ func TestDAA(t *testing.T) {
 			targetHashNanosecondsFunction: func(totalElapsedTime time.Duration) int64 {
 				if totalElapsedTime < 5*time.Minute {
 					return machineHashNanoseconds * 10
-				} else {
-					return machineHashNanoseconds * 2
 				}
+				return machineHashNanoseconds * 2
 			},
 		},
 		{
@@ -71,9 +69,8 @@ func TestDAA(t *testing.T) {
 			targetHashNanosecondsFunction: func(totalElapsedTime time.Duration) int64 {
 				if totalElapsedTime < 4*time.Minute && totalElapsedTime > 5*time.Minute {
 					return machineHashNanoseconds * 2
-				} else {
-					return machineHashNanoseconds * 10
 				}
+				return machineHashNanoseconds * 10
 			},
 		},
 		{
@@ -82,9 +79,8 @@ func TestDAA(t *testing.T) {
 			targetHashNanosecondsFunction: func(totalElapsedTime time.Duration) int64 {
 				if totalElapsedTime < 4*time.Minute && totalElapsedTime > 5*time.Minute {
 					return machineHashNanoseconds * 10
-				} else {
-					return machineHashNanoseconds * 2
 				}
+				return machineHashNanoseconds * 2
 			},
 		},
 		{
@@ -93,9 +89,8 @@ func TestDAA(t *testing.T) {
 			targetHashNanosecondsFunction: func(totalElapsedTime time.Duration) int64 {
 				if int(totalElapsedTime.Seconds())%30 == 0 {
 					return machineHashNanoseconds * 2
-				} else {
-					return machineHashNanoseconds * 10
 				}
+				return machineHashNanoseconds * 10
 			},
 		},
 		{
@@ -104,9 +99,8 @@ func TestDAA(t *testing.T) {
 			targetHashNanosecondsFunction: func(totalElapsedTime time.Duration) int64 {
 				if int(totalElapsedTime.Seconds())%30 == 0 {
 					return machineHashNanoseconds * 10
-				} else {
-					return machineHashNanoseconds * 2
 				}
+				return machineHashNanoseconds * 2
 			},
 		},
 		{
@@ -122,10 +116,10 @@ func TestDAA(t *testing.T) {
 
 					return fromHashNanoseconds -
 						int64(math.Pow(float64(fromHashNanoseconds-toHashNanoseconds), timeElapsedFraction))
-				} else {
-					// 5 minute cooldown
-					return toHashNanoseconds
 				}
+
+				// 5 minute cooldown
+				return toHashNanoseconds
 			},
 		},
 		{
@@ -141,10 +135,10 @@ func TestDAA(t *testing.T) {
 
 					return fromHashNanoseconds +
 						int64(math.Pow(float64(toHashNanoseconds-fromHashNanoseconds), timeElapsedFraction))
-				} else {
-					// 5 minute cooldown
-					return toHashNanoseconds
 				}
+
+				// 5 minute cooldown
+				return toHashNanoseconds
 			},
 		},
 	}
