@@ -29,20 +29,20 @@ func TestDAA(t *testing.T) {
 	tests := []struct {
 		name                          string
 		runDuration                   time.Duration
-		targetHashNanosecondsFunction func(hashes int64, elapsedTimeNanoseconds int64) int64
+		targetHashNanosecondsFunction func(hashes int64, totalElapsedTime time.Duration) int64
 	}{
 		{
 			name:        "constant hash rate",
 			runDuration: 5 * time.Minute,
-			targetHashNanosecondsFunction: func(hashes int64, elapsedTimeNanoseconds int64) int64 {
+			targetHashNanosecondsFunction: func(hashes int64, totalElapsedTime time.Duration) int64 {
 				return machineHashNanoseconds * 2
 			},
 		},
 		{
 			name:        "sudden hash rate drop",
 			runDuration: 5 * time.Minute,
-			targetHashNanosecondsFunction: func(hashes int64, elapsedTimeNanoseconds int64) int64 {
-				if time.Duration(elapsedTimeNanoseconds) < 3*time.Minute {
+			targetHashNanosecondsFunction: func(hashes int64, totalElapsedTime time.Duration) int64 {
+				if totalElapsedTime < 3*time.Minute {
 					return machineHashNanoseconds * 2
 				} else {
 					return machineHashNanoseconds * 10
@@ -52,8 +52,8 @@ func TestDAA(t *testing.T) {
 		{
 			name:        "sudden hash rate jump",
 			runDuration: 5 * time.Minute,
-			targetHashNanosecondsFunction: func(hashes int64, elapsedTimeNanoseconds int64) int64 {
-				if time.Duration(elapsedTimeNanoseconds) < 3*time.Minute {
+			targetHashNanosecondsFunction: func(hashes int64, totalElapsedTime time.Duration) int64 {
+				if totalElapsedTime < 3*time.Minute {
 					return machineHashNanoseconds * 10
 				} else {
 					return machineHashNanoseconds * 2
@@ -87,7 +87,7 @@ func measureMachineHashNanoseconds(t *testing.T) int64 {
 }
 
 func runDAATest(t *testing.T, testName string, runDuration time.Duration,
-	targetHashNanosecondsFunction func(hashes int64, elapsedTimeNanoseconds int64) int64) {
+	targetHashNanosecondsFunction func(hashes int64, totalElapsedTime time.Duration) int64) {
 
 	t.Logf("TEST STARTED: %s", testName)
 	defer t.Logf("TEST FINISHED: %s", testName)
@@ -129,9 +129,7 @@ func runDAATest(t *testing.T, testName string, runDuration time.Duration,
 			// Yielding a thread in Go takes up to a few milliseconds whereas hashing once
 			// takes a few hundred nanoseconds, so we spin in place instead of e.g. calling time.Sleep()
 			for {
-				totalTimeElapsedNanoseconds := time.Since(startTime).Nanoseconds()
-				targetHashNanoseconds := targetHashNanosecondsFunction(hashes, totalTimeElapsedNanoseconds)
-
+				targetHashNanoseconds := targetHashNanosecondsFunction(hashes, time.Since(startTime))
 				hashElapsedTimeNanoseconds := time.Since(hashStartTime).Nanoseconds()
 				if hashElapsedTimeNanoseconds >= targetHashNanoseconds {
 					break
