@@ -61,6 +61,50 @@ func TestDAA(t *testing.T) {
 				}
 			},
 		},
+		{
+			name:        "hash rate peak",
+			runDuration: 10 * time.Minute,
+			targetHashNanosecondsFunction: func(hashes int64, totalElapsedTime time.Duration) int64 {
+				if totalElapsedTime < 4*time.Minute && totalElapsedTime > 5*time.Minute {
+					return machineHashNanoseconds * 2
+				} else {
+					return machineHashNanoseconds * 10
+				}
+			},
+		},
+		{
+			name:        "hash rate valley",
+			runDuration: 10 * time.Minute,
+			targetHashNanosecondsFunction: func(hashes int64, totalElapsedTime time.Duration) int64 {
+				if totalElapsedTime < 4*time.Minute && totalElapsedTime > 5*time.Minute {
+					return machineHashNanoseconds * 10
+				} else {
+					return machineHashNanoseconds * 2
+				}
+			},
+		},
+		{
+			name:        "periodic hash rate peaks",
+			runDuration: 10 * time.Minute,
+			targetHashNanosecondsFunction: func(hashes int64, totalElapsedTime time.Duration) int64 {
+				if int(totalElapsedTime.Seconds())%30 == 0 {
+					return machineHashNanoseconds * 2
+				} else {
+					return machineHashNanoseconds * 10
+				}
+			},
+		},
+		{
+			name:        "periodic hash rate valleys",
+			runDuration: 10 * time.Minute,
+			targetHashNanosecondsFunction: func(hashes int64, totalElapsedTime time.Duration) int64 {
+				if int(totalElapsedTime.Seconds())%30 == 0 {
+					return machineHashNanoseconds * 10
+				} else {
+					return machineHashNanoseconds * 2
+				}
+			},
+		},
 	}
 
 	for _, test := range tests {
