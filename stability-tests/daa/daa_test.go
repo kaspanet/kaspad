@@ -1,4 +1,4 @@
-package main
+package daa
 
 import (
 	"fmt"
@@ -8,30 +8,25 @@ import (
 	"github.com/kaspanet/kaspad/infrastructure/network/rpcclient"
 	"github.com/kaspanet/kaspad/stability-tests/common"
 	"github.com/kaspanet/kaspad/util/difficulty"
-	"github.com/kaspanet/kaspad/util/panics"
 	"math"
 	"math/rand"
+	"os"
+	"sync/atomic"
+	"syscall"
+	"testing"
 	"time"
 )
 
 const rpcAddress = "localhost:9000"
 const miningAddress = "kaspadev:qrcqat6l9zcjsu7swnaztqzrv0s7hu04skpaezxk43y4etj8ncwfkuhy0zmax"
-const hashRateDeviationThreshold = 10
+const hashRateDeviationThreshold = 500
 const blockRateDeviationThreshold = 0.5
 
-func main() {
-	defer panics.HandlePanic(log, "daa-main", nil)
-	err := parseConfig()
-	if err != nil {
-		panic(err)
-	}
-	defer backendLog.Close()
-	common.UseLogger(backendLog, log.Level())
-
+func TestDAA(t *testing.T) {
 	machineHashNanoseconds := measureMachineHashNanoseconds()
-	log.Infof("Machine hashes per second: %d", hashNanosecondsToHashesPerSecond(machineHashNanoseconds))
+	t.Logf("Machine hashes per second: %d", hashNanosecondsToHashesPerSecond(machineHashNanoseconds))
 
-	testConstantHashRate(machineHashNanoseconds, 5*time.Minute)
+	testConstantHashRate(t, machineHashNanoseconds, 5*time.Minute)
 }
 
 func hashNanosecondsToHashesPerSecond(hashNanoseconds int64) int64 {
@@ -54,18 +49,18 @@ func measureMachineHashNanoseconds() int64 {
 	return machineHashesPerSecondMeasurementDuration.Nanoseconds() / hashes
 }
 
-func testConstantHashRate(machineHashNanoseconds int64, runDuration time.Duration) {
-	log.Infof("testConstantHashRate STARTED")
-	defer log.Infof("testConstantHashRate FINISHED")
+func testConstantHashRate(t *testing.T, machineHashNanoseconds int64, runDuration time.Duration) {
+	t.Logf("testConstantHashRate STARTED")
+	defer t.Logf("testConstantHashRate FINISHED")
 
 	targetHashNanoseconds := machineHashNanoseconds * 2
 
-	tearDownKaspad := runKaspad()
+	tearDownKaspad := runKaspad(t)
 	defer tearDownKaspad()
 
 	rpcClient, err := rpcclient.NewRPCClient(rpcAddress)
 	if err != nil {
-		panic(err)
+		t.Fatalf("NewRPCClient: %s", err)
 	}
 
 	var miningDurations []time.Duration
@@ -75,11 +70,11 @@ func testConstantHashRate(machineHashNanoseconds int64, runDuration time.Duratio
 	runForDuration(runDuration, func() {
 		getBlockTemplateResponse, err := rpcClient.GetBlockTemplate(miningAddress)
 		if err != nil {
-			panic(err)
+			t.Fatalf("GetBlockTemplate: %s", err)
 		}
 		templateBlock, err := appmessage.RPCBlockToDomainBlock(getBlockTemplateResponse.Block)
 		if err != nil {
-			panic(err)
+			t.Fatalf("RPCBlockToDomainBlock: %s", err)
 		}
 		targetDifficulty := difficulty.CompactToBig(templateBlock.Header.Bits())
 		headerForMining := templateBlock.Header.ToMutable()
@@ -104,7 +99,7 @@ func testConstantHashRate(machineHashNanoseconds int64, runDuration time.Duratio
 
 		_, err = rpcClient.SubmitBlock(templateBlock)
 		if err != nil {
-			panic(err)
+			t.Fatalf("SubmitBlock: %s", err)
 		}
 	})
 
@@ -113,8 +108,8 @@ func testConstantHashRate(machineHashNanoseconds int64, runDuration time.Duratio
 	targetHashesPerSecond := hashNanosecondsToHashesPerSecond(targetHashNanoseconds)
 	hashRateDeviation := math.Abs(float64(hashesPerSecond - targetHashesPerSecond))
 	if hashRateDeviation > hashRateDeviationThreshold {
-		panic(fmt.Errorf("hash rate deviation %f is higher than threshold %f. Want: %d, got: %d",
-			hashRateDeviation, blockRateDeviationThreshold, targetHashesPerSecond, hashesPerSecond))
+		t.Fatalf("Hash rate deviation %f is higher than threshold %f. Want: %d, got: %d",
+			hashRateDeviation, blockRateDeviationThreshold, targetHashesPerSecond, hashesPerSecond)
 	}
 
 	lastMiningDurationSampleSize := 60
@@ -127,8 +122,8 @@ func testConstantHashRate(machineHashNanoseconds int64, runDuration time.Duratio
 	expectedAverageBlocksPerSecond := float64(1)
 	deviation := math.Abs(expectedAverageBlocksPerSecond - averageOfLastMiningDurations.Seconds())
 	if deviation > blockRateDeviationThreshold {
-		panic(fmt.Errorf("block rate deviation %f is higher than threshold %f. Want: %f, got: %f",
-			deviation, blockRateDeviationThreshold, expectedAverageBlocksPerSecond, averageOfLastMiningDurations.Seconds()))
+		t.Fatalf("Block rate deviation %f is higher than threshold %f. Want: %f, got: %f",
+			deviation, blockRateDeviationThreshold, expectedAverageBlocksPerSecond, averageOfLastMiningDurations.Seconds())
 	}
 }
 
@@ -141,4 +136,47 @@ func runForDuration(duration time.Duration, runFunction func()) {
 	}()
 	time.Sleep(duration)
 	isFinished = true
+}
+
+func runKaspad(t *testing.T) func() {
+	dataDir, err := common.TempDir("kaspad-daa-test")
+	if err != nil {
+		t.Fatalf("TempDir: %s", err)
+	}
+
+	kaspadRunCommand, err := common.StartCmd("KASPAD",
+		"kaspad",
+		common.NetworkCliArgumentFromNetParams(&dagconfig.DevnetParams),
+		"--appdir", dataDir,
+		"--logdir", dataDir,
+		"--rpclisten", rpcAddress,
+		"--loglevel", "debug",
+	)
+	if err != nil {
+		t.Fatalf("StartCmd: %s", err)
+	}
+	t.Logf("Kaspad started")
+
+	isShutdown := uint64(0)
+	go func() {
+		err := kaspadRunCommand.Wait()
+		if err != nil {
+			if atomic.LoadUint64(&isShutdown) == 0 {
+				panic(fmt.Sprintf("Kaspad closed unexpectedly: %s. See logs at: %s", err, dataDir))
+			}
+		}
+	}()
+
+	return func() {
+		err := kaspadRunCommand.Process.Signal(syscall.SIGTERM)
+		if err != nil {
+			t.Fatalf("Signal: %s", err)
+		}
+		err = os.RemoveAll(dataDir)
+		if err != nil {
+			t.Fatalf("RemoveAll: %s", err)
+		}
+		atomic.StoreUint64(&isShutdown, 1)
+		t.Logf("Kaspad stopped")
+	}
 }
