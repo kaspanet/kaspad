@@ -245,7 +245,7 @@ func runDAATest(t *testing.T, testName string, runDuration time.Duration,
 	expectedAverageBlocksPerSecond := float64(1)
 	deviation := math.Abs(expectedAverageBlocksPerSecond - averageBlocksPerSecond)
 	if deviation > blockRateDeviationThreshold {
-		t.Fatalf("Block rate deviation %f is higher than threshold %f. Want: %f, got: %f",
+		t.Errorf("Block rate deviation %f is higher than threshold %f. Want: %f, got: %f",
 			deviation, blockRateDeviationThreshold, expectedAverageBlocksPerSecond, averageBlocksPerSecond)
 	}
 }
