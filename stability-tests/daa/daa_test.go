@@ -158,7 +158,7 @@ func measureMachineHashNanoseconds(t *testing.T) int64 {
 
 	machineHashesPerSecondMeasurementDuration := 10 * time.Second
 	hashes := int64(0)
-	runForDuration(machineHashesPerSecondMeasurementDuration, func() {
+	runForDuration(machineHashesPerSecondMeasurementDuration, func(isFinished *bool) {
 		headerForMining.SetNonce(rand.Uint64())
 		pow.CheckProofOfWorkWithTarget(headerForMining, targetDifficulty)
 		hashes++
@@ -187,7 +187,7 @@ func runDAATest(t *testing.T, testName string, runDuration time.Duration,
 	blocksMined := 0
 
 	startTime := time.Now()
-	runForDuration(runDuration, func() {
+	runForDuration(runDuration, func(isFinished *bool) {
 		getBlockTemplateResponse, err := rpcClient.GetBlockTemplate(miningAddress)
 		if err != nil {
 			t.Fatalf("GetBlockTemplate: %s", err)
@@ -224,11 +224,19 @@ func runDAATest(t *testing.T, testName string, runDuration time.Duration,
 			if len(hashDurations) > averageHashRateSampleSize {
 				hashDurations = hashDurations[1:]
 			}
+
+			if *isFinished {
+				return
+			}
 		}
 		miningDuration := time.Since(miningStartTime)
 		miningDurations = append(miningDurations, miningDuration)
 		if len(miningDurations) > averageBlockRateSampleSize {
 			miningDurations = miningDurations[1:]
+		}
+
+		if *isFinished {
+			return
 		}
 
 		averageMiningDuration := calculateAverageDuration(miningDurations)
@@ -244,6 +252,10 @@ func runDAATest(t *testing.T, testName string, runDuration time.Duration,
 		t.Logf("Mined block. Took: %s, average block mining duration: %s, "+
 			"average hashes per second: %d, difficulty delta: %f, time elapsed: %s, blocks mined: %d",
 			miningDuration, averageMiningDuration, averageHashesPerSecond, difficultyDelta, time.Since(startTime), blocksMined)
+
+		if *isFinished {
+			return
+		}
 
 		_, err = rpcClient.SubmitBlock(templateBlock)
 		if err != nil {
@@ -264,11 +276,11 @@ func hashNanosecondsToHashesPerSecond(hashNanoseconds int64) int64 {
 	return time.Second.Nanoseconds() / hashNanoseconds
 }
 
-func runForDuration(duration time.Duration, runFunction func()) {
+func runForDuration(duration time.Duration, runFunction func(isFinished *bool)) {
 	isFinished := false
 	go func() {
 		for !isFinished {
-			runFunction()
+			runFunction(&isFinished)
 		}
 	}()
 	time.Sleep(duration)
