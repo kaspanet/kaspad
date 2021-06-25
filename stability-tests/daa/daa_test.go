@@ -181,8 +181,8 @@ func runDAATest(t *testing.T, testName string, runDuration time.Duration,
 		t.Fatalf("NewRPCClient: %s", err)
 	}
 
-	var hashDurations []time.Duration
-	var miningDurations []time.Duration
+	hashDurations := make([]time.Duration, 0, averageHashRateSampleSize+1)
+	miningDurations := make([]time.Duration, 0, averageBlockRateSampleSize+1)
 
 	startTime := time.Now()
 	runForDuration(runDuration, func() {
@@ -266,7 +266,7 @@ func runForDuration(duration time.Duration, runFunction func()) {
 }
 
 func runKaspad(t *testing.T) func() {
-	dataDir, err := common.TempDir("kaspad-daa-test")
+	appDir, err := common.TempDir("kaspad-daa-test")
 	if err != nil {
 		t.Fatalf("TempDir: %s", err)
 	}
@@ -274,22 +274,22 @@ func runKaspad(t *testing.T) func() {
 	kaspadRunCommand, err := common.StartCmd("KASPAD",
 		"kaspad",
 		common.NetworkCliArgumentFromNetParams(&dagconfig.DevnetParams),
-		"--appdir", dataDir,
-		"--logdir", dataDir,
+		"--appdir", appDir,
+		"--logdir", appDir,
 		"--rpclisten", rpcAddress,
 		"--loglevel", "debug",
 	)
 	if err != nil {
 		t.Fatalf("StartCmd: %s", err)
 	}
-	t.Logf("Kaspad started")
+	t.Logf("Kaspad started with --appdir=%s", appDir)
 
 	isShutdown := uint64(0)
 	go func() {
 		err := kaspadRunCommand.Wait()
 		if err != nil {
 			if atomic.LoadUint64(&isShutdown) == 0 {
-				panic(fmt.Sprintf("Kaspad closed unexpectedly: %s. See logs at: %s", err, dataDir))
+				panic(fmt.Sprintf("Kaspad closed unexpectedly: %s. See logs at: %s", err, appDir))
 			}
 		}
 	}()
@@ -299,7 +299,7 @@ func runKaspad(t *testing.T) func() {
 		if err != nil {
 			t.Fatalf("Signal: %s", err)
 		}
-		err = os.RemoveAll(dataDir)
+		err = os.RemoveAll(appDir)
 		if err != nil {
 			t.Fatalf("RemoveAll: %s", err)
 		}
