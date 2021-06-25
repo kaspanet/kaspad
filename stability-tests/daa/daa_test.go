@@ -67,7 +67,7 @@ func TestDAA(t *testing.T) {
 			name:        "hash rate peak",
 			runDuration: 10 * time.Minute,
 			targetHashNanosecondsFunction: func(totalElapsedTime time.Duration) int64 {
-				if totalElapsedTime < 4*time.Minute && totalElapsedTime > 5*time.Minute {
+				if totalElapsedTime > 4*time.Minute && totalElapsedTime < 5*time.Minute {
 					return machineHashNanoseconds * 2
 				}
 				return machineHashNanoseconds * 10
@@ -77,7 +77,7 @@ func TestDAA(t *testing.T) {
 			name:        "hash rate valley",
 			runDuration: 10 * time.Minute,
 			targetHashNanosecondsFunction: func(totalElapsedTime time.Duration) int64 {
-				if totalElapsedTime < 4*time.Minute && totalElapsedTime > 5*time.Minute {
+				if totalElapsedTime > 4*time.Minute && totalElapsedTime < 5*time.Minute {
 					return machineHashNanoseconds * 10
 				}
 				return machineHashNanoseconds * 2
