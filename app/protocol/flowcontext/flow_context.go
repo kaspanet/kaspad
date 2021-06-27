@@ -1,9 +1,10 @@
 package flowcontext
 
 import (
-	"github.com/kaspanet/kaspad/util/mstime"
 	"sync"
 	"time"
+
+	"github.com/kaspanet/kaspad/util/mstime"
 
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 
@@ -46,10 +47,8 @@ type FlowContext struct {
 	onPruningPointUTXOSetOverrideHandler OnPruningPointUTXOSetOverrideHandler
 	onTransactionAddedToMempoolHandler   OnTransactionAddedToMempoolHandler
 
-	transactionsToRebroadcastLock sync.Mutex
-	transactionsToRebroadcast     map[externalapi.DomainTransactionID]*externalapi.DomainTransaction
-	lastRebroadcastTime           time.Time
-	sharedRequestedTransactions   *transactionrelay.SharedRequestedTransactions
+	lastRebroadcastTime         time.Time
+	sharedRequestedTransactions *transactionrelay.SharedRequestedTransactions
 
 	sharedRequestedBlocks *blockrelay.SharedRequestedBlocks
 
@@ -78,7 +77,6 @@ func New(cfg *config.Config, domain domain.Domain, addressManager *addressmanage
 		sharedRequestedTransactions: transactionrelay.NewSharedRequestedTransactions(),
 		sharedRequestedBlocks:       blockrelay.NewSharedRequestedBlocks(),
 		peers:                       make(map[id.ID]*peerpkg.Peer),
-		transactionsToRebroadcast:   make(map[externalapi.DomainTransactionID]*externalapi.DomainTransaction),
 		orphans:                     make(map[externalapi.DomainHash]*externalapi.DomainBlock),
 		timeStarted:                 mstime.Now().UnixMilliseconds(),
 		shutdownChan:                make(chan struct{}),

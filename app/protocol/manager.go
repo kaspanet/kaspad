@@ -2,9 +2,10 @@ package protocol
 
 import (
 	"fmt"
-	"github.com/pkg/errors"
 	"sync"
 	"sync/atomic"
+
+	"github.com/pkg/errors"
 
 	"github.com/kaspanet/kaspad/domain"
 
@@ -61,8 +62,8 @@ func (m *Manager) IBDPeer() *peerpkg.Peer {
 }
 
 // AddTransaction adds transaction to the mempool and propagates it.
-func (m *Manager) AddTransaction(tx *externalapi.DomainTransaction) error {
-	return m.context.AddTransaction(tx)
+func (m *Manager) AddTransaction(tx *externalapi.DomainTransaction, allowOrphan bool) error {
+	return m.context.AddTransaction(tx, allowOrphan)
 }
 
 // AddBlock adds the given block to the DAG and propagates it.

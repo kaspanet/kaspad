@@ -139,7 +139,7 @@ func (btb *blockTemplateBuilder) GetBlockTemplate(coinbaseData *consensusexterna
 		for _, tx := range invalidTxsErr.InvalidTransactions {
 			invalidTxs = append(invalidTxs, tx.Transaction)
 		}
-		err = btb.mempool.RemoveTransactions(invalidTxs)
+		err = btb.mempool.RemoveTransactions(invalidTxs, true)
 		if err != nil {
 			// mempool.RemoveTransactions might return errors in situations that are perfectly fine in this context.
 			// TODO: Once the mempool invariants are clear, this should be converted back `return nil, err`:
