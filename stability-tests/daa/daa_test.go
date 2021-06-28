@@ -111,8 +111,8 @@ func TestDAA(t *testing.T) {
 				toHashNanoseconds := machineHashNanoseconds * 2
 
 				if totalElapsedTime < 10*time.Minute {
-					totalTime := 10 * time.Minute
-					timeElapsedFraction := float64(totalElapsedTime.Nanoseconds()) / float64(totalTime.Nanoseconds())
+					exponentialIncreaseDuration := 10 * time.Minute
+					timeElapsedFraction := float64(totalElapsedTime.Nanoseconds()) / float64(exponentialIncreaseDuration.Nanoseconds())
 
 					return fromHashNanoseconds -
 						int64(math.Pow(float64(fromHashNanoseconds-toHashNanoseconds), timeElapsedFraction))
@@ -131,8 +131,8 @@ func TestDAA(t *testing.T) {
 				toHashNanoseconds := machineHashNanoseconds * 10
 
 				if totalElapsedTime < 10*time.Minute {
-					totalTime := 10 * time.Minute
-					timeElapsedFraction := float64(totalElapsedTime.Nanoseconds()) / float64(totalTime.Nanoseconds())
+					exponentialDecreaseDuration := 10 * time.Minute
+					timeElapsedFraction := float64(totalElapsedTime.Nanoseconds()) / float64(exponentialDecreaseDuration.Nanoseconds())
 
 					return fromHashNanoseconds +
 						int64(math.Pow(float64(toHashNanoseconds-fromHashNanoseconds), timeElapsedFraction))
