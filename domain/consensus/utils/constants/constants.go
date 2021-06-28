@@ -31,18 +31,18 @@ const (
 	// SequenceLockTimeIsSeconds is a flag that if set on a transaction
 	// input's sequence number, the relative locktime has units of 524,2788
 	// milliseconds
-	SequenceLockTimeIsSeconds = 1 << 22
+	SequenceLockTimeIsSeconds = 1 << 62
 
 	// SequenceLockTimeMask is a mask that extracts the relative locktime
 	// when masked against the transaction input sequence number.
-	SequenceLockTimeMask = 0x0000ffff
+	SequenceLockTimeMask = 0x00000000ffffffff
 
 	// SequenceLockTimeGranularity is the defined time based granularity
 	// for milliseconds-based relative time locks. When converting from milliseconds
-	// to a sequence number, the value is right shifted by this amount,
-	// therefore the granularity of relative time locks in 524288 or 2^19
-	// milliseconds. Enforced relative lock times are multiples of 524288 milliseconds.
-	SequenceLockTimeGranularity = 19
+	// to a sequence number, the value is multiplied by this amount,
+	// therefore the granularity of relative time locks 1000 milliseconds.
+	// Enforced relative lock times are multiples of 524288 milliseconds.
+	SequenceLockTimeGranularity = 1000
 
 	// LockTimeThreshold is the number below which a lock time is
 	// interpreted to be a block number. Since an average of one block
