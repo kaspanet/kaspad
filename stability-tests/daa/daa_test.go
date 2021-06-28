@@ -174,8 +174,8 @@ func measureMachineHashNanoseconds(t *testing.T) int64 {
 func runDAATest(t *testing.T, testName string, runDuration time.Duration,
 	targetHashNanosecondsFunction func(totalElapsedDuration time.Duration) int64) {
 
-	t.Logf("TEST STARTED: %s", testName)
-	defer t.Logf("TEST FINISHED: %s", testName)
+	t.Logf("DAA TEST STARTED: %s", testName)
+	defer t.Logf("DAA TEST FINISHED: %s", testName)
 
 	tearDownKaspad := runKaspad(t)
 	defer tearDownKaspad()
