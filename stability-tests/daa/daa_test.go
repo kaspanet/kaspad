@@ -301,7 +301,6 @@ func runKaspad(t *testing.T) func() {
 		"kaspad",
 		common.NetworkCliArgumentFromNetParams(&dagconfig.DevnetParams),
 		"--appdir", appDir,
-		"--logdir", appDir,
 		"--rpclisten", rpcAddress,
 		"--loglevel", "debug",
 	)
