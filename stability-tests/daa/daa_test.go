@@ -160,10 +160,12 @@ func measureMachineHashNanoseconds(t *testing.T) int64 {
 
 	machineHashesPerSecondMeasurementDuration := 10 * time.Second
 	hashes := int64(0)
+	nonce := rand.Uint64()
 	runForDuration(machineHashesPerSecondMeasurementDuration, func(isFinished *bool) {
-		headerForMining.SetNonce(rand.Uint64())
+		headerForMining.SetNonce(nonce)
 		pow.CheckProofOfWorkWithTarget(headerForMining, targetDifficulty)
 		hashes++
+		nonce++
 	})
 
 	return machineHashesPerSecondMeasurementDuration.Nanoseconds() / hashes
