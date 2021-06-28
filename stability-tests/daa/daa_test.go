@@ -119,6 +119,7 @@ func TestDAA(t *testing.T) {
 				}
 
 				// 5 minute cooldown
+
 				return toHashNanoseconds
 			},
 		},
@@ -138,6 +139,7 @@ func TestDAA(t *testing.T) {
 				}
 
 				// 5 minute cooldown
+
 				return toHashNanoseconds
 			},
 		},
