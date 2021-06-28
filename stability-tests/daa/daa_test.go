@@ -34,20 +34,20 @@ func TestDAA(t *testing.T) {
 	tests := []struct {
 		name                          string
 		runDuration                   time.Duration
-		targetHashNanosecondsFunction func(totalElapsedTime time.Duration) int64
+		targetHashNanosecondsFunction func(totalElapsedDuration time.Duration) int64
 	}{
 		{
 			name:        "constant hash rate",
 			runDuration: 10 * time.Minute,
-			targetHashNanosecondsFunction: func(totalElapsedTime time.Duration) int64 {
+			targetHashNanosecondsFunction: func(totalElapsedDuration time.Duration) int64 {
 				return machineHashNanoseconds * 2
 			},
 		},
 		{
 			name:        "sudden hash rate drop",
 			runDuration: 15 * time.Minute,
-			targetHashNanosecondsFunction: func(totalElapsedTime time.Duration) int64 {
-				if totalElapsedTime < 5*time.Minute {
+			targetHashNanosecondsFunction: func(totalElapsedDuration time.Duration) int64 {
+				if totalElapsedDuration < 5*time.Minute {
 					return machineHashNanoseconds * 2
 				}
 				return machineHashNanoseconds * 10
@@ -56,8 +56,8 @@ func TestDAA(t *testing.T) {
 		{
 			name:        "sudden hash rate jump",
 			runDuration: 15 * time.Minute,
-			targetHashNanosecondsFunction: func(totalElapsedTime time.Duration) int64 {
-				if totalElapsedTime < 5*time.Minute {
+			targetHashNanosecondsFunction: func(totalElapsedDuration time.Duration) int64 {
+				if totalElapsedDuration < 5*time.Minute {
 					return machineHashNanoseconds * 10
 				}
 				return machineHashNanoseconds * 2
@@ -66,8 +66,8 @@ func TestDAA(t *testing.T) {
 		{
 			name:        "hash rate peak",
 			runDuration: 10 * time.Minute,
-			targetHashNanosecondsFunction: func(totalElapsedTime time.Duration) int64 {
-				if totalElapsedTime > 4*time.Minute && totalElapsedTime < 5*time.Minute {
+			targetHashNanosecondsFunction: func(totalElapsedDuration time.Duration) int64 {
+				if totalElapsedDuration > 4*time.Minute && totalElapsedDuration < 5*time.Minute {
 					return machineHashNanoseconds * 2
 				}
 				return machineHashNanoseconds * 10
@@ -76,8 +76,8 @@ func TestDAA(t *testing.T) {
 		{
 			name:        "hash rate valley",
 			runDuration: 10 * time.Minute,
-			targetHashNanosecondsFunction: func(totalElapsedTime time.Duration) int64 {
-				if totalElapsedTime > 4*time.Minute && totalElapsedTime < 5*time.Minute {
+			targetHashNanosecondsFunction: func(totalElapsedDuration time.Duration) int64 {
+				if totalElapsedDuration > 4*time.Minute && totalElapsedDuration < 5*time.Minute {
 					return machineHashNanoseconds * 10
 				}
 				return machineHashNanoseconds * 2
@@ -86,8 +86,8 @@ func TestDAA(t *testing.T) {
 		{
 			name:        "periodic hash rate peaks",
 			runDuration: 10 * time.Minute,
-			targetHashNanosecondsFunction: func(totalElapsedTime time.Duration) int64 {
-				if int(totalElapsedTime.Seconds())%30 == 0 {
+			targetHashNanosecondsFunction: func(totalElapsedDuration time.Duration) int64 {
+				if int(totalElapsedDuration.Seconds())%30 == 0 {
 					return machineHashNanoseconds * 2
 				}
 				return machineHashNanoseconds * 10
@@ -96,8 +96,8 @@ func TestDAA(t *testing.T) {
 		{
 			name:        "periodic hash rate valleys",
 			runDuration: 10 * time.Minute,
-			targetHashNanosecondsFunction: func(totalElapsedTime time.Duration) int64 {
-				if int(totalElapsedTime.Seconds())%30 == 0 {
+			targetHashNanosecondsFunction: func(totalElapsedDuration time.Duration) int64 {
+				if int(totalElapsedDuration.Seconds())%30 == 0 {
 					return machineHashNanoseconds * 10
 				}
 				return machineHashNanoseconds * 2
@@ -106,13 +106,13 @@ func TestDAA(t *testing.T) {
 		{
 			name:        "constant exponential hash rate increase",
 			runDuration: 15 * time.Minute,
-			targetHashNanosecondsFunction: func(totalElapsedTime time.Duration) int64 {
+			targetHashNanosecondsFunction: func(totalElapsedDuration time.Duration) int64 {
 				fromHashNanoseconds := machineHashNanoseconds * 10
 				toHashNanoseconds := machineHashNanoseconds * 2
 
-				if totalElapsedTime < 10*time.Minute {
+				if totalElapsedDuration < 10*time.Minute {
 					exponentialIncreaseDuration := 10 * time.Minute
-					timeElapsedFraction := float64(totalElapsedTime.Nanoseconds()) / float64(exponentialIncreaseDuration.Nanoseconds())
+					timeElapsedFraction := float64(totalElapsedDuration.Nanoseconds()) / float64(exponentialIncreaseDuration.Nanoseconds())
 
 					return fromHashNanoseconds -
 						int64(math.Pow(float64(fromHashNanoseconds-toHashNanoseconds), timeElapsedFraction))
@@ -126,13 +126,13 @@ func TestDAA(t *testing.T) {
 		{
 			name:        "constant exponential hash rate decrease",
 			runDuration: 15 * time.Minute,
-			targetHashNanosecondsFunction: func(totalElapsedTime time.Duration) int64 {
+			targetHashNanosecondsFunction: func(totalElapsedDuration time.Duration) int64 {
 				fromHashNanoseconds := machineHashNanoseconds * 2
 				toHashNanoseconds := machineHashNanoseconds * 10
 
-				if totalElapsedTime < 10*time.Minute {
+				if totalElapsedDuration < 10*time.Minute {
 					exponentialDecreaseDuration := 10 * time.Minute
-					timeElapsedFraction := float64(totalElapsedTime.Nanoseconds()) / float64(exponentialDecreaseDuration.Nanoseconds())
+					timeElapsedFraction := float64(totalElapsedDuration.Nanoseconds()) / float64(exponentialDecreaseDuration.Nanoseconds())
 
 					return fromHashNanoseconds +
 						int64(math.Pow(float64(toHashNanoseconds-fromHashNanoseconds), timeElapsedFraction))
@@ -170,7 +170,7 @@ func measureMachineHashNanoseconds(t *testing.T) int64 {
 }
 
 func runDAATest(t *testing.T, testName string, runDuration time.Duration,
-	targetHashNanosecondsFunction func(totalElapsedTime time.Duration) int64) {
+	targetHashNanosecondsFunction func(totalElapsedDuration time.Duration) int64) {
 
 	t.Logf("TEST STARTED: %s", testName)
 	defer t.Logf("TEST FINISHED: %s", testName)
@@ -215,8 +215,8 @@ func runDAATest(t *testing.T, testName string, runDuration time.Duration,
 			// takes a few hundred nanoseconds, so we spin in place instead of e.g. calling time.Sleep()
 			for {
 				targetHashNanoseconds := targetHashNanosecondsFunction(time.Since(startTime))
-				hashElapsedTimeNanoseconds := time.Since(hashStartTime).Nanoseconds()
-				if hashElapsedTimeNanoseconds >= targetHashNanoseconds {
+				hashElapsedDurationNanoseconds := time.Since(hashStartTime).Nanoseconds()
+				if hashElapsedDurationNanoseconds >= targetHashNanoseconds {
 					break
 				}
 			}
