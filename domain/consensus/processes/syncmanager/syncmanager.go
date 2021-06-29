@@ -58,12 +58,12 @@ func New(
 }
 
 func (sm *syncManager) GetHashesBetween(stagingArea *model.StagingArea, lowHash, highHash *externalapi.DomainHash,
-	maxBlueScoreDifference uint64) (hashes []*externalapi.DomainHash, actualHighHash *externalapi.DomainHash, err error) {
+	maxBlocks uint64) (hashes []*externalapi.DomainHash, actualHighHash *externalapi.DomainHash, err error) {
 
 	onEnd := logger.LogAndMeasureExecutionTime(log, "GetHashesBetween")
 	defer onEnd()
 
-	return sm.antiPastHashesBetween(stagingArea, lowHash, highHash, maxBlueScoreDifference)
+	return sm.antiPastHashesBetween(stagingArea, lowHash, highHash, maxBlocks)
 }
 
 func (sm *syncManager) GetMissingBlockBodyHashes(stagingArea *model.StagingArea, highHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error) {
