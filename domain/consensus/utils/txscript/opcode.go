@@ -1153,31 +1153,24 @@ func opcodeCheckLockTimeVerify(op *parsedOpcode, vm *Engine) error {
 // LockTime field of the transaction containing the script signature
 // validating if the transaction outputs are spendable yet.
 func opcodeCheckSequenceVerify(op *parsedOpcode, vm *Engine) error {
-
 	// The current transaction sequence is a uint64 resulting in a maximum
 	// sequence of 2^63-1. However, scriptNums are signed and therefore a
-	// standard 4-byte scriptNum would only support up to a maximum of
-	// 2^31-1. Thus, a 5-byte scriptNum is used here since it will support
-	// up to 2^39-1 which allows sequences beyond the current sequence
-	// limit.
-	//
-	// PopByteArray is used here instead of PopInt because we do not want
-	// to be limited to a 4-byte integer for reasons specified above.
+	// standard 8-byte scriptNum would only support up to a maximum of
+	// 2^63-1.
+	// Thus, a 9-byte scriptNum is used here.
+	// However, we allow a 9-th byte only if it's a zero, and the sequence-enabled bit is up.
 	so, err := vm.dstack.PopByteArray()
 	if err != nil {
 		return err
 	}
-	stackSequence, err := makeScriptNum(so, 5)
-	if err != nil {
-		return err
+	if len(so) > 8 && (len(so) != 9 || so[len(so)-1] != 0 || so[len(so)-2]&0x80 == 0) {
+		str := fmt.Sprintf("sequence value encoded as %x is longer than allowed", so)
+		return scriptError(ErrNumberTooBig, str)
 	}
 
-	// In the rare event that the argument needs to be < 0 due to some
-	// arithmetic being done first, you can always use
-	// 0 OP_MAX OP_CHECKSEQUENCEVERIFY.
-	if stackSequence < 0 {
-		str := fmt.Sprintf("negative sequence: %d", stackSequence)
-		return scriptError(ErrNegativeLockTime, str)
+	stackSequence, err := makeScriptNum(so, 9)
+	if err != nil {
+		return err
 	}
 
 	sequence := uint64(stackSequence)
