@@ -26,16 +26,16 @@ const (
 	// SequenceLockTimeDisabled is a flag that if set on a transaction
 	// input's sequence number, the sequence number will not be interpreted
 	// as a relative locktime.
-	SequenceLockTimeDisabled = 1 << 63
+	SequenceLockTimeDisabled uint64 = 1 << 63
 
 	// SequenceLockTimeIsSeconds is a flag that if set on a transaction
 	// input's sequence number, the relative locktime has units of 524,2788
 	// milliseconds
-	SequenceLockTimeIsSeconds = 1 << 62
+	SequenceLockTimeIsSeconds uint64 = 1 << 62
 
 	// SequenceLockTimeMask is a mask that extracts the relative locktime
 	// when masked against the transaction input sequence number.
-	SequenceLockTimeMask = 0x00000000ffffffff
+	SequenceLockTimeMask uint64 = 0x00000000ffffffff
 
 	// SequenceLockTimeGranularity is the defined time based granularity
 	// for milliseconds-based relative time locks. When converting from milliseconds

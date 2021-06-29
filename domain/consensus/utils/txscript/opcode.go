@@ -1153,32 +1153,32 @@ func opcodeCheckLockTimeVerify(op *parsedOpcode, vm *Engine) error {
 // LockTime field of the transaction containing the script signature
 // validating if the transaction outputs are spendable yet.
 func opcodeCheckSequenceVerify(op *parsedOpcode, vm *Engine) error {
-	// The current transaction sequence is a uint64 resulting in a maximum
-	// sequence of 2^63-1. However, scriptNums are signed and therefore a
-	// standard 8-byte scriptNum would only support up to a maximum of
-	// 2^63-1.
-	// Thus, a 9-byte scriptNum is used here.
-	// However, we allow a 9-th byte only if it's a zero, and the sequence-enabled bit is up.
-	so, err := vm.dstack.PopByteArray()
+	sequenceBytes, err := vm.dstack.PopByteArray()
 	if err != nil {
 		return err
 	}
-	if len(so) > 8 && (len(so) != 9 || so[len(so)-1] != 0 || so[len(so)-2]&0x80 == 0) {
-		str := fmt.Sprintf("sequence value encoded as %x is longer than allowed", so)
+
+	// Make sure sequenceBytes is exactly 8 bytes.
+	// If more - return ErrNumberTooBig
+	// If less - pad with 0's
+	if len(sequenceBytes) > 8 {
+		str := fmt.Sprintf("sequence value represented as %x is longer then 8 bytes", sequenceBytes)
 		return scriptError(ErrNumberTooBig, str)
 	}
-
-	stackSequence, err := makeScriptNum(so, 9)
-	if err != nil {
-		return err
+	if len(sequenceBytes) < 8 {
+		paddedSequenceBytes := make([]byte, 8)
+		copy(paddedSequenceBytes[8-len(sequenceBytes):], sequenceBytes)
+		sequenceBytes = paddedSequenceBytes
 	}
 
-	sequence := uint64(stackSequence)
+	// Don't use MakeScriptNum here, since sequence is not an actual number, minimal encoding rules don't apply to it,
+	// and is more convenient to be represented as an unsigned int.
+	stackSequence := binary.LittleEndian.Uint64(sequenceBytes)
 
 	// To provide for future soft-fork extensibility, if the
 	// operand has the disabled lock-time flag set,
 	// CHECKSEQUENCEVERIFY behaves as a NOP.
-	if sequence&uint64(constants.SequenceLockTimeDisabled) != 0 {
+	if stackSequence&constants.SequenceLockTimeDisabled != 0 {
 		return nil
 	}
 
@@ -1194,10 +1194,10 @@ func opcodeCheckSequenceVerify(op *parsedOpcode, vm *Engine) error {
 	}
 
 	// Mask off non-consensus bits before doing comparisons.
-	lockTimeMask := uint64(constants.SequenceLockTimeIsSeconds |
-		constants.SequenceLockTimeMask)
-	return verifyLockTime(txSequence&lockTimeMask,
-		constants.SequenceLockTimeIsSeconds, sequence&lockTimeMask)
+	lockTimeMask := constants.SequenceLockTimeIsSeconds | constants.SequenceLockTimeMask
+	maskedTxSequence := txSequence & lockTimeMask
+	maskedStackSequence := stackSequence & lockTimeMask
+	return verifyLockTime(maskedTxSequence, constants.SequenceLockTimeIsSeconds, maskedStackSequence)
 }
 
 // opcodeToAltStack removes the top item from the main data stack and pushes it
