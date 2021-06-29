@@ -32,8 +32,12 @@ func TestDAA(t *testing.T) {
 	t.Logf("Machine hashes per second: %d", hashNanosecondsToHashesPerSecond(machineHashNanoseconds))
 
 	tests := []struct {
-		name                          string
-		runDuration                   time.Duration
+		name        string
+		runDuration time.Duration
+
+		// targetHashNanosecondsFunction receives the duration of time between now and the start
+		// of the run (moments before the first hash has been calculated). It returns the target
+		// duration of a single hash operation in nanoseconds (greater return value = lesser hash rate)
 		targetHashNanosecondsFunction func(totalElapsedDuration time.Duration) int64
 	}{
 		{
