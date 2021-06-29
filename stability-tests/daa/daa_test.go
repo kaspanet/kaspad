@@ -162,7 +162,7 @@ func measureMachineHashNanoseconds(t *testing.T) int64 {
 	machineHashesPerSecondMeasurementDuration := 10 * time.Second
 	hashes := int64(0)
 	nonce := rand.Uint64()
-	runForDuration(machineHashesPerSecondMeasurementDuration, func(isFinished *bool) {
+	loopForDuration(machineHashesPerSecondMeasurementDuration, func(isFinished *bool) {
 		headerForMining.SetNonce(nonce)
 		pow.CheckProofOfWorkWithTarget(headerForMining, targetDifficulty)
 		hashes++
@@ -192,7 +192,7 @@ func runDAATest(t *testing.T, testName string, runDuration time.Duration,
 	blocksMined := 0
 
 	startTime := time.Now()
-	runForDuration(runDuration, func(isFinished *bool) {
+	loopForDuration(runDuration, func(isFinished *bool) {
 		getBlockTemplateResponse, err := rpcClient.GetBlockTemplate(miningAddress)
 		if err != nil {
 			t.Fatalf("GetBlockTemplate: %s", err)
@@ -283,7 +283,7 @@ func hashNanosecondsToHashesPerSecond(hashNanoseconds int64) int64 {
 	return time.Second.Nanoseconds() / hashNanoseconds
 }
 
-func runForDuration(duration time.Duration, runFunction func(isFinished *bool)) {
+func loopForDuration(duration time.Duration, runFunction func(isFinished *bool)) {
 	isFinished := false
 	go func() {
 		for !isFinished {
