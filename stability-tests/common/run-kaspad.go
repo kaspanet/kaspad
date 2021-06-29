@@ -9,6 +9,7 @@ import (
 	"testing"
 )
 
+// RunKaspadForTesting runs kaspad for testing purposes
 func RunKaspadForTesting(t *testing.T, testName string, rpcAddress string) func() {
 	appDir, err := TempDir(testName)
 	if err != nil {
