@@ -204,14 +204,16 @@ func runDAATest(t *testing.T, testName string, runDuration time.Duration,
 		headerForMining := templateBlock.Header.ToMutable()
 
 		miningStartTime := time.Now()
-		for i := rand.Uint64(); i < math.MaxUint64; i++ {
+		nonce := rand.Uint64()
+		for {
 			hashStartTime := time.Now()
 
-			headerForMining.SetNonce(i)
+			headerForMining.SetNonce(nonce)
 			if pow.CheckProofOfWorkWithTarget(headerForMining, targetDifficulty) {
 				templateBlock.Header = headerForMining.ToImmutable()
 				break
 			}
+			nonce++
 
 			// Yielding a thread in Go takes up to a few milliseconds whereas hashing once
 			// takes a few hundred nanoseconds, so we spin in place instead of e.g. calling time.Sleep()
