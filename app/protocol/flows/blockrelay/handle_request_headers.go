@@ -49,7 +49,7 @@ func (flow *handleRequestHeadersFlow) start() error {
 
 			// GetHashesBetween is a relatively heavy operation so we limit it
 			// in order to avoid locking the consensus for too long
-			const maxBlocks = 1 << 13
+			const maxBlocks = 1 << 10
 			blockHashes, _, err := flow.Domain().Consensus().GetHashesBetween(lowHash, highHash, maxBlocks)
 			if err != nil {
 				return err
