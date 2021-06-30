@@ -314,6 +314,7 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 	syncManager := syncmanager.New(
 		dbManager,
 		genesisHash,
+		config.MergeSetSizeLimit,
 		dagTraversalManager,
 		dagTopologyManager,
 		ghostdagManager,

@@ -7,11 +7,19 @@ import (
 )
 
 // antiPastHashesBetween returns the hashes of the blocks between the
-// lowHash's antiPast and highHash's antiPast, or up to
-// `maxBlueScoreDifference`, if non-zero.
+// lowHash's antiPast and highHash's antiPast, or up to `maxBlocks`, if non-zero.
 // The result excludes lowHash and includes highHash. If lowHash == highHash, returns nothing.
+// If maxBlocks != 0 then maxBlocks MUST be >= MergeSetSizeLimit + 1
+// because it returns blocks with MergeSet granularity,
+// so if MergeSet > maxBlocks, function will return nothing
 func (sm *syncManager) antiPastHashesBetween(stagingArea *model.StagingArea, lowHash, highHash *externalapi.DomainHash,
-	maxBlueScoreDifference uint64) (hashes []*externalapi.DomainHash, actualHighHash *externalapi.DomainHash, err error) {
+	maxBlocks uint64) (hashes []*externalapi.DomainHash, actualHighHash *externalapi.DomainHash, err error) {
+
+	// Sanity check, for debugging only
+	if maxBlocks != 0 && maxBlocks < sm.mergeSetSizeLimit+1 {
+		return nil, nil,
+			errors.Errorf("maxBlocks (%d) MUST be >= MergeSetSizeLimit + 1 (%d)", maxBlocks, sm.mergeSetSizeLimit+1)
+	}
 
 	// If lowHash is not in the selectedParentChain of highHash - SelectedChildIterator will fail.
 	// Therefore, we traverse down lowHash's selectedParentChain until we reach a block that is in
@@ -36,23 +44,6 @@ func (sm *syncManager) antiPastHashesBetween(stagingArea *model.StagingArea, low
 			lowBlockGHOSTDAGData.BlueScore(), highBlockGHOSTDAGData.BlueScore())
 	}
 
-	if maxBlueScoreDifference != 0 {
-		// In order to get no more then maxBlueScoreDifference
-		// blocks from the future of the lowHash (including itself),
-		// we iterate the selected parent chain of the highNode and
-		// stop once we reach
-		// highBlockBlueScore-lowBlockBlueScore+1 <= maxBlueScoreDifference.
-		// That stop point becomes the new highHash.
-		// Using blueScore as an approximation is considered to be
-		// fairly accurate because we presume that most DAG blocks are
-		// blue.
-		highHash, err = sm.findHighHashAccordingToMaxBlueScoreDifference(stagingArea,
-			lowHash, highHash, maxBlueScoreDifference, highBlockGHOSTDAGData, lowBlockGHOSTDAGData)
-		if err != nil {
-			return nil, nil, err
-		}
-	}
-
 	// Collect all hashes by concatenating the merge-sets of all blocks between highHash and lowHash
 	blockHashes := []*externalapi.DomainHash{}
 	iterator, err := sm.dagTraversalManager.SelectedChildIterator(stagingArea, highHash, lowHash)
@@ -75,6 +66,12 @@ func (sm *syncManager) antiPastHashesBetween(stagingArea *model.StagingArea, low
 		if err != nil {
 			return nil, nil, err
 		}
+
+		if maxBlocks != 0 && uint64(len(blockHashes)+len(sortedMergeSet)) > maxBlocks {
+			break
+		}
+
+		highHash = current
 
 		// append to blockHashes all blocks in sortedMergeSet which are not in the past of originalLowHash
 		for _, blockHash := range sortedMergeSet {
@@ -134,37 +131,6 @@ func (sm *syncManager) getSortedMergeSet(stagingArea *model.StagingArea, current
 	sortedMergeSet = append(sortedMergeSet, redMergeSet[j:]...)
 
 	return sortedMergeSet, nil
-}
-
-func (sm *syncManager) findHighHashAccordingToMaxBlueScoreDifference(stagingArea *model.StagingArea,
-	lowHash *externalapi.DomainHash, highHash *externalapi.DomainHash, maxBlueScoreDifference uint64,
-	highBlockGHOSTDAGData *model.BlockGHOSTDAGData, lowBlockGHOSTDAGData *model.BlockGHOSTDAGData) (
-	*externalapi.DomainHash, error) {
-
-	if highBlockGHOSTDAGData.BlueScore()-lowBlockGHOSTDAGData.BlueScore() <= maxBlueScoreDifference {
-		return highHash, nil
-	}
-
-	iterator, err := sm.dagTraversalManager.SelectedChildIterator(stagingArea, highHash, lowHash)
-	if err != nil {
-		return nil, err
-	}
-	defer iterator.Close()
-	for ok := iterator.First(); ok; ok = iterator.Next() {
-		highHashCandidate, err := iterator.Get()
-		if err != nil {
-			return nil, err
-		}
-		highBlockGHOSTDAGData, err = sm.ghostdagDataStore.Get(sm.databaseContext, stagingArea, highHashCandidate)
-		if err != nil {
-			return nil, err
-		}
-		if highBlockGHOSTDAGData.BlueScore()-lowBlockGHOSTDAGData.BlueScore() > maxBlueScoreDifference {
-			break
-		}
-		highHash = highHashCandidate
-	}
-	return highHash, nil
 }
 
 func (sm *syncManager) findLowHashInHighHashSelectedParentChain(stagingArea *model.StagingArea,
