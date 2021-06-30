@@ -13,6 +13,7 @@ import (
 func (sm *syncManager) antiPastHashesBetween(stagingArea *model.StagingArea, lowHash, highHash *externalapi.DomainHash,
 	maxBlocks uint64) (hashes []*externalapi.DomainHash, actualHighHash *externalapi.DomainHash, err error) {
 
+	// Sanity check, for debugging only
 	if maxBlocks != 0 && maxBlocks < sm.mergeSetSizeLimit+1 {
 		return nil, nil,
 			errors.Errorf("maxBlocks (%d) MUST be >= MergeSetSizeLimit + 1 (%d)", maxBlocks, sm.mergeSetSizeLimit+1)
