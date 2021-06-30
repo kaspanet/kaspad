@@ -190,6 +190,12 @@ func makeScriptNum(v []byte, scriptNumLen int) (scriptNum, error) {
 		return 0, scriptError(ErrNumberTooBig, str)
 	}
 
+	// Disallow any numerical value larger than 8 bytes, so that it fits in int64.
+	if len(v) > 8 {
+		str := fmt.Sprintf("numeric value encoded as %x is longer than 8 bytes", v)
+		return 0, scriptError(ErrNumberTooBig, str)
+	}
+
 	if err := checkMinimalDataEncoding(v); err != nil {
 		return 0, err
 	}

@@ -294,7 +294,7 @@ func (v *transactionValidator) calcTxSequenceLockFromReferencedUTXOEntries(stagi
 			// amount to convert to the proper relative time-lock. We also
 			// subtract one from the relative lock to maintain the original
 			// lockTime semantics.
-			timeLockMilliseconds := (relativeLock << constants.SequenceLockTimeGranularity) - 1
+			timeLockMilliseconds := (relativeLock * constants.SequenceLockTimeGranularity) - 1
 			timeLock := medianTime + timeLockMilliseconds
 			if timeLock > sequenceLock.Milliseconds {
 				sequenceLock.Milliseconds = timeLock

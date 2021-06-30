@@ -2883,11 +2883,11 @@
     "OK"
   ],
   [
-    "TRUE 2147483648",
+    "TRUE DATA_8 0x0000000000000080",
     "CHECKSEQUENCEVERIFY",
     "",
     "OK",
-    "CSV passes if stack top bit 1 << 31 is set"
+    "CSV passes if stack top bit 1 << 63 is set"
   ],
   [
     "",
@@ -5271,20 +5271,6 @@
     "",
     "INVALID_STACK_OPERATION",
     "CSV automatically fails on a empty stack"
-  ],
-  [
-    "-1",
-    "CHECKSEQUENCEVERIFY",
-    "",
-    "NEGATIVE_LOCKTIME",
-    "CSV automatically fails if stack top is negative"
-  ],
-  [
-    "0x0100",
-    "CHECKSEQUENCEVERIFY",
-    "",
-    "UNKNOWN_ERROR",
-    "CSV fails if stack top is not minimally encoded"
   ],
   [
     "0",
