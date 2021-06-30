@@ -9,8 +9,14 @@ import (
 // antiPastHashesBetween returns the hashes of the blocks between the
 // lowHash's antiPast and highHash's antiPast, or up to `maxBlocks`, if non-zero.
 // The result excludes lowHash and includes highHash. If lowHash == highHash, returns nothing.
+// If maxBlocks != 0 then maxBlocks MUST be >= MergeSetSizeLimit + 1
 func (sm *syncManager) antiPastHashesBetween(stagingArea *model.StagingArea, lowHash, highHash *externalapi.DomainHash,
 	maxBlocks uint64) (hashes []*externalapi.DomainHash, actualHighHash *externalapi.DomainHash, err error) {
+
+	if maxBlocks != 0 && maxBlocks < sm.mergeSetSizeLimit+1 {
+		return nil, nil,
+			errors.Errorf("maxBlocks (%d) MUST be >= MergeSetSizeLimit + 1 (%d)", maxBlocks, sm.mergeSetSizeLimit+1)
+	}
 
 	// If lowHash is not in the selectedParentChain of highHash - SelectedChildIterator will fail.
 	// Therefore, we traverse down lowHash's selectedParentChain until we reach a block that is in

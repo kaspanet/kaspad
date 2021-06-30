@@ -21,12 +21,15 @@ type syncManager struct {
 	blockStore                model.BlockStore
 	pruningStore              model.PruningStore
 	headersSelectedChainStore model.HeadersSelectedChainStore
+
+	mergeSetSizeLimit uint64
 }
 
 // New instantiates a new SyncManager
 func New(
 	databaseContext model.DBReader,
 	genesisBlockHash *externalapi.DomainHash,
+	mergeSetSizeLimit uint64,
 	dagTraversalManager model.DAGTraversalManager,
 	dagTopologyManager model.DAGTopologyManager,
 	ghostdagManager model.GHOSTDAGManager,
