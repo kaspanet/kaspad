@@ -1171,7 +1171,7 @@ func opcodeCheckSequenceVerify(op *parsedOpcode, vm *Engine) error {
 		sequenceBytes = paddedSequenceBytes
 	}
 
-	// Don't use MakeScriptNum here, since sequence is not an actual number, minimal encoding rules don't apply to it,
+	// Don't use makeScriptNum here, since sequence is not an actual number, minimal encoding rules don't apply to it,
 	// and is more convenient to be represented as an unsigned int.
 	stackSequence := binary.LittleEndian.Uint64(sequenceBytes)
 

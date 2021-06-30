@@ -169,7 +169,7 @@ func TestMakeScriptNum(t *testing.T) {
 		{hexToBytes("00000800"), 0, defaultScriptNumLen, errMinimalData}, // 524288
 		{hexToBytes("00007000"), 0, defaultScriptNumLen, errMinimalData}, // 7340032
 		{hexToBytes("0009000100"), 0, 5, errMinimalData},                 // 16779520
-		// Values above 8 bytes should be always
+		// Values above 8 bytes should always return error
 		{hexToBytes("ffffffffffffffffff"), 0, 9, errNumTooBig},
 		{hexToBytes("00000000000000000000"), 0, 10, errNumTooBig},
 	}
