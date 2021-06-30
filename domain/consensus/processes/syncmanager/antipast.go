@@ -10,6 +10,8 @@ import (
 // lowHash's antiPast and highHash's antiPast, or up to `maxBlocks`, if non-zero.
 // The result excludes lowHash and includes highHash. If lowHash == highHash, returns nothing.
 // If maxBlocks != 0 then maxBlocks MUST be >= MergeSetSizeLimit + 1
+// because it returns blocks with MergeSet granularity,
+// so if MergeSet > maxBlocks, function will return nothing
 func (sm *syncManager) antiPastHashesBetween(stagingArea *model.StagingArea, lowHash, highHash *externalapi.DomainHash,
 	maxBlocks uint64) (hashes []*externalapi.DomainHash, actualHighHash *externalapi.DomainHash, err error) {
 
