@@ -2,6 +2,7 @@ package daa
 
 import (
 	"github.com/kaspanet/kaspad/app/appmessage"
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/pow"
 	"github.com/kaspanet/kaspad/domain/dagconfig"
 	"github.com/kaspanet/kaspad/infrastructure/network/rpcclient"
@@ -193,14 +194,7 @@ func runDAATest(t *testing.T, testName string, runDuration time.Duration,
 
 	startTime := time.Now()
 	loopForDuration(runDuration, func(isFinished *bool) {
-		getBlockTemplateResponse, err := rpcClient.GetBlockTemplate(miningAddress)
-		if err != nil {
-			t.Fatalf("GetBlockTemplate: %s", err)
-		}
-		templateBlock, err := appmessage.RPCBlockToDomainBlock(getBlockTemplateResponse.Block)
-		if err != nil {
-			t.Fatalf("RPCBlockToDomainBlock: %s", err)
-		}
+		templateBlock := fetchBlockForMining(t, rpcClient)
 		targetDifficulty := difficulty.CompactToBig(templateBlock.Header.Bits())
 		headerForMining := templateBlock.Header.ToMutable()
 
@@ -277,6 +271,18 @@ func runDAATest(t *testing.T, testName string, runDuration time.Duration,
 		t.Errorf("Block rate deviation %f is higher than threshold %f. Want: %f, got: %f",
 			deviation, blockRateDeviationThreshold, expectedAverageBlocksPerSecond, averageBlocksPerSecond)
 	}
+}
+
+func fetchBlockForMining(t *testing.T, rpcClient *rpcclient.RPCClient) *externalapi.DomainBlock {
+	getBlockTemplateResponse, err := rpcClient.GetBlockTemplate(miningAddress)
+	if err != nil {
+		t.Fatalf("GetBlockTemplate: %s", err)
+	}
+	templateBlock, err := appmessage.RPCBlockToDomainBlock(getBlockTemplateResponse.Block)
+	if err != nil {
+		t.Fatalf("RPCBlockToDomainBlock: %s", err)
+	}
+	return templateBlock
 }
 
 func hashNanosecondsToHashesPerSecond(hashNanoseconds int64) int64 {
