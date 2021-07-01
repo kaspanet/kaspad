@@ -188,17 +188,20 @@ func runDAATest(t *testing.T, testName string, runDuration time.Duration,
 		t.Fatalf("NewRPCClient: %s", err)
 	}
 
+	// These variables are for gathering stats. Useful mostly for debugging
 	hashDurations := make([]time.Duration, 0, averageHashRateSampleSize+1)
 	miningDurations := make([]time.Duration, 0, averageBlockRateSampleSize+1)
 	previousDifficulty := float64(0)
 	blocksMined := 0
 
+	// Mine blocks the same way a CPU miner mines blocks until `runDuration` elapses
 	startTime := time.Now()
 	loopForDuration(runDuration, func(isFinished *bool) {
 		templateBlock := fetchBlockForMining(t, rpcClient)
 		targetDifficulty := difficulty.CompactToBig(templateBlock.Header.Bits())
 		headerForMining := templateBlock.Header.ToMutable()
 
+		// Try hashes until we find a valid block
 		miningStartTime := time.Now()
 		nonce := rand.Uint64()
 		for {
@@ -209,22 +212,27 @@ func runDAATest(t *testing.T, testName string, runDuration time.Duration,
 				break
 			}
 
+			// Throttle the hash rate by waiting until the target hash duration elapses
 			waitUntilTargetHashDurationHadElapsed(startTime, hashStartTime, targetHashNanosecondsFunction)
 
+			// Collect stats about hash rate
 			hashDuration := time.Since(hashStartTime)
 			hashDurations = appendHashDuration(hashDurations, hashDuration)
 
+			// Exit early if the test is finished
 			if *isFinished {
 				return
 			}
 		}
 
+		// Collect stats about block rate
 		miningDuration := time.Since(miningStartTime)
 		miningDurations = appendMiningDuration(miningDurations, miningDuration)
 
 		logMinedBlockStatsAndUpdateStatFields(t, rpcClient, miningDurations, hashDurations, startTime,
 			miningDuration, &previousDifficulty, &blocksMined)
 
+		// Exit early if the test is finished
 		if *isFinished {
 			return
 		}
