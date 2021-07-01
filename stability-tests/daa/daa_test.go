@@ -230,10 +230,7 @@ func runDAATest(t *testing.T, testName string, runDuration time.Duration,
 			return
 		}
 
-		_, err = rpcClient.SubmitBlock(templateBlock)
-		if err != nil {
-			t.Fatalf("SubmitBlock: %s", err)
-		}
+		submitMinedBlock(t, rpcClient, templateBlock)
 	})
 
 	averageBlocksPerSecond := calculateAverageDuration(miningDurations).Seconds()
@@ -304,7 +301,13 @@ func logMinedBlockStatsAndUpdateStatFields(t *testing.T, rpcClient *rpcclient.RP
 	t.Logf("Mined block. Took: %s, average block mining duration: %s, "+
 		"average hashes per second: %d, difficulty delta: %f, time elapsed: %s, blocks mined: %d",
 		miningDuration, averageMiningDuration, averageHashesPerSecond, difficultyDelta, time.Since(startTime), *blocksMined)
+}
 
+func submitMinedBlock(t *testing.T, rpcClient *rpcclient.RPCClient, block *externalapi.DomainBlock) {
+	_, err := rpcClient.SubmitBlock(block)
+	if err != nil {
+		t.Fatalf("SubmitBlock: %s", err)
+	}
 }
 
 func hashNanosecondsToHashesPerSecond(hashNanoseconds int64) int64 {
