@@ -210,15 +210,7 @@ func runDAATest(t *testing.T, testName string, runDuration time.Duration,
 			}
 			nonce++
 
-			// Yielding a thread in Go takes up to a few milliseconds whereas hashing once
-			// takes a few hundred nanoseconds, so we spin in place instead of e.g. calling time.Sleep()
-			for {
-				targetHashNanoseconds := targetHashNanosecondsFunction(time.Since(startTime))
-				hashElapsedDurationNanoseconds := time.Since(hashStartTime).Nanoseconds()
-				if hashElapsedDurationNanoseconds >= targetHashNanoseconds {
-					break
-				}
-			}
+			waitUntilTargetHashDurationHadElapsed(startTime, hashStartTime, targetHashNanosecondsFunction)
 
 			hashDuration := time.Since(hashStartTime)
 			hashDurations = append(hashDurations, hashDuration)
@@ -283,6 +275,20 @@ func fetchBlockForMining(t *testing.T, rpcClient *rpcclient.RPCClient) *external
 		t.Fatalf("RPCBlockToDomainBlock: %s", err)
 	}
 	return templateBlock
+}
+
+func waitUntilTargetHashDurationHadElapsed(startTime time.Time, hashStartTime time.Time,
+	targetHashNanosecondsFunction func(totalElapsedDuration time.Duration) int64) {
+
+	// Yielding a thread in Go takes up to a few milliseconds whereas hashing once
+	// takes a few hundred nanoseconds, so we spin in place instead of e.g. calling time.Sleep()
+	for {
+		targetHashNanoseconds := targetHashNanosecondsFunction(time.Since(startTime))
+		hashElapsedDurationNanoseconds := time.Since(hashStartTime).Nanoseconds()
+		if hashElapsedDurationNanoseconds >= targetHashNanoseconds {
+			break
+		}
+	}
 }
 
 func hashNanosecondsToHashesPerSecond(hashNanoseconds int64) int64 {
