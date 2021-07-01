@@ -3,9 +3,13 @@ package mempool
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/miningmanager/mempool/model"
+	"github.com/kaspanet/kaspad/infrastructure/logger"
 )
 
 func (mp *mempool) revalidateHighPriorityTransactions() ([]*externalapi.DomainTransaction, error) {
+	onEnd := logger.LogAndMeasureExecutionTime(log, "revalidateHighPriorityTransactions")
+	defer onEnd()
+
 	validTransactions := []*externalapi.DomainTransaction{}
 
 	for _, transaction := range mp.transactionsPool.highPriorityTransactions {
@@ -31,6 +35,7 @@ func (mp *mempool) revalidateTransaction(transaction *model.MempoolTransaction) 
 		return false, err
 	}
 	if len(missingParents) > 0 {
+		log.Debugf("Removing transaction %s, it failed revalidation", transaction.TransactionID())
 		err := mp.removeTransaction(transaction.TransactionID(), true)
 		if err != nil {
 			return false, err
