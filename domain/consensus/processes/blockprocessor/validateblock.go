@@ -9,7 +9,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-func (bp *blockProcessor) validateBlock(stagingArea *model.StagingArea, block *externalapi.DomainBlock, isPruningPoint, isBlockWithPrefilledData bool) error {
+func (bp *blockProcessor) validateBlock(stagingArea *model.StagingArea, block *externalapi.DomainBlock, isBlockWithPrefilledData bool) error {
 	blockHash := consensushashing.HeaderHash(block.Header)
 	log.Debugf("Validating block %s", blockHash)
 
@@ -47,7 +47,7 @@ func (bp *blockProcessor) validateBlock(stagingArea *model.StagingArea, block *e
 
 	// If in-context validations fail, discard all changes and store the
 	// block with StatusInvalid.
-	err = bp.validatePostProofOfWork(stagingArea, block, isPruningPoint)
+	err = bp.validatePostProofOfWork(stagingArea, block, isBlockWithPrefilledData)
 	if err != nil {
 		if errors.As(err, &ruleerrors.RuleError{}) {
 			// We mark invalid blocks with status externalapi.StatusInvalid except in the

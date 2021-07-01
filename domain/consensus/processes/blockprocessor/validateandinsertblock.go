@@ -2,6 +2,7 @@ package blockprocessor
 
 import (
 	"fmt"
+	"github.com/kaspanet/kaspad/infrastructure/db/database"
 
 	"github.com/kaspanet/kaspad/util/staging"
 
@@ -79,7 +80,7 @@ func (bp *blockProcessor) validateAndInsertBlock(stagingArea *model.StagingArea,
 	isPruningPoint bool, validateUTXO bool, isBlockWithPrefilledData bool) (*externalapi.BlockInsertionResult, error) {
 
 	blockHash := consensushashing.HeaderHash(block.Header)
-	err := bp.validateBlock(stagingArea, block, isPruningPoint, isBlockWithPrefilledData)
+	err := bp.validateBlock(stagingArea, block, isBlockWithPrefilledData)
 	if err != nil {
 		return nil, err
 	}
@@ -90,8 +91,11 @@ func (bp *blockProcessor) validateAndInsertBlock(stagingArea *model.StagingArea,
 	}
 
 	var oldHeadersSelectedTip *externalapi.DomainHash
-	isGenesis := blockHash.Equal(bp.genesisHash)
-	if !isGenesis {
+	hasHeaderSelectedTip, err := bp.headersSelectedTipStore.Has(bp.databaseContext, stagingArea)
+	if err != nil {
+		return nil, err
+	}
+	if hasHeaderSelectedTip {
 		var err error
 		oldHeadersSelectedTip, err = bp.headersSelectedTipStore.HeadersSelectedTip(bp.databaseContext, stagingArea)
 		if err != nil {
@@ -108,15 +112,15 @@ func (bp *blockProcessor) validateAndInsertBlock(stagingArea *model.StagingArea,
 	var virtualUTXODiff externalapi.UTXODiff
 	var reversalData *model.UTXODiffReversalData
 	isHeaderOnlyBlock := isHeaderOnlyBlock(block)
-	if !isHeaderOnlyBlock && validateUTXO {
+	if !isHeaderOnlyBlock {
 		// Attempt to add the block to the virtual
-		selectedParentChainChanges, virtualUTXODiff, reversalData, err = bp.consensusStateManager.AddBlock(stagingArea, blockHash)
+		selectedParentChainChanges, virtualUTXODiff, reversalData, err = bp.consensusStateManager.AddBlock(stagingArea, blockHash, validateUTXO)
 		if err != nil {
 			return nil, err
 		}
 	}
 
-	if !isGenesis {
+	if hasHeaderSelectedTip {
 		err := bp.updateReachabilityReindexRoot(stagingArea, oldHeadersSelectedTip)
 		if err != nil {
 			return nil, err
@@ -170,7 +174,9 @@ func (bp *blockProcessor) validateAndInsertBlock(stagingArea *model.StagingArea,
 	}
 
 	virtualParents, err := bp.dagTopologyManager.Parents(stagingArea, model.VirtualBlockHash)
-	if err != nil {
+	if database.IsNotFoundError(err) {
+		virtualParents = nil
+	} else if err != nil {
 		return nil, err
 	}
 

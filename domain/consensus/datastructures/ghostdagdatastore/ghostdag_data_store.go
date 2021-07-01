@@ -10,36 +10,36 @@ import (
 	"github.com/kaspanet/kaspad/domain/prefixmanager/prefix"
 )
 
-var bucketName = []byte("block-ghostdag-data")
-
 // ghostdagDataStore represents a store of BlockGHOSTDAGData
 type ghostdagDataStore struct {
-	cache  *lrucache.LRUCache
-	bucket model.DBBucket
+	cache          *lrucache.LRUCache
+	bucket         model.DBBucket
+	stagingShardID model.StagingShardID
 }
 
 // New instantiates a new GHOSTDAGDataStore
-func New(prefix *prefix.Prefix, cacheSize int, preallocate bool) model.GHOSTDAGDataStore {
+func New(stagingShardID model.StagingShardID, bucketName []byte, prefix *prefix.Prefix, cacheSize int, preallocate bool) model.GHOSTDAGDataStore {
 	return &ghostdagDataStore{
-		cache:  lrucache.New(cacheSize, preallocate),
-		bucket: database.MakeBucket(prefix.Serialize()).Bucket(bucketName),
+		cache:          lrucache.New(cacheSize, preallocate),
+		bucket:         database.MakeBucket(prefix.Serialize()).Bucket(bucketName),
+		stagingShardID: stagingShardID,
 	}
 }
 
 // Stage stages the given blockGHOSTDAGData for the given blockHash
 func (gds *ghostdagDataStore) Stage(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash, blockGHOSTDAGData *externalapi.BlockGHOSTDAGData) {
-	stagingShard := gds.stagingShard(stagingArea)
+	stagingShard := gds.stagingShard(gds.stagingShardID, stagingArea)
 
 	stagingShard.toAdd[*blockHash] = blockGHOSTDAGData
 }
 
 func (gds *ghostdagDataStore) IsStaged(stagingArea *model.StagingArea) bool {
-	return gds.stagingShard(stagingArea).isStaged()
+	return gds.stagingShard(gds.stagingShardID, stagingArea).isStaged()
 }
 
 // Get gets the blockGHOSTDAGData associated with the given blockHash
 func (gds *ghostdagDataStore) Get(dbContext model.DBReader, stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) (*externalapi.BlockGHOSTDAGData, error) {
-	stagingShard := gds.stagingShard(stagingArea)
+	stagingShard := gds.stagingShard(gds.stagingShardID, stagingArea)
 
 	if blockGHOSTDAGData, ok := stagingShard.toAdd[*blockHash]; ok {
 		return blockGHOSTDAGData, nil

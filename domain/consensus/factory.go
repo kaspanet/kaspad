@@ -1,11 +1,10 @@
 package consensus
 
 import (
+	"github.com/kaspanet/kaspad/domain/consensus/datastructures/daawindowstore"
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/prefixmanager/prefix"
-	"github.com/pkg/errors"
 	"io/ioutil"
-	"math/big"
 	"os"
 	"sync"
 
@@ -62,6 +61,8 @@ type Config struct {
 	IsArchival bool
 	// EnableSanityCheckPruningUTXOSet checks the full pruning point utxo set against the commitment at every pruning movement
 	EnableSanityCheckPruningUTXOSet bool
+
+	ShouldNotAddGenesis bool
 }
 
 // Factory instantiates new Consensuses
@@ -117,6 +118,7 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 	pruningWindowSizePlusFinalityDepthForCache := int(config.PruningDepth() + config.FinalityDepth())
 
 	// Data Structures
+	daaWindowStore := daawindowstore.New(dbPrefix, 200, preallocateCaches)
 	acceptanceDataStore := acceptancedatastore.New(dbPrefix, 200, preallocateCaches)
 	blockStore, err := blockstore.New(dbManager, dbPrefix, 200, preallocateCaches)
 	if err != nil {
@@ -142,7 +144,8 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 	if ghostdagDataCacheSize < config.DifficultyAdjustmentWindowSize {
 		ghostdagDataCacheSize = config.DifficultyAdjustmentWindowSize
 	}
-	ghostdagDataStore := ghostdagdatastore.New(dbPrefix, ghostdagDataCacheSize, preallocateCaches)
+	ghostdagDataStore := ghostdagdatastore.New(model.StagingShardIDGHOSTDAG, []byte("block-ghostdag-data"), dbPrefix, ghostdagDataCacheSize, preallocateCaches)
+	blockWithMetaDataGHOSTDAGDataStore := ghostdagdatastore.New(model.StagingShardIDGHOSTDAGFromBlocksWithMetaData, []byte("block-ghostdag-data-from-blocks-with-meta-data"), dbPrefix, ghostdagDataCacheSize, preallocateCaches)
 
 	headersSelectedTipStore := headersselectedtipstore.New(dbPrefix)
 	finalityStore := finalitystore.New(dbPrefix, 200, preallocateCaches)
@@ -164,7 +167,9 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 		dagTopologyManager,
 		ghostdagDataStore,
 		blockHeaderStore,
-		config.K)
+		blockWithMetaDataGHOSTDAGDataStore,
+		config.K,
+		config.GenesisHash)
 	dagTraversalManager := dagtraversalmanager.New(
 		dbManager,
 		dagTopologyManager,
@@ -172,6 +177,7 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 		reachabilityDataStore,
 		ghostdagManager,
 		consensusStateStore,
+		daaWindowStore,
 		config.GenesisHash)
 	pastMedianTimeManager := f.pastMedianTimeConsructor(
 		config.TimestampDeviationTolerance,
@@ -202,7 +208,8 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 		config.DifficultyAdjustmentWindowSize,
 		config.DisableDifficultyAdjustment,
 		config.TargetTimePerBlock,
-		config.GenesisHash)
+		config.GenesisHash,
+		config.GenesisBlock.Header.Bits())
 	coinbaseManager := coinbasemanager.New(
 		dbManager,
 		config.SubsidyReductionInterval,
@@ -309,6 +316,7 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 		blockHeaderStore,
 		utxoDiffStore,
 		daaBlocksStore,
+		reachabilityDataStore,
 		config.IsArchival,
 		genesisHash,
 		config.FinalityDepth(),
@@ -375,11 +383,16 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 		headersSelectedTipStore,
 		finalityStore,
 		headersSelectedChainStore,
-		daaBlocksStore)
+		daaBlocksStore,
+		daaWindowStore,
+		blockWithMetaDataGHOSTDAGDataStore)
 
 	c := &consensus{
 		lock:            &sync.Mutex{},
 		databaseContext: dbManager,
+
+		genesisBlock: config.GenesisBlock,
+		genesisHash:  config.GenesisHash,
 
 		blockProcessor:        blockProcessor,
 		blockBuilder:          blockBuilder,
@@ -416,37 +429,9 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 		daaBlocksStore:            daaBlocksStore,
 	}
 
-	err = c.Init()
+	err = c.Init(config.ShouldNotAddGenesis)
 	if err != nil {
 		return nil, err
-	}
-
-	genesisInfo, err := c.GetBlockInfo(genesisHash)
-	if err != nil {
-		return nil, err
-	}
-
-	if !genesisInfo.Exists {
-		if c.blockStore.Count(model.NewStagingArea()) > 0 {
-			return nil, errors.Errorf(
-				"expected genesis block %s is not found in the non-empty DAG \"%s\": wrong config or appdir?",
-				genesisHash, config.Params.Name)
-		}
-		genesisWithMetaData := &externalapi.BlockWithMetaData{
-			Block:     config.GenesisBlock,
-			DAAScore:  0,
-			DAAWindow: nil,
-			GHOSTDAGData: []*externalapi.BlockGHOSTDAGDataHashPair{
-				{
-					GHOSTDAGData: externalapi.NewBlockGHOSTDAGData(0, big.NewInt(0), model.VirtualGenesisBlockHash, nil, nil, make(map[externalapi.DomainHash]externalapi.KType)),
-					Hash:         genesisHash,
-				},
-			},
-		}
-		_, err = c.ValidateAndInsertBlockWithMetaData(genesisWithMetaData, true) // TODO: Don't always add genesis
-		if err != nil {
-			return nil, err
-		}
 	}
 
 	err = consensusStateManager.RecoverUTXOIfRequired()

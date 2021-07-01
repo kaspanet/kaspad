@@ -4,7 +4,7 @@ import "github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 
 // ConsensusStateManager manages the node's consensus state
 type ConsensusStateManager interface {
-	AddBlock(stagingArea *StagingArea, blockHash *externalapi.DomainHash) (*externalapi.SelectedChainPath, externalapi.UTXODiff, *UTXODiffReversalData, error)
+	AddBlock(stagingArea *StagingArea, blockHash *externalapi.DomainHash, updateVirtual bool) (*externalapi.SelectedChainPath, externalapi.UTXODiff, *UTXODiffReversalData, error)
 	PopulateTransactionWithUTXOEntries(stagingArea *StagingArea, transaction *externalapi.DomainTransaction) error
 	ImportPruningPoint(stagingArea *StagingArea, newPruningPoint *externalapi.DomainBlock) error
 	RestorePastUTXOSetIterator(stagingArea *StagingArea, blockHash *externalapi.DomainHash) (externalapi.ReadOnlyUTXOSetIterator, error)
@@ -12,4 +12,5 @@ type ConsensusStateManager interface {
 	GetVirtualSelectedParentChainFromBlock(stagingArea *StagingArea, blockHash *externalapi.DomainHash) (*externalapi.SelectedChainPath, error)
 	RecoverUTXOIfRequired() error
 	ReverseUTXODiffs(tipHash *externalapi.DomainHash, reversalData *UTXODiffReversalData) error
+	ResolveVirtual(stagingArea *StagingArea) error
 }

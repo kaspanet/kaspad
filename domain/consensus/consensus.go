@@ -3,6 +3,7 @@ package consensus
 import (
 	"github.com/kaspanet/kaspad/infrastructure/logger"
 	"github.com/kaspanet/kaspad/util/staging"
+	"math/big"
 	"sync"
 
 	"github.com/kaspanet/kaspad/domain/consensus/database"
@@ -15,6 +16,9 @@ import (
 type consensus struct {
 	lock            *sync.Mutex
 	databaseContext model.DBManager
+
+	genesisBlock *externalapi.DomainBlock
+	genesisHash  *externalapi.DomainHash
 
 	blockProcessor        model.BlockProcessor
 	blockBuilder          model.BlockBuilder
@@ -58,38 +62,56 @@ func (s *consensus) ValidateAndInsertBlockWithMetaData(block *externalapi.BlockW
 	return s.blockProcessor.ValidateAndInsertBlockWithMetaData(block, validateUTXO)
 }
 
-func (s *consensus) Init() error {
-	s.lock.Lock()
-	defer s.lock.Unlock()
+func (c *consensus) Init(shouldNotAddGenesis bool) error {
+	c.lock.Lock()
+	defer c.lock.Unlock()
 
 	onEnd := logger.LogAndMeasureExecutionTime(log, "Init")
 	defer onEnd()
 
 	stagingArea := model.NewStagingArea()
 
-	exists, err := s.blockStatusStore.Exists(s.databaseContext, stagingArea, model.VirtualGenesisBlockHash)
+	exists, err := c.blockStatusStore.Exists(c.databaseContext, stagingArea, model.VirtualGenesisBlockHash)
 	if err != nil {
 		return err
 	}
 
-	if exists {
-		return nil
+	if !exists {
+		c.blockStatusStore.Stage(stagingArea, model.VirtualGenesisBlockHash, externalapi.StatusUTXOValid)
+		err = c.reachabilityManager.Init(stagingArea)
+		if err != nil {
+			return err
+		}
+
+		err = c.dagTopologyManager.SetParents(stagingArea, model.VirtualGenesisBlockHash, nil)
+		if err != nil {
+			return err
+		}
+
+		c.consensusStateStore.StageTips(stagingArea, []*externalapi.DomainHash{model.VirtualGenesisBlockHash})
+
+		err = staging.CommitAllChanges(c.databaseContext, stagingArea)
+		if err != nil {
+			return err
+		}
 	}
 
-	s.blockStatusStore.Stage(stagingArea, model.VirtualGenesisBlockHash, externalapi.StatusUTXOValid)
-	err = s.reachabilityManager.Init(stagingArea)
-	if err != nil {
-		return err
-	}
-
-	err = s.dagTopologyManager.SetParents(stagingArea, model.VirtualGenesisBlockHash, nil)
-	if err != nil {
-		return err
-	}
-
-	err = staging.CommitAllChanges(s.databaseContext, stagingArea)
-	if err != nil {
-		return err
+	if !shouldNotAddGenesis && c.blockStore.Count(stagingArea) == 0 {
+		genesisWithMetaData := &externalapi.BlockWithMetaData{
+			Block:     c.genesisBlock,
+			DAAScore:  0,
+			DAAWindow: nil,
+			GHOSTDAGData: []*externalapi.BlockGHOSTDAGDataHashPair{
+				{
+					GHOSTDAGData: externalapi.NewBlockGHOSTDAGData(0, big.NewInt(0), model.VirtualGenesisBlockHash, nil, nil, make(map[externalapi.DomainHash]externalapi.KType)),
+					Hash:         c.genesisHash,
+				},
+			},
+		}
+		_, err = c.blockProcessor.ValidateAndInsertBlockWithMetaData(genesisWithMetaData, true)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -99,7 +121,13 @@ func (s *consensus) ResolveVirtual() error {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	panic("implement me")
+	stagingArea := model.NewStagingArea()
+	err := s.consensusStateManager.ResolveVirtual(stagingArea)
+	if err != nil {
+		return err
+	}
+
+	return staging.CommitAllChanges(s.databaseContext, stagingArea)
 }
 
 func (s *consensus) PruningPointAndItsAnticoneWithMetaData() ([]*externalapi.BlockWithMetaData, error) {

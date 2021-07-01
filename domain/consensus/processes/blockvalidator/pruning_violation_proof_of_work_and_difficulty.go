@@ -4,7 +4,6 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/pow"
 	"github.com/kaspanet/kaspad/infrastructure/db/database"
 	"github.com/kaspanet/kaspad/infrastructure/logger"
@@ -28,22 +27,22 @@ func (v *blockValidator) ValidatePruningPointViolationAndProofOfWorkAndDifficult
 		return err
 	}
 
-	err = v.checkParentsIncest(stagingArea, header)
+	err = v.setParents(stagingArea, blockHash, header, isBlockWithPrefilledData)
 	if err != nil {
 		return err
 	}
 
-	err = v.checkPruningPointViolation(stagingArea, header)
+	err = v.checkParentsIncest(stagingArea, blockHash)
+	if err != nil {
+		return err
+	}
+
+	err = v.checkPruningPointViolation(stagingArea, blockHash)
 	if err != nil {
 		return err
 	}
 
 	err = v.checkProofOfWork(header)
-	if err != nil {
-		return err
-	}
-
-	err = v.setParents(stagingArea, blockHash, header, isBlockWithPrefilledData)
 	if err != nil {
 		return err
 	}
@@ -182,7 +181,7 @@ func (v *blockValidator) checkParentHeadersExist(stagingArea *model.StagingArea,
 
 	return nil
 }
-func (v *blockValidator) checkPruningPointViolation(stagingArea *model.StagingArea, header externalapi.BlockHeader) error {
+func (v *blockValidator) checkPruningPointViolation(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) error {
 	// check if the pruning point is on past of at least one parent of the header's parents.
 
 	hasPruningPoint, err := v.pruningStore.HasPruningPoint(v.databaseContext, stagingArea)
@@ -200,13 +199,27 @@ func (v *blockValidator) checkPruningPointViolation(stagingArea *model.StagingAr
 		return err
 	}
 
-	isAncestorOfAny, err := v.dagTopologyManager.IsAncestorOfAny(stagingArea, pruningPoint, header.ParentHashes())
+	parents, err := v.dagTopologyManager.Parents(stagingArea, blockHash)
 	if err != nil {
 		return err
 	}
+
+	if v.isVirtualGenesisOnlyParent(parents) {
+		return nil
+	}
+
+	isAncestorOfAny, err := v.dagTopologyManager.IsAncestorOfAny(stagingArea, pruningPoint, parents)
+	if err != nil {
+		return err
+	}
+
 	if !isAncestorOfAny {
 		return errors.Wrapf(ruleerrors.ErrPruningPointViolation,
-			"expected pruning point %s to be in block %s past.", pruningPoint, consensushashing.HeaderHash(header))
+			"expected pruning point %s to be in block %s past.", pruningPoint, blockHash)
 	}
 	return nil
+}
+
+func (v *blockValidator) isVirtualGenesisOnlyParent(parents []*externalapi.DomainHash) bool {
+	return len(parents) == 1 && parents[0].Equal(model.VirtualGenesisBlockHash)
 }

@@ -239,17 +239,25 @@ func (gm *ghostdagManager) checkBlueCandidateWithChainBlock(stagingArea *model.S
 func (gm *ghostdagManager) blueAnticoneSize(stagingArea *model.StagingArea,
 	block *externalapi.DomainHash, context *externalapi.BlockGHOSTDAGData) (externalapi.KType, error) {
 
+	ghostdagDataStore := gm.ghostdagDataStore
 	for current := context; current != nil; {
 		if blueAnticoneSize, ok := current.BluesAnticoneSizes()[*block]; ok {
 			return blueAnticoneSize, nil
 		}
-		if current.SelectedParent() == nil {
+		if current.SelectedParent().Equal(gm.genesisHash) {
 			break
 		}
 		var err error
-		current, err = gm.ghostdagDataStore.Get(gm.databaseContext, stagingArea, current.SelectedParent())
+		current, err = ghostdagDataStore.Get(gm.databaseContext, stagingArea, current.SelectedParent())
 		if err != nil {
 			return 0, err
+		}
+		if current.SelectedParent().Equal(model.VirtualGenesisBlockHash) {
+			ghostdagDataStore = gm.blockWithMetaDataGHOSTDAGDataStore
+			current, err = gm.ghostdagDataStore.Get(gm.databaseContext, stagingArea, current.SelectedParent())
+			if err != nil {
+				return 0, err
+			}
 		}
 	}
 	return 0, errors.Errorf("block %s is not in blue set of the given context", block)

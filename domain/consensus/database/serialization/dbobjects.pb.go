@@ -1606,6 +1606,61 @@ func (x *DbBlockHeaderCount) GetCount() uint64 {
 	return 0
 }
 
+type DbBlockGHOSTDAGDataHashPair struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Hash         *DbHash              `protobuf:"bytes,1,opt,name=hash,proto3" json:"hash,omitempty"`
+	GhostdagData *DbBlockGhostdagData `protobuf:"bytes,2,opt,name=GhostdagData,proto3" json:"GhostdagData,omitempty"`
+}
+
+func (x *DbBlockGHOSTDAGDataHashPair) Reset() {
+	*x = DbBlockGHOSTDAGDataHashPair{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_dbobjects_proto_msgTypes[27]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *DbBlockGHOSTDAGDataHashPair) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DbBlockGHOSTDAGDataHashPair) ProtoMessage() {}
+
+func (x *DbBlockGHOSTDAGDataHashPair) ProtoReflect() protoreflect.Message {
+	mi := &file_dbobjects_proto_msgTypes[27]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DbBlockGHOSTDAGDataHashPair.ProtoReflect.Descriptor instead.
+func (*DbBlockGHOSTDAGDataHashPair) Descriptor() ([]byte, []int) {
+	return file_dbobjects_proto_rawDescGZIP(), []int{27}
+}
+
+func (x *DbBlockGHOSTDAGDataHashPair) GetHash() *DbHash {
+	if x != nil {
+		return x.Hash
+	}
+	return nil
+}
+
+func (x *DbBlockGHOSTDAGDataHashPair) GetGhostdagData() *DbBlockGhostdagData {
+	if x != nil {
+		return x.GhostdagData
+	}
+	return nil
+}
+
 var File_dbobjects_proto protoreflect.FileDescriptor
 
 var file_dbobjects_proto_rawDesc = []byte{
@@ -1837,10 +1892,19 @@ var file_dbobjects_proto_rawDesc = []byte{
 	0x20, 0x01, 0x28, 0x04, 0x52, 0x05, 0x63, 0x6f, 0x75, 0x6e, 0x74, 0x22, 0x2a, 0x0a, 0x12, 0x44,
 	0x62, 0x42, 0x6c, 0x6f, 0x63, 0x6b, 0x48, 0x65, 0x61, 0x64, 0x65, 0x72, 0x43, 0x6f, 0x75, 0x6e,
 	0x74, 0x12, 0x14, 0x0a, 0x05, 0x63, 0x6f, 0x75, 0x6e, 0x74, 0x18, 0x01, 0x20, 0x01, 0x28, 0x04,
-	0x52, 0x05, 0x63, 0x6f, 0x75, 0x6e, 0x74, 0x42, 0x2a, 0x5a, 0x28, 0x67, 0x69, 0x74, 0x68, 0x75,
-	0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x6b, 0x61, 0x73, 0x70, 0x61, 0x6e, 0x65, 0x74, 0x2f, 0x6b,
-	0x61, 0x73, 0x70, 0x61, 0x64, 0x2f, 0x73, 0x65, 0x72, 0x69, 0x61, 0x6c, 0x69, 0x7a, 0x61, 0x74,
-	0x69, 0x6f, 0x6e, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x52, 0x05, 0x63, 0x6f, 0x75, 0x6e, 0x74, 0x22, 0x90, 0x01, 0x0a, 0x1b, 0x44, 0x62, 0x42, 0x6c,
+	0x6f, 0x63, 0x6b, 0x47, 0x48, 0x4f, 0x53, 0x54, 0x44, 0x41, 0x47, 0x44, 0x61, 0x74, 0x61, 0x48,
+	0x61, 0x73, 0x68, 0x50, 0x61, 0x69, 0x72, 0x12, 0x29, 0x0a, 0x04, 0x68, 0x61, 0x73, 0x68, 0x18,
+	0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x15, 0x2e, 0x73, 0x65, 0x72, 0x69, 0x61, 0x6c, 0x69, 0x7a,
+	0x61, 0x74, 0x69, 0x6f, 0x6e, 0x2e, 0x44, 0x62, 0x48, 0x61, 0x73, 0x68, 0x52, 0x04, 0x68, 0x61,
+	0x73, 0x68, 0x12, 0x46, 0x0a, 0x0c, 0x47, 0x68, 0x6f, 0x73, 0x74, 0x64, 0x61, 0x67, 0x44, 0x61,
+	0x74, 0x61, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x22, 0x2e, 0x73, 0x65, 0x72, 0x69, 0x61,
+	0x6c, 0x69, 0x7a, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x2e, 0x44, 0x62, 0x42, 0x6c, 0x6f, 0x63, 0x6b,
+	0x47, 0x68, 0x6f, 0x73, 0x74, 0x64, 0x61, 0x67, 0x44, 0x61, 0x74, 0x61, 0x52, 0x0c, 0x47, 0x68,
+	0x6f, 0x73, 0x74, 0x64, 0x61, 0x67, 0x44, 0x61, 0x74, 0x61, 0x42, 0x2a, 0x5a, 0x28, 0x67, 0x69,
+	0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x6b, 0x61, 0x73, 0x70, 0x61, 0x6e, 0x65,
+	0x74, 0x2f, 0x6b, 0x61, 0x73, 0x70, 0x61, 0x64, 0x2f, 0x73, 0x65, 0x72, 0x69, 0x61, 0x6c, 0x69,
+	0x7a, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -1855,7 +1919,7 @@ func file_dbobjects_proto_rawDescGZIP() []byte {
 	return file_dbobjects_proto_rawDescData
 }
 
-var file_dbobjects_proto_msgTypes = make([]protoimpl.MessageInfo, 27)
+var file_dbobjects_proto_msgTypes = make([]protoimpl.MessageInfo, 28)
 var file_dbobjects_proto_goTypes = []interface{}{
 	(*DbBlock)(nil),                     // 0: serialization.DbBlock
 	(*DbBlockHeader)(nil),               // 1: serialization.DbBlockHeader
@@ -1884,6 +1948,7 @@ var file_dbobjects_proto_goTypes = []interface{}{
 	(*DbTips)(nil),                      // 24: serialization.DbTips
 	(*DbBlockCount)(nil),                // 25: serialization.DbBlockCount
 	(*DbBlockHeaderCount)(nil),          // 26: serialization.DbBlockHeaderCount
+	(*DbBlockGHOSTDAGDataHashPair)(nil), // 27: serialization.DbBlockGHOSTDAGDataHashPair
 }
 var file_dbobjects_proto_depIdxs = []int32{
 	1,  // 0: serialization.DbBlock.header:type_name -> serialization.DbBlockHeader
@@ -1921,11 +1986,13 @@ var file_dbobjects_proto_depIdxs = []int32{
 	18, // 32: serialization.DbUtxoDiff.toAdd:type_name -> serialization.DbUtxoCollectionItem
 	18, // 33: serialization.DbUtxoDiff.toRemove:type_name -> serialization.DbUtxoCollectionItem
 	2,  // 34: serialization.DbTips.tips:type_name -> serialization.DbHash
-	35, // [35:35] is the sub-list for method output_type
-	35, // [35:35] is the sub-list for method input_type
-	35, // [35:35] is the sub-list for extension type_name
-	35, // [35:35] is the sub-list for extension extendee
-	0,  // [0:35] is the sub-list for field type_name
+	2,  // 35: serialization.DbBlockGHOSTDAGDataHashPair.hash:type_name -> serialization.DbHash
+	14, // 36: serialization.DbBlockGHOSTDAGDataHashPair.GhostdagData:type_name -> serialization.DbBlockGhostdagData
+	37, // [37:37] is the sub-list for method output_type
+	37, // [37:37] is the sub-list for method input_type
+	37, // [37:37] is the sub-list for extension type_name
+	37, // [37:37] is the sub-list for extension extendee
+	0,  // [0:37] is the sub-list for field type_name
 }
 
 func init() { file_dbobjects_proto_init() }
@@ -2258,6 +2325,18 @@ func file_dbobjects_proto_init() {
 				return nil
 			}
 		}
+		file_dbobjects_proto_msgTypes[27].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*DbBlockGHOSTDAGDataHashPair); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
@@ -2265,7 +2344,7 @@ func file_dbobjects_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_dbobjects_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   27,
+			NumMessages:   28,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

@@ -34,8 +34,8 @@ func New(
 
 }
 
-func (mdm *mergeDepthManager) CheckBoundedMergeDepth(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) error {
-	nonBoundedMergeDepthViolatingBlues, err := mdm.NonBoundedMergeDepthViolatingBlues(stagingArea, blockHash)
+func (mdm *mergeDepthManager) CheckBoundedMergeDepth(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash, isBlockWithPrefilledData bool) error {
+	nonBoundedMergeDepthViolatingBlues, err := mdm.NonBoundedMergeDepthViolatingBlues(stagingArea, blockHash, isBlockWithPrefilledData)
 	if err != nil {
 		return err
 	}
@@ -50,7 +50,7 @@ func (mdm *mergeDepthManager) CheckBoundedMergeDepth(stagingArea *model.StagingA
 		return nil
 	}
 
-	finalityPoint, err := mdm.finalityManager.FinalityPoint(stagingArea, blockHash)
+	finalityPoint, err := mdm.finalityManager.FinalityPoint(stagingArea, blockHash, isBlockWithPrefilledData)
 	if err != nil {
 		return err
 	}
@@ -79,7 +79,7 @@ func (mdm *mergeDepthManager) CheckBoundedMergeDepth(stagingArea *model.StagingA
 	return nil
 }
 
-func (mdm *mergeDepthManager) NonBoundedMergeDepthViolatingBlues(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error) {
+func (mdm *mergeDepthManager) NonBoundedMergeDepthViolatingBlues(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash, isBlockWithPrefilledData bool) ([]*externalapi.DomainHash, error) {
 	ghostdagData, err := mdm.ghostdagDataStore.Get(mdm.databaseContext, stagingArea, blockHash)
 	if err != nil {
 		return nil, err
@@ -87,7 +87,7 @@ func (mdm *mergeDepthManager) NonBoundedMergeDepthViolatingBlues(stagingArea *mo
 
 	nonBoundedMergeDepthViolatingBlues := make([]*externalapi.DomainHash, 0, len(ghostdagData.MergeSetBlues()))
 
-	finalityPoint, err := mdm.finalityManager.FinalityPoint(stagingArea, blockHash)
+	finalityPoint, err := mdm.finalityManager.FinalityPoint(stagingArea, blockHash, isBlockWithPrefilledData)
 	if err != nil {
 		return nil, err
 	}

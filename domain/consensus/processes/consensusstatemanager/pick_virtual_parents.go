@@ -282,7 +282,7 @@ func (csm *consensusStateManager) boundedMergeBreakingParents(stagingArea *model
 	}
 
 	potentiallyKosherizingBlocks, err :=
-		csm.mergeDepthManager.NonBoundedMergeDepthViolatingBlues(stagingArea, model.VirtualBlockHash)
+		csm.mergeDepthManager.NonBoundedMergeDepthViolatingBlues(stagingArea, model.VirtualBlockHash, false)
 	if err != nil {
 		return nil, err
 	}

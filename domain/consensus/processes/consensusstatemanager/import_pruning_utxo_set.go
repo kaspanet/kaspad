@@ -31,18 +31,7 @@ func (csm *consensusStateManager) importPruningPoint(
 
 	newPruningPointHash := consensushashing.BlockHash(newPruningPoint)
 
-	// We ignore the shouldSendNotification return value because we always want to send finality conflict notification
-	// in case the new pruning point violates finality
-	isViolatingFinality, _, err := csm.isViolatingFinality(stagingArea, newPruningPointHash)
-	if err != nil {
-		return err
-	}
-
-	if isViolatingFinality {
-		log.Warnf("Finality Violation Detected! The suggest pruning point %s violates finality!", newPruningPointHash)
-		return errors.Wrapf(ruleerrors.ErrSuggestedPruningViolatesFinality, "%s cannot be a pruning point because "+
-			"it violates finality", newPruningPointHash)
-	}
+	// TODO: We should validate the imported pruning point doesn't violate finality as part of the headers proof.
 
 	importedPruningPointMultiset, err := csm.pruningStore.ImportedPruningPointMultiset(csm.databaseContext)
 	if err != nil {
@@ -62,12 +51,12 @@ func (csm *consensusStateManager) importPruningPoint(
 	}
 	log.Debugf("The new pruning point UTXO commitment validation passed")
 
-	log.Debugf("Staging the pruning point as the only DAG tip")
-	newTips := []*externalapi.DomainHash{newPruningPointHash}
-	csm.consensusStateStore.StageTips(stagingArea, newTips)
-
+	//log.Debugf("Staging the pruning point as the only DAG tip")
+	//newTips := []*externalapi.DomainHash{newPruningPointHash}
+	//csm.consensusStateStore.StageTips(stagingArea, newTips)
+	//
 	log.Debugf("Setting the pruning point as the only virtual parent")
-	err = csm.dagTopologyManager.SetParents(stagingArea, model.VirtualBlockHash, newTips)
+	err = csm.dagTopologyManager.SetParents(stagingArea, model.VirtualBlockHash, []*externalapi.DomainHash{newPruningPointHash})
 	if err != nil {
 		return err
 	}
@@ -132,6 +121,12 @@ func (csm *consensusStateManager) importPruningPoint(
 
 	log.Debugf("Staging the new pruning point multiset")
 	csm.multisetStore.Stage(stagingArea, newPruningPointHash, importedPruningPointMultiset)
+
+	_, err = csm.difficultyManager.StageDAADataAndReturnRequiredDifficulty(stagingArea, model.VirtualBlockHash, false)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 

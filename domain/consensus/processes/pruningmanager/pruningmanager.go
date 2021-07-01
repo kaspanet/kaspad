@@ -24,12 +24,13 @@ type pruningManager struct {
 	blockStatusStore       model.BlockStatusStore
 	headerSelectedTipStore model.HeaderSelectedTipStore
 
-	multiSetStore       model.MultisetStore
-	acceptanceDataStore model.AcceptanceDataStore
-	blocksStore         model.BlockStore
-	blockHeaderStore    model.BlockHeaderStore
-	utxoDiffStore       model.UTXODiffStore
-	daaBlocksStore      model.DAABlocksStore
+	multiSetStore         model.MultisetStore
+	acceptanceDataStore   model.AcceptanceDataStore
+	blocksStore           model.BlockStore
+	blockHeaderStore      model.BlockHeaderStore
+	utxoDiffStore         model.UTXODiffStore
+	daaBlocksStore        model.DAABlocksStore
+	reachabilityDataStore model.ReachabilityDataStore
 
 	isArchivalNode                  bool
 	genesisHash                     *externalapi.DomainHash
@@ -57,6 +58,7 @@ func New(
 	blockHeaderStore model.BlockHeaderStore,
 	utxoDiffStore model.UTXODiffStore,
 	daaBlocksStore model.DAABlocksStore,
+	reachabilityDataStore model.ReachabilityDataStore,
 
 	isArchivalNode bool,
 	genesisHash *externalapi.DomainHash,
@@ -66,21 +68,24 @@ func New(
 ) model.PruningManager {
 
 	return &pruningManager{
-		databaseContext:                 databaseContext,
-		dagTraversalManager:             dagTraversalManager,
-		dagTopologyManager:              dagTopologyManager,
-		consensusStateManager:           consensusStateManager,
-		consensusStateStore:             consensusStateStore,
-		ghostdagDataStore:               ghostdagDataStore,
-		pruningStore:                    pruningStore,
-		blockStatusStore:                blockStatusStore,
-		multiSetStore:                   multiSetStore,
-		acceptanceDataStore:             acceptanceDataStore,
-		blocksStore:                     blocksStore,
-		blockHeaderStore:                blockHeaderStore,
-		utxoDiffStore:                   utxoDiffStore,
-		headerSelectedTipStore:          headerSelectedTipStore,
-		daaBlocksStore:                  daaBlocksStore,
+		databaseContext:       databaseContext,
+		dagTraversalManager:   dagTraversalManager,
+		dagTopologyManager:    dagTopologyManager,
+		consensusStateManager: consensusStateManager,
+
+		consensusStateStore:    consensusStateStore,
+		ghostdagDataStore:      ghostdagDataStore,
+		pruningStore:           pruningStore,
+		blockStatusStore:       blockStatusStore,
+		multiSetStore:          multiSetStore,
+		acceptanceDataStore:    acceptanceDataStore,
+		blocksStore:            blocksStore,
+		blockHeaderStore:       blockHeaderStore,
+		utxoDiffStore:          utxoDiffStore,
+		headerSelectedTipStore: headerSelectedTipStore,
+		daaBlocksStore:         daaBlocksStore,
+		reachabilityDataStore:  reachabilityDataStore,
+
 		isArchivalNode:                  isArchivalNode,
 		genesisHash:                     genesisHash,
 		pruningDepth:                    pruningDepth,
@@ -406,18 +411,6 @@ func (pm *pruningManager) IsValidPruningPoint(stagingArea *model.StagingArea, bl
 
 	// A pruning point has to be at depth of at least pm.pruningDepth
 	if headersSelectedTipGHOSTDAGData.BlueScore()-ghostdagData.BlueScore() < pm.pruningDepth {
-		return false, nil
-	}
-
-	selectedParentGHOSTDAGData, err := pm.ghostdagDataStore.Get(pm.databaseContext, stagingArea, ghostdagData.SelectedParent())
-	if err != nil {
-		return false, err
-	}
-
-	// A pruning point has to be the lowest chain block with a certain finality score, so
-	// if the block selected parent has the same finality score it means it cannot be a
-	// pruning point.
-	if pm.finalityScore(ghostdagData.BlueScore()) == pm.finalityScore(selectedParentGHOSTDAGData.BlueScore()) {
 		return false, nil
 	}
 
@@ -758,13 +751,13 @@ func (pm *pruningManager) blockWithMetaData(stagingArea *model.StagingArea, bloc
 		return nil, err
 	}
 
-	windowSize := 2640 // TODO: Change to dm.difficultyAdjustmentWindowSize+1
+	windowSize := 2641 // TODO: Change to dm.difficultyAdjustmentWindowSize+1
 	window, err := pm.dagTraversalManager.BlockWindow(stagingArea, blockHash, windowSize, false)
 	if err != nil {
 		return nil, err
 	}
 
-	windowPairs := make([]*externalapi.BlockGHOSTDAGDataHeaderPair, len(window))
+	windowPairs := make([]*externalapi.DAABlock, len(window))
 	for i, blockHash := range window {
 		header, err := pm.blockHeaderStore.BlockHeader(pm.databaseContext, stagingArea, blockHash)
 		if err != nil {
@@ -776,7 +769,7 @@ func (pm *pruningManager) blockWithMetaData(stagingArea *model.StagingArea, bloc
 			return nil, err
 		}
 
-		windowPairs[i] = &externalapi.BlockGHOSTDAGDataHeaderPair{
+		windowPairs[i] = &externalapi.DAABlock{
 			Header:       header,
 			GHOSTDAGData: ghostdagData,
 		}
@@ -810,3 +803,77 @@ func (pm *pruningManager) blockWithMetaData(stagingArea *model.StagingArea, bloc
 		GHOSTDAGData: ghostdagDataHashPairs,
 	}, nil
 }
+
+//func (pm *pruningManager) replaceGHOSTDAGDataPrePruningDataWithVirtualGenesis(stagingArea *model.StagingArea, data *externalapi.BlockGHOSTDAGData) (*externalapi.BlockGHOSTDAGData, error) {
+//	mergeSetBlues := make([]*externalapi.DomainHash, 0, len(data.MergeSetBlues()))
+//	for _, blockHash := range data.MergeSetBlues() {
+//		isPruned, err := pm.isPruned(stagingArea, blockHash)
+//		if err != nil {
+//			return nil, err
+//		}
+//		if isPruned {
+//			continue
+//		}
+//
+//		mergeSetBlues = append(mergeSetBlues, blockHash)
+//	}
+//
+//	mergeSetReds := make([]*externalapi.DomainHash, 0, len(data.MergeSetReds()))
+//	for _, blockHash := range data.MergeSetReds() {
+//		isPruned, err := pm.isPruned(stagingArea, blockHash)
+//		if err != nil {
+//			return nil, err
+//		}
+//		if isPruned {
+//			continue
+//		}
+//
+//		mergeSetReds = append(mergeSetReds, blockHash)
+//	}
+//
+//	selectedParent := data.SelectedParent()
+//	isPruned, err := pm.isPruned(stagingArea, data.SelectedParent())
+//	if err != nil {
+//		return nil, err
+//	}
+//
+//	if isPruned{
+//		selectedParent = model.VirtualGenesisBlockHash
+//	}
+//
+//	return externalapi.NewBlockGHOSTDAGData(
+//		data.BlueScore(),
+//		data.BlueWork(),
+//		selectedParent,
+//		mergeSetBlues,
+//		mergeSetReds,
+//		data.BluesAnticoneSizes(),
+//	), nil
+//}
+//
+//func (pm *pruningManager) isPruned(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) (bool, error) {
+//	hasReachabilityData, err := pm.reachabilityDataStore.HasReachabilityData(pm.databaseContext, stagingArea, blockHash)
+//	if err != nil {
+//		return false, err
+//	}
+//
+//	if !hasReachabilityData {
+//		return true, nil
+//	}
+//
+//	pruningPoint, err := pm.pruningStore.PruningPoint(pm.databaseContext, stagingArea)
+//	if err != nil {
+//		return false, err
+//	}
+//
+//	isAncestorOfPruningPoint, err := pm.dagTopologyManager.IsAncestorOf(stagingArea, blockHash, pruningPoint)
+//	if err != nil {
+//		return false, err
+//	}
+//
+//	if isAncestorOfPruningPoint {
+//		return true, nil
+//	}
+//
+//	return false, nil
+//}

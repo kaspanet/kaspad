@@ -47,7 +47,20 @@ func (rt *reachabilityManager) AddBlock(stagingArea *model.StagingArea, blockHas
 	}
 
 	// Insert the node into the selected parent's reachability tree
-	err = rt.addChild(stagingArea, ghostdagData.SelectedParent(), blockHash, reindexRoot)
+	parent := ghostdagData.SelectedParent()
+	if parent == nil {
+		parent = model.VirtualGenesisBlockHash
+	} else {
+		hasReachabilityData, err := rt.reachabilityDataStore.HasReachabilityData(rt.databaseContext, stagingArea, parent)
+		if err != nil {
+			return err
+		}
+		if !hasReachabilityData {
+			parent = model.VirtualGenesisBlockHash
+		}
+	}
+
+	err = rt.addChild(stagingArea, parent, blockHash, reindexRoot)
 	if err != nil {
 		return err
 	}

@@ -2,7 +2,7 @@ package externalapi
 
 // Consensus maintains the current core state of the node
 type Consensus interface {
-	Init() error
+	Init(shouldNotAddGenesis bool) error
 	BuildBlock(coinbaseData *DomainCoinbaseData, transactions []*DomainTransaction) (*DomainBlock, error)
 	ValidateAndInsertBlock(block *DomainBlock, validateUTXO bool) (*BlockInsertionResult, error)
 	ValidateAndInsertBlockWithMetaData(block *BlockWithMetaData, validateUTXO bool) (*BlockInsertionResult, error)

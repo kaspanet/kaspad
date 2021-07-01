@@ -39,7 +39,7 @@ func (fm *finalityManager) VirtualFinalityPoint(stagingArea *model.StagingArea) 
 	log.Debugf("virtualFinalityPoint start")
 	defer log.Debugf("virtualFinalityPoint end")
 
-	virtualFinalityPoint, err := fm.calculateFinalityPoint(stagingArea, model.VirtualBlockHash)
+	virtualFinalityPoint, err := fm.calculateFinalityPoint(stagingArea, model.VirtualBlockHash, false)
 	if err != nil {
 		return nil, err
 	}
@@ -48,7 +48,7 @@ func (fm *finalityManager) VirtualFinalityPoint(stagingArea *model.StagingArea) 
 	return virtualFinalityPoint, nil
 }
 
-func (fm *finalityManager) FinalityPoint(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) (*externalapi.DomainHash, error) {
+func (fm *finalityManager) FinalityPoint(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash, isBlockWithPrefilledData bool) (*externalapi.DomainHash, error) {
 	log.Debugf("FinalityPoint start")
 	defer log.Debugf("FinalityPoint end")
 	if blockHash.Equal(model.VirtualBlockHash) {
@@ -58,7 +58,7 @@ func (fm *finalityManager) FinalityPoint(stagingArea *model.StagingArea, blockHa
 	if err != nil {
 		log.Debugf("%s finality point not found in store - calculating", blockHash)
 		if errors.Is(err, database.ErrNotFound) {
-			return fm.calculateAndStageFinalityPoint(stagingArea, blockHash)
+			return fm.calculateAndStageFinalityPoint(stagingArea, blockHash, isBlockWithPrefilledData)
 		}
 		return nil, err
 	}
@@ -66,9 +66,9 @@ func (fm *finalityManager) FinalityPoint(stagingArea *model.StagingArea, blockHa
 }
 
 func (fm *finalityManager) calculateAndStageFinalityPoint(
-	stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) (*externalapi.DomainHash, error) {
+	stagingArea *model.StagingArea, blockHash *externalapi.DomainHash, isBlockWithPrefilledData bool) (*externalapi.DomainHash, error) {
 
-	finalityPoint, err := fm.calculateFinalityPoint(stagingArea, blockHash)
+	finalityPoint, err := fm.calculateFinalityPoint(stagingArea, blockHash, isBlockWithPrefilledData)
 	if err != nil {
 		return nil, err
 	}
@@ -76,11 +76,16 @@ func (fm *finalityManager) calculateAndStageFinalityPoint(
 	return finalityPoint, nil
 }
 
-func (fm *finalityManager) calculateFinalityPoint(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) (
+func (fm *finalityManager) calculateFinalityPoint(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash, isBlockWithPrefilledData bool) (
 	*externalapi.DomainHash, error) {
 
 	log.Debugf("calculateFinalityPoint start")
 	defer log.Debugf("calculateFinalityPoint end")
+
+	if isBlockWithPrefilledData {
+		return model.VirtualGenesisBlockHash, nil
+	}
+
 	ghostdagData, err := fm.ghostdagDataStore.Get(fm.databaseContext, stagingArea, blockHash)
 	if err != nil {
 		return nil, err

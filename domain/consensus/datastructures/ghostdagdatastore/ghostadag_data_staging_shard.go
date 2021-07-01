@@ -10,8 +10,8 @@ type ghostdagDataStagingShard struct {
 	toAdd map[externalapi.DomainHash]*externalapi.BlockGHOSTDAGData
 }
 
-func (gds *ghostdagDataStore) stagingShard(stagingArea *model.StagingArea) *ghostdagDataStagingShard {
-	return stagingArea.GetOrCreateShard(model.StagingShardIDGHOSTDAG, func() model.StagingShard {
+func (gds *ghostdagDataStore) stagingShard(stagingShardID model.StagingShardID, stagingArea *model.StagingArea) *ghostdagDataStagingShard {
+	return stagingArea.GetOrCreateShard(stagingShardID, func() model.StagingShard {
 		return &ghostdagDataStagingShard{
 			store: gds,
 			toAdd: make(map[externalapi.DomainHash]*externalapi.BlockGHOSTDAGData),

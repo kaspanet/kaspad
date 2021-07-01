@@ -28,6 +28,7 @@ type difficultyManager struct {
 	difficultyAdjustmentWindowSize int
 	disableDifficultyAdjustment    bool
 	targetTimePerBlock             time.Duration
+	genesisBits                    uint32
 }
 
 // New instantiates a new DifficultyManager
@@ -42,7 +43,8 @@ func New(databaseContext model.DBReader,
 	difficultyAdjustmentWindowSize int,
 	disableDifficultyAdjustment bool,
 	targetTimePerBlock time.Duration,
-	genesisHash *externalapi.DomainHash) model.DifficultyManager {
+	genesisHash *externalapi.DomainHash,
+	genesisBits uint32) model.DifficultyManager {
 	return &difficultyManager{
 		databaseContext:                databaseContext,
 		ghostdagManager:                ghostdagManager,
@@ -56,16 +58,8 @@ func New(databaseContext model.DBReader,
 		disableDifficultyAdjustment:    disableDifficultyAdjustment,
 		targetTimePerBlock:             targetTimePerBlock,
 		genesisHash:                    genesisHash,
+		genesisBits:                    genesisBits,
 	}
-}
-
-func (dm *difficultyManager) genesisBits(stagingArea *model.StagingArea) (uint32, error) {
-	header, err := dm.headerStore.BlockHeader(dm.databaseContext, stagingArea, dm.genesisHash)
-	if err != nil {
-		return 0, err
-	}
-
-	return header.Bits(), nil
 }
 
 // StageDAADataAndReturnRequiredDifficulty calculates the DAA window, stages the DAA score and DAA added
@@ -94,7 +88,7 @@ func (dm *difficultyManager) StageDAADataAndReturnRequiredDifficulty(
 		return 0, err
 	}
 
-	return dm.requiredDifficultyFromTargetsWindow(stagingArea, targetsWindow)
+	return dm.requiredDifficultyFromTargetsWindow(targetsWindow)
 }
 
 // RequiredDifficulty returns the difficulty required for some block
@@ -105,20 +99,19 @@ func (dm *difficultyManager) RequiredDifficulty(stagingArea *model.StagingArea, 
 		return 0, err
 	}
 
-	return dm.requiredDifficultyFromTargetsWindow(stagingArea, targetsWindow)
+	return dm.requiredDifficultyFromTargetsWindow(targetsWindow)
 }
 
-func (dm *difficultyManager) requiredDifficultyFromTargetsWindow(
-	stagingArea *model.StagingArea, targetsWindow blockWindow) (uint32, error) {
+func (dm *difficultyManager) requiredDifficultyFromTargetsWindow(targetsWindow blockWindow) (uint32, error) {
 	if dm.disableDifficultyAdjustment {
-		return dm.genesisBits(stagingArea)
+		return dm.genesisBits, nil
 	}
 
 	// We need at least 2 blocks to get a timestamp interval
 	// We could instead clamp the timestamp difference to `targetTimePerBlock`,
 	// but then everything will cancel out and we'll get the target from the last block, which will be the same as genesis.
 	if len(targetsWindow) < 2 {
-		return dm.genesisBits(stagingArea)
+		return dm.genesisBits, nil
 	}
 	windowMinTimestamp, windowMaxTimeStamp, windowsMinIndex, _ := targetsWindow.minMaxTimestamps()
 	// Remove the last block from the window so to calculate the average target of dag.difficultyAdjustmentWindowSize blocks

@@ -22,12 +22,14 @@ const (
 	StagingShardIDDAABlocks
 	StagingShardIDFinality
 	StagingShardIDGHOSTDAG
+	StagingShardIDGHOSTDAGFromBlocksWithMetaData
 	StagingShardIDHeadersSelectedChain
 	StagingShardIDHeadersSelectedTip
 	StagingShardIDMultiset
 	StagingShardIDPruning
 	StagingShardIDReachabilityData
 	StagingShardIDUTXODiff
+	StagingShardIDDAAWindow
 	// Always leave StagingShardIDLen as the last constant
 	StagingShardIDLen
 )

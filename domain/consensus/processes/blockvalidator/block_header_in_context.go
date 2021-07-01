@@ -69,7 +69,7 @@ func (v *blockValidator) ValidateHeaderInContext(stagingArea *model.StagingArea,
 		}
 	}
 
-	err = v.mergeDepthManager.CheckBoundedMergeDepth(stagingArea, blockHash)
+	err = v.mergeDepthManager.CheckBoundedMergeDepth(stagingArea, blockHash, isBlockWithPrefilledData)
 	if err != nil {
 		return err
 	}
@@ -96,9 +96,14 @@ func (v *blockValidator) hasValidatedHeader(stagingArea *model.StagingArea, bloc
 }
 
 // checkParentsIncest validates that no parent is an ancestor of another parent
-func (v *blockValidator) checkParentsIncest(stagingArea *model.StagingArea, header externalapi.BlockHeader) error {
-	for _, parentA := range header.ParentHashes() {
-		for _, parentB := range header.ParentHashes() {
+func (v *blockValidator) checkParentsIncest(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) error {
+	parents, err := v.dagTopologyManager.Parents(stagingArea, blockHash)
+	if err != nil {
+		return err
+	}
+
+	for _, parentA := range parents {
+		for _, parentB := range parents {
 			if parentA.Equal(parentB) {
 				continue
 			}

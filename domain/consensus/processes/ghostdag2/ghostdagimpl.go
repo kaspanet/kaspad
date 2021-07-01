@@ -25,7 +25,9 @@ func New(
 	dagTopologyManager model.DAGTopologyManager,
 	ghostdagDataStore model.GHOSTDAGDataStore,
 	headerStore model.BlockHeaderStore,
-	k externalapi.KType) model.GHOSTDAGManager {
+	blockWithMetaDataGHOSTDAGDataStore model.GHOSTDAGDataStore,
+	k externalapi.KType,
+	genesisHash *externalapi.DomainHash) model.GHOSTDAGManager {
 
 	return &ghostdagHelper{
 		dbAccess:           databaseContext,

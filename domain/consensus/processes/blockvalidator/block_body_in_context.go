@@ -73,11 +73,16 @@ func (v *blockValidator) checkParentBlockBodiesExist(
 	stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) error {
 
 	missingParentHashes := []*externalapi.DomainHash{}
-	header, err := v.blockHeaderStore.BlockHeader(v.databaseContext, stagingArea, blockHash)
+	parents, err := v.dagTopologyManager.Parents(stagingArea, blockHash)
 	if err != nil {
 		return err
 	}
-	for _, parent := range header.ParentHashes() {
+
+	if len(parents) == 1 && parents[0].Equal(model.VirtualGenesisBlockHash) {
+		return nil
+	}
+
+	for _, parent := range parents {
 		hasBlock, err := v.blockStore.HasBlock(v.databaseContext, stagingArea, parent)
 		if err != nil {
 			return err
