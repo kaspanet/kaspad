@@ -213,20 +213,15 @@ func runDAATest(t *testing.T, testName string, runDuration time.Duration,
 			waitUntilTargetHashDurationHadElapsed(startTime, hashStartTime, targetHashNanosecondsFunction)
 
 			hashDuration := time.Since(hashStartTime)
-			hashDurations = append(hashDurations, hashDuration)
-			if len(hashDurations) > averageHashRateSampleSize {
-				hashDurations = hashDurations[1:]
-			}
+			hashDurations = pushHashDuration(hashDurations, hashDuration)
 
 			if *isFinished {
 				return
 			}
 		}
+
 		miningDuration := time.Since(miningStartTime)
-		miningDurations = append(miningDurations, miningDuration)
-		if len(miningDurations) > averageBlockRateSampleSize {
-			miningDurations = miningDurations[1:]
-		}
+		miningDurations = pushMiningDuration(miningDurations, miningDuration)
 
 		if *isFinished {
 			return
@@ -289,6 +284,22 @@ func waitUntilTargetHashDurationHadElapsed(startTime time.Time, hashStartTime ti
 			break
 		}
 	}
+}
+
+func pushHashDuration(hashDurations []time.Duration, hashDuration time.Duration) []time.Duration {
+	hashDurations = append(hashDurations, hashDuration)
+	if len(hashDurations) > averageHashRateSampleSize {
+		hashDurations = hashDurations[1:]
+	}
+	return hashDurations
+}
+
+func pushMiningDuration(miningDurations []time.Duration, miningDuration time.Duration) []time.Duration {
+	miningDurations = append(miningDurations, miningDuration)
+	if len(miningDurations) > averageBlockRateSampleSize {
+		miningDurations = miningDurations[1:]
+	}
+	return miningDurations
 }
 
 func hashNanosecondsToHashesPerSecond(hashNanoseconds int64) int64 {
