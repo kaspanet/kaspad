@@ -213,7 +213,7 @@ func runDAATest(t *testing.T, testName string, runDuration time.Duration,
 			waitUntilTargetHashDurationHadElapsed(startTime, hashStartTime, targetHashNanosecondsFunction)
 
 			hashDuration := time.Since(hashStartTime)
-			hashDurations = pushHashDuration(hashDurations, hashDuration)
+			hashDurations = appendHashDuration(hashDurations, hashDuration)
 
 			if *isFinished {
 				return
@@ -221,25 +221,10 @@ func runDAATest(t *testing.T, testName string, runDuration time.Duration,
 		}
 
 		miningDuration := time.Since(miningStartTime)
-		miningDurations = pushMiningDuration(miningDurations, miningDuration)
+		miningDurations = appendMiningDuration(miningDurations, miningDuration)
 
-		if *isFinished {
-			return
-		}
-
-		averageMiningDuration := calculateAverageDuration(miningDurations)
-		averageHashNanoseconds := calculateAverageDuration(hashDurations).Nanoseconds()
-		averageHashesPerSecond := hashNanosecondsToHashesPerSecond(averageHashNanoseconds)
-		blockDAGInfoResponse, err := rpcClient.GetBlockDAGInfo()
-		if err != nil {
-			t.Fatalf("GetBlockDAGInfo: %s", err)
-		}
-		difficultyDelta := blockDAGInfoResponse.Difficulty - previousDifficulty
-		previousDifficulty = blockDAGInfoResponse.Difficulty
-		blocksMined++
-		t.Logf("Mined block. Took: %s, average block mining duration: %s, "+
-			"average hashes per second: %d, difficulty delta: %f, time elapsed: %s, blocks mined: %d",
-			miningDuration, averageMiningDuration, averageHashesPerSecond, difficultyDelta, time.Since(startTime), blocksMined)
+		logMinedBlockStatsAndUpdateStatFields(t, rpcClient, miningDurations, hashDurations, startTime,
+			miningDuration, &previousDifficulty, &blocksMined)
 
 		if *isFinished {
 			return
@@ -286,7 +271,7 @@ func waitUntilTargetHashDurationHadElapsed(startTime time.Time, hashStartTime ti
 	}
 }
 
-func pushHashDuration(hashDurations []time.Duration, hashDuration time.Duration) []time.Duration {
+func appendHashDuration(hashDurations []time.Duration, hashDuration time.Duration) []time.Duration {
 	hashDurations = append(hashDurations, hashDuration)
 	if len(hashDurations) > averageHashRateSampleSize {
 		hashDurations = hashDurations[1:]
@@ -294,12 +279,32 @@ func pushHashDuration(hashDurations []time.Duration, hashDuration time.Duration)
 	return hashDurations
 }
 
-func pushMiningDuration(miningDurations []time.Duration, miningDuration time.Duration) []time.Duration {
+func appendMiningDuration(miningDurations []time.Duration, miningDuration time.Duration) []time.Duration {
 	miningDurations = append(miningDurations, miningDuration)
 	if len(miningDurations) > averageBlockRateSampleSize {
 		miningDurations = miningDurations[1:]
 	}
 	return miningDurations
+}
+
+func logMinedBlockStatsAndUpdateStatFields(t *testing.T, rpcClient *rpcclient.RPCClient,
+	miningDurations []time.Duration, hashDurations []time.Duration,
+	startTime time.Time, miningDuration time.Duration, previousDifficulty *float64, blocksMined *int) {
+
+	averageMiningDuration := calculateAverageDuration(miningDurations)
+	averageHashNanoseconds := calculateAverageDuration(hashDurations).Nanoseconds()
+	averageHashesPerSecond := hashNanosecondsToHashesPerSecond(averageHashNanoseconds)
+	blockDAGInfoResponse, err := rpcClient.GetBlockDAGInfo()
+	if err != nil {
+		t.Fatalf("GetBlockDAGInfo: %s", err)
+	}
+	difficultyDelta := blockDAGInfoResponse.Difficulty - *previousDifficulty
+	*previousDifficulty = blockDAGInfoResponse.Difficulty
+	*blocksMined++
+	t.Logf("Mined block. Took: %s, average block mining duration: %s, "+
+		"average hashes per second: %d, difficulty delta: %f, time elapsed: %s, blocks mined: %d",
+		miningDuration, averageMiningDuration, averageHashesPerSecond, difficultyDelta, time.Since(startTime), *blocksMined)
+
 }
 
 func hashNanosecondsToHashesPerSecond(hashNanoseconds int64) int64 {
