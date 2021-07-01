@@ -9,6 +9,7 @@ import (
 	"github.com/kaspanet/kaspad/stability-tests/common"
 	"github.com/kaspanet/kaspad/util/difficulty"
 	"math"
+	"math/big"
 	"math/rand"
 	"os"
 	"testing"
@@ -203,12 +204,10 @@ func runDAATest(t *testing.T, testName string, runDuration time.Duration,
 		for {
 			hashStartTime := time.Now()
 
-			headerForMining.SetNonce(nonce)
-			if pow.CheckProofOfWorkWithTarget(headerForMining, targetDifficulty) {
-				templateBlock.Header = headerForMining.ToImmutable()
+			blockFound := tryNonceForMiningAndIncrementNonce(headerForMining, &nonce, targetDifficulty, templateBlock)
+			if blockFound {
 				break
 			}
-			nonce++
 
 			waitUntilTargetHashDurationHadElapsed(startTime, hashStartTime, targetHashNanosecondsFunction)
 
@@ -252,6 +251,19 @@ func fetchBlockForMining(t *testing.T, rpcClient *rpcclient.RPCClient) *external
 		t.Fatalf("RPCBlockToDomainBlock: %s", err)
 	}
 	return templateBlock
+}
+
+func tryNonceForMiningAndIncrementNonce(headerForMining externalapi.MutableBlockHeader, nonce *uint64,
+	targetDifficulty *big.Int, templateBlock *externalapi.DomainBlock) bool {
+
+	headerForMining.SetNonce(*nonce)
+	if pow.CheckProofOfWorkWithTarget(headerForMining, targetDifficulty) {
+		templateBlock.Header = headerForMining.ToImmutable()
+		return true
+	}
+
+	*nonce++
+	return false
 }
 
 func waitUntilTargetHashDurationHadElapsed(startTime time.Time, hashStartTime time.Time,
