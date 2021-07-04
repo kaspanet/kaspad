@@ -46,8 +46,8 @@ func New(timestampDeviationTolerance int,
 }
 
 // PastMedianTime returns the past median time for some block
-func (pmtm *pastMedianTimeManager) PastMedianTime(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash, isBlockWithPrefilledData bool) (int64, error) {
-	window, err := pmtm.dagTraversalManager.BlockWindow(stagingArea, blockHash, 2*pmtm.timestampDeviationTolerance-1, isBlockWithPrefilledData)
+func (pmtm *pastMedianTimeManager) PastMedianTime(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) (int64, error) {
+	window, err := pmtm.dagTraversalManager.BlockWindow(stagingArea, blockHash, 2*pmtm.timestampDeviationTolerance-1)
 	if err != nil {
 		return 0, err
 	}

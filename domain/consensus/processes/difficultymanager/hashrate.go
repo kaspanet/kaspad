@@ -25,7 +25,7 @@ func (dm *difficultyManager) estimateNetworkHashesPerSecond(stagingArea *model.S
 		return 0, errors.Errorf("windowSize must be equal to or greater than %d", minWindowSize)
 	}
 
-	blockWindow, windowHashes, err := dm.blockWindow(stagingArea, startHash, windowSize, false)
+	blockWindow, windowHashes, err := dm.blockWindow(stagingArea, startHash, windowSize)
 	if err != nil {
 		return 0, err
 	}

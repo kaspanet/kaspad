@@ -34,11 +34,11 @@ func (dm *difficultyManager) getDifficultyBlock(
 // blocks in the past of startingNode, the sorting is unspecified.
 // If the number of blocks in the past of startingNode is less then windowSize,
 // the window will be padded by genesis blocks to achieve a size of windowSize.
-func (dm *difficultyManager) blockWindow(stagingArea *model.StagingArea, startingNode *externalapi.DomainHash, windowSize int, isBlockWithPrefilledData bool) (blockWindow,
+func (dm *difficultyManager) blockWindow(stagingArea *model.StagingArea, startingNode *externalapi.DomainHash, windowSize int) (blockWindow,
 	[]*externalapi.DomainHash, error) {
 
 	window := make(blockWindow, 0, windowSize)
-	windowHashes, err := dm.dagTraversalManager.BlockWindow(stagingArea, startingNode, windowSize, isBlockWithPrefilledData)
+	windowHashes, err := dm.dagTraversalManager.BlockWindow(stagingArea, startingNode, windowSize)
 	if err != nil {
 		return nil, nil, err
 	}

@@ -9,8 +9,7 @@ import (
 // BlockWindow returns a blockWindow of the given size that contains the
 // blocks in the past of highHash, the sorting is unspecified.
 // If the number of blocks in the past of startingNode is less then windowSize,
-func (dtm *dagTraversalManager) BlockWindow(stagingArea *model.StagingArea, highHash *externalapi.DomainHash, windowSize int,
-	isBlockWithPrefilledData bool) ([]*externalapi.DomainHash, error) {
+func (dtm *dagTraversalManager) BlockWindow(stagingArea *model.StagingArea, highHash *externalapi.DomainHash, windowSize int) ([]*externalapi.DomainHash, error) {
 
 	if highHash.Equal(dtm.genesisHash) {
 		return nil, nil
@@ -25,10 +24,6 @@ func (dtm *dagTraversalManager) BlockWindow(stagingArea *model.StagingArea, high
 	windowHeap := dtm.newSizedUpHeap(stagingArea, windowSize)
 
 	for {
-		if windowHeap.len() == windowSize {
-			break
-		}
-
 		if currentGHOSTDAGData.SelectedParent().Equal(dtm.genesisHash) {
 			break
 		}

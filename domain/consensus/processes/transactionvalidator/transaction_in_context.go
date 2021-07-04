@@ -284,7 +284,7 @@ func (v *transactionValidator) calcTxSequenceLockFromReferencedUTXOEntries(stagi
 				baseGHOSTDAGData = selectedParentGHOSTDAGData
 			}
 
-			medianTime, err := v.pastMedianTimeManager.PastMedianTime(stagingArea, baseHash, false)
+			medianTime, err := v.pastMedianTimeManager.PastMedianTime(stagingArea, baseHash)
 			if err != nil {
 				return nil, err
 			}

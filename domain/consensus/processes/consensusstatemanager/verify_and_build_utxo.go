@@ -62,7 +62,7 @@ func (csm *consensusStateManager) validateBlockTransactionsAgainstPastUTXO(stagi
 	log.Tracef("validateBlockTransactionsAgainstPastUTXO start for block %s", blockHash)
 	defer log.Tracef("validateBlockTransactionsAgainstPastUTXO end for block %s", blockHash)
 
-	selectedParentMedianTime, err := csm.pastMedianTimeManager.PastMedianTime(stagingArea, blockHash, false)
+	selectedParentMedianTime, err := csm.pastMedianTimeManager.PastMedianTime(stagingArea, blockHash)
 	if err != nil {
 		return err
 	}

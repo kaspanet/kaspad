@@ -86,7 +86,7 @@ func TestDifficulty(t *testing.T) {
 				t.Fatalf("GHOSTDAG: %+v", err)
 			}
 
-			pastMedianTime, err := tc.PastMedianTimeManager().PastMedianTime(stagingArea, &tempHash, false)
+			pastMedianTime, err := tc.PastMedianTimeManager().PastMedianTime(stagingArea, &tempHash)
 			if err != nil {
 				t.Fatalf("PastMedianTime: %+v", err)
 			}
@@ -236,7 +236,7 @@ func TestDAAScore(t *testing.T) {
 		stagingArea := model.NewStagingArea()
 
 		factory := consensus.NewFactory()
-		tc, teardown, err := factory.NewTestConsensus(consensusConfig, "TestDifficulty")
+		tc, teardown, err := factory.NewTestConsensus(consensusConfig, "TestDAAScore")
 		if err != nil {
 			t.Fatalf("Error setting up consensus: %+v", err)
 		}

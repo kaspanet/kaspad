@@ -752,7 +752,7 @@ func (pm *pruningManager) blockWithMetaData(stagingArea *model.StagingArea, bloc
 	}
 
 	windowSize := 2641 // TODO: Change to dm.difficultyAdjustmentWindowSize+1
-	window, err := pm.dagTraversalManager.BlockWindow(stagingArea, blockHash, windowSize, false)
+	window, err := pm.dagTraversalManager.BlockWindow(stagingArea, blockHash, windowSize)
 	if err != nil {
 		return nil, err
 	}

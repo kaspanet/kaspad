@@ -96,7 +96,7 @@ func TestCreateStagingConsensus(t *testing.T) {
 			t.Fatalf("InitStagingConsensus: %+v", err)
 		}
 
-		_, err = domainInstance.StagingConsensus().ValidateAndInsertBlock(block)
+		_, err = domainInstance.StagingConsensus().ValidateAndInsertBlock(block, true)
 		if err != nil {
 			t.Fatalf("ValidateAndInsertBlock: %+v", err)
 		}

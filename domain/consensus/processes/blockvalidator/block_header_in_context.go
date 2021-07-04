@@ -44,7 +44,7 @@ func (v *blockValidator) ValidateHeaderInContext(stagingArea *model.StagingArea,
 		}
 	}
 
-	err = v.validateMedianTime(stagingArea, header, isBlockWithPrefilledData)
+	err = v.validateMedianTime(stagingArea, header)
 	if err != nil {
 		return err
 	}
@@ -125,7 +125,7 @@ func (v *blockValidator) checkParentsIncest(stagingArea *model.StagingArea, bloc
 	return nil
 }
 
-func (v *blockValidator) validateMedianTime(stagingArea *model.StagingArea, header externalapi.BlockHeader, isBlockWithPrefilledData bool) error {
+func (v *blockValidator) validateMedianTime(stagingArea *model.StagingArea, header externalapi.BlockHeader) error {
 	if len(header.ParentHashes()) == 0 {
 		return nil
 	}
@@ -133,7 +133,7 @@ func (v *blockValidator) validateMedianTime(stagingArea *model.StagingArea, head
 	// Ensure the timestamp for the block header is not before the
 	// median time of the last several blocks (medianTimeBlocks).
 	hash := consensushashing.HeaderHash(header)
-	pastMedianTime, err := v.pastMedianTimeManager.PastMedianTime(stagingArea, hash, isBlockWithPrefilledData)
+	pastMedianTime, err := v.pastMedianTimeManager.PastMedianTime(stagingArea, hash)
 	if err != nil {
 		return err
 	}

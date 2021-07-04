@@ -66,7 +66,7 @@ func TestPastMedianTime(t *testing.T) {
 
 		stagingArea := model.NewStagingArea()
 		for _, test := range tests {
-			pastMedianTime, err := tc.PastMedianTimeManager().PastMedianTime(stagingArea, blockHashes[test.blockNumber], false)
+			pastMedianTime, err := tc.PastMedianTimeManager().PastMedianTime(stagingArea, blockHashes[test.blockNumber])
 			if err != nil {
 				t.Fatalf("PastMedianTime: %s", err)
 			}

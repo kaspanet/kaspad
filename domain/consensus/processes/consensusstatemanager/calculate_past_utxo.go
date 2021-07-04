@@ -151,7 +151,7 @@ func (csm *consensusStateManager) applyMergeSetBlocks(stagingArea *model.Staging
 		return nil, nil, err
 	}
 
-	selectedParentMedianTime, err := csm.pastMedianTimeManager.PastMedianTime(stagingArea, blockHash, false)
+	selectedParentMedianTime, err := csm.pastMedianTimeManager.PastMedianTime(stagingArea, blockHash)
 	if err != nil {
 		return nil, nil, err
 	}

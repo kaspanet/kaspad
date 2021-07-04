@@ -106,11 +106,6 @@ func TestPruning(t *testing.T) {
 				blockIDToHash[dagBlock.ID] = blockHash
 				blockHashToID[*blockHash] = dagBlock.ID
 
-				pruningPoint, err := tc.PruningPoint()
-				if err != nil {
-					return err
-				}
-
 				pruningPointCandidate, err := tc.PruningStore().PruningPointCandidate(tc.DatabaseContext(), stagingArea)
 				if err != nil {
 					return err
@@ -121,9 +116,8 @@ func TestPruning(t *testing.T) {
 					return err
 				}
 
-				shouldBeValid := *pruningPoint == *pruningPointCandidate
-				if isValidPruningPoint != shouldBeValid {
-					t.Fatalf("isValidPruningPoint is %t while expected %t", isValidPruningPoint, shouldBeValid)
+				if !isValidPruningPoint {
+					t.Fatalf("isValidPruningPoint is %t while expected %t", isValidPruningPoint, true)
 				}
 			}
 

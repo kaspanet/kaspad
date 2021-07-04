@@ -395,45 +395,11 @@ func RPCBlockToDomainBlock(block *RPCBlock) (*externalapi.DomainBlock, error) {
 }
 
 func BlockWithMetaDataToDomainBlockWithMetaData(block *MsgBlockWithMetaData) *externalapi.BlockWithMetaData {
-	bluesAnticoneSizes := make(map[externalapi.DomainHash]externalapi.KType, len(block.GHOSTDAGData.BluesAnticoneSizes))
-	for _, blueAnticoneSizes := range block.GHOSTDAGData.BluesAnticoneSizes {
-		bluesAnticoneSizes[*blueAnticoneSizes.BlueHash] = blueAnticoneSizes.AnticoneSize
-	}
-
-	return &externalapi.BlockWithMetaData{
-		Block:    MsgBlockToDomainBlock(block.Block),
-		DAAScore: block.DAAScore,
-		GHOSTDAGData: externalapi.NewBlockGHOSTDAGData(
-			block.GHOSTDAGData.BlueScore,
-			block.GHOSTDAGData.BlueWork,
-			block.GHOSTDAGData.SelectedParent,
-			block.GHOSTDAGData.MergeSetBlues,
-			block.GHOSTDAGData.MergeSetReds,
-			bluesAnticoneSizes,
-		),
-	}
+	return block.BlockWithMetaData
 }
 
 func DomainBlockWithMetaDataToBlockWithMetaData(block *externalapi.BlockWithMetaData) *MsgBlockWithMetaData {
-	bluesAnticoneSizes := make([]*BluesAnticoneSizes, 0, len(block.GHOSTDAGData.BluesAnticoneSizes()))
-	for blueHash, anticoneSize := range block.GHOSTDAGData.BluesAnticoneSizes() {
-		blueHashCopy := blueHash
-		bluesAnticoneSizes = append(bluesAnticoneSizes, &BluesAnticoneSizes{
-			BlueHash:     &blueHashCopy,
-			AnticoneSize: anticoneSize,
-		})
-	}
-
 	return &MsgBlockWithMetaData{
-		Block:    DomainBlockToMsgBlock(block.Block),
-		DAAScore: block.DAAScore,
-		GHOSTDAGData: &GHOSTDAGData{
-			BlueScore:          block.GHOSTDAGData.BlueScore(),
-			BlueWork:           block.GHOSTDAGData.BlueWork(),
-			SelectedParent:     block.GHOSTDAGData.SelectedParent(),
-			MergeSetBlues:      block.GHOSTDAGData.MergeSetBlues(),
-			MergeSetReds:       block.GHOSTDAGData.MergeSetReds(),
-			BluesAnticoneSizes: bluesAnticoneSizes,
-		},
+		BlockWithMetaData: block,
 	}
 }

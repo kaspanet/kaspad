@@ -175,7 +175,7 @@ func (s *consensus) ValidateTransactionAndPopulateWithConsensusData(transaction 
 		return err
 	}
 
-	virtualSelectedParentMedianTime, err := s.pastMedianTimeManager.PastMedianTime(stagingArea, model.VirtualBlockHash, false)
+	virtualSelectedParentMedianTime, err := s.pastMedianTimeManager.PastMedianTime(stagingArea, model.VirtualBlockHash)
 	if err != nil {
 		return err
 	}
@@ -453,7 +453,7 @@ func (s *consensus) GetVirtualInfo() (*externalapi.VirtualInfo, error) {
 	if err != nil {
 		return nil, err
 	}
-	pastMedianTime, err := s.pastMedianTimeManager.PastMedianTime(stagingArea, model.VirtualBlockHash, false)
+	pastMedianTime, err := s.pastMedianTimeManager.PastMedianTime(stagingArea, model.VirtualBlockHash)
 	if err != nil {
 		return nil, err
 	}
