@@ -6,4 +6,5 @@ import "github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 // past median time of a block
 type PastMedianTimeManager interface {
 	PastMedianTime(stagingArea *StagingArea, blockHash *externalapi.DomainHash) (int64, error)
+	InvalidateVirtualPastMedianTimeCache()
 }

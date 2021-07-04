@@ -99,7 +99,10 @@ func (tp *transactionsPool) expireOldTransactions() error {
 		}
 
 		// Remove all transactions whose addedAtDAAScore is older then TransactionExpireIntervalDAAScore
-		if virtualDAAScore-mempoolTransaction.AddedAtDAAScore() > tp.mempool.config.TransactionExpireIntervalDAAScore {
+		daaScoreSinceAdded := virtualDAAScore - mempoolTransaction.AddedAtDAAScore()
+		if daaScoreSinceAdded > tp.mempool.config.TransactionExpireIntervalDAAScore {
+			log.Debugf("Removing transaction %s, because it expired. DAAScore moved by %d, expire interval: %d",
+				mempoolTransaction.TransactionID(), daaScoreSinceAdded, tp.mempool.config.TransactionExpireIntervalDAAScore)
 			err = tp.mempool.removeTransaction(mempoolTransaction.TransactionID(), true)
 			if err != nil {
 				return err
@@ -175,6 +178,8 @@ func (tp *transactionsPool) limitTransactionCount() error {
 			}
 		}
 
+		log.Debugf("Removing transaction %s, because mempoolTransaction count (%d) exceeded the limit (%d)",
+			transactionToRemove.TransactionID(), len(tp.allTransactions), tp.mempool.config.MaximumTransactionCount)
 		err := tp.mempool.removeTransaction(transactionToRemove.TransactionID(), true)
 		if err != nil {
 			return err
