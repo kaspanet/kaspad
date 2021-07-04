@@ -294,7 +294,7 @@ func (m *Manager) registerFlowWithCapacity(name string, capacity int, router *ro
 	messageTypes []appmessage.MessageCommand, isStopping *uint32,
 	errChan chan error, initializeFunc flowInitializeFunc) *flow {
 
-	route, err := router.AddIncomingRouteWithCapacity(capacity, messageTypes)
+	route, err := router.AddIncomingRouteWithCapacity(name, capacity, messageTypes)
 	if err != nil {
 		panic(err)
 	}

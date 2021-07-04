@@ -45,8 +45,8 @@ func (r *Router) AddIncomingRoute(name string, messageTypes []appmessage.Message
 
 // AddIncomingRouteWithCapacity registers the messages of types `messageTypes` to
 // be routed to the given `route` with a capacity of `capacity`
-func (r *Router) AddIncomingRouteWithCapacity(capacity int, messageTypes []appmessage.MessageCommand) (*Route, error) {
-	route := newRouteWithCapacity("", capacity)
+func (r *Router) AddIncomingRouteWithCapacity(name string, capacity int, messageTypes []appmessage.MessageCommand) (*Route, error) {
+	route := newRouteWithCapacity(fmt.Sprintf("%s - incoming", name), capacity)
 	err := r.initializeIncomingRoute(route, messageTypes)
 	if err != nil {
 		return nil, err
