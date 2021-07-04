@@ -23,6 +23,10 @@ type mocPastMedianTimeManager struct {
 	pastMedianTimeForTest int64
 }
 
+func (mdf *mocPastMedianTimeManager) InvalidateVirtualPastMedianTimeCache() {
+	// do nothing
+}
+
 // PastMedianTime returns the past median time for the test.
 func (mdf *mocPastMedianTimeManager) PastMedianTime(*model.StagingArea, *externalapi.DomainHash) (int64, error) {
 	return mdf.pastMedianTimeForTest, nil
