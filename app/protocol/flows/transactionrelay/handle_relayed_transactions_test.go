@@ -74,9 +74,9 @@ func TestHandleRelayedTransactionsNotFound(t *testing.T) {
 			domain:                      domainInstance,
 			sharedRequestedTransactions: sharedRequestedTransactions,
 		}
-		incomingRoute := router.NewRoute()
+		incomingRoute := router.NewRoute("incoming")
 		defer incomingRoute.Close()
-		peerIncomingRoute := router.NewRoute()
+		peerIncomingRoute := router.NewRoute("outgoing")
 		defer peerIncomingRoute.Close()
 
 		txID1 := externalapi.NewDomainTransactionIDFromByteArray(&[externalapi.DomainHashSize]byte{
@@ -167,8 +167,8 @@ func TestOnClosedIncomingRoute(t *testing.T) {
 			domain:                      domainInstance,
 			sharedRequestedTransactions: sharedRequestedTransactions,
 		}
-		incomingRoute := router.NewRoute()
-		outgoingRoute := router.NewRoute()
+		incomingRoute := router.NewRoute("incoming")
+		outgoingRoute := router.NewRoute("outgoing")
 		defer outgoingRoute.Close()
 
 		txID := externalapi.NewDomainTransactionIDFromByteArray(&[externalapi.DomainHashSize]byte{

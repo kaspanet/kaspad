@@ -197,19 +197,19 @@ outerLoop:
 	routesChan := make(chan *Routes)
 
 	routeInitializer := func(router *router.Router, netConnection *netadapter.NetConnection) {
-		handshakeRoute, err := router.AddIncomingRoute([]appmessage.MessageCommand{appmessage.CmdVersion, appmessage.CmdVerAck})
+		handshakeRoute, err := router.AddIncomingRoute("handshake", []appmessage.MessageCommand{appmessage.CmdVersion, appmessage.CmdVerAck})
 		if err != nil {
 			panic(errors.Wrap(err, "error registering handshake route"))
 		}
-		addressesRoute, err := router.AddIncomingRoute([]appmessage.MessageCommand{appmessage.CmdRequestAddresses, appmessage.CmdAddresses})
+		addressesRoute, err := router.AddIncomingRoute("addresses", []appmessage.MessageCommand{appmessage.CmdRequestAddresses, appmessage.CmdAddresses})
 		if err != nil {
 			panic(errors.Wrap(err, "error registering addresses route"))
 		}
-		pingRoute, err := router.AddIncomingRoute([]appmessage.MessageCommand{appmessage.CmdPing})
+		pingRoute, err := router.AddIncomingRoute("ping", []appmessage.MessageCommand{appmessage.CmdPing})
 		if err != nil {
 			panic(errors.Wrap(err, "error registering ping route"))
 		}
-		everythingElseRoute, err := router.AddIncomingRoute(everythingElse)
+		everythingElseRoute, err := router.AddIncomingRoute("everything else", everythingElse)
 		if err != nil {
 			panic(errors.Wrap(err, "error registering everythingElseRoute"))
 		}
