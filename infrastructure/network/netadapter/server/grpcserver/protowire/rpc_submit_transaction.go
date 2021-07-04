@@ -146,6 +146,9 @@ func (x *RpcTransactionInput) toAppMessage() (*appmessage.RPCTransactionInput, e
 	if x == nil {
 		return nil, errors.Wrapf(errorNil, "RpcTransactionInput is nil")
 	}
+	if x.SigOpCount > math.MaxUint8 {
+		return nil, errors.New("TransactionInput SigOpCount > math.MaxUint8")
+	}
 	outpoint, err := x.PreviousOutpoint.toAppMessage()
 	if err != nil {
 		return nil, err
@@ -163,6 +166,7 @@ func (x *RpcTransactionInput) toAppMessage() (*appmessage.RPCTransactionInput, e
 		SignatureScript:  x.SignatureScript,
 		Sequence:         x.Sequence,
 		VerboseData:      verboseData,
+		SigOpCount:       byte(x.SigOpCount),
 	}, nil
 }
 
@@ -179,6 +183,7 @@ func (x *RpcTransactionInput) fromAppMessage(message *appmessage.RPCTransactionI
 		SignatureScript:  message.SignatureScript,
 		Sequence:         message.Sequence,
 		VerboseData:      verboseData,
+		SigOpCount:       uint32(message.SigOpCount),
 	}
 }
 

@@ -61,6 +61,7 @@ type RPCTransactionInput struct {
 	PreviousOutpoint *RPCOutpoint
 	SignatureScript  string
 	Sequence         uint64
+	SigOpCount       byte
 	VerboseData      *RPCTransactionInputVerboseData
 }
 

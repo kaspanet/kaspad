@@ -61,6 +61,7 @@ message RpcTransactionInput {
   RpcOutpoint previousOutpoint = 1;
   string signatureScript = 2;
   uint64 sequence = 3;
+  uint32 sigOpCount = 5;
   RpcTransactionInputVerboseData verboseData = 4;
 }
 

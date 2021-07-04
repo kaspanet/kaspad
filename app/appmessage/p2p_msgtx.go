@@ -90,16 +90,18 @@ type TxIn struct {
 	PreviousOutpoint Outpoint
 	SignatureScript  []byte
 	Sequence         uint64
+	SigOpCount       byte
 }
 
 // NewTxIn returns a new kaspa transaction input with the provided
 // previous outpoint point and signature script with a default sequence of
 // MaxTxInSequenceNum.
-func NewTxIn(prevOut *Outpoint, signatureScript []byte, sequence uint64) *TxIn {
+func NewTxIn(prevOut *Outpoint, signatureScript []byte, sequence uint64, sigOpCount byte) *TxIn {
 	return &TxIn{
 		PreviousOutpoint: *prevOut,
 		SignatureScript:  signatureScript,
 		Sequence:         sequence,
+		SigOpCount:       sigOpCount,
 	}
 }
 
