@@ -53,7 +53,7 @@ func (m *Manager) routerInitializer(router *router.Router, netConnection *netada
 	for messageType := range handlers {
 		messageTypes = append(messageTypes, messageType)
 	}
-	incomingRoute, err := router.AddIncomingRoute(messageTypes)
+	incomingRoute, err := router.AddIncomingRoute("router", messageTypes)
 	if err != nil {
 		panic(err)
 	}

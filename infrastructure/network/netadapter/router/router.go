@@ -1,6 +1,7 @@
 package router
 
 import (
+	"fmt"
 	"sync"
 
 	"github.com/kaspanet/kaspad/app/appmessage"
@@ -33,8 +34,8 @@ func NewRouter() *Router {
 
 // AddIncomingRoute registers the messages of types `messageTypes` to
 // be routed to the given `route`
-func (r *Router) AddIncomingRoute(messageTypes []appmessage.MessageCommand) (*Route, error) {
-	route := NewRoute()
+func (r *Router) AddIncomingRoute(name string, messageTypes []appmessage.MessageCommand) (*Route, error) {
+	route := NewRoute(fmt.Sprintf("%s - incoming", name))
 	err := r.initializeIncomingRoute(route, messageTypes)
 	if err != nil {
 		return nil, err
