@@ -136,10 +136,6 @@ func TestMakeScriptNum(t *testing.T) {
 		{hexToBytes("ffffffffff"), -549755813887, 5, nil},
 		{hexToBytes("ffffffffffffff7f"), 9223372036854775807, 8, nil},
 		{hexToBytes("ffffffffffffffff"), -9223372036854775807, 8, nil},
-		{hexToBytes("ffffffffffffffff7f"), -1, 9, nil},
-		{hexToBytes("ffffffffffffffffff"), 1, 9, nil},
-		{hexToBytes("ffffffffffffffffff7f"), -1, 10, nil},
-		{hexToBytes("ffffffffffffffffffff"), 1, 10, nil},
 
 		// Minimally encoded values that are out of range for data that
 		// is interpreted as script numbers with the minimal encoding
@@ -173,6 +169,9 @@ func TestMakeScriptNum(t *testing.T) {
 		{hexToBytes("00000800"), 0, defaultScriptNumLen, errMinimalData}, // 524288
 		{hexToBytes("00007000"), 0, defaultScriptNumLen, errMinimalData}, // 7340032
 		{hexToBytes("0009000100"), 0, 5, errMinimalData},                 // 16779520
+		// Values above 8 bytes should always return error
+		{hexToBytes("ffffffffffffffffff"), 0, 9, errNumTooBig},
+		{hexToBytes("00000000000000000000"), 0, 10, errNumTooBig},
 	}
 
 	for _, test := range tests {

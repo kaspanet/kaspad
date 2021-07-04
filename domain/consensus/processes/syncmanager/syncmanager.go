@@ -21,12 +21,15 @@ type syncManager struct {
 	blockStore                model.BlockStore
 	pruningStore              model.PruningStore
 	headersSelectedChainStore model.HeadersSelectedChainStore
+
+	mergeSetSizeLimit uint64
 }
 
 // New instantiates a new SyncManager
 func New(
 	databaseContext model.DBReader,
 	genesisBlockHash *externalapi.DomainHash,
+	mergeSetSizeLimit uint64,
 	dagTraversalManager model.DAGTraversalManager,
 	dagTopologyManager model.DAGTopologyManager,
 	ghostdagManager model.GHOSTDAGManager,
@@ -58,12 +61,12 @@ func New(
 }
 
 func (sm *syncManager) GetHashesBetween(stagingArea *model.StagingArea, lowHash, highHash *externalapi.DomainHash,
-	maxBlueScoreDifference uint64) (hashes []*externalapi.DomainHash, actualHighHash *externalapi.DomainHash, err error) {
+	maxBlocks uint64) (hashes []*externalapi.DomainHash, actualHighHash *externalapi.DomainHash, err error) {
 
 	onEnd := logger.LogAndMeasureExecutionTime(log, "GetHashesBetween")
 	defer onEnd()
 
-	return sm.antiPastHashesBetween(stagingArea, lowHash, highHash, maxBlueScoreDifference)
+	return sm.antiPastHashesBetween(stagingArea, lowHash, highHash, maxBlocks)
 }
 
 func (sm *syncManager) GetMissingBlockBodyHashes(stagingArea *model.StagingArea, highHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error) {
