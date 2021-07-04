@@ -28,8 +28,7 @@ type overrideDAGParamsConfig struct {
 	K                                       *model.KType `json:"k"`
 	MaxBlockParents                         *model.KType `json:"maxBlockParents"`
 	MergeSetSizeLimit                       *uint64      `json:"mergeSetSizeLimit"`
-	MaxMassAcceptedByBlock                  *uint64      `json:"maxMassAcceptedByBlock"`
-	MaxBlockSize                            *uint64      `json:"maxBlockSize"`
+	MaxBlockMass                            *uint64      `json:"maxBlockSize"`
 	MaxCoinbasePayloadLength                *uint64      `json:"maxCoinbasePayloadLength"`
 	MassPerTxByte                           *uint64      `json:"massPerTxByte"`
 	MassPerScriptPubKeyByte                 *uint64      `json:"massPerScriptPubKeyByte"`
@@ -132,12 +131,8 @@ func (networkFlags *NetworkFlags) overrideDAGParams() error {
 		networkFlags.ActiveNetParams.MergeSetSizeLimit = *config.MergeSetSizeLimit
 	}
 
-	if config.MaxMassAcceptedByBlock != nil {
-		networkFlags.ActiveNetParams.MaxMassAcceptedByBlock = *config.MaxMassAcceptedByBlock
-	}
-
-	if config.MaxBlockSize != nil {
-		networkFlags.ActiveNetParams.MaxBlockSize = *config.MaxBlockSize
+	if config.MaxBlockMass != nil {
+		networkFlags.ActiveNetParams.MaxBlockMass = *config.MaxBlockMass
 	}
 
 	if config.MaxCoinbasePayloadLength != nil {
