@@ -189,8 +189,8 @@ func runDAATest(t *testing.T, testName string, runDuration time.Duration,
 	}
 
 	// These variables are for gathering stats. Useful mostly for debugging
-	hashDurations := make([]time.Duration, 0, averageHashRateSampleSize+1)
-	miningDurations := make([]time.Duration, 0, averageBlockRateSampleSize+1)
+	averageHashDuration := newAverageDuration(averageHashRateSampleSize)
+	averageMiningDuration := newAverageDuration(averageBlockRateSampleSize)
 	previousDifficulty := float64(0)
 	blocksMined := 0
 
@@ -217,7 +217,7 @@ func runDAATest(t *testing.T, testName string, runDuration time.Duration,
 
 			// Collect stats about hash rate
 			hashDuration := time.Since(hashStartTime)
-			hashDurations = appendHashDuration(hashDurations, hashDuration)
+			averageHashDuration.add(hashDuration)
 
 			// Exit early if the test is finished
 			if *isFinished {
@@ -227,9 +227,9 @@ func runDAATest(t *testing.T, testName string, runDuration time.Duration,
 
 		// Collect stats about block rate
 		miningDuration := time.Since(miningStartTime)
-		miningDurations = appendMiningDuration(miningDurations, miningDuration)
+		averageMiningDuration.add(miningDuration)
 
-		logMinedBlockStatsAndUpdateStatFields(t, rpcClient, miningDurations, hashDurations, startTime,
+		logMinedBlockStatsAndUpdateStatFields(t, rpcClient, averageMiningDuration, averageHashDuration, startTime,
 			miningDuration, &previousDifficulty, &blocksMined)
 
 		// Exit early if the test is finished
@@ -240,12 +240,12 @@ func runDAATest(t *testing.T, testName string, runDuration time.Duration,
 		submitMinedBlock(t, rpcClient, templateBlock)
 	})
 
-	averageBlocksPerSecond := calculateAverageDuration(miningDurations).Seconds()
-	expectedAverageBlocksPerSecond := float64(1)
-	deviation := math.Abs(expectedAverageBlocksPerSecond - averageBlocksPerSecond)
+	averageMiningDurationInSeconds := averageMiningDuration.toDuration().Seconds()
+	expectedAverageMiningDurationInSeconds := float64(1)
+	deviation := math.Abs(expectedAverageMiningDurationInSeconds - averageMiningDurationInSeconds)
 	if deviation > blockRateDeviationThreshold {
 		t.Errorf("Block rate deviation %f is higher than threshold %f. Want: %f, got: %f",
-			deviation, blockRateDeviationThreshold, expectedAverageBlocksPerSecond, averageBlocksPerSecond)
+			deviation, blockRateDeviationThreshold, expectedAverageMiningDurationInSeconds, averageMiningDurationInSeconds)
 	}
 }
 
@@ -288,28 +288,12 @@ func waitUntilTargetHashDurationHadElapsed(startTime time.Time, hashStartTime ti
 	}
 }
 
-func appendHashDuration(hashDurations []time.Duration, hashDuration time.Duration) []time.Duration {
-	hashDurations = append(hashDurations, hashDuration)
-	if len(hashDurations) > averageHashRateSampleSize {
-		hashDurations = hashDurations[1:]
-	}
-	return hashDurations
-}
-
-func appendMiningDuration(miningDurations []time.Duration, miningDuration time.Duration) []time.Duration {
-	miningDurations = append(miningDurations, miningDuration)
-	if len(miningDurations) > averageBlockRateSampleSize {
-		miningDurations = miningDurations[1:]
-	}
-	return miningDurations
-}
-
 func logMinedBlockStatsAndUpdateStatFields(t *testing.T, rpcClient *rpcclient.RPCClient,
-	miningDurations []time.Duration, hashDurations []time.Duration,
+	averageMiningDuration *averageDuration, averageHashDurations *averageDuration,
 	startTime time.Time, miningDuration time.Duration, previousDifficulty *float64, blocksMined *int) {
 
-	averageMiningDuration := calculateAverageDuration(miningDurations)
-	averageHashNanoseconds := calculateAverageDuration(hashDurations).Nanoseconds()
+	averageMiningDurationAsDuration := averageMiningDuration.toDuration()
+	averageHashNanoseconds := averageHashDurations.toDuration().Nanoseconds()
 	averageHashesPerSecond := hashNanosecondsToHashesPerSecond(averageHashNanoseconds)
 	blockDAGInfoResponse, err := rpcClient.GetBlockDAGInfo()
 	if err != nil {
@@ -320,7 +304,7 @@ func logMinedBlockStatsAndUpdateStatFields(t *testing.T, rpcClient *rpcclient.RP
 	*blocksMined++
 	t.Logf("Mined block. Took: %s, average block mining duration: %s, "+
 		"average hashes per second: %d, difficulty delta: %f, time elapsed: %s, blocks mined: %d",
-		miningDuration, averageMiningDuration, averageHashesPerSecond, difficultyDelta, time.Since(startTime), *blocksMined)
+		miningDuration, averageMiningDurationAsDuration, averageHashesPerSecond, difficultyDelta, time.Since(startTime), *blocksMined)
 }
 
 func submitMinedBlock(t *testing.T, rpcClient *rpcclient.RPCClient, block *externalapi.DomainBlock) {
@@ -343,13 +327,4 @@ func loopForDuration(duration time.Duration, runFunction func(isFinished *bool))
 	}()
 	time.Sleep(duration)
 	isFinished = true
-}
-
-func calculateAverageDuration(durations []time.Duration) time.Duration {
-	sumOfDurations := time.Duration(0)
-	for _, duration := range durations {
-		sumOfDurations += duration
-	}
-	averageOfDurations := sumOfDurations / time.Duration(len(durations))
-	return averageOfDurations
 }
