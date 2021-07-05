@@ -9,7 +9,11 @@ import (
 	"github.com/pkg/errors"
 )
 
-func (v *transactionValidator) ValidateTransactionInIsolation(tx *externalapi.DomainTransaction) error {
+// ValidateTransactionInIsolationAndPopulateMass validates the pares of the transaction that can be validated
+// context-free, and populates its mass field.
+//
+// Note: if the function fails, there's no guarantee that the transaction mass field will remain unaffected.
+func (v *transactionValidator) ValidateTransactionInIsolationAndPopulateMass(tx *externalapi.DomainTransaction) error {
 	err := v.checkTransactionInputCount(tx)
 	if err != nil {
 		return err
@@ -49,6 +53,8 @@ func (v *transactionValidator) ValidateTransactionInIsolation(tx *externalapi.Do
 	if tx.Version > constants.MaxTransactionVersion {
 		return errors.Wrapf(ruleerrors.ErrTransactionVersionIsUnknown, "validation failed: unknown transaction version. ")
 	}
+
+	tx.Mass = v.transactionMass(tx)
 
 	return nil
 }

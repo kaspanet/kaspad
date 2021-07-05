@@ -237,7 +237,7 @@ func (csm *consensusStateManager) maybeAcceptTransaction(stagingArea *model.Stag
 		log.Tracef("Transaction %s is the coinbase of block %s", transactionID, blockHash)
 	} else {
 		log.Tracef("Validating transaction %s in block %s", transactionID, blockHash)
-		err = csm.transactionValidator.ValidateTransactionInContextAndPopulateMassAndFee(
+		err = csm.transactionValidator.ValidateTransactionInContextAndPopulateFee(
 			stagingArea, transaction, blockHash, selectedParentPastMedianTime)
 		if err != nil {
 			if !errors.As(err, &(ruleerrors.RuleError{})) {

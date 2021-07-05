@@ -11,11 +11,11 @@ import (
 	"github.com/pkg/errors"
 )
 
-// ValidateTransactionInContextAndPopulateMassAndFee validates the transaction against its referenced UTXO, and
-// populates its mass and fee fields.
+// ValidateTransactionInContextAndPopulateFee validates the transaction against its referenced UTXO, and
+// populates its fee field.
 //
-// Note: if the function fails, there's no guarantee that the transaction mass and fee fields will remain unaffected.
-func (v *transactionValidator) ValidateTransactionInContextAndPopulateMassAndFee(stagingArea *model.StagingArea,
+// Note: if the function fails, there's no guarantee that the transaction fee field will remain unaffected.
+func (v *transactionValidator) ValidateTransactionInContextAndPopulateFee(stagingArea *model.StagingArea,
 	tx *externalapi.DomainTransaction, povBlockHash *externalapi.DomainHash, selectedParentMedianTime int64) error {
 
 	err := v.checkTransactionCoinbaseMaturity(stagingArea, povBlockHash, tx)
@@ -41,11 +41,6 @@ func (v *transactionValidator) ValidateTransactionInContextAndPopulateMassAndFee
 	}
 
 	err = v.validateTransactionScripts(tx)
-	if err != nil {
-		return err
-	}
-
-	tx.Mass, err = v.transactionMass(tx)
 	if err != nil {
 		return err
 	}

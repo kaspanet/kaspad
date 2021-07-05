@@ -137,7 +137,7 @@ func (v *blockValidator) checkBlockTransactionOrder(block *externalapi.DomainBlo
 
 func (v *blockValidator) checkTransactionsInIsolation(block *externalapi.DomainBlock) error {
 	for _, tx := range block.Transactions {
-		err := v.transactionValidator.ValidateTransactionInIsolation(tx)
+		err := v.transactionValidator.ValidateTransactionInIsolationAndPopulateMass(tx)
 		if err != nil {
 			return errors.Wrapf(err, "transaction %s failed isolation "+
 				"check", consensushashing.TransactionID(tx))

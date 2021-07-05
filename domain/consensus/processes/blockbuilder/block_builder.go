@@ -150,7 +150,7 @@ func (bb *blockBuilder) validateTransaction(
 		return err
 	}
 
-	return bb.transactionValidator.ValidateTransactionInContextAndPopulateMassAndFee(
+	return bb.transactionValidator.ValidateTransactionInContextAndPopulateFee(
 		stagingArea, transaction, model.VirtualBlockHash, virtualSelectedParentMedianTime)
 }
 

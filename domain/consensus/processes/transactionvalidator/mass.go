@@ -2,10 +2,8 @@ package transactionvalidator
 
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
-	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/estimatedsize"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/transactionhelper"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/txscript"
 )
 
 func (v *transactionValidator) transactionMassStandalonePart(tx *externalapi.DomainTransaction) uint64 {
@@ -20,29 +18,30 @@ func (v *transactionValidator) transactionMassStandalonePart(tx *externalapi.Dom
 	return size*v.massPerTxByte + totalScriptPubKeySize*v.massPerScriptPubKeyByte
 }
 
-func (v *transactionValidator) transactionMass(tx *externalapi.DomainTransaction) (uint64, error) {
+func (v *transactionValidator) transactionMass(tx *externalapi.DomainTransaction) uint64 {
 	if transactionhelper.IsCoinBase(tx) {
-		return 0, nil
+		return 0
 	}
 
-	standaloneMass := v.transactionMassStandalonePart(tx)
-	sigOpsCount := uint64(0)
-	var missingOutpoints []*externalapi.DomainOutpoint
+	// calculate mass for size
+	size := estimatedsize.TransactionEstimatedSerializedSize(tx)
+	massForSize := size * v.massPerTxByte
+
+	// calculate mass for scriptPubKey
+	totalScriptPubKeySize := uint64(0)
+	for _, output := range tx.Outputs {
+		totalScriptPubKeySize += 2 //output.ScriptPublicKey.Version (uint16)
+		totalScriptPubKeySize += uint64(len(output.ScriptPublicKey.Script))
+	}
+	massForScriptPubKey := totalScriptPubKeySize * v.massPerScriptPubKeyByte
+
+	// calculate mass for SigOps
+	totalSigOpCount := uint64(0)
 	for _, input := range tx.Inputs {
-		utxoEntry := input.UTXOEntry
-		if utxoEntry == nil {
-			missingOutpoints = append(missingOutpoints, &input.PreviousOutpoint)
-			continue
-		}
-		// Count the precise number of signature operations in the
-		// referenced public key script.
-		sigScript := input.SignatureScript
-		isP2SH := txscript.IsPayToScriptHash(utxoEntry.ScriptPublicKey())
-		sigOpsCount += uint64(txscript.GetPreciseSigOpCount(sigScript, utxoEntry.ScriptPublicKey(), isP2SH))
+		totalSigOpCount += uint64(input.SigOpCount)
 	}
-	if len(missingOutpoints) > 0 {
-		return 0, ruleerrors.NewErrMissingTxOut(missingOutpoints)
-	}
+	massForSigOps := totalSigOpCount * v.massPerSigOp
 
-	return standaloneMass + sigOpsCount*v.massPerSigOp, nil
+	// Sum all components of mass
+	return massForSize + massForScriptPubKey + massForSigOps
 }

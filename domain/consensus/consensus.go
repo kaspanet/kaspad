@@ -77,7 +77,7 @@ func (s *consensus) ValidateTransactionAndPopulateWithConsensusData(transaction 
 
 	stagingArea := model.NewStagingArea()
 
-	err := s.transactionValidator.ValidateTransactionInIsolation(transaction)
+	err := s.transactionValidator.ValidateTransactionInIsolationAndPopulateMass(transaction)
 	if err != nil {
 		return err
 	}
@@ -92,7 +92,7 @@ func (s *consensus) ValidateTransactionAndPopulateWithConsensusData(transaction 
 		return err
 	}
 
-	return s.transactionValidator.ValidateTransactionInContextAndPopulateMassAndFee(
+	return s.transactionValidator.ValidateTransactionInContextAndPopulateFee(
 		stagingArea, transaction, model.VirtualBlockHash, virtualSelectedParentMedianTime)
 }
 
