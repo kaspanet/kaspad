@@ -152,6 +152,11 @@ func (flow *handleRelayInvsFlow) downloadHeadersProofBlocksAndPruningUTXOSet(con
 
 func (flow *handleRelayInvsFlow) downloadPruningPointAndItsAnticone(consensus externalapi.Consensus) (*externalapi.DomainHash, error) {
 	log.Infof("Downloading pruning point and its anticone from %s", flow.peer)
+	err := flow.outgoingRoute.Enqueue(appmessage.NewMsgRequestPruningPointAndItsAnticone())
+	if err != nil {
+		return nil, err
+	}
+
 	pruningPoint, _, err := flow.receiveBlockWithMetaData(true)
 	if err != nil {
 		return nil, err
@@ -163,7 +168,7 @@ func (flow *handleRelayInvsFlow) downloadPruningPointAndItsAnticone(consensus ex
 	}
 
 	for {
-		blockHeaderWithMetaData, done, err := flow.receiveBlockWithMetaData(false)
+		blockWithMetaData, done, err := flow.receiveBlockWithMetaData(false)
 		if err != nil {
 			return nil, err
 		}
@@ -172,7 +177,7 @@ func (flow *handleRelayInvsFlow) downloadPruningPointAndItsAnticone(consensus ex
 			break
 		}
 
-		err = flow.processBlockWithMetaData(consensus, blockHeaderWithMetaData)
+		err = flow.processBlockWithMetaData(consensus, blockWithMetaData)
 		if err != nil {
 			return nil, err
 		}

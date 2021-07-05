@@ -23,7 +23,7 @@ func (msg *MsgRequestIBDBlocks) Command() MessageCommand {
 	return CmdRequestIBDBlocks
 }
 
-// NewMsgRequstIBDBlocks returns a new kaspa RequestHeaders message that conforms to the
+// NewMsgRequstIBDBlocks returns a new kaspa RequestIBDBlocks message that conforms to the
 // Message interface using the passed parameters and defaults for the remaining
 // fields.
 func NewMsgRequstIBDBlocks(lowHash, highHash *externalapi.DomainHash) *MsgRequestIBDBlocks {

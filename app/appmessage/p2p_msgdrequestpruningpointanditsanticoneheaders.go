@@ -10,7 +10,7 @@ func (msg *MsgRequestPruningPointAndItsAnticone) Command() MessageCommand {
 	return CmdRequestPruningPointAndItsAnticone
 }
 
-// NewMsgRequestPruningPointAndItsAnticoneHeaders returns a new MsgRequestPruningPointAndItsAnticone.
-func NewMsgRequestPruningPointAndItsAnticoneHeaders() *MsgRequestPruningPointAndItsAnticone {
+// NewMsgRequestPruningPointAndItsAnticone returns a new MsgRequestPruningPointAndItsAnticone.
+func NewMsgRequestPruningPointAndItsAnticone() *MsgRequestPruningPointAndItsAnticone {
 	return &MsgRequestPruningPointAndItsAnticone{}
 }

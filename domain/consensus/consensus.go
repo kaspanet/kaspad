@@ -89,6 +89,14 @@ func (c *consensus) Init(shouldNotAddGenesis bool) error {
 		}
 
 		c.consensusStateStore.StageTips(stagingArea, []*externalapi.DomainHash{model.VirtualGenesisBlockHash})
+		c.ghostdagDataStore.Stage(stagingArea, model.VirtualGenesisBlockHash, externalapi.NewBlockGHOSTDAGData(
+			0,
+			big.NewInt(0),
+			nil,
+			nil,
+			nil,
+			nil,
+		))
 
 		err = staging.CommitAllChanges(c.databaseContext, stagingArea)
 		if err != nil {

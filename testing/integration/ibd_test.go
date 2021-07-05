@@ -41,10 +41,15 @@ func TestIBD(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Error getting tip for syncer")
 	}
+	tip1Info, err := syncer.rpcClient.GetBlock(tip1Hash.SelectedTipHash, false)
+	t.Log(tip1Info)
+
 	tip2Hash, err := syncee.rpcClient.GetSelectedTipHash()
 	if err != nil {
 		t.Fatalf("Error getting tip for syncee")
 	}
+	tip2Info, err := syncer.rpcClient.GetBlock(tip2Hash.SelectedTipHash, false)
+	t.Log(tip2Info)
 
 	if tip1Hash.SelectedTipHash != tip2Hash.SelectedTipHash {
 		t.Errorf("Tips of syncer: '%s' and syncee '%s' are not equal", tip1Hash.SelectedTipHash, tip2Hash.SelectedTipHash)

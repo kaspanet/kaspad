@@ -105,7 +105,7 @@ func (pm *pruningManager) UpdatePruningPointByVirtual(stagingArea *model.Staging
 	}
 
 	if !hasPruningPoint {
-		err = pm.savePruningPoint(stagingArea, pm.genesisHash)
+		err = pm.savePruningPoint(stagingArea, model.VirtualGenesisBlockHash)
 		if err != nil {
 			return err
 		}
@@ -339,8 +339,8 @@ func (pm *pruningManager) savePruningPoint(stagingArea *model.StagingArea, pruni
 	onEnd := logger.LogAndMeasureExecutionTime(log, "pruningManager.savePruningPoint")
 	defer onEnd()
 
-	// If pruningPointHash is the genesis then there's no pruning point set right now.
-	if !pruningPointHash.Equal(pm.genesisHash) {
+	// If pruningPointHash is the virtual genesis then there's no pruning point set right now.
+	if !pruningPointHash.Equal(model.VirtualGenesisBlockHash) {
 		previousPruningPoint, err := pm.pruningStore.PruningPoint(pm.databaseContext, stagingArea)
 		if err != nil {
 			return err
@@ -424,7 +424,7 @@ func (pm *pruningManager) pruningPointCandidate(stagingArea *model.StagingArea) 
 	}
 
 	if !hasPruningPointCandidate {
-		return pm.genesisHash, nil
+		return model.VirtualGenesisBlockHash, nil
 	}
 
 	return pm.pruningStore.PruningPointCandidate(pm.databaseContext, stagingArea)
@@ -481,7 +481,7 @@ func (pm *pruningManager) validateUTXOSetFitsCommitment(stagingArea *model.Stagi
 func (pm *pruningManager) calculateDiffBetweenPreviousAndCurrentPruningPoints(stagingArea *model.StagingArea, currentPruningHash *externalapi.DomainHash) (externalapi.UTXODiff, error) {
 	onEnd := logger.LogAndMeasureExecutionTime(log, "pruningManager.calculateDiffBetweenPreviousAndCurrentPruningPoints")
 	defer onEnd()
-	if currentPruningHash.Equal(pm.genesisHash) {
+	if currentPruningHash.Equal(pm.genesisHash) || currentPruningHash.Equal(model.VirtualGenesisBlockHash) {
 		return utxo.NewUTXODiff(), nil
 	}
 

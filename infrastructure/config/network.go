@@ -3,6 +3,7 @@ package config
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"math/big"
 	"os"
 	"time"

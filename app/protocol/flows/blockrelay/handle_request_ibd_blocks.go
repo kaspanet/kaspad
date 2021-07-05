@@ -42,7 +42,7 @@ func (flow *handleRequestIBDBlocksFlow) start() error {
 		if err != nil {
 			return err
 		}
-		log.Debugf("Received requestHeaders with lowHash: %s, highHash: %s", lowHash, highHash)
+		log.Debugf("Received requestIBDBlocks with lowHash: %s, highHash: %s", lowHash, highHash)
 
 		for !lowHash.Equal(highHash) {
 			log.Debugf("Getting block headers between %s and %s to %s", lowHash, highHash, flow.peer)
@@ -54,7 +54,7 @@ func (flow *handleRequestIBDBlocksFlow) start() error {
 			if err != nil {
 				return err
 			}
-			log.Debugf("Got %d header hashes above lowHash %s", len(blockHashes), lowHash)
+			log.Debugf("Got %d hashes above lowHash %s", len(blockHashes), lowHash)
 
 			blocks := make([]*appmessage.MsgBlock, len(blockHashes))
 			for i, blockHash := range blockHashes {

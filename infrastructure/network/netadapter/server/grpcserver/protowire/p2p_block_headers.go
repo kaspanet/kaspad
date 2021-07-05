@@ -5,47 +5,47 @@ import (
 	"github.com/pkg/errors"
 )
 
-func (x *KaspadMessage_BlockHeaders) toAppMessage() (appmessage.Message, error) {
+func (x *KaspadMessage_IbdBlocks) toAppMessage() (appmessage.Message, error) {
 	if x == nil {
 		return nil, errors.Wrapf(errorNil, "KaspadMessage_BlockHeaders is nil")
 	}
-	blockHeaders, err := x.BlockHeaders.toAppMessage()
+	blocks, err := x.IbdBlocks.toAppMessage()
 	if err != nil {
 		return nil, err
 	}
 	return &appmessage.IBDBlocksMessage{
-		Blocks: blockHeaders,
+		Blocks: blocks,
 	}, nil
 }
 
-func (x *BlockHeadersMessage) toAppMessage() ([]*appmessage.MsgBlockHeader, error) {
+func (x *IBDBlocksMessage) toAppMessage() ([]*appmessage.MsgBlock, error) {
 	if x == nil {
 		return nil, errors.Wrapf(errorNil, "IBDBlocksMessage is nil")
 	}
-	blockHeaders := make([]*appmessage.MsgBlockHeader, len(x.BlockHeaders))
-	for i, blockHeader := range x.BlockHeaders {
+	blocks := make([]*appmessage.MsgBlock, len(x.Blocks))
+	for i, block := range x.Blocks {
 		var err error
-		blockHeaders[i], err = blockHeader.toAppMessage()
+		blocks[i], err = block.toAppMessage()
 		if err != nil {
 			return nil, err
 		}
 	}
 
-	return blockHeaders, nil
+	return blocks, nil
 }
 
-func (x *KaspadMessage_BlockHeaders) fromAppMessage(blockHeadersMessage *appmessage.IBDBlocksMessage) error {
-	blockHeaders := make([]*BlockHeaderMessage, len(blockHeadersMessage.Blocks))
-	for i, blockHeader := range blockHeadersMessage.Blocks {
-		blockHeaders[i] = &BlockHeaderMessage{}
-		err := blockHeaders[i].fromAppMessage(blockHeader)
+func (x *KaspadMessage_IbdBlocks) fromAppMessage(ibdBlocksMessage *appmessage.IBDBlocksMessage) error {
+	blocks := make([]*BlockMessage, len(ibdBlocksMessage.Blocks))
+	for i, blockHeader := range ibdBlocksMessage.Blocks {
+		blocks[i] = &BlockMessage{}
+		err := blocks[i].fromAppMessage(blockHeader)
 		if err != nil {
 			return err
 		}
 	}
 
-	x.BlockHeaders = &BlockHeadersMessage{
-		BlockHeaders: blockHeaders,
+	x.IbdBlocks = &IBDBlocksMessage{
+		Blocks: blocks,
 	}
 	return nil
 }

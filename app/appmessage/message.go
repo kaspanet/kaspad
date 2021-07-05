@@ -150,7 +150,7 @@ var ProtocolMessageCommandToString = map[MessageCommand]string{
 	CmdVerAck:                              "VerAck",
 	CmdRequestAddresses:                    "RequestAddresses",
 	CmdAddresses:                           "Addresses",
-	CmdRequestIBDBlocks:                    "RequestHeaders",
+	CmdRequestIBDBlocks:                    "CmdRequestIBDBlocks",
 	CmdBlock:                               "Block",
 	CmdTx:                                  "Tx",
 	CmdPing:                                "Ping",
@@ -176,7 +176,7 @@ var ProtocolMessageCommandToString = map[MessageCommand]string{
 	CmdDonePruningPointUTXOSetChunks:       "DonePruningPointUTXOSetChunks",
 	CmdBlockBlueWork:                       "BlockBlueWork",
 	CmdBlockWithMetaData:                   "BlockWithMetaData",
-	CmdDoneBlocksWithMetaData:              "DoneBlockHeadersWithMetaData",
+	CmdDoneBlocksWithMetaData:              "DoneBlocksWithMetaData",
 	CmdRequestPruningPointAndItsAnticone:   "RequestPruningPointAndItsAnticoneHeaders",
 	CmdRequestBlockBlueWork:                "RequestBlockBlueWork",
 }

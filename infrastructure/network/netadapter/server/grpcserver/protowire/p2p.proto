@@ -57,11 +57,11 @@ message TransactionOutput{
 }
 
 message BlockMessage{
-  BlockHeaderMessage header = 1;
+  BlockHeader header = 1;
   repeated TransactionMessage transactions = 2;
 }
 
-message BlockHeaderMessage{
+message BlockHeader{
   uint32 version = 1;
   repeated Hash parentHashes = 2;
   Hash hashMerkleRoot = 3;
@@ -86,15 +86,15 @@ message BlockLocatorMessage{
   repeated Hash hashes = 1;
 }
 
-message RequestHeadersMessage{
+message RequestIBDBlocksMessage{
   Hash lowHash = 1;
   Hash highHash = 2;
 }
 
-message RequestNextHeadersMessage{
+message RequestNextIBDBlocksMessage{
 }
 
-message DoneHeadersMessage{
+message DoneIBDBlocksMessage{
 }
 
 message RequestRelayBlocksMessage{
@@ -170,18 +170,7 @@ message RequestNextPruningPointUtxoSetChunkMessage {
 message DonePruningPointUtxoSetChunksMessage {
 }
 
-message RequestIBDBlocksMessage{
-  repeated Hash hashes = 1;
-}
-
 message UnexpectedPruningPointMessage{
-}
-
-message RequestPruningPointHashMessage{
-}
-
-message PruningPointHashMessage{
-  Hash hash = 1;
 }
 
 message IbdBlockLocatorMessage {
@@ -196,18 +185,28 @@ message IbdBlockLocatorHighestHashMessage {
 message IbdBlockLocatorHighestHashNotFoundMessage {
 }
 
-message BlockHeadersMessage {
-  repeated BlockHeaderMessage blockHeaders = 1;
+message IBDBlocksMessage {
+  repeated BlockMessage blocks = 1;
 }
 
-message RequestPruningPointAndItsAnticoneHeaders {
-  repeated BlockHeaderWithMetaDataMessage headers = 1;
+message RequestPruningPointAndItsAnticoneMessage {
 }
 
-message BlockHeaderWithMetaDataMessage {
-  BlockHeaderMessage block = 1;
+message BlockWithMetaDataMessage {
+  BlockMessage block = 1;
   uint64 daaScore = 2;
-  GhostdagData ghostdagData = 3;
+  repeated DaaBlock daaWindow = 3;
+  repeated BlockGHOSTDAGDataHashPair ghostdagData = 4;
+}
+
+message DaaBlock {
+  BlockHeader header = 1;
+  GhostdagData ghostdagData = 2;
+}
+
+message BlockGHOSTDAGDataHashPair {
+  Hash hash = 1;
+  GhostdagData ghostdagData = 2;
 }
 
 message GhostdagData {
@@ -224,7 +223,7 @@ message BluesAnticoneSizes {
   uint32 anticoneSize = 2;
 }
 
-message DoneBlockHeadersWithMetaDataMessage {
+message DoneBlocksWithMetaDataMessage {
 }
 
 message RequestBlockBlueWorkMessage {
@@ -232,5 +231,5 @@ message RequestBlockBlueWorkMessage {
 }
 
 message BlockBlueWorkMessage {
-  repeated bytes blueWork = 1;
+  bytes blueWork = 1;
 }

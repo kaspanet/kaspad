@@ -63,7 +63,7 @@ func (csm *consensusStateManager) AddBlock(stagingArea *model.StagingArea, block
 	log.Debugf("After adding %s, the amount of new tips are %d", blockHash, len(newTips))
 
 	if !updateVirtual {
-		return nil, nil, nil, nil
+		return &externalapi.SelectedChainPath{}, nil, nil, nil
 	}
 
 	log.Debugf("Updating the virtual with the new tips")

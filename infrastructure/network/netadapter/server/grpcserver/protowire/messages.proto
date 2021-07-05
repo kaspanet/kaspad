@@ -14,12 +14,10 @@ message KaspadMessage {
     RequestBlockLocatorMessage requestBlockLocator = 4;
     BlockLocatorMessage blockLocator = 5;
     RequestAddressesMessage requestAddresses = 6;
-    RequestHeadersMessage requestHeaders = 7;
-    RequestNextHeadersMessage requestNextHeaders = 8;
-    DoneHeadersMessage DoneHeaders = 9;
+    RequestNextIBDBlocksMessage requestNextIBDBlocks = 8;
+    DoneIBDBlocksMessage doneIBDBlocks = 9;
     RequestRelayBlocksMessage requestRelayBlocks = 10;
     RequestTransactionsMessage requestTransactions = 12;
-    BlockMessage ibdBlock = 13;
     InvRelayBlockMessage invRelayBlock = 14;
     InvTransactionsMessage invTransactions = 15;
     PingMessage ping = 16;
@@ -32,18 +30,17 @@ message KaspadMessage {
     PruningPointUtxoSetChunkMessage pruningPointUtxoSetChunk = 25;
     RequestIBDBlocksMessage requestIBDBlocks = 26;
     UnexpectedPruningPointMessage unexpectedPruningPoint = 27;
-    RequestPruningPointHashMessage requestPruningPointHash = 28;
-    PruningPointHashMessage pruningPointHash = 29;
     IbdBlockLocatorMessage ibdBlockLocator = 30;
     IbdBlockLocatorHighestHashMessage ibdBlockLocatorHighestHash = 31;
-    BlockHeadersMessage blockHeaders = 32;
+    IBDBlocksMessage ibdBlocks = 32;
     RequestNextPruningPointUtxoSetChunkMessage requestNextPruningPointUtxoSetChunk = 33;
     DonePruningPointUtxoSetChunksMessage donePruningPointUtxoSetChunks = 34;
     IbdBlockLocatorHighestHashNotFoundMessage ibdBlockLocatorHighestHashNotFound = 35;
-    BlockHeaderWithMetaDataMessage blockWithMetaData = 36;
-    DoneBlockHeadersWithMetaDataMessage doneBlocksWithMetaData = 37;
+    BlockWithMetaDataMessage blockWithMetaData = 36;
+    DoneBlocksWithMetaDataMessage doneBlocksWithMetaData = 37;
     RequestBlockBlueWorkMessage requestBlockBlueWork = 38;
     BlockBlueWorkMessage blockBlueWork = 39;
+    RequestPruningPointAndItsAnticoneMessage requestPruningPointAndItsAnticone = 40;
 
     GetCurrentNetworkRequestMessage getCurrentNetworkRequest = 1001;
     GetCurrentNetworkResponseMessage getCurrentNetworkResponse = 1002;

@@ -22,6 +22,7 @@ func HandlePruningPointAndItsAnticoneRequests(context PruningPointAndItsAnticone
 		if err != nil {
 			return err
 		}
+
 		log.Debugf("Got request for pruning point and its anticone from %s", peer)
 		blocks, err := context.Domain().Consensus().PruningPointAndItsAnticoneWithMetaData()
 		if err != nil {
@@ -33,6 +34,11 @@ func HandlePruningPointAndItsAnticoneRequests(context PruningPointAndItsAnticone
 			if err != nil {
 				return err
 			}
+		}
+
+		err = outgoingRoute.Enqueue(appmessage.NewMsgDoneBlocksWithMetaData())
+		if err != nil {
+			return err
 		}
 
 		log.Debugf("Sent pruning point and its anticone to %s", peer)

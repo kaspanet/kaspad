@@ -130,6 +130,22 @@ type fakeRelayInvsContext struct {
 	rwLock                                        sync.RWMutex
 }
 
+func (f *fakeRelayInvsContext) Init(shouldNotAddGenesis bool) error {
+	panic("implement me")
+}
+
+func (f *fakeRelayInvsContext) ValidateAndInsertBlockWithMetaData(block *externalapi.BlockWithMetaData, validateUTXO bool) (*externalapi.BlockInsertionResult, error) {
+	panic("implement me")
+}
+
+func (f *fakeRelayInvsContext) ResolveVirtual() error {
+	panic("implement me")
+}
+
+func (f *fakeRelayInvsContext) PruningPointAndItsAnticoneWithMetaData() ([]*externalapi.BlockWithMetaData, error) {
+	panic("implement me")
+}
+
 func (f *fakeRelayInvsContext) DeleteStagingConsensus() error {
 	panic("implement me")
 }
@@ -174,7 +190,7 @@ func (f *fakeRelayInvsContext) BuildBlock(coinbaseData *externalapi.DomainCoinba
 	panic(errors.Errorf("called unimplemented function from test '%s'", f.testName))
 }
 
-func (f *fakeRelayInvsContext) ValidateAndInsertBlock(block *externalapi.DomainBlock) (*externalapi.BlockInsertionResult, error) {
+func (f *fakeRelayInvsContext) ValidateAndInsertBlock(*externalapi.DomainBlock, bool) (*externalapi.BlockInsertionResult, error) {
 	return nil, f.validateAndInsertBlockResponse
 }
 
@@ -231,7 +247,7 @@ func (f *fakeRelayInvsContext) AppendImportedPruningPointUTXOs(outpointAndUTXOEn
 	panic(errors.Errorf("called unimplemented function from test '%s'", f.testName))
 }
 
-func (f *fakeRelayInvsContext) ValidateAndInsertImportedPruningPoint(newPruningPoint *externalapi.DomainBlock) error {
+func (f *fakeRelayInvsContext) ValidateAndInsertImportedPruningPoint(newPruningPoint *externalapi.DomainHash) error {
 	f.rwLock.RLock()
 	defer f.rwLock.RUnlock()
 	return f.validateAndInsertImportedPruningPointResponse

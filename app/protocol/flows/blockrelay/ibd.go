@@ -65,7 +65,7 @@ func (flow *handleRelayInvsFlow) runIBDIfNotRunning(highHash *externalapi.Domain
 	if err != nil {
 		return err
 	}
-	log.Debugf("Finished resolving virtual", highHash)
+	log.Debugf("Finished resolving virtual")
 
 	isFinishedSuccessfully = true
 
@@ -210,21 +210,21 @@ func (flow *handleRelayInvsFlow) downloadIBDBlocks(consensus externalapi.Consens
 	// Keep a short queue of blockHeadersMessages so that there's
 	// never a moment when the node is not validating and inserting
 	// headers
-	blockHeadersMessageChan := make(chan *appmessage.IBDBlocksMessage, 2)
+	ibdBlocksMessageChan := make(chan *appmessage.IBDBlocksMessage, 2)
 	errChan := make(chan error)
 	spawn("handleRelayInvsFlow-downloadIBDBlocks", func() {
 		for {
-			blockHeadersMessage, doneIBD, err := flow.receiveIBDBlocks()
+			msgBlock, doneIBD, err := flow.receiveIBDBlocks()
 			if err != nil {
 				errChan <- err
 				return
 			}
 			if doneIBD {
-				close(blockHeadersMessageChan)
+				close(ibdBlocksMessageChan)
 				return
 			}
 
-			blockHeadersMessageChan <- blockHeadersMessage
+			ibdBlocksMessageChan <- msgBlock
 
 			err = flow.outgoingRoute.Enqueue(appmessage.NewMsgRequestNextIBDBlocks())
 			if err != nil {
@@ -236,7 +236,7 @@ func (flow *handleRelayInvsFlow) downloadIBDBlocks(consensus externalapi.Consens
 
 	for {
 		select {
-		case blockHeadersMessage, ok := <-blockHeadersMessageChan:
+		case msgBlock, ok := <-ibdBlocksMessageChan:
 			if !ok {
 				// If the highHash has not been received, the peer is misbehaving
 				highHashBlockInfo, err := consensus.GetBlockInfo(highHash)
@@ -245,12 +245,12 @@ func (flow *handleRelayInvsFlow) downloadIBDBlocks(consensus externalapi.Consens
 				}
 				if !highHashBlockInfo.Exists {
 					return protocolerrors.Errorf(true, "did not receive "+
-						"highHash header %s from peer %s during header download", highHash, flow.peer)
+						"highHash block %s from peer %s during block download", highHash, flow.peer)
 				}
 				return nil
 			}
-			for _, header := range blockHeadersMessage.Blocks {
-				err = flow.processIBDBlock(consensus, header)
+			for _, block := range msgBlock.Blocks {
+				err = flow.processIBDBlock(consensus, block)
 				if err != nil {
 					return err
 				}
@@ -299,21 +299,21 @@ func (flow *handleRelayInvsFlow) processIBDBlock(consensus externalapi.Consensus
 		log.Debugf("Block %s is already in the DAG. Skipping...", blockHash)
 		return nil
 	}
-	_, err = consensus.ValidateAndInsertBlock(block, false)
+	blockInsertionResult, err := consensus.ValidateAndInsertBlock(block, false)
 	if err != nil {
 		if !errors.As(err, &ruleerrors.RuleError{}) {
-			return errors.Wrapf(err, "failed to process header %s during IBD", blockHash)
+			return errors.Wrapf(err, "failed to process block %s during IBD", blockHash)
 		}
 
 		if errors.Is(err, ruleerrors.ErrDuplicateBlock) {
 			log.Debugf("Skipping block %s as it is a duplicate", blockHash)
 		} else {
 			log.Infof("Rejected block %s from %s during IBD: %s", blockHash, flow.peer, err)
-			return protocolerrors.Wrapf(true, err, "got invalid block header %s during IBD", blockHash)
+			return protocolerrors.Wrapf(true, err, "got invalid block %s during IBD", blockHash)
 		}
 	}
 
-	return nil
+	return flow.OnNewBlock(block, blockInsertionResult)
 }
 
 func (flow *handleRelayInvsFlow) receiveAndInsertPruningPointUTXOSet(

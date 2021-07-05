@@ -45,6 +45,12 @@ func (csm *consensusStateManager) ResolveVirtual(stagingArea *model.StagingArea)
 
 	if selectedTip == nil {
 		log.Warnf("Non of the DAG tips are valid")
+		return nil
+	}
+
+	_, _, err = csm.updateVirtual(stagingArea, selectedTip, tips)
+	if err != nil {
+		return err
 	}
 
 	return nil
