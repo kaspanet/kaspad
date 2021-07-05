@@ -361,5 +361,5 @@ func (v *transactionValidator) validateTransactionSigOpCounts(tx *externalapi.Do
 				i, input.SigOpCount, sigOpCount)
 		}
 	}
-
+	return nil
 }

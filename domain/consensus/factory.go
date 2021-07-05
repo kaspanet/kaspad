@@ -260,7 +260,6 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 	consensusStateManager, err := consensusstatemanager.New(
 		dbManager,
 		config.PruningDepth(),
-		config.MaxMassAcceptedByBlock,
 		config.MaxBlockParents,
 		config.MergeSetSizeLimit,
 		genesisHash,
