@@ -1,3 +1,25 @@
+Kaspad v0.10.4 - 2021-07-05
+===========================
+* Make use of maxBlocks instead of maxBlueScoreDifference in antiPastHashesBetween (#1774)
+
+Kaspad v0.10.3 - 2021-06-06
+===========================
+Non-breaking changes:
+* Implement NotifyVirtualDaaScoreChanged (#1737)
+
+Kaspad v0.10.2 - 2021-05-18
+===========================
+Non-breaking changes:
+* Fix getBlock and getBlocks RPC commands to return blocks and transactions properly (#1716)
+* serializeAddress should always serialize as IPv6, since it assumes the IP size is 16 bytes (#1720)
+* Add VirtualDaaScore to GetBlockDagInfo (#1719)
+* Fix calcTxSequenceLockFromReferencedUTXOEntries for loop break condition (#1723)
+* Fix overflow when checking coinbase maturity and don't ban peers that send transactions with immature spend (#1722)
+
+Kaspad v0.10.1 - 2021-05-11
+===========================
+* Calculate virtual's acceptance data and multiset after importing a new pruning point (#1700)
+
 Kaspad v0.10.0 - 2021-04-26
 ===========================
 Major changes include:
