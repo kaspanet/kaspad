@@ -20,10 +20,10 @@ type txSubnetworkData struct {
 	payload      []byte
 }
 
-func TestValidateTransactionInIsolation(t *testing.T) {
+func TestValidateTransactionInIsolationAndPopulateMass(t *testing.T) {
 	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
 		factory := consensus.NewFactory()
-		tc, teardown, err := factory.NewTestConsensus(consensusConfig, "TestValidateTransactionInIsolation")
+		tc, teardown, err := factory.NewTestConsensus(consensusConfig, "TestValidateTransactionInIsolationAndPopulateMass")
 		if err != nil {
 			t.Fatalf("Error setting up consensus: %+v", err)
 		}
@@ -111,7 +111,7 @@ func TestValidateTransactionInIsolation(t *testing.T) {
 
 			err := tc.TransactionValidator().ValidateTransactionInIsolationAndPopulateMass(tx)
 			if !errors.Is(err, test.expectedErr) {
-				t.Errorf("TestValidateTransactionInIsolation: '%s': unexpected error %+v", test.name, err)
+				t.Errorf("TestValidateTransactionInIsolationAndPopulateMass: '%s': unexpected error %+v", test.name, err)
 			}
 		}
 	})
@@ -129,6 +129,7 @@ func createTxForTest(numInputs uint32, numOutputs uint32, outputValue uint64, su
 			},
 			SignatureScript: []byte{},
 			Sequence:        constants.MaxTxInSequenceNum,
+			SigOpCount:      1,
 		})
 	}
 
