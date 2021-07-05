@@ -121,7 +121,9 @@ func TestDAA(t *testing.T) {
 						int64(math.Pow(float64(fromHashNanoseconds-toHashNanoseconds), timeElapsedFraction))
 				}
 
-				// 5 minute cooldown
+				// 5 minute cooldown. We expect the DAA to still be "catching up" at the end
+				// of the exponential increase so, for the sake of testing, we wait a while for
+				// the hash rate to stabilize
 
 				return toHashNanoseconds
 			},
@@ -141,7 +143,9 @@ func TestDAA(t *testing.T) {
 						int64(math.Pow(float64(toHashNanoseconds-fromHashNanoseconds), timeElapsedFraction))
 				}
 
-				// 5 minute cooldown
+				// 5 minute cooldown. We expect the DAA to still be "catching up" at the end
+				// of the exponential decrease so, for the sake of testing, we wait a while for
+				// the hash rate to stabilize
 
 				return toHashNanoseconds
 			},
