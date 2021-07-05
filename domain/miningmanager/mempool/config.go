@@ -43,7 +43,7 @@ type Config struct {
 	MaximumOrphanTransactionSize          uint64
 	MaximumOrphanTransactionCount         uint64
 	AcceptNonStandard                     bool
-	MaximumMassAcceptedByBlock            uint64
+	MaximumMassPerBlock                   uint64
 	MinimumRelayTransactionFee            util.Amount
 	MinimumStandardTransactionVersion     uint16
 	MaximumStandardTransactionVersion     uint16
@@ -62,7 +62,7 @@ func DefaultConfig(dagParams *dagconfig.Params) *Config {
 		MaximumOrphanTransactionSize:          defaultMaximumOrphanTransactionSize,
 		MaximumOrphanTransactionCount:         defaultMaximumOrphanTransactionCount,
 		AcceptNonStandard:                     dagParams.RelayNonStdTxs,
-		MaximumMassAcceptedByBlock:            dagParams.MaxMassAcceptedByBlock,
+		MaximumMassPerBlock:                   dagParams.MaxBlockMass,
 		MinimumRelayTransactionFee:            defaultMinimumRelayTransactionFee,
 		MinimumStandardTransactionVersion:     defaultMinimumStandardTransactionVersion,
 		MaximumStandardTransactionVersion:     defaultMaximumStandardTransactionVersion,
