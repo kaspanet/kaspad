@@ -1,12 +1,13 @@
 package consensus
 
 import (
-	"github.com/kaspanet/kaspad/domain/consensus/model"
-	"github.com/kaspanet/kaspad/domain/prefixmanager/prefix"
-	"github.com/pkg/errors"
 	"io/ioutil"
 	"os"
 	"sync"
+
+	"github.com/kaspanet/kaspad/domain/consensus/model"
+	"github.com/kaspanet/kaspad/domain/prefixmanager/prefix"
+	"github.com/pkg/errors"
 
 	consensusdatabase "github.com/kaspanet/kaspad/domain/consensus/database"
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/acceptancedatastore"
@@ -231,7 +232,7 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 		config.SkipProofOfWork,
 		genesisHash,
 		config.EnableNonNativeSubnetworks,
-		config.MaxBlockSize,
+		config.MaxBlockMass,
 		config.MergeSetSizeLimit,
 		config.MaxBlockParents,
 		config.TimestampDeviationTolerance,

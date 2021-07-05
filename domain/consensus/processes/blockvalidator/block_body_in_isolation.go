@@ -5,7 +5,6 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/estimatedsize"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/merkle"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/subnetworks"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/transactionhelper"
@@ -30,11 +29,6 @@ func (v *blockValidator) ValidateBodyInIsolation(stagingArea *model.StagingArea,
 	}
 
 	err = v.checkBlockHashMerkleRoot(block)
-	if err != nil {
-		return err
-	}
-
-	err = v.checkBlockSize(block)
 	if err != nil {
 		return err
 	}
@@ -65,6 +59,11 @@ func (v *blockValidator) ValidateBodyInIsolation(stagingArea *model.StagingArea,
 	}
 
 	err = v.checkTransactionsInIsolation(block)
+	if err != nil {
+		return err
+	}
+
+	err = v.checkBlockMass(block)
 	if err != nil {
 		return err
 	}
@@ -215,16 +214,16 @@ func (v *blockValidator) validateGasLimit(block *externalapi.DomainBlock) error 
 	return nil
 }
 
-func (v *blockValidator) checkBlockSize(block *externalapi.DomainBlock) error {
-	size := uint64(0)
-	size += v.headerEstimatedSerializedSize(block.Header)
+func (v *blockValidator) checkBlockMass(block *externalapi.DomainBlock) error {
+	mass := uint64(0)
+	mass += v.headerEstimatedSerializedSize(block.Header)
 
-	for _, tx := range block.Transactions {
-		sizeBefore := size
-		size += estimatedsize.TransactionEstimatedSerializedSize(tx)
-		if size > v.maxBlockSize || size < sizeBefore {
-			return errors.Wrapf(ruleerrors.ErrBlockSizeTooHigh, "block excceeded the size limit of %d",
-				v.maxBlockSize)
+	for _, transaction := range block.Transactions {
+		massBefore := mass
+		mass += transaction.Mass
+		if mass > v.maxBlockMass || mass < massBefore {
+			return errors.Wrapf(ruleerrors.ErrBlockSizeTooHigh, "block exceeded the mass limit of %d",
+				v.maxBlockMass)
 		}
 	}
 
