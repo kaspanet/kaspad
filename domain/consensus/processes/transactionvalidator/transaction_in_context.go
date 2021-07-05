@@ -40,6 +40,11 @@ func (v *transactionValidator) ValidateTransactionInContextAndPopulateFee(stagin
 		return err
 	}
 
+	err = v.validateTransactionSigOpCounts(tx)
+	if err != nil {
+		return err
+	}
+
 	err = v.validateTransactionScripts(tx)
 	if err != nil {
 		return err
@@ -339,4 +344,22 @@ func (v *transactionValidator) sequenceLockActive(sequenceLock *sequenceLock, bl
 	}
 
 	return true
+}
+
+func (v *transactionValidator) validateTransactionSigOpCounts(tx *externalapi.DomainTransaction) error {
+	for i, input := range tx.Inputs {
+		utxoEntry := input.UTXOEntry
+
+		// Count the precise number of signature operations in the
+		// referenced public key script.
+		sigScript := input.SignatureScript
+		isP2SH := txscript.IsPayToScriptHash(utxoEntry.ScriptPublicKey())
+		sigOpCount := txscript.GetPreciseSigOpCount(sigScript, utxoEntry.ScriptPublicKey(), isP2SH)
+		if sigOpCount != int(input.SigOpCount) {
+			return errors.Wrapf(ruleerrors.ErrWrongSigOpCount,
+				"input %d specifies SigOpCount %d while actual SigOpCount is %d",
+				i, input.SigOpCount, sigOpCount)
+		}
+	}
+
 }

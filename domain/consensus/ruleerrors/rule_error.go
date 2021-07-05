@@ -139,6 +139,9 @@ var (
 	// a Payload
 	ErrInvalidPayload = newRuleError("ErrInvalidPayload")
 
+	// ErrWrongSigOpCount transaction input specifies an incorrect SigOpCount
+	ErrWrongSigOpCount = newRuleError("ErrWrongSigOpCount ")
+
 	// ErrSubnetwork indicates that a block doesn't adhere to the subnetwork
 	// registry rules
 	ErrSubnetworkRegistry = newRuleError("ErrSubnetworkRegistry")
