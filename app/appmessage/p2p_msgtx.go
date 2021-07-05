@@ -208,6 +208,7 @@ func (msg *MsgTx) Copy() *MsgTx {
 			PreviousOutpoint: newOutpoint,
 			SignatureScript:  newScript,
 			Sequence:         oldTxIn.Sequence,
+			SigOpCount:       oldTxIn.SigOpCount,
 		}
 
 		// Finally, append this fully copied txin.
