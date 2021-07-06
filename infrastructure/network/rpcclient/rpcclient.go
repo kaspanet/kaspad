@@ -6,6 +6,7 @@ import (
 	routerpkg "github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
 	"github.com/kaspanet/kaspad/infrastructure/network/rpcclient/grpcclient"
 	"github.com/kaspanet/kaspad/util/panics"
+	"github.com/kaspanet/kaspad/version"
 	"github.com/pkg/errors"
 	"sync/atomic"
 	"time"
@@ -36,6 +37,19 @@ func NewRPCClient(rpcAddress string) (*RPCClient, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	getInfoResponse, err := rpcClient.GetInfo()
+	if err != nil {
+		return nil, errors.Errorf("error making GetInfo request")
+	}
+
+	localVersion := version.Version()
+	remoteVersion := getInfoResponse.ServerVersion
+
+	if localVersion != remoteVersion {
+		return nil, errors.Errorf("Server version mismatch, expect: %s, got: %s", localVersion, remoteVersion)
+	}
+
 	return rpcClient, nil
 }
 

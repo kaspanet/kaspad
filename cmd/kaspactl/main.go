@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/kaspanet/kaspad/version"
 	"os"
 	"time"
 
@@ -32,6 +33,18 @@ func main() {
 		printErrorAndExit(fmt.Sprintf("error connecting to the RPC server: %s", err))
 	}
 	defer client.Disconnect()
+
+	kaspadMessage, err := client.Post(&protowire.KaspadMessage{Payload: &protowire.KaspadMessage_GetInfoRequest{GetInfoRequest: &protowire.GetInfoRequestMessage{}}})
+	if err != nil {
+		printErrorAndExit(fmt.Sprintf("Cannot post GetInfo message: %s", err))
+	}
+
+	localVersion := version.Version()
+	remoteVersion := kaspadMessage.GetGetInfoResponse().ServerVersion
+
+	if localVersion != remoteVersion {
+		printErrorAndExit(fmt.Sprintf("Server version mismatch, expect: %s, got: %s", localVersion, remoteVersion))
+	}
 
 	responseChan := make(chan string)
 
