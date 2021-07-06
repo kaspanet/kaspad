@@ -108,86 +108,86 @@ func TestCalculateSignatureHashSchnorr(t *testing.T) {
 
 		// sigHashAll
 		{name: "native-all-0", tx: nativeTx, hashType: all, inputIndex: 0,
-			expectedSignatureHash: "3e4a8effa6903dea5f762754ec410d732114ec2907e5bcbae7b6dd8d3f309a10"},
+			expectedSignatureHash: "c2766321d8de72b737de9f544ef18d8b82073fbdec3139b5ef95ac67aba6f13e"},
 		{name: "native-all-0-modify-input-1", tx: nativeTx, hashType: all, inputIndex: 0,
 			modificationFunction:  modifyInput(1), // should change the hash
-			expectedSignatureHash: "0bd2947383101f9708d94d5799626c69c1b8472d2de66523c90c4a674e99cc51"},
+			expectedSignatureHash: "4fabf8898a81210230b992d4e384bd74152cb988dbf9ba6d3c3ceeddf45cfd7b"},
 		{name: "native-all-0-modify-output-1", tx: nativeTx, hashType: all, inputIndex: 0,
 			modificationFunction:  modifyOutput(1), // should change the hash
-			expectedSignatureHash: "ae69aa1372e958f069bf52d2628ead7ee789f195340b615ff0bcb6f01a995810"},
+			expectedSignatureHash: "b0bf6bf951512d64d16e5cf3902eb998cef28cc7b0a1994babde396db4351bf2"},
 		{name: "native-all-0-modify-sequence-1", tx: nativeTx, hashType: all, inputIndex: 0,
 			modificationFunction:  modifySequence(1), // should change the hash
-			expectedSignatureHash: "51295575e7efc1fe1c2e741ade49089e3d780d15d26e9a0b18b3d90e35caf795"},
+			expectedSignatureHash: "bf586a8abe56e1bcd1650eb65120344bb69fb689d4ab9f78ace1f5510a13970d"},
 		{name: "native-all-anyonecanpay-0", tx: nativeTx, hashType: allAnyoneCanPay, inputIndex: 0,
-			expectedSignatureHash: "0a13d3cab42a6cf3a7ef96f7b28c9bb0d98c209a3032ff85a6bfa7dac520f2c2"},
+			expectedSignatureHash: "f58cf34a54a810c54a7f588212cb9b21aa81182bd3e43f5425cc899df6c0a026"},
 		{name: "native-all-anyonecanpay-0-modify-input-0", tx: nativeTx, hashType: allAnyoneCanPay, inputIndex: 0,
 			modificationFunction:  modifyInput(0), // should change the hash
-			expectedSignatureHash: "aeaa56f5bc99daea0be5ed4b047808ce0123a81ac89c6089b72fa7199f5cd1c6"},
+			expectedSignatureHash: "4cda446a173ebb9043f7303b3448fc26384bbe2e3b0208c46e5ccedaf0bffb5f"},
 		{name: "native-all-anyonecanpay-0-modify-input-1", tx: nativeTx, hashType: allAnyoneCanPay, inputIndex: 0,
 			modificationFunction:  modifyInput(1), // shouldn't change the hash
-			expectedSignatureHash: "0a13d3cab42a6cf3a7ef96f7b28c9bb0d98c209a3032ff85a6bfa7dac520f2c2"},
+			expectedSignatureHash: "f58cf34a54a810c54a7f588212cb9b21aa81182bd3e43f5425cc899df6c0a026"},
 		{name: "native-all-anyonecanpay-0-modify-sequence", tx: nativeTx, hashType: allAnyoneCanPay, inputIndex: 0,
 			modificationFunction:  modifySequence(1), // shouldn't change the hash
-			expectedSignatureHash: "0a13d3cab42a6cf3a7ef96f7b28c9bb0d98c209a3032ff85a6bfa7dac520f2c2"},
+			expectedSignatureHash: "f58cf34a54a810c54a7f588212cb9b21aa81182bd3e43f5425cc899df6c0a026"},
 
 		// sigHashNone
 		{name: "native-none-0", tx: nativeTx, hashType: none, inputIndex: 0,
-			expectedSignatureHash: "da53f7c726b55357adb1b644265fe7b9b7897cadde91a942d6127195c2ce99dc"},
+			expectedSignatureHash: "b96150611b6d60ec266c588ad3b70dae88d86bee340f681d97a8c9cfc1c20dc8"},
 		{name: "native-none-0-modify-output-1", tx: nativeTx, hashType: none, inputIndex: 0,
 			modificationFunction:  modifyOutput(1), // shouldn't change the hash
-			expectedSignatureHash: "da53f7c726b55357adb1b644265fe7b9b7897cadde91a942d6127195c2ce99dc"},
+			expectedSignatureHash: "b96150611b6d60ec266c588ad3b70dae88d86bee340f681d97a8c9cfc1c20dc8"},
 		{name: "native-none-0-modify-sequence-0", tx: nativeTx, hashType: none, inputIndex: 0,
 			modificationFunction:  modifySequence(0), // should change the hash
-			expectedSignatureHash: "72c07c152a3792fb863d2de219ab4e863fe6779dc970a5c3958e26b3a3b9f139"},
+			expectedSignatureHash: "d4399441aea22085ee10cd662268b6cb77cd808bc8a0c96494867a92646494fc"},
 		{name: "native-none-0-modify-sequence-1", tx: nativeTx, hashType: none, inputIndex: 0,
 			modificationFunction:  modifySequence(1), // shouldn't change the hash
-			expectedSignatureHash: "da53f7c726b55357adb1b644265fe7b9b7897cadde91a942d6127195c2ce99dc"},
+			expectedSignatureHash: "b96150611b6d60ec266c588ad3b70dae88d86bee340f681d97a8c9cfc1c20dc8"},
 		{name: "native-none-anyonecanpay-0", tx: nativeTx, hashType: noneAnyoneCanPay, inputIndex: 0,
-			expectedSignatureHash: "18eb79df328a516708f792cadfc4bf2be21b6add35fb6637a20347d532b1dce1"},
+			expectedSignatureHash: "8fc42f2592194aae23dafe8bbf6439a1a1a7b21a1c59e82216cf85a5a006b618"},
 		{name: "native-none-anyonecanpay-0-modify-amount-spent", tx: nativeTx, hashType: noneAnyoneCanPay, inputIndex: 0,
 			modificationFunction:  modifyAmountSpent(0), // should change the hash
-			expectedSignatureHash: "674a8e6effa0bbfdb3df3ca45a7b17ab695cc0f9b3e0519e5bff165de13604e2"},
+			expectedSignatureHash: "52490f657b9258a49a19e7cd2c809ff93865216977ba3e988cbd44baa817e878"},
 		{name: "native-none-anyonecanpay-0-modify-script-public-key", tx: nativeTx, hashType: noneAnyoneCanPay, inputIndex: 0,
 			modificationFunction:  modifyScriptPublicKey(0), // should change the hash
-			expectedSignatureHash: "7a879d339c9b948c5264f1c0b8463f551221b2dcd575623f178cbbfcf7e01987"},
+			expectedSignatureHash: "e69568f9c6deac7731d66b4992a88a37bc494a8a5b278708e07c522e05e0b1c7"},
 
 		// sigHashSingle
 		{name: "native-single-0", tx: nativeTx, hashType: single, inputIndex: 0,
-			expectedSignatureHash: "99c0a4a381fed9dbd651450d6ca969a6e8cdd941e9d73be086a1ba6c90fb630f"},
+			expectedSignatureHash: "2d75e6381492f3cda38e2cfce6c2838474d947b5e62888654408a88e776ef74d"},
 		{name: "native-single-0-modify-output-0", tx: nativeTx, hashType: single, inputIndex: 0,
 			modificationFunction:  modifyOutput(0), // should change the hash
-			expectedSignatureHash: "92189a32391ca50a454d1853efed55acb1c49993911a1201df9891c866c483ee"},
+			expectedSignatureHash: "3fe0c5099036de36f3b093ab990e152af8bddfebe49bfdced31d886ad84fed1e"},
 		{name: "native-single-0-modify-output-1", tx: nativeTx, hashType: single, inputIndex: 0,
 			modificationFunction:  modifyOutput(1), // shouldn't change the hash
-			expectedSignatureHash: "99c0a4a381fed9dbd651450d6ca969a6e8cdd941e9d73be086a1ba6c90fb630f"},
+			expectedSignatureHash: "2d75e6381492f3cda38e2cfce6c2838474d947b5e62888654408a88e776ef74d"},
 		{name: "native-single-0-modify-sequence-0", tx: nativeTx, hashType: single, inputIndex: 0,
 			modificationFunction:  modifySequence(0), // should change the hash
-			expectedSignatureHash: "765e2289df98b3a5269f112d4b36d57fe32c74d42e04a3046c6a3c8dd78a4121"},
+			expectedSignatureHash: "1bac8ac36428c8b645a24143742884e51660eecaa9a7a3a848b90f4b83588ce7"},
 		{name: "native-single-0-modify-sequence-1", tx: nativeTx, hashType: single, inputIndex: 0,
 			modificationFunction:  modifySequence(1), // shouldn't change the hash
-			expectedSignatureHash: "99c0a4a381fed9dbd651450d6ca969a6e8cdd941e9d73be086a1ba6c90fb630f"},
+			expectedSignatureHash: "2d75e6381492f3cda38e2cfce6c2838474d947b5e62888654408a88e776ef74d"},
 		{name: "native-single-2-no-corresponding-output", tx: nativeTx, hashType: single, inputIndex: 2,
-			expectedSignatureHash: "43de18c04d7fde81f49a40228d8730b4ceb0c66c77841c22622f59554769dd13"},
+			expectedSignatureHash: "4dcb08cc49ff93451569aab2c07e2e1722bdd80bcf5e4d329f513d24a3dca341"},
 		{name: "native-single-2-no-corresponding-output-modify-output-1", tx: nativeTx, hashType: single, inputIndex: 2,
 			modificationFunction:  modifyOutput(1), // shouldn't change the hash
-			expectedSignatureHash: "43de18c04d7fde81f49a40228d8730b4ceb0c66c77841c22622f59554769dd13"},
+			expectedSignatureHash: "4dcb08cc49ff93451569aab2c07e2e1722bdd80bcf5e4d329f513d24a3dca341"},
 		{name: "native-single-anyonecanpay-0", tx: nativeTx, hashType: singleAnyoneCanPay, inputIndex: 0,
-			expectedSignatureHash: "2e270f86fd68f780a5aa8d250364ab6786d990040268e5d561d09dde365dfab7"},
+			expectedSignatureHash: "f63c97796684cf7dcf6e84b78d0f0beaa75d0203c5c107bf413dcd242f432ef8"},
 		{name: "native-single-anyonecanpay-2-no-corresponding-output", tx: nativeTx, hashType: singleAnyoneCanPay, inputIndex: 2,
-			expectedSignatureHash: "afc05dd6b4a530cc3a4d7d23126548bd1f31c793e9282cbbfa27ff5566219501"},
+			expectedSignatureHash: "23fdede55a082515be0267704ec0421b973fff3a86775260a3f0b426f5b64af1"},
 
 		// subnetwork transaction
 		{name: "subnetwork-all-0", tx: subnetworkTx, hashType: all, inputIndex: 0,
-			expectedSignatureHash: "5a67423ee048e067b94e2d4fc2960f62eceff6aa8b6c5ad71e3b7b7e5ff6bad7"},
+			expectedSignatureHash: "7faedb5acd2baa1a8cded790bc59635d1abf4f079c642bfe2e6ea691c18655b1"},
 		{name: "subnetwork-all-modify-payload", tx: subnetworkTx, hashType: all, inputIndex: 0,
 			modificationFunction:  modifyPayload, // should change the hash
-			expectedSignatureHash: "0d3bc5914da8dc8df081945fea1255359f380ca9baa8b31dfb3657c1e3c6038a"},
+			expectedSignatureHash: "e993737f485b783dfbb582476dd3349d1255bad73ad3f8b20466c01a01c2b275"},
 		{name: "subnetwork-all-modify-gas", tx: subnetworkTx, hashType: all, inputIndex: 0,
 			modificationFunction:  modifyGas, // should change the hash
-			expectedSignatureHash: "70abe9f947d0a0f5d735f9a063db8af41fe5902940f2693a1782119063097094"},
+			expectedSignatureHash: "7df291ab556d214043449d39f5a4b2e04c1307d0b0b0a84e980ab2ed3a002342"},
 		{name: "subnetwork-all-subnetwork-id", tx: subnetworkTx, hashType: all, inputIndex: 0,
 			modificationFunction:  modifySubnetworkID, // should change the hash
-			expectedSignatureHash: "571a0b7ea905b7a6ff7ab825b72d23f911bac0bfaa7c4c97a4887a3d090925d4"},
+			expectedSignatureHash: "2c92afb7298225b5d76928247277724f9c1f8c09a2664b8c084fd7af2d23a289"},
 	}
 
 	for _, test := range tests {
@@ -230,86 +230,86 @@ func TestCalculateSignatureHashECDSA(t *testing.T) {
 
 		// sigHashAll
 		{name: "native-all-0", tx: nativeTx, hashType: all, inputIndex: 0,
-			expectedSignatureHash: "150a2bcd0296f76a3395a4a9982df46bf24ce93f955bc39c10ffc95b6c524eb3"},
+			expectedSignatureHash: "2d2c7aa479b140cdd8ab9bfb3d3b52746f4a39c5bd9dfd838997105128290286"},
 		{name: "native-all-0-modify-input-1", tx: nativeTx, hashType: all, inputIndex: 0,
 			modificationFunction:  modifyInput(1), // should change the hash
-			expectedSignatureHash: "8fb5304e181b003e0c123ea6f6677abc3704feec47054e8a1c218b827bf57ca0"},
+			expectedSignatureHash: "2e7e8908226db4401d7a62436ba50696ae96c48b2fae95a8117d2bf88607d307"},
 		{name: "native-all-0-modify-output-1", tx: nativeTx, hashType: all, inputIndex: 0,
 			modificationFunction:  modifyOutput(1), // should change the hash
-			expectedSignatureHash: "180cb36454aa80822694decde4fc711104e35a4bddf92286a83877f2b8d0aabb"},
+			expectedSignatureHash: "b8f3631943daa8175bebaeed185c2ea2d514b86881f2f6edcb3b105a86d2910a"},
 		{name: "native-all-0-modify-sequence-1", tx: nativeTx, hashType: all, inputIndex: 0,
 			modificationFunction:  modifySequence(1), // should change the hash
-			expectedSignatureHash: "5b5f1c42a3c3c16bb4922777e2963c00e6a2cce39afa1980d2288053378f9632"},
+			expectedSignatureHash: "d7570879c0df476a0a44a6254e276db03a6aa699df3f0e130dc07082487d9629"},
 		{name: "native-all-anyonecanpay-0", tx: nativeTx, hashType: allAnyoneCanPay, inputIndex: 0,
-			expectedSignatureHash: "9473ffbe0db4914f2cd8fe5d67479224a02eb031882d9170b785d0d2c7bfcd1b"},
+			expectedSignatureHash: "e75753361f9429790bc3c36453733c4c581abfadaa6ad20efa73c78e48111e16"},
 		{name: "native-all-anyonecanpay-0-modify-input-0", tx: nativeTx, hashType: allAnyoneCanPay, inputIndex: 0,
 			modificationFunction:  modifyInput(0), // should change the hash
-			expectedSignatureHash: "1208491d564c138d613f51b997394dbad23feca7c0ca88c7f36cdf6b9173327d"},
+			expectedSignatureHash: "7747b49ca8755b9d7ac0e3b3bb8dd6d156304fadf24e2dccc3997a00f60329b7"},
 		{name: "native-all-anyonecanpay-0-modify-input-1", tx: nativeTx, hashType: allAnyoneCanPay, inputIndex: 0,
 			modificationFunction:  modifyInput(1), // shouldn't change the hash
-			expectedSignatureHash: "9473ffbe0db4914f2cd8fe5d67479224a02eb031882d9170b785d0d2c7bfcd1b"},
+			expectedSignatureHash: "e75753361f9429790bc3c36453733c4c581abfadaa6ad20efa73c78e48111e16"},
 		{name: "native-all-anyonecanpay-0-modify-sequence", tx: nativeTx, hashType: allAnyoneCanPay, inputIndex: 0,
 			modificationFunction:  modifySequence(1), // shouldn't change the hash
-			expectedSignatureHash: "9473ffbe0db4914f2cd8fe5d67479224a02eb031882d9170b785d0d2c7bfcd1b"},
+			expectedSignatureHash: "e75753361f9429790bc3c36453733c4c581abfadaa6ad20efa73c78e48111e16"},
 
 		// sigHashNone
 		{name: "native-none-0", tx: nativeTx, hashType: none, inputIndex: 0,
-			expectedSignatureHash: "6e427f26e4a9c1a7fc556a8aabdedb8799a897bc5d42a0a18615e5a0f7639d8f"},
+			expectedSignatureHash: "b319b8e974accf2e683071eb361b92bc55e1d0490e4ff72f2a40a9f9c385517f"},
 		{name: "native-none-0-modify-output-1", tx: nativeTx, hashType: none, inputIndex: 0,
 			modificationFunction:  modifyOutput(1), // shouldn't change the hash
-			expectedSignatureHash: "6e427f26e4a9c1a7fc556a8aabdedb8799a897bc5d42a0a18615e5a0f7639d8f"},
+			expectedSignatureHash: "b319b8e974accf2e683071eb361b92bc55e1d0490e4ff72f2a40a9f9c385517f"},
 		{name: "native-none-0-modify-sequence-0", tx: nativeTx, hashType: none, inputIndex: 0,
 			modificationFunction:  modifySequence(0), // should change the hash
-			expectedSignatureHash: "57d76e2568cd3fc3426b4f8836fe900a2d20e740fad744949126651fd549f75e"},
+			expectedSignatureHash: "7c92ad3bb596fd11cee89eaede987b807515e3f4b41bd061e0c08548221c8509"},
 		{name: "native-none-0-modify-sequence-1", tx: nativeTx, hashType: none, inputIndex: 0,
 			modificationFunction:  modifySequence(1), // shouldn't change the hash
-			expectedSignatureHash: "6e427f26e4a9c1a7fc556a8aabdedb8799a897bc5d42a0a18615e5a0f7639d8f"},
+			expectedSignatureHash: "b319b8e974accf2e683071eb361b92bc55e1d0490e4ff72f2a40a9f9c385517f"},
 		{name: "native-none-anyonecanpay-0", tx: nativeTx, hashType: noneAnyoneCanPay, inputIndex: 0,
-			expectedSignatureHash: "ef97a0f89d623302619f9aa2a00fce1522e72d4d255e6c6d3ed225ffc02f38ff"},
+			expectedSignatureHash: "8b954e26f46ac6c8a63d4c83b3064dd8d474372be0bfb6489b66a7583830d5f3"},
 		{name: "native-none-anyonecanpay-0-modify-amount-spent", tx: nativeTx, hashType: noneAnyoneCanPay, inputIndex: 0,
 			modificationFunction:  modifyAmountSpent(0), // should change the hash
-			expectedSignatureHash: "043a2a943f02607be126ac6609ab2324aae389d784a4147f27101e7da379311a"},
+			expectedSignatureHash: "b8c801cb791537abf23fda56366d902d60349c582189552a9851b6ec3c2a1b93"},
 		{name: "native-none-anyonecanpay-0-modify-script-public-key", tx: nativeTx, hashType: noneAnyoneCanPay, inputIndex: 0,
 			modificationFunction:  modifyScriptPublicKey(0), // should change the hash
-			expectedSignatureHash: "f2cd43d0d047cdcfbf8b6e12a86cfbf250f1e2c34dc5e631675a5f5b867bd9e6"},
+			expectedSignatureHash: "30dbb56982cea63f6012f8ad32797b5568c3eaf34057ee8aefa4d4f6cb7002f5"},
 
 		// sigHashSingle
 		{name: "native-single-0", tx: nativeTx, hashType: single, inputIndex: 0,
-			expectedSignatureHash: "1cf376b9f180f59a1b9a5e420390198c20e1ba79c39349271632145fda175247"},
+			expectedSignatureHash: "fe32012dcde41a49cb9403cd31b02ccf7777f0f76bcd970fec9ec007879b6c8a"},
 		{name: "native-single-0-modify-output-0", tx: nativeTx, hashType: single, inputIndex: 0,
 			modificationFunction:  modifyOutput(0), // should change the hash
-			expectedSignatureHash: "c2c7e77516a15f0f47f886b14cc47af2045eea15f176a9a560a9d47d8866958f"},
+			expectedSignatureHash: "ed588a4837b380a72aa7886436a0106f4f6c5a0843c41c71587ebb7135125b6e"},
 		{name: "native-single-0-modify-output-1", tx: nativeTx, hashType: single, inputIndex: 0,
 			modificationFunction:  modifyOutput(1), // shouldn't change the hash
-			expectedSignatureHash: "1cf376b9f180f59a1b9a5e420390198c20e1ba79c39349271632145fda175247"},
+			expectedSignatureHash: "fe32012dcde41a49cb9403cd31b02ccf7777f0f76bcd970fec9ec007879b6c8a"},
 		{name: "native-single-0-modify-sequence-0", tx: nativeTx, hashType: single, inputIndex: 0,
 			modificationFunction:  modifySequence(0), // should change the hash
-			expectedSignatureHash: "2034eec2acc08c49d3896cc1bda214904ca850fc5989518885465b5a3154ee7f"},
+			expectedSignatureHash: "0c57b42e1e896230e00902319e48f6707f0c6471d4adc3fe05841b8e8b50770e"},
 		{name: "native-single-0-modify-sequence-1", tx: nativeTx, hashType: single, inputIndex: 0,
 			modificationFunction:  modifySequence(1), // shouldn't change the hash
-			expectedSignatureHash: "1cf376b9f180f59a1b9a5e420390198c20e1ba79c39349271632145fda175247"},
+			expectedSignatureHash: "fe32012dcde41a49cb9403cd31b02ccf7777f0f76bcd970fec9ec007879b6c8a"},
 		{name: "native-single-2-no-corresponding-output", tx: nativeTx, hashType: single, inputIndex: 2,
-			expectedSignatureHash: "84ae3bb03202efc587d97e5aea7b80581b82242b969e6dea13b8daa32d24c0c1"},
+			expectedSignatureHash: "a64502f4d7c5123e158b4f3b2840d5a6158abf9d460df71d0f81862e917fd103"},
 		{name: "native-single-2-no-corresponding-output-modify-output-1", tx: nativeTx, hashType: single, inputIndex: 2,
 			modificationFunction:  modifyOutput(1), // shouldn't change the hash
-			expectedSignatureHash: "84ae3bb03202efc587d97e5aea7b80581b82242b969e6dea13b8daa32d24c0c1"},
+			expectedSignatureHash: "a64502f4d7c5123e158b4f3b2840d5a6158abf9d460df71d0f81862e917fd103"},
 		{name: "native-single-anyonecanpay-0", tx: nativeTx, hashType: singleAnyoneCanPay, inputIndex: 0,
-			expectedSignatureHash: "b2ccf259a65c3231d741a03420967b95563c3928cc15d3d15e8e795f383ab48b"},
+			expectedSignatureHash: "c732f95720f3a6252e7798cb611bc9c10cc63ccc149f2d6bd93129c01f0a99b5"},
 		{name: "native-single-anyonecanpay-2-no-corresponding-output", tx: nativeTx, hashType: singleAnyoneCanPay, inputIndex: 2,
-			expectedSignatureHash: "652c8cd0ac050e41aad347ea09ee788360eec70908ba22fe5bba5bdde49b8ae1"},
+			expectedSignatureHash: "2601b3cd12f12b7d836660d2c4576388820992ee1417e93a396c167d8c0dd5ea"},
 
 		// subnetwork transaction
 		{name: "subnetwork-all-0", tx: subnetworkTx, hashType: all, inputIndex: 0,
-			expectedSignatureHash: "2e828c04f5f03e4ce4b3de1fa5303400da5fa504291b760f5f6d4e98fc24597f"},
+			expectedSignatureHash: "ff6d4401a0c0e9a3d04b9d243c2fa1276fc39196b102b6e90586eb9948125fee"},
 		{name: "subnetwork-all-modify-payload", tx: subnetworkTx, hashType: all, inputIndex: 0,
 			modificationFunction:  modifyPayload, // should change the hash
-			expectedSignatureHash: "d5f3993aa8b7f47df52f78f2be9965f928c9cca9ac9e9542f1190b9d5ed6c17d"},
+			expectedSignatureHash: "726b626b3b9ba9657e7aab61ad7dd860b0b59a6a49e0c8fdef98fae270814e16"},
 		{name: "subnetwork-all-modify-gas", tx: subnetworkTx, hashType: all, inputIndex: 0,
 			modificationFunction:  modifyGas, // should change the hash
-			expectedSignatureHash: "e74d4a9fa5cdf476299ebdfa03f3c8021a157f814731ea11f6a6d606dc5cd439"},
+			expectedSignatureHash: "cc69f9172fab23f1866c2623d5f9e6e161aa8ae06dc70bafaf205e4873b96651"},
 		{name: "subnetwork-all-subnetwork-id", tx: subnetworkTx, hashType: all, inputIndex: 0,
 			modificationFunction:  modifySubnetworkID, // should change the hash
-			expectedSignatureHash: "ca8bf9bc42cda2ec3ce8bee090011072e56ff4d0d8616d5c20cefe5f84d7fb37"},
+			expectedSignatureHash: "6ace5526c3a72d98f003dbcec4adb7a56b3b6eeb81aa2b9ed97ee1e739f43625"},
 	}
 
 	for _, test := range tests {
