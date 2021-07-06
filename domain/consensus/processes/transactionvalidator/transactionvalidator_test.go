@@ -491,16 +491,18 @@ func TestSigningTwoInputsECDSA(t *testing.T) {
 						TransactionID: *consensushashing.TransactionID(block2.Transactions[0]),
 						Index:         0,
 					},
-					Sequence:  constants.MaxTxInSequenceNum,
-					UTXOEntry: utxo.NewUTXOEntry(block2TxOut.Value, block2TxOut.ScriptPublicKey, true, 0),
+					Sequence:   constants.MaxTxInSequenceNum,
+					SigOpCount: 1,
+					UTXOEntry:  utxo.NewUTXOEntry(block2TxOut.Value, block2TxOut.ScriptPublicKey, true, 0),
 				},
 				{
 					PreviousOutpoint: externalapi.DomainOutpoint{
 						TransactionID: *consensushashing.TransactionID(block3.Transactions[0]),
 						Index:         0,
 					},
-					Sequence:  constants.MaxTxInSequenceNum,
-					UTXOEntry: utxo.NewUTXOEntry(block3TxOut.Value, block3TxOut.ScriptPublicKey, true, 0),
+					Sequence:   constants.MaxTxInSequenceNum,
+					SigOpCount: 1,
+					UTXOEntry:  utxo.NewUTXOEntry(block3TxOut.Value, block3TxOut.ScriptPublicKey, true, 0),
 				},
 			},
 			Outputs: []*externalapi.DomainTransactionOutput{{
