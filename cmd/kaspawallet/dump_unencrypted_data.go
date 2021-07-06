@@ -12,9 +12,11 @@ import (
 )
 
 func dumpUnencryptedData(conf *dumpUnencryptedDataConfig) error {
-	err := confirmDump()
-	if err != nil {
-		return err
+	if !conf.Yes {
+		err := confirmDump()
+		if err != nil {
+			return err
+		}
 	}
 
 	keysFile, err := keys.ReadKeysFile(conf.NetParams(), conf.KeysFile)
@@ -22,7 +24,7 @@ func dumpUnencryptedData(conf *dumpUnencryptedDataConfig) error {
 		return err
 	}
 
-	mnemonics, err := keysFile.DecryptMnemonics()
+	mnemonics, err := keysFile.DecryptMnemonics(conf.Password)
 	if err != nil {
 		return err
 	}

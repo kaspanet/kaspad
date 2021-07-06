@@ -1,8 +1,6 @@
 package protocol
 
 import (
-	"github.com/kaspanet/kaspad/app/protocol/flows/rejects"
-	"github.com/kaspanet/kaspad/infrastructure/network/connmanager"
 	"sync"
 	"sync/atomic"
 
@@ -11,10 +9,12 @@ import (
 	"github.com/kaspanet/kaspad/app/protocol/flows/blockrelay"
 	"github.com/kaspanet/kaspad/app/protocol/flows/handshake"
 	"github.com/kaspanet/kaspad/app/protocol/flows/ping"
+	"github.com/kaspanet/kaspad/app/protocol/flows/rejects"
 	"github.com/kaspanet/kaspad/app/protocol/flows/transactionrelay"
 	peerpkg "github.com/kaspanet/kaspad/app/protocol/peer"
 	"github.com/kaspanet/kaspad/app/protocol/protocolerrors"
 	"github.com/kaspanet/kaspad/infrastructure/network/addressmanager"
+	"github.com/kaspanet/kaspad/infrastructure/network/connmanager"
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter"
 	routerpkg "github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
 	"github.com/pkg/errors"
@@ -106,7 +106,7 @@ func (m *Manager) handleError(err error, netConnection *netadapter.NetConnection
 			log.Warnf("Banning %s (reason: %s)", netConnection, protocolErr.Cause)
 
 			err := m.context.ConnectionManager().Ban(netConnection)
-			if !errors.Is(err, connmanager.ErrCannotBanPermanent) {
+			if err != nil && !errors.Is(err, connmanager.ErrCannotBanPermanent) {
 				panic(err)
 			}
 
@@ -282,7 +282,7 @@ func (m *Manager) registerRejectsFlow(router *routerpkg.Router, isStopping *uint
 func (m *Manager) registerFlow(name string, router *routerpkg.Router, messageTypes []appmessage.MessageCommand, isStopping *uint32,
 	errChan chan error, initializeFunc flowInitializeFunc) *flow {
 
-	route, err := router.AddIncomingRoute(messageTypes)
+	route, err := router.AddIncomingRoute(name, messageTypes)
 	if err != nil {
 		panic(err)
 	}
@@ -294,7 +294,7 @@ func (m *Manager) registerFlowWithCapacity(name string, capacity int, router *ro
 	messageTypes []appmessage.MessageCommand, isStopping *uint32,
 	errChan chan error, initializeFunc flowInitializeFunc) *flow {
 
-	route, err := router.AddIncomingRouteWithCapacity(capacity, messageTypes)
+	route, err := router.AddIncomingRouteWithCapacity(name, capacity, messageTypes)
 	if err != nil {
 		panic(err)
 	}
@@ -320,7 +320,7 @@ func (m *Manager) registerFlowForRoute(route *routerpkg.Route, name string, isSt
 func (m *Manager) registerOneTimeFlow(name string, router *routerpkg.Router, messageTypes []appmessage.MessageCommand,
 	isStopping *uint32, stopChan chan error, initializeFunc flowInitializeFunc) *flow {
 
-	route, err := router.AddIncomingRoute(messageTypes)
+	route, err := router.AddIncomingRoute(name, messageTypes)
 	if err != nil {
 		panic(err)
 	}
@@ -346,12 +346,12 @@ func (m *Manager) registerOneTimeFlow(name string, router *routerpkg.Router, mes
 
 func registerHandshakeRoutes(router *routerpkg.Router) (
 	receiveVersionRoute *routerpkg.Route, sendVersionRoute *routerpkg.Route) {
-	receiveVersionRoute, err := router.AddIncomingRoute([]appmessage.MessageCommand{appmessage.CmdVersion})
+	receiveVersionRoute, err := router.AddIncomingRoute("recieveVersion - incoming", []appmessage.MessageCommand{appmessage.CmdVersion})
 	if err != nil {
 		panic(err)
 	}
 
-	sendVersionRoute, err = router.AddIncomingRoute([]appmessage.MessageCommand{appmessage.CmdVerAck})
+	sendVersionRoute, err = router.AddIncomingRoute("sendVersion - incoming", []appmessage.MessageCommand{appmessage.CmdVerAck})
 	if err != nil {
 		panic(err)
 	}

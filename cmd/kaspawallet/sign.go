@@ -18,7 +18,7 @@ func sign(conf *signConfig) error {
 		return err
 	}
 
-	privateKeys, err := keysFile.DecryptMnemonics()
+	privateKeys, err := keysFile.DecryptMnemonics(conf.Password)
 	if err != nil {
 		return err
 	}

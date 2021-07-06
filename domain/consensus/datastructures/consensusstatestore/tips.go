@@ -2,13 +2,12 @@ package consensusstatestore
 
 import (
 	"github.com/golang/protobuf/proto"
-	"github.com/kaspanet/kaspad/domain/consensus/database"
 	"github.com/kaspanet/kaspad/domain/consensus/database/serialization"
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 )
 
-var tipsKey = database.MakeBucket(nil).Key([]byte("tips"))
+var tipsKeyName = []byte("tips")
 
 func (css *consensusStateStore) Tips(stagingArea *model.StagingArea, dbContext model.DBReader) ([]*externalapi.DomainHash, error) {
 	stagingShard := css.stagingShard(stagingArea)
@@ -21,7 +20,7 @@ func (css *consensusStateStore) Tips(stagingArea *model.StagingArea, dbContext m
 		return externalapi.CloneHashes(css.tipsCache), nil
 	}
 
-	tipsBytes, err := dbContext.Get(tipsKey)
+	tipsBytes, err := dbContext.Get(css.tipsKey)
 	if err != nil {
 		return nil, err
 	}
@@ -66,7 +65,7 @@ func (csss *consensusStateStagingShard) commitTips(dbTx model.DBTransaction) err
 	if err != nil {
 		return err
 	}
-	err = dbTx.Put(tipsKey, tipsBytes)
+	err = dbTx.Put(csss.store.tipsKey, tipsBytes)
 	if err != nil {
 		return err
 	}

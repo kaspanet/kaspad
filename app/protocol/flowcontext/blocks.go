@@ -1,13 +1,14 @@
 package flowcontext
 
 import (
+	"time"
+
 	peerpkg "github.com/kaspanet/kaspad/app/protocol/peer"
 	"github.com/kaspanet/kaspad/app/protocol/protocolerrors"
-	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
-	"github.com/pkg/errors"
-
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
+	"github.com/pkg/errors"
 
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/app/protocol/flows/blockrelay"
@@ -71,8 +72,6 @@ func (f *FlowContext) OnPruningPointUTXOSetOverride() error {
 func (f *FlowContext) broadcastTransactionsAfterBlockAdded(
 	addedBlocks []*externalapi.DomainBlock, transactionsAcceptedToMempool []*externalapi.DomainTransaction) error {
 
-	f.updateTransactionsToRebroadcast(addedBlocks)
-
 	// Don't relay transactions when in IBD.
 	if f.IsIBDRunning() {
 		return nil
@@ -80,7 +79,12 @@ func (f *FlowContext) broadcastTransactionsAfterBlockAdded(
 
 	var txIDsToRebroadcast []*externalapi.DomainTransactionID
 	if f.shouldRebroadcastTransactions() {
-		txIDsToRebroadcast = f.txIDsToRebroadcast()
+		txsToRebroadcast, err := f.Domain().MiningManager().RevalidateHighPriorityTransactions()
+		if err != nil {
+			return err
+		}
+		txIDsToRebroadcast = consensushashing.TransactionIDs(txsToRebroadcast)
+		f.lastRebroadcastTime = time.Now()
 	}
 
 	txIDsToBroadcast := make([]*externalapi.DomainTransactionID, len(transactionsAcceptedToMempool)+len(txIDsToRebroadcast))
@@ -161,7 +165,6 @@ func (f *FlowContext) UnsetIBDRunning() {
 	}
 
 	f.ibdPeer = nil
-	log.Infof("IBD finished")
 }
 
 // IBDPeer returns the current IBD peer or null if the node is not

@@ -213,16 +213,16 @@ const (
 	OpCheckMultiSigVerify = 0xaf // 175
 	OpCheckLockTimeVerify = 0xb0 // 176
 	OpCheckSequenceVerify = 0xb1 // 177
-	OpNop1                = 0xb2 // 178
-	OpNop2                = 0xb3 // 179
-	OpNop3                = 0xb4 // 180
-	OpNop4                = 0xb5 // 181
-	OpNop5                = 0xb6 // 182
-	OpNop6                = 0xb7 // 183
-	OpNop7                = 0xb8 // 184
-	OpNop8                = 0xb9 // 185
-	OpNop9                = 0xba // 186
-	OpNop10               = 0xbb // 187
+	OpUnknown178          = 0xb2 // 178
+	OpUnknown179          = 0xb3 // 179
+	OpUnknown180          = 0xb4 // 180
+	OpUnknown181          = 0xb5 // 181
+	OpUnknown182          = 0xb6 // 182
+	OpUnknown183          = 0xb7 // 183
+	OpUnknown184          = 0xb8 // 184
+	OpUnknown185          = 0xb9 // 185
+	OpUnknown186          = 0xba // 186
+	OpUnknown187          = 0xbb // 187
 	OpUnknown188          = 0xbc // 188
 	OpUnknown189          = 0xbd // 189
 	OpUnknown190          = 0xbe // 190
@@ -494,21 +494,19 @@ var opcodeArray = [256]opcode{
 	OpCheckMultiSig:       {OpCheckMultiSig, "OP_CHECKMULTISIG", 1, opcodeCheckMultiSig},
 	OpCheckMultiSigVerify: {OpCheckMultiSigVerify, "OP_CHECKMULTISIGVERIFY", 1, opcodeCheckMultiSigVerify},
 
-	// Reserved opcodes.
-	OpNop1:  {OpNop1, "OP_NOP1", 1, opcodeNop},
-	OpNop2:  {OpNop2, "OP_NOP2", 1, opcodeNop},
-	OpNop3:  {OpNop3, "OP_NOP3", 1, opcodeNop},
-	OpNop4:  {OpNop4, "OP_NOP4", 1, opcodeNop},
-	OpNop5:  {OpNop5, "OP_NOP5", 1, opcodeNop},
-	OpNop6:  {OpNop6, "OP_NOP6", 1, opcodeNop},
-	OpNop7:  {OpNop7, "OP_NOP7", 1, opcodeNop},
-	OpNop8:  {OpNop8, "OP_NOP8", 1, opcodeNop},
-	OpNop9:  {OpNop9, "OP_NOP9", 1, opcodeNop},
-	OpNop10: {OpNop10, "OP_NOP10", 1, opcodeNop},
-
 	// Undefined opcodes.
 	OpUnknown166: {OpUnknown166, "OP_UNKNOWN166", 1, opcodeInvalid},
 	OpUnknown167: {OpUnknown167, "OP_UNKNOWN167", 1, opcodeInvalid},
+	OpUnknown178: {OpUnknown188, "OP_UNKNOWN178", 1, opcodeInvalid},
+	OpUnknown179: {OpUnknown189, "OP_UNKNOWN179", 1, opcodeInvalid},
+	OpUnknown180: {OpUnknown190, "OP_UNKNOWN180", 1, opcodeInvalid},
+	OpUnknown181: {OpUnknown191, "OP_UNKNOWN181", 1, opcodeInvalid},
+	OpUnknown182: {OpUnknown192, "OP_UNKNOWN182", 1, opcodeInvalid},
+	OpUnknown183: {OpUnknown193, "OP_UNKNOWN183", 1, opcodeInvalid},
+	OpUnknown184: {OpUnknown194, "OP_UNKNOWN184", 1, opcodeInvalid},
+	OpUnknown185: {OpUnknown195, "OP_UNKNOWN185", 1, opcodeInvalid},
+	OpUnknown186: {OpUnknown196, "OP_UNKNOWN186", 1, opcodeInvalid},
+	OpUnknown187: {OpUnknown197, "OP_UNKNOWN187", 1, opcodeInvalid},
 	OpUnknown188: {OpUnknown188, "OP_UNKNOWN188", 1, opcodeInvalid},
 	OpUnknown189: {OpUnknown189, "OP_UNKNOWN189", 1, opcodeInvalid},
 	OpUnknown190: {OpUnknown190, "OP_UNKNOWN190", 1, opcodeInvalid},
@@ -611,17 +609,6 @@ var opcodeOnelineRepls = map[string]string{
 type parsedOpcode struct {
 	opcode *opcode
 	data   []byte
-}
-
-// isUpgradableNop returns whether or not the opcode is a numbered nop
-// that is intended to be upgradable by a soft fork
-func isUpgradableNop(pop *parsedOpcode) bool {
-	switch pop.opcode.value {
-	case OpNop1, OpNop2, OpNop3, OpNop4, OpNop5,
-		OpNop6, OpNop7, OpNop8, OpNop9, OpNop10:
-		return true
-	}
-	return false
 }
 
 // isDisabled returns whether or not the opcode is disabled and thus is always
@@ -913,13 +900,6 @@ func opcodeN(op *parsedOpcode, vm *Engine) error {
 // implies it generally does nothing, however, it will return an error when
 // the flag to discourage use of NOPs is set for select opcodes.
 func opcodeNop(op *parsedOpcode, vm *Engine) error {
-	if isUpgradableNop(op) {
-		if vm.hasFlag(ScriptDiscourageUpgradableNops) {
-			str := fmt.Sprintf("OP_NOP%d reserved for soft-fork "+
-				"upgrades", op.opcode.value-(OpNop1-1))
-			return scriptError(ErrDiscourageUpgradableNOPs, str)
-		}
-	}
 	return nil
 }
 
@@ -1141,7 +1121,7 @@ func opcodeCheckLockTimeVerify(op *parsedOpcode, vm *Engine) error {
 	// which the transaction is finalized or a timestamp depending on if the
 	// value is before the txscript.LockTimeThreshold. When it is under the
 	// threshold it is a block height.
-	err = verifyLockTime(vm.tx.LockTime, LockTimeThreshold,
+	err = verifyLockTime(vm.tx.LockTime, constants.LockTimeThreshold,
 		uint64(lockTime))
 	if err != nil {
 		return err
@@ -1173,39 +1153,32 @@ func opcodeCheckLockTimeVerify(op *parsedOpcode, vm *Engine) error {
 // LockTime field of the transaction containing the script signature
 // validating if the transaction outputs are spendable yet.
 func opcodeCheckSequenceVerify(op *parsedOpcode, vm *Engine) error {
-
-	// The current transaction sequence is a uint64 resulting in a maximum
-	// sequence of 2^63-1. However, scriptNums are signed and therefore a
-	// standard 4-byte scriptNum would only support up to a maximum of
-	// 2^31-1. Thus, a 5-byte scriptNum is used here since it will support
-	// up to 2^39-1 which allows sequences beyond the current sequence
-	// limit.
-	//
-	// PopByteArray is used here instead of PopInt because we do not want
-	// to be limited to a 4-byte integer for reasons specified above.
-	so, err := vm.dstack.PopByteArray()
-	if err != nil {
-		return err
-	}
-	stackSequence, err := makeScriptNum(so, 5)
+	sequenceBytes, err := vm.dstack.PopByteArray()
 	if err != nil {
 		return err
 	}
 
-	// In the rare event that the argument needs to be < 0 due to some
-	// arithmetic being done first, you can always use
-	// 0 OP_MAX OP_CHECKSEQUENCEVERIFY.
-	if stackSequence < 0 {
-		str := fmt.Sprintf("negative sequence: %d", stackSequence)
-		return scriptError(ErrNegativeLockTime, str)
+	// Make sure sequenceBytes is exactly 8 bytes.
+	// If more - return ErrNumberTooBig
+	// If less - pad with 0's
+	if len(sequenceBytes) > 8 {
+		str := fmt.Sprintf("sequence value represented as %x is longer then 8 bytes", sequenceBytes)
+		return scriptError(ErrNumberTooBig, str)
+	}
+	if len(sequenceBytes) < 8 {
+		paddedSequenceBytes := make([]byte, 8)
+		copy(paddedSequenceBytes[8-len(sequenceBytes):], sequenceBytes)
+		sequenceBytes = paddedSequenceBytes
 	}
 
-	sequence := uint64(stackSequence)
+	// Don't use makeScriptNum here, since sequence is not an actual number, minimal encoding rules don't apply to it,
+	// and is more convenient to be represented as an unsigned int.
+	stackSequence := binary.LittleEndian.Uint64(sequenceBytes)
 
 	// To provide for future soft-fork extensibility, if the
 	// operand has the disabled lock-time flag set,
 	// CHECKSEQUENCEVERIFY behaves as a NOP.
-	if sequence&uint64(constants.SequenceLockTimeDisabled) != 0 {
+	if stackSequence&constants.SequenceLockTimeDisabled != 0 {
 		return nil
 	}
 
@@ -1221,10 +1194,10 @@ func opcodeCheckSequenceVerify(op *parsedOpcode, vm *Engine) error {
 	}
 
 	// Mask off non-consensus bits before doing comparisons.
-	lockTimeMask := uint64(constants.SequenceLockTimeIsSeconds |
-		constants.SequenceLockTimeMask)
-	return verifyLockTime(txSequence&lockTimeMask,
-		constants.SequenceLockTimeIsSeconds, sequence&lockTimeMask)
+	lockTimeMask := constants.SequenceLockTimeIsSeconds | constants.SequenceLockTimeMask
+	maskedTxSequence := txSequence & lockTimeMask
+	maskedStackSequence := stackSequence & lockTimeMask
+	return verifyLockTime(maskedTxSequence, constants.SequenceLockTimeIsSeconds, maskedStackSequence)
 }
 
 // opcodeToAltStack removes the top item from the main data stack and pushes it

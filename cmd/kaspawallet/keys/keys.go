@@ -109,29 +109,30 @@ func (d *File) fromJSON(fileJSON *keysFileJSON) error {
 }
 
 // SetPath sets the path where the file is saved to.
-func (d *File) SetPath(params *dagconfig.Params, path string) error {
+func (d *File) SetPath(params *dagconfig.Params, path string, forceOverride bool) error {
 	if path == "" {
 		path = defaultKeysFile(params)
 	}
 
-	exists, err := pathExists(path)
-	if err != nil {
-		return err
-	}
-
-	if exists {
-		reader := bufio.NewReader(os.Stdin)
-		fmt.Printf("The file %s already exists. Are you sure you want to override it (type 'y' to approve)? ", d.path)
-		line, err := utils.ReadLine(reader)
+	if !forceOverride {
+		exists, err := pathExists(path)
 		if err != nil {
 			return err
 		}
 
-		if string(line) != "y" {
-			return errors.Errorf("aborted setting the file path to %s", path)
+		if exists {
+			reader := bufio.NewReader(os.Stdin)
+			fmt.Printf("The file %s already exists. Are you sure you want to override it (type 'y' to approve)? ", d.path)
+			line, err := utils.ReadLine(reader)
+			if err != nil {
+				return err
+			}
+
+			if string(line) != "y" {
+				return errors.Errorf("aborted setting the file path to %s", path)
+			}
 		}
 	}
-
 	d.path = path
 	return nil
 }
@@ -175,8 +176,11 @@ func (d *File) LastUsedInternalIndex() uint32 {
 
 // DecryptMnemonics asks the user to enter the password for the private keys and
 // returns the decrypted private keys.
-func (d *File) DecryptMnemonics() ([]string, error) {
-	password := getPassword("Password:")
+func (d *File) DecryptMnemonics(cmdLinePassword string) ([]string, error) {
+	password := []byte(cmdLinePassword)
+	if len(password) == 0 {
+		password = getPassword("Password:")
+	}
 	privateKeys := make([]string, len(d.EncryptedMnemonics))
 	for i, encryptedPrivateKey := range d.EncryptedMnemonics {
 		var err error

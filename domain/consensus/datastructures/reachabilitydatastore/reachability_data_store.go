@@ -7,21 +7,27 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/lrucache"
+	"github.com/kaspanet/kaspad/domain/prefixmanager/prefix"
 )
 
-var reachabilityDataBucket = database.MakeBucket([]byte("reachability-data"))
-var reachabilityReindexRootKey = database.MakeBucket(nil).Key([]byte("reachability-reindex-root"))
+var reachabilityDataBucketName = []byte("reachability-data")
+var reachabilityReindexRootKeyName = []byte("reachability-reindex-root")
 
 // reachabilityDataStore represents a store of ReachabilityData
 type reachabilityDataStore struct {
 	reachabilityDataCache        *lrucache.LRUCache
 	reachabilityReindexRootCache *externalapi.DomainHash
+
+	reachabilityDataBucket     model.DBBucket
+	reachabilityReindexRootKey model.DBKey
 }
 
 // New instantiates a new ReachabilityDataStore
-func New(cacheSize int, preallocate bool) model.ReachabilityDataStore {
+func New(prefix *prefix.Prefix, cacheSize int, preallocate bool) model.ReachabilityDataStore {
 	return &reachabilityDataStore{
-		reachabilityDataCache: lrucache.New(cacheSize, preallocate),
+		reachabilityDataCache:      lrucache.New(cacheSize, preallocate),
+		reachabilityDataBucket:     database.MakeBucket(prefix.Serialize()).Bucket(reachabilityDataBucketName),
+		reachabilityReindexRootKey: database.MakeBucket(prefix.Serialize()).Key(reachabilityReindexRootKeyName),
 	}
 }
 
@@ -94,7 +100,7 @@ func (rds *reachabilityDataStore) ReachabilityReindexRoot(dbContext model.DBRead
 		return rds.reachabilityReindexRootCache, nil
 	}
 
-	reachabilityReindexRootBytes, err := dbContext.Get(reachabilityReindexRootKey)
+	reachabilityReindexRootBytes, err := dbContext.Get(rds.reachabilityReindexRootKey)
 	if err != nil {
 		return nil, err
 	}
@@ -108,7 +114,7 @@ func (rds *reachabilityDataStore) ReachabilityReindexRoot(dbContext model.DBRead
 }
 
 func (rds *reachabilityDataStore) reachabilityDataBlockHashAsKey(hash *externalapi.DomainHash) model.DBKey {
-	return reachabilityDataBucket.Key(hash.ByteSlice())
+	return rds.reachabilityDataBucket.Key(hash.ByteSlice())
 }
 
 func (rds *reachabilityDataStore) serializeReachabilityData(reachabilityData model.ReachabilityData) ([]byte, error) {

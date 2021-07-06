@@ -5,18 +5,21 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/lrucache"
+	"github.com/kaspanet/kaspad/domain/prefixmanager/prefix"
 )
 
-var bucket = database.MakeBucket([]byte("finality-points"))
+var bucketName = []byte("finality-points")
 
 type finalityStore struct {
-	cache *lrucache.LRUCache
+	cache  *lrucache.LRUCache
+	bucket model.DBBucket
 }
 
 // New instantiates a new FinalityStore
-func New(cacheSize int, preallocate bool) model.FinalityStore {
+func New(prefix *prefix.Prefix, cacheSize int, preallocate bool) model.FinalityStore {
 	return &finalityStore{
-		cache: lrucache.New(cacheSize, preallocate),
+		cache:  lrucache.New(cacheSize, preallocate),
+		bucket: database.MakeBucket(prefix.Serialize()).Bucket(bucketName),
 	}
 }
 
@@ -55,5 +58,5 @@ func (fs *finalityStore) IsStaged(stagingArea *model.StagingArea) bool {
 }
 
 func (fs *finalityStore) hashAsKey(hash *externalapi.DomainHash) model.DBKey {
-	return bucket.Key(hash.ByteSlice())
+	return fs.bucket.Key(hash.ByteSlice())
 }

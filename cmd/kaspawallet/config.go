@@ -31,6 +31,8 @@ type configFlags struct {
 
 type createConfig struct {
 	KeysFile          string `long:"keys-file" short:"f" description:"Keys file location (default: ~/.kaspawallet/keys.json (*nix), %USERPROFILE%\\AppData\\Local\\Kaspawallet\\key.json (Windows))"`
+	Password          string `long:"password" short:"p" description:"Wallet password"`
+	Yes               bool   `long:"yes" short:"y" description:"Assume \"yes\" to all questions"`
 	MinimumSignatures uint32 `long:"min-signatures" short:"m" description:"Minimum required signatures" default:"1"`
 	NumPrivateKeys    uint32 `long:"num-private-keys" short:"k" description:"Number of private keys" default:"1"`
 	NumPublicKeys     uint32 `long:"num-public-keys" short:"n" description:"Total number of keys" default:"1"`
@@ -46,6 +48,7 @@ type balanceConfig struct {
 
 type sendConfig struct {
 	KeysFile      string  `long:"keys-file" short:"f" description:"Keys file location (default: ~/.kaspawallet/keys.json (*nix), %USERPROFILE%\\AppData\\Local\\Kaspawallet\\key.json (Windows))"`
+	Password      string  `long:"password" short:"p" description:"Wallet password"`
 	DaemonAddress string  `long:"daemonaddress" short:"d" description:"Wallet daemon server to connect to (default: localhost:8082)"`
 	ToAddress     string  `long:"to-address" short:"t" description:"The public address to send Kaspa to" required:"true"`
 	SendAmount    float64 `long:"send-amount" short:"v" description:"An amount to send in Kaspa (e.g. 1234.12345678)" required:"true"`
@@ -61,6 +64,7 @@ type createUnsignedTransactionConfig struct {
 
 type signConfig struct {
 	KeysFile    string `long:"keys-file" short:"f" description:"Keys file location (default: ~/.kaspawallet/keys.json (*nix), %USERPROFILE%\\AppData\\Local\\Kaspawallet\\key.json (Windows))"`
+	Password    string `long:"password" short:"p" description:"Wallet password"`
 	Transaction string `long:"transaction" short:"t" description:"The unsigned transaction to sign on (encoded in hex)" required:"true"`
 	config.NetworkFlags
 }
@@ -78,6 +82,7 @@ type showAddressConfig struct {
 
 type startDaemonConfig struct {
 	KeysFile  string `long:"keys-file" short:"f" description:"Keys file location (default: ~/.kaspawallet/keys.json (*nix), %USERPROFILE%\\AppData\\Local\\Kaspawallet\\key.json (Windows))"`
+	Password  string `long:"password" short:"p" description:"Wallet password"`
 	RPCServer string `long:"rpcserver" short:"s" description:"RPC server to connect to"`
 	Listen    string `short:"l" long:"listen" description:"Address to listen on (default: 0.0.0.0:8082)"`
 	config.NetworkFlags
@@ -85,6 +90,8 @@ type startDaemonConfig struct {
 
 type dumpUnencryptedDataConfig struct {
 	KeysFile string `long:"keys-file" short:"f" description:"Keys file location (default: ~/.kaspawallet/keys.json (*nix), %USERPROFILE%\\AppData\\Local\\Kaspawallet\\key.json (Windows))"`
+	Password string `long:"password" short:"p" description:"Wallet password"`
+	Yes      bool   `long:"yes" short:"y" description:"Assume \"yes\" to all questions"`
 	config.NetworkFlags
 }
 
