@@ -38,6 +38,7 @@ type Config struct {
 	MaximumTransactionCount               uint64
 	TransactionExpireIntervalDAAScore     uint64
 	TransactionExpireScanIntervalDAAScore uint64
+	TransactionExpireScanIntervalSeconds  uint64
 	OrphanExpireIntervalDAAScore          uint64
 	OrphanExpireScanIntervalDAAScore      uint64
 	MaximumOrphanTransactionSize          uint64
@@ -57,6 +58,7 @@ func DefaultConfig(dagParams *dagconfig.Params) *Config {
 		MaximumTransactionCount:               defaultMaximumTransactionCount,
 		TransactionExpireIntervalDAAScore:     defaultTransactionExpireIntervalSeconds / targetBlocksPerSecond,
 		TransactionExpireScanIntervalDAAScore: defaultTransactionExpireScanIntervalSeconds / targetBlocksPerSecond,
+		TransactionExpireScanIntervalSeconds:  defaultTransactionExpireScanIntervalSeconds,
 		OrphanExpireIntervalDAAScore:          defaultOrphanExpireIntervalSeconds / targetBlocksPerSecond,
 		OrphanExpireScanIntervalDAAScore:      defaultOrphanExpireScanIntervalSeconds / targetBlocksPerSecond,
 		MaximumOrphanTransactionSize:          defaultMaximumOrphanTransactionSize,
