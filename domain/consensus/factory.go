@@ -317,11 +317,15 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 		utxoDiffStore,
 		daaBlocksStore,
 		reachabilityDataStore,
+		daaWindowStore,
+		blockWithMetaDataGHOSTDAGDataStore,
+
 		config.IsArchival,
 		genesisHash,
 		config.FinalityDepth(),
 		config.PruningDepth(),
-		config.EnableSanityCheckPruningUTXOSet)
+		config.EnableSanityCheckPruningUTXOSet,
+		config.K)
 
 	syncManager := syncmanager.New(
 		dbManager,

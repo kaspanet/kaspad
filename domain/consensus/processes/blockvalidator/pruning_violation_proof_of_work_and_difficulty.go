@@ -22,6 +22,11 @@ func (v *blockValidator) ValidatePruningPointViolationAndProofOfWorkAndDifficult
 		return err
 	}
 
+	err = v.checkParentHeadersNotVirtualGenesis(header)
+	if err != nil {
+		return err
+	}
+
 	err = v.checkParentHeadersExist(stagingArea, header, isBlockWithPrefilledData)
 	if err != nil {
 		return err
@@ -143,6 +148,16 @@ func (v *blockValidator) checkProofOfWork(header externalapi.BlockHeader) error 
 			return errors.Wrap(ruleerrors.ErrInvalidPoW, "block has invalid proof of work")
 		}
 	}
+	return nil
+}
+
+func (v *blockValidator) checkParentHeadersNotVirtualGenesis(header externalapi.BlockHeader) error {
+	for _, parent := range header.ParentHashes() {
+		if parent.Equal(model.VirtualGenesisBlockHash) {
+			return errors.Wrapf(ruleerrors.ErrVirtualGenesisParent, "block header cannot have the virtual genesis as parent")
+		}
+	}
+
 	return nil
 }
 

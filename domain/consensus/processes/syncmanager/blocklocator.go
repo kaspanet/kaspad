@@ -77,6 +77,24 @@ func (sm *syncManager) createHeadersSelectedChainBlockLocator(stagingArea *model
 		return externalapi.BlockLocator{sm.genesisBlockHash}, nil
 	}
 
+	//if lowHash.Equal(model.VirtualGenesisBlockHash) {
+	//	iterator, err := sm.dagTraversalManager.SelectedChildIterator(stagingArea, highHash, lowHash)
+	//	if err != nil {
+	//		return nil, err
+	//	}
+	//	defer iterator.Close()
+	//
+	//	ok := iterator.First()
+	//	if !ok {
+	//		return nil, errors.Errorf("virtual genesis is not in the selected chain path of %s", highHash)
+	//	}
+	//
+	//	lowHash, err = iterator.Get()
+	//	if err != nil {
+	//		return nil, err
+	//	}
+	//}
+
 	lowHashIndex, err := sm.headersSelectedChainStore.GetIndexByHash(sm.databaseContext, stagingArea, lowHash)
 	if err != nil {
 		if database.IsNotFoundError(err) {

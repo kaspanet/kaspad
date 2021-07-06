@@ -75,7 +75,6 @@ func TestValidateAndInsertImportedPruningPoint(t *testing.T) {
 		tipHash = addBlock(tcSyncer, []*externalapi.DomainHash{tipHash}, t)
 		nextPruningPoint := addBlock(tcSyncer, []*externalapi.DomainHash{tipHash}, t)
 
-		fmt.Printf("~~~~~~~ nextPruningPoint %s\n", nextPruningPoint)
 		tipHash = addBlock(tcSyncer, []*externalapi.DomainHash{pruningPointAnticoneBlock, nextPruningPoint}, t)
 
 		// Add blocks until the pruning point changes

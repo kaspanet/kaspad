@@ -54,7 +54,7 @@ func (flow *handleRelayInvsFlow) runIBDIfNotRunning(highHash *externalapi.Domain
 			return err
 		}
 	} else {
-		err = flow.downloadIBDBlocks(flow.Domain().Consensus(), highestSharedBlockHash, highHash)
+		err = flow.downloadIBDBlocks(flow.Domain().Consensus(), highestSharedBlockHash, highHash, true)
 		if err != nil {
 			return err
 		}
@@ -198,7 +198,7 @@ func (flow *handleRelayInvsFlow) fetchHighestHash(
 }
 
 func (flow *handleRelayInvsFlow) downloadIBDBlocks(consensus externalapi.Consensus, highestSharedBlockHash *externalapi.DomainHash,
-	highHash *externalapi.DomainHash) error {
+	highHash *externalapi.DomainHash, callOnNewBlock bool) error {
 
 	log.Infof("Downloading IBD blocks from %s", flow.peer)
 
@@ -250,7 +250,7 @@ func (flow *handleRelayInvsFlow) downloadIBDBlocks(consensus externalapi.Consens
 				return nil
 			}
 			for _, block := range msgBlock.Blocks {
-				err = flow.processIBDBlock(consensus, block)
+				err = flow.processIBDBlock(consensus, block, callOnNewBlock)
 				if err != nil {
 					return err
 				}
@@ -288,9 +288,10 @@ func (flow *handleRelayInvsFlow) receiveIBDBlocks() (msgIBDBlock *appmessage.IBD
 	}
 }
 
-func (flow *handleRelayInvsFlow) processIBDBlock(consensus externalapi.Consensus, msgBlock *appmessage.MsgBlock) error {
+func (flow *handleRelayInvsFlow) processIBDBlock(consensus externalapi.Consensus, msgBlock *appmessage.MsgBlock, callOnNewBlock bool) error {
 	block := appmessage.MsgBlockToDomainBlock(msgBlock)
 	blockHash := consensushashing.BlockHash(block)
+	log.Criticalf("processIBDBlock %s", blockHash)
 	blockInfo, err := flow.Domain().Consensus().GetBlockInfo(blockHash)
 	if err != nil {
 		return err
@@ -313,11 +314,15 @@ func (flow *handleRelayInvsFlow) processIBDBlock(consensus externalapi.Consensus
 		}
 	}
 
-	return flow.OnNewBlock(block, blockInsertionResult)
+	if callOnNewBlock {
+		return flow.OnNewBlock(block, blockInsertionResult)
+	}
+
+	return nil
 }
 
 func (flow *handleRelayInvsFlow) receiveAndInsertPruningPointUTXOSet(
-	pruningPointHash *externalapi.DomainHash) (bool, error) {
+	consensus externalapi.Consensus, pruningPointHash *externalapi.DomainHash) (bool, error) {
 
 	onEnd := logger.LogAndMeasureExecutionTime(log, "receiveAndInsertPruningPointUTXOSet")
 	defer onEnd()
@@ -336,7 +341,7 @@ func (flow *handleRelayInvsFlow) receiveAndInsertPruningPointUTXOSet(
 			domainOutpointAndUTXOEntryPairs :=
 				appmessage.OutpointAndUTXOEntryPairsToDomainOutpointAndUTXOEntryPairs(message.OutpointAndUTXOEntryPairs)
 
-			err := flow.Domain().Consensus().AppendImportedPruningPointUTXOs(domainOutpointAndUTXOEntryPairs)
+			err := consensus.AppendImportedPruningPointUTXOs(domainOutpointAndUTXOEntryPairs)
 			if err != nil {
 				return false, err
 			}

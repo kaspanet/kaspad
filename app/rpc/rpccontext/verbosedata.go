@@ -53,6 +53,7 @@ func (ctx *Context) PopulateBlockWithVerboseData(block *appmessage.RPCBlock, dom
 	}
 
 	if blockInfo.BlockStatus == externalapi.StatusInvalid {
+		log.Criticalf("PopulateBlockWithVerboseData: %s", blockHash)
 		return errors.Wrap(ErrBuildBlockVerboseDataInvalidBlock, "cannot build verbose data for "+
 			"invalid block")
 	}

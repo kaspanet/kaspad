@@ -490,6 +490,15 @@ func (s *consensus) CreateBlockLocator(lowHash, highHash *externalapi.DomainHash
 
 	stagingArea := model.NewStagingArea()
 
+	if lowHash == nil {
+		pruningPoint, err := s.pruningStore.PruningPoint(s.databaseContext, stagingArea)
+		if err != nil {
+			return nil, err
+		}
+
+		lowHash = pruningPoint
+	}
+
 	err := s.validateBlockHashExists(stagingArea, lowHash)
 	if err != nil {
 		return nil, err

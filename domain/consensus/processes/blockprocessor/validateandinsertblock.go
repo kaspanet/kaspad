@@ -79,6 +79,8 @@ func (bp *blockProcessor) updateVirtualAcceptanceDataAfterImportingPruningPoint(
 func (bp *blockProcessor) validateAndInsertBlock(stagingArea *model.StagingArea, block *externalapi.DomainBlock,
 	isPruningPoint bool, validateUTXO bool, isBlockWithPrefilledData bool) (*externalapi.BlockInsertionResult, error) {
 
+	// TODO: Disallow genesis after consensus is initialized
+
 	blockHash := consensushashing.HeaderHash(block.Header)
 	err := bp.validateBlock(stagingArea, block, isBlockWithPrefilledData)
 	if err != nil {
@@ -160,6 +162,10 @@ func (bp *blockProcessor) validateAndInsertBlock(stagingArea *model.StagingArea,
 	var logClosureErr error
 	log.Debug(logger.NewLogClosure(func() string {
 		virtualGhostDAGData, err := bp.ghostdagDataStore.Get(bp.databaseContext, stagingArea, model.VirtualBlockHash)
+		if database.IsNotFoundError(err) {
+			return fmt.Sprintf("Cannot log data for non-existent virtual")
+		}
+
 		if err != nil {
 			logClosureErr = err
 			return fmt.Sprintf("Failed to get virtual GHOSTDAG data: %s", err)

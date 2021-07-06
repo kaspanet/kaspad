@@ -13,6 +13,12 @@ func (bp *blockProcessor) validateBlock(stagingArea *model.StagingArea, block *e
 	blockHash := consensushashing.HeaderHash(block.Header)
 	log.Debugf("Validating block %s", blockHash)
 
+	// Since genesis has a lot of special cases validation rules, we make sure it's not added unintentionally
+	// on uninitialized node.
+	if blockHash.Equal(bp.genesisHash) && bp.blockStore.Count(stagingArea) != 0 {
+		return errors.Wrapf(ruleerrors.ErrGenesisOnInitializedConsensus, "Cannot add genesis to an initialized consensus")
+	}
+
 	err := bp.checkBlockStatus(stagingArea, block)
 	if err != nil {
 		return err

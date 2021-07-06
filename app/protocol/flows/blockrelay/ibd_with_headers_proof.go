@@ -130,7 +130,7 @@ func (flow *handleRelayInvsFlow) downloadHeadersProofBlocksAndPruningUTXOSet(con
 		return err
 	}
 
-	err = flow.downloadIBDBlocks(consensus, pruningPoint, highHash)
+	err = flow.downloadIBDBlocks(consensus, pruningPoint, highHash, false)
 	if err != nil {
 		return err
 	}
@@ -138,7 +138,7 @@ func (flow *handleRelayInvsFlow) downloadHeadersProofBlocksAndPruningUTXOSet(con
 	log.Debugf("Blocks downloaded from peer %s", flow.peer)
 
 	log.Debugf("Syncing the current pruning point UTXO set")
-	syncedPruningPointUTXOSetSuccessfully, err := flow.syncPruningPointUTXOSet(pruningPoint)
+	syncedPruningPointUTXOSetSuccessfully, err := flow.syncPruningPointUTXOSet(consensus, pruningPoint)
 	if err != nil {
 		return err
 	}
@@ -220,7 +220,7 @@ func (flow *handleRelayInvsFlow) receiveBlockWithMetaData(mustAccept bool) (*app
 	}
 }
 
-func (flow *handleRelayInvsFlow) syncPruningPointUTXOSet(pruningPoint *externalapi.DomainHash) (bool, error) {
+func (flow *handleRelayInvsFlow) syncPruningPointUTXOSet(consensus externalapi.Consensus, pruningPoint *externalapi.DomainHash) (bool, error) {
 	log.Infof("Checking if the suggested pruning point %s is compatible to the node DAG", pruningPoint)
 	isValid, err := flow.Domain().StagingConsensus().IsValidPruningPoint(pruningPoint)
 	if err != nil {
@@ -234,7 +234,7 @@ func (flow *handleRelayInvsFlow) syncPruningPointUTXOSet(pruningPoint *externala
 	}
 
 	log.Info("Fetching the pruning point UTXO set")
-	succeed, err := flow.fetchMissingUTXOSet(pruningPoint)
+	succeed, err := flow.fetchMissingUTXOSet(consensus, pruningPoint)
 	if err != nil {
 		return false, err
 	}
@@ -248,7 +248,7 @@ func (flow *handleRelayInvsFlow) syncPruningPointUTXOSet(pruningPoint *externala
 	return true, nil
 }
 
-func (flow *handleRelayInvsFlow) fetchMissingUTXOSet(pruningPointHash *externalapi.DomainHash) (succeed bool, err error) {
+func (flow *handleRelayInvsFlow) fetchMissingUTXOSet(consensus externalapi.Consensus, pruningPointHash *externalapi.DomainHash) (succeed bool, err error) {
 	defer func() {
 		// TODO: Consider getting rid of ClearImportedPruningPointData since the whole
 		// StagingConsensus is roll-backed in case of failure.
@@ -263,7 +263,7 @@ func (flow *handleRelayInvsFlow) fetchMissingUTXOSet(pruningPointHash *externala
 		return false, err
 	}
 
-	receivedAll, err := flow.receiveAndInsertPruningPointUTXOSet(pruningPointHash)
+	receivedAll, err := flow.receiveAndInsertPruningPointUTXOSet(consensus, pruningPointHash)
 	if err != nil {
 		return false, err
 	}

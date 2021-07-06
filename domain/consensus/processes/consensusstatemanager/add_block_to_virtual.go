@@ -3,6 +3,7 @@ package consensusstatemanager
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/utxo"
 	"github.com/kaspanet/kaspad/infrastructure/logger"
 )
 
@@ -63,7 +64,7 @@ func (csm *consensusStateManager) AddBlock(stagingArea *model.StagingArea, block
 	log.Debugf("After adding %s, the amount of new tips are %d", blockHash, len(newTips))
 
 	if !updateVirtual {
-		return &externalapi.SelectedChainPath{}, nil, nil, nil
+		return &externalapi.SelectedChainPath{}, utxo.NewUTXODiff(), nil, nil
 	}
 
 	log.Debugf("Updating the virtual with the new tips")

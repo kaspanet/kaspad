@@ -76,7 +76,10 @@ func (d *domain) InitStagingConsensus() error {
 	}
 
 	consensusFactory := consensus.NewFactory()
-	consensusInstance, err := consensusFactory.NewConsensus(d.consensusConfig, d.db, inactivePrefix)
+	cfg := *d.consensusConfig
+	cfg.ShouldNotAddGenesis = true
+
+	consensusInstance, err := consensusFactory.NewConsensus(&cfg, d.db, inactivePrefix)
 	if err != nil {
 		return err
 	}

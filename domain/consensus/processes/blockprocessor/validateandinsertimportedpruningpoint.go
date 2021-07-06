@@ -23,12 +23,7 @@ func (bp *blockProcessor) validateAndInsertImportedPruningPoint(
 	}
 
 	log.Infof("Updating consensus state manager according to the new pruning point %s", newPruningPointHash)
-	newPruningPoint, err := bp.blockStore.Block(bp.databaseContext, stagingArea, newPruningPointHash)
-	if err != nil {
-		return err
-	}
-
-	err = bp.consensusStateManager.ImportPruningPoint(stagingArea, newPruningPoint)
+	err = bp.consensusStateManager.ImportPruningPoint(stagingArea, newPruningPointHash)
 	if err != nil {
 		return err
 	}

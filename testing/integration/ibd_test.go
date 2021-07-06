@@ -41,15 +41,11 @@ func TestIBD(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Error getting tip for syncer")
 	}
-	tip1Info, err := syncer.rpcClient.GetBlock(tip1Hash.SelectedTipHash, false)
-	t.Log(tip1Info)
 
 	tip2Hash, err := syncee.rpcClient.GetSelectedTipHash()
 	if err != nil {
 		t.Fatalf("Error getting tip for syncee")
 	}
-	tip2Info, err := syncer.rpcClient.GetBlock(tip2Hash.SelectedTipHash, false)
-	t.Log(tip2Info)
 
 	if tip1Hash.SelectedTipHash != tip2Hash.SelectedTipHash {
 		t.Errorf("Tips of syncer: '%s' and syncee '%s' are not equal", tip1Hash.SelectedTipHash, tip2Hash.SelectedTipHash)
@@ -59,6 +55,59 @@ func TestIBD(t *testing.T) {
 // TestIBDWithPruning checks the IBD from a node with
 // already pruned blocks.
 func TestIBDWithPruning(t *testing.T) {
+	testSync := func(syncer, syncee *appHarness) {
+		utxoSetOverriden := make(chan struct{})
+		err := syncee.rpcClient.RegisterPruningPointUTXOSetNotifications(func() {
+			close(utxoSetOverriden)
+		})
+
+		if err != nil {
+			t.Fatalf("RegisterPruningPointUTXOSetNotifications: %+v", err)
+		}
+
+		// We expect this to trigger IBD
+		connect(t, syncer, syncee)
+
+		syncerBlockCountResponse, err := syncer.rpcClient.GetBlockCount()
+		if err != nil {
+			t.Fatalf("GetBlockCount: %+v", err)
+		}
+
+		if syncerBlockCountResponse.BlockCount == syncerBlockCountResponse.HeaderCount {
+			t.Fatalf("Expected some pruned blocks but found none")
+		}
+
+		ticker := time.NewTicker(time.Second)
+		defer ticker.Stop()
+
+		start := time.Now()
+		for range ticker.C {
+			if time.Since(start) > defaultTimeout {
+				t.Fatalf("Timeout waiting for IBD to finish.")
+			}
+
+			tip1Hash, err := syncer.rpcClient.GetSelectedTipHash()
+			if err != nil {
+				t.Fatalf("Error getting tip for syncer")
+			}
+			tip2Hash, err := syncee.rpcClient.GetSelectedTipHash()
+			if err != nil {
+				t.Fatalf("Error getting tip for syncee")
+			}
+
+			if tip1Hash.SelectedTipHash == tip2Hash.SelectedTipHash {
+				break
+			}
+		}
+
+		const timeout = 10 * time.Second
+		select {
+		case <-utxoSetOverriden:
+		case <-time.After(timeout):
+			t.Fatalf("expected pruning point UTXO set override notification, but it didn't get one after %s", timeout)
+		}
+	}
+
 	const numBlocks = 100
 
 	overrideDAGParams := dagconfig.SimnetParams
@@ -82,94 +131,35 @@ func TestIBDWithPruning(t *testing.T) {
 			overrideDAGParams:       &overrideDAGParams,
 			utxoIndex:               true,
 		},
+		{
+			p2pAddress:              p2pAddress3,
+			rpcAddress:              rpcAddress3,
+			miningAddress:           miningAddress3,
+			miningAddressPrivateKey: miningAddress3PrivateKey,
+			overrideDAGParams:       &overrideDAGParams,
+			utxoIndex:               true,
+		},
 	})
 	defer teardown()
 
-	syncer, syncee := harnesses[0], harnesses[1]
+	syncer, syncee1, syncee2 := harnesses[0], harnesses[1], harnesses[2]
 
-	// Let the syncee have two blocks that the syncer
+	// Let syncee1 have two blocks that the syncer
 	// doesn't have to test a situation where
 	// the block locator will need more than one
 	// iteration to find the highest shared chain
 	// block.
 	const synceeOnlyBlocks = 2
 	for i := 0; i < synceeOnlyBlocks; i++ {
-		mineNextBlock(t, syncee)
+		mineNextBlock(t, syncee1)
 	}
 
 	for i := 0; i < numBlocks-1; i++ {
 		mineNextBlock(t, syncer)
 	}
 
-	utxoSetOverriden := make(chan struct{})
-	err := syncee.rpcClient.RegisterPruningPointUTXOSetNotifications(func() {
-		close(utxoSetOverriden)
-	})
+	testSync(syncer, syncee1)
 
-	if err != nil {
-		t.Fatalf("RegisterPruningPointUTXOSetNotifications: %+v", err)
-	}
-
-	// We expect this to trigger IBD
-	connect(t, syncer, syncee)
-
-	syncerBlockCountResponse, err := syncer.rpcClient.GetBlockCount()
-	if err != nil {
-		t.Fatalf("GetBlockCount: %+v", err)
-	}
-
-	if syncerBlockCountResponse.BlockCount == syncerBlockCountResponse.HeaderCount {
-		t.Fatalf("Expected some pruned blocks but found none")
-	}
-
-	ticker := time.NewTicker(time.Second)
-	defer ticker.Stop()
-
-	start := time.Now()
-	for range ticker.C {
-		if time.Since(start) > defaultTimeout {
-			t.Fatalf("Timeout waiting for IBD to finish.")
-		}
-
-		tip1Hash, err := syncer.rpcClient.GetSelectedTipHash()
-		if err != nil {
-			t.Fatalf("Error getting tip for syncer")
-		}
-		tip2Hash, err := syncee.rpcClient.GetSelectedTipHash()
-		if err != nil {
-			t.Fatalf("Error getting tip for syncee")
-		}
-
-		if tip1Hash.SelectedTipHash == tip2Hash.SelectedTipHash {
-			break
-		}
-	}
-
-	synceeBlockCountResponse, err := syncee.rpcClient.GetBlockCount()
-	if err != nil {
-		t.Fatalf("GetBlockCount: %+v", err)
-	}
-
-	if synceeBlockCountResponse.BlockCount != syncerBlockCountResponse.BlockCount+synceeOnlyBlocks+1 {
-		t.Fatalf("Because the syncee haven't pruned any of its old blocks, its expected "+
-			"block count is expected to be greater than the syncer by synceeOnlyBlocks(%d)+genesis, but instead "+
-			"we got syncer block count of %d and syncee block count of %d", synceeOnlyBlocks,
-			syncerBlockCountResponse.BlockCount,
-			synceeBlockCountResponse.BlockCount)
-	}
-
-	if synceeBlockCountResponse.HeaderCount != syncerBlockCountResponse.HeaderCount+synceeOnlyBlocks {
-		t.Fatalf("Because the syncer haven't synced from the syncee, its expected "+
-			"block count is expected to be smaller by synceeOnlyBlocks(%d), but instead "+
-			"we got syncer headers count of %d and syncee headers count of %d", synceeOnlyBlocks,
-			syncerBlockCountResponse.HeaderCount,
-			synceeBlockCountResponse.HeaderCount)
-	}
-
-	const timeout = 10 * time.Second
-	select {
-	case <-utxoSetOverriden:
-	case <-time.After(timeout):
-		t.Fatalf("expected pruning point UTXO set override notification, but it didn't get one after %s", timeout)
-	}
+	// Test a situation where a node with pruned headers syncs another fresh node.
+	testSync(syncee1, syncee2)
 }

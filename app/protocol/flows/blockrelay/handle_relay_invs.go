@@ -283,8 +283,7 @@ func (flow *handleRelayInvsFlow) processOrphan(block *externalapi.DomainBlock) e
 // In the response, if we know none of the hashes, we should retrieve the given
 // blockHash via IBD. Otherwise, via unorphaning.
 func (flow *handleRelayInvsFlow) isBlockInOrphanResolutionRange(blockHash *externalapi.DomainHash) (bool, error) {
-	lowHash := flow.Config().ActiveNetParams.GenesisHash
-	err := flow.sendGetBlockLocator(lowHash, blockHash, orphanResolutionRange)
+	err := flow.sendGetBlockLocator(nil, blockHash, orphanResolutionRange)
 	if err != nil {
 		return false, err
 	}

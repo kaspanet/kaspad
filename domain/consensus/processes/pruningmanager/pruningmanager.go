@@ -15,14 +15,16 @@ import (
 type pruningManager struct {
 	databaseContext model.DBManager
 
-	dagTraversalManager    model.DAGTraversalManager
-	dagTopologyManager     model.DAGTopologyManager
-	consensusStateManager  model.ConsensusStateManager
-	consensusStateStore    model.ConsensusStateStore
-	ghostdagDataStore      model.GHOSTDAGDataStore
-	pruningStore           model.PruningStore
-	blockStatusStore       model.BlockStatusStore
-	headerSelectedTipStore model.HeaderSelectedTipStore
+	dagTraversalManager                model.DAGTraversalManager
+	dagTopologyManager                 model.DAGTopologyManager
+	consensusStateManager              model.ConsensusStateManager
+	consensusStateStore                model.ConsensusStateStore
+	ghostdagDataStore                  model.GHOSTDAGDataStore
+	blockWithMetaDataGHOSTDAGDataStore model.GHOSTDAGDataStore
+	pruningStore                       model.PruningStore
+	blockStatusStore                   model.BlockStatusStore
+	headerSelectedTipStore             model.HeaderSelectedTipStore
+	daaWindowStore                     model.DAAWindowStore
 
 	multiSetStore         model.MultisetStore
 	acceptanceDataStore   model.AcceptanceDataStore
@@ -37,6 +39,7 @@ type pruningManager struct {
 	finalityInterval                uint64
 	pruningDepth                    uint64
 	shouldSanityCheckPruningUTXOSet bool
+	k                               externalapi.KType
 }
 
 // New instantiates a new PruningManager
@@ -59,12 +62,15 @@ func New(
 	utxoDiffStore model.UTXODiffStore,
 	daaBlocksStore model.DAABlocksStore,
 	reachabilityDataStore model.ReachabilityDataStore,
+	daaWindowStore model.DAAWindowStore,
+	blockWithMetaDataGHOSTDAGDataStore model.GHOSTDAGDataStore,
 
 	isArchivalNode bool,
 	genesisHash *externalapi.DomainHash,
 	finalityInterval uint64,
 	pruningDepth uint64,
 	shouldSanityCheckPruningUTXOSet bool,
+	k externalapi.KType,
 ) model.PruningManager {
 
 	return &pruningManager{
@@ -73,24 +79,27 @@ func New(
 		dagTopologyManager:    dagTopologyManager,
 		consensusStateManager: consensusStateManager,
 
-		consensusStateStore:    consensusStateStore,
-		ghostdagDataStore:      ghostdagDataStore,
-		pruningStore:           pruningStore,
-		blockStatusStore:       blockStatusStore,
-		multiSetStore:          multiSetStore,
-		acceptanceDataStore:    acceptanceDataStore,
-		blocksStore:            blocksStore,
-		blockHeaderStore:       blockHeaderStore,
-		utxoDiffStore:          utxoDiffStore,
-		headerSelectedTipStore: headerSelectedTipStore,
-		daaBlocksStore:         daaBlocksStore,
-		reachabilityDataStore:  reachabilityDataStore,
+		consensusStateStore:                consensusStateStore,
+		ghostdagDataStore:                  ghostdagDataStore,
+		pruningStore:                       pruningStore,
+		blockStatusStore:                   blockStatusStore,
+		multiSetStore:                      multiSetStore,
+		acceptanceDataStore:                acceptanceDataStore,
+		blocksStore:                        blocksStore,
+		blockHeaderStore:                   blockHeaderStore,
+		utxoDiffStore:                      utxoDiffStore,
+		headerSelectedTipStore:             headerSelectedTipStore,
+		daaBlocksStore:                     daaBlocksStore,
+		reachabilityDataStore:              reachabilityDataStore,
+		daaWindowStore:                     daaWindowStore,
+		blockWithMetaDataGHOSTDAGDataStore: blockWithMetaDataGHOSTDAGDataStore,
 
 		isArchivalNode:                  isArchivalNode,
 		genesisHash:                     genesisHash,
 		pruningDepth:                    pruningDepth,
 		finalityInterval:                finalityInterval,
 		shouldSanityCheckPruningUTXOSet: shouldSanityCheckPruningUTXOSet,
+		k:                               k,
 	}
 }
 
@@ -105,10 +114,20 @@ func (pm *pruningManager) UpdatePruningPointByVirtual(stagingArea *model.Staging
 	}
 
 	if !hasPruningPoint {
-		err = pm.savePruningPoint(stagingArea, model.VirtualGenesisBlockHash)
+		hasGenesis, err := pm.blocksStore.HasBlock(pm.databaseContext, stagingArea, pm.genesisHash)
 		if err != nil {
 			return err
 		}
+
+		if hasGenesis {
+			err = pm.savePruningPoint(stagingArea, pm.genesisHash)
+			if err != nil {
+				return err
+			}
+		}
+
+		// Pruning point should initially set manually on a pruned-headers node.
+		return nil
 	}
 
 	currentCandidate, err := pm.pruningPointCandidate(stagingArea)
@@ -339,8 +358,8 @@ func (pm *pruningManager) savePruningPoint(stagingArea *model.StagingArea, pruni
 	onEnd := logger.LogAndMeasureExecutionTime(log, "pruningManager.savePruningPoint")
 	defer onEnd()
 
-	// If pruningPointHash is the virtual genesis then there's no pruning point set right now.
-	if !pruningPointHash.Equal(model.VirtualGenesisBlockHash) {
+	// If pruningPointHash is the genesis then there's no pruning point set right now.
+	if !pruningPointHash.Equal(pm.genesisHash) {
 		previousPruningPoint, err := pm.pruningStore.PruningPoint(pm.databaseContext, stagingArea)
 		if err != nil {
 			return err
@@ -424,7 +443,7 @@ func (pm *pruningManager) pruningPointCandidate(stagingArea *model.StagingArea) 
 	}
 
 	if !hasPruningPointCandidate {
-		return model.VirtualGenesisBlockHash, nil
+		return pm.genesisHash, nil
 	}
 
 	return pm.pruningStore.PruningPointCandidate(pm.databaseContext, stagingArea)
@@ -481,7 +500,7 @@ func (pm *pruningManager) validateUTXOSetFitsCommitment(stagingArea *model.Stagi
 func (pm *pruningManager) calculateDiffBetweenPreviousAndCurrentPruningPoints(stagingArea *model.StagingArea, currentPruningHash *externalapi.DomainHash) (externalapi.UTXODiff, error) {
 	onEnd := logger.LogAndMeasureExecutionTime(log, "pruningManager.calculateDiffBetweenPreviousAndCurrentPruningPoints")
 	defer onEnd()
-	if currentPruningHash.Equal(pm.genesisHash) || currentPruningHash.Equal(model.VirtualGenesisBlockHash) {
+	if currentPruningHash.Equal(pm.genesisHash) {
 		return utxo.NewUTXODiff(), nil
 	}
 
@@ -758,14 +777,21 @@ func (pm *pruningManager) blockWithMetaData(stagingArea *model.StagingArea, bloc
 	}
 
 	windowPairs := make([]*externalapi.DAABlock, len(window))
-	for i, blockHash := range window {
-		header, err := pm.blockHeaderStore.BlockHeader(pm.databaseContext, stagingArea, blockHash)
+	for i, blockWindowHash := range window {
+		header, err := pm.blockHeaderStore.BlockHeader(pm.databaseContext, stagingArea, blockWindowHash)
 		if err != nil {
 			return nil, err
 		}
 
-		ghostdagData, err := pm.ghostdagDataStore.Get(pm.databaseContext, stagingArea, blockHash)
-		if err != nil {
+		ghostdagData, err := pm.ghostdagDataStore.Get(pm.databaseContext, stagingArea, blockWindowHash)
+		if database.IsNotFoundError(err) {
+			daaBlock, err := pm.daaWindowStore.DAAWindowBlock(pm.databaseContext, stagingArea, blockHash, uint64(i))
+			if err != nil {
+				return nil, err
+			}
+
+			ghostdagData = daaBlock.GHOSTDAGData
+		} else if err != nil {
 			return nil, err
 		}
 
@@ -775,12 +801,16 @@ func (pm *pruningManager) blockWithMetaData(stagingArea *model.StagingArea, bloc
 		}
 	}
 
-	var k externalapi.KType = 18 // TODO: Replace with real constant
-	ghostdagDataHashPairs := make([]*externalapi.BlockGHOSTDAGDataHashPair, 0, k)
+	ghostdagDataHashPairs := make([]*externalapi.BlockGHOSTDAGDataHashPair, 0, pm.k)
 	current := blockHash
-	for i := externalapi.KType(0); i < k; i++ {
+	for i := externalapi.KType(0); i < pm.k+1; i++ {
 		ghostdagData, err := pm.ghostdagDataStore.Get(pm.databaseContext, stagingArea, current)
-		if err != nil {
+		if database.IsNotFoundError(err) {
+			ghostdagData, err = pm.blockWithMetaDataGHOSTDAGDataStore.Get(pm.databaseContext, stagingArea, current)
+			if err != nil {
+				return nil, err
+			}
+		} else if err != nil {
 			return nil, err
 		}
 

@@ -4,11 +4,13 @@ import (
 	"fmt"
 	"github.com/kaspanet/kaspad/domain"
 	"github.com/kaspanet/kaspad/domain/consensus"
+	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/testutils"
 	"github.com/kaspanet/kaspad/infrastructure/db/database/ldb"
 	"io/ioutil"
+	"math/big"
 	"os"
 	"strings"
 	"testing"
@@ -41,6 +43,26 @@ func TestCreateStagingConsensus(t *testing.T) {
 		if !strings.Contains(err.Error(), "cannot create staging consensus when a staging consensus already exists") {
 			t.Fatalf("unexpected error: %+v", err)
 		}
+
+		addGenesisToStagingConsensus := func() {
+			genesisWithMetaData := &externalapi.BlockWithMetaData{
+				Block:     consensusConfig.GenesisBlock,
+				DAAScore:  0,
+				DAAWindow: nil,
+				GHOSTDAGData: []*externalapi.BlockGHOSTDAGDataHashPair{
+					{
+						GHOSTDAGData: externalapi.NewBlockGHOSTDAGData(0, big.NewInt(0), model.VirtualGenesisBlockHash, nil, nil, make(map[externalapi.DomainHash]externalapi.KType)),
+						Hash:         consensusConfig.GenesisHash,
+					},
+				},
+			}
+			_, err = domainInstance.StagingConsensus().ValidateAndInsertBlockWithMetaData(genesisWithMetaData, true)
+			if err != nil {
+				t.Fatalf("ValidateAndInsertBlockWithMetaData: %+v", err)
+			}
+		}
+
+		addGenesisToStagingConsensus()
 
 		coinbaseData := &externalapi.DomainCoinbaseData{
 			ScriptPublicKey: &externalapi.ScriptPublicKey{},
@@ -96,6 +118,7 @@ func TestCreateStagingConsensus(t *testing.T) {
 			t.Fatalf("InitStagingConsensus: %+v", err)
 		}
 
+		addGenesisToStagingConsensus()
 		_, err = domainInstance.StagingConsensus().ValidateAndInsertBlock(block, true)
 		if err != nil {
 			t.Fatalf("ValidateAndInsertBlock: %+v", err)
