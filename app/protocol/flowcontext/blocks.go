@@ -1,6 +1,8 @@
 package flowcontext
 
 import (
+	"time"
+
 	peerpkg "github.com/kaspanet/kaspad/app/protocol/peer"
 	"github.com/kaspanet/kaspad/app/protocol/protocolerrors"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
@@ -82,6 +84,7 @@ func (f *FlowContext) broadcastTransactionsAfterBlockAdded(
 			return err
 		}
 		txIDsToRebroadcast = consensushashing.TransactionIDs(txsToRebroadcast)
+		f.lastRebroadcastTime = time.Now()
 	}
 
 	txIDsToBroadcast := make([]*externalapi.DomainTransactionID, len(transactionsAcceptedToMempool)+len(txIDsToRebroadcast))

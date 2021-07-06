@@ -23,6 +23,8 @@ type pastMedianTimeManager struct {
 	ghostdagDataStore model.GHOSTDAGDataStore
 
 	genesisHash *externalapi.DomainHash
+
+	virtualPastMedianTimeCache int64
 }
 
 // New instantiates a new PastMedianTimeManager
@@ -47,6 +49,9 @@ func New(timestampDeviationTolerance int,
 
 // PastMedianTime returns the past median time for some block
 func (pmtm *pastMedianTimeManager) PastMedianTime(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) (int64, error) {
+	if blockHash == model.VirtualBlockHash && pmtm.virtualPastMedianTimeCache != 0 {
+		return pmtm.virtualPastMedianTimeCache, nil
+	}
 	window, err := pmtm.dagTraversalManager.BlockWindow(stagingArea, blockHash, 2*pmtm.timestampDeviationTolerance-1)
 	if err != nil {
 		return 0, err
@@ -59,7 +64,16 @@ func (pmtm *pastMedianTimeManager) PastMedianTime(stagingArea *model.StagingArea
 		return header.TimeInMilliseconds(), nil
 	}
 
-	return pmtm.windowMedianTimestamp(stagingArea, window)
+	pastMedianTime, err := pmtm.windowMedianTimestamp(stagingArea, window)
+	if err != nil {
+		return 0, err
+	}
+
+	if blockHash == model.VirtualBlockHash {
+		pmtm.virtualPastMedianTimeCache = pastMedianTime
+	}
+
+	return pastMedianTime, nil
 }
 
 func (pmtm *pastMedianTimeManager) windowMedianTimestamp(
@@ -81,4 +95,8 @@ func (pmtm *pastMedianTimeManager) windowMedianTimestamp(
 	sort.Sort(sorters.Int64Slice(timestamps))
 
 	return timestamps[len(timestamps)/2], nil
+}
+
+func (pmtm *pastMedianTimeManager) InvalidateVirtualPastMedianTimeCache() {
+	pmtm.virtualPastMedianTimeCache = 0
 }
