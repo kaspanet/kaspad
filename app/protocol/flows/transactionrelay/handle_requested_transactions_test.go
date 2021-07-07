@@ -45,8 +45,8 @@ func TestHandleRequestedTransactionsNotFound(t *testing.T) {
 			domain:                      domainInstance,
 			sharedRequestedTransactions: sharedRequestedTransactions,
 		}
-		incomingRoute := router.NewRoute()
-		outgoingRoute := router.NewRoute()
+		incomingRoute := router.NewRoute("incoming")
+		outgoingRoute := router.NewRoute("outgoing")
 		defer outgoingRoute.Close()
 
 		txID1 := externalapi.NewDomainTransactionIDFromByteArray(&[externalapi.DomainHashSize]byte{
