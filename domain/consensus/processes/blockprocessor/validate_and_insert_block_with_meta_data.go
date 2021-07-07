@@ -5,12 +5,10 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
 	"github.com/kaspanet/kaspad/infrastructure/db/database"
-	"sort"
 )
 
 func (bp *blockProcessor) validateAndInsertBlockWithMetaData(stagingArea *model.StagingArea, block *externalapi.BlockWithMetaData, validateUTXO bool) (*externalapi.BlockInsertionResult, error) {
 	blockHash := consensushashing.BlockHash(block.Block)
-	//bp.sortDAAWindow(block.DAAWindow)
 	for i, daaBlock := range block.DAAWindow {
 		hash := consensushashing.HeaderHash(daaBlock.Header)
 		bp.blocksWithMetaDataDAAWindowStore.Stage(stagingArea, blockHash, uint64(i), &externalapi.BlockGHOSTDAGDataHashPair{
@@ -91,10 +89,4 @@ func (bp *blockProcessor) isPruned(stagingArea *model.StagingArea, blockHash *ex
 	}
 
 	return false, nil
-}
-
-func (bp *blockProcessor) sortDAAWindow(daaWindow []*externalapi.BlockGHOSTDAGDataHashPair) {
-	sort.Slice(daaWindow, func(i, j int) bool {
-		return daaWindow[i].GHOSTDAGData.BlueWork().Cmp(daaWindow[j].GHOSTDAGData.BlueWork()) < 0
-	})
 }

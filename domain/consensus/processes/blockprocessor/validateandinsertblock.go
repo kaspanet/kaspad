@@ -79,8 +79,6 @@ func (bp *blockProcessor) updateVirtualAcceptanceDataAfterImportingPruningPoint(
 func (bp *blockProcessor) validateAndInsertBlock(stagingArea *model.StagingArea, block *externalapi.DomainBlock,
 	isPruningPoint bool, validateUTXO bool, isBlockWithPrefilledData bool) (*externalapi.BlockInsertionResult, error) {
 
-	// TODO: Disallow genesis after consensus is initialized
-
 	blockHash := consensushashing.HeaderHash(block.Header)
 	err := bp.validateBlock(stagingArea, block, isBlockWithPrefilledData)
 	if err != nil {

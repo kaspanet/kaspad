@@ -42,7 +42,6 @@ func (dm *difficultyManager) blockWindow(stagingArea *model.StagingArea, startin
 	if err != nil {
 		return nil, nil, err
 	}
-	//fmt.Printf("Window: %s\n", windowHashes)
 
 	for _, hash := range windowHashes {
 		block, err := dm.getDifficultyBlock(stagingArea, hash)
