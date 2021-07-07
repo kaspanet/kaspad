@@ -27,9 +27,10 @@ func (x *KaspadMessage_GetInfoResponse) fromAppMessage(message *appmessage.GetIn
 		err = &RPCError{Message: message.Error.Message}
 	}
 	x.GetInfoResponse = &GetInfoResponseMessage{
-		P2PId:       message.P2PID,
-		MempoolSize: message.MempoolSize,
-		Error:       err,
+		P2PId:         message.P2PID,
+		ServerVersion: message.ServerVersion,
+		MempoolSize:   message.MempoolSize,
+		Error:         err,
 	}
 	return nil
 }
@@ -49,8 +50,9 @@ func (x *GetInfoResponseMessage) toAppMessage() (appmessage.Message, error) {
 	}
 
 	return &appmessage.GetInfoResponseMessage{
-		P2PID:       x.P2PId,
-		MempoolSize: x.MempoolSize,
-		Error:       rpcErr,
+		P2PID:         x.P2PId,
+		MempoolSize:   x.MempoolSize,
+		ServerVersion: x.ServerVersion,
+		Error:         rpcErr,
 	}, nil
 }

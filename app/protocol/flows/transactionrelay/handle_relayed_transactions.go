@@ -173,17 +173,18 @@ func (flow *handleRelayedTransactionsFlow) receiveTransactions(requestedTransact
 				expectedID, txID)
 		}
 
-		err = flow.Domain().MiningManager().ValidateAndInsertTransaction(tx, true)
+		acceptedTransactions, err :=
+			flow.Domain().MiningManager().ValidateAndInsertTransaction(tx, false, true)
 		if err != nil {
 			ruleErr := &mempool.RuleError{}
 			if !errors.As(err, ruleErr) {
 				return errors.Wrapf(err, "failed to process transaction %s", txID)
 			}
 
-			shouldBan := true
+			shouldBan := false
 			if txRuleErr := (&mempool.TxRuleError{}); errors.As(ruleErr.Err, txRuleErr) {
-				if txRuleErr.RejectCode != mempool.RejectInvalid {
-					shouldBan = false
+				if txRuleErr.RejectCode == mempool.RejectInvalid {
+					shouldBan = true
 				}
 			}
 
@@ -193,7 +194,7 @@ func (flow *handleRelayedTransactionsFlow) receiveTransactions(requestedTransact
 
 			return protocolerrors.Errorf(true, "rejected transaction %s: %s", txID, ruleErr)
 		}
-		err = flow.broadcastAcceptedTransactions([]*externalapi.DomainTransactionID{txID})
+		err = flow.broadcastAcceptedTransactions(consensushashing.TransactionIDs(acceptedTransactions))
 		if err != nil {
 			return err
 		}

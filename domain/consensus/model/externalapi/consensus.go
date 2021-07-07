@@ -16,7 +16,7 @@ type Consensus interface {
 	GetBlockRelations(blockHash *DomainHash) (parents []*DomainHash, selectedParent *DomainHash, children []*DomainHash, err error)
 	GetBlockAcceptanceData(blockHash *DomainHash) (AcceptanceData, error)
 
-	GetHashesBetween(lowHash, highHash *DomainHash, maxBlueScoreDifference uint64) (hashes []*DomainHash, actualHighHash *DomainHash, err error)
+	GetHashesBetween(lowHash, highHash *DomainHash, maxBlocks uint64) (hashes []*DomainHash, actualHighHash *DomainHash, err error)
 	GetPruningPointUTXOs(expectedPruningPointHash *DomainHash, fromOutpoint *DomainOutpoint, limit int) ([]*OutpointAndUTXOEntryPair, error)
 	GetVirtualUTXOs(expectedVirtualParents []*DomainHash, fromOutpoint *DomainOutpoint, limit int) ([]*OutpointAndUTXOEntryPair, error)
 	PruningPoint() (*DomainHash, error)
@@ -31,6 +31,7 @@ type Consensus interface {
 	GetSyncInfo() (*SyncInfo, error)
 	Tips() ([]*DomainHash, error)
 	GetVirtualInfo() (*VirtualInfo, error)
+	GetVirtualDAAScore() (uint64, error)
 	IsValidPruningPoint(blockHash *DomainHash) (bool, error)
 	GetVirtualSelectedParentChainFromBlock(blockHash *DomainHash) (*SelectedChainPath, error)
 	IsInSelectedParentChainOf(blockHashA *DomainHash, blockHashB *DomainHash) (bool, error)

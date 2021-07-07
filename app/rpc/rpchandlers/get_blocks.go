@@ -8,12 +8,6 @@ import (
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
 )
 
-const (
-	// maxBlocksInGetBlocksResponse is the max amount of blocks that are
-	// allowed in a GetBlocksResult.
-	maxBlocksInGetBlocksResponse = 1000
-)
-
 // HandleGetBlocks handles the respectively named RPC command
 func HandleGetBlocks(context *rpccontext.Context, _ *router.Router, request appmessage.Message) (appmessage.Message, error) {
 	getBlocksRequest := request.(*appmessage.GetBlocksRequestMessage)
@@ -55,7 +49,11 @@ func HandleGetBlocks(context *rpccontext.Context, _ *router.Router, request appm
 	if err != nil {
 		return nil, err
 	}
-	blockHashes, highHash, err := context.Domain.Consensus().GetHashesBetween(lowHash, virtualSelectedParent, maxBlocksInGetBlocksResponse)
+
+	// We use +1 because lowHash is also returned
+	// maxBlocks MUST be >= MergeSetSizeLimit + 1
+	maxBlocks := context.Config.NetParams().MergeSetSizeLimit + 1
+	blockHashes, highHash, err := context.Domain.Consensus().GetHashesBetween(lowHash, virtualSelectedParent, maxBlocks)
 	if err != nil {
 		return nil, err
 	}
@@ -72,12 +70,6 @@ func HandleGetBlocks(context *rpccontext.Context, _ *router.Router, request appm
 			return nil, err
 		}
 		blockHashes = append(blockHashes, virtualSelectedParentAnticone...)
-	}
-
-	// Both GetHashesBetween and Anticone might return more then the allowed number of blocks, so
-	// trim any extra blocks.
-	if len(blockHashes) > maxBlocksInGetBlocksResponse {
-		blockHashes = blockHashes[:maxBlocksInGetBlocksResponse]
 	}
 
 	// Prepare the response

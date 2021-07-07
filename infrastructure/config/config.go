@@ -109,7 +109,7 @@ type Flags struct {
 	LogLevel                        string        `short:"d" long:"loglevel" description:"Logging level for all subsystems {trace, debug, info, warn, error, critical} -- You may also specify <subsystem>=<level>,<subsystem2>=<level>,... to set the log level for individual subsystems -- Use show to list available subsystems"`
 	Upnp                            bool          `long:"upnp" description:"Use UPnP to map our listening port outside of NAT"`
 	MinRelayTxFee                   float64       `long:"minrelaytxfee" description:"The minimum transaction fee in KAS/kB to be considered a non-zero fee."`
-	MaxOrphanTxs                    int           `long:"maxorphantx" description:"Max number of orphan transactions to keep in memory"`
+	MaxOrphanTxs                    uint64        `long:"maxorphantx" description:"Max number of orphan transactions to keep in memory"`
 	BlockMaxMass                    uint64        `long:"blockmaxmass" description:"Maximum transaction mass to be used when creating a block"`
 	UserAgentComments               []string      `long:"uacomment" description:"Comment to add to the user agent -- See BIP 14 for more information."`
 	NoPeerBloomFilters              bool          `long:"nopeerbloomfilters" description:"Disable bloom filtering support"`
@@ -480,16 +480,6 @@ func LoadConfig() (*Config, error) {
 			"and %d -- parsed [%d]"
 		err := errors.Errorf(str, funcName, blockMaxMassMin,
 			blockMaxMassMax, cfg.BlockMaxMass)
-		fmt.Fprintln(os.Stderr, err)
-		fmt.Fprintln(os.Stderr, usageMessage)
-		return nil, err
-	}
-
-	// Limit the max orphan count to a sane value.
-	if cfg.MaxOrphanTxs < 0 {
-		str := "%s: The maxorphantx option may not be less than 0 " +
-			"-- parsed [%d]"
-		err := errors.Errorf(str, funcName, cfg.MaxOrphanTxs)
 		fmt.Fprintln(os.Stderr, err)
 		fmt.Fprintln(os.Stderr, usageMessage)
 		return nil, err

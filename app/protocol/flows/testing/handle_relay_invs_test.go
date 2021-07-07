@@ -223,7 +223,7 @@ func (f *fakeRelayInvsContext) GetBlockAcceptanceData(blockHash *externalapi.Dom
 	panic(errors.Errorf("called unimplemented function from test '%s'", f.testName))
 }
 
-func (f *fakeRelayInvsContext) GetHashesBetween(lowHash, highHash *externalapi.DomainHash, maxBlueScoreDifference uint64) (hashes []*externalapi.DomainHash, actualHighHash *externalapi.DomainHash, err error) {
+func (f *fakeRelayInvsContext) GetHashesBetween(lowHash, highHash *externalapi.DomainHash, maxBlocks uint64) (hashes []*externalapi.DomainHash, actualHighHash *externalapi.DomainHash, err error) {
 	panic(errors.Errorf("called unimplemented function from test '%s'", f.testName))
 }
 
@@ -302,6 +302,10 @@ func (f *fakeRelayInvsContext) GetVirtualInfo() (*externalapi.VirtualInfo, error
 		BlueScore:      f.virtualBlueScore,
 		DAAScore:       0,
 	}, nil
+}
+
+func (f *fakeRelayInvsContext) GetVirtualDAAScore() (uint64, error) {
+	panic(errors.Errorf("called unimplemented function from test '%s'", f.testName))
 }
 
 func (f *fakeRelayInvsContext) IsValidPruningPoint(blockHash *externalapi.DomainHash) (bool, error) {
@@ -719,8 +723,8 @@ func TestHandleRelayInvs(t *testing.T) {
 			t.Run(test.name, func(t *testing.T) {
 				t.Parallel()
 
-				incomingRoute := router.NewRoute()
-				outgoingRoute := router.NewRoute()
+				incomingRoute := router.NewRoute("incoming")
+				outgoingRoute := router.NewRoute("outgoing")
 				peer := peerpkg.New(nil)
 				errChan := make(chan error)
 				context := &fakeRelayInvsContext{

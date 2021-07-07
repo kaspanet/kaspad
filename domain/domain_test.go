@@ -2,15 +2,17 @@ package domain_test
 
 import (
 	"fmt"
+	"math/big"
+
 	"github.com/kaspanet/kaspad/domain"
 	"github.com/kaspanet/kaspad/domain/consensus"
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/testutils"
+	"github.com/kaspanet/kaspad/domain/miningmanager/mempool"
 	"github.com/kaspanet/kaspad/infrastructure/db/database/ldb"
 	"io/ioutil"
-	"math/big"
 	"os"
 	"strings"
 	"testing"
@@ -29,7 +31,7 @@ func TestCreateStagingConsensus(t *testing.T) {
 			t.Fatalf("NewLevelDB: %+v", err)
 		}
 
-		domainInstance, err := domain.New(consensusConfig, db)
+		domainInstance, err := domain.New(consensusConfig, mempool.DefaultConfig(&consensusConfig.Params), db)
 		if err != nil {
 			t.Fatalf("New: %+v", err)
 		}
@@ -124,7 +126,7 @@ func TestCreateStagingConsensus(t *testing.T) {
 			t.Fatalf("ValidateAndInsertBlock: %+v", err)
 		}
 
-		domainInstance2, err := domain.New(consensusConfig, db)
+		domainInstance2, err := domain.New(consensusConfig, mempool.DefaultConfig(&consensusConfig.Params), db)
 		if err != nil {
 			t.Fatalf("New: %+v", err)
 		}

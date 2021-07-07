@@ -186,6 +186,8 @@ func (bp *blockProcessor) validateAndInsertBlock(stagingArea *model.StagingArea,
 		return nil, err
 	}
 
+	bp.pastMedianTimeManager.InvalidateVirtualPastMedianTimeCache()
+
 	bp.blockLogger.LogBlock(block)
 
 	return &externalapi.BlockInsertionResult{

@@ -5,6 +5,7 @@ package appmessage
 type SubmitTransactionRequestMessage struct {
 	baseMessage
 	Transaction *RPCTransaction
+	AllowOrphan bool
 }
 
 // Command returns the protocol command string for the message
@@ -13,9 +14,10 @@ func (msg *SubmitTransactionRequestMessage) Command() MessageCommand {
 }
 
 // NewSubmitTransactionRequestMessage returns a instance of the message
-func NewSubmitTransactionRequestMessage(transaction *RPCTransaction) *SubmitTransactionRequestMessage {
+func NewSubmitTransactionRequestMessage(transaction *RPCTransaction, allowOrphan bool) *SubmitTransactionRequestMessage {
 	return &SubmitTransactionRequestMessage{
 		Transaction: transaction,
+		AllowOrphan: allowOrphan,
 	}
 }
 

@@ -8,9 +8,14 @@ import (
 
 // HandleGetVirtualSelectedParentBlueScore handles the respectively named RPC command
 func HandleGetVirtualSelectedParentBlueScore(context *rpccontext.Context, _ *router.Router, _ appmessage.Message) (appmessage.Message, error) {
-	virtualInfo, err := context.Domain.Consensus().GetVirtualInfo()
+	c := context.Domain.Consensus()
+	selectedParent, err := c.GetVirtualSelectedParent()
 	if err != nil {
 		return nil, err
 	}
-	return appmessage.NewGetVirtualSelectedParentBlueScoreResponseMessage(virtualInfo.BlueScore), nil
+	blockInfo, err := c.GetBlockInfo(selectedParent)
+	if err != nil {
+		return nil, err
+	}
+	return appmessage.NewGetVirtualSelectedParentBlueScoreResponseMessage(blockInfo.BlueScore), nil
 }

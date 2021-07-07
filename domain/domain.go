@@ -1,16 +1,18 @@
 package domain
 
 import (
+	"sync"
+	"sync/atomic"
+	"unsafe"
+
 	"github.com/kaspanet/kaspad/domain/consensus"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/miningmanager"
+	"github.com/kaspanet/kaspad/domain/miningmanager/mempool"
 	"github.com/kaspanet/kaspad/domain/prefixmanager"
 	"github.com/kaspanet/kaspad/domain/prefixmanager/prefix"
 	infrastructuredatabase "github.com/kaspanet/kaspad/infrastructure/db/database"
 	"github.com/pkg/errors"
-	"sync"
-	"sync/atomic"
-	"unsafe"
 )
 
 // Domain provides a reference to the domain's external aps
@@ -160,7 +162,7 @@ func (d *domain) DeleteStagingConsensus() error {
 }
 
 // New instantiates a new instance of a Domain object
-func New(consensusConfig *consensus.Config, db infrastructuredatabase.Database) (Domain, error) {
+func New(consensusConfig *consensus.Config, mempoolConfig *mempool.Config, db infrastructuredatabase.Database) (Domain, error) {
 	err := prefixmanager.DeleteInactivePrefix(db)
 	if err != nil {
 		return nil, err
@@ -186,7 +188,7 @@ func New(consensusConfig *consensus.Config, db infrastructuredatabase.Database) 
 	}
 
 	miningManagerFactory := miningmanager.NewFactory()
-	miningManager := miningManagerFactory.NewMiningManager(consensusInstance, &consensusConfig.Params)
+	miningManager := miningManagerFactory.NewMiningManager(consensusInstance, &consensusConfig.Params, mempoolConfig)
 
 	return &domain{
 		consensus:       &consensusInstance,

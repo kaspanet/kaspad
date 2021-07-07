@@ -4,12 +4,11 @@ import (
 	"math"
 
 	"github.com/kaspanet/kaspad/domain/consensus/model"
-	"github.com/kaspanet/kaspad/infrastructure/logger"
-
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/txscript"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
+	"github.com/kaspanet/kaspad/infrastructure/logger"
 	"github.com/pkg/errors"
 )
 
@@ -166,7 +165,7 @@ func (v *blockValidator) isFinalizedTransaction(tx *externalapi.DomainTransactio
 	// value is before the txscript.LockTimeThreshold. When it is under the
 	// threshold it is a block blue score.
 	blockTimeOrBlueScore := uint64(0)
-	if lockTime < txscript.LockTimeThreshold {
+	if lockTime < constants.LockTimeThreshold {
 		blockTimeOrBlueScore = blockBlueScore
 	} else {
 		blockTimeOrBlueScore = uint64(blockTime)

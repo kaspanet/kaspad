@@ -1,9 +1,11 @@
 package miningmanager_test
 
 import (
-	"github.com/kaspanet/kaspad/domain/miningmanager/mempool"
+	"reflect"
 	"strings"
 	"testing"
+
+	"github.com/kaspanet/kaspad/domain/miningmanager/mempool"
 
 	"github.com/kaspanet/kaspad/domain/consensus"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
@@ -33,11 +35,11 @@ func TestValidateAndInsertTransaction(t *testing.T) {
 		defer teardown(false)
 
 		miningFactory := miningmanager.NewFactory()
-		miningManager := miningFactory.NewMiningManager(tc, &consensusConfig.Params)
+		miningManager := miningFactory.NewMiningManager(tc, &consensusConfig.Params, mempool.DefaultConfig(&consensusConfig.Params))
 		transactionsToInsert := make([]*externalapi.DomainTransaction, 10)
 		for i := range transactionsToInsert {
 			transactionsToInsert[i] = createTransactionWithUTXOEntry(t, i)
-			err = miningManager.ValidateAndInsertTransaction(transactionsToInsert[i], true)
+			_, err = miningManager.ValidateAndInsertTransaction(transactionsToInsert[i], false, true)
 			if err != nil {
 				t.Fatalf("ValidateAndInsertTransaction: %v", err)
 			}
@@ -56,11 +58,11 @@ func TestValidateAndInsertTransaction(t *testing.T) {
 
 		// The parent's transaction was inserted by consensus(AddBlock), and we want to verify that
 		// the transaction is not considered an orphan and inserted into the mempool.
-		transactionNotAnOrphan, err := createChildTxWhenParentTxWasAddedByConsensus(consensusConfig, tc)
+		transactionNotAnOrphan, err := createChildAndParentTxsAndAddParentToConsensus(tc)
 		if err != nil {
 			t.Fatalf("Error in createParentAndChildrenTransaction: %v", err)
 		}
-		err = miningManager.ValidateAndInsertTransaction(transactionNotAnOrphan, true)
+		_, err = miningManager.ValidateAndInsertTransaction(transactionNotAnOrphan, false, true)
 		if err != nil {
 			t.Fatalf("ValidateAndInsertTransaction: %v", err)
 		}
@@ -81,9 +83,9 @@ func TestImmatureSpend(t *testing.T) {
 		defer teardown(false)
 
 		miningFactory := miningmanager.NewFactory()
-		miningManager := miningFactory.NewMiningManager(tc, &consensusConfig.Params)
+		miningManager := miningFactory.NewMiningManager(tc, &consensusConfig.Params, mempool.DefaultConfig(&consensusConfig.Params))
 		tx := createTransactionWithUTXOEntry(t, 0)
-		err = miningManager.ValidateAndInsertTransaction(tx, false)
+		_, err = miningManager.ValidateAndInsertTransaction(tx, false, false)
 		txRuleError := &mempool.TxRuleError{}
 		if !errors.As(err, txRuleError) || txRuleError.RejectCode != mempool.RejectImmatureSpend {
 			t.Fatalf("Unexpected error %+v", err)
@@ -108,14 +110,48 @@ func TestInsertDoubleTransactionsToMempool(t *testing.T) {
 		defer teardown(false)
 
 		miningFactory := miningmanager.NewFactory()
-		miningManager := miningFactory.NewMiningManager(tc, &consensusConfig.Params)
+		miningManager := miningFactory.NewMiningManager(tc, &consensusConfig.Params, mempool.DefaultConfig(&consensusConfig.Params))
 		transaction := createTransactionWithUTXOEntry(t, 0)
-		err = miningManager.ValidateAndInsertTransaction(transaction, true)
+		_, err = miningManager.ValidateAndInsertTransaction(transaction, false, true)
 		if err != nil {
 			t.Fatalf("ValidateAndInsertTransaction: %v", err)
 		}
-		err = miningManager.ValidateAndInsertTransaction(transaction, true)
-		if err == nil || !strings.Contains(err.Error(), "already have transaction") {
+		_, err = miningManager.ValidateAndInsertTransaction(transaction, false, true)
+		if err == nil || !strings.Contains(err.Error(), "is already in the mempool") {
+			t.Fatalf("ValidateAndInsertTransaction: %v", err)
+		}
+	})
+}
+
+// TestDoubleSpendInMempool verifies that an attempt to insert a transaction double-spending
+// another transaction already in  the mempool will result in raising an appropriate error.
+func TestDoubleSpendInMempool(t *testing.T) {
+	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
+		consensusConfig.BlockCoinbaseMaturity = 0
+		factory := consensus.NewFactory()
+		tc, teardown, err := factory.NewTestConsensus(consensusConfig, "TestDoubleSpendInMempool")
+		if err != nil {
+			t.Fatalf("Error setting up TestConsensus: %+v", err)
+		}
+		defer teardown(false)
+
+		miningFactory := miningmanager.NewFactory()
+		miningManager := miningFactory.NewMiningManager(tc, &consensusConfig.Params, mempool.DefaultConfig(&consensusConfig.Params))
+		transaction, err := createChildAndParentTxsAndAddParentToConsensus(tc)
+		if err != nil {
+			t.Fatalf("Error creating transaction: %+v", err)
+		}
+		_, err = miningManager.ValidateAndInsertTransaction(transaction, false, true)
+		if err != nil {
+			t.Fatalf("ValidateAndInsertTransaction: %v", err)
+		}
+
+		doubleSpendingTransaction := transaction.Clone()
+		doubleSpendingTransaction.ID = nil
+		doubleSpendingTransaction.Outputs[0].Value-- // do some minor change so that txID is different
+
+		_, err = miningManager.ValidateAndInsertTransaction(doubleSpendingTransaction, false, true)
+		if err == nil || !strings.Contains(err.Error(), "already spent by transaction") {
 			t.Fatalf("ValidateAndInsertTransaction: %v", err)
 		}
 	})
@@ -133,12 +169,12 @@ func TestHandleNewBlockTransactions(t *testing.T) {
 		defer teardown(false)
 
 		miningFactory := miningmanager.NewFactory()
-		miningManager := miningFactory.NewMiningManager(tc, &consensusConfig.Params)
+		miningManager := miningFactory.NewMiningManager(tc, &consensusConfig.Params, mempool.DefaultConfig(&consensusConfig.Params))
 		transactionsToInsert := make([]*externalapi.DomainTransaction, 10)
 		for i := range transactionsToInsert {
 			transaction := createTransactionWithUTXOEntry(t, i)
 			transactionsToInsert[i] = transaction
-			err = miningManager.ValidateAndInsertTransaction(transaction, true)
+			_, err = miningManager.ValidateAndInsertTransaction(transaction, false, true)
 			if err != nil {
 				t.Fatalf("ValidateAndInsertTransaction: %v", err)
 			}
@@ -186,22 +222,22 @@ func domainBlocksToBlockIds(blocks []*externalapi.DomainTransaction) []*external
 	return blockIDs
 }
 
-// TestDoubleSpends verifies that any transactions which are now double spends as a result of the block's new transactions
+// TestDoubleSpendWithBlock verifies that any transactions which are now double spends as a result of the block's new transactions
 // will be removed from the mempool.
-func TestDoubleSpends(t *testing.T) {
+func TestDoubleSpendWithBlock(t *testing.T) {
 	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
 		consensusConfig.BlockCoinbaseMaturity = 0
 		factory := consensus.NewFactory()
-		tc, teardown, err := factory.NewTestConsensus(consensusConfig, "TestDoubleSpends")
+		tc, teardown, err := factory.NewTestConsensus(consensusConfig, "TestDoubleSpendWithBlock")
 		if err != nil {
 			t.Fatalf("Failed setting up TestConsensus: %+v", err)
 		}
 		defer teardown(false)
 
 		miningFactory := miningmanager.NewFactory()
-		miningManager := miningFactory.NewMiningManager(tc, &consensusConfig.Params)
+		miningManager := miningFactory.NewMiningManager(tc, &consensusConfig.Params, mempool.DefaultConfig(&consensusConfig.Params))
 		transactionInTheMempool := createTransactionWithUTXOEntry(t, 0)
-		err = miningManager.ValidateAndInsertTransaction(transactionInTheMempool, true)
+		_, err = miningManager.ValidateAndInsertTransaction(transactionInTheMempool, false, true)
 		if err != nil {
 			t.Fatalf("ValidateAndInsertTransaction: %v", err)
 		}
@@ -222,7 +258,6 @@ func TestDoubleSpends(t *testing.T) {
 // TestOrphanTransactions verifies that a transaction could be a part of a new block template, only if it's not an orphan.
 func TestOrphanTransactions(t *testing.T) {
 	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
-
 		consensusConfig.BlockCoinbaseMaturity = 0
 		factory := consensus.NewFactory()
 		tc, teardown, err := factory.NewTestConsensus(consensusConfig, "TestOrphanTransactions")
@@ -232,14 +267,14 @@ func TestOrphanTransactions(t *testing.T) {
 		defer teardown(false)
 
 		miningFactory := miningmanager.NewFactory()
-		miningManager := miningFactory.NewMiningManager(tc, &consensusConfig.Params)
+		miningManager := miningFactory.NewMiningManager(tc, &consensusConfig.Params, mempool.DefaultConfig(&consensusConfig.Params))
 		// Before each parent transaction, We will add two blocks by consensus in order to fund the parent transactions.
 		parentTransactions, childTransactions, err := createArraysOfParentAndChildrenTransactions(tc)
 		if err != nil {
 			t.Fatalf("Error in createArraysOfParentAndChildrenTransactions: %v", err)
 		}
 		for _, orphanTransaction := range childTransactions {
-			err = miningManager.ValidateAndInsertTransaction(orphanTransaction, true)
+			_, err = miningManager.ValidateAndInsertTransaction(orphanTransaction, false, true)
 			if err != nil {
 				t.Fatalf("ValidateAndInsertTransaction: %v", err)
 			}
@@ -284,7 +319,7 @@ func TestOrphanTransactions(t *testing.T) {
 		}
 		_, err = miningManager.HandleNewBlockTransactions(blockParentsTransactions.Transactions)
 		if err != nil {
-			t.Fatalf("HandleNewBlockTransactions: %v", err)
+			t.Fatalf("HandleNewBlockTransactions: %+v", err)
 		}
 		transactionsMempool = miningManager.AllTransactions()
 		if len(transactionsMempool) != len(childTransactions) {
@@ -314,6 +349,198 @@ func TestOrphanTransactions(t *testing.T) {
 			if !isContained {
 				t.Fatalf("Error: Unknown Transaction %s in a block.", consensushashing.TransactionID(transactionFromBlock))
 			}
+		}
+	})
+}
+
+func TestHighPriorityTransactions(t *testing.T) {
+	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
+		consensusConfig.BlockCoinbaseMaturity = 0
+		factory := consensus.NewFactory()
+		tc, teardown, err := factory.NewTestConsensus(consensusConfig, "TestDoubleSpendWithBlock")
+		if err != nil {
+			t.Fatalf("Failed setting up TestConsensus: %+v", err)
+		}
+		defer teardown(false)
+
+		miningFactory := miningmanager.NewFactory()
+		mempoolConfig := mempool.DefaultConfig(&consensusConfig.Params)
+		mempoolConfig.MaximumTransactionCount = 1
+		mempoolConfig.MaximumOrphanTransactionCount = 1
+		miningManager := miningFactory.NewMiningManager(tc, &consensusConfig.Params, mempoolConfig)
+
+		// Create 3 pairs of transaction parent-and-child pairs: 1 low priority and 2 high priority
+		lowPriorityParentTransaction, lowPriorityChildTransaction, err := createParentAndChildrenTransactions(tc)
+		if err != nil {
+			t.Fatalf("error creating low-priority transaction pair: %+v", err)
+		}
+		firstHighPriorityParentTransaction, firstHighPriorityChildTransaction, err := createParentAndChildrenTransactions(tc)
+		if err != nil {
+			t.Fatalf("error creating first high-priority transaction pair: %+v", err)
+		}
+		secondHighPriorityParentTransaction, secondHighPriorityChildTransaction, err := createParentAndChildrenTransactions(tc)
+		if err != nil {
+			t.Fatalf("error creating second high-priority transaction pair: %+v", err)
+		}
+
+		// Submit all the children, make sure the 2 highPriority ones remain in the orphan pool
+		_, err = miningManager.ValidateAndInsertTransaction(lowPriorityChildTransaction, false, true)
+		if err != nil {
+			t.Fatalf("error submitting low-priority transaction: %+v", err)
+		}
+		_, err = miningManager.ValidateAndInsertTransaction(firstHighPriorityChildTransaction, true, true)
+		if err != nil {
+			t.Fatalf("error submitting first high-priority transaction: %+v", err)
+		}
+		_, err = miningManager.ValidateAndInsertTransaction(secondHighPriorityChildTransaction, true, true)
+		if err != nil {
+			t.Fatalf("error submitting second high-priority transaction: %+v", err)
+		}
+		// There's no API to check what stayed in the orphan pool, but we'll find it out when we begin to unorphan
+
+		// Submit all the parents.
+		// Low priority transaction will only accept the parent, since the child was evicted from orphanPool
+		lowPriorityAcceptedTransactions, err :=
+			miningManager.ValidateAndInsertTransaction(lowPriorityParentTransaction, false, true)
+		if err != nil {
+			t.Fatalf("error submitting low-priority transaction: %+v", err)
+		}
+		expectedLowPriorityAcceptedTransactions := []*externalapi.DomainTransaction{lowPriorityParentTransaction}
+		if !reflect.DeepEqual(lowPriorityAcceptedTransactions, expectedLowPriorityAcceptedTransactions) {
+			t.Errorf("Expected only lowPriorityParent (%v) to be in lowPriorityAcceptedTransactions, but got %v",
+				consensushashing.TransactionIDs(expectedLowPriorityAcceptedTransactions),
+				consensushashing.TransactionIDs(lowPriorityAcceptedTransactions))
+		}
+
+		// Both high priority transactions should accept parent and child
+
+		// Insert firstHighPriorityParentTransaction
+		firstHighPriorityAcceptedTransactions, err :=
+			miningManager.ValidateAndInsertTransaction(firstHighPriorityParentTransaction, true, true)
+		if err != nil {
+			t.Fatalf("error submitting first high-priority transaction: %+v", err)
+		}
+		expectedFirstHighPriorityAcceptedTransactions :=
+			[]*externalapi.DomainTransaction{firstHighPriorityParentTransaction, firstHighPriorityChildTransaction}
+		if !reflect.DeepEqual(firstHighPriorityAcceptedTransactions, expectedFirstHighPriorityAcceptedTransactions) {
+			t.Errorf(
+				"Expected both firstHighPriority transaction (%v) to be in firstHighPriorityAcceptedTransactions, but got %v",
+				consensushashing.TransactionIDs(firstHighPriorityAcceptedTransactions),
+				consensushashing.TransactionIDs(expectedFirstHighPriorityAcceptedTransactions))
+		}
+		// Insert secondHighPriorityParentTransaction
+		secondHighPriorityAcceptedTransactions, err :=
+			miningManager.ValidateAndInsertTransaction(secondHighPriorityParentTransaction, true, true)
+		if err != nil {
+			t.Fatalf("error submitting second high-priority transaction: %+v", err)
+		}
+		expectedSecondHighPriorityAcceptedTransactions :=
+			[]*externalapi.DomainTransaction{secondHighPriorityParentTransaction, secondHighPriorityChildTransaction}
+		if !reflect.DeepEqual(secondHighPriorityAcceptedTransactions, expectedSecondHighPriorityAcceptedTransactions) {
+			t.Errorf(
+				"Expected both secondHighPriority transaction (%v) to be in secondHighPriorityAcceptedTransactions, but got %v",
+				consensushashing.TransactionIDs(secondHighPriorityAcceptedTransactions),
+				consensushashing.TransactionIDs(expectedSecondHighPriorityAcceptedTransactions))
+		}
+	})
+}
+
+func TestRevalidateHighPriorityTransactions(t *testing.T) {
+	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
+		consensusConfig.BlockCoinbaseMaturity = 0
+		factory := consensus.NewFactory()
+		tc, teardown, err := factory.NewTestConsensus(consensusConfig, "TestRevalidateHighPriorityTransactions")
+		if err != nil {
+			t.Fatalf("Failed setting up TestConsensus: %+v", err)
+		}
+		defer teardown(false)
+
+		miningFactory := miningmanager.NewFactory()
+		mempoolConfig := mempool.DefaultConfig(&consensusConfig.Params)
+		miningManager := miningFactory.NewMiningManager(tc, &consensusConfig.Params, mempoolConfig)
+
+		// Create two valid transactions that double-spend each other (childTransaction1, childTransaction2)
+		parentTransaction, childTransaction1, err := createParentAndChildrenTransactions(tc)
+		if err != nil {
+			t.Fatalf("Error creating parentTransaction and childTransaction1: %+v", err)
+		}
+		tips, err := tc.Tips()
+		if err != nil {
+			t.Fatalf("Error getting tips: %+v", err)
+		}
+
+		fundingBlock, _, err := tc.AddBlock(tips, nil, []*externalapi.DomainTransaction{parentTransaction})
+		if err != nil {
+			t.Fatalf("Error getting function block: %+v", err)
+		}
+
+		childTransaction2 := childTransaction1.Clone()
+		childTransaction2.Outputs[0].Value-- // decrement value to change id
+
+		// Mine 1 block with confirming childTransaction1 and 2 blocks confirming childTransaction2, so that
+		// childTransaction2 is accepted
+		tip1, _, err := tc.AddBlock([]*externalapi.DomainHash{fundingBlock}, nil,
+			[]*externalapi.DomainTransaction{childTransaction1})
+		if err != nil {
+			t.Fatalf("Error adding tip1: %+v", err)
+		}
+		tip2, _, err := tc.AddBlock([]*externalapi.DomainHash{fundingBlock}, nil,
+			[]*externalapi.DomainTransaction{childTransaction2})
+		if err != nil {
+			t.Fatalf("Error adding tip2: %+v", err)
+		}
+		_, _, err = tc.AddBlock([]*externalapi.DomainHash{tip2}, nil, nil)
+		if err != nil {
+			t.Fatalf("Error mining on top of tip2: %+v", err)
+		}
+
+		// Add to mempool transaction that spends childTransaction2 (as high priority)
+		spendingTransaction, err := testutils.CreateTransaction(childTransaction2, 1000)
+		if err != nil {
+			t.Fatalf("Error creating spendingTransaction: %+v", err)
+		}
+		_, err = miningManager.ValidateAndInsertTransaction(spendingTransaction, true, false)
+		if err != nil {
+			t.Fatalf("Error inserting spendingTransaction: %+v", err)
+		}
+
+		// Revalidate, to make sure spendingTransaction is still valid
+		validTransactions, err := miningManager.RevalidateHighPriorityTransactions()
+		if err != nil {
+			t.Fatalf("Error from first RevalidateHighPriorityTransactions: %+v", err)
+		}
+		if len(validTransactions) != 1 || !validTransactions[0].Equal(spendingTransaction) {
+			t.Fatalf("Expected to have spendingTransaction as only validTransaction returned from "+
+				"RevalidateHighPriorityTransactions, but got %v instead", validTransactions)
+		}
+
+		// Mine 2 more blocks on top of tip1, to re-org out childTransaction1, thus making spendingTransaction invalid
+		for i := 0; i < 2; i++ {
+			tip1, _, err = tc.AddBlock([]*externalapi.DomainHash{tip1}, nil, nil)
+			if err != nil {
+				t.Fatalf("Error mining on top of tip1: %+v", err)
+			}
+		}
+
+		// Make sure spendingTransaction is still in mempool
+		allTransactions := miningManager.AllTransactions()
+		if len(allTransactions) != 1 || !allTransactions[0].Equal(spendingTransaction) {
+			t.Fatalf("Expected to have spendingTransaction as only validTransaction returned from "+
+				"RevalidateHighPriorityTransactions, but got %v instead", validTransactions)
+		}
+
+		// Revalidate again, this time validTransactions should be empty
+		validTransactions, err = miningManager.RevalidateHighPriorityTransactions()
+		if err != nil {
+			t.Fatalf("Error from first RevalidateHighPriorityTransactions: %+v", err)
+		}
+		if len(validTransactions) != 0 {
+			t.Fatalf("Expected to have empty validTransactions, but got %v instead", validTransactions)
+		}
+		// And also AllTransactions should be empty as well
+		allTransactions = miningManager.AllTransactions()
+		if len(allTransactions) != 0 {
+			t.Fatalf("Expected to have empty allTransactions, but got %v instead", allTransactions)
 		}
 	})
 }
@@ -369,8 +596,8 @@ func createArraysOfParentAndChildrenTransactions(tc testapi.TestConsensus) ([]*e
 	return parentTransactions, transactions, nil
 }
 
-func createParentAndChildrenTransactions(tc testapi.TestConsensus) (*externalapi.DomainTransaction,
-	*externalapi.DomainTransaction, error) {
+func createParentAndChildrenTransactions(tc testapi.TestConsensus) (txParent *externalapi.DomainTransaction,
+	txChild *externalapi.DomainTransaction, err error) {
 
 	// We will add two blocks by consensus before the parent transactions, in order to fund the parent transactions.
 	tips, err := tc.Tips()
@@ -397,19 +624,19 @@ func createParentAndChildrenTransactions(tc testapi.TestConsensus) (*externalapi
 		return nil, nil, errors.Wrap(err, "GetBlock: ")
 	}
 	fundingTransactionForParent := fundingBlockForParent.Transactions[transactionhelper.CoinbaseTransactionIndex]
-	txParent, err := testutils.CreateTransaction(fundingTransactionForParent, 1000)
+	txParent, err = testutils.CreateTransaction(fundingTransactionForParent, 1000)
 	if err != nil {
 		return nil, nil, err
 	}
-	txChild, err := testutils.CreateTransaction(txParent, 1000)
+	txChild, err = testutils.CreateTransaction(txParent, 1000)
 	if err != nil {
 		return nil, nil, err
 	}
 	return txParent, txChild, nil
 }
 
-func createChildTxWhenParentTxWasAddedByConsensus(consensusConfig *consensus.Config, tc testapi.TestConsensus) (*externalapi.DomainTransaction, error) {
-	firstBlockHash, _, err := tc.AddBlock([]*externalapi.DomainHash{consensusConfig.GenesisHash}, nil, nil)
+func createChildAndParentTxsAndAddParentToConsensus(tc testapi.TestConsensus) (*externalapi.DomainTransaction, error) {
+	firstBlockHash, _, err := tc.AddBlock([]*externalapi.DomainHash{tc.DAGParams().GenesisHash}, nil, nil)
 	if err != nil {
 		return nil, errors.Wrapf(err, "AddBlock: %v", err)
 	}

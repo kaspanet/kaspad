@@ -2,16 +2,18 @@ package transactionrelay_test
 
 import (
 	"errors"
+	"strings"
+	"testing"
+
 	"github.com/kaspanet/kaspad/app/protocol/flows/transactionrelay"
 	"github.com/kaspanet/kaspad/app/protocol/protocolerrors"
 	"github.com/kaspanet/kaspad/domain"
 	"github.com/kaspanet/kaspad/domain/consensus"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/testutils"
+	"github.com/kaspanet/kaspad/domain/miningmanager/mempool"
 	"github.com/kaspanet/kaspad/infrastructure/logger"
 	"github.com/kaspanet/kaspad/util/panics"
-	"strings"
-	"testing"
 
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/infrastructure/config"
@@ -63,7 +65,7 @@ func TestHandleRelayedTransactionsNotFound(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Failed to create a NetAdapter: %v", err)
 		}
-		domainInstance, err := domain.New(consensusConfig, tc.Database())
+		domainInstance, err := domain.New(consensusConfig, mempool.DefaultConfig(&consensusConfig.Params), tc.Database())
 		if err != nil {
 			t.Fatalf("Failed to set up a domain instance: %v", err)
 		}
@@ -72,9 +74,9 @@ func TestHandleRelayedTransactionsNotFound(t *testing.T) {
 			domain:                      domainInstance,
 			sharedRequestedTransactions: sharedRequestedTransactions,
 		}
-		incomingRoute := router.NewRoute()
+		incomingRoute := router.NewRoute("incoming")
 		defer incomingRoute.Close()
-		peerIncomingRoute := router.NewRoute()
+		peerIncomingRoute := router.NewRoute("outgoing")
 		defer peerIncomingRoute.Close()
 
 		txID1 := externalapi.NewDomainTransactionIDFromByteArray(&[externalapi.DomainHashSize]byte{
@@ -156,7 +158,7 @@ func TestOnClosedIncomingRoute(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Failed to creat a NetAdapter : %v", err)
 		}
-		domainInstance, err := domain.New(consensusConfig, tc.Database())
+		domainInstance, err := domain.New(consensusConfig, mempool.DefaultConfig(&consensusConfig.Params), tc.Database())
 		if err != nil {
 			t.Fatalf("Failed to set up a domain instance: %v", err)
 		}
@@ -165,8 +167,8 @@ func TestOnClosedIncomingRoute(t *testing.T) {
 			domain:                      domainInstance,
 			sharedRequestedTransactions: sharedRequestedTransactions,
 		}
-		incomingRoute := router.NewRoute()
-		outgoingRoute := router.NewRoute()
+		incomingRoute := router.NewRoute("incoming")
+		outgoingRoute := router.NewRoute("outgoing")
 		defer outgoingRoute.Close()
 
 		txID := externalapi.NewDomainTransactionIDFromByteArray(&[externalapi.DomainHashSize]byte{

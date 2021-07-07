@@ -273,6 +273,7 @@ message AddPeerResponseMessage{
 // SubmitTransactionRequestMessage submits a transaction to the mempool
 message SubmitTransactionRequestMessage{
   RpcTransaction transaction = 1;
+  bool allowOrphan = 2;
 }
 
 message SubmitTransactionResponseMessage{
@@ -606,6 +607,7 @@ message GetInfoRequestMessage{
 message GetInfoResponseMessage{
   string p2pId = 1;
   uint64 mempoolSize = 2;
+  string serverVersion = 3;
   RPCError error = 1000;
 }
 
