@@ -12,7 +12,7 @@ type PruningPointAndItsAnticoneRequestsContext interface {
 	Domain() domain.Domain
 }
 
-// HandleBlockBlueWorkRequests listens to appmessage.MsgRequestPruningPointAndItsAnticone messages and sends
+// HandlePruningPointAndItsAnticoneRequests listens to appmessage.MsgRequestPruningPointAndItsAnticone messages and sends
 // the pruning point and its anticone to the requesting peer.
 func HandlePruningPointAndItsAnticoneRequests(context PruningPointAndItsAnticoneRequestsContext, incomingRoute *router.Route,
 	outgoingRoute *router.Route, peer *peerpkg.Peer) error {

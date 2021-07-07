@@ -13,7 +13,7 @@ func (bp *blockProcessor) validateAndInsertBlockWithMetaData(stagingArea *model.
 	//bp.sortDAAWindow(block.DAAWindow)
 	for i, daaBlock := range block.DAAWindow {
 		hash := consensushashing.HeaderHash(daaBlock.Header)
-		bp.daaWindowStore.Stage(stagingArea, blockHash, uint64(i), &externalapi.BlockGHOSTDAGDataHashPair{
+		bp.blocksWithMetaDataDAAWindowStore.Stage(stagingArea, blockHash, uint64(i), &externalapi.BlockGHOSTDAGDataHashPair{
 			Hash:         hash,
 			GHOSTDAGData: daaBlock.GHOSTDAGData,
 		})
@@ -27,7 +27,7 @@ func (bp *blockProcessor) validateAndInsertBlockWithMetaData(stagingArea *model.
 	bp.ghostdagDataStore.Stage(stagingArea, blockHash, blockReplacedGHOSTDAGData)
 
 	for _, pair := range block.GHOSTDAGData {
-		bp.blockWithMetaDataGHOSTDAGDataStore.Stage(stagingArea, pair.Hash, pair.GHOSTDAGData)
+		bp.blocksWithMetaDataGHOSTDAGDataStore.Stage(stagingArea, pair.Hash, pair.GHOSTDAGData)
 	}
 
 	bp.daaBlocksStore.StageDAAScore(stagingArea, blockHash, block.DAAScore)

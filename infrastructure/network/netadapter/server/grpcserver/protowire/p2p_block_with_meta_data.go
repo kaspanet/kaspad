@@ -18,7 +18,7 @@ func (x *KaspadMessage_BlockWithMetaData) toAppMessage() (appmessage.Message, er
 	}
 	domainBlock := appmessage.MsgBlockToDomainBlock(msgBlock)
 
-	daaWindow := make([]*externalapi.DAABlock, len(x.BlockWithMetaData.DaaWindow))
+	daaWindow := make([]*externalapi.BlockWithMetaDataDAABlock, len(x.BlockWithMetaData.DaaWindow))
 	for i, daaBlock := range x.BlockWithMetaData.DaaWindow {
 		daaWindow[i], err = daaBlock.toDomain()
 		if err != nil {
@@ -86,7 +86,7 @@ func (x *KaspadMessage_BlockWithMetaData) fromAppMessage(msgBlockWithMetaData *a
 	return nil
 }
 
-func (x *DaaBlock) toDomain() (*externalapi.DAABlock, error) {
+func (x *DaaBlock) toDomain() (*externalapi.BlockWithMetaDataDAABlock, error) {
 	if x == nil {
 		return nil, errors.Wrapf(errorNil, "DaaBlock is nil")
 	}
@@ -103,13 +103,13 @@ func (x *DaaBlock) toDomain() (*externalapi.DAABlock, error) {
 		return nil, err
 	}
 
-	return &externalapi.DAABlock{
+	return &externalapi.BlockWithMetaDataDAABlock{
 		Header:       header,
 		GHOSTDAGData: ghostdagData,
 	}, nil
 }
 
-func (x *DaaBlock) fromDomain(daaBlock *externalapi.DAABlock) error {
+func (x *DaaBlock) fromDomain(daaBlock *externalapi.BlockWithMetaDataDAABlock) error {
 	*x = DaaBlock{
 		Header:       &BlockHeader{},
 		GhostdagData: &GhostdagData{},

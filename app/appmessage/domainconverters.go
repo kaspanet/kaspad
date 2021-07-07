@@ -394,10 +394,12 @@ func RPCBlockToDomainBlock(block *RPCBlock) (*externalapi.DomainBlock, error) {
 	}, nil
 }
 
+// BlockWithMetaDataToDomainBlockWithMetaData converts *MsgBlockWithMetaData to *externalapi.BlockWithMetaData
 func BlockWithMetaDataToDomainBlockWithMetaData(block *MsgBlockWithMetaData) *externalapi.BlockWithMetaData {
 	return block.BlockWithMetaData
 }
 
+// DomainBlockWithMetaDataToBlockWithMetaData converts *externalapi.BlockWithMetaData to *MsgBlockWithMetaData
 func DomainBlockWithMetaDataToBlockWithMetaData(block *externalapi.BlockWithMetaData) *MsgBlockWithMetaData {
 	return &MsgBlockWithMetaData{
 		BlockWithMetaData: block,

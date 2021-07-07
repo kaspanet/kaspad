@@ -44,7 +44,7 @@ type implManager struct {
 		dagTopologyManager model.DAGTopologyManager,
 		ghostdagDataStore model.GHOSTDAGDataStore,
 		headerStore model.BlockHeaderStore,
-		blockWithMetaDataGHOSTDAGDataStore model.GHOSTDAGDataStore,
+		blocksWithMetaDataGHOSTDAGDataStore model.GHOSTDAGDataStore,
 		k externalapi.KType,
 		genesisHash *externalapi.DomainHash) model.GHOSTDAGManager
 	implName string

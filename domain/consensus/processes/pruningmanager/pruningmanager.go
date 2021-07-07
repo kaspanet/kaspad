@@ -15,16 +15,16 @@ import (
 type pruningManager struct {
 	databaseContext model.DBManager
 
-	dagTraversalManager                model.DAGTraversalManager
-	dagTopologyManager                 model.DAGTopologyManager
-	consensusStateManager              model.ConsensusStateManager
-	consensusStateStore                model.ConsensusStateStore
-	ghostdagDataStore                  model.GHOSTDAGDataStore
-	blockWithMetaDataGHOSTDAGDataStore model.GHOSTDAGDataStore
-	pruningStore                       model.PruningStore
-	blockStatusStore                   model.BlockStatusStore
-	headerSelectedTipStore             model.HeaderSelectedTipStore
-	daaWindowStore                     model.DAAWindowStore
+	dagTraversalManager                 model.DAGTraversalManager
+	dagTopologyManager                  model.DAGTopologyManager
+	consensusStateManager               model.ConsensusStateManager
+	consensusStateStore                 model.ConsensusStateStore
+	ghostdagDataStore                   model.GHOSTDAGDataStore
+	blocksWithMetaDataGHOSTDAGDataStore model.GHOSTDAGDataStore
+	pruningStore                        model.PruningStore
+	blockStatusStore                    model.BlockStatusStore
+	headerSelectedTipStore              model.HeaderSelectedTipStore
+	daaWindowStore                      model.BlocksWithMetaDataDAAWindowStore
 
 	multiSetStore         model.MultisetStore
 	acceptanceDataStore   model.AcceptanceDataStore
@@ -62,8 +62,8 @@ func New(
 	utxoDiffStore model.UTXODiffStore,
 	daaBlocksStore model.DAABlocksStore,
 	reachabilityDataStore model.ReachabilityDataStore,
-	daaWindowStore model.DAAWindowStore,
-	blockWithMetaDataGHOSTDAGDataStore model.GHOSTDAGDataStore,
+	daaWindowStore model.BlocksWithMetaDataDAAWindowStore,
+	blocksWithMetaDataGHOSTDAGDataStore model.GHOSTDAGDataStore,
 
 	isArchivalNode bool,
 	genesisHash *externalapi.DomainHash,
@@ -79,20 +79,20 @@ func New(
 		dagTopologyManager:    dagTopologyManager,
 		consensusStateManager: consensusStateManager,
 
-		consensusStateStore:                consensusStateStore,
-		ghostdagDataStore:                  ghostdagDataStore,
-		pruningStore:                       pruningStore,
-		blockStatusStore:                   blockStatusStore,
-		multiSetStore:                      multiSetStore,
-		acceptanceDataStore:                acceptanceDataStore,
-		blocksStore:                        blocksStore,
-		blockHeaderStore:                   blockHeaderStore,
-		utxoDiffStore:                      utxoDiffStore,
-		headerSelectedTipStore:             headerSelectedTipStore,
-		daaBlocksStore:                     daaBlocksStore,
-		reachabilityDataStore:              reachabilityDataStore,
-		daaWindowStore:                     daaWindowStore,
-		blockWithMetaDataGHOSTDAGDataStore: blockWithMetaDataGHOSTDAGDataStore,
+		consensusStateStore:                 consensusStateStore,
+		ghostdagDataStore:                   ghostdagDataStore,
+		pruningStore:                        pruningStore,
+		blockStatusStore:                    blockStatusStore,
+		multiSetStore:                       multiSetStore,
+		acceptanceDataStore:                 acceptanceDataStore,
+		blocksStore:                         blocksStore,
+		blockHeaderStore:                    blockHeaderStore,
+		utxoDiffStore:                       utxoDiffStore,
+		headerSelectedTipStore:              headerSelectedTipStore,
+		daaBlocksStore:                      daaBlocksStore,
+		reachabilityDataStore:               reachabilityDataStore,
+		daaWindowStore:                      daaWindowStore,
+		blocksWithMetaDataGHOSTDAGDataStore: blocksWithMetaDataGHOSTDAGDataStore,
 
 		isArchivalNode:                  isArchivalNode,
 		genesisHash:                     genesisHash,
@@ -776,7 +776,7 @@ func (pm *pruningManager) blockWithMetaData(stagingArea *model.StagingArea, bloc
 		return nil, err
 	}
 
-	windowPairs := make([]*externalapi.DAABlock, len(window))
+	windowPairs := make([]*externalapi.BlockWithMetaDataDAABlock, len(window))
 	for i, blockWindowHash := range window {
 		header, err := pm.blockHeaderStore.BlockHeader(pm.databaseContext, stagingArea, blockWindowHash)
 		if err != nil {
@@ -795,7 +795,7 @@ func (pm *pruningManager) blockWithMetaData(stagingArea *model.StagingArea, bloc
 			return nil, err
 		}
 
-		windowPairs[i] = &externalapi.DAABlock{
+		windowPairs[i] = &externalapi.BlockWithMetaDataDAABlock{
 			Header:       header,
 			GHOSTDAGData: ghostdagData,
 		}
@@ -806,7 +806,7 @@ func (pm *pruningManager) blockWithMetaData(stagingArea *model.StagingArea, bloc
 	for i := externalapi.KType(0); i < pm.k+1; i++ {
 		ghostdagData, err := pm.ghostdagDataStore.Get(pm.databaseContext, stagingArea, current)
 		if database.IsNotFoundError(err) {
-			ghostdagData, err = pm.blockWithMetaDataGHOSTDAGDataStore.Get(pm.databaseContext, stagingArea, current)
+			ghostdagData, err = pm.blocksWithMetaDataGHOSTDAGDataStore.Get(pm.databaseContext, stagingArea, current)
 			if err != nil {
 				return nil, err
 			}

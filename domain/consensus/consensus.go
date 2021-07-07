@@ -62,34 +62,35 @@ func (s *consensus) ValidateAndInsertBlockWithMetaData(block *externalapi.BlockW
 	return s.blockProcessor.ValidateAndInsertBlockWithMetaData(block, validateUTXO)
 }
 
-func (c *consensus) Init(shouldNotAddGenesis bool) error {
-	c.lock.Lock()
-	defer c.lock.Unlock()
+// Init initializes consensus
+func (s *consensus) Init(shouldNotAddGenesis bool) error {
+	s.lock.Lock()
+	defer s.lock.Unlock()
 
 	onEnd := logger.LogAndMeasureExecutionTime(log, "Init")
 	defer onEnd()
 
 	stagingArea := model.NewStagingArea()
 
-	exists, err := c.blockStatusStore.Exists(c.databaseContext, stagingArea, model.VirtualGenesisBlockHash)
+	exists, err := s.blockStatusStore.Exists(s.databaseContext, stagingArea, model.VirtualGenesisBlockHash)
 	if err != nil {
 		return err
 	}
 
 	if !exists {
-		c.blockStatusStore.Stage(stagingArea, model.VirtualGenesisBlockHash, externalapi.StatusUTXOValid)
-		err = c.reachabilityManager.Init(stagingArea)
+		s.blockStatusStore.Stage(stagingArea, model.VirtualGenesisBlockHash, externalapi.StatusUTXOValid)
+		err = s.reachabilityManager.Init(stagingArea)
 		if err != nil {
 			return err
 		}
 
-		err = c.dagTopologyManager.SetParents(stagingArea, model.VirtualGenesisBlockHash, nil)
+		err = s.dagTopologyManager.SetParents(stagingArea, model.VirtualGenesisBlockHash, nil)
 		if err != nil {
 			return err
 		}
 
-		c.consensusStateStore.StageTips(stagingArea, []*externalapi.DomainHash{model.VirtualGenesisBlockHash})
-		c.ghostdagDataStore.Stage(stagingArea, model.VirtualGenesisBlockHash, externalapi.NewBlockGHOSTDAGData(
+		s.consensusStateStore.StageTips(stagingArea, []*externalapi.DomainHash{model.VirtualGenesisBlockHash})
+		s.ghostdagDataStore.Stage(stagingArea, model.VirtualGenesisBlockHash, externalapi.NewBlockGHOSTDAGData(
 			0,
 			big.NewInt(0),
 			nil,
@@ -98,25 +99,25 @@ func (c *consensus) Init(shouldNotAddGenesis bool) error {
 			nil,
 		))
 
-		err = staging.CommitAllChanges(c.databaseContext, stagingArea)
+		err = staging.CommitAllChanges(s.databaseContext, stagingArea)
 		if err != nil {
 			return err
 		}
 	}
 
-	if !shouldNotAddGenesis && c.blockStore.Count(stagingArea) == 0 {
+	if !shouldNotAddGenesis && s.blockStore.Count(stagingArea) == 0 {
 		genesisWithMetaData := &externalapi.BlockWithMetaData{
-			Block:     c.genesisBlock,
+			Block:     s.genesisBlock,
 			DAAScore:  0,
 			DAAWindow: nil,
 			GHOSTDAGData: []*externalapi.BlockGHOSTDAGDataHashPair{
 				{
 					GHOSTDAGData: externalapi.NewBlockGHOSTDAGData(0, big.NewInt(0), model.VirtualGenesisBlockHash, nil, nil, make(map[externalapi.DomainHash]externalapi.KType)),
-					Hash:         c.genesisHash,
+					Hash:         s.genesisHash,
 				},
 			},
 		}
-		_, err = c.blockProcessor.ValidateAndInsertBlockWithMetaData(genesisWithMetaData, true)
+		_, err = s.blockProcessor.ValidateAndInsertBlockWithMetaData(genesisWithMetaData, true)
 		if err != nil {
 			return err
 		}

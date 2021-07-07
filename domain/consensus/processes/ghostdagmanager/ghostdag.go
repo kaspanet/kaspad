@@ -253,7 +253,7 @@ func (gm *ghostdagManager) blueAnticoneSize(stagingArea *model.StagingArea,
 			return 0, err
 		}
 		if current.SelectedParent().Equal(model.VirtualGenesisBlockHash) {
-			ghostdagDataStore = gm.blockWithMetaDataGHOSTDAGDataStore
+			ghostdagDataStore = gm.blocksWithMetaDataGHOSTDAGDataStore
 			current, err = gm.ghostdagDataStore.Get(gm.databaseContext, stagingArea, current.SelectedParent())
 			if err != nil {
 				return 0, err

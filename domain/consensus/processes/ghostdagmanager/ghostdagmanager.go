@@ -7,11 +7,11 @@ import (
 
 // ghostdagManager resolves and manages GHOSTDAG block data
 type ghostdagManager struct {
-	databaseContext                    model.DBReader
-	dagTopologyManager                 model.DAGTopologyManager
-	ghostdagDataStore                  model.GHOSTDAGDataStore
-	blockWithMetaDataGHOSTDAGDataStore model.GHOSTDAGDataStore
-	headerStore                        model.BlockHeaderStore
+	databaseContext                     model.DBReader
+	dagTopologyManager                  model.DAGTopologyManager
+	ghostdagDataStore                   model.GHOSTDAGDataStore
+	blocksWithMetaDataGHOSTDAGDataStore model.GHOSTDAGDataStore
+	headerStore                         model.BlockHeaderStore
 
 	k           externalapi.KType
 	genesisHash *externalapi.DomainHash
@@ -23,17 +23,17 @@ func New(
 	dagTopologyManager model.DAGTopologyManager,
 	ghostdagDataStore model.GHOSTDAGDataStore,
 	headerStore model.BlockHeaderStore,
-	blockWithMetaDataGHOSTDAGDataStore model.GHOSTDAGDataStore,
+	blocksWithMetaDataGHOSTDAGDataStore model.GHOSTDAGDataStore,
 	k externalapi.KType,
 	genesisHash *externalapi.DomainHash) model.GHOSTDAGManager {
 
 	return &ghostdagManager{
-		databaseContext:                    databaseContext,
-		dagTopologyManager:                 dagTopologyManager,
-		ghostdagDataStore:                  ghostdagDataStore,
-		headerStore:                        headerStore,
-		blockWithMetaDataGHOSTDAGDataStore: blockWithMetaDataGHOSTDAGDataStore,
-		k:                                  k,
-		genesisHash:                        genesisHash,
+		databaseContext:                     databaseContext,
+		dagTopologyManager:                  dagTopologyManager,
+		ghostdagDataStore:                   ghostdagDataStore,
+		headerStore:                         headerStore,
+		blocksWithMetaDataGHOSTDAGDataStore: blocksWithMetaDataGHOSTDAGDataStore,
+		k:                                   k,
+		genesisHash:                         genesisHash,
 	}
 }

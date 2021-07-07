@@ -145,7 +145,7 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 		ghostdagDataCacheSize = config.DifficultyAdjustmentWindowSize
 	}
 	ghostdagDataStore := ghostdagdatastore.New(model.StagingShardIDGHOSTDAG, []byte("block-ghostdag-data"), dbPrefix, ghostdagDataCacheSize, preallocateCaches)
-	blockWithMetaDataGHOSTDAGDataStore := ghostdagdatastore.New(model.StagingShardIDGHOSTDAGFromBlocksWithMetaData, []byte("block-ghostdag-data-from-blocks-with-meta-data"), dbPrefix, ghostdagDataCacheSize, preallocateCaches)
+	blocksWithMetaDataGHOSTDAGDataStore := ghostdagdatastore.New(model.StagingShardIDGHOSTDAGFromBlocksWithMetaData, []byte("block-ghostdag-data-from-blocks-with-meta-data"), dbPrefix, ghostdagDataCacheSize, preallocateCaches)
 
 	headersSelectedTipStore := headersselectedtipstore.New(dbPrefix)
 	finalityStore := finalitystore.New(dbPrefix, 200, preallocateCaches)
@@ -167,7 +167,7 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 		dagTopologyManager,
 		ghostdagDataStore,
 		blockHeaderStore,
-		blockWithMetaDataGHOSTDAGDataStore,
+		blocksWithMetaDataGHOSTDAGDataStore,
 		config.K,
 		config.GenesisHash)
 	dagTraversalManager := dagtraversalmanager.New(
@@ -318,7 +318,7 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 		daaBlocksStore,
 		reachabilityDataStore,
 		daaWindowStore,
-		blockWithMetaDataGHOSTDAGDataStore,
+		blocksWithMetaDataGHOSTDAGDataStore,
 
 		config.IsArchival,
 		genesisHash,
@@ -389,7 +389,7 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 		headersSelectedChainStore,
 		daaBlocksStore,
 		daaWindowStore,
-		blockWithMetaDataGHOSTDAGDataStore)
+		blocksWithMetaDataGHOSTDAGDataStore)
 
 	c := &consensus{
 		lock:            &sync.Mutex{},
