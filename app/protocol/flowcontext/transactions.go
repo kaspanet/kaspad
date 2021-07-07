@@ -17,9 +17,7 @@ func (f *FlowContext) AddTransaction(tx *externalapi.DomainTransaction, allowOrp
 	}
 
 	acceptedTransactionIDs := consensushashing.TransactionIDs(acceptedTransactions)
-	inv := appmessage.NewMsgInvTransaction(acceptedTransactionIDs)
-
-	return f.Broadcast(inv)
+	return f.EnqueueTransactionIDsForPropagation(acceptedTransactionIDs)
 }
 
 func (f *FlowContext) shouldRebroadcastTransactions() bool {
@@ -39,4 +37,40 @@ func (f *FlowContext) OnTransactionAddedToMempool() {
 	if f.onTransactionAddedToMempoolHandler != nil {
 		f.onTransactionAddedToMempoolHandler()
 	}
+}
+
+// EnqueueTransactionIDsForPropagation add the given transactions IDs to a set of IDs to
+// propagate. The IDs will be broadcast to all peers within a single transaction Inv message.
+// The broadcast itself may happen only during a subsequent call to this method
+func (f *FlowContext) EnqueueTransactionIDsForPropagation(transactionIDs []*externalapi.DomainTransactionID) error {
+	if len(transactionIDs) == 0 {
+		return nil
+	}
+
+	f.transactionIDPropagationLock.Lock()
+	defer f.transactionIDPropagationLock.Unlock()
+
+	f.transactionIDsToPropagate = append(f.transactionIDsToPropagate, transactionIDs...)
+
+	const propagationInterval = 10 * time.Second
+	if time.Since(f.lastTransactionIDPropagationTime) < propagationInterval &&
+		len(f.transactionIDsToPropagate) < appmessage.MaxInvPerTxInvMsg {
+		return nil
+	}
+	f.lastTransactionIDPropagationTime = time.Now()
+
+	transactionIDsToBroadcast := f.transactionIDsToPropagate
+	if len(transactionIDsToBroadcast) > appmessage.MaxInvPerTxInvMsg {
+		transactionIDsToBroadcast = transactionIDsToBroadcast[:appmessage.MaxInvPerTxInvMsg]
+	}
+
+	log.Infof("EnqueueTransactionIDsForPropagation %s", transactionIDs)
+	inv := appmessage.NewMsgInvTransaction(transactionIDsToBroadcast)
+	err := f.Broadcast(inv)
+	if err != nil {
+		return err
+	}
+
+	f.transactionIDsToPropagate = f.transactionIDsToPropagate[len(transactionIDsToBroadcast):]
+	return nil
 }
