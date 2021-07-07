@@ -9,6 +9,9 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
 )
 
+// TransactionIDPropagationInterval is the interval between transaction IDs propagations
+const TransactionIDPropagationInterval = 10 * time.Second
+
 // AddTransaction adds transaction to the mempool and propagates it.
 func (f *FlowContext) AddTransaction(tx *externalapi.DomainTransaction, allowOrphan bool) error {
 	acceptedTransactions, err := f.Domain().MiningManager().ValidateAndInsertTransaction(tx, true, allowOrphan)
@@ -52,8 +55,7 @@ func (f *FlowContext) EnqueueTransactionIDsForPropagation(transactionIDs []*exte
 
 	f.transactionIDsToPropagate = append(f.transactionIDsToPropagate, transactionIDs...)
 
-	const propagationInterval = 10 * time.Second
-	if time.Since(f.lastTransactionIDPropagationTime) < propagationInterval &&
+	if time.Since(f.lastTransactionIDPropagationTime) < TransactionIDPropagationInterval &&
 		len(f.transactionIDsToPropagate) < appmessage.MaxInvPerTxInvMsg {
 		return nil
 	}
