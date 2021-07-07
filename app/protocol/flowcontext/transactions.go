@@ -66,6 +66,8 @@ func (f *FlowContext) EnqueueTransactionIDsForPropagation(transactionIDs []*exte
 		transactionIDsToBroadcast = transactionIDsToBroadcast[:appmessage.MaxInvPerTxInvMsg]
 	}
 
+	log.Infof("Transaction propagation: broadcasting %d transactions", len(transactionIDsToBroadcast))
+
 	inv := appmessage.NewMsgInvTransaction(transactionIDsToBroadcast)
 	err := f.Broadcast(inv)
 	if err != nil {
