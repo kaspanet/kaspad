@@ -95,15 +95,7 @@ func (f *FlowContext) broadcastTransactionsAfterBlockAdded(
 	for i, txID := range txIDsToRebroadcast {
 		txIDsToBroadcast[offset+i] = txID
 	}
-
-	if len(txIDsToBroadcast) == 0 {
-		return nil
-	}
-	if len(txIDsToBroadcast) > appmessage.MaxInvPerTxInvMsg {
-		txIDsToBroadcast = txIDsToBroadcast[:appmessage.MaxInvPerTxInvMsg]
-	}
-	inv := appmessage.NewMsgInvTransaction(txIDsToBroadcast)
-	return f.Broadcast(inv)
+	return f.EnqueueTransactionIDsForPropagation(txIDsToBroadcast)
 }
 
 // SharedRequestedBlocks returns a *blockrelay.SharedRequestedBlocks for sharing

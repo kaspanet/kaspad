@@ -19,8 +19,8 @@ type TransactionsRelayContext interface {
 	NetAdapter() *netadapter.NetAdapter
 	Domain() domain.Domain
 	SharedRequestedTransactions() *SharedRequestedTransactions
-	Broadcast(message appmessage.Message) error
 	OnTransactionAddedToMempool()
+	EnqueueTransactionIDsForPropagation(transactionIDs []*externalapi.DomainTransactionID) error
 }
 
 type handleRelayedTransactionsFlow struct {
@@ -119,8 +119,7 @@ func (flow *handleRelayedTransactionsFlow) readInv() (*appmessage.MsgInvTransact
 }
 
 func (flow *handleRelayedTransactionsFlow) broadcastAcceptedTransactions(acceptedTxIDs []*externalapi.DomainTransactionID) error {
-	inv := appmessage.NewMsgInvTransaction(acceptedTxIDs)
-	return flow.Broadcast(inv)
+	return flow.EnqueueTransactionIDsForPropagation(acceptedTxIDs)
 }
 
 // readMsgTxOrNotFound returns the next msgTx or msgTransactionNotFound in incomingRoute,
