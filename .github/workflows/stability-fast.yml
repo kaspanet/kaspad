@@ -2,14 +2,16 @@ name: Fast stability tests
 
 on:
   push:
+  pull_request:
+    types: [opened, synchronize]
 
 jobs:
   stability-test-fast:
     runs-on: ubuntu-20.04
-    name: Fast stability tests on ${{ github.ref }}
+    name: Fast stability tests, ${{ github.head_ref }}
     steps:
 
-      - name: Set up Go 1.16
+      - name: Set up Go
         uses: actions/setup-go@v2
         with:
           go-version: 1.16
