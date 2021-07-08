@@ -1030,7 +1030,7 @@ func TestCheckBlockHashMerkleRoot(t *testing.T) {
 func TestBlockMass(t *testing.T) {
 	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
 		factory := consensus.NewFactory()
-		tc, teardown, err := factory.NewTestConsensus(consensusConfig, "TestBlockSize")
+		tc, teardown, err := factory.NewTestConsensus(consensusConfig, "TestBlockMass")
 		if err != nil {
 			t.Fatalf("Error setting up tc: %+v", err)
 		}
@@ -1045,9 +1045,9 @@ func TestBlockMass(t *testing.T) {
 		tc.BlockStore().Stage(stagingArea, blockHash, block)
 
 		err = tc.BlockValidator().ValidateBodyInIsolation(stagingArea, blockHash)
-		if err == nil || !errors.Is(err, ruleerrors.ErrBlockSizeTooHigh) {
-			t.Fatalf("ValidateBodyInIsolationTest: TestBlockSize:"+
-				" Unexpected error: Expected to: %v, but got : %v", ruleerrors.ErrBlockSizeTooHigh, err)
+		if err == nil || !errors.Is(err, ruleerrors.ErrBlockMassTooHigh) {
+			t.Fatalf("ValidateBodyInIsolationTest: TestBlockMass:"+
+				" Unexpected error: Expected to: %v, but got : %v", ruleerrors.ErrBlockMassTooHigh, err)
 		}
 	})
 }

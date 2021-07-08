@@ -24,7 +24,7 @@ import (
 
 const (
 	defaultMaxCoinbasePayloadLength = 150
-	// defaultMaxBlockSize is a bound on the size of a block in bytes, larger values increase the bound d
+	// defaultMaxBlockMass is a bound on the mass of a block, larger values increase the bound d
 	// on the round trip time of a block, which affects the other parameters as described below
 	defaultMaxBlockMass = 500_000
 	// defaultMassPerTxByte, defaultMassPerScriptPubKeyByte and defaultMassPerSigOp define the number of grams per

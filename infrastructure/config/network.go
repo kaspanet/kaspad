@@ -28,7 +28,7 @@ type overrideDAGParamsConfig struct {
 	K                                       *model.KType `json:"k"`
 	MaxBlockParents                         *model.KType `json:"maxBlockParents"`
 	MergeSetSizeLimit                       *uint64      `json:"mergeSetSizeLimit"`
-	MaxBlockMass                            *uint64      `json:"maxBlockSize"`
+	MaxBlockMass                            *uint64      `json:"maxBlockMass"`
 	MaxCoinbasePayloadLength                *uint64      `json:"maxCoinbasePayloadLength"`
 	MassPerTxByte                           *uint64      `json:"massPerTxByte"`
 	MassPerScriptPubKeyByte                 *uint64      `json:"massPerScriptPubKeyByte"`

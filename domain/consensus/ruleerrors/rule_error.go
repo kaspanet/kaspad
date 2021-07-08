@@ -164,9 +164,9 @@ var (
 	// In the same block
 	ErrChainedTransactions = newRuleError("ErrChainedTransactions")
 
-	// ErrBlockSizeTooHigh indicates the size of a block exceeds the maximum
+	// ErrBlockMassTooHigh indicates the mass of a block exceeds the maximum
 	// allowed limits.
-	ErrBlockSizeTooHigh = newRuleError("ErrBlockSizeTooHigh")
+	ErrBlockMassTooHigh = newRuleError("ErrBlockMassTooHigh")
 
 	ErrKnownInvalid = newRuleError("ErrKnownInvalid")
 

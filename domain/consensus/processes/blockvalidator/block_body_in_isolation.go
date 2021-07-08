@@ -222,7 +222,7 @@ func (v *blockValidator) checkBlockMass(block *externalapi.DomainBlock) error {
 		massBefore := mass
 		mass += transaction.Mass
 		if mass > v.maxBlockMass || mass < massBefore {
-			return errors.Wrapf(ruleerrors.ErrBlockSizeTooHigh, "block exceeded the mass limit of %d",
+			return errors.Wrapf(ruleerrors.ErrBlockMassTooHigh, "block exceeded the mass limit of %d",
 				v.maxBlockMass)
 		}
 	}
