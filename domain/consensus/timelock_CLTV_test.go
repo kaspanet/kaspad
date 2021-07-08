@@ -48,7 +48,7 @@ func TestCheckLockTimeVerifyConditionedByDAAScore(t *testing.T) {
 		}
 		fees := uint64(1)
 		//Create a CLTV script:
-		targetDAAScore := int64(30)
+		targetDAAScore := uint64(30)
 		redeemScriptCLTV, err := createScriptCLTV(targetDAAScore)
 		if err != nil {
 			t.Fatalf("Failed to create a script using createScriptCLTV: %v", err)
@@ -94,25 +94,34 @@ func TestCheckLockTimeVerifyConditionedByDAAScore(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Failed getting DAA score: %v", err)
 		}
-		numOfBlocksToAdd := targetDAAScore - int64(currentDAAScore)
-		for i := int64(0); i < numOfBlocksToAdd; i++ {
+		numOfBlocksToAdd := targetDAAScore - currentDAAScore
+		for numOfBlocksToAdd > 0 {
 			tipHash, _, err = testConsensus.AddBlock([]*externalapi.DomainHash{tipHash}, nil, nil)
 			if err != nil {
 				t.Fatalf("Error creating tip: %v", err)
 			}
-
+			numOfBlocksToAdd--
 		}
 		// Tries to spend the output that should be no longer locked
-		_, _, err = testConsensus.AddBlock([]*externalapi.DomainHash{tipHash}, nil,
+		validBlock, _, err := testConsensus.AddBlock([]*externalapi.DomainHash{tipHash}, nil,
 			[]*externalapi.DomainTransaction{transactionThatSpentTheLockedOutput})
 		if err != nil {
 			t.Fatalf("The block should be valid since the output is not locked anymore. but got an error: %v", err)
+		}
+		validBlockStatus, err := testConsensus.BlockStatusStore().Get(testConsensus.DatabaseContext(), stagingArea,
+			validBlock)
+		if err != nil {
+			t.Fatalf("Failed getting the status for validBlock: %v", err)
+		}
+		if !validBlockStatus.Equal(externalapi.StatusUTXOValid) {
+			t.Fatalf("The status of validBlock should be: %v, but got: %v", externalapi.StatusUTXOValid,
+				validBlockStatus)
 		}
 	})
 }
 
 // TestCheckLockTimeVerifyConditionedByDAAScoreWithWrongLockTime verifies that in case of wrong lock time(lower than expected)
-// the block status will be StatusDisqualifiedFromChain
+// the block status will be StatusDisqualifiedFromChain.
 func TestCheckLockTimeVerifyConditionedByDAAScoreWithWrongLockTime(t *testing.T) {
 	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
 		consensusConfig.BlockCoinbaseMaturity = 0
@@ -146,7 +155,7 @@ func TestCheckLockTimeVerifyConditionedByDAAScoreWithWrongLockTime(t *testing.T)
 		}
 		fees := uint64(1)
 		//Create a CLTV script:
-		targetDAAScore := int64(30)
+		targetDAAScore := uint64(30)
 		redeemScriptCLTV, err := createScriptCLTV(targetDAAScore)
 		if err != nil {
 			t.Fatalf("Failed to create a script using createScriptCLTV: %v", err)
@@ -173,10 +182,10 @@ func TestCheckLockTimeVerifyConditionedByDAAScoreWithWrongLockTime(t *testing.T)
 		}
 		// Create a transaction that tries to spend the locked output.
 		// Decreased the lock time to get wrong lock time.
-		transactionThatSpentTheLockedOutput, err := createTransactionThatSpentTheLockedOutput(transactionWithLockedOutput,
+		transactionWithWrongLockTime, err := createTransactionThatSpentTheLockedOutput(transactionWithLockedOutput,
 			fees, redeemScriptCLTV, targetDAAScore-1)
 		if err != nil {
-			t.Fatalf("Error creating transactionThatSpentTheLockedOutput: %v", err)
+			t.Fatalf("Error creating transactionWithWrongLockTime: %v", err)
 		}
 		// Add blocks to release the locked output, the DAA score should be 'numOfBlocksToWait'.
 		tipHash := blockEHash
@@ -185,17 +194,18 @@ func TestCheckLockTimeVerifyConditionedByDAAScoreWithWrongLockTime(t *testing.T)
 		if err != nil {
 			t.Fatalf("Failed getting DAA score for tip: %v", err)
 		}
-		numOfBlocksToAdd := targetDAAScore - int64(currentDAAScore)
-		for i := int64(0); i < numOfBlocksToAdd; i++ {
+		numOfBlocksToAdd := targetDAAScore - currentDAAScore
+		for numOfBlocksToAdd > 0 {
 			tipHash, _, err = testConsensus.AddBlock([]*externalapi.DomainHash{tipHash}, nil, nil)
 			if err != nil {
 				t.Fatalf("Error creating tip: %v", err)
 			}
+			numOfBlocksToAdd--
 		}
 		// Tries to spend the output, the output is not locked anymore but since the lock time is wrong the block status should
 		// be 'disqualifiedFromChain'.
 		blockWithWrongLockTime, _, err := testConsensus.AddBlock([]*externalapi.DomainHash{tipHash}, nil,
-			[]*externalapi.DomainTransaction{transactionThatSpentTheLockedOutput})
+			[]*externalapi.DomainTransaction{transactionWithWrongLockTime})
 		if err != nil {
 			t.Fatalf("The block should be valid. but got an error: %v", err)
 		}
@@ -212,7 +222,7 @@ func TestCheckLockTimeVerifyConditionedByDAAScoreWithWrongLockTime(t *testing.T)
 }
 
 // TestCheckLockTimeVerifyConditionedByAbsoluteTime verifies that an output locked by the CLTV script has spendable only after
-//// the time is reached to the set target (compared to the past median time).
+// the time has reached to the set target (compared to the past median time).
 func TestCheckLockTimeVerifyConditionedByAbsoluteTime(t *testing.T) {
 	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
 		consensusConfig.BlockCoinbaseMaturity = 0
@@ -246,8 +256,8 @@ func TestCheckLockTimeVerifyConditionedByAbsoluteTime(t *testing.T) {
 			t.Fatalf("Failed getting blockD: %v", err)
 		}
 		//Create a CLTV script:
-		timeToWait := int64(12 * 1000)
-		lockTimeTarget := blockD.Header.TimeInMilliseconds() + timeToWait
+		timeToWait := uint64(12 * 1000)
+		lockTimeTarget := uint64(blockD.Header.TimeInMilliseconds()) + timeToWait
 		redeemScriptCLTV, err := createScriptCLTV(lockTimeTarget)
 		if err != nil {
 			t.Fatalf("Failed to create a script using createScriptCLTV: %v", err)
@@ -316,15 +326,24 @@ func TestCheckLockTimeVerifyConditionedByAbsoluteTime(t *testing.T) {
 			if err != nil {
 				t.Fatalf("Failed getting pastMedianTime: %v", err)
 			}
-			if pastMedianTime > lockTimeTarget {
+			if uint64(pastMedianTime) > lockTimeTarget {
 				break
 			}
 		}
 		// Tries to spend the output that should be no longer locked
-		_, _, err = testConsensus.AddBlock([]*externalapi.DomainHash{tipHash}, nil,
+		validBlock, _, err := testConsensus.AddBlock([]*externalapi.DomainHash{tipHash}, nil,
 			[]*externalapi.DomainTransaction{transactionThatSpentTheLockedOutput})
 		if err != nil {
 			t.Fatalf("The block should be valid since the output is not locked anymore. but got an error: %v", err)
+		}
+		validBlockStatus, err := testConsensus.BlockStatusStore().Get(testConsensus.DatabaseContext(), stagingArea,
+			validBlock)
+		if err != nil {
+			t.Fatalf("Failed getting the status for validBlock: %v", err)
+		}
+		if !validBlockStatus.Equal(externalapi.StatusUTXOValid) {
+			t.Fatalf("The status of validBlock should be: %v, but got: %v", externalapi.StatusUTXOValid,
+				validBlockStatus)
 		}
 	})
 }
@@ -365,8 +384,8 @@ func TestCheckLockTimeVerifyConditionedByAbsoluteTimeWithWrongLockTime(t *testin
 			t.Fatalf("Failed getting blockD: %v", err)
 		}
 		//Create a CLTV script:
-		timeToWait := int64(12 * 1000)
-		lockTimeTarget := blockD.Header.TimeInMilliseconds() + timeToWait
+		timeToWait := uint64(12 * 1000)
+		lockTimeTarget := uint64(blockD.Header.TimeInMilliseconds()) + timeToWait
 		redeemScriptCLTV, err := createScriptCLTV(lockTimeTarget)
 		if err != nil {
 			t.Fatalf("Failed to create a script using createScriptCLTV: %v", err)
@@ -396,10 +415,10 @@ func TestCheckLockTimeVerifyConditionedByAbsoluteTimeWithWrongLockTime(t *testin
 			t.Fatalf("Failed getting blockE: %v", err)
 		}
 		// Create a transaction that tries to spend the locked output.
-		transactionThatSpentTheLockedOutput, err := createTransactionThatSpentTheLockedOutput(transactionWithLockedOutput,
+		transactionWithWrongLockTime, err := createTransactionThatSpentTheLockedOutput(transactionWithLockedOutput,
 			fees, redeemScriptCLTV, lockTimeTarget-1)
 		if err != nil {
-			t.Fatalf("Error creating transactionThatSpentTheLockedOutput: %v", err)
+			t.Fatalf("Error creating transactionWithWrongLockTime: %v", err)
 		}
 		emptyCoinbase := externalapi.DomainCoinbaseData{
 			ScriptPublicKey: &externalapi.ScriptPublicKey{
@@ -428,14 +447,14 @@ func TestCheckLockTimeVerifyConditionedByAbsoluteTimeWithWrongLockTime(t *testin
 			if err != nil {
 				t.Fatalf("Failed getting pastMedianTime: %v", err)
 			}
-			if pastMedianTime > lockTimeTarget {
+			if uint64(pastMedianTime) > lockTimeTarget {
 				break
 			}
 		}
 		// Tries to spend the output, the output is not locked anymore but since the lock time is wrong the block status should
 		// be 'disqualifiedFromChain'.
 		blockWithWrongLockTime, _, err := testConsensus.AddBlock([]*externalapi.DomainHash{tipHash}, nil,
-			[]*externalapi.DomainTransaction{transactionThatSpentTheLockedOutput})
+			[]*externalapi.DomainTransaction{transactionWithWrongLockTime})
 		if err != nil {
 			t.Fatalf("The block should be valid. but got an error: %v", err)
 		}
@@ -451,9 +470,9 @@ func TestCheckLockTimeVerifyConditionedByAbsoluteTimeWithWrongLockTime(t *testin
 	})
 }
 
-func createScriptCLTV(absoluteTimeOrDAAScoreTarget int64) ([]byte, error) {
+func createScriptCLTV(absoluteTimeOrDAAScoreTarget uint64) ([]byte, error) {
 	scriptBuilder := txscript.NewScriptBuilder()
-	scriptBuilder.AddInt64(absoluteTimeOrDAAScoreTarget)
+	scriptBuilder.AddLockTimeNumber(absoluteTimeOrDAAScoreTarget)
 	scriptBuilder.AddOp(txscript.OpCheckLockTimeVerify)
 	scriptBuilder.AddOp(txscript.OpTrue)
 	return scriptBuilder.Script()
@@ -488,7 +507,7 @@ func createTransactionWithLockedOutput(txToSpend *externalapi.DomainTransaction,
 }
 
 func createTransactionThatSpentTheLockedOutput(txToSpend *externalapi.DomainTransaction, fee uint64,
-	redeemScript []byte, lockTime int64) (*externalapi.DomainTransaction, error) {
+	redeemScript []byte, lockTime uint64) (*externalapi.DomainTransaction, error) {
 
 	signatureScript, err := txscript.PayToScriptHashSignatureScript(redeemScript, []byte{})
 	if err != nil {
@@ -501,7 +520,7 @@ func createTransactionThatSpentTheLockedOutput(txToSpend *externalapi.DomainTran
 			Index:         0,
 		},
 		SignatureScript: signatureScript,
-		Sequence:        0xffffffff - 1,
+		Sequence:        constants.MaxTxInSequenceNum - 1,
 	}
 	output := &externalapi.DomainTransactionOutput{
 		ScriptPublicKey: scriptPublicKeyOutput,
@@ -512,6 +531,6 @@ func createTransactionThatSpentTheLockedOutput(txToSpend *externalapi.DomainTran
 		Inputs:   []*externalapi.DomainTransactionInput{input},
 		Outputs:  []*externalapi.DomainTransactionOutput{output},
 		Payload:  []byte{},
-		LockTime: uint64(lockTime), // less than 500 million interpreted as a DAA score, and above as an UNIX timestamp.
+		LockTime: lockTime, // less than 500 billion interpreted as a DAA score, and above as an UNIX timestamp.
 	}, nil
 }

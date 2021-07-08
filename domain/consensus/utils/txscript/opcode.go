@@ -1093,36 +1093,30 @@ func verifyLockTime(txLockTime, threshold, lockTime uint64) error {
 // LockTime field of the transaction containing the script signature
 // validating if the transaction outputs are spendable yet.
 func opcodeCheckLockTimeVerify(op *parsedOpcode, vm *Engine) error {
-	// The current transaction locktime is a uint64 resulting in a maximum
-	// locktime of 2^63-1 (the year 292278994). However, scriptNums are signed
-	// and therefore a standard 4-byte scriptNum would only support up to a
-	// maximum of 2^31-1 (the year 2038). Thus, a 5-byte scriptNum is used
-	// here since it will support up to 2^39-1 which allows dates until the year 19400
-	// PopByteArray is used here instead of PopInt because we do not want
-	// to be limited to a 4-byte integer for reasons specified above.
-	so, err := vm.dstack.PopByteArray()
-	if err != nil {
-		return err
-	}
-	lockTime, err := makeScriptNum(so, 5)
+	lockTimeBytes, err := vm.dstack.PopByteArray()
 	if err != nil {
 		return err
 	}
 
-	// In the rare event that the argument needs to be < 0 due to some
-	// arithmetic being done first, you can always use
-	// 0 OP_MAX OP_CHECKLOCKTIMEVERIFY.
-	if lockTime < 0 {
-		str := fmt.Sprintf("negative lock time: %d", lockTime)
-		return scriptError(ErrNegativeLockTime, str)
+	// Make sure lockTimeBytes is exactly 8 bytes.
+	// If more - return ErrNumberTooBig
+	// If less - pad with 0's
+	if len(lockTimeBytes) > 8 {
+		str := fmt.Sprintf("lockTime value represented as %x is longer then 8 bytes", lockTimeBytes)
+		return scriptError(ErrNumberTooBig, str)
 	}
-
+	if len(lockTimeBytes) < 8 {
+		paddedLockTimeBytes := make([]byte, 8)
+		copy(paddedLockTimeBytes, lockTimeBytes)
+		lockTimeBytes = paddedLockTimeBytes
+	}
+	stackLockTime := binary.LittleEndian.Uint64(lockTimeBytes)
 	// The lock time field of a transaction is either a block height at
 	// which the transaction is finalized or a timestamp depending on if the
-	// value is before the txscript.LockTimeThreshold. When it is under the
+	// value is before the constants.LockTimeThreshold. When it is under the
 	// threshold it is a block height.
 	err = verifyLockTime(vm.tx.LockTime, constants.LockTimeThreshold,
-		uint64(lockTime))
+		stackLockTime)
 	if err != nil {
 		return err
 	}
@@ -1167,7 +1161,7 @@ func opcodeCheckSequenceVerify(op *parsedOpcode, vm *Engine) error {
 	}
 	if len(sequenceBytes) < 8 {
 		paddedSequenceBytes := make([]byte, 8)
-		copy(paddedSequenceBytes[8-len(sequenceBytes):], sequenceBytes)
+		copy(paddedSequenceBytes, sequenceBytes)
 		sequenceBytes = paddedSequenceBytes
 	}
 

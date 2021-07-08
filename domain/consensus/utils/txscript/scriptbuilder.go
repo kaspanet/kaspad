@@ -251,6 +251,36 @@ func (b *ScriptBuilder) AddInt64(val int64) *ScriptBuilder {
 	return b.AddData(scriptNum(val).Bytes())
 }
 
+// AddLockTimeNumber gets a uint64 lockTime, converts it to byte array in little-endian, and then used the AddData function.
+func (b *ScriptBuilder) AddLockTimeNumber(lockTime uint64) *ScriptBuilder {
+	if b.err != nil {
+		return b
+	}
+	lockTimeBytes := make([]byte, 8)
+	binary.LittleEndian.PutUint64(lockTimeBytes, lockTime)
+	fixedSize := 7
+	for lockTimeBytes[fixedSize] == 0 {
+		fixedSize--
+	}
+	fixedLockTimeBytes := lockTimeBytes[:fixedSize+1]
+	return b.addData(fixedLockTimeBytes)
+}
+
+// AddSequenceNumber gets a uint64 sequence, converts it to byte array in little-endian, and then used the AddData function.
+func (b *ScriptBuilder) AddSequenceNumber(sequence uint64) *ScriptBuilder {
+	if b.err != nil {
+		return b
+	}
+	sequenceBytes := make([]byte, 8)
+	binary.LittleEndian.PutUint64(sequenceBytes, sequence)
+	fixedSize := 7
+	for sequenceBytes[fixedSize] == 0 {
+		fixedSize--
+	}
+	fixedSequenceBytes := sequenceBytes[:fixedSize+1]
+	return b.addData(fixedSequenceBytes)
+}
+
 // Reset resets the script so it has no content.
 func (b *ScriptBuilder) Reset() *ScriptBuilder {
 	b.script = b.script[0:0]
