@@ -21,16 +21,16 @@ jobs:
       - name: Fix CRLF on Windows
         if: runner.os == 'Windows'
         run: git config --global core.autocrlf false
-      
+
+      - name: Check out code into the Go module directory
+        uses: actions/checkout@v2
+
       # Increase the pagefile size on Windows to aviod run out of memory
       # Use the powershell script https://github.com/al-cheb/configure-pagefile-action/blob/master/scripts/SetPageFileSize.ps1
       - name: Increase pagefile size on Windows
         if: runner.os == 'Windows'
         shell: powershell
         run: powershell -command .\.github\workflows\SetPageFileSize.ps1
-
-      - name: Check out code into the Go module directory
-        uses: actions/checkout@v2
 
       - name: Setup Go
         uses: actions/setup-go@v2
