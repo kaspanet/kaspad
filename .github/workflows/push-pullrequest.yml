@@ -14,8 +14,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ ubuntu-16.04, macos-10.15, windows-2019 ]
-    name: Testing on ${{ matrix.os }}
+        os: [ ubuntu-latest, macos-latest, windows-latest ]
+    name: Tests, ${{ matrix.os }}
     steps:
 
       - name: Fix windows CRLF
@@ -52,7 +52,7 @@ jobs:
 
 
   stability-test-fast:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     name: Fast stability tests, ${{ github.head_ref }}
     steps:
 
@@ -79,7 +79,7 @@ jobs:
 
 
   coverage:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     name: Produce code coverage
     steps:
       - name: Check out code into the Go module directory
