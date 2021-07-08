@@ -251,34 +251,29 @@ func (b *ScriptBuilder) AddInt64(val int64) *ScriptBuilder {
 	return b.AddData(scriptNum(val).Bytes())
 }
 
-// AddLockTimeNumber gets a uint64 lockTime, converts it to byte array in little-endian, and then used the AddData function.
+// AddLockTimeNumber gets a uint64 lockTime,converts it to byte array in little-endian, and then used the AddData function.
 func (b *ScriptBuilder) AddLockTimeNumber(lockTime uint64) *ScriptBuilder {
-	if b.err != nil {
-		return b
-	}
-	lockTimeBytes := make([]byte, 8)
-	binary.LittleEndian.PutUint64(lockTimeBytes, lockTime)
-	unpaddedSize := 8
-	for lockTimeBytes[unpaddedSize-1] == 0 {
-		unpaddedSize--
-	}
-	fixedLockTimeBytes := lockTimeBytes[:unpaddedSize]
-	return b.AddData(fixedLockTimeBytes)
+	return b.addLockTimeOrSequence(lockTime)
 }
 
 // AddSequenceNumber gets a uint64 sequence, converts it to byte array in little-endian, and then used the AddData function.
 func (b *ScriptBuilder) AddSequenceNumber(sequence uint64) *ScriptBuilder {
+	return b.addLockTimeOrSequence(sequence)
+}
+
+// addLockTimeOrSequence gets a uint64 lockTime/sequence, converts it to byte array in little-endian, and then used the AddData function.
+func (b *ScriptBuilder) addLockTimeOrSequence(lockTimeOrSequence uint64) *ScriptBuilder {
 	if b.err != nil {
 		return b
 	}
-	sequenceBytes := make([]byte, 8)
-	binary.LittleEndian.PutUint64(sequenceBytes, sequence)
+	lockTimeOrSequenceBytes := make([]byte, 8)
+	binary.LittleEndian.PutUint64(lockTimeOrSequenceBytes, lockTimeOrSequence)
 	unpaddedSize := 8
-	for sequenceBytes[unpaddedSize-1] == 0 {
+	for lockTimeOrSequenceBytes[unpaddedSize-1] == 0 {
 		unpaddedSize--
 	}
-	fixedSequenceBytes := sequenceBytes[:unpaddedSize]
-	return b.AddData(fixedSequenceBytes)
+	fixedLockTimeOrSequenceBytesBytes := lockTimeOrSequenceBytes[:unpaddedSize]
+	return b.AddData(fixedLockTimeOrSequenceBytesBytes)
 }
 
 // Reset resets the script so it has no content.
