@@ -38,7 +38,7 @@ func (flow *handleRelayInvsFlow) runIBDIfNotRunning(highHash *externalapi.Domain
 	}
 	log.Debugf("Found highest shared chain block %s with peer %s", highestSharedBlockHash, flow.peer)
 
-	shouldDownloadHeadersProof, shouldSync, err := flow.shouldDownloadHeadersProof(highHash, highestSharedBlockHash, highestSharedBlockFound)
+	shouldDownloadHeadersProof, shouldSync, err := flow.shouldDownloadHeadersProof(highHash, highestSharedBlockFound)
 	if err != nil {
 		return err
 	}

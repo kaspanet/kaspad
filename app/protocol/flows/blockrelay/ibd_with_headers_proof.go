@@ -44,7 +44,7 @@ func (flow *handleRelayInvsFlow) ibdWithHeadersProof(highHash *externalapi.Domai
 	return nil
 }
 
-func (flow *handleRelayInvsFlow) shouldDownloadHeadersProof(highHash, highestSharedBlockHash *externalapi.DomainHash,
+func (flow *handleRelayInvsFlow) shouldDownloadHeadersProof(highHash *externalapi.DomainHash,
 	highestSharedBlockFound bool) (shouldDownload, shouldSync bool, err error) {
 
 	if !highestSharedBlockFound {
@@ -58,25 +58,6 @@ func (flow *handleRelayInvsFlow) shouldDownloadHeadersProof(highHash, highestSha
 		}
 
 		return false, false, nil
-	}
-
-	blockInfo, err := flow.Domain().Consensus().GetBlockInfo(highestSharedBlockHash)
-	if err != nil {
-		return false, false, err
-	}
-
-	virtualInfo, err := flow.Domain().Consensus().GetVirtualInfo()
-	if err != nil {
-		return false, false, err
-	}
-
-	if virtualInfo.BlueScore-blockInfo.BlueScore > flow.Config().NetParams().PruningDepth() {
-		hasMoreBlueWorkThanSelectedTip, err := flow.checkIfHighHashHasMoreBlueWorkThanSelectedTip(highHash)
-		if err != nil {
-			return false, false, err
-		}
-
-		return hasMoreBlueWorkThanSelectedTip, true, nil
 	}
 
 	return false, true, nil
