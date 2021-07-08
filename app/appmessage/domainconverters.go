@@ -396,12 +396,87 @@ func RPCBlockToDomainBlock(block *RPCBlock) (*externalapi.DomainBlock, error) {
 
 // BlockWithMetaDataToDomainBlockWithMetaData converts *MsgBlockWithMetaData to *externalapi.BlockWithMetaData
 func BlockWithMetaDataToDomainBlockWithMetaData(block *MsgBlockWithMetaData) *externalapi.BlockWithMetaData {
-	return block.BlockWithMetaData
+	daaWindow := make([]*externalapi.BlockWithMetaDataDAABlock, len(block.DAAWindow))
+	for i, daaBlock := range block.DAAWindow {
+		daaWindow[i] = &externalapi.BlockWithMetaDataDAABlock{
+			Header:       BlockHeaderToDomainBlockHeader(daaBlock.Header),
+			GHOSTDAGData: ghostdagDataToDomainGHOSTDAGData(daaBlock.GHOSTDAGData),
+		}
+	}
+
+	ghostdagData := make([]*externalapi.BlockGHOSTDAGDataHashPair, len(block.GHOSTDAGData))
+	for i, datum := range block.GHOSTDAGData {
+		ghostdagData[i] = &externalapi.BlockGHOSTDAGDataHashPair{
+			Hash:         datum.Hash,
+			GHOSTDAGData: ghostdagDataToDomainGHOSTDAGData(datum.GHOSTDAGData),
+		}
+	}
+
+	return &externalapi.BlockWithMetaData{
+		Block:        MsgBlockToDomainBlock(block.Block),
+		DAAScore:     block.DAAScore,
+		DAAWindow:    daaWindow,
+		GHOSTDAGData: ghostdagData,
+	}
+}
+
+func ghostdagDataToDomainGHOSTDAGData(data *BlockGHOSTDAGData) *externalapi.BlockGHOSTDAGData {
+	bluesAnticoneSizes := make(map[externalapi.DomainHash]externalapi.KType, len(data.BluesAnticoneSizes))
+	for _, pair := range data.BluesAnticoneSizes {
+		bluesAnticoneSizes[*pair.BlueHash] = pair.AnticoneSize
+	}
+	return externalapi.NewBlockGHOSTDAGData(
+		data.BlueScore,
+		data.BlueWork,
+		data.SelectedParent,
+		data.MergeSetBlues,
+		data.MergeSetReds,
+		bluesAnticoneSizes,
+	)
+}
+
+func domainGHOSTDAGDataGHOSTDAGData(data *externalapi.BlockGHOSTDAGData) *BlockGHOSTDAGData {
+	bluesAnticoneSizes := make([]*BluesAnticoneSizes, 0, len(data.BluesAnticoneSizes()))
+	for blueHash, anticoneSize := range data.BluesAnticoneSizes() {
+		blueHashCopy := blueHash
+		bluesAnticoneSizes = append(bluesAnticoneSizes, &BluesAnticoneSizes{
+			BlueHash:     &blueHashCopy,
+			AnticoneSize: anticoneSize,
+		})
+	}
+
+	return &BlockGHOSTDAGData{
+		BlueScore:          data.BlueScore(),
+		BlueWork:           data.BlueWork(),
+		SelectedParent:     data.SelectedParent(),
+		MergeSetBlues:      data.MergeSetBlues(),
+		MergeSetReds:       data.MergeSetReds(),
+		BluesAnticoneSizes: bluesAnticoneSizes,
+	}
 }
 
 // DomainBlockWithMetaDataToBlockWithMetaData converts *externalapi.BlockWithMetaData to *MsgBlockWithMetaData
 func DomainBlockWithMetaDataToBlockWithMetaData(block *externalapi.BlockWithMetaData) *MsgBlockWithMetaData {
+	daaWindow := make([]*BlockWithMetaDataDAABlock, len(block.DAAWindow))
+	for i, daaBlock := range block.DAAWindow {
+		daaWindow[i] = &BlockWithMetaDataDAABlock{
+			Header:       DomainBlockHeaderToBlockHeader(daaBlock.Header),
+			GHOSTDAGData: domainGHOSTDAGDataGHOSTDAGData(daaBlock.GHOSTDAGData),
+		}
+	}
+
+	ghostdagData := make([]*BlockGHOSTDAGDataHashPair, len(block.GHOSTDAGData))
+	for i, datum := range block.GHOSTDAGData {
+		ghostdagData[i] = &BlockGHOSTDAGDataHashPair{
+			Hash:         datum.Hash,
+			GHOSTDAGData: domainGHOSTDAGDataGHOSTDAGData(datum.GHOSTDAGData),
+		}
+	}
+
 	return &MsgBlockWithMetaData{
-		BlockWithMetaData: block,
+		Block:        DomainBlockToMsgBlock(block.Block),
+		DAAScore:     block.DAAScore,
+		DAAWindow:    daaWindow,
+		GHOSTDAGData: ghostdagData,
 	}
 }

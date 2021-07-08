@@ -16,44 +16,42 @@ func (x *KaspadMessage_BlockWithMetaData) toAppMessage() (appmessage.Message, er
 	if err != nil {
 		return nil, err
 	}
-	domainBlock := appmessage.MsgBlockToDomainBlock(msgBlock)
 
-	daaWindow := make([]*externalapi.BlockWithMetaDataDAABlock, len(x.BlockWithMetaData.DaaWindow))
+	daaWindow := make([]*appmessage.BlockWithMetaDataDAABlock, len(x.BlockWithMetaData.DaaWindow))
 	for i, daaBlock := range x.BlockWithMetaData.DaaWindow {
-		daaWindow[i], err = daaBlock.toDomain()
+		daaWindow[i], err = daaBlock.toAppMessage()
 		if err != nil {
 			return nil, err
 		}
 	}
 
-	ghostdagData := make([]*externalapi.BlockGHOSTDAGDataHashPair, len(x.BlockWithMetaData.GhostdagData))
+	ghostdagData := make([]*appmessage.BlockGHOSTDAGDataHashPair, len(x.BlockWithMetaData.GhostdagData))
 	for i, pair := range x.BlockWithMetaData.GhostdagData {
 		hash, err := pair.Hash.toDomain()
 		if err != nil {
 			return nil, err
 		}
 
-		data, err := pair.GhostdagData.toDomain()
+		data, err := pair.GhostdagData.toAppMessage()
 		if err != nil {
 			return nil, err
 		}
 
-		ghostdagData[i] = &externalapi.BlockGHOSTDAGDataHashPair{
+		ghostdagData[i] = &appmessage.BlockGHOSTDAGDataHashPair{
 			Hash:         hash,
 			GHOSTDAGData: data,
 		}
 	}
 
-	return appmessage.NewMsgBlockWithMetaData(&externalapi.BlockWithMetaData{
-		Block:        domainBlock,
+	return &appmessage.MsgBlockWithMetaData{
+		Block:        msgBlock,
 		DAAScore:     x.BlockWithMetaData.DaaScore,
 		DAAWindow:    daaWindow,
 		GHOSTDAGData: ghostdagData,
-	}), nil
+	}, nil
 }
 
 func (x *KaspadMessage_BlockWithMetaData) fromAppMessage(msgBlockWithMetaData *appmessage.MsgBlockWithMetaData) error {
-	msgBlock := appmessage.DomainBlockToMsgBlock(msgBlockWithMetaData.Block)
 	x.BlockWithMetaData = &BlockWithMetaDataMessage{
 		Block:        &BlockMessage{},
 		DaaScore:     msgBlockWithMetaData.DAAScore,
@@ -61,14 +59,14 @@ func (x *KaspadMessage_BlockWithMetaData) fromAppMessage(msgBlockWithMetaData *a
 		GhostdagData: make([]*BlockGHOSTDAGDataHashPair, len(msgBlockWithMetaData.GHOSTDAGData)),
 	}
 
-	err := x.BlockWithMetaData.Block.fromAppMessage(msgBlock)
+	err := x.BlockWithMetaData.Block.fromAppMessage(msgBlockWithMetaData.Block)
 	if err != nil {
 		return err
 	}
 
 	for i, daaBlock := range msgBlockWithMetaData.DAAWindow {
 		x.BlockWithMetaData.DaaWindow[i] = &DaaBlock{}
-		err := x.BlockWithMetaData.DaaWindow[i].fromDomain(daaBlock)
+		err := x.BlockWithMetaData.DaaWindow[i].fromAppMessage(daaBlock)
 		if err != nil {
 			return err
 		}
@@ -80,13 +78,13 @@ func (x *KaspadMessage_BlockWithMetaData) fromAppMessage(msgBlockWithMetaData *a
 			GhostdagData: &GhostdagData{},
 		}
 
-		x.BlockWithMetaData.GhostdagData[i].GhostdagData.fromDomain(pair.GHOSTDAGData)
+		x.BlockWithMetaData.GhostdagData[i].GhostdagData.fromAppMessage(pair.GHOSTDAGData)
 	}
 
 	return nil
 }
 
-func (x *DaaBlock) toDomain() (*externalapi.BlockWithMetaDataDAABlock, error) {
+func (x *DaaBlock) toAppMessage() (*appmessage.BlockWithMetaDataDAABlock, error) {
 	if x == nil {
 		return nil, errors.Wrapf(errorNil, "DaaBlock is nil")
 	}
@@ -96,36 +94,34 @@ func (x *DaaBlock) toDomain() (*externalapi.BlockWithMetaDataDAABlock, error) {
 		return nil, err
 	}
 
-	header := appmessage.BlockHeaderToDomainBlockHeader(msgBlockHeader)
-
-	ghostdagData, err := x.GhostdagData.toDomain()
+	ghostdagData, err := x.GhostdagData.toAppMessage()
 	if err != nil {
 		return nil, err
 	}
 
-	return &externalapi.BlockWithMetaDataDAABlock{
-		Header:       header,
+	return &appmessage.BlockWithMetaDataDAABlock{
+		Header:       msgBlockHeader,
 		GHOSTDAGData: ghostdagData,
 	}, nil
 }
 
-func (x *DaaBlock) fromDomain(daaBlock *externalapi.BlockWithMetaDataDAABlock) error {
+func (x *DaaBlock) fromAppMessage(daaBlock *appmessage.BlockWithMetaDataDAABlock) error {
 	*x = DaaBlock{
 		Header:       &BlockHeader{},
 		GhostdagData: &GhostdagData{},
 	}
 
-	err := x.Header.fromAppMessage(appmessage.DomainBlockHeaderToBlockHeader(daaBlock.Header))
+	err := x.Header.fromAppMessage(daaBlock.Header)
 	if err != nil {
 		return err
 	}
 
-	x.GhostdagData.fromDomain(daaBlock.GHOSTDAGData)
+	x.GhostdagData.fromAppMessage(daaBlock.GHOSTDAGData)
 
 	return nil
 }
 
-func (x *GhostdagData) toDomain() (*externalapi.BlockGHOSTDAGData, error) {
+func (x *GhostdagData) toAppMessage() (*appmessage.BlockGHOSTDAGData, error) {
 	if x == nil {
 		return nil, errors.Wrapf(errorNil, "GhostdagData is nil")
 	}
@@ -145,44 +141,48 @@ func (x *GhostdagData) toDomain() (*externalapi.BlockGHOSTDAGData, error) {
 		return nil, err
 	}
 
-	bluesAnticoneSizes := make(map[externalapi.DomainHash]externalapi.KType, len(x.BluesAnticoneSizes))
-	for _, protoBluesAnticoneSizes := range x.BluesAnticoneSizes {
+	bluesAnticoneSizes := make([]*appmessage.BluesAnticoneSizes, len(x.BluesAnticoneSizes))
+	for i, protoBluesAnticoneSizes := range x.BluesAnticoneSizes {
 		blueHash, err := protoBluesAnticoneSizes.BlueHash.toDomain()
 		if err != nil {
 			return nil, err
 		}
 
 		if protoBluesAnticoneSizes.AnticoneSize > maxKType() {
-			bluesAnticoneSizes[*blueHash] = externalapi.KType(protoBluesAnticoneSizes.AnticoneSize)
+			return nil, errors.Errorf("anticone size %d is greater than max k type %d", protoBluesAnticoneSizes.AnticoneSize, maxKType())
+		}
+
+		bluesAnticoneSizes[i] = &appmessage.BluesAnticoneSizes{
+			BlueHash:     blueHash,
+			AnticoneSize: externalapi.KType(protoBluesAnticoneSizes.AnticoneSize),
 		}
 	}
 
 	blueWork := big.NewInt(0).SetBytes(x.BlueWork)
-
-	return externalapi.NewBlockGHOSTDAGData(
-		x.BlueScore,
-		blueWork,
-		selectedParent,
-		mergeSetBlues,
-		mergeSetReds,
-		bluesAnticoneSizes,
-	), nil
+	return &appmessage.BlockGHOSTDAGData{
+		BlueScore:          x.BlueScore,
+		BlueWork:           blueWork,
+		SelectedParent:     selectedParent,
+		MergeSetBlues:      mergeSetBlues,
+		MergeSetReds:       mergeSetReds,
+		BluesAnticoneSizes: bluesAnticoneSizes,
+	}, nil
 }
 
-func (x *GhostdagData) fromDomain(ghostdagData *externalapi.BlockGHOSTDAGData) {
-	protoBluesAnticoneSizes := make([]*BluesAnticoneSizes, 0, len(ghostdagData.BluesAnticoneSizes()))
-	for blueHash, anitconeSize := range ghostdagData.BluesAnticoneSizes() {
+func (x *GhostdagData) fromAppMessage(ghostdagData *appmessage.BlockGHOSTDAGData) {
+	protoBluesAnticoneSizes := make([]*BluesAnticoneSizes, 0, len(ghostdagData.BluesAnticoneSizes))
+	for _, pair := range ghostdagData.BluesAnticoneSizes {
 		protoBluesAnticoneSizes = append(protoBluesAnticoneSizes, &BluesAnticoneSizes{
-			BlueHash:     domainHashToProto(&blueHash),
-			AnticoneSize: uint32(anitconeSize),
+			BlueHash:     domainHashToProto(pair.BlueHash),
+			AnticoneSize: uint32(pair.AnticoneSize),
 		})
 	}
 	*x = GhostdagData{
-		BlueScore:          ghostdagData.BlueScore(),
-		BlueWork:           ghostdagData.BlueWork().Bytes(),
-		SelectedParent:     domainHashToProto(ghostdagData.SelectedParent()),
-		MergeSetBlues:      domainHashesToProto(ghostdagData.MergeSetBlues()),
-		MergeSetReds:       domainHashesToProto(ghostdagData.MergeSetReds()),
+		BlueScore:          ghostdagData.BlueScore,
+		BlueWork:           ghostdagData.BlueWork.Bytes(),
+		SelectedParent:     domainHashToProto(ghostdagData.SelectedParent),
+		MergeSetBlues:      domainHashesToProto(ghostdagData.MergeSetBlues),
+		MergeSetReds:       domainHashesToProto(ghostdagData.MergeSetReds),
 		BluesAnticoneSizes: protoBluesAnticoneSizes,
 	}
 }

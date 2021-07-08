@@ -7,7 +7,6 @@ import (
 	"github.com/kaspanet/kaspad/app/protocol/protocolerrors"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
 	"github.com/pkg/errors"
 )
 
@@ -184,7 +183,7 @@ func (flow *handleRelayInvsFlow) downloadPruningPointAndItsAnticone(consensus ex
 	}
 
 	log.Infof("Finished downloading pruning point and its anticone from %s", flow.peer)
-	return consensushashing.BlockHash(pruningPoint.Block), nil
+	return pruningPoint.Block.Header.BlockHash(), nil
 }
 
 func (flow *handleRelayInvsFlow) processBlockWithMetaData(
