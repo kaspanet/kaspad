@@ -115,6 +115,8 @@ func calculateSignatureHash(tx *externalapi.DomainTransaction, inputIndex int, t
 
 	infallibleWriteElement(hashWriter, txIn.Sequence)
 
+	infallibleWriteElement(hashWriter, txIn.SigOpCount)
+
 	outputsHash := getOutputsHash(tx, inputIndex, hashType, reusedValues)
 	infallibleWriteElement(hashWriter, outputsHash)
 

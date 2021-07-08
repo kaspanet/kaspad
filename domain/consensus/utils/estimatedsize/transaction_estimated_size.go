@@ -58,7 +58,7 @@ func outpointEstimatedSerializedSize() uint64 {
 func TransactionOutputEstimatedSerializedSize(output *externalapi.DomainTransactionOutput) uint64 {
 	size := uint64(0)
 	size += 8 // value (uint64)
-	size += 2 //output.ScriptPublicKey.Version (uint 16)
+	size += 2 // output.ScriptPublicKey.Version (uint 16)
 	size += 8 // length of script public key (uint64)
 	size += uint64(len(output.ScriptPublicKey.Script))
 	return size

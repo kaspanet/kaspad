@@ -9,7 +9,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-// ValidateTransactionInIsolationAndPopulateMass validates the pares of the transaction that can be validated
+// ValidateTransactionInIsolationAndPopulateMass validates the parts of the transaction that can be validated
 // context-free, and populates its mass field.
 //
 // Note: if the function fails, there's no guarantee that the transaction mass field will remain unaffected.
