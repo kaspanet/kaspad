@@ -258,12 +258,12 @@ func (b *ScriptBuilder) AddLockTimeNumber(lockTime uint64) *ScriptBuilder {
 	}
 	lockTimeBytes := make([]byte, 8)
 	binary.LittleEndian.PutUint64(lockTimeBytes, lockTime)
-	fixedSize := 7
-	for lockTimeBytes[fixedSize] == 0 {
-		fixedSize--
+	unpaddedSize := 8
+	for lockTimeBytes[unpaddedSize-1] == 0 {
+		unpaddedSize--
 	}
-	fixedLockTimeBytes := lockTimeBytes[:fixedSize+1]
-	return b.addData(fixedLockTimeBytes)
+	fixedLockTimeBytes := lockTimeBytes[:unpaddedSize]
+	return b.AddData(fixedLockTimeBytes)
 }
 
 // AddSequenceNumber gets a uint64 sequence, converts it to byte array in little-endian, and then used the AddData function.
@@ -273,12 +273,12 @@ func (b *ScriptBuilder) AddSequenceNumber(sequence uint64) *ScriptBuilder {
 	}
 	sequenceBytes := make([]byte, 8)
 	binary.LittleEndian.PutUint64(sequenceBytes, sequence)
-	fixedSize := 7
-	for sequenceBytes[fixedSize] == 0 {
-		fixedSize--
+	unpaddedSize := 8
+	for sequenceBytes[unpaddedSize-1] == 0 {
+		unpaddedSize--
 	}
-	fixedSequenceBytes := sequenceBytes[:fixedSize+1]
-	return b.addData(fixedSequenceBytes)
+	fixedSequenceBytes := sequenceBytes[:unpaddedSize]
+	return b.AddData(fixedSequenceBytes)
 }
 
 // Reset resets the script so it has no content.
