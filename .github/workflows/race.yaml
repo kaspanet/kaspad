@@ -1,4 +1,4 @@
-name: Go-Race
+name: Race
 
 on:
   schedule:
@@ -7,7 +7,7 @@ on:
 
 jobs:
   race_test:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
@@ -19,10 +19,10 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Set up Go 1.x
+      - name: Setup Go
         uses: actions/setup-go@v2
         with:
-          go-version: 1.15
+          go-version: 1.16
 
       - name: Set scheduled branch name
         shell: bash
