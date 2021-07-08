@@ -28,7 +28,7 @@ jobs:
       # Increase the pagefile size on Windows to aviod running out of memory
       - name: Increase pagefile size on Windows
         if: runner.os == 'Windows'
-        run: powershell -command .\.github\workflows\SetPageFileSize.ps1
+        run: powershell -command .github\workflows\SetPageFileSize.ps1
 
       - name: Setup Go
         uses: actions/setup-go@v2
@@ -71,8 +71,7 @@ jobs:
       - name: Install golint
         run: go get -u golang.org/x/lint/golint
 
-      - name: Run fast stability test
-        timeout-minutes: 720
+      - name: Run fast stability tests
         working-directory: stability-tests
         run: ./install_and_test.sh
 
