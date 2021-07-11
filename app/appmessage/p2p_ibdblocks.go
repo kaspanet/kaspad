@@ -11,7 +11,7 @@ func (msg *IBDBlocksMessage) Command() MessageCommand {
 	return CmdIBDBlocks
 }
 
-// NewIBDBlocksMessage returns a new kaspa BlockHeaders message
+// NewIBDBlocksMessage returns a new kaspa IBDBlocks message
 func NewIBDBlocksMessage(blocks []*MsgBlock) *IBDBlocksMessage {
 	return &IBDBlocksMessage{
 		Blocks: blocks,

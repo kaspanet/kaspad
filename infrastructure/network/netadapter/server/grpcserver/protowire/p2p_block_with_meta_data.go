@@ -56,7 +56,7 @@ func (x *KaspadMessage_BlockWithMetaData) fromAppMessage(msgBlockWithMetaData *a
 		Block:        &BlockMessage{},
 		DaaScore:     msgBlockWithMetaData.DAAScore,
 		DaaWindow:    make([]*DaaBlock, len(msgBlockWithMetaData.DAAWindow)),
-		GhostdagData: make([]*BlockGHOSTDAGDataHashPair, len(msgBlockWithMetaData.GHOSTDAGData)),
+		GhostdagData: make([]*BlockGhostdagDataHashPair, len(msgBlockWithMetaData.GHOSTDAGData)),
 	}
 
 	err := x.BlockWithMetaData.Block.fromAppMessage(msgBlockWithMetaData.Block)
@@ -73,7 +73,7 @@ func (x *KaspadMessage_BlockWithMetaData) fromAppMessage(msgBlockWithMetaData *a
 	}
 
 	for i, pair := range msgBlockWithMetaData.GHOSTDAGData {
-		x.BlockWithMetaData.GhostdagData[i] = &BlockGHOSTDAGDataHashPair{
+		x.BlockWithMetaData.GhostdagData[i] = &BlockGhostdagDataHashPair{
 			Hash:         domainHashToProto(pair.Hash),
 			GhostdagData: &GhostdagData{},
 		}

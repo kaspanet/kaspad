@@ -14,7 +14,7 @@ func (msg *MsgDoneBlocksWithMetaData) Command() MessageCommand {
 	return CmdDoneBlocksWithMetaData
 }
 
-// NewMsgDoneBlocksWithMetaData returns a new kaspa DoneIBDBlocks message that conforms to the
+// NewMsgDoneBlocksWithMetaData returns a new kaspa DoneBlocksWithMetaData message that conforms to the
 // Message interface.
 func NewMsgDoneBlocksWithMetaData() *MsgDoneBlocksWithMetaData {
 	return &MsgDoneBlocksWithMetaData{}

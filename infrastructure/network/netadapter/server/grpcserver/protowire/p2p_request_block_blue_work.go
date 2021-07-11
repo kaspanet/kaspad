@@ -7,14 +7,14 @@ import (
 
 func (x *KaspadMessage_RequestBlockBlueWork) toAppMessage() (appmessage.Message, error) {
 	if x == nil {
-		return nil, errors.Wrapf(errorNil, "KaspadMessage_InvRelayBlock is nil")
+		return nil, errors.Wrapf(errorNil, "KaspadMessage_RequestBlockBlueWork is nil")
 	}
 	return x.RequestBlockBlueWork.toAppMessage()
 }
 
 func (x *RequestBlockBlueWorkMessage) toAppMessage() (appmessage.Message, error) {
 	if x == nil {
-		return nil, errors.Wrapf(errorNil, "InvRelayBlockMessage is nil")
+		return nil, errors.Wrapf(errorNil, "RequestBlockBlueWorkMessage is nil")
 	}
 	hash, err := x.Block.toDomain()
 	if err != nil {

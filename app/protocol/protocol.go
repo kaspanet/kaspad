@@ -200,11 +200,11 @@ func (m *Manager) registerBlockRelayFlows(router *routerpkg.Router, isStopping *
 			},
 		),
 
-		m.registerFlow("HandleRequestPruningPointUTXOSetAndBlock", router,
+		m.registerFlow("HandleRequestPruningPointUTXOSet", router,
 			[]appmessage.MessageCommand{appmessage.CmdRequestPruningPointUTXOSet,
 				appmessage.CmdRequestNextPruningPointUTXOSetChunk}, isStopping, errChan,
 			func(incomingRoute *routerpkg.Route, peer *peerpkg.Peer) error {
-				return blockrelay.HandleRequestPruningPointUTXOSetAndBlock(m.context, incomingRoute, outgoingRoute)
+				return blockrelay.HandleRequestPruningPointUTXOSet(m.context, incomingRoute, outgoingRoute)
 			},
 		),
 

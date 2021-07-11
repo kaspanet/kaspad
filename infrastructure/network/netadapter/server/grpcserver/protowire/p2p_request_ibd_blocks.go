@@ -5,16 +5,16 @@ import (
 	"github.com/pkg/errors"
 )
 
-func (x *KaspadMessage_RequestIBDBlocks) toAppMessage() (appmessage.Message, error) {
+func (x *KaspadMessage_RequestIbdBlocks) toAppMessage() (appmessage.Message, error) {
 	if x == nil {
 		return nil, errors.Wrapf(errorNil, "KaspadMessage_RequestIBDBlocks is nil")
 	}
-	lowHash, err := x.RequestIBDBlocks.LowHash.toDomain()
+	lowHash, err := x.RequestIbdBlocks.LowHash.toDomain()
 	if err != nil {
 		return nil, err
 	}
 
-	highHash, err := x.RequestIBDBlocks.HighHash.toDomain()
+	highHash, err := x.RequestIbdBlocks.HighHash.toDomain()
 	if err != nil {
 		return nil, err
 	}
@@ -25,7 +25,7 @@ func (x *KaspadMessage_RequestIBDBlocks) toAppMessage() (appmessage.Message, err
 	}, nil
 }
 
-func (x *RequestIBDBlocksMessage) toAppMessage() (appmessage.Message, error) {
+func (x *RequestIbdBlocksMessage) toAppMessage() (appmessage.Message, error) {
 	if x == nil {
 		return nil, errors.Wrapf(errorNil, "RequestIBDBlocksMessage is nil")
 	}
@@ -46,8 +46,8 @@ func (x *RequestIBDBlocksMessage) toAppMessage() (appmessage.Message, error) {
 
 }
 
-func (x *KaspadMessage_RequestIBDBlocks) fromAppMessage(msgRequestmsgRequestIBDBlocks *appmessage.MsgRequestIBDBlocks) error {
-	x.RequestIBDBlocks = &RequestIBDBlocksMessage{
+func (x *KaspadMessage_RequestIbdBlocks) fromAppMessage(msgRequestmsgRequestIBDBlocks *appmessage.MsgRequestIBDBlocks) error {
+	x.RequestIbdBlocks = &RequestIbdBlocksMessage{
 		LowHash:  domainHashToProto(msgRequestmsgRequestIBDBlocks.LowHash),
 		HighHash: domainHashToProto(msgRequestmsgRequestIBDBlocks.HighHash),
 	}

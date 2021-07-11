@@ -86,15 +86,15 @@ message BlockLocatorMessage{
   repeated Hash hashes = 1;
 }
 
-message RequestIBDBlocksMessage{
+message RequestIbdBlocksMessage{
   Hash lowHash = 1;
   Hash highHash = 2;
 }
 
-message RequestNextIBDBlocksMessage{
+message RequestNextIbdBlocksMessage{
 }
 
-message DoneIBDBlocksMessage{
+message DoneIbdBlocksMessage{
 }
 
 message RequestRelayBlocksMessage{
@@ -144,7 +144,7 @@ message RejectMessage{
   string reason = 1;
 }
 
-message RequestPruningPointUTXOSetAndBlockMessage{
+message RequestPruningPointUTXOSetMessage{
   Hash pruningPointHash = 1;
 }
 
@@ -185,7 +185,7 @@ message IbdBlockLocatorHighestHashMessage {
 message IbdBlockLocatorHighestHashNotFoundMessage {
 }
 
-message IBDBlocksMessage {
+message IbdBlocksMessage {
   repeated BlockMessage blocks = 1;
 }
 
@@ -196,7 +196,7 @@ message BlockWithMetaDataMessage {
   BlockMessage block = 1;
   uint64 daaScore = 2;
   repeated DaaBlock daaWindow = 3;
-  repeated BlockGHOSTDAGDataHashPair ghostdagData = 4;
+  repeated BlockGhostdagDataHashPair ghostdagData = 4;
 }
 
 message DaaBlock {
@@ -204,7 +204,7 @@ message DaaBlock {
   GhostdagData ghostdagData = 2;
 }
 
-message BlockGHOSTDAGDataHashPair {
+message BlockGhostdagDataHashPair {
   Hash hash = 1;
   GhostdagData ghostdagData = 2;
 }

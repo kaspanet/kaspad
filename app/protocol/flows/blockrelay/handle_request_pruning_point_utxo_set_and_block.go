@@ -12,71 +12,71 @@ import (
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
 )
 
-// HandleRequestPruningPointUTXOSetAndBlockContext is the interface for the context needed for the HandleRequestPruningPointUTXOSetAndBlock flow.
-type HandleRequestPruningPointUTXOSetAndBlockContext interface {
+// HandleRequestPruningPointUTXOSetContext is the interface for the context needed for the HandleRequestPruningPointUTXOSet flow.
+type HandleRequestPruningPointUTXOSetContext interface {
 	Domain() domain.Domain
 }
 
-type handleRequestPruningPointUTXOSetAndBlockFlow struct {
-	HandleRequestPruningPointUTXOSetAndBlockContext
+type handleRequestPruningPointUTXOSetFlow struct {
+	HandleRequestPruningPointUTXOSetContext
 	incomingRoute, outgoingRoute *router.Route
 }
 
-// HandleRequestPruningPointUTXOSetAndBlock listens to appmessage.MsgRequestPruningPointUTXOSet messages and sends
+// HandleRequestPruningPointUTXOSet listens to appmessage.MsgRequestPruningPointUTXOSet messages and sends
 // the pruning point UTXO set and block body.
-func HandleRequestPruningPointUTXOSetAndBlock(context HandleRequestPruningPointUTXOSetAndBlockContext, incomingRoute,
+func HandleRequestPruningPointUTXOSet(context HandleRequestPruningPointUTXOSetContext, incomingRoute,
 	outgoingRoute *router.Route) error {
-	flow := &handleRequestPruningPointUTXOSetAndBlockFlow{
-		HandleRequestPruningPointUTXOSetAndBlockContext: context,
-		incomingRoute: incomingRoute,
-		outgoingRoute: outgoingRoute,
+	flow := &handleRequestPruningPointUTXOSetFlow{
+		HandleRequestPruningPointUTXOSetContext: context,
+		incomingRoute:                           incomingRoute,
+		outgoingRoute:                           outgoingRoute,
 	}
 
 	return flow.start()
 }
 
-func (flow *handleRequestPruningPointUTXOSetAndBlockFlow) start() error {
+func (flow *handleRequestPruningPointUTXOSetFlow) start() error {
 	for {
-		msgRequestPruningPointUTXOSetAndBlock, err := flow.waitForRequestPruningPointUTXOSetAndBlockMessages()
+		msgRequestPruningPointUTXOSet, err := flow.waitForRequestPruningPointUTXOSetMessages()
 		if err != nil {
 			return err
 		}
 
-		err = flow.handleRequestPruningPointUTXOSetAndBlockMessage(msgRequestPruningPointUTXOSetAndBlock)
+		err = flow.handleRequestPruningPointUTXOSetMessage(msgRequestPruningPointUTXOSet)
 		if err != nil {
 			return err
 		}
 	}
 }
 
-func (flow *handleRequestPruningPointUTXOSetAndBlockFlow) handleRequestPruningPointUTXOSetAndBlockMessage(
-	msgRequestPruningPointUTXOSetAndBlock *appmessage.MsgRequestPruningPointUTXOSet) error {
+func (flow *handleRequestPruningPointUTXOSetFlow) handleRequestPruningPointUTXOSetMessage(
+	msgRequestPruningPointUTXOSet *appmessage.MsgRequestPruningPointUTXOSet) error {
 
-	onEnd := logger.LogAndMeasureExecutionTime(log, "handleRequestPruningPointUTXOSetAndBlockFlow")
+	onEnd := logger.LogAndMeasureExecutionTime(log, "handleRequestPruningPointUTXOSetFlow")
 	defer onEnd()
 
 	log.Debugf("Got request for pruning point UTXO set")
 
-	return flow.sendPruningPointUTXOSet(msgRequestPruningPointUTXOSetAndBlock)
+	return flow.sendPruningPointUTXOSet(msgRequestPruningPointUTXOSet)
 }
 
-func (flow *handleRequestPruningPointUTXOSetAndBlockFlow) waitForRequestPruningPointUTXOSetAndBlockMessages() (
+func (flow *handleRequestPruningPointUTXOSetFlow) waitForRequestPruningPointUTXOSetMessages() (
 	*appmessage.MsgRequestPruningPointUTXOSet, error) {
 
 	message, err := flow.incomingRoute.Dequeue()
 	if err != nil {
 		return nil, err
 	}
-	msgRequestPruningPointUTXOSetAndBlock, ok := message.(*appmessage.MsgRequestPruningPointUTXOSet)
+	msgRequestPruningPointUTXOSet, ok := message.(*appmessage.MsgRequestPruningPointUTXOSet)
 	if !ok {
 		return nil, protocolerrors.Errorf(true, "received unexpected message type. "+
 			"expected: %s, got: %s", appmessage.CmdRequestPruningPointUTXOSet, message.Command())
 	}
-	return msgRequestPruningPointUTXOSetAndBlock, nil
+	return msgRequestPruningPointUTXOSet, nil
 }
 
-func (flow *handleRequestPruningPointUTXOSetAndBlockFlow) sendPruningPointUTXOSet(
-	msgRequestPruningPointUTXOSetAndBlock *appmessage.MsgRequestPruningPointUTXOSet) error {
+func (flow *handleRequestPruningPointUTXOSetFlow) sendPruningPointUTXOSet(
+	msgRequestPruningPointUTXOSet *appmessage.MsgRequestPruningPointUTXOSet) error {
 
 	// Send the UTXO set in `step`-sized chunks
 	const step = 1000
@@ -84,7 +84,7 @@ func (flow *handleRequestPruningPointUTXOSetAndBlockFlow) sendPruningPointUTXOSe
 	chunksSent := 0
 	for {
 		pruningPointUTXOs, err := flow.Domain().Consensus().GetPruningPointUTXOs(
-			msgRequestPruningPointUTXOSetAndBlock.PruningPointHash, fromOutpoint, step)
+			msgRequestPruningPointUTXOSet.PruningPointHash, fromOutpoint, step)
 		if err != nil {
 			if errors.Is(err, ruleerrors.ErrWrongPruningPointHash) {
 				return flow.outgoingRoute.Enqueue(appmessage.NewMsgUnexpectedPruningPoint())
@@ -92,7 +92,7 @@ func (flow *handleRequestPruningPointUTXOSetAndBlockFlow) sendPruningPointUTXOSe
 		}
 
 		log.Debugf("Retrieved %d UTXOs for pruning block %s",
-			len(pruningPointUTXOs), msgRequestPruningPointUTXOSetAndBlock.PruningPointHash)
+			len(pruningPointUTXOs), msgRequestPruningPointUTXOSet.PruningPointHash)
 
 		outpointAndUTXOEntryPairs :=
 			appmessage.DomainOutpointAndUTXOEntryPairsToOutpointAndUTXOEntryPairs(pruningPointUTXOs)
@@ -103,7 +103,7 @@ func (flow *handleRequestPruningPointUTXOSetAndBlockFlow) sendPruningPointUTXOSe
 
 		if len(pruningPointUTXOs) < step {
 			log.Debugf("Finished sending UTXOs for pruning block %s",
-				msgRequestPruningPointUTXOSetAndBlock.PruningPointHash)
+				msgRequestPruningPointUTXOSet.PruningPointHash)
 
 			return flow.outgoingRoute.Enqueue(appmessage.NewMsgDonePruningPointUTXOSetChunks())
 		}

@@ -15,7 +15,7 @@ func newKey(blockHash *externalapi.DomainHash, index uint64) lruKey {
 }
 
 // LRUCache is a least-recently-used cache from
-// uint64 to DomainHash
+// lruKey to *externalapi.BlockGHOSTDAGDataHashPair
 type LRUCache struct {
 	cache    map[lruKey]*externalapi.BlockGHOSTDAGDataHashPair
 	capacity int

@@ -15,7 +15,7 @@ func (msg *MsgRequestNextIBDBlocks) Command() MessageCommand {
 	return CmdRequestNextIBDBlocks
 }
 
-// NewMsgRequestNextIBDBlocks returns a new kaspa RequestNextHeaders message that conforms to the
+// NewMsgRequestNextIBDBlocks returns a new kaspa RequestNextIBDBlocks message that conforms to the
 // Message interface.
 func NewMsgRequestNextIBDBlocks() *MsgRequestNextIBDBlocks {
 	return &MsgRequestNextIBDBlocks{}

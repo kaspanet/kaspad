@@ -7,7 +7,7 @@ import (
 
 func (x *KaspadMessage_IbdBlocks) toAppMessage() (appmessage.Message, error) {
 	if x == nil {
-		return nil, errors.Wrapf(errorNil, "KaspadMessage_BlockHeaders is nil")
+		return nil, errors.Wrapf(errorNil, "KaspadMessage_IbdBlocks is nil")
 	}
 	blocks, err := x.IbdBlocks.toAppMessage()
 	if err != nil {
@@ -18,7 +18,7 @@ func (x *KaspadMessage_IbdBlocks) toAppMessage() (appmessage.Message, error) {
 	}, nil
 }
 
-func (x *IBDBlocksMessage) toAppMessage() ([]*appmessage.MsgBlock, error) {
+func (x *IbdBlocksMessage) toAppMessage() ([]*appmessage.MsgBlock, error) {
 	if x == nil {
 		return nil, errors.Wrapf(errorNil, "IBDBlocksMessage is nil")
 	}
@@ -44,7 +44,7 @@ func (x *KaspadMessage_IbdBlocks) fromAppMessage(ibdBlocksMessage *appmessage.IB
 		}
 	}
 
-	x.IbdBlocks = &IBDBlocksMessage{
+	x.IbdBlocks = &IbdBlocksMessage{
 		Blocks: blocks,
 	}
 	return nil

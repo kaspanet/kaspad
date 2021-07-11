@@ -1,7 +1,7 @@
 package appmessage
 
 // MsgDoneIBDBlocks implements the Message interface and represents a kaspa
-// DoneHeaders message. It is used to notify the IBD syncing peer that the
+// DoneIBDBlocks message. It is used to notify the IBD syncing peer that the
 // syncer sent all the requested IBD blocks.
 //
 // This message has no payload.
