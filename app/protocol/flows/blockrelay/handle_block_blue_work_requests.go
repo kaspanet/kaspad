@@ -8,7 +8,7 @@ import (
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
 )
 
-// BlockBlueWorkRequestsContext is the interface for the context needed for the HandleRelayBlockRequests flow.
+// BlockBlueWorkRequestsContext is the interface for the context needed for the HandleBlockBlueWorkRequests flow.
 type BlockBlueWorkRequestsContext interface {
 	Domain() domain.Domain
 }

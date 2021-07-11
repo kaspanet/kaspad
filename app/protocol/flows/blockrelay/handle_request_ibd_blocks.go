@@ -66,8 +66,8 @@ func (flow *handleRequestIBDBlocksFlow) start() error {
 				blocks[i] = appmessage.DomainBlockToMsgBlock(blockHeader)
 			}
 
-			blockHeadersMessage := appmessage.NewIBDBlocksMessage(blocks)
-			err = flow.outgoingRoute.Enqueue(blockHeadersMessage)
+			ibdBlocksMessage := appmessage.NewIBDBlocksMessage(blocks)
+			err = flow.outgoingRoute.Enqueue(ibdBlocksMessage)
 			if err != nil {
 				return err
 			}

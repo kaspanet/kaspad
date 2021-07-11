@@ -45,6 +45,8 @@ func HandleIBDBlockLocator(context HandleIBDBlockLocatorContext, incomingRoute *
 			if err != nil {
 				return err
 			}
+
+			// The IBD block locator is checking only existing blocks with bodies.
 			if !blockInfo.Exists || blockInfo.BlockStatus == externalapi.StatusHeaderOnly {
 				continue
 			}
