@@ -54,7 +54,7 @@ func (v *transactionValidator) ValidateTransactionInIsolationAndPopulateMass(tx 
 		return errors.Wrapf(ruleerrors.ErrTransactionVersionIsUnknown, "validation failed: unknown transaction version. ")
 	}
 
-	tx.Mass = v.transactionMass(tx)
+	tx.Mass = v.TransactionMass(tx)
 
 	return nil
 }

@@ -10,4 +10,5 @@ type TransactionValidator interface {
 	ValidateTransactionInIsolationAndPopulateMass(transaction *externalapi.DomainTransaction) error
 	ValidateTransactionInContextAndPopulateFee(stagingArea *StagingArea,
 		tx *externalapi.DomainTransaction, povBlockHash *externalapi.DomainHash, selectedParentMedianTime int64) error
+	TransactionMass(tx *externalapi.DomainTransaction) uint64
 }

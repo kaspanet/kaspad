@@ -551,3 +551,7 @@ func (s *consensus) EstimateNetworkHashesPerSecond(startHash *externalapi.Domain
 
 	return s.difficultyManager.EstimateNetworkHashesPerSecond(startHash, windowSize)
 }
+
+func (s *consensus) TransactionMass(transaction *externalapi.DomainTransaction) uint64 {
+	return s.transactionValidator.TransactionMass(transaction)
+}

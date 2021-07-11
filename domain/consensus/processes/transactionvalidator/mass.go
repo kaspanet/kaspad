@@ -6,19 +6,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/utils/transactionhelper"
 )
 
-func (v *transactionValidator) transactionMassStandalonePart(tx *externalapi.DomainTransaction) uint64 {
-	size := estimatedsize.TransactionEstimatedSerializedSize(tx)
-
-	totalScriptPubKeySize := uint64(0)
-	for _, output := range tx.Outputs {
-		totalScriptPubKeySize += 2 //output.ScriptPublicKey.Version (uint16)
-		totalScriptPubKeySize += uint64(len(output.ScriptPublicKey.Script))
-	}
-
-	return size*v.massPerTxByte + totalScriptPubKeySize*v.massPerScriptPubKeyByte
-}
-
-func (v *transactionValidator) transactionMass(tx *externalapi.DomainTransaction) uint64 {
+func (v *transactionValidator) TransactionMass(tx *externalapi.DomainTransaction) uint64 {
 	if transactionhelper.IsCoinBase(tx) {
 		return 0
 	}
