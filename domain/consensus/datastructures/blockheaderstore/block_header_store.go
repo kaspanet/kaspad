@@ -7,21 +7,26 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/lrucache"
+	"github.com/kaspanet/kaspad/domain/prefixmanager/prefix"
 )
 
-var bucket = database.MakeBucket([]byte("block-headers"))
-var countKey = database.MakeBucket(nil).Key([]byte("block-headers-count"))
+var bucketName = []byte("block-headers")
+var countKeyName = []byte("block-headers-count")
 
 // blockHeaderStore represents a store of blocks
 type blockHeaderStore struct {
 	cache       *lrucache.LRUCache
 	countCached uint64
+	bucket      model.DBBucket
+	countKey    model.DBKey
 }
 
 // New instantiates a new BlockHeaderStore
-func New(dbContext model.DBReader, cacheSize int, preallocate bool) (model.BlockHeaderStore, error) {
+func New(dbContext model.DBReader, prefix *prefix.Prefix, cacheSize int, preallocate bool) (model.BlockHeaderStore, error) {
 	blockHeaderStore := &blockHeaderStore{
-		cache: lrucache.New(cacheSize, preallocate),
+		cache:    lrucache.New(cacheSize, preallocate),
+		bucket:   database.MakeBucket(prefix.Serialize()).Bucket(bucketName),
+		countKey: database.MakeBucket(prefix.Serialize()).Key(countKeyName),
 	}
 
 	err := blockHeaderStore.initializeCount(dbContext)
@@ -34,12 +39,12 @@ func New(dbContext model.DBReader, cacheSize int, preallocate bool) (model.Block
 
 func (bhs *blockHeaderStore) initializeCount(dbContext model.DBReader) error {
 	count := uint64(0)
-	hasCountBytes, err := dbContext.Has(countKey)
+	hasCountBytes, err := dbContext.Has(bhs.countKey)
 	if err != nil {
 		return err
 	}
 	if hasCountBytes {
-		countBytes, err := dbContext.Get(countKey)
+		countBytes, err := dbContext.Get(bhs.countKey)
 		if err != nil {
 			return err
 		}
@@ -144,7 +149,7 @@ func (bhs *blockHeaderStore) Delete(stagingArea *model.StagingArea, blockHash *e
 }
 
 func (bhs *blockHeaderStore) hashAsKey(hash *externalapi.DomainHash) model.DBKey {
-	return bucket.Key(hash.ByteSlice())
+	return bhs.bucket.Key(hash.ByteSlice())
 }
 
 func (bhs *blockHeaderStore) serializeHeader(header externalapi.BlockHeader) ([]byte, error) {

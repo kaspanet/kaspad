@@ -226,7 +226,7 @@ func (s *consensus) GetBlockAcceptanceData(blockHash *externalapi.DomainHash) (e
 	return s.acceptanceDataStore.Get(s.databaseContext, stagingArea, blockHash)
 }
 
-func (s *consensus) GetHashesBetween(lowHash, highHash *externalapi.DomainHash, maxBlueScoreDifference uint64) (
+func (s *consensus) GetHashesBetween(lowHash, highHash *externalapi.DomainHash, maxBlocks uint64) (
 	hashes []*externalapi.DomainHash, actualHighHash *externalapi.DomainHash, err error) {
 
 	s.lock.Lock()
@@ -243,7 +243,7 @@ func (s *consensus) GetHashesBetween(lowHash, highHash *externalapi.DomainHash, 
 		return nil, nil, err
 	}
 
-	return s.syncManager.GetHashesBetween(stagingArea, lowHash, highHash, maxBlueScoreDifference)
+	return s.syncManager.GetHashesBetween(stagingArea, lowHash, highHash, maxBlocks)
 }
 
 func (s *consensus) GetMissingBlockBodyHashes(highHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error) {
@@ -399,6 +399,15 @@ func (s *consensus) GetVirtualInfo() (*externalapi.VirtualInfo, error) {
 		BlueScore:      virtualGHOSTDAGData.BlueScore(),
 		DAAScore:       daaScore,
 	}, nil
+}
+
+func (s *consensus) GetVirtualDAAScore() (uint64, error) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	stagingArea := model.NewStagingArea()
+
+	return s.daaBlocksStore.DAAScore(s.databaseContext, stagingArea, model.VirtualBlockHash)
 }
 
 func (s *consensus) CreateBlockLocator(lowHash, highHash *externalapi.DomainHash, limit uint32) (externalapi.BlockLocator, error) {

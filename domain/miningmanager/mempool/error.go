@@ -50,6 +50,7 @@ const (
 	RejectFinality        RejectCode = 0x43
 	RejectDifficulty      RejectCode = 0x44
 	RejectImmatureSpend   RejectCode = 0x45
+	RejectBadOrphan       RejectCode = 0x64
 )
 
 // Map of reject codes back strings for pretty printing.
@@ -58,13 +59,14 @@ var rejectCodeStrings = map[RejectCode]string{
 	RejectInvalid:         "REJECT_INVALID",
 	RejectObsolete:        "REJECT_OBSOLETE",
 	RejectDuplicate:       "REJECT_DUPLICATE",
-	RejectNonstandard:     "REJECT_NONSTANDARD",
+	RejectNonstandard:     "REJECT_NON_STANDARD",
 	RejectDust:            "REJECT_DUST",
-	RejectInsufficientFee: "REJECT_INSUFFICIENTFEE",
+	RejectInsufficientFee: "REJECT_INSUFFICIENT_FEE",
 	RejectFinality:        "REJECT_FINALITY",
 	RejectDifficulty:      "REJECT_DIFFICULTY",
-	RejectNotRequested:    "REJECT_NOTREQUESTED",
-	RejectImmatureSpend:   "REJECT_IMMATURESPEND",
+	RejectNotRequested:    "REJECT_NOT_REQUESTED",
+	RejectImmatureSpend:   "REJECT_IMMATURE_SPEND",
+	RejectBadOrphan:       "REJECT_BAD_ORPHAN",
 }
 
 // String returns the RejectCode in human-readable form.
@@ -91,12 +93,10 @@ func (e TxRuleError) Error() string {
 	return e.Description
 }
 
-// txRuleError creates an underlying TxRuleError with the given a set of
+// transactionRuleError creates an underlying TxRuleError with the given a set of
 // arguments and returns a RuleError that encapsulates it.
-func txRuleError(c RejectCode, desc string) RuleError {
-	return RuleError{
-		Err: TxRuleError{RejectCode: c, Description: desc},
-	}
+func transactionRuleError(c RejectCode, desc string) RuleError {
+	return newRuleError(TxRuleError{RejectCode: c, Description: desc})
 }
 
 func newRuleError(err error) RuleError {

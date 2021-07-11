@@ -139,8 +139,6 @@ func parseScriptFlags(flagStr string) (ScriptFlags, error) {
 		switch flag {
 		case "":
 			// Nothing.
-		case "DISCOURAGE_UPGRADABLE_NOPS":
-			flags |= ScriptDiscourageUpgradableNops
 		default:
 			return flags, errors.Errorf("invalid flag: %s", flag)
 		}
@@ -188,8 +186,6 @@ func parseExpectedResult(expected string) ([]ErrorCode, error) {
 		return []ErrorCode{ErrInvalidStackOperation}, nil
 	case "DISABLED_OPCODE":
 		return []ErrorCode{ErrDisabledOpcode}, nil
-	case "DISCOURAGE_UPGRADABLE_NOPS":
-		return []ErrorCode{ErrDiscourageUpgradableNOPs}, nil
 	case "PUSH_SIZE":
 		return []ErrorCode{ErrElementTooBig}, nil
 	case "OP_COUNT":

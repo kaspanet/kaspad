@@ -7,22 +7,26 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/lrucache"
+	"github.com/kaspanet/kaspad/domain/prefixmanager/prefix"
 	"github.com/pkg/errors"
 )
 
-var bucket = database.MakeBucket([]byte("blocks"))
-var countKey = database.MakeBucket(nil).Key([]byte("blocks-count"))
+var bucketName = []byte("blocks")
 
 // blockStore represents a store of blocks
 type blockStore struct {
 	cache       *lrucache.LRUCache
 	countCached uint64
+	bucket      model.DBBucket
+	countKey    model.DBKey
 }
 
 // New instantiates a new BlockStore
-func New(dbContext model.DBReader, cacheSize int, preallocate bool) (model.BlockStore, error) {
+func New(dbContext model.DBReader, prefix *prefix.Prefix, cacheSize int, preallocate bool) (model.BlockStore, error) {
 	blockStore := &blockStore{
-		cache: lrucache.New(cacheSize, preallocate),
+		cache:    lrucache.New(cacheSize, preallocate),
+		bucket:   database.MakeBucket(prefix.Serialize()).Bucket(bucketName),
+		countKey: database.MakeBucket(prefix.Serialize()).Key([]byte("blocks-count")),
 	}
 
 	err := blockStore.initializeCount(dbContext)
@@ -35,12 +39,12 @@ func New(dbContext model.DBReader, cacheSize int, preallocate bool) (model.Block
 
 func (bs *blockStore) initializeCount(dbContext model.DBReader) error {
 	count := uint64(0)
-	hasCountBytes, err := dbContext.Has(countKey)
+	hasCountBytes, err := dbContext.Has(bs.countKey)
 	if err != nil {
 		return err
 	}
 	if hasCountBytes {
-		countBytes, err := dbContext.Get(countKey)
+		countBytes, err := dbContext.Get(bs.countKey)
 		if err != nil {
 			return err
 		}
@@ -153,7 +157,7 @@ func (bs *blockStore) deserializeBlock(blockBytes []byte) (*externalapi.DomainBl
 }
 
 func (bs *blockStore) hashAsKey(hash *externalapi.DomainHash) model.DBKey {
-	return bucket.Key(hash.ByteSlice())
+	return bs.bucket.Key(hash.ByteSlice())
 }
 
 func (bs *blockStore) Count(stagingArea *model.StagingArea) uint64 {
@@ -225,7 +229,7 @@ func (a allBlockHashesIterator) Close() error {
 }
 
 func (bs *blockStore) AllBlockHashesIterator(dbContext model.DBReader) (model.BlockIterator, error) {
-	cursor, err := dbContext.Cursor(bucket)
+	cursor, err := dbContext.Cursor(bs.bucket)
 	if err != nil {
 		return nil, err
 	}

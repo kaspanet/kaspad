@@ -1,6 +1,7 @@
 package router
 
 import (
+	"fmt"
 	"sync"
 
 	"github.com/kaspanet/kaspad/app/appmessage"
@@ -26,15 +27,15 @@ type Router struct {
 func NewRouter() *Router {
 	router := Router{
 		incomingRoutes: make(map[appmessage.MessageCommand]*Route),
-		outgoingRoute:  newRouteWithCapacity(outgoingRouteMaxMessages),
+		outgoingRoute:  newRouteWithCapacity("", outgoingRouteMaxMessages),
 	}
 	return &router
 }
 
 // AddIncomingRoute registers the messages of types `messageTypes` to
 // be routed to the given `route`
-func (r *Router) AddIncomingRoute(messageTypes []appmessage.MessageCommand) (*Route, error) {
-	route := NewRoute()
+func (r *Router) AddIncomingRoute(name string, messageTypes []appmessage.MessageCommand) (*Route, error) {
+	route := NewRoute(fmt.Sprintf("%s - incoming", name))
 	err := r.initializeIncomingRoute(route, messageTypes)
 	if err != nil {
 		return nil, err
@@ -44,8 +45,8 @@ func (r *Router) AddIncomingRoute(messageTypes []appmessage.MessageCommand) (*Ro
 
 // AddIncomingRouteWithCapacity registers the messages of types `messageTypes` to
 // be routed to the given `route` with a capacity of `capacity`
-func (r *Router) AddIncomingRouteWithCapacity(capacity int, messageTypes []appmessage.MessageCommand) (*Route, error) {
-	route := newRouteWithCapacity(capacity)
+func (r *Router) AddIncomingRouteWithCapacity(name string, capacity int, messageTypes []appmessage.MessageCommand) (*Route, error) {
+	route := newRouteWithCapacity(fmt.Sprintf("%s - incoming", name), capacity)
 	err := r.initializeIncomingRoute(route, messageTypes)
 	if err != nil {
 		return nil, err

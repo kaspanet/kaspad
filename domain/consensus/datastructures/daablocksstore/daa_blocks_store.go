@@ -6,22 +6,27 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/lrucache"
+	"github.com/kaspanet/kaspad/domain/prefixmanager/prefix"
 )
 
-var daaScoreBucket = database.MakeBucket([]byte("daa-score"))
-var daaAddedBlocksBucket = database.MakeBucket([]byte("daa-added-blocks"))
+var daaScoreBucketName = []byte("daa-score")
+var daaAddedBlocksBucketName = []byte("daa-added-blocks")
 
 // daaBlocksStore represents a store of DAABlocksStore
 type daaBlocksStore struct {
 	daaScoreLRUCache       *lrucache.LRUCache
 	daaAddedBlocksLRUCache *lrucache.LRUCache
+	daaScoreBucket         model.DBBucket
+	daaAddedBlocksBucket   model.DBBucket
 }
 
 // New instantiates a new DAABlocksStore
-func New(daaScoreCacheSize int, daaAddedBlocksCacheSize int, preallocate bool) model.DAABlocksStore {
+func New(prefix *prefix.Prefix, daaScoreCacheSize int, daaAddedBlocksCacheSize int, preallocate bool) model.DAABlocksStore {
 	return &daaBlocksStore{
 		daaScoreLRUCache:       lrucache.New(daaScoreCacheSize, preallocate),
 		daaAddedBlocksLRUCache: lrucache.New(daaAddedBlocksCacheSize, preallocate),
+		daaScoreBucket:         database.MakeBucket(prefix.Serialize()).Bucket(daaScoreBucketName),
+		daaAddedBlocksBucket:   database.MakeBucket(prefix.Serialize()).Bucket(daaAddedBlocksBucketName),
 	}
 }
 
@@ -90,11 +95,11 @@ func (daas *daaBlocksStore) DAAAddedBlocks(dbContext model.DBReader, stagingArea
 }
 
 func (daas *daaBlocksStore) daaScoreHashAsKey(hash *externalapi.DomainHash) model.DBKey {
-	return daaScoreBucket.Key(hash.ByteSlice())
+	return daas.daaScoreBucket.Key(hash.ByteSlice())
 }
 
 func (daas *daaBlocksStore) daaAddedBlocksHashAsKey(hash *externalapi.DomainHash) model.DBKey {
-	return daaAddedBlocksBucket.Key(hash.ByteSlice())
+	return daas.daaAddedBlocksBucket.Key(hash.ByteSlice())
 }
 
 func (daas *daaBlocksStore) Delete(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) {

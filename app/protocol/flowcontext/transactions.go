@@ -9,52 +9,23 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
 )
 
-// AddTransaction adds transaction to the mempool and propagates it.
-func (f *FlowContext) AddTransaction(tx *externalapi.DomainTransaction) error {
-	f.transactionsToRebroadcastLock.Lock()
-	defer f.transactionsToRebroadcastLock.Unlock()
+// TransactionIDPropagationInterval is the interval between transaction IDs propagations
+const TransactionIDPropagationInterval = 10 * time.Second
 
-	err := f.Domain().MiningManager().ValidateAndInsertTransaction(tx, false)
+// AddTransaction adds transaction to the mempool and propagates it.
+func (f *FlowContext) AddTransaction(tx *externalapi.DomainTransaction, allowOrphan bool) error {
+	acceptedTransactions, err := f.Domain().MiningManager().ValidateAndInsertTransaction(tx, true, allowOrphan)
 	if err != nil {
 		return err
 	}
 
-	transactionID := consensushashing.TransactionID(tx)
-	f.transactionsToRebroadcast[*transactionID] = tx
-	inv := appmessage.NewMsgInvTransaction([]*externalapi.DomainTransactionID{transactionID})
-	return f.Broadcast(inv)
-}
-
-func (f *FlowContext) updateTransactionsToRebroadcast(addedBlocks []*externalapi.DomainBlock) {
-	f.transactionsToRebroadcastLock.Lock()
-	defer f.transactionsToRebroadcastLock.Unlock()
-
-	for _, block := range addedBlocks {
-		// Note: if a transaction is included in the DAG but not accepted,
-		// it won't be rebroadcast anymore, although it is not included in
-		// the UTXO set
-		for _, tx := range block.Transactions {
-			delete(f.transactionsToRebroadcast, *consensushashing.TransactionID(tx))
-		}
-	}
+	acceptedTransactionIDs := consensushashing.TransactionIDs(acceptedTransactions)
+	return f.EnqueueTransactionIDsForPropagation(acceptedTransactionIDs)
 }
 
 func (f *FlowContext) shouldRebroadcastTransactions() bool {
 	const rebroadcastInterval = 30 * time.Second
 	return time.Since(f.lastRebroadcastTime) > rebroadcastInterval
-}
-
-func (f *FlowContext) txIDsToRebroadcast() []*externalapi.DomainTransactionID {
-	f.transactionsToRebroadcastLock.Lock()
-	defer f.transactionsToRebroadcastLock.Unlock()
-
-	txIDs := make([]*externalapi.DomainTransactionID, len(f.transactionsToRebroadcast))
-	i := 0
-	for _, tx := range f.transactionsToRebroadcast {
-		txIDs[i] = consensushashing.TransactionID(tx)
-		i++
-	}
-	return txIDs
 }
 
 // SharedRequestedTransactions returns a *transactionrelay.SharedRequestedTransactions for sharing
@@ -69,4 +40,40 @@ func (f *FlowContext) OnTransactionAddedToMempool() {
 	if f.onTransactionAddedToMempoolHandler != nil {
 		f.onTransactionAddedToMempoolHandler()
 	}
+}
+
+// EnqueueTransactionIDsForPropagation add the given transactions IDs to a set of IDs to
+// propagate. The IDs will be broadcast to all peers within a single transaction Inv message.
+// The broadcast itself may happen only during a subsequent call to this method
+func (f *FlowContext) EnqueueTransactionIDsForPropagation(transactionIDs []*externalapi.DomainTransactionID) error {
+	if len(transactionIDs) == 0 {
+		return nil
+	}
+
+	f.transactionIDPropagationLock.Lock()
+	defer f.transactionIDPropagationLock.Unlock()
+
+	f.transactionIDsToPropagate = append(f.transactionIDsToPropagate, transactionIDs...)
+
+	if time.Since(f.lastTransactionIDPropagationTime) < TransactionIDPropagationInterval &&
+		len(f.transactionIDsToPropagate) < appmessage.MaxInvPerTxInvMsg {
+		return nil
+	}
+	f.lastTransactionIDPropagationTime = time.Now()
+
+	transactionIDsToBroadcast := f.transactionIDsToPropagate
+	if len(transactionIDsToBroadcast) > appmessage.MaxInvPerTxInvMsg {
+		transactionIDsToBroadcast = transactionIDsToBroadcast[:appmessage.MaxInvPerTxInvMsg]
+	}
+
+	log.Infof("Transaction propagation: broadcasting %d transactions", len(transactionIDsToBroadcast))
+
+	inv := appmessage.NewMsgInvTransaction(transactionIDsToBroadcast)
+	err := f.Broadcast(inv)
+	if err != nil {
+		return err
+	}
+
+	f.transactionIDsToPropagate = f.transactionIDsToPropagate[len(transactionIDsToBroadcast):]
+	return nil
 }

@@ -2,6 +2,7 @@ package integration
 
 import (
 	"encoding/hex"
+	"github.com/kaspanet/kaspad/app/protocol/flowcontext"
 	"strings"
 	"testing"
 	"time"
@@ -44,10 +45,14 @@ func TestTxRelay(t *testing.T) {
 		waitForPayeeToReceiveBlock(t, payeeBlockAddedChan)
 	}
 
+	// Sleep for `TransactionIDPropagationInterval` to make sure that our transaction will
+	// be propagated
+	time.Sleep(flowcontext.TransactionIDPropagationInterval)
+
 	msgTx := generateTx(t, secondBlock.Transactions[transactionhelper.CoinbaseTransactionIndex], payer, payee)
 	domainTransaction := appmessage.MsgTxToDomainTransaction(msgTx)
 	rpcTransaction := appmessage.DomainTransactionToRPCTransaction(domainTransaction)
-	response, err := payer.rpcClient.SubmitTransaction(rpcTransaction)
+	response, err := payer.rpcClient.SubmitTransaction(rpcTransaction, false)
 	if err != nil {
 		t.Fatalf("Error submitting transaction: %+v", err)
 	}

@@ -52,7 +52,6 @@ func TestErrorCodeStringer(t *testing.T) {
 		{ErrPubKeyFormat, "ErrPubKeyFormat"},
 		{ErrCleanStack, "ErrCleanStack"},
 		{ErrNullFail, "ErrNullFail"},
-		{ErrDiscourageUpgradableNOPs, "ErrDiscourageUpgradableNOPs"},
 		{ErrNegativeLockTime, "ErrNegativeLockTime"},
 		{ErrUnsatisfiedLockTime, "ErrUnsatisfiedLockTime"},
 		{ErrMinimalIf, "ErrMinimalIf"},

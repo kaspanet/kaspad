@@ -17,14 +17,14 @@ func TestVirtualSelectedParentBlueScoreAndVirtualDAAScore(t *testing.T) {
 	kaspad, teardown := setupHarness(t, harnessParams)
 	defer teardown()
 
-	// Make sure that the initial blue score is 1
+	// Make sure that the initial selected parent blue score is 0
 	response, err := kaspad.rpcClient.GetVirtualSelectedParentBlueScore()
 	if err != nil {
 		t.Fatalf("Error getting virtual selected parent blue score: %s", err)
 	}
-	if response.BlueScore != 1 {
+	if response.BlueScore != 0 {
 		t.Fatalf("Unexpected virtual selected parent blue score. Want: %d, got: %d",
-			1, response.BlueScore)
+			0, response.BlueScore)
 	}
 
 	// Register to virtual selected parent blue score changes
@@ -70,8 +70,8 @@ func TestVirtualSelectedParentBlueScoreAndVirtualDAAScore(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Error getting virtual selected parent blue score: %s", err)
 	}
-	if response.BlueScore != 1+blockAmountToMine {
+	if response.BlueScore != blockAmountToMine {
 		t.Fatalf("Unexpected virtual selected parent blue score. Want: %d, got: %d",
-			1+blockAmountToMine, response.BlueScore)
+			blockAmountToMine, response.BlueScore)
 	}
 }

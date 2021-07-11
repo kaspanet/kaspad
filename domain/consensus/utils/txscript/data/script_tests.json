@@ -1217,37 +1217,11 @@
     "OK"
   ],
   [
-    "1",
-    "NOP1 NOP2 NOP3 NOP4 NOP5 NOP6 NOP7 NOP8 NOP9 NOP10 1 EQUAL",
-    "",
-    "OK"
-  ],
-  [
-    "'NOP_1_to_10'",
-    "NOP1 NOP2 NOP3 NOP4 NOP5 NOP6 NOP7 NOP8 NOP9 NOP10 'NOP_1_to_10' EQUAL",
-    "",
-    "OK"
-  ],
-  [
-    "1",
-    "NOP",
-    "DISCOURAGE_UPGRADABLE_NOPS",
-    "OK",
-    "Discourage NOPx flag allows OP_NOP"
-  ],
-  [
     "0",
-    "IF NOP10 ENDIF 1",
-    "DISCOURAGE_UPGRADABLE_NOPS",
-    "OK",
-    "Discouraged NOPs are allowed if not executed"
-  ],
-  [
-    "0",
-    "IF 0xbc ELSE 1 ENDIF",
+    "IF 0xb2 ELSE 1 ENDIF",
     "",
     "OK",
-    "opcodes above NOP10 invalid if executed"
+    "opcodes above OP_CHECKSEQUENCEVERIFY invalid if executed"
   ],
   [
     "0",
@@ -2189,66 +2163,6 @@
   ],
   [
     "",
-    "NOP1 1",
-    "",
-    "OK"
-  ],
-  [
-    "",
-    "NOP2 1",
-    "",
-    "OK"
-  ],
-  [
-    "",
-    "NOP3 1",
-    "",
-    "OK"
-  ],
-  [
-    "",
-    "NOP4 1",
-    "",
-    "OK"
-  ],
-  [
-    "",
-    "NOP5 1",
-    "",
-    "OK"
-  ],
-  [
-    "",
-    "NOP6 1",
-    "",
-    "OK"
-  ],
-  [
-    "",
-    "NOP7 1",
-    "",
-    "OK"
-  ],
-  [
-    "",
-    "NOP8 1",
-    "",
-    "OK"
-  ],
-  [
-    "",
-    "NOP9 1",
-    "",
-    "OK"
-  ],
-  [
-    "",
-    "NOP10 1",
-    "",
-    "OK"
-  ],
-  [
-    "",
     "0 0 CHECKMULTISIG VERIFY DEPTH 0 EQUAL",
     "",
     "OK",
@@ -2969,11 +2883,11 @@
     "OK"
   ],
   [
-    "TRUE 2147483648",
+    "TRUE DATA_8 0x0000000000000080",
     "CHECKSEQUENCEVERIFY",
     "",
     "OK",
-    "CSV passes if stack top bit 1 << 31 is set"
+    "CSV passes if stack top bit 1 << 63 is set"
   ],
   [
     "",
@@ -3761,88 +3675,6 @@
     "disabled"
   ],
   [
-    "1",
-    "NOP1 NOP2 NOP3 NOP4 NOP5 NOP6 NOP7 NOP8 NOP9 NOP10 2 EQUAL",
-    "",
-    "EVAL_FALSE"
-  ],
-  [
-    "'NOP_1_to_10'",
-    "NOP1 NOP2 NOP3 NOP4 NOP5 NOP6 NOP7 NOP8 NOP9 NOP10 'NOP_1_to_11' EQUAL",
-    "",
-    "EVAL_FALSE"
-  ],
-  [
-    "Ensure 100% coverage of discouraged NOPS"
-  ],
-  [
-    "1",
-    "NOP1",
-    "DISCOURAGE_UPGRADABLE_NOPS",
-    "DISCOURAGE_UPGRADABLE_NOPS"
-  ],
-  [
-    "1",
-    "NOP2",
-    "DISCOURAGE_UPGRADABLE_NOPS",
-    "DISCOURAGE_UPGRADABLE_NOPS"
-  ],
-  [
-    "1",
-    "NOP3",
-    "DISCOURAGE_UPGRADABLE_NOPS",
-    "DISCOURAGE_UPGRADABLE_NOPS"
-  ],
-  [
-    "1",
-    "NOP4",
-    "DISCOURAGE_UPGRADABLE_NOPS",
-    "DISCOURAGE_UPGRADABLE_NOPS"
-  ],
-  [
-    "1",
-    "NOP5",
-    "DISCOURAGE_UPGRADABLE_NOPS",
-    "DISCOURAGE_UPGRADABLE_NOPS"
-  ],
-  [
-    "1",
-    "NOP6",
-    "DISCOURAGE_UPGRADABLE_NOPS",
-    "DISCOURAGE_UPGRADABLE_NOPS"
-  ],
-  [
-    "1",
-    "NOP7",
-    "DISCOURAGE_UPGRADABLE_NOPS",
-    "DISCOURAGE_UPGRADABLE_NOPS"
-  ],
-  [
-    "1",
-    "NOP8",
-    "DISCOURAGE_UPGRADABLE_NOPS",
-    "DISCOURAGE_UPGRADABLE_NOPS"
-  ],
-  [
-    "1",
-    "NOP9",
-    "DISCOURAGE_UPGRADABLE_NOPS",
-    "DISCOURAGE_UPGRADABLE_NOPS"
-  ],
-  [
-    "1",
-    "NOP10",
-    "DISCOURAGE_UPGRADABLE_NOPS",
-    "DISCOURAGE_UPGRADABLE_NOPS"
-  ],
-  [
-    "1 0x01 0xbb",
-    "BLAKE2B 0x20 0x4324d0dc945c746e3be93be15b636ec1684108806912a479e8a34b2858be114a EQUAL",
-    "DISCOURAGE_UPGRADABLE_NOPS",
-    "DISCOURAGE_UPGRADABLE_NOPS",
-    "Discouraged NOP10 in redeemScript"
-  ],
-  [
     "0x50",
     "1",
     "",
@@ -3851,10 +3683,70 @@
   ],
   [
     "1",
-    "IF 0xbc ELSE 1 ENDIF",
+    "IF 0xb2 ELSE 1 ENDIF",
     "",
     "BAD_OPCODE",
-    "opcodes above NOP10 invalid if executed"
+    "opcodes above OP_CHECKSEQUENCEVERIFY invalid if executed"
+  ],
+  [
+    "1",
+    "IF 0xb3 ELSE 1 ENDIF",
+    "",
+    "BAD_OPCODE"
+  ],
+  [
+    "1",
+    "IF 0xb4 ELSE 1 ENDIF",
+    "",
+    "BAD_OPCODE"
+  ],
+  [
+    "1",
+    "IF 0xb5 ELSE 1 ENDIF",
+    "",
+    "BAD_OPCODE"
+  ],
+  [
+    "1",
+    "IF 0xb6 ELSE 1 ENDIF",
+    "",
+    "BAD_OPCODE"
+  ],
+  [
+    "1",
+    "IF 0xb7 ELSE 1 ENDIF",
+    "",
+    "BAD_OPCODE"
+  ],
+  [
+    "1",
+    "IF 0xb8 ELSE 1 ENDIF",
+    "",
+    "BAD_OPCODE"
+  ],
+  [
+    "1",
+    "IF 0xb9 ELSE 1 ENDIF",
+    "",
+    "BAD_OPCODE"
+  ],
+  [
+    "1",
+    "IF 0xba ELSE 1 ENDIF",
+    "",
+    "BAD_OPCODE"
+  ],
+  [
+    "1",
+    "IF 0xbb ELSE 1 ENDIF",
+    "",
+    "BAD_OPCODE"
+  ],
+  [
+    "1",
+    "IF 0xbc ELSE 1 ENDIF",
+    "",
+    "BAD_OPCODE"
   ],
   [
     "1",
@@ -4338,12 +4230,6 @@
     "10,001-byte scriptPubKey"
   ],
   [
-    "",
-    "NOP1 NOP10",
-    "",
-    "EVAL_FALSE"
-  ],
-  [
     "1",
     "VER",
     "",
@@ -4387,10 +4273,10 @@
   ],
   [
     "1",
-    "0xbc",
+    "0xb2",
     "",
     "BAD_OPCODE",
-    "0xbc == OP_NOP10 + 1"
+    "0xb2 == OP_CHECKSEQUENCEVERIFY + 1"
   ],
   [
     "2147483648",
@@ -4846,12 +4732,6 @@
     "",
     "SIG_PUSHONLY",
     "Tests for Script.IsPushOnly()"
-  ],
-  [
-    "NOP1 0x01 1",
-    "BLAKE2B 0x20 0xda1745e9b549bd0bfa1a569971c77eba30cd5a4b EQUAL",
-    "",
-    "SIG_PUSHONLY"
   ],
   [
     "0 0x01 0x50",
@@ -5391,20 +5271,6 @@
     "",
     "INVALID_STACK_OPERATION",
     "CSV automatically fails on a empty stack"
-  ],
-  [
-    "-1",
-    "CHECKSEQUENCEVERIFY",
-    "",
-    "NEGATIVE_LOCKTIME",
-    "CSV automatically fails if stack top is negative"
-  ],
-  [
-    "0x0100",
-    "CHECKSEQUENCEVERIFY",
-    "",
-    "UNKNOWN_ERROR",
-    "CSV fails if stack top is not minimally encoded"
   ],
   [
     "0",
