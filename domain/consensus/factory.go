@@ -325,7 +325,9 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 		config.FinalityDepth(),
 		config.PruningDepth(),
 		config.EnableSanityCheckPruningUTXOSet,
-		config.K)
+		config.K,
+		config.DifficultyAdjustmentWindowSize,
+	)
 
 	syncManager := syncmanager.New(
 		dbManager,

@@ -40,6 +40,7 @@ type pruningManager struct {
 	pruningDepth                    uint64
 	shouldSanityCheckPruningUTXOSet bool
 	k                               externalapi.KType
+	difficultyAdjustmentWindowSize  int
 }
 
 // New instantiates a new PruningManager
@@ -71,6 +72,7 @@ func New(
 	pruningDepth uint64,
 	shouldSanityCheckPruningUTXOSet bool,
 	k externalapi.KType,
+	difficultyAdjustmentWindowSize int,
 ) model.PruningManager {
 
 	return &pruningManager{
@@ -100,6 +102,7 @@ func New(
 		finalityInterval:                finalityInterval,
 		shouldSanityCheckPruningUTXOSet: shouldSanityCheckPruningUTXOSet,
 		k:                               k,
+		difficultyAdjustmentWindowSize:  difficultyAdjustmentWindowSize,
 	}
 }
 
@@ -770,7 +773,7 @@ func (pm *pruningManager) blockWithMetaData(stagingArea *model.StagingArea, bloc
 		return nil, err
 	}
 
-	windowSize := 2641 // TODO: Change to dm.difficultyAdjustmentWindowSize+1
+	windowSize := pm.difficultyAdjustmentWindowSize + 1
 	window, err := pm.dagTraversalManager.BlockWindow(stagingArea, blockHash, windowSize)
 	if err != nil {
 		return nil, err
