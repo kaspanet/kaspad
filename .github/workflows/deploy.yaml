@@ -1,4 +1,4 @@
-name: Build and Upload assets
+name: Build and upload assets
 on:
   release:
     types: [published]
@@ -10,31 +10,30 @@ jobs:
       fail-fast: false
       matrix:
         os: [ ubuntu-latest, windows-latest, macos-latest ]
-    name: Building For ${{ matrix.os }}
+    name: Building, ${{ matrix.os }}
     steps:
-      - name: Fix windows CRLF
+      - name: Fix CRLF on Windows
+        if: runner.os == 'Windows'
         run: git config --global core.autocrlf false
 
       - name: Check out code into the Go module directory
         uses: actions/checkout@v2
 
-      # We need to increase the page size because the tests run out of memory on github CI windows.
-      # Use the powershell script from this github action: https://github.com/al-cheb/configure-pagefile-action/blob/master/scripts/SetPageFileSize.ps1
-      # MIT License (MIT) Copyright (c) 2020 Maxim Lobanov and contributors
-      - name: Increase page size on windows
+      # Increase the pagefile size on Windows to aviod running out of memory
+      - name: Increase pagefile size on Windows
         if: runner.os == 'Windows'
-        shell: powershell
-        run: powershell -command .\.github\workflows\SetPageFileSize.ps1
+        run: powershell -command .github\workflows\SetPageFileSize.ps1
 
 
-      - name: Set up Go 1.x
+      - name: Setup Go
         uses: actions/setup-go@v2
         with:
           go-version: 1.16
 
-      - name: Build on linux
+      - name: Build on Linux
         if: runner.os == 'Linux'
-        # `-extldflags=-static` - means static link everything, `-tags netgo,osusergo` means use pure go replacements for "os/user" and "net"
+        # `-extldflags=-static` - means static link everything,
+        # `-tags netgo,osusergo` means use pure go replacements for "os/user" and "net"
         # `-s -w` strips the binary to produce smaller size binaries
         run: |
           go build -v -ldflags="-s -w -extldflags=-static" -tags netgo,osusergo -o ./bin/ ./...
@@ -66,7 +65,7 @@ jobs:
           echo "asset_name=${asset_name}" >> $GITHUB_ENV
 
 
-      - name: Upload Release Asset
+      - name: Upload release asset
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
