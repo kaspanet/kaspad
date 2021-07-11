@@ -125,6 +125,25 @@ func TestUpdateReindexRoot(t *testing.T) {
 			if err != nil {
 				t.Fatalf("AddBlock: %+v", err)
 			}
+
+			reindexRoot, err := tc.ReachabilityDataStore().ReachabilityReindexRoot(tc.DatabaseContext(), stagingArea)
+			if err != nil {
+				t.Fatalf("ReachabilityReindexRoot: %s", err)
+			}
+
+			// The reindex root shouldn't move until the last two blocks
+			// that should move it to genesis
+			if i == reachabilityReindexWindow-2 {
+				if !reindexRoot.Equal(consensusConfig.GenesisHash) {
+					t.Fatalf("reindex root is expected to be genesis")
+				}
+				continue
+			}
+
+			if !reindexRoot.Equal(model.VirtualGenesisBlockHash) {
+				t.Fatalf("reindex root unexpectedly moved")
+			}
+
 		}
 
 		// Add another block over chain1. This will move the reindex root to chain1RootBlock
