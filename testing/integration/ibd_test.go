@@ -68,15 +68,6 @@ func TestIBDWithPruning(t *testing.T) {
 		// We expect this to trigger IBD
 		connect(t, syncer, syncee)
 
-		syncerBlockCountResponse, err := syncer.rpcClient.GetBlockCount()
-		if err != nil {
-			t.Fatalf("GetBlockCount: %+v", err)
-		}
-
-		if syncerBlockCountResponse.BlockCount == syncerBlockCountResponse.HeaderCount {
-			t.Fatalf("Expected some pruned blocks but found none")
-		}
-
 		ticker := time.NewTicker(time.Second)
 		defer ticker.Stop()
 
