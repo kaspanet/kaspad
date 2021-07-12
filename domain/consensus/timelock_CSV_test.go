@@ -16,14 +16,14 @@ import (
 	"github.com/pkg/errors"
 )
 
-// TestCheckSequenceVerifyConditionedByBlockHeight verifies that locked output (by CSV script) is spendable
+// TestCheckSequenceVerifyConditionedByDAAScore verifies that a locked output (by CSV script) is spendable
 // only after a certain number of blocks have been added relative to the time the UTXO was mined.
 // CSV - check sequence verify.
-func TestCheckSequenceVerifyConditionedByBlockHeight(t *testing.T) {
+func TestCheckSequenceVerifyConditionedByDAAScore(t *testing.T) {
 	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
 		consensusConfig.BlockCoinbaseMaturity = 0
 		factory := consensus.NewFactory()
-		testConsensus, teardown, err := factory.NewTestConsensus(consensusConfig, "TestCheckSequenceVerifyConditionedByBlockHeight")
+		testConsensus, teardown, err := factory.NewTestConsensus(consensusConfig, "TestCheckSequenceVerifyConditionedByDAAScore")
 		if err != nil {
 			t.Fatalf("Error setting up consensus: %+v", err)
 		}
@@ -41,26 +41,18 @@ func TestCheckSequenceVerifyConditionedByBlockHeight(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Error creating blockC: %v", err)
 		}
-		blockC, err := testConsensus.GetBlock(blockCHash)
+		blockDHash, _, err := testConsensus.AddBlock([]*externalapi.DomainHash{blockCHash}, nil, nil)
 		if err != nil {
-			t.Fatalf("Failed getting blockC: %v", err)
+			t.Fatalf("Error creating blockD: %v", err)
+		}
+		blockD, err := testConsensus.GetBlock(blockDHash)
+		if err != nil {
+			t.Fatalf("Failed getting blockD: %v", err)
 		}
 		fees := uint64(1)
-		fundingTransaction, err := testutils.CreateTransaction(blockC.Transactions[transactionhelper.CoinbaseTransactionIndex], fees)
-		if err != nil {
-			t.Fatalf("Error creating foundingTransaction: %v", err)
-		}
-		blockDHash, _, err := testConsensus.AddBlock([]*externalapi.DomainHash{blockCHash}, nil,
-			[]*externalapi.DomainTransaction{fundingTransaction})
-		if err != nil {
-			t.Fatalf("Failed creating blockD: %v", err)
-		}
-		//create a CSV script
-		numOfBlocksToWait := int64(10)
-		if numOfBlocksToWait > 0xffff {
-			t.Fatalf("More than the maximum number of blocks allowed.")
-		}
-		redeemScriptCSV, err := createCheckSequenceVerifyScript(numOfBlocksToWait)
+		// Create a CSV script
+		numOfDAAScoreToWait := uint64(10)
+		redeemScriptCSV, err := createScriptCSV(numOfDAAScoreToWait)
 		if err != nil {
 			t.Fatalf("Failed to create a script using createCheckSequenceVerifyScript: %v", err)
 		}
@@ -72,9 +64,10 @@ func TestCheckSequenceVerifyConditionedByBlockHeight(t *testing.T) {
 			Version: constants.MaxScriptPublicKeyVersion,
 			Script:  p2shScriptCSV,
 		}
-		transactionWithLockedOutput, err := createTransactionWithLockedOutput(fundingTransaction, fees, &scriptPublicKeyCSV)
+		transactionWithLockedOutput, err := CreateTransactionWithLockedOutput(
+			blockD.Transactions[transactionhelper.CoinbaseTransactionIndex], fees, &scriptPublicKeyCSV)
 		if err != nil {
-			t.Fatalf("Error in createTransactionWithLockedOutput: %v", err)
+			t.Fatalf("Error in CreateTransactionWithLockedOutput: %v", err)
 		}
 		// BlockE contains the locked output (locked by CSV).
 		// This block should be valid since CSV script locked only the output.
@@ -83,11 +76,11 @@ func TestCheckSequenceVerifyConditionedByBlockHeight(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Error creating blockE: %v", err)
 		}
-		// The 23-bit of sequence defines if it's conditioned by block height(set to 0) or by time (set to 1).
-		sequenceFlag := 0
+		// bit 62 of sequence defines if it's conditioned by DAA score(set to 0) or by time (set to 1).
+		sequenceTypeFlag := 0
 		// Create a transaction that tries to spend the locked output.
-		transactionThatSpentTheLockedOutput, err := createTransactionThatSpentTheLockedOutput(transactionWithLockedOutput,
-			fees, redeemScriptCSV, uint64(numOfBlocksToWait), sequenceFlag, blockEHash, &testConsensus)
+		transactionThatSpentTheLockedOutput, err := createTransactionThatSpentTheLockedOutputRelativeLock(transactionWithLockedOutput,
+			fees, redeemScriptCSV, numOfDAAScoreToWait, sequenceTypeFlag, blockEHash, &testConsensus)
 		if err != nil {
 			t.Fatalf("Error creating transactionThatSpentTheLockedOutput: %v", err)
 		}
@@ -97,19 +90,42 @@ func TestCheckSequenceVerifyConditionedByBlockHeight(t *testing.T) {
 		if err == nil || !errors.Is(err, ruleerrors.ErrUnfinalizedTx) {
 			t.Fatalf("Expected block to be invalid with err: %v, instead found: %v", ruleerrors.ErrUnfinalizedTx, err)
 		}
-		//Add x blocks to release the locked output, where x = 'numOfBlocksToWait'.
+		// Adds blocks until it reaches the DAA score target, so the locked output will be released.
 		tipHash := blockEHash
-		for i := int64(0); i < numOfBlocksToWait; i++ {
+		stagingArea := model.NewStagingArea()
+		blockEDAAScore, err := testConsensus.DAABlocksStore().DAAScore(testConsensus.DatabaseContext(), stagingArea, blockEHash)
+		if err != nil {
+			t.Fatalf("Failed getting DAA score of blockE: %v", err)
+		}
+		targetDAAScore := blockEDAAScore + numOfDAAScoreToWait
+		currentDAAScore, err := testConsensus.DAABlocksStore().DAAScore(testConsensus.DatabaseContext(), stagingArea, tipHash)
+		if err != nil {
+			t.Fatalf("Failed getting DAA score: %v", err)
+		}
+		for currentDAAScore <= targetDAAScore {
 			tipHash, _, err = testConsensus.AddBlock([]*externalapi.DomainHash{tipHash}, nil, nil)
 			if err != nil {
-				t.Fatalf("Error creating tip: %v", err)
+				t.Fatalf("Error creating a tip: %v", err)
+			}
+			currentDAAScore, err = testConsensus.DAABlocksStore().DAAScore(testConsensus.DatabaseContext(), stagingArea, tipHash)
+			if err != nil {
+				t.Fatalf("Failed getting DAA score: %v", err)
 			}
 		}
 		// Tries to spend the output that should be no longer locked.
-		_, _, err = testConsensus.AddBlock([]*externalapi.DomainHash{tipHash}, nil,
+		validBlock, _, err := testConsensus.AddBlock([]*externalapi.DomainHash{tipHash}, nil,
 			[]*externalapi.DomainTransaction{transactionThatSpentTheLockedOutput})
 		if err != nil {
 			t.Fatalf("The block should be valid since the output is not locked anymore. but got an error: %v", err)
+		}
+		validBlockStatus, err := testConsensus.BlockStatusStore().Get(testConsensus.DatabaseContext(), stagingArea,
+			validBlock)
+		if err != nil {
+			t.Fatalf("Failed getting the status for validBlock: %v", err)
+		}
+		if !validBlockStatus.Equal(externalapi.StatusUTXOValid) {
+			t.Fatalf("The status of validBlock should be: %v, but got: %v", externalapi.StatusUTXOValid,
+				validBlockStatus)
 		}
 	})
 }
@@ -138,28 +154,21 @@ func TestCheckSequenceVerifyConditionedByRelativeTime(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Error creating blockC: %v", err)
 		}
-		blockC, err := testConsensus.GetBlock(blockCHash)
+		blockDHash, _, err := testConsensus.AddBlock([]*externalapi.DomainHash{blockCHash}, nil, nil)
 		if err != nil {
-			t.Fatalf("Failed getting blockC: %v", err)
+			t.Fatalf("Error creating blockD: %v", err)
+		}
+		blockD, err := testConsensus.GetBlock(blockDHash)
+		if err != nil {
+			t.Fatalf("Failed getting blockD: %v", err)
 		}
 		fees := uint64(1)
-		fundingTransaction, err := testutils.CreateTransaction(blockC.Transactions[transactionhelper.CoinbaseTransactionIndex], fees)
-		if err != nil {
-			t.Fatalf("Error creating foundingTransaction: %v", err)
-		}
-		blockDHash, _, err := testConsensus.AddBlock([]*externalapi.DomainHash{blockCHash}, nil,
-			[]*externalapi.DomainTransaction{fundingTransaction})
-		if err != nil {
-			t.Fatalf("Failed creating blockD: %v", err)
-		}
 		//create a CSV script
-		timeToWait := int64(14 * 1000)
-		if timeToWait > 0xffff {
-			t.Fatalf("More than the allowed time to set.")
-		}
-		redeemScriptCSV, err := createCheckSequenceVerifyScript(timeToWait)
+		timeToWait := uint64(14) // in seconds
+		sequence := timeToWait | constants.SequenceLockTimeIsSeconds
+		redeemScriptCSV, err := createScriptCSV(sequence)
 		if err != nil {
-			t.Fatalf("Failed to create a script using createCheckSequenceVerifyScript: %v", err)
+			t.Fatalf("Failed to create a script using createScriptCSV: %v", err)
 		}
 		p2shScriptCSV, err := txscript.PayToScriptHashScript(redeemScriptCSV)
 		if err != nil {
@@ -169,9 +178,10 @@ func TestCheckSequenceVerifyConditionedByRelativeTime(t *testing.T) {
 			Version: constants.MaxScriptPublicKeyVersion,
 			Script:  p2shScriptCSV,
 		}
-		transactionWithLockedOutput, err := createTransactionWithLockedOutput(fundingTransaction, fees, &scriptPublicKeyCSV)
+		transactionWithLockedOutput, err := CreateTransactionWithLockedOutput(blockD.Transactions[transactionhelper.CoinbaseTransactionIndex],
+			fees, &scriptPublicKeyCSV)
 		if err != nil {
-			t.Fatalf("Error in createTransactionWithLockedOutput: %v", err)
+			t.Fatalf("Error in CreateTransactionWithLockedOutput: %v", err)
 		}
 		// BlockE contains the locked output (locked by CSV).
 		// This block should be valid since CSV script locked only the output.
@@ -180,11 +190,11 @@ func TestCheckSequenceVerifyConditionedByRelativeTime(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Error creating blockE: %v", err)
 		}
-		// The 23-bit of sequence defines if it's conditioned by block height(set to 0) or by time (set to 1).
-		sequenceFlag := 1
+		// bit 62 of sequence defines if it's conditioned by DAA score(set to 0) or by time (set to 1).
+		sequenceTypeFlag := 1
 		// Create a transaction that tries to spend the locked output.
-		transactionThatSpentTheLockedOutput, err := createTransactionThatSpentTheLockedOutput(transactionWithLockedOutput,
-			fees, redeemScriptCSV, uint64(timeToWait), sequenceFlag, blockEHash, &testConsensus)
+		transactionThatSpentTheLockedOutput, err := createTransactionThatSpentTheLockedOutputRelativeLock(transactionWithLockedOutput,
+			fees, redeemScriptCSV, timeToWait, sequenceTypeFlag, blockEHash, &testConsensus)
 		if err != nil {
 			t.Fatalf("Error creating transactionThatSpentTheLockedOutput: %v", err)
 		}
@@ -208,14 +218,15 @@ func TestCheckSequenceVerifyConditionedByRelativeTime(t *testing.T) {
 		timeStampBlockE := blockE.Header.TimeInMilliseconds()
 		stagingArea := model.NewStagingArea()
 		// Make sure the time limitation has passed.
-		lockTimeTarget := blockE.Header.TimeInMilliseconds() + timeToWait
+
+		lockTimeTarget := uint64(blockE.Header.TimeInMilliseconds()) + timeToWait*constants.SequenceLockTimeGranularity
 		for i := int64(0); ; i++ {
 			tipBlock, err := testConsensus.BuildBlock(&emptyCoinbase, nil)
 			if err != nil {
 				t.Fatalf("Error creating tip using BuildBlock: %v", err)
 			}
 			blockHeader := tipBlock.Header.ToMutable()
-			blockHeader.SetTimeInMilliseconds(timeStampBlockE + i*1000)
+			blockHeader.SetTimeInMilliseconds(timeStampBlockE + i*constants.SequenceLockTimeGranularity)
 			tipBlock.Header = blockHeader.ToImmutable()
 			_, err = testConsensus.ValidateAndInsertBlock(tipBlock)
 			if err != nil {
@@ -226,21 +237,30 @@ func TestCheckSequenceVerifyConditionedByRelativeTime(t *testing.T) {
 			if err != nil {
 				t.Fatalf("Failed getting pastMedianTime: %v", err)
 			}
-			if pastMedianTime > lockTimeTarget {
+			if uint64(pastMedianTime) > lockTimeTarget {
 				break
 			}
 		}
 		// Tries to spend the output that should be no longer locked
-		_, _, err = testConsensus.AddBlock([]*externalapi.DomainHash{tipHash}, nil,
+		validBlock, _, err := testConsensus.AddBlock([]*externalapi.DomainHash{tipHash}, nil,
 			[]*externalapi.DomainTransaction{transactionThatSpentTheLockedOutput})
 		if err != nil {
 			t.Fatalf("The block should be valid since the output is not locked anymore. but got an error: %v", err)
 		}
+		validBlockStatus, err := testConsensus.BlockStatusStore().Get(testConsensus.DatabaseContext(), stagingArea,
+			validBlock)
+		if err != nil {
+			t.Fatalf("Failed getting the status for validBlock: %v", err)
+		}
+		if !validBlockStatus.Equal(externalapi.StatusUTXOValid) {
+			t.Fatalf("The status of validBlock should be: %v, but got: %v", externalapi.StatusUTXOValid,
+				validBlockStatus)
+		}
 	})
 }
 
-//TestRelativeTimeOnCheckSequenceVerify verifies that if the relative target is set to X blocks to wait, and the absolute height
-// will be X before adding all the blocks, then the output will remain locked.
+// TestRelativeTimeOnCheckSequenceVerify verifies that if the relative target is set to be X DAA score,
+// and the absolute DAA score is X before having X DAA score more than the time the UTXO was mined, then the output will remain locked.
 func TestRelativeTimeOnCheckSequenceVerify(t *testing.T) {
 	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
 		consensusConfig.BlockCoinbaseMaturity = 0
@@ -251,45 +271,32 @@ func TestRelativeTimeOnCheckSequenceVerify(t *testing.T) {
 		}
 		defer teardown(false)
 
-		currentNumOfBlocks := int64(0)
 		blockAHash, _, err := testConsensus.AddBlock([]*externalapi.DomainHash{testConsensus.DAGParams().GenesisHash}, nil, nil)
 		if err != nil {
 			t.Fatalf("Error creating blockA: %v", err)
 		}
-		currentNumOfBlocks++
 		blockBHash, _, err := testConsensus.AddBlock([]*externalapi.DomainHash{blockAHash}, nil, nil)
 		if err != nil {
 			t.Fatalf("Error creating blockB: %v", err)
 		}
-		currentNumOfBlocks++
 		blockCHash, _, err := testConsensus.AddBlock([]*externalapi.DomainHash{blockBHash}, nil, nil)
 		if err != nil {
 			t.Fatalf("Error creating blockC: %v", err)
 		}
-		currentNumOfBlocks++
-		blockC, err := testConsensus.GetBlock(blockCHash)
+		blockDHash, _, err := testConsensus.AddBlock([]*externalapi.DomainHash{blockCHash}, nil, nil)
+		if err != nil {
+			t.Fatalf("Error creating blockC: %v", err)
+		}
+		blockD, err := testConsensus.GetBlock(blockDHash)
 		if err != nil {
 			t.Fatalf("Failed getting blockC: %v", err)
 		}
 		fees := uint64(1)
-		fundingTransaction, err := testutils.CreateTransaction(blockC.Transactions[transactionhelper.CoinbaseTransactionIndex], fees)
-		if err != nil {
-			t.Fatalf("Error creating foundingTransaction: %v", err)
-		}
-		blockDHash, _, err := testConsensus.AddBlock([]*externalapi.DomainHash{blockCHash}, nil,
-			[]*externalapi.DomainTransaction{fundingTransaction})
-		if err != nil {
-			t.Fatalf("Failed creating blockD: %v", err)
-		}
-		currentNumOfBlocks++
 		//create a CSV script
-		numOfBlocksToWait := int64(10)
-		if numOfBlocksToWait > 0xffff {
-			t.Fatalf("More than the max number of blocks that allowed to set.")
-		}
-		redeemScriptCSV, err := createCheckSequenceVerifyScript(numOfBlocksToWait)
+		numOfDAAScoreToWait := uint64(10)
+		redeemScriptCSV, err := createScriptCSV(numOfDAAScoreToWait)
 		if err != nil {
-			t.Fatalf("Failed to create a script using createCheckSequenceVerifyScript: %v", err)
+			t.Fatalf("Failed to create a script using createScriptCSV: %v", err)
 		}
 		p2shScriptCSV, err := txscript.PayToScriptHashScript(redeemScriptCSV)
 		if err != nil {
@@ -299,9 +306,10 @@ func TestRelativeTimeOnCheckSequenceVerify(t *testing.T) {
 			Version: constants.MaxScriptPublicKeyVersion,
 			Script:  p2shScriptCSV,
 		}
-		transactionWithLockedOutput, err := createTransactionWithLockedOutput(fundingTransaction, fees, &scriptPublicKeyCSV)
+		transactionWithLockedOutput, err := CreateTransactionWithLockedOutput(blockD.Transactions[transactionhelper.CoinbaseTransactionIndex],
+			fees, &scriptPublicKeyCSV)
 		if err != nil {
-			t.Fatalf("Error in createTransactionWithLockedOutput: %v", err)
+			t.Fatalf("Error in CreateTransactionWithLockedOutput: %v", err)
 		}
 		// BlockE contains the locked output (locked by CSV).
 		// This block should be valid since CSV script locked only the output.
@@ -310,26 +318,34 @@ func TestRelativeTimeOnCheckSequenceVerify(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Error creating blockE: %v", err)
 		}
-		currentNumOfBlocks++
-		// The 23-bit of sequence defines if it's conditioned by block height(set to 0) or by time (set to 1).
-		sequenceFlag := 0
+		// bit 62 of sequence defines if it's conditioned by DAA score(set to 0) or by time (set to 1).
+		sequenceTypeFlag := 0
 		// Create a transaction that tries to spend the locked output.
-		transactionThatSpentTheLockedOutput, err := createTransactionThatSpentTheLockedOutput(transactionWithLockedOutput,
-			fees, redeemScriptCSV, uint64(numOfBlocksToWait), sequenceFlag, blockEHash, &testConsensus)
+		transactionThatSpentTheLockedOutput, err := createTransactionThatSpentTheLockedOutputRelativeLock(transactionWithLockedOutput,
+			fees, redeemScriptCSV, numOfDAAScoreToWait, sequenceTypeFlag, blockEHash, &testConsensus)
 		if err != nil {
 			t.Fatalf("Error creating transactionThatSpentTheLockedOutput: %v", err)
 		}
-		// Mines blocks so the block height will be the same as the relative number(but not enough to reach the relative target)
-		// and verify that the output is still locked.
-		// For unlocked the output the blocks should be count from the block that contains the locked output and not as an absolute height.
 		tipHash := blockEHash
-		for currentNumOfBlocks == numOfBlocksToWait {
+		stagingArea := model.NewStagingArea()
+		currentDAAScore, err := testConsensus.DAABlocksStore().DAAScore(testConsensus.DatabaseContext(), stagingArea, tipHash)
+		if err != nil {
+			t.Fatalf("Failed getting DAA score for tip: %v", err)
+		}
+		// Mines blocks until the DAA score will be the same as the relative number(but not enough to reach the relative target - relative
+		// number + DAA score of the block which contains the locked output ) and verify that the output is still locked.
+		for currentDAAScore != numOfDAAScoreToWait {
 			tipHash, _, err = testConsensus.AddBlock([]*externalapi.DomainHash{tipHash}, nil, nil)
 			if err != nil {
 				t.Fatalf("Error creating tip: %v", err)
 			}
-			currentNumOfBlocks++
+			currentDAAScore, err = testConsensus.DAABlocksStore().DAAScore(testConsensus.DatabaseContext(), stagingArea, tipHash)
+			if err != nil {
+				t.Fatalf("Failed getting DAA score for tip: %v", err)
+			}
 		}
+		// After the above for loop, the latest block has 10 DAA score, but the output will be unlocked only when the DAA score will be 15,
+		// so this block is expected to be considered invalid.
 		_, _, err = testConsensus.AddBlock([]*externalapi.DomainHash{tipHash}, nil,
 			[]*externalapi.DomainTransaction{transactionThatSpentTheLockedOutput})
 		if err == nil || !errors.Is(err, ruleerrors.ErrUnfinalizedTx) {
@@ -338,65 +354,39 @@ func TestRelativeTimeOnCheckSequenceVerify(t *testing.T) {
 	})
 }
 
-func createCheckSequenceVerifyScript(numOfBlocks int64) ([]byte, error) {
+func createScriptCSV(sequence uint64) ([]byte, error) {
 	scriptBuilder := txscript.NewScriptBuilder()
+	scriptBuilder.AddSequenceNumber(sequence)
 	scriptBuilder.AddOp(txscript.OpCheckSequenceVerify)
-	scriptBuilder.AddInt64(numOfBlocks)
 	scriptBuilder.AddOp(txscript.OpTrue)
 	return scriptBuilder.Script()
 }
 
-func createTransactionWithLockedOutput(txToSpend *externalapi.DomainTransaction, fee uint64,
-	scriptPublicKeyCSV *externalapi.ScriptPublicKey) (*externalapi.DomainTransaction, error) {
-
-	_, redeemScript := testutils.OpTrueScript()
-	signatureScript, err := txscript.PayToScriptHashSignatureScript(redeemScript, nil)
-	if err != nil {
-		return nil, err
-	}
-	input := &externalapi.DomainTransactionInput{
-		PreviousOutpoint: externalapi.DomainOutpoint{
-			TransactionID: *consensushashing.TransactionID(txToSpend),
-			Index:         0,
-		},
-		SignatureScript: signatureScript,
-		Sequence:        constants.MaxTxInSequenceNum,
-	}
-	output := &externalapi.DomainTransactionOutput{
-		ScriptPublicKey: scriptPublicKeyCSV,
-		Value:           txToSpend.Outputs[0].Value - fee,
-	}
-	return &externalapi.DomainTransaction{
-		Version: constants.MaxTransactionVersion,
-		Inputs:  []*externalapi.DomainTransactionInput{input},
-		Outputs: []*externalapi.DomainTransactionOutput{output},
-		Payload: []byte{},
-	}, nil
-}
-
-func createTransactionThatSpentTheLockedOutput(txToSpend *externalapi.DomainTransaction, fee uint64,
-	redeemScript []byte, lockTime uint64, sequenceFlag23Bit int, lockedOutputBlockHash *externalapi.DomainHash,
+func createTransactionThatSpentTheLockedOutputRelativeLock(txToSpend *externalapi.DomainTransaction, fee uint64,
+	redeemScript []byte, numOfDAAScoreOrTimeForRelativeWaiting uint64, sequenceTypeFlag int, lockedOutputBlockHash *externalapi.DomainHash,
 	testConsensus *testapi.TestConsensus) (*externalapi.DomainTransaction, error) {
 
-	// the 31bit is off since its relative timelock.
-	sequence := uint64(0)
-	sequence |= lockTime
-	// conditioned by absolute time:
-	if sequenceFlag23Bit == 1 {
-		sequence |= 1 << 23
+	var lockTime, sequence uint64
+	if sequenceTypeFlag == 1 { // Conditioned by time:
+		sequence = numOfDAAScoreOrTimeForRelativeWaiting // In seconds
+		sequence |= constants.SequenceLockTimeIsSeconds
 		lockedOutputBlock, err := (*testConsensus).GetBlock(lockedOutputBlockHash)
 		if err != nil {
 			return nil, err
 		}
-		lockTime += uint64(lockedOutputBlock.Header.TimeInMilliseconds())
-	} else {
-		// conditioned by block height:
+		stamp := uint64(lockedOutputBlock.Header.TimeInMilliseconds())
+		lockTime = numOfDAAScoreOrTimeForRelativeWaiting*constants.SequenceLockTimeGranularity + stamp // In milliseconds
+	} else { // conditioned by DAA score:
+		sequence = numOfDAAScoreOrTimeForRelativeWaiting
 		blockDAAScore, err := (*testConsensus).DAABlocksStore().DAAScore((*testConsensus).DatabaseContext(),
 			model.NewStagingArea(), lockedOutputBlockHash)
 		if err != nil {
 			return nil, err
 		}
-		lockTime += blockDAAScore
+		lockTime = numOfDAAScoreOrTimeForRelativeWaiting + blockDAAScore
+	}
+	if sequence&constants.SequenceLockTimeDisabled == constants.SequenceLockTimeDisabled {
+		return nil, errors.New("The flag SequenceLockTimeDisabled is raised even though it's a relative lock.")
 	}
 	signatureScript, err := txscript.PayToScriptHashSignatureScript(redeemScript, []byte{})
 	if err != nil {
