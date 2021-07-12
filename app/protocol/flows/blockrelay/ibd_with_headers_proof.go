@@ -201,9 +201,7 @@ func (flow *handleRelayInvsFlow) syncPruningPointUTXOSet(consensus externalapi.C
 	}
 
 	if !isValid {
-		log.Infof("The suggested pruning point %s is incompatible to this node DAG, so stopping IBD with this"+
-			" peer", pruningPoint)
-		return false, nil
+		return false, protocolerrors.Errorf(true, "invalid pruning point %s", pruningPoint)
 	}
 
 	log.Info("Fetching the pruning point UTXO set")
