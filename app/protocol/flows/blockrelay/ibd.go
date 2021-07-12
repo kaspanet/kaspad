@@ -207,14 +207,14 @@ func (flow *handleRelayInvsFlow) downloadIBDBlocks(consensus externalapi.Consens
 		return err
 	}
 
-	// Keep a short queue of blockHeadersMessages so that there's
+	// Keep a short queue of ibdBlocksMessages so that there's
 	// never a moment when the node is not validating and inserting
-	// headers
+	// blocks
 	ibdBlocksMessageChan := make(chan *appmessage.IBDBlocksMessage, 2)
 	errChan := make(chan error)
 	spawn("handleRelayInvsFlow-downloadIBDBlocks", func() {
 		for {
-			msgBlock, doneIBD, err := flow.receiveIBDBlocks()
+			ibdBlocksMessage, doneIBD, err := flow.receiveIBDBlocks()
 			if err != nil {
 				errChan <- err
 				return
@@ -224,7 +224,7 @@ func (flow *handleRelayInvsFlow) downloadIBDBlocks(consensus externalapi.Consens
 				return
 			}
 
-			ibdBlocksMessageChan <- msgBlock
+			ibdBlocksMessageChan <- ibdBlocksMessage
 
 			err = flow.outgoingRoute.Enqueue(appmessage.NewMsgRequestNextIBDBlocks())
 			if err != nil {
@@ -236,7 +236,7 @@ func (flow *handleRelayInvsFlow) downloadIBDBlocks(consensus externalapi.Consens
 
 	for {
 		select {
-		case msgBlock, ok := <-ibdBlocksMessageChan:
+		case ibdBlocksMessage, ok := <-ibdBlocksMessageChan:
 			if !ok {
 				// If the highHash has not been received, the peer is misbehaving
 				highHashBlockInfo, err := consensus.GetBlockInfo(highHash)
@@ -249,7 +249,7 @@ func (flow *handleRelayInvsFlow) downloadIBDBlocks(consensus externalapi.Consens
 				}
 				return nil
 			}
-			for _, block := range msgBlock.Blocks {
+			for _, block := range ibdBlocksMessage.Blocks {
 				err = flow.processIBDBlock(consensus, block, callOnNewBlock)
 				if err != nil {
 					return err
@@ -282,8 +282,8 @@ func (flow *handleRelayInvsFlow) receiveIBDBlocks() (msgIBDBlock *appmessage.IBD
 		return nil, false,
 			protocolerrors.Errorf(true, "received unexpected message type. "+
 				"expected: %s or %s, got: %s",
-				(&appmessage.IBDBlocksMessage{}).Command(),
-				(&appmessage.MsgDoneIBDBlocks{}).Command(),
+				appmessage.CmdIBDBlocks,
+				appmessage.CmdDoneIBDBlocks,
 				message.Command())
 	}
 }
@@ -291,7 +291,6 @@ func (flow *handleRelayInvsFlow) receiveIBDBlocks() (msgIBDBlock *appmessage.IBD
 func (flow *handleRelayInvsFlow) processIBDBlock(consensus externalapi.Consensus, msgBlock *appmessage.MsgBlock, callOnNewBlock bool) error {
 	block := appmessage.MsgBlockToDomainBlock(msgBlock)
 	blockHash := consensushashing.BlockHash(block)
-	log.Criticalf("processIBDBlock %s", blockHash)
 	blockInfo, err := flow.Domain().Consensus().GetBlockInfo(blockHash)
 	if err != nil {
 		return err

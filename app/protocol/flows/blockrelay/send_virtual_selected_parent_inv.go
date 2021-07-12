@@ -24,7 +24,7 @@ func SendVirtualSelectedParentInv(context SendVirtualSelectedParentInvContext,
 	}
 
 	if virtualSelectedParent.Equal(context.Config().NetParams().GenesisHash) {
-		log.Debugf("Skipping sending the virtual selected parent hash to peer %s because it's genesis", peer)
+		log.Debugf("Skipping sending the virtual selected parent hash to peer %s because it's the genesis", peer)
 		return nil
 	}
 

@@ -33,6 +33,7 @@ type RelayInvsContext interface {
 	IsIBDRunning() bool
 	TrySetIBDRunning(ibdPeer *peerpkg.Peer) bool
 	UnsetIBDRunning()
+	IsRecoverableError(err error) bool
 }
 
 type handleRelayInvsFlow struct {

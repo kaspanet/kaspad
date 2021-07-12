@@ -131,6 +131,10 @@ type fakeRelayInvsContext struct {
 	rwLock                                        sync.RWMutex
 }
 
+func (f *fakeRelayInvsContext) IsRecoverableError(err error) bool {
+	panic("implement me")
+}
+
 func (f *fakeRelayInvsContext) Init(shouldNotAddGenesis bool) error {
 	panic("implement me")
 }

@@ -18,12 +18,10 @@ func (flow *handleRelayInvsFlow) ibdWithHeadersProof(highHash *externalapi.Domai
 
 	committed := false
 	defer func() {
-		if committed {
+		if committed || !flow.IsRecoverableError(err) {
 			return
 		}
 
-		// TODO: Do not call DeleteStagingConsensus if the function stopped
-		// because of non-recoverable error.
 		err := flow.Domain().DeleteStagingConsensus()
 		if err != nil {
 			panic(err)
