@@ -77,7 +77,7 @@ func (s *consensus) ValidateTransactionAndPopulateWithConsensusData(transaction 
 
 	stagingArea := model.NewStagingArea()
 
-	err := s.transactionValidator.ValidateTransactionInIsolationAndPopulateMass(transaction)
+	err := s.transactionValidator.ValidateTransactionInIsolation(transaction)
 	if err != nil {
 		return err
 	}
@@ -552,6 +552,6 @@ func (s *consensus) EstimateNetworkHashesPerSecond(startHash *externalapi.Domain
 	return s.difficultyManager.EstimateNetworkHashesPerSecond(startHash, windowSize)
 }
 
-func (s *consensus) TransactionMass(transaction *externalapi.DomainTransaction) uint64 {
-	return s.transactionValidator.TransactionMass(transaction)
+func (s *consensus) PopulateMass(transaction *externalapi.DomainTransaction) {
+	s.transactionValidator.PopulateMass(transaction)
 }

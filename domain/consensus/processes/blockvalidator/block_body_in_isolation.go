@@ -136,7 +136,7 @@ func (v *blockValidator) checkBlockTransactionOrder(block *externalapi.DomainBlo
 
 func (v *blockValidator) checkTransactionsInIsolation(block *externalapi.DomainBlock) error {
 	for _, tx := range block.Transactions {
-		err := v.transactionValidator.ValidateTransactionInIsolationAndPopulateMass(tx)
+		err := v.transactionValidator.ValidateTransactionInIsolation(tx)
 		if err != nil {
 			return errors.Wrapf(err, "transaction %s failed isolation "+
 				"check", consensushashing.TransactionID(tx))
@@ -219,9 +219,8 @@ func (v *blockValidator) checkBlockMass(block *externalapi.DomainBlock) error {
 	mass += v.headerEstimatedSerializedSize(block.Header)
 
 	for _, transaction := range block.Transactions {
-		if !transactionhelper.IsCoinBase(transaction) && transaction.Mass == 0 { // This is a sanity check. If it fails - return a non-rule error.
-			return errors.Errorf("Transaction with non-filled mass in block passed to checkBlockMass")
-		}
+		v.transactionValidator.PopulateMass(transaction)
+
 		massBefore := mass
 		mass += transaction.Mass
 		if mass > v.maxBlockMass || mass < massBefore {

@@ -113,10 +113,11 @@ func (ctx *Context) PopulateTransactionWithVerboseData(
 		return err
 	}
 
+	ctx.Domain.Consensus().PopulateMass(domainTransaction)
 	transaction.VerboseData = &appmessage.RPCTransactionVerboseData{
 		TransactionID: consensushashing.TransactionID(domainTransaction).String(),
 		Hash:          consensushashing.TransactionHash(domainTransaction).String(),
-		Mass:          ctx.Domain.Consensus().TransactionMass(domainTransaction),
+		Mass:          domainTransaction.Mass,
 	}
 	if domainBlockHeader != nil {
 		transaction.VerboseData.BlockHash = consensushashing.HeaderHash(domainBlockHeader).String()

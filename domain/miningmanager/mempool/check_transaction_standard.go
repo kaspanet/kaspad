@@ -36,10 +36,9 @@ const (
 	// (1 + 15*74 + 3) + (15*34 + 3) + 23 = 1650
 	maximumStandardSignatureScriptSize = 1650
 
-	// maximumStandardTransactionSize  is the maximum size allowed for transactions that
-	// are considered standard and will therefore be relayed and considered
-	// for mining.
-	maximumStandardTransactionSize = 100000
+	// maximumStandardTransactionMass is the maximum mass allowed for transactions that
+	// are considered standard and will therefore be relayed and considered for mining.
+	maximumStandardTransactionMass = 100000
 )
 
 func (mp *mempool) checkTransactionStandardInIsolation(transaction *externalapi.DomainTransaction) error {
@@ -60,9 +59,9 @@ func (mp *mempool) checkTransactionStandardInIsolation(transaction *externalapi.
 	// size of a transaction. This also helps mitigate CPU exhaustion
 	// attacks.
 	serializedLength := estimatedsize.TransactionEstimatedSerializedSize(transaction)
-	if serializedLength > maximumStandardTransactionSize {
+	if serializedLength > maximumStandardTransactionMass {
 		str := fmt.Sprintf("transaction size of %d is larger than max allowed size of %d",
-			serializedLength, maximumStandardTransactionSize)
+			serializedLength, maximumStandardTransactionMass)
 		return transactionRuleError(RejectNonstandard, str)
 	}
 
@@ -188,14 +187,12 @@ func (mp *mempool) checkTransactionStandardInContext(transaction *externalapi.Do
 }
 
 // minimumRequiredTransactionRelayFee returns the minimum transaction fee required for a
-// transaction with the passed serialized size to be accepted into the memory
-// pool and relayed.
-func (mp *mempool) minimumRequiredTransactionRelayFee(serializedSize uint64) uint64 {
+// transaction with the passed mass to be accepted into the mampool and relayed.
+func (mp *mempool) minimumRequiredTransactionRelayFee(mass uint64) uint64 {
 	// Calculate the minimum fee for a transaction to be allowed into the
 	// mempool and relayed by scaling the base fee. MinimumRelayTransactionFee is in
-	// sompi/kB so multiply by serializedSize (which is in bytes) and
-	// divide by 1000 to get minimum sompis.
-	minimumFee := (serializedSize * uint64(mp.config.MinimumRelayTransactionFee)) / 1000
+	// sompi/kg so multiply by mass (which is in grams) and divide by 1000 to get minimum sompis.
+	minimumFee := (mass * uint64(mp.config.MinimumRelayTransactionFee)) / 1000
 
 	if minimumFee == 0 && mp.config.MinimumRelayTransactionFee > 0 {
 		minimumFee = uint64(mp.config.MinimumRelayTransactionFee)

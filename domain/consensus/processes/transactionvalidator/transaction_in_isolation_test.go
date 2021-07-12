@@ -109,7 +109,7 @@ func TestValidateTransactionInIsolationAndPopulateMass(t *testing.T) {
 				test.extraModificationsFunc(tx)
 			}
 
-			err := tc.TransactionValidator().ValidateTransactionInIsolationAndPopulateMass(tx)
+			err := tc.TransactionValidator().ValidateTransactionInIsolation(tx)
 			if !errors.Is(err, test.expectedErr) {
 				t.Errorf("TestValidateTransactionInIsolationAndPopulateMass: '%s': unexpected error %+v", test.name, err)
 			}
