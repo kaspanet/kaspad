@@ -205,12 +205,12 @@ func (flow *handleRelayInvsFlow) syncPruningPointUTXOSet(consensus externalapi.C
 	}
 
 	log.Info("Fetching the pruning point UTXO set")
-	succeed, err := flow.fetchMissingUTXOSet(consensus, pruningPoint)
+	isSuccessfull, err := flow.fetchMissingUTXOSet(consensus, pruningPoint)
 	if err != nil {
 		return false, err
 	}
 
-	if !succeed {
+	if !isSuccessfull {
 		log.Infof("Couldn't successfully fetch the pruning point UTXO set. Stopping IBD.")
 		return false, nil
 	}
