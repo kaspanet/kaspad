@@ -296,7 +296,7 @@ func (x *RpcTransactionVerboseData) toAppMessage() (*appmessage.RPCTransactionVe
 	return &appmessage.RPCTransactionVerboseData{
 		TransactionID: x.TransactionId,
 		Hash:          x.Hash,
-		Size:          x.Size,
+		Mass:          x.Mass,
 		BlockHash:     x.BlockHash,
 		BlockTime:     x.BlockTime,
 	}, nil
@@ -306,7 +306,7 @@ func (x *RpcTransactionVerboseData) fromAppMessage(message *appmessage.RPCTransa
 	*x = RpcTransactionVerboseData{
 		TransactionId: message.TransactionID,
 		Hash:          message.Hash,
-		Size:          message.Size,
+		Mass:          message.Mass,
 		BlockHash:     message.BlockHash,
 		BlockTime:     message.BlockTime,
 	}

@@ -99,7 +99,7 @@ type RPCUTXOEntry struct {
 type RPCTransactionVerboseData struct {
 	TransactionID string
 	Hash          string
-	Size          uint64
+	Mass          uint64
 	BlockHash     string
 	BlockTime     uint64
 }

@@ -10,7 +10,6 @@ import (
 
 	"github.com/kaspanet/kaspad/domain/consensus/utils/hashes"
 
-	"github.com/kaspanet/kaspad/domain/consensus/utils/estimatedsize"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/txscript"
 
 	"github.com/kaspanet/kaspad/app/appmessage"
@@ -117,7 +116,7 @@ func (ctx *Context) PopulateTransactionWithVerboseData(
 	transaction.VerboseData = &appmessage.RPCTransactionVerboseData{
 		TransactionID: consensushashing.TransactionID(domainTransaction).String(),
 		Hash:          consensushashing.TransactionHash(domainTransaction).String(),
-		Size:          estimatedsize.TransactionEstimatedSerializedSize(domainTransaction),
+		Mass:          ctx.Domain.Consensus().TransactionMass(domainTransaction),
 	}
 	if domainBlockHeader != nil {
 		transaction.VerboseData.BlockHash = consensushashing.HeaderHash(domainBlockHeader).String()
