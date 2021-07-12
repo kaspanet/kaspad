@@ -131,9 +131,13 @@ func (flow *handleRelayInvsFlow) syncPruningPointAndItsAnticone(consensus extern
 		return nil, err
 	}
 
-	pruningPoint, _, err := flow.receiveBlockWithMetaData(true)
+	pruningPoint, done, err := flow.receiveBlockWithMetaData()
 	if err != nil {
 		return nil, err
+	}
+
+	if done {
+		return nil, protocolerrors.Errorf(true, "got `done` message before receiving the pruning point")
 	}
 
 	err = flow.processBlockWithMetaData(consensus, pruningPoint)
@@ -142,7 +146,7 @@ func (flow *handleRelayInvsFlow) syncPruningPointAndItsAnticone(consensus extern
 	}
 
 	for {
-		blockWithMetaData, done, err := flow.receiveBlockWithMetaData(false)
+		blockWithMetaData, done, err := flow.receiveBlockWithMetaData()
 		if err != nil {
 			return nil, err
 		}
@@ -168,7 +172,7 @@ func (flow *handleRelayInvsFlow) processBlockWithMetaData(
 	return err
 }
 
-func (flow *handleRelayInvsFlow) receiveBlockWithMetaData(mustAccept bool) (*appmessage.MsgBlockWithMetaData, bool, error) {
+func (flow *handleRelayInvsFlow) receiveBlockWithMetaData() (*appmessage.MsgBlockWithMetaData, bool, error) {
 	message, err := flow.dequeueIncomingMessageAndSkipInvs(common.DefaultTimeout)
 	if err != nil {
 		return nil, false, err
@@ -178,11 +182,6 @@ func (flow *handleRelayInvsFlow) receiveBlockWithMetaData(mustAccept bool) (*app
 	case *appmessage.MsgBlockWithMetaData:
 		return downCastedMessage, false, nil
 	case *appmessage.MsgDoneBlocksWithMetaData:
-		if mustAccept {
-			return nil, false,
-				protocolerrors.Errorf(true, "received unexpected message type. "+
-					"expected: %s, got: %s", downCastedMessage.Command(), message.Command())
-		}
 		return nil, true, nil
 	default:
 		return nil, false,
