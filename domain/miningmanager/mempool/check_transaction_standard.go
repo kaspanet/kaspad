@@ -54,14 +54,14 @@ func (mp *mempool) checkTransactionStandardInIsolation(transaction *externalapi.
 		return transactionRuleError(RejectNonstandard, str)
 	}
 
+	mp.consensus.PopulateMass(transaction)
 	// Since extremely large transactions with a lot of inputs can cost
 	// almost as much to process as the sender fees, limit the maximum
 	// size of a transaction. This also helps mitigate CPU exhaustion
 	// attacks.
-	serializedLength := estimatedsize.TransactionEstimatedSerializedSize(transaction)
-	if serializedLength > maximumStandardTransactionMass {
-		str := fmt.Sprintf("transaction size of %d is larger than max allowed size of %d",
-			serializedLength, maximumStandardTransactionMass)
+	if transaction.Mass > maximumStandardTransactionMass {
+		str := fmt.Sprintf("transaction mass of %d is larger than max allowed size of %d",
+			transaction.Mass, maximumStandardTransactionMass)
 		return transactionRuleError(RejectNonstandard, str)
 	}
 
@@ -175,8 +175,7 @@ func (mp *mempool) checkTransactionStandardInContext(transaction *externalapi.Do
 		}
 	}
 
-	serializedSize := estimatedsize.TransactionEstimatedSerializedSize(transaction)
-	minimumFee := mp.minimumRequiredTransactionRelayFee(serializedSize)
+	minimumFee := mp.minimumRequiredTransactionRelayFee(transaction.Mass)
 	if transaction.Fee < minimumFee {
 		str := fmt.Sprintf("transaction %s has %d fees which is under the required amount of %d",
 			consensushashing.TransactionID(transaction), transaction.Fee, minimumFee)

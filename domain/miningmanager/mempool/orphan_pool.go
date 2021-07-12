@@ -10,7 +10,6 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/utils/utxo"
 
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/estimatedsize"
 	"github.com/kaspanet/kaspad/domain/miningmanager/mempool/model"
 	"github.com/pkg/errors"
 )
@@ -44,7 +43,7 @@ func (op *orphansPool) maybeAddOrphan(transaction *externalapi.DomainTransaction
 		return err
 	}
 
-	err = op.checkOrphanSize(transaction)
+	err = op.checkOrphanMass(transaction)
 	if err != nil {
 		return err
 	}
@@ -87,12 +86,11 @@ func (op *orphansPool) limitOrphanPoolSize() error {
 	return nil
 }
 
-func (op *orphansPool) checkOrphanSize(transaction *externalapi.DomainTransaction) error {
-	serializedLength := estimatedsize.TransactionEstimatedSerializedSize(transaction)
-	if serializedLength > op.mempool.config.MaximumOrphanTransactionSize {
+func (op *orphansPool) checkOrphanMass(transaction *externalapi.DomainTransaction) error {
+	if transaction.Mass > op.mempool.config.MaximumOrphanTransactionMass {
 		str := fmt.Sprintf("orphan transaction size of %d bytes is "+
 			"larger than max allowed size of %d bytes",
-			serializedLength, op.mempool.config.MaximumOrphanTransactionSize)
+			transaction.Mass, op.mempool.config.MaximumOrphanTransactionMass)
 		return transactionRuleError(RejectBadOrphan, str)
 	}
 	return nil

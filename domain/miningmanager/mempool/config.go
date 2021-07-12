@@ -18,7 +18,7 @@ const (
 	defaultOrphanExpireIntervalSeconds          uint64 = 60
 	defaultOrphanExpireScanIntervalSeconds      uint64 = 10
 
-	defaultMaximumOrphanTransactionSize = 100000
+	defaultMaximumOrphanTransactionMass = 100000
 	// defaultMaximumOrphanTransactionCount should remain small as long as we have recursion in
 	// removeOrphans when removeRedeemers = true
 	defaultMaximumOrphanTransactionCount = 50
@@ -43,7 +43,7 @@ type Config struct {
 	TransactionExpireScanIntervalSeconds  uint64
 	OrphanExpireIntervalDAAScore          uint64
 	OrphanExpireScanIntervalDAAScore      uint64
-	MaximumOrphanTransactionSize          uint64
+	MaximumOrphanTransactionMass          uint64
 	MaximumOrphanTransactionCount         uint64
 	AcceptNonStandard                     bool
 	MaximumMassPerBlock                   uint64
@@ -63,7 +63,7 @@ func DefaultConfig(dagParams *dagconfig.Params) *Config {
 		TransactionExpireScanIntervalSeconds:  defaultTransactionExpireScanIntervalSeconds,
 		OrphanExpireIntervalDAAScore:          defaultOrphanExpireIntervalSeconds / targetBlocksPerSecond,
 		OrphanExpireScanIntervalDAAScore:      defaultOrphanExpireScanIntervalSeconds / targetBlocksPerSecond,
-		MaximumOrphanTransactionSize:          defaultMaximumOrphanTransactionSize,
+		MaximumOrphanTransactionMass:          defaultMaximumOrphanTransactionMass,
 		MaximumOrphanTransactionCount:         defaultMaximumOrphanTransactionCount,
 		AcceptNonStandard:                     dagParams.RelayNonStdTxs,
 		MaximumMassPerBlock:                   dagParams.MaxBlockMass,
