@@ -38,7 +38,7 @@ func (flow *handleRelayInvsFlow) runIBDIfNotRunning(highHash *externalapi.Domain
 	}
 	log.Debugf("Found highest shared chain block %s with peer %s", highestSharedBlockHash, flow.peer)
 
-	shouldDownloadHeadersProof, shouldSync, err := flow.shouldDownloadHeadersProof(highHash, highestSharedBlockFound)
+	shouldDownloadHeadersProof, shouldSync, err := flow.shouldSyncAndShouldDownloadHeadersProof(highHash, highestSharedBlockFound)
 	if err != nil {
 		return err
 	}
@@ -54,7 +54,7 @@ func (flow *handleRelayInvsFlow) runIBDIfNotRunning(highHash *externalapi.Domain
 			return err
 		}
 	} else {
-		err = flow.downloadIBDBlocks(flow.Domain().Consensus(), highestSharedBlockHash, highHash, true)
+		err = flow.syncPruningPointFuture(flow.Domain().Consensus(), highestSharedBlockHash, highHash, true)
 		if err != nil {
 			return err
 		}
@@ -197,7 +197,7 @@ func (flow *handleRelayInvsFlow) fetchHighestHash(
 	}
 }
 
-func (flow *handleRelayInvsFlow) downloadIBDBlocks(consensus externalapi.Consensus, highestSharedBlockHash *externalapi.DomainHash,
+func (flow *handleRelayInvsFlow) syncPruningPointFuture(consensus externalapi.Consensus, highestSharedBlockHash *externalapi.DomainHash,
 	highHash *externalapi.DomainHash, callOnNewBlock bool) error {
 
 	log.Infof("Downloading IBD blocks from %s", flow.peer)
@@ -212,7 +212,7 @@ func (flow *handleRelayInvsFlow) downloadIBDBlocks(consensus externalapi.Consens
 	// blocks
 	ibdBlocksMessageChan := make(chan *appmessage.IBDBlocksMessage, 2)
 	errChan := make(chan error)
-	spawn("handleRelayInvsFlow-downloadIBDBlocks", func() {
+	spawn("handleRelayInvsFlow-syncPruningPointFuture", func() {
 		for {
 			ibdBlocksMessage, doneIBD, err := flow.receiveIBDBlocks()
 			if err != nil {

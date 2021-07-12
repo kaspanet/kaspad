@@ -28,7 +28,7 @@ func (flow *handleRelayInvsFlow) ibdWithHeadersProof(highHash *externalapi.Domai
 		}
 	}()
 
-	err = flow.downloadHeadersProofBlocksAndPruningUTXOSet(flow.Domain().StagingConsensus(), highHash)
+	err = flow.downloadBlocksAndPruningUTXOSet(flow.Domain().StagingConsensus(), highHash)
 	if err != nil {
 		return err
 	}
@@ -42,7 +42,7 @@ func (flow *handleRelayInvsFlow) ibdWithHeadersProof(highHash *externalapi.Domai
 	return nil
 }
 
-func (flow *handleRelayInvsFlow) shouldDownloadHeadersProof(highHash *externalapi.DomainHash,
+func (flow *handleRelayInvsFlow) shouldSyncAndShouldDownloadHeadersProof(highHash *externalapi.DomainHash,
 	highestSharedBlockFound bool) (shouldDownload, shouldSync bool, err error) {
 
 	if !highestSharedBlockFound {
@@ -76,7 +76,7 @@ func (flow *handleRelayInvsFlow) checkIfHighHashHasMoreBlueWorkThanSelectedTip(h
 	if !ok {
 		return false,
 			protocolerrors.Errorf(true, "received unexpected message type. "+
-				"expected: %s, got: %s", msgBlockBlueWork.Command(), message.Command())
+				"expected: %s, got: %s", appmessage.CmdBlockBlueWork, message.Command())
 	}
 
 	headersSelectedTip, err := flow.Domain().Consensus().GetHeadersSelectedTip()
@@ -97,18 +97,18 @@ func (flow *handleRelayInvsFlow) downloadHeadersProof() error {
 	return nil
 }
 
-func (flow *handleRelayInvsFlow) downloadHeadersProofBlocksAndPruningUTXOSet(consensus externalapi.Consensus, highHash *externalapi.DomainHash) error {
+func (flow *handleRelayInvsFlow) downloadBlocksAndPruningUTXOSet(consensus externalapi.Consensus, highHash *externalapi.DomainHash) error {
 	err := flow.downloadHeadersProof()
 	if err != nil {
 		return err
 	}
 
-	pruningPoint, err := flow.downloadPruningPointAndItsAnticone(consensus)
+	pruningPoint, err := flow.syncPruningPointAndItsAnticone(consensus)
 	if err != nil {
 		return err
 	}
 
-	err = flow.downloadIBDBlocks(consensus, pruningPoint, highHash, false)
+	err = flow.syncPruningPointFuture(consensus, pruningPoint, highHash, false)
 	if err != nil {
 		return err
 	}
@@ -128,7 +128,7 @@ func (flow *handleRelayInvsFlow) downloadHeadersProofBlocksAndPruningUTXOSet(con
 	return nil
 }
 
-func (flow *handleRelayInvsFlow) downloadPruningPointAndItsAnticone(consensus externalapi.Consensus) (*externalapi.DomainHash, error) {
+func (flow *handleRelayInvsFlow) syncPruningPointAndItsAnticone(consensus externalapi.Consensus) (*externalapi.DomainHash, error) {
 	log.Infof("Downloading pruning point and its anticone from %s", flow.peer)
 	err := flow.outgoingRoute.Enqueue(appmessage.NewMsgRequestPruningPointAndItsAnticone())
 	if err != nil {
@@ -228,8 +228,6 @@ func (flow *handleRelayInvsFlow) syncPruningPointUTXOSet(consensus externalapi.C
 
 func (flow *handleRelayInvsFlow) fetchMissingUTXOSet(consensus externalapi.Consensus, pruningPointHash *externalapi.DomainHash) (succeed bool, err error) {
 	defer func() {
-		// TODO: Consider getting rid of ClearImportedPruningPointData since the whole
-		// StagingConsensus is roll-backed in case of failure.
 		err := flow.Domain().StagingConsensus().ClearImportedPruningPointData()
 		if err != nil {
 			panic(fmt.Sprintf("failed to clear imported pruning point data: %s", err))
