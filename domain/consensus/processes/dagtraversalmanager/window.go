@@ -16,7 +16,7 @@ func (dtm *dagTraversalManager) BlockWindow(stagingArea *model.StagingArea, high
 	}
 
 	current := highHash
-	currentGHOSTDAGData, err := dtm.ghostdagDataStore.Get(dtm.databaseContext, stagingArea, highHash)
+	currentGHOSTDAGData, err := dtm.ghostdagDataStore.Get(dtm.databaseContext, stagingArea, highHash, false)
 	if err != nil {
 		return nil, err
 	}
@@ -53,7 +53,7 @@ func (dtm *dagTraversalManager) BlockWindow(stagingArea *model.StagingArea, high
 		}
 
 		selectedParentGHOSTDAGData, err := dtm.ghostdagDataStore.Get(
-			dtm.databaseContext, stagingArea, currentGHOSTDAGData.SelectedParent())
+			dtm.databaseContext, stagingArea, currentGHOSTDAGData.SelectedParent(), false)
 		if err != nil {
 			return nil, err
 		}

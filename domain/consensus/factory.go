@@ -2,7 +2,6 @@ package consensus
 
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/daawindowstore"
-	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/prefixmanager/prefix"
 	"io/ioutil"
 	"os"
@@ -144,8 +143,7 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 	if ghostdagDataCacheSize < config.DifficultyAdjustmentWindowSize {
 		ghostdagDataCacheSize = config.DifficultyAdjustmentWindowSize
 	}
-	ghostdagDataStore := ghostdagdatastore.New(model.StagingShardIDGHOSTDAG, []byte("block-ghostdag-data"), dbPrefix, ghostdagDataCacheSize, preallocateCaches)
-	blocksWithMetaDataGHOSTDAGDataStore := ghostdagdatastore.New(model.StagingShardIDGHOSTDAGFromBlocksWithMetaData, []byte("block-ghostdag-data-from-blocks-with-meta-data"), dbPrefix, ghostdagDataCacheSize, preallocateCaches)
+	ghostdagDataStore := ghostdagdatastore.New(dbPrefix, ghostdagDataCacheSize, preallocateCaches)
 
 	headersSelectedTipStore := headersselectedtipstore.New(dbPrefix)
 	finalityStore := finalitystore.New(dbPrefix, 200, preallocateCaches)
@@ -167,7 +165,6 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 		dagTopologyManager,
 		ghostdagDataStore,
 		blockHeaderStore,
-		blocksWithMetaDataGHOSTDAGDataStore,
 		config.K,
 		config.GenesisHash)
 	dagTraversalManager := dagtraversalmanager.New(
@@ -318,7 +315,6 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 		daaBlocksStore,
 		reachabilityDataStore,
 		daaWindowStore,
-		blocksWithMetaDataGHOSTDAGDataStore,
 
 		config.IsArchival,
 		genesisHash,
@@ -391,8 +387,7 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 		finalityStore,
 		headersSelectedChainStore,
 		daaBlocksStore,
-		daaWindowStore,
-		blocksWithMetaDataGHOSTDAGDataStore)
+		daaWindowStore)
 
 	c := &consensus{
 		lock:            &sync.Mutex{},

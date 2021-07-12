@@ -91,7 +91,7 @@ func (gm *ghostdagManager) GHOSTDAG(stagingArea *model.StagingArea, blockHash *e
 	}
 
 	if !isGenesis {
-		selectedParentGHOSTDAGData, err := gm.ghostdagDataStore.Get(gm.databaseContext, stagingArea, newBlockData.selectedParent)
+		selectedParentGHOSTDAGData, err := gm.ghostdagDataStore.Get(gm.databaseContext, stagingArea, newBlockData.selectedParent, false)
 		if err != nil {
 			return err
 		}
@@ -112,7 +112,7 @@ func (gm *ghostdagManager) GHOSTDAG(stagingArea *model.StagingArea, blockHash *e
 		newBlockData.blueWork.SetUint64(0)
 	}
 
-	gm.ghostdagDataStore.Stage(stagingArea, blockHash, newBlockData.toModel())
+	gm.ghostdagDataStore.Stage(stagingArea, blockHash, newBlockData.toModel(), false)
 
 	return nil
 }
@@ -157,7 +157,7 @@ func (gm *ghostdagManager) checkBlueCandidate(stagingArea *model.StagingArea, ne
 			return false, 0, nil, nil
 		}
 
-		selectedParentGHOSTDAGData, err := gm.ghostdagDataStore.Get(gm.databaseContext, stagingArea, chainBlock.blockData.SelectedParent())
+		selectedParentGHOSTDAGData, err := gm.ghostdagDataStore.Get(gm.databaseContext, stagingArea, chainBlock.blockData.SelectedParent(), false)
 		if err != nil {
 			return false, 0, nil, err
 		}
@@ -238,7 +238,7 @@ func (gm *ghostdagManager) checkBlueCandidateWithChainBlock(stagingArea *model.S
 func (gm *ghostdagManager) blueAnticoneSize(stagingArea *model.StagingArea,
 	block *externalapi.DomainHash, context *externalapi.BlockGHOSTDAGData) (externalapi.KType, error) {
 
-	ghostdagDataStore := gm.ghostdagDataStore
+	isMetaData := false
 	for current := context; current != nil; {
 		if blueAnticoneSize, ok := current.BluesAnticoneSizes()[*block]; ok {
 			return blueAnticoneSize, nil
@@ -246,14 +246,15 @@ func (gm *ghostdagManager) blueAnticoneSize(stagingArea *model.StagingArea,
 		if current.SelectedParent().Equal(gm.genesisHash) {
 			break
 		}
+
 		var err error
-		current, err = ghostdagDataStore.Get(gm.databaseContext, stagingArea, current.SelectedParent())
+		current, err = gm.ghostdagDataStore.Get(gm.databaseContext, stagingArea, current.SelectedParent(), isMetaData)
 		if err != nil {
 			return 0, err
 		}
 		if current.SelectedParent().Equal(model.VirtualGenesisBlockHash) {
-			ghostdagDataStore = gm.blocksWithMetaDataGHOSTDAGDataStore
-			current, err = gm.ghostdagDataStore.Get(gm.databaseContext, stagingArea, current.SelectedParent())
+			isMetaData = true
+			current, err = gm.ghostdagDataStore.Get(gm.databaseContext, stagingArea, current.SelectedParent(), isMetaData)
 			if err != nil {
 				return 0, err
 			}

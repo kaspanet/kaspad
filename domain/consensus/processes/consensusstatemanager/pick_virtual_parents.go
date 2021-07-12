@@ -296,7 +296,7 @@ func (csm *consensusStateManager) boundedMergeBreakingParents(stagingArea *model
 
 	var badReds []*externalapi.DomainHash
 
-	virtualGHOSTDAGData, err := csm.ghostdagDataStore.Get(csm.databaseContext, stagingArea, model.VirtualBlockHash)
+	virtualGHOSTDAGData, err := csm.ghostdagDataStore.Get(csm.databaseContext, stagingArea, model.VirtualBlockHash, false)
 	if err != nil {
 		return nil, err
 	}

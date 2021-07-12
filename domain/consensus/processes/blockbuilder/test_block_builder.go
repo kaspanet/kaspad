@@ -142,7 +142,7 @@ func (bb *testBlockBuilder) buildBlockWithParents(stagingArea *model.StagingArea
 		return nil, nil, err
 	}
 
-	ghostdagData, err := bb.ghostdagDataStore.Get(bb.databaseContext, stagingArea, tempBlockHash)
+	ghostdagData, err := bb.ghostdagDataStore.Get(bb.databaseContext, stagingArea, tempBlockHash, false)
 	if err != nil {
 		return nil, nil, err
 	}

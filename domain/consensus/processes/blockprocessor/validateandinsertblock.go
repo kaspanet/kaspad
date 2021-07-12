@@ -159,7 +159,7 @@ func (bp *blockProcessor) validateAndInsertBlock(stagingArea *model.StagingArea,
 
 	var logClosureErr error
 	log.Debug(logger.NewLogClosure(func() string {
-		virtualGhostDAGData, err := bp.ghostdagDataStore.Get(bp.databaseContext, stagingArea, model.VirtualBlockHash)
+		virtualGhostDAGData, err := bp.ghostdagDataStore.Get(bp.databaseContext, stagingArea, model.VirtualBlockHash, false)
 		if database.IsNotFoundError(err) {
 			return fmt.Sprintf("Cannot log data for non-existent virtual")
 		}

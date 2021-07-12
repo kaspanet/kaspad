@@ -88,7 +88,7 @@ func (csm *consensusStateManager) isCandidateToBeNextVirtualSelectedParent(
 		return true, nil
 	}
 
-	virtualGhostdagData, err := csm.ghostdagDataStore.Get(csm.databaseContext, stagingArea, model.VirtualBlockHash)
+	virtualGhostdagData, err := csm.ghostdagDataStore.Get(csm.databaseContext, stagingArea, model.VirtualBlockHash, false)
 	if err != nil {
 		return false, err
 	}

@@ -29,23 +29,22 @@ type blockProcessor struct {
 	headerTipsManager     model.HeadersSelectedTipManager
 	syncManager           model.SyncManager
 
-	acceptanceDataStore                 model.AcceptanceDataStore
-	blockStore                          model.BlockStore
-	blockStatusStore                    model.BlockStatusStore
-	blockRelationStore                  model.BlockRelationStore
-	multisetStore                       model.MultisetStore
-	ghostdagDataStore                   model.GHOSTDAGDataStore
-	consensusStateStore                 model.ConsensusStateStore
-	pruningStore                        model.PruningStore
-	reachabilityDataStore               model.ReachabilityDataStore
-	utxoDiffStore                       model.UTXODiffStore
-	blockHeaderStore                    model.BlockHeaderStore
-	headersSelectedTipStore             model.HeaderSelectedTipStore
-	finalityStore                       model.FinalityStore
-	headersSelectedChainStore           model.HeadersSelectedChainStore
-	daaBlocksStore                      model.DAABlocksStore
-	blocksWithMetaDataDAAWindowStore    model.BlocksWithMetaDataDAAWindowStore
-	blocksWithMetaDataGHOSTDAGDataStore model.GHOSTDAGDataStore
+	acceptanceDataStore              model.AcceptanceDataStore
+	blockStore                       model.BlockStore
+	blockStatusStore                 model.BlockStatusStore
+	blockRelationStore               model.BlockRelationStore
+	multisetStore                    model.MultisetStore
+	ghostdagDataStore                model.GHOSTDAGDataStore
+	consensusStateStore              model.ConsensusStateStore
+	pruningStore                     model.PruningStore
+	reachabilityDataStore            model.ReachabilityDataStore
+	utxoDiffStore                    model.UTXODiffStore
+	blockHeaderStore                 model.BlockHeaderStore
+	headersSelectedTipStore          model.HeaderSelectedTipStore
+	finalityStore                    model.FinalityStore
+	headersSelectedChainStore        model.HeadersSelectedChainStore
+	daaBlocksStore                   model.DAABlocksStore
+	blocksWithMetaDataDAAWindowStore model.BlocksWithMetaDataDAAWindowStore
 
 	stores []model.Store
 }
@@ -84,7 +83,6 @@ func New(
 	headersSelectedChainStore model.HeadersSelectedChainStore,
 	daaBlocksStore model.DAABlocksStore,
 	blocksWithMetaDataDAAWindowStore model.BlocksWithMetaDataDAAWindowStore,
-	blocksWithMetaDataGHOSTDAGDataStore model.GHOSTDAGDataStore,
 ) model.BlockProcessor {
 
 	return &blockProcessor{
@@ -103,24 +101,23 @@ func New(
 		headerTipsManager:     headerTipsManager,
 		syncManager:           syncManager,
 
-		consensusStateManager:               consensusStateManager,
-		acceptanceDataStore:                 acceptanceDataStore,
-		blockStore:                          blockStore,
-		blockStatusStore:                    blockStatusStore,
-		blockRelationStore:                  blockRelationStore,
-		multisetStore:                       multisetStore,
-		ghostdagDataStore:                   ghostdagDataStore,
-		consensusStateStore:                 consensusStateStore,
-		pruningStore:                        pruningStore,
-		reachabilityDataStore:               reachabilityDataStore,
-		utxoDiffStore:                       utxoDiffStore,
-		blockHeaderStore:                    blockHeaderStore,
-		headersSelectedTipStore:             headersSelectedTipStore,
-		finalityStore:                       finalityStore,
-		headersSelectedChainStore:           headersSelectedChainStore,
-		daaBlocksStore:                      daaBlocksStore,
-		blocksWithMetaDataDAAWindowStore:    blocksWithMetaDataDAAWindowStore,
-		blocksWithMetaDataGHOSTDAGDataStore: blocksWithMetaDataGHOSTDAGDataStore,
+		consensusStateManager:            consensusStateManager,
+		acceptanceDataStore:              acceptanceDataStore,
+		blockStore:                       blockStore,
+		blockStatusStore:                 blockStatusStore,
+		blockRelationStore:               blockRelationStore,
+		multisetStore:                    multisetStore,
+		ghostdagDataStore:                ghostdagDataStore,
+		consensusStateStore:              consensusStateStore,
+		pruningStore:                     pruningStore,
+		reachabilityDataStore:            reachabilityDataStore,
+		utxoDiffStore:                    utxoDiffStore,
+		blockHeaderStore:                 blockHeaderStore,
+		headersSelectedTipStore:          headersSelectedTipStore,
+		finalityStore:                    finalityStore,
+		headersSelectedChainStore:        headersSelectedChainStore,
+		daaBlocksStore:                   daaBlocksStore,
+		blocksWithMetaDataDAAWindowStore: blocksWithMetaDataDAAWindowStore,
 
 		stores: []model.Store{
 			consensusStateStore,
@@ -140,7 +137,6 @@ func New(
 			headersSelectedChainStore,
 			daaBlocksStore,
 			blocksWithMetaDataDAAWindowStore,
-			blocksWithMetaDataGHOSTDAGDataStore,
 		},
 	}
 }

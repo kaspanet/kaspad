@@ -6,50 +6,56 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/database/serialization"
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/lrucache"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/lrucacheghostdagdata"
 	"github.com/kaspanet/kaspad/domain/prefixmanager/prefix"
 )
 
+var ghostdagDataBucketName = []byte("block-ghostdag-data")
+var metaDataBucketName = []byte("block-with-meta-data-ghostdag-data")
+
 // ghostdagDataStore represents a store of BlockGHOSTDAGData
 type ghostdagDataStore struct {
-	cache          *lrucache.LRUCache
-	bucket         model.DBBucket
-	stagingShardID model.StagingShardID
+	cache              *lrucacheghostdagdata.LRUCache
+	ghostdagDataBucket model.DBBucket
+	metaDataBucket     model.DBBucket
 }
 
 // New instantiates a new GHOSTDAGDataStore
-func New(stagingShardID model.StagingShardID, bucketName []byte, prefix *prefix.Prefix, cacheSize int, preallocate bool) model.GHOSTDAGDataStore {
+func New(prefix *prefix.Prefix, cacheSize int, preallocate bool) model.GHOSTDAGDataStore {
 	return &ghostdagDataStore{
-		cache:          lrucache.New(cacheSize, preallocate),
-		bucket:         database.MakeBucket(prefix.Serialize()).Bucket(bucketName),
-		stagingShardID: stagingShardID,
+		cache:              lrucacheghostdagdata.New(cacheSize, preallocate),
+		ghostdagDataBucket: database.MakeBucket(prefix.Serialize()).Bucket(ghostdagDataBucketName),
+		metaDataBucket:     database.MakeBucket(prefix.Serialize()).Bucket(metaDataBucketName),
 	}
 }
 
 // Stage stages the given blockGHOSTDAGData for the given blockHash
-func (gds *ghostdagDataStore) Stage(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash, blockGHOSTDAGData *externalapi.BlockGHOSTDAGData) {
-	stagingShard := gds.stagingShard(gds.stagingShardID, stagingArea)
+func (gds *ghostdagDataStore) Stage(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash,
+	blockGHOSTDAGData *externalapi.BlockGHOSTDAGData, isMetaData bool) {
 
-	stagingShard.toAdd[*blockHash] = blockGHOSTDAGData
+	stagingShard := gds.stagingShard(stagingArea)
+
+	stagingShard.toAdd[newKey(blockHash, isMetaData)] = blockGHOSTDAGData
 }
 
 func (gds *ghostdagDataStore) IsStaged(stagingArea *model.StagingArea) bool {
-	return gds.stagingShard(gds.stagingShardID, stagingArea).isStaged()
+	return gds.stagingShard(stagingArea).isStaged()
 }
 
 // Get gets the blockGHOSTDAGData associated with the given blockHash
-func (gds *ghostdagDataStore) Get(dbContext model.DBReader, stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) (*externalapi.BlockGHOSTDAGData, error) {
-	stagingShard := gds.stagingShard(gds.stagingShardID, stagingArea)
+func (gds *ghostdagDataStore) Get(dbContext model.DBReader, stagingArea *model.StagingArea, blockHash *externalapi.DomainHash, isMetaData bool) (*externalapi.BlockGHOSTDAGData, error) {
+	stagingShard := gds.stagingShard(stagingArea)
 
-	if blockGHOSTDAGData, ok := stagingShard.toAdd[*blockHash]; ok {
+	key := newKey(blockHash, isMetaData)
+	if blockGHOSTDAGData, ok := stagingShard.toAdd[key]; ok {
 		return blockGHOSTDAGData, nil
 	}
 
-	if blockGHOSTDAGData, ok := gds.cache.Get(blockHash); ok {
-		return blockGHOSTDAGData.(*externalapi.BlockGHOSTDAGData), nil
+	if blockGHOSTDAGData, ok := gds.cache.Get(blockHash, isMetaData); ok {
+		return blockGHOSTDAGData, nil
 	}
 
-	blockGHOSTDAGDataBytes, err := dbContext.Get(gds.hashAsKey(blockHash))
+	blockGHOSTDAGDataBytes, err := dbContext.Get(gds.serializeKey(key))
 	if err != nil {
 		return nil, err
 	}
@@ -58,12 +64,15 @@ func (gds *ghostdagDataStore) Get(dbContext model.DBReader, stagingArea *model.S
 	if err != nil {
 		return nil, err
 	}
-	gds.cache.Add(blockHash, blockGHOSTDAGData)
+	gds.cache.Add(blockHash, isMetaData, blockGHOSTDAGData)
 	return blockGHOSTDAGData, nil
 }
 
-func (gds *ghostdagDataStore) hashAsKey(hash *externalapi.DomainHash) model.DBKey {
-	return gds.bucket.Key(hash.ByteSlice())
+func (gds *ghostdagDataStore) serializeKey(k key) model.DBKey {
+	if k.isMetaData {
+		return gds.metaDataBucket.Key(k.hash.ByteSlice())
+	}
+	return gds.ghostdagDataBucket.Key(k.hash.ByteSlice())
 }
 
 func (gds *ghostdagDataStore) serializeBlockGHOSTDAGData(blockGHOSTDAGData *externalapi.BlockGHOSTDAGData) ([]byte, error) {

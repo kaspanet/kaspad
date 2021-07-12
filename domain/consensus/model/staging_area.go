@@ -22,7 +22,6 @@ const (
 	StagingShardIDDAABlocks
 	StagingShardIDFinality
 	StagingShardIDGHOSTDAG
-	StagingShardIDGHOSTDAGFromBlocksWithMetaData
 	StagingShardIDHeadersSelectedChain
 	StagingShardIDHeadersSelectedTip
 	StagingShardIDMultiset

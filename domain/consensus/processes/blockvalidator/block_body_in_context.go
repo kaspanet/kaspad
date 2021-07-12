@@ -130,7 +130,7 @@ func (v *blockValidator) checkBlockTransactionsFinalized(
 		return err
 	}
 
-	ghostdagData, err := v.ghostdagDataStore.Get(v.databaseContext, stagingArea, blockHash)
+	ghostdagData, err := v.ghostdagDataStore.Get(v.databaseContext, stagingArea, blockHash, false)
 	if err != nil {
 		return err
 	}

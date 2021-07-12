@@ -187,7 +187,7 @@ func TestIsFinalizedTransaction(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Error Inserting block: %+v", err)
 		}
-		blockGhostDAG, err := tc.GHOSTDAGDataStore().Get(tc.DatabaseContext(), stagingArea, consensushashing.BlockHash(block))
+		blockGhostDAG, err := tc.GHOSTDAGDataStore().Get(tc.DatabaseContext(), stagingArea, consensushashing.BlockHash(block), false)
 		if err != nil {
 			t.Fatalf("Error getting GhostDAG Data: %+v", err)
 		}

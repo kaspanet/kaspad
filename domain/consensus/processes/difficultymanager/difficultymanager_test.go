@@ -142,7 +142,7 @@ func TestDifficulty(t *testing.T) {
 		// Increase block rate to increase difficulty
 		for i := 0; i < consensusConfig.DifficultyAdjustmentWindowSize; i++ {
 			tip, tipHash = addBlockWithMinimumTime(tipHash)
-			tipGHOSTDAGData, err := tc.GHOSTDAGDataStore().Get(tc.DatabaseContext(), stagingArea, tipHash)
+			tipGHOSTDAGData, err := tc.GHOSTDAGDataStore().Get(tc.DatabaseContext(), stagingArea, tipHash, false)
 			if err != nil {
 				t.Fatalf("GHOSTDAGDataStore: %+v", err)
 			}

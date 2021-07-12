@@ -180,7 +180,7 @@ func TestValidateTransactionInContextAndPopulateMassAndFee(t *testing.T) {
 			consensusConfig.GenesisHash,
 			nil,
 			nil,
-			nil))
+			nil), false)
 
 		tests := []struct {
 			name                     string

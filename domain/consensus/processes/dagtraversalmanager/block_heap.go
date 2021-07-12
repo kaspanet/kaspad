@@ -99,7 +99,7 @@ func (bh *blockHeap) Pop() *externalapi.DomainHash {
 
 // Push pushes the block onto the heap
 func (bh *blockHeap) Push(blockHash *externalapi.DomainHash) error {
-	ghostdagData, err := bh.ghostdagStore.Get(bh.dbContext, bh.stagingArea, blockHash)
+	ghostdagData, err := bh.ghostdagStore.Get(bh.dbContext, bh.stagingArea, blockHash, false)
 	if err != nil {
 		return err
 	}
@@ -189,7 +189,7 @@ func (sbh *sizedUpBlockHeap) tryPushWithGHOSTDAGData(blockHash *externalapi.Doma
 
 // tryPush tries to push the block onto the heap, if the heap is full and it's less than the minimum it rejects it
 func (sbh *sizedUpBlockHeap) tryPush(blockHash *externalapi.DomainHash) (bool, error) {
-	ghostdagData, err := sbh.ghostdagStore.Get(sbh.dbContext, sbh.stagingArea, blockHash)
+	ghostdagData, err := sbh.ghostdagStore.Get(sbh.dbContext, sbh.stagingArea, blockHash, false)
 	if err != nil {
 		return false, err
 	}

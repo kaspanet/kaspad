@@ -97,7 +97,7 @@ func (s *consensus) Init(shouldNotAddGenesis bool) error {
 			nil,
 			nil,
 			nil,
-		))
+		), false)
 
 		err = staging.CommitAllChanges(s.databaseContext, stagingArea)
 		if err != nil {
@@ -271,7 +271,7 @@ func (s *consensus) GetBlockInfo(blockHash *externalapi.DomainHash) (*externalap
 		return blockInfo, nil
 	}
 
-	ghostdagData, err := s.ghostdagDataStore.Get(s.databaseContext, stagingArea, blockHash)
+	ghostdagData, err := s.ghostdagDataStore.Get(s.databaseContext, stagingArea, blockHash, false)
 	if err != nil {
 		return nil, err
 	}
@@ -296,7 +296,7 @@ func (s *consensus) GetBlockRelations(blockHash *externalapi.DomainHash) (
 		return nil, nil, nil, err
 	}
 
-	blockGHOSTDAGData, err := s.ghostdagDataStore.Get(s.databaseContext, stagingArea, blockHash)
+	blockGHOSTDAGData, err := s.ghostdagDataStore.Get(s.databaseContext, stagingArea, blockHash, false)
 	if err != nil {
 		return nil, nil, nil, err
 	}
@@ -426,7 +426,7 @@ func (s *consensus) GetVirtualSelectedParent() (*externalapi.DomainHash, error) 
 
 	stagingArea := model.NewStagingArea()
 
-	virtualGHOSTDAGData, err := s.ghostdagDataStore.Get(s.databaseContext, stagingArea, model.VirtualBlockHash)
+	virtualGHOSTDAGData, err := s.ghostdagDataStore.Get(s.databaseContext, stagingArea, model.VirtualBlockHash, false)
 	if err != nil {
 		return nil, err
 	}
@@ -460,7 +460,7 @@ func (s *consensus) GetVirtualInfo() (*externalapi.VirtualInfo, error) {
 	if err != nil {
 		return nil, err
 	}
-	virtualGHOSTDAGData, err := s.ghostdagDataStore.Get(s.databaseContext, stagingArea, model.VirtualBlockHash)
+	virtualGHOSTDAGData, err := s.ghostdagDataStore.Get(s.databaseContext, stagingArea, model.VirtualBlockHash, false)
 	if err != nil {
 		return nil, err
 	}

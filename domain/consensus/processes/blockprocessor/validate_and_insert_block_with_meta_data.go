@@ -22,10 +22,10 @@ func (bp *blockProcessor) validateAndInsertBlockWithMetaData(stagingArea *model.
 	if err != nil {
 		return nil, err
 	}
-	bp.ghostdagDataStore.Stage(stagingArea, blockHash, blockReplacedGHOSTDAGData)
+	bp.ghostdagDataStore.Stage(stagingArea, blockHash, blockReplacedGHOSTDAGData, false)
 
 	for _, pair := range block.GHOSTDAGData {
-		bp.blocksWithMetaDataGHOSTDAGDataStore.Stage(stagingArea, pair.Hash, pair.GHOSTDAGData)
+		bp.ghostdagDataStore.Stage(stagingArea, pair.Hash, pair.GHOSTDAGData, true)
 	}
 
 	bp.daaBlocksStore.StageDAAScore(stagingArea, blockHash, block.DAAScore)
@@ -80,7 +80,7 @@ func (bp *blockProcessor) replaceGHOSTDAGDataPrePruningDataWithVirtualGenesis(st
 }
 
 func (bp *blockProcessor) isPruned(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) (bool, error) {
-	_, err := bp.ghostdagDataStore.Get(bp.databaseContext, stagingArea, blockHash)
+	_, err := bp.ghostdagDataStore.Get(bp.databaseContext, stagingArea, blockHash, false)
 	if database.IsNotFoundError(err) {
 		return true, nil
 	}

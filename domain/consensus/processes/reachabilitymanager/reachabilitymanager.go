@@ -36,7 +36,7 @@ func (rt *reachabilityManager) AddBlock(stagingArea *model.StagingArea, blockHas
 	newReachabilityData := newReachabilityTreeData()
 	rt.stageData(stagingArea, blockHash, newReachabilityData)
 
-	ghostdagData, err := rt.ghostdagDataStore.Get(rt.databaseContext, stagingArea, blockHash)
+	ghostdagData, err := rt.ghostdagDataStore.Get(rt.databaseContext, stagingArea, blockHash, false)
 	if err != nil {
 		return err
 	}

@@ -148,13 +148,13 @@ func TestFinality(t *testing.T) {
 			t.Fatalf("TestFinality: Failed getting virtual selectedParent: %v", err)
 		}
 		selectedTipGhostDagData, err :=
-			consensus.GHOSTDAGDataStore().Get(consensus.DatabaseContext(), stagingArea, selectedTip)
+			consensus.GHOSTDAGDataStore().Get(consensus.DatabaseContext(), stagingArea, selectedTip, false)
 		if err != nil {
 			t.Fatalf("TestFinality: Failed getting the ghost dag data of the selected tip: %v", err)
 		}
 
 		sideChainTipGhostDagData, err :=
-			consensus.GHOSTDAGDataStore().Get(consensus.DatabaseContext(), stagingArea, sideChainTipHash)
+			consensus.GHOSTDAGDataStore().Get(consensus.DatabaseContext(), stagingArea, sideChainTipHash, false)
 		if err != nil {
 			t.Fatalf("TestFinality: Failed getting the ghost dag data of the sidechain tip: %v", err)
 		}
@@ -308,7 +308,7 @@ func TestBoundedMergeDepth(t *testing.T) {
 
 		stagingArea := model.NewStagingArea()
 		virtualGhotDagData, err := consensusReal.GHOSTDAGDataStore().Get(consensusReal.DatabaseContext(),
-			stagingArea, model.VirtualBlockHash)
+			stagingArea, model.VirtualBlockHash, false)
 		if err != nil {
 			t.Fatalf("TestBoundedMergeDepth: Failed getting the ghostdag data of the virtual: %v", err)
 		}
@@ -357,7 +357,7 @@ func TestBoundedMergeDepth(t *testing.T) {
 		}
 
 		virtualGhotDagData, err = consensusReal.GHOSTDAGDataStore().Get(
-			consensusReal.DatabaseContext(), stagingArea, model.VirtualBlockHash)
+			consensusReal.DatabaseContext(), stagingArea, model.VirtualBlockHash, false)
 		if err != nil {
 			t.Fatalf("TestBoundedMergeDepth: Failed getting the ghostdag data of the virtual: %v", err)
 		}

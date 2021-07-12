@@ -87,7 +87,7 @@ func (gm *ghostdagManager) sortMergeSet(stagingArea *model.StagingArea, mergeSet
 func (gm *ghostdagManager) GetSortedMergeSet(stagingArea *model.StagingArea,
 	current *externalapi.DomainHash) ([]*externalapi.DomainHash, error) {
 
-	currentGhostdagData, err := gm.ghostdagDataStore.Get(gm.databaseContext, stagingArea, current)
+	currentGhostdagData, err := gm.ghostdagDataStore.Get(gm.databaseContext, stagingArea, current, false)
 	if err != nil {
 		return nil, err
 	}
@@ -104,12 +104,12 @@ func (gm *ghostdagManager) GetSortedMergeSet(stagingArea *model.StagingArea,
 	i, j := 0, 0
 	for i < len(blueMergeSet) && j < len(redMergeSet) {
 		currentBlue := blueMergeSet[i]
-		currentBlueGhostdagData, err := gm.ghostdagDataStore.Get(gm.databaseContext, stagingArea, currentBlue)
+		currentBlueGhostdagData, err := gm.ghostdagDataStore.Get(gm.databaseContext, stagingArea, currentBlue, false)
 		if err != nil {
 			return nil, err
 		}
 		currentRed := redMergeSet[j]
-		currentRedGhostdagData, err := gm.ghostdagDataStore.Get(gm.databaseContext, stagingArea, currentRed)
+		currentRedGhostdagData, err := gm.ghostdagDataStore.Get(gm.databaseContext, stagingArea, currentRed, false)
 		if err != nil {
 			return nil, err
 		}

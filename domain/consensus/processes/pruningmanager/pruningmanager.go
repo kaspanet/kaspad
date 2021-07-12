@@ -15,16 +15,15 @@ import (
 type pruningManager struct {
 	databaseContext model.DBManager
 
-	dagTraversalManager                 model.DAGTraversalManager
-	dagTopologyManager                  model.DAGTopologyManager
-	consensusStateManager               model.ConsensusStateManager
-	consensusStateStore                 model.ConsensusStateStore
-	ghostdagDataStore                   model.GHOSTDAGDataStore
-	blocksWithMetaDataGHOSTDAGDataStore model.GHOSTDAGDataStore
-	pruningStore                        model.PruningStore
-	blockStatusStore                    model.BlockStatusStore
-	headerSelectedTipStore              model.HeaderSelectedTipStore
-	daaWindowStore                      model.BlocksWithMetaDataDAAWindowStore
+	dagTraversalManager    model.DAGTraversalManager
+	dagTopologyManager     model.DAGTopologyManager
+	consensusStateManager  model.ConsensusStateManager
+	consensusStateStore    model.ConsensusStateStore
+	ghostdagDataStore      model.GHOSTDAGDataStore
+	pruningStore           model.PruningStore
+	blockStatusStore       model.BlockStatusStore
+	headerSelectedTipStore model.HeaderSelectedTipStore
+	daaWindowStore         model.BlocksWithMetaDataDAAWindowStore
 
 	multiSetStore         model.MultisetStore
 	acceptanceDataStore   model.AcceptanceDataStore
@@ -64,7 +63,6 @@ func New(
 	daaBlocksStore model.DAABlocksStore,
 	reachabilityDataStore model.ReachabilityDataStore,
 	daaWindowStore model.BlocksWithMetaDataDAAWindowStore,
-	blocksWithMetaDataGHOSTDAGDataStore model.GHOSTDAGDataStore,
 
 	isArchivalNode bool,
 	genesisHash *externalapi.DomainHash,
@@ -81,20 +79,19 @@ func New(
 		dagTopologyManager:    dagTopologyManager,
 		consensusStateManager: consensusStateManager,
 
-		consensusStateStore:                 consensusStateStore,
-		ghostdagDataStore:                   ghostdagDataStore,
-		pruningStore:                        pruningStore,
-		blockStatusStore:                    blockStatusStore,
-		multiSetStore:                       multiSetStore,
-		acceptanceDataStore:                 acceptanceDataStore,
-		blocksStore:                         blocksStore,
-		blockHeaderStore:                    blockHeaderStore,
-		utxoDiffStore:                       utxoDiffStore,
-		headerSelectedTipStore:              headerSelectedTipStore,
-		daaBlocksStore:                      daaBlocksStore,
-		reachabilityDataStore:               reachabilityDataStore,
-		daaWindowStore:                      daaWindowStore,
-		blocksWithMetaDataGHOSTDAGDataStore: blocksWithMetaDataGHOSTDAGDataStore,
+		consensusStateStore:    consensusStateStore,
+		ghostdagDataStore:      ghostdagDataStore,
+		pruningStore:           pruningStore,
+		blockStatusStore:       blockStatusStore,
+		multiSetStore:          multiSetStore,
+		acceptanceDataStore:    acceptanceDataStore,
+		blocksStore:            blocksStore,
+		blockHeaderStore:       blockHeaderStore,
+		utxoDiffStore:          utxoDiffStore,
+		headerSelectedTipStore: headerSelectedTipStore,
+		daaBlocksStore:         daaBlocksStore,
+		reachabilityDataStore:  reachabilityDataStore,
+		daaWindowStore:         daaWindowStore,
 
 		isArchivalNode:                  isArchivalNode,
 		genesisHash:                     genesisHash,
@@ -138,17 +135,17 @@ func (pm *pruningManager) UpdatePruningPointByVirtual(stagingArea *model.Staging
 		return err
 	}
 
-	currentCandidateGHOSTDAGData, err := pm.ghostdagDataStore.Get(pm.databaseContext, stagingArea, currentCandidate)
+	currentCandidateGHOSTDAGData, err := pm.ghostdagDataStore.Get(pm.databaseContext, stagingArea, currentCandidate, false)
 	if err != nil {
 		return err
 	}
 
-	virtual, err := pm.ghostdagDataStore.Get(pm.databaseContext, stagingArea, model.VirtualBlockHash)
+	virtual, err := pm.ghostdagDataStore.Get(pm.databaseContext, stagingArea, model.VirtualBlockHash, false)
 	if err != nil {
 		return err
 	}
 
-	virtualSelectedParent, err := pm.ghostdagDataStore.Get(pm.databaseContext, stagingArea, virtual.SelectedParent())
+	virtualSelectedParent, err := pm.ghostdagDataStore.Get(pm.databaseContext, stagingArea, virtual.SelectedParent(), false)
 	if err != nil {
 		return err
 	}
@@ -158,7 +155,7 @@ func (pm *pruningManager) UpdatePruningPointByVirtual(stagingArea *model.Staging
 		return err
 	}
 
-	currentPruningPointGHOSTDAGData, err := pm.ghostdagDataStore.Get(pm.databaseContext, stagingArea, currentPruningPoint)
+	currentPruningPointGHOSTDAGData, err := pm.ghostdagDataStore.Get(pm.databaseContext, stagingArea, currentPruningPoint, false)
 	if err != nil {
 		return err
 	}
@@ -191,7 +188,7 @@ func (pm *pruningManager) UpdatePruningPointByVirtual(stagingArea *model.Staging
 		if err != nil {
 			return err
 		}
-		selectedChildGHOSTDAGData, err := pm.ghostdagDataStore.Get(pm.databaseContext, stagingArea, selectedChild)
+		selectedChildGHOSTDAGData, err := pm.ghostdagDataStore.Get(pm.databaseContext, stagingArea, selectedChild, false)
 		if err != nil {
 			return err
 		}
@@ -411,7 +408,7 @@ func (pm *pruningManager) IsValidPruningPoint(stagingArea *model.StagingArea, bl
 	}
 
 	// A pruning point has to be in the selected chain of the headers selected tip.
-	headersSelectedTipGHOSTDAGData, err := pm.ghostdagDataStore.Get(pm.databaseContext, stagingArea, headersSelectedTip)
+	headersSelectedTipGHOSTDAGData, err := pm.ghostdagDataStore.Get(pm.databaseContext, stagingArea, headersSelectedTip, false)
 	if err != nil {
 		return false, err
 	}
@@ -426,7 +423,7 @@ func (pm *pruningManager) IsValidPruningPoint(stagingArea *model.StagingArea, bl
 		return false, nil
 	}
 
-	ghostdagData, err := pm.ghostdagDataStore.Get(pm.databaseContext, stagingArea, blockHash)
+	ghostdagData, err := pm.ghostdagDataStore.Get(pm.databaseContext, stagingArea, blockHash, false)
 	if err != nil {
 		return false, err
 	}
@@ -511,11 +508,11 @@ func (pm *pruningManager) calculateDiffBetweenPreviousAndCurrentPruningPoints(st
 	if err != nil {
 		return nil, err
 	}
-	currentPruningGhostDAG, err := pm.ghostdagDataStore.Get(pm.databaseContext, stagingArea, currentPruningHash)
+	currentPruningGhostDAG, err := pm.ghostdagDataStore.Get(pm.databaseContext, stagingArea, currentPruningHash, false)
 	if err != nil {
 		return nil, err
 	}
-	previousPruningGhostDAG, err := pm.ghostdagDataStore.Get(pm.databaseContext, stagingArea, previousPruningHash)
+	previousPruningGhostDAG, err := pm.ghostdagDataStore.Get(pm.databaseContext, stagingArea, previousPruningHash, false)
 	if err != nil {
 		return nil, err
 	}
@@ -542,7 +539,7 @@ func (pm *pruningManager) calculateDiffBetweenPreviousAndCurrentPruningPoints(st
 			if err != nil {
 				return nil, err
 			}
-			diffChildGhostDag, err := pm.ghostdagDataStore.Get(pm.databaseContext, stagingArea, previousPruningCurrentDiffChild)
+			diffChildGhostDag, err := pm.ghostdagDataStore.Get(pm.databaseContext, stagingArea, previousPruningCurrentDiffChild, false)
 			if err != nil {
 				return nil, err
 			}
@@ -559,7 +556,7 @@ func (pm *pruningManager) calculateDiffBetweenPreviousAndCurrentPruningPoints(st
 			if err != nil {
 				return nil, err
 			}
-			diffChildGhostDag, err := pm.ghostdagDataStore.Get(pm.databaseContext, stagingArea, currentPruningCurrentDiffChild)
+			diffChildGhostDag, err := pm.ghostdagDataStore.Get(pm.databaseContext, stagingArea, currentPruningCurrentDiffChild, false)
 			if err != nil {
 				return nil, err
 			}
@@ -786,7 +783,7 @@ func (pm *pruningManager) blockWithMetaData(stagingArea *model.StagingArea, bloc
 			return nil, err
 		}
 
-		ghostdagData, err := pm.ghostdagDataStore.Get(pm.databaseContext, stagingArea, blockWindowHash)
+		ghostdagData, err := pm.ghostdagDataStore.Get(pm.databaseContext, stagingArea, blockWindowHash, false)
 		if database.IsNotFoundError(err) {
 			daaBlock, err := pm.daaWindowStore.DAAWindowBlock(pm.databaseContext, stagingArea, blockHash, uint64(i))
 			if err != nil {
@@ -807,9 +804,9 @@ func (pm *pruningManager) blockWithMetaData(stagingArea *model.StagingArea, bloc
 	ghostdagDataHashPairs := make([]*externalapi.BlockGHOSTDAGDataHashPair, 0, pm.k)
 	current := blockHash
 	for i := externalapi.KType(0); i < pm.k+1; i++ {
-		ghostdagData, err := pm.ghostdagDataStore.Get(pm.databaseContext, stagingArea, current)
+		ghostdagData, err := pm.ghostdagDataStore.Get(pm.databaseContext, stagingArea, current, false)
 		if database.IsNotFoundError(err) {
-			ghostdagData, err = pm.blocksWithMetaDataGHOSTDAGDataStore.Get(pm.databaseContext, stagingArea, current)
+			ghostdagData, err = pm.ghostdagDataStore.Get(pm.databaseContext, stagingArea, current, true)
 			if err != nil {
 				return nil, err
 			}

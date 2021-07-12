@@ -86,7 +86,7 @@ func (fm *finalityManager) calculateFinalityPoint(stagingArea *model.StagingArea
 		return model.VirtualGenesisBlockHash, nil
 	}
 
-	ghostdagData, err := fm.ghostdagDataStore.Get(fm.databaseContext, stagingArea, blockHash)
+	ghostdagData, err := fm.ghostdagDataStore.Get(fm.databaseContext, stagingArea, blockHash, false)
 	if err != nil {
 		return nil, err
 	}
@@ -114,7 +114,7 @@ func (fm *finalityManager) calculateFinalityPoint(stagingArea *model.StagingArea
 		if err != nil {
 			return nil, err
 		}
-		nextGHOSTDAGData, err := fm.ghostdagDataStore.Get(fm.databaseContext, stagingArea, next)
+		nextGHOSTDAGData, err := fm.ghostdagDataStore.Get(fm.databaseContext, stagingArea, next, false)
 		if err != nil {
 			return nil, err
 		}
