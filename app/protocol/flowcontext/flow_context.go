@@ -61,6 +61,10 @@ type FlowContext struct {
 	orphans      map[externalapi.DomainHash]*externalapi.DomainBlock
 	orphansMutex sync.RWMutex
 
+	transactionIDsToPropagate        []*externalapi.DomainTransactionID
+	lastTransactionIDPropagationTime time.Time
+	transactionIDPropagationLock     sync.Mutex
+
 	shutdownChan chan struct{}
 }
 
@@ -69,17 +73,19 @@ func New(cfg *config.Config, domain domain.Domain, addressManager *addressmanage
 	netAdapter *netadapter.NetAdapter, connectionManager *connmanager.ConnectionManager) *FlowContext {
 
 	return &FlowContext{
-		cfg:                         cfg,
-		netAdapter:                  netAdapter,
-		domain:                      domain,
-		addressManager:              addressManager,
-		connectionManager:           connectionManager,
-		sharedRequestedTransactions: transactionrelay.NewSharedRequestedTransactions(),
-		sharedRequestedBlocks:       blockrelay.NewSharedRequestedBlocks(),
-		peers:                       make(map[id.ID]*peerpkg.Peer),
-		orphans:                     make(map[externalapi.DomainHash]*externalapi.DomainBlock),
-		timeStarted:                 mstime.Now().UnixMilliseconds(),
-		shutdownChan:                make(chan struct{}),
+		cfg:                              cfg,
+		netAdapter:                       netAdapter,
+		domain:                           domain,
+		addressManager:                   addressManager,
+		connectionManager:                connectionManager,
+		sharedRequestedTransactions:      transactionrelay.NewSharedRequestedTransactions(),
+		sharedRequestedBlocks:            blockrelay.NewSharedRequestedBlocks(),
+		peers:                            make(map[id.ID]*peerpkg.Peer),
+		orphans:                          make(map[externalapi.DomainHash]*externalapi.DomainBlock),
+		timeStarted:                      mstime.Now().UnixMilliseconds(),
+		transactionIDsToPropagate:        []*externalapi.DomainTransactionID{},
+		lastTransactionIDPropagationTime: time.Now(),
+		shutdownChan:                     make(chan struct{}),
 	}
 }
 

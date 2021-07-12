@@ -3,6 +3,7 @@ package mempool
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/miningmanager/mempool/model"
+	"time"
 )
 
 type transactionsPool struct {
@@ -11,7 +12,8 @@ type transactionsPool struct {
 	highPriorityTransactions              model.IDToTransactionMap
 	chainedTransactionsByPreviousOutpoint model.OutpointToTransactionMap
 	transactionsOrderedByFeeRate          model.TransactionsOrderedByFeeRate
-	lastExpireScan                        uint64
+	lastExpireScanDAAScore                uint64
+	lastExpireScanTime                    time.Time
 }
 
 func newTransactionsPool(mp *mempool) *transactionsPool {
@@ -21,7 +23,8 @@ func newTransactionsPool(mp *mempool) *transactionsPool {
 		highPriorityTransactions:              model.IDToTransactionMap{},
 		chainedTransactionsByPreviousOutpoint: model.OutpointToTransactionMap{},
 		transactionsOrderedByFeeRate:          model.TransactionsOrderedByFeeRate{},
-		lastExpireScan:                        0,
+		lastExpireScanDAAScore:                0,
+		lastExpireScanTime:                    time.Now(),
 	}
 }
 
@@ -88,7 +91,8 @@ func (tp *transactionsPool) expireOldTransactions() error {
 		return err
 	}
 
-	if virtualDAAScore-tp.lastExpireScan < tp.mempool.config.TransactionExpireScanIntervalDAAScore {
+	if virtualDAAScore-tp.lastExpireScanDAAScore < tp.mempool.config.TransactionExpireScanIntervalDAAScore ||
+		time.Since(tp.lastExpireScanTime).Seconds() < float64(tp.mempool.config.TransactionExpireScanIntervalSeconds) {
 		return nil
 	}
 
@@ -110,7 +114,8 @@ func (tp *transactionsPool) expireOldTransactions() error {
 		}
 	}
 
-	tp.lastExpireScan = virtualDAAScore
+	tp.lastExpireScanDAAScore = virtualDAAScore
+	tp.lastExpireScanTime = time.Now()
 	return nil
 }
 

@@ -39,7 +39,7 @@ func (m *mocTransactionsRelayContext) SharedRequestedTransactions() *transaction
 	return m.sharedRequestedTransactions
 }
 
-func (m *mocTransactionsRelayContext) Broadcast(appmessage.Message) error {
+func (m *mocTransactionsRelayContext) EnqueueTransactionIDsForPropagation(transactionIDs []*externalapi.DomainTransactionID) error {
 	return nil
 }
 

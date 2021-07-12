@@ -1,38 +1,36 @@
-name: Go
+name: Tests
 
 on:
   push:
   pull_request:
-    # edtited - "title, body, or the base branch of the PR is modified"
-    # synchronize - "commit(s) pushed to the pull request"
-    types: [opened, synchronize, edited, reopened]
+    # edtited - because base branch can be modified
+    # synchronize - update commits on PR
+    types: [opened, synchronize, edited]
 
 jobs:
+
   build:
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-        os: [ ubuntu-16.04, macos-10.15, windows-2019 ]
-    name: Testing on on ${{ matrix.os }}
+        os: [ ubuntu-latest, macos-latest, windows-latest ]
+    name: Tests, ${{ matrix.os }}
     steps:
 
-      - name: Fix windows CRLF
+      - name: Fix CRLF on Windows
+        if: runner.os == 'Windows'
         run: git config --global core.autocrlf false
 
       - name: Check out code into the Go module directory
         uses: actions/checkout@v2
 
-      # We need to increase the page size because the tests run out of memory on github CI windows.
-      # Use the powershell script from this github action: https://github.com/al-cheb/configure-pagefile-action/blob/master/scripts/SetPageFileSize.ps1
-      # MIT License (MIT) Copyright (c) 2020 Maxim Lobanov and contributors
-      - name: Increase page size on windows
+      # Increase the pagefile size on Windows to aviod running out of memory
+      - name: Increase pagefile size on Windows
         if: runner.os == 'Windows'
-        shell: powershell
-        run: powershell -command .\.github\workflows\SetPageFileSize.ps1
+        run: powershell -command .github\workflows\SetPageFileSize.ps1
 
-
-      - name: Set up Go 1.x
+      - name: Setup Go
         uses: actions/setup-go@v2
         with:
           go-version: 1.16
@@ -51,14 +49,41 @@ jobs:
         shell: bash
         run: ./build_and_test.sh -v
 
+
+  stability-test-fast:
+    runs-on: ubuntu-latest
+    name: Fast stability tests, ${{ github.head_ref }}
+    steps:
+
+      - name: Setup Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: 1.16
+
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+
+      - name: Install kaspad
+        run: go install ./...
+
+      - name: Install golint
+        run: go get -u golang.org/x/lint/golint
+
+      - name: Run fast stability tests
+        working-directory: stability-tests
+        run: ./install_and_test.sh
+
+
   coverage:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     name: Produce code coverage
     steps:
       - name: Check out code into the Go module directory
         uses: actions/checkout@v2
 
-      - name: Set up Go 1.x
+      - name: Setup Go
         uses: actions/setup-go@v2
         with:
           go-version: 1.16

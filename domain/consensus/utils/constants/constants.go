@@ -45,5 +45,5 @@ const (
 
 	// LockTimeThreshold is the number below which a lock time is
 	// interpreted to be a block number.
-	LockTimeThreshold = 5e8 // Tue Nov 5 00:53:20 1985 UTC
+	LockTimeThreshold = 5e11 // Tue Nov 5 00:53:20 1985 UTC
 )
