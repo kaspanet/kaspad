@@ -7,10 +7,8 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 )
 
-func (flow *handleRelayInvsFlow) sendGetBlockLocator(lowHash *externalapi.DomainHash,
-	highHash *externalapi.DomainHash, limit uint32) error {
-
-	msgGetBlockLocator := appmessage.NewMsgRequestBlockLocator(lowHash, highHash, limit)
+func (flow *handleRelayInvsFlow) sendGetBlockLocator(highHash *externalapi.DomainHash, limit uint32) error {
+	msgGetBlockLocator := appmessage.NewMsgRequestBlockLocator(nil, highHash, limit)
 	return flow.outgoingRoute.Enqueue(msgGetBlockLocator)
 }
 
