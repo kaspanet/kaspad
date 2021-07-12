@@ -314,7 +314,10 @@ func (flow *handleRelayInvsFlow) processIBDBlock(consensus externalapi.Consensus
 	}
 
 	if callOnNewBlock {
-		return flow.OnNewBlock(block, blockInsertionResult)
+		err := flow.OnNewBlock(block, blockInsertionResult)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil

@@ -16,20 +16,17 @@ func (flow *handleRelayInvsFlow) ibdWithHeadersProof(highHash *externalapi.Domai
 		return err
 	}
 
-	committed := false
-	defer func() {
-		if committed || !flow.IsRecoverableError(err) {
-			return
-		}
-
-		err := flow.Domain().DeleteStagingConsensus()
-		if err != nil {
-			panic(err)
-		}
-	}()
-
 	err = flow.downloadBlocksAndPruningUTXOSet(flow.Domain().StagingConsensus(), highHash)
 	if err != nil {
+		if !flow.IsRecoverableError(err) {
+			return err
+		}
+
+		deleteStagingConsensusErr := flow.Domain().DeleteStagingConsensus()
+		if deleteStagingConsensusErr != nil {
+			return deleteStagingConsensusErr
+		}
+
 		return err
 	}
 
@@ -38,7 +35,6 @@ func (flow *handleRelayInvsFlow) ibdWithHeadersProof(highHash *externalapi.Domai
 		return err
 	}
 
-	committed = true
 	return nil
 }
 
