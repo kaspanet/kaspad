@@ -38,6 +38,10 @@ echo "Running many-tips"
 cd "${PROJECT_ROOT}/many-tips/run" && ./run.sh || failedTests+=("many-tips")
 echo "Done running many-tips"
 
+echo "Running daa"
+cd "${PROJECT_ROOT}/daa/run" && ./run.sh || failedTests+=("daa")
+echo "Done running daa"
+
 echo "Running reorg"
 cd "${PROJECT_ROOT}/reorg/run" && ./run-full-finality-window-reorg.sh || failedTests+=("reorg")
 echo "Done running reorg"
