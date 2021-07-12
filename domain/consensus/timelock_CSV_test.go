@@ -64,10 +64,10 @@ func TestCheckSequenceVerifyConditionedByDAAScore(t *testing.T) {
 			Version: constants.MaxScriptPublicKeyVersion,
 			Script:  p2shScriptCSV,
 		}
-		transactionWithLockedOutput, err := CreateTransactionWithLockedOutput(
+		transactionWithLockedOutput, err := createTransactionWithLockedOutput(
 			blockD.Transactions[transactionhelper.CoinbaseTransactionIndex], fees, &scriptPublicKeyCSV)
 		if err != nil {
-			t.Fatalf("Error in CreateTransactionWithLockedOutput: %v", err)
+			t.Fatalf("Error in createTransactionWithLockedOutput: %v", err)
 		}
 		// BlockE contains the locked output (locked by CSV).
 		// This block should be valid since CSV script locked only the output.
@@ -178,10 +178,10 @@ func TestCheckSequenceVerifyConditionedByRelativeTime(t *testing.T) {
 			Version: constants.MaxScriptPublicKeyVersion,
 			Script:  p2shScriptCSV,
 		}
-		transactionWithLockedOutput, err := CreateTransactionWithLockedOutput(blockD.Transactions[transactionhelper.CoinbaseTransactionIndex],
+		transactionWithLockedOutput, err := createTransactionWithLockedOutput(blockD.Transactions[transactionhelper.CoinbaseTransactionIndex],
 			fees, &scriptPublicKeyCSV)
 		if err != nil {
-			t.Fatalf("Error in CreateTransactionWithLockedOutput: %v", err)
+			t.Fatalf("Error in createTransactionWithLockedOutput: %v", err)
 		}
 		// BlockE contains the locked output (locked by CSV).
 		// This block should be valid since CSV script locked only the output.
@@ -306,10 +306,10 @@ func TestRelativeTimeOnCheckSequenceVerify(t *testing.T) {
 			Version: constants.MaxScriptPublicKeyVersion,
 			Script:  p2shScriptCSV,
 		}
-		transactionWithLockedOutput, err := CreateTransactionWithLockedOutput(blockD.Transactions[transactionhelper.CoinbaseTransactionIndex],
+		transactionWithLockedOutput, err := createTransactionWithLockedOutput(blockD.Transactions[transactionhelper.CoinbaseTransactionIndex],
 			fees, &scriptPublicKeyCSV)
 		if err != nil {
-			t.Fatalf("Error in CreateTransactionWithLockedOutput: %v", err)
+			t.Fatalf("Error in createTransactionWithLockedOutput: %v", err)
 		}
 		// BlockE contains the locked output (locked by CSV).
 		// This block should be valid since CSV script locked only the output.
@@ -402,10 +402,10 @@ func TestCheckSequenceVerifyConditionedByDAAScoreWithWrongSequence(t *testing.T)
 			Version: constants.MaxScriptPublicKeyVersion,
 			Script:  p2shScriptCSV,
 		}
-		transactionWithLockedOutput, err := CreateTransactionWithLockedOutput(
+		transactionWithLockedOutput, err := createTransactionWithLockedOutput(
 			blockD.Transactions[transactionhelper.CoinbaseTransactionIndex], fees, &scriptPublicKeyCSV)
 		if err != nil {
-			t.Fatalf("Error in CreateTransactionWithLockedOutput: %v", err)
+			t.Fatalf("Error in createTransactionWithLockedOutput: %v", err)
 		}
 		// BlockE contains the locked output (locked by CSV).
 		// This block should be valid since CSV script locked only the output.

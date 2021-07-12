@@ -62,10 +62,10 @@ func TestCheckLockTimeVerifyConditionedByDAAScore(t *testing.T) {
 			Version: constants.MaxScriptPublicKeyVersion,
 			Script:  p2shScriptCLTV,
 		}
-		transactionWithLockedOutput, err := CreateTransactionWithLockedOutput(blockD.Transactions[transactionhelper.CoinbaseTransactionIndex],
+		transactionWithLockedOutput, err := createTransactionWithLockedOutput(blockD.Transactions[transactionhelper.CoinbaseTransactionIndex],
 			fees, &scriptPublicKeyCLTV)
 		if err != nil {
-			t.Fatalf("Error in CreateTransactionWithLockedOutput: %v", err)
+			t.Fatalf("Error in createTransactionWithLockedOutput: %v", err)
 		}
 		// BlockE contains the locked output (locked by CLTV).
 		// This block should be valid since CLTV script locked only the output.
@@ -169,10 +169,10 @@ func TestCheckLockTimeVerifyConditionedByDAAScoreWithWrongLockTime(t *testing.T)
 			Version: constants.MaxScriptPublicKeyVersion,
 			Script:  p2shScriptCLTV,
 		}
-		transactionWithLockedOutput, err := CreateTransactionWithLockedOutput(blockD.Transactions[transactionhelper.CoinbaseTransactionIndex],
+		transactionWithLockedOutput, err := createTransactionWithLockedOutput(blockD.Transactions[transactionhelper.CoinbaseTransactionIndex],
 			fees, &scriptPublicKeyCLTV)
 		if err != nil {
-			t.Fatalf("Error in CreateTransactionWithLockedOutput: %v", err)
+			t.Fatalf("Error in createTransactionWithLockedOutput: %v", err)
 		}
 		// BlockE contains the locked output (locked by CLTV).
 		// This block should be valid since CLTV script locked only the output.
@@ -271,10 +271,10 @@ func TestCheckLockTimeVerifyConditionedByAbsoluteTime(t *testing.T) {
 			Version: constants.MaxScriptPublicKeyVersion,
 			Script:  p2shScriptCLTV,
 		}
-		transactionWithLockedOutput, err := CreateTransactionWithLockedOutput(blockD.Transactions[transactionhelper.CoinbaseTransactionIndex],
+		transactionWithLockedOutput, err := createTransactionWithLockedOutput(blockD.Transactions[transactionhelper.CoinbaseTransactionIndex],
 			fees, &scriptPublicKeyCLTV)
 		if err != nil {
-			t.Fatalf("Error in CreateTransactionWithLockedOutput: %v", err)
+			t.Fatalf("Error in createTransactionWithLockedOutput: %v", err)
 		}
 		// BlockE contains the locked output (locked by CLTV).
 		// This block should be valid since CLTV script locked only the output.
@@ -399,10 +399,10 @@ func TestCheckLockTimeVerifyConditionedByAbsoluteTimeWithWrongLockTime(t *testin
 			Version: constants.MaxScriptPublicKeyVersion,
 			Script:  p2shScriptCLTV,
 		}
-		transactionWithLockedOutput, err := CreateTransactionWithLockedOutput(blockD.Transactions[transactionhelper.CoinbaseTransactionIndex],
+		transactionWithLockedOutput, err := createTransactionWithLockedOutput(blockD.Transactions[transactionhelper.CoinbaseTransactionIndex],
 			fees, &scriptPublicKeyCLTV)
 		if err != nil {
-			t.Fatalf("Error in CreateTransactionWithLockedOutput: %v", err)
+			t.Fatalf("Error in createTransactionWithLockedOutput: %v", err)
 		}
 		// BlockE contains the locked output (locked by CLTV).
 		// This block should be valid since CLTV script locked only the output.
@@ -479,7 +479,7 @@ func createScriptCLTV(absoluteTimeOrDAAScoreTarget uint64) ([]byte, error) {
 	return scriptBuilder.Script()
 }
 
-func CreateTransactionWithLockedOutput(txToSpend *externalapi.DomainTransaction, fee uint64,
+func createTransactionWithLockedOutput(txToSpend *externalapi.DomainTransaction, fee uint64,
 	scriptPublicKeyCLTVOrCSV *externalapi.ScriptPublicKey) (*externalapi.DomainTransaction, error) {
 
 	_, redeemScript := testutils.OpTrueScript()
