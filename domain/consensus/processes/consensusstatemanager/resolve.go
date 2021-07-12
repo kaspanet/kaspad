@@ -4,13 +4,15 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/infrastructure/logger"
+	"github.com/kaspanet/kaspad/util/staging"
 	"sort"
 )
 
-func (csm *consensusStateManager) ResolveVirtual(stagingArea *model.StagingArea) error {
+func (csm *consensusStateManager) ResolveVirtual() error {
 	onEnd := logger.LogAndMeasureExecutionTime(log, "csm.ResolveVirtual")
 	defer onEnd()
 
+	stagingArea := model.NewStagingArea()
 	tips, err := csm.consensusStateStore.Tips(stagingArea, csm.databaseContext)
 	if err != nil {
 		return err
@@ -53,5 +55,5 @@ func (csm *consensusStateManager) ResolveVirtual(stagingArea *model.StagingArea)
 		return err
 	}
 
-	return nil
+	return staging.CommitAllChanges(csm.databaseContext, stagingArea)
 }

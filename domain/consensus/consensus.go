@@ -130,13 +130,7 @@ func (s *consensus) ResolveVirtual() error {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	stagingArea := model.NewStagingArea()
-	err := s.consensusStateManager.ResolveVirtual(stagingArea)
-	if err != nil {
-		return err
-	}
-
-	return staging.CommitAllChanges(s.databaseContext, stagingArea)
+	return s.consensusStateManager.ResolveVirtual()
 }
 
 func (s *consensus) PruningPointAndItsAnticoneWithMetaData() ([]*externalapi.BlockWithMetaData, error) {
