@@ -1,13 +1,9 @@
 package blockvalidator
 
 import (
-	"math"
-
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
 	"github.com/kaspanet/kaspad/infrastructure/logger"
 	"github.com/pkg/errors"
 )
@@ -23,7 +19,7 @@ func (v *blockValidator) ValidateBodyInContext(stagingArea *model.StagingArea, b
 		return err
 	}
 
-	err = v.checkBlockTransactionsFinalized(stagingArea, blockHash)
+	err = v.checkBlockTransactions(stagingArea, blockHash)
 	if err != nil {
 		return err
 	}
@@ -117,7 +113,7 @@ func (v *blockValidator) checkParentBlockBodiesExist(
 	return nil
 }
 
-func (v *blockValidator) checkBlockTransactionsFinalized(
+func (v *blockValidator) checkBlockTransactions(
 	stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) error {
 
 	block, err := v.blockStore.Block(v.databaseContext, stagingArea, blockHash)
@@ -125,57 +121,12 @@ func (v *blockValidator) checkBlockTransactionsFinalized(
 		return err
 	}
 
-	ghostdagData, err := v.ghostdagDataStore.Get(v.databaseContext, stagingArea, blockHash)
-	if err != nil {
-		return err
-	}
-
-	blockTime, err := v.pastMedianTimeManager.PastMedianTime(stagingArea, blockHash)
-	if err != nil {
-		return err
-	}
-
 	// Ensure all transactions in the block are finalized.
 	for _, tx := range block.Transactions {
-		if !v.isFinalizedTransaction(tx, ghostdagData.BlueScore(), blockTime) {
-			txID := consensushashing.TransactionID(tx)
-			return errors.Wrapf(ruleerrors.ErrUnfinalizedTx, "block contains unfinalized "+
-				"transaction %s", txID)
+		if err = v.transactionValidator.ValidateTransactionWithContextAndWithoutUTXOContext(stagingArea, tx, blockHash); err != nil {
+			return err
 		}
 	}
 
 	return nil
-}
-
-// IsFinalizedTransaction determines whether or not a transaction is finalized.
-func (v *blockValidator) isFinalizedTransaction(tx *externalapi.DomainTransaction, blockBlueScore uint64, blockTime int64) bool {
-	// Lock time of zero means the transaction is finalized.
-	lockTime := tx.LockTime
-	if lockTime == 0 {
-		return true
-	}
-
-	// The lock time field of a transaction is either a block blue score at
-	// which the transaction is finalized or a timestamp depending on if the
-	// value is before the constants.LockTimeThreshold. When it is under the
-	// threshold it is a block blue score.
-	blockTimeOrBlueScore := uint64(0)
-	if lockTime < constants.LockTimeThreshold {
-		blockTimeOrBlueScore = blockBlueScore
-	} else {
-		blockTimeOrBlueScore = uint64(blockTime)
-	}
-	if lockTime < blockTimeOrBlueScore {
-		return true
-	}
-
-	// At this point, the transaction's lock time hasn't occurred yet, but
-	// the transaction might still be finalized if the sequence number
-	// for all transaction inputs is maxed out.
-	for _, input := range tx.Inputs {
-		if input.Sequence != math.MaxUint64 {
-			return false
-		}
-	}
-	return true
 }

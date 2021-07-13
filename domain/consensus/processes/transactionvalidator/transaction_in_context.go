@@ -1,6 +1,8 @@
 package transactionvalidator
 
 import (
+	"math"
+
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
@@ -10,6 +12,58 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/utils/txscript"
 	"github.com/pkg/errors"
 )
+
+// IsFinalizedTransaction determines whether or not a transaction is finalized.
+func (v *transactionValidator) IsFinalizedTransaction(tx *externalapi.DomainTransaction, blockDAAScore uint64, blockTime int64) bool {
+	// Lock time of zero means the transaction is finalized.
+	lockTime := tx.LockTime
+	if lockTime == 0 {
+		return true
+	}
+
+	// The lock time field of a transaction is either a block DAA score at
+	// which the transaction is finalized or a timestamp depending on if the
+	// value is before the constants.LockTimeThreshold. When it is under the
+	// threshold it is a DAA score.
+	blockTimeOrBlueScore := uint64(0)
+	if lockTime < constants.LockTimeThreshold {
+		blockTimeOrBlueScore = blockDAAScore
+	} else {
+		blockTimeOrBlueScore = uint64(blockTime)
+	}
+	if lockTime < blockTimeOrBlueScore {
+		return true
+	}
+
+	// At this point, the transaction's lock time hasn't occurred yet, but
+	// the transaction might still be finalized if the sequence number
+	// for all transaction inputs is maxed out.
+	for _, input := range tx.Inputs {
+		if input.Sequence != math.MaxUint64 {
+			return false
+		}
+	}
+	return true
+}
+
+// ValidateTransactionWithContextAndWithoutUTXOContext validates the transaction with context and without the context of UTXO
+func (v *transactionValidator) ValidateTransactionWithContextAndWithoutUTXOContext(stagingArea *model.StagingArea, tx *externalapi.DomainTransaction,
+	povBlockHash *externalapi.DomainHash) error {
+
+	povBlockDAAScore, err := v.daaBlocksStore.DAAScore(v.databaseContext, stagingArea, povBlockHash)
+	if err != nil {
+		return err
+	}
+	povBlockPastMedianTime, err := v.pastMedianTimeManager.PastMedianTime(stagingArea, povBlockHash)
+	if err != nil {
+		return err
+	}
+	if isFinalized := v.IsFinalizedTransaction(tx, povBlockDAAScore, povBlockPastMedianTime); !isFinalized {
+		return errors.Wrapf(ruleerrors.ErrUnfinalizedTx, "unfinalized transaction %v", tx)
+	}
+
+	return nil
+}
 
 // ValidateTransactionInContextAndPopulateMassAndFee validates the transaction against its referenced UTXO, and
 // populates its mass and fee fields.
