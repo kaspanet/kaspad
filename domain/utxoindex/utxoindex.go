@@ -4,6 +4,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/infrastructure/db/database"
 	"github.com/kaspanet/kaspad/infrastructure/logger"
+	"github.com/pkg/errors"
 	"sync"
 )
 
@@ -101,72 +102,90 @@ func (ui *UTXOIndex) Update(blockInsertionResult *externalapi.BlockInsertionResu
 	ui.mutex.Lock()
 	defer ui.mutex.Unlock()
 
-	log.Tracef("Updating UTXO index with VirtualUTXODiff: %+v", blockInsertionResult.VirtualUTXODiff)
-	err := ui.removeUTXOs(blockInsertionResult.VirtualUTXODiff.ToRemove())
-	if err != nil {
-		return nil, err
-	}
+	virtualUtxoDiff := blockInsertionResult.VirtualUTXODiff
+	uis := ui.store
 
-	err = ui.addUTXOs(blockInsertionResult.VirtualUTXODiff.ToAdd())
-	if err != nil {
-		return nil, err
+	log.Tracef("Updating UTXO index with VirtualUTXODiff: %+v", virtualUtxoDiff)
+
+	for _, iteration := range []struct {
+		opName                     string
+		utxoCollection             externalapi.UTXOCollection
+		setToInclude, setToExclude AddressesUTXOMap
+	}{
+		{"Removing", virtualUtxoDiff.ToRemove(), uis.toRemove, uis.toAdd},
+		{"Adding", virtualUtxoDiff.ToAdd(), uis.toAdd, uis.toRemove},
+	} {
+		iterator := iteration.utxoCollection.Iterator()
+		opName := iteration.opName
+		setToInclude := iteration.setToInclude
+		for ok := iterator.First(); ok; ok = iterator.Next() {
+			outpoint, entry, err := iterator.Get()
+			if err != nil {
+				return nil, err
+			}
+
+			log.Tracef("UTXO index: %s outpoint: %s", opName, outpoint)
+
+			key := ConvertScriptPublicKeyToString(entry.ScriptPublicKey())
+			log.Tracef("scriptPublicKey %s: %s outpoint %s:%d",
+				key, iteration.opName, outpoint.TransactionID, outpoint.Index)
+
+			// If the outpoint exists in the opposite set simply remove it from there and continue
+			if utxoMapToExclude, ok := iteration.setToExclude[key]; ok {
+				if _, ok := utxoMapToExclude[*outpoint]; ok {
+					log.Tracef("Outpoint exists in %s set, deleting it from there: %s:%d",
+						opName, outpoint.TransactionID, outpoint.Index)
+					delete(utxoMapToExclude, *outpoint)
+					continue
+				}
+			}
+
+			// Create a UTXOMap entry in toInclude set if it doesn't exist
+			if _, ok := setToInclude[key]; !ok {
+				log.Tracef("Creating key in %s set: %s", opName, key)
+				iteration.setToInclude[key] = make(UTXOMap)
+			}
+
+			// Return an error if the outpoint already exists in toInclude set
+			utxoMapToInclude := setToInclude[key]
+			if _, ok := utxoMapToInclude[*outpoint]; ok {
+				return nil, errors.Errorf("Cannot add outpoint because it’s being added already: %s", outpoint)
+			}
+
+			// If we add to toRemove set, we add nil instead of UTXO entry
+			valueToAdd := entry
+			if &setToInclude == &uis.toRemove {
+				valueToAdd = nil
+			}
+			utxoMapToInclude[*outpoint] = valueToAdd
+
+			log.Tracef("Done %s outpoint %s:%d on scriptPublicKey %s",
+				opName, outpoint.TransactionID, outpoint.Index, key)
+
+		}
+		iterator.Close()
 	}
 
 	ui.store.updateVirtualParents(blockInsertionResult.VirtualParents)
 
 	added, removed, _ := ui.store.stagedData()
+
+	err := ui.store.commit()
+	if err != nil {
+		return nil, err
+	}
+
 	utxoIndexChanges := &UTXOChanges{
 		Added:   added,
 		Removed: removed,
-	}
-
-	err = ui.store.commit()
-	if err != nil {
-		return nil, err
 	}
 
 	log.Tracef("UTXO index updated with the UTXOChanged: %+v", utxoIndexChanges)
 	return utxoIndexChanges, nil
 }
 
-func (ui *UTXOIndex) addUTXOs(toAdd externalapi.UTXOCollection) error {
-	iterator := toAdd.Iterator()
-	defer iterator.Close()
-	for ok := iterator.First(); ok; ok = iterator.Next() {
-		outpoint, entry, err := iterator.Get()
-		if err != nil {
-			return err
-		}
-
-		log.Tracef("Adding outpoint %s to UTXO index", outpoint)
-		err = ui.store.add(entry.ScriptPublicKey(), outpoint, entry)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func (ui *UTXOIndex) removeUTXOs(toRemove externalapi.UTXOCollection) error {
-	iterator := toRemove.Iterator()
-	defer iterator.Close()
-	for ok := iterator.First(); ok; ok = iterator.Next() {
-		outpoint, entry, err := iterator.Get()
-		if err != nil {
-			return err
-		}
-
-		log.Tracef("Removing outpoint %s from UTXO index", outpoint)
-		err = ui.store.remove(entry.ScriptPublicKey(), outpoint)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
 // UTXOs returns all the UTXOs for the given scriptPublicKey
-func (ui *UTXOIndex) UTXOs(scriptPublicKey *externalapi.ScriptPublicKey) (UTXOOutpointEntryPairs, error) {
+func (ui *UTXOIndex) UTXOs(scriptPublicKey *externalapi.ScriptPublicKey) (UTXOMap, error) {
 	onEnd := logger.LogAndMeasureExecutionTime(log, "UTXOIndex.UTXOs")
 	defer onEnd()
 

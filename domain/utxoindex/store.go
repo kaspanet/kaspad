@@ -13,86 +13,17 @@ var virtualParentsKey = database.MakeBucket([]byte("")).Key([]byte("utxo-index-v
 
 type utxoIndexStore struct {
 	database       database.Database
-	toAdd          map[ScriptPublicKeyString]UTXOOutpointEntryPairs
-	toRemove       map[ScriptPublicKeyString]UTXOOutpoints
+	toAdd          AddressesUTXOMap
+	toRemove       AddressesUTXOMap
 	virtualParents []*externalapi.DomainHash
 }
 
 func newUTXOIndexStore(database database.Database) *utxoIndexStore {
 	return &utxoIndexStore{
 		database: database,
-		toAdd:    make(map[ScriptPublicKeyString]UTXOOutpointEntryPairs),
-		toRemove: make(map[ScriptPublicKeyString]UTXOOutpoints),
+		toAdd:    make(AddressesUTXOMap),
+		toRemove: make(AddressesUTXOMap),
 	}
-}
-
-func (uis *utxoIndexStore) add(scriptPublicKey *externalapi.ScriptPublicKey, outpoint *externalapi.DomainOutpoint, utxoEntry externalapi.UTXOEntry) error {
-
-	key := ConvertScriptPublicKeyToString(scriptPublicKey)
-	log.Tracef("Adding outpoint %s:%d to scriptPublicKey %s",
-		outpoint.TransactionID, outpoint.Index, key)
-
-	// If the outpoint exists in `toRemove` simply remove it from there and return
-	if toRemoveOutpointsOfKey, ok := uis.toRemove[key]; ok {
-		if _, ok := toRemoveOutpointsOfKey[*outpoint]; ok {
-			log.Tracef("Outpoint %s:%d exists in `toRemove`. Deleting it from there",
-				outpoint.TransactionID, outpoint.Index)
-			delete(toRemoveOutpointsOfKey, *outpoint)
-			return nil
-		}
-	}
-
-	// Create a UTXOOutpointEntryPairs entry in `toAdd` if it doesn't exist
-	if _, ok := uis.toAdd[key]; !ok {
-		log.Tracef("Creating key %s in `toAdd`", key)
-		uis.toAdd[key] = make(UTXOOutpointEntryPairs)
-	}
-
-	// Return an error if the outpoint already exists in `toAdd`
-	toAddPairsOfKey := uis.toAdd[key]
-	if _, ok := toAddPairsOfKey[*outpoint]; ok {
-		return errors.Errorf("cannot add outpoint %s because it's being added already", outpoint)
-	}
-
-	toAddPairsOfKey[*outpoint] = utxoEntry
-
-	log.Tracef("Added outpoint %s:%d to scriptPublicKey %s",
-		outpoint.TransactionID, outpoint.Index, key)
-	return nil
-}
-
-func (uis *utxoIndexStore) remove(scriptPublicKey *externalapi.ScriptPublicKey, outpoint *externalapi.DomainOutpoint) error {
-	key := ConvertScriptPublicKeyToString(scriptPublicKey)
-	log.Tracef("Removing outpoint %s:%d from scriptPublicKey %s",
-		outpoint.TransactionID, outpoint.Index, key)
-
-	// If the outpoint exists in `toAdd` simply remove it from there and return
-	if toAddPairsOfKey, ok := uis.toAdd[key]; ok {
-		if _, ok := toAddPairsOfKey[*outpoint]; ok {
-			log.Tracef("Outpoint %s:%d exists in `toAdd`. Deleting it from there",
-				outpoint.TransactionID, outpoint.Index)
-			delete(toAddPairsOfKey, *outpoint)
-			return nil
-		}
-	}
-
-	// Create a UTXOOutpoints entry in `toRemove` if it doesn't exist
-	if _, ok := uis.toRemove[key]; !ok {
-		log.Tracef("Creating key %s in `toRemove`", key)
-		uis.toRemove[key] = make(UTXOOutpoints)
-	}
-
-	// Return an error if the outpoint already exists in `toRemove`
-	toRemoveOutpointsOfKey := uis.toRemove[key]
-	if _, ok := toRemoveOutpointsOfKey[*outpoint]; ok {
-		return errors.Errorf("cannot remove outpoint %s because it's being removed already", outpoint)
-	}
-
-	toRemoveOutpointsOfKey[*outpoint] = struct{}{}
-
-	log.Tracef("Removed outpoint %s:%d from scriptPublicKey %s",
-		outpoint.TransactionID, outpoint.Index, key)
-	return nil
 }
 
 func (uis *utxoIndexStore) updateVirtualParents(virtualParents []*externalapi.DomainHash) {
@@ -100,8 +31,8 @@ func (uis *utxoIndexStore) updateVirtualParents(virtualParents []*externalapi.Do
 }
 
 func (uis *utxoIndexStore) discard() {
-	uis.toAdd = make(map[ScriptPublicKeyString]UTXOOutpointEntryPairs)
-	uis.toRemove = make(map[ScriptPublicKeyString]UTXOOutpoints)
+	uis.toAdd = make(AddressesUTXOMap)
+	uis.toRemove = make(AddressesUTXOMap)
 	uis.virtualParents = nil
 }
 
@@ -115,42 +46,34 @@ func (uis *utxoIndexStore) commit() error {
 	}
 	defer dbTransaction.RollbackUnlessClosed()
 
-	for scriptPublicKeyString, toRemoveOutpointsOfKey := range uis.toRemove {
-		scriptPublicKey := ConvertStringToScriptPublicKey(scriptPublicKeyString)
-		bucket := uis.bucketForScriptPublicKey(scriptPublicKey)
-		for outpointToRemove := range toRemoveOutpointsOfKey {
-			key, err := uis.convertOutpointToKey(bucket, &outpointToRemove)
-			if err != nil {
-				return err
-			}
-			err = dbTransaction.Delete(key)
-			if err != nil {
-				return err
-			}
-		}
-	}
-
-	for scriptPublicKeyString, toAddUTXOOutpointEntryPairs := range uis.toAdd {
-		scriptPublicKey := ConvertStringToScriptPublicKey(scriptPublicKeyString)
-		bucket := uis.bucketForScriptPublicKey(scriptPublicKey)
-		for outpointToAdd, utxoEntryToAdd := range toAddUTXOOutpointEntryPairs {
-			key, err := uis.convertOutpointToKey(bucket, &outpointToAdd)
-			if err != nil {
-				return err
-			}
-			serializedUTXOEntry, err := serializeUTXOEntry(utxoEntryToAdd)
-			if err != nil {
-				return err
-			}
-			err = dbTransaction.Put(key, serializedUTXOEntry)
-			if err != nil {
-				return err
+	for _, set := range []*AddressesUTXOMap{&uis.toRemove, &uis.toAdd} {
+		for KeyString, utxoMapOrNils := range *set {
+			bucket := uis.bucketForScriptPublicKey(ConvertStringToScriptPublicKey(KeyString))
+			for outpoint, utxoEntry := range utxoMapOrNils {
+				key, err := uis.convertOutpointToKey(bucket, &outpoint)
+				if err != nil {
+					return err
+				}
+				if set == &uis.toRemove {
+					err = dbTransaction.Delete(key)
+					if err != nil {
+						return err
+					}
+				} else {
+					serializedUTXOEntry, err := serializeUTXOEntry(utxoEntry)
+					if err != nil {
+						return err
+					}
+					err = dbTransaction.Put(key, serializedUTXOEntry)
+					if err != nil {
+						return err
+					}
+				}
 			}
 		}
 	}
 
-	serializeParentHashes := serializeHashes(uis.virtualParents)
-	err = dbTransaction.Put(virtualParentsKey, serializeParentHashes)
+	err = dbTransaction.Put(virtualParentsKey, serializeHashes(uis.virtualParents))
 	if err != nil {
 		return err
 	}
@@ -210,26 +133,26 @@ func (uis *utxoIndexStore) convertKeyToOutpoint(key *database.Key) (*externalapi
 }
 
 func (uis *utxoIndexStore) stagedData() (
-	toAdd map[ScriptPublicKeyString]UTXOOutpointEntryPairs,
-	toRemove map[ScriptPublicKeyString]UTXOOutpoints,
+	toAdd AddressesUTXOMap,
+	toRemove AddressesUTXOMap,
 	virtualParents []*externalapi.DomainHash) {
 
-	toAddClone := make(map[ScriptPublicKeyString]UTXOOutpointEntryPairs, len(uis.toAdd))
-	for scriptPublicKeyString, toAddUTXOOutpointEntryPairs := range uis.toAdd {
-		toAddUTXOOutpointEntryPairsClone := make(UTXOOutpointEntryPairs, len(toAddUTXOOutpointEntryPairs))
+	toAddClone := make(map[KeyString]UTXOMap, len(uis.toAdd))
+	for keyString, toAddUTXOOutpointEntryPairs := range uis.toAdd {
+		toAddUTXOOutpointEntryPairsClone := make(UTXOMap, len(toAddUTXOOutpointEntryPairs))
 		for outpoint, utxoEntry := range toAddUTXOOutpointEntryPairs {
 			toAddUTXOOutpointEntryPairsClone[outpoint] = utxoEntry
 		}
-		toAddClone[scriptPublicKeyString] = toAddUTXOOutpointEntryPairsClone
+		toAddClone[keyString] = toAddUTXOOutpointEntryPairsClone
 	}
 
-	toRemoveClone := make(map[ScriptPublicKeyString]UTXOOutpoints, len(uis.toRemove))
-	for scriptPublicKeyString, toRemoveOutpoints := range uis.toRemove {
-		toRemoveOutpointsClone := make(UTXOOutpoints, len(toRemoveOutpoints))
+	toRemoveClone := make(AddressesUTXOMap, len(uis.toRemove))
+	for keyString, toRemoveOutpoints := range uis.toRemove {
+		toRemoveOutpointsClone := make(UTXOMap, len(toRemoveOutpoints))
 		for outpoint := range toRemoveOutpoints {
-			toRemoveOutpointsClone[outpoint] = struct{}{}
+			toRemoveOutpointsClone[outpoint] = nil
 		}
-		toRemoveClone[scriptPublicKeyString] = toRemoveOutpointsClone
+		toRemoveClone[keyString] = toRemoveOutpointsClone
 	}
 
 	return toAddClone, toRemoveClone, uis.virtualParents
@@ -239,7 +162,7 @@ func (uis *utxoIndexStore) isAnythingStaged() bool {
 	return len(uis.toAdd) > 0 || len(uis.toRemove) > 0
 }
 
-func (uis *utxoIndexStore) getUTXOOutpointEntryPairs(scriptPublicKey *externalapi.ScriptPublicKey) (UTXOOutpointEntryPairs, error) {
+func (uis *utxoIndexStore) getUTXOOutpointEntryPairs(scriptPublicKey *externalapi.ScriptPublicKey) (UTXOMap, error) {
 	if uis.isAnythingStaged() {
 		return nil, errors.Errorf("cannot get utxo outpoint entry pairs while staging isn't empty")
 	}
@@ -250,7 +173,7 @@ func (uis *utxoIndexStore) getUTXOOutpointEntryPairs(scriptPublicKey *externalap
 		return nil, err
 	}
 	defer cursor.Close()
-	utxoOutpointEntryPairs := make(UTXOOutpointEntryPairs)
+	utxoOutpointEntryPairs := make(UTXOMap)
 	for cursor.Next() {
 		key, err := cursor.Key()
 		if err != nil {

@@ -18,8 +18,8 @@ type NotificationManager struct {
 // UTXOsChangedNotificationAddress represents a kaspad address.
 // This type is meant to be used in UTXOsChanged notifications
 type UTXOsChangedNotificationAddress struct {
-	Address               string
-	ScriptPublicKeyString utxoindex.ScriptPublicKeyString
+	Address   string
+	KeyString utxoindex.KeyString
 }
 
 // NotificationListener represents a registered RPC notification listener
@@ -33,7 +33,7 @@ type NotificationListener struct {
 	propagateVirtualDaaScoreChangedNotifications                bool
 	propagatePruningPointUTXOSetOverrideNotifications           bool
 
-	propagateUTXOsChangedNotificationAddresses map[utxoindex.ScriptPublicKeyString]*UTXOsChangedNotificationAddress
+	propagateUTXOsChangedNotificationAddresses map[utxoindex.KeyString]*UTXOsChangedNotificationAddress
 }
 
 // NewNotificationManager creates a new NotificationManager
@@ -262,11 +262,11 @@ func (nl *NotificationListener) PropagateUTXOsChangedNotifications(addresses []*
 	if !nl.propagateUTXOsChangedNotifications {
 		nl.propagateUTXOsChangedNotifications = true
 		nl.propagateUTXOsChangedNotificationAddresses =
-			make(map[utxoindex.ScriptPublicKeyString]*UTXOsChangedNotificationAddress, len(addresses))
+			make(map[utxoindex.KeyString]*UTXOsChangedNotificationAddress, len(addresses))
 	}
 
 	for _, address := range addresses {
-		nl.propagateUTXOsChangedNotificationAddresses[address.ScriptPublicKeyString] = address
+		nl.propagateUTXOsChangedNotificationAddresses[address.KeyString] = address
 	}
 }
 
@@ -279,7 +279,7 @@ func (nl *NotificationListener) StopPropagatingUTXOsChangedNotifications(address
 	}
 
 	for _, address := range addresses {
-		delete(nl.propagateUTXOsChangedNotificationAddresses, address.ScriptPublicKeyString)
+		delete(nl.propagateUTXOsChangedNotificationAddresses, address.KeyString)
 	}
 }
 
@@ -293,26 +293,26 @@ func (nl *NotificationListener) convertUTXOChangesToUTXOsChangedNotification(
 
 	notification := &appmessage.UTXOsChangedNotificationMessage{}
 	if utxoChangesSize < addressesSize {
-		for scriptPublicKeyString, addedPairs := range utxoChanges.Added {
-			if listenerAddress, ok := nl.propagateUTXOsChangedNotificationAddresses[scriptPublicKeyString]; ok {
+		for KeyString, addedPairs := range utxoChanges.Added {
+			if listenerAddress, ok := nl.propagateUTXOsChangedNotificationAddresses[KeyString]; ok {
 				utxosByAddressesEntries := ConvertUTXOOutpointEntryPairsToUTXOsByAddressesEntries(listenerAddress.Address, addedPairs)
 				notification.Added = append(notification.Added, utxosByAddressesEntries...)
 			}
 		}
-		for scriptPublicKeyString, removedOutpoints := range utxoChanges.Removed {
-			if listenerAddress, ok := nl.propagateUTXOsChangedNotificationAddresses[scriptPublicKeyString]; ok {
+		for KeyString, removedOutpoints := range utxoChanges.Removed {
+			if listenerAddress, ok := nl.propagateUTXOsChangedNotificationAddresses[KeyString]; ok {
 				utxosByAddressesEntries := convertUTXOOutpointsToUTXOsByAddressesEntries(listenerAddress.Address, removedOutpoints)
 				notification.Removed = append(notification.Removed, utxosByAddressesEntries...)
 			}
 		}
 	} else {
 		for _, listenerAddress := range nl.propagateUTXOsChangedNotificationAddresses {
-			listenerScriptPublicKeyString := listenerAddress.ScriptPublicKeyString
-			if addedPairs, ok := utxoChanges.Added[listenerScriptPublicKeyString]; ok {
+			listenerKeyString := listenerAddress.KeyString
+			if addedPairs, ok := utxoChanges.Added[listenerKeyString]; ok {
 				utxosByAddressesEntries := ConvertUTXOOutpointEntryPairsToUTXOsByAddressesEntries(listenerAddress.Address, addedPairs)
 				notification.Added = append(notification.Added, utxosByAddressesEntries...)
 			}
-			if removedOutpoints, ok := utxoChanges.Removed[listenerScriptPublicKeyString]; ok {
+			if removedOutpoints, ok := utxoChanges.Removed[listenerKeyString]; ok {
 				utxosByAddressesEntries := convertUTXOOutpointsToUTXOsByAddressesEntries(listenerAddress.Address, removedOutpoints)
 				notification.Removed = append(notification.Removed, utxosByAddressesEntries...)
 			}

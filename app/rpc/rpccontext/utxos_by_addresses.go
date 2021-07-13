@@ -11,10 +11,11 @@ import (
 )
 
 // ConvertUTXOOutpointEntryPairsToUTXOsByAddressesEntries converts
-// UTXOOutpointEntryPairs to a slice of UTXOsByAddressesEntry
-func ConvertUTXOOutpointEntryPairsToUTXOsByAddressesEntries(address string, pairs utxoindex.UTXOOutpointEntryPairs) []*appmessage.UTXOsByAddressesEntry {
+// UTXOMap to a slice of UTXOsByAddressesEntry
+func ConvertUTXOOutpointEntryPairsToUTXOsByAddressesEntries(address string, pairs utxoindex.UTXOMap) []*appmessage.UTXOsByAddressesEntry {
 	utxosByAddressesEntries := make([]*appmessage.UTXOsByAddressesEntry, 0, len(pairs))
 	for outpoint, utxoEntry := range pairs {
+		scriptPublicKey := utxoEntry.ScriptPublicKey()
 		utxosByAddressesEntries = append(utxosByAddressesEntries, &appmessage.UTXOsByAddressesEntry{
 			Address: address,
 			Outpoint: &appmessage.RPCOutpoint{
@@ -23,7 +24,7 @@ func ConvertUTXOOutpointEntryPairsToUTXOsByAddressesEntries(address string, pair
 			},
 			UTXOEntry: &appmessage.RPCUTXOEntry{
 				Amount:          utxoEntry.Amount(),
-				ScriptPublicKey: &appmessage.RPCScriptPublicKey{Script: hex.EncodeToString(utxoEntry.ScriptPublicKey().Script), Version: utxoEntry.ScriptPublicKey().Version},
+				ScriptPublicKey: &appmessage.RPCScriptPublicKey{Script: hex.EncodeToString(scriptPublicKey.Script), Version: scriptPublicKey.Version},
 				BlockDAAScore:   utxoEntry.BlockDAAScore(),
 				IsCoinbase:      utxoEntry.IsCoinbase(),
 			},
@@ -34,7 +35,7 @@ func ConvertUTXOOutpointEntryPairsToUTXOsByAddressesEntries(address string, pair
 
 // convertUTXOOutpointsToUTXOsByAddressesEntries converts
 // UTXOOutpoints to a slice of UTXOsByAddressesEntry
-func convertUTXOOutpointsToUTXOsByAddressesEntries(address string, outpoints utxoindex.UTXOOutpoints) []*appmessage.UTXOsByAddressesEntry {
+func convertUTXOOutpointsToUTXOsByAddressesEntries(address string, outpoints utxoindex.UTXOMap) []*appmessage.UTXOsByAddressesEntry {
 	utxosByAddressesEntries := make([]*appmessage.UTXOsByAddressesEntry, 0, len(outpoints))
 	for outpoint := range outpoints {
 		utxosByAddressesEntries = append(utxosByAddressesEntries, &appmessage.UTXOsByAddressesEntry{
@@ -63,10 +64,10 @@ func (ctx *Context) ConvertAddressStringsToUTXOsChangedNotificationAddresses(
 		if err != nil {
 			return nil, errors.Errorf("Could not create a scriptPublicKey for address '%s': %s", addressString, err)
 		}
-		scriptPublicKeyString := utxoindex.ConvertScriptPublicKeyToString(scriptPublicKey)
+		KeyString := utxoindex.ConvertScriptPublicKeyToString(scriptPublicKey)
 		addresses[i] = &UTXOsChangedNotificationAddress{
-			Address:               addressString,
-			ScriptPublicKeyString: scriptPublicKeyString,
+			Address:   addressString,
+			KeyString: KeyString,
 		}
 	}
 	return addresses, nil

@@ -5,39 +5,32 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 )
 
-// ScriptPublicKeyString is a script public key represented as a string
+// KeyString is a script public key represented as a string
 // We use this type rather than just a byte slice because Go maps don't
 // support slices as keys. See: UTXOChanges
-type ScriptPublicKeyString string
+type KeyString string
 
-// UTXOOutpointEntryPairs is a map between UTXO outpoints to UTXO entries
-type UTXOOutpointEntryPairs map[externalapi.DomainOutpoint]externalapi.UTXOEntry
+// UTXOMap is just a UTXO map
+type UTXOMap map[externalapi.DomainOutpoint]externalapi.UTXOEntry
 
-// UTXOOutpoints is a set of UTXO outpoints
-type UTXOOutpoints map[externalapi.DomainOutpoint]interface{}
+// AddressesUTXOMap Addresses to UTXOMap map
+type AddressesUTXOMap map[KeyString]UTXOMap
 
 // UTXOChanges is the set of changes made to the UTXO index after
 // a successful update
 type UTXOChanges struct {
-	Added   map[ScriptPublicKeyString]UTXOOutpointEntryPairs
-	Removed map[ScriptPublicKeyString]UTXOOutpoints
+	Added, Removed AddressesUTXOMap
 }
 
 // ConvertScriptPublicKeyToString converts the given scriptPublicKey to a string
-func ConvertScriptPublicKeyToString(scriptPublicKey *externalapi.ScriptPublicKey) ScriptPublicKeyString {
-	var versionBytes = make([]byte, 2) // uint16
+func ConvertScriptPublicKeyToString(scriptPublicKey *externalapi.ScriptPublicKey) KeyString {
+	versionBytes := make([]byte, 2) // uint16
 	binary.LittleEndian.PutUint16(versionBytes, scriptPublicKey.Version)
-	versionString := ScriptPublicKeyString(versionBytes)
-	scriptString := ScriptPublicKeyString(scriptPublicKey.Script)
-	return versionString + scriptString
-
+	return KeyString(versionBytes) + KeyString(scriptPublicKey.Script)
 }
 
 // ConvertStringToScriptPublicKey converts the given string to a scriptPublicKey
-func ConvertStringToScriptPublicKey(string ScriptPublicKeyString) *externalapi.ScriptPublicKey {
+func ConvertStringToScriptPublicKey(string KeyString) *externalapi.ScriptPublicKey {
 	bytes := []byte(string)
-	version := binary.LittleEndian.Uint16(bytes[:2])
-	script := bytes[2:]
-	return &externalapi.ScriptPublicKey{Script: script, Version: version}
-
+	return &externalapi.ScriptPublicKey{Script: bytes[2:], Version: binary.LittleEndian.Uint16(bytes[:2])}
 }
