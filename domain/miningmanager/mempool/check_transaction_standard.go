@@ -55,7 +55,6 @@ func (mp *mempool) checkTransactionStandardInIsolation(transaction *externalapi.
 		return transactionRuleError(RejectNonstandard, str)
 	}
 
-	mp.consensus.PopulateMass(transaction)
 	// Since extremely large transactions with a lot of inputs can cost
 	// almost as much to process as the sender fees, limit the maximum
 	// size of a transaction. This also helps mitigate CPU exhaustion

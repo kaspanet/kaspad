@@ -6,7 +6,7 @@ import (
 )
 
 func (v *transactionValidator) PopulateMass(transaction *externalapi.DomainTransaction) {
-	if transaction.Mass == 0 {
+	if transaction.Mass != 0 {
 		return
 	}
 	transaction.Mass = v.transactionMass(transaction)
