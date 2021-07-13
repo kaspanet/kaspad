@@ -130,6 +130,10 @@ type fakeRelayInvsContext struct {
 	rwLock                                        sync.RWMutex
 }
 
+func (f *fakeRelayInvsContext) PopulateMass(*externalapi.DomainTransaction) {
+	panic("implement me")
+}
+
 func (f *fakeRelayInvsContext) DeleteStagingConsensus() error {
 	panic("implement me")
 }
