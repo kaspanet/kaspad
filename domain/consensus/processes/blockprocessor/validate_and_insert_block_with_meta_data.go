@@ -34,7 +34,8 @@ func (bp *blockProcessor) validateAndInsertBlockWithMetaData(stagingArea *model.
 	return bp.validateAndInsertBlock(stagingArea, block.Block, false, validateUTXO, true)
 }
 
-func (bp *blockProcessor) removePrunedBlocksFromGHOSTDAGData(stagingArea *model.StagingArea, data *externalapi.BlockGHOSTDAGData) (*externalapi.BlockGHOSTDAGData, error) {
+func (bp *blockProcessor) removePrunedBlocksFromGHOSTDAGData(stagingArea *model.StagingArea,
+	data *externalapi.BlockGHOSTDAGData) (*externalapi.BlockGHOSTDAGData, error) {
 	mergeSetBlues := make([]*externalapi.DomainHash, 0, len(data.MergeSetBlues()))
 	for _, blockHash := range data.MergeSetBlues() {
 		isPruned, err := bp.isPruned(stagingArea, blockHash)

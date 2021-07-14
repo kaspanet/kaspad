@@ -24,7 +24,7 @@ type Consensus interface {
 	AppendImportedPruningPointUTXOs(outpointAndUTXOEntryPairs []*OutpointAndUTXOEntryPair) error
 	ValidateAndInsertImportedPruningPoint(newPruningPoint *DomainHash) error
 	GetVirtualSelectedParent() (*DomainHash, error)
-	CreateBlockLocator(lowHash, highHash *DomainHash, limit uint32) (BlockLocator, error)
+	CreateBlockLocatorFromPruningPoint(highHash *DomainHash, limit uint32) (BlockLocator, error)
 	CreateHeadersSelectedChainBlockLocator(lowHash, highHash *DomainHash) (BlockLocator, error)
 	CreateFullHeadersSelectedChainBlockLocator() (BlockLocator, error)
 	GetSyncInfo() (*SyncInfo, error)

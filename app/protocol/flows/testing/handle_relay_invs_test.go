@@ -258,7 +258,7 @@ func (f *fakeRelayInvsContext) GetVirtualSelectedParent() (*externalapi.DomainHa
 	panic(errors.Errorf("called unimplemented function from test '%s'", f.testName))
 }
 
-func (f *fakeRelayInvsContext) CreateBlockLocator(lowHash, highHash *externalapi.DomainHash, limit uint32) (externalapi.BlockLocator, error) {
+func (f *fakeRelayInvsContext) CreateBlockLocatorFromPruningPoint(highHash *externalapi.DomainHash, limit uint32) (externalapi.BlockLocator, error) {
 	panic(errors.Errorf("called unimplemented function from test '%s'", f.testName))
 }
 

@@ -77,9 +77,8 @@ message Hash{
 }
 
 message RequestBlockLocatorMessage{
-  Hash lowHash = 1;
-  Hash highHash = 2;
-  uint32 limit = 3;
+  Hash highHash = 1;
+  uint32 limit = 2;
 }
 
 message BlockLocatorMessage{

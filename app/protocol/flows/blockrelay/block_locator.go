@@ -8,7 +8,7 @@ import (
 )
 
 func (flow *handleRelayInvsFlow) sendGetBlockLocator(highHash *externalapi.DomainHash, limit uint32) error {
-	msgGetBlockLocator := appmessage.NewMsgRequestBlockLocator(nil, highHash, limit)
+	msgGetBlockLocator := appmessage.NewMsgRequestBlockLocator(highHash, limit)
 	return flow.outgoingRoute.Enqueue(msgGetBlockLocator)
 }
 

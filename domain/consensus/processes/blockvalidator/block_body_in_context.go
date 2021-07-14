@@ -77,7 +77,7 @@ func (v *blockValidator) checkParentBlockBodiesExist(
 		return err
 	}
 
-	if len(parents) == 1 && parents[0].Equal(model.VirtualGenesisBlockHash) {
+	if v.isVirtualGenesisOnlyParent(parents) {
 		return nil
 	}
 

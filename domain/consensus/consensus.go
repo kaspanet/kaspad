@@ -485,31 +485,23 @@ func (s *consensus) GetVirtualDAAScore() (uint64, error) {
 	return s.daaBlocksStore.DAAScore(s.databaseContext, stagingArea, model.VirtualBlockHash)
 }
 
-func (s *consensus) CreateBlockLocator(lowHash, highHash *externalapi.DomainHash, limit uint32) (externalapi.BlockLocator, error) {
+func (s *consensus) CreateBlockLocatorFromPruningPoint(highHash *externalapi.DomainHash, limit uint32) (externalapi.BlockLocator, error) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
 	stagingArea := model.NewStagingArea()
 
-	if lowHash == nil {
-		pruningPoint, err := s.pruningStore.PruningPoint(s.databaseContext, stagingArea)
-		if err != nil {
-			return nil, err
-		}
-
-		lowHash = pruningPoint
-	}
-
-	err := s.validateBlockHashExists(stagingArea, lowHash)
-	if err != nil {
-		return nil, err
-	}
-	err = s.validateBlockHashExists(stagingArea, highHash)
+	err := s.validateBlockHashExists(stagingArea, highHash)
 	if err != nil {
 		return nil, err
 	}
 
-	return s.syncManager.CreateBlockLocator(stagingArea, lowHash, highHash, limit)
+	pruningPoint, err := s.pruningStore.PruningPoint(s.databaseContext, stagingArea)
+	if err != nil {
+		return nil, err
+	}
+
+	return s.syncManager.CreateBlockLocator(stagingArea, pruningPoint, highHash, limit)
 }
 
 func (s *consensus) CreateFullHeadersSelectedChainBlockLocator() (externalapi.BlockLocator, error) {
