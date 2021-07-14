@@ -20,7 +20,7 @@ func (bp *blockProcessor) validateAndInsertBlockWithMetaData(stagingArea *model.
 		bp.blockHeaderStore.Stage(stagingArea, hash, daaBlock.Header)
 	}
 
-	blockReplacedGHOSTDAGData, err := bp.replaceGHOSTDAGDataPrePruningDataWithVirtualGenesis(stagingArea, block.GHOSTDAGData[0].GHOSTDAGData)
+	blockReplacedGHOSTDAGData, err := bp.removePrunedBlocksFromGHOSTDAGData(stagingArea, block.GHOSTDAGData[0].GHOSTDAGData)
 	if err != nil {
 		return nil, err
 	}
@@ -34,7 +34,7 @@ func (bp *blockProcessor) validateAndInsertBlockWithMetaData(stagingArea *model.
 	return bp.validateAndInsertBlock(stagingArea, block.Block, false, validateUTXO, true)
 }
 
-func (bp *blockProcessor) replaceGHOSTDAGDataPrePruningDataWithVirtualGenesis(stagingArea *model.StagingArea, data *externalapi.BlockGHOSTDAGData) (*externalapi.BlockGHOSTDAGData, error) {
+func (bp *blockProcessor) removePrunedBlocksFromGHOSTDAGData(stagingArea *model.StagingArea, data *externalapi.BlockGHOSTDAGData) (*externalapi.BlockGHOSTDAGData, error) {
 	mergeSetBlues := make([]*externalapi.DomainHash, 0, len(data.MergeSetBlues()))
 	for _, blockHash := range data.MergeSetBlues() {
 		isPruned, err := bp.isPruned(stagingArea, blockHash)
@@ -42,6 +42,9 @@ func (bp *blockProcessor) replaceGHOSTDAGDataPrePruningDataWithVirtualGenesis(st
 			return nil, err
 		}
 		if isPruned {
+			if data.SelectedParent().Equal(blockHash) {
+				mergeSetBlues = append(mergeSetBlues, model.VirtualGenesisBlockHash)
+			}
 			continue
 		}
 
