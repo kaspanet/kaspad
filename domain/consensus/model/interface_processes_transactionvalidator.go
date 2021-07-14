@@ -8,6 +8,8 @@ import (
 // it's possible to determine whether a transaction is valid
 type TransactionValidator interface {
 	ValidateTransactionInIsolation(transaction *externalapi.DomainTransaction) error
+	ValidateTransactionInContextIgnoringUTXO(stagingArea *StagingArea, tx *externalapi.DomainTransaction,
+		povBlockHash *externalapi.DomainHash) error
 	ValidateTransactionInContextAndPopulateFee(stagingArea *StagingArea,
 		tx *externalapi.DomainTransaction, povBlockHash *externalapi.DomainHash, selectedParentMedianTime int64) error
 	PopulateMass(transaction *externalapi.DomainTransaction)
