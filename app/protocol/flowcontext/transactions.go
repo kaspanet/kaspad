@@ -10,7 +10,7 @@ import (
 )
 
 // TransactionIDPropagationInterval is the interval between transaction IDs propagations
-const TransactionIDPropagationInterval = 10 * time.Second
+const TransactionIDPropagationInterval = 500 * time.Millisecond
 
 // AddTransaction adds transaction to the mempool and propagates it.
 func (f *FlowContext) AddTransaction(tx *externalapi.DomainTransaction, allowOrphan bool) error {
@@ -46,34 +46,36 @@ func (f *FlowContext) OnTransactionAddedToMempool() {
 // propagate. The IDs will be broadcast to all peers within a single transaction Inv message.
 // The broadcast itself may happen only during a subsequent call to this method
 func (f *FlowContext) EnqueueTransactionIDsForPropagation(transactionIDs []*externalapi.DomainTransactionID) error {
-	if len(transactionIDs) == 0 {
-		return nil
-	}
-
 	f.transactionIDPropagationLock.Lock()
 	defer f.transactionIDPropagationLock.Unlock()
 
 	f.transactionIDsToPropagate = append(f.transactionIDsToPropagate, transactionIDs...)
 
+	return f.maybePropagateTransactions()
+}
+
+func (f *FlowContext) maybePropagateTransactions() error {
 	if time.Since(f.lastTransactionIDPropagationTime) < TransactionIDPropagationInterval &&
 		len(f.transactionIDsToPropagate) < appmessage.MaxInvPerTxInvMsg {
 		return nil
 	}
+
+	for len(f.transactionIDsToPropagate) > 0 {
+		transactionIDsToBroadcast := f.transactionIDsToPropagate
+		if len(transactionIDsToBroadcast) > appmessage.MaxInvPerTxInvMsg {
+			f.transactionIDsToPropagate = f.transactionIDsToPropagate[len(transactionIDsToBroadcast):]
+		}
+
+		log.Infof("Transaction propagation: broadcasting %d transactions", len(transactionIDsToBroadcast))
+
+		inv := appmessage.NewMsgInvTransaction(transactionIDsToBroadcast)
+		err := f.Broadcast(inv)
+		if err != nil {
+			return err
+		}
+	}
+
 	f.lastTransactionIDPropagationTime = time.Now()
 
-	transactionIDsToBroadcast := f.transactionIDsToPropagate
-	if len(transactionIDsToBroadcast) > appmessage.MaxInvPerTxInvMsg {
-		transactionIDsToBroadcast = transactionIDsToBroadcast[:appmessage.MaxInvPerTxInvMsg]
-	}
-
-	log.Infof("Transaction propagation: broadcasting %d transactions", len(transactionIDsToBroadcast))
-
-	inv := appmessage.NewMsgInvTransaction(transactionIDsToBroadcast)
-	err := f.Broadcast(inv)
-	if err != nil {
-		return err
-	}
-
-	f.transactionIDsToPropagate = f.transactionIDsToPropagate[len(transactionIDsToBroadcast):]
 	return nil
 }
