@@ -117,6 +117,8 @@ message KaspadMessage {
     NotifyVirtualDaaScoreChangedRequestMessage notifyVirtualDaaScoreChangedRequest = 1074;
     NotifyVirtualDaaScoreChangedResponseMessage notifyVirtualDaaScoreChangedResponse = 1075;
     VirtualDaaScoreChangedNotificationMessage virtualDaaScoreChangedNotification = 1076;
+    GetMempoolEntriesByAddressesRequestMessage getMempoolEntriesByAddressesRequest = 1077;
+    GetMempoolEntriesByAddressesResponseMessage getMempoolEntriesByAddressesResponse = 1078;
   }
 }
 

@@ -36,6 +36,8 @@
     - [GetMempoolEntriesRequestMessage](#protowire.GetMempoolEntriesRequestMessage)
     - [GetMempoolEntriesResponseMessage](#protowire.GetMempoolEntriesResponseMessage)
     - [MempoolEntry](#protowire.MempoolEntry)
+    - [GetMempoolEntriesByAddressesRequestMessage](#protowire.GetMempoolEntriesByAddressesRequestMessage)
+    - [GetMempoolEntriesByAddressesResponseMessage](#protowire.GetMempoolEntriesByAddressesResponseMessage)
     - [GetConnectedPeerInfoRequestMessage](#protowire.GetConnectedPeerInfoRequestMessage)
     - [GetConnectedPeerInfoResponseMessage](#protowire.GetConnectedPeerInfoResponseMessage)
     - [GetConnectedPeerInfoMessage](#protowire.GetConnectedPeerInfoMessage)
@@ -315,7 +317,7 @@ Receivers of any ResponseMessage are expected to check whether its error field i
 | ----- | ---- | ----- | ----------- |
 | transactionId | [string](#string) |  |  |
 | hash | [string](#string) |  |  |
-| size | [uint64](#uint64) |  |  |
+| mass | [uint64](#uint64) |  |  |
 | blockHash | [string](#string) |  |  |
 | blockTime | [uint64](#uint64) |  |  |
 
@@ -631,6 +633,38 @@ currently in the mempool.
 | ----- | ---- | ----- | ----------- |
 | fee | [uint64](#uint64) |  |  |
 | transaction | [RpcTransaction](#protowire.RpcTransaction) |  |  |
+
+
+
+
+
+
+<a name="protowire.GetMempoolEntriesByAddressesRequestMessage"></a>
+
+### GetMempoolEntriesByAddressesRequestMessage
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| addresses | [string](#string) | repeated |  |
+
+
+
+
+
+
+<a name="protowire.GetMempoolEntriesByAddressesResponseMessage"></a>
+
+### GetMempoolEntriesByAddressesResponseMessage
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| spendingEntries | [MempoolEntry](#protowire.MempoolEntry) | repeated |  |
+| receivingEntries | [MempoolEntry](#protowire.MempoolEntry) | repeated |  |
+| error | [RPCError](#protowire.RPCError) |  |  |
 
 
 

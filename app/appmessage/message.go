@@ -142,6 +142,8 @@ const (
 	CmdNotifyVirtualDaaScoreChangedRequestMessage
 	CmdNotifyVirtualDaaScoreChangedResponseMessage
 	CmdVirtualDaaScoreChangedNotificationMessage
+	CmdGetMempoolEntriesByAddressesRequestMessage
+	CmdGetMempoolEntriesByAddressesResponseMessage
 )
 
 // ProtocolMessageCommandToString maps all MessageCommands to their string representation

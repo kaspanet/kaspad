@@ -226,6 +226,17 @@ message MempoolEntry{
   RpcTransaction transaction = 3;
 }
 
+message GetMempoolEntriesByAddressesRequestMessage {
+  repeated string addresses = 1;
+}
+
+message GetMempoolEntriesByAddressesResponseMessage {
+  repeated MempoolEntry spendingEntries = 1;
+  repeated MempoolEntry receivingEntries = 2;
+
+  RPCError error = 1000;
+}
+
 // GetConnectedPeerInfoRequestMessage requests information about all the p2p peers
 // currently connected to this kaspad.
 message GetConnectedPeerInfoRequestMessage{
@@ -621,5 +632,4 @@ message EstimateNetworkHashesPerSecondResponseMessage{
   uint64 networkHashesPerSecond = 1;
   RPCError error = 1000;
 }
-
 

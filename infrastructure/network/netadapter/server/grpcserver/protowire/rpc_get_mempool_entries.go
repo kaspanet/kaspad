@@ -29,13 +29,9 @@ func (x *KaspadMessage_GetMempoolEntriesResponse) fromAppMessage(message *appmes
 	if message.Error != nil {
 		rpcErr = &RPCError{Message: message.Error.Message}
 	}
-	entries := make([]*MempoolEntry, len(message.Entries))
-	for i, entry := range message.Entries {
-		entries[i] = new(MempoolEntry)
-		err := entries[i].fromAppMessage(entry)
-		if err != nil {
-			return err
-		}
+	entries, err := mempoolEntriesAppMessagesToProtos(message.Entries)
+	if err != nil {
+		return err
 	}
 	x.GetMempoolEntriesResponse = &GetMempoolEntriesResponseMessage{
 		Entries: entries,
@@ -57,12 +53,10 @@ func (x *GetMempoolEntriesResponseMessage) toAppMessage() (appmessage.Message, e
 	if rpcErr != nil && len(x.Entries) != 0 {
 		return nil, errors.New("GetMempoolEntriesResponseMessage contains both an error and a response")
 	}
-	entries := make([]*appmessage.MempoolEntry, len(x.Entries))
-	for i, entry := range x.Entries {
-		entries[i], err = entry.toAppMessage()
-		if err != nil {
-			return nil, err
-		}
+
+	entries, err := mempoolEntriesProtosToAppMessages(x.Entries)
+	if err != nil {
+		return nil, err
 	}
 
 	return &appmessage.GetMempoolEntriesResponseMessage{
