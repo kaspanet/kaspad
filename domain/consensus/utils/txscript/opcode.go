@@ -1069,10 +1069,10 @@ func opcodeReturn(op *parsedOpcode, vm *Engine) error {
 }
 
 // verifyLockTime is a helper function used to validate locktimes.
-func verifyLockTime(txLockTime, threshold, lockTime uint64) error {
+func verifyLockTime(txLockTime, threshold, lockTime uint64, isRelativeLockTime bool) error {
 	// The lockTimes in both the script and transaction must be of the same
 	// type.
-	if !((txLockTime < threshold && lockTime < threshold) ||
+	if !isRelativeLockTime && !((txLockTime < threshold && lockTime < threshold) ||
 		(txLockTime >= threshold && lockTime >= threshold)) {
 		str := fmt.Sprintf("mismatched locktime types -- tx locktime "+
 			"%d, stack locktime %d", txLockTime, lockTime)
@@ -1115,8 +1115,8 @@ func opcodeCheckLockTimeVerify(op *parsedOpcode, vm *Engine) error {
 	// which the transaction is finalized or a timestamp depending on if the
 	// value is before the constants.LockTimeThreshold. When it is under the
 	// threshold it is a block height.
-	err = verifyLockTime(vm.tx.LockTime, constants.LockTimeThreshold,
-		stackLockTime)
+	isRelativeLockTime := false
+	err = verifyLockTime(vm.tx.LockTime, constants.LockTimeThreshold, stackLockTime, isRelativeLockTime)
 	if err != nil {
 		return err
 	}
@@ -1188,10 +1188,10 @@ func opcodeCheckSequenceVerify(op *parsedOpcode, vm *Engine) error {
 	}
 
 	// Mask off non-consensus bits before doing comparisons.
-	lockTimeMask := constants.SequenceLockTimeIsSeconds | constants.SequenceLockTimeMask
-	maskedTxSequence := txSequence & lockTimeMask
-	maskedStackSequence := stackSequence & lockTimeMask
-	return verifyLockTime(maskedTxSequence, constants.SequenceLockTimeIsSeconds, maskedStackSequence)
+	maskedTxSequence := txSequence & constants.SequenceLockTimeMask
+	maskedStackSequence := stackSequence & constants.SequenceLockTimeMask
+	isRelativeLockTime := true
+	return verifyLockTime(maskedTxSequence, 0, maskedStackSequence, isRelativeLockTime)
 }
 
 // opcodeToAltStack removes the top item from the main data stack and pushes it

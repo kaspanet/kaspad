@@ -245,70 +245,19 @@ func (v *transactionValidator) calcTxSequenceLockFromReferencedUTXOEntries(stagi
 		sequenceNum := input.Sequence
 		relativeLock := int64(sequenceNum & constants.SequenceLockTimeMask)
 
-		switch {
 		// Relative time locks are disabled for this input, so we can
 		// skip any further calculation.
-		case sequenceNum&constants.SequenceLockTimeDisabled == constants.SequenceLockTimeDisabled:
+		if sequenceNum&constants.SequenceLockTimeDisabled == constants.SequenceLockTimeDisabled {
 			continue
-		case sequenceNum&constants.SequenceLockTimeIsSeconds == constants.SequenceLockTimeIsSeconds:
-			// This input requires a relative time lock expressed
-			// in seconds before it can be spent. Therefore, we
-			// need to query for the block prior to the one in
-			// which this input was accepted within so we can
-			// compute the past median time for the block prior to
-			// the one which accepted this referenced output.
-			baseGHOSTDAGData, err := v.ghostdagDataStore.Get(v.databaseContext, stagingArea, povBlockHash)
-			if err != nil {
-				return nil, err
-			}
-
-			baseHash := povBlockHash
-
-			for {
-				selectedParentDAAScore, err := v.daaBlocksStore.DAAScore(v.databaseContext, stagingArea, baseHash)
-				if err != nil {
-					return nil, err
-				}
-
-				if selectedParentDAAScore <= inputDAAScore {
-					break
-				}
-
-				selectedParentGHOSTDAGData, err := v.ghostdagDataStore.Get(
-					v.databaseContext, stagingArea, baseGHOSTDAGData.SelectedParent())
-				if err != nil {
-					return nil, err
-				}
-
-				baseHash = baseGHOSTDAGData.SelectedParent()
-				baseGHOSTDAGData = selectedParentGHOSTDAGData
-			}
-
-			medianTime, err := v.pastMedianTimeManager.PastMedianTime(stagingArea, baseHash)
-			if err != nil {
-				return nil, err
-			}
-
-			// Time based relative time-locks have a time granularity of
-			// constants.SequenceLockTimeGranularity, so we shift left by this
-			// amount to convert to the proper relative time-lock. We also
-			// subtract one from the relative lock to maintain the original
-			// lockTime semantics.
-			timeLockMilliseconds := (relativeLock * constants.SequenceLockTimeGranularity) - 1
-			timeLock := medianTime + timeLockMilliseconds
-			if timeLock > sequenceLock.Milliseconds {
-				sequenceLock.Milliseconds = timeLock
-			}
-		default:
-			// The relative lock-time for this input is expressed
-			// in blocks so we calculate the relative offset from
-			// the input's DAA score as its converted absolute
-			// lock-time. We subtract one from the relative lock in
-			// order to maintain the original lockTime semantics.
-			blockDAAScore := int64(inputDAAScore) + relativeLock - 1
-			if blockDAAScore > sequenceLock.BlockDAAScore {
-				sequenceLock.BlockDAAScore = blockDAAScore
-			}
+		}
+		// The relative lock-time for this input is expressed
+		// in blocks so we calculate the relative offset from
+		// the input's DAA score as its converted absolute
+		// lock-time. We subtract one from the relative lock in
+		// order to maintain the original lockTime semantics.
+		blockDAAScore := int64(inputDAAScore) + relativeLock - 1
+		if blockDAAScore > sequenceLock.BlockDAAScore {
+			sequenceLock.BlockDAAScore = blockDAAScore
 		}
 	}
 	if len(missingOutpoints) > 0 {
