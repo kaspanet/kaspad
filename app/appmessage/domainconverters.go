@@ -2,6 +2,7 @@ package appmessage
 
 import (
 	"encoding/hex"
+
 	"github.com/kaspanet/kaspad/domain/consensus/utils/blockheader"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/hashes"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/utxo"
@@ -100,6 +101,7 @@ func domainTransactionInputToTxIn(domainTransactionInput *externalapi.DomainTran
 		PreviousOutpoint: *domainOutpointToOutpoint(domainTransactionInput.PreviousOutpoint),
 		SignatureScript:  domainTransactionInput.SignatureScript,
 		Sequence:         domainTransactionInput.Sequence,
+		SigOpCount:       domainTransactionInput.SigOpCount,
 	}
 }
 
@@ -148,6 +150,7 @@ func txInToDomainTransactionInput(txIn *TxIn) *externalapi.DomainTransactionInpu
 	return &externalapi.DomainTransactionInput{
 		PreviousOutpoint: *outpointToDomainOutpoint(&txIn.PreviousOutpoint), //TODO
 		SignatureScript:  txIn.SignatureScript,
+		SigOpCount:       txIn.SigOpCount,
 		Sequence:         txIn.Sequence,
 	}
 }
@@ -175,6 +178,7 @@ func RPCTransactionToDomainTransaction(rpcTransaction *RPCTransaction) (*externa
 			PreviousOutpoint: *previousOutpoint,
 			SignatureScript:  signatureScript,
 			Sequence:         input.Sequence,
+			SigOpCount:       input.SigOpCount,
 		}
 	}
 	outputs := make([]*externalapi.DomainTransactionOutput, len(rpcTransaction.Outputs))
@@ -253,6 +257,7 @@ func DomainTransactionToRPCTransaction(transaction *externalapi.DomainTransactio
 			PreviousOutpoint: previousOutpoint,
 			SignatureScript:  signatureScript,
 			Sequence:         input.Sequence,
+			SigOpCount:       input.SigOpCount,
 		}
 	}
 	outputs := make([]*RPCTransactionOutput, len(transaction.Outputs))

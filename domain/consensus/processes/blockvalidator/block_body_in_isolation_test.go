@@ -1027,17 +1027,16 @@ func TestCheckBlockHashMerkleRoot(t *testing.T) {
 	})
 }
 
-func TestBlockSize(t *testing.T) {
+func TestBlockMass(t *testing.T) {
 	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
-
 		factory := consensus.NewFactory()
-		tc, teardown, err := factory.NewTestConsensus(consensusConfig, "TestBlockSize")
+		tc, teardown, err := factory.NewTestConsensus(consensusConfig, "TestBlockMass")
 		if err != nil {
 			t.Fatalf("Error setting up tc: %+v", err)
 		}
 		defer teardown(false)
 
-		block, _, err := initBlockWithInvalidBlockSize(consensusConfig, tc)
+		block, _, err := initBlockWithInvalidBlockMass(consensusConfig, tc)
 		if err != nil {
 			t.Fatalf("Error BuildBlockWithParents : %+v", err)
 		}
@@ -1046,14 +1045,14 @@ func TestBlockSize(t *testing.T) {
 		tc.BlockStore().Stage(stagingArea, blockHash, block)
 
 		err = tc.BlockValidator().ValidateBodyInIsolation(stagingArea, blockHash)
-		if err == nil || !errors.Is(err, ruleerrors.ErrBlockSizeTooHigh) {
-			t.Fatalf("ValidateBodyInIsolationTest: TestBlockSize:"+
-				" Unexpected error: Expected to: %v, but got : %v", ruleerrors.ErrBlockSizeTooHigh, err)
+		if err == nil || !errors.Is(err, ruleerrors.ErrBlockMassTooHigh) {
+			t.Fatalf("ValidateBodyInIsolationTest: TestBlockMass:"+
+				" Unexpected error: Expected to: %v, but got : %v", ruleerrors.ErrBlockMassTooHigh, err)
 		}
 	})
 }
 
-func initBlockWithInvalidBlockSize(consensusConfig *consensus.Config, tc testapi.TestConsensus) (*externalapi.DomainBlock, externalapi.UTXODiff, error) {
+func initBlockWithInvalidBlockMass(consensusConfig *consensus.Config, tc testapi.TestConsensus) (*externalapi.DomainBlock, externalapi.UTXODiff, error) {
 	emptyCoinbase := externalapi.DomainCoinbaseData{
 		ScriptPublicKey: &externalapi.ScriptPublicKey{
 			Script:  nil,
@@ -1062,11 +1061,12 @@ func initBlockWithInvalidBlockSize(consensusConfig *consensus.Config, tc testapi
 	}
 	prevOutTxID := &externalapi.DomainTransactionID{}
 	prevOutPoint := externalapi.DomainOutpoint{TransactionID: *prevOutTxID, Index: 1}
-	bigSignatureScript := bytes.Repeat([]byte("01"), 25000)
+	bigSignatureScript := bytes.Repeat([]byte("01"), 500000)
 	txInput := externalapi.DomainTransactionInput{
 		PreviousOutpoint: prevOutPoint,
 		SignatureScript:  bigSignatureScript,
 		Sequence:         constants.MaxTxInSequenceNum,
+		SigOpCount:       10,
 		UTXOEntry: utxo.NewUTXOEntry(
 			100_000_000,
 			&externalapi.ScriptPublicKey{},
@@ -1079,7 +1079,7 @@ func initBlockWithInvalidBlockSize(consensusConfig *consensus.Config, tc testapi
 		Outputs: []*externalapi.DomainTransactionOutput{{uint64(0xFFFF),
 			&externalapi.ScriptPublicKey{Script: []byte{1, 2}, Version: 0}}, {uint64(0xFFFF),
 			&externalapi.ScriptPublicKey{Script: []byte{1, 3}, Version: 0}}},
-		Payload: []byte{0x01},
+		Payload: []byte{},
 	}
 
 	return tc.BuildBlockWithParents([]*externalapi.DomainHash{consensusConfig.GenesisHash}, &emptyCoinbase, []*externalapi.DomainTransaction{tx})

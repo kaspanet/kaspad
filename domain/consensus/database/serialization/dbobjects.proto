@@ -37,6 +37,7 @@ message DbTransactionInput {
   DbOutpoint previousOutpoint = 1;
   bytes signatureScript = 2;
   uint64 sequence = 3;
+  uint32 sigOpCount = 4;
 }
 
 message DbOutpoint {

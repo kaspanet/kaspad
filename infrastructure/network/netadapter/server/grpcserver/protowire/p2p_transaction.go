@@ -1,9 +1,10 @@
 package protowire
 
 import (
+	"math"
+
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/pkg/errors"
-	"math"
 )
 
 func (x *KaspadMessage_Transaction) toAppMessage() (appmessage.Message, error) {
@@ -64,11 +65,14 @@ func (x *TransactionInput) toAppMessage() (*appmessage.TxIn, error) {
 	if x == nil {
 		return nil, errors.Wrapf(errorNil, "TransactionInput is nil")
 	}
+	if x.SigOpCount > math.MaxUint8 {
+		return nil, errors.New("TransactionInput SigOpCount > math.MaxUint8")
+	}
 	outpoint, err := x.PreviousOutpoint.toAppMessage()
 	if err != nil {
 		return nil, err
 	}
-	return appmessage.NewTxIn(outpoint, x.SignatureScript, x.Sequence), nil
+	return appmessage.NewTxIn(outpoint, x.SignatureScript, x.Sequence, byte(x.SigOpCount)), nil
 }
 
 func (x *TransactionOutput) toAppMessage() (*appmessage.TxOut, error) {
@@ -95,6 +99,7 @@ func (x *TransactionMessage) fromAppMessage(msgTx *appmessage.MsgTx) {
 			},
 			SignatureScript: input.SignatureScript,
 			Sequence:        input.Sequence,
+			SigOpCount:      uint32(input.SigOpCount),
 		}
 	}
 
@@ -118,5 +123,4 @@ func (x *TransactionMessage) fromAppMessage(msgTx *appmessage.MsgTx) {
 		Gas:          msgTx.Gas,
 		Payload:      msgTx.Payload,
 	}
-
 }

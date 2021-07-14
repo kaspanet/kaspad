@@ -228,6 +228,7 @@ Receivers of any ResponseMessage are expected to check whether its error field i
 | previousOutpoint | [RpcOutpoint](#protowire.RpcOutpoint) |  |  |
 | signatureScript | [string](#string) |  |  |
 | sequence | [uint64](#uint64) |  |  |
+| sigOpCount | [uint32](#uint32) |  |  |
 | verboseData | [RpcTransactionInputVerboseData](#protowire.RpcTransactionInputVerboseData) |  |  |
 
 

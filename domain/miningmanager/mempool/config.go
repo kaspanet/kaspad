@@ -18,11 +18,13 @@ const (
 	defaultOrphanExpireIntervalSeconds          uint64 = 60
 	defaultOrphanExpireScanIntervalSeconds      uint64 = 10
 
-	defaultMaximumOrphanTransactionSize = 100000
+	defaultMaximumOrphanTransactionMass = 100000
 	// defaultMaximumOrphanTransactionCount should remain small as long as we have recursion in
 	// removeOrphans when removeRedeemers = true
 	defaultMaximumOrphanTransactionCount = 50
 
+	// defaultMinimumRelayTransactionFee specifies the minimum transaction fee for a transaction to be accepted to
+	// the mempool and relayed. It is specified in sompi per 1kg (or 1000 grams) of transaction mass.
 	defaultMinimumRelayTransactionFee = util.Amount(1000)
 
 	// Standard transaction version range might be different from what consensus accepts, therefore
@@ -41,10 +43,10 @@ type Config struct {
 	TransactionExpireScanIntervalSeconds  uint64
 	OrphanExpireIntervalDAAScore          uint64
 	OrphanExpireScanIntervalDAAScore      uint64
-	MaximumOrphanTransactionSize          uint64
+	MaximumOrphanTransactionMass          uint64
 	MaximumOrphanTransactionCount         uint64
 	AcceptNonStandard                     bool
-	MaximumMassAcceptedByBlock            uint64
+	MaximumMassPerBlock                   uint64
 	MinimumRelayTransactionFee            util.Amount
 	MinimumStandardTransactionVersion     uint16
 	MaximumStandardTransactionVersion     uint16
@@ -61,10 +63,10 @@ func DefaultConfig(dagParams *dagconfig.Params) *Config {
 		TransactionExpireScanIntervalSeconds:  defaultTransactionExpireScanIntervalSeconds,
 		OrphanExpireIntervalDAAScore:          defaultOrphanExpireIntervalSeconds / targetBlocksPerSecond,
 		OrphanExpireScanIntervalDAAScore:      defaultOrphanExpireScanIntervalSeconds / targetBlocksPerSecond,
-		MaximumOrphanTransactionSize:          defaultMaximumOrphanTransactionSize,
+		MaximumOrphanTransactionMass:          defaultMaximumOrphanTransactionMass,
 		MaximumOrphanTransactionCount:         defaultMaximumOrphanTransactionCount,
 		AcceptNonStandard:                     dagParams.RelayNonStdTxs,
-		MaximumMassAcceptedByBlock:            dagParams.MaxMassAcceptedByBlock,
+		MaximumMassPerBlock:                   dagParams.MaxBlockMass,
 		MinimumRelayTransactionFee:            defaultMinimumRelayTransactionFee,
 		MinimumStandardTransactionVersion:     defaultMinimumStandardTransactionVersion,
 		MaximumStandardTransactionVersion:     defaultMaximumStandardTransactionVersion,

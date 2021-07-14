@@ -68,7 +68,7 @@ func TestTx(t *testing.T) {
 
 	// Ensure we get the same transaction input back out.
 	sigScript := []byte{0x04, 0x31, 0xdc, 0x00, 0x1b, 0x01, 0x62}
-	txIn := NewTxIn(prevOut, sigScript, constants.MaxTxInSequenceNum)
+	txIn := NewTxIn(prevOut, sigScript, constants.MaxTxInSequenceNum, 1)
 	if !reflect.DeepEqual(&txIn.PreviousOutpoint, prevOut) {
 		t.Errorf("NewTxIn: wrong prev outpoint - got %v, want %v",
 			spew.Sprint(&txIn.PreviousOutpoint),

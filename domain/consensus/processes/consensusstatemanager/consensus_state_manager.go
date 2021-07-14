@@ -7,12 +7,11 @@ import (
 
 // consensusStateManager manages the node's consensus state
 type consensusStateManager struct {
-	pruningDepth           uint64
-	maxMassAcceptedByBlock uint64
-	maxBlockParents        externalapi.KType
-	mergeSetSizeLimit      uint64
-	genesisHash            *externalapi.DomainHash
-	databaseContext        model.DBManager
+	pruningDepth      uint64
+	maxBlockParents   externalapi.KType
+	mergeSetSizeLimit uint64
+	genesisHash       *externalapi.DomainHash
+	databaseContext   model.DBManager
 
 	ghostdagManager       model.GHOSTDAGManager
 	dagTopologyManager    model.DAGTopologyManager
@@ -46,7 +45,6 @@ type consensusStateManager struct {
 func New(
 	databaseContext model.DBManager,
 	pruningDepth uint64,
-	maxMassAcceptedByBlock uint64,
 	maxBlockParents externalapi.KType,
 	mergeSetSizeLimit uint64,
 	genesisHash *externalapi.DomainHash,
@@ -77,12 +75,11 @@ func New(
 	daaBlocksStore model.DAABlocksStore) (model.ConsensusStateManager, error) {
 
 	csm := &consensusStateManager{
-		pruningDepth:           pruningDepth,
-		maxMassAcceptedByBlock: maxMassAcceptedByBlock,
-		maxBlockParents:        maxBlockParents,
-		mergeSetSizeLimit:      mergeSetSizeLimit,
-		genesisHash:            genesisHash,
-		databaseContext:        databaseContext,
+		pruningDepth:      pruningDepth,
+		maxBlockParents:   maxBlockParents,
+		mergeSetSizeLimit: mergeSetSizeLimit,
+		genesisHash:       genesisHash,
+		databaseContext:   databaseContext,
 
 		ghostdagManager:       ghostdagManager,
 		dagTopologyManager:    dagTopologyManager,

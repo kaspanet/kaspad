@@ -148,8 +148,8 @@ type Params struct {
 	// MaxCoinbasePayloadLength is the maximum length in bytes allowed for a block's coinbase's payload
 	MaxCoinbasePayloadLength uint64
 
-	// MaxBlockSize is the maximum size in bytes a block is allowed
-	MaxBlockSize uint64
+	// MaxBlockMass is the maximum mass a block is allowed
+	MaxBlockMass uint64
 
 	// MaxBlockParents is the maximum number of blocks a block is allowed to point to
 	MaxBlockParents externalapi.KType
@@ -168,9 +168,6 @@ type Params struct {
 
 	// MergeSetSizeLimit is the maximum number of blocks in a block's merge set
 	MergeSetSizeLimit uint64
-
-	// MaxMassAcceptedByBlock is the maximum total transaction mass a block may accept.
-	MaxMassAcceptedByBlock uint64
 
 	// CoinbasePayloadScriptPublicKeyMaxLength is the maximum allowed script public key in the coinbase's payload
 	CoinbasePayloadScriptPublicKeyMaxLength uint8
@@ -240,13 +237,12 @@ var MainnetParams = Params{
 	DisableDifficultyAdjustment: false,
 
 	MaxCoinbasePayloadLength:                defaultMaxCoinbasePayloadLength,
-	MaxBlockSize:                            defaultMaxBlockSize,
+	MaxBlockMass:                            defaultMaxBlockMass,
 	MaxBlockParents:                         defaultMaxBlockParents,
 	MassPerTxByte:                           defaultMassPerTxByte,
 	MassPerScriptPubKeyByte:                 defaultMassPerScriptPubKeyByte,
 	MassPerSigOp:                            defaultMassPerSigOp,
 	MergeSetSizeLimit:                       defaultMergeSetSizeLimit,
-	MaxMassAcceptedByBlock:                  defaultMaxMassAcceptedByBlock,
 	BaseSubsidy:                             defaultBaseSubsidy,
 	CoinbasePayloadScriptPublicKeyMaxLength: defaultCoinbasePayloadScriptPublicKeyMaxLength,
 }
@@ -297,13 +293,12 @@ var TestnetParams = Params{
 	DisableDifficultyAdjustment: false,
 
 	MaxCoinbasePayloadLength:                defaultMaxCoinbasePayloadLength,
-	MaxBlockSize:                            defaultMaxBlockSize,
+	MaxBlockMass:                            defaultMaxBlockMass,
 	MaxBlockParents:                         defaultMaxBlockParents,
 	MassPerTxByte:                           defaultMassPerTxByte,
 	MassPerScriptPubKeyByte:                 defaultMassPerScriptPubKeyByte,
 	MassPerSigOp:                            defaultMassPerSigOp,
 	MergeSetSizeLimit:                       defaultMergeSetSizeLimit,
-	MaxMassAcceptedByBlock:                  defaultMaxMassAcceptedByBlock,
 	BaseSubsidy:                             defaultBaseSubsidy,
 	CoinbasePayloadScriptPublicKeyMaxLength: defaultCoinbasePayloadScriptPublicKeyMaxLength,
 }
@@ -358,13 +353,12 @@ var SimnetParams = Params{
 	DisableDifficultyAdjustment: true,
 
 	MaxCoinbasePayloadLength:                defaultMaxCoinbasePayloadLength,
-	MaxBlockSize:                            defaultMaxBlockSize,
+	MaxBlockMass:                            defaultMaxBlockMass,
 	MaxBlockParents:                         defaultMaxBlockParents,
 	MassPerTxByte:                           defaultMassPerTxByte,
 	MassPerScriptPubKeyByte:                 defaultMassPerScriptPubKeyByte,
 	MassPerSigOp:                            defaultMassPerSigOp,
 	MergeSetSizeLimit:                       defaultMergeSetSizeLimit,
-	MaxMassAcceptedByBlock:                  defaultMaxMassAcceptedByBlock,
 	BaseSubsidy:                             defaultBaseSubsidy,
 	CoinbasePayloadScriptPublicKeyMaxLength: defaultCoinbasePayloadScriptPublicKeyMaxLength,
 }
@@ -415,13 +409,12 @@ var DevnetParams = Params{
 	DisableDifficultyAdjustment: false,
 
 	MaxCoinbasePayloadLength:                defaultMaxCoinbasePayloadLength,
-	MaxBlockSize:                            defaultMaxBlockSize,
+	MaxBlockMass:                            defaultMaxBlockMass,
 	MaxBlockParents:                         defaultMaxBlockParents,
 	MassPerTxByte:                           defaultMassPerTxByte,
 	MassPerScriptPubKeyByte:                 defaultMassPerScriptPubKeyByte,
 	MassPerSigOp:                            defaultMassPerSigOp,
 	MergeSetSizeLimit:                       defaultMergeSetSizeLimit,
-	MaxMassAcceptedByBlock:                  defaultMaxMassAcceptedByBlock,
 	BaseSubsidy:                             defaultBaseSubsidy,
 	CoinbasePayloadScriptPublicKeyMaxLength: defaultCoinbasePayloadScriptPublicKeyMaxLength,
 }

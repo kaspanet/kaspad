@@ -2,10 +2,11 @@ package consensus
 
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/daawindowstore"
-	"github.com/kaspanet/kaspad/domain/prefixmanager/prefix"
 	"io/ioutil"
 	"os"
 	"sync"
+
+	"github.com/kaspanet/kaspad/domain/prefixmanager/prefix"
 
 	consensusdatabase "github.com/kaspanet/kaspad/domain/consensus/database"
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/acceptancedatastore"
@@ -236,7 +237,7 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 		config.SkipProofOfWork,
 		genesisHash,
 		config.EnableNonNativeSubnetworks,
-		config.MaxBlockSize,
+		config.MaxBlockMass,
 		config.MergeSetSizeLimit,
 		config.MaxBlockParents,
 		config.TimestampDeviationTolerance,
@@ -264,7 +265,6 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 	consensusStateManager, err := consensusstatemanager.New(
 		dbManager,
 		config.PruningDepth(),
-		config.MaxMassAcceptedByBlock,
 		config.MaxBlockParents,
 		config.MergeSetSizeLimit,
 		genesisHash,
