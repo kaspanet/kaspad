@@ -92,6 +92,11 @@ func (s *consensus) ValidateTransactionAndPopulateWithConsensusData(transaction 
 		return err
 	}
 
+	err = s.transactionValidator.ValidateTransactionInContextIgnoringUTXO(stagingArea, transaction, model.VirtualBlockHash)
+	if err != nil {
+		return err
+	}
+
 	return s.transactionValidator.ValidateTransactionInContextAndPopulateMassAndFee(
 		stagingArea, transaction, model.VirtualBlockHash, virtualSelectedParentMedianTime)
 }
