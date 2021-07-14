@@ -77,6 +77,8 @@ func (s *consensus) Init(shouldNotAddGenesis bool) error {
 		return err
 	}
 
+	// There should always be a virtual genesis block. Initially only the genesis points to this block, but
+	// on a node with pruned header all blocks without known parents points to it.
 	if !exists {
 		s.blockStatusStore.Stage(stagingArea, model.VirtualGenesisBlockHash, externalapi.StatusUTXOValid)
 		err = s.reachabilityManager.Init(stagingArea)
@@ -105,6 +107,8 @@ func (s *consensus) Init(shouldNotAddGenesis bool) error {
 		}
 	}
 
+	// The genesis should be added to the DAG if it's a fresh consensus, unless said otherwise (on a
+	// case where the consensus is used for a pruned headers node).
 	if !shouldNotAddGenesis && s.blockStore.Count(stagingArea) == 0 {
 		genesisWithMetaData := &externalapi.BlockWithMetaData{
 			Block:     s.genesisBlock,
