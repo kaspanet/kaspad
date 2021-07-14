@@ -160,7 +160,7 @@ func (csm *consensusStateManager) setPruningPointSelectedChildAsVirtualOnlyParen
 		return err
 	}
 
-	blockStatus, _, err := csm.resolveBlockStatus(stagingArea, pruningPointSelectedChild, true)
+	blockStatus, _, err := csm.resolveBlockStatus(stagingArea, pruningPointSelectedChild, false)
 	if err != nil {
 		return err
 	}
