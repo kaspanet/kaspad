@@ -109,6 +109,12 @@ func TestIBDWithPruning(t *testing.T) {
 			t.Fatalf("expected pruning point UTXO set override notification, but it didn't get one after %s", timeout)
 		}
 
+		// Checking that the syncee can generate block templates before resolving the virtual
+		_, err = syncee.rpcClient.GetBlockTemplate(syncee.miningAddress)
+		if err != nil {
+			t.Fatalf("Error getting block template: %+v", err)
+		}
+
 		// This should trigger resolving the syncee virtual
 		syncerTip := mineNextBlock(t, syncer)
 		time.Sleep(time.Second)

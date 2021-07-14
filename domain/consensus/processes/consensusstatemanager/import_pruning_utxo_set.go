@@ -124,6 +124,57 @@ func (csm *consensusStateManager) importPruningPoint(
 		return err
 	}
 
+	err = csm.setPruningPointSelectedChildAsVirtualOnlyParent(stagingArea)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (csm *consensusStateManager) setPruningPointSelectedChildAsVirtualOnlyParent(stagingArea *model.StagingArea) error {
+	headersSelectedTip, err := csm.headersSelectedTipStore.HeadersSelectedTip(csm.databaseContext, stagingArea)
+	if err != nil {
+		return err
+	}
+
+	pruningPoint, err := csm.pruningStore.PruningPoint(csm.databaseContext, stagingArea)
+	if err != nil {
+		return err
+	}
+
+	pruningPointSelectedChildIterator, err := csm.dagTraversalManager.SelectedChildIterator(stagingArea,
+		headersSelectedTip, pruningPoint)
+	if err != nil {
+		return err
+	}
+	defer pruningPointSelectedChildIterator.Close()
+
+	ok := pruningPointSelectedChildIterator.First()
+	if !ok {
+		return errors.Errorf("pruning point pruningPointSelectedChildIterator is empty")
+	}
+
+	pruningPointSelectedChild, err := pruningPointSelectedChildIterator.Get()
+	if err != nil {
+		return err
+	}
+
+	blockStatus, _, err := csm.resolveBlockStatus(stagingArea, pruningPointSelectedChild, true)
+	if err != nil {
+		return err
+	}
+
+	if blockStatus == externalapi.StatusDisqualifiedFromChain {
+		return errors.Wrapf(ruleerrors.ErrPruningPointSelectedChildDisqualifiedFromChain, "pruning point selected"+
+			" child is disqualified from chain")
+	}
+
+	_, _, err = csm.updateVirtual(stagingArea, pruningPointSelectedChild, []*externalapi.DomainHash{pruningPointSelectedChild})
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
