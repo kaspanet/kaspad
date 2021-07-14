@@ -27,25 +27,25 @@ type NetworkFlags struct {
 type overrideDAGParamsConfig struct {
 	K                                       *externalapi.KType `json:"k"`
 	MaxBlockParents                         *externalapi.KType `json:"maxBlockParents"`
-	MergeSetSizeLimit                       *uint64      `json:"mergeSetSizeLimit"`
-	MaxBlockMass                            *uint64      `json:"maxBlockMass"`
-	MaxCoinbasePayloadLength                *uint64      `json:"maxCoinbasePayloadLength"`
-	MassPerTxByte                           *uint64      `json:"massPerTxByte"`
-	MassPerScriptPubKeyByte                 *uint64      `json:"massPerScriptPubKeyByte"`
-	MassPerSigOp                            *uint64      `json:"massPerSigOp"`
-	CoinbasePayloadScriptPublicKeyMaxLength *uint8       `json:"coinbasePayloadScriptPublicKeyMaxLength"`
-	PowMax                                  *string      `json:"powMax"`
-	BlockCoinbaseMaturity                   *uint64      `json:"blockCoinbaseMaturity"`
-	SubsidyReductionInterval                *uint64      `json:"subsidyReductionInterval"`
-	TargetTimePerBlockInMilliSeconds        *int64       `json:"targetTimePerBlockInMilliSeconds"`
-	FinalityDuration                        *int64       `json:"finalityDuration"`
-	TimestampDeviationTolerance             *int         `json:"timestampDeviationTolerance"`
-	DifficultyAdjustmentWindowSize          *int         `json:"difficultyAdjustmentWindowSize"`
-	RelayNonStdTxs                          *bool        `json:"relayNonStdTxs"`
-	AcceptUnroutable                        *bool        `json:"acceptUnroutable"`
-	EnableNonNativeSubnetworks              *bool        `json:"enableNonNativeSubnetworks"`
-	DisableDifficultyAdjustment             *bool        `json:"disableDifficultyAdjustment"`
-	SkipProofOfWork                         *bool        `json:"skipProofOfWork"`
+	MergeSetSizeLimit                       *uint64            `json:"mergeSetSizeLimit"`
+	MaxBlockMass                            *uint64            `json:"maxBlockMass"`
+	MaxCoinbasePayloadLength                *uint64            `json:"maxCoinbasePayloadLength"`
+	MassPerTxByte                           *uint64            `json:"massPerTxByte"`
+	MassPerScriptPubKeyByte                 *uint64            `json:"massPerScriptPubKeyByte"`
+	MassPerSigOp                            *uint64            `json:"massPerSigOp"`
+	CoinbasePayloadScriptPublicKeyMaxLength *uint8             `json:"coinbasePayloadScriptPublicKeyMaxLength"`
+	PowMax                                  *string            `json:"powMax"`
+	BlockCoinbaseMaturity                   *uint64            `json:"blockCoinbaseMaturity"`
+	SubsidyReductionInterval                *uint64            `json:"subsidyReductionInterval"`
+	TargetTimePerBlockInMilliSeconds        *int64             `json:"targetTimePerBlockInMilliSeconds"`
+	FinalityDuration                        *int64             `json:"finalityDuration"`
+	TimestampDeviationTolerance             *int               `json:"timestampDeviationTolerance"`
+	DifficultyAdjustmentWindowSize          *int               `json:"difficultyAdjustmentWindowSize"`
+	RelayNonStdTxs                          *bool              `json:"relayNonStdTxs"`
+	AcceptUnroutable                        *bool              `json:"acceptUnroutable"`
+	EnableNonNativeSubnetworks              *bool              `json:"enableNonNativeSubnetworks"`
+	DisableDifficultyAdjustment             *bool              `json:"disableDifficultyAdjustment"`
+	SkipProofOfWork                         *bool              `json:"skipProofOfWork"`
 }
 
 // ResolveNetwork parses the network command line argument and sets NetParams accordingly.

@@ -31,7 +31,7 @@ func newTransactionsPool(mp *mempool) *transactionsPool {
 func (tp *transactionsPool) addTransaction(transaction *externalapi.DomainTransaction,
 	parentTransactionsInPool model.OutpointToTransactionMap, isHighPriority bool) (*model.MempoolTransaction, error) {
 
-	virtualDAAScore, err := tp.mempool.consensus.Consensus().GetVirtualDAAScore()
+	virtualDAAScore, err := tp.mempool.consensusWrapper.Consensus().GetVirtualDAAScore()
 	if err != nil {
 		return nil, err
 	}
@@ -86,7 +86,7 @@ func (tp *transactionsPool) removeTransaction(transaction *model.MempoolTransact
 }
 
 func (tp *transactionsPool) expireOldTransactions() error {
-	virtualDAAScore, err := tp.mempool.consensus.Consensus().GetVirtualDAAScore()
+	virtualDAAScore, err := tp.mempool.consensusWrapper.Consensus().GetVirtualDAAScore()
 	if err != nil {
 		return err
 	}

@@ -10,8 +10,8 @@ import (
 type mempool struct {
 	mtx sync.RWMutex
 
-	config    *Config
-	consensus externalapi.ConsensusWrapper
+	config           *Config
+	consensusWrapper externalapi.ConsensusWrapper
 
 	mempoolUTXOSet   *mempoolUTXOSet
 	transactionsPool *transactionsPool
@@ -19,10 +19,10 @@ type mempool struct {
 }
 
 // New constructs a new mempool
-func New(config *Config, consensus externalapi.ConsensusWrapper) miningmanagermodel.Mempool {
+func New(config *Config, consensusWrapper externalapi.ConsensusWrapper) miningmanagermodel.Mempool {
 	mp := &mempool{
-		config:    config,
-		consensus: consensus,
+		config:           config,
+		consensusWrapper: consensusWrapper,
 	}
 
 	mp.mempoolUTXOSet = newMempoolUTXOSet(mp)

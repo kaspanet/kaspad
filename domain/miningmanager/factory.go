@@ -15,11 +15,11 @@ type Factory interface {
 type factory struct{}
 
 // NewMiningManager instantiate a new mining manager
-func (f *factory) NewMiningManager(consensus externalapi.ConsensusWrapper, params *dagconfig.Params,
+func (f *factory) NewMiningManager(consensusWrapper externalapi.ConsensusWrapper, params *dagconfig.Params,
 	mempoolConfig *mempoolpkg.Config) MiningManager {
 
-	mempool := mempoolpkg.New(mempoolConfig, consensus)
-	blockTemplateBuilder := blocktemplatebuilder.New(consensus, mempool, params.MaxBlockMass)
+	mempool := mempoolpkg.New(mempoolConfig, consensusWrapper)
+	blockTemplateBuilder := blocktemplatebuilder.New(consensusWrapper, mempool, params.MaxBlockMass)
 
 	return &miningManager{
 		mempool:              mempool,

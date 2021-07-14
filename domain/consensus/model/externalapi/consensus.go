@@ -40,6 +40,7 @@ type Consensus interface {
 	PopulateMass(transaction *DomainTransaction)
 }
 
+// ConsensusWrapper is a wrapper for consensus
 type ConsensusWrapper interface {
 	Consensus() Consensus
 }

@@ -90,7 +90,7 @@ func TestCalcMinRequiredTxRelayFee(t *testing.T) {
 		factory := consensus.NewFactory()
 		tc, teardown, err := factory.NewTestConsensus(consensusConfig, "TestCalcMinRequiredTxRelayFee")
 		if err != nil {
-			t.Fatalf("Error setting up consensus: %+v", err)
+			t.Fatalf("Error setting up consensusWrapper: %+v", err)
 		}
 		defer teardown(false)
 
@@ -177,7 +177,7 @@ func TestIsTransactionOutputDust(t *testing.T) {
 		factory := consensus.NewFactory()
 		tc, teardown, err := factory.NewTestConsensus(consensusConfig, "TestIsTransactionOutputDust")
 		if err != nil {
-			t.Fatalf("Error setting up consensus: %+v", err)
+			t.Fatalf("Error setting up consensusWrapper: %+v", err)
 		}
 		defer teardown(false)
 
@@ -297,7 +297,7 @@ func TestCheckTransactionStandardInIsolation(t *testing.T) {
 		factory := consensus.NewFactory()
 		tc, teardown, err := factory.NewTestConsensus(consensusConfig, "TestCheckTransactionStandardInIsolation")
 		if err != nil {
-			t.Fatalf("Error setting up consensus: %+v", err)
+			t.Fatalf("Error setting up consensusWrapper: %+v", err)
 		}
 		defer teardown(false)
 

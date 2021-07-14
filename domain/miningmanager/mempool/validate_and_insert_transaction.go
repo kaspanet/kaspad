@@ -17,7 +17,7 @@ func (mp *mempool) validateAndInsertTransaction(transaction *externalapi.DomainT
 	defer onEnd()
 
 	// Populate mass in the beginning, it will be used in multiple places throughout the validation and insertion.
-	mp.consensus.Consensus().PopulateMass(transaction)
+	mp.consensusWrapper.Consensus().PopulateMass(transaction)
 
 	err = mp.validateTransactionPreUTXOEntry(transaction)
 	if err != nil {

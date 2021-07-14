@@ -32,7 +32,7 @@ func (mpus *mempoolUTXOSet) addTransaction(transaction *model.MempoolTransaction
 
 		// Delete the output this input spends, in case it was created by mempool.
 		// If the outpoint doesn't exist in mpus.poolUnspentOutputs - this means
-		// it was created in the DAG (a.k.a. in consensus).
+		// it was created in the DAG (a.k.a. in consensusWrapper).
 		delete(mpus.poolUnspentOutputs, *outpoint)
 
 		mpus.transactionByPreviousOutpoint[input.PreviousOutpoint] = transaction

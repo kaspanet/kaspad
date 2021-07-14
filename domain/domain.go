@@ -194,6 +194,8 @@ func New(consensusConfig *consensus.Config, mempoolConfig *mempool.Config, db in
 	}
 
 	miningManagerFactory := miningmanager.NewFactory()
+
+	// We create a consensus wrapper because the actual consensus might change
 	consensusWrapper := consensusWrapper{consensus: &domainInstance.consensus}
 	domainInstance.miningManager = miningManagerFactory.NewMiningManager(consensusWrapper, &consensusConfig.Params, mempoolConfig)
 	return domainInstance, nil

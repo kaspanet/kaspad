@@ -27,17 +27,17 @@ type candidateTx struct {
 
 // blockTemplateBuilder creates block templates for a miner to consume
 type blockTemplateBuilder struct {
-	consensus consensusexternalapi.ConsensusWrapper
-	mempool   miningmanagerapi.Mempool
-	policy    policy
+	consensusWrapper consensusexternalapi.ConsensusWrapper
+	mempool          miningmanagerapi.Mempool
+	policy           policy
 }
 
 // New creates a new blockTemplateBuilder
-func New(consensus consensusexternalapi.ConsensusWrapper, mempool miningmanagerapi.Mempool, blockMaxMass uint64) miningmanagerapi.BlockTemplateBuilder {
+func New(consensusWrapper consensusexternalapi.ConsensusWrapper, mempool miningmanagerapi.Mempool, blockMaxMass uint64) miningmanagerapi.BlockTemplateBuilder {
 	return &blockTemplateBuilder{
-		consensus: consensus,
-		mempool:   mempool,
-		policy:    policy{BlockMaxMass: blockMaxMass},
+		consensusWrapper: consensusWrapper,
+		mempool:          mempool,
+		policy:           policy{BlockMaxMass: blockMaxMass},
 	}
 }
 
@@ -130,11 +130,11 @@ func (btb *blockTemplateBuilder) GetBlockTemplate(coinbaseData *consensusexterna
 		len(candidateTxs))
 
 	blockTxs := btb.selectTransactions(candidateTxs)
-	blk, err := btb.consensus.Consensus().BuildBlock(coinbaseData, blockTxs.selectedTxs)
+	blk, err := btb.consensusWrapper.Consensus().BuildBlock(coinbaseData, blockTxs.selectedTxs)
 
 	invalidTxsErr := ruleerrors.ErrInvalidTransactionsInNewBlock{}
 	if errors.As(err, &invalidTxsErr) {
-		log.Criticalf("consensus.BuildBlock returned invalid txs in GetBlockTemplate: %s", err)
+		log.Criticalf("consensusWrapper.BuildBlock returned invalid txs in GetBlockTemplate: %s", err)
 		invalidTxs := make([]*consensusexternalapi.DomainTransaction, 0, len(invalidTxsErr.InvalidTransactions))
 		for _, tx := range invalidTxsErr.InvalidTransactions {
 			invalidTxs = append(invalidTxs, tx.Transaction)
