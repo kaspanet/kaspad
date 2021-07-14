@@ -58,6 +58,7 @@ func sign(params *dagconfig.Params, mnemonic string, partiallySignedTransaction 
 			false, // This is a fake value, because it's irrelevant for the signature
 			0,     // This is a fake value, because it's irrelevant for the signature
 		)
+		partiallySignedTransaction.Tx.Inputs[i].SigOpCount = byte(len(partiallySignedInput.PubKeySignaturePairs))
 	}
 
 	signed := false

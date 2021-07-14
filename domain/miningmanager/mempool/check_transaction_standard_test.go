@@ -44,13 +44,13 @@ func TestCalcMinRequiredTxRelayFee(t *testing.T) {
 		},
 		{
 			"max standard tx size with default minimum relay fee",
-			maximumStandardTransactionSize,
+			maximumStandardTransactionMass,
 			defaultMinimumRelayTransactionFee,
 			100000,
 		},
 		{
 			"max standard tx size with max sompi relay fee",
-			maximumStandardTransactionSize,
+			maximumStandardTransactionMass,
 			util.MaxSompi,
 			util.MaxSompi,
 		},
@@ -244,7 +244,7 @@ func TestCheckTransactionStandardInIsolation(t *testing.T) {
 			name: "Transaction size is too large",
 			tx: &externalapi.DomainTransaction{Version: 0, Inputs: []*externalapi.DomainTransactionInput{&dummyTxIn}, Outputs: []*externalapi.DomainTransactionOutput{{
 				Value:           0,
-				ScriptPublicKey: &externalapi.ScriptPublicKey{bytes.Repeat([]byte{0x00}, maximumStandardTransactionSize+1), 0},
+				ScriptPublicKey: &externalapi.ScriptPublicKey{bytes.Repeat([]byte{0x00}, maximumStandardTransactionMass+1), 0},
 			}}},
 			height:     300000,
 			isStandard: false,

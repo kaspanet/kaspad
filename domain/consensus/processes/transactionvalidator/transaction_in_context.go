@@ -1,6 +1,8 @@
 package transactionvalidator
 
 import (
+	"math"
+
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
@@ -11,11 +13,63 @@ import (
 	"github.com/pkg/errors"
 )
 
-// ValidateTransactionInContextAndPopulateMassAndFee validates the transaction against its referenced UTXO, and
-// populates its mass and fee fields.
+// IsFinalizedTransaction determines whether or not a transaction is finalized.
+func (v *transactionValidator) IsFinalizedTransaction(tx *externalapi.DomainTransaction, blockDAAScore uint64, blockTime int64) bool {
+	// Lock time of zero means the transaction is finalized.
+	lockTime := tx.LockTime
+	if lockTime == 0 {
+		return true
+	}
+
+	// The lock time field of a transaction is either a block DAA score at
+	// which the transaction is finalized or a timestamp depending on if the
+	// value is before the constants.LockTimeThreshold. When it is under the
+	// threshold it is a DAA score.
+	blockTimeOrBlueScore := uint64(0)
+	if lockTime < constants.LockTimeThreshold {
+		blockTimeOrBlueScore = blockDAAScore
+	} else {
+		blockTimeOrBlueScore = uint64(blockTime)
+	}
+	if lockTime < blockTimeOrBlueScore {
+		return true
+	}
+
+	// At this point, the transaction's lock time hasn't occurred yet, but
+	// the transaction might still be finalized if the sequence number
+	// for all transaction inputs is maxed out.
+	for _, input := range tx.Inputs {
+		if input.Sequence != math.MaxUint64 {
+			return false
+		}
+	}
+	return true
+}
+
+// ValidateTransactionInContextIgnoringUTXO validates the transaction with consensus context but ignoring UTXO
+func (v *transactionValidator) ValidateTransactionInContextIgnoringUTXO(stagingArea *model.StagingArea, tx *externalapi.DomainTransaction,
+	povBlockHash *externalapi.DomainHash) error {
+
+	povBlockDAAScore, err := v.daaBlocksStore.DAAScore(v.databaseContext, stagingArea, povBlockHash)
+	if err != nil {
+		return err
+	}
+	povBlockPastMedianTime, err := v.pastMedianTimeManager.PastMedianTime(stagingArea, povBlockHash)
+	if err != nil {
+		return err
+	}
+	if isFinalized := v.IsFinalizedTransaction(tx, povBlockDAAScore, povBlockPastMedianTime); !isFinalized {
+		return errors.Wrapf(ruleerrors.ErrUnfinalizedTx, "unfinalized transaction %v", tx)
+	}
+
+	return nil
+}
+
+// ValidateTransactionInContextAndPopulateFee validates the transaction against its referenced UTXO, and
+// populates its fee field.
 //
-// Note: if the function fails, there's no guarantee that the transaction mass and fee fields will remain unaffected.
-func (v *transactionValidator) ValidateTransactionInContextAndPopulateMassAndFee(stagingArea *model.StagingArea,
+// Note: if the function fails, there's no guarantee that the transaction fee field will remain unaffected.
+func (v *transactionValidator) ValidateTransactionInContextAndPopulateFee(stagingArea *model.StagingArea,
 	tx *externalapi.DomainTransaction, povBlockHash *externalapi.DomainHash, selectedParentMedianTime int64) error {
 
 	err := v.checkTransactionCoinbaseMaturity(stagingArea, povBlockHash, tx)
@@ -40,12 +94,12 @@ func (v *transactionValidator) ValidateTransactionInContextAndPopulateMassAndFee
 		return err
 	}
 
-	err = v.validateTransactionScripts(tx)
+	err = v.validateTransactionSigOpCounts(tx)
 	if err != nil {
 		return err
 	}
 
-	tx.Mass, err = v.transactionMass(tx)
+	err = v.validateTransactionScripts(tx)
 	if err != nil {
 		return err
 	}
@@ -293,4 +347,22 @@ func (v *transactionValidator) sequenceLockActive(sequenceLock *sequenceLock, bl
 	}
 
 	return true
+}
+
+func (v *transactionValidator) validateTransactionSigOpCounts(tx *externalapi.DomainTransaction) error {
+	for i, input := range tx.Inputs {
+		utxoEntry := input.UTXOEntry
+
+		// Count the precise number of signature operations in the
+		// referenced public key script.
+		sigScript := input.SignatureScript
+		isP2SH := txscript.IsPayToScriptHash(utxoEntry.ScriptPublicKey())
+		sigOpCount := txscript.GetPreciseSigOpCount(sigScript, utxoEntry.ScriptPublicKey(), isP2SH)
+		if sigOpCount != int(input.SigOpCount) {
+			return errors.Wrapf(ruleerrors.ErrWrongSigOpCount,
+				"input %d specifies SigOpCount %d while actual SigOpCount is %d",
+				i, input.SigOpCount, sigOpCount)
+		}
+	}
+	return nil
 }

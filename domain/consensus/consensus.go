@@ -92,7 +92,11 @@ func (s *consensus) ValidateTransactionAndPopulateWithConsensusData(transaction 
 		return err
 	}
 
-	return s.transactionValidator.ValidateTransactionInContextAndPopulateMassAndFee(
+	err = s.transactionValidator.ValidateTransactionInContextIgnoringUTXO(stagingArea, transaction, model.VirtualBlockHash)
+	if err != nil {
+		return err
+	}
+	return s.transactionValidator.ValidateTransactionInContextAndPopulateFee(
 		stagingArea, transaction, model.VirtualBlockHash, virtualSelectedParentMedianTime)
 }
 
@@ -550,4 +554,8 @@ func (s *consensus) EstimateNetworkHashesPerSecond(startHash *externalapi.Domain
 	defer s.lock.Unlock()
 
 	return s.difficultyManager.EstimateNetworkHashesPerSecond(startHash, windowSize)
+}
+
+func (s *consensus) PopulateMass(transaction *externalapi.DomainTransaction) {
+	s.transactionValidator.PopulateMass(transaction)
 }

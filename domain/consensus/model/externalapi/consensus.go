@@ -35,4 +35,5 @@ type Consensus interface {
 	GetHeadersSelectedTip() (*DomainHash, error)
 	Anticone(blockHash *DomainHash) ([]*DomainHash, error)
 	EstimateNetworkHashesPerSecond(startHash *DomainHash, windowSize int) (uint64, error)
+	PopulateMass(transaction *DomainTransaction)
 }
