@@ -10,6 +10,7 @@ type TransactionValidator interface {
 	ValidateTransactionInIsolation(transaction *externalapi.DomainTransaction) error
 	ValidateTransactionInContextIgnoringUTXO(stagingArea *StagingArea, tx *externalapi.DomainTransaction,
 		povBlockHash *externalapi.DomainHash) error
-	ValidateTransactionInContextAndPopulateMassAndFee(stagingArea *StagingArea,
+	ValidateTransactionInContextAndPopulateFee(stagingArea *StagingArea,
 		tx *externalapi.DomainTransaction, povBlockHash *externalapi.DomainHash, selectedParentMedianTime int64) error
+	PopulateMass(transaction *externalapi.DomainTransaction)
 }

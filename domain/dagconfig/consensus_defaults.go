@@ -1,8 +1,9 @@
 package dagconfig
 
 import (
-	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
 	"time"
+
+	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
 )
 
 // The documentation refers to the following constants which aren't explicated in the code:
@@ -23,30 +24,32 @@ import (
 
 const (
 	defaultMaxCoinbasePayloadLength = 150
-	// defaultMaxBlockSize is a bound on the size of a block in bytes, larger values increase the bound d
+	// defaultMaxBlockMass is a bound on the mass of a block, larger values increase the bound d
 	// on the round trip time of a block, which affects the other parameters as described below
-	defaultMaxBlockSize = 50_000
-	// defaultMaxBlockParents is the number of blocks any block can point to.
-	// Should be about d/defaultTargetTimePerBlock where d is a bound on the round trip time of a block.
-	defaultMaxBlockParents         = 10
+	defaultMaxBlockMass = 500_000
+	// defaultMassPerTxByte, defaultMassPerScriptPubKeyByte and defaultMassPerSigOp define the number of grams per
+	// transaction byte, script pub key byte and sig op respectively.
+	// These values are used when calculating a transactions mass.
 	defaultMassPerTxByte           = 1
 	defaultMassPerScriptPubKeyByte = 10
-	defaultMassPerSigOp            = 10000
-	// defaultMergeSetSizeLimit is a bound on the size of the past of a block and the size of the past
-	// of its selected parent. Any block which violates this bound is invalid.
-	// Should be at least an order of magnitude smaller than defaultFinalityDuration/defaultTargetTimePerBlock.
-	// (Higher values make pruning attacks easier by a constant, lower values make merging after a split or a spike
-	// in block take longer)
-	defaultMergeSetSizeLimit                       = 1000
-	defaultMaxMassAcceptedByBlock                  = 500_000
-	defaultBaseSubsidy                             = 50 * constants.SompiPerKaspa
-	defaultCoinbasePayloadScriptPublicKeyMaxLength = 150
+	defaultMassPerSigOp            = 1000
+	// defaultMaxBlockParents is the number of blocks any block can point to.
+	// Should be about d/defaultTargetTimePerBlock where d is a bound on the round trip time of a block.
+	defaultMaxBlockParents = 10
 	// defaultGHOSTDAGK is a bound on the number of blue blocks in the anticone of a blue block. Approximates the maximal
 	// width of the network.
 	// Formula (1) in section 4.2 of the PHATOM paper shows how to calculate defaultGHOSTDAGK. The delta term represents a bound
 	// on the expected fraction of the network life in which the width was higher than defaultGHOSTDAGK. The current value of K
 	// was calculated for d = 5 seconds and delta = 0.05.
 	defaultGHOSTDAGK = 18
+	// defaultMergeSetSizeLimit is a bound on the size of the past of a block and the size of the past
+	// of its selected parent. Any block which violates this bound is invalid.
+	// Should be at least an order of magnitude smaller than defaultFinalityDuration/defaultTargetTimePerBlock.
+	// (Higher values make pruning attacks easier by a constant, lower values make merging after a split or a spike
+	// in block take longer)
+	defaultMergeSetSizeLimit                       = defaultGHOSTDAGK * 10
+	defaultBaseSubsidy                             = 50 * constants.SompiPerKaspa
+	defaultCoinbasePayloadScriptPublicKeyMaxLength = 150
 	// defaultDifficultyAdjustmentWindowSize is the number of blocks in a block's past used to calculate its difficulty
 	// target.
 	defaultDifficultyAdjustmentWindowSize = 2640

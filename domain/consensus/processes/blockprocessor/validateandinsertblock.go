@@ -60,7 +60,6 @@ func (bp *blockProcessor) setBlockStatusAfterBlockValidation(
 }
 
 func (bp *blockProcessor) updateVirtualAcceptanceDataAfterImportingPruningPoint(stagingArea *model.StagingArea) error {
-
 	_, virtualAcceptanceData, virtualMultiset, err :=
 		bp.consensusStateManager.CalculatePastUTXOAndAcceptanceData(stagingArea, model.VirtualBlockHash)
 	if err != nil {

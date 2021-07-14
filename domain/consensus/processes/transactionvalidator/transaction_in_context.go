@@ -65,11 +65,11 @@ func (v *transactionValidator) ValidateTransactionInContextIgnoringUTXO(stagingA
 	return nil
 }
 
-// ValidateTransactionInContextAndPopulateMassAndFee validates the transaction against its referenced UTXO, and
-// populates its mass and fee fields.
+// ValidateTransactionInContextAndPopulateFee validates the transaction against its referenced UTXO, and
+// populates its fee field.
 //
-// Note: if the function fails, there's no guarantee that the transaction mass and fee fields will remain unaffected.
-func (v *transactionValidator) ValidateTransactionInContextAndPopulateMassAndFee(stagingArea *model.StagingArea,
+// Note: if the function fails, there's no guarantee that the transaction fee field will remain unaffected.
+func (v *transactionValidator) ValidateTransactionInContextAndPopulateFee(stagingArea *model.StagingArea,
 	tx *externalapi.DomainTransaction, povBlockHash *externalapi.DomainHash, selectedParentMedianTime int64) error {
 
 	err := v.checkTransactionCoinbaseMaturity(stagingArea, povBlockHash, tx)
@@ -94,12 +94,12 @@ func (v *transactionValidator) ValidateTransactionInContextAndPopulateMassAndFee
 		return err
 	}
 
-	err = v.validateTransactionScripts(tx)
+	err = v.validateTransactionSigOpCounts(tx)
 	if err != nil {
 		return err
 	}
 
-	tx.Mass, err = v.transactionMass(tx)
+	err = v.validateTransactionScripts(tx)
 	if err != nil {
 		return err
 	}
@@ -398,4 +398,22 @@ func (v *transactionValidator) sequenceLockActive(sequenceLock *sequenceLock, bl
 	}
 
 	return true
+}
+
+func (v *transactionValidator) validateTransactionSigOpCounts(tx *externalapi.DomainTransaction) error {
+	for i, input := range tx.Inputs {
+		utxoEntry := input.UTXOEntry
+
+		// Count the precise number of signature operations in the
+		// referenced public key script.
+		sigScript := input.SignatureScript
+		isP2SH := txscript.IsPayToScriptHash(utxoEntry.ScriptPublicKey())
+		sigOpCount := txscript.GetPreciseSigOpCount(sigScript, utxoEntry.ScriptPublicKey(), isP2SH)
+		if sigOpCount != int(input.SigOpCount) {
+			return errors.Wrapf(ruleerrors.ErrWrongSigOpCount,
+				"input %d specifies SigOpCount %d while actual SigOpCount is %d",
+				i, input.SigOpCount, sigOpCount)
+		}
+	}
+	return nil
 }
