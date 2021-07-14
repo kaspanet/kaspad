@@ -40,18 +40,9 @@ func (x *KaspadMessage_GetVirtualSelectedParentChainFromBlockResponse) fromAppMe
 	if message.Error != nil {
 		err = &RPCError{Message: message.Error.Message}
 	}
-	addedChainBlocks := make([]*ChainBlock, len(message.AddedChainBlocks))
-	for i, addedChainBlock := range message.AddedChainBlocks {
-		protoAddedChainBlock := &ChainBlock{}
-		err := protoAddedChainBlock.fromAppMessage(addedChainBlock)
-		if err != nil {
-			return err
-		}
-		addedChainBlocks[i] = protoAddedChainBlock
-	}
 	x.GetVirtualSelectedParentChainFromBlockResponse = &GetVirtualSelectedParentChainFromBlockResponseMessage{
 		RemovedChainBlockHashes: message.RemovedChainBlockHashes,
-		AddedChainBlocks:        addedChainBlocks,
+		AddedChainBlockHashes:   message.AddedChainBlockHashes,
 		Error:                   err,
 	}
 	return nil
@@ -67,21 +58,13 @@ func (x *GetVirtualSelectedParentChainFromBlockResponseMessage) toAppMessage() (
 		return nil, err
 	}
 
-	if rpcErr != nil && (len(x.AddedChainBlocks) != 0 || len(x.RemovedChainBlockHashes) != 0) {
+	if rpcErr != nil && (len(x.AddedChainBlockHashes) != 0 || len(x.RemovedChainBlockHashes) != 0) {
 		return nil, errors.New("GetVirtualSelectedParentChainFromBlockResponseMessage contains both an error and a response")
 	}
 
-	addedChainBlocks := make([]*appmessage.ChainBlock, len(x.AddedChainBlocks))
-	for i, addedChainBlock := range x.AddedChainBlocks {
-		appAddedChainBlock, err := addedChainBlock.toAppMessage()
-		if err != nil {
-			return nil, err
-		}
-		addedChainBlocks[i] = appAddedChainBlock
-	}
 	return &appmessage.GetVirtualSelectedParentChainFromBlockResponseMessage{
 		RemovedChainBlockHashes: x.RemovedChainBlockHashes,
-		AddedChainBlocks:        addedChainBlocks,
+		AddedChainBlockHashes:   x.AddedChainBlockHashes,
 		Error:                   rpcErr,
 	}, nil
 }

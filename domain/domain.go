@@ -187,13 +187,22 @@ func New(consensusConfig *consensus.Config, mempoolConfig *mempool.Config, db in
 		return nil, err
 	}
 
-	miningManagerFactory := miningmanager.NewFactory()
-	miningManager := miningManagerFactory.NewMiningManager(consensusInstance, &consensusConfig.Params, mempoolConfig)
-
-	return &domain{
+	domainInstance := &domain{
 		consensus:       &consensusInstance,
-		miningManager:   miningManager,
 		consensusConfig: consensusConfig,
 		db:              db,
-	}, nil
+	}
+
+	miningManagerFactory := miningmanager.NewFactory()
+	consensusWrapper := consensusWrapper{consensus: &domainInstance.consensus}
+	domainInstance.miningManager = miningManagerFactory.NewMiningManager(consensusWrapper, &consensusConfig.Params, mempoolConfig)
+	return domainInstance, nil
+}
+
+type consensusWrapper struct {
+	consensus **externalapi.Consensus
+}
+
+func (wrapper consensusWrapper) Consensus() externalapi.Consensus {
+	return **wrapper.consensus
 }

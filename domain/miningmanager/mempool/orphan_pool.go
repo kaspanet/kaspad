@@ -120,7 +120,7 @@ func (op *orphansPool) checkOrphanDoubleSpend(transaction *externalapi.DomainTra
 }
 
 func (op *orphansPool) addOrphan(transaction *externalapi.DomainTransaction, isHighPriority bool) error {
-	virtualDAAScore, err := op.mempool.consensus.GetVirtualDAAScore()
+	virtualDAAScore, err := op.mempool.consensus.Consensus().GetVirtualDAAScore()
 	if err != nil {
 		return err
 	}
@@ -193,7 +193,7 @@ func (op *orphansPool) unorphanTransaction(transaction *model.OrphanTransaction)
 		return err
 	}
 
-	err = op.mempool.consensus.ValidateTransactionAndPopulateWithConsensusData(transaction.Transaction())
+	err = op.mempool.consensus.Consensus().ValidateTransactionAndPopulateWithConsensusData(transaction.Transaction())
 	if err != nil {
 		if errors.Is(err, ruleerrors.ErrImmatureSpend) {
 			return transactionRuleError(RejectImmatureSpend, "one of the transaction inputs spends an immature UTXO")
@@ -209,7 +209,7 @@ func (op *orphansPool) unorphanTransaction(transaction *model.OrphanTransaction)
 		return err
 	}
 
-	virtualDAAScore, err := op.mempool.consensus.GetVirtualDAAScore()
+	virtualDAAScore, err := op.mempool.consensus.Consensus().GetVirtualDAAScore()
 	if err != nil {
 		return err
 	}
@@ -269,7 +269,7 @@ func (op *orphansPool) removeRedeemersOf(transaction model.Transaction) error {
 }
 
 func (op *orphansPool) expireOrphanTransactions() error {
-	virtualDAAScore, err := op.mempool.consensus.GetVirtualDAAScore()
+	virtualDAAScore, err := op.mempool.consensus.Consensus().GetVirtualDAAScore()
 	if err != nil {
 		return err
 	}

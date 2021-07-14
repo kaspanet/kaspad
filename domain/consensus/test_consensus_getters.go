@@ -2,6 +2,7 @@ package consensus
 
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/model/testapi"
 	"github.com/kaspanet/kaspad/infrastructure/db/database"
 )
@@ -140,4 +141,8 @@ func (tc *testConsensus) HeadersSelectedChainStore() model.HeadersSelectedChainS
 
 func (tc *testConsensus) DAABlocksStore() model.DAABlocksStore {
 	return tc.daaBlocksStore
+}
+
+func (tc *testConsensus) Consensus() externalapi.Consensus {
+	return tc
 }

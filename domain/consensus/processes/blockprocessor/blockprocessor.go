@@ -143,12 +143,12 @@ func New(
 
 // ValidateAndInsertBlock validates the given block and, if valid, applies it
 // to the current state
-func (bp *blockProcessor) ValidateAndInsertBlock(block *externalapi.DomainBlock, validateUTXO bool) (*externalapi.BlockInsertionResult, error) {
+func (bp *blockProcessor) ValidateAndInsertBlock(block *externalapi.DomainBlock, shouldValidateAgainstUTXO bool) (*externalapi.BlockInsertionResult, error) {
 	onEnd := logger.LogAndMeasureExecutionTime(log, "ValidateAndInsertBlock")
 	defer onEnd()
 
 	stagingArea := model.NewStagingArea()
-	return bp.validateAndInsertBlock(stagingArea, block, false, validateUTXO, false)
+	return bp.validateAndInsertBlock(stagingArea, block, false, shouldValidateAgainstUTXO, false)
 }
 
 func (bp *blockProcessor) ValidateAndInsertImportedPruningPoint(newPruningPoint *externalapi.DomainHash) error {
@@ -159,11 +159,11 @@ func (bp *blockProcessor) ValidateAndInsertImportedPruningPoint(newPruningPoint 
 	return bp.validateAndInsertImportedPruningPoint(stagingArea, newPruningPoint)
 }
 
-func (bp *blockProcessor) ValidateAndInsertBlockWithMetaData(block *externalapi.BlockWithMetaData, validateUTXO bool) (*externalapi.BlockInsertionResult, error) {
+func (bp *blockProcessor) ValidateAndInsertBlockWithMetaData(block *externalapi.BlockWithMetaData, shouldValidateAgainstUTXO bool) (*externalapi.BlockInsertionResult, error) {
 	onEnd := logger.LogAndMeasureExecutionTime(log, "ValidateAndInsertBlockWithMetaData")
 	defer onEnd()
 
 	stagingArea := model.NewStagingArea()
 
-	return bp.validateAndInsertBlockWithMetaData(stagingArea, block, validateUTXO)
+	return bp.validateAndInsertBlockWithMetaData(stagingArea, block, shouldValidateAgainstUTXO)
 }

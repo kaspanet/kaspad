@@ -26,6 +26,7 @@ const (
 // TestConsensus wraps the Consensus interface with some methods that are needed by tests only
 type TestConsensus interface {
 	externalapi.Consensus
+	externalapi.ConsensusWrapper
 
 	DAGParams() *dagconfig.Params
 	DatabaseContext() model.DBManager

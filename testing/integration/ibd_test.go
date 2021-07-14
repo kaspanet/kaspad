@@ -1,6 +1,8 @@
 package integration
 
 import (
+	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
+	"reflect"
 	"sync"
 	"testing"
 	"time"
@@ -23,7 +25,11 @@ func TestIBD(t *testing.T) {
 	blockAddedWG := sync.WaitGroup{}
 	blockAddedWG.Add(numBlocks)
 	receivedBlocks := 0
+	disableOnBlockAddedHandler := false
 	setOnBlockAddedHandler(t, syncee, func(_ *appmessage.BlockAddedNotificationMessage) {
+		if disableOnBlockAddedHandler {
+			return
+		}
 		receivedBlocks++
 		blockAddedWG.Done()
 	})
@@ -36,6 +42,11 @@ func TestIBD(t *testing.T) {
 		t.Fatalf("Timeout waiting for IBD to finish. Received %d blocks out of %d", receivedBlocks, numBlocks)
 	case <-ReceiveFromChanWhenDone(func() { blockAddedWG.Wait() }):
 	}
+
+	disableOnBlockAddedHandler = true
+	// This should trigger resolving the syncee virtual
+	mineNextBlock(t, syncer)
+	time.Sleep(time.Second)
 
 	tip1Hash, err := syncer.rpcClient.GetSelectedTipHash()
 	if err != nil {
@@ -77,16 +88,16 @@ func TestIBDWithPruning(t *testing.T) {
 				t.Fatalf("Timeout waiting for IBD to finish.")
 			}
 
-			tip1Hash, err := syncer.rpcClient.GetSelectedTipHash()
+			syncerInfo, err := syncer.rpcClient.GetBlockDAGInfo()
 			if err != nil {
 				t.Fatalf("Error getting tip for syncer")
 			}
-			tip2Hash, err := syncee.rpcClient.GetSelectedTipHash()
+			synceeInfo, err := syncee.rpcClient.GetBlockDAGInfo()
 			if err != nil {
 				t.Fatalf("Error getting tip for syncee")
 			}
 
-			if tip1Hash.SelectedTipHash == tip2Hash.SelectedTipHash {
+			if reflect.DeepEqual(syncerInfo.TipHashes, synceeInfo.TipHashes) {
 				break
 			}
 		}
@@ -96,6 +107,18 @@ func TestIBDWithPruning(t *testing.T) {
 		case <-utxoSetOverriden:
 		case <-time.After(timeout):
 			t.Fatalf("expected pruning point UTXO set override notification, but it didn't get one after %s", timeout)
+		}
+
+		// This should trigger resolving the syncee virtual
+		syncerTip := mineNextBlock(t, syncer)
+		time.Sleep(time.Second)
+		synceeSelectedTip, err := syncee.rpcClient.GetSelectedTipHash()
+		if err != nil {
+			t.Fatalf("Error getting tip for syncee")
+		}
+
+		if synceeSelectedTip.SelectedTipHash != consensushashing.BlockHash(syncerTip).String() {
+			t.Fatalf("Unexpected selected tip")
 		}
 	}
 

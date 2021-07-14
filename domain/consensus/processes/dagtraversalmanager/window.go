@@ -10,9 +10,37 @@ import (
 // blocks in the past of highHash, the sorting is unspecified.
 // If the number of blocks in the past of startingNode is less then windowSize,
 func (dtm *dagTraversalManager) BlockWindow(stagingArea *model.StagingArea, highHash *externalapi.DomainHash, windowSize int) ([]*externalapi.DomainHash, error) {
+	windowHeap, err := dtm.blockWindowHeap(stagingArea, highHash, windowSize)
+	if err != nil {
+		return nil, err
+	}
 
+	window := make([]*externalapi.DomainHash, 0, len(windowHeap.impl.slice))
+	for _, b := range windowHeap.impl.slice {
+		window = append(window, b.Hash)
+	}
+	return window, nil
+}
+
+func (dtm *dagTraversalManager) BlockWindowWithGHOSTDAGData(stagingArea *model.StagingArea, highHash *externalapi.DomainHash, windowSize int) ([]*externalapi.BlockGHOSTDAGDataHashPair, error) {
+
+	windowHeap, err := dtm.blockWindowHeap(stagingArea, highHash, windowSize)
+	if err != nil {
+		return nil, err
+	}
+
+	window := make([]*externalapi.BlockGHOSTDAGDataHashPair, 0, len(windowHeap.impl.slice))
+	for _, b := range windowHeap.impl.slice {
+		window = append(window, (*externalapi.BlockGHOSTDAGDataHashPair)(b))
+	}
+	return window, nil
+}
+
+func (dtm *dagTraversalManager) blockWindowHeap(stagingArea *model.StagingArea, highHash *externalapi.DomainHash, windowSize int) (*sizedUpBlockHeap, error) {
+
+	windowHeap := dtm.newSizedUpHeap(stagingArea, windowSize)
 	if highHash.Equal(dtm.genesisHash) {
-		return nil, nil
+		return windowHeap, nil
 	}
 
 	current := highHash
@@ -20,8 +48,6 @@ func (dtm *dagTraversalManager) BlockWindow(stagingArea *model.StagingArea, high
 	if err != nil {
 		return nil, err
 	}
-
-	windowHeap := dtm.newSizedUpHeap(stagingArea, windowSize)
 
 	for {
 		if currentGHOSTDAGData.SelectedParent().Equal(dtm.genesisHash) {
@@ -99,9 +125,5 @@ func (dtm *dagTraversalManager) BlockWindow(stagingArea *model.StagingArea, high
 		currentGHOSTDAGData = selectedParentGHOSTDAGData
 	}
 
-	window := make([]*externalapi.DomainHash, 0, len(windowHeap.impl.slice))
-	for _, b := range windowHeap.impl.slice {
-		window = append(window, b.hash)
-	}
-	return window, nil
+	return windowHeap, nil
 }

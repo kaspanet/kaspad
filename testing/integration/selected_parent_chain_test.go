@@ -35,16 +35,16 @@ func TestVirtualSelectedParentChain(t *testing.T) {
 		if len(notification.RemovedChainBlockHashes) > 0 {
 			t.Fatalf("RemovedChainBlockHashes is unexpectedly not empty")
 		}
-		if len(notification.AddedChainBlocks) != 1 {
-			t.Fatalf("Unexpected length of AddedChainBlocks. Want: %d, got: %d",
-				1, len(notification.AddedChainBlocks))
+		if len(notification.AddedChainBlockHashes) != 1 {
+			t.Fatalf("Unexpected length of AddedChainBlockHashes. Want: %d, got: %d",
+				1, len(notification.AddedChainBlockHashes))
 		}
 
 		minedBlockHash := consensushashing.BlockHash(minedBlock)
 		minedBlockHashString := minedBlockHash.String()
-		if minedBlockHashString != notification.AddedChainBlocks[0].Hash {
-			t.Fatalf("Unexpected block hash in AddedChainBlocks. Want: %s, got: %s",
-				minedBlockHashString, notification.AddedChainBlocks[0].Hash)
+		if minedBlockHashString != notification.AddedChainBlockHashes[0] {
+			t.Fatalf("Unexpected block hash in AddedChainBlockHashes. Want: %s, got: %s",
+				minedBlockHashString, notification.AddedChainBlockHashes[0])
 		}
 		chain1TipHashString = minedBlockHashString
 	}
@@ -70,8 +70,8 @@ func TestVirtualSelectedParentChain(t *testing.T) {
 		if len(notification.RemovedChainBlockHashes) > 0 {
 			t.Fatalf("RemovedChainBlockHashes is unexpectedly not empty")
 		}
-		if len(notification.AddedChainBlocks) > 0 {
-			t.Fatalf("AddedChainBlocks is unexpectedly not empty")
+		if len(notification.AddedChainBlockHashes) > 0 {
+			t.Fatalf("AddedChainBlockHashes is unexpectedly not empty")
 		}
 	}
 
@@ -115,16 +115,16 @@ func TestVirtualSelectedParentChain(t *testing.T) {
 		t.Fatalf("Unexpected length of virtualSelectedParentChainFromChain1Tip.RemovedChainBlockHashes. Want: %d, got: %d",
 			blockAmountToMine, len(virtualSelectedParentChainFromChain1Tip.RemovedChainBlockHashes))
 	}
-	if len(virtualSelectedParentChainFromChain1Tip.AddedChainBlocks) != blockAmountToMine+1 {
-		t.Fatalf("Unexpected length of virtualSelectedParentChainFromChain1Tip.AddedChainBlocks. Want: %d, got: %d",
-			blockAmountToMine+1, len(virtualSelectedParentChainFromChain1Tip.AddedChainBlocks))
+	if len(virtualSelectedParentChainFromChain1Tip.AddedChainBlockHashes) != blockAmountToMine+1 {
+		t.Fatalf("Unexpected length of virtualSelectedParentChainFromChain1Tip.AddedChainBlockHashes. Want: %d, got: %d",
+			blockAmountToMine+1, len(virtualSelectedParentChainFromChain1Tip.AddedChainBlockHashes))
 	}
 
 	// Make sure that the last block in `added` is the tip
 	// of chain2
-	lastAddedChainBlock := virtualSelectedParentChainFromChain1Tip.AddedChainBlocks[len(virtualSelectedParentChainFromChain1Tip.AddedChainBlocks)-1]
-	if lastAddedChainBlock.Hash != chain2TipHashString {
+	lastAddedChainBlock := virtualSelectedParentChainFromChain1Tip.AddedChainBlockHashes[len(virtualSelectedParentChainFromChain1Tip.AddedChainBlockHashes)-1]
+	if lastAddedChainBlock != chain2TipHashString {
 		t.Fatalf("Unexpected last added chain block. Want: %s, got: %s",
-			chain2TipHashString, lastAddedChainBlock.Hash)
+			chain2TipHashString, lastAddedChainBlock)
 	}
 }

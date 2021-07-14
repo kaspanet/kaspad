@@ -15,15 +15,15 @@ import (
 type pruningManager struct {
 	databaseContext model.DBManager
 
-	dagTraversalManager    model.DAGTraversalManager
-	dagTopologyManager     model.DAGTopologyManager
-	consensusStateManager  model.ConsensusStateManager
-	consensusStateStore    model.ConsensusStateStore
-	ghostdagDataStore      model.GHOSTDAGDataStore
-	pruningStore           model.PruningStore
-	blockStatusStore       model.BlockStatusStore
-	headerSelectedTipStore model.HeaderSelectedTipStore
-	daaWindowStore         model.BlocksWithMetaDataDAAWindowStore
+	dagTraversalManager              model.DAGTraversalManager
+	dagTopologyManager               model.DAGTopologyManager
+	consensusStateManager            model.ConsensusStateManager
+	consensusStateStore              model.ConsensusStateStore
+	ghostdagDataStore                model.GHOSTDAGDataStore
+	pruningStore                     model.PruningStore
+	blockStatusStore                 model.BlockStatusStore
+	headerSelectedTipStore           model.HeaderSelectedTipStore
+	blocksWithMetaDataDAAWindowStore model.BlocksWithMetaDataDAAWindowStore
 
 	multiSetStore         model.MultisetStore
 	acceptanceDataStore   model.AcceptanceDataStore
@@ -62,7 +62,7 @@ func New(
 	utxoDiffStore model.UTXODiffStore,
 	daaBlocksStore model.DAABlocksStore,
 	reachabilityDataStore model.ReachabilityDataStore,
-	daaWindowStore model.BlocksWithMetaDataDAAWindowStore,
+	blocksWithMetaDataDAAWindowStore model.BlocksWithMetaDataDAAWindowStore,
 
 	isArchivalNode bool,
 	genesisHash *externalapi.DomainHash,
@@ -79,19 +79,19 @@ func New(
 		dagTopologyManager:    dagTopologyManager,
 		consensusStateManager: consensusStateManager,
 
-		consensusStateStore:    consensusStateStore,
-		ghostdagDataStore:      ghostdagDataStore,
-		pruningStore:           pruningStore,
-		blockStatusStore:       blockStatusStore,
-		multiSetStore:          multiSetStore,
-		acceptanceDataStore:    acceptanceDataStore,
-		blocksStore:            blocksStore,
-		blockHeaderStore:       blockHeaderStore,
-		utxoDiffStore:          utxoDiffStore,
-		headerSelectedTipStore: headerSelectedTipStore,
-		daaBlocksStore:         daaBlocksStore,
-		reachabilityDataStore:  reachabilityDataStore,
-		daaWindowStore:         daaWindowStore,
+		consensusStateStore:              consensusStateStore,
+		ghostdagDataStore:                ghostdagDataStore,
+		pruningStore:                     pruningStore,
+		blockStatusStore:                 blockStatusStore,
+		multiSetStore:                    multiSetStore,
+		acceptanceDataStore:              acceptanceDataStore,
+		blocksStore:                      blocksStore,
+		blockHeaderStore:                 blockHeaderStore,
+		utxoDiffStore:                    utxoDiffStore,
+		headerSelectedTipStore:           headerSelectedTipStore,
+		daaBlocksStore:                   daaBlocksStore,
+		reachabilityDataStore:            reachabilityDataStore,
+		blocksWithMetaDataDAAWindowStore: blocksWithMetaDataDAAWindowStore,
 
 		isArchivalNode:                  isArchivalNode,
 		genesisHash:                     genesisHash,
@@ -771,33 +771,21 @@ func (pm *pruningManager) blockWithMetaData(stagingArea *model.StagingArea, bloc
 	}
 
 	windowSize := pm.difficultyAdjustmentWindowSize + 1
-	window, err := pm.dagTraversalManager.BlockWindow(stagingArea, blockHash, windowSize)
+	window, err := pm.dagTraversalManager.BlockWindowWithGHOSTDAGData(stagingArea, blockHash, windowSize)
 	if err != nil {
 		return nil, err
 	}
 
 	windowPairs := make([]*externalapi.BlockWithMetaDataDAABlock, len(window))
-	for i, blockWindowHash := range window {
-		header, err := pm.blockHeaderStore.BlockHeader(pm.databaseContext, stagingArea, blockWindowHash)
+	for i, daaBlock := range window {
+		header, err := pm.blockHeaderStore.BlockHeader(pm.databaseContext, stagingArea, daaBlock.Hash)
 		if err != nil {
-			return nil, err
-		}
-
-		ghostdagData, err := pm.ghostdagDataStore.Get(pm.databaseContext, stagingArea, blockWindowHash, false)
-		if database.IsNotFoundError(err) {
-			daaBlock, err := pm.daaWindowStore.DAAWindowBlock(pm.databaseContext, stagingArea, blockHash, uint64(i))
-			if err != nil {
-				return nil, err
-			}
-
-			ghostdagData = daaBlock.GHOSTDAGData
-		} else if err != nil {
 			return nil, err
 		}
 
 		windowPairs[i] = &externalapi.BlockWithMetaDataDAABlock{
 			Header:       header,
-			GHOSTDAGData: ghostdagData,
+			GHOSTDAGData: daaBlock.GHOSTDAGData,
 		}
 	}
 

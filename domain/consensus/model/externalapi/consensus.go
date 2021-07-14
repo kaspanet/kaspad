@@ -4,10 +4,9 @@ package externalapi
 type Consensus interface {
 	Init(shouldNotAddGenesis bool) error
 	BuildBlock(coinbaseData *DomainCoinbaseData, transactions []*DomainTransaction) (*DomainBlock, error)
-	ValidateAndInsertBlock(block *DomainBlock, validateUTXO bool) (*BlockInsertionResult, error)
+	ValidateAndInsertBlock(block *DomainBlock, shouldValidateAgainstUTXO bool) (*BlockInsertionResult, error)
 	ValidateAndInsertBlockWithMetaData(block *BlockWithMetaData, validateUTXO bool) (*BlockInsertionResult, error)
 	ValidateTransactionAndPopulateWithConsensusData(transaction *DomainTransaction) error
-	ResolveVirtual() error
 
 	GetBlock(blockHash *DomainHash) (*DomainBlock, error)
 	GetBlockEvenIfHeaderOnly(blockHash *DomainHash) (*DomainBlock, error)
@@ -38,4 +37,8 @@ type Consensus interface {
 	GetHeadersSelectedTip() (*DomainHash, error)
 	Anticone(blockHash *DomainHash) ([]*DomainHash, error)
 	EstimateNetworkHashesPerSecond(startHash *DomainHash, windowSize int) (uint64, error)
+}
+
+type ConsensusWrapper interface {
+	Consensus() Consensus
 }

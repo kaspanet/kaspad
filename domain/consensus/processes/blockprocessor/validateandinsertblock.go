@@ -77,7 +77,7 @@ func (bp *blockProcessor) updateVirtualAcceptanceDataAfterImportingPruningPoint(
 }
 
 func (bp *blockProcessor) validateAndInsertBlock(stagingArea *model.StagingArea, block *externalapi.DomainBlock,
-	isPruningPoint bool, validateUTXO bool, isBlockWithPrefilledData bool) (*externalapi.BlockInsertionResult, error) {
+	isPruningPoint bool, shouldValidateAgainstUTXO bool, isBlockWithPrefilledData bool) (*externalapi.BlockInsertionResult, error) {
 
 	blockHash := consensushashing.HeaderHash(block.Header)
 	err := bp.validateBlock(stagingArea, block, isBlockWithPrefilledData)
@@ -114,7 +114,7 @@ func (bp *blockProcessor) validateAndInsertBlock(stagingArea *model.StagingArea,
 	isHeaderOnlyBlock := isHeaderOnlyBlock(block)
 	if !isHeaderOnlyBlock {
 		// Attempt to add the block to the virtual
-		selectedParentChainChanges, virtualUTXODiff, reversalData, err = bp.consensusStateManager.AddBlock(stagingArea, blockHash, validateUTXO)
+		selectedParentChainChanges, virtualUTXODiff, reversalData, err = bp.consensusStateManager.AddBlock(stagingArea, blockHash, shouldValidateAgainstUTXO)
 		if err != nil {
 			return nil, err
 		}
@@ -127,7 +127,7 @@ func (bp *blockProcessor) validateAndInsertBlock(stagingArea *model.StagingArea,
 		}
 	}
 
-	if !isHeaderOnlyBlock && validateUTXO {
+	if !isHeaderOnlyBlock && shouldValidateAgainstUTXO {
 		// Trigger pruning, which will check if the pruning point changed and delete the data if it did.
 		err = bp.pruningManager.UpdatePruningPointByVirtual(stagingArea)
 		if err != nil {

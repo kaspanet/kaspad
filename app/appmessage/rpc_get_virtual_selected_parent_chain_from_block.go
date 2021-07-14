@@ -24,7 +24,7 @@ func NewGetVirtualSelectedParentChainFromBlockRequestMessage(startHash string) *
 type GetVirtualSelectedParentChainFromBlockResponseMessage struct {
 	baseMessage
 	RemovedChainBlockHashes []string
-	AddedChainBlocks        []*ChainBlock
+	AddedChainBlockHashes   []string
 
 	Error *RPCError
 }
@@ -35,11 +35,11 @@ func (msg *GetVirtualSelectedParentChainFromBlockResponseMessage) Command() Mess
 }
 
 // NewGetVirtualSelectedParentChainFromBlockResponseMessage returns a instance of the message
-func NewGetVirtualSelectedParentChainFromBlockResponseMessage(removedChainBlockHashes []string,
-	addedChainBlocks []*ChainBlock) *GetVirtualSelectedParentChainFromBlockResponseMessage {
+func NewGetVirtualSelectedParentChainFromBlockResponseMessage(removedChainBlockHashes,
+	addedChainBlocks []string) *GetVirtualSelectedParentChainFromBlockResponseMessage {
 
 	return &GetVirtualSelectedParentChainFromBlockResponseMessage{
 		RemovedChainBlockHashes: removedChainBlockHashes,
-		AddedChainBlocks:        addedChainBlocks,
+		AddedChainBlockHashes:   addedChainBlocks,
 	}
 }

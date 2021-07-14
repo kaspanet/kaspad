@@ -60,15 +60,8 @@ func (flow *handleRelayInvsFlow) runIBDIfNotRunning(highHash *externalapi.Domain
 		}
 	}
 
-	log.Debugf("Finished syncing blocks up to %s. Resolving virtual.", highHash)
-	err = flow.Domain().Consensus().ResolveVirtual()
-	if err != nil {
-		return err
-	}
-	log.Debugf("Finished resolving virtual")
-
+	log.Debugf("Finished syncing blocks up to %s", highHash)
 	isFinishedSuccessfully = true
-
 	return nil
 }
 

@@ -46,8 +46,6 @@
     - [NotifyVirtualSelectedParentChainChangedRequestMessage](#protowire.NotifyVirtualSelectedParentChainChangedRequestMessage)
     - [NotifyVirtualSelectedParentChainChangedResponseMessage](#protowire.NotifyVirtualSelectedParentChainChangedResponseMessage)
     - [VirtualSelectedParentChainChangedNotificationMessage](#protowire.VirtualSelectedParentChainChangedNotificationMessage)
-    - [ChainBlock](#protowire.ChainBlock)
-    - [AcceptedBlock](#protowire.AcceptedBlock)
     - [GetBlockRequestMessage](#protowire.GetBlockRequestMessage)
     - [GetBlockResponseMessage](#protowire.GetBlockResponseMessage)
     - [GetSubnetworkRequestMessage](#protowire.GetSubnetworkRequestMessage)
@@ -727,6 +725,7 @@ SubmitTransactionRequestMessage submits a transaction to the mempool
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | transaction | [RpcTransaction](#protowire.RpcTransaction) |  |  |
+| allowOrphan | [bool](#bool) |  |  |
 
 
 
@@ -788,39 +787,7 @@ See: NotifyVirtualSelectedParentChainChangedRequestMessage
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | removedChainBlockHashes | [string](#string) | repeated | The chain blocks that were removed, in high-to-low order |
-| addedChainBlocks | [ChainBlock](#protowire.ChainBlock) | repeated | The chain blocks that were added, in low-to-high order |
-
-
-
-
-
-
-<a name="protowire.ChainBlock"></a>
-
-### ChainBlock
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| hash | [string](#string) |  |  |
-| acceptedBlocks | [AcceptedBlock](#protowire.AcceptedBlock) | repeated |  |
-
-
-
-
-
-
-<a name="protowire.AcceptedBlock"></a>
-
-### AcceptedBlock
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| hash | [string](#string) |  |  |
-| acceptedTransactionIds | [string](#string) | repeated |  |
+| addedChainBlockHashes | [string](#string) | repeated | The chain blocks that were added, in low-to-high order |
 
 
 
@@ -917,7 +884,7 @@ parent chain from some startHash to this kaspad&#39;s current virtual
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | removedChainBlockHashes | [string](#string) | repeated | The chain blocks that were removed, in high-to-low order |
-| addedChainBlocks | [ChainBlock](#protowire.ChainBlock) | repeated | The chain blocks that were added, in low-to-high order |
+| addedChainBlockHashes | [string](#string) | repeated | The chain blocks that were added, in low-to-high order |
 | error | [RPCError](#protowire.RPCError) |  |  |
 
 

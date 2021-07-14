@@ -143,10 +143,6 @@ func (f *fakeRelayInvsContext) ValidateAndInsertBlockWithMetaData(block *externa
 	panic("implement me")
 }
 
-func (f *fakeRelayInvsContext) ResolveVirtual() error {
-	panic("implement me")
-}
-
 func (f *fakeRelayInvsContext) PruningPointAndItsAnticoneWithMetaData() ([]*externalapi.BlockWithMetaData, error) {
 	panic("implement me")
 }

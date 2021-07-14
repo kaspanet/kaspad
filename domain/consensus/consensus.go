@@ -126,13 +126,6 @@ func (s *consensus) Init(shouldNotAddGenesis bool) error {
 	return nil
 }
 
-func (s *consensus) ResolveVirtual() error {
-	s.lock.Lock()
-	defer s.lock.Unlock()
-
-	return s.consensusStateManager.ResolveVirtual()
-}
-
 func (s *consensus) PruningPointAndItsAnticoneWithMetaData() ([]*externalapi.BlockWithMetaData, error) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
@@ -153,11 +146,11 @@ func (s *consensus) BuildBlock(coinbaseData *externalapi.DomainCoinbaseData,
 
 // ValidateAndInsertBlock validates the given block and, if valid, applies it
 // to the current state
-func (s *consensus) ValidateAndInsertBlock(block *externalapi.DomainBlock, validateUTXO bool) (*externalapi.BlockInsertionResult, error) {
+func (s *consensus) ValidateAndInsertBlock(block *externalapi.DomainBlock, shouldValidateAgainstUTXO bool) (*externalapi.BlockInsertionResult, error) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	return s.blockProcessor.ValidateAndInsertBlock(block, validateUTXO)
+	return s.blockProcessor.ValidateAndInsertBlock(block, shouldValidateAgainstUTXO)
 }
 
 // ValidateTransactionAndPopulateWithConsensusData validates the given transaction

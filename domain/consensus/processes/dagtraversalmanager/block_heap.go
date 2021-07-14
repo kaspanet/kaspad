@@ -7,13 +7,10 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 )
 
-type blockHeapNode struct {
-	hash         *externalapi.DomainHash
-	ghostdagData *externalapi.BlockGHOSTDAGData
-}
+type blockHeapNode externalapi.BlockGHOSTDAGDataHashPair
 
 func (left *blockHeapNode) less(right *blockHeapNode, gm model.GHOSTDAGManager) bool {
-	return gm.Less(left.hash, left.ghostdagData, right.hash, right.ghostdagData)
+	return gm.Less(left.Hash, left.GHOSTDAGData, right.Hash, right.GHOSTDAGData)
 }
 
 // baseHeap  is an implementation for heap.Interface that sorts blocks by their blueWork+hash
@@ -94,7 +91,7 @@ func (dtm *dagTraversalManager) NewUpHeap(stagingArea *model.StagingArea) model.
 
 // Pop removes the block with lowest blueWork+hash from this heap and returns it
 func (bh *blockHeap) Pop() *externalapi.DomainHash {
-	return heap.Pop(bh.impl).(*blockHeapNode).hash
+	return heap.Pop(bh.impl).(*blockHeapNode).Hash
 }
 
 // Push pushes the block onto the heap
@@ -105,8 +102,8 @@ func (bh *blockHeap) Push(blockHash *externalapi.DomainHash) error {
 	}
 
 	heap.Push(bh.impl, &blockHeapNode{
-		hash:         blockHash,
-		ghostdagData: ghostdagData,
+		Hash:         blockHash,
+		GHOSTDAGData: ghostdagData,
 	})
 
 	return nil
@@ -164,7 +161,7 @@ func (sbh *sizedUpBlockHeap) len() int {
 
 // pop removes the block with lowest blueWork+hash from this heap and returns it
 func (sbh *sizedUpBlockHeap) pop() *externalapi.DomainHash {
-	return heap.Pop(&sbh.impl).(*blockHeapNode).hash
+	return heap.Pop(&sbh.impl).(*blockHeapNode).Hash
 }
 
 // tryPushWithGHOSTDAGData is just like tryPush but the caller provides the ghostdagData of the block.
@@ -172,8 +169,8 @@ func (sbh *sizedUpBlockHeap) tryPushWithGHOSTDAGData(blockHash *externalapi.Doma
 	ghostdagData *externalapi.BlockGHOSTDAGData) (bool, error) {
 
 	node := &blockHeapNode{
-		hash:         blockHash,
-		ghostdagData: ghostdagData,
+		Hash:         blockHash,
+		GHOSTDAGData: ghostdagData,
 	}
 	if len(sbh.impl.slice) == cap(sbh.impl.slice) {
 		min := sbh.impl.peek()
