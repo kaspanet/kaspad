@@ -49,7 +49,7 @@ const (
 	defaultGHOSTDAGK = 18
 	// defaultDifficultyAdjustmentWindowSize is the number of blocks in a block's past used to calculate its difficulty
 	// target.
-	defaultDifficultyAdjustmentWindowSize = 2640
+	defaultDifficultyAdjustmentWindowSize = 2641
 	// defaultTimestampDeviationTolerance is the allowed deviance of an inconming block's timestamp, measured in block delays.
 	// A new block can't hold a timestamp lower than the median timestamp of the (defaultTimestampDeviationTolerance*2-1) blocks
 	// with highest accumulated blue work in its past, such blocks are considered invalid.

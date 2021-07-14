@@ -26,6 +26,7 @@ type handleRequestPruningPointUTXOSetFlow struct {
 // the pruning point UTXO set and block body.
 func HandleRequestPruningPointUTXOSet(context HandleRequestPruningPointUTXOSetContext, incomingRoute,
 	outgoingRoute *router.Route) error {
+
 	flow := &handleRequestPruningPointUTXOSetFlow{
 		HandleRequestPruningPointUTXOSetContext: context,
 		incomingRoute:                           incomingRoute,

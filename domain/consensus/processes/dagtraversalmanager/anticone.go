@@ -6,7 +6,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/utils/hashset"
 )
 
-func (dtm *dagTraversalManager) AnticoneFromVirtual(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) (
+func (dtm *dagTraversalManager) AnticoneFromVirtualPOV(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) (
 	[]*externalapi.DomainHash, error) {
 
 	virtualParents, err := dtm.dagTopologyManager.Parents(stagingArea, model.VirtualBlockHash)
@@ -14,7 +14,7 @@ func (dtm *dagTraversalManager) AnticoneFromVirtual(stagingArea *model.StagingAr
 		return nil, err
 	}
 
-	return dtm.anticoneFromTips(stagingArea, virtualParents, blockHash)
+	return dtm.anticoneFromBlocks(stagingArea, virtualParents, blockHash)
 }
 
 func (dtm *dagTraversalManager) Anticone(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) (
@@ -25,10 +25,10 @@ func (dtm *dagTraversalManager) Anticone(stagingArea *model.StagingArea, blockHa
 		return nil, err
 	}
 
-	return dtm.anticoneFromTips(stagingArea, tips, blockHash)
+	return dtm.anticoneFromBlocks(stagingArea, tips, blockHash)
 }
 
-func (dtm *dagTraversalManager) anticoneFromTips(stagingArea *model.StagingArea, tips []*externalapi.DomainHash, blockHash *externalapi.DomainHash) (
+func (dtm *dagTraversalManager) anticoneFromBlocks(stagingArea *model.StagingArea, tips []*externalapi.DomainHash, blockHash *externalapi.DomainHash) (
 	[]*externalapi.DomainHash, error) {
 
 	anticone := []*externalapi.DomainHash{}

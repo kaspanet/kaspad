@@ -31,7 +31,7 @@ func TestDifficulty(t *testing.T) {
 		}
 
 		consensusConfig.K = 1
-		consensusConfig.DifficultyAdjustmentWindowSize = 264
+		consensusConfig.DifficultyAdjustmentWindowSize = 265
 
 		factory := consensus.NewFactory()
 		tc, teardown, err := factory.NewTestConsensus(consensusConfig, "TestDifficulty")
@@ -231,7 +231,7 @@ func TestDifficulty(t *testing.T) {
 
 func TestDAAScore(t *testing.T) {
 	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
-		consensusConfig.DifficultyAdjustmentWindowSize = 264
+		consensusConfig.DifficultyAdjustmentWindowSize = 265
 
 		stagingArea := model.NewStagingArea()
 

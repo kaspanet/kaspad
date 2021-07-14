@@ -77,8 +77,7 @@ func (dm *difficultyManager) StageDAADataAndReturnRequiredDifficulty(
 	onEnd := logger.LogAndMeasureExecutionTime(log, "StageDAADataAndReturnRequiredDifficulty")
 	defer onEnd()
 
-	// Fetch window of dag.difficultyAdjustmentWindowSize + 1 so we can have dag.difficultyAdjustmentWindowSize block intervals
-	targetsWindow, windowHashes, err := dm.blockWindow(stagingArea, blockHash, dm.difficultyAdjustmentWindowSize+1)
+	targetsWindow, windowHashes, err := dm.blockWindow(stagingArea, blockHash, dm.difficultyAdjustmentWindowSize)
 	if err != nil {
 		return 0, err
 	}
@@ -93,8 +92,7 @@ func (dm *difficultyManager) StageDAADataAndReturnRequiredDifficulty(
 
 // RequiredDifficulty returns the difficulty required for some block
 func (dm *difficultyManager) RequiredDifficulty(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) (uint32, error) {
-	// Fetch window of dag.difficultyAdjustmentWindowSize + 1 so we can have dag.difficultyAdjustmentWindowSize block intervals
-	targetsWindow, _, err := dm.blockWindow(stagingArea, blockHash, dm.difficultyAdjustmentWindowSize+1)
+	targetsWindow, _, err := dm.blockWindow(stagingArea, blockHash, dm.difficultyAdjustmentWindowSize)
 	if err != nil {
 		return 0, err
 	}

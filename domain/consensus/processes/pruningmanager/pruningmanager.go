@@ -280,8 +280,7 @@ func (pm *pruningManager) deletePastBlocks(stagingArea *model.StagingArea, pruni
 		return err
 	}
 
-	isChildOfVirtualGenesis := len(parents) == 1 && parents[0].Equal(model.VirtualGenesisBlockHash)
-	if !isChildOfVirtualGenesis {
+	if !pm.isVirtualGenesisOnlyParent(parents) {
 		err = queue.PushSlice(parents)
 		if err != nil {
 			return err
@@ -294,6 +293,10 @@ func (pm *pruningManager) deletePastBlocks(stagingArea *model.StagingArea, pruni
 	}
 
 	return nil
+}
+
+func (pm *pruningManager) isVirtualGenesisOnlyParent(parents []*externalapi.DomainHash) bool {
+	return len(parents) == 1 && parents[0].Equal(model.VirtualGenesisBlockHash)
 }
 
 func (pm *pruningManager) deleteBlocksDownward(stagingArea *model.StagingArea, queue model.BlockHeap) error {
@@ -316,8 +319,7 @@ func (pm *pruningManager) deleteBlocksDownward(stagingArea *model.StagingArea, q
 				return err
 			}
 
-			isChildOfVirtualGenesis := len(parents) == 1 && parents[0].Equal(model.VirtualGenesisBlockHash)
-			if !isChildOfVirtualGenesis {
+			if !pm.isVirtualGenesisOnlyParent(parents) {
 				err = queue.PushSlice(parents)
 				if err != nil {
 					return err
@@ -734,7 +736,7 @@ func (pm *pruningManager) PruningPointAndItsAnticoneWithMetaData() ([]*externala
 		return nil, err
 	}
 
-	pruningPointAnticone, err := pm.dagTraversalManager.AnticoneFromVirtual(stagingArea, pruningPoint)
+	pruningPointAnticone, err := pm.dagTraversalManager.AnticoneFromVirtualPOV(stagingArea, pruningPoint)
 	if err != nil {
 		return nil, err
 	}
@@ -770,7 +772,7 @@ func (pm *pruningManager) blockWithMetaData(stagingArea *model.StagingArea, bloc
 		return nil, err
 	}
 
-	windowSize := pm.difficultyAdjustmentWindowSize + 1
+	windowSize := pm.difficultyAdjustmentWindowSize
 	window, err := pm.dagTraversalManager.BlockWindowWithGHOSTDAGData(stagingArea, blockHash, windowSize)
 	if err != nil {
 		return nil, err
