@@ -46,8 +46,8 @@ func (v *transactionValidator) IsFinalizedTransaction(tx *externalapi.DomainTran
 	return true
 }
 
-// ValidateTransactionWithContextAndWithoutUTXOContext validates the transaction with context and without the context of UTXO
-func (v *transactionValidator) ValidateTransactionWithContextAndWithoutUTXOContext(stagingArea *model.StagingArea, tx *externalapi.DomainTransaction,
+// ValidateTransactionInContextIgnoringUTXO validates the transaction with consensus context but ignoring UTXO
+func (v *transactionValidator) ValidateTransactionInContextIgnoringUTXO(stagingArea *model.StagingArea, tx *externalapi.DomainTransaction,
 	povBlockHash *externalapi.DomainHash) error {
 
 	povBlockDAAScore, err := v.daaBlocksStore.DAAScore(v.databaseContext, stagingArea, povBlockHash)

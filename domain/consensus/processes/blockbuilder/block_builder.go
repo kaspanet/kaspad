@@ -145,7 +145,7 @@ func (bb *blockBuilder) validateTransaction(
 		return err
 	}
 
-	err = bb.transactionValidator.ValidateTransactionWithContextAndWithoutUTXOContext(stagingArea, transaction, model.VirtualBlockHash)
+	err = bb.transactionValidator.ValidateTransactionInContextIgnoringUTXO(stagingArea, transaction, model.VirtualBlockHash)
 	if err != nil {
 		return err
 	}

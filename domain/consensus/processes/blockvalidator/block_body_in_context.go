@@ -123,7 +123,7 @@ func (v *blockValidator) checkBlockTransactions(
 
 	// Ensure all transactions in the block are finalized.
 	for _, tx := range block.Transactions {
-		if err = v.transactionValidator.ValidateTransactionWithContextAndWithoutUTXOContext(stagingArea, tx, blockHash); err != nil {
+		if err = v.transactionValidator.ValidateTransactionInContextIgnoringUTXO(stagingArea, tx, blockHash); err != nil {
 			return err
 		}
 	}
