@@ -13,7 +13,7 @@ import (
 
 // ValidateHeaderInContext validates block headers in the context of the current
 // consensus state
-func (v *blockValidator) ValidateHeaderInContext(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash, isBlockWithPrefilledData bool) error {
+func (v *blockValidator) ValidateHeaderInContext(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash, isBlockWithTrustedData bool) error {
 	onEnd := logger.LogAndMeasureExecutionTime(log, "ValidateHeaderInContext")
 	defer onEnd()
 
@@ -69,7 +69,7 @@ func (v *blockValidator) ValidateHeaderInContext(stagingArea *model.StagingArea,
 		}
 	}
 
-	err = v.mergeDepthManager.CheckBoundedMergeDepth(stagingArea, blockHash, isBlockWithPrefilledData)
+	err = v.mergeDepthManager.CheckBoundedMergeDepth(stagingArea, blockHash, isBlockWithTrustedData)
 	if err != nil {
 		return err
 	}

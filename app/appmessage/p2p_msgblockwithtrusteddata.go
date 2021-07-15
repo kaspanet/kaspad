@@ -5,28 +5,28 @@ import (
 	"math/big"
 )
 
-// MsgBlockWithMetaData represents a kaspa BlockWithMetaData message
-type MsgBlockWithMetaData struct {
+// MsgBlockWithTrustedData represents a kaspa BlockWithTrustedData message
+type MsgBlockWithTrustedData struct {
 	baseMessage
 
 	Block        *MsgBlock
 	DAAScore     uint64
-	DAAWindow    []*BlockWithMetaDataDAABlock
+	DAAWindow    []*TrustedDataDataDAABlock
 	GHOSTDAGData []*BlockGHOSTDAGDataHashPair
 }
 
 // Command returns the protocol command string for the message
-func (msg *MsgBlockWithMetaData) Command() MessageCommand {
-	return CmdBlockWithMetaData
+func (msg *MsgBlockWithTrustedData) Command() MessageCommand {
+	return CmdBlockWithTrustedData
 }
 
-// NewMsgBlockWithMetaData returns a new MsgBlockWithMetaData.
-func NewMsgBlockWithMetaData() *MsgBlockWithMetaData {
-	return &MsgBlockWithMetaData{}
+// NewMsgBlockWithTrustedData returns a new MsgBlockWithTrustedData.
+func NewMsgBlockWithTrustedData() *MsgBlockWithTrustedData {
+	return &MsgBlockWithTrustedData{}
 }
 
-// BlockWithMetaDataDAABlock is an appmessage representation of externalapi.BlockWithMetaDataDAABlock
-type BlockWithMetaDataDAABlock struct {
+// TrustedDataDataDAABlock is an appmessage representation of externalapi.TrustedDataDataDAABlock
+type TrustedDataDataDAABlock struct {
 	Header       *MsgBlockHeader
 	GHOSTDAGData *BlockGHOSTDAGData
 }

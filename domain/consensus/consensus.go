@@ -55,11 +55,11 @@ type consensus struct {
 	daaBlocksStore            model.DAABlocksStore
 }
 
-func (s *consensus) ValidateAndInsertBlockWithMetaData(block *externalapi.BlockWithMetaData, validateUTXO bool) (*externalapi.BlockInsertionResult, error) {
+func (s *consensus) ValidateAndInsertBlockWithTrustedData(block *externalapi.BlockWithTrustedData, validateUTXO bool) (*externalapi.BlockInsertionResult, error) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	return s.blockProcessor.ValidateAndInsertBlockWithMetaData(block, validateUTXO)
+	return s.blockProcessor.ValidateAndInsertBlockWithTrustedData(block, validateUTXO)
 }
 
 // Init initializes consensus
@@ -110,7 +110,7 @@ func (s *consensus) Init(shouldNotAddGenesis bool) error {
 	// The genesis should be added to the DAG if it's a fresh consensus, unless said otherwise (on a
 	// case where the consensus is used for a pruned headers node).
 	if !shouldNotAddGenesis && s.blockStore.Count(stagingArea) == 0 {
-		genesisWithMetaData := &externalapi.BlockWithMetaData{
+		genesisWithTrustedData := &externalapi.BlockWithTrustedData{
 			Block:     s.genesisBlock,
 			DAAScore:  0,
 			DAAWindow: nil,
@@ -121,7 +121,7 @@ func (s *consensus) Init(shouldNotAddGenesis bool) error {
 				},
 			},
 		}
-		_, err = s.blockProcessor.ValidateAndInsertBlockWithMetaData(genesisWithMetaData, true)
+		_, err = s.blockProcessor.ValidateAndInsertBlockWithTrustedData(genesisWithTrustedData, true)
 		if err != nil {
 			return err
 		}
@@ -130,11 +130,11 @@ func (s *consensus) Init(shouldNotAddGenesis bool) error {
 	return nil
 }
 
-func (s *consensus) PruningPointAndItsAnticoneWithMetaData() ([]*externalapi.BlockWithMetaData, error) {
+func (s *consensus) PruningPointAndItsAnticoneWithTrustedData() ([]*externalapi.BlockWithTrustedData, error) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	return s.pruningManager.PruningPointAndItsAnticoneWithMetaData()
+	return s.pruningManager.PruningPointAndItsAnticoneWithTrustedData()
 }
 
 // BuildBlock builds a block over the current state, with the transactions

@@ -238,7 +238,7 @@ func (gm *ghostdagManager) checkBlueCandidateWithChainBlock(stagingArea *model.S
 func (gm *ghostdagManager) blueAnticoneSize(stagingArea *model.StagingArea,
 	block *externalapi.DomainHash, context *externalapi.BlockGHOSTDAGData) (externalapi.KType, error) {
 
-	isMetaData := false
+	isTrustedData := false
 	for current := context; current != nil; {
 		if blueAnticoneSize, ok := current.BluesAnticoneSizes()[*block]; ok {
 			return blueAnticoneSize, nil
@@ -248,13 +248,13 @@ func (gm *ghostdagManager) blueAnticoneSize(stagingArea *model.StagingArea,
 		}
 
 		var err error
-		current, err = gm.ghostdagDataStore.Get(gm.databaseContext, stagingArea, current.SelectedParent(), isMetaData)
+		current, err = gm.ghostdagDataStore.Get(gm.databaseContext, stagingArea, current.SelectedParent(), isTrustedData)
 		if err != nil {
 			return 0, err
 		}
 		if current.SelectedParent().Equal(model.VirtualGenesisBlockHash) {
-			isMetaData = true
-			current, err = gm.ghostdagDataStore.Get(gm.databaseContext, stagingArea, current.SelectedParent(), isMetaData)
+			isTrustedData = true
+			current, err = gm.ghostdagDataStore.Get(gm.databaseContext, stagingArea, current.SelectedParent(), isTrustedData)
 			if err != nil {
 				return 0, err
 			}

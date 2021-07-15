@@ -192,7 +192,7 @@ message IbdBlocksMessage {
 message RequestPruningPointAndItsAnticoneMessage {
 }
 
-message BlockWithMetaDataMessage {
+message BlockWithTrustedDataMessage {
   BlockMessage block = 1;
   uint64 daaScore = 2;
   repeated DaaBlock daaWindow = 3;
@@ -223,7 +223,7 @@ message BluesAnticoneSizes {
   uint32 anticoneSize = 2;
 }
 
-message DoneBlocksWithMetaDataMessage {
+message DoneBlocksWithTrustedDataMessage {
 }
 
 message RequestBlockBlueWorkMessage {

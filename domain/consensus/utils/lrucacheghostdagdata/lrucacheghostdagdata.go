@@ -3,14 +3,14 @@ package lrucacheghostdagdata
 import "github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 
 type lruKey struct {
-	blockHash  externalapi.DomainHash
-	isMetaData bool
+	blockHash     externalapi.DomainHash
+	isTrustedData bool
 }
 
-func newKey(blockHash *externalapi.DomainHash, isMetaData bool) lruKey {
+func newKey(blockHash *externalapi.DomainHash, isTrustedData bool) lruKey {
 	return lruKey{
-		blockHash:  *blockHash,
-		isMetaData: isMetaData,
+		blockHash:     *blockHash,
+		isTrustedData: isTrustedData,
 	}
 }
 
@@ -36,8 +36,8 @@ func New(capacity int, preallocate bool) *LRUCache {
 }
 
 // Add adds an entry to the LRUCache
-func (c *LRUCache) Add(blockHash *externalapi.DomainHash, isMetaData bool, value *externalapi.BlockGHOSTDAGData) {
-	key := newKey(blockHash, isMetaData)
+func (c *LRUCache) Add(blockHash *externalapi.DomainHash, isTrustedData bool, value *externalapi.BlockGHOSTDAGData) {
+	key := newKey(blockHash, isTrustedData)
 	c.cache[key] = value
 
 	if len(c.cache) > c.capacity {
@@ -46,8 +46,8 @@ func (c *LRUCache) Add(blockHash *externalapi.DomainHash, isMetaData bool, value
 }
 
 // Get returns the entry for the given key, or (nil, false) otherwise
-func (c *LRUCache) Get(blockHash *externalapi.DomainHash, isMetaData bool) (*externalapi.BlockGHOSTDAGData, bool) {
-	key := newKey(blockHash, isMetaData)
+func (c *LRUCache) Get(blockHash *externalapi.DomainHash, isTrustedData bool) (*externalapi.BlockGHOSTDAGData, bool) {
+	key := newKey(blockHash, isTrustedData)
 	value, ok := c.cache[key]
 	if !ok {
 		return nil, false
@@ -56,16 +56,16 @@ func (c *LRUCache) Get(blockHash *externalapi.DomainHash, isMetaData bool) (*ext
 }
 
 // Has returns whether the LRUCache contains the given key
-func (c *LRUCache) Has(blockHash *externalapi.DomainHash, isMetaData bool) bool {
-	key := newKey(blockHash, isMetaData)
+func (c *LRUCache) Has(blockHash *externalapi.DomainHash, isTrustedData bool) bool {
+	key := newKey(blockHash, isTrustedData)
 	_, ok := c.cache[key]
 	return ok
 }
 
 // Remove removes the entry for the the given key. Does nothing if
 // the entry does not exist
-func (c *LRUCache) Remove(blockHash *externalapi.DomainHash, isMetaData bool) {
-	key := newKey(blockHash, isMetaData)
+func (c *LRUCache) Remove(blockHash *externalapi.DomainHash, isTrustedData bool) {
+	key := newKey(blockHash, isTrustedData)
 	delete(c.cache, key)
 }
 
@@ -75,5 +75,5 @@ func (c *LRUCache) evictRandom() {
 		keyToEvict = key
 		break
 	}
-	c.Remove(&keyToEvict.blockHash, keyToEvict.isMetaData)
+	c.Remove(&keyToEvict.blockHash, keyToEvict.isTrustedData)
 }

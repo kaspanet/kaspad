@@ -16,15 +16,15 @@ import (
 type pruningManager struct {
 	databaseContext model.DBManager
 
-	dagTraversalManager              model.DAGTraversalManager
-	dagTopologyManager               model.DAGTopologyManager
-	consensusStateManager            model.ConsensusStateManager
-	consensusStateStore              model.ConsensusStateStore
-	ghostdagDataStore                model.GHOSTDAGDataStore
-	pruningStore                     model.PruningStore
-	blockStatusStore                 model.BlockStatusStore
-	headerSelectedTipStore           model.HeaderSelectedTipStore
-	blocksWithMetaDataDAAWindowStore model.BlocksWithMetaDataDAAWindowStore
+	dagTraversalManager                 model.DAGTraversalManager
+	dagTopologyManager                  model.DAGTopologyManager
+	consensusStateManager               model.ConsensusStateManager
+	consensusStateStore                 model.ConsensusStateStore
+	ghostdagDataStore                   model.GHOSTDAGDataStore
+	pruningStore                        model.PruningStore
+	blockStatusStore                    model.BlockStatusStore
+	headerSelectedTipStore              model.HeaderSelectedTipStore
+	blocksWithTrustedDataDAAWindowStore model.BlocksWithTrustedDataDAAWindowStore
 
 	multiSetStore         model.MultisetStore
 	acceptanceDataStore   model.AcceptanceDataStore
@@ -63,7 +63,7 @@ func New(
 	utxoDiffStore model.UTXODiffStore,
 	daaBlocksStore model.DAABlocksStore,
 	reachabilityDataStore model.ReachabilityDataStore,
-	blocksWithMetaDataDAAWindowStore model.BlocksWithMetaDataDAAWindowStore,
+	blocksWithTrustedDataDAAWindowStore model.BlocksWithTrustedDataDAAWindowStore,
 
 	isArchivalNode bool,
 	genesisHash *externalapi.DomainHash,
@@ -80,19 +80,19 @@ func New(
 		dagTopologyManager:    dagTopologyManager,
 		consensusStateManager: consensusStateManager,
 
-		consensusStateStore:              consensusStateStore,
-		ghostdagDataStore:                ghostdagDataStore,
-		pruningStore:                     pruningStore,
-		blockStatusStore:                 blockStatusStore,
-		multiSetStore:                    multiSetStore,
-		acceptanceDataStore:              acceptanceDataStore,
-		blocksStore:                      blocksStore,
-		blockHeaderStore:                 blockHeaderStore,
-		utxoDiffStore:                    utxoDiffStore,
-		headerSelectedTipStore:           headerSelectedTipStore,
-		daaBlocksStore:                   daaBlocksStore,
-		reachabilityDataStore:            reachabilityDataStore,
-		blocksWithMetaDataDAAWindowStore: blocksWithMetaDataDAAWindowStore,
+		consensusStateStore:                 consensusStateStore,
+		ghostdagDataStore:                   ghostdagDataStore,
+		pruningStore:                        pruningStore,
+		blockStatusStore:                    blockStatusStore,
+		multiSetStore:                       multiSetStore,
+		acceptanceDataStore:                 acceptanceDataStore,
+		blocksStore:                         blocksStore,
+		blockHeaderStore:                    blockHeaderStore,
+		utxoDiffStore:                       utxoDiffStore,
+		headerSelectedTipStore:              headerSelectedTipStore,
+		daaBlocksStore:                      daaBlocksStore,
+		reachabilityDataStore:               reachabilityDataStore,
+		blocksWithTrustedDataDAAWindowStore: blocksWithTrustedDataDAAWindowStore,
 
 		isArchivalNode:                  isArchivalNode,
 		genesisHash:                     genesisHash,
@@ -723,8 +723,8 @@ func (pm *pruningManager) PruneAllBlocksBelow(stagingArea *model.StagingArea, pr
 	return nil
 }
 
-func (pm *pruningManager) PruningPointAndItsAnticoneWithMetaData() ([]*externalapi.BlockWithMetaData, error) {
-	onEnd := logger.LogAndMeasureExecutionTime(log, "PruningPointAndItsAnticoneWithMetaData")
+func (pm *pruningManager) PruningPointAndItsAnticoneWithTrustedData() ([]*externalapi.BlockWithTrustedData, error) {
+	onEnd := logger.LogAndMeasureExecutionTime(log, "PruningPointAndItsAnticoneWithTrustedData")
 	defer onEnd()
 
 	stagingArea := model.NewStagingArea()
@@ -738,27 +738,27 @@ func (pm *pruningManager) PruningPointAndItsAnticoneWithMetaData() ([]*externala
 		return nil, err
 	}
 
-	blocks := make([]*externalapi.BlockWithMetaData, 0, len(pruningPointAnticone)+1)
+	blocks := make([]*externalapi.BlockWithTrustedData, 0, len(pruningPointAnticone)+1)
 
-	pruningPointWithMetaData, err := pm.blockWithMetaData(stagingArea, pruningPoint)
+	pruningPointWithTrustedData, err := pm.blockWithTrustedData(stagingArea, pruningPoint)
 	if err != nil {
 		return nil, err
 	}
 
-	blocks = append(blocks, pruningPointWithMetaData)
+	blocks = append(blocks, pruningPointWithTrustedData)
 	for _, blockHash := range pruningPointAnticone {
-		blockWithMetaData, err := pm.blockWithMetaData(stagingArea, blockHash)
+		blockWithTrustedData, err := pm.blockWithTrustedData(stagingArea, blockHash)
 		if err != nil {
 			return nil, err
 		}
 
-		blocks = append(blocks, blockWithMetaData)
+		blocks = append(blocks, blockWithTrustedData)
 	}
 
 	return blocks, nil
 }
 
-func (pm *pruningManager) blockWithMetaData(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) (*externalapi.BlockWithMetaData, error) {
+func (pm *pruningManager) blockWithTrustedData(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) (*externalapi.BlockWithTrustedData, error) {
 	block, err := pm.blocksStore.Block(pm.databaseContext, stagingArea, blockHash)
 	if err != nil {
 		return nil, err
@@ -775,14 +775,14 @@ func (pm *pruningManager) blockWithMetaData(stagingArea *model.StagingArea, bloc
 		return nil, err
 	}
 
-	windowPairs := make([]*externalapi.BlockWithMetaDataDAABlock, len(window))
+	windowPairs := make([]*externalapi.TrustedDataDataDAABlock, len(window))
 	for i, daaBlock := range window {
 		header, err := pm.blockHeaderStore.BlockHeader(pm.databaseContext, stagingArea, daaBlock.Hash)
 		if err != nil {
 			return nil, err
 		}
 
-		windowPairs[i] = &externalapi.BlockWithMetaDataDAABlock{
+		windowPairs[i] = &externalapi.TrustedDataDataDAABlock{
 			Header:       header,
 			GHOSTDAGData: daaBlock.GHOSTDAGData,
 		}
@@ -813,7 +813,7 @@ func (pm *pruningManager) blockWithMetaData(stagingArea *model.StagingArea, bloc
 		current = ghostdagData.SelectedParent()
 	}
 
-	return &externalapi.BlockWithMetaData{
+	return &externalapi.BlockWithTrustedData{
 		Block:        block,
 		DAAScore:     daaScore,
 		DAAWindow:    windowPairs,

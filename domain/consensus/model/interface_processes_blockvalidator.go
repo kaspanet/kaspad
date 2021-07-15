@@ -9,7 +9,7 @@ import (
 type BlockValidator interface {
 	ValidateHeaderInIsolation(stagingArea *StagingArea, blockHash *externalapi.DomainHash) error
 	ValidateBodyInIsolation(stagingArea *StagingArea, blockHash *externalapi.DomainHash) error
-	ValidateHeaderInContext(stagingArea *StagingArea, blockHash *externalapi.DomainHash, isBlockWithPrefilledData bool) error
-	ValidateBodyInContext(stagingArea *StagingArea, blockHash *externalapi.DomainHash, isBlockWithPrefilledData bool) error
-	ValidatePruningPointViolationAndProofOfWorkAndDifficulty(stagingArea *StagingArea, blockHash *externalapi.DomainHash, isBlockWithPrefilledData bool) error
+	ValidateHeaderInContext(stagingArea *StagingArea, blockHash *externalapi.DomainHash, isBlockWithTrustedData bool) error
+	ValidateBodyInContext(stagingArea *StagingArea, blockHash *externalapi.DomainHash, isBlockWithTrustedData bool) error
+	ValidatePruningPointViolationAndProofOfWorkAndDifficulty(stagingArea *StagingArea, blockHash *externalapi.DomainHash, isBlockWithTrustedData bool) error
 }

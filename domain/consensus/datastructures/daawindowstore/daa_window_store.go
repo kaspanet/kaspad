@@ -18,8 +18,8 @@ type daaWindowStore struct {
 	bucket model.DBBucket
 }
 
-// New instantiates a new BlocksWithMetaDataDAAWindowStore
-func New(prefix *prefix.Prefix, cacheSize int, preallocate bool) model.BlocksWithMetaDataDAAWindowStore {
+// New instantiates a new BlocksWithTrustedDataDAAWindowStore
+func New(prefix *prefix.Prefix, cacheSize int, preallocate bool) model.BlocksWithTrustedDataDAAWindowStore {
 	return &daaWindowStore{
 		cache:  lrucachehashpairtoblockghostdagdatahashpair.New(cacheSize, preallocate),
 		bucket: database.MakeBucket(prefix.Serialize()).Bucket(bucketName),

@@ -11,7 +11,7 @@ import (
 
 // ValidateBodyInContext validates block bodies in the context of the current
 // consensus state
-func (v *blockValidator) ValidateBodyInContext(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash, isBlockWithPrefilledData bool) error {
+func (v *blockValidator) ValidateBodyInContext(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash, isBlockWithTrustedData bool) error {
 	onEnd := logger.LogAndMeasureExecutionTime(log, "ValidateBodyInContext")
 	defer onEnd()
 
@@ -25,7 +25,7 @@ func (v *blockValidator) ValidateBodyInContext(stagingArea *model.StagingArea, b
 		return err
 	}
 
-	if !isBlockWithPrefilledData {
+	if !isBlockWithTrustedData {
 		err := v.checkParentBlockBodiesExist(stagingArea, blockHash)
 		if err != nil {
 			return err

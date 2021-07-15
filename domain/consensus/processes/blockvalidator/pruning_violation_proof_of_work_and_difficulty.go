@@ -13,7 +13,7 @@ import (
 )
 
 func (v *blockValidator) ValidatePruningPointViolationAndProofOfWorkAndDifficulty(stagingArea *model.StagingArea,
-	blockHash *externalapi.DomainHash, isBlockWithPrefilledData bool) error {
+	blockHash *externalapi.DomainHash, isBlockWithTrustedData bool) error {
 
 	onEnd := logger.LogAndMeasureExecutionTime(log, "ValidatePruningPointViolationAndProofOfWorkAndDifficulty")
 	defer onEnd()
@@ -28,12 +28,12 @@ func (v *blockValidator) ValidatePruningPointViolationAndProofOfWorkAndDifficult
 		return err
 	}
 
-	err = v.checkParentHeadersExist(stagingArea, header, isBlockWithPrefilledData)
+	err = v.checkParentHeadersExist(stagingArea, header, isBlockWithTrustedData)
 	if err != nil {
 		return err
 	}
 
-	err = v.setParents(stagingArea, blockHash, header, isBlockWithPrefilledData)
+	err = v.setParents(stagingArea, blockHash, header, isBlockWithTrustedData)
 	if err != nil {
 		return err
 	}
@@ -53,7 +53,7 @@ func (v *blockValidator) ValidatePruningPointViolationAndProofOfWorkAndDifficult
 		return err
 	}
 
-	err = v.validateDifficulty(stagingArea, blockHash, isBlockWithPrefilledData)
+	err = v.validateDifficulty(stagingArea, blockHash, isBlockWithTrustedData)
 	if err != nil {
 		return err
 	}
@@ -64,7 +64,7 @@ func (v *blockValidator) ValidatePruningPointViolationAndProofOfWorkAndDifficult
 func (v *blockValidator) setParents(stagingArea *model.StagingArea,
 	blockHash *externalapi.DomainHash,
 	header externalapi.BlockHeader,
-	isBlockWithPrefilledData bool) error {
+	isBlockWithTrustedData bool) error {
 
 	parents := make([]*externalapi.DomainHash, 0, len(header.ParentHashes()))
 	for _, currentParent := range header.ParentHashes() {
@@ -74,7 +74,7 @@ func (v *blockValidator) setParents(stagingArea *model.StagingArea,
 		}
 
 		if !exists {
-			if !isBlockWithPrefilledData {
+			if !isBlockWithTrustedData {
 				return errors.Errorf("only block with prefilled information can have some missing parents")
 			}
 			continue
@@ -92,9 +92,9 @@ func (v *blockValidator) setParents(stagingArea *model.StagingArea,
 
 func (v *blockValidator) validateDifficulty(stagingArea *model.StagingArea,
 	blockHash *externalapi.DomainHash,
-	isBlockWithPrefilledData bool) error {
+	isBlockWithTrustedData bool) error {
 
-	if !isBlockWithPrefilledData {
+	if !isBlockWithTrustedData {
 		// We need to calculate GHOSTDAG for the block in order to check its difficulty
 		err := v.ghostdagManager.GHOSTDAG(stagingArea, blockHash)
 		if err != nil {
@@ -105,7 +105,7 @@ func (v *blockValidator) validateDifficulty(stagingArea *model.StagingArea,
 	// Ensure the difficulty specified in the block header matches
 	// the calculated difficulty based on the previous block and
 	// difficulty retarget rules.
-	expectedBits, err := v.difficultyManager.StageDAADataAndReturnRequiredDifficulty(stagingArea, blockHash, isBlockWithPrefilledData)
+	expectedBits, err := v.difficultyManager.StageDAADataAndReturnRequiredDifficulty(stagingArea, blockHash, isBlockWithTrustedData)
 	if err != nil {
 		return err
 	}
@@ -164,9 +164,9 @@ func (v *blockValidator) checkParentNotVirtualGenesis(header externalapi.BlockHe
 
 func (v *blockValidator) checkParentHeadersExist(stagingArea *model.StagingArea,
 	header externalapi.BlockHeader,
-	isBlockWithPrefilledData bool) error {
+	isBlockWithTrustedData bool) error {
 
-	if isBlockWithPrefilledData {
+	if isBlockWithTrustedData {
 		return nil
 	}
 

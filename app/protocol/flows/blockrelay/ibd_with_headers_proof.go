@@ -131,7 +131,7 @@ func (flow *handleRelayInvsFlow) syncPruningPointAndItsAnticone(consensus extern
 		return nil, err
 	}
 
-	pruningPoint, done, err := flow.receiveBlockWithMetaData()
+	pruningPoint, done, err := flow.receiveBlockWithTrustedData()
 	if err != nil {
 		return nil, err
 	}
@@ -140,13 +140,13 @@ func (flow *handleRelayInvsFlow) syncPruningPointAndItsAnticone(consensus extern
 		return nil, protocolerrors.Errorf(true, "got `done` message before receiving the pruning point")
 	}
 
-	err = flow.processBlockWithMetaData(consensus, pruningPoint)
+	err = flow.processBlockWithTrustedData(consensus, pruningPoint)
 	if err != nil {
 		return nil, err
 	}
 
 	for {
-		blockWithMetaData, done, err := flow.receiveBlockWithMetaData()
+		blockWithTrustedData, done, err := flow.receiveBlockWithTrustedData()
 		if err != nil {
 			return nil, err
 		}
@@ -155,7 +155,7 @@ func (flow *handleRelayInvsFlow) syncPruningPointAndItsAnticone(consensus extern
 			break
 		}
 
-		err = flow.processBlockWithMetaData(consensus, blockWithMetaData)
+		err = flow.processBlockWithTrustedData(consensus, blockWithTrustedData)
 		if err != nil {
 			return nil, err
 		}
@@ -165,30 +165,30 @@ func (flow *handleRelayInvsFlow) syncPruningPointAndItsAnticone(consensus extern
 	return pruningPoint.Block.Header.BlockHash(), nil
 }
 
-func (flow *handleRelayInvsFlow) processBlockWithMetaData(
-	consensus externalapi.Consensus, block *appmessage.MsgBlockWithMetaData) error {
+func (flow *handleRelayInvsFlow) processBlockWithTrustedData(
+	consensus externalapi.Consensus, block *appmessage.MsgBlockWithTrustedData) error {
 
-	_, err := consensus.ValidateAndInsertBlockWithMetaData(appmessage.BlockWithMetaDataToDomainBlockWithMetaData(block), false)
+	_, err := consensus.ValidateAndInsertBlockWithTrustedData(appmessage.BlockWithTrustedDataToDomainBlockWithTrustedData(block), false)
 	return err
 }
 
-func (flow *handleRelayInvsFlow) receiveBlockWithMetaData() (*appmessage.MsgBlockWithMetaData, bool, error) {
+func (flow *handleRelayInvsFlow) receiveBlockWithTrustedData() (*appmessage.MsgBlockWithTrustedData, bool, error) {
 	message, err := flow.dequeueIncomingMessageAndSkipInvs(common.DefaultTimeout)
 	if err != nil {
 		return nil, false, err
 	}
 
 	switch downCastedMessage := message.(type) {
-	case *appmessage.MsgBlockWithMetaData:
+	case *appmessage.MsgBlockWithTrustedData:
 		return downCastedMessage, false, nil
-	case *appmessage.MsgDoneBlocksWithMetaData:
+	case *appmessage.MsgDoneBlocksWithTrustedData:
 		return nil, true, nil
 	default:
 		return nil, false,
 			protocolerrors.Errorf(true, "received unexpected message type. "+
 				"expected: %s or %s, got: %s",
-				(&appmessage.MsgBlockWithMetaData{}).Command(),
-				(&appmessage.MsgDoneBlocksWithMetaData{}).Command(),
+				(&appmessage.MsgBlockWithTrustedData{}).Command(),
+				(&appmessage.MsgDoneBlocksWithTrustedData{}).Command(),
 				downCastedMessage.Command())
 	}
 }

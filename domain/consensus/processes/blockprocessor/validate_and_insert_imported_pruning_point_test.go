@@ -38,15 +38,15 @@ func addBlock(tc testapi.TestConsensus, parentHashes []*externalapi.DomainHash, 
 func TestValidateAndInsertImportedPruningPoint(t *testing.T) {
 	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
 		syncConsensuses := func(tcSyncer, tcSyncee testapi.TestConsensus) {
-			pointAndItsAnticoneWithMetaData, err := tcSyncer.PruningPointAndItsAnticoneWithMetaData()
+			pointAndItsAnticoneWithTrustedData, err := tcSyncer.PruningPointAndItsAnticoneWithTrustedData()
 			if err != nil {
-				t.Fatalf("PruningPointAndItsAnticoneWithMetaData: %+v", err)
+				t.Fatalf("PruningPointAndItsAnticoneWithTrustedData: %+v", err)
 			}
 
-			for _, blockWithMetaData := range pointAndItsAnticoneWithMetaData {
-				_, err := tcSyncee.ValidateAndInsertBlockWithMetaData(blockWithMetaData, false)
+			for _, blockWithTrustedData := range pointAndItsAnticoneWithTrustedData {
+				_, err := tcSyncee.ValidateAndInsertBlockWithTrustedData(blockWithTrustedData, false)
 				if err != nil {
-					t.Fatalf("ValidateAndInsertBlockWithMetaData: %+v", err)
+					t.Fatalf("ValidateAndInsertBlockWithTrustedData: %+v", err)
 				}
 			}
 
@@ -316,15 +316,15 @@ func TestValidateAndInsertPruningPointWithSideBlocks(t *testing.T) {
 			t.Fatalf("Unexpected pruning point %s", pruningPoint)
 		}
 
-		pointAndItsAnticoneWithMetaData, err := tcSyncer.PruningPointAndItsAnticoneWithMetaData()
+		pointAndItsAnticoneWithTrustedData, err := tcSyncer.PruningPointAndItsAnticoneWithTrustedData()
 		if err != nil {
-			t.Fatalf("PruningPointAndItsAnticoneWithMetaData: %+v", err)
+			t.Fatalf("PruningPointAndItsAnticoneWithTrustedData: %+v", err)
 		}
 
-		for _, blockWithMetaData := range pointAndItsAnticoneWithMetaData {
-			_, err := tcSyncee.ValidateAndInsertBlockWithMetaData(blockWithMetaData, false)
+		for _, blockWithTrustedData := range pointAndItsAnticoneWithTrustedData {
+			_, err := tcSyncee.ValidateAndInsertBlockWithTrustedData(blockWithTrustedData, false)
 			if err != nil {
-				t.Fatalf("ValidateAndInsertBlockWithMetaData: %+v", err)
+				t.Fatalf("ValidateAndInsertBlockWithTrustedData: %+v", err)
 			}
 		}
 

@@ -4,8 +4,8 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 )
 
-// BlocksWithMetaDataDAAWindowStore stores the DAA window of blocks with meta data
-type BlocksWithMetaDataDAAWindowStore interface {
+// BlocksWithTrustedDataDAAWindowStore stores the DAA window of blocks with trusted data
+type BlocksWithTrustedDataDAAWindowStore interface {
 	Store
 	IsStaged(stagingArea *StagingArea) bool
 	Stage(stagingArea *StagingArea, blockHash *externalapi.DomainHash, index uint64, ghostdagData *externalapi.BlockGHOSTDAGDataHashPair)

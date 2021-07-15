@@ -6,14 +6,14 @@ import (
 )
 
 type key struct {
-	hash       externalapi.DomainHash
-	isMetaData bool
+	hash          externalapi.DomainHash
+	isTrustedData bool
 }
 
-func newKey(hash *externalapi.DomainHash, isMetaData bool) key {
+func newKey(hash *externalapi.DomainHash, isTrustedData bool) key {
 	return key{
-		hash:       *hash,
-		isMetaData: isMetaData,
+		hash:          *hash,
+		isTrustedData: isTrustedData,
 	}
 }
 
@@ -41,7 +41,7 @@ func (gdss *ghostdagDataStagingShard) Commit(dbTx model.DBTransaction) error {
 		if err != nil {
 			return err
 		}
-		gdss.store.cache.Add(&key.hash, key.isMetaData, blockGHOSTDAGData)
+		gdss.store.cache.Add(&key.hash, key.isTrustedData, blockGHOSTDAGData)
 	}
 
 	return nil

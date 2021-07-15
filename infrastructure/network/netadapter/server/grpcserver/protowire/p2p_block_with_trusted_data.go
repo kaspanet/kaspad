@@ -7,26 +7,26 @@ import (
 	"math/big"
 )
 
-func (x *KaspadMessage_BlockWithMetaData) toAppMessage() (appmessage.Message, error) {
+func (x *KaspadMessage_BlockWithTrustedData) toAppMessage() (appmessage.Message, error) {
 	if x == nil {
-		return nil, errors.Wrapf(errorNil, "KaspadMessage_BlockWithMetaData is nil")
+		return nil, errors.Wrapf(errorNil, "KaspadMessage_BlockWithTrustedData is nil")
 	}
 
-	msgBlock, err := x.BlockWithMetaData.Block.toAppMessage()
+	msgBlock, err := x.BlockWithTrustedData.Block.toAppMessage()
 	if err != nil {
 		return nil, err
 	}
 
-	daaWindow := make([]*appmessage.BlockWithMetaDataDAABlock, len(x.BlockWithMetaData.DaaWindow))
-	for i, daaBlock := range x.BlockWithMetaData.DaaWindow {
+	daaWindow := make([]*appmessage.TrustedDataDataDAABlock, len(x.BlockWithTrustedData.DaaWindow))
+	for i, daaBlock := range x.BlockWithTrustedData.DaaWindow {
 		daaWindow[i], err = daaBlock.toAppMessage()
 		if err != nil {
 			return nil, err
 		}
 	}
 
-	ghostdagData := make([]*appmessage.BlockGHOSTDAGDataHashPair, len(x.BlockWithMetaData.GhostdagData))
-	for i, pair := range x.BlockWithMetaData.GhostdagData {
+	ghostdagData := make([]*appmessage.BlockGHOSTDAGDataHashPair, len(x.BlockWithTrustedData.GhostdagData))
+	for i, pair := range x.BlockWithTrustedData.GhostdagData {
 		hash, err := pair.Hash.toDomain()
 		if err != nil {
 			return nil, err
@@ -43,48 +43,48 @@ func (x *KaspadMessage_BlockWithMetaData) toAppMessage() (appmessage.Message, er
 		}
 	}
 
-	return &appmessage.MsgBlockWithMetaData{
+	return &appmessage.MsgBlockWithTrustedData{
 		Block:        msgBlock,
-		DAAScore:     x.BlockWithMetaData.DaaScore,
+		DAAScore:     x.BlockWithTrustedData.DaaScore,
 		DAAWindow:    daaWindow,
 		GHOSTDAGData: ghostdagData,
 	}, nil
 }
 
-func (x *KaspadMessage_BlockWithMetaData) fromAppMessage(msgBlockWithMetaData *appmessage.MsgBlockWithMetaData) error {
-	x.BlockWithMetaData = &BlockWithMetaDataMessage{
+func (x *KaspadMessage_BlockWithTrustedData) fromAppMessage(msgBlockWithTrustedData *appmessage.MsgBlockWithTrustedData) error {
+	x.BlockWithTrustedData = &BlockWithTrustedDataMessage{
 		Block:        &BlockMessage{},
-		DaaScore:     msgBlockWithMetaData.DAAScore,
-		DaaWindow:    make([]*DaaBlock, len(msgBlockWithMetaData.DAAWindow)),
-		GhostdagData: make([]*BlockGhostdagDataHashPair, len(msgBlockWithMetaData.GHOSTDAGData)),
+		DaaScore:     msgBlockWithTrustedData.DAAScore,
+		DaaWindow:    make([]*DaaBlock, len(msgBlockWithTrustedData.DAAWindow)),
+		GhostdagData: make([]*BlockGhostdagDataHashPair, len(msgBlockWithTrustedData.GHOSTDAGData)),
 	}
 
-	err := x.BlockWithMetaData.Block.fromAppMessage(msgBlockWithMetaData.Block)
+	err := x.BlockWithTrustedData.Block.fromAppMessage(msgBlockWithTrustedData.Block)
 	if err != nil {
 		return err
 	}
 
-	for i, daaBlock := range msgBlockWithMetaData.DAAWindow {
-		x.BlockWithMetaData.DaaWindow[i] = &DaaBlock{}
-		err := x.BlockWithMetaData.DaaWindow[i].fromAppMessage(daaBlock)
+	for i, daaBlock := range msgBlockWithTrustedData.DAAWindow {
+		x.BlockWithTrustedData.DaaWindow[i] = &DaaBlock{}
+		err := x.BlockWithTrustedData.DaaWindow[i].fromAppMessage(daaBlock)
 		if err != nil {
 			return err
 		}
 	}
 
-	for i, pair := range msgBlockWithMetaData.GHOSTDAGData {
-		x.BlockWithMetaData.GhostdagData[i] = &BlockGhostdagDataHashPair{
+	for i, pair := range msgBlockWithTrustedData.GHOSTDAGData {
+		x.BlockWithTrustedData.GhostdagData[i] = &BlockGhostdagDataHashPair{
 			Hash:         domainHashToProto(pair.Hash),
 			GhostdagData: &GhostdagData{},
 		}
 
-		x.BlockWithMetaData.GhostdagData[i].GhostdagData.fromAppMessage(pair.GHOSTDAGData)
+		x.BlockWithTrustedData.GhostdagData[i].GhostdagData.fromAppMessage(pair.GHOSTDAGData)
 	}
 
 	return nil
 }
 
-func (x *DaaBlock) toAppMessage() (*appmessage.BlockWithMetaDataDAABlock, error) {
+func (x *DaaBlock) toAppMessage() (*appmessage.TrustedDataDataDAABlock, error) {
 	if x == nil {
 		return nil, errors.Wrapf(errorNil, "DaaBlock is nil")
 	}
@@ -99,13 +99,13 @@ func (x *DaaBlock) toAppMessage() (*appmessage.BlockWithMetaDataDAABlock, error)
 		return nil, err
 	}
 
-	return &appmessage.BlockWithMetaDataDAABlock{
+	return &appmessage.TrustedDataDataDAABlock{
 		Header:       msgBlockHeader,
 		GHOSTDAGData: ghostdagData,
 	}, nil
 }
 
-func (x *DaaBlock) fromAppMessage(daaBlock *appmessage.BlockWithMetaDataDAABlock) error {
+func (x *DaaBlock) fromAppMessage(daaBlock *appmessage.TrustedDataDataDAABlock) error {
 	*x = DaaBlock{
 		Header:       &BlockHeader{},
 		GhostdagData: &GhostdagData{},

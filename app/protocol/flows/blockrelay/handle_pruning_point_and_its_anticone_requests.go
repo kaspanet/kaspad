@@ -24,19 +24,19 @@ func HandlePruningPointAndItsAnticoneRequests(context PruningPointAndItsAnticone
 		}
 
 		log.Debugf("Got request for pruning point and its anticone from %s", peer)
-		blocks, err := context.Domain().Consensus().PruningPointAndItsAnticoneWithMetaData()
+		blocks, err := context.Domain().Consensus().PruningPointAndItsAnticoneWithTrustedData()
 		if err != nil {
 			return err
 		}
 
 		for _, block := range blocks {
-			err = outgoingRoute.Enqueue(appmessage.DomainBlockWithMetaDataToBlockWithMetaData(block))
+			err = outgoingRoute.Enqueue(appmessage.DomainBlockWithTrustedDataToBlockWithTrustedData(block))
 			if err != nil {
 				return err
 			}
 		}
 
-		err = outgoingRoute.Enqueue(appmessage.NewMsgDoneBlocksWithMetaData())
+		err = outgoingRoute.Enqueue(appmessage.NewMsgDoneBlocksWithTrustedData())
 		if err != nil {
 			return err
 		}

@@ -7,13 +7,13 @@ import (
 	"github.com/kaspanet/kaspad/infrastructure/db/database"
 )
 
-func (bp *blockProcessor) validateAndInsertBlockWithMetaData(stagingArea *model.StagingArea,
-	block *externalapi.BlockWithMetaData, validateUTXO bool) (*externalapi.BlockInsertionResult, error) {
+func (bp *blockProcessor) validateAndInsertBlockWithTrustedData(stagingArea *model.StagingArea,
+	block *externalapi.BlockWithTrustedData, validateUTXO bool) (*externalapi.BlockInsertionResult, error) {
 
 	blockHash := consensushashing.BlockHash(block.Block)
 	for i, daaBlock := range block.DAAWindow {
 		hash := consensushashing.HeaderHash(daaBlock.Header)
-		bp.blocksWithMetaDataDAAWindowStore.Stage(stagingArea, blockHash, uint64(i), &externalapi.BlockGHOSTDAGDataHashPair{
+		bp.blocksWithTrustedDataDAAWindowStore.Stage(stagingArea, blockHash, uint64(i), &externalapi.BlockGHOSTDAGDataHashPair{
 			Hash:         hash,
 			GHOSTDAGData: daaBlock.GHOSTDAGData,
 		})

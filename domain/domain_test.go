@@ -47,7 +47,7 @@ func TestCreateStagingConsensus(t *testing.T) {
 		}
 
 		addGenesisToStagingConsensus := func() {
-			genesisWithMetaData := &externalapi.BlockWithMetaData{
+			genesisWithTrustedData := &externalapi.BlockWithTrustedData{
 				Block:     consensusConfig.GenesisBlock,
 				DAAScore:  0,
 				DAAWindow: nil,
@@ -58,9 +58,9 @@ func TestCreateStagingConsensus(t *testing.T) {
 					},
 				},
 			}
-			_, err = domainInstance.StagingConsensus().ValidateAndInsertBlockWithMetaData(genesisWithMetaData, true)
+			_, err = domainInstance.StagingConsensus().ValidateAndInsertBlockWithTrustedData(genesisWithTrustedData, true)
 			if err != nil {
-				t.Fatalf("ValidateAndInsertBlockWithMetaData: %+v", err)
+				t.Fatalf("ValidateAndInsertBlockWithTrustedData: %+v", err)
 			}
 		}
 

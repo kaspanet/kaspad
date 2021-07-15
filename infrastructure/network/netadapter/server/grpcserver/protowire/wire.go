@@ -254,8 +254,8 @@ func toP2PPayload(message appmessage.Message) (isKaspadMessage_Payload, error) {
 			return nil, err
 		}
 		return payload, nil
-	case *appmessage.MsgBlockWithMetaData:
-		payload := new(KaspadMessage_BlockWithMetaData)
+	case *appmessage.MsgBlockWithTrustedData:
+		payload := new(KaspadMessage_BlockWithTrustedData)
 		err := payload.fromAppMessage(message)
 		if err != nil {
 			return nil, err
@@ -282,8 +282,8 @@ func toP2PPayload(message appmessage.Message) (isKaspadMessage_Payload, error) {
 			return nil, err
 		}
 		return payload, nil
-	case *appmessage.MsgDoneBlocksWithMetaData:
-		payload := new(KaspadMessage_DoneBlocksWithMetaData)
+	case *appmessage.MsgDoneBlocksWithTrustedData:
+		payload := new(KaspadMessage_DoneBlocksWithTrustedData)
 		err := payload.fromAppMessage(message)
 		if err != nil {
 			return nil, err

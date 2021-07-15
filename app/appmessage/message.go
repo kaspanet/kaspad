@@ -59,8 +59,8 @@ const (
 	CmdRequestNextPruningPointUTXOSetChunk
 	CmdDonePruningPointUTXOSetChunks
 	CmdBlockBlueWork
-	CmdBlockWithMetaData
-	CmdDoneBlocksWithMetaData
+	CmdBlockWithTrustedData
+	CmdDoneBlocksWithTrustedData
 	CmdRequestPruningPointAndItsAnticone
 	CmdRequestBlockBlueWork
 
@@ -175,8 +175,8 @@ var ProtocolMessageCommandToString = map[MessageCommand]string{
 	CmdRequestNextPruningPointUTXOSetChunk: "RequestNextPruningPointUTXOSetChunk",
 	CmdDonePruningPointUTXOSetChunks:       "DonePruningPointUTXOSetChunks",
 	CmdBlockBlueWork:                       "BlockBlueWork",
-	CmdBlockWithMetaData:                   "BlockWithMetaData",
-	CmdDoneBlocksWithMetaData:              "DoneBlocksWithMetaData",
+	CmdBlockWithTrustedData:                "BlockWithTrustedData",
+	CmdDoneBlocksWithTrustedData:           "DoneBlocksWithTrustedData",
 	CmdRequestPruningPointAndItsAnticone:   "RequestPruningPointAndItsAnticoneHeaders",
 	CmdRequestBlockBlueWork:                "RequestBlockBlueWork",
 }

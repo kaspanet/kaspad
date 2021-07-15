@@ -170,8 +170,8 @@ func (m *Manager) registerBlockRelayFlows(router *routerpkg.Router, isStopping *
 		m.registerFlow("HandleRelayInvs", router, []appmessage.MessageCommand{
 			appmessage.CmdInvRelayBlock, appmessage.CmdBlock, appmessage.CmdBlockLocator, appmessage.CmdBlockBlueWork,
 			appmessage.CmdDoneIBDBlocks, appmessage.CmdUnexpectedPruningPoint, appmessage.CmdPruningPointUTXOSetChunk,
-			appmessage.CmdIBDBlocks, appmessage.CmdIBDBlockLocatorHighestHash, appmessage.CmdBlockWithMetaData,
-			appmessage.CmdDoneBlocksWithMetaData, appmessage.CmdIBDBlockLocatorHighestHashNotFound,
+			appmessage.CmdIBDBlocks, appmessage.CmdIBDBlockLocatorHighestHash, appmessage.CmdBlockWithTrustedData,
+			appmessage.CmdDoneBlocksWithTrustedData, appmessage.CmdIBDBlockLocatorHighestHashNotFound,
 			appmessage.CmdDonePruningPointUTXOSetChunks,
 		},
 			isStopping, errChan, func(incomingRoute *routerpkg.Route, peer *peerpkg.Peer) error {

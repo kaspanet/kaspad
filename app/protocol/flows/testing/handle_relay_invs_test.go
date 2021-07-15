@@ -143,11 +143,11 @@ func (f *fakeRelayInvsContext) Init(shouldNotAddGenesis bool) error {
 	panic("implement me")
 }
 
-func (f *fakeRelayInvsContext) ValidateAndInsertBlockWithMetaData(block *externalapi.BlockWithMetaData, validateUTXO bool) (*externalapi.BlockInsertionResult, error) {
+func (f *fakeRelayInvsContext) ValidateAndInsertBlockWithTrustedData(block *externalapi.BlockWithTrustedData, validateUTXO bool) (*externalapi.BlockInsertionResult, error) {
 	panic("implement me")
 }
 
-func (f *fakeRelayInvsContext) PruningPointAndItsAnticoneWithMetaData() ([]*externalapi.BlockWithMetaData, error) {
+func (f *fakeRelayInvsContext) PruningPointAndItsAnticoneWithTrustedData() ([]*externalapi.BlockWithTrustedData, error) {
 	panic("implement me")
 }
 

@@ -399,11 +399,11 @@ func RPCBlockToDomainBlock(block *RPCBlock) (*externalapi.DomainBlock, error) {
 	}, nil
 }
 
-// BlockWithMetaDataToDomainBlockWithMetaData converts *MsgBlockWithMetaData to *externalapi.BlockWithMetaData
-func BlockWithMetaDataToDomainBlockWithMetaData(block *MsgBlockWithMetaData) *externalapi.BlockWithMetaData {
-	daaWindow := make([]*externalapi.BlockWithMetaDataDAABlock, len(block.DAAWindow))
+// BlockWithTrustedDataToDomainBlockWithTrustedData converts *MsgBlockWithTrustedData to *externalapi.BlockWithTrustedData
+func BlockWithTrustedDataToDomainBlockWithTrustedData(block *MsgBlockWithTrustedData) *externalapi.BlockWithTrustedData {
+	daaWindow := make([]*externalapi.TrustedDataDataDAABlock, len(block.DAAWindow))
 	for i, daaBlock := range block.DAAWindow {
-		daaWindow[i] = &externalapi.BlockWithMetaDataDAABlock{
+		daaWindow[i] = &externalapi.TrustedDataDataDAABlock{
 			Header:       BlockHeaderToDomainBlockHeader(daaBlock.Header),
 			GHOSTDAGData: ghostdagDataToDomainGHOSTDAGData(daaBlock.GHOSTDAGData),
 		}
@@ -417,7 +417,7 @@ func BlockWithMetaDataToDomainBlockWithMetaData(block *MsgBlockWithMetaData) *ex
 		}
 	}
 
-	return &externalapi.BlockWithMetaData{
+	return &externalapi.BlockWithTrustedData{
 		Block:        MsgBlockToDomainBlock(block.Block),
 		DAAScore:     block.DAAScore,
 		DAAWindow:    daaWindow,
@@ -460,11 +460,11 @@ func domainGHOSTDAGDataGHOSTDAGData(data *externalapi.BlockGHOSTDAGData) *BlockG
 	}
 }
 
-// DomainBlockWithMetaDataToBlockWithMetaData converts *externalapi.BlockWithMetaData to *MsgBlockWithMetaData
-func DomainBlockWithMetaDataToBlockWithMetaData(block *externalapi.BlockWithMetaData) *MsgBlockWithMetaData {
-	daaWindow := make([]*BlockWithMetaDataDAABlock, len(block.DAAWindow))
+// DomainBlockWithTrustedDataToBlockWithTrustedData converts *externalapi.BlockWithTrustedData to *MsgBlockWithTrustedData
+func DomainBlockWithTrustedDataToBlockWithTrustedData(block *externalapi.BlockWithTrustedData) *MsgBlockWithTrustedData {
+	daaWindow := make([]*TrustedDataDataDAABlock, len(block.DAAWindow))
 	for i, daaBlock := range block.DAAWindow {
-		daaWindow[i] = &BlockWithMetaDataDAABlock{
+		daaWindow[i] = &TrustedDataDataDAABlock{
 			Header:       DomainBlockHeaderToBlockHeader(daaBlock.Header),
 			GHOSTDAGData: domainGHOSTDAGDataGHOSTDAGData(daaBlock.GHOSTDAGData),
 		}
@@ -478,7 +478,7 @@ func DomainBlockWithMetaDataToBlockWithMetaData(block *externalapi.BlockWithMeta
 		}
 	}
 
-	return &MsgBlockWithMetaData{
+	return &MsgBlockWithTrustedData{
 		Block:        DomainBlockToMsgBlock(block.Block),
 		DAAScore:     block.DAAScore,
 		DAAWindow:    daaWindow,

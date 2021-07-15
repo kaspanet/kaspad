@@ -1,21 +1,21 @@
 package appmessage
 
-// MsgDoneBlocksWithMetaData implements the Message interface and represents a kaspa
-// DoneBlocksWithMetaData message
+// MsgDoneBlocksWithTrustedData implements the Message interface and represents a kaspa
+// DoneBlocksWithTrustedData message
 //
 // This message has no payload.
-type MsgDoneBlocksWithMetaData struct {
+type MsgDoneBlocksWithTrustedData struct {
 	baseMessage
 }
 
 // Command returns the protocol command string for the message. This is part
 // of the Message interface implementation.
-func (msg *MsgDoneBlocksWithMetaData) Command() MessageCommand {
-	return CmdDoneBlocksWithMetaData
+func (msg *MsgDoneBlocksWithTrustedData) Command() MessageCommand {
+	return CmdDoneBlocksWithTrustedData
 }
 
-// NewMsgDoneBlocksWithMetaData returns a new kaspa DoneBlocksWithMetaData message that conforms to the
+// NewMsgDoneBlocksWithTrustedData returns a new kaspa DoneBlocksWithTrustedData message that conforms to the
 // Message interface.
-func NewMsgDoneBlocksWithMetaData() *MsgDoneBlocksWithMetaData {
-	return &MsgDoneBlocksWithMetaData{}
+func NewMsgDoneBlocksWithTrustedData() *MsgDoneBlocksWithTrustedData {
+	return &MsgDoneBlocksWithTrustedData{}
 }

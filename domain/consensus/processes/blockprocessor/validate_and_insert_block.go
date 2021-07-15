@@ -76,10 +76,10 @@ func (bp *blockProcessor) updateVirtualAcceptanceDataAfterImportingPruningPoint(
 }
 
 func (bp *blockProcessor) validateAndInsertBlock(stagingArea *model.StagingArea, block *externalapi.DomainBlock,
-	isPruningPoint bool, shouldValidateAgainstUTXO bool, isBlockWithPrefilledData bool) (*externalapi.BlockInsertionResult, error) {
+	isPruningPoint bool, shouldValidateAgainstUTXO bool, isBlockWithTrustedData bool) (*externalapi.BlockInsertionResult, error) {
 
 	blockHash := consensushashing.HeaderHash(block.Header)
-	err := bp.validateBlock(stagingArea, block, isBlockWithPrefilledData)
+	err := bp.validateBlock(stagingArea, block, isBlockWithTrustedData)
 	if err != nil {
 		return nil, err
 	}
@@ -274,7 +274,7 @@ func (bp *blockProcessor) validatePreProofOfWork(stagingArea *model.StagingArea,
 	return nil
 }
 
-func (bp *blockProcessor) validatePostProofOfWork(stagingArea *model.StagingArea, block *externalapi.DomainBlock, isBlockWithPrefilledData bool) error {
+func (bp *blockProcessor) validatePostProofOfWork(stagingArea *model.StagingArea, block *externalapi.DomainBlock, isBlockWithTrustedData bool) error {
 	blockHash := consensushashing.BlockHash(block)
 
 	isHeaderOnlyBlock := isHeaderOnlyBlock(block)
@@ -292,14 +292,14 @@ func (bp *blockProcessor) validatePostProofOfWork(stagingArea *model.StagingArea
 	}
 
 	if !hasValidatedHeader {
-		err = bp.blockValidator.ValidateHeaderInContext(stagingArea, blockHash, isBlockWithPrefilledData)
+		err = bp.blockValidator.ValidateHeaderInContext(stagingArea, blockHash, isBlockWithTrustedData)
 		if err != nil {
 			return err
 		}
 	}
 
 	if !isHeaderOnlyBlock {
-		err = bp.blockValidator.ValidateBodyInContext(stagingArea, blockHash, isBlockWithPrefilledData)
+		err = bp.blockValidator.ValidateBodyInContext(stagingArea, blockHash, isBlockWithTrustedData)
 		if err != nil {
 			return err
 		}

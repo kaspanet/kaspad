@@ -11,13 +11,13 @@ import (
 )
 
 var ghostdagDataBucketName = []byte("block-ghostdag-data")
-var metaDataBucketName = []byte("block-with-meta-data-ghostdag-data")
+var trustedDataBucketName = []byte("block-with-trusted-data-ghostdag-data")
 
 // ghostdagDataStore represents a store of BlockGHOSTDAGData
 type ghostdagDataStore struct {
 	cache              *lrucacheghostdagdata.LRUCache
 	ghostdagDataBucket model.DBBucket
-	metaDataBucket     model.DBBucket
+	trustedDataBucket  model.DBBucket
 }
 
 // New instantiates a new GHOSTDAGDataStore
@@ -25,17 +25,17 @@ func New(prefix *prefix.Prefix, cacheSize int, preallocate bool) model.GHOSTDAGD
 	return &ghostdagDataStore{
 		cache:              lrucacheghostdagdata.New(cacheSize, preallocate),
 		ghostdagDataBucket: database.MakeBucket(prefix.Serialize()).Bucket(ghostdagDataBucketName),
-		metaDataBucket:     database.MakeBucket(prefix.Serialize()).Bucket(metaDataBucketName),
+		trustedDataBucket:  database.MakeBucket(prefix.Serialize()).Bucket(trustedDataBucketName),
 	}
 }
 
 // Stage stages the given blockGHOSTDAGData for the given blockHash
 func (gds *ghostdagDataStore) Stage(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash,
-	blockGHOSTDAGData *externalapi.BlockGHOSTDAGData, isMetaData bool) {
+	blockGHOSTDAGData *externalapi.BlockGHOSTDAGData, isTrustedData bool) {
 
 	stagingShard := gds.stagingShard(stagingArea)
 
-	stagingShard.toAdd[newKey(blockHash, isMetaData)] = blockGHOSTDAGData
+	stagingShard.toAdd[newKey(blockHash, isTrustedData)] = blockGHOSTDAGData
 }
 
 func (gds *ghostdagDataStore) IsStaged(stagingArea *model.StagingArea) bool {
@@ -43,15 +43,15 @@ func (gds *ghostdagDataStore) IsStaged(stagingArea *model.StagingArea) bool {
 }
 
 // Get gets the blockGHOSTDAGData associated with the given blockHash
-func (gds *ghostdagDataStore) Get(dbContext model.DBReader, stagingArea *model.StagingArea, blockHash *externalapi.DomainHash, isMetaData bool) (*externalapi.BlockGHOSTDAGData, error) {
+func (gds *ghostdagDataStore) Get(dbContext model.DBReader, stagingArea *model.StagingArea, blockHash *externalapi.DomainHash, isTrustedData bool) (*externalapi.BlockGHOSTDAGData, error) {
 	stagingShard := gds.stagingShard(stagingArea)
 
-	key := newKey(blockHash, isMetaData)
+	key := newKey(blockHash, isTrustedData)
 	if blockGHOSTDAGData, ok := stagingShard.toAdd[key]; ok {
 		return blockGHOSTDAGData, nil
 	}
 
-	if blockGHOSTDAGData, ok := gds.cache.Get(blockHash, isMetaData); ok {
+	if blockGHOSTDAGData, ok := gds.cache.Get(blockHash, isTrustedData); ok {
 		return blockGHOSTDAGData, nil
 	}
 
@@ -64,13 +64,13 @@ func (gds *ghostdagDataStore) Get(dbContext model.DBReader, stagingArea *model.S
 	if err != nil {
 		return nil, err
 	}
-	gds.cache.Add(blockHash, isMetaData, blockGHOSTDAGData)
+	gds.cache.Add(blockHash, isTrustedData, blockGHOSTDAGData)
 	return blockGHOSTDAGData, nil
 }
 
 func (gds *ghostdagDataStore) serializeKey(k key) model.DBKey {
-	if k.isMetaData {
-		return gds.metaDataBucket.Key(k.hash.ByteSlice())
+	if k.isTrustedData {
+		return gds.trustedDataBucket.Key(k.hash.ByteSlice())
 	}
 	return gds.ghostdagDataBucket.Key(k.hash.ByteSlice())
 }

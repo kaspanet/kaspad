@@ -5,7 +5,7 @@ type Consensus interface {
 	Init(shouldNotAddGenesis bool) error
 	BuildBlock(coinbaseData *DomainCoinbaseData, transactions []*DomainTransaction) (*DomainBlock, error)
 	ValidateAndInsertBlock(block *DomainBlock, shouldValidateAgainstUTXO bool) (*BlockInsertionResult, error)
-	ValidateAndInsertBlockWithMetaData(block *BlockWithMetaData, validateUTXO bool) (*BlockInsertionResult, error)
+	ValidateAndInsertBlockWithTrustedData(block *BlockWithTrustedData, validateUTXO bool) (*BlockInsertionResult, error)
 	ValidateTransactionAndPopulateWithConsensusData(transaction *DomainTransaction) error
 
 	GetBlock(blockHash *DomainHash) (*DomainBlock, error)
@@ -19,7 +19,7 @@ type Consensus interface {
 	GetPruningPointUTXOs(expectedPruningPointHash *DomainHash, fromOutpoint *DomainOutpoint, limit int) ([]*OutpointAndUTXOEntryPair, error)
 	GetVirtualUTXOs(expectedVirtualParents []*DomainHash, fromOutpoint *DomainOutpoint, limit int) ([]*OutpointAndUTXOEntryPair, error)
 	PruningPoint() (*DomainHash, error)
-	PruningPointAndItsAnticoneWithMetaData() ([]*BlockWithMetaData, error)
+	PruningPointAndItsAnticoneWithTrustedData() ([]*BlockWithTrustedData, error)
 	ClearImportedPruningPointData() error
 	AppendImportedPruningPointUTXOs(outpointAndUTXOEntryPairs []*OutpointAndUTXOEntryPair) error
 	ValidateAndInsertImportedPruningPoint(newPruningPoint *DomainHash) error

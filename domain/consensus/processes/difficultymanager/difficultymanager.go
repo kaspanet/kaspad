@@ -72,7 +72,7 @@ func New(databaseContext model.DBReader,
 func (dm *difficultyManager) StageDAADataAndReturnRequiredDifficulty(
 	stagingArea *model.StagingArea,
 	blockHash *externalapi.DomainHash,
-	isBlockWithPrefilledData bool) (uint32, error) {
+	isBlockWithTrustedData bool) (uint32, error) {
 
 	onEnd := logger.LogAndMeasureExecutionTime(log, "StageDAADataAndReturnRequiredDifficulty")
 	defer onEnd()
@@ -82,7 +82,7 @@ func (dm *difficultyManager) StageDAADataAndReturnRequiredDifficulty(
 		return 0, err
 	}
 
-	err = dm.stageDAAScoreAndAddedBlocks(stagingArea, blockHash, windowHashes, isBlockWithPrefilledData)
+	err = dm.stageDAAScoreAndAddedBlocks(stagingArea, blockHash, windowHashes, isBlockWithTrustedData)
 	if err != nil {
 		return 0, err
 	}
@@ -136,12 +136,12 @@ func (dm *difficultyManager) requiredDifficultyFromTargetsWindow(targetsWindow b
 func (dm *difficultyManager) stageDAAScoreAndAddedBlocks(stagingArea *model.StagingArea,
 	blockHash *externalapi.DomainHash,
 	windowHashes []*externalapi.DomainHash,
-	isBlockWithPrefilledData bool) error {
+	isBlockWithTrustedData bool) error {
 
 	onEnd := logger.LogAndMeasureExecutionTime(log, "stageDAAScoreAndAddedBlocks")
 	defer onEnd()
 
-	daaScore, addedBlocks, err := dm.calculateDaaScoreAndAddedBlocks(stagingArea, blockHash, windowHashes, isBlockWithPrefilledData)
+	daaScore, addedBlocks, err := dm.calculateDaaScoreAndAddedBlocks(stagingArea, blockHash, windowHashes, isBlockWithTrustedData)
 	if err != nil {
 		return err
 	}
@@ -154,7 +154,7 @@ func (dm *difficultyManager) stageDAAScoreAndAddedBlocks(stagingArea *model.Stag
 func (dm *difficultyManager) calculateDaaScoreAndAddedBlocks(stagingArea *model.StagingArea,
 	blockHash *externalapi.DomainHash,
 	windowHashes []*externalapi.DomainHash,
-	isBlockWithPrefilledData bool) (uint64, []*externalapi.DomainHash, error) {
+	isBlockWithTrustedData bool) (uint64, []*externalapi.DomainHash, error) {
 
 	if blockHash.Equal(dm.genesisHash) {
 		return 0, nil, nil
@@ -187,7 +187,7 @@ func (dm *difficultyManager) calculateDaaScoreAndAddedBlocks(stagingArea *model.
 	}
 
 	var daaScore uint64
-	if isBlockWithPrefilledData {
+	if isBlockWithTrustedData {
 		daaScore, err = dm.daaBlocksStore.DAAScore(dm.databaseContext, stagingArea, blockHash)
 		if err != nil {
 			return 0, nil, err
