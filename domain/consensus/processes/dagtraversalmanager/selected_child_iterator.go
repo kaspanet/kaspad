@@ -7,15 +7,13 @@ import (
 )
 
 type selectedChildIterator struct {
-	databaseContext    model.DBReader
-	dagTopologyManager model.DAGTopologyManager
+	dagTraversalManager model.DAGTraversalManager
 
-	reachabilityDataStore model.ReachabilityDataStore
-	highHash, lowHash     *externalapi.DomainHash
-	current               *externalapi.DomainHash
-	err                   error
-	isClosed              bool
-	stagingArea           *model.StagingArea
+	highHash, lowHash *externalapi.DomainHash
+	current           *externalapi.DomainHash
+	err               error
+	isClosed          bool
+	stagingArea       *model.StagingArea
 }
 
 func (s *selectedChildIterator) First() bool {
@@ -34,28 +32,18 @@ func (s *selectedChildIterator) Next() bool {
 		return true
 	}
 
-	data, err := s.reachabilityDataStore.ReachabilityData(s.databaseContext, s.stagingArea, s.current)
+	selectedChild, err := s.dagTraversalManager.SelectedChild(s.stagingArea, s.highHash, s.current)
+	if errors.Is(err, errNoSelectedChild) {
+		return false
+	}
 	if err != nil {
 		s.current = nil
 		s.err = err
 		return true
 	}
 
-	for _, child := range data.Children() {
-		isChildInSelectedParentChainOfHighHash, err := s.dagTopologyManager.IsInSelectedParentChainOf(
-			s.stagingArea, child, s.highHash)
-		if err != nil {
-			s.current = nil
-			s.err = err
-			return true
-		}
-
-		if isChildInSelectedParentChainOfHighHash {
-			s.current = child
-			return true
-		}
-	}
-	return false
+	s.current = selectedChild
+	return true
 }
 
 func (s *selectedChildIterator) Get() (*externalapi.DomainHash, error) {
@@ -70,9 +58,6 @@ func (s *selectedChildIterator) Close() error {
 		return errors.New("Tried using a closed SelectedChildIterator")
 	}
 	s.isClosed = true
-	s.databaseContext = nil
-	s.dagTopologyManager = nil
-	s.reachabilityDataStore = nil
 	s.highHash = nil
 	s.lowHash = nil
 	s.current = nil
@@ -93,12 +78,36 @@ func (dtm *dagTraversalManager) SelectedChildIterator(stagingArea *model.Staging
 		return nil, errors.Errorf("%s is not in the selected parent chain of %s", highHash, lowHash)
 	}
 	return &selectedChildIterator{
-		databaseContext:       dtm.databaseContext,
-		dagTopologyManager:    dtm.dagTopologyManager,
-		reachabilityDataStore: dtm.reachabilityDataStore,
-		highHash:              highHash,
-		lowHash:               lowHash,
-		current:               lowHash,
-		stagingArea:           stagingArea,
+		dagTraversalManager: dtm,
+		highHash:            highHash,
+		lowHash:             lowHash,
+		current:             lowHash,
+		stagingArea:         stagingArea,
 	}, nil
+}
+
+var errNoSelectedChild = errors.New("errNoSelectedChild")
+
+func (dtm *dagTraversalManager) SelectedChild(stagingArea *model.StagingArea,
+	context, blockHash *externalapi.DomainHash) (*externalapi.DomainHash, error) {
+
+	data, err := dtm.reachabilityDataStore.ReachabilityData(dtm.databaseContext, stagingArea, blockHash)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, child := range data.Children() {
+		isChildInSelectedParentChainOfHighHash, err := dtm.dagTopologyManager.IsInSelectedParentChainOf(
+			stagingArea, child, context)
+		if err != nil {
+			return nil, err
+		}
+
+		if isChildInSelectedParentChainOfHighHash {
+			return child, nil
+		}
+	}
+
+	return nil, errors.Wrapf(errNoSelectedChild, "no selected child for %s from the point of view of %s",
+		blockHash, context)
 }

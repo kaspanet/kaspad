@@ -124,7 +124,7 @@ func (csm *consensusStateManager) importPruningPoint(
 		return err
 	}
 
-	err = csm.setPruningPointSelectedChildAsVirtualOnlyParent(stagingArea)
+	err = csm.setPruningPointSelectedChildAsTheOnlyParentOfTheVirtual(stagingArea)
 	if err != nil {
 		return err
 	}
@@ -132,7 +132,7 @@ func (csm *consensusStateManager) importPruningPoint(
 	return nil
 }
 
-func (csm *consensusStateManager) setPruningPointSelectedChildAsVirtualOnlyParent(stagingArea *model.StagingArea) error {
+func (csm *consensusStateManager) setPruningPointSelectedChildAsTheOnlyParentOfTheVirtual(stagingArea *model.StagingArea) error {
 	headersSelectedTip, err := csm.headersSelectedTipStore.HeadersSelectedTip(csm.databaseContext, stagingArea)
 	if err != nil {
 		return err
@@ -143,19 +143,8 @@ func (csm *consensusStateManager) setPruningPointSelectedChildAsVirtualOnlyParen
 		return err
 	}
 
-	pruningPointSelectedChildIterator, err := csm.dagTraversalManager.SelectedChildIterator(stagingArea,
+	pruningPointSelectedChild, err := csm.dagTraversalManager.SelectedChild(stagingArea,
 		headersSelectedTip, pruningPoint)
-	if err != nil {
-		return err
-	}
-	defer pruningPointSelectedChildIterator.Close()
-
-	ok := pruningPointSelectedChildIterator.First()
-	if !ok {
-		return errors.Errorf("pruning point pruningPointSelectedChildIterator is empty")
-	}
-
-	pruningPointSelectedChild, err := pruningPointSelectedChildIterator.Get()
 	if err != nil {
 		return err
 	}
