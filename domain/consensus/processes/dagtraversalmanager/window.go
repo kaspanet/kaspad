@@ -9,7 +9,9 @@ import (
 // BlockWindow returns a blockWindow of the given size that contains the
 // blocks in the past of highHash, the sorting is unspecified.
 // If the number of blocks in the past of startingNode is less then windowSize,
-func (dtm *dagTraversalManager) BlockWindow(stagingArea *model.StagingArea, highHash *externalapi.DomainHash, windowSize int) ([]*externalapi.DomainHash, error) {
+func (dtm *dagTraversalManager) BlockWindow(stagingArea *model.StagingArea, highHash *externalapi.DomainHash,
+	windowSize int) ([]*externalapi.DomainHash, error) {
+
 	windowHeap, err := dtm.blockWindowHeap(stagingArea, highHash, windowSize)
 	if err != nil {
 		return nil, err
@@ -22,18 +24,15 @@ func (dtm *dagTraversalManager) BlockWindow(stagingArea *model.StagingArea, high
 	return window, nil
 }
 
-func (dtm *dagTraversalManager) BlockWindowWithGHOSTDAGData(stagingArea *model.StagingArea, highHash *externalapi.DomainHash, windowSize int) ([]*externalapi.BlockGHOSTDAGDataHashPair, error) {
+func (dtm *dagTraversalManager) BlockWindowWithGHOSTDAGData(stagingArea *model.StagingArea,
+	highHash *externalapi.DomainHash, windowSize int) ([]*externalapi.BlockGHOSTDAGDataHashPair, error) {
 
 	windowHeap, err := dtm.blockWindowHeap(stagingArea, highHash, windowSize)
 	if err != nil {
 		return nil, err
 	}
 
-	window := make([]*externalapi.BlockGHOSTDAGDataHashPair, 0, len(windowHeap.impl.slice))
-	for _, b := range windowHeap.impl.slice {
-		window = append(window, b)
-	}
-	return window, nil
+	return windowHeap.impl.slice, nil
 }
 
 func (dtm *dagTraversalManager) blockWindowHeap(stagingArea *model.StagingArea, highHash *externalapi.DomainHash, windowSize int) (*sizedUpBlockHeap, error) {
