@@ -31,7 +31,7 @@ func (dtm *dagTraversalManager) BlockWindowWithGHOSTDAGData(stagingArea *model.S
 
 	window := make([]*externalapi.BlockGHOSTDAGDataHashPair, 0, len(windowHeap.impl.slice))
 	for _, b := range windowHeap.impl.slice {
-		window = append(window, (*externalapi.BlockGHOSTDAGDataHashPair)(b))
+		window = append(window, b)
 	}
 	return window, nil
 }

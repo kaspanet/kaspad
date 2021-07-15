@@ -7,15 +7,13 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 )
 
-type blockHeapNode externalapi.BlockGHOSTDAGDataHashPair
-
-func (left *blockHeapNode) less(right *blockHeapNode, gm model.GHOSTDAGManager) bool {
+func blockGHOSTDAGDataHashPairLess(left, right *externalapi.BlockGHOSTDAGDataHashPair, gm model.GHOSTDAGManager) bool {
 	return gm.Less(left.Hash, left.GHOSTDAGData, right.Hash, right.GHOSTDAGData)
 }
 
 // baseHeap  is an implementation for heap.Interface that sorts blocks by their blueWork+hash
 type baseHeap struct {
-	slice           []*blockHeapNode
+	slice           []*externalapi.BlockGHOSTDAGDataHashPair
 	ghostdagManager model.GHOSTDAGManager
 }
 
@@ -23,7 +21,7 @@ func (h *baseHeap) Len() int      { return len(h.slice) }
 func (h *baseHeap) Swap(i, j int) { h.slice[i], h.slice[j] = h.slice[j], h.slice[i] }
 
 func (h *baseHeap) Push(x interface{}) {
-	h.slice = append(h.slice, x.(*blockHeapNode))
+	h.slice = append(h.slice, x.(*externalapi.BlockGHOSTDAGDataHashPair))
 }
 
 func (h *baseHeap) Pop() interface{} {
@@ -35,7 +33,7 @@ func (h *baseHeap) Pop() interface{} {
 }
 
 // peek returns the block with lowest blueWork+hash from this heap without removing it
-func (h *baseHeap) peek() *blockHeapNode {
+func (h *baseHeap) peek() *externalapi.BlockGHOSTDAGDataHashPair {
 	return h.slice[0]
 }
 
@@ -45,7 +43,7 @@ type upHeap struct{ baseHeap }
 func (h *upHeap) Less(i, j int) bool {
 	heapNodeI := h.slice[i]
 	heapNodeJ := h.slice[j]
-	return heapNodeI.less(heapNodeJ, h.ghostdagManager)
+	return blockGHOSTDAGDataHashPairLess(heapNodeI, heapNodeJ, h.ghostdagManager)
 }
 
 // downHeap extends baseHeap to include Less operation that traverses from top to bottom
@@ -54,7 +52,7 @@ type downHeap struct{ baseHeap }
 func (h *downHeap) Less(i, j int) bool {
 	heapNodeI := h.slice[i]
 	heapNodeJ := h.slice[j]
-	return !heapNodeI.less(heapNodeJ, h.ghostdagManager)
+	return !blockGHOSTDAGDataHashPairLess(heapNodeI, heapNodeJ, h.ghostdagManager)
 }
 
 // blockHeap represents a mutable heap of blocks, sorted by their blueWork+hash
@@ -91,7 +89,7 @@ func (dtm *dagTraversalManager) NewUpHeap(stagingArea *model.StagingArea) model.
 
 // Pop removes the block with lowest blueWork+hash from this heap and returns it
 func (bh *blockHeap) Pop() *externalapi.DomainHash {
-	return heap.Pop(bh.impl).(*blockHeapNode).Hash
+	return heap.Pop(bh.impl).(*externalapi.BlockGHOSTDAGDataHashPair).Hash
 }
 
 // Push pushes the block onto the heap
@@ -101,7 +99,7 @@ func (bh *blockHeap) Push(blockHash *externalapi.DomainHash) error {
 		return err
 	}
 
-	heap.Push(bh.impl, &blockHeapNode{
+	heap.Push(bh.impl, &externalapi.BlockGHOSTDAGDataHashPair{
 		Hash:         blockHash,
 		GHOSTDAGData: ghostdagData,
 	})
@@ -145,7 +143,7 @@ type sizedUpBlockHeap struct {
 // newSizedUpHeap initializes and returns a new sizedUpBlockHeap
 func (dtm *dagTraversalManager) newSizedUpHeap(stagingArea *model.StagingArea, cap int) *sizedUpBlockHeap {
 	h := sizedUpBlockHeap{
-		impl:          upHeap{baseHeap{slice: make([]*blockHeapNode, 0, cap), ghostdagManager: dtm.ghostdagManager}},
+		impl:          upHeap{baseHeap{slice: make([]*externalapi.BlockGHOSTDAGDataHashPair, 0, cap), ghostdagManager: dtm.ghostdagManager}},
 		ghostdagStore: dtm.ghostdagDataStore,
 		dbContext:     dtm.databaseContext,
 		stagingArea:   stagingArea,
@@ -161,21 +159,21 @@ func (sbh *sizedUpBlockHeap) len() int {
 
 // pop removes the block with lowest blueWork+hash from this heap and returns it
 func (sbh *sizedUpBlockHeap) pop() *externalapi.DomainHash {
-	return heap.Pop(&sbh.impl).(*blockHeapNode).Hash
+	return heap.Pop(&sbh.impl).(*externalapi.BlockGHOSTDAGDataHashPair).Hash
 }
 
 // tryPushWithGHOSTDAGData is just like tryPush but the caller provides the ghostdagData of the block.
 func (sbh *sizedUpBlockHeap) tryPushWithGHOSTDAGData(blockHash *externalapi.DomainHash,
 	ghostdagData *externalapi.BlockGHOSTDAGData) (bool, error) {
 
-	node := &blockHeapNode{
+	node := &externalapi.BlockGHOSTDAGDataHashPair{
 		Hash:         blockHash,
 		GHOSTDAGData: ghostdagData,
 	}
 	if len(sbh.impl.slice) == cap(sbh.impl.slice) {
 		min := sbh.impl.peek()
 		// if the heap is full, and the new block is less than the minimum, return false
-		if node.less(min, sbh.impl.ghostdagManager) {
+		if blockGHOSTDAGDataHashPairLess(node, min, sbh.impl.ghostdagManager) {
 			return false, nil
 		}
 		sbh.pop()
