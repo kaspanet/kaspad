@@ -28,11 +28,6 @@ const (
 	// as a relative locktime.
 	SequenceLockTimeDisabled uint64 = 1 << 63
 
-	// SequenceLockTimeIsSeconds is a flag that if set on a transaction
-	// input's sequence number, the relative locktime has units of 1 second.
-	// If the flag is not set, the relative lockatime is according to DAA score.
-	SequenceLockTimeIsSeconds uint64 = 1 << 62
-
 	// SequenceLockTimeMask is a mask that extracts the relative locktime
 	// when masked against the transaction input sequence number.
 	SequenceLockTimeMask uint64 = 0x00000000ffffffff

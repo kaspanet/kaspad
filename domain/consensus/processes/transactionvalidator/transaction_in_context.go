@@ -70,7 +70,7 @@ func (v *transactionValidator) ValidateTransactionInContextIgnoringUTXO(stagingA
 //
 // Note: if the function fails, there's no guarantee that the transaction fee field will remain unaffected.
 func (v *transactionValidator) ValidateTransactionInContextAndPopulateFee(stagingArea *model.StagingArea,
-	tx *externalapi.DomainTransaction, povBlockHash *externalapi.DomainHash, selectedParentMedianTime int64) error {
+	tx *externalapi.DomainTransaction, povBlockHash *externalapi.DomainHash) error {
 
 	err := v.checkTransactionCoinbaseMaturity(stagingArea, povBlockHash, tx)
 	if err != nil {
@@ -89,7 +89,7 @@ func (v *transactionValidator) ValidateTransactionInContextAndPopulateFee(stagin
 
 	tx.Fee = totalSompiIn - totalSompiOut
 
-	err = v.checkTransactionSequenceLock(stagingArea, povBlockHash, tx, selectedParentMedianTime)
+	err = v.checkTransactionSequenceLock(stagingArea, povBlockHash, tx)
 	if err != nil {
 		return err
 	}
@@ -204,7 +204,7 @@ func (v *transactionValidator) checkTransactionOutputAmounts(tx *externalapi.Dom
 }
 
 func (v *transactionValidator) checkTransactionSequenceLock(stagingArea *model.StagingArea,
-	povBlockHash *externalapi.DomainHash, tx *externalapi.DomainTransaction, medianTime int64) error {
+	povBlockHash *externalapi.DomainHash, tx *externalapi.DomainTransaction) error {
 
 	// A transaction can only be included within a block
 	// once the sequence locks of *all* its inputs are
@@ -219,7 +219,7 @@ func (v *transactionValidator) checkTransactionSequenceLock(stagingArea *model.S
 		return err
 	}
 
-	if !v.sequenceLockActive(sequenceLock, daaScore, medianTime) {
+	if !v.sequenceLockActive(sequenceLock, daaScore) {
 		return errors.Wrapf(ruleerrors.ErrUnfinalizedTx, "block contains "+
 			"transaction whose input sequence "+
 			"locks are not met")
@@ -271,14 +271,13 @@ func (v *transactionValidator) validateTransactionScripts(tx *externalapi.Domain
 func (v *transactionValidator) calcTxSequenceLockFromReferencedUTXOEntries(stagingArea *model.StagingArea,
 	povBlockHash *externalapi.DomainHash, tx *externalapi.DomainTransaction) (*sequenceLock, error) {
 
-	// A value of -1 for each relative lock type represents a relative time
-	// lock value that will allow a transaction to be included in a block
-	// at any given height or time.
-	sequenceLock := &sequenceLock{Milliseconds: -1, BlockDAAScore: -1}
+	// A value of -1 represents a relative timelock value that will allow a transaction to be
+	//included in a block at any given DAA score.
+	sequenceLock := &sequenceLock{BlockDAAScore: -1}
 
 	// Sequence locks don't apply to coinbase transactions Therefore, we
 	// return sequence lock values of -1 indicating that this transaction
-	// can be included within a block at any given height or time.
+	// can be included within a block at any given DAA score.
 	if transactionhelper.IsCoinBase(tx) {
 		return sequenceLock, nil
 	}
@@ -321,28 +320,24 @@ func (v *transactionValidator) calcTxSequenceLockFromReferencedUTXOEntries(stagi
 	return sequenceLock, nil
 }
 
-// sequenceLock represents the converted relative lock-time in seconds, and
+// sequenceLock represents the converted relative lock-time in
 // absolute block-daa-score for a transaction input's relative lock-times.
 // According to sequenceLock, after the referenced input has been confirmed
 // within a block, a transaction spending that input can be included into a
-// block either after 'seconds' (according to past median time), or once the
-// 'BlockDAAScore' has been reached.
+// block either after the 'BlockDAAScore' has been reached.
 type sequenceLock struct {
-	Milliseconds  int64
 	BlockDAAScore int64
 }
 
 // sequenceLockActive determines if a transaction's sequence locks have been
 // met, meaning that all the inputs of a given transaction have reached a
-// DAA score or time sufficient for their relative lock-time maturity.
-func (v *transactionValidator) sequenceLockActive(sequenceLock *sequenceLock, blockDAAScore uint64,
-	medianTimePast int64) bool {
+// DAA score sufficient for their relative lock-time maturity.
+func (v *transactionValidator) sequenceLockActive(sequenceLock *sequenceLock, blockDAAScore uint64) bool {
 
-	// If either the milliseconds, or DAA score relative-lock time has not yet
+	// If (DAA score) relative-lock time has not yet
 	// reached, then the transaction is not yet mature according to its
 	// sequence locks.
-	if sequenceLock.Milliseconds >= medianTimePast ||
-		sequenceLock.BlockDAAScore >= int64(blockDAAScore) {
+	if sequenceLock.BlockDAAScore >= int64(blockDAAScore) {
 		return false
 	}
 
