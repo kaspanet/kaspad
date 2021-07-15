@@ -9,7 +9,12 @@ import (
 )
 
 func checkResolveVirtual(syncerClient, syncedClient *rpc.Client) error {
-	syncedBlockCountResponse, err := syncerClient.GetBlockCount()
+	err := syncedClient.RegisterForBlockAddedNotifications()
+	if err != nil {
+		return errors.Wrap(err, "error registering for blockAdded notifications")
+	}
+
+	syncedBlockCountResponse, err := syncedClient.GetBlockCount()
 	if err != nil {
 		return err
 	}
