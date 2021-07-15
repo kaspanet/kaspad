@@ -31,6 +31,7 @@ var commandTypes = []reflect.Type{
 
 	reflect.TypeOf(protowire.KaspadMessage_GetMempoolEntryRequest{}),
 	reflect.TypeOf(protowire.KaspadMessage_GetMempoolEntriesRequest{}),
+	reflect.TypeOf(protowire.KaspadMessage_GetMempoolEntriesByAddressesRequest{}),
 	reflect.TypeOf(protowire.KaspadMessage_SubmitTransactionRequest{}),
 
 	reflect.TypeOf(protowire.KaspadMessage_GetUtxosByAddressesRequest{}),
