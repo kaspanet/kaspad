@@ -40,7 +40,9 @@ type Consensus interface {
 	PopulateMass(transaction *DomainTransaction)
 }
 
-// ConsensusWrapper is a wrapper for consensus
-type ConsensusWrapper interface {
+// ConsensusReference holds a reference for consensus.
+// It is used when you want access to a consensus that
+// can be swapped.
+type ConsensusReference interface {
 	Consensus() Consensus
 }

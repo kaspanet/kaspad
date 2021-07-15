@@ -27,10 +27,10 @@ const (
 	// the mempool and relayed. It is specified in sompi per 1kg (or 1000 grams) of transaction mass.
 	defaultMinimumRelayTransactionFee = util.Amount(1000)
 
-	// Standard transaction version range might be different from what consensusWrapper accepts, therefore
+	// Standard transaction version range might be different from what consensus accepts, therefore
 	// we define separate values in mempool.
 	// However, currently there's exactly one transaction version, so mempool accepts the same version
-	// as consensusWrapper.
+	// as consensus.
 	defaultMinimumStandardTransactionVersion = constants.MaxTransactionVersion
 	defaultMaximumStandardTransactionVersion = constants.MaxTransactionVersion
 )

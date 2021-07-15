@@ -15,7 +15,7 @@ func (mp *mempool) fillInputsAndGetMissingParents(transaction *externalapi.Domai
 
 	fillInputs(transaction, parentsInPool)
 
-	err = mp.consensusWrapper.Consensus().ValidateTransactionAndPopulateWithConsensusData(transaction)
+	err = mp.consensusReference.Consensus().ValidateTransactionAndPopulateWithConsensusData(transaction)
 	if err != nil {
 		errMissingOutpoints := ruleerrors.ErrMissingTxOut{}
 		if errors.As(err, &errMissingOutpoints) {

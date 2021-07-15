@@ -36,10 +36,10 @@ func (msg *GetVirtualSelectedParentChainFromBlockResponseMessage) Command() Mess
 
 // NewGetVirtualSelectedParentChainFromBlockResponseMessage returns a instance of the message
 func NewGetVirtualSelectedParentChainFromBlockResponseMessage(removedChainBlockHashes,
-	addedChainBlocks []string) *GetVirtualSelectedParentChainFromBlockResponseMessage {
+	addedChainBlockHashes []string) *GetVirtualSelectedParentChainFromBlockResponseMessage {
 
 	return &GetVirtualSelectedParentChainFromBlockResponseMessage{
 		RemovedChainBlockHashes: removedChainBlockHashes,
-		AddedChainBlockHashes:   addedChainBlocks,
+		AddedChainBlockHashes:   addedChainBlockHashes,
 	}
 }
