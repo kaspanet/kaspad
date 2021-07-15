@@ -5,6 +5,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/multiset"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/utxo"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/virtual"
 	"github.com/kaspanet/kaspad/infrastructure/db/database"
 	"github.com/kaspanet/kaspad/infrastructure/logger"
 	"github.com/kaspanet/kaspad/util/staging"
@@ -280,7 +281,7 @@ func (pm *pruningManager) deletePastBlocks(stagingArea *model.StagingArea, pruni
 		return err
 	}
 
-	if !pm.isVirtualGenesisOnlyParent(parents) {
+	if !virtual.ContainsOnlyVirtualGenesis(parents) {
 		err = queue.PushSlice(parents)
 		if err != nil {
 			return err
@@ -293,10 +294,6 @@ func (pm *pruningManager) deletePastBlocks(stagingArea *model.StagingArea, pruni
 	}
 
 	return nil
-}
-
-func (pm *pruningManager) isVirtualGenesisOnlyParent(parents []*externalapi.DomainHash) bool {
-	return len(parents) == 1 && parents[0].Equal(model.VirtualGenesisBlockHash)
 }
 
 func (pm *pruningManager) deleteBlocksDownward(stagingArea *model.StagingArea, queue model.BlockHeap) error {
@@ -319,7 +316,7 @@ func (pm *pruningManager) deleteBlocksDownward(stagingArea *model.StagingArea, q
 				return err
 			}
 
-			if !pm.isVirtualGenesisOnlyParent(parents) {
+			if !virtual.ContainsOnlyVirtualGenesis(parents) {
 				err = queue.PushSlice(parents)
 				if err != nil {
 					return err

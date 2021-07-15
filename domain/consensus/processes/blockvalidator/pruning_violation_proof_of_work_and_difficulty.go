@@ -5,6 +5,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/pow"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/virtual"
 	"github.com/kaspanet/kaspad/infrastructure/db/database"
 	"github.com/kaspanet/kaspad/infrastructure/logger"
 	"github.com/kaspanet/kaspad/util/difficulty"
@@ -219,7 +220,7 @@ func (v *blockValidator) checkPruningPointViolation(stagingArea *model.StagingAr
 		return err
 	}
 
-	if v.isVirtualGenesisOnlyParent(parents) {
+	if virtual.ContainsOnlyVirtualGenesis(parents) {
 		return nil
 	}
 
@@ -233,8 +234,4 @@ func (v *blockValidator) checkPruningPointViolation(stagingArea *model.StagingAr
 			"expected pruning point %s to be in block %s past.", pruningPoint, blockHash)
 	}
 	return nil
-}
-
-func (v *blockValidator) isVirtualGenesisOnlyParent(parents []*externalapi.DomainHash) bool {
-	return len(parents) == 1 && parents[0].Equal(model.VirtualGenesisBlockHash)
 }
