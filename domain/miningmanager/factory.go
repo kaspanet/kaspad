@@ -19,7 +19,7 @@ func (f *factory) NewMiningManager(consensus externalapi.Consensus, params *dagc
 	mempoolConfig *mempoolpkg.Config) MiningManager {
 
 	mempool := mempoolpkg.New(mempoolConfig, consensus)
-	blockTemplateBuilder := blocktemplatebuilder.New(consensus, mempool, params.MaxMassAcceptedByBlock)
+	blockTemplateBuilder := blocktemplatebuilder.New(consensus, mempool, params.MaxBlockMass)
 
 	return &miningManager{
 		mempool:              mempool,

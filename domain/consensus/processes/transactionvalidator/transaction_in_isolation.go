@@ -9,6 +9,7 @@ import (
 	"github.com/pkg/errors"
 )
 
+// ValidateTransactionInIsolation validates the parts of the transaction that can be validated context-free
 func (v *transactionValidator) ValidateTransactionInIsolation(tx *externalapi.DomainTransaction) error {
 	err := v.checkTransactionInputCount(tx)
 	if err != nil {

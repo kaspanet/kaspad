@@ -187,9 +187,10 @@ func TestIsFinalizedTransaction(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Error Inserting block: %+v", err)
 		}
-		blockGhostDAG, err := tc.GHOSTDAGDataStore().Get(tc.DatabaseContext(), stagingArea, consensushashing.BlockHash(block))
+		blockHash := consensushashing.BlockHash(block)
+		blockDAAScore, err := tc.DAABlocksStore().DAAScore(tc.DatabaseContext(), stagingArea, blockHash)
 		if err != nil {
-			t.Fatalf("Error getting GhostDAG Data: %+v", err)
+			t.Fatalf("Error getting block DAA score : %+v", err)
 		}
 		blockParents := block.Header.ParentHashes()
 		parentToSpend, err := tc.GetBlock(blockParents[0])
@@ -212,10 +213,10 @@ func TestIsFinalizedTransaction(t *testing.T) {
 			}
 		}
 
-		// Check that the same blueScore or higher fails, but lower passes.
-		checkForLockTimeAndSequence(blockGhostDAG.BlueScore()+1, 0, false)
-		checkForLockTimeAndSequence(blockGhostDAG.BlueScore(), 0, false)
-		checkForLockTimeAndSequence(blockGhostDAG.BlueScore()-1, 0, true)
+		// Check that the same DAAScore or higher fails, but lower passes.
+		checkForLockTimeAndSequence(blockDAAScore+1, 0, false)
+		checkForLockTimeAndSequence(blockDAAScore, 0, false)
+		checkForLockTimeAndSequence(blockDAAScore-1, 0, true)
 
 		pastMedianTime, err := tc.PastMedianTimeManager().PastMedianTime(stagingArea, consensushashing.BlockHash(block))
 		if err != nil {
