@@ -10,8 +10,7 @@ import (
 )
 
 func serializeOutpoint(outpoint *externalapi.DomainOutpoint) ([]byte, error) {
-	dbOutpoint := serialization.DomainOutpointToDbOutpoint(outpoint)
-	return proto.Marshal(dbOutpoint)
+	return proto.Marshal(serialization.DomainOutpointToDbOutpoint(outpoint))
 }
 
 func deserializeOutpoint(serializedOutpoint []byte) (*externalapi.DomainOutpoint, error) {

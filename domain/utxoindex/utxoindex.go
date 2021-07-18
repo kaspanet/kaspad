@@ -7,8 +7,7 @@ import (
 	"sync"
 )
 
-// UTXOIndex maintains an index between transaction scriptPublicKeys
-// and UTXOs
+// UTXOIndex maintains an index between batch scriptPublicKeys and UTXOs
 type UTXOIndex struct {
 	consensus externalapi.Consensus
 	store     *utxoIndexStore
@@ -42,7 +41,15 @@ func New(consensus externalapi.Consensus, database database.Database) (*UTXOInde
 
 // Reset deletes the whole UTXO index and resyncs it from consensus.
 func (ui *UTXOIndex) Reset() error {
-	err := ui.store.deleteAll()
+	uis := ui.store
+
+	err := uis.StartBatch()
+	if err != nil {
+		return err
+	}
+	defer uis.RollbackUnlessClosed()
+
+	err = uis.clear()
 	if err != nil {
 		return err
 	}
@@ -59,28 +66,32 @@ func (ui *UTXOIndex) Reset() error {
 		if err != nil {
 			return err
 		}
-
-		err = ui.store.addAndCommitOutpointsWithoutTransaction(virtualUTXOs)
-		if err != nil {
-			return err
+		for _, pair := range virtualUTXOs {
+			err = ui.store.put(pair)
+			if err != nil {
+				return err
+			}
 		}
-
 		if len(virtualUTXOs) < step {
 			break
 		}
-
 		fromOutpoint = virtualUTXOs[len(virtualUTXOs)-1].Outpoint
 	}
 
 	// This has to be done last to mark that the reset went smoothly and no reset has to be called next time.
-	return ui.store.updateAndCommitVirtualParentsWithoutTransaction(virtualInfo.ParentHashes)
+	err = ui.store.putVirtualParents(virtualInfo.ParentHashes)
+	if err != nil {
+		return err
+	}
+
+	return uis.Commit()
 }
 
 func (ui *UTXOIndex) isSynced() (bool, error) {
 	utxoIndexVirtualParents, err := ui.store.getVirtualParents()
 	if err != nil {
 		if database.IsNotFoundError(err) {
-			return false, nil
+			err = nil
 		}
 		return false, err
 	}
@@ -101,77 +112,77 @@ func (ui *UTXOIndex) Update(blockInsertionResult *externalapi.BlockInsertionResu
 	ui.mutex.Lock()
 	defer ui.mutex.Unlock()
 
-	log.Tracef("Updating UTXO index with VirtualUTXODiff: %+v", blockInsertionResult.VirtualUTXODiff)
-	err := ui.removeUTXOs(blockInsertionResult.VirtualUTXODiff.ToRemove())
+	diff := blockInsertionResult.VirtualUTXODiff
+	uis := ui.store
+
+	log.Tracef("Updating UTXO index with VirtualUTXODiff: %+v", diff)
+
+	err := uis.StartBatch()
+	if err != nil {
+		return nil, err
+	}
+	defer uis.RollbackUnlessClosed()
+
+	// Structure for NotifyUTXOsChanged
+	changes := &UTXOChanges{Added: AddressesUTXOMap{}, Removed: AddressesUTXOMap{}}
+
+	for _, iteration := range []struct {
+		utxos      externalapi.UTXOCollection
+		changesMap AddressesUTXOMap
+		isToRemove bool
+	}{
+		{diff.ToRemove(), changes.Removed, true},
+		{diff.ToAdd(), changes.Added, false},
+	} {
+		iterator := iteration.utxos.Iterator()
+		changesMap := iteration.changesMap
+		for ok := iterator.First(); ok; ok = iterator.Next() {
+			outpoint, entry, err := iterator.Get()
+			if err != nil {
+				return nil, err
+			}
+			pair := &externalapi.OutpointAndUTXOEntryPair{
+				Outpoint:  outpoint,
+				UTXOEntry: entry,
+			}
+			if iteration.isToRemove {
+				err = uis.delete(pair)
+			} else {
+				err = uis.put(pair)
+			}
+			if err != nil {
+				return nil, err
+			}
+
+			// Filling changes structure
+			scriptPublicKeyString := ConvertScriptPublicKeyToString(entry.ScriptPublicKey())
+			if changesMap[scriptPublicKeyString] == nil {
+				changesMap[scriptPublicKeyString] = make(UTXOMap)
+			}
+			changesMap[scriptPublicKeyString][*outpoint] = entry
+		}
+	}
+
+	err = uis.putVirtualParents(blockInsertionResult.VirtualParents)
 	if err != nil {
 		return nil, err
 	}
 
-	err = ui.addUTXOs(blockInsertionResult.VirtualUTXODiff.ToAdd())
+	err = uis.Commit()
 	if err != nil {
 		return nil, err
 	}
 
-	ui.store.updateVirtualParents(blockInsertionResult.VirtualParents)
-
-	added, removed, _ := ui.store.stagedData()
-	utxoIndexChanges := &UTXOChanges{
-		Added:   added,
-		Removed: removed,
-	}
-
-	err = ui.store.commit()
-	if err != nil {
-		return nil, err
-	}
-
-	log.Tracef("UTXO index updated with the UTXOChanged: %+v", utxoIndexChanges)
-	return utxoIndexChanges, nil
+	return changes, nil
 }
 
-func (ui *UTXOIndex) addUTXOs(toAdd externalapi.UTXOCollection) error {
-	iterator := toAdd.Iterator()
-	defer iterator.Close()
-	for ok := iterator.First(); ok; ok = iterator.Next() {
-		outpoint, entry, err := iterator.Get()
-		if err != nil {
-			return err
-		}
-
-		log.Tracef("Adding outpoint %s to UTXO index", outpoint)
-		err = ui.store.add(entry.ScriptPublicKey(), outpoint, entry)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func (ui *UTXOIndex) removeUTXOs(toRemove externalapi.UTXOCollection) error {
-	iterator := toRemove.Iterator()
-	defer iterator.Close()
-	for ok := iterator.First(); ok; ok = iterator.Next() {
-		outpoint, entry, err := iterator.Get()
-		if err != nil {
-			return err
-		}
-
-		log.Tracef("Removing outpoint %s from UTXO index", outpoint)
-		err = ui.store.remove(entry.ScriptPublicKey(), outpoint)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-// UTXOs returns all the UTXOs for the given scriptPublicKey
-func (ui *UTXOIndex) UTXOs(scriptPublicKey *externalapi.ScriptPublicKey) (UTXOOutpointEntryPairs, error) {
+// GetUTXOsByScriptPublicKey returns all the UTXOs for the given scriptPublicKey
+func (ui *UTXOIndex) GetUTXOsByScriptPublicKey(scriptPublicKey *externalapi.ScriptPublicKey) (UTXOMap, error) {
 	onEnd := logger.LogAndMeasureExecutionTime(log, "UTXOIndex.UTXOs")
 	defer onEnd()
 
 	ui.mutex.Lock()
 	defer ui.mutex.Unlock()
 
-	return ui.store.getUTXOOutpointEntryPairs(scriptPublicKey)
+	return ui.store.getUTXOsByScriptPublicKey(scriptPublicKey)
 }
