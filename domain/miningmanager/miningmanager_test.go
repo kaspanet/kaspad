@@ -21,8 +21,6 @@ import (
 	"github.com/pkg/errors"
 )
 
-const blockMaxMass uint64 = 10000000
-
 // TestValidateAndInsertTransaction verifies that valid transactions were successfully inserted into the mempool.
 func TestValidateAndInsertTransaction(t *testing.T) {
 	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
@@ -553,10 +551,10 @@ func createTransactionWithUTXOEntry(t *testing.T, i int) *externalapi.DomainTran
 	if err != nil {
 		t.Fatalf("PayToScriptHashSignatureScript: %v", err)
 	}
-	txInputWithMaxSequence := externalapi.DomainTransactionInput{
+	txInput := externalapi.DomainTransactionInput{
 		PreviousOutpoint: prevOutPoint,
 		SignatureScript:  signatureScript,
-		Sequence:         constants.SequenceLockTimeIsSeconds,
+		Sequence:         constants.MaxTxInSequenceNum,
 		UTXOEntry: utxo.NewUTXOEntry(
 			100000000, // 1 KAS
 			scriptPublicKey,
@@ -569,7 +567,7 @@ func createTransactionWithUTXOEntry(t *testing.T, i int) *externalapi.DomainTran
 	}
 	tx := externalapi.DomainTransaction{
 		Version:      constants.MaxTransactionVersion,
-		Inputs:       []*externalapi.DomainTransactionInput{&txInputWithMaxSequence},
+		Inputs:       []*externalapi.DomainTransactionInput{&txInput},
 		Outputs:      []*externalapi.DomainTransactionOutput{&txOut},
 		SubnetworkID: subnetworks.SubnetworkIDNative,
 		Gas:          0,

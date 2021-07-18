@@ -11,6 +11,6 @@ type TransactionValidator interface {
 	ValidateTransactionInContextIgnoringUTXO(stagingArea *StagingArea, tx *externalapi.DomainTransaction,
 		povBlockHash *externalapi.DomainHash) error
 	ValidateTransactionInContextAndPopulateFee(stagingArea *StagingArea,
-		tx *externalapi.DomainTransaction, povBlockHash *externalapi.DomainHash, selectedParentMedianTime int64) error
+		tx *externalapi.DomainTransaction, povBlockHash *externalapi.DomainHash) error
 	PopulateMass(transaction *externalapi.DomainTransaction)
 }

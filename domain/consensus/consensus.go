@@ -87,17 +87,12 @@ func (s *consensus) ValidateTransactionAndPopulateWithConsensusData(transaction 
 		return err
 	}
 
-	virtualSelectedParentMedianTime, err := s.pastMedianTimeManager.PastMedianTime(stagingArea, model.VirtualBlockHash)
-	if err != nil {
-		return err
-	}
-
 	err = s.transactionValidator.ValidateTransactionInContextIgnoringUTXO(stagingArea, transaction, model.VirtualBlockHash)
 	if err != nil {
 		return err
 	}
 	return s.transactionValidator.ValidateTransactionInContextAndPopulateFee(
-		stagingArea, transaction, model.VirtualBlockHash, virtualSelectedParentMedianTime)
+		stagingArea, transaction, model.VirtualBlockHash)
 }
 
 func (s *consensus) GetBlock(blockHash *externalapi.DomainHash) (*externalapi.DomainBlock, error) {
