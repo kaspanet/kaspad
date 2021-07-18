@@ -1069,11 +1069,11 @@ func opcodeReturn(op *parsedOpcode, vm *Engine) error {
 }
 
 func verifyLockTimeWithThreshold(txLockTime, threshold, lockTime uint64) error {
-	err := verifyLockTime(txLockTime, lockTime)
+	err := verifyLockTimeThreshold(txLockTime, threshold, lockTime)
 	if err != nil {
 		return err
 	}
-	return verifyLockTimeTypes(txLockTime, threshold, lockTime)
+	return verifyLockTime(txLockTime, lockTime)
 }
 
 // checkLockTimeRequirement is a helper function used to validate locktimes.
@@ -1088,8 +1088,8 @@ func verifyLockTime(txLockTime, lockTime uint64) error {
 	return nil
 }
 
-// verifyLockTimeTypes is a helper function used to verify the lockTimes in both the script and transaction have the same type.
-func verifyLockTimeTypes(txLockTime, threshold, lockTime uint64) error {
+// verifyLockTimeThreshold is a helper function used to verify the lockTimes in both the script and transaction have the same type.
+func verifyLockTimeThreshold(txLockTime, threshold, lockTime uint64) error {
 	if !((txLockTime < threshold && lockTime < threshold) ||
 		(txLockTime >= threshold && lockTime >= threshold)) {
 		str := fmt.Sprintf("mismatched locktime types -- tx locktime "+
