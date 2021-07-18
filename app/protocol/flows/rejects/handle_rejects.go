@@ -33,10 +33,5 @@ func (flow *handleRejectsFlow) start() error {
 	}
 	rejectMessage := message.(*appmessage.MsgReject)
 
-	const maxReasonLength = 255
-	if len(rejectMessage.Reason) > maxReasonLength {
-		return protocolerrors.Errorf(false, "got reject message longer than %d", maxReasonLength)
-	}
-
 	return protocolerrors.Errorf(false, "got reject message: `%s`", rejectMessage.Reason)
 }
