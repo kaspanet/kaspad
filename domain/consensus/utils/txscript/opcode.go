@@ -1068,21 +1068,32 @@ func opcodeReturn(op *parsedOpcode, vm *Engine) error {
 	return scriptError(ErrEarlyReturn, "script returned early")
 }
 
-// verifyLockTime is a helper function used to validate locktimes.
-func verifyLockTime(txLockTime, threshold, lockTime uint64, isRelativeLockTime bool) error {
-	// The lockTimes in both the script and transaction must be of the same
-	// type.
-	if !isRelativeLockTime && !((txLockTime < threshold && lockTime < threshold) ||
-		(txLockTime >= threshold && lockTime >= threshold)) {
-		str := fmt.Sprintf("mismatched locktime types -- tx locktime "+
-			"%d, stack locktime %d", txLockTime, lockTime)
-		return scriptError(ErrUnsatisfiedLockTime, str)
+func verifyLockTimeWithThreshold(txLockTime, threshold, lockTime uint64) error {
+	err := verifyLockTime(txLockTime, lockTime)
+	if err != nil {
+		return err
 	}
+	return verifyLockTimeTypes(txLockTime, threshold, lockTime)
+}
 
+// checkLockTimeRequirement is a helper function used to validate locktimes.
+func verifyLockTime(txLockTime, lockTime uint64) error {
 	if lockTime > txLockTime {
 		str := fmt.Sprintf("locktime requirement not satisfied -- "+
 			"locktime is greater than the transaction locktime: "+
 			"%d > %d", lockTime, txLockTime)
+		return scriptError(ErrUnsatisfiedLockTime, str)
+	}
+
+	return nil
+}
+
+// verifyLockTimeTypes is a helper function used to verify the lockTimes in both the script and transaction have the same type.
+func verifyLockTimeTypes(txLockTime, threshold, lockTime uint64) error {
+	if !((txLockTime < threshold && lockTime < threshold) ||
+		(txLockTime >= threshold && lockTime >= threshold)) {
+		str := fmt.Sprintf("mismatched locktime types -- tx locktime "+
+			"%d, stack locktime %d", txLockTime, lockTime)
 		return scriptError(ErrUnsatisfiedLockTime, str)
 	}
 
@@ -1111,12 +1122,11 @@ func opcodeCheckLockTimeVerify(op *parsedOpcode, vm *Engine) error {
 		lockTimeBytes = paddedLockTimeBytes
 	}
 	stackLockTime := binary.LittleEndian.Uint64(lockTimeBytes)
-	// The lock time field of a transaction is either a block height at
+	// The lock time field of a transaction is either a DAA score at
 	// which the transaction is finalized or a timestamp depending on if the
 	// value is before the constants.LockTimeThreshold. When it is under the
-	// threshold it is a block height.
-	isRelativeLockTime := false
-	err = verifyLockTime(vm.tx.LockTime, constants.LockTimeThreshold, stackLockTime, isRelativeLockTime)
+	// threshold it is a DAA score.
+	err = verifyLockTimeWithThreshold(vm.tx.LockTime, constants.LockTimeThreshold, stackLockTime)
 	if err != nil {
 		return err
 	}
@@ -1190,8 +1200,7 @@ func opcodeCheckSequenceVerify(op *parsedOpcode, vm *Engine) error {
 	// Mask off non-consensus bits before doing comparisons.
 	maskedTxSequence := txSequence & constants.SequenceLockTimeMask
 	maskedStackSequence := stackSequence & constants.SequenceLockTimeMask
-	isRelativeLockTime := true
-	return verifyLockTime(maskedTxSequence, 0, maskedStackSequence, isRelativeLockTime)
+	return verifyLockTime(maskedTxSequence, maskedStackSequence)
 }
 
 // opcodeToAltStack removes the top item from the main data stack and pushes it

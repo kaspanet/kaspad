@@ -32,13 +32,7 @@ const (
 	// when masked against the transaction input sequence number.
 	SequenceLockTimeMask uint64 = 0x00000000ffffffff
 
-	// SequenceLockTimeGranularity is the defined time based granularity
-	// for milliseconds-based relative time locks. When converting from milliseconds
-	// to a sequence number, the value is multiplied by this amount,
-	// therefore the granularity of relative time locks is 1000 milliseconds or 1 second.
-	SequenceLockTimeGranularity = 1000
-
 	// LockTimeThreshold is the number below which a lock time is
-	// interpreted to be a block number.
+	// interpreted to be a DAA score.
 	LockTimeThreshold = 5e11 // Tue Nov 5 00:53:20 1985 UTC
 )
