@@ -75,6 +75,10 @@ jobs:
         working-directory: stability-tests
         run: ./install_and_test.sh
 
+      - name: Notify Discord on Failure
+        if: ${{ failure() }}
+        run: .github\workflows\notify_discord.sh
+
 
   coverage:
     runs-on: ubuntu-latest
