@@ -77,7 +77,7 @@ jobs:
 
       - name: Notify Discord on Failure
         if: ${{ failure() }}
-        run: .github/workflows/notify_discord.sh
+        run: bash -C .github/workflows/notify_discord.sh
 
 
   coverage:
