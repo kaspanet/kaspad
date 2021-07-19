@@ -6,6 +6,9 @@ PROJECT_ROOT=$( cd "${BASEDIR}/.."; pwd)
 
 failedTests=()
 
+echo "Intentionally failing fast stability tests"
+exit 1
+
 # echo "Running application-level-garbage"
 # cd "${PROJECT_ROOT}/application-level-garbage/run" && ./run.sh || failedTests+=("application-level-garbage")
 # echo "Done running application-level-garbage"
