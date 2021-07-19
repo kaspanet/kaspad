@@ -1,3 +1,3 @@
 #!/bin/sh
 
-echo "Hello world!"
+echo "Hello world! ${HELLO_ENV}! How's it going?"

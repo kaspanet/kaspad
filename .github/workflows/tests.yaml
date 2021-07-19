@@ -75,8 +75,10 @@ jobs:
         working-directory: stability-tests
         run: ./install_and_test.sh
 
-      - name: Notify Discord on Failure
+      - name: Notify Discord on failure
         if: ${{ failure() }}
+        env:
+          HELLO_ENV: "Howdy"
         run: bash -C .github/workflows/notify_discord.sh
 
 
