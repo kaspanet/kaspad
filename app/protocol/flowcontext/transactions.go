@@ -65,7 +65,7 @@ func (f *FlowContext) maybePropagateTransactions() error {
 		if len(transactionIDsToBroadcast) > appmessage.MaxInvPerTxInvMsg {
 			transactionIDsToBroadcast = f.transactionIDsToPropagate[:len(transactionIDsToBroadcast)]
 		}
-		log.Infof("Transaction propagation: broadcasting %d transactions", len(transactionIDsToBroadcast))
+		log.Debugf("Transaction propagation: broadcasting %d transactions", len(transactionIDsToBroadcast))
 
 		inv := appmessage.NewMsgInvTransaction(transactionIDsToBroadcast)
 		err := f.Broadcast(inv)
