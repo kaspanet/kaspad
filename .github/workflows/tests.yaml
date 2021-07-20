@@ -81,7 +81,8 @@ jobs:
           MESSAGE_TITLE: "Fast Stability Tests Failed"
           COMMITER: ${{ github.actor }}
           REPOSITORY_NAME: ${{ github.repository }}
-          BRANCH_NAME: ${{ github.ref }}
+          EVENT_NAME: ${{ github.event_name }}
+          EVENT: ${{ toJson(github.event) }}
         run: bash -C .github/workflows/notify_discord.sh
 
 
