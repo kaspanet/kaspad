@@ -78,7 +78,10 @@ jobs:
       - name: Notify Discord on failure
         if: ${{ failure() }}
         env:
-          HELLO_ENV: "Howdy"
+          MESSAGE_TITLE: "Fast Stability Tests Failed"
+          COMMITER: ${{ github.actor }}
+          REPOSITORY_NAME: ${{ github.repository }}
+          BRANCH_NAME: ${{ github.ref }}
         run: bash -C .github/workflows/notify_discord.sh
 
 

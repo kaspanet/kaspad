@@ -1,3 +1,6 @@
 #!/bin/sh
 
-echo "Hello world! ${HELLO_ENV}! How's it going?"
+MESSAGE="**${MESSAGE_TITLE}**:
+Job **FAILED** in ${REPOSITORY_NAME} for branch '${BRANCH_NAME}' authored by ${COMMITER}"
+
+echo "${MESSAGE}"
