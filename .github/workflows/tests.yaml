@@ -79,6 +79,7 @@ jobs:
         if: ${{ failure() }}
         env:
           GITHUB_JSON: ${{ toJson(github) }}
+          JOB_JSON: ${{ toJson(job) }}
         run: bash -C .github/workflows/notify_discord.sh
 
 
