@@ -12,10 +12,10 @@ if [ "${EVENT_NAME}" = "pull_request" ]; then
   PULL_REQUEST_TITLE=$(jq -r .event.pull_request.title <<< "${GITHUB_JSON}")
   PULL_REQUEST_URL=$(jq -r .event.pull_request._links.html.href <<< "${GITHUB_JSON}")
   RUN_ID=$(jq -r .run_id <<< "${GITHUB_JSON}")
-  RUN_URL="${PULL_REQUEST_URL}/checks?check_run_id=${RUN_ID}"
+  RUN_URL="https://github.com/kaspanet/kaspad/actions/runs/${RUN_ID}"
 
   MESSAGE="${MESSAGE} for pull request '${PULL_REQUEST_TITLE}'
-  [Pull Request](${PULL_REQUEST_URL})  [JOB](${RUN_URL})"
+  [Pull Request](${PULL_REQUEST_URL})  [Run](${RUN_URL})"
 fi
 
 echo "${MESSAGE}"
