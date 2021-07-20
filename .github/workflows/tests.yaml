@@ -82,7 +82,7 @@ jobs:
           COMMITER: ${{ github.actor }}
           REPOSITORY_NAME: ${{ github.repository }}
           EVENT_NAME: ${{ github.event_name }}
-          EVENT: ${{ toJson(github.event) }}
+          EVENT_JSON: ${{ toJson(github.event) }}
         run: bash -C .github/workflows/notify_discord.sh
 
 

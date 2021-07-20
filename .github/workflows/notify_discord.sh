@@ -1,5 +1,9 @@
 #!/bin/sh
 
+echo "${EVENT_JSON}"
+echo "aaa"
+
+EVENT=$(jq "${EVENT_JSON}")
 echo "${EVENT}"
 
 JOB_TYPE="commit"
