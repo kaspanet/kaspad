@@ -79,10 +79,7 @@ jobs:
         if: ${{ failure() }}
         env:
           MESSAGE_TITLE: "Fast Stability Tests Failed"
-          COMMITER: ${{ github.actor }}
-          REPOSITORY_NAME: ${{ github.repository }}
-          EVENT_NAME: ${{ github.event_name }}
-          EVENT_JSON: ${{ toJson(github.event) }}
+          GITHUB_JSON: ${{ toJson(github) }}
         run: bash -C .github/workflows/notify_discord.sh
 
 
