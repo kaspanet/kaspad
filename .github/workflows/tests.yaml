@@ -79,6 +79,8 @@ jobs:
         if: ${{ failure() }}
         env:
           GITHUB_JSON: ${{ toJson(github) }}
+          DISCORD_CLIENT_ID: ${{ secrets.DISCORD_CLIENT_ID }}
+          DISCORD_API_TOKEN: ${{ secrets.DISCORD_API_TOKEN }}
         run: bash -C .github/workflows/notify_discord.sh
 
 

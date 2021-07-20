@@ -19,3 +19,7 @@ if [ "${EVENT_NAME}" = "pull_request" ]; then
 fi
 
 echo "${MESSAGE}"
+
+curl \
+    "https://discordapp.com/api/webhooks/${DISCORD_CLIENT_ID}/${DISCORD_API_TOKEN}" \
+    -F content="${MESSAGE}"
