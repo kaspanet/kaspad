@@ -45,7 +45,7 @@ func (flow *handleRequestIBDBlocksFlow) start() error {
 		log.Debugf("Received requestIBDBlocks with lowHash: %s, highHash: %s", lowHash, highHash)
 
 		for !lowHash.Equal(highHash) {
-			log.Debugf("Getting block headers between %s and %s to %s", lowHash, highHash, flow.peer)
+			log.Debugf("Getting blocks between %s and %s to %s", lowHash, highHash, flow.peer)
 
 			// GetHashesBetween is a relatively heavy operation so we limit it
 			// in order to avoid locking the consensus for too long
@@ -57,28 +57,38 @@ func (flow *handleRequestIBDBlocksFlow) start() error {
 			}
 			log.Debugf("Got %d hashes above lowHash %s", len(blockHashes), lowHash)
 
-			blocks := make([]*appmessage.MsgBlock, len(blockHashes))
-			for i, blockHash := range blockHashes {
-				blockHeader, err := flow.Domain().Consensus().GetBlock(blockHash)
+			step := 100
+			for i := 0; i < len(blockHashes); i += step {
+				end := i + step
+				if end > len(blockHashes) {
+					end = len(blockHashes)
+				}
+
+				batchHashes := blockHashes[i:end]
+				blocks := make([]*appmessage.MsgBlock, len(batchHashes))
+				for i, blockHash := range batchHashes {
+					block, err := flow.Domain().Consensus().GetBlock(blockHash)
+					if err != nil {
+						return err
+					}
+					blocks[i] = appmessage.DomainBlockToMsgBlock(block)
+				}
+
+				ibdBlocksMessage := appmessage.NewIBDBlocksMessage(blocks)
+				err = flow.outgoingRoute.Enqueue(ibdBlocksMessage)
 				if err != nil {
 					return err
 				}
-				blocks[i] = appmessage.DomainBlockToMsgBlock(blockHeader)
-			}
 
-			ibdBlocksMessage := appmessage.NewIBDBlocksMessage(blocks)
-			err = flow.outgoingRoute.Enqueue(ibdBlocksMessage)
-			if err != nil {
-				return err
-			}
+				message, err := flow.incomingRoute.Dequeue()
+				if err != nil {
+					return err
+				}
 
-			message, err := flow.incomingRoute.Dequeue()
-			if err != nil {
-				return err
-			}
-			if _, ok := message.(*appmessage.MsgRequestNextIBDBlocks); !ok {
-				return protocolerrors.Errorf(true, "received unexpected message type. "+
-					"expected: %s, got: %s", appmessage.CmdRequestNextIBDBlocks, message.Command())
+				if _, ok := message.(*appmessage.MsgRequestNextIBDBlocks); !ok {
+					return protocolerrors.Errorf(true, "received unexpected message type. "+
+						"expected: %s, got: %s", appmessage.CmdRequestNextIBDBlocks, message.Command())
+				}
 			}
 
 			// The next lowHash is the last element in blockHashes
