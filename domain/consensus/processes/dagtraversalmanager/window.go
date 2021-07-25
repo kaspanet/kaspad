@@ -63,16 +63,14 @@ func (dtm *dagTraversalManager) calculateBlockWindowHeap(stagingArea *model.Stag
 					return nil, err
 				}
 
-				added, err := windowHeap.tryPushWithGHOSTDAGData(daaBlock.Hash, daaBlock.GHOSTDAGData)
+				_, err = windowHeap.tryPushWithGHOSTDAGData(daaBlock.Hash, daaBlock.GHOSTDAGData)
 				if err != nil {
 					return nil, err
 				}
 
-				// Because the DAA window is sorted by blue work, if this block is not added the next one
-				// won't be added as well.
-				if !added {
-					break
-				}
+				// Right now we go over all of the window of `current` and filter blocks on the fly.
+				// We can optimize it if we make sure that daaWindowStore stores sorted windows, and
+				// then return from this function once one block was not added to the heap.
 			}
 			break
 		}
