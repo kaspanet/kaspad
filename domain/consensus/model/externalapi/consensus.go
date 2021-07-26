@@ -39,10 +39,3 @@ type Consensus interface {
 	EstimateNetworkHashesPerSecond(startHash *DomainHash, windowSize int) (uint64, error)
 	PopulateMass(transaction *DomainTransaction)
 }
-
-// ConsensusReference holds a reference for consensus.
-// It is used when you want access to a consensus that
-// can be swapped.
-type ConsensusReference interface {
-	Consensus() Consensus
-}

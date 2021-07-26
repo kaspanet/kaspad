@@ -1,6 +1,7 @@
 package miningmanager_test
 
 import (
+	"github.com/kaspanet/kaspad/domain/consensusreference"
 	"reflect"
 	"strings"
 	"testing"
@@ -35,7 +36,10 @@ func TestValidateAndInsertTransaction(t *testing.T) {
 		defer teardown(false)
 
 		miningFactory := miningmanager.NewFactory()
-		miningManager := miningFactory.NewMiningManager(tc, &consensusConfig.Params, mempool.DefaultConfig(&consensusConfig.Params))
+		tcAsConsensus := tc.(externalapi.Consensus)
+		tcAsConsensusPointer := &tcAsConsensus
+		consensusReference := consensusreference.NewConsensusReference(&tcAsConsensusPointer)
+		miningManager := miningFactory.NewMiningManager(consensusReference, &consensusConfig.Params, mempool.DefaultConfig(&consensusConfig.Params))
 		transactionsToInsert := make([]*externalapi.DomainTransaction, 10)
 		for i := range transactionsToInsert {
 			transactionsToInsert[i] = createTransactionWithUTXOEntry(t, i)
@@ -83,7 +87,10 @@ func TestImmatureSpend(t *testing.T) {
 		defer teardown(false)
 
 		miningFactory := miningmanager.NewFactory()
-		miningManager := miningFactory.NewMiningManager(tc, &consensusConfig.Params, mempool.DefaultConfig(&consensusConfig.Params))
+		tcAsConsensus := tc.(externalapi.Consensus)
+		tcAsConsensusPointer := &tcAsConsensus
+		consensusReference := consensusreference.NewConsensusReference(&tcAsConsensusPointer)
+		miningManager := miningFactory.NewMiningManager(consensusReference, &consensusConfig.Params, mempool.DefaultConfig(&consensusConfig.Params))
 		tx := createTransactionWithUTXOEntry(t, 0)
 		_, err = miningManager.ValidateAndInsertTransaction(tx, false, false)
 		txRuleError := &mempool.TxRuleError{}
@@ -110,7 +117,10 @@ func TestInsertDoubleTransactionsToMempool(t *testing.T) {
 		defer teardown(false)
 
 		miningFactory := miningmanager.NewFactory()
-		miningManager := miningFactory.NewMiningManager(tc, &consensusConfig.Params, mempool.DefaultConfig(&consensusConfig.Params))
+		tcAsConsensus := tc.(externalapi.Consensus)
+		tcAsConsensusPointer := &tcAsConsensus
+		consensusReference := consensusreference.NewConsensusReference(&tcAsConsensusPointer)
+		miningManager := miningFactory.NewMiningManager(consensusReference, &consensusConfig.Params, mempool.DefaultConfig(&consensusConfig.Params))
 		transaction := createTransactionWithUTXOEntry(t, 0)
 		_, err = miningManager.ValidateAndInsertTransaction(transaction, false, true)
 		if err != nil {
@@ -136,7 +146,10 @@ func TestDoubleSpendInMempool(t *testing.T) {
 		defer teardown(false)
 
 		miningFactory := miningmanager.NewFactory()
-		miningManager := miningFactory.NewMiningManager(tc, &consensusConfig.Params, mempool.DefaultConfig(&consensusConfig.Params))
+		tcAsConsensus := tc.(externalapi.Consensus)
+		tcAsConsensusPointer := &tcAsConsensus
+		consensusReference := consensusreference.NewConsensusReference(&tcAsConsensusPointer)
+		miningManager := miningFactory.NewMiningManager(consensusReference, &consensusConfig.Params, mempool.DefaultConfig(&consensusConfig.Params))
 		transaction, err := createChildAndParentTxsAndAddParentToConsensus(tc)
 		if err != nil {
 			t.Fatalf("Error creating transaction: %+v", err)
@@ -169,7 +182,10 @@ func TestHandleNewBlockTransactions(t *testing.T) {
 		defer teardown(false)
 
 		miningFactory := miningmanager.NewFactory()
-		miningManager := miningFactory.NewMiningManager(tc, &consensusConfig.Params, mempool.DefaultConfig(&consensusConfig.Params))
+		tcAsConsensus := tc.(externalapi.Consensus)
+		tcAsConsensusPointer := &tcAsConsensus
+		consensusReference := consensusreference.NewConsensusReference(&tcAsConsensusPointer)
+		miningManager := miningFactory.NewMiningManager(consensusReference, &consensusConfig.Params, mempool.DefaultConfig(&consensusConfig.Params))
 		transactionsToInsert := make([]*externalapi.DomainTransaction, 10)
 		for i := range transactionsToInsert {
 			transaction := createTransactionWithUTXOEntry(t, i)
@@ -235,7 +251,10 @@ func TestDoubleSpendWithBlock(t *testing.T) {
 		defer teardown(false)
 
 		miningFactory := miningmanager.NewFactory()
-		miningManager := miningFactory.NewMiningManager(tc, &consensusConfig.Params, mempool.DefaultConfig(&consensusConfig.Params))
+		tcAsConsensus := tc.(externalapi.Consensus)
+		tcAsConsensusPointer := &tcAsConsensus
+		consensusReference := consensusreference.NewConsensusReference(&tcAsConsensusPointer)
+		miningManager := miningFactory.NewMiningManager(consensusReference, &consensusConfig.Params, mempool.DefaultConfig(&consensusConfig.Params))
 		transactionInTheMempool := createTransactionWithUTXOEntry(t, 0)
 		_, err = miningManager.ValidateAndInsertTransaction(transactionInTheMempool, false, true)
 		if err != nil {
@@ -267,7 +286,10 @@ func TestOrphanTransactions(t *testing.T) {
 		defer teardown(false)
 
 		miningFactory := miningmanager.NewFactory()
-		miningManager := miningFactory.NewMiningManager(tc, &consensusConfig.Params, mempool.DefaultConfig(&consensusConfig.Params))
+		tcAsConsensus := tc.(externalapi.Consensus)
+		tcAsConsensusPointer := &tcAsConsensus
+		consensusReference := consensusreference.NewConsensusReference(&tcAsConsensusPointer)
+		miningManager := miningFactory.NewMiningManager(consensusReference, &consensusConfig.Params, mempool.DefaultConfig(&consensusConfig.Params))
 		// Before each parent transaction, We will add two blocks by consensus in order to fund the parent transactions.
 		parentTransactions, childTransactions, err := createArraysOfParentAndChildrenTransactions(tc)
 		if err != nil {
@@ -367,7 +389,10 @@ func TestHighPriorityTransactions(t *testing.T) {
 		mempoolConfig := mempool.DefaultConfig(&consensusConfig.Params)
 		mempoolConfig.MaximumTransactionCount = 1
 		mempoolConfig.MaximumOrphanTransactionCount = 1
-		miningManager := miningFactory.NewMiningManager(tc, &consensusConfig.Params, mempoolConfig)
+		tcAsConsensus := tc.(externalapi.Consensus)
+		tcAsConsensusPointer := &tcAsConsensus
+		consensusReference := consensusreference.NewConsensusReference(&tcAsConsensusPointer)
+		miningManager := miningFactory.NewMiningManager(consensusReference, &consensusConfig.Params, mempoolConfig)
 
 		// Create 3 pairs of transaction parent-and-child pairs: 1 low priority and 2 high priority
 		lowPriorityParentTransaction, lowPriorityChildTransaction, err := createParentAndChildrenTransactions(tc)
@@ -457,7 +482,10 @@ func TestRevalidateHighPriorityTransactions(t *testing.T) {
 
 		miningFactory := miningmanager.NewFactory()
 		mempoolConfig := mempool.DefaultConfig(&consensusConfig.Params)
-		miningManager := miningFactory.NewMiningManager(tc, &consensusConfig.Params, mempoolConfig)
+		tcAsConsensus := tc.(externalapi.Consensus)
+		tcAsConsensusPointer := &tcAsConsensus
+		consensusReference := consensusreference.NewConsensusReference(&tcAsConsensusPointer)
+		miningManager := miningFactory.NewMiningManager(consensusReference, &consensusConfig.Params, mempoolConfig)
 
 		// Create two valid transactions that double-spend each other (childTransaction1, childTransaction2)
 		parentTransaction, childTransaction1, err := createParentAndChildrenTransactions(tc)

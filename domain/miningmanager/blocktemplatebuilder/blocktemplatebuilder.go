@@ -1,6 +1,7 @@
 package blocktemplatebuilder
 
 import (
+	"github.com/kaspanet/kaspad/domain/consensusreference"
 	"math"
 	"sort"
 
@@ -27,13 +28,13 @@ type candidateTx struct {
 
 // blockTemplateBuilder creates block templates for a miner to consume
 type blockTemplateBuilder struct {
-	consensusReference consensusexternalapi.ConsensusReference
+	consensusReference consensusreference.ConsensusReference
 	mempool            miningmanagerapi.Mempool
 	policy             policy
 }
 
 // New creates a new blockTemplateBuilder
-func New(consensusReference consensusexternalapi.ConsensusReference, mempool miningmanagerapi.Mempool, blockMaxMass uint64) miningmanagerapi.BlockTemplateBuilder {
+func New(consensusReference consensusreference.ConsensusReference, mempool miningmanagerapi.Mempool, blockMaxMass uint64) miningmanagerapi.BlockTemplateBuilder {
 	return &blockTemplateBuilder{
 		consensusReference: consensusReference,
 		mempool:            mempool,

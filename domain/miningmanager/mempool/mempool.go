@@ -1,6 +1,7 @@
 package mempool
 
 import (
+	"github.com/kaspanet/kaspad/domain/consensusreference"
 	"sync"
 
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
@@ -11,7 +12,7 @@ type mempool struct {
 	mtx sync.RWMutex
 
 	config             *Config
-	consensusReference externalapi.ConsensusReference
+	consensusReference consensusreference.ConsensusReference
 
 	mempoolUTXOSet   *mempoolUTXOSet
 	transactionsPool *transactionsPool
@@ -19,7 +20,7 @@ type mempool struct {
 }
 
 // New constructs a new mempool
-func New(config *Config, consensusReference externalapi.ConsensusReference) miningmanagermodel.Mempool {
+func New(config *Config, consensusReference consensusreference.ConsensusReference) miningmanagermodel.Mempool {
 	mp := &mempool{
 		config:             config,
 		consensusReference: consensusReference,
