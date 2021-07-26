@@ -60,12 +60,12 @@ func TestValidateAndInsertImportedPruningPoint(t *testing.T) {
 				t.Fatalf("PruningPoint: %+v", err)
 			}
 
-			missingBlocksHashes, _, err := tcSyncer.GetHashesBetween(pruningPoint, syncerVirtualSelectedParent, math.MaxUint64)
+			missingHeaderHashes, _, err := tcSyncer.GetHashesBetween(pruningPoint, syncerVirtualSelectedParent, math.MaxUint64)
 			if err != nil {
 				t.Fatalf("GetHashesBetween: %+v", err)
 			}
 
-			for _, blocksHash := range missingBlocksHashes {
+			for _, blocksHash := range missingHeaderHashes {
 				blockInfo, err := tcSyncee.GetBlockInfo(blocksHash)
 				if err != nil {
 					t.Fatalf("GetBlockInfo: %+v", err)
@@ -75,12 +75,12 @@ func TestValidateAndInsertImportedPruningPoint(t *testing.T) {
 					continue
 				}
 
-				block, err := tcSyncer.GetBlock(blocksHash)
+				header, err := tcSyncer.GetBlockHeader(blocksHash)
 				if err != nil {
-					t.Fatalf("GetBlock: %+v", err)
+					t.Fatalf("GetBlockHeader: %+v", err)
 				}
 
-				_, err = tcSyncee.ValidateAndInsertBlock(block, false)
+				_, err = tcSyncee.ValidateAndInsertBlock(&externalapi.DomainBlock{Header: header}, false)
 				if err != nil {
 					t.Fatalf("ValidateAndInsertBlock: %+v", err)
 				}
@@ -134,6 +134,42 @@ func TestValidateAndInsertImportedPruningPoint(t *testing.T) {
 			err = tcSyncee.ValidateAndInsertImportedPruningPoint(pruningPoint)
 			if err != nil {
 				t.Fatalf("ValidateAndInsertImportedPruningPoint: %+v", err)
+			}
+
+			emptyCoinbase := &externalapi.DomainCoinbaseData{
+				ScriptPublicKey: &externalapi.ScriptPublicKey{
+					Script:  nil,
+					Version: 0,
+				},
+			}
+
+			// Check that we can build a block just after importing the pruning point.
+			_, err = tcSyncee.BuildBlock(emptyCoinbase, nil)
+			if err != nil {
+				t.Fatalf("BuildBlock: %+v", err)
+			}
+
+			// Sync block bodies
+			headersSelectedTip, err := tcSyncee.GetHeadersSelectedTip()
+			if err != nil {
+				t.Fatalf("GetHeadersSelectedTip: %+v", err)
+			}
+
+			missingBlockHashes, err := tcSyncee.GetMissingBlockBodyHashes(headersSelectedTip)
+			if err != nil {
+				t.Fatalf("GetMissingBlockBodyHashes: %+v", err)
+			}
+
+			for _, blocksHash := range missingBlockHashes {
+				block, err := tcSyncer.GetBlock(blocksHash)
+				if err != nil {
+					t.Fatalf("GetBlock: %+v", err)
+				}
+
+				_, err = tcSyncee.ValidateAndInsertBlock(block, true)
+				if err != nil {
+					t.Fatalf("ValidateAndInsertBlock: %+v", err)
+				}
 			}
 
 			synceeTips, err := tcSyncee.Tips()

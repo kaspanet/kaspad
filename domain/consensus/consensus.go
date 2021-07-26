@@ -334,6 +334,20 @@ func (s *consensus) GetHashesBetween(lowHash, highHash *externalapi.DomainHash, 
 	return s.syncManager.GetHashesBetween(stagingArea, lowHash, highHash, maxBlocks)
 }
 
+func (s *consensus) GetMissingBlockBodyHashes(highHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	stagingArea := model.NewStagingArea()
+
+	err := s.validateBlockHashExists(stagingArea, highHash)
+	if err != nil {
+		return nil, err
+	}
+
+	return s.syncManager.GetMissingBlockBodyHashes(stagingArea, highHash)
+}
+
 func (s *consensus) GetPruningPointUTXOs(expectedPruningPointHash *externalapi.DomainHash,
 	fromOutpoint *externalapi.DomainOutpoint, limit int) ([]*externalapi.OutpointAndUTXOEntryPair, error) {
 

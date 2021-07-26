@@ -714,7 +714,7 @@ func TestHandleRelayInvs(t *testing.T) {
 			expectsBan:           true,
 			expectsIBDToFinish:   true,
 			expectsErrToContain: fmt.Sprintf("received unexpected message type. expected: %s or %s",
-				appmessage.CmdIBDBlocks, appmessage.CmdDoneIBDBlocks),
+				appmessage.CmdBlockHeaders, appmessage.CmdDoneHeaders),
 		},
 	}
 

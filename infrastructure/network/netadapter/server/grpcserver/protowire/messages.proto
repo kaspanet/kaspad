@@ -15,6 +15,7 @@ message KaspadMessage {
     RequestAddressesMessage requestAddresses = 6;
     RequestRelayBlocksMessage requestRelayBlocks = 10;
     RequestTransactionsMessage requestTransactions = 12;
+    BlockMessage ibdBlock = 13;
     InvRelayBlockMessage invRelayBlock = 14;
     InvTransactionsMessage invTransactions = 15;
     PingMessage ping = 16;
@@ -24,6 +25,7 @@ message KaspadMessage {
     TransactionNotFoundMessage transactionNotFound = 21;
     RejectMessage reject = 22;
     PruningPointUtxoSetChunkMessage pruningPointUtxoSetChunk = 25;
+    RequestIBDBlocksMessage requestIBDBlocks = 26;
     UnexpectedPruningPointMessage unexpectedPruningPoint = 27;
     IbdBlockLocatorMessage ibdBlockLocator = 30;
     IbdBlockLocatorHighestHashMessage ibdBlockLocatorHighestHash = 31;
@@ -35,11 +37,11 @@ message KaspadMessage {
     RequestBlockBlueWorkMessage requestBlockBlueWork = 38;
     BlockBlueWorkMessage blockBlueWork = 39;
     RequestPruningPointAndItsAnticoneMessage requestPruningPointAndItsAnticone = 40;
-    IbdBlocksMessage ibdBlocks = 41;
-    RequestNextIbdBlocksMessage requestNextIbdBlocks = 42;
-    DoneIbdBlocksMessage doneIbdBlocks = 43;
+    BlockHeadersMessage blockHeaders = 41;
+    RequestNextHeadersMessage requestNextHeaders = 42;
+    DoneHeadersMessage DoneHeaders = 43;
     RequestPruningPointUTXOSetMessage requestPruningPointUTXOSet = 44;
-    RequestIbdBlocksMessage requestIbdBlocks = 45;
+    RequestHeadersMessage requestHeaders = 45;
     RequestBlockLocatorMessage requestBlockLocator = 46;
 
     GetCurrentNetworkRequestMessage getCurrentNetworkRequest = 1001;

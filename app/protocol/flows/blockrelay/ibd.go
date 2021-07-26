@@ -54,10 +54,15 @@ func (flow *handleRelayInvsFlow) runIBDIfNotRunning(highHash *externalapi.Domain
 			return err
 		}
 	} else {
-		err = flow.syncPruningPointFuture(flow.Domain().Consensus(), highestSharedBlockHash, highHash, true)
+		err = flow.syncPruningPointFutureHeaders(flow.Domain().Consensus(), highestSharedBlockHash, highHash)
 		if err != nil {
 			return err
 		}
+	}
+
+	err = flow.syncMissingBlockBodies(highHash)
+	if err != nil {
+		return err
 	}
 
 	log.Debugf("Finished syncing blocks up to %s", highHash)
@@ -190,12 +195,12 @@ func (flow *handleRelayInvsFlow) fetchHighestHash(
 	}
 }
 
-func (flow *handleRelayInvsFlow) syncPruningPointFuture(consensus externalapi.Consensus, highestSharedBlockHash *externalapi.DomainHash,
-	highHash *externalapi.DomainHash, callOnNewBlock bool) error {
+func (flow *handleRelayInvsFlow) syncPruningPointFutureHeaders(consensus externalapi.Consensus, highestSharedBlockHash *externalapi.DomainHash,
+	highHash *externalapi.DomainHash) error {
 
 	log.Infof("Downloading IBD blocks from %s", flow.peer)
 
-	err := flow.sendRequestIBDBlocks(highestSharedBlockHash, highHash)
+	err := flow.sendRequestHeaders(highestSharedBlockHash, highHash)
 	if err != nil {
 		return err
 	}
@@ -203,11 +208,11 @@ func (flow *handleRelayInvsFlow) syncPruningPointFuture(consensus externalapi.Co
 	// Keep a short queue of ibdBlocksMessages so that there's
 	// never a moment when the node is not validating and inserting
 	// blocks
-	ibdBlocksMessageChan := make(chan *appmessage.IBDBlocksMessage, 2)
+	ibdBlocksMessageChan := make(chan *appmessage.BlockHeadersMessage, 2)
 	errChan := make(chan error)
-	spawn("handleRelayInvsFlow-syncPruningPointFuture", func() {
+	spawn("handleRelayInvsFlow-syncPruningPointFutureHeaders", func() {
 		for {
-			ibdBlocksMessage, doneIBD, err := flow.receiveIBDBlocks()
+			ibdBlocksMessage, doneIBD, err := flow.receiveHeaders()
 			if err != nil {
 				errChan <- err
 				return
@@ -219,7 +224,7 @@ func (flow *handleRelayInvsFlow) syncPruningPointFuture(consensus externalapi.Co
 
 			ibdBlocksMessageChan <- ibdBlocksMessage
 
-			err = flow.outgoingRoute.Enqueue(appmessage.NewMsgRequestNextIBDBlocks())
+			err = flow.outgoingRoute.Enqueue(appmessage.NewMsgRequestNextHeaders())
 			if err != nil {
 				errChan <- err
 				return
@@ -242,8 +247,8 @@ func (flow *handleRelayInvsFlow) syncPruningPointFuture(consensus externalapi.Co
 				}
 				return nil
 			}
-			for _, block := range ibdBlocksMessage.Blocks {
-				err = flow.processIBDBlock(consensus, block, callOnNewBlock)
+			for _, block := range ibdBlocksMessage.BlockHeaders {
+				err = flow.processHeader(consensus, block)
 				if err != nil {
 					return err
 				}
@@ -254,34 +259,67 @@ func (flow *handleRelayInvsFlow) syncPruningPointFuture(consensus externalapi.Co
 	}
 }
 
-func (flow *handleRelayInvsFlow) sendRequestIBDBlocks(highestSharedBlockHash *externalapi.DomainHash,
+func (flow *handleRelayInvsFlow) sendRequestHeaders(highestSharedBlockHash *externalapi.DomainHash,
 	peerSelectedTipHash *externalapi.DomainHash) error {
 
-	msgGetBlockInvs := appmessage.NewMsgRequstIBDBlocks(highestSharedBlockHash, peerSelectedTipHash)
+	msgGetBlockInvs := appmessage.NewMsgRequstHeaders(highestSharedBlockHash, peerSelectedTipHash)
 	return flow.outgoingRoute.Enqueue(msgGetBlockInvs)
 }
 
-func (flow *handleRelayInvsFlow) receiveIBDBlocks() (msgIBDBlock *appmessage.IBDBlocksMessage, doneIBD bool, err error) {
+func (flow *handleRelayInvsFlow) receiveHeaders() (msgIBDBlock *appmessage.BlockHeadersMessage, doneHeaders bool, err error) {
 	message, err := flow.dequeueIncomingMessageAndSkipInvs(common.DefaultTimeout)
 	if err != nil {
 		return nil, false, err
 	}
 	switch message := message.(type) {
-	case *appmessage.IBDBlocksMessage:
+	case *appmessage.BlockHeadersMessage:
 		return message, false, nil
-	case *appmessage.MsgDoneIBDBlocks:
+	case *appmessage.MsgDoneHeaders:
 		return nil, true, nil
 	default:
 		return nil, false,
 			protocolerrors.Errorf(true, "received unexpected message type. "+
 				"expected: %s or %s, got: %s",
-				appmessage.CmdIBDBlocks,
-				appmessage.CmdDoneIBDBlocks,
+				appmessage.CmdBlockHeaders,
+				appmessage.CmdDoneHeaders,
 				message.Command())
 	}
 }
 
-func (flow *handleRelayInvsFlow) processIBDBlock(consensus externalapi.Consensus, msgBlock *appmessage.MsgBlock, callOnNewBlock bool) error {
+func (flow *handleRelayInvsFlow) processHeader(consensus externalapi.Consensus, msgBlockHeader *appmessage.MsgBlockHeader) error {
+	header := appmessage.BlockHeaderToDomainBlockHeader(msgBlockHeader)
+	block := &externalapi.DomainBlock{
+		Header:       header,
+		Transactions: nil,
+	}
+
+	blockHash := consensushashing.BlockHash(block)
+	blockInfo, err := consensus.GetBlockInfo(blockHash)
+	if err != nil {
+		return err
+	}
+	if blockInfo.Exists {
+		log.Debugf("Block header %s is already in the DAG. Skipping...", blockHash)
+		return nil
+	}
+	_, err = consensus.ValidateAndInsertBlock(block, false)
+	if err != nil {
+		if !errors.As(err, &ruleerrors.RuleError{}) {
+			return errors.Wrapf(err, "failed to process header %s during IBD", blockHash)
+		}
+
+		if errors.Is(err, ruleerrors.ErrDuplicateBlock) {
+			log.Debugf("Skipping block header %s as it is a duplicate", blockHash)
+		} else {
+			log.Infof("Rejected block header %s from %s during IBD: %s", blockHash, flow.peer, err)
+			return protocolerrors.Wrapf(true, err, "got invalid block header %s during IBD", blockHash)
+		}
+	}
+
+	return nil
+}
+
+func (flow *handleRelayInvsFlow) processIBDBlock(msgBlock *appmessage.MsgBlock) error {
 	block := appmessage.MsgBlockToDomainBlock(msgBlock)
 	blockHash := consensushashing.BlockHash(block)
 	blockInfo, err := flow.Domain().Consensus().GetBlockInfo(blockHash)
@@ -292,7 +330,7 @@ func (flow *handleRelayInvsFlow) processIBDBlock(consensus externalapi.Consensus
 		log.Debugf("Block %s is already in the DAG. Skipping...", blockHash)
 		return nil
 	}
-	blockInsertionResult, err := consensus.ValidateAndInsertBlock(block, false)
+	blockInsertionResult, err := flow.Domain().Consensus().ValidateAndInsertBlock(block, true)
 	if err != nil {
 		if !errors.As(err, &ruleerrors.RuleError{}) {
 			return errors.Wrapf(err, "failed to process block %s during IBD", blockHash)
@@ -306,11 +344,9 @@ func (flow *handleRelayInvsFlow) processIBDBlock(consensus externalapi.Consensus
 		}
 	}
 
-	if callOnNewBlock {
-		err := flow.OnNewBlock(block, blockInsertionResult)
-		if err != nil {
-			return err
-		}
+	err = flow.OnNewBlock(block, blockInsertionResult)
+	if err != nil {
+		return err
 	}
 
 	return nil
@@ -369,6 +405,73 @@ func (flow *handleRelayInvsFlow) receiveAndInsertPruningPointUTXOSet(
 			)
 		}
 	}
+}
+
+func (flow *handleRelayInvsFlow) syncMissingBlockBodies(highHash *externalapi.DomainHash) error {
+	hashes, err := flow.Domain().Consensus().GetMissingBlockBodyHashes(highHash)
+	if err != nil {
+		return err
+	}
+	if len(hashes) == 0 {
+		// Blocks can be inserted inside the DAG during IBD if those were requested before IBD started.
+		// In rare cases, all the IBD blocks might be already inserted by the time we reach this point.
+		// In these cases - GetMissingBlockBodyHashes would return an empty array.
+		log.Debugf("No missing block body hashes found.")
+		return nil
+	}
+
+	for offset := 0; offset < len(hashes); offset += ibdBatchSize {
+		var hashesToRequest []*externalapi.DomainHash
+		if offset+ibdBatchSize < len(hashes) {
+			hashesToRequest = hashes[offset : offset+ibdBatchSize]
+		} else {
+			hashesToRequest = hashes[offset:]
+		}
+
+		err := flow.outgoingRoute.Enqueue(appmessage.NewMsgRequestIBDBlocks(hashesToRequest))
+		if err != nil {
+			return err
+		}
+
+		for _, expectedHash := range hashesToRequest {
+			message, err := flow.dequeueIncomingMessageAndSkipInvs(common.DefaultTimeout)
+			if err != nil {
+				return err
+			}
+
+			msgIBDBlock, ok := message.(*appmessage.MsgIBDBlock)
+			if !ok {
+				return protocolerrors.Errorf(true, "received unexpected message type. "+
+					"expected: %s, got: %s", appmessage.CmdIBDBlock, message.Command())
+			}
+
+			block := appmessage.MsgBlockToDomainBlock(msgIBDBlock.MsgBlock)
+			blockHash := consensushashing.BlockHash(block)
+			if !expectedHash.Equal(blockHash) {
+				return protocolerrors.Errorf(true, "expected block %s but got %s", expectedHash, blockHash)
+			}
+
+			err = flow.banIfBlockIsHeaderOnly(block)
+			if err != nil {
+				return err
+			}
+
+			blockInsertionResult, err := flow.Domain().Consensus().ValidateAndInsertBlock(block, true)
+			if err != nil {
+				if errors.Is(err, ruleerrors.ErrDuplicateBlock) {
+					log.Debugf("Skipping IBD Block %s as it has already been added to the DAG", blockHash)
+					continue
+				}
+				return protocolerrors.ConvertToBanningProtocolErrorIfRuleError(err, "invalid block %s", blockHash)
+			}
+			err = flow.OnNewBlock(block, blockInsertionResult)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
 }
 
 // dequeueIncomingMessageAndSkipInvs is a convenience method to be used during

@@ -169,10 +169,10 @@ func (m *Manager) registerBlockRelayFlows(router *routerpkg.Router, isStopping *
 
 		m.registerFlow("HandleRelayInvs", router, []appmessage.MessageCommand{
 			appmessage.CmdInvRelayBlock, appmessage.CmdBlock, appmessage.CmdBlockLocator, appmessage.CmdBlockBlueWork,
-			appmessage.CmdDoneIBDBlocks, appmessage.CmdUnexpectedPruningPoint, appmessage.CmdPruningPointUTXOSetChunk,
-			appmessage.CmdIBDBlocks, appmessage.CmdIBDBlockLocatorHighestHash, appmessage.CmdBlockWithTrustedData,
+			appmessage.CmdDoneHeaders, appmessage.CmdUnexpectedPruningPoint, appmessage.CmdPruningPointUTXOSetChunk,
+			appmessage.CmdBlockHeaders, appmessage.CmdIBDBlockLocatorHighestHash, appmessage.CmdBlockWithTrustedData,
 			appmessage.CmdDoneBlocksWithTrustedData, appmessage.CmdIBDBlockLocatorHighestHashNotFound,
-			appmessage.CmdDonePruningPointUTXOSetChunks,
+			appmessage.CmdDonePruningPointUTXOSetChunks, appmessage.CmdIBDBlock,
 		},
 			isStopping, errChan, func(incomingRoute *routerpkg.Route, peer *peerpkg.Peer) error {
 				return blockrelay.HandleRelayInvs(m.context, incomingRoute,
@@ -193,10 +193,17 @@ func (m *Manager) registerBlockRelayFlows(router *routerpkg.Router, isStopping *
 			},
 		),
 
-		m.registerFlow("HandleRequestIBDBlocks", router,
-			[]appmessage.MessageCommand{appmessage.CmdRequestIBDBlocks, appmessage.CmdRequestNextIBDBlocks}, isStopping, errChan,
+		m.registerFlow("HandleRequestHeaders", router,
+			[]appmessage.MessageCommand{appmessage.CmdRequestHeaders, appmessage.CmdRequestNextHeaders}, isStopping, errChan,
 			func(incomingRoute *routerpkg.Route, peer *peerpkg.Peer) error {
-				return blockrelay.HandleRequestIBDBlocks(m.context, incomingRoute, outgoingRoute, peer)
+				return blockrelay.HandleRequestHeaders(m.context, incomingRoute, outgoingRoute, peer)
+			},
+		),
+
+		m.registerFlow("HandleIBDBlockRequests", router,
+			[]appmessage.MessageCommand{appmessage.CmdRequestIBDBlocks}, isStopping, errChan,
+			func(incomingRoute *routerpkg.Route, peer *peerpkg.Peer) error {
+				return blockrelay.HandleIBDBlockRequests(m.context, incomingRoute, outgoingRoute)
 			},
 		),
 

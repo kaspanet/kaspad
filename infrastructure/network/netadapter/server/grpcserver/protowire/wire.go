@@ -94,21 +94,21 @@ func toP2PPayload(message appmessage.Message) (isKaspadMessage_Payload, error) {
 		}
 		return payload, nil
 	case *appmessage.MsgRequestIBDBlocks:
-		payload := new(KaspadMessage_RequestIbdBlocks)
+		payload := new(KaspadMessage_RequestIBDBlocks)
 		err := payload.fromAppMessage(message)
 		if err != nil {
 			return nil, err
 		}
 		return payload, nil
-	case *appmessage.MsgRequestNextIBDBlocks:
-		payload := new(KaspadMessage_RequestNextIbdBlocks)
+	case *appmessage.MsgRequestNextHeaders:
+		payload := new(KaspadMessage_RequestNextHeaders)
 		err := payload.fromAppMessage(message)
 		if err != nil {
 			return nil, err
 		}
 		return payload, nil
-	case *appmessage.MsgDoneIBDBlocks:
-		payload := new(KaspadMessage_DoneIbdBlocks)
+	case *appmessage.MsgDoneHeaders:
+		payload := new(KaspadMessage_DoneHeaders)
 		err := payload.fromAppMessage(message)
 		if err != nil {
 			return nil, err
@@ -233,8 +233,8 @@ func toP2PPayload(message appmessage.Message) (isKaspadMessage_Payload, error) {
 			return nil, err
 		}
 		return payload, nil
-	case *appmessage.IBDBlocksMessage:
-		payload := new(KaspadMessage_IbdBlocks)
+	case *appmessage.BlockHeadersMessage:
+		payload := new(KaspadMessage_BlockHeaders)
 		err := payload.fromAppMessage(message)
 		if err != nil {
 			return nil, err
@@ -284,6 +284,20 @@ func toP2PPayload(message appmessage.Message) (isKaspadMessage_Payload, error) {
 		return payload, nil
 	case *appmessage.MsgDoneBlocksWithTrustedData:
 		payload := new(KaspadMessage_DoneBlocksWithTrustedData)
+		err := payload.fromAppMessage(message)
+		if err != nil {
+			return nil, err
+		}
+		return payload, nil
+	case *appmessage.MsgIBDBlock:
+		payload := new(KaspadMessage_IbdBlock)
+		err := payload.fromAppMessage(message)
+		if err != nil {
+			return nil, err
+		}
+		return payload, nil
+	case *appmessage.MsgRequestHeaders:
+		payload := new(KaspadMessage_RequestHeaders)
 		err := payload.fromAppMessage(message)
 		if err != nil {
 			return nil, err

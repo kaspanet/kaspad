@@ -86,15 +86,15 @@ message BlockLocatorMessage{
   repeated Hash hashes = 1;
 }
 
-message RequestIbdBlocksMessage{
+message RequestHeadersMessage{
   Hash lowHash = 1;
   Hash highHash = 2;
 }
 
-message RequestNextIbdBlocksMessage{
+message RequestNextHeadersMessage{
 }
 
-message DoneIbdBlocksMessage{
+message DoneHeadersMessage{
 }
 
 message RequestRelayBlocksMessage{
@@ -170,6 +170,10 @@ message RequestNextPruningPointUtxoSetChunkMessage {
 message DonePruningPointUtxoSetChunksMessage {
 }
 
+message RequestIBDBlocksMessage{
+  repeated Hash hashes = 1;
+}
+
 message UnexpectedPruningPointMessage{
 }
 
@@ -185,8 +189,8 @@ message IbdBlockLocatorHighestHashMessage {
 message IbdBlockLocatorHighestHashNotFoundMessage {
 }
 
-message IbdBlocksMessage {
-  repeated BlockMessage blocks = 1;
+message BlockHeadersMessage {
+  repeated BlockHeader blockHeaders = 1;
 }
 
 message RequestPruningPointAndItsAnticoneMessage {

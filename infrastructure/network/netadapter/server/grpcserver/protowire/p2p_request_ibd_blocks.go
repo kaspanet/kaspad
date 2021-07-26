@@ -5,51 +5,28 @@ import (
 	"github.com/pkg/errors"
 )
 
-func (x *KaspadMessage_RequestIbdBlocks) toAppMessage() (appmessage.Message, error) {
+func (x *KaspadMessage_RequestIBDBlocks) toAppMessage() (appmessage.Message, error) {
 	if x == nil {
 		return nil, errors.Wrapf(errorNil, "KaspadMessage_RequestIBDBlocks is nil")
 	}
-	lowHash, err := x.RequestIbdBlocks.LowHash.toDomain()
-	if err != nil {
-		return nil, err
-	}
-
-	highHash, err := x.RequestIbdBlocks.HighHash.toDomain()
-	if err != nil {
-		return nil, err
-	}
-
-	return &appmessage.MsgRequestIBDBlocks{
-		LowHash:  lowHash,
-		HighHash: highHash,
-	}, nil
+	return x.RequestIBDBlocks.toAppMessage()
 }
 
-func (x *RequestIbdBlocksMessage) toAppMessage() (appmessage.Message, error) {
+func (x *RequestIBDBlocksMessage) toAppMessage() (appmessage.Message, error) {
 	if x == nil {
 		return nil, errors.Wrapf(errorNil, "RequestIBDBlocksMessage is nil")
 	}
-	lowHash, err := x.LowHash.toDomain()
+	hashes, err := protoHashesToDomain(x.Hashes)
 	if err != nil {
 		return nil, err
 	}
-
-	highHash, err := x.HighHash.toDomain()
-	if err != nil {
-		return nil, err
-	}
-
-	return &appmessage.MsgRequestIBDBlocks{
-		LowHash:  lowHash,
-		HighHash: highHash,
-	}, nil
-
+	return &appmessage.MsgRequestIBDBlocks{Hashes: hashes}, nil
 }
 
-func (x *KaspadMessage_RequestIbdBlocks) fromAppMessage(msgRequestmsgRequestIBDBlocks *appmessage.MsgRequestIBDBlocks) error {
-	x.RequestIbdBlocks = &RequestIbdBlocksMessage{
-		LowHash:  domainHashToProto(msgRequestmsgRequestIBDBlocks.LowHash),
-		HighHash: domainHashToProto(msgRequestmsgRequestIBDBlocks.HighHash),
+func (x *KaspadMessage_RequestIBDBlocks) fromAppMessage(msgRequestIBDBlocks *appmessage.MsgRequestIBDBlocks) error {
+	x.RequestIBDBlocks = &RequestIBDBlocksMessage{
+		Hashes: domainHashesToProto(msgRequestIBDBlocks.Hashes),
 	}
+
 	return nil
 }

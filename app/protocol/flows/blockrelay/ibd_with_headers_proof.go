@@ -16,7 +16,7 @@ func (flow *handleRelayInvsFlow) ibdWithHeadersProof(highHash *externalapi.Domai
 		return err
 	}
 
-	err = flow.downloadBlocksAndPruningUTXOSet(flow.Domain().StagingConsensus(), highHash)
+	err = flow.downloadHeadersAndPruningUTXOSet(flow.Domain().StagingConsensus(), highHash)
 	if err != nil {
 		if !flow.IsRecoverableError(err) {
 			return err
@@ -93,7 +93,7 @@ func (flow *handleRelayInvsFlow) downloadHeadersProof() error {
 	return nil
 }
 
-func (flow *handleRelayInvsFlow) downloadBlocksAndPruningUTXOSet(consensus externalapi.Consensus, highHash *externalapi.DomainHash) error {
+func (flow *handleRelayInvsFlow) downloadHeadersAndPruningUTXOSet(consensus externalapi.Consensus, highHash *externalapi.DomainHash) error {
 	err := flow.downloadHeadersProof()
 	if err != nil {
 		return err
@@ -104,7 +104,7 @@ func (flow *handleRelayInvsFlow) downloadBlocksAndPruningUTXOSet(consensus exter
 		return err
 	}
 
-	err = flow.syncPruningPointFuture(consensus, pruningPoint, highHash, false)
+	err = flow.syncPruningPointFutureHeaders(consensus, pruningPoint, highHash)
 	if err != nil {
 		return err
 	}
