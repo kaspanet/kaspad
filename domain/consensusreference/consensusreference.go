@@ -2,9 +2,11 @@ package consensusreference
 
 import "github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 
-// ConsensusReference holds a reference for consensus.
-// It is used when you want access to a consensus that
-// can be swapped.
+// ConsensusReference holds a reference to a consensus object.
+// The consensus object may be swapped with a new one entirely
+// during the IBD process. Before an atomic consensus operation,
+// callers are expected to call Consensus() once and work against
+// that instance throughout.
 type ConsensusReference struct {
 	consensus **externalapi.Consensus
 }
