@@ -790,15 +790,19 @@ func (pm *pruningManager) blockWithTrustedData(stagingArea *model.StagingArea, b
 
 	ghostdagDataHashPairs := make([]*externalapi.BlockGHOSTDAGDataHashPair, 0, pm.k)
 	current := blockHash
+	isTrustedData := false
 	for i := externalapi.KType(0); i < pm.k+1; i++ {
-		ghostdagData, err := pm.ghostdagDataStore.Get(pm.databaseContext, stagingArea, current, false)
-		if database.IsNotFoundError(err) {
+		ghostdagData, err := pm.ghostdagDataStore.Get(pm.databaseContext, stagingArea, current, isTrustedData)
+		isNotFoundError := database.IsNotFoundError(err)
+		if !isNotFoundError && err != nil {
+			return nil, err
+		}
+		if isNotFoundError || ghostdagData.SelectedParent().Equal(model.VirtualGenesisBlockHash) {
+			isTrustedData = true
 			ghostdagData, err = pm.ghostdagDataStore.Get(pm.databaseContext, stagingArea, current, true)
 			if err != nil {
 				return nil, err
 			}
-		} else if err != nil {
-			return nil, err
 		}
 
 		ghostdagDataHashPairs = append(ghostdagDataHashPairs, &externalapi.BlockGHOSTDAGDataHashPair{
@@ -807,6 +811,10 @@ func (pm *pruningManager) blockWithTrustedData(stagingArea *model.StagingArea, b
 		})
 
 		if ghostdagData.SelectedParent().Equal(pm.genesisHash) {
+			break
+		}
+
+		if current.Equal(pm.genesisHash) {
 			break
 		}
 
