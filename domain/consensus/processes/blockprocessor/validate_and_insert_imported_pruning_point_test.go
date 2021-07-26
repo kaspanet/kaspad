@@ -186,7 +186,7 @@ func TestValidateAndInsertImportedPruningPoint(t *testing.T) {
 		consensusConfig.K = 0
 
 		synceeConfig := *consensusConfig
-		synceeConfig.ShouldNotAddGenesis = true
+		synceeConfig.SkipAddingGenesis = true
 
 		factory := consensus.NewFactory()
 
@@ -261,7 +261,7 @@ func TestValidateAndInsertPruningPointWithSideBlocks(t *testing.T) {
 		consensusConfig.K = 0
 
 		synceeConfig := *consensusConfig
-		synceeConfig.ShouldNotAddGenesis = true
+		synceeConfig.SkipAddingGenesis = true
 
 		factory := consensus.NewFactory()
 

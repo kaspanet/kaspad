@@ -62,7 +62,7 @@ type Config struct {
 	// EnableSanityCheckPruningUTXOSet checks the full pruning point utxo set against the commitment at every pruning movement
 	EnableSanityCheckPruningUTXOSet bool
 
-	ShouldNotAddGenesis bool
+	SkipAddingGenesis bool
 }
 
 // Factory instantiates new Consensuses
@@ -431,7 +431,7 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 		daaBlocksStore:            daaBlocksStore,
 	}
 
-	err = c.Init(config.ShouldNotAddGenesis)
+	err = c.Init(config.SkipAddingGenesis)
 	if err != nil {
 		return nil, err
 	}

@@ -63,7 +63,7 @@ func (s *consensus) ValidateAndInsertBlockWithTrustedData(block *externalapi.Blo
 }
 
 // Init initializes consensus
-func (s *consensus) Init(shouldNotAddGenesis bool) error {
+func (s *consensus) Init(skipAddingGenesis bool) error {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
@@ -109,7 +109,7 @@ func (s *consensus) Init(shouldNotAddGenesis bool) error {
 
 	// The genesis should be added to the DAG if it's a fresh consensus, unless said otherwise (on a
 	// case where the consensus is used for a pruned headers node).
-	if !shouldNotAddGenesis && s.blockStore.Count(stagingArea) == 0 {
+	if !skipAddingGenesis && s.blockStore.Count(stagingArea) == 0 {
 		genesisWithTrustedData := &externalapi.BlockWithTrustedData{
 			Block:     s.genesisBlock,
 			DAAScore:  0,
