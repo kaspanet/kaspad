@@ -105,7 +105,7 @@ func (csm *consensusStateManager) importPruningPoint(
 		}
 		log.Tracef("Validating transaction %s and populating it with mass and fee", transactionID)
 		err = csm.transactionValidator.ValidateTransactionInContextAndPopulateFee(
-			stagingArea, transaction, newPruningPoint, newPruningPointSelectedParentMedianTime)
+			stagingArea, transaction, newPruningPoint)
 		if err != nil {
 			return err
 		}
