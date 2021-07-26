@@ -11,6 +11,7 @@ type ConsensusReference struct {
 	consensus **externalapi.Consensus
 }
 
+// Consensus returns the underlying consensus
 func (ref ConsensusReference) Consensus() externalapi.Consensus {
 	return **ref.consensus
 }
