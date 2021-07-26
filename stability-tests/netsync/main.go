@@ -51,9 +51,15 @@ func main() {
 		syncedClient.Disconnect()
 		syncedTeardown()
 	}()
+
 	err = checkSyncRate(syncerClient, syncedClient)
 	if err != nil {
 		panic(errors.Wrap(err, "error in checkSyncRate"))
+	}
+
+	err = checkResolveVirtual(syncerClient, syncedClient)
+	if err != nil {
+		panic(errors.Wrap(err, "error in checkResolveVirtual"))
 	}
 
 	atomic.StoreUint64(&shutdown, 1)

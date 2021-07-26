@@ -84,7 +84,7 @@ func TestConsensusStateManager_pickVirtualParents(t *testing.T) {
 			if err != nil {
 				t.Fatalf("Failed building a block: %v", err)
 			}
-			_, err = tc.ValidateAndInsertBlock(block)
+			_, err = tc.ValidateAndInsertBlock(block, true)
 			if err != nil {
 				t.Fatalf("Failed Inserting block to tc: %v", err)
 			}

@@ -39,7 +39,7 @@ func TestPOW(t *testing.T) {
 			t.Fatal(err)
 		}
 		invalidBlockWrongPOW = solveBlockWithWrongPOW(invalidBlockWrongPOW)
-		_, err = tc.ValidateAndInsertBlock(invalidBlockWrongPOW)
+		_, err = tc.ValidateAndInsertBlock(invalidBlockWrongPOW, true)
 		if !errors.Is(err, ruleerrors.ErrInvalidPoW) {
 			t.Fatalf("Expected block to be invalid with err: %v, instead found: %v", ruleerrors.ErrInvalidPoW, err)
 		}
@@ -61,7 +61,7 @@ func TestPOW(t *testing.T) {
 			abovePowMaxBlock.Header.Nonce(),
 		)
 
-		_, err = tc.ValidateAndInsertBlock(abovePowMaxBlock)
+		_, err = tc.ValidateAndInsertBlock(abovePowMaxBlock, true)
 		if !errors.Is(err, ruleerrors.ErrTargetTooHigh) {
 			t.Fatalf("Unexpected error: %+v", err)
 		}
@@ -82,7 +82,7 @@ func TestPOW(t *testing.T) {
 			negativeTargetBlock.Header.Nonce(),
 		)
 
-		_, err = tc.ValidateAndInsertBlock(negativeTargetBlock)
+		_, err = tc.ValidateAndInsertBlock(negativeTargetBlock, true)
 		if !errors.Is(err, ruleerrors.ErrNegativeTarget) {
 			t.Fatalf("Unexpected error: %+v", err)
 		}
@@ -94,7 +94,7 @@ func TestPOW(t *testing.T) {
 		}
 		random := rand.New(rand.NewSource(0))
 		mining.SolveBlock(validBlock, random)
-		_, err = tc.ValidateAndInsertBlock(validBlock)
+		_, err = tc.ValidateAndInsertBlock(validBlock, true)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -146,7 +146,7 @@ func TestCheckParentHeadersExist(t *testing.T) {
 			orphanBlock.Header.Nonce(),
 		)
 
-		_, err = tc.ValidateAndInsertBlock(orphanBlock)
+		_, err = tc.ValidateAndInsertBlock(orphanBlock, true)
 		errMissingParents := &ruleerrors.ErrMissingParents{}
 		if !errors.As(err, errMissingParents) {
 			t.Fatalf("Unexpected error: %+v", err)
@@ -174,7 +174,7 @@ func TestCheckParentHeadersExist(t *testing.T) {
 			orphanBlock.Header.Nonce(),
 		)
 
-		_, err = tc.ValidateAndInsertBlock(invalidBlock)
+		_, err = tc.ValidateAndInsertBlock(invalidBlock, true)
 		if !errors.Is(err, ruleerrors.ErrTransactionVersionIsUnknown) {
 			t.Fatalf("Unexpected error: %+v", err)
 		}
@@ -197,7 +197,7 @@ func TestCheckParentHeadersExist(t *testing.T) {
 			invalidBlockChild.Header.Nonce(),
 		)
 
-		_, err = tc.ValidateAndInsertBlock(invalidBlockChild)
+		_, err = tc.ValidateAndInsertBlock(invalidBlockChild, true)
 		if !errors.Is(err, ruleerrors.ErrInvalidAncestorBlock) {
 			t.Fatalf("Unexpected error: %+v", err)
 		}
@@ -255,7 +255,7 @@ func TestValidateDifficulty(t *testing.T) {
 		factory.SetTestDifficultyManager(func(_ model.DBReader, _ model.GHOSTDAGManager, _ model.GHOSTDAGDataStore,
 			_ model.BlockHeaderStore, daaBlocksStore model.DAABlocksStore, _ model.DAGTopologyManager,
 			_ model.DAGTraversalManager, _ *big.Int, _ int, _ bool, _ time.Duration,
-			_ *externalapi.DomainHash) model.DifficultyManager {
+			_ *externalapi.DomainHash, _ uint32) model.DifficultyManager {
 
 			mocDifficulty.daaBlocksStore = daaBlocksStore
 			return mocDifficulty
@@ -286,7 +286,7 @@ func TestValidateDifficulty(t *testing.T) {
 		wrongTestDifficulty := mocDifficulty.testDifficulty + uint32(5)
 		mocDifficulty.testDifficulty = wrongTestDifficulty
 
-		err = tc.BlockValidator().ValidatePruningPointViolationAndProofOfWorkAndDifficulty(stagingArea, blockHash)
+		err = tc.BlockValidator().ValidatePruningPointViolationAndProofOfWorkAndDifficulty(stagingArea, blockHash, false)
 		if err == nil || !errors.Is(err, ruleerrors.ErrUnexpectedDifficulty) {
 			t.Fatalf("Expected block to be invalid with err: %v, instead found: %v", ruleerrors.ErrUnexpectedDifficulty, err)
 		}
@@ -305,7 +305,7 @@ func (dm *mocDifficultyManager) RequiredDifficulty(*model.StagingArea, *external
 }
 
 // StageDAADataAndReturnRequiredDifficulty returns the difficulty required for the test
-func (dm *mocDifficultyManager) StageDAADataAndReturnRequiredDifficulty(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) (uint32, error) {
+func (dm *mocDifficultyManager) StageDAADataAndReturnRequiredDifficulty(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash, isBlockWithTrustedData bool) (uint32, error) {
 	// Populate daaBlocksStore with fake values
 	dm.daaBlocksStore.StageDAAScore(stagingArea, blockHash, 0)
 	dm.daaBlocksStore.StageBlockDAAAddedBlocks(stagingArea, blockHash, nil)

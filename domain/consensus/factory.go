@@ -1,13 +1,12 @@
 package consensus
 
 import (
+	"github.com/kaspanet/kaspad/domain/consensus/datastructures/daawindowstore"
 	"io/ioutil"
 	"os"
 	"sync"
 
-	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/prefixmanager/prefix"
-	"github.com/pkg/errors"
 
 	consensusdatabase "github.com/kaspanet/kaspad/domain/consensus/database"
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/acceptancedatastore"
@@ -62,6 +61,8 @@ type Config struct {
 	IsArchival bool
 	// EnableSanityCheckPruningUTXOSet checks the full pruning point utxo set against the commitment at every pruning movement
 	EnableSanityCheckPruningUTXOSet bool
+
+	SkipAddingGenesis bool
 }
 
 // Factory instantiates new Consensuses
@@ -117,6 +118,7 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 	pruningWindowSizePlusFinalityDepthForCache := int(config.PruningDepth() + config.FinalityDepth())
 
 	// Data Structures
+	daaWindowStore := daawindowstore.New(dbPrefix, 200, preallocateCaches)
 	acceptanceDataStore := acceptancedatastore.New(dbPrefix, 200, preallocateCaches)
 	blockStore, err := blockstore.New(dbManager, dbPrefix, 200, preallocateCaches)
 	if err != nil {
@@ -164,7 +166,8 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 		dagTopologyManager,
 		ghostdagDataStore,
 		blockHeaderStore,
-		config.K)
+		config.K,
+		config.GenesisHash)
 	dagTraversalManager := dagtraversalmanager.New(
 		dbManager,
 		dagTopologyManager,
@@ -172,6 +175,7 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 		reachabilityDataStore,
 		ghostdagManager,
 		consensusStateStore,
+		daaWindowStore,
 		config.GenesisHash)
 	pastMedianTimeManager := f.pastMedianTimeConsructor(
 		config.TimestampDeviationTolerance,
@@ -202,7 +206,8 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 		config.DifficultyAdjustmentWindowSize,
 		config.DisableDifficultyAdjustment,
 		config.TargetTimePerBlock,
-		config.GenesisHash)
+		config.GenesisHash,
+		config.GenesisBlock.Header.Bits())
 	coinbaseManager := coinbasemanager.New(
 		dbManager,
 		config.SubsidyReductionInterval,
@@ -308,11 +313,17 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 		blockHeaderStore,
 		utxoDiffStore,
 		daaBlocksStore,
+		reachabilityDataStore,
+		daaWindowStore,
+
 		config.IsArchival,
 		genesisHash,
 		config.FinalityDepth(),
 		config.PruningDepth(),
-		config.EnableSanityCheckPruningUTXOSet)
+		config.EnableSanityCheckPruningUTXOSet,
+		config.K,
+		config.DifficultyAdjustmentWindowSize,
+	)
 
 	syncManager := syncmanager.New(
 		dbManager,
@@ -375,11 +386,15 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 		headersSelectedTipStore,
 		finalityStore,
 		headersSelectedChainStore,
-		daaBlocksStore)
+		daaBlocksStore,
+		daaWindowStore)
 
 	c := &consensus{
 		lock:            &sync.Mutex{},
 		databaseContext: dbManager,
+
+		genesisBlock: config.GenesisBlock,
+		genesisHash:  config.GenesisHash,
 
 		blockProcessor:        blockProcessor,
 		blockBuilder:          blockBuilder,
@@ -416,21 +431,9 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 		daaBlocksStore:            daaBlocksStore,
 	}
 
-	genesisInfo, err := c.GetBlockInfo(genesisHash)
+	err = c.Init(config.SkipAddingGenesis)
 	if err != nil {
 		return nil, err
-	}
-
-	if !genesisInfo.Exists {
-		if c.blockStore.Count(model.NewStagingArea()) > 0 {
-			return nil, errors.Errorf(
-				"expected genesis block %s is not found in the non-empty DAG \"%s\": wrong config or appdir?",
-				genesisHash, config.Params.Name)
-		}
-		_, err = c.ValidateAndInsertBlock(config.GenesisBlock)
-		if err != nil {
-			return nil, err
-		}
 	}
 
 	err = consensusStateManager.RecoverUTXOIfRequired()

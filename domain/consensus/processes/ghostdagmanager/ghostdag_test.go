@@ -32,10 +32,10 @@ type block struct {
 
 // json struct:
 type testDag struct {
-	K                    model.KType `json:"K"`
-	GenesisID            string      `json:"GenesisID"`
-	ExpectedMergeSetReds []string    `json:"ExpectedReds"`
-	Blocks               []block     `json:"Blocks"`
+	K                    externalapi.KType `json:"K"`
+	GenesisID            string            `json:"GenesisID"`
+	ExpectedMergeSetReds []string          `json:"ExpectedReds"`
+	Blocks               []block           `json:"Blocks"`
 }
 
 type implManager struct {
@@ -44,7 +44,8 @@ type implManager struct {
 		dagTopologyManager model.DAGTopologyManager,
 		ghostdagDataStore model.GHOSTDAGDataStore,
 		headerStore model.BlockHeaderStore,
-		k model.KType) model.GHOSTDAGManager
+		k externalapi.KType,
+		genesisHash *externalapi.DomainHash) model.GHOSTDAGManager
 	implName string
 }
 
@@ -63,14 +64,14 @@ func TestGHOSTDAG(t *testing.T) {
 		}
 
 		ghostdagDataStore := &GHOSTDAGDataStoreImpl{
-			dagMap: make(map[externalapi.DomainHash]*model.BlockGHOSTDAGData),
+			dagMap: make(map[externalapi.DomainHash]*externalapi.BlockGHOSTDAGData),
 		}
 
 		blockHeadersStore := &blockHeadersStore{
 			dagMap: make(map[externalapi.DomainHash]externalapi.BlockHeader),
 		}
 
-		blockGHOSTDAGDataGenesis := model.NewBlockGHOSTDAGData(0, new(big.Int), nil, nil, nil, nil)
+		blockGHOSTDAGDataGenesis := externalapi.NewBlockGHOSTDAGData(0, new(big.Int), nil, nil, nil, nil)
 		genesisHeader := consensusConfig.GenesisBlock.Header
 		genesisWork := difficulty.CalcWork(genesisHeader.Bits())
 
@@ -104,7 +105,7 @@ func TestGHOSTDAG(t *testing.T) {
 			blockHeadersStore.dagMap[genesisHash] = genesisHeader
 
 			for _, factory := range implementationFactories {
-				g := factory.function(nil, dagTopology, ghostdagDataStore, blockHeadersStore, test.K)
+				g := factory.function(nil, dagTopology, ghostdagDataStore, blockHeadersStore, test.K, &genesisHash)
 
 				for _, testBlockData := range test.Blocks {
 					blockID := StringToDomainHash(testBlockData.ID)
@@ -125,7 +126,7 @@ func TestGHOSTDAG(t *testing.T) {
 						t.Fatalf("Test failed: \n Impl: %s,FileName: %s \n error on GHOSTDAG - block %s: %s.",
 							factory.implName, info.Name(), testBlockData.ID, err)
 					}
-					ghostdagData, err := ghostdagDataStore.Get(nil, nil, blockID)
+					ghostdagData, err := ghostdagDataStore.Get(nil, nil, blockID, false)
 					if err != nil {
 						t.Fatalf("\nTEST FAILED:\n Impl: %s, FileName: %s \nBlock: %s, \nError: ghostdagDataStore error: %v.",
 							factory.implName, info.Name(), testBlockData.ID, err)
@@ -159,7 +160,7 @@ func TestGHOSTDAG(t *testing.T) {
 				}
 				dagTopology.parentsMap = make(map[externalapi.DomainHash][]*externalapi.DomainHash)
 				dagTopology.parentsMap[genesisHash] = nil
-				ghostdagDataStore.dagMap = make(map[externalapi.DomainHash]*model.BlockGHOSTDAGData)
+				ghostdagDataStore.dagMap = make(map[externalapi.DomainHash]*externalapi.BlockGHOSTDAGData)
 				ghostdagDataStore.dagMap[genesisHash] = blockGHOSTDAGDataGenesis
 				blockHeadersStore.dagMap = make(map[externalapi.DomainHash]externalapi.BlockHeader)
 				blockHeadersStore.dagMap[genesisHash] = genesisHeader
@@ -189,7 +190,7 @@ func TestBlueWork(t *testing.T) {
 	}
 
 	ghostdagDataStore := &GHOSTDAGDataStoreImpl{
-		dagMap: make(map[externalapi.DomainHash]*model.BlockGHOSTDAGData),
+		dagMap: make(map[externalapi.DomainHash]*externalapi.BlockGHOSTDAGData),
 	}
 
 	blockHeadersStore := &blockHeadersStore{
@@ -216,7 +217,7 @@ func TestBlueWork(t *testing.T) {
 	)
 
 	dagTopology.parentsMap[*fakeGenesisHash] = nil
-	ghostdagDataStore.dagMap[*fakeGenesisHash] = model.NewBlockGHOSTDAGData(0, new(big.Int), nil, nil, nil, nil)
+	ghostdagDataStore.dagMap[*fakeGenesisHash] = externalapi.NewBlockGHOSTDAGData(0, new(big.Int), nil, nil, nil, nil)
 	blockHeadersStore.dagMap[*fakeGenesisHash] = lowDifficultyHeader
 
 	dagTopology.parentsMap[*longestChainBlock1Hash] = []*externalapi.DomainHash{fakeGenesisHash}
@@ -246,7 +247,7 @@ func TestBlueWork(t *testing.T) {
 	dagTopology.parentsMap[*tipHash] = []*externalapi.DomainHash{heaviestChainBlock2Hash, longestChainBlock3Hash}
 	blockHeadersStore.dagMap[*tipHash] = lowDifficultyHeader
 
-	manager := ghostdagmanager.New(nil, dagTopology, ghostdagDataStore, blockHeadersStore, 18)
+	manager := ghostdagmanager.New(nil, dagTopology, ghostdagDataStore, blockHeadersStore, 18, fakeGenesisHash)
 	blocksForGHOSTDAG := []*externalapi.DomainHash{
 		longestChainBlock1Hash,
 		longestChainBlock2Hash,
@@ -296,10 +297,10 @@ func StringToDomainHashSlice(stringIDArr []string) []*externalapi.DomainHash {
 
 /* ---------------------- */
 type GHOSTDAGDataStoreImpl struct {
-	dagMap map[externalapi.DomainHash]*model.BlockGHOSTDAGData
+	dagMap map[externalapi.DomainHash]*externalapi.BlockGHOSTDAGData
 }
 
-func (ds *GHOSTDAGDataStoreImpl) Stage(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash, blockGHOSTDAGData *model.BlockGHOSTDAGData) {
+func (ds *GHOSTDAGDataStoreImpl) Stage(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash, blockGHOSTDAGData *externalapi.BlockGHOSTDAGData, isTrustedData bool) {
 	ds.dagMap[*blockHash] = blockGHOSTDAGData
 }
 
@@ -315,7 +316,7 @@ func (ds *GHOSTDAGDataStoreImpl) Commit(dbTx model.DBTransaction) error {
 	panic("implement me")
 }
 
-func (ds *GHOSTDAGDataStoreImpl) Get(dbContext model.DBReader, stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) (*model.BlockGHOSTDAGData, error) {
+func (ds *GHOSTDAGDataStoreImpl) Get(dbContext model.DBReader, stagingArea *model.StagingArea, blockHash *externalapi.DomainHash, isTrustedData bool) (*externalapi.BlockGHOSTDAGData, error) {
 	v, ok := ds.dagMap[*blockHash]
 	if ok {
 		return v, nil

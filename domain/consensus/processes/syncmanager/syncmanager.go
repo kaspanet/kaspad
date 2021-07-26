@@ -69,17 +69,10 @@ func (sm *syncManager) GetHashesBetween(stagingArea *model.StagingArea, lowHash,
 	return sm.antiPastHashesBetween(stagingArea, lowHash, highHash, maxBlocks)
 }
 
-func (sm *syncManager) GetMissingBlockBodyHashes(stagingArea *model.StagingArea, highHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error) {
-	onEnd := logger.LogAndMeasureExecutionTime(log, "GetMissingBlockBodyHashes")
-	defer onEnd()
-
-	return sm.missingBlockBodyHashes(stagingArea, highHash)
-}
-
 func (sm *syncManager) CreateBlockLocator(stagingArea *model.StagingArea,
 	lowHash, highHash *externalapi.DomainHash, limit uint32) (externalapi.BlockLocator, error) {
 
-	onEnd := logger.LogAndMeasureExecutionTime(log, "CreateBlockLocator")
+	onEnd := logger.LogAndMeasureExecutionTime(log, "CreateBlockLocatorFromPruningPoint")
 	defer onEnd()
 
 	return sm.createBlockLocator(stagingArea, lowHash, highHash, limit)

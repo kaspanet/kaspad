@@ -29,3 +29,8 @@ func (*FlowContext) HandleError(err error, flowName string, isStopping *uint32, 
 		errChan <- err
 	}
 }
+
+// IsRecoverableError returns whether the error is recoverable
+func (*FlowContext) IsRecoverableError(err error) bool {
+	return err == nil || errors.Is(err, router.ErrRouteClosed) || errors.As(err, &protocolerrors.ProtocolError{})
+}

@@ -29,21 +29,22 @@ type blockProcessor struct {
 	headerTipsManager     model.HeadersSelectedTipManager
 	syncManager           model.SyncManager
 
-	acceptanceDataStore       model.AcceptanceDataStore
-	blockStore                model.BlockStore
-	blockStatusStore          model.BlockStatusStore
-	blockRelationStore        model.BlockRelationStore
-	multisetStore             model.MultisetStore
-	ghostdagDataStore         model.GHOSTDAGDataStore
-	consensusStateStore       model.ConsensusStateStore
-	pruningStore              model.PruningStore
-	reachabilityDataStore     model.ReachabilityDataStore
-	utxoDiffStore             model.UTXODiffStore
-	blockHeaderStore          model.BlockHeaderStore
-	headersSelectedTipStore   model.HeaderSelectedTipStore
-	finalityStore             model.FinalityStore
-	headersSelectedChainStore model.HeadersSelectedChainStore
-	daaBlocksStore            model.DAABlocksStore
+	acceptanceDataStore                 model.AcceptanceDataStore
+	blockStore                          model.BlockStore
+	blockStatusStore                    model.BlockStatusStore
+	blockRelationStore                  model.BlockRelationStore
+	multisetStore                       model.MultisetStore
+	ghostdagDataStore                   model.GHOSTDAGDataStore
+	consensusStateStore                 model.ConsensusStateStore
+	pruningStore                        model.PruningStore
+	reachabilityDataStore               model.ReachabilityDataStore
+	utxoDiffStore                       model.UTXODiffStore
+	blockHeaderStore                    model.BlockHeaderStore
+	headersSelectedTipStore             model.HeaderSelectedTipStore
+	finalityStore                       model.FinalityStore
+	headersSelectedChainStore           model.HeadersSelectedChainStore
+	daaBlocksStore                      model.DAABlocksStore
+	blocksWithTrustedDataDAAWindowStore model.BlocksWithTrustedDataDAAWindowStore
 
 	stores []model.Store
 }
@@ -81,6 +82,7 @@ func New(
 	finalityStore model.FinalityStore,
 	headersSelectedChainStore model.HeadersSelectedChainStore,
 	daaBlocksStore model.DAABlocksStore,
+	blocksWithTrustedDataDAAWindowStore model.BlocksWithTrustedDataDAAWindowStore,
 ) model.BlockProcessor {
 
 	return &blockProcessor{
@@ -99,22 +101,23 @@ func New(
 		headerTipsManager:     headerTipsManager,
 		syncManager:           syncManager,
 
-		consensusStateManager:     consensusStateManager,
-		acceptanceDataStore:       acceptanceDataStore,
-		blockStore:                blockStore,
-		blockStatusStore:          blockStatusStore,
-		blockRelationStore:        blockRelationStore,
-		multisetStore:             multisetStore,
-		ghostdagDataStore:         ghostdagDataStore,
-		consensusStateStore:       consensusStateStore,
-		pruningStore:              pruningStore,
-		reachabilityDataStore:     reachabilityDataStore,
-		utxoDiffStore:             utxoDiffStore,
-		blockHeaderStore:          blockHeaderStore,
-		headersSelectedTipStore:   headersSelectedTipStore,
-		finalityStore:             finalityStore,
-		headersSelectedChainStore: headersSelectedChainStore,
-		daaBlocksStore:            daaBlocksStore,
+		consensusStateManager:               consensusStateManager,
+		acceptanceDataStore:                 acceptanceDataStore,
+		blockStore:                          blockStore,
+		blockStatusStore:                    blockStatusStore,
+		blockRelationStore:                  blockRelationStore,
+		multisetStore:                       multisetStore,
+		ghostdagDataStore:                   ghostdagDataStore,
+		consensusStateStore:                 consensusStateStore,
+		pruningStore:                        pruningStore,
+		reachabilityDataStore:               reachabilityDataStore,
+		utxoDiffStore:                       utxoDiffStore,
+		blockHeaderStore:                    blockHeaderStore,
+		headersSelectedTipStore:             headersSelectedTipStore,
+		finalityStore:                       finalityStore,
+		headersSelectedChainStore:           headersSelectedChainStore,
+		daaBlocksStore:                      daaBlocksStore,
+		blocksWithTrustedDataDAAWindowStore: blocksWithTrustedDataDAAWindowStore,
 
 		stores: []model.Store{
 			consensusStateStore,
@@ -133,24 +136,34 @@ func New(
 			finalityStore,
 			headersSelectedChainStore,
 			daaBlocksStore,
+			blocksWithTrustedDataDAAWindowStore,
 		},
 	}
 }
 
 // ValidateAndInsertBlock validates the given block and, if valid, applies it
 // to the current state
-func (bp *blockProcessor) ValidateAndInsertBlock(block *externalapi.DomainBlock) (*externalapi.BlockInsertionResult, error) {
+func (bp *blockProcessor) ValidateAndInsertBlock(block *externalapi.DomainBlock, shouldValidateAgainstUTXO bool) (*externalapi.BlockInsertionResult, error) {
 	onEnd := logger.LogAndMeasureExecutionTime(log, "ValidateAndInsertBlock")
 	defer onEnd()
 
 	stagingArea := model.NewStagingArea()
-	return bp.validateAndInsertBlock(stagingArea, block, false)
+	return bp.validateAndInsertBlock(stagingArea, block, false, shouldValidateAgainstUTXO, false)
 }
 
-func (bp *blockProcessor) ValidateAndInsertImportedPruningPoint(newPruningPoint *externalapi.DomainBlock) error {
+func (bp *blockProcessor) ValidateAndInsertImportedPruningPoint(newPruningPoint *externalapi.DomainHash) error {
 	onEnd := logger.LogAndMeasureExecutionTime(log, "ValidateAndInsertImportedPruningPoint")
 	defer onEnd()
 
 	stagingArea := model.NewStagingArea()
 	return bp.validateAndInsertImportedPruningPoint(stagingArea, newPruningPoint)
+}
+
+func (bp *blockProcessor) ValidateAndInsertBlockWithTrustedData(block *externalapi.BlockWithTrustedData, shouldValidateAgainstUTXO bool) (*externalapi.BlockInsertionResult, error) {
+	onEnd := logger.LogAndMeasureExecutionTime(log, "ValidateAndInsertBlockWithTrustedData")
+	defer onEnd()
+
+	stagingArea := model.NewStagingArea()
+
+	return bp.validateAndInsertBlockWithTrustedData(stagingArea, block, shouldValidateAgainstUTXO)
 }

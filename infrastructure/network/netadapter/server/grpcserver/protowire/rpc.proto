@@ -303,17 +303,7 @@ message VirtualSelectedParentChainChangedNotificationMessage{
   repeated string removedChainBlockHashes = 1;
 
   // The chain blocks that were added, in low-to-high order
-  repeated ChainBlock addedChainBlocks = 2;
-}
-
-message ChainBlock{
-  string hash = 1;
-  repeated AcceptedBlock acceptedBlocks = 2;
-}
-
-message AcceptedBlock{
-  string hash = 1;
-  repeated string acceptedTransactionIds = 2;
+  repeated string addedChainBlockHashes = 3;
 }
 
 // GetBlockRequestMessage requests information about a specific block
@@ -353,7 +343,7 @@ message GetVirtualSelectedParentChainFromBlockResponseMessage{
   repeated string removedChainBlockHashes = 1;
 
   // The chain blocks that were added, in low-to-high order
-  repeated ChainBlock addedChainBlocks = 2;
+  repeated string addedChainBlockHashes = 3;
 
   RPCError error = 1000;
 }

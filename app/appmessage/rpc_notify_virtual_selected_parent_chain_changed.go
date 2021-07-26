@@ -38,19 +38,7 @@ func NewNotifyVirtualSelectedParentChainChangedResponseMessage() *NotifyVirtualS
 type VirtualSelectedParentChainChangedNotificationMessage struct {
 	baseMessage
 	RemovedChainBlockHashes []string
-	AddedChainBlocks        []*ChainBlock
-}
-
-// ChainBlock represents a DAG chain-block
-type ChainBlock struct {
-	Hash           string
-	AcceptedBlocks []*AcceptedBlock
-}
-
-// AcceptedBlock represents a block accepted into the DAG
-type AcceptedBlock struct {
-	Hash                   string
-	AcceptedTransactionIDs []string
+	AddedChainBlockHashes   []string
 }
 
 // Command returns the protocol command string for the message
@@ -59,11 +47,11 @@ func (msg *VirtualSelectedParentChainChangedNotificationMessage) Command() Messa
 }
 
 // NewVirtualSelectedParentChainChangedNotificationMessage returns a instance of the message
-func NewVirtualSelectedParentChainChangedNotificationMessage(removedChainBlockHashes []string,
-	addedChainBlocks []*ChainBlock) *VirtualSelectedParentChainChangedNotificationMessage {
+func NewVirtualSelectedParentChainChangedNotificationMessage(removedChainBlockHashes,
+	addedChainBlocks []string) *VirtualSelectedParentChainChangedNotificationMessage {
 
 	return &VirtualSelectedParentChainChangedNotificationMessage{
 		RemovedChainBlockHashes: removedChainBlockHashes,
-		AddedChainBlocks:        addedChainBlocks,
+		AddedChainBlockHashes:   addedChainBlocks,
 	}
 }

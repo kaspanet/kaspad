@@ -1,3 +1,7 @@
+// Copyright (c) 2013-2016 The btcsuite developers
+// Use of this source code is governed by an ISC
+// license that can be found in the LICENSE file.
+
 package appmessage
 
 import (
@@ -5,11 +9,12 @@ import (
 )
 
 // MsgRequestIBDBlocks implements the Message interface and represents a kaspa
-// RequestIBDBlocks message. It is used to request blocks as part of the IBD
-// protocol.
+// RequestIBDBlocks message. It is used to request a list of blocks starting after the
+// low hash and until the high hash.
 type MsgRequestIBDBlocks struct {
 	baseMessage
-	Hashes []*externalapi.DomainHash
+	LowHash  *externalapi.DomainHash
+	HighHash *externalapi.DomainHash
 }
 
 // Command returns the protocol command string for the message. This is part
@@ -18,9 +23,12 @@ func (msg *MsgRequestIBDBlocks) Command() MessageCommand {
 	return CmdRequestIBDBlocks
 }
 
-// NewMsgRequestIBDBlocks returns a new MsgRequestIBDBlocks.
-func NewMsgRequestIBDBlocks(hashes []*externalapi.DomainHash) *MsgRequestIBDBlocks {
+// NewMsgRequstIBDBlocks returns a new kaspa RequestIBDBlocks message that conforms to the
+// Message interface using the passed parameters and defaults for the remaining
+// fields.
+func NewMsgRequstIBDBlocks(lowHash, highHash *externalapi.DomainHash) *MsgRequestIBDBlocks {
 	return &MsgRequestIBDBlocks{
-		Hashes: hashes,
+		LowHash:  lowHash,
+		HighHash: highHash,
 	}
 }

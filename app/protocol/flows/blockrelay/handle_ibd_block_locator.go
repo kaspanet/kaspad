@@ -5,6 +5,7 @@ import (
 	"github.com/kaspanet/kaspad/app/protocol/peer"
 	"github.com/kaspanet/kaspad/app/protocol/protocolerrors"
 	"github.com/kaspanet/kaspad/domain"
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
 )
 
@@ -44,7 +45,9 @@ func HandleIBDBlockLocator(context HandleIBDBlockLocatorContext, incomingRoute *
 			if err != nil {
 				return err
 			}
-			if !blockInfo.Exists {
+
+			// The IBD block locator is checking only existing blocks with bodies.
+			if !blockInfo.Exists || blockInfo.BlockStatus == externalapi.StatusHeaderOnly {
 				continue
 			}
 

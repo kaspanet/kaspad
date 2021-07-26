@@ -38,7 +38,7 @@ func (csm *consensusStateManager) ReverseUTXODiffs(tipHash *externalapi.DomainHa
 
 	log.Trace("Reversed 1 utxoDiff")
 
-	previousBlockGHOSTDAGData, err := csm.ghostdagDataStore.Get(csm.databaseContext, readStagingArea, previousBlock)
+	previousBlockGHOSTDAGData, err := csm.ghostdagDataStore.Get(csm.databaseContext, readStagingArea, previousBlock, false)
 	if err != nil {
 		return err
 	}
@@ -50,7 +50,7 @@ func (csm *consensusStateManager) ReverseUTXODiffs(tipHash *externalapi.DomainHa
 		if err != nil {
 			return err
 		}
-		currentBlockGHOSTDAGData, err := csm.ghostdagDataStore.Get(csm.databaseContext, readStagingArea, currentBlock)
+		currentBlockGHOSTDAGData, err := csm.ghostdagDataStore.Get(csm.databaseContext, readStagingArea, currentBlock, false)
 		if err != nil {
 			return err
 		}

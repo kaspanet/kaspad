@@ -13,7 +13,7 @@ import (
 
 // ValidateHeaderInContext validates block headers in the context of the current
 // consensus state
-func (v *blockValidator) ValidateHeaderInContext(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) error {
+func (v *blockValidator) ValidateHeaderInContext(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash, isBlockWithTrustedData bool) error {
 	onEnd := logger.LogAndMeasureExecutionTime(log, "ValidateHeaderInContext")
 	defer onEnd()
 
@@ -30,8 +30,8 @@ func (v *blockValidator) ValidateHeaderInContext(stagingArea *model.StagingArea,
 	if !hasValidatedHeader {
 		var logErr error
 		log.Debug(logger.NewLogClosure(func() string {
-			var ghostdagData *model.BlockGHOSTDAGData
-			ghostdagData, logErr = v.ghostdagDataStore.Get(v.databaseContext, stagingArea, blockHash)
+			var ghostdagData *externalapi.BlockGHOSTDAGData
+			ghostdagData, logErr = v.ghostdagDataStore.Get(v.databaseContext, stagingArea, blockHash, false)
 			if err != nil {
 				return ""
 			}
@@ -69,7 +69,7 @@ func (v *blockValidator) ValidateHeaderInContext(stagingArea *model.StagingArea,
 		}
 	}
 
-	err = v.mergeDepthManager.CheckBoundedMergeDepth(stagingArea, blockHash)
+	err = v.mergeDepthManager.CheckBoundedMergeDepth(stagingArea, blockHash, isBlockWithTrustedData)
 	if err != nil {
 		return err
 	}
@@ -96,9 +96,14 @@ func (v *blockValidator) hasValidatedHeader(stagingArea *model.StagingArea, bloc
 }
 
 // checkParentsIncest validates that no parent is an ancestor of another parent
-func (v *blockValidator) checkParentsIncest(stagingArea *model.StagingArea, header externalapi.BlockHeader) error {
-	for _, parentA := range header.ParentHashes() {
-		for _, parentB := range header.ParentHashes() {
+func (v *blockValidator) checkParentsIncest(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) error {
+	parents, err := v.dagTopologyManager.Parents(stagingArea, blockHash)
+	if err != nil {
+		return err
+	}
+
+	for _, parentA := range parents {
+		for _, parentB := range parents {
 			if parentA.Equal(parentB) {
 				continue
 			}
@@ -142,7 +147,7 @@ func (v *blockValidator) validateMedianTime(stagingArea *model.StagingArea, head
 }
 
 func (v *blockValidator) checkMergeSizeLimit(stagingArea *model.StagingArea, hash *externalapi.DomainHash) error {
-	ghostdagData, err := v.ghostdagDataStore.Get(v.databaseContext, stagingArea, hash)
+	ghostdagData, err := v.ghostdagDataStore.Get(v.databaseContext, stagingArea, hash, false)
 	if err != nil {
 		return err
 	}

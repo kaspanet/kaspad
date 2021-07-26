@@ -7,7 +7,7 @@ import (
 	"math"
 )
 
-func (x *BlockHeaderMessage) toAppMessage() (*appmessage.MsgBlockHeader, error) {
+func (x *BlockHeader) toAppMessage() (*appmessage.MsgBlockHeader, error) {
 	if x == nil {
 		return nil, errors.Wrapf(errorNil, "BlockHeaderMessage is nil")
 	}
@@ -42,8 +42,8 @@ func (x *BlockHeaderMessage) toAppMessage() (*appmessage.MsgBlockHeader, error) 
 	}, nil
 }
 
-func (x *BlockHeaderMessage) fromAppMessage(msgBlockHeader *appmessage.MsgBlockHeader) error {
-	*x = BlockHeaderMessage{
+func (x *BlockHeader) fromAppMessage(msgBlockHeader *appmessage.MsgBlockHeader) error {
+	*x = BlockHeader{
 		Version:              uint32(msgBlockHeader.Version),
 		ParentHashes:         domainHashesToProto(msgBlockHeader.ParentHashes),
 		HashMerkleRoot:       domainHashToProto(msgBlockHeader.HashMerkleRoot),

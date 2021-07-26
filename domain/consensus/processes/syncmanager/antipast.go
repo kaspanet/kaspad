@@ -31,11 +31,11 @@ func (sm *syncManager) antiPastHashesBetween(stagingArea *model.StagingArea, low
 		return nil, nil, err
 	}
 
-	lowBlockGHOSTDAGData, err := sm.ghostdagDataStore.Get(sm.databaseContext, stagingArea, lowHash)
+	lowBlockGHOSTDAGData, err := sm.ghostdagDataStore.Get(sm.databaseContext, stagingArea, lowHash, false)
 	if err != nil {
 		return nil, nil, err
 	}
-	highBlockGHOSTDAGData, err := sm.ghostdagDataStore.Get(sm.databaseContext, stagingArea, highHash)
+	highBlockGHOSTDAGData, err := sm.ghostdagDataStore.Get(sm.databaseContext, stagingArea, highHash, false)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -104,77 +104,13 @@ func (sm *syncManager) findLowHashInHighHashSelectedParentChain(stagingArea *mod
 		if isInSelectedParentChain {
 			break
 		}
-		lowBlockGHOSTDAGData, err := sm.ghostdagDataStore.Get(sm.databaseContext, stagingArea, lowHash)
+		lowBlockGHOSTDAGData, err := sm.ghostdagDataStore.Get(sm.databaseContext, stagingArea, lowHash, false)
 		if err != nil {
 			return nil, err
 		}
 		lowHash = lowBlockGHOSTDAGData.SelectedParent()
 	}
 	return lowHash, nil
-}
-
-func (sm *syncManager) missingBlockBodyHashes(stagingArea *model.StagingArea, highHash *externalapi.DomainHash) (
-	[]*externalapi.DomainHash, error) {
-
-	pruningPoint, err := sm.pruningStore.PruningPoint(sm.databaseContext, stagingArea)
-	if err != nil {
-		return nil, err
-	}
-
-	selectedChildIterator, err := sm.dagTraversalManager.SelectedChildIterator(stagingArea, highHash, pruningPoint)
-	if err != nil {
-		return nil, err
-	}
-	defer selectedChildIterator.Close()
-
-	lowHash := pruningPoint
-	foundHeaderOnlyBlock := false
-	for ok := selectedChildIterator.First(); ok; ok = selectedChildIterator.Next() {
-		selectedChild, err := selectedChildIterator.Get()
-		if err != nil {
-			return nil, err
-		}
-		hasBlock, err := sm.blockStore.HasBlock(sm.databaseContext, stagingArea, selectedChild)
-		if err != nil {
-			return nil, err
-		}
-
-		if !hasBlock {
-			foundHeaderOnlyBlock = true
-			break
-		}
-		lowHash = selectedChild
-	}
-	if !foundHeaderOnlyBlock {
-		if lowHash == highHash {
-			// Blocks can be inserted inside the DAG during IBD if those were requested before IBD started.
-			// In rare cases, all the IBD blocks might be already inserted by the time we reach this point.
-			// In these cases - return an empty list of blocks to sync
-			return []*externalapi.DomainHash{}, nil
-		}
-		// TODO: Once block children are fixed (https://github.com/kaspanet/kaspad/issues/1499),
-		// this error should be returned rather the logged
-		log.Errorf("no header-only blocks between %s and %s",
-			lowHash, highHash)
-	}
-
-	hashesBetween, _, err := sm.antiPastHashesBetween(stagingArea, lowHash, highHash, 0)
-	if err != nil {
-		return nil, err
-	}
-
-	missingBlocks := make([]*externalapi.DomainHash, 0, len(hashesBetween))
-	for _, blockHash := range hashesBetween {
-		blockStatus, err := sm.blockStatusStore.Get(sm.databaseContext, stagingArea, blockHash)
-		if err != nil {
-			return nil, err
-		}
-		if blockStatus == externalapi.StatusHeaderOnly {
-			missingBlocks = append(missingBlocks, blockHash)
-		}
-	}
-
-	return missingBlocks, nil
 }
 
 func (sm *syncManager) isHeaderOnlyBlock(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) (bool, error) {

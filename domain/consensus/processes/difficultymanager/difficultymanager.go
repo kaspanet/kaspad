@@ -28,6 +28,7 @@ type difficultyManager struct {
 	difficultyAdjustmentWindowSize int
 	disableDifficultyAdjustment    bool
 	targetTimePerBlock             time.Duration
+	genesisBits                    uint32
 }
 
 // New instantiates a new DifficultyManager
@@ -42,7 +43,8 @@ func New(databaseContext model.DBReader,
 	difficultyAdjustmentWindowSize int,
 	disableDifficultyAdjustment bool,
 	targetTimePerBlock time.Duration,
-	genesisHash *externalapi.DomainHash) model.DifficultyManager {
+	genesisHash *externalapi.DomainHash,
+	genesisBits uint32) model.DifficultyManager {
 	return &difficultyManager{
 		databaseContext:                databaseContext,
 		ghostdagManager:                ghostdagManager,
@@ -56,16 +58,8 @@ func New(databaseContext model.DBReader,
 		disableDifficultyAdjustment:    disableDifficultyAdjustment,
 		targetTimePerBlock:             targetTimePerBlock,
 		genesisHash:                    genesisHash,
+		genesisBits:                    genesisBits,
 	}
-}
-
-func (dm *difficultyManager) genesisBits(stagingArea *model.StagingArea) (uint32, error) {
-	header, err := dm.headerStore.BlockHeader(dm.databaseContext, stagingArea, dm.genesisHash)
-	if err != nil {
-		return 0, err
-	}
-
-	return header.Bits(), nil
 }
 
 // StageDAADataAndReturnRequiredDifficulty calculates the DAA window, stages the DAA score and DAA added
@@ -76,47 +70,46 @@ func (dm *difficultyManager) genesisBits(stagingArea *model.StagingArea) (uint32
 // For cases where no staging should happen and the caller only needs to know the difficulty he should
 // use RequiredDifficulty.
 func (dm *difficultyManager) StageDAADataAndReturnRequiredDifficulty(
-	stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) (uint32, error) {
+	stagingArea *model.StagingArea,
+	blockHash *externalapi.DomainHash,
+	isBlockWithTrustedData bool) (uint32, error) {
 
 	onEnd := logger.LogAndMeasureExecutionTime(log, "StageDAADataAndReturnRequiredDifficulty")
 	defer onEnd()
 
-	// Fetch window of dag.difficultyAdjustmentWindowSize + 1 so we can have dag.difficultyAdjustmentWindowSize block intervals
-	targetsWindow, windowHashes, err := dm.blockWindow(stagingArea, blockHash, dm.difficultyAdjustmentWindowSize+1)
+	targetsWindow, windowHashes, err := dm.blockWindow(stagingArea, blockHash, dm.difficultyAdjustmentWindowSize)
 	if err != nil {
 		return 0, err
 	}
 
-	err = dm.stageDAAScoreAndAddedBlocks(stagingArea, blockHash, windowHashes)
+	err = dm.stageDAAScoreAndAddedBlocks(stagingArea, blockHash, windowHashes, isBlockWithTrustedData)
 	if err != nil {
 		return 0, err
 	}
 
-	return dm.requiredDifficultyFromTargetsWindow(stagingArea, targetsWindow)
+	return dm.requiredDifficultyFromTargetsWindow(targetsWindow)
 }
 
 // RequiredDifficulty returns the difficulty required for some block
 func (dm *difficultyManager) RequiredDifficulty(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) (uint32, error) {
-	// Fetch window of dag.difficultyAdjustmentWindowSize + 1 so we can have dag.difficultyAdjustmentWindowSize block intervals
-	targetsWindow, _, err := dm.blockWindow(stagingArea, blockHash, dm.difficultyAdjustmentWindowSize+1)
+	targetsWindow, _, err := dm.blockWindow(stagingArea, blockHash, dm.difficultyAdjustmentWindowSize)
 	if err != nil {
 		return 0, err
 	}
 
-	return dm.requiredDifficultyFromTargetsWindow(stagingArea, targetsWindow)
+	return dm.requiredDifficultyFromTargetsWindow(targetsWindow)
 }
 
-func (dm *difficultyManager) requiredDifficultyFromTargetsWindow(
-	stagingArea *model.StagingArea, targetsWindow blockWindow) (uint32, error) {
+func (dm *difficultyManager) requiredDifficultyFromTargetsWindow(targetsWindow blockWindow) (uint32, error) {
 	if dm.disableDifficultyAdjustment {
-		return dm.genesisBits(stagingArea)
+		return dm.genesisBits, nil
 	}
 
 	// We need at least 2 blocks to get a timestamp interval
 	// We could instead clamp the timestamp difference to `targetTimePerBlock`,
 	// but then everything will cancel out and we'll get the target from the last block, which will be the same as genesis.
 	if len(targetsWindow) < 2 {
-		return dm.genesisBits(stagingArea)
+		return dm.genesisBits, nil
 	}
 	windowMinTimestamp, windowMaxTimeStamp, windowsMinIndex, _ := targetsWindow.minMaxTimestamps()
 	// Remove the last block from the window so to calculate the average target of dag.difficultyAdjustmentWindowSize blocks
@@ -141,12 +134,14 @@ func (dm *difficultyManager) requiredDifficultyFromTargetsWindow(
 }
 
 func (dm *difficultyManager) stageDAAScoreAndAddedBlocks(stagingArea *model.StagingArea,
-	blockHash *externalapi.DomainHash, windowHashes []*externalapi.DomainHash) error {
+	blockHash *externalapi.DomainHash,
+	windowHashes []*externalapi.DomainHash,
+	isBlockWithTrustedData bool) error {
 
 	onEnd := logger.LogAndMeasureExecutionTime(log, "stageDAAScoreAndAddedBlocks")
 	defer onEnd()
 
-	daaScore, addedBlocks, err := dm.calculateDaaScoreAndAddedBlocks(stagingArea, blockHash, windowHashes)
+	daaScore, addedBlocks, err := dm.calculateDaaScoreAndAddedBlocks(stagingArea, blockHash, windowHashes, isBlockWithTrustedData)
 	if err != nil {
 		return err
 	}
@@ -157,13 +152,15 @@ func (dm *difficultyManager) stageDAAScoreAndAddedBlocks(stagingArea *model.Stag
 }
 
 func (dm *difficultyManager) calculateDaaScoreAndAddedBlocks(stagingArea *model.StagingArea,
-	blockHash *externalapi.DomainHash, windowHashes []*externalapi.DomainHash) (uint64, []*externalapi.DomainHash, error) {
+	blockHash *externalapi.DomainHash,
+	windowHashes []*externalapi.DomainHash,
+	isBlockWithTrustedData bool) (uint64, []*externalapi.DomainHash, error) {
 
 	if blockHash.Equal(dm.genesisHash) {
 		return 0, nil, nil
 	}
 
-	ghostdagData, err := dm.ghostdagStore.Get(dm.databaseContext, stagingArea, blockHash)
+	ghostdagData, err := dm.ghostdagStore.Get(dm.databaseContext, stagingArea, blockHash, false)
 	if err != nil {
 		return 0, nil, err
 	}
@@ -189,10 +186,19 @@ func (dm *difficultyManager) calculateDaaScoreAndAddedBlocks(stagingArea *model.
 		}
 	}
 
-	selectedParentDAAScore, err := dm.daaBlocksStore.DAAScore(dm.databaseContext, stagingArea, ghostdagData.SelectedParent())
-	if err != nil {
-		return 0, nil, err
+	var daaScore uint64
+	if isBlockWithTrustedData {
+		daaScore, err = dm.daaBlocksStore.DAAScore(dm.databaseContext, stagingArea, blockHash)
+		if err != nil {
+			return 0, nil, err
+		}
+	} else {
+		selectedParentDAAScore, err := dm.daaBlocksStore.DAAScore(dm.databaseContext, stagingArea, ghostdagData.SelectedParent())
+		if err != nil {
+			return 0, nil, err
+		}
+		daaScore = selectedParentDAAScore + uint64(len(daaAddedBlocks))
 	}
 
-	return selectedParentDAAScore + uint64(len(daaAddedBlocks)), daaAddedBlocks, nil
+	return daaScore, daaAddedBlocks, nil
 }

@@ -16,6 +16,7 @@ type dagTraversalManager struct {
 	ghostdagDataStore     model.GHOSTDAGDataStore
 	reachabilityDataStore model.ReachabilityDataStore
 	consensusStateStore   model.ConsensusStateStore
+	daaWindowStore        model.BlocksWithTrustedDataDAAWindowStore
 	genesisHash           *externalapi.DomainHash
 }
 
@@ -27,6 +28,7 @@ func New(
 	reachabilityDataStore model.ReachabilityDataStore,
 	ghostdagManager model.GHOSTDAGManager,
 	conssensusStateStore model.ConsensusStateStore,
+	daaWindowStore model.BlocksWithTrustedDataDAAWindowStore,
 	genesisHash *externalapi.DomainHash) model.DAGTraversalManager {
 	return &dagTraversalManager{
 		databaseContext:       databaseContext,
@@ -35,7 +37,9 @@ func New(
 		reachabilityDataStore: reachabilityDataStore,
 		ghostdagManager:       ghostdagManager,
 		consensusStateStore:   conssensusStateStore,
-		genesisHash:           genesisHash,
+		daaWindowStore:        daaWindowStore,
+
+		genesisHash: genesisHash,
 	}
 }
 
@@ -44,7 +48,7 @@ func New(
 // of the block with the given highHash's selected parent chain.
 func (dtm *dagTraversalManager) BlockAtDepth(stagingArea *model.StagingArea, highHash *externalapi.DomainHash, depth uint64) (*externalapi.DomainHash, error) {
 	currentBlockHash := highHash
-	highBlockGHOSTDAGData, err := dtm.ghostdagDataStore.Get(dtm.databaseContext, stagingArea, highHash)
+	highBlockGHOSTDAGData, err := dtm.ghostdagDataStore.Get(dtm.databaseContext, stagingArea, highHash, false)
 	if err != nil {
 		return nil, err
 	}
@@ -61,7 +65,7 @@ func (dtm *dagTraversalManager) BlockAtDepth(stagingArea *model.StagingArea, hig
 			return currentBlockHash, nil
 		}
 		currentBlockHash = currentBlockGHOSTDAGData.SelectedParent()
-		currentBlockGHOSTDAGData, err = dtm.ghostdagDataStore.Get(dtm.databaseContext, stagingArea, currentBlockHash)
+		currentBlockGHOSTDAGData, err = dtm.ghostdagDataStore.Get(dtm.databaseContext, stagingArea, currentBlockHash, false)
 		if err != nil {
 			return nil, err
 		}
@@ -70,7 +74,7 @@ func (dtm *dagTraversalManager) BlockAtDepth(stagingArea *model.StagingArea, hig
 }
 
 func (dtm *dagTraversalManager) LowestChainBlockAboveOrEqualToBlueScore(stagingArea *model.StagingArea, highHash *externalapi.DomainHash, blueScore uint64) (*externalapi.DomainHash, error) {
-	highBlockGHOSTDAGData, err := dtm.ghostdagDataStore.Get(dtm.databaseContext, stagingArea, highHash)
+	highBlockGHOSTDAGData, err := dtm.ghostdagDataStore.Get(dtm.databaseContext, stagingArea, highHash, false)
 	if err != nil {
 		return nil, err
 	}
@@ -83,9 +87,9 @@ func (dtm *dagTraversalManager) LowestChainBlockAboveOrEqualToBlueScore(stagingA
 	currentHash := highHash
 	currentBlockGHOSTDAGData := highBlockGHOSTDAGData
 
-	for currentBlockGHOSTDAGData.SelectedParent() != nil {
+	for !currentHash.Equal(dtm.genesisHash) {
 		selectedParentBlockGHOSTDAGData, err := dtm.ghostdagDataStore.Get(dtm.databaseContext, stagingArea,
-			currentBlockGHOSTDAGData.SelectedParent())
+			currentBlockGHOSTDAGData.SelectedParent(), false)
 		if err != nil {
 			return nil, err
 		}
@@ -120,7 +124,7 @@ func (dtm *dagTraversalManager) CalculateChainPath(stagingArea *model.StagingAre
 		}
 		removed = append(removed, current)
 
-		currentGHOSTDAGData, err := dtm.ghostdagDataStore.Get(dtm.databaseContext, stagingArea, current)
+		currentGHOSTDAGData, err := dtm.ghostdagDataStore.Get(dtm.databaseContext, stagingArea, current, false)
 		if err != nil {
 			return nil, err
 		}
@@ -133,7 +137,7 @@ func (dtm *dagTraversalManager) CalculateChainPath(stagingArea *model.StagingAre
 	current = toBlockHash
 	for !current.Equal(commonAncestor) {
 		added = append(added, current)
-		currentGHOSTDAGData, err := dtm.ghostdagDataStore.Get(dtm.databaseContext, stagingArea, current)
+		currentGHOSTDAGData, err := dtm.ghostdagDataStore.Get(dtm.databaseContext, stagingArea, current, false)
 		if err != nil {
 			return nil, err
 		}

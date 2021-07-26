@@ -27,7 +27,7 @@ func (csm *consensusStateManager) CalculatePastUTXOAndAcceptanceData(stagingArea
 		return utxo.NewUTXODiff(), externalapi.AcceptanceData{}, multiset.New(), nil
 	}
 
-	blockGHOSTDAGData, err := csm.ghostdagDataStore.Get(csm.databaseContext, stagingArea, blockHash)
+	blockGHOSTDAGData, err := csm.ghostdagDataStore.Get(csm.databaseContext, stagingArea, blockHash, false)
 	if err != nil {
 		return nil, nil, nil, err
 	}
@@ -50,7 +50,7 @@ func (csm *consensusStateManager) calculatePastUTXOAndAcceptanceDataWithSelected
 	blockHash *externalapi.DomainHash, selectedParentPastUTXO externalapi.UTXODiff) (
 	externalapi.UTXODiff, externalapi.AcceptanceData, model.Multiset, error) {
 
-	blockGHOSTDAGData, err := csm.ghostdagDataStore.Get(csm.databaseContext, stagingArea, blockHash)
+	blockGHOSTDAGData, err := csm.ghostdagDataStore.Get(csm.databaseContext, stagingArea, blockHash, false)
 	if err != nil {
 		return nil, nil, nil, err
 	}
@@ -67,7 +67,7 @@ func (csm *consensusStateManager) calculatePastUTXOAndAcceptanceDataWithSelected
 	}
 
 	log.Debugf("Calculating the multiset of %s", blockHash)
-	multiset, err := csm.calculateMultiset(stagingArea, acceptanceData, blockGHOSTDAGData, daaScore)
+	multiset, err := csm.calculateMultiset(stagingArea, blockHash, acceptanceData, blockGHOSTDAGData, daaScore)
 	if err != nil {
 		return nil, nil, nil, err
 	}

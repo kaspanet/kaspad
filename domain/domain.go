@@ -1,6 +1,7 @@
 package domain
 
 import (
+	"github.com/kaspanet/kaspad/domain/consensusreference"
 	"sync"
 	"sync/atomic"
 	"unsafe"
@@ -78,7 +79,10 @@ func (d *domain) InitStagingConsensus() error {
 	}
 
 	consensusFactory := consensus.NewFactory()
-	consensusInstance, err := consensusFactory.NewConsensus(d.consensusConfig, d.db, inactivePrefix)
+	cfg := *d.consensusConfig
+	cfg.SkipAddingGenesis = true
+
+	consensusInstance, err := consensusFactory.NewConsensus(&cfg, d.db, inactivePrefix)
 	if err != nil {
 		return err
 	}
@@ -184,13 +188,16 @@ func New(consensusConfig *consensus.Config, mempoolConfig *mempool.Config, db in
 		return nil, err
 	}
 
-	miningManagerFactory := miningmanager.NewFactory()
-	miningManager := miningManagerFactory.NewMiningManager(consensusInstance, &consensusConfig.Params, mempoolConfig)
-
-	return &domain{
+	domainInstance := &domain{
 		consensus:       &consensusInstance,
-		miningManager:   miningManager,
 		consensusConfig: consensusConfig,
 		db:              db,
-	}, nil
+	}
+
+	miningManagerFactory := miningmanager.NewFactory()
+
+	// We create a consensus wrapper because the actual consensus might change
+	consensusReference := consensusreference.NewConsensusReference(&domainInstance.consensus)
+	domainInstance.miningManager = miningManagerFactory.NewMiningManager(consensusReference, &consensusConfig.Params, mempoolConfig)
+	return domainInstance, nil
 }

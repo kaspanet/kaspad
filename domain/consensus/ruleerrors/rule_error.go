@@ -194,6 +194,12 @@ var (
 	ErrPrunedBlock = newRuleError("ErrPrunedBlock")
 
 	ErrGetVirtualUTXOsWrongVirtualParents = newRuleError("ErrGetVirtualUTXOsWrongVirtualParents")
+
+	ErrVirtualGenesisParent = newRuleError("ErrVirtualGenesisParent")
+
+	ErrGenesisOnInitializedConsensus = newRuleError("ErrGenesisOnInitializedConsensus")
+
+	ErrPruningPointSelectedChildDisqualifiedFromChain = newRuleError("ErrPruningPointSelectedChildDisqualifiedFromChain")
 )
 
 // RuleError identifies a rule violation. It is used to indicate that

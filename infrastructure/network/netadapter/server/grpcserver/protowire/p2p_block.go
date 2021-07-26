@@ -42,7 +42,7 @@ func (x *BlockMessage) toAppMessage() (*appmessage.MsgBlock, error) {
 }
 
 func (x *BlockMessage) fromAppMessage(msgBlock *appmessage.MsgBlock) error {
-	protoHeader := new(BlockHeaderMessage)
+	protoHeader := new(BlockHeader)
 	err := protoHeader.fromAppMessage(&msgBlock.Header)
 	if err != nil {
 		return err

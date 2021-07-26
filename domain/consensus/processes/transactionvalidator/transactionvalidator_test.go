@@ -176,13 +176,13 @@ func TestValidateTransactionInContextAndPopulateFee(t *testing.T) {
 		tc.DAABlocksStore().StageDAAScore(stagingArea, povBlockHash, consensusConfig.BlockCoinbaseMaturity+txInput.UTXOEntry.BlockDAAScore())
 
 		// Just use some stub ghostdag data
-		tc.GHOSTDAGDataStore().Stage(stagingArea, povBlockHash, model.NewBlockGHOSTDAGData(
+		tc.GHOSTDAGDataStore().Stage(stagingArea, povBlockHash, externalapi.NewBlockGHOSTDAGData(
 			0,
 			nil,
 			consensusConfig.GenesisHash,
 			nil,
 			nil,
-			nil))
+			nil), false)
 
 		tests := []struct {
 			name          string

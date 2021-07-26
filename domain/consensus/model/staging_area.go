@@ -28,6 +28,7 @@ const (
 	StagingShardIDPruning
 	StagingShardIDReachabilityData
 	StagingShardIDUTXODiff
+	StagingShardIDDAAWindow
 	// Always leave StagingShardIDLen as the last constant
 	StagingShardIDLen
 )

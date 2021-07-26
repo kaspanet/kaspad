@@ -1,6 +1,7 @@
 package externalapi
 
 import (
+	"math/big"
 	"reflect"
 	"testing"
 )
@@ -12,22 +13,32 @@ func initTestBlockInfoStructsForClone() []*BlockInfo {
 			true,
 			BlockStatus(0x01),
 			0,
+			big.NewInt(0),
 		}, {
 			true,
 			BlockStatus(0x02),
 			0,
+			big.NewInt(0),
 		}, {
 			true,
 			1,
 			1,
+			big.NewInt(0),
 		}, {
 			true,
 			255,
 			2,
+			big.NewInt(0),
 		}, {
 			true,
 			0,
 			3,
+			big.NewInt(0),
+		}, {
+			true,
+			BlockStatus(0x01),
+			0,
+			big.NewInt(1),
 		},
 	}
 	return tests

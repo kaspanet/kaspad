@@ -131,7 +131,7 @@ func (csm *consensusStateManager) selectedParentInfo(
 			"which by definition has status: %s", externalapi.StatusUTXOValid)
 		return lastUnverifiedBlock, externalapi.StatusUTXOValid, utxo.NewUTXODiff(), nil
 	}
-	lastUnverifiedBlockGHOSTDAGData, err := csm.ghostdagDataStore.Get(csm.databaseContext, stagingArea, lastUnverifiedBlock)
+	lastUnverifiedBlockGHOSTDAGData, err := csm.ghostdagDataStore.Get(csm.databaseContext, stagingArea, lastUnverifiedBlock, false)
 	if err != nil {
 		return nil, 0, nil, err
 	}
@@ -174,7 +174,7 @@ func (csm *consensusStateManager) getUnverifiedChainBlocks(stagingArea *model.St
 		log.Debugf("Block %s is unverified. Adding it to the unverified block collection", currentHash)
 		unverifiedBlocks = append(unverifiedBlocks, currentHash)
 
-		currentBlockGHOSTDAGData, err := csm.ghostdagDataStore.Get(csm.databaseContext, stagingArea, currentHash)
+		currentBlockGHOSTDAGData, err := csm.ghostdagDataStore.Get(csm.databaseContext, stagingArea, currentHash, false)
 		if err != nil {
 			return nil, err
 		}
@@ -297,7 +297,7 @@ func (csm *consensusStateManager) isNewSelectedTip(stagingArea *model.StagingAre
 }
 
 func (csm *consensusStateManager) selectedTip(stagingArea *model.StagingArea) (*externalapi.DomainHash, error) {
-	virtualGHOSTDAGData, err := csm.ghostdagDataStore.Get(csm.databaseContext, stagingArea, model.VirtualBlockHash)
+	virtualGHOSTDAGData, err := csm.ghostdagDataStore.Get(csm.databaseContext, stagingArea, model.VirtualBlockHash, false)
 	if err != nil {
 		return nil, err
 	}

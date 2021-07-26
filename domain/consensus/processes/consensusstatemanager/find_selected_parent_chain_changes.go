@@ -11,7 +11,7 @@ func (csm *consensusStateManager) GetVirtualSelectedParentChainFromBlock(staging
 	// virtual's selected parent. Note that we explicitly don't
 	// do the calculation against the virtual itself so that we
 	// won't later need to remove it from the result.
-	virtualGHOSTDAGData, err := csm.ghostdagDataStore.Get(csm.databaseContext, stagingArea, model.VirtualBlockHash)
+	virtualGHOSTDAGData, err := csm.ghostdagDataStore.Get(csm.databaseContext, stagingArea, model.VirtualBlockHash, false)
 	if err != nil {
 		return nil, err
 	}

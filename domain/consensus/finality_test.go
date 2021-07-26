@@ -32,7 +32,7 @@ func TestFinality(t *testing.T) {
 				return nil, err
 			}
 
-			_, err = consensus.ValidateAndInsertBlock(block)
+			_, err = consensus.ValidateAndInsertBlock(block, true)
 			if err != nil {
 				return nil, err
 			}
@@ -148,13 +148,13 @@ func TestFinality(t *testing.T) {
 			t.Fatalf("TestFinality: Failed getting virtual selectedParent: %v", err)
 		}
 		selectedTipGhostDagData, err :=
-			consensus.GHOSTDAGDataStore().Get(consensus.DatabaseContext(), stagingArea, selectedTip)
+			consensus.GHOSTDAGDataStore().Get(consensus.DatabaseContext(), stagingArea, selectedTip, false)
 		if err != nil {
 			t.Fatalf("TestFinality: Failed getting the ghost dag data of the selected tip: %v", err)
 		}
 
 		sideChainTipGhostDagData, err :=
-			consensus.GHOSTDAGDataStore().Get(consensus.DatabaseContext(), stagingArea, sideChainTipHash)
+			consensus.GHOSTDAGDataStore().Get(consensus.DatabaseContext(), stagingArea, sideChainTipHash, false)
 		if err != nil {
 			t.Fatalf("TestFinality: Failed getting the ghost dag data of the sidechain tip: %v", err)
 		}
@@ -194,7 +194,7 @@ func TestBoundedMergeDepth(t *testing.T) {
 				return nil, false // fo some reason go doesn't recognize that t.Fatalf never returns
 			}
 
-			_, err = consensus.ValidateAndInsertBlock(block)
+			_, err = consensus.ValidateAndInsertBlock(block, true)
 			if err == nil {
 				return block, false
 			} else if errors.Is(err, ruleerrors.ErrViolatingBoundedMergeDepth) {
@@ -206,7 +206,7 @@ func TestBoundedMergeDepth(t *testing.T) {
 		}
 
 		processBlock := func(consensus testapi.TestConsensus, block *externalapi.DomainBlock, name string) {
-			_, err := consensus.ValidateAndInsertBlock(block)
+			_, err := consensus.ValidateAndInsertBlock(block, true)
 			if err != nil {
 				t.Fatalf("TestBoundedMergeDepth: %s got unexpected error from ProcessBlock: %+v", name, err)
 
@@ -218,7 +218,7 @@ func TestBoundedMergeDepth(t *testing.T) {
 			if err != nil {
 				t.Fatalf("TestBoundedMergeDepth: Failed building block: %v", err)
 			}
-			_, err = consensus.ValidateAndInsertBlock(block)
+			_, err = consensus.ValidateAndInsertBlock(block, true)
 			if err != nil {
 				t.Fatalf("TestBoundedMergeDepth: Failed Inserting block to consensus: %v", err)
 			}
@@ -308,7 +308,7 @@ func TestBoundedMergeDepth(t *testing.T) {
 
 		stagingArea := model.NewStagingArea()
 		virtualGhotDagData, err := consensusReal.GHOSTDAGDataStore().Get(consensusReal.DatabaseContext(),
-			stagingArea, model.VirtualBlockHash)
+			stagingArea, model.VirtualBlockHash, false)
 		if err != nil {
 			t.Fatalf("TestBoundedMergeDepth: Failed getting the ghostdag data of the virtual: %v", err)
 		}
@@ -357,7 +357,7 @@ func TestBoundedMergeDepth(t *testing.T) {
 		}
 
 		virtualGhotDagData, err = consensusReal.GHOSTDAGDataStore().Get(
-			consensusReal.DatabaseContext(), stagingArea, model.VirtualBlockHash)
+			consensusReal.DatabaseContext(), stagingArea, model.VirtualBlockHash, false)
 		if err != nil {
 			t.Fatalf("TestBoundedMergeDepth: Failed getting the ghostdag data of the virtual: %v", err)
 		}

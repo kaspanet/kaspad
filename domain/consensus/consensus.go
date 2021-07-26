@@ -1,6 +1,9 @@
 package consensus
 
 import (
+	"github.com/kaspanet/kaspad/infrastructure/logger"
+	"github.com/kaspanet/kaspad/util/staging"
+	"math/big"
 	"sync"
 
 	"github.com/kaspanet/kaspad/domain/consensus/database"
@@ -13,6 +16,9 @@ import (
 type consensus struct {
 	lock            *sync.Mutex
 	databaseContext model.DBManager
+
+	genesisBlock *externalapi.DomainBlock
+	genesisHash  *externalapi.DomainHash
 
 	blockProcessor        model.BlockProcessor
 	blockBuilder          model.BlockBuilder
@@ -49,6 +55,88 @@ type consensus struct {
 	daaBlocksStore            model.DAABlocksStore
 }
 
+func (s *consensus) ValidateAndInsertBlockWithTrustedData(block *externalapi.BlockWithTrustedData, validateUTXO bool) (*externalapi.BlockInsertionResult, error) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	return s.blockProcessor.ValidateAndInsertBlockWithTrustedData(block, validateUTXO)
+}
+
+// Init initializes consensus
+func (s *consensus) Init(skipAddingGenesis bool) error {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	onEnd := logger.LogAndMeasureExecutionTime(log, "Init")
+	defer onEnd()
+
+	stagingArea := model.NewStagingArea()
+
+	exists, err := s.blockStatusStore.Exists(s.databaseContext, stagingArea, model.VirtualGenesisBlockHash)
+	if err != nil {
+		return err
+	}
+
+	// There should always be a virtual genesis block. Initially only the genesis points to this block, but
+	// on a node with pruned header all blocks without known parents points to it.
+	if !exists {
+		s.blockStatusStore.Stage(stagingArea, model.VirtualGenesisBlockHash, externalapi.StatusUTXOValid)
+		err = s.reachabilityManager.Init(stagingArea)
+		if err != nil {
+			return err
+		}
+
+		err = s.dagTopologyManager.SetParents(stagingArea, model.VirtualGenesisBlockHash, nil)
+		if err != nil {
+			return err
+		}
+
+		s.consensusStateStore.StageTips(stagingArea, []*externalapi.DomainHash{model.VirtualGenesisBlockHash})
+		s.ghostdagDataStore.Stage(stagingArea, model.VirtualGenesisBlockHash, externalapi.NewBlockGHOSTDAGData(
+			0,
+			big.NewInt(0),
+			nil,
+			nil,
+			nil,
+			nil,
+		), false)
+
+		err = staging.CommitAllChanges(s.databaseContext, stagingArea)
+		if err != nil {
+			return err
+		}
+	}
+
+	// The genesis should be added to the DAG if it's a fresh consensus, unless said otherwise (on a
+	// case where the consensus is used for a pruned headers node).
+	if !skipAddingGenesis && s.blockStore.Count(stagingArea) == 0 {
+		genesisWithTrustedData := &externalapi.BlockWithTrustedData{
+			Block:     s.genesisBlock,
+			DAAScore:  0,
+			DAAWindow: nil,
+			GHOSTDAGData: []*externalapi.BlockGHOSTDAGDataHashPair{
+				{
+					GHOSTDAGData: externalapi.NewBlockGHOSTDAGData(0, big.NewInt(0), model.VirtualGenesisBlockHash, nil, nil, make(map[externalapi.DomainHash]externalapi.KType)),
+					Hash:         s.genesisHash,
+				},
+			},
+		}
+		_, err = s.blockProcessor.ValidateAndInsertBlockWithTrustedData(genesisWithTrustedData, true)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (s *consensus) PruningPointAndItsAnticoneWithTrustedData() ([]*externalapi.BlockWithTrustedData, error) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	return s.pruningManager.PruningPointAndItsAnticoneWithTrustedData()
+}
+
 // BuildBlock builds a block over the current state, with the transactions
 // selected by the given transactionSelector
 func (s *consensus) BuildBlock(coinbaseData *externalapi.DomainCoinbaseData,
@@ -62,11 +150,11 @@ func (s *consensus) BuildBlock(coinbaseData *externalapi.DomainCoinbaseData,
 
 // ValidateAndInsertBlock validates the given block and, if valid, applies it
 // to the current state
-func (s *consensus) ValidateAndInsertBlock(block *externalapi.DomainBlock) (*externalapi.BlockInsertionResult, error) {
+func (s *consensus) ValidateAndInsertBlock(block *externalapi.DomainBlock, shouldValidateAgainstUTXO bool) (*externalapi.BlockInsertionResult, error) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	return s.blockProcessor.ValidateAndInsertBlock(block)
+	return s.blockProcessor.ValidateAndInsertBlock(block, shouldValidateAgainstUTXO)
 }
 
 // ValidateTransactionAndPopulateWithConsensusData validates the given transaction
@@ -179,12 +267,13 @@ func (s *consensus) GetBlockInfo(blockHash *externalapi.DomainHash) (*externalap
 		return blockInfo, nil
 	}
 
-	ghostdagData, err := s.ghostdagDataStore.Get(s.databaseContext, stagingArea, blockHash)
+	ghostdagData, err := s.ghostdagDataStore.Get(s.databaseContext, stagingArea, blockHash, false)
 	if err != nil {
 		return nil, err
 	}
 
 	blockInfo.BlueScore = ghostdagData.BlueScore()
+	blockInfo.BlueWork = ghostdagData.BlueWork()
 
 	return blockInfo, nil
 }
@@ -203,7 +292,7 @@ func (s *consensus) GetBlockRelations(blockHash *externalapi.DomainHash) (
 		return nil, nil, nil, err
 	}
 
-	blockGHOSTDAGData, err := s.ghostdagDataStore.Get(s.databaseContext, stagingArea, blockHash)
+	blockGHOSTDAGData, err := s.ghostdagDataStore.Get(s.databaseContext, stagingArea, blockHash, false)
 	if err != nil {
 		return nil, nil, nil, err
 	}
@@ -243,20 +332,6 @@ func (s *consensus) GetHashesBetween(lowHash, highHash *externalapi.DomainHash, 
 	}
 
 	return s.syncManager.GetHashesBetween(stagingArea, lowHash, highHash, maxBlocks)
-}
-
-func (s *consensus) GetMissingBlockBodyHashes(highHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error) {
-	s.lock.Lock()
-	defer s.lock.Unlock()
-
-	stagingArea := model.NewStagingArea()
-
-	err := s.validateBlockHashExists(stagingArea, highHash)
-	if err != nil {
-		return nil, err
-	}
-
-	return s.syncManager.GetMissingBlockBodyHashes(stagingArea, highHash)
 }
 
 func (s *consensus) GetPruningPointUTXOs(expectedPruningPointHash *externalapi.DomainHash,
@@ -334,7 +409,7 @@ func (s *consensus) AppendImportedPruningPointUTXOs(outpointAndUTXOEntryPairs []
 	return s.pruningManager.AppendImportedPruningPointUTXOs(outpointAndUTXOEntryPairs)
 }
 
-func (s *consensus) ValidateAndInsertImportedPruningPoint(newPruningPoint *externalapi.DomainBlock) error {
+func (s *consensus) ValidateAndInsertImportedPruningPoint(newPruningPoint *externalapi.DomainHash) error {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
@@ -347,7 +422,7 @@ func (s *consensus) GetVirtualSelectedParent() (*externalapi.DomainHash, error) 
 
 	stagingArea := model.NewStagingArea()
 
-	virtualGHOSTDAGData, err := s.ghostdagDataStore.Get(s.databaseContext, stagingArea, model.VirtualBlockHash)
+	virtualGHOSTDAGData, err := s.ghostdagDataStore.Get(s.databaseContext, stagingArea, model.VirtualBlockHash, false)
 	if err != nil {
 		return nil, err
 	}
@@ -381,7 +456,7 @@ func (s *consensus) GetVirtualInfo() (*externalapi.VirtualInfo, error) {
 	if err != nil {
 		return nil, err
 	}
-	virtualGHOSTDAGData, err := s.ghostdagDataStore.Get(s.databaseContext, stagingArea, model.VirtualBlockHash)
+	virtualGHOSTDAGData, err := s.ghostdagDataStore.Get(s.databaseContext, stagingArea, model.VirtualBlockHash, false)
 	if err != nil {
 		return nil, err
 	}
@@ -409,22 +484,23 @@ func (s *consensus) GetVirtualDAAScore() (uint64, error) {
 	return s.daaBlocksStore.DAAScore(s.databaseContext, stagingArea, model.VirtualBlockHash)
 }
 
-func (s *consensus) CreateBlockLocator(lowHash, highHash *externalapi.DomainHash, limit uint32) (externalapi.BlockLocator, error) {
+func (s *consensus) CreateBlockLocatorFromPruningPoint(highHash *externalapi.DomainHash, limit uint32) (externalapi.BlockLocator, error) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
 	stagingArea := model.NewStagingArea()
 
-	err := s.validateBlockHashExists(stagingArea, lowHash)
-	if err != nil {
-		return nil, err
-	}
-	err = s.validateBlockHashExists(stagingArea, highHash)
+	err := s.validateBlockHashExists(stagingArea, highHash)
 	if err != nil {
 		return nil, err
 	}
 
-	return s.syncManager.CreateBlockLocator(stagingArea, lowHash, highHash, limit)
+	pruningPoint, err := s.pruningStore.PruningPoint(s.databaseContext, stagingArea)
+	if err != nil {
+		return nil, err
+	}
+
+	return s.syncManager.CreateBlockLocator(stagingArea, pruningPoint, highHash, limit)
 }
 
 func (s *consensus) CreateFullHeadersSelectedChainBlockLocator() (externalapi.BlockLocator, error) {

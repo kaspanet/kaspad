@@ -34,7 +34,7 @@ const (
 	CmdVerAck
 	CmdRequestAddresses
 	CmdAddresses
-	CmdRequestHeaders
+	CmdRequestIBDBlocks
 	CmdBlock
 	CmdTx
 	CmdPing
@@ -45,24 +45,24 @@ const (
 	CmdRequestRelayBlocks
 	CmdInvTransaction
 	CmdRequestTransactions
-	CmdIBDBlock
-	CmdDoneHeaders
+	CmdDoneIBDBlocks
 	CmdTransactionNotFound
 	CmdReject
-	CmdHeader
-	CmdRequestNextHeaders
-	CmdRequestPruningPointUTXOSetAndBlock
+	CmdRequestNextIBDBlocks
+	CmdRequestPruningPointUTXOSet
 	CmdPruningPointUTXOSetChunk
-	CmdRequestIBDBlocks
 	CmdUnexpectedPruningPoint
-	CmdRequestPruningPointHash
-	CmdPruningPointHash
 	CmdIBDBlockLocator
 	CmdIBDBlockLocatorHighestHash
 	CmdIBDBlockLocatorHighestHashNotFound
-	CmdBlockHeaders
+	CmdIBDBlocks
 	CmdRequestNextPruningPointUTXOSetChunk
 	CmdDonePruningPointUTXOSetChunks
+	CmdBlockBlueWork
+	CmdBlockWithTrustedData
+	CmdDoneBlocksWithTrustedData
+	CmdRequestPruningPointAndItsAnticone
+	CmdRequestBlockBlueWork
 
 	// rpc
 	CmdGetCurrentNetworkRequestMessage
@@ -150,7 +150,7 @@ var ProtocolMessageCommandToString = map[MessageCommand]string{
 	CmdVerAck:                              "VerAck",
 	CmdRequestAddresses:                    "RequestAddresses",
 	CmdAddresses:                           "Addresses",
-	CmdRequestHeaders:                      "RequestHeaders",
+	CmdRequestIBDBlocks:                    "CmdRequestIBDBlocks",
 	CmdBlock:                               "Block",
 	CmdTx:                                  "Tx",
 	CmdPing:                                "Ping",
@@ -161,24 +161,24 @@ var ProtocolMessageCommandToString = map[MessageCommand]string{
 	CmdRequestRelayBlocks:                  "RequestRelayBlocks",
 	CmdInvTransaction:                      "InvTransaction",
 	CmdRequestTransactions:                 "RequestTransactions",
-	CmdIBDBlock:                            "IBDBlock",
-	CmdDoneHeaders:                         "DoneHeaders",
+	CmdDoneIBDBlocks:                       "DoneIBDBlocks",
 	CmdTransactionNotFound:                 "TransactionNotFound",
 	CmdReject:                              "Reject",
-	CmdHeader:                              "Header",
-	CmdRequestNextHeaders:                  "RequestNextHeaders",
-	CmdRequestPruningPointUTXOSetAndBlock:  "RequestPruningPointUTXOSetAndBlock",
+	CmdRequestNextIBDBlocks:                "RequestNextIBDBlocks",
+	CmdRequestPruningPointUTXOSet:          "RequestPruningPointUTXOSet",
 	CmdPruningPointUTXOSetChunk:            "PruningPointUTXOSetChunk",
-	CmdRequestIBDBlocks:                    "RequestIBDBlocks",
 	CmdUnexpectedPruningPoint:              "UnexpectedPruningPoint",
-	CmdRequestPruningPointHash:             "RequestPruningPointHashHash",
-	CmdPruningPointHash:                    "PruningPointHash",
 	CmdIBDBlockLocator:                     "IBDBlockLocator",
 	CmdIBDBlockLocatorHighestHash:          "IBDBlockLocatorHighestHash",
 	CmdIBDBlockLocatorHighestHashNotFound:  "IBDBlockLocatorHighestHashNotFound",
-	CmdBlockHeaders:                        "BlockHeaders",
+	CmdIBDBlocks:                           "IBDBlocks",
 	CmdRequestNextPruningPointUTXOSetChunk: "RequestNextPruningPointUTXOSetChunk",
 	CmdDonePruningPointUTXOSetChunks:       "DonePruningPointUTXOSetChunks",
+	CmdBlockBlueWork:                       "BlockBlueWork",
+	CmdBlockWithTrustedData:                "BlockWithTrustedData",
+	CmdDoneBlocksWithTrustedData:           "DoneBlocksWithTrustedData",
+	CmdRequestPruningPointAndItsAnticone:   "RequestPruningPointAndItsAnticoneHeaders",
+	CmdRequestBlockBlueWork:                "RequestBlockBlueWork",
 }
 
 // RPCMessageCommandToString maps all MessageCommands to their string representation

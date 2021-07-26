@@ -8,7 +8,7 @@ import (
 // consensusStateManager manages the node's consensus state
 type consensusStateManager struct {
 	pruningDepth      uint64
-	maxBlockParents   model.KType
+	maxBlockParents   externalapi.KType
 	mergeSetSizeLimit uint64
 	genesisHash       *externalapi.DomainHash
 	databaseContext   model.DBManager
@@ -45,7 +45,7 @@ type consensusStateManager struct {
 func New(
 	databaseContext model.DBManager,
 	pruningDepth uint64,
-	maxBlockParents model.KType,
+	maxBlockParents externalapi.KType,
 	mergeSetSizeLimit uint64,
 	genesisHash *externalapi.DomainHash,
 

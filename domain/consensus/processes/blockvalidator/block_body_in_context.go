@@ -4,13 +4,14 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/virtual"
 	"github.com/kaspanet/kaspad/infrastructure/logger"
 	"github.com/pkg/errors"
 )
 
 // ValidateBodyInContext validates block bodies in the context of the current
 // consensus state
-func (v *blockValidator) ValidateBodyInContext(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash, isPruningPoint bool) error {
+func (v *blockValidator) ValidateBodyInContext(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash, isBlockWithTrustedData bool) error {
 	onEnd := logger.LogAndMeasureExecutionTime(log, "ValidateBodyInContext")
 	defer onEnd()
 
@@ -24,7 +25,7 @@ func (v *blockValidator) ValidateBodyInContext(stagingArea *model.StagingArea, b
 		return err
 	}
 
-	if !isPruningPoint {
+	if !isBlockWithTrustedData {
 		err := v.checkParentBlockBodiesExist(stagingArea, blockHash)
 		if err != nil {
 			return err
@@ -68,11 +69,16 @@ func (v *blockValidator) checkParentBlockBodiesExist(
 	stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) error {
 
 	missingParentHashes := []*externalapi.DomainHash{}
-	header, err := v.blockHeaderStore.BlockHeader(v.databaseContext, stagingArea, blockHash)
+	parents, err := v.dagTopologyManager.Parents(stagingArea, blockHash)
 	if err != nil {
 		return err
 	}
-	for _, parent := range header.ParentHashes() {
+
+	if virtual.ContainsOnlyVirtualGenesis(parents) {
+		return nil
+	}
+
+	for _, parent := range parents {
 		hasBlock, err := v.blockStore.HasBlock(v.databaseContext, stagingArea, parent)
 		if err != nil {
 			return err

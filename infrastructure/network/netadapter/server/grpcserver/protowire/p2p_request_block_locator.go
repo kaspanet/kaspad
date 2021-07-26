@@ -16,10 +16,6 @@ func (x *RequestBlockLocatorMessage) toAppMessage() (appmessage.Message, error) 
 	if x == nil {
 		return nil, errors.Wrapf(errorNil, "RequestBlockLocatorMessage is nil")
 	}
-	lowHash, err := x.LowHash.toDomain()
-	if err != nil {
-		return nil, err
-	}
 
 	highHash, err := x.HighHash.toDomain()
 	if err != nil {
@@ -27,7 +23,6 @@ func (x *RequestBlockLocatorMessage) toAppMessage() (appmessage.Message, error) 
 	}
 
 	return &appmessage.MsgRequestBlockLocator{
-		LowHash:  lowHash,
 		HighHash: highHash,
 		Limit:    x.Limit,
 	}, nil
@@ -36,9 +31,9 @@ func (x *RequestBlockLocatorMessage) toAppMessage() (appmessage.Message, error) 
 
 func (x *KaspadMessage_RequestBlockLocator) fromAppMessage(msgGetBlockLocator *appmessage.MsgRequestBlockLocator) error {
 	x.RequestBlockLocator = &RequestBlockLocatorMessage{
-		LowHash:  domainHashToProto(msgGetBlockLocator.LowHash),
 		HighHash: domainHashToProto(msgGetBlockLocator.HighHash),
 		Limit:    msgGetBlockLocator.Limit,
 	}
+
 	return nil
 }

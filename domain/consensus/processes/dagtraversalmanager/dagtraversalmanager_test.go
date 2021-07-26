@@ -32,7 +32,7 @@ func TestBlockAtDepthOnChainDag(t *testing.T) {
 			t.Fatalf("Failed creating a Chain DAG In BlockAtDepthTEST: %+v", err)
 		}
 		currentBlockHash := highHash
-		currentBlockData, err := tc.GHOSTDAGDataStore().Get(tc.DatabaseContext(), stagingArea, currentBlockHash)
+		currentBlockData, err := tc.GHOSTDAGDataStore().Get(tc.DatabaseContext(), stagingArea, currentBlockHash, false)
 		if err != nil {
 			t.Fatalf("Failed getting GHOSTDAGData for block with hash %s: %+v", currentBlockHash.String(), err)
 		}
@@ -42,7 +42,7 @@ func TestBlockAtDepthOnChainDag(t *testing.T) {
 				break
 			}
 			currentBlockHash = currentBlockData.SelectedParent()
-			currentBlockData, err = tc.GHOSTDAGDataStore().Get(tc.DatabaseContext(), stagingArea, currentBlockHash)
+			currentBlockData, err = tc.GHOSTDAGDataStore().Get(tc.DatabaseContext(), stagingArea, currentBlockHash, false)
 			if err != nil {
 				t.Fatalf("Failed getting GHOSTDAGData for block with hash %s: %+v", currentBlockHash.String(), err)
 			}
@@ -230,7 +230,7 @@ func TestLowestChainBlockAboveOrEqualToBlueScore(t *testing.T) {
 		}
 
 		checkBlueScore := func(blockHash *externalapi.DomainHash, expectedBlueScoe uint64) {
-			ghostdagData, err := tc.GHOSTDAGDataStore().Get(tc.DatabaseContext(), stagingArea, blockHash)
+			ghostdagData, err := tc.GHOSTDAGDataStore().Get(tc.DatabaseContext(), stagingArea, blockHash, false)
 			if err != nil {
 				t.Fatalf("GHOSTDAGDataStore().Get: %+v", err)
 			}

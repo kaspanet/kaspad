@@ -150,3 +150,8 @@ message DbBlockCount {
 message DbBlockHeaderCount {
   uint64 count = 1;
 }
+
+message DbBlockGHOSTDAGDataHashPair {
+  DbHash hash = 1;
+  DbBlockGhostdagData GhostdagData = 2;
+}

@@ -31,7 +31,7 @@ func TestDifficulty(t *testing.T) {
 		}
 
 		consensusConfig.K = 1
-		consensusConfig.DifficultyAdjustmentWindowSize = 264
+		consensusConfig.DifficultyAdjustmentWindowSize = 265
 
 		factory := consensus.NewFactory()
 		tc, teardown, err := factory.NewTestConsensus(consensusConfig, "TestDifficulty")
@@ -65,7 +65,7 @@ func TestDifficulty(t *testing.T) {
 			newHeader := block.Header.ToMutable()
 			newHeader.SetTimeInMilliseconds(blockTime)
 			block.Header = newHeader.ToImmutable()
-			_, err = tc.ValidateAndInsertBlock(block)
+			_, err = tc.ValidateAndInsertBlock(block, true)
 			if err != nil {
 				t.Fatalf("ValidateAndInsertBlock: %+v", err)
 			}
@@ -142,7 +142,7 @@ func TestDifficulty(t *testing.T) {
 		// Increase block rate to increase difficulty
 		for i := 0; i < consensusConfig.DifficultyAdjustmentWindowSize; i++ {
 			tip, tipHash = addBlockWithMinimumTime(tipHash)
-			tipGHOSTDAGData, err := tc.GHOSTDAGDataStore().Get(tc.DatabaseContext(), stagingArea, tipHash)
+			tipGHOSTDAGData, err := tc.GHOSTDAGDataStore().Get(tc.DatabaseContext(), stagingArea, tipHash, false)
 			if err != nil {
 				t.Fatalf("GHOSTDAGDataStore: %+v", err)
 			}
@@ -231,12 +231,12 @@ func TestDifficulty(t *testing.T) {
 
 func TestDAAScore(t *testing.T) {
 	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
-		consensusConfig.DifficultyAdjustmentWindowSize = 264
+		consensusConfig.DifficultyAdjustmentWindowSize = 265
 
 		stagingArea := model.NewStagingArea()
 
 		factory := consensus.NewFactory()
-		tc, teardown, err := factory.NewTestConsensus(consensusConfig, "TestDifficulty")
+		tc, teardown, err := factory.NewTestConsensus(consensusConfig, "TestDAAScore")
 		if err != nil {
 			t.Fatalf("Error setting up consensus: %+v", err)
 		}

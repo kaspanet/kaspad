@@ -10,7 +10,6 @@ import (
 // The locator is returned via a locator message (MsgBlockLocator).
 type MsgRequestBlockLocator struct {
 	baseMessage
-	LowHash  *externalapi.DomainHash
 	HighHash *externalapi.DomainHash
 	Limit    uint32
 }
@@ -24,9 +23,8 @@ func (msg *MsgRequestBlockLocator) Command() MessageCommand {
 // NewMsgRequestBlockLocator returns a new RequestBlockLocator message that conforms to the
 // Message interface using the passed parameters and defaults for the remaining
 // fields.
-func NewMsgRequestBlockLocator(lowHash, highHash *externalapi.DomainHash, limit uint32) *MsgRequestBlockLocator {
+func NewMsgRequestBlockLocator(highHash *externalapi.DomainHash, limit uint32) *MsgRequestBlockLocator {
 	return &MsgRequestBlockLocator{
-		LowHash:  lowHash,
 		HighHash: highHash,
 		Limit:    limit,
 	}
