@@ -31,45 +31,7 @@ func (csm *consensusStateManager) updateVirtual(stagingArea *model.StagingArea, 
 	}
 	log.Debugf("Picked virtual parents: %s", virtualParents)
 
-	err = csm.dagTopologyManager.SetParents(stagingArea, model.VirtualBlockHash, virtualParents)
-	if err != nil {
-		return nil, nil, err
-	}
-	log.Debugf("Set new parents for the virtual block hash")
-
-	err = csm.ghostdagManager.GHOSTDAG(stagingArea, model.VirtualBlockHash)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	// This is needed for `csm.CalculatePastUTXOAndAcceptanceData`
-	_, err = csm.difficultyManager.StageDAADataAndReturnRequiredDifficulty(stagingArea, model.VirtualBlockHash, false)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	log.Debugf("Calculating past UTXO, acceptance data, and multiset for the new virtual block")
-	virtualUTXODiff, virtualAcceptanceData, virtualMultiset, err :=
-		csm.CalculatePastUTXOAndAcceptanceData(stagingArea, model.VirtualBlockHash)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	log.Debugf("Calculated the past UTXO of the new virtual. "+
-		"Diff toAdd length: %d, toRemove length: %d",
-		virtualUTXODiff.ToAdd().Len(), virtualUTXODiff.ToRemove().Len())
-
-	log.Debugf("Staging new acceptance data for the virtual block")
-	csm.acceptanceDataStore.Stage(stagingArea, model.VirtualBlockHash, virtualAcceptanceData)
-
-	log.Debugf("Staging new multiset for the virtual block")
-	csm.multisetStore.Stage(stagingArea, model.VirtualBlockHash, virtualMultiset)
-
-	log.Debugf("Staging new UTXO diff for the virtual block")
-	csm.consensusStateStore.StageVirtualUTXODiff(stagingArea, virtualUTXODiff)
-
-	log.Debugf("Updating the selected tip's utxo-diff after adding %s to the DAG", newBlockHash)
-	err = csm.updateSelectedTipUTXODiff(stagingArea, virtualUTXODiff)
+	virtualUTXODiff, err := csm.updateVirtualWithParents(stagingArea, virtualParents)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -92,6 +54,54 @@ func (csm *consensusStateManager) updateVirtual(stagingArea *model.StagingArea, 
 	}
 
 	return selectedParentChainChanges, virtualUTXODiff, nil
+}
+
+func (csm *consensusStateManager) updateVirtualWithParents(
+	stagingArea *model.StagingArea, virtualParents []*externalapi.DomainHash) (externalapi.UTXODiff, error) {
+	err := csm.dagTopologyManager.SetParents(stagingArea, model.VirtualBlockHash, virtualParents)
+	if err != nil {
+		return nil, err
+	}
+	log.Debugf("Set new parents for the virtual block hash")
+
+	err = csm.ghostdagManager.GHOSTDAG(stagingArea, model.VirtualBlockHash)
+	if err != nil {
+		return nil, err
+	}
+
+	// This is needed for `csm.CalculatePastUTXOAndAcceptanceData`
+	_, err = csm.difficultyManager.StageDAADataAndReturnRequiredDifficulty(stagingArea, model.VirtualBlockHash, false)
+	if err != nil {
+		return nil, err
+	}
+
+	log.Debugf("Calculating past UTXO, acceptance data, and multiset for the new virtual block")
+	virtualUTXODiff, virtualAcceptanceData, virtualMultiset, err :=
+		csm.CalculatePastUTXOAndAcceptanceData(stagingArea, model.VirtualBlockHash)
+	if err != nil {
+		return nil, err
+	}
+
+	log.Debugf("Calculated the past UTXO of the new virtual. "+
+		"Diff toAdd length: %d, toRemove length: %d",
+		virtualUTXODiff.ToAdd().Len(), virtualUTXODiff.ToRemove().Len())
+
+	log.Debugf("Staging new acceptance data for the virtual block")
+	csm.acceptanceDataStore.Stage(stagingArea, model.VirtualBlockHash, virtualAcceptanceData)
+
+	log.Debugf("Staging new multiset for the virtual block")
+	csm.multisetStore.Stage(stagingArea, model.VirtualBlockHash, virtualMultiset)
+
+	log.Debugf("Staging new UTXO diff for the virtual block")
+	csm.consensusStateStore.StageVirtualUTXODiff(stagingArea, virtualUTXODiff)
+
+	log.Debugf("Updating the selected tip's utxo-diff")
+	err = csm.updateSelectedTipUTXODiff(stagingArea, virtualUTXODiff)
+	if err != nil {
+		return nil, err
+	}
+
+	return virtualUTXODiff, nil
 }
 
 func (csm *consensusStateManager) updateSelectedTipUTXODiff(
