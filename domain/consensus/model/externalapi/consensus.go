@@ -39,4 +39,5 @@ type Consensus interface {
 	Anticone(blockHash *DomainHash) ([]*DomainHash, error)
 	EstimateNetworkHashesPerSecond(startHash *DomainHash, windowSize int) (uint64, error)
 	PopulateMass(transaction *DomainTransaction)
+	ResolveVirtual() error
 }

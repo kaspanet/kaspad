@@ -118,7 +118,7 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 	pruningWindowSizePlusFinalityDepthForCache := int(config.PruningDepth() + config.FinalityDepth())
 
 	// Data Structures
-	daaWindowStore := daawindowstore.New(dbPrefix, 200, preallocateCaches)
+	daaWindowStore := daawindowstore.New(dbPrefix, 10_000, preallocateCaches)
 	acceptanceDataStore := acceptancedatastore.New(dbPrefix, 200, preallocateCaches)
 	blockStore, err := blockstore.New(dbManager, dbPrefix, 200, preallocateCaches)
 	if err != nil {

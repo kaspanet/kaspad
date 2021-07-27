@@ -104,6 +104,12 @@ func (flow *handleRelayInvsFlow) downloadHeadersAndPruningUTXOSet(consensus exte
 		return err
 	}
 
+	// TODO: Remove this condition once there's more proper way to check finality violation
+	// in the headers proof.
+	if pruningPoint.Equal(flow.Config().NetParams().GenesisHash) {
+		return protocolerrors.Errorf(true, "the genesis pruning point violates finality")
+	}
+
 	err = flow.syncPruningPointFutureHeaders(consensus, pruningPoint, highHash)
 	if err != nil {
 		return err

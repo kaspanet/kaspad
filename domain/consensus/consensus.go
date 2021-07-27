@@ -644,3 +644,25 @@ func (s *consensus) EstimateNetworkHashesPerSecond(startHash *externalapi.Domain
 func (s *consensus) PopulateMass(transaction *externalapi.DomainTransaction) {
 	s.transactionValidator.PopulateMass(transaction)
 }
+
+func (s *consensus) ResolveVirtual() error {
+	// In order to prevent a situation that the consensus lock is held for too much time, we
+	// release the lock each time resolve 100 blocks.
+	for {
+		var isCompletelyResolved bool
+		var err error
+		func() {
+			s.lock.Lock()
+			defer s.lock.Unlock()
+
+			isCompletelyResolved, err = s.consensusStateManager.ResolveVirtual(100)
+		}()
+		if err != nil {
+			return err
+		}
+
+		if isCompletelyResolved {
+			return nil
+		}
+	}
+}

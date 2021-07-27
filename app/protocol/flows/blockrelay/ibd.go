@@ -319,39 +319,6 @@ func (flow *handleRelayInvsFlow) processHeader(consensus externalapi.Consensus, 
 	return nil
 }
 
-func (flow *handleRelayInvsFlow) processIBDBlock(msgBlock *appmessage.MsgBlock) error {
-	block := appmessage.MsgBlockToDomainBlock(msgBlock)
-	blockHash := consensushashing.BlockHash(block)
-	blockInfo, err := flow.Domain().Consensus().GetBlockInfo(blockHash)
-	if err != nil {
-		return err
-	}
-	if blockInfo.Exists {
-		log.Debugf("Block %s is already in the DAG. Skipping...", blockHash)
-		return nil
-	}
-	blockInsertionResult, err := flow.Domain().Consensus().ValidateAndInsertBlock(block, true)
-	if err != nil {
-		if !errors.As(err, &ruleerrors.RuleError{}) {
-			return errors.Wrapf(err, "failed to process block %s during IBD", blockHash)
-		}
-
-		if errors.Is(err, ruleerrors.ErrDuplicateBlock) {
-			log.Debugf("Skipping block %s as it is a duplicate", blockHash)
-		} else {
-			log.Infof("Rejected block %s from %s during IBD: %s", blockHash, flow.peer, err)
-			return protocolerrors.Wrapf(true, err, "got invalid block %s during IBD", blockHash)
-		}
-	}
-
-	err = flow.OnNewBlock(block, blockInsertionResult)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
 func (flow *handleRelayInvsFlow) receiveAndInsertPruningPointUTXOSet(
 	consensus externalapi.Consensus, pruningPointHash *externalapi.DomainHash) (bool, error) {
 
@@ -456,7 +423,7 @@ func (flow *handleRelayInvsFlow) syncMissingBlockBodies(highHash *externalapi.Do
 				return err
 			}
 
-			blockInsertionResult, err := flow.Domain().Consensus().ValidateAndInsertBlock(block, true)
+			blockInsertionResult, err := flow.Domain().Consensus().ValidateAndInsertBlock(block, false)
 			if err != nil {
 				if errors.Is(err, ruleerrors.ErrDuplicateBlock) {
 					log.Debugf("Skipping IBD Block %s as it has already been added to the DAG", blockHash)
@@ -471,7 +438,7 @@ func (flow *handleRelayInvsFlow) syncMissingBlockBodies(highHash *externalapi.Do
 		}
 	}
 
-	return nil
+	return flow.Domain().Consensus().ResolveVirtual()
 }
 
 // dequeueIncomingMessageAndSkipInvs is a convenience method to be used during
