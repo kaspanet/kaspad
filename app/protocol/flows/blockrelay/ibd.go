@@ -198,31 +198,31 @@ func (flow *handleRelayInvsFlow) fetchHighestHash(
 func (flow *handleRelayInvsFlow) syncPruningPointFutureHeaders(consensus externalapi.Consensus, highestSharedBlockHash *externalapi.DomainHash,
 	highHash *externalapi.DomainHash) error {
 
-	log.Infof("Downloading IBD blocks from %s", flow.peer)
+	log.Infof("Downloading headers from %s", flow.peer)
 
 	err := flow.sendRequestHeaders(highestSharedBlockHash, highHash)
 	if err != nil {
 		return err
 	}
 
-	// Keep a short queue of ibdBlocksMessages so that there's
+	// Keep a short queue of BlockHeadersMessages so that there's
 	// never a moment when the node is not validating and inserting
-	// blocks
-	ibdBlocksMessageChan := make(chan *appmessage.BlockHeadersMessage, 2)
+	// headers
+	blockHeadersMessageChan := make(chan *appmessage.BlockHeadersMessage, 2)
 	errChan := make(chan error)
 	spawn("handleRelayInvsFlow-syncPruningPointFutureHeaders", func() {
 		for {
-			ibdBlocksMessage, doneIBD, err := flow.receiveHeaders()
+			blockHeadersMessage, doneIBD, err := flow.receiveHeaders()
 			if err != nil {
 				errChan <- err
 				return
 			}
 			if doneIBD {
-				close(ibdBlocksMessageChan)
+				close(blockHeadersMessageChan)
 				return
 			}
 
-			ibdBlocksMessageChan <- ibdBlocksMessage
+			blockHeadersMessageChan <- blockHeadersMessage
 
 			err = flow.outgoingRoute.Enqueue(appmessage.NewMsgRequestNextHeaders())
 			if err != nil {
@@ -234,7 +234,7 @@ func (flow *handleRelayInvsFlow) syncPruningPointFutureHeaders(consensus externa
 
 	for {
 		select {
-		case ibdBlocksMessage, ok := <-ibdBlocksMessageChan:
+		case ibdBlocksMessage, ok := <-blockHeadersMessageChan:
 			if !ok {
 				// If the highHash has not been received, the peer is misbehaving
 				highHashBlockInfo, err := consensus.GetBlockInfo(highHash)
