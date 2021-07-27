@@ -124,42 +124,8 @@ func (csm *consensusStateManager) importPruningPoint(
 		return err
 	}
 
-	err = csm.setPruningPointSelectedChildAsTheOnlyParentOfTheVirtual(stagingArea)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (csm *consensusStateManager) setPruningPointSelectedChildAsTheOnlyParentOfTheVirtual(stagingArea *model.StagingArea) error {
-	headersSelectedTip, err := csm.headersSelectedTipStore.HeadersSelectedTip(csm.databaseContext, stagingArea)
-	if err != nil {
-		return err
-	}
-
-	pruningPoint, err := csm.pruningStore.PruningPoint(csm.databaseContext, stagingArea)
-	if err != nil {
-		return err
-	}
-
-	pruningPointSelectedChild, err := csm.dagTraversalManager.SelectedChild(stagingArea,
-		headersSelectedTip, pruningPoint)
-	if err != nil {
-		return err
-	}
-
-	blockStatus, _, err := csm.resolveBlockStatus(stagingArea, pruningPointSelectedChild, false)
-	if err != nil {
-		return err
-	}
-
-	if blockStatus == externalapi.StatusDisqualifiedFromChain {
-		return errors.Wrapf(ruleerrors.ErrPruningPointSelectedChildDisqualifiedFromChain, "pruning point selected"+
-			" child is disqualified from chain")
-	}
-
-	_, _, err = csm.updateVirtual(stagingArea, pruningPointSelectedChild, []*externalapi.DomainHash{pruningPointSelectedChild})
+	// Run update virtual to create acceptance data and any other missing data.
+	_, _, err = csm.updateVirtual(stagingArea, newPruningPoint, []*externalapi.DomainHash{newPruningPoint})
 	if err != nil {
 		return err
 	}
