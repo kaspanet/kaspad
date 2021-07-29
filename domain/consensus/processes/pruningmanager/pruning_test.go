@@ -36,7 +36,7 @@ func TestPruning(t *testing.T) {
 		},
 		"dag-for-test-pruning.json": {
 			dagconfig.MainnetParams.Name: "503",
-			dagconfig.TestnetParams.Name: "502",
+			dagconfig.TestnetParams.Name: "503",
 			dagconfig.DevnetParams.Name:  "503",
 			dagconfig.SimnetParams.Name:  "502",
 		},
