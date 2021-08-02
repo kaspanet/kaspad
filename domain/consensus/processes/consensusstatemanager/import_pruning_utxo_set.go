@@ -8,6 +8,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/utils/transactionhelper"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/utxo"
 	"github.com/kaspanet/kaspad/infrastructure/logger"
+	"github.com/kaspanet/kaspad/util/staging"
 	"github.com/pkg/errors"
 )
 
@@ -20,7 +21,19 @@ func (csm *consensusStateManager) ImportPruningPoint(stagingArea *model.StagingA
 		return err
 	}
 
-	return csm.applyImportedPruningPointUTXOSet(stagingArea)
+	err = csm.applyImportedPruningPointUTXOSet(stagingArea)
+	if err != nil {
+		return err
+	}
+
+	// Run update virtual to create acceptance data and any other missing data.
+	updateVirtualStagingArea := model.NewStagingArea()
+	_, _, err = csm.updateVirtual(updateVirtualStagingArea, newPruningPoint, []*externalapi.DomainHash{newPruningPoint})
+	if err != nil {
+		return err
+	}
+
+	return staging.CommitAllChanges(csm.databaseContext, updateVirtualStagingArea)
 }
 
 func (csm *consensusStateManager) importPruningPoint(
@@ -120,12 +133,6 @@ func (csm *consensusStateManager) importPruningPoint(
 	csm.multisetStore.Stage(stagingArea, newPruningPoint, importedPruningPointMultiset)
 
 	_, err = csm.difficultyManager.StageDAADataAndReturnRequiredDifficulty(stagingArea, model.VirtualBlockHash, false)
-	if err != nil {
-		return err
-	}
-
-	// Run update virtual to create acceptance data and any other missing data.
-	_, _, err = csm.updateVirtual(stagingArea, newPruningPoint, []*externalapi.DomainHash{newPruningPoint})
 	if err != nil {
 		return err
 	}
