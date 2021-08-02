@@ -8,6 +8,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/utils/transactionhelper"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/utxo"
 	"github.com/kaspanet/kaspad/infrastructure/logger"
+	"github.com/kaspanet/kaspad/util/staging"
 	"github.com/pkg/errors"
 )
 
@@ -20,7 +21,12 @@ func (csm *consensusStateManager) ImportPruningPoint(stagingArea *model.StagingA
 		return err
 	}
 
-	return csm.applyImportedPruningPointUTXOSet(stagingArea)
+	err = csm.applyImportedPruningPointUTXOSet(stagingArea, newPruningPoint)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (csm *consensusStateManager) importPruningPoint(
@@ -124,16 +130,10 @@ func (csm *consensusStateManager) importPruningPoint(
 		return err
 	}
 
-	// Run update virtual to create acceptance data and any other missing data.
-	_, _, err = csm.updateVirtual(stagingArea, newPruningPoint, []*externalapi.DomainHash{newPruningPoint})
-	if err != nil {
-		return err
-	}
-
 	return nil
 }
 
-func (csm *consensusStateManager) applyImportedPruningPointUTXOSet(stagingArea *model.StagingArea) error {
+func (csm *consensusStateManager) applyImportedPruningPointUTXOSet(stagingArea *model.StagingArea, newPruningPoint *externalapi.DomainHash) error {
 	dbTx, err := csm.databaseContext.Begin()
 	if err != nil {
 		return err
@@ -156,10 +156,10 @@ func (csm *consensusStateManager) applyImportedPruningPointUTXOSet(stagingArea *
 		return err
 	}
 
-	return csm.importVirtualUTXOSetAndPruningPointUTXOSet()
+	return csm.importVirtualUTXOSetAndPruningPointUTXOSet(newPruningPoint)
 }
 
-func (csm *consensusStateManager) importVirtualUTXOSetAndPruningPointUTXOSet() error {
+func (csm *consensusStateManager) importVirtualUTXOSetAndPruningPointUTXOSet(pruningPoint *externalapi.DomainHash) error {
 	onEnd := logger.LogAndMeasureExecutionTime(log, "importVirtualUTXOSetAndPruningPointUTXOSet")
 	defer onEnd()
 
@@ -182,6 +182,18 @@ func (csm *consensusStateManager) importVirtualUTXOSetAndPruningPointUTXOSet() e
 		return err
 	}
 
+	// Run update virtual to create acceptance data and any other missing data.
+	updateVirtualStagingArea := model.NewStagingArea()
+	_, _, err = csm.updateVirtual(updateVirtualStagingArea, pruningPoint, []*externalapi.DomainHash{pruningPoint})
+	if err != nil {
+		return err
+	}
+
+	err = staging.CommitAllChanges(csm.databaseContext, updateVirtualStagingArea)
+	if err != nil {
+		return err
+	}
+
 	log.Debugf("Finishing to import virtual UTXO set and pruning point UTXO set")
 	return csm.consensusStateStore.FinishImportingPruningPointUTXOSet(csm.databaseContext)
 }
@@ -196,7 +208,12 @@ func (csm *consensusStateManager) RecoverUTXOIfRequired() error {
 	}
 
 	log.Warnf("Unimported pruning point UTXO set detected. Attempting to recover...")
-	err = csm.importVirtualUTXOSetAndPruningPointUTXOSet()
+	pruningPoint, err := csm.pruningStore.PruningPoint(csm.databaseContext, model.NewStagingArea())
+	if err != nil {
+		return err
+	}
+
+	err = csm.importVirtualUTXOSetAndPruningPointUTXOSet(pruningPoint)
 	if err != nil {
 		return err
 	}

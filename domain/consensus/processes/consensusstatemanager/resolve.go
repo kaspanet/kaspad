@@ -75,7 +75,7 @@ func (csm *consensusStateManager) ResolveVirtual(maxBlocksToResolve uint64) (boo
 
 	if selectedTip == nil {
 		log.Warnf("Non of the DAG tips are valid")
-		return false, nil
+		return true, nil
 	}
 
 	updateVirtualStagingArea := model.NewStagingArea()

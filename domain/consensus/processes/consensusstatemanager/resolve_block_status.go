@@ -215,7 +215,7 @@ func (csm *consensusStateManager) resolveSingleBlockStatus(stagingArea *model.St
 	err = csm.verifyUTXO(stagingArea, block, blockHash, pastUTXOSet, acceptanceData, multiset)
 	if err != nil {
 		if errors.As(err, &ruleerrors.RuleError{}) {
-			log.Debugf("UTXO verification for block %s failed: %s", blockHash, err)
+			log.Warnf("UTXO verification for block %s failed: %s", blockHash, err)
 			return externalapi.StatusDisqualifiedFromChain, nil, nil
 		}
 		return 0, nil, err
