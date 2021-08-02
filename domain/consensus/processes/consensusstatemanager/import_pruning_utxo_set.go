@@ -21,7 +21,7 @@ func (csm *consensusStateManager) ImportPruningPoint(stagingArea *model.StagingA
 		return err
 	}
 
-	err = csm.applyImportedPruningPointUTXOSet(stagingArea)
+	err = csm.applyImportedPruningPointUTXOSet(stagingArea, newPruningPoint)
 	if err != nil {
 		return err
 	}
@@ -133,7 +133,7 @@ func (csm *consensusStateManager) importPruningPoint(
 	return nil
 }
 
-func (csm *consensusStateManager) applyImportedPruningPointUTXOSet(stagingArea *model.StagingArea) error {
+func (csm *consensusStateManager) applyImportedPruningPointUTXOSet(stagingArea *model.StagingArea, newPruningPoint *externalapi.DomainHash) error {
 	dbTx, err := csm.databaseContext.Begin()
 	if err != nil {
 		return err
@@ -156,10 +156,10 @@ func (csm *consensusStateManager) applyImportedPruningPointUTXOSet(stagingArea *
 		return err
 	}
 
-	return csm.importVirtualUTXOSetAndPruningPointUTXOSet()
+	return csm.importVirtualUTXOSetAndPruningPointUTXOSet(newPruningPoint)
 }
 
-func (csm *consensusStateManager) importVirtualUTXOSetAndPruningPointUTXOSet() error {
+func (csm *consensusStateManager) importVirtualUTXOSetAndPruningPointUTXOSet(pruningPoint *externalapi.DomainHash) error {
 	onEnd := logger.LogAndMeasureExecutionTime(log, "importVirtualUTXOSetAndPruningPointUTXOSet")
 	defer onEnd()
 
@@ -184,11 +184,6 @@ func (csm *consensusStateManager) importVirtualUTXOSetAndPruningPointUTXOSet() e
 
 	// Run update virtual to create acceptance data and any other missing data.
 	updateVirtualStagingArea := model.NewStagingArea()
-	pruningPoint, err := csm.pruningStore.PruningPoint(csm.databaseContext, updateVirtualStagingArea)
-	if err != nil {
-		return err
-	}
-
 	_, _, err = csm.updateVirtual(updateVirtualStagingArea, pruningPoint, []*externalapi.DomainHash{pruningPoint})
 	if err != nil {
 		return err
@@ -213,7 +208,12 @@ func (csm *consensusStateManager) RecoverUTXOIfRequired() error {
 	}
 
 	log.Warnf("Unimported pruning point UTXO set detected. Attempting to recover...")
-	err = csm.importVirtualUTXOSetAndPruningPointUTXOSet()
+	pruningPoint, err := csm.pruningStore.PruningPoint(csm.databaseContext, model.NewStagingArea())
+	if err != nil {
+		return err
+	}
+
+	err = csm.importVirtualUTXOSetAndPruningPointUTXOSet(pruningPoint)
 	if err != nil {
 		return err
 	}
