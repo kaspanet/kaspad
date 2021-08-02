@@ -26,14 +26,7 @@ func (csm *consensusStateManager) ImportPruningPoint(stagingArea *model.StagingA
 		return err
 	}
 
-	// Run update virtual to create acceptance data and any other missing data.
-	updateVirtualStagingArea := model.NewStagingArea()
-	_, _, err = csm.updateVirtual(updateVirtualStagingArea, newPruningPoint, []*externalapi.DomainHash{newPruningPoint})
-	if err != nil {
-		return err
-	}
-
-	return staging.CommitAllChanges(csm.databaseContext, updateVirtualStagingArea)
+	return nil
 }
 
 func (csm *consensusStateManager) importPruningPoint(
@@ -185,6 +178,23 @@ func (csm *consensusStateManager) importVirtualUTXOSetAndPruningPointUTXOSet() e
 
 	log.Debugf("Importing the new pruning point UTXO set")
 	err = csm.pruningStore.CommitImportedPruningPointUTXOSet(csm.databaseContext)
+	if err != nil {
+		return err
+	}
+
+	// Run update virtual to create acceptance data and any other missing data.
+	updateVirtualStagingArea := model.NewStagingArea()
+	pruningPoint, err := csm.pruningStore.PruningPoint(csm.databaseContext, updateVirtualStagingArea)
+	if err != nil {
+		return err
+	}
+
+	_, _, err = csm.updateVirtual(updateVirtualStagingArea, pruningPoint, []*externalapi.DomainHash{pruningPoint})
+	if err != nil {
+		return err
+	}
+
+	err = staging.CommitAllChanges(csm.databaseContext, updateVirtualStagingArea)
 	if err != nil {
 		return err
 	}
