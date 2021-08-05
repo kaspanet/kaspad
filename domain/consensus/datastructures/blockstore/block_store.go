@@ -108,12 +108,20 @@ func (bs *blockStore) HasBlock(dbContext model.DBReader, stagingArea *model.Stag
 		return true, nil
 	}
 
-	exists, err := dbContext.Has(bs.hashAsKey(blockHash))
+	// Use Get instead of Has to be able to populate the cache
+	blockBytes, err := dbContext.Get(bs.hashAsKey(blockHash))
+	if err != nil {
+		if !database.IsNotFoundError(err) {
+			return false, err
+		}
+		return false, nil
+	}
+	block, err := bs.deserializeBlock(blockBytes)
 	if err != nil {
 		return false, err
 	}
-
-	return exists, nil
+	bs.cache.Add(blockHash, block)
+	return true, nil
 }
 
 // Blocks gets the blocks associated with the given blockHashes
