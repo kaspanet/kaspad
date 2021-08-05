@@ -134,12 +134,11 @@ func (sm *syncManager) missingBlockBodyHashes(stagingArea *model.StagingArea, hi
 		if err != nil {
 			return nil, err
 		}
-		hasBlock, err := sm.blockStore.HasBlock(sm.databaseContext, stagingArea, selectedChild)
+		blockStatus, err := sm.blockStatusStore.Get(sm.databaseContext, stagingArea, selectedChild)
 		if err != nil {
 			return nil, err
 		}
-
-		if !hasBlock {
+		if blockStatus == externalapi.StatusHeaderOnly {
 			foundHeaderOnlyBlock = true
 			break
 		}
