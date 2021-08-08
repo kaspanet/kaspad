@@ -524,16 +524,12 @@ func (pm *pruningManager) calculateDiffBetweenPreviousAndCurrentPruningPoints(st
 	currentPruningCurrentDiffChildBlueWork := currentPruningGhostDAG.BlueWork()
 	previousPruningCurrentDiffChildBlueWork := previousPruningGhostDAG.BlueWork()
 
-	var diffsFromPrevious []externalapi.UTXODiff
-	var diffsFromCurrent []externalapi.UTXODiff
+	var diffHashesFromPrevious []*externalapi.DomainHash
+	var diffHashesFromCurrent []*externalapi.DomainHash
 	for {
 		// if currentPruningCurrentDiffChildBlueWork > previousPruningCurrentDiffChildBlueWork
 		if currentPruningCurrentDiffChildBlueWork.Cmp(previousPruningCurrentDiffChildBlueWork) == 1 {
-			utxoDiff, err := pm.utxoDiffStore.UTXODiff(pm.databaseContext, stagingArea, previousPruningCurrentDiffChild)
-			if err != nil {
-				return nil, err
-			}
-			diffsFromPrevious = append(diffsFromPrevious, utxoDiff)
+			diffHashesFromPrevious = append(diffHashesFromPrevious, previousPruningCurrentDiffChild)
 			previousPruningCurrentDiffChild, err = pm.utxoDiffStore.UTXODiffChild(pm.databaseContext, stagingArea, previousPruningCurrentDiffChild)
 			if err != nil {
 				return nil, err
@@ -546,11 +542,7 @@ func (pm *pruningManager) calculateDiffBetweenPreviousAndCurrentPruningPoints(st
 		} else if currentPruningCurrentDiffChild.Equal(previousPruningCurrentDiffChild) {
 			break
 		} else {
-			utxoDiff, err := pm.utxoDiffStore.UTXODiff(pm.databaseContext, stagingArea, currentPruningCurrentDiffChild)
-			if err != nil {
-				return nil, err
-			}
-			diffsFromCurrent = append(diffsFromCurrent, utxoDiff)
+			diffHashesFromCurrent = append(diffHashesFromCurrent, currentPruningCurrentDiffChild)
 			currentPruningCurrentDiffChild, err = pm.utxoDiffStore.UTXODiffChild(pm.databaseContext, stagingArea, currentPruningCurrentDiffChild)
 			if err != nil {
 				return nil, err
@@ -565,15 +557,23 @@ func (pm *pruningManager) calculateDiffBetweenPreviousAndCurrentPruningPoints(st
 	// The order in which we apply the diffs should be from top to bottom, but we traversed from bottom to top
 	// so we apply the diffs in reverse order.
 	oldDiff := utxo.NewMutableUTXODiff()
-	for i := len(diffsFromPrevious) - 1; i >= 0; i-- {
-		err = oldDiff.WithDiffInPlace(diffsFromPrevious[i])
+	for i := len(diffHashesFromPrevious) - 1; i >= 0; i-- {
+		utxoDiff, err := pm.utxoDiffStore.UTXODiff(pm.databaseContext, stagingArea, diffHashesFromPrevious[i])
+		if err != nil {
+			return nil, err
+		}
+		err = oldDiff.WithDiffInPlace(utxoDiff)
 		if err != nil {
 			return nil, err
 		}
 	}
 	newDiff := utxo.NewMutableUTXODiff()
-	for i := len(diffsFromCurrent) - 1; i >= 0; i-- {
-		err = newDiff.WithDiffInPlace(diffsFromCurrent[i])
+	for i := len(diffHashesFromCurrent) - 1; i >= 0; i-- {
+		utxoDiff, err := pm.utxoDiffStore.UTXODiff(pm.databaseContext, stagingArea, diffHashesFromCurrent[i])
+		if err != nil {
+			return nil, err
+		}
+		err = newDiff.WithDiffInPlace(utxoDiff)
 		if err != nil {
 			return nil, err
 		}
