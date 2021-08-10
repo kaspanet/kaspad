@@ -38,6 +38,9 @@ func DomainBlockHeaderToBlockHeader(domainBlockHeader externalapi.BlockHeader) *
 		Timestamp:            mstime.UnixMilliseconds(domainBlockHeader.TimeInMilliseconds()),
 		Bits:                 domainBlockHeader.Bits(),
 		Nonce:                domainBlockHeader.Nonce(),
+		DAAScore:             domainBlockHeader.DAAScore(),
+		BlueWork:             domainBlockHeader.BlueWork(),
+		FinalityPoint:        domainBlockHeader.FinalityPoint(),
 	}
 }
 
