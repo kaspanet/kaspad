@@ -185,6 +185,10 @@ func (bb *testBlockBuilder) buildBlockWithParents(stagingArea *model.StagingArea
 	}
 	transactionsWithCoinbase := append([]*externalapi.DomainTransaction{coinbase}, transactions...)
 
+	err = bb.testConsensus.ReachabilityManager().AddBlock(stagingArea, tempBlockHash)
+	if err != nil {
+		return nil, nil, err
+	}
 	finalityPoint, err := bb.finalityManager.FinalityPoint(stagingArea, tempBlockHash, false)
 	if err != nil {
 		return nil, nil, err
@@ -248,6 +252,10 @@ func (bb *testBlockBuilder) BuildUTXOInvalidBlock(parentHashes []*externalapi.Do
 	}
 	blueWork := ghostdagData.BlueWork()
 
+	err = bb.testConsensus.ReachabilityManager().AddBlock(stagingArea, tempBlockHash)
+	if err != nil {
+		return nil, err
+	}
 	finalityPoint, err := bb.finalityManager.FinalityPoint(stagingArea, tempBlockHash, false)
 	if err != nil {
 		return nil, err
