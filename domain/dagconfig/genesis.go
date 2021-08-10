@@ -6,6 +6,7 @@ package dagconfig
 
 import (
 	"github.com/kaspanet/go-muhash"
+	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/blockheader"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/subnetworks"
@@ -59,7 +60,7 @@ var genesisBlock = externalapi.DomainBlock{
 		0x0,
 		0,
 		big.NewInt(0),
-		&externalapi.DomainHash{},
+		model.VirtualGenesisBlockHash,
 	),
 	Transactions: []*externalapi.DomainTransaction{genesisCoinbaseTx},
 }
@@ -112,7 +113,7 @@ var devnetGenesisBlock = externalapi.DomainBlock{
 		0x10eff,
 		0,
 		big.NewInt(0),
-		&externalapi.DomainHash{},
+		model.VirtualGenesisBlockHash,
 	),
 	Transactions: []*externalapi.DomainTransaction{devnetGenesisCoinbaseTx},
 }
@@ -164,7 +165,7 @@ var simnetGenesisBlock = externalapi.DomainBlock{
 		0x0,
 		0,
 		big.NewInt(0),
-		&externalapi.DomainHash{},
+		model.VirtualGenesisBlockHash,
 	),
 	Transactions: []*externalapi.DomainTransaction{simnetGenesisCoinbaseTx},
 }
@@ -216,7 +217,7 @@ var testnetGenesisBlock = externalapi.DomainBlock{
 		0x4c933,
 		0,
 		big.NewInt(0),
-		&externalapi.DomainHash{},
+		model.VirtualGenesisBlockHash,
 	),
 	Transactions: []*externalapi.DomainTransaction{testnetGenesisCoinbaseTx},
 }
