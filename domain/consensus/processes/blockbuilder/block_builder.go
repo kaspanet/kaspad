@@ -26,6 +26,7 @@ type blockBuilder struct {
 	consensusStateManager model.ConsensusStateManager
 	ghostdagManager       model.GHOSTDAGManager
 	transactionValidator  model.TransactionValidator
+	finalityManager       model.FinalityManager
 
 	acceptanceDataStore model.AcceptanceDataStore
 	blockRelationStore  model.BlockRelationStore
@@ -44,6 +45,7 @@ func New(
 	consensusStateManager model.ConsensusStateManager,
 	ghostdagManager model.GHOSTDAGManager,
 	transactionValidator model.TransactionValidator,
+	finalityManager model.FinalityManager,
 
 	acceptanceDataStore model.AcceptanceDataStore,
 	blockRelationStore model.BlockRelationStore,
@@ -60,6 +62,7 @@ func New(
 		consensusStateManager: consensusStateManager,
 		ghostdagManager:       ghostdagManager,
 		transactionValidator:  transactionValidator,
+		finalityManager:       finalityManager,
 
 		acceptanceDataStore: acceptanceDataStore,
 		blockRelationStore:  blockRelationStore,
@@ -195,6 +198,10 @@ func (bb *blockBuilder) buildHeader(stagingArea *model.StagingArea, transactions
 	if err != nil {
 		return nil, err
 	}
+	finalityPoint, err := bb.newBlockFinalityPoint(stagingArea)
+	if err != nil {
+		return nil, err
+	}
 
 	return blockheader.NewImmutableBlockHeader(
 		constants.MaxBlockVersion,
@@ -207,7 +214,7 @@ func (bb *blockBuilder) buildHeader(stagingArea *model.StagingArea, transactions
 		0,
 		daaScore,
 		blueWork,
-		&externalapi.DomainHash{},
+		finalityPoint,
 	), nil
 }
 
@@ -302,4 +309,8 @@ func (bb *blockBuilder) newBlockBlueWork(stagingArea *model.StagingArea) (*big.I
 		return nil, err
 	}
 	return virtualGHOSTDAGData.BlueWork(), nil
+}
+
+func (bb *blockBuilder) newBlockFinalityPoint(stagingArea *model.StagingArea) (*externalapi.DomainHash, error) {
+	return bb.finalityManager.FinalityPoint(stagingArea, model.VirtualBlockHash, false)
 }

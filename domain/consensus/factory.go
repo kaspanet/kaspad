@@ -277,7 +277,6 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 		pastMedianTimeManager,
 		transactionValidator,
 		blockValidator,
-		reachabilityManager,
 		coinbaseManager,
 		mergeDepthManager,
 		finalityManager,
@@ -351,6 +350,7 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 		consensusStateManager,
 		ghostdagManager,
 		transactionValidator,
+		finalityManager,
 
 		acceptanceDataStore,
 		blockRelationStore,

@@ -64,8 +64,9 @@ func (bb *testBlockBuilder) BuildBlockWithParents(parentHashes []*externalapi.Do
 	return block, diff, nil
 }
 
-func (bb *testBlockBuilder) buildUTXOInvalidHeader(stagingArea *model.StagingArea, parentHashes []*externalapi.DomainHash,
-	bits uint32, daaScore uint64, blueWork *big.Int, transactions []*externalapi.DomainTransaction) (externalapi.BlockHeader, error) {
+func (bb *testBlockBuilder) buildUTXOInvalidHeader(stagingArea *model.StagingArea,
+	parentHashes []*externalapi.DomainHash, bits uint32, daaScore uint64, blueWork *big.Int,
+	finalityPoint *externalapi.DomainHash, transactions []*externalapi.DomainTransaction) (externalapi.BlockHeader, error) {
 
 	timeInMilliseconds, err := bb.minBlockTime(stagingArea, tempBlockHash)
 	if err != nil {
@@ -86,15 +87,16 @@ func (bb *testBlockBuilder) buildUTXOInvalidHeader(stagingArea *model.StagingAre
 		bb.nonceCounter,
 		daaScore,
 		blueWork,
-		&externalapi.DomainHash{},
+		finalityPoint,
 	), nil
 }
 
-func (bb *testBlockBuilder) buildHeaderWithParents(stagingArea *model.StagingArea, parentHashes []*externalapi.DomainHash,
-	bits uint32, transactions []*externalapi.DomainTransaction, acceptanceData externalapi.AcceptanceData,
-	multiset model.Multiset, daaScore uint64, blueWork *big.Int) (externalapi.BlockHeader, error) {
+func (bb *testBlockBuilder) buildHeaderWithParents(stagingArea *model.StagingArea,
+	parentHashes []*externalapi.DomainHash, bits uint32, transactions []*externalapi.DomainTransaction,
+	acceptanceData externalapi.AcceptanceData, multiset model.Multiset, daaScore uint64, blueWork *big.Int,
+	finalityPoint *externalapi.DomainHash) (externalapi.BlockHeader, error) {
 
-	header, err := bb.buildUTXOInvalidHeader(stagingArea, parentHashes, bits, daaScore, blueWork, transactions)
+	header, err := bb.buildUTXOInvalidHeader(stagingArea, parentHashes, bits, daaScore, blueWork, finalityPoint, transactions)
 	if err != nil {
 		return nil, err
 	}
@@ -183,8 +185,13 @@ func (bb *testBlockBuilder) buildBlockWithParents(stagingArea *model.StagingArea
 	}
 	transactionsWithCoinbase := append([]*externalapi.DomainTransaction{coinbase}, transactions...)
 
+	finalityPoint, err := bb.finalityManager.FinalityPoint(stagingArea, tempBlockHash, false)
+	if err != nil {
+		return nil, nil, err
+	}
+
 	header, err := bb.buildHeaderWithParents(
-		stagingArea, parentHashes, bits, transactionsWithCoinbase, acceptanceData, multiset, daaScore, blueWork)
+		stagingArea, parentHashes, bits, transactionsWithCoinbase, acceptanceData, multiset, daaScore, blueWork, finalityPoint)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -241,7 +248,12 @@ func (bb *testBlockBuilder) BuildUTXOInvalidBlock(parentHashes []*externalapi.Do
 	}
 	blueWork := ghostdagData.BlueWork()
 
-	header, err := bb.buildUTXOInvalidHeader(stagingArea, parentHashes, bits, daaScore, blueWork, genesisTransactions)
+	finalityPoint, err := bb.finalityManager.FinalityPoint(stagingArea, tempBlockHash, false)
+	if err != nil {
+		return nil, err
+	}
+
+	header, err := bb.buildUTXOInvalidHeader(stagingArea, parentHashes, bits, daaScore, blueWork, finalityPoint, genesisTransactions)
 	if err != nil {
 		return nil, err
 	}
