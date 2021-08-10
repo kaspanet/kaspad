@@ -9,6 +9,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/utils/txscript"
 	"github.com/kaspanet/kaspad/infrastructure/logger"
 	"github.com/pkg/errors"
+	"math/big"
 )
 
 type testBlockBuilder struct {
@@ -83,6 +84,9 @@ func (bb *testBlockBuilder) buildUTXOInvalidHeader(stagingArea *model.StagingAre
 		timeInMilliseconds,
 		bits,
 		bb.nonceCounter,
+		0,
+		big.NewInt(0),
+		&externalapi.DomainHash{},
 	), nil
 }
 
@@ -111,6 +115,9 @@ func (bb *testBlockBuilder) buildHeaderWithParents(stagingArea *model.StagingAre
 		header.TimeInMilliseconds(),
 		header.Bits(),
 		header.Nonce(),
+		header.DAAScore(),
+		header.BlueWork(),
+		header.FinalityPoint(),
 	), nil
 }
 

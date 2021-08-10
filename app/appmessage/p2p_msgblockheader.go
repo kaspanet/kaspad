@@ -6,6 +6,7 @@ package appmessage
 
 import (
 	"math"
+	"math/big"
 
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
 
@@ -60,6 +61,15 @@ type MsgBlockHeader struct {
 
 	// Nonce used to generate the block.
 	Nonce uint64
+
+	// DAASCore is the DAA score of the block.
+	DAAScore uint64
+
+	// BlueWork is the blue work of the block.
+	BlueWork *big.Int
+
+	// FinalityPoint is the highest finality point below the block.
+	FinalityPoint *externalapi.DomainHash
 }
 
 // NumParentBlocks return the number of entries in ParentHashes
@@ -85,7 +95,8 @@ func (h *MsgBlockHeader) IsGenesis() bool {
 // block hash, hash merkle root, accepted ID merkle root, difficulty bits, and nonce used to generate the
 // block with defaults or calclulated values for the remaining fields.
 func NewBlockHeader(version uint16, parentHashes []*externalapi.DomainHash, hashMerkleRoot *externalapi.DomainHash,
-	acceptedIDMerkleRoot *externalapi.DomainHash, utxoCommitment *externalapi.DomainHash, bits uint32, nonce uint64) *MsgBlockHeader {
+	acceptedIDMerkleRoot *externalapi.DomainHash, utxoCommitment *externalapi.DomainHash, bits uint32, nonce uint64,
+	daaScore uint64, blueWork *big.Int, finalityPoint *externalapi.DomainHash) *MsgBlockHeader {
 
 	// Limit the timestamp to one millisecond precision since the protocol
 	// doesn't support better.
@@ -98,5 +109,8 @@ func NewBlockHeader(version uint16, parentHashes []*externalapi.DomainHash, hash
 		Timestamp:            mstime.Now(),
 		Bits:                 bits,
 		Nonce:                nonce,
+		DAAScore:             daaScore,
+		BlueWork:             blueWork,
+		FinalityPoint:        finalityPoint,
 	}
 }

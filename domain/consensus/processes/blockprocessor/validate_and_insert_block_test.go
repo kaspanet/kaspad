@@ -73,6 +73,9 @@ func TestBlockStatus(t *testing.T) {
 			disqualifiedBlock.Header.TimeInMilliseconds(),
 			disqualifiedBlock.Header.Bits(),
 			disqualifiedBlock.Header.Nonce(),
+			disqualifiedBlock.Header.DAAScore(),
+			disqualifiedBlock.Header.BlueWork(),
+			disqualifiedBlock.Header.FinalityPoint(),
 		)
 
 		_, err = tc.ValidateAndInsertBlock(disqualifiedBlock, true)
@@ -96,6 +99,9 @@ func TestBlockStatus(t *testing.T) {
 			disqualifiedBlock.Header.TimeInMilliseconds(),
 			disqualifiedBlock.Header.Bits(),
 			disqualifiedBlock.Header.Nonce(),
+			disqualifiedBlock.Header.DAAScore(),
+			disqualifiedBlock.Header.BlueWork(),
+			disqualifiedBlock.Header.FinalityPoint(),
 		)
 
 		_, err = tc.ValidateAndInsertBlock(invalidBlock, true)

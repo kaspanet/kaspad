@@ -59,6 +59,9 @@ func TestPOW(t *testing.T) {
 			abovePowMaxBlock.Header.TimeInMilliseconds(),
 			difficulty.BigToCompact(abovePowMaxTarget),
 			abovePowMaxBlock.Header.Nonce(),
+			abovePowMaxBlock.Header.DAAScore(),
+			abovePowMaxBlock.Header.BlueWork(),
+			abovePowMaxBlock.Header.FinalityPoint(),
 		)
 
 		_, err = tc.ValidateAndInsertBlock(abovePowMaxBlock, true)
@@ -80,6 +83,9 @@ func TestPOW(t *testing.T) {
 			negativeTargetBlock.Header.TimeInMilliseconds(),
 			0x00800000,
 			negativeTargetBlock.Header.Nonce(),
+			negativeTargetBlock.Header.DAAScore(),
+			negativeTargetBlock.Header.BlueWork(),
+			negativeTargetBlock.Header.FinalityPoint(),
 		)
 
 		_, err = tc.ValidateAndInsertBlock(negativeTargetBlock, true)
@@ -144,6 +150,9 @@ func TestCheckParentHeadersExist(t *testing.T) {
 			orphanBlock.Header.TimeInMilliseconds(),
 			orphanBlock.Header.Bits(),
 			orphanBlock.Header.Nonce(),
+			orphanBlock.Header.DAAScore(),
+			orphanBlock.Header.BlueWork(),
+			orphanBlock.Header.FinalityPoint(),
 		)
 
 		_, err = tc.ValidateAndInsertBlock(orphanBlock, true)
@@ -172,6 +181,9 @@ func TestCheckParentHeadersExist(t *testing.T) {
 			orphanBlock.Header.TimeInMilliseconds(),
 			orphanBlock.Header.Bits(),
 			orphanBlock.Header.Nonce(),
+			orphanBlock.Header.DAAScore(),
+			orphanBlock.Header.BlueWork(),
+			orphanBlock.Header.FinalityPoint(),
 		)
 
 		_, err = tc.ValidateAndInsertBlock(invalidBlock, true)
@@ -195,6 +207,9 @@ func TestCheckParentHeadersExist(t *testing.T) {
 			invalidBlockChild.Header.TimeInMilliseconds(),
 			invalidBlockChild.Header.Bits(),
 			invalidBlockChild.Header.Nonce(),
+			invalidBlockChild.Header.DAAScore(),
+			invalidBlockChild.Header.BlueWork(),
+			invalidBlockChild.Header.FinalityPoint(),
 		)
 
 		_, err = tc.ValidateAndInsertBlock(invalidBlockChild, true)

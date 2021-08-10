@@ -165,9 +165,9 @@ func NewImmutableBlockHeader(
 	timeInMilliseconds int64,
 	bits uint32,
 	nonce uint64,
-	//daaScore uint64,
-	//blueWork *big.Int,
-	//finalityPoint *externalapi.DomainHash,
+	daaScore uint64,
+	blueWork *big.Int,
+	finalityPoint *externalapi.DomainHash,
 ) externalapi.BlockHeader {
 	return &blockHeader{
 		version:              version,
@@ -178,8 +178,8 @@ func NewImmutableBlockHeader(
 		timeInMilliseconds:   timeInMilliseconds,
 		bits:                 bits,
 		nonce:                nonce,
-		//daaScore:             daaScore,
-		//blueWork:             blueWork,
-		//finalityPoint:        finalityPoint,
+		daaScore:             daaScore,
+		blueWork:             blueWork,
+		finalityPoint:        finalityPoint,
 	}
 }

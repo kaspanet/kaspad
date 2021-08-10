@@ -1,6 +1,7 @@
 package blockbuilder
 
 import (
+	"math/big"
 	"sort"
 
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
@@ -193,6 +194,9 @@ func (bb *blockBuilder) buildHeader(stagingArea *model.StagingArea, transactions
 		timeInMilliseconds,
 		bits,
 		0,
+		0,
+		big.NewInt(0),
+		&externalapi.DomainHash{},
 	), nil
 }
 

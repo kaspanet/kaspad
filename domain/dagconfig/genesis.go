@@ -10,6 +10,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/utils/blockheader"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/subnetworks"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/transactionhelper"
+	"math/big"
 )
 
 var genesisTxOuts = []*externalapi.DomainTransactionOutput{}
@@ -56,6 +57,9 @@ var genesisBlock = externalapi.DomainBlock{
 		0x177bfd44981,
 		0x207fffff,
 		0x0,
+		0,
+		big.NewInt(0),
+		&externalapi.DomainHash{},
 	),
 	Transactions: []*externalapi.DomainTransaction{genesisCoinbaseTx},
 }
@@ -106,6 +110,9 @@ var devnetGenesisBlock = externalapi.DomainBlock{
 		0x11e9db49828,
 		0x1e7fffff,
 		0x10eff,
+		0,
+		big.NewInt(0),
+		&externalapi.DomainHash{},
 	),
 	Transactions: []*externalapi.DomainTransaction{devnetGenesisCoinbaseTx},
 }
@@ -155,6 +162,9 @@ var simnetGenesisBlock = externalapi.DomainBlock{
 		0x177bfd44a10,
 		0x207fffff,
 		0x0,
+		0,
+		big.NewInt(0),
+		&externalapi.DomainHash{},
 	),
 	Transactions: []*externalapi.DomainTransaction{simnetGenesisCoinbaseTx},
 }
@@ -204,6 +214,9 @@ var testnetGenesisBlock = externalapi.DomainBlock{
 		0x17a56662e7d,
 		0x1e7fffff,
 		0x4c933,
+		0,
+		big.NewInt(0),
+		&externalapi.DomainHash{},
 	),
 	Transactions: []*externalapi.DomainTransaction{testnetGenesisCoinbaseTx},
 }
