@@ -191,6 +191,10 @@ func (bb *blockBuilder) buildHeader(stagingArea *model.StagingArea, transactions
 	if err != nil {
 		return nil, err
 	}
+	blueWork, err := bb.newBlockBlueWork(stagingArea)
+	if err != nil {
+		return nil, err
+	}
 
 	return blockheader.NewImmutableBlockHeader(
 		constants.MaxBlockVersion,
@@ -202,7 +206,7 @@ func (bb *blockBuilder) buildHeader(stagingArea *model.StagingArea, transactions
 		bits,
 		0,
 		daaScore,
-		big.NewInt(0),
+		blueWork,
 		&externalapi.DomainHash{},
 	), nil
 }
@@ -290,4 +294,12 @@ func (bb *blockBuilder) newBlockUTXOCommitment(stagingArea *model.StagingArea) (
 
 func (bb *blockBuilder) newBlockDAAScore(stagingArea *model.StagingArea) (uint64, error) {
 	return bb.daaBlocksStore.DAAScore(bb.databaseContext, stagingArea, model.VirtualBlockHash)
+}
+
+func (bb *blockBuilder) newBlockBlueWork(stagingArea *model.StagingArea) (*big.Int, error) {
+	virtualGHOSTDAGData, err := bb.ghostdagDataStore.Get(bb.databaseContext, stagingArea, model.VirtualBlockHash, false)
+	if err != nil {
+		return nil, err
+	}
+	return virtualGHOSTDAGData.BlueWork(), nil
 }

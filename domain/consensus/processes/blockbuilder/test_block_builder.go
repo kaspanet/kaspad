@@ -65,7 +65,7 @@ func (bb *testBlockBuilder) BuildBlockWithParents(parentHashes []*externalapi.Do
 }
 
 func (bb *testBlockBuilder) buildUTXOInvalidHeader(stagingArea *model.StagingArea, parentHashes []*externalapi.DomainHash,
-	bits uint32, daaScore uint64, transactions []*externalapi.DomainTransaction) (externalapi.BlockHeader, error) {
+	bits uint32, daaScore uint64, blueWork *big.Int, transactions []*externalapi.DomainTransaction) (externalapi.BlockHeader, error) {
 
 	timeInMilliseconds, err := bb.minBlockTime(stagingArea, tempBlockHash)
 	if err != nil {
@@ -85,16 +85,16 @@ func (bb *testBlockBuilder) buildUTXOInvalidHeader(stagingArea *model.StagingAre
 		bits,
 		bb.nonceCounter,
 		daaScore,
-		big.NewInt(0),
+		blueWork,
 		&externalapi.DomainHash{},
 	), nil
 }
 
 func (bb *testBlockBuilder) buildHeaderWithParents(stagingArea *model.StagingArea, parentHashes []*externalapi.DomainHash,
 	bits uint32, transactions []*externalapi.DomainTransaction, acceptanceData externalapi.AcceptanceData,
-	multiset model.Multiset, daaScore uint64) (externalapi.BlockHeader, error) {
+	multiset model.Multiset, daaScore uint64, blueWork *big.Int) (externalapi.BlockHeader, error) {
 
-	header, err := bb.buildUTXOInvalidHeader(stagingArea, parentHashes, bits, daaScore, transactions)
+	header, err := bb.buildUTXOInvalidHeader(stagingArea, parentHashes, bits, daaScore, blueWork, transactions)
 	if err != nil {
 		return nil, err
 	}
@@ -157,6 +157,7 @@ func (bb *testBlockBuilder) buildBlockWithParents(stagingArea *model.StagingArea
 	if err != nil {
 		return nil, nil, err
 	}
+	blueWork := ghostdagData.BlueWork()
 
 	selectedParentStatus, err := bb.testConsensus.ConsensusStateManager().ResolveBlockStatus(
 		stagingArea, ghostdagData.SelectedParent(), false)
@@ -183,7 +184,7 @@ func (bb *testBlockBuilder) buildBlockWithParents(stagingArea *model.StagingArea
 	transactionsWithCoinbase := append([]*externalapi.DomainTransaction{coinbase}, transactions...)
 
 	header, err := bb.buildHeaderWithParents(
-		stagingArea, parentHashes, bits, transactionsWithCoinbase, acceptanceData, multiset, daaScore)
+		stagingArea, parentHashes, bits, transactionsWithCoinbase, acceptanceData, multiset, daaScore, blueWork)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -234,7 +235,13 @@ func (bb *testBlockBuilder) BuildUTXOInvalidBlock(parentHashes []*externalapi.Do
 		return nil, err
 	}
 
-	header, err := bb.buildUTXOInvalidHeader(stagingArea, parentHashes, bits, daaScore, genesisTransactions)
+	ghostdagData, err := bb.ghostdagDataStore.Get(bb.databaseContext, stagingArea, tempBlockHash, false)
+	if err != nil {
+		return nil, err
+	}
+	blueWork := ghostdagData.BlueWork()
+
+	header, err := bb.buildUTXOInvalidHeader(stagingArea, parentHashes, bits, daaScore, blueWork, genesisTransactions)
 	if err != nil {
 		return nil, err
 	}
