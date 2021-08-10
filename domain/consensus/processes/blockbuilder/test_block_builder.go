@@ -91,8 +91,8 @@ func (bb *testBlockBuilder) buildUTXOInvalidHeader(stagingArea *model.StagingAre
 }
 
 func (bb *testBlockBuilder) buildHeaderWithParents(stagingArea *model.StagingArea, parentHashes []*externalapi.DomainHash,
-	bits uint32, transactions []*externalapi.DomainTransaction, acceptanceData externalapi.AcceptanceData, multiset model.Multiset) (
-	externalapi.BlockHeader, error) {
+	bits uint32, transactions []*externalapi.DomainTransaction, acceptanceData externalapi.AcceptanceData,
+	multiset model.Multiset, daaScore uint64) (externalapi.BlockHeader, error) {
 
 	header, err := bb.buildUTXOInvalidHeader(stagingArea, parentHashes, bits, transactions)
 	if err != nil {
@@ -115,7 +115,7 @@ func (bb *testBlockBuilder) buildHeaderWithParents(stagingArea *model.StagingAre
 		header.TimeInMilliseconds(),
 		header.Bits(),
 		header.Nonce(),
-		header.DAAScore(),
+		daaScore,
 		header.BlueWork(),
 		header.FinalityPoint(),
 	), nil
@@ -145,6 +145,10 @@ func (bb *testBlockBuilder) buildBlockWithParents(stagingArea *model.StagingArea
 	}
 
 	bits, err := bb.difficultyManager.StageDAADataAndReturnRequiredDifficulty(stagingArea, tempBlockHash, false)
+	if err != nil {
+		return nil, nil, err
+	}
+	daaScore, err := bb.daaBlocksStore.DAAScore(bb.databaseContext, stagingArea, tempBlockHash)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -179,7 +183,7 @@ func (bb *testBlockBuilder) buildBlockWithParents(stagingArea *model.StagingArea
 	transactionsWithCoinbase := append([]*externalapi.DomainTransaction{coinbase}, transactions...)
 
 	header, err := bb.buildHeaderWithParents(
-		stagingArea, parentHashes, bits, transactionsWithCoinbase, acceptanceData, multiset)
+		stagingArea, parentHashes, bits, transactionsWithCoinbase, acceptanceData, multiset, daaScore)
 	if err != nil {
 		return nil, nil, err
 	}

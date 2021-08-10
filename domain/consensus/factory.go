@@ -355,6 +355,7 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 		blockRelationStore,
 		multisetStore,
 		ghostdagDataStore,
+		daaBlocksStore,
 	)
 
 	blockProcessor := blockprocessor.New(

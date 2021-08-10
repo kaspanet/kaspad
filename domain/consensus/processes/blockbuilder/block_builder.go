@@ -31,6 +31,7 @@ type blockBuilder struct {
 	blockRelationStore  model.BlockRelationStore
 	multisetStore       model.MultisetStore
 	ghostdagDataStore   model.GHOSTDAGDataStore
+	daaBlocksStore      model.DAABlocksStore
 }
 
 // New creates a new instance of a BlockBuilder
@@ -48,6 +49,7 @@ func New(
 	blockRelationStore model.BlockRelationStore,
 	multisetStore model.MultisetStore,
 	ghostdagDataStore model.GHOSTDAGDataStore,
+	daaBlocksStore model.DAABlocksStore,
 ) model.BlockBuilder {
 
 	return &blockBuilder{
@@ -63,6 +65,7 @@ func New(
 		blockRelationStore:  blockRelationStore,
 		multisetStore:       multisetStore,
 		ghostdagDataStore:   ghostdagDataStore,
+		daaBlocksStore:      daaBlocksStore,
 	}
 }
 
@@ -184,6 +187,10 @@ func (bb *blockBuilder) buildHeader(stagingArea *model.StagingArea, transactions
 	if err != nil {
 		return nil, err
 	}
+	daaScore, err := bb.newBlockDAAScore(stagingArea)
+	if err != nil {
+		return nil, err
+	}
 
 	return blockheader.NewImmutableBlockHeader(
 		constants.MaxBlockVersion,
@@ -194,7 +201,7 @@ func (bb *blockBuilder) buildHeader(stagingArea *model.StagingArea, transactions
 		timeInMilliseconds,
 		bits,
 		0,
-		0,
+		daaScore,
 		big.NewInt(0),
 		&externalapi.DomainHash{},
 	), nil
@@ -279,4 +286,8 @@ func (bb *blockBuilder) newBlockUTXOCommitment(stagingArea *model.StagingArea) (
 	}
 	newBlockUTXOCommitment := newBlockMultiset.Hash()
 	return newBlockUTXOCommitment, nil
+}
+
+func (bb *blockBuilder) newBlockDAAScore(stagingArea *model.StagingArea) (uint64, error) {
+	return bb.daaBlocksStore.DAAScore(bb.databaseContext, stagingArea, model.VirtualBlockHash)
 }
