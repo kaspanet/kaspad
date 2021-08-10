@@ -74,6 +74,11 @@ func (v *blockValidator) ValidateHeaderInContext(stagingArea *model.StagingArea,
 		return err
 	}
 
+	err = v.checkFinalityPoint(stagingArea, blockHash, header, isBlockWithTrustedData)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -159,5 +164,18 @@ func (v *blockValidator) checkMergeSizeLimit(stagingArea *model.StagingArea, has
 			"The block merges %d blocks > %d merge set size limit", mergeSetSize, v.mergeSetSizeLimit)
 	}
 
+	return nil
+}
+
+func (v *blockValidator) checkFinalityPoint(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash,
+	header externalapi.BlockHeader, isBlockWithTrustedData bool) error {
+
+	expectedFinalityPoint, err := v.finalityManager.FinalityPoint(stagingArea, blockHash, isBlockWithTrustedData)
+	if err != nil {
+		return err
+	}
+	if !header.FinalityPoint().Equal(expectedFinalityPoint) {
+		return errors.Wrapf(ruleerrors.ErrUnexpectedFinalityPoint, "block finality point of %s is not the expected hash of %s", header.FinalityPoint(), expectedFinalityPoint)
+	}
 	return nil
 }

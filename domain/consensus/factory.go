@@ -253,6 +253,7 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 		coinbaseManager,
 		mergeDepthManager,
 		reachabilityManager,
+		finalityManager,
 
 		pruningStore,
 		blockStore,
