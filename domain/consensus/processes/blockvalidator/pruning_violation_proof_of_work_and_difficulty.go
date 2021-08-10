@@ -53,7 +53,7 @@ func (v *blockValidator) ValidatePruningPointViolationAndProofOfWorkAndDifficult
 		return err
 	}
 
-	err = v.validateDifficulty(stagingArea, blockHash, isBlockWithTrustedData)
+	err = v.validateDifficultyDAAAndBlueWork(stagingArea, blockHash, isBlockWithTrustedData)
 	if err != nil {
 		return err
 	}
@@ -90,12 +90,12 @@ func (v *blockValidator) setParents(stagingArea *model.StagingArea,
 	return v.dagTopologyManager.SetParents(stagingArea, blockHash, parents)
 }
 
-func (v *blockValidator) validateDifficulty(stagingArea *model.StagingArea,
+func (v *blockValidator) validateDifficultyDAAAndBlueWork(stagingArea *model.StagingArea,
 	blockHash *externalapi.DomainHash,
 	isBlockWithTrustedData bool) error {
 
 	if !isBlockWithTrustedData {
-		// We need to calculate GHOSTDAG for the block in order to check its difficulty
+		// We need to calculate GHOSTDAG for the block in order to check its difficulty and blue work
 		err := v.ghostdagManager.GHOSTDAG(stagingArea, blockHash)
 		if err != nil {
 			return err
@@ -124,6 +124,15 @@ func (v *blockValidator) validateDifficulty(stagingArea *model.StagingArea,
 	}
 	if header.DAAScore() != expectedDAAScore {
 		return errors.Wrapf(ruleerrors.ErrUnexpectedDAAScore, "block DAA score of %d is not the expected value of %d", header.DAAScore(), expectedDAAScore)
+	}
+
+	ghostdagData, err := v.ghostdagDataStore.Get(v.databaseContext, stagingArea, blockHash, isBlockWithTrustedData)
+	if err != nil {
+		return err
+	}
+	expectedBlueWork := ghostdagData.BlueWork()
+	if header.BlueWork().Cmp(expectedBlueWork) != 0 {
+		return errors.Wrapf(ruleerrors.ErrUnexpectedBlueWork, "block blue work of %d is not the expected value of %d", header.BlueWork(), expectedBlueWork)
 	}
 
 	return nil

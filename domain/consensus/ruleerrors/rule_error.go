@@ -38,6 +38,10 @@ var (
 	// the expected value.
 	ErrUnexpectedDAAScore = newRuleError("ErrUnexpectedDAAScore")
 
+	// ErrUnexpectedBlueWork indicates specified blue work does not align with
+	// the expected value.
+	ErrUnexpectedBlueWork = newRuleError("ErrUnexpectedBlueWork")
+
 	// ErrTargetTooHigh indicates specified bits do not align with
 	// the expected value either because it is above the valid
 	// range.
