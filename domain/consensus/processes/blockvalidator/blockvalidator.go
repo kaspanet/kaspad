@@ -41,6 +41,7 @@ type blockValidator struct {
 	blockStatusStore    model.BlockStatusStore
 	reachabilityStore   model.ReachabilityDataStore
 	consensusStateStore model.ConsensusStateStore
+	daaBlocksStore      model.DAABlocksStore
 }
 
 // New instantiates a new BlockValidator
@@ -74,6 +75,7 @@ func New(powMax *big.Int,
 	blockStatusStore model.BlockStatusStore,
 	reachabilityStore model.ReachabilityDataStore,
 	consensusStateStore model.ConsensusStateStore,
+	daaBlocksStore model.DAABlocksStore,
 ) model.BlockValidator {
 
 	return &blockValidator{
@@ -106,5 +108,6 @@ func New(powMax *big.Int,
 		blockStatusStore:    blockStatusStore,
 		reachabilityStore:   reachabilityStore,
 		consensusStateStore: consensusStateStore,
+		daaBlocksStore:      daaBlocksStore,
 	}
 }

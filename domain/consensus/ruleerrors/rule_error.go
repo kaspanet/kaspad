@@ -34,6 +34,10 @@ var (
 	// valued based on difficulty regarted rules.
 	ErrUnexpectedDifficulty = newRuleError("ErrUnexpectedDifficulty")
 
+	// ErrUnexpectedDAAScore indicates specified DAA score does not align with
+	// the expected value.
+	ErrUnexpectedDAAScore = newRuleError("ErrUnexpectedDAAScore")
+
 	// ErrTargetTooHigh indicates specified bits do not align with
 	// the expected value either because it is above the valid
 	// range.

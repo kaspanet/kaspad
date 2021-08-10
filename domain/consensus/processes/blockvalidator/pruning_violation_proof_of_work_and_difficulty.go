@@ -118,6 +118,14 @@ func (v *blockValidator) validateDifficulty(stagingArea *model.StagingArea,
 		return errors.Wrapf(ruleerrors.ErrUnexpectedDifficulty, "block difficulty of %d is not the expected value of %d", header.Bits(), expectedBits)
 	}
 
+	expectedDAAScore, err := v.daaBlocksStore.DAAScore(v.databaseContext, stagingArea, blockHash)
+	if err != nil {
+		return err
+	}
+	if header.DAAScore() != expectedDAAScore {
+		return errors.Wrapf(ruleerrors.ErrUnexpectedDAAScore, "block DAA score of %d is not the expected value of %d", header.DAAScore(), expectedDAAScore)
+	}
+
 	return nil
 }
 

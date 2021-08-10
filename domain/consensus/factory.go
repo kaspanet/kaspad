@@ -261,6 +261,7 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 		blockStatusStore,
 		reachabilityDataStore,
 		consensusStateStore,
+		daaBlocksStore,
 	)
 	consensusStateManager, err := consensusstatemanager.New(
 		dbManager,
