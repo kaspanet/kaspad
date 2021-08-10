@@ -65,7 +65,7 @@ func (bb *testBlockBuilder) BuildBlockWithParents(parentHashes []*externalapi.Do
 }
 
 func (bb *testBlockBuilder) buildUTXOInvalidHeader(stagingArea *model.StagingArea, parentHashes []*externalapi.DomainHash,
-	bits uint32, transactions []*externalapi.DomainTransaction) (externalapi.BlockHeader, error) {
+	bits uint32, daaScore uint64, transactions []*externalapi.DomainTransaction) (externalapi.BlockHeader, error) {
 
 	timeInMilliseconds, err := bb.minBlockTime(stagingArea, tempBlockHash)
 	if err != nil {
@@ -84,7 +84,7 @@ func (bb *testBlockBuilder) buildUTXOInvalidHeader(stagingArea *model.StagingAre
 		timeInMilliseconds,
 		bits,
 		bb.nonceCounter,
-		0,
+		daaScore,
 		big.NewInt(0),
 		&externalapi.DomainHash{},
 	), nil
@@ -94,7 +94,7 @@ func (bb *testBlockBuilder) buildHeaderWithParents(stagingArea *model.StagingAre
 	bits uint32, transactions []*externalapi.DomainTransaction, acceptanceData externalapi.AcceptanceData,
 	multiset model.Multiset, daaScore uint64) (externalapi.BlockHeader, error) {
 
-	header, err := bb.buildUTXOInvalidHeader(stagingArea, parentHashes, bits, transactions)
+	header, err := bb.buildUTXOInvalidHeader(stagingArea, parentHashes, bits, daaScore, transactions)
 	if err != nil {
 		return nil, err
 	}
@@ -115,7 +115,7 @@ func (bb *testBlockBuilder) buildHeaderWithParents(stagingArea *model.StagingAre
 		header.TimeInMilliseconds(),
 		header.Bits(),
 		header.Nonce(),
-		daaScore,
+		header.DAAScore(),
 		header.BlueWork(),
 		header.FinalityPoint(),
 	), nil
@@ -225,7 +225,16 @@ func (bb *testBlockBuilder) BuildUTXOInvalidBlock(parentHashes []*externalapi.Do
 		return nil, err
 	}
 
-	header, err := bb.buildUTXOInvalidHeader(stagingArea, parentHashes, bits, genesisTransactions)
+	_, err = bb.difficultyManager.StageDAADataAndReturnRequiredDifficulty(stagingArea, tempBlockHash, false)
+	if err != nil {
+		return nil, err
+	}
+	daaScore, err := bb.daaBlocksStore.DAAScore(bb.databaseContext, stagingArea, tempBlockHash)
+	if err != nil {
+		return nil, err
+	}
+
+	header, err := bb.buildUTXOInvalidHeader(stagingArea, parentHashes, bits, daaScore, genesisTransactions)
 	if err != nil {
 		return nil, err
 	}
