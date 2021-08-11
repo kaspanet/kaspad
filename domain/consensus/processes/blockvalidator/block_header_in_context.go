@@ -170,14 +170,14 @@ func (v *blockValidator) checkMergeSizeLimit(stagingArea *model.StagingArea, has
 func (v *blockValidator) checkFinalityPoint(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash,
 	header externalapi.BlockHeader, isBlockWithTrustedData bool) error {
 
-	if isBlockWithTrustedData {
-		return nil
-	}
-
 	expectedFinalityPoint, err := v.finalityManager.FinalityPoint(stagingArea, blockHash, isBlockWithTrustedData)
 	if err != nil {
 		return err
 	}
+	if expectedFinalityPoint.Equal(model.VirtualGenesisBlockHash) {
+		return nil
+	}
+
 	if !header.FinalityPoint().Equal(expectedFinalityPoint) {
 		return errors.Wrapf(ruleerrors.ErrUnexpectedFinalityPoint, "block finality point of %s is not the expected hash of %s", header.FinalityPoint(), expectedFinalityPoint)
 	}
