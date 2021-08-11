@@ -2,6 +2,7 @@ package finalitymanager
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/kaspanet/kaspad/domain/consensus/database"
 	"github.com/kaspanet/kaspad/domain/consensus/model"
@@ -83,8 +84,10 @@ func (fm *finalityManager) calculateFinalityPoint(stagingArea *model.StagingArea
 	defer log.Debugf("calculateFinalityPoint end")
 
 	if isBlockWithTrustedData {
+		fmt.Printf("block is with trusted data, its finality point must be fefefefe\n")
 		return model.VirtualGenesisBlockHash, nil
 	}
+	fmt.Printf("block is NOT with trusted data\n")
 
 	ghostdagData, err := fm.ghostdagDataStore.Get(fm.databaseContext, stagingArea, blockHash, false)
 	if err != nil {
@@ -107,9 +110,11 @@ func (fm *finalityManager) calculateFinalityPoint(stagingArea *model.StagingArea
 	}
 	requiredBlueScore := ghostdagData.BlueScore() - fm.finalityDepth
 	log.Debugf("%s's finality point is the one having the highest blue score lower then %d", blockHash, requiredBlueScore)
+	fmt.Printf("%s's finality point is the one having the highest blue score lower then %d\n", blockHash, requiredBlueScore)
 
 	var next *externalapi.DomainHash
 	for {
+		fmt.Printf("current: %s\n", current)
 		next, err = fm.dagTopologyManager.ChildInSelectedParentChainOf(stagingArea, current, blockHash)
 		if err != nil {
 			return nil, err
@@ -120,6 +125,7 @@ func (fm *finalityManager) calculateFinalityPoint(stagingArea *model.StagingArea
 		}
 		if nextGHOSTDAGData.BlueScore() >= requiredBlueScore {
 			log.Debugf("%s's finality point is %s", blockHash, current)
+			fmt.Printf("%s's finality point is %s\n", blockHash, current)
 			return current, nil
 		}
 

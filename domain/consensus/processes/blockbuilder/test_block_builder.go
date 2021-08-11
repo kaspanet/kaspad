@@ -1,6 +1,7 @@
 package blockbuilder
 
 import (
+	"fmt"
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/model/testapi"
@@ -193,6 +194,7 @@ func (bb *testBlockBuilder) buildBlockWithParents(stagingArea *model.StagingArea
 	if err != nil {
 		return nil, nil, err
 	}
+	fmt.Printf("testBlockBuilder.buildBlockWithParents %s\n", finalityPoint)
 
 	header, err := bb.buildHeaderWithParents(
 		stagingArea, parentHashes, bits, transactionsWithCoinbase, acceptanceData, multiset, daaScore, blueWork, finalityPoint)
@@ -260,6 +262,7 @@ func (bb *testBlockBuilder) BuildUTXOInvalidBlock(parentHashes []*externalapi.Do
 	if err != nil {
 		return nil, err
 	}
+	fmt.Printf("testBlockBuilder.BuildUTXOInvalidBlock %s\n", finalityPoint)
 
 	header, err := bb.buildUTXOInvalidHeader(stagingArea, parentHashes, bits, daaScore, blueWork, finalityPoint, genesisTransactions)
 	if err != nil {

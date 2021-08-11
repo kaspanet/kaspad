@@ -187,6 +187,16 @@ func (bp *blockProcessor) validateAndInsertBlock(stagingArea *model.StagingArea,
 
 	bp.blockLogger.LogBlock(block)
 
+	finalityPoint, err := bp.finalityStore.FinalityPoint(bp.databaseContext, stagingArea, blockHash)
+	if err != nil {
+		return nil, err
+	}
+	fmt.Printf("validateAndInsertBlock %s should be: %s\n", finalityPoint, block.Header.FinalityPoint())
+	if finalityPoint.Equal(model.VirtualGenesisBlockHash) {
+		fmt.Printf("validateAndInsertBlock: the finality point is the virtual genesis!!!\n")
+	}
+	fmt.Printf("validateAndInsertBlock %s parents: %s\n", blockHash, block.Header.ParentHashes())
+
 	return &externalapi.BlockInsertionResult{
 		VirtualSelectedParentChainChanges: selectedParentChainChanges,
 		VirtualUTXODiff:                   virtualUTXODiff,
