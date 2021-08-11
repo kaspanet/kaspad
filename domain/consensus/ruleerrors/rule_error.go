@@ -46,6 +46,10 @@ var (
 	// the expected value.
 	ErrUnexpectedFinalityPoint = newRuleError("ErrUnexpectedFinalityPoint")
 
+	// ErrUnexpectedBlueScore indicates specified blue score does not align with
+	// the expected value.
+	ErrUnexpectedBlueScore = newRuleError("ErrUnexpectedBlueScore")
+
 	// ErrTargetTooHigh indicates specified bits do not align with
 	// the expected value either because it is above the valid
 	// range.

@@ -4,6 +4,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/transactionhelper"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/virtual"
 	"github.com/kaspanet/kaspad/infrastructure/logger"
 	"github.com/pkg/errors"
@@ -27,6 +28,10 @@ func (v *blockValidator) ValidateBodyInContext(stagingArea *model.StagingArea, b
 
 	if !isBlockWithTrustedData {
 		err := v.checkParentBlockBodiesExist(stagingArea, blockHash)
+		if err != nil {
+			return err
+		}
+		err = v.checkCoinbaseBlueScore(stagingArea, blockHash, isBlockWithTrustedData)
 		if err != nil {
 			return err
 		}
@@ -134,5 +139,27 @@ func (v *blockValidator) checkBlockTransactions(
 		}
 	}
 
+	return nil
+}
+
+func (v *blockValidator) checkCoinbaseBlueScore(stagingArea *model.StagingArea,
+	blockHash *externalapi.DomainHash, isBlockWithTrustedData bool) error {
+
+	block, err := v.blockStore.Block(v.databaseContext, stagingArea, blockHash)
+	if err != nil {
+		return err
+	}
+	coinbaseBlueScore, _, err := v.coinbaseManager.ExtractCoinbaseDataAndBlueScore(block.Transactions[transactionhelper.CoinbaseTransactionIndex])
+	if err != nil {
+		return err
+	}
+	blockGHOSTDAGData, err := v.ghostdagDataStore.Get(v.databaseContext, stagingArea, blockHash, isBlockWithTrustedData)
+	if err != nil {
+		return err
+	}
+	expectedBlueScore := blockGHOSTDAGData.BlueScore()
+	if coinbaseBlueScore != expectedBlueScore {
+		return errors.Wrapf(ruleerrors.ErrUnexpectedBlueScore, "block blue score of %d is not the expected value of %d", coinbaseBlueScore, expectedBlueScore)
+	}
 	return nil
 }
