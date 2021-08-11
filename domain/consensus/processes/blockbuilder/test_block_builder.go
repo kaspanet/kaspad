@@ -1,11 +1,13 @@
 package blockbuilder
 
 import (
+	"encoding/binary"
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/model/testapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/blockheader"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/transactionhelper"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/txscript"
 	"github.com/kaspanet/kaspad/infrastructure/logger"
 	"github.com/pkg/errors"
@@ -229,9 +231,6 @@ func (bb *testBlockBuilder) BuildUTXOInvalidBlock(parentHashes []*externalapi.Do
 		return nil, err
 	}
 
-	// We use genesis transactions so we'll have something to build merkle root and coinbase with
-	genesisTransactions := bb.testConsensus.DAGParams().GenesisBlock.Transactions
-
 	bits, err := bb.difficultyManager.RequiredDifficulty(stagingArea, tempBlockHash)
 	if err != nil {
 		return nil, err
@@ -252,6 +251,12 @@ func (bb *testBlockBuilder) BuildUTXOInvalidBlock(parentHashes []*externalapi.Do
 	}
 	blueWork := ghostdagData.BlueWork()
 
+	// We use the genesis coinbase so that we'll have something to build merkle root and a new coinbase with
+	genesisTransactions := bb.testConsensus.DAGParams().GenesisBlock.Transactions
+	genesisCoinbase := genesisTransactions[transactionhelper.CoinbaseTransactionIndex].Clone()
+	binary.LittleEndian.PutUint64(genesisCoinbase.Payload[:8], ghostdagData.BlueScore())
+	transactions := []*externalapi.DomainTransaction{genesisCoinbase}
+
 	err = bb.testConsensus.ReachabilityManager().AddBlock(stagingArea, tempBlockHash)
 	if err != nil {
 		return nil, err
@@ -261,13 +266,13 @@ func (bb *testBlockBuilder) BuildUTXOInvalidBlock(parentHashes []*externalapi.Do
 		return nil, err
 	}
 
-	header, err := bb.buildUTXOInvalidHeader(stagingArea, parentHashes, bits, daaScore, blueWork, finalityPoint, genesisTransactions)
+	header, err := bb.buildUTXOInvalidHeader(stagingArea, parentHashes, bits, daaScore, blueWork, finalityPoint, transactions)
 	if err != nil {
 		return nil, err
 	}
 
 	return &externalapi.DomainBlock{
 		Header:       header,
-		Transactions: genesisTransactions,
+		Transactions: transactions,
 	}, nil
 }
