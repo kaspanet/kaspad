@@ -312,5 +312,5 @@ func (bb *blockBuilder) newBlockBlueWork(stagingArea *model.StagingArea) (*big.I
 }
 
 func (bb *blockBuilder) newBlockFinalityPoint(stagingArea *model.StagingArea) (*externalapi.DomainHash, error) {
-	return bb.finalityManager.FinalityPoint(stagingArea, model.VirtualBlockHash, false)
+	return bb.finalityManager.VirtualFinalityPoint(stagingArea)
 }
