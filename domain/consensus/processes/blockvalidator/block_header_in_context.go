@@ -74,6 +74,14 @@ func (v *blockValidator) ValidateHeaderInContext(stagingArea *model.StagingArea,
 		return err
 	}
 
+	err = v.checkDAAScore(stagingArea, blockHash, header)
+	if err != nil {
+		return err
+	}
+	err = v.checkBlueWork(stagingArea, blockHash, header, isBlockWithTrustedData)
+	if err != nil {
+		return err
+	}
 	err = v.checkFinalityPoint(stagingArea, blockHash, header, isBlockWithTrustedData)
 	if err != nil {
 		return err
@@ -164,6 +172,33 @@ func (v *blockValidator) checkMergeSizeLimit(stagingArea *model.StagingArea, has
 			"The block merges %d blocks > %d merge set size limit", mergeSetSize, v.mergeSetSizeLimit)
 	}
 
+	return nil
+}
+
+func (v *blockValidator) checkDAAScore(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash,
+	header externalapi.BlockHeader) error {
+
+	expectedDAAScore, err := v.daaBlocksStore.DAAScore(v.databaseContext, stagingArea, blockHash)
+	if err != nil {
+		return err
+	}
+	if header.DAAScore() != expectedDAAScore {
+		return errors.Wrapf(ruleerrors.ErrUnexpectedDAAScore, "block DAA score of %d is not the expected value of %d", header.DAAScore(), expectedDAAScore)
+	}
+	return nil
+}
+
+func (v *blockValidator) checkBlueWork(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash,
+	header externalapi.BlockHeader, isBlockWithTrustedData bool) error {
+
+	ghostdagData, err := v.ghostdagDataStore.Get(v.databaseContext, stagingArea, blockHash, isBlockWithTrustedData)
+	if err != nil {
+		return err
+	}
+	expectedBlueWork := ghostdagData.BlueWork()
+	if header.BlueWork().Cmp(expectedBlueWork) != 0 {
+		return errors.Wrapf(ruleerrors.ErrUnexpectedBlueWork, "block blue work of %d is not the expected value of %d", header.BlueWork(), expectedBlueWork)
+	}
 	return nil
 }
 
