@@ -20,9 +20,15 @@ type p2pServer struct {
 
 const p2pMaxMessageSize = 10 * 1024 * 1024 // 10MB
 
+// p2pMaxInboundConnections is the max amount of inbound connections for the P2P server.
+// Note that inbound connections are not limited by the gRPC server. (A value of 0 means
+// unlimited inbound connections.) The P2P limiting logic is more applicative, and as such
+// is handled in the ConnectionManager instead.
+const p2pMaxInboundConnections = 0
+
 // NewP2PServer creates a new P2PServer
 func NewP2PServer(listeningAddresses []string) (server.P2PServer, error) {
-	gRPCServer := newGRPCServer(listeningAddresses, p2pMaxMessageSize, 0, "P2P")
+	gRPCServer := newGRPCServer(listeningAddresses, p2pMaxMessageSize, p2pMaxInboundConnections, "P2P")
 	p2pServer := &p2pServer{gRPCServer: *gRPCServer}
 	protowire.RegisterP2PServer(gRPCServer.server, p2pServer)
 	return p2pServer, nil
