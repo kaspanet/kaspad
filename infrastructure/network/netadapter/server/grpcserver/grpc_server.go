@@ -21,18 +21,19 @@ type gRPCServer struct {
 
 	maxInboundConnections      int
 	inboundConnectionCount     int
-	inboundConnectionCountLock sync.Mutex
+	inboundConnectionCountLock *sync.Mutex
 }
 
 // newGRPCServer creates a gRPC server
 func newGRPCServer(listeningAddresses []string, maxMessageSize int, maxInboundConnections int, name string) *gRPCServer {
 	log.Debugf("Created new %s GRPC server with maxMessageSize %d and maxInboundConnections %d", name, maxMessageSize, maxInboundConnections)
 	return &gRPCServer{
-		server:                 grpc.NewServer(grpc.MaxRecvMsgSize(maxMessageSize), grpc.MaxSendMsgSize(maxMessageSize)),
-		listeningAddresses:     listeningAddresses,
-		name:                   name,
-		maxInboundConnections:  maxInboundConnections,
-		inboundConnectionCount: 0,
+		server:                     grpc.NewServer(grpc.MaxRecvMsgSize(maxMessageSize), grpc.MaxSendMsgSize(maxMessageSize)),
+		listeningAddresses:         listeningAddresses,
+		name:                       name,
+		maxInboundConnections:      maxInboundConnections,
+		inboundConnectionCount:     0,
+		inboundConnectionCountLock: &sync.Mutex{},
 	}
 }
 
