@@ -231,12 +231,7 @@ func (bb *testBlockBuilder) BuildUTXOInvalidBlock(parentHashes []*externalapi.Do
 		return nil, err
 	}
 
-	bits, err := bb.difficultyManager.RequiredDifficulty(stagingArea, tempBlockHash)
-	if err != nil {
-		return nil, err
-	}
-
-	_, err = bb.difficultyManager.StageDAADataAndReturnRequiredDifficulty(stagingArea, tempBlockHash, false)
+	bits, err := bb.difficultyManager.StageDAADataAndReturnRequiredDifficulty(stagingArea, tempBlockHash, false)
 	if err != nil {
 		return nil, err
 	}
