@@ -129,7 +129,7 @@ func (s *gRPCServer) incrementInboundConnectionCountAndLimitIfRequired() error {
 		return errors.Errorf("limit of %d inbound connections has been exceeded", s.maxInboundConnections)
 	}
 
-	s.maxInboundConnections++
+	s.inboundConnectionCount++
 	return nil
 }
 
@@ -137,5 +137,5 @@ func (s *gRPCServer) decrementInboundConnectionCount() {
 	s.inboundConnectionCountLock.Lock()
 	defer s.inboundConnectionCountLock.Unlock()
 
-	s.maxInboundConnections--
+	s.inboundConnectionCount--
 }
