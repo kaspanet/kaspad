@@ -22,7 +22,7 @@ const p2pMaxMessageSize = 10 * 1024 * 1024 // 10MB
 
 // NewP2PServer creates a new P2PServer
 func NewP2PServer(listeningAddresses []string) (server.P2PServer, error) {
-	gRPCServer := newGRPCServer(listeningAddresses, p2pMaxMessageSize, "P2P")
+	gRPCServer := newGRPCServer(listeningAddresses, p2pMaxMessageSize, 0, "P2P")
 	p2pServer := &p2pServer{gRPCServer: *gRPCServer}
 	protowire.RegisterP2PServer(gRPCServer.server, p2pServer)
 	return p2pServer, nil
