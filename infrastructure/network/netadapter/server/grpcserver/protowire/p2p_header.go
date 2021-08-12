@@ -5,6 +5,7 @@ import (
 	"github.com/kaspanet/kaspad/util/mstime"
 	"github.com/pkg/errors"
 	"math"
+	"math/big"
 )
 
 func (x *BlockHeader) toAppMessage() (*appmessage.MsgBlockHeader, error) {
@@ -27,6 +28,10 @@ func (x *BlockHeader) toAppMessage() (*appmessage.MsgBlockHeader, error) {
 	if err != nil {
 		return nil, err
 	}
+	finalityPoint, err := x.FinalityPoint.toDomain()
+	if err != nil {
+		return nil, err
+	}
 	if x.Version > math.MaxUint16 {
 		return nil, errors.Errorf("Invalid block header version - bigger then uint16")
 	}
@@ -39,6 +44,9 @@ func (x *BlockHeader) toAppMessage() (*appmessage.MsgBlockHeader, error) {
 		Timestamp:            mstime.UnixMilliseconds(x.Timestamp),
 		Bits:                 x.Bits,
 		Nonce:                x.Nonce,
+		DAAScore:             x.DaaScore,
+		BlueWork:             new(big.Int).SetBytes(x.BlueWork),
+		FinalityPoint:        finalityPoint,
 	}, nil
 }
 
@@ -52,6 +60,9 @@ func (x *BlockHeader) fromAppMessage(msgBlockHeader *appmessage.MsgBlockHeader) 
 		Timestamp:            msgBlockHeader.Timestamp.UnixMilliseconds(),
 		Bits:                 msgBlockHeader.Bits,
 		Nonce:                msgBlockHeader.Nonce,
+		DaaScore:             msgBlockHeader.DAAScore,
+		BlueWork:             msgBlockHeader.BlueWork.Bytes(),
+		FinalityPoint:        domainHashToProto(msgBlockHeader.FinalityPoint),
 	}
 	return nil
 }

@@ -34,6 +34,22 @@ var (
 	// valued based on difficulty regarted rules.
 	ErrUnexpectedDifficulty = newRuleError("ErrUnexpectedDifficulty")
 
+	// ErrUnexpectedDAAScore indicates specified DAA score does not align with
+	// the expected value.
+	ErrUnexpectedDAAScore = newRuleError("ErrUnexpectedDAAScore")
+
+	// ErrUnexpectedBlueWork indicates specified blue work does not align with
+	// the expected value.
+	ErrUnexpectedBlueWork = newRuleError("ErrUnexpectedBlueWork")
+
+	// ErrUnexpectedFinalityPoint indicates specified finality point does not align with
+	// the expected value.
+	ErrUnexpectedFinalityPoint = newRuleError("ErrUnexpectedFinalityPoint")
+
+	// ErrUnexpectedBlueScore indicates specified blue score does not align with
+	// the expected value.
+	ErrUnexpectedBlueScore = newRuleError("ErrUnexpectedBlueScore")
+
 	// ErrTargetTooHigh indicates specified bits do not align with
 	// the expected value either because it is above the valid
 	// range.

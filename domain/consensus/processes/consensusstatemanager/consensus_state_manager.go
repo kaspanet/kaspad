@@ -19,7 +19,6 @@ type consensusStateManager struct {
 	pastMedianTimeManager model.PastMedianTimeManager
 	transactionValidator  model.TransactionValidator
 	blockValidator        model.BlockValidator
-	reachabilityManager   model.ReachabilityManager
 	coinbaseManager       model.CoinbaseManager
 	mergeDepthManager     model.MergeDepthManager
 	finalityManager       model.FinalityManager
@@ -55,7 +54,6 @@ func New(
 	pastMedianTimeManager model.PastMedianTimeManager,
 	transactionValidator model.TransactionValidator,
 	blockValidator model.BlockValidator,
-	reachabilityManager model.ReachabilityManager,
 	coinbaseManager model.CoinbaseManager,
 	mergeDepthManager model.MergeDepthManager,
 	finalityManager model.FinalityManager,
@@ -87,7 +85,6 @@ func New(
 		pastMedianTimeManager: pastMedianTimeManager,
 		transactionValidator:  transactionValidator,
 		blockValidator:        blockValidator,
-		reachabilityManager:   reachabilityManager,
 		coinbaseManager:       coinbaseManager,
 		mergeDepthManager:     mergeDepthManager,
 		finalityManager:       finalityManager,

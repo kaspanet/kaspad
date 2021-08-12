@@ -2,6 +2,7 @@ package blockvalidator_test
 
 import (
 	"errors"
+	"math/big"
 	"testing"
 
 	"github.com/kaspanet/kaspad/domain/consensus/utils/blockheader"
@@ -116,6 +117,9 @@ func TestCheckParentsIncest(t *testing.T) {
 				0,
 				0,
 				0,
+				0,
+				big.NewInt(0),
+				&externalapi.DomainHash{},
 			),
 			Transactions: nil,
 		}
@@ -135,6 +139,9 @@ func TestCheckParentsIncest(t *testing.T) {
 				0,
 				0,
 				0,
+				0,
+				big.NewInt(0),
+				&externalapi.DomainHash{},
 			),
 			Transactions: nil,
 		}

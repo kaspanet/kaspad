@@ -71,6 +71,9 @@ message BlockHeader{
   int64 timestamp = 6;
   uint32 bits = 7;
   uint64 nonce = 8;
+  uint64 daaScore = 9;
+  bytes blueWork = 10;
+  Hash finalityPoint = 11;
 }
 
 message Hash{
