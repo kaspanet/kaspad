@@ -15,7 +15,7 @@ type rpcServer struct {
 const RPCMaxMessageSize = 1024 * 1024 * 1024 // 1 GB
 
 // RPCMaxInboundConnections is the max amount of inbound connections for the RPC server
-const RPCMaxInboundConnections = 8
+const RPCMaxInboundConnections = 128
 
 // NewRPCServer creates a new RPCServer
 func NewRPCServer(listeningAddresses []string) (server.Server, error) {
