@@ -2,6 +2,7 @@ package ghostdagmanager
 
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 )
 
 // ghostdagManager resolves and manages GHOSTDAG block data
@@ -10,7 +11,9 @@ type ghostdagManager struct {
 	dagTopologyManager model.DAGTopologyManager
 	ghostdagDataStore  model.GHOSTDAGDataStore
 	headerStore        model.BlockHeaderStore
-	k                  model.KType
+
+	k           externalapi.KType
+	genesisHash *externalapi.DomainHash
 }
 
 // New instantiates a new GHOSTDAGManager
@@ -19,7 +22,8 @@ func New(
 	dagTopologyManager model.DAGTopologyManager,
 	ghostdagDataStore model.GHOSTDAGDataStore,
 	headerStore model.BlockHeaderStore,
-	k model.KType) model.GHOSTDAGManager {
+	k externalapi.KType,
+	genesisHash *externalapi.DomainHash) model.GHOSTDAGManager {
 
 	return &ghostdagManager{
 		databaseContext:    databaseContext,
@@ -27,5 +31,6 @@ func New(
 		ghostdagDataStore:  ghostdagDataStore,
 		headerStore:        headerStore,
 		k:                  k,
+		genesisHash:        genesisHash,
 	}
 }

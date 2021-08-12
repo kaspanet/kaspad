@@ -389,7 +389,7 @@ func (rt *reachabilityManager) findNextReindexRoot(stagingArea *model.StagingAre
 	reindexRootAncestor = currentReindexRoot
 	newReindexRoot = currentReindexRoot
 
-	selectedTipGHOSTDAGData, err := rt.ghostdagDataStore.Get(rt.databaseContext, stagingArea, selectedTip)
+	selectedTipGHOSTDAGData, err := rt.ghostdagDataStore.Get(rt.databaseContext, stagingArea, selectedTip, false)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -401,7 +401,7 @@ func (rt *reachabilityManager) findNextReindexRoot(stagingArea *model.StagingAre
 
 	// Test if current root is ancestor of selected tip - if not, this is a reorg case
 	if !isCurrentAncestorOfTip {
-		currentRootGHOSTDAGData, err := rt.ghostdagDataStore.Get(rt.databaseContext, stagingArea, currentReindexRoot)
+		currentRootGHOSTDAGData, err := rt.ghostdagDataStore.Get(rt.databaseContext, stagingArea, currentReindexRoot, false)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -437,7 +437,7 @@ func (rt *reachabilityManager) findNextReindexRoot(stagingArea *model.StagingAre
 			return nil, nil, err
 		}
 
-		chosenChildGHOSTDAGData, err := rt.ghostdagDataStore.Get(rt.databaseContext, stagingArea, chosenChild)
+		chosenChildGHOSTDAGData, err := rt.ghostdagDataStore.Get(rt.databaseContext, stagingArea, chosenChild, false)
 		if err != nil {
 			return nil, nil, err
 		}

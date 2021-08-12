@@ -135,13 +135,6 @@ func toP2PPayload(message appmessage.Message) (isKaspadMessage_Payload, error) {
 			return nil, err
 		}
 		return payload, nil
-	case *appmessage.MsgIBDBlock:
-		payload := new(KaspadMessage_IbdBlock)
-		err := payload.fromAppMessage(message)
-		if err != nil {
-			return nil, err
-		}
-		return payload, nil
 	case *appmessage.MsgInvRelayBlock:
 		payload := new(KaspadMessage_InvRelayBlock)
 		err := payload.fromAppMessage(message)
@@ -198,8 +191,8 @@ func toP2PPayload(message appmessage.Message) (isKaspadMessage_Payload, error) {
 			return nil, err
 		}
 		return payload, nil
-	case *appmessage.MsgRequestPruningPointUTXOSetAndBlock:
-		payload := new(KaspadMessage_RequestPruningPointUTXOSetAndBlock)
+	case *appmessage.MsgRequestPruningPointUTXOSet:
+		payload := new(KaspadMessage_RequestPruningPointUTXOSet)
 		err := payload.fromAppMessage(message)
 		if err != nil {
 			return nil, err
@@ -212,29 +205,8 @@ func toP2PPayload(message appmessage.Message) (isKaspadMessage_Payload, error) {
 			return nil, err
 		}
 		return payload, nil
-	case *appmessage.MsgRequestHeaders:
-		payload := new(KaspadMessage_RequestHeaders)
-		err := payload.fromAppMessage(message)
-		if err != nil {
-			return nil, err
-		}
-		return payload, nil
 	case *appmessage.MsgUnexpectedPruningPoint:
 		payload := new(KaspadMessage_UnexpectedPruningPoint)
-		err := payload.fromAppMessage(message)
-		if err != nil {
-			return nil, err
-		}
-		return payload, nil
-	case *appmessage.MsgRequestPruningPointHashMessage:
-		payload := new(KaspadMessage_RequestPruningPointHash)
-		err := payload.fromAppMessage(message)
-		if err != nil {
-			return nil, err
-		}
-		return payload, nil
-	case *appmessage.MsgPruningPointHashMessage:
-		payload := new(KaspadMessage_PruningPointHash)
 		err := payload.fromAppMessage(message)
 		if err != nil {
 			return nil, err
@@ -277,6 +249,55 @@ func toP2PPayload(message appmessage.Message) (isKaspadMessage_Payload, error) {
 		return payload, nil
 	case *appmessage.MsgDonePruningPointUTXOSetChunks:
 		payload := new(KaspadMessage_DonePruningPointUtxoSetChunks)
+		err := payload.fromAppMessage(message)
+		if err != nil {
+			return nil, err
+		}
+		return payload, nil
+	case *appmessage.MsgBlockWithTrustedData:
+		payload := new(KaspadMessage_BlockWithTrustedData)
+		err := payload.fromAppMessage(message)
+		if err != nil {
+			return nil, err
+		}
+		return payload, nil
+	case *appmessage.MsgRequestPruningPointAndItsAnticone:
+		payload := new(KaspadMessage_RequestPruningPointAndItsAnticone)
+		err := payload.fromAppMessage(message)
+		if err != nil {
+			return nil, err
+		}
+		return payload, nil
+	case *appmessage.MsgRequestBlockBlueWork:
+		payload := new(KaspadMessage_RequestBlockBlueWork)
+		err := payload.fromAppMessage(message)
+		if err != nil {
+			return nil, err
+		}
+		return payload, nil
+	case *appmessage.MsgBlockBlueWork:
+		payload := new(KaspadMessage_BlockBlueWork)
+		err := payload.fromAppMessage(message)
+		if err != nil {
+			return nil, err
+		}
+		return payload, nil
+	case *appmessage.MsgDoneBlocksWithTrustedData:
+		payload := new(KaspadMessage_DoneBlocksWithTrustedData)
+		err := payload.fromAppMessage(message)
+		if err != nil {
+			return nil, err
+		}
+		return payload, nil
+	case *appmessage.MsgIBDBlock:
+		payload := new(KaspadMessage_IbdBlock)
+		err := payload.fromAppMessage(message)
+		if err != nil {
+			return nil, err
+		}
+		return payload, nil
+	case *appmessage.MsgRequestHeaders:
+		payload := new(KaspadMessage_RequestHeaders)
 		err := payload.fromAppMessage(message)
 		if err != nil {
 			return nil, err

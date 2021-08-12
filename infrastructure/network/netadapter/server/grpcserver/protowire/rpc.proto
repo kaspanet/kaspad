@@ -61,6 +61,7 @@ message RpcTransactionInput {
   RpcOutpoint previousOutpoint = 1;
   string signatureScript = 2;
   uint64 sequence = 3;
+  uint32 sigOpCount = 5;
   RpcTransactionInputVerboseData verboseData = 4;
 }
 
@@ -90,7 +91,7 @@ message RpcUtxoEntry {
 message RpcTransactionVerboseData{
   string transactionId = 1;
   string hash = 2;
-  uint64 size = 3;
+  uint64 mass = 4;
   string blockHash = 12;
   uint64 blockTime = 14;
 }
@@ -302,17 +303,7 @@ message VirtualSelectedParentChainChangedNotificationMessage{
   repeated string removedChainBlockHashes = 1;
 
   // The chain blocks that were added, in low-to-high order
-  repeated ChainBlock addedChainBlocks = 2;
-}
-
-message ChainBlock{
-  string hash = 1;
-  repeated AcceptedBlock acceptedBlocks = 2;
-}
-
-message AcceptedBlock{
-  string hash = 1;
-  repeated string acceptedTransactionIds = 2;
+  repeated string addedChainBlockHashes = 3;
 }
 
 // GetBlockRequestMessage requests information about a specific block
@@ -352,7 +343,7 @@ message GetVirtualSelectedParentChainFromBlockResponseMessage{
   repeated string removedChainBlockHashes = 1;
 
   // The chain blocks that were added, in low-to-high order
-  repeated ChainBlock addedChainBlocks = 2;
+  repeated string addedChainBlockHashes = 3;
 
   RPCError error = 1000;
 }

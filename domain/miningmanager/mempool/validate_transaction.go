@@ -44,13 +44,6 @@ func (mp *mempool) validateTransactionInIsolation(transaction *externalapi.Domai
 }
 
 func (mp *mempool) validateTransactionInContext(transaction *externalapi.DomainTransaction) error {
-	transactionID := consensushashing.TransactionID(transaction)
-	if transaction.Mass > mp.config.MaximumMassAcceptedByBlock {
-		return transactionRuleError(RejectInvalid, fmt.Sprintf("transaction %s mass is %d which is "+
-			"higher than the maxmimum of %d", transactionID,
-			transaction.Mass, mp.config.MaximumMassAcceptedByBlock))
-	}
-
 	if !mp.config.AcceptNonStandard {
 		err := mp.checkTransactionStandardInContext(transaction)
 		if err != nil {

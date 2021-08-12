@@ -32,20 +32,19 @@ func HandleRequestBlockLocator(context RequestBlockLocatorContext, incomingRoute
 
 func (flow *handleRequestBlockLocatorFlow) start() error {
 	for {
-		lowHash, highHash, limit, err := flow.receiveGetBlockLocator()
+		highHash, limit, err := flow.receiveGetBlockLocator()
 		if err != nil {
 			return err
 		}
-		log.Debugf("Received getBlockLocator with lowHash: %s, highHash: %s, limit: %d",
-			lowHash, highHash, limit)
+		log.Debugf("Received getBlockLocator with highHash: %s, limit: %d", highHash, limit)
 
-		locator, err := flow.Domain().Consensus().CreateBlockLocator(lowHash, highHash, limit)
+		locator, err := flow.Domain().Consensus().CreateBlockLocatorFromPruningPoint(highHash, limit)
 		if err != nil || len(locator) == 0 {
 			if err != nil {
-				log.Debugf("Received error from CreateBlockLocator: %s", err)
+				log.Debugf("Received error from CreateBlockLocatorFromPruningPoint: %s", err)
 			}
 			return protocolerrors.Errorf(true, "couldn't build a block "+
-				"locator between blocks %s and %s", lowHash, highHash)
+				"locator between the pruning point and %s", highHash)
 		}
 
 		err = flow.sendBlockLocator(locator)
@@ -55,16 +54,15 @@ func (flow *handleRequestBlockLocatorFlow) start() error {
 	}
 }
 
-func (flow *handleRequestBlockLocatorFlow) receiveGetBlockLocator() (lowHash *externalapi.DomainHash,
-	highHash *externalapi.DomainHash, limit uint32, err error) {
+func (flow *handleRequestBlockLocatorFlow) receiveGetBlockLocator() (highHash *externalapi.DomainHash, limit uint32, err error) {
 
 	message, err := flow.incomingRoute.Dequeue()
 	if err != nil {
-		return nil, nil, 0, err
+		return nil, 0, err
 	}
 	msgGetBlockLocator := message.(*appmessage.MsgRequestBlockLocator)
 
-	return msgGetBlockLocator.LowHash, msgGetBlockLocator.HighHash, msgGetBlockLocator.Limit, nil
+	return msgGetBlockLocator.HighHash, msgGetBlockLocator.Limit, nil
 }
 
 func (flow *handleRequestBlockLocatorFlow) sendBlockLocator(locator externalapi.BlockLocator) error {

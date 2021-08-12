@@ -38,19 +38,20 @@ func (csm *consensusStateManager) ReverseUTXODiffs(tipHash *externalapi.DomainHa
 
 	log.Trace("Reversed 1 utxoDiff")
 
-	previousBlockGHOSTDAGData, err := csm.ghostdagDataStore.Get(csm.databaseContext, readStagingArea, previousBlock)
+	previousBlockGHOSTDAGData, err := csm.ghostdagDataStore.Get(csm.databaseContext, readStagingArea, previousBlock, false)
 	if err != nil {
 		return err
 	}
 	// Now go over the rest of the blocks and assign for every block Bi.UTXODiff = Bi+1.UTXODiff.Reversed()
 	for i := 1; ; i++ {
 		currentBlock := previousBlockGHOSTDAGData.SelectedParent()
+		log.Debugf("Reversing UTXO diff for %s", currentBlock)
 
 		currentBlockUTXODiffChild, err := csm.utxoDiffStore.UTXODiffChild(csm.databaseContext, readStagingArea, currentBlock)
 		if err != nil {
 			return err
 		}
-		currentBlockGHOSTDAGData, err := csm.ghostdagDataStore.Get(csm.databaseContext, readStagingArea, currentBlock)
+		currentBlockGHOSTDAGData, err := csm.ghostdagDataStore.Get(csm.databaseContext, readStagingArea, currentBlock, false)
 		if err != nil {
 			return err
 		}

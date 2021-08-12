@@ -33,11 +33,11 @@ func (sorter testGhostDAGSorter) Len() int {
 }
 
 func (sorter testGhostDAGSorter) Less(i, j int) bool {
-	ghostdagDataI, err := sorter.tc.GHOSTDAGDataStore().Get(sorter.tc.DatabaseContext(), sorter.stagingArea, sorter.slice[i])
+	ghostdagDataI, err := sorter.tc.GHOSTDAGDataStore().Get(sorter.tc.DatabaseContext(), sorter.stagingArea, sorter.slice[i], false)
 	if err != nil {
 		sorter.test.Fatalf("TestGhostDAGSorter: Failed getting ghostdag data for %s", err)
 	}
-	ghostdagDataJ, err := sorter.tc.GHOSTDAGDataStore().Get(sorter.tc.DatabaseContext(), sorter.stagingArea, sorter.slice[j])
+	ghostdagDataJ, err := sorter.tc.GHOSTDAGDataStore().Get(sorter.tc.DatabaseContext(), sorter.stagingArea, sorter.slice[j], false)
 	if err != nil {
 		sorter.test.Fatalf("TestGhostDAGSorter: Failed getting ghostdag data for %s", err)
 	}

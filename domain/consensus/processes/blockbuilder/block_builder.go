@@ -145,13 +145,12 @@ func (bb *blockBuilder) validateTransaction(
 		return err
 	}
 
-	virtualSelectedParentMedianTime, err := bb.pastMedianTimeManager.PastMedianTime(stagingArea, model.VirtualBlockHash)
+	err = bb.transactionValidator.ValidateTransactionInContextIgnoringUTXO(stagingArea, transaction, model.VirtualBlockHash)
 	if err != nil {
 		return err
 	}
 
-	return bb.transactionValidator.ValidateTransactionInContextAndPopulateMassAndFee(
-		stagingArea, transaction, model.VirtualBlockHash, virtualSelectedParentMedianTime)
+	return bb.transactionValidator.ValidateTransactionInContextAndPopulateFee(stagingArea, transaction, model.VirtualBlockHash)
 }
 
 func (bb *blockBuilder) newBlockCoinbaseTransaction(stagingArea *model.StagingArea,

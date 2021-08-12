@@ -12,26 +12,26 @@ import (
 
 const ibdBatchSize = router.DefaultMaxMessages
 
-// RequestIBDBlocksContext is the interface for the context needed for the HandleRequestHeaders flow.
-type RequestIBDBlocksContext interface {
+// RequestHeadersContext is the interface for the context needed for the HandleRequestHeaders flow.
+type RequestHeadersContext interface {
 	Domain() domain.Domain
 }
 
 type handleRequestHeadersFlow struct {
-	RequestIBDBlocksContext
+	RequestHeadersContext
 	incomingRoute, outgoingRoute *router.Route
 	peer                         *peer.Peer
 }
 
 // HandleRequestHeaders handles RequestHeaders messages
-func HandleRequestHeaders(context RequestIBDBlocksContext, incomingRoute *router.Route,
+func HandleRequestHeaders(context RequestHeadersContext, incomingRoute *router.Route,
 	outgoingRoute *router.Route, peer *peer.Peer) error {
 
 	flow := &handleRequestHeadersFlow{
-		RequestIBDBlocksContext: context,
-		incomingRoute:           incomingRoute,
-		outgoingRoute:           outgoingRoute,
-		peer:                    peer,
+		RequestHeadersContext: context,
+		incomingRoute:         incomingRoute,
+		outgoingRoute:         outgoingRoute,
+		peer:                  peer,
 	}
 	return flow.start()
 }

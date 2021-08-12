@@ -53,6 +53,7 @@ func (sht SigHashType) isSigHashAnyOneCanPay() bool {
 type SighashReusedValues struct {
 	previousOutputsHash *externalapi.DomainHash
 	sequencesHash       *externalapi.DomainHash
+	sigOpCountsHash     *externalapi.DomainHash
 	outputsHash         *externalapi.DomainHash
 	payloadHash         *externalapi.DomainHash
 }
@@ -102,6 +103,9 @@ func calculateSignatureHash(tx *externalapi.DomainTransaction, inputIndex int, t
 	sequencesHash := getSequencesHash(tx, hashType, reusedValues)
 	infallibleWriteElement(hashWriter, sequencesHash)
 
+	sigOpCountsHash := getSigOpCountsHash(tx, hashType, reusedValues)
+	infallibleWriteElement(hashWriter, sigOpCountsHash)
+
 	hashOutpoint(hashWriter, txIn.PreviousOutpoint)
 
 	infallibleWriteElement(hashWriter, prevScriptPublicKey.Version)
@@ -110,6 +114,8 @@ func calculateSignatureHash(tx *externalapi.DomainTransaction, inputIndex int, t
 	infallibleWriteElement(hashWriter, txIn.UTXOEntry.Amount())
 
 	infallibleWriteElement(hashWriter, txIn.Sequence)
+
+	infallibleWriteElement(hashWriter, txIn.SigOpCount)
 
 	outputsHash := getOutputsHash(tx, inputIndex, hashType, reusedValues)
 	infallibleWriteElement(hashWriter, outputsHash)
@@ -157,6 +163,22 @@ func getSequencesHash(tx *externalapi.DomainTransaction, hashType SigHashType, r
 	}
 
 	return reusedValues.sequencesHash
+}
+
+func getSigOpCountsHash(tx *externalapi.DomainTransaction, hashType SigHashType, reusedValues *SighashReusedValues) *externalapi.DomainHash {
+	if hashType.isSigHashAnyOneCanPay() {
+		return externalapi.NewZeroHash()
+	}
+
+	if reusedValues.sigOpCountsHash == nil {
+		hashWriter := hashes.NewTransactionSigningHashWriter()
+		for _, txIn := range tx.Inputs {
+			infallibleWriteElement(hashWriter, txIn.SigOpCount)
+		}
+		reusedValues.sigOpCountsHash = hashWriter.Finalize()
+	}
+
+	return reusedValues.sigOpCountsHash
 }
 
 func getOutputsHash(tx *externalapi.DomainTransaction, inputIndex int, hashType SigHashType, reusedValues *SighashReusedValues) *externalapi.DomainHash {

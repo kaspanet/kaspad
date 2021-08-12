@@ -37,6 +37,7 @@ message DbTransactionInput {
   DbOutpoint previousOutpoint = 1;
   bytes signatureScript = 2;
   uint64 sequence = 3;
+  uint32 sigOpCount = 4;
 }
 
 message DbOutpoint {
@@ -148,4 +149,9 @@ message DbBlockCount {
 
 message DbBlockHeaderCount {
   uint64 count = 1;
+}
+
+message DbBlockGHOSTDAGDataHashPair {
+  DbHash hash = 1;
+  DbBlockGhostdagData GhostdagData = 2;
 }

@@ -33,6 +33,7 @@ type RelayInvsContext interface {
 	IsIBDRunning() bool
 	TrySetIBDRunning(ibdPeer *peerpkg.Peer) bool
 	UnsetIBDRunning()
+	IsRecoverableError(err error) bool
 }
 
 type handleRelayInvsFlow struct {
@@ -126,7 +127,7 @@ func (flow *handleRelayInvsFlow) start() error {
 		}
 		if len(missingParents) > 0 {
 			log.Debugf("Block %s is orphan and has missing parents: %s", inv.Hash, missingParents)
-			err := flow.processOrphan(block, missingParents)
+			err := flow.processOrphan(block)
 			if err != nil {
 				return err
 			}
@@ -228,7 +229,7 @@ func (flow *handleRelayInvsFlow) readMsgBlock() (msgBlock *appmessage.MsgBlock, 
 
 func (flow *handleRelayInvsFlow) processBlock(block *externalapi.DomainBlock) ([]*externalapi.DomainHash, *externalapi.BlockInsertionResult, error) {
 	blockHash := consensushashing.BlockHash(block)
-	blockInsertionResult, err := flow.Domain().Consensus().ValidateAndInsertBlock(block)
+	blockInsertionResult, err := flow.Domain().Consensus().ValidateAndInsertBlock(block, true)
 	if err != nil {
 		if !errors.As(err, &ruleerrors.RuleError{}) {
 			return nil, nil, errors.Wrapf(err, "failed to process block %s", blockHash)
@@ -249,7 +250,7 @@ func (flow *handleRelayInvsFlow) relayBlock(block *externalapi.DomainBlock) erro
 	return flow.Broadcast(appmessage.NewMsgInvBlock(blockHash))
 }
 
-func (flow *handleRelayInvsFlow) processOrphan(block *externalapi.DomainBlock, missingParents []*externalapi.DomainHash) error {
+func (flow *handleRelayInvsFlow) processOrphan(block *externalapi.DomainBlock) error {
 	blockHash := consensushashing.BlockHash(block)
 
 	// Return if the block has been orphaned from elsewhere already
@@ -283,8 +284,7 @@ func (flow *handleRelayInvsFlow) processOrphan(block *externalapi.DomainBlock, m
 // In the response, if we know none of the hashes, we should retrieve the given
 // blockHash via IBD. Otherwise, via unorphaning.
 func (flow *handleRelayInvsFlow) isBlockInOrphanResolutionRange(blockHash *externalapi.DomainHash) (bool, error) {
-	lowHash := flow.Config().ActiveNetParams.GenesisHash
-	err := flow.sendGetBlockLocator(lowHash, blockHash, orphanResolutionRange)
+	err := flow.sendGetBlockLocator(blockHash, orphanResolutionRange)
 	if err != nil {
 		return false, err
 	}

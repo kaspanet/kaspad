@@ -22,6 +22,8 @@ func TestCreateBlockLocator(t *testing.T) {
 		}
 		defer tearDown(false)
 
+		stagingArea := model.NewStagingArea()
+
 		chain := []*externalapi.DomainHash{consensusConfig.GenesisHash}
 		tipHash := consensusConfig.GenesisHash
 		for i := 0; i < 20; i++ {
@@ -40,9 +42,9 @@ func TestCreateBlockLocator(t *testing.T) {
 		}
 
 		// Check a situation where low hash is not on the exact step blue score
-		locator, err := tc.CreateBlockLocator(consensusConfig.GenesisHash, tipHash, 0)
+		locator, err := tc.SyncManager().CreateBlockLocator(stagingArea, consensusConfig.GenesisHash, tipHash, 0)
 		if err != nil {
-			t.Fatalf("CreateBlockLocator: %+v", err)
+			t.Fatalf("CreateBlockLocatorFromPruningPoint: %+v", err)
 		}
 
 		if !externalapi.HashesEqual(locator, []*externalapi.DomainHash{
@@ -57,9 +59,9 @@ func TestCreateBlockLocator(t *testing.T) {
 		}
 
 		// Check a situation where low hash is on the exact step blue score
-		locator, err = tc.CreateBlockLocator(chain[5], tipHash, 0)
+		locator, err = tc.SyncManager().CreateBlockLocator(stagingArea, chain[5], tipHash, 0)
 		if err != nil {
-			t.Fatalf("CreateBlockLocator: %+v", err)
+			t.Fatalf("CreateBlockLocatorFromPruningPoint: %+v", err)
 		}
 
 		if !externalapi.HashesEqual(locator, []*externalapi.DomainHash{
@@ -73,9 +75,9 @@ func TestCreateBlockLocator(t *testing.T) {
 		}
 
 		// Check block locator with limit
-		locator, err = tc.CreateBlockLocator(consensusConfig.GenesisHash, tipHash, 3)
+		locator, err = tc.SyncManager().CreateBlockLocator(stagingArea, consensusConfig.GenesisHash, tipHash, 3)
 		if err != nil {
-			t.Fatalf("CreateBlockLocator: %+v", err)
+			t.Fatalf("CreateBlockLocatorFromPruningPoint: %+v", err)
 		}
 
 		if !externalapi.HashesEqual(locator, []*externalapi.DomainHash{
@@ -87,9 +89,9 @@ func TestCreateBlockLocator(t *testing.T) {
 		}
 
 		// Check a block locator from genesis to genesis
-		locator, err = tc.CreateBlockLocator(consensusConfig.GenesisHash, consensusConfig.GenesisHash, 0)
+		locator, err = tc.SyncManager().CreateBlockLocator(stagingArea, consensusConfig.GenesisHash, consensusConfig.GenesisHash, 0)
 		if err != nil {
-			t.Fatalf("CreateBlockLocator: %+v", err)
+			t.Fatalf("CreateBlockLocatorFromPruningPoint: %+v", err)
 		}
 
 		if !externalapi.HashesEqual(locator, []*externalapi.DomainHash{
@@ -99,9 +101,9 @@ func TestCreateBlockLocator(t *testing.T) {
 		}
 
 		// Check a block locator from one block to the same block
-		locator, err = tc.CreateBlockLocator(chain[7], chain[7], 0)
+		locator, err = tc.SyncManager().CreateBlockLocator(stagingArea, chain[7], chain[7], 0)
 		if err != nil {
-			t.Fatalf("CreateBlockLocator: %+v", err)
+			t.Fatalf("CreateBlockLocatorFromPruningPoint: %+v", err)
 		}
 
 		if !externalapi.HashesEqual(locator, []*externalapi.DomainHash{
@@ -111,20 +113,14 @@ func TestCreateBlockLocator(t *testing.T) {
 		}
 
 		// Check block locator with incompatible blocks
-		_, err = tc.CreateBlockLocator(sideChainTipHash, tipHash, 0)
+		_, err = tc.SyncManager().CreateBlockLocator(stagingArea, sideChainTipHash, tipHash, 0)
 		expectedErr := "highHash and lowHash are not in the same selected parent chain"
 		if err == nil || !strings.Contains(err.Error(), expectedErr) {
 			t.Fatalf("expected error '%s' but got '%s'", expectedErr, err)
 		}
 
 		// Check block locator with non exist blocks
-		_, err = tc.CreateBlockLocator(&externalapi.DomainHash{}, tipHash, 0)
-		expectedErr = "does not exist"
-		if err == nil || !strings.Contains(err.Error(), expectedErr) {
-			t.Fatalf("expected error '%s' but got '%s'", expectedErr, err)
-		}
-
-		_, err = tc.CreateBlockLocator(tipHash, &externalapi.DomainHash{}, 0)
+		_, err = tc.CreateBlockLocatorFromPruningPoint(&externalapi.DomainHash{}, 0)
 		expectedErr = "does not exist"
 		if err == nil || !strings.Contains(err.Error(), expectedErr) {
 			t.Fatalf("expected error '%s' but got '%s'", expectedErr, err)
@@ -162,7 +158,7 @@ func TestCreateHeadersSelectedChainBlockLocator(t *testing.T) {
 		// Check a situation where low hash is not on the exact step
 		locator, err := tc.CreateHeadersSelectedChainBlockLocator(consensusConfig.GenesisHash, tipHash)
 		if err != nil {
-			t.Fatalf("CreateBlockLocator: %+v", err)
+			t.Fatalf("CreateBlockLocatorFromPruningPoint: %+v", err)
 		}
 
 		if !externalapi.HashesEqual(locator, []*externalapi.DomainHash{
@@ -179,7 +175,7 @@ func TestCreateHeadersSelectedChainBlockLocator(t *testing.T) {
 		// Check a situation where low hash is on the exact step
 		locator, err = tc.CreateHeadersSelectedChainBlockLocator(chain[5], tipHash)
 		if err != nil {
-			t.Fatalf("CreateBlockLocator: %+v", err)
+			t.Fatalf("CreateBlockLocatorFromPruningPoint: %+v", err)
 		}
 
 		if !externalapi.HashesEqual(locator, []*externalapi.DomainHash{
@@ -195,7 +191,7 @@ func TestCreateHeadersSelectedChainBlockLocator(t *testing.T) {
 		// Check a block locator from genesis to genesis
 		locator, err = tc.CreateHeadersSelectedChainBlockLocator(consensusConfig.GenesisHash, consensusConfig.GenesisHash)
 		if err != nil {
-			t.Fatalf("CreateBlockLocator: %+v", err)
+			t.Fatalf("CreateBlockLocatorFromPruningPoint: %+v", err)
 		}
 
 		if !externalapi.HashesEqual(locator, []*externalapi.DomainHash{
@@ -207,7 +203,7 @@ func TestCreateHeadersSelectedChainBlockLocator(t *testing.T) {
 		// Check a block locator from one block to the same block
 		locator, err = tc.CreateHeadersSelectedChainBlockLocator(chain[7], chain[7])
 		if err != nil {
-			t.Fatalf("CreateBlockLocator: %+v", err)
+			t.Fatalf("CreateBlockLocatorFromPruningPoint: %+v", err)
 		}
 
 		if !externalapi.HashesEqual(locator, []*externalapi.DomainHash{

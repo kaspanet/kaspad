@@ -34,13 +34,13 @@ func New(
 
 }
 
-func (mdm *mergeDepthManager) CheckBoundedMergeDepth(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) error {
-	nonBoundedMergeDepthViolatingBlues, err := mdm.NonBoundedMergeDepthViolatingBlues(stagingArea, blockHash)
+func (mdm *mergeDepthManager) CheckBoundedMergeDepth(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash, isBlockWithTrustedData bool) error {
+	nonBoundedMergeDepthViolatingBlues, err := mdm.NonBoundedMergeDepthViolatingBlues(stagingArea, blockHash, isBlockWithTrustedData)
 	if err != nil {
 		return err
 	}
 
-	ghostdagData, err := mdm.ghostdagDataStore.Get(mdm.databaseContext, stagingArea, blockHash)
+	ghostdagData, err := mdm.ghostdagDataStore.Get(mdm.databaseContext, stagingArea, blockHash, false)
 	if err != nil {
 		return err
 	}
@@ -50,7 +50,7 @@ func (mdm *mergeDepthManager) CheckBoundedMergeDepth(stagingArea *model.StagingA
 		return nil
 	}
 
-	finalityPoint, err := mdm.finalityManager.FinalityPoint(stagingArea, blockHash)
+	finalityPoint, err := mdm.finalityManager.FinalityPoint(stagingArea, blockHash, isBlockWithTrustedData)
 	if err != nil {
 		return err
 	}
@@ -79,15 +79,15 @@ func (mdm *mergeDepthManager) CheckBoundedMergeDepth(stagingArea *model.StagingA
 	return nil
 }
 
-func (mdm *mergeDepthManager) NonBoundedMergeDepthViolatingBlues(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error) {
-	ghostdagData, err := mdm.ghostdagDataStore.Get(mdm.databaseContext, stagingArea, blockHash)
+func (mdm *mergeDepthManager) NonBoundedMergeDepthViolatingBlues(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash, isBlockWithTrustedData bool) ([]*externalapi.DomainHash, error) {
+	ghostdagData, err := mdm.ghostdagDataStore.Get(mdm.databaseContext, stagingArea, blockHash, false)
 	if err != nil {
 		return nil, err
 	}
 
 	nonBoundedMergeDepthViolatingBlues := make([]*externalapi.DomainHash, 0, len(ghostdagData.MergeSetBlues()))
 
-	finalityPoint, err := mdm.finalityManager.FinalityPoint(stagingArea, blockHash)
+	finalityPoint, err := mdm.finalityManager.FinalityPoint(stagingArea, blockHash, isBlockWithTrustedData)
 	if err != nil {
 		return nil, err
 	}

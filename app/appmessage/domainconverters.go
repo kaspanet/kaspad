@@ -2,6 +2,7 @@ package appmessage
 
 import (
 	"encoding/hex"
+
 	"github.com/kaspanet/kaspad/domain/consensus/utils/blockheader"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/hashes"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/utxo"
@@ -100,6 +101,7 @@ func domainTransactionInputToTxIn(domainTransactionInput *externalapi.DomainTran
 		PreviousOutpoint: *domainOutpointToOutpoint(domainTransactionInput.PreviousOutpoint),
 		SignatureScript:  domainTransactionInput.SignatureScript,
 		Sequence:         domainTransactionInput.Sequence,
+		SigOpCount:       domainTransactionInput.SigOpCount,
 	}
 }
 
@@ -148,6 +150,7 @@ func txInToDomainTransactionInput(txIn *TxIn) *externalapi.DomainTransactionInpu
 	return &externalapi.DomainTransactionInput{
 		PreviousOutpoint: *outpointToDomainOutpoint(&txIn.PreviousOutpoint), //TODO
 		SignatureScript:  txIn.SignatureScript,
+		SigOpCount:       txIn.SigOpCount,
 		Sequence:         txIn.Sequence,
 	}
 }
@@ -175,6 +178,7 @@ func RPCTransactionToDomainTransaction(rpcTransaction *RPCTransaction) (*externa
 			PreviousOutpoint: *previousOutpoint,
 			SignatureScript:  signatureScript,
 			Sequence:         input.Sequence,
+			SigOpCount:       input.SigOpCount,
 		}
 	}
 	outputs := make([]*externalapi.DomainTransactionOutput, len(rpcTransaction.Outputs))
@@ -253,6 +257,7 @@ func DomainTransactionToRPCTransaction(transaction *externalapi.DomainTransactio
 			PreviousOutpoint: previousOutpoint,
 			SignatureScript:  signatureScript,
 			Sequence:         input.Sequence,
+			SigOpCount:       input.SigOpCount,
 		}
 	}
 	outputs := make([]*RPCTransactionOutput, len(transaction.Outputs))
@@ -392,4 +397,91 @@ func RPCBlockToDomainBlock(block *RPCBlock) (*externalapi.DomainBlock, error) {
 		Header:       header,
 		Transactions: transactions,
 	}, nil
+}
+
+// BlockWithTrustedDataToDomainBlockWithTrustedData converts *MsgBlockWithTrustedData to *externalapi.BlockWithTrustedData
+func BlockWithTrustedDataToDomainBlockWithTrustedData(block *MsgBlockWithTrustedData) *externalapi.BlockWithTrustedData {
+	daaWindow := make([]*externalapi.TrustedDataDataDAABlock, len(block.DAAWindow))
+	for i, daaBlock := range block.DAAWindow {
+		daaWindow[i] = &externalapi.TrustedDataDataDAABlock{
+			Header:       BlockHeaderToDomainBlockHeader(daaBlock.Header),
+			GHOSTDAGData: ghostdagDataToDomainGHOSTDAGData(daaBlock.GHOSTDAGData),
+		}
+	}
+
+	ghostdagData := make([]*externalapi.BlockGHOSTDAGDataHashPair, len(block.GHOSTDAGData))
+	for i, datum := range block.GHOSTDAGData {
+		ghostdagData[i] = &externalapi.BlockGHOSTDAGDataHashPair{
+			Hash:         datum.Hash,
+			GHOSTDAGData: ghostdagDataToDomainGHOSTDAGData(datum.GHOSTDAGData),
+		}
+	}
+
+	return &externalapi.BlockWithTrustedData{
+		Block:        MsgBlockToDomainBlock(block.Block),
+		DAAScore:     block.DAAScore,
+		DAAWindow:    daaWindow,
+		GHOSTDAGData: ghostdagData,
+	}
+}
+
+func ghostdagDataToDomainGHOSTDAGData(data *BlockGHOSTDAGData) *externalapi.BlockGHOSTDAGData {
+	bluesAnticoneSizes := make(map[externalapi.DomainHash]externalapi.KType, len(data.BluesAnticoneSizes))
+	for _, pair := range data.BluesAnticoneSizes {
+		bluesAnticoneSizes[*pair.BlueHash] = pair.AnticoneSize
+	}
+	return externalapi.NewBlockGHOSTDAGData(
+		data.BlueScore,
+		data.BlueWork,
+		data.SelectedParent,
+		data.MergeSetBlues,
+		data.MergeSetReds,
+		bluesAnticoneSizes,
+	)
+}
+
+func domainGHOSTDAGDataGHOSTDAGData(data *externalapi.BlockGHOSTDAGData) *BlockGHOSTDAGData {
+	bluesAnticoneSizes := make([]*BluesAnticoneSizes, 0, len(data.BluesAnticoneSizes()))
+	for blueHash, anticoneSize := range data.BluesAnticoneSizes() {
+		blueHashCopy := blueHash
+		bluesAnticoneSizes = append(bluesAnticoneSizes, &BluesAnticoneSizes{
+			BlueHash:     &blueHashCopy,
+			AnticoneSize: anticoneSize,
+		})
+	}
+
+	return &BlockGHOSTDAGData{
+		BlueScore:          data.BlueScore(),
+		BlueWork:           data.BlueWork(),
+		SelectedParent:     data.SelectedParent(),
+		MergeSetBlues:      data.MergeSetBlues(),
+		MergeSetReds:       data.MergeSetReds(),
+		BluesAnticoneSizes: bluesAnticoneSizes,
+	}
+}
+
+// DomainBlockWithTrustedDataToBlockWithTrustedData converts *externalapi.BlockWithTrustedData to *MsgBlockWithTrustedData
+func DomainBlockWithTrustedDataToBlockWithTrustedData(block *externalapi.BlockWithTrustedData) *MsgBlockWithTrustedData {
+	daaWindow := make([]*TrustedDataDataDAABlock, len(block.DAAWindow))
+	for i, daaBlock := range block.DAAWindow {
+		daaWindow[i] = &TrustedDataDataDAABlock{
+			Header:       DomainBlockHeaderToBlockHeader(daaBlock.Header),
+			GHOSTDAGData: domainGHOSTDAGDataGHOSTDAGData(daaBlock.GHOSTDAGData),
+		}
+	}
+
+	ghostdagData := make([]*BlockGHOSTDAGDataHashPair, len(block.GHOSTDAGData))
+	for i, datum := range block.GHOSTDAGData {
+		ghostdagData[i] = &BlockGHOSTDAGDataHashPair{
+			Hash:         datum.Hash,
+			GHOSTDAGData: domainGHOSTDAGDataGHOSTDAGData(datum.GHOSTDAGData),
+		}
+	}
+
+	return &MsgBlockWithTrustedData{
+		Block:        DomainBlockToMsgBlock(block.Block),
+		DAAScore:     block.DAAScore,
+		DAAWindow:    daaWindow,
+		GHOSTDAGData: ghostdagData,
+	}
 }

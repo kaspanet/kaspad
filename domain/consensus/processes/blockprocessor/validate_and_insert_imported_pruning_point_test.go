@@ -1,52 +1,228 @@
 package blockprocessor_test
 
 import (
+	"github.com/kaspanet/kaspad/domain/consensus/model"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/txscript"
+	"github.com/kaspanet/kaspad/domain/dagconfig"
+	"math"
 	"testing"
 	"time"
-
-	"github.com/kaspanet/kaspad/domain/consensus/model"
 
 	"github.com/kaspanet/kaspad/domain/consensus"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/model/testapi"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/testutils"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/txscript"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/utxo"
-	"github.com/kaspanet/kaspad/domain/dagconfig"
 	"github.com/pkg/errors"
 )
 
-func addBlock(tcSyncer, tcSyncee testapi.TestConsensus, parentHashes []*externalapi.DomainHash, t *testing.T) *externalapi.DomainHash {
-	block, _, err := tcSyncer.BuildBlockWithParents(parentHashes, nil, nil)
+func addBlock(tc testapi.TestConsensus, parentHashes []*externalapi.DomainHash, t *testing.T) *externalapi.DomainHash {
+	block, _, err := tc.BuildBlockWithParents(parentHashes, nil, nil)
 	if err != nil {
 		t.Fatalf("BuildBlockWithParents: %+v", err)
 	}
 
-	_, err = tcSyncer.ValidateAndInsertBlock(block)
+	blockHash := consensushashing.BlockHash(block)
+
+	_, err = tc.ValidateAndInsertBlock(block, true)
 	if err != nil {
 		t.Fatalf("ValidateAndInsertBlock: %+v", err)
 	}
 
-	_, err = tcSyncee.ValidateAndInsertBlock(&externalapi.DomainBlock{
-		Header:       block.Header,
-		Transactions: nil,
-	})
-	if err != nil {
-		t.Fatalf("ValidateAndInsertBlock: %+v", err)
-	}
-
-	return consensushashing.BlockHash(block)
+	return blockHash
 }
 
 func TestValidateAndInsertImportedPruningPoint(t *testing.T) {
 	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
+		syncConsensuses := func(tcSyncer, tcSyncee testapi.TestConsensus) {
+			pointAndItsAnticoneWithTrustedData, err := tcSyncer.PruningPointAndItsAnticoneWithTrustedData()
+			if err != nil {
+				t.Fatalf("PruningPointAndItsAnticoneWithTrustedData: %+v", err)
+			}
+
+			for _, blockWithTrustedData := range pointAndItsAnticoneWithTrustedData {
+				_, err := tcSyncee.ValidateAndInsertBlockWithTrustedData(blockWithTrustedData, false)
+				if err != nil {
+					t.Fatalf("ValidateAndInsertBlockWithTrustedData: %+v", err)
+				}
+			}
+
+			syncerVirtualSelectedParent, err := tcSyncer.GetVirtualSelectedParent()
+			if err != nil {
+				t.Fatalf("GetVirtualSelectedParent: %+v", err)
+			}
+
+			pruningPoint, err := tcSyncer.PruningPoint()
+			if err != nil {
+				t.Fatalf("PruningPoint: %+v", err)
+			}
+
+			missingHeaderHashes, _, err := tcSyncer.GetHashesBetween(pruningPoint, syncerVirtualSelectedParent, math.MaxUint64)
+			if err != nil {
+				t.Fatalf("GetHashesBetween: %+v", err)
+			}
+
+			for _, blocksHash := range missingHeaderHashes {
+				blockInfo, err := tcSyncee.GetBlockInfo(blocksHash)
+				if err != nil {
+					t.Fatalf("GetBlockInfo: %+v", err)
+				}
+
+				if blockInfo.Exists {
+					continue
+				}
+
+				header, err := tcSyncer.GetBlockHeader(blocksHash)
+				if err != nil {
+					t.Fatalf("GetBlockHeader: %+v", err)
+				}
+
+				_, err = tcSyncee.ValidateAndInsertBlock(&externalapi.DomainBlock{Header: header}, false)
+				if err != nil {
+					t.Fatalf("ValidateAndInsertBlock: %+v", err)
+				}
+			}
+
+			pruningPointUTXOs, err := tcSyncer.GetPruningPointUTXOs(pruningPoint, nil, 1000)
+			if err != nil {
+				t.Fatalf("GetPruningPointUTXOs: %+v", err)
+			}
+			err = tcSyncee.AppendImportedPruningPointUTXOs(pruningPointUTXOs)
+			if err != nil {
+				t.Fatalf("AppendImportedPruningPointUTXOs: %+v", err)
+			}
+
+			virtualSelectedParent, err := tcSyncer.GetVirtualSelectedParent()
+			if err != nil {
+				t.Fatalf("GetVirtualSelectedParent: %+v", err)
+			}
+
+			// Check that ValidateAndInsertImportedPruningPoint fails for invalid pruning point
+			err = tcSyncee.ValidateAndInsertImportedPruningPoint(virtualSelectedParent)
+			if !errors.Is(err, ruleerrors.ErrUnexpectedPruningPoint) {
+				t.Fatalf("Unexpected error: %+v", err)
+			}
+
+			err = tcSyncee.ClearImportedPruningPointData()
+			if err != nil {
+				t.Fatalf("ClearImportedPruningPointData: %+v", err)
+			}
+			err = tcSyncee.AppendImportedPruningPointUTXOs(makeFakeUTXOs())
+			if err != nil {
+				t.Fatalf("AppendImportedPruningPointUTXOs: %+v", err)
+			}
+
+			// Check that ValidateAndInsertImportedPruningPoint fails if the UTXO commitment doesn't fit the provided UTXO set.
+			err = tcSyncee.ValidateAndInsertImportedPruningPoint(pruningPoint)
+			if !errors.Is(err, ruleerrors.ErrBadPruningPointUTXOSet) {
+				t.Fatalf("Unexpected error: %+v", err)
+			}
+
+			err = tcSyncee.ClearImportedPruningPointData()
+			if err != nil {
+				t.Fatalf("ClearImportedPruningPointData: %+v", err)
+			}
+			err = tcSyncee.AppendImportedPruningPointUTXOs(pruningPointUTXOs)
+			if err != nil {
+				t.Fatalf("AppendImportedPruningPointUTXOs: %+v", err)
+			}
+
+			// Check that ValidateAndInsertImportedPruningPoint works given the right arguments.
+			err = tcSyncee.ValidateAndInsertImportedPruningPoint(pruningPoint)
+			if err != nil {
+				t.Fatalf("ValidateAndInsertImportedPruningPoint: %+v", err)
+			}
+
+			emptyCoinbase := &externalapi.DomainCoinbaseData{
+				ScriptPublicKey: &externalapi.ScriptPublicKey{
+					Script:  nil,
+					Version: 0,
+				},
+			}
+
+			// Check that we can build a block just after importing the pruning point.
+			_, err = tcSyncee.BuildBlock(emptyCoinbase, nil)
+			if err != nil {
+				t.Fatalf("BuildBlock: %+v", err)
+			}
+
+			// Sync block bodies
+			headersSelectedTip, err := tcSyncee.GetHeadersSelectedTip()
+			if err != nil {
+				t.Fatalf("GetHeadersSelectedTip: %+v", err)
+			}
+
+			missingBlockHashes, err := tcSyncee.GetMissingBlockBodyHashes(headersSelectedTip)
+			if err != nil {
+				t.Fatalf("GetMissingBlockBodyHashes: %+v", err)
+			}
+
+			for _, blocksHash := range missingBlockHashes {
+				block, err := tcSyncer.GetBlock(blocksHash)
+				if err != nil {
+					t.Fatalf("GetBlock: %+v", err)
+				}
+
+				_, err = tcSyncee.ValidateAndInsertBlock(block, true)
+				if err != nil {
+					t.Fatalf("ValidateAndInsertBlock: %+v", err)
+				}
+			}
+
+			synceeTips, err := tcSyncee.Tips()
+			if err != nil {
+				t.Fatalf("Tips: %+v", err)
+			}
+
+			syncerTips, err := tcSyncer.Tips()
+			if err != nil {
+				t.Fatalf("Tips: %+v", err)
+			}
+
+			if !externalapi.HashesEqual(synceeTips, syncerTips) {
+				t.Fatalf("Syncee's tips are %s while syncer's are %s", synceeTips, syncerTips)
+			}
+
+			tipHash := addBlock(tcSyncer, syncerTips, t)
+			tip, err := tcSyncer.GetBlock(tipHash)
+			if err != nil {
+				t.Fatalf("GetBlock: %+v", err)
+			}
+
+			_, err = tcSyncee.ValidateAndInsertBlock(tip, true)
+			if err != nil {
+				t.Fatalf("ValidateAndInsertBlock: %+v", err)
+			}
+
+			blockInfo, err := tcSyncee.GetBlockInfo(tipHash)
+			if err != nil {
+				t.Fatalf("GetBlockInfo: %+v", err)
+			}
+
+			if blockInfo.BlockStatus != externalapi.StatusUTXOValid {
+				t.Fatalf("Tip didn't pass UTXO verification")
+			}
+
+			synceePruningPoint, err := tcSyncee.PruningPoint()
+			if err != nil {
+				t.Fatalf("PruningPoint: %+v", err)
+			}
+
+			if !synceePruningPoint.Equal(pruningPoint) {
+				t.Fatalf("The syncee pruning point has not changed as exepcted")
+			}
+		}
+
 		// This is done to reduce the pruning depth to 6 blocks
 		finalityDepth := 3
 		consensusConfig.FinalityDuration = time.Duration(finalityDepth) * consensusConfig.TargetTimePerBlock
 		consensusConfig.K = 0
+
+		synceeConfig := *consensusConfig
+		synceeConfig.SkipAddingGenesis = true
 
 		factory := consensus.NewFactory()
 
@@ -56,27 +232,27 @@ func TestValidateAndInsertImportedPruningPoint(t *testing.T) {
 		}
 		defer teardownSyncer(false)
 
-		tcSyncee, teardownSyncee, err := factory.NewTestConsensus(consensusConfig, "TestValidateAndInsertPruningPointSyncee")
+		tcSyncee1, teardownSyncee1, err := factory.NewTestConsensus(&synceeConfig, "TestValidateAndInsertPruningPointSyncee1")
 		if err != nil {
-			t.Fatalf("Error setting up tcSyncee: %+v", err)
+			t.Fatalf("Error setting up tcSyncee1: %+v", err)
 		}
-		defer teardownSyncee(false)
+		defer teardownSyncee1(false)
 
 		tipHash := consensusConfig.GenesisHash
 		for i := 0; i < finalityDepth-2; i++ {
-			tipHash = addBlock(tcSyncer, tcSyncee, []*externalapi.DomainHash{tipHash}, t)
+			tipHash = addBlock(tcSyncer, []*externalapi.DomainHash{tipHash}, t)
 		}
 
 		// Add block in the anticone of the pruning point to test such situation
-		pruningPointAnticoneBlock := addBlock(tcSyncer, tcSyncee, []*externalapi.DomainHash{tipHash}, t)
-		tipHash = addBlock(tcSyncer, tcSyncee, []*externalapi.DomainHash{tipHash}, t)
-		nextPruningPoint := addBlock(tcSyncer, tcSyncee, []*externalapi.DomainHash{tipHash}, t)
+		pruningPointAnticoneBlock := addBlock(tcSyncer, []*externalapi.DomainHash{tipHash}, t)
+		tipHash = addBlock(tcSyncer, []*externalapi.DomainHash{tipHash}, t)
+		nextPruningPoint := addBlock(tcSyncer, []*externalapi.DomainHash{tipHash}, t)
 
-		tipHash = addBlock(tcSyncer, tcSyncee, []*externalapi.DomainHash{pruningPointAnticoneBlock, nextPruningPoint}, t)
+		tipHash = addBlock(tcSyncer, []*externalapi.DomainHash{pruningPointAnticoneBlock, nextPruningPoint}, t)
 
 		// Add blocks until the pruning point changes
 		for {
-			tipHash = addBlock(tcSyncer, tcSyncee, []*externalapi.DomainHash{tipHash}, t)
+			tipHash = addBlock(tcSyncer, []*externalapi.DomainHash{tipHash}, t)
 
 			pruningPoint, err := tcSyncer.PruningPoint()
 			if err != nil {
@@ -97,6 +273,128 @@ func TestValidateAndInsertImportedPruningPoint(t *testing.T) {
 			t.Fatalf("Unexpected pruning point %s", pruningPoint)
 		}
 
+		syncConsensuses(tcSyncer, tcSyncee1)
+
+		// Test a situation where a consensus with pruned headers syncs another fresh consensus.
+		tcSyncee2, teardownSyncee2, err := factory.NewTestConsensus(&synceeConfig, "TestValidateAndInsertPruningPointSyncee2")
+		if err != nil {
+			t.Fatalf("Error setting up tcSyncee2: %+v", err)
+		}
+		defer teardownSyncee2(false)
+
+		syncConsensuses(tcSyncee1, tcSyncee2)
+	})
+}
+
+// TestValidateAndInsertPruningPointWithSideBlocks makes sure that when a node applies a UTXO-Set downloaded during
+// IBD, while it already has a non-empty UTXO-Set originating from blocks mined on top of genesis - the resulting
+// UTXO set is correct
+func TestValidateAndInsertPruningPointWithSideBlocks(t *testing.T) {
+	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
+		// This is done to reduce the pruning depth to 6 blocks
+		finalityDepth := 3
+		consensusConfig.FinalityDuration = time.Duration(finalityDepth) * consensusConfig.TargetTimePerBlock
+		consensusConfig.K = 0
+
+		synceeConfig := *consensusConfig
+		synceeConfig.SkipAddingGenesis = true
+
+		factory := consensus.NewFactory()
+
+		tcSyncer, teardownSyncer, err := factory.NewTestConsensus(consensusConfig, "TestValidateAndInsertPruningPointSyncer")
+		if err != nil {
+			t.Fatalf("Error setting up tcSyncer: %+v", err)
+		}
+		defer teardownSyncer(false)
+
+		tcSyncee, teardownSyncee, err := factory.NewTestConsensus(&synceeConfig, "TestValidateAndInsertPruningPointSyncee")
+		if err != nil {
+			t.Fatalf("Error setting up tcSyncee: %+v", err)
+		}
+		defer teardownSyncee(false)
+
+		// Mine two blocks on syncee on top of genesis
+		synceeOnlyBlock := addBlock(tcSyncer, []*externalapi.DomainHash{consensusConfig.GenesisHash}, t)
+		addBlock(tcSyncer, []*externalapi.DomainHash{synceeOnlyBlock}, t)
+
+		tipHash := consensusConfig.GenesisHash
+		for i := 0; i < finalityDepth-2; i++ {
+			tipHash = addBlock(tcSyncer, []*externalapi.DomainHash{tipHash}, t)
+		}
+
+		// Add block in the anticone of the pruning point to test such situation
+		pruningPointAnticoneBlock := addBlock(tcSyncer, []*externalapi.DomainHash{tipHash}, t)
+		tipHash = addBlock(tcSyncer, []*externalapi.DomainHash{tipHash}, t)
+		nextPruningPoint := addBlock(tcSyncer, []*externalapi.DomainHash{tipHash}, t)
+
+		tipHash = addBlock(tcSyncer, []*externalapi.DomainHash{pruningPointAnticoneBlock, nextPruningPoint}, t)
+
+		// Add blocks until the pruning point changes
+		for {
+			tipHash = addBlock(tcSyncer, []*externalapi.DomainHash{tipHash}, t)
+
+			pruningPoint, err := tcSyncer.PruningPoint()
+			if err != nil {
+				t.Fatalf("PruningPoint: %+v", err)
+			}
+
+			if !pruningPoint.Equal(consensusConfig.GenesisHash) {
+				break
+			}
+		}
+
+		pruningPoint, err := tcSyncer.PruningPoint()
+		if err != nil {
+			t.Fatalf("PruningPoint: %+v", err)
+		}
+
+		if !pruningPoint.Equal(nextPruningPoint) {
+			t.Fatalf("Unexpected pruning point %s", pruningPoint)
+		}
+
+		pointAndItsAnticoneWithTrustedData, err := tcSyncer.PruningPointAndItsAnticoneWithTrustedData()
+		if err != nil {
+			t.Fatalf("PruningPointAndItsAnticoneWithTrustedData: %+v", err)
+		}
+
+		for _, blockWithTrustedData := range pointAndItsAnticoneWithTrustedData {
+			_, err := tcSyncee.ValidateAndInsertBlockWithTrustedData(blockWithTrustedData, false)
+			if err != nil {
+				t.Fatalf("ValidateAndInsertBlockWithTrustedData: %+v", err)
+			}
+		}
+
+		syncerVirtualSelectedParent, err := tcSyncer.GetVirtualSelectedParent()
+		if err != nil {
+			t.Fatalf("GetVirtualSelectedParent: %+v", err)
+		}
+
+		missingBlocksHashes, _, err := tcSyncer.GetHashesBetween(pruningPoint, syncerVirtualSelectedParent, math.MaxUint64)
+		if err != nil {
+			t.Fatalf("GetHashesBetween: %+v", err)
+		}
+
+		for _, blocksHash := range missingBlocksHashes {
+			blockInfo, err := tcSyncee.GetBlockInfo(blocksHash)
+			if err != nil {
+				t.Fatalf("GetBlockInfo: %+v", err)
+			}
+
+			if blockInfo.Exists {
+				continue
+			}
+
+			block, err := tcSyncer.GetBlock(blocksHash)
+			if err != nil {
+				t.Fatalf("GetBlock: %+v", err)
+			}
+
+			_, err = tcSyncee.ValidateAndInsertBlock(block, false)
+			if err != nil {
+				t.Fatalf("ValidateAndInsertBlock: %+v", err)
+			}
+		}
+
 		pruningPointUTXOs, err := tcSyncer.GetPruningPointUTXOs(pruningPoint, nil, 1000)
 		if err != nil {
 			t.Fatalf("GetPruningPointUTXOs: %+v", err)
@@ -106,28 +404,9 @@ func TestValidateAndInsertImportedPruningPoint(t *testing.T) {
 			t.Fatalf("AppendImportedPruningPointUTXOs: %+v", err)
 		}
 
-		tip, err := tcSyncer.GetBlock(tipHash)
-		if err != nil {
-			t.Fatalf("GetBlock: %+v", err)
-		}
-
 		// Check that ValidateAndInsertImportedPruningPoint fails for invalid pruning point
-		err = tcSyncee.ValidateAndInsertImportedPruningPoint(tip)
+		err = tcSyncee.ValidateAndInsertImportedPruningPoint(tipHash)
 		if !errors.Is(err, ruleerrors.ErrUnexpectedPruningPoint) {
-			t.Fatalf("Unexpected error: %+v", err)
-		}
-
-		pruningPointBlock, err := tcSyncer.GetBlock(pruningPoint)
-		if err != nil {
-			t.Fatalf("GetBlock: %+v", err)
-		}
-
-		invalidPruningPointBlock := pruningPointBlock.Clone()
-		invalidPruningPointBlock.Transactions[0].Version += 1
-
-		// Check that ValidateAndInsertImportedPruningPoint fails for invalid block
-		err = tcSyncee.ValidateAndInsertImportedPruningPoint(invalidPruningPointBlock)
-		if !errors.Is(err, ruleerrors.ErrBadMerkleRoot) {
 			t.Fatalf("Unexpected error: %+v", err)
 		}
 
@@ -141,7 +420,7 @@ func TestValidateAndInsertImportedPruningPoint(t *testing.T) {
 		}
 
 		// Check that ValidateAndInsertImportedPruningPoint fails if the UTXO commitment doesn't fit the provided UTXO set.
-		err = tcSyncee.ValidateAndInsertImportedPruningPoint(pruningPointBlock)
+		err = tcSyncee.ValidateAndInsertImportedPruningPoint(pruningPoint)
 		if !errors.Is(err, ruleerrors.ErrBadPruningPointUTXOSet) {
 			t.Fatalf("Unexpected error: %+v", err)
 		}
@@ -156,33 +435,11 @@ func TestValidateAndInsertImportedPruningPoint(t *testing.T) {
 		}
 
 		// Check that ValidateAndInsertImportedPruningPoint works given the right arguments.
-		err = tcSyncee.ValidateAndInsertImportedPruningPoint(pruningPointBlock)
+		err = tcSyncee.ValidateAndInsertImportedPruningPoint(pruningPoint)
 		if err != nil {
 			t.Fatalf("ValidateAndInsertImportedPruningPoint: %+v", err)
 		}
 
-		virtualSelectedParent, err := tcSyncer.GetVirtualSelectedParent()
-		if err != nil {
-			t.Fatalf("GetVirtualSelectedParent: %+v", err)
-		}
-
-		missingBlockBodyHashes, err := tcSyncee.GetMissingBlockBodyHashes(virtualSelectedParent)
-		if err != nil {
-			t.Fatalf("GetMissingBlockBodyHashes: %+v", err)
-		}
-
-		for _, missingHash := range missingBlockBodyHashes {
-			block, err := tcSyncer.GetBlock(missingHash)
-			if err != nil {
-				t.Fatalf("GetBlock: %+v", err)
-			}
-
-			_, err = tcSyncee.ValidateAndInsertBlock(block)
-			if err != nil {
-				t.Fatalf("ValidateAndInsertBlock: %+v", err)
-			}
-		}
-
 		synceeTips, err := tcSyncee.Tips()
 		if err != nil {
 			t.Fatalf("Tips: %+v", err)
@@ -197,142 +454,26 @@ func TestValidateAndInsertImportedPruningPoint(t *testing.T) {
 			t.Fatalf("Syncee's tips are %s while syncer's are %s", synceeTips, syncerTips)
 		}
 
-		synceePruningPoint, err := tcSyncee.PruningPoint()
-		if err != nil {
-			t.Fatalf("PruningPoint: %+v", err)
-		}
-
-		if !synceePruningPoint.Equal(pruningPoint) {
-			t.Fatalf("The syncee pruning point has not changed as exepcted")
-		}
-	})
-}
-
-// TestValidateAndInsertPruningPointWithSideBlocks makes sure that when a node applies a UTXO-Set downloaded during
-// IBD, while it already has a non-empty UTXO-Set originating from blocks mined on top of genesis - the resulting
-// UTXO set is correct
-func TestValidateAndInsertPruningPointWithSideBlocks(t *testing.T) {
-	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
-		// This is done to reduce the pruning depth to 6 blocks
-		finalityDepth := 3
-		consensusConfig.FinalityDuration = time.Duration(finalityDepth) * consensusConfig.TargetTimePerBlock
-		consensusConfig.K = 0
-
-		factory := consensus.NewFactory()
-
-		tcSyncer, teardownSyncer, err := factory.NewTestConsensus(consensusConfig, "TestValidateAndInsertPruningPointSyncer")
-		if err != nil {
-			t.Fatalf("Error setting up tcSyncer: %+v", err)
-		}
-		defer teardownSyncer(false)
-
-		tcSyncee, teardownSyncee, err := factory.NewTestConsensus(consensusConfig, "TestValidateAndInsertPruningPointSyncee")
-		if err != nil {
-			t.Fatalf("Error setting up tcSyncee: %+v", err)
-		}
-		defer teardownSyncee(false)
-
-		// Mine 2 block in the syncee on top of genesis
-		side, _, err := tcSyncee.AddBlock([]*externalapi.DomainHash{consensusConfig.GenesisHash}, &externalapi.DomainCoinbaseData{ScriptPublicKey: &externalapi.ScriptPublicKey{}, ExtraData: []byte{1, 2}}, nil)
-		if err != nil {
-			t.Fatal(err)
-		}
-		_, _, err = tcSyncee.AddBlock([]*externalapi.DomainHash{side}, nil, nil)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		tipHash := consensusConfig.GenesisHash
-		for i := 0; i < finalityDepth-2; i++ {
-			tipHash = addBlock(tcSyncer, tcSyncee, []*externalapi.DomainHash{tipHash}, t)
-		}
-
-		tipHash = addBlock(tcSyncer, tcSyncee, []*externalapi.DomainHash{tipHash}, t)
-		nextPruningPoint := addBlock(tcSyncer, tcSyncee, []*externalapi.DomainHash{tipHash}, t)
-
-		tipHash = addBlock(tcSyncer, tcSyncee, []*externalapi.DomainHash{nextPruningPoint}, t)
-
-		// Add blocks until the pruning point changes
-		for {
-			tipHash = addBlock(tcSyncer, tcSyncee, []*externalapi.DomainHash{tipHash}, t)
-
-			pruningPoint, err := tcSyncer.PruningPoint()
-			if err != nil {
-				t.Fatalf("PruningPoint: %+v", err)
-			}
-
-			if !pruningPoint.Equal(consensusConfig.GenesisHash) {
-				break
-			}
-		}
-
-		pruningPoint, err := tcSyncer.PruningPoint()
-		if err != nil {
-			t.Fatalf("PruningPoint: %+v", err)
-		}
-
-		if !pruningPoint.Equal(nextPruningPoint) {
-			t.Fatalf("Unexpected pruning point %s", pruningPoint)
-		}
-
-		pruningPointUTXOs, err := tcSyncer.GetPruningPointUTXOs(pruningPoint, nil, 1000)
-		if err != nil {
-			t.Fatalf("GetPruningPointUTXOs: %+v", err)
-		}
-		err = tcSyncee.AppendImportedPruningPointUTXOs(pruningPointUTXOs)
-		if err != nil {
-			t.Fatalf("AppendImportedPruningPointUTXOs: %+v", err)
-		}
-
-		// Check that ValidateAndInsertPruningPoint works.
-		pruningPointBlock, err := tcSyncer.GetBlock(pruningPoint)
+		tipHash = addBlock(tcSyncer, syncerTips, t)
+		tip, err := tcSyncer.GetBlock(tipHash)
 		if err != nil {
 			t.Fatalf("GetBlock: %+v", err)
 		}
-		err = tcSyncee.ValidateAndInsertImportedPruningPoint(pruningPointBlock)
+
+		_, err = tcSyncee.ValidateAndInsertBlock(tip, true)
 		if err != nil {
-			t.Fatalf("ValidateAndInsertPruningPoint: %+v", err)
+			t.Fatalf("ValidateAndInsertBlock: %+v", err)
 		}
 
-		// Insert the rest of the blocks atop pruning point
-		virtualSelectedParent, err := tcSyncer.GetVirtualSelectedParent()
+		blockInfo, err := tcSyncee.GetBlockInfo(tipHash)
 		if err != nil {
-			t.Fatalf("GetVirtualSelectedParent: %+v", err)
+			t.Fatalf("GetBlockInfo: %+v", err)
 		}
 
-		missingBlockBodyHashes, err := tcSyncee.GetMissingBlockBodyHashes(virtualSelectedParent)
-		if err != nil {
-			t.Fatalf("GetMissingBlockBodyHashes: %+v", err)
+		if blockInfo.BlockStatus != externalapi.StatusUTXOValid {
+			t.Fatalf("Tip didn't pass UTXO verification")
 		}
 
-		for _, missingHash := range missingBlockBodyHashes {
-			block, err := tcSyncer.GetBlock(missingHash)
-			if err != nil {
-				t.Fatalf("GetBlock: %+v", err)
-			}
-
-			_, err = tcSyncee.ValidateAndInsertBlock(block)
-			if err != nil {
-				t.Fatalf("ValidateAndInsertBlock: %+v", err)
-			}
-		}
-
-		// Verify that syncee and syncer tips are equal
-		synceeTips, err := tcSyncee.Tips()
-		if err != nil {
-			t.Fatalf("Tips: %+v", err)
-		}
-
-		syncerTips, err := tcSyncer.Tips()
-		if err != nil {
-			t.Fatalf("Tips: %+v", err)
-		}
-
-		if !externalapi.HashesEqual(synceeTips, syncerTips) {
-			t.Fatalf("Syncee's tips are %s while syncer's are %s", synceeTips, syncerTips)
-		}
-
-		// Verify that syncee and syncer pruning points are equal
 		synceePruningPoint, err := tcSyncee.PruningPoint()
 		if err != nil {
 			t.Fatalf("PruningPoint: %+v", err)
@@ -340,47 +481,6 @@ func TestValidateAndInsertPruningPointWithSideBlocks(t *testing.T) {
 
 		if !synceePruningPoint.Equal(pruningPoint) {
 			t.Fatalf("The syncee pruning point has not changed as exepcted")
-		}
-
-		pruningPointOld := pruningPoint
-
-		// Add blocks until the pruning point moves, and verify it moved to the same point on both syncer and syncee
-		for {
-			block, _, err := tcSyncer.BuildBlockWithParents([]*externalapi.DomainHash{tipHash}, nil, nil)
-			if err != nil {
-				t.Fatalf("BuildBlockWithParents: %+v", err)
-			}
-
-			_, err = tcSyncer.ValidateAndInsertBlock(block)
-			if err != nil {
-				t.Fatalf("ValidateAndInsertBlock: %+v", err)
-			}
-
-			_, err = tcSyncee.ValidateAndInsertBlock(block)
-			if err != nil {
-				t.Fatalf("ValidateAndInsertBlock: %+v", err)
-			}
-
-			tipHash = consensushashing.BlockHash(block)
-
-			pruningPoint, err = tcSyncer.PruningPoint()
-			if err != nil {
-				t.Fatalf("PruningPoint: %+v", err)
-			}
-
-			if !pruningPoint.Equal(pruningPointOld) {
-				break
-			}
-		}
-
-		synceePruningPoint, err = tcSyncee.PruningPoint()
-		if err != nil {
-			t.Fatalf("PruningPoint: %+v", err)
-		}
-
-		if !synceePruningPoint.Equal(pruningPoint) {
-			t.Fatalf("The syncee pruning point(%s) is not equal to syncer pruning point (%s) after it moved. "+
-				"pruning point before move: %s", synceePruningPoint, pruningPoint, pruningPointOld)
 		}
 	})
 }
@@ -447,7 +547,7 @@ func TestGetPruningPointUTXOs(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Error building block above genesis: %+v", err)
 		}
-		_, err = testConsensus.ValidateAndInsertBlock(blockAboveGenesis)
+		_, err = testConsensus.ValidateAndInsertBlock(blockAboveGenesis, true)
 		if err != nil {
 			t.Fatalf("Error validating and inserting block above genesis: %+v", err)
 		}
@@ -459,7 +559,7 @@ func TestGetPruningPointUTXOs(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Error building block with spendable coinbase: %+v", err)
 		}
-		_, err = testConsensus.ValidateAndInsertBlock(blockWithSpendableCoinbase)
+		_, err = testConsensus.ValidateAndInsertBlock(blockWithSpendableCoinbase, true)
 		if err != nil {
 			t.Fatalf("Error validating and inserting block with spendable coinbase: %+v", err)
 		}
@@ -498,7 +598,7 @@ func TestGetPruningPointUTXOs(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Error building including block: %+v", err)
 		}
-		_, err = testConsensus.ValidateAndInsertBlock(includingBlock)
+		_, err = testConsensus.ValidateAndInsertBlock(includingBlock, true)
 		if err != nil {
 			t.Fatalf("Error validating and inserting including block: %+v", err)
 		}
@@ -509,7 +609,7 @@ func TestGetPruningPointUTXOs(t *testing.T) {
 			if err != nil {
 				t.Fatalf("Error building block: %+v", err)
 			}
-			_, err = testConsensus.ValidateAndInsertBlock(block)
+			_, err = testConsensus.ValidateAndInsertBlock(block, true)
 			if err != nil {
 				t.Fatalf("Error validating and inserting block: %+v", err)
 			}
@@ -604,7 +704,7 @@ func BenchmarkGetPruningPointUTXOs(b *testing.B) {
 	if err != nil {
 		b.Fatalf("Error building block with spendable coinbase: %+v", err)
 	}
-	_, err = testConsensus.ValidateAndInsertBlock(blockWithSpendableCoinbase)
+	_, err = testConsensus.ValidateAndInsertBlock(blockWithSpendableCoinbase, true)
 	if err != nil {
 		b.Fatalf("Error validating and inserting block with spendable coinbase: %+v", err)
 	}
@@ -642,7 +742,7 @@ func BenchmarkGetPruningPointUTXOs(b *testing.B) {
 		if err != nil {
 			b.Fatalf("Error building block: %+v", err)
 		}
-		_, err = testConsensus.ValidateAndInsertBlock(block)
+		_, err = testConsensus.ValidateAndInsertBlock(block, true)
 		if err != nil {
 			b.Fatalf("Error validating and inserting block: %+v", err)
 		}
@@ -662,7 +762,7 @@ func BenchmarkGetPruningPointUTXOs(b *testing.B) {
 		if err != nil {
 			b.Fatalf("Error building block: %+v", err)
 		}
-		_, err = testConsensus.ValidateAndInsertBlock(block)
+		_, err = testConsensus.ValidateAndInsertBlock(block, true)
 		if err != nil {
 			b.Fatalf("Error validating and inserting block: %+v", err)
 		}

@@ -148,12 +148,12 @@ func addAlternatingReorgBlocks(t *testing.T, tc testapi.TestConsensus, tips []*e
 		t.Fatal(errors.Errorf("reindex root is not on any header tip chain, this is unexpected behavior"))
 	}
 
-	chainTipGHOSTDAGData, err := tc.GHOSTDAGDataStore().Get(tc.DatabaseContext(), stagingArea, chainTip)
+	chainTipGHOSTDAGData, err := tc.GHOSTDAGDataStore().Get(tc.DatabaseContext(), stagingArea, chainTip, false)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	reorgTipGHOSTDAGData, err := tc.GHOSTDAGDataStore().Get(tc.DatabaseContext(), stagingArea, reorgTip)
+	reorgTipGHOSTDAGData, err := tc.GHOSTDAGDataStore().Get(tc.DatabaseContext(), stagingArea, reorgTip, false)
 	if err != nil {
 		t.Fatal(err)
 	}

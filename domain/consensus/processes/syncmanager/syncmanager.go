@@ -79,7 +79,7 @@ func (sm *syncManager) GetMissingBlockBodyHashes(stagingArea *model.StagingArea,
 func (sm *syncManager) CreateBlockLocator(stagingArea *model.StagingArea,
 	lowHash, highHash *externalapi.DomainHash, limit uint32) (externalapi.BlockLocator, error) {
 
-	onEnd := logger.LogAndMeasureExecutionTime(log, "CreateBlockLocator")
+	onEnd := logger.LogAndMeasureExecutionTime(log, "CreateBlockLocatorFromPruningPoint")
 	defer onEnd()
 
 	return sm.createBlockLocator(stagingArea, lowHash, highHash, limit)

@@ -1,12 +1,13 @@
 package serialization
 
 import (
+	"math"
+
 	"github.com/golang/protobuf/proto"
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/libkaspawallet/serialization/protoserialization"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/subnetworks"
 	"github.com/pkg/errors"
-	"math"
 )
 
 // PartiallySignedTransaction is a type that is intended
@@ -190,6 +191,10 @@ func transactionToProto(tx *externalapi.DomainTransaction) *protoserialization.T
 }
 
 func transactionInputFromProto(protoInput *protoserialization.TransactionInput) (*externalapi.DomainTransactionInput, error) {
+	if protoInput.SigOpCount > math.MaxUint8 {
+		return nil, errors.New("TransactionInput SigOpCount > math.MaxUint8")
+	}
+
 	outpoint, err := outpointFromProto(protoInput.PreviousOutpoint)
 	if err != nil {
 		return nil, err
@@ -199,6 +204,7 @@ func transactionInputFromProto(protoInput *protoserialization.TransactionInput) 
 		PreviousOutpoint: *outpoint,
 		SignatureScript:  protoInput.SignatureScript,
 		Sequence:         protoInput.Sequence,
+		SigOpCount:       byte(protoInput.SigOpCount),
 	}, nil
 }
 
@@ -207,6 +213,7 @@ func transactionInputToProto(input *externalapi.DomainTransactionInput) *protose
 		PreviousOutpoint: outpointToProto(&input.PreviousOutpoint),
 		SignatureScript:  input.SignatureScript,
 		Sequence:         input.Sequence,
+		SigOpCount:       uint32(input.SigOpCount),
 	}
 }
 

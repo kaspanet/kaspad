@@ -1,12 +1,11 @@
 package serialization
 
 import (
-	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/pkg/errors"
 )
 
-func bluesAnticoneSizesToDBBluesAnticoneSizes(bluesAnticoneSizes map[externalapi.DomainHash]model.KType) []*DbBluesAnticoneSizes {
+func bluesAnticoneSizesToDBBluesAnticoneSizes(bluesAnticoneSizes map[externalapi.DomainHash]externalapi.KType) []*DbBluesAnticoneSizes {
 	dbBluesAnticoneSizes := make([]*DbBluesAnticoneSizes, len(bluesAnticoneSizes))
 	i := 0
 	for hash, anticoneSize := range bluesAnticoneSizes {
@@ -21,8 +20,8 @@ func bluesAnticoneSizesToDBBluesAnticoneSizes(bluesAnticoneSizes map[externalapi
 	return dbBluesAnticoneSizes
 }
 
-func dbBluesAnticoneSizesToBluesAnticoneSizes(dbBluesAnticoneSizes []*DbBluesAnticoneSizes) (map[externalapi.DomainHash]model.KType, error) {
-	bluesAnticoneSizes := make(map[externalapi.DomainHash]model.KType, len(dbBluesAnticoneSizes))
+func dbBluesAnticoneSizesToBluesAnticoneSizes(dbBluesAnticoneSizes []*DbBluesAnticoneSizes) (map[externalapi.DomainHash]externalapi.KType, error) {
+	bluesAnticoneSizes := make(map[externalapi.DomainHash]externalapi.KType, len(dbBluesAnticoneSizes))
 
 	for _, data := range dbBluesAnticoneSizes {
 		hash, err := DbHashToDomainHash(data.BlueHash)
@@ -39,8 +38,8 @@ func dbBluesAnticoneSizesToBluesAnticoneSizes(dbBluesAnticoneSizes []*DbBluesAnt
 	return bluesAnticoneSizes, nil
 }
 
-func uint32ToKType(n uint32) (model.KType, error) {
-	convertedN := model.KType(n)
+func uint32ToKType(n uint32) (externalapi.KType, error) {
+	convertedN := externalapi.KType(n)
 	if uint32(convertedN) != n {
 		return 0, errors.Errorf("cannot convert %d to KType without losing data", n)
 	}

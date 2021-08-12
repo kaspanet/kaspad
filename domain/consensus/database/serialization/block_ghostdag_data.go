@@ -1,13 +1,12 @@
 package serialization
 
 import (
-	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"math/big"
 )
 
 // BlockGHOSTDAGDataToDBBlockGHOSTDAGData converts BlockGHOSTDAGData to DbBlockGhostdagData
-func BlockGHOSTDAGDataToDBBlockGHOSTDAGData(blockGHOSTDAGData *model.BlockGHOSTDAGData) *DbBlockGhostdagData {
+func BlockGHOSTDAGDataToDBBlockGHOSTDAGData(blockGHOSTDAGData *externalapi.BlockGHOSTDAGData) *DbBlockGhostdagData {
 	var selectedParent *DbHash
 	if blockGHOSTDAGData.SelectedParent() != nil {
 		selectedParent = DomainHashToDbHash(blockGHOSTDAGData.SelectedParent())
@@ -24,7 +23,7 @@ func BlockGHOSTDAGDataToDBBlockGHOSTDAGData(blockGHOSTDAGData *model.BlockGHOSTD
 }
 
 // DBBlockGHOSTDAGDataToBlockGHOSTDAGData converts DbBlockGhostdagData to BlockGHOSTDAGData
-func DBBlockGHOSTDAGDataToBlockGHOSTDAGData(dbBlockGHOSTDAGData *DbBlockGhostdagData) (*model.BlockGHOSTDAGData, error) {
+func DBBlockGHOSTDAGDataToBlockGHOSTDAGData(dbBlockGHOSTDAGData *DbBlockGhostdagData) (*externalapi.BlockGHOSTDAGData, error) {
 	var selectedParent *externalapi.DomainHash
 	if dbBlockGHOSTDAGData.SelectedParent != nil {
 		var err error
@@ -49,7 +48,7 @@ func DBBlockGHOSTDAGDataToBlockGHOSTDAGData(dbBlockGHOSTDAGData *DbBlockGhostdag
 		return nil, err
 	}
 
-	return model.NewBlockGHOSTDAGData(
+	return externalapi.NewBlockGHOSTDAGData(
 		dbBlockGHOSTDAGData.BlueScore,
 		new(big.Int).SetBytes(dbBlockGHOSTDAGData.BlueWork),
 		selectedParent,

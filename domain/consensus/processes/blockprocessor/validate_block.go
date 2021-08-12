@@ -9,13 +9,15 @@ import (
 	"github.com/pkg/errors"
 )
 
-func (bp *blockProcessor) validateBlockAndDiscardChanges(block *externalapi.DomainBlock, isPruningPoint bool) error {
-	return bp.validateBlock(model.NewStagingArea(), block, isPruningPoint)
-}
-
-func (bp *blockProcessor) validateBlock(stagingArea *model.StagingArea, block *externalapi.DomainBlock, isPruningPoint bool) error {
+func (bp *blockProcessor) validateBlock(stagingArea *model.StagingArea, block *externalapi.DomainBlock, isBlockWithTrustedData bool) error {
 	blockHash := consensushashing.HeaderHash(block.Header)
 	log.Debugf("Validating block %s", blockHash)
+
+	// Since genesis has a lot of special cases validation rules, we make sure it's not added unintentionally
+	// on uninitialized node.
+	if blockHash.Equal(bp.genesisHash) && bp.blockStore.Count(stagingArea) != 0 {
+		return errors.Wrapf(ruleerrors.ErrGenesisOnInitializedConsensus, "Cannot add genesis to an initialized consensus")
+	}
 
 	err := bp.checkBlockStatus(stagingArea, block)
 	if err != nil {
@@ -43,7 +45,7 @@ func (bp *blockProcessor) validateBlock(stagingArea *model.StagingArea, block *e
 	}
 
 	if !hasValidatedHeader {
-		err = bp.blockValidator.ValidatePruningPointViolationAndProofOfWorkAndDifficulty(stagingArea, blockHash)
+		err = bp.blockValidator.ValidatePruningPointViolationAndProofOfWorkAndDifficulty(stagingArea, blockHash, isBlockWithTrustedData)
 		if err != nil {
 			return err
 		}
@@ -51,7 +53,7 @@ func (bp *blockProcessor) validateBlock(stagingArea *model.StagingArea, block *e
 
 	// If in-context validations fail, discard all changes and store the
 	// block with StatusInvalid.
-	err = bp.validatePostProofOfWork(stagingArea, block, isPruningPoint)
+	err = bp.validatePostProofOfWork(stagingArea, block, isBlockWithTrustedData)
 	if err != nil {
 		if errors.As(err, &ruleerrors.RuleError{}) {
 			// We mark invalid blocks with status externalapi.StatusInvalid except in the

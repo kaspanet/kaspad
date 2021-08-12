@@ -1,12 +1,12 @@
 package blockvalidator
 
 import (
-	"github.com/kaspanet/kaspad/util/difficulty"
 	"math/big"
 	"time"
 
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+	"github.com/kaspanet/kaspad/util/difficulty"
 )
 
 // blockValidator exposes a set of validation classes, after which
@@ -17,9 +17,9 @@ type blockValidator struct {
 	genesisHash                 *externalapi.DomainHash
 	enableNonNativeSubnetworks  bool
 	powMaxBits                  uint32
-	maxBlockSize                uint64
+	maxBlockMass                uint64
 	mergeSetSizeLimit           uint64
-	maxBlockParents             model.KType
+	maxBlockParents             externalapi.KType
 	timestampDeviationTolerance int
 	targetTimePerBlock          time.Duration
 
@@ -48,9 +48,9 @@ func New(powMax *big.Int,
 	skipPoW bool,
 	genesisHash *externalapi.DomainHash,
 	enableNonNativeSubnetworks bool,
-	maxBlockSize uint64,
+	maxBlockMass uint64,
 	mergeSetSizeLimit uint64,
-	maxBlockParents model.KType,
+	maxBlockParents externalapi.KType,
 	timestampDeviationTolerance int,
 	targetTimePerBlock time.Duration,
 
@@ -82,7 +82,7 @@ func New(powMax *big.Int,
 		genesisHash:                genesisHash,
 		enableNonNativeSubnetworks: enableNonNativeSubnetworks,
 		powMaxBits:                 difficulty.BigToCompact(powMax),
-		maxBlockSize:               maxBlockSize,
+		maxBlockMass:               maxBlockMass,
 		mergeSetSizeLimit:          mergeSetSizeLimit,
 		maxBlockParents:            maxBlockParents,
 

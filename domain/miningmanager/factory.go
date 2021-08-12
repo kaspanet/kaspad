@@ -1,7 +1,7 @@
 package miningmanager
 
 import (
-	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+	"github.com/kaspanet/kaspad/domain/consensusreference"
 	"github.com/kaspanet/kaspad/domain/dagconfig"
 	"github.com/kaspanet/kaspad/domain/miningmanager/blocktemplatebuilder"
 	mempoolpkg "github.com/kaspanet/kaspad/domain/miningmanager/mempool"
@@ -9,17 +9,17 @@ import (
 
 // Factory instantiates new mining managers
 type Factory interface {
-	NewMiningManager(consensus externalapi.Consensus, params *dagconfig.Params, mempoolConfig *mempoolpkg.Config) MiningManager
+	NewMiningManager(consensus consensusreference.ConsensusReference, params *dagconfig.Params, mempoolConfig *mempoolpkg.Config) MiningManager
 }
 
 type factory struct{}
 
 // NewMiningManager instantiate a new mining manager
-func (f *factory) NewMiningManager(consensus externalapi.Consensus, params *dagconfig.Params,
+func (f *factory) NewMiningManager(consensusReference consensusreference.ConsensusReference, params *dagconfig.Params,
 	mempoolConfig *mempoolpkg.Config) MiningManager {
 
-	mempool := mempoolpkg.New(mempoolConfig, consensus)
-	blockTemplateBuilder := blocktemplatebuilder.New(consensus, mempool, params.MaxMassAcceptedByBlock)
+	mempool := mempoolpkg.New(mempoolConfig, consensusReference)
+	blockTemplateBuilder := blocktemplatebuilder.New(consensusReference, mempool, params.MaxBlockMass)
 
 	return &miningManager{
 		mempool:              mempool,

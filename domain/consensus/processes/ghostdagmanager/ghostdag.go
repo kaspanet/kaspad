@@ -15,11 +15,11 @@ type blockGHOSTDAGData struct {
 	selectedParent     *externalapi.DomainHash
 	mergeSetBlues      []*externalapi.DomainHash
 	mergeSetReds       []*externalapi.DomainHash
-	bluesAnticoneSizes map[externalapi.DomainHash]model.KType
+	bluesAnticoneSizes map[externalapi.DomainHash]externalapi.KType
 }
 
-func (bg *blockGHOSTDAGData) toModel() *model.BlockGHOSTDAGData {
-	return model.NewBlockGHOSTDAGData(bg.blueScore, bg.blueWork, bg.selectedParent, bg.mergeSetBlues, bg.mergeSetReds, bg.bluesAnticoneSizes)
+func (bg *blockGHOSTDAGData) toModel() *externalapi.BlockGHOSTDAGData {
+	return externalapi.NewBlockGHOSTDAGData(bg.blueScore, bg.blueWork, bg.selectedParent, bg.mergeSetBlues, bg.mergeSetReds, bg.bluesAnticoneSizes)
 }
 
 // GHOSTDAG runs the GHOSTDAG protocol and calculates the block BlockGHOSTDAGData by the given parents.
@@ -45,7 +45,7 @@ func (gm *ghostdagManager) GHOSTDAG(stagingArea *model.StagingArea, blockHash *e
 		blueWork:           new(big.Int),
 		mergeSetBlues:      make([]*externalapi.DomainHash, 0),
 		mergeSetReds:       make([]*externalapi.DomainHash, 0),
-		bluesAnticoneSizes: make(map[externalapi.DomainHash]model.KType),
+		bluesAnticoneSizes: make(map[externalapi.DomainHash]externalapi.KType),
 	}
 
 	blockParents, err := gm.dagTopologyManager.Parents(stagingArea, blockHash)
@@ -91,7 +91,7 @@ func (gm *ghostdagManager) GHOSTDAG(stagingArea *model.StagingArea, blockHash *e
 	}
 
 	if !isGenesis {
-		selectedParentGHOSTDAGData, err := gm.ghostdagDataStore.Get(gm.databaseContext, stagingArea, newBlockData.selectedParent)
+		selectedParentGHOSTDAGData, err := gm.ghostdagDataStore.Get(gm.databaseContext, stagingArea, newBlockData.selectedParent, false)
 		if err != nil {
 			return err
 		}
@@ -112,27 +112,27 @@ func (gm *ghostdagManager) GHOSTDAG(stagingArea *model.StagingArea, blockHash *e
 		newBlockData.blueWork.SetUint64(0)
 	}
 
-	gm.ghostdagDataStore.Stage(stagingArea, blockHash, newBlockData.toModel())
+	gm.ghostdagDataStore.Stage(stagingArea, blockHash, newBlockData.toModel(), false)
 
 	return nil
 }
 
 type chainBlockData struct {
 	hash      *externalapi.DomainHash
-	blockData *model.BlockGHOSTDAGData
+	blockData *externalapi.BlockGHOSTDAGData
 }
 
-func (gm *ghostdagManager) checkBlueCandidate(stagingArea *model.StagingArea, newBlockData *model.BlockGHOSTDAGData,
-	blueCandidate *externalapi.DomainHash) (isBlue bool, candidateAnticoneSize model.KType,
-	candidateBluesAnticoneSizes map[externalapi.DomainHash]model.KType, err error) {
+func (gm *ghostdagManager) checkBlueCandidate(stagingArea *model.StagingArea, newBlockData *externalapi.BlockGHOSTDAGData,
+	blueCandidate *externalapi.DomainHash) (isBlue bool, candidateAnticoneSize externalapi.KType,
+	candidateBluesAnticoneSizes map[externalapi.DomainHash]externalapi.KType, err error) {
 
 	// The maximum length of node.blues can be K+1 because
 	// it contains the selected parent.
-	if model.KType(len(newBlockData.MergeSetBlues())) == gm.k+1 {
+	if externalapi.KType(len(newBlockData.MergeSetBlues())) == gm.k+1 {
 		return false, 0, nil, nil
 	}
 
-	candidateBluesAnticoneSizes = make(map[externalapi.DomainHash]model.KType, gm.k)
+	candidateBluesAnticoneSizes = make(map[externalapi.DomainHash]externalapi.KType, gm.k)
 
 	// Iterate over all blocks in the blue set of newNode that are not in the past
 	// of blueCandidate, and check for each one of them if blueCandidate potentially
@@ -157,7 +157,7 @@ func (gm *ghostdagManager) checkBlueCandidate(stagingArea *model.StagingArea, ne
 			return false, 0, nil, nil
 		}
 
-		selectedParentGHOSTDAGData, err := gm.ghostdagDataStore.Get(gm.databaseContext, stagingArea, chainBlock.blockData.SelectedParent())
+		selectedParentGHOSTDAGData, err := gm.ghostdagDataStore.Get(gm.databaseContext, stagingArea, chainBlock.blockData.SelectedParent(), false)
 		if err != nil {
 			return false, 0, nil, err
 		}
@@ -171,9 +171,9 @@ func (gm *ghostdagManager) checkBlueCandidate(stagingArea *model.StagingArea, ne
 }
 
 func (gm *ghostdagManager) checkBlueCandidateWithChainBlock(stagingArea *model.StagingArea,
-	newBlockData *model.BlockGHOSTDAGData, chainBlock chainBlockData, blueCandidate *externalapi.DomainHash,
-	candidateBluesAnticoneSizes map[externalapi.DomainHash]model.KType,
-	candidateAnticoneSize *model.KType) (isBlue, isRed bool, err error) {
+	newBlockData *externalapi.BlockGHOSTDAGData, chainBlock chainBlockData, blueCandidate *externalapi.DomainHash,
+	candidateBluesAnticoneSizes map[externalapi.DomainHash]externalapi.KType,
+	candidateAnticoneSize *externalapi.KType) (isBlue, isRed bool, err error) {
 
 	// If blueCandidate is in the future of chainBlock, it means
 	// that all remaining blues are in the past of chainBlock and thus
@@ -236,19 +236,28 @@ func (gm *ghostdagManager) checkBlueCandidateWithChainBlock(stagingArea *model.S
 // blueAnticoneSize returns the blue anticone size of 'block' from the worldview of 'context'.
 // Expects 'block' to be in the blue set of 'context'
 func (gm *ghostdagManager) blueAnticoneSize(stagingArea *model.StagingArea,
-	block *externalapi.DomainHash, context *model.BlockGHOSTDAGData) (model.KType, error) {
+	block *externalapi.DomainHash, context *externalapi.BlockGHOSTDAGData) (externalapi.KType, error) {
 
+	isTrustedData := false
 	for current := context; current != nil; {
 		if blueAnticoneSize, ok := current.BluesAnticoneSizes()[*block]; ok {
 			return blueAnticoneSize, nil
 		}
-		if current.SelectedParent() == nil {
+		if current.SelectedParent().Equal(gm.genesisHash) {
 			break
 		}
+
 		var err error
-		current, err = gm.ghostdagDataStore.Get(gm.databaseContext, stagingArea, current.SelectedParent())
+		current, err = gm.ghostdagDataStore.Get(gm.databaseContext, stagingArea, current.SelectedParent(), isTrustedData)
 		if err != nil {
 			return 0, err
+		}
+		if current.SelectedParent().Equal(model.VirtualGenesisBlockHash) {
+			isTrustedData = true
+			current, err = gm.ghostdagDataStore.Get(gm.databaseContext, stagingArea, current.SelectedParent(), isTrustedData)
+			if err != nil {
+				return 0, err
+			}
 		}
 	}
 	return 0, errors.Errorf("block %s is not in blue set of the given context", block)

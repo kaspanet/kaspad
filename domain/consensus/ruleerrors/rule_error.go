@@ -139,6 +139,9 @@ var (
 	// a Payload
 	ErrInvalidPayload = newRuleError("ErrInvalidPayload")
 
+	// ErrWrongSigOpCount transaction input specifies an incorrect SigOpCount
+	ErrWrongSigOpCount = newRuleError("ErrWrongSigOpCount")
+
 	// ErrSubnetwork indicates that a block doesn't adhere to the subnetwork
 	// registry rules
 	ErrSubnetworkRegistry = newRuleError("ErrSubnetworkRegistry")
@@ -161,9 +164,9 @@ var (
 	// In the same block
 	ErrChainedTransactions = newRuleError("ErrChainedTransactions")
 
-	// ErrBlockSizeTooHigh indicates the size of a block exceeds the maximum
+	// ErrBlockMassTooHigh indicates the mass of a block exceeds the maximum
 	// allowed limits.
-	ErrBlockSizeTooHigh = newRuleError("ErrBlockSizeTooHigh")
+	ErrBlockMassTooHigh = newRuleError("ErrBlockMassTooHigh")
 
 	ErrKnownInvalid = newRuleError("ErrKnownInvalid")
 
@@ -191,6 +194,12 @@ var (
 	ErrPrunedBlock = newRuleError("ErrPrunedBlock")
 
 	ErrGetVirtualUTXOsWrongVirtualParents = newRuleError("ErrGetVirtualUTXOsWrongVirtualParents")
+
+	ErrVirtualGenesisParent = newRuleError("ErrVirtualGenesisParent")
+
+	ErrGenesisOnInitializedConsensus = newRuleError("ErrGenesisOnInitializedConsensus")
+
+	ErrPruningPointSelectedChildDisqualifiedFromChain = newRuleError("ErrPruningPointSelectedChildDisqualifiedFromChain")
 )
 
 // RuleError identifies a rule violation. It is used to indicate that

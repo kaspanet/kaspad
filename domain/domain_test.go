@@ -2,18 +2,20 @@ package domain_test
 
 import (
 	"fmt"
-	"io/ioutil"
-	"os"
-	"strings"
-	"testing"
+	"math/big"
 
 	"github.com/kaspanet/kaspad/domain"
 	"github.com/kaspanet/kaspad/domain/consensus"
+	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/testutils"
 	"github.com/kaspanet/kaspad/domain/miningmanager/mempool"
 	"github.com/kaspanet/kaspad/infrastructure/db/database/ldb"
+	"io/ioutil"
+	"os"
+	"strings"
+	"testing"
 )
 
 func TestCreateStagingConsensus(t *testing.T) {
@@ -44,6 +46,26 @@ func TestCreateStagingConsensus(t *testing.T) {
 			t.Fatalf("unexpected error: %+v", err)
 		}
 
+		addGenesisToStagingConsensus := func() {
+			genesisWithTrustedData := &externalapi.BlockWithTrustedData{
+				Block:     consensusConfig.GenesisBlock,
+				DAAScore:  0,
+				DAAWindow: nil,
+				GHOSTDAGData: []*externalapi.BlockGHOSTDAGDataHashPair{
+					{
+						GHOSTDAGData: externalapi.NewBlockGHOSTDAGData(0, big.NewInt(0), model.VirtualGenesisBlockHash, nil, nil, make(map[externalapi.DomainHash]externalapi.KType)),
+						Hash:         consensusConfig.GenesisHash,
+					},
+				},
+			}
+			_, err = domainInstance.StagingConsensus().ValidateAndInsertBlockWithTrustedData(genesisWithTrustedData, true)
+			if err != nil {
+				t.Fatalf("ValidateAndInsertBlockWithTrustedData: %+v", err)
+			}
+		}
+
+		addGenesisToStagingConsensus()
+
 		coinbaseData := &externalapi.DomainCoinbaseData{
 			ScriptPublicKey: &externalapi.ScriptPublicKey{},
 			ExtraData:       []byte{},
@@ -53,7 +75,7 @@ func TestCreateStagingConsensus(t *testing.T) {
 			t.Fatalf("BuildBlock: %+v", err)
 		}
 
-		_, err = domainInstance.StagingConsensus().ValidateAndInsertBlock(block)
+		_, err = domainInstance.StagingConsensus().ValidateAndInsertBlock(block, true)
 		if err != nil {
 			t.Fatalf("ValidateAndInsertBlock: %+v", err)
 		}
@@ -98,7 +120,8 @@ func TestCreateStagingConsensus(t *testing.T) {
 			t.Fatalf("InitStagingConsensus: %+v", err)
 		}
 
-		_, err = domainInstance.StagingConsensus().ValidateAndInsertBlock(block)
+		addGenesisToStagingConsensus()
+		_, err = domainInstance.StagingConsensus().ValidateAndInsertBlock(block, true)
 		if err != nil {
 			t.Fatalf("ValidateAndInsertBlock: %+v", err)
 		}

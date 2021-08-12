@@ -122,7 +122,7 @@ func mineOrFetchBlock(blockData JSONBlock, mdb *miningDB, testConsensus testapi.
 		SolveBlock(block)
 	}
 
-	_, err = testConsensus.ValidateAndInsertBlock(block)
+	_, err = testConsensus.ValidateAndInsertBlock(block, true)
 	if err != nil {
 		return nil, errors.Wrap(err, "error in ValidateAndInsertBlock")
 	}

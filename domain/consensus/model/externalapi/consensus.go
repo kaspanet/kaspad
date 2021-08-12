@@ -2,8 +2,10 @@ package externalapi
 
 // Consensus maintains the current core state of the node
 type Consensus interface {
+	Init(skipAddingGenesis bool) error
 	BuildBlock(coinbaseData *DomainCoinbaseData, transactions []*DomainTransaction) (*DomainBlock, error)
-	ValidateAndInsertBlock(block *DomainBlock) (*BlockInsertionResult, error)
+	ValidateAndInsertBlock(block *DomainBlock, shouldValidateAgainstUTXO bool) (*BlockInsertionResult, error)
+	ValidateAndInsertBlockWithTrustedData(block *BlockWithTrustedData, validateUTXO bool) (*BlockInsertionResult, error)
 	ValidateTransactionAndPopulateWithConsensusData(transaction *DomainTransaction) error
 
 	GetBlock(blockHash *DomainHash) (*DomainBlock, error)
@@ -18,11 +20,12 @@ type Consensus interface {
 	GetPruningPointUTXOs(expectedPruningPointHash *DomainHash, fromOutpoint *DomainOutpoint, limit int) ([]*OutpointAndUTXOEntryPair, error)
 	GetVirtualUTXOs(expectedVirtualParents []*DomainHash, fromOutpoint *DomainOutpoint, limit int) ([]*OutpointAndUTXOEntryPair, error)
 	PruningPoint() (*DomainHash, error)
+	PruningPointAndItsAnticoneWithTrustedData() ([]*BlockWithTrustedData, error)
 	ClearImportedPruningPointData() error
 	AppendImportedPruningPointUTXOs(outpointAndUTXOEntryPairs []*OutpointAndUTXOEntryPair) error
-	ValidateAndInsertImportedPruningPoint(newPruningPoint *DomainBlock) error
+	ValidateAndInsertImportedPruningPoint(newPruningPoint *DomainHash) error
 	GetVirtualSelectedParent() (*DomainHash, error)
-	CreateBlockLocator(lowHash, highHash *DomainHash, limit uint32) (BlockLocator, error)
+	CreateBlockLocatorFromPruningPoint(highHash *DomainHash, limit uint32) (BlockLocator, error)
 	CreateHeadersSelectedChainBlockLocator(lowHash, highHash *DomainHash) (BlockLocator, error)
 	CreateFullHeadersSelectedChainBlockLocator() (BlockLocator, error)
 	GetSyncInfo() (*SyncInfo, error)
@@ -35,4 +38,6 @@ type Consensus interface {
 	GetHeadersSelectedTip() (*DomainHash, error)
 	Anticone(blockHash *DomainHash) ([]*DomainHash, error)
 	EstimateNetworkHashesPerSecond(startHash *DomainHash, windowSize int) (uint64, error)
+	PopulateMass(transaction *DomainTransaction)
+	ResolveVirtual() error
 }

@@ -31,11 +31,11 @@ func (sm *syncManager) antiPastHashesBetween(stagingArea *model.StagingArea, low
 		return nil, nil, err
 	}
 
-	lowBlockGHOSTDAGData, err := sm.ghostdagDataStore.Get(sm.databaseContext, stagingArea, lowHash)
+	lowBlockGHOSTDAGData, err := sm.ghostdagDataStore.Get(sm.databaseContext, stagingArea, lowHash, false)
 	if err != nil {
 		return nil, nil, err
 	}
-	highBlockGHOSTDAGData, err := sm.ghostdagDataStore.Get(sm.databaseContext, stagingArea, highHash)
+	highBlockGHOSTDAGData, err := sm.ghostdagDataStore.Get(sm.databaseContext, stagingArea, highHash, false)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -104,7 +104,7 @@ func (sm *syncManager) findLowHashInHighHashSelectedParentChain(stagingArea *mod
 		if isInSelectedParentChain {
 			break
 		}
-		lowBlockGHOSTDAGData, err := sm.ghostdagDataStore.Get(sm.databaseContext, stagingArea, lowHash)
+		lowBlockGHOSTDAGData, err := sm.ghostdagDataStore.Get(sm.databaseContext, stagingArea, lowHash, false)
 		if err != nil {
 			return nil, err
 		}

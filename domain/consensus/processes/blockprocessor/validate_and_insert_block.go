@@ -2,6 +2,7 @@ package blockprocessor
 
 import (
 	"fmt"
+	"github.com/kaspanet/kaspad/infrastructure/db/database"
 
 	"github.com/kaspanet/kaspad/util/staging"
 
@@ -60,7 +61,6 @@ func (bp *blockProcessor) setBlockStatusAfterBlockValidation(
 }
 
 func (bp *blockProcessor) updateVirtualAcceptanceDataAfterImportingPruningPoint(stagingArea *model.StagingArea) error {
-
 	_, virtualAcceptanceData, virtualMultiset, err :=
 		bp.consensusStateManager.CalculatePastUTXOAndAcceptanceData(stagingArea, model.VirtualBlockHash)
 	if err != nil {
@@ -76,10 +76,10 @@ func (bp *blockProcessor) updateVirtualAcceptanceDataAfterImportingPruningPoint(
 }
 
 func (bp *blockProcessor) validateAndInsertBlock(stagingArea *model.StagingArea, block *externalapi.DomainBlock,
-	isPruningPoint bool) (*externalapi.BlockInsertionResult, error) {
+	isPruningPoint bool, shouldValidateAgainstUTXO bool, isBlockWithTrustedData bool) (*externalapi.BlockInsertionResult, error) {
 
 	blockHash := consensushashing.HeaderHash(block.Header)
-	err := bp.validateBlock(stagingArea, block, isPruningPoint)
+	err := bp.validateBlock(stagingArea, block, isBlockWithTrustedData)
 	if err != nil {
 		return nil, err
 	}
@@ -90,8 +90,11 @@ func (bp *blockProcessor) validateAndInsertBlock(stagingArea *model.StagingArea,
 	}
 
 	var oldHeadersSelectedTip *externalapi.DomainHash
-	isGenesis := blockHash.Equal(bp.genesisHash)
-	if !isGenesis {
+	hasHeaderSelectedTip, err := bp.headersSelectedTipStore.Has(bp.databaseContext, stagingArea)
+	if err != nil {
+		return nil, err
+	}
+	if hasHeaderSelectedTip {
 		var err error
 		oldHeadersSelectedTip, err = bp.headersSelectedTipStore.HeadersSelectedTip(bp.databaseContext, stagingArea)
 		if err != nil {
@@ -109,31 +112,21 @@ func (bp *blockProcessor) validateAndInsertBlock(stagingArea *model.StagingArea,
 	var reversalData *model.UTXODiffReversalData
 	isHeaderOnlyBlock := isHeaderOnlyBlock(block)
 	if !isHeaderOnlyBlock {
-		// There's no need to update the consensus state manager when
-		// processing the pruning point since it was already handled
-		// in consensusStateManager.ImportPruningPoint
-		if !isPruningPoint {
-			// Attempt to add the block to the virtual
-			selectedParentChainChanges, virtualUTXODiff, reversalData, err = bp.consensusStateManager.AddBlock(stagingArea, blockHash)
-			if err != nil {
-				return nil, err
-			}
-		} else {
-			err := bp.updateVirtualAcceptanceDataAfterImportingPruningPoint(stagingArea)
-			if err != nil {
-				return nil, err
-			}
+		// Attempt to add the block to the virtual
+		selectedParentChainChanges, virtualUTXODiff, reversalData, err = bp.consensusStateManager.AddBlock(stagingArea, blockHash, shouldValidateAgainstUTXO)
+		if err != nil {
+			return nil, err
 		}
 	}
 
-	if !isGenesis {
+	if hasHeaderSelectedTip {
 		err := bp.updateReachabilityReindexRoot(stagingArea, oldHeadersSelectedTip)
 		if err != nil {
 			return nil, err
 		}
 	}
 
-	if !isHeaderOnlyBlock {
+	if !isHeaderOnlyBlock && shouldValidateAgainstUTXO {
 		// Trigger pruning, which will check if the pruning point changed and delete the data if it did.
 		err = bp.pruningManager.UpdatePruningPointByVirtual(stagingArea)
 		if err != nil {
@@ -165,7 +158,11 @@ func (bp *blockProcessor) validateAndInsertBlock(stagingArea *model.StagingArea,
 
 	var logClosureErr error
 	log.Debug(logger.NewLogClosure(func() string {
-		virtualGhostDAGData, err := bp.ghostdagDataStore.Get(bp.databaseContext, stagingArea, model.VirtualBlockHash)
+		virtualGhostDAGData, err := bp.ghostdagDataStore.Get(bp.databaseContext, stagingArea, model.VirtualBlockHash, false)
+		if database.IsNotFoundError(err) {
+			return fmt.Sprintf("Cannot log data for non-existent virtual")
+		}
+
 		if err != nil {
 			logClosureErr = err
 			return fmt.Sprintf("Failed to get virtual GHOSTDAG data: %s", err)
@@ -180,7 +177,9 @@ func (bp *blockProcessor) validateAndInsertBlock(stagingArea *model.StagingArea,
 	}
 
 	virtualParents, err := bp.dagTopologyManager.Parents(stagingArea, model.VirtualBlockHash)
-	if err != nil {
+	if database.IsNotFoundError(err) {
+		virtualParents = nil
+	} else if err != nil {
 		return nil, err
 	}
 
@@ -275,7 +274,7 @@ func (bp *blockProcessor) validatePreProofOfWork(stagingArea *model.StagingArea,
 	return nil
 }
 
-func (bp *blockProcessor) validatePostProofOfWork(stagingArea *model.StagingArea, block *externalapi.DomainBlock, isPruningPoint bool) error {
+func (bp *blockProcessor) validatePostProofOfWork(stagingArea *model.StagingArea, block *externalapi.DomainBlock, isBlockWithTrustedData bool) error {
 	blockHash := consensushashing.BlockHash(block)
 
 	isHeaderOnlyBlock := isHeaderOnlyBlock(block)
@@ -293,14 +292,14 @@ func (bp *blockProcessor) validatePostProofOfWork(stagingArea *model.StagingArea
 	}
 
 	if !hasValidatedHeader {
-		err = bp.blockValidator.ValidateHeaderInContext(stagingArea, blockHash)
+		err = bp.blockValidator.ValidateHeaderInContext(stagingArea, blockHash, isBlockWithTrustedData)
 		if err != nil {
 			return err
 		}
 	}
 
 	if !isHeaderOnlyBlock {
-		err = bp.blockValidator.ValidateBodyInContext(stagingArea, blockHash, isPruningPoint)
+		err = bp.blockValidator.ValidateBodyInContext(stagingArea, blockHash, isBlockWithTrustedData)
 		if err != nil {
 			return err
 		}

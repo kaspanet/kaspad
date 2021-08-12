@@ -1,9 +1,10 @@
 package serialization
 
 import (
+	"math"
+
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/pkg/errors"
-	"math"
 )
 
 // DomainTransactionToDbTransaction converts DomainTransaction to DbTransaction
@@ -14,6 +15,7 @@ func DomainTransactionToDbTransaction(domainTransaction *externalapi.DomainTrans
 			PreviousOutpoint: DomainOutpointToDbOutpoint(&domainTransactionInput.PreviousOutpoint),
 			SignatureScript:  domainTransactionInput.SignatureScript,
 			Sequence:         domainTransactionInput.Sequence,
+			SigOpCount:       uint32(domainTransactionInput.SigOpCount),
 		}
 	}
 
@@ -54,6 +56,7 @@ func DbTransactionToDomainTransaction(dbTransaction *DbTransaction) (*externalap
 			PreviousOutpoint: *domainPreviousOutpoint,
 			SignatureScript:  dbTransactionInput.SignatureScript,
 			Sequence:         dbTransactionInput.Sequence,
+			SigOpCount:       byte(dbTransactionInput.SigOpCount),
 		}
 	}
 

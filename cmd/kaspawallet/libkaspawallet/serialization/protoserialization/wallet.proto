@@ -13,7 +13,7 @@ message PartiallySignedInput{
   TransactionOutput prevOutput = 2;
   uint32 minimumSignatures = 3;
   repeated PubKeySignaturePair pubKeySignaturePairs = 4;
-  string DerivationPath = 5;
+  string derivationPath = 5;
 }
 
 message PubKeySignaturePair{
@@ -39,6 +39,7 @@ message TransactionInput{
   Outpoint previousOutpoint = 1;
   bytes signatureScript = 2;
   uint64 sequence = 3;
+  uint32 sigOpCount = 4;
 }
 
 message Outpoint{

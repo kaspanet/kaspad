@@ -4,8 +4,8 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/pow"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/virtual"
 	"github.com/kaspanet/kaspad/infrastructure/db/database"
 	"github.com/kaspanet/kaspad/infrastructure/logger"
 	"github.com/kaspanet/kaspad/util/difficulty"
@@ -13,7 +13,7 @@ import (
 )
 
 func (v *blockValidator) ValidatePruningPointViolationAndProofOfWorkAndDifficulty(stagingArea *model.StagingArea,
-	blockHash *externalapi.DomainHash) error {
+	blockHash *externalapi.DomainHash, isBlockWithTrustedData bool) error {
 
 	onEnd := logger.LogAndMeasureExecutionTime(log, "ValidatePruningPointViolationAndProofOfWorkAndDifficulty")
 	defer onEnd()
@@ -23,17 +23,27 @@ func (v *blockValidator) ValidatePruningPointViolationAndProofOfWorkAndDifficult
 		return err
 	}
 
-	err = v.checkParentHeadersExist(stagingArea, header)
+	err = v.checkParentNotVirtualGenesis(header)
 	if err != nil {
 		return err
 	}
 
-	err = v.checkParentsIncest(stagingArea, header)
+	err = v.checkParentHeadersExist(stagingArea, header, isBlockWithTrustedData)
 	if err != nil {
 		return err
 	}
 
-	err = v.checkPruningPointViolation(stagingArea, header)
+	err = v.setParents(stagingArea, blockHash, header, isBlockWithTrustedData)
+	if err != nil {
+		return err
+	}
+
+	err = v.checkParentsIncest(stagingArea, blockHash)
+	if err != nil {
+		return err
+	}
+
+	err = v.checkPruningPointViolation(stagingArea, blockHash)
 	if err != nil {
 		return err
 	}
@@ -43,12 +53,7 @@ func (v *blockValidator) ValidatePruningPointViolationAndProofOfWorkAndDifficult
 		return err
 	}
 
-	err = v.dagTopologyManager.SetParents(stagingArea, blockHash, header.ParentHashes())
-	if err != nil {
-		return err
-	}
-
-	err = v.validateDifficulty(stagingArea, blockHash)
+	err = v.validateDifficulty(stagingArea, blockHash, isBlockWithTrustedData)
 	if err != nil {
 		return err
 	}
@@ -56,17 +61,51 @@ func (v *blockValidator) ValidatePruningPointViolationAndProofOfWorkAndDifficult
 	return nil
 }
 
-func (v *blockValidator) validateDifficulty(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) error {
-	// We need to calculate GHOSTDAG for the block in order to check its difficulty
-	err := v.ghostdagManager.GHOSTDAG(stagingArea, blockHash)
-	if err != nil {
-		return err
+func (v *blockValidator) setParents(stagingArea *model.StagingArea,
+	blockHash *externalapi.DomainHash,
+	header externalapi.BlockHeader,
+	isBlockWithTrustedData bool) error {
+
+	parents := make([]*externalapi.DomainHash, 0, len(header.ParentHashes()))
+	for _, currentParent := range header.ParentHashes() {
+		exists, err := v.blockStatusStore.Exists(v.databaseContext, stagingArea, currentParent)
+		if err != nil {
+			return err
+		}
+
+		if !exists {
+			if !isBlockWithTrustedData {
+				return errors.Errorf("only block with prefilled information can have some missing parents")
+			}
+			continue
+		}
+
+		parents = append(parents, currentParent)
+	}
+
+	if len(parents) == 0 {
+		parents = append(parents, model.VirtualGenesisBlockHash)
+	}
+
+	return v.dagTopologyManager.SetParents(stagingArea, blockHash, parents)
+}
+
+func (v *blockValidator) validateDifficulty(stagingArea *model.StagingArea,
+	blockHash *externalapi.DomainHash,
+	isBlockWithTrustedData bool) error {
+
+	if !isBlockWithTrustedData {
+		// We need to calculate GHOSTDAG for the block in order to check its difficulty
+		err := v.ghostdagManager.GHOSTDAG(stagingArea, blockHash)
+		if err != nil {
+			return err
+		}
 	}
 
 	// Ensure the difficulty specified in the block header matches
 	// the calculated difficulty based on the previous block and
 	// difficulty retarget rules.
-	expectedBits, err := v.difficultyManager.StageDAADataAndReturnRequiredDifficulty(stagingArea, blockHash)
+	expectedBits, err := v.difficultyManager.StageDAADataAndReturnRequiredDifficulty(stagingArea, blockHash, isBlockWithTrustedData)
 	if err != nil {
 		return err
 	}
@@ -113,7 +152,24 @@ func (v *blockValidator) checkProofOfWork(header externalapi.BlockHeader) error 
 	return nil
 }
 
-func (v *blockValidator) checkParentHeadersExist(stagingArea *model.StagingArea, header externalapi.BlockHeader) error {
+func (v *blockValidator) checkParentNotVirtualGenesis(header externalapi.BlockHeader) error {
+	for _, parent := range header.ParentHashes() {
+		if parent.Equal(model.VirtualGenesisBlockHash) {
+			return errors.Wrapf(ruleerrors.ErrVirtualGenesisParent, "block header cannot have the virtual genesis as parent")
+		}
+	}
+
+	return nil
+}
+
+func (v *blockValidator) checkParentHeadersExist(stagingArea *model.StagingArea,
+	header externalapi.BlockHeader,
+	isBlockWithTrustedData bool) error {
+
+	if isBlockWithTrustedData {
+		return nil
+	}
+
 	missingParentHashes := []*externalapi.DomainHash{}
 	for _, parent := range header.ParentHashes() {
 		parentHeaderExists, err := v.blockHeaderStore.HasBlockHeader(v.databaseContext, stagingArea, parent)
@@ -141,7 +197,7 @@ func (v *blockValidator) checkParentHeadersExist(stagingArea *model.StagingArea,
 
 	return nil
 }
-func (v *blockValidator) checkPruningPointViolation(stagingArea *model.StagingArea, header externalapi.BlockHeader) error {
+func (v *blockValidator) checkPruningPointViolation(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) error {
 	// check if the pruning point is on past of at least one parent of the header's parents.
 
 	hasPruningPoint, err := v.pruningStore.HasPruningPoint(v.databaseContext, stagingArea)
@@ -159,13 +215,23 @@ func (v *blockValidator) checkPruningPointViolation(stagingArea *model.StagingAr
 		return err
 	}
 
-	isAncestorOfAny, err := v.dagTopologyManager.IsAncestorOfAny(stagingArea, pruningPoint, header.ParentHashes())
+	parents, err := v.dagTopologyManager.Parents(stagingArea, blockHash)
 	if err != nil {
 		return err
 	}
+
+	if virtual.ContainsOnlyVirtualGenesis(parents) {
+		return nil
+	}
+
+	isAncestorOfAny, err := v.dagTopologyManager.IsAncestorOfAny(stagingArea, pruningPoint, parents)
+	if err != nil {
+		return err
+	}
+
 	if !isAncestorOfAny {
 		return errors.Wrapf(ruleerrors.ErrPruningPointViolation,
-			"expected pruning point %s to be in block %s past.", pruningPoint, consensushashing.HeaderHash(header))
+			"expected pruning point %s to be in block %s past.", pruningPoint, blockHash)
 	}
 	return nil
 }

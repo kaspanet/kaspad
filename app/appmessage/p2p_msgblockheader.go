@@ -81,12 +81,6 @@ func (h *MsgBlockHeader) IsGenesis() bool {
 	return h.NumParentBlocks() == 0
 }
 
-// Command returns the protocol command string for the message. This is part
-// of the Message interface implementation.
-func (h *MsgBlockHeader) Command() MessageCommand {
-	return CmdHeader
-}
-
 // NewBlockHeader returns a new MsgBlockHeader using the provided version, previous
 // block hash, hash merkle root, accepted ID merkle root, difficulty bits, and nonce used to generate the
 // block with defaults or calclulated values for the remaining fields.

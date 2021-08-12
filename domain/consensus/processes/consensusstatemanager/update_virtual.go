@@ -17,7 +17,7 @@ func (csm *consensusStateManager) updateVirtual(stagingArea *model.StagingArea, 
 	log.Debugf("Saving a reference to the GHOSTDAG data of the old virtual")
 	var oldVirtualSelectedParent *externalapi.DomainHash
 	if !newBlockHash.Equal(csm.genesisHash) {
-		oldVirtualGHOSTDAGData, err := csm.ghostdagDataStore.Get(csm.databaseContext, stagingArea, model.VirtualBlockHash)
+		oldVirtualGHOSTDAGData, err := csm.ghostdagDataStore.Get(csm.databaseContext, stagingArea, model.VirtualBlockHash, false)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -31,28 +31,55 @@ func (csm *consensusStateManager) updateVirtual(stagingArea *model.StagingArea, 
 	}
 	log.Debugf("Picked virtual parents: %s", virtualParents)
 
-	err = csm.dagTopologyManager.SetParents(stagingArea, model.VirtualBlockHash, virtualParents)
+	virtualUTXODiff, err := csm.updateVirtualWithParents(stagingArea, virtualParents)
 	if err != nil {
 		return nil, nil, err
+	}
+
+	log.Debugf("Calculating selected parent chain changes")
+	var selectedParentChainChanges *externalapi.SelectedChainPath
+	if !newBlockHash.Equal(csm.genesisHash) {
+		newVirtualGHOSTDAGData, err := csm.ghostdagDataStore.Get(csm.databaseContext, stagingArea, model.VirtualBlockHash, false)
+		if err != nil {
+			return nil, nil, err
+		}
+		newVirtualSelectedParent := newVirtualGHOSTDAGData.SelectedParent()
+		selectedParentChainChanges, err = csm.dagTraversalManager.
+			CalculateChainPath(stagingArea, oldVirtualSelectedParent, newVirtualSelectedParent)
+		if err != nil {
+			return nil, nil, err
+		}
+		log.Debugf("Selected parent chain changes: %d blocks were removed and %d blocks were added",
+			len(selectedParentChainChanges.Removed), len(selectedParentChainChanges.Added))
+	}
+
+	return selectedParentChainChanges, virtualUTXODiff, nil
+}
+
+func (csm *consensusStateManager) updateVirtualWithParents(
+	stagingArea *model.StagingArea, virtualParents []*externalapi.DomainHash) (externalapi.UTXODiff, error) {
+	err := csm.dagTopologyManager.SetParents(stagingArea, model.VirtualBlockHash, virtualParents)
+	if err != nil {
+		return nil, err
 	}
 	log.Debugf("Set new parents for the virtual block hash")
 
 	err = csm.ghostdagManager.GHOSTDAG(stagingArea, model.VirtualBlockHash)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	// This is needed for `csm.CalculatePastUTXOAndAcceptanceData`
-	_, err = csm.difficultyManager.StageDAADataAndReturnRequiredDifficulty(stagingArea, model.VirtualBlockHash)
+	_, err = csm.difficultyManager.StageDAADataAndReturnRequiredDifficulty(stagingArea, model.VirtualBlockHash, false)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	log.Debugf("Calculating past UTXO, acceptance data, and multiset for the new virtual block")
 	virtualUTXODiff, virtualAcceptanceData, virtualMultiset, err :=
 		csm.CalculatePastUTXOAndAcceptanceData(stagingArea, model.VirtualBlockHash)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	log.Debugf("Calculated the past UTXO of the new virtual. "+
@@ -68,30 +95,13 @@ func (csm *consensusStateManager) updateVirtual(stagingArea *model.StagingArea, 
 	log.Debugf("Staging new UTXO diff for the virtual block")
 	csm.consensusStateStore.StageVirtualUTXODiff(stagingArea, virtualUTXODiff)
 
-	log.Debugf("Updating the selected tip's utxo-diff after adding %s to the DAG", newBlockHash)
+	log.Debugf("Updating the selected tip's utxo-diff")
 	err = csm.updateSelectedTipUTXODiff(stagingArea, virtualUTXODiff)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
-	log.Debugf("Calculating selected parent chain changes")
-	var selectedParentChainChanges *externalapi.SelectedChainPath
-	if !newBlockHash.Equal(csm.genesisHash) {
-		newVirtualGHOSTDAGData, err := csm.ghostdagDataStore.Get(csm.databaseContext, stagingArea, model.VirtualBlockHash)
-		if err != nil {
-			return nil, nil, err
-		}
-		newVirtualSelectedParent := newVirtualGHOSTDAGData.SelectedParent()
-		selectedParentChainChanges, err = csm.dagTraversalManager.
-			CalculateChainPath(stagingArea, oldVirtualSelectedParent, newVirtualSelectedParent)
-		if err != nil {
-			return nil, nil, err
-		}
-		log.Debugf("Selected parent chain changes: %d blocks were removed and %d blocks were added",
-			len(selectedParentChainChanges.Removed), len(selectedParentChainChanges.Added))
-	}
-
-	return selectedParentChainChanges, virtualUTXODiff, nil
+	return virtualUTXODiff, nil
 }
 
 func (csm *consensusStateManager) updateSelectedTipUTXODiff(

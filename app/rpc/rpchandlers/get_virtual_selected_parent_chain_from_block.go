@@ -32,6 +32,6 @@ func HandleGetVirtualSelectedParentChainFromBlock(context *rpccontext.Context, _
 	}
 
 	response := appmessage.NewGetVirtualSelectedParentChainFromBlockResponseMessage(
-		chainChangedNotification.RemovedChainBlockHashes, chainChangedNotification.AddedChainBlocks)
+		chainChangedNotification.RemovedChainBlockHashes, chainChangedNotification.AddedChainBlockHashes)
 	return response, nil
 }

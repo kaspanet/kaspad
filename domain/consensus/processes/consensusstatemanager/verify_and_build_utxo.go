@@ -83,9 +83,9 @@ func (csm *consensusStateManager) validateBlockTransactionsAgainstPastUTXO(stagi
 			return err
 		}
 
-		log.Tracef("Validating transaction %s and populating it with mass and fee", transactionID)
-		err = csm.transactionValidator.ValidateTransactionInContextAndPopulateMassAndFee(
-			stagingArea, transaction, blockHash, selectedParentMedianTime)
+		log.Tracef("Validating transaction %s and populating it with fee", transactionID)
+		err = csm.transactionValidator.ValidateTransactionInContextAndPopulateFee(
+			stagingArea, transaction, blockHash)
 		if err != nil {
 			return err
 		}

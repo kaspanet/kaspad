@@ -3,26 +3,80 @@ package dagtraversalmanager
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+	"github.com/kaspanet/kaspad/infrastructure/db/database"
 )
 
 // BlockWindow returns a blockWindow of the given size that contains the
 // blocks in the past of highHash, the sorting is unspecified.
 // If the number of blocks in the past of startingNode is less then windowSize,
-// the window will be padded by genesis blocks to achieve a size of windowSize.
-func (dtm *dagTraversalManager) BlockWindow(stagingArea *model.StagingArea, highHash *externalapi.DomainHash, windowSize int) ([]*externalapi.DomainHash, error) {
-	currentGHOSTDAGData, err := dtm.ghostdagDataStore.Get(dtm.databaseContext, stagingArea, highHash)
+func (dtm *dagTraversalManager) BlockWindow(stagingArea *model.StagingArea, highHash *externalapi.DomainHash,
+	windowSize int) ([]*externalapi.DomainHash, error) {
+
+	windowHeap, err := dtm.calculateBlockWindowHeap(stagingArea, highHash, windowSize)
 	if err != nil {
 		return nil, err
 	}
 
-	windowHeap := dtm.newSizedUpHeap(stagingArea, windowSize)
+	window := make([]*externalapi.DomainHash, 0, len(windowHeap.impl.slice))
+	for _, b := range windowHeap.impl.slice {
+		window = append(window, b.Hash)
+	}
+	return window, nil
+}
 
-	for windowHeap.len() <= windowSize &&
-		currentGHOSTDAGData.SelectedParent() != nil &&
-		!currentGHOSTDAGData.SelectedParent().Equal(dtm.genesisHash) {
+func (dtm *dagTraversalManager) BlockWindowWithGHOSTDAGData(stagingArea *model.StagingArea,
+	highHash *externalapi.DomainHash, windowSize int) ([]*externalapi.BlockGHOSTDAGDataHashPair, error) {
+
+	windowHeap, err := dtm.calculateBlockWindowHeap(stagingArea, highHash, windowSize)
+	if err != nil {
+		return nil, err
+	}
+
+	return windowHeap.impl.slice, nil
+}
+
+func (dtm *dagTraversalManager) calculateBlockWindowHeap(stagingArea *model.StagingArea, highHash *externalapi.DomainHash, windowSize int) (*sizedUpBlockHeap, error) {
+
+	windowHeap := dtm.newSizedUpHeap(stagingArea, windowSize)
+	if highHash.Equal(dtm.genesisHash) {
+		return windowHeap, nil
+	}
+
+	current := highHash
+	currentGHOSTDAGData, err := dtm.ghostdagDataStore.Get(dtm.databaseContext, stagingArea, highHash, false)
+	if err != nil {
+		return nil, err
+	}
+
+	for {
+		if currentGHOSTDAGData.SelectedParent().Equal(dtm.genesisHash) {
+			break
+		}
+
+		if currentGHOSTDAGData.SelectedParent().Equal(model.VirtualGenesisBlockHash) {
+			for i := uint64(0); ; i++ {
+				daaBlock, err := dtm.daaWindowStore.DAAWindowBlock(dtm.databaseContext, stagingArea, current, i)
+				if database.IsNotFoundError(err) {
+					break
+				}
+				if err != nil {
+					return nil, err
+				}
+
+				_, err = windowHeap.tryPushWithGHOSTDAGData(daaBlock.Hash, daaBlock.GHOSTDAGData)
+				if err != nil {
+					return nil, err
+				}
+
+				// Right now we go over all of the window of `current` and filter blocks on the fly.
+				// We can optimize it if we make sure that daaWindowStore stores sorted windows, and
+				// then return from this function once one block was not added to the heap.
+			}
+			break
+		}
 
 		selectedParentGHOSTDAGData, err := dtm.ghostdagDataStore.Get(
-			dtm.databaseContext, stagingArea, currentGHOSTDAGData.SelectedParent())
+			dtm.databaseContext, stagingArea, currentGHOSTDAGData.SelectedParent(), false)
 		if err != nil {
 			return nil, err
 		}
@@ -51,6 +105,7 @@ func (dtm *dagTraversalManager) BlockWindow(stagingArea *model.StagingArea, high
 				break
 			}
 		}
+
 		mergeSetReds := currentGHOSTDAGData.MergeSetReds()
 		for i := len(mergeSetReds) - 1; i >= 0; i-- {
 			added, err := windowHeap.tryPush(mergeSetReds[i])
@@ -62,12 +117,10 @@ func (dtm *dagTraversalManager) BlockWindow(stagingArea *model.StagingArea, high
 				break
 			}
 		}
+
+		current = currentGHOSTDAGData.SelectedParent()
 		currentGHOSTDAGData = selectedParentGHOSTDAGData
 	}
 
-	window := make([]*externalapi.DomainHash, 0, len(windowHeap.impl.slice))
-	for _, b := range windowHeap.impl.slice {
-		window = append(window, b.hash)
-	}
-	return window, nil
+	return windowHeap, nil
 }

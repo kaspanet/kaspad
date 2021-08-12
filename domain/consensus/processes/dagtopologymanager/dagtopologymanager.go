@@ -184,7 +184,7 @@ func (dtm *dagTopologyManager) ChildInSelectedParentChainOf(stagingArea *model.S
 	// use it's selected parent as highHash.
 	specifiedHighHash := highHash
 	if highHash == model.VirtualBlockHash {
-		ghostdagData, err := dtm.ghostdagStore.Get(dtm.databaseContext, stagingArea, highHash)
+		ghostdagData, err := dtm.ghostdagStore.Get(dtm.databaseContext, stagingArea, highHash, false)
 		if err != nil {
 			return nil, err
 		}

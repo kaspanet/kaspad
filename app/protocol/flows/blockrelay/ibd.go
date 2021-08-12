@@ -1,7 +1,6 @@
 package blockrelay
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/kaspanet/kaspad/infrastructure/logger"
@@ -31,37 +30,43 @@ func (flow *handleRelayInvsFlow) runIBDIfNotRunning(highHash *externalapi.Domain
 	}()
 
 	log.Debugf("IBD started with peer %s and highHash %s", flow.peer, highHash)
-	log.Debugf("Syncing headers up to %s", highHash)
-	headersSynced, err := flow.syncHeaders(highHash)
+	log.Debugf("Syncing blocks up to %s", highHash)
+	log.Debugf("Trying to find highest shared chain block with peer %s with high hash %s", flow.peer, highHash)
+	highestSharedBlockHash, highestSharedBlockFound, err := flow.findHighestSharedBlockHash(highHash)
 	if err != nil {
 		return err
 	}
-	if !headersSynced {
-		log.Debugf("Aborting IBD because the headers failed to sync")
-		return nil
-	}
-	log.Debugf("Finished syncing headers up to %s", highHash)
+	log.Debugf("Found highest shared chain block %s with peer %s", highestSharedBlockHash, flow.peer)
 
-	log.Debugf("Syncing the current pruning point UTXO set")
-	syncedPruningPointUTXOSetSuccessfully, err := flow.syncPruningPointUTXOSet()
+	shouldDownloadHeadersProof, shouldSync, err := flow.shouldSyncAndShouldDownloadHeadersProof(highHash, highestSharedBlockFound)
 	if err != nil {
 		return err
 	}
-	if !syncedPruningPointUTXOSetSuccessfully {
-		log.Debugf("Aborting IBD because the pruning point UTXO set failed to sync")
+
+	if !shouldSync {
 		return nil
 	}
-	log.Debugf("Finished syncing the current pruning point UTXO set")
 
-	log.Debugf("Downloading block bodies up to %s", highHash)
+	if shouldDownloadHeadersProof {
+		log.Infof("Starting IBD with headers proof")
+		err := flow.ibdWithHeadersProof(highHash)
+		if err != nil {
+			return err
+		}
+	} else {
+		err = flow.syncPruningPointFutureHeaders(flow.Domain().Consensus(), highestSharedBlockHash, highHash)
+		if err != nil {
+			return err
+		}
+	}
+
 	err = flow.syncMissingBlockBodies(highHash)
 	if err != nil {
 		return err
 	}
-	log.Debugf("Finished downloading block bodies up to %s", highHash)
 
+	log.Debugf("Finished syncing blocks up to %s", highHash)
 	isFinishedSuccessfully = true
-
 	return nil
 }
 
@@ -71,38 +76,6 @@ func (flow *handleRelayInvsFlow) logIBDFinished(isFinishedSuccessfully bool) {
 		successString = "(interrupted)"
 	}
 	log.Infof("IBD finished %s", successString)
-}
-
-// syncHeaders attempts to sync headers from the peer. This method may fail
-// because the peer and us have conflicting pruning points. In that case we
-// return (false, nil) so that we may stop IBD gracefully.
-func (flow *handleRelayInvsFlow) syncHeaders(highHash *externalapi.DomainHash) (bool, error) {
-	log.Debugf("Trying to find highest shared chain block with peer %s with high hash %s", flow.peer, highHash)
-	highestSharedBlockHash, highestSharedBlockFound, err := flow.findHighestSharedBlockHash(highHash)
-	if err != nil {
-		return false, err
-	}
-	if !highestSharedBlockFound {
-		return false, nil
-	}
-	log.Debugf("Found highest shared chain block %s with peer %s", highestSharedBlockHash, flow.peer)
-
-	err = flow.downloadHeaders(highestSharedBlockHash, highHash)
-	if err != nil {
-		return false, err
-	}
-
-	// If the highHash has not been received, the peer is misbehaving
-	highHashBlockInfo, err := flow.Domain().Consensus().GetBlockInfo(highHash)
-	if err != nil {
-		return false, err
-	}
-	if !highHashBlockInfo.Exists {
-		return false, protocolerrors.Errorf(true, "did not receive "+
-			"highHash header %s from peer %s during header download", highHash, flow.peer)
-	}
-	log.Debugf("Headers downloaded from peer %s", flow.peer)
-	return true, nil
 }
 
 // findHighestSharedBlock attempts to find the highest shared block between the peer
@@ -222,20 +195,22 @@ func (flow *handleRelayInvsFlow) fetchHighestHash(
 	}
 }
 
-func (flow *handleRelayInvsFlow) downloadHeaders(highestSharedBlockHash *externalapi.DomainHash,
+func (flow *handleRelayInvsFlow) syncPruningPointFutureHeaders(consensus externalapi.Consensus, highestSharedBlockHash *externalapi.DomainHash,
 	highHash *externalapi.DomainHash) error {
+
+	log.Infof("Downloading headers from %s", flow.peer)
 
 	err := flow.sendRequestHeaders(highestSharedBlockHash, highHash)
 	if err != nil {
 		return err
 	}
 
-	// Keep a short queue of blockHeadersMessages so that there's
+	// Keep a short queue of BlockHeadersMessages so that there's
 	// never a moment when the node is not validating and inserting
 	// headers
 	blockHeadersMessageChan := make(chan *appmessage.BlockHeadersMessage, 2)
 	errChan := make(chan error)
-	spawn("handleRelayInvsFlow-downloadHeaders", func() {
+	spawn("handleRelayInvsFlow-syncPruningPointFutureHeaders", func() {
 		for {
 			blockHeadersMessage, doneIBD, err := flow.receiveHeaders()
 			if err != nil {
@@ -259,12 +234,21 @@ func (flow *handleRelayInvsFlow) downloadHeaders(highestSharedBlockHash *externa
 
 	for {
 		select {
-		case blockHeadersMessage, ok := <-blockHeadersMessageChan:
+		case ibdBlocksMessage, ok := <-blockHeadersMessageChan:
 			if !ok {
+				// If the highHash has not been received, the peer is misbehaving
+				highHashBlockInfo, err := consensus.GetBlockInfo(highHash)
+				if err != nil {
+					return err
+				}
+				if !highHashBlockInfo.Exists {
+					return protocolerrors.Errorf(true, "did not receive "+
+						"highHash block %s from peer %s during block download", highHash, flow.peer)
+				}
 				return nil
 			}
-			for _, header := range blockHeadersMessage.BlockHeaders {
-				err = flow.processHeader(header)
+			for _, block := range ibdBlocksMessage.BlockHeaders {
+				err = flow.processHeader(consensus, block)
 				if err != nil {
 					return err
 				}
@@ -282,7 +266,7 @@ func (flow *handleRelayInvsFlow) sendRequestHeaders(highestSharedBlockHash *exte
 	return flow.outgoingRoute.Enqueue(msgGetBlockInvs)
 }
 
-func (flow *handleRelayInvsFlow) receiveHeaders() (msgIBDBlock *appmessage.BlockHeadersMessage, doneIBD bool, err error) {
+func (flow *handleRelayInvsFlow) receiveHeaders() (msgIBDBlock *appmessage.BlockHeadersMessage, doneHeaders bool, err error) {
 	message, err := flow.dequeueIncomingMessageAndSkipInvs(common.DefaultTimeout)
 	if err != nil {
 		return nil, false, err
@@ -295,11 +279,14 @@ func (flow *handleRelayInvsFlow) receiveHeaders() (msgIBDBlock *appmessage.Block
 	default:
 		return nil, false,
 			protocolerrors.Errorf(true, "received unexpected message type. "+
-				"expected: %s or %s, got: %s", appmessage.CmdHeader, appmessage.CmdDoneHeaders, message.Command())
+				"expected: %s or %s, got: %s",
+				appmessage.CmdBlockHeaders,
+				appmessage.CmdDoneHeaders,
+				message.Command())
 	}
 }
 
-func (flow *handleRelayInvsFlow) processHeader(msgBlockHeader *appmessage.MsgBlockHeader) error {
+func (flow *handleRelayInvsFlow) processHeader(consensus externalapi.Consensus, msgBlockHeader *appmessage.MsgBlockHeader) error {
 	header := appmessage.BlockHeaderToDomainBlockHeader(msgBlockHeader)
 	block := &externalapi.DomainBlock{
 		Header:       header,
@@ -307,7 +294,7 @@ func (flow *handleRelayInvsFlow) processHeader(msgBlockHeader *appmessage.MsgBlo
 	}
 
 	blockHash := consensushashing.BlockHash(block)
-	blockInfo, err := flow.Domain().Consensus().GetBlockInfo(blockHash)
+	blockInfo, err := consensus.GetBlockInfo(blockHash)
 	if err != nil {
 		return err
 	}
@@ -315,7 +302,7 @@ func (flow *handleRelayInvsFlow) processHeader(msgBlockHeader *appmessage.MsgBlo
 		log.Debugf("Block header %s is already in the DAG. Skipping...", blockHash)
 		return nil
 	}
-	_, err = flow.Domain().Consensus().ValidateAndInsertBlock(block)
+	_, err = consensus.ValidateAndInsertBlock(block, false)
 	if err != nil {
 		if !errors.As(err, &ruleerrors.RuleError{}) {
 			return errors.Wrapf(err, "failed to process header %s during IBD", blockHash)
@@ -332,129 +319,8 @@ func (flow *handleRelayInvsFlow) processHeader(msgBlockHeader *appmessage.MsgBlo
 	return nil
 }
 
-func (flow *handleRelayInvsFlow) syncPruningPointUTXOSet() (bool, error) {
-	log.Debugf("Checking if a new pruning point is available")
-	err := flow.outgoingRoute.Enqueue(appmessage.NewMsgRequestPruningPointHashMessage())
-	if err != nil {
-		return false, err
-	}
-	message, err := flow.dequeueIncomingMessageAndSkipInvs(common.DefaultTimeout)
-	if err != nil {
-		return false, err
-	}
-	msgPruningPointHash, ok := message.(*appmessage.MsgPruningPointHashMessage)
-	if !ok {
-		return false, protocolerrors.Errorf(true, "received unexpected message type. "+
-			"expected: %s, got: %s", appmessage.CmdPruningPointHash, message.Command())
-	}
-
-	blockInfo, err := flow.Domain().Consensus().GetBlockInfo(msgPruningPointHash.Hash)
-	if err != nil {
-		return false, err
-	}
-
-	if !blockInfo.Exists {
-		return false, errors.Errorf("The pruning point header is missing")
-	}
-
-	if blockInfo.BlockStatus != externalapi.StatusHeaderOnly {
-		log.Debugf("Already has the block data of the new suggested pruning point %s", msgPruningPointHash.Hash)
-		return true, nil
-	}
-
-	log.Infof("Checking if the suggested pruning point %s is compatible to the node DAG", msgPruningPointHash.Hash)
-	isValid, err := flow.Domain().Consensus().IsValidPruningPoint(msgPruningPointHash.Hash)
-	if err != nil {
-		return false, err
-	}
-
-	if !isValid {
-		log.Infof("The suggested pruning point %s is incompatible to this node DAG, so stopping IBD with this"+
-			" peer", msgPruningPointHash.Hash)
-		return false, nil
-	}
-
-	log.Info("Fetching the pruning point UTXO set")
-	succeed, err := flow.fetchMissingUTXOSet(msgPruningPointHash.Hash)
-	if err != nil {
-		return false, err
-	}
-
-	if !succeed {
-		log.Infof("Couldn't successfully fetch the pruning point UTXO set. Stopping IBD.")
-		return false, nil
-	}
-
-	log.Info("Fetched the new pruning point UTXO set")
-	return true, nil
-}
-
-func (flow *handleRelayInvsFlow) fetchMissingUTXOSet(pruningPointHash *externalapi.DomainHash) (succeed bool, err error) {
-	defer func() {
-		err := flow.Domain().Consensus().ClearImportedPruningPointData()
-		if err != nil {
-			panic(fmt.Sprintf("failed to clear imported pruning point data: %s", err))
-		}
-	}()
-
-	err = flow.outgoingRoute.Enqueue(appmessage.NewMsgRequestPruningPointUTXOSetAndBlock(pruningPointHash))
-	if err != nil {
-		return false, err
-	}
-
-	block, err := flow.receivePruningPointBlock()
-	if err != nil {
-		return false, err
-	}
-
-	receivedAll, err := flow.receiveAndInsertPruningPointUTXOSet(pruningPointHash)
-	if err != nil {
-		return false, err
-	}
-	if !receivedAll {
-		return false, nil
-	}
-
-	err = flow.Domain().Consensus().ValidateAndInsertImportedPruningPoint(block)
-	if err != nil {
-		// TODO: Find a better way to deal with finality conflicts.
-		if errors.Is(err, ruleerrors.ErrSuggestedPruningViolatesFinality) {
-			return false, nil
-		}
-		return false, protocolerrors.ConvertToBanningProtocolErrorIfRuleError(err, "error with pruning point UTXO set")
-	}
-
-	err = flow.OnPruningPointUTXOSetOverride()
-	if err != nil {
-		return false, err
-	}
-
-	return true, nil
-}
-
-func (flow *handleRelayInvsFlow) receivePruningPointBlock() (*externalapi.DomainBlock, error) {
-	onEnd := logger.LogAndMeasureExecutionTime(log, "receivePruningPointBlock")
-	defer onEnd()
-
-	message, err := flow.dequeueIncomingMessageAndSkipInvs(common.DefaultTimeout)
-	if err != nil {
-		return nil, err
-	}
-
-	ibdBlockMessage, ok := message.(*appmessage.MsgIBDBlock)
-	if !ok {
-		return nil, protocolerrors.Errorf(true, "received unexpected message type. "+
-			"expected: %s, got: %s", appmessage.CmdIBDBlock, message.Command())
-	}
-	block := appmessage.MsgBlockToDomainBlock(ibdBlockMessage.MsgBlock)
-
-	log.Debugf("Received pruning point block %s", consensushashing.BlockHash(block))
-
-	return block, nil
-}
-
 func (flow *handleRelayInvsFlow) receiveAndInsertPruningPointUTXOSet(
-	pruningPointHash *externalapi.DomainHash) (bool, error) {
+	consensus externalapi.Consensus, pruningPointHash *externalapi.DomainHash) (bool, error) {
 
 	onEnd := logger.LogAndMeasureExecutionTime(log, "receiveAndInsertPruningPointUTXOSet")
 	defer onEnd()
@@ -473,7 +339,7 @@ func (flow *handleRelayInvsFlow) receiveAndInsertPruningPointUTXOSet(
 			domainOutpointAndUTXOEntryPairs :=
 				appmessage.OutpointAndUTXOEntryPairsToDomainOutpointAndUTXOEntryPairs(message.OutpointAndUTXOEntryPairs)
 
-			err := flow.Domain().Consensus().AppendImportedPruningPointUTXOs(domainOutpointAndUTXOEntryPairs)
+			err := consensus.AppendImportedPruningPointUTXOs(domainOutpointAndUTXOEntryPairs)
 			if err != nil {
 				return false, err
 			}
@@ -557,7 +423,7 @@ func (flow *handleRelayInvsFlow) syncMissingBlockBodies(highHash *externalapi.Do
 				return err
 			}
 
-			blockInsertionResult, err := flow.Domain().Consensus().ValidateAndInsertBlock(block)
+			blockInsertionResult, err := flow.Domain().Consensus().ValidateAndInsertBlock(block, false)
 			if err != nil {
 				if errors.Is(err, ruleerrors.ErrDuplicateBlock) {
 					log.Debugf("Skipping IBD Block %s as it has already been added to the DAG", blockHash)
@@ -572,7 +438,7 @@ func (flow *handleRelayInvsFlow) syncMissingBlockBodies(highHash *externalapi.Do
 		}
 	}
 
-	return nil
+	return flow.Domain().Consensus().ResolveVirtual()
 }
 
 // dequeueIncomingMessageAndSkipInvs is a convenience method to be used during

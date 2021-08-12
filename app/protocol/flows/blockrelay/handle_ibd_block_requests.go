@@ -48,7 +48,7 @@ func HandleIBDBlockRequests(context HandleIBDBlockRequestsContext, incomingRoute
 			if err != nil {
 				return err
 			}
-			log.Debugf("sent %d out of %d", i, len(msgRequestIBDBlocks.Hashes))
+			log.Debugf("sent %d out of %d", i+1, len(msgRequestIBDBlocks.Hashes))
 		}
 	}
 }

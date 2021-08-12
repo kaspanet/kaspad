@@ -27,7 +27,7 @@ func (csm *consensusStateManager) CalculatePastUTXOAndAcceptanceData(stagingArea
 		return utxo.NewUTXODiff(), externalapi.AcceptanceData{}, multiset.New(), nil
 	}
 
-	blockGHOSTDAGData, err := csm.ghostdagDataStore.Get(csm.databaseContext, stagingArea, blockHash)
+	blockGHOSTDAGData, err := csm.ghostdagDataStore.Get(csm.databaseContext, stagingArea, blockHash, false)
 	if err != nil {
 		return nil, nil, nil, err
 	}
@@ -50,7 +50,7 @@ func (csm *consensusStateManager) calculatePastUTXOAndAcceptanceDataWithSelected
 	blockHash *externalapi.DomainHash, selectedParentPastUTXO externalapi.UTXODiff) (
 	externalapi.UTXODiff, externalapi.AcceptanceData, model.Multiset, error) {
 
-	blockGHOSTDAGData, err := csm.ghostdagDataStore.Get(csm.databaseContext, stagingArea, blockHash)
+	blockGHOSTDAGData, err := csm.ghostdagDataStore.Get(csm.databaseContext, stagingArea, blockHash, false)
 	if err != nil {
 		return nil, nil, nil, err
 	}
@@ -67,7 +67,7 @@ func (csm *consensusStateManager) calculatePastUTXOAndAcceptanceDataWithSelected
 	}
 
 	log.Debugf("Calculating the multiset of %s", blockHash)
-	multiset, err := csm.calculateMultiset(stagingArea, acceptanceData, blockGHOSTDAGData, daaScore)
+	multiset, err := csm.calculateMultiset(stagingArea, blockHash, acceptanceData, blockGHOSTDAGData, daaScore)
 	if err != nil {
 		return nil, nil, nil, err
 	}
@@ -237,8 +237,8 @@ func (csm *consensusStateManager) maybeAcceptTransaction(stagingArea *model.Stag
 		log.Tracef("Transaction %s is the coinbase of block %s", transactionID, blockHash)
 	} else {
 		log.Tracef("Validating transaction %s in block %s", transactionID, blockHash)
-		err = csm.transactionValidator.ValidateTransactionInContextAndPopulateMassAndFee(
-			stagingArea, transaction, blockHash, selectedParentPastMedianTime)
+		err = csm.transactionValidator.ValidateTransactionInContextAndPopulateFee(
+			stagingArea, transaction, blockHash)
 		if err != nil {
 			if !errors.As(err, &(ruleerrors.RuleError{})) {
 				return false, 0, err
@@ -249,14 +249,6 @@ func (csm *consensusStateManager) maybeAcceptTransaction(stagingArea *model.Stag
 			return false, accumulatedMassBefore, nil
 		}
 		log.Tracef("Validation passed for transaction %s in block %s", transactionID, blockHash)
-
-		log.Tracef("Check mass for transaction %s in block %s", transactionID, blockHash)
-		isAccepted, accumulatedMassAfter = csm.checkTransactionMass(transaction, accumulatedMassBefore)
-		if !isAccepted {
-			log.Tracef("Transaction %s in block %s has too much mass, "+
-				"and cannot be accepted", transactionID, blockHash)
-			return false, accumulatedMassBefore, nil
-		}
 	}
 
 	log.Tracef("Adding transaction %s in block %s to the accumulated diff", transactionID, blockHash)
@@ -266,27 +258,6 @@ func (csm *consensusStateManager) maybeAcceptTransaction(stagingArea *model.Stag
 	}
 
 	return true, accumulatedMassAfter, nil
-}
-
-func (csm *consensusStateManager) checkTransactionMass(transaction *externalapi.DomainTransaction, accumulatedMassBefore uint64) (
-	isAccepted bool, accumulatedMassAfter uint64) {
-
-	transactionID := consensushashing.TransactionID(transaction)
-	log.Tracef("checkTransactionMass start for transaction %s", transactionID)
-	defer log.Tracef("checkTransactionMass end for transaction %s", transactionID)
-
-	log.Tracef("Adding transaction %s with mass %d to the "+
-		"so-far accumulated mass of %d", transactionID, transaction.Mass, accumulatedMassBefore)
-	accumulatedMassAfter = accumulatedMassBefore + transaction.Mass
-	log.Tracef("Accumulated mass including transaction %s: %d", transactionID, accumulatedMassAfter)
-
-	// We could potentially overflow the accumulator so check for
-	// overflow as well.
-	if accumulatedMassAfter < transaction.Mass || accumulatedMassAfter > csm.maxMassAcceptedByBlock {
-		return false, 0
-	}
-
-	return true, accumulatedMassAfter
 }
 
 // RestorePastUTXOSetIterator restores the given block's UTXOSet iterator, and returns it as a externalapi.ReadOnlyUTXOSetIterator

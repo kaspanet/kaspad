@@ -35,9 +35,9 @@ func (x *BlockHeadersMessage) toAppMessage() ([]*appmessage.MsgBlockHeader, erro
 }
 
 func (x *KaspadMessage_BlockHeaders) fromAppMessage(blockHeadersMessage *appmessage.BlockHeadersMessage) error {
-	blockHeaders := make([]*BlockHeaderMessage, len(blockHeadersMessage.BlockHeaders))
+	blockHeaders := make([]*BlockHeader, len(blockHeadersMessage.BlockHeaders))
 	for i, blockHeader := range blockHeadersMessage.BlockHeaders {
-		blockHeaders[i] = &BlockHeaderMessage{}
+		blockHeaders[i] = &BlockHeader{}
 		err := blockHeaders[i].fromAppMessage(blockHeader)
 		if err != nil {
 			return err

@@ -19,36 +19,17 @@ import (
 	"github.com/pkg/errors"
 )
 
-type mocPastMedianTimeManager struct {
-	pastMedianTimeForTest int64
-}
-
-func (mdf *mocPastMedianTimeManager) InvalidateVirtualPastMedianTimeCache() {
-	// do nothing
-}
-
-// PastMedianTime returns the past median time for the test.
-func (mdf *mocPastMedianTimeManager) PastMedianTime(*model.StagingArea, *externalapi.DomainHash) (int64, error) {
-	return mdf.pastMedianTimeForTest, nil
-}
-
-func TestValidateTransactionInContextAndPopulateMassAndFee(t *testing.T) {
+func TestValidateTransactionInContextAndPopulateFee(t *testing.T) {
 	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
 
 		factory := consensus.NewFactory()
-		pastMedianManager := &mocPastMedianTimeManager{}
-		factory.SetTestPastMedianTimeManager(func(int, model.DBReader, model.DAGTraversalManager, model.BlockHeaderStore,
-			model.GHOSTDAGDataStore, *externalapi.DomainHash) model.PastMedianTimeManager {
-			return pastMedianManager
-		})
 		tc, tearDown, err := factory.NewTestConsensus(consensusConfig,
-			"TestValidateTransactionInContextAndPopulateMassAndFee")
+			"TestValidateTransactionInContextAndPopulateFee")
 		if err != nil {
 			t.Fatalf("Failed create a NewTestConsensus: %s", err)
 		}
 		defer tearDown(false)
 
-		pastMedianManager.pastMedianTimeForTest = 1
 		privateKey, err := secp256k1.GenerateSchnorrKeyPair()
 		if err != nil {
 			t.Fatalf("Failed to generate a private key: %v", err)
@@ -76,56 +57,70 @@ func TestValidateTransactionInContextAndPopulateMassAndFee(t *testing.T) {
 			PreviousOutpoint: prevOutPoint,
 			SignatureScript:  []byte{},
 			Sequence:         constants.MaxTxInSequenceNum,
+			SigOpCount:       1,
 			UTXOEntry: utxo.NewUTXOEntry(
 				100_000_000, // 1 KAS
 				scriptPublicKey,
 				true,
 				uint64(5)),
 		}
-		immatureInput := externalapi.DomainTransactionInput{
+		txInputWrongSignature := externalapi.DomainTransactionInput{
+			PreviousOutpoint: prevOutPoint,
+			SignatureScript:  []byte{},
+			SigOpCount:       1,
+			UTXOEntry: utxo.NewUTXOEntry(
+				100_000_000, // 1 KAS
+				scriptPublicKey,
+				true,
+				uint64(5)),
+		}
+		immatureCoinbaseInput := externalapi.DomainTransactionInput{
 			PreviousOutpoint: prevOutPoint,
 			SignatureScript:  []byte{},
 			Sequence:         constants.MaxTxInSequenceNum,
+			SigOpCount:       1,
 			UTXOEntry: utxo.NewUTXOEntry(
 				100_000_000, // 1 KAS
 				scriptPublicKey,
 				true,
 				uint64(6)),
 		}
-		txInputWithSequenceLockTimeIsSeconds := externalapi.DomainTransactionInput{
-			PreviousOutpoint: prevOutPoint,
-			SignatureScript:  []byte{},
-			Sequence:         constants.SequenceLockTimeIsSeconds,
-			UTXOEntry: utxo.NewUTXOEntry(
-				100000000, // 1 KAS
-				scriptPublicKey,
-				true,
-				uint64(5)),
-		}
 		txInputWithLargeAmount := externalapi.DomainTransactionInput{
 			PreviousOutpoint: prevOutPoint,
 			SignatureScript:  []byte{},
 			Sequence:         constants.MaxTxInSequenceNum,
+			SigOpCount:       1,
 			UTXOEntry: utxo.NewUTXOEntry(
 				constants.MaxSompi,
 				scriptPublicKey,
 				true,
 				uint64(5)),
 		}
+		txInputWithBadSigOpCount := externalapi.DomainTransactionInput{
+			PreviousOutpoint: prevOutPoint,
+			SignatureScript:  []byte{},
+			Sequence:         constants.MaxTxInSequenceNum,
+			SigOpCount:       2,
+			UTXOEntry: utxo.NewUTXOEntry(
+				100_000_000, // 1 KAS
+				scriptPublicKey,
+				true,
+				uint64(5)),
+		}
 
-		txOut := externalapi.DomainTransactionOutput{
+		txOutput := externalapi.DomainTransactionOutput{
 			Value:           100000000, // 1 KAS
 			ScriptPublicKey: scriptPublicKey,
 		}
-		txOutBigValue := externalapi.DomainTransactionOutput{
+		txOutputBigValue := externalapi.DomainTransactionOutput{
 			Value:           200_000_000, // 2 KAS
 			ScriptPublicKey: scriptPublicKey,
 		}
 
 		validTx := externalapi.DomainTransaction{
 			Version:      constants.MaxTransactionVersion,
-			Inputs:       []*externalapi.DomainTransactionInput{&txInputWithSequenceLockTimeIsSeconds},
-			Outputs:      []*externalapi.DomainTransactionOutput{&txOut},
+			Inputs:       []*externalapi.DomainTransactionInput{&txInput},
+			Outputs:      []*externalapi.DomainTransactionOutput{&txOutput},
 			SubnetworkID: subnetworks.SubnetworkIDRegistry,
 			Gas:          0,
 			LockTime:     0}
@@ -141,29 +136,36 @@ func TestValidateTransactionInContextAndPopulateMassAndFee(t *testing.T) {
 
 		txWithImmatureCoinbase := externalapi.DomainTransaction{
 			Version:      constants.MaxTransactionVersion,
-			Inputs:       []*externalapi.DomainTransactionInput{&immatureInput},
-			Outputs:      []*externalapi.DomainTransactionOutput{&txOut},
+			Inputs:       []*externalapi.DomainTransactionInput{&immatureCoinbaseInput},
+			Outputs:      []*externalapi.DomainTransactionOutput{&txOutput},
 			SubnetworkID: subnetworks.SubnetworkIDRegistry,
 			Gas:          0,
 			LockTime:     0}
 		txWithLargeAmount := externalapi.DomainTransaction{
 			Version:      constants.MaxTransactionVersion,
 			Inputs:       []*externalapi.DomainTransactionInput{&txInput, &txInputWithLargeAmount},
-			Outputs:      []*externalapi.DomainTransactionOutput{&txOut},
+			Outputs:      []*externalapi.DomainTransactionOutput{&txOutput},
 			SubnetworkID: subnetworks.SubnetworkIDRegistry,
 			Gas:          0,
 			LockTime:     0}
 		txWithBigValue := externalapi.DomainTransaction{
 			Version:      constants.MaxTransactionVersion,
 			Inputs:       []*externalapi.DomainTransactionInput{&txInput},
-			Outputs:      []*externalapi.DomainTransactionOutput{&txOutBigValue},
+			Outputs:      []*externalapi.DomainTransactionOutput{&txOutputBigValue},
 			SubnetworkID: subnetworks.SubnetworkIDRegistry,
 			Gas:          0,
 			LockTime:     0}
 		txWithInvalidSignature := externalapi.DomainTransaction{
 			Version:      constants.MaxTransactionVersion,
-			Inputs:       []*externalapi.DomainTransactionInput{&txInput},
-			Outputs:      []*externalapi.DomainTransactionOutput{&txOut},
+			Inputs:       []*externalapi.DomainTransactionInput{&txInputWrongSignature},
+			Outputs:      []*externalapi.DomainTransactionOutput{&txOutput},
+			SubnetworkID: subnetworks.SubnetworkIDRegistry,
+			Gas:          0,
+			LockTime:     0}
+		txWithBadSigOpCount := externalapi.DomainTransaction{
+			Version:      constants.MaxTransactionVersion,
+			Inputs:       []*externalapi.DomainTransactionInput{&txInputWithBadSigOpCount},
+			Outputs:      []*externalapi.DomainTransactionOutput{&txOutput},
 			SubnetworkID: subnetworks.SubnetworkIDRegistry,
 			Gas:          0,
 			LockTime:     0}
@@ -174,85 +176,78 @@ func TestValidateTransactionInContextAndPopulateMassAndFee(t *testing.T) {
 		tc.DAABlocksStore().StageDAAScore(stagingArea, povBlockHash, consensusConfig.BlockCoinbaseMaturity+txInput.UTXOEntry.BlockDAAScore())
 
 		// Just use some stub ghostdag data
-		tc.GHOSTDAGDataStore().Stage(stagingArea, povBlockHash, model.NewBlockGHOSTDAGData(
+		tc.GHOSTDAGDataStore().Stage(stagingArea, povBlockHash, externalapi.NewBlockGHOSTDAGData(
 			0,
 			nil,
 			consensusConfig.GenesisHash,
 			nil,
 			nil,
-			nil))
+			nil), false)
 
 		tests := []struct {
-			name                     string
-			tx                       *externalapi.DomainTransaction
-			povBlockHash             *externalapi.DomainHash
-			selectedParentMedianTime int64
-			isValid                  bool
-			expectedError            error
+			name          string
+			tx            *externalapi.DomainTransaction
+			povBlockHash  *externalapi.DomainHash
+			isValid       bool
+			expectedError error
 		}{
 			{
-				name:                     "Valid transaction",
-				tx:                       &validTx,
-				povBlockHash:             povBlockHash,
-				selectedParentMedianTime: 1,
-				isValid:                  true,
-				expectedError:            nil,
+				name:          "Valid transaction",
+				tx:            &validTx,
+				povBlockHash:  povBlockHash,
+				isValid:       true,
+				expectedError: nil,
 			},
 			{ // The calculated block coinbase maturity is smaller than the minimum expected blockCoinbaseMaturity.
 				// The povBlockHash DAA score is 10 and the UTXO DAA score is 5, hence the The subtraction between
 				// them will yield a smaller result than the required CoinbaseMaturity (currently set to 100).
-				name:                     "checkTransactionCoinbaseMaturity",
-				tx:                       &txWithImmatureCoinbase,
-				povBlockHash:             povBlockHash,
-				selectedParentMedianTime: 1,
-				isValid:                  false,
-				expectedError:            ruleerrors.ErrImmatureSpend,
+				name:          "checkTransactionCoinbaseMaturity",
+				tx:            &txWithImmatureCoinbase,
+				povBlockHash:  povBlockHash,
+				isValid:       false,
+				expectedError: ruleerrors.ErrImmatureSpend,
 			},
 			{ // The total inputs amount is bigger than the allowed maximum (constants.MaxSompi)
-				name:                     "checkTransactionInputAmounts",
-				tx:                       &txWithLargeAmount,
-				povBlockHash:             povBlockHash,
-				selectedParentMedianTime: 1,
-				isValid:                  false,
-				expectedError:            ruleerrors.ErrBadTxOutValue,
+				name:          "checkTransactionInputAmounts",
+				tx:            &txWithLargeAmount,
+				povBlockHash:  povBlockHash,
+				isValid:       false,
+				expectedError: ruleerrors.ErrBadTxOutValue,
 			},
 			{ // The total SompiIn (sum of inputs amount) is smaller than the total SompiOut (sum of outputs value) and hence invalid.
-				name:                     "checkTransactionOutputAmounts",
-				tx:                       &txWithBigValue,
-				povBlockHash:             povBlockHash,
-				selectedParentMedianTime: 1,
-				isValid:                  false,
-				expectedError:            ruleerrors.ErrSpendTooHigh,
+				name:          "checkTransactionOutputAmounts",
+				tx:            &txWithBigValue,
+				povBlockHash:  povBlockHash,
+				isValid:       false,
+				expectedError: ruleerrors.ErrSpendTooHigh,
 			},
-			{ // the selectedParentMedianTime is negative and hence invalid.
-				name:                     "checkTransactionSequenceLock",
-				tx:                       &validTx,
-				povBlockHash:             povBlockHash,
-				selectedParentMedianTime: -1,
-				isValid:                  false,
-				expectedError:            ruleerrors.ErrUnfinalizedTx,
+			{ // The SignatureScript is wrong
+				name:          "checkTransactionScripts",
+				tx:            &txWithInvalidSignature,
+				povBlockHash:  povBlockHash,
+				isValid:       false,
+				expectedError: ruleerrors.ErrScriptValidation,
 			},
-			{ // The SignatureScript (in the immatureInput) is empty and hence invalid.
-				name:                     "checkTransactionScripts",
-				tx:                       &txWithInvalidSignature,
-				povBlockHash:             povBlockHash,
-				selectedParentMedianTime: 1,
-				isValid:                  false,
-				expectedError:            ruleerrors.ErrScriptValidation,
+			{ // the SigOpCount in the input is wrong, and hence invalid
+				name:          "checkTransactionSigOpCounts",
+				tx:            &txWithBadSigOpCount,
+				povBlockHash:  povBlockHash,
+				isValid:       false,
+				expectedError: ruleerrors.ErrWrongSigOpCount,
 			},
 		}
 
 		for _, test := range tests {
-			err := tc.TransactionValidator().ValidateTransactionInContextAndPopulateMassAndFee(stagingArea, test.tx, test.povBlockHash, test.selectedParentMedianTime)
+			err := tc.TransactionValidator().ValidateTransactionInContextAndPopulateFee(stagingArea, test.tx, test.povBlockHash)
 
 			if test.isValid {
 				if err != nil {
-					t.Fatalf("Unexpected error on TestValidateTransactionInContextAndPopulateMassAndFee"+
+					t.Fatalf("Unexpected error on TestValidateTransactionInContextAndPopulateFee"+
 						" on test '%v': %+v", test.name, err)
 				}
 			} else {
 				if err == nil || !errors.Is(err, test.expectedError) {
-					t.Fatalf("TestValidateTransactionInContextAndPopulateMassAndFee: test %v:"+
+					t.Fatalf("TestValidateTransactionInContextAndPopulateFee: test %v:"+
 						" Unexpected error: Expected to: %v, but got : %+v", test.name, test.expectedError, err)
 				}
 			}
@@ -335,16 +330,18 @@ func TestSigningTwoInputs(t *testing.T) {
 						TransactionID: *consensushashing.TransactionID(block2.Transactions[0]),
 						Index:         0,
 					},
-					Sequence:  constants.MaxTxInSequenceNum,
-					UTXOEntry: utxo.NewUTXOEntry(block2TxOut.Value, block2TxOut.ScriptPublicKey, true, 0),
+					Sequence:   constants.MaxTxInSequenceNum,
+					SigOpCount: 1,
+					UTXOEntry:  utxo.NewUTXOEntry(block2TxOut.Value, block2TxOut.ScriptPublicKey, true, 0),
 				},
 				{
 					PreviousOutpoint: externalapi.DomainOutpoint{
 						TransactionID: *consensushashing.TransactionID(block3.Transactions[0]),
 						Index:         0,
 					},
-					Sequence:  constants.MaxTxInSequenceNum,
-					UTXOEntry: utxo.NewUTXOEntry(block3TxOut.Value, block3TxOut.ScriptPublicKey, true, 0),
+					Sequence:   constants.MaxTxInSequenceNum,
+					SigOpCount: 1,
+					UTXOEntry:  utxo.NewUTXOEntry(block3TxOut.Value, block3TxOut.ScriptPublicKey, true, 0),
 				},
 			},
 			Outputs: []*externalapi.DomainTransactionOutput{{
@@ -459,16 +456,18 @@ func TestSigningTwoInputsECDSA(t *testing.T) {
 						TransactionID: *consensushashing.TransactionID(block2.Transactions[0]),
 						Index:         0,
 					},
-					Sequence:  constants.MaxTxInSequenceNum,
-					UTXOEntry: utxo.NewUTXOEntry(block2TxOut.Value, block2TxOut.ScriptPublicKey, true, 0),
+					Sequence:   constants.MaxTxInSequenceNum,
+					SigOpCount: 1,
+					UTXOEntry:  utxo.NewUTXOEntry(block2TxOut.Value, block2TxOut.ScriptPublicKey, true, 0),
 				},
 				{
 					PreviousOutpoint: externalapi.DomainOutpoint{
 						TransactionID: *consensushashing.TransactionID(block3.Transactions[0]),
 						Index:         0,
 					},
-					Sequence:  constants.MaxTxInSequenceNum,
-					UTXOEntry: utxo.NewUTXOEntry(block3TxOut.Value, block3TxOut.ScriptPublicKey, true, 0),
+					Sequence:   constants.MaxTxInSequenceNum,
+					SigOpCount: 1,
+					UTXOEntry:  utxo.NewUTXOEntry(block3TxOut.Value, block3TxOut.ScriptPublicKey, true, 0),
 				},
 			},
 			Outputs: []*externalapi.DomainTransactionOutput{{

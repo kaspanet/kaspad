@@ -12,7 +12,7 @@ import (
 func (sm *syncManager) createBlockLocator(stagingArea *model.StagingArea, lowHash, highHash *externalapi.DomainHash,
 	limit uint32) (externalapi.BlockLocator, error) {
 
-	lowBlockGHOSTDAGData, err := sm.ghostdagDataStore.Get(sm.databaseContext, stagingArea, lowHash)
+	lowBlockGHOSTDAGData, err := sm.ghostdagDataStore.Get(sm.databaseContext, stagingArea, lowHash, false)
 	if err != nil {
 		return nil, err
 	}
@@ -30,7 +30,7 @@ func (sm *syncManager) createBlockLocator(stagingArea *model.StagingArea, lowHas
 			break
 		}
 
-		currentBlockGHOSTDAGData, err := sm.ghostdagDataStore.Get(sm.databaseContext, stagingArea, currentHash)
+		currentBlockGHOSTDAGData, err := sm.ghostdagDataStore.Get(sm.databaseContext, stagingArea, currentHash, false)
 		if err != nil {
 			return nil, err
 		}

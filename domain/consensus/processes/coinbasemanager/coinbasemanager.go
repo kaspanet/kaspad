@@ -23,7 +23,7 @@ type coinbaseManager struct {
 func (c *coinbaseManager) ExpectedCoinbaseTransaction(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash,
 	coinbaseData *externalapi.DomainCoinbaseData) (*externalapi.DomainTransaction, error) {
 
-	ghostdagData, err := c.ghostdagDataStore.Get(c.databaseContext, stagingArea, blockHash)
+	ghostdagData, err := c.ghostdagDataStore.Get(c.databaseContext, stagingArea, blockHash, false)
 	if err != nil {
 		return nil, err
 	}
@@ -118,7 +118,7 @@ func (c *coinbaseManager) coinbaseOutputForBlueBlock(stagingArea *model.StagingA
 }
 
 func (c *coinbaseManager) coinbaseOutputForRewardFromRedBlocks(stagingArea *model.StagingArea,
-	ghostdagData *model.BlockGHOSTDAGData, acceptanceData externalapi.AcceptanceData, daaAddedBlocksSet hashset.HashSet,
+	ghostdagData *externalapi.BlockGHOSTDAGData, acceptanceData externalapi.AcceptanceData, daaAddedBlocksSet hashset.HashSet,
 	coinbaseData *externalapi.DomainCoinbaseData) (*externalapi.DomainTransactionOutput, bool, error) {
 
 	acceptanceDataMap := acceptanceDataFromArrayToMap(acceptanceData)

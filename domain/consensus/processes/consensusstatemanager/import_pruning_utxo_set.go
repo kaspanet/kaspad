@@ -11,7 +11,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-func (csm *consensusStateManager) ImportPruningPoint(stagingArea *model.StagingArea, newPruningPoint *externalapi.DomainBlock) error {
+func (csm *consensusStateManager) ImportPruningPoint(stagingArea *model.StagingArea, newPruningPoint *externalapi.DomainHash) error {
 	onEnd := logger.LogAndMeasureExecutionTime(log, "ImportPruningPoint")
 	defer onEnd()
 
@@ -24,32 +24,19 @@ func (csm *consensusStateManager) ImportPruningPoint(stagingArea *model.StagingA
 }
 
 func (csm *consensusStateManager) importPruningPoint(
-	stagingArea *model.StagingArea, newPruningPoint *externalapi.DomainBlock) error {
+	stagingArea *model.StagingArea, newPruningPoint *externalapi.DomainHash) error {
 
 	log.Debugf("importPruningPoint start")
 	defer log.Debugf("importPruningPoint end")
 
-	newPruningPointHash := consensushashing.BlockHash(newPruningPoint)
-
-	// We ignore the shouldSendNotification return value because we always want to send finality conflict notification
-	// in case the new pruning point violates finality
-	isViolatingFinality, _, err := csm.isViolatingFinality(stagingArea, newPruningPointHash)
-	if err != nil {
-		return err
-	}
-
-	if isViolatingFinality {
-		log.Warnf("Finality Violation Detected! The suggest pruning point %s violates finality!", newPruningPointHash)
-		return errors.Wrapf(ruleerrors.ErrSuggestedPruningViolatesFinality, "%s cannot be a pruning point because "+
-			"it violates finality", newPruningPointHash)
-	}
+	// TODO: We should validate the imported pruning point doesn't violate finality as part of the headers proof.
 
 	importedPruningPointMultiset, err := csm.pruningStore.ImportedPruningPointMultiset(csm.databaseContext)
 	if err != nil {
 		return err
 	}
 
-	newPruningPointHeader, err := csm.blockHeaderStore.BlockHeader(csm.databaseContext, stagingArea, newPruningPointHash)
+	newPruningPointHeader, err := csm.blockHeaderStore.BlockHeader(csm.databaseContext, stagingArea, newPruningPoint)
 	if err != nil {
 		return err
 	}
@@ -62,12 +49,8 @@ func (csm *consensusStateManager) importPruningPoint(
 	}
 	log.Debugf("The new pruning point UTXO commitment validation passed")
 
-	log.Debugf("Staging the pruning point as the only DAG tip")
-	newTips := []*externalapi.DomainHash{newPruningPointHash}
-	csm.consensusStateStore.StageTips(stagingArea, newTips)
-
 	log.Debugf("Setting the pruning point as the only virtual parent")
-	err = csm.dagTopologyManager.SetParents(stagingArea, model.VirtualBlockHash, newTips)
+	err = csm.dagTopologyManager.SetParents(stagingArea, model.VirtualBlockHash, []*externalapi.DomainHash{newPruningPoint})
 	if err != nil {
 		return err
 	}
@@ -79,10 +62,11 @@ func (csm *consensusStateManager) importPruningPoint(
 	}
 
 	log.Debugf("Updating the new pruning point to be the new virtual diff parent with an empty diff")
-	csm.stageDiff(stagingArea, newPruningPointHash, utxo.NewUTXODiff(), nil)
+	csm.stageDiff(stagingArea, newPruningPoint, utxo.NewUTXODiff(), nil)
 
-	log.Debugf("Staging the new pruning point %s", newPruningPointHash)
-	csm.pruningStore.StagePruningPoint(stagingArea, newPruningPointHash)
+	log.Debugf("Staging the new pruning point %s", newPruningPoint)
+	csm.pruningStore.StagePruningPoint(stagingArea, newPruningPoint)
+	csm.pruningStore.StagePruningPointCandidate(stagingArea, newPruningPoint)
 
 	log.Debugf("Populating the pruning point with UTXO entries")
 	importedPruningPointUTXOIterator, err := csm.pruningStore.ImportedPruningPointUTXOIterator(csm.databaseContext)
@@ -91,10 +75,12 @@ func (csm *consensusStateManager) importPruningPoint(
 	}
 	defer importedPruningPointUTXOIterator.Close()
 
-	// Clone the pruningPoint block here because validateBlockTransactionsAgainstPastUTXO
-	// assumes that the block UTXOEntries are pre-filled during further validations
-	newPruningPointClone := newPruningPoint.Clone()
-	err = csm.populateTransactionWithUTXOEntriesFromUTXOSet(newPruningPointClone, importedPruningPointUTXOIterator)
+	newPruningPointBlock, err := csm.blockStore.Block(csm.databaseContext, stagingArea, newPruningPoint)
+	if err != nil {
+		return err
+	}
+
+	err = csm.populateTransactionWithUTXOEntriesFromUTXOSet(newPruningPointBlock, importedPruningPointUTXOIterator)
 	if err != nil {
 		return err
 	}
@@ -102,24 +88,24 @@ func (csm *consensusStateManager) importPruningPoint(
 	// Before we manually mark the new pruning point as valid, we validate that all of its transactions are valid
 	// against the provided UTXO set.
 	log.Debugf("Validating that the pruning point is UTXO valid")
-	newPruningPointSelectedParentMedianTime, err := csm.pastMedianTimeManager.PastMedianTime(stagingArea, newPruningPointHash)
+	newPruningPointSelectedParentMedianTime, err := csm.pastMedianTimeManager.PastMedianTime(stagingArea, newPruningPoint)
 	if err != nil {
 		return err
 	}
 	log.Tracef("The past median time of pruning block %s is %d",
-		newPruningPointHash, newPruningPointSelectedParentMedianTime)
+		newPruningPoint, newPruningPointSelectedParentMedianTime)
 
-	for i, transaction := range newPruningPointClone.Transactions {
+	for i, transaction := range newPruningPointBlock.Transactions {
 		transactionID := consensushashing.TransactionID(transaction)
 		log.Tracef("Validating transaction %s in pruning block %s against "+
-			"the pruning point's past UTXO", transactionID, newPruningPointHash)
+			"the pruning point's past UTXO", transactionID, newPruningPoint)
 		if i == transactionhelper.CoinbaseTransactionIndex {
 			log.Tracef("Skipping transaction %s because it is the coinbase", transactionID)
 			continue
 		}
 		log.Tracef("Validating transaction %s and populating it with mass and fee", transactionID)
-		err = csm.transactionValidator.ValidateTransactionInContextAndPopulateMassAndFee(
-			stagingArea, transaction, newPruningPointHash, newPruningPointSelectedParentMedianTime)
+		err = csm.transactionValidator.ValidateTransactionInContextAndPopulateFee(
+			stagingArea, transaction, newPruningPoint)
 		if err != nil {
 			return err
 		}
@@ -128,10 +114,22 @@ func (csm *consensusStateManager) importPruningPoint(
 	}
 
 	log.Debugf("Staging the new pruning point as %s", externalapi.StatusUTXOValid)
-	csm.blockStatusStore.Stage(stagingArea, newPruningPointHash, externalapi.StatusUTXOValid)
+	csm.blockStatusStore.Stage(stagingArea, newPruningPoint, externalapi.StatusUTXOValid)
 
 	log.Debugf("Staging the new pruning point multiset")
-	csm.multisetStore.Stage(stagingArea, newPruningPointHash, importedPruningPointMultiset)
+	csm.multisetStore.Stage(stagingArea, newPruningPoint, importedPruningPointMultiset)
+
+	_, err = csm.difficultyManager.StageDAADataAndReturnRequiredDifficulty(stagingArea, model.VirtualBlockHash, false)
+	if err != nil {
+		return err
+	}
+
+	// Run update virtual to create acceptance data and any other missing data.
+	_, _, err = csm.updateVirtual(stagingArea, newPruningPoint, []*externalapi.DomainHash{newPruningPoint})
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 

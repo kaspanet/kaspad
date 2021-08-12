@@ -31,7 +31,7 @@ func newTransactionsPool(mp *mempool) *transactionsPool {
 func (tp *transactionsPool) addTransaction(transaction *externalapi.DomainTransaction,
 	parentTransactionsInPool model.OutpointToTransactionMap, isHighPriority bool) (*model.MempoolTransaction, error) {
 
-	virtualDAAScore, err := tp.mempool.consensus.GetVirtualDAAScore()
+	virtualDAAScore, err := tp.mempool.consensusReference.Consensus().GetVirtualDAAScore()
 	if err != nil {
 		return nil, err
 	}
@@ -86,7 +86,7 @@ func (tp *transactionsPool) removeTransaction(transaction *model.MempoolTransact
 }
 
 func (tp *transactionsPool) expireOldTransactions() error {
-	virtualDAAScore, err := tp.mempool.consensus.GetVirtualDAAScore()
+	virtualDAAScore, err := tp.mempool.consensusReference.Consensus().GetVirtualDAAScore()
 	if err != nil {
 		return err
 	}
@@ -146,17 +146,18 @@ func (tp *transactionsPool) getParentTransactionsInPool(
 }
 
 func (tp *transactionsPool) getRedeemers(transaction *model.MempoolTransaction) []*model.MempoolTransaction {
-	queue := []*model.MempoolTransaction{transaction}
+	stack := []*model.MempoolTransaction{transaction}
 	redeemers := []*model.MempoolTransaction{}
-	for len(queue) > 0 {
+	for len(stack) > 0 {
 		var current *model.MempoolTransaction
-		current, queue = queue[0], queue[1:]
+		last := len(stack) - 1
+		current, stack = stack[last], stack[:last]
 
 		outpoint := externalapi.DomainOutpoint{TransactionID: *current.TransactionID()}
 		for i := range current.Transaction().Outputs {
 			outpoint.Index = uint32(i)
 			if redeemerTransaction, ok := tp.chainedTransactionsByPreviousOutpoint[outpoint]; ok {
-				queue = append(queue, redeemerTransaction)
+				stack = append(stack, redeemerTransaction)
 				redeemers = append(redeemers, redeemerTransaction)
 			}
 		}

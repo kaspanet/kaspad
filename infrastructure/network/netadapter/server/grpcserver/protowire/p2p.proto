@@ -36,6 +36,7 @@ message TransactionInput{
   Outpoint previousOutpoint = 1;
   bytes signatureScript = 2;
   uint64 sequence = 3;
+  uint32 sigOpCount = 4;
 }
 
 message Outpoint{
@@ -57,11 +58,11 @@ message TransactionOutput{
 }
 
 message BlockMessage{
-  BlockHeaderMessage header = 1;
+  BlockHeader header = 1;
   repeated TransactionMessage transactions = 2;
 }
 
-message BlockHeaderMessage{
+message BlockHeader{
   uint32 version = 1;
   repeated Hash parentHashes = 2;
   Hash hashMerkleRoot = 3;
@@ -77,9 +78,8 @@ message Hash{
 }
 
 message RequestBlockLocatorMessage{
-  Hash lowHash = 1;
-  Hash highHash = 2;
-  uint32 limit = 3;
+  Hash highHash = 1;
+  uint32 limit = 2;
 }
 
 message BlockLocatorMessage{
@@ -144,7 +144,7 @@ message RejectMessage{
   string reason = 1;
 }
 
-message RequestPruningPointUTXOSetAndBlockMessage{
+message RequestPruningPointUTXOSetMessage{
   Hash pruningPointHash = 1;
 }
 
@@ -177,13 +177,6 @@ message RequestIBDBlocksMessage{
 message UnexpectedPruningPointMessage{
 }
 
-message RequestPruningPointHashMessage{
-}
-
-message PruningPointHashMessage{
-  Hash hash = 1;
-}
-
 message IbdBlockLocatorMessage {
   Hash targetHash = 1;
   repeated Hash blockLocatorHashes = 2;
@@ -197,5 +190,50 @@ message IbdBlockLocatorHighestHashNotFoundMessage {
 }
 
 message BlockHeadersMessage {
-  repeated BlockHeaderMessage blockHeaders = 1;
+  repeated BlockHeader blockHeaders = 1;
+}
+
+message RequestPruningPointAndItsAnticoneMessage {
+}
+
+message BlockWithTrustedDataMessage {
+  BlockMessage block = 1;
+  uint64 daaScore = 2;
+  repeated DaaBlock daaWindow = 3;
+  repeated BlockGhostdagDataHashPair ghostdagData = 4;
+}
+
+message DaaBlock {
+  BlockHeader header = 1;
+  GhostdagData ghostdagData = 2;
+}
+
+message BlockGhostdagDataHashPair {
+  Hash hash = 1;
+  GhostdagData ghostdagData = 2;
+}
+
+message GhostdagData {
+  uint64 blueScore = 1;
+  bytes blueWork = 2;
+  Hash selectedParent = 3;
+  repeated Hash mergeSetBlues = 4;
+  repeated Hash mergeSetReds = 5;
+  repeated BluesAnticoneSizes bluesAnticoneSizes = 6;
+}
+
+message BluesAnticoneSizes {
+  Hash blueHash = 1;
+  uint32 anticoneSize = 2;
+}
+
+message DoneBlocksWithTrustedDataMessage {
+}
+
+message RequestBlockBlueWorkMessage {
+  Hash block = 1;
+}
+
+message BlockBlueWorkMessage {
+  bytes blueWork = 1;
 }

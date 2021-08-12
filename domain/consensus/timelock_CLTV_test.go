@@ -2,6 +2,8 @@ package consensus_test
 
 import (
 	"errors"
+	"testing"
+
 	"github.com/kaspanet/kaspad/domain/consensus"
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
@@ -11,7 +13,6 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/utils/testutils"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/transactionhelper"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/txscript"
-	"testing"
 )
 
 // TestCheckLockTimeVerifyConditionedByDAAScore verifies that an output locked by the CLTV script is spendable only after
@@ -317,7 +318,7 @@ func TestCheckLockTimeVerifyConditionedByAbsoluteTime(t *testing.T) {
 			blockHeader := tipBlock.Header.ToMutable()
 			blockHeader.SetTimeInMilliseconds(timeStampBlockE + i*1000)
 			tipBlock.Header = blockHeader.ToImmutable()
-			_, err = testConsensus.ValidateAndInsertBlock(tipBlock)
+			_, err = testConsensus.ValidateAndInsertBlock(tipBlock, true)
 			if err != nil {
 				t.Fatalf("Error validating and inserting tip block: %v", err)
 			}
@@ -438,7 +439,7 @@ func TestCheckLockTimeVerifyConditionedByAbsoluteTimeWithWrongLockTime(t *testin
 			blockHeader := tipBlock.Header.ToMutable()
 			blockHeader.SetTimeInMilliseconds(timeStampBlockE + i*1000)
 			tipBlock.Header = blockHeader.ToImmutable()
-			_, err = testConsensus.ValidateAndInsertBlock(tipBlock)
+			_, err = testConsensus.ValidateAndInsertBlock(tipBlock, true)
 			if err != nil {
 				t.Fatalf("Error validating and inserting tip block: %v", err)
 			}

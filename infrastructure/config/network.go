@@ -3,12 +3,12 @@ package config
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"math/big"
 	"os"
 	"time"
 
 	"github.com/jessevdk/go-flags"
-	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/dagconfig"
 	"github.com/kaspanet/kaspad/util/difficulty"
 	"github.com/pkg/errors"
@@ -25,28 +25,27 @@ type NetworkFlags struct {
 }
 
 type overrideDAGParamsConfig struct {
-	K                                       *model.KType `json:"k"`
-	MaxBlockParents                         *model.KType `json:"maxBlockParents"`
-	MergeSetSizeLimit                       *uint64      `json:"mergeSetSizeLimit"`
-	MaxMassAcceptedByBlock                  *uint64      `json:"maxMassAcceptedByBlock"`
-	MaxBlockSize                            *uint64      `json:"maxBlockSize"`
-	MaxCoinbasePayloadLength                *uint64      `json:"maxCoinbasePayloadLength"`
-	MassPerTxByte                           *uint64      `json:"massPerTxByte"`
-	MassPerScriptPubKeyByte                 *uint64      `json:"massPerScriptPubKeyByte"`
-	MassPerSigOp                            *uint64      `json:"massPerSigOp"`
-	CoinbasePayloadScriptPublicKeyMaxLength *uint8       `json:"coinbasePayloadScriptPublicKeyMaxLength"`
-	PowMax                                  *string      `json:"powMax"`
-	BlockCoinbaseMaturity                   *uint64      `json:"blockCoinbaseMaturity"`
-	SubsidyReductionInterval                *uint64      `json:"subsidyReductionInterval"`
-	TargetTimePerBlockInMilliSeconds        *int64       `json:"targetTimePerBlockInMilliSeconds"`
-	FinalityDuration                        *int64       `json:"finalityDuration"`
-	TimestampDeviationTolerance             *int         `json:"timestampDeviationTolerance"`
-	DifficultyAdjustmentWindowSize          *int         `json:"difficultyAdjustmentWindowSize"`
-	RelayNonStdTxs                          *bool        `json:"relayNonStdTxs"`
-	AcceptUnroutable                        *bool        `json:"acceptUnroutable"`
-	EnableNonNativeSubnetworks              *bool        `json:"enableNonNativeSubnetworks"`
-	DisableDifficultyAdjustment             *bool        `json:"disableDifficultyAdjustment"`
-	SkipProofOfWork                         *bool        `json:"skipProofOfWork"`
+	K                                       *externalapi.KType `json:"k"`
+	MaxBlockParents                         *externalapi.KType `json:"maxBlockParents"`
+	MergeSetSizeLimit                       *uint64            `json:"mergeSetSizeLimit"`
+	MaxBlockMass                            *uint64            `json:"maxBlockMass"`
+	MaxCoinbasePayloadLength                *uint64            `json:"maxCoinbasePayloadLength"`
+	MassPerTxByte                           *uint64            `json:"massPerTxByte"`
+	MassPerScriptPubKeyByte                 *uint64            `json:"massPerScriptPubKeyByte"`
+	MassPerSigOp                            *uint64            `json:"massPerSigOp"`
+	CoinbasePayloadScriptPublicKeyMaxLength *uint8             `json:"coinbasePayloadScriptPublicKeyMaxLength"`
+	PowMax                                  *string            `json:"powMax"`
+	BlockCoinbaseMaturity                   *uint64            `json:"blockCoinbaseMaturity"`
+	SubsidyReductionInterval                *uint64            `json:"subsidyReductionInterval"`
+	TargetTimePerBlockInMilliSeconds        *int64             `json:"targetTimePerBlockInMilliSeconds"`
+	FinalityDuration                        *int64             `json:"finalityDuration"`
+	TimestampDeviationTolerance             *int               `json:"timestampDeviationTolerance"`
+	DifficultyAdjustmentWindowSize          *int               `json:"difficultyAdjustmentWindowSize"`
+	RelayNonStdTxs                          *bool              `json:"relayNonStdTxs"`
+	AcceptUnroutable                        *bool              `json:"acceptUnroutable"`
+	EnableNonNativeSubnetworks              *bool              `json:"enableNonNativeSubnetworks"`
+	DisableDifficultyAdjustment             *bool              `json:"disableDifficultyAdjustment"`
+	SkipProofOfWork                         *bool              `json:"skipProofOfWork"`
 }
 
 // ResolveNetwork parses the network command line argument and sets NetParams accordingly.
@@ -132,12 +131,8 @@ func (networkFlags *NetworkFlags) overrideDAGParams() error {
 		networkFlags.ActiveNetParams.MergeSetSizeLimit = *config.MergeSetSizeLimit
 	}
 
-	if config.MaxMassAcceptedByBlock != nil {
-		networkFlags.ActiveNetParams.MaxMassAcceptedByBlock = *config.MaxMassAcceptedByBlock
-	}
-
-	if config.MaxBlockSize != nil {
-		networkFlags.ActiveNetParams.MaxBlockSize = *config.MaxBlockSize
+	if config.MaxBlockMass != nil {
+		networkFlags.ActiveNetParams.MaxBlockMass = *config.MaxBlockMass
 	}
 
 	if config.MaxCoinbasePayloadLength != nil {

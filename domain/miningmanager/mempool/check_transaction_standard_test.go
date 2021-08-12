@@ -6,6 +6,7 @@ package mempool
 
 import (
 	"bytes"
+	"github.com/kaspanet/kaspad/domain/consensusreference"
 	"math"
 	"testing"
 
@@ -44,13 +45,13 @@ func TestCalcMinRequiredTxRelayFee(t *testing.T) {
 		},
 		{
 			"max standard tx size with default minimum relay fee",
-			maximumStandardTransactionSize,
+			maximumStandardTransactionMass,
 			defaultMinimumRelayTransactionFee,
 			100000,
 		},
 		{
 			"max standard tx size with max sompi relay fee",
-			maximumStandardTransactionSize,
+			maximumStandardTransactionMass,
 			util.MaxSompi,
 			util.MaxSompi,
 		},
@@ -97,7 +98,9 @@ func TestCalcMinRequiredTxRelayFee(t *testing.T) {
 		for _, test := range tests {
 			mempoolConfig := DefaultConfig(tc.DAGParams())
 			mempoolConfig.MinimumRelayTransactionFee = test.minimumRelayTransactionFee
-			mempool := New(mempoolConfig, tc).(*mempool)
+			tcAsConsensus := tc.(externalapi.Consensus)
+			tcAsConsensusPointer := &tcAsConsensus
+			mempool := New(mempoolConfig, consensusreference.NewConsensusReference(&tcAsConsensusPointer)).(*mempool)
 
 			got := mempool.minimumRequiredTransactionRelayFee(test.size)
 			if got != test.want {
@@ -184,7 +187,9 @@ func TestIsTransactionOutputDust(t *testing.T) {
 		for _, test := range tests {
 			mempoolConfig := DefaultConfig(tc.DAGParams())
 			mempoolConfig.MinimumRelayTransactionFee = test.minimumRelayTransactionFee
-			mempool := New(mempoolConfig, tc).(*mempool)
+			tcAsConsensus := tc.(externalapi.Consensus)
+			tcAsConsensusPointer := &tcAsConsensus
+			mempool := New(mempoolConfig, consensusreference.NewConsensusReference(&tcAsConsensusPointer)).(*mempool)
 
 			res := mempool.IsTransactionOutputDust(&test.txOut)
 			if res != test.isDust {
@@ -244,7 +249,7 @@ func TestCheckTransactionStandardInIsolation(t *testing.T) {
 			name: "Transaction size is too large",
 			tx: &externalapi.DomainTransaction{Version: 0, Inputs: []*externalapi.DomainTransactionInput{&dummyTxIn}, Outputs: []*externalapi.DomainTransactionOutput{{
 				Value:           0,
-				ScriptPublicKey: &externalapi.ScriptPublicKey{bytes.Repeat([]byte{0x00}, maximumStandardTransactionSize+1), 0},
+				ScriptPublicKey: &externalapi.ScriptPublicKey{bytes.Repeat([]byte{0x00}, maximumStandardTransactionMass+1), 0},
 			}}},
 			height:     300000,
 			isStandard: false,
@@ -303,7 +308,10 @@ func TestCheckTransactionStandardInIsolation(t *testing.T) {
 
 		for _, test := range tests {
 			mempoolConfig := DefaultConfig(tc.DAGParams())
-			mempool := New(mempoolConfig, tc).(*mempool)
+			tcAsConsensus := tc.(externalapi.Consensus)
+			tcAsConsensusPointer := &tcAsConsensus
+			consensusReference := consensusreference.NewConsensusReference(&tcAsConsensusPointer)
+			mempool := New(mempoolConfig, consensusReference).(*mempool)
 
 			// Ensure standardness is as expected.
 			err := mempool.checkTransactionStandardInIsolation(test.tx)
