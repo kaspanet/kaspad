@@ -2,6 +2,8 @@ package appmessage
 
 import (
 	"encoding/hex"
+	"github.com/pkg/errors"
+	"math/big"
 
 	"github.com/kaspanet/kaspad/domain/consensus/utils/blockheader"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/hashes"
@@ -36,6 +38,9 @@ func DomainBlockHeaderToBlockHeader(domainBlockHeader externalapi.BlockHeader) *
 		Timestamp:            mstime.UnixMilliseconds(domainBlockHeader.TimeInMilliseconds()),
 		Bits:                 domainBlockHeader.Bits(),
 		Nonce:                domainBlockHeader.Nonce(),
+		DAAScore:             domainBlockHeader.DAAScore(),
+		BlueWork:             domainBlockHeader.BlueWork(),
+		FinalityPoint:        domainBlockHeader.FinalityPoint(),
 	}
 }
 
@@ -63,6 +68,9 @@ func BlockHeaderToDomainBlockHeader(blockHeader *MsgBlockHeader) externalapi.Blo
 		blockHeader.Timestamp.UnixMilliseconds(),
 		blockHeader.Bits,
 		blockHeader.Nonce,
+		blockHeader.DAAScore,
+		blockHeader.BlueWork,
+		blockHeader.FinalityPoint,
 	)
 }
 
@@ -343,6 +351,9 @@ func DomainBlockToRPCBlock(block *externalapi.DomainBlock) *RPCBlock {
 		Timestamp:            block.Header.TimeInMilliseconds(),
 		Bits:                 block.Header.Bits(),
 		Nonce:                block.Header.Nonce(),
+		DAAScore:             block.Header.DAAScore(),
+		BlueWork:             block.Header.BlueWork().Text(16),
+		FinalityPoint:        block.Header.FinalityPoint().String(),
 	}
 	transactions := make([]*RPCTransaction, len(block.Transactions))
 	for i, transaction := range block.Transactions {
@@ -376,6 +387,14 @@ func RPCBlockToDomainBlock(block *RPCBlock) (*externalapi.DomainBlock, error) {
 	if err != nil {
 		return nil, err
 	}
+	blueWork, success := new(big.Int).SetString(block.Header.BlueWork, 16)
+	if !success {
+		return nil, errors.Errorf("failed to parse blue work: %s", block.Header.BlueWork)
+	}
+	finalityPoint, err := externalapi.NewDomainHashFromString(block.Header.FinalityPoint)
+	if err != nil {
+		return nil, err
+	}
 	header := blockheader.NewImmutableBlockHeader(
 		uint16(block.Header.Version),
 		parentHashes,
@@ -384,7 +403,10 @@ func RPCBlockToDomainBlock(block *RPCBlock) (*externalapi.DomainBlock, error) {
 		utxoCommitment,
 		block.Header.Timestamp,
 		block.Header.Bits,
-		block.Header.Nonce)
+		block.Header.Nonce,
+		block.Header.DAAScore,
+		blueWork,
+		finalityPoint)
 	transactions := make([]*externalapi.DomainTransaction, len(block.Transactions))
 	for i, transaction := range block.Transactions {
 		domainTransaction, err := RPCTransactionToDomainTransaction(transaction)

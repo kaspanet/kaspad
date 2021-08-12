@@ -1,14 +1,17 @@
 package blockbuilder
 
 import (
+	"encoding/binary"
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/model/testapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/blockheader"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/transactionhelper"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/txscript"
 	"github.com/kaspanet/kaspad/infrastructure/logger"
 	"github.com/pkg/errors"
+	"math/big"
 )
 
 type testBlockBuilder struct {
@@ -63,8 +66,9 @@ func (bb *testBlockBuilder) BuildBlockWithParents(parentHashes []*externalapi.Do
 	return block, diff, nil
 }
 
-func (bb *testBlockBuilder) buildUTXOInvalidHeader(stagingArea *model.StagingArea, parentHashes []*externalapi.DomainHash,
-	bits uint32, transactions []*externalapi.DomainTransaction) (externalapi.BlockHeader, error) {
+func (bb *testBlockBuilder) buildUTXOInvalidHeader(stagingArea *model.StagingArea,
+	parentHashes []*externalapi.DomainHash, bits uint32, daaScore uint64, blueWork *big.Int,
+	finalityPoint *externalapi.DomainHash, transactions []*externalapi.DomainTransaction) (externalapi.BlockHeader, error) {
 
 	timeInMilliseconds, err := bb.minBlockTime(stagingArea, tempBlockHash)
 	if err != nil {
@@ -83,14 +87,18 @@ func (bb *testBlockBuilder) buildUTXOInvalidHeader(stagingArea *model.StagingAre
 		timeInMilliseconds,
 		bits,
 		bb.nonceCounter,
+		daaScore,
+		blueWork,
+		finalityPoint,
 	), nil
 }
 
-func (bb *testBlockBuilder) buildHeaderWithParents(stagingArea *model.StagingArea, parentHashes []*externalapi.DomainHash,
-	bits uint32, transactions []*externalapi.DomainTransaction, acceptanceData externalapi.AcceptanceData, multiset model.Multiset) (
-	externalapi.BlockHeader, error) {
+func (bb *testBlockBuilder) buildHeaderWithParents(stagingArea *model.StagingArea,
+	parentHashes []*externalapi.DomainHash, bits uint32, transactions []*externalapi.DomainTransaction,
+	acceptanceData externalapi.AcceptanceData, multiset model.Multiset, daaScore uint64, blueWork *big.Int,
+	finalityPoint *externalapi.DomainHash) (externalapi.BlockHeader, error) {
 
-	header, err := bb.buildUTXOInvalidHeader(stagingArea, parentHashes, bits, transactions)
+	header, err := bb.buildUTXOInvalidHeader(stagingArea, parentHashes, bits, daaScore, blueWork, finalityPoint, transactions)
 	if err != nil {
 		return nil, err
 	}
@@ -111,6 +119,9 @@ func (bb *testBlockBuilder) buildHeaderWithParents(stagingArea *model.StagingAre
 		header.TimeInMilliseconds(),
 		header.Bits(),
 		header.Nonce(),
+		header.DAAScore(),
+		header.BlueWork(),
+		header.FinalityPoint(),
 	), nil
 }
 
@@ -141,11 +152,16 @@ func (bb *testBlockBuilder) buildBlockWithParents(stagingArea *model.StagingArea
 	if err != nil {
 		return nil, nil, err
 	}
+	daaScore, err := bb.daaBlocksStore.DAAScore(bb.databaseContext, stagingArea, tempBlockHash)
+	if err != nil {
+		return nil, nil, err
+	}
 
 	ghostdagData, err := bb.ghostdagDataStore.Get(bb.databaseContext, stagingArea, tempBlockHash, false)
 	if err != nil {
 		return nil, nil, err
 	}
+	blueWork := ghostdagData.BlueWork()
 
 	selectedParentStatus, err := bb.testConsensus.ConsensusStateManager().ResolveBlockStatus(
 		stagingArea, ghostdagData.SelectedParent(), false)
@@ -171,8 +187,17 @@ func (bb *testBlockBuilder) buildBlockWithParents(stagingArea *model.StagingArea
 	}
 	transactionsWithCoinbase := append([]*externalapi.DomainTransaction{coinbase}, transactions...)
 
+	err = bb.testConsensus.ReachabilityManager().AddBlock(stagingArea, tempBlockHash)
+	if err != nil {
+		return nil, nil, err
+	}
+	finalityPoint, err := bb.finalityManager.FinalityPoint(stagingArea, tempBlockHash, false)
+	if err != nil {
+		return nil, nil, err
+	}
+
 	header, err := bb.buildHeaderWithParents(
-		stagingArea, parentHashes, bits, transactionsWithCoinbase, acceptanceData, multiset)
+		stagingArea, parentHashes, bits, transactionsWithCoinbase, acceptanceData, multiset, daaScore, blueWork, finalityPoint)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -206,21 +231,43 @@ func (bb *testBlockBuilder) BuildUTXOInvalidBlock(parentHashes []*externalapi.Do
 		return nil, err
 	}
 
-	// We use genesis transactions so we'll have something to build merkle root and coinbase with
-	genesisTransactions := bb.testConsensus.DAGParams().GenesisBlock.Transactions
-
-	bits, err := bb.difficultyManager.RequiredDifficulty(stagingArea, tempBlockHash)
+	bits, err := bb.difficultyManager.StageDAADataAndReturnRequiredDifficulty(stagingArea, tempBlockHash, false)
+	if err != nil {
+		return nil, err
+	}
+	daaScore, err := bb.daaBlocksStore.DAAScore(bb.databaseContext, stagingArea, tempBlockHash)
 	if err != nil {
 		return nil, err
 	}
 
-	header, err := bb.buildUTXOInvalidHeader(stagingArea, parentHashes, bits, genesisTransactions)
+	ghostdagData, err := bb.ghostdagDataStore.Get(bb.databaseContext, stagingArea, tempBlockHash, false)
+	if err != nil {
+		return nil, err
+	}
+	blueWork := ghostdagData.BlueWork()
+
+	// We use the genesis coinbase so that we'll have something to build merkle root and a new coinbase with
+	genesisTransactions := bb.testConsensus.DAGParams().GenesisBlock.Transactions
+	genesisCoinbase := genesisTransactions[transactionhelper.CoinbaseTransactionIndex].Clone()
+	binary.LittleEndian.PutUint64(genesisCoinbase.Payload[:8], ghostdagData.BlueScore())
+	transactions := []*externalapi.DomainTransaction{genesisCoinbase}
+
+	err = bb.testConsensus.ReachabilityManager().AddBlock(stagingArea, tempBlockHash)
+	if err != nil {
+		return nil, err
+	}
+	finalityPoint, err := bb.finalityManager.FinalityPoint(stagingArea, tempBlockHash, false)
+	if err != nil {
+		return nil, err
+	}
+
+	header, err := bb.buildUTXOInvalidHeader(stagingArea, parentHashes, bits, daaScore, blueWork, finalityPoint, transactions)
 	if err != nil {
 		return nil, err
 	}
 
 	return &externalapi.DomainBlock{
 		Header:       header,
-		Transactions: genesisTransactions,
+		Transactions: transactions,
 	}, nil
 }

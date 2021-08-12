@@ -5,6 +5,7 @@
 package appmessage
 
 import (
+	"math/big"
 	"reflect"
 	"testing"
 
@@ -22,7 +23,11 @@ func TestBlockHeader(t *testing.T) {
 	merkleHash := mainnetGenesisMerkleRoot
 	acceptedIDMerkleRoot := exampleAcceptedIDMerkleRoot
 	bits := uint32(0x1d00ffff)
-	bh := NewBlockHeader(1, hashes, merkleHash, acceptedIDMerkleRoot, exampleUTXOCommitment, bits, nonce)
+	daaScore := uint64(123)
+	blueWork := big.NewInt(456)
+	finalityPoint := simnetGenesisHash
+	bh := NewBlockHeader(1, hashes, merkleHash, acceptedIDMerkleRoot, exampleUTXOCommitment, bits, nonce,
+		daaScore, blueWork, finalityPoint)
 
 	// Ensure we get the same data back out.
 	if !reflect.DeepEqual(bh.ParentHashes, hashes) {
@@ -40,6 +45,18 @@ func TestBlockHeader(t *testing.T) {
 	if bh.Nonce != nonce {
 		t.Errorf("NewBlockHeader: wrong nonce - got %v, want %v",
 			bh.Nonce, nonce)
+	}
+	if bh.DAAScore != daaScore {
+		t.Errorf("NewBlockHeader: wrong daaScore - got %v, want %v",
+			bh.DAAScore, daaScore)
+	}
+	if bh.BlueWork != blueWork {
+		t.Errorf("NewBlockHeader: wrong blueWork - got %v, want %v",
+			bh.BlueWork, blueWork)
+	}
+	if !bh.FinalityPoint.Equal(finalityPoint) {
+		t.Errorf("NewBlockHeader: wrong finalityHash - got %v, want %v",
+			bh.FinalityPoint, finalityPoint)
 	}
 }
 

@@ -5,6 +5,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/utils/blockheader"
 	"github.com/pkg/errors"
 	"math"
+	"math/big"
 )
 
 // DomainBlockHeaderToDbBlockHeader converts BlockHeader to DbBlockHeader
@@ -18,6 +19,9 @@ func DomainBlockHeaderToDbBlockHeader(domainBlockHeader externalapi.BlockHeader)
 		TimeInMilliseconds:   domainBlockHeader.TimeInMilliseconds(),
 		Bits:                 domainBlockHeader.Bits(),
 		Nonce:                domainBlockHeader.Nonce(),
+		DaaScore:             domainBlockHeader.DAAScore(),
+		BlueWork:             domainBlockHeader.BlueWork().Bytes(),
+		FinalityPoint:        DomainHashToDbHash(domainBlockHeader.FinalityPoint()),
 	}
 }
 
@@ -42,6 +46,10 @@ func DbBlockHeaderToDomainBlockHeader(dbBlockHeader *DbBlockHeader) (externalapi
 	if dbBlockHeader.Version > math.MaxUint16 {
 		return nil, errors.Errorf("Invalid header version - bigger then uint16")
 	}
+	finalityPoint, err := DbHashToDomainHash(dbBlockHeader.FinalityPoint)
+	if err != nil {
+		return nil, err
+	}
 
 	return blockheader.NewImmutableBlockHeader(
 		uint16(dbBlockHeader.Version),
@@ -52,5 +60,8 @@ func DbBlockHeaderToDomainBlockHeader(dbBlockHeader *DbBlockHeader) (externalapi
 		dbBlockHeader.TimeInMilliseconds,
 		dbBlockHeader.Bits,
 		dbBlockHeader.Nonce,
+		dbBlockHeader.DaaScore,
+		new(big.Int).SetBytes(dbBlockHeader.BlueWork),
+		finalityPoint,
 	), nil
 }

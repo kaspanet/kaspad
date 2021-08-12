@@ -1,6 +1,7 @@
 package blockbuilder
 
 import (
+	"math/big"
 	"sort"
 
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
@@ -25,11 +26,13 @@ type blockBuilder struct {
 	consensusStateManager model.ConsensusStateManager
 	ghostdagManager       model.GHOSTDAGManager
 	transactionValidator  model.TransactionValidator
+	finalityManager       model.FinalityManager
 
 	acceptanceDataStore model.AcceptanceDataStore
 	blockRelationStore  model.BlockRelationStore
 	multisetStore       model.MultisetStore
 	ghostdagDataStore   model.GHOSTDAGDataStore
+	daaBlocksStore      model.DAABlocksStore
 }
 
 // New creates a new instance of a BlockBuilder
@@ -42,11 +45,13 @@ func New(
 	consensusStateManager model.ConsensusStateManager,
 	ghostdagManager model.GHOSTDAGManager,
 	transactionValidator model.TransactionValidator,
+	finalityManager model.FinalityManager,
 
 	acceptanceDataStore model.AcceptanceDataStore,
 	blockRelationStore model.BlockRelationStore,
 	multisetStore model.MultisetStore,
 	ghostdagDataStore model.GHOSTDAGDataStore,
+	daaBlocksStore model.DAABlocksStore,
 ) model.BlockBuilder {
 
 	return &blockBuilder{
@@ -57,11 +62,13 @@ func New(
 		consensusStateManager: consensusStateManager,
 		ghostdagManager:       ghostdagManager,
 		transactionValidator:  transactionValidator,
+		finalityManager:       finalityManager,
 
 		acceptanceDataStore: acceptanceDataStore,
 		blockRelationStore:  blockRelationStore,
 		multisetStore:       multisetStore,
 		ghostdagDataStore:   ghostdagDataStore,
+		daaBlocksStore:      daaBlocksStore,
 	}
 }
 
@@ -183,6 +190,18 @@ func (bb *blockBuilder) buildHeader(stagingArea *model.StagingArea, transactions
 	if err != nil {
 		return nil, err
 	}
+	daaScore, err := bb.newBlockDAAScore(stagingArea)
+	if err != nil {
+		return nil, err
+	}
+	blueWork, err := bb.newBlockBlueWork(stagingArea)
+	if err != nil {
+		return nil, err
+	}
+	finalityPoint, err := bb.newBlockFinalityPoint(stagingArea)
+	if err != nil {
+		return nil, err
+	}
 
 	return blockheader.NewImmutableBlockHeader(
 		constants.MaxBlockVersion,
@@ -193,6 +212,9 @@ func (bb *blockBuilder) buildHeader(stagingArea *model.StagingArea, transactions
 		timeInMilliseconds,
 		bits,
 		0,
+		daaScore,
+		blueWork,
+		finalityPoint,
 	), nil
 }
 
@@ -275,4 +297,20 @@ func (bb *blockBuilder) newBlockUTXOCommitment(stagingArea *model.StagingArea) (
 	}
 	newBlockUTXOCommitment := newBlockMultiset.Hash()
 	return newBlockUTXOCommitment, nil
+}
+
+func (bb *blockBuilder) newBlockDAAScore(stagingArea *model.StagingArea) (uint64, error) {
+	return bb.daaBlocksStore.DAAScore(bb.databaseContext, stagingArea, model.VirtualBlockHash)
+}
+
+func (bb *blockBuilder) newBlockBlueWork(stagingArea *model.StagingArea) (*big.Int, error) {
+	virtualGHOSTDAGData, err := bb.ghostdagDataStore.Get(bb.databaseContext, stagingArea, model.VirtualBlockHash, false)
+	if err != nil {
+		return nil, err
+	}
+	return virtualGHOSTDAGData.BlueWork(), nil
+}
+
+func (bb *blockBuilder) newBlockFinalityPoint(stagingArea *model.StagingArea) (*externalapi.DomainHash, error) {
+	return bb.finalityManager.VirtualFinalityPoint(stagingArea)
 }

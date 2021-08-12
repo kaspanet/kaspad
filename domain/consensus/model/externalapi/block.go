@@ -1,5 +1,7 @@
 package externalapi
 
+import "math/big"
+
 // DomainBlock represents a Kaspa block
 type DomainBlock struct {
 	Header       BlockHeader
@@ -62,6 +64,9 @@ type BaseBlockHeader interface {
 	TimeInMilliseconds() int64
 	Bits() uint32
 	Nonce() uint64
+	DAAScore() uint64
+	BlueWork() *big.Int
+	FinalityPoint() *DomainHash
 	Equal(other BaseBlockHeader) bool
 }
 

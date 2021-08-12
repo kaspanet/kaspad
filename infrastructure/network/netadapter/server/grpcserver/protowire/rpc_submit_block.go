@@ -134,6 +134,9 @@ func (x *RpcBlockHeader) toAppMessage() (*appmessage.RPCBlockHeader, error) {
 		Timestamp:            x.Timestamp,
 		Bits:                 x.Bits,
 		Nonce:                x.Nonce,
+		DAAScore:             x.DaaScore,
+		BlueWork:             x.BlueWork,
+		FinalityPoint:        x.FinalityPoint,
 	}, nil
 }
 
@@ -147,6 +150,9 @@ func (x *RpcBlockHeader) fromAppMessage(message *appmessage.RPCBlockHeader) {
 		Timestamp:            message.Timestamp,
 		Bits:                 message.Bits,
 		Nonce:                message.Nonce,
+		DaaScore:             message.DAAScore,
+		BlueWork:             message.BlueWork,
+		FinalityPoint:        message.FinalityPoint,
 	}
 }
 
