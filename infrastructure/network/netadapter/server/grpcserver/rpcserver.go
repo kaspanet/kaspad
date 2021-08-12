@@ -14,9 +14,12 @@ type rpcServer struct {
 // RPCMaxMessageSize is the max message size for the RPC server to send and receive
 const RPCMaxMessageSize = 1024 * 1024 * 1024 // 1 GB
 
+// RPCMaxInboundConnections is the max amount of inbound connections for the RPC server
+const RPCMaxInboundConnections = 128
+
 // NewRPCServer creates a new RPCServer
 func NewRPCServer(listeningAddresses []string) (server.Server, error) {
-	gRPCServer := newGRPCServer(listeningAddresses, RPCMaxMessageSize, "RPC")
+	gRPCServer := newGRPCServer(listeningAddresses, RPCMaxMessageSize, RPCMaxInboundConnections, "RPC")
 	rpcServer := &rpcServer{gRPCServer: *gRPCServer}
 	protowire.RegisterRPCServer(gRPCServer.server, rpcServer)
 	return rpcServer, nil

@@ -18,11 +18,12 @@ const defaultTimeout = 30 * time.Second
 type RPCClient struct {
 	*grpcclient.GRPCClient
 
-	rpcAddress     string
-	rpcRouter      *rpcRouter
-	isConnected    uint32
-	isClosed       uint32
-	isReconnecting uint32
+	rpcAddress           string
+	rpcRouter            *rpcRouter
+	isConnected          uint32
+	isClosed             uint32
+	isReconnecting       uint32
+	lastDisconnectedTime time.Time
 
 	timeout time.Duration
 }
@@ -112,14 +113,15 @@ func (c *RPCClient) Reconnect() error {
 
 	// Attempt to connect until we succeed
 	for {
-		err := c.connect()
-		if err == nil {
-			return nil
-		}
-		log.Warnf("Could not automatically reconnect to %s: %s", c.rpcAddress, err)
-
 		const retryDelay = 10 * time.Second
-		log.Warnf("Retrying in %s", retryDelay)
+		if time.Since(c.lastDisconnectedTime) > retryDelay {
+			err := c.connect()
+			if err == nil {
+				return nil
+			}
+			log.Warnf("Could not automatically reconnect to %s: %s", c.rpcAddress, err)
+			log.Warnf("Retrying in %s", retryDelay)
+		}
 		time.Sleep(retryDelay)
 	}
 }
@@ -127,6 +129,7 @@ func (c *RPCClient) Reconnect() error {
 func (c *RPCClient) handleClientDisconnected() {
 	atomic.StoreUint32(&c.isConnected, 0)
 	if atomic.LoadUint32(&c.isClosed) == 0 {
+		c.lastDisconnectedTime = time.Now()
 		err := c.Reconnect()
 		if err != nil {
 			panic(err)

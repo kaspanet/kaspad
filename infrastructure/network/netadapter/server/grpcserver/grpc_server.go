@@ -9,6 +9,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/peer"
 	"net"
+	"sync"
 	"time"
 )
 
@@ -17,15 +18,22 @@ type gRPCServer struct {
 	listeningAddresses []string
 	server             *grpc.Server
 	name               string
+
+	maxInboundConnections      int
+	inboundConnectionCount     int
+	inboundConnectionCountLock *sync.Mutex
 }
 
 // newGRPCServer creates a gRPC server
-func newGRPCServer(listeningAddresses []string, maxMessageSize int, name string) *gRPCServer {
-	log.Debugf("Created new %s GRPC server with maxMessageSize %d", name, maxMessageSize)
+func newGRPCServer(listeningAddresses []string, maxMessageSize int, maxInboundConnections int, name string) *gRPCServer {
+	log.Debugf("Created new %s GRPC server with maxMessageSize %d and maxInboundConnections %d", name, maxMessageSize, maxInboundConnections)
 	return &gRPCServer{
-		server:             grpc.NewServer(grpc.MaxRecvMsgSize(maxMessageSize), grpc.MaxSendMsgSize(maxMessageSize)),
-		listeningAddresses: listeningAddresses,
-		name:               name,
+		server:                     grpc.NewServer(grpc.MaxRecvMsgSize(maxMessageSize), grpc.MaxSendMsgSize(maxMessageSize)),
+		listeningAddresses:         listeningAddresses,
+		name:                       name,
+		maxInboundConnections:      maxInboundConnections,
+		inboundConnectionCount:     0,
+		inboundConnectionCountLock: &sync.Mutex{},
 	}
 }
 
@@ -86,6 +94,11 @@ func (s *gRPCServer) SetOnConnectedHandler(onConnectedHandler server.OnConnected
 }
 
 func (s *gRPCServer) handleInboundConnection(ctx context.Context, stream grpcStream) error {
+	err := s.incrementInboundConnectionCountAndLimitIfRequired()
+	if err != nil {
+		return err
+	}
+
 	peerInfo, ok := peer.FromContext(ctx)
 	if !ok {
 		return errors.Errorf("Error getting stream peer info from context")
@@ -97,7 +110,7 @@ func (s *gRPCServer) handleInboundConnection(ctx context.Context, stream grpcStr
 
 	connection := newConnection(s, tcpAddress, stream, nil)
 
-	err := s.onConnectedHandler(connection)
+	err = s.onConnectedHandler(connection)
 	if err != nil {
 		return err
 	}
@@ -105,6 +118,25 @@ func (s *gRPCServer) handleInboundConnection(ctx context.Context, stream grpcStr
 	log.Infof("%s Incoming connection from %s", s.name, peerInfo.Addr)
 
 	<-connection.stopChan
-
+	s.decrementInboundConnectionCount()
 	return nil
+}
+
+func (s *gRPCServer) incrementInboundConnectionCountAndLimitIfRequired() error {
+	s.inboundConnectionCountLock.Lock()
+	defer s.inboundConnectionCountLock.Unlock()
+
+	if s.maxInboundConnections > 0 && s.inboundConnectionCount == s.maxInboundConnections {
+		return errors.Errorf("limit of %d inbound connections has been exceeded", s.maxInboundConnections)
+	}
+
+	s.inboundConnectionCount++
+	return nil
+}
+
+func (s *gRPCServer) decrementInboundConnectionCount() {
+	s.inboundConnectionCountLock.Lock()
+	defer s.inboundConnectionCountLock.Unlock()
+
+	s.inboundConnectionCount--
 }
