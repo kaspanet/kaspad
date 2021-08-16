@@ -28,7 +28,7 @@ func (gm *ghostManager) GHOST(stagingArea *model.StagingArea,
 		largestFutureSize := uint64(0)
 		var childHashWithLargestFutureSize *externalapi.DomainHash
 		for _, childHash := range childHashes {
-			childFutureSize := futureSizes[childHash]
+			childFutureSize := futureSizes[*childHash]
 			if childHashWithLargestFutureSize == nil || childFutureSize > largestFutureSize {
 				largestFutureSize = childFutureSize
 				childHashWithLargestFutureSize = childHash
@@ -40,15 +40,15 @@ func (gm *ghostManager) GHOST(stagingArea *model.StagingArea,
 }
 
 func (gm *ghostManager) futureSizes(stagingArea *model.StagingArea,
-	lowHash *externalapi.DomainHash) (map[*externalapi.DomainHash]uint64, error) {
+	lowHash *externalapi.DomainHash) (map[externalapi.DomainHash]uint64, error) {
 
 	tips, err := gm.consensusStateStore.Tips(stagingArea, gm.databaseContext)
 	if err != nil {
 		return nil, err
 	}
-	futureSizes := make(map[*externalapi.DomainHash]uint64)
+	futureSizes := make(map[externalapi.DomainHash]uint64)
 	for _, tip := range tips {
-		futureSizes[tip] = 0
+		futureSizes[*tip] = 0
 	}
 
 	queue := gm.dagTraversalManager.NewDownHeap(stagingArea)
@@ -77,10 +77,13 @@ func (gm *ghostManager) futureSizes(stagingArea *model.StagingArea,
 		}
 		blockFutureSize := uint64(0)
 		for _, childHash := range childHashes {
-			childFutureSize := futureSizes[childHash]
+			if childHash.Equal(model.VirtualBlockHash) {
+				continue
+			}
+			childFutureSize := futureSizes[*childHash]
 			blockFutureSize += childFutureSize
 		}
-		futureSizes[blockHash] = blockFutureSize
+		futureSizes[*blockHash] = blockFutureSize + 1 // The "1" represents the current block
 
 		// Add the block's parents to the queue
 		parentHashes, err := gm.dagTopologyManager.Parents(stagingArea, blockHash)
