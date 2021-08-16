@@ -7,60 +7,204 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/testapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/hashset"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/testutils"
+	"github.com/kaspanet/kaspad/domain/dagconfig"
 	"reflect"
 	"testing"
 )
 
 func TestGHOST(t *testing.T) {
-	testChain := []struct {
+	tests := map[string][]*struct {
 		parents            []string
 		id                 string
 		expectedGHOSTChain []string
 	}{
-		{
-			parents:            []string{"A"},
-			id:                 "B",
-			expectedGHOSTChain: []string{"A", "B"},
+		dagconfig.MainnetParams.Name: {
+			{
+				parents:            []string{"A"},
+				id:                 "B",
+				expectedGHOSTChain: []string{"A", "B"},
+			},
+			{
+				parents:            []string{"B"},
+				id:                 "C",
+				expectedGHOSTChain: []string{"A", "B", "C"},
+			},
+			{
+				parents:            []string{"B"},
+				id:                 "D",
+				expectedGHOSTChain: []string{"A", "B", "C"},
+			},
+			{
+				parents:            []string{"C", "D"},
+				id:                 "E",
+				expectedGHOSTChain: []string{"A", "B", "C", "E"},
+			},
+			{
+				parents:            []string{"C", "D"},
+				id:                 "F",
+				expectedGHOSTChain: []string{"A", "B", "C", "F"},
+			},
+			{
+				parents:            []string{"A"},
+				id:                 "G",
+				expectedGHOSTChain: []string{"A", "B", "C", "F"},
+			},
+			{
+				parents:            []string{"G"},
+				id:                 "H",
+				expectedGHOSTChain: []string{"A", "B", "C", "F"},
+			},
+			{
+				parents:            []string{"H", "F"},
+				id:                 "I",
+				expectedGHOSTChain: []string{"A", "B", "C", "F", "I"},
+			},
+			{
+				parents:            []string{"I"},
+				id:                 "J",
+				expectedGHOSTChain: []string{"A", "B", "C", "F", "I", "J"},
+			},
 		},
-		{
-			parents:            []string{"B"},
-			id:                 "C",
-			expectedGHOSTChain: []string{"A", "B", "C"},
+		dagconfig.TestnetParams.Name: {
+			{
+				parents:            []string{"A"},
+				id:                 "B",
+				expectedGHOSTChain: []string{"A", "B"},
+			},
+			{
+				parents:            []string{"B"},
+				id:                 "C",
+				expectedGHOSTChain: []string{"A", "B", "C"},
+			},
+			{
+				parents:            []string{"B"},
+				id:                 "D",
+				expectedGHOSTChain: []string{"A", "B", "C"},
+			},
+			{
+				parents:            []string{"C", "D"},
+				id:                 "E",
+				expectedGHOSTChain: []string{"A", "B", "C", "E"},
+			},
+			{
+				parents:            []string{"C", "D"},
+				id:                 "F",
+				expectedGHOSTChain: []string{"A", "B", "C", "F"},
+			},
+			{
+				parents:            []string{"A"},
+				id:                 "G",
+				expectedGHOSTChain: []string{"A", "B", "C", "F"},
+			},
+			{
+				parents:            []string{"G"},
+				id:                 "H",
+				expectedGHOSTChain: []string{"A", "B", "C", "F"},
+			},
+			{
+				parents:            []string{"H", "F"},
+				id:                 "I",
+				expectedGHOSTChain: []string{"A", "B", "C", "F", "I"},
+			},
+			{
+				parents:            []string{"I"},
+				id:                 "J",
+				expectedGHOSTChain: []string{"A", "B", "C", "F", "I", "J"},
+			},
 		},
-		{
-			parents:            []string{"B"},
-			id:                 "D",
-			expectedGHOSTChain: []string{"A", "B", "C"},
+		dagconfig.SimnetParams.Name: {
+			{
+				parents:            []string{"A"},
+				id:                 "B",
+				expectedGHOSTChain: []string{"A", "B"},
+			},
+			{
+				parents:            []string{"B"},
+				id:                 "C",
+				expectedGHOSTChain: []string{"A", "B", "C"},
+			},
+			{
+				parents:            []string{"B"},
+				id:                 "D",
+				expectedGHOSTChain: []string{"A", "B", "D"},
+			},
+			{
+				parents:            []string{"C", "D"},
+				id:                 "E",
+				expectedGHOSTChain: []string{"A", "B", "D", "E"},
+			},
+			{
+				parents:            []string{"C", "D"},
+				id:                 "F",
+				expectedGHOSTChain: []string{"A", "B", "D", "F"},
+			},
+			{
+				parents:            []string{"A"},
+				id:                 "G",
+				expectedGHOSTChain: []string{"A", "B", "D", "F"},
+			},
+			{
+				parents:            []string{"G"},
+				id:                 "H",
+				expectedGHOSTChain: []string{"A", "B", "D", "F"},
+			},
+			{
+				parents:            []string{"H", "F"},
+				id:                 "I",
+				expectedGHOSTChain: []string{"A", "B", "D", "F", "I"},
+			},
+			{
+				parents:            []string{"I"},
+				id:                 "J",
+				expectedGHOSTChain: []string{"A", "B", "D", "F", "I", "J"},
+			},
 		},
-		{
-			parents:            []string{"C", "D"},
-			id:                 "E",
-			expectedGHOSTChain: []string{"A", "B", "C", "E"},
-		},
-		{
-			parents:            []string{"C", "D"},
-			id:                 "F",
-			expectedGHOSTChain: []string{"A", "B", "C", "E"},
-		},
-		{
-			parents:            []string{"A"},
-			id:                 "G",
-			expectedGHOSTChain: []string{"A", "B", "C", "E"},
-		},
-		{
-			parents:            []string{"G"},
-			id:                 "H",
-			expectedGHOSTChain: []string{"A", "B", "C", "E"},
-		},
-		{
-			parents:            []string{"H", "F"},
-			id:                 "I",
-			expectedGHOSTChain: []string{"A", "B", "C", "F", "I"},
-		},
-		{
-			parents:            []string{"I"},
-			id:                 "J",
-			expectedGHOSTChain: []string{"A", "B", "C", "F", "I", "J"},
+		dagconfig.DevnetParams.Name: {
+			{
+				parents:            []string{"A"},
+				id:                 "B",
+				expectedGHOSTChain: []string{"A", "B"},
+			},
+			{
+				parents:            []string{"B"},
+				id:                 "C",
+				expectedGHOSTChain: []string{"A", "B", "C"},
+			},
+			{
+				parents:            []string{"B"},
+				id:                 "D",
+				expectedGHOSTChain: []string{"A", "B", "D"},
+			},
+			{
+				parents:            []string{"C", "D"},
+				id:                 "E",
+				expectedGHOSTChain: []string{"A", "B", "D", "E"},
+			},
+			{
+				parents:            []string{"C", "D"},
+				id:                 "F",
+				expectedGHOSTChain: []string{"A", "B", "D", "F"},
+			},
+			{
+				parents:            []string{"A"},
+				id:                 "G",
+				expectedGHOSTChain: []string{"A", "B", "D", "F"},
+			},
+			{
+				parents:            []string{"G"},
+				id:                 "H",
+				expectedGHOSTChain: []string{"A", "B", "D", "F"},
+			},
+			{
+				parents:            []string{"H", "F"},
+				id:                 "I",
+				expectedGHOSTChain: []string{"A", "B", "D", "F", "I"},
+			},
+			{
+				parents:            []string{"I"},
+				id:                 "J",
+				expectedGHOSTChain: []string{"A", "B", "D", "F", "I", "J"},
+			},
 		},
 	}
 
@@ -77,6 +221,7 @@ func TestGHOST(t *testing.T) {
 		blockByIDMap["A"] = consensusConfig.GenesisHash
 		idByBlockMap[*consensusConfig.GenesisHash] = "A"
 
+		testChain := tests[consensusConfig.Name]
 		for _, blockData := range testChain {
 			parents := hashset.New()
 			for _, parentID := range blockData.parents {

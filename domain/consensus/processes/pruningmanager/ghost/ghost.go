@@ -35,7 +35,8 @@ func GHOST(subDAG *model.SubDAG) []*externalapi.DomainHash {
 		var childHashWithLargestFutureSize *externalapi.DomainHash
 		for _, childHash := range childHashes {
 			childFutureSize := futureSizes[*childHash]
-			if childHashWithLargestFutureSize == nil || childFutureSize > largestFutureSize {
+			if childHashWithLargestFutureSize == nil || childFutureSize > largestFutureSize ||
+				(childFutureSize == largestFutureSize && childHashWithLargestFutureSize.Less(childHash)) {
 				largestFutureSize = childFutureSize
 				childHashWithLargestFutureSize = childHash
 			}
