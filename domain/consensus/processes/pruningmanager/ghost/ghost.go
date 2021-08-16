@@ -10,17 +10,8 @@ import (
 func GHOST(subDAG *model.SubDAG) []*externalapi.DomainHash {
 	futureSizes := futureSizes(subDAG)
 
-	var dagRootHashWithLargestFutureSize *externalapi.DomainHash
-	largestRootFutureSize := uint64(0)
-	for _, rootHash := range subDAG.RootHashes {
-		rootFutureSize := futureSizes[*rootHash]
-		if dagRootHashWithLargestFutureSize == nil || rootFutureSize > largestRootFutureSize {
-			largestRootFutureSize = rootFutureSize
-			dagRootHashWithLargestFutureSize = rootHash
-		}
-	}
-
 	ghostChain := []*externalapi.DomainHash{}
+	dagRootHashWithLargestFutureSize := blockHashWithLargestFutureSize(futureSizes, subDAG.RootHashes)
 	currentHash := dagRootHashWithLargestFutureSize
 	for {
 		ghostChain = append(ghostChain, currentHash)
@@ -31,16 +22,7 @@ func GHOST(subDAG *model.SubDAG) []*externalapi.DomainHash {
 			break
 		}
 
-		largestFutureSize := uint64(0)
-		var childHashWithLargestFutureSize *externalapi.DomainHash
-		for _, childHash := range childHashes {
-			childFutureSize := futureSizes[*childHash]
-			if childHashWithLargestFutureSize == nil || childFutureSize > largestFutureSize ||
-				(childFutureSize == largestFutureSize && childHashWithLargestFutureSize.Less(childHash)) {
-				largestFutureSize = childFutureSize
-				childHashWithLargestFutureSize = childHash
-			}
-		}
+		childHashWithLargestFutureSize := blockHashWithLargestFutureSize(futureSizes, childHashes)
 		currentHash = childHashWithLargestFutureSize
 	}
 	return ghostChain
@@ -77,4 +59,18 @@ func futureSizes(subDAG *model.SubDAG) map[externalapi.DomainHash]uint64 {
 		}
 	}
 	return futureSizes
+}
+
+func blockHashWithLargestFutureSize(futureSizes map[externalapi.DomainHash]uint64, blockHashes []*externalapi.DomainHash) *externalapi.DomainHash {
+	var blockHashWithLargestFutureSize *externalapi.DomainHash
+	largestFutureSize := uint64(0)
+	for _, blockHash := range blockHashes {
+		blockFutureSize := futureSizes[*blockHash]
+		if blockHashWithLargestFutureSize == nil || blockFutureSize > largestFutureSize ||
+			(blockFutureSize == largestFutureSize && blockHashWithLargestFutureSize.Less(blockHash)) {
+			largestFutureSize = blockFutureSize
+			blockHashWithLargestFutureSize = blockHash
+		}
+	}
+	return blockHashWithLargestFutureSize
 }
