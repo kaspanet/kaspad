@@ -92,7 +92,7 @@ func TestGHOST(t *testing.T) {
 			idByBlockMap[*blockHash] = blockData.id
 
 			subDAG := convertDAGtoSubDAG(t, consensusConfig, tc)
-			ghostChainHashes := GHOST(subDAG)
+			ghostChainHashes := GHOST(subDAG, consensusConfig.GenesisHash)
 			ghostChainIDs := make([]string, len(ghostChainHashes))
 			for i, ghostChainHash := range ghostChainHashes {
 				ghostChainIDs[i] = idByBlockMap[*ghostChainHash]
@@ -115,9 +115,9 @@ func convertDAGtoSubDAG(t *testing.T, consensusConfig *consensus.Config, tc test
 	}
 
 	subDAG := &model.SubDAG{
-		GenesisHash: genesisHash,
-		TipHashes:   tipHashes,
-		Blocks:      map[externalapi.DomainHash]*model.SubDAGBlock{},
+		RootHashes: []*externalapi.DomainHash{genesisHash},
+		TipHashes:  tipHashes,
+		Blocks:     map[externalapi.DomainHash]*model.SubDAGBlock{},
 	}
 
 	visited := hashset.New()

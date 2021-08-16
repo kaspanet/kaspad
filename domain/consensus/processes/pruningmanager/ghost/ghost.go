@@ -6,12 +6,12 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/utils/hashset"
 )
 
-// GHOST calculates the GHOST chain for the given `subDAG`
-func GHOST(subDAG *model.SubDAG) []*externalapi.DomainHash {
+// GHOST calculates the GHOST chain for the given `subDAG` starting with `lowHash`
+func GHOST(subDAG *model.SubDAG, lowHash *externalapi.DomainHash) []*externalapi.DomainHash {
 	futureSizes := futureSizes(subDAG)
 	ghostChain := []*externalapi.DomainHash{}
 
-	currentHash := subDAG.GenesisHash
+	currentHash := lowHash
 	for {
 		ghostChain = append(ghostChain, currentHash)
 
