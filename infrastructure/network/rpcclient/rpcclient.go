@@ -39,18 +39,6 @@ func NewRPCClient(rpcAddress string) (*RPCClient, error) {
 		return nil, err
 	}
 
-	getInfoResponse, err := rpcClient.GetInfo()
-	if err != nil {
-		return nil, errors.Errorf("error making GetInfo request")
-	}
-
-	localVersion := version.Version()
-	remoteVersion := getInfoResponse.ServerVersion
-
-	if localVersion != remoteVersion {
-		return nil, errors.Errorf("Server version mismatch, expect: %s, got: %s", localVersion, remoteVersion)
-	}
-
 	return rpcClient, nil
 }
 
@@ -73,11 +61,23 @@ func (c *RPCClient) connect() error {
 	c.rpcRouter = rpcRouter
 
 	log.Infof("Connected to %s", c.rpcAddress)
+
+	getInfoResponse, err := c.GetInfo()
+	if err != nil {
+		return errors.Wrapf(err, "error making GetInfo request")
+	}
+
+	localVersion := version.Version()
+	remoteVersion := getInfoResponse.ServerVersion
+
+	if localVersion != remoteVersion {
+		return errors.Errorf("Server version mismatch, expect: %s, got: %s", localVersion, remoteVersion)
+	}
+
 	return nil
 }
 
 func (c *RPCClient) disconnect() error {
-	c.rpcRouter.router.Close()
 	err := c.GRPCClient.Disconnect()
 	if err != nil {
 		return err
@@ -129,8 +129,12 @@ func (c *RPCClient) Reconnect() error {
 func (c *RPCClient) handleClientDisconnected() {
 	atomic.StoreUint32(&c.isConnected, 0)
 	if atomic.LoadUint32(&c.isClosed) == 0 {
+		err := c.disconnect()
+		if err != nil {
+			panic(err)
+		}
 		c.lastDisconnectedTime = time.Now()
-		err := c.Reconnect()
+		err = c.Reconnect()
 		if err != nil {
 			panic(err)
 		}
