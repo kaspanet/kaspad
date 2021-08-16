@@ -37,7 +37,6 @@ type consensus struct {
 	pruningManager        model.PruningManager
 	reachabilityManager   model.ReachabilityManager
 	finalityManager       model.FinalityManager
-	ghostManager          model.GHOSTManager
 
 	acceptanceDataStore       model.AcceptanceDataStore
 	blockStore                model.BlockStore

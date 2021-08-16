@@ -1,9 +1,10 @@
-package ghostmanager_test
+package ghost
 
 import (
 	"github.com/kaspanet/kaspad/domain/consensus"
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+	"github.com/kaspanet/kaspad/domain/consensus/model/testapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/hashset"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/testutils"
 	"reflect"
@@ -90,10 +91,8 @@ func TestGHOST(t *testing.T) {
 			blockByIDMap[blockData.id] = blockHash
 			idByBlockMap[*blockHash] = blockData.id
 
-			ghostChainHashes, err := tc.GHOSTManager().GHOST(model.NewStagingArea(), consensusConfig.GenesisHash)
-			if err != nil {
-				t.Fatalf("GHOST: %+v", err)
-			}
+			subDAG := convertDAGtoSubDAG(t, consensusConfig, tc)
+			ghostChainHashes := GHOST(subDAG)
 			ghostChainIDs := make([]string, len(ghostChainHashes))
 			for i, ghostChainHash := range ghostChainHashes {
 				ghostChainIDs[i] = idByBlockMap[*ghostChainHash]
@@ -104,4 +103,67 @@ func TestGHOST(t *testing.T) {
 			}
 		}
 	})
+}
+
+func convertDAGtoSubDAG(t *testing.T, consensusConfig *consensus.Config, tc testapi.TestConsensus) *model.SubDAG {
+	genesisHash := consensusConfig.GenesisHash
+
+	stagingArea := model.NewStagingArea()
+	tipHashes, err := tc.ConsensusStateStore().Tips(stagingArea, tc.DatabaseContext())
+	if err != nil {
+		t.Fatalf("Tips: %+v", err)
+	}
+
+	subDAG := &model.SubDAG{
+		GenesisHash: genesisHash,
+		TipHashes:   tipHashes,
+		Blocks:      map[externalapi.DomainHash]*model.SubDAGBlock{},
+	}
+
+	visited := hashset.New()
+	queue := tc.DAGTraversalManager().NewDownHeap(stagingArea)
+	err = queue.PushSlice(tipHashes)
+	if err != nil {
+		t.Fatalf("PushSlice: %+v", err)
+	}
+	for queue.Len() > 0 {
+		blockHash := queue.Pop()
+		visited.Add(blockHash)
+		dagChildHashes, err := tc.DAGTopologyManager().Children(stagingArea, blockHash)
+		if err != nil {
+			t.Fatalf("Children: %+v", err)
+		}
+		childHashes := []*externalapi.DomainHash{}
+		for _, dagChildHash := range dagChildHashes {
+			if dagChildHash.Equal(model.VirtualBlockHash) {
+				continue
+			}
+			childHashes = append(childHashes, dagChildHash)
+		}
+
+		dagParentHashes, err := tc.DAGTopologyManager().Parents(stagingArea, blockHash)
+		if err != nil {
+			t.Fatalf("Parents: %+v", err)
+		}
+		parentHashes := []*externalapi.DomainHash{}
+		for _, dagParentHash := range dagParentHashes {
+			if dagParentHash.Equal(model.VirtualGenesisBlockHash) {
+				continue
+			}
+			parentHashes = append(parentHashes, dagParentHash)
+			if !visited.Contains(dagParentHash) {
+				err := queue.Push(dagParentHash)
+				if err != nil {
+					t.Fatalf("Push: %+v", err)
+				}
+			}
+		}
+
+		subDAG.Blocks[*blockHash] = &model.SubDAGBlock{
+			BlockHash:    blockHash,
+			ParentHashes: parentHashes,
+			ChildHashes:  childHashes,
+		}
+	}
+	return subDAG
 }

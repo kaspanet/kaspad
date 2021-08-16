@@ -83,6 +83,5 @@ type TestConsensus interface {
 	PruningManager() model.PruningManager
 	ReachabilityManager() TestReachabilityManager
 	SyncManager() model.SyncManager
-	GHOSTManager() model.GHOSTManager
 	TransactionValidator() TestTransactionValidator
 }

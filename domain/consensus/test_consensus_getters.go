@@ -146,7 +146,3 @@ func (tc *testConsensus) DAABlocksStore() model.DAABlocksStore {
 func (tc *testConsensus) Consensus() externalapi.Consensus {
 	return tc
 }
-
-func (tc *testConsensus) GHOSTManager() model.GHOSTManager {
-	return tc.ghostManager
-}
