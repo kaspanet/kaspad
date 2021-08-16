@@ -64,7 +64,7 @@ func (c *RPCClient) connect() error {
 
 	getInfoResponse, err := c.GetInfo()
 	if err != nil {
-		return errors.Errorf("error making GetInfo request")
+		return errors.Wrapf(err, "error making GetInfo request")
 	}
 
 	localVersion := version.Version()
