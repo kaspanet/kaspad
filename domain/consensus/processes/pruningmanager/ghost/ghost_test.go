@@ -92,7 +92,7 @@ func TestGHOST(t *testing.T) {
 			idByBlockMap[*blockHash] = blockData.id
 
 			subDAG := convertDAGtoSubDAG(t, consensusConfig, tc)
-			ghostChainHashes := GHOST(subDAG, consensusConfig.GenesisHash)
+			ghostChainHashes := GHOST(subDAG)
 			ghostChainIDs := make([]string, len(ghostChainHashes))
 			for i, ghostChainHash := range ghostChainHashes {
 				ghostChainIDs[i] = idByBlockMap[*ghostChainHash]
