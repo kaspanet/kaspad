@@ -2,6 +2,7 @@ package consensus
 
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/daawindowstore"
+	"github.com/kaspanet/kaspad/domain/consensus/processes/ghostmanager"
 	"io/ioutil"
 	"os"
 	"sync"
@@ -177,6 +178,11 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 		consensusStateStore,
 		daaWindowStore,
 		config.GenesisHash)
+	ghostManager := ghostmanager.New(
+		dbManager,
+		dagTraversalManager,
+		dagTopologyManager,
+		consensusStateStore)
 	pastMedianTimeManager := f.pastMedianTimeConsructor(
 		config.TimestampDeviationTolerance,
 		dbManager,
@@ -416,6 +422,7 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 		pruningManager:        pruningManager,
 		reachabilityManager:   reachabilityManager,
 		finalityManager:       finalityManager,
+		ghostManager:          ghostManager,
 
 		acceptanceDataStore:       acceptanceDataStore,
 		blockStore:                blockStore,
