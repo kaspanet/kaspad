@@ -258,7 +258,16 @@ func BenchmarkGHOST(b *testing.B) {
 	for _, block := range subDAG.Blocks {
 		for _, parentHash := range block.ParentHashes {
 			parentBlock := subDAG.Blocks[*parentHash]
-			parentBlock.ChildHashes = append(parentBlock.ChildHashes, block.BlockHash)
+			parentAlreadyHasBlockAsChild := false
+			for _, childHash := range parentBlock.ChildHashes {
+				if block.BlockHash.Equal(childHash) {
+					parentAlreadyHasBlockAsChild = true
+					break
+				}
+			}
+			if !parentAlreadyHasBlockAsChild {
+				parentBlock.ChildHashes = append(parentBlock.ChildHashes, block.BlockHash)
+			}
 		}
 	}
 	for _, block := range subDAG.Blocks {

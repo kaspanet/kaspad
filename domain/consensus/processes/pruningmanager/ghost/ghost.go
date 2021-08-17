@@ -8,8 +8,10 @@ import (
 
 // GHOST calculates the GHOST chain for the given `subDAG`
 func GHOST(subDAG *model.SubDAG) []*externalapi.DomainHash {
+	futureSizes := futureSizes(subDAG)
+
 	ghostChain := []*externalapi.DomainHash{}
-	dagRootHashWithLargestFutureSize := blockHashWithLargestFutureSize(subDAG, subDAG.RootHashes)
+	dagRootHashWithLargestFutureSize := blockHashWithLargestFutureSize(futureSizes, subDAG.RootHashes)
 	currentHash := dagRootHashWithLargestFutureSize
 	for {
 		ghostChain = append(ghostChain, currentHash)
@@ -20,17 +22,19 @@ func GHOST(subDAG *model.SubDAG) []*externalapi.DomainHash {
 			break
 		}
 
-		childHashWithLargestFutureSize := blockHashWithLargestFutureSize(subDAG, childHashes)
+		childHashWithLargestFutureSize := blockHashWithLargestFutureSize(futureSizes, childHashes)
 		currentHash = childHashWithLargestFutureSize
 	}
 	return ghostChain
 }
 
-func blockHashWithLargestFutureSize(subDAG *model.SubDAG, blockHashes []*externalapi.DomainHash) *externalapi.DomainHash {
+func blockHashWithLargestFutureSize(futureSizes map[externalapi.DomainHash]uint64,
+	blockHashes []*externalapi.DomainHash) *externalapi.DomainHash {
+
 	var blockHashWithLargestFutureSize *externalapi.DomainHash
 	largestFutureSize := uint64(0)
 	for _, blockHash := range blockHashes {
-		blockFutureSize := futureSize(subDAG, blockHash)
+		blockFutureSize := futureSizes[*blockHash]
 		if blockHashWithLargestFutureSize == nil || blockFutureSize > largestFutureSize ||
 			(blockFutureSize == largestFutureSize && blockHash.Less(blockHashWithLargestFutureSize)) {
 			largestFutureSize = blockFutureSize
@@ -40,23 +44,31 @@ func blockHashWithLargestFutureSize(subDAG *model.SubDAG, blockHashes []*externa
 	return blockHashWithLargestFutureSize
 }
 
+func futureSizes(subDAG *model.SubDAG) map[externalapi.DomainHash]uint64 {
+	futureSizes := make(map[externalapi.DomainHash]uint64, len(subDAG.Blocks))
+	for _, block := range subDAG.Blocks {
+		futureSizes[*block.BlockHash] = futureSize(subDAG, block.BlockHash)
+	}
+	return futureSizes
+}
+
 func futureSize(subDAG *model.SubDAG, blockHash *externalapi.DomainHash) uint64 {
 	queue := []*externalapi.DomainHash{blockHash}
-	visited := hashset.New()
+	addedToQueue := hashset.NewFromSlice(blockHash)
 	futureSize := uint64(0)
 	for len(queue) > 0 {
 		futureSize++
 
 		var currentBlockHash *externalapi.DomainHash
 		currentBlockHash, queue = queue[0], queue[1:]
-		visited.Add(currentBlockHash)
 
 		currentBlock := subDAG.Blocks[*currentBlockHash]
 		for _, childHash := range currentBlock.ChildHashes {
-			if visited.Contains(childHash) {
+			if addedToQueue.Contains(childHash) {
 				continue
 			}
 			queue = append(queue, childHash)
+			addedToQueue.Add(childHash)
 		}
 	}
 	return futureSize
