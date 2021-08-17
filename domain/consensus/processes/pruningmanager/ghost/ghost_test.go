@@ -5,206 +5,63 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/model/testapi"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/hashset"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/testutils"
-	"github.com/kaspanet/kaspad/domain/dagconfig"
 	"reflect"
 	"testing"
 )
 
 func TestGHOST(t *testing.T) {
-	tests := map[string][]*struct {
+	testChain := []struct {
 		parents            []string
 		id                 string
 		expectedGHOSTChain []string
 	}{
-		dagconfig.MainnetParams.Name: {
-			{
-				parents:            []string{"A"},
-				id:                 "B",
-				expectedGHOSTChain: []string{"A", "B"},
-			},
-			{
-				parents:            []string{"B"},
-				id:                 "C",
-				expectedGHOSTChain: []string{"A", "B", "C"},
-			},
-			{
-				parents:            []string{"B"},
-				id:                 "D",
-				expectedGHOSTChain: []string{"A", "B", "C"},
-			},
-			{
-				parents:            []string{"C", "D"},
-				id:                 "E",
-				expectedGHOSTChain: []string{"A", "B", "C", "E"},
-			},
-			{
-				parents:            []string{"C", "D"},
-				id:                 "F",
-				expectedGHOSTChain: []string{"A", "B", "C", "F"},
-			},
-			{
-				parents:            []string{"A"},
-				id:                 "G",
-				expectedGHOSTChain: []string{"A", "B", "C", "F"},
-			},
-			{
-				parents:            []string{"G"},
-				id:                 "H",
-				expectedGHOSTChain: []string{"A", "B", "C", "F"},
-			},
-			{
-				parents:            []string{"H", "F"},
-				id:                 "I",
-				expectedGHOSTChain: []string{"A", "B", "C", "F", "I"},
-			},
-			{
-				parents:            []string{"I"},
-				id:                 "J",
-				expectedGHOSTChain: []string{"A", "B", "C", "F", "I", "J"},
-			},
+		{
+			parents:            []string{"A"},
+			id:                 "B",
+			expectedGHOSTChain: []string{"A", "B"},
 		},
-		dagconfig.TestnetParams.Name: {
-			{
-				parents:            []string{"A"},
-				id:                 "B",
-				expectedGHOSTChain: []string{"A", "B"},
-			},
-			{
-				parents:            []string{"B"},
-				id:                 "C",
-				expectedGHOSTChain: []string{"A", "B", "C"},
-			},
-			{
-				parents:            []string{"B"},
-				id:                 "D",
-				expectedGHOSTChain: []string{"A", "B", "C"},
-			},
-			{
-				parents:            []string{"C", "D"},
-				id:                 "E",
-				expectedGHOSTChain: []string{"A", "B", "C", "E"},
-			},
-			{
-				parents:            []string{"C", "D"},
-				id:                 "F",
-				expectedGHOSTChain: []string{"A", "B", "C", "F"},
-			},
-			{
-				parents:            []string{"A"},
-				id:                 "G",
-				expectedGHOSTChain: []string{"A", "B", "C", "F"},
-			},
-			{
-				parents:            []string{"G"},
-				id:                 "H",
-				expectedGHOSTChain: []string{"A", "B", "C", "F"},
-			},
-			{
-				parents:            []string{"H", "F"},
-				id:                 "I",
-				expectedGHOSTChain: []string{"A", "B", "C", "F", "I"},
-			},
-			{
-				parents:            []string{"I"},
-				id:                 "J",
-				expectedGHOSTChain: []string{"A", "B", "C", "F", "I", "J"},
-			},
+		{
+			parents:            []string{"B"},
+			id:                 "C",
+			expectedGHOSTChain: []string{"A", "B", "C"},
 		},
-		dagconfig.SimnetParams.Name: {
-			{
-				parents:            []string{"A"},
-				id:                 "B",
-				expectedGHOSTChain: []string{"A", "B"},
-			},
-			{
-				parents:            []string{"B"},
-				id:                 "C",
-				expectedGHOSTChain: []string{"A", "B", "C"},
-			},
-			{
-				parents:            []string{"B"},
-				id:                 "D",
-				expectedGHOSTChain: []string{"A", "B", "D"},
-			},
-			{
-				parents:            []string{"C", "D"},
-				id:                 "E",
-				expectedGHOSTChain: []string{"A", "B", "D", "E"},
-			},
-			{
-				parents:            []string{"C", "D"},
-				id:                 "F",
-				expectedGHOSTChain: []string{"A", "B", "D", "F"},
-			},
-			{
-				parents:            []string{"A"},
-				id:                 "G",
-				expectedGHOSTChain: []string{"A", "B", "D", "F"},
-			},
-			{
-				parents:            []string{"G"},
-				id:                 "H",
-				expectedGHOSTChain: []string{"A", "B", "D", "F"},
-			},
-			{
-				parents:            []string{"H", "F"},
-				id:                 "I",
-				expectedGHOSTChain: []string{"A", "B", "D", "F", "I"},
-			},
-			{
-				parents:            []string{"I"},
-				id:                 "J",
-				expectedGHOSTChain: []string{"A", "B", "D", "F", "I", "J"},
-			},
+		{
+			parents:            []string{"B"},
+			id:                 "D",
+			expectedGHOSTChain: []string{"A", "B", "D"},
 		},
-		dagconfig.DevnetParams.Name: {
-			{
-				parents:            []string{"A"},
-				id:                 "B",
-				expectedGHOSTChain: []string{"A", "B"},
-			},
-			{
-				parents:            []string{"B"},
-				id:                 "C",
-				expectedGHOSTChain: []string{"A", "B", "C"},
-			},
-			{
-				parents:            []string{"B"},
-				id:                 "D",
-				expectedGHOSTChain: []string{"A", "B", "D"},
-			},
-			{
-				parents:            []string{"C", "D"},
-				id:                 "E",
-				expectedGHOSTChain: []string{"A", "B", "D", "E"},
-			},
-			{
-				parents:            []string{"C", "D"},
-				id:                 "F",
-				expectedGHOSTChain: []string{"A", "B", "D", "F"},
-			},
-			{
-				parents:            []string{"A"},
-				id:                 "G",
-				expectedGHOSTChain: []string{"A", "B", "D", "F"},
-			},
-			{
-				parents:            []string{"G"},
-				id:                 "H",
-				expectedGHOSTChain: []string{"A", "B", "D", "F"},
-			},
-			{
-				parents:            []string{"H", "F"},
-				id:                 "I",
-				expectedGHOSTChain: []string{"A", "B", "D", "F", "I"},
-			},
-			{
-				parents:            []string{"I"},
-				id:                 "J",
-				expectedGHOSTChain: []string{"A", "B", "D", "F", "I", "J"},
-			},
+		{
+			parents:            []string{"C", "D"},
+			id:                 "E",
+			expectedGHOSTChain: []string{"A", "B", "D", "E"},
+		},
+		{
+			parents:            []string{"C", "D"},
+			id:                 "F",
+			expectedGHOSTChain: []string{"A", "B", "D", "F"},
+		},
+		{
+			parents:            []string{"A"},
+			id:                 "G",
+			expectedGHOSTChain: []string{"A", "B", "D", "F"},
+		},
+		{
+			parents:            []string{"G"},
+			id:                 "H",
+			expectedGHOSTChain: []string{"A", "B", "D", "F"},
+		},
+		{
+			parents:            []string{"H", "F"},
+			id:                 "I",
+			expectedGHOSTChain: []string{"A", "B", "D", "F", "I"},
+		},
+		{
+			parents:            []string{"I"},
+			id:                 "J",
+			expectedGHOSTChain: []string{"A", "B", "D", "F", "I", "J"},
 		},
 	}
 
@@ -220,8 +77,8 @@ func TestGHOST(t *testing.T) {
 		idByBlockMap := make(map[externalapi.DomainHash]string)
 		blockByIDMap["A"] = consensusConfig.GenesisHash
 		idByBlockMap[*consensusConfig.GenesisHash] = "A"
+		mostRecentHash := consensusConfig.GenesisHash
 
-		testChain := tests[consensusConfig.Name]
 		for _, blockData := range testChain {
 			parents := hashset.New()
 			for _, parentID := range blockData.parents {
@@ -229,12 +86,13 @@ func TestGHOST(t *testing.T) {
 				parents.Add(parent)
 			}
 
-			blockHash, _, err := tc.AddBlock(parents.ToSlice(), nil, nil)
+			blockHash := addBlockWithHashSmallerThan(t, tc, parents.ToSlice(), mostRecentHash)
 			if err != nil {
 				t.Fatalf("AddBlock: %+v", err)
 			}
 			blockByIDMap[blockData.id] = blockHash
 			idByBlockMap[*blockHash] = blockData.id
+			mostRecentHash = blockHash
 
 			subDAG := convertDAGtoSubDAG(t, consensusConfig, tc)
 			ghostChainHashes := GHOST(subDAG)
@@ -248,6 +106,31 @@ func TestGHOST(t *testing.T) {
 			}
 		}
 	})
+}
+
+// addBlockWithHashSmallerThan adds a block to the DAG with the given parents such that its
+// hash is smaller than `maxHash`. This ensures that the GHOST chain calculated from the
+// DAG is deterministic
+func addBlockWithHashSmallerThan(t *testing.T, tc testapi.TestConsensus,
+	parentHashes []*externalapi.DomainHash, maxHash *externalapi.DomainHash) *externalapi.DomainHash {
+
+	var block *externalapi.DomainBlock
+	blockHash := maxHash
+	for maxHash.LessOrEqual(blockHash) {
+		var err error
+		block, _, err = tc.BuildBlockWithParents(parentHashes, nil, nil)
+		if err != nil {
+			t.Fatalf("BuildBlockWithParents: %+v", err)
+		}
+		blockHash = consensushashing.BlockHash(block)
+	}
+
+	_, err := tc.ValidateAndInsertBlock(block, true)
+	if err != nil {
+		t.Fatalf("ValidateAndInsertBlock: %+v", err)
+	}
+
+	return blockHash
 }
 
 func convertDAGtoSubDAG(t *testing.T, consensusConfig *consensus.Config, tc testapi.TestConsensus) *model.SubDAG {

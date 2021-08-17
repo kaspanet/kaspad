@@ -32,7 +32,7 @@ func blockHashWithLargestFutureSize(subDAG *model.SubDAG, blockHashes []*externa
 	for _, blockHash := range blockHashes {
 		blockFutureSize := futureSize(subDAG, blockHash)
 		if blockHashWithLargestFutureSize == nil || blockFutureSize > largestFutureSize ||
-			(blockFutureSize == largestFutureSize && blockHashWithLargestFutureSize.Less(blockHash)) {
+			(blockFutureSize == largestFutureSize && blockHash.Less(blockHashWithLargestFutureSize)) {
 			largestFutureSize = blockFutureSize
 			blockHashWithLargestFutureSize = blockHash
 		}
