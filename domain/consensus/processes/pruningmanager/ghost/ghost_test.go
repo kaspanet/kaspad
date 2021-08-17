@@ -1,6 +1,8 @@
 package ghost
 
 import (
+	"encoding/json"
+	"fmt"
 	"github.com/kaspanet/kaspad/domain/consensus"
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
@@ -8,6 +10,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/hashset"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/testutils"
+	"os"
 	"reflect"
 	"testing"
 )
@@ -194,4 +197,82 @@ func convertDAGtoSubDAG(t *testing.T, consensusConfig *consensus.Config, tc test
 		}
 	}
 	return subDAG
+}
+
+type jsonBlock struct {
+	ID      string   `json:"ID"`
+	Parents []string `json:"Parents"`
+}
+
+type testJSON struct {
+	Blocks []*jsonBlock `json:"blocks"`
+}
+
+func BenchmarkGHOST(b *testing.B) {
+	b.StopTimer()
+
+	// Load JSON
+	jsonFile, err := os.Open("benchmark_data.json")
+	if err != nil {
+		b.Fatalf("Open: %+v", err)
+	}
+	defer jsonFile.Close()
+
+	test := &testJSON{}
+	decoder := json.NewDecoder(jsonFile)
+	decoder.DisallowUnknownFields()
+	err = decoder.Decode(&test)
+	if err != nil {
+		b.Fatalf("Decode: %+v", err)
+	}
+
+	// Convert JSON data to a SubDAG
+	subDAG := &model.SubDAG{
+		RootHashes: []*externalapi.DomainHash{},
+		TipHashes:  []*externalapi.DomainHash{},
+		Blocks:     make(map[externalapi.DomainHash]*model.SubDAGBlock, len(test.Blocks)),
+	}
+	blockIDToHash := func(blockID string) *externalapi.DomainHash {
+		blockHashHex := fmt.Sprintf("%064s", blockID)
+		blockHash, err := externalapi.NewDomainHashFromString(blockHashHex)
+		if err != nil {
+			b.Fatalf("NewDomainHashFromString: %+v", err)
+		}
+		return blockHash
+	}
+	for _, block := range test.Blocks {
+		blockHash := blockIDToHash(block.ID)
+
+		parentHashes := []*externalapi.DomainHash{}
+		for _, parentID := range block.Parents {
+			parentHash := blockIDToHash(parentID)
+			parentHashes = append(parentHashes, parentHash)
+		}
+
+		subDAG.Blocks[*blockHash] = &model.SubDAGBlock{
+			BlockHash:    blockHash,
+			ParentHashes: parentHashes,
+			ChildHashes:  []*externalapi.DomainHash{},
+		}
+	}
+	for _, block := range subDAG.Blocks {
+		for _, parentHash := range block.ParentHashes {
+			parentBlock := subDAG.Blocks[*parentHash]
+			parentBlock.ChildHashes = append(parentBlock.ChildHashes, block.BlockHash)
+		}
+	}
+	for _, block := range subDAG.Blocks {
+		if len(block.ParentHashes) == 0 {
+			subDAG.RootHashes = append(subDAG.RootHashes, block.BlockHash)
+		}
+		if len(block.ChildHashes) == 0 {
+			subDAG.TipHashes = append(subDAG.TipHashes, block.BlockHash)
+		}
+	}
+
+	b.ResetTimer()
+	b.StartTimer()
+	for i := 0; i < b.N; i++ {
+		GHOST(subDAG)
+	}
 }
