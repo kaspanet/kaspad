@@ -212,6 +212,7 @@ func BenchmarkGHOST(b *testing.B) {
 	b.StopTimer()
 
 	// Load JSON
+	b.Logf("Loading JSON data")
 	jsonFile, err := os.Open("benchmark_data.json")
 	if err != nil {
 		b.Fatalf("Open: %+v", err)
@@ -227,6 +228,7 @@ func BenchmarkGHOST(b *testing.B) {
 	}
 
 	// Convert JSON data to a SubDAG
+	b.Logf("Converting JSON data to SubDAG")
 	subDAG := &model.SubDAG{
 		RootHashes: []*externalapi.DomainHash{},
 		TipHashes:  []*externalapi.DomainHash{},
@@ -279,6 +281,7 @@ func BenchmarkGHOST(b *testing.B) {
 		}
 	}
 
+	b.Logf("Running benchmark")
 	b.ResetTimer()
 	b.StartTimer()
 	for i := 0; i < b.N; i++ {
