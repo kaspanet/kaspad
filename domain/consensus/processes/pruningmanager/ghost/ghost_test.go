@@ -10,8 +10,11 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/hashset"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/testutils"
+	"io/ioutil"
+	"log"
 	"os"
 	"reflect"
+	"runtime/pprof"
 	"testing"
 )
 
@@ -280,6 +283,17 @@ func BenchmarkGHOST(b *testing.B) {
 			subDAG.TipHashes = append(subDAG.TipHashes, block.BlockHash)
 		}
 	}
+
+	profileFile, err := ioutil.TempFile("", "profile")
+	if err != nil {
+		log.Fatal("could not create CPU profile: ", err)
+	}
+	defer profileFile.Close()
+	if err := pprof.StartCPUProfile(profileFile); err != nil {
+		log.Fatal("could not start CPU profile: ", err)
+	}
+	defer pprof.StopCPUProfile()
+	b.Logf("Writing profile data to %s", profileFile.Name())
 
 	b.Logf("Running benchmark")
 	b.ResetTimer()
