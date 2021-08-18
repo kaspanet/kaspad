@@ -344,6 +344,9 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 
 	blockBuilder := blockbuilder.New(
 		dbManager,
+		genesisHash,
+		config.PruningDepth(),
+
 		difficultyManager,
 		pastMedianTimeManager,
 		coinbaseManager,
@@ -357,6 +360,7 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 		multisetStore,
 		ghostdagDataStore,
 		daaBlocksStore,
+		pruningStore,
 	)
 
 	blockProcessor := blockprocessor.New(

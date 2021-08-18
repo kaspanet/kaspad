@@ -1,6 +1,7 @@
 package blockbuilder
 
 import (
+	"github.com/kaspanet/kaspad/infrastructure/db/database"
 	"math/big"
 	"sort"
 
@@ -19,6 +20,8 @@ import (
 
 type blockBuilder struct {
 	databaseContext model.DBManager
+	genesisHash     *externalapi.DomainHash
+	pruningDepth    uint64
 
 	difficultyManager     model.DifficultyManager
 	pastMedianTimeManager model.PastMedianTimeManager
@@ -33,11 +36,14 @@ type blockBuilder struct {
 	multisetStore       model.MultisetStore
 	ghostdagDataStore   model.GHOSTDAGDataStore
 	daaBlocksStore      model.DAABlocksStore
+	pruningStore        model.PruningStore
 }
 
 // New creates a new instance of a BlockBuilder
 func New(
 	databaseContext model.DBManager,
+	genesisHash *externalapi.DomainHash,
+	pruningDepth uint64,
 
 	difficultyManager model.DifficultyManager,
 	pastMedianTimeManager model.PastMedianTimeManager,
@@ -52,10 +58,14 @@ func New(
 	multisetStore model.MultisetStore,
 	ghostdagDataStore model.GHOSTDAGDataStore,
 	daaBlocksStore model.DAABlocksStore,
+	pruningStore model.PruningStore,
 ) model.BlockBuilder {
 
 	return &blockBuilder{
-		databaseContext:       databaseContext,
+		databaseContext: databaseContext,
+		genesisHash:     genesisHash,
+		pruningDepth:    pruningDepth,
+
 		difficultyManager:     difficultyManager,
 		pastMedianTimeManager: pastMedianTimeManager,
 		coinbaseManager:       coinbaseManager,
@@ -69,6 +79,7 @@ func New(
 		multisetStore:       multisetStore,
 		ghostdagDataStore:   ghostdagDataStore,
 		daaBlocksStore:      daaBlocksStore,
+		pruningStore:        pruningStore,
 	}
 }
 
@@ -198,7 +209,7 @@ func (bb *blockBuilder) buildHeader(stagingArea *model.StagingArea, transactions
 	if err != nil {
 		return nil, err
 	}
-	finalityPoint, err := bb.newBlockFinalityPoint(stagingArea)
+	pruningPoint, err := bb.newBlockPruningPoint(stagingArea, model.VirtualBlockHash)
 	if err != nil {
 		return nil, err
 	}
@@ -214,7 +225,7 @@ func (bb *blockBuilder) buildHeader(stagingArea *model.StagingArea, transactions
 		0,
 		daaScore,
 		blueWork,
-		finalityPoint,
+		pruningPoint,
 	), nil
 }
 
@@ -311,6 +322,33 @@ func (bb *blockBuilder) newBlockBlueWork(stagingArea *model.StagingArea) (*big.I
 	return virtualGHOSTDAGData.BlueWork(), nil
 }
 
-func (bb *blockBuilder) newBlockFinalityPoint(stagingArea *model.StagingArea) (*externalapi.DomainHash, error) {
-	return bb.finalityManager.VirtualFinalityPoint(stagingArea)
+func (bb *blockBuilder) newBlockPruningPoint(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) (*externalapi.DomainHash, error) {
+	blockGHOSTDAGData, err := bb.ghostdagDataStore.Get(bb.databaseContext, stagingArea, blockHash, false)
+	if err != nil {
+		return nil, err
+	}
+
+	currentPruningPoint, err := bb.pruningStore.PruningPoint(bb.databaseContext, stagingArea)
+	if err != nil {
+		return nil, err
+	}
+
+	currentPruningPointGHOSTDAGData, err := bb.ghostdagDataStore.Get(bb.databaseContext, stagingArea, currentPruningPoint, false)
+	if err != nil {
+		return nil, err
+	}
+
+	if currentPruningPoint.Equal(bb.genesisHash) || blockGHOSTDAGData.BlueScore()-currentPruningPointGHOSTDAGData.BlueScore() > bb.pruningDepth {
+		return currentPruningPoint, nil
+	}
+
+	previousPruningPoint, err := bb.pruningStore.PreviousPruningPoint(bb.databaseContext, stagingArea)
+	if database.IsNotFoundError(err) {
+		return bb.genesisHash, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	return previousPruningPoint, nil
 }

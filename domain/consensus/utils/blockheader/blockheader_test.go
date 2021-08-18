@@ -94,7 +94,6 @@ func TestDomainBlockHeader_Equal(t *testing.T) {
 				{
 					header: &blockHeader{
 						0,
-						// []*externalapi.DomainHash{{1}, {2}},
 						[]*externalapi.DomainHash{
 							externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{1}),
 							externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{2})},

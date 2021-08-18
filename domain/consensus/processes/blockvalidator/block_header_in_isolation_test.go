@@ -68,7 +68,7 @@ func TestCheckBlockVersion(t *testing.T) {
 			block.Header.Nonce(),
 			block.Header.DAAScore(),
 			block.Header.BlueWork(),
-			block.Header.FinalityPoint(),
+			block.Header.PruningPoint(),
 		)
 
 		_, err = tc.ValidateAndInsertBlock(block, true)
@@ -108,7 +108,7 @@ func TestCheckBlockTimestampInIsolation(t *testing.T) {
 			block.Header.Nonce(),
 			block.Header.DAAScore(),
 			block.Header.BlueWork(),
-			block.Header.FinalityPoint(),
+			block.Header.PruningPoint(),
 		)
 
 		_, err = tc.ValidateAndInsertBlock(block, true)

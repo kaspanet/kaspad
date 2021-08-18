@@ -66,7 +66,7 @@ type BaseBlockHeader interface {
 	Nonce() uint64
 	DAAScore() uint64
 	BlueWork() *big.Int
-	FinalityPoint() *DomainHash
+	PruningPoint() *DomainHash
 	Equal(other BaseBlockHeader) bool
 }
 

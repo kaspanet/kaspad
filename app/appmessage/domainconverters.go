@@ -40,7 +40,7 @@ func DomainBlockHeaderToBlockHeader(domainBlockHeader externalapi.BlockHeader) *
 		Nonce:                domainBlockHeader.Nonce(),
 		DAAScore:             domainBlockHeader.DAAScore(),
 		BlueWork:             domainBlockHeader.BlueWork(),
-		FinalityPoint:        domainBlockHeader.FinalityPoint(),
+		PruningPoint:         domainBlockHeader.PruningPoint(),
 	}
 }
 
@@ -70,7 +70,7 @@ func BlockHeaderToDomainBlockHeader(blockHeader *MsgBlockHeader) externalapi.Blo
 		blockHeader.Nonce,
 		blockHeader.DAAScore,
 		blockHeader.BlueWork,
-		blockHeader.FinalityPoint,
+		blockHeader.PruningPoint,
 	)
 }
 
@@ -353,7 +353,7 @@ func DomainBlockToRPCBlock(block *externalapi.DomainBlock) *RPCBlock {
 		Nonce:                block.Header.Nonce(),
 		DAAScore:             block.Header.DAAScore(),
 		BlueWork:             block.Header.BlueWork().Text(16),
-		FinalityPoint:        block.Header.FinalityPoint().String(),
+		PruningPoint:         block.Header.PruningPoint().String(),
 	}
 	transactions := make([]*RPCTransaction, len(block.Transactions))
 	for i, transaction := range block.Transactions {
@@ -391,7 +391,7 @@ func RPCBlockToDomainBlock(block *RPCBlock) (*externalapi.DomainBlock, error) {
 	if !success {
 		return nil, errors.Errorf("failed to parse blue work: %s", block.Header.BlueWork)
 	}
-	finalityPoint, err := externalapi.NewDomainHashFromString(block.Header.FinalityPoint)
+	pruningPoint, err := externalapi.NewDomainHashFromString(block.Header.PruningPoint)
 	if err != nil {
 		return nil, err
 	}
@@ -406,7 +406,7 @@ func RPCBlockToDomainBlock(block *RPCBlock) (*externalapi.DomainBlock, error) {
 		block.Header.Nonce,
 		block.Header.DAAScore,
 		blueWork,
-		finalityPoint)
+		pruningPoint)
 	transactions := make([]*externalapi.DomainTransaction, len(block.Transactions))
 	for i, transaction := range block.Transactions {
 		domainTransaction, err := RPCTransactionToDomainTransaction(transaction)

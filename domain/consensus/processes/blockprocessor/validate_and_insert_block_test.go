@@ -75,7 +75,7 @@ func TestBlockStatus(t *testing.T) {
 			disqualifiedBlock.Header.Nonce(),
 			disqualifiedBlock.Header.DAAScore(),
 			disqualifiedBlock.Header.BlueWork(),
-			disqualifiedBlock.Header.FinalityPoint(),
+			disqualifiedBlock.Header.PruningPoint(),
 		)
 
 		_, err = tc.ValidateAndInsertBlock(disqualifiedBlock, true)
@@ -101,7 +101,7 @@ func TestBlockStatus(t *testing.T) {
 			disqualifiedBlock.Header.Nonce(),
 			disqualifiedBlock.Header.DAAScore(),
 			disqualifiedBlock.Header.BlueWork(),
-			disqualifiedBlock.Header.FinalityPoint(),
+			disqualifiedBlock.Header.PruningPoint(),
 		)
 
 		_, err = tc.ValidateAndInsertBlock(invalidBlock, true)

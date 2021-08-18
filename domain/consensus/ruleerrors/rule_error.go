@@ -216,6 +216,10 @@ var (
 	ErrGenesisOnInitializedConsensus = newRuleError("ErrGenesisOnInitializedConsensus")
 
 	ErrPruningPointSelectedChildDisqualifiedFromChain = newRuleError("ErrPruningPointSelectedChildDisqualifiedFromChain")
+
+	// ErrUnexpectedFinalityPoint indicates a block header pruning point does not align with
+	// the expected value.
+	ErrUnexpectedHeaderPruningPoint = newRuleError("ErrUnexpectedHeaderPruningPoint")
 )
 
 // RuleError identifies a rule violation. It is used to indicate that

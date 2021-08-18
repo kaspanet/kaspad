@@ -61,7 +61,7 @@ func TestPOW(t *testing.T) {
 			abovePowMaxBlock.Header.Nonce(),
 			abovePowMaxBlock.Header.DAAScore(),
 			abovePowMaxBlock.Header.BlueWork(),
-			abovePowMaxBlock.Header.FinalityPoint(),
+			abovePowMaxBlock.Header.PruningPoint(),
 		)
 
 		_, err = tc.ValidateAndInsertBlock(abovePowMaxBlock, true)
@@ -85,7 +85,7 @@ func TestPOW(t *testing.T) {
 			negativeTargetBlock.Header.Nonce(),
 			negativeTargetBlock.Header.DAAScore(),
 			negativeTargetBlock.Header.BlueWork(),
-			negativeTargetBlock.Header.FinalityPoint(),
+			negativeTargetBlock.Header.PruningPoint(),
 		)
 
 		_, err = tc.ValidateAndInsertBlock(negativeTargetBlock, true)
@@ -152,7 +152,7 @@ func TestCheckParentHeadersExist(t *testing.T) {
 			orphanBlock.Header.Nonce(),
 			orphanBlock.Header.DAAScore(),
 			orphanBlock.Header.BlueWork(),
-			orphanBlock.Header.FinalityPoint(),
+			orphanBlock.Header.PruningPoint(),
 		)
 
 		_, err = tc.ValidateAndInsertBlock(orphanBlock, true)
@@ -183,7 +183,7 @@ func TestCheckParentHeadersExist(t *testing.T) {
 			orphanBlock.Header.Nonce(),
 			orphanBlock.Header.DAAScore(),
 			orphanBlock.Header.BlueWork(),
-			orphanBlock.Header.FinalityPoint(),
+			orphanBlock.Header.PruningPoint(),
 		)
 
 		_, err = tc.ValidateAndInsertBlock(invalidBlock, true)
@@ -209,7 +209,7 @@ func TestCheckParentHeadersExist(t *testing.T) {
 			invalidBlockChild.Header.Nonce(),
 			invalidBlockChild.Header.DAAScore(),
 			invalidBlockChild.Header.BlueWork(),
-			invalidBlockChild.Header.FinalityPoint(),
+			invalidBlockChild.Header.PruningPoint(),
 		)
 
 		_, err = tc.ValidateAndInsertBlock(invalidBlockChild, true)

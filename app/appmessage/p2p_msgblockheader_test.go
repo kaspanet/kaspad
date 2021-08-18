@@ -25,9 +25,9 @@ func TestBlockHeader(t *testing.T) {
 	bits := uint32(0x1d00ffff)
 	daaScore := uint64(123)
 	blueWork := big.NewInt(456)
-	finalityPoint := simnetGenesisHash
+	pruningPoint := simnetGenesisHash
 	bh := NewBlockHeader(1, hashes, merkleHash, acceptedIDMerkleRoot, exampleUTXOCommitment, bits, nonce,
-		daaScore, blueWork, finalityPoint)
+		daaScore, blueWork, pruningPoint)
 
 	// Ensure we get the same data back out.
 	if !reflect.DeepEqual(bh.ParentHashes, hashes) {
@@ -53,10 +53,6 @@ func TestBlockHeader(t *testing.T) {
 	if bh.BlueWork != blueWork {
 		t.Errorf("NewBlockHeader: wrong blueWork - got %v, want %v",
 			bh.BlueWork, blueWork)
-	}
-	if !bh.FinalityPoint.Equal(finalityPoint) {
-		t.Errorf("NewBlockHeader: wrong finalityHash - got %v, want %v",
-			bh.FinalityPoint, finalityPoint)
 	}
 }
 

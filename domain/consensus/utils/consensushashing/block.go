@@ -45,5 +45,5 @@ func serializeHeader(w io.Writer, header externalapi.BaseBlockHeader) error {
 		}
 	}
 	return serialization.WriteElements(w, header.HashMerkleRoot(), header.AcceptedIDMerkleRoot(), header.UTXOCommitment(), timestamp,
-		header.Bits(), header.Nonce(), header.DAAScore(), blueWork, header.FinalityPoint())
+		header.Bits(), header.Nonce(), header.DAAScore(), blueWork, header.PruningPoint())
 }

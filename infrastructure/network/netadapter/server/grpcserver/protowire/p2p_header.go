@@ -28,7 +28,7 @@ func (x *BlockHeader) toAppMessage() (*appmessage.MsgBlockHeader, error) {
 	if err != nil {
 		return nil, err
 	}
-	finalityPoint, err := x.FinalityPoint.toDomain()
+	pruningPoint, err := x.PruningPoint.toDomain()
 	if err != nil {
 		return nil, err
 	}
@@ -46,7 +46,7 @@ func (x *BlockHeader) toAppMessage() (*appmessage.MsgBlockHeader, error) {
 		Nonce:                x.Nonce,
 		DAAScore:             x.DaaScore,
 		BlueWork:             new(big.Int).SetBytes(x.BlueWork),
-		FinalityPoint:        finalityPoint,
+		PruningPoint:         pruningPoint,
 	}, nil
 }
 
@@ -62,7 +62,7 @@ func (x *BlockHeader) fromAppMessage(msgBlockHeader *appmessage.MsgBlockHeader) 
 		Nonce:                msgBlockHeader.Nonce,
 		DaaScore:             msgBlockHeader.DAAScore,
 		BlueWork:             msgBlockHeader.BlueWork.Bytes(),
-		FinalityPoint:        domainHashToProto(msgBlockHeader.FinalityPoint),
+		PruningPoint:         domainHashToProto(msgBlockHeader.PruningPoint),
 	}
 	return nil
 }

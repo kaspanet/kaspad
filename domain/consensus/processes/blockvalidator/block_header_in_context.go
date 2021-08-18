@@ -82,10 +82,6 @@ func (v *blockValidator) ValidateHeaderInContext(stagingArea *model.StagingArea,
 	if err != nil {
 		return err
 	}
-	err = v.checkFinalityPoint(stagingArea, blockHash, header, isBlockWithTrustedData)
-	if err != nil {
-		return err
-	}
 
 	return nil
 }
@@ -198,23 +194,6 @@ func (v *blockValidator) checkBlueWork(stagingArea *model.StagingArea, blockHash
 	expectedBlueWork := ghostdagData.BlueWork()
 	if header.BlueWork().Cmp(expectedBlueWork) != 0 {
 		return errors.Wrapf(ruleerrors.ErrUnexpectedBlueWork, "block blue work of %d is not the expected value of %d", header.BlueWork(), expectedBlueWork)
-	}
-	return nil
-}
-
-func (v *blockValidator) checkFinalityPoint(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash,
-	header externalapi.BlockHeader, isBlockWithTrustedData bool) error {
-
-	expectedFinalityPoint, err := v.finalityManager.FinalityPoint(stagingArea, blockHash, isBlockWithTrustedData)
-	if err != nil {
-		return err
-	}
-	if expectedFinalityPoint.Equal(model.VirtualGenesisBlockHash) {
-		return nil
-	}
-
-	if !header.FinalityPoint().Equal(expectedFinalityPoint) {
-		return errors.Wrapf(ruleerrors.ErrUnexpectedFinalityPoint, "block finality point of %s is not the expected hash of %s", header.FinalityPoint(), expectedFinalityPoint)
 	}
 	return nil
 }

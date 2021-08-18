@@ -79,7 +79,7 @@ type RPCBlockHeader struct {
 	Nonce                uint64
 	DAAScore             uint64
 	BlueWork             string
-	FinalityPoint        string
+	PruningPoint         string
 }
 
 // RPCBlockVerboseData holds verbose data about a block
