@@ -46,21 +46,100 @@ func blockHashWithLargestFutureSize(futureSizes map[externalapi.DomainHash]uint6
 
 func futureSizes(subDAG *model.SubDAG) map[externalapi.DomainHash]uint64 {
 	futureSizes := make(map[externalapi.DomainHash]uint64, len(subDAG.Blocks))
-	for _, block := range subDAG.Blocks {
-		futureSizes[*block.BlockHash] = futureSize(subDAG, block.BlockHash)
+	reverseMergeSets := make(map[externalapi.DomainHash]hashset.HashSet, len(subDAG.Blocks))
+
+	queue := append([]*externalapi.DomainHash{}, subDAG.TipHashes...)
+	addedToQueue := hashset.NewFromSlice(subDAG.TipHashes...)
+	for len(queue) > 0 {
+		var currentBlockHash *externalapi.DomainHash
+		currentBlockHash, queue = queue[0], queue[1:]
+
+		currentBlock := subDAG.Blocks[*currentBlockHash]
+		for _, parentHash := range currentBlock.ParentHashes {
+			if addedToQueue.Contains(parentHash) {
+				continue
+			}
+			queue = append(queue, parentHash)
+			addedToQueue.Add(parentHash)
+		}
+
+		populateReverseMergeSet(subDAG, currentBlock, reverseMergeSets)
+		currentBlockReverseMergeSet := reverseMergeSets[*currentBlockHash]
+		currentBlockReverseMergeSetSize := currentBlockReverseMergeSet.Length()
+		futureSize := uint64(currentBlockReverseMergeSetSize)
+		if currentBlockReverseMergeSet.Length() > 0 {
+			selectedChild := blockHashWithLargestReverseMergeSetSize(reverseMergeSets, currentBlock.ChildHashes)
+			selectedChildFutureSize := futureSizes[*selectedChild]
+			futureSize += selectedChildFutureSize
+		}
+		futureSizes[*currentBlockHash] = futureSize
 	}
 	return futureSizes
 }
 
-func futureSize(subDAG *model.SubDAG, blockHash *externalapi.DomainHash) uint64 {
-	queue := []*externalapi.DomainHash{blockHash}
-	addedToQueue := hashset.NewFromSlice(blockHash)
-	futureSize := uint64(0)
-	for len(queue) > 0 {
-		futureSize++
+func populateReverseMergeSet(subDAG *model.SubDAG, block *model.SubDAGBlock, reverseMergeSets map[externalapi.DomainHash]hashset.HashSet) {
+	if len(block.ChildHashes) == 0 {
+		reverseMergeSets[*block.BlockHash] = hashset.New()
+		return
+	}
 
+	selectedChild := blockHashWithLargestReverseMergeSetSize(reverseMergeSets, block.ChildHashes)
+	reverseMergeSet := hashset.NewFromSlice(selectedChild)
+
+	queue := append([]*externalapi.DomainHash{}, block.ChildHashes...)
+	addedToQueue := hashset.NewFromSlice(block.ChildHashes...)
+	for len(queue) > 0 {
 		var currentBlockHash *externalapi.DomainHash
 		currentBlockHash, queue = queue[0], queue[1:]
+
+		if isDescendantOf(subDAG, currentBlockHash, selectedChild) {
+			continue
+		}
+		reverseMergeSet.Add(currentBlockHash)
+
+		for _, childHash := range block.ChildHashes {
+			if addedToQueue.Contains(childHash) {
+				continue
+			}
+			queue = append(queue, childHash)
+			addedToQueue.Add(childHash)
+		}
+	}
+	reverseMergeSets[*block.BlockHash] = reverseMergeSet
+}
+
+func blockHashWithLargestReverseMergeSetSize(reverseMergeSets map[externalapi.DomainHash]hashset.HashSet,
+	blockHashes []*externalapi.DomainHash) *externalapi.DomainHash {
+
+	var blockHashWithLargestReverseMergeSetSize *externalapi.DomainHash
+	largestReverseMergeSetSize := 0
+	for _, blockHash := range blockHashes {
+		blockReverseMergeSetSize := reverseMergeSets[*blockHash].Length()
+		if blockHashWithLargestReverseMergeSetSize == nil || blockReverseMergeSetSize > largestReverseMergeSetSize ||
+			(blockReverseMergeSetSize == largestReverseMergeSetSize && blockHash.Less(blockHashWithLargestReverseMergeSetSize)) {
+			largestReverseMergeSetSize = blockReverseMergeSetSize
+			blockHashWithLargestReverseMergeSetSize = blockHash
+		}
+	}
+	return blockHashWithLargestReverseMergeSetSize
+}
+
+func isDescendantOf(subDAG *model.SubDAG, blockAHash *externalapi.DomainHash, blockBHash *externalapi.DomainHash) bool {
+	if blockAHash.Equal(blockBHash) {
+		return true
+	}
+
+	blockB := subDAG.Blocks[*blockBHash]
+
+	queue := append([]*externalapi.DomainHash{}, blockB.ChildHashes...)
+	addedToQueue := hashset.NewFromSlice(blockB.ChildHashes...)
+	for len(queue) > 0 {
+		var currentBlockHash *externalapi.DomainHash
+		currentBlockHash, queue = queue[0], queue[1:]
+
+		if currentBlockHash.Equal(blockAHash) {
+			return true
+		}
 
 		currentBlock := subDAG.Blocks[*currentBlockHash]
 		for _, childHash := range currentBlock.ChildHashes {
@@ -71,5 +150,5 @@ func futureSize(subDAG *model.SubDAG, blockHash *externalapi.DomainHash) uint64 
 			addedToQueue.Add(childHash)
 		}
 	}
-	return futureSize
+	return false
 }
