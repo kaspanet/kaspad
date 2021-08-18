@@ -110,7 +110,8 @@ func populateReverseMergeSet(subDAG *model.SubDAG, block *model.SubDAGBlock, rev
 		}
 		reverseMergeSet.Add(currentBlockHash)
 
-		for _, childHash := range block.ChildHashes {
+		currentBlock := subDAG.Blocks[*currentBlockHash]
+		for _, childHash := range currentBlock.ChildHashes {
 			if addedToQueue.Contains(childHash) {
 				continue
 			}
