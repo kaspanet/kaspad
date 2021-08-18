@@ -76,8 +76,9 @@ func futureSizes(subDAG *model.SubDAG) map[externalapi.DomainHash]uint64 {
 			addedToQueue.Add(parentHash)
 		}
 
-		populateReverseMergeSet(subDAG, currentBlock, reverseMergeSets)
-		currentBlockReverseMergeSet := reverseMergeSets[*currentBlockHash]
+		currentBlockReverseMergeSet := calculateReverseMergeSet(subDAG, currentBlock)
+		reverseMergeSets[*currentBlockHash] = currentBlockReverseMergeSet
+
 		currentBlockReverseMergeSetSize := currentBlockReverseMergeSet.Length()
 		futureSize := uint64(currentBlockReverseMergeSetSize)
 		if currentBlockReverseMergeSet.Length() > 0 {
@@ -90,10 +91,9 @@ func futureSizes(subDAG *model.SubDAG) map[externalapi.DomainHash]uint64 {
 	return futureSizes
 }
 
-func populateReverseMergeSet(subDAG *model.SubDAG, block *model.SubDAGBlock, reverseMergeSets map[externalapi.DomainHash]hashset.HashSet) {
+func calculateReverseMergeSet(subDAG *model.SubDAG, block *model.SubDAGBlock) hashset.HashSet {
 	if len(block.ChildHashes) == 0 {
-		reverseMergeSets[*block.BlockHash] = hashset.New()
-		return
+		return hashset.New()
 	}
 
 	selectedChild := block.ChildHashes[0]
@@ -119,7 +119,7 @@ func populateReverseMergeSet(subDAG *model.SubDAG, block *model.SubDAGBlock, rev
 			addedToQueue.Add(childHash)
 		}
 	}
-	reverseMergeSets[*block.BlockHash] = reverseMergeSet
+	return reverseMergeSet
 }
 
 func isDescendantOf(subDAG *model.SubDAG, blockAHash *externalapi.DomainHash, blockBHash *externalapi.DomainHash) bool {
