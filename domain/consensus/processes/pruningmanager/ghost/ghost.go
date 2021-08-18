@@ -54,7 +54,20 @@ func futureSizes(subDAG *model.SubDAG) map[externalapi.DomainHash]uint64 {
 		var currentBlockHash *externalapi.DomainHash
 		currentBlockHash, queue = queue[0], queue[1:]
 
+		// Send the block to the back of the queue if one or more of its children had not been processed yet
 		currentBlock := subDAG.Blocks[*currentBlockHash]
+		hasMissingChildData := false
+		for _, childHash := range currentBlock.ChildHashes {
+			if _, ok := futureSizes[*childHash]; !ok {
+				hasMissingChildData = true
+				continue
+			}
+		}
+		if hasMissingChildData {
+			queue = append(queue, currentBlockHash)
+			continue
+		}
+
 		for _, parentHash := range currentBlock.ParentHashes {
 			if addedToQueue.Contains(parentHash) {
 				continue
