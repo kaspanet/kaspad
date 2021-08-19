@@ -60,14 +60,13 @@ func futureSizes(subDAG *model.SubDAG) (map[externalapi.DomainHash]uint64, error
 	for {
 		for _, blockHash := range heightMaps.heightToBlockHashesMap[height] {
 			block := subDAG.Blocks[*blockHash]
-			currentBlockReverseMergeSet, err := calculateReverseMergeSet(subDAG, ghostReachabilityManager, block)
+			currentBlockReverseMergeSetSize, err := calculateReverseMergeSetSize(subDAG, ghostReachabilityManager, block)
 			if err != nil {
 				return nil, err
 			}
 
-			currentBlockReverseMergeSetSize := currentBlockReverseMergeSet.Length()
-			futureSize := uint64(currentBlockReverseMergeSetSize)
-			if currentBlockReverseMergeSet.Length() > 0 {
+			futureSize := currentBlockReverseMergeSetSize
+			if currentBlockReverseMergeSetSize > 0 {
 				selectedChild := block.ChildHashes[0]
 				selectedChildFutureSize := futureSizes[*selectedChild]
 				futureSize += selectedChildFutureSize
@@ -82,15 +81,15 @@ func futureSizes(subDAG *model.SubDAG) (map[externalapi.DomainHash]uint64, error
 	return futureSizes, nil
 }
 
-func calculateReverseMergeSet(subDAG *model.SubDAG,
-	ghostReachabilityManager *ghostReachabilityManager, block *model.SubDAGBlock) (hashset.HashSet, error) {
+func calculateReverseMergeSetSize(subDAG *model.SubDAG,
+	ghostReachabilityManager *ghostReachabilityManager, block *model.SubDAGBlock) (uint64, error) {
 
 	if len(block.ChildHashes) == 0 {
-		return hashset.New(), nil
+		return 0, nil
 	}
 
 	selectedChild := block.ChildHashes[0]
-	reverseMergeSet := hashset.NewFromSlice(selectedChild)
+	reverseMergeSetSize := uint64(0)
 
 	queue := append([]*externalapi.DomainHash{}, block.ChildHashes...)
 	addedToQueue := hashset.NewFromSlice(block.ChildHashes...)
@@ -100,12 +99,12 @@ func calculateReverseMergeSet(subDAG *model.SubDAG,
 
 		isCurrentBlockDescendantOfSelectedChild, err := ghostReachabilityManager.isDescendantOf(currentBlockHash, selectedChild)
 		if err != nil {
-			return nil, err
+			return 0, err
 		}
 		if isCurrentBlockDescendantOfSelectedChild {
 			continue
 		}
-		reverseMergeSet.Add(currentBlockHash)
+		reverseMergeSetSize++
 
 		currentBlock := subDAG.Blocks[*currentBlockHash]
 		for _, childHash := range currentBlock.ChildHashes {
@@ -116,5 +115,5 @@ func calculateReverseMergeSet(subDAG *model.SubDAG,
 			addedToQueue.Add(childHash)
 		}
 	}
-	return reverseMergeSet, nil
+	return reverseMergeSetSize, nil
 }
