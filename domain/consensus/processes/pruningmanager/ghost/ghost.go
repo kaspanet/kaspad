@@ -91,22 +91,35 @@ func calculateReverseMergeSetSize(subDAG *model.SubDAG,
 	selectedChild := block.ChildHashes[0]
 	reverseMergeSetSize := uint64(1)
 
+	knownSelectedChildDescendants := hashset.NewFromSlice(selectedChild)
+
 	queue := append([]*externalapi.DomainHash{}, block.ChildHashes...)
 	addedToQueue := hashset.NewFromSlice(block.ChildHashes...)
 	for len(queue) > 0 {
 		var currentBlockHash *externalapi.DomainHash
 		currentBlockHash, queue = queue[0], queue[1:]
 
+		currentBlock := subDAG.Blocks[*currentBlockHash]
+		if knownSelectedChildDescendants.Contains(currentBlockHash) {
+			for _, childHash := range currentBlock.ChildHashes {
+				knownSelectedChildDescendants.Add(childHash)
+			}
+			continue
+		}
+
 		isCurrentBlockDescendantOfSelectedChild, err := ghostReachabilityManager.isDescendantOf(currentBlockHash, selectedChild)
 		if err != nil {
 			return 0, err
 		}
 		if isCurrentBlockDescendantOfSelectedChild {
+			knownSelectedChildDescendants.Add(currentBlockHash)
+			for _, childHash := range currentBlock.ChildHashes {
+				knownSelectedChildDescendants.Add(childHash)
+			}
 			continue
 		}
 		reverseMergeSetSize++
 
-		currentBlock := subDAG.Blocks[*currentBlockHash]
 		for _, childHash := range currentBlock.ChildHashes {
 			if addedToQueue.Contains(childHash) {
 				continue
