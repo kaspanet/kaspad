@@ -59,7 +59,7 @@ func TestRPCMaxInboundConnections(t *testing.T) {
 		if err != nil {
 			t.Fatalf("newTestRPCClient: %s", err)
 		}
-	case <-time.After(time.Second):
+	case <-time.After(time.Second * 5):
 		t.Fatalf("Timeout for connecting %d RPC connections elapsed", grpcserver.RPCMaxInboundConnections)
 	}
 
