@@ -55,7 +55,6 @@ func futureSizes(subDAG *model.SubDAG) (map[externalapi.DomainHash]uint64, error
 	}
 
 	futureSizes := make(map[externalapi.DomainHash]uint64, len(subDAG.Blocks))
-	reverseMergeSets := make(map[externalapi.DomainHash]hashset.HashSet, len(subDAG.Blocks))
 
 	height := heightMaps.maxHeight
 	for {
@@ -65,7 +64,6 @@ func futureSizes(subDAG *model.SubDAG) (map[externalapi.DomainHash]uint64, error
 			if err != nil {
 				return nil, err
 			}
-			reverseMergeSets[*blockHash] = currentBlockReverseMergeSet
 
 			currentBlockReverseMergeSetSize := currentBlockReverseMergeSet.Length()
 			futureSize := uint64(currentBlockReverseMergeSetSize)

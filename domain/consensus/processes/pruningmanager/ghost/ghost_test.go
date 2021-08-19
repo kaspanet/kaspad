@@ -287,16 +287,22 @@ func BenchmarkGHOST(b *testing.B) {
 		}
 	}
 
-	profileFile, err := ioutil.TempFile("", "profile")
+	cpuProfileFile, err := ioutil.TempFile("", "profile")
 	if err != nil {
 		log.Fatal("could not create CPU profile: ", err)
 	}
-	defer profileFile.Close()
-	if err := pprof.StartCPUProfile(profileFile); err != nil {
+	defer cpuProfileFile.Close()
+	if err := pprof.StartCPUProfile(cpuProfileFile); err != nil {
 		log.Fatal("could not start CPU profile: ", err)
 	}
 	defer pprof.StopCPUProfile()
-	b.Logf("Writing profile data to %s", profileFile.Name())
+	b.Logf("Writing CPU profile data to %s", cpuProfileFile.Name())
+
+	heapProfileFile, err := ioutil.TempFile("", "profile")
+	if err != nil {
+		log.Fatal("could not create heap profile: ", err)
+	}
+	defer heapProfileFile.Close()
 
 	b.Logf("Running benchmark")
 	b.ResetTimer()
@@ -307,4 +313,7 @@ func BenchmarkGHOST(b *testing.B) {
 			b.Fatalf("GHOST: %+v", err)
 		}
 	}
+
+	b.Logf("Writing heap profile data to %s", heapProfileFile.Name())
+	pprof.WriteHeapProfile(heapProfileFile)
 }
