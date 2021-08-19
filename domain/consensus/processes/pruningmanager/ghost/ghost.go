@@ -48,7 +48,8 @@ func blockHashWithLargestFutureSize(futureSizes map[externalapi.DomainHash]uint6
 }
 
 func futureSizes(subDAG *model.SubDAG) (map[externalapi.DomainHash]uint64, error) {
-	ghostReachabilityManager, err := newGHOSTReachabilityManager(subDAG)
+	heightMaps := buildHeightMaps(subDAG)
+	ghostReachabilityManager, err := newGHOSTReachabilityManager(subDAG, heightMaps)
 	if err != nil {
 		return nil, err
 	}
