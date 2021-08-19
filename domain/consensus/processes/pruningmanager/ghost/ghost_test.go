@@ -101,7 +101,10 @@ func TestGHOST(t *testing.T) {
 			mostRecentHash = blockHash
 
 			subDAG := convertDAGtoSubDAG(t, consensusConfig, tc)
-			ghostChainHashes := GHOST(subDAG)
+			ghostChainHashes, err := GHOST(subDAG)
+			if err != nil {
+				t.Fatalf("GHOST: %+v", err)
+			}
 			ghostChainIDs := make([]string, len(ghostChainHashes))
 			for i, ghostChainHash := range ghostChainHashes {
 				ghostChainIDs[i] = idByBlockMap[*ghostChainHash]
@@ -299,6 +302,9 @@ func BenchmarkGHOST(b *testing.B) {
 	b.ResetTimer()
 	b.StartTimer()
 	for i := 0; i < b.N; i++ {
-		GHOST(subDAG)
+		_, err := GHOST(subDAG)
+		if err != nil {
+			b.Fatalf("GHOST: %+v", err)
+		}
 	}
 }

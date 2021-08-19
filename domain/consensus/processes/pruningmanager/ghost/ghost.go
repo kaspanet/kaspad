@@ -7,8 +7,11 @@ import (
 )
 
 // GHOST calculates the GHOST chain for the given `subDAG`
-func GHOST(subDAG *model.SubDAG) []*externalapi.DomainHash {
-	futureSizes := futureSizes(subDAG)
+func GHOST(subDAG *model.SubDAG) ([]*externalapi.DomainHash, error) {
+	futureSizes, err := futureSizes(subDAG)
+	if err != nil {
+		return nil, err
+	}
 
 	ghostChain := []*externalapi.DomainHash{}
 	dagRootHashWithLargestFutureSize := blockHashWithLargestFutureSize(futureSizes, subDAG.RootHashes)
@@ -25,7 +28,7 @@ func GHOST(subDAG *model.SubDAG) []*externalapi.DomainHash {
 		childHashWithLargestFutureSize := blockHashWithLargestFutureSize(futureSizes, childHashes)
 		currentHash = childHashWithLargestFutureSize
 	}
-	return ghostChain
+	return ghostChain, nil
 }
 
 func blockHashWithLargestFutureSize(futureSizes map[externalapi.DomainHash]uint64,
@@ -44,7 +47,12 @@ func blockHashWithLargestFutureSize(futureSizes map[externalapi.DomainHash]uint6
 	return blockHashWithLargestFutureSize
 }
 
-func futureSizes(subDAG *model.SubDAG) map[externalapi.DomainHash]uint64 {
+func futureSizes(subDAG *model.SubDAG) (map[externalapi.DomainHash]uint64, error) {
+	ghostReachabilityManager, err := newGHOSTReachabilityManager(subDAG)
+	if err != nil {
+		return nil, err
+	}
+
 	futureSizes := make(map[externalapi.DomainHash]uint64, len(subDAG.Blocks))
 	reverseMergeSets := make(map[externalapi.DomainHash]hashset.HashSet, len(subDAG.Blocks))
 
@@ -76,7 +84,10 @@ func futureSizes(subDAG *model.SubDAG) map[externalapi.DomainHash]uint64 {
 			addedToQueue.Add(parentHash)
 		}
 
-		currentBlockReverseMergeSet := calculateReverseMergeSet(subDAG, currentBlock)
+		currentBlockReverseMergeSet, err := calculateReverseMergeSet(subDAG, ghostReachabilityManager, currentBlock)
+		if err != nil {
+			return nil, err
+		}
 		reverseMergeSets[*currentBlockHash] = currentBlockReverseMergeSet
 
 		currentBlockReverseMergeSetSize := currentBlockReverseMergeSet.Length()
@@ -88,12 +99,14 @@ func futureSizes(subDAG *model.SubDAG) map[externalapi.DomainHash]uint64 {
 		}
 		futureSizes[*currentBlockHash] = futureSize
 	}
-	return futureSizes
+	return futureSizes, nil
 }
 
-func calculateReverseMergeSet(subDAG *model.SubDAG, block *model.SubDAGBlock) hashset.HashSet {
+func calculateReverseMergeSet(subDAG *model.SubDAG,
+	ghostReachabilityManager *ghostReachabilityManager, block *model.SubDAGBlock) (hashset.HashSet, error) {
+
 	if len(block.ChildHashes) == 0 {
-		return hashset.New()
+		return hashset.New(), nil
 	}
 
 	selectedChild := block.ChildHashes[0]
@@ -105,7 +118,11 @@ func calculateReverseMergeSet(subDAG *model.SubDAG, block *model.SubDAGBlock) ha
 		var currentBlockHash *externalapi.DomainHash
 		currentBlockHash, queue = queue[0], queue[1:]
 
-		if isDescendantOf(subDAG, currentBlockHash, selectedChild) {
+		isCurrentBlockDescendantOfSelectedChild, err := ghostReachabilityManager.isDescendantOf(currentBlockHash, selectedChild)
+		if err != nil {
+			return nil, err
+		}
+		if isCurrentBlockDescendantOfSelectedChild {
 			continue
 		}
 		reverseMergeSet.Add(currentBlockHash)
@@ -119,34 +136,5 @@ func calculateReverseMergeSet(subDAG *model.SubDAG, block *model.SubDAGBlock) ha
 			addedToQueue.Add(childHash)
 		}
 	}
-	return reverseMergeSet
-}
-
-func isDescendantOf(subDAG *model.SubDAG, blockAHash *externalapi.DomainHash, blockBHash *externalapi.DomainHash) bool {
-	if blockAHash.Equal(blockBHash) {
-		return true
-	}
-
-	blockB := subDAG.Blocks[*blockBHash]
-
-	queue := append([]*externalapi.DomainHash{}, blockB.ChildHashes...)
-	addedToQueue := hashset.NewFromSlice(blockB.ChildHashes...)
-	for len(queue) > 0 {
-		var currentBlockHash *externalapi.DomainHash
-		currentBlockHash, queue = queue[0], queue[1:]
-
-		if currentBlockHash.Equal(blockAHash) {
-			return true
-		}
-
-		currentBlock := subDAG.Blocks[*currentBlockHash]
-		for _, childHash := range currentBlock.ChildHashes {
-			if addedToQueue.Contains(childHash) {
-				continue
-			}
-			queue = append(queue, childHash)
-			addedToQueue.Add(childHash)
-		}
-	}
-	return false
+	return reverseMergeSet, nil
 }
