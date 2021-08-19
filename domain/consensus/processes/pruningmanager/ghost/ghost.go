@@ -89,7 +89,7 @@ func calculateReverseMergeSetSize(subDAG *model.SubDAG,
 	}
 
 	selectedChild := block.ChildHashes[0]
-	reverseMergeSetSize := uint64(0)
+	reverseMergeSetSize := uint64(1)
 
 	queue := append([]*externalapi.DomainHash{}, block.ChildHashes...)
 	addedToQueue := hashset.NewFromSlice(block.ChildHashes...)
