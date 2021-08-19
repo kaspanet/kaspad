@@ -57,48 +57,29 @@ func futureSizes(subDAG *model.SubDAG) (map[externalapi.DomainHash]uint64, error
 	futureSizes := make(map[externalapi.DomainHash]uint64, len(subDAG.Blocks))
 	reverseMergeSets := make(map[externalapi.DomainHash]hashset.HashSet, len(subDAG.Blocks))
 
-	queue := append([]*externalapi.DomainHash{}, subDAG.TipHashes...)
-	addedToQueue := hashset.NewFromSlice(subDAG.TipHashes...)
-	for len(queue) > 0 {
-		var currentBlockHash *externalapi.DomainHash
-		currentBlockHash, queue = queue[0], queue[1:]
-
-		// Send the block to the back of the queue if one or more of its children had not been processed yet
-		currentBlock := subDAG.Blocks[*currentBlockHash]
-		hasMissingChildData := false
-		for _, childHash := range currentBlock.ChildHashes {
-			if _, ok := futureSizes[*childHash]; !ok {
-				hasMissingChildData = true
-				continue
+	height := heightMaps.maxHeight
+	for {
+		for _, blockHash := range heightMaps.heightToBlockHashesMap[height] {
+			block := subDAG.Blocks[*blockHash]
+			currentBlockReverseMergeSet, err := calculateReverseMergeSet(subDAG, ghostReachabilityManager, block)
+			if err != nil {
+				return nil, err
 			}
-		}
-		if hasMissingChildData {
-			queue = append(queue, currentBlockHash)
-			continue
-		}
+			reverseMergeSets[*blockHash] = currentBlockReverseMergeSet
 
-		for _, parentHash := range currentBlock.ParentHashes {
-			if addedToQueue.Contains(parentHash) {
-				continue
+			currentBlockReverseMergeSetSize := currentBlockReverseMergeSet.Length()
+			futureSize := uint64(currentBlockReverseMergeSetSize)
+			if currentBlockReverseMergeSet.Length() > 0 {
+				selectedChild := block.ChildHashes[0]
+				selectedChildFutureSize := futureSizes[*selectedChild]
+				futureSize += selectedChildFutureSize
 			}
-			queue = append(queue, parentHash)
-			addedToQueue.Add(parentHash)
+			futureSizes[*blockHash] = futureSize
 		}
-
-		currentBlockReverseMergeSet, err := calculateReverseMergeSet(subDAG, ghostReachabilityManager, currentBlock)
-		if err != nil {
-			return nil, err
+		if height == 0 {
+			break
 		}
-		reverseMergeSets[*currentBlockHash] = currentBlockReverseMergeSet
-
-		currentBlockReverseMergeSetSize := currentBlockReverseMergeSet.Length()
-		futureSize := uint64(currentBlockReverseMergeSetSize)
-		if currentBlockReverseMergeSet.Length() > 0 {
-			selectedChild := currentBlock.ChildHashes[0]
-			selectedChildFutureSize := futureSizes[*selectedChild]
-			futureSize += selectedChildFutureSize
-		}
-		futureSizes[*currentBlockHash] = futureSize
+		height--
 	}
 	return futureSizes, nil
 }
