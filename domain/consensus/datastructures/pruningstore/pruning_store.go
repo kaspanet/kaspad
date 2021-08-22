@@ -60,7 +60,7 @@ func (ps *pruningStore) PruningPointCandidate(dbContext model.DBReader, stagingA
 		return ps.pruningPointCandidateCache, nil
 	}
 
-	candidateBytes, err := dbContext.Get(ps.pruningBlockHashKey)
+	candidateBytes, err := dbContext.Get(ps.candidatePruningPointHashKey)
 	if err != nil {
 		return nil, err
 	}
