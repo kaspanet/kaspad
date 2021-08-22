@@ -124,7 +124,7 @@ func TestIBDWithPruning(t *testing.T) {
 		}
 
 		if synceeSelectedTip.SelectedTipHash != consensushashing.BlockHash(syncerTip).String() {
-			t.Fatalf("Unexpected selected tip")
+			t.Fatalf("Unexpected selected tip: expected %s but got %s", consensushashing.BlockHash(syncerTip).String(), synceeSelectedTip.SelectedTipHash)
 		}
 	}
 

@@ -160,9 +160,9 @@ func TestDoubleSpends(t *testing.T) {
 
 // TestTransactionAcceptance checks that block transactions are accepted correctly when the merge set is sorted topologically.
 // DAG diagram:
-// genesis <- blockA <- blockB <- blockC   <- ..(chain of k-blocks).. lastBlockInChain <- blockD <- blockE <- blockF
-//                                ^								           ^									|
-//								  | redBlock <------------------------ blueChildOfRedBlock <--------------------
+// genesis <- blockA <- blockB <- blockC   <- ..(chain of k-blocks).. lastBlockInChain <- blockD <- blockE <- blockF <- blockG
+//                                ^								           ^									          |
+//								  | redBlock <------------------------ blueChildOfRedBlock <-------------------------------
 func TestTransactionAcceptance(t *testing.T) {
 	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
 		stagingArea := model.NewStagingArea()
@@ -244,8 +244,12 @@ func TestTransactionAcceptance(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Error creating blockD : %+v", err)
 		}
+		blockHashE, _, err := testConsensus.AddBlock([]*externalapi.DomainHash{blockHashD}, nil, nil)
+		if err != nil {
+			t.Fatalf("Error creating blockD : %+v", err)
+		}
 		blockEScriptPublicKey := &externalapi.ScriptPublicKey{Script: []byte{4}, Version: 0}
-		blockHashE, _, err := testConsensus.AddBlock([]*externalapi.DomainHash{blockHashD},
+		blockHashF, _, err := testConsensus.AddBlock([]*externalapi.DomainHash{blockHashE},
 			&externalapi.DomainCoinbaseData{
 				ScriptPublicKey: blockEScriptPublicKey,
 				ExtraData:       nil,
@@ -254,7 +258,7 @@ func TestTransactionAcceptance(t *testing.T) {
 			t.Fatalf("Error creating blockE: %+v", err)
 		}
 		blockFScriptPublicKey := &externalapi.ScriptPublicKey{Script: []byte{5}, Version: 0}
-		blockHashF, _, err := testConsensus.AddBlock([]*externalapi.DomainHash{blockHashE, hashBlueChildOfRedBlock},
+		blockHashG, _, err := testConsensus.AddBlock([]*externalapi.DomainHash{blockHashF, hashBlueChildOfRedBlock},
 			&externalapi.DomainCoinbaseData{
 				ScriptPublicKey: blockFScriptPublicKey,
 				ExtraData:       nil,
@@ -263,7 +267,7 @@ func TestTransactionAcceptance(t *testing.T) {
 			t.Fatalf("Error creating blockF: %+v", err)
 		}
 
-		acceptanceData, err := testConsensus.AcceptanceDataStore().Get(testConsensus.DatabaseContext(), stagingArea, blockHashF)
+		acceptanceData, err := testConsensus.AcceptanceDataStore().Get(testConsensus.DatabaseContext(), stagingArea, blockHashG)
 		if err != nil {
 			t.Fatalf("Error getting acceptance data: %+v", err)
 		}
@@ -271,7 +275,7 @@ func TestTransactionAcceptance(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Error getting blueChildOfRedBlock: %+v", err)
 		}
-		blockE, err := testConsensus.GetBlock(blockHashE)
+		blockE, err := testConsensus.GetBlock(blockHashF)
 		if err != nil {
 			t.Fatalf("Error getting blockE: %+v", err)
 		}
@@ -279,16 +283,16 @@ func TestTransactionAcceptance(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Error getting redBlock: %+v", err)
 		}
-		blockF, err := testConsensus.GetBlock(blockHashF)
+		blockF, err := testConsensus.GetBlock(blockHashG)
 		if err != nil {
 			t.Fatalf("Error getting blockF: %+v", err)
 		}
-		updatedDAAScoreVirtualBlock := 25
+		updatedDAAScoreVirtualBlock := 26
 		//We expect the second transaction in the "blue block" (blueChildOfRedBlock) to be accepted because the merge set is ordered topologically
 		//and the red block is ordered topologically before the "blue block" so the input is known in the UTXOSet.
 		expectedAcceptanceData := externalapi.AcceptanceData{
 			{
-				BlockHash: blockHashE,
+				BlockHash: blockHashF,
 				TransactionAcceptanceData: []*externalapi.TransactionAcceptanceData{
 					{
 						Transaction:                 blockE.Transactions[0],
