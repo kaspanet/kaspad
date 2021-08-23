@@ -64,7 +64,7 @@ message BlockMessage{
 
 message BlockHeader{
   uint32 version = 1;
-  repeated Hash parentHashes = 2;
+  repeated BlockLevelParents parents = 2;
   Hash hashMerkleRoot = 3;
   Hash acceptedIdMerkleRoot = 4;
   Hash utxoCommitment = 5;
@@ -74,6 +74,10 @@ message BlockHeader{
   uint64 daaScore = 9;
   bytes blueWork = 10;
   Hash finalityPoint = 11;
+}
+
+message BlockLevelParents {
+    repeated Hash parentHashes = 1;
 }
 
 message Hash{
