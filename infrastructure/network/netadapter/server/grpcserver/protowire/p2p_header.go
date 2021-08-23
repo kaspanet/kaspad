@@ -37,7 +37,7 @@ func (x *BlockHeader) toAppMessage() (*appmessage.MsgBlockHeader, error) {
 	}
 	return &appmessage.MsgBlockHeader{
 		Version:              uint16(x.Version),
-		ParentHashes:         parentHashes,
+		Parents:              parentHashes,
 		HashMerkleRoot:       hashMerkleRoot,
 		AcceptedIDMerkleRoot: acceptedIDMerkleRoot,
 		UTXOCommitment:       utxoCommitment,
@@ -53,7 +53,7 @@ func (x *BlockHeader) toAppMessage() (*appmessage.MsgBlockHeader, error) {
 func (x *BlockHeader) fromAppMessage(msgBlockHeader *appmessage.MsgBlockHeader) error {
 	*x = BlockHeader{
 		Version:              uint32(msgBlockHeader.Version),
-		ParentHashes:         domainHashesToProto(msgBlockHeader.ParentHashes),
+		ParentHashes:         domainHashesToProto(msgBlockHeader.Parents),
 		HashMerkleRoot:       domainHashToProto(msgBlockHeader.HashMerkleRoot),
 		AcceptedIdMerkleRoot: domainHashToProto(msgBlockHeader.AcceptedIDMerkleRoot),
 		UtxoCommitment:       domainHashToProto(msgBlockHeader.UTXOCommitment),

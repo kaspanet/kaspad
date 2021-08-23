@@ -141,9 +141,9 @@ func TestCheckParentHeadersExist(t *testing.T) {
 		parentHash := externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{}) // Non existing parent hash
 		orphanBlock.Header = blockheader.NewImmutableBlockHeader(
 			orphanBlock.Header.Version(),
-			[]*externalapi.DomainHash{
+			[]externalapi.BlockLevelParents{[]*externalapi.DomainHash{
 				parentHash,
-			},
+			}},
 			orphanBlock.Header.HashMerkleRoot(),
 			orphanBlock.Header.AcceptedIDMerkleRoot(),
 			orphanBlock.Header.UTXOCommitment(),
@@ -200,7 +200,7 @@ func TestCheckParentHeadersExist(t *testing.T) {
 
 		invalidBlockChild.Header = blockheader.NewImmutableBlockHeader(
 			invalidBlockChild.Header.Version(),
-			[]*externalapi.DomainHash{invalidBlockHash},
+			[]externalapi.BlockLevelParents{[]*externalapi.DomainHash{invalidBlockHash}},
 			invalidBlockChild.Header.HashMerkleRoot(),
 			invalidBlockChild.Header.AcceptedIDMerkleRoot(),
 			invalidBlockChild.Header.UTXOCommitment(),

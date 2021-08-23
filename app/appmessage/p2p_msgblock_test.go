@@ -21,7 +21,7 @@ func TestBlock(t *testing.T) {
 	pver := ProtocolVersion
 
 	// Block 1 header.
-	parentHashes := blockOne.Header.ParentHashes
+	parentHashes := blockOne.Header.Parents
 	hashMerkleRoot := blockOne.Header.HashMerkleRoot
 	acceptedIDMerkleRoot := blockOne.Header.AcceptedIDMerkleRoot
 	utxoCommitment := blockOne.Header.UTXOCommitment
@@ -135,7 +135,7 @@ func TestConvertToPartial(t *testing.T) {
 var blockOne = MsgBlock{
 	Header: MsgBlockHeader{
 		Version:              0,
-		ParentHashes:         []*externalapi.DomainHash{mainnetGenesisHash, simnetGenesisHash},
+		Parents:              []*externalapi.DomainHash{mainnetGenesisHash, simnetGenesisHash},
 		HashMerkleRoot:       mainnetGenesisMerkleRoot,
 		AcceptedIDMerkleRoot: exampleAcceptedIDMerkleRoot,
 		UTXOCommitment:       exampleUTXOCommitment,

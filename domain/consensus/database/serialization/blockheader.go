@@ -27,7 +27,7 @@ func DomainBlockHeaderToDbBlockHeader(domainBlockHeader externalapi.BlockHeader)
 
 // DbBlockHeaderToDomainBlockHeader converts DbBlockHeader to BlockHeader
 func DbBlockHeaderToDomainBlockHeader(dbBlockHeader *DbBlockHeader) (externalapi.BlockHeader, error) {
-	parentHashes, err := DbHashesToDomainHashes(dbBlockHeader.ParentHashes)
+	parents, err := DbHashesToDomainHashes(dbBlockHeader.ParentHashes)
 	if err != nil {
 		return nil, err
 	}
@@ -53,7 +53,7 @@ func DbBlockHeaderToDomainBlockHeader(dbBlockHeader *DbBlockHeader) (externalapi
 
 	return blockheader.NewImmutableBlockHeader(
 		uint16(dbBlockHeader.Version),
-		parentHashes,
+		parents,
 		hashMerkleRoot,
 		acceptedIDMerkleRoot,
 		utxoCommitment,

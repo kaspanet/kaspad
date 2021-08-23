@@ -51,7 +51,7 @@ var genesisMerkleRoot = externalapi.NewDomainHashFromByteArray(&[externalapi.Dom
 var genesisBlock = externalapi.DomainBlock{
 	Header: blockheader.NewImmutableBlockHeader(
 		0,
-		[]*externalapi.DomainHash{},
+		[]externalapi.BlockLevelParents{},
 		genesisMerkleRoot,
 		&externalapi.DomainHash{},
 		externalapi.NewDomainHashFromByteArray(muhash.EmptyMuHashHash.AsArray()),
@@ -104,7 +104,7 @@ var devnetGenesisMerkleRoot = externalapi.NewDomainHashFromByteArray(&[externala
 var devnetGenesisBlock = externalapi.DomainBlock{
 	Header: blockheader.NewImmutableBlockHeader(
 		0,
-		[]*externalapi.DomainHash{},
+		[]externalapi.BlockLevelParents{},
 		devnetGenesisMerkleRoot,
 		&externalapi.DomainHash{},
 		externalapi.NewDomainHashFromByteArray(muhash.EmptyMuHashHash.AsArray()),
@@ -156,7 +156,7 @@ var simnetGenesisMerkleRoot = externalapi.NewDomainHashFromByteArray(&[externala
 var simnetGenesisBlock = externalapi.DomainBlock{
 	Header: blockheader.NewImmutableBlockHeader(
 		0,
-		[]*externalapi.DomainHash{},
+		[]externalapi.BlockLevelParents{},
 		simnetGenesisMerkleRoot,
 		&externalapi.DomainHash{},
 		externalapi.NewDomainHashFromByteArray(muhash.EmptyMuHashHash.AsArray()),
@@ -208,7 +208,7 @@ var testnetGenesisMerkleRoot = externalapi.NewDomainHashFromByteArray(&[external
 var testnetGenesisBlock = externalapi.DomainBlock{
 	Header: blockheader.NewImmutableBlockHeader(
 		0,
-		[]*externalapi.DomainHash{},
+		[]externalapi.BlockLevelParents{},
 		testnetGenesisMerkleRoot,
 		&externalapi.DomainHash{},
 		externalapi.NewDomainHashFromByteArray(muhash.EmptyMuHashHash.AsArray()),

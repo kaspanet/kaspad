@@ -31,7 +31,7 @@ func DomainBlockToMsgBlock(domainBlock *externalapi.DomainBlock) *MsgBlock {
 func DomainBlockHeaderToBlockHeader(domainBlockHeader externalapi.BlockHeader) *MsgBlockHeader {
 	return &MsgBlockHeader{
 		Version:              domainBlockHeader.Version(),
-		ParentHashes:         domainBlockHeader.Parents(),
+		Parents:              domainBlockHeader.Parents(),
 		HashMerkleRoot:       domainBlockHeader.HashMerkleRoot(),
 		AcceptedIDMerkleRoot: domainBlockHeader.AcceptedIDMerkleRoot(),
 		UTXOCommitment:       domainBlockHeader.UTXOCommitment(),
@@ -61,7 +61,7 @@ func MsgBlockToDomainBlock(msgBlock *MsgBlock) *externalapi.DomainBlock {
 func BlockHeaderToDomainBlockHeader(blockHeader *MsgBlockHeader) externalapi.BlockHeader {
 	return blockheader.NewImmutableBlockHeader(
 		blockHeader.Version,
-		blockHeader.ParentHashes,
+		blockHeader.Parents,
 		blockHeader.HashMerkleRoot,
 		blockHeader.AcceptedIDMerkleRoot,
 		blockHeader.UTXOCommitment,
@@ -367,13 +367,13 @@ func DomainBlockToRPCBlock(block *externalapi.DomainBlock) *RPCBlock {
 
 // RPCBlockToDomainBlock converts `block` into a DomainBlock
 func RPCBlockToDomainBlock(block *RPCBlock) (*externalapi.DomainBlock, error) {
-	parentHashes := make([]*externalapi.DomainHash, len(block.Header.ParentHashes))
+	parents := make([]*externalapi.DomainHash, len(block.Header.ParentHashes))
 	for i, parentHash := range block.Header.ParentHashes {
 		domainParentHashes, err := externalapi.NewDomainHashFromString(parentHash)
 		if err != nil {
 			return nil, err
 		}
-		parentHashes[i] = domainParentHashes
+		parents[i] = domainParentHashes
 	}
 	hashMerkleRoot, err := externalapi.NewDomainHashFromString(block.Header.HashMerkleRoot)
 	if err != nil {
@@ -397,7 +397,7 @@ func RPCBlockToDomainBlock(block *RPCBlock) (*externalapi.DomainBlock, error) {
 	}
 	header := blockheader.NewImmutableBlockHeader(
 		uint16(block.Header.Version),
-		parentHashes,
+		parents,
 		hashMerkleRoot,
 		acceptedIDMerkleRoot,
 		utxoCommitment,

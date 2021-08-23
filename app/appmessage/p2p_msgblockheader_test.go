@@ -30,9 +30,9 @@ func TestBlockHeader(t *testing.T) {
 		daaScore, blueWork, finalityPoint)
 
 	// Ensure we get the same data back out.
-	if !reflect.DeepEqual(bh.ParentHashes, hashes) {
+	if !reflect.DeepEqual(bh.Parents, hashes) {
 		t.Errorf("NewBlockHeader: wrong prev hashes - got %v, want %v",
-			spew.Sprint(bh.ParentHashes), spew.Sprint(hashes))
+			spew.Sprint(bh.Parents), spew.Sprint(hashes))
 	}
 	if bh.HashMerkleRoot != merkleHash {
 		t.Errorf("NewBlockHeader: wrong merkle root - got %v, want %v",
@@ -67,7 +67,7 @@ func TestIsGenesis(t *testing.T) {
 
 	baseBlockHdr := &MsgBlockHeader{
 		Version:        1,
-		ParentHashes:   []*externalapi.DomainHash{mainnetGenesisHash, simnetGenesisHash},
+		Parents:        []*externalapi.DomainHash{mainnetGenesisHash, simnetGenesisHash},
 		HashMerkleRoot: mainnetGenesisMerkleRoot,
 		Timestamp:      timestamp,
 		Bits:           bits,
@@ -75,7 +75,7 @@ func TestIsGenesis(t *testing.T) {
 	}
 	genesisBlockHdr := &MsgBlockHeader{
 		Version:        1,
-		ParentHashes:   []*externalapi.DomainHash{},
+		Parents:        []*externalapi.DomainHash{},
 		HashMerkleRoot: mainnetGenesisMerkleRoot,
 		Timestamp:      timestamp,
 		Bits:           bits,

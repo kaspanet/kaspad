@@ -40,8 +40,8 @@ type MsgBlockHeader struct {
 	// Version of the block. This is not the same as the protocol version.
 	Version uint16
 
-	// Hashes of the parent block headers in the blockDAG.
-	ParentHashes []*externalapi.DomainHash
+	// Parents are the parent block hashes of the block in the DAG per superblock level.
+	Parents []externalapi.BlockLevelParents
 
 	// HashMerkleRoot is the merkle tree reference to hash of all transactions for the block.
 	HashMerkleRoot *externalapi.DomainHash
@@ -74,7 +74,7 @@ type MsgBlockHeader struct {
 
 // NumParentBlocks return the number of entries in ParentHashes
 func (h *MsgBlockHeader) NumParentBlocks() byte {
-	numParents := len(h.ParentHashes)
+	numParents := len(h.Parents)
 	if numParents > math.MaxUint8 {
 		panic(errors.Errorf("number of parents is %d, which is more than one byte can fit", numParents))
 	}
@@ -94,7 +94,7 @@ func (h *MsgBlockHeader) IsGenesis() bool {
 // NewBlockHeader returns a new MsgBlockHeader using the provided version, previous
 // block hash, hash merkle root, accepted ID merkle root, difficulty bits, and nonce used to generate the
 // block with defaults or calclulated values for the remaining fields.
-func NewBlockHeader(version uint16, parentHashes []*externalapi.DomainHash, hashMerkleRoot *externalapi.DomainHash,
+func NewBlockHeader(version uint16, parents []externalapi.BlockLevelParents, hashMerkleRoot *externalapi.DomainHash,
 	acceptedIDMerkleRoot *externalapi.DomainHash, utxoCommitment *externalapi.DomainHash, bits uint32, nonce uint64,
 	daaScore uint64, blueWork *big.Int, finalityPoint *externalapi.DomainHash) *MsgBlockHeader {
 
@@ -102,7 +102,7 @@ func NewBlockHeader(version uint16, parentHashes []*externalapi.DomainHash, hash
 	// doesn't support better.
 	return &MsgBlockHeader{
 		Version:              version,
-		ParentHashes:         parentHashes,
+		Parents:              parents,
 		HashMerkleRoot:       hashMerkleRoot,
 		AcceptedIDMerkleRoot: acceptedIDMerkleRoot,
 		UTXOCommitment:       utxoCommitment,
