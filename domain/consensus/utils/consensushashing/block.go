@@ -35,11 +35,11 @@ func serializeHeader(w io.Writer, header externalapi.BaseBlockHeader) error {
 	timestamp := header.TimeInMilliseconds()
 	blueWork := header.BlueWork().Bytes()
 
-	numParents := len(header.ParentHashes())
+	numParents := len(header.Parents())
 	if err := serialization.WriteElements(w, header.Version(), uint64(numParents)); err != nil {
 		return err
 	}
-	for _, hash := range header.ParentHashes() {
+	for _, hash := range header.Parents() {
 		if err := serialization.WriteElement(w, hash); err != nil {
 			return err
 		}

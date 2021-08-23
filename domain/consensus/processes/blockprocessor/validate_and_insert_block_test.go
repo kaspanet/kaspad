@@ -66,7 +66,7 @@ func TestBlockStatus(t *testing.T) {
 		}
 		disqualifiedBlock.Header = blockheader.NewImmutableBlockHeader(
 			disqualifiedBlock.Header.Version(),
-			disqualifiedBlock.Header.ParentHashes(),
+			disqualifiedBlock.Header.Parents(),
 			disqualifiedBlock.Header.HashMerkleRoot(),
 			externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{}), // This should disqualify the block
 			disqualifiedBlock.Header.UTXOCommitment(),
@@ -92,7 +92,7 @@ func TestBlockStatus(t *testing.T) {
 		invalidBlock.Transactions[0].Version = constants.MaxTransactionVersion + 1 // This should invalidate the block
 		invalidBlock.Header = blockheader.NewImmutableBlockHeader(
 			disqualifiedBlock.Header.Version(),
-			disqualifiedBlock.Header.ParentHashes(),
+			disqualifiedBlock.Header.Parents(),
 			merkle.CalculateHashMerkleRoot(invalidBlock.Transactions),
 			disqualifiedBlock.Header.AcceptedIDMerkleRoot(),
 			disqualifiedBlock.Header.UTXOCommitment(),

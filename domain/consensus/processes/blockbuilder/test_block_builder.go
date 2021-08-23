@@ -112,7 +112,7 @@ func (bb *testBlockBuilder) buildHeaderWithParents(stagingArea *model.StagingAre
 
 	return blockheader.NewImmutableBlockHeader(
 		header.Version(),
-		header.ParentHashes(),
+		header.Parents(),
 		hashMerkleRoot,
 		acceptedIDMerkleRoot,
 		utxoCommitment,

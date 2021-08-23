@@ -31,7 +31,7 @@ func DomainBlockToMsgBlock(domainBlock *externalapi.DomainBlock) *MsgBlock {
 func DomainBlockHeaderToBlockHeader(domainBlockHeader externalapi.BlockHeader) *MsgBlockHeader {
 	return &MsgBlockHeader{
 		Version:              domainBlockHeader.Version(),
-		ParentHashes:         domainBlockHeader.ParentHashes(),
+		ParentHashes:         domainBlockHeader.Parents(),
 		HashMerkleRoot:       domainBlockHeader.HashMerkleRoot(),
 		AcceptedIDMerkleRoot: domainBlockHeader.AcceptedIDMerkleRoot(),
 		UTXOCommitment:       domainBlockHeader.UTXOCommitment(),
@@ -344,7 +344,7 @@ func DomainOutpointAndUTXOEntryPairsToOutpointAndUTXOEntryPairs(
 func DomainBlockToRPCBlock(block *externalapi.DomainBlock) *RPCBlock {
 	header := &RPCBlockHeader{
 		Version:              uint32(block.Header.Version()),
-		ParentHashes:         hashes.ToStrings(block.Header.ParentHashes()),
+		ParentHashes:         hashes.ToStrings(block.Header.Parents()),
 		HashMerkleRoot:       block.Header.HashMerkleRoot().String(),
 		AcceptedIDMerkleRoot: block.Header.AcceptedIDMerkleRoot().String(),
 		UTXOCommitment:       block.Header.UTXOCommitment().String(),

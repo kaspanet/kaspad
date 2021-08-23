@@ -66,8 +66,8 @@ func (v *blockValidator) setParents(stagingArea *model.StagingArea,
 	header externalapi.BlockHeader,
 	isBlockWithTrustedData bool) error {
 
-	parents := make([]*externalapi.DomainHash, 0, len(header.ParentHashes()))
-	for _, currentParent := range header.ParentHashes() {
+	parents := make([]*externalapi.DomainHash, 0, len(header.Parents()))
+	for _, currentParent := range header.Parents() {
 		exists, err := v.blockStatusStore.Exists(v.databaseContext, stagingArea, currentParent)
 		if err != nil {
 			return err
@@ -153,7 +153,7 @@ func (v *blockValidator) checkProofOfWork(header externalapi.BlockHeader) error 
 }
 
 func (v *blockValidator) checkParentNotVirtualGenesis(header externalapi.BlockHeader) error {
-	for _, parent := range header.ParentHashes() {
+	for _, parent := range header.Parents() {
 		if parent.Equal(model.VirtualGenesisBlockHash) {
 			return errors.Wrapf(ruleerrors.ErrVirtualGenesisParent, "block header cannot have the virtual genesis as parent")
 		}
@@ -171,7 +171,7 @@ func (v *blockValidator) checkParentHeadersExist(stagingArea *model.StagingArea,
 	}
 
 	missingParentHashes := []*externalapi.DomainHash{}
-	for _, parent := range header.ParentHashes() {
+	for _, parent := range header.Parents() {
 		parentHeaderExists, err := v.blockHeaderStore.HasBlockHeader(v.databaseContext, stagingArea, parent)
 		if err != nil {
 			return err
