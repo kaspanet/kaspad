@@ -356,16 +356,10 @@ func (pm *pruningManager) pruneTips(stagingArea *model.StagingArea, pruningPoint
 func (pm *pruningManager) savePruningPoint(stagingArea *model.StagingArea, pruningPointHash *externalapi.DomainHash) error {
 	onEnd := logger.LogAndMeasureExecutionTime(log, "pruningManager.savePruningPoint")
 	defer onEnd()
-
-	// If pruningPointHash is the genesis then there's no pruning point set right now.
-	if !pruningPointHash.Equal(pm.genesisHash) {
-		previousPruningPoint, err := pm.pruningStore.PruningPoint(pm.databaseContext, stagingArea)
-		if err != nil {
-			return err
-		}
-		pm.pruningStore.StagePreviousPruningPoint(stagingArea, previousPruningPoint)
+	err := pm.pruningStore.StagePruningPoint(pm.databaseContext, stagingArea, pruningPointHash)
+	if err != nil {
+		return err
 	}
-	pm.pruningStore.StagePruningPoint(stagingArea, pruningPointHash)
 	pm.pruningStore.StageStartUpdatingPruningPointUTXOSet(stagingArea)
 
 	return nil
@@ -503,7 +497,16 @@ func (pm *pruningManager) calculateDiffBetweenPreviousAndCurrentPruningPoints(st
 		return utxo.NewUTXODiff(), nil
 	}
 
-	previousPruningHash, err := pm.pruningStore.PreviousPruningPoint(pm.databaseContext, stagingArea)
+	pruningPointIndex, err := pm.pruningStore.PruningPointIndex(pm.databaseContext, stagingArea)
+	if err != nil {
+		return nil, err
+	}
+
+	if pruningPointIndex == 0 {
+		return nil, errors.Errorf("previous pruning point doesn't exist")
+	}
+
+	previousPruningHash, err := pm.pruningStore.PruningPointByIndex(pm.databaseContext, stagingArea, pruningPointIndex-1)
 	if err != nil {
 		return nil, err
 	}

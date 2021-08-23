@@ -71,7 +71,10 @@ func (csm *consensusStateManager) importPruningPoint(
 	csm.stageDiff(stagingArea, newPruningPoint, utxo.NewUTXODiff(), nil)
 
 	log.Debugf("Staging the new pruning point %s", newPruningPoint)
-	csm.pruningStore.StagePruningPoint(stagingArea, newPruningPoint)
+	err = csm.pruningStore.StagePruningPoint(csm.databaseContext, stagingArea, newPruningPoint)
+	if err != nil {
+		return err
+	}
 	csm.pruningStore.StagePruningPointCandidate(stagingArea, newPruningPoint)
 
 	log.Debugf("Populating the pruning point with UTXO entries")

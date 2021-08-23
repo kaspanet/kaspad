@@ -1,7 +1,6 @@
 package blockbuilder
 
 import (
-	"github.com/kaspanet/kaspad/infrastructure/db/database"
 	"math/big"
 	"sort"
 
@@ -323,32 +322,40 @@ func (bb *blockBuilder) newBlockBlueWork(stagingArea *model.StagingArea) (*big.I
 }
 
 func (bb *blockBuilder) newBlockPruningPoint(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) (*externalapi.DomainHash, error) {
-	blockGHOSTDAGData, err := bb.ghostdagDataStore.Get(bb.databaseContext, stagingArea, blockHash, false)
+	return bb.expectedHeaderPruningPoint(stagingArea, blockHash)
+}
+
+func (bb *blockBuilder) expectedHeaderPruningPoint(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) (*externalapi.DomainHash, error) {
+	// TODO: This is a duplicate of `func (csm *consensusStateManager) expectedHeaderPruningPoint`. We should find a proper way to reuse the code.
+	pruningPointIndex, err := bb.pruningStore.PruningPointIndex(bb.databaseContext, stagingArea)
 	if err != nil {
 		return nil, err
 	}
 
-	currentPruningPoint, err := bb.pruningStore.PruningPoint(bb.databaseContext, stagingArea)
-	if err != nil {
-		return nil, err
+	for i := pruningPointIndex; ; i-- {
+		currentPruningPoint, err := bb.pruningStore.PruningPointByIndex(bb.databaseContext, stagingArea, i)
+		if err != nil {
+			return nil, err
+		}
+
+		currentPruningPointGHOSTDAGData, err := bb.ghostdagDataStore.Get(bb.databaseContext, stagingArea, currentPruningPoint, false)
+		if err != nil {
+			return nil, err
+		}
+
+		blockGHOSTDAGData, err := bb.ghostdagDataStore.Get(bb.databaseContext, stagingArea, blockHash, false)
+		if err != nil {
+			return nil, err
+		}
+
+		if blockGHOSTDAGData.BlueScore()-currentPruningPointGHOSTDAGData.BlueScore() > bb.pruningDepth {
+			return currentPruningPoint, nil
+		}
+
+		if i == 0 {
+			break
+		}
 	}
 
-	currentPruningPointGHOSTDAGData, err := bb.ghostdagDataStore.Get(bb.databaseContext, stagingArea, currentPruningPoint, false)
-	if err != nil {
-		return nil, err
-	}
-
-	if currentPruningPoint.Equal(bb.genesisHash) || blockGHOSTDAGData.BlueScore()-currentPruningPointGHOSTDAGData.BlueScore() > bb.pruningDepth {
-		return currentPruningPoint, nil
-	}
-
-	previousPruningPoint, err := bb.pruningStore.PreviousPruningPoint(bb.databaseContext, stagingArea)
-	if database.IsNotFoundError(err) {
-		return bb.genesisHash, nil
-	}
-	if err != nil {
-		return nil, err
-	}
-
-	return previousPruningPoint, nil
+	return bb.genesisHash, nil
 }
