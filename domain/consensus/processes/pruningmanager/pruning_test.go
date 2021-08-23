@@ -2,6 +2,7 @@ package pruningmanager_test
 
 import (
 	"encoding/json"
+	"github.com/kaspanet/kaspad/infrastructure/db/database"
 	"os"
 	"path/filepath"
 	"testing"
@@ -107,7 +108,9 @@ func TestPruning(t *testing.T) {
 				blockHashToID[*blockHash] = dagBlock.ID
 
 				pruningPointCandidate, err := tc.PruningStore().PruningPointCandidate(tc.DatabaseContext(), stagingArea)
-				if err != nil {
+				if database.IsNotFoundError(err) {
+					pruningPointCandidate = consensusConfig.GenesisHash
+				} else if err != nil {
 					return err
 				}
 
