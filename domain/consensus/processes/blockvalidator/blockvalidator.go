@@ -22,6 +22,7 @@ type blockValidator struct {
 	maxBlockParents             externalapi.KType
 	timestampDeviationTolerance int
 	targetTimePerBlock          time.Duration
+	pruningDepth                uint64
 
 	databaseContext       model.DBReader
 	difficultyManager     model.DifficultyManager
@@ -55,6 +56,7 @@ func New(powMax *big.Int,
 	maxBlockParents externalapi.KType,
 	timestampDeviationTolerance int,
 	targetTimePerBlock time.Duration,
+	pruningDepth uint64,
 
 	databaseContext model.DBReader,
 
@@ -89,6 +91,7 @@ func New(powMax *big.Int,
 		maxBlockMass:               maxBlockMass,
 		mergeSetSizeLimit:          mergeSetSizeLimit,
 		maxBlockParents:            maxBlockParents,
+		pruningDepth:               pruningDepth,
 
 		timestampDeviationTolerance: timestampDeviationTolerance,
 		targetTimePerBlock:          targetTimePerBlock,

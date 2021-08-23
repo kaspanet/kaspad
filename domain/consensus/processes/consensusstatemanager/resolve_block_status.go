@@ -206,16 +206,16 @@ func (csm *consensusStateManager) resolveSingleBlockStatus(stagingArea *model.St
 	log.Tracef("Staging the calculated acceptance data of block %s", blockHash)
 	csm.acceptanceDataStore.Stage(stagingArea, blockHash, acceptanceData)
 
-	log.Tracef("starting chain block verification of block %s", blockHash)
-	err = csm.verifyChainBlock(stagingArea, blockHash, pastUTXOSet, acceptanceData, multiset)
+	log.Tracef("verifying the UTXO of block %s", blockHash)
+	err = csm.verifyUTXO(stagingArea, blockHash, pastUTXOSet, acceptanceData, multiset)
 	if err != nil {
 		if errors.As(err, &ruleerrors.RuleError{}) {
-			log.Warnf("Chain verification for block %s failed: %s", blockHash, err)
+			log.Debugf("UTXO verification for block %s failed: %s", blockHash, err)
 			return externalapi.StatusDisqualifiedFromChain, nil, nil
 		}
 		return 0, nil, err
 	}
-	log.Debugf("Chain verification for block %s passed", blockHash)
+	log.Debugf("UTXO verification for block %s passed", blockHash)
 
 	log.Tracef("Staging the multiset of block %s", blockHash)
 	csm.multisetStore.Stage(stagingArea, blockHash, multiset)

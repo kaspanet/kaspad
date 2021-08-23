@@ -198,6 +198,8 @@ var (
 
 	ErrUnexpectedPruningPoint = newRuleError("ErrUnexpectedPruningPoint")
 
+	ErrInvalidPruningPointsChain = newRuleError("ErrInvalidPruningPointsChain")
+
 	ErrSuggestedPruningViolatesFinality = newRuleError("ErrSuggestedPruningViolatesFinality")
 
 	//ErrBlockVersionIsUnknown indicates that the block version is unknown.

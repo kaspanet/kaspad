@@ -6,6 +6,8 @@ import "github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 type PruningManager interface {
 	UpdatePruningPointByVirtual(stagingArea *StagingArea) error
 	IsValidPruningPoint(stagingArea *StagingArea, blockHash *externalapi.DomainHash) (bool, error)
+	ArePruningPointsViolatingFinality(stagingArea *StagingArea, pruningPoints []externalapi.BlockHeader) (bool, error)
+	ArePruningPointsInValidChain(stagingArea *StagingArea) (bool, error)
 	ClearImportedPruningPointData() error
 	AppendImportedPruningPointUTXOs(outpointAndUTXOEntryPairs []*externalapi.OutpointAndUTXOEntryPair) error
 	UpdatePruningPointIfRequired() error

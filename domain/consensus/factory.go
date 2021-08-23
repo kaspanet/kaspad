@@ -242,6 +242,7 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 		config.MaxBlockParents,
 		config.TimestampDeviationTolerance,
 		config.TargetTimePerBlock,
+		config.PruningDepth(),
 
 		dbManager,
 		difficultyManager,
@@ -266,7 +267,6 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 	)
 	consensusStateManager, err := consensusstatemanager.New(
 		dbManager,
-		config.PruningDepth(),
 		config.MaxBlockParents,
 		config.MergeSetSizeLimit,
 		genesisHash,
@@ -303,6 +303,8 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 		dagTraversalManager,
 		dagTopologyManager,
 		consensusStateManager,
+		finalityManager,
+
 		consensusStateStore,
 		ghostdagDataStore,
 		pruningStore,

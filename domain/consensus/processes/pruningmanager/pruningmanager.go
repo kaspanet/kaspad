@@ -3,6 +3,7 @@ package pruningmanager
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/multiset"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/utxo"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/virtual"
@@ -16,23 +17,24 @@ import (
 type pruningManager struct {
 	databaseContext model.DBManager
 
-	dagTraversalManager                 model.DAGTraversalManager
-	dagTopologyManager                  model.DAGTopologyManager
-	consensusStateManager               model.ConsensusStateManager
+	dagTraversalManager   model.DAGTraversalManager
+	dagTopologyManager    model.DAGTopologyManager
+	consensusStateManager model.ConsensusStateManager
+	finalityManager       model.FinalityManager
+
 	consensusStateStore                 model.ConsensusStateStore
 	ghostdagDataStore                   model.GHOSTDAGDataStore
 	pruningStore                        model.PruningStore
 	blockStatusStore                    model.BlockStatusStore
 	headerSelectedTipStore              model.HeaderSelectedTipStore
 	blocksWithTrustedDataDAAWindowStore model.BlocksWithTrustedDataDAAWindowStore
-
-	multiSetStore         model.MultisetStore
-	acceptanceDataStore   model.AcceptanceDataStore
-	blocksStore           model.BlockStore
-	blockHeaderStore      model.BlockHeaderStore
-	utxoDiffStore         model.UTXODiffStore
-	daaBlocksStore        model.DAABlocksStore
-	reachabilityDataStore model.ReachabilityDataStore
+	multiSetStore                       model.MultisetStore
+	acceptanceDataStore                 model.AcceptanceDataStore
+	blocksStore                         model.BlockStore
+	blockHeaderStore                    model.BlockHeaderStore
+	utxoDiffStore                       model.UTXODiffStore
+	daaBlocksStore                      model.DAABlocksStore
+	reachabilityDataStore               model.ReachabilityDataStore
 
 	isArchivalNode                  bool
 	genesisHash                     *externalapi.DomainHash
@@ -50,6 +52,7 @@ func New(
 	dagTraversalManager model.DAGTraversalManager,
 	dagTopologyManager model.DAGTopologyManager,
 	consensusStateManager model.ConsensusStateManager,
+	finalityManager model.FinalityManager,
 
 	consensusStateStore model.ConsensusStateStore,
 	ghostdagDataStore model.GHOSTDAGDataStore,
@@ -79,6 +82,7 @@ func New(
 		dagTraversalManager:   dagTraversalManager,
 		dagTopologyManager:    dagTopologyManager,
 		consensusStateManager: consensusStateManager,
+		finalityManager:       finalityManager,
 
 		consensusStateStore:                 consensusStateStore,
 		ghostdagDataStore:                   ghostdagDataStore,
@@ -424,6 +428,119 @@ func (pm *pruningManager) IsValidPruningPoint(stagingArea *model.StagingArea, bl
 	// A pruning point has to be at depth of at least pm.pruningDepth
 	if headersSelectedTipGHOSTDAGData.BlueScore()-ghostdagData.BlueScore() < pm.pruningDepth {
 		return false, nil
+	}
+
+	return true, nil
+}
+
+func (pm *pruningManager) ArePruningPointsViolatingFinality(stagingArea *model.StagingArea,
+	pruningPoints []externalapi.BlockHeader) (bool, error) {
+
+	virtualFinalityPoint, err := pm.finalityManager.VirtualFinalityPoint(stagingArea)
+	if err != nil {
+		return false, err
+	}
+
+	virtualFinalityPointFinalityPoint, err := pm.finalityManager.FinalityPoint(stagingArea, virtualFinalityPoint, false)
+	if err != nil {
+		return false, err
+	}
+
+	for _, header := range pruningPoints {
+		blockHash := consensushashing.HeaderHash(header)
+		isInSelectedParentChainOfVirtualFinalityPointFinalityPoint, err := pm.dagTopologyManager.
+			IsInSelectedParentChainOf(stagingArea, virtualFinalityPointFinalityPoint, blockHash)
+		if err != nil {
+			return false, err
+		}
+
+		if !isInSelectedParentChainOfVirtualFinalityPointFinalityPoint {
+			return true, nil
+		}
+	}
+
+	return false, nil
+}
+
+func (pm *pruningManager) ArePruningPointsInValidChain(stagingArea *model.StagingArea) (bool, error) {
+	lastPruningPoint, err := pm.pruningStore.PruningPoint(pm.databaseContext, stagingArea)
+	if err != nil {
+		return false, err
+	}
+
+	lastPruningPointGHOSTDAGData, err := pm.ghostdagDataStore.Get(pm.databaseContext, stagingArea, lastPruningPoint, false)
+	if err != nil {
+		return false, err
+	}
+
+	expectedPruningPoints := make([]*externalapi.DomainHash, 0)
+	headersSelectedTip, err := pm.headerSelectedTipStore.HeadersSelectedTip(pm.databaseContext, stagingArea)
+	if err != nil {
+		return false, err
+	}
+
+	current := headersSelectedTip
+	for {
+		header, err := pm.blockHeaderStore.BlockHeader(pm.databaseContext, stagingArea, current)
+		if err != nil {
+			return false, err
+		}
+
+		if !expectedPruningPoints[len(expectedPruningPoints)].Equal(header.PruningPoint()) {
+			expectedPruningPoints = append(expectedPruningPoints, header.PruningPoint())
+		}
+
+		currentGHOSTDAGData, err := pm.ghostdagDataStore.Get(pm.databaseContext, stagingArea, current, false)
+		if err != nil {
+			return false, err
+		}
+
+		if currentGHOSTDAGData.BlueScore() < lastPruningPointGHOSTDAGData.BlueScore()+pm.finalityInterval {
+			break
+		}
+
+		current, err = pm.finalityManager.FinalityPoint(stagingArea, current, false)
+		if err != nil {
+			return false, err
+		}
+	}
+
+	lastPruningPointIndex, err := pm.pruningStore.PruningPointIndex(pm.databaseContext, stagingArea)
+	if err != nil {
+		return false, err
+	}
+
+	for i := lastPruningPointIndex; ; i-- {
+		pruningPoint, err := pm.pruningStore.PruningPointByIndex(pm.databaseContext, stagingArea, i)
+		if err != nil {
+			return false, err
+		}
+
+		header, err := pm.blockHeaderStore.BlockHeader(pm.databaseContext, stagingArea, pruningPoint)
+		if err != nil {
+			return false, err
+		}
+
+		if !expectedPruningPoints[len(expectedPruningPoints)].Equal(header.PruningPoint()) {
+			expectedPruningPoints = append(expectedPruningPoints, header.PruningPoint())
+		}
+		expectedPruningPoints = append(expectedPruningPoints, header.PruningPoint())
+
+		var expectedPruningPoint *externalapi.DomainHash
+		expectedPruningPoint, expectedPruningPoints = expectedPruningPoints[0], expectedPruningPoints[1:]
+		if !pruningPoint.Equal(expectedPruningPoint) {
+			return false, nil
+		}
+
+		if i == 0 {
+			if len(expectedPruningPoints) != 0 {
+				return false, nil
+			}
+			if !pruningPoint.Equal(pm.genesisHash) {
+				return false, nil
+			}
+			break
+		}
 	}
 
 	return true, nil

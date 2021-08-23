@@ -12,11 +12,11 @@ import (
 	"github.com/pkg/errors"
 )
 
-func (csm *consensusStateManager) ImportPruningPoint(stagingArea *model.StagingArea, newPruningPoint *externalapi.DomainHash) error {
+func (csm *consensusStateManager) ImportPruningPointUTXOSet(stagingArea *model.StagingArea, newPruningPoint *externalapi.DomainHash) error {
 	onEnd := logger.LogAndMeasureExecutionTime(log, "ImportPruningPoint")
 	defer onEnd()
 
-	err := csm.importPruningPoint(stagingArea, newPruningPoint)
+	err := csm.importPruningPointUTXOSet(stagingArea, newPruningPoint)
 	if err != nil {
 		return err
 	}
@@ -29,11 +29,9 @@ func (csm *consensusStateManager) ImportPruningPoint(stagingArea *model.StagingA
 	return nil
 }
 
-func (csm *consensusStateManager) importPruningPoint(
-	stagingArea *model.StagingArea, newPruningPoint *externalapi.DomainHash) error {
-
-	log.Debugf("importPruningPoint start")
-	defer log.Debugf("importPruningPoint end")
+func (csm *consensusStateManager) importPruningPointUTXOSet(stagingArea *model.StagingArea, newPruningPoint *externalapi.DomainHash) error {
+	log.Debugf("importPruningPointUTXOSet start")
+	defer log.Debugf("importPruningPointUTXOSet end")
 
 	// TODO: We should validate the imported pruning point doesn't violate finality as part of the headers proof.
 
@@ -70,11 +68,7 @@ func (csm *consensusStateManager) importPruningPoint(
 	log.Debugf("Updating the new pruning point to be the new virtual diff parent with an empty diff")
 	csm.stageDiff(stagingArea, newPruningPoint, utxo.NewUTXODiff(), nil)
 
-	log.Debugf("Staging the new pruning point %s", newPruningPoint)
-	err = csm.pruningStore.StagePruningPoint(csm.databaseContext, stagingArea, newPruningPoint)
-	if err != nil {
-		return err
-	}
+	log.Debugf("Staging the new pruning point as the pruning candidate %s", newPruningPoint)
 	csm.pruningStore.StagePruningPointCandidate(stagingArea, newPruningPoint)
 
 	log.Debugf("Populating the pruning point with UTXO entries")
@@ -131,6 +125,20 @@ func (csm *consensusStateManager) importPruningPoint(
 	_, err = csm.difficultyManager.StageDAADataAndReturnRequiredDifficulty(stagingArea, model.VirtualBlockHash, false)
 	if err != nil {
 		return err
+	}
+
+	return nil
+}
+
+func (csm *consensusStateManager) ImportPruningPoints(stagingArea *model.StagingArea, pruningPoints []externalapi.BlockHeader) error {
+	for i, header := range pruningPoints {
+		blockHash := consensushashing.HeaderHash(header)
+		err := csm.pruningStore.StagePruningPointByIndex(csm.databaseContext, stagingArea, blockHash, uint64(i))
+		if err != nil {
+			return err
+		}
+
+		csm.blockHeaderStore.Stage(stagingArea, blockHash, header)
 	}
 
 	return nil

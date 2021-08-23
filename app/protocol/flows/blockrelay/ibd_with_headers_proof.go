@@ -16,7 +16,7 @@ func (flow *handleRelayInvsFlow) ibdWithHeadersProof(highHash *externalapi.Domai
 		return err
 	}
 
-	err = flow.downloadHeadersAndPruningUTXOSet(flow.Domain().StagingConsensus(), highHash)
+	err = flow.downloadHeadersAndPruningUTXOSet(highHash)
 	if err != nil {
 		if !flow.IsRecoverableError(err) {
 			return err
@@ -93,13 +93,13 @@ func (flow *handleRelayInvsFlow) downloadHeadersProof() error {
 	return nil
 }
 
-func (flow *handleRelayInvsFlow) downloadHeadersAndPruningUTXOSet(consensus externalapi.Consensus, highHash *externalapi.DomainHash) error {
+func (flow *handleRelayInvsFlow) downloadHeadersAndPruningUTXOSet(highHash *externalapi.DomainHash) error {
 	err := flow.downloadHeadersProof()
 	if err != nil {
 		return err
 	}
 
-	pruningPoint, err := flow.syncPruningPointAndItsAnticone(consensus)
+	pruningPoint, err := flow.syncPruningPointAndItsAnticone()
 	if err != nil {
 		return err
 	}
@@ -110,7 +110,7 @@ func (flow *handleRelayInvsFlow) downloadHeadersAndPruningUTXOSet(consensus exte
 		return protocolerrors.Errorf(true, "the genesis pruning point violates finality")
 	}
 
-	err = flow.syncPruningPointFutureHeaders(consensus, pruningPoint, highHash)
+	err = flow.syncPruningPointFutureHeaders(flow.Domain().StagingConsensus(), pruningPoint, highHash)
 	if err != nil {
 		return err
 	}
@@ -118,7 +118,7 @@ func (flow *handleRelayInvsFlow) downloadHeadersAndPruningUTXOSet(consensus exte
 	log.Debugf("Blocks downloaded from peer %s", flow.peer)
 
 	log.Debugf("Syncing the current pruning point UTXO set")
-	syncedPruningPointUTXOSetSuccessfully, err := flow.syncPruningPointUTXOSet(consensus, pruningPoint)
+	syncedPruningPointUTXOSetSuccessfully, err := flow.syncPruningPointUTXOSet(flow.Domain().StagingConsensus(), pruningPoint)
 	if err != nil {
 		return err
 	}
@@ -130,9 +130,15 @@ func (flow *handleRelayInvsFlow) downloadHeadersAndPruningUTXOSet(consensus exte
 	return nil
 }
 
-func (flow *handleRelayInvsFlow) syncPruningPointAndItsAnticone(consensus externalapi.Consensus) (*externalapi.DomainHash, error) {
+func (flow *handleRelayInvsFlow) syncPruningPointAndItsAnticone() (*externalapi.DomainHash, error) {
+
 	log.Infof("Downloading pruning point and its anticone from %s", flow.peer)
 	err := flow.outgoingRoute.Enqueue(appmessage.NewMsgRequestPruningPointAndItsAnticone())
+	if err != nil {
+		return nil, err
+	}
+
+	err = flow.validateAndInsertPruningPoints()
 	if err != nil {
 		return nil, err
 	}
@@ -146,7 +152,7 @@ func (flow *handleRelayInvsFlow) syncPruningPointAndItsAnticone(consensus extern
 		return nil, protocolerrors.Errorf(true, "got `done` message before receiving the pruning point")
 	}
 
-	err = flow.processBlockWithTrustedData(consensus, pruningPoint)
+	err = flow.processBlockWithTrustedData(flow.Domain().StagingConsensus(), pruningPoint)
 	if err != nil {
 		return nil, err
 	}
@@ -161,7 +167,7 @@ func (flow *handleRelayInvsFlow) syncPruningPointAndItsAnticone(consensus extern
 			break
 		}
 
-		err = flow.processBlockWithTrustedData(consensus, blockWithTrustedData)
+		err = flow.processBlockWithTrustedData(flow.Domain().StagingConsensus(), blockWithTrustedData)
 		if err != nil {
 			return nil, err
 		}
@@ -199,7 +205,54 @@ func (flow *handleRelayInvsFlow) receiveBlockWithTrustedData() (*appmessage.MsgB
 	}
 }
 
-func (flow *handleRelayInvsFlow) syncPruningPointUTXOSet(consensus externalapi.Consensus, pruningPoint *externalapi.DomainHash) (bool, error) {
+func (flow *handleRelayInvsFlow) receivePruningPoints() (*appmessage.MsgPruningPoints, error) {
+	message, err := flow.dequeueIncomingMessageAndSkipInvs(common.DefaultTimeout)
+	if err != nil {
+		return nil, err
+	}
+
+	msgPruningPoints, ok := message.(*appmessage.MsgPruningPoints)
+	if !ok {
+		return nil,
+			protocolerrors.Errorf(true, "received unexpected message type. "+
+				"expected: %s, got: %s", appmessage.CmdPruningPoints, message.Command())
+	}
+
+	return msgPruningPoints, nil
+}
+
+func (flow *handleRelayInvsFlow) validateAndInsertPruningPoints() error {
+	pruningPoints, err := flow.receivePruningPoints()
+	if err != nil {
+		return err
+	}
+
+	headers := make([]externalapi.BlockHeader, len(pruningPoints.Headers))
+	for i, header := range pruningPoints.Headers {
+		headers[i] = appmessage.BlockHeaderToDomainBlockHeader(header)
+	}
+
+	arePruningPointsViolatingFinality, err := flow.Domain().Consensus().ArePruningPointsViolatingFinality(headers)
+	if err != nil {
+		return err
+	}
+
+	if arePruningPointsViolatingFinality {
+		// TODO: Find a better way to deal with finality conflicts.
+		return protocolerrors.Errorf(false, "pruning points are violating finality")
+	}
+
+	err = flow.Domain().StagingConsensus().ImportPruningPoints(headers)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (flow *handleRelayInvsFlow) syncPruningPointUTXOSet(consensus externalapi.Consensus,
+	pruningPoint *externalapi.DomainHash) (bool, error) {
+
 	log.Infof("Checking if the suggested pruning point %s is compatible to the node DAG", pruningPoint)
 	isValid, err := flow.Domain().StagingConsensus().IsValidPruningPoint(pruningPoint)
 	if err != nil {

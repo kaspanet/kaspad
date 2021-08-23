@@ -348,7 +348,8 @@ func (bb *blockBuilder) expectedHeaderPruningPoint(stagingArea *model.StagingAre
 			return nil, err
 		}
 
-		if blockGHOSTDAGData.BlueScore()-currentPruningPointGHOSTDAGData.BlueScore() > bb.pruningDepth {
+		if blockGHOSTDAGData.BlueScore() > currentPruningPointGHOSTDAGData.BlueScore() &&
+			blockGHOSTDAGData.BlueScore()-currentPruningPointGHOSTDAGData.BlueScore() > bb.pruningDepth {
 			return currentPruningPoint, nil
 		}
 

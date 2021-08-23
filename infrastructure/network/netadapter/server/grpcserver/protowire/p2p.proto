@@ -240,3 +240,7 @@ message RequestBlockBlueWorkMessage {
 message BlockBlueWorkMessage {
   bytes blueWork = 1;
 }
+
+message PruningPointsMessage {
+  repeated BlockHeader headers = 1;
+}

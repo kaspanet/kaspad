@@ -7,7 +7,6 @@ import (
 
 // consensusStateManager manages the node's consensus state
 type consensusStateManager struct {
-	pruningDepth      uint64
 	maxBlockParents   externalapi.KType
 	mergeSetSizeLimit uint64
 	genesisHash       *externalapi.DomainHash
@@ -43,7 +42,6 @@ type consensusStateManager struct {
 // New instantiates a new ConsensusStateManager
 func New(
 	databaseContext model.DBManager,
-	pruningDepth uint64,
 	maxBlockParents externalapi.KType,
 	mergeSetSizeLimit uint64,
 	genesisHash *externalapi.DomainHash,
@@ -73,7 +71,6 @@ func New(
 	daaBlocksStore model.DAABlocksStore) (model.ConsensusStateManager, error) {
 
 	csm := &consensusStateManager{
-		pruningDepth:      pruningDepth,
 		maxBlockParents:   maxBlockParents,
 		mergeSetSizeLimit: mergeSetSizeLimit,
 		genesisHash:       genesisHash,
