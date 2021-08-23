@@ -135,7 +135,7 @@ func TestConvertToPartial(t *testing.T) {
 var blockOne = MsgBlock{
 	Header: MsgBlockHeader{
 		Version:              0,
-		Parents:              []*externalapi.DomainHash{mainnetGenesisHash, simnetGenesisHash},
+		Parents:              []externalapi.BlockLevelParents{[]*externalapi.DomainHash{mainnetGenesisHash, simnetGenesisHash}},
 		HashMerkleRoot:       mainnetGenesisMerkleRoot,
 		AcceptedIDMerkleRoot: exampleAcceptedIDMerkleRoot,
 		UTXOCommitment:       exampleUTXOCommitment,
