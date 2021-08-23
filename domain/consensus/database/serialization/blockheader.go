@@ -12,7 +12,7 @@ import (
 func DomainBlockHeaderToDbBlockHeader(domainBlockHeader externalapi.BlockHeader) *DbBlockHeader {
 	return &DbBlockHeader{
 		Version:              uint32(domainBlockHeader.Version()),
-		ParentHashes:         DomainHashesToDbHashes(domainBlockHeader.Parents()),
+		Parents:              DomainParentsToDbParents(domainBlockHeader.Parents()),
 		HashMerkleRoot:       DomainHashToDbHash(domainBlockHeader.HashMerkleRoot()),
 		AcceptedIDMerkleRoot: DomainHashToDbHash(domainBlockHeader.AcceptedIDMerkleRoot()),
 		UtxoCommitment:       DomainHashToDbHash(domainBlockHeader.UTXOCommitment()),
@@ -27,7 +27,7 @@ func DomainBlockHeaderToDbBlockHeader(domainBlockHeader externalapi.BlockHeader)
 
 // DbBlockHeaderToDomainBlockHeader converts DbBlockHeader to BlockHeader
 func DbBlockHeaderToDomainBlockHeader(dbBlockHeader *DbBlockHeader) (externalapi.BlockHeader, error) {
-	parents, err := DbHashesToDomainHashes(dbBlockHeader.ParentHashes)
+	parents, err := DbParentsToDomainParents(dbBlockHeader.Parents)
 	if err != nil {
 		return nil, err
 	}
