@@ -192,7 +192,7 @@ func TestIsFinalizedTransaction(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Error getting block DAA score : %+v", err)
 		}
-		blockParents := block.Header.Parents()
+		blockParents := block.Header.DirectParents()
 		parentToSpend, err := tc.GetBlock(blockParents[0])
 		if err != nil {
 			t.Fatalf("Error getting block1: %+v", err)

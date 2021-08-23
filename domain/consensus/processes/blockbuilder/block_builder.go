@@ -223,7 +223,7 @@ func (bb *blockBuilder) newBlockParents(stagingArea *model.StagingArea) ([]exter
 	if err != nil {
 		return nil, err
 	}
-	return virtualBlockRelations.Parents, nil
+	return []externalapi.BlockLevelParents{virtualBlockRelations.Parents}, nil
 }
 
 func (bb *blockBuilder) newBlockTime(stagingArea *model.StagingArea) (int64, error) {

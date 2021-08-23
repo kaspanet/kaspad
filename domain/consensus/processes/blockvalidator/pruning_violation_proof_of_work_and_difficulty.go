@@ -66,7 +66,7 @@ func (v *blockValidator) setParents(stagingArea *model.StagingArea,
 	header externalapi.BlockHeader,
 	isBlockWithTrustedData bool) error {
 
-	parents := make([]*externalapi.DomainHash, 0, len(header.Parents()))
+	parents := make([]*externalapi.DomainHash, 0, len(header.DirectParents()))
 	for _, currentParent := range header.DirectParents() {
 		exists, err := v.blockStatusStore.Exists(v.databaseContext, stagingArea, currentParent)
 		if err != nil {
