@@ -125,9 +125,17 @@ func (x *RpcBlockHeader) toAppMessage() (*appmessage.RPCBlockHeader, error) {
 	if x.Version > math.MaxUint16 {
 		return nil, errors.Errorf("Invalid block header version - bigger then uint16")
 	}
+	parents := make([]*appmessage.RPCBlockLevelParents, len(x.Parents))
+	for i, blockLevelParents := range x.Parents {
+		var err error
+		parents[i], err = blockLevelParents.toAppMessage()
+		if err != nil {
+			return nil, err
+		}
+	}
 	return &appmessage.RPCBlockHeader{
 		Version:              x.Version,
-		ParentHashes:         x.ParentHashes,
+		Parents:              parents,
 		HashMerkleRoot:       x.HashMerkleRoot,
 		AcceptedIDMerkleRoot: x.AcceptedIdMerkleRoot,
 		UTXOCommitment:       x.UtxoCommitment,
@@ -141,9 +149,14 @@ func (x *RpcBlockHeader) toAppMessage() (*appmessage.RPCBlockHeader, error) {
 }
 
 func (x *RpcBlockHeader) fromAppMessage(message *appmessage.RPCBlockHeader) {
+	parents := make([]*RpcBlockLevelParents, len(message.Parents))
+	for i, blockLevelParents := range message.Parents {
+		parents[i] = &RpcBlockLevelParents{}
+		parents[i].fromAppMessage(blockLevelParents)
+	}
 	*x = RpcBlockHeader{
 		Version:              message.Version,
-		ParentHashes:         message.ParentHashes,
+		Parents:              parents,
 		HashMerkleRoot:       message.HashMerkleRoot,
 		AcceptedIdMerkleRoot: message.AcceptedIDMerkleRoot,
 		UtxoCommitment:       message.UTXOCommitment,
@@ -153,6 +166,21 @@ func (x *RpcBlockHeader) fromAppMessage(message *appmessage.RPCBlockHeader) {
 		DaaScore:             message.DAAScore,
 		BlueWork:             message.BlueWork,
 		FinalityPoint:        message.FinalityPoint,
+	}
+}
+
+func (x *RpcBlockLevelParents) toAppMessage() (*appmessage.RPCBlockLevelParents, error) {
+	if x == nil {
+		return nil, errors.Wrapf(errorNil, "RpcBlockLevelParents is nil")
+	}
+	return &appmessage.RPCBlockLevelParents{
+		ParentHashes: x.ParentHashes,
+	}, nil
+}
+
+func (x *RpcBlockLevelParents) fromAppMessage(message *appmessage.RPCBlockLevelParents) {
+	*x = RpcBlockLevelParents{
+		ParentHashes: message.ParentHashes,
 	}
 }
 

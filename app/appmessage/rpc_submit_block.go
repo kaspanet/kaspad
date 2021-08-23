@@ -53,7 +53,7 @@ func (msg *SubmitBlockResponseMessage) Command() MessageCommand {
 	return CmdSubmitBlockResponseMessage
 }
 
-// NewSubmitBlockResponseMessage returns a instance of the message
+// NewSubmitBlockResponseMessage returns an instance of the message
 func NewSubmitBlockResponseMessage() *SubmitBlockResponseMessage {
 	return &SubmitBlockResponseMessage{}
 }
@@ -70,7 +70,7 @@ type RPCBlock struct {
 // used over RPC
 type RPCBlockHeader struct {
 	Version              uint32
-	ParentHashes         []string
+	Parents              []*RPCBlockLevelParents
 	HashMerkleRoot       string
 	AcceptedIDMerkleRoot string
 	UTXOCommitment       string
@@ -80,6 +80,11 @@ type RPCBlockHeader struct {
 	DAAScore             uint64
 	BlueWork             string
 	FinalityPoint        string
+}
+
+// RPCBlockLevelParents holds parent hashes for one block level
+type RPCBlockLevelParents struct {
+	ParentHashes []string
 }
 
 // RPCBlockVerboseData holds verbose data about a block
