@@ -99,7 +99,7 @@ func (bh *blockHeader) Equal(other externalapi.BaseBlockHeader) bool {
 		return false
 	}
 
-	if !externalapi.BlockLevelParentsEqual(bh.parents, other.Parents()) {
+	if !externalapi.ParentsEqual(bh.parents, other.Parents()) {
 		return false
 	}
 
@@ -145,7 +145,7 @@ func (bh *blockHeader) Equal(other externalapi.BaseBlockHeader) bool {
 func (bh *blockHeader) clone() *blockHeader {
 	return &blockHeader{
 		version:              bh.version,
-		parents:              externalapi.CloneBlockLevelParents(bh.parents),
+		parents:              externalapi.CloneParents(bh.parents),
 		hashMerkleRoot:       bh.hashMerkleRoot,
 		acceptedIDMerkleRoot: bh.acceptedIDMerkleRoot,
 		utxoCommitment:       bh.utxoCommitment,
