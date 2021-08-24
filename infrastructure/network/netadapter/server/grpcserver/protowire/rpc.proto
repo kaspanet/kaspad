@@ -27,7 +27,7 @@ message RpcBlock {
 
 message RpcBlockHeader {
   uint32 version = 1;
-  repeated RpcBlockLevelParents parents = 2;
+  repeated RpcBlockLevelParents parents = 12;
   string hashMerkleRoot = 3;
   string acceptedIdMerkleRoot = 4;
   string utxoCommitment = 5;

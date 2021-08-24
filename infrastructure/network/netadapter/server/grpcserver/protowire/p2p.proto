@@ -64,7 +64,7 @@ message BlockMessage{
 
 message BlockHeader{
   uint32 version = 1;
-  repeated BlockLevelParents parents = 2;
+  repeated BlockLevelParents parents = 12;
   Hash hashMerkleRoot = 3;
   Hash acceptedIdMerkleRoot = 4;
   Hash utxoCommitment = 5;
