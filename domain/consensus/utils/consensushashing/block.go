@@ -39,9 +39,15 @@ func serializeHeader(w io.Writer, header externalapi.BaseBlockHeader) error {
 	if err := serialization.WriteElements(w, header.Version(), uint64(numParents)); err != nil {
 		return err
 	}
-	for _, hash := range header.Parents() {
-		if err := serialization.WriteElement(w, hash); err != nil {
+	for _, blockLevelParents := range header.Parents() {
+		numBlockLevelParents := len(blockLevelParents)
+		if err := serialization.WriteElements(w, uint64(numBlockLevelParents)); err != nil {
 			return err
+		}
+		for _, hash := range blockLevelParents {
+			if err := serialization.WriteElement(w, hash); err != nil {
+				return err
+			}
 		}
 	}
 	return serialization.WriteElements(w, header.HashMerkleRoot(), header.AcceptedIDMerkleRoot(), header.UTXOCommitment(), timestamp,
