@@ -5,14 +5,12 @@
 package appmessage
 
 import (
-	"math"
 	"math/big"
 
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
 
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/util/mstime"
-	"github.com/pkg/errors"
 )
 
 // BaseBlockHeaderPayload is the base number of bytes a block header can be,
@@ -72,23 +70,9 @@ type MsgBlockHeader struct {
 	FinalityPoint *externalapi.DomainHash
 }
 
-// NumParentBlocks return the number of entries in ParentHashes
-func (h *MsgBlockHeader) NumParentBlocks() byte {
-	numParents := len(h.Parents)
-	if numParents > math.MaxUint8 {
-		panic(errors.Errorf("number of parents is %d, which is more than one byte can fit", numParents))
-	}
-	return byte(numParents)
-}
-
 // BlockHash computes the block identifier hash for the given block header.
 func (h *MsgBlockHeader) BlockHash() *externalapi.DomainHash {
 	return consensushashing.HeaderHash(BlockHeaderToDomainBlockHeader(h))
-}
-
-// IsGenesis returns true iff this block is a genesis block
-func (h *MsgBlockHeader) IsGenesis() bool {
-	return h.NumParentBlocks() == 0
 }
 
 // NewBlockHeader returns a new MsgBlockHeader using the provided version, previous

@@ -11,7 +11,6 @@ import (
 
 	"github.com/davecgh/go-spew/spew"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
-	"github.com/kaspanet/kaspad/util/mstime"
 )
 
 // TestBlockHeader tests the MsgBlockHeader API.
@@ -57,45 +56,5 @@ func TestBlockHeader(t *testing.T) {
 	if !bh.FinalityPoint.Equal(finalityPoint) {
 		t.Errorf("NewBlockHeader: wrong finalityHash - got %v, want %v",
 			bh.FinalityPoint, finalityPoint)
-	}
-}
-
-func TestIsGenesis(t *testing.T) {
-	nonce := uint64(123123) // 0x1e0f3
-	bits := uint32(0x1d00ffff)
-	timestamp := mstime.UnixMilliseconds(0x495fab29000)
-
-	baseBlockHdr := &MsgBlockHeader{
-		Version:        1,
-		Parents:        []externalapi.BlockLevelParents{[]*externalapi.DomainHash{mainnetGenesisHash, simnetGenesisHash}},
-		HashMerkleRoot: mainnetGenesisMerkleRoot,
-		Timestamp:      timestamp,
-		Bits:           bits,
-		Nonce:          nonce,
-	}
-	genesisBlockHdr := &MsgBlockHeader{
-		Version:        1,
-		Parents:        []externalapi.BlockLevelParents{},
-		HashMerkleRoot: mainnetGenesisMerkleRoot,
-		Timestamp:      timestamp,
-		Bits:           bits,
-		Nonce:          nonce,
-	}
-
-	tests := []struct {
-		in        *MsgBlockHeader // Block header to encode
-		isGenesis bool            // Expected result for call of .IsGenesis
-	}{
-		{genesisBlockHdr, true},
-		{baseBlockHdr, false},
-	}
-
-	t.Logf("Running %d tests", len(tests))
-	for i, test := range tests {
-		isGenesis := test.in.IsGenesis()
-		if isGenesis != test.isGenesis {
-			t.Errorf("MsgBlockHeader.IsGenesis: #%d got: %t, want: %t",
-				i, isGenesis, test.isGenesis)
-		}
 	}
 }
