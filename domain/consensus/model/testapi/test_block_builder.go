@@ -11,11 +11,11 @@ type TestBlockBuilder interface {
 
 	// BuildBlockWithParents builds a block with provided parents, coinbaseData and transactions,
 	// and returns the block together with its past UTXO-diff from the virtual.
-	BuildBlockWithParents(parents []externalapi.BlockLevelParents, coinbaseData *externalapi.DomainCoinbaseData,
+	BuildBlockWithParents(parentHashes []*externalapi.DomainHash, coinbaseData *externalapi.DomainCoinbaseData,
 		transactions []*externalapi.DomainTransaction) (*externalapi.DomainBlock, externalapi.UTXODiff, error)
 
-	BuildUTXOInvalidHeader(parents []externalapi.BlockLevelParents) (externalapi.BlockHeader, error)
+	BuildUTXOInvalidHeader(parentHashes []*externalapi.DomainHash) (externalapi.BlockHeader, error)
 
-	BuildUTXOInvalidBlock(parents []externalapi.BlockLevelParents) (*externalapi.DomainBlock,
+	BuildUTXOInvalidBlock(parentHashes []*externalapi.DomainHash) (*externalapi.DomainBlock,
 		error)
 }
