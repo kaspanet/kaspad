@@ -6,7 +6,6 @@ package dagconfig
 
 import (
 	"github.com/kaspanet/go-muhash"
-	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/blockheader"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/subnetworks"
@@ -31,10 +30,10 @@ var genesisCoinbaseTx = transactionhelper.NewSubnetworkTransaction(0, []*externa
 // genesisHash is the hash of the first block in the block DAG for the main
 // network (genesis block).
 var genesisHash = externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{
-	0xf9, 0xe6, 0x59, 0x8b, 0x25, 0xb2, 0xde, 0xdd,
-	0xd3, 0x8e, 0x0d, 0x78, 0x89, 0x44, 0x2c, 0x9f,
-	0xe1, 0x2e, 0x49, 0xce, 0x58, 0x0b, 0x69, 0xb1,
-	0x05, 0xbf, 0x44, 0x44, 0x7d, 0x95, 0x5e, 0xfd,
+	0x86, 0xd0, 0x2f, 0x43, 0xd9, 0xe2, 0x54, 0xf2,
+	0xda, 0x51, 0x26, 0x06, 0x2b, 0x06, 0xc4, 0xfd,
+	0xd2, 0x7b, 0x10, 0xd8, 0xe4, 0xb0, 0x10, 0x85,
+	0x60, 0xaf, 0x7b, 0x76, 0xb6, 0x81, 0xae, 0x27,
 })
 
 // genesisMerkleRoot is the hash of the first transaction in the genesis block
@@ -51,16 +50,16 @@ var genesisMerkleRoot = externalapi.NewDomainHashFromByteArray(&[externalapi.Dom
 var genesisBlock = externalapi.DomainBlock{
 	Header: blockheader.NewImmutableBlockHeader(
 		0,
-		[]*externalapi.DomainHash{},
+		[]externalapi.BlockLevelParents{},
 		genesisMerkleRoot,
 		&externalapi.DomainHash{},
 		externalapi.NewDomainHashFromByteArray(muhash.EmptyMuHashHash.AsArray()),
-		0x17a99ae1020,
+		0x17adc150114,
 		0x207fffff,
-		0x4,
+		0x1,
 		0,
 		big.NewInt(0),
-		model.VirtualGenesisBlockHash,
+		&externalapi.DomainHash{},
 	),
 	Transactions: []*externalapi.DomainTransaction{genesisCoinbaseTx},
 }
@@ -84,10 +83,10 @@ var devnetGenesisCoinbaseTx = transactionhelper.NewSubnetworkTransaction(0,
 // devGenesisHash is the hash of the first block in the block DAG for the development
 // network (genesis block).
 var devnetGenesisHash = externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{
-	0xd8, 0x8e, 0xfe, 0x55, 0x26, 0xd0, 0xf3, 0x65,
-	0x21, 0xad, 0xb6, 0x5f, 0x24, 0x55, 0xd1, 0x24,
-	0x18, 0xbf, 0x4e, 0x78, 0x53, 0x8b, 0x3a, 0x09,
-	0x43, 0x3b, 0xfe, 0xba, 0x8f, 0x9d, 0xde, 0x21,
+	0xe4, 0xe1, 0xf7, 0xc2, 0x7e, 0xc8, 0x61, 0x94,
+	0x5d, 0x9d, 0xcb, 0x12, 0x4b, 0x77, 0xca, 0x57,
+	0x84, 0x2c, 0x90, 0x56, 0x06, 0x66, 0xc9, 0x47,
+	0xb7, 0x22, 0x4b, 0x73, 0xac, 0x63, 0x4f, 0x08,
 })
 
 // devnetGenesisMerkleRoot is the hash of the first transaction in the genesis block
@@ -104,16 +103,16 @@ var devnetGenesisMerkleRoot = externalapi.NewDomainHashFromByteArray(&[externala
 var devnetGenesisBlock = externalapi.DomainBlock{
 	Header: blockheader.NewImmutableBlockHeader(
 		0,
-		[]*externalapi.DomainHash{},
+		[]externalapi.BlockLevelParents{},
 		devnetGenesisMerkleRoot,
 		&externalapi.DomainHash{},
 		externalapi.NewDomainHashFromByteArray(muhash.EmptyMuHashHash.AsArray()),
 		0x11e9db49828,
 		0x1e7fffff,
-		0x168a8,
+		0x23694,
 		0,
 		big.NewInt(0),
-		model.VirtualGenesisBlockHash,
+		&externalapi.DomainHash{},
 	),
 	Transactions: []*externalapi.DomainTransaction{devnetGenesisCoinbaseTx},
 }
@@ -136,10 +135,10 @@ var simnetGenesisCoinbaseTx = transactionhelper.NewSubnetworkTransaction(0,
 // simnetGenesisHash is the hash of the first block in the block DAG for
 // the simnet (genesis block).
 var simnetGenesisHash = externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{
-	0x5b, 0x55, 0xb6, 0x3c, 0x77, 0x1b, 0x48, 0xfc,
-	0xc7, 0x65, 0x77, 0xd6, 0x2f, 0x1e, 0x20, 0x63,
-	0x85, 0x54, 0x1c, 0xb8, 0x37, 0x5a, 0x29, 0x07,
-	0x3e, 0xb1, 0xb2, 0xe7, 0x6f, 0x2a, 0xdb, 0x95,
+	0x7a, 0x83, 0x0d, 0x9e, 0x29, 0x38, 0xb1, 0x7a,
+	0xfc, 0x85, 0xe4, 0x3f, 0xce, 0x1f, 0x37, 0xc4,
+	0x52, 0x97, 0xea, 0xba, 0x11, 0x70, 0xf5, 0x4e,
+	0xe3, 0x2f, 0xd3, 0xb0, 0x50, 0x08, 0x67, 0xa7,
 })
 
 // simnetGenesisMerkleRoot is the hash of the first transaction in the genesis block
@@ -156,16 +155,16 @@ var simnetGenesisMerkleRoot = externalapi.NewDomainHashFromByteArray(&[externala
 var simnetGenesisBlock = externalapi.DomainBlock{
 	Header: blockheader.NewImmutableBlockHeader(
 		0,
-		[]*externalapi.DomainHash{},
+		[]externalapi.BlockLevelParents{},
 		simnetGenesisMerkleRoot,
 		&externalapi.DomainHash{},
 		externalapi.NewDomainHashFromByteArray(muhash.EmptyMuHashHash.AsArray()),
-		0x17a99ae10cc,
+		0x17adc15022f,
 		0x207fffff,
-		0x2,
+		0x1,
 		0,
 		big.NewInt(0),
-		model.VirtualGenesisBlockHash,
+		&externalapi.DomainHash{},
 	),
 	Transactions: []*externalapi.DomainTransaction{simnetGenesisCoinbaseTx},
 }
@@ -188,10 +187,10 @@ var testnetGenesisCoinbaseTx = transactionhelper.NewSubnetworkTransaction(0,
 // testnetGenesisHash is the hash of the first block in the block DAG for the test
 // network (genesis block).
 var testnetGenesisHash = externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{
-	0x32, 0x10, 0x6a, 0x42, 0x52, 0xb7, 0x5a, 0xba,
-	0x68, 0xca, 0x77, 0xbc, 0x62, 0x61, 0x63, 0xe2,
-	0xd1, 0x44, 0xfa, 0x10, 0xbd, 0xc3, 0x0b, 0x96,
-	0x7d, 0xc1, 0xe7, 0x52, 0xa4, 0xe8, 0x25, 0x7c,
+	0x12, 0x35, 0x45, 0x64, 0x16, 0xac, 0x7b, 0x00,
+	0xe9, 0xa2, 0xc9, 0x97, 0x8d, 0x8b, 0xd3, 0x7c,
+	0xa2, 0xc2, 0x9b, 0x9e, 0x23, 0x62, 0x49, 0xb6,
+	0x41, 0x8a, 0xcc, 0x0a, 0x98, 0xd1, 0x10, 0x36,
 })
 
 // testnetGenesisMerkleRoot is the hash of the first transaction in the genesis block
@@ -208,16 +207,16 @@ var testnetGenesisMerkleRoot = externalapi.NewDomainHashFromByteArray(&[external
 var testnetGenesisBlock = externalapi.DomainBlock{
 	Header: blockheader.NewImmutableBlockHeader(
 		0,
-		[]*externalapi.DomainHash{},
+		[]externalapi.BlockLevelParents{},
 		testnetGenesisMerkleRoot,
 		&externalapi.DomainHash{},
 		externalapi.NewDomainHashFromByteArray(muhash.EmptyMuHashHash.AsArray()),
-		0x17a99ae10cc,
+		0x17adc15022f,
 		0x1e7fffff,
-		0x71d0d,
+		0x2f291,
 		0,
 		big.NewInt(0),
-		model.VirtualGenesisBlockHash,
+		&externalapi.DomainHash{},
 	),
 	Transactions: []*externalapi.DomainTransaction{testnetGenesisCoinbaseTx},
 }

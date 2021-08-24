@@ -10,7 +10,7 @@ message DbBlock {
 
 message DbBlockHeader {
   uint32 version = 1;
-  repeated DbHash parentHashes = 2;
+  repeated DbBlockLevelParents parents = 2;
   DbHash hashMerkleRoot = 3;
   DbHash acceptedIDMerkleRoot = 4;
   DbHash utxoCommitment = 5;
@@ -20,6 +20,10 @@ message DbBlockHeader {
   uint64 daaScore = 9;
   bytes blueWork = 10;
   DbHash finalityPoint = 11;
+}
+
+message DbBlockLevelParents {
+  repeated DbHash parentHashes = 1;
 }
 
 message DbHash {

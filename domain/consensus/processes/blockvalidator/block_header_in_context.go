@@ -139,7 +139,7 @@ func (v *blockValidator) checkParentsIncest(stagingArea *model.StagingArea, bloc
 }
 
 func (v *blockValidator) validateMedianTime(stagingArea *model.StagingArea, header externalapi.BlockHeader) error {
-	if len(header.ParentHashes()) == 0 {
+	if len(header.DirectParents()) == 0 {
 		return nil
 	}
 

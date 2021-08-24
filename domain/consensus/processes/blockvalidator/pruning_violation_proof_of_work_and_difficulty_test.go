@@ -52,7 +52,7 @@ func TestPOW(t *testing.T) {
 		abovePowMaxTarget := big.NewInt(0).Add(big.NewInt(1), consensusConfig.PowMax)
 		abovePowMaxBlock.Header = blockheader.NewImmutableBlockHeader(
 			abovePowMaxBlock.Header.Version(),
-			abovePowMaxBlock.Header.ParentHashes(),
+			abovePowMaxBlock.Header.Parents(),
 			abovePowMaxBlock.Header.HashMerkleRoot(),
 			abovePowMaxBlock.Header.AcceptedIDMerkleRoot(),
 			abovePowMaxBlock.Header.UTXOCommitment(),
@@ -76,7 +76,7 @@ func TestPOW(t *testing.T) {
 
 		negativeTargetBlock.Header = blockheader.NewImmutableBlockHeader(
 			negativeTargetBlock.Header.Version(),
-			negativeTargetBlock.Header.ParentHashes(),
+			negativeTargetBlock.Header.Parents(),
 			negativeTargetBlock.Header.HashMerkleRoot(),
 			negativeTargetBlock.Header.AcceptedIDMerkleRoot(),
 			negativeTargetBlock.Header.UTXOCommitment(),
@@ -141,9 +141,9 @@ func TestCheckParentHeadersExist(t *testing.T) {
 		parentHash := externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{}) // Non existing parent hash
 		orphanBlock.Header = blockheader.NewImmutableBlockHeader(
 			orphanBlock.Header.Version(),
-			[]*externalapi.DomainHash{
+			[]externalapi.BlockLevelParents{[]*externalapi.DomainHash{
 				parentHash,
-			},
+			}},
 			orphanBlock.Header.HashMerkleRoot(),
 			orphanBlock.Header.AcceptedIDMerkleRoot(),
 			orphanBlock.Header.UTXOCommitment(),
@@ -174,7 +174,7 @@ func TestCheckParentHeadersExist(t *testing.T) {
 		invalidBlock.Transactions[0].Version = constants.MaxTransactionVersion + 1 // This should invalidate the block
 		invalidBlock.Header = blockheader.NewImmutableBlockHeader(
 			invalidBlock.Header.Version(),
-			invalidBlock.Header.ParentHashes(),
+			invalidBlock.Header.Parents(),
 			merkle.CalculateHashMerkleRoot(invalidBlock.Transactions),
 			orphanBlock.Header.AcceptedIDMerkleRoot(),
 			orphanBlock.Header.UTXOCommitment(),
@@ -200,7 +200,7 @@ func TestCheckParentHeadersExist(t *testing.T) {
 
 		invalidBlockChild.Header = blockheader.NewImmutableBlockHeader(
 			invalidBlockChild.Header.Version(),
-			[]*externalapi.DomainHash{invalidBlockHash},
+			[]externalapi.BlockLevelParents{[]*externalapi.DomainHash{invalidBlockHash}},
 			invalidBlockChild.Header.HashMerkleRoot(),
 			invalidBlockChild.Header.AcceptedIDMerkleRoot(),
 			invalidBlockChild.Header.UTXOCommitment(),
