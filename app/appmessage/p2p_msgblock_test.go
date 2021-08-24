@@ -21,7 +21,7 @@ func TestBlock(t *testing.T) {
 	pver := ProtocolVersion
 
 	// Block 1 header.
-	parentHashes := blockOne.Header.Parents
+	parents := blockOne.Header.Parents
 	hashMerkleRoot := blockOne.Header.HashMerkleRoot
 	acceptedIDMerkleRoot := blockOne.Header.AcceptedIDMerkleRoot
 	utxoCommitment := blockOne.Header.UTXOCommitment
@@ -30,7 +30,7 @@ func TestBlock(t *testing.T) {
 	daaScore := blockOne.Header.DAAScore
 	blueWork := blockOne.Header.BlueWork
 	finalityPoint := blockOne.Header.FinalityPoint
-	bh := NewBlockHeader(1, parentHashes, hashMerkleRoot, acceptedIDMerkleRoot, utxoCommitment, bits, nonce,
+	bh := NewBlockHeader(1, parents, hashMerkleRoot, acceptedIDMerkleRoot, utxoCommitment, bits, nonce,
 		daaScore, blueWork, finalityPoint)
 
 	// Ensure the command is expected value.
