@@ -36,12 +36,12 @@ message RpcBlockHeader {
   uint64 nonce = 8;
   uint64 daaScore = 9;
   string blueWork = 10;
-  string pruningPoint = 12;
+  string pruningPoint = 14;
   uint64 blueScore = 13;
 }
 
 message RpcBlockLevelParents {
-    repeated string parentHashes = 1;
+  repeated string parentHashes = 1;
 }
 
 message RpcBlockVerboseData{

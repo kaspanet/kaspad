@@ -73,7 +73,7 @@ message BlockHeader{
   uint64 nonce = 8;
   uint64 daaScore = 9;
   bytes blueWork = 10;
-  Hash pruningPoint = 12;
+  Hash pruningPoint = 14;
   uint64 blueScore = 13;
 }
 

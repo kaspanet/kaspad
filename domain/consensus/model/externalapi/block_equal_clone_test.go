@@ -404,7 +404,7 @@ func initTestBlockStructsForEqual() *[]TestBlockStruct {
 					block: &externalapi.DomainBlock{
 						blockheader.NewImmutableBlockHeader(
 							0,
-							[]*externalapi.DomainHash{externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{1})},
+							[]externalapi.BlockLevelParents{[]*externalapi.DomainHash{externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{1})}},
 							externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{2}),
 							externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{3}),
 							externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{4}),
