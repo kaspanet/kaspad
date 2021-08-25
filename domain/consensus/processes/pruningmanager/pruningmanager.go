@@ -495,11 +495,6 @@ func (pm *pruningManager) ArePruningPointsInValidChain(stagingArea *model.Stagin
 		return false, err
 	}
 
-	lastPruningPointGHOSTDAGData, err := pm.ghostdagDataStore.Get(pm.databaseContext, stagingArea, lastPruningPoint, false)
-	if err != nil {
-		return false, err
-	}
-
 	expectedPruningPoints := make([]*externalapi.DomainHash, 0)
 	headersSelectedTip, err := pm.headerSelectedTipStore.HeadersSelectedTip(pm.databaseContext, stagingArea)
 	if err != nil {
@@ -507,7 +502,7 @@ func (pm *pruningManager) ArePruningPointsInValidChain(stagingArea *model.Stagin
 	}
 
 	current := headersSelectedTip
-	for {
+	for !current.Equal(lastPruningPoint) {
 		header, err := pm.blockHeaderStore.BlockHeader(pm.databaseContext, stagingArea, current)
 		if err != nil {
 			return false, err
@@ -524,14 +519,7 @@ func (pm *pruningManager) ArePruningPointsInValidChain(stagingArea *model.Stagin
 			return false, err
 		}
 
-		if currentGHOSTDAGData.BlueScore() < lastPruningPointGHOSTDAGData.BlueScore()+pm.finalityInterval {
-			break
-		}
-
-		current, err = pm.finalityManager.FinalityPoint(stagingArea, current, false)
-		if err != nil {
-			return false, err
-		}
+		current = currentGHOSTDAGData.SelectedParent()
 	}
 
 	lastPruningPointIndex, err := pm.pruningStore.PruningPointIndex(pm.databaseContext, stagingArea)
