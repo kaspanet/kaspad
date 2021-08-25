@@ -77,7 +77,10 @@ func (bb *testBlockBuilder) buildUTXOInvalidHeader(stagingArea *model.StagingAre
 
 	hashMerkleRoot := bb.newBlockHashMerkleRoot(transactions)
 
-	parents := []externalapi.BlockLevelParents{parentHashes}
+	parents, err := bb.blockParentBuilder.BuildParents(stagingArea, parentHashes)
+	if err != nil {
+		return nil, err
+	}
 
 	bb.nonceCounter++
 	return blockheader.NewImmutableBlockHeader(

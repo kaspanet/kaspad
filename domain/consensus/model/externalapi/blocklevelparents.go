@@ -6,7 +6,22 @@ type BlockLevelParents []*DomainHash
 
 // Equal returns true if this BlockLevelParents is equal to `other`
 func (sl BlockLevelParents) Equal(other BlockLevelParents) bool {
-	return HashesEqual(sl, other)
+	if len(sl) != len(other) {
+		return false
+	}
+	for _, thisHash := range sl {
+		found := false
+		for _, otherHash := range other {
+			if thisHash.Equal(otherHash) {
+				found = true
+				break
+			}
+		}
+		if !found {
+			return false
+		}
+	}
+	return true
 }
 
 // Clone creates a clone of this BlockLevelParents
