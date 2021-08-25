@@ -180,11 +180,6 @@ func (pm *pruningManager) NextPruningPointAndCandidateByBlockHash(stagingArea *m
 		return nil, nil, err
 	}
 
-	currentCandidateGHOSTDAGData, err := pm.ghostdagDataStore.Get(pm.databaseContext, stagingArea, currentCandidate, false)
-	if err != nil {
-		return nil, nil, err
-	}
-
 	ghostdagData, err := pm.ghostdagDataStore.Get(pm.databaseContext, stagingArea, blockHash, false)
 	if err != nil {
 		return nil, nil, err
@@ -222,7 +217,6 @@ func (pm *pruningManager) NextPruningPointAndCandidateByBlockHash(stagingArea *m
 	// that a block that was once in depth of pm.pruningDepth cannot be
 	// reorged without causing a finality conflict first.
 	newCandidate := currentCandidate
-	newCandidateGHOSTDAGData := currentCandidateGHOSTDAGData
 
 	newPruningPoint := currentPruningPoint
 	newPruningPointGHOSTDAGData := currentPruningPointGHOSTDAGData
@@ -241,7 +235,7 @@ func (pm *pruningManager) NextPruningPointAndCandidateByBlockHash(stagingArea *m
 		}
 
 		newCandidate = selectedChild
-		newCandidateGHOSTDAGData = selectedChildGHOSTDAGData
+		newCandidateGHOSTDAGData := selectedChildGHOSTDAGData
 
 		// We move the pruning point every time the candidate's finality score is
 		// bigger than the current pruning point finality score.
