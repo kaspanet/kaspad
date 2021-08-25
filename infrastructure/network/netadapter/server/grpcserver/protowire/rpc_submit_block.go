@@ -136,6 +136,7 @@ func (x *RpcBlockHeader) toAppMessage() (*appmessage.RPCBlockHeader, error) {
 		Nonce:                x.Nonce,
 		DAAScore:             x.DaaScore,
 		BlueWork:             x.BlueWork,
+		BlueScore:            x.BlueScore,
 		PruningPoint:         x.PruningPoint,
 	}, nil
 }
@@ -152,6 +153,7 @@ func (x *RpcBlockHeader) fromAppMessage(message *appmessage.RPCBlockHeader) {
 		Nonce:                message.Nonce,
 		DaaScore:             message.DAAScore,
 		BlueWork:             message.BlueWork,
+		BlueScore:            message.BlueScore,
 		PruningPoint:         message.PruningPoint,
 	}
 }

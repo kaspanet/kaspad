@@ -611,7 +611,17 @@ func (s *consensus) ImportPruningPoints(pruningPoints []externalapi.BlockHeader)
 	defer s.lock.Unlock()
 
 	stagingArea := model.NewStagingArea()
-	return s.consensusStateManager.ImportPruningPoints(stagingArea, pruningPoints)
+	err := s.consensusStateManager.ImportPruningPoints(stagingArea, pruningPoints)
+	if err != nil {
+		return err
+	}
+
+	err = staging.CommitAllChanges(s.databaseContext, stagingArea)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (s *consensus) GetVirtualSelectedParentChainFromBlock(blockHash *externalapi.DomainHash) (*externalapi.SelectedChainPath, error) {

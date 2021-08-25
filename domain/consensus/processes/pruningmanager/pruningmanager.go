@@ -108,8 +108,6 @@ func New(
 	}
 }
 
-// FindNextPruningPoint finds the next pruning point from the
-// given blockHash
 func (pm *pruningManager) UpdatePruningPointByVirtual(stagingArea *model.StagingArea) error {
 	onEnd := logger.LogAndMeasureExecutionTime(log, "pruningManager.UpdatePruningPointByVirtual")
 	defer onEnd()
@@ -135,24 +133,24 @@ func (pm *pruningManager) UpdatePruningPointByVirtual(stagingArea *model.Staging
 		return nil
 	}
 
+	virtualGHOSTDAGData, err := pm.ghostdagDataStore.Get(pm.databaseContext, stagingArea, model.VirtualBlockHash, false)
+	if err != nil {
+		return err
+	}
+
+	newPruningPoint, newCandidate, err := pm.NextPruningPointAndCandidateByBlockHash(stagingArea, virtualGHOSTDAGData.SelectedParent())
+	if err != nil {
+		return err
+	}
+
 	currentCandidate, err := pm.pruningPointCandidate(stagingArea)
 	if err != nil {
 		return err
 	}
 
-	currentCandidateGHOSTDAGData, err := pm.ghostdagDataStore.Get(pm.databaseContext, stagingArea, currentCandidate, false)
-	if err != nil {
-		return err
-	}
-
-	virtual, err := pm.ghostdagDataStore.Get(pm.databaseContext, stagingArea, model.VirtualBlockHash, false)
-	if err != nil {
-		return err
-	}
-
-	virtualSelectedParent, err := pm.ghostdagDataStore.Get(pm.databaseContext, stagingArea, virtual.SelectedParent(), false)
-	if err != nil {
-		return err
+	if !newCandidate.Equal(currentCandidate) {
+		log.Debugf("Staged a new pruning candidate, old: %s, new: %s", currentCandidate, newCandidate)
+		pm.pruningStore.StagePruningPointCandidate(stagingArea, newCandidate)
 	}
 
 	currentPruningPoint, err := pm.pruningStore.PruningPoint(pm.databaseContext, stagingArea)
@@ -160,14 +158,54 @@ func (pm *pruningManager) UpdatePruningPointByVirtual(stagingArea *model.Staging
 		return err
 	}
 
-	currentPruningPointGHOSTDAGData, err := pm.ghostdagDataStore.Get(pm.databaseContext, stagingArea, currentPruningPoint, false)
-	if err != nil {
-		return err
+	if !newPruningPoint.Equal(currentPruningPoint) {
+		log.Debugf("Moving pruning point from %s to %s", currentPruningPoint, newPruningPoint)
+		err = pm.savePruningPoint(stagingArea, newPruningPoint)
+		if err != nil {
+			return err
+		}
 	}
 
-	iterator, err := pm.dagTraversalManager.SelectedChildIterator(stagingArea, virtual.SelectedParent(), currentCandidate)
+	return nil
+}
+
+func (pm *pruningManager) NextPruningPointAndCandidateByBlockHash(stagingArea *model.StagingArea,
+	blockHash *externalapi.DomainHash) (*externalapi.DomainHash, *externalapi.DomainHash, error) {
+
+	onEnd := logger.LogAndMeasureExecutionTime(log, "pruningManager.NextPruningPointAndCandidateByBlockHash")
+	defer onEnd()
+
+	currentCandidate, err := pm.pruningPointCandidate(stagingArea)
 	if err != nil {
-		return err
+		return nil, nil, err
+	}
+
+	currentCandidateGHOSTDAGData, err := pm.ghostdagDataStore.Get(pm.databaseContext, stagingArea, currentCandidate, false)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	ghostdagData, err := pm.ghostdagDataStore.Get(pm.databaseContext, stagingArea, blockHash, false)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	currentPruningPoint, err := pm.pruningStore.PruningPoint(pm.databaseContext, stagingArea)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	currentPruningPointGHOSTDAGData, err := pm.ghostdagDataStore.Get(pm.databaseContext, stagingArea, currentPruningPoint, false)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	// We iterate until the selected parent of the given block, in order to allow a situation where the given block hash
+	// belongs to the virtual. This shouldn't change anything since the max blue score difference between a block and its
+	// selected parent is K, and K << pm.pruningDepth.
+	iterator, err := pm.dagTraversalManager.SelectedChildIterator(stagingArea, ghostdagData.SelectedParent(), currentCandidate)
+	if err != nil {
+		return nil, nil, err
 	}
 	defer iterator.Close()
 
@@ -191,14 +229,14 @@ func (pm *pruningManager) UpdatePruningPointByVirtual(stagingArea *model.Staging
 	for ok := iterator.First(); ok; ok = iterator.Next() {
 		selectedChild, err := iterator.Get()
 		if err != nil {
-			return err
+			return nil, nil, err
 		}
 		selectedChildGHOSTDAGData, err := pm.ghostdagDataStore.Get(pm.databaseContext, stagingArea, selectedChild, false)
 		if err != nil {
-			return err
+			return nil, nil, err
 		}
 
-		if virtualSelectedParent.BlueScore()-selectedChildGHOSTDAGData.BlueScore() < pm.pruningDepth {
+		if ghostdagData.BlueScore()-selectedChildGHOSTDAGData.BlueScore() < pm.pruningDepth {
 			break
 		}
 
@@ -213,26 +251,7 @@ func (pm *pruningManager) UpdatePruningPointByVirtual(stagingArea *model.Staging
 		}
 	}
 
-	if !newCandidate.Equal(currentCandidate) {
-		log.Debugf("Staged a new pruning candidate, old: %s, new: %s", currentCandidate, newCandidate)
-		pm.pruningStore.StagePruningPointCandidate(stagingArea, newCandidate)
-	}
-
-	// We move the pruning point every time the candidate's finality score is
-	// bigger than the current pruning point finality score.
-	if pm.finalityScore(newCandidateGHOSTDAGData.BlueScore()) <= pm.finalityScore(currentPruningPointGHOSTDAGData.BlueScore()) {
-		return nil
-	}
-
-	if !newPruningPoint.Equal(currentPruningPoint) {
-		log.Debugf("Moving pruning point from %s to %s", currentPruningPoint, newPruningPoint)
-		err = pm.savePruningPoint(stagingArea, newPruningPoint)
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
+	return newPruningPoint, newCandidate, nil
 }
 
 func (pm *pruningManager) isInPruningFutureOrInVirtualPast(stagingArea *model.StagingArea, block *externalapi.DomainHash,
@@ -448,18 +467,26 @@ func (pm *pruningManager) ArePruningPointsViolatingFinality(stagingArea *model.S
 
 	for _, header := range pruningPoints {
 		blockHash := consensushashing.HeaderHash(header)
+		exists, err := pm.blockStatusStore.Exists(pm.databaseContext, stagingArea, blockHash)
+		if err != nil {
+			return false, err
+		}
+
+		if !exists {
+			continue
+		}
+
 		isInSelectedParentChainOfVirtualFinalityPointFinalityPoint, err := pm.dagTopologyManager.
 			IsInSelectedParentChainOf(stagingArea, virtualFinalityPointFinalityPoint, blockHash)
 		if err != nil {
 			return false, err
 		}
 
-		if !isInSelectedParentChainOfVirtualFinalityPointFinalityPoint {
-			return true, nil
-		}
+		return !isInSelectedParentChainOfVirtualFinalityPointFinalityPoint, nil
 	}
 
-	return false, nil
+	// If no pruning point is known, there's definitely a finality violation
+	return true, nil
 }
 
 func (pm *pruningManager) ArePruningPointsInValidChain(stagingArea *model.StagingArea) (bool, error) {
@@ -486,7 +513,9 @@ func (pm *pruningManager) ArePruningPointsInValidChain(stagingArea *model.Stagin
 			return false, err
 		}
 
-		if !expectedPruningPoints[len(expectedPruningPoints)].Equal(header.PruningPoint()) {
+		if len(expectedPruningPoints) == 0 ||
+			!expectedPruningPoints[len(expectedPruningPoints)-1].Equal(header.PruningPoint()) {
+
 			expectedPruningPoints = append(expectedPruningPoints, header.PruningPoint())
 		}
 
@@ -521,11 +550,6 @@ func (pm *pruningManager) ArePruningPointsInValidChain(stagingArea *model.Stagin
 			return false, err
 		}
 
-		if !expectedPruningPoints[len(expectedPruningPoints)].Equal(header.PruningPoint()) {
-			expectedPruningPoints = append(expectedPruningPoints, header.PruningPoint())
-		}
-		expectedPruningPoints = append(expectedPruningPoints, header.PruningPoint())
-
 		var expectedPruningPoint *externalapi.DomainHash
 		expectedPruningPoint, expectedPruningPoints = expectedPruningPoints[0], expectedPruningPoints[1:]
 		if !pruningPoint.Equal(expectedPruningPoint) {
@@ -540,6 +564,10 @@ func (pm *pruningManager) ArePruningPointsInValidChain(stagingArea *model.Stagin
 				return false, nil
 			}
 			break
+		}
+
+		if !expectedPruningPoints[len(expectedPruningPoints)-1].Equal(header.PruningPoint()) {
+			expectedPruningPoints = append(expectedPruningPoints, header.PruningPoint())
 		}
 	}
 

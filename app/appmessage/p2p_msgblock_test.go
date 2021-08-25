@@ -28,10 +28,11 @@ func TestBlock(t *testing.T) {
 	bits := blockOne.Header.Bits
 	nonce := blockOne.Header.Nonce
 	daaScore := blockOne.Header.DAAScore
+	blueScore := blockOne.Header.BlueScore
 	blueWork := blockOne.Header.BlueWork
 	pruningPoint := blockOne.Header.PruningPoint
 	bh := NewBlockHeader(1, parentHashes, hashMerkleRoot, acceptedIDMerkleRoot, utxoCommitment, bits, nonce,
-		daaScore, blueWork, pruningPoint)
+		daaScore, blueScore, blueWork, pruningPoint)
 
 	// Ensure the command is expected value.
 	wantCmd := MessageCommand(5)

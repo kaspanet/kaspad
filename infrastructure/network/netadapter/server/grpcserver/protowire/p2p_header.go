@@ -45,6 +45,7 @@ func (x *BlockHeader) toAppMessage() (*appmessage.MsgBlockHeader, error) {
 		Bits:                 x.Bits,
 		Nonce:                x.Nonce,
 		DAAScore:             x.DaaScore,
+		BlueScore:            x.BlueScore,
 		BlueWork:             new(big.Int).SetBytes(x.BlueWork),
 		PruningPoint:         pruningPoint,
 	}, nil
@@ -61,6 +62,7 @@ func (x *BlockHeader) fromAppMessage(msgBlockHeader *appmessage.MsgBlockHeader) 
 		Bits:                 msgBlockHeader.Bits,
 		Nonce:                msgBlockHeader.Nonce,
 		DaaScore:             msgBlockHeader.DAAScore,
+		BlueScore:            msgBlockHeader.BlueScore,
 		BlueWork:             msgBlockHeader.BlueWork.Bytes(),
 		PruningPoint:         domainHashToProto(msgBlockHeader.PruningPoint),
 	}

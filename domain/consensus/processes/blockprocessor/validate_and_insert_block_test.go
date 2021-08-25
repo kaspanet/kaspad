@@ -74,6 +74,7 @@ func TestBlockStatus(t *testing.T) {
 			disqualifiedBlock.Header.Bits(),
 			disqualifiedBlock.Header.Nonce(),
 			disqualifiedBlock.Header.DAAScore(),
+			disqualifiedBlock.Header.BlueScore(),
 			disqualifiedBlock.Header.BlueWork(),
 			disqualifiedBlock.Header.PruningPoint(),
 		)
@@ -100,6 +101,7 @@ func TestBlockStatus(t *testing.T) {
 			disqualifiedBlock.Header.Bits(),
 			disqualifiedBlock.Header.Nonce(),
 			disqualifiedBlock.Header.DAAScore(),
+			disqualifiedBlock.Header.BlueScore(),
 			disqualifiedBlock.Header.BlueWork(),
 			disqualifiedBlock.Header.PruningPoint(),
 		)

@@ -48,7 +48,7 @@ func (v *blockValidator) ValidateBodyInIsolation(stagingArea *model.StagingArea,
 		return err
 	}
 
-	err = v.checkCoinbase(block)
+	err = v.checkCoinbaseBlueScore(block)
 	if err != nil {
 		return err
 	}
@@ -91,10 +91,14 @@ func (v *blockValidator) ValidateBodyInIsolation(stagingArea *model.StagingArea,
 	return nil
 }
 
-func (v *blockValidator) checkCoinbase(block *externalapi.DomainBlock) error {
-	_, _, err := v.coinbaseManager.ExtractCoinbaseDataAndBlueScore(block.Transactions[transactionhelper.CoinbaseTransactionIndex])
+func (v *blockValidator) checkCoinbaseBlueScore(block *externalapi.DomainBlock) error {
+	coinbaseBlueScore, _, err := v.coinbaseManager.ExtractCoinbaseDataAndBlueScore(block.Transactions[transactionhelper.CoinbaseTransactionIndex])
 	if err != nil {
 		return err
+	}
+	if coinbaseBlueScore != block.Header.BlueScore() {
+		return errors.Wrapf(ruleerrors.ErrUnexpectedCoinbaseBlueScore, "block blue score of %d is not the expected "+
+			"value of %d", coinbaseBlueScore, block.Header.BlueScore())
 	}
 	return nil
 }

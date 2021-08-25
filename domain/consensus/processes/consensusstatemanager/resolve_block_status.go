@@ -206,8 +206,13 @@ func (csm *consensusStateManager) resolveSingleBlockStatus(stagingArea *model.St
 	log.Tracef("Staging the calculated acceptance data of block %s", blockHash)
 	csm.acceptanceDataStore.Stage(stagingArea, blockHash, acceptanceData)
 
+	block, err := csm.blockStore.Block(csm.databaseContext, stagingArea, blockHash)
+	if err != nil {
+		return 0, nil, err
+	}
+
 	log.Tracef("verifying the UTXO of block %s", blockHash)
-	err = csm.verifyUTXO(stagingArea, blockHash, pastUTXOSet, acceptanceData, multiset)
+	err = csm.verifyUTXO(stagingArea, block, blockHash, pastUTXOSet, acceptanceData, multiset)
 	if err != nil {
 		if errors.As(err, &ruleerrors.RuleError{}) {
 			log.Debugf("UTXO verification for block %s failed: %s", blockHash, err)

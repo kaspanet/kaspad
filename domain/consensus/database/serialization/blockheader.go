@@ -20,6 +20,7 @@ func DomainBlockHeaderToDbBlockHeader(domainBlockHeader externalapi.BlockHeader)
 		Bits:                 domainBlockHeader.Bits(),
 		Nonce:                domainBlockHeader.Nonce(),
 		DaaScore:             domainBlockHeader.DAAScore(),
+		BlueScore:            domainBlockHeader.BlueScore(),
 		BlueWork:             domainBlockHeader.BlueWork().Bytes(),
 		PruningPoint:         DomainHashToDbHash(domainBlockHeader.PruningPoint()),
 	}
@@ -62,6 +63,7 @@ func DbBlockHeaderToDomainBlockHeader(dbBlockHeader *DbBlockHeader) (externalapi
 		dbBlockHeader.Bits,
 		dbBlockHeader.Nonce,
 		dbBlockHeader.DaaScore,
+		dbBlockHeader.BlueScore,
 		new(big.Int).SetBytes(dbBlockHeader.BlueWork),
 		pruningPoint,
 	), nil

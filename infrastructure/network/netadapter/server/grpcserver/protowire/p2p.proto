@@ -74,6 +74,7 @@ message BlockHeader{
   uint64 daaScore = 9;
   bytes blueWork = 10;
   Hash pruningPoint = 12;
+  uint64 blueScore = 13;
 }
 
 message Hash{

@@ -13,4 +13,6 @@ type PruningManager interface {
 	UpdatePruningPointIfRequired() error
 	PruneAllBlocksBelow(stagingArea *StagingArea, pruningPointHash *externalapi.DomainHash) error
 	PruningPointAndItsAnticoneWithTrustedData() ([]*externalapi.BlockWithTrustedData, error)
+	NextPruningPointAndCandidateByBlockHash(stagingArea *StagingArea,
+		blockHash *externalapi.DomainHash) (*externalapi.DomainHash, *externalapi.DomainHash, error)
 }

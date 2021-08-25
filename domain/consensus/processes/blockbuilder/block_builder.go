@@ -29,6 +29,7 @@ type blockBuilder struct {
 	ghostdagManager       model.GHOSTDAGManager
 	transactionValidator  model.TransactionValidator
 	finalityManager       model.FinalityManager
+	pruningManager        model.PruningManager
 
 	acceptanceDataStore model.AcceptanceDataStore
 	blockRelationStore  model.BlockRelationStore
@@ -36,6 +37,7 @@ type blockBuilder struct {
 	ghostdagDataStore   model.GHOSTDAGDataStore
 	daaBlocksStore      model.DAABlocksStore
 	pruningStore        model.PruningStore
+	blockHeaderStore    model.BlockHeaderStore
 }
 
 // New creates a new instance of a BlockBuilder
@@ -51,6 +53,7 @@ func New(
 	ghostdagManager model.GHOSTDAGManager,
 	transactionValidator model.TransactionValidator,
 	finalityManager model.FinalityManager,
+	pruningManager model.PruningManager,
 
 	acceptanceDataStore model.AcceptanceDataStore,
 	blockRelationStore model.BlockRelationStore,
@@ -58,6 +61,7 @@ func New(
 	ghostdagDataStore model.GHOSTDAGDataStore,
 	daaBlocksStore model.DAABlocksStore,
 	pruningStore model.PruningStore,
+	blockHeaderStore model.BlockHeaderStore,
 ) model.BlockBuilder {
 
 	return &blockBuilder{
@@ -72,6 +76,7 @@ func New(
 		ghostdagManager:       ghostdagManager,
 		transactionValidator:  transactionValidator,
 		finalityManager:       finalityManager,
+		pruningManager:        pruningManager,
 
 		acceptanceDataStore: acceptanceDataStore,
 		blockRelationStore:  blockRelationStore,
@@ -79,6 +84,7 @@ func New(
 		ghostdagDataStore:   ghostdagDataStore,
 		daaBlocksStore:      daaBlocksStore,
 		pruningStore:        pruningStore,
+		blockHeaderStore:    blockHeaderStore,
 	}
 }
 
@@ -208,6 +214,10 @@ func (bb *blockBuilder) buildHeader(stagingArea *model.StagingArea, transactions
 	if err != nil {
 		return nil, err
 	}
+	blueScore, err := bb.newBlockBlueScore(stagingArea)
+	if err != nil {
+		return nil, err
+	}
 	pruningPoint, err := bb.newBlockPruningPoint(stagingArea, model.VirtualBlockHash)
 	if err != nil {
 		return nil, err
@@ -223,6 +233,7 @@ func (bb *blockBuilder) buildHeader(stagingArea *model.StagingArea, transactions
 		bits,
 		0,
 		daaScore,
+		blueScore,
 		blueWork,
 		pruningPoint,
 	), nil
@@ -321,12 +332,29 @@ func (bb *blockBuilder) newBlockBlueWork(stagingArea *model.StagingArea) (*big.I
 	return virtualGHOSTDAGData.BlueWork(), nil
 }
 
-func (bb *blockBuilder) newBlockPruningPoint(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) (*externalapi.DomainHash, error) {
-	return bb.expectedHeaderPruningPoint(stagingArea, blockHash)
+func (bb *blockBuilder) newBlockBlueScore(stagingArea *model.StagingArea) (uint64, error) {
+	virtualGHOSTDAGData, err := bb.ghostdagDataStore.Get(bb.databaseContext, stagingArea, model.VirtualBlockHash, false)
+	if err != nil {
+		return 0, err
+	}
+	return virtualGHOSTDAGData.BlueScore(), nil
 }
 
-func (bb *blockBuilder) expectedHeaderPruningPoint(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) (*externalapi.DomainHash, error) {
-	// TODO: This is a duplicate of `func (csm *consensusStateManager) expectedHeaderPruningPoint`. We should find a proper way to reuse the code.
+func (bb *blockBuilder) newBlockPruningPoint(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) (*externalapi.DomainHash, error) {
+	virtualPruningPoint, _, err := bb.pruningManager.NextPruningPointAndCandidateByBlockHash(stagingArea, model.VirtualBlockHash)
+	if err != nil {
+		return nil, err
+	}
+
+	isNewBlockPruningPoint, err := bb.isNewBlockPruningPoint(stagingArea, blockHash, virtualPruningPoint)
+	if err != nil {
+		return nil, err
+	}
+
+	if isNewBlockPruningPoint {
+		return virtualPruningPoint, nil
+	}
+
 	pruningPointIndex, err := bb.pruningStore.PruningPointIndex(bb.databaseContext, stagingArea)
 	if err != nil {
 		return nil, err
@@ -338,18 +366,12 @@ func (bb *blockBuilder) expectedHeaderPruningPoint(stagingArea *model.StagingAre
 			return nil, err
 		}
 
-		currentPruningPointGHOSTDAGData, err := bb.ghostdagDataStore.Get(bb.databaseContext, stagingArea, currentPruningPoint, false)
+		isNewBlockPruningPoint, err := bb.isNewBlockPruningPoint(stagingArea, blockHash, currentPruningPoint)
 		if err != nil {
 			return nil, err
 		}
 
-		blockGHOSTDAGData, err := bb.ghostdagDataStore.Get(bb.databaseContext, stagingArea, blockHash, false)
-		if err != nil {
-			return nil, err
-		}
-
-		if blockGHOSTDAGData.BlueScore() > currentPruningPointGHOSTDAGData.BlueScore() &&
-			blockGHOSTDAGData.BlueScore()-currentPruningPointGHOSTDAGData.BlueScore() > bb.pruningDepth {
+		if isNewBlockPruningPoint {
 			return currentPruningPoint, nil
 		}
 
@@ -359,4 +381,18 @@ func (bb *blockBuilder) expectedHeaderPruningPoint(stagingArea *model.StagingAre
 	}
 
 	return bb.genesisHash, nil
+}
+
+func (bb *blockBuilder) isNewBlockPruningPoint(stagingArea *model.StagingArea, blockHash, pruningPoint *externalapi.DomainHash) (bool, error) {
+	pruningPointHeader, err := bb.blockHeaderStore.BlockHeader(bb.databaseContext, stagingArea, pruningPoint)
+	if err != nil {
+		return false, err
+	}
+
+	blockGHOSTDAGData, err := bb.ghostdagDataStore.Get(bb.databaseContext, stagingArea, blockHash, false)
+	if err != nil {
+		return false, err
+	}
+
+	return blockGHOSTDAGData.BlueScore() >= pruningPointHeader.BlueScore()+bb.pruningDepth, nil
 }

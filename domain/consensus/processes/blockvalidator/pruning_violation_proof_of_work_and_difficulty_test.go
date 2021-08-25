@@ -60,6 +60,7 @@ func TestPOW(t *testing.T) {
 			difficulty.BigToCompact(abovePowMaxTarget),
 			abovePowMaxBlock.Header.Nonce(),
 			abovePowMaxBlock.Header.DAAScore(),
+			abovePowMaxBlock.Header.BlueScore(),
 			abovePowMaxBlock.Header.BlueWork(),
 			abovePowMaxBlock.Header.PruningPoint(),
 		)
@@ -84,6 +85,7 @@ func TestPOW(t *testing.T) {
 			0x00800000,
 			negativeTargetBlock.Header.Nonce(),
 			negativeTargetBlock.Header.DAAScore(),
+			negativeTargetBlock.Header.BlueScore(),
 			negativeTargetBlock.Header.BlueWork(),
 			negativeTargetBlock.Header.PruningPoint(),
 		)
@@ -151,6 +153,7 @@ func TestCheckParentHeadersExist(t *testing.T) {
 			orphanBlock.Header.Bits(),
 			orphanBlock.Header.Nonce(),
 			orphanBlock.Header.DAAScore(),
+			orphanBlock.Header.BlueScore(),
 			orphanBlock.Header.BlueWork(),
 			orphanBlock.Header.PruningPoint(),
 		)
@@ -182,6 +185,7 @@ func TestCheckParentHeadersExist(t *testing.T) {
 			orphanBlock.Header.Bits(),
 			orphanBlock.Header.Nonce(),
 			orphanBlock.Header.DAAScore(),
+			orphanBlock.Header.BlueScore(),
 			orphanBlock.Header.BlueWork(),
 			orphanBlock.Header.PruningPoint(),
 		)
@@ -208,6 +212,7 @@ func TestCheckParentHeadersExist(t *testing.T) {
 			invalidBlockChild.Header.Bits(),
 			invalidBlockChild.Header.Nonce(),
 			invalidBlockChild.Header.DAAScore(),
+			invalidBlockChild.Header.BlueScore(),
 			invalidBlockChild.Header.BlueWork(),
 			invalidBlockChild.Header.PruningPoint(),
 		)

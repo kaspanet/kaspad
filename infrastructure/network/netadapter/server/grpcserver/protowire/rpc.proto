@@ -37,6 +37,7 @@ message RpcBlockHeader {
   uint64 daaScore = 9;
   string blueWork = 10;
   string pruningPoint = 12;
+  uint64 blueScore = 13;
 }
 
 message RpcBlockVerboseData{

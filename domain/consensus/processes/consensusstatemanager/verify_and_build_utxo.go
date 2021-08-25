@@ -15,20 +15,15 @@ import (
 	"github.com/pkg/errors"
 )
 
-func (csm *consensusStateManager) verifyUTXO(stagingArea *model.StagingArea,
+func (csm *consensusStateManager) verifyUTXO(stagingArea *model.StagingArea, block *externalapi.DomainBlock,
 	blockHash *externalapi.DomainHash, pastUTXODiff externalapi.UTXODiff, acceptanceData externalapi.AcceptanceData,
 	multiset model.Multiset) error {
-
-	block, err := csm.blockStore.Block(csm.databaseContext, stagingArea, blockHash)
-	if err != nil {
-		return err
-	}
 
 	log.Debugf("verifyUTXO start for block %s", blockHash)
 	defer log.Debugf("verifyUTXO end for block %s", blockHash)
 
 	log.Debugf("Validating UTXO commitment for block %s", blockHash)
-	err = csm.validateUTXOCommitment(block, blockHash, multiset)
+	err := csm.validateUTXOCommitment(block, blockHash, multiset)
 	if err != nil {
 		return err
 	}

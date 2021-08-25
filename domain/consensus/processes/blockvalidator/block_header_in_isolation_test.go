@@ -67,6 +67,7 @@ func TestCheckBlockVersion(t *testing.T) {
 			block.Header.Bits(),
 			block.Header.Nonce(),
 			block.Header.DAAScore(),
+			block.Header.BlueScore(),
 			block.Header.BlueWork(),
 			block.Header.PruningPoint(),
 		)
@@ -107,6 +108,7 @@ func TestCheckBlockTimestampInIsolation(t *testing.T) {
 			block.Header.Bits(),
 			block.Header.Nonce(),
 			block.Header.DAAScore(),
+			block.Header.BlueScore(),
 			block.Header.BlueWork(),
 			block.Header.PruningPoint(),
 		)

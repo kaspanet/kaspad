@@ -78,6 +78,7 @@ type RPCBlockHeader struct {
 	Bits                 uint32
 	Nonce                uint64
 	DAAScore             uint64
+	BlueScore            uint64
 	BlueWork             string
 	PruningPoint         string
 }

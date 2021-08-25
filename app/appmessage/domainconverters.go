@@ -38,6 +38,7 @@ func DomainBlockHeaderToBlockHeader(domainBlockHeader externalapi.BlockHeader) *
 		Timestamp:            mstime.UnixMilliseconds(domainBlockHeader.TimeInMilliseconds()),
 		Bits:                 domainBlockHeader.Bits(),
 		Nonce:                domainBlockHeader.Nonce(),
+		BlueScore:            domainBlockHeader.BlueScore(),
 		DAAScore:             domainBlockHeader.DAAScore(),
 		BlueWork:             domainBlockHeader.BlueWork(),
 		PruningPoint:         domainBlockHeader.PruningPoint(),
@@ -69,6 +70,7 @@ func BlockHeaderToDomainBlockHeader(blockHeader *MsgBlockHeader) externalapi.Blo
 		blockHeader.Bits,
 		blockHeader.Nonce,
 		blockHeader.DAAScore,
+		blockHeader.BlueScore,
 		blockHeader.BlueWork,
 		blockHeader.PruningPoint,
 	)
@@ -352,6 +354,7 @@ func DomainBlockToRPCBlock(block *externalapi.DomainBlock) *RPCBlock {
 		Bits:                 block.Header.Bits(),
 		Nonce:                block.Header.Nonce(),
 		DAAScore:             block.Header.DAAScore(),
+		BlueScore:            block.Header.BlueScore(),
 		BlueWork:             block.Header.BlueWork().Text(16),
 		PruningPoint:         block.Header.PruningPoint().String(),
 	}
@@ -405,6 +408,7 @@ func RPCBlockToDomainBlock(block *RPCBlock) (*externalapi.DomainBlock, error) {
 		block.Header.Bits,
 		block.Header.Nonce,
 		block.Header.DAAScore,
+		block.Header.BlueScore,
 		blueWork,
 		pruningPoint)
 	transactions := make([]*externalapi.DomainTransaction, len(block.Transactions))

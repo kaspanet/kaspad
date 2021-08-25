@@ -20,6 +20,7 @@ message DbBlockHeader {
   uint64 daaScore = 9;
   bytes blueWork = 10;
   DbHash pruningPoint = 12;
+  uint64 blueScore = 13;
 }
 
 message DbHash {

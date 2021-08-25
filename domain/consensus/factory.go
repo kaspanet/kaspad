@@ -356,6 +356,7 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 		ghostdagManager,
 		transactionValidator,
 		finalityManager,
+		pruningManager,
 
 		acceptanceDataStore,
 		blockRelationStore,
@@ -363,6 +364,7 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 		ghostdagDataStore,
 		daaBlocksStore,
 		pruningStore,
+		blockHeaderStore,
 	)
 
 	blockProcessor := blockprocessor.New(

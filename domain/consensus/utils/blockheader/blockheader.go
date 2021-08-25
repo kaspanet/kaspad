@@ -15,8 +15,13 @@ type blockHeader struct {
 	bits                 uint32
 	nonce                uint64
 	daaScore             uint64
+	blueScore            uint64
 	blueWork             *big.Int
 	pruningPoint         *externalapi.DomainHash
+}
+
+func (bh *blockHeader) BlueScore() uint64 {
+	return bh.blueScore
 }
 
 func (bh *blockHeader) PruningPoint() *externalapi.DomainHash {
@@ -124,6 +129,10 @@ func (bh *blockHeader) Equal(other externalapi.BaseBlockHeader) bool {
 		return false
 	}
 
+	if bh.blueScore != other.BlueScore() {
+		return false
+	}
+
 	if bh.blueWork.Cmp(other.BlueWork()) != 0 {
 		return false
 	}
@@ -146,6 +155,7 @@ func (bh *blockHeader) clone() *blockHeader {
 		bits:                 bh.bits,
 		nonce:                bh.nonce,
 		daaScore:             bh.daaScore,
+		blueScore:            bh.blueScore,
 		blueWork:             bh.blueWork,
 		pruningPoint:         bh.pruningPoint,
 	}
@@ -166,6 +176,7 @@ func NewImmutableBlockHeader(
 	bits uint32,
 	nonce uint64,
 	daaScore uint64,
+	blueScore uint64,
 	blueWork *big.Int,
 	pruningPoint *externalapi.DomainHash,
 ) externalapi.BlockHeader {
@@ -179,6 +190,7 @@ func NewImmutableBlockHeader(
 		bits:                 bits,
 		nonce:                nonce,
 		daaScore:             daaScore,
+		blueScore:            blueScore,
 		blueWork:             blueWork,
 		pruningPoint:         pruningPoint,
 	}

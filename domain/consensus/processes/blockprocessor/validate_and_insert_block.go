@@ -134,6 +134,21 @@ func (bp *blockProcessor) validateAndInsertBlock(stagingArea *model.StagingArea,
 		}
 	}
 
+	err = bp.blockValidator.ValidateHeaderPruningPoint(stagingArea, blockHash)
+	if err != nil {
+		if errors.As(err, &ruleerrors.RuleError{}) {
+			// Use a new stagingArea so we save only the block status
+			stagingArea := model.NewStagingArea()
+			hash := consensushashing.BlockHash(block)
+			bp.blockStatusStore.Stage(stagingArea, hash, externalapi.StatusInvalid)
+			commitErr := staging.CommitAllChanges(bp.databaseContext, stagingArea)
+			if commitErr != nil {
+				return nil, commitErr
+			}
+		}
+		return nil, err
+	}
+
 	err = staging.CommitAllChanges(bp.databaseContext, stagingArea)
 	if err != nil {
 		return nil, err
