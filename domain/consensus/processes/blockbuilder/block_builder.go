@@ -27,6 +27,7 @@ type blockBuilder struct {
 	ghostdagManager       model.GHOSTDAGManager
 	transactionValidator  model.TransactionValidator
 	finalityManager       model.FinalityManager
+	blockParentBuilder    model.BlockParentBuilder
 
 	acceptanceDataStore model.AcceptanceDataStore
 	blockRelationStore  model.BlockRelationStore
@@ -46,6 +47,7 @@ func New(
 	ghostdagManager model.GHOSTDAGManager,
 	transactionValidator model.TransactionValidator,
 	finalityManager model.FinalityManager,
+	blockParentBuilder model.BlockParentBuilder,
 
 	acceptanceDataStore model.AcceptanceDataStore,
 	blockRelationStore model.BlockRelationStore,
@@ -63,6 +65,7 @@ func New(
 		ghostdagManager:       ghostdagManager,
 		transactionValidator:  transactionValidator,
 		finalityManager:       finalityManager,
+		blockParentBuilder:    blockParentBuilder,
 
 		acceptanceDataStore: acceptanceDataStore,
 		blockRelationStore:  blockRelationStore,
@@ -223,7 +226,7 @@ func (bb *blockBuilder) newBlockParents(stagingArea *model.StagingArea) ([]exter
 	if err != nil {
 		return nil, err
 	}
-	return []externalapi.BlockLevelParents{virtualBlockRelations.Parents}, nil
+	return bb.blockParentBuilder.BuildParents(stagingArea, virtualBlockRelations.Parents)
 }
 
 func (bb *blockBuilder) newBlockTime(stagingArea *model.StagingArea) (int64, error) {

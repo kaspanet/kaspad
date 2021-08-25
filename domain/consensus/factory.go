@@ -2,6 +2,7 @@ package consensus
 
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/daawindowstore"
+	"github.com/kaspanet/kaspad/domain/consensus/processes/blockparentbuilder"
 	"io/ioutil"
 	"os"
 	"sync"
@@ -152,6 +153,9 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 	daaBlocksStore := daablocksstore.New(dbPrefix, pruningWindowSizeForCaches, int(config.FinalityDepth()), preallocateCaches)
 
 	// Processes
+	blockParentBuilder := blockparentbuilder.New(
+		dbManager,
+	)
 	reachabilityManager := reachabilitymanager.New(
 		dbManager,
 		ghostdagDataStore,
@@ -351,6 +355,7 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 		ghostdagManager,
 		transactionValidator,
 		finalityManager,
+		blockParentBuilder,
 
 		acceptanceDataStore,
 		blockRelationStore,
