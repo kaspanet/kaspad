@@ -196,6 +196,8 @@ var (
 	//ErrPruningPointViolation indicates that the pruning point isn't in the block past.
 	ErrPruningPointViolation = newRuleError("ErrPruningPointViolation")
 
+	ErrUnexpectedParents = newRuleError("ErrUnexpectedParents")
+
 	ErrUnexpectedPruningPoint = newRuleError("ErrUnexpectedPruningPoint")
 
 	ErrSuggestedPruningViolatesFinality = newRuleError("ErrSuggestedPruningViolatesFinality")

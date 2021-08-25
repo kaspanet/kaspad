@@ -260,6 +260,7 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 		mergeDepthManager,
 		reachabilityManager,
 		finalityManager,
+		blockParentBuilder,
 
 		pruningStore,
 		blockStore,
