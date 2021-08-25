@@ -43,8 +43,12 @@ func (bpb *blockParentBuilder) BuildParents(stagingArea *model.StagingArea,
 	for directParentHash, directParentHeader := range directParentHeaders {
 		directParentHash := directParentHash // Assign to a new pointer to avoid `range` pointer reuse
 
+		// Level 0 parents are always equal to the direct parents
+		// This explicit assignment is mainly useful for tests where the proof of work is not checked
+		parentsMap[0] = append(parentsMap[0], &directParentHash)
+
 		proofOfWorkValue := pow.CalculateProofOfWorkValue(directParentHeader.ToMutable())
-		for blockLevel := 0; proofOfWorkValue.Bit(blockLevel) == 0; blockLevel++ {
+		for blockLevel := 1; proofOfWorkValue.Bit(blockLevel) == 0; blockLevel++ {
 			parentsMap[blockLevel] = append(parentsMap[blockLevel], &directParentHash)
 		}
 	}
