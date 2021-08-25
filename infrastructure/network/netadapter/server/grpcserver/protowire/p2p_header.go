@@ -2,6 +2,7 @@ package protowire
 
 import (
 	"github.com/kaspanet/kaspad/app/appmessage"
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/util/mstime"
 	"github.com/pkg/errors"
 	"math"
@@ -12,7 +13,7 @@ func (x *BlockHeader) toAppMessage() (*appmessage.MsgBlockHeader, error) {
 	if x == nil {
 		return nil, errors.Wrapf(errorNil, "BlockHeaderMessage is nil")
 	}
-	parentHashes, err := protoHashesToDomain(x.ParentHashes)
+	parents, err := protoParentsToDomain(x.Parents)
 	if err != nil {
 		return nil, err
 	}
@@ -37,7 +38,7 @@ func (x *BlockHeader) toAppMessage() (*appmessage.MsgBlockHeader, error) {
 	}
 	return &appmessage.MsgBlockHeader{
 		Version:              uint16(x.Version),
-		ParentHashes:         parentHashes,
+		Parents:              parents,
 		HashMerkleRoot:       hashMerkleRoot,
 		AcceptedIDMerkleRoot: acceptedIDMerkleRoot,
 		UTXOCommitment:       utxoCommitment,
@@ -54,7 +55,7 @@ func (x *BlockHeader) toAppMessage() (*appmessage.MsgBlockHeader, error) {
 func (x *BlockHeader) fromAppMessage(msgBlockHeader *appmessage.MsgBlockHeader) error {
 	*x = BlockHeader{
 		Version:              uint32(msgBlockHeader.Version),
-		ParentHashes:         domainHashesToProto(msgBlockHeader.ParentHashes),
+		Parents:              domainParentsToProto(msgBlockHeader.Parents),
 		HashMerkleRoot:       domainHashToProto(msgBlockHeader.HashMerkleRoot),
 		AcceptedIdMerkleRoot: domainHashToProto(msgBlockHeader.AcceptedIDMerkleRoot),
 		UtxoCommitment:       domainHashToProto(msgBlockHeader.UTXOCommitment),
@@ -67,4 +68,49 @@ func (x *BlockHeader) fromAppMessage(msgBlockHeader *appmessage.MsgBlockHeader) 
 		PruningPoint:         domainHashToProto(msgBlockHeader.PruningPoint),
 	}
 	return nil
+}
+
+func (x *BlockLevelParents) toDomain() (externalapi.BlockLevelParents, error) {
+	if x == nil {
+		return nil, errors.Wrap(errorNil, "BlockLevelParents is nil")
+	}
+	domainBlockLevelParents := make(externalapi.BlockLevelParents, len(x.ParentHashes))
+	for i, parentHash := range x.ParentHashes {
+		var err error
+		domainBlockLevelParents[i], err = externalapi.NewDomainHashFromByteSlice(parentHash.Bytes)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return domainBlockLevelParents, nil
+}
+
+func protoParentsToDomain(protoParents []*BlockLevelParents) ([]externalapi.BlockLevelParents, error) {
+	domainParents := make([]externalapi.BlockLevelParents, len(protoParents))
+	for i, protoBlockLevelParents := range protoParents {
+		var err error
+		domainParents[i], err = protoBlockLevelParents.toDomain()
+		if err != nil {
+			return nil, err
+		}
+	}
+	return domainParents, nil
+}
+
+func domainBlockLevelParentsToProto(parentHashes externalapi.BlockLevelParents) *BlockLevelParents {
+	protoParentHashes := make([]*Hash, len(parentHashes))
+	for i, parentHash := range parentHashes {
+		protoParentHashes[i] = &Hash{Bytes: parentHash.ByteSlice()}
+	}
+	return &BlockLevelParents{
+		ParentHashes: protoParentHashes,
+	}
+}
+
+func domainParentsToProto(parents []externalapi.BlockLevelParents) []*BlockLevelParents {
+	protoParents := make([]*BlockLevelParents, len(parents))
+	for i, hash := range parents {
+		protoParents[i] = domainBlockLevelParentsToProto(hash)
+	}
+	return protoParents
 }

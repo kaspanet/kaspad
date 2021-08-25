@@ -27,7 +27,7 @@ message RpcBlock {
 
 message RpcBlockHeader {
   uint32 version = 1;
-  repeated string parentHashes = 2;
+  repeated RpcBlockLevelParents parents = 12;
   string hashMerkleRoot = 3;
   string acceptedIdMerkleRoot = 4;
   string utxoCommitment = 5;
@@ -38,6 +38,10 @@ message RpcBlockHeader {
   string blueWork = 10;
   string pruningPoint = 12;
   uint64 blueScore = 13;
+}
+
+message RpcBlockLevelParents {
+    repeated string parentHashes = 1;
 }
 
 message RpcBlockVerboseData{

@@ -59,7 +59,7 @@ func TestCheckBlockVersion(t *testing.T) {
 
 		block.Header = blockheader.NewImmutableBlockHeader(
 			constants.MaxBlockVersion+1,
-			block.Header.ParentHashes(),
+			block.Header.Parents(),
 			block.Header.HashMerkleRoot(),
 			block.Header.AcceptedIDMerkleRoot(),
 			block.Header.UTXOCommitment(),
@@ -100,7 +100,7 @@ func TestCheckBlockTimestampInIsolation(t *testing.T) {
 
 		block.Header = blockheader.NewImmutableBlockHeader(
 			block.Header.Version(),
-			block.Header.ParentHashes(),
+			block.Header.Parents(),
 			block.Header.HashMerkleRoot(),
 			block.Header.AcceptedIDMerkleRoot(),
 			block.Header.UTXOCommitment(),

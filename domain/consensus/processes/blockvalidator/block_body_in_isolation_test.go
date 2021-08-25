@@ -135,7 +135,7 @@ func TestCheckBlockSanity(t *testing.T) {
 var unOrderedParentsBlock = externalapi.DomainBlock{
 	Header: blockheader.NewImmutableBlockHeader(
 		0x00000000,
-		[]*externalapi.DomainHash{
+		[]externalapi.BlockLevelParents{[]*externalapi.DomainHash{
 			externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{
 				0x4b, 0xb0, 0x75, 0x35, 0xdf, 0xd5, 0x8e, 0x0b,
 				0x3c, 0xd6, 0x4f, 0xd7, 0x15, 0x52, 0x80, 0x87,
@@ -148,7 +148,7 @@ var unOrderedParentsBlock = externalapi.DomainBlock{
 				0x46, 0x11, 0x89, 0x6b, 0x82, 0x1a, 0x68, 0x3b,
 				0x7a, 0x4e, 0xde, 0xfe, 0x2c, 0x00, 0x00, 0x00,
 			}),
-		},
+		}},
 		externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{
 			0x09, 0xaf, 0x3b, 0x09, 0xa8, 0x8f, 0xfc, 0x7e,
 			0x7d, 0xc6, 0x06, 0x78, 0x04, 0x2b, 0x1c, 0x8a,
@@ -412,7 +412,7 @@ var unOrderedParentsBlock = externalapi.DomainBlock{
 var exampleValidBlock = externalapi.DomainBlock{
 	Header: blockheader.NewImmutableBlockHeader(
 		0x00000000,
-		[]*externalapi.DomainHash{
+		[]externalapi.BlockLevelParents{[]*externalapi.DomainHash{
 			externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{
 				0x16, 0x5e, 0x38, 0xe8, 0xb3, 0x91, 0x45, 0x95,
 				0xd9, 0xc6, 0x41, 0xf3, 0xb8, 0xee, 0xc2, 0xf3,
@@ -425,7 +425,7 @@ var exampleValidBlock = externalapi.DomainBlock{
 				0x2a, 0x04, 0x71, 0xbc, 0xf8, 0x30, 0x95, 0x52,
 				0x6a, 0xce, 0x0e, 0x38, 0xc6, 0x00, 0x00, 0x00,
 			}),
-		},
+		}},
 		externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{
 			0x6e, 0xa3, 0x1a, 0xd6, 0xb8, 0xd9, 0xc1, 0xb2,
 			0xab, 0x18, 0xcc, 0x59, 0x6d, 0x03, 0x6b, 0x8d,
@@ -717,7 +717,7 @@ var exampleValidBlock = externalapi.DomainBlock{
 var blockWithWrongTxOrder = externalapi.DomainBlock{
 	Header: blockheader.NewImmutableBlockHeader(
 		0,
-		[]*externalapi.DomainHash{
+		[]externalapi.BlockLevelParents{[]*externalapi.DomainHash{
 			externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{
 				0x16, 0x5e, 0x38, 0xe8, 0xb3, 0x91, 0x45, 0x95,
 				0xd9, 0xc6, 0x41, 0xf3, 0xb8, 0xee, 0xc2, 0xf3,
@@ -730,7 +730,7 @@ var blockWithWrongTxOrder = externalapi.DomainBlock{
 				0x2a, 0x04, 0x71, 0xbc, 0xf8, 0x30, 0x95, 0x52,
 				0x6a, 0xce, 0x0e, 0x38, 0xc6, 0x00, 0x00, 0x00,
 			}),
-		},
+		}},
 		externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{
 			0xfc, 0x03, 0xa8, 0x09, 0x03, 0xf6, 0x64, 0xd9,
 			0xba, 0xab, 0x6d, 0x50, 0x1c, 0x67, 0xcb, 0xff,
@@ -1346,7 +1346,7 @@ func initBlockWithFirstTransactionDifferentThanCoinbase(consensusConfig *consens
 	return &externalapi.DomainBlock{
 		Header: blockheader.NewImmutableBlockHeader(
 			constants.MaxBlockVersion,
-			[]*externalapi.DomainHash{consensusConfig.GenesisHash},
+			[]externalapi.BlockLevelParents{[]*externalapi.DomainHash{consensusConfig.GenesisHash}},
 			merkle.CalculateHashMerkleRoot([]*externalapi.DomainTransaction{tx}),
 			&externalapi.DomainHash{},
 			externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{

@@ -97,13 +97,11 @@ func initTestTwoTransactions() []*externalapi.DomainTransaction {
 }
 
 func initTestBlockStructsForClone() []*externalapi.DomainBlock {
-
 	tests := []*externalapi.DomainBlock{
 		{
 			blockheader.NewImmutableBlockHeader(
-
 				0,
-				[]*externalapi.DomainHash{externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{0})},
+				[]externalapi.BlockLevelParents{[]*externalapi.DomainHash{externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{0})}},
 				externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{1}),
 				externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{2}),
 				externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{3}),
@@ -119,7 +117,7 @@ func initTestBlockStructsForClone() []*externalapi.DomainBlock {
 		}, {
 			blockheader.NewImmutableBlockHeader(
 				0,
-				[]*externalapi.DomainHash{},
+				[]externalapi.BlockLevelParents{[]*externalapi.DomainHash{}},
 				externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{1}),
 				externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{2}),
 				externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{3}),
@@ -151,7 +149,7 @@ func initTestBlockStructsForEqual() *[]TestBlockStruct {
 					block: &externalapi.DomainBlock{
 						blockheader.NewImmutableBlockHeader(
 							0,
-							[]*externalapi.DomainHash{externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{0})},
+							[]externalapi.BlockLevelParents{[]*externalapi.DomainHash{externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{0})}},
 							externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{1}),
 							externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{2}),
 							externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{3}),
@@ -171,7 +169,7 @@ func initTestBlockStructsForEqual() *[]TestBlockStruct {
 			baseBlock: &externalapi.DomainBlock{
 				blockheader.NewImmutableBlockHeader(
 					0,
-					[]*externalapi.DomainHash{externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{1})},
+					[]externalapi.BlockLevelParents{[]*externalapi.DomainHash{externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{1})}},
 					externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{2}),
 					externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{3}),
 					externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{4}),
@@ -194,7 +192,7 @@ func initTestBlockStructsForEqual() *[]TestBlockStruct {
 					block: &externalapi.DomainBlock{
 						blockheader.NewImmutableBlockHeader(
 							0,
-							[]*externalapi.DomainHash{externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{1})},
+							[]externalapi.BlockLevelParents{[]*externalapi.DomainHash{externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{1})}},
 							externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{2}),
 							externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{3}),
 							externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{4}),
@@ -213,7 +211,7 @@ func initTestBlockStructsForEqual() *[]TestBlockStruct {
 					block: &externalapi.DomainBlock{
 						blockheader.NewImmutableBlockHeader(
 							0,
-							[]*externalapi.DomainHash{externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{1})},
+							[]externalapi.BlockLevelParents{[]*externalapi.DomainHash{externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{1})}},
 							externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{2}),
 							externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{3}),
 							externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{4}),
@@ -232,10 +230,10 @@ func initTestBlockStructsForEqual() *[]TestBlockStruct {
 					block: &externalapi.DomainBlock{
 						blockheader.NewImmutableBlockHeader(
 							0,
-							[]*externalapi.DomainHash{
+							[]externalapi.BlockLevelParents{[]*externalapi.DomainHash{
 								externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{1}),
 								externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{2}),
-							},
+							}},
 							externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{2}),
 							externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{3}),
 							externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{4}),
@@ -254,7 +252,7 @@ func initTestBlockStructsForEqual() *[]TestBlockStruct {
 					block: &externalapi.DomainBlock{
 						blockheader.NewImmutableBlockHeader(
 							0,
-							[]*externalapi.DomainHash{externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{100})}, // Changed
+							[]externalapi.BlockLevelParents{[]*externalapi.DomainHash{externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{100})}}, // Changed
 							externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{2}),
 							externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{3}),
 							externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{4}),
@@ -273,7 +271,7 @@ func initTestBlockStructsForEqual() *[]TestBlockStruct {
 					block: &externalapi.DomainBlock{
 						blockheader.NewImmutableBlockHeader(
 							0,
-							[]*externalapi.DomainHash{externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{1})},
+							[]externalapi.BlockLevelParents{[]*externalapi.DomainHash{externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{1})}},
 							externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{100}), // Changed
 							externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{3}),
 							externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{4}),
@@ -292,7 +290,7 @@ func initTestBlockStructsForEqual() *[]TestBlockStruct {
 					block: &externalapi.DomainBlock{
 						blockheader.NewImmutableBlockHeader(
 							0,
-							[]*externalapi.DomainHash{externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{1})},
+							[]externalapi.BlockLevelParents{[]*externalapi.DomainHash{externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{1})}},
 							externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{2}),
 							externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{100}), // Changed
 							externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{4}),
@@ -311,7 +309,7 @@ func initTestBlockStructsForEqual() *[]TestBlockStruct {
 					block: &externalapi.DomainBlock{
 						blockheader.NewImmutableBlockHeader(
 							0,
-							[]*externalapi.DomainHash{externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{1})},
+							[]externalapi.BlockLevelParents{[]*externalapi.DomainHash{externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{1})}},
 							externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{2}),
 							externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{3}),
 							externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{100}), // Changed
@@ -330,7 +328,7 @@ func initTestBlockStructsForEqual() *[]TestBlockStruct {
 					block: &externalapi.DomainBlock{
 						blockheader.NewImmutableBlockHeader(
 							0,
-							[]*externalapi.DomainHash{externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{1})},
+							[]externalapi.BlockLevelParents{[]*externalapi.DomainHash{externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{1})}},
 							externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{2}),
 							externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{3}),
 							externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{4}),
@@ -349,7 +347,7 @@ func initTestBlockStructsForEqual() *[]TestBlockStruct {
 					block: &externalapi.DomainBlock{
 						blockheader.NewImmutableBlockHeader(
 							0,
-							[]*externalapi.DomainHash{externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{1})},
+							[]externalapi.BlockLevelParents{[]*externalapi.DomainHash{externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{1})}},
 							externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{2}),
 							externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{3}),
 							externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{4}),
@@ -368,7 +366,7 @@ func initTestBlockStructsForEqual() *[]TestBlockStruct {
 					block: &externalapi.DomainBlock{
 						blockheader.NewImmutableBlockHeader(
 							0,
-							[]*externalapi.DomainHash{externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{1})},
+							[]externalapi.BlockLevelParents{[]*externalapi.DomainHash{externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{1})}},
 							externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{2}),
 							externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{3}),
 							externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{4}),
@@ -387,7 +385,7 @@ func initTestBlockStructsForEqual() *[]TestBlockStruct {
 					block: &externalapi.DomainBlock{
 						blockheader.NewImmutableBlockHeader(
 							0,
-							[]*externalapi.DomainHash{externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{1})},
+							[]externalapi.BlockLevelParents{[]*externalapi.DomainHash{externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{1})}},
 							externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{2}),
 							externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{3}),
 							externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{4}),
@@ -425,7 +423,7 @@ func initTestBlockStructsForEqual() *[]TestBlockStruct {
 					block: &externalapi.DomainBlock{
 						blockheader.NewImmutableBlockHeader(
 							0,
-							[]*externalapi.DomainHash{externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{1})},
+							[]externalapi.BlockLevelParents{[]*externalapi.DomainHash{externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{1})}},
 							externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{2}),
 							externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{3}),
 							externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{4}),
@@ -444,7 +442,7 @@ func initTestBlockStructsForEqual() *[]TestBlockStruct {
 					block: &externalapi.DomainBlock{
 						blockheader.NewImmutableBlockHeader(
 							0,
-							[]*externalapi.DomainHash{externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{1})},
+							[]externalapi.BlockLevelParents{[]*externalapi.DomainHash{externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{1})}},
 							externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{2}),
 							externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{3}),
 							externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{4}),

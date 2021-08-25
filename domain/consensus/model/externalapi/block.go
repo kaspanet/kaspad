@@ -57,7 +57,8 @@ type BlockHeader interface {
 // BaseBlockHeader represents the header part of a Kaspa block
 type BaseBlockHeader interface {
 	Version() uint16
-	ParentHashes() []*DomainHash
+	Parents() []BlockLevelParents
+	DirectParents() BlockLevelParents
 	HashMerkleRoot() *DomainHash
 	AcceptedIDMerkleRoot() *DomainHash
 	UTXOCommitment() *DomainHash

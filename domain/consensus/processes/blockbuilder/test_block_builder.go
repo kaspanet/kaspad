@@ -82,10 +82,12 @@ func (bb *testBlockBuilder) buildUTXOInvalidHeader(stagingArea *model.StagingAre
 		return nil, err
 	}
 
+	parents := []externalapi.BlockLevelParents{parentHashes}
+
 	bb.nonceCounter++
 	return blockheader.NewImmutableBlockHeader(
 		constants.MaxBlockVersion,
-		parentHashes,
+		parents,
 		hashMerkleRoot,
 		&externalapi.DomainHash{},
 		&externalapi.DomainHash{},
@@ -117,7 +119,7 @@ func (bb *testBlockBuilder) buildHeaderWithParents(stagingArea *model.StagingAre
 
 	return blockheader.NewImmutableBlockHeader(
 		header.Version(),
-		header.ParentHashes(),
+		header.Parents(),
 		hashMerkleRoot,
 		acceptedIDMerkleRoot,
 		utxoCommitment,

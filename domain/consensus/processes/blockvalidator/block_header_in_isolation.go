@@ -42,13 +42,13 @@ func (v *blockValidator) ValidateHeaderInIsolation(stagingArea *model.StagingAre
 
 func (v *blockValidator) checkParentsLimit(header externalapi.BlockHeader) error {
 	hash := consensushashing.HeaderHash(header)
-	if len(header.ParentHashes()) == 0 && !hash.Equal(v.genesisHash) {
+	if len(header.DirectParents()) == 0 && !hash.Equal(v.genesisHash) {
 		return errors.Wrapf(ruleerrors.ErrNoParents, "block has no parents")
 	}
 
-	if uint64(len(header.ParentHashes())) > uint64(v.maxBlockParents) {
+	if uint64(len(header.DirectParents())) > uint64(v.maxBlockParents) {
 		return errors.Wrapf(ruleerrors.ErrTooManyParents, "block header has %d parents, but the maximum allowed amount "+
-			"is %d", len(header.ParentHashes()), v.maxBlockParents)
+			"is %d", len(header.DirectParents()), v.maxBlockParents)
 	}
 	return nil
 }

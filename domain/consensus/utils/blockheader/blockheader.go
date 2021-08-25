@@ -7,7 +7,7 @@ import (
 
 type blockHeader struct {
 	version              uint16
-	parentHashes         []*externalapi.DomainHash
+	parents              []externalapi.BlockLevelParents
 	hashMerkleRoot       *externalapi.DomainHash
 	acceptedIDMerkleRoot *externalapi.DomainHash
 	utxoCommitment       *externalapi.DomainHash
@@ -52,8 +52,15 @@ func (bh *blockHeader) Version() uint16 {
 	return bh.version
 }
 
-func (bh *blockHeader) ParentHashes() []*externalapi.DomainHash {
-	return bh.parentHashes
+func (bh *blockHeader) Parents() []externalapi.BlockLevelParents {
+	return bh.parents
+}
+
+func (bh *blockHeader) DirectParents() externalapi.BlockLevelParents {
+	if len(bh.parents) == 0 {
+		return externalapi.BlockLevelParents{}
+	}
+	return bh.parents[0]
 }
 
 func (bh *blockHeader) HashMerkleRoot() *externalapi.DomainHash {
@@ -97,7 +104,7 @@ func (bh *blockHeader) Equal(other externalapi.BaseBlockHeader) bool {
 		return false
 	}
 
-	if !externalapi.HashesEqual(bh.parentHashes, other.ParentHashes()) {
+	if !externalapi.ParentsEqual(bh.parents, other.Parents()) {
 		return false
 	}
 
@@ -147,7 +154,7 @@ func (bh *blockHeader) Equal(other externalapi.BaseBlockHeader) bool {
 func (bh *blockHeader) clone() *blockHeader {
 	return &blockHeader{
 		version:              bh.version,
-		parentHashes:         externalapi.CloneHashes(bh.parentHashes),
+		parents:              externalapi.CloneParents(bh.parents),
 		hashMerkleRoot:       bh.hashMerkleRoot,
 		acceptedIDMerkleRoot: bh.acceptedIDMerkleRoot,
 		utxoCommitment:       bh.utxoCommitment,
@@ -168,7 +175,7 @@ func (bh *blockHeader) ToMutable() externalapi.MutableBlockHeader {
 // NewImmutableBlockHeader returns a new immutable header
 func NewImmutableBlockHeader(
 	version uint16,
-	parentHashes []*externalapi.DomainHash,
+	parents []externalapi.BlockLevelParents,
 	hashMerkleRoot *externalapi.DomainHash,
 	acceptedIDMerkleRoot *externalapi.DomainHash,
 	utxoCommitment *externalapi.DomainHash,
@@ -182,7 +189,7 @@ func NewImmutableBlockHeader(
 ) externalapi.BlockHeader {
 	return &blockHeader{
 		version:              version,
-		parentHashes:         parentHashes,
+		parents:              parents,
 		hashMerkleRoot:       hashMerkleRoot,
 		acceptedIDMerkleRoot: acceptedIDMerkleRoot,
 		utxoCommitment:       utxoCommitment,

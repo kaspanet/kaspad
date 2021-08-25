@@ -110,7 +110,7 @@ func TestCheckParentsIncest(t *testing.T) {
 		directParentsRelationBlock := &externalapi.DomainBlock{
 			Header: blockheader.NewImmutableBlockHeader(
 				0,
-				[]*externalapi.DomainHash{a, b},
+				[]externalapi.BlockLevelParents{[]*externalapi.DomainHash{a, b}},
 				&externalapi.DomainHash{},
 				&externalapi.DomainHash{},
 				&externalapi.DomainHash{},
@@ -133,7 +133,7 @@ func TestCheckParentsIncest(t *testing.T) {
 		indirectParentsRelationBlock := &externalapi.DomainBlock{
 			Header: blockheader.NewImmutableBlockHeader(
 				0,
-				[]*externalapi.DomainHash{consensusConfig.GenesisHash, b},
+				[]externalapi.BlockLevelParents{[]*externalapi.DomainHash{consensusConfig.GenesisHash, b}},
 				&externalapi.DomainHash{},
 				&externalapi.DomainHash{},
 				&externalapi.DomainHash{},

@@ -185,7 +185,7 @@ func (bb *blockBuilder) newBlockCoinbaseTransaction(stagingArea *model.StagingAr
 func (bb *blockBuilder) buildHeader(stagingArea *model.StagingArea, transactions []*externalapi.DomainTransaction) (
 	externalapi.BlockHeader, error) {
 
-	parentHashes, err := bb.newBlockParentHashes(stagingArea)
+	parents, err := bb.newBlockParents(stagingArea)
 	if err != nil {
 		return nil, err
 	}
@@ -225,7 +225,7 @@ func (bb *blockBuilder) buildHeader(stagingArea *model.StagingArea, transactions
 
 	return blockheader.NewImmutableBlockHeader(
 		constants.MaxBlockVersion,
-		parentHashes,
+		parents,
 		hashMerkleRoot,
 		acceptedIDMerkleRoot,
 		utxoCommitment,
@@ -239,13 +239,12 @@ func (bb *blockBuilder) buildHeader(stagingArea *model.StagingArea, transactions
 	), nil
 }
 
-func (bb *blockBuilder) newBlockParentHashes(stagingArea *model.StagingArea) ([]*externalapi.DomainHash, error) {
+func (bb *blockBuilder) newBlockParents(stagingArea *model.StagingArea) ([]externalapi.BlockLevelParents, error) {
 	virtualBlockRelations, err := bb.blockRelationStore.BlockRelation(bb.databaseContext, stagingArea, model.VirtualBlockHash)
 	if err != nil {
 		return nil, err
 	}
-
-	return virtualBlockRelations.Parents, nil
+	return []externalapi.BlockLevelParents{virtualBlockRelations.Parents}, nil
 }
 
 func (bb *blockBuilder) newBlockTime(stagingArea *model.StagingArea) (int64, error) {

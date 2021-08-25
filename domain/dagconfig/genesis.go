@@ -30,10 +30,10 @@ var genesisCoinbaseTx = transactionhelper.NewSubnetworkTransaction(0, []*externa
 // genesisHash is the hash of the first block in the block DAG for the main
 // network (genesis block).
 var genesisHash = externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{
-	0xc7, 0xbd, 0x6e, 0x05, 0x6d, 0xaa, 0x53, 0x7a,
-	0x9e, 0x46, 0xc2, 0x0f, 0xfc, 0x1e, 0x49, 0xb0,
-	0x2f, 0x5c, 0xb3, 0xa3, 0xa1, 0x1c, 0xda, 0x57,
-	0xae, 0x89, 0x50, 0xe8, 0x10, 0x90, 0x3d, 0x2f,
+	0x86, 0xd0, 0x2f, 0x43, 0xd9, 0xe2, 0x54, 0xf2,
+	0xda, 0x51, 0x26, 0x06, 0x2b, 0x06, 0xc4, 0xfd,
+	0xd2, 0x7b, 0x10, 0xd8, 0xe4, 0xb0, 0x10, 0x85,
+	0x60, 0xaf, 0x7b, 0x76, 0xb6, 0x81, 0xae, 0x27,
 })
 
 // genesisMerkleRoot is the hash of the first transaction in the genesis block
@@ -50,7 +50,7 @@ var genesisMerkleRoot = externalapi.NewDomainHashFromByteArray(&[externalapi.Dom
 var genesisBlock = externalapi.DomainBlock{
 	Header: blockheader.NewImmutableBlockHeader(
 		0,
-		[]*externalapi.DomainHash{},
+		[]externalapi.BlockLevelParents{},
 		genesisMerkleRoot,
 		&externalapi.DomainHash{},
 		externalapi.NewDomainHashFromByteArray(muhash.EmptyMuHashHash.AsArray()),
@@ -84,10 +84,10 @@ var devnetGenesisCoinbaseTx = transactionhelper.NewSubnetworkTransaction(0,
 // devGenesisHash is the hash of the first block in the block DAG for the development
 // network (genesis block).
 var devnetGenesisHash = externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{
-	0x70, 0xbc, 0x1c, 0x88, 0xd5, 0xd9, 0x70, 0x11,
-	0xf5, 0x90, 0x56, 0x71, 0x4f, 0x7b, 0x8b, 0x6a,
-	0x11, 0x95, 0x02, 0xe0, 0x12, 0xeb, 0x50, 0x46,
-	0xf6, 0xa0, 0xf3, 0xc3, 0x86, 0x29, 0x0e, 0x31,
+	0xe4, 0xe1, 0xf7, 0xc2, 0x7e, 0xc8, 0x61, 0x94,
+	0x5d, 0x9d, 0xcb, 0x12, 0x4b, 0x77, 0xca, 0x57,
+	0x84, 0x2c, 0x90, 0x56, 0x06, 0x66, 0xc9, 0x47,
+	0xb7, 0x22, 0x4b, 0x73, 0xac, 0x63, 0x4f, 0x08,
 })
 
 // devnetGenesisMerkleRoot is the hash of the first transaction in the genesis block
@@ -104,7 +104,7 @@ var devnetGenesisMerkleRoot = externalapi.NewDomainHashFromByteArray(&[externala
 var devnetGenesisBlock = externalapi.DomainBlock{
 	Header: blockheader.NewImmutableBlockHeader(
 		0,
-		[]*externalapi.DomainHash{},
+		[]externalapi.BlockLevelParents{},
 		devnetGenesisMerkleRoot,
 		&externalapi.DomainHash{},
 		externalapi.NewDomainHashFromByteArray(muhash.EmptyMuHashHash.AsArray()),
@@ -157,7 +157,7 @@ var simnetGenesisMerkleRoot = externalapi.NewDomainHashFromByteArray(&[externala
 var simnetGenesisBlock = externalapi.DomainBlock{
 	Header: blockheader.NewImmutableBlockHeader(
 		0,
-		[]*externalapi.DomainHash{},
+		[]externalapi.BlockLevelParents{},
 		simnetGenesisMerkleRoot,
 		&externalapi.DomainHash{},
 		externalapi.NewDomainHashFromByteArray(muhash.EmptyMuHashHash.AsArray()),
@@ -210,7 +210,7 @@ var testnetGenesisMerkleRoot = externalapi.NewDomainHashFromByteArray(&[external
 var testnetGenesisBlock = externalapi.DomainBlock{
 	Header: blockheader.NewImmutableBlockHeader(
 		0,
-		[]*externalapi.DomainHash{},
+		[]externalapi.BlockLevelParents{},
 		testnetGenesisMerkleRoot,
 		&externalapi.DomainHash{},
 		externalapi.NewDomainHashFromByteArray(muhash.EmptyMuHashHash.AsArray()),

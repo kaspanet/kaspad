@@ -11,14 +11,13 @@ import (
 
 	"github.com/davecgh/go-spew/spew"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
-	"github.com/kaspanet/kaspad/util/mstime"
 )
 
 // TestBlockHeader tests the MsgBlockHeader API.
 func TestBlockHeader(t *testing.T) {
 	nonce := uint64(0xba4d87a69924a93d)
 
-	hashes := []*externalapi.DomainHash{mainnetGenesisHash, simnetGenesisHash}
+	parents := []externalapi.BlockLevelParents{[]*externalapi.DomainHash{mainnetGenesisHash, simnetGenesisHash}}
 
 	merkleHash := mainnetGenesisMerkleRoot
 	acceptedIDMerkleRoot := exampleAcceptedIDMerkleRoot
@@ -27,13 +26,13 @@ func TestBlockHeader(t *testing.T) {
 	blueScore := uint64(456)
 	blueWork := big.NewInt(789)
 	pruningPoint := simnetGenesisHash
-	bh := NewBlockHeader(1, hashes, merkleHash, acceptedIDMerkleRoot, exampleUTXOCommitment, bits, nonce,
+	bh := NewBlockHeader(1, parents, merkleHash, acceptedIDMerkleRoot, exampleUTXOCommitment, bits, nonce,
 		daaScore, blueScore, blueWork, pruningPoint)
 
 	// Ensure we get the same data back out.
-	if !reflect.DeepEqual(bh.ParentHashes, hashes) {
-		t.Errorf("NewBlockHeader: wrong prev hashes - got %v, want %v",
-			spew.Sprint(bh.ParentHashes), spew.Sprint(hashes))
+	if !reflect.DeepEqual(bh.Parents, parents) {
+		t.Errorf("NewBlockHeader: wrong parents - got %v, want %v",
+			spew.Sprint(bh.Parents), spew.Sprint(parents))
 	}
 	if bh.HashMerkleRoot != merkleHash {
 		t.Errorf("NewBlockHeader: wrong merkle root - got %v, want %v",
@@ -62,45 +61,5 @@ func TestBlockHeader(t *testing.T) {
 	if !bh.PruningPoint.Equal(pruningPoint) {
 		t.Errorf("NewBlockHeader: wrong pruningPoint - got %v, want %v",
 			bh.PruningPoint, pruningPoint)
-	}
-}
-
-func TestIsGenesis(t *testing.T) {
-	nonce := uint64(123123) // 0x1e0f3
-	bits := uint32(0x1d00ffff)
-	timestamp := mstime.UnixMilliseconds(0x495fab29000)
-
-	baseBlockHdr := &MsgBlockHeader{
-		Version:        1,
-		ParentHashes:   []*externalapi.DomainHash{mainnetGenesisHash, simnetGenesisHash},
-		HashMerkleRoot: mainnetGenesisMerkleRoot,
-		Timestamp:      timestamp,
-		Bits:           bits,
-		Nonce:          nonce,
-	}
-	genesisBlockHdr := &MsgBlockHeader{
-		Version:        1,
-		ParentHashes:   []*externalapi.DomainHash{},
-		HashMerkleRoot: mainnetGenesisMerkleRoot,
-		Timestamp:      timestamp,
-		Bits:           bits,
-		Nonce:          nonce,
-	}
-
-	tests := []struct {
-		in        *MsgBlockHeader // Block header to encode
-		isGenesis bool            // Expected result for call of .IsGenesis
-	}{
-		{genesisBlockHdr, true},
-		{baseBlockHdr, false},
-	}
-
-	t.Logf("Running %d tests", len(tests))
-	for i, test := range tests {
-		isGenesis := test.in.IsGenesis()
-		if isGenesis != test.isGenesis {
-			t.Errorf("MsgBlockHeader.IsGenesis: #%d got: %t, want: %t",
-				i, isGenesis, test.isGenesis)
-		}
 	}
 }

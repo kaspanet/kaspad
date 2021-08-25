@@ -32,7 +32,7 @@ func TestConsensusStateManager_pickVirtualParents(t *testing.T) {
 			if err != nil {
 				t.Fatalf("Consensus failed building a block: %v", err)
 			}
-			blockParents := block.Header.ParentHashes()
+			blockParents := block.Header.DirectParents()
 			sort.Sort(testutils.NewTestGhostDAGSorter(stagingArea, virtualRelations.Parents, tc, t))
 			sort.Sort(testutils.NewTestGhostDAGSorter(stagingArea, blockParents, tc, t))
 			if !externalapi.HashesEqual(virtualRelations.Parents, blockParents) {
@@ -89,7 +89,7 @@ func TestConsensusStateManager_pickVirtualParents(t *testing.T) {
 				t.Fatalf("Failed Inserting block to tc: %v", err)
 			}
 			virtualSelectedParent = consensushashing.BlockHash(block)
-			if len(block.Header.ParentHashes()) == 1 {
+			if len(block.Header.DirectParents()) == 1 {
 				break
 			}
 		}

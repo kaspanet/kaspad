@@ -11,8 +11,11 @@ func (v *blockValidator) headerEstimatedSerializedSize(header externalapi.BlockH
 	size := uint64(0)
 	size += 2 // Version (uint16)
 
-	size += 8                                                               // number of parents (uint64)
-	size += uint64(externalapi.DomainHashSize * len(header.ParentHashes())) // parents
+	size += 8 // number of block levels (uint64)
+	for _, blockLevelParents := range header.Parents() {
+		size += 8                                                           // number of parents in the block level (uint64)
+		size += uint64(externalapi.DomainHashSize * len(blockLevelParents)) // parents
+	}
 
 	size += externalapi.DomainHashSize // HashMerkleRoot
 	size += externalapi.DomainHashSize // AcceptedIDMerkleRoot

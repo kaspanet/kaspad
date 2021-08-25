@@ -25,7 +25,7 @@ func TestDomainBlockHeader_Equal(t *testing.T) {
 				{
 					header: &blockHeader{
 						0,
-						[]*externalapi.DomainHash{externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{0})},
+						[]externalapi.BlockLevelParents{[]*externalapi.DomainHash{externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{0})}},
 						externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{1}),
 						externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{2}),
 						externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{3}),
@@ -44,7 +44,7 @@ func TestDomainBlockHeader_Equal(t *testing.T) {
 		{
 			baseHeader: &blockHeader{
 				0,
-				[]*externalapi.DomainHash{externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{1})},
+				[]externalapi.BlockLevelParents{[]*externalapi.DomainHash{externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{1})}},
 				externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{2}),
 				externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{3}),
 				externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{4}),
@@ -64,7 +64,7 @@ func TestDomainBlockHeader_Equal(t *testing.T) {
 				{
 					header: &blockHeader{
 						0,
-						[]*externalapi.DomainHash{externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{1})},
+						[]externalapi.BlockLevelParents{[]*externalapi.DomainHash{externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{1})}},
 						externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{2}),
 						externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{3}),
 						externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{4}),
@@ -81,7 +81,7 @@ func TestDomainBlockHeader_Equal(t *testing.T) {
 				{
 					header: &blockHeader{
 						100,
-						[]*externalapi.DomainHash{externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{1})},
+						[]externalapi.BlockLevelParents{[]*externalapi.DomainHash{externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{1})}},
 						externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{2}),
 						externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{3}),
 						externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{4}),
@@ -98,9 +98,9 @@ func TestDomainBlockHeader_Equal(t *testing.T) {
 				{
 					header: &blockHeader{
 						0,
-						[]*externalapi.DomainHash{
+						[]externalapi.BlockLevelParents{[]*externalapi.DomainHash{
 							externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{1}),
-							externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{2})},
+							externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{2})}},
 						externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{2}),
 						externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{3}),
 						externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{4}),
@@ -117,7 +117,7 @@ func TestDomainBlockHeader_Equal(t *testing.T) {
 				{
 					header: &blockHeader{
 						0,
-						[]*externalapi.DomainHash{externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{100})},
+						[]externalapi.BlockLevelParents{[]*externalapi.DomainHash{externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{100})}},
 						externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{2}),
 						externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{3}),
 						externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{4}),
@@ -134,7 +134,7 @@ func TestDomainBlockHeader_Equal(t *testing.T) {
 				{
 					header: &blockHeader{
 						0,
-						[]*externalapi.DomainHash{externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{1})},
+						[]externalapi.BlockLevelParents{[]*externalapi.DomainHash{externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{1})}},
 						externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{100}),
 						externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{3}),
 						externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{4}),
@@ -151,7 +151,7 @@ func TestDomainBlockHeader_Equal(t *testing.T) {
 				{
 					header: &blockHeader{
 						0,
-						[]*externalapi.DomainHash{externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{1})},
+						[]externalapi.BlockLevelParents{[]*externalapi.DomainHash{externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{1})}},
 						externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{2}),
 						externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{100}),
 						externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{4}),
@@ -168,7 +168,7 @@ func TestDomainBlockHeader_Equal(t *testing.T) {
 				{
 					header: &blockHeader{
 						0,
-						[]*externalapi.DomainHash{externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{1})},
+						[]externalapi.BlockLevelParents{[]*externalapi.DomainHash{externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{1})}},
 						externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{2}),
 						externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{3}),
 						externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{100}),
@@ -202,7 +202,7 @@ func TestDomainBlockHeader_Equal(t *testing.T) {
 				{
 					header: &blockHeader{
 						0,
-						[]*externalapi.DomainHash{externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{1})},
+						[]externalapi.BlockLevelParents{[]*externalapi.DomainHash{externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{1})}},
 						externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{2}),
 						externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{3}),
 						externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{4}),
@@ -219,7 +219,7 @@ func TestDomainBlockHeader_Equal(t *testing.T) {
 				{
 					header: &blockHeader{
 						0,
-						[]*externalapi.DomainHash{externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{1})},
+						[]externalapi.BlockLevelParents{[]*externalapi.DomainHash{externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{1})}},
 						externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{2}),
 						externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{3}),
 						externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{4}),
@@ -236,7 +236,7 @@ func TestDomainBlockHeader_Equal(t *testing.T) {
 				{
 					header: &blockHeader{
 						0,
-						[]*externalapi.DomainHash{externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{1})},
+						[]externalapi.BlockLevelParents{[]*externalapi.DomainHash{externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{1})}},
 						externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{2}),
 						externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{3}),
 						externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{4}),
@@ -253,7 +253,7 @@ func TestDomainBlockHeader_Equal(t *testing.T) {
 				{
 					header: &blockHeader{
 						0,
-						[]*externalapi.DomainHash{externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{1})},
+						[]externalapi.BlockLevelParents{[]*externalapi.DomainHash{externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{1})}},
 						externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{2}),
 						externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{3}),
 						externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{4}),
@@ -270,7 +270,7 @@ func TestDomainBlockHeader_Equal(t *testing.T) {
 				{
 					header: &blockHeader{
 						0,
-						[]*externalapi.DomainHash{externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{1})},
+						[]externalapi.BlockLevelParents{[]*externalapi.DomainHash{externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{1})}},
 						externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{2}),
 						externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{3}),
 						externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{4}),
@@ -287,7 +287,7 @@ func TestDomainBlockHeader_Equal(t *testing.T) {
 				{
 					header: &blockHeader{
 						0,
-						[]*externalapi.DomainHash{externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{1})},
+						[]externalapi.BlockLevelParents{[]*externalapi.DomainHash{externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{1})}},
 						externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{2}),
 						externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{3}),
 						externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{4}),

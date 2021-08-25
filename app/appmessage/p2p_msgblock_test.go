@@ -21,7 +21,7 @@ func TestBlock(t *testing.T) {
 	pver := ProtocolVersion
 
 	// Block 1 header.
-	parentHashes := blockOne.Header.ParentHashes
+	parents := blockOne.Header.Parents
 	hashMerkleRoot := blockOne.Header.HashMerkleRoot
 	acceptedIDMerkleRoot := blockOne.Header.AcceptedIDMerkleRoot
 	utxoCommitment := blockOne.Header.UTXOCommitment
@@ -31,7 +31,7 @@ func TestBlock(t *testing.T) {
 	blueScore := blockOne.Header.BlueScore
 	blueWork := blockOne.Header.BlueWork
 	pruningPoint := blockOne.Header.PruningPoint
-	bh := NewBlockHeader(1, parentHashes, hashMerkleRoot, acceptedIDMerkleRoot, utxoCommitment, bits, nonce,
+	bh := NewBlockHeader(1, parents, hashMerkleRoot, acceptedIDMerkleRoot, utxoCommitment, bits, nonce,
 		daaScore, blueScore, blueWork, pruningPoint)
 
 	// Ensure the command is expected value.
@@ -136,7 +136,7 @@ func TestConvertToPartial(t *testing.T) {
 var blockOne = MsgBlock{
 	Header: MsgBlockHeader{
 		Version:              0,
-		ParentHashes:         []*externalapi.DomainHash{mainnetGenesisHash, simnetGenesisHash},
+		Parents:              []externalapi.BlockLevelParents{[]*externalapi.DomainHash{mainnetGenesisHash, simnetGenesisHash}},
 		HashMerkleRoot:       mainnetGenesisMerkleRoot,
 		AcceptedIDMerkleRoot: exampleAcceptedIDMerkleRoot,
 		UTXOCommitment:       exampleUTXOCommitment,
