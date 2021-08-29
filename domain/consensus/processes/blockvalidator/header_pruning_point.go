@@ -30,7 +30,7 @@ func (v *blockValidator) ValidateHeaderPruningPoint(stagingArea *model.StagingAr
 }
 
 func (v *blockValidator) expectedHeaderPruningPoint(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) (*externalapi.DomainHash, error) {
-	pruningPointIndex, err := v.pruningStore.PruningPointIndex(v.databaseContext, stagingArea)
+	pruningPointIndex, err := v.pruningStore.CurrentPruningPointIndex(v.databaseContext, stagingArea)
 	if err != nil {
 		return nil, err
 	}

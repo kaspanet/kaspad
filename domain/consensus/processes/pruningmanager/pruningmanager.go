@@ -516,7 +516,7 @@ func (pm *pruningManager) ArePruningPointsInValidChain(stagingArea *model.Stagin
 		current = currentGHOSTDAGData.SelectedParent()
 	}
 
-	lastPruningPointIndex, err := pm.pruningStore.PruningPointIndex(pm.databaseContext, stagingArea)
+	lastPruningPointIndex, err := pm.pruningStore.CurrentPruningPointIndex(pm.databaseContext, stagingArea)
 	if err != nil {
 		return false, err
 	}
@@ -624,7 +624,7 @@ func (pm *pruningManager) calculateDiffBetweenPreviousAndCurrentPruningPoints(st
 		return utxo.NewUTXODiff(), nil
 	}
 
-	pruningPointIndex, err := pm.pruningStore.PruningPointIndex(pm.databaseContext, stagingArea)
+	pruningPointIndex, err := pm.pruningStore.CurrentPruningPointIndex(pm.databaseContext, stagingArea)
 	if err != nil {
 		return nil, err
 	}

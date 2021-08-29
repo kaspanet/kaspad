@@ -30,12 +30,12 @@ func HandlePruningPointAndItsAnticoneRequests(context PruningPointAndItsAnticone
 			return err
 		}
 
-		msgHeaders := make([]*appmessage.MsgBlockHeader, len(pruningPointHeaders))
+		msgPruningPointHeaders := make([]*appmessage.MsgBlockHeader, len(pruningPointHeaders))
 		for i, header := range pruningPointHeaders {
-			msgHeaders[i] = appmessage.DomainBlockHeaderToBlockHeader(header)
+			msgPruningPointHeaders[i] = appmessage.DomainBlockHeaderToBlockHeader(header)
 		}
 
-		err = outgoingRoute.Enqueue(appmessage.NewMsgPruningPoints(msgHeaders))
+		err = outgoingRoute.Enqueue(appmessage.NewMsgPruningPoints(msgPruningPointHeaders))
 		if err != nil {
 			return err
 		}

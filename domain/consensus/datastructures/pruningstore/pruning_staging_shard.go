@@ -9,7 +9,7 @@ type pruningStagingShard struct {
 	store *pruningStore
 
 	pruningPointByIndex              map[uint64]*externalapi.DomainHash
-	pruningPointIndex                *uint64
+	currentPruningPointIndex         *uint64
 	newPruningPointCandidate         *externalapi.DomainHash
 	startUpdatingPruningPointUTXOSet bool
 }
@@ -39,19 +39,19 @@ func (mss *pruningStagingShard) Commit(dbTx model.DBTransaction) error {
 		mss.store.pruningPointByIndexCache.Add(index, hashCopy)
 	}
 
-	if mss.pruningPointIndex != nil {
-		indexBytes := mss.store.serializeIndex(*mss.pruningPointIndex)
-		err := dbTx.Put(mss.store.pruningBlockIndexKey, indexBytes)
+	if mss.currentPruningPointIndex != nil {
+		indexBytes := mss.store.serializeIndex(*mss.currentPruningPointIndex)
+		err := dbTx.Put(mss.store.currentPruningPointIndexKey, indexBytes)
 		if err != nil {
 			return err
 		}
 
-		if mss.store.pruningPointIndexCache == nil {
+		if mss.store.currentPruningPointIndexCache == nil {
 			var zero uint64
-			mss.store.pruningPointIndexCache = &zero
+			mss.store.currentPruningPointIndexCache = &zero
 		}
 
-		*mss.store.pruningPointIndexCache = *mss.pruningPointIndex
+		*mss.store.currentPruningPointIndexCache = *mss.currentPruningPointIndex
 	}
 
 	if mss.newPruningPointCandidate != nil {

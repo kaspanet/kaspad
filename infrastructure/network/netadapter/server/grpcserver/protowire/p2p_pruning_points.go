@@ -7,7 +7,7 @@ import (
 
 func (x *KaspadMessage_PruningPoints) toAppMessage() (appmessage.Message, error) {
 	if x == nil {
-		return nil, errors.Wrapf(errorNil, "KaspadMessage_BlockHeaders is nil")
+		return nil, errors.Wrapf(errorNil, "KaspadMessage_PruningPoints is nil")
 	}
 
 	if x.PruningPoints == nil {

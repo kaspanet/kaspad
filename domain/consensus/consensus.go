@@ -415,7 +415,7 @@ func (s *consensus) PruningPointHeaders() ([]externalapi.BlockHeader, error) {
 
 	stagingArea := model.NewStagingArea()
 
-	lastPruningPointIndex, err := s.pruningStore.PruningPointIndex(s.databaseContext, stagingArea)
+	lastPruningPointIndex, err := s.pruningStore.CurrentPruningPointIndex(s.databaseContext, stagingArea)
 	if err != nil {
 		return nil, err
 	}

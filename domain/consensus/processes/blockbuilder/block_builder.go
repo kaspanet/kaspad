@@ -354,7 +354,7 @@ func (bb *blockBuilder) newBlockPruningPoint(stagingArea *model.StagingArea, blo
 		return virtualPruningPoint, nil
 	}
 
-	pruningPointIndex, err := bb.pruningStore.PruningPointIndex(bb.databaseContext, stagingArea)
+	pruningPointIndex, err := bb.pruningStore.CurrentPruningPointIndex(bb.databaseContext, stagingArea)
 	if err != nil {
 		return nil, err
 	}

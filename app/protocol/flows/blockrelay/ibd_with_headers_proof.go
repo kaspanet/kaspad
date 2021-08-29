@@ -99,7 +99,7 @@ func (flow *handleRelayInvsFlow) downloadHeadersAndPruningUTXOSet(highHash *exte
 		return err
 	}
 
-	pruningPoint, err := flow.syncPruningPointAndItsAnticone()
+	pruningPoint, err := flow.syncPruningPointsAndPruningPointAnticone()
 	if err != nil {
 		return err
 	}
@@ -130,9 +130,9 @@ func (flow *handleRelayInvsFlow) downloadHeadersAndPruningUTXOSet(highHash *exte
 	return nil
 }
 
-func (flow *handleRelayInvsFlow) syncPruningPointAndItsAnticone() (*externalapi.DomainHash, error) {
+func (flow *handleRelayInvsFlow) syncPruningPointsAndPruningPointAnticone() (*externalapi.DomainHash, error) {
 
-	log.Infof("Downloading pruning point and its anticone from %s", flow.peer)
+	log.Infof("Downloading the past pruning point and the pruning point anticone from %s", flow.peer)
 	err := flow.outgoingRoute.Enqueue(appmessage.NewMsgRequestPruningPointAndItsAnticone())
 	if err != nil {
 		return nil, err

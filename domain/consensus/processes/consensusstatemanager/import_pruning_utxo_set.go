@@ -13,7 +13,7 @@ import (
 )
 
 func (csm *consensusStateManager) ImportPruningPointUTXOSet(stagingArea *model.StagingArea, newPruningPoint *externalapi.DomainHash) error {
-	onEnd := logger.LogAndMeasureExecutionTime(log, "ImportPruningPoint")
+	onEnd := logger.LogAndMeasureExecutionTime(log, "ImportPruningPointUTXOSet")
 	defer onEnd()
 
 	err := csm.importPruningPointUTXOSet(stagingArea, newPruningPoint)

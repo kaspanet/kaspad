@@ -14,7 +14,7 @@ type PruningStore interface {
 	HasPruningPointCandidate(dbContext DBReader, stagingArea *StagingArea) (bool, error)
 	PruningPoint(dbContext DBReader, stagingArea *StagingArea) (*externalapi.DomainHash, error)
 	HasPruningPoint(dbContext DBReader, stagingArea *StagingArea) (bool, error)
-	PruningPointIndex(dbContext DBReader, stagingArea *StagingArea) (uint64, error)
+	CurrentPruningPointIndex(dbContext DBReader, stagingArea *StagingArea) (uint64, error)
 	PruningPointByIndex(dbContext DBReader, stagingArea *StagingArea, index uint64) (*externalapi.DomainHash, error)
 
 	StageStartUpdatingPruningPointUTXOSet(stagingArea *StagingArea)
