@@ -81,8 +81,8 @@ func (bpb *blockParentBuilder) BuildParents(stagingArea *model.StagingArea,
 			// Copy the parents in the map and in the header to separate slices
 			// so that we could gradually remove parents that had not yet been
 			// processed
-			unprocessedHeaderParents := append(externalapi.BlockLevelParents{}, blockLevelParentsInHeader...)
-			unprocessedMapParents := append(externalapi.BlockLevelParents{}, blockLevelParentsInMap...)
+			headerParents := append(externalapi.BlockLevelParents{}, blockLevelParentsInHeader...)
+			mapParents := append(externalapi.BlockLevelParents{}, blockLevelParentsInMap...)
 
 			// Get the pruning point parents for the block level (if they exist)
 			pruningPointBlockLevelParents := externalapi.BlockLevelParents{}
@@ -93,54 +93,70 @@ func (bpb *blockParentBuilder) BuildParents(stagingArea *model.StagingArea,
 			// Replace any pruned header parents with the pruning point parents for
 			// this block level
 			unprocessedHeaderParentsContainPrunedBlocks := false
-			for i, headerParent := range unprocessedHeaderParents {
+			for i, headerParent := range headerParents {
 				hasReachabilityData, err := bpb.reachabilityDataStore.HasReachabilityData(bpb.databaseContext, stagingArea, headerParent)
 				if err != nil {
 					return nil, err
 				}
 				if !hasReachabilityData {
 					unprocessedHeaderParentsContainPrunedBlocks = true
-					unprocessedHeaderParents = append(unprocessedHeaderParents[:i], unprocessedHeaderParents[i+1:]...)
+					headerParents = append(headerParents[:i], headerParents[i+1:]...)
 				}
 			}
 			if unprocessedHeaderParentsContainPrunedBlocks {
-				unprocessedHeaderParents = append(unprocessedHeaderParents, pruningPointBlockLevelParents...)
+				headerParents = append(headerParents, pruningPointBlockLevelParents...)
 			}
 
 			// Replace any pruned map parents with the pruning point parents for
 			// this block level
 			unprocessedMapParentsContainPruningBlocks := false
-			for i, mapParent := range unprocessedMapParents {
+			for i, mapParent := range mapParents {
 				hasReachabilityData, err := bpb.reachabilityDataStore.HasReachabilityData(bpb.databaseContext, stagingArea, mapParent)
 				if err != nil {
 					return nil, err
 				}
 				if !hasReachabilityData {
 					unprocessedMapParentsContainPruningBlocks = true
-					unprocessedMapParents = append(unprocessedMapParents[:i], unprocessedMapParents[i+1:]...)
+					mapParents = append(mapParents[:i], mapParents[i+1:]...)
 				}
 			}
 			if unprocessedMapParentsContainPruningBlocks {
-				unprocessedHeaderParents = append(unprocessedHeaderParents, pruningPointBlockLevelParents...)
+				headerParents = append(headerParents, pruningPointBlockLevelParents...)
 			}
 
 			newBlockLevelParents := externalapi.BlockLevelParents{}
 
 			// Include in the new parents collection for this block level any
 			// parents that exist in both the map and the header
-			for i, headerParent := range unprocessedHeaderParents {
+			unprocessedHeaderParents := externalapi.BlockLevelParents{}
+			unprocessedMapParents := externalapi.BlockLevelParents{}
+			for _, headerParent := range headerParents {
 				found := false
-				for j, mapParent := range unprocessedMapParents {
+				for _, mapParent := range mapParents {
 					if headerParent.Equal(mapParent) {
 						found = true
-						unprocessedHeaderParents = append(unprocessedHeaderParents[:i], unprocessedHeaderParents[i+1:]...)
-						unprocessedMapParents = append(unprocessedMapParents[:j], unprocessedMapParents[j+1:]...)
 						break
 					}
 				}
 				if found {
 					newBlockLevelParents = append(newBlockLevelParents, headerParent)
+					continue
 				}
+				unprocessedHeaderParents = append(unprocessedHeaderParents, headerParent)
+			}
+			for _, mapParent := range mapParents {
+				found := false
+				for _, headerParent := range unprocessedHeaderParents {
+					if mapParent.Equal(headerParent) {
+						found = true
+						break
+					}
+				}
+				if found {
+					newBlockLevelParents = append(newBlockLevelParents, mapParent)
+					continue
+				}
+				unprocessedMapParents = append(unprocessedMapParents, mapParent)
 			}
 
 			// Include in the new parents collection for this block level any
