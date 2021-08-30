@@ -256,7 +256,32 @@ func TestCheckPruningPointViolation(t *testing.T) {
 			}
 		}
 
-		_, _, err = tc.AddUTXOInvalidBlock([]*externalapi.DomainHash{consensusConfig.GenesisHash})
+		tips, err := tc.Tips()
+		if err != nil {
+			t.Fatalf("Tips: %+v", err)
+		}
+
+		blockWithPruningViolation, _, err := tc.BuildBlockWithParents(tips, nil, nil)
+		if err != nil {
+			t.Fatalf("BuildBlockWithParents: %+v", err)
+		}
+
+		blockWithPruningViolation.Header = blockheader.NewImmutableBlockHeader(
+			blockWithPruningViolation.Header.Version(),
+			[]externalapi.BlockLevelParents{[]*externalapi.DomainHash{consensusConfig.GenesisHash}},
+			blockWithPruningViolation.Header.HashMerkleRoot(),
+			blockWithPruningViolation.Header.AcceptedIDMerkleRoot(),
+			blockWithPruningViolation.Header.UTXOCommitment(),
+			blockWithPruningViolation.Header.TimeInMilliseconds(),
+			blockWithPruningViolation.Header.Bits(),
+			blockWithPruningViolation.Header.Nonce(),
+			blockWithPruningViolation.Header.DAAScore(),
+			blockWithPruningViolation.Header.BlueScore(),
+			blockWithPruningViolation.Header.BlueWork(),
+			blockWithPruningViolation.Header.PruningPoint(),
+		)
+
+		_, err = tc.ValidateAndInsertBlock(blockWithPruningViolation, true)
 		if !errors.Is(err, ruleerrors.ErrPruningPointViolation) {
 			t.Fatalf("Unexpected error: %+v", err)
 		}
