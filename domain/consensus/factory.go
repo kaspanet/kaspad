@@ -166,6 +166,8 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 		dbManager,
 		blockHeaderStore,
 		dagTopologyManager,
+		reachabilityDataStore,
+		pruningStore,
 	)
 	ghostdagManager := f.ghostdagConstructor(
 		dbManager,

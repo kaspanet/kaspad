@@ -7,9 +7,11 @@ import (
 )
 
 type blockParentBuilder struct {
-	databaseContext    model.DBManager
-	blockHeaderStore   model.BlockHeaderStore
-	dagTopologyManager model.DAGTopologyManager
+	databaseContext       model.DBManager
+	blockHeaderStore      model.BlockHeaderStore
+	dagTopologyManager    model.DAGTopologyManager
+	reachabilityDataStore model.ReachabilityDataStore
+	pruningStore          model.PruningStore
 }
 
 // New creates a new instance of a BlockParentBuilder
@@ -17,16 +19,33 @@ func New(
 	databaseContext model.DBManager,
 	blockHeaderStore model.BlockHeaderStore,
 	dagTopologyManager model.DAGTopologyManager,
+	reachabilityDataStore model.ReachabilityDataStore,
+	pruningStore model.PruningStore,
 ) model.BlockParentBuilder {
 	return &blockParentBuilder{
-		databaseContext:    databaseContext,
-		blockHeaderStore:   blockHeaderStore,
-		dagTopologyManager: dagTopologyManager,
+		databaseContext:       databaseContext,
+		blockHeaderStore:      blockHeaderStore,
+		dagTopologyManager:    dagTopologyManager,
+		reachabilityDataStore: reachabilityDataStore,
+		pruningStore:          pruningStore,
 	}
 }
 
 func (bpb *blockParentBuilder) BuildParents(stagingArea *model.StagingArea,
 	directParentHashes []*externalapi.DomainHash) ([]externalapi.BlockLevelParents, error) {
+
+	pruningPoint, hasPruningPoint, err := bpb.pruningPoint(stagingArea)
+	if err != nil {
+		return nil, err
+	}
+	pruningPointParents := []externalapi.BlockLevelParents{}
+	if hasPruningPoint {
+		var err error
+		pruningPointParents, err = bpb.pruningPointParents(stagingArea, pruningPoint)
+		if err != nil {
+			return nil, err
+		}
+	}
 
 	directParentHeaders := make(map[externalapi.DomainHash]externalapi.BlockHeader)
 	for _, directParentHash := range directParentHashes {
@@ -58,40 +77,147 @@ func (bpb *blockParentBuilder) BuildParents(stagingArea *model.StagingArea,
 	for _, directParentHeader := range directParentHeaders {
 		for blockLevel, blockLevelParentsInHeader := range directParentHeader.Parents() {
 			blockLevelParentsInMap := parentsMap[blockLevel]
+
+			// Copy the parents in the map and in the header to separate slices
+			// so that we could gradually remove parents that had not yet been
+			// processed
+			unprocessedHeaderParents := append(externalapi.BlockLevelParents{}, blockLevelParentsInHeader...)
+			unprocessedMapParents := append(externalapi.BlockLevelParents{}, blockLevelParentsInMap...)
+
+			// Get the pruning point parents for the block level (if they exist)
+			pruningPointBlockLevelParents := externalapi.BlockLevelParents{}
+			if len(pruningPointParents) > blockLevel {
+				pruningPointBlockLevelParents = pruningPointParents[blockLevel]
+			}
+
+			// Replace any pruned header parents with the pruning point parents for
+			// this block level
+			unprocessedHeaderParentsContainPrunedBlocks := false
+			for i, headerParent := range unprocessedHeaderParents {
+				hasReachabilityData, err := bpb.reachabilityDataStore.HasReachabilityData(bpb.databaseContext, stagingArea, headerParent)
+				if err != nil {
+					return nil, err
+				}
+				if !hasReachabilityData {
+					unprocessedHeaderParentsContainPrunedBlocks = true
+					unprocessedHeaderParents = append(unprocessedHeaderParents[:i], unprocessedHeaderParents[i+1:]...)
+				}
+			}
+			if unprocessedHeaderParentsContainPrunedBlocks {
+				unprocessedHeaderParents = append(unprocessedHeaderParents, pruningPointBlockLevelParents...)
+			}
+
+			// Replace any pruned map parents with the pruning point parents for
+			// this block level
+			unprocessedMapParentsContainPruningBlocks := false
+			for i, mapParent := range unprocessedMapParents {
+				hasReachabilityData, err := bpb.reachabilityDataStore.HasReachabilityData(bpb.databaseContext, stagingArea, mapParent)
+				if err != nil {
+					return nil, err
+				}
+				if !hasReachabilityData {
+					unprocessedMapParentsContainPruningBlocks = true
+					unprocessedMapParents = append(unprocessedMapParents[:i], unprocessedMapParents[i+1:]...)
+				}
+			}
+			if unprocessedMapParentsContainPruningBlocks {
+				unprocessedHeaderParents = append(unprocessedHeaderParents, pruningPointBlockLevelParents...)
+			}
+
 			newBlockLevelParents := externalapi.BlockLevelParents{}
 
-			// Include map parents that don't have any header parents in their future
-			for _, mapBlockLevelParent := range blockLevelParentsInMap {
-				isMapParentAncestorOfAnyHeaderParent, err := bpb.dagTopologyManager.IsAncestorOfAny(stagingArea, mapBlockLevelParent, blockLevelParentsInHeader)
-				if err != nil {
-					return nil, err
-				}
-				if !isMapParentAncestorOfAnyHeaderParent {
-					newBlockLevelParents = append(newBlockLevelParents, mapBlockLevelParent)
-				}
-			}
-
-			// Include header parents that don't have any map parents in their future
-			for _, headerBlockLevelParent := range blockLevelParentsInHeader {
-				isHeaderParentAncestorOfAnyMapParent, err := bpb.dagTopologyManager.IsAncestorOfAny(stagingArea, headerBlockLevelParent, blockLevelParentsInMap)
-				if err != nil {
-					return nil, err
-				}
-				if !isHeaderParentAncestorOfAnyMapParent {
-					newBlockLevelParents = append(newBlockLevelParents, headerBlockLevelParent)
-				}
-			}
-
-			// Include any parents that exist in both the map and the header
-			for _, mapBlockLevelParent := range blockLevelParentsInMap {
+			// Include in the new parents collection for this block level any
+			// parents that exist in both the map and the header
+			for i, headerParent := range unprocessedHeaderParents {
 				found := false
-				for _, headerBlockLevelParent := range blockLevelParentsInHeader {
-					if mapBlockLevelParent.Equal(headerBlockLevelParent) {
+				for j, mapParent := range unprocessedMapParents {
+					if headerParent.Equal(mapParent) {
 						found = true
+						unprocessedHeaderParents = append(unprocessedHeaderParents[:i], unprocessedHeaderParents[i+1:]...)
+						unprocessedMapParents = append(unprocessedMapParents[:j], unprocessedMapParents[j+1:]...)
+						break
 					}
 				}
 				if found {
-					newBlockLevelParents = append(newBlockLevelParents, mapBlockLevelParent)
+					newBlockLevelParents = append(newBlockLevelParents, headerParent)
+				}
+			}
+
+			// Include in the new parents collection for this block level any
+			// map parents that don't have any header parents in their future
+			for _, mapParent := range unprocessedMapParents {
+				// If the map parent is one of the pruning point parents for
+				// this level, use the pruning point for the topological
+				// comparison instead
+				mapParentForTopologyComparison := mapParent
+				if pruningPointBlockLevelParents.Contains(mapParent) {
+					mapParentForTopologyComparison = pruningPoint
+				}
+
+				foundDescendantOfMapParent := false
+				for _, headerParent := range unprocessedHeaderParents {
+					// If the header parent is one of the pruning point parents
+					// for this level, use the pruning point for the topological
+					// comparison instead (unless the map parent is also a
+					// parent of the pruning point, in which case skip)
+					headerParentForTopologyComparison := headerParent
+					if pruningPointBlockLevelParents.Contains(headerParent) {
+						if mapParentForTopologyComparison.Equal(pruningPoint) {
+							continue
+						}
+						headerParentForTopologyComparison = pruningPoint
+					}
+					isMapParentAncestorOfHeaderParent, err := bpb.dagTopologyManager.IsAncestorOf(stagingArea,
+						mapParentForTopologyComparison, headerParentForTopologyComparison)
+					if err != nil {
+						return nil, err
+					}
+					if isMapParentAncestorOfHeaderParent {
+						foundDescendantOfMapParent = true
+						break
+					}
+				}
+				if !foundDescendantOfMapParent {
+					newBlockLevelParents = append(newBlockLevelParents, mapParent)
+				}
+			}
+
+			// Include in the new parents collection for this block level any
+			// header parents that don't have any map parents in their future
+			for _, headerParent := range unprocessedHeaderParents {
+				// If the header parent is one of the pruning point parents for
+				// this level, use the pruning point for the topological
+				// comparison instead
+				headerParentForTopologyComparison := headerParent
+				if pruningPointBlockLevelParents.Contains(headerParent) {
+					headerParentForTopologyComparison = pruningPoint
+				}
+
+				foundDescendantOfHeaderParent := false
+				for _, mapParent := range unprocessedMapParents {
+					// If the map parent is one of the pruning point parents
+					// for this level, use the pruning point for the topological
+					// comparison instead (unless the header parent is also a
+					// parent of the pruning point, in which case skip)
+					mapParentForTopologyComparison := mapParent
+					if pruningPointBlockLevelParents.Contains(mapParent) {
+						if headerParentForTopologyComparison.Equal(pruningPoint) {
+							continue
+						}
+						mapParentForTopologyComparison = pruningPoint
+					}
+					isHeaderParentAncestorOfMapParent, err := bpb.dagTopologyManager.IsAncestorOf(stagingArea,
+						headerParentForTopologyComparison, mapParentForTopologyComparison)
+					if err != nil {
+						return nil, err
+					}
+					if isHeaderParentAncestorOfMapParent {
+						foundDescendantOfHeaderParent = true
+						break
+					}
+				}
+				if !foundDescendantOfHeaderParent {
+					newBlockLevelParents = append(newBlockLevelParents, headerParent)
 				}
 			}
 
@@ -104,4 +230,28 @@ func (bpb *blockParentBuilder) BuildParents(stagingArea *model.StagingArea,
 		parents[blockLevel] = parentsMap[blockLevel]
 	}
 	return parents, nil
+}
+
+func (bpb *blockParentBuilder) pruningPoint(stagingArea *model.StagingArea) (*externalapi.DomainHash, bool, error) {
+	hasPruningPoint, err := bpb.pruningStore.HasPruningPoint(bpb.databaseContext, stagingArea)
+	if err != nil {
+		return nil, false, err
+	}
+	if !hasPruningPoint {
+		return nil, false, nil
+	}
+	pruningPoint, err := bpb.pruningStore.PruningPoint(bpb.databaseContext, stagingArea)
+	if err != nil {
+		return nil, false, err
+	}
+	return pruningPoint, true, nil
+}
+
+func (bpb *blockParentBuilder) pruningPointParents(stagingArea *model.StagingArea, pruningPoint *externalapi.DomainHash) ([]externalapi.BlockLevelParents, error) {
+	pruningPointHeader, err := bpb.blockHeaderStore.BlockHeader(bpb.databaseContext, stagingArea, pruningPoint)
+	if err != nil {
+		return nil, err
+	}
+	pruningPointParents := pruningPointHeader.Parents()
+	return pruningPointParents, nil
 }
