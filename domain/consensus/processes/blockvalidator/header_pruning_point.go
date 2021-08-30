@@ -7,7 +7,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-func (v *blockValidator) ValidateHeaderPruningPoint(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) error {
+func (v *blockValidator) validateHeaderPruningPoint(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) error {
 	if blockHash.Equal(v.genesisHash) {
 		return nil
 	}
@@ -17,7 +17,7 @@ func (v *blockValidator) ValidateHeaderPruningPoint(stagingArea *model.StagingAr
 		return err
 	}
 
-	expectedPruningPoint, err := v.expectedHeaderPruningPoint(stagingArea, blockHash)
+	expectedPruningPoint, err := v.pruningManager.ExpectedHeaderPruningPoint(stagingArea, blockHash)
 	if err != nil {
 		return err
 	}
@@ -27,38 +27,4 @@ func (v *blockValidator) ValidateHeaderPruningPoint(stagingArea *model.StagingAr
 	}
 
 	return nil
-}
-
-func (v *blockValidator) expectedHeaderPruningPoint(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) (*externalapi.DomainHash, error) {
-	pruningPointIndex, err := v.pruningStore.CurrentPruningPointIndex(v.databaseContext, stagingArea)
-	if err != nil {
-		return nil, err
-	}
-
-	blockGHOSTDAGData, err := v.ghostdagDataStore.Get(v.databaseContext, stagingArea, blockHash, false)
-	if err != nil {
-		return nil, err
-	}
-
-	for i := pruningPointIndex; ; i-- {
-		currentPruningPoint, err := v.pruningStore.PruningPointByIndex(v.databaseContext, stagingArea, i)
-		if err != nil {
-			return nil, err
-		}
-
-		currentPruningPointHeader, err := v.blockHeaderStore.BlockHeader(v.databaseContext, stagingArea, currentPruningPoint)
-		if err != nil {
-			return nil, err
-		}
-
-		if blockGHOSTDAGData.BlueScore() >= currentPruningPointHeader.BlueScore()+v.pruningDepth {
-			return currentPruningPoint, nil
-		}
-
-		if i == 0 {
-			break
-		}
-	}
-
-	return v.genesisHash, nil
 }

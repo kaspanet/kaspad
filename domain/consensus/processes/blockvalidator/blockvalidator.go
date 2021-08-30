@@ -22,7 +22,6 @@ type blockValidator struct {
 	maxBlockParents             externalapi.KType
 	timestampDeviationTolerance int
 	targetTimePerBlock          time.Duration
-	pruningDepth                uint64
 
 	databaseContext       model.DBReader
 	difficultyManager     model.DifficultyManager
@@ -36,6 +35,7 @@ type blockValidator struct {
 	pruningStore          model.PruningStore
 	reachabilityManager   model.ReachabilityManager
 	finalityManager       model.FinalityManager
+	pruningManager        model.PruningManager
 
 	blockStore          model.BlockStore
 	ghostdagDataStore   model.GHOSTDAGDataStore
@@ -56,7 +56,6 @@ func New(powMax *big.Int,
 	maxBlockParents externalapi.KType,
 	timestampDeviationTolerance int,
 	targetTimePerBlock time.Duration,
-	pruningDepth uint64,
 
 	databaseContext model.DBReader,
 
@@ -70,9 +69,9 @@ func New(powMax *big.Int,
 	mergeDepthManager model.MergeDepthManager,
 	reachabilityManager model.ReachabilityManager,
 	finalityManager model.FinalityManager,
+	pruningManager model.PruningManager,
 
 	pruningStore model.PruningStore,
-
 	blockStore model.BlockStore,
 	ghostdagDataStore model.GHOSTDAGDataStore,
 	blockHeaderStore model.BlockHeaderStore,
@@ -91,7 +90,6 @@ func New(powMax *big.Int,
 		maxBlockMass:               maxBlockMass,
 		mergeSetSizeLimit:          mergeSetSizeLimit,
 		maxBlockParents:            maxBlockParents,
-		pruningDepth:               pruningDepth,
 
 		timestampDeviationTolerance: timestampDeviationTolerance,
 		targetTimePerBlock:          targetTimePerBlock,
@@ -106,6 +104,7 @@ func New(powMax *big.Int,
 		mergeDepthManager:           mergeDepthManager,
 		reachabilityManager:         reachabilityManager,
 		finalityManager:             finalityManager,
+		pruningManager:              pruningManager,
 
 		pruningStore:        pruningStore,
 		blockStore:          blockStore,

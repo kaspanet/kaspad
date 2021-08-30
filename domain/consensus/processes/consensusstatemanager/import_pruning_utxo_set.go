@@ -68,9 +68,6 @@ func (csm *consensusStateManager) importPruningPointUTXOSet(stagingArea *model.S
 	log.Debugf("Updating the new pruning point to be the new virtual diff parent with an empty diff")
 	csm.stageDiff(stagingArea, newPruningPoint, utxo.NewUTXODiff(), nil)
 
-	log.Debugf("Staging the new pruning point as the pruning candidate %s", newPruningPoint)
-	csm.pruningStore.StagePruningPointCandidate(stagingArea, newPruningPoint)
-
 	log.Debugf("Populating the pruning point with UTXO entries")
 	importedPruningPointUTXOIterator, err := csm.pruningStore.ImportedPruningPointUTXOIterator(csm.databaseContext)
 	if err != nil {
@@ -140,6 +137,9 @@ func (csm *consensusStateManager) ImportPruningPoints(stagingArea *model.Staging
 
 		csm.blockHeaderStore.Stage(stagingArea, blockHash, header)
 	}
+
+	lastPruningPointHeader := pruningPoints[len(pruningPoints)-1]
+	csm.pruningStore.StagePruningPointCandidate(stagingArea, consensushashing.HeaderHash(lastPruningPointHeader))
 
 	return nil
 }

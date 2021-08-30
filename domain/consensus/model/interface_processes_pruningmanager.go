@@ -15,4 +15,5 @@ type PruningManager interface {
 	PruningPointAndItsAnticoneWithTrustedData() ([]*externalapi.BlockWithTrustedData, error)
 	NextPruningPointAndCandidateByBlockHash(stagingArea *StagingArea,
 		blockHash *externalapi.DomainHash) (*externalapi.DomainHash, *externalapi.DomainHash, error)
+	ExpectedHeaderPruningPoint(stagingArea *StagingArea, blockHash *externalapi.DomainHash) (*externalapi.DomainHash, error)
 }

@@ -17,7 +17,6 @@ type consensusStateManager struct {
 	dagTraversalManager   model.DAGTraversalManager
 	pastMedianTimeManager model.PastMedianTimeManager
 	transactionValidator  model.TransactionValidator
-	blockValidator        model.BlockValidator
 	coinbaseManager       model.CoinbaseManager
 	mergeDepthManager     model.MergeDepthManager
 	finalityManager       model.FinalityManager
@@ -51,7 +50,6 @@ func New(
 	dagTraversalManager model.DAGTraversalManager,
 	pastMedianTimeManager model.PastMedianTimeManager,
 	transactionValidator model.TransactionValidator,
-	blockValidator model.BlockValidator,
 	coinbaseManager model.CoinbaseManager,
 	mergeDepthManager model.MergeDepthManager,
 	finalityManager model.FinalityManager,
@@ -81,7 +79,6 @@ func New(
 		dagTraversalManager:   dagTraversalManager,
 		pastMedianTimeManager: pastMedianTimeManager,
 		transactionValidator:  transactionValidator,
-		blockValidator:        blockValidator,
 		coinbaseManager:       coinbaseManager,
 		mergeDepthManager:     mergeDepthManager,
 		finalityManager:       finalityManager,

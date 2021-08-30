@@ -958,3 +958,60 @@ func (pm *pruningManager) blockWithTrustedData(stagingArea *model.StagingArea, b
 		GHOSTDAGData: ghostdagDataHashPairs,
 	}, nil
 }
+
+func (pm *pruningManager) ExpectedHeaderPruningPoint(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) (*externalapi.DomainHash, error) {
+	nextOrCurrentPruningPoint, _, err := pm.NextPruningPointAndCandidateByBlockHash(stagingArea, blockHash)
+	if err != nil {
+		return nil, err
+	}
+
+	isHeaderPruningPoint, err := pm.isPruningPointInPruningDepth(stagingArea, blockHash, nextOrCurrentPruningPoint)
+	if err != nil {
+		return nil, err
+	}
+
+	if isHeaderPruningPoint {
+		return nextOrCurrentPruningPoint, nil
+	}
+
+	pruningPointIndex, err := pm.pruningStore.CurrentPruningPointIndex(pm.databaseContext, stagingArea)
+	if err != nil {
+		return nil, err
+	}
+
+	for i := pruningPointIndex; ; i-- {
+		currentPruningPoint, err := pm.pruningStore.PruningPointByIndex(pm.databaseContext, stagingArea, i)
+		if err != nil {
+			return nil, err
+		}
+
+		isHeaderPruningPoint, err := pm.isPruningPointInPruningDepth(stagingArea, blockHash, currentPruningPoint)
+		if err != nil {
+			return nil, err
+		}
+
+		if isHeaderPruningPoint {
+			return currentPruningPoint, nil
+		}
+
+		if i == 0 {
+			break
+		}
+	}
+
+	return pm.genesisHash, nil
+}
+
+func (pm *pruningManager) isPruningPointInPruningDepth(stagingArea *model.StagingArea, blockHash, pruningPoint *externalapi.DomainHash) (bool, error) {
+	pruningPointHeader, err := pm.blockHeaderStore.BlockHeader(pm.databaseContext, stagingArea, pruningPoint)
+	if err != nil {
+		return false, err
+	}
+
+	blockGHOSTDAGData, err := pm.ghostdagDataStore.Get(pm.databaseContext, stagingArea, blockHash, false)
+	if err != nil {
+		return false, err
+	}
+
+	return blockGHOSTDAGData.BlueScore() >= pruningPointHeader.BlueScore()+pm.pruningDepth, nil
+}

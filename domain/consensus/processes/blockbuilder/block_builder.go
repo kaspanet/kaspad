@@ -20,7 +20,6 @@ import (
 type blockBuilder struct {
 	databaseContext model.DBManager
 	genesisHash     *externalapi.DomainHash
-	pruningDepth    uint64
 
 	difficultyManager     model.DifficultyManager
 	pastMedianTimeManager model.PastMedianTimeManager
@@ -44,7 +43,6 @@ type blockBuilder struct {
 func New(
 	databaseContext model.DBManager,
 	genesisHash *externalapi.DomainHash,
-	pruningDepth uint64,
 
 	difficultyManager model.DifficultyManager,
 	pastMedianTimeManager model.PastMedianTimeManager,
@@ -67,7 +65,6 @@ func New(
 	return &blockBuilder{
 		databaseContext: databaseContext,
 		genesisHash:     genesisHash,
-		pruningDepth:    pruningDepth,
 
 		difficultyManager:     difficultyManager,
 		pastMedianTimeManager: pastMedianTimeManager,
@@ -340,58 +337,5 @@ func (bb *blockBuilder) newBlockBlueScore(stagingArea *model.StagingArea) (uint6
 }
 
 func (bb *blockBuilder) newBlockPruningPoint(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) (*externalapi.DomainHash, error) {
-	virtualPruningPoint, _, err := bb.pruningManager.NextPruningPointAndCandidateByBlockHash(stagingArea, model.VirtualBlockHash)
-	if err != nil {
-		return nil, err
-	}
-
-	isNewBlockPruningPoint, err := bb.isNewBlockPruningPoint(stagingArea, blockHash, virtualPruningPoint)
-	if err != nil {
-		return nil, err
-	}
-
-	if isNewBlockPruningPoint {
-		return virtualPruningPoint, nil
-	}
-
-	pruningPointIndex, err := bb.pruningStore.CurrentPruningPointIndex(bb.databaseContext, stagingArea)
-	if err != nil {
-		return nil, err
-	}
-
-	for i := pruningPointIndex; ; i-- {
-		currentPruningPoint, err := bb.pruningStore.PruningPointByIndex(bb.databaseContext, stagingArea, i)
-		if err != nil {
-			return nil, err
-		}
-
-		isNewBlockPruningPoint, err := bb.isNewBlockPruningPoint(stagingArea, blockHash, currentPruningPoint)
-		if err != nil {
-			return nil, err
-		}
-
-		if isNewBlockPruningPoint {
-			return currentPruningPoint, nil
-		}
-
-		if i == 0 {
-			break
-		}
-	}
-
-	return bb.genesisHash, nil
-}
-
-func (bb *blockBuilder) isNewBlockPruningPoint(stagingArea *model.StagingArea, blockHash, pruningPoint *externalapi.DomainHash) (bool, error) {
-	pruningPointHeader, err := bb.blockHeaderStore.BlockHeader(bb.databaseContext, stagingArea, pruningPoint)
-	if err != nil {
-		return false, err
-	}
-
-	blockGHOSTDAGData, err := bb.ghostdagDataStore.Get(bb.databaseContext, stagingArea, blockHash, false)
-	if err != nil {
-		return false, err
-	}
-
-	return blockGHOSTDAGData.BlueScore() >= pruningPointHeader.BlueScore()+bb.pruningDepth, nil
+	return bb.pruningManager.ExpectedHeaderPruningPoint(stagingArea, blockHash)
 }

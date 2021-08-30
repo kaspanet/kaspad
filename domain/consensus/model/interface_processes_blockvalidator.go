@@ -12,5 +12,4 @@ type BlockValidator interface {
 	ValidateHeaderInContext(stagingArea *StagingArea, blockHash *externalapi.DomainHash, isBlockWithTrustedData bool) error
 	ValidateBodyInContext(stagingArea *StagingArea, blockHash *externalapi.DomainHash, isBlockWithTrustedData bool) error
 	ValidatePruningPointViolationAndProofOfWorkAndDifficulty(stagingArea *StagingArea, blockHash *externalapi.DomainHash, isBlockWithTrustedData bool) error
-	ValidateHeaderPruningPoint(stagingArea *StagingArea, blockHash *externalapi.DomainHash) error
 }

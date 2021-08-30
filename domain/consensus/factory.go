@@ -232,39 +232,6 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 		dagTraversalManager,
 		finalityManager,
 		ghostdagDataStore)
-	blockValidator := blockvalidator.New(
-		config.PowMax,
-		config.SkipProofOfWork,
-		genesisHash,
-		config.EnableNonNativeSubnetworks,
-		config.MaxBlockMass,
-		config.MergeSetSizeLimit,
-		config.MaxBlockParents,
-		config.TimestampDeviationTolerance,
-		config.TargetTimePerBlock,
-		config.PruningDepth(),
-
-		dbManager,
-		difficultyManager,
-		pastMedianTimeManager,
-		transactionValidator,
-		ghostdagManager,
-		dagTopologyManager,
-		dagTraversalManager,
-		coinbaseManager,
-		mergeDepthManager,
-		reachabilityManager,
-		finalityManager,
-
-		pruningStore,
-		blockStore,
-		ghostdagDataStore,
-		blockHeaderStore,
-		blockStatusStore,
-		reachabilityDataStore,
-		consensusStateStore,
-		daaBlocksStore,
-	)
 	consensusStateManager, err := consensusstatemanager.New(
 		dbManager,
 		config.MaxBlockParents,
@@ -276,7 +243,6 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 		dagTraversalManager,
 		pastMedianTimeManager,
 		transactionValidator,
-		blockValidator,
 		coinbaseManager,
 		mergeDepthManager,
 		finalityManager,
@@ -328,6 +294,40 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 		config.DifficultyAdjustmentWindowSize,
 	)
 
+	blockValidator := blockvalidator.New(
+		config.PowMax,
+		config.SkipProofOfWork,
+		genesisHash,
+		config.EnableNonNativeSubnetworks,
+		config.MaxBlockMass,
+		config.MergeSetSizeLimit,
+		config.MaxBlockParents,
+		config.TimestampDeviationTolerance,
+		config.TargetTimePerBlock,
+
+		dbManager,
+		difficultyManager,
+		pastMedianTimeManager,
+		transactionValidator,
+		ghostdagManager,
+		dagTopologyManager,
+		dagTraversalManager,
+		coinbaseManager,
+		mergeDepthManager,
+		reachabilityManager,
+		finalityManager,
+		pruningManager,
+
+		pruningStore,
+		blockStore,
+		ghostdagDataStore,
+		blockHeaderStore,
+		blockStatusStore,
+		reachabilityDataStore,
+		consensusStateStore,
+		daaBlocksStore,
+	)
+
 	syncManager := syncmanager.New(
 		dbManager,
 		genesisHash,
@@ -347,7 +347,6 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 	blockBuilder := blockbuilder.New(
 		dbManager,
 		genesisHash,
-		config.PruningDepth(),
 
 		difficultyManager,
 		pastMedianTimeManager,
