@@ -38,9 +38,10 @@ func DomainBlockHeaderToBlockHeader(domainBlockHeader externalapi.BlockHeader) *
 		Timestamp:            mstime.UnixMilliseconds(domainBlockHeader.TimeInMilliseconds()),
 		Bits:                 domainBlockHeader.Bits(),
 		Nonce:                domainBlockHeader.Nonce(),
+		BlueScore:            domainBlockHeader.BlueScore(),
 		DAAScore:             domainBlockHeader.DAAScore(),
 		BlueWork:             domainBlockHeader.BlueWork(),
-		FinalityPoint:        domainBlockHeader.FinalityPoint(),
+		PruningPoint:         domainBlockHeader.PruningPoint(),
 	}
 }
 
@@ -69,8 +70,9 @@ func BlockHeaderToDomainBlockHeader(blockHeader *MsgBlockHeader) externalapi.Blo
 		blockHeader.Bits,
 		blockHeader.Nonce,
 		blockHeader.DAAScore,
+		blockHeader.BlueScore,
 		blockHeader.BlueWork,
-		blockHeader.FinalityPoint,
+		blockHeader.PruningPoint,
 	)
 }
 
@@ -358,8 +360,9 @@ func DomainBlockToRPCBlock(block *externalapi.DomainBlock) *RPCBlock {
 		Bits:                 block.Header.Bits(),
 		Nonce:                block.Header.Nonce(),
 		DAAScore:             block.Header.DAAScore(),
+		BlueScore:            block.Header.BlueScore(),
 		BlueWork:             block.Header.BlueWork().Text(16),
-		FinalityPoint:        block.Header.FinalityPoint().String(),
+		PruningPoint:         block.Header.PruningPoint().String(),
 	}
 	transactions := make([]*RPCTransaction, len(block.Transactions))
 	for i, transaction := range block.Transactions {
@@ -400,7 +403,7 @@ func RPCBlockToDomainBlock(block *RPCBlock) (*externalapi.DomainBlock, error) {
 	if !success {
 		return nil, errors.Errorf("failed to parse blue work: %s", block.Header.BlueWork)
 	}
-	finalityPoint, err := externalapi.NewDomainHashFromString(block.Header.FinalityPoint)
+	pruningPoint, err := externalapi.NewDomainHashFromString(block.Header.PruningPoint)
 	if err != nil {
 		return nil, err
 	}
@@ -414,8 +417,9 @@ func RPCBlockToDomainBlock(block *RPCBlock) (*externalapi.DomainBlock, error) {
 		block.Header.Bits,
 		block.Header.Nonce,
 		block.Header.DAAScore,
+		block.Header.BlueScore,
 		blueWork,
-		finalityPoint)
+		pruningPoint)
 	transactions := make([]*externalapi.DomainTransaction, len(block.Transactions))
 	for i, transaction := range block.Transactions {
 		domainTransaction, err := RPCTransactionToDomainTransaction(transaction)

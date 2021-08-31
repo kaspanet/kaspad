@@ -7,6 +7,7 @@ type Consensus interface {
 	ValidateAndInsertBlock(block *DomainBlock, shouldValidateAgainstUTXO bool) (*BlockInsertionResult, error)
 	ValidateAndInsertBlockWithTrustedData(block *BlockWithTrustedData, validateUTXO bool) (*BlockInsertionResult, error)
 	ValidateTransactionAndPopulateWithConsensusData(transaction *DomainTransaction) error
+	ImportPruningPoints(pruningPoints []BlockHeader) error
 
 	GetBlock(blockHash *DomainHash) (*DomainBlock, error)
 	GetBlockEvenIfHeaderOnly(blockHash *DomainHash) (*DomainBlock, error)
@@ -20,6 +21,7 @@ type Consensus interface {
 	GetPruningPointUTXOs(expectedPruningPointHash *DomainHash, fromOutpoint *DomainOutpoint, limit int) ([]*OutpointAndUTXOEntryPair, error)
 	GetVirtualUTXOs(expectedVirtualParents []*DomainHash, fromOutpoint *DomainOutpoint, limit int) ([]*OutpointAndUTXOEntryPair, error)
 	PruningPoint() (*DomainHash, error)
+	PruningPointHeaders() ([]BlockHeader, error)
 	PruningPointAndItsAnticoneWithTrustedData() ([]*BlockWithTrustedData, error)
 	ClearImportedPruningPointData() error
 	AppendImportedPruningPointUTXOs(outpointAndUTXOEntryPairs []*OutpointAndUTXOEntryPair) error
@@ -33,6 +35,7 @@ type Consensus interface {
 	GetVirtualInfo() (*VirtualInfo, error)
 	GetVirtualDAAScore() (uint64, error)
 	IsValidPruningPoint(blockHash *DomainHash) (bool, error)
+	ArePruningPointsViolatingFinality(pruningPoints []BlockHeader) (bool, error)
 	GetVirtualSelectedParentChainFromBlock(blockHash *DomainHash) (*SelectedChainPath, error)
 	IsInSelectedParentChainOf(blockHashA *DomainHash, blockHashB *DomainHash) (bool, error)
 	GetHeadersSelectedTip() (*DomainHash, error)

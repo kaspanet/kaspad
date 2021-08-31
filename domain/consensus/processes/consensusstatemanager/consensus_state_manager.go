@@ -7,7 +7,6 @@ import (
 
 // consensusStateManager manages the node's consensus state
 type consensusStateManager struct {
-	pruningDepth      uint64
 	maxBlockParents   externalapi.KType
 	mergeSetSizeLimit uint64
 	genesisHash       *externalapi.DomainHash
@@ -18,7 +17,6 @@ type consensusStateManager struct {
 	dagTraversalManager   model.DAGTraversalManager
 	pastMedianTimeManager model.PastMedianTimeManager
 	transactionValidator  model.TransactionValidator
-	blockValidator        model.BlockValidator
 	coinbaseManager       model.CoinbaseManager
 	mergeDepthManager     model.MergeDepthManager
 	finalityManager       model.FinalityManager
@@ -43,7 +41,6 @@ type consensusStateManager struct {
 // New instantiates a new ConsensusStateManager
 func New(
 	databaseContext model.DBManager,
-	pruningDepth uint64,
 	maxBlockParents externalapi.KType,
 	mergeSetSizeLimit uint64,
 	genesisHash *externalapi.DomainHash,
@@ -53,7 +50,6 @@ func New(
 	dagTraversalManager model.DAGTraversalManager,
 	pastMedianTimeManager model.PastMedianTimeManager,
 	transactionValidator model.TransactionValidator,
-	blockValidator model.BlockValidator,
 	coinbaseManager model.CoinbaseManager,
 	mergeDepthManager model.MergeDepthManager,
 	finalityManager model.FinalityManager,
@@ -73,7 +69,6 @@ func New(
 	daaBlocksStore model.DAABlocksStore) (model.ConsensusStateManager, error) {
 
 	csm := &consensusStateManager{
-		pruningDepth:      pruningDepth,
 		maxBlockParents:   maxBlockParents,
 		mergeSetSizeLimit: mergeSetSizeLimit,
 		genesisHash:       genesisHash,
@@ -84,7 +79,6 @@ func New(
 		dagTraversalManager:   dagTraversalManager,
 		pastMedianTimeManager: pastMedianTimeManager,
 		transactionValidator:  transactionValidator,
-		blockValidator:        blockValidator,
 		coinbaseManager:       coinbaseManager,
 		mergeDepthManager:     mergeDepthManager,
 		finalityManager:       finalityManager,

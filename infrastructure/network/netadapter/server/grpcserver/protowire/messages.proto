@@ -43,6 +43,7 @@ message KaspadMessage {
     RequestPruningPointUTXOSetMessage requestPruningPointUTXOSet = 44;
     RequestHeadersMessage requestHeaders = 45;
     RequestBlockLocatorMessage requestBlockLocator = 46;
+    PruningPointsMessage pruningPoints = 47;
 
     GetCurrentNetworkRequestMessage getCurrentNetworkRequest = 1001;
     GetCurrentNetworkResponseMessage getCurrentNetworkResponse = 1002;

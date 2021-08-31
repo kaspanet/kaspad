@@ -15,8 +15,17 @@ type blockHeader struct {
 	bits                 uint32
 	nonce                uint64
 	daaScore             uint64
+	blueScore            uint64
 	blueWork             *big.Int
-	finalityPoint        *externalapi.DomainHash
+	pruningPoint         *externalapi.DomainHash
+}
+
+func (bh *blockHeader) BlueScore() uint64 {
+	return bh.blueScore
+}
+
+func (bh *blockHeader) PruningPoint() *externalapi.DomainHash {
+	return bh.pruningPoint
 }
 
 func (bh *blockHeader) DAAScore() uint64 {
@@ -25,10 +34,6 @@ func (bh *blockHeader) DAAScore() uint64 {
 
 func (bh *blockHeader) BlueWork() *big.Int {
 	return bh.blueWork
-}
-
-func (bh *blockHeader) FinalityPoint() *externalapi.DomainHash {
-	return bh.finalityPoint
 }
 
 func (bh *blockHeader) ToImmutable() externalapi.BlockHeader {
@@ -131,11 +136,15 @@ func (bh *blockHeader) Equal(other externalapi.BaseBlockHeader) bool {
 		return false
 	}
 
+	if bh.blueScore != other.BlueScore() {
+		return false
+	}
+
 	if bh.blueWork.Cmp(other.BlueWork()) != 0 {
 		return false
 	}
 
-	if !bh.finalityPoint.Equal(other.FinalityPoint()) {
+	if !bh.pruningPoint.Equal(other.PruningPoint()) {
 		return false
 	}
 
@@ -153,8 +162,9 @@ func (bh *blockHeader) clone() *blockHeader {
 		bits:                 bh.bits,
 		nonce:                bh.nonce,
 		daaScore:             bh.daaScore,
+		blueScore:            bh.blueScore,
 		blueWork:             bh.blueWork,
-		finalityPoint:        bh.finalityPoint,
+		pruningPoint:         bh.pruningPoint,
 	}
 }
 
@@ -173,8 +183,9 @@ func NewImmutableBlockHeader(
 	bits uint32,
 	nonce uint64,
 	daaScore uint64,
+	blueScore uint64,
 	blueWork *big.Int,
-	finalityPoint *externalapi.DomainHash,
+	pruningPoint *externalapi.DomainHash,
 ) externalapi.BlockHeader {
 	return &blockHeader{
 		version:              version,
@@ -186,7 +197,8 @@ func NewImmutableBlockHeader(
 		bits:                 bits,
 		nonce:                nonce,
 		daaScore:             daaScore,
+		blueScore:            blueScore,
 		blueWork:             blueWork,
-		finalityPoint:        finalityPoint,
+		pruningPoint:         pruningPoint,
 	}
 }

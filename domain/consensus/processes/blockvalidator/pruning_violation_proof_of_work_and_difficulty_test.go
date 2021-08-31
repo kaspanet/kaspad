@@ -60,8 +60,9 @@ func TestPOW(t *testing.T) {
 			difficulty.BigToCompact(abovePowMaxTarget),
 			abovePowMaxBlock.Header.Nonce(),
 			abovePowMaxBlock.Header.DAAScore(),
+			abovePowMaxBlock.Header.BlueScore(),
 			abovePowMaxBlock.Header.BlueWork(),
-			abovePowMaxBlock.Header.FinalityPoint(),
+			abovePowMaxBlock.Header.PruningPoint(),
 		)
 
 		_, err = tc.ValidateAndInsertBlock(abovePowMaxBlock, true)
@@ -84,8 +85,9 @@ func TestPOW(t *testing.T) {
 			0x00800000,
 			negativeTargetBlock.Header.Nonce(),
 			negativeTargetBlock.Header.DAAScore(),
+			negativeTargetBlock.Header.BlueScore(),
 			negativeTargetBlock.Header.BlueWork(),
-			negativeTargetBlock.Header.FinalityPoint(),
+			negativeTargetBlock.Header.PruningPoint(),
 		)
 
 		_, err = tc.ValidateAndInsertBlock(negativeTargetBlock, true)
@@ -151,8 +153,9 @@ func TestCheckParentHeadersExist(t *testing.T) {
 			orphanBlock.Header.Bits(),
 			orphanBlock.Header.Nonce(),
 			orphanBlock.Header.DAAScore(),
+			orphanBlock.Header.BlueScore(),
 			orphanBlock.Header.BlueWork(),
-			orphanBlock.Header.FinalityPoint(),
+			orphanBlock.Header.PruningPoint(),
 		)
 
 		_, err = tc.ValidateAndInsertBlock(orphanBlock, true)
@@ -182,8 +185,9 @@ func TestCheckParentHeadersExist(t *testing.T) {
 			orphanBlock.Header.Bits(),
 			orphanBlock.Header.Nonce(),
 			orphanBlock.Header.DAAScore(),
+			orphanBlock.Header.BlueScore(),
 			orphanBlock.Header.BlueWork(),
-			orphanBlock.Header.FinalityPoint(),
+			orphanBlock.Header.PruningPoint(),
 		)
 
 		_, err = tc.ValidateAndInsertBlock(invalidBlock, true)
@@ -208,8 +212,9 @@ func TestCheckParentHeadersExist(t *testing.T) {
 			invalidBlockChild.Header.Bits(),
 			invalidBlockChild.Header.Nonce(),
 			invalidBlockChild.Header.DAAScore(),
+			invalidBlockChild.Header.BlueScore(),
 			invalidBlockChild.Header.BlueWork(),
-			invalidBlockChild.Header.FinalityPoint(),
+			invalidBlockChild.Header.PruningPoint(),
 		)
 
 		_, err = tc.ValidateAndInsertBlock(invalidBlockChild, true)
@@ -251,7 +256,32 @@ func TestCheckPruningPointViolation(t *testing.T) {
 			}
 		}
 
-		_, _, err = tc.AddUTXOInvalidBlock([]*externalapi.DomainHash{consensusConfig.GenesisHash})
+		tips, err := tc.Tips()
+		if err != nil {
+			t.Fatalf("Tips: %+v", err)
+		}
+
+		blockWithPruningViolation, _, err := tc.BuildBlockWithParents(tips, nil, nil)
+		if err != nil {
+			t.Fatalf("BuildBlockWithParents: %+v", err)
+		}
+
+		blockWithPruningViolation.Header = blockheader.NewImmutableBlockHeader(
+			blockWithPruningViolation.Header.Version(),
+			[]externalapi.BlockLevelParents{[]*externalapi.DomainHash{consensusConfig.GenesisHash}},
+			blockWithPruningViolation.Header.HashMerkleRoot(),
+			blockWithPruningViolation.Header.AcceptedIDMerkleRoot(),
+			blockWithPruningViolation.Header.UTXOCommitment(),
+			blockWithPruningViolation.Header.TimeInMilliseconds(),
+			blockWithPruningViolation.Header.Bits(),
+			blockWithPruningViolation.Header.Nonce(),
+			blockWithPruningViolation.Header.DAAScore(),
+			blockWithPruningViolation.Header.BlueScore(),
+			blockWithPruningViolation.Header.BlueWork(),
+			blockWithPruningViolation.Header.PruningPoint(),
+		)
+
+		_, err = tc.ValidateAndInsertBlock(blockWithPruningViolation, true)
 		if !errors.Is(err, ruleerrors.ErrPruningPointViolation) {
 			t.Fatalf("Unexpected error: %+v", err)
 		}

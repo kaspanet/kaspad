@@ -409,6 +409,35 @@ func (s *consensus) PruningPoint() (*externalapi.DomainHash, error) {
 	return s.pruningStore.PruningPoint(s.databaseContext, stagingArea)
 }
 
+func (s *consensus) PruningPointHeaders() ([]externalapi.BlockHeader, error) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	stagingArea := model.NewStagingArea()
+
+	lastPruningPointIndex, err := s.pruningStore.CurrentPruningPointIndex(s.databaseContext, stagingArea)
+	if err != nil {
+		return nil, err
+	}
+
+	headers := make([]externalapi.BlockHeader, 0, lastPruningPointIndex)
+	for i := uint64(0); i <= lastPruningPointIndex; i++ {
+		pruningPoint, err := s.pruningStore.PruningPointByIndex(s.databaseContext, stagingArea, i)
+		if err != nil {
+			return nil, err
+		}
+
+		header, err := s.blockHeaderStore.BlockHeader(s.databaseContext, stagingArea, pruningPoint)
+		if err != nil {
+			return nil, err
+		}
+
+		headers = append(headers, header)
+	}
+
+	return headers, nil
+}
+
 func (s *consensus) ClearImportedPruningPointData() error {
 	s.lock.Lock()
 	defer s.lock.Unlock()
@@ -566,6 +595,33 @@ func (s *consensus) IsValidPruningPoint(blockHash *externalapi.DomainHash) (bool
 	}
 
 	return s.pruningManager.IsValidPruningPoint(stagingArea, blockHash)
+}
+
+func (s *consensus) ArePruningPointsViolatingFinality(pruningPoints []externalapi.BlockHeader) (bool, error) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	stagingArea := model.NewStagingArea()
+
+	return s.pruningManager.ArePruningPointsViolatingFinality(stagingArea, pruningPoints)
+}
+
+func (s *consensus) ImportPruningPoints(pruningPoints []externalapi.BlockHeader) error {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	stagingArea := model.NewStagingArea()
+	err := s.consensusStateManager.ImportPruningPoints(stagingArea, pruningPoints)
+	if err != nil {
+		return err
+	}
+
+	err = staging.CommitAllChanges(s.databaseContext, stagingArea)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (s *consensus) GetVirtualSelectedParentChainFromBlock(blockHash *externalapi.DomainHash) (*externalapi.SelectedChainPath, error) {

@@ -171,6 +171,7 @@ var unOrderedParentsBlock = externalapi.DomainBlock{
 		0x207fffff,
 		0x1,
 		0,
+		9,
 		big.NewInt(0),
 		externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{
 			0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -442,6 +443,7 @@ var exampleValidBlock = externalapi.DomainBlock{
 		0x207fffff,
 		1,
 		0,
+		9,
 		big.NewInt(0),
 		externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{
 			0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -751,6 +753,7 @@ var blockWithWrongTxOrder = externalapi.DomainBlock{
 		0x207fffff,
 		1,
 		0,
+		9,
 		big.NewInt(0),
 		externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{
 			0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -1355,6 +1358,7 @@ func initBlockWithFirstTransactionDifferentThanCoinbase(consensusConfig *consens
 			0x5cd18053000,
 			0x207fffff,
 			0x1,
+			0,
 			0,
 			big.NewInt(0),
 			externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{

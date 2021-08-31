@@ -124,7 +124,7 @@ func TestIBDWithPruning(t *testing.T) {
 		}
 
 		if synceeSelectedTip.SelectedTipHash != consensushashing.BlockHash(syncerTip).String() {
-			t.Fatalf("Unexpected selected tip")
+			t.Fatalf("Unexpected selected tip: expected %s but got %s", consensushashing.BlockHash(syncerTip).String(), synceeSelectedTip.SelectedTipHash)
 		}
 	}
 
@@ -135,6 +135,12 @@ func TestIBDWithPruning(t *testing.T) {
 	// This is done to make a pruning depth of 6 blocks
 	overrideDAGParams.FinalityDuration = 2 * overrideDAGParams.TargetTimePerBlock
 	overrideDAGParams.K = 0
+
+	expectedPruningDepth := uint64(6)
+	if overrideDAGParams.PruningDepth() != expectedPruningDepth {
+		t.Fatalf("Unexpected pruning depth: expected %d but got %d", expectedPruningDepth, overrideDAGParams.PruningDepth())
+	}
+
 	harnesses, teardown := setupHarnesses(t, []*harnessParams{
 		{
 			p2pAddress:              p2pAddress1,

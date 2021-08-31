@@ -20,8 +20,9 @@ func DomainBlockHeaderToDbBlockHeader(domainBlockHeader externalapi.BlockHeader)
 		Bits:                 domainBlockHeader.Bits(),
 		Nonce:                domainBlockHeader.Nonce(),
 		DaaScore:             domainBlockHeader.DAAScore(),
+		BlueScore:            domainBlockHeader.BlueScore(),
 		BlueWork:             domainBlockHeader.BlueWork().Bytes(),
-		FinalityPoint:        DomainHashToDbHash(domainBlockHeader.FinalityPoint()),
+		PruningPoint:         DomainHashToDbHash(domainBlockHeader.PruningPoint()),
 	}
 }
 
@@ -46,7 +47,8 @@ func DbBlockHeaderToDomainBlockHeader(dbBlockHeader *DbBlockHeader) (externalapi
 	if dbBlockHeader.Version > math.MaxUint16 {
 		return nil, errors.Errorf("Invalid header version - bigger then uint16")
 	}
-	finalityPoint, err := DbHashToDomainHash(dbBlockHeader.FinalityPoint)
+
+	pruningPoint, err := DbHashToDomainHash(dbBlockHeader.PruningPoint)
 	if err != nil {
 		return nil, err
 	}
@@ -61,7 +63,8 @@ func DbBlockHeaderToDomainBlockHeader(dbBlockHeader *DbBlockHeader) (externalapi
 		dbBlockHeader.Bits,
 		dbBlockHeader.Nonce,
 		dbBlockHeader.DaaScore,
+		dbBlockHeader.BlueScore,
 		new(big.Int).SetBytes(dbBlockHeader.BlueWork),
-		finalityPoint,
+		pruningPoint,
 	), nil
 }

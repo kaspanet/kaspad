@@ -38,6 +38,16 @@ func addBlock(tc testapi.TestConsensus, parentHashes []*externalapi.DomainHash, 
 func TestValidateAndInsertImportedPruningPoint(t *testing.T) {
 	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
 		syncConsensuses := func(tcSyncer, tcSyncee testapi.TestConsensus) {
+			pruningPointHeaders, err := tcSyncer.PruningPointHeaders()
+			if err != nil {
+				t.Fatalf("PruningPointHeaders: %+v", err)
+			}
+
+			err = tcSyncee.ImportPruningPoints(pruningPointHeaders)
+			if err != nil {
+				t.Fatalf("PruningPointHeaders: %+v", err)
+			}
+
 			pointAndItsAnticoneWithTrustedData, err := tcSyncer.PruningPointAndItsAnticoneWithTrustedData()
 			if err != nil {
 				t.Fatalf("PruningPointAndItsAnticoneWithTrustedData: %+v", err)
@@ -350,6 +360,16 @@ func TestValidateAndInsertPruningPointWithSideBlocks(t *testing.T) {
 
 		if !pruningPoint.Equal(nextPruningPoint) {
 			t.Fatalf("Unexpected pruning point %s", pruningPoint)
+		}
+
+		pruningPointHeaders, err := tcSyncer.PruningPointHeaders()
+		if err != nil {
+			t.Fatalf("PruningPointHeaders: %+v", err)
+		}
+
+		err = tcSyncee.ImportPruningPoints(pruningPointHeaders)
+		if err != nil {
+			t.Fatalf("PruningPointHeaders: %+v", err)
 		}
 
 		pointAndItsAnticoneWithTrustedData, err := tcSyncer.PruningPointAndItsAnticoneWithTrustedData()
