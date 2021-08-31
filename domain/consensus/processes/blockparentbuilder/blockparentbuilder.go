@@ -78,50 +78,48 @@ func (bpb *blockParentBuilder) BuildParents(stagingArea *model.StagingArea,
 		for blockLevel, blockLevelParentsInHeader := range directParentHeader.Parents() {
 			blockLevelParentsInMap := parentsMap[blockLevel]
 
-			// Copy the parents in the map and in the header to separate slices
-			// so that we could gradually remove parents that had not yet been
-			// processed
-			headerParents := append(externalapi.BlockLevelParents{}, blockLevelParentsInHeader...)
-			mapParents := append(externalapi.BlockLevelParents{}, blockLevelParentsInMap...)
-
 			// Get the pruning point parents for the block level (if they exist)
 			pruningPointBlockLevelParents := externalapi.BlockLevelParents{}
 			if len(pruningPointParents) > blockLevel {
 				pruningPointBlockLevelParents = pruningPointParents[blockLevel]
 			}
 
-			// Replace any pruned header parents with the pruning point parents for
-			// this block level
+			// Copy the header parents and replace any pruned header parents with
+			// the pruning point parents for this block level
+			headerParents := externalapi.BlockLevelParents{}
 			unprocessedHeaderParentsContainPrunedBlocks := false
-			for i, headerParent := range headerParents {
+			for _, headerParent := range blockLevelParentsInHeader {
 				hasReachabilityData, err := bpb.reachabilityDataStore.HasReachabilityData(bpb.databaseContext, stagingArea, headerParent)
 				if err != nil {
 					return nil, err
 				}
 				if !hasReachabilityData {
 					unprocessedHeaderParentsContainPrunedBlocks = true
-					headerParents = append(headerParents[:i], headerParents[i+1:]...)
+					continue
 				}
+				headerParents = append(headerParents, headerParent)
 			}
 			if unprocessedHeaderParentsContainPrunedBlocks {
 				headerParents = append(headerParents, pruningPointBlockLevelParents...)
 			}
 
-			// Replace any pruned map parents with the pruning point parents for
-			// this block level
+			// Copy the map parents and replace any pruned header parents with
+			// the pruning point parents for this block level
+			mapParents := externalapi.BlockLevelParents{}
 			unprocessedMapParentsContainPruningBlocks := false
-			for i, mapParent := range mapParents {
+			for _, mapParent := range blockLevelParentsInMap {
 				hasReachabilityData, err := bpb.reachabilityDataStore.HasReachabilityData(bpb.databaseContext, stagingArea, mapParent)
 				if err != nil {
 					return nil, err
 				}
 				if !hasReachabilityData {
 					unprocessedMapParentsContainPruningBlocks = true
-					mapParents = append(mapParents[:i], mapParents[i+1:]...)
+					continue
 				}
+				mapParents = append(mapParents, mapParent)
 			}
 			if unprocessedMapParentsContainPruningBlocks {
-				headerParents = append(headerParents, pruningPointBlockLevelParents...)
+				mapParents = append(mapParents, pruningPointBlockLevelParents...)
 			}
 
 			newBlockLevelParents := externalapi.BlockLevelParents{}
