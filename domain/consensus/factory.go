@@ -324,6 +324,7 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 		mergeDepthManager,
 		reachabilityManager,
 		finalityManager,
+		blockParentBuilder,
 		pruningManager,
 
 		pruningStore,
@@ -363,8 +364,8 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 		ghostdagManager,
 		transactionValidator,
 		finalityManager,
-		pruningManager,
 		blockParentBuilder,
+		pruningManager,
 
 		acceptanceDataStore,
 		blockRelationStore,
