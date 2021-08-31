@@ -35,8 +35,6 @@ type blockBuilder struct {
 	multisetStore       model.MultisetStore
 	ghostdagDataStore   model.GHOSTDAGDataStore
 	daaBlocksStore      model.DAABlocksStore
-	pruningStore        model.PruningStore
-	blockHeaderStore    model.BlockHeaderStore
 }
 
 // New creates a new instance of a BlockBuilder
@@ -58,8 +56,6 @@ func New(
 	multisetStore model.MultisetStore,
 	ghostdagDataStore model.GHOSTDAGDataStore,
 	daaBlocksStore model.DAABlocksStore,
-	pruningStore model.PruningStore,
-	blockHeaderStore model.BlockHeaderStore,
 ) model.BlockBuilder {
 
 	return &blockBuilder{
@@ -80,8 +76,6 @@ func New(
 		multisetStore:       multisetStore,
 		ghostdagDataStore:   ghostdagDataStore,
 		daaBlocksStore:      daaBlocksStore,
-		pruningStore:        pruningStore,
-		blockHeaderStore:    blockHeaderStore,
 	}
 }
 
