@@ -151,7 +151,9 @@ func (bpb *blockParentBuilder) BuildParents(stagingArea *model.StagingArea,
 					}
 				}
 				if found {
-					newBlockLevelParents = append(newBlockLevelParents, mapParent)
+					if !newBlockLevelParents.Contains(mapParent) {
+						newBlockLevelParents = append(newBlockLevelParents, mapParent)
+					}
 					continue
 				}
 				unprocessedMapParents = append(unprocessedMapParents, mapParent)
@@ -192,7 +194,9 @@ func (bpb *blockParentBuilder) BuildParents(stagingArea *model.StagingArea,
 					}
 				}
 				if !foundDescendantOfMapParent {
-					newBlockLevelParents = append(newBlockLevelParents, mapParent)
+					if !newBlockLevelParents.Contains(mapParent) {
+						newBlockLevelParents = append(newBlockLevelParents, mapParent)
+					}
 				}
 			}
 
@@ -231,7 +235,9 @@ func (bpb *blockParentBuilder) BuildParents(stagingArea *model.StagingArea,
 					}
 				}
 				if !foundDescendantOfHeaderParent {
-					newBlockLevelParents = append(newBlockLevelParents, headerParent)
+					if !newBlockLevelParents.Contains(headerParent) {
+						newBlockLevelParents = append(newBlockLevelParents, headerParent)
+					}
 				}
 			}
 
