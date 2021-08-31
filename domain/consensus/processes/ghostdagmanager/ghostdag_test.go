@@ -120,6 +120,7 @@ func TestGHOSTDAG(t *testing.T) {
 						genesisHeader.Bits(),
 						0,
 						0,
+						0,
 						big.NewInt(0),
 						nil,
 					)
@@ -218,6 +219,7 @@ func TestBlueWork(t *testing.T) {
 		0,
 		0,
 		0,
+		0,
 		big.NewInt(0),
 		&externalapi.DomainHash{},
 	)
@@ -244,6 +246,7 @@ func TestBlueWork(t *testing.T) {
 		&externalapi.DomainHash{},
 		0,
 		math.MaxUint32, // Put a very high difficulty so the chain that contains this block will have a very high blue work
+		0,
 		0,
 		0,
 		big.NewInt(0),

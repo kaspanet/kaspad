@@ -24,6 +24,22 @@ func HandlePruningPointAndItsAnticoneRequests(context PruningPointAndItsAnticone
 		}
 
 		log.Debugf("Got request for pruning point and its anticone from %s", peer)
+
+		pruningPointHeaders, err := context.Domain().Consensus().PruningPointHeaders()
+		if err != nil {
+			return err
+		}
+
+		msgPruningPointHeaders := make([]*appmessage.MsgBlockHeader, len(pruningPointHeaders))
+		for i, header := range pruningPointHeaders {
+			msgPruningPointHeaders[i] = appmessage.DomainBlockHeaderToBlockHeader(header)
+		}
+
+		err = outgoingRoute.Enqueue(appmessage.NewMsgPruningPoints(msgPruningPointHeaders))
+		if err != nil {
+			return err
+		}
+
 		blocks, err := context.Domain().Consensus().PruningPointAndItsAnticoneWithTrustedData()
 		if err != nil {
 			return err

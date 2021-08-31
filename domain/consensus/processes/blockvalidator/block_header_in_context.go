@@ -2,7 +2,6 @@ package blockvalidator
 
 import (
 	"fmt"
-
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
@@ -85,13 +84,22 @@ func (v *blockValidator) ValidateHeaderInContext(stagingArea *model.StagingArea,
 	if err != nil {
 		return err
 	}
-	err = v.checkBlueWork(stagingArea, blockHash, header, isBlockWithTrustedData)
+
+	err = v.checkBlueWork(stagingArea, blockHash, header)
 	if err != nil {
 		return err
 	}
-	err = v.checkFinalityPoint(stagingArea, blockHash, header, isBlockWithTrustedData)
+
+	err = v.checkHeaderBlueScore(stagingArea, blockHash, header)
 	if err != nil {
 		return err
+	}
+
+	if !isBlockWithTrustedData {
+		err = v.validateHeaderPruningPoint(stagingArea, blockHash)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -209,9 +217,9 @@ func (v *blockValidator) checkDAAScore(stagingArea *model.StagingArea, blockHash
 }
 
 func (v *blockValidator) checkBlueWork(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash,
-	header externalapi.BlockHeader, isBlockWithTrustedData bool) error {
+	header externalapi.BlockHeader) error {
 
-	ghostdagData, err := v.ghostdagDataStore.Get(v.databaseContext, stagingArea, blockHash, isBlockWithTrustedData)
+	ghostdagData, err := v.ghostdagDataStore.Get(v.databaseContext, stagingArea, blockHash, false)
 	if err != nil {
 		return err
 	}
@@ -222,19 +230,16 @@ func (v *blockValidator) checkBlueWork(stagingArea *model.StagingArea, blockHash
 	return nil
 }
 
-func (v *blockValidator) checkFinalityPoint(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash,
-	header externalapi.BlockHeader, isBlockWithTrustedData bool) error {
+func (v *blockValidator) checkHeaderBlueScore(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash,
+	header externalapi.BlockHeader) error {
 
-	expectedFinalityPoint, err := v.finalityManager.FinalityPoint(stagingArea, blockHash, isBlockWithTrustedData)
+	ghostdagData, err := v.ghostdagDataStore.Get(v.databaseContext, stagingArea, blockHash, false)
 	if err != nil {
 		return err
 	}
-	if expectedFinalityPoint.Equal(model.VirtualGenesisBlockHash) {
-		return nil
-	}
-
-	if !header.FinalityPoint().Equal(expectedFinalityPoint) {
-		return errors.Wrapf(ruleerrors.ErrUnexpectedFinalityPoint, "block finality point of %s is not the expected hash of %s", header.FinalityPoint(), expectedFinalityPoint)
+	if header.BlueScore() != ghostdagData.BlueScore() {
+		return errors.Wrapf(ruleerrors.ErrUnexpectedBlueWork, "block blue work of %d is not the expected "+
+			"value of %d", header.BlueWork(), ghostdagData.BlueScore())
 	}
 	return nil
 }

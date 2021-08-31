@@ -78,8 +78,9 @@ type RPCBlockHeader struct {
 	Bits                 uint32
 	Nonce                uint64
 	DAAScore             uint64
+	BlueScore            uint64
 	BlueWork             string
-	FinalityPoint        string
+	PruningPoint         string
 }
 
 // RPCBlockLevelParents holds parent hashes for one block level

@@ -19,6 +19,7 @@ import (
 
 type blockBuilder struct {
 	databaseContext model.DBManager
+	genesisHash     *externalapi.DomainHash
 
 	difficultyManager     model.DifficultyManager
 	pastMedianTimeManager model.PastMedianTimeManager
@@ -27,6 +28,7 @@ type blockBuilder struct {
 	ghostdagManager       model.GHOSTDAGManager
 	transactionValidator  model.TransactionValidator
 	finalityManager       model.FinalityManager
+	pruningManager        model.PruningManager
 	blockParentBuilder    model.BlockParentBuilder
 
 	acceptanceDataStore model.AcceptanceDataStore
@@ -34,11 +36,14 @@ type blockBuilder struct {
 	multisetStore       model.MultisetStore
 	ghostdagDataStore   model.GHOSTDAGDataStore
 	daaBlocksStore      model.DAABlocksStore
+	pruningStore        model.PruningStore
+	blockHeaderStore    model.BlockHeaderStore
 }
 
 // New creates a new instance of a BlockBuilder
 func New(
 	databaseContext model.DBManager,
+	genesisHash *externalapi.DomainHash,
 
 	difficultyManager model.DifficultyManager,
 	pastMedianTimeManager model.PastMedianTimeManager,
@@ -48,16 +53,21 @@ func New(
 	transactionValidator model.TransactionValidator,
 	finalityManager model.FinalityManager,
 	blockParentBuilder model.BlockParentBuilder,
+	pruningManager model.PruningManager,
 
 	acceptanceDataStore model.AcceptanceDataStore,
 	blockRelationStore model.BlockRelationStore,
 	multisetStore model.MultisetStore,
 	ghostdagDataStore model.GHOSTDAGDataStore,
 	daaBlocksStore model.DAABlocksStore,
+	pruningStore model.PruningStore,
+	blockHeaderStore model.BlockHeaderStore,
 ) model.BlockBuilder {
 
 	return &blockBuilder{
-		databaseContext:       databaseContext,
+		databaseContext: databaseContext,
+		genesisHash:     genesisHash,
+
 		difficultyManager:     difficultyManager,
 		pastMedianTimeManager: pastMedianTimeManager,
 		coinbaseManager:       coinbaseManager,
@@ -66,12 +76,15 @@ func New(
 		transactionValidator:  transactionValidator,
 		finalityManager:       finalityManager,
 		blockParentBuilder:    blockParentBuilder,
+		pruningManager:        pruningManager,
 
 		acceptanceDataStore: acceptanceDataStore,
 		blockRelationStore:  blockRelationStore,
 		multisetStore:       multisetStore,
 		ghostdagDataStore:   ghostdagDataStore,
 		daaBlocksStore:      daaBlocksStore,
+		pruningStore:        pruningStore,
+		blockHeaderStore:    blockHeaderStore,
 	}
 }
 
@@ -201,7 +214,11 @@ func (bb *blockBuilder) buildHeader(stagingArea *model.StagingArea, transactions
 	if err != nil {
 		return nil, err
 	}
-	finalityPoint, err := bb.newBlockFinalityPoint(stagingArea)
+	blueScore, err := bb.newBlockBlueScore(stagingArea)
+	if err != nil {
+		return nil, err
+	}
+	pruningPoint, err := bb.newBlockPruningPoint(stagingArea, model.VirtualBlockHash)
 	if err != nil {
 		return nil, err
 	}
@@ -216,8 +233,9 @@ func (bb *blockBuilder) buildHeader(stagingArea *model.StagingArea, transactions
 		bits,
 		0,
 		daaScore,
+		blueScore,
 		blueWork,
-		finalityPoint,
+		pruningPoint,
 	), nil
 }
 
@@ -313,6 +331,14 @@ func (bb *blockBuilder) newBlockBlueWork(stagingArea *model.StagingArea) (*big.I
 	return virtualGHOSTDAGData.BlueWork(), nil
 }
 
-func (bb *blockBuilder) newBlockFinalityPoint(stagingArea *model.StagingArea) (*externalapi.DomainHash, error) {
-	return bb.finalityManager.VirtualFinalityPoint(stagingArea)
+func (bb *blockBuilder) newBlockBlueScore(stagingArea *model.StagingArea) (uint64, error) {
+	virtualGHOSTDAGData, err := bb.ghostdagDataStore.Get(bb.databaseContext, stagingArea, model.VirtualBlockHash, false)
+	if err != nil {
+		return 0, err
+	}
+	return virtualGHOSTDAGData.BlueScore(), nil
+}
+
+func (bb *blockBuilder) newBlockPruningPoint(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) (*externalapi.DomainHash, error) {
+	return bb.pruningManager.ExpectedHeaderPruningPoint(stagingArea, blockHash)
 }

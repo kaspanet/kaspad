@@ -36,6 +36,7 @@ type blockValidator struct {
 	reachabilityManager   model.ReachabilityManager
 	finalityManager       model.FinalityManager
 	blockParentBuilder    model.BlockParentBuilder
+	pruningManager        model.PruningManager
 
 	blockStore          model.BlockStore
 	ghostdagDataStore   model.GHOSTDAGDataStore
@@ -70,9 +71,9 @@ func New(powMax *big.Int,
 	reachabilityManager model.ReachabilityManager,
 	finalityManager model.FinalityManager,
 	blockParentBuilder model.BlockParentBuilder,
+	pruningManager model.PruningManager,
 
 	pruningStore model.PruningStore,
-
 	blockStore model.BlockStore,
 	ghostdagDataStore model.GHOSTDAGDataStore,
 	blockHeaderStore model.BlockHeaderStore,
@@ -106,6 +107,7 @@ func New(powMax *big.Int,
 		reachabilityManager:         reachabilityManager,
 		finalityManager:             finalityManager,
 		blockParentBuilder:          blockParentBuilder,
+		pruningManager:              pruningManager,
 
 		pruningStore:        pruningStore,
 		blockStore:          blockStore,

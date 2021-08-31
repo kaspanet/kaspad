@@ -5,15 +5,17 @@ import "github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 // PruningStore represents a store for the current pruning state
 type PruningStore interface {
 	Store
-	StagePruningPoint(stagingArea *StagingArea, pruningPointBlockHash *externalapi.DomainHash)
-	StagePreviousPruningPoint(stagingArea *StagingArea, oldPruningPointBlockHash *externalapi.DomainHash)
+	StagePruningPoint(dbContext DBWriter, stagingArea *StagingArea, pruningPointBlockHash *externalapi.DomainHash) error
+	StagePruningPointByIndex(dbContext DBReader, stagingArea *StagingArea,
+		pruningPointBlockHash *externalapi.DomainHash, index uint64) error
 	StagePruningPointCandidate(stagingArea *StagingArea, candidate *externalapi.DomainHash)
 	IsStaged(stagingArea *StagingArea) bool
 	PruningPointCandidate(dbContext DBReader, stagingArea *StagingArea) (*externalapi.DomainHash, error)
 	HasPruningPointCandidate(dbContext DBReader, stagingArea *StagingArea) (bool, error)
-	PreviousPruningPoint(dbContext DBReader, stagingArea *StagingArea) (*externalapi.DomainHash, error)
 	PruningPoint(dbContext DBReader, stagingArea *StagingArea) (*externalapi.DomainHash, error)
 	HasPruningPoint(dbContext DBReader, stagingArea *StagingArea) (bool, error)
+	CurrentPruningPointIndex(dbContext DBReader, stagingArea *StagingArea) (uint64, error)
+	PruningPointByIndex(dbContext DBReader, stagingArea *StagingArea, index uint64) (*externalapi.DomainHash, error)
 
 	StageStartUpdatingPruningPointUTXOSet(stagingArea *StagingArea)
 	HadStartedUpdatingPruningPointUTXOSet(dbContext DBWriter) (bool, error)

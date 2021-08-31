@@ -19,7 +19,8 @@ message DbBlockHeader {
   uint64 nonce = 8;
   uint64 daaScore = 9;
   bytes blueWork = 10;
-  DbHash finalityPoint = 11;
+  DbHash pruningPoint = 12;
+  uint64 blueScore = 13;
 }
 
 message DbBlockLevelParents {

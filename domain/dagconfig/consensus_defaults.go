@@ -38,7 +38,7 @@ const (
 	defaultMaxBlockParents = 10
 	// defaultGHOSTDAGK is a bound on the number of blue blocks in the anticone of a blue block. Approximates the maximal
 	// width of the network.
-	// Formula (1) in section 4.2 of the PHATOM paper shows how to calculate defaultGHOSTDAGK. The delta term represents a bound
+	// Formula (1) in section 4.2 of the PHANTOM paper shows how to calculate defaultGHOSTDAGK. The delta term represents a bound
 	// on the expected fraction of the network life in which the width was higher than defaultGHOSTDAGK. The current value of K
 	// was calculated for d = 5 seconds and delta = 0.05.
 	defaultGHOSTDAGK = 18

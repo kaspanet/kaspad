@@ -163,7 +163,6 @@ func (csm *consensusStateManager) applyMergeSetBlocks(stagingArea *model.Staging
 
 	for i, mergeSetBlock := range mergeSetBlocks {
 		mergeSetBlockHash := consensushashing.BlockHash(mergeSetBlock)
-		log.Tracef("Applying merge set block %s", mergeSetBlockHash)
 		blockAcceptanceData := &externalapi.BlockAcceptanceData{
 			BlockHash:                 mergeSetBlockHash,
 			TransactionAcceptanceData: make([]*externalapi.TransactionAcceptanceData, len(mergeSetBlock.Transactions)),

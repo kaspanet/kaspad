@@ -46,9 +46,13 @@ var (
 	// the expected value.
 	ErrUnexpectedFinalityPoint = newRuleError("ErrUnexpectedFinalityPoint")
 
-	// ErrUnexpectedBlueScore indicates specified blue score does not align with
+	// ErrUnexpectedCoinbaseBlueScore indicates specified blue score in the coinbase does not align with
 	// the expected value.
-	ErrUnexpectedBlueScore = newRuleError("ErrUnexpectedBlueScore")
+	ErrUnexpectedCoinbaseBlueScore = newRuleError("ErrUnexpectedCoinbaseBlueScore")
+
+	// ErrUnexpectedHeaderBlueScore indicates specified blue score in the header does not align with
+	// the expected value.
+	ErrUnexpectedHeaderBlueScore = newRuleError("ErrUnexpectedHeaderBlueScore")
 
 	// ErrTargetTooHigh indicates specified bits do not align with
 	// the expected value either because it is above the valid
@@ -200,6 +204,8 @@ var (
 
 	ErrUnexpectedPruningPoint = newRuleError("ErrUnexpectedPruningPoint")
 
+	ErrInvalidPruningPointsChain = newRuleError("ErrInvalidPruningPointsChain")
+
 	ErrSuggestedPruningViolatesFinality = newRuleError("ErrSuggestedPruningViolatesFinality")
 
 	//ErrBlockVersionIsUnknown indicates that the block version is unknown.
@@ -218,6 +224,10 @@ var (
 	ErrGenesisOnInitializedConsensus = newRuleError("ErrGenesisOnInitializedConsensus")
 
 	ErrPruningPointSelectedChildDisqualifiedFromChain = newRuleError("ErrPruningPointSelectedChildDisqualifiedFromChain")
+
+	// ErrUnexpectedFinalityPoint indicates a block header pruning point does not align with
+	// the expected value.
+	ErrUnexpectedHeaderPruningPoint = newRuleError("ErrUnexpectedHeaderPruningPoint")
 )
 
 // RuleError identifies a rule violation. It is used to indicate that
