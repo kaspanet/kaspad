@@ -12,6 +12,7 @@ import (
 	"github.com/kaspanet/kaspad/infrastructure/logger"
 	"github.com/pkg/errors"
 	"math/big"
+	"sort"
 )
 
 type testBlockBuilder struct {
@@ -85,6 +86,12 @@ func (bb *testBlockBuilder) buildUTXOInvalidHeader(stagingArea *model.StagingAre
 	parents, err := bb.blockParentBuilder.BuildParents(stagingArea, parentHashes)
 	if err != nil {
 		return nil, err
+	}
+
+	for _, blockLevelParents := range parents {
+		sort.Slice(blockLevelParents, func(i, j int) bool {
+			return blockLevelParents[i].Less(blockLevelParents[j])
+		})
 	}
 
 	bb.nonceCounter++

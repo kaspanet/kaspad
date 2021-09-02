@@ -191,6 +191,9 @@ func (v *blockValidator) checkMergeSizeLimit(stagingArea *model.StagingArea, has
 }
 
 func (v *blockValidator) checkIndirectParents(stagingArea *model.StagingArea, header externalapi.BlockHeader) error {
+	// TODO: Return this validation once saving 2m blocks in the past of the pruning point.
+	return nil
+
 	expectedParents, err := v.blockParentBuilder.BuildParents(stagingArea, header.DirectParents())
 	if err != nil {
 		return err
