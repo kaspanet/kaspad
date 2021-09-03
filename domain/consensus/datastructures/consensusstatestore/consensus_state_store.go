@@ -1,17 +1,17 @@
 package consensusstatestore
 
 import (
-	"github.com/kaspanet/kaspad/domain/consensus/database"
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/utxolrucache"
-	"github.com/kaspanet/kaspad/domain/prefixmanager/prefix"
+	"github.com/kaspanet/kaspad/util/staging"
 )
 
 var importingPruningPointUTXOSetKeyName = []byte("importing-pruning-point-utxo-set")
 
 // consensusStateStore represents a store for the current consensus state
 type consensusStateStore struct {
+	shardID                         model.StagingShardID
 	virtualUTXOSetCache             *utxolrucache.LRUCache
 	tipsCache                       []*externalapi.DomainHash
 	tipsKey                         model.DBKey
@@ -20,12 +20,13 @@ type consensusStateStore struct {
 }
 
 // New instantiates a new ConsensusStateStore
-func New(prefix *prefix.Prefix, utxoSetCacheSize int, preallocate bool) model.ConsensusStateStore {
+func New(prefixBucket model.DBBucket, utxoSetCacheSize int, preallocate bool) model.ConsensusStateStore {
 	return &consensusStateStore{
+		shardID:                         staging.GenerateShardingID(),
 		virtualUTXOSetCache:             utxolrucache.New(utxoSetCacheSize, preallocate),
-		tipsKey:                         database.MakeBucket(prefix.Serialize()).Key(tipsKeyName),
-		importingPruningPointUTXOSetKey: database.MakeBucket(prefix.Serialize()).Key(importingPruningPointUTXOSetKeyName),
-		utxoSetBucket:                   database.MakeBucket(prefix.Serialize()).Bucket(utxoSetBucketName),
+		tipsKey:                         prefixBucket.Key(tipsKeyName),
+		importingPruningPointUTXOSetKey: prefixBucket.Key(importingPruningPointUTXOSetKeyName),
+		utxoSetBucket:                   prefixBucket.Bucket(utxoSetBucketName),
 	}
 }
 

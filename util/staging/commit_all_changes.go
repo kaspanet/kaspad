@@ -3,6 +3,7 @@ package staging
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/infrastructure/logger"
+	"sync/atomic"
 )
 
 // CommitAllChanges creates a transaction in `databaseContext`, and commits all changes in `stagingArea` through it.
@@ -21,4 +22,10 @@ func CommitAllChanges(databaseContext model.DBManager, stagingArea *model.Stagin
 	}
 
 	return dbTx.Commit()
+}
+
+var lastShardingID uint64
+
+func GenerateShardingID() model.StagingShardID {
+	return model.StagingShardID(atomic.AddUint64(&lastShardingID, 1))
 }

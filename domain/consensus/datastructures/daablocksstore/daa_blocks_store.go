@@ -1,12 +1,11 @@
 package daablocksstore
 
 import (
-	"github.com/kaspanet/kaspad/domain/consensus/database"
 	"github.com/kaspanet/kaspad/domain/consensus/database/binaryserialization"
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/lrucache"
-	"github.com/kaspanet/kaspad/domain/prefixmanager/prefix"
+	"github.com/kaspanet/kaspad/util/staging"
 )
 
 var daaScoreBucketName = []byte("daa-score")
@@ -14,6 +13,7 @@ var daaAddedBlocksBucketName = []byte("daa-added-blocks")
 
 // daaBlocksStore represents a store of DAABlocksStore
 type daaBlocksStore struct {
+	shardID                model.StagingShardID
 	daaScoreLRUCache       *lrucache.LRUCache
 	daaAddedBlocksLRUCache *lrucache.LRUCache
 	daaScoreBucket         model.DBBucket
@@ -21,12 +21,13 @@ type daaBlocksStore struct {
 }
 
 // New instantiates a new DAABlocksStore
-func New(prefix *prefix.Prefix, daaScoreCacheSize int, daaAddedBlocksCacheSize int, preallocate bool) model.DAABlocksStore {
+func New(prefixBucket model.DBBucket, daaScoreCacheSize int, daaAddedBlocksCacheSize int, preallocate bool) model.DAABlocksStore {
 	return &daaBlocksStore{
+		shardID:                staging.GenerateShardingID(),
 		daaScoreLRUCache:       lrucache.New(daaScoreCacheSize, preallocate),
 		daaAddedBlocksLRUCache: lrucache.New(daaAddedBlocksCacheSize, preallocate),
-		daaScoreBucket:         database.MakeBucket(prefix.Serialize()).Bucket(daaScoreBucketName),
-		daaAddedBlocksBucket:   database.MakeBucket(prefix.Serialize()).Bucket(daaAddedBlocksBucketName),
+		daaScoreBucket:         prefixBucket.Bucket(daaScoreBucketName),
+		daaAddedBlocksBucket:   prefixBucket.Bucket(daaAddedBlocksBucketName),
 	}
 }
 

@@ -2,24 +2,25 @@ package headersselectedtipstore
 
 import (
 	"github.com/golang/protobuf/proto"
-	"github.com/kaspanet/kaspad/domain/consensus/database"
 	"github.com/kaspanet/kaspad/domain/consensus/database/serialization"
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
-	"github.com/kaspanet/kaspad/domain/prefixmanager/prefix"
+	"github.com/kaspanet/kaspad/util/staging"
 )
 
 var keyName = []byte("headers-selected-tip")
 
 type headerSelectedTipStore struct {
-	cache *externalapi.DomainHash
-	key   model.DBKey
+	shardID model.StagingShardID
+	cache   *externalapi.DomainHash
+	key     model.DBKey
 }
 
 // New instantiates a new HeaderSelectedTipStore
-func New(prefix *prefix.Prefix) model.HeaderSelectedTipStore {
+func New(prefixBucket model.DBBucket) model.HeaderSelectedTipStore {
 	return &headerSelectedTipStore{
-		key: database.MakeBucket(prefix.Serialize()).Key(keyName),
+		shardID: staging.GenerateShardingID(),
+		key:     prefixBucket.Key(keyName),
 	}
 }
 

@@ -3,6 +3,7 @@ package blockprocessor_test
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/pow"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/txscript"
 	"github.com/kaspanet/kaspad/domain/dagconfig"
 	"math"
@@ -26,6 +27,14 @@ func addBlock(tc testapi.TestConsensus, parentHashes []*externalapi.DomainHash, 
 	}
 
 	blockHash := consensushashing.BlockHash(block)
+
+	proofOfWorkValue := pow.CalculateProofOfWorkValue(block.Header.ToMutable())
+	for blockLevel := 0; ; blockLevel++ {
+		if proofOfWorkValue.Bit(blockLevel+1) != 0 {
+			t.Logf("block %s parents %s level %d ", blockHash, block.Header.DirectParents(), blockLevel)
+			break
+		}
+	}
 
 	_, err = tc.ValidateAndInsertBlock(block, true)
 	if err != nil {
@@ -75,7 +84,7 @@ func TestValidateAndInsertImportedPruningPoint(t *testing.T) {
 				t.Fatalf("GetHashesBetween: %+v", err)
 			}
 
-			for _, blocksHash := range missingHeaderHashes {
+			for i, blocksHash := range missingHeaderHashes {
 				blockInfo, err := tcSyncee.GetBlockInfo(blocksHash)
 				if err != nil {
 					t.Fatalf("GetBlockInfo: %+v", err)
@@ -92,7 +101,7 @@ func TestValidateAndInsertImportedPruningPoint(t *testing.T) {
 
 				_, err = tcSyncee.ValidateAndInsertBlock(&externalapi.DomainBlock{Header: header}, false)
 				if err != nil {
-					t.Fatalf("ValidateAndInsertBlock: %+v", err)
+					t.Fatalf("ValidateAndInsertBlock %d: %+v", i, err)
 				}
 			}
 
@@ -279,10 +288,13 @@ func TestValidateAndInsertImportedPruningPoint(t *testing.T) {
 			t.Fatalf("PruningPoint: %+v", err)
 		}
 
+		t.Logf("Pruning point %s", pruningPoint)
+
 		if !pruningPoint.Equal(nextPruningPoint) {
 			t.Fatalf("Unexpected pruning point %s", pruningPoint)
 		}
 
+		t.Logf("~~~~~~~~~~~~~~")
 		syncConsensuses(tcSyncer, tcSyncee1)
 
 		// Test a situation where a consensus with pruned headers syncs another fresh consensus.

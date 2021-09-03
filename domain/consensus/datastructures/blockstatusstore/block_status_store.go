@@ -2,27 +2,28 @@ package blockstatusstore
 
 import (
 	"github.com/golang/protobuf/proto"
-	"github.com/kaspanet/kaspad/domain/consensus/database"
 	"github.com/kaspanet/kaspad/domain/consensus/database/serialization"
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/lrucache"
-	"github.com/kaspanet/kaspad/domain/prefixmanager/prefix"
+	"github.com/kaspanet/kaspad/util/staging"
 )
 
 var bucketName = []byte("block-statuses")
 
 // blockStatusStore represents a store of BlockStatuses
 type blockStatusStore struct {
-	cache  *lrucache.LRUCache
-	bucket model.DBBucket
+	shardID model.StagingShardID
+	cache   *lrucache.LRUCache
+	bucket  model.DBBucket
 }
 
 // New instantiates a new BlockStatusStore
-func New(prefix *prefix.Prefix, cacheSize int, preallocate bool) model.BlockStatusStore {
+func New(prefixBucket model.DBBucket, cacheSize int, preallocate bool) model.BlockStatusStore {
 	return &blockStatusStore{
-		cache:  lrucache.New(cacheSize, preallocate),
-		bucket: database.MakeBucket(prefix.Serialize()).Bucket(bucketName),
+		shardID: staging.GenerateShardingID(),
+		cache:   lrucache.New(cacheSize, preallocate),
+		bucket:  prefixBucket.Bucket(bucketName),
 	}
 }
 

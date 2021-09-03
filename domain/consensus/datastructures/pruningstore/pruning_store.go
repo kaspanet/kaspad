@@ -9,7 +9,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/lrucacheuint64tohash"
-	"github.com/kaspanet/kaspad/domain/prefixmanager/prefix"
+	"github.com/kaspanet/kaspad/util/staging"
 )
 
 var currentPruningPointIndexKeyName = []byte("pruning-block-index")
@@ -20,6 +20,7 @@ var pruningPointByIndexBucketName = []byte("pruning-point-by-index")
 
 // pruningStore represents a store for the current pruning state
 type pruningStore struct {
+	shardID                       model.StagingShardID
 	pruningPointByIndexCache      *lrucacheuint64tohash.LRUCache
 	currentPruningPointIndexCache *uint64
 	pruningPointCandidateCache    *externalapi.DomainHash
@@ -34,16 +35,17 @@ type pruningStore struct {
 }
 
 // New instantiates a new PruningStore
-func New(prefix *prefix.Prefix, cacheSize int, preallocate bool) model.PruningStore {
+func New(prefixBucket model.DBBucket, cacheSize int, preallocate bool) model.PruningStore {
 	return &pruningStore{
+		shardID:                         staging.GenerateShardingID(),
 		pruningPointByIndexCache:        lrucacheuint64tohash.New(cacheSize, preallocate),
-		currentPruningPointIndexKey:     database.MakeBucket(prefix.Serialize()).Key(currentPruningPointIndexKeyName),
-		candidatePruningPointHashKey:    database.MakeBucket(prefix.Serialize()).Key(candidatePruningPointHashKeyName),
-		pruningPointUTXOSetBucket:       database.MakeBucket(prefix.Serialize()).Bucket(pruningPointUTXOSetBucketName),
-		importedPruningPointUTXOsBucket: database.MakeBucket(prefix.Serialize()).Bucket(importedPruningPointUTXOsBucketName),
-		updatingPruningPointUTXOSetKey:  database.MakeBucket(prefix.Serialize()).Key(updatingPruningPointUTXOSetKeyName),
-		importedPruningPointMultisetKey: database.MakeBucket(prefix.Serialize()).Key(importedPruningPointMultisetKeyName),
-		pruningPointByIndexBucket:       database.MakeBucket(prefix.Serialize()).Bucket(pruningPointByIndexBucketName),
+		currentPruningPointIndexKey:     prefixBucket.Key(currentPruningPointIndexKeyName),
+		candidatePruningPointHashKey:    prefixBucket.Key(candidatePruningPointHashKeyName),
+		pruningPointUTXOSetBucket:       prefixBucket.Bucket(pruningPointUTXOSetBucketName),
+		importedPruningPointUTXOsBucket: prefixBucket.Bucket(importedPruningPointUTXOsBucketName),
+		updatingPruningPointUTXOSetKey:  prefixBucket.Key(updatingPruningPointUTXOSetKeyName),
+		importedPruningPointMultisetKey: prefixBucket.Key(importedPruningPointMultisetKeyName),
+		pruningPointByIndexBucket:       prefixBucket.Bucket(pruningPointByIndexBucketName),
 	}
 }
 

@@ -13,7 +13,7 @@ type utxoDiffStagingShard struct {
 }
 
 func (uds *utxoDiffStore) stagingShard(stagingArea *model.StagingArea) *utxoDiffStagingShard {
-	return stagingArea.GetOrCreateShard(model.StagingShardIDUTXODiff, func() model.StagingShard {
+	return stagingArea.GetOrCreateShard(uds.shardID, func() model.StagingShard {
 		return &utxoDiffStagingShard{
 			store:              uds,
 			utxoDiffToAdd:      make(map[externalapi.DomainHash]externalapi.UTXODiff),

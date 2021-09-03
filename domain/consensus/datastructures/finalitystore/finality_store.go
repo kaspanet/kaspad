@@ -1,25 +1,24 @@
 package finalitystore
 
 import (
-	"github.com/kaspanet/kaspad/domain/consensus/database"
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/lrucache"
-	"github.com/kaspanet/kaspad/domain/prefixmanager/prefix"
 )
 
 var bucketName = []byte("finality-points")
 
 type finalityStore struct {
-	cache  *lrucache.LRUCache
-	bucket model.DBBucket
+	shardID model.StagingShardID
+	cache   *lrucache.LRUCache
+	bucket  model.DBBucket
 }
 
 // New instantiates a new FinalityStore
-func New(prefix *prefix.Prefix, cacheSize int, preallocate bool) model.FinalityStore {
+func New(prefixBucket model.DBBucket, cacheSize int, preallocate bool) model.FinalityStore {
 	return &finalityStore{
 		cache:  lrucache.New(cacheSize, preallocate),
-		bucket: database.MakeBucket(prefix.Serialize()).Bucket(bucketName),
+		bucket: prefixBucket.Bucket(bucketName),
 	}
 }
 

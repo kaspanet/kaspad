@@ -23,7 +23,7 @@ type ghostdagDataStagingShard struct {
 }
 
 func (gds *ghostdagDataStore) stagingShard(stagingArea *model.StagingArea) *ghostdagDataStagingShard {
-	return stagingArea.GetOrCreateShard(model.StagingShardIDGHOSTDAG, func() model.StagingShard {
+	return stagingArea.GetOrCreateShard(gds.shardID, func() model.StagingShard {
 		return &ghostdagDataStagingShard{
 			store: gds,
 			toAdd: make(map[key]*externalapi.BlockGHOSTDAGData),

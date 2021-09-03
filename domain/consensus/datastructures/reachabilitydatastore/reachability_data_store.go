@@ -2,12 +2,11 @@ package reachabilitydatastore
 
 import (
 	"github.com/golang/protobuf/proto"
-	"github.com/kaspanet/kaspad/domain/consensus/database"
 	"github.com/kaspanet/kaspad/domain/consensus/database/serialization"
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/lrucache"
-	"github.com/kaspanet/kaspad/domain/prefixmanager/prefix"
+	"github.com/kaspanet/kaspad/util/staging"
 )
 
 var reachabilityDataBucketName = []byte("reachability-data")
@@ -15,6 +14,7 @@ var reachabilityReindexRootKeyName = []byte("reachability-reindex-root")
 
 // reachabilityDataStore represents a store of ReachabilityData
 type reachabilityDataStore struct {
+	shardID                      model.StagingShardID
 	reachabilityDataCache        *lrucache.LRUCache
 	reachabilityReindexRootCache *externalapi.DomainHash
 
@@ -23,11 +23,12 @@ type reachabilityDataStore struct {
 }
 
 // New instantiates a new ReachabilityDataStore
-func New(prefix *prefix.Prefix, cacheSize int, preallocate bool) model.ReachabilityDataStore {
+func New(prefixBucket model.DBBucket, cacheSize int, preallocate bool) model.ReachabilityDataStore {
 	return &reachabilityDataStore{
+		shardID:                    staging.GenerateShardingID(),
 		reachabilityDataCache:      lrucache.New(cacheSize, preallocate),
-		reachabilityDataBucket:     database.MakeBucket(prefix.Serialize()).Bucket(reachabilityDataBucketName),
-		reachabilityReindexRootKey: database.MakeBucket(prefix.Serialize()).Key(reachabilityReindexRootKeyName),
+		reachabilityDataBucket:     prefixBucket.Bucket(reachabilityDataBucketName),
+		reachabilityReindexRootKey: prefixBucket.Key(reachabilityReindexRootKeyName),
 	}
 }
 
