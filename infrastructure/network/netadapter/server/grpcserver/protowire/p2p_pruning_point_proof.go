@@ -3,6 +3,7 @@ package protowire
 import (
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/pkg/errors"
+	"math/big"
 )
 
 func (x *KaspadMessage_PruningPointProof) toAppMessage() (appmessage.Message, error) {
@@ -23,7 +24,8 @@ func (x *KaspadMessage_PruningPointProof) toAppMessage() (appmessage.Message, er
 		}
 	}
 	return &appmessage.MsgPruningPointProof{
-		Headers: blockHeaders,
+		Headers:              blockHeaders,
+		PruningPointBlueWork: big.NewInt(0).SetBytes(x.PruningPointProof.PruningPointBlueWork),
 	}, nil
 }
 
@@ -38,7 +40,8 @@ func (x *KaspadMessage_PruningPointProof) fromAppMessage(msgPruningPointProof *a
 	}
 
 	x.PruningPointProof = &PruningPointProofMessage{
-		Headers: blockHeaders,
+		Headers:              blockHeaders,
+		PruningPointBlueWork: msgPruningPointProof.PruningPointBlueWork.Bytes(),
 	}
 	return nil
 }

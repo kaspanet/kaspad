@@ -255,4 +255,5 @@ message RequestPruningPointProofMessage {
 
 message PruningPointProofMessage {
   repeated BlockHeader headers = 1;
+  bytes pruningPointBlueWork = 2;
 }

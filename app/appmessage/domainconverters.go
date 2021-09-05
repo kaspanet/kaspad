@@ -527,7 +527,8 @@ func MsgPruningPointProofToDomainPruningPointProof(pruningPointProofMessage *Msg
 		headers[i] = BlockHeaderToDomainBlockHeader(header)
 	}
 	return &externalapi.PruningPointProof{
-		Headers: headers,
+		Headers:              headers,
+		PruningPointBlueWork: pruningPointProofMessage.PruningPointBlueWork,
 	}
 }
 
@@ -537,6 +538,7 @@ func DomainPruningPointProofToMsgPruningPointProof(pruningPointProof *externalap
 		headers[i] = DomainBlockHeaderToBlockHeader(header)
 	}
 	return &MsgPruningPointProof{
-		Headers: headers,
+		Headers:              headers,
+		PruningPointBlueWork: pruningPointProof.PruningPointBlueWork,
 	}
 }
