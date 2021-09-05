@@ -66,6 +66,8 @@ const (
 	CmdIBDBlock
 	CmdRequestIBDBlocks
 	CmdPruningPoints
+	CmdRequestPruningPointProof
+	CmdPruningPointProof
 
 	// rpc
 	CmdGetCurrentNetworkRequestMessage
@@ -185,6 +187,8 @@ var ProtocolMessageCommandToString = map[MessageCommand]string{
 	CmdIBDBlock:                            "IBDBlock",
 	CmdRequestIBDBlocks:                    "RequestIBDBlocks",
 	CmdPruningPoints:                       "PruningPoints",
+	CmdRequestPruningPointProof:            "RequestPruningPointProof",
+	CmdPruningPointProof:                   "PruningPointProof",
 }
 
 // RPCMessageCommandToString maps all MessageCommands to their string representation

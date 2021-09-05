@@ -520,3 +520,23 @@ func DomainBlockWithTrustedDataToBlockWithTrustedData(block *externalapi.BlockWi
 		GHOSTDAGData: ghostdagData,
 	}
 }
+
+func MsgPruningPointProofToDomainPruningPointProof(pruningPointProofMessage *MsgPruningPointProof) *externalapi.PruningPointProof {
+	headers := make([]externalapi.BlockHeader, len(pruningPointProofMessage.Headers))
+	for i, header := range pruningPointProofMessage.Headers {
+		headers[i] = BlockHeaderToDomainBlockHeader(header)
+	}
+	return &externalapi.PruningPointProof{
+		Headers: headers,
+	}
+}
+
+func DomainPruningPointProofToMsgPruningPointProof(pruningPointProof *externalapi.PruningPointProof) *MsgPruningPointProof {
+	headers := make([]*MsgBlockHeader, len(pruningPointProof.Headers))
+	for i, header := range pruningPointProof.Headers {
+		headers[i] = DomainBlockHeaderToBlockHeader(header)
+	}
+	return &MsgPruningPointProof{
+		Headers: headers,
+	}
+}
