@@ -88,13 +88,27 @@ func (flow *handleRelayInvsFlow) checkIfHighHashHasMoreBlueWorkThanSelectedTip(h
 	return msgBlockBlueWork.BlueWork.Cmp(headersSelectedTipInfo.BlueWork) > 0, nil
 }
 
-func (flow *handleRelayInvsFlow) downloadHeadersProof() error {
-	// TODO: Implement headers proof mechanism
-	return nil
+func (flow *handleRelayInvsFlow) syncAndValidatePruningPointProof() error {
+	log.Infof("Downloading the pruning point proof from %s", flow.peer)
+	err := flow.outgoingRoute.Enqueue(appmessage.NewMsgRequestPruningPointProof())
+	if err != nil {
+		return err
+	}
+	message, err := flow.dequeueIncomingMessageAndSkipInvs(common.DefaultTimeout)
+	if err != nil {
+		return err
+	}
+	pruningPointProofMessage, ok := message.(*appmessage.MsgPruningPointProof)
+	if !ok {
+		return protocolerrors.Errorf(true, "received unexpected message type. "+
+			"expected: %s, got: %s", appmessage.CmdPruningPointProof, message.Command())
+	}
+	pruningPointProof := appmessage.MsgPruningPointProofToDomainPruningPointProof(pruningPointProofMessage)
+	return flow.Domain().Consensus().ValidatePruningPointProof(pruningPointProof)
 }
 
 func (flow *handleRelayInvsFlow) downloadHeadersAndPruningUTXOSet(highHash *externalapi.DomainHash) error {
-	err := flow.downloadHeadersProof()
+	err := flow.syncAndValidatePruningPointProof()
 	if err != nil {
 		return err
 	}
@@ -131,7 +145,6 @@ func (flow *handleRelayInvsFlow) downloadHeadersAndPruningUTXOSet(highHash *exte
 }
 
 func (flow *handleRelayInvsFlow) syncPruningPointsAndPruningPointAnticone() (*externalapi.DomainHash, error) {
-
 	log.Infof("Downloading the past pruning points and the pruning point anticone from %s", flow.peer)
 	err := flow.outgoingRoute.Enqueue(appmessage.NewMsgRequestPruningPointAndItsAnticone())
 	if err != nil {

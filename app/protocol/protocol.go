@@ -173,6 +173,7 @@ func (m *Manager) registerBlockRelayFlows(router *routerpkg.Router, isStopping *
 			appmessage.CmdBlockHeaders, appmessage.CmdIBDBlockLocatorHighestHash, appmessage.CmdBlockWithTrustedData,
 			appmessage.CmdDoneBlocksWithTrustedData, appmessage.CmdIBDBlockLocatorHighestHashNotFound,
 			appmessage.CmdDonePruningPointUTXOSetChunks, appmessage.CmdIBDBlock, appmessage.CmdPruningPoints,
+			appmessage.CmdPruningPointProof,
 		},
 			isStopping, errChan, func(incomingRoute *routerpkg.Route, peer *peerpkg.Peer) error {
 				return blockrelay.HandleRelayInvs(m.context, incomingRoute,
@@ -233,6 +234,13 @@ func (m *Manager) registerBlockRelayFlows(router *routerpkg.Router, isStopping *
 			[]appmessage.MessageCommand{appmessage.CmdIBDBlockLocator}, isStopping, errChan,
 			func(incomingRoute *routerpkg.Route, peer *peerpkg.Peer) error {
 				return blockrelay.HandleIBDBlockLocator(m.context, incomingRoute, outgoingRoute, peer)
+			},
+		),
+
+		m.registerFlow("HandlePruningPointProofRequests", router,
+			[]appmessage.MessageCommand{appmessage.CmdRequestPruningPointProof}, isStopping, errChan,
+			func(incomingRoute *routerpkg.Route, peer *peerpkg.Peer) error {
+				return blockrelay.HandlePruningPointProofRequests(m.context, incomingRoute, outgoingRoute, peer)
 			},
 		),
 	}

@@ -722,3 +722,23 @@ func (s *consensus) ResolveVirtual() error {
 		}
 	}
 }
+
+func (s *consensus) BuildPruningPointProof() (*externalapi.PruningPointProof, error) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	// TODO: Implement this
+
+	return &externalapi.PruningPointProof{
+		Headers: [][]externalapi.BlockHeader{},
+	}, nil
+}
+
+func (s *consensus) ValidatePruningPointProof(pruningPointProof *externalapi.PruningPointProof) error {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	// TODO: Implement this
+
+	return nil
+}
