@@ -254,5 +254,9 @@ message RequestPruningPointProofMessage {
 }
 
 message PruningPointProofMessage {
+  repeated PruningPointProofHeaderArray headers = 1;
+}
+
+message PruningPointProofHeaderArray {
   repeated BlockHeader headers = 1;
 }

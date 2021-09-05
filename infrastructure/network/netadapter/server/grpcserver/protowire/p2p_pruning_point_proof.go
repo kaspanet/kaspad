@@ -14,12 +14,15 @@ func (x *KaspadMessage_PruningPointProof) toAppMessage() (appmessage.Message, er
 		return nil, errors.Wrapf(errorNil, "x.PruningPointProof is nil")
 	}
 
-	blockHeaders := make([]*appmessage.MsgBlockHeader, len(x.PruningPointProof.Headers))
-	for i, blockHeader := range x.PruningPointProof.Headers {
-		var err error
-		blockHeaders[i], err = blockHeader.toAppMessage()
-		if err != nil {
-			return nil, err
+	blockHeaders := make([][]*appmessage.MsgBlockHeader, len(x.PruningPointProof.Headers))
+	for i, blockHeaderArray := range x.PruningPointProof.Headers {
+		blockHeaders[i] = make([]*appmessage.MsgBlockHeader, len(blockHeaderArray.Headers))
+		for j, blockHeader := range blockHeaderArray.Headers {
+			var err error
+			blockHeaders[i][j], err = blockHeader.toAppMessage()
+			if err != nil {
+				return nil, err
+			}
 		}
 	}
 	return &appmessage.MsgPruningPointProof{
@@ -28,12 +31,15 @@ func (x *KaspadMessage_PruningPointProof) toAppMessage() (appmessage.Message, er
 }
 
 func (x *KaspadMessage_PruningPointProof) fromAppMessage(msgPruningPointProof *appmessage.MsgPruningPointProof) error {
-	blockHeaders := make([]*BlockHeader, len(msgPruningPointProof.Headers))
-	for i, blockHeader := range msgPruningPointProof.Headers {
-		blockHeaders[i] = &BlockHeader{}
-		err := blockHeaders[i].fromAppMessage(blockHeader)
-		if err != nil {
-			return err
+	blockHeaders := make([]*PruningPointProofHeaderArray, len(msgPruningPointProof.Headers))
+	for i, blockHeaderArray := range msgPruningPointProof.Headers {
+		blockHeaders[i] = &PruningPointProofHeaderArray{Headers: make([]*BlockHeader, len(blockHeaderArray))}
+		for j, blockHeader := range blockHeaderArray {
+			blockHeaders[i].Headers[j] = &BlockHeader{}
+			err := blockHeaders[i].Headers[j].fromAppMessage(blockHeader)
+			if err != nil {
+				return err
+			}
 		}
 	}
 
