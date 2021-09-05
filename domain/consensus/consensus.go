@@ -728,7 +728,8 @@ func (s *consensus) BuildPruningPointProof() (*externalapi.PruningPointProof, er
 	defer s.lock.Unlock()
 
 	return &externalapi.PruningPointProof{
-		Headers: []externalapi.BlockHeader{},
+		Headers:              []externalapi.BlockHeader{},
+		PruningPointBlueWork: big.NewInt(0),
 	}, nil
 }
 
