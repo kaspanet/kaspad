@@ -4,7 +4,7 @@ package appmessage
 type MsgPruningPointProof struct {
 	baseMessage
 
-	Headers []*MsgBlockHeader
+	Headers [][]*MsgBlockHeader
 }
 
 // Command returns the protocol command string for the message
@@ -13,7 +13,7 @@ func (msg *MsgPruningPointProof) Command() MessageCommand {
 }
 
 // NewMsgPruningPointProof returns a new MsgPruningPointProof.
-func NewMsgPruningPointProof(headers []*MsgBlockHeader) *MsgPruningPointProof {
+func NewMsgPruningPointProof(headers [][]*MsgBlockHeader) *MsgPruningPointProof {
 	return &MsgPruningPointProof{
 		Headers: headers,
 	}

@@ -523,9 +523,12 @@ func DomainBlockWithTrustedDataToBlockWithTrustedData(block *externalapi.BlockWi
 
 // MsgPruningPointProofToDomainPruningPointProof converts *MsgPruningPointProof to *externalapi.PruningPointProof
 func MsgPruningPointProofToDomainPruningPointProof(pruningPointProofMessage *MsgPruningPointProof) *externalapi.PruningPointProof {
-	headers := make([]externalapi.BlockHeader, len(pruningPointProofMessage.Headers))
-	for i, header := range pruningPointProofMessage.Headers {
-		headers[i] = BlockHeaderToDomainBlockHeader(header)
+	headers := make([][]externalapi.BlockHeader, len(pruningPointProofMessage.Headers))
+	for blockLevel, blockLevelParents := range pruningPointProofMessage.Headers {
+		headers[blockLevel] = make([]externalapi.BlockHeader, len(blockLevelParents))
+		for i, header := range blockLevelParents {
+			headers[blockLevel][i] = BlockHeaderToDomainBlockHeader(header)
+		}
 	}
 	return &externalapi.PruningPointProof{
 		Headers: headers,
@@ -534,9 +537,12 @@ func MsgPruningPointProofToDomainPruningPointProof(pruningPointProofMessage *Msg
 
 // DomainPruningPointProofToMsgPruningPointProof converts *externalapi.PruningPointProof to *MsgPruningPointProof
 func DomainPruningPointProofToMsgPruningPointProof(pruningPointProof *externalapi.PruningPointProof) *MsgPruningPointProof {
-	headers := make([]*MsgBlockHeader, len(pruningPointProof.Headers))
-	for i, header := range pruningPointProof.Headers {
-		headers[i] = DomainBlockHeaderToBlockHeader(header)
+	headers := make([][]*MsgBlockHeader, len(pruningPointProof.Headers))
+	for blockLevel, blockLevelParents := range pruningPointProof.Headers {
+		headers[blockLevel] = make([]*MsgBlockHeader, len(blockLevelParents))
+		for i, header := range blockLevelParents {
+			headers[blockLevel][i] = DomainBlockHeaderToBlockHeader(header)
+		}
 	}
 	return &MsgPruningPointProof{
 		Headers: headers,
