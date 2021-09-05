@@ -727,9 +727,19 @@ func (s *consensus) BuildPruningPointProof() (*externalapi.PruningPointProof, er
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
+	stagingArea := model.NewStagingArea()
+	pruningPointHash, err := s.pruningStore.PruningPoint(s.databaseContext, stagingArea)
+	if err != nil {
+		return nil, err
+	}
+	pruningPointHeader, err := s.blockHeaderStore.BlockHeader(s.databaseContext, stagingArea, pruningPointHash)
+	if err != nil {
+		return nil, err
+	}
+
 	return &externalapi.PruningPointProof{
 		Headers:              []externalapi.BlockHeader{},
-		PruningPointBlueWork: big.NewInt(0),
+		PruningPointBlueWork: pruningPointHeader.BlueWork(),
 	}, nil
 }
 

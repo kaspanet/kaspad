@@ -122,7 +122,7 @@ func (flow *handleRelayInvsFlow) downloadHeadersAndPruningUTXOSet(highHash *exte
 	if err != nil {
 		return err
 	}
-	pruningPointHeader, err := flow.Domain().Consensus().GetBlockHeader(pruningPointHash)
+	pruningPointHeader, err := flow.Domain().StagingConsensus().GetBlockHeader(pruningPointHash)
 	if err != nil {
 		return err
 	}
