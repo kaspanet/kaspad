@@ -44,6 +44,8 @@ message KaspadMessage {
     RequestHeadersMessage requestHeaders = 45;
     RequestBlockLocatorMessage requestBlockLocator = 46;
     PruningPointsMessage pruningPoints = 47;
+    RequestPruningPointProofMessage requestPruningPointProof = 48;
+    PruningPointProofMessage pruningPointProof = 49;
 
     GetCurrentNetworkRequestMessage getCurrentNetworkRequest = 1001;
     GetCurrentNetworkResponseMessage getCurrentNetworkResponse = 1002;
