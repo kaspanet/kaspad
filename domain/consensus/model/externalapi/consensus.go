@@ -8,6 +8,8 @@ type Consensus interface {
 	ValidateAndInsertBlockWithTrustedData(block *BlockWithTrustedData, validateUTXO bool) (*BlockInsertionResult, error)
 	ValidateTransactionAndPopulateWithConsensusData(transaction *DomainTransaction) error
 	ImportPruningPoints(pruningPoints []BlockHeader) error
+	BuildPruningPointProof() (*PruningPointProof, error)
+	ValidatePruningPointProof(pruningPointProof *PruningPointProof) error
 
 	GetBlock(blockHash *DomainHash) (*DomainBlock, error)
 	GetBlockEvenIfHeaderOnly(blockHash *DomainHash) (*DomainBlock, error)

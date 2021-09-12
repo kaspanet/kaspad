@@ -310,6 +310,20 @@ func toP2PPayload(message appmessage.Message) (isKaspadMessage_Payload, error) {
 			return nil, err
 		}
 		return payload, nil
+	case *appmessage.MsgRequestPruningPointProof:
+		payload := new(KaspadMessage_RequestPruningPointProof)
+		err := payload.fromAppMessage(message)
+		if err != nil {
+			return nil, err
+		}
+		return payload, nil
+	case *appmessage.MsgPruningPointProof:
+		payload := new(KaspadMessage_PruningPointProof)
+		err := payload.fromAppMessage(message)
+		if err != nil {
+			return nil, err
+		}
+		return payload, nil
 	default:
 		return nil, nil
 	}

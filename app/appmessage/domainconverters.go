@@ -520,3 +520,31 @@ func DomainBlockWithTrustedDataToBlockWithTrustedData(block *externalapi.BlockWi
 		GHOSTDAGData: ghostdagData,
 	}
 }
+
+// MsgPruningPointProofToDomainPruningPointProof converts *MsgPruningPointProof to *externalapi.PruningPointProof
+func MsgPruningPointProofToDomainPruningPointProof(pruningPointProofMessage *MsgPruningPointProof) *externalapi.PruningPointProof {
+	headers := make([][]externalapi.BlockHeader, len(pruningPointProofMessage.Headers))
+	for blockLevel, blockLevelParents := range pruningPointProofMessage.Headers {
+		headers[blockLevel] = make([]externalapi.BlockHeader, len(blockLevelParents))
+		for i, header := range blockLevelParents {
+			headers[blockLevel][i] = BlockHeaderToDomainBlockHeader(header)
+		}
+	}
+	return &externalapi.PruningPointProof{
+		Headers: headers,
+	}
+}
+
+// DomainPruningPointProofToMsgPruningPointProof converts *externalapi.PruningPointProof to *MsgPruningPointProof
+func DomainPruningPointProofToMsgPruningPointProof(pruningPointProof *externalapi.PruningPointProof) *MsgPruningPointProof {
+	headers := make([][]*MsgBlockHeader, len(pruningPointProof.Headers))
+	for blockLevel, blockLevelParents := range pruningPointProof.Headers {
+		headers[blockLevel] = make([]*MsgBlockHeader, len(blockLevelParents))
+		for i, header := range blockLevelParents {
+			headers[blockLevel][i] = DomainBlockHeaderToBlockHeader(header)
+		}
+	}
+	return &MsgPruningPointProof{
+		Headers: headers,
+	}
+}

@@ -338,6 +338,12 @@ func (ps *pruningStore) CurrentPruningPointIndex(dbContext model.DBReader, stagi
 	if err != nil {
 		return 0, err
 	}
+
+	if ps.currentPruningPointIndexCache == nil {
+		var zero uint64
+		ps.currentPruningPointIndexCache = &zero
+	}
+
 	*ps.currentPruningPointIndexCache = index
 	return index, nil
 }
