@@ -165,6 +165,10 @@ func (bpb *blockParentBuilder) BuildParents(stagingArea *model.StagingArea,
 		return nil
 	}
 
+	// The first candidates to be added should be from a parent in the future of the pruning
+	// point, so later on we'll know that every block that doesn't have reachability data
+	// (i.e. pruned) is necessarily in the past of the current candidates and cannot be
+	// considered as a valid candidate.
 	var firstAddedParent *externalapi.DomainHash
 	for directParentHash, directParentHeader := range directParentHeaders {
 		directParentHash := directParentHash
@@ -185,8 +189,7 @@ func (bpb *blockParentBuilder) BuildParents(stagingArea *model.StagingArea,
 		firstAddedParent = &directParentHash
 		break
 	}
-	// Find the future-most parents for every block level. Note that for some block
-	// levels it will be the indirect parents that are the most in the future
+
 	for directParentHash, directParentHeader := range directParentHeaders {
 		if directParentHash.Equal(firstAddedParent) {
 			continue

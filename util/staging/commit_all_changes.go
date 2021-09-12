@@ -26,6 +26,7 @@ func CommitAllChanges(databaseContext model.DBManager, stagingArea *model.Stagin
 
 var lastShardingID uint64
 
+// GenerateShardingID generates a unique staging sharding ID.
 func GenerateShardingID() model.StagingShardID {
 	return model.StagingShardID(atomic.AddUint64(&lastShardingID, 1))
 }
