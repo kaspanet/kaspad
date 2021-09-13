@@ -111,8 +111,12 @@ func (flow *handleRelayInvsFlow) downloadHeadersAndPruningUTXOSet(highHash *exte
 	if err != nil {
 		return err
 	}
-
 	log.Debugf("Blocks downloaded from peer %s", flow.peer)
+
+	err = flow.validatePruningPointFutureHeaderTimestamps(pruningPoint)
+	if err != nil {
+		return err
+	}
 
 	log.Debugf("Syncing the current pruning point UTXO set")
 	syncedPruningPointUTXOSetSuccessfully, err := flow.syncPruningPointUTXOSet(flow.Domain().StagingConsensus(), pruningPoint)
