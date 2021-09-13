@@ -16,7 +16,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-func (flow *handleRelayInvsFlow) runIBDIfNotRunning(highHash *externalapi.DomainHash) error {
+func (flow *handleRelayInvsFlow) runIBDIfNotRunning(block *externalapi.DomainBlock) error {
 	wasIBDNotRunning := flow.TrySetIBDRunning(flow.peer)
 	if !wasIBDNotRunning {
 		log.Debugf("IBD is already running")
@@ -29,6 +29,7 @@ func (flow *handleRelayInvsFlow) runIBDIfNotRunning(highHash *externalapi.Domain
 		flow.logIBDFinished(isFinishedSuccessfully)
 	}()
 
+	highHash := consensushashing.BlockHash(block)
 	log.Debugf("IBD started with peer %s and highHash %s", flow.peer, highHash)
 	log.Debugf("Syncing blocks up to %s", highHash)
 	log.Debugf("Trying to find highest shared chain block with peer %s with high hash %s", flow.peer, highHash)
@@ -38,7 +39,7 @@ func (flow *handleRelayInvsFlow) runIBDIfNotRunning(highHash *externalapi.Domain
 	}
 	log.Debugf("Found highest shared chain block %s with peer %s", highestSharedBlockHash, flow.peer)
 
-	shouldDownloadHeadersProof, shouldSync, err := flow.shouldSyncAndShouldDownloadHeadersProof(highHash, highestSharedBlockFound)
+	shouldDownloadHeadersProof, shouldSync, err := flow.shouldSyncAndShouldDownloadHeadersProof(block, highestSharedBlockFound)
 	if err != nil {
 		return err
 	}

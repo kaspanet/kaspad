@@ -275,7 +275,7 @@ func (flow *handleRelayInvsFlow) processOrphan(block *externalapi.DomainBlock) e
 	// Start IBD unless we already are in IBD
 	log.Debugf("Block %s is out of orphan resolution range. "+
 		"Attempting to start IBD against it.", blockHash)
-	return flow.runIBDIfNotRunning(blockHash)
+	return flow.runIBDIfNotRunning(block)
 }
 
 // isBlockInOrphanResolutionRange finds out whether the given blockHash should be
