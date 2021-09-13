@@ -339,15 +339,15 @@ func (flow *handleRelayInvsFlow) validatePruningPointFutureHeaderTimestamps() er
 	if err != nil {
 		return err
 	}
-	currentPruningPointTimestamp := currentSelectedTipHeader.TimeInMilliseconds()
+	currentSelectedTipTimestamp := currentSelectedTipHeader.TimeInMilliseconds()
 
-	if headerSelectedTipTimestamp < currentPruningPointTimestamp {
+	if headerSelectedTipTimestamp < currentSelectedTipTimestamp {
 		return protocolerrors.Errorf(false, "the timestamp of the candidate selected "+
 			"tip is smaller than the current selected tip")
 	}
 
 	minTimestampDifferenceInMilliseconds := (10 * time.Minute).Milliseconds()
-	if headerSelectedTipTimestamp-currentPruningPointTimestamp < minTimestampDifferenceInMilliseconds {
+	if headerSelectedTipTimestamp-currentSelectedTipTimestamp < minTimestampDifferenceInMilliseconds {
 		return protocolerrors.Errorf(false, "difference between the timestamps of "+
 			"the current pruning point and the candidate pruning point is too small. Aborting IBD...")
 	}
