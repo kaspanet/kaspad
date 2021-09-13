@@ -320,9 +320,7 @@ func (flow *handleRelayInvsFlow) processHeader(consensus externalapi.Consensus, 
 	return nil
 }
 
-func (flow *handleRelayInvsFlow) validatePruningPointFutureHeaderTimestamps(
-	pruningPointHash *externalapi.DomainHash) error {
-
+func (flow *handleRelayInvsFlow) validatePruningPointFutureHeaderTimestamps() error {
 	headerSelectedTipHash, err := flow.Domain().StagingConsensus().GetHeadersSelectedTip()
 	if err != nil {
 		return err
@@ -333,16 +331,6 @@ func (flow *handleRelayInvsFlow) validatePruningPointFutureHeaderTimestamps(
 	}
 	headerSelectedTipTimestamp := headerSelectedTipHeader.TimeInMilliseconds()
 
-	pruningPointHeader, err := flow.Domain().StagingConsensus().GetBlockHeader(pruningPointHash)
-	if err != nil {
-		return err
-	}
-	pruningPointTimestamp := pruningPointHeader.TimeInMilliseconds()
-	if headerSelectedTipTimestamp < pruningPointTimestamp {
-		return protocolerrors.Errorf(true, "header selected tip has a lower "+
-			"timestamp than that of the pruning point")
-	}
-
 	currentSelectedTipHash, err := flow.Domain().Consensus().GetHeadersSelectedTip()
 	if err != nil {
 		return err
@@ -352,6 +340,11 @@ func (flow *handleRelayInvsFlow) validatePruningPointFutureHeaderTimestamps(
 		return err
 	}
 	currentPruningPointTimestamp := currentSelectedTipHeader.TimeInMilliseconds()
+
+	if headerSelectedTipTimestamp < currentPruningPointTimestamp {
+		return protocolerrors.Errorf(false, "the timestamp of the candidate selected "+
+			"tip is smaller than the current selected tip")
+	}
 
 	minTimestampDifferenceInMilliseconds := (10 * time.Minute).Milliseconds()
 	if headerSelectedTipTimestamp-currentPruningPointTimestamp < minTimestampDifferenceInMilliseconds {

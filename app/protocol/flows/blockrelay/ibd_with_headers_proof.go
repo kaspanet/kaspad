@@ -113,7 +113,7 @@ func (flow *handleRelayInvsFlow) downloadHeadersAndPruningUTXOSet(highHash *exte
 	}
 	log.Debugf("Blocks downloaded from peer %s", flow.peer)
 
-	err = flow.validatePruningPointFutureHeaderTimestamps(pruningPoint)
+	err = flow.validatePruningPointFutureHeaderTimestamps()
 	if err != nil {
 		return err
 	}
