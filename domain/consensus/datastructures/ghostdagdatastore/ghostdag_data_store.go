@@ -2,12 +2,11 @@ package ghostdagdatastore
 
 import (
 	"github.com/golang/protobuf/proto"
-	"github.com/kaspanet/kaspad/domain/consensus/database"
 	"github.com/kaspanet/kaspad/domain/consensus/database/serialization"
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/lrucacheghostdagdata"
-	"github.com/kaspanet/kaspad/domain/prefixmanager/prefix"
+	"github.com/kaspanet/kaspad/util/staging"
 )
 
 var ghostdagDataBucketName = []byte("block-ghostdag-data")
@@ -15,17 +14,19 @@ var trustedDataBucketName = []byte("block-with-trusted-data-ghostdag-data")
 
 // ghostdagDataStore represents a store of BlockGHOSTDAGData
 type ghostdagDataStore struct {
+	shardID            model.StagingShardID
 	cache              *lrucacheghostdagdata.LRUCache
 	ghostdagDataBucket model.DBBucket
 	trustedDataBucket  model.DBBucket
 }
 
 // New instantiates a new GHOSTDAGDataStore
-func New(prefix *prefix.Prefix, cacheSize int, preallocate bool) model.GHOSTDAGDataStore {
+func New(prefixBucket model.DBBucket, cacheSize int, preallocate bool) model.GHOSTDAGDataStore {
 	return &ghostdagDataStore{
+		shardID:            staging.GenerateShardingID(),
 		cache:              lrucacheghostdagdata.New(cacheSize, preallocate),
-		ghostdagDataBucket: database.MakeBucket(prefix.Serialize()).Bucket(ghostdagDataBucketName),
-		trustedDataBucket:  database.MakeBucket(prefix.Serialize()).Bucket(trustedDataBucketName),
+		ghostdagDataBucket: prefixBucket.Bucket(ghostdagDataBucketName),
+		trustedDataBucket:  prefixBucket.Bucket(trustedDataBucketName),
 	}
 }
 

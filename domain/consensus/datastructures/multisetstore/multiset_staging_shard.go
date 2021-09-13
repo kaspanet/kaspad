@@ -12,7 +12,7 @@ type multisetStagingShard struct {
 }
 
 func (ms *multisetStore) stagingShard(stagingArea *model.StagingArea) *multisetStagingShard {
-	return stagingArea.GetOrCreateShard(model.StagingShardIDMultiset, func() model.StagingShard {
+	return stagingArea.GetOrCreateShard(ms.shardID, func() model.StagingShard {
 		return &multisetStagingShard{
 			store:    ms,
 			toAdd:    make(map[externalapi.DomainHash]model.Multiset),

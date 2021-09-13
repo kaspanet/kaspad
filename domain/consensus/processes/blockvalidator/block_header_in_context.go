@@ -68,6 +68,13 @@ func (v *blockValidator) ValidateHeaderInContext(stagingArea *model.StagingArea,
 		}
 	}
 
+	if !isBlockWithTrustedData {
+		err = v.checkIndirectParents(stagingArea, header)
+		if err != nil {
+			return err
+		}
+	}
+
 	err = v.mergeDepthManager.CheckBoundedMergeDepth(stagingArea, blockHash, isBlockWithTrustedData)
 	if err != nil {
 		return err
@@ -180,6 +187,19 @@ func (v *blockValidator) checkMergeSizeLimit(stagingArea *model.StagingArea, has
 			"The block merges %d blocks > %d merge set size limit", mergeSetSize, v.mergeSetSizeLimit)
 	}
 
+	return nil
+}
+
+func (v *blockValidator) checkIndirectParents(stagingArea *model.StagingArea, header externalapi.BlockHeader) error {
+	expectedParents, err := v.blockParentBuilder.BuildParents(stagingArea, header.DirectParents())
+	if err != nil {
+		return err
+	}
+
+	areParentsEqual := externalapi.ParentsEqual(header.Parents(), expectedParents)
+	if !areParentsEqual {
+		return errors.Wrapf(ruleerrors.ErrUnexpectedParents, "unexpected indirect block parents")
+	}
 	return nil
 }
 

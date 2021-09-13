@@ -9,29 +9,7 @@ type StagingShard interface {
 }
 
 // StagingShardID is used to identify each of the store's staging shards
-type StagingShardID byte
-
-// StagingShardID constants
-const (
-	StagingShardIDAcceptanceData StagingShardID = iota
-	StagingShardIDBlockHeader
-	StagingShardIDBlockRelation
-	StagingShardIDBlockStatus
-	StagingShardIDBlock
-	StagingShardIDConsensusState
-	StagingShardIDDAABlocks
-	StagingShardIDFinality
-	StagingShardIDGHOSTDAG
-	StagingShardIDHeadersSelectedChain
-	StagingShardIDHeadersSelectedTip
-	StagingShardIDMultiset
-	StagingShardIDPruning
-	StagingShardIDReachabilityData
-	StagingShardIDUTXODiff
-	StagingShardIDDAAWindow
-	// Always leave StagingShardIDLen as the last constant
-	StagingShardIDLen
-)
+type StagingShardID uint64
 
 // StagingArea is single changeset inside the consensus database, similar to a transaction in a classic database.
 // Each StagingArea consists of multiple StagingShards, one for each dataStore that has any changes within it.
@@ -41,16 +19,14 @@ const (
 // When the StagingArea is being Committed, it goes over all it's shards, and commits those one-by-one.
 // Since Commit happens in a DatabaseTransaction, a StagingArea is atomic.
 type StagingArea struct {
-	// shards is deliberately an array and not a map, as an optimization - since it's being read a lot of time, and
-	// reads from maps are relatively slow.
-	shards      [StagingShardIDLen]StagingShard
+	shards      []StagingShard
 	isCommitted bool
 }
 
 // NewStagingArea creates a new, empty staging area.
 func NewStagingArea() *StagingArea {
 	return &StagingArea{
-		shards:      [StagingShardIDLen]StagingShard{},
+		shards:      []StagingShard{},
 		isCommitted: false,
 	}
 }
@@ -58,6 +34,9 @@ func NewStagingArea() *StagingArea {
 // GetOrCreateShard attempts to retrieve a shard with the given name.
 // If it does not exist - a new shard is created using `createFunc`.
 func (sa *StagingArea) GetOrCreateShard(shardID StagingShardID, createFunc func() StagingShard) StagingShard {
+	for uint64(len(sa.shards)) <= uint64(shardID) {
+		sa.shards = append(sa.shards, nil)
+	}
 	if sa.shards[shardID] == nil {
 		sa.shards[shardID] = createFunc()
 	}

@@ -2,7 +2,7 @@ package headersselectedchainstore
 
 import (
 	"encoding/binary"
-	"github.com/kaspanet/kaspad/domain/prefixmanager/prefix"
+	"github.com/kaspanet/kaspad/util/staging"
 
 	"github.com/kaspanet/kaspad/domain/consensus/database"
 	"github.com/kaspanet/kaspad/domain/consensus/database/binaryserialization"
@@ -18,6 +18,7 @@ var bucketChainBlockIndexByHashName = []byte("chain-block-index-by-hash")
 var highestChainBlockIndexKeyName = []byte("highest-chain-block-index")
 
 type headersSelectedChainStore struct {
+	shardID                     model.StagingShardID
 	cacheByIndex                *lrucacheuint64tohash.LRUCache
 	cacheByHash                 *lrucache.LRUCache
 	cacheHighestChainBlockIndex uint64
@@ -27,13 +28,14 @@ type headersSelectedChainStore struct {
 }
 
 // New instantiates a new HeadersSelectedChainStore
-func New(prefix *prefix.Prefix, cacheSize int, preallocate bool) model.HeadersSelectedChainStore {
+func New(prefixBucket model.DBBucket, cacheSize int, preallocate bool) model.HeadersSelectedChainStore {
 	return &headersSelectedChainStore{
+		shardID:                     staging.GenerateShardingID(),
 		cacheByIndex:                lrucacheuint64tohash.New(cacheSize, preallocate),
 		cacheByHash:                 lrucache.New(cacheSize, preallocate),
-		bucketChainBlockHashByIndex: database.MakeBucket(prefix.Serialize()).Bucket(bucketChainBlockHashByIndexName),
-		bucketChainBlockIndexByHash: database.MakeBucket(prefix.Serialize()).Bucket(bucketChainBlockIndexByHashName),
-		highestChainBlockIndexKey:   database.MakeBucket(prefix.Serialize()).Key(highestChainBlockIndexKeyName),
+		bucketChainBlockHashByIndex: prefixBucket.Bucket(bucketChainBlockHashByIndexName),
+		bucketChainBlockIndexByHash: prefixBucket.Bucket(bucketChainBlockIndexByHashName),
+		highestChainBlockIndexKey:   prefixBucket.Key(highestChainBlockIndexKeyName),
 	}
 }
 

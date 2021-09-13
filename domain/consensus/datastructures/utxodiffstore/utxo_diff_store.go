@@ -2,12 +2,11 @@ package utxodiffstore
 
 import (
 	"github.com/golang/protobuf/proto"
-	"github.com/kaspanet/kaspad/domain/consensus/database"
 	"github.com/kaspanet/kaspad/domain/consensus/database/serialization"
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/lrucache"
-	"github.com/kaspanet/kaspad/domain/prefixmanager/prefix"
+	"github.com/kaspanet/kaspad/util/staging"
 	"github.com/pkg/errors"
 )
 
@@ -16,6 +15,7 @@ var utxoDiffChildBucketName = []byte("utxo-diff-children")
 
 // utxoDiffStore represents a store of UTXODiffs
 type utxoDiffStore struct {
+	shardID             model.StagingShardID
 	utxoDiffCache       *lrucache.LRUCache
 	utxoDiffChildCache  *lrucache.LRUCache
 	utxoDiffBucket      model.DBBucket
@@ -23,12 +23,13 @@ type utxoDiffStore struct {
 }
 
 // New instantiates a new UTXODiffStore
-func New(prefix *prefix.Prefix, cacheSize int, preallocate bool) model.UTXODiffStore {
+func New(prefixBucket model.DBBucket, cacheSize int, preallocate bool) model.UTXODiffStore {
 	return &utxoDiffStore{
+		shardID:             staging.GenerateShardingID(),
 		utxoDiffCache:       lrucache.New(cacheSize, preallocate),
 		utxoDiffChildCache:  lrucache.New(cacheSize, preallocate),
-		utxoDiffBucket:      database.MakeBucket(prefix.Serialize()).Bucket(utxoDiffBucketName),
-		utxoDiffChildBucket: database.MakeBucket(prefix.Serialize()).Bucket(utxoDiffChildBucketName),
+		utxoDiffBucket:      prefixBucket.Bucket(utxoDiffBucketName),
+		utxoDiffChildBucket: prefixBucket.Bucket(utxoDiffChildBucketName),
 	}
 }
 

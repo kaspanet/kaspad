@@ -25,7 +25,7 @@ type daaWindowStagingShard struct {
 }
 
 func (daaws *daaWindowStore) stagingShard(stagingArea *model.StagingArea) *daaWindowStagingShard {
-	return stagingArea.GetOrCreateShard(model.StagingShardIDDAAWindow, func() model.StagingShard {
+	return stagingArea.GetOrCreateShard(daaws.shardID, func() model.StagingShard {
 		return &daaWindowStagingShard{
 			store: daaws,
 			toAdd: make(map[dbKey]*externalapi.BlockGHOSTDAGDataHashPair),

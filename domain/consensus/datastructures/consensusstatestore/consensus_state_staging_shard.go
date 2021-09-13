@@ -12,7 +12,7 @@ type consensusStateStagingShard struct {
 }
 
 func (bs *consensusStateStore) stagingShard(stagingArea *model.StagingArea) *consensusStateStagingShard {
-	return stagingArea.GetOrCreateShard(model.StagingShardIDConsensusState, func() model.StagingShard {
+	return stagingArea.GetOrCreateShard(bs.shardID, func() model.StagingShard {
 		return &consensusStateStagingShard{
 			store:                  bs,
 			tipsStaging:            nil,

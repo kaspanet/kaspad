@@ -2,6 +2,7 @@ package consensus
 
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/daawindowstore"
+	"github.com/kaspanet/kaspad/domain/consensus/processes/blockparentbuilder"
 	"io/ioutil"
 	"os"
 	"sync"
@@ -103,6 +104,7 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 	externalapi.Consensus, error) {
 
 	dbManager := consensusdatabase.New(db)
+	prefixBucket := consensusdatabase.MakeBucket(dbPrefix.Serialize())
 
 	pruningWindowSizeForCaches := int(config.PruningDepth())
 
@@ -118,24 +120,24 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 	pruningWindowSizePlusFinalityDepthForCache := int(config.PruningDepth() + config.FinalityDepth())
 
 	// Data Structures
-	daaWindowStore := daawindowstore.New(dbPrefix, 10_000, preallocateCaches)
-	acceptanceDataStore := acceptancedatastore.New(dbPrefix, 200, preallocateCaches)
-	blockStore, err := blockstore.New(dbManager, dbPrefix, 200, preallocateCaches)
+	daaWindowStore := daawindowstore.New(prefixBucket, 10_000, preallocateCaches)
+	acceptanceDataStore := acceptancedatastore.New(prefixBucket, 200, preallocateCaches)
+	blockStore, err := blockstore.New(dbManager, prefixBucket, 200, preallocateCaches)
 	if err != nil {
 		return nil, err
 	}
-	blockHeaderStore, err := blockheaderstore.New(dbManager, dbPrefix, 10_000, preallocateCaches)
+	blockHeaderStore, err := blockheaderstore.New(dbManager, prefixBucket, 10_000, preallocateCaches)
 	if err != nil {
 		return nil, err
 	}
-	blockRelationStore := blockrelationstore.New(dbPrefix, pruningWindowSizePlusFinalityDepthForCache, preallocateCaches)
+	blockRelationStore := blockrelationstore.New(prefixBucket, pruningWindowSizePlusFinalityDepthForCache, preallocateCaches)
 
-	blockStatusStore := blockstatusstore.New(dbPrefix, pruningWindowSizePlusFinalityDepthForCache, preallocateCaches)
-	multisetStore := multisetstore.New(dbPrefix, 200, preallocateCaches)
-	pruningStore := pruningstore.New(dbPrefix, 2, preallocateCaches)
-	reachabilityDataStore := reachabilitydatastore.New(dbPrefix, pruningWindowSizePlusFinalityDepthForCache, preallocateCaches)
-	utxoDiffStore := utxodiffstore.New(dbPrefix, 200, preallocateCaches)
-	consensusStateStore := consensusstatestore.New(dbPrefix, 10_000, preallocateCaches)
+	blockStatusStore := blockstatusstore.New(prefixBucket, pruningWindowSizePlusFinalityDepthForCache, preallocateCaches)
+	multisetStore := multisetstore.New(prefixBucket, 200, preallocateCaches)
+	pruningStore := pruningstore.New(prefixBucket, 2, preallocateCaches)
+	reachabilityDataStore := reachabilitydatastore.New(prefixBucket, pruningWindowSizePlusFinalityDepthForCache, preallocateCaches)
+	utxoDiffStore := utxodiffstore.New(prefixBucket, 200, preallocateCaches)
+	consensusStateStore := consensusstatestore.New(prefixBucket, 10_000, preallocateCaches)
 
 	// Some tests artificially decrease the pruningWindowSize, thus making the GhostDagStore cache too small for a
 	// a single DifficultyAdjustmentWindow. To alleviate this problem we make sure that the cache size is at least
@@ -144,12 +146,12 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 	if ghostdagDataCacheSize < config.DifficultyAdjustmentWindowSize {
 		ghostdagDataCacheSize = config.DifficultyAdjustmentWindowSize
 	}
-	ghostdagDataStore := ghostdagdatastore.New(dbPrefix, ghostdagDataCacheSize, preallocateCaches)
+	ghostdagDataStore := ghostdagdatastore.New(prefixBucket, ghostdagDataCacheSize, preallocateCaches)
 
-	headersSelectedTipStore := headersselectedtipstore.New(dbPrefix)
-	finalityStore := finalitystore.New(dbPrefix, 200, preallocateCaches)
-	headersSelectedChainStore := headersselectedchainstore.New(dbPrefix, pruningWindowSizeForCaches, preallocateCaches)
-	daaBlocksStore := daablocksstore.New(dbPrefix, pruningWindowSizeForCaches, int(config.FinalityDepth()), preallocateCaches)
+	headersSelectedTipStore := headersselectedtipstore.New(prefixBucket)
+	finalityStore := finalitystore.New(prefixBucket, 200, preallocateCaches)
+	headersSelectedChainStore := headersselectedchainstore.New(prefixBucket, pruningWindowSizeForCaches, preallocateCaches)
+	daaBlocksStore := daablocksstore.New(prefixBucket, pruningWindowSizeForCaches, int(config.FinalityDepth()), preallocateCaches)
 
 	// Processes
 	reachabilityManager := reachabilitymanager.New(
@@ -161,6 +163,13 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 		reachabilityManager,
 		blockRelationStore,
 		ghostdagDataStore)
+	blockParentBuilder := blockparentbuilder.New(
+		dbManager,
+		blockHeaderStore,
+		dagTopologyManager,
+		reachabilityDataStore,
+		pruningStore,
+	)
 	ghostdagManager := f.ghostdagConstructor(
 		dbManager,
 		dagTopologyManager,
@@ -316,6 +325,7 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 		mergeDepthManager,
 		reachabilityManager,
 		finalityManager,
+		blockParentBuilder,
 		pruningManager,
 
 		pruningStore,
@@ -355,6 +365,7 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 		ghostdagManager,
 		transactionValidator,
 		finalityManager,
+		blockParentBuilder,
 		pruningManager,
 
 		acceptanceDataStore,

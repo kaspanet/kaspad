@@ -12,7 +12,7 @@ type blockHeaderStagingShard struct {
 }
 
 func (bhs *blockHeaderStore) stagingShard(stagingArea *model.StagingArea) *blockHeaderStagingShard {
-	return stagingArea.GetOrCreateShard(model.StagingShardIDBlockHeader, func() model.StagingShard {
+	return stagingArea.GetOrCreateShard(bhs.shardID, func() model.StagingShard {
 		return &blockHeaderStagingShard{
 			store:    bhs,
 			toAdd:    make(map[externalapi.DomainHash]externalapi.BlockHeader),

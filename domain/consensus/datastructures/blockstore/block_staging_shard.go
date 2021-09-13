@@ -12,7 +12,7 @@ type blockStagingShard struct {
 }
 
 func (bs *blockStore) stagingShard(stagingArea *model.StagingArea) *blockStagingShard {
-	return stagingArea.GetOrCreateShard(model.StagingShardIDBlock, func() model.StagingShard {
+	return stagingArea.GetOrCreateShard(bs.shardID, func() model.StagingShard {
 		return &blockStagingShard{
 			store:    bs,
 			toAdd:    make(map[externalapi.DomainHash]*externalapi.DomainBlock),

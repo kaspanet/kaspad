@@ -26,7 +26,6 @@ func addBlock(tc testapi.TestConsensus, parentHashes []*externalapi.DomainHash, 
 	}
 
 	blockHash := consensushashing.BlockHash(block)
-
 	_, err = tc.ValidateAndInsertBlock(block, true)
 	if err != nil {
 		t.Fatalf("ValidateAndInsertBlock: %+v", err)
@@ -75,7 +74,7 @@ func TestValidateAndInsertImportedPruningPoint(t *testing.T) {
 				t.Fatalf("GetHashesBetween: %+v", err)
 			}
 
-			for _, blocksHash := range missingHeaderHashes {
+			for i, blocksHash := range missingHeaderHashes {
 				blockInfo, err := tcSyncee.GetBlockInfo(blocksHash)
 				if err != nil {
 					t.Fatalf("GetBlockInfo: %+v", err)
@@ -92,7 +91,7 @@ func TestValidateAndInsertImportedPruningPoint(t *testing.T) {
 
 				_, err = tcSyncee.ValidateAndInsertBlock(&externalapi.DomainBlock{Header: header}, false)
 				if err != nil {
-					t.Fatalf("ValidateAndInsertBlock: %+v", err)
+					t.Fatalf("ValidateAndInsertBlock %d: %+v", i, err)
 				}
 			}
 

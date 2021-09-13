@@ -2,12 +2,11 @@ package blockstore
 
 import (
 	"github.com/golang/protobuf/proto"
-	"github.com/kaspanet/kaspad/domain/consensus/database"
 	"github.com/kaspanet/kaspad/domain/consensus/database/serialization"
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/lrucache"
-	"github.com/kaspanet/kaspad/domain/prefixmanager/prefix"
+	"github.com/kaspanet/kaspad/util/staging"
 	"github.com/pkg/errors"
 )
 
@@ -15,6 +14,7 @@ var bucketName = []byte("blocks")
 
 // blockStore represents a store of blocks
 type blockStore struct {
+	shardID     model.StagingShardID
 	cache       *lrucache.LRUCache
 	countCached uint64
 	bucket      model.DBBucket
@@ -22,11 +22,12 @@ type blockStore struct {
 }
 
 // New instantiates a new BlockStore
-func New(dbContext model.DBReader, prefix *prefix.Prefix, cacheSize int, preallocate bool) (model.BlockStore, error) {
+func New(dbContext model.DBReader, prefixBucket model.DBBucket, cacheSize int, preallocate bool) (model.BlockStore, error) {
 	blockStore := &blockStore{
+		shardID:  staging.GenerateShardingID(),
 		cache:    lrucache.New(cacheSize, preallocate),
-		bucket:   database.MakeBucket(prefix.Serialize()).Bucket(bucketName),
-		countKey: database.MakeBucket(prefix.Serialize()).Key([]byte("blocks-count")),
+		bucket:   prefixBucket.Bucket(bucketName),
+		countKey: prefixBucket.Key([]byte("blocks-count")),
 	}
 
 	err := blockStore.initializeCount(dbContext)

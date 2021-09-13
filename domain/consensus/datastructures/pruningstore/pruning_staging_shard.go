@@ -15,7 +15,7 @@ type pruningStagingShard struct {
 }
 
 func (ps *pruningStore) stagingShard(stagingArea *model.StagingArea) *pruningStagingShard {
-	return stagingArea.GetOrCreateShard(model.StagingShardIDPruning, func() model.StagingShard {
+	return stagingArea.GetOrCreateShard(ps.shardID, func() model.StagingShard {
 		return &pruningStagingShard{
 			store:                            ps,
 			pruningPointByIndex:              map[uint64]*externalapi.DomainHash{},

@@ -3,26 +3,27 @@ package daawindowstore
 import (
 	"encoding/binary"
 	"github.com/golang/protobuf/proto"
-	"github.com/kaspanet/kaspad/domain/consensus/database"
 	"github.com/kaspanet/kaspad/domain/consensus/database/serialization"
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/lrucachehashpairtoblockghostdagdatahashpair"
-	"github.com/kaspanet/kaspad/domain/prefixmanager/prefix"
+	"github.com/kaspanet/kaspad/util/staging"
 )
 
 var bucketName = []byte("daa-window")
 
 type daaWindowStore struct {
-	cache  *lrucachehashpairtoblockghostdagdatahashpair.LRUCache
-	bucket model.DBBucket
+	shardID model.StagingShardID
+	cache   *lrucachehashpairtoblockghostdagdatahashpair.LRUCache
+	bucket  model.DBBucket
 }
 
 // New instantiates a new BlocksWithTrustedDataDAAWindowStore
-func New(prefix *prefix.Prefix, cacheSize int, preallocate bool) model.BlocksWithTrustedDataDAAWindowStore {
+func New(prefixBucket model.DBBucket, cacheSize int, preallocate bool) model.BlocksWithTrustedDataDAAWindowStore {
 	return &daaWindowStore{
-		cache:  lrucachehashpairtoblockghostdagdatahashpair.New(cacheSize, preallocate),
-		bucket: database.MakeBucket(prefix.Serialize()).Bucket(bucketName),
+		shardID: staging.GenerateShardingID(),
+		cache:   lrucachehashpairtoblockghostdagdatahashpair.New(cacheSize, preallocate),
+		bucket:  prefixBucket.Bucket(bucketName),
 	}
 }
 

@@ -15,7 +15,7 @@ import (
 // it does not check if the difficulty itself is valid or less than the maximum for the appropriate network
 func CheckProofOfWorkWithTarget(header externalapi.MutableBlockHeader, target *big.Int) bool {
 	// The block pow must be less than the claimed target
-	powNum := calcPowValue(header)
+	powNum := CalculateProofOfWorkValue(header)
 
 	// The block hash must be less or equal than the claimed target.
 	return powNum.Cmp(target) <= 0
@@ -27,7 +27,8 @@ func CheckProofOfWorkByBits(header externalapi.MutableBlockHeader) bool {
 	return CheckProofOfWorkWithTarget(header, difficulty.CompactToBig(header.Bits()))
 }
 
-func calcPowValue(header externalapi.MutableBlockHeader) *big.Int {
+// CalculateProofOfWorkValue hashes the given header and returns its big.Int value
+func CalculateProofOfWorkValue(header externalapi.MutableBlockHeader) *big.Int {
 	// Zero out the time and nonce.
 	timestamp, nonce := header.TimeInMilliseconds(), header.Nonce()
 	header.SetTimeInMilliseconds(0)
