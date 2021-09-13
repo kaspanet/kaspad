@@ -194,7 +194,7 @@ func TestIBDWithPruning(t *testing.T) {
 
 var currentMockTimestamp int64 = 0
 
-// minerNextBlockWithMockTimestamps mines blocks with large timestamp differences
+// mineNextBlockWithMockTimestamps mines blocks with large timestamp differences
 // between every two blocks. This is done to avoid the timestamp threshold validation
 // of ibd-with-headers-proof
 func mineNextBlockWithMockTimestamps(t *testing.T, harness *appHarness) *externalapi.DomainBlock {
