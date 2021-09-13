@@ -238,14 +238,6 @@ message BluesAnticoneSizes {
 message DoneBlocksWithTrustedDataMessage {
 }
 
-message RequestBlockBlueWorkMessage {
-  Hash block = 1;
-}
-
-message BlockBlueWorkMessage {
-  bytes blueWork = 1;
-}
-
 message PruningPointsMessage {
   repeated BlockHeader headers = 1;
 }

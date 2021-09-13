@@ -34,8 +34,6 @@ message KaspadMessage {
     IbdBlockLocatorHighestHashNotFoundMessage ibdBlockLocatorHighestHashNotFound = 35;
     BlockWithTrustedDataMessage blockWithTrustedData = 36;
     DoneBlocksWithTrustedDataMessage doneBlocksWithTrustedData = 37;
-    RequestBlockBlueWorkMessage requestBlockBlueWork = 38;
-    BlockBlueWorkMessage blockBlueWork = 39;
     RequestPruningPointAndItsAnticoneMessage requestPruningPointAndItsAnticone = 40;
     BlockHeadersMessage blockHeaders = 41;
     RequestNextHeadersMessage requestNextHeaders = 42;
