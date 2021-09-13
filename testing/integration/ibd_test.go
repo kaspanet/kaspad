@@ -1,6 +1,7 @@
 package integration
 
 import (
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
 	"reflect"
 	"sync"
@@ -116,7 +117,7 @@ func TestIBDWithPruning(t *testing.T) {
 		}
 
 		// This should trigger resolving the syncee virtual
-		syncerTip := mineNextBlock(t, syncer)
+		syncerTip := mineNextBlockWithMockTimestamps(t, syncer)
 		time.Sleep(time.Second)
 		synceeSelectedTip, err := syncee.rpcClient.GetSelectedTipHash()
 		if err != nil {
@@ -135,6 +136,7 @@ func TestIBDWithPruning(t *testing.T) {
 	// This is done to make a pruning depth of 6 blocks
 	overrideDAGParams.FinalityDuration = 2 * overrideDAGParams.TargetTimePerBlock
 	overrideDAGParams.K = 0
+	overrideDAGParams.TimestampDeviationTolerance = 10_000_000 // Disable the "too far in the future" validation
 
 	expectedPruningDepth := uint64(6)
 	if overrideDAGParams.PruningDepth() != expectedPruningDepth {
@@ -177,15 +179,47 @@ func TestIBDWithPruning(t *testing.T) {
 	// block.
 	const synceeOnlyBlocks = 2
 	for i := 0; i < synceeOnlyBlocks; i++ {
-		mineNextBlock(t, syncee1)
+		mineNextBlockWithMockTimestamps(t, syncee1)
 	}
 
 	for i := 0; i < numBlocks-1; i++ {
-		mineNextBlock(t, syncer)
+		mineNextBlockWithMockTimestamps(t, syncer)
 	}
 
 	testSync(syncer, syncee1)
 
 	// Test a situation where a node with pruned headers syncs another fresh node.
 	testSync(syncee1, syncee2)
+}
+
+var currentMockTimestamp int64 = 0
+
+func mineNextBlockWithMockTimestamps(t *testing.T, harness *appHarness) *externalapi.DomainBlock {
+	blockTemplate, err := harness.rpcClient.GetBlockTemplate(harness.miningAddress)
+	if err != nil {
+		t.Fatalf("Error getting block template: %+v", err)
+	}
+
+	block, err := appmessage.RPCBlockToDomainBlock(blockTemplate.Block)
+	if err != nil {
+		t.Fatalf("Error converting block: %s", err)
+	}
+
+	if currentMockTimestamp == 0 {
+		currentMockTimestamp = block.Header.TimeInMilliseconds()
+	} else {
+		currentMockTimestamp += 10000
+	}
+	mutableHeader := block.Header.ToMutable()
+	mutableHeader.SetTimeInMilliseconds(currentMockTimestamp)
+	block.Header = mutableHeader.ToImmutable()
+
+	solveBlock(block)
+
+	_, err = harness.rpcClient.SubmitBlock(block)
+	if err != nil {
+		t.Fatalf("Error submitting block: %s", err)
+	}
+
+	return block
 }
