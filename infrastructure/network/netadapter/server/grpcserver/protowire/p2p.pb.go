@@ -2619,100 +2619,6 @@ func (*DoneBlocksWithTrustedDataMessage) Descriptor() ([]byte, []int) {
 	return file_p2p_proto_rawDescGZIP(), []int{47}
 }
 
-type RequestBlockBlueWorkMessage struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	Block *Hash `protobuf:"bytes,1,opt,name=block,proto3" json:"block,omitempty"`
-}
-
-func (x *RequestBlockBlueWorkMessage) Reset() {
-	*x = RequestBlockBlueWorkMessage{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_p2p_proto_msgTypes[48]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *RequestBlockBlueWorkMessage) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*RequestBlockBlueWorkMessage) ProtoMessage() {}
-
-func (x *RequestBlockBlueWorkMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_p2p_proto_msgTypes[48]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use RequestBlockBlueWorkMessage.ProtoReflect.Descriptor instead.
-func (*RequestBlockBlueWorkMessage) Descriptor() ([]byte, []int) {
-	return file_p2p_proto_rawDescGZIP(), []int{48}
-}
-
-func (x *RequestBlockBlueWorkMessage) GetBlock() *Hash {
-	if x != nil {
-		return x.Block
-	}
-	return nil
-}
-
-type BlockBlueWorkMessage struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	BlueWork []byte `protobuf:"bytes,1,opt,name=blueWork,proto3" json:"blueWork,omitempty"`
-}
-
-func (x *BlockBlueWorkMessage) Reset() {
-	*x = BlockBlueWorkMessage{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_p2p_proto_msgTypes[49]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *BlockBlueWorkMessage) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*BlockBlueWorkMessage) ProtoMessage() {}
-
-func (x *BlockBlueWorkMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_p2p_proto_msgTypes[49]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use BlockBlueWorkMessage.ProtoReflect.Descriptor instead.
-func (*BlockBlueWorkMessage) Descriptor() ([]byte, []int) {
-	return file_p2p_proto_rawDescGZIP(), []int{49}
-}
-
-func (x *BlockBlueWorkMessage) GetBlueWork() []byte {
-	if x != nil {
-		return x.BlueWork
-	}
-	return nil
-}
-
 type PruningPointsMessage struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -2724,7 +2630,7 @@ type PruningPointsMessage struct {
 func (x *PruningPointsMessage) Reset() {
 	*x = PruningPointsMessage{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_p2p_proto_msgTypes[50]
+		mi := &file_p2p_proto_msgTypes[48]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -2737,7 +2643,7 @@ func (x *PruningPointsMessage) String() string {
 func (*PruningPointsMessage) ProtoMessage() {}
 
 func (x *PruningPointsMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_p2p_proto_msgTypes[50]
+	mi := &file_p2p_proto_msgTypes[48]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2750,7 +2656,7 @@ func (x *PruningPointsMessage) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PruningPointsMessage.ProtoReflect.Descriptor instead.
 func (*PruningPointsMessage) Descriptor() ([]byte, []int) {
-	return file_p2p_proto_rawDescGZIP(), []int{50}
+	return file_p2p_proto_rawDescGZIP(), []int{48}
 }
 
 func (x *PruningPointsMessage) GetHeaders() []*BlockHeader {
@@ -2769,7 +2675,7 @@ type RequestPruningPointProofMessage struct {
 func (x *RequestPruningPointProofMessage) Reset() {
 	*x = RequestPruningPointProofMessage{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_p2p_proto_msgTypes[51]
+		mi := &file_p2p_proto_msgTypes[49]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -2782,7 +2688,7 @@ func (x *RequestPruningPointProofMessage) String() string {
 func (*RequestPruningPointProofMessage) ProtoMessage() {}
 
 func (x *RequestPruningPointProofMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_p2p_proto_msgTypes[51]
+	mi := &file_p2p_proto_msgTypes[49]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2795,7 +2701,7 @@ func (x *RequestPruningPointProofMessage) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RequestPruningPointProofMessage.ProtoReflect.Descriptor instead.
 func (*RequestPruningPointProofMessage) Descriptor() ([]byte, []int) {
-	return file_p2p_proto_rawDescGZIP(), []int{51}
+	return file_p2p_proto_rawDescGZIP(), []int{49}
 }
 
 type PruningPointProofMessage struct {
@@ -2809,7 +2715,7 @@ type PruningPointProofMessage struct {
 func (x *PruningPointProofMessage) Reset() {
 	*x = PruningPointProofMessage{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_p2p_proto_msgTypes[52]
+		mi := &file_p2p_proto_msgTypes[50]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -2822,7 +2728,7 @@ func (x *PruningPointProofMessage) String() string {
 func (*PruningPointProofMessage) ProtoMessage() {}
 
 func (x *PruningPointProofMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_p2p_proto_msgTypes[52]
+	mi := &file_p2p_proto_msgTypes[50]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2835,7 +2741,7 @@ func (x *PruningPointProofMessage) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PruningPointProofMessage.ProtoReflect.Descriptor instead.
 func (*PruningPointProofMessage) Descriptor() ([]byte, []int) {
-	return file_p2p_proto_rawDescGZIP(), []int{52}
+	return file_p2p_proto_rawDescGZIP(), []int{50}
 }
 
 func (x *PruningPointProofMessage) GetHeaders() []*PruningPointProofHeaderArray {
@@ -2856,7 +2762,7 @@ type PruningPointProofHeaderArray struct {
 func (x *PruningPointProofHeaderArray) Reset() {
 	*x = PruningPointProofHeaderArray{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_p2p_proto_msgTypes[53]
+		mi := &file_p2p_proto_msgTypes[51]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -2869,7 +2775,7 @@ func (x *PruningPointProofHeaderArray) String() string {
 func (*PruningPointProofHeaderArray) ProtoMessage() {}
 
 func (x *PruningPointProofHeaderArray) ProtoReflect() protoreflect.Message {
-	mi := &file_p2p_proto_msgTypes[53]
+	mi := &file_p2p_proto_msgTypes[51]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2882,7 +2788,7 @@ func (x *PruningPointProofHeaderArray) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PruningPointProofHeaderArray.ProtoReflect.Descriptor instead.
 func (*PruningPointProofHeaderArray) Descriptor() ([]byte, []int) {
-	return file_p2p_proto_rawDescGZIP(), []int{53}
+	return file_p2p_proto_rawDescGZIP(), []int{51}
 }
 
 func (x *PruningPointProofHeaderArray) GetHeaders() []*BlockHeader {
@@ -3213,36 +3119,28 @@ var file_p2p_proto_rawDesc = []byte{
 	0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0d, 0x52, 0x0c, 0x61, 0x6e, 0x74, 0x69, 0x63, 0x6f, 0x6e,
 	0x65, 0x53, 0x69, 0x7a, 0x65, 0x22, 0x22, 0x0a, 0x20, 0x44, 0x6f, 0x6e, 0x65, 0x42, 0x6c, 0x6f,
 	0x63, 0x6b, 0x73, 0x57, 0x69, 0x74, 0x68, 0x54, 0x72, 0x75, 0x73, 0x74, 0x65, 0x64, 0x44, 0x61,
-	0x74, 0x61, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x22, 0x44, 0x0a, 0x1b, 0x52, 0x65, 0x71,
-	0x75, 0x65, 0x73, 0x74, 0x42, 0x6c, 0x6f, 0x63, 0x6b, 0x42, 0x6c, 0x75, 0x65, 0x57, 0x6f, 0x72,
-	0x6b, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x12, 0x25, 0x0a, 0x05, 0x62, 0x6c, 0x6f, 0x63,
-	0x6b, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x0f, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x77,
-	0x69, 0x72, 0x65, 0x2e, 0x48, 0x61, 0x73, 0x68, 0x52, 0x05, 0x62, 0x6c, 0x6f, 0x63, 0x6b, 0x22,
-	0x32, 0x0a, 0x14, 0x42, 0x6c, 0x6f, 0x63, 0x6b, 0x42, 0x6c, 0x75, 0x65, 0x57, 0x6f, 0x72, 0x6b,
-	0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x12, 0x1a, 0x0a, 0x08, 0x62, 0x6c, 0x75, 0x65, 0x57,
-	0x6f, 0x72, 0x6b, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x08, 0x62, 0x6c, 0x75, 0x65, 0x57,
-	0x6f, 0x72, 0x6b, 0x22, 0x48, 0x0a, 0x14, 0x50, 0x72, 0x75, 0x6e, 0x69, 0x6e, 0x67, 0x50, 0x6f,
-	0x69, 0x6e, 0x74, 0x73, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x12, 0x30, 0x0a, 0x07, 0x68,
-	0x65, 0x61, 0x64, 0x65, 0x72, 0x73, 0x18, 0x01, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x16, 0x2e, 0x70,
-	0x72, 0x6f, 0x74, 0x6f, 0x77, 0x69, 0x72, 0x65, 0x2e, 0x42, 0x6c, 0x6f, 0x63, 0x6b, 0x48, 0x65,
-	0x61, 0x64, 0x65, 0x72, 0x52, 0x07, 0x68, 0x65, 0x61, 0x64, 0x65, 0x72, 0x73, 0x22, 0x21, 0x0a,
-	0x1f, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x50, 0x72, 0x75, 0x6e, 0x69, 0x6e, 0x67, 0x50,
-	0x6f, 0x69, 0x6e, 0x74, 0x50, 0x72, 0x6f, 0x6f, 0x66, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65,
-	0x22, 0x5d, 0x0a, 0x18, 0x50, 0x72, 0x75, 0x6e, 0x69, 0x6e, 0x67, 0x50, 0x6f, 0x69, 0x6e, 0x74,
-	0x50, 0x72, 0x6f, 0x6f, 0x66, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x12, 0x41, 0x0a, 0x07,
-	0x68, 0x65, 0x61, 0x64, 0x65, 0x72, 0x73, 0x18, 0x01, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x27, 0x2e,
-	0x70, 0x72, 0x6f, 0x74, 0x6f, 0x77, 0x69, 0x72, 0x65, 0x2e, 0x50, 0x72, 0x75, 0x6e, 0x69, 0x6e,
-	0x67, 0x50, 0x6f, 0x69, 0x6e, 0x74, 0x50, 0x72, 0x6f, 0x6f, 0x66, 0x48, 0x65, 0x61, 0x64, 0x65,
-	0x72, 0x41, 0x72, 0x72, 0x61, 0x79, 0x52, 0x07, 0x68, 0x65, 0x61, 0x64, 0x65, 0x72, 0x73, 0x22,
-	0x50, 0x0a, 0x1c, 0x50, 0x72, 0x75, 0x6e, 0x69, 0x6e, 0x67, 0x50, 0x6f, 0x69, 0x6e, 0x74, 0x50,
-	0x72, 0x6f, 0x6f, 0x66, 0x48, 0x65, 0x61, 0x64, 0x65, 0x72, 0x41, 0x72, 0x72, 0x61, 0x79, 0x12,
-	0x30, 0x0a, 0x07, 0x68, 0x65, 0x61, 0x64, 0x65, 0x72, 0x73, 0x18, 0x01, 0x20, 0x03, 0x28, 0x0b,
-	0x32, 0x16, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x77, 0x69, 0x72, 0x65, 0x2e, 0x42, 0x6c, 0x6f,
-	0x63, 0x6b, 0x48, 0x65, 0x61, 0x64, 0x65, 0x72, 0x52, 0x07, 0x68, 0x65, 0x61, 0x64, 0x65, 0x72,
-	0x73, 0x42, 0x26, 0x5a, 0x24, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f,
-	0x6b, 0x61, 0x73, 0x70, 0x61, 0x6e, 0x65, 0x74, 0x2f, 0x6b, 0x61, 0x73, 0x70, 0x61, 0x64, 0x2f,
-	0x70, 0x72, 0x6f, 0x74, 0x6f, 0x77, 0x69, 0x72, 0x65, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f,
-	0x33,
+	0x74, 0x61, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x22, 0x48, 0x0a, 0x14, 0x50, 0x72, 0x75,
+	0x6e, 0x69, 0x6e, 0x67, 0x50, 0x6f, 0x69, 0x6e, 0x74, 0x73, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67,
+	0x65, 0x12, 0x30, 0x0a, 0x07, 0x68, 0x65, 0x61, 0x64, 0x65, 0x72, 0x73, 0x18, 0x01, 0x20, 0x03,
+	0x28, 0x0b, 0x32, 0x16, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x77, 0x69, 0x72, 0x65, 0x2e, 0x42,
+	0x6c, 0x6f, 0x63, 0x6b, 0x48, 0x65, 0x61, 0x64, 0x65, 0x72, 0x52, 0x07, 0x68, 0x65, 0x61, 0x64,
+	0x65, 0x72, 0x73, 0x22, 0x21, 0x0a, 0x1f, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x50, 0x72,
+	0x75, 0x6e, 0x69, 0x6e, 0x67, 0x50, 0x6f, 0x69, 0x6e, 0x74, 0x50, 0x72, 0x6f, 0x6f, 0x66, 0x4d,
+	0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x22, 0x5d, 0x0a, 0x18, 0x50, 0x72, 0x75, 0x6e, 0x69, 0x6e,
+	0x67, 0x50, 0x6f, 0x69, 0x6e, 0x74, 0x50, 0x72, 0x6f, 0x6f, 0x66, 0x4d, 0x65, 0x73, 0x73, 0x61,
+	0x67, 0x65, 0x12, 0x41, 0x0a, 0x07, 0x68, 0x65, 0x61, 0x64, 0x65, 0x72, 0x73, 0x18, 0x01, 0x20,
+	0x03, 0x28, 0x0b, 0x32, 0x27, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x77, 0x69, 0x72, 0x65, 0x2e,
+	0x50, 0x72, 0x75, 0x6e, 0x69, 0x6e, 0x67, 0x50, 0x6f, 0x69, 0x6e, 0x74, 0x50, 0x72, 0x6f, 0x6f,
+	0x66, 0x48, 0x65, 0x61, 0x64, 0x65, 0x72, 0x41, 0x72, 0x72, 0x61, 0x79, 0x52, 0x07, 0x68, 0x65,
+	0x61, 0x64, 0x65, 0x72, 0x73, 0x22, 0x50, 0x0a, 0x1c, 0x50, 0x72, 0x75, 0x6e, 0x69, 0x6e, 0x67,
+	0x50, 0x6f, 0x69, 0x6e, 0x74, 0x50, 0x72, 0x6f, 0x6f, 0x66, 0x48, 0x65, 0x61, 0x64, 0x65, 0x72,
+	0x41, 0x72, 0x72, 0x61, 0x79, 0x12, 0x30, 0x0a, 0x07, 0x68, 0x65, 0x61, 0x64, 0x65, 0x72, 0x73,
+	0x18, 0x01, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x16, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x77, 0x69,
+	0x72, 0x65, 0x2e, 0x42, 0x6c, 0x6f, 0x63, 0x6b, 0x48, 0x65, 0x61, 0x64, 0x65, 0x72, 0x52, 0x07,
+	0x68, 0x65, 0x61, 0x64, 0x65, 0x72, 0x73, 0x42, 0x26, 0x5a, 0x24, 0x67, 0x69, 0x74, 0x68, 0x75,
+	0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x6b, 0x61, 0x73, 0x70, 0x61, 0x6e, 0x65, 0x74, 0x2f, 0x6b,
+	0x61, 0x73, 0x70, 0x61, 0x64, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x77, 0x69, 0x72, 0x65, 0x62,
+	0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -3257,7 +3155,7 @@ func file_p2p_proto_rawDescGZIP() []byte {
 	return file_p2p_proto_rawDescData
 }
 
-var file_p2p_proto_msgTypes = make([]protoimpl.MessageInfo, 54)
+var file_p2p_proto_msgTypes = make([]protoimpl.MessageInfo, 52)
 var file_p2p_proto_goTypes = []interface{}{
 	(*RequestAddressesMessage)(nil),                    // 0: protowire.RequestAddressesMessage
 	(*AddressesMessage)(nil),                           // 1: protowire.AddressesMessage
@@ -3307,12 +3205,10 @@ var file_p2p_proto_goTypes = []interface{}{
 	(*GhostdagData)(nil),                               // 45: protowire.GhostdagData
 	(*BluesAnticoneSizes)(nil),                         // 46: protowire.BluesAnticoneSizes
 	(*DoneBlocksWithTrustedDataMessage)(nil),           // 47: protowire.DoneBlocksWithTrustedDataMessage
-	(*RequestBlockBlueWorkMessage)(nil),                // 48: protowire.RequestBlockBlueWorkMessage
-	(*BlockBlueWorkMessage)(nil),                       // 49: protowire.BlockBlueWorkMessage
-	(*PruningPointsMessage)(nil),                       // 50: protowire.PruningPointsMessage
-	(*RequestPruningPointProofMessage)(nil),            // 51: protowire.RequestPruningPointProofMessage
-	(*PruningPointProofMessage)(nil),                   // 52: protowire.PruningPointProofMessage
-	(*PruningPointProofHeaderArray)(nil),               // 53: protowire.PruningPointProofHeaderArray
+	(*PruningPointsMessage)(nil),                       // 48: protowire.PruningPointsMessage
+	(*RequestPruningPointProofMessage)(nil),            // 49: protowire.RequestPruningPointProofMessage
+	(*PruningPointProofMessage)(nil),                   // 50: protowire.PruningPointProofMessage
+	(*PruningPointProofHeaderArray)(nil),               // 51: protowire.PruningPointProofHeaderArray
 }
 var file_p2p_proto_depIdxs = []int32{
 	3,  // 0: protowire.RequestAddressesMessage.subnetworkId:type_name -> protowire.SubnetworkId
@@ -3364,15 +3260,14 @@ var file_p2p_proto_depIdxs = []int32{
 	13, // 46: protowire.GhostdagData.mergeSetReds:type_name -> protowire.Hash
 	46, // 47: protowire.GhostdagData.bluesAnticoneSizes:type_name -> protowire.BluesAnticoneSizes
 	13, // 48: protowire.BluesAnticoneSizes.blueHash:type_name -> protowire.Hash
-	13, // 49: protowire.RequestBlockBlueWorkMessage.block:type_name -> protowire.Hash
-	11, // 50: protowire.PruningPointsMessage.headers:type_name -> protowire.BlockHeader
-	53, // 51: protowire.PruningPointProofMessage.headers:type_name -> protowire.PruningPointProofHeaderArray
-	11, // 52: protowire.PruningPointProofHeaderArray.headers:type_name -> protowire.BlockHeader
-	53, // [53:53] is the sub-list for method output_type
-	53, // [53:53] is the sub-list for method input_type
-	53, // [53:53] is the sub-list for extension type_name
-	53, // [53:53] is the sub-list for extension extendee
-	0,  // [0:53] is the sub-list for field type_name
+	11, // 49: protowire.PruningPointsMessage.headers:type_name -> protowire.BlockHeader
+	51, // 50: protowire.PruningPointProofMessage.headers:type_name -> protowire.PruningPointProofHeaderArray
+	11, // 51: protowire.PruningPointProofHeaderArray.headers:type_name -> protowire.BlockHeader
+	52, // [52:52] is the sub-list for method output_type
+	52, // [52:52] is the sub-list for method input_type
+	52, // [52:52] is the sub-list for extension type_name
+	52, // [52:52] is the sub-list for extension extendee
+	0,  // [0:52] is the sub-list for field type_name
 }
 
 func init() { file_p2p_proto_init() }
@@ -3958,30 +3853,6 @@ func file_p2p_proto_init() {
 			}
 		}
 		file_p2p_proto_msgTypes[48].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*RequestBlockBlueWorkMessage); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_p2p_proto_msgTypes[49].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*BlockBlueWorkMessage); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_p2p_proto_msgTypes[50].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*PruningPointsMessage); i {
 			case 0:
 				return &v.state
@@ -3993,7 +3864,7 @@ func file_p2p_proto_init() {
 				return nil
 			}
 		}
-		file_p2p_proto_msgTypes[51].Exporter = func(v interface{}, i int) interface{} {
+		file_p2p_proto_msgTypes[49].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*RequestPruningPointProofMessage); i {
 			case 0:
 				return &v.state
@@ -4005,7 +3876,7 @@ func file_p2p_proto_init() {
 				return nil
 			}
 		}
-		file_p2p_proto_msgTypes[52].Exporter = func(v interface{}, i int) interface{} {
+		file_p2p_proto_msgTypes[50].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*PruningPointProofMessage); i {
 			case 0:
 				return &v.state
@@ -4017,7 +3888,7 @@ func file_p2p_proto_init() {
 				return nil
 			}
 		}
-		file_p2p_proto_msgTypes[53].Exporter = func(v interface{}, i int) interface{} {
+		file_p2p_proto_msgTypes[51].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*PruningPointProofHeaderArray); i {
 			case 0:
 				return &v.state
@@ -4036,7 +3907,7 @@ func file_p2p_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_p2p_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   54,
+			NumMessages:   52,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

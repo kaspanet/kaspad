@@ -38,11 +38,11 @@ func (flow *handleRelayInvsFlow) ibdWithHeadersProof(highHash *externalapi.Domai
 	return nil
 }
 
-func (flow *handleRelayInvsFlow) shouldSyncAndShouldDownloadHeadersProof(highHash *externalapi.DomainHash,
+func (flow *handleRelayInvsFlow) shouldSyncAndShouldDownloadHeadersProof(highBlock *externalapi.DomainBlock,
 	highestSharedBlockFound bool) (shouldDownload, shouldSync bool, err error) {
 
 	if !highestSharedBlockFound {
-		hasMoreBlueWorkThanSelectedTip, err := flow.checkIfHighHashHasMoreBlueWorkThanSelectedTip(highHash)
+		hasMoreBlueWorkThanSelectedTip, err := flow.checkIfHighHashHasMoreBlueWorkThanSelectedTip(highBlock)
 		if err != nil {
 			return false, false, err
 		}
@@ -57,24 +57,7 @@ func (flow *handleRelayInvsFlow) shouldSyncAndShouldDownloadHeadersProof(highHas
 	return false, true, nil
 }
 
-func (flow *handleRelayInvsFlow) checkIfHighHashHasMoreBlueWorkThanSelectedTip(highHash *externalapi.DomainHash) (bool, error) {
-	err := flow.outgoingRoute.Enqueue(appmessage.NewRequestBlockBlueWork(highHash))
-	if err != nil {
-		return false, err
-	}
-
-	message, err := flow.dequeueIncomingMessageAndSkipInvs(common.DefaultTimeout)
-	if err != nil {
-		return false, err
-	}
-
-	msgBlockBlueWork, ok := message.(*appmessage.MsgBlockBlueWork)
-	if !ok {
-		return false,
-			protocolerrors.Errorf(true, "received unexpected message type. "+
-				"expected: %s, got: %s", appmessage.CmdBlockBlueWork, message.Command())
-	}
-
+func (flow *handleRelayInvsFlow) checkIfHighHashHasMoreBlueWorkThanSelectedTip(highBlock *externalapi.DomainBlock) (bool, error) {
 	headersSelectedTip, err := flow.Domain().Consensus().GetHeadersSelectedTip()
 	if err != nil {
 		return false, err
@@ -85,7 +68,7 @@ func (flow *handleRelayInvsFlow) checkIfHighHashHasMoreBlueWorkThanSelectedTip(h
 		return false, err
 	}
 
-	return msgBlockBlueWork.BlueWork.Cmp(headersSelectedTipInfo.BlueWork) > 0, nil
+	return highBlock.Header.BlueWork().Cmp(headersSelectedTipInfo.BlueWork) > 0, nil
 }
 
 func (flow *handleRelayInvsFlow) syncAndValidatePruningPointProof() error {

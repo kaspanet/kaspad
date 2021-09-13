@@ -168,7 +168,7 @@ func (m *Manager) registerBlockRelayFlows(router *routerpkg.Router, isStopping *
 			}),
 
 		m.registerFlow("HandleRelayInvs", router, []appmessage.MessageCommand{
-			appmessage.CmdInvRelayBlock, appmessage.CmdBlock, appmessage.CmdBlockLocator, appmessage.CmdBlockBlueWork,
+			appmessage.CmdInvRelayBlock, appmessage.CmdBlock, appmessage.CmdBlockLocator,
 			appmessage.CmdDoneHeaders, appmessage.CmdUnexpectedPruningPoint, appmessage.CmdPruningPointUTXOSetChunk,
 			appmessage.CmdBlockHeaders, appmessage.CmdIBDBlockLocatorHighestHash, appmessage.CmdBlockWithTrustedData,
 			appmessage.CmdDoneBlocksWithTrustedData, appmessage.CmdIBDBlockLocatorHighestHashNotFound,
@@ -213,13 +213,6 @@ func (m *Manager) registerBlockRelayFlows(router *routerpkg.Router, isStopping *
 				appmessage.CmdRequestNextPruningPointUTXOSetChunk}, isStopping, errChan,
 			func(incomingRoute *routerpkg.Route, peer *peerpkg.Peer) error {
 				return blockrelay.HandleRequestPruningPointUTXOSet(m.context, incomingRoute, outgoingRoute)
-			},
-		),
-
-		m.registerFlow("HandleBlockBlueWorkRequests", router,
-			[]appmessage.MessageCommand{appmessage.CmdRequestBlockBlueWork}, isStopping, errChan,
-			func(incomingRoute *routerpkg.Route, peer *peerpkg.Peer) error {
-				return blockrelay.HandleBlockBlueWorkRequests(m.context, incomingRoute, outgoingRoute, peer)
 			},
 		),
 
