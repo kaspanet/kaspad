@@ -117,7 +117,7 @@ func (bpb *blockParentBuilder) BuildParents(stagingArea *model.StagingArea,
 		}
 	}
 
-	maybeAddDirectParentParents := func(directParentHeader externalapi.BlockHeader) error {
+	for _, directParentHeader := range directParentHeaders {
 		for blockLevel, blockLevelParentsInHeader := range directParentHeader.Parents() {
 			isEmptyLevel := false
 			if _, exists := candidatesByLevelToReferenceBlocksMap[blockLevel]; !exists {
@@ -128,7 +128,7 @@ func (bpb *blockParentBuilder) BuildParents(stagingArea *model.StagingArea,
 			for _, parent := range blockLevelParentsInHeader {
 				hasReachabilityData, err := bpb.reachabilityDataStore.HasReachabilityData(bpb.databaseContext, stagingArea, parent)
 				if err != nil {
-					return err
+					return nil, err
 				}
 
 				var referenceBlocks []*externalapi.DomainHash
@@ -162,7 +162,7 @@ func (bpb *blockParentBuilder) BuildParents(stagingArea *model.StagingArea,
 					candidate := candidate // Assign to a new pointer to avoid `range` pointer reuse
 					isInFutureOfCurrentCandidate, err := bpb.dagTopologyManager.IsAnyAncestorOf(stagingArea, candidateReferences, parent)
 					if err != nil {
-						return err
+						return nil, err
 					}
 
 					if isInFutureOfCurrentCandidate {
@@ -177,7 +177,7 @@ func (bpb *blockParentBuilder) BuildParents(stagingArea *model.StagingArea,
 					// Maybe explicitly check the candidate if you see it has reachability data
 					isAncestorOfCurrentCandidate, err := bpb.dagTopologyManager.IsAncestorOfAny(stagingArea, parent, candidateReferences)
 					if err != nil {
-						return err
+						return nil, err
 					}
 
 					if isAncestorOfCurrentCandidate {
@@ -197,15 +197,6 @@ func (bpb *blockParentBuilder) BuildParents(stagingArea *model.StagingArea,
 					candidatesByLevelToReferenceBlocksMap[blockLevel][*parent] = referenceBlocks
 				}
 			}
-		}
-
-		return nil
-	}
-
-	for _, directParentHeader := range directParentHeaders {
-		err = maybeAddDirectParentParents(directParentHeader)
-		if err != nil {
-			return nil, err
 		}
 	}
 
