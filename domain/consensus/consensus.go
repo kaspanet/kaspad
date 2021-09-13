@@ -28,27 +28,27 @@ type consensus struct {
 	pastMedianTimeManager model.PastMedianTimeManager
 	blockValidator        model.BlockValidator
 	coinbaseManager       model.CoinbaseManager
-	dagTopologyManager    model.DAGTopologyManager
+	dagTopologyManagers   []model.DAGTopologyManager
 	dagTraversalManager   model.DAGTraversalManager
 	difficultyManager     model.DifficultyManager
-	ghostdagManager       model.GHOSTDAGManager
+	ghostdagManagers      []model.GHOSTDAGManager
 	headerTipsManager     model.HeadersSelectedTipManager
 	mergeDepthManager     model.MergeDepthManager
 	pruningManager        model.PruningManager
-	reachabilityManager   model.ReachabilityManager
+	reachabilityManagers  []model.ReachabilityManager
 	finalityManager       model.FinalityManager
 
 	acceptanceDataStore       model.AcceptanceDataStore
 	blockStore                model.BlockStore
 	blockHeaderStore          model.BlockHeaderStore
 	pruningStore              model.PruningStore
-	ghostdagDataStore         model.GHOSTDAGDataStore
-	blockRelationStore        model.BlockRelationStore
+	ghostdagDataStores        []model.GHOSTDAGDataStore
+	blockRelationStores       []model.BlockRelationStore
 	blockStatusStore          model.BlockStatusStore
 	consensusStateStore       model.ConsensusStateStore
 	headersSelectedTipStore   model.HeaderSelectedTipStore
 	multisetStore             model.MultisetStore
-	reachabilityDataStore     model.ReachabilityDataStore
+	reachabilityDataStores    []model.ReachabilityDataStore
 	utxoDiffStore             model.UTXODiffStore
 	finalityStore             model.FinalityStore
 	headersSelectedChainStore model.HeadersSelectedChainStore
@@ -81,25 +81,31 @@ func (s *consensus) Init(skipAddingGenesis bool) error {
 	// on a node with pruned header all blocks without known parents points to it.
 	if !exists {
 		s.blockStatusStore.Stage(stagingArea, model.VirtualGenesisBlockHash, externalapi.StatusUTXOValid)
-		err = s.reachabilityManager.Init(stagingArea)
-		if err != nil {
-			return err
+		for _, reachabilityManager := range s.reachabilityManagers {
+			err = reachabilityManager.Init(stagingArea)
+			if err != nil {
+				return err
+			}
 		}
 
-		err = s.dagTopologyManager.SetParents(stagingArea, model.VirtualGenesisBlockHash, nil)
-		if err != nil {
-			return err
+		for _, dagTopologyManager := range s.dagTopologyManagers {
+			err = dagTopologyManager.SetParents(stagingArea, model.VirtualGenesisBlockHash, nil)
+			if err != nil {
+				return err
+			}
 		}
 
 		s.consensusStateStore.StageTips(stagingArea, []*externalapi.DomainHash{model.VirtualGenesisBlockHash})
-		s.ghostdagDataStore.Stage(stagingArea, model.VirtualGenesisBlockHash, externalapi.NewBlockGHOSTDAGData(
-			0,
-			big.NewInt(0),
-			nil,
-			nil,
-			nil,
-			nil,
-		), false)
+		for _, ghostdagDataStore := range s.ghostdagDataStores {
+			ghostdagDataStore.Stage(stagingArea, model.VirtualGenesisBlockHash, externalapi.NewBlockGHOSTDAGData(
+				0,
+				big.NewInt(0),
+				nil,
+				nil,
+				nil,
+				nil,
+			), false)
+		}
 
 		err = staging.CommitAllChanges(s.databaseContext, stagingArea)
 		if err != nil {
@@ -267,7 +273,7 @@ func (s *consensus) GetBlockInfo(blockHash *externalapi.DomainHash) (*externalap
 		return blockInfo, nil
 	}
 
-	ghostdagData, err := s.ghostdagDataStore.Get(s.databaseContext, stagingArea, blockHash, false)
+	ghostdagData, err := s.ghostdagDataStores[0].Get(s.databaseContext, stagingArea, blockHash, false)
 	if err != nil {
 		return nil, err
 	}
@@ -287,12 +293,12 @@ func (s *consensus) GetBlockRelations(blockHash *externalapi.DomainHash) (
 
 	stagingArea := model.NewStagingArea()
 
-	blockRelation, err := s.blockRelationStore.BlockRelation(s.databaseContext, stagingArea, blockHash)
+	blockRelation, err := s.blockRelationStores[0].BlockRelation(s.databaseContext, stagingArea, blockHash)
 	if err != nil {
 		return nil, nil, nil, err
 	}
 
-	blockGHOSTDAGData, err := s.ghostdagDataStore.Get(s.databaseContext, stagingArea, blockHash, false)
+	blockGHOSTDAGData, err := s.ghostdagDataStores[0].Get(s.databaseContext, stagingArea, blockHash, false)
 	if err != nil {
 		return nil, nil, nil, err
 	}
@@ -382,7 +388,7 @@ func (s *consensus) GetVirtualUTXOs(expectedVirtualParents []*externalapi.Domain
 
 	stagingArea := model.NewStagingArea()
 
-	virtualParents, err := s.dagTopologyManager.Parents(stagingArea, model.VirtualBlockHash)
+	virtualParents, err := s.dagTopologyManagers[0].Parents(stagingArea, model.VirtualBlockHash)
 	if err != nil {
 		return nil, err
 	}
@@ -465,7 +471,7 @@ func (s *consensus) GetVirtualSelectedParent() (*externalapi.DomainHash, error) 
 
 	stagingArea := model.NewStagingArea()
 
-	virtualGHOSTDAGData, err := s.ghostdagDataStore.Get(s.databaseContext, stagingArea, model.VirtualBlockHash, false)
+	virtualGHOSTDAGData, err := s.ghostdagDataStores[0].Get(s.databaseContext, stagingArea, model.VirtualBlockHash, false)
 	if err != nil {
 		return nil, err
 	}
@@ -487,7 +493,7 @@ func (s *consensus) GetVirtualInfo() (*externalapi.VirtualInfo, error) {
 
 	stagingArea := model.NewStagingArea()
 
-	blockRelations, err := s.blockRelationStore.BlockRelation(s.databaseContext, stagingArea, model.VirtualBlockHash)
+	blockRelations, err := s.blockRelationStores[0].BlockRelation(s.databaseContext, stagingArea, model.VirtualBlockHash)
 	if err != nil {
 		return nil, err
 	}
@@ -499,7 +505,7 @@ func (s *consensus) GetVirtualInfo() (*externalapi.VirtualInfo, error) {
 	if err != nil {
 		return nil, err
 	}
-	virtualGHOSTDAGData, err := s.ghostdagDataStore.Get(s.databaseContext, stagingArea, model.VirtualBlockHash, false)
+	virtualGHOSTDAGData, err := s.ghostdagDataStores[0].Get(s.databaseContext, stagingArea, model.VirtualBlockHash, false)
 	if err != nil {
 		return nil, err
 	}
@@ -664,7 +670,7 @@ func (s *consensus) IsInSelectedParentChainOf(blockHashA *externalapi.DomainHash
 		return false, err
 	}
 
-	return s.dagTopologyManager.IsInSelectedParentChainOf(stagingArea, blockHashA, blockHashB)
+	return s.dagTopologyManagers[0].IsInSelectedParentChainOf(stagingArea, blockHashA, blockHashB)
 }
 
 func (s *consensus) GetHeadersSelectedTip() (*externalapi.DomainHash, error) {

@@ -27,13 +27,13 @@ type blockValidator struct {
 	difficultyManager     model.DifficultyManager
 	pastMedianTimeManager model.PastMedianTimeManager
 	transactionValidator  model.TransactionValidator
-	ghostdagManager       model.GHOSTDAGManager
-	dagTopologyManager    model.DAGTopologyManager
+	ghostdagManagers      []model.GHOSTDAGManager
+	dagTopologyManagers   []model.DAGTopologyManager
 	dagTraversalManager   model.DAGTraversalManager
 	coinbaseManager       model.CoinbaseManager
 	mergeDepthManager     model.MergeDepthManager
 	pruningStore          model.PruningStore
-	reachabilityManager   model.ReachabilityManager
+	reachabilityManagers  []model.ReachabilityManager
 	finalityManager       model.FinalityManager
 	blockParentBuilder    model.BlockParentBuilder
 	pruningManager        model.PruningManager
@@ -63,12 +63,12 @@ func New(powMax *big.Int,
 	difficultyManager model.DifficultyManager,
 	pastMedianTimeManager model.PastMedianTimeManager,
 	transactionValidator model.TransactionValidator,
-	ghostdagManager model.GHOSTDAGManager,
-	dagTopologyManager model.DAGTopologyManager,
+	ghostdagManagers []model.GHOSTDAGManager,
+	dagTopologyManagers []model.DAGTopologyManager,
 	dagTraversalManager model.DAGTraversalManager,
 	coinbaseManager model.CoinbaseManager,
 	mergeDepthManager model.MergeDepthManager,
-	reachabilityManager model.ReachabilityManager,
+	reachabilityManagers []model.ReachabilityManager,
 	finalityManager model.FinalityManager,
 	blockParentBuilder model.BlockParentBuilder,
 	pruningManager model.PruningManager,
@@ -99,12 +99,12 @@ func New(powMax *big.Int,
 		difficultyManager:           difficultyManager,
 		pastMedianTimeManager:       pastMedianTimeManager,
 		transactionValidator:        transactionValidator,
-		ghostdagManager:             ghostdagManager,
-		dagTopologyManager:          dagTopologyManager,
+		ghostdagManagers:            ghostdagManagers,
+		dagTopologyManagers:         dagTopologyManagers,
 		dagTraversalManager:         dagTraversalManager,
 		coinbaseManager:             coinbaseManager,
 		mergeDepthManager:           mergeDepthManager,
-		reachabilityManager:         reachabilityManager,
+		reachabilityManagers:        reachabilityManagers,
 		finalityManager:             finalityManager,
 		blockParentBuilder:          blockParentBuilder,
 		pruningManager:              pruningManager,

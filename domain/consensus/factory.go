@@ -2,7 +2,9 @@ package consensus
 
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/daawindowstore"
+	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/processes/blockparentbuilder"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
 	"io/ioutil"
 	"os"
 	"sync"
@@ -130,39 +132,30 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 	if err != nil {
 		return nil, err
 	}
-	blockRelationStore := blockrelationstore.New(prefixBucket, pruningWindowSizePlusFinalityDepthForCache, preallocateCaches)
 
 	blockStatusStore := blockstatusstore.New(prefixBucket, pruningWindowSizePlusFinalityDepthForCache, preallocateCaches)
 	multisetStore := multisetstore.New(prefixBucket, 200, preallocateCaches)
 	pruningStore := pruningstore.New(prefixBucket, 2, preallocateCaches)
-	reachabilityDataStore := reachabilitydatastore.New(prefixBucket, pruningWindowSizePlusFinalityDepthForCache, preallocateCaches)
 	utxoDiffStore := utxodiffstore.New(prefixBucket, 200, preallocateCaches)
 	consensusStateStore := consensusstatestore.New(prefixBucket, 10_000, preallocateCaches)
-
-	// Some tests artificially decrease the pruningWindowSize, thus making the GhostDagStore cache too small for a
-	// a single DifficultyAdjustmentWindow. To alleviate this problem we make sure that the cache size is at least
-	// dagParams.DifficultyAdjustmentWindowSize
-	ghostdagDataCacheSize := pruningWindowSizeForCaches
-	if ghostdagDataCacheSize < config.DifficultyAdjustmentWindowSize {
-		ghostdagDataCacheSize = config.DifficultyAdjustmentWindowSize
-	}
-	ghostdagDataStore := ghostdagdatastore.New(prefixBucket, ghostdagDataCacheSize, preallocateCaches)
 
 	headersSelectedTipStore := headersselectedtipstore.New(prefixBucket)
 	finalityStore := finalitystore.New(prefixBucket, 200, preallocateCaches)
 	headersSelectedChainStore := headersselectedchainstore.New(prefixBucket, pruningWindowSizeForCaches, preallocateCaches)
 	daaBlocksStore := daablocksstore.New(prefixBucket, pruningWindowSizeForCaches, int(config.FinalityDepth()), preallocateCaches)
 
+	blockRelationStores, reachabilityDataStores, ghostdagDataStores := dagStores(config, prefixBucket, pruningWindowSizePlusFinalityDepthForCache, pruningWindowSizeForCaches, preallocateCaches)
+	reachabilityManagers, dagTopologyManagers, ghostdagManagers := f.dagProcesses(config, dbManager, blockHeaderStore, blockRelationStores, reachabilityDataStores, ghostdagDataStores)
+
+	blockRelationStore := blockRelationStores[0]
+	reachabilityDataStore := reachabilityDataStores[0]
+	ghostdagDataStore := ghostdagDataStores[0]
+
+	reachabilityManager := reachabilityManagers[0]
+	dagTopologyManager := dagTopologyManagers[0]
+	ghostdagManager := ghostdagManagers[0]
+
 	// Processes
-	reachabilityManager := reachabilitymanager.New(
-		dbManager,
-		ghostdagDataStore,
-		reachabilityDataStore)
-	dagTopologyManager := dagtopologymanager.New(
-		dbManager,
-		reachabilityManager,
-		blockRelationStore,
-		ghostdagDataStore)
 	blockParentBuilder := blockparentbuilder.New(
 		dbManager,
 		blockHeaderStore,
@@ -170,13 +163,6 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 		reachabilityDataStore,
 		pruningStore,
 	)
-	ghostdagManager := f.ghostdagConstructor(
-		dbManager,
-		dagTopologyManager,
-		ghostdagDataStore,
-		blockHeaderStore,
-		config.K,
-		config.GenesisHash)
 	dagTraversalManager := dagtraversalmanager.New(
 		dbManager,
 		dagTopologyManager,
@@ -318,12 +304,12 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 		difficultyManager,
 		pastMedianTimeManager,
 		transactionValidator,
-		ghostdagManager,
-		dagTopologyManager,
+		ghostdagManagers,
+		dagTopologyManagers,
 		dagTraversalManager,
 		coinbaseManager,
 		mergeDepthManager,
-		reachabilityManager,
+		reachabilityManagers,
 		finalityManager,
 		blockParentBuilder,
 		pruningManager,
@@ -423,27 +409,27 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 		pastMedianTimeManager: pastMedianTimeManager,
 		blockValidator:        blockValidator,
 		coinbaseManager:       coinbaseManager,
-		dagTopologyManager:    dagTopologyManager,
+		dagTopologyManagers:   dagTopologyManagers,
 		dagTraversalManager:   dagTraversalManager,
 		difficultyManager:     difficultyManager,
-		ghostdagManager:       ghostdagManager,
+		ghostdagManagers:      ghostdagManagers,
 		headerTipsManager:     headerTipsManager,
 		mergeDepthManager:     mergeDepthManager,
 		pruningManager:        pruningManager,
-		reachabilityManager:   reachabilityManager,
+		reachabilityManagers:  reachabilityManagers,
 		finalityManager:       finalityManager,
 
 		acceptanceDataStore:       acceptanceDataStore,
 		blockStore:                blockStore,
 		blockHeaderStore:          blockHeaderStore,
 		pruningStore:              pruningStore,
-		ghostdagDataStore:         ghostdagDataStore,
+		ghostdagDataStores:        ghostdagDataStores,
 		blockStatusStore:          blockStatusStore,
-		blockRelationStore:        blockRelationStore,
+		blockRelationStores:       blockRelationStores,
 		consensusStateStore:       consensusStateStore,
 		headersSelectedTipStore:   headersSelectedTipStore,
 		multisetStore:             multisetStore,
-		reachabilityDataStore:     reachabilityDataStore,
+		reachabilityDataStores:    reachabilityDataStores,
 		utxoDiffStore:             utxoDiffStore,
 		finalityStore:             finalityStore,
 		headersSelectedChainStore: headersSelectedChainStore,
@@ -510,7 +496,7 @@ func (f *factory) NewTestConsensus(config *Config, testName string) (
 		database:                  db,
 		testConsensusStateManager: testConsensusStateManager,
 		testReachabilityManager: reachabilitymanager.NewTestReachabilityManager(consensusAsImplementation.
-			reachabilityManager),
+			reachabilityManagers[0]),
 		testTransactionValidator: testTransactionValidator,
 	}
 	tstConsensus.testBlockBuilder = blockbuilder.NewTestBlockBuilder(consensusAsImplementation.blockBuilder, tstConsensus)
@@ -548,4 +534,73 @@ func (f *factory) SetTestLevelDBCacheSize(cacheSizeMiB int) {
 }
 func (f *factory) SetTestPreAllocateCache(preallocateCaches bool) {
 	f.preallocateCaches = &preallocateCaches
+}
+
+func dagStores(config *Config,
+	prefixBucket model.DBBucket,
+	pruningWindowSizePlusFinalityDepthForCache, pruningWindowSizeForCaches int,
+	preallocateCaches bool) ([]model.BlockRelationStore, []model.ReachabilityDataStore, []model.GHOSTDAGDataStore) {
+
+	blockRelationStores := make([]model.BlockRelationStore, constants.MaxBlockLevel+1)
+	reachabilityDataStores := make([]model.ReachabilityDataStore, constants.MaxBlockLevel+1)
+	ghostdagDataStores := make([]model.GHOSTDAGDataStore, constants.MaxBlockLevel+1)
+
+	ghostdagDataCacheSize := pruningWindowSizeForCaches
+	if ghostdagDataCacheSize < config.DifficultyAdjustmentWindowSize {
+		ghostdagDataCacheSize = config.DifficultyAdjustmentWindowSize
+	}
+
+	for i := 0; i <= constants.MaxBlockLevel; i++ {
+		prefixBucket := prefixBucket.Bucket([]byte{byte(i)})
+		if i == 0 {
+			blockRelationStores[i] = blockrelationstore.New(prefixBucket, pruningWindowSizePlusFinalityDepthForCache, preallocateCaches)
+			reachabilityDataStores[i] = reachabilitydatastore.New(prefixBucket, pruningWindowSizePlusFinalityDepthForCache, preallocateCaches)
+			ghostdagDataStores[i] = ghostdagdatastore.New(prefixBucket, ghostdagDataCacheSize, preallocateCaches)
+		} else {
+			blockRelationStores[i] = blockrelationstore.New(prefixBucket, 200, preallocateCaches)
+			reachabilityDataStores[i] = reachabilitydatastore.New(prefixBucket, 200, preallocateCaches)
+			ghostdagDataStores[i] = ghostdagdatastore.New(prefixBucket, 200, preallocateCaches)
+		}
+	}
+
+	return blockRelationStores, reachabilityDataStores, ghostdagDataStores
+}
+
+func (f *factory) dagProcesses(config *Config,
+	dbManager model.DBManager,
+	blockHeaderStore model.BlockHeaderStore,
+	blockRelationStores []model.BlockRelationStore,
+	reachabilityDataStores []model.ReachabilityDataStore,
+	ghostdagDataStores []model.GHOSTDAGDataStore) (
+	[]model.ReachabilityManager,
+	[]model.DAGTopologyManager,
+	[]model.GHOSTDAGManager,
+) {
+
+	reachabilityManagers := make([]model.ReachabilityManager, constants.MaxBlockLevel+1)
+	dagTopologyManagers := make([]model.DAGTopologyManager, constants.MaxBlockLevel+1)
+	ghostdagManagers := make([]model.GHOSTDAGManager, constants.MaxBlockLevel+1)
+
+	for i := 0; i <= constants.MaxBlockLevel; i++ {
+		reachabilityManagers[i] = reachabilitymanager.New(
+			dbManager,
+			ghostdagDataStores[i],
+			reachabilityDataStores[i])
+
+		dagTopologyManagers[i] = dagtopologymanager.New(
+			dbManager,
+			reachabilityManagers[i],
+			blockRelationStores[i],
+			ghostdagDataStores[i])
+
+		ghostdagManagers[i] = f.ghostdagConstructor(
+			dbManager,
+			dagTopologyManagers[i],
+			ghostdagDataStores[i],
+			blockHeaderStore,
+			config.K,
+			config.GenesisHash)
+	}
+
+	return reachabilityManagers, dagTopologyManagers, ghostdagManagers
 }

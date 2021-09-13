@@ -3,6 +3,7 @@ package pow
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/hashes"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/serialization"
 	"github.com/kaspanet/kaspad/util/difficulty"
@@ -64,4 +65,13 @@ func toBig(hash *externalapi.DomainHash) *big.Int {
 	}
 
 	return new(big.Int).SetBytes(buf)
+}
+
+func BlockLevel(header externalapi.BlockHeader) int {
+	proofOfWorkValue := CalculateProofOfWorkValue(header.ToMutable())
+	for blockLevel := 0; ; blockLevel++ {
+		if blockLevel == constants.MaxBlockLevel || proofOfWorkValue.Bit(blockLevel+1) != 0 {
+			return blockLevel
+		}
+	}
 }

@@ -35,4 +35,6 @@ const (
 	// LockTimeThreshold is the number below which a lock time is
 	// interpreted to be a DAA score.
 	LockTimeThreshold = 5e11 // Tue Nov 5 00:53:20 1985 UTC
+
+	MaxBlockLevel = 255
 )

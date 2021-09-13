@@ -66,28 +66,35 @@ func (v *blockValidator) setParents(stagingArea *model.StagingArea,
 	header externalapi.BlockHeader,
 	isBlockWithTrustedData bool) error {
 
-	parents := make([]*externalapi.DomainHash, 0, len(header.DirectParents()))
-	for _, currentParent := range header.DirectParents() {
-		exists, err := v.blockStatusStore.Exists(v.databaseContext, stagingArea, currentParent)
+	for level := 0; level <= pow.BlockLevel(header); level++ {
+		var parents []*externalapi.DomainHash
+		for _, parent := range header.ParentsAtLevel(level) {
+			exists, err := v.blockStatusStore.Exists(v.databaseContext, stagingArea, parent)
+			if err != nil {
+				return err
+			}
+
+			if !exists {
+				if level == 0 && !isBlockWithTrustedData {
+					return errors.Errorf("direct parent %s is missing: only block with prefilled information can have some missing parents", parent)
+				}
+				continue
+			}
+
+			parents = append(parents, parent)
+		}
+
+		if len(parents) == 0 {
+			parents = append(parents, model.VirtualGenesisBlockHash)
+		}
+
+		err := v.dagTopologyManagers[level].SetParents(stagingArea, blockHash, parents)
 		if err != nil {
 			return err
 		}
-
-		if !exists {
-			if !isBlockWithTrustedData {
-				return errors.Errorf("direct parent %s is missing: only block with prefilled information can have some missing parents", currentParent)
-			}
-			continue
-		}
-
-		parents = append(parents, currentParent)
 	}
 
-	if len(parents) == 0 {
-		parents = append(parents, model.VirtualGenesisBlockHash)
-	}
-
-	return v.dagTopologyManager.SetParents(stagingArea, blockHash, parents)
+	return nil
 }
 
 func (v *blockValidator) validateDifficulty(stagingArea *model.StagingArea,
@@ -96,7 +103,20 @@ func (v *blockValidator) validateDifficulty(stagingArea *model.StagingArea,
 
 	if !isBlockWithTrustedData {
 		// We need to calculate GHOSTDAG for the block in order to check its difficulty and blue work
-		err := v.ghostdagManager.GHOSTDAG(stagingArea, blockHash)
+		err := v.ghostdagManagers[0].GHOSTDAG(stagingArea, blockHash)
+		if err != nil {
+			return err
+		}
+	}
+
+	header, err := v.blockHeaderStore.BlockHeader(v.databaseContext, stagingArea, blockHash)
+	if err != nil {
+		return err
+	}
+
+	blockLevel := pow.BlockLevel(header)
+	for i := 1; i <= blockLevel; i++ {
+		err = v.ghostdagManagers[i].GHOSTDAG(stagingArea, blockHash)
 		if err != nil {
 			return err
 		}
@@ -110,10 +130,6 @@ func (v *blockValidator) validateDifficulty(stagingArea *model.StagingArea,
 		return err
 	}
 
-	header, err := v.blockHeaderStore.BlockHeader(v.databaseContext, stagingArea, blockHash)
-	if err != nil {
-		return err
-	}
 	if header.Bits() != expectedBits {
 		return errors.Wrapf(ruleerrors.ErrUnexpectedDifficulty, "block difficulty of %d is not the expected value of %d", header.Bits(), expectedBits)
 	}
@@ -215,7 +231,7 @@ func (v *blockValidator) checkPruningPointViolation(stagingArea *model.StagingAr
 		return err
 	}
 
-	parents, err := v.dagTopologyManager.Parents(stagingArea, blockHash)
+	parents, err := v.dagTopologyManagers[0].Parents(stagingArea, blockHash)
 	if err != nil {
 		return err
 	}
@@ -224,7 +240,7 @@ func (v *blockValidator) checkPruningPointViolation(stagingArea *model.StagingAr
 		return nil
 	}
 
-	isAncestorOfAny, err := v.dagTopologyManager.IsAncestorOfAny(stagingArea, pruningPoint, parents)
+	isAncestorOfAny, err := v.dagTopologyManagers[0].IsAncestorOfAny(stagingArea, pruningPoint, parents)
 	if err != nil {
 		return err
 	}

@@ -24,7 +24,7 @@ func (tc *testConsensus) BlockHeaderStore() model.BlockHeaderStore {
 }
 
 func (tc *testConsensus) BlockRelationStore() model.BlockRelationStore {
-	return tc.blockRelationStore
+	return tc.blockRelationStores[0]
 }
 
 func (tc *testConsensus) BlockStatusStore() model.BlockStatusStore {
@@ -40,7 +40,7 @@ func (tc *testConsensus) ConsensusStateStore() model.ConsensusStateStore {
 }
 
 func (tc *testConsensus) GHOSTDAGDataStore() model.GHOSTDAGDataStore {
-	return tc.ghostdagDataStore
+	return tc.ghostdagDataStores[0]
 }
 
 func (tc *testConsensus) HeaderTipsStore() model.HeaderSelectedTipStore {
@@ -56,7 +56,7 @@ func (tc *testConsensus) PruningStore() model.PruningStore {
 }
 
 func (tc *testConsensus) ReachabilityDataStore() model.ReachabilityDataStore {
-	return tc.reachabilityDataStore
+	return tc.reachabilityDataStores[0]
 }
 
 func (tc *testConsensus) UTXODiffStore() model.UTXODiffStore {
@@ -84,7 +84,7 @@ func (tc *testConsensus) ConsensusStateManager() testapi.TestConsensusStateManag
 }
 
 func (tc *testConsensus) DAGTopologyManager() model.DAGTopologyManager {
-	return tc.dagTopologyManager
+	return tc.dagTopologyManagers[0]
 }
 
 func (tc *testConsensus) DAGTraversalManager() model.DAGTraversalManager {
@@ -96,7 +96,7 @@ func (tc *testConsensus) DifficultyManager() model.DifficultyManager {
 }
 
 func (tc *testConsensus) GHOSTDAGManager() model.GHOSTDAGManager {
-	return tc.ghostdagManager
+	return tc.ghostdagManagers[0]
 }
 
 func (tc *testConsensus) HeaderTipsManager() model.HeadersSelectedTipManager {

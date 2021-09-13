@@ -47,12 +47,12 @@ func TestValidateAndInsertImportedPruningPoint(t *testing.T) {
 				t.Fatalf("PruningPointHeaders: %+v", err)
 			}
 
-			pointAndItsAnticoneWithTrustedData, err := tcSyncer.PruningPointAndItsAnticoneWithTrustedData()
+			pruningPointAndItsAnticoneWithTrustedData, err := tcSyncer.PruningPointAndItsAnticoneWithTrustedData()
 			if err != nil {
 				t.Fatalf("PruningPointAndItsAnticoneWithTrustedData: %+v", err)
 			}
 
-			for _, blockWithTrustedData := range pointAndItsAnticoneWithTrustedData {
+			for _, blockWithTrustedData := range pruningPointAndItsAnticoneWithTrustedData {
 				_, err := tcSyncee.ValidateAndInsertBlockWithTrustedData(blockWithTrustedData, false)
 				if err != nil {
 					t.Fatalf("ValidateAndInsertBlockWithTrustedData: %+v", err)
