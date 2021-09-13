@@ -86,6 +86,9 @@ func (bpb *blockParentBuilder) BuildParents(stagingArea *model.StagingArea,
 		directParentHeaders[i] = directParentHeader
 	}
 
+	type blockToReferences map[externalapi.DomainHash][]*externalapi.DomainHash
+	candidatesByLevelToReferenceBlocksMap := make(map[int]blockToReferences)
+
 	// Direct parents are guaranteed to be in one other's anticones so add them all to
 	// all the block levels they occupy
 	for _, directParentHeader := range directParentHeaders {
