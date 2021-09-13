@@ -136,7 +136,11 @@ func TestIBDWithPruning(t *testing.T) {
 	// This is done to make a pruning depth of 6 blocks
 	overrideDAGParams.FinalityDuration = 2 * overrideDAGParams.TargetTimePerBlock
 	overrideDAGParams.K = 0
-	overrideDAGParams.TimestampDeviationTolerance = 10_000_000 // Disable the "too far in the future" validation
+
+	// Disable the "too far in the future" validation. This is done so that we could
+	// mine blocks with high enough timestamps to avoid the timestamp threshold
+	// validation of ibd-with-headers-proof
+	overrideDAGParams.TimestampDeviationTolerance = 10_000_000
 
 	expectedPruningDepth := uint64(6)
 	if overrideDAGParams.PruningDepth() != expectedPruningDepth {
