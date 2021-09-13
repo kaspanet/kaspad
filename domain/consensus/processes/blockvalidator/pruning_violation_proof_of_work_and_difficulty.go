@@ -75,7 +75,7 @@ func (v *blockValidator) setParents(stagingArea *model.StagingArea,
 
 		if !exists {
 			if !isBlockWithTrustedData {
-				return errors.Errorf("only block with prefilled information can have some missing parents")
+				return errors.Errorf("direct parent %s is missing: only block with prefilled information can have some missing parents", currentParent)
 			}
 			continue
 		}

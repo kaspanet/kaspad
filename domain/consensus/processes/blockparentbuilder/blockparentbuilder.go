@@ -3,8 +3,10 @@ package blockparentbuilder
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/hashset"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/pow"
+	"github.com/pkg/errors"
 )
 
 type blockParentBuilder struct {
@@ -35,32 +37,67 @@ func New(
 func (bpb *blockParentBuilder) BuildParents(stagingArea *model.StagingArea,
 	directParentHashes []*externalapi.DomainHash) ([]externalapi.BlockLevelParents, error) {
 
+	// Late on we'll mutate direct parent hashes, so we first clone it.
+	directParentHashesCopy := make([]*externalapi.DomainHash, len(directParentHashes))
+	copy(directParentHashesCopy, directParentHashes)
+
 	pruningPoint, err := bpb.pruningStore.PruningPoint(bpb.databaseContext, stagingArea)
 	if err != nil {
 		return nil, err
 	}
 
-	directParentHeaders := make(map[externalapi.DomainHash]externalapi.BlockHeader)
-	for _, directParentHash := range directParentHashes {
+	// The first candidates to be added should be from a parent in the future of the pruning
+	// point, so later on we'll know that every block that doesn't have reachability data
+	// (i.e. pruned) is necessarily in the past of the current candidates and cannot be
+	// considered as a valid candidate.
+	// This is why we sort the direct parent headers in a way that the first one will be
+	// in the future of the pruning point.
+	directParentHeaders := make([]externalapi.BlockHeader, len(directParentHashesCopy))
+	firstParentInFutureOfPruningPointIndex := 0
+	foundFirstParentInFutureOfPruningPoint := false
+	for i, directParentHash := range directParentHashesCopy {
+		isInFutureOfPruningPoint, err := bpb.dagTopologyManager.IsAncestorOf(stagingArea, pruningPoint, directParentHash)
+		if err != nil {
+			return nil, err
+		}
+
+		if !isInFutureOfPruningPoint {
+			continue
+		}
+
+		firstParentInFutureOfPruningPointIndex = i
+		foundFirstParentInFutureOfPruningPoint = true
+		break
+	}
+
+	if !foundFirstParentInFutureOfPruningPoint {
+		return nil, errors.New("BuildParents should get at least one parent in the future of the pruning point")
+	}
+
+	oldFirstDirectParent := directParentHashesCopy[0]
+	directParentHashesCopy[0] = directParentHashesCopy[firstParentInFutureOfPruningPointIndex]
+	directParentHashesCopy[firstParentInFutureOfPruningPointIndex] = oldFirstDirectParent
+
+	for i, directParentHash := range directParentHashesCopy {
 		directParentHeader, err := bpb.blockHeaderStore.BlockHeader(bpb.databaseContext, stagingArea, directParentHash)
 		if err != nil {
 			return nil, err
 		}
-		directParentHeaders[*directParentHash] = directParentHeader
+		directParentHeaders[i] = directParentHeader
 	}
 
 	// Direct parents are guaranteed to be in one other's anticones so add them all to
 	// all the block levels they occupy
 	candidatesByLevelToReferenceBlocksMap := make(map[int]map[externalapi.DomainHash][]*externalapi.DomainHash)
 
-	for directParentHash, directParentHeader := range directParentHeaders {
-		directParentHash := directParentHash // Assign to a new pointer to avoid `range` pointer reuse
+	for _, directParentHeader := range directParentHeaders {
+		directParentHash := consensushashing.HeaderHash(directParentHeader)
 		proofOfWorkValue := pow.CalculateProofOfWorkValue(directParentHeader.ToMutable())
 		for blockLevel := 0; ; blockLevel++ {
 			if _, exists := candidatesByLevelToReferenceBlocksMap[blockLevel]; !exists {
 				candidatesByLevelToReferenceBlocksMap[blockLevel] = make(map[externalapi.DomainHash][]*externalapi.DomainHash)
 			}
-			candidatesByLevelToReferenceBlocksMap[blockLevel][directParentHash] = []*externalapi.DomainHash{&directParentHash}
+			candidatesByLevelToReferenceBlocksMap[blockLevel][*directParentHash] = []*externalapi.DomainHash{directParentHash}
 			if proofOfWorkValue.Bit(blockLevel+1) != 0 {
 				break
 			}
@@ -165,36 +202,7 @@ func (bpb *blockParentBuilder) BuildParents(stagingArea *model.StagingArea,
 		return nil
 	}
 
-	// The first candidates to be added should be from a parent in the future of the pruning
-	// point, so later on we'll know that every block that doesn't have reachability data
-	// (i.e. pruned) is necessarily in the past of the current candidates and cannot be
-	// considered as a valid candidate.
-	var firstAddedParent *externalapi.DomainHash
-	for directParentHash, directParentHeader := range directParentHeaders {
-		directParentHash := directParentHash
-		isInFutureOfPruningPoint, err := bpb.dagTopologyManager.IsAncestorOf(stagingArea, pruningPoint, &directParentHash)
-		if err != nil {
-			return nil, err
-		}
-
-		if !isInFutureOfPruningPoint {
-			continue
-		}
-
-		err = maybeAddDirectParentParents(directParentHeader)
-		if err != nil {
-			return nil, err
-		}
-
-		firstAddedParent = &directParentHash
-		break
-	}
-
-	for directParentHash, directParentHeader := range directParentHeaders {
-		if directParentHash.Equal(firstAddedParent) {
-			continue
-		}
-
+	for _, directParentHeader := range directParentHeaders {
 		err = maybeAddDirectParentParents(directParentHeader)
 		if err != nil {
 			return nil, err
