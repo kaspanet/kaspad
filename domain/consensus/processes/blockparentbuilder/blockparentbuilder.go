@@ -88,8 +88,6 @@ func (bpb *blockParentBuilder) BuildParents(stagingArea *model.StagingArea,
 
 	// Direct parents are guaranteed to be in one other's anticones so add them all to
 	// all the block levels they occupy
-	candidatesByLevelToReferenceBlocksMap := make(map[int]map[externalapi.DomainHash][]*externalapi.DomainHash)
-
 	for _, directParentHeader := range directParentHeaders {
 		directParentHash := consensushashing.HeaderHash(directParentHeader)
 		proofOfWorkValue := pow.CalculateProofOfWorkValue(directParentHeader.ToMutable())
@@ -131,12 +129,22 @@ func (bpb *blockParentBuilder) BuildParents(stagingArea *model.StagingArea,
 					return nil, err
 				}
 
+				// Reference blocks are the blocks that are used in reachability queries to check if
+				// a candidate is in the future of another candidate. In most cases this is just the
+				// block itself, but in the case where a block doesn't have reachability data we need
+				// to use some blocks in its future as reference instead.
+				// If we make sure to add a parent in the future of the pruning point first, we can
+				// know that any pruned candidate that is in the past of some blocks in the pruning
+				// point anticone should have should be a parent (in the relevant level) of one of
+				// the virtual genesis children in the pruning point anticone. So we can check which
+				// virtual genesis children have this block as parent and use those block as
+				// reference blocks.
 				var referenceBlocks []*externalapi.DomainHash
 				if hasReachabilityData {
 					referenceBlocks = []*externalapi.DomainHash{parent}
 				} else {
 					for childHash, childHeader := range virtualGenesisChildrenHeaders {
-						childHash := childHash
+						childHash := childHash // Assign to a new pointer to avoid `range` pointer reuse
 						if len(childHeader.Parents()) <= blockLevel {
 							continue
 						}
@@ -174,7 +182,6 @@ func (bpb *blockParentBuilder) BuildParents(stagingArea *model.StagingArea,
 						continue
 					}
 
-					// Maybe explicitly check the candidate if you see it has reachability data
 					isAncestorOfCurrentCandidate, err := bpb.dagTopologyManager.IsAncestorOfAny(stagingArea, parent, candidateReferences)
 					if err != nil {
 						return nil, err
