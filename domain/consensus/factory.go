@@ -262,12 +262,13 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 	pruningManager := pruningmanager.New(
 		dbManager,
 		dagTraversalManager,
-		dagTopologyManager,
+		dagTopologyManagers,
 		consensusStateManager,
 		finalityManager,
+		ghostdagManagers,
 
 		consensusStateStore,
-		ghostdagDataStore,
+		ghostdagDataStores,
 		pruningStore,
 		blockStatusStore,
 		headersSelectedTipStore,

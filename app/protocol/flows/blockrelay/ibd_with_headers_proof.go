@@ -7,6 +7,7 @@ import (
 	"github.com/kaspanet/kaspad/app/protocol/protocolerrors"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
 	"github.com/pkg/errors"
 )
 
@@ -112,7 +113,16 @@ func (flow *handleRelayInvsFlow) downloadHeadersAndPruningUTXOSet(highHash *exte
 		return err
 	}
 
-	log.Debugf("Blocks downloaded from peer %s", flow.peer)
+	log.Debugf("Headers downloaded from peer %s", flow.peer)
+
+	highHashInfo, err := flow.Domain().StagingConsensus().GetBlockInfo(highHash)
+	if err != nil {
+		return err
+	}
+
+	if !highHashInfo.Exists {
+		return protocolerrors.Errorf(true, "the triggering IBD block was not send")
+	}
 
 	log.Debugf("Syncing the current pruning point UTXO set")
 	syncedPruningPointUTXOSetSuccessfully, err := flow.syncPruningPointUTXOSet(flow.Domain().StagingConsensus(), pruningPoint)
@@ -236,6 +246,16 @@ func (flow *handleRelayInvsFlow) validateAndInsertPruningPoints() error {
 	if arePruningPointsViolatingFinality {
 		// TODO: Find a better way to deal with finality conflicts.
 		return protocolerrors.Errorf(false, "pruning points are violating finality")
+	}
+
+	currentPruningPoint, err := flow.Domain().Consensus().PruningPoint()
+	if err != nil {
+		return err
+	}
+
+	proposedPruningPoint := consensushashing.HeaderHash(headers[len(headers)-1])
+	if currentPruningPoint.Equal(proposedPruningPoint) {
+		return protocolerrors.Errorf(true, "the proposed pruning point is the same as the current pruning point")
 	}
 
 	err = flow.Domain().StagingConsensus().ImportPruningPoints(headers)
