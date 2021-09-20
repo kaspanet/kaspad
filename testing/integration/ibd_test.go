@@ -133,14 +133,15 @@ func TestIBDWithPruning(t *testing.T) {
 
 	overrideDAGParams := dagconfig.SimnetParams
 
+	// Increase the target time per block so that we could mine
+	// blocks with timestamps that are spaced far enough apart
+	// to avoid failing the timestamp threshold validation of
+	// ibd-with-headers-proof
+	overrideDAGParams.TargetTimePerBlock = time.Minute
+
 	// This is done to make a pruning depth of 6 blocks
 	overrideDAGParams.FinalityDuration = 2 * overrideDAGParams.TargetTimePerBlock
 	overrideDAGParams.K = 0
-
-	// Disable the "too far in the future" validation. This is done so that we could
-	// mine blocks with high enough timestamps to avoid the timestamp threshold
-	// validation of ibd-with-headers-proof
-	overrideDAGParams.TimestampDeviationTolerance = 10_000_000
 
 	expectedPruningDepth := uint64(6)
 	if overrideDAGParams.PruningDepth() != expectedPruningDepth {
@@ -215,7 +216,7 @@ func mineNextBlockWithMockTimestamps(t *testing.T, harness *appHarness) *externa
 	if currentMockTimestamp == 0 {
 		currentMockTimestamp = block.Header.TimeInMilliseconds()
 	} else {
-		currentMockTimestamp += 10000
+		currentMockTimestamp += 10_000
 	}
 	mutableHeader := block.Header.ToMutable()
 	mutableHeader.SetTimeInMilliseconds(currentMockTimestamp)
