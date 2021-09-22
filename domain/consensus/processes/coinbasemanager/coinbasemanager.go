@@ -182,11 +182,10 @@ func (c *coinbaseManager) getBlockSubsidy(stagingArea *model.StagingArea, blockH
 // has the expected value.
 //
 // Further details: https://hashdag.medium.com/kaspa-launch-plan-9a63f4d754a6
+//
 // TODO: This function makes heavy use of floating point operations, which are
 // unfortunately not guaranteed to produce identical results between differing
-// architectures in Go. This may produce discrepancies among nodes in the
-// network. Rewrite this function either without the use of floats, or without
-// the use of Go
+// architectures. This may produce discrepancies among nodes in the network
 func (c *coinbaseManager) calcBlockSubsidy(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) (uint64, error) {
 	if blockHash.Equal(c.genesisHash) {
 		return c.subsidyGenesisReward, nil
