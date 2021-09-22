@@ -223,6 +223,7 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 		config.SubsidyPastRewardMultiplier,
 		config.SubsidyMergeSetRewardMultiplier,
 		config.CoinbasePayloadScriptPublicKeyMaxLength,
+		config.GenesisHash,
 		ghostdagDataStore,
 		acceptanceDataStore,
 		daaBlocksStore)

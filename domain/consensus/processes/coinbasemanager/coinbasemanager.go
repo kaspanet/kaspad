@@ -14,6 +14,7 @@ type coinbaseManager struct {
 	subsidyPastRewardMultiplier             float64
 	subsidyMergeSetRewardMultiplier         float64
 	coinbasePayloadScriptPublicKeyMaxLength uint8
+	genesisHash                             *externalapi.DomainHash
 
 	databaseContext     model.DBReader
 	ghostdagDataStore   model.GHOSTDAGDataStore
@@ -158,6 +159,9 @@ func acceptanceDataFromArrayToMap(acceptanceData externalapi.AcceptanceData) map
 //
 // Further details: https://hashdag.medium.com/kaspa-launch-plan-9a63f4d754a6
 func (c *coinbaseManager) calcBlockSubsidy(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) (uint64, error) {
+	if blockHash.Equal(c.genesisHash) {
+		return c.subsidyGenesisReward, nil
+	}
 	return c.subsidyGenesisReward, nil
 }
 
@@ -196,6 +200,7 @@ func New(
 	subsidyPastRewardMultiplier float64,
 	subsidyMergeSetRewardMultiplier float64,
 	coinbasePayloadScriptPublicKeyMaxLength uint8,
+	genesisHash *externalapi.DomainHash,
 
 	ghostdagDataStore model.GHOSTDAGDataStore,
 	acceptanceDataStore model.AcceptanceDataStore,
@@ -208,6 +213,7 @@ func New(
 		subsidyPastRewardMultiplier:             subsidyPastRewardMultiplier,
 		subsidyMergeSetRewardMultiplier:         subsidyMergeSetRewardMultiplier,
 		coinbasePayloadScriptPublicKeyMaxLength: coinbasePayloadScriptPublicKeyMaxLength,
+		genesisHash:                             genesisHash,
 
 		ghostdagDataStore:   ghostdagDataStore,
 		acceptanceDataStore: acceptanceDataStore,
