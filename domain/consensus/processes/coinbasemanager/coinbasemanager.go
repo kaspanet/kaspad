@@ -10,8 +10,9 @@ import (
 )
 
 type coinbaseManager struct {
-	subsidyReductionInterval                uint64
-	baseSubsidy                             uint64
+	subsidyGenesisReward                    uint64
+	subsidyPastRewardMultiplier             float64
+	subsidyMergeSetRewardMultiplier         float64
 	coinbasePayloadScriptPublicKeyMaxLength uint8
 
 	databaseContext     model.DBReader
@@ -155,23 +156,9 @@ func acceptanceDataFromArrayToMap(acceptanceData externalapi.AcceptanceData) map
 // newly generated blocks awards as well as validating the coinbase for blocks
 // has the expected value.
 //
-// The subsidy is halved every SubsidyReductionInterval blocks. Mathematically
-// this is: baseSubsidy / 2^(blueScore/SubsidyReductionInterval)
-//
-// At the target block generation rate for the main network, this is
-// approximately every 4 years.
+// Further details: https://hashdag.medium.com/kaspa-launch-plan-9a63f4d754a6
 func (c *coinbaseManager) calcBlockSubsidy(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) (uint64, error) {
-	if c.subsidyReductionInterval == 0 {
-		return c.baseSubsidy, nil
-	}
-
-	daaScore, err := c.daaBlocksStore.DAAScore(c.databaseContext, stagingArea, blockHash)
-	if err != nil {
-		return 0, err
-	}
-
-	// Equivalent to: baseSubsidy / 2^(daaScore/subsidyHalvingInterval)
-	return c.baseSubsidy >> uint(daaScore/c.subsidyReductionInterval), nil
+	return c.subsidyGenesisReward, nil
 }
 
 func (c *coinbaseManager) calcMergedBlockReward(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash,
@@ -205,8 +192,9 @@ func (c *coinbaseManager) calcMergedBlockReward(stagingArea *model.StagingArea, 
 func New(
 	databaseContext model.DBReader,
 
-	subsidyReductionInterval uint64,
-	baseSubsidy uint64,
+	subsidyGenesisReward uint64,
+	subsidyPastRewardMultiplier float64,
+	subsidyMergeSetRewardMultiplier float64,
 	coinbasePayloadScriptPublicKeyMaxLength uint8,
 
 	ghostdagDataStore model.GHOSTDAGDataStore,
@@ -216,8 +204,9 @@ func New(
 	return &coinbaseManager{
 		databaseContext: databaseContext,
 
-		subsidyReductionInterval:                subsidyReductionInterval,
-		baseSubsidy:                             baseSubsidy,
+		subsidyGenesisReward:                    subsidyGenesisReward,
+		subsidyPastRewardMultiplier:             subsidyPastRewardMultiplier,
+		subsidyMergeSetRewardMultiplier:         subsidyMergeSetRewardMultiplier,
 		coinbasePayloadScriptPublicKeyMaxLength: coinbasePayloadScriptPublicKeyMaxLength,
 
 		ghostdagDataStore:   ghostdagDataStore,
