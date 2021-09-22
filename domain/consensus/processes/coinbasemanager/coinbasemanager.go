@@ -1,6 +1,7 @@
 package coinbasemanager
 
 import (
+	"fmt"
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
@@ -17,6 +18,8 @@ type coinbaseManager struct {
 	genesisHash                             *externalapi.DomainHash
 
 	databaseContext     model.DBReader
+	dagTraversalManager model.DAGTraversalManager
+	dagTopologyManager  model.DAGTopologyManager
 	ghostdagDataStore   model.GHOSTDAGDataStore
 	acceptanceDataStore model.AcceptanceDataStore
 	daaBlocksStore      model.DAABlocksStore
@@ -162,6 +165,47 @@ func (c *coinbaseManager) calcBlockSubsidy(stagingArea *model.StagingArea, block
 	if blockHash.Equal(c.genesisHash) {
 		return c.subsidyGenesisReward, nil
 	}
+
+	blockParents, err := c.dagTopologyManager.Parents(stagingArea, blockHash)
+	if err != nil {
+		return 0, err
+	}
+
+	const subsidyPastWindowSize = uint64(100)
+
+	pastBlockCount := uint64(0)
+	pastBlockSubsidySum := uint64(0)
+	queue := c.dagTraversalManager.NewDownHeap(stagingArea)
+	addedToQueue := make(map[externalapi.DomainHash]struct{})
+	err = queue.PushSlice(blockParents)
+	if err != nil {
+		return 0, err
+	}
+	for _, blockParent := range blockParents {
+		addedToQueue[*blockParent] = struct{}{}
+	}
+
+	for pastBlockCount < subsidyPastWindowSize && queue.Len() > 0 {
+		pastBlockHash := queue.Pop()
+		pastBlockCount++
+		fmt.Println(pastBlockHash, pastBlockSubsidySum)
+
+		pastBlockParents, err := c.dagTopologyManager.Parents(stagingArea, blockHash)
+		if err != nil {
+			return 0, err
+		}
+		for _, pastBlockParent := range pastBlockParents {
+			if _, ok := addedToQueue[*pastBlockParent]; ok {
+				continue
+			}
+			err = queue.Push(pastBlockParent)
+			if err != nil {
+				return 0, err
+			}
+			addedToQueue[*pastBlockParent] = struct{}{}
+		}
+	}
+
 	return c.subsidyGenesisReward, nil
 }
 
@@ -202,6 +246,8 @@ func New(
 	coinbasePayloadScriptPublicKeyMaxLength uint8,
 	genesisHash *externalapi.DomainHash,
 
+	dagTraversalManager model.DAGTraversalManager,
+	dagTopologyManager model.DAGTopologyManager,
 	ghostdagDataStore model.GHOSTDAGDataStore,
 	acceptanceDataStore model.AcceptanceDataStore,
 	daaBlocksStore model.DAABlocksStore) model.CoinbaseManager {
@@ -215,6 +261,8 @@ func New(
 		coinbasePayloadScriptPublicKeyMaxLength: coinbasePayloadScriptPublicKeyMaxLength,
 		genesisHash:                             genesisHash,
 
+		dagTraversalManager: dagTraversalManager,
+		dagTopologyManager:  dagTopologyManager,
 		ghostdagDataStore:   ghostdagDataStore,
 		acceptanceDataStore: acceptanceDataStore,
 		daaBlocksStore:      daaBlocksStore,
