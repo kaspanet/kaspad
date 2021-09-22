@@ -53,7 +53,15 @@ func (fs *subsidyStore) Get(dbContext model.DBReader, stagingArea *model.Staging
 }
 
 func (fs *subsidyStore) Has(dbContext model.DBReader, stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) (bool, error) {
-	panic("implement me")
+	stagingShard := fs.stagingShard(stagingArea)
+
+	if _, ok := stagingShard.toAdd[*blockHash]; ok {
+		return true, nil
+	}
+	if _, ok := fs.cache.Get(blockHash); ok {
+		return true, nil
+	}
+	return dbContext.Has(fs.hashAsKey(blockHash))
 }
 
 func (fs *subsidyStore) Delete(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) {

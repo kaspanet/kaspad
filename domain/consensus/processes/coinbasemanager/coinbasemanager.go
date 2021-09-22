@@ -156,6 +156,23 @@ func acceptanceDataFromArrayToMap(acceptanceData externalapi.AcceptanceData) map
 	return acceptanceDataMap
 }
 
+func (c *coinbaseManager) getBlockSubsidy(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) (uint64, error) {
+	subsidyExists, err := c.subsidyStore.Has(c.databaseContext, stagingArea, blockHash)
+	if err != nil {
+		return 0, err
+	}
+	if subsidyExists {
+		return c.subsidyStore.Get(c.databaseContext, stagingArea, blockHash)
+	}
+
+	subsidy, err := c.calcBlockSubsidy(stagingArea, blockHash)
+	if err != nil {
+		return 0, err
+	}
+	c.subsidyStore.Stage(stagingArea, blockHash, subsidy)
+	return subsidy, nil
+}
+
 // calcBlockSubsidy returns the subsidy amount a block at the provided blue score
 // should have. This is mainly used for determining how much the coinbase for
 // newly generated blocks awards as well as validating the coinbase for blocks
@@ -229,7 +246,7 @@ func (c *coinbaseManager) calcMergedBlockReward(stagingArea *model.StagingArea, 
 		}
 	}
 
-	subsidy, err := c.calcBlockSubsidy(stagingArea, blockHash)
+	subsidy, err := c.getBlockSubsidy(stagingArea, blockHash)
 	if err != nil {
 		return 0, err
 	}
