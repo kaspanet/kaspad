@@ -23,6 +23,7 @@ type coinbaseManager struct {
 	ghostdagDataStore   model.GHOSTDAGDataStore
 	acceptanceDataStore model.AcceptanceDataStore
 	daaBlocksStore      model.DAABlocksStore
+	subsidyStore        model.SubsidyStore
 }
 
 func (c *coinbaseManager) ExpectedCoinbaseTransaction(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash,
@@ -250,7 +251,8 @@ func New(
 	dagTopologyManager model.DAGTopologyManager,
 	ghostdagDataStore model.GHOSTDAGDataStore,
 	acceptanceDataStore model.AcceptanceDataStore,
-	daaBlocksStore model.DAABlocksStore) model.CoinbaseManager {
+	daaBlocksStore model.DAABlocksStore,
+	subsidyStore model.SubsidyStore) model.CoinbaseManager {
 
 	return &coinbaseManager{
 		databaseContext: databaseContext,
@@ -266,5 +268,6 @@ func New(
 		ghostdagDataStore:   ghostdagDataStore,
 		acceptanceDataStore: acceptanceDataStore,
 		daaBlocksStore:      daaBlocksStore,
+		subsidyStore:        subsidyStore,
 	}
 }

@@ -1,10 +1,11 @@
-package finalitystore
+package subsidystore
 
 import (
 	"encoding/binary"
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/lrucache"
+	"github.com/kaspanet/kaspad/util/staging"
 )
 
 var bucketName = []byte("subsidies")
@@ -18,8 +19,9 @@ type subsidyStore struct {
 // New instantiates a new SubsidyStore
 func New(prefixBucket model.DBBucket, cacheSize int, preallocate bool) model.SubsidyStore {
 	return &subsidyStore{
-		cache:  lrucache.New(cacheSize, preallocate),
-		bucket: prefixBucket.Bucket(bucketName),
+		shardID: staging.GenerateShardingID(),
+		cache:   lrucache.New(cacheSize, preallocate),
+		bucket:  prefixBucket.Bucket(bucketName),
 	}
 }
 

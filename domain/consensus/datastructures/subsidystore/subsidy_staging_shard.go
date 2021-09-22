@@ -1,4 +1,4 @@
-package finalitystore
+package subsidystore
 
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
