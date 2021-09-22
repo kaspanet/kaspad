@@ -1,7 +1,6 @@
 package coinbasemanager
 
 import (
-	"fmt"
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
@@ -184,17 +183,29 @@ func (c *coinbaseManager) calcBlockSubsidy(stagingArea *model.StagingArea, block
 		return c.subsidyGenesisReward, nil
 	}
 
+	averagePastSubsidy, err := c.calculateAveragePastSubsidy(stagingArea, blockHash)
+	if err != nil {
+		return 0, err
+	}
+	println(blockHash.String(), averagePastSubsidy)
+
+	return c.subsidyGenesisReward, nil
+}
+
+func (c *coinbaseManager) calculateAveragePastSubsidy(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) (uint64, error) {
 	blockParents, err := c.dagTopologyManager.Parents(stagingArea, blockHash)
 	if err != nil {
 		return 0, err
 	}
-
-	const subsidyPastWindowSize = uint64(100)
+	if len(blockParents) == 0 {
+		return 0, nil
+	}
 
 	pastBlockCount := uint64(0)
 	pastBlockSubsidySum := uint64(0)
 	queue := c.dagTraversalManager.NewDownHeap(stagingArea)
 	addedToQueue := make(map[externalapi.DomainHash]struct{})
+
 	err = queue.PushSlice(blockParents)
 	if err != nil {
 		return 0, err
@@ -203,10 +214,16 @@ func (c *coinbaseManager) calcBlockSubsidy(stagingArea *model.StagingArea, block
 		addedToQueue[*blockParent] = struct{}{}
 	}
 
+	const subsidyPastWindowSize = uint64(100)
 	for pastBlockCount < subsidyPastWindowSize && queue.Len() > 0 {
 		pastBlockHash := queue.Pop()
 		pastBlockCount++
-		fmt.Println(pastBlockHash, pastBlockSubsidySum)
+
+		pastBlockSubsidy, err := c.getBlockSubsidy(stagingArea, pastBlockHash)
+		if err != nil {
+			return 0, err
+		}
+		pastBlockSubsidySum += pastBlockSubsidy
 
 		pastBlockParents, err := c.dagTopologyManager.Parents(stagingArea, blockHash)
 		if err != nil {
@@ -224,7 +241,7 @@ func (c *coinbaseManager) calcBlockSubsidy(stagingArea *model.StagingArea, block
 		}
 	}
 
-	return c.subsidyGenesisReward, nil
+	return pastBlockSubsidySum / pastBlockCount, nil
 }
 
 func (c *coinbaseManager) calcMergedBlockReward(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash,
