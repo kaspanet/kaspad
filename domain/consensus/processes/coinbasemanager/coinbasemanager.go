@@ -1,6 +1,7 @@
 package coinbasemanager
 
 import (
+	"fmt"
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
@@ -187,7 +188,11 @@ func (c *coinbaseManager) calcBlockSubsidy(stagingArea *model.StagingArea, block
 	if err != nil {
 		return 0, err
 	}
-	println(blockHash.String(), averagePastSubsidy)
+	mergeSetSubsidySum, err := c.calculateMergeSetSubsidySum(stagingArea, blockHash)
+	if err != nil {
+		return 0, err
+	}
+	fmt.Println("kaka", blockHash.String(), averagePastSubsidy, mergeSetSubsidySum)
 
 	return c.subsidyGenesisReward, nil
 }
@@ -242,6 +247,24 @@ func (c *coinbaseManager) calculateAveragePastSubsidy(stagingArea *model.Staging
 	}
 
 	return pastBlockSubsidySum / pastBlockCount, nil
+}
+
+func (c *coinbaseManager) calculateMergeSetSubsidySum(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) (uint64, error) {
+	ghostdagData, err := c.ghostdagDataStore.Get(c.databaseContext, stagingArea, blockHash, false)
+	if err != nil {
+		return 0, err
+	}
+	mergeSet := append(ghostdagData.MergeSetBlues(), ghostdagData.MergeSetReds()...)
+
+	mergeSetSubsidySum := uint64(0)
+	for _, mergeSetBlockHash := range mergeSet {
+		mergeSetBlockSubsidy, err := c.getBlockSubsidy(stagingArea, mergeSetBlockHash)
+		if err != nil {
+			return 0, err
+		}
+		mergeSetSubsidySum += mergeSetBlockSubsidy
+	}
+	return mergeSetSubsidySum, nil
 }
 
 func (c *coinbaseManager) calcMergedBlockReward(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash,
