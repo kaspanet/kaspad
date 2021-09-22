@@ -9,6 +9,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/utils/hashset"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/subnetworks"
 	"github.com/pkg/errors"
+	"math"
 	"math/rand"
 )
 
@@ -199,9 +200,21 @@ func (c *coinbaseManager) calcBlockSubsidy(stagingArea *model.StagingArea, block
 		return 0, err
 	}
 
-	fmt.Println("kaka", blockHash.String(), averagePastSubsidy, mergeSetSubsidySum, subsidyRandomVariable)
+	fmt.Println("----------")
+	fmt.Println(blockHash.String(), averagePastSubsidy, subsidyRandomVariable, mergeSetSubsidySum)
 
-	return c.subsidyGenesisReward, nil
+	pastSubsidy := c.subsidyPastRewardMultiplier * float64(averagePastSubsidy)
+	subsidyRandom := math.Pow(4, subsidyRandomVariable)
+	mergeSetSubsidy := c.subsidyMergeSetRewardMultiplier * float64(mergeSetSubsidySum)
+
+	fmt.Println(uint64(pastSubsidy), subsidyRandom, uint64(mergeSetSubsidy))
+
+	blockSubsidy := uint64((pastSubsidy * subsidyRandom) + mergeSetSubsidy)
+
+	fmt.Println(blockSubsidy)
+	fmt.Println("============")
+
+	return blockSubsidy, nil
 }
 
 func (c *coinbaseManager) calculateAveragePastSubsidy(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) (uint64, error) {
