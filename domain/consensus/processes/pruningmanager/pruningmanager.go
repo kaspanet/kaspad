@@ -6,6 +6,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/hashset"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/multiset"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/pow"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/utxo"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/virtual"
 	"github.com/kaspanet/kaspad/infrastructure/db/database"
@@ -1031,35 +1032,49 @@ func (pm *pruningManager) BuildPruningPointProof(stagingArea *model.StagingArea)
 	}
 
 	maxLevel := len(pruningPointHeader.Parents()) - 1
-	proof := &externalapi.PruningPointProof{Headers: make([][]externalapi.BlockHeader, maxLevel+1)}
 	selectedTipByLevel := make([]*externalapi.DomainHash, maxLevel+1)
+	headersByLevel := make(map[int][]externalapi.BlockHeader)
+	pruningPointLevel := pow.BlockLevel(pruningPointHeader)
 	for blockLevel := maxLevel; blockLevel >= 0; blockLevel-- {
-		blockLevelParents := pruningPointHeader.ParentsAtLevel(blockLevel)
-		selectedTip, err := pm.ghostdagManagers[blockLevel].ChooseSelectedParent(stagingArea, []*externalapi.DomainHash(blockLevelParents)...)
+		var selectedTip *externalapi.DomainHash
+		if blockLevel <= pruningPointLevel {
+			selectedTip = pruningPoint
+		} else {
+			blockLevelParents := pruningPointHeader.ParentsAtLevel(blockLevel)
+			selectedTip, err = pm.ghostdagManagers[blockLevel].ChooseSelectedParent(stagingArea, []*externalapi.DomainHash(blockLevelParents)...)
+			if err != nil {
+				return nil, err
+			}
+		}
+
+		const m = 1000
+		blockAtDepth2M, found, err := pm.blockAtDepth(stagingArea, pm.ghostdagDataStores[blockLevel], selectedTip, 2*m)
 		if err != nil {
 			return nil, err
 		}
 
-		const m = 1000
-		blockAtDepth2M, err := pm.blockAtDepth(stagingArea, blockLevel, selectedTip, 2*m)
-		if err != nil {
-			return nil, err
+		if !found {
+			continue
 		}
 
 		root := blockAtDepth2M
 		if blockLevel != maxLevel {
-			blockAtDepthMAtNextLevel, err := pm.blockAtDepth(stagingArea, blockLevel+1, selectedTipByLevel[blockLevel+1], m)
+			blockAtDepthMAtNextLevel, found, err := pm.blockAtDepth(stagingArea, pm.ghostdagDataStores[blockLevel+1], selectedTipByLevel[blockLevel+1], m)
 			if err != nil {
 				return nil, err
 			}
 
-			isAncestorOf, err := pm.dagTopologyManagers[blockLevel].IsAncestorOf(stagingArea, blockAtDepthMAtNextLevel, blockAtDepth2M)
-			if err != nil {
-				return nil, err
-			}
+			if found {
+				isAncestorOf, err := pm.dagTopologyManagers[blockLevel].IsAncestorOf(stagingArea, blockAtDepthMAtNextLevel, blockAtDepth2M)
+				if err != nil {
+					return nil, err
+				}
 
-			if isAncestorOf {
-				root = blockAtDepthMAtNextLevel
+				if isAncestorOf {
+					root = blockAtDepthMAtNextLevel
+				}
+			} else {
+				root = pm.genesisHash
 			}
 		}
 
@@ -1096,18 +1111,21 @@ func (pm *pruningManager) BuildPruningPointProof(stagingArea *model.StagingArea)
 
 			queue = append(queue, children...)
 		}
+	}
 
-		proof.Headers[blockLevel] = headers
+	proof := &externalapi.PruningPointProof{Headers: make([][]externalapi.BlockHeader, len(headersByLevel))}
+	for i := 0; i < len(headersByLevel); i++ {
+		proof.Headers[i] = headersByLevel[i]
 	}
 
 	return proof, nil
 }
 
-func (pm *pruningManager) blockAtDepth(stagingArea *model.StagingArea, blockLevel int, highHash *externalapi.DomainHash, depth uint64) (*externalapi.DomainHash, error) {
+func (pm *pruningManager) blockAtDepth(stagingArea *model.StagingArea, ghostdagDataStore model.GHOSTDAGDataStore, highHash *externalapi.DomainHash, depth uint64) (*externalapi.DomainHash, bool, error) {
 	currentBlockHash := highHash
-	highBlockGHOSTDAGData, err := pm.ghostdagDataStores[blockLevel].Get(pm.databaseContext, stagingArea, highHash, false)
+	highBlockGHOSTDAGData, err := ghostdagDataStore.Get(pm.databaseContext, stagingArea, highHash, false)
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 
 	requiredBlueScore := uint64(0)
@@ -1118,14 +1136,19 @@ func (pm *pruningManager) blockAtDepth(stagingArea *model.StagingArea, blockLeve
 	currentBlockGHOSTDAGData := highBlockGHOSTDAGData
 	// If we used `BlockIterator` we'd need to do more calls to `ghostdagDataStore` so we can get the blueScore
 	for currentBlockGHOSTDAGData.BlueScore() >= requiredBlueScore {
-		if currentBlockGHOSTDAGData.SelectedParent() == nil { // genesis
-			return currentBlockHash, nil
-		}
 		currentBlockHash = currentBlockGHOSTDAGData.SelectedParent()
-		currentBlockGHOSTDAGData, err = pm.ghostdagDataStores[blockLevel].Get(pm.databaseContext, stagingArea, currentBlockHash, false)
+		if currentBlockHash.Equal(model.VirtualGenesisBlockHash) {
+			return nil, false, nil
+		}
+		currentBlockGHOSTDAGData, err = ghostdagDataStore.Get(pm.databaseContext, stagingArea, currentBlockHash, false)
 		if err != nil {
-			return nil, err
+			return nil, false, err
 		}
 	}
-	return currentBlockHash, nil
+	return currentBlockHash, false, nil
+}
+
+func (pm *pruningManager) ValidatePruningPointProof(stagingArea *model.StagingArea, pruningPointProof *externalapi.PruningPointProof) error {
+	level0Headers := pruningPointProof.Headers[0]
+	pruningPointHeader := level0Headers[len(level0Headers)-1]
 }
