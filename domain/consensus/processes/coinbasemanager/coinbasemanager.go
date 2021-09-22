@@ -1,6 +1,7 @@
 package coinbasemanager
 
 import (
+	"encoding/binary"
 	"fmt"
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
@@ -8,6 +9,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/utils/hashset"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/subnetworks"
 	"github.com/pkg/errors"
+	"math/rand"
 )
 
 type coinbaseManager struct {
@@ -192,7 +194,12 @@ func (c *coinbaseManager) calcBlockSubsidy(stagingArea *model.StagingArea, block
 	if err != nil {
 		return 0, err
 	}
-	fmt.Println("kaka", blockHash.String(), averagePastSubsidy, mergeSetSubsidySum)
+	subsidyRandomVariable, err := c.calculateSubsidyRandomVariable(stagingArea, blockHash)
+	if err != nil {
+		return 0, err
+	}
+
+	fmt.Println("kaka", blockHash.String(), averagePastSubsidy, mergeSetSubsidySum, subsidyRandomVariable)
 
 	return c.subsidyGenesisReward, nil
 }
@@ -265,6 +272,24 @@ func (c *coinbaseManager) calculateMergeSetSubsidySum(stagingArea *model.Staging
 		mergeSetSubsidySum += mergeSetBlockSubsidy
 	}
 	return mergeSetSubsidySum, nil
+}
+
+func (c *coinbaseManager) calculateSubsidyRandomVariable(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) (float64, error) {
+	ghostdagData, err := c.ghostdagDataStore.Get(c.databaseContext, stagingArea, blockHash, false)
+	if err != nil {
+		return 0, err
+	}
+	selectedParent := ghostdagData.SelectedParent()
+	if selectedParent == nil {
+		return 0, nil
+	}
+
+	seed := int64(0)
+	for i := 0; i < externalapi.DomainHashSize; i += 8 {
+		seed += int64(binary.BigEndian.Uint64(selectedParent.ByteSlice()[i:]))
+	}
+	random := rand.New(rand.NewSource(seed))
+	return random.NormFloat64(), nil
 }
 
 func (c *coinbaseManager) calcMergedBlockReward(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash,
