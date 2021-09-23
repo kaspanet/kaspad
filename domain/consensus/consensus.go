@@ -37,6 +37,7 @@ type consensus struct {
 	pruningManager        model.PruningManager
 	reachabilityManagers  []model.ReachabilityManager
 	finalityManager       model.FinalityManager
+	pruningProofManager   model.PruningProofManager
 
 	acceptanceDataStore       model.AcceptanceDataStore
 	blockStore                model.BlockStore
@@ -733,18 +734,27 @@ func (s *consensus) BuildPruningPointProof() (*externalapi.PruningPointProof, er
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	// TODO: Implement this
-
-	return &externalapi.PruningPointProof{
-		Headers: [][]externalapi.BlockHeader{},
-	}, nil
+	return s.pruningProofManager.BuildPruningPointProof(model.NewStagingArea())
 }
 
 func (s *consensus) ValidatePruningPointProof(pruningPointProof *externalapi.PruningPointProof) error {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	// TODO: Implement this
+	return s.pruningProofManager.ValidatePruningPointProof(pruningPointProof)
+}
+
+func (s *consensus) ApplyPruningPointProof(pruningPointProof *externalapi.PruningPointProof) error {
+	stagingArea := model.NewStagingArea()
+	err := s.pruningProofManager.ApplyPruningPointProof(stagingArea, pruningPointProof)
+	if err != nil {
+		return err
+	}
+
+	err = staging.CommitAllChanges(s.databaseContext, stagingArea)
+	if err != nil {
+		return err
+	}
 
 	return nil
 }

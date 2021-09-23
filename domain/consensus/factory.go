@@ -4,6 +4,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/daawindowstore"
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/processes/blockparentbuilder"
+	"github.com/kaspanet/kaspad/domain/consensus/processes/pruningproofmanager"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
 	"io/ioutil"
 	"os"
@@ -18,7 +19,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/blockstatusstore"
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/blockstore"
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/consensusstatestore"
-	daablocksstore "github.com/kaspanet/kaspad/domain/consensus/datastructures/daablocksstore"
+	"github.com/kaspanet/kaspad/domain/consensus/datastructures/daablocksstore"
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/finalitystore"
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/ghostdagdatastore"
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/headersselectedchainstore"
@@ -262,13 +263,12 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 	pruningManager := pruningmanager.New(
 		dbManager,
 		dagTraversalManager,
-		dagTopologyManagers,
+		dagTopologyManager,
 		consensusStateManager,
 		finalityManager,
-		ghostdagManagers,
 
 		consensusStateStore,
-		ghostdagDataStores,
+		ghostdagDataStore,
 		pruningStore,
 		blockStatusStore,
 		headersSelectedTipStore,
@@ -395,6 +395,17 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 		daaBlocksStore,
 		daaWindowStore)
 
+	pruningProofManager := pruningproofmanager.New(
+		dbManager,
+		dagTopologyManagers,
+		ghostdagManagers,
+		ghostdagDataStores,
+		pruningStore,
+		blockHeaderStore,
+		genesisHash,
+		config.K,
+	)
+
 	c := &consensus{
 		lock:            &sync.Mutex{},
 		databaseContext: dbManager,
@@ -419,6 +430,7 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 		pruningManager:        pruningManager,
 		reachabilityManagers:  reachabilityManagers,
 		finalityManager:       finalityManager,
+		pruningProofManager:   pruningProofManager,
 
 		acceptanceDataStore:       acceptanceDataStore,
 		blockStore:                blockStore,

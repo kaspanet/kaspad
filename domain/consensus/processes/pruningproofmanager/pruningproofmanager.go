@@ -23,100 +23,44 @@ import (
 type pruningProofManager struct {
 	databaseContext model.DBManager
 
-	dagTraversalManager   model.DAGTraversalManager
-	dagTopologyManagers   []model.DAGTopologyManager
-	consensusStateManager model.ConsensusStateManager
-	finalityManager       model.FinalityManager
-	ghostdagManagers      []model.GHOSTDAGManager
+	dagTopologyManagers  []model.DAGTopologyManager
+	ghostdagManagers     []model.GHOSTDAGManager
+	reachabilityManagers []model.ReachabilityManager
 
-	consensusStateStore                 model.ConsensusStateStore
-	ghostdagDataStores                  []model.GHOSTDAGDataStore
-	blockRelationStores                 []model.BlockRelationStore
-	pruningStore                        model.PruningStore
-	blockStatusStore                    model.BlockStatusStore
-	headerSelectedTipStore              model.HeaderSelectedTipStore
-	blocksWithTrustedDataDAAWindowStore model.BlocksWithTrustedDataDAAWindowStore
-	multiSetStore                       model.MultisetStore
-	acceptanceDataStore                 model.AcceptanceDataStore
-	blocksStore                         model.BlockStore
-	blockHeaderStore                    model.BlockHeaderStore
-	utxoDiffStore                       model.UTXODiffStore
-	daaBlocksStore                      model.DAABlocksStore
-	reachabilityDataStore               model.ReachabilityDataStore
+	ghostdagDataStores []model.GHOSTDAGDataStore
+	pruningStore       model.PruningStore
+	blockHeaderStore   model.BlockHeaderStore
 
-	isArchivalNode                  bool
-	genesisHash                     *externalapi.DomainHash
-	finalityInterval                uint64
-	pruningDepth                    uint64
-	shouldSanityCheckPruningUTXOSet bool
-	k                               externalapi.KType
-	difficultyAdjustmentWindowSize  int
+	genesisHash *externalapi.DomainHash
+	k           externalapi.KType
 }
 
 // New instantiates a new PruningManager
 func New(
 	databaseContext model.DBManager,
 
-	dagTraversalManager model.DAGTraversalManager,
 	dagTopologyManagers []model.DAGTopologyManager,
-	consensusStateManager model.ConsensusStateManager,
-	finalityManager model.FinalityManager,
 	ghostdagManagers []model.GHOSTDAGManager,
 
-	consensusStateStore model.ConsensusStateStore,
 	ghostdagDataStores []model.GHOSTDAGDataStore,
 	pruningStore model.PruningStore,
-	blockStatusStore model.BlockStatusStore,
-	headerSelectedTipStore model.HeaderSelectedTipStore,
-	multiSetStore model.MultisetStore,
-	acceptanceDataStore model.AcceptanceDataStore,
-	blocksStore model.BlockStore,
 	blockHeaderStore model.BlockHeaderStore,
-	utxoDiffStore model.UTXODiffStore,
-	daaBlocksStore model.DAABlocksStore,
-	reachabilityDataStore model.ReachabilityDataStore,
-	blocksWithTrustedDataDAAWindowStore model.BlocksWithTrustedDataDAAWindowStore,
-	blockRelationStores []model.BlockRelationStore,
 
-	isArchivalNode bool,
 	genesisHash *externalapi.DomainHash,
-	finalityInterval uint64,
-	pruningDepth uint64,
-	shouldSanityCheckPruningUTXOSet bool,
 	k externalapi.KType,
-	difficultyAdjustmentWindowSize int,
 ) model.PruningProofManager {
 
 	return &pruningProofManager{
-		databaseContext:       databaseContext,
-		dagTraversalManager:   dagTraversalManager,
-		dagTopologyManagers:   dagTopologyManagers,
-		consensusStateManager: consensusStateManager,
-		finalityManager:       finalityManager,
-		ghostdagManagers:      ghostdagManagers,
+		databaseContext:     databaseContext,
+		dagTopologyManagers: dagTopologyManagers,
+		ghostdagManagers:    ghostdagManagers,
 
-		consensusStateStore:                 consensusStateStore,
-		ghostdagDataStores:                  ghostdagDataStores,
-		pruningStore:                        pruningStore,
-		blockStatusStore:                    blockStatusStore,
-		multiSetStore:                       multiSetStore,
-		acceptanceDataStore:                 acceptanceDataStore,
-		blocksStore:                         blocksStore,
-		blockHeaderStore:                    blockHeaderStore,
-		utxoDiffStore:                       utxoDiffStore,
-		headerSelectedTipStore:              headerSelectedTipStore,
-		daaBlocksStore:                      daaBlocksStore,
-		reachabilityDataStore:               reachabilityDataStore,
-		blocksWithTrustedDataDAAWindowStore: blocksWithTrustedDataDAAWindowStore,
-		blockRelationStores:                 blockRelationStores,
+		ghostdagDataStores: ghostdagDataStores,
+		pruningStore:       pruningStore,
+		blockHeaderStore:   blockHeaderStore,
 
-		isArchivalNode:                  isArchivalNode,
-		genesisHash:                     genesisHash,
-		pruningDepth:                    pruningDepth,
-		finalityInterval:                finalityInterval,
-		shouldSanityCheckPruningUTXOSet: shouldSanityCheckPruningUTXOSet,
-		k:                               k,
-		difficultyAdjustmentWindowSize:  difficultyAdjustmentWindowSize,
+		genesisHash: genesisHash,
+		k:           k,
 	}
 }
 
@@ -520,4 +464,89 @@ func (ppm *pruningProofManager) future(stagingArea *model.StagingArea, dagTopolo
 	}
 
 	return future, nil
+}
+
+func (ppm *pruningProofManager) ApplyPruningPointProof(stagingArea *model.StagingArea, pruningPointProof *externalapi.PruningPointProof) error {
+	for blockLevel, headers := range pruningPointProof.Headers {
+		var selectedTip *externalapi.DomainHash
+		for i, header := range headers {
+			blockHash := consensushashing.HeaderHash(header)
+			if pow.BlockLevel(header) < blockLevel {
+				return errors.Wrapf(ruleerrors.ErrPruningProofWrongBlockLevel, "block %s level is %d when it's "+
+					"expected to be at least %d", blockHash, pow.BlockLevel(header), blockLevel)
+			}
+
+			ppm.blockHeaderStore.Stage(stagingArea, blockHash, header)
+
+			var parents []*externalapi.DomainHash
+			for _, parent := range header.ParentsAtLevel(blockLevel) {
+				_, err := ppm.ghostdagDataStores[blockLevel].Get(ppm.databaseContext, stagingArea, parent, false)
+				if database.IsNotFoundError(err) {
+					continue
+				}
+				if err != nil {
+					return err
+				}
+
+				parents = append(parents, parent)
+			}
+
+			if len(parents) == 0 {
+				if i != 0 {
+					return errors.Wrapf(ruleerrors.ErrPruningProofHeaderWithNoKnownParents, "the proof header "+
+						"%s is missing known parents", blockHash)
+				}
+				parents = append(parents, model.VirtualGenesisBlockHash)
+			}
+
+			err := ppm.dagTopologyManagers[blockLevel].SetParents(stagingArea, blockHash, parents)
+			if err != nil {
+				return err
+			}
+
+			if i == 0 {
+				selectedParent, err := ppm.ghostdagManagers[blockLevel].ChooseSelectedParent(stagingArea, parents...)
+				if err != nil {
+					return err
+				}
+
+				ppm.ghostdagDataStores[0].Stage(stagingArea, blockHash, externalapi.NewBlockGHOSTDAGData(
+					header.BlueScore(),
+					header.BlueWork(),
+					selectedParent,
+					nil,
+					nil,
+					nil,
+				), false)
+			} else {
+				err = ppm.ghostdagManagers[blockLevel].GHOSTDAG(stagingArea, blockHash)
+				if err != nil {
+					return err
+				}
+			}
+
+			if selectedTip == nil {
+				selectedTip = blockHash
+			} else {
+				selectedTip, err = ppm.ghostdagManagers[blockLevel].ChooseSelectedParent(stagingArea, selectedTip, blockHash)
+				if err != nil {
+					return err
+				}
+			}
+
+			err = ppm.reachabilityManagers[blockLevel].AddBlock(stagingArea, blockHash)
+			if err != nil {
+				return err
+			}
+
+			if selectedTip.Equal(blockHash) {
+				err := ppm.reachabilityManagers[blockLevel].UpdateReindexRoot(stagingArea, selectedTip)
+				if err != nil {
+					return err
+				}
+			}
+		}
+	}
+
+	return nil
 }

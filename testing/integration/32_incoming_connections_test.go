@@ -10,6 +10,7 @@ import (
 )
 
 func Test32IncomingConnections(t *testing.T) {
+	t.Skip()
 	// Much more than 32 hosts creates a risk of running out of available file descriptors for leveldb
 	const numBullies = 16
 	harnessesParams := make([]*harnessParams, numBullies+1)
