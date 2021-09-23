@@ -4,9 +4,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/hashset"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/multiset"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/pow"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/utxo"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/virtual"
 	"github.com/kaspanet/kaspad/infrastructure/db/database"
@@ -20,13 +18,12 @@ type pruningManager struct {
 	databaseContext model.DBManager
 
 	dagTraversalManager   model.DAGTraversalManager
-	dagTopologyManagers   []model.DAGTopologyManager
+	dagTopologyManager    model.DAGTopologyManager
 	consensusStateManager model.ConsensusStateManager
 	finalityManager       model.FinalityManager
-	ghostdagManagers      []model.GHOSTDAGManager
 
 	consensusStateStore                 model.ConsensusStateStore
-	ghostdagDataStores                  []model.GHOSTDAGDataStore
+	ghostdagDataStore                   model.GHOSTDAGDataStore
 	pruningStore                        model.PruningStore
 	blockStatusStore                    model.BlockStatusStore
 	headerSelectedTipStore              model.HeaderSelectedTipStore
@@ -53,13 +50,12 @@ func New(
 	databaseContext model.DBManager,
 
 	dagTraversalManager model.DAGTraversalManager,
-	dagTopologyManagers []model.DAGTopologyManager,
+	dagTopologyManager model.DAGTopologyManager,
 	consensusStateManager model.ConsensusStateManager,
 	finalityManager model.FinalityManager,
-	ghostdagManagers []model.GHOSTDAGManager,
 
 	consensusStateStore model.ConsensusStateStore,
-	ghostdagDataStores []model.GHOSTDAGDataStore,
+	ghostdagDataStore model.GHOSTDAGDataStore,
 	pruningStore model.PruningStore,
 	blockStatusStore model.BlockStatusStore,
 	headerSelectedTipStore model.HeaderSelectedTipStore,
@@ -84,12 +80,12 @@ func New(
 	return &pruningManager{
 		databaseContext:       databaseContext,
 		dagTraversalManager:   dagTraversalManager,
-		dagTopologyManagers:   dagTopologyManagers,
+		dagTopologyManager:    dagTopologyManager,
 		consensusStateManager: consensusStateManager,
 		finalityManager:       finalityManager,
 
 		consensusStateStore:                 consensusStateStore,
-		ghostdagDataStores:                  ghostdagDataStores,
+		ghostdagDataStore:                   ghostdagDataStore,
 		pruningStore:                        pruningStore,
 		blockStatusStore:                    blockStatusStore,
 		multiSetStore:                       multiSetStore,
@@ -137,7 +133,7 @@ func (pm *pruningManager) UpdatePruningPointByVirtual(stagingArea *model.Staging
 		return nil
 	}
 
-	virtualGHOSTDAGData, err := pm.ghostdagDataStores[0].Get(pm.databaseContext, stagingArea, model.VirtualBlockHash, false)
+	virtualGHOSTDAGData, err := pm.ghostdagDataStore.Get(pm.databaseContext, stagingArea, model.VirtualBlockHash, false)
 	if err != nil {
 		return err
 	}
@@ -184,7 +180,7 @@ func (pm *pruningManager) NextPruningPointAndCandidateByBlockHash(stagingArea *m
 		return nil, nil, err
 	}
 
-	ghostdagData, err := pm.ghostdagDataStores[0].Get(pm.databaseContext, stagingArea, blockHash, false)
+	ghostdagData, err := pm.ghostdagDataStore.Get(pm.databaseContext, stagingArea, blockHash, false)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -194,7 +190,7 @@ func (pm *pruningManager) NextPruningPointAndCandidateByBlockHash(stagingArea *m
 		return nil, nil, err
 	}
 
-	currentPruningPointGHOSTDAGData, err := pm.ghostdagDataStores[0].Get(pm.databaseContext, stagingArea, currentPruningPoint, false)
+	currentPruningPointGHOSTDAGData, err := pm.ghostdagDataStore.Get(pm.databaseContext, stagingArea, currentPruningPoint, false)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -229,7 +225,7 @@ func (pm *pruningManager) NextPruningPointAndCandidateByBlockHash(stagingArea *m
 		if err != nil {
 			return nil, nil, err
 		}
-		selectedChildGHOSTDAGData, err := pm.ghostdagDataStores[0].Get(pm.databaseContext, stagingArea, selectedChild, false)
+		selectedChildGHOSTDAGData, err := pm.ghostdagDataStore.Get(pm.databaseContext, stagingArea, selectedChild, false)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -255,7 +251,7 @@ func (pm *pruningManager) NextPruningPointAndCandidateByBlockHash(stagingArea *m
 func (pm *pruningManager) isInPruningFutureOrInVirtualPast(stagingArea *model.StagingArea, block *externalapi.DomainHash,
 	pruningPoint *externalapi.DomainHash, virtualParents []*externalapi.DomainHash) (bool, error) {
 
-	hasPruningPointInPast, err := pm.dagTopologyManagers[0].IsAncestorOf(stagingArea, pruningPoint, block)
+	hasPruningPointInPast, err := pm.dagTopologyManager.IsAncestorOf(stagingArea, pruningPoint, block)
 	if err != nil {
 		return false, err
 	}
@@ -264,7 +260,7 @@ func (pm *pruningManager) isInPruningFutureOrInVirtualPast(stagingArea *model.St
 	}
 	// Because virtual doesn't have reachability data, we need to check reachability
 	// using it parents.
-	isInVirtualPast, err := pm.dagTopologyManagers[0].IsAncestorOfAny(stagingArea, block, virtualParents)
+	isInVirtualPast, err := pm.dagTopologyManager.IsAncestorOfAny(stagingArea, block, virtualParents)
 	if err != nil {
 		return false, err
 	}
@@ -281,7 +277,7 @@ func (pm *pruningManager) deletePastBlocks(stagingArea *model.StagingArea, pruni
 
 	// Go over all pruningPoint.Past and pruningPoint.Anticone that's not in virtual.Past
 	queue := pm.dagTraversalManager.NewDownHeap(stagingArea)
-	virtualParents, err := pm.dagTopologyManagers[0].Parents(stagingArea, model.VirtualBlockHash)
+	virtualParents, err := pm.dagTopologyManager.Parents(stagingArea, model.VirtualBlockHash)
 	if err != nil {
 		return err
 	}
@@ -297,7 +293,7 @@ func (pm *pruningManager) deletePastBlocks(stagingArea *model.StagingArea, pruni
 	}
 
 	// Add pruningPoint.Parents to queue
-	parents, err := pm.dagTopologyManagers[0].Parents(stagingArea, pruningPoint)
+	parents, err := pm.dagTopologyManager.Parents(stagingArea, pruningPoint)
 	if err != nil {
 		return err
 	}
@@ -332,7 +328,7 @@ func (pm *pruningManager) deleteBlocksDownward(stagingArea *model.StagingArea, q
 			return err
 		}
 		if !alreadyPruned {
-			parents, err := pm.dagTopologyManagers[0].Parents(stagingArea, current)
+			parents, err := pm.dagTopologyManager.Parents(stagingArea, current)
 			if err != nil {
 				return err
 			}
@@ -422,13 +418,13 @@ func (pm *pruningManager) IsValidPruningPoint(stagingArea *model.StagingArea, bl
 	}
 
 	// A pruning point has to be in the selected chain of the headers selected tip.
-	headersSelectedTipGHOSTDAGData, err := pm.ghostdagDataStores[0].Get(pm.databaseContext, stagingArea, headersSelectedTip, false)
+	headersSelectedTipGHOSTDAGData, err := pm.ghostdagDataStore.Get(pm.databaseContext, stagingArea, headersSelectedTip, false)
 	if err != nil {
 		return false, err
 	}
 
 	isInSelectedParentChainOfHeadersSelectedTip, err :=
-		pm.dagTopologyManagers[0].IsInSelectedParentChainOf(stagingArea, blockHash, headersSelectedTip)
+		pm.dagTopologyManager.IsInSelectedParentChainOf(stagingArea, blockHash, headersSelectedTip)
 	if err != nil {
 		return false, err
 	}
@@ -437,7 +433,7 @@ func (pm *pruningManager) IsValidPruningPoint(stagingArea *model.StagingArea, bl
 		return false, nil
 	}
 
-	ghostdagData, err := pm.ghostdagDataStores[0].Get(pm.databaseContext, stagingArea, blockHash, false)
+	ghostdagData, err := pm.ghostdagDataStore.Get(pm.databaseContext, stagingArea, blockHash, false)
 	if err != nil {
 		return false, err
 	}
@@ -474,7 +470,7 @@ func (pm *pruningManager) ArePruningPointsViolatingFinality(stagingArea *model.S
 			continue
 		}
 
-		isInSelectedParentChainOfVirtualFinalityPointFinalityPoint, err := pm.dagTopologyManagers[0].
+		isInSelectedParentChainOfVirtualFinalityPointFinalityPoint, err := pm.dagTopologyManager.
 			IsInSelectedParentChainOf(stagingArea, virtualFinalityPointFinalityPoint, blockHash)
 		if err != nil {
 			return false, err
@@ -512,7 +508,7 @@ func (pm *pruningManager) ArePruningPointsInValidChain(stagingArea *model.Stagin
 			expectedPruningPoints = append(expectedPruningPoints, header.PruningPoint())
 		}
 
-		currentGHOSTDAGData, err := pm.ghostdagDataStores[0].Get(pm.databaseContext, stagingArea, current, false)
+		currentGHOSTDAGData, err := pm.ghostdagDataStore.Get(pm.databaseContext, stagingArea, current, false)
 		if err != nil {
 			return false, err
 		}
@@ -641,11 +637,11 @@ func (pm *pruningManager) calculateDiffBetweenPreviousAndCurrentPruningPoints(st
 	if err != nil {
 		return nil, err
 	}
-	currentPruningGhostDAG, err := pm.ghostdagDataStores[0].Get(pm.databaseContext, stagingArea, currentPruningHash, false)
+	currentPruningGhostDAG, err := pm.ghostdagDataStore.Get(pm.databaseContext, stagingArea, currentPruningHash, false)
 	if err != nil {
 		return nil, err
 	}
-	previousPruningGhostDAG, err := pm.ghostdagDataStores[0].Get(pm.databaseContext, stagingArea, previousPruningHash, false)
+	previousPruningGhostDAG, err := pm.ghostdagDataStore.Get(pm.databaseContext, stagingArea, previousPruningHash, false)
 	if err != nil {
 		return nil, err
 	}
@@ -668,7 +664,7 @@ func (pm *pruningManager) calculateDiffBetweenPreviousAndCurrentPruningPoints(st
 			if err != nil {
 				return nil, err
 			}
-			diffChildGhostDag, err := pm.ghostdagDataStores[0].Get(pm.databaseContext, stagingArea, previousPruningCurrentDiffChild, false)
+			diffChildGhostDag, err := pm.ghostdagDataStore.Get(pm.databaseContext, stagingArea, previousPruningCurrentDiffChild, false)
 			if err != nil {
 				return nil, err
 			}
@@ -681,7 +677,7 @@ func (pm *pruningManager) calculateDiffBetweenPreviousAndCurrentPruningPoints(st
 			if err != nil {
 				return nil, err
 			}
-			diffChildGhostDag, err := pm.ghostdagDataStores[0].Get(pm.databaseContext, stagingArea, currentPruningCurrentDiffChild, false)
+			diffChildGhostDag, err := pm.ghostdagDataStore.Get(pm.databaseContext, stagingArea, currentPruningCurrentDiffChild, false)
 			if err != nil {
 				return nil, err
 			}
@@ -841,7 +837,7 @@ func (pm *pruningManager) PruneAllBlocksBelow(stagingArea *model.StagingArea, pr
 		if err != nil {
 			return err
 		}
-		isInPastOfPruningPoint, err := pm.dagTopologyManagers[0].IsAncestorOf(stagingArea, pruningPointHash, blockHash)
+		isInPastOfPruningPoint, err := pm.dagTopologyManager.IsAncestorOf(stagingArea, pruningPointHash, blockHash)
 		if err != nil {
 			return err
 		}
@@ -926,14 +922,14 @@ func (pm *pruningManager) blockWithTrustedData(stagingArea *model.StagingArea, b
 	current := blockHash
 	isTrustedData := false
 	for i := externalapi.KType(0); i < pm.k+1; i++ {
-		ghostdagData, err := pm.ghostdagDataStores[0].Get(pm.databaseContext, stagingArea, current, isTrustedData)
+		ghostdagData, err := pm.ghostdagDataStore.Get(pm.databaseContext, stagingArea, current, isTrustedData)
 		isNotFoundError := database.IsNotFoundError(err)
 		if !isNotFoundError && err != nil {
 			return nil, err
 		}
 		if isNotFoundError || ghostdagData.SelectedParent().Equal(model.VirtualGenesisBlockHash) {
 			isTrustedData = true
-			ghostdagData, err = pm.ghostdagDataStores[0].Get(pm.databaseContext, stagingArea, current, true)
+			ghostdagData, err = pm.ghostdagDataStore.Get(pm.databaseContext, stagingArea, current, true)
 			if err != nil {
 				return nil, err
 			}
@@ -1012,143 +1008,10 @@ func (pm *pruningManager) isPruningPointInPruningDepth(stagingArea *model.Stagin
 		return false, err
 	}
 
-	blockGHOSTDAGData, err := pm.ghostdagDataStores[0].Get(pm.databaseContext, stagingArea, blockHash, false)
+	blockGHOSTDAGData, err := pm.ghostdagDataStore.Get(pm.databaseContext, stagingArea, blockHash, false)
 	if err != nil {
 		return false, err
 	}
 
 	return blockGHOSTDAGData.BlueScore() >= pruningPointHeader.BlueScore()+pm.pruningDepth, nil
-}
-
-func (pm *pruningManager) BuildPruningPointProof(stagingArea *model.StagingArea) (*externalapi.PruningPointProof, error) {
-	pruningPoint, err := pm.pruningStore.PruningPoint(pm.databaseContext, stagingArea)
-	if err != nil {
-		return nil, err
-	}
-
-	pruningPointHeader, err := pm.blockHeaderStore.BlockHeader(pm.databaseContext, stagingArea, pruningPoint)
-	if err != nil {
-		return nil, err
-	}
-
-	maxLevel := len(pruningPointHeader.Parents()) - 1
-	selectedTipByLevel := make([]*externalapi.DomainHash, maxLevel+1)
-	headersByLevel := make(map[int][]externalapi.BlockHeader)
-	pruningPointLevel := pow.BlockLevel(pruningPointHeader)
-	for blockLevel := maxLevel; blockLevel >= 0; blockLevel-- {
-		var selectedTip *externalapi.DomainHash
-		if blockLevel <= pruningPointLevel {
-			selectedTip = pruningPoint
-		} else {
-			blockLevelParents := pruningPointHeader.ParentsAtLevel(blockLevel)
-			selectedTip, err = pm.ghostdagManagers[blockLevel].ChooseSelectedParent(stagingArea, []*externalapi.DomainHash(blockLevelParents)...)
-			if err != nil {
-				return nil, err
-			}
-		}
-
-		const m = 1000
-		blockAtDepth2M, found, err := pm.blockAtDepth(stagingArea, pm.ghostdagDataStores[blockLevel], selectedTip, 2*m)
-		if err != nil {
-			return nil, err
-		}
-
-		if !found {
-			continue
-		}
-
-		root := blockAtDepth2M
-		if blockLevel != maxLevel {
-			blockAtDepthMAtNextLevel, found, err := pm.blockAtDepth(stagingArea, pm.ghostdagDataStores[blockLevel+1], selectedTipByLevel[blockLevel+1], m)
-			if err != nil {
-				return nil, err
-			}
-
-			if found {
-				isAncestorOf, err := pm.dagTopologyManagers[blockLevel].IsAncestorOf(stagingArea, blockAtDepthMAtNextLevel, blockAtDepth2M)
-				if err != nil {
-					return nil, err
-				}
-
-				if isAncestorOf {
-					root = blockAtDepthMAtNextLevel
-				}
-			} else {
-				root = pm.genesisHash
-			}
-		}
-
-		headers := make([]externalapi.BlockHeader, 0, 2*m)
-		visited := hashset.New()
-		queue := []*externalapi.DomainHash{root}
-		for len(queue) > 0 {
-			var current *externalapi.DomainHash
-			current, queue = queue[0], queue[1:]
-
-			if visited.Contains(current) {
-				continue
-			}
-
-			isAncestorOfPruningPoint, err := pm.dagTopologyManagers[0].IsAncestorOf(stagingArea, current, pruningPoint)
-			if err != nil {
-				return nil, err
-			}
-
-			if !isAncestorOfPruningPoint {
-				continue
-			}
-
-			currentHeader, err := pm.blockHeaderStore.BlockHeader(pm.databaseContext, stagingArea, current)
-			if err != nil {
-				return nil, err
-			}
-
-			headers = append(headers, currentHeader)
-			children, err := pm.dagTopologyManagers[blockLevel].Children(stagingArea, current)
-			if err != nil {
-				return nil, err
-			}
-
-			queue = append(queue, children...)
-		}
-	}
-
-	proof := &externalapi.PruningPointProof{Headers: make([][]externalapi.BlockHeader, len(headersByLevel))}
-	for i := 0; i < len(headersByLevel); i++ {
-		proof.Headers[i] = headersByLevel[i]
-	}
-
-	return proof, nil
-}
-
-func (pm *pruningManager) blockAtDepth(stagingArea *model.StagingArea, ghostdagDataStore model.GHOSTDAGDataStore, highHash *externalapi.DomainHash, depth uint64) (*externalapi.DomainHash, bool, error) {
-	currentBlockHash := highHash
-	highBlockGHOSTDAGData, err := ghostdagDataStore.Get(pm.databaseContext, stagingArea, highHash, false)
-	if err != nil {
-		return nil, false, err
-	}
-
-	requiredBlueScore := uint64(0)
-	if highBlockGHOSTDAGData.BlueScore() > depth {
-		requiredBlueScore = highBlockGHOSTDAGData.BlueScore() - depth
-	}
-
-	currentBlockGHOSTDAGData := highBlockGHOSTDAGData
-	// If we used `BlockIterator` we'd need to do more calls to `ghostdagDataStore` so we can get the blueScore
-	for currentBlockGHOSTDAGData.BlueScore() >= requiredBlueScore {
-		currentBlockHash = currentBlockGHOSTDAGData.SelectedParent()
-		if currentBlockHash.Equal(model.VirtualGenesisBlockHash) {
-			return nil, false, nil
-		}
-		currentBlockGHOSTDAGData, err = ghostdagDataStore.Get(pm.databaseContext, stagingArea, currentBlockHash, false)
-		if err != nil {
-			return nil, false, err
-		}
-	}
-	return currentBlockHash, false, nil
-}
-
-func (pm *pruningManager) ValidatePruningPointProof(stagingArea *model.StagingArea, pruningPointProof *externalapi.PruningPointProof) error {
-	level0Headers := pruningPointProof.Headers[0]
-	pruningPointHeader := level0Headers[len(level0Headers)-1]
 }
