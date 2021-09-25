@@ -1,6 +1,7 @@
 package pruningproofmanager
 
 import (
+	consensusDB "github.com/kaspanet/kaspad/domain/consensus/database"
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/blockrelationstore"
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/ghostdagdatastore"
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/reachabilitydatastore"
@@ -92,7 +93,7 @@ func (ppm *pruningProofManager) BuildPruningPointProof(stagingArea *model.Stagin
 			}
 		}
 
-		root, _, err := ppm.blockAtDepth(stagingArea, ppm.ghostdagDataStores[blockLevel], selectedTip, 2*m)
+		root, err := ppm.blockAtDepth(stagingArea, ppm.ghostdagDataStores[blockLevel], selectedTip, 2*m)
 		if err != nil {
 			return nil, err
 		}
@@ -108,6 +109,7 @@ func (ppm *pruningProofManager) BuildPruningPointProof(stagingArea *model.Stagin
 				continue
 			}
 
+			visited.Add(current)
 			isAncestorOfPruningPoint, err := ppm.dagTopologyManagers[0].IsAncestorOf(stagingArea, current, pruningPoint)
 			if err != nil {
 				return nil, err
@@ -130,6 +132,8 @@ func (ppm *pruningProofManager) BuildPruningPointProof(stagingArea *model.Stagin
 
 			queue = append(queue, children...)
 		}
+
+		headersByLevel[blockLevel] = headers
 	}
 
 	proof := &externalapi.PruningPointProof{Headers: make([][]externalapi.BlockHeader, len(headersByLevel))}
@@ -140,11 +144,11 @@ func (ppm *pruningProofManager) BuildPruningPointProof(stagingArea *model.Stagin
 	return proof, nil
 }
 
-func (ppm *pruningProofManager) blockAtDepth(stagingArea *model.StagingArea, ghostdagDataStore model.GHOSTDAGDataStore, highHash *externalapi.DomainHash, depth uint64) (*externalapi.DomainHash, bool, error) {
+func (ppm *pruningProofManager) blockAtDepth(stagingArea *model.StagingArea, ghostdagDataStore model.GHOSTDAGDataStore, highHash *externalapi.DomainHash, depth uint64) (*externalapi.DomainHash, error) {
 	currentBlockHash := highHash
 	highBlockGHOSTDAGData, err := ghostdagDataStore.Get(ppm.databaseContext, stagingArea, highHash, false)
 	if err != nil {
-		return nil, false, err
+		return nil, err
 	}
 
 	requiredBlueScore := uint64(0)
@@ -155,17 +159,17 @@ func (ppm *pruningProofManager) blockAtDepth(stagingArea *model.StagingArea, gho
 	currentBlockGHOSTDAGData := highBlockGHOSTDAGData
 	// If we used `BlockIterator` we'd need to do more calls to `ghostdagDataStore` so we can get the blueScore
 	for currentBlockGHOSTDAGData.BlueScore() >= requiredBlueScore {
-		if currentBlockHash.Equal(ppm.genesisHash) {
-			return ppm.genesisHash, false, nil
+		if currentBlockGHOSTDAGData.SelectedParent().Equal(model.VirtualGenesisBlockHash) {
+			break
 		}
 
 		currentBlockHash = currentBlockGHOSTDAGData.SelectedParent()
 		currentBlockGHOSTDAGData, err = ghostdagDataStore.Get(ppm.databaseContext, stagingArea, currentBlockHash, false)
 		if err != nil {
-			return nil, false, err
+			return nil, err
 		}
 	}
-	return currentBlockHash, true, nil
+	return currentBlockHash, nil
 }
 
 func (ppm *pruningProofManager) ValidatePruningPointProof(pruningPointProof *externalapi.PruningPointProof) error {
@@ -184,8 +188,9 @@ func (ppm *pruningProofManager) ValidatePruningPointProof(pruningPointProof *ext
 	for blockLevel := maxLevel; blockLevel >= 0; blockLevel-- {
 		headers := make([]externalapi.BlockHeader, len(pruningPointProof.Headers[blockLevel]))
 		copy(headers, pruningPointProof.Headers[blockLevel])
+
 		if blockLevel < maxLevel {
-			blockAtDepthMAtNextLevel, _, err := ppm.blockAtDepth(stagingArea, ppm.ghostdagDataStores[blockLevel+1], selectedTipByLevel[blockLevel+1], m)
+			blockAtDepthMAtNextLevel, err := ppm.blockAtDepth(stagingArea, ppm.ghostdagDataStores[blockLevel+1], selectedTipByLevel[blockLevel+1], m)
 			if err != nil {
 				return err
 			}
@@ -396,10 +401,11 @@ func dagStores() ([]model.BlockRelationStore, []model.ReachabilityDataStore, []m
 	reachabilityDataStores := make([]model.ReachabilityDataStore, constants.MaxBlockLevel+1)
 	ghostdagDataStores := make([]model.GHOSTDAGDataStore, constants.MaxBlockLevel+1)
 
+	prefix := consensusDB.MakeBucket([]byte("pruningProofManager"))
 	for i := 0; i <= constants.MaxBlockLevel; i++ {
-		blockRelationStores[i] = blockrelationstore.New(nil, 0, false)
-		reachabilityDataStores[i] = reachabilitydatastore.New(nil, 0, false)
-		ghostdagDataStores[i] = ghostdagdatastore.New(nil, 0, false)
+		blockRelationStores[i] = blockrelationstore.New(prefix, 0, false)
+		reachabilityDataStores[i] = reachabilitydatastore.New(prefix, 0, false)
+		ghostdagDataStores[i] = ghostdagdatastore.New(prefix, 0, false)
 	}
 
 	return blockRelationStores, reachabilityDataStores, ghostdagDataStores
