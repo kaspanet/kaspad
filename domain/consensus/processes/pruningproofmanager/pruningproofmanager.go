@@ -42,6 +42,7 @@ func New(
 
 	dagTopologyManagers []model.DAGTopologyManager,
 	ghostdagManagers []model.GHOSTDAGManager,
+	reachabilityManagers []model.ReachabilityManager,
 
 	ghostdagDataStores []model.GHOSTDAGDataStore,
 	pruningStore model.PruningStore,
@@ -52,9 +53,10 @@ func New(
 ) model.PruningProofManager {
 
 	return &pruningProofManager{
-		databaseContext:     databaseContext,
-		dagTopologyManagers: dagTopologyManagers,
-		ghostdagManagers:    ghostdagManagers,
+		databaseContext:      databaseContext,
+		dagTopologyManagers:  dagTopologyManagers,
+		ghostdagManagers:     ghostdagManagers,
+		reachabilityManagers: reachabilityManagers,
 
 		ghostdagDataStores: ghostdagDataStores,
 		pruningStore:       pruningStore,
@@ -174,14 +176,37 @@ func (ppm *pruningProofManager) blockAtDepth(stagingArea *model.StagingArea, gho
 
 func (ppm *pruningProofManager) ValidatePruningPointProof(pruningPointProof *externalapi.PruningPointProof) error {
 	stagingArea := model.NewStagingArea()
-	blockRelationStores, reachabilityDataStores, ghostdagDataStores := dagStores()
-	reachabilityManagers, dagTopologyManagers, ghostdagManagers := ppm.dagProcesses(blockRelationStores, reachabilityDataStores, ghostdagDataStores)
 	level0Headers := pruningPointProof.Headers[0]
 	pruningPointHeader := level0Headers[len(level0Headers)-1]
+	pruningPointBlockLevel := pow.BlockLevel(pruningPointHeader)
 	maxLevel := len(pruningPointHeader.Parents()) - 1
 	if maxLevel >= len(pruningPointProof.Headers) {
 		return errors.Wrapf(ruleerrors.ErrPruningProofMissingBlockLevels, "proof has only %d levels while pruning point "+
 			"has parents from %d levels", len(pruningPointProof.Headers), maxLevel+1)
+	}
+
+	blockRelationStores, reachabilityDataStores, ghostdagDataStores := dagStores(maxLevel)
+	reachabilityManagers, dagTopologyManagers, ghostdagManagers := ppm.dagProcesses(maxLevel, blockRelationStores, reachabilityDataStores, ghostdagDataStores)
+
+	for blockLevel := 0; blockLevel <= maxLevel; blockLevel++ {
+		err := reachabilityManagers[blockLevel].Init(stagingArea)
+		if err != nil {
+			return err
+		}
+
+		err = dagTopologyManagers[blockLevel].SetParents(stagingArea, model.VirtualGenesisBlockHash, nil)
+		if err != nil {
+			return err
+		}
+
+		ghostdagDataStores[blockLevel].Stage(stagingArea, model.VirtualGenesisBlockHash, externalapi.NewBlockGHOSTDAGData(
+			0,
+			big.NewInt(0),
+			nil,
+			nil,
+			nil,
+			nil,
+		), false)
 	}
 
 	selectedTipByLevel := make([]*externalapi.DomainHash, maxLevel+1)
@@ -190,7 +215,7 @@ func (ppm *pruningProofManager) ValidatePruningPointProof(pruningPointProof *ext
 		copy(headers, pruningPointProof.Headers[blockLevel])
 
 		if blockLevel < maxLevel {
-			blockAtDepthMAtNextLevel, err := ppm.blockAtDepth(stagingArea, ppm.ghostdagDataStores[blockLevel+1], selectedTipByLevel[blockLevel+1], m)
+			blockAtDepthMAtNextLevel, err := ppm.blockAtDepth(stagingArea, ghostdagDataStores[blockLevel+1], selectedTipByLevel[blockLevel+1], m)
 			if err != nil {
 				return err
 			}
@@ -296,9 +321,14 @@ func (ppm *pruningProofManager) ValidatePruningPointProof(pruningPointProof *ext
 	}
 
 	for blockLevel, selectedTip := range selectedTipByLevel {
-		if !pruningPointHeader.ParentsAtLevel(blockLevel).Contains(selectedTip) {
+		if blockLevel <= pruningPointBlockLevel {
+			if !selectedTip.Equal(consensushashing.HeaderHash(pruningPointHeader)) {
+				return errors.Wrapf(ruleerrors.ErrPruningProofSelectedTipIsNotThePruningPoint, "the pruning "+
+					"proof selected tip %s at level %d is not the pruning point", selectedTip, blockLevel)
+			}
+		} else if !pruningPointHeader.ParentsAtLevel(blockLevel).Contains(selectedTip) {
 			return errors.Wrapf(ruleerrors.ErrPruningProofSelectedTipNotParentOfPruningPoint, "the pruning "+
-				"proof selected tip %s at level %d is not a parent of the of the pruning point in the same "+
+				"proof selected tip %s at level %d is not a parent of the of the pruning point on the same "+
 				"level", selectedTip, blockLevel)
 		}
 
@@ -396,13 +426,13 @@ func (ppm *pruningProofManager) ValidatePruningPointProof(pruningPointProof *ext
 		"shared blocks with the known DAGs, but doesn't have enough headers from levels higher than the existing block levels.")
 }
 
-func dagStores() ([]model.BlockRelationStore, []model.ReachabilityDataStore, []model.GHOSTDAGDataStore) {
+func dagStores(maxLevel int) ([]model.BlockRelationStore, []model.ReachabilityDataStore, []model.GHOSTDAGDataStore) {
 	blockRelationStores := make([]model.BlockRelationStore, constants.MaxBlockLevel+1)
 	reachabilityDataStores := make([]model.ReachabilityDataStore, constants.MaxBlockLevel+1)
 	ghostdagDataStores := make([]model.GHOSTDAGDataStore, constants.MaxBlockLevel+1)
 
 	prefix := consensusDB.MakeBucket([]byte("pruningProofManager"))
-	for i := 0; i <= constants.MaxBlockLevel; i++ {
+	for i := 0; i <= maxLevel; i++ {
 		blockRelationStores[i] = blockrelationstore.New(prefix, 0, false)
 		reachabilityDataStores[i] = reachabilitydatastore.New(prefix, 0, false)
 		ghostdagDataStores[i] = ghostdagdatastore.New(prefix, 0, false)
@@ -412,6 +442,7 @@ func dagStores() ([]model.BlockRelationStore, []model.ReachabilityDataStore, []m
 }
 
 func (ppm *pruningProofManager) dagProcesses(
+	maxLevel int,
 	blockRelationStores []model.BlockRelationStore,
 	reachabilityDataStores []model.ReachabilityDataStore,
 	ghostdagDataStores []model.GHOSTDAGDataStore) (
@@ -424,7 +455,7 @@ func (ppm *pruningProofManager) dagProcesses(
 	dagTopologyManagers := make([]model.DAGTopologyManager, constants.MaxBlockLevel+1)
 	ghostdagManagers := make([]model.GHOSTDAGManager, constants.MaxBlockLevel+1)
 
-	for i := 0; i <= constants.MaxBlockLevel; i++ {
+	for i := 0; i <= maxLevel; i++ {
 		reachabilityManagers[i] = reachabilitymanager.New(
 			ppm.databaseContext,
 			ghostdagDataStores[i],
@@ -510,7 +541,7 @@ func (ppm *pruningProofManager) ApplyPruningPointProof(stagingArea *model.Stagin
 				return err
 			}
 
-			if i == 0 {
+			if blockLevel == 0 {
 				selectedParent, err := ppm.ghostdagManagers[blockLevel].ChooseSelectedParent(stagingArea, parents...)
 				if err != nil {
 					return err

@@ -233,6 +233,7 @@ var (
 	ErrPruningProofMissingBlockLevels                 = newRuleError("ErrPruningProofMissingBlockLevels")
 	ErrPruningProofWrongBlockLevel                    = newRuleError("ErrPruningProofWrongBlockLevel")
 	ErrPruningProofSelectedTipNotParentOfPruningPoint = newRuleError("ErrPruningProofSelectedTipNotParentOfPruningPoint")
+	ErrPruningProofSelectedTipIsNotThePruningPoint    = newRuleError("ErrPruningProofSelectedTipIsNotThePruningPoint")
 	ErrPruningProofInsufficientBlueWork               = newRuleError("ErrPruningProofInsufficientBlueWork")
 )
 

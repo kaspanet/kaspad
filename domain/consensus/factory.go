@@ -399,9 +399,12 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 		dbManager,
 		dagTopologyManagers,
 		ghostdagManagers,
+		reachabilityManagers,
+
 		ghostdagDataStores,
 		pruningStore,
 		blockHeaderStore,
+
 		genesisHash,
 		config.K,
 	)
