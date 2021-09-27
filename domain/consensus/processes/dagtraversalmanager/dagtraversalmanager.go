@@ -6,7 +6,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-// dagTraversalManager exposes methods for travering blocks
+// dagTraversalManager exposes methods for traversing blocks
 // in the DAG
 type dagTraversalManager struct {
 	databaseContext model.DBReader
