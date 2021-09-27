@@ -132,7 +132,7 @@ func (ppm *pruningProofManager) BuildPruningPointProof(stagingArea *model.Stagin
 			}
 
 			visited.Add(current)
-			isAncestorOfPruningPoint, err := ppm.dagTopologyManagers[0].IsAncestorOf(stagingArea, current, pruningPoint)
+			isAncestorOfPruningPoint, err := ppm.dagTopologyManagers[blockLevel].IsAncestorOf(stagingArea, current, selectedTip)
 			if err != nil {
 				return nil, err
 			}
@@ -399,7 +399,7 @@ func (ppm *pruningProofManager) ValidatePruningPointProof(pruningPointProof *ext
 
 			if foundBetterParent {
 				return errors.Wrapf(ruleerrors.ErrPruningProofInsufficientBlueWork, "the proof doesn't "+
-					"have sufficied blue work in order to replace the current DAG")
+					"have sufficient blue work in order to replace the current DAG")
 			} else {
 				return nil
 			}
