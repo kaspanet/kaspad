@@ -230,7 +230,7 @@ func (c *coinbaseManager) calculateAveragePastSubsidy(stagingArea *model.Staging
 		return nil, err
 	}
 	if len(blockParents) == 0 {
-		return nil, nil
+		return new(big.Rat), nil
 	}
 
 	pastBlockCount := int64(0)

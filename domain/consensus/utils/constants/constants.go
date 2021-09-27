@@ -17,7 +17,7 @@ const (
 	SompiPerKaspa = 100_000_000
 
 	// MaxSompi is the maximum transaction amount allowed in sompi.
-	MaxSompi = 21_000_000 * SompiPerKaspa
+	MaxSompi = math.MaxInt64
 
 	// MaxTxInSequenceNum is the maximum sequence number the sequence field
 	// of a transaction input can be.
