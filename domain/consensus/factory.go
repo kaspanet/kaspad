@@ -407,6 +407,7 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 
 		genesisHash,
 		config.K,
+		config.PruningProofM,
 	)
 
 	c := &consensus{

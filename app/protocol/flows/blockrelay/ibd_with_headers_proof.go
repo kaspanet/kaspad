@@ -90,6 +90,9 @@ func (flow *handleRelayInvsFlow) syncAndValidatePruningPointProof() (*externalap
 	pruningPointProof := appmessage.MsgPruningPointProofToDomainPruningPointProof(pruningPointProofMessage)
 	err = flow.Domain().Consensus().ValidatePruningPointProof(pruningPointProof)
 	if err != nil {
+		if !errors.As(err, &ruleerrors.RuleError{}) {
+			return nil, protocolerrors.Wrapf(true, err, "pruning point proof validation failed")
+		}
 		return nil, err
 	}
 

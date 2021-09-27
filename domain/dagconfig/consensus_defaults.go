@@ -71,4 +71,6 @@ const (
 	// Should be parametrized such that the average width of the DAG is about defaultMaxBlockParents and such that most of the
 	// time the width of the DAG is at most defaultGHOSTDAGK.
 	defaultTargetTimePerBlock = 1 * time.Second
+
+	defaultPruningProofM = 1000
 )

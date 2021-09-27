@@ -235,6 +235,7 @@ var (
 	ErrPruningProofSelectedTipNotParentOfPruningPoint = newRuleError("ErrPruningProofSelectedTipNotParentOfPruningPoint")
 	ErrPruningProofSelectedTipIsNotThePruningPoint    = newRuleError("ErrPruningProofSelectedTipIsNotThePruningPoint")
 	ErrPruningProofInsufficientBlueWork               = newRuleError("ErrPruningProofInsufficientBlueWork")
+	ErrPruningProofMissingBlockAtDepthMFromNextLevel  = newRuleError("ErrPruningProofMissingBlockAtDepthMFromNextLevel")
 )
 
 // RuleError identifies a rule violation. It is used to indicate that

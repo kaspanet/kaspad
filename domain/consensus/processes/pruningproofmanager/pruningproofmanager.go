@@ -2,6 +2,7 @@ package pruningproofmanager
 
 import (
 	consensusDB "github.com/kaspanet/kaspad/domain/consensus/database"
+	"github.com/kaspanet/kaspad/domain/consensus/datastructures/blockheaderstore"
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/blockrelationstore"
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/ghostdagdatastore"
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/reachabilitydatastore"
@@ -18,7 +19,6 @@ import (
 	"github.com/kaspanet/kaspad/infrastructure/db/database"
 	"github.com/pkg/errors"
 	"math/big"
-	"sort"
 )
 
 type pruningProofManager struct {
@@ -32,8 +32,9 @@ type pruningProofManager struct {
 	pruningStore       model.PruningStore
 	blockHeaderStore   model.BlockHeaderStore
 
-	genesisHash *externalapi.DomainHash
-	k           externalapi.KType
+	genesisHash   *externalapi.DomainHash
+	k             externalapi.KType
+	pruningProofM uint64
 }
 
 // New instantiates a new PruningManager
@@ -50,6 +51,7 @@ func New(
 
 	genesisHash *externalapi.DomainHash,
 	k externalapi.KType,
+	pruningProofM uint64,
 ) model.PruningProofManager {
 
 	return &pruningProofManager{
@@ -62,12 +64,11 @@ func New(
 		pruningStore:       pruningStore,
 		blockHeaderStore:   blockHeaderStore,
 
-		genesisHash: genesisHash,
-		k:           k,
+		genesisHash:   genesisHash,
+		k:             k,
+		pruningProofM: pruningProofM,
 	}
 }
-
-const m = 1000
 
 func (ppm *pruningProofManager) BuildPruningPointProof(stagingArea *model.StagingArea) (*externalapi.PruningPointProof, error) {
 	pruningPoint, err := ppm.pruningStore.PruningPoint(ppm.databaseContext, stagingArea)
@@ -82,6 +83,7 @@ func (ppm *pruningProofManager) BuildPruningPointProof(stagingArea *model.Stagin
 
 	maxLevel := len(pruningPointHeader.Parents()) - 1
 	headersByLevel := make(map[int][]externalapi.BlockHeader)
+	selectedTipByLevel := make([]*externalapi.DomainHash, maxLevel+1)
 	pruningPointLevel := pow.BlockLevel(pruningPointHeader)
 	for blockLevel := maxLevel; blockLevel >= 0; blockLevel-- {
 		var selectedTip *externalapi.DomainHash
@@ -94,13 +96,31 @@ func (ppm *pruningProofManager) BuildPruningPointProof(stagingArea *model.Stagin
 				return nil, err
 			}
 		}
+		selectedTipByLevel[blockLevel] = selectedTip
 
-		root, err := ppm.blockAtDepth(stagingArea, ppm.ghostdagDataStores[blockLevel], selectedTip, 2*m)
+		blockAtDepth2M, err := ppm.blockAtDepth(stagingArea, ppm.ghostdagDataStores[blockLevel], selectedTip, 2*ppm.pruningProofM)
 		if err != nil {
 			return nil, err
 		}
 
-		headers := make([]externalapi.BlockHeader, 0, 2*m)
+		root := blockAtDepth2M
+		if blockLevel != maxLevel {
+			blockAtDepthMAtNextLevel, err := ppm.blockAtDepth(stagingArea, ppm.ghostdagDataStores[blockLevel+1], selectedTipByLevel[blockLevel+1], ppm.pruningProofM)
+			if err != nil {
+				return nil, err
+			}
+
+			isAncestorOf, err := ppm.dagTopologyManagers[blockLevel].IsAncestorOf(stagingArea, blockAtDepthMAtNextLevel, blockAtDepth2M)
+			if err != nil {
+				return nil, err
+			}
+
+			if isAncestorOf {
+				root = blockAtDepthMAtNextLevel
+			}
+		}
+
+		headers := make([]externalapi.BlockHeader, 0, 2*ppm.pruningProofM)
 		visited := hashset.New()
 		queue := []*externalapi.DomainHash{root}
 		for len(queue) > 0 {
@@ -185,8 +205,12 @@ func (ppm *pruningProofManager) ValidatePruningPointProof(pruningPointProof *ext
 			"has parents from %d levels", len(pruningPointProof.Headers), maxLevel+1)
 	}
 
-	blockRelationStores, reachabilityDataStores, ghostdagDataStores := dagStores(maxLevel)
-	reachabilityManagers, dagTopologyManagers, ghostdagManagers := ppm.dagProcesses(maxLevel, blockRelationStores, reachabilityDataStores, ghostdagDataStores)
+	blockHeaderStore, blockRelationStores, reachabilityDataStores, ghostdagDataStores, err := ppm.dagStores(maxLevel)
+	if err != nil {
+		return err
+	}
+
+	reachabilityManagers, dagTopologyManagers, ghostdagManagers := ppm.dagProcesses(maxLevel, blockHeaderStore, blockRelationStores, reachabilityDataStores, ghostdagDataStores)
 
 	for blockLevel := 0; blockLevel <= maxLevel; blockLevel++ {
 		err := reachabilityManagers[blockLevel].Init(stagingArea)
@@ -214,41 +238,6 @@ func (ppm *pruningProofManager) ValidatePruningPointProof(pruningPointProof *ext
 		headers := make([]externalapi.BlockHeader, len(pruningPointProof.Headers[blockLevel]))
 		copy(headers, pruningPointProof.Headers[blockLevel])
 
-		if blockLevel < maxLevel {
-			blockAtDepthMAtNextLevel, err := ppm.blockAtDepth(stagingArea, ghostdagDataStores[blockLevel+1], selectedTipByLevel[blockLevel+1], m)
-			if err != nil {
-				return err
-			}
-
-			headersSet := hashset.New()
-			for _, header := range headers {
-				headersSet.Add(consensushashing.HeaderHash(header))
-			}
-
-			if !headersSet.Contains(blockAtDepthMAtNextLevel) {
-				futureOfBlockAtDepthMAtNextLevel, err := ppm.future(stagingArea, ppm.dagTopologyManagers[blockLevel+1], blockAtDepthMAtNextLevel)
-				if err != nil {
-					return err
-				}
-
-				for _, blockHash := range futureOfBlockAtDepthMAtNextLevel {
-					if headersSet.Contains(blockHash) {
-						continue
-					}
-
-					header, err := ppm.blockHeaderStore.BlockHeader(ppm.databaseContext, stagingArea, blockHash)
-					if err != nil {
-						return err
-					}
-					headers = append(headers, header)
-				}
-
-				sort.Slice(headers, func(i, j int) bool {
-					return headers[i].BlueWork().Cmp(headers[j].BlueWork()) < 0
-				})
-			}
-		}
-
 		var selectedTip *externalapi.DomainHash
 		for i, header := range headers {
 			blockHash := consensushashing.HeaderHash(header)
@@ -257,7 +246,7 @@ func (ppm *pruningProofManager) ValidatePruningPointProof(pruningPointProof *ext
 					"expected to be at least %d", blockHash, pow.BlockLevel(header), blockLevel)
 			}
 
-			ppm.blockHeaderStore.Stage(stagingArea, blockHash, header)
+			blockHeaderStore.Stage(stagingArea, blockHash, header)
 
 			var parents []*externalapi.DomainHash
 			for _, parent := range header.ParentsAtLevel(blockLevel) {
@@ -312,6 +301,23 @@ func (ppm *pruningProofManager) ValidatePruningPointProof(pruningPointProof *ext
 			}
 		}
 
+		if blockLevel < maxLevel {
+			blockAtDepthMAtNextLevel, err := ppm.blockAtDepth(stagingArea, ghostdagDataStores[blockLevel+1], selectedTipByLevel[blockLevel+1], ppm.pruningProofM)
+			if err != nil {
+				return err
+			}
+
+			hasBlockAtDepthMAtNextLevel, err := blockRelationStores[blockLevel].Has(ppm.databaseContext, stagingArea, blockAtDepthMAtNextLevel)
+			if err != nil {
+				return err
+			}
+
+			if !hasBlockAtDepthMAtNextLevel {
+				return errors.Wrapf(ruleerrors.ErrPruningProofMissingBlockAtDepthMFromNextLevel, "proof level %d "+
+					"is missing the block at depth m in level %d", blockLevel, blockLevel+1)
+			}
+		}
+
 		selectedTipByLevel[blockLevel] = selectedTip
 	}
 
@@ -337,7 +343,7 @@ func (ppm *pruningProofManager) ValidatePruningPointProof(pruningPointProof *ext
 			return err
 		}
 
-		if selectedTipGHOSTDAGData.BlueScore() < 2*m {
+		if selectedTipGHOSTDAGData.BlueScore() < 2*ppm.pruningProofM {
 			continue
 		}
 
@@ -416,7 +422,7 @@ func (ppm *pruningProofManager) ValidatePruningPointProof(pruningPointProof *ext
 				return err
 			}
 
-			if parentGHOSTDAGData.BlueScore() < 2*m {
+			if parentGHOSTDAGData.BlueScore() < 2*ppm.pruningProofM {
 				return nil
 			}
 		}
@@ -426,23 +432,29 @@ func (ppm *pruningProofManager) ValidatePruningPointProof(pruningPointProof *ext
 		"shared blocks with the known DAGs, but doesn't have enough headers from levels higher than the existing block levels.")
 }
 
-func dagStores(maxLevel int) ([]model.BlockRelationStore, []model.ReachabilityDataStore, []model.GHOSTDAGDataStore) {
+func (ppm *pruningProofManager) dagStores(maxLevel int) (model.BlockHeaderStore, []model.BlockRelationStore, []model.ReachabilityDataStore, []model.GHOSTDAGDataStore, error) {
 	blockRelationStores := make([]model.BlockRelationStore, constants.MaxBlockLevel+1)
 	reachabilityDataStores := make([]model.ReachabilityDataStore, constants.MaxBlockLevel+1)
 	ghostdagDataStores := make([]model.GHOSTDAGDataStore, constants.MaxBlockLevel+1)
 
 	prefix := consensusDB.MakeBucket([]byte("pruningProofManager"))
+	blockHeaderStore, err := blockheaderstore.New(ppm.databaseContext, prefix, 0, false)
+	if err != nil {
+		return nil, nil, nil, nil, err
+	}
+
 	for i := 0; i <= maxLevel; i++ {
 		blockRelationStores[i] = blockrelationstore.New(prefix, 0, false)
 		reachabilityDataStores[i] = reachabilitydatastore.New(prefix, 0, false)
 		ghostdagDataStores[i] = ghostdagdatastore.New(prefix, 0, false)
 	}
 
-	return blockRelationStores, reachabilityDataStores, ghostdagDataStores
+	return blockHeaderStore, blockRelationStores, reachabilityDataStores, ghostdagDataStores, nil
 }
 
 func (ppm *pruningProofManager) dagProcesses(
 	maxLevel int,
+	blockHeaderStore model.BlockHeaderStore,
 	blockRelationStores []model.BlockRelationStore,
 	reachabilityDataStores []model.ReachabilityDataStore,
 	ghostdagDataStores []model.GHOSTDAGDataStore) (
@@ -471,7 +483,7 @@ func (ppm *pruningProofManager) dagProcesses(
 			ppm.databaseContext,
 			dagTopologyManagers[i],
 			ghostdagDataStores[i],
-			ppm.blockHeaderStore,
+			blockHeaderStore,
 			ppm.k,
 			ppm.genesisHash)
 	}
@@ -479,29 +491,29 @@ func (ppm *pruningProofManager) dagProcesses(
 	return reachabilityManagers, dagTopologyManagers, ghostdagManagers
 }
 
-func (ppm *pruningProofManager) future(stagingArea *model.StagingArea, dagTopologyManager model.DAGTopologyManager, root *externalapi.DomainHash) ([]*externalapi.DomainHash, error) {
-	visited := hashset.New()
-	queue := []*externalapi.DomainHash{root}
-	future := make([]*externalapi.DomainHash, 0)
-	for len(queue) > 0 {
-		var current *externalapi.DomainHash
-		current, queue = queue[0], queue[1:]
-
-		if visited.Contains(current) {
-			continue
-		}
-
-		future = append(future, current)
-		children, err := dagTopologyManager.Children(stagingArea, current)
-		if err != nil {
-			return nil, err
-		}
-
-		queue = append(queue, children...)
-	}
-
-	return future, nil
-}
+//func (ppm *pruningProofManager) future(stagingArea *model.StagingArea, dagTopologyManager model.DAGTopologyManager, root *externalapi.DomainHash) ([]*externalapi.DomainHash, error) {
+//	visited := hashset.New()
+//	queue := []*externalapi.DomainHash{root}
+//	future := make([]*externalapi.DomainHash, 0)
+//	for len(queue) > 0 {
+//		var current *externalapi.DomainHash
+//		current, queue = queue[0], queue[1:]
+//
+//		if visited.Contains(current) {
+//			continue
+//		}
+//
+//		future = append(future, current)
+//		children, err := dagTopologyManager.Children(stagingArea, current)
+//		if err != nil {
+//			return nil, err
+//		}
+//
+//		queue = append(queue, children...)
+//	}
+//
+//	return future, nil
+//}
 
 func (ppm *pruningProofManager) ApplyPruningPointProof(stagingArea *model.StagingArea, pruningPointProof *externalapi.PruningPointProof) error {
 	for blockLevel, headers := range pruningPointProof.Headers {
