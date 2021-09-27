@@ -10,13 +10,14 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/utils/subnetworks"
 	"github.com/pkg/errors"
 	"math"
+	"math/big"
 	"math/rand"
 )
 
 type coinbaseManager struct {
 	subsidyGenesisReward                    uint64
-	subsidyPastRewardMultiplier             float64
-	subsidyMergeSetRewardMultiplier         float64
+	subsidyPastRewardMultiplier             *big.Rat
+	subsidyMergeSetRewardMultiplier         *big.Rat
 	coinbasePayloadScriptPublicKeyMaxLength uint8
 	genesisHash                             *externalapi.DomainHash
 
@@ -207,56 +208,58 @@ func (c *coinbaseManager) calcBlockSubsidy(stagingArea *model.StagingArea, block
 	fmt.Println("----------")
 	fmt.Println(blockHash.String(), averagePastSubsidy, subsidyRandomVariable, mergeSetSubsidySum)
 
-	pastSubsidy := c.subsidyPastRewardMultiplier * float64(averagePastSubsidy)
-	subsidyRandom := math.Pow(4, subsidyRandomVariable)
-	mergeSetSubsidy := c.subsidyMergeSetRewardMultiplier * float64(mergeSetSubsidySum)
+	pastSubsidy := new(big.Rat).Mul(averagePastSubsidy, c.subsidyPastRewardMultiplier)
+	subsidyRandom := new(big.Rat).SetFloat64(math.Pow(4, subsidyRandomVariable))
+	mergeSetSubsidy := new(big.Rat).Mul(mergeSetSubsidySum, c.subsidyMergeSetRewardMultiplier)
 
-	fmt.Println(uint64(pastSubsidy), subsidyRandom, uint64(mergeSetSubsidy))
+	fmt.Println(pastSubsidy, subsidyRandom, mergeSetSubsidy)
 
-	blockSubsidy := uint64((pastSubsidy * subsidyRandom) + mergeSetSubsidy)
+	blockSubsidyBigRat := new(big.Rat).Add(mergeSetSubsidy, new(big.Rat).Mul(pastSubsidy, subsidyRandom))
+	blockSubsidyFloat64, _ := blockSubsidyBigRat.Float64()
+	blockSubsidyUint64 := uint64(blockSubsidyFloat64)
 
-	fmt.Println(blockSubsidy)
+	fmt.Println(blockSubsidyBigRat, blockSubsidyFloat64, blockSubsidyUint64)
 	fmt.Println("============")
 
-	return blockSubsidy, nil
+	return blockSubsidyUint64, nil
 }
 
-func (c *coinbaseManager) calculateAveragePastSubsidy(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) (uint64, error) {
+func (c *coinbaseManager) calculateAveragePastSubsidy(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) (*big.Rat, error) {
 	blockParents, err := c.dagTopologyManager.Parents(stagingArea, blockHash)
 	if err != nil {
-		return 0, err
+		return nil, err
 	}
 	if len(blockParents) == 0 {
-		return 0, nil
+		return nil, nil
 	}
 
-	pastBlockCount := uint64(0)
-	pastBlockSubsidySum := uint64(0)
+	pastBlockCount := int64(0)
+	pastBlockSubsidySum := int64(0)
 	queue := c.dagTraversalManager.NewDownHeap(stagingArea)
 	addedToQueue := make(map[externalapi.DomainHash]struct{})
 
 	err = queue.PushSlice(blockParents)
 	if err != nil {
-		return 0, err
+		return nil, err
 	}
 	for _, blockParent := range blockParents {
 		addedToQueue[*blockParent] = struct{}{}
 	}
 
-	const subsidyPastWindowSize = uint64(100)
+	const subsidyPastWindowSize = int64(100)
 	for pastBlockCount < subsidyPastWindowSize && queue.Len() > 0 {
 		pastBlockHash := queue.Pop()
 		pastBlockCount++
 
 		pastBlockSubsidy, err := c.getBlockSubsidy(stagingArea, pastBlockHash)
 		if err != nil {
-			return 0, err
+			return nil, err
 		}
-		pastBlockSubsidySum += pastBlockSubsidy
+		pastBlockSubsidySum += int64(pastBlockSubsidy)
 
 		pastBlockParents, err := c.dagTopologyManager.Parents(stagingArea, blockHash)
 		if err != nil {
-			return 0, err
+			return nil, err
 		}
 		for _, pastBlockParent := range pastBlockParents {
 			if _, ok := addedToQueue[*pastBlockParent]; ok {
@@ -264,31 +267,31 @@ func (c *coinbaseManager) calculateAveragePastSubsidy(stagingArea *model.Staging
 			}
 			err = queue.Push(pastBlockParent)
 			if err != nil {
-				return 0, err
+				return nil, err
 			}
 			addedToQueue[*pastBlockParent] = struct{}{}
 		}
 	}
 
-	return pastBlockSubsidySum / pastBlockCount, nil
+	return big.NewRat(pastBlockSubsidySum, pastBlockCount), nil
 }
 
-func (c *coinbaseManager) calculateMergeSetSubsidySum(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) (uint64, error) {
+func (c *coinbaseManager) calculateMergeSetSubsidySum(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) (*big.Rat, error) {
 	ghostdagData, err := c.ghostdagDataStore.Get(c.databaseContext, stagingArea, blockHash, false)
 	if err != nil {
-		return 0, err
+		return nil, err
 	}
 	mergeSet := append(ghostdagData.MergeSetBlues(), ghostdagData.MergeSetReds()...)
 
-	mergeSetSubsidySum := uint64(0)
+	mergeSetSubsidySum := int64(0)
 	for _, mergeSetBlockHash := range mergeSet {
 		mergeSetBlockSubsidy, err := c.getBlockSubsidy(stagingArea, mergeSetBlockHash)
 		if err != nil {
-			return 0, err
+			return nil, err
 		}
-		mergeSetSubsidySum += mergeSetBlockSubsidy
+		mergeSetSubsidySum += int64(mergeSetBlockSubsidy)
 	}
-	return mergeSetSubsidySum, nil
+	return big.NewRat(mergeSetSubsidySum, 1), nil
 }
 
 func (c *coinbaseManager) calculateSubsidyRandomVariable(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) (float64, error) {
@@ -306,7 +309,8 @@ func (c *coinbaseManager) calculateSubsidyRandomVariable(stagingArea *model.Stag
 		seed += int64(binary.LittleEndian.Uint64(selectedParent.ByteSlice()[i : i+8]))
 	}
 	random := rand.New(rand.NewSource(seed))
-	return random.NormFloat64(), nil
+	randomNormalFloat64 := random.NormFloat64()
+	return randomNormalFloat64, nil
 }
 
 func (c *coinbaseManager) calcMergedBlockReward(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash,
@@ -341,8 +345,8 @@ func New(
 	databaseContext model.DBReader,
 
 	subsidyGenesisReward uint64,
-	subsidyPastRewardMultiplier float64,
-	subsidyMergeSetRewardMultiplier float64,
+	subsidyPastRewardMultiplier *big.Rat,
+	subsidyMergeSetRewardMultiplier *big.Rat,
 	coinbasePayloadScriptPublicKeyMaxLength uint8,
 	genesisHash *externalapi.DomainHash,
 

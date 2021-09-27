@@ -179,14 +179,6 @@ func (networkFlags *NetworkFlags) overrideDAGParams() error {
 		networkFlags.ActiveNetParams.SubsidyGenesisReward = *config.SubsidyGenesisReward
 	}
 
-	if config.SubsidyPastRewardMultiplier != nil {
-		networkFlags.ActiveNetParams.SubsidyPastRewardMultiplier = *config.SubsidyPastRewardMultiplier
-	}
-
-	if config.SubsidyMergeSetRewardMultiplier != nil {
-		networkFlags.ActiveNetParams.SubsidyMergeSetRewardMultiplier = *config.SubsidyMergeSetRewardMultiplier
-	}
-
 	if config.TargetTimePerBlockInMilliSeconds != nil {
 		networkFlags.ActiveNetParams.TargetTimePerBlock = time.Duration(*config.TargetTimePerBlockInMilliSeconds) *
 			time.Millisecond
