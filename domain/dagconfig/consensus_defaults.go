@@ -47,7 +47,7 @@ const (
 	// (Higher values make pruning attacks easier by a constant, lower values make merging after a split or a spike
 	// in block take longer)
 	defaultMergeSetSizeLimit                       = defaultGHOSTDAGK * 10
-	defaultSubsidyGenesisReward                    = 1 * constants.SompiPerKaspa
+	defaultSubsidyGenesisReward                    = 50 * constants.SompiPerKaspa
 	defaultSubsidyPastRewardMultiplier             = 0.9
 	defaultSubsidyMergeSetRewardMultiplier         = 0.1
 	defaultCoinbasePayloadScriptPublicKeyMaxLength = 150
