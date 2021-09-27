@@ -303,7 +303,7 @@ func (c *coinbaseManager) calculateSubsidyRandomVariable(stagingArea *model.Stag
 
 	seed := int64(0)
 	for i := 0; i < externalapi.DomainHashSize; i += 8 {
-		seed += int64(binary.BigEndian.Uint64(selectedParent.ByteSlice()[i:]))
+		seed += int64(binary.LittleEndian.Uint64(selectedParent.ByteSlice()[i:]))
 	}
 	random := rand.New(rand.NewSource(seed))
 	return random.NormFloat64(), nil
