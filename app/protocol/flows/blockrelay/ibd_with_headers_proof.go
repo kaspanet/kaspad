@@ -101,7 +101,7 @@ func (flow *handleRelayInvsFlow) syncAndValidatePruningPointProof() (*externalap
 		return nil, err
 	}
 
-	return consensushashing.HeaderHash(pruningPointProof.Headers[0][0]), nil
+	return consensushashing.HeaderHash(pruningPointProof.Headers[0][len(pruningPointProof.Headers[0])-1]), nil
 }
 
 func (flow *handleRelayInvsFlow) downloadHeadersAndPruningUTXOSet(highHash *externalapi.DomainHash) error {
@@ -274,7 +274,8 @@ func (flow *handleRelayInvsFlow) validateAndInsertPruningPoints(proofPruningPoin
 		return protocolerrors.Errorf(false, "pruning points are violating finality")
 	}
 
-	if !consensushashing.HeaderHash(headers[len(headers)-1]).Equal(proofPruningPoint) {
+	lastPruningPoint := consensushashing.HeaderHash(headers[len(headers)-1])
+	if !lastPruningPoint.Equal(proofPruningPoint) {
 		return protocolerrors.Errorf(true, "the proof pruning point is not equal to the last pruning "+
 			"point in the list")
 	}

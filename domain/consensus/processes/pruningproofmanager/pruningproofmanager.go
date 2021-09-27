@@ -433,9 +433,9 @@ func (ppm *pruningProofManager) ValidatePruningPointProof(pruningPointProof *ext
 }
 
 func (ppm *pruningProofManager) dagStores(maxLevel int) (model.BlockHeaderStore, []model.BlockRelationStore, []model.ReachabilityDataStore, []model.GHOSTDAGDataStore, error) {
-	blockRelationStores := make([]model.BlockRelationStore, constants.MaxBlockLevel+1)
-	reachabilityDataStores := make([]model.ReachabilityDataStore, constants.MaxBlockLevel+1)
-	ghostdagDataStores := make([]model.GHOSTDAGDataStore, constants.MaxBlockLevel+1)
+	blockRelationStores := make([]model.BlockRelationStore, maxLevel+1)
+	reachabilityDataStores := make([]model.ReachabilityDataStore, maxLevel+1)
+	ghostdagDataStores := make([]model.GHOSTDAGDataStore, maxLevel+1)
 
 	prefix := consensusDB.MakeBucket([]byte("pruningProofManager"))
 	blockHeaderStore, err := blockheaderstore.New(ppm.databaseContext, prefix, 0, false)
