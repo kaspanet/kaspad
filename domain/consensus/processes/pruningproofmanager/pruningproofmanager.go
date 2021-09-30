@@ -110,13 +110,41 @@ func (ppm *pruningProofManager) BuildPruningPointProof(stagingArea *model.Stagin
 				return nil, err
 			}
 
-			isAncestorOf, err := ppm.dagTopologyManagers[blockLevel].IsAncestorOf(stagingArea, blockAtDepthMAtNextLevel, blockAtDepth2M)
+			isBlockAtDepthMAtNextLevelAncestorOfBlockAtDepth2M, err := ppm.dagTopologyManagers[blockLevel].IsAncestorOf(stagingArea, blockAtDepthMAtNextLevel, blockAtDepth2M)
 			if err != nil {
 				return nil, err
 			}
 
-			if isAncestorOf {
+			if isBlockAtDepthMAtNextLevelAncestorOfBlockAtDepth2M {
 				root = blockAtDepthMAtNextLevel
+			} else {
+				isBlockAtDepth2MAncestorOfBlockAtDepthMAtNextLevel, err := ppm.dagTopologyManagers[blockLevel].IsAncestorOf(stagingArea, blockAtDepth2M, blockAtDepthMAtNextLevel)
+				if err != nil {
+					return nil, err
+				}
+
+				if !isBlockAtDepth2MAncestorOfBlockAtDepthMAtNextLevel {
+					// find common ancestor
+					// TODO: Is it actually secure?
+					current := blockAtDepthMAtNextLevel
+					for {
+						ghostdagData, err := ppm.ghostdagDataStores[blockLevel+1].Get(ppm.databaseContext, stagingArea, current, false)
+						if err != nil {
+							return nil, err
+						}
+
+						current = ghostdagData.SelectedParent()
+						isCurrentAncestorOfBlockAtDepth2M, err := ppm.dagTopologyManagers[blockLevel].IsAncestorOf(stagingArea, current, blockAtDepth2M)
+						if err != nil {
+							return nil, err
+						}
+
+						if isCurrentAncestorOfBlockAtDepth2M {
+							root = current
+							break
+						}
+					}
+				}
 			}
 		}
 
