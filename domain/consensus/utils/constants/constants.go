@@ -36,5 +36,6 @@ const (
 	// interpreted to be a DAA score.
 	LockTimeThreshold = 5e11 // Tue Nov 5 00:53:20 1985 UTC
 
+	// MaxBlockLevel is the maximum possible block level.
 	MaxBlockLevel = 255
 )

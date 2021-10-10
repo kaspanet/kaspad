@@ -67,6 +67,7 @@ func toBig(hash *externalapi.DomainHash) *big.Int {
 	return new(big.Int).SetBytes(buf)
 }
 
+// BlockLevel returns the block level of the given header.
 func BlockLevel(header externalapi.BlockHeader) int {
 	proofOfWorkValue := CalculateProofOfWorkValue(header.ToMutable())
 	for blockLevel := 0; ; blockLevel++ {

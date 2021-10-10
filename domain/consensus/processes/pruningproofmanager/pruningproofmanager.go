@@ -441,9 +441,8 @@ func (ppm *pruningProofManager) ValidatePruningPointProof(pruningPointProof *ext
 			if foundBetterParent {
 				return errors.Wrapf(ruleerrors.ErrPruningProofInsufficientBlueWork, "the proof doesn't "+
 					"have sufficient blue work in order to replace the current DAG")
-			} else {
-				return nil
 			}
+			return nil
 		}
 	}
 
