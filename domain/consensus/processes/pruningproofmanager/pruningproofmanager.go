@@ -28,9 +28,12 @@ type pruningProofManager struct {
 	ghostdagManagers     []model.GHOSTDAGManager
 	reachabilityManagers []model.ReachabilityManager
 
-	ghostdagDataStores []model.GHOSTDAGDataStore
-	pruningStore       model.PruningStore
-	blockHeaderStore   model.BlockHeaderStore
+	ghostdagDataStores  []model.GHOSTDAGDataStore
+	pruningStore        model.PruningStore
+	blockHeaderStore    model.BlockHeaderStore
+	blockStatusStore    model.BlockStatusStore
+	finalityStore       model.FinalityStore
+	consensusStateStore model.ConsensusStateStore
 
 	genesisHash   *externalapi.DomainHash
 	k             externalapi.KType
@@ -48,6 +51,9 @@ func New(
 	ghostdagDataStores []model.GHOSTDAGDataStore,
 	pruningStore model.PruningStore,
 	blockHeaderStore model.BlockHeaderStore,
+	blockStatusStore model.BlockStatusStore,
+	finalityStore model.FinalityStore,
+	consensusStateStore model.ConsensusStateStore,
 
 	genesisHash *externalapi.DomainHash,
 	k externalapi.KType,
@@ -60,9 +66,12 @@ func New(
 		ghostdagManagers:     ghostdagManagers,
 		reachabilityManagers: reachabilityManagers,
 
-		ghostdagDataStores: ghostdagDataStores,
-		pruningStore:       pruningStore,
-		blockHeaderStore:   blockHeaderStore,
+		ghostdagDataStores:  ghostdagDataStores,
+		pruningStore:        pruningStore,
+		blockHeaderStore:    blockHeaderStore,
+		blockStatusStore:    blockStatusStore,
+		finalityStore:       finalityStore,
+		consensusStateStore: consensusStateStore,
 
 		genesisHash:   genesisHash,
 		k:             k,
@@ -128,12 +137,16 @@ func (ppm *pruningProofManager) BuildPruningPointProof(stagingArea *model.Stagin
 					// TODO: Is it actually secure?
 					current := blockAtDepthMAtNextLevel
 					for {
-						ghostdagData, err := ppm.ghostdagDataStores[blockLevel+1].Get(ppm.databaseContext, stagingArea, current, false)
+						ghostdagData, err := ppm.ghostdagDataStores[blockLevel].Get(ppm.databaseContext, stagingArea, current, false)
 						if err != nil {
 							return nil, err
 						}
 
 						current = ghostdagData.SelectedParent()
+						if current.Equal(model.VirtualGenesisBlockHash) {
+							return nil, errors.Errorf("No common ancestor between %s and %s at level %d", blockAtDepth2M, blockAtDepthMAtNextLevel, blockLevel)
+						}
+
 						isCurrentAncestorOfBlockAtDepth2M, err := ppm.dagTopologyManagers[blockLevel].IsAncestorOf(stagingArea, current, blockAtDepth2M)
 						if err != nil {
 							return nil, err
@@ -519,30 +532,6 @@ func (ppm *pruningProofManager) dagProcesses(
 	return reachabilityManagers, dagTopologyManagers, ghostdagManagers
 }
 
-//func (ppm *pruningProofManager) future(stagingArea *model.StagingArea, dagTopologyManager model.DAGTopologyManager, root *externalapi.DomainHash) ([]*externalapi.DomainHash, error) {
-//	visited := hashset.New()
-//	queue := []*externalapi.DomainHash{root}
-//	future := make([]*externalapi.DomainHash, 0)
-//	for len(queue) > 0 {
-//		var current *externalapi.DomainHash
-//		current, queue = queue[0], queue[1:]
-//
-//		if visited.Contains(current) {
-//			continue
-//		}
-//
-//		future = append(future, current)
-//		children, err := dagTopologyManager.Children(stagingArea, current)
-//		if err != nil {
-//			return nil, err
-//		}
-//
-//		queue = append(queue, children...)
-//	}
-//
-//	return future, nil
-//}
-
 func (ppm *pruningProofManager) ApplyPruningPointProof(stagingArea *model.StagingArea, pruningPointProof *externalapi.PruningPointProof) error {
 	for blockLevel, headers := range pruningPointProof.Headers {
 		var selectedTip *externalapi.DomainHash
@@ -595,6 +584,9 @@ func (ppm *pruningProofManager) ApplyPruningPointProof(stagingArea *model.Stagin
 					nil,
 					nil,
 				), false)
+
+				ppm.finalityStore.StageFinalityPoint(stagingArea, blockHash, model.VirtualGenesisBlockHash)
+				ppm.blockStatusStore.Stage(stagingArea, blockHash, externalapi.StatusHeaderOnly)
 			} else {
 				err = ppm.ghostdagManagers[blockLevel].GHOSTDAG(stagingArea, blockHash)
 				if err != nil {
@@ -625,5 +617,8 @@ func (ppm *pruningProofManager) ApplyPruningPointProof(stagingArea *model.Stagin
 		}
 	}
 
+	pruningPointHeader := pruningPointProof.Headers[0][len(pruningPointProof.Headers[0])-1]
+	pruningPoint := consensushashing.HeaderHash(pruningPointHeader)
+	ppm.consensusStateStore.StageTips(stagingArea, []*externalapi.DomainHash{pruningPoint})
 	return nil
 }

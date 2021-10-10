@@ -43,6 +43,10 @@ func (tc *testConsensus) GHOSTDAGDataStore() model.GHOSTDAGDataStore {
 	return tc.ghostdagDataStores[0]
 }
 
+func (tc *testConsensus) GHOSTDAGDataStores() []model.GHOSTDAGDataStore {
+	return tc.ghostdagDataStores
+}
+
 func (tc *testConsensus) HeaderTipsStore() model.HeaderSelectedTipStore {
 	return tc.headersSelectedTipStore
 }

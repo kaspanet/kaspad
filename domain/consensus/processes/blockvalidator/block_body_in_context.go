@@ -15,12 +15,14 @@ func (v *blockValidator) ValidateBodyInContext(stagingArea *model.StagingArea, b
 	onEnd := logger.LogAndMeasureExecutionTime(log, "ValidateBodyInContext")
 	defer onEnd()
 
-	err := v.checkBlockIsNotPruned(stagingArea, blockHash)
-	if err != nil {
-		return err
+	if !isBlockWithTrustedData {
+		err := v.checkBlockIsNotPruned(stagingArea, blockHash)
+		if err != nil {
+			return err
+		}
 	}
 
-	err = v.checkBlockTransactions(stagingArea, blockHash)
+	err := v.checkBlockTransactions(stagingArea, blockHash)
 	if err != nil {
 		return err
 	}

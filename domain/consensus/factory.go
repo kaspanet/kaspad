@@ -404,6 +404,9 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 		ghostdagDataStores,
 		pruningStore,
 		blockHeaderStore,
+		blockStatusStore,
+		finalityStore,
+		consensusStateStore,
 
 		genesisHash,
 		config.K,

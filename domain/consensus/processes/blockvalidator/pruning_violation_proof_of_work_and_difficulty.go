@@ -43,9 +43,11 @@ func (v *blockValidator) ValidatePruningPointViolationAndProofOfWorkAndDifficult
 		return err
 	}
 
-	err = v.checkPruningPointViolation(stagingArea, blockHash)
-	if err != nil {
-		return err
+	if !isBlockWithTrustedData {
+		err = v.checkPruningPointViolation(stagingArea, blockHash)
+		if err != nil {
+			return err
+		}
 	}
 
 	err = v.checkProofOfWork(header)
