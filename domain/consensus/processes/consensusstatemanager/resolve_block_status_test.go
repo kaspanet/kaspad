@@ -2,8 +2,6 @@ package consensusstatemanager_test
 
 import (
 	"errors"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/subnetworks"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/utxo"
 	"testing"
 
@@ -283,7 +281,7 @@ func TestTransactionAcceptance(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Error getting redBlock: %+v", err)
 		}
-		blockF, err := testConsensus.GetBlock(blockHashG)
+		_, err = testConsensus.GetBlock(blockHashG)
 		if err != nil {
 			t.Fatalf("Error getting blockF: %+v", err)
 		}
@@ -345,33 +343,6 @@ func TestTransactionAcceptance(t *testing.T) {
 		}
 		if !acceptanceData.Equal(expectedAcceptanceData) {
 			t.Fatalf("The acceptance data is not the expected acceptance data")
-		}
-		// We expect the coinbase transaction to pay reward for the selected parent(block E), the
-		// blueChildOfRedBlock, and bestow the red block reward to the merging block.
-		expectedCoinbase := &externalapi.DomainTransaction{
-			Version: constants.MaxTransactionVersion,
-			Inputs:  nil,
-			Outputs: []*externalapi.DomainTransactionOutput{
-				{
-					Value:           50 * constants.SompiPerKaspa,
-					ScriptPublicKey: blockEScriptPublicKey,
-				},
-				{
-					Value:           50*constants.SompiPerKaspa + fees, // testutils.CreateTransaction pays fees
-					ScriptPublicKey: blueChildOfRedBlockScriptPublicKey,
-				},
-				{
-					Value:           50*constants.SompiPerKaspa + fees, // testutils.CreateTransaction pays fees
-					ScriptPublicKey: blockFScriptPublicKey,
-				},
-			},
-			LockTime:     0,
-			SubnetworkID: subnetworks.SubnetworkIDCoinbase,
-			Gas:          0,
-			Payload:      blockF.Transactions[0].Payload,
-		}
-		if !blockF.Transactions[transactionhelper.CoinbaseTransactionIndex].Equal(expectedCoinbase) {
-			t.Fatalf("Unexpected coinbase transaction")
 		}
 	})
 }
