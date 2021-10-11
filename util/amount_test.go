@@ -5,6 +5,7 @@
 package util_test
 
 import (
+	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
 	"math"
 	"testing"
 
@@ -27,21 +28,21 @@ func TestAmountCreation(t *testing.T) {
 		},
 		{
 			name:     "max producible",
-			amount:   21e6,
+			amount:   10e9,
 			valid:    true,
-			expected: MaxSompi,
+			expected: constants.MaxSompi,
 		},
 		{
 			name:     "exceeds max producible",
-			amount:   21e6 + 1e-8,
+			amount:   10e9 + 1e-8,
 			valid:    true,
-			expected: MaxSompi + 1,
+			expected: constants.MaxSompi,
 		},
 		{
 			name:     "one hundred",
 			amount:   100,
 			valid:    true,
-			expected: 100 * SompiPerKaspa,
+			expected: 100 * constants.SompiPerKaspa,
 		},
 		{
 			name:     "fraction",
@@ -53,13 +54,13 @@ func TestAmountCreation(t *testing.T) {
 			name:     "rounding up",
 			amount:   54.999999999999943157,
 			valid:    true,
-			expected: 55 * SompiPerKaspa,
+			expected: 55 * constants.SompiPerKaspa,
 		},
 		{
 			name:     "rounding down",
 			amount:   55.000000000000056843,
 			valid:    true,
-			expected: 55 * SompiPerKaspa,
+			expected: 55 * constants.SompiPerKaspa,
 		},
 
 		// Negative tests.
@@ -108,10 +109,10 @@ func TestAmountUnitConversions(t *testing.T) {
 	}{
 		{
 			name:      "MKAS",
-			amount:    MaxSompi,
+			amount:    constants.MaxSompi,
 			unit:      AmountMegaKAS,
-			converted: 21,
-			s:         "21 MKAS",
+			converted: 10000,
+			s:         "10000 MKAS",
 		},
 		{
 			name:      "kKAS",

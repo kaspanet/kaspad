@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/daemon/pb"
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/libkaspawallet"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/pkg/errors"
 )
@@ -88,7 +89,7 @@ func (s *server) selectUTXOs(spendAmount uint64, feePerInput uint64) (
 	totalSpend := spendAmount + fee
 	if totalValue < totalSpend {
 		return nil, 0, errors.Errorf("Insufficient funds for send: %f required, while only %f available",
-			float64(totalSpend)/util.SompiPerKaspa, float64(totalValue)/util.SompiPerKaspa)
+			float64(totalSpend)/constants.SompiPerKaspa, float64(totalValue)/constants.SompiPerKaspa)
 	}
 
 	return selectedUTXOs, totalValue - totalSpend, nil
