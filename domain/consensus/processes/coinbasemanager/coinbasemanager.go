@@ -201,7 +201,8 @@ func (c *coinbaseManager) calcBlockSubsidy(stagingArea *model.StagingArea, block
 	}
 
 	fmt.Println("----------")
-	fmt.Println(blockHash.String(), averagePastSubsidy, subsidyRandomVariable, mergeSetSubsidySum)
+	fmt.Println(blockHash.String())
+	fmt.Println(averagePastSubsidy, subsidyRandomVariable, mergeSetSubsidySum)
 
 	pastSubsidy := new(big.Rat).Mul(averagePastSubsidy, c.subsidyPastRewardMultiplier)
 	mergeSetSubsidy := new(big.Rat).Mul(mergeSetSubsidySum, c.subsidyMergeSetRewardMultiplier)
@@ -325,8 +326,9 @@ func (c *coinbaseManager) calculateSubsidyRandomVariable(stagingArea *model.Stag
 		currentRandomWalkValue += step
 	}
 
-	// Standard deviation = 0.25
-	const standardDeviationInverse = int64(4)
+	// Standard deviation = 0.2
+	// We use the inverse to avoid multiplying by a float
+	const standardDeviationInverse = int64(5)
 	return currentRandomWalkValue / standardDeviationInverse, nil
 }
 
