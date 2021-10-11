@@ -9,7 +9,6 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/utils/hashset"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/subnetworks"
 	"github.com/pkg/errors"
-	"math"
 	"math/big"
 	"math/rand"
 )
@@ -209,7 +208,7 @@ func (c *coinbaseManager) calcBlockSubsidy(stagingArea *model.StagingArea, block
 	fmt.Println(blockHash.String(), averagePastSubsidy, subsidyRandomVariable, mergeSetSubsidySum)
 
 	pastSubsidy := new(big.Rat).Mul(averagePastSubsidy, c.subsidyPastRewardMultiplier)
-	subsidyRandom := new(big.Rat).SetFloat64(math.Pow(4, subsidyRandomVariable))
+	subsidyRandom := new(big.Rat).SetInt64(powInt64(4, subsidyRandomVariable))
 	mergeSetSubsidy := new(big.Rat).Mul(mergeSetSubsidySum, c.subsidyMergeSetRewardMultiplier)
 
 	fmt.Println(pastSubsidy, subsidyRandom, mergeSetSubsidy)
@@ -294,7 +293,7 @@ func (c *coinbaseManager) calculateMergeSetSubsidySum(stagingArea *model.Staging
 	return big.NewRat(mergeSetSubsidySum, 1), nil
 }
 
-func (c *coinbaseManager) calculateSubsidyRandomVariable(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) (float64, error) {
+func (c *coinbaseManager) calculateSubsidyRandomVariable(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) (int64, error) {
 	ghostdagData, err := c.ghostdagDataStore.Get(c.databaseContext, stagingArea, blockHash, false)
 	if err != nil {
 		return 0, err
@@ -309,8 +308,34 @@ func (c *coinbaseManager) calculateSubsidyRandomVariable(stagingArea *model.Stag
 		seed += int64(binary.LittleEndian.Uint64(selectedParent.ByteSlice()[i : i+8]))
 	}
 	random := rand.New(rand.NewSource(seed))
-	randomNormalFloat64 := random.NormFloat64()
-	return randomNormalFloat64, nil
+
+	// Execute a random walk for `randomWalkSteps` steps to approximate
+	// a normal distribution
+	const randomWalkSteps = 100
+	currentRandomWalkValue := int64(0)
+	for i := 0; i < randomWalkSteps; i++ {
+		step := int64(1)
+		if random.Intn(2) == 0 {
+			step = -1
+		}
+		currentRandomWalkValue += step
+	}
+
+	const standardDeviation = int64(1)
+	return currentRandomWalkValue * standardDeviation, nil
+}
+
+// Adapted from https://stackoverflow.com/a/101613
+func powInt64(base int64, exponent int64) int64 {
+	result := int64(1)
+	for exponent != 0 {
+		if exponent&1 == 1 {
+			result *= base
+		}
+		exponent >>= 1
+		base *= base
+	}
+	return result
 }
 
 func (c *coinbaseManager) calcMergedBlockReward(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash,
