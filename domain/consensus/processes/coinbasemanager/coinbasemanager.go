@@ -325,8 +325,9 @@ func (c *coinbaseManager) calculateSubsidyRandomVariable(stagingArea *model.Stag
 		currentRandomWalkValue += step
 	}
 
-	const standardDeviation = int64(1)
-	return currentRandomWalkValue * standardDeviation, nil
+	// Standard deviation = 0.25
+	const standardDeviationInverse = int64(4)
+	return currentRandomWalkValue / standardDeviationInverse, nil
 }
 
 // Adapted from https://stackoverflow.com/a/101613
