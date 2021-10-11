@@ -190,6 +190,9 @@ func (tp *transactionsPool) limitTransactionCount() error {
 		if err != nil {
 			return err
 		}
+		if currentIndex >= len(tp.allTransactions) {
+			break
+		}
 	}
 	return nil
 }
