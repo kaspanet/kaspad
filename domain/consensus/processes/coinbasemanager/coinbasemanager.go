@@ -182,10 +182,6 @@ func (c *coinbaseManager) getBlockSubsidy(stagingArea *model.StagingArea, blockH
 // has the expected value.
 //
 // Further details: https://hashdag.medium.com/kaspa-launch-plan-9a63f4d754a6
-//
-// TODO: This function makes heavy use of floating point operations, which are
-// unfortunately not guaranteed to produce identical results between differing
-// architectures. This may produce discrepancies among nodes in the network
 func (c *coinbaseManager) calcBlockSubsidy(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) (uint64, error) {
 	if blockHash.Equal(c.genesisHash) {
 		return c.subsidyGenesisReward, nil
@@ -208,8 +204,16 @@ func (c *coinbaseManager) calcBlockSubsidy(stagingArea *model.StagingArea, block
 	fmt.Println(blockHash.String(), averagePastSubsidy, subsidyRandomVariable, mergeSetSubsidySum)
 
 	pastSubsidy := new(big.Rat).Mul(averagePastSubsidy, c.subsidyPastRewardMultiplier)
-	subsidyRandom := new(big.Rat).SetInt64(powInt64(4, subsidyRandomVariable))
 	mergeSetSubsidy := new(big.Rat).Mul(mergeSetSubsidySum, c.subsidyMergeSetRewardMultiplier)
+
+	// In order to avoid unsupported fractional results from powInt64, flip
+	// the numerator and the denominator manually
+	subsidyRandom := new(big.Rat)
+	if subsidyRandomVariable >= 0 {
+		subsidyRandom = subsidyRandom.SetInt64(powInt64(4, subsidyRandomVariable))
+	} else {
+		subsidyRandom = subsidyRandom.SetFrac64(1, powInt64(4, -subsidyRandomVariable))
+	}
 
 	fmt.Println(pastSubsidy, subsidyRandom, mergeSetSubsidy)
 
@@ -327,6 +331,10 @@ func (c *coinbaseManager) calculateSubsidyRandomVariable(stagingArea *model.Stag
 
 // Adapted from https://stackoverflow.com/a/101613
 func powInt64(base int64, exponent int64) int64 {
+	if exponent < 0 {
+		panic("negative exponents are not supported")
+	}
+
 	result := int64(1)
 	for exponent != 0 {
 		if exponent&1 == 1 {
