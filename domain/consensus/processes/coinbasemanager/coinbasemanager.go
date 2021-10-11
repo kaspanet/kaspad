@@ -314,22 +314,13 @@ func (c *coinbaseManager) calculateSubsidyRandomVariable(stagingArea *model.Stag
 	}
 	random := rand.New(rand.NewSource(seed))
 
-	// Execute a random walk for `randomWalkSteps` steps to approximate
-	// a normal distribution
-	const randomWalkSteps = 100
-	currentRandomWalkValue := int64(0)
-	for i := 0; i < randomWalkSteps; i++ {
-		step := int64(1)
-		if random.Intn(2) == 0 {
-			step = -1
-		}
-		currentRandomWalkValue += step
+	const binomialSteps = 6
+	binomialSum := int64(0)
+	for i := 0; i < binomialSteps; i++ {
+		step := random.Intn(2)
+		binomialSum += int64(step)
 	}
-
-	// Standard deviation = 0.2
-	// We use the inverse to avoid multiplying by a float
-	const standardDeviationInverse = int64(5)
-	return currentRandomWalkValue / standardDeviationInverse, nil
+	return binomialSum - (binomialSteps / 2), nil
 }
 
 // Adapted from https://stackoverflow.com/a/101613
