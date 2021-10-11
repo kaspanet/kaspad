@@ -15,6 +15,8 @@ import (
 
 type coinbaseManager struct {
 	subsidyGenesisReward                    uint64
+	subsidyMinGenesisReward                 uint64
+	subsidyMaxGenesisReward                 uint64
 	subsidyPastRewardMultiplier             *big.Rat
 	subsidyMergeSetRewardMultiplier         *big.Rat
 	coinbasePayloadScriptPublicKeyMaxLength uint8
@@ -222,10 +224,17 @@ func (c *coinbaseManager) calcBlockSubsidy(stagingArea *model.StagingArea, block
 	blockSubsidyFloat64, _ := blockSubsidyBigRat.Float64()
 	blockSubsidyUint64 := uint64(blockSubsidyFloat64)
 
-	fmt.Println(blockSubsidyBigRat, blockSubsidyFloat64, blockSubsidyUint64)
+	clampedBlockSubsidy := blockSubsidyUint64
+	if clampedBlockSubsidy < c.subsidyMinGenesisReward {
+		clampedBlockSubsidy = c.subsidyMinGenesisReward
+	} else if clampedBlockSubsidy > c.subsidyMaxGenesisReward {
+		clampedBlockSubsidy = c.subsidyMaxGenesisReward
+	}
+
+	fmt.Println(blockSubsidyBigRat, blockSubsidyFloat64, blockSubsidyUint64, clampedBlockSubsidy)
 	fmt.Println("============")
 
-	return blockSubsidyUint64, nil
+	return clampedBlockSubsidy, nil
 }
 
 func (c *coinbaseManager) calculateAveragePastSubsidy(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) (*big.Rat, error) {
@@ -372,6 +381,8 @@ func New(
 	databaseContext model.DBReader,
 
 	subsidyGenesisReward uint64,
+	subsidyMinGenesisReward uint64,
+	subsidyMaxGenesisReward uint64,
 	subsidyPastRewardMultiplier *big.Rat,
 	subsidyMergeSetRewardMultiplier *big.Rat,
 	coinbasePayloadScriptPublicKeyMaxLength uint8,
@@ -388,6 +399,8 @@ func New(
 		databaseContext: databaseContext,
 
 		subsidyGenesisReward:                    subsidyGenesisReward,
+		subsidyMinGenesisReward:                 subsidyMinGenesisReward,
+		subsidyMaxGenesisReward:                 subsidyMaxGenesisReward,
 		subsidyPastRewardMultiplier:             subsidyPastRewardMultiplier,
 		subsidyMergeSetRewardMultiplier:         subsidyMergeSetRewardMultiplier,
 		coinbasePayloadScriptPublicKeyMaxLength: coinbasePayloadScriptPublicKeyMaxLength,
