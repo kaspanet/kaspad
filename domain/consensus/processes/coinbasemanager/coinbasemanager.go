@@ -211,9 +211,9 @@ func (c *coinbaseManager) calcBlockSubsidy(stagingArea *model.StagingArea, block
 	// the numerator and the denominator manually
 	subsidyRandom := new(big.Rat)
 	if subsidyRandomVariable >= 0 {
-		subsidyRandom = subsidyRandom.SetInt64(powInt64(4, subsidyRandomVariable))
+		subsidyRandom = subsidyRandom.SetInt64(powInt64(2, subsidyRandomVariable))
 	} else {
-		subsidyRandom = subsidyRandom.SetFrac64(1, powInt64(4, -subsidyRandomVariable))
+		subsidyRandom = subsidyRandom.SetFrac64(1, powInt64(2, -subsidyRandomVariable))
 	}
 
 	fmt.Println(pastSubsidy, subsidyRandom, mergeSetSubsidy)
@@ -314,7 +314,7 @@ func (c *coinbaseManager) calculateSubsidyRandomVariable(stagingArea *model.Stag
 	}
 	random := rand.New(rand.NewSource(seed))
 
-	const binomialSteps = 6
+	const binomialSteps = 10
 	binomialSum := int64(0)
 	for i := 0; i < binomialSteps; i++ {
 		step := random.Intn(2)
