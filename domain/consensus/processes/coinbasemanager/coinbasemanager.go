@@ -2,7 +2,6 @@ package coinbasemanager
 
 import (
 	"encoding/binary"
-	"fmt"
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
@@ -202,10 +201,6 @@ func (c *coinbaseManager) calcBlockSubsidy(stagingArea *model.StagingArea, block
 		return 0, err
 	}
 
-	fmt.Println("----------")
-	fmt.Println(blockHash.String())
-	fmt.Println(averagePastSubsidy, subsidyRandomVariable, mergeSetSubsidySum)
-
 	pastSubsidy := new(big.Rat).Mul(averagePastSubsidy, c.subsidyPastRewardMultiplier)
 	mergeSetSubsidy := new(big.Rat).Mul(mergeSetSubsidySum, c.subsidyMergeSetRewardMultiplier)
 
@@ -218,8 +213,6 @@ func (c *coinbaseManager) calcBlockSubsidy(stagingArea *model.StagingArea, block
 		subsidyRandom = subsidyRandom.SetFrac64(1, powInt64(2, -subsidyRandomVariable))
 	}
 
-	fmt.Println(pastSubsidy, subsidyRandom, mergeSetSubsidy)
-
 	blockSubsidyBigRat := new(big.Rat).Add(mergeSetSubsidy, new(big.Rat).Mul(pastSubsidy, subsidyRandom))
 	blockSubsidyFloat64, _ := blockSubsidyBigRat.Float64()
 	blockSubsidyUint64 := uint64(blockSubsidyFloat64)
@@ -230,9 +223,6 @@ func (c *coinbaseManager) calcBlockSubsidy(stagingArea *model.StagingArea, block
 	} else if clampedBlockSubsidy > c.subsidyMaxGenesisReward {
 		clampedBlockSubsidy = c.subsidyMaxGenesisReward
 	}
-
-	fmt.Println(blockSubsidyBigRat, blockSubsidyFloat64, blockSubsidyUint64, clampedBlockSubsidy)
-	fmt.Println("============")
 
 	return clampedBlockSubsidy, nil
 }
