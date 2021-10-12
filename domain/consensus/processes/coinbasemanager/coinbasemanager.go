@@ -21,6 +21,8 @@ type coinbaseManager struct {
 	subsidyMergeSetRewardMultiplier         *big.Rat
 	coinbasePayloadScriptPublicKeyMaxLength uint8
 	genesisHash                             *externalapi.DomainHash
+	fixedSubsidySwitchPruningPointInterval  uint64
+	fixedSubsidySwitchHashRateDifference    *big.Int
 
 	databaseContext     model.DBReader
 	dagTraversalManager model.DAGTraversalManager
@@ -28,6 +30,9 @@ type coinbaseManager struct {
 	acceptanceDataStore model.AcceptanceDataStore
 	daaBlocksStore      model.DAABlocksStore
 	blockStore          model.BlockStore
+	pruningStore        model.PruningStore
+
+	hasBlockRewardSwitchedToFixed bool
 }
 
 func (c *coinbaseManager) ExpectedCoinbaseTransaction(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash,
@@ -349,12 +354,15 @@ func New(
 	subsidyMergeSetRewardMultiplier *big.Rat,
 	coinbasePayloadScriptPublicKeyMaxLength uint8,
 	genesisHash *externalapi.DomainHash,
+	fixedSubsidySwitchPruningPointInterval uint64,
+	fixedSubsidySwitchHashRateDifference *big.Int,
 
 	dagTraversalManager model.DAGTraversalManager,
 	ghostdagDataStore model.GHOSTDAGDataStore,
 	acceptanceDataStore model.AcceptanceDataStore,
 	daaBlocksStore model.DAABlocksStore,
-	blockStore model.BlockStore) model.CoinbaseManager {
+	blockStore model.BlockStore,
+	pruningStore model.PruningStore) model.CoinbaseManager {
 
 	return &coinbaseManager{
 		databaseContext: databaseContext,
@@ -366,11 +374,16 @@ func New(
 		subsidyMergeSetRewardMultiplier:         subsidyMergeSetRewardMultiplier,
 		coinbasePayloadScriptPublicKeyMaxLength: coinbasePayloadScriptPublicKeyMaxLength,
 		genesisHash:                             genesisHash,
+		fixedSubsidySwitchPruningPointInterval:  fixedSubsidySwitchPruningPointInterval,
+		fixedSubsidySwitchHashRateDifference:    fixedSubsidySwitchHashRateDifference,
 
 		dagTraversalManager: dagTraversalManager,
 		ghostdagDataStore:   ghostdagDataStore,
 		acceptanceDataStore: acceptanceDataStore,
 		daaBlocksStore:      daaBlocksStore,
 		blockStore:          blockStore,
+		pruningStore:        pruningStore,
+
+		hasBlockRewardSwitchedToFixed: false,
 	}
 }

@@ -179,6 +179,13 @@ type Params struct {
 
 	// PruningProofM is the 'm' constant in the pruning proof. For more details see: https://github.com/kaspanet/research/issues/3
 	PruningProofM uint64
+
+	// BaseSubsidy is the starting subsidy amount for mined blocks.
+	BaseSubsidy uint64
+
+	FixedSubsidySwitchPruningPointInterval uint64
+
+	FixedSubsidySwitchHashRateDifference *big.Int
 }
 
 // NormalizeRPCServerAddress returns addr with the current network default
@@ -254,6 +261,8 @@ var MainnetParams = Params{
 	MergeSetSizeLimit:                       defaultMergeSetSizeLimit,
 	CoinbasePayloadScriptPublicKeyMaxLength: defaultCoinbasePayloadScriptPublicKeyMaxLength,
 	PruningProofM:                           defaultPruningProofM,
+	FixedSubsidySwitchPruningPointInterval:  defaultFixedSubsidySwitchPruningPointInterval,
+	FixedSubsidySwitchHashRateDifference:    big.NewInt(1_000_000),
 }
 
 // TestnetParams defines the network parameters for the test Kaspa network.
@@ -314,6 +323,8 @@ var TestnetParams = Params{
 	MergeSetSizeLimit:                       defaultMergeSetSizeLimit,
 	CoinbasePayloadScriptPublicKeyMaxLength: defaultCoinbasePayloadScriptPublicKeyMaxLength,
 	PruningProofM:                           defaultPruningProofM,
+	FixedSubsidySwitchPruningPointInterval:  defaultFixedSubsidySwitchPruningPointInterval,
+	FixedSubsidySwitchHashRateDifference:    big.NewInt(1_000_000),
 }
 
 // SimnetParams defines the network parameters for the simulation test Kaspa
@@ -378,6 +389,8 @@ var SimnetParams = Params{
 	MergeSetSizeLimit:                       defaultMergeSetSizeLimit,
 	CoinbasePayloadScriptPublicKeyMaxLength: defaultCoinbasePayloadScriptPublicKeyMaxLength,
 	PruningProofM:                           defaultPruningProofM,
+	FixedSubsidySwitchPruningPointInterval:  defaultFixedSubsidySwitchPruningPointInterval,
+	FixedSubsidySwitchHashRateDifference:    big.NewInt(1_000_000),
 }
 
 // DevnetParams defines the network parameters for the development Kaspa network.
@@ -438,6 +451,8 @@ var DevnetParams = Params{
 	MergeSetSizeLimit:                       defaultMergeSetSizeLimit,
 	CoinbasePayloadScriptPublicKeyMaxLength: defaultCoinbasePayloadScriptPublicKeyMaxLength,
 	PruningProofM:                           defaultPruningProofM,
+	FixedSubsidySwitchPruningPointInterval:  defaultFixedSubsidySwitchPruningPointInterval,
+	FixedSubsidySwitchHashRateDifference:    big.NewInt(1_000_000),
 }
 
 var (
