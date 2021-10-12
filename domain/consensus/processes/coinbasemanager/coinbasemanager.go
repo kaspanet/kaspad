@@ -228,55 +228,25 @@ func (c *coinbaseManager) calcBlockSubsidy(stagingArea *model.StagingArea, block
 }
 
 func (c *coinbaseManager) calculateAveragePastSubsidy(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) (*big.Rat, error) {
-	blockParents, err := c.dagTopologyManager.Parents(stagingArea, blockHash)
+	const subsidyPastWindowSize = 100
+	blockWindow, err := c.dagTraversalManager.BlockWindow(stagingArea, blockHash, subsidyPastWindowSize)
 	if err != nil {
 		return nil, err
 	}
-	if len(blockParents) == 0 {
+	if len(blockWindow) == 0 {
 		return new(big.Rat), nil
 	}
 
-	pastBlockCount := int64(0)
 	pastBlockSubsidySum := int64(0)
-	queue := c.dagTraversalManager.NewDownHeap(stagingArea)
-	addedToQueue := make(map[externalapi.DomainHash]struct{})
-
-	err = queue.PushSlice(blockParents)
-	if err != nil {
-		return nil, err
-	}
-	for _, blockParent := range blockParents {
-		addedToQueue[*blockParent] = struct{}{}
-	}
-
-	const subsidyPastWindowSize = int64(100)
-	for pastBlockCount < subsidyPastWindowSize && queue.Len() > 0 {
-		pastBlockHash := queue.Pop()
-		pastBlockCount++
-
+	for _, pastBlockHash := range blockWindow {
 		pastBlockSubsidy, err := c.getBlockSubsidy(stagingArea, pastBlockHash)
 		if err != nil {
 			return nil, err
 		}
 		pastBlockSubsidySum += int64(pastBlockSubsidy)
-
-		pastBlockParents, err := c.dagTopologyManager.Parents(stagingArea, blockHash)
-		if err != nil {
-			return nil, err
-		}
-		for _, pastBlockParent := range pastBlockParents {
-			if _, ok := addedToQueue[*pastBlockParent]; ok {
-				continue
-			}
-			err = queue.Push(pastBlockParent)
-			if err != nil {
-				return nil, err
-			}
-			addedToQueue[*pastBlockParent] = struct{}{}
-		}
 	}
 
-	return big.NewRat(pastBlockSubsidySum, pastBlockCount), nil
+	return big.NewRat(pastBlockSubsidySum, int64(len(blockWindow))), nil
 }
 
 func (c *coinbaseManager) calculateMergeSetSubsidySum(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) (*big.Rat, error) {
