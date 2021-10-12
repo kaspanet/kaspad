@@ -12,12 +12,13 @@ func (bp *blockProcessor) validateAndInsertBlockWithTrustedData(stagingArea *mod
 
 	blockHash := consensushashing.BlockHash(block.Block)
 	for i, daaBlock := range block.DAAWindow {
-		hash := consensushashing.HeaderHash(daaBlock.Header)
+		hash := consensushashing.BlockHash(daaBlock.Block)
 		bp.blocksWithTrustedDataDAAWindowStore.Stage(stagingArea, blockHash, uint64(i), &externalapi.BlockGHOSTDAGDataHashPair{
 			Hash:         hash,
 			GHOSTDAGData: daaBlock.GHOSTDAGData,
 		})
-		bp.blockHeaderStore.Stage(stagingArea, hash, daaBlock.Header)
+		bp.blockStore.Stage(stagingArea, hash, daaBlock.Block)
+		bp.blockHeaderStore.Stage(stagingArea, hash, daaBlock.Block.Header)
 	}
 
 	blockReplacedGHOSTDAGData, err := bp.ghostdagDataWithoutPrunedBlocks(stagingArea, block.GHOSTDAGData[0].GHOSTDAGData)

@@ -911,9 +911,10 @@ func (pm *pruningManager) blockWithTrustedData(stagingArea *model.StagingArea, b
 		if err != nil {
 			return nil, err
 		}
+		daaDomainBlock := &externalapi.DomainBlock{Header: header}
 
 		windowPairs[i] = &externalapi.TrustedDataDataDAABlock{
-			Header:       header,
+			Block:        daaDomainBlock,
 			GHOSTDAGData: daaBlock.GHOSTDAGData,
 		}
 	}

@@ -13,7 +13,7 @@ type BlockWithTrustedData struct {
 
 // TrustedDataDataDAABlock is a block that belongs to BlockWithTrustedData.DAAWindow
 type TrustedDataDataDAABlock struct {
-	Header       BlockHeader
+	Block        *DomainBlock
 	GHOSTDAGData *BlockGHOSTDAGData
 }
 
