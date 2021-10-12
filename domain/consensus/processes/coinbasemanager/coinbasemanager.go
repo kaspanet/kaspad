@@ -23,7 +23,6 @@ type coinbaseManager struct {
 
 	databaseContext     model.DBReader
 	dagTraversalManager model.DAGTraversalManager
-	dagTopologyManager  model.DAGTopologyManager
 	ghostdagDataStore   model.GHOSTDAGDataStore
 	acceptanceDataStore model.AcceptanceDataStore
 	daaBlocksStore      model.DAABlocksStore
@@ -349,7 +348,6 @@ func New(
 	genesisHash *externalapi.DomainHash,
 
 	dagTraversalManager model.DAGTraversalManager,
-	dagTopologyManager model.DAGTopologyManager,
 	ghostdagDataStore model.GHOSTDAGDataStore,
 	acceptanceDataStore model.AcceptanceDataStore,
 	daaBlocksStore model.DAABlocksStore,
@@ -367,7 +365,6 @@ func New(
 		genesisHash:                             genesisHash,
 
 		dagTraversalManager: dagTraversalManager,
-		dagTopologyManager:  dagTopologyManager,
 		ghostdagDataStore:   ghostdagDataStore,
 		acceptanceDataStore: acceptanceDataStore,
 		daaBlocksStore:      daaBlocksStore,
