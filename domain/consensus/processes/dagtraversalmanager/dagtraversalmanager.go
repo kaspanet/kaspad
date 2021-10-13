@@ -15,7 +15,6 @@ type dagTraversalManager struct {
 	ghostdagManager       model.GHOSTDAGManager
 	ghostdagDataStore     model.GHOSTDAGDataStore
 	reachabilityDataStore model.ReachabilityDataStore
-	consensusStateStore   model.ConsensusStateStore
 	daaWindowStore        model.BlocksWithTrustedDataDAAWindowStore
 	genesisHash           *externalapi.DomainHash
 }
@@ -27,7 +26,6 @@ func New(
 	ghostdagDataStore model.GHOSTDAGDataStore,
 	reachabilityDataStore model.ReachabilityDataStore,
 	ghostdagManager model.GHOSTDAGManager,
-	conssensusStateStore model.ConsensusStateStore,
 	daaWindowStore model.BlocksWithTrustedDataDAAWindowStore,
 	genesisHash *externalapi.DomainHash) model.DAGTraversalManager {
 	return &dagTraversalManager{
@@ -36,7 +34,6 @@ func New(
 		ghostdagDataStore:     ghostdagDataStore,
 		reachabilityDataStore: reachabilityDataStore,
 		ghostdagManager:       ghostdagManager,
-		consensusStateStore:   conssensusStateStore,
 		daaWindowStore:        daaWindowStore,
 
 		genesisHash: genesisHash,

@@ -39,7 +39,7 @@ type blockValidator struct {
 	pruningManager        model.PruningManager
 
 	blockStore          model.BlockStore
-	ghostdagDataStore   model.GHOSTDAGDataStore
+	ghostdagDataStores  []model.GHOSTDAGDataStore
 	blockHeaderStore    model.BlockHeaderStore
 	blockStatusStore    model.BlockStatusStore
 	reachabilityStore   model.ReachabilityDataStore
@@ -75,7 +75,7 @@ func New(powMax *big.Int,
 
 	pruningStore model.PruningStore,
 	blockStore model.BlockStore,
-	ghostdagDataStore model.GHOSTDAGDataStore,
+	ghostdagDataStores []model.GHOSTDAGDataStore,
 	blockHeaderStore model.BlockHeaderStore,
 	blockStatusStore model.BlockStatusStore,
 	reachabilityStore model.ReachabilityDataStore,
@@ -111,7 +111,7 @@ func New(powMax *big.Int,
 
 		pruningStore:        pruningStore,
 		blockStore:          blockStore,
-		ghostdagDataStore:   ghostdagDataStore,
+		ghostdagDataStores:  ghostdagDataStores,
 		blockHeaderStore:    blockHeaderStore,
 		blockStatusStore:    blockStatusStore,
 		reachabilityStore:   reachabilityStore,

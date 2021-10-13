@@ -71,12 +71,13 @@ func (v *blockValidator) setParents(stagingArea *model.StagingArea,
 	for level := 0; level <= pow.BlockLevel(header); level++ {
 		var parents []*externalapi.DomainHash
 		for _, parent := range header.ParentsAtLevel(level) {
-			exists, err := v.blockStatusStore.Exists(v.databaseContext, stagingArea, parent)
-			if err != nil {
+			_, err := v.ghostdagDataStores[level].Get(v.databaseContext, stagingArea, parent, false)
+			isNotFoundError := database.IsNotFoundError(err)
+			if !isNotFoundError && err != nil {
 				return err
 			}
 
-			if !exists {
+			if isNotFoundError {
 				if level == 0 && !isBlockWithTrustedData {
 					return errors.Errorf("direct parent %s is missing: only block with prefilled information can have some missing parents", parent)
 				}

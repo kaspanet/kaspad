@@ -694,7 +694,12 @@ func (s *consensus) Anticone(blockHash *externalapi.DomainHash) ([]*externalapi.
 		return nil, err
 	}
 
-	return s.dagTraversalManager.Anticone(stagingArea, blockHash)
+	tips, err := s.consensusStateStore.Tips(stagingArea, s.databaseContext)
+	if err != nil {
+		return nil, err
+	}
+
+	return s.dagTraversalManager.AnticoneFromBlocks(stagingArea, tips, blockHash)
 }
 
 func (s *consensus) EstimateNetworkHashesPerSecond(startHash *externalapi.DomainHash, windowSize int) (uint64, error) {

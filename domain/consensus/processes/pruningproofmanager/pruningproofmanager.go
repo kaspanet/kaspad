@@ -27,6 +27,7 @@ type pruningProofManager struct {
 	dagTopologyManagers  []model.DAGTopologyManager
 	ghostdagManagers     []model.GHOSTDAGManager
 	reachabilityManagers []model.ReachabilityManager
+	dagTraversalManagers []model.DAGTraversalManager
 
 	ghostdagDataStores  []model.GHOSTDAGDataStore
 	pruningStore        model.PruningStore
@@ -47,6 +48,7 @@ func New(
 	dagTopologyManagers []model.DAGTopologyManager,
 	ghostdagManagers []model.GHOSTDAGManager,
 	reachabilityManagers []model.ReachabilityManager,
+	dagTraversalManagers []model.DAGTraversalManager,
 
 	ghostdagDataStores []model.GHOSTDAGDataStore,
 	pruningStore model.PruningStore,
@@ -65,6 +67,7 @@ func New(
 		dagTopologyManagers:  dagTopologyManagers,
 		ghostdagManagers:     ghostdagManagers,
 		reachabilityManagers: reachabilityManagers,
+		dagTraversalManagers: dagTraversalManagers,
 
 		ghostdagDataStores:  ghostdagDataStores,
 		pruningStore:        pruningStore,
@@ -163,10 +166,13 @@ func (ppm *pruningProofManager) BuildPruningPointProof(stagingArea *model.Stagin
 
 		headers := make([]externalapi.BlockHeader, 0, 2*ppm.pruningProofM)
 		visited := hashset.New()
-		queue := []*externalapi.DomainHash{root}
-		for len(queue) > 0 {
-			var current *externalapi.DomainHash
-			current, queue = queue[0], queue[1:]
+		queue := ppm.dagTraversalManagers[blockLevel].NewUpHeap(stagingArea)
+		err = queue.Push(root)
+		if err != nil {
+			return nil, err
+		}
+		for queue.Len() > 0 {
+			current := queue.Pop()
 
 			if visited.Contains(current) {
 				continue
@@ -193,7 +199,10 @@ func (ppm *pruningProofManager) BuildPruningPointProof(stagingArea *model.Stagin
 				return nil, err
 			}
 
-			queue = append(queue, children...)
+			err = queue.PushSlice(children)
+			if err != nil {
+				return nil, err
+			}
 		}
 
 		headersByLevel[blockLevel] = headers
@@ -569,8 +578,14 @@ func (ppm *pruningProofManager) ApplyPruningPointProof(stagingArea *model.Stagin
 				return err
 			}
 
+			err = ppm.ghostdagManagers[blockLevel].GHOSTDAG(stagingArea, blockHash)
+			if err != nil {
+				return err
+			}
+
 			if blockLevel == 0 {
-				selectedParent, err := ppm.ghostdagManagers[blockLevel].ChooseSelectedParent(stagingArea, parents...)
+				// Override the ghostdag data with the real blue score and blue work
+				ghostdagData, err := ppm.ghostdagDataStores[0].Get(ppm.databaseContext, stagingArea, blockHash, false)
 				if err != nil {
 					return err
 				}
@@ -578,19 +593,14 @@ func (ppm *pruningProofManager) ApplyPruningPointProof(stagingArea *model.Stagin
 				ppm.ghostdagDataStores[0].Stage(stagingArea, blockHash, externalapi.NewBlockGHOSTDAGData(
 					header.BlueScore(),
 					header.BlueWork(),
-					selectedParent,
-					nil,
-					nil,
-					nil,
+					ghostdagData.SelectedParent(),
+					ghostdagData.MergeSetBlues(),
+					ghostdagData.MergeSetReds(),
+					ghostdagData.BluesAnticoneSizes(),
 				), false)
 
 				ppm.finalityStore.StageFinalityPoint(stagingArea, blockHash, model.VirtualGenesisBlockHash)
 				ppm.blockStatusStore.Stage(stagingArea, blockHash, externalapi.StatusHeaderOnly)
-			} else {
-				err = ppm.ghostdagManagers[blockLevel].GHOSTDAG(stagingArea, blockHash)
-				if err != nil {
-					return err
-				}
 			}
 
 			if selectedTip == nil {
