@@ -137,7 +137,6 @@ func (ppm *pruningProofManager) BuildPruningPointProof(stagingArea *model.Stagin
 
 				if !isBlockAtDepth2MAncestorOfBlockAtDepthMAtNextLevel {
 					// find common ancestor
-					// TODO: Is it actually secure?
 					current := blockAtDepthMAtNextLevel
 					for {
 						ghostdagData, err := ppm.ghostdagDataStores[blockLevel].Get(ppm.databaseContext, stagingArea, current, false)
@@ -248,6 +247,7 @@ func (ppm *pruningProofManager) ValidatePruningPointProof(pruningPointProof *ext
 	stagingArea := model.NewStagingArea()
 	level0Headers := pruningPointProof.Headers[0]
 	pruningPointHeader := level0Headers[len(level0Headers)-1]
+	pruningPoint := consensushashing.HeaderHash(pruningPointHeader)
 	pruningPointBlockLevel := pow.BlockLevel(pruningPointHeader)
 	maxLevel := len(pruningPointHeader.Parents()) - 1
 	if maxLevel >= len(pruningPointProof.Headers) {
@@ -368,6 +368,10 @@ func (ppm *pruningProofManager) ValidatePruningPointProof(pruningPointProof *ext
 			}
 		}
 
+		if !selectedTip.Equal(pruningPoint) && !pruningPointHeader.ParentsAtLevel(blockLevel).Contains(selectedTip) {
+			return errors.Wrapf(ruleerrors.ErrPruningProofMissesBlocksBelowPruningPoint, "the selected tip %s at "+
+				"level %d is not a parent of the pruning point", selectedTip, blockLevel)
+		}
 		selectedTipByLevel[blockLevel] = selectedTip
 	}
 
