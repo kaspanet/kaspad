@@ -7,6 +7,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/lrucachehashpairtoblockghostdagdatahashpair"
+	"github.com/kaspanet/kaspad/infrastructure/db/database"
 	"github.com/kaspanet/kaspad/util/staging"
 )
 
@@ -46,10 +47,17 @@ func (daaws *daaWindowStore) DAAWindowBlock(dbContext model.DBReader, stagingAre
 	}
 
 	if pair, ok := daaws.cache.Get(blockHash, index); ok {
+		if pair == nil {
+			return nil, database.ErrNotFound
+		}
+
 		return pair, nil
 	}
 
 	pairBytes, err := dbContext.Get(daaws.key(dbKey))
+	if database.IsNotFoundError(err) {
+		daaws.cache.Add(blockHash, index, nil)
+	}
 	if err != nil {
 		return nil, err
 	}
