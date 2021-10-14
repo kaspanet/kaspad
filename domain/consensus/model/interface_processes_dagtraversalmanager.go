@@ -5,7 +5,6 @@ import "github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 // DAGTraversalManager exposes methods for traversing blocks
 // in the DAG
 type DAGTraversalManager interface {
-	BlockAtDepth(stagingArea *StagingArea, highHash *externalapi.DomainHash, depth uint64) (*externalapi.DomainHash, error)
 	LowestChainBlockAboveOrEqualToBlueScore(stagingArea *StagingArea, highHash *externalapi.DomainHash, blueScore uint64) (*externalapi.DomainHash, error)
 	// SelectedChildIterator should return a BlockIterator that iterates
 	// from lowHash (exclusive) to highHash (inclusive) over highHash's selected parent chain
