@@ -11,8 +11,8 @@
 #>
 
 param(
-    [System.UInt64] $MinimumSize = 32gb ,
-    [System.UInt64] $MaximumSize = 32gb ,
+    [System.UInt64] $MinimumSize = 8gb ,
+    [System.UInt64] $MaximumSize = 8gb ,
     [System.String] $DiskRoot = "D:"
 )
 
