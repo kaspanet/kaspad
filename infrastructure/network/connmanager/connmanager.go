@@ -91,6 +91,7 @@ func (c *ConnectionManager) Stop() {
 	}
 
 	c.loopTicker.Stop()
+	c.run()
 }
 
 func (c *ConnectionManager) run() {
