@@ -2,7 +2,6 @@ package consensus
 
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/daawindowstore"
-	"github.com/kaspanet/kaspad/domain/consensus/datastructures/subsidystore"
 	"github.com/kaspanet/kaspad/domain/consensus/processes/blockparentbuilder"
 	"io/ioutil"
 	"os"
@@ -153,7 +152,6 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 	finalityStore := finalitystore.New(prefixBucket, 200, preallocateCaches)
 	headersSelectedChainStore := headersselectedchainstore.New(prefixBucket, pruningWindowSizeForCaches, preallocateCaches)
 	daaBlocksStore := daablocksstore.New(prefixBucket, pruningWindowSizeForCaches, int(config.FinalityDepth()), preallocateCaches)
-	subsidyStore := subsidystore.New(prefixBucket, 200, preallocateCaches)
 
 	// Processes
 	reachabilityManager := reachabilitymanager.New(
@@ -232,7 +230,7 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 		ghostdagDataStore,
 		acceptanceDataStore,
 		daaBlocksStore,
-		subsidyStore)
+		blockStore)
 	headerTipsManager := headersselectedtipmanager.New(dbManager, dagTopologyManager, dagTraversalManager,
 		ghostdagManager, headersSelectedTipStore, headersSelectedChainStore)
 	genesisHash := config.GenesisHash

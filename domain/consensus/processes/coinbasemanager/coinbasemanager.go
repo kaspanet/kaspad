@@ -7,6 +7,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/hashset"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/subnetworks"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/transactionhelper"
 	"github.com/pkg/errors"
 	"math/big"
 	"math/rand"
@@ -26,7 +27,7 @@ type coinbaseManager struct {
 	ghostdagDataStore   model.GHOSTDAGDataStore
 	acceptanceDataStore model.AcceptanceDataStore
 	daaBlocksStore      model.DAABlocksStore
-	subsidyStore        model.SubsidyStore
+	blockStore          model.BlockStore
 }
 
 func (c *coinbaseManager) ExpectedCoinbaseTransaction(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash,
@@ -167,23 +168,6 @@ func acceptanceDataFromArrayToMap(acceptanceData externalapi.AcceptanceData) map
 	return acceptanceDataMap
 }
 
-func (c *coinbaseManager) getBlockSubsidy(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) (uint64, error) {
-	subsidyExists, err := c.subsidyStore.Has(c.databaseContext, stagingArea, blockHash)
-	if err != nil {
-		return 0, err
-	}
-	if subsidyExists {
-		return c.subsidyStore.Get(c.databaseContext, stagingArea, blockHash)
-	}
-
-	subsidy, err := c.calcBlockSubsidy(stagingArea, blockHash)
-	if err != nil {
-		return 0, err
-	}
-	c.subsidyStore.Stage(stagingArea, blockHash, subsidy)
-	return subsidy, nil
-}
-
 // calcBlockSubsidy returns the subsidy amount a block at the provided blue score
 // should have. This is mainly used for determining how much the coinbase for
 // newly generated blocks awards as well as validating the coinbase for blocks
@@ -244,15 +228,20 @@ func (c *coinbaseManager) calculateAveragePastSubsidy(stagingArea *model.Staging
 		return new(big.Rat), nil
 	}
 
+	pastBlocks, err := c.blockStore.Blocks(c.databaseContext, stagingArea, blockWindow)
+	if err != nil {
+		return nil, err
+	}
+
 	pastBlockSubsidySum := int64(0)
-	for _, pastBlockHash := range blockWindow {
-		pastBlockSubsidy, err := c.getBlockSubsidy(stagingArea, pastBlockHash)
+	for _, pastBlock := range pastBlocks {
+		coinbaseTransaction := pastBlock.Transactions[transactionhelper.CoinbaseTransactionIndex]
+		_, _, pastBlockSubsidy, err := c.ExtractCoinbaseDataBlueScoreAndSubsidy(coinbaseTransaction)
 		if err != nil {
 			return nil, err
 		}
 		pastBlockSubsidySum += int64(pastBlockSubsidy)
 	}
-
 	return big.NewRat(pastBlockSubsidySum, int64(len(blockWindow))), nil
 }
 
@@ -263,9 +252,15 @@ func (c *coinbaseManager) calculateMergeSetSubsidySum(stagingArea *model.Staging
 	}
 	mergeSet := append(ghostdagData.MergeSetBlues(), ghostdagData.MergeSetReds()...)
 
+	mergeSetBlocks, err := c.blockStore.Blocks(c.databaseContext, stagingArea, mergeSet)
+	if err != nil {
+		return nil, err
+	}
+
 	mergeSetSubsidySum := int64(0)
-	for _, mergeSetBlockHash := range mergeSet {
-		mergeSetBlockSubsidy, err := c.getBlockSubsidy(stagingArea, mergeSetBlockHash)
+	for _, mergeSetBlock := range mergeSetBlocks {
+		coinbaseTransaction := mergeSetBlock.Transactions[transactionhelper.CoinbaseTransactionIndex]
+		_, _, mergeSetBlockSubsidy, err := c.ExtractCoinbaseDataBlueScoreAndSubsidy(coinbaseTransaction)
 		if err != nil {
 			return nil, err
 		}
@@ -335,7 +330,7 @@ func (c *coinbaseManager) calcMergedBlockReward(stagingArea *model.StagingArea, 
 		}
 	}
 
-	subsidy, err := c.getBlockSubsidy(stagingArea, blockHash)
+	subsidy, err := c.calcBlockSubsidy(stagingArea, blockHash)
 	if err != nil {
 		return 0, 0, err
 	}
@@ -359,7 +354,7 @@ func New(
 	ghostdagDataStore model.GHOSTDAGDataStore,
 	acceptanceDataStore model.AcceptanceDataStore,
 	daaBlocksStore model.DAABlocksStore,
-	subsidyStore model.SubsidyStore) model.CoinbaseManager {
+	blockStore model.BlockStore) model.CoinbaseManager {
 
 	return &coinbaseManager{
 		databaseContext: databaseContext,
@@ -376,6 +371,6 @@ func New(
 		ghostdagDataStore:   ghostdagDataStore,
 		acceptanceDataStore: acceptanceDataStore,
 		daaBlocksStore:      daaBlocksStore,
-		subsidyStore:        subsidyStore,
+		blockStore:          blockStore,
 	}
 }
