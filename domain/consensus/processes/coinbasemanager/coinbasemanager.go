@@ -31,6 +31,7 @@ type coinbaseManager struct {
 	daaBlocksStore      model.DAABlocksStore
 	blockStore          model.BlockStore
 	pruningStore        model.PruningStore
+	blockHeaderStore    model.BlockHeaderStore
 
 	hasBlockRewardSwitchedToFixed bool
 }
@@ -370,7 +371,8 @@ func New(
 	acceptanceDataStore model.AcceptanceDataStore,
 	daaBlocksStore model.DAABlocksStore,
 	blockStore model.BlockStore,
-	pruningStore model.PruningStore) model.CoinbaseManager {
+	pruningStore model.PruningStore,
+	blockHeaderStore model.BlockHeaderStore) model.CoinbaseManager {
 
 	return &coinbaseManager{
 		databaseContext: databaseContext,
@@ -391,6 +393,7 @@ func New(
 		daaBlocksStore:      daaBlocksStore,
 		blockStore:          blockStore,
 		pruningStore:        pruningStore,
+		blockHeaderStore:    blockHeaderStore,
 
 		hasBlockRewardSwitchedToFixed: false,
 	}

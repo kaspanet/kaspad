@@ -27,17 +27,17 @@ func (c *coinbaseManager) isBlockRewardFixed(stagingArea *model.StagingArea) (bo
 			return false, err
 		}
 
-		highPruningPointGHOSTDAGData, err := c.ghostdagDataStore.Get(c.databaseContext, stagingArea, highPruningPointHash, false)
+		highPruningPointHeader, err := c.blockHeaderStore.BlockHeader(c.databaseContext, stagingArea, highPruningPointHash)
 		if err != nil {
 			return false, err
 		}
-		lowPruningPointGHOSTDAGData, err := c.ghostdagDataStore.Get(c.databaseContext, stagingArea, lowPruningPointHash, false)
+		lowPruningPointHeader, err := c.blockHeaderStore.BlockHeader(c.databaseContext, stagingArea, lowPruningPointHash)
 		if err != nil {
 			return false, err
 		}
 
-		blueWorkDifference := new(big.Int).Sub(highPruningPointGHOSTDAGData.BlueWork(), lowPruningPointGHOSTDAGData.BlueWork())
-		blueScoreDifference := new(big.Int).SetUint64(highPruningPointGHOSTDAGData.BlueScore() - lowPruningPointGHOSTDAGData.BlueScore())
+		blueWorkDifference := new(big.Int).Sub(highPruningPointHeader.BlueWork(), lowPruningPointHeader.BlueWork())
+		blueScoreDifference := new(big.Int).SetUint64(highPruningPointHeader.BlueScore() - lowPruningPointHeader.BlueScore())
 		estimatedAverageHashRate := new(big.Int).Div(blueWorkDifference, blueScoreDifference)
 		if estimatedAverageHashRate.Cmp(c.fixedSubsidySwitchHashRateDifference) >= 0 {
 			c.hasBlockRewardSwitchedToFixed = true
