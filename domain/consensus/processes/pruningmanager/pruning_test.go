@@ -2,6 +2,7 @@ package pruningmanager_test
 
 import (
 	"encoding/json"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
 	"github.com/kaspanet/kaspad/infrastructure/db/database"
 	"os"
 	"path/filepath"
@@ -36,9 +37,9 @@ func TestPruning(t *testing.T) {
 			dagconfig.SimnetParams.Name:  "1582",
 		},
 		"dag-for-test-pruning.json": {
-			dagconfig.MainnetParams.Name: "502",
+			dagconfig.MainnetParams.Name: "503",
 			dagconfig.TestnetParams.Name: "503",
-			dagconfig.DevnetParams.Name:  "503",
+			dagconfig.DevnetParams.Name:  "502",
 			dagconfig.SimnetParams.Name:  "502",
 		},
 	}
@@ -68,6 +69,7 @@ func TestPruning(t *testing.T) {
 
 			consensusConfig.FinalityDuration = time.Duration(test.FinalityDepth) * consensusConfig.TargetTimePerBlock
 			consensusConfig.MergeSetSizeLimit = test.MergeSetSizeLimit
+			consensusConfig.DifficultyAdjustmentWindowSize = 400
 
 			factory := consensus.NewFactory()
 			tc, teardown, err := factory.NewTestConsensus(consensusConfig, "TestPruning")
@@ -135,6 +137,25 @@ func TestPruning(t *testing.T) {
 				t.Fatalf("%s: Expected pruning point to be %s but got %s", info.Name(), expectedPruningPoint, pruningPointID)
 			}
 
+			// We expect blocks that are within the difficulty adjustment window size of
+			// the pruning point and its anticone to not get pruned
+			unprunedBlockHashesBelowPruningPoint := make(map[externalapi.DomainHash]struct{})
+			pruningPointAndItsAnticone, err := tc.PruningPointAndItsAnticoneWithTrustedData()
+			if err != nil {
+				t.Fatalf("pruningPointAndItsAnticone: %+v", err)
+			}
+			for _, block := range pruningPointAndItsAnticone {
+				blockHash := consensushashing.BlockHash(block.Block)
+				unprunedBlockHashesBelowPruningPoint[*blockHash] = struct{}{}
+				blockWindow, err := tc.DAGTraversalManager().BlockWindow(stagingArea, blockHash, consensusConfig.DifficultyAdjustmentWindowSize)
+				if err != nil {
+					t.Fatalf("BlockWindow: %+v", err)
+				}
+				for _, windowBlockHash := range blockWindow {
+					unprunedBlockHashesBelowPruningPoint[*windowBlockHash] = struct{}{}
+				}
+			}
+
 			for _, jsonBlock := range test.Blocks {
 				id := jsonBlock.ID
 				blockHash := blockIDToHash[id]
@@ -152,7 +173,9 @@ func TestPruning(t *testing.T) {
 					}
 
 					if isBlockAncestorOfPruningPoint {
-						expectsBlock = false
+						if _, ok := unprunedBlockHashesBelowPruningPoint[*blockHash]; !ok {
+							expectsBlock = false
+						}
 					} else {
 						virtualInfo, err := tc.GetVirtualInfo()
 						if err != nil {
@@ -174,7 +197,9 @@ func TestPruning(t *testing.T) {
 						}
 
 						if !isInPastOfVirtual {
-							expectsBlock = false
+							if _, ok := unprunedBlockHashesBelowPruningPoint[*blockHash]; !ok {
+								expectsBlock = false
+							}
 						}
 					}
 
