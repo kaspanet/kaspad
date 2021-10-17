@@ -20,6 +20,9 @@ func TestCheckBlockIsNotPruned(t *testing.T) {
 		consensusConfig.FinalityDuration = 2 * consensusConfig.TargetTimePerBlock
 		consensusConfig.K = 0
 
+		// Makes it so that no blocks are kept below the pruning point
+		consensusConfig.DifficultyAdjustmentWindowSize = 0
+
 		factory := consensus.NewFactory()
 
 		tc, teardown, err := factory.NewTestConsensus(consensusConfig, "TestCheckBlockIsNotPruned")

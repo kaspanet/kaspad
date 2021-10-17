@@ -35,10 +35,14 @@ func (dtm *dagTraversalManager) BlockWindowWithGHOSTDAGData(stagingArea *model.S
 	return windowHeap.impl.slice, nil
 }
 
-func (dtm *dagTraversalManager) calculateBlockWindowHeap(stagingArea *model.StagingArea, highHash *externalapi.DomainHash, windowSize int) (*sizedUpBlockHeap, error) {
+func (dtm *dagTraversalManager) calculateBlockWindowHeap(stagingArea *model.StagingArea,
+	highHash *externalapi.DomainHash, windowSize int) (*sizedUpBlockHeap, error) {
 
 	windowHeap := dtm.newSizedUpHeap(stagingArea, windowSize)
 	if highHash.Equal(dtm.genesisHash) {
+		return windowHeap, nil
+	}
+	if windowSize == 0 {
 		return windowHeap, nil
 	}
 
