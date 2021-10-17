@@ -250,7 +250,16 @@ func (c *coinbaseManager) calculateMergeSetSubsidySum(stagingArea *model.Staging
 	if err != nil {
 		return nil, err
 	}
-	mergeSet := append(ghostdagData.MergeSetBlues(), ghostdagData.MergeSetReds()...)
+
+	// TODO: the virtual genesis block sometimes appears in the merge set. That is a bug.
+	// Once it's fixed, this bit of code should be simplified.
+	mergeSet := make([]*externalapi.DomainHash, 0)
+	for _, blockHash := range append(ghostdagData.MergeSetBlues(), ghostdagData.MergeSetReds()...) {
+		if blockHash.Equal(model.VirtualGenesisBlockHash) {
+			continue
+		}
+		mergeSet = append(mergeSet, blockHash)
+	}
 
 	mergeSetBlocks, err := c.blockStore.Blocks(c.databaseContext, stagingArea, mergeSet)
 	if err != nil {
