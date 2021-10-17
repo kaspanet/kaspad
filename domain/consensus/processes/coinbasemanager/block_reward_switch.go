@@ -31,7 +31,7 @@ func (c *coinbaseManager) isBlockRewardFixed(stagingArea *model.StagingArea) (bo
 		if err != nil {
 			return false, err
 		}
-		lowPruningPointGHOSTDAGData, err := c.ghostdagDataStore.Get(c.databaseContext, stagingArea, lowPruningPointHash, true)
+		lowPruningPointGHOSTDAGData, err := c.ghostdagDataStore.Get(c.databaseContext, stagingArea, lowPruningPointHash, false)
 		if err != nil {
 			return false, err
 		}
