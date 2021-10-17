@@ -189,6 +189,14 @@ func (c *coinbaseManager) CalcBlockSubsidy(stagingArea *model.StagingArea, block
 		return c.subsidyGenesisReward, nil
 	}
 
+	isBlockRewardFixed, err := c.isBlockRewardFixed(stagingArea)
+	if err != nil {
+		return 0, err
+	}
+	if isBlockRewardFixed {
+		return c.subsidyGenesisReward, nil
+	}
+
 	averagePastSubsidy, err := c.calculateAveragePastSubsidy(stagingArea, blockHash)
 	if err != nil {
 		return 0, err
