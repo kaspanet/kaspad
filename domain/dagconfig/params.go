@@ -175,6 +175,7 @@ type Params struct {
 	// BaseSubsidy is the starting subsidy amount for mined blocks.
 	BaseSubsidy uint64
 
+	// PruningProofM is the 'm' constant in the pruning proof. For more details see: https://github.com/kaspanet/research/issues/3
 	PruningProofM uint64
 }
 
