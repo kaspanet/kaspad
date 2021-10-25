@@ -178,12 +178,12 @@ func (ppm *pruningProofManager) BuildPruningPointProof(stagingArea *model.Stagin
 			}
 
 			visited.Add(current)
-			isAncestorOfPruningPoint, err := ppm.dagTopologyManagers[blockLevel].IsAncestorOf(stagingArea, current, selectedTip)
+			isAncestorOfSelectedTip, err := ppm.dagTopologyManagers[blockLevel].IsAncestorOf(stagingArea, current, selectedTip)
 			if err != nil {
 				return nil, err
 			}
 
-			if !isAncestorOfPruningPoint {
+			if !isAncestorOfSelectedTip {
 				continue
 			}
 
