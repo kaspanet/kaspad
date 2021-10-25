@@ -9,8 +9,8 @@ import (
 	"github.com/kaspanet/kaspad/app/appmessage"
 )
 
-func Test64IncomingConnections(t *testing.T) {
-	// Much more than 32 hosts creates a risk of running out of available file descriptors for leveldb
+func Test16IncomingConnections(t *testing.T) {
+	// Much more than 16 hosts creates a risk of running out of available file descriptors for leveldb
 	const numBullies = 16
 	harnessesParams := make([]*harnessParams, numBullies+1)
 	for i := 0; i < numBullies+1; i++ {
