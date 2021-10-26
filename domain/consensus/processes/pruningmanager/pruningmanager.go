@@ -138,7 +138,7 @@ func (pm *pruningManager) UpdatePruningPointByVirtual(stagingArea *model.Staging
 		return err
 	}
 
-	newPruningPoint, newCandidate, err := pm.NextPruningPointAndCandidateByBlockHash(stagingArea, virtualGHOSTDAGData.SelectedParent())
+	newPruningPoint, newCandidate, err := pm.nextPruningPointAndCandidateByBlockHash(stagingArea, virtualGHOSTDAGData.SelectedParent(), nil)
 	if err != nil {
 		return err
 	}
@@ -169,15 +169,35 @@ func (pm *pruningManager) UpdatePruningPointByVirtual(stagingArea *model.Staging
 	return nil
 }
 
-func (pm *pruningManager) NextPruningPointAndCandidateByBlockHash(stagingArea *model.StagingArea,
-	blockHash *externalapi.DomainHash) (*externalapi.DomainHash, *externalapi.DomainHash, error) {
+func (pm *pruningManager) nextPruningPointAndCandidateByBlockHash(stagingArea *model.StagingArea,
+	blockHash, suggestedLowHash *externalapi.DomainHash) (*externalapi.DomainHash, *externalapi.DomainHash, error) {
 
-	onEnd := logger.LogAndMeasureExecutionTime(log, "pruningManager.NextPruningPointAndCandidateByBlockHash")
+	onEnd := logger.LogAndMeasureExecutionTime(log, "pruningManager.nextPruningPointAndCandidateByBlockHash")
 	defer onEnd()
 
 	currentCandidate, err := pm.pruningPointCandidate(stagingArea)
 	if err != nil {
 		return nil, nil, err
+	}
+
+	lowHash := currentCandidate
+	if suggestedLowHash != nil {
+		isSuggestedLowHashInSelectedParentChainOfCurrentCandidate, err := pm.dagTopologyManager.IsInSelectedParentChainOf(stagingArea, suggestedLowHash, currentCandidate)
+		if err != nil {
+			return nil, nil, err
+		}
+
+		if !isSuggestedLowHashInSelectedParentChainOfCurrentCandidate {
+			isCurrentCandidateInSelectedParentChainOfSuggestedLowHash, err := pm.dagTopologyManager.IsInSelectedParentChainOf(stagingArea, currentCandidate, suggestedLowHash)
+			if err != nil {
+				return nil, nil, err
+			}
+
+			if !isCurrentCandidateInSelectedParentChainOfSuggestedLowHash {
+				panic(errors.Errorf("suggested low hash %s is not on the same selected chain as the pruning candidate %s", suggestedLowHash, currentCandidate))
+			}
+			lowHash = suggestedLowHash
+		}
 	}
 
 	ghostdagData, err := pm.ghostdagDataStore.Get(pm.databaseContext, stagingArea, blockHash, false)
@@ -198,7 +218,7 @@ func (pm *pruningManager) NextPruningPointAndCandidateByBlockHash(stagingArea *m
 	// We iterate until the selected parent of the given block, in order to allow a situation where the given block hash
 	// belongs to the virtual. This shouldn't change anything since the max blue score difference between a block and its
 	// selected parent is K, and K << pm.pruningDepth.
-	iterator, err := pm.dagTraversalManager.SelectedChildIterator(stagingArea, ghostdagData.SelectedParent(), currentCandidate)
+	iterator, err := pm.dagTraversalManager.SelectedChildIterator(stagingArea, ghostdagData.SelectedParent(), lowHash)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -981,7 +1001,17 @@ func (pm *pruningManager) ExpectedHeaderPruningPoint(stagingArea *model.StagingA
 
 	nextOrCurrentPruningPoint := selectedParentHeader.PruningPoint()
 	if pm.finalityScore(ghostdagData.BlueScore()) > pm.finalityScore(selectedParentPruningPointHeader.BlueScore()+pm.pruningDepth) {
-		nextOrCurrentPruningPoint, _, err = pm.NextPruningPointAndCandidateByBlockHash(stagingArea, blockHash)
+		var suggestedLowHash *externalapi.DomainHash
+		hasReachabilityData, err := pm.reachabilityDataStore.HasReachabilityData(pm.databaseContext, stagingArea, selectedParentHeader.PruningPoint())
+		if err != nil {
+			return nil, err
+		}
+
+		if hasReachabilityData {
+			suggestedLowHash = selectedParentHeader.PruningPoint()
+		}
+
+		nextOrCurrentPruningPoint, _, err = pm.nextPruningPointAndCandidateByBlockHash(stagingArea, blockHash, suggestedLowHash)
 		if err != nil {
 			return nil, err
 		}
