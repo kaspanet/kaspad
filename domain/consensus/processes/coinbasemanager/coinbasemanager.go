@@ -52,7 +52,7 @@ func (c *coinbaseManager) ExpectedCoinbaseTransaction(stagingArea *model.Staging
 	totalSubsidy := uint64(0)
 	acceptanceDataMap := acceptanceDataFromArrayToMap(acceptanceData)
 	for _, blue := range ghostdagData.MergeSetBlues() {
-		txOut, subsidy, hasReward, err := c.coinbaseOutputForBlueBlock(stagingArea, blue, acceptanceDataMap[*blue], daaAddedBlocksSet)
+		txOut, subsidy, hasReward, err := c.coinbaseOutputAndSubsidyForBlueBlock(stagingArea, blue, acceptanceDataMap[*blue], daaAddedBlocksSet)
 		if err != nil {
 			return nil, err
 		}
@@ -63,7 +63,7 @@ func (c *coinbaseManager) ExpectedCoinbaseTransaction(stagingArea *model.Staging
 		}
 	}
 
-	txOut, subsidy, hasReward, err := c.coinbaseOutputForRewardFromRedBlocks(
+	txOut, subsidy, hasReward, err := c.coinbaseOutputAndSubsidyForRewardFromRedBlocks(
 		stagingArea, ghostdagData, acceptanceData, daaAddedBlocksSet, coinbaseData)
 	if err != nil {
 		return nil, err
@@ -101,9 +101,9 @@ func (c *coinbaseManager) daaAddedBlocksSet(stagingArea *model.StagingArea, bloc
 	return hashset.NewFromSlice(daaAddedBlocks...), nil
 }
 
-// coinbaseOutputForBlueBlock calculates the output that should go into the coinbase transaction of blueBlock
+// coinbaseOutputAndSubsidyForBlueBlock calculates the output that should go into the coinbase transaction of blueBlock
 // If blueBlock gets no fee - returns nil for txOut
-func (c *coinbaseManager) coinbaseOutputForBlueBlock(stagingArea *model.StagingArea,
+func (c *coinbaseManager) coinbaseOutputAndSubsidyForBlueBlock(stagingArea *model.StagingArea,
 	blueBlock *externalapi.DomainHash, blockAcceptanceData *externalapi.BlockAcceptanceData,
 	mergingBlockDAAAddedBlocksSet hashset.HashSet) (*externalapi.DomainTransactionOutput, uint64, bool, error) {
 
@@ -131,7 +131,7 @@ func (c *coinbaseManager) coinbaseOutputForBlueBlock(stagingArea *model.StagingA
 	return txOut, subsidy, true, nil
 }
 
-func (c *coinbaseManager) coinbaseOutputForRewardFromRedBlocks(stagingArea *model.StagingArea,
+func (c *coinbaseManager) coinbaseOutputAndSubsidyForRewardFromRedBlocks(stagingArea *model.StagingArea,
 	ghostdagData *externalapi.BlockGHOSTDAGData, acceptanceData externalapi.AcceptanceData, daaAddedBlocksSet hashset.HashSet,
 	coinbaseData *externalapi.DomainCoinbaseData) (*externalapi.DomainTransactionOutput, uint64, bool, error) {
 
