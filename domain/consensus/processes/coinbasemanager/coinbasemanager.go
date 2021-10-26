@@ -10,7 +10,6 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/utils/transactionhelper"
 	"github.com/pkg/errors"
 	"math/big"
-	"math/rand"
 )
 
 type coinbaseManager struct {
@@ -284,21 +283,20 @@ func (c *coinbaseManager) calculateSubsidyRandomVariable(stagingArea *model.Stag
 	if err != nil {
 		return 0, err
 	}
-	selectedParent := ghostdagData.SelectedParent()
-	if selectedParent == nil {
+	selectedParentHash := ghostdagData.SelectedParent()
+	if selectedParentHash == nil {
 		return 0, nil
 	}
 
-	seed := int64(0)
-	for i := 0; i < externalapi.DomainHashSize; i += 8 {
-		seed += int64(binary.LittleEndian.Uint64(selectedParent.ByteSlice()[i : i+8]))
-	}
-	random := rand.New(rand.NewSource(seed))
-
 	const binomialSteps = 10
 	binomialSum := int64(0)
+
+	// The first two bytes of a hash are a good deterministic source
+	// of randomness, so we use that instead of any rand implementation
+	firstTwoBytes := binary.LittleEndian.Uint16(selectedParentHash.ByteSlice()[:2])
 	for i := 0; i < binomialSteps; i++ {
-		step := random.Intn(2)
+		step := firstTwoBytes & 1
+		firstTwoBytes >>= 1
 		binomialSum += int64(step)
 	}
 	return binomialSum - (binomialSteps / 2), nil
