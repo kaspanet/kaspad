@@ -92,8 +92,8 @@ type Params struct {
 	// SubsidyPastRewardMultiplier are part of the block subsidy equation.
 	// Further details: https://hashdag.medium.com/kaspa-launch-plan-9a63f4d754a6
 	SubsidyGenesisReward            uint64
-	SubsidyMinGenesisReward         uint64
-	SubsidyMaxGenesisReward         uint64
+	MinSubsidy                      uint64
+	MaxSubsidy                      uint64
 	SubsidyPastRewardMultiplier     *big.Rat
 	SubsidyMergeSetRewardMultiplier *big.Rat
 
@@ -211,8 +211,8 @@ var MainnetParams = Params{
 	PowMax:                          mainPowMax,
 	BlockCoinbaseMaturity:           100,
 	SubsidyGenesisReward:            defaultSubsidyGenesisReward,
-	SubsidyMinGenesisReward:         defaultSubsidyMinGenesisReward,
-	SubsidyMaxGenesisReward:         defaultSubsidyMaxGenesisReward,
+	MinSubsidy:                      defaultMinSubsidy,
+	MaxSubsidy:                      defaultMaxSubsidy,
 	SubsidyPastRewardMultiplier:     big.NewRat(9, 10),
 	SubsidyMergeSetRewardMultiplier: big.NewRat(1, 10),
 	TargetTimePerBlock:              defaultTargetTimePerBlock,
@@ -271,8 +271,8 @@ var TestnetParams = Params{
 	PowMax:                          testnetPowMax,
 	BlockCoinbaseMaturity:           100,
 	SubsidyGenesisReward:            defaultSubsidyGenesisReward,
-	SubsidyMinGenesisReward:         defaultSubsidyMinGenesisReward,
-	SubsidyMaxGenesisReward:         defaultSubsidyMaxGenesisReward,
+	MinSubsidy:                      defaultMinSubsidy,
+	MaxSubsidy:                      defaultMaxSubsidy,
 	SubsidyPastRewardMultiplier:     big.NewRat(9, 10),
 	SubsidyMergeSetRewardMultiplier: big.NewRat(1, 10),
 	TargetTimePerBlock:              defaultTargetTimePerBlock,
@@ -337,8 +337,8 @@ var SimnetParams = Params{
 	PowMax:                          simnetPowMax,
 	BlockCoinbaseMaturity:           100,
 	SubsidyGenesisReward:            defaultSubsidyGenesisReward,
-	SubsidyMinGenesisReward:         defaultSubsidyMinGenesisReward,
-	SubsidyMaxGenesisReward:         defaultSubsidyMaxGenesisReward,
+	MinSubsidy:                      defaultMinSubsidy,
+	MaxSubsidy:                      defaultMaxSubsidy,
 	SubsidyPastRewardMultiplier:     big.NewRat(9, 10),
 	SubsidyMergeSetRewardMultiplier: big.NewRat(1, 10),
 	TargetTimePerBlock:              time.Millisecond,
@@ -395,8 +395,8 @@ var DevnetParams = Params{
 	PowMax:                          devnetPowMax,
 	BlockCoinbaseMaturity:           100,
 	SubsidyGenesisReward:            defaultSubsidyGenesisReward,
-	SubsidyMinGenesisReward:         defaultSubsidyMinGenesisReward,
-	SubsidyMaxGenesisReward:         defaultSubsidyMaxGenesisReward,
+	MinSubsidy:                      defaultMinSubsidy,
+	MaxSubsidy:                      defaultMaxSubsidy,
 	SubsidyPastRewardMultiplier:     big.NewRat(9, 10),
 	SubsidyMergeSetRewardMultiplier: big.NewRat(1, 10),
 	TargetTimePerBlock:              defaultTargetTimePerBlock,

@@ -15,8 +15,8 @@ import (
 
 type coinbaseManager struct {
 	subsidyGenesisReward                    uint64
-	subsidyMinGenesisReward                 uint64
-	subsidyMaxGenesisReward                 uint64
+	minSubsidy                              uint64
+	maxSubsidy                              uint64
 	subsidyPastRewardMultiplier             *big.Rat
 	subsidyMergeSetRewardMultiplier         *big.Rat
 	coinbasePayloadScriptPublicKeyMaxLength uint8
@@ -209,10 +209,10 @@ func (c *coinbaseManager) calcBlockSubsidy(stagingArea *model.StagingArea, block
 	blockSubsidyUint64 := blockSubsidyBigInt.Uint64()
 
 	clampedBlockSubsidy := blockSubsidyUint64
-	if clampedBlockSubsidy < c.subsidyMinGenesisReward {
-		clampedBlockSubsidy = c.subsidyMinGenesisReward
-	} else if clampedBlockSubsidy > c.subsidyMaxGenesisReward {
-		clampedBlockSubsidy = c.subsidyMaxGenesisReward
+	if clampedBlockSubsidy < c.minSubsidy {
+		clampedBlockSubsidy = c.minSubsidy
+	} else if clampedBlockSubsidy > c.maxSubsidy {
+		clampedBlockSubsidy = c.maxSubsidy
 	}
 
 	return clampedBlockSubsidy, nil
@@ -352,8 +352,8 @@ func New(
 	databaseContext model.DBReader,
 
 	subsidyGenesisReward uint64,
-	subsidyMinGenesisReward uint64,
-	subsidyMaxGenesisReward uint64,
+	minSubsidy uint64,
+	maxSubsidy uint64,
 	subsidyPastRewardMultiplier *big.Rat,
 	subsidyMergeSetRewardMultiplier *big.Rat,
 	coinbasePayloadScriptPublicKeyMaxLength uint8,
@@ -369,8 +369,8 @@ func New(
 		databaseContext: databaseContext,
 
 		subsidyGenesisReward:                    subsidyGenesisReward,
-		subsidyMinGenesisReward:                 subsidyMinGenesisReward,
-		subsidyMaxGenesisReward:                 subsidyMaxGenesisReward,
+		minSubsidy:                              minSubsidy,
+		maxSubsidy:                              maxSubsidy,
 		subsidyPastRewardMultiplier:             subsidyPastRewardMultiplier,
 		subsidyMergeSetRewardMultiplier:         subsidyMergeSetRewardMultiplier,
 		coinbasePayloadScriptPublicKeyMaxLength: coinbasePayloadScriptPublicKeyMaxLength,
