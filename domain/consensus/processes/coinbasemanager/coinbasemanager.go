@@ -205,8 +205,8 @@ func (c *coinbaseManager) calcBlockSubsidy(stagingArea *model.StagingArea, block
 	}
 
 	blockSubsidyBigRat := new(big.Rat).Add(mergeSetSubsidy, new(big.Rat).Mul(pastSubsidy, subsidyRandom))
-	blockSubsidyFloat64, _ := blockSubsidyBigRat.Float64()
-	blockSubsidyUint64 := uint64(blockSubsidyFloat64)
+	blockSubsidyBigInt := new(big.Int).Div(blockSubsidyBigRat.Num(), blockSubsidyBigRat.Denom())
+	blockSubsidyUint64 := blockSubsidyBigInt.Uint64()
 
 	clampedBlockSubsidy := blockSubsidyUint64
 	if clampedBlockSubsidy < c.subsidyMinGenesisReward {
