@@ -960,31 +960,9 @@ func (pm *pruningManager) blockWithTrustedData(stagingArea *model.StagingArea, b
 }
 
 func (pm *pruningManager) ExpectedHeaderPruningPoint(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) (*externalapi.DomainHash, error) {
-	ghostdagData, err := pm.ghostdagDataStore.Get(pm.databaseContext, stagingArea, blockHash, false)
+	nextOrCurrentPruningPoint, _, err := pm.NextPruningPointAndCandidateByBlockHash(stagingArea, blockHash)
 	if err != nil {
 		return nil, err
-	}
-
-	if ghostdagData.SelectedParent().Equal(pm.genesisHash) {
-		return pm.genesisHash, nil
-	}
-
-	selectedParentHeader, err := pm.blockHeaderStore.BlockHeader(pm.databaseContext, stagingArea, ghostdagData.SelectedParent())
-	if err != nil {
-		return nil, err
-	}
-
-	selectedParentPruningPointHeader, err := pm.blockHeaderStore.BlockHeader(pm.databaseContext, stagingArea, selectedParentHeader.PruningPoint())
-	if err != nil {
-		return nil, err
-	}
-
-	nextOrCurrentPruningPoint := selectedParentHeader.PruningPoint()
-	if pm.finalityScore(ghostdagData.BlueScore()) > pm.finalityScore(selectedParentPruningPointHeader.BlueScore()+pm.pruningDepth) {
-		nextOrCurrentPruningPoint, _, err = pm.NextPruningPointAndCandidateByBlockHash(stagingArea, blockHash)
-		if err != nil {
-			return nil, err
-		}
 	}
 
 	isHeaderPruningPoint, err := pm.isPruningPointInPruningDepth(stagingArea, blockHash, nextOrCurrentPruningPoint)
