@@ -38,7 +38,7 @@ func (tc *testConsensus) convertToDot() (string, error) {
 		}
 		dotScriptBuilder.WriteString(fmt.Sprintf("\t\"%s\";\n", hash))
 
-		parents, err := tc.dagTopologyManager.Parents(stagingArea, hash)
+		parents, err := tc.dagTopologyManagers[0].Parents(stagingArea, hash)
 		if err != nil {
 			return "", err
 		}

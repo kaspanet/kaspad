@@ -7,7 +7,9 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/lrucachehashpairtoblockghostdagdatahashpair"
+	"github.com/kaspanet/kaspad/infrastructure/db/database"
 	"github.com/kaspanet/kaspad/util/staging"
+	"github.com/pkg/errors"
 )
 
 var bucketName = []byte("daa-window")
@@ -37,6 +39,8 @@ func (daaws *daaWindowStore) Stage(stagingArea *model.StagingArea, blockHash *ex
 
 }
 
+var errDAAWindowBlockNotFound = errors.Wrap(database.ErrNotFound, "DAA window block not found")
+
 func (daaws *daaWindowStore) DAAWindowBlock(dbContext model.DBReader, stagingArea *model.StagingArea, blockHash *externalapi.DomainHash, index uint64) (*externalapi.BlockGHOSTDAGDataHashPair, error) {
 	stagingShard := daaws.stagingShard(stagingArea)
 
@@ -46,10 +50,17 @@ func (daaws *daaWindowStore) DAAWindowBlock(dbContext model.DBReader, stagingAre
 	}
 
 	if pair, ok := daaws.cache.Get(blockHash, index); ok {
+		if pair == nil {
+			return nil, errDAAWindowBlockNotFound
+		}
+
 		return pair, nil
 	}
 
 	pairBytes, err := dbContext.Get(daaws.key(dbKey))
+	if database.IsNotFoundError(err) {
+		daaws.cache.Add(blockHash, index, nil)
+	}
 	if err != nil {
 		return nil, err
 	}

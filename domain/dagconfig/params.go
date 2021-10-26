@@ -176,6 +176,9 @@ type Params struct {
 
 	// CoinbasePayloadScriptPublicKeyMaxLength is the maximum allowed script public key in the coinbase's payload
 	CoinbasePayloadScriptPublicKeyMaxLength uint8
+
+	// PruningProofM is the 'm' constant in the pruning proof. For more details see: https://github.com/kaspanet/research/issues/3
+	PruningProofM uint64
 }
 
 // NormalizeRPCServerAddress returns addr with the current network default
@@ -250,6 +253,7 @@ var MainnetParams = Params{
 	MassPerSigOp:                            defaultMassPerSigOp,
 	MergeSetSizeLimit:                       defaultMergeSetSizeLimit,
 	CoinbasePayloadScriptPublicKeyMaxLength: defaultCoinbasePayloadScriptPublicKeyMaxLength,
+	PruningProofM:                           defaultPruningProofM,
 }
 
 // TestnetParams defines the network parameters for the test Kaspa network.
@@ -309,6 +313,7 @@ var TestnetParams = Params{
 	MassPerSigOp:                            defaultMassPerSigOp,
 	MergeSetSizeLimit:                       defaultMergeSetSizeLimit,
 	CoinbasePayloadScriptPublicKeyMaxLength: defaultCoinbasePayloadScriptPublicKeyMaxLength,
+	PruningProofM:                           defaultPruningProofM,
 }
 
 // SimnetParams defines the network parameters for the simulation test Kaspa
@@ -372,6 +377,7 @@ var SimnetParams = Params{
 	MassPerSigOp:                            defaultMassPerSigOp,
 	MergeSetSizeLimit:                       defaultMergeSetSizeLimit,
 	CoinbasePayloadScriptPublicKeyMaxLength: defaultCoinbasePayloadScriptPublicKeyMaxLength,
+	PruningProofM:                           defaultPruningProofM,
 }
 
 // DevnetParams defines the network parameters for the development Kaspa network.
@@ -431,6 +437,7 @@ var DevnetParams = Params{
 	MassPerSigOp:                            defaultMassPerSigOp,
 	MergeSetSizeLimit:                       defaultMergeSetSizeLimit,
 	CoinbasePayloadScriptPublicKeyMaxLength: defaultCoinbasePayloadScriptPublicKeyMaxLength,
+	PruningProofM:                           defaultPruningProofM,
 }
 
 var (
@@ -475,4 +482,5 @@ func init() {
 	mustRegister(&MainnetParams)
 	mustRegister(&TestnetParams)
 	mustRegister(&SimnetParams)
+	mustRegister(&DevnetParams)
 }

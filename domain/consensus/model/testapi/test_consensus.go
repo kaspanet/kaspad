@@ -59,6 +59,7 @@ type TestConsensus interface {
 	BlockStore() model.BlockStore
 	ConsensusStateStore() model.ConsensusStateStore
 	GHOSTDAGDataStore() model.GHOSTDAGDataStore
+	GHOSTDAGDataStores() []model.GHOSTDAGDataStore
 	HeaderTipsStore() model.HeaderSelectedTipStore
 	MultisetStore() model.MultisetStore
 	PruningStore() model.PruningStore

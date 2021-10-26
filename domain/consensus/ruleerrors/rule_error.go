@@ -228,6 +228,15 @@ var (
 	// ErrUnexpectedFinalityPoint indicates a block header pruning point does not align with
 	// the expected value.
 	ErrUnexpectedHeaderPruningPoint = newRuleError("ErrUnexpectedHeaderPruningPoint")
+
+	ErrPruningProofHeaderWithNoKnownParents           = newRuleError("ErrPruningProofHeaderWithNoKnownParents")
+	ErrPruningProofMissingBlockLevels                 = newRuleError("ErrPruningProofMissingBlockLevels")
+	ErrPruningProofWrongBlockLevel                    = newRuleError("ErrPruningProofWrongBlockLevel")
+	ErrPruningProofSelectedTipNotParentOfPruningPoint = newRuleError("ErrPruningProofSelectedTipNotParentOfPruningPoint")
+	ErrPruningProofSelectedTipIsNotThePruningPoint    = newRuleError("ErrPruningProofSelectedTipIsNotThePruningPoint")
+	ErrPruningProofInsufficientBlueWork               = newRuleError("ErrPruningProofInsufficientBlueWork")
+	ErrPruningProofMissingBlockAtDepthMFromNextLevel  = newRuleError("ErrPruningProofMissingBlockAtDepthMFromNextLevel")
+	ErrPruningProofMissesBlocksBelowPruningPoint      = newRuleError("ErrPruningProofMissesBlocksBelowPruningPoint")
 )
 
 // RuleError identifies a rule violation. It is used to indicate that

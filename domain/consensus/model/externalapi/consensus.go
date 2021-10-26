@@ -10,6 +10,7 @@ type Consensus interface {
 	ImportPruningPoints(pruningPoints []BlockHeader) error
 	BuildPruningPointProof() (*PruningPointProof, error)
 	ValidatePruningPointProof(pruningPointProof *PruningPointProof) error
+	ApplyPruningPointProof(pruningPointProof *PruningPointProof) error
 
 	GetBlock(blockHash *DomainHash) (*DomainBlock, error)
 	GetBlockEvenIfHeaderOnly(blockHash *DomainHash) (*DomainBlock, error)

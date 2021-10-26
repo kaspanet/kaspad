@@ -14,21 +14,10 @@ func (dtm *dagTraversalManager) AnticoneFromVirtualPOV(stagingArea *model.Stagin
 		return nil, err
 	}
 
-	return dtm.anticoneFromBlocks(stagingArea, virtualParents, blockHash)
+	return dtm.AnticoneFromBlocks(stagingArea, virtualParents, blockHash)
 }
 
-func (dtm *dagTraversalManager) Anticone(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) (
-	[]*externalapi.DomainHash, error) {
-
-	tips, err := dtm.consensusStateStore.Tips(stagingArea, dtm.databaseContext)
-	if err != nil {
-		return nil, err
-	}
-
-	return dtm.anticoneFromBlocks(stagingArea, tips, blockHash)
-}
-
-func (dtm *dagTraversalManager) anticoneFromBlocks(stagingArea *model.StagingArea, tips []*externalapi.DomainHash, blockHash *externalapi.DomainHash) (
+func (dtm *dagTraversalManager) AnticoneFromBlocks(stagingArea *model.StagingArea, tips []*externalapi.DomainHash, blockHash *externalapi.DomainHash) (
 	[]*externalapi.DomainHash, error) {
 
 	anticone := []*externalapi.DomainHash{}

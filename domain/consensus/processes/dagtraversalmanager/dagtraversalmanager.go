@@ -6,7 +6,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-// dagTraversalManager exposes methods for travering blocks
+// dagTraversalManager exposes methods for traversing blocks
 // in the DAG
 type dagTraversalManager struct {
 	databaseContext model.DBReader
@@ -15,7 +15,6 @@ type dagTraversalManager struct {
 	ghostdagManager       model.GHOSTDAGManager
 	ghostdagDataStore     model.GHOSTDAGDataStore
 	reachabilityDataStore model.ReachabilityDataStore
-	consensusStateStore   model.ConsensusStateStore
 	daaWindowStore        model.BlocksWithTrustedDataDAAWindowStore
 	genesisHash           *externalapi.DomainHash
 }
@@ -27,7 +26,6 @@ func New(
 	ghostdagDataStore model.GHOSTDAGDataStore,
 	reachabilityDataStore model.ReachabilityDataStore,
 	ghostdagManager model.GHOSTDAGManager,
-	conssensusStateStore model.ConsensusStateStore,
 	daaWindowStore model.BlocksWithTrustedDataDAAWindowStore,
 	genesisHash *externalapi.DomainHash) model.DAGTraversalManager {
 	return &dagTraversalManager{
@@ -36,41 +34,10 @@ func New(
 		ghostdagDataStore:     ghostdagDataStore,
 		reachabilityDataStore: reachabilityDataStore,
 		ghostdagManager:       ghostdagManager,
-		consensusStateStore:   conssensusStateStore,
 		daaWindowStore:        daaWindowStore,
 
 		genesisHash: genesisHash,
 	}
-}
-
-// BlockAtDepth returns the hash of the highest block with a blue score
-// lower than (highHash.blueSore - depth) in the selected-parent-chain
-// of the block with the given highHash's selected parent chain.
-func (dtm *dagTraversalManager) BlockAtDepth(stagingArea *model.StagingArea, highHash *externalapi.DomainHash, depth uint64) (*externalapi.DomainHash, error) {
-	currentBlockHash := highHash
-	highBlockGHOSTDAGData, err := dtm.ghostdagDataStore.Get(dtm.databaseContext, stagingArea, highHash, false)
-	if err != nil {
-		return nil, err
-	}
-
-	requiredBlueScore := uint64(0)
-	if highBlockGHOSTDAGData.BlueScore() > depth {
-		requiredBlueScore = highBlockGHOSTDAGData.BlueScore() - depth
-	}
-
-	currentBlockGHOSTDAGData := highBlockGHOSTDAGData
-	// If we used `BlockIterator` we'd need to do more calls to `ghostdagDataStore` so we can get the blueScore
-	for currentBlockGHOSTDAGData.BlueScore() >= requiredBlueScore {
-		if currentBlockGHOSTDAGData.SelectedParent() == nil { // genesis
-			return currentBlockHash, nil
-		}
-		currentBlockHash = currentBlockGHOSTDAGData.SelectedParent()
-		currentBlockGHOSTDAGData, err = dtm.ghostdagDataStore.Get(dtm.databaseContext, stagingArea, currentBlockHash, false)
-		if err != nil {
-			return nil, err
-		}
-	}
-	return currentBlockHash, nil
 }
 
 func (dtm *dagTraversalManager) LowestChainBlockAboveOrEqualToBlueScore(stagingArea *model.StagingArea, highHash *externalapi.DomainHash, blueScore uint64) (*externalapi.DomainHash, error) {
