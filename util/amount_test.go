@@ -28,13 +28,13 @@ func TestAmountCreation(t *testing.T) {
 		},
 		{
 			name:     "max producible",
-			amount:   25e6,
+			amount:   21e6,
 			valid:    true,
 			expected: constants.MaxSompi,
 		},
 		{
 			name:     "exceeds max producible",
-			amount:   25e6 + 1e-8,
+			amount:   21e6 + 1e-8,
 			valid:    true,
 			expected: constants.MaxSompi + 1,
 		},
