@@ -74,7 +74,7 @@ func (c *coinbaseManager) ExpectedCoinbaseTransaction(stagingArea *model.Staging
 		txOuts = append(txOuts, txOut)
 	}
 
-	payload, err := c.serializeCoinbasePayload(ghostdagData.BlueScore(), coinbaseData, subsidy)
+	payload, err := c.serializeCoinbasePayload(ghostdagData.BlueScore(), coinbaseData, totalSubsidy)
 	if err != nil {
 		return nil, err
 	}
