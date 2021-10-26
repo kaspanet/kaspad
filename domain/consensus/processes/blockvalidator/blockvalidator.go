@@ -27,19 +27,19 @@ type blockValidator struct {
 	difficultyManager     model.DifficultyManager
 	pastMedianTimeManager model.PastMedianTimeManager
 	transactionValidator  model.TransactionValidator
-	ghostdagManager       model.GHOSTDAGManager
-	dagTopologyManager    model.DAGTopologyManager
+	ghostdagManagers      []model.GHOSTDAGManager
+	dagTopologyManagers   []model.DAGTopologyManager
 	dagTraversalManager   model.DAGTraversalManager
 	coinbaseManager       model.CoinbaseManager
 	mergeDepthManager     model.MergeDepthManager
 	pruningStore          model.PruningStore
-	reachabilityManager   model.ReachabilityManager
+	reachabilityManagers  []model.ReachabilityManager
 	finalityManager       model.FinalityManager
 	blockParentBuilder    model.BlockParentBuilder
 	pruningManager        model.PruningManager
 
 	blockStore          model.BlockStore
-	ghostdagDataStore   model.GHOSTDAGDataStore
+	ghostdagDataStores  []model.GHOSTDAGDataStore
 	blockHeaderStore    model.BlockHeaderStore
 	blockStatusStore    model.BlockStatusStore
 	reachabilityStore   model.ReachabilityDataStore
@@ -63,19 +63,19 @@ func New(powMax *big.Int,
 	difficultyManager model.DifficultyManager,
 	pastMedianTimeManager model.PastMedianTimeManager,
 	transactionValidator model.TransactionValidator,
-	ghostdagManager model.GHOSTDAGManager,
-	dagTopologyManager model.DAGTopologyManager,
+	ghostdagManagers []model.GHOSTDAGManager,
+	dagTopologyManagers []model.DAGTopologyManager,
 	dagTraversalManager model.DAGTraversalManager,
 	coinbaseManager model.CoinbaseManager,
 	mergeDepthManager model.MergeDepthManager,
-	reachabilityManager model.ReachabilityManager,
+	reachabilityManagers []model.ReachabilityManager,
 	finalityManager model.FinalityManager,
 	blockParentBuilder model.BlockParentBuilder,
 	pruningManager model.PruningManager,
 
 	pruningStore model.PruningStore,
 	blockStore model.BlockStore,
-	ghostdagDataStore model.GHOSTDAGDataStore,
+	ghostdagDataStores []model.GHOSTDAGDataStore,
 	blockHeaderStore model.BlockHeaderStore,
 	blockStatusStore model.BlockStatusStore,
 	reachabilityStore model.ReachabilityDataStore,
@@ -99,19 +99,19 @@ func New(powMax *big.Int,
 		difficultyManager:           difficultyManager,
 		pastMedianTimeManager:       pastMedianTimeManager,
 		transactionValidator:        transactionValidator,
-		ghostdagManager:             ghostdagManager,
-		dagTopologyManager:          dagTopologyManager,
+		ghostdagManagers:            ghostdagManagers,
+		dagTopologyManagers:         dagTopologyManagers,
 		dagTraversalManager:         dagTraversalManager,
 		coinbaseManager:             coinbaseManager,
 		mergeDepthManager:           mergeDepthManager,
-		reachabilityManager:         reachabilityManager,
+		reachabilityManagers:        reachabilityManagers,
 		finalityManager:             finalityManager,
 		blockParentBuilder:          blockParentBuilder,
 		pruningManager:              pruningManager,
 
 		pruningStore:        pruningStore,
 		blockStore:          blockStore,
-		ghostdagDataStore:   ghostdagDataStore,
+		ghostdagDataStores:  ghostdagDataStores,
 		blockHeaderStore:    blockHeaderStore,
 		blockStatusStore:    blockStatusStore,
 		reachabilityStore:   reachabilityStore,

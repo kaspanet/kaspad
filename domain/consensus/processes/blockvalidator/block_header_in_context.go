@@ -6,6 +6,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/pow"
 	"github.com/kaspanet/kaspad/infrastructure/logger"
 	"github.com/pkg/errors"
 )
@@ -30,7 +31,7 @@ func (v *blockValidator) ValidateHeaderInContext(stagingArea *model.StagingArea,
 		var logErr error
 		log.Debug(logger.NewLogClosure(func() string {
 			var ghostdagData *externalapi.BlockGHOSTDAGData
-			ghostdagData, logErr = v.ghostdagDataStore.Get(v.databaseContext, stagingArea, blockHash, false)
+			ghostdagData, logErr = v.ghostdagDataStores[0].Get(v.databaseContext, stagingArea, blockHash, false)
 			if err != nil {
 				return ""
 			}
@@ -62,9 +63,12 @@ func (v *blockValidator) ValidateHeaderInContext(stagingArea *model.StagingArea,
 		return err
 	}
 	if !hasReachabilityData {
-		err = v.reachabilityManager.AddBlock(stagingArea, blockHash)
-		if err != nil {
-			return err
+		blockLevel := pow.BlockLevel(header)
+		for i := 0; i <= blockLevel; i++ {
+			err = v.reachabilityManagers[i].AddBlock(stagingArea, blockHash)
+			if err != nil {
+				return err
+			}
 		}
 	}
 
@@ -125,7 +129,7 @@ func (v *blockValidator) hasValidatedHeader(stagingArea *model.StagingArea, bloc
 
 // checkParentsIncest validates that no parent is an ancestor of another parent
 func (v *blockValidator) checkParentsIncest(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) error {
-	parents, err := v.dagTopologyManager.Parents(stagingArea, blockHash)
+	parents, err := v.dagTopologyManagers[0].Parents(stagingArea, blockHash)
 	if err != nil {
 		return err
 	}
@@ -136,7 +140,7 @@ func (v *blockValidator) checkParentsIncest(stagingArea *model.StagingArea, bloc
 				continue
 			}
 
-			isAAncestorOfB, err := v.dagTopologyManager.IsAncestorOf(stagingArea, parentA, parentB)
+			isAAncestorOfB, err := v.dagTopologyManagers[0].IsAncestorOf(stagingArea, parentA, parentB)
 			if err != nil {
 				return err
 			}
@@ -175,7 +179,7 @@ func (v *blockValidator) validateMedianTime(stagingArea *model.StagingArea, head
 }
 
 func (v *blockValidator) checkMergeSizeLimit(stagingArea *model.StagingArea, hash *externalapi.DomainHash) error {
-	ghostdagData, err := v.ghostdagDataStore.Get(v.databaseContext, stagingArea, hash, false)
+	ghostdagData, err := v.ghostdagDataStores[0].Get(v.databaseContext, stagingArea, hash, false)
 	if err != nil {
 		return err
 	}
@@ -219,7 +223,7 @@ func (v *blockValidator) checkDAAScore(stagingArea *model.StagingArea, blockHash
 func (v *blockValidator) checkBlueWork(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash,
 	header externalapi.BlockHeader) error {
 
-	ghostdagData, err := v.ghostdagDataStore.Get(v.databaseContext, stagingArea, blockHash, false)
+	ghostdagData, err := v.ghostdagDataStores[0].Get(v.databaseContext, stagingArea, blockHash, false)
 	if err != nil {
 		return err
 	}
@@ -233,7 +237,7 @@ func (v *blockValidator) checkBlueWork(stagingArea *model.StagingArea, blockHash
 func (v *blockValidator) checkHeaderBlueScore(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash,
 	header externalapi.BlockHeader) error {
 
-	ghostdagData, err := v.ghostdagDataStore.Get(v.databaseContext, stagingArea, blockHash, false)
+	ghostdagData, err := v.ghostdagDataStores[0].Get(v.databaseContext, stagingArea, blockHash, false)
 	if err != nil {
 		return err
 	}

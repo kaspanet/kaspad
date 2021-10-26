@@ -174,6 +174,9 @@ type Params struct {
 
 	// BaseSubsidy is the starting subsidy amount for mined blocks.
 	BaseSubsidy uint64
+
+	// PruningProofM is the 'm' constant in the pruning proof. For more details see: https://github.com/kaspanet/research/issues/3
+	PruningProofM uint64
 }
 
 // NormalizeRPCServerAddress returns addr with the current network default
@@ -245,6 +248,7 @@ var MainnetParams = Params{
 	MergeSetSizeLimit:                       defaultMergeSetSizeLimit,
 	BaseSubsidy:                             defaultBaseSubsidy,
 	CoinbasePayloadScriptPublicKeyMaxLength: defaultCoinbasePayloadScriptPublicKeyMaxLength,
+	PruningProofM:                           defaultPruningProofM,
 }
 
 // TestnetParams defines the network parameters for the test Kaspa network.
@@ -301,6 +305,7 @@ var TestnetParams = Params{
 	MergeSetSizeLimit:                       defaultMergeSetSizeLimit,
 	BaseSubsidy:                             defaultBaseSubsidy,
 	CoinbasePayloadScriptPublicKeyMaxLength: defaultCoinbasePayloadScriptPublicKeyMaxLength,
+	PruningProofM:                           defaultPruningProofM,
 }
 
 // SimnetParams defines the network parameters for the simulation test Kaspa
@@ -361,6 +366,7 @@ var SimnetParams = Params{
 	MergeSetSizeLimit:                       defaultMergeSetSizeLimit,
 	BaseSubsidy:                             defaultBaseSubsidy,
 	CoinbasePayloadScriptPublicKeyMaxLength: defaultCoinbasePayloadScriptPublicKeyMaxLength,
+	PruningProofM:                           defaultPruningProofM,
 }
 
 // DevnetParams defines the network parameters for the development Kaspa network.
@@ -417,6 +423,7 @@ var DevnetParams = Params{
 	MergeSetSizeLimit:                       defaultMergeSetSizeLimit,
 	BaseSubsidy:                             defaultBaseSubsidy,
 	CoinbasePayloadScriptPublicKeyMaxLength: defaultCoinbasePayloadScriptPublicKeyMaxLength,
+	PruningProofM:                           defaultPruningProofM,
 }
 
 var (
@@ -461,4 +468,5 @@ func init() {
 	mustRegister(&MainnetParams)
 	mustRegister(&TestnetParams)
 	mustRegister(&SimnetParams)
+	mustRegister(&DevnetParams)
 }

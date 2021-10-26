@@ -15,12 +15,14 @@ func (v *blockValidator) ValidateBodyInContext(stagingArea *model.StagingArea, b
 	onEnd := logger.LogAndMeasureExecutionTime(log, "ValidateBodyInContext")
 	defer onEnd()
 
-	err := v.checkBlockIsNotPruned(stagingArea, blockHash)
-	if err != nil {
-		return err
+	if !isBlockWithTrustedData {
+		err := v.checkBlockIsNotPruned(stagingArea, blockHash)
+		if err != nil {
+			return err
+		}
 	}
 
-	err = v.checkBlockTransactions(stagingArea, blockHash)
+	err := v.checkBlockTransactions(stagingArea, blockHash)
 	if err != nil {
 		return err
 	}
@@ -52,7 +54,7 @@ func (v *blockValidator) checkBlockIsNotPruned(stagingArea *model.StagingArea, b
 		return err
 	}
 
-	isAncestorOfSomeTips, err := v.dagTopologyManager.IsAncestorOfAny(stagingArea, blockHash, tips)
+	isAncestorOfSomeTips, err := v.dagTopologyManagers[0].IsAncestorOfAny(stagingArea, blockHash, tips)
 	if err != nil {
 		return err
 	}
@@ -69,7 +71,7 @@ func (v *blockValidator) checkParentBlockBodiesExist(
 	stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) error {
 
 	missingParentHashes := []*externalapi.DomainHash{}
-	parents, err := v.dagTopologyManager.Parents(stagingArea, blockHash)
+	parents, err := v.dagTopologyManagers[0].Parents(stagingArea, blockHash)
 	if err != nil {
 		return err
 	}
@@ -90,7 +92,7 @@ func (v *blockValidator) checkParentBlockBodiesExist(
 				return err
 			}
 
-			isInPastOfPruningPoint, err := v.dagTopologyManager.IsAncestorOf(stagingArea, parent, pruningPoint)
+			isInPastOfPruningPoint, err := v.dagTopologyManagers[0].IsAncestorOf(stagingArea, parent, pruningPoint)
 			if err != nil {
 				return err
 			}

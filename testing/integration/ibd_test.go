@@ -135,6 +135,7 @@ func TestIBDWithPruning(t *testing.T) {
 	// This is done to make a pruning depth of 6 blocks
 	overrideDAGParams.FinalityDuration = 2 * overrideDAGParams.TargetTimePerBlock
 	overrideDAGParams.K = 0
+	overrideDAGParams.PruningProofM = 20
 
 	expectedPruningDepth := uint64(6)
 	if overrideDAGParams.PruningDepth() != expectedPruningDepth {

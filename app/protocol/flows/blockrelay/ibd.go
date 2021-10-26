@@ -248,8 +248,8 @@ func (flow *handleRelayInvsFlow) syncPruningPointFutureHeaders(consensus externa
 				}
 				return nil
 			}
-			for _, block := range ibdBlocksMessage.BlockHeaders {
-				err = flow.processHeader(consensus, block)
+			for _, header := range ibdBlocksMessage.BlockHeaders {
+				err = flow.processHeader(consensus, header)
 				if err != nil {
 					return err
 				}
