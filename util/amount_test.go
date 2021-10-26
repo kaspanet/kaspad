@@ -111,8 +111,8 @@ func TestAmountUnitConversions(t *testing.T) {
 			name:      "MKAS",
 			amount:    constants.MaxSompi,
 			unit:      AmountMegaKAS,
-			converted: 25,
-			s:         "25 MKAS",
+			converted: 21,
+			s:         "21 MKAS",
 		},
 		{
 			name:      "kKAS",
