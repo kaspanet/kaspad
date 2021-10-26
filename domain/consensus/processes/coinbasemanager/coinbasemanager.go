@@ -195,7 +195,7 @@ func (c *coinbaseManager) calcBlockSubsidy(stagingArea *model.StagingArea, block
 	pastSubsidy := new(big.Rat).Mul(averagePastSubsidy, c.subsidyPastRewardMultiplier)
 	mergeSetSubsidy := new(big.Rat).Mul(mergeSetSubsidySum, c.subsidyMergeSetRewardMultiplier)
 
-	// In order to avoid unsupported fractional results from powInt64, flip
+	// In order to avoid unsupported negative exponents in powInt64, flip
 	// the numerator and the denominator manually
 	subsidyRandom := new(big.Rat)
 	if subsidyRandomVariable >= 0 {
