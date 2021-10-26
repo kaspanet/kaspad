@@ -91,7 +91,7 @@ func (c *ConnectionManager) Stop() {
 	}
 
 	c.loopTicker.Stop()
-	// Force the next iteration so the connection loop will stop immediately and not after `connectionsLoopInterval`ErrPruningProofMissesBlocksBelowPruningPoint.
+	// Force the next iteration so the connection loop will stop immediately and not after `connectionsLoopInterval`.
 	c.run()
 }
 
