@@ -59,7 +59,7 @@ func (c *coinbaseManager) ExpectedCoinbaseTransaction(stagingArea *model.Staging
 	txOuts := make([]*externalapi.DomainTransactionOutput, 0, len(ghostdagData.MergeSetBlues()))
 	acceptanceDataMap := acceptanceDataFromArrayToMap(acceptanceData)
 	for _, blue := range ghostdagData.MergeSetBlues() {
-		txOut, hasReward, err := c.coinbaseOutputAndSubsidyForBlueBlock(stagingArea, blue, acceptanceDataMap[*blue], daaAddedBlocksSet)
+		txOut, hasReward, err := c.coinbaseOutputForBlueBlock(stagingArea, blue, acceptanceDataMap[*blue], daaAddedBlocksSet)
 		if err != nil {
 			return nil, err
 		}
@@ -69,7 +69,7 @@ func (c *coinbaseManager) ExpectedCoinbaseTransaction(stagingArea *model.Staging
 		}
 	}
 
-	txOut, hasReward, err := c.coinbaseOutputAndSubsidyForRewardFromRedBlocks(
+	txOut, hasReward, err := c.coinbaseOutputForRewardFromRedBlocks(
 		stagingArea, ghostdagData, acceptanceData, daaAddedBlocksSet, coinbaseData)
 	if err != nil {
 		return nil, err
@@ -111,9 +111,9 @@ func (c *coinbaseManager) daaAddedBlocksSet(stagingArea *model.StagingArea, bloc
 	return hashset.NewFromSlice(daaAddedBlocks...), nil
 }
 
-// coinbaseOutputAndSubsidyForBlueBlock calculates the output that should go into the coinbase transaction of blueBlock
+// coinbaseOutputForBlueBlock calculates the output that should go into the coinbase transaction of blueBlock
 // If blueBlock gets no fee - returns nil for txOut
-func (c *coinbaseManager) coinbaseOutputAndSubsidyForBlueBlock(stagingArea *model.StagingArea,
+func (c *coinbaseManager) coinbaseOutputForBlueBlock(stagingArea *model.StagingArea,
 	blueBlock *externalapi.DomainHash, blockAcceptanceData *externalapi.BlockAcceptanceData,
 	mergingBlockDAAAddedBlocksSet hashset.HashSet) (*externalapi.DomainTransactionOutput, bool, error) {
 
@@ -140,7 +140,7 @@ func (c *coinbaseManager) coinbaseOutputAndSubsidyForBlueBlock(stagingArea *mode
 	return txOut, true, nil
 }
 
-func (c *coinbaseManager) coinbaseOutputAndSubsidyForRewardFromRedBlocks(stagingArea *model.StagingArea,
+func (c *coinbaseManager) coinbaseOutputForRewardFromRedBlocks(stagingArea *model.StagingArea,
 	ghostdagData *externalapi.BlockGHOSTDAGData, acceptanceData externalapi.AcceptanceData, daaAddedBlocksSet hashset.HashSet,
 	coinbaseData *externalapi.DomainCoinbaseData) (*externalapi.DomainTransactionOutput, bool, error) {
 
