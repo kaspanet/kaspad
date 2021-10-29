@@ -204,9 +204,9 @@ func (c *coinbaseManager) CalcBlockSubsidy(stagingArea *model.StagingArea, block
 	// the numerator and the denominator manually
 	subsidyRandom := new(big.Rat)
 	if subsidyRandomVariable >= 0 {
-		subsidyRandom = subsidyRandom.SetInt64(powInt64(2, subsidyRandomVariable))
+		subsidyRandom = subsidyRandom.SetInt64(1 << subsidyRandomVariable)
 	} else {
-		subsidyRandom = subsidyRandom.SetFrac64(1, powInt64(2, -subsidyRandomVariable))
+		subsidyRandom = subsidyRandom.SetFrac64(1, 1<<(-subsidyRandomVariable))
 	}
 
 	blockSubsidyBigRat := new(big.Rat).Add(mergeSetSubsidy, new(big.Rat).Mul(pastSubsidy, subsidyRandom))
@@ -304,23 +304,6 @@ func (c *coinbaseManager) calculateSubsidyRandomVariable(stagingArea *model.Stag
 		binomialSum += int64(step)
 	}
 	return binomialSum - (binomialSteps / 2), nil
-}
-
-// Adapted from https://stackoverflow.com/a/101613
-func powInt64(base int64, exponent int64) int64 {
-	if exponent < 0 {
-		panic("negative exponents are not supported")
-	}
-
-	result := int64(1)
-	for exponent != 0 {
-		if exponent&1 == 1 {
-			result *= base
-		}
-		exponent >>= 1
-		base *= base
-	}
-	return result
 }
 
 func (c *coinbaseManager) calcMergedBlockReward(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash,
