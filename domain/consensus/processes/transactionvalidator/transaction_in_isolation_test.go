@@ -80,19 +80,19 @@ func TestValidateTransactionInIsolationAndPopulateMass(t *testing.T) {
 				&txSubnetworkData{subnetworks.SubnetworkIDCoinbase, 0, make([]byte, consensusConfig.MaxCoinbasePayloadLength+1)},
 				nil,
 				ruleerrors.ErrBadCoinbasePayloadLen},
-			{"non-zero gas in Kaspa", 1, 1, 0,
+			{"non-zero gas in Kaspa", 1, 1, 1,
 				subnetworks.SubnetworkIDNative,
 				nil,
 				func(tx *externalapi.DomainTransaction) {
 					tx.Gas = 1
 				},
 				ruleerrors.ErrInvalidGas},
-			{"non-zero gas in subnetwork registry", 1, 1, 0,
+			{"non-zero gas in subnetwork registry", 1, 1, 1,
 				subnetworks.SubnetworkIDRegistry,
 				&txSubnetworkData{subnetworks.SubnetworkIDRegistry, 1, []byte{}},
 				nil,
 				ruleerrors.ErrInvalidGas},
-			{"non-zero payload in Kaspa", 1, 1, 0,
+			{"non-zero payload in Kaspa", 1, 1, 1,
 				subnetworks.SubnetworkIDNative,
 				nil,
 				func(tx *externalapi.DomainTransaction) {

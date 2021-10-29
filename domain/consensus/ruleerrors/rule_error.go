@@ -89,7 +89,8 @@ var (
 
 	// ErrBadTxOutValue indicates an output value for a transaction is
 	// invalid in some way such as being out of range.
-	ErrBadTxOutValue = newRuleError("ErrBadTxOutValue")
+	ErrBadTxOutValue  = newRuleError("ErrBadTxOutValue")
+	ErrTxOutValueZero = newRuleError("ErrTxOutValueZero")
 
 	// ErrDuplicateTxInputs indicates a transaction references the same
 	// input more than once.
@@ -237,6 +238,7 @@ var (
 	ErrPruningProofInsufficientBlueWork               = newRuleError("ErrPruningProofInsufficientBlueWork")
 	ErrPruningProofMissingBlockAtDepthMFromNextLevel  = newRuleError("ErrPruningProofMissingBlockAtDepthMFromNextLevel")
 	ErrPruningProofMissesBlocksBelowPruningPoint      = newRuleError("ErrPruningProofMissesBlocksBelowPruningPoint")
+	ErrWrongCoinbaseSubsidy                           = newRuleError("ErrWrongCoinbaseSubsidy")
 )
 
 // RuleError identifies a rule violation. It is used to indicate that

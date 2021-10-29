@@ -141,7 +141,7 @@ func TestCheckParentBlockBodiesExist(t *testing.T) {
 			}
 		}
 
-		// Add anticonePruningBlock's body and Check that it's valid to point to
+		// Add anticonePruningBlock's body and check that it's valid to point to
 		// a header only block in the past of the pruning point.
 		_, err = tc.ValidateAndInsertBlock(anticonePruningBlock, true)
 		if err != nil {
