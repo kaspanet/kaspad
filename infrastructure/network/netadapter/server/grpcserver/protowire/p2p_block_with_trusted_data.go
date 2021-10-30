@@ -89,7 +89,7 @@ func (x *DaaBlock) toAppMessage() (*appmessage.TrustedDataDataDAABlock, error) {
 		return nil, errors.Wrapf(errorNil, "DaaBlock is nil")
 	}
 
-	msgBlockHeader, err := x.Header.toAppMessage()
+	msgBlock, err := x.Block.toAppMessage()
 	if err != nil {
 		return nil, err
 	}
@@ -100,18 +100,18 @@ func (x *DaaBlock) toAppMessage() (*appmessage.TrustedDataDataDAABlock, error) {
 	}
 
 	return &appmessage.TrustedDataDataDAABlock{
-		Header:       msgBlockHeader,
+		Block:        msgBlock,
 		GHOSTDAGData: ghostdagData,
 	}, nil
 }
 
 func (x *DaaBlock) fromAppMessage(daaBlock *appmessage.TrustedDataDataDAABlock) error {
 	*x = DaaBlock{
-		Header:       &BlockHeader{},
+		Block:        &BlockMessage{},
 		GhostdagData: &GhostdagData{},
 	}
 
-	err := x.Header.fromAppMessage(daaBlock.Header)
+	err := x.Block.fromAppMessage(daaBlock.Block)
 	if err != nil {
 		return err
 	}

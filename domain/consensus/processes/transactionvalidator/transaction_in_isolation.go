@@ -72,6 +72,10 @@ func (v *transactionValidator) checkTransactionAmountRanges(tx *externalapi.Doma
 	var totalSompi uint64
 	for _, txOut := range tx.Outputs {
 		sompi := txOut.Value
+		if sompi == 0 {
+			return errors.Wrap(ruleerrors.ErrTxOutValueZero, "zero value outputs are forbidden")
+		}
+
 		if sompi > constants.MaxSompi {
 			return errors.Wrapf(ruleerrors.ErrBadTxOutValue, "transaction output value of %d is "+
 				"higher than max allowed value of %d", sompi, constants.MaxSompi)

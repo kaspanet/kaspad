@@ -10,7 +10,6 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/txscript"
-	"github.com/kaspanet/kaspad/util"
 )
 
 const (
@@ -199,8 +198,8 @@ func (mp *mempool) minimumRequiredTransactionRelayFee(mass uint64) uint64 {
 
 	// Set the minimum fee to the maximum possible value if the calculated
 	// fee is not in the valid range for monetary amounts.
-	if minimumFee > util.MaxSompi {
-		minimumFee = util.MaxSompi
+	if minimumFee > constants.MaxSompi {
+		minimumFee = constants.MaxSompi
 	}
 
 	return minimumFee

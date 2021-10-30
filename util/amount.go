@@ -5,6 +5,7 @@
 package util
 
 import (
+	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
 	"github.com/pkg/errors"
 	"math"
 	"strconv"
@@ -84,7 +85,7 @@ func NewAmount(f float64) (Amount, error) {
 		return 0, errors.New("invalid kaspa amount")
 	}
 
-	return round(f * SompiPerKaspa), nil
+	return round(f * constants.SompiPerKaspa), nil
 }
 
 // ToUnit converts a monetary amount counted in kaspa base units to a

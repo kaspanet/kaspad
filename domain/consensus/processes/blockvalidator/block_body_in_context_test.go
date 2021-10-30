@@ -20,6 +20,12 @@ func TestCheckBlockIsNotPruned(t *testing.T) {
 		consensusConfig.FinalityDuration = 2 * consensusConfig.TargetTimePerBlock
 		consensusConfig.K = 0
 
+		// When pruning, blocks in the DAA window of the pruning point and its
+		// anticone are kept for the sake of IBD. Setting this value to zero
+		// forces all DAA windows to be empty, and as such, no blocks are kept
+		// below the pruning point
+		consensusConfig.DifficultyAdjustmentWindowSize = 0
+
 		factory := consensus.NewFactory()
 
 		tc, teardown, err := factory.NewTestConsensus(consensusConfig, "TestCheckBlockIsNotPruned")
@@ -135,7 +141,7 @@ func TestCheckParentBlockBodiesExist(t *testing.T) {
 			}
 		}
 
-		// Add anticonePruningBlock's body and Check that it's valid to point to
+		// Add anticonePruningBlock's body and check that it's valid to point to
 		// a header only block in the past of the pruning point.
 		_, err = tc.ValidateAndInsertBlock(anticonePruningBlock, true)
 		if err != nil {

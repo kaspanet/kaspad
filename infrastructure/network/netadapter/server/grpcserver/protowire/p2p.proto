@@ -212,7 +212,7 @@ message BlockWithTrustedDataMessage {
 }
 
 message DaaBlock {
-  BlockHeader header = 1;
+  BlockMessage block = 3;
   GhostdagData ghostdagData = 2;
 }
 

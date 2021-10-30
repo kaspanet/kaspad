@@ -198,12 +198,18 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 		config.GenesisBlock.Header.Bits())
 	coinbaseManager := coinbasemanager.New(
 		dbManager,
-		config.SubsidyReductionInterval,
-		config.BaseSubsidy,
+		config.SubsidyGenesisReward,
+		config.MinSubsidy,
+		config.MaxSubsidy,
+		config.SubsidyPastRewardMultiplier,
+		config.SubsidyMergeSetRewardMultiplier,
 		config.CoinbasePayloadScriptPublicKeyMaxLength,
+		config.GenesisHash,
+		dagTraversalManager,
 		ghostdagDataStore,
 		acceptanceDataStore,
-		daaBlocksStore)
+		daaBlocksStore,
+		blockStore)
 	headerTipsManager := headersselectedtipmanager.New(dbManager, dagTopologyManager, dagTraversalManager,
 		ghostdagManager, headersSelectedTipStore, headersSelectedChainStore)
 	genesisHash := config.GenesisHash

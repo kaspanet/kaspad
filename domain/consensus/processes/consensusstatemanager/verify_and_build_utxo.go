@@ -156,7 +156,7 @@ func (csm *consensusStateManager) validateCoinbaseTransaction(stagingArea *model
 
 	log.Tracef("Extracting coinbase data for coinbase transaction %s in block %s",
 		consensushashing.TransactionID(coinbaseTransaction), blockHash)
-	_, coinbaseData, err := csm.coinbaseManager.ExtractCoinbaseDataAndBlueScore(coinbaseTransaction)
+	_, coinbaseData, _, err := csm.coinbaseManager.ExtractCoinbaseDataBlueScoreAndSubsidy(coinbaseTransaction)
 	if err != nil {
 		return err
 	}

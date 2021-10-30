@@ -7,7 +7,7 @@ import (
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/daemon/pb"
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/keys"
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/libkaspawallet"
-	"github.com/kaspanet/kaspad/util"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
 	"github.com/pkg/errors"
 )
 
@@ -30,7 +30,7 @@ func send(conf *sendConfig) error {
 	ctx, cancel := context.WithTimeout(context.Background(), daemonTimeout)
 	defer cancel()
 
-	sendAmountSompi := uint64(conf.SendAmount * util.SompiPerKaspa)
+	sendAmountSompi := uint64(conf.SendAmount * constants.SompiPerKaspa)
 	createUnsignedTransactionResponse, err := daemonClient.CreateUnsignedTransaction(ctx, &pb.CreateUnsignedTransactionRequest{
 		Address: conf.ToAddress,
 		Amount:  sendAmountSompi,

@@ -257,7 +257,7 @@ func mineLoopUntilHavingOnlyOneTipInDAG(rpcClient *rpc.Client, miningAddress uti
 	}
 	hasTimedOut := false
 	spawn("ChecksIfTimeIsUp", func() {
-		timer := time.NewTimer(20 * time.Minute)
+		timer := time.NewTimer(30 * time.Minute)
 		<-timer.C
 		hasTimedOut = true
 	})

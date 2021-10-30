@@ -325,7 +325,11 @@ func (pm *pruningManager) deletePastBlocks(stagingArea *model.StagingArea, pruni
 		}
 	}
 
-	err = pm.deleteBlocksDownward(stagingArea, queue)
+	blocksToKeep, err := pm.calculateBlocksToKeep(stagingArea, pruningPoint)
+	if err != nil {
+		return err
+	}
+	err = pm.deleteBlocksDownward(stagingArea, queue, blocksToKeep)
 	if err != nil {
 		return err
 	}
@@ -333,9 +337,33 @@ func (pm *pruningManager) deletePastBlocks(stagingArea *model.StagingArea, pruni
 	return nil
 }
 
-func (pm *pruningManager) deleteBlocksDownward(stagingArea *model.StagingArea, queue model.BlockHeap) error {
+func (pm *pruningManager) calculateBlocksToKeep(stagingArea *model.StagingArea,
+	pruningPoint *externalapi.DomainHash) (map[externalapi.DomainHash]struct{}, error) {
+
+	pruningPointAnticone, err := pm.dagTraversalManager.AnticoneFromVirtualPOV(stagingArea, pruningPoint)
+	if err != nil {
+		return nil, err
+	}
+	pruningPointAndItsAnticone := append(pruningPointAnticone, pruningPoint)
+	blocksToKeep := make(map[externalapi.DomainHash]struct{})
+	for _, blockHash := range pruningPointAndItsAnticone {
+		blocksToKeep[*blockHash] = struct{}{}
+		blockWindow, err := pm.dagTraversalManager.BlockWindow(stagingArea, blockHash, pm.difficultyAdjustmentWindowSize)
+		if err != nil {
+			return nil, err
+		}
+		for _, windowBlockHash := range blockWindow {
+			blocksToKeep[*windowBlockHash] = struct{}{}
+		}
+	}
+	return blocksToKeep, nil
+}
+
+func (pm *pruningManager) deleteBlocksDownward(stagingArea *model.StagingArea,
+	queue model.BlockHeap, blocksToKeep map[externalapi.DomainHash]struct{}) error {
+
 	visited := map[externalapi.DomainHash]struct{}{}
-	// Prune everything in the queue including its past
+	// Prune everything in the queue including its past, unless it's in `blocksToKeep`
 	for queue.Len() > 0 {
 		current := queue.Pop()
 		if _, ok := visited[*current]; ok {
@@ -343,11 +371,16 @@ func (pm *pruningManager) deleteBlocksDownward(stagingArea *model.StagingArea, q
 		}
 		visited[*current] = struct{}{}
 
-		alreadyPruned, err := pm.deleteBlock(stagingArea, current)
-		if err != nil {
-			return err
+		shouldAddParents := true
+		if _, ok := blocksToKeep[*current]; !ok {
+			alreadyPruned, err := pm.deleteBlock(stagingArea, current)
+			if err != nil {
+				return err
+			}
+			shouldAddParents = !alreadyPruned
 		}
-		if !alreadyPruned {
+
+		if shouldAddParents {
 			parents, err := pm.dagTopologyManager.Parents(stagingArea, current)
 			if err != nil {
 				return err
@@ -927,13 +960,13 @@ func (pm *pruningManager) blockWithTrustedData(stagingArea *model.StagingArea, b
 
 	windowPairs := make([]*externalapi.TrustedDataDataDAABlock, len(window))
 	for i, daaBlock := range window {
-		header, err := pm.blockHeaderStore.BlockHeader(pm.databaseContext, stagingArea, daaBlock.Hash)
+		daaDomainBlock, err := pm.blocksStore.Block(pm.databaseContext, stagingArea, daaBlock.Hash)
 		if err != nil {
 			return nil, err
 		}
 
 		windowPairs[i] = &externalapi.TrustedDataDataDAABlock{
-			Header:       header,
+			Block:        daaDomainBlock,
 			GHOSTDAGData: daaBlock.GHOSTDAGData,
 		}
 	}
