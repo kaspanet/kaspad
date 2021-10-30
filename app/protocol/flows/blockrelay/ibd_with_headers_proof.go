@@ -137,6 +137,11 @@ func (flow *handleRelayInvsFlow) downloadHeadersAndPruningUTXOSet(highHash *exte
 		return protocolerrors.Errorf(true, "the triggering IBD block was not sent")
 	}
 
+	err = flow.validatePruningPointFutureHeaderTimestamps()
+	if err != nil {
+		return err
+	}
+
 	log.Debugf("Syncing the current pruning point UTXO set")
 	syncedPruningPointUTXOSetSuccessfully, err := flow.syncPruningPointUTXOSet(flow.Domain().StagingConsensus(), proofPruningPoint)
 	if err != nil {
