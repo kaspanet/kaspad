@@ -245,13 +245,18 @@ func (ppm *pruningProofManager) blockAtDepth(stagingArea *model.StagingArea, gho
 
 func (ppm *pruningProofManager) ValidatePruningPointProof(pruningPointProof *externalapi.PruningPointProof) error {
 	stagingArea := model.NewStagingArea()
+
+	if len(pruningPointProof.Headers) == 0 {
+		return errors.Wrap(ruleerrors.ErrPruningProofEmpty, "pruning proof is empty")
+	}
+
 	level0Headers := pruningPointProof.Headers[0]
 	pruningPointHeader := level0Headers[len(level0Headers)-1]
 	pruningPoint := consensushashing.HeaderHash(pruningPointHeader)
 	pruningPointBlockLevel := pow.BlockLevel(pruningPointHeader)
 	maxLevel := len(pruningPointHeader.Parents()) - 1
 	if maxLevel >= len(pruningPointProof.Headers) {
-		return errors.Wrapf(ruleerrors.ErrPruningProofMissingBlockLevels, "proof has only %d levels while pruning point "+
+		return errors.Wrapf(ruleerrors.ErrPruningProofEmpty, "proof has only %d levels while pruning point "+
 			"has parents from %d levels", len(pruningPointProof.Headers), maxLevel+1)
 	}
 
