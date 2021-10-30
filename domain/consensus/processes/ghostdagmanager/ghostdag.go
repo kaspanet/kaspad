@@ -100,6 +100,11 @@ func (gm *ghostdagManager) GHOSTDAG(stagingArea *model.StagingArea, blockHash *e
 		newBlockData.blueWork.Set(selectedParentGHOSTDAGData.BlueWork())
 		// Then we add up all the *work*(not blueWork) that all of newBlock merge set blues and selected parent did
 		for _, blue := range newBlockData.mergeSetBlues {
+			// We don't count the work of the virtual genesis
+			if blue.Equal(model.VirtualGenesisBlockHash) {
+				continue
+			}
+
 			header, err := gm.headerStore.BlockHeader(gm.databaseContext, stagingArea, blue)
 			if err != nil {
 				return err

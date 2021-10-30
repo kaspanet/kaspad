@@ -35,10 +35,14 @@ func (dtm *dagTraversalManager) BlockWindowWithGHOSTDAGData(stagingArea *model.S
 	return windowHeap.impl.slice, nil
 }
 
-func (dtm *dagTraversalManager) calculateBlockWindowHeap(stagingArea *model.StagingArea, highHash *externalapi.DomainHash, windowSize int) (*sizedUpBlockHeap, error) {
+func (dtm *dagTraversalManager) calculateBlockWindowHeap(stagingArea *model.StagingArea,
+	highHash *externalapi.DomainHash, windowSize int) (*sizedUpBlockHeap, error) {
 
 	windowHeap := dtm.newSizedUpHeap(stagingArea, windowSize)
 	if highHash.Equal(dtm.genesisHash) {
+		return windowHeap, nil
+	}
+	if windowSize == 0 {
 		return windowHeap, nil
 	}
 
@@ -53,7 +57,13 @@ func (dtm *dagTraversalManager) calculateBlockWindowHeap(stagingArea *model.Stag
 			break
 		}
 
-		if currentGHOSTDAGData.SelectedParent().Equal(model.VirtualGenesisBlockHash) {
+		_, err := dtm.daaWindowStore.DAAWindowBlock(dtm.databaseContext, stagingArea, current, 0)
+		isNotFoundError := database.IsNotFoundError(err)
+		if !isNotFoundError && err != nil {
+			return nil, err
+		}
+
+		if !isNotFoundError {
 			for i := uint64(0); ; i++ {
 				daaBlock, err := dtm.daaWindowStore.DAAWindowBlock(dtm.databaseContext, stagingArea, current, i)
 				if database.IsNotFoundError(err) {

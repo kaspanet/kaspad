@@ -93,15 +93,12 @@ func (bpb *blockParentBuilder) BuildParents(stagingArea *model.StagingArea,
 	// all the block levels they occupy
 	for _, directParentHeader := range directParentHeaders {
 		directParentHash := consensushashing.HeaderHash(directParentHeader)
-		proofOfWorkValue := pow.CalculateProofOfWorkValue(directParentHeader.ToMutable())
-		for blockLevel := 0; ; blockLevel++ {
-			if _, exists := candidatesByLevelToReferenceBlocksMap[blockLevel]; !exists {
-				candidatesByLevelToReferenceBlocksMap[blockLevel] = make(map[externalapi.DomainHash][]*externalapi.DomainHash)
+		blockLevel := pow.BlockLevel(directParentHeader)
+		for i := 0; i <= blockLevel; i++ {
+			if _, exists := candidatesByLevelToReferenceBlocksMap[i]; !exists {
+				candidatesByLevelToReferenceBlocksMap[i] = make(map[externalapi.DomainHash][]*externalapi.DomainHash)
 			}
-			candidatesByLevelToReferenceBlocksMap[blockLevel][*directParentHash] = []*externalapi.DomainHash{directParentHash}
-			if proofOfWorkValue.Bit(blockLevel+1) != 0 {
-				break
-			}
+			candidatesByLevelToReferenceBlocksMap[i][*directParentHash] = []*externalapi.DomainHash{directParentHash}
 		}
 	}
 

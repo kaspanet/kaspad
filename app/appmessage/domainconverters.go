@@ -439,7 +439,7 @@ func BlockWithTrustedDataToDomainBlockWithTrustedData(block *MsgBlockWithTrusted
 	daaWindow := make([]*externalapi.TrustedDataDataDAABlock, len(block.DAAWindow))
 	for i, daaBlock := range block.DAAWindow {
 		daaWindow[i] = &externalapi.TrustedDataDataDAABlock{
-			Header:       BlockHeaderToDomainBlockHeader(daaBlock.Header),
+			Block:        MsgBlockToDomainBlock(daaBlock.Block),
 			GHOSTDAGData: ghostdagDataToDomainGHOSTDAGData(daaBlock.GHOSTDAGData),
 		}
 	}
@@ -500,7 +500,7 @@ func DomainBlockWithTrustedDataToBlockWithTrustedData(block *externalapi.BlockWi
 	daaWindow := make([]*TrustedDataDataDAABlock, len(block.DAAWindow))
 	for i, daaBlock := range block.DAAWindow {
 		daaWindow[i] = &TrustedDataDataDAABlock{
-			Header:       DomainBlockHeaderToBlockHeader(daaBlock.Header),
+			Block:        DomainBlockToMsgBlock(daaBlock.Block),
 			GHOSTDAGData: domainGHOSTDAGDataGHOSTDAGData(daaBlock.GHOSTDAGData),
 		}
 	}

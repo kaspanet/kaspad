@@ -12,8 +12,11 @@ type BlockWithTrustedData struct {
 }
 
 // TrustedDataDataDAABlock is a block that belongs to BlockWithTrustedData.DAAWindow
+// TODO: Currently each trusted data block contains the entire set of blocks in its
+// DAA window. There's a lot of duplications between DAA windows of trusted blocks.
+// This duplication should be optimized out.
 type TrustedDataDataDAABlock struct {
-	Header       BlockHeader
+	Block        *DomainBlock
 	GHOSTDAGData *BlockGHOSTDAGData
 }
 

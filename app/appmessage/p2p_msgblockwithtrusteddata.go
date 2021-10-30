@@ -27,7 +27,7 @@ func NewMsgBlockWithTrustedData() *MsgBlockWithTrustedData {
 
 // TrustedDataDataDAABlock is an appmessage representation of externalapi.TrustedDataDataDAABlock
 type TrustedDataDataDAABlock struct {
-	Header       *MsgBlockHeader
+	Block        *MsgBlock
 	GHOSTDAGData *BlockGHOSTDAGData
 }
 

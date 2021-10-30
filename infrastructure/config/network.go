@@ -36,7 +36,9 @@ type overrideDAGParamsConfig struct {
 	CoinbasePayloadScriptPublicKeyMaxLength *uint8             `json:"coinbasePayloadScriptPublicKeyMaxLength"`
 	PowMax                                  *string            `json:"powMax"`
 	BlockCoinbaseMaturity                   *uint64            `json:"blockCoinbaseMaturity"`
-	SubsidyReductionInterval                *uint64            `json:"subsidyReductionInterval"`
+	SubsidyGenesisReward                    *uint64            `json:"subsidyGenesisReward"`
+	SubsidyPastRewardMultiplier             *float64           `json:"subsidyPastRewardMultiplier"`
+	SubsidyMergeSetRewardMultiplier         *float64           `json:"subsidyMergeSetRewardMultiplier"`
 	TargetTimePerBlockInMilliSeconds        *int64             `json:"targetTimePerBlockInMilliSeconds"`
 	FinalityDuration                        *int64             `json:"finalityDuration"`
 	TimestampDeviationTolerance             *int               `json:"timestampDeviationTolerance"`
@@ -173,8 +175,8 @@ func (networkFlags *NetworkFlags) overrideDAGParams() error {
 		networkFlags.ActiveNetParams.BlockCoinbaseMaturity = *config.BlockCoinbaseMaturity
 	}
 
-	if config.SubsidyReductionInterval != nil {
-		networkFlags.ActiveNetParams.SubsidyReductionInterval = *config.SubsidyReductionInterval
+	if config.SubsidyGenesisReward != nil {
+		networkFlags.ActiveNetParams.SubsidyGenesisReward = *config.SubsidyGenesisReward
 	}
 
 	if config.TargetTimePerBlockInMilliSeconds != nil {

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/daemon/client"
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/daemon/pb"
-	"github.com/kaspanet/kaspad/util"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
 )
 
 func balance(conf *balanceConfig) error {
@@ -22,9 +22,9 @@ func balance(conf *balanceConfig) error {
 		return err
 	}
 
-	fmt.Printf("Balance:\t\tKAS %f\n", float64(response.Available)/util.SompiPerKaspa)
+	fmt.Printf("Balance:\t\tKAS %f\n", float64(response.Available)/constants.SompiPerKaspa)
 	if response.Pending > 0 {
-		fmt.Printf("Pending balance:\tKAS %f\n", float64(response.Pending)/util.SompiPerKaspa)
+		fmt.Printf("Pending balance:\tKAS %f\n", float64(response.Pending)/constants.SompiPerKaspa)
 	}
 
 	return nil

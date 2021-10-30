@@ -88,9 +88,14 @@ type Params struct {
 	// coins can be spent.
 	BlockCoinbaseMaturity uint64
 
-	// SubsidyReductionInterval is the interval of blocks before the subsidy
-	// is reduced.
-	SubsidyReductionInterval uint64
+	// SubsidyGenesisReward SubsidyMergeSetRewardMultiplier, and
+	// SubsidyPastRewardMultiplier are part of the block subsidy equation.
+	// Further details: https://hashdag.medium.com/kaspa-launch-plan-9a63f4d754a6
+	SubsidyGenesisReward            uint64
+	MinSubsidy                      uint64
+	MaxSubsidy                      uint64
+	SubsidyPastRewardMultiplier     *big.Rat
+	SubsidyMergeSetRewardMultiplier *big.Rat
 
 	// TargetTimePerBlock is the desired amount of time to generate each
 	// block.
@@ -172,8 +177,8 @@ type Params struct {
 	// CoinbasePayloadScriptPublicKeyMaxLength is the maximum allowed script public key in the coinbase's payload
 	CoinbasePayloadScriptPublicKeyMaxLength uint8
 
-	// BaseSubsidy is the starting subsidy amount for mined blocks.
-	BaseSubsidy uint64
+	// PruningProofM is the 'm' constant in the pruning proof. For more details see: https://github.com/kaspanet/research/issues/3
+	PruningProofM uint64
 }
 
 // NormalizeRPCServerAddress returns addr with the current network default
@@ -201,15 +206,19 @@ var MainnetParams = Params{
 	DefaultPort: "16111",
 
 	// DAG parameters
-	GenesisBlock:                   &genesisBlock,
-	GenesisHash:                    genesisHash,
-	PowMax:                         mainPowMax,
-	BlockCoinbaseMaturity:          100,
-	SubsidyReductionInterval:       210000,
-	TargetTimePerBlock:             defaultTargetTimePerBlock,
-	FinalityDuration:               defaultFinalityDuration,
-	DifficultyAdjustmentWindowSize: defaultDifficultyAdjustmentWindowSize,
-	TimestampDeviationTolerance:    defaultTimestampDeviationTolerance,
+	GenesisBlock:                    &genesisBlock,
+	GenesisHash:                     genesisHash,
+	PowMax:                          mainPowMax,
+	BlockCoinbaseMaturity:           100,
+	SubsidyGenesisReward:            defaultSubsidyGenesisReward,
+	MinSubsidy:                      defaultMinSubsidy,
+	MaxSubsidy:                      defaultMaxSubsidy,
+	SubsidyPastRewardMultiplier:     big.NewRat(9, 10),
+	SubsidyMergeSetRewardMultiplier: big.NewRat(1, 10),
+	TargetTimePerBlock:              defaultTargetTimePerBlock,
+	FinalityDuration:                defaultFinalityDuration,
+	DifficultyAdjustmentWindowSize:  defaultDifficultyAdjustmentWindowSize,
+	TimestampDeviationTolerance:     defaultTimestampDeviationTolerance,
 
 	// Consensus rule change deployments.
 	//
@@ -243,8 +252,8 @@ var MainnetParams = Params{
 	MassPerScriptPubKeyByte:                 defaultMassPerScriptPubKeyByte,
 	MassPerSigOp:                            defaultMassPerSigOp,
 	MergeSetSizeLimit:                       defaultMergeSetSizeLimit,
-	BaseSubsidy:                             defaultBaseSubsidy,
 	CoinbasePayloadScriptPublicKeyMaxLength: defaultCoinbasePayloadScriptPublicKeyMaxLength,
+	PruningProofM:                           defaultPruningProofM,
 }
 
 // TestnetParams defines the network parameters for the test Kaspa network.
@@ -257,15 +266,19 @@ var TestnetParams = Params{
 	DNSSeeds:    []string{"testnet-6-dnsseed.daglabs-dev.com"},
 
 	// DAG parameters
-	GenesisBlock:                   &testnetGenesisBlock,
-	GenesisHash:                    testnetGenesisHash,
-	PowMax:                         testnetPowMax,
-	BlockCoinbaseMaturity:          100,
-	SubsidyReductionInterval:       210000,
-	TargetTimePerBlock:             defaultTargetTimePerBlock,
-	FinalityDuration:               defaultFinalityDuration,
-	DifficultyAdjustmentWindowSize: defaultDifficultyAdjustmentWindowSize,
-	TimestampDeviationTolerance:    defaultTimestampDeviationTolerance,
+	GenesisBlock:                    &testnetGenesisBlock,
+	GenesisHash:                     testnetGenesisHash,
+	PowMax:                          testnetPowMax,
+	BlockCoinbaseMaturity:           100,
+	SubsidyGenesisReward:            defaultSubsidyGenesisReward,
+	MinSubsidy:                      defaultMinSubsidy,
+	MaxSubsidy:                      defaultMaxSubsidy,
+	SubsidyPastRewardMultiplier:     big.NewRat(9, 10),
+	SubsidyMergeSetRewardMultiplier: big.NewRat(1, 10),
+	TargetTimePerBlock:              defaultTargetTimePerBlock,
+	FinalityDuration:                defaultFinalityDuration,
+	DifficultyAdjustmentWindowSize:  defaultDifficultyAdjustmentWindowSize,
+	TimestampDeviationTolerance:     defaultTimestampDeviationTolerance,
 
 	// Consensus rule change deployments.
 	//
@@ -299,8 +312,8 @@ var TestnetParams = Params{
 	MassPerScriptPubKeyByte:                 defaultMassPerScriptPubKeyByte,
 	MassPerSigOp:                            defaultMassPerSigOp,
 	MergeSetSizeLimit:                       defaultMergeSetSizeLimit,
-	BaseSubsidy:                             defaultBaseSubsidy,
 	CoinbasePayloadScriptPublicKeyMaxLength: defaultCoinbasePayloadScriptPublicKeyMaxLength,
+	PruningProofM:                           defaultPruningProofM,
 }
 
 // SimnetParams defines the network parameters for the simulation test Kaspa
@@ -319,15 +332,19 @@ var SimnetParams = Params{
 	DNSSeeds:    []string{}, // NOTE: There must NOT be any seeds.
 
 	// DAG parameters
-	GenesisBlock:                   &simnetGenesisBlock,
-	GenesisHash:                    simnetGenesisHash,
-	PowMax:                         simnetPowMax,
-	BlockCoinbaseMaturity:          100,
-	SubsidyReductionInterval:       210000,
-	TargetTimePerBlock:             time.Millisecond,
-	FinalityDuration:               time.Minute,
-	DifficultyAdjustmentWindowSize: defaultDifficultyAdjustmentWindowSize,
-	TimestampDeviationTolerance:    defaultTimestampDeviationTolerance,
+	GenesisBlock:                    &simnetGenesisBlock,
+	GenesisHash:                     simnetGenesisHash,
+	PowMax:                          simnetPowMax,
+	BlockCoinbaseMaturity:           100,
+	SubsidyGenesisReward:            defaultSubsidyGenesisReward,
+	MinSubsidy:                      defaultMinSubsidy,
+	MaxSubsidy:                      defaultMaxSubsidy,
+	SubsidyPastRewardMultiplier:     big.NewRat(9, 10),
+	SubsidyMergeSetRewardMultiplier: big.NewRat(1, 10),
+	TargetTimePerBlock:              time.Millisecond,
+	FinalityDuration:                time.Minute,
+	DifficultyAdjustmentWindowSize:  defaultDifficultyAdjustmentWindowSize,
+	TimestampDeviationTolerance:     defaultTimestampDeviationTolerance,
 
 	// Consensus rule change deployments.
 	//
@@ -359,8 +376,8 @@ var SimnetParams = Params{
 	MassPerScriptPubKeyByte:                 defaultMassPerScriptPubKeyByte,
 	MassPerSigOp:                            defaultMassPerSigOp,
 	MergeSetSizeLimit:                       defaultMergeSetSizeLimit,
-	BaseSubsidy:                             defaultBaseSubsidy,
 	CoinbasePayloadScriptPublicKeyMaxLength: defaultCoinbasePayloadScriptPublicKeyMaxLength,
+	PruningProofM:                           defaultPruningProofM,
 }
 
 // DevnetParams defines the network parameters for the development Kaspa network.
@@ -373,15 +390,19 @@ var DevnetParams = Params{
 	DNSSeeds:    []string{}, // NOTE: There must NOT be any seeds.
 
 	// DAG parameters
-	GenesisBlock:                   &devnetGenesisBlock,
-	GenesisHash:                    devnetGenesisHash,
-	PowMax:                         devnetPowMax,
-	BlockCoinbaseMaturity:          100,
-	SubsidyReductionInterval:       210000,
-	TargetTimePerBlock:             defaultTargetTimePerBlock,
-	FinalityDuration:               defaultFinalityDuration,
-	DifficultyAdjustmentWindowSize: defaultDifficultyAdjustmentWindowSize,
-	TimestampDeviationTolerance:    defaultTimestampDeviationTolerance,
+	GenesisBlock:                    &devnetGenesisBlock,
+	GenesisHash:                     devnetGenesisHash,
+	PowMax:                          devnetPowMax,
+	BlockCoinbaseMaturity:           100,
+	SubsidyGenesisReward:            defaultSubsidyGenesisReward,
+	MinSubsidy:                      defaultMinSubsidy,
+	MaxSubsidy:                      defaultMaxSubsidy,
+	SubsidyPastRewardMultiplier:     big.NewRat(9, 10),
+	SubsidyMergeSetRewardMultiplier: big.NewRat(1, 10),
+	TargetTimePerBlock:              defaultTargetTimePerBlock,
+	FinalityDuration:                defaultFinalityDuration,
+	DifficultyAdjustmentWindowSize:  defaultDifficultyAdjustmentWindowSize,
+	TimestampDeviationTolerance:     defaultTimestampDeviationTolerance,
 
 	// Consensus rule change deployments.
 	//
@@ -415,8 +436,8 @@ var DevnetParams = Params{
 	MassPerScriptPubKeyByte:                 defaultMassPerScriptPubKeyByte,
 	MassPerSigOp:                            defaultMassPerSigOp,
 	MergeSetSizeLimit:                       defaultMergeSetSizeLimit,
-	BaseSubsidy:                             defaultBaseSubsidy,
 	CoinbasePayloadScriptPublicKeyMaxLength: defaultCoinbasePayloadScriptPublicKeyMaxLength,
+	PruningProofM:                           defaultPruningProofM,
 }
 
 var (
@@ -461,4 +482,5 @@ func init() {
 	mustRegister(&MainnetParams)
 	mustRegister(&TestnetParams)
 	mustRegister(&SimnetParams)
+	mustRegister(&DevnetParams)
 }

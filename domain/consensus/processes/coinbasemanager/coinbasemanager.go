@@ -1,31 +1,49 @@
 package coinbasemanager
 
 import (
+	"encoding/binary"
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/hashset"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/subnetworks"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/transactionhelper"
+	"github.com/kaspanet/kaspad/infrastructure/db/database"
 	"github.com/pkg/errors"
+	"math/big"
 )
 
 type coinbaseManager struct {
-	subsidyReductionInterval                uint64
-	baseSubsidy                             uint64
+	subsidyGenesisReward                    uint64
+	minSubsidy                              uint64
+	maxSubsidy                              uint64
+	subsidyPastRewardMultiplier             *big.Rat
+	subsidyMergeSetRewardMultiplier         *big.Rat
 	coinbasePayloadScriptPublicKeyMaxLength uint8
+	genesisHash                             *externalapi.DomainHash
 
 	databaseContext     model.DBReader
+	dagTraversalManager model.DAGTraversalManager
 	ghostdagDataStore   model.GHOSTDAGDataStore
 	acceptanceDataStore model.AcceptanceDataStore
 	daaBlocksStore      model.DAABlocksStore
+	blockStore          model.BlockStore
 }
 
 func (c *coinbaseManager) ExpectedCoinbaseTransaction(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash,
 	coinbaseData *externalapi.DomainCoinbaseData) (*externalapi.DomainTransaction, error) {
 
-	ghostdagData, err := c.ghostdagDataStore.Get(c.databaseContext, stagingArea, blockHash, false)
-	if err != nil {
+	ghostdagData, err := c.ghostdagDataStore.Get(c.databaseContext, stagingArea, blockHash, true)
+	if !database.IsNotFoundError(err) && err != nil {
 		return nil, err
+	}
+
+	// If there's ghostdag data with trusted data we prefer it because we need the original merge set non-pruned merge set.
+	if database.IsNotFoundError(err) {
+		ghostdagData, err = c.ghostdagDataStore.Get(c.databaseContext, stagingArea, blockHash, false)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	acceptanceData, err := c.acceptanceDataStore.Get(c.databaseContext, stagingArea, blockHash)
@@ -61,7 +79,12 @@ func (c *coinbaseManager) ExpectedCoinbaseTransaction(stagingArea *model.Staging
 		txOuts = append(txOuts, txOut)
 	}
 
-	payload, err := c.serializeCoinbasePayload(ghostdagData.BlueScore(), coinbaseData)
+	subsidy, err := c.CalcBlockSubsidy(stagingArea, blockHash)
+	if err != nil {
+		return nil, err
+	}
+
+	payload, err := c.serializeCoinbasePayload(ghostdagData.BlueScore(), coinbaseData, subsidy)
 	if err != nil {
 		return nil, err
 	}
@@ -94,23 +117,23 @@ func (c *coinbaseManager) coinbaseOutputForBlueBlock(stagingArea *model.StagingA
 	blueBlock *externalapi.DomainHash, blockAcceptanceData *externalapi.BlockAcceptanceData,
 	mergingBlockDAAAddedBlocksSet hashset.HashSet) (*externalapi.DomainTransactionOutput, bool, error) {
 
-	totalReward, err := c.calcMergedBlockReward(stagingArea, blueBlock, blockAcceptanceData, mergingBlockDAAAddedBlocksSet)
+	blockReward, err := c.calcMergedBlockReward(stagingArea, blueBlock, blockAcceptanceData, mergingBlockDAAAddedBlocksSet)
 	if err != nil {
 		return nil, false, err
 	}
 
-	if totalReward == 0 {
+	if blockReward == 0 {
 		return nil, false, nil
 	}
 
 	// the ScriptPublicKey for the coinbase is parsed from the coinbase payload
-	_, coinbaseData, err := c.ExtractCoinbaseDataAndBlueScore(blockAcceptanceData.TransactionAcceptanceData[0].Transaction)
+	_, coinbaseData, _, err := c.ExtractCoinbaseDataBlueScoreAndSubsidy(blockAcceptanceData.TransactionAcceptanceData[0].Transaction)
 	if err != nil {
 		return nil, false, err
 	}
 
 	txOut := &externalapi.DomainTransactionOutput{
-		Value:           totalReward,
+		Value:           blockReward,
 		ScriptPublicKey: coinbaseData.ScriptPublicKey,
 	}
 
@@ -150,28 +173,137 @@ func acceptanceDataFromArrayToMap(acceptanceData externalapi.AcceptanceData) map
 	return acceptanceDataMap
 }
 
-// calcBlockSubsidy returns the subsidy amount a block at the provided blue score
+// CalcBlockSubsidy returns the subsidy amount a block at the provided blue score
 // should have. This is mainly used for determining how much the coinbase for
 // newly generated blocks awards as well as validating the coinbase for blocks
 // has the expected value.
 //
-// The subsidy is halved every SubsidyReductionInterval blocks. Mathematically
-// this is: baseSubsidy / 2^(blueScore/SubsidyReductionInterval)
-//
-// At the target block generation rate for the main network, this is
-// approximately every 4 years.
-func (c *coinbaseManager) calcBlockSubsidy(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) (uint64, error) {
-	if c.subsidyReductionInterval == 0 {
-		return c.baseSubsidy, nil
+// Further details: https://hashdag.medium.com/kaspa-launch-plan-9a63f4d754a6
+func (c *coinbaseManager) CalcBlockSubsidy(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) (uint64, error) {
+	if blockHash.Equal(c.genesisHash) {
+		return c.subsidyGenesisReward, nil
 	}
 
-	daaScore, err := c.daaBlocksStore.DAAScore(c.databaseContext, stagingArea, blockHash)
+	averagePastSubsidy, err := c.calculateAveragePastSubsidy(stagingArea, blockHash)
+	if err != nil {
+		return 0, err
+	}
+	mergeSetSubsidySum, err := c.calculateMergeSetSubsidySum(stagingArea, blockHash)
+	if err != nil {
+		return 0, err
+	}
+	subsidyRandomVariable, err := c.calculateSubsidyRandomVariable(stagingArea, blockHash)
 	if err != nil {
 		return 0, err
 	}
 
-	// Equivalent to: baseSubsidy / 2^(daaScore/subsidyHalvingInterval)
-	return c.baseSubsidy >> uint(daaScore/c.subsidyReductionInterval), nil
+	pastSubsidy := new(big.Rat).Mul(averagePastSubsidy, c.subsidyPastRewardMultiplier)
+	mergeSetSubsidy := new(big.Rat).Mul(mergeSetSubsidySum, c.subsidyMergeSetRewardMultiplier)
+
+	// In order to avoid unsupported negative exponents in powInt64, flip
+	// the numerator and the denominator manually
+	subsidyRandom := new(big.Rat)
+	if subsidyRandomVariable >= 0 {
+		subsidyRandom = subsidyRandom.SetInt64(1 << subsidyRandomVariable)
+	} else {
+		subsidyRandom = subsidyRandom.SetFrac64(1, 1<<(-subsidyRandomVariable))
+	}
+
+	blockSubsidyBigRat := new(big.Rat).Add(mergeSetSubsidy, new(big.Rat).Mul(pastSubsidy, subsidyRandom))
+	blockSubsidyBigInt := new(big.Int).Div(blockSubsidyBigRat.Num(), blockSubsidyBigRat.Denom())
+	blockSubsidyUint64 := blockSubsidyBigInt.Uint64()
+
+	clampedBlockSubsidy := blockSubsidyUint64
+	if clampedBlockSubsidy < c.minSubsidy {
+		clampedBlockSubsidy = c.minSubsidy
+	} else if clampedBlockSubsidy > c.maxSubsidy {
+		clampedBlockSubsidy = c.maxSubsidy
+	}
+
+	return clampedBlockSubsidy, nil
+}
+
+func (c *coinbaseManager) calculateAveragePastSubsidy(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) (*big.Rat, error) {
+	const subsidyPastWindowSize = 100
+	blockWindow, err := c.dagTraversalManager.BlockWindow(stagingArea, blockHash, subsidyPastWindowSize)
+	if err != nil {
+		return nil, err
+	}
+	if len(blockWindow) == 0 {
+		return new(big.Rat).SetFrac64(int64(c.subsidyGenesisReward), 1), nil
+	}
+
+	pastBlocks, err := c.blockStore.Blocks(c.databaseContext, stagingArea, blockWindow)
+	if err != nil {
+		return nil, err
+	}
+
+	pastBlockSubsidySum := int64(0)
+	for _, pastBlock := range pastBlocks {
+		coinbaseTransaction := pastBlock.Transactions[transactionhelper.CoinbaseTransactionIndex]
+		_, _, pastBlockSubsidy, err := c.ExtractCoinbaseDataBlueScoreAndSubsidy(coinbaseTransaction)
+		if err != nil {
+			return nil, err
+		}
+		pastBlockSubsidySum += int64(pastBlockSubsidy)
+	}
+	return big.NewRat(pastBlockSubsidySum, int64(len(blockWindow))), nil
+}
+
+func (c *coinbaseManager) calculateMergeSetSubsidySum(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) (*big.Rat, error) {
+	ghostdagData, err := c.ghostdagDataStore.Get(c.databaseContext, stagingArea, blockHash, true)
+	if !database.IsNotFoundError(err) && err != nil {
+		return nil, err
+	}
+
+	// If there's ghostdag data with trusted data we prefer it because we need the original merge set non-pruned merge set.
+	if database.IsNotFoundError(err) {
+		ghostdagData, err = c.ghostdagDataStore.Get(c.databaseContext, stagingArea, blockHash, false)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	mergeSet := append(ghostdagData.MergeSetBlues(), ghostdagData.MergeSetReds()...)
+	mergeSetBlocks, err := c.blockStore.Blocks(c.databaseContext, stagingArea, mergeSet)
+	if err != nil {
+		return nil, err
+	}
+
+	mergeSetSubsidySum := int64(0)
+	for _, mergeSetBlock := range mergeSetBlocks {
+		coinbaseTransaction := mergeSetBlock.Transactions[transactionhelper.CoinbaseTransactionIndex]
+		_, _, mergeSetBlockSubsidy, err := c.ExtractCoinbaseDataBlueScoreAndSubsidy(coinbaseTransaction)
+		if err != nil {
+			return nil, err
+		}
+		mergeSetSubsidySum += int64(mergeSetBlockSubsidy)
+	}
+	return big.NewRat(mergeSetSubsidySum, 1), nil
+}
+
+func (c *coinbaseManager) calculateSubsidyRandomVariable(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) (int64, error) {
+	ghostdagData, err := c.ghostdagDataStore.Get(c.databaseContext, stagingArea, blockHash, false)
+	if err != nil {
+		return 0, err
+	}
+	selectedParentHash := ghostdagData.SelectedParent()
+	if selectedParentHash == nil {
+		return 0, nil
+	}
+
+	const binomialSteps = 10
+	binomialSum := int64(0)
+
+	// The first two bytes of a hash are a good deterministic source
+	// of randomness, so we use that instead of any rand implementation
+	firstTwoBytes := binary.LittleEndian.Uint16(selectedParentHash.ByteSlice()[:2])
+	for i := 0; i < binomialSteps; i++ {
+		step := firstTwoBytes & 1
+		firstTwoBytes >>= 1
+		binomialSum += int64(step)
+	}
+	return binomialSum - (binomialSteps / 2), nil
 }
 
 func (c *coinbaseManager) calcMergedBlockReward(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash,
@@ -193,7 +325,12 @@ func (c *coinbaseManager) calcMergedBlockReward(stagingArea *model.StagingArea, 
 		}
 	}
 
-	subsidy, err := c.calcBlockSubsidy(stagingArea, blockHash)
+	block, err := c.blockStore.Block(c.databaseContext, stagingArea, blockHash)
+	if err != nil {
+		return 0, err
+	}
+
+	_, _, subsidy, err := c.ExtractCoinbaseDataBlueScoreAndSubsidy(block.Transactions[transactionhelper.CoinbaseTransactionIndex])
 	if err != nil {
 		return 0, err
 	}
@@ -205,23 +342,35 @@ func (c *coinbaseManager) calcMergedBlockReward(stagingArea *model.StagingArea, 
 func New(
 	databaseContext model.DBReader,
 
-	subsidyReductionInterval uint64,
-	baseSubsidy uint64,
+	subsidyGenesisReward uint64,
+	minSubsidy uint64,
+	maxSubsidy uint64,
+	subsidyPastRewardMultiplier *big.Rat,
+	subsidyMergeSetRewardMultiplier *big.Rat,
 	coinbasePayloadScriptPublicKeyMaxLength uint8,
+	genesisHash *externalapi.DomainHash,
 
+	dagTraversalManager model.DAGTraversalManager,
 	ghostdagDataStore model.GHOSTDAGDataStore,
 	acceptanceDataStore model.AcceptanceDataStore,
-	daaBlocksStore model.DAABlocksStore) model.CoinbaseManager {
+	daaBlocksStore model.DAABlocksStore,
+	blockStore model.BlockStore) model.CoinbaseManager {
 
 	return &coinbaseManager{
 		databaseContext: databaseContext,
 
-		subsidyReductionInterval:                subsidyReductionInterval,
-		baseSubsidy:                             baseSubsidy,
+		subsidyGenesisReward:                    subsidyGenesisReward,
+		minSubsidy:                              minSubsidy,
+		maxSubsidy:                              maxSubsidy,
+		subsidyPastRewardMultiplier:             subsidyPastRewardMultiplier,
+		subsidyMergeSetRewardMultiplier:         subsidyMergeSetRewardMultiplier,
 		coinbasePayloadScriptPublicKeyMaxLength: coinbasePayloadScriptPublicKeyMaxLength,
+		genesisHash:                             genesisHash,
 
+		dagTraversalManager: dagTraversalManager,
 		ghostdagDataStore:   ghostdagDataStore,
 		acceptanceDataStore: acceptanceDataStore,
 		daaBlocksStore:      daaBlocksStore,
+		blockStore:          blockStore,
 	}
 }

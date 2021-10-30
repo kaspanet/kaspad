@@ -10,7 +10,6 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/utils/subnetworks"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/testutils"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/transactionhelper"
-	"github.com/kaspanet/kaspad/util"
 	"github.com/pkg/errors"
 )
 
@@ -42,12 +41,12 @@ func TestValidateTransactionInIsolationAndPopulateMass(t *testing.T) {
 			{"good one", 1, 1, 1, subnetworks.SubnetworkIDNative, nil, nil, nil},
 			{"no inputs", 0, 1, 1, subnetworks.SubnetworkIDNative, nil, nil, ruleerrors.ErrNoTxInputs},
 			{"no outputs", 1, 0, 1, subnetworks.SubnetworkIDNative, nil, nil, nil},
-			{"too much sompi in one output", 1, 1, util.MaxSompi + 1,
+			{"too much sompi in one output", 1, 1, constants.MaxSompi + 1,
 				subnetworks.SubnetworkIDNative,
 				nil,
 				nil,
 				ruleerrors.ErrBadTxOutValue},
-			{"too much sompi in total outputs", 1, 2, util.MaxSompi - 1,
+			{"too much sompi in total outputs", 1, 2, constants.MaxSompi - 1,
 				subnetworks.SubnetworkIDNative,
 				nil,
 				nil,
@@ -81,19 +80,19 @@ func TestValidateTransactionInIsolationAndPopulateMass(t *testing.T) {
 				&txSubnetworkData{subnetworks.SubnetworkIDCoinbase, 0, make([]byte, consensusConfig.MaxCoinbasePayloadLength+1)},
 				nil,
 				ruleerrors.ErrBadCoinbasePayloadLen},
-			{"non-zero gas in Kaspa", 1, 1, 0,
+			{"non-zero gas in Kaspa", 1, 1, 1,
 				subnetworks.SubnetworkIDNative,
 				nil,
 				func(tx *externalapi.DomainTransaction) {
 					tx.Gas = 1
 				},
 				ruleerrors.ErrInvalidGas},
-			{"non-zero gas in subnetwork registry", 1, 1, 0,
+			{"non-zero gas in subnetwork registry", 1, 1, 1,
 				subnetworks.SubnetworkIDRegistry,
 				&txSubnetworkData{subnetworks.SubnetworkIDRegistry, 1, []byte{}},
 				nil,
 				ruleerrors.ErrInvalidGas},
-			{"non-zero payload in Kaspa", 1, 1, 0,
+			{"non-zero payload in Kaspa", 1, 1, 1,
 				subnetworks.SubnetworkIDNative,
 				nil,
 				func(tx *externalapi.DomainTransaction) {
