@@ -12,6 +12,10 @@ func (c *coinbaseManager) isBlockRewardFixed(stagingArea *model.StagingArea, blo
 		return false, err
 	}
 
+	// The given `pruningPointBlock` may only not be found under one circumstance:
+	// we're currently in the process of building the next pruning point. As such,
+	// we must manually set highIndex to currentIndex + 1 because the next pruning
+	// point is not yet stored in the database
 	highPruningPointIndex := blockPruningPointIndex
 	highPruningPointHash := blockPruningPoint
 	if !found {
