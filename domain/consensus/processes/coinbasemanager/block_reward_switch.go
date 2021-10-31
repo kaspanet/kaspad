@@ -19,7 +19,7 @@ func (c *coinbaseManager) isBlockRewardFixed(stagingArea *model.StagingArea, blo
 		if err != nil {
 			return false, err
 		}
-		blockPruningPointIndex = currentPruningPointIndex + 1
+		highPruningPointIndex = currentPruningPointIndex + 1
 	}
 
 	for {
