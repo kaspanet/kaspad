@@ -79,8 +79,11 @@ func TestBlockRewardSwitch(t *testing.T) {
 			}
 			pruningPointCoinbase := pruningPoint.Transactions[transactionhelper.CoinbaseTransactionIndex]
 			_, _, subsidy, err := tc.CoinbaseManager().ExtractCoinbaseDataBlueScoreAndSubsidy(pruningPointCoinbase)
+			if err != nil {
+				t.Fatalf("ExtractCoinbaseDataBlueScoreAndSubsidy: %+v", err)
+			}
 			if subsidy != consensusConfig.MinSubsidy {
-				t.Errorf("Subsidy has unexpected value. Want: %d, got: %d", consensusConfig.MinSubsidy, subsidy)
+				t.Fatalf("Subsidy has unexpected value. Want: %d, got: %d", consensusConfig.MinSubsidy, subsidy)
 			}
 		}
 
@@ -108,8 +111,11 @@ func TestBlockRewardSwitch(t *testing.T) {
 		}
 		lastPruningPointCoinbase := lastPruningPoint.Transactions[transactionhelper.CoinbaseTransactionIndex]
 		_, _, subsidy, err := tc.CoinbaseManager().ExtractCoinbaseDataBlueScoreAndSubsidy(lastPruningPointCoinbase)
+		if err != nil {
+			t.Fatalf("ExtractCoinbaseDataBlueScoreAndSubsidy: %+v", err)
+		}
 		if subsidy != consensusConfig.SubsidyGenesisReward {
-			t.Errorf("Subsidy has unexpected value. Want: %d, got: %d", consensusConfig.SubsidyGenesisReward, subsidy)
+			t.Fatalf("Subsidy has unexpected value. Want: %d, got: %d", consensusConfig.SubsidyGenesisReward, subsidy)
 		}
 	})
 }
