@@ -320,6 +320,40 @@ func (flow *handleRelayInvsFlow) processHeader(consensus externalapi.Consensus, 
 	return nil
 }
 
+func (flow *handleRelayInvsFlow) validatePruningPointFutureHeaderTimestamps() error {
+	headerSelectedTipHash, err := flow.Domain().StagingConsensus().GetHeadersSelectedTip()
+	if err != nil {
+		return err
+	}
+	headerSelectedTipHeader, err := flow.Domain().StagingConsensus().GetBlockHeader(headerSelectedTipHash)
+	if err != nil {
+		return err
+	}
+	headerSelectedTipTimestamp := headerSelectedTipHeader.TimeInMilliseconds()
+
+	currentSelectedTipHash, err := flow.Domain().Consensus().GetHeadersSelectedTip()
+	if err != nil {
+		return err
+	}
+	currentSelectedTipHeader, err := flow.Domain().Consensus().GetBlockHeader(currentSelectedTipHash)
+	if err != nil {
+		return err
+	}
+	currentSelectedTipTimestamp := currentSelectedTipHeader.TimeInMilliseconds()
+
+	if headerSelectedTipTimestamp < currentSelectedTipTimestamp {
+		return protocolerrors.Errorf(false, "the timestamp of the candidate selected "+
+			"tip is smaller than the current selected tip")
+	}
+
+	minTimestampDifferenceInMilliseconds := (10 * time.Minute).Milliseconds()
+	if headerSelectedTipTimestamp-currentSelectedTipTimestamp < minTimestampDifferenceInMilliseconds {
+		return protocolerrors.Errorf(false, "difference between the timestamps of "+
+			"the current pruning point and the candidate pruning point is too small. Aborting IBD...")
+	}
+	return nil
+}
+
 func (flow *handleRelayInvsFlow) receiveAndInsertPruningPointUTXOSet(
 	consensus externalapi.Consensus, pruningPointHash *externalapi.DomainHash) (bool, error) {
 
