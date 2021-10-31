@@ -43,12 +43,12 @@ func (flow *handleRelayInvsFlow) shouldSyncAndShouldDownloadHeadersProof(highBlo
 	highestSharedBlockFound bool) (shouldDownload, shouldSync bool, err error) {
 
 	if !highestSharedBlockFound {
-		hasMoreBlueWorkThanSelectedTip, err := flow.checkIfHighHashHasMoreBlueWorkThanSelectedTip(highBlock)
+		hasMoreBlueWorkThanSelectedTipAndPruningDepthMoreBlueScore, err := flow.checkIfHighHashHasMoreBlueWorkThanSelectedTipAndPruningDepthMoreBlueScore(highBlock)
 		if err != nil {
 			return false, false, err
 		}
 
-		if hasMoreBlueWorkThanSelectedTip {
+		if hasMoreBlueWorkThanSelectedTipAndPruningDepthMoreBlueScore {
 			return true, true, nil
 		}
 
@@ -58,7 +58,7 @@ func (flow *handleRelayInvsFlow) shouldSyncAndShouldDownloadHeadersProof(highBlo
 	return false, true, nil
 }
 
-func (flow *handleRelayInvsFlow) checkIfHighHashHasMoreBlueWorkThanSelectedTip(highBlock *externalapi.DomainBlock) (bool, error) {
+func (flow *handleRelayInvsFlow) checkIfHighHashHasMoreBlueWorkThanSelectedTipAndPruningDepthMoreBlueScore(highBlock *externalapi.DomainBlock) (bool, error) {
 	headersSelectedTip, err := flow.Domain().Consensus().GetHeadersSelectedTip()
 	if err != nil {
 		return false, err
@@ -67,6 +67,10 @@ func (flow *handleRelayInvsFlow) checkIfHighHashHasMoreBlueWorkThanSelectedTip(h
 	headersSelectedTipInfo, err := flow.Domain().Consensus().GetBlockInfo(headersSelectedTip)
 	if err != nil {
 		return false, err
+	}
+
+	if highBlock.Header.BlueScore() < headersSelectedTipInfo.BlueScore+flow.Config().NetParams().PruningDepth() {
+		return false, nil
 	}
 
 	return highBlock.Header.BlueWork().Cmp(headersSelectedTipInfo.BlueWork) > 0, nil
