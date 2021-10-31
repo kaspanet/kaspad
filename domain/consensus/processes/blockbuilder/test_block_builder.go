@@ -200,7 +200,11 @@ func (bb *testBlockBuilder) buildBlockWithParents(stagingArea *model.StagingArea
 
 	bb.acceptanceDataStore.Stage(stagingArea, tempBlockHash, acceptanceData)
 
-	coinbase, err := bb.coinbaseManager.ExpectedCoinbaseTransaction(stagingArea, tempBlockHash, coinbaseData)
+	pruningPoint, err := bb.newBlockPruningPoint(stagingArea, tempBlockHash)
+	if err != nil {
+		return nil, nil, err
+	}
+	coinbase, err := bb.coinbaseManager.ExpectedCoinbaseTransaction(stagingArea, tempBlockHash, coinbaseData, pruningPoint)
 	if err != nil {
 		return nil, nil, err
 	}

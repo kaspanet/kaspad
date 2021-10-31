@@ -103,7 +103,11 @@ func (bb *blockBuilder) buildBlock(stagingArea *model.StagingArea, coinbaseData 
 		return nil, err
 	}
 
-	coinbase, err := bb.newBlockCoinbaseTransaction(stagingArea, coinbaseData)
+	pruningPoint, err := bb.newBlockPruningPoint(stagingArea, model.VirtualBlockHash)
+	if err != nil {
+		return nil, err
+	}
+	coinbase, err := bb.newBlockCoinbaseTransaction(stagingArea, coinbaseData, pruningPoint)
 	if err != nil {
 		return nil, err
 	}
@@ -171,9 +175,9 @@ func (bb *blockBuilder) validateTransaction(
 }
 
 func (bb *blockBuilder) newBlockCoinbaseTransaction(stagingArea *model.StagingArea,
-	coinbaseData *externalapi.DomainCoinbaseData) (*externalapi.DomainTransaction, error) {
+	coinbaseData *externalapi.DomainCoinbaseData, blockPruningPoint *externalapi.DomainHash) (*externalapi.DomainTransaction, error) {
 
-	return bb.coinbaseManager.ExpectedCoinbaseTransaction(stagingArea, model.VirtualBlockHash, coinbaseData)
+	return bb.coinbaseManager.ExpectedCoinbaseTransaction(stagingArea, model.VirtualBlockHash, coinbaseData, blockPruningPoint)
 }
 
 func (bb *blockBuilder) buildHeader(stagingArea *model.StagingArea, transactions []*externalapi.DomainTransaction) (

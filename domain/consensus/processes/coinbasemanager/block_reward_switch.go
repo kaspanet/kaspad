@@ -2,20 +2,17 @@ package coinbasemanager
 
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"math/big"
 )
 
-func (c *coinbaseManager) isBlockRewardFixed(stagingArea *model.StagingArea) (bool, error) {
-	if c.hasBlockRewardSwitchedToFixed {
-		return true, nil
-	}
-
-	currentPruningPointIndex, err := c.pruningStore.CurrentPruningPointIndex(c.databaseContext, stagingArea)
+func (c *coinbaseManager) isBlockRewardFixed(stagingArea *model.StagingArea, blockPruningPoint *externalapi.DomainHash) (bool, error) {
+	blockPruningPointIndex, err := c.findPruningPointIndex(stagingArea, blockPruningPoint)
 	if err != nil {
 		return false, err
 	}
 
-	for highPruningPointIndex := currentPruningPointIndex; highPruningPointIndex > c.fixedSubsidySwitchPruningPointInterval; highPruningPointIndex-- {
+	for highPruningPointIndex := blockPruningPointIndex; highPruningPointIndex > c.fixedSubsidySwitchPruningPointInterval; highPruningPointIndex-- {
 		lowPruningPointIndex := highPruningPointIndex - c.fixedSubsidySwitchPruningPointInterval
 
 		highPruningPointHash, err := c.pruningStore.PruningPointByIndex(c.databaseContext, stagingArea, highPruningPointIndex)
@@ -40,10 +37,28 @@ func (c *coinbaseManager) isBlockRewardFixed(stagingArea *model.StagingArea) (bo
 		blueScoreDifference := new(big.Int).SetUint64(highPruningPointHeader.BlueScore() - lowPruningPointHeader.BlueScore())
 		estimatedAverageHashRate := new(big.Int).Div(blueWorkDifference, blueScoreDifference)
 		if estimatedAverageHashRate.Cmp(c.fixedSubsidySwitchHashRateDifference) >= 0 {
-			c.hasBlockRewardSwitchedToFixed = true
 			return true, nil
 		}
 	}
 
 	return false, nil
+}
+
+func (c *coinbaseManager) findPruningPointIndex(stagingArea *model.StagingArea, pruningPointHash *externalapi.DomainHash) (uint64, error) {
+	currentPruningPointHash, err := c.pruningStore.PruningPoint(c.databaseContext, stagingArea)
+	if err != nil {
+		return 0, err
+	}
+	currentPruningPointIndex, err := c.pruningStore.CurrentPruningPointIndex(c.databaseContext, stagingArea)
+	if err != nil {
+		return 0, err
+	}
+	for !currentPruningPointHash.Equal(pruningPointHash) && currentPruningPointIndex > 0 {
+		currentPruningPointIndex--
+		currentPruningPointHash, err = c.pruningStore.PruningPointByIndex(c.databaseContext, stagingArea, currentPruningPointIndex)
+		if err != nil {
+			return 0, err
+		}
+	}
+	return currentPruningPointIndex, nil
 }
