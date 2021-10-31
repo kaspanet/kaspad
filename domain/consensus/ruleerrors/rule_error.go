@@ -238,6 +238,7 @@ var (
 	ErrPruningProofInsufficientBlueWork               = newRuleError("ErrPruningProofInsufficientBlueWork")
 	ErrPruningProofMissingBlockAtDepthMFromNextLevel  = newRuleError("ErrPruningProofMissingBlockAtDepthMFromNextLevel")
 	ErrPruningProofMissesBlocksBelowPruningPoint      = newRuleError("ErrPruningProofMissesBlocksBelowPruningPoint")
+	ErrPruningProofEmpty                              = newRuleError("ErrPruningProofEmpty")
 	ErrWrongCoinbaseSubsidy                           = newRuleError("ErrWrongCoinbaseSubsidy")
 )
 
