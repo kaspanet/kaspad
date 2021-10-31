@@ -54,15 +54,15 @@ type Config struct {
 
 // DefaultConfig returns the default mempool configuration
 func DefaultConfig(dagParams *dagconfig.Params) *Config {
-	targetBlocksPerSecond := uint64(time.Second / dagParams.TargetTimePerBlock)
+	targetBlocksPerSecond := time.Second.Seconds() / dagParams.TargetTimePerBlock.Seconds()
 
 	return &Config{
 		MaximumTransactionCount:               defaultMaximumTransactionCount,
-		TransactionExpireIntervalDAAScore:     defaultTransactionExpireIntervalSeconds / targetBlocksPerSecond,
-		TransactionExpireScanIntervalDAAScore: defaultTransactionExpireScanIntervalSeconds / targetBlocksPerSecond,
+		TransactionExpireIntervalDAAScore:     uint64(float64(defaultTransactionExpireIntervalSeconds) / targetBlocksPerSecond),
+		TransactionExpireScanIntervalDAAScore: uint64(float64(defaultTransactionExpireScanIntervalSeconds) / targetBlocksPerSecond),
 		TransactionExpireScanIntervalSeconds:  defaultTransactionExpireScanIntervalSeconds,
-		OrphanExpireIntervalDAAScore:          defaultOrphanExpireIntervalSeconds / targetBlocksPerSecond,
-		OrphanExpireScanIntervalDAAScore:      defaultOrphanExpireScanIntervalSeconds / targetBlocksPerSecond,
+		OrphanExpireIntervalDAAScore:          uint64(float64(defaultOrphanExpireIntervalSeconds) / targetBlocksPerSecond),
+		OrphanExpireScanIntervalDAAScore:      uint64(float64(defaultOrphanExpireScanIntervalSeconds) / targetBlocksPerSecond),
 		MaximumOrphanTransactionMass:          defaultMaximumOrphanTransactionMass,
 		MaximumOrphanTransactionCount:         defaultMaximumOrphanTransactionCount,
 		AcceptNonStandard:                     dagParams.RelayNonStdTxs,
