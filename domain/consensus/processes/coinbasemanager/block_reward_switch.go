@@ -7,18 +7,27 @@ import (
 )
 
 func (c *coinbaseManager) isBlockRewardFixed(stagingArea *model.StagingArea, blockPruningPoint *externalapi.DomainHash) (bool, error) {
-	blockPruningPointIndex, err := c.findPruningPointIndex(stagingArea, blockPruningPoint)
+	blockPruningPointIndex, found, err := c.findPruningPointIndex(stagingArea, blockPruningPoint)
 	if err != nil {
 		return false, err
 	}
 
-	for highPruningPointIndex := blockPruningPointIndex; highPruningPointIndex > c.fixedSubsidySwitchPruningPointInterval; highPruningPointIndex-- {
-		lowPruningPointIndex := highPruningPointIndex - c.fixedSubsidySwitchPruningPointInterval
-
-		highPruningPointHash, err := c.pruningStore.PruningPointByIndex(c.databaseContext, stagingArea, highPruningPointIndex)
+	highPruningPointIndex := blockPruningPointIndex
+	highPruningPointHash := blockPruningPoint
+	if !found {
+		currentPruningPointIndex, err := c.pruningStore.CurrentPruningPointIndex(c.databaseContext, stagingArea)
 		if err != nil {
 			return false, err
 		}
+		blockPruningPointIndex = currentPruningPointIndex + 1
+	}
+
+	for {
+		if highPruningPointIndex <= c.fixedSubsidySwitchPruningPointInterval {
+			break
+		}
+
+		lowPruningPointIndex := highPruningPointIndex - c.fixedSubsidySwitchPruningPointInterval
 		lowPruningPointHash, err := c.pruningStore.PruningPointByIndex(c.databaseContext, stagingArea, lowPruningPointIndex)
 		if err != nil {
 			return false, err
@@ -39,26 +48,35 @@ func (c *coinbaseManager) isBlockRewardFixed(stagingArea *model.StagingArea, blo
 		if estimatedAverageHashRate.Cmp(c.fixedSubsidySwitchHashRateDifference) >= 0 {
 			return true, nil
 		}
+
+		highPruningPointIndex--
+		highPruningPointHash, err = c.pruningStore.PruningPointByIndex(c.databaseContext, stagingArea, highPruningPointIndex)
+		if err != nil {
+			return false, err
+		}
 	}
 
 	return false, nil
 }
 
-func (c *coinbaseManager) findPruningPointIndex(stagingArea *model.StagingArea, pruningPointHash *externalapi.DomainHash) (uint64, error) {
+func (c *coinbaseManager) findPruningPointIndex(stagingArea *model.StagingArea, pruningPointHash *externalapi.DomainHash) (uint64, bool, error) {
 	currentPruningPointHash, err := c.pruningStore.PruningPoint(c.databaseContext, stagingArea)
 	if err != nil {
-		return 0, err
+		return 0, false, err
 	}
 	currentPruningPointIndex, err := c.pruningStore.CurrentPruningPointIndex(c.databaseContext, stagingArea)
 	if err != nil {
-		return 0, err
+		return 0, false, err
 	}
 	for !currentPruningPointHash.Equal(pruningPointHash) && currentPruningPointIndex > 0 {
 		currentPruningPointIndex--
 		currentPruningPointHash, err = c.pruningStore.PruningPointByIndex(c.databaseContext, stagingArea, currentPruningPointIndex)
 		if err != nil {
-			return 0, err
+			return 0, false, err
 		}
 	}
-	return currentPruningPointIndex, nil
+	if currentPruningPointIndex == 0 && !currentPruningPointHash.Equal(pruningPointHash) {
+		return 0, false, nil
+	}
+	return currentPruningPointIndex, true, nil
 }
