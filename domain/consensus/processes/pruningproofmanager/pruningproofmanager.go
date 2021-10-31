@@ -88,6 +88,10 @@ func (ppm *pruningProofManager) BuildPruningPointProof(stagingArea *model.Stagin
 		return nil, err
 	}
 
+	if pruningPoint.Equal(ppm.genesisHash) {
+		return &externalapi.PruningPointProof{}, nil
+	}
+
 	pruningPointHeader, err := ppm.blockHeaderStore.BlockHeader(ppm.databaseContext, stagingArea, pruningPoint)
 	if err != nil {
 		return nil, err
