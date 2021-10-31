@@ -21,6 +21,8 @@ type coinbaseManager struct {
 	subsidyMergeSetRewardMultiplier         *big.Rat
 	coinbasePayloadScriptPublicKeyMaxLength uint8
 	genesisHash                             *externalapi.DomainHash
+	fixedSubsidySwitchPruningPointInterval  uint64
+	fixedSubsidySwitchHashRateDifference    *big.Int
 
 	databaseContext     model.DBReader
 	dagTraversalManager model.DAGTraversalManager
@@ -28,10 +30,12 @@ type coinbaseManager struct {
 	acceptanceDataStore model.AcceptanceDataStore
 	daaBlocksStore      model.DAABlocksStore
 	blockStore          model.BlockStore
+	pruningStore        model.PruningStore
+	blockHeaderStore    model.BlockHeaderStore
 }
 
 func (c *coinbaseManager) ExpectedCoinbaseTransaction(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash,
-	coinbaseData *externalapi.DomainCoinbaseData) (*externalapi.DomainTransaction, error) {
+	coinbaseData *externalapi.DomainCoinbaseData, blockPruningPoint *externalapi.DomainHash) (*externalapi.DomainTransaction, error) {
 
 	ghostdagData, err := c.ghostdagDataStore.Get(c.databaseContext, stagingArea, blockHash, true)
 	if !database.IsNotFoundError(err) && err != nil {
@@ -79,7 +83,7 @@ func (c *coinbaseManager) ExpectedCoinbaseTransaction(stagingArea *model.Staging
 		txOuts = append(txOuts, txOut)
 	}
 
-	subsidy, err := c.CalcBlockSubsidy(stagingArea, blockHash)
+	subsidy, err := c.CalcBlockSubsidy(stagingArea, blockHash, blockPruningPoint)
 	if err != nil {
 		return nil, err
 	}
@@ -179,8 +183,18 @@ func acceptanceDataFromArrayToMap(acceptanceData externalapi.AcceptanceData) map
 // has the expected value.
 //
 // Further details: https://hashdag.medium.com/kaspa-launch-plan-9a63f4d754a6
-func (c *coinbaseManager) CalcBlockSubsidy(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) (uint64, error) {
+func (c *coinbaseManager) CalcBlockSubsidy(stagingArea *model.StagingArea,
+	blockHash *externalapi.DomainHash, blockPruningPoint *externalapi.DomainHash) (uint64, error) {
+
 	if blockHash.Equal(c.genesisHash) {
+		return c.subsidyGenesisReward, nil
+	}
+
+	isBlockRewardFixed, err := c.isBlockRewardFixed(stagingArea, blockPruningPoint)
+	if err != nil {
+		return 0, err
+	}
+	if isBlockRewardFixed {
 		return c.subsidyGenesisReward, nil
 	}
 
@@ -349,12 +363,16 @@ func New(
 	subsidyMergeSetRewardMultiplier *big.Rat,
 	coinbasePayloadScriptPublicKeyMaxLength uint8,
 	genesisHash *externalapi.DomainHash,
+	fixedSubsidySwitchPruningPointInterval uint64,
+	fixedSubsidySwitchHashRateDifference *big.Int,
 
 	dagTraversalManager model.DAGTraversalManager,
 	ghostdagDataStore model.GHOSTDAGDataStore,
 	acceptanceDataStore model.AcceptanceDataStore,
 	daaBlocksStore model.DAABlocksStore,
-	blockStore model.BlockStore) model.CoinbaseManager {
+	blockStore model.BlockStore,
+	pruningStore model.PruningStore,
+	blockHeaderStore model.BlockHeaderStore) model.CoinbaseManager {
 
 	return &coinbaseManager{
 		databaseContext: databaseContext,
@@ -366,11 +384,15 @@ func New(
 		subsidyMergeSetRewardMultiplier:         subsidyMergeSetRewardMultiplier,
 		coinbasePayloadScriptPublicKeyMaxLength: coinbasePayloadScriptPublicKeyMaxLength,
 		genesisHash:                             genesisHash,
+		fixedSubsidySwitchPruningPointInterval:  fixedSubsidySwitchPruningPointInterval,
+		fixedSubsidySwitchHashRateDifference:    fixedSubsidySwitchHashRateDifference,
 
 		dagTraversalManager: dagTraversalManager,
 		ghostdagDataStore:   ghostdagDataStore,
 		acceptanceDataStore: acceptanceDataStore,
 		daaBlocksStore:      daaBlocksStore,
 		blockStore:          blockStore,
+		pruningStore:        pruningStore,
+		blockHeaderStore:    blockHeaderStore,
 	}
 }

@@ -205,11 +205,15 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 		config.SubsidyMergeSetRewardMultiplier,
 		config.CoinbasePayloadScriptPublicKeyMaxLength,
 		config.GenesisHash,
+		config.FixedSubsidySwitchPruningPointInterval,
+		config.FixedSubsidySwitchHashRateDifference,
 		dagTraversalManager,
 		ghostdagDataStore,
 		acceptanceDataStore,
 		daaBlocksStore,
-		blockStore)
+		blockStore,
+		pruningStore,
+		blockHeaderStore)
 	headerTipsManager := headersselectedtipmanager.New(dbManager, dagTopologyManager, dagTraversalManager,
 		ghostdagManager, headersSelectedTipStore, headersSelectedChainStore)
 	genesisHash := config.GenesisHash

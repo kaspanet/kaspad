@@ -46,11 +46,13 @@ const (
 	// Should be at least an order of magnitude smaller than defaultFinalityDuration/defaultTargetTimePerBlock.
 	// (Higher values make pruning attacks easier by a constant, lower values make merging after a split or a spike
 	// in block take longer)
-	defaultMergeSetSizeLimit                       = defaultGHOSTDAGK * 10
-	defaultSubsidyGenesisReward                    = 1 * constants.SompiPerKaspa
-	defaultMinSubsidy                              = 1 * constants.SompiPerKaspa
-	defaultMaxSubsidy                              = 1000 * constants.SompiPerKaspa
-	defaultCoinbasePayloadScriptPublicKeyMaxLength = 150
+	defaultMergeSetSizeLimit                              = defaultGHOSTDAGK * 10
+	defaultSubsidyGenesisReward                           = 1 * constants.SompiPerKaspa
+	defaultMinSubsidy                                     = 1 * constants.SompiPerKaspa
+	defaultMaxSubsidy                                     = 1000 * constants.SompiPerKaspa
+	defaultBaseSubsidy                                    = 50 * constants.SompiPerKaspa
+	defaultFixedSubsidySwitchPruningPointInterval  uint64 = 7
+	defaultCoinbasePayloadScriptPublicKeyMaxLength        = 150
 	// defaultDifficultyAdjustmentWindowSize is the number of blocks in a block's past used to calculate its difficulty
 	// target.
 	// The DAA should take the median of 2640 blocks, so in order to do that we need 2641 window size.

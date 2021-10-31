@@ -178,7 +178,7 @@ func (v *blockValidator) checkCoinbaseSubsidy(
 		return err
 	}
 
-	expectedSubsidy, err := v.coinbaseManager.CalcBlockSubsidy(stagingArea, blockHash)
+	expectedSubsidy, err := v.coinbaseManager.CalcBlockSubsidy(stagingArea, blockHash, block.Header.PruningPoint())
 	if err != nil {
 		return err
 	}
