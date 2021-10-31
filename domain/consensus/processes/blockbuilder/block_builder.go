@@ -103,17 +103,17 @@ func (bb *blockBuilder) buildBlock(stagingArea *model.StagingArea, coinbaseData 
 		return nil, err
 	}
 
-	pruningPoint, err := bb.newBlockPruningPoint(stagingArea, model.VirtualBlockHash)
+	newBlockPruningPoint, err := bb.newBlockPruningPoint(stagingArea, model.VirtualBlockHash)
 	if err != nil {
 		return nil, err
 	}
-	coinbase, err := bb.newBlockCoinbaseTransaction(stagingArea, coinbaseData, pruningPoint)
+	coinbase, err := bb.newBlockCoinbaseTransaction(stagingArea, coinbaseData, newBlockPruningPoint)
 	if err != nil {
 		return nil, err
 	}
 	transactionsWithCoinbase := append([]*externalapi.DomainTransaction{coinbase}, transactions...)
 
-	header, err := bb.buildHeader(stagingArea, transactionsWithCoinbase)
+	header, err := bb.buildHeader(stagingArea, transactionsWithCoinbase, newBlockPruningPoint)
 	if err != nil {
 		return nil, err
 	}
@@ -180,8 +180,8 @@ func (bb *blockBuilder) newBlockCoinbaseTransaction(stagingArea *model.StagingAr
 	return bb.coinbaseManager.ExpectedCoinbaseTransaction(stagingArea, model.VirtualBlockHash, coinbaseData, blockPruningPoint)
 }
 
-func (bb *blockBuilder) buildHeader(stagingArea *model.StagingArea, transactions []*externalapi.DomainTransaction) (
-	externalapi.BlockHeader, error) {
+func (bb *blockBuilder) buildHeader(stagingArea *model.StagingArea, transactions []*externalapi.DomainTransaction,
+	newBlockPruningPoint *externalapi.DomainHash) (externalapi.BlockHeader, error) {
 
 	parents, err := bb.newBlockParents(stagingArea)
 	if err != nil {
@@ -216,10 +216,6 @@ func (bb *blockBuilder) buildHeader(stagingArea *model.StagingArea, transactions
 	if err != nil {
 		return nil, err
 	}
-	pruningPoint, err := bb.newBlockPruningPoint(stagingArea, model.VirtualBlockHash)
-	if err != nil {
-		return nil, err
-	}
 
 	return blockheader.NewImmutableBlockHeader(
 		constants.MaxBlockVersion,
@@ -233,7 +229,7 @@ func (bb *blockBuilder) buildHeader(stagingArea *model.StagingArea, transactions
 		daaScore,
 		blueScore,
 		blueWork,
-		pruningPoint,
+		newBlockPruningPoint,
 	), nil
 }
 
