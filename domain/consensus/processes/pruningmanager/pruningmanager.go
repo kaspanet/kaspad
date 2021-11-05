@@ -11,6 +11,7 @@ import (
 	"github.com/kaspanet/kaspad/infrastructure/logger"
 	"github.com/kaspanet/kaspad/util/staging"
 	"github.com/pkg/errors"
+	"sort"
 )
 
 // pruningManager resolves and manages the current pruning point
@@ -928,7 +929,6 @@ func (pm *pruningManager) PruningPointAndItsAnticoneWithTrustedData() ([]*extern
 		return nil, err
 	}
 
-	blocks = append(blocks, pruningPointWithTrustedData)
 	for _, blockHash := range pruningPointAnticone {
 		blockWithTrustedData, err := pm.blockWithTrustedData(stagingArea, blockHash)
 		if err != nil {
@@ -937,6 +937,14 @@ func (pm *pruningManager) PruningPointAndItsAnticoneWithTrustedData() ([]*extern
 
 		blocks = append(blocks, blockWithTrustedData)
 	}
+
+	// Sorting the blocks in topological order
+	sort.Slice(blocks, func(i, j int) bool {
+		return blocks[i].Block.Header.BlueWork().Cmp(blocks[j].Block.Header.BlueWork()) < 0
+	})
+
+	// The pruning point should always come first
+	blocks = append([]*externalapi.BlockWithTrustedData{pruningPointWithTrustedData}, blocks...)
 
 	return blocks, nil
 }
