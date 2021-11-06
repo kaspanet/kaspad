@@ -13,6 +13,7 @@ const (
 	transcationSigningECDSADomain = "TransactionSigningHashECDSA"
 	blockDomain                   = "BlockHash"
 	proofOfWorkDomain             = "ProofOfWorkHash"
+	heavyHashDomain               = "HeavyHash"
 	merkleBranchDomain            = "MerkleBranchHash"
 )
 
@@ -69,6 +70,15 @@ func NewPoWHashWriter() HashWriter {
 	blake, err := blake2b.New256([]byte(proofOfWorkDomain))
 	if err != nil {
 		panic(errors.Wrapf(err, "this should never happen. %s is less than 64 bytes", proofOfWorkDomain))
+	}
+	return HashWriter{blake}
+}
+
+// NewHeavyHashWriter Returns a new HashWriter used for the HeavyHash function
+func NewHeavyHashWriter() HashWriter {
+	blake, err := blake2b.New256([]byte(heavyHashDomain))
+	if err != nil {
+		panic(errors.Wrapf(err, "this should never happen. %s is less than 64 bytes", heavyHashDomain))
 	}
 	return HashWriter{blake}
 }
