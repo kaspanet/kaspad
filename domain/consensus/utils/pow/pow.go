@@ -52,7 +52,10 @@ func CalculateProofOfWorkValue(header externalapi.MutableBlockHeader) *big.Int {
 	if err != nil {
 		panic(errors.Wrap(err, "this should never happen. Hash digest should never return an error"))
 	}
-	return toBig(writer.Finalize())
+	powHash := writer.Finalize()
+	matrix := generateMatrix(powHash)
+	heavyHash := matrix.HeavyHash(powHash)
+	return toBig(heavyHash)
 }
 
 // ToBig converts a externalapi.DomainHash into a big.Int treated as a little endian string.
