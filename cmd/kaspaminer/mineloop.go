@@ -13,7 +13,6 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/utils/pow"
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
 	"github.com/kaspanet/kaspad/util"
-	"github.com/kaspanet/kaspad/util/difficulty"
 	"github.com/pkg/errors"
 )
 
@@ -143,20 +142,20 @@ func mineNextBlock(mineWhenNotSynced bool) *externalapi.DomainBlock {
 		// In the rare case where the nonce space is exhausted for a specific
 		// block, it'll keep looping the nonce until a new block template
 		// is discovered.
-		block := getBlockForMining(mineWhenNotSynced)
-		targetDifficulty := difficulty.CompactToBig(block.Header.Bits())
-		headerForMining := block.Header.ToMutable()
-		headerForMining.SetNonce(nonce)
+		block, state := getBlockForMining(mineWhenNotSynced)
+		state.Nonce = nonce
 		atomic.AddUint64(&hashesTried, 1)
-		if pow.CheckProofOfWorkWithTarget(headerForMining, targetDifficulty) {
-			block.Header = headerForMining.ToImmutable()
+		if state.CheckProofOfWork() {
+			mutHeader := block.Header.ToMutable()
+			mutHeader.SetNonce(nonce)
+			block.Header = mutHeader.ToImmutable()
 			log.Infof("Found block %s with parents %s", consensushashing.BlockHash(block), block.Header.DirectParents())
 			return block
 		}
 	}
 }
 
-func getBlockForMining(mineWhenNotSynced bool) *externalapi.DomainBlock {
+func getBlockForMining(mineWhenNotSynced bool) (*externalapi.DomainBlock, *pow.MinerState) {
 	tryCount := 0
 
 	const sleepTime = 500 * time.Millisecond
@@ -166,7 +165,7 @@ func getBlockForMining(mineWhenNotSynced bool) *externalapi.DomainBlock {
 		tryCount++
 
 		shouldLog := (tryCount-1)%10 == 0
-		template, isSynced := templatemanager.Get()
+		template, state, isSynced := templatemanager.Get()
 		if template == nil {
 			if shouldLog {
 				log.Info("Waiting for the initial template")
@@ -182,7 +181,7 @@ func getBlockForMining(mineWhenNotSynced bool) *externalapi.DomainBlock {
 			continue
 		}
 
-		return template
+		return template, state
 	}
 }
 

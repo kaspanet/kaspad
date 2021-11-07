@@ -7,9 +7,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/dagconfig"
 	"github.com/kaspanet/kaspad/infrastructure/network/rpcclient"
 	"github.com/kaspanet/kaspad/stability-tests/common"
-	"github.com/kaspanet/kaspad/util/difficulty"
 	"math"
-	"math/big"
 	"math/rand"
 	"os"
 	"testing"
@@ -162,17 +160,15 @@ func measureMachineHashNanoseconds(t *testing.T) int64 {
 	defer t.Logf("Finished measuring machine hash rate")
 
 	genesisBlock := dagconfig.DevnetParams.GenesisBlock
-	targetDifficulty := difficulty.CompactToBig(genesisBlock.Header.Bits())
-	headerForMining := genesisBlock.Header.ToMutable()
+	state := pow.NewMinerState(genesisBlock.Header.ToMutable())
 
 	machineHashesPerSecondMeasurementDuration := 10 * time.Second
 	hashes := int64(0)
-	nonce := rand.Uint64()
+	state.Nonce = rand.Uint64()
 	loopForDuration(machineHashesPerSecondMeasurementDuration, func(isFinished *bool) {
-		headerForMining.SetNonce(nonce)
-		pow.CheckProofOfWorkWithTarget(headerForMining, targetDifficulty)
+		state.CheckProofOfWork()
 		hashes++
-		nonce++
+		state.IncrementNonce()
 	})
 
 	return machineHashesPerSecondMeasurementDuration.Nanoseconds() / hashes
@@ -202,17 +198,18 @@ func runDAATest(t *testing.T, testName string, runDuration time.Duration,
 	startTime := time.Now()
 	loopForDuration(runDuration, func(isFinished *bool) {
 		templateBlock := fetchBlockForMining(t, rpcClient)
-		targetDifficulty := difficulty.CompactToBig(templateBlock.Header.Bits())
 		headerForMining := templateBlock.Header.ToMutable()
+		minerState := pow.NewMinerState(headerForMining)
 
 		// Try hashes until we find a valid block
 		miningStartTime := time.Now()
-		nonce := rand.Uint64()
+		minerState.Nonce = rand.Uint64()
 		for {
 			hashStartTime := time.Now()
 
-			blockFound := tryNonceForMiningAndIncrementNonce(headerForMining, &nonce, targetDifficulty, templateBlock)
-			if blockFound {
+			if minerState.CheckProofOfWork() {
+				headerForMining.SetNonce(minerState.Nonce)
+				templateBlock.Header = headerForMining.ToImmutable()
 				break
 			}
 
@@ -227,6 +224,7 @@ func runDAATest(t *testing.T, testName string, runDuration time.Duration,
 			if *isFinished {
 				return
 			}
+			minerState.IncrementNonce()
 		}
 
 		// Collect stats about block rate
@@ -263,19 +261,6 @@ func fetchBlockForMining(t *testing.T, rpcClient *rpcclient.RPCClient) *external
 		t.Fatalf("RPCBlockToDomainBlock: %s", err)
 	}
 	return templateBlock
-}
-
-func tryNonceForMiningAndIncrementNonce(headerForMining externalapi.MutableBlockHeader, nonce *uint64,
-	targetDifficulty *big.Int, templateBlock *externalapi.DomainBlock) bool {
-
-	headerForMining.SetNonce(*nonce)
-	if pow.CheckProofOfWorkWithTarget(headerForMining, targetDifficulty) {
-		templateBlock.Header = headerForMining.ToImmutable()
-		return true
-	}
-
-	*nonce++
-	return false
 }
 
 func waitUntilTargetHashDurationHadElapsed(startTime time.Time, hashStartTime time.Time,

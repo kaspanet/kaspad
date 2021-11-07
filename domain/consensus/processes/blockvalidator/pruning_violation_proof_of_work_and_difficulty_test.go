@@ -111,13 +111,13 @@ func TestPOW(t *testing.T) {
 
 // solveBlockWithWrongPOW increments the given block's nonce until it gets wrong POW (for test!).
 func solveBlockWithWrongPOW(block *externalapi.DomainBlock) *externalapi.DomainBlock {
-	targetDifficulty := difficulty.CompactToBig(block.Header.Bits())
-	headerForMining := block.Header.ToMutable()
-	initialNonce := uint64(0)
-	for i := initialNonce; i < math.MaxUint64; i++ {
-		headerForMining.SetNonce(i)
-		if !pow.CheckProofOfWorkWithTarget(headerForMining, targetDifficulty) {
-			block.Header = headerForMining.ToImmutable()
+	header := block.Header.ToMutable()
+	state := pow.NewMinerState(header)
+	for i := uint64(0); i < math.MaxUint64; i++ {
+		state.Nonce = i
+		if !state.CheckProofOfWork() {
+			header.SetNonce(state.Nonce)
+			block.Header = header.ToImmutable()
 			return block
 		}
 	}
