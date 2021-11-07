@@ -67,23 +67,15 @@ func NewBlockHashWriter() HashWriter {
 }
 
 // NewPoWHashWriter Returns a new HashWriter used for the PoW function
-func NewPoWHashWriter() HashWriter {
-	keccak256 := sha3.NewLegacyKeccak256()
-	_, err := keccak256.Write([]byte(proofOfWorkDomain))
-	if err != nil {
-		panic(errors.Wrap(err, "this should never happen"))
-	}
-	return HashWriter{keccak256}
+func NewPoWHashWriter() ShakeHashWriter {
+	shake256 := sha3.NewCShake256(nil, []byte(proofOfWorkDomain))
+	return ShakeHashWriter{shake256}
 }
 
 // NewHeavyHashWriter Returns a new HashWriter used for the HeavyHash function
-func NewHeavyHashWriter() HashWriter {
-	keccak256 := sha3.NewLegacyKeccak256()
-	_, err := keccak256.Write([]byte(heavyHashDomain))
-	if err != nil {
-		panic(errors.Wrap(err, "this should never happen"))
-	}
-	return HashWriter{keccak256}
+func NewHeavyHashWriter() ShakeHashWriter {
+	shake256 := sha3.NewCShake256(nil, []byte(heavyHashDomain))
+	return ShakeHashWriter{shake256}
 }
 
 // NewMerkleBranchHashWriter Returns a new HashWriter used for a merkle tree branch
