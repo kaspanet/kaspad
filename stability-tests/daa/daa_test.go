@@ -48,7 +48,7 @@ func TestDAA(t *testing.T) {
 		},
 		{
 			name:        "sudden hash rate drop",
-			runDuration: 15 * time.Minute,
+			runDuration: 45 * time.Minute,
 			targetHashNanosecondsFunction: func(totalElapsedDuration time.Duration) int64 {
 				if totalElapsedDuration < 5*time.Minute {
 					return machineHashNanoseconds * 2
@@ -130,7 +130,7 @@ func TestDAA(t *testing.T) {
 		},
 		{
 			name:        "constant exponential hash rate decrease",
-			runDuration: 15 * time.Minute,
+			runDuration: 45 * time.Minute,
 			targetHashNanosecondsFunction: func(totalElapsedDuration time.Duration) int64 {
 				fromHashNanoseconds := machineHashNanoseconds * 2
 				toHashNanoseconds := machineHashNanoseconds * 10
