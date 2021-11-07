@@ -185,7 +185,7 @@ type Params struct {
 
 	FixedSubsidySwitchPruningPointInterval uint64
 
-	FixedSubsidySwitchHashRateDifference *big.Int
+	FixedSubsidySwitchHashRateThreshold *big.Int
 }
 
 // NormalizeRPCServerAddress returns addr with the current network default
@@ -211,6 +211,7 @@ var MainnetParams = Params{
 	Net:         appmessage.Mainnet,
 	RPCPort:     "16110",
 	DefaultPort: "16111",
+	DNSSeeds:    []string{"mainnet-dnsseed.daglabs-dev.com"},
 
 	// DAG parameters
 	GenesisBlock:                    &genesisBlock,
@@ -262,7 +263,7 @@ var MainnetParams = Params{
 	CoinbasePayloadScriptPublicKeyMaxLength: defaultCoinbasePayloadScriptPublicKeyMaxLength,
 	PruningProofM:                           defaultPruningProofM,
 	FixedSubsidySwitchPruningPointInterval:  defaultFixedSubsidySwitchPruningPointInterval,
-	FixedSubsidySwitchHashRateDifference:    big.NewInt(1_000_000),
+	FixedSubsidySwitchHashRateThreshold:     big.NewInt(150_000_000_000),
 }
 
 // TestnetParams defines the network parameters for the test Kaspa network.
@@ -324,7 +325,7 @@ var TestnetParams = Params{
 	CoinbasePayloadScriptPublicKeyMaxLength: defaultCoinbasePayloadScriptPublicKeyMaxLength,
 	PruningProofM:                           defaultPruningProofM,
 	FixedSubsidySwitchPruningPointInterval:  defaultFixedSubsidySwitchPruningPointInterval,
-	FixedSubsidySwitchHashRateDifference:    big.NewInt(1_000_000),
+	FixedSubsidySwitchHashRateThreshold:     big.NewInt(150_000_000_000),
 }
 
 // SimnetParams defines the network parameters for the simulation test Kaspa
@@ -390,7 +391,7 @@ var SimnetParams = Params{
 	CoinbasePayloadScriptPublicKeyMaxLength: defaultCoinbasePayloadScriptPublicKeyMaxLength,
 	PruningProofM:                           defaultPruningProofM,
 	FixedSubsidySwitchPruningPointInterval:  defaultFixedSubsidySwitchPruningPointInterval,
-	FixedSubsidySwitchHashRateDifference:    big.NewInt(1_000_000),
+	FixedSubsidySwitchHashRateThreshold:     big.NewInt(150_000_000_000),
 }
 
 // DevnetParams defines the network parameters for the development Kaspa network.
@@ -452,7 +453,7 @@ var DevnetParams = Params{
 	CoinbasePayloadScriptPublicKeyMaxLength: defaultCoinbasePayloadScriptPublicKeyMaxLength,
 	PruningProofM:                           defaultPruningProofM,
 	FixedSubsidySwitchPruningPointInterval:  defaultFixedSubsidySwitchPruningPointInterval,
-	FixedSubsidySwitchHashRateDifference:    big.NewInt(1_000_000),
+	FixedSubsidySwitchHashRateThreshold:     big.NewInt(150_000_000_000),
 }
 
 var (

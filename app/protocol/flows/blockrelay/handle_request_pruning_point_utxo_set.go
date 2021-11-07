@@ -102,7 +102,7 @@ func (flow *handleRequestPruningPointUTXOSetFlow) sendPruningPointUTXOSet(
 			return err
 		}
 
-		if len(pruningPointUTXOs) < step {
+		if len(pruningPointUTXOs) < step && chunksSent%ibdBatchSize == 0 {
 			log.Debugf("Finished sending UTXOs for pruning block %s",
 				msgRequestPruningPointUTXOSet.PruningPointHash)
 
