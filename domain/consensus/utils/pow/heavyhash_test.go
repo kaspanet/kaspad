@@ -19,7 +19,7 @@ func BenchmarkMatrix_HeavyHash(b *testing.B) {
 }
 
 func TestMatrix_HeavyHash(t *testing.T) {
-	expected, err := hex.DecodeString("288fd7da3f7970c9bb2f8f0c802603a4750aab70afb39ba4174c1c3d57b7f6fe")
+	expected, err := hex.DecodeString("87689f379943eaf9b7475ca95325687772bfcc68fc7899caeb4409ec4590c325")
 	if err != nil {
 		t.Fatal(err)
 	}
