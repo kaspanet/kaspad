@@ -19,6 +19,12 @@ import (
 
 func TestDifficulty(t *testing.T) {
 	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
+		// Mainnet's genesis is too new, so if we'll build on it we'll get to the future very quickly.
+		// TODO: Once it gets older, we should unskip this test.
+		if consensusConfig.Name == "kaspa-mainnet" {
+			return
+		}
+
 		if consensusConfig.DisableDifficultyAdjustment {
 			return
 		}
