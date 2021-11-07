@@ -211,6 +211,7 @@ var MainnetParams = Params{
 	Net:         appmessage.Mainnet,
 	RPCPort:     "16110",
 	DefaultPort: "16111",
+	DNSSeeds:    []string{"mainnet-dnsseed.daglabs-dev.com"},
 
 	// DAG parameters
 	GenesisBlock:                    &genesisBlock,
