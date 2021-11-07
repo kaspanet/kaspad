@@ -36,6 +36,7 @@ func CalculateProofOfWorkValue(header externalapi.MutableBlockHeader) *big.Int {
 	header.SetNonce(0)
 
 	prePowHash := consensushashing.HeaderHash(header)
+	matrix := generateMatrix(prePowHash)
 	header.SetTimeInMilliseconds(timestamp)
 	header.SetNonce(nonce)
 
@@ -52,7 +53,9 @@ func CalculateProofOfWorkValue(header externalapi.MutableBlockHeader) *big.Int {
 	if err != nil {
 		panic(errors.Wrap(err, "this should never happen. Hash digest should never return an error"))
 	}
-	return toBig(writer.Finalize())
+	powHash := writer.Finalize()
+	heavyHash := matrix.HeavyHash(powHash)
+	return toBig(heavyHash)
 }
 
 // ToBig converts a externalapi.DomainHash into a big.Int treated as a little endian string.
