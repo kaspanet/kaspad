@@ -4,6 +4,7 @@ import (
 	"crypto/sha256"
 	"github.com/pkg/errors"
 	"golang.org/x/crypto/blake2b"
+	"golang.org/x/crypto/sha3"
 )
 
 const (
@@ -67,20 +68,22 @@ func NewBlockHashWriter() HashWriter {
 
 // NewPoWHashWriter Returns a new HashWriter used for the PoW function
 func NewPoWHashWriter() HashWriter {
-	blake, err := blake2b.New256([]byte(proofOfWorkDomain))
+	keccak256 := sha3.NewLegacyKeccak256()
+	_, err := keccak256.Write([]byte(proofOfWorkDomain))
 	if err != nil {
-		panic(errors.Wrapf(err, "this should never happen. %s is less than 64 bytes", proofOfWorkDomain))
+		panic(errors.Wrap(err, "this should never happen"))
 	}
-	return HashWriter{blake}
+	return HashWriter{keccak256}
 }
 
 // NewHeavyHashWriter Returns a new HashWriter used for the HeavyHash function
 func NewHeavyHashWriter() HashWriter {
-	blake, err := blake2b.New256([]byte(heavyHashDomain))
+	keccak256 := sha3.NewLegacyKeccak256()
+	_, err := keccak256.Write([]byte(heavyHashDomain))
 	if err != nil {
-		panic(errors.Wrapf(err, "this should never happen. %s is less than 64 bytes", heavyHashDomain))
+		panic(errors.Wrap(err, "this should never happen"))
 	}
-	return HashWriter{blake}
+	return HashWriter{keccak256}
 }
 
 // NewMerkleBranchHashWriter Returns a new HashWriter used for a merkle tree branch
