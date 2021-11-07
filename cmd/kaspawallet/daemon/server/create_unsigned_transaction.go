@@ -28,7 +28,7 @@ func (s *server) CreateUnsignedTransaction(_ context.Context, request *pb.Create
 	}
 
 	// TODO: Implement a better fee estimation mechanism
-	const feePerInput = 1000
+	const feePerInput = 10000
 	selectedUTXOs, changeSompi, err := s.selectUTXOs(request.Amount, feePerInput)
 	if err != nil {
 		return nil, err
