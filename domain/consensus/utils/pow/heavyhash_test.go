@@ -7,7 +7,6 @@ import (
 	"testing"
 )
 
-
 func BenchmarkMatrix_HeavyHash(b *testing.B) {
 	input := []byte("BenchmarkMatrix_HeavyHash")
 	writer := hashes.NewPoWHashWriter()
@@ -20,8 +19,7 @@ func BenchmarkMatrix_HeavyHash(b *testing.B) {
 }
 
 func TestMatrix_HeavyHash(t *testing.T) {
-	//expected, err := hex.DecodeString("39387f2e64e7c08d3ce0da8c491b4fcf2c862798dedb4690d819de7926aa4ecb") -> Keccak
-	expected, err := hex.DecodeString("137c69e3c4707cef02eeb8633d8a91fb5f62801342c9bc7e9514695c98e08b08")
+	expected, err := hex.DecodeString("288fd7da3f7970c9bb2f8f0c802603a4750aab70afb39ba4174c1c3d57b7f6fe")
 	if err != nil {
 		t.Fatal(err)
 	}
