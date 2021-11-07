@@ -22,7 +22,7 @@ type coinbaseManager struct {
 	coinbasePayloadScriptPublicKeyMaxLength uint8
 	genesisHash                             *externalapi.DomainHash
 	fixedSubsidySwitchPruningPointInterval  uint64
-	fixedSubsidySwitchHashRateDifference    *big.Int
+	fixedSubsidySwitchHashRateThreshold     *big.Int
 
 	databaseContext     model.DBReader
 	dagTraversalManager model.DAGTraversalManager
@@ -364,7 +364,7 @@ func New(
 	coinbasePayloadScriptPublicKeyMaxLength uint8,
 	genesisHash *externalapi.DomainHash,
 	fixedSubsidySwitchPruningPointInterval uint64,
-	fixedSubsidySwitchHashRateDifference *big.Int,
+	fixedSubsidySwitchHashRateThreshold *big.Int,
 
 	dagTraversalManager model.DAGTraversalManager,
 	ghostdagDataStore model.GHOSTDAGDataStore,
@@ -385,7 +385,7 @@ func New(
 		coinbasePayloadScriptPublicKeyMaxLength: coinbasePayloadScriptPublicKeyMaxLength,
 		genesisHash:                             genesisHash,
 		fixedSubsidySwitchPruningPointInterval:  fixedSubsidySwitchPruningPointInterval,
-		fixedSubsidySwitchHashRateDifference:    fixedSubsidySwitchHashRateDifference,
+		fixedSubsidySwitchHashRateThreshold:     fixedSubsidySwitchHashRateThreshold,
 
 		dagTraversalManager: dagTraversalManager,
 		ghostdagDataStore:   ghostdagDataStore,
