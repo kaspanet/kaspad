@@ -49,7 +49,7 @@ func (c *coinbaseManager) isBlockRewardFixed(stagingArea *model.StagingArea, blo
 		blueWorkDifference := new(big.Int).Sub(highPruningPointHeader.BlueWork(), lowPruningPointHeader.BlueWork())
 		blueScoreDifference := new(big.Int).SetUint64(highPruningPointHeader.BlueScore() - lowPruningPointHeader.BlueScore())
 		estimatedAverageHashRate := new(big.Int).Div(blueWorkDifference, blueScoreDifference)
-		if estimatedAverageHashRate.Cmp(c.fixedSubsidySwitchHashRateDifference) >= 0 {
+		if estimatedAverageHashRate.Cmp(c.fixedSubsidySwitchHashRateThreshold) >= 0 {
 			return true, nil
 		}
 
