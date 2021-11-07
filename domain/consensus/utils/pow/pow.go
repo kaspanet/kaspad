@@ -72,6 +72,12 @@ func toBig(hash *externalapi.DomainHash) *big.Int {
 
 // BlockLevel returns the block level of the given header.
 func BlockLevel(header externalapi.BlockHeader) int {
+	// Genesis is defined to be the root of all blocks at all levels, so we define it to be the maximal
+	// block level.
+	if len(header.DirectParents()) == 0 {
+		return constants.MaxBlockLevel
+	}
+
 	proofOfWorkValue := CalculateProofOfWorkValue(header.ToMutable())
 	for blockLevel := 0; ; blockLevel++ {
 		if blockLevel == constants.MaxBlockLevel || proofOfWorkValue.Bit(blockLevel+1) != 0 {
