@@ -32,7 +32,7 @@ func TestBlockRewardSwitch(t *testing.T) {
 		// Set the hash rate difference such that the switch would trigger exactly
 		// on the `FixedSubsidySwitchPruningPointInterval + 1`th pruning point
 		workToAcceptGenesis := difficulty.CalcWork(consensusConfig.GenesisBlock.Header.Bits())
-		consensusConfig.FixedSubsidySwitchHashRateDifference = workToAcceptGenesis
+		consensusConfig.FixedSubsidySwitchHashRateThreshold = workToAcceptGenesis
 
 		// Set the min, max, and post-switch subsidies to values that would make it
 		// easy to tell whether the switch happened
