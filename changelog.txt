@@ -1,3 +1,8 @@
+Kaspad v0.11.1 - 2021-11-09
+===========================
+Non-breaking changes:
+* Cache the miner state
+
 Kaspad v0.10.2 - 2021-05-18
 ===========================
 Non-breaking changes:

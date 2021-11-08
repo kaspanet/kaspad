@@ -19,7 +19,7 @@ func Connect(address string) (pb.KaspawalletdClient, func(), error) {
 	conn, err := grpc.DialContext(ctx, address, grpc.WithInsecure(), grpc.WithBlock())
 	if err != nil {
 		if errors.Is(err, context.DeadlineExceeded) {
-			return nil, nil, errors.New("kaspactl daemon is not running, start it with `kaspactl start-daemon`")
+			return nil, nil, errors.New("kaspawallet daemon is not running, start it with `kaspawallet start-daemon`")
 		}
 		return nil, nil, err
 	}
