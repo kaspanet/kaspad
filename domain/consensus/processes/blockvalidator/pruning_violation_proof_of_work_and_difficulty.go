@@ -8,7 +8,6 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/utils/virtual"
 	"github.com/kaspanet/kaspad/infrastructure/db/database"
 	"github.com/kaspanet/kaspad/infrastructure/logger"
-	"github.com/kaspanet/kaspad/util/difficulty"
 	"github.com/pkg/errors"
 )
 
@@ -149,7 +148,8 @@ func (v *blockValidator) validateDifficulty(stagingArea *model.StagingArea,
 //    difficulty is not performed.
 func (v *blockValidator) checkProofOfWork(header externalapi.BlockHeader) error {
 	// The target difficulty must be larger than zero.
-	target := difficulty.CompactToBig(header.Bits())
+	state := pow.NewState(header.ToMutable())
+	target := &state.Target
 	if target.Sign() <= 0 {
 		return errors.Wrapf(ruleerrors.ErrNegativeTarget, "block target difficulty of %064x is too low",
 			target)
@@ -163,7 +163,7 @@ func (v *blockValidator) checkProofOfWork(header externalapi.BlockHeader) error 
 
 	// The block pow must be valid unless the flag to avoid proof of work checks is set.
 	if !v.skipPoW {
-		valid := pow.CheckProofOfWorkWithTarget(header.ToMutable(), target)
+		valid := state.CheckProofOfWork()
 		if !valid {
 			return errors.Wrap(ruleerrors.ErrInvalidPoW, "block has invalid proof of work")
 		}

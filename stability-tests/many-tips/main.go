@@ -4,11 +4,9 @@ import (
 	"fmt"
 	"github.com/kaspanet/go-secp256k1"
 	"github.com/kaspanet/kaspad/app/appmessage"
-	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/pow"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/mining"
 	"github.com/kaspanet/kaspad/util"
-	"github.com/kaspanet/kaspad/util/difficulty"
-	"math"
+	"math/rand"
 	"os"
 	"os/exec"
 	"strings"
@@ -78,8 +76,8 @@ func realMain() error {
 	genesisTimestamp := activeConfig().NetParams().GenesisBlock.Header.TimeInMilliseconds()
 	mutableHeader.SetTimeInMilliseconds(genesisTimestamp + 1000)
 	block.Header = mutableHeader.ToImmutable()
-	solvedBlock := solveBlock(block)
-	_, err = rpcClient.SubmitBlock(solvedBlock)
+	mining.SolveBlock(block, rand.New(rand.NewSource(time.Now().UnixNano())))
+	_, err = rpcClient.SubmitBlock(block)
 	if err != nil {
 		return err
 	}
@@ -183,8 +181,8 @@ func mineBlock(rpcClient *rpc.Client, miningAddress util.Address) error {
 	if err != nil {
 		return err
 	}
-	solvedBlock := solveBlock(block)
-	_, err = rpcClient.SubmitBlock(solvedBlock)
+	mining.SolveBlock(block, rand.New(rand.NewSource(time.Now().UnixNano())))
+	_, err = rpcClient.SubmitBlock(block)
 	if err != nil {
 		return err
 	}
@@ -200,9 +198,10 @@ func mineTips(numOfTips int, miningAddress util.Address, rpcClient *rpc.Client) 
 	if err != nil {
 		return err
 	}
+	rd := rand.New(rand.NewSource(time.Now().UnixNano()))
 	for i := 0; i < numOfTips; i++ {
-		solvedBlock := solveBlock(block)
-		_, err = rpcClient.SubmitBlock(solvedBlock)
+		mining.SolveBlock(block, rd)
+		_, err = rpcClient.SubmitBlock(block)
 		if err != nil {
 			return err
 		}
@@ -294,23 +293,6 @@ func getCurrentTipsLength(rpcClient *rpc.Client) (int, error) {
 	}
 	log.Infof("Current number of tips is %d", len(dagInfo.TipHashes))
 	return len(dagInfo.TipHashes), nil
-}
-
-var latestNonce uint64 = 0 // Use to make the nonce unique.
-// The nonce is unique for each block in this function.
-func solveBlock(block *externalapi.DomainBlock) *externalapi.DomainBlock {
-	targetDifficulty := difficulty.CompactToBig(block.Header.Bits())
-	headerForMining := block.Header.ToMutable()
-	maxUInt64 := uint64(math.MaxUint64)
-	for i := latestNonce; i < maxUInt64; i++ {
-		headerForMining.SetNonce(i)
-		if pow.CheckProofOfWorkWithTarget(headerForMining, targetDifficulty) {
-			block.Header = headerForMining.ToImmutable()
-			latestNonce = i + 1
-			return block
-		}
-	}
-	panic("Failed to solve block!")
 }
 
 func killWithSigterm(cmd *exec.Cmd, commandName string) {

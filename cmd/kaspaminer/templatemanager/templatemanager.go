@@ -3,23 +3,26 @@ package templatemanager
 import (
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/pow"
 	"sync"
 )
 
 var currentTemplate *externalapi.DomainBlock
+var currentState *pow.State
 var isSynced bool
 var lock = &sync.Mutex{}
 
 // Get returns the template to work on
-func Get() (*externalapi.DomainBlock, bool) {
+func Get() (*externalapi.DomainBlock, *pow.State, bool) {
 	lock.Lock()
 	defer lock.Unlock()
 	// Shallow copy the block so when the user replaces the header it won't affect the template here.
 	if currentTemplate == nil {
-		return nil, false
+		return nil, nil, false
 	}
 	block := *currentTemplate
-	return &block, isSynced
+	state := *currentState
+	return &block, &state, isSynced
 }
 
 // Set sets the current template to work on
@@ -31,6 +34,7 @@ func Set(template *appmessage.GetBlockTemplateResponseMessage) error {
 	lock.Lock()
 	defer lock.Unlock()
 	currentTemplate = block
+	currentState = pow.NewState(block.Header.ToMutable())
 	isSynced = template.IsSynced
 	return nil
 }

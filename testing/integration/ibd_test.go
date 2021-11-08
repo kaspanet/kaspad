@@ -3,6 +3,8 @@ package integration
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/mining"
+	"math/rand"
 	"reflect"
 	"sync"
 	"testing"
@@ -117,7 +119,7 @@ func TestIBDWithPruning(t *testing.T) {
 		}
 
 		// This should trigger resolving the syncee virtual
-		syncerTip := mineNextBlockWithMockTimestamps(t, syncer)
+		syncerTip := mineNextBlockWithMockTimestamps(t, syncer, rand.New(rand.NewSource(time.Now().UnixNano())))
 		time.Sleep(time.Second)
 		synceeSelectedTip, err := syncee.rpcClient.GetSelectedTipHash()
 		if err != nil {
@@ -184,12 +186,13 @@ func TestIBDWithPruning(t *testing.T) {
 	// iteration to find the highest shared chain
 	// block.
 	const synceeOnlyBlocks = 2
+	rd := rand.New(rand.NewSource(time.Now().UnixNano()))
 	for i := 0; i < synceeOnlyBlocks; i++ {
-		mineNextBlockWithMockTimestamps(t, syncee1)
+		mineNextBlockWithMockTimestamps(t, syncee1, rd)
 	}
 
 	for i := 0; i < numBlocks-1; i++ {
-		mineNextBlockWithMockTimestamps(t, syncer)
+		mineNextBlockWithMockTimestamps(t, syncer, rd)
 	}
 
 	testSync(syncer, syncee1)
@@ -203,7 +206,7 @@ var currentMockTimestamp int64 = 0
 // mineNextBlockWithMockTimestamps mines blocks with large timestamp differences
 // between every two blocks. This is done to avoid the timestamp threshold validation
 // of ibd-with-headers-proof
-func mineNextBlockWithMockTimestamps(t *testing.T, harness *appHarness) *externalapi.DomainBlock {
+func mineNextBlockWithMockTimestamps(t *testing.T, harness *appHarness, rd *rand.Rand) *externalapi.DomainBlock {
 	blockTemplate, err := harness.rpcClient.GetBlockTemplate(harness.miningAddress)
 	if err != nil {
 		t.Fatalf("Error getting block template: %+v", err)
@@ -223,7 +226,7 @@ func mineNextBlockWithMockTimestamps(t *testing.T, harness *appHarness) *externa
 	mutableHeader.SetTimeInMilliseconds(currentMockTimestamp)
 	block.Header = mutableHeader.ToImmutable()
 
-	solveBlock(block)
+	mining.SolveBlock(block, rd)
 
 	_, err = harness.rpcClient.SubmitBlock(block)
 	if err != nil {

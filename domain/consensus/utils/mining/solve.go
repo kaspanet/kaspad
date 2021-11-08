@@ -6,18 +6,17 @@ import (
 
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/pow"
-	"github.com/kaspanet/kaspad/util/difficulty"
 	"github.com/pkg/errors"
 )
 
 // SolveBlock increments the given block's nonce until it matches the difficulty requirements in its bits field
 func SolveBlock(block *externalapi.DomainBlock, rd *rand.Rand) {
-	targetDifficulty := difficulty.CompactToBig(block.Header.Bits())
-	headerForMining := block.Header.ToMutable()
-	for i := rd.Uint64(); i < math.MaxUint64; i++ {
-		headerForMining.SetNonce(i)
-		if pow.CheckProofOfWorkWithTarget(headerForMining, targetDifficulty) {
-			block.Header = headerForMining.ToImmutable()
+	header := block.Header.ToMutable()
+	state := pow.NewState(header)
+	for state.Nonce = rd.Uint64(); state.Nonce < math.MaxUint64; state.Nonce++ {
+		if state.CheckProofOfWork() {
+			header.SetNonce(state.Nonce)
+			block.Header = header.ToImmutable()
 			return
 		}
 	}
