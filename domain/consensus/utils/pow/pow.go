@@ -12,6 +12,7 @@ import (
 	"math/big"
 )
 
+// State is an intermediate data structure with pre-computed values to speed up mining.
 type State struct {
 	mat        matrix
 	Timestamp  int64
@@ -20,7 +21,7 @@ type State struct {
 	prePowHash externalapi.DomainHash
 }
 
-// NewState creates a new miner state with pre-computed values to speed up mining
+// NewState creates a new state with pre-computed values to speed up mining
 // It takes the target from the Bits field
 func NewState(header externalapi.MutableBlockHeader) *State {
 	target := difficulty.CompactToBig(header.Bits())
@@ -63,7 +64,7 @@ func (state *State) CalculateProofOfWorkValue() *big.Int {
 
 // IncrementNonce the nonce in State by 1
 func (state *State) IncrementNonce() {
-	state.Nonce += 1
+	state.Nonce++
 }
 
 // CheckProofOfWork check's if the block has a valid PoW according to the provided target
