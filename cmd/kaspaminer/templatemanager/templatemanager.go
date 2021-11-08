@@ -8,12 +8,12 @@ import (
 )
 
 var currentTemplate *externalapi.DomainBlock
-var currentState *pow.MinerState
+var currentState *pow.State
 var isSynced bool
 var lock = &sync.Mutex{}
 
 // Get returns the template to work on
-func Get() (*externalapi.DomainBlock,*pow.MinerState, bool) {
+func Get() (*externalapi.DomainBlock, *pow.State, bool) {
 	lock.Lock()
 	defer lock.Unlock()
 	// Shallow copy the block so when the user replaces the header it won't affect the template here.
@@ -34,7 +34,7 @@ func Set(template *appmessage.GetBlockTemplateResponseMessage) error {
 	lock.Lock()
 	defer lock.Unlock()
 	currentTemplate = block
-	currentState = pow.NewMinerState(block.Header.ToMutable())
+	currentState = pow.NewState(block.Header.ToMutable())
 	isSynced = template.IsSynced
 	return nil
 }

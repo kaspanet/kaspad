@@ -12,7 +12,7 @@ import (
 // SolveBlock increments the given block's nonce until it matches the difficulty requirements in its bits field
 func SolveBlock(block *externalapi.DomainBlock, rd *rand.Rand) {
 	header := block.Header.ToMutable()
-	state := pow.NewMinerState(header)
+	state := pow.NewState(header)
 	for state.Nonce = rd.Uint64(); state.Nonce < math.MaxUint64; state.Nonce++ {
 		if state.CheckProofOfWork() {
 			header.SetNonce(state.Nonce)

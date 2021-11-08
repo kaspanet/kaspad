@@ -12,7 +12,7 @@ import (
 	"math/big"
 )
 
-type MinerState struct {
+type State struct {
 	mat        matrix
 	Timestamp  int64
 	Nonce      uint64
@@ -20,9 +20,9 @@ type MinerState struct {
 	prePowHash externalapi.DomainHash
 }
 
-// NewMinerState creates a new miner state with pre-computed values to speed up mining
+// NewState creates a new miner state with pre-computed values to speed up mining
 // It takes the target from the Bits field
-func NewMinerState(header externalapi.MutableBlockHeader) *MinerState {
+func NewState(header externalapi.MutableBlockHeader) *State {
 	target := difficulty.CompactToBig(header.Bits())
 	// Zero out the time and nonce.
 	timestamp, nonce := header.TimeInMilliseconds(), header.Nonce()
@@ -32,7 +32,7 @@ func NewMinerState(header externalapi.MutableBlockHeader) *MinerState {
 	header.SetTimeInMilliseconds(timestamp)
 	header.SetNonce(nonce)
 
-	return &MinerState{
+	return &State{
 		Target:     *target,
 		prePowHash: *prePowHash,
 		mat:        *generateMatrix(prePowHash),
@@ -42,7 +42,7 @@ func NewMinerState(header externalapi.MutableBlockHeader) *MinerState {
 }
 
 // CalculateProofOfWorkValue hashes the internal header and returns its big.Int value
-func (state *MinerState) CalculateProofOfWorkValue() *big.Int {
+func (state *State) CalculateProofOfWorkValue() *big.Int {
 	// PRE_POW_HASH || TIME || 32 zero byte padding || NONCE
 	writer := hashes.NewPoWHashWriter()
 	writer.InfallibleWrite(state.prePowHash.ByteSlice())
@@ -61,14 +61,14 @@ func (state *MinerState) CalculateProofOfWorkValue() *big.Int {
 	return toBig(heavyHash)
 }
 
-// IncrementNonce the nonce in MinerState by 1
-func (state *MinerState) IncrementNonce() {
+// IncrementNonce the nonce in State by 1
+func (state *State) IncrementNonce() {
 	state.Nonce += 1
 }
 
 // CheckProofOfWork check's if the block has a valid PoW according to the provided target
 // it does not check if the difficulty itself is valid or less than the maximum for the appropriate network
-func (state *MinerState) CheckProofOfWork() bool {
+func (state *State) CheckProofOfWork() bool {
 	// The block pow must be less than the claimed target
 	powNum := state.CalculateProofOfWorkValue()
 
@@ -79,7 +79,7 @@ func (state *MinerState) CheckProofOfWork() bool {
 // CheckProofOfWorkByBits check's if the block has a valid PoW according to its Bits field
 // it does not check if the difficulty itself is valid or less than the maximum for the appropriate network
 func CheckProofOfWorkByBits(header externalapi.MutableBlockHeader) bool {
-	return NewMinerState(header).CheckProofOfWork()
+	return NewState(header).CheckProofOfWork()
 }
 
 // ToBig converts a externalapi.DomainHash into a big.Int treated as a little endian string.
@@ -102,7 +102,7 @@ func BlockLevel(header externalapi.BlockHeader) int {
 		return constants.MaxBlockLevel
 	}
 
-	proofOfWorkValue := NewMinerState(header.ToMutable()).CalculateProofOfWorkValue()
+	proofOfWorkValue := NewState(header.ToMutable()).CalculateProofOfWorkValue()
 	for blockLevel := 0; ; blockLevel++ {
 		if blockLevel == constants.MaxBlockLevel || proofOfWorkValue.Bit(blockLevel+1) != 0 {
 			return blockLevel

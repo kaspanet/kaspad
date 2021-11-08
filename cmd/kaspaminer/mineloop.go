@@ -155,7 +155,7 @@ func mineNextBlock(mineWhenNotSynced bool) *externalapi.DomainBlock {
 	}
 }
 
-func getBlockForMining(mineWhenNotSynced bool) (*externalapi.DomainBlock, *pow.MinerState) {
+func getBlockForMining(mineWhenNotSynced bool) (*externalapi.DomainBlock, *pow.State) {
 	tryCount := 0
 
 	const sleepTime = 500 * time.Millisecond
