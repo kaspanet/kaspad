@@ -75,7 +75,7 @@ func TestCheckLockTimeVerifyConditionedByDAAScore(t *testing.T) {
 			t.Fatalf("Error creating blockE: %v", err)
 		}
 		// Create a transaction that tries to spend the locked output.
-		transactionThatSpentTheLockedOutput, err := createTransactionThatSpentTheLockedOutput(transactionWithLockedOutput,
+		transactionThatSpentTheLockedOutput, err := createTransactionThatSpentTheLockedOutputAbsoluteLock(transactionWithLockedOutput,
 			fees, redeemScriptCLTV, targetDAAScore)
 		if err != nil {
 			t.Fatalf("Error creating transactionThatSpentTheLockedOutput: %v", err)
@@ -183,7 +183,7 @@ func TestCheckLockTimeVerifyConditionedByDAAScoreWithWrongLockTime(t *testing.T)
 		}
 		// Create a transaction that tries to spend the locked output.
 		// Decreased the lock time to get wrong lock time.
-		transactionWithWrongLockTime, err := createTransactionThatSpentTheLockedOutput(transactionWithLockedOutput,
+		transactionWithWrongLockTime, err := createTransactionThatSpentTheLockedOutputAbsoluteLock(transactionWithLockedOutput,
 			fees, redeemScriptCLTV, targetDAAScore-1)
 		if err != nil {
 			t.Fatalf("Error creating transactionWithWrongLockTime: %v", err)
@@ -288,7 +288,7 @@ func TestCheckLockTimeVerifyConditionedByAbsoluteTime(t *testing.T) {
 			t.Fatalf("Failed getting blockE: %v", err)
 		}
 		// Create a transaction that tries to spend the locked output.
-		transactionThatSpentTheLockedOutput, err := createTransactionThatSpentTheLockedOutput(transactionWithLockedOutput,
+		transactionThatSpentTheLockedOutput, err := createTransactionThatSpentTheLockedOutputAbsoluteLock(transactionWithLockedOutput,
 			fees, redeemScriptCLTV, lockTimeTarget)
 		if err != nil {
 			t.Fatalf("Error creating transactionThatSpentTheLockedOutput: %v", err)
@@ -416,7 +416,7 @@ func TestCheckLockTimeVerifyConditionedByAbsoluteTimeWithWrongLockTime(t *testin
 			t.Fatalf("Failed getting blockE: %v", err)
 		}
 		// Create a transaction that tries to spend the locked output.
-		transactionWithWrongLockTime, err := createTransactionThatSpentTheLockedOutput(transactionWithLockedOutput,
+		transactionWithWrongLockTime, err := createTransactionThatSpentTheLockedOutputAbsoluteLock(transactionWithLockedOutput,
 			fees, redeemScriptCLTV, lockTimeTarget-1)
 		if err != nil {
 			t.Fatalf("Error creating transactionWithWrongLockTime: %v", err)
@@ -480,7 +480,7 @@ func createScriptCLTV(absoluteTimeOrDAAScoreTarget uint64) ([]byte, error) {
 }
 
 func createTransactionWithLockedOutput(txToSpend *externalapi.DomainTransaction, fee uint64,
-	scriptPublicKeyCLTV *externalapi.ScriptPublicKey) (*externalapi.DomainTransaction, error) {
+	scriptPublicKeyCLTVOrCSV *externalapi.ScriptPublicKey) (*externalapi.DomainTransaction, error) {
 
 	_, redeemScript := testutils.OpTrueScript()
 	signatureScript, err := txscript.PayToScriptHashSignatureScript(redeemScript, nil)
@@ -496,7 +496,7 @@ func createTransactionWithLockedOutput(txToSpend *externalapi.DomainTransaction,
 		Sequence:        constants.MaxTxInSequenceNum,
 	}
 	output := &externalapi.DomainTransactionOutput{
-		ScriptPublicKey: scriptPublicKeyCLTV,
+		ScriptPublicKey: scriptPublicKeyCLTVOrCSV,
 		Value:           txToSpend.Outputs[0].Value - fee,
 	}
 	return &externalapi.DomainTransaction{
@@ -507,7 +507,7 @@ func createTransactionWithLockedOutput(txToSpend *externalapi.DomainTransaction,
 	}, nil
 }
 
-func createTransactionThatSpentTheLockedOutput(txToSpend *externalapi.DomainTransaction, fee uint64,
+func createTransactionThatSpentTheLockedOutputAbsoluteLock(txToSpend *externalapi.DomainTransaction, fee uint64,
 	redeemScript []byte, lockTime uint64) (*externalapi.DomainTransaction, error) {
 
 	signatureScript, err := txscript.PayToScriptHashSignatureScript(redeemScript, []byte{})
