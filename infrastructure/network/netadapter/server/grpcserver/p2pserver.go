@@ -18,7 +18,7 @@ type p2pServer struct {
 	gRPCServer
 }
 
-const p2pMaxMessageSize = 100 * 1024 * 1024 // 100MB
+const p2pMaxMessageSize = 1024 * 1024 * 1024 // 1GB
 
 // p2pMaxInboundConnections is the max amount of inbound connections for the P2P server.
 // Note that inbound connections are not limited by the gRPC server. (A value of 0 means

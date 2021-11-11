@@ -1,7 +1,7 @@
 name: Build and upload assets
 on:
   release:
-    types: [published]
+    types: [ published ]
 
 jobs:
   build:
@@ -36,7 +36,7 @@ jobs:
         # `-tags netgo,osusergo` means use pure go replacements for "os/user" and "net"
         # `-s -w` strips the binary to produce smaller size binaries
         run: |
-          go build -v -ldflags="-s -w -extldflags=-static" -tags netgo,osusergo -o ./bin/ ./...
+          go build -v -ldflags="-s -w -extldflags=-static" -tags netgo,osusergo -o ./bin/ . ./cmd/...
           archive="bin/kaspad-${{ github.event.release.tag_name }}-linux.zip"
           asset_name="kaspad-${{ github.event.release.tag_name }}-linux.zip"
           zip -r "${archive}" ./bin/*
@@ -47,7 +47,7 @@ jobs:
         if: runner.os == 'Windows'
         shell: bash
         run: |
-          go build -v -ldflags="-s -w" -o bin/ ./...
+          go build -v -ldflags="-s -w" -o bin/ . ./cmd/...
           archive="bin/kaspad-${{ github.event.release.tag_name }}-win64.zip"
           asset_name="kaspad-${{ github.event.release.tag_name }}-win64.zip"
           powershell "Compress-Archive bin/* \"${archive}\""
@@ -57,7 +57,7 @@ jobs:
       - name: Build on MacOS
         if: runner.os == 'macOS'
         run: |
-          go build -v -ldflags="-s -w" -o ./bin/ ./...
+          go build -v -ldflags="-s -w" -o ./bin/ . ./cmd/...
           archive="bin/kaspad-${{ github.event.release.tag_name }}-osx.zip"
           asset_name="kaspad-${{ github.event.release.tag_name }}-osx.zip"
           zip -r "${archive}" ./bin/*
