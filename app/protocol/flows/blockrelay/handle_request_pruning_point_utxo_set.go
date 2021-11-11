@@ -110,7 +110,7 @@ func (flow *handleRequestPruningPointUTXOSetFlow) sendPruningPointUTXOSet(
 			return flow.outgoingRoute.Enqueue(appmessage.NewMsgDonePruningPointUTXOSetChunks())
 		}
 
-		if !finished {
+		if len(pruningPointUTXOs) > 0 {
 			fromOutpoint = pruningPointUTXOs[len(pruningPointUTXOs)-1].Outpoint
 		}
 		chunksSent++
