@@ -1,3 +1,10 @@
+Kaspad v0.11.2 - 2021-11-11
+===========================
+Bug fixes:
+* Enlarge p2p max message size to 1gb
+* Fix UTXO chunks logic
+* Increase tests timeout to 20 minutes
+
 Kaspad v0.11.1 - 2021-11-09
 ===========================
 Non-breaking changes:
