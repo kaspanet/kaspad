@@ -45,7 +45,7 @@ func (p *p2pServer) MessageStream(stream protowire.P2P_MessageStreamServer) erro
 func (p *p2pServer) Connect(address string) (server.Connection, error) {
 	log.Debugf("%s Dialing to %s", p.name, address)
 
-	const dialTimeout = 30 * time.Second
+	const dialTimeout = 1 * time.Second
 	ctx, cancel := context.WithTimeout(context.Background(), dialTimeout)
 	defer cancel()
 
