@@ -102,9 +102,30 @@ func (bp *blockProcessor) validateAndInsertBlock(stagingArea *model.StagingArea,
 		}
 	}
 
-	err = bp.headerTipsManager.AddHeaderTip(stagingArea, blockHash)
-	if err != nil {
-		return nil, err
+	shouldAddHeaderSelectedTip := false
+	if !hasHeaderSelectedTip {
+		shouldAddHeaderSelectedTip = true
+	} else {
+		pruningPoint, err := bp.pruningStore.PruningPoint(bp.databaseContext, stagingArea)
+		if err != nil {
+			return nil, err
+		}
+
+		isInSelectedChainOfPruningPoint, err := bp.dagTopologyManager.IsInSelectedParentChainOf(stagingArea, pruningPoint, blockHash)
+		if err != nil {
+			return nil, err
+		}
+
+		// Don't set blocks in the anticone of the pruning point as header selected tip.
+		shouldAddHeaderSelectedTip = isInSelectedChainOfPruningPoint
+	}
+
+	if shouldAddHeaderSelectedTip {
+		// Don't set blocks in the anticone of the pruning point as header selected tip.
+		err = bp.headerTipsManager.AddHeaderTip(stagingArea, blockHash)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	var selectedParentChainChanges *externalapi.SelectedChainPath
