@@ -39,7 +39,7 @@ func (mat *matrix) computeRank() int {
 	var rowSelected [64]bool
 	for i := 0; i < 64; i++ {
 		var j int
-		for j := 0; j < 64; j++ {
+		for j = 0; j < 64; j++ {
 			if !rowSelected[j] && math.Abs(B[j][i]) > eps {
 				break
 			}
