@@ -15,7 +15,6 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/hashset"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/pow"
 	"github.com/kaspanet/kaspad/infrastructure/db/database"
 	"github.com/pkg/errors"
 	"math/big"
@@ -100,7 +99,7 @@ func (ppm *pruningProofManager) BuildPruningPointProof(stagingArea *model.Stagin
 	maxLevel := len(pruningPointHeader.Parents()) - 1
 	headersByLevel := make(map[int][]externalapi.BlockHeader)
 	selectedTipByLevel := make([]*externalapi.DomainHash, maxLevel+1)
-	pruningPointLevel := pow.BlockLevel(pruningPointHeader)
+	pruningPointLevel := pruningPointHeader.BlockLevel()
 	for blockLevel := maxLevel; blockLevel >= 0; blockLevel-- {
 		var selectedTip *externalapi.DomainHash
 		if blockLevel <= pruningPointLevel {
@@ -257,7 +256,7 @@ func (ppm *pruningProofManager) ValidatePruningPointProof(pruningPointProof *ext
 	level0Headers := pruningPointProof.Headers[0]
 	pruningPointHeader := level0Headers[len(level0Headers)-1]
 	pruningPoint := consensushashing.HeaderHash(pruningPointHeader)
-	pruningPointBlockLevel := pow.BlockLevel(pruningPointHeader)
+	pruningPointBlockLevel := pruningPointHeader.BlockLevel()
 	maxLevel := len(pruningPointHeader.Parents()) - 1
 	if maxLevel >= len(pruningPointProof.Headers) {
 		return errors.Wrapf(ruleerrors.ErrPruningProofEmpty, "proof has only %d levels while pruning point "+
@@ -300,9 +299,9 @@ func (ppm *pruningProofManager) ValidatePruningPointProof(pruningPointProof *ext
 		var selectedTip *externalapi.DomainHash
 		for i, header := range headers {
 			blockHash := consensushashing.HeaderHash(header)
-			if pow.BlockLevel(header) < blockLevel {
+			if header.BlockLevel() < blockLevel {
 				return errors.Wrapf(ruleerrors.ErrPruningProofWrongBlockLevel, "block %s level is %d when it's "+
-					"expected to be at least %d", blockHash, pow.BlockLevel(header), blockLevel)
+					"expected to be at least %d", blockHash, header.BlockLevel(), blockLevel)
 			}
 
 			blockHeaderStore.Stage(stagingArea, blockHash, header)
@@ -558,9 +557,9 @@ func (ppm *pruningProofManager) ApplyPruningPointProof(stagingArea *model.Stagin
 		var selectedTip *externalapi.DomainHash
 		for i, header := range headers {
 			blockHash := consensushashing.HeaderHash(header)
-			if pow.BlockLevel(header) < blockLevel {
+			if header.BlockLevel() < blockLevel {
 				return errors.Wrapf(ruleerrors.ErrPruningProofWrongBlockLevel, "block %s level is %d when it's "+
-					"expected to be at least %d", blockHash, pow.BlockLevel(header), blockLevel)
+					"expected to be at least %d", blockHash, header.BlockLevel(), blockLevel)
 			}
 
 			ppm.blockHeaderStore.Stage(stagingArea, blockHash, header)

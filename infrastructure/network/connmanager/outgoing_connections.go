@@ -41,7 +41,7 @@ func (c *ConnectionManager) checkOutgoingConnections(connSet connectionSet) {
 
 		err := c.initiateConnection(addressString)
 		if err != nil {
-			log.Infof("Couldn't connect to %s: %s", addressString, err)
+			log.Debugf("Couldn't connect to %s: %s", addressString, err)
 			c.addressManager.MarkConnectionFailure(netAddress)
 			continue
 		}
