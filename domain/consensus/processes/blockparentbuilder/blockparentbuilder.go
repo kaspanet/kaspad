@@ -5,7 +5,6 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/hashset"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/pow"
 	"github.com/pkg/errors"
 )
 
@@ -93,7 +92,7 @@ func (bpb *blockParentBuilder) BuildParents(stagingArea *model.StagingArea,
 	// all the block levels they occupy
 	for _, directParentHeader := range directParentHeaders {
 		directParentHash := consensushashing.HeaderHash(directParentHeader)
-		blockLevel := pow.BlockLevel(directParentHeader)
+		blockLevel := directParentHeader.BlockLevel()
 		for i := 0; i <= blockLevel; i++ {
 			if _, exists := candidatesByLevelToReferenceBlocksMap[i]; !exists {
 				candidatesByLevelToReferenceBlocksMap[i] = make(map[externalapi.DomainHash][]*externalapi.DomainHash)
