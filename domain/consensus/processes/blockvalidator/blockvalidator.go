@@ -37,6 +37,7 @@ type blockValidator struct {
 	finalityManager       model.FinalityManager
 	blockParentBuilder    model.BlockParentBuilder
 	pruningManager        model.PruningManager
+	parentsManager        model.ParentsManager
 
 	blockStore          model.BlockStore
 	ghostdagDataStores  []model.GHOSTDAGDataStore
@@ -72,6 +73,7 @@ func New(powMax *big.Int,
 	finalityManager model.FinalityManager,
 	blockParentBuilder model.BlockParentBuilder,
 	pruningManager model.PruningManager,
+	parentsManager model.ParentsManager,
 
 	pruningStore model.PruningStore,
 	blockStore model.BlockStore,
@@ -108,6 +110,7 @@ func New(powMax *big.Int,
 		finalityManager:             finalityManager,
 		blockParentBuilder:          blockParentBuilder,
 		pruningManager:              pruningManager,
+		parentsManager:              parentsManager,
 
 		pruningStore:        pruningStore,
 		blockStore:          blockStore,

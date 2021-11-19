@@ -27,6 +27,7 @@ type pruningProofManager struct {
 	ghostdagManagers     []model.GHOSTDAGManager
 	reachabilityManagers []model.ReachabilityManager
 	dagTraversalManagers []model.DAGTraversalManager
+	parentsManager       model.ParentsManager
 
 	ghostdagDataStores  []model.GHOSTDAGDataStore
 	pruningStore        model.PruningStore
@@ -48,6 +49,7 @@ func New(
 	ghostdagManagers []model.GHOSTDAGManager,
 	reachabilityManagers []model.ReachabilityManager,
 	dagTraversalManagers []model.DAGTraversalManager,
+	parentsManager model.ParentsManager,
 
 	ghostdagDataStores []model.GHOSTDAGDataStore,
 	pruningStore model.PruningStore,
@@ -67,6 +69,7 @@ func New(
 		ghostdagManagers:     ghostdagManagers,
 		reachabilityManagers: reachabilityManagers,
 		dagTraversalManagers: dagTraversalManagers,
+		parentsManager:       parentsManager,
 
 		ghostdagDataStores:  ghostdagDataStores,
 		pruningStore:        pruningStore,
@@ -96,7 +99,7 @@ func (ppm *pruningProofManager) BuildPruningPointProof(stagingArea *model.Stagin
 		return nil, err
 	}
 
-	maxLevel := len(pruningPointHeader.Parents()) - 1
+	maxLevel := len(ppm.parentsManager.Parents(pruningPointHeader)) - 1
 	headersByLevel := make(map[int][]externalapi.BlockHeader)
 	selectedTipByLevel := make([]*externalapi.DomainHash, maxLevel+1)
 	pruningPointLevel := pruningPointHeader.BlockLevel()
@@ -257,7 +260,7 @@ func (ppm *pruningProofManager) ValidatePruningPointProof(pruningPointProof *ext
 	pruningPointHeader := level0Headers[len(level0Headers)-1]
 	pruningPoint := consensushashing.HeaderHash(pruningPointHeader)
 	pruningPointBlockLevel := pruningPointHeader.BlockLevel()
-	maxLevel := len(pruningPointHeader.Parents()) - 1
+	maxLevel := len(ppm.parentsManager.Parents(pruningPointHeader)) - 1
 	if maxLevel >= len(pruningPointProof.Headers) {
 		return errors.Wrapf(ruleerrors.ErrPruningProofEmpty, "proof has only %d levels while pruning point "+
 			"has parents from %d levels", len(pruningPointProof.Headers), maxLevel+1)

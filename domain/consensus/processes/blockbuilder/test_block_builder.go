@@ -83,7 +83,7 @@ func (bb *testBlockBuilder) buildUTXOInvalidHeader(stagingArea *model.StagingAre
 		return nil, err
 	}
 
-	parents, err := bb.blockParentBuilder.BuildParents(stagingArea, parentHashes)
+	parents, err := bb.blockParentBuilder.BuildParents(stagingArea, daaScore, parentHashes)
 	if err != nil {
 		return nil, err
 	}

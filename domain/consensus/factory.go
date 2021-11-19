@@ -4,6 +4,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/daawindowstore"
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/processes/blockparentbuilder"
+	parentssanager "github.com/kaspanet/kaspad/domain/consensus/processes/parentsmanager"
 	"github.com/kaspanet/kaspad/domain/consensus/processes/pruningproofmanager"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
 	"io/ioutil"
@@ -158,12 +159,17 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 	dagTraversalManager := dagTraversalManagers[0]
 
 	// Processes
+	parentsManager := parentssanager.New(config.GenesisHash, config.HardForkOmitGenesisFromParentsDAAScore)
 	blockParentBuilder := blockparentbuilder.New(
 		dbManager,
 		blockHeaderStore,
 		dagTopologyManager,
+		parentsManager,
 		reachabilityDataStore,
 		pruningStore,
+
+		config.HardForkOmitGenesisFromParentsDAAScore,
+		config.GenesisHash,
 	)
 	pastMedianTimeManager := f.pastMedianTimeConsructor(
 		config.TimestampDeviationTolerance,
@@ -316,6 +322,7 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 		finalityManager,
 		blockParentBuilder,
 		pruningManager,
+		parentsManager,
 
 		pruningStore,
 		blockStore,
@@ -403,6 +410,7 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 		ghostdagManagers,
 		reachabilityManagers,
 		dagTraversalManagers,
+		parentsManager,
 
 		ghostdagDataStores,
 		pruningStore,

@@ -12,8 +12,12 @@ type blockParentBuilder struct {
 	databaseContext       model.DBManager
 	blockHeaderStore      model.BlockHeaderStore
 	dagTopologyManager    model.DAGTopologyManager
+	parentsManager        model.ParentsManager
 	reachabilityDataStore model.ReachabilityDataStore
 	pruningStore          model.PruningStore
+
+	hardForkOmitGenesisFromParentsDAAScore uint64
+	genesisHash                            *externalapi.DomainHash
 }
 
 // New creates a new instance of a BlockParentBuilder
@@ -21,20 +25,29 @@ func New(
 	databaseContext model.DBManager,
 	blockHeaderStore model.BlockHeaderStore,
 	dagTopologyManager model.DAGTopologyManager,
+	parentsManager model.ParentsManager,
+
 	reachabilityDataStore model.ReachabilityDataStore,
 	pruningStore model.PruningStore,
+
+	hardForkOmitGenesisFromParentsDAAScore uint64,
+	genesisHash *externalapi.DomainHash,
 ) model.BlockParentBuilder {
 	return &blockParentBuilder{
-		databaseContext:       databaseContext,
-		blockHeaderStore:      blockHeaderStore,
-		dagTopologyManager:    dagTopologyManager,
-		reachabilityDataStore: reachabilityDataStore,
-		pruningStore:          pruningStore,
+		databaseContext:    databaseContext,
+		blockHeaderStore:   blockHeaderStore,
+		dagTopologyManager: dagTopologyManager,
+		parentsManager:     parentsManager,
+
+		reachabilityDataStore:                  reachabilityDataStore,
+		pruningStore:                           pruningStore,
+		hardForkOmitGenesisFromParentsDAAScore: hardForkOmitGenesisFromParentsDAAScore,
+		genesisHash:                            genesisHash,
 	}
 }
 
 func (bpb *blockParentBuilder) BuildParents(stagingArea *model.StagingArea,
-	directParentHashes []*externalapi.DomainHash) ([]externalapi.BlockLevelParents, error) {
+	daaScore uint64, directParentHashes []*externalapi.DomainHash) ([]externalapi.BlockLevelParents, error) {
 
 	// Late on we'll mutate direct parent hashes, so we first clone it.
 	directParentHashesCopy := make([]*externalapi.DomainHash, len(directParentHashes))
@@ -115,7 +128,7 @@ func (bpb *blockParentBuilder) BuildParents(stagingArea *model.StagingArea,
 	}
 
 	for _, directParentHeader := range directParentHeaders {
-		for blockLevel, blockLevelParentsInHeader := range directParentHeader.Parents() {
+		for blockLevel, blockLevelParentsInHeader := range bpb.parentsManager.Parents(directParentHeader) {
 			isEmptyLevel := false
 			if _, exists := candidatesByLevelToReferenceBlocksMap[blockLevel]; !exists {
 				candidatesByLevelToReferenceBlocksMap[blockLevel] = make(map[externalapi.DomainHash][]*externalapi.DomainHash)
@@ -204,11 +217,16 @@ func (bpb *blockParentBuilder) BuildParents(stagingArea *model.StagingArea,
 
 	parents := make([]externalapi.BlockLevelParents, len(candidatesByLevelToReferenceBlocksMap))
 	for blockLevel := 0; blockLevel < len(candidatesByLevelToReferenceBlocksMap); blockLevel++ {
+		if _, ok := candidatesByLevelToReferenceBlocksMap[blockLevel][*bpb.genesisHash]; daaScore >= bpb.hardForkOmitGenesisFromParentsDAAScore && ok && len(candidatesByLevelToReferenceBlocksMap[blockLevel]) == 1 {
+			break
+		}
+
 		levelBlocks := make(externalapi.BlockLevelParents, 0, len(candidatesByLevelToReferenceBlocksMap[blockLevel]))
 		for block := range candidatesByLevelToReferenceBlocksMap[blockLevel] {
 			block := block // Assign to a new pointer to avoid `range` pointer reuse
 			levelBlocks = append(levelBlocks, &block)
 		}
+
 		parents[blockLevel] = levelBlocks
 	}
 	return parents, nil
