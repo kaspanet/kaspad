@@ -14,7 +14,12 @@ import (
 func HandleSubmitBlock(context *rpccontext.Context, _ *router.Router, request appmessage.Message) (appmessage.Message, error) {
 	submitBlockRequest := request.(*appmessage.SubmitBlockRequestMessage)
 
-	if context.ProtocolManager.IsIBDRunning() {
+	isSynced, err := context.ProtocolManager.ShouldMine()
+	if err != nil {
+		return nil, err
+	}
+
+	if !isSynced {
 		return &appmessage.SubmitBlockResponseMessage{
 			Error:        appmessage.RPCErrorf("Block not submitted - IBD is running"),
 			RejectReason: appmessage.RejectReasonIsInIBD,
