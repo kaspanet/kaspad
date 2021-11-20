@@ -23,6 +23,7 @@ var (
 	defaultAppDir = util.AppDir("kaspawallet", false)
 )
 
+// LastVersion is the most up to date file format version
 const LastVersion = 1
 
 func defaultKeysFile(netParams *dagconfig.Params) string {
@@ -299,9 +300,11 @@ func (d *File) Save() error {
 	return nil
 }
 
+const defaultNumThreads = 8
+
 func (d *File) numThreads(password []byte) (uint8, error) {
 	if d.Version != 0 {
-		return 8, nil
+		return defaultNumThreads, nil
 	}
 
 	if d.NumThreads != 0 {
