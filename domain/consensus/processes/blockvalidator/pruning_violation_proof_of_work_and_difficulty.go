@@ -69,7 +69,7 @@ func (v *blockValidator) setParents(stagingArea *model.StagingArea,
 
 	for level := 0; level <= header.BlockLevel(); level++ {
 		var parents []*externalapi.DomainHash
-		for _, parent := range header.ParentsAtLevel(level) {
+		for _, parent := range v.parentsManager.ParentsAtLevel(header, level) {
 			_, err := v.ghostdagDataStores[level].Get(v.databaseContext, stagingArea, parent, false)
 			isNotFoundError := database.IsNotFoundError(err)
 			if !isNotFoundError && err != nil {

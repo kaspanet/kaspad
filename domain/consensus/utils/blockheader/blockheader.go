@@ -62,16 +62,12 @@ func (bh *blockHeader) Parents() []externalapi.BlockLevelParents {
 	return bh.parents
 }
 
-func (bh *blockHeader) ParentsAtLevel(level int) externalapi.BlockLevelParents {
-	if len(bh.parents) <= level {
+func (bh *blockHeader) DirectParents() externalapi.BlockLevelParents {
+	if len(bh.parents) == 0 {
 		return externalapi.BlockLevelParents{}
 	}
 
-	return bh.parents[level]
-}
-
-func (bh *blockHeader) DirectParents() externalapi.BlockLevelParents {
-	return bh.ParentsAtLevel(0)
+	return bh.parents[0]
 }
 
 func (bh *blockHeader) HashMerkleRoot() *externalapi.DomainHash {
