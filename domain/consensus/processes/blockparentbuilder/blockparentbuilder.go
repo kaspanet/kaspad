@@ -157,7 +157,7 @@ func (bpb *blockParentBuilder) BuildParents(stagingArea *model.StagingArea,
 				} else {
 					for childHash, childHeader := range virtualGenesisChildrenHeaders {
 						childHash := childHash // Assign to a new pointer to avoid `range` pointer reuse
-						if childHeader.ParentsAtLevel(blockLevel).Contains(parent) {
+						if bpb.parentsManager.ParentsAtLevel(childHeader, blockLevel).Contains(parent) {
 							referenceBlocks = append(referenceBlocks, &childHash)
 						}
 					}

@@ -112,7 +112,7 @@ func (ppm *pruningProofManager) BuildPruningPointProof(stagingArea *model.Stagin
 		if blockLevel <= pruningPointLevel {
 			selectedTip = pruningPoint
 		} else {
-			blockLevelParents := pruningPointHeader.ParentsAtLevel(blockLevel)
+			blockLevelParents := ppm.parentsManager.ParentsAtLevel(pruningPointHeader, blockLevel)
 			selectedTip, err = ppm.ghostdagManagers[blockLevel].ChooseSelectedParent(stagingArea, []*externalapi.DomainHash(blockLevelParents)...)
 			if err != nil {
 				return nil, err
@@ -317,7 +317,7 @@ func (ppm *pruningProofManager) ValidatePruningPointProof(pruningPointProof *ext
 			blockHeaderStore.Stage(stagingArea, blockHash, header)
 
 			var parents []*externalapi.DomainHash
-			for _, parent := range header.ParentsAtLevel(blockLevel) {
+			for _, parent := range ppm.parentsManager.ParentsAtLevel(header, blockLevel) {
 				_, err := ghostdagDataStores[blockLevel].Get(ppm.databaseContext, stagingArea, parent, false)
 				if database.IsNotFoundError(err) {
 					continue
@@ -386,7 +386,7 @@ func (ppm *pruningProofManager) ValidatePruningPointProof(pruningPointProof *ext
 			}
 		}
 
-		if !selectedTip.Equal(pruningPoint) && !pruningPointHeader.ParentsAtLevel(blockLevel).Contains(selectedTip) {
+		if !selectedTip.Equal(pruningPoint) && !ppm.parentsManager.ParentsAtLevel(pruningPointHeader, blockLevel).Contains(selectedTip) {
 			return errors.Wrapf(ruleerrors.ErrPruningProofMissesBlocksBelowPruningPoint, "the selected tip %s at "+
 				"level %d is not a parent of the pruning point", selectedTip, blockLevel)
 		}
@@ -404,7 +404,7 @@ func (ppm *pruningProofManager) ValidatePruningPointProof(pruningPointProof *ext
 				return errors.Wrapf(ruleerrors.ErrPruningProofSelectedTipIsNotThePruningPoint, "the pruning "+
 					"proof selected tip %s at level %d is not the pruning point", selectedTip, blockLevel)
 			}
-		} else if !pruningPointHeader.ParentsAtLevel(blockLevel).Contains(selectedTip) {
+		} else if !ppm.parentsManager.ParentsAtLevel(pruningPointHeader, blockLevel).Contains(selectedTip) {
 			return errors.Wrapf(ruleerrors.ErrPruningProofSelectedTipNotParentOfPruningPoint, "the pruning "+
 				"proof selected tip %s at level %d is not a parent of the of the pruning point on the same "+
 				"level", selectedTip, blockLevel)
@@ -578,7 +578,7 @@ func (ppm *pruningProofManager) ApplyPruningPointProof(stagingArea *model.Stagin
 			ppm.blockHeaderStore.Stage(stagingArea, blockHash, header)
 
 			var parents []*externalapi.DomainHash
-			for _, parent := range header.ParentsAtLevel(blockLevel) {
+			for _, parent := range ppm.parentsManager.ParentsAtLevel(header, blockLevel) {
 				_, err := ppm.ghostdagDataStores[blockLevel].Get(ppm.databaseContext, stagingArea, parent, false)
 				if database.IsNotFoundError(err) {
 					continue

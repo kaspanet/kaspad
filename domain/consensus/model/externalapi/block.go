@@ -58,7 +58,6 @@ type BlockHeader interface {
 type BaseBlockHeader interface {
 	Version() uint16
 	Parents() []BlockLevelParents
-	ParentsAtLevel(level int) BlockLevelParents
 	DirectParents() BlockLevelParents
 	HashMerkleRoot() *DomainHash
 	AcceptedIDMerkleRoot() *DomainHash
