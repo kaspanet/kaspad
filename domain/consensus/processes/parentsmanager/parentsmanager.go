@@ -20,14 +20,16 @@ func New(genesisHash *externalapi.DomainHash, hardForkOmitGenesisFromParentsDAAS
 }
 
 func (pm *parentsManager) ParentsAtLevel(blockHeader externalapi.BlockHeader, level int) externalapi.BlockLevelParents {
-	if len(blockHeader.Parents()) <= level {
-		if blockHeader.DAAScore() >= pm.hardForkOmitGenesisFromParentsDAAScore {
-			return externalapi.BlockLevelParents{pm.genesisHash}
-		}
-		return externalapi.BlockLevelParents{}
+	var parentsAtLevel externalapi.BlockLevelParents
+	if len(blockHeader.Parents()) > level {
+		parentsAtLevel = blockHeader.Parents()[level]
 	}
 
-	return blockHeader.Parents()[level]
+	if len(parentsAtLevel) == 0 && len(blockHeader.DirectParents()) > 0 && blockHeader.DAAScore() >= pm.hardForkOmitGenesisFromParentsDAAScore {
+		return externalapi.BlockLevelParents{pm.genesisHash}
+	}
+
+	return parentsAtLevel
 }
 
 func (pm *parentsManager) Parents(blockHeader externalapi.BlockHeader) []externalapi.BlockLevelParents {
