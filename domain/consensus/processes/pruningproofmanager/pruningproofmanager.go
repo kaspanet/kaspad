@@ -40,6 +40,9 @@ type pruningProofManager struct {
 	genesisHash   *externalapi.DomainHash
 	k             externalapi.KType
 	pruningProofM uint64
+
+	cachedPruningPoint *externalapi.DomainHash
+	cachedProof        *externalapi.PruningPointProof
 }
 
 // New instantiates a new PruningManager
@@ -87,6 +90,30 @@ func New(
 
 func (ppm *pruningProofManager) BuildPruningPointProof(stagingArea *model.StagingArea) (*externalapi.PruningPointProof, error) {
 	onEnd := logger.LogAndMeasureExecutionTime(log, "BuildPruningPointProof")
+	defer onEnd()
+
+	pruningPoint, err := ppm.pruningStore.PruningPoint(ppm.databaseContext, stagingArea)
+	if err != nil {
+		return nil, err
+	}
+
+	if ppm.cachedPruningPoint != nil && ppm.cachedPruningPoint.Equal(pruningPoint) {
+		return ppm.cachedProof, nil
+	}
+
+	proof, err := ppm.buildPruningPointProof(stagingArea)
+	if err != nil {
+		return nil, err
+	}
+
+	ppm.cachedProof = proof
+	ppm.cachedPruningPoint = pruningPoint
+
+	return proof, nil
+}
+
+func (ppm *pruningProofManager) buildPruningPointProof(stagingArea *model.StagingArea) (*externalapi.PruningPointProof, error) {
+	onEnd := logger.LogAndMeasureExecutionTime(log, "buildPruningPointProof")
 	defer onEnd()
 
 	pruningPoint, err := ppm.pruningStore.PruningPoint(ppm.databaseContext, stagingArea)
