@@ -215,7 +215,7 @@ func (bpb *blockParentBuilder) BuildParents(stagingArea *model.StagingArea,
 		}
 	}
 
-	parents := make([]externalapi.BlockLevelParents, len(candidatesByLevelToReferenceBlocksMap))
+	parents := make([]externalapi.BlockLevelParents, 0, len(candidatesByLevelToReferenceBlocksMap))
 	for blockLevel := 0; blockLevel < len(candidatesByLevelToReferenceBlocksMap); blockLevel++ {
 		if _, ok := candidatesByLevelToReferenceBlocksMap[blockLevel][*bpb.genesisHash]; daaScore >= bpb.hardForkOmitGenesisFromParentsDAAScore && ok && len(candidatesByLevelToReferenceBlocksMap[blockLevel]) == 1 {
 			break
@@ -227,7 +227,7 @@ func (bpb *blockParentBuilder) BuildParents(stagingArea *model.StagingArea,
 			levelBlocks = append(levelBlocks, &block)
 		}
 
-		parents[blockLevel] = levelBlocks
+		parents = append(parents, levelBlocks)
 	}
 	return parents, nil
 }
