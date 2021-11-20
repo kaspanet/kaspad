@@ -16,6 +16,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/hashset"
 	"github.com/kaspanet/kaspad/infrastructure/db/database"
+	"github.com/kaspanet/kaspad/infrastructure/logger"
 	"github.com/pkg/errors"
 	"math/big"
 )
@@ -85,6 +86,9 @@ func New(
 }
 
 func (ppm *pruningProofManager) BuildPruningPointProof(stagingArea *model.StagingArea) (*externalapi.PruningPointProof, error) {
+	onEnd := logger.LogAndMeasureExecutionTime(log, "BuildPruningPointProof")
+	defer onEnd()
+
 	pruningPoint, err := ppm.pruningStore.PruningPoint(ppm.databaseContext, stagingArea)
 	if err != nil {
 		return nil, err
@@ -250,6 +254,9 @@ func (ppm *pruningProofManager) blockAtDepth(stagingArea *model.StagingArea, gho
 }
 
 func (ppm *pruningProofManager) ValidatePruningPointProof(pruningPointProof *externalapi.PruningPointProof) error {
+	onEnd := logger.LogAndMeasureExecutionTime(log, "ValidatePruningPointProof")
+	defer onEnd()
+
 	stagingArea := model.NewStagingArea()
 
 	if len(pruningPointProof.Headers) == 0 {
@@ -556,6 +563,9 @@ func (ppm *pruningProofManager) dagProcesses(
 }
 
 func (ppm *pruningProofManager) ApplyPruningPointProof(stagingArea *model.StagingArea, pruningPointProof *externalapi.PruningPointProof) error {
+	onEnd := logger.LogAndMeasureExecutionTime(log, "ApplyPruningPointProof")
+	defer onEnd()
+
 	for blockLevel, headers := range pruningPointProof.Headers {
 		var selectedTip *externalapi.DomainHash
 		for i, header := range headers {

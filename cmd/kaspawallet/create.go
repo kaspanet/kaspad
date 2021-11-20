@@ -56,6 +56,7 @@ func create(conf *createConfig) error {
 	}
 
 	file := keys.File{
+		Version:            keys.LastVersion,
 		EncryptedMnemonics: encryptedMnemonics,
 		ExtendedPublicKeys: extendedPublicKeys,
 		MinimumSignatures:  conf.MinimumSignatures,

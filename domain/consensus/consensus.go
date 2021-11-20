@@ -717,7 +717,9 @@ func (s *consensus) ResolveVirtual() error {
 	// In order to prevent a situation that the consensus lock is held for too much time, we
 	// release the lock each time resolve 100 blocks.
 	for i := 0; ; i++ {
-		log.Infof("Resolving virtual. This may take some time...")
+		if i%10 == 0 {
+			log.Infof("Resolving virtual. This may take some time...")
+		}
 		var isCompletelyResolved bool
 		var err error
 		func() {
