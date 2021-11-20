@@ -113,7 +113,23 @@ func (ppm *pruningProofManager) BuildPruningPointProof(stagingArea *model.Stagin
 			selectedTip = pruningPoint
 		} else {
 			blockLevelParents := ppm.parentsManager.ParentsAtLevel(pruningPointHeader, blockLevel)
-			selectedTip, err = ppm.ghostdagManagers[blockLevel].ChooseSelectedParent(stagingArea, []*externalapi.DomainHash(blockLevelParents)...)
+			selectedTipCandidates := make([]*externalapi.DomainHash, 0, len(blockLevelParents))
+
+			// In a pruned node, some pruning point parents might be missing, but we're guaranteed that its
+			// selected parent is not missing.
+			for _, parent := range blockLevelParents {
+				_, err := ppm.ghostdagDataStores[blockLevel].Get(ppm.databaseContext, stagingArea, parent, false)
+				if database.IsNotFoundError(err) {
+					continue
+				}
+				if err != nil {
+					return nil, err
+				}
+
+				selectedTipCandidates = append(selectedTipCandidates, parent)
+			}
+
+			selectedTip, err = ppm.ghostdagManagers[blockLevel].ChooseSelectedParent(stagingArea, selectedTipCandidates...)
 			if err != nil {
 				return nil, err
 			}
