@@ -266,7 +266,7 @@ var MainnetParams = Params{
 	PruningProofM:                           defaultPruningProofM,
 	FixedSubsidySwitchPruningPointInterval:  defaultFixedSubsidySwitchPruningPointInterval,
 	FixedSubsidySwitchHashRateThreshold:     big.NewInt(150_000_000_000),
-	HardForkOmitGenesisFromParentsDAAScore:  2e6,
+	HardForkOmitGenesisFromParentsDAAScore:  1265814,
 }
 
 // TestnetParams defines the network parameters for the test Kaspa network.
