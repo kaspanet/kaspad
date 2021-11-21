@@ -907,8 +907,8 @@ func (pm *pruningManager) PruneAllBlocksBelow(stagingArea *model.StagingArea, pr
 	return nil
 }
 
-func (pm *pruningManager) PruningPointAndItsAnticoneWithTrustedData() ([]*externalapi.BlockWithTrustedData, error) {
-	onEnd := logger.LogAndMeasureExecutionTime(log, "PruningPointAndItsAnticoneWithTrustedData")
+func (pm *pruningManager) PruningPointAndItsAnticone() ([]*externalapi.DomainHash, error) {
+	onEnd := logger.LogAndMeasureExecutionTime(log, "PruningPointAndItsAnticone")
 	defer onEnd()
 
 	stagingArea := model.NewStagingArea()
@@ -922,34 +922,29 @@ func (pm *pruningManager) PruningPointAndItsAnticoneWithTrustedData() ([]*extern
 		return nil, err
 	}
 
-	blocks := make([]*externalapi.BlockWithTrustedData, 0, len(pruningPointAnticone)+1)
-
-	pruningPointWithTrustedData, err := pm.blockWithTrustedData(stagingArea, pruningPoint)
-	if err != nil {
-		return nil, err
-	}
-
-	for _, blockHash := range pruningPointAnticone {
-		blockWithTrustedData, err := pm.blockWithTrustedData(stagingArea, blockHash)
+	// Sorting the blocks in topological order
+	var sortErr error
+	sort.Slice(pruningPointAnticone, func(i, j int) bool {
+		headerI, err := pm.blockHeaderStore.BlockHeader(pm.databaseContext, stagingArea, pruningPointAnticone[i])
 		if err != nil {
-			return nil, err
+			sortErr = err
+			return false
 		}
 
-		blocks = append(blocks, blockWithTrustedData)
-	}
+		headerJ, err := pm.blockHeaderStore.BlockHeader(pm.databaseContext, stagingArea, pruningPointAnticone[j])
+		if err != nil {
+			sortErr = err
+			return false
+		}
 
-	// Sorting the blocks in topological order
-	sort.Slice(blocks, func(i, j int) bool {
-		return blocks[i].Block.Header.BlueWork().Cmp(blocks[j].Block.Header.BlueWork()) < 0
+		return headerI.BlueWork().Cmp(headerJ.BlueWork()) < 0
 	})
 
 	// The pruning point should always come first
-	blocks = append([]*externalapi.BlockWithTrustedData{pruningPointWithTrustedData}, blocks...)
-
-	return blocks, nil
+	return append([]*externalapi.DomainHash{pruningPoint}, pruningPointAnticone...), nil
 }
 
-func (pm *pruningManager) blockWithTrustedData(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) (*externalapi.BlockWithTrustedData, error) {
+func (pm *pruningManager) BlockWithTrustedData(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) (*externalapi.BlockWithTrustedData, error) {
 	block, err := pm.blocksStore.Block(pm.databaseContext, stagingArea, blockHash)
 	if err != nil {
 		return nil, err

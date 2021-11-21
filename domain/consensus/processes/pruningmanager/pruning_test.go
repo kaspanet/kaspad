@@ -140,7 +140,7 @@ func TestPruning(t *testing.T) {
 			// We expect blocks that are within the difficulty adjustment window size of
 			// the pruning point and its anticone to not get pruned
 			unprunedBlockHashesBelowPruningPoint := make(map[externalapi.DomainHash]struct{})
-			pruningPointAndItsAnticone, err := tc.PruningPointAndItsAnticoneWithTrustedData()
+			pruningPointAndItsAnticone, err := tc.PruningPointAndItsAnticone()
 			if err != nil {
 				t.Fatalf("pruningPointAndItsAnticone: %+v", err)
 			}
