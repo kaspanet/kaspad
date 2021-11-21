@@ -37,7 +37,7 @@ type encryptedPrivateKeyJSON struct {
 
 type keysFileJSON struct {
 	Version               uint32                     `json:"version"`
-	NumThreads            uint8                      `json:"numThreads,omitempty"` // This field is ignored for versions different than 0
+	NumThreads            uint8                      `json:"numThreads,omitempty"` // This field is ignored for versions different from 0. See more details at the function `numThreads`.
 	EncryptedPrivateKeys  []*encryptedPrivateKeyJSON `json:"encryptedMnemonics"`
 	ExtendedPublicKeys    []string                   `json:"publicKeys"`
 	MinimumSignatures     uint32                     `json:"minimumSignatures"`
@@ -303,6 +303,13 @@ func (d *File) Save() error {
 const defaultNumThreads = 8
 
 func (d *File) numThreads(password []byte) (uint8, error) {
+	// There's a bug in v0 wallets where the number of threads
+	// was determined by the number of logical CPUs at the machine,
+	// which made the authentication non-deterministic across platforms.
+	// In order to solve it we introduce v1 where the number of threads
+	// is constant, and brute force the number of threads in v0. After we
+	// find the right amount via brute force we save the result to the file.
+
 	if d.Version != 0 {
 		return defaultNumThreads, nil
 	}
@@ -344,7 +351,7 @@ func (d *File) detectNumThreads(password, salt []byte) (uint8, error) {
 		_, err := getAEAD(i, password, salt)
 		if err != nil {
 			const maxTries = 32
-			if i == maxTries || !strings.Contains(err.Error(), "message authentication failed") {
+			if i > maxTries || !strings.Contains(err.Error(), "message authentication failed") {
 				return 0, err
 			}
 		} else {

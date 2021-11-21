@@ -11,7 +11,7 @@ type parentsManager struct {
 	genesisHash                            *externalapi.DomainHash
 }
 
-// New instantiates a new HeadersSelectedTipManager
+// New instantiates a new ParentsManager
 func New(genesisHash *externalapi.DomainHash, hardForkOmitGenesisFromParentsDAAScore uint64) model.ParentsManager {
 	return &parentsManager{
 		genesisHash:                            genesisHash,
