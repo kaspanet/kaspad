@@ -70,7 +70,8 @@ func (flow *handleRequestPruningPointUTXOSetFlow) waitForRequestPruningPointUTXO
 	}
 	msgRequestPruningPointUTXOSet, ok := message.(*appmessage.MsgRequestPruningPointUTXOSet)
 	if !ok {
-		return nil, protocolerrors.Errorf(true, "received unexpected message type. "+
+		// TODO: Change to shouldBan: true once we fix the bug of getting redundant messages
+		return nil, protocolerrors.Errorf(false, "received unexpected message type. "+
 			"expected: %s, got: %s", appmessage.CmdRequestPruningPointUTXOSet, message.Command())
 	}
 	return msgRequestPruningPointUTXOSet, nil
@@ -123,7 +124,8 @@ func (flow *handleRequestPruningPointUTXOSetFlow) sendPruningPointUTXOSet(
 			}
 			_, ok := message.(*appmessage.MsgRequestNextPruningPointUTXOSetChunk)
 			if !ok {
-				return protocolerrors.Errorf(true, "received unexpected message type. "+
+				// TODO: Change to shouldBan: true once we fix the bug of getting redundant messages
+				return protocolerrors.Errorf(false, "received unexpected message type. "+
 					"expected: %s, got: %s", appmessage.CmdRequestNextPruningPointUTXOSetChunk, message.Command())
 			}
 
