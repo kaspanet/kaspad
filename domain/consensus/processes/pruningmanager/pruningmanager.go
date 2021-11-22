@@ -939,6 +939,9 @@ func (pm *pruningManager) PruningPointAndItsAnticone() ([]*externalapi.DomainHas
 
 		return headerI.BlueWork().Cmp(headerJ.BlueWork()) < 0
 	})
+	if sortErr != nil {
+		return nil, sortErr
+	}
 
 	// The pruning point should always come first
 	return append([]*externalapi.DomainHash{pruningPoint}, pruningPointAnticone...), nil

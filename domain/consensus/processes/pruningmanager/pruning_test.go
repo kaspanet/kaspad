@@ -2,7 +2,6 @@ package pruningmanager_test
 
 import (
 	"encoding/json"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
 	"github.com/kaspanet/kaspad/infrastructure/db/database"
 	"os"
 	"path/filepath"
@@ -144,8 +143,7 @@ func TestPruning(t *testing.T) {
 			if err != nil {
 				t.Fatalf("pruningPointAndItsAnticone: %+v", err)
 			}
-			for _, block := range pruningPointAndItsAnticone {
-				blockHash := consensushashing.BlockHash(block.Block)
+			for _, blockHash := range pruningPointAndItsAnticone {
 				unprunedBlockHashesBelowPruningPoint[*blockHash] = struct{}{}
 				blockWindow, err := tc.DAGTraversalManager().BlockWindow(stagingArea, blockHash, consensusConfig.DifficultyAdjustmentWindowSize)
 				if err != nil {
