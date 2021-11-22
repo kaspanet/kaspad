@@ -186,8 +186,6 @@ type Params struct {
 	FixedSubsidySwitchPruningPointInterval uint64
 
 	FixedSubsidySwitchHashRateThreshold *big.Int
-
-	HardForkOmitGenesisFromParentsDAAScore uint64
 }
 
 // NormalizeRPCServerAddress returns addr with the current network default
@@ -266,7 +264,6 @@ var MainnetParams = Params{
 	PruningProofM:                           defaultPruningProofM,
 	FixedSubsidySwitchPruningPointInterval:  defaultFixedSubsidySwitchPruningPointInterval,
 	FixedSubsidySwitchHashRateThreshold:     big.NewInt(150_000_000_000),
-	HardForkOmitGenesisFromParentsDAAScore:  1320000,
 }
 
 // TestnetParams defines the network parameters for the test Kaspa network.
@@ -329,7 +326,6 @@ var TestnetParams = Params{
 	PruningProofM:                           defaultPruningProofM,
 	FixedSubsidySwitchPruningPointInterval:  defaultFixedSubsidySwitchPruningPointInterval,
 	FixedSubsidySwitchHashRateThreshold:     big.NewInt(150_000_000_000),
-	HardForkOmitGenesisFromParentsDAAScore:  2e6,
 }
 
 // SimnetParams defines the network parameters for the simulation test Kaspa
@@ -396,7 +392,6 @@ var SimnetParams = Params{
 	PruningProofM:                           defaultPruningProofM,
 	FixedSubsidySwitchPruningPointInterval:  defaultFixedSubsidySwitchPruningPointInterval,
 	FixedSubsidySwitchHashRateThreshold:     big.NewInt(150_000_000_000),
-	HardForkOmitGenesisFromParentsDAAScore:  5,
 }
 
 // DevnetParams defines the network parameters for the development Kaspa network.
@@ -459,7 +454,6 @@ var DevnetParams = Params{
 	PruningProofM:                           defaultPruningProofM,
 	FixedSubsidySwitchPruningPointInterval:  defaultFixedSubsidySwitchPruningPointInterval,
 	FixedSubsidySwitchHashRateThreshold:     big.NewInt(150_000_000_000),
-	HardForkOmitGenesisFromParentsDAAScore:  3000,
 }
 
 var (

@@ -159,7 +159,7 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 	dagTraversalManager := dagTraversalManagers[0]
 
 	// Processes
-	parentsManager := parentssanager.New(config.GenesisHash, config.HardForkOmitGenesisFromParentsDAAScore)
+	parentsManager := parentssanager.New(config.GenesisHash)
 	blockParentBuilder := blockparentbuilder.New(
 		dbManager,
 		blockHeaderStore,
@@ -168,7 +168,6 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 		reachabilityDataStore,
 		pruningStore,
 
-		config.HardForkOmitGenesisFromParentsDAAScore,
 		config.GenesisHash,
 	)
 	pastMedianTimeManager := f.pastMedianTimeConsructor(
