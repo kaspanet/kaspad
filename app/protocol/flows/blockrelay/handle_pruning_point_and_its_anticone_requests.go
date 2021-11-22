@@ -4,6 +4,7 @@ import (
 	"github.com/kaspanet/kaspad/app/appmessage"
 	peerpkg "github.com/kaspanet/kaspad/app/protocol/peer"
 	"github.com/kaspanet/kaspad/domain"
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
 )
 
@@ -40,13 +41,13 @@ func HandlePruningPointAndItsAnticoneRequests(context PruningPointAndItsAnticone
 			return err
 		}
 
-		blocks, err := context.Domain().Consensus().PruningPointAndItsAnticoneWithTrustedData()
+		pointAndItsAnticone, err := context.Domain().Consensus().PruningPointAndItsAnticone()
 		if err != nil {
 			return err
 		}
 
-		for _, block := range blocks {
-			err = outgoingRoute.Enqueue(appmessage.DomainBlockWithTrustedDataToBlockWithTrustedData(block))
+		for _, blockHash := range pointAndItsAnticone {
+			err := sendBlockWithTrustedData(context, outgoingRoute, blockHash)
 			if err != nil {
 				return err
 			}
@@ -59,4 +60,18 @@ func HandlePruningPointAndItsAnticoneRequests(context PruningPointAndItsAnticone
 
 		log.Debugf("Sent pruning point and its anticone to %s", peer)
 	}
+}
+
+func sendBlockWithTrustedData(context PruningPointAndItsAnticoneRequestsContext, outgoingRoute *router.Route, blockHash *externalapi.DomainHash) error {
+	blockWithTrustedData, err := context.Domain().Consensus().BlockWithTrustedData(blockHash)
+	if err != nil {
+		return err
+	}
+
+	err = outgoingRoute.Enqueue(appmessage.DomainBlockWithTrustedDataToBlockWithTrustedData(blockWithTrustedData))
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

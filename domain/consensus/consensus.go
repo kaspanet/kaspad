@@ -137,11 +137,18 @@ func (s *consensus) Init(skipAddingGenesis bool) error {
 	return nil
 }
 
-func (s *consensus) PruningPointAndItsAnticoneWithTrustedData() ([]*externalapi.BlockWithTrustedData, error) {
+func (s *consensus) PruningPointAndItsAnticone() ([]*externalapi.DomainHash, error) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	return s.pruningManager.PruningPointAndItsAnticoneWithTrustedData()
+	return s.pruningManager.PruningPointAndItsAnticone()
+}
+
+func (s *consensus) BlockWithTrustedData(blockHash *externalapi.DomainHash) (*externalapi.BlockWithTrustedData, error) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	return s.pruningManager.BlockWithTrustedData(model.NewStagingArea(), blockHash)
 }
 
 // BuildBlock builds a block over the current state, with the transactions

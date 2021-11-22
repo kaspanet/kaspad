@@ -12,6 +12,7 @@ type PruningManager interface {
 	AppendImportedPruningPointUTXOs(outpointAndUTXOEntryPairs []*externalapi.OutpointAndUTXOEntryPair) error
 	UpdatePruningPointIfRequired() error
 	PruneAllBlocksBelow(stagingArea *StagingArea, pruningPointHash *externalapi.DomainHash) error
-	PruningPointAndItsAnticoneWithTrustedData() ([]*externalapi.BlockWithTrustedData, error)
+	PruningPointAndItsAnticone() ([]*externalapi.DomainHash, error)
 	ExpectedHeaderPruningPoint(stagingArea *StagingArea, blockHash *externalapi.DomainHash) (*externalapi.DomainHash, error)
+	BlockWithTrustedData(stagingArea *StagingArea, blockHash *externalapi.DomainHash) (*externalapi.BlockWithTrustedData, error)
 }
