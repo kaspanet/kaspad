@@ -22,7 +22,7 @@ import (
 //
 
 const (
-	defaultMaxCoinbasePayloadLength = 172
+	defaultMaxCoinbasePayloadLength = 204
 	// defaultMaxBlockMass is a bound on the mass of a block, larger values increase the bound d
 	// on the round trip time of a block, which affects the other parameters as described below
 	defaultMaxBlockMass = 500_000

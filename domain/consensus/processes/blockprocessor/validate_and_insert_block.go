@@ -1,10 +1,15 @@
 package blockprocessor
 
 import (
+	"bytes"
+	"compress/gzip"
+	_ "embed"
 	"fmt"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/multiset"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/utxo"
 	"github.com/kaspanet/kaspad/infrastructure/db/database"
-
 	"github.com/kaspanet/kaspad/util/staging"
+	"io"
 
 	"github.com/kaspanet/kaspad/util/difficulty"
 
@@ -15,6 +20,9 @@ import (
 	"github.com/kaspanet/kaspad/infrastructure/logger"
 	"github.com/pkg/errors"
 )
+
+//go:embed resources/utxos.gz
+var utxoDumpFile []byte
 
 func (bp *blockProcessor) setBlockStatusAfterBlockValidation(
 	stagingArea *model.StagingArea, block *externalapi.DomainBlock, isPruningPoint bool) error {
@@ -152,6 +160,63 @@ func (bp *blockProcessor) validateAndInsertBlock(stagingArea *model.StagingArea,
 		err = bp.pruningManager.UpdatePruningPointByVirtual(stagingArea)
 		if err != nil {
 			return nil, err
+		}
+	}
+
+	{
+		isGenesis := len(block.Header.DirectParents()) == 0
+		if isGenesis && !block.Header.UTXOCommitment().Equal(externalapi.NewZeroHash()) {
+			log.Infof("Loading UTXO set dump")
+
+			toAdd := make(map[externalapi.DomainOutpoint]externalapi.UTXOEntry)
+			utxoSetMultiset := multiset.New()
+			file, err := gzip.NewReader(bytes.NewReader(utxoDumpFile))
+			if err != nil {
+				return nil, err
+			}
+			for i := 0; ; i++ {
+				size := make([]byte, 1)
+				_, err = io.ReadFull(file, size)
+				if errors.Is(err, io.EOF) {
+					break
+				}
+				if err != nil {
+					return nil, err
+				}
+
+				serializedUTXO := make([]byte, size[0])
+				_, err = io.ReadFull(file, serializedUTXO)
+				if err != nil {
+					return nil, err
+				}
+
+				utxoSetMultiset.Add(serializedUTXO)
+
+				entry, outpoint, err := utxo.DeserializeUTXO(serializedUTXO)
+				if err != nil {
+					return nil, err
+				}
+
+				toAdd[*outpoint] = entry
+			}
+
+			log.Infof("Finished loading UTXO set dump")
+			utxoSetHash := utxoSetMultiset.Hash()
+			if !utxoSetHash.Equal(block.Header.UTXOCommitment()) {
+				return nil, errors.New("Invalid UTXO set dump")
+			}
+
+			diff, err := utxo.NewUTXODiffFromCollections(utxo.NewUTXOCollection(toAdd), utxo.NewUTXOCollection(make(map[externalapi.DomainOutpoint]externalapi.UTXOEntry)))
+			if err != nil {
+				return nil, err
+			}
+
+			area := model.NewStagingArea()
+			bp.consensusStateStore.StageVirtualUTXODiff(area, diff)
+			err = staging.CommitAllChanges(bp.databaseContext, area)
+			if err != nil {
+				return nil, err
+			}
 		}
 	}
 
