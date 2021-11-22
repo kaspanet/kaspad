@@ -2,6 +2,7 @@ package blockheader
 
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/pow"
 	"math/big"
 )
 
@@ -18,6 +19,9 @@ type blockHeader struct {
 	blueScore            uint64
 	blueWork             *big.Int
 	pruningPoint         *externalapi.DomainHash
+
+	isBlockLevelCached bool
+	blockLevel         int
 }
 
 func (bh *blockHeader) BlueScore() uint64 {
@@ -41,10 +45,12 @@ func (bh *blockHeader) ToImmutable() externalapi.BlockHeader {
 }
 
 func (bh *blockHeader) SetNonce(nonce uint64) {
+	bh.isBlockLevelCached = false
 	bh.nonce = nonce
 }
 
 func (bh *blockHeader) SetTimeInMilliseconds(timeInMilliseconds int64) {
+	bh.isBlockLevelCached = false
 	bh.timeInMilliseconds = timeInMilliseconds
 }
 
@@ -56,16 +62,12 @@ func (bh *blockHeader) Parents() []externalapi.BlockLevelParents {
 	return bh.parents
 }
 
-func (bh *blockHeader) ParentsAtLevel(level int) externalapi.BlockLevelParents {
-	if len(bh.parents) <= level {
+func (bh *blockHeader) DirectParents() externalapi.BlockLevelParents {
+	if len(bh.parents) == 0 {
 		return externalapi.BlockLevelParents{}
 	}
 
-	return bh.parents[level]
-}
-
-func (bh *blockHeader) DirectParents() externalapi.BlockLevelParents {
-	return bh.ParentsAtLevel(0)
+	return bh.parents[0]
 }
 
 func (bh *blockHeader) HashMerkleRoot() *externalapi.DomainHash {
@@ -175,6 +177,15 @@ func (bh *blockHeader) clone() *blockHeader {
 
 func (bh *blockHeader) ToMutable() externalapi.MutableBlockHeader {
 	return bh.clone()
+}
+
+func (bh *blockHeader) BlockLevel() int {
+	if !bh.isBlockLevelCached {
+		bh.blockLevel = pow.BlockLevel(bh)
+		bh.isBlockLevelCached = true
+	}
+
+	return bh.blockLevel
 }
 
 // NewImmutableBlockHeader returns a new immutable header

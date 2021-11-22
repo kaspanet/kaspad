@@ -48,6 +48,7 @@ type overrideDAGParamsConfig struct {
 	EnableNonNativeSubnetworks              *bool              `json:"enableNonNativeSubnetworks"`
 	DisableDifficultyAdjustment             *bool              `json:"disableDifficultyAdjustment"`
 	SkipProofOfWork                         *bool              `json:"skipProofOfWork"`
+	HardForkOmitGenesisFromParentsDAAScore  *uint64            `json:"hardForkOmitGenesisFromParentsDaaScore"`
 }
 
 // ResolveNetwork parses the network command line argument and sets NetParams accordingly.

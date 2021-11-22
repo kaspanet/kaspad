@@ -97,7 +97,7 @@ func encryptMnemonic(mnemonic string, password []byte) (*EncryptedMnemonic, erro
 		return nil, err
 	}
 
-	aead, err := getAEAD(password, salt)
+	aead, err := getAEAD(defaultNumThreads, password, salt)
 	if err != nil {
 		return nil, err
 	}

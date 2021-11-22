@@ -10,6 +10,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strings"
 
 	"github.com/kaspanet/kaspad/domain/dagconfig"
 	"github.com/kaspanet/kaspad/util"
@@ -22,6 +23,9 @@ var (
 	defaultAppDir = util.AppDir("kaspawallet", false)
 )
 
+// LastVersion is the most up to date file format version
+const LastVersion = 1
+
 func defaultKeysFile(netParams *dagconfig.Params) string {
 	return filepath.Join(defaultAppDir, netParams.Name, "keys.json")
 }
@@ -32,6 +36,8 @@ type encryptedPrivateKeyJSON struct {
 }
 
 type keysFileJSON struct {
+	Version               uint32                     `json:"version"`
+	NumThreads            uint8                      `json:"numThreads,omitempty"` // This field is ignored for versions different from 0. See more details at the function `numThreads`.
 	EncryptedPrivateKeys  []*encryptedPrivateKeyJSON `json:"encryptedMnemonics"`
 	ExtendedPublicKeys    []string                   `json:"publicKeys"`
 	MinimumSignatures     uint32                     `json:"minimumSignatures"`
@@ -49,6 +55,8 @@ type EncryptedMnemonic struct {
 
 // File holds all the data related to the wallet keys
 type File struct {
+	Version               uint32
+	NumThreads            uint8 // This field is ignored for versions different than 0
 	EncryptedMnemonics    []*EncryptedMnemonic
 	ExtendedPublicKeys    []string
 	MinimumSignatures     uint32
@@ -69,6 +77,8 @@ func (d *File) toJSON() *keysFileJSON {
 	}
 
 	return &keysFileJSON{
+		Version:               d.Version,
+		NumThreads:            d.NumThreads,
 		EncryptedPrivateKeys:  encryptedPrivateKeysJSON,
 		ExtendedPublicKeys:    d.ExtendedPublicKeys,
 		MinimumSignatures:     d.MinimumSignatures,
@@ -80,6 +90,8 @@ func (d *File) toJSON() *keysFileJSON {
 }
 
 func (d *File) fromJSON(fileJSON *keysFileJSON) error {
+	d.Version = fileJSON.Version
+	d.NumThreads = fileJSON.NumThreads
 	d.MinimumSignatures = fileJSON.MinimumSignatures
 	d.ECDSA = fileJSON.ECDSA
 	d.ExtendedPublicKeys = fileJSON.ExtendedPublicKeys
@@ -181,10 +193,20 @@ func (d *File) DecryptMnemonics(cmdLinePassword string) ([]string, error) {
 	if len(password) == 0 {
 		password = getPassword("Password:")
 	}
+
+	var numThreads uint8
+	if len(d.EncryptedMnemonics) > 0 {
+		var err error
+		numThreads, err = d.numThreads(password)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	privateKeys := make([]string, len(d.EncryptedMnemonics))
 	for i, encryptedPrivateKey := range d.EncryptedMnemonics {
 		var err error
-		privateKeys[i], err = decryptMnemonic(encryptedPrivateKey, password)
+		privateKeys[i], err = decryptMnemonic(numThreads, encryptedPrivateKey, password)
 		if err != nil {
 			return nil, err
 		}
@@ -278,13 +300,73 @@ func (d *File) Save() error {
 	return nil
 }
 
-func getAEAD(password, salt []byte) (cipher.AEAD, error) {
-	key := argon2.IDKey(password, salt, 1, 64*1024, uint8(runtime.NumCPU()), 32)
+const defaultNumThreads = 8
+
+func (d *File) numThreads(password []byte) (uint8, error) {
+	// There's a bug in v0 wallets where the number of threads
+	// was determined by the number of logical CPUs at the machine,
+	// which made the authentication non-deterministic across platforms.
+	// In order to solve it we introduce v1 where the number of threads
+	// is constant, and brute force the number of threads in v0. After we
+	// find the right amount via brute force we save the result to the file.
+
+	if d.Version != 0 {
+		return defaultNumThreads, nil
+	}
+
+	if d.NumThreads != 0 {
+		return d.NumThreads, nil
+	}
+
+	numThreads, err := d.detectNumThreads(password, d.EncryptedMnemonics[0].salt)
+	if err != nil {
+		return 0, err
+	}
+
+	d.NumThreads = numThreads
+	err = d.Save()
+	if err != nil {
+		return 0, err
+	}
+
+	return numThreads, nil
+}
+
+func (d *File) detectNumThreads(password, salt []byte) (uint8, error) {
+	numCPU := uint8(runtime.NumCPU())
+	_, err := getAEAD(numCPU, password, salt)
+	if err != nil {
+		if !strings.Contains(err.Error(), "message authentication failed") {
+			return 0, err
+		}
+	} else {
+		return numCPU, nil
+	}
+
+	for i := uint8(1); ; i++ {
+		if i == numCPU {
+			continue
+		}
+
+		_, err := getAEAD(i, password, salt)
+		if err != nil {
+			const maxTries = 32
+			if i > maxTries || !strings.Contains(err.Error(), "message authentication failed") {
+				return 0, err
+			}
+		} else {
+			return i, nil
+		}
+	}
+}
+
+func getAEAD(threads uint8, password, salt []byte) (cipher.AEAD, error) {
+	key := argon2.IDKey(password, salt, 1, 64*1024, threads, 32)
 	return chacha20poly1305.NewX(key)
 }
 
-func decryptMnemonic(encryptedPrivateKey *EncryptedMnemonic, password []byte) (string, error) {
-	aead, err := getAEAD(password, encryptedPrivateKey.salt)
+func decryptMnemonic(numThreads uint8, encryptedPrivateKey *EncryptedMnemonic, password []byte) (string, error) {
+	aead, err := getAEAD(numThreads, password, encryptedPrivateKey.salt)
 	if err != nil {
 		return "", err
 	}

@@ -87,13 +87,18 @@ func TestValidateAndInsertImportedPruningPoint(t *testing.T) {
 				t.Fatalf("PruningPointHeaders: %+v", err)
 			}
 
-			pruningPointAndItsAnticoneWithTrustedData, err := tcSyncer.PruningPointAndItsAnticoneWithTrustedData()
+			pruningPointAndItsAnticone, err := tcSyncer.PruningPointAndItsAnticone()
 			if err != nil {
-				t.Fatalf("PruningPointAndItsAnticoneWithTrustedData: %+v", err)
+				t.Fatalf("PruningPointAndItsAnticone: %+v", err)
 			}
 
-			for _, blockWithTrustedData := range pruningPointAndItsAnticoneWithTrustedData {
-				_, err := synceeStaging.ValidateAndInsertBlockWithTrustedData(blockWithTrustedData, false)
+			for _, blockHash := range pruningPointAndItsAnticone {
+				blockWithTrustedData, err := tcSyncer.BlockWithTrustedData(blockHash)
+				if err != nil {
+					return
+				}
+
+				_, err = synceeStaging.ValidateAndInsertBlockWithTrustedData(blockWithTrustedData, false)
 				if err != nil {
 					t.Fatalf("ValidateAndInsertBlockWithTrustedData: %+v", err)
 				}

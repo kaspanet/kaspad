@@ -2,7 +2,6 @@ package pruningmanager_test
 
 import (
 	"encoding/json"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
 	"github.com/kaspanet/kaspad/infrastructure/db/database"
 	"os"
 	"path/filepath"
@@ -40,7 +39,7 @@ func TestPruning(t *testing.T) {
 			dagconfig.MainnetParams.Name: "502",
 			dagconfig.TestnetParams.Name: "502",
 			dagconfig.DevnetParams.Name:  "502",
-			dagconfig.SimnetParams.Name:  "502",
+			dagconfig.SimnetParams.Name:  "503",
 		},
 	}
 
@@ -140,12 +139,11 @@ func TestPruning(t *testing.T) {
 			// We expect blocks that are within the difficulty adjustment window size of
 			// the pruning point and its anticone to not get pruned
 			unprunedBlockHashesBelowPruningPoint := make(map[externalapi.DomainHash]struct{})
-			pruningPointAndItsAnticone, err := tc.PruningPointAndItsAnticoneWithTrustedData()
+			pruningPointAndItsAnticone, err := tc.PruningPointAndItsAnticone()
 			if err != nil {
 				t.Fatalf("pruningPointAndItsAnticone: %+v", err)
 			}
-			for _, block := range pruningPointAndItsAnticone {
-				blockHash := consensushashing.BlockHash(block.Block)
+			for _, blockHash := range pruningPointAndItsAnticone {
 				unprunedBlockHashesBelowPruningPoint[*blockHash] = struct{}{}
 				blockWindow, err := tc.DAGTraversalManager().BlockWindow(stagingArea, blockHash, consensusConfig.DifficultyAdjustmentWindowSize)
 				if err != nil {

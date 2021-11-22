@@ -25,7 +25,8 @@ type Consensus interface {
 	GetVirtualUTXOs(expectedVirtualParents []*DomainHash, fromOutpoint *DomainOutpoint, limit int) ([]*OutpointAndUTXOEntryPair, error)
 	PruningPoint() (*DomainHash, error)
 	PruningPointHeaders() ([]BlockHeader, error)
-	PruningPointAndItsAnticoneWithTrustedData() ([]*BlockWithTrustedData, error)
+	PruningPointAndItsAnticone() ([]*DomainHash, error)
+	BlockWithTrustedData(blockHash *DomainHash) (*BlockWithTrustedData, error)
 	ClearImportedPruningPointData() error
 	AppendImportedPruningPointUTXOs(outpointAndUTXOEntryPairs []*OutpointAndUTXOEntryPair) error
 	ValidateAndInsertImportedPruningPoint(newPruningPoint *DomainHash) error

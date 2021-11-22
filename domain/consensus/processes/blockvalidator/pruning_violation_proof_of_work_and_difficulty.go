@@ -67,9 +67,9 @@ func (v *blockValidator) setParents(stagingArea *model.StagingArea,
 	header externalapi.BlockHeader,
 	isBlockWithTrustedData bool) error {
 
-	for level := 0; level <= pow.BlockLevel(header); level++ {
+	for level := 0; level <= header.BlockLevel(); level++ {
 		var parents []*externalapi.DomainHash
-		for _, parent := range header.ParentsAtLevel(level) {
+		for _, parent := range v.parentsManager.ParentsAtLevel(header, level) {
 			_, err := v.ghostdagDataStores[level].Get(v.databaseContext, stagingArea, parent, false)
 			isNotFoundError := database.IsNotFoundError(err)
 			if !isNotFoundError && err != nil {
@@ -116,7 +116,7 @@ func (v *blockValidator) validateDifficulty(stagingArea *model.StagingArea,
 		return err
 	}
 
-	blockLevel := pow.BlockLevel(header)
+	blockLevel := header.BlockLevel()
 	for i := 1; i <= blockLevel; i++ {
 		err = v.ghostdagManagers[i].GHOSTDAG(stagingArea, blockHash)
 		if err != nil {

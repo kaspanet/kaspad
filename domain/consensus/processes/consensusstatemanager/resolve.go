@@ -35,7 +35,7 @@ func (csm *consensusStateManager) ResolveVirtual(maxBlocksToResolve uint64) (boo
 	var selectedTip *externalapi.DomainHash
 	isCompletelyResolved := true
 	for _, tip := range tips {
-		log.Infof("Resolving tip %s", tip)
+		log.Debugf("Resolving tip %s", tip)
 		resolveStagingArea := model.NewStagingArea()
 		unverifiedBlocks, err := csm.getUnverifiedChainBlocks(resolveStagingArea, tip)
 		if err != nil {
@@ -46,7 +46,7 @@ func (csm *consensusStateManager) ResolveVirtual(maxBlocksToResolve uint64) (boo
 		hasMoreUnverifiedThanMax := maxBlocksToResolve != 0 && uint64(len(unverifiedBlocks)) > maxBlocksToResolve
 		if hasMoreUnverifiedThanMax {
 			resolveTip = unverifiedBlocks[uint64(len(unverifiedBlocks))-maxBlocksToResolve]
-			log.Infof("Has more than %d blocks to resolve. Changing the resolve tip to %s", maxBlocksToResolve, resolveTip)
+			log.Debugf("Has more than %d blocks to resolve. Changing the resolve tip to %s", maxBlocksToResolve, resolveTip)
 		}
 
 		blockStatus, reversalData, err := csm.resolveBlockStatus(resolveStagingArea, resolveTip, true)

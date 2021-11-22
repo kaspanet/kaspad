@@ -137,11 +137,18 @@ func (s *consensus) Init(skipAddingGenesis bool) error {
 	return nil
 }
 
-func (s *consensus) PruningPointAndItsAnticoneWithTrustedData() ([]*externalapi.BlockWithTrustedData, error) {
+func (s *consensus) PruningPointAndItsAnticone() ([]*externalapi.DomainHash, error) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	return s.pruningManager.PruningPointAndItsAnticoneWithTrustedData()
+	return s.pruningManager.PruningPointAndItsAnticone()
+}
+
+func (s *consensus) BlockWithTrustedData(blockHash *externalapi.DomainHash) (*externalapi.BlockWithTrustedData, error) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	return s.pruningManager.BlockWithTrustedData(model.NewStagingArea(), blockHash)
 }
 
 // BuildBlock builds a block over the current state, with the transactions
@@ -716,7 +723,10 @@ func (s *consensus) PopulateMass(transaction *externalapi.DomainTransaction) {
 func (s *consensus) ResolveVirtual() error {
 	// In order to prevent a situation that the consensus lock is held for too much time, we
 	// release the lock each time resolve 100 blocks.
-	for {
+	for i := 0; ; i++ {
+		if i%10 == 0 {
+			log.Infof("Resolving virtual. This may take some time...")
+		}
 		var isCompletelyResolved bool
 		var err error
 		func() {
@@ -730,6 +740,7 @@ func (s *consensus) ResolveVirtual() error {
 		}
 
 		if isCompletelyResolved {
+			log.Infof("Resolved virtual")
 			return nil
 		}
 	}

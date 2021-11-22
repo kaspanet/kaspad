@@ -15,8 +15,8 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/hashset"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/pow"
 	"github.com/kaspanet/kaspad/infrastructure/db/database"
+	"github.com/kaspanet/kaspad/infrastructure/logger"
 	"github.com/pkg/errors"
 	"math/big"
 )
@@ -28,6 +28,7 @@ type pruningProofManager struct {
 	ghostdagManagers     []model.GHOSTDAGManager
 	reachabilityManagers []model.ReachabilityManager
 	dagTraversalManagers []model.DAGTraversalManager
+	parentsManager       model.ParentsManager
 
 	ghostdagDataStores  []model.GHOSTDAGDataStore
 	pruningStore        model.PruningStore
@@ -39,6 +40,9 @@ type pruningProofManager struct {
 	genesisHash   *externalapi.DomainHash
 	k             externalapi.KType
 	pruningProofM uint64
+
+	cachedPruningPoint *externalapi.DomainHash
+	cachedProof        *externalapi.PruningPointProof
 }
 
 // New instantiates a new PruningManager
@@ -49,6 +53,7 @@ func New(
 	ghostdagManagers []model.GHOSTDAGManager,
 	reachabilityManagers []model.ReachabilityManager,
 	dagTraversalManagers []model.DAGTraversalManager,
+	parentsManager model.ParentsManager,
 
 	ghostdagDataStores []model.GHOSTDAGDataStore,
 	pruningStore model.PruningStore,
@@ -68,6 +73,7 @@ func New(
 		ghostdagManagers:     ghostdagManagers,
 		reachabilityManagers: reachabilityManagers,
 		dagTraversalManagers: dagTraversalManagers,
+		parentsManager:       parentsManager,
 
 		ghostdagDataStores:  ghostdagDataStores,
 		pruningStore:        pruningStore,
@@ -83,6 +89,33 @@ func New(
 }
 
 func (ppm *pruningProofManager) BuildPruningPointProof(stagingArea *model.StagingArea) (*externalapi.PruningPointProof, error) {
+	onEnd := logger.LogAndMeasureExecutionTime(log, "BuildPruningPointProof")
+	defer onEnd()
+
+	pruningPoint, err := ppm.pruningStore.PruningPoint(ppm.databaseContext, stagingArea)
+	if err != nil {
+		return nil, err
+	}
+
+	if ppm.cachedPruningPoint != nil && ppm.cachedPruningPoint.Equal(pruningPoint) {
+		return ppm.cachedProof, nil
+	}
+
+	proof, err := ppm.buildPruningPointProof(stagingArea)
+	if err != nil {
+		return nil, err
+	}
+
+	ppm.cachedProof = proof
+	ppm.cachedPruningPoint = pruningPoint
+
+	return proof, nil
+}
+
+func (ppm *pruningProofManager) buildPruningPointProof(stagingArea *model.StagingArea) (*externalapi.PruningPointProof, error) {
+	onEnd := logger.LogAndMeasureExecutionTime(log, "buildPruningPointProof")
+	defer onEnd()
+
 	pruningPoint, err := ppm.pruningStore.PruningPoint(ppm.databaseContext, stagingArea)
 	if err != nil {
 		return nil, err
@@ -97,17 +130,33 @@ func (ppm *pruningProofManager) BuildPruningPointProof(stagingArea *model.Stagin
 		return nil, err
 	}
 
-	maxLevel := len(pruningPointHeader.Parents()) - 1
+	maxLevel := len(ppm.parentsManager.Parents(pruningPointHeader)) - 1
 	headersByLevel := make(map[int][]externalapi.BlockHeader)
 	selectedTipByLevel := make([]*externalapi.DomainHash, maxLevel+1)
-	pruningPointLevel := pow.BlockLevel(pruningPointHeader)
+	pruningPointLevel := pruningPointHeader.BlockLevel()
 	for blockLevel := maxLevel; blockLevel >= 0; blockLevel-- {
 		var selectedTip *externalapi.DomainHash
 		if blockLevel <= pruningPointLevel {
 			selectedTip = pruningPoint
 		} else {
-			blockLevelParents := pruningPointHeader.ParentsAtLevel(blockLevel)
-			selectedTip, err = ppm.ghostdagManagers[blockLevel].ChooseSelectedParent(stagingArea, []*externalapi.DomainHash(blockLevelParents)...)
+			blockLevelParents := ppm.parentsManager.ParentsAtLevel(pruningPointHeader, blockLevel)
+			selectedTipCandidates := make([]*externalapi.DomainHash, 0, len(blockLevelParents))
+
+			// In a pruned node, some pruning point parents might be missing, but we're guaranteed that its
+			// selected parent is not missing.
+			for _, parent := range blockLevelParents {
+				_, err := ppm.ghostdagDataStores[blockLevel].Get(ppm.databaseContext, stagingArea, parent, false)
+				if database.IsNotFoundError(err) {
+					continue
+				}
+				if err != nil {
+					return nil, err
+				}
+
+				selectedTipCandidates = append(selectedTipCandidates, parent)
+			}
+
+			selectedTip, err = ppm.ghostdagManagers[blockLevel].ChooseSelectedParent(stagingArea, selectedTipCandidates...)
 			if err != nil {
 				return nil, err
 			}
@@ -248,6 +297,9 @@ func (ppm *pruningProofManager) blockAtDepth(stagingArea *model.StagingArea, gho
 }
 
 func (ppm *pruningProofManager) ValidatePruningPointProof(pruningPointProof *externalapi.PruningPointProof) error {
+	onEnd := logger.LogAndMeasureExecutionTime(log, "ValidatePruningPointProof")
+	defer onEnd()
+
 	stagingArea := model.NewStagingArea()
 
 	if len(pruningPointProof.Headers) == 0 {
@@ -257,8 +309,8 @@ func (ppm *pruningProofManager) ValidatePruningPointProof(pruningPointProof *ext
 	level0Headers := pruningPointProof.Headers[0]
 	pruningPointHeader := level0Headers[len(level0Headers)-1]
 	pruningPoint := consensushashing.HeaderHash(pruningPointHeader)
-	pruningPointBlockLevel := pow.BlockLevel(pruningPointHeader)
-	maxLevel := len(pruningPointHeader.Parents()) - 1
+	pruningPointBlockLevel := pruningPointHeader.BlockLevel()
+	maxLevel := len(ppm.parentsManager.Parents(pruningPointHeader)) - 1
 	if maxLevel >= len(pruningPointProof.Headers) {
 		return errors.Wrapf(ruleerrors.ErrPruningProofEmpty, "proof has only %d levels while pruning point "+
 			"has parents from %d levels", len(pruningPointProof.Headers), maxLevel+1)
@@ -300,15 +352,15 @@ func (ppm *pruningProofManager) ValidatePruningPointProof(pruningPointProof *ext
 		var selectedTip *externalapi.DomainHash
 		for i, header := range headers {
 			blockHash := consensushashing.HeaderHash(header)
-			if pow.BlockLevel(header) < blockLevel {
+			if header.BlockLevel() < blockLevel {
 				return errors.Wrapf(ruleerrors.ErrPruningProofWrongBlockLevel, "block %s level is %d when it's "+
-					"expected to be at least %d", blockHash, pow.BlockLevel(header), blockLevel)
+					"expected to be at least %d", blockHash, header.BlockLevel(), blockLevel)
 			}
 
 			blockHeaderStore.Stage(stagingArea, blockHash, header)
 
 			var parents []*externalapi.DomainHash
-			for _, parent := range header.ParentsAtLevel(blockLevel) {
+			for _, parent := range ppm.parentsManager.ParentsAtLevel(header, blockLevel) {
 				_, err := ghostdagDataStores[blockLevel].Get(ppm.databaseContext, stagingArea, parent, false)
 				if database.IsNotFoundError(err) {
 					continue
@@ -377,7 +429,7 @@ func (ppm *pruningProofManager) ValidatePruningPointProof(pruningPointProof *ext
 			}
 		}
 
-		if !selectedTip.Equal(pruningPoint) && !pruningPointHeader.ParentsAtLevel(blockLevel).Contains(selectedTip) {
+		if !selectedTip.Equal(pruningPoint) && !ppm.parentsManager.ParentsAtLevel(pruningPointHeader, blockLevel).Contains(selectedTip) {
 			return errors.Wrapf(ruleerrors.ErrPruningProofMissesBlocksBelowPruningPoint, "the selected tip %s at "+
 				"level %d is not a parent of the pruning point", selectedTip, blockLevel)
 		}
@@ -395,7 +447,7 @@ func (ppm *pruningProofManager) ValidatePruningPointProof(pruningPointProof *ext
 				return errors.Wrapf(ruleerrors.ErrPruningProofSelectedTipIsNotThePruningPoint, "the pruning "+
 					"proof selected tip %s at level %d is not the pruning point", selectedTip, blockLevel)
 			}
-		} else if !pruningPointHeader.ParentsAtLevel(blockLevel).Contains(selectedTip) {
+		} else if !ppm.parentsManager.ParentsAtLevel(pruningPointHeader, blockLevel).Contains(selectedTip) {
 			return errors.Wrapf(ruleerrors.ErrPruningProofSelectedTipNotParentOfPruningPoint, "the pruning "+
 				"proof selected tip %s at level %d is not a parent of the of the pruning point on the same "+
 				"level", selectedTip, blockLevel)
@@ -554,19 +606,22 @@ func (ppm *pruningProofManager) dagProcesses(
 }
 
 func (ppm *pruningProofManager) ApplyPruningPointProof(stagingArea *model.StagingArea, pruningPointProof *externalapi.PruningPointProof) error {
+	onEnd := logger.LogAndMeasureExecutionTime(log, "ApplyPruningPointProof")
+	defer onEnd()
+
 	for blockLevel, headers := range pruningPointProof.Headers {
 		var selectedTip *externalapi.DomainHash
 		for i, header := range headers {
 			blockHash := consensushashing.HeaderHash(header)
-			if pow.BlockLevel(header) < blockLevel {
+			if header.BlockLevel() < blockLevel {
 				return errors.Wrapf(ruleerrors.ErrPruningProofWrongBlockLevel, "block %s level is %d when it's "+
-					"expected to be at least %d", blockHash, pow.BlockLevel(header), blockLevel)
+					"expected to be at least %d", blockHash, header.BlockLevel(), blockLevel)
 			}
 
 			ppm.blockHeaderStore.Stage(stagingArea, blockHash, header)
 
 			var parents []*externalapi.DomainHash
-			for _, parent := range header.ParentsAtLevel(blockLevel) {
+			for _, parent := range ppm.parentsManager.ParentsAtLevel(header, blockLevel) {
 				_, err := ppm.ghostdagDataStores[blockLevel].Get(ppm.databaseContext, stagingArea, parent, false)
 				if database.IsNotFoundError(err) {
 					continue
