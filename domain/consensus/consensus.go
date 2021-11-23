@@ -134,50 +134,6 @@ func (s *consensus) Init(skipAddingGenesis bool) error {
 		}
 	}
 
-	//{
-	//	//area := model.NewStagingArea()
-	//	file, err := os.OpenFile("/tmp/utxos", os.O_WRONLY|os.O_CREATE, 0600)
-	//	if err != nil {
-	//		return err
-	//	}
-	//	defer file.Close()
-	//
-	//	utxoSetIterator, err := s.pruningStore.PruningPointUTXOIterator(s.databaseContext)
-	//	if err != nil {
-	//		return err
-	//	}
-	//	defer utxoSetIterator.Close()
-	//
-	//	//utxoSetMultiset := multiset.New()
-	//	for ok := utxoSetIterator.First(); ok; ok = utxoSetIterator.Next() {
-	//		outpoint, entry, err := utxoSetIterator.Get()
-	//		if err != nil {
-	//			return err
-	//		}
-	//		serializedUTXO, err := utxo.SerializeUTXO(entry, outpoint)
-	//		if err != nil {
-	//			return err
-	//		}
-	//		if len(serializedUTXO) > 255 {
-	//			panic("shit")
-	//		}
-	//		_, err = file.Write([]byte{byte(len(serializedUTXO))})
-	//		if err != nil {
-	//			return err
-	//		}
-	//		_, err = file.Write(serializedUTXO)
-	//		if err != nil {
-	//			return err
-	//		}
-	//		//utxoSetMultiset.Add(serializedUTXO)
-	//	}
-	//
-	//	err = file.Close()
-	//	if err != nil {
-	//		return err
-	//	}
-	//}
-
 	return nil
 }
 
