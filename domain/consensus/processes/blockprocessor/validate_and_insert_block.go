@@ -5,6 +5,7 @@ import (
 	"compress/gzip"
 	_ "embed"
 	"fmt"
+	"github.com/kaspanet/go-muhash"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/multiset"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/utxo"
 	"github.com/kaspanet/kaspad/infrastructure/db/database"
@@ -165,7 +166,7 @@ func (bp *blockProcessor) validateAndInsertBlock(stagingArea *model.StagingArea,
 
 	{
 		isGenesis := len(block.Header.DirectParents()) == 0
-		if isGenesis && !block.Header.UTXOCommitment().Equal(externalapi.NewZeroHash()) {
+		if isGenesis && !block.Header.UTXOCommitment().Equal(externalapi.NewDomainHashFromByteArray(muhash.EmptyMuHashHash.AsArray())) {
 			log.Infof("Loading UTXO set dump")
 
 			toAdd := make(map[externalapi.DomainOutpoint]externalapi.UTXOEntry)
