@@ -83,6 +83,8 @@ func (bp *blockProcessor) updateVirtualAcceptanceDataAfterImportingPruningPoint(
 	return nil
 }
 
+var GenesisUTXOSet externalapi.UTXODiff
+
 func (bp *blockProcessor) validateAndInsertBlock(stagingArea *model.StagingArea, block *externalapi.DomainBlock,
 	isPruningPoint bool, shouldValidateAgainstUTXO bool, isBlockWithTrustedData bool) (*externalapi.BlockInsertionResult, error) {
 
@@ -193,14 +195,18 @@ func (bp *blockProcessor) validateAndInsertBlock(stagingArea *model.StagingArea,
 			if err != nil {
 				return nil, err
 			}
+			GenesisUTXOSet = diff
 		} else if isGenesis {
 			// if it's genesis but has an empty muhash then commit an empty multiset.
 			area := model.NewStagingArea()
+			bp.consensusStateStore.StageVirtualUTXODiff(area, utxo.NewUTXODiff())
+			bp.utxoDiffStore.Stage(area, blockHash, utxo.NewUTXODiff(), nil)
 			bp.multisetStore.Stage(area, blockHash, multiset.New())
 			err = staging.CommitAllChanges(bp.databaseContext, area)
 			if err != nil {
 				return nil, err
 			}
+			GenesisUTXOSet = utxo.NewUTXODiff()
 		}
 	}
 
