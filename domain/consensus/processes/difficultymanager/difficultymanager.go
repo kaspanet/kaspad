@@ -105,8 +105,8 @@ func (dm *difficultyManager) requiredDifficultyFromTargetsWindow(targetsWindow b
 		return dm.genesisBits, nil
 	}
 
-	// in the past this was < 2 as the comment explains, we changed it to under the window size to prevent
-	// mainnet bugs after the hard fork.
+	// in the past this was < 2 as the comment explains, we changed it to under the window size to
+	// make the hashrate(which is ~1.5GH/s) constant in the first 2641 blocks so that we won't have a lot of tips
 
 	// We need at least 2 blocks to get a timestamp interval
 	// We could instead clamp the timestamp difference to `targetTimePerBlock`,

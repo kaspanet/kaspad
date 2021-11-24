@@ -12,6 +12,7 @@ import (
 	"github.com/kaspanet/kaspad/util/difficulty"
 	"github.com/kaspanet/kaspad/util/staging"
 	"io"
+	"sync"
 
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
@@ -83,7 +84,50 @@ func (bp *blockProcessor) updateVirtualAcceptanceDataAfterImportingPruningPoint(
 	return nil
 }
 
-var GenesisUTXOSet externalapi.UTXODiff
+var mainnetGenesisUTXOSet externalapi.UTXODiff
+var mainnetGenesisMultiSet model.Multiset
+var mainnetGenesisOnce sync.Once
+var mainnetGenesisErr error
+func deserializeMainnetUTXOSet() (externalapi.UTXODiff, model.Multiset, error) {
+	mainnetGenesisOnce.Do(func() {
+		toAdd := make(map[externalapi.DomainOutpoint]externalapi.UTXOEntry)
+		mainnetGenesisMultiSet = multiset.New()
+		file, err := gzip.NewReader(bytes.NewReader(utxoDumpFile))
+		if err != nil {
+			mainnetGenesisErr = err
+			return
+		}
+		for i := 0; ; i++ {
+			size := make([]byte, 1)
+			_, err = io.ReadFull(file, size)
+			if errors.Is(err, io.EOF) {
+				break
+			}
+			if err != nil {
+				mainnetGenesisErr = err
+				return
+			}
+
+			serializedUTXO := make([]byte, size[0])
+			_, err = io.ReadFull(file, serializedUTXO)
+			if err != nil {
+				mainnetGenesisErr = err
+				return
+			}
+
+			mainnetGenesisMultiSet.Add(serializedUTXO)
+
+			entry, outpoint, err := utxo.DeserializeUTXO(serializedUTXO)
+			if err != nil {
+				mainnetGenesisErr = err
+				return
+			}
+			toAdd[*outpoint] = entry
+		}
+		mainnetGenesisUTXOSet, mainnetGenesisErr = utxo.NewUTXODiffFromCollections(utxo.NewUTXOCollection(toAdd), utxo.NewUTXOCollection(make(map[externalapi.DomainOutpoint]externalapi.UTXOEntry)))
+	})
+	return mainnetGenesisUTXOSet, mainnetGenesisMultiSet, mainnetGenesisErr
+}
 
 func (bp *blockProcessor) validateAndInsertBlock(stagingArea *model.StagingArea, block *externalapi.DomainBlock,
 	isPruningPoint bool, shouldValidateAgainstUTXO bool, isBlockWithTrustedData bool) (*externalapi.BlockInsertionResult, error) {
@@ -142,48 +186,11 @@ func (bp *blockProcessor) validateAndInsertBlock(stagingArea *model.StagingArea,
 		isGenesis := len(block.Header.DirectParents()) == 0
 		if isGenesis && !block.Header.UTXOCommitment().Equal(externalapi.NewDomainHashFromByteArray(muhash.EmptyMuHashHash.AsArray())) {
 			log.Infof("Loading UTXO set dump")
-
-			toAdd := make(map[externalapi.DomainOutpoint]externalapi.UTXOEntry)
-			utxoSetMultiset := multiset.New()
-			file, err := gzip.NewReader(bytes.NewReader(utxoDumpFile))
-			if err != nil {
-				return nil, err
-			}
-			for i := 0; ; i++ {
-				size := make([]byte, 1)
-				_, err = io.ReadFull(file, size)
-				if errors.Is(err, io.EOF) {
-					break
-				}
-				if err != nil {
-					return nil, err
-				}
-
-				serializedUTXO := make([]byte, size[0])
-				_, err = io.ReadFull(file, serializedUTXO)
-				if err != nil {
-					return nil, err
-				}
-
-				utxoSetMultiset.Add(serializedUTXO)
-
-				entry, outpoint, err := utxo.DeserializeUTXO(serializedUTXO)
-				if err != nil {
-					return nil, err
-				}
-
-				toAdd[*outpoint] = entry
-			}
-
+			diff, utxoSetMultiset, err := deserializeMainnetUTXOSet()
 			log.Infof("Finished loading UTXO set dump")
 			utxoSetHash := utxoSetMultiset.Hash()
 			if !utxoSetHash.Equal(block.Header.UTXOCommitment()) {
 				return nil, errors.New("Invalid UTXO set dump")
-			}
-
-			diff, err := utxo.NewUTXODiffFromCollections(utxo.NewUTXOCollection(toAdd), utxo.NewUTXOCollection(make(map[externalapi.DomainOutpoint]externalapi.UTXOEntry)))
-			if err != nil {
-				return nil, err
 			}
 
 			area := model.NewStagingArea()
@@ -195,7 +202,6 @@ func (bp *blockProcessor) validateAndInsertBlock(stagingArea *model.StagingArea,
 			if err != nil {
 				return nil, err
 			}
-			GenesisUTXOSet = diff
 		} else if isGenesis {
 			// if it's genesis but has an empty muhash then commit an empty multiset.
 			area := model.NewStagingArea()
@@ -206,7 +212,6 @@ func (bp *blockProcessor) validateAndInsertBlock(stagingArea *model.StagingArea,
 			if err != nil {
 				return nil, err
 			}
-			GenesisUTXOSet = utxo.NewUTXODiff()
 		}
 	}
 

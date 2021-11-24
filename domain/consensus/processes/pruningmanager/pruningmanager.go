@@ -3,7 +3,6 @@ package pruningmanager
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
-	"github.com/kaspanet/kaspad/domain/consensus/processes/blockprocessor"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/multiset"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/utxo"
@@ -676,7 +675,19 @@ func (pm *pruningManager) calculateDiffBetweenPreviousAndCurrentPruningPoints(st
 	onEnd := logger.LogAndMeasureExecutionTime(log, "pruningManager.calculateDiffBetweenPreviousAndCurrentPruningPoints")
 	defer onEnd()
 	if currentPruningHash.Equal(pm.genesisHash) {
-		return blockprocessor.GenesisUTXOSet, nil
+		iter, err := pm.consensusStateManager.RestorePastUTXOSetIterator(stagingArea, currentPruningHash)
+		if err != nil {
+			return nil, err
+		}
+		set := make(map[externalapi.DomainOutpoint]externalapi.UTXOEntry)
+		for ok := iter.First(); ok; ok = iter.Next() {
+			outpoint, entry, err := iter.Get()
+			if err != nil {
+				return nil, err
+			}
+			set[*outpoint] = entry
+		}
+		return utxo.NewUTXODiffFromCollections(utxo.NewUTXOCollection(set), utxo.NewUTXOCollection(nil))
 	}
 
 	pruningPointIndex, err := pm.pruningStore.CurrentPruningPointIndex(pm.databaseContext, stagingArea)
