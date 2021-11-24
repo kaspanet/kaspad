@@ -39,7 +39,7 @@ func TestValidateAndInsertImportedPruningPoint(t *testing.T) {
 		factory := consensus.NewFactory()
 
 		// This is done to reduce the pruning depth to 6 blocks
-		finalityDepth := 3
+		finalityDepth := 5
 		consensusConfig.FinalityDuration = time.Duration(finalityDepth) * consensusConfig.TargetTimePerBlock
 		consensusConfig.K = 0
 		consensusConfig.PruningProofM = 1
