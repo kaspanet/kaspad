@@ -243,9 +243,9 @@ func TestVirtualSelectionViolatingMergeSizeLimit(t *testing.T) {
 
 		// Test if Virtual's mergeset is too large
 		// Note: the selected parent itself is also counted in the mergeset limit
-		if len(selectedParentAnticone) + 1 > (int)(consensusConfig.MergeSetSizeLimit) {
+		if len(selectedParentAnticone)+1 > (int)(consensusConfig.MergeSetSizeLimit) {
 			t.Fatalf("Virtual's mergset size (%d) exeeds merge set limit (%d)",
-				len(selectedParentAnticone) + 1, consensusConfig.MergeSetSizeLimit)
+				len(selectedParentAnticone)+1, consensusConfig.MergeSetSizeLimit)
 		}
 	})
 }
