@@ -39,7 +39,7 @@ func TestValidateAndInsertImportedPruningPoint(t *testing.T) {
 		factory := consensus.NewFactory()
 
 		// This is done to reduce the pruning depth to 6 blocks
-		finalityDepth := 5
+		finalityDepth := 3
 		consensusConfig.FinalityDuration = time.Duration(finalityDepth) * consensusConfig.TargetTimePerBlock
 		consensusConfig.K = 0
 		consensusConfig.PruningProofM = 1
@@ -144,15 +144,15 @@ func TestValidateAndInsertImportedPruningPoint(t *testing.T) {
 
 			var fromOutpoint *externalapi.DomainOutpoint
 			var pruningPointUTXOs []*externalapi.OutpointAndUTXOEntryPair
-			const step = 10_000
+			const step = 100_000
 			for {
-				localPruningPointUTXOs, err := tcSyncer.GetPruningPointUTXOs(pruningPoint, fromOutpoint, step)
+				outpointAndUTXOEntryPairs, err := tcSyncer.GetPruningPointUTXOs(pruningPoint, fromOutpoint, step)
 				if err != nil {
 					t.Fatalf("GetPruningPointUTXOs: %+v", err)
 				}
-				pruningPointUTXOs = append(pruningPointUTXOs, localPruningPointUTXOs...)
-				fromOutpoint = pruningPointUTXOs[len(pruningPointUTXOs)-1].Outpoint
-				if len(pruningPointUTXOs) < step {
+				fromOutpoint = outpointAndUTXOEntryPairs[len(outpointAndUTXOEntryPairs)-1].Outpoint
+				pruningPointUTXOs = append(pruningPointUTXOs, outpointAndUTXOEntryPairs...)
+				if len(outpointAndUTXOEntryPairs) < step {
 					break
 				}
 			}
@@ -520,7 +520,7 @@ func TestGetPruningPointUTXOs(t *testing.T) {
 
 		// Get pruning point UTXOs in a loop
 		var allOutpointAndUTXOEntryPairs []*externalapi.OutpointAndUTXOEntryPair
-		step := 100
+		const step = 100_000
 		var fromOutpoint *externalapi.DomainOutpoint
 		for {
 			outpointAndUTXOEntryPairs, err := testConsensus.GetPruningPointUTXOs(pruningPoint, fromOutpoint, step)
@@ -535,11 +535,17 @@ func TestGetPruningPointUTXOs(t *testing.T) {
 			}
 		}
 
+		const mainnetUTXOSize = 1232643
+		expected := len(outputs)+1
+		if consensusConfig.Name != "mainnet" {
+			expected += mainnetUTXOSize
+		}
+
 		// Make sure the length of the UTXOs is exactly spendingTransaction.Outputs + 1 coinbase
 		// output (includingBlock's coinbase)
-		if len(allOutpointAndUTXOEntryPairs) != len(outputs)+1 {
+		if len(allOutpointAndUTXOEntryPairs) != expected {
 			t.Fatalf("Returned an unexpected amount of UTXOs. "+
-				"Want: %d, got: %d", len(outputs)+2, len(allOutpointAndUTXOEntryPairs))
+				"Want: %d, got: %d", expected, len(allOutpointAndUTXOEntryPairs))
 		}
 
 		// Make sure all spendingTransaction.Outputs are in the returned UTXOs
