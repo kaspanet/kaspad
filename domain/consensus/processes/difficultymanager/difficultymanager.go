@@ -105,10 +105,13 @@ func (dm *difficultyManager) requiredDifficultyFromTargetsWindow(targetsWindow b
 		return dm.genesisBits, nil
 	}
 
+	// in the past this was < 2 as the comment explains, we changed it to under the window size to prevent
+	// mainnet bugs after the hard fork.
+
 	// We need at least 2 blocks to get a timestamp interval
 	// We could instead clamp the timestamp difference to `targetTimePerBlock`,
 	// but then everything will cancel out and we'll get the target from the last block, which will be the same as genesis.
-	if len(targetsWindow) < 2 {
+	if len(targetsWindow) < dm.difficultyAdjustmentWindowSize {
 		return dm.genesisBits, nil
 	}
 	windowMinTimestamp, windowMaxTimeStamp, windowsMinIndex, _ := targetsWindow.minMaxTimestamps()
