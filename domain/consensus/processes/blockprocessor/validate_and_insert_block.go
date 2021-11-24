@@ -9,10 +9,9 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/utils/multiset"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/utxo"
 	"github.com/kaspanet/kaspad/infrastructure/db/database"
+	"github.com/kaspanet/kaspad/util/difficulty"
 	"github.com/kaspanet/kaspad/util/staging"
 	"io"
-
-	"github.com/kaspanet/kaspad/util/difficulty"
 
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
@@ -137,33 +136,6 @@ func (bp *blockProcessor) validateAndInsertBlock(stagingArea *model.StagingArea,
 		}
 	}
 
-	var selectedParentChainChanges *externalapi.SelectedChainPath
-	var virtualUTXODiff externalapi.UTXODiff
-	var reversalData *model.UTXODiffReversalData
-	isHeaderOnlyBlock := isHeaderOnlyBlock(block)
-	if !isHeaderOnlyBlock {
-		// Attempt to add the block to the virtual
-		selectedParentChainChanges, virtualUTXODiff, reversalData, err = bp.consensusStateManager.AddBlock(stagingArea, blockHash, shouldValidateAgainstUTXO)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	if hasHeaderSelectedTip {
-		err := bp.updateReachabilityReindexRoot(stagingArea, oldHeadersSelectedTip)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	if !isHeaderOnlyBlock && shouldValidateAgainstUTXO {
-		// Trigger pruning, which will check if the pruning point changed and delete the data if it did.
-		err = bp.pruningManager.UpdatePruningPointByVirtual(stagingArea)
-		if err != nil {
-			return nil, err
-		}
-	}
-
 	{
 		isGenesis := len(block.Header.DirectParents()) == 0
 		if isGenesis && !block.Header.UTXOCommitment().Equal(externalapi.NewDomainHashFromByteArray(muhash.EmptyMuHashHash.AsArray())) {
@@ -214,10 +186,48 @@ func (bp *blockProcessor) validateAndInsertBlock(stagingArea *model.StagingArea,
 
 			area := model.NewStagingArea()
 			bp.consensusStateStore.StageVirtualUTXODiff(area, diff)
+			bp.utxoDiffStore.Stage(area, blockHash, diff, nil)
+			// commit the multiset of genesis
+			bp.multisetStore.Stage(area, blockHash, utxoSetMultiset)
 			err = staging.CommitAllChanges(bp.databaseContext, area)
 			if err != nil {
 				return nil, err
 			}
+		} else if isGenesis {
+			// if it's genesis but has an empty muhash then commit an empty multiset.
+			area := model.NewStagingArea()
+			bp.multisetStore.Stage(area, blockHash, multiset.New())
+			err = staging.CommitAllChanges(bp.databaseContext, area)
+			if err != nil {
+				return nil, err
+			}
+		}
+	}
+
+	var selectedParentChainChanges *externalapi.SelectedChainPath
+	var virtualUTXODiff externalapi.UTXODiff
+	var reversalData *model.UTXODiffReversalData
+	isHeaderOnlyBlock := isHeaderOnlyBlock(block)
+	if !isHeaderOnlyBlock {
+		// Attempt to add the block to the virtual
+		selectedParentChainChanges, virtualUTXODiff, reversalData, err = bp.consensusStateManager.AddBlock(stagingArea, blockHash, shouldValidateAgainstUTXO)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	if hasHeaderSelectedTip {
+		err := bp.updateReachabilityReindexRoot(stagingArea, oldHeadersSelectedTip)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	if !isHeaderOnlyBlock && shouldValidateAgainstUTXO {
+		// Trigger pruning, which will check if the pruning point changed and delete the data if it did.
+		err = bp.pruningManager.UpdatePruningPointByVirtual(stagingArea)
+		if err != nil {
+			return nil, err
 		}
 	}
 
