@@ -165,14 +165,15 @@ func TestCheckMergeSizeLimit(t *testing.T) {
 	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
 		consensusConfig.MergeSetSizeLimit = 2 * uint64(consensusConfig.K)
 		factory := consensus.NewFactory()
-		tc, teardown, err := factory.NewTestConsensus(consensusConfig, "TestCheckParentsIncest")
+		tc, teardown, err := factory.NewTestConsensus(consensusConfig, "TestCheckMergeSizeLimit")
 		if err != nil {
 			t.Fatalf("Error setting up consensus: %+v", err)
 		}
 		defer teardown(false)
 
 		chain1TipHash := consensusConfig.GenesisHash
-		for i := uint64(0); i < consensusConfig.MergeSetSizeLimit+2; i++ {
+		// We add a chain larger by one than chain2 below, to make this one the selected chain
+		for i := uint64(0); i < consensusConfig.MergeSetSizeLimit+1; i++ {
 			chain1TipHash, _, err = tc.AddBlock([]*externalapi.DomainHash{chain1TipHash}, nil, nil)
 			if err != nil {
 				t.Fatalf("AddBlock: %+v", err)
@@ -180,7 +181,9 @@ func TestCheckMergeSizeLimit(t *testing.T) {
 		}
 
 		chain2TipHash := consensusConfig.GenesisHash
-		for i := uint64(0); i < consensusConfig.MergeSetSizeLimit+1; i++ {
+		// We add a merge set of size exactly MergeSetSizeLimit (to violate the limit),
+		// since selected parent is also counted
+		for i := uint64(0); i < consensusConfig.MergeSetSizeLimit; i++ {
 			chain2TipHash, _, err = tc.AddBlock([]*externalapi.DomainHash{chain2TipHash}, nil, nil)
 			if err != nil {
 				t.Fatalf("AddBlock: %+v", err)
@@ -190,6 +193,59 @@ func TestCheckMergeSizeLimit(t *testing.T) {
 		_, _, err = tc.AddBlock([]*externalapi.DomainHash{chain1TipHash, chain2TipHash}, nil, nil)
 		if !errors.Is(err, ruleerrors.ErrViolatingMergeLimit) {
 			t.Fatalf("unexpected error: %+v", err)
+		}
+	})
+}
+
+func TestVirtualSelectionViolatingMergeSizeLimit(t *testing.T) {
+	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
+		consensusConfig.MergeSetSizeLimit = 2 * uint64(consensusConfig.K)
+		factory := consensus.NewFactory()
+		tc, teardown, err := factory.NewTestConsensus(consensusConfig, "TestVirtualSelectionViolatingMergeSizeLimit")
+		if err != nil {
+			t.Fatalf("Error setting up consensus: %+v", err)
+		}
+		defer teardown(false)
+
+		chain1TipHash := consensusConfig.GenesisHash
+		// We add a chain larger than chain2 below, to make this one the selected chain
+		for i := uint64(0); i < consensusConfig.MergeSetSizeLimit; i++ {
+			chain1TipHash, _, err = tc.AddBlock([]*externalapi.DomainHash{chain1TipHash}, nil, nil)
+			if err != nil {
+				t.Fatalf("AddBlock: %+v", err)
+			}
+		}
+
+		chain2TipHash := consensusConfig.GenesisHash
+		// We add a merge set of size exactly MergeSetSizeLimit-1 (to still not violate the limit)
+		for i := uint64(0); i < consensusConfig.MergeSetSizeLimit-1; i++ {
+			chain2TipHash, _, err = tc.AddBlock([]*externalapi.DomainHash{chain2TipHash}, nil, nil)
+			if err != nil {
+				t.Fatalf("AddBlock: %+v", err)
+			}
+		}
+
+		// We now add a single block over genesis which is expected to exceed the limit
+		_, _, err = tc.AddBlock([]*externalapi.DomainHash{consensusConfig.GenesisHash}, nil, nil)
+		if err != nil {
+			t.Fatalf("AddBlock: %+v", err)
+		}
+
+		stagingArea := model.NewStagingArea()
+		virtualSelectedParent, err := tc.GetVirtualSelectedParent()
+		if err != nil {
+			t.Fatalf("GetVirtualSelectedParent: %+v", err)
+		}
+		selectedParentAnticone, err := tc.DAGTraversalManager().AnticoneFromVirtualPOV(stagingArea, virtualSelectedParent)
+		if err != nil {
+			t.Fatalf("AnticoneFromVirtualPOV: %+v", err)
+		}
+
+		// Test if Virtual's mergeset is too large
+		// Note: the selected parent itself is also counted in the mergeset limit
+		if len(selectedParentAnticone)+1 > (int)(consensusConfig.MergeSetSizeLimit) {
+			t.Fatalf("Virtual's mergset size (%d) exeeds merge set limit (%d)",
+				len(selectedParentAnticone)+1, consensusConfig.MergeSetSizeLimit)
 		}
 	})
 }
