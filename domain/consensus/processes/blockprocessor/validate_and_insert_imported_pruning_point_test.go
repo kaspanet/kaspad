@@ -141,10 +141,22 @@ func TestValidateAndInsertImportedPruningPoint(t *testing.T) {
 				}
 			}
 
-			pruningPointUTXOs, err := tcSyncer.GetPruningPointUTXOs(pruningPoint, nil, 1000)
-			if err != nil {
-				t.Fatalf("GetPruningPointUTXOs: %+v", err)
+
+			var fromOutpoint *externalapi.DomainOutpoint
+			var pruningPointUTXOs []*externalapi.OutpointAndUTXOEntryPair
+			const step = 10_000
+			for {
+				localPruningPointUTXOs, err := tcSyncer.GetPruningPointUTXOs(pruningPoint, fromOutpoint, step)
+				if err != nil {
+					t.Fatalf("GetPruningPointUTXOs: %+v", err)
+				}
+				pruningPointUTXOs = append(pruningPointUTXOs, localPruningPointUTXOs...)
+				fromOutpoint = pruningPointUTXOs[len(pruningPointUTXOs)-1].Outpoint
+				if len(pruningPointUTXOs) < step {
+					break
+				}
 			}
+
 			err = synceeStaging.AppendImportedPruningPointUTXOs(pruningPointUTXOs)
 			if err != nil {
 				t.Fatalf("AppendImportedPruningPointUTXOs: %+v", err)
