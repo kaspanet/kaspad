@@ -3,6 +3,7 @@ package blockprocessor
 import (
 	"bytes"
 	"compress/gzip"
+	// we need to embed the utxoset of mainnet genesis here
 	_ "embed"
 	"fmt"
 	"github.com/kaspanet/go-muhash"
