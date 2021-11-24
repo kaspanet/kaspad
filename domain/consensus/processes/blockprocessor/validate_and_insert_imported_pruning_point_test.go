@@ -141,7 +141,6 @@ func TestValidateAndInsertImportedPruningPoint(t *testing.T) {
 				}
 			}
 
-
 			var fromOutpoint *externalapi.DomainOutpoint
 			var pruningPointUTXOs []*externalapi.OutpointAndUTXOEntryPair
 			const step = 100_000
@@ -536,7 +535,7 @@ func TestGetPruningPointUTXOs(t *testing.T) {
 		}
 
 		const mainnetUTXOSize = 1232643
-		expected := len(outputs)+1
+		expected := len(outputs) + 1
 		if consensusConfig.Name == "mainnet" {
 			expected += mainnetUTXOSize
 		}

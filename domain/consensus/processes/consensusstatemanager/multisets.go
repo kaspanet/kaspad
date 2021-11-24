@@ -19,7 +19,7 @@ func (csm *consensusStateManager) calculateMultiset(stagingArea *model.StagingAr
 	if blockHash.Equal(csm.genesisHash) {
 		log.Debugf("Selected parent is nil, which could only happen for the genesis. " +
 			"The genesis has a predefined multiset")
-		return 	csm.multisetStore.Get(csm.databaseContext, stagingArea, blockHash)
+		return csm.multisetStore.Get(csm.databaseContext, stagingArea, blockHash)
 	}
 
 	ms, err := csm.multisetStore.Get(csm.databaseContext, stagingArea, blockGHOSTDAGData.SelectedParent())

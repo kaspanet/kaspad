@@ -88,6 +88,7 @@ var mainnetGenesisUTXOSet externalapi.UTXODiff
 var mainnetGenesisMultiSet model.Multiset
 var mainnetGenesisOnce sync.Once
 var mainnetGenesisErr error
+
 func deserializeMainnetUTXOSet() (externalapi.UTXODiff, model.Multiset, error) {
 	mainnetGenesisOnce.Do(func() {
 		toAdd := make(map[externalapi.DomainOutpoint]externalapi.UTXOEntry)
