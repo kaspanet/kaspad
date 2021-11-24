@@ -49,7 +49,7 @@ const (
 	defaultMergeSetSizeLimit                              = defaultGHOSTDAGK * 10
 	defaultSubsidyGenesisReward                           = 1 * constants.SompiPerKaspa
 	defaultMinSubsidy                                     = 1 * constants.SompiPerKaspa
-	defaultMaxSubsidy                                     = 1000 * constants.SompiPerKaspa
+	defaultMaxSubsidy                                     = 500 * constants.SompiPerKaspa
 	defaultBaseSubsidy                                    = 50 * constants.SompiPerKaspa
 	defaultFixedSubsidySwitchPruningPointInterval  uint64 = 7
 	defaultCoinbasePayloadScriptPublicKeyMaxLength        = 150
