@@ -43,6 +43,7 @@ func TestValidateAndInsertImportedPruningPoint(t *testing.T) {
 		consensusConfig.FinalityDuration = time.Duration(finalityDepth) * consensusConfig.TargetTimePerBlock
 		consensusConfig.K = 0
 		consensusConfig.PruningProofM = 1
+		consensusConfig.EnableSanityCheckPruningUTXOSet = true
 
 		syncConsensuses := func(tcSyncerRef, tcSynceeRef *testapi.TestConsensus) {
 			tcSyncer, tcSyncee := *tcSyncerRef, *tcSynceeRef

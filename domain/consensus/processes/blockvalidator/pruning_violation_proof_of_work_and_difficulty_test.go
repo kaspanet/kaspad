@@ -101,7 +101,17 @@ func TestPOW(t *testing.T) {
 			t.Fatal(err)
 		}
 		random := rand.New(rand.NewSource(0))
-		mining.SolveBlock(validBlock, random)
+		// Difficulty is too high on mainnet to actually mine.
+		if consensusConfig.Name == "mainnet" {
+			consensusConfig.SkipProofOfWork = true
+			tc, teardown, err = factory.NewTestConsensus(consensusConfig, "TestPOW")
+			if err != nil {
+				t.Fatalf("Error setting up consensus: %+v", err)
+			}
+			defer teardown(false)
+		} else {
+			mining.SolveBlock(validBlock, random)
+		}
 		_, err = tc.ValidateAndInsertBlock(validBlock, true)
 		if err != nil {
 			t.Fatal(err)
