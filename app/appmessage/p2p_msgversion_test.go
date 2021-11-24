@@ -26,7 +26,7 @@ func TestVersion(t *testing.T) {
 	}
 
 	// Ensure we get the correct data back out.
-	msg := NewMsgVersion(me, generatedID, "mainnet", nil)
+	msg := NewMsgVersion(me, generatedID, "mainnet", nil, "My banner")
 	if msg.ProtocolVersion != pver {
 		t.Errorf("NewMsgVersion: wrong protocol version - got %v, want %v",
 			msg.ProtocolVersion, pver)

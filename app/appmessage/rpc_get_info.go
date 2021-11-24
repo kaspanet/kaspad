@@ -23,6 +23,7 @@ type GetInfoResponseMessage struct {
 	P2PID         string
 	MempoolSize   uint64
 	ServerVersion string
+	Banner        string
 
 	Error *RPCError
 }
@@ -33,10 +34,11 @@ func (msg *GetInfoResponseMessage) Command() MessageCommand {
 }
 
 // NewGetInfoResponseMessage returns a instance of the message
-func NewGetInfoResponseMessage(p2pID string, mempoolSize uint64, serverVersion string) *GetInfoResponseMessage {
+func NewGetInfoResponseMessage(p2pID string, mempoolSize uint64, serverVersion string, banner string) *GetInfoResponseMessage {
 	return &GetInfoResponseMessage{
 		P2PID:         p2pID,
 		MempoolSize:   mempoolSize,
 		ServerVersion: serverVersion,
+		Banner:        banner,
 	}
 }

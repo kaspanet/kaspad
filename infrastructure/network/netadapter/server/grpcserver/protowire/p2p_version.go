@@ -45,6 +45,7 @@ func (x *VersionMessage) toAppMessage() (appmessage.Message, error) {
 		UserAgent:       x.UserAgent,
 		DisableRelayTx:  x.DisableRelayTx,
 		SubnetworkID:    subnetworkID,
+		Banner:          x.Banner,
 	}, nil
 }
 
@@ -75,6 +76,7 @@ func (x *KaspadMessage_Version) fromAppMessage(msgVersion *appmessage.MsgVersion
 		UserAgent:       msgVersion.UserAgent,
 		DisableRelayTx:  msgVersion.DisableRelayTx,
 		SubnetworkId:    domainSubnetworkIDToProto(msgVersion.SubnetworkID),
+		Banner:          msgVersion.Banner,
 	}
 	return nil
 }

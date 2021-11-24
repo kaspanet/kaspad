@@ -607,6 +607,7 @@ message GetInfoResponseMessage{
   string p2pId = 1;
   uint64 mempoolSize = 2;
   string serverVersion = 3;
+  string banner = 4;
   RPCError error = 1000;
 }
 

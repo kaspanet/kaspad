@@ -13,6 +13,7 @@ func HandleGetInfo(context *rpccontext.Context, _ *router.Router, _ appmessage.M
 		context.NetAdapter.ID().String(),
 		uint64(context.Domain.MiningManager().TransactionCount()),
 		version.Version(),
+		context.Config.Flags.Banner,
 	)
 
 	return response, nil

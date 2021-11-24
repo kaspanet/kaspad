@@ -58,6 +58,9 @@ type MsgVersion struct {
 
 	// The subnetwork of the generator of the version message. Should be nil in full nodes
 	SubnetworkID *externalapi.DomainSubnetworkID
+
+	// Arbitrary string that identifies this node
+	Banner string
 }
 
 // HasService returns whether the specified service is supported by the peer
@@ -82,7 +85,7 @@ func (msg *MsgVersion) Command() MessageCommand {
 // Message interface using the passed parameters and defaults for the remaining
 // fields.
 func NewMsgVersion(addr *NetAddress, id *id.ID, network string,
-	subnetworkID *externalapi.DomainSubnetworkID) *MsgVersion {
+	subnetworkID *externalapi.DomainSubnetworkID, banner string) *MsgVersion {
 
 	// Limit the timestamp to one millisecond precision since the protocol
 	// doesn't support better.
@@ -96,6 +99,7 @@ func NewMsgVersion(addr *NetAddress, id *id.ID, network string,
 		UserAgent:       DefaultUserAgent,
 		DisableRelayTx:  false,
 		SubnetworkID:    subnetworkID,
+		Banner:          banner,
 	}
 }
 

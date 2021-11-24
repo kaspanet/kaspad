@@ -79,6 +79,9 @@ func (app *kaspadApp) main(startedChan chan<- struct{}) error {
 
 	// Show version at startup.
 	log.Infof("Version %s", version.Version())
+	if app.cfg.Banner != "" {
+		log.Infof("Banner: %s", app.cfg.Banner)
+	}
 
 	// Enable http profiling server if requested.
 	if app.cfg.Profile != "" {

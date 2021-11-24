@@ -146,6 +146,7 @@ message VersionMessage{
   bool disableRelayTx = 8;
   SubnetworkId subnetworkId = 9;
   string network = 10;
+  string banner = 11;
 }
 
 message RejectMessage{

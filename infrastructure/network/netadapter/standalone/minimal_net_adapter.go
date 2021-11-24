@@ -122,6 +122,7 @@ func (mna *MinimalNetAdapter) handleHandshake(routes *Routes, ourID *id.ID) erro
 		UserAgent:       "/net-adapter-mock/",
 		DisableRelayTx:  true,
 		SubnetworkID:    nil,
+		Banner:          "",
 	})
 	if err != nil {
 		return err

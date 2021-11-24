@@ -60,8 +60,6 @@ func (c *RPCClient) connect() error {
 	c.GRPCClient = rpcClient
 	c.rpcRouter = rpcRouter
 
-	log.Infof("Connected to %s", c.rpcAddress)
-
 	getInfoResponse, err := c.GetInfo()
 	if err != nil {
 		return errors.Wrapf(err, "error making GetInfo request")
@@ -72,6 +70,12 @@ func (c *RPCClient) connect() error {
 
 	if localVersion != remoteVersion {
 		return errors.Errorf("Server version mismatch, expect: %s, got: %s", localVersion, remoteVersion)
+	}
+
+	log.Infof("Connected to %s", c.rpcAddress)
+
+	if getInfoResponse.Banner != "" {
+		log.Infof("RPC server’s banner: %s", getInfoResponse.Banner)
 	}
 
 	return nil

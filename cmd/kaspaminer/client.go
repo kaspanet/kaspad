@@ -41,6 +41,14 @@ func (mc *minerClient) connect() error {
 	}
 
 	log.Infof("Connected to %s", rpcAddress)
+	getInfoResponse, err := rpcClient.GetInfo()
+	if err != nil {
+		return errors.Wrapf(err, "error making GetInfo request")
+	}
+
+	if getInfoResponse.Banner != "" {
+		log.Infof("RPC server’s banner: %s", getInfoResponse.Banner)
+	}
 
 	return nil
 }

@@ -25,6 +25,7 @@ type appHarness struct {
 	database                database.Database
 	utxoIndex               bool
 	overrideDAGParams       *dagconfig.Params
+	banner                  string
 }
 
 type harnessParams struct {
@@ -34,6 +35,7 @@ type harnessParams struct {
 	miningAddressPrivateKey string
 	utxoIndex               bool
 	overrideDAGParams       *dagconfig.Params
+	banner                  string
 }
 
 // setupHarness creates a single appHarness with given parameters
@@ -45,6 +47,7 @@ func setupHarness(t *testing.T, params *harnessParams) (harness *appHarness, tea
 		miningAddressPrivateKey: params.miningAddressPrivateKey,
 		utxoIndex:               params.utxoIndex,
 		overrideDAGParams:       params.overrideDAGParams,
+		banner:                  params.banner,
 	}
 
 	setConfig(t, harness)
@@ -82,17 +85,20 @@ func standardSetup(t *testing.T) (appHarness1, appHarness2, appHarness3 *appHarn
 			rpcAddress:              rpcAddress1,
 			miningAddress:           miningAddress1,
 			miningAddressPrivateKey: miningAddress1PrivateKey,
+			banner:                  banner1,
 		},
 		{
 			p2pAddress:              p2pAddress2,
 			rpcAddress:              rpcAddress2,
 			miningAddress:           miningAddress2,
 			miningAddressPrivateKey: miningAddress2PrivateKey,
+			banner:                  banner2,
 		}, {
 			p2pAddress:              p2pAddress3,
 			rpcAddress:              rpcAddress3,
 			miningAddress:           miningAddress3,
 			miningAddressPrivateKey: miningAddress3PrivateKey,
+			banner:                  banner3,
 		},
 	})
 

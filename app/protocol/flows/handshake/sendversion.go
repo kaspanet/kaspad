@@ -57,7 +57,7 @@ func (flow *sendVersionFlow) start() error {
 	localAddress := flow.AddressManager().BestLocalAddress(flow.peer.Connection().NetAddress())
 	subnetworkID := flow.Config().SubnetworkID
 	msg := appmessage.NewMsgVersion(localAddress, flow.NetAdapter().ID(),
-		flow.Config().ActiveNetParams.Name, subnetworkID)
+		flow.Config().ActiveNetParams.Name, subnetworkID, flow.Config().Banner)
 	msg.AddUserAgent(userAgentName, userAgentVersion, flow.Config().UserAgentComments...)
 
 	// Advertise the services flag

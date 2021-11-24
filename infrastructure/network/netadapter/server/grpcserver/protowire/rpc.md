@@ -7,6 +7,7 @@
     - [RPCError](#protowire.RPCError)
     - [RpcBlock](#protowire.RpcBlock)
     - [RpcBlockHeader](#protowire.RpcBlockHeader)
+    - [RpcBlockLevelParents](#protowire.RpcBlockLevelParents)
     - [RpcBlockVerboseData](#protowire.RpcBlockVerboseData)
     - [RpcTransaction](#protowire.RpcTransaction)
     - [RpcTransactionInput](#protowire.RpcTransactionInput)
@@ -161,13 +162,32 @@ Receivers of any ResponseMessage are expected to check whether its error field i
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | version | [uint32](#uint32) |  |  |
-| parentHashes | [string](#string) | repeated |  |
+| parents | [RpcBlockLevelParents](#protowire.RpcBlockLevelParents) | repeated |  |
 | hashMerkleRoot | [string](#string) |  |  |
 | acceptedIdMerkleRoot | [string](#string) |  |  |
 | utxoCommitment | [string](#string) |  |  |
 | timestamp | [int64](#int64) |  |  |
 | bits | [uint32](#uint32) |  |  |
 | nonce | [uint64](#uint64) |  |  |
+| daaScore | [uint64](#uint64) |  |  |
+| blueWork | [string](#string) |  |  |
+| pruningPoint | [string](#string) |  |  |
+| blueScore | [uint64](#uint64) |  |  |
+
+
+
+
+
+
+<a name="protowire.RpcBlockLevelParents"></a>
+
+### RpcBlockLevelParents
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| parentHashes | [string](#string) | repeated |  |
 
 
 
@@ -313,7 +333,7 @@ Receivers of any ResponseMessage are expected to check whether its error field i
 | ----- | ---- | ----- | ----------- |
 | transactionId | [string](#string) |  |  |
 | hash | [string](#string) |  |  |
-| size | [uint64](#uint64) |  |  |
+| mass | [uint64](#uint64) |  |  |
 | blockHash | [string](#string) |  |  |
 | blockTime | [uint64](#uint64) |  |  |
 
@@ -1546,6 +1566,7 @@ GetInfoRequestMessage returns info about the node.
 | p2pId | [string](#string) |  |  |
 | mempoolSize | [uint64](#uint64) |  |  |
 | serverVersion | [string](#string) |  |  |
+| banner | [string](#string) |  |  |
 | error | [RPCError](#protowire.RPCError) |  |  |
 
 

@@ -104,6 +104,9 @@ func (flow *receiveVersionFlow) start() (*appmessage.NetAddress, error) {
 	}
 
 	flow.peer.Connection().SetID(msgVersion.ID)
+	if msgVersion.Banner != "" {
+		log.Infof("Got peer’s banner: %s\n", msgVersion.Banner)
+	}
 
 	return msgVersion.Address, nil
 }

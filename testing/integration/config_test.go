@@ -27,6 +27,10 @@ const (
 	miningAddress3           = "kaspasim:qqq754f2gdcjcnykwuwwr60c82rh5u6mxxe7yqxljnrxz9fu0h95kduq9ezng"
 	miningAddress3PrivateKey = "f6c8f31fd359cbb97007034780bc4021f6ad01c6bc10499b79849efd4cc7ca39"
 
+	banner1 = "Banner 1!"
+	banner2 = "Banner 2!"
+	banner3 = "Banner 3!"
+
 	defaultTimeout = 10 * time.Second
 )
 
@@ -37,6 +41,7 @@ func setConfig(t *testing.T, harness *appHarness) {
 	harness.config.RPCListeners = []string{harness.rpcAddress}
 	harness.config.UTXOIndex = harness.utxoIndex
 	harness.config.AllowSubmitBlockWhenNotSynced = true
+	harness.config.Banner = "test banner4"
 
 	if harness.overrideDAGParams != nil {
 		harness.config.ActiveNetParams = harness.overrideDAGParams
@@ -51,6 +56,7 @@ func commonConfig() *config.Config {
 	commonConfig.TargetOutboundPeers = 0
 	commonConfig.DisableDNSSeed = true
 	commonConfig.Simnet = true
+	commonConfig.Banner = "Common config banner5"
 
 	return commonConfig
 }

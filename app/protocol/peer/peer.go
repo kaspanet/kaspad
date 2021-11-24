@@ -27,6 +27,7 @@ type Peer struct {
 	protocolVersion          uint32 // negotiated protocol version
 	disableRelayTx           bool
 	subnetworkID             *externalapi.DomainSubnetworkID
+	banner                   string
 
 	timeOffset        time.Duration
 	connectionStarted time.Time
@@ -100,11 +101,13 @@ func (p *Peer) UpdateFieldsFromMsgVersion(msg *appmessage.MsgVersion) {
 
 	// Set the remote peer's user agent.
 	p.userAgent = msg.UserAgent
+	p.banner = msg.Banner
 
 	p.disableRelayTx = msg.DisableRelayTx
 	p.subnetworkID = msg.SubnetworkID
 
 	p.timeOffset = mstime.Since(msg.Timestamp)
+
 }
 
 // SetPingPending sets the ping state of the peer to 'pending'
