@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"math"
 	"math/big"
+	"reflect"
+	"runtime"
 	"testing"
 
 	"github.com/kaspanet/kaspad/domain/consensus"
@@ -20,6 +22,31 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/utils/utxo"
 	"github.com/pkg/errors"
 )
+
+func TestBlockValidator_ValidateBodyInIsolation(t *testing.T) {
+	tests := []func(t *testing.T, tc testapi.TestConsensus, cfg *consensus.Config){
+		CheckBlockSanity,
+		CheckBlockHashMerkleRoot,
+		BlockMass,
+		CheckBlockDuplicateTransactions,
+		CheckBlockContainsOnlyOneCoinbase,
+		CheckBlockDoubleSpends,
+		CheckFirstBlockTransactionIsCoinbase,
+	}
+	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
+		tc, teardown, err := consensus.NewFactory().NewTestConsensus(consensusConfig, "TestChainedTransactions")
+		if err != nil {
+			t.Fatalf("Error setting up consensus: %+v", err)
+		}
+		defer teardown(false)
+		for _, test := range tests {
+			testName := runtime.FuncForPC(reflect.ValueOf(test).Pointer()).Name()
+			t.Run(testName, func(t *testing.T) {
+				test(t, tc, consensusConfig)
+			})
+		}
+	})
+}
 
 func TestChainedTransactions(t *testing.T) {
 	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
@@ -89,47 +116,39 @@ func TestChainedTransactions(t *testing.T) {
 	})
 }
 
-// TestCheckBlockSanity tests the CheckBlockSanity function to ensure it works
+// CheckBlockSanity tests the CheckBlockSanity function to ensure it works
 // as expected.
-func TestCheckBlockSanity(t *testing.T) {
-	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
-		factory := consensus.NewFactory()
-		tc, teardown, err := factory.NewTestConsensus(consensusConfig, "TestCheckBlockSanity")
-		if err != nil {
-			t.Fatalf("Error setting up consensus: %+v", err)
-		}
-		defer teardown(false)
-		blockHash := consensushashing.BlockHash(&exampleValidBlock)
-		if len(exampleValidBlock.Transactions) < 3 {
-			t.Fatalf("Too few transactions in block, expect at least 3, got %v", len(exampleValidBlock.Transactions))
-		}
+func CheckBlockSanity(t *testing.T, tc testapi.TestConsensus, _ *consensus.Config) {
+	blockHash := consensushashing.BlockHash(&exampleValidBlock)
+	if len(exampleValidBlock.Transactions) < 3 {
+		t.Fatalf("Too few transactions in block, expect at least 3, got %v", len(exampleValidBlock.Transactions))
+	}
 
-		stagingArea := model.NewStagingArea()
+	stagingArea := model.NewStagingArea()
 
-		tc.BlockStore().Stage(stagingArea, blockHash, &exampleValidBlock)
+	tc.BlockStore().Stage(stagingArea, blockHash, &exampleValidBlock)
 
-		err = tc.BlockValidator().ValidateBodyInIsolation(stagingArea, blockHash)
-		if err != nil {
-			t.Fatalf("Failed validating block in isolation: %v", err)
-		}
+	err := tc.BlockValidator().ValidateBodyInIsolation(stagingArea, blockHash)
+	if err != nil {
+		t.Fatalf("Failed validating block in isolation: %v", err)
+	}
 
-		// Test with block with wrong transactions sorting order
-		blockHash = consensushashing.BlockHash(&blockWithWrongTxOrder)
-		tc.BlockStore().Stage(stagingArea, blockHash, &blockWithWrongTxOrder)
-		err = tc.BlockValidator().ValidateBodyInIsolation(stagingArea, blockHash)
-		if !errors.Is(err, ruleerrors.ErrTransactionsNotSorted) {
-			t.Errorf("CheckBlockSanity: Expected ErrTransactionsNotSorted error, instead got %v", err)
-		}
+	// Test with block with wrong transactions sorting order
+	blockHash = consensushashing.BlockHash(&blockWithWrongTxOrder)
+	tc.BlockStore().Stage(stagingArea, blockHash, &blockWithWrongTxOrder)
+	err = tc.BlockValidator().ValidateBodyInIsolation(stagingArea, blockHash)
+	if !errors.Is(err, ruleerrors.ErrTransactionsNotSorted) {
+		t.Errorf("CheckBlockSanity: Expected ErrTransactionsNotSorted error, instead got %v", err)
+	}
 
-		// Test a block with invalid parents order
-		// We no longer require blocks to have ordered parents
-		blockHash = consensushashing.BlockHash(&unOrderedParentsBlock)
-		tc.BlockStore().Stage(stagingArea, blockHash, &unOrderedParentsBlock)
-		err = tc.BlockValidator().ValidateBodyInIsolation(stagingArea, blockHash)
-		if err != nil {
-			t.Errorf("CheckBlockSanity: Expected block to be be body in isolation valid, got error instead: %v", err)
-		}
-	})
+	// Test a block with invalid parents order
+	// We no longer require blocks to have ordered parents
+	blockHash = consensushashing.BlockHash(&unOrderedParentsBlock)
+	tc.BlockStore().Stage(stagingArea, blockHash, &unOrderedParentsBlock)
+	err = tc.BlockValidator().ValidateBodyInIsolation(stagingArea, blockHash)
+	if err != nil {
+		t.Errorf("CheckBlockSanity: Expected block to be be body in isolation valid, got error instead: %v", err)
+	}
 }
 
 var unOrderedParentsBlock = externalapi.DomainBlock{
@@ -1025,59 +1044,41 @@ var blockWithWrongTxOrder = externalapi.DomainBlock{
 	},
 }
 
-func TestCheckBlockHashMerkleRoot(t *testing.T) {
-	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
-		factory := consensus.NewFactory()
-		tc, teardown, err := factory.NewTestConsensus(consensusConfig, "TestCheckBlockHashMerkleRoot")
-		if err != nil {
-			t.Fatalf("Error setting up tc: %+v", err)
-		}
-		defer teardown(false)
+func CheckBlockHashMerkleRoot(t *testing.T, tc testapi.TestConsensus, consensusConfig *consensus.Config) {
+	block, _, err := tc.BuildBlockWithParents([]*externalapi.DomainHash{consensusConfig.GenesisHash}, nil, nil)
+	if err != nil {
+		t.Fatalf("BuildBlockWithParents: %+v", err)
+	}
+	blockWithInvalidMerkleRoot := block.Clone()
+	blockWithInvalidMerkleRoot.Transactions[0].Version += 1
 
-		block, _, err := tc.BuildBlockWithParents([]*externalapi.DomainHash{consensusConfig.GenesisHash}, nil, nil)
-		if err != nil {
-			t.Fatalf("BuildBlockWithParents: %+v", err)
-		}
-		blockWithInvalidMerkleRoot := block.Clone()
-		blockWithInvalidMerkleRoot.Transactions[0].Version += 1
+	_, err = tc.ValidateAndInsertBlock(blockWithInvalidMerkleRoot, true)
+	if !errors.Is(err, ruleerrors.ErrBadMerkleRoot) {
+		t.Fatalf("Unexpected error: %+v", err)
+	}
 
-		_, err = tc.ValidateAndInsertBlock(blockWithInvalidMerkleRoot, true)
-		if !errors.Is(err, ruleerrors.ErrBadMerkleRoot) {
-			t.Fatalf("Unexpected error: %+v", err)
-		}
-
-		// Check that a block with invalid merkle root is not marked as invalid
-		// and can be re-added with the right transactions.
-		_, err = tc.ValidateAndInsertBlock(block, true)
-		if err != nil {
-			t.Fatalf("ValidateAndInsertBlock: %+v", err)
-		}
-	})
+	// Check that a block with invalid merkle root is not marked as invalid
+	// and can be re-added with the right transactions.
+	_, err = tc.ValidateAndInsertBlock(block, true)
+	if err != nil {
+		t.Fatalf("ValidateAndInsertBlock: %+v", err)
+	}
 }
 
-func TestBlockMass(t *testing.T) {
-	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
-		factory := consensus.NewFactory()
-		tc, teardown, err := factory.NewTestConsensus(consensusConfig, "TestBlockMass")
-		if err != nil {
-			t.Fatalf("Error setting up tc: %+v", err)
-		}
-		defer teardown(false)
+func BlockMass(t *testing.T, tc testapi.TestConsensus, consensusConfig *consensus.Config) {
+	block, _, err := initBlockWithInvalidBlockMass(consensusConfig, tc)
+	if err != nil {
+		t.Fatalf("Error BuildBlockWithParents : %+v", err)
+	}
+	blockHash := consensushashing.BlockHash(block)
+	stagingArea := model.NewStagingArea()
+	tc.BlockStore().Stage(stagingArea, blockHash, block)
 
-		block, _, err := initBlockWithInvalidBlockMass(consensusConfig, tc)
-		if err != nil {
-			t.Fatalf("Error BuildBlockWithParents : %+v", err)
-		}
-		blockHash := consensushashing.BlockHash(block)
-		stagingArea := model.NewStagingArea()
-		tc.BlockStore().Stage(stagingArea, blockHash, block)
-
-		err = tc.BlockValidator().ValidateBodyInIsolation(stagingArea, blockHash)
-		if err == nil || !errors.Is(err, ruleerrors.ErrBlockMassTooHigh) {
-			t.Fatalf("ValidateBodyInIsolationTest: TestBlockMass:"+
-				" Unexpected error: Expected to: %v, but got : %v", ruleerrors.ErrBlockMassTooHigh, err)
-		}
-	})
+	err = tc.BlockValidator().ValidateBodyInIsolation(stagingArea, blockHash)
+	if err == nil || !errors.Is(err, ruleerrors.ErrBlockMassTooHigh) {
+		t.Fatalf("ValidateBodyInIsolationTest: TestBlockMass:"+
+			" Unexpected error: Expected to: %v, but got : %v", ruleerrors.ErrBlockMassTooHigh, err)
+	}
 }
 
 func initBlockWithInvalidBlockMass(consensusConfig *consensus.Config, tc testapi.TestConsensus) (*externalapi.DomainBlock, externalapi.UTXODiff, error) {
@@ -1113,30 +1114,20 @@ func initBlockWithInvalidBlockMass(consensusConfig *consensus.Config, tc testapi
 	return tc.BuildBlockWithParents([]*externalapi.DomainHash{consensusConfig.GenesisHash}, &emptyCoinbase, []*externalapi.DomainTransaction{tx})
 }
 
-func TestCheckBlockDuplicateTransactions(t *testing.T) {
-	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
+func CheckBlockDuplicateTransactions(t *testing.T, tc testapi.TestConsensus, consensusConfig *consensus.Config) {
+	block, _, err := initBlockWithDuplicateTransaction(consensusConfig, tc)
+	if err != nil {
+		t.Fatalf("Error BuildBlockWithParents : %+v", err)
+	}
+	blockHash := consensushashing.BlockHash(block)
+	stagingArea := model.NewStagingArea()
+	tc.BlockStore().Stage(stagingArea, blockHash, block)
 
-		factory := consensus.NewFactory()
-		tc, teardown, err := factory.NewTestConsensus(consensusConfig, "TestCheckBlockDuplicateTransactions")
-		if err != nil {
-			t.Fatalf("Error setting up tc: %+v", err)
-		}
-		defer teardown(false)
-
-		block, _, err := initBlockWithDuplicateTransaction(consensusConfig, tc)
-		if err != nil {
-			t.Fatalf("Error BuildBlockWithParents : %+v", err)
-		}
-		blockHash := consensushashing.BlockHash(block)
-		stagingArea := model.NewStagingArea()
-		tc.BlockStore().Stage(stagingArea, blockHash, block)
-
-		err = tc.BlockValidator().ValidateBodyInIsolation(stagingArea, blockHash)
-		if err == nil || !errors.Is(err, ruleerrors.ErrDuplicateTx) {
-			t.Fatalf("ValidateBodyInIsolationTest: TestCheckBlockDuplicateTransactions:"+
-				" Unexpected error: Expected to: %v, but got : %v", ruleerrors.ErrDuplicateTx, err)
-		}
-	})
+	err = tc.BlockValidator().ValidateBodyInIsolation(stagingArea, blockHash)
+	if err == nil || !errors.Is(err, ruleerrors.ErrDuplicateTx) {
+		t.Fatalf("ValidateBodyInIsolationTest: TestCheckBlockDuplicateTransactions:"+
+			" Unexpected error: Expected to: %v, but got : %v", ruleerrors.ErrDuplicateTx, err)
+	}
 }
 
 func initBlockWithDuplicateTransaction(consensusConfig *consensus.Config, tc testapi.TestConsensus) (*externalapi.DomainBlock, externalapi.UTXODiff, error) {
@@ -1170,30 +1161,20 @@ func initBlockWithDuplicateTransaction(consensusConfig *consensus.Config, tc tes
 	return tc.BuildBlockWithParents([]*externalapi.DomainHash{consensusConfig.GenesisHash}, &emptyCoinbase, []*externalapi.DomainTransaction{tx, tx})
 }
 
-func TestCheckBlockContainsOnlyOneCoinbase(t *testing.T) {
-	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
+func CheckBlockContainsOnlyOneCoinbase(t *testing.T, tc testapi.TestConsensus, consensusConfig *consensus.Config) {
+	block, _, err := initBlockWithMoreThanOneCoinbase(consensusConfig, tc)
+	if err != nil {
+		t.Fatalf("Error BuildBlockWithParents : %+v", err)
+	}
+	blockHash := consensushashing.BlockHash(block)
+	stagingArea := model.NewStagingArea()
+	tc.BlockStore().Stage(stagingArea, blockHash, block)
 
-		factory := consensus.NewFactory()
-		tc, teardown, err := factory.NewTestConsensus(consensusConfig, "TestCheckBlockContainsOnlyOneCoinbase")
-		if err != nil {
-			t.Fatalf("Error setting up tc: %+v", err)
-		}
-		defer teardown(false)
-
-		block, _, err := initBlockWithMoreThanOneCoinbase(consensusConfig, tc)
-		if err != nil {
-			t.Fatalf("Error BuildBlockWithParents : %+v", err)
-		}
-		blockHash := consensushashing.BlockHash(block)
-		stagingArea := model.NewStagingArea()
-		tc.BlockStore().Stage(stagingArea, blockHash, block)
-
-		err = tc.BlockValidator().ValidateBodyInIsolation(stagingArea, blockHash)
-		if err == nil || !errors.Is(err, ruleerrors.ErrMultipleCoinbases) {
-			t.Fatalf("ValidateBodyInIsolationTest: TestCheckBlockContainsOnlyOneCoinbase:"+
-				" Unexpected error: Expected to: %v, but got : %v", ruleerrors.ErrMultipleCoinbases, err)
-		}
-	})
+	err = tc.BlockValidator().ValidateBodyInIsolation(stagingArea, blockHash)
+	if err == nil || !errors.Is(err, ruleerrors.ErrMultipleCoinbases) {
+		t.Fatalf("ValidateBodyInIsolationTest: TestCheckBlockContainsOnlyOneCoinbase:"+
+			" Unexpected error: Expected to: %v, but got : %v", ruleerrors.ErrMultipleCoinbases, err)
+	}
 }
 
 func initBlockWithMoreThanOneCoinbase(consensusConfig *consensus.Config, tc testapi.TestConsensus) (*externalapi.DomainBlock, externalapi.UTXODiff, error) {
@@ -1227,30 +1208,20 @@ func initBlockWithMoreThanOneCoinbase(consensusConfig *consensus.Config, tc test
 	return tc.BuildBlockWithParents([]*externalapi.DomainHash{consensusConfig.GenesisHash}, &emptyCoinbase, []*externalapi.DomainTransaction{tx})
 }
 
-func TestCheckBlockDoubleSpends(t *testing.T) {
-	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
+func CheckBlockDoubleSpends(t *testing.T, tc testapi.TestConsensus, consensusConfig *consensus.Config) {
+	block, _, err := initBlockWithDoubleSpends(consensusConfig, tc)
+	if err != nil {
+		t.Fatalf("Error BuildBlockWithParents : %+v", err)
+	}
+	blockHash := consensushashing.BlockHash(block)
+	stagingArea := model.NewStagingArea()
+	tc.BlockStore().Stage(stagingArea, blockHash, block)
 
-		factory := consensus.NewFactory()
-		tc, teardown, err := factory.NewTestConsensus(consensusConfig, "TestCheckBlockDoubleSpends")
-		if err != nil {
-			t.Fatalf("Error setting up tc: %+v", err)
-		}
-		defer teardown(false)
-
-		block, _, err := initBlockWithDoubleSpends(consensusConfig, tc)
-		if err != nil {
-			t.Fatalf("Error BuildBlockWithParents : %+v", err)
-		}
-		blockHash := consensushashing.BlockHash(block)
-		stagingArea := model.NewStagingArea()
-		tc.BlockStore().Stage(stagingArea, blockHash, block)
-
-		err = tc.BlockValidator().ValidateBodyInIsolation(stagingArea, blockHash)
-		if err == nil || !errors.Is(err, ruleerrors.ErrDoubleSpendInSameBlock) {
-			t.Fatalf("ValidateBodyInIsolationTest: TestCheckBlockDoubleSpends:"+
-				" Unexpected error: Expected to: %v, but got : %v", ruleerrors.ErrDoubleSpendInSameBlock, err)
-		}
-	})
+	err = tc.BlockValidator().ValidateBodyInIsolation(stagingArea, blockHash)
+	if err == nil || !errors.Is(err, ruleerrors.ErrDoubleSpendInSameBlock) {
+		t.Fatalf("ValidateBodyInIsolationTest: TestCheckBlockDoubleSpends:"+
+			" Unexpected error: Expected to: %v, but got : %v", ruleerrors.ErrDoubleSpendInSameBlock, err)
+	}
 }
 
 func initBlockWithDoubleSpends(consensusConfig *consensus.Config, tc testapi.TestConsensus) (*externalapi.DomainBlock, externalapi.UTXODiff, error) {
@@ -1303,27 +1274,18 @@ func initBlockWithDoubleSpends(consensusConfig *consensus.Config, tc testapi.Tes
 		&emptyCoinbase, []*externalapi.DomainTransaction{tx, txSameOutpoint})
 }
 
-func TestCheckFirstBlockTransactionIsCoinbase(t *testing.T) {
-	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
+func CheckFirstBlockTransactionIsCoinbase(t *testing.T, tc testapi.TestConsensus, consensusConfig *consensus.Config) {
 
-		factory := consensus.NewFactory()
-		tc, teardown, err := factory.NewTestConsensus(consensusConfig, "TestCheckFirstBlockTransactionIsCoinbase")
-		if err != nil {
-			t.Fatalf("Error setting up tc: %+v", err)
-		}
-		defer teardown(false)
+	block := initBlockWithFirstTransactionDifferentThanCoinbase(consensusConfig)
+	blockHash := consensushashing.BlockHash(block)
+	stagingArea := model.NewStagingArea()
+	tc.BlockStore().Stage(stagingArea, blockHash, block)
 
-		block := initBlockWithFirstTransactionDifferentThanCoinbase(consensusConfig)
-		blockHash := consensushashing.BlockHash(block)
-		stagingArea := model.NewStagingArea()
-		tc.BlockStore().Stage(stagingArea, blockHash, block)
-
-		err = tc.BlockValidator().ValidateBodyInIsolation(stagingArea, blockHash)
-		if err == nil || !errors.Is(err, ruleerrors.ErrFirstTxNotCoinbase) {
-			t.Fatalf("ValidateBodyInIsolationTest: TestCheckFirstBlockTransactionIsCoinbase:"+
-				" Unexpected error: Expected to: %v, but got : %v", ruleerrors.ErrFirstTxNotCoinbase, err)
-		}
-	})
+	err := tc.BlockValidator().ValidateBodyInIsolation(stagingArea, blockHash)
+	if err == nil || !errors.Is(err, ruleerrors.ErrFirstTxNotCoinbase) {
+		t.Fatalf("ValidateBodyInIsolationTest: TestCheckFirstBlockTransactionIsCoinbase:"+
+			" Unexpected error: Expected to: %v, but got : %v", ruleerrors.ErrFirstTxNotCoinbase, err)
+	}
 }
 
 func initBlockWithFirstTransactionDifferentThanCoinbase(consensusConfig *consensus.Config) *externalapi.DomainBlock {

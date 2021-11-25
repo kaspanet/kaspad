@@ -49,7 +49,7 @@ func TestCheckLockTimeVerifyConditionedByDAAScore(t *testing.T) {
 		}
 		fees := uint64(1)
 		//Create a CLTV script:
-		targetDAAScore := uint64(30)
+		targetDAAScore := consensusConfig.GenesisBlock.Header.DAAScore() + uint64(30)
 		redeemScriptCLTV, err := createScriptCLTV(targetDAAScore)
 		if err != nil {
 			t.Fatalf("Failed to create a script using createScriptCLTV: %v", err)
@@ -156,7 +156,7 @@ func TestCheckLockTimeVerifyConditionedByDAAScoreWithWrongLockTime(t *testing.T)
 		}
 		fees := uint64(1)
 		//Create a CLTV script:
-		targetDAAScore := uint64(30)
+		targetDAAScore := consensusConfig.GenesisBlock.Header.DAAScore() + uint64(30)
 		redeemScriptCLTV, err := createScriptCLTV(targetDAAScore)
 		if err != nil {
 			t.Fatalf("Failed to create a script using createScriptCLTV: %v", err)
