@@ -160,7 +160,11 @@ func (dm *difficultyManager) calculateDaaScoreAndAddedBlocks(stagingArea *model.
 	isBlockWithTrustedData bool) (uint64, []*externalapi.DomainHash, error) {
 
 	if blockHash.Equal(dm.genesisHash) {
-		return 0, nil, nil
+		genesisHeader, err := dm.headerStore.BlockHeader(dm.databaseContext, stagingArea, dm.genesisHash)
+		if err != nil {
+			return 0, nil, err
+		}
+		return genesisHeader.DAAScore(), nil, nil
 	}
 
 	ghostdagData, err := dm.ghostdagStore.Get(dm.databaseContext, stagingArea, blockHash, false)

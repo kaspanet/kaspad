@@ -19,12 +19,6 @@ import (
 
 func TestDifficulty(t *testing.T) {
 	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
-		// Mainnet's genesis is too new, so if we'll build on it we'll get to the future very quickly.
-		// TODO: Once it gets older, we should unskip this test.
-		if consensusConfig.Name == "kaspa-mainnet" {
-			return
-		}
-
 		if consensusConfig.DisableDifficultyAdjustment {
 			return
 		}
@@ -138,7 +132,7 @@ func TestDifficulty(t *testing.T) {
 		case dagconfig.TestnetParams.Name, dagconfig.DevnetParams.Name:
 			expectedBits = uint32(0x1e7f83df)
 		case dagconfig.MainnetParams.Name:
-			expectedBits = uint32(0x1e7f83df)
+			expectedBits = uint32(0x1d02c77e)
 		}
 
 		if tip.Header.Bits() != expectedBits {
@@ -269,9 +263,9 @@ func TestDAAScore(t *testing.T) {
 			t.Fatalf("DAAScore: %+v", err)
 		}
 
-		blockBlueScore3ExpectedDAAScore := uint64(2)
+		blockBlueScore3ExpectedDAAScore := uint64(2) + consensusConfig.GenesisBlock.Header.DAAScore()
 		if blockBlueScore3DAAScore != blockBlueScore3ExpectedDAAScore {
-			t.Fatalf("DAA score is expected to be %d but got %d", blockBlueScore3ExpectedDAAScore, blockBlueScore3ExpectedDAAScore)
+			t.Fatalf("DAA score is expected to be %d but got %d", blockBlueScore3ExpectedDAAScore, blockBlueScore3DAAScore)
 		}
 		tipDAAScore := blockBlueScore3ExpectedDAAScore
 
