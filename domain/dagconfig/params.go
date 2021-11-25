@@ -207,11 +207,16 @@ func (p *Params) PruningDepth() uint64 {
 // MainnetParams defines the network parameters for the main Kaspa network.
 var MainnetParams = Params{
 	K:           defaultGHOSTDAGK,
-	Name:        "mainnet",
+	Name:        "kaspa-mainnet",
 	Net:         appmessage.Mainnet,
 	RPCPort:     "16110",
 	DefaultPort: "16111",
-	DNSSeeds:    []string{"mainnet-dnsseed.daglabs-dev.com"},
+	DNSSeeds: []string{"mainnet-dnsseed.daglabs-dev.com",
+		// This DNS seeder is run by Denis Mashkevich
+		"mainnet-dnsseed-1.kaspanet.org",
+		// This DNS seeder is run by Denis Mashkevich
+		"mainnet-dnsseed-2.kaspanet.org",
+	},
 
 	// DAG parameters
 	GenesisBlock:                    &genesisBlock,

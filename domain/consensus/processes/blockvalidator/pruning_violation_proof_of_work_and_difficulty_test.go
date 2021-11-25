@@ -102,7 +102,7 @@ func TestPOW(t *testing.T) {
 		}
 		random := rand.New(rand.NewSource(0))
 		// Difficulty is too high on mainnet to actually mine.
-		if consensusConfig.Name != "mainnet" {
+		if consensusConfig.Name != "kaspa-mainnet" {
 			mining.SolveBlock(validBlock, random)
 			_, err = tc.ValidateAndInsertBlock(validBlock, true)
 			if err != nil {

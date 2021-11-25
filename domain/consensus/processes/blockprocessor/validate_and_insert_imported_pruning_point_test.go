@@ -535,7 +535,7 @@ func TestGetPruningPointUTXOs(t *testing.T) {
 
 		const mainnetUTXOSize = 1232643
 		expected := len(outputs) + 1
-		if consensusConfig.Name == "mainnet" {
+		if consensusConfig.Name == "kaspa-mainnet" {
 			expected += mainnetUTXOSize
 		}
 

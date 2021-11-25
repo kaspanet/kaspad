@@ -29,7 +29,6 @@ import (
 
 const (
 	defaultConfigFilename      = "kaspad.conf"
-	defaultDataDirname         = "data"
 	defaultLogLevel            = "info"
 	defaultLogDirname          = "logs"
 	defaultLogFilename         = "kaspad.log"
