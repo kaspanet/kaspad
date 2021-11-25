@@ -3,10 +3,11 @@ package blockprocessor
 import (
 	"bytes"
 	"compress/gzip"
+	"github.com/kaspanet/go-muhash"
+
 	// we need to embed the utxoset of mainnet genesis here
 	_ "embed"
 	"fmt"
-	"github.com/kaspanet/go-muhash"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/multiset"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/utxo"
 	"github.com/kaspanet/kaspad/infrastructure/db/database"
@@ -85,52 +86,6 @@ func (bp *blockProcessor) updateVirtualAcceptanceDataAfterImportingPruningPoint(
 	return nil
 }
 
-var mainnetGenesisUTXOSet externalapi.UTXODiff
-var mainnetGenesisMultiSet model.Multiset
-var mainnetGenesisOnce sync.Once
-var mainnetGenesisErr error
-
-func deserializeMainnetUTXOSet() (externalapi.UTXODiff, model.Multiset, error) {
-	mainnetGenesisOnce.Do(func() {
-		toAdd := make(map[externalapi.DomainOutpoint]externalapi.UTXOEntry)
-		mainnetGenesisMultiSet = multiset.New()
-		file, err := gzip.NewReader(bytes.NewReader(utxoDumpFile))
-		if err != nil {
-			mainnetGenesisErr = err
-			return
-		}
-		for i := 0; ; i++ {
-			size := make([]byte, 1)
-			_, err = io.ReadFull(file, size)
-			if errors.Is(err, io.EOF) {
-				break
-			}
-			if err != nil {
-				mainnetGenesisErr = err
-				return
-			}
-
-			serializedUTXO := make([]byte, size[0])
-			_, err = io.ReadFull(file, serializedUTXO)
-			if err != nil {
-				mainnetGenesisErr = err
-				return
-			}
-
-			mainnetGenesisMultiSet.Add(serializedUTXO)
-
-			entry, outpoint, err := utxo.DeserializeUTXO(serializedUTXO)
-			if err != nil {
-				mainnetGenesisErr = err
-				return
-			}
-			toAdd[*outpoint] = entry
-		}
-		mainnetGenesisUTXOSet, mainnetGenesisErr = utxo.NewUTXODiffFromCollections(utxo.NewUTXOCollection(toAdd), utxo.NewUTXOCollection(make(map[externalapi.DomainOutpoint]externalapi.UTXOEntry)))
-	})
-	return mainnetGenesisUTXOSet, mainnetGenesisMultiSet, mainnetGenesisErr
-}
-
 func (bp *blockProcessor) validateAndInsertBlock(stagingArea *model.StagingArea, block *externalapi.DomainBlock,
 	isPruningPoint bool, shouldValidateAgainstUTXO bool, isBlockWithTrustedData bool) (*externalapi.BlockInsertionResult, error) {
 
@@ -184,37 +139,9 @@ func (bp *blockProcessor) validateAndInsertBlock(stagingArea *model.StagingArea,
 		}
 	}
 
-	{
-		isGenesis := len(block.Header.DirectParents()) == 0
-		if isGenesis && !block.Header.UTXOCommitment().Equal(externalapi.NewDomainHashFromByteArray(muhash.EmptyMuHashHash.AsArray())) {
-			log.Infof("Loading UTXO set dump")
-			diff, utxoSetMultiset, err := deserializeMainnetUTXOSet()
-			log.Infof("Finished loading UTXO set dump")
-			utxoSetHash := utxoSetMultiset.Hash()
-			if !utxoSetHash.Equal(block.Header.UTXOCommitment()) {
-				return nil, errors.New("Invalid UTXO set dump")
-			}
-
-			area := model.NewStagingArea()
-			bp.consensusStateStore.StageVirtualUTXODiff(area, diff)
-			bp.utxoDiffStore.Stage(area, blockHash, diff, nil)
-			// commit the multiset of genesis
-			bp.multisetStore.Stage(area, blockHash, utxoSetMultiset)
-			err = staging.CommitAllChanges(bp.databaseContext, area)
-			if err != nil {
-				return nil, err
-			}
-		} else if isGenesis {
-			// if it's genesis but has an empty muhash then commit an empty multiset.
-			area := model.NewStagingArea()
-			bp.consensusStateStore.StageVirtualUTXODiff(area, utxo.NewUTXODiff())
-			bp.utxoDiffStore.Stage(area, blockHash, utxo.NewUTXODiff(), nil)
-			bp.multisetStore.Stage(area, blockHash, multiset.New())
-			err = staging.CommitAllChanges(bp.databaseContext, area)
-			if err != nil {
-				return nil, err
-			}
-		}
+	err = bp.ifGenesisSetUtxoSet(block)
+	if err != nil {
+		return nil, err
 	}
 
 	var selectedParentChainChanges *externalapi.SelectedChainPath
@@ -302,6 +229,93 @@ func (bp *blockProcessor) validateAndInsertBlock(stagingArea *model.StagingArea,
 		VirtualUTXODiff:                   virtualUTXODiff,
 		VirtualParents:                    virtualParents,
 	}, nil
+}
+
+var mainnetGenesisUTXOSet externalapi.UTXODiff
+var mainnetGenesisMultiSet model.Multiset
+var mainnetGenesisOnce sync.Once
+var mainnetGenesisErr error
+
+func deserializeMainnetUTXOSet() (externalapi.UTXODiff, model.Multiset, error) {
+	mainnetGenesisOnce.Do(func() {
+		toAdd := make(map[externalapi.DomainOutpoint]externalapi.UTXOEntry)
+		mainnetGenesisMultiSet = multiset.New()
+		file, err := gzip.NewReader(bytes.NewReader(utxoDumpFile))
+		if err != nil {
+			mainnetGenesisErr = err
+			return
+		}
+		for i := 0; ; i++ {
+			size := make([]byte, 1)
+			_, err = io.ReadFull(file, size)
+			if errors.Is(err, io.EOF) {
+				break
+			}
+			if err != nil {
+				mainnetGenesisErr = err
+				return
+			}
+
+			serializedUTXO := make([]byte, size[0])
+			_, err = io.ReadFull(file, serializedUTXO)
+			if err != nil {
+				mainnetGenesisErr = err
+				return
+			}
+
+			mainnetGenesisMultiSet.Add(serializedUTXO)
+
+			entry, outpoint, err := utxo.DeserializeUTXO(serializedUTXO)
+			if err != nil {
+				mainnetGenesisErr = err
+				return
+			}
+			toAdd[*outpoint] = entry
+		}
+		mainnetGenesisUTXOSet, mainnetGenesisErr = utxo.NewUTXODiffFromCollections(utxo.NewUTXOCollection(toAdd), utxo.NewUTXOCollection(make(map[externalapi.DomainOutpoint]externalapi.UTXOEntry)))
+	})
+	return mainnetGenesisUTXOSet, mainnetGenesisMultiSet, mainnetGenesisErr
+}
+
+func (bp *blockProcessor) ifGenesisSetUtxoSet(block *externalapi.DomainBlock) error {
+	isGenesis := len(block.Header.DirectParents()) == 0
+	if !isGenesis {
+		return nil
+	}
+	blockHash := consensushashing.BlockHash(block)
+	if !block.Header.UTXOCommitment().Equal(externalapi.NewDomainHashFromByteArray(muhash.EmptyMuHashHash.AsArray())) {
+		log.Infof("Loading UTXO set dump")
+		diff, utxoSetMultiset, err := deserializeMainnetUTXOSet()
+		if err != nil {
+			return err
+		}
+		log.Infof("Finished loading UTXO set dump")
+		utxoSetHash := utxoSetMultiset.Hash()
+		if !utxoSetHash.Equal(block.Header.UTXOCommitment()) {
+			return errors.New("Invalid UTXO set dump")
+		}
+
+		area := model.NewStagingArea()
+		bp.consensusStateStore.StageVirtualUTXODiff(area, diff)
+		bp.utxoDiffStore.Stage(area, blockHash, diff, nil)
+		// commit the multiset of genesis
+		bp.multisetStore.Stage(area, blockHash, utxoSetMultiset)
+		err = staging.CommitAllChanges(bp.databaseContext, area)
+		if err != nil {
+			return err
+		}
+	} else {
+		// if it's genesis but has an empty muhash then commit an empty multiset and an empty diff
+		area := model.NewStagingArea()
+		bp.consensusStateStore.StageVirtualUTXODiff(area, utxo.NewUTXODiff())
+		bp.utxoDiffStore.Stage(area, blockHash, utxo.NewUTXODiff(), nil)
+		bp.multisetStore.Stage(area, blockHash, multiset.New())
+		err := staging.CommitAllChanges(bp.databaseContext, area)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func isHeaderOnlyBlock(block *externalapi.DomainBlock) bool {
