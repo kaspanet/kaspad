@@ -105,10 +105,14 @@ func (dm *difficultyManager) requiredDifficultyFromTargetsWindow(targetsWindow b
 		return dm.genesisBits, nil
 	}
 
+	// in the past this was < 2 as the comment explains, we changed it to under the window size to
+	// make the hashrate(which is ~1.5GH/s) constant in the first 2641 blocks so that we won't have a lot of tips
+
 	// We need at least 2 blocks to get a timestamp interval
 	// We could instead clamp the timestamp difference to `targetTimePerBlock`,
 	// but then everything will cancel out and we'll get the target from the last block, which will be the same as genesis.
-	if len(targetsWindow) < 2 {
+	// We add 64 as a safety margin
+	if len(targetsWindow) < 2 || len(targetsWindow) < dm.difficultyAdjustmentWindowSize + 64 {
 		return dm.genesisBits, nil
 	}
 	windowMinTimestamp, windowMaxTimeStamp, windowsMinIndex, _ := targetsWindow.minMaxTimestamps()
@@ -157,7 +161,11 @@ func (dm *difficultyManager) calculateDaaScoreAndAddedBlocks(stagingArea *model.
 	isBlockWithTrustedData bool) (uint64, []*externalapi.DomainHash, error) {
 
 	if blockHash.Equal(dm.genesisHash) {
-		return 0, nil, nil
+		genesisHeader, err := dm.headerStore.BlockHeader(dm.databaseContext, stagingArea, dm.genesisHash)
+		if err != nil {
+			return 0, nil, err
+		}
+		return genesisHeader.DAAScore(), nil, nil
 	}
 
 	ghostdagData, err := dm.ghostdagStore.Get(dm.databaseContext, stagingArea, blockHash, false)

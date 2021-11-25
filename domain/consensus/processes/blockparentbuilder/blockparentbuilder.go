@@ -16,8 +16,7 @@ type blockParentBuilder struct {
 	reachabilityDataStore model.ReachabilityDataStore
 	pruningStore          model.PruningStore
 
-	hardForkOmitGenesisFromParentsDAAScore uint64
-	genesisHash                            *externalapi.DomainHash
+	genesisHash *externalapi.DomainHash
 }
 
 // New creates a new instance of a BlockParentBuilder
@@ -30,7 +29,6 @@ func New(
 	reachabilityDataStore model.ReachabilityDataStore,
 	pruningStore model.PruningStore,
 
-	hardForkOmitGenesisFromParentsDAAScore uint64,
 	genesisHash *externalapi.DomainHash,
 ) model.BlockParentBuilder {
 	return &blockParentBuilder{
@@ -39,10 +37,9 @@ func New(
 		dagTopologyManager: dagTopologyManager,
 		parentsManager:     parentsManager,
 
-		reachabilityDataStore:                  reachabilityDataStore,
-		pruningStore:                           pruningStore,
-		hardForkOmitGenesisFromParentsDAAScore: hardForkOmitGenesisFromParentsDAAScore,
-		genesisHash:                            genesisHash,
+		reachabilityDataStore: reachabilityDataStore,
+		pruningStore:          pruningStore,
+		genesisHash:           genesisHash,
 	}
 }
 
@@ -217,8 +214,10 @@ func (bpb *blockParentBuilder) BuildParents(stagingArea *model.StagingArea,
 
 	parents := make([]externalapi.BlockLevelParents, 0, len(candidatesByLevelToReferenceBlocksMap))
 	for blockLevel := 0; blockLevel < len(candidatesByLevelToReferenceBlocksMap); blockLevel++ {
-		if _, ok := candidatesByLevelToReferenceBlocksMap[blockLevel][*bpb.genesisHash]; daaScore >= bpb.hardForkOmitGenesisFromParentsDAAScore && ok && len(candidatesByLevelToReferenceBlocksMap[blockLevel]) == 1 {
-			break
+		if blockLevel > 0 {
+			if _, ok := candidatesByLevelToReferenceBlocksMap[blockLevel][*bpb.genesisHash]; ok && len(candidatesByLevelToReferenceBlocksMap[blockLevel]) == 1 {
+				break
+			}
 		}
 
 		levelBlocks := make(externalapi.BlockLevelParents, 0, len(candidatesByLevelToReferenceBlocksMap[blockLevel]))

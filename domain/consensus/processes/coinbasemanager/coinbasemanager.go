@@ -2,6 +2,8 @@ package coinbasemanager
 
 import (
 	"encoding/binary"
+	"math/big"
+
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
@@ -10,7 +12,6 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/utils/transactionhelper"
 	"github.com/kaspanet/kaspad/infrastructure/db/database"
 	"github.com/pkg/errors"
-	"math/big"
 )
 
 type coinbaseManager struct {
@@ -190,51 +191,7 @@ func (c *coinbaseManager) CalcBlockSubsidy(stagingArea *model.StagingArea,
 		return c.subsidyGenesisReward, nil
 	}
 
-	isBlockRewardFixed, err := c.isBlockRewardFixed(stagingArea, blockPruningPoint)
-	if err != nil {
-		return 0, err
-	}
-	if isBlockRewardFixed {
-		return c.subsidyGenesisReward, nil
-	}
-
-	averagePastSubsidy, err := c.calculateAveragePastSubsidy(stagingArea, blockHash)
-	if err != nil {
-		return 0, err
-	}
-	mergeSetSubsidySum, err := c.calculateMergeSetSubsidySum(stagingArea, blockHash)
-	if err != nil {
-		return 0, err
-	}
-	subsidyRandomVariable, err := c.calculateSubsidyRandomVariable(stagingArea, blockHash)
-	if err != nil {
-		return 0, err
-	}
-
-	pastSubsidy := new(big.Rat).Mul(averagePastSubsidy, c.subsidyPastRewardMultiplier)
-	mergeSetSubsidy := new(big.Rat).Mul(mergeSetSubsidySum, c.subsidyMergeSetRewardMultiplier)
-
-	// In order to avoid unsupported negative exponents in powInt64, flip
-	// the numerator and the denominator manually
-	subsidyRandom := new(big.Rat)
-	if subsidyRandomVariable >= 0 {
-		subsidyRandom = subsidyRandom.SetInt64(1 << subsidyRandomVariable)
-	} else {
-		subsidyRandom = subsidyRandom.SetFrac64(1, 1<<(-subsidyRandomVariable))
-	}
-
-	blockSubsidyBigRat := new(big.Rat).Add(mergeSetSubsidy, new(big.Rat).Mul(pastSubsidy, subsidyRandom))
-	blockSubsidyBigInt := new(big.Int).Div(blockSubsidyBigRat.Num(), blockSubsidyBigRat.Denom())
-	blockSubsidyUint64 := blockSubsidyBigInt.Uint64()
-
-	clampedBlockSubsidy := blockSubsidyUint64
-	if clampedBlockSubsidy < c.minSubsidy {
-		clampedBlockSubsidy = c.minSubsidy
-	} else if clampedBlockSubsidy > c.maxSubsidy {
-		clampedBlockSubsidy = c.maxSubsidy
-	}
-
-	return clampedBlockSubsidy, nil
+	return c.maxSubsidy, nil
 }
 
 func (c *coinbaseManager) calculateAveragePastSubsidy(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) (*big.Rat, error) {

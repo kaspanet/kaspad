@@ -7,15 +7,13 @@ import (
 )
 
 type parentsManager struct {
-	hardForkOmitGenesisFromParentsDAAScore uint64
-	genesisHash                            *externalapi.DomainHash
+	genesisHash *externalapi.DomainHash
 }
 
 // New instantiates a new ParentsManager
-func New(genesisHash *externalapi.DomainHash, hardForkOmitGenesisFromParentsDAAScore uint64) model.ParentsManager {
+func New(genesisHash *externalapi.DomainHash) model.ParentsManager {
 	return &parentsManager{
-		genesisHash:                            genesisHash,
-		hardForkOmitGenesisFromParentsDAAScore: hardForkOmitGenesisFromParentsDAAScore,
+		genesisHash: genesisHash,
 	}
 }
 
@@ -25,7 +23,7 @@ func (pm *parentsManager) ParentsAtLevel(blockHeader externalapi.BlockHeader, le
 		parentsAtLevel = blockHeader.Parents()[level]
 	}
 
-	if len(parentsAtLevel) == 0 && len(blockHeader.DirectParents()) > 0 && blockHeader.DAAScore() >= pm.hardForkOmitGenesisFromParentsDAAScore {
+	if len(parentsAtLevel) == 0 && len(blockHeader.DirectParents()) > 0 {
 		return externalapi.BlockLevelParents{pm.genesisHash}
 	}
 
@@ -33,11 +31,7 @@ func (pm *parentsManager) ParentsAtLevel(blockHeader externalapi.BlockHeader, le
 }
 
 func (pm *parentsManager) Parents(blockHeader externalapi.BlockHeader) []externalapi.BlockLevelParents {
-	numParents := len(blockHeader.Parents())
-	if blockHeader.DAAScore() >= pm.hardForkOmitGenesisFromParentsDAAScore {
-		numParents = constants.MaxBlockLevel + 1
-	}
-
+	numParents := constants.MaxBlockLevel + 1
 	parents := make([]externalapi.BlockLevelParents, numParents)
 	for i := 0; i < numParents; i++ {
 		parents[i] = pm.ParentsAtLevel(blockHeader, i)

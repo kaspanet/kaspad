@@ -675,7 +675,19 @@ func (pm *pruningManager) calculateDiffBetweenPreviousAndCurrentPruningPoints(st
 	onEnd := logger.LogAndMeasureExecutionTime(log, "pruningManager.calculateDiffBetweenPreviousAndCurrentPruningPoints")
 	defer onEnd()
 	if currentPruningHash.Equal(pm.genesisHash) {
-		return utxo.NewUTXODiff(), nil
+		iter, err := pm.consensusStateManager.RestorePastUTXOSetIterator(stagingArea, currentPruningHash)
+		if err != nil {
+			return nil, err
+		}
+		set := make(map[externalapi.DomainOutpoint]externalapi.UTXOEntry)
+		for ok := iter.First(); ok; ok = iter.Next() {
+			outpoint, entry, err := iter.Get()
+			if err != nil {
+				return nil, err
+			}
+			set[*outpoint] = entry
+		}
+		return utxo.NewUTXODiffFromCollections(utxo.NewUTXOCollection(set), utxo.NewUTXOCollection(make(map[externalapi.DomainOutpoint]externalapi.UTXOEntry)))
 	}
 
 	pruningPointIndex, err := pm.pruningStore.CurrentPruningPointIndex(pm.databaseContext, stagingArea)

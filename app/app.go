@@ -20,7 +20,10 @@ import (
 	"github.com/kaspanet/kaspad/version"
 )
 
-const leveldbCacheSizeMiB = 256
+const (
+	leveldbCacheSizeMiB = 256
+	defaultDataDirname  = "datadir"
+)
 
 var desiredLimits = &limits.DesiredLimits{
 	FileLimitWant: 2048,
@@ -159,7 +162,7 @@ func (app *kaspadApp) main(startedChan chan<- struct{}) error {
 
 // dbPath returns the path to the block database given a database type.
 func databasePath(cfg *config.Config) string {
-	return filepath.Join(cfg.AppDir, "data")
+	return filepath.Join(cfg.AppDir, defaultDataDirname)
 }
 
 func removeDatabase(cfg *config.Config) error {

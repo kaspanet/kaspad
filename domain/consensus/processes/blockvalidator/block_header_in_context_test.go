@@ -67,8 +67,8 @@ func TestValidateMedianTime(t *testing.T) {
 
 		blockTime := tip.Header.TimeInMilliseconds()
 
-		for i := 0; i < 100; i++ {
-			blockTime += 1000
+		for i := 0; i < 10; i++ {
+			blockTime += 100
 			_, tipHash = addBlock(blockTime, []*externalapi.DomainHash{tipHash}, nil)
 		}
 
@@ -163,7 +163,7 @@ func TestCheckParentsIncest(t *testing.T) {
 
 func TestCheckMergeSizeLimit(t *testing.T) {
 	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
-		consensusConfig.MergeSetSizeLimit = 2 * uint64(consensusConfig.K)
+		consensusConfig.MergeSetSizeLimit = 5
 		factory := consensus.NewFactory()
 		tc, teardown, err := factory.NewTestConsensus(consensusConfig, "TestCheckMergeSizeLimit")
 		if err != nil {

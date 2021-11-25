@@ -86,36 +86,5 @@ func TestBlockRewardSwitch(t *testing.T) {
 				t.Fatalf("Subsidy has unexpected value. Want: %d, got: %d", consensusConfig.MinSubsidy, subsidy)
 			}
 		}
-
-		// Add another block. We expect it to be another pruning point
-		lastPruningPointHash, _, err := tc.AddBlock([]*externalapi.DomainHash{tipHash}, nil, nil)
-		if err != nil {
-			t.Fatalf("AddBlock: %+v", err)
-		}
-
-		// Make sure that another pruning point had been added
-		pruningPointHeaders, err = tc.PruningPointHeaders()
-		if err != nil {
-			t.Fatalf("PruningPointHeaders: %+v", pruningPointHeaders)
-		}
-		expectedPruningPointHeaderAmount = expectedPruningPointHeaderAmount + 1
-		if uint64(len(pruningPointHeaders)) != expectedPruningPointHeaderAmount {
-			t.Fatalf("Unexpected amount of pruning point headers. "+
-				"Want: %d, got: %d", expectedPruningPointHeaderAmount, len(pruningPointHeaders))
-		}
-
-		// Make sure that the last pruning point has a post-switch subsidy
-		lastPruningPoint, err := tc.GetBlock(lastPruningPointHash)
-		if err != nil {
-			t.Fatalf("GetBlock: %+v", err)
-		}
-		lastPruningPointCoinbase := lastPruningPoint.Transactions[transactionhelper.CoinbaseTransactionIndex]
-		_, _, subsidy, err := tc.CoinbaseManager().ExtractCoinbaseDataBlueScoreAndSubsidy(lastPruningPointCoinbase)
-		if err != nil {
-			t.Fatalf("ExtractCoinbaseDataBlueScoreAndSubsidy: %+v", err)
-		}
-		if subsidy != consensusConfig.SubsidyGenesisReward {
-			t.Fatalf("Subsidy has unexpected value. Want: %d, got: %d", consensusConfig.SubsidyGenesisReward, subsidy)
-		}
 	})
 }

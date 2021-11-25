@@ -1,6 +1,9 @@
 package blockvalidator_test
 
 import (
+	"github.com/kaspanet/kaspad/domain/consensus/model/testapi"
+	"reflect"
+	"runtime"
 	"testing"
 
 	"github.com/kaspanet/kaspad/domain/consensus"
@@ -13,73 +16,74 @@ import (
 	"github.com/pkg/errors"
 )
 
-func TestCheckParentsLimit(t *testing.T) {
+func TestBlockValidator_ValidateHeaderInIsolation(t *testing.T) {
+	tests := []func(t *testing.T, tc testapi.TestConsensus, cfg *consensus.Config){
+		CheckParentsLimit,
+		CheckBlockVersion,
+		CheckBlockTimestampInIsolation,
+	}
 	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
-		factory := consensus.NewFactory()
-
-		tc, teardown, err := factory.NewTestConsensus(consensusConfig, "TestCheckParentsLimit")
+		tc, teardown, err := consensus.NewFactory().NewTestConsensus(consensusConfig, "TestBlockValidator_ValidateHeaderInIsolation")
 		if err != nil {
 			t.Fatalf("Error setting up consensus: %+v", err)
 		}
 		defer teardown(false)
-
-		for i := externalapi.KType(0); i < consensusConfig.MaxBlockParents+1; i++ {
-			_, _, err = tc.AddBlock([]*externalapi.DomainHash{consensusConfig.GenesisHash}, nil, nil)
-			if err != nil {
-				t.Fatalf("AddBlock: %+v", err)
-			}
-		}
-
-		tips, err := tc.Tips()
-		if err != nil {
-			t.Fatalf("Tips: %+v", err)
-		}
-
-		_, _, err = tc.AddBlock(tips, nil, nil)
-		if !errors.Is(err, ruleerrors.ErrTooManyParents) {
-			t.Fatalf("Unexpected error: %+v", err)
+		for _, test := range tests {
+			testName := runtime.FuncForPC(reflect.ValueOf(test).Pointer()).Name()
+			t.Run(testName, func(t *testing.T) {
+				test(t, tc, consensusConfig)
+			})
 		}
 	})
 }
 
-func TestCheckBlockVersion(t *testing.T) {
-	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
-		factory := consensus.NewFactory()
-
-		tc, teardown, err := factory.NewTestConsensus(consensusConfig, "TestCheckBlockVersion")
+func CheckParentsLimit(t *testing.T, tc testapi.TestConsensus, consensusConfig *consensus.Config) {
+	for i := externalapi.KType(0); i < consensusConfig.MaxBlockParents+1; i++ {
+		_, _, err := tc.AddBlock([]*externalapi.DomainHash{consensusConfig.GenesisHash}, nil, nil)
 		if err != nil {
-			t.Fatalf("Error setting up consensus: %+v", err)
+			t.Fatalf("AddBlock: %+v", err)
 		}
-		defer teardown(false)
+	}
 
-		block, _, err := tc.BuildBlockWithParents([]*externalapi.DomainHash{consensusConfig.GenesisHash}, nil, nil)
-		if err != nil {
-			t.Fatalf("BuildBlockWithParents: %+v", err)
-		}
+	tips, err := tc.Tips()
+	if err != nil {
+		t.Fatalf("Tips: %+v", err)
+	}
 
-		block.Header = blockheader.NewImmutableBlockHeader(
-			constants.MaxBlockVersion+1,
-			block.Header.Parents(),
-			block.Header.HashMerkleRoot(),
-			block.Header.AcceptedIDMerkleRoot(),
-			block.Header.UTXOCommitment(),
-			block.Header.TimeInMilliseconds(),
-			block.Header.Bits(),
-			block.Header.Nonce(),
-			block.Header.DAAScore(),
-			block.Header.BlueScore(),
-			block.Header.BlueWork(),
-			block.Header.PruningPoint(),
-		)
-
-		_, err = tc.ValidateAndInsertBlock(block, true)
-		if !errors.Is(err, ruleerrors.ErrBlockVersionIsUnknown) {
-			t.Fatalf("Unexpected error: %+v", err)
-		}
-	})
+	_, _, err = tc.AddBlock(tips, nil, nil)
+	if !errors.Is(err, ruleerrors.ErrTooManyParents) {
+		t.Fatalf("Unexpected error: %+v", err)
+	}
 }
 
-func TestCheckBlockTimestampInIsolation(t *testing.T) {
+func CheckBlockVersion(t *testing.T, tc testapi.TestConsensus, consensusConfig *consensus.Config) {
+	block, _, err := tc.BuildBlockWithParents([]*externalapi.DomainHash{consensusConfig.GenesisHash}, nil, nil)
+	if err != nil {
+		t.Fatalf("BuildBlockWithParents: %+v", err)
+	}
+
+	block.Header = blockheader.NewImmutableBlockHeader(
+		constants.MaxBlockVersion+1,
+		block.Header.Parents(),
+		block.Header.HashMerkleRoot(),
+		block.Header.AcceptedIDMerkleRoot(),
+		block.Header.UTXOCommitment(),
+		block.Header.TimeInMilliseconds(),
+		block.Header.Bits(),
+		block.Header.Nonce(),
+		block.Header.DAAScore(),
+		block.Header.BlueScore(),
+		block.Header.BlueWork(),
+		block.Header.PruningPoint(),
+	)
+
+	_, err = tc.ValidateAndInsertBlock(block, true)
+	if !errors.Is(err, ruleerrors.ErrBlockVersionIsUnknown) {
+		t.Fatalf("Unexpected error: %+v", err)
+	}
+}
+
+func CheckBlockTimestampInIsolation(t *testing.T, tc testapi.TestConsensus, cfg *consensus.Config) {
 	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
 		factory := consensus.NewFactory()
 
