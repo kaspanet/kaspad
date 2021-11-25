@@ -22,7 +22,7 @@ import (
 
 const (
 	leveldbCacheSizeMiB = 256
-	defaultDataDirname  = "datadir"
+	defaultDataDirname  = "datadir2"
 )
 
 var desiredLimits = &limits.DesiredLimits{
