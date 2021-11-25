@@ -284,12 +284,12 @@ func (bp *blockProcessor) ifGenesisSetUtxoSet(block *externalapi.DomainBlock) er
 	}
 	blockHash := consensushashing.BlockHash(block)
 	if !block.Header.UTXOCommitment().Equal(externalapi.NewDomainHashFromByteArray(muhash.EmptyMuHashHash.AsArray())) {
-		log.Infof("Loading UTXO set dump")
+		log.Infof("Loading checkpoint UTXO set")
 		diff, utxoSetMultiset, err := deserializeMainnetUTXOSet()
 		if err != nil {
 			return err
 		}
-		log.Infof("Finished loading UTXO set dump")
+		log.Infof("Finished loading checkpoint UTXO set")
 		utxoSetHash := utxoSetMultiset.Hash()
 		if !utxoSetHash.Equal(block.Header.UTXOCommitment()) {
 			return errors.New("Invalid UTXO set dump")
