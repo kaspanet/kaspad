@@ -75,7 +75,7 @@ func TestVirtualDiff(t *testing.T) {
 			blockB.Transactions[0].Outputs[0].Value,
 			blockB.Transactions[0].Outputs[0].ScriptPublicKey,
 			true,
-			consensusConfig.GenesisBlock.Header.DAAScore() + 2, //Expected virtual DAA score
+			consensusConfig.GenesisBlock.Header.DAAScore()+2, //Expected virtual DAA score
 		)) {
 			t.Fatalf("Unexpected entry %s", entry)
 		}
