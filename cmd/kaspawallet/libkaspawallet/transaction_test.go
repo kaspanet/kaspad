@@ -2,6 +2,9 @@ package libkaspawallet_test
 
 import (
 	"fmt"
+	"strings"
+	"testing"
+
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/libkaspawallet"
 	"github.com/kaspanet/kaspad/domain/consensus"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
@@ -10,8 +13,6 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/utils/txscript"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/utxo"
 	"github.com/kaspanet/kaspad/util"
-	"strings"
-	"testing"
 )
 
 func forSchnorrAndECDSA(t *testing.T, testFunc func(t *testing.T, ecdsa bool)) {
@@ -104,7 +105,7 @@ func TestMultisig(t *testing.T) {
 				[]*libkaspawallet.Payment{{
 					Address: address,
 					Amount:  10,
-				}}, selectedUTXOs)
+				}}, selectedUTXOs, false)
 			if err != nil {
 				t.Fatalf("CreateUnsignedTransaction: %+v", err)
 			}
@@ -265,7 +266,7 @@ func TestP2PK(t *testing.T) {
 				[]*libkaspawallet.Payment{{
 					Address: address,
 					Amount:  10,
-				}}, selectedUTXOs)
+				}}, selectedUTXOs, false)
 			if err != nil {
 				t.Fatalf("CreateUnsignedTransaction: %+v", err)
 			}

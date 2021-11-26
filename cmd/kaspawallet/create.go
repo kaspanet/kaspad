@@ -3,16 +3,36 @@ package main
 import (
 	"bufio"
 	"fmt"
+	"os"
+
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/libkaspawallet"
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/libkaspawallet/bip32"
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/utils"
+	"github.com/kaspanet/kaspad/util"
 	"github.com/pkg/errors"
-	"os"
 
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/keys"
 )
 
 func create(conf *createConfig) error {
+	if conf.PublicPrivateKeys {
+
+		privateKey, publicKey, err := libkaspawallet.CreateKeyPair(false)
+		if err != nil {
+			return err
+		}
+
+		addr, err := util.NewAddressPublicKey(publicKey, conf.NetParams().Prefix)
+		if err != nil {
+			return err
+		}
+
+		fmt.Printf("Private key: %x\n", privateKey)
+		fmt.Printf("Public key: %x\n", publicKey)
+		fmt.Printf("Address: %s\n", addr)
+
+		return nil
+	}
 	var encryptedMnemonics []*keys.EncryptedMnemonic
 	var signerExtendedPublicKeys []string
 	var err error

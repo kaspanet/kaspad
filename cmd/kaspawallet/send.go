@@ -2,7 +2,9 @@ package main
 
 import (
 	"context"
+	"encoding/hex"
 	"fmt"
+
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/daemon/client"
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/daemon/pb"
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/keys"
@@ -12,6 +14,51 @@ import (
 )
 
 func send(conf *sendConfig) error {
+
+	if len(conf.PrivateKey) > 0 {
+		daemonClient, tearDown, err := client.Connect(conf.DaemonAddress)
+		if err != nil {
+			return err
+		}
+		defer tearDown()
+
+		ctx, cancel := context.WithTimeout(context.Background(), daemonTimeout)
+		defer cancel()
+
+		sendAmountSompi := uint64(conf.SendAmount * constants.SompiPerKaspa)
+		createUnsignedTransactionResponse, err := daemonClient.CreateUnsignedTransaction(ctx, &pb.CreateUnsignedTransactionRequest{
+			Address: conf.ToAddress,
+			Amount:  sendAmountSompi,
+		})
+		if err != nil {
+			return err
+		}
+
+		privateKey, err := hex.DecodeString(conf.PrivateKey)
+		if err != nil {
+			return err
+		}
+
+		signedTransaction, err := libkaspawallet.SignWithPrivateKey(conf.NetParams(), privateKey, createUnsignedTransactionResponse.UnsignedTransaction)
+		if err != nil {
+			return err
+		}
+
+		ctx2, cancel2 := context.WithTimeout(context.Background(), daemonTimeout)
+		defer cancel2()
+		broadcastResponse, err := daemonClient.Broadcast(ctx2, &pb.BroadcastRequest{
+			Transaction: signedTransaction,
+		})
+		if err != nil {
+			return err
+		}
+
+		fmt.Println("Transaction was sent successfully")
+		fmt.Printf("Transaction ID: \t%s\n", broadcastResponse.TxID)
+
+		return nil
+	}
+
 	keysFile, err := keys.ReadKeysFile(conf.NetParams(), conf.KeysFile)
 	if err != nil {
 		return err

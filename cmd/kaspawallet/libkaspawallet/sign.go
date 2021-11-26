@@ -1,6 +1,7 @@
 package libkaspawallet
 
 import (
+	"github.com/kaspanet/go-secp256k1"
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/libkaspawallet/bip32"
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/libkaspawallet/serialization"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
@@ -23,7 +24,9 @@ func rawTxInSignature(extendedKey *bip32.ExtendedKey, tx *externalapi.DomainTran
 	if err != nil {
 		return nil, err
 	}
-
+	if err != nil {
+		return nil, err
+	}
 	return txscript.RawTxInSignature(tx, idx, hashType, schnorrKeyPair, sighashReusedValues)
 }
 
@@ -83,6 +86,75 @@ func sign(params *dagconfig.Params, mnemonic string, partiallySignedTransaction 
 		for _, pair := range partiallySignedInput.PubKeySignaturePairs {
 			if pair.ExtendedPublicKey == derivedPublicKey.String() {
 				pair.Signature, err = rawTxInSignature(derivedKey, partiallySignedTransaction.Tx, i, consensushashing.SigHashAll, sighashReusedValues, ecdsa)
+				if err != nil {
+					return err
+				}
+
+				signed = true
+			}
+		}
+	}
+
+	if !signed {
+		return errors.Errorf("Public key doesn't match any of the transaction public keys")
+	}
+
+	return nil
+}
+
+func rawTxInSignatureWithPrivateKey(schnorrKeyPair *secp256k1.SchnorrKeyPair, tx *externalapi.DomainTransaction, idx int, hashType consensushashing.SigHashType,
+	sighashReusedValues *consensushashing.SighashReusedValues) ([]byte, error) {
+	return txscript.RawTxInSignature(tx, idx, hashType, schnorrKeyPair, sighashReusedValues)
+}
+
+// Sign signs the transaction with the given private keys
+func SignWithPrivateKey(params *dagconfig.Params, privateKey []byte, serializedPSTx []byte) ([]byte, error) {
+	partiallySignedTransaction, err := serialization.DeserializePartiallySignedTransaction(serializedPSTx)
+	if err != nil {
+		return nil, err
+	}
+
+	err = signWithPrivateKey(params, privateKey, partiallySignedTransaction)
+	if err != nil {
+		return nil, err
+	}
+
+	return serialization.SerializePartiallySignedTransaction(partiallySignedTransaction)
+}
+
+func signWithPrivateKey(params *dagconfig.Params, privateKey []byte, partiallySignedTransaction *serialization.PartiallySignedTransaction) error {
+	if isTransactionFullySigned(partiallySignedTransaction) {
+		return nil
+	}
+
+	sighashReusedValues := &consensushashing.SighashReusedValues{}
+	for i, partiallySignedInput := range partiallySignedTransaction.PartiallySignedInputs {
+		prevOut := partiallySignedInput.PrevOutput
+		partiallySignedTransaction.Tx.Inputs[i].UTXOEntry = utxo.NewUTXOEntry(
+			prevOut.Value,
+			prevOut.ScriptPublicKey,
+			false, // This is a fake value, because it's irrelevant for the signature
+			0,     // This is a fake value, because it's irrelevant for the signature
+		)
+		partiallySignedTransaction.Tx.Inputs[i].SigOpCount = byte(len(partiallySignedInput.PubKeySignaturePairs))
+	}
+
+	signed := false
+
+	schnorrKeyPair, err := secp256k1.DeserializeSchnorrPrivateKeyFromSlice(privateKey)
+	if err != nil {
+		return err
+	}
+
+	publicKey, err := schnorrKeyPair.SchnorrPublicKey()
+	if err != nil {
+		return err
+	}
+
+	for i, partiallySignedInput := range partiallySignedTransaction.PartiallySignedInputs {
+		for _, pair := range partiallySignedInput.PubKeySignaturePairs {
+			if pair.ExtendedPublicKey == publicKey.String() {
+				pair.Signature, err = rawTxInSignatureWithPrivateKey(schnorrKeyPair, partiallySignedTransaction.Tx, i, consensushashing.SigHashAll, sighashReusedValues)
 				if err != nil {
 					return err
 				}

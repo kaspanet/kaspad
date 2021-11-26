@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"fmt"
+
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/daemon/pb"
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/libkaspawallet"
 	"github.com/kaspanet/kaspad/util"
@@ -10,6 +11,10 @@ import (
 )
 
 func (s *server) changeAddress() (util.Address, error) {
+	if s.isPublicAddressUsed {
+		return s.publicAddress, nil
+	}
+
 	err := s.keysFile.SetLastUsedInternalIndex(s.keysFile.LastUsedInternalIndex() + 1)
 	if err != nil {
 		return nil, err
@@ -37,6 +42,10 @@ func (s *server) GetReceiveAddress(_ context.Context, request *pb.GetReceiveAddr
 		return nil, errors.New("server is not synced")
 	}
 
+	if s.isPublicAddressUsed {
+		return &pb.GetReceiveAddressResponse{Address: s.publicAddress.String()}, nil
+	}
+
 	err := s.keysFile.SetLastUsedExternalIndex(s.keysFile.LastUsedExternalIndex() + 1)
 	if err != nil {
 		return nil, err
@@ -62,6 +71,9 @@ func (s *server) GetReceiveAddress(_ context.Context, request *pb.GetReceiveAddr
 }
 
 func (s *server) walletAddressString(wAddr *walletAddress) (string, error) {
+	if s.isPublicAddressUsed {
+		return s.publicAddress.String(), nil
+	}
 	path := s.walletAddressPath(wAddr)
 	addr, err := libkaspawallet.Address(s.params, s.keysFile.ExtendedPublicKeys, s.keysFile.MinimumSignatures, path, s.keysFile.ECDSA)
 	if err != nil {

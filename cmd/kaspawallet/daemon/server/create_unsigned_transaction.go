@@ -2,12 +2,68 @@ package server
 
 import (
 	"context"
+	"encoding/hex"
+
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/daemon/pb"
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/libkaspawallet"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/pkg/errors"
 )
+
+func (s *server) CreateUnsignedTransaction2(_ context.Context, request *pb.CreateUnsignedTransactionRequest) (*pb.CreateUnsignedTransactionResponse, error) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	if !s.isSynced() {
+		return nil, errors.New("server is not synced")
+	}
+
+	err := s.refreshExistingUTXOs()
+	if err != nil {
+		return nil, err
+	}
+
+	toAddress, err := util.DecodeAddress(request.Address, s.params.Prefix)
+	if err != nil {
+		return nil, err
+	}
+
+	// TODO: Implement a better fee estimation mechanism
+	const feePerInput = 10000
+	selectedUTXOs, changeSompi, err := s.selectUTXOs(request.Amount, feePerInput)
+	if err != nil {
+		return nil, err
+	}
+
+	changeAddress, err := s.changeAddress()
+	if err != nil {
+		return nil, err
+	}
+
+	pubKeyHex := string("d914583856ce184873fd24c5da72fdde05dfda342762afbbd6e3c6617c87c6f4")
+	pubKey, _ := hex.DecodeString(pubKeyHex) // 32 bytes
+
+	pubKeys := make([]string, 1)
+	pubKeys[0] = string(pubKey)
+	pubKeysByte := []byte(pubKeys[0])
+
+	addr, _ := util.NewAddressPublicKey(pubKeysByte, changeAddress.Prefix())
+	unsignedTransaction, err := libkaspawallet.CreateUnsignedTransaction(pubKeys,
+		s.keysFile.MinimumSignatures,
+		[]*libkaspawallet.Payment{{
+			Address: toAddress,
+			Amount:  request.Amount,
+		}, {
+			Address: addr,
+			Amount:  changeSompi,
+		}}, selectedUTXOs, true)
+	if err != nil {
+		return nil, err
+	}
+
+	return &pb.CreateUnsignedTransactionResponse{UnsignedTransaction: unsignedTransaction}, nil
+}
 
 func (s *server) CreateUnsignedTransaction(_ context.Context, request *pb.CreateUnsignedTransactionRequest) (*pb.CreateUnsignedTransactionResponse, error) {
 	s.lock.Lock()
@@ -39,6 +95,26 @@ func (s *server) CreateUnsignedTransaction(_ context.Context, request *pb.Create
 		return nil, err
 	}
 
+	if s.isPublicAddressUsed {
+		pubKeys := make([]string, 1)
+		pubKeys[0] = hex.EncodeToString((s.publicKey)) // we want hex encoded string - other side - sign check it like this
+		unsignedTransaction, err := libkaspawallet.CreateUnsignedTransaction(pubKeys,
+			s.keysFile.MinimumSignatures,
+			[]*libkaspawallet.Payment{{
+				Address: toAddress,
+				Amount:  request.Amount,
+			}, {
+				Address: changeAddress,
+				Amount:  changeSompi,
+			}}, selectedUTXOs, s.isPublicAddressUsed /* true */)
+		if err != nil {
+			return nil, err
+		}
+
+		return &pb.CreateUnsignedTransactionResponse{UnsignedTransaction: unsignedTransaction}, nil
+
+	}
+
 	unsignedTransaction, err := libkaspawallet.CreateUnsignedTransaction(s.keysFile.ExtendedPublicKeys,
 		s.keysFile.MinimumSignatures,
 		[]*libkaspawallet.Payment{{
@@ -47,7 +123,7 @@ func (s *server) CreateUnsignedTransaction(_ context.Context, request *pb.Create
 		}, {
 			Address: changeAddress,
 			Amount:  changeSompi,
-		}}, selectedUTXOs)
+		}}, selectedUTXOs, s.isPublicAddressUsed /* false */)
 	if err != nil {
 		return nil, err
 	}
