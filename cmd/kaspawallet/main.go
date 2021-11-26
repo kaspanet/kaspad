@@ -17,6 +17,8 @@ func main() {
 		err = createUnsignedTransaction(config.(*createUnsignedTransactionConfig))
 	case signSubCmd:
 		err = sign(config.(*signConfig))
+	case signWithPrivateKeySubCmd:
+		err = signWithPrivateKey(config.(*signWithPrivateKeyConfig))
 	case broadcastSubCmd:
 		err = broadcast(config.(*broadcastConfig))
 	case showAddressSubCmd:

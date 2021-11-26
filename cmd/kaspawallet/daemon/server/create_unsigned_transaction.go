@@ -2,6 +2,8 @@ package server
 
 import (
 	"context"
+	"encoding/hex"
+
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/daemon/pb"
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/libkaspawallet"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
@@ -39,6 +41,26 @@ func (s *server) CreateUnsignedTransaction(_ context.Context, request *pb.Create
 		return nil, err
 	}
 
+	if s.isPublicAddressUsed {
+		pubKeys := make([]string, 1)
+		pubKeys[0] = hex.EncodeToString((s.publicKey)) // we want hex encoded string - other side - sign check it like this
+		unsignedTransaction, err := libkaspawallet.CreateUnsignedTransaction(pubKeys,
+			s.keysFile.MinimumSignatures,
+			[]*libkaspawallet.Payment{{
+				Address: toAddress,
+				Amount:  request.Amount,
+			}, {
+				Address: changeAddress,
+				Amount:  changeSompi,
+			}}, selectedUTXOs, s.isPublicAddressUsed /* true */)
+		if err != nil {
+			return nil, err
+		}
+
+		return &pb.CreateUnsignedTransactionResponse{UnsignedTransaction: unsignedTransaction}, nil
+
+	}
+
 	unsignedTransaction, err := libkaspawallet.CreateUnsignedTransaction(s.keysFile.ExtendedPublicKeys,
 		s.keysFile.MinimumSignatures,
 		[]*libkaspawallet.Payment{{
@@ -47,7 +69,7 @@ func (s *server) CreateUnsignedTransaction(_ context.Context, request *pb.Create
 		}, {
 			Address: changeAddress,
 			Amount:  changeSompi,
-		}}, selectedUTXOs)
+		}}, selectedUTXOs, s.isPublicAddressUsed /* false */)
 	if err != nil {
 		return nil, err
 	}

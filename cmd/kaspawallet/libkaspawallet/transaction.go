@@ -31,10 +31,10 @@ func CreateUnsignedTransaction(
 	extendedPublicKeys []string,
 	minimumSignatures uint32,
 	payments []*Payment,
-	selectedUTXOs []*UTXO) ([]byte, error) {
+	selectedUTXOs []*UTXO, isSchnorr bool) ([]byte, error) {
 
 	sortPublicKeys(extendedPublicKeys)
-	unsignedTransaction, err := createUnsignedTransaction(extendedPublicKeys, minimumSignatures, payments, selectedUTXOs)
+	unsignedTransaction, err := createUnsignedTransaction(extendedPublicKeys, minimumSignatures, payments, selectedUTXOs, isSchnorr)
 	if err != nil {
 		return nil, err
 	}
@@ -98,37 +98,55 @@ func createUnsignedTransaction(
 	extendedPublicKeys []string,
 	minimumSignatures uint32,
 	payments []*Payment,
-	selectedUTXOs []*UTXO) (*serialization.PartiallySignedTransaction, error) {
+	selectedUTXOs []*UTXO, isSchonorr bool) (*serialization.PartiallySignedTransaction, error) {
 
 	inputs := make([]*externalapi.DomainTransactionInput, len(selectedUTXOs))
 	partiallySignedInputs := make([]*serialization.PartiallySignedInput, len(selectedUTXOs))
 	for i, utxo := range selectedUTXOs {
-		emptyPubKeySignaturePairs := make([]*serialization.PubKeySignaturePair, len(extendedPublicKeys))
-		for i, extendedPublicKey := range extendedPublicKeys {
-			extendedKey, err := bip32.DeserializeExtendedKey(extendedPublicKey)
-			if err != nil {
-				return nil, err
-			}
-
-			derivedKey, err := extendedKey.DeriveFromPath(utxo.DerivationPath)
-			if err != nil {
-				return nil, err
-			}
+		if isSchonorr {
+			emptyPubKeySignaturePairs := make([]*serialization.PubKeySignaturePair, len(extendedPublicKeys))
 
 			emptyPubKeySignaturePairs[i] = &serialization.PubKeySignaturePair{
-				ExtendedPublicKey: derivedKey.String(),
+				ExtendedPublicKey: extendedPublicKeys[0],
 			}
-		}
 
-		inputs[i] = &externalapi.DomainTransactionInput{PreviousOutpoint: *utxo.Outpoint}
-		partiallySignedInputs[i] = &serialization.PartiallySignedInput{
-			PrevOutput: &externalapi.DomainTransactionOutput{
-				Value:           utxo.UTXOEntry.Amount(),
-				ScriptPublicKey: utxo.UTXOEntry.ScriptPublicKey(),
-			},
-			MinimumSignatures:    minimumSignatures,
-			PubKeySignaturePairs: emptyPubKeySignaturePairs,
-			DerivationPath:       utxo.DerivationPath,
+			inputs[i] = &externalapi.DomainTransactionInput{PreviousOutpoint: *utxo.Outpoint}
+			partiallySignedInputs[i] = &serialization.PartiallySignedInput{
+				PrevOutput: &externalapi.DomainTransactionOutput{
+					Value:           utxo.UTXOEntry.Amount(),
+					ScriptPublicKey: utxo.UTXOEntry.ScriptPublicKey(),
+				},
+				MinimumSignatures:    minimumSignatures,
+				PubKeySignaturePairs: emptyPubKeySignaturePairs,
+				DerivationPath:       utxo.DerivationPath,
+			}
+		} else {
+			emptyPubKeySignaturePairs := make([]*serialization.PubKeySignaturePair, len(extendedPublicKeys))
+			for i, extendedPublicKey := range extendedPublicKeys {
+				extendedKey, err := bip32.DeserializeExtendedKey(extendedPublicKey)
+				if err != nil {
+					return nil, err
+				}
+
+				derivedKey, err := extendedKey.DeriveFromPath(utxo.DerivationPath)
+				if err != nil {
+					return nil, err
+				}
+
+				emptyPubKeySignaturePairs[i] = &serialization.PubKeySignaturePair{
+					ExtendedPublicKey: derivedKey.String(),
+				}
+			}
+			inputs[i] = &externalapi.DomainTransactionInput{PreviousOutpoint: *utxo.Outpoint}
+			partiallySignedInputs[i] = &serialization.PartiallySignedInput{
+				PrevOutput: &externalapi.DomainTransactionOutput{
+					Value:           utxo.UTXOEntry.Amount(),
+					ScriptPublicKey: utxo.UTXOEntry.ScriptPublicKey(),
+				},
+				MinimumSignatures:    minimumSignatures,
+				PubKeySignaturePairs: emptyPubKeySignaturePairs,
+				DerivationPath:       utxo.DerivationPath,
+			}
 		}
 	}
 

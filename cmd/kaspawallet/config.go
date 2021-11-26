@@ -1,9 +1,10 @@
 package main
 
 import (
+	"os"
+
 	"github.com/kaspanet/kaspad/infrastructure/config"
 	"github.com/pkg/errors"
-	"os"
 
 	"github.com/jessevdk/go-flags"
 )
@@ -14,6 +15,7 @@ const (
 	sendSubCmd                      = "send"
 	createUnsignedTransactionSubCmd = "create-unsigned-transaction"
 	signSubCmd                      = "sign"
+	signWithPrivateKeySubCmd        = "sign-with-private-key"
 	broadcastSubCmd                 = "broadcast"
 	showAddressSubCmd               = "show-address"
 	dumpUnencryptedDataSubCmd       = "dump-unencrypted-data"
@@ -38,6 +40,7 @@ type createConfig struct {
 	NumPublicKeys     uint32 `long:"num-public-keys" short:"n" description:"Total number of keys" default:"1"`
 	ECDSA             bool   `long:"ecdsa" description:"Create an ECDSA wallet"`
 	Import            bool   `long:"import" short:"i" description:"Import private keys (as opposed to generating them)"`
+	PublicPrivateKeys bool   `long:"public-private-keys" short:"x" description:"Create schnorr public private key pair and print in hex encoding"`
 	config.NetworkFlags
 }
 
@@ -52,6 +55,7 @@ type sendConfig struct {
 	DaemonAddress string  `long:"daemonaddress" short:"d" description:"Wallet daemon server to connect to (default: localhost:8082)"`
 	ToAddress     string  `long:"to-address" short:"t" description:"The public address to send Kaspa to" required:"true"`
 	SendAmount    float64 `long:"send-amount" short:"v" description:"An amount to send in Kaspa (e.g. 1234.12345678)" required:"true"`
+	PrivateKey    string  `long:"private-key" short:"g" description:"The private key (encoded in hex)"`
 	config.NetworkFlags
 }
 
@@ -65,6 +69,11 @@ type createUnsignedTransactionConfig struct {
 type signConfig struct {
 	KeysFile    string `long:"keys-file" short:"f" description:"Keys file location (default: ~/.kaspawallet/keys.json (*nix), %USERPROFILE%\\AppData\\Local\\Kaspawallet\\key.json (Windows))"`
 	Password    string `long:"password" short:"p" description:"Wallet password"`
+	Transaction string `long:"transaction" short:"t" description:"The unsigned transaction to sign on (encoded in hex)" required:"true"`
+	config.NetworkFlags
+}
+type signWithPrivateKeyConfig struct {
+	PrivateKey  string `long:"private-key" short:"p" description:"The private key (encoded in hex)" required:"true"`
 	Transaction string `long:"transaction" short:"t" description:"The unsigned transaction to sign on (encoded in hex)" required:"true"`
 	config.NetworkFlags
 }
@@ -85,6 +94,7 @@ type startDaemonConfig struct {
 	Password  string `long:"password" short:"p" description:"Wallet password"`
 	RPCServer string `long:"rpcserver" short:"s" description:"RPC server to connect to"`
 	Listen    string `short:"l" long:"listen" description:"Address to listen on (default: 0.0.0.0:8082)"`
+	PublicKey string `long:"public-key" short:"k" description:"The public key (encoded in hex) to use for regular public-private keys"`
 	config.NetworkFlags
 }
 
@@ -118,6 +128,10 @@ func parseCommandLine() (subCommand string, config interface{}) {
 	signConf := &signConfig{}
 	parser.AddCommand(signSubCmd, "Sign the given partially signed transaction",
 		"Sign the given partially signed transaction", signConf)
+
+	signWithPrivateKeyConf := &signWithPrivateKeyConfig{}
+	parser.AddCommand(signWithPrivateKeySubCmd, "Sign the given partially signed transaction with private key",
+		"Sign the given partially signed transaction", signWithPrivateKeyConf)
 
 	broadcastConf := &broadcastConfig{DaemonAddress: defaultListen}
 	parser.AddCommand(broadcastSubCmd, "Broadcast the given transaction",
@@ -186,6 +200,13 @@ func parseCommandLine() (subCommand string, config interface{}) {
 			printErrorAndExit(err)
 		}
 		config = signConf
+	case signWithPrivateKeySubCmd:
+		combineNetworkFlags(&signWithPrivateKeyConf.NetworkFlags, &cfg.NetworkFlags)
+		err := signWithPrivateKeyConf.ResolveNetwork(parser)
+		if err != nil {
+			printErrorAndExit(err)
+		}
+		config = signWithPrivateKeyConf
 	case broadcastSubCmd:
 		combineNetworkFlags(&broadcastConf.NetworkFlags, &cfg.NetworkFlags)
 		err := broadcastConf.ResolveNetwork(parser)

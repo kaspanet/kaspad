@@ -1,10 +1,11 @@
 package server
 
 import (
+	"time"
+
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/pkg/errors"
-	"time"
 )
 
 const (
@@ -58,6 +59,10 @@ const numIndexesToQuery = 100
 // for each key chain.
 func (s *server) addressesToQuery(start, end uint32) (walletAddressSet, error) {
 	addresses := make(walletAddressSet)
+	if s.isPublicAddressUsed {
+		addresses[s.publicAddress.String()] = &walletAddress{index: 0, cosignerIndex: 0, keyChain: externalKeychain} // just junk values inside walletAddress
+		return addresses, nil
+	}
 	for index := start; index < end; index++ {
 		for cosignerIndex := uint32(0); cosignerIndex < uint32(len(s.keysFile.ExtendedPublicKeys)); cosignerIndex++ {
 			for _, keychain := range keyChains {
@@ -74,7 +79,6 @@ func (s *server) addressesToQuery(start, end uint32) (walletAddressSet, error) {
 			}
 		}
 	}
-
 	return addresses, nil
 }
 
@@ -132,7 +136,6 @@ func (s *server) collectUTXOs(start, end uint32) error {
 	if err != nil {
 		return err
 	}
-
 	getUTXOsByAddressesResponse, err := s.rpcClient.GetUTXOsByAddresses(addressSet.strings())
 	if err != nil {
 		return err
@@ -259,5 +262,8 @@ func (s *server) refreshExistingUTXOs() error {
 }
 
 func (s *server) isSynced() bool {
+	if s.isPublicAddressUsed {
+		return true
+	}
 	return s.nextSyncStartIndex > s.keysFile.LastUsedInternalIndex() && s.nextSyncStartIndex > s.keysFile.LastUsedExternalIndex()
 }

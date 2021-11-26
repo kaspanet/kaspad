@@ -1,6 +1,7 @@
 package server
 
 import (
+	"encoding/hex"
 	"fmt"
 	"net"
 	"os"
@@ -13,6 +14,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/dagconfig"
 	"github.com/kaspanet/kaspad/infrastructure/network/rpcclient"
 	"github.com/kaspanet/kaspad/infrastructure/os/signal"
+	"github.com/kaspanet/kaspad/util"
 	"github.com/kaspanet/kaspad/util/panics"
 	"github.com/pkg/errors"
 
@@ -25,15 +27,18 @@ type server struct {
 	rpcClient *rpcclient.RPCClient
 	params    *dagconfig.Params
 
-	lock               sync.RWMutex
-	utxos              map[externalapi.DomainOutpoint]*walletUTXO
-	nextSyncStartIndex uint32
-	keysFile           *keys.File
-	shutdown           chan struct{}
+	lock                sync.RWMutex
+	utxos               map[externalapi.DomainOutpoint]*walletUTXO
+	nextSyncStartIndex  uint32
+	keysFile            *keys.File
+	publicKey           []byte
+	publicAddress       *util.AddressPublicKey
+	isPublicAddressUsed bool
+	shutdown            chan struct{}
 }
 
 // Start starts the kaspawalletd server
-func Start(params *dagconfig.Params, listen, rpcServer string, keysFilePath string) error {
+func Start(params *dagconfig.Params, listen, rpcServer string, keysFilePath string, publicKey string) error {
 	initLog(defaultLogFile, defaultErrLogFile)
 
 	defer panics.HandlePanic(log, "MAIN", nil)
@@ -50,18 +55,33 @@ func Start(params *dagconfig.Params, listen, rpcServer string, keysFilePath stri
 		return (errors.Wrapf(err, "Error connecting to RPC server %s", rpcServer))
 	}
 
+	isPublicAddressUsed := len(publicKey) > 0
+
+	publicKeyBytes, err := hex.DecodeString(publicKey)
+	if isPublicAddressUsed && err != nil {
+		return (errors.Wrapf(err, "Error decoding public key hex string %s", publicKey))
+	}
+
+	publicAddress, err := util.NewAddressPublicKey(publicKeyBytes, params.Prefix)
+	if isPublicAddressUsed && err != nil {
+		return (errors.Wrapf(err, "Error decoding public address hex string %s", publicKey))
+	}
+
 	keysFile, err := keys.ReadKeysFile(params, keysFilePath)
 	if err != nil {
 		return (errors.Wrapf(err, "Error connecting to RPC server %s", rpcServer))
 	}
 
 	serverInstance := &server{
-		rpcClient:          rpcClient,
-		params:             params,
-		utxos:              make(map[externalapi.DomainOutpoint]*walletUTXO),
-		nextSyncStartIndex: 0,
-		keysFile:           keysFile,
-		shutdown:           make(chan struct{}),
+		rpcClient:           rpcClient,
+		params:              params,
+		utxos:               make(map[externalapi.DomainOutpoint]*walletUTXO),
+		nextSyncStartIndex:  0,
+		keysFile:            keysFile,
+		publicKey:           publicKeyBytes,
+		publicAddress:       publicAddress,
+		isPublicAddressUsed: isPublicAddressUsed,
+		shutdown:            make(chan struct{}),
 	}
 
 	spawn("serverInstance.sync", func() {
