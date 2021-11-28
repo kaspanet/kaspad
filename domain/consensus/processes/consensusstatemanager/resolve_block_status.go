@@ -3,8 +3,6 @@ package consensusstatemanager
 import (
 	"fmt"
 
-	"github.com/kaspanet/kaspad/domain/consensus/utils/utxo"
-
 	"github.com/kaspanet/kaspad/util/staging"
 
 	"github.com/kaspanet/kaspad/domain/consensus/model"
@@ -129,7 +127,11 @@ func (csm *consensusStateManager) selectedParentInfo(
 	if lastUnverifiedBlock.Equal(csm.genesisHash) {
 		log.Debugf("the most recent unverified block is the genesis block, "+
 			"which by definition has status: %s", externalapi.StatusUTXOValid)
-		return lastUnverifiedBlock, externalapi.StatusUTXOValid, utxo.NewUTXODiff(), nil
+		utxoDiff, err := csm.utxoDiffStore.UTXODiff(csm.databaseContext, stagingArea, lastUnverifiedBlock)
+		if err != nil {
+			return nil, 0, nil, err
+		}
+		return lastUnverifiedBlock, externalapi.StatusUTXOValid, utxoDiff, nil
 	}
 	lastUnverifiedBlockGHOSTDAGData, err := csm.ghostdagDataStore.Get(csm.databaseContext, stagingArea, lastUnverifiedBlock, false)
 	if err != nil {

@@ -40,7 +40,7 @@ func TestValidateAndInsertTransaction(t *testing.T) {
 		miningManager := miningFactory.NewMiningManager(consensusReference, &consensusConfig.Params, mempool.DefaultConfig(&consensusConfig.Params))
 		transactionsToInsert := make([]*externalapi.DomainTransaction, 10)
 		for i := range transactionsToInsert {
-			transactionsToInsert[i] = createTransactionWithUTXOEntry(t, i)
+			transactionsToInsert[i] = createTransactionWithUTXOEntry(t, i, 0)
 			_, err = miningManager.ValidateAndInsertTransaction(transactionsToInsert[i], false, true)
 			if err != nil {
 				t.Fatalf("ValidateAndInsertTransaction: %v", err)
@@ -89,7 +89,7 @@ func TestImmatureSpend(t *testing.T) {
 		tcAsConsensusPointer := &tcAsConsensus
 		consensusReference := consensusreference.NewConsensusReference(&tcAsConsensusPointer)
 		miningManager := miningFactory.NewMiningManager(consensusReference, &consensusConfig.Params, mempool.DefaultConfig(&consensusConfig.Params))
-		tx := createTransactionWithUTXOEntry(t, 0)
+		tx := createTransactionWithUTXOEntry(t, 0, consensusConfig.GenesisBlock.Header.DAAScore())
 		_, err = miningManager.ValidateAndInsertTransaction(tx, false, false)
 		txRuleError := &mempool.TxRuleError{}
 		if !errors.As(err, txRuleError) || txRuleError.RejectCode != mempool.RejectImmatureSpend {
@@ -119,7 +119,7 @@ func TestInsertDoubleTransactionsToMempool(t *testing.T) {
 		tcAsConsensusPointer := &tcAsConsensus
 		consensusReference := consensusreference.NewConsensusReference(&tcAsConsensusPointer)
 		miningManager := miningFactory.NewMiningManager(consensusReference, &consensusConfig.Params, mempool.DefaultConfig(&consensusConfig.Params))
-		transaction := createTransactionWithUTXOEntry(t, 0)
+		transaction := createTransactionWithUTXOEntry(t, 0, 0)
 		_, err = miningManager.ValidateAndInsertTransaction(transaction, false, true)
 		if err != nil {
 			t.Fatalf("ValidateAndInsertTransaction: %v", err)
@@ -186,7 +186,7 @@ func TestHandleNewBlockTransactions(t *testing.T) {
 		miningManager := miningFactory.NewMiningManager(consensusReference, &consensusConfig.Params, mempool.DefaultConfig(&consensusConfig.Params))
 		transactionsToInsert := make([]*externalapi.DomainTransaction, 10)
 		for i := range transactionsToInsert {
-			transaction := createTransactionWithUTXOEntry(t, i)
+			transaction := createTransactionWithUTXOEntry(t, i, 0)
 			transactionsToInsert[i] = transaction
 			_, err = miningManager.ValidateAndInsertTransaction(transaction, false, true)
 			if err != nil {
@@ -253,12 +253,12 @@ func TestDoubleSpendWithBlock(t *testing.T) {
 		tcAsConsensusPointer := &tcAsConsensus
 		consensusReference := consensusreference.NewConsensusReference(&tcAsConsensusPointer)
 		miningManager := miningFactory.NewMiningManager(consensusReference, &consensusConfig.Params, mempool.DefaultConfig(&consensusConfig.Params))
-		transactionInTheMempool := createTransactionWithUTXOEntry(t, 0)
+		transactionInTheMempool := createTransactionWithUTXOEntry(t, 0, 0)
 		_, err = miningManager.ValidateAndInsertTransaction(transactionInTheMempool, false, true)
 		if err != nil {
 			t.Fatalf("ValidateAndInsertTransaction: %v", err)
 		}
-		doubleSpendTransactionInTheBlock := createTransactionWithUTXOEntry(t, 0)
+		doubleSpendTransactionInTheBlock := createTransactionWithUTXOEntry(t, 0, 0)
 		doubleSpendTransactionInTheBlock.Inputs[0].PreviousOutpoint = transactionInTheMempool.Inputs[0].PreviousOutpoint
 		blockTransactions := []*externalapi.DomainTransaction{nil, doubleSpendTransactionInTheBlock}
 		_, err = miningManager.HandleNewBlockTransactions(blockTransactions)
@@ -571,7 +571,7 @@ func TestRevalidateHighPriorityTransactions(t *testing.T) {
 	})
 }
 
-func createTransactionWithUTXOEntry(t *testing.T, i int) *externalapi.DomainTransaction {
+func createTransactionWithUTXOEntry(t *testing.T, i int, daaScore uint64) *externalapi.DomainTransaction {
 	prevOutTxID := externalapi.DomainTransactionID{}
 	prevOutPoint := externalapi.DomainOutpoint{TransactionID: prevOutTxID, Index: uint32(i)}
 	scriptPublicKey, redeemScript := testutils.OpTrueScript()
@@ -587,7 +587,7 @@ func createTransactionWithUTXOEntry(t *testing.T, i int) *externalapi.DomainTran
 			100000000, // 1 KAS
 			scriptPublicKey,
 			true,
-			uint64(0)),
+			daaScore),
 	}
 	txOut := externalapi.DomainTransactionOutput{
 		Value:           10000,

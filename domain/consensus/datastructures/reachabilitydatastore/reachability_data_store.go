@@ -6,7 +6,9 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/lrucache"
+	"github.com/kaspanet/kaspad/infrastructure/db/database"
 	"github.com/kaspanet/kaspad/util/staging"
+	"github.com/pkg/errors"
 )
 
 var reachabilityDataBucketName = []byte("reachability-data")
@@ -50,6 +52,8 @@ func (rds *reachabilityDataStore) IsStaged(stagingArea *model.StagingArea) bool 
 	return rds.stagingShard(stagingArea).isStaged()
 }
 
+var errNotFound = errors.Wrap(database.ErrNotFound, "reachability data not found")
+
 // ReachabilityData returns the reachabilityData associated with the given blockHash
 func (rds *reachabilityDataStore) ReachabilityData(dbContext model.DBReader, stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) (model.ReachabilityData, error) {
 	stagingShard := rds.stagingShard(stagingArea)
@@ -59,10 +63,16 @@ func (rds *reachabilityDataStore) ReachabilityData(dbContext model.DBReader, sta
 	}
 
 	if reachabilityData, ok := rds.reachabilityDataCache.Get(blockHash); ok {
+		if reachabilityData == nil {
+			return nil, errNotFound
+		}
 		return reachabilityData.(model.ReachabilityData), nil
 	}
 
 	reachabilityDataBytes, err := dbContext.Get(rds.reachabilityDataBlockHashAsKey(blockHash))
+	if database.IsNotFoundError(err) {
+		rds.reachabilityDataCache.Add(blockHash, nil)
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -76,17 +86,15 @@ func (rds *reachabilityDataStore) ReachabilityData(dbContext model.DBReader, sta
 }
 
 func (rds *reachabilityDataStore) HasReachabilityData(dbContext model.DBReader, stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) (bool, error) {
-	stagingShard := rds.stagingShard(stagingArea)
-
-	if _, ok := stagingShard.reachabilityData[*blockHash]; ok {
-		return true, nil
+	_, err := rds.ReachabilityData(dbContext, stagingArea, blockHash)
+	if database.IsNotFoundError(err) {
+		return false, nil
+	}
+	if err != nil {
+		return false, err
 	}
 
-	if rds.reachabilityDataCache.Has(blockHash) {
-		return true, nil
-	}
-
-	return dbContext.Has(rds.reachabilityDataBlockHashAsKey(blockHash))
+	return true, nil
 }
 
 // ReachabilityReindexRoot returns the current reachability reindex root

@@ -130,7 +130,7 @@ func (flow *handleRelayInvsFlow) downloadHeadersAndPruningUTXOSet(highHash *exte
 		return err
 	}
 
-	log.Debugf("Headers downloaded from peer %s", flow.peer)
+	log.Infof("Headers downloaded from peer %s", flow.peer)
 
 	highHashInfo, err := flow.Domain().StagingConsensus().GetBlockInfo(highHash)
 	if err != nil {

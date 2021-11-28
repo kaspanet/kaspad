@@ -2,7 +2,6 @@ package pruningmanager_test
 
 import (
 	"encoding/json"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
 	"github.com/kaspanet/kaspad/infrastructure/db/database"
 	"os"
 	"path/filepath"
@@ -37,7 +36,7 @@ func TestPruning(t *testing.T) {
 			dagconfig.SimnetParams.Name:  "1582",
 		},
 		"dag-for-test-pruning.json": {
-			dagconfig.MainnetParams.Name: "502",
+			dagconfig.MainnetParams.Name: "503",
 			dagconfig.TestnetParams.Name: "502",
 			dagconfig.DevnetParams.Name:  "502",
 			dagconfig.SimnetParams.Name:  "502",
@@ -45,6 +44,8 @@ func TestPruning(t *testing.T) {
 	}
 
 	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
+		// Improve the performance of the test a little
+		consensusConfig.DisableDifficultyAdjustment = true
 		err := filepath.Walk("./testdata", func(path string, info os.FileInfo, err error) error {
 			if err != nil {
 				return err
@@ -72,6 +73,7 @@ func TestPruning(t *testing.T) {
 			consensusConfig.DifficultyAdjustmentWindowSize = 400
 
 			factory := consensus.NewFactory()
+			factory.SetTestLevelDBCacheSize(128)
 			tc, teardown, err := factory.NewTestConsensus(consensusConfig, "TestPruning")
 			if err != nil {
 				t.Fatalf("Error setting up consensus: %+v", err)
@@ -140,12 +142,11 @@ func TestPruning(t *testing.T) {
 			// We expect blocks that are within the difficulty adjustment window size of
 			// the pruning point and its anticone to not get pruned
 			unprunedBlockHashesBelowPruningPoint := make(map[externalapi.DomainHash]struct{})
-			pruningPointAndItsAnticone, err := tc.PruningPointAndItsAnticoneWithTrustedData()
+			pruningPointAndItsAnticone, err := tc.PruningPointAndItsAnticone()
 			if err != nil {
 				t.Fatalf("pruningPointAndItsAnticone: %+v", err)
 			}
-			for _, block := range pruningPointAndItsAnticone {
-				blockHash := consensushashing.BlockHash(block.Block)
+			for _, blockHash := range pruningPointAndItsAnticone {
 				unprunedBlockHashesBelowPruningPoint[*blockHash] = struct{}{}
 				blockWindow, err := tc.DAGTraversalManager().BlockWindow(stagingArea, blockHash, consensusConfig.DifficultyAdjustmentWindowSize)
 				if err != nil {

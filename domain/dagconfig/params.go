@@ -211,7 +211,15 @@ var MainnetParams = Params{
 	Net:         appmessage.Mainnet,
 	RPCPort:     "16110",
 	DefaultPort: "16111",
-	DNSSeeds:    []string{"mainnet-dnsseed.daglabs-dev.com"},
+	DNSSeeds: []string{
+		"mainnet-dnsseed.daglabs-dev.com",
+		// This DNS seeder is run by Denis Mashkevich
+		"mainnet-dnsseed-1.kaspanet.org",
+		// This DNS seeder is run by Denis Mashkevich
+		"mainnet-dnsseed-2.kaspanet.org",
+		// This DNS seeder is run by Elichai Turkel
+		"kaspa.turkel.in",
+	},
 
 	// DAG parameters
 	GenesisBlock:                    &genesisBlock,

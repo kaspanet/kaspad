@@ -5,7 +5,6 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/hashset"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/pow"
 	"github.com/pkg/errors"
 )
 
@@ -13,8 +12,11 @@ type blockParentBuilder struct {
 	databaseContext       model.DBManager
 	blockHeaderStore      model.BlockHeaderStore
 	dagTopologyManager    model.DAGTopologyManager
+	parentsManager        model.ParentsManager
 	reachabilityDataStore model.ReachabilityDataStore
 	pruningStore          model.PruningStore
+
+	genesisHash *externalapi.DomainHash
 }
 
 // New creates a new instance of a BlockParentBuilder
@@ -22,20 +24,27 @@ func New(
 	databaseContext model.DBManager,
 	blockHeaderStore model.BlockHeaderStore,
 	dagTopologyManager model.DAGTopologyManager,
+	parentsManager model.ParentsManager,
+
 	reachabilityDataStore model.ReachabilityDataStore,
 	pruningStore model.PruningStore,
+
+	genesisHash *externalapi.DomainHash,
 ) model.BlockParentBuilder {
 	return &blockParentBuilder{
-		databaseContext:       databaseContext,
-		blockHeaderStore:      blockHeaderStore,
-		dagTopologyManager:    dagTopologyManager,
+		databaseContext:    databaseContext,
+		blockHeaderStore:   blockHeaderStore,
+		dagTopologyManager: dagTopologyManager,
+		parentsManager:     parentsManager,
+
 		reachabilityDataStore: reachabilityDataStore,
 		pruningStore:          pruningStore,
+		genesisHash:           genesisHash,
 	}
 }
 
 func (bpb *blockParentBuilder) BuildParents(stagingArea *model.StagingArea,
-	directParentHashes []*externalapi.DomainHash) ([]externalapi.BlockLevelParents, error) {
+	daaScore uint64, directParentHashes []*externalapi.DomainHash) ([]externalapi.BlockLevelParents, error) {
 
 	// Late on we'll mutate direct parent hashes, so we first clone it.
 	directParentHashesCopy := make([]*externalapi.DomainHash, len(directParentHashes))
@@ -93,7 +102,7 @@ func (bpb *blockParentBuilder) BuildParents(stagingArea *model.StagingArea,
 	// all the block levels they occupy
 	for _, directParentHeader := range directParentHeaders {
 		directParentHash := consensushashing.HeaderHash(directParentHeader)
-		blockLevel := pow.BlockLevel(directParentHeader)
+		blockLevel := directParentHeader.BlockLevel()
 		for i := 0; i <= blockLevel; i++ {
 			if _, exists := candidatesByLevelToReferenceBlocksMap[i]; !exists {
 				candidatesByLevelToReferenceBlocksMap[i] = make(map[externalapi.DomainHash][]*externalapi.DomainHash)
@@ -116,7 +125,7 @@ func (bpb *blockParentBuilder) BuildParents(stagingArea *model.StagingArea,
 	}
 
 	for _, directParentHeader := range directParentHeaders {
-		for blockLevel, blockLevelParentsInHeader := range directParentHeader.Parents() {
+		for blockLevel, blockLevelParentsInHeader := range bpb.parentsManager.Parents(directParentHeader) {
 			isEmptyLevel := false
 			if _, exists := candidatesByLevelToReferenceBlocksMap[blockLevel]; !exists {
 				candidatesByLevelToReferenceBlocksMap[blockLevel] = make(map[externalapi.DomainHash][]*externalapi.DomainHash)
@@ -145,7 +154,7 @@ func (bpb *blockParentBuilder) BuildParents(stagingArea *model.StagingArea,
 				} else {
 					for childHash, childHeader := range virtualGenesisChildrenHeaders {
 						childHash := childHash // Assign to a new pointer to avoid `range` pointer reuse
-						if childHeader.ParentsAtLevel(blockLevel).Contains(parent) {
+						if bpb.parentsManager.ParentsAtLevel(childHeader, blockLevel).Contains(parent) {
 							referenceBlocks = append(referenceBlocks, &childHash)
 						}
 					}
@@ -203,14 +212,21 @@ func (bpb *blockParentBuilder) BuildParents(stagingArea *model.StagingArea,
 		}
 	}
 
-	parents := make([]externalapi.BlockLevelParents, len(candidatesByLevelToReferenceBlocksMap))
+	parents := make([]externalapi.BlockLevelParents, 0, len(candidatesByLevelToReferenceBlocksMap))
 	for blockLevel := 0; blockLevel < len(candidatesByLevelToReferenceBlocksMap); blockLevel++ {
+		if blockLevel > 0 {
+			if _, ok := candidatesByLevelToReferenceBlocksMap[blockLevel][*bpb.genesisHash]; ok && len(candidatesByLevelToReferenceBlocksMap[blockLevel]) == 1 {
+				break
+			}
+		}
+
 		levelBlocks := make(externalapi.BlockLevelParents, 0, len(candidatesByLevelToReferenceBlocksMap[blockLevel]))
 		for block := range candidatesByLevelToReferenceBlocksMap[blockLevel] {
 			block := block // Assign to a new pointer to avoid `range` pointer reuse
 			levelBlocks = append(levelBlocks, &block)
 		}
-		parents[blockLevel] = levelBlocks
+
+		parents = append(parents, levelBlocks)
 	}
 	return parents, nil
 }

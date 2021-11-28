@@ -4,7 +4,6 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/multiset"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/utxo"
 )
 
@@ -19,8 +18,8 @@ func (csm *consensusStateManager) calculateMultiset(stagingArea *model.StagingAr
 
 	if blockHash.Equal(csm.genesisHash) {
 		log.Debugf("Selected parent is nil, which could only happen for the genesis. " +
-			"The genesis, by definition, has an empty multiset")
-		return multiset.New(), nil
+			"The genesis has a predefined multiset")
+		return csm.multisetStore.Get(csm.databaseContext, stagingArea, blockHash)
 	}
 
 	ms, err := csm.multisetStore.Get(csm.databaseContext, stagingArea, blockGHOSTDAGData.SelectedParent())

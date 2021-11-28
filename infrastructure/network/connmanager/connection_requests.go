@@ -66,7 +66,7 @@ func (c *ConnectionManager) checkRequestedConnections(connSet connectionSet) {
 		log.Debugf("Connecting to connection request %s", connReq.address)
 		err := c.initiateConnection(connReq.address)
 		if err != nil {
-			log.Infof("Couldn't connect to %s: %s", address, err)
+			log.Infof("Couldn't connect to requested connection %s: %s", address, err)
 			// if connection request is one try - remove from pending and ignore failure
 			if !connReq.isPermanent {
 				delete(c.pendingRequested, address)

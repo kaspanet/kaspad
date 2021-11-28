@@ -22,7 +22,7 @@ import (
 //
 
 const (
-	defaultMaxCoinbasePayloadLength = 172
+	defaultMaxCoinbasePayloadLength = 204
 	// defaultMaxBlockMass is a bound on the mass of a block, larger values increase the bound d
 	// on the round trip time of a block, which affects the other parameters as described below
 	defaultMaxBlockMass = 500_000
@@ -49,7 +49,7 @@ const (
 	defaultMergeSetSizeLimit                              = defaultGHOSTDAGK * 10
 	defaultSubsidyGenesisReward                           = 1 * constants.SompiPerKaspa
 	defaultMinSubsidy                                     = 1 * constants.SompiPerKaspa
-	defaultMaxSubsidy                                     = 1000 * constants.SompiPerKaspa
+	defaultMaxSubsidy                                     = 500 * constants.SompiPerKaspa
 	defaultBaseSubsidy                                    = 50 * constants.SompiPerKaspa
 	defaultFixedSubsidySwitchPruningPointInterval  uint64 = 7
 	defaultCoinbasePayloadScriptPublicKeyMaxLength        = 150

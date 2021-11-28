@@ -87,13 +87,18 @@ func TestValidateAndInsertImportedPruningPoint(t *testing.T) {
 				t.Fatalf("PruningPointHeaders: %+v", err)
 			}
 
-			pruningPointAndItsAnticoneWithTrustedData, err := tcSyncer.PruningPointAndItsAnticoneWithTrustedData()
+			pruningPointAndItsAnticone, err := tcSyncer.PruningPointAndItsAnticone()
 			if err != nil {
-				t.Fatalf("PruningPointAndItsAnticoneWithTrustedData: %+v", err)
+				t.Fatalf("PruningPointAndItsAnticone: %+v", err)
 			}
 
-			for _, blockWithTrustedData := range pruningPointAndItsAnticoneWithTrustedData {
-				_, err := synceeStaging.ValidateAndInsertBlockWithTrustedData(blockWithTrustedData, false)
+			for _, blockHash := range pruningPointAndItsAnticone {
+				blockWithTrustedData, err := tcSyncer.BlockWithTrustedData(blockHash)
+				if err != nil {
+					return
+				}
+
+				_, err = synceeStaging.ValidateAndInsertBlockWithTrustedData(blockWithTrustedData, false)
 				if err != nil {
 					t.Fatalf("ValidateAndInsertBlockWithTrustedData: %+v", err)
 				}
@@ -135,10 +140,21 @@ func TestValidateAndInsertImportedPruningPoint(t *testing.T) {
 				}
 			}
 
-			pruningPointUTXOs, err := tcSyncer.GetPruningPointUTXOs(pruningPoint, nil, 1000)
-			if err != nil {
-				t.Fatalf("GetPruningPointUTXOs: %+v", err)
+			var fromOutpoint *externalapi.DomainOutpoint
+			var pruningPointUTXOs []*externalapi.OutpointAndUTXOEntryPair
+			const step = 100_000
+			for {
+				outpointAndUTXOEntryPairs, err := tcSyncer.GetPruningPointUTXOs(pruningPoint, fromOutpoint, step)
+				if err != nil {
+					t.Fatalf("GetPruningPointUTXOs: %+v", err)
+				}
+				fromOutpoint = outpointAndUTXOEntryPairs[len(outpointAndUTXOEntryPairs)-1].Outpoint
+				pruningPointUTXOs = append(pruningPointUTXOs, outpointAndUTXOEntryPairs...)
+				if len(outpointAndUTXOEntryPairs) < step {
+					break
+				}
 			}
+
 			err = synceeStaging.AppendImportedPruningPointUTXOs(pruningPointUTXOs)
 			if err != nil {
 				t.Fatalf("AppendImportedPruningPointUTXOs: %+v", err)
@@ -502,7 +518,7 @@ func TestGetPruningPointUTXOs(t *testing.T) {
 
 		// Get pruning point UTXOs in a loop
 		var allOutpointAndUTXOEntryPairs []*externalapi.OutpointAndUTXOEntryPair
-		step := 100
+		const step = 100_000
 		var fromOutpoint *externalapi.DomainOutpoint
 		for {
 			outpointAndUTXOEntryPairs, err := testConsensus.GetPruningPointUTXOs(pruningPoint, fromOutpoint, step)
@@ -517,11 +533,17 @@ func TestGetPruningPointUTXOs(t *testing.T) {
 			}
 		}
 
+		const mainnetUTXOSize = 1232643
+		expected := len(outputs) + 1
+		if consensusConfig.Name == "kaspa-mainnet" {
+			expected += mainnetUTXOSize
+		}
+
 		// Make sure the length of the UTXOs is exactly spendingTransaction.Outputs + 1 coinbase
 		// output (includingBlock's coinbase)
-		if len(allOutpointAndUTXOEntryPairs) != len(outputs)+1 {
+		if len(allOutpointAndUTXOEntryPairs) != expected {
 			t.Fatalf("Returned an unexpected amount of UTXOs. "+
-				"Want: %d, got: %d", len(outputs)+2, len(allOutpointAndUTXOEntryPairs))
+				"Want: %d, got: %d", expected, len(allOutpointAndUTXOEntryPairs))
 		}
 
 		// Make sure all spendingTransaction.Outputs are in the returned UTXOs

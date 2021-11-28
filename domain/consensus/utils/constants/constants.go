@@ -37,5 +37,7 @@ const (
 	LockTimeThreshold = 5e11 // Tue Nov 5 00:53:20 1985 UTC
 
 	// MaxBlockLevel is the maximum possible block level.
-	MaxBlockLevel = 255
+	// This is technically 255, but we clamped it at 256 - block level of mainnet genesis
+	// This means that any block that has a level lower or equal to genesis will be level 0.
+	MaxBlockLevel = 225
 )
