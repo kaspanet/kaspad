@@ -472,7 +472,6 @@ func (flow *handleRelayInvsFlow) syncMissingBlockBodies(highHash *externalapi.Do
 			}
 		}
 	}
-
 	return flow.Domain().Consensus().ResolveVirtual()
 }
 

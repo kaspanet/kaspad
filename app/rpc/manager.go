@@ -83,6 +83,17 @@ func (m *Manager) NotifyBlockAddedToDAG(block *externalapi.DomainBlock, blockIns
 	return m.context.NotificationManager.NotifyBlockAdded(blockAddedNotification)
 }
 
+// NotifyVirtualResolved notifies the manager that ResoveVirtual was called within IBD
+func (m *Manager) NotifyVirtualResolved(bir *externalapi.BlockInsertionResult) error {
+	onEnd := logger.LogAndMeasureExecutionTime(log, "RPCManager.NotifyVirtualResolved")
+	defer onEnd()
+
+	if m.context.Config.UTXOIndex {
+		return m.notifyUTXOsChanged(bir)
+	}
+	return nil
+}
+
 // NotifyPruningPointUTXOSetOverride notifies the manager whenever the UTXO index
 // resets due to pruning point change via IBD.
 func (m *Manager) NotifyPruningPointUTXOSetOverride() error {

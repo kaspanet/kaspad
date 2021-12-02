@@ -47,4 +47,5 @@ type Consensus interface {
 	EstimateNetworkHashesPerSecond(startHash *DomainHash, windowSize int) (uint64, error)
 	PopulateMass(transaction *DomainTransaction)
 	ResolveVirtual() error
+	SetOnResolveVirtualHandler(onResolveVirtualHandler func(bir *BlockInsertionResult) error)
 }

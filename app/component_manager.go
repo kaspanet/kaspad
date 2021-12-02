@@ -154,6 +154,7 @@ func setupRPC(
 	)
 	protocolManager.SetOnBlockAddedToDAGHandler(rpcManager.NotifyBlockAddedToDAG)
 	protocolManager.SetOnPruningPointUTXOSetOverrideHandler(rpcManager.NotifyPruningPointUTXOSetOverride)
+	domain.Consensus().SetOnResolveVirtualHandler(rpcManager.NotifyVirtualResolved)
 
 	return rpcManager
 }

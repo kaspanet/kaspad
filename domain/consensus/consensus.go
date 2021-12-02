@@ -732,7 +732,6 @@ func (s *consensus) ResolveVirtual() error {
 		func() {
 			s.lock.Lock()
 			defer s.lock.Unlock()
-
 			isCompletelyResolved, err = s.consensusStateManager.ResolveVirtual(100)
 		}()
 		if err != nil {
@@ -773,4 +772,9 @@ func (s *consensus) ApplyPruningPointProof(pruningPointProof *externalapi.Prunin
 	}
 
 	return nil
+}
+
+// SetOnResolveVirtualHandler sets the onResolveVirtualHandler handler
+func (s *consensus) SetOnResolveVirtualHandler(onResolveVirtualHandler func(bir *externalapi.BlockInsertionResult) error) {
+	s.consensusStateManager.SetOnResolveVirtualHandler(onResolveVirtualHandler)
 }

@@ -14,4 +14,5 @@ type ConsensusStateManager interface {
 	RecoverUTXOIfRequired() error
 	ReverseUTXODiffs(tipHash *externalapi.DomainHash, reversalData *UTXODiffReversalData) error
 	ResolveVirtual(maxBlocksToResolve uint64) (bool, error)
+	SetOnResolveVirtualHandler(onResolveVirtualHandler func(bir *externalapi.BlockInsertionResult) error)
 }

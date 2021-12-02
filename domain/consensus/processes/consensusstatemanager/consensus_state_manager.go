@@ -36,6 +36,8 @@ type consensusStateManager struct {
 	daaBlocksStore          model.DAABlocksStore
 
 	stores []model.Store
+
+	onResolveVirtualHandler func(bir *externalapi.BlockInsertionResult) error
 }
 
 // New instantiates a new ConsensusStateManager
@@ -114,4 +116,9 @@ func New(
 	}
 
 	return csm, nil
+}
+
+// SetOnResolveVirtualHandler sets the onResolveVirtualHandler handler
+func (csm *consensusStateManager) SetOnResolveVirtualHandler(onResolveVirtualHandler func(*externalapi.BlockInsertionResult) error) {
+	csm.onResolveVirtualHandler = onResolveVirtualHandler
 }

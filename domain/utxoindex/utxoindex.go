@@ -93,6 +93,36 @@ func (ui *UTXOIndex) isSynced() (bool, error) {
 	return externalapi.HashesEqual(virtualInfo.ParentHashes, utxoIndexVirtualParents), nil
 }
 
+func (ui *UTXOIndex) UpdateUtxoDiff(utxoDiff externalapi.UTXODiff) (*UTXOChanges, error) {
+	ui.mutex.Lock()
+	defer ui.mutex.Unlock()
+
+	log.Tracef("Updating UTXO index with VirtualUTXODiff: %+v", utxoDiff)
+	err := ui.removeUTXOs(utxoDiff.ToRemove())
+	if err != nil {
+		return nil, err
+	}
+
+	err = ui.addUTXOs(utxoDiff.ToAdd())
+	if err != nil {
+		return nil, err
+	}
+
+	added, removed, _ := ui.store.stagedData()
+	utxoIndexChanges := &UTXOChanges{
+		Added:   added,
+		Removed: removed,
+	}
+
+	err = ui.store.commit()
+	if err != nil {
+		return nil, err
+	}
+
+	log.Tracef("UTXO index updated with the UTXOChanged: %+v", utxoIndexChanges)
+	return utxoIndexChanges, nil
+}
+
 // Update updates the UTXO index with the given DAG selected parent chain changes
 func (ui *UTXOIndex) Update(blockInsertionResult *externalapi.BlockInsertionResult) (*UTXOChanges, error) {
 	onEnd := logger.LogAndMeasureExecutionTime(log, "UTXOIndex.Update")

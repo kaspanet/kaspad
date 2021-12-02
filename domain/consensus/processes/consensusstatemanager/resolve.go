@@ -79,7 +79,7 @@ func (csm *consensusStateManager) ResolveVirtual(maxBlocksToResolve uint64) (boo
 	}
 
 	updateVirtualStagingArea := model.NewStagingArea()
-	_, err = csm.updateVirtualWithParents(updateVirtualStagingArea, []*externalapi.DomainHash{selectedTip})
+	utxoDiff, err := csm.updateVirtualWithParents(updateVirtualStagingArea, []*externalapi.DomainHash{selectedTip})
 	if err != nil {
 		return false, err
 	}
@@ -89,5 +89,8 @@ func (csm *consensusStateManager) ResolveVirtual(maxBlocksToResolve uint64) (boo
 		return false, err
 	}
 
-	return isCompletelyResolved, nil
+	return isCompletelyResolved, csm.onResolveVirtualHandler(&externalapi.BlockInsertionResult{
+		VirtualUTXODiff: utxoDiff,
+		VirtualParents:  tips,
+	})
 }
