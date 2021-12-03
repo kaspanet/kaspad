@@ -314,10 +314,6 @@ func (d *File) numThreads(password []byte) (uint8, error) {
 		return defaultNumThreads, nil
 	}
 
-	if d.NumThreads != 0 {
-		return d.NumThreads, nil
-	}
-
 	numThreads, err := d.detectNumThreads(password, d.EncryptedMnemonics[0])
 	if err != nil {
 		return 0, err
@@ -333,18 +329,21 @@ func (d *File) numThreads(password []byte) (uint8, error) {
 }
 
 func (d *File) detectNumThreads(password []byte, encryptedMnemonic *EncryptedMnemonic) (uint8, error) {
-	numCPU := uint8(runtime.NumCPU())
-	_, err := decryptMnemonic(numCPU, encryptedMnemonic, password)
+	firstGuessNumThreads := d.NumThreads
+	if d.NumThreads == 0 {
+		firstGuessNumThreads = uint8(runtime.NumCPU())
+	}
+	_, err := decryptMnemonic(firstGuessNumThreads, encryptedMnemonic, password)
 	if err != nil {
 		if !strings.Contains(err.Error(), "message authentication failed") {
 			return 0, err
 		}
 	} else {
-		return numCPU, nil
+		return firstGuessNumThreads, nil
 	}
 
 	for numThreadsGuess := uint8(1); ; numThreadsGuess++ {
-		if numThreadsGuess == numCPU {
+		if numThreadsGuess == firstGuessNumThreads {
 			continue
 		}
 
