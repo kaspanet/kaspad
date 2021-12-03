@@ -223,6 +223,16 @@ func (bp *blockProcessor) ifGenesisSetUtxoSet(stagingArea *model.StagingArea, bl
 		return
 	}
 	blockHash := consensushashing.BlockHash(block)
+	// Note: The applied UTXO set and multiset do not satisfy the UTXO commitment
+	// of Mainnet's genesis. This is why any block that will be built on top of genesis
+	// will have a wrong UTXO commitment as well, and will not be able to get to a consensus
+	// with the rest of the network.
+	// This is why getting direct blocks on top of genesis is forbidden, and the only way to
+	// get a newer state for a node with genesis only is by requesting a proof for a recent
+	// pruning point.
+	// The actual UTXO set that fits Mainnet's genesis' UTXO commitment was removed from the codebase in order
+	// to make reduce the consensus initialization time and the compiled binary size, but can be still
+	// found here for anyone to verify: https://github.com/kaspanet/kaspad/blob/dbf18d8052f000ba0079be9e79b2d6f5a98b74ca/domain/consensus/processes/blockprocessor/resources/utxos.gz
 	bp.consensusStateStore.StageVirtualUTXODiff(stagingArea, utxo.NewUTXODiff())
 	bp.utxoDiffStore.Stage(stagingArea, blockHash, utxo.NewUTXODiff(), nil)
 	bp.multisetStore.Stage(stagingArea, blockHash, multiset.New())

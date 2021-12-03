@@ -89,7 +89,7 @@ func (flow *handleRelayInvsFlow) start() error {
 		if flow.IsOrphan(inv.Hash) {
 			if !flow.Config().AllowSubmitBlockWhenNotSynced && isGenesisVirtualSelectedParent {
 				log.Infof("Cannot process orphan %s for a node with only the genesis block. The node needs to IBD "+
-					"to the recent pruning point before normal can resume.", inv.Hash)
+					"to the recent pruning point before normal operation can resume.", inv.Hash)
 				continue
 			}
 
@@ -289,7 +289,7 @@ func (flow *handleRelayInvsFlow) processOrphan(block *externalapi.DomainBlock) e
 
 			if isGenesisVirtualSelectedParent {
 				log.Infof("Cannot process orphan %s for a node with only the genesis block. The node needs to IBD "+
-					"to the recent pruning point before normal can resume.", blockHash)
+					"to the recent pruning point before normal operation can resume.", blockHash)
 				return nil
 			}
 		}

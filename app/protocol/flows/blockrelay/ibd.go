@@ -55,6 +55,19 @@ func (flow *handleRelayInvsFlow) runIBDIfNotRunning(block *externalapi.DomainBlo
 			return err
 		}
 	} else {
+		if !flow.Config().AllowSubmitBlockWhenNotSynced {
+			isGenesisVirtualSelectedParent, err := flow.isGenesisVirtualSelectedParent()
+			if err != nil {
+				return err
+			}
+
+			if isGenesisVirtualSelectedParent {
+				log.Infof("Cannot IBD to %s because it won't change the pruning point. The node needs to IBD "+
+					"to the recent pruning point before normal operation can resume.", highHash)
+				return nil
+			}
+		}
+
 		err = flow.syncPruningPointFutureHeaders(flow.Domain().Consensus(), highestSharedBlockHash, highHash)
 		if err != nil {
 			return err
