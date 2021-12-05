@@ -55,7 +55,7 @@ func (flow *handleRelayInvsFlow) runIBDIfNotRunning(block *externalapi.DomainBlo
 			return err
 		}
 	} else {
-		if !flow.Config().AllowSubmitBlockWhenNotSynced {
+		if flow.Config().NetParams().DisallowDirectBlocksOnTopOfGenesis && !flow.Config().AllowSubmitBlockWhenNotSynced {
 			isGenesisVirtualSelectedParent, err := flow.isGenesisVirtualSelectedParent()
 			if err != nil {
 				return err

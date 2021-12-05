@@ -87,7 +87,7 @@ func (flow *handleRelayInvsFlow) start() error {
 		}
 
 		if flow.IsOrphan(inv.Hash) {
-			if !flow.Config().AllowSubmitBlockWhenNotSynced && isGenesisVirtualSelectedParent {
+			if flow.Config().NetParams().DisallowDirectBlocksOnTopOfGenesis && !flow.Config().AllowSubmitBlockWhenNotSynced && isGenesisVirtualSelectedParent {
 				log.Infof("Cannot process orphan %s for a node with only the genesis block. The node needs to IBD "+
 					"to the recent pruning point before normal operation can resume.", inv.Hash)
 				continue
@@ -122,7 +122,7 @@ func (flow *handleRelayInvsFlow) start() error {
 			return err
 		}
 
-		if !flow.Config().AllowSubmitBlockWhenNotSynced && flow.isChildOfGenesis(block) {
+		if flow.Config().NetParams().DisallowDirectBlocksOnTopOfGenesis && !flow.Config().AllowSubmitBlockWhenNotSynced && !flow.Config().Devnet && flow.isChildOfGenesis(block) {
 			log.Infof("Cannot process %s because it's a direct child of genesis.", consensushashing.BlockHash(block))
 			continue
 		}
@@ -281,7 +281,7 @@ func (flow *handleRelayInvsFlow) processOrphan(block *externalapi.DomainBlock) e
 		return err
 	}
 	if isBlockInOrphanResolutionRange {
-		if !flow.Config().AllowSubmitBlockWhenNotSynced {
+		if flow.Config().NetParams().DisallowDirectBlocksOnTopOfGenesis && !flow.Config().AllowSubmitBlockWhenNotSynced {
 			isGenesisVirtualSelectedParent, err := flow.isGenesisVirtualSelectedParent()
 			if err != nil {
 				return err
