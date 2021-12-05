@@ -7,7 +7,7 @@ import (
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/daemon/pb"
 )
 
-func showAddress(conf *showAddressConfig) error {
+func newAddress(conf *newAddressConfig) error {
 	daemonClient, tearDown, err := client.Connect(conf.DaemonAddress)
 	if err != nil {
 		return err
@@ -17,7 +17,7 @@ func showAddress(conf *showAddressConfig) error {
 	ctx, cancel := context.WithTimeout(context.Background(), daemonTimeout)
 	defer cancel()
 
-	response, err := daemonClient.GetReceiveAddress(ctx, &pb.GetReceiveAddressRequest{})
+	response, err := daemonClient.NewAddress(ctx, &pb.NewAddressRequest{})
 	if err != nil {
 		return err
 	}

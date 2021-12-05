@@ -29,7 +29,7 @@ func (s *server) changeAddress() (util.Address, error) {
 	return libkaspawallet.Address(s.params, s.keysFile.ExtendedPublicKeys, s.keysFile.MinimumSignatures, path, s.keysFile.ECDSA)
 }
 
-func (s *server) GetReceiveAddress(_ context.Context, request *pb.GetReceiveAddressRequest) (*pb.GetReceiveAddressResponse, error) {
+func (s *server) NewAddress(_ context.Context, request *pb.NewAddressRequest) (*pb.NewAddressResponse, error) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
@@ -58,7 +58,7 @@ func (s *server) GetReceiveAddress(_ context.Context, request *pb.GetReceiveAddr
 		return nil, err
 	}
 
-	return &pb.GetReceiveAddressResponse{Address: address.String()}, nil
+	return &pb.NewAddressResponse{Address: address.String()}, nil
 }
 
 func (s *server) walletAddressString(wAddr *walletAddress) (string, error) {
