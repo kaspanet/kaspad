@@ -24,6 +24,7 @@ import (
 // when a block is added to the DAG
 type OnBlockAddedToDAGHandler func(block *externalapi.DomainBlock, virtualChangeSet *externalapi.VirtualChangeSet) error
 
+// OnVirtualChangeHandler is a handler function that's triggered when the virtual changes
 type OnVirtualChangeHandler func(virtualChangeSet *externalapi.VirtualChangeSet) error
 
 // OnPruningPointUTXOSetOverrideHandler is a handle function that's triggered whenever the UTXO set
@@ -103,6 +104,7 @@ func (f *FlowContext) ShutdownChan() <-chan struct{} {
 	return f.shutdownChan
 }
 
+// SetOnVirtualChangeHandler sets the onVirtualChangeHandler handler
 func (f *FlowContext) SetOnVirtualChangeHandler(onVirtualChangeHandler OnVirtualChangeHandler) {
 	f.onVirtualChangeHandler = onVirtualChangeHandler
 }

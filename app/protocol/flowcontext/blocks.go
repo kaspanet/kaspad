@@ -60,6 +60,7 @@ func (f *FlowContext) OnNewBlock(block *externalapi.DomainBlock,
 	return f.broadcastTransactionsAfterBlockAdded(newBlocks, allAcceptedTransactions)
 }
 
+// OnVirtualChange calls the handler function whenever the virtual block changes.
 func (f *FlowContext) OnVirtualChange(virtualChangeSet *externalapi.VirtualChangeSet) error {
 	if f.onVirtualChangeHandler != nil && virtualChangeSet != nil {
 		return f.onVirtualChangeHandler(virtualChangeSet)
