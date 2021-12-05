@@ -20,6 +20,7 @@ const _ = grpc.SupportPackageIsVersion7
 type KaspawalletdClient interface {
 	GetBalance(ctx context.Context, in *GetBalanceRequest, opts ...grpc.CallOption) (*GetBalanceResponse, error)
 	CreateUnsignedTransaction(ctx context.Context, in *CreateUnsignedTransactionRequest, opts ...grpc.CallOption) (*CreateUnsignedTransactionResponse, error)
+	ShowAddresses(ctx context.Context, in *ShowAddressesRequest, opts ...grpc.CallOption) (*ShowAddressesResponse, error)
 	NewAddress(ctx context.Context, in *NewAddressRequest, opts ...grpc.CallOption) (*NewAddressResponse, error)
 	Shutdown(ctx context.Context, in *ShutdownRequest, opts ...grpc.CallOption) (*ShutdownResponse, error)
 	Broadcast(ctx context.Context, in *BroadcastRequest, opts ...grpc.CallOption) (*BroadcastResponse, error)
@@ -45,6 +46,15 @@ func (c *kaspawalletdClient) GetBalance(ctx context.Context, in *GetBalanceReque
 func (c *kaspawalletdClient) CreateUnsignedTransaction(ctx context.Context, in *CreateUnsignedTransactionRequest, opts ...grpc.CallOption) (*CreateUnsignedTransactionResponse, error) {
 	out := new(CreateUnsignedTransactionResponse)
 	err := c.cc.Invoke(ctx, "/kaspawalletd/CreateUnsignedTransaction", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *kaspawalletdClient) ShowAddresses(ctx context.Context, in *ShowAddressesRequest, opts ...grpc.CallOption) (*ShowAddressesResponse, error) {
+	out := new(ShowAddressesResponse)
+	err := c.cc.Invoke(ctx, "/kaspawalletd/ShowAddresses", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -84,6 +94,7 @@ func (c *kaspawalletdClient) Broadcast(ctx context.Context, in *BroadcastRequest
 type KaspawalletdServer interface {
 	GetBalance(context.Context, *GetBalanceRequest) (*GetBalanceResponse, error)
 	CreateUnsignedTransaction(context.Context, *CreateUnsignedTransactionRequest) (*CreateUnsignedTransactionResponse, error)
+	ShowAddresses(context.Context, *ShowAddressesRequest) (*ShowAddressesResponse, error)
 	NewAddress(context.Context, *NewAddressRequest) (*NewAddressResponse, error)
 	Shutdown(context.Context, *ShutdownRequest) (*ShutdownResponse, error)
 	Broadcast(context.Context, *BroadcastRequest) (*BroadcastResponse, error)
@@ -99,6 +110,9 @@ func (UnimplementedKaspawalletdServer) GetBalance(context.Context, *GetBalanceRe
 }
 func (UnimplementedKaspawalletdServer) CreateUnsignedTransaction(context.Context, *CreateUnsignedTransactionRequest) (*CreateUnsignedTransactionResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateUnsignedTransaction not implemented")
+}
+func (UnimplementedKaspawalletdServer) ShowAddresses(context.Context, *ShowAddressesRequest) (*ShowAddressesResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ShowAddresses not implemented")
 }
 func (UnimplementedKaspawalletdServer) NewAddress(context.Context, *NewAddressRequest) (*NewAddressResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method NewAddress not implemented")
@@ -154,6 +168,24 @@ func _Kaspawalletd_CreateUnsignedTransaction_Handler(srv interface{}, ctx contex
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(KaspawalletdServer).CreateUnsignedTransaction(ctx, req.(*CreateUnsignedTransactionRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Kaspawalletd_ShowAddresses_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ShowAddressesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(KaspawalletdServer).ShowAddresses(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/kaspawalletd/ShowAddresses",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(KaspawalletdServer).ShowAddresses(ctx, req.(*ShowAddressesRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -226,6 +258,10 @@ var Kaspawalletd_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "CreateUnsignedTransaction",
 			Handler:    _Kaspawalletd_CreateUnsignedTransaction_Handler,
+		},
+		{
+			MethodName: "ShowAddresses",
+			Handler:    _Kaspawalletd_ShowAddresses_Handler,
 		},
 		{
 			MethodName: "NewAddress",

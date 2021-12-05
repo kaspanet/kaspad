@@ -29,6 +29,32 @@ func (s *server) changeAddress() (util.Address, error) {
 	return libkaspawallet.Address(s.params, s.keysFile.ExtendedPublicKeys, s.keysFile.MinimumSignatures, path, s.keysFile.ECDSA)
 }
 
+func (s *server) ShowAddresses(_ context.Context, request *pb.ShowAddressesRequest) (*pb.ShowAddressesResponse, error) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	if !s.isSynced() {
+		return nil, errors.New("server is not synced")
+	}
+
+	addresses := make([]string, 0)
+	for i := uint32(1); i <= s.keysFile.LastUsedExternalIndex(); i++ {
+		walletAddr := &walletAddress{
+			index:         i,
+			cosignerIndex: s.keysFile.CosignerIndex,
+			keyChain:      externalKeychain,
+		}
+		path := s.walletAddressPath(walletAddr)
+		address, err := libkaspawallet.Address(s.params, s.keysFile.ExtendedPublicKeys, s.keysFile.MinimumSignatures, path, s.keysFile.ECDSA)
+		if err != nil {
+			return nil, err
+		}
+		addresses = append(addresses, address.String())
+	}
+
+	return &pb.ShowAddressesResponse{Address: addresses}, nil
+}
+
 func (s *server) NewAddress(_ context.Context, request *pb.NewAddressRequest) (*pb.NewAddressResponse, error) {
 	s.lock.Lock()
 	defer s.lock.Unlock()

@@ -19,6 +19,8 @@ func main() {
 		err = sign(config.(*signConfig))
 	case broadcastSubCmd:
 		err = broadcast(config.(*broadcastConfig))
+	case showAddressesSubCmd:
+		err = showAddresses(config.(*showAddressesConfig))
 	case newAddressSubCmd:
 		err = newAddress(config.(*newAddressConfig))
 	case dumpUnencryptedDataSubCmd:

@@ -15,6 +15,7 @@ const (
 	createUnsignedTransactionSubCmd = "create-unsigned-transaction"
 	signSubCmd                      = "sign"
 	broadcastSubCmd                 = "broadcast"
+	showAddressesSubCmd             = "show-addresses"
 	newAddressSubCmd                = "new-address"
 	dumpUnencryptedDataSubCmd       = "dump-unencrypted-data"
 	startDaemonSubCmd               = "start-daemon"
@@ -75,6 +76,11 @@ type broadcastConfig struct {
 	config.NetworkFlags
 }
 
+type showAddressesConfig struct {
+	DaemonAddress string `long:"daemonaddress" short:"d" description:"Wallet daemon server to connect to (default: localhost:8082)"`
+	config.NetworkFlags
+}
+
 type newAddressConfig struct {
 	DaemonAddress string `long:"daemonaddress" short:"d" description:"Wallet daemon server to connect to (default: localhost:8082)"`
 	config.NetworkFlags
@@ -122,6 +128,10 @@ func parseCommandLine() (subCommand string, config interface{}) {
 	broadcastConf := &broadcastConfig{DaemonAddress: defaultListen}
 	parser.AddCommand(broadcastSubCmd, "Broadcast the given transaction",
 		"Broadcast the given transaction", broadcastConf)
+
+	showAddressesConf := &showAddressesConfig{DaemonAddress: defaultListen}
+	parser.AddCommand(showAddressesSubCmd, "Shows all generated public addresses of the current wallet",
+		"Shows all generated public addresses of the current wallet", showAddressesConf)
 
 	newAddressConf := &newAddressConfig{DaemonAddress: defaultListen}
 	parser.AddCommand(newAddressSubCmd, "Generates new public address of the current wallet and shows it",
@@ -193,6 +203,13 @@ func parseCommandLine() (subCommand string, config interface{}) {
 			printErrorAndExit(err)
 		}
 		config = broadcastConf
+	case showAddressesSubCmd:
+		combineNetworkFlags(&showAddressesConf.NetworkFlags, &cfg.NetworkFlags)
+		err := showAddressesConf.ResolveNetwork(parser)
+		if err != nil {
+			printErrorAndExit(err)
+		}
+		config = showAddressesConf
 	case newAddressSubCmd:
 		combineNetworkFlags(&newAddressConf.NetworkFlags, &cfg.NetworkFlags)
 		err := newAddressConf.ResolveNetwork(parser)
