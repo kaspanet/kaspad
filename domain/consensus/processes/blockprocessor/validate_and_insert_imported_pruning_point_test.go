@@ -533,12 +533,7 @@ func TestGetPruningPointUTXOs(t *testing.T) {
 			}
 		}
 
-		const mainnetUTXOSize = 1232643
 		expected := len(outputs) + 1
-		if consensusConfig.Name == "kaspa-mainnet" {
-			expected += mainnetUTXOSize
-		}
-
 		// Make sure the length of the UTXOs is exactly spendingTransaction.Outputs + 1 coinbase
 		// output (includingBlock's coinbase)
 		if len(allOutpointAndUTXOEntryPairs) != expected {

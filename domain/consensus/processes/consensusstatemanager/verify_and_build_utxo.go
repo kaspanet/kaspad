@@ -117,6 +117,10 @@ func (csm *consensusStateManager) validateUTXOCommitment(
 	log.Tracef("validateUTXOCommitment start for block %s", blockHash)
 	defer log.Tracef("validateUTXOCommitment end for block %s", blockHash)
 
+	if blockHash.Equal(csm.genesisHash) {
+		return nil
+	}
+
 	multisetHash := multiset.Hash()
 	if !block.Header.UTXOCommitment().Equal(multisetHash) {
 		return errors.Wrapf(ruleerrors.ErrBadUTXOCommitment, "block %s UTXO commitment is invalid - block "+

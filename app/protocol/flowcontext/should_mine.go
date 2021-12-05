@@ -25,6 +25,10 @@ func (f *FlowContext) ShouldMine() (bool, error) {
 		return false, err
 	}
 
+	if virtualSelectedParent.Equal(f.Config().NetParams().GenesisHash) {
+		return false, nil
+	}
+
 	virtualSelectedParentHeader, err := f.domain.Consensus().GetBlockHeader(virtualSelectedParent)
 	if err != nil {
 		return false, err
