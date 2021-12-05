@@ -174,8 +174,6 @@ func acceptanceDataFromArrayToMap(acceptanceData externalapi.AcceptanceData) map
 // should have. This is mainly used for determining how much the coinbase for
 // newly generated blocks awards as well as validating the coinbase for blocks
 // has the expected value.
-//
-// Further details: https://hashdag.medium.com/kaspa-launch-plan-9a63f4d754a6
 func (c *coinbaseManager) CalcBlockSubsidy(blockHash *externalapi.DomainHash) (uint64, error) {
 	if blockHash.Equal(c.genesisHash) {
 		return c.subsidyGenesisReward, nil
