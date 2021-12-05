@@ -23,7 +23,8 @@ var orphanResolutionRange uint32 = 5
 type RelayInvsContext interface {
 	Domain() domain.Domain
 	Config() *config.Config
-	OnNewBlock(block *externalapi.DomainBlock, blockInsertionResult *externalapi.BlockInsertionResult) error
+	OnNewBlock(block *externalapi.DomainBlock, virtualChangeSet *externalapi.VirtualChangeSet) error
+	OnVirtualChange(virtualChangeSet *externalapi.VirtualChangeSet) error
 	OnPruningPointUTXOSetOverride() error
 	SharedRequestedBlocks() *SharedRequestedBlocks
 	Broadcast(message appmessage.Message) error
@@ -128,7 +129,7 @@ func (flow *handleRelayInvsFlow) start() error {
 		}
 
 		log.Debugf("Processing block %s", inv.Hash)
-		missingParents, blockInsertionResult, err := flow.processBlock(block)
+		missingParents, virtualChangeSet, err := flow.processBlock(block)
 		if err != nil {
 			if errors.Is(err, ruleerrors.ErrPrunedBlock) {
 				log.Infof("Ignoring pruned block %s", inv.Hash)
@@ -156,7 +157,7 @@ func (flow *handleRelayInvsFlow) start() error {
 			return err
 		}
 		log.Infof("Accepted block %s via relay", inv.Hash)
-		err = flow.OnNewBlock(block, blockInsertionResult)
+		err = flow.OnNewBlock(block, virtualChangeSet)
 		if err != nil {
 			return err
 		}
@@ -243,9 +244,9 @@ func (flow *handleRelayInvsFlow) readMsgBlock() (msgBlock *appmessage.MsgBlock, 
 	}
 }
 
-func (flow *handleRelayInvsFlow) processBlock(block *externalapi.DomainBlock) ([]*externalapi.DomainHash, *externalapi.BlockInsertionResult, error) {
+func (flow *handleRelayInvsFlow) processBlock(block *externalapi.DomainBlock) ([]*externalapi.DomainHash, *externalapi.VirtualChangeSet, error) {
 	blockHash := consensushashing.BlockHash(block)
-	blockInsertionResult, err := flow.Domain().Consensus().ValidateAndInsertBlock(block, true)
+	virtualChangeSet, err := flow.Domain().Consensus().ValidateAndInsertBlock(block, true)
 	if err != nil {
 		if !errors.As(err, &ruleerrors.RuleError{}) {
 			return nil, nil, errors.Wrapf(err, "failed to process block %s", blockHash)
@@ -258,7 +259,7 @@ func (flow *handleRelayInvsFlow) processBlock(block *externalapi.DomainBlock) ([
 		log.Warnf("Rejected block %s from %s: %s", blockHash, flow.peer, err)
 		return nil, nil, protocolerrors.Wrapf(true, err, "got invalid block %s from relay", blockHash)
 	}
-	return nil, blockInsertionResult, nil
+	return nil, virtualChangeSet, nil
 }
 
 func (flow *handleRelayInvsFlow) relayBlock(block *externalapi.DomainBlock) error {

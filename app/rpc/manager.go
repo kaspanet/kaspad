@@ -48,12 +48,30 @@ func NewManager(
 }
 
 // NotifyBlockAddedToDAG notifies the manager that a block has been added to the DAG
-func (m *Manager) NotifyBlockAddedToDAG(block *externalapi.DomainBlock, blockInsertionResult *externalapi.BlockInsertionResult) error {
+func (m *Manager) NotifyBlockAddedToDAG(block *externalapi.DomainBlock, virtualChangeSet *externalapi.VirtualChangeSet) error {
+	onEnd := logger.LogAndMeasureExecutionTime(log, "RPCManager.NotifyBlockAddedToDAG")
+	defer onEnd()
+
+	err := m.NotifyVirtualChange(virtualChangeSet)
+	if err != nil {
+		return err
+	}
+
+	rpcBlock := appmessage.DomainBlockToRPCBlock(block)
+	err = m.context.PopulateBlockWithVerboseData(rpcBlock, block.Header, block, false)
+	if err != nil {
+		return err
+	}
+	blockAddedNotification := appmessage.NewBlockAddedNotificationMessage(rpcBlock)
+	return m.context.NotificationManager.NotifyBlockAdded(blockAddedNotification)
+}
+
+func (m *Manager) NotifyVirtualChange(virtualChangeSet *externalapi.VirtualChangeSet) error {
 	onEnd := logger.LogAndMeasureExecutionTime(log, "RPCManager.NotifyBlockAddedToDAG")
 	defer onEnd()
 
 	if m.context.Config.UTXOIndex {
-		err := m.notifyUTXOsChanged(blockInsertionResult)
+		err := m.notifyUTXOsChanged(virtualChangeSet)
 		if err != nil {
 			return err
 		}
@@ -69,18 +87,12 @@ func (m *Manager) NotifyBlockAddedToDAG(block *externalapi.DomainBlock, blockIns
 		return err
 	}
 
-	err = m.notifyVirtualSelectedParentChainChanged(blockInsertionResult)
+	err = m.notifyVirtualSelectedParentChainChanged(virtualChangeSet)
 	if err != nil {
 		return err
 	}
 
-	rpcBlock := appmessage.DomainBlockToRPCBlock(block)
-	err = m.context.PopulateBlockWithVerboseData(rpcBlock, block.Header, block, false)
-	if err != nil {
-		return err
-	}
-	blockAddedNotification := appmessage.NewBlockAddedNotificationMessage(rpcBlock)
-	return m.context.NotificationManager.NotifyBlockAdded(blockAddedNotification)
+	return nil
 }
 
 // NotifyPruningPointUTXOSetOverride notifies the manager whenever the UTXO index
@@ -117,11 +129,11 @@ func (m *Manager) NotifyFinalityConflictResolved(finalityBlockHash string) error
 	return m.context.NotificationManager.NotifyFinalityConflictResolved(notification)
 }
 
-func (m *Manager) notifyUTXOsChanged(blockInsertionResult *externalapi.BlockInsertionResult) error {
+func (m *Manager) notifyUTXOsChanged(virtualChangeSet *externalapi.VirtualChangeSet) error {
 	onEnd := logger.LogAndMeasureExecutionTime(log, "RPCManager.NotifyUTXOsChanged")
 	defer onEnd()
 
-	utxoIndexChanges, err := m.context.UTXOIndex.Update(blockInsertionResult)
+	utxoIndexChanges, err := m.context.UTXOIndex.Update(virtualChangeSet)
 	if err != nil {
 		return err
 	}
@@ -171,12 +183,12 @@ func (m *Manager) notifyVirtualDaaScoreChanged() error {
 	return m.context.NotificationManager.NotifyVirtualDaaScoreChanged(notification)
 }
 
-func (m *Manager) notifyVirtualSelectedParentChainChanged(blockInsertionResult *externalapi.BlockInsertionResult) error {
+func (m *Manager) notifyVirtualSelectedParentChainChanged(virtualChangeSet *externalapi.VirtualChangeSet) error {
 	onEnd := logger.LogAndMeasureExecutionTime(log, "RPCManager.NotifyVirtualSelectedParentChainChanged")
 	defer onEnd()
 
 	notification, err := m.context.ConvertVirtualSelectedParentChainChangesToChainChangedNotificationMessage(
-		blockInsertionResult.VirtualSelectedParentChainChanges)
+		virtualChangeSet.VirtualSelectedParentChainChanges)
 	if err != nil {
 		return err
 	}

@@ -46,7 +46,7 @@ func (tc *testConsensus) BuildBlockWithParents(parentHashes []*externalapi.Domai
 }
 
 func (tc *testConsensus) AddBlock(parentHashes []*externalapi.DomainHash, coinbaseData *externalapi.DomainCoinbaseData,
-	transactions []*externalapi.DomainTransaction) (*externalapi.DomainHash, *externalapi.BlockInsertionResult, error) {
+	transactions []*externalapi.DomainTransaction) (*externalapi.DomainHash, *externalapi.VirtualChangeSet, error) {
 
 	// Require write lock because BuildBlockWithParents stages temporary data
 	tc.lock.Lock()
@@ -57,16 +57,16 @@ func (tc *testConsensus) AddBlock(parentHashes []*externalapi.DomainHash, coinba
 		return nil, nil, err
 	}
 
-	blockInsertionResult, err := tc.blockProcessor.ValidateAndInsertBlock(block, true)
+	virtualChangeSet, err := tc.blockProcessor.ValidateAndInsertBlock(block, true)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	return consensushashing.BlockHash(block), blockInsertionResult, nil
+	return consensushashing.BlockHash(block), virtualChangeSet, nil
 }
 
 func (tc *testConsensus) AddUTXOInvalidHeader(parentHashes []*externalapi.DomainHash) (*externalapi.DomainHash,
-	*externalapi.BlockInsertionResult, error) {
+	*externalapi.VirtualChangeSet, error) {
 
 	// Require write lock because BuildBlockWithParents stages temporary data
 	tc.lock.Lock()
@@ -77,7 +77,7 @@ func (tc *testConsensus) AddUTXOInvalidHeader(parentHashes []*externalapi.Domain
 		return nil, nil, err
 	}
 
-	blockInsertionResult, err := tc.blockProcessor.ValidateAndInsertBlock(&externalapi.DomainBlock{
+	virtualChangeSet, err := tc.blockProcessor.ValidateAndInsertBlock(&externalapi.DomainBlock{
 		Header:       header,
 		Transactions: nil,
 	}, true)
@@ -85,11 +85,11 @@ func (tc *testConsensus) AddUTXOInvalidHeader(parentHashes []*externalapi.Domain
 		return nil, nil, err
 	}
 
-	return consensushashing.HeaderHash(header), blockInsertionResult, nil
+	return consensushashing.HeaderHash(header), virtualChangeSet, nil
 }
 
 func (tc *testConsensus) AddUTXOInvalidBlock(parentHashes []*externalapi.DomainHash) (*externalapi.DomainHash,
-	*externalapi.BlockInsertionResult, error) {
+	*externalapi.VirtualChangeSet, error) {
 
 	// Require write lock because BuildBlockWithParents stages temporary data
 	tc.lock.Lock()
@@ -100,12 +100,12 @@ func (tc *testConsensus) AddUTXOInvalidBlock(parentHashes []*externalapi.DomainH
 		return nil, nil, err
 	}
 
-	blockInsertionResult, err := tc.blockProcessor.ValidateAndInsertBlock(block, true)
+	virtualChangeSet, err := tc.blockProcessor.ValidateAndInsertBlock(block, true)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	return consensushashing.BlockHash(block), blockInsertionResult, nil
+	return consensushashing.BlockHash(block), virtualChangeSet, nil
 }
 
 func (tc *testConsensus) MineJSON(r io.Reader, blockType testapi.MineJSONBlockType) (tips []*externalapi.DomainHash, err error) {

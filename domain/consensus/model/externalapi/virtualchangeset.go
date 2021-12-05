@@ -1,7 +1,7 @@
 package externalapi
 
-// BlockInsertionResult is auxiliary data returned from ValidateAndInsertBlock
-type BlockInsertionResult struct {
+// VirtualChangeSet is auxiliary data returned from ValidateAndInsertBlock and ResolveVirtual
+type VirtualChangeSet struct {
 	VirtualSelectedParentChainChanges *SelectedChainPath
 	VirtualUTXODiff                   UTXODiff
 	VirtualParents                    []*DomainHash

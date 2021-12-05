@@ -8,14 +8,14 @@ import (
 	"sort"
 )
 
-func (csm *consensusStateManager) ResolveVirtual(maxBlocksToResolve uint64) (bool, error) {
+func (csm *consensusStateManager) ResolveVirtual(maxBlocksToResolve uint64) (*externalapi.VirtualChangeSet, bool, error) {
 	onEnd := logger.LogAndMeasureExecutionTime(log, "csm.ResolveVirtual")
 	defer onEnd()
 
 	readStagingArea := model.NewStagingArea()
 	tips, err := csm.consensusStateStore.Tips(readStagingArea, csm.databaseContext)
 	if err != nil {
-		return false, err
+		return nil, false, err
 	}
 
 	var sortErr error
@@ -29,7 +29,7 @@ func (csm *consensusStateManager) ResolveVirtual(maxBlocksToResolve uint64) (boo
 		return selectedParent.Equal(tips[i])
 	})
 	if sortErr != nil {
-		return false, sortErr
+		return nil, false, sortErr
 	}
 
 	var selectedTip *externalapi.DomainHash
@@ -39,7 +39,7 @@ func (csm *consensusStateManager) ResolveVirtual(maxBlocksToResolve uint64) (boo
 		resolveStagingArea := model.NewStagingArea()
 		unverifiedBlocks, err := csm.getUnverifiedChainBlocks(resolveStagingArea, tip)
 		if err != nil {
-			return false, err
+			return nil, false, err
 		}
 
 		resolveTip := tip
@@ -51,7 +51,7 @@ func (csm *consensusStateManager) ResolveVirtual(maxBlocksToResolve uint64) (boo
 
 		blockStatus, reversalData, err := csm.resolveBlockStatus(resolveStagingArea, resolveTip, true)
 		if err != nil {
-			return false, err
+			return nil, false, err
 		}
 
 		if blockStatus == externalapi.StatusUTXOValid {
@@ -60,13 +60,13 @@ func (csm *consensusStateManager) ResolveVirtual(maxBlocksToResolve uint64) (boo
 
 			err = staging.CommitAllChanges(csm.databaseContext, resolveStagingArea)
 			if err != nil {
-				return false, err
+				return nil, false, err
 			}
 
 			if reversalData != nil {
 				err = csm.ReverseUTXODiffs(resolveTip, reversalData)
 				if err != nil {
-					return false, err
+					return nil, false, err
 				}
 			}
 			break
@@ -75,19 +75,39 @@ func (csm *consensusStateManager) ResolveVirtual(maxBlocksToResolve uint64) (boo
 
 	if selectedTip == nil {
 		log.Warnf("Non of the DAG tips are valid")
-		return true, nil
+		return nil, true, nil
+	}
+
+	oldVirtualGHOSTDAGData, err := csm.ghostdagDataStore.Get(csm.databaseContext, readStagingArea, model.VirtualBlockHash, false)
+	if err != nil {
+		return nil, false, err
 	}
 
 	updateVirtualStagingArea := model.NewStagingArea()
-	_, err = csm.updateVirtualWithParents(updateVirtualStagingArea, []*externalapi.DomainHash{selectedTip})
+	virtualUTXODiff, err := csm.updateVirtualWithParents(updateVirtualStagingArea, []*externalapi.DomainHash{selectedTip})
 	if err != nil {
-		return false, err
+		return nil, false, err
 	}
 
 	err = staging.CommitAllChanges(csm.databaseContext, updateVirtualStagingArea)
 	if err != nil {
-		return false, err
+		return nil, false, err
 	}
 
-	return isCompletelyResolved, nil
+	selectedParentChainChanges, err := csm.dagTraversalManager.
+		CalculateChainPath(readStagingArea, oldVirtualGHOSTDAGData.SelectedParent(), selectedTip)
+	if err != nil {
+		return nil, false, err
+	}
+
+	virtualParents, err := csm.dagTopologyManager.Parents(readStagingArea, model.VirtualBlockHash)
+	if err != nil {
+		return nil, false, err
+	}
+
+	return &externalapi.VirtualChangeSet{
+		VirtualSelectedParentChainChanges: selectedParentChainChanges,
+		VirtualUTXODiff:                   virtualUTXODiff,
+		VirtualParents:                    virtualParents,
+	}, isCompletelyResolved, nil
 }

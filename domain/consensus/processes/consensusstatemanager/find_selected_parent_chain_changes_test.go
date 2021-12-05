@@ -19,11 +19,11 @@ func TestCalculateChainPath(t *testing.T) {
 		defer teardown(false)
 
 		// Add block A over the genesis
-		blockAHash, blockAInsertionResult, err := consensus.AddBlock([]*externalapi.DomainHash{consensusConfig.GenesisHash}, nil, nil)
+		blockAHash, blockAVirtualChangeSet, err := consensus.AddBlock([]*externalapi.DomainHash{consensusConfig.GenesisHash}, nil, nil)
 		if err != nil {
 			t.Fatalf("Error adding block A: %+v", err)
 		}
-		blockASelectedParentChainChanges := blockAInsertionResult.VirtualSelectedParentChainChanges
+		blockASelectedParentChainChanges := blockAVirtualChangeSet.VirtualSelectedParentChainChanges
 
 		// Make sure that the removed slice is empty
 		if len(blockASelectedParentChainChanges.Removed) > 0 {
@@ -59,11 +59,11 @@ func TestCalculateChainPath(t *testing.T) {
 
 		// Add block C over the block that isn't the current virtual's selected parent
 		// We expect this to cause a reorg
-		blockCHash, blockCInsertionResult, err := consensus.AddBlock([]*externalapi.DomainHash{notVirtualSelectedParent}, nil, nil)
+		blockCHash, blockCVirtualChangeSet, err := consensus.AddBlock([]*externalapi.DomainHash{notVirtualSelectedParent}, nil, nil)
 		if err != nil {
 			t.Fatalf("Error adding block C: %+v", err)
 		}
-		blockCSelectedParentChainChanges := blockCInsertionResult.VirtualSelectedParentChainChanges
+		blockCSelectedParentChainChanges := blockCVirtualChangeSet.VirtualSelectedParentChainChanges
 
 		// Make sure that the removed slice contains only the block that was previously
 		// the selected parent
@@ -92,11 +92,11 @@ func TestCalculateChainPath(t *testing.T) {
 		}
 
 		// Add block D over the genesis
-		_, blockDInsertionResult, err := consensus.AddBlock([]*externalapi.DomainHash{consensusConfig.GenesisHash}, nil, nil)
+		_, blockDVirtualChangeSet, err := consensus.AddBlock([]*externalapi.DomainHash{consensusConfig.GenesisHash}, nil, nil)
 		if err != nil {
 			t.Fatalf("Error adding block D: %+v", err)
 		}
-		blockDSelectedParentChainChanges := blockDInsertionResult.VirtualSelectedParentChainChanges
+		blockDSelectedParentChainChanges := blockDVirtualChangeSet.VirtualSelectedParentChainChanges
 
 		// Make sure that both the added and the removed slices are empty
 		if len(blockDSelectedParentChainChanges.Added) > 0 {

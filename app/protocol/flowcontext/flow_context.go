@@ -22,7 +22,9 @@ import (
 
 // OnBlockAddedToDAGHandler is a handler function that's triggered
 // when a block is added to the DAG
-type OnBlockAddedToDAGHandler func(block *externalapi.DomainBlock, blockInsertionResult *externalapi.BlockInsertionResult) error
+type OnBlockAddedToDAGHandler func(block *externalapi.DomainBlock, virtualChangeSet *externalapi.VirtualChangeSet) error
+
+type OnVirtualChangeHandler func(virtualChangeSet *externalapi.VirtualChangeSet) error
 
 // OnPruningPointUTXOSetOverrideHandler is a handle function that's triggered whenever the UTXO set
 // resets due to pruning point change via IBD.
@@ -43,6 +45,7 @@ type FlowContext struct {
 
 	timeStarted int64
 
+	onVirtualChangeHandler               OnVirtualChangeHandler
 	onBlockAddedToDAGHandler             OnBlockAddedToDAGHandler
 	onPruningPointUTXOSetOverrideHandler OnPruningPointUTXOSetOverrideHandler
 	onTransactionAddedToMempoolHandler   OnTransactionAddedToMempoolHandler
@@ -98,6 +101,10 @@ func (f *FlowContext) Close() {
 // event.
 func (f *FlowContext) ShutdownChan() <-chan struct{} {
 	return f.shutdownChan
+}
+
+func (f *FlowContext) SetOnVirtualChangeHandler(onVirtualChangeHandler OnVirtualChangeHandler) {
+	f.onVirtualChangeHandler = onVirtualChangeHandler
 }
 
 // SetOnBlockAddedToDAGHandler sets the onBlockAddedToDAG handler
