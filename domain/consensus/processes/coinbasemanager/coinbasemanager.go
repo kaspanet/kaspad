@@ -76,7 +76,7 @@ func (c *coinbaseManager) ExpectedCoinbaseTransaction(stagingArea *model.Staging
 		txOuts = append(txOuts, txOut)
 	}
 
-	subsidy, err := c.CalcBlockSubsidy(stagingArea, blockHash, blockPruningPoint)
+	subsidy, err := c.CalcBlockSubsidy(blockHash)
 	if err != nil {
 		return nil, err
 	}
@@ -176,9 +176,7 @@ func acceptanceDataFromArrayToMap(acceptanceData externalapi.AcceptanceData) map
 // has the expected value.
 //
 // Further details: https://hashdag.medium.com/kaspa-launch-plan-9a63f4d754a6
-func (c *coinbaseManager) CalcBlockSubsidy(stagingArea *model.StagingArea,
-	blockHash *externalapi.DomainHash, blockPruningPoint *externalapi.DomainHash) (uint64, error) {
-
+func (c *coinbaseManager) CalcBlockSubsidy(blockHash *externalapi.DomainHash) (uint64, error) {
 	if blockHash.Equal(c.genesisHash) {
 		return c.subsidyGenesisReward, nil
 	}
