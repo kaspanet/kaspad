@@ -92,7 +92,7 @@ type Params struct {
 	// SubsidyPastRewardMultiplier are part of the block subsidy equation.
 	// Further details: https://hashdag.medium.com/kaspa-launch-plan-9a63f4d754a6
 	SubsidyGenesisReward uint64
-	MaxSubsidy           uint64
+	BaseSubsidy          uint64
 
 	// TargetTimePerBlock is the desired amount of time to generate each
 	// block.
@@ -217,7 +217,7 @@ var MainnetParams = Params{
 	PowMax:                         mainPowMax,
 	BlockCoinbaseMaturity:          100,
 	SubsidyGenesisReward:           defaultSubsidyGenesisReward,
-	MaxSubsidy:                     defaultMaxSubsidy,
+	BaseSubsidy:                    defaultBaseSubsidy,
 	TargetTimePerBlock:             defaultTargetTimePerBlock,
 	FinalityDuration:               defaultFinalityDuration,
 	DifficultyAdjustmentWindowSize: defaultDifficultyAdjustmentWindowSize,
@@ -274,7 +274,7 @@ var TestnetParams = Params{
 	PowMax:                         testnetPowMax,
 	BlockCoinbaseMaturity:          100,
 	SubsidyGenesisReward:           defaultSubsidyGenesisReward,
-	MaxSubsidy:                     defaultMaxSubsidy,
+	BaseSubsidy:                    defaultBaseSubsidy,
 	TargetTimePerBlock:             defaultTargetTimePerBlock,
 	FinalityDuration:               defaultFinalityDuration,
 	DifficultyAdjustmentWindowSize: defaultDifficultyAdjustmentWindowSize,
@@ -337,7 +337,7 @@ var SimnetParams = Params{
 	PowMax:                         simnetPowMax,
 	BlockCoinbaseMaturity:          100,
 	SubsidyGenesisReward:           defaultSubsidyGenesisReward,
-	MaxSubsidy:                     defaultMaxSubsidy,
+	BaseSubsidy:                    defaultBaseSubsidy,
 	TargetTimePerBlock:             time.Millisecond,
 	FinalityDuration:               time.Minute,
 	DifficultyAdjustmentWindowSize: defaultDifficultyAdjustmentWindowSize,
@@ -392,7 +392,7 @@ var DevnetParams = Params{
 	PowMax:                         devnetPowMax,
 	BlockCoinbaseMaturity:          100,
 	SubsidyGenesisReward:           defaultSubsidyGenesisReward,
-	MaxSubsidy:                     defaultMaxSubsidy,
+	BaseSubsidy:                    defaultBaseSubsidy,
 	TargetTimePerBlock:             defaultTargetTimePerBlock,
 	FinalityDuration:               defaultFinalityDuration,
 	DifficultyAdjustmentWindowSize: defaultDifficultyAdjustmentWindowSize,

@@ -13,7 +13,7 @@ import (
 
 type coinbaseManager struct {
 	subsidyGenesisReward                    uint64
-	maxSubsidy                              uint64
+	baseSubsidy                             uint64
 	coinbasePayloadScriptPublicKeyMaxLength uint8
 	genesisHash                             *externalapi.DomainHash
 
@@ -183,7 +183,7 @@ func (c *coinbaseManager) CalcBlockSubsidy(stagingArea *model.StagingArea,
 		return c.subsidyGenesisReward, nil
 	}
 
-	return c.maxSubsidy, nil
+	return c.baseSubsidy, nil
 }
 
 func (c *coinbaseManager) calcMergedBlockReward(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash,
@@ -223,7 +223,7 @@ func New(
 	databaseContext model.DBReader,
 
 	subsidyGenesisReward uint64,
-	maxSubsidy uint64,
+	baseSubsidy uint64,
 	coinbasePayloadScriptPublicKeyMaxLength uint8,
 	genesisHash *externalapi.DomainHash,
 
@@ -239,7 +239,7 @@ func New(
 		databaseContext: databaseContext,
 
 		subsidyGenesisReward:                    subsidyGenesisReward,
-		maxSubsidy:                              maxSubsidy,
+		baseSubsidy:                             baseSubsidy,
 		coinbasePayloadScriptPublicKeyMaxLength: coinbasePayloadScriptPublicKeyMaxLength,
 		genesisHash:                             genesisHash,
 

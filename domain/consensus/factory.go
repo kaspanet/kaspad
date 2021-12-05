@@ -204,7 +204,7 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 	coinbaseManager := coinbasemanager.New(
 		dbManager,
 		config.SubsidyGenesisReward,
-		config.MaxSubsidy,
+		config.BaseSubsidy,
 		config.CoinbasePayloadScriptPublicKeyMaxLength,
 		config.GenesisHash,
 		dagTraversalManager,
