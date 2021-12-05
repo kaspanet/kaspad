@@ -129,7 +129,7 @@ func (bp *blockProcessor) validateAndInsertBlock(stagingArea *model.StagingArea,
 		}
 	}
 
-	bp.ifGenesisSetUtxoSet(stagingArea, block)
+	bp.loadUTXODataForGenesis(stagingArea, block)
 	var selectedParentChainChanges *externalapi.SelectedChainPath
 	var virtualUTXODiff externalapi.UTXODiff
 	var reversalData *model.UTXODiffReversalData
@@ -217,7 +217,7 @@ func (bp *blockProcessor) validateAndInsertBlock(stagingArea *model.StagingArea,
 	}, nil
 }
 
-func (bp *blockProcessor) ifGenesisSetUtxoSet(stagingArea *model.StagingArea, block *externalapi.DomainBlock) {
+func (bp *blockProcessor) loadUTXODataForGenesis(stagingArea *model.StagingArea, block *externalapi.DomainBlock) {
 	isGenesis := len(block.Header.DirectParents()) == 0
 	if !isGenesis {
 		return
