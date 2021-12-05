@@ -27,6 +27,13 @@ message CreateUnsignedTransactionResponse {
   bytes unsignedTransaction = 1;
 }
 
+message ShowAddressesRequest {
+}
+
+message ShowAddressesResponse {
+  repeated string address = 1;
+}
+
 message NewAddressRequest {
 }
 
