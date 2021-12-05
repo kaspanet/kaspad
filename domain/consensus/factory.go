@@ -207,6 +207,7 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 		config.BaseSubsidy,
 		config.CoinbasePayloadScriptPublicKeyMaxLength,
 		config.GenesisHash,
+		config.DeflationaryPhaseDaaScore,
 		dagTraversalManager,
 		ghostdagDataStore,
 		acceptanceDataStore,

@@ -176,6 +176,10 @@ type Params struct {
 
 	// PruningProofM is the 'm' constant in the pruning proof. For more details see: https://github.com/kaspanet/research/issues/3
 	PruningProofM uint64
+
+	// DeflationaryPhaseDaaScore is the DAA score after which the monetary policy switches
+	// to its deflationary phase
+	DeflationaryPhaseDaaScore uint64
 }
 
 // NormalizeRPCServerAddress returns addr with the current network default
@@ -257,6 +261,7 @@ var MainnetParams = Params{
 	MergeSetSizeLimit:                       defaultMergeSetSizeLimit,
 	CoinbasePayloadScriptPublicKeyMaxLength: defaultCoinbasePayloadScriptPublicKeyMaxLength,
 	PruningProofM:                           defaultPruningProofM,
+	DeflationaryPhaseDaaScore:               defaultDeflationaryPhaseDaaScore,
 }
 
 // TestnetParams defines the network parameters for the test Kaspa network.
@@ -314,6 +319,7 @@ var TestnetParams = Params{
 	MergeSetSizeLimit:                       defaultMergeSetSizeLimit,
 	CoinbasePayloadScriptPublicKeyMaxLength: defaultCoinbasePayloadScriptPublicKeyMaxLength,
 	PruningProofM:                           defaultPruningProofM,
+	DeflationaryPhaseDaaScore:               defaultDeflationaryPhaseDaaScore,
 }
 
 // SimnetParams defines the network parameters for the simulation test Kaspa
@@ -375,6 +381,7 @@ var SimnetParams = Params{
 	MergeSetSizeLimit:                       defaultMergeSetSizeLimit,
 	CoinbasePayloadScriptPublicKeyMaxLength: defaultCoinbasePayloadScriptPublicKeyMaxLength,
 	PruningProofM:                           defaultPruningProofM,
+	DeflationaryPhaseDaaScore:               defaultDeflationaryPhaseDaaScore,
 }
 
 // DevnetParams defines the network parameters for the development Kaspa network.
@@ -432,6 +439,7 @@ var DevnetParams = Params{
 	MergeSetSizeLimit:                       defaultMergeSetSizeLimit,
 	CoinbasePayloadScriptPublicKeyMaxLength: defaultCoinbasePayloadScriptPublicKeyMaxLength,
 	PruningProofM:                           defaultPruningProofM,
+	DeflationaryPhaseDaaScore:               defaultDeflationaryPhaseDaaScore,
 }
 
 var (

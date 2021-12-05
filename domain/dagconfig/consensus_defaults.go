@@ -73,4 +73,6 @@ const (
 	defaultTargetTimePerBlock = 1 * time.Second
 
 	defaultPruningProofM = 1000
+
+	defaultDeflationaryPhaseDaaScore = 15778800 // Half a year
 )
