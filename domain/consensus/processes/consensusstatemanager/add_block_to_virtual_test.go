@@ -22,12 +22,12 @@ func TestVirtualDiff(t *testing.T) {
 		defer teardown(false)
 
 		// Add block A over the genesis
-		blockAHash, blockInsertionResult, err := tc.AddBlock([]*externalapi.DomainHash{consensusConfig.GenesisHash}, nil, nil)
+		blockAHash, virtualChangeSet, err := tc.AddBlock([]*externalapi.DomainHash{consensusConfig.GenesisHash}, nil, nil)
 		if err != nil {
 			t.Fatalf("Error adding block A: %+v", err)
 		}
 
-		virtualUTXODiff := blockInsertionResult.VirtualUTXODiff
+		virtualUTXODiff := virtualChangeSet.VirtualUTXODiff
 		if virtualUTXODiff.ToRemove().Len() != 0 {
 			t.Fatalf("Unexpected length %d for virtualUTXODiff.ToRemove()", virtualUTXODiff.ToRemove().Len())
 		}
@@ -37,7 +37,7 @@ func TestVirtualDiff(t *testing.T) {
 			t.Fatalf("Unexpected length %d for virtualUTXODiff.ToAdd()", virtualUTXODiff.ToAdd().Len())
 		}
 
-		blockBHash, blockInsertionResult, err := tc.AddBlock([]*externalapi.DomainHash{blockAHash}, nil, nil)
+		blockBHash, virtualChangeSet, err := tc.AddBlock([]*externalapi.DomainHash{blockAHash}, nil, nil)
 		if err != nil {
 			t.Fatalf("Error adding block A: %+v", err)
 		}
@@ -47,7 +47,7 @@ func TestVirtualDiff(t *testing.T) {
 			t.Fatalf("Block: %+v", err)
 		}
 
-		virtualUTXODiff = blockInsertionResult.VirtualUTXODiff
+		virtualUTXODiff = virtualChangeSet.VirtualUTXODiff
 		if virtualUTXODiff.ToRemove().Len() != 0 {
 			t.Fatalf("Unexpected length %d for virtualUTXODiff.ToRemove()", virtualUTXODiff.ToRemove().Len())
 		}

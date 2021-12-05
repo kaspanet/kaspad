@@ -1,7 +1,7 @@
 #!/bin/bash
 rm -rf /tmp/kaspad-temp
 
-kaspad --devnet --nobanning --appdir=/tmp/kaspad-temp --profile=6061 &
+kaspad --devnet --appdir=/tmp/kaspad-temp --profile=6061 &
 KASPAD_PID=$!
 
 sleep 1

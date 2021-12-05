@@ -186,6 +186,8 @@ type Params struct {
 	FixedSubsidySwitchPruningPointInterval uint64
 
 	FixedSubsidySwitchHashRateThreshold *big.Int
+
+	DisallowDirectBlocksOnTopOfGenesis bool
 }
 
 // NormalizeRPCServerAddress returns addr with the current network default
@@ -272,6 +274,7 @@ var MainnetParams = Params{
 	PruningProofM:                           defaultPruningProofM,
 	FixedSubsidySwitchPruningPointInterval:  defaultFixedSubsidySwitchPruningPointInterval,
 	FixedSubsidySwitchHashRateThreshold:     big.NewInt(150_000_000_000),
+	DisallowDirectBlocksOnTopOfGenesis:      true,
 }
 
 // TestnetParams defines the network parameters for the test Kaspa network.
