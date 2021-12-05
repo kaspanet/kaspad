@@ -471,7 +471,7 @@ func (flow *handleRelayInvsFlow) syncMissingBlockBodies(highHash *externalapi.Do
 				return err
 			}
 
-			blockInsertionResult, err := flow.Domain().Consensus().ValidateAndInsertBlock(block, false)
+			virtualChangeSet, err := flow.Domain().Consensus().ValidateAndInsertBlock(block, false)
 			if err != nil {
 				if errors.Is(err, ruleerrors.ErrDuplicateBlock) {
 					log.Debugf("Skipping IBD Block %s as it has already been added to the DAG", blockHash)
@@ -479,14 +479,36 @@ func (flow *handleRelayInvsFlow) syncMissingBlockBodies(highHash *externalapi.Do
 				}
 				return protocolerrors.ConvertToBanningProtocolErrorIfRuleError(err, "invalid block %s", blockHash)
 			}
-			err = flow.OnNewBlock(block, blockInsertionResult)
+			err = flow.OnNewBlock(block, virtualChangeSet)
 			if err != nil {
 				return err
 			}
 		}
 	}
 
-	return flow.Domain().Consensus().ResolveVirtual()
+	return flow.resolveVirtual()
+}
+
+func (flow *handleRelayInvsFlow) resolveVirtual() error {
+	for i := 0; ; i++ {
+		if i%10 == 0 {
+			log.Infof("Resolving virtual. This may take some time...")
+		}
+		virtualChangeSet, isCompletelyResolved, err := flow.Domain().Consensus().ResolveVirtual()
+		if err != nil {
+			return err
+		}
+
+		err = flow.OnVirtualChange(virtualChangeSet)
+		if err != nil {
+			return err
+		}
+
+		if isCompletelyResolved {
+			log.Infof("Resolved virtual")
+			return nil
+		}
+	}
 }
 
 // dequeueIncomingMessageAndSkipInvs is a convenience method to be used during
