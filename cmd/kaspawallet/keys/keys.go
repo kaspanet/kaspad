@@ -89,6 +89,22 @@ func (d *File) toJSON() *keysFileJSON {
 	}
 }
 
+func NewFileFromMnemonics(params *dagconfig.Params, mnemonics string, password string) (*File, error) {
+	encryptedMnemonics, extendedPublicKeys, err :=
+		encryptedMnemonicExtendedPublicKeyPairs(params, []string{mnemonics}, password, false)
+	if err != nil {
+		return nil, err
+	}
+	return &File{
+		Version:            LastVersion,
+		NumThreads:         DefaultNumThreads,
+		EncryptedMnemonics: encryptedMnemonics,
+		ExtendedPublicKeys: extendedPublicKeys,
+		MinimumSignatures:  1,
+		ECDSA:              false,
+	}, nil
+}
+
 func (d *File) fromJSON(fileJSON *keysFileJSON) error {
 	d.Version = fileJSON.Version
 	d.NumThreads = fileJSON.NumThreads
