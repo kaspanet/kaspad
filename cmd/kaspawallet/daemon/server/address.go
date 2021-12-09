@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"fmt"
+
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/daemon/pb"
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/libkaspawallet"
 	"github.com/kaspanet/kaspad/util"
@@ -23,7 +24,7 @@ func (s *server) changeAddress() (util.Address, error) {
 	walletAddr := &walletAddress{
 		index:         s.keysFile.LastUsedInternalIndex(),
 		cosignerIndex: s.keysFile.CosignerIndex,
-		keyChain:      internalKeychain,
+		keyChain:      libkaspawallet.InternalKeychain,
 	}
 	path := s.walletAddressPath(walletAddr)
 	return libkaspawallet.Address(s.params, s.keysFile.ExtendedPublicKeys, s.keysFile.MinimumSignatures, path, s.keysFile.ECDSA)
@@ -50,7 +51,7 @@ func (s *server) GetReceiveAddress(_ context.Context, request *pb.GetReceiveAddr
 	walletAddr := &walletAddress{
 		index:         s.keysFile.LastUsedExternalIndex(),
 		cosignerIndex: s.keysFile.CosignerIndex,
-		keyChain:      externalKeychain,
+		keyChain:      libkaspawallet.ExternalKeychain,
 	}
 	path := s.walletAddressPath(walletAddr)
 	address, err := libkaspawallet.Address(s.params, s.keysFile.ExtendedPublicKeys, s.keysFile.MinimumSignatures, path, s.keysFile.ECDSA)

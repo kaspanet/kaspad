@@ -6,11 +6,12 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"github.com/kaspanet/kaspad/cmd/kaspawallet/utils"
 	"os"
 	"path/filepath"
 	"runtime"
 	"strings"
+
+	"github.com/kaspanet/kaspad/cmd/kaspawallet/utils"
 
 	"github.com/kaspanet/kaspad/domain/dagconfig"
 	"github.com/kaspanet/kaspad/util"
@@ -97,7 +98,7 @@ func NewFileFromMnemonics(params *dagconfig.Params, mnemonics string, password s
 	}
 	return &File{
 		Version:            LastVersion,
-		NumThreads:         DefaultNumThreads,
+		NumThreads:         defaultNumThreads,
 		EncryptedMnemonics: encryptedMnemonics,
 		ExtendedPublicKeys: extendedPublicKeys,
 		MinimumSignatures:  1,
