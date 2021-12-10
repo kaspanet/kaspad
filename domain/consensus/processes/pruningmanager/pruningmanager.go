@@ -1051,7 +1051,19 @@ func (pm *pruningManager) ExpectedHeaderPruningPoint(stagingArea *model.StagingA
 	}
 
 	nextOrCurrentPruningPoint := selectedParentHeader.PruningPoint()
-	if pm.finalityScore(ghostdagData.BlueScore()) > pm.finalityScore(selectedParentPruningPointHeader.BlueScore()+pm.pruningDepth) {
+	pruningPoint, err := pm.pruningStore.PruningPoint(pm.databaseContext, stagingArea)
+	if err != nil {
+		return nil, err
+	}
+
+	// If the block doesn't have the pruning in its selected chain we know for sure that it can't trigger a pruning point
+	// change (we check the selected parent to take care of the case where the block is the virtual which doesn't have reachability data).
+	hasPruningPointInItsSelectedChain, err := pm.dagTopologyManager.IsInSelectedParentChainOf(stagingArea, pruningPoint, ghostdagData.SelectedParent())
+	if err != nil {
+		return nil, err
+	}
+
+	if hasPruningPointInItsSelectedChain && pm.finalityScore(ghostdagData.BlueScore()) > pm.finalityScore(selectedParentPruningPointHeader.BlueScore()+pm.pruningDepth) {
 		var suggestedLowHash *externalapi.DomainHash
 		hasReachabilityData, err := pm.reachabilityDataStore.HasReachabilityData(pm.databaseContext, stagingArea, selectedParentHeader.PruningPoint())
 		if err != nil {
