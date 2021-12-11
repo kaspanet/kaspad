@@ -26,6 +26,7 @@ func mineLoop(syncerRPCClient, syncedRPCClient *rpc.Client) error {
 		return err
 	}
 	log.Infof("Starting to mine")
+	totalTime := time.Duration(0)
 	for i := uint64(0); i < activeConfig().NumberOfBlocks; i++ {
 		log.Infof("Mining block %d...", i+1)
 		err = mineBlock(syncerRPCClient.Address(), miningAddr)
@@ -35,12 +36,14 @@ func mineLoop(syncerRPCClient, syncedRPCClient *rpc.Client) error {
 			log.Warnf("mineBlock returned an err: %s", err)
 		}
 
+		start := time.Now()
 		const timeToPropagate = 10 * time.Second
 		select {
 		case <-syncedRPCClient.OnBlockAdded:
 		case <-time.After(timeToPropagate):
 			return errors.Errorf("block %d took more than %s to propagate", i+1, timeToPropagate)
 		}
+		totalTime += time.Since(start)
 
 		syncerResult, err := syncerRPCClient.GetBlockDAGInfo()
 		if err != nil {
@@ -55,6 +58,12 @@ func mineLoop(syncerRPCClient, syncedRPCClient *rpc.Client) error {
 		if !areTipsAreEqual(syncedResult, syncerResult) {
 			return errors.Errorf("syncer node has tips %s but synced node has tips %s", syncerResult.TipHashes, syncedResult.TipHashes)
 		}
+	}
+
+	const expectedAveragePropagationTime = time.Second
+	averagePropagationTime := totalTime / time.Duration(activeConfig().NumberOfBlocks)
+	if averagePropagationTime > expectedAveragePropagationTime {
+		return errors.Errorf("average block propagation time %s is higher than expected (%s)", averagePropagationTime, expectedAveragePropagationTime)
 	}
 
 	log.Infof("Finished to mine")
