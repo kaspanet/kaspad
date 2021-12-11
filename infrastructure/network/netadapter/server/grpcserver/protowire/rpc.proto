@@ -501,11 +501,11 @@ message GetUtxosByAddressesResponseMessage {
 // GetBalanceByAddressRequest returns the total balance in unspent transactions towards a given address
 // 
 // This call is only available when this kaspad was started with `--utxoindex`
-message GetBalanceByAddressRequest {
+message GetBalanceByAddressRequestMessage {
   string address = 1;
 }
 
-message GetBalanceByAddressResponse {
+message GetBalanceByAddressResponseMessage {
   uint64 balance = 1;
 
   RPCError error = 1000;
