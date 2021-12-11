@@ -76,6 +76,8 @@
     - [StopNotifyingUtxosChangedResponseMessage](#protowire.StopNotifyingUtxosChangedResponseMessage)
     - [GetUtxosByAddressesRequestMessage](#protowire.GetUtxosByAddressesRequestMessage)
     - [GetUtxosByAddressesResponseMessage](#protowire.GetUtxosByAddressesResponseMessage)
+    - [GetBalanceByAddressRequestMessage](#protowire.GetBalanceByAddressRequestMessage)
+    - [GetBalanceByAddressResponseMessage](#protowire.GetBalanceByAddressResponseMessage)
     - [GetVirtualSelectedParentBlueScoreRequestMessage](#protowire.GetVirtualSelectedParentBlueScoreRequestMessage)
     - [GetVirtualSelectedParentBlueScoreResponseMessage](#protowire.GetVirtualSelectedParentBlueScoreResponseMessage)
     - [NotifyVirtualSelectedParentBlueScoreChangedRequestMessage](#protowire.NotifyVirtualSelectedParentBlueScoreChangedRequestMessage)
@@ -1268,6 +1270,34 @@ This call is only available when this kaspad was started with `--utxoindex`
 | entries | [UtxosByAddressesEntry](#protowire.UtxosByAddressesEntry) | repeated |  |
 | error | [RPCError](#protowire.RPCError) |  |  |
 
+
+<a name="protowire.GetBalanceByAddressRequestMessage"></a>
+
+### GetBalanceByAddressRequestMessage
+GetBalanceByAddressRequestMessage returns the total balance in unspent transactions towards a given address
+
+This call is only available when this kaspad was started with `--utxoindex`
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| address | [string](#string) | |  |
+
+
+
+
+
+
+<a name="protowire.GetUtxosByAddressesResponseMessage"></a>
+
+### GetUtxosByAddressesResponseMessage
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| balance | [uint64](#uint64) |  |  |
+| error | [RPCError](#protowire.RPCError) |  |  |
 
 
 
