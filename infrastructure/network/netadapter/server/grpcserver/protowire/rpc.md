@@ -7,6 +7,7 @@
     - [RPCError](#protowire.RPCError)
     - [RpcBlock](#protowire.RpcBlock)
     - [RpcBlockHeader](#protowire.RpcBlockHeader)
+    - [RpcBlockLevelParents](#protowire.RpcBlockLevelParents)
     - [RpcBlockVerboseData](#protowire.RpcBlockVerboseData)
     - [RpcTransaction](#protowire.RpcTransaction)
     - [RpcTransactionInput](#protowire.RpcTransactionInput)
@@ -163,13 +164,32 @@ Receivers of any ResponseMessage are expected to check whether its error field i
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | version | [uint32](#uint32) |  |  |
-| parentHashes | [string](#string) | repeated |  |
+| parents | [RpcBlockLevelParents](#protowire.RpcBlockLevelParents) | repeated |  |
 | hashMerkleRoot | [string](#string) |  |  |
 | acceptedIdMerkleRoot | [string](#string) |  |  |
 | utxoCommitment | [string](#string) |  |  |
 | timestamp | [int64](#int64) |  |  |
 | bits | [uint32](#uint32) |  |  |
 | nonce | [uint64](#uint64) |  |  |
+| daaScore | [uint64](#uint64) |  |  |
+| blueWork | [string](#string) |  |  |
+| pruningPoint | [string](#string) |  |  |
+| blueScore | [uint64](#uint64) |  |  |
+
+
+
+
+
+
+<a name="protowire.RpcBlockLevelParents"></a>
+
+### RpcBlockLevelParents
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| parentHashes | [string](#string) | repeated |  |
 
 
 
@@ -315,7 +335,7 @@ Receivers of any ResponseMessage are expected to check whether its error field i
 | ----- | ---- | ----- | ----------- |
 | transactionId | [string](#string) |  |  |
 | hash | [string](#string) |  |  |
-| size | [uint64](#uint64) |  |  |
+| mass | [uint64](#uint64) |  |  |
 | blockHash | [string](#string) |  |  |
 | blockTime | [uint64](#uint64) |  |  |
 
@@ -1271,6 +1291,10 @@ This call is only available when this kaspad was started with `--utxoindex`
 | error | [RPCError](#protowire.RPCError) |  |  |
 
 
+
+
+
+
 <a name="protowire.GetBalanceByAddressRequestMessage"></a>
 
 ### GetBalanceByAddressRequestMessage
@@ -1281,16 +1305,16 @@ This call is only available when this kaspad was started with `--utxoindex`
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| address | [string](#string) | |  |
+| address | [string](#string) |  |  |
 
 
 
 
 
 
-<a name="protowire.GetUtxosByAddressesResponseMessage"></a>
+<a name="protowire.GetBalanceByAddressResponseMessage"></a>
 
-### GetUtxosByAddressesResponseMessage
+### GetBalanceByAddressResponseMessage
 
 
 
@@ -1298,6 +1322,7 @@ This call is only available when this kaspad was started with `--utxoindex`
 | ----- | ---- | ----- | ----------- |
 | balance | [uint64](#uint64) |  |  |
 | error | [RPCError](#protowire.RPCError) |  |  |
+
 
 
 
