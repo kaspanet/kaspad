@@ -43,7 +43,7 @@ func (s *server) ShowAddresses(_ context.Context, request *pb.ShowAddressesReque
 		walletAddr := &walletAddress{
 			index:         i,
 			cosignerIndex: s.keysFile.CosignerIndex,
-			keyChain:      externalKeychain,
+			keyChain:      libkaspawallet.ExternalKeychain,
 		}
 		path := s.walletAddressPath(walletAddr)
 		address, err := libkaspawallet.Address(s.params, s.keysFile.ExtendedPublicKeys, s.keysFile.MinimumSignatures, path, s.keysFile.ECDSA)
