@@ -90,7 +90,8 @@ func (d *File) toJSON() *keysFileJSON {
 	}
 }
 
-func NewFileFromMnemonics(params *dagconfig.Params, mnemonics string, password string) (*File, error) {
+// NewFileFromMnemonic generates a new File from the given mnemonic string
+func NewFileFromMnemonic(params *dagconfig.Params, mnemonics string, password string) (*File, error) {
 	encryptedMnemonics, extendedPublicKeys, err :=
 		encryptedMnemonicExtendedPublicKeyPairs(params, []string{mnemonics}, password, false)
 	if err != nil {
