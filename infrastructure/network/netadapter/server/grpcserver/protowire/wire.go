@@ -703,14 +703,14 @@ func toRPCPayload(message appmessage.Message) (isKaspadMessage_Payload, error) {
 		}
 		return payload, nil
 	case *appmessage.GetBalanceByAddressRequest:
-		payload := new(KaspadMessage_GetBalanceByAddressRequest)
+		payload := new(KaspadMessage_GetBalanceByAddressRequestMessage)
 		err := payload.fromAppMessage(message)
 		if err != nil {
 			return nil, err
 		}
 		return payload, nil
 	case *appmessage.GetBalanceByAddressResponse:
-		payload := new(KaspadMessage_GetBalanceByAddressResponse)
+		payload := new(KaspadMessage_GetBalanceByAddressResponseMessage)
 		err := payload.fromAppMessage(message)
 		if err != nil {
 			return nil, err
