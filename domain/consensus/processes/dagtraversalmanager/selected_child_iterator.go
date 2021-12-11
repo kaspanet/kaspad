@@ -9,6 +9,7 @@ import (
 type selectedChildIterator struct {
 	dagTraversalManager model.DAGTraversalManager
 
+	includeLowHash    bool
 	highHash, lowHash *externalapi.DomainHash
 	current           *externalapi.DomainHash
 	err               error
@@ -21,6 +22,10 @@ func (s *selectedChildIterator) First() bool {
 		panic("Tried using a closed SelectedChildIterator")
 	}
 	s.current = s.lowHash
+	if s.includeLowHash {
+		return true
+	}
+
 	return s.Next()
 }
 
@@ -67,7 +72,9 @@ func (s *selectedChildIterator) Close() error {
 
 // SelectedChildIterator returns a BlockIterator that iterates from lowHash (exclusive) to highHash (inclusive) over
 // highHash's selected parent chain
-func (dtm *dagTraversalManager) SelectedChildIterator(stagingArea *model.StagingArea, highHash, lowHash *externalapi.DomainHash) (model.BlockIterator, error) {
+func (dtm *dagTraversalManager) SelectedChildIterator(stagingArea *model.StagingArea,
+	highHash, lowHash *externalapi.DomainHash, includeLowHash bool) (model.BlockIterator, error) {
+
 	isLowHashInSelectedParentChainOfHighHash, err := dtm.dagTopologyManager.IsInSelectedParentChainOf(
 		stagingArea, lowHash, highHash)
 	if err != nil {
@@ -79,6 +86,7 @@ func (dtm *dagTraversalManager) SelectedChildIterator(stagingArea *model.Staging
 	}
 	return &selectedChildIterator{
 		dagTraversalManager: dtm,
+		includeLowHash:      includeLowHash,
 		highHash:            highHash,
 		lowHash:             lowHash,
 		current:             lowHash,

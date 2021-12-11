@@ -313,7 +313,7 @@ func TestCheckLockTimeVerifyConditionedByAbsoluteTime(t *testing.T) {
 		for i := int64(0); ; i++ {
 			tipBlock, err := testConsensus.BuildBlock(&emptyCoinbase, nil)
 			if err != nil {
-				t.Fatalf("Error creating tip using BuildBlock: %v", err)
+				t.Fatalf("Error creating tip using BuildBlock: %+v", err)
 			}
 			blockHeader := tipBlock.Header.ToMutable()
 			blockHeader.SetTimeInMilliseconds(timeStampBlockE + i*1000)

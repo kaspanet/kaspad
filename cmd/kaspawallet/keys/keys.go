@@ -6,11 +6,12 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"github.com/kaspanet/kaspad/cmd/kaspawallet/utils"
 	"os"
 	"path/filepath"
 	"runtime"
 	"strings"
+
+	"github.com/kaspanet/kaspad/cmd/kaspawallet/utils"
 
 	"github.com/kaspanet/kaspad/domain/dagconfig"
 	"github.com/kaspanet/kaspad/util"
@@ -87,6 +88,23 @@ func (d *File) toJSON() *keysFileJSON {
 		LastUsedExternalIndex: d.lastUsedExternalIndex,
 		LastUsedInternalIndex: d.lastUsedInternalIndex,
 	}
+}
+
+// NewFileFromMnemonic generates a new File from the given mnemonic string
+func NewFileFromMnemonic(params *dagconfig.Params, mnemonic string, password string) (*File, error) {
+	encryptedMnemonics, extendedPublicKeys, err :=
+		encryptedMnemonicExtendedPublicKeyPairs(params, []string{mnemonic}, password, false)
+	if err != nil {
+		return nil, err
+	}
+	return &File{
+		Version:            LastVersion,
+		NumThreads:         defaultNumThreads,
+		EncryptedMnemonics: encryptedMnemonics,
+		ExtendedPublicKeys: extendedPublicKeys,
+		MinimumSignatures:  1,
+		ECDSA:              false,
+	}, nil
 }
 
 func (d *File) fromJSON(fileJSON *keysFileJSON) error {

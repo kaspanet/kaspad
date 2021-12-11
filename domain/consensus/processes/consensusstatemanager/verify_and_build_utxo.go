@@ -166,12 +166,8 @@ func (csm *consensusStateManager) validateCoinbaseTransaction(stagingArea *model
 	}
 
 	log.Tracef("Calculating the expected coinbase transaction for the given coinbase data and block %s", blockHash)
-	header, err := csm.blockHeaderStore.BlockHeader(csm.databaseContext, stagingArea, blockHash)
-	if err != nil {
-		return err
-	}
 	expectedCoinbaseTransaction, err :=
-		csm.coinbaseManager.ExpectedCoinbaseTransaction(stagingArea, blockHash, coinbaseData, header.PruningPoint())
+		csm.coinbaseManager.ExpectedCoinbaseTransaction(stagingArea, blockHash, coinbaseData)
 	if err != nil {
 		return err
 	}
