@@ -8,7 +8,7 @@ type DAGTraversalManager interface {
 	LowestChainBlockAboveOrEqualToBlueScore(stagingArea *StagingArea, highHash *externalapi.DomainHash, blueScore uint64) (*externalapi.DomainHash, error)
 	// SelectedChildIterator should return a BlockIterator that iterates
 	// from lowHash (exclusive) to highHash (inclusive) over highHash's selected parent chain
-	SelectedChildIterator(stagingArea *StagingArea, highHash, lowHash *externalapi.DomainHash) (BlockIterator, error)
+	SelectedChildIterator(stagingArea *StagingArea, highHash, lowHash *externalapi.DomainHash, includeLowHash bool) (BlockIterator, error)
 	SelectedChild(stagingArea *StagingArea, highHash, lowHash *externalapi.DomainHash) (*externalapi.DomainHash, error)
 	AnticoneFromBlocks(stagingArea *StagingArea, tips []*externalapi.DomainHash, blockHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error)
 	AnticoneFromVirtualPOV(stagingArea *StagingArea, blockHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error)
