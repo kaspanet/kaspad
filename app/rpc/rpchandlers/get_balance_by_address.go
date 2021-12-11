@@ -16,7 +16,7 @@ func HandleGetBalanceByAddress(context *rpccontext.Context, _ *router.Router, re
 		return errorMessage, nil
 	}
 
-	getBalanceByAddressRequest := request.(*appmessage.GetBalanceByAddressRequestMessage)
+	getBalanceByAddressRequest := request.(*appmessage.GetBalanceByAddressRequest)
 
 	var balance uint64 = 0
 	addressString := getBalanceByAddressRequest.Address
@@ -37,6 +37,6 @@ func HandleGetBalanceByAddress(context *rpccontext.Context, _ *router.Router, re
 		balance += utxoOutpointEntryPair.Amount()
 	}
 
-	response := appmessage.NewGetBalanceByAddressResponseMessage(balance)
+	response := appmessage.NewGetBalanceByAddressResponse(balance)
 	return response, nil
 }

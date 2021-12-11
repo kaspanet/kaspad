@@ -4236,10 +4236,10 @@ func (x *GetUtxosByAddressesResponseMessage) GetError() *RPCError {
 	return nil
 }
 
-// GetBalanceByAddressRequestMessage returns the total balance in unspent transactions towards a given address
+// GetBalanceByAddressRequest returns the total balance in unspent transactions towards a given address
 //
 // This call is only available when this kaspad was started with `--utxoindex`
-type GetBalanceByAddressRequestMessage struct {
+type GetBalanceByAddressRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
@@ -4247,8 +4247,8 @@ type GetBalanceByAddressRequestMessage struct {
 	Address string `protobuf:"bytes,1,opt,name=address,proto3" json:"address,omitempty"`
 }
 
-func (x *GetBalanceByAddressRequestMessage) Reset() {
-	*x = GetBalanceByAddressRequestMessage{}
+func (x *GetBalanceByAddressRequest) Reset() {
+	*x = GetBalanceByAddressRequest{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_rpc_proto_msgTypes[73]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -4256,13 +4256,13 @@ func (x *GetBalanceByAddressRequestMessage) Reset() {
 	}
 }
 
-func (x *GetBalanceByAddressRequestMessage) String() string {
+func (x *GetBalanceByAddressRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*GetBalanceByAddressRequestMessage) ProtoMessage() {}
+func (*GetBalanceByAddressRequest) ProtoMessage() {}
 
-func (x *GetBalanceByAddressRequestMessage) ProtoReflect() protoreflect.Message {
+func (x *GetBalanceByAddressRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_rpc_proto_msgTypes[73]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -4274,19 +4274,19 @@ func (x *GetBalanceByAddressRequestMessage) ProtoReflect() protoreflect.Message 
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use GetBalanceByAddressRequestMessage.ProtoReflect.Descriptor instead.
-func (*GetBalanceByAddressRequestMessage) Descriptor() ([]byte, []int) {
+// Deprecated: Use GetBalanceByAddressRequest.ProtoReflect.Descriptor instead.
+func (*GetBalanceByAddressRequest) Descriptor() ([]byte, []int) {
 	return file_rpc_proto_rawDescGZIP(), []int{73}
 }
 
-func (x *GetBalanceByAddressRequestMessage) GetAddress() string {
+func (x *GetBalanceByAddressRequest) GetAddress() string {
 	if x != nil {
 		return x.Address
 	}
 	return ""
 }
 
-type GetBalanceByAddressResponseMessage struct {
+type GetBalanceByAddressResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
@@ -4295,8 +4295,8 @@ type GetBalanceByAddressResponseMessage struct {
 	Error   *RPCError `protobuf:"bytes,1000,opt,name=error,proto3" json:"error,omitempty"`
 }
 
-func (x *GetBalanceByAddressResponseMessage) Reset() {
-	*x = GetBalanceByAddressResponseMessage{}
+func (x *GetBalanceByAddressResponse) Reset() {
+	*x = GetBalanceByAddressResponse{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_rpc_proto_msgTypes[74]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -4304,13 +4304,13 @@ func (x *GetBalanceByAddressResponseMessage) Reset() {
 	}
 }
 
-func (x *GetBalanceByAddressResponseMessage) String() string {
+func (x *GetBalanceByAddressResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*GetBalanceByAddressResponseMessage) ProtoMessage() {}
+func (*GetBalanceByAddressResponse) ProtoMessage() {}
 
-func (x *GetBalanceByAddressResponseMessage) ProtoReflect() protoreflect.Message {
+func (x *GetBalanceByAddressResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_rpc_proto_msgTypes[74]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -4322,19 +4322,19 @@ func (x *GetBalanceByAddressResponseMessage) ProtoReflect() protoreflect.Message
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use GetBalanceByAddressResponseMessage.ProtoReflect.Descriptor instead.
-func (*GetBalanceByAddressResponseMessage) Descriptor() ([]byte, []int) {
+// Deprecated: Use GetBalanceByAddressResponse.ProtoReflect.Descriptor instead.
+func (*GetBalanceByAddressResponse) Descriptor() ([]byte, []int) {
 	return file_rpc_proto_rawDescGZIP(), []int{74}
 }
 
-func (x *GetBalanceByAddressResponseMessage) GetBalance() uint64 {
+func (x *GetBalanceByAddressResponse) GetBalance() uint64 {
 	if x != nil {
 		return x.Balance
 	}
 	return 0
 }
 
-func (x *GetBalanceByAddressResponseMessage) GetError() *RPCError {
+func (x *GetBalanceByAddressResponse) GetError() *RPCError {
 	if x != nil {
 		return x.Error
 	}
@@ -6115,8 +6115,8 @@ var file_rpc_proto_goTypes = []interface{}{
 	(*StopNotifyingUtxosChangedResponseMessage)(nil),                   // 71: protowire.StopNotifyingUtxosChangedResponseMessage
 	(*GetUtxosByAddressesRequestMessage)(nil),                          // 72: protowire.GetUtxosByAddressesRequestMessage
 	(*GetUtxosByAddressesResponseMessage)(nil),                         // 73: protowire.GetUtxosByAddressesResponseMessage
-	(*GetBalanceByAddressRequestMessage)(nil),                          // 74: protowire.GetBalanceByAddressRequestMessage
-	(*GetBalanceByAddressResponseMessage)(nil),                         // 75: protowire.GetBalanceByAddressResponseMessage
+	(*GetBalanceByAddressRequest)(nil),                                 // 74: protowire.GetBalanceByAddressRequest
+	(*GetBalanceByAddressResponse)(nil),                                // 75: protowire.GetBalanceByAddressResponse
 	(*GetVirtualSelectedParentBlueScoreRequestMessage)(nil),            // 76: protowire.GetVirtualSelectedParentBlueScoreRequestMessage
 	(*GetVirtualSelectedParentBlueScoreResponseMessage)(nil),           // 77: protowire.GetVirtualSelectedParentBlueScoreResponseMessage
 	(*NotifyVirtualSelectedParentBlueScoreChangedRequestMessage)(nil),  // 78: protowire.NotifyVirtualSelectedParentBlueScoreChangedRequestMessage
@@ -6195,7 +6195,7 @@ var file_rpc_proto_depIdxs = []int32{
 	1,  // 52: protowire.StopNotifyingUtxosChangedResponseMessage.error:type_name -> protowire.RPCError
 	69, // 53: protowire.GetUtxosByAddressesResponseMessage.entries:type_name -> protowire.UtxosByAddressesEntry
 	1,  // 54: protowire.GetUtxosByAddressesResponseMessage.error:type_name -> protowire.RPCError
-	1,  // 55: protowire.GetBalanceByAddressResponseMessage.error:type_name -> protowire.RPCError
+	1,  // 55: protowire.GetBalanceByAddressResponse.error:type_name -> protowire.RPCError
 	1,  // 56: protowire.GetVirtualSelectedParentBlueScoreResponseMessage.error:type_name -> protowire.RPCError
 	1,  // 57: protowire.NotifyVirtualSelectedParentBlueScoreChangedResponseMessage.error:type_name -> protowire.RPCError
 	1,  // 58: protowire.NotifyVirtualDaaScoreChangedResponseMessage.error:type_name -> protowire.RPCError
@@ -7095,7 +7095,7 @@ func file_rpc_proto_init() {
 			}
 		}
 		file_rpc_proto_msgTypes[73].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*GetBalanceByAddressRequestMessage); i {
+			switch v := v.(*GetBalanceByAddressRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -7107,7 +7107,7 @@ func file_rpc_proto_init() {
 			}
 		}
 		file_rpc_proto_msgTypes[74].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*GetBalanceByAddressResponseMessage); i {
+			switch v := v.(*GetBalanceByAddressResponse); i {
 			case 0:
 				return &v.state
 			case 1:

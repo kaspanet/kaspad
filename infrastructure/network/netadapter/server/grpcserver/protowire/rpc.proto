@@ -498,14 +498,14 @@ message GetUtxosByAddressesResponseMessage {
   RPCError error = 1000;
 }
 
-// GetBalanceByAddressRequestMessage returns the total balance in unspent transactions towards a given address
+// GetBalanceByAddressRequest returns the total balance in unspent transactions towards a given address
 // 
 // This call is only available when this kaspad was started with `--utxoindex`
-message GetBalanceByAddressRequestMessage {
+message GetBalanceByAddressRequest {
   string address = 1;
 }
 
-message GetBalanceByAddressResponseMessage {
+message GetBalanceByAddressResponse {
   uint64 balance = 1;
 
   RPCError error = 1000;

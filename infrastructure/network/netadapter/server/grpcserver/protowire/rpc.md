@@ -77,8 +77,8 @@
     - [StopNotifyingUtxosChangedResponseMessage](#protowire.StopNotifyingUtxosChangedResponseMessage)
     - [GetUtxosByAddressesRequestMessage](#protowire.GetUtxosByAddressesRequestMessage)
     - [GetUtxosByAddressesResponseMessage](#protowire.GetUtxosByAddressesResponseMessage)
-    - [GetBalanceByAddressRequestMessage](#protowire.GetBalanceByAddressRequestMessage)
-    - [GetBalanceByAddressResponseMessage](#protowire.GetBalanceByAddressResponseMessage)
+    - [GetBalanceByAddressRequest](#protowire.GetBalanceByAddressRequest)
+    - [GetBalanceByAddressResponse](#protowire.GetBalanceByAddressResponse)
     - [GetVirtualSelectedParentBlueScoreRequestMessage](#protowire.GetVirtualSelectedParentBlueScoreRequestMessage)
     - [GetVirtualSelectedParentBlueScoreResponseMessage](#protowire.GetVirtualSelectedParentBlueScoreResponseMessage)
     - [NotifyVirtualSelectedParentBlueScoreChangedRequestMessage](#protowire.NotifyVirtualSelectedParentBlueScoreChangedRequestMessage)
@@ -1295,10 +1295,10 @@ This call is only available when this kaspad was started with `--utxoindex`
 
 
 
-<a name="protowire.GetBalanceByAddressRequestMessage"></a>
+<a name="protowire.GetBalanceByAddressRequest"></a>
 
-### GetBalanceByAddressRequestMessage
-GetBalanceByAddressRequestMessage returns the total balance in unspent transactions towards a given address
+### GetBalanceByAddressRequest
+GetBalanceByAddressRequest returns the total balance in unspent transactions towards a given address
 
 This call is only available when this kaspad was started with `--utxoindex`
 
@@ -1312,9 +1312,9 @@ This call is only available when this kaspad was started with `--utxoindex`
 
 
 
-<a name="protowire.GetBalanceByAddressResponseMessage"></a>
+<a name="protowire.GetBalanceByAddressResponse"></a>
 
-### GetBalanceByAddressResponseMessage
+### GetBalanceByAddressResponse
 
 
 

@@ -143,8 +143,8 @@ type KaspadMessage struct {
 	//	*KaspadMessage_NotifyVirtualDaaScoreChangedRequest
 	//	*KaspadMessage_NotifyVirtualDaaScoreChangedResponse
 	//	*KaspadMessage_VirtualDaaScoreChangedNotification
-	//	*KaspadMessage_GetBalanceByAddressRequestMessage
-	//	*KaspadMessage_GetBalanceByAddressResponseMessage
+	//	*KaspadMessage_GetBalanceByAddressRequest
+	//	*KaspadMessage_GetBalanceByAddressResponse
 	Payload isKaspadMessage_Payload `protobuf_oneof:"payload"`
 }
 
@@ -971,16 +971,16 @@ func (x *KaspadMessage) GetVirtualDaaScoreChangedNotification() *VirtualDaaScore
 	return nil
 }
 
-func (x *KaspadMessage) GetGetBalanceByAddressRequestMessage() *GetBalanceByAddressRequestMessage {
-	if x, ok := x.GetPayload().(*KaspadMessage_GetBalanceByAddressRequestMessage); ok {
-		return x.GetBalanceByAddressRequestMessage
+func (x *KaspadMessage) GetGetBalanceByAddressRequest() *GetBalanceByAddressRequest {
+	if x, ok := x.GetPayload().(*KaspadMessage_GetBalanceByAddressRequest); ok {
+		return x.GetBalanceByAddressRequest
 	}
 	return nil
 }
 
-func (x *KaspadMessage) GetGetBalanceByAddressResponseMessage() *GetBalanceByAddressResponseMessage {
-	if x, ok := x.GetPayload().(*KaspadMessage_GetBalanceByAddressResponseMessage); ok {
-		return x.GetBalanceByAddressResponseMessage
+func (x *KaspadMessage) GetGetBalanceByAddressResponse() *GetBalanceByAddressResponse {
+	if x, ok := x.GetPayload().(*KaspadMessage_GetBalanceByAddressResponse); ok {
+		return x.GetBalanceByAddressResponse
 	}
 	return nil
 }
@@ -1437,12 +1437,12 @@ type KaspadMessage_VirtualDaaScoreChangedNotification struct {
 	VirtualDaaScoreChangedNotification *VirtualDaaScoreChangedNotificationMessage `protobuf:"bytes,1076,opt,name=virtualDaaScoreChangedNotification,proto3,oneof"`
 }
 
-type KaspadMessage_GetBalanceByAddressRequestMessage struct {
-	GetBalanceByAddressRequestMessage *GetBalanceByAddressRequestMessage `protobuf:"bytes,1077,opt,name=getBalanceByAddressRequestMessage,proto3,oneof"`
+type KaspadMessage_GetBalanceByAddressRequest struct {
+	GetBalanceByAddressRequest *GetBalanceByAddressRequest `protobuf:"bytes,1077,opt,name=getBalanceByAddressRequestMessage,proto3,oneof"`
 }
 
-type KaspadMessage_GetBalanceByAddressResponseMessage struct {
-	GetBalanceByAddressResponseMessage *GetBalanceByAddressResponseMessage `protobuf:"bytes,1078,opt,name=getBalanceByAddressResponseMessage,proto3,oneof"`
+type KaspadMessage_GetBalanceByAddressResponse struct {
+	GetBalanceByAddressResponse *GetBalanceByAddressResponse `protobuf:"bytes,1078,opt,name=getBalanceByAddressResponseMessage,proto3,oneof"`
 }
 
 func (*KaspadMessage_Addresses) isKaspadMessage_Payload() {}
@@ -1669,9 +1669,9 @@ func (*KaspadMessage_NotifyVirtualDaaScoreChangedResponse) isKaspadMessage_Paylo
 
 func (*KaspadMessage_VirtualDaaScoreChangedNotification) isKaspadMessage_Payload() {}
 
-func (*KaspadMessage_GetBalanceByAddressRequestMessage) isKaspadMessage_Payload() {}
+func (*KaspadMessage_GetBalanceByAddressRequest) isKaspadMessage_Payload() {}
 
-func (*KaspadMessage_GetBalanceByAddressResponseMessage) isKaspadMessage_Payload() {}
+func (*KaspadMessage_GetBalanceByAddressResponse) isKaspadMessage_Payload() {}
 
 var File_messages_proto protoreflect.FileDescriptor
 
@@ -2589,8 +2589,8 @@ var file_messages_proto_goTypes = []interface{}{
 	(*NotifyVirtualDaaScoreChangedRequestMessage)(nil),                 // 109: protowire.NotifyVirtualDaaScoreChangedRequestMessage
 	(*NotifyVirtualDaaScoreChangedResponseMessage)(nil),                // 110: protowire.NotifyVirtualDaaScoreChangedResponseMessage
 	(*VirtualDaaScoreChangedNotificationMessage)(nil),                  // 111: protowire.VirtualDaaScoreChangedNotificationMessage
-	(*GetBalanceByAddressRequestMessage)(nil),                          // 112: protowire.GetBalanceByAddressRequestMessage
-	(*GetBalanceByAddressResponseMessage)(nil),                         // 113: protowire.GetBalanceByAddressResponseMessage
+	(*GetBalanceByAddressRequest)(nil),                                 // 112: protowire.GetBalanceByAddressRequest
+	(*GetBalanceByAddressResponse)(nil),                                // 113: protowire.GetBalanceByAddressResponse
 }
 var file_messages_proto_depIdxs = []int32{
 	1,   // 0: protowire.KaspadMessage.addresses:type_name -> protowire.AddressesMessage
@@ -2705,8 +2705,8 @@ var file_messages_proto_depIdxs = []int32{
 	109, // 109: protowire.KaspadMessage.notifyVirtualDaaScoreChangedRequest:type_name -> protowire.NotifyVirtualDaaScoreChangedRequestMessage
 	110, // 110: protowire.KaspadMessage.notifyVirtualDaaScoreChangedResponse:type_name -> protowire.NotifyVirtualDaaScoreChangedResponseMessage
 	111, // 111: protowire.KaspadMessage.virtualDaaScoreChangedNotification:type_name -> protowire.VirtualDaaScoreChangedNotificationMessage
-	112, // 112: protowire.KaspadMessage.getBalanceByAddressRequestMessage:type_name -> protowire.GetBalanceByAddressRequestMessage
-	113, // 113: protowire.KaspadMessage.getBalanceByAddressResponseMessage:type_name -> protowire.GetBalanceByAddressResponseMessage
+	112, // 112: protowire.KaspadMessage.getBalanceByAddressRequestMessage:type_name -> protowire.GetBalanceByAddressRequest
+	113, // 113: protowire.KaspadMessage.getBalanceByAddressResponseMessage:type_name -> protowire.GetBalanceByAddressResponse
 	0,   // 114: protowire.P2P.MessageStream:input_type -> protowire.KaspadMessage
 	0,   // 115: protowire.RPC.MessageStream:input_type -> protowire.KaspadMessage
 	0,   // 116: protowire.P2P.MessageStream:output_type -> protowire.KaspadMessage
@@ -2852,8 +2852,8 @@ func file_messages_proto_init() {
 		(*KaspadMessage_NotifyVirtualDaaScoreChangedRequest)(nil),
 		(*KaspadMessage_NotifyVirtualDaaScoreChangedResponse)(nil),
 		(*KaspadMessage_VirtualDaaScoreChangedNotification)(nil),
-		(*KaspadMessage_GetBalanceByAddressRequestMessage)(nil),
-		(*KaspadMessage_GetBalanceByAddressResponseMessage)(nil),
+		(*KaspadMessage_GetBalanceByAddressRequest)(nil),
+		(*KaspadMessage_GetBalanceByAddressResponse)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
