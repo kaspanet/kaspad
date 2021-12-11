@@ -307,6 +307,7 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 		config.MaxBlockParents,
 		config.TimestampDeviationTolerance,
 		config.TargetTimePerBlock,
+		config.IgnoreHeaderMass,
 
 		dbManager,
 		difficultyManager,

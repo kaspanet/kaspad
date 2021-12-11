@@ -220,7 +220,9 @@ func (v *blockValidator) validateGasLimit(block *externalapi.DomainBlock) error 
 
 func (v *blockValidator) checkBlockMass(block *externalapi.DomainBlock) error {
 	mass := uint64(0)
-	mass += v.headerEstimatedSerializedSize(block.Header)
+	if !v.ignoreHeaderMass {
+		mass += v.headerEstimatedSerializedSize(block.Header)
+	}
 
 	for _, transaction := range block.Transactions {
 		v.transactionValidator.PopulateMass(transaction)
