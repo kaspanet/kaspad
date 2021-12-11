@@ -219,7 +219,7 @@ func (pm *pruningManager) nextPruningPointAndCandidateByBlockHash(stagingArea *m
 	// We iterate until the selected parent of the given block, in order to allow a situation where the given block hash
 	// belongs to the virtual. This shouldn't change anything since the max blue score difference between a block and its
 	// selected parent is K, and K << pm.pruningDepth.
-	iterator, err := pm.dagTraversalManager.SelectedChildIterator(stagingArea, ghostdagData.SelectedParent(), lowHash)
+	iterator, err := pm.dagTraversalManager.SelectedChildIterator(stagingArea, ghostdagData.SelectedParent(), lowHash, true)
 	if err != nil {
 		return nil, nil, err
 	}
