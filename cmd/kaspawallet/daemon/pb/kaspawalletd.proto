@@ -5,7 +5,8 @@ option go_package = "github.com/kaspanet/kaspad/cmd/kaspawallet/daemon/pb";
 service kaspawalletd {
   rpc GetBalance (GetBalanceRequest) returns (GetBalanceResponse) {}
   rpc CreateUnsignedTransaction (CreateUnsignedTransactionRequest) returns (CreateUnsignedTransactionResponse) {}
-  rpc GetReceiveAddress (GetReceiveAddressRequest) returns (GetReceiveAddressResponse) {}
+  rpc ShowAddresses (ShowAddressesRequest) returns (ShowAddressesResponse) {}
+  rpc NewAddress (NewAddressRequest) returns (NewAddressResponse) {}
   rpc Shutdown (ShutdownRequest) returns (ShutdownResponse) {}
   rpc Broadcast (BroadcastRequest) returns (BroadcastResponse) {}
 }
@@ -27,10 +28,17 @@ message CreateUnsignedTransactionResponse {
   bytes unsignedTransaction = 1;
 }
 
-message GetReceiveAddressRequest {
+message ShowAddressesRequest {
 }
 
-message GetReceiveAddressResponse {
+message ShowAddressesResponse {
+  repeated string address = 1;
+}
+
+message NewAddressRequest {
+}
+
+message NewAddressResponse {
   string address = 1;
 }
 

@@ -332,11 +332,7 @@ func (d *File) numThreads(password []byte) (uint8, error) {
 		return defaultNumThreads, nil
 	}
 
-	if d.NumThreads != 0 {
-		return d.NumThreads, nil
-	}
-
-	numThreads, err := d.detectNumThreads(password, d.EncryptedMnemonics[0].salt)
+	numThreads, err := d.detectNumThreads(password, d.EncryptedMnemonics[0])
 	if err != nil {
 		return 0, err
 	}
@@ -350,30 +346,33 @@ func (d *File) numThreads(password []byte) (uint8, error) {
 	return numThreads, nil
 }
 
-func (d *File) detectNumThreads(password, salt []byte) (uint8, error) {
-	numCPU := uint8(runtime.NumCPU())
-	_, err := getAEAD(numCPU, password, salt)
+func (d *File) detectNumThreads(password []byte, encryptedMnemonic *EncryptedMnemonic) (uint8, error) {
+	firstGuessNumThreads := d.NumThreads
+	if d.NumThreads == 0 {
+		firstGuessNumThreads = uint8(runtime.NumCPU())
+	}
+	_, err := decryptMnemonic(firstGuessNumThreads, encryptedMnemonic, password)
 	if err != nil {
 		if !strings.Contains(err.Error(), "message authentication failed") {
 			return 0, err
 		}
 	} else {
-		return numCPU, nil
+		return firstGuessNumThreads, nil
 	}
 
-	for i := uint8(1); ; i++ {
-		if i == numCPU {
+	for numThreadsGuess := uint8(1); ; numThreadsGuess++ {
+		if numThreadsGuess == firstGuessNumThreads {
 			continue
 		}
 
-		_, err := getAEAD(i, password, salt)
+		_, err := decryptMnemonic(numThreadsGuess, encryptedMnemonic, password)
 		if err != nil {
 			const maxTries = 32
-			if i > maxTries || !strings.Contains(err.Error(), "message authentication failed") {
+			if numThreadsGuess == maxTries || !strings.Contains(err.Error(), "message authentication failed") {
 				return 0, err
 			}
 		} else {
-			return i, nil
+			return numThreadsGuess, nil
 		}
 	}
 }
