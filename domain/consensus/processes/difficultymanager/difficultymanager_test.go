@@ -19,12 +19,6 @@ import (
 
 func TestDifficulty(t *testing.T) {
 	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
-		// Mainnet's genesis is too new, so if we'll build on it we'll get to the future very quickly.
-		// TODO: Once it gets older, we should unskip this test.
-		if consensusConfig.Name == "kaspa-mainnet" {
-			return
-		}
-
 		if consensusConfig.DisableDifficultyAdjustment {
 			return
 		}
@@ -37,7 +31,7 @@ func TestDifficulty(t *testing.T) {
 		}
 
 		consensusConfig.K = 1
-		consensusConfig.DifficultyAdjustmentWindowSize = 265
+		consensusConfig.DifficultyAdjustmentWindowSize = 140
 
 		factory := consensus.NewFactory()
 		tc, teardown, err := factory.NewTestConsensus(consensusConfig, "TestDifficulty")
@@ -114,7 +108,7 @@ func TestDifficulty(t *testing.T) {
 					"window size, the difficulty should be the same as genesis'")
 			}
 		}
-		for i := 0; i < consensusConfig.DifficultyAdjustmentWindowSize+100; i++ {
+		for i := 0; i < consensusConfig.DifficultyAdjustmentWindowSize+10; i++ {
 			tip, tipHash = addBlock(0, tipHash)
 			if tip.Header.Bits() != consensusConfig.GenesisBlock.Header.Bits() {
 				t.Fatalf("As long as the block rate remains the same, the difficulty shouldn't change")
@@ -135,10 +129,12 @@ func TestDifficulty(t *testing.T) {
 
 		var expectedBits uint32
 		switch consensusConfig.Name {
-		case dagconfig.TestnetParams.Name, dagconfig.DevnetParams.Name:
-			expectedBits = uint32(0x1e7f83df)
+		case dagconfig.TestnetParams.Name:
+			expectedBits = uint32(0x1e7f1441)
+		case dagconfig.DevnetParams.Name:
+			expectedBits = uint32(0x207f1441)
 		case dagconfig.MainnetParams.Name:
-			expectedBits = uint32(0x1e7f83df)
+			expectedBits = uint32(0x1d02c50f)
 		}
 
 		if tip.Header.Bits() != expectedBits {
@@ -237,7 +233,7 @@ func TestDifficulty(t *testing.T) {
 
 func TestDAAScore(t *testing.T) {
 	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
-		consensusConfig.DifficultyAdjustmentWindowSize = 265
+		consensusConfig.DifficultyAdjustmentWindowSize = 86
 
 		stagingArea := model.NewStagingArea()
 
@@ -269,9 +265,9 @@ func TestDAAScore(t *testing.T) {
 			t.Fatalf("DAAScore: %+v", err)
 		}
 
-		blockBlueScore3ExpectedDAAScore := uint64(2)
+		blockBlueScore3ExpectedDAAScore := uint64(2) + consensusConfig.GenesisBlock.Header.DAAScore()
 		if blockBlueScore3DAAScore != blockBlueScore3ExpectedDAAScore {
-			t.Fatalf("DAA score is expected to be %d but got %d", blockBlueScore3ExpectedDAAScore, blockBlueScore3ExpectedDAAScore)
+			t.Fatalf("DAA score is expected to be %d but got %d", blockBlueScore3ExpectedDAAScore, blockBlueScore3DAAScore)
 		}
 		tipDAAScore := blockBlueScore3ExpectedDAAScore
 

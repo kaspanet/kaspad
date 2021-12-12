@@ -1,18 +1,19 @@
 package blockprocessor
 
 import (
+	// we need to embed the utxoset of mainnet genesis here
+	_ "embed"
 	"fmt"
-	"github.com/kaspanet/kaspad/infrastructure/db/database"
-
-	"github.com/kaspanet/kaspad/util/staging"
-
-	"github.com/kaspanet/kaspad/util/difficulty"
-
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/multiset"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/utxo"
+	"github.com/kaspanet/kaspad/infrastructure/db/database"
 	"github.com/kaspanet/kaspad/infrastructure/logger"
+	"github.com/kaspanet/kaspad/util/difficulty"
+	"github.com/kaspanet/kaspad/util/staging"
 	"github.com/pkg/errors"
 )
 
@@ -76,7 +77,7 @@ func (bp *blockProcessor) updateVirtualAcceptanceDataAfterImportingPruningPoint(
 }
 
 func (bp *blockProcessor) validateAndInsertBlock(stagingArea *model.StagingArea, block *externalapi.DomainBlock,
-	isPruningPoint bool, shouldValidateAgainstUTXO bool, isBlockWithTrustedData bool) (*externalapi.BlockInsertionResult, error) {
+	isPruningPoint bool, shouldValidateAgainstUTXO bool, isBlockWithTrustedData bool) (*externalapi.VirtualChangeSet, error) {
 
 	blockHash := consensushashing.HeaderHash(block.Header)
 	err := bp.validateBlock(stagingArea, block, isBlockWithTrustedData)
@@ -102,11 +103,33 @@ func (bp *blockProcessor) validateAndInsertBlock(stagingArea *model.StagingArea,
 		}
 	}
 
-	err = bp.headerTipsManager.AddHeaderTip(stagingArea, blockHash)
-	if err != nil {
-		return nil, err
+	shouldAddHeaderSelectedTip := false
+	if !hasHeaderSelectedTip {
+		shouldAddHeaderSelectedTip = true
+	} else {
+		pruningPoint, err := bp.pruningStore.PruningPoint(bp.databaseContext, stagingArea)
+		if err != nil {
+			return nil, err
+		}
+
+		isInSelectedChainOfPruningPoint, err := bp.dagTopologyManager.IsInSelectedParentChainOf(stagingArea, pruningPoint, blockHash)
+		if err != nil {
+			return nil, err
+		}
+
+		// Don't set blocks in the anticone of the pruning point as header selected tip.
+		shouldAddHeaderSelectedTip = isInSelectedChainOfPruningPoint
 	}
 
+	if shouldAddHeaderSelectedTip {
+		// Don't set blocks in the anticone of the pruning point as header selected tip.
+		err = bp.headerTipsManager.AddHeaderTip(stagingArea, blockHash)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	bp.loadUTXODataForGenesis(stagingArea, block)
 	var selectedParentChainChanges *externalapi.SelectedChainPath
 	var virtualUTXODiff externalapi.UTXODiff
 	var reversalData *model.UTXODiffReversalData
@@ -187,11 +210,32 @@ func (bp *blockProcessor) validateAndInsertBlock(stagingArea *model.StagingArea,
 
 	bp.blockLogger.LogBlock(block)
 
-	return &externalapi.BlockInsertionResult{
+	return &externalapi.VirtualChangeSet{
 		VirtualSelectedParentChainChanges: selectedParentChainChanges,
 		VirtualUTXODiff:                   virtualUTXODiff,
 		VirtualParents:                    virtualParents,
 	}, nil
+}
+
+func (bp *blockProcessor) loadUTXODataForGenesis(stagingArea *model.StagingArea, block *externalapi.DomainBlock) {
+	isGenesis := len(block.Header.DirectParents()) == 0
+	if !isGenesis {
+		return
+	}
+	blockHash := consensushashing.BlockHash(block)
+	// Note: The applied UTXO set and multiset do not satisfy the UTXO commitment
+	// of Mainnet's genesis. This is why any block that will be built on top of genesis
+	// will have a wrong UTXO commitment as well, and will not be able to get to a consensus
+	// with the rest of the network.
+	// This is why getting direct blocks on top of genesis is forbidden, and the only way to
+	// get a newer state for a node with genesis only is by requesting a proof for a recent
+	// pruning point.
+	// The actual UTXO set that fits Mainnet's genesis' UTXO commitment was removed from the codebase in order
+	// to make reduce the consensus initialization time and the compiled binary size, but can be still
+	// found here for anyone to verify: https://github.com/kaspanet/kaspad/blob/dbf18d8052f000ba0079be9e79b2d6f5a98b74ca/domain/consensus/processes/blockprocessor/resources/utxos.gz
+	bp.consensusStateStore.StageVirtualUTXODiff(stagingArea, utxo.NewUTXODiff())
+	bp.utxoDiffStore.Stage(stagingArea, blockHash, utxo.NewUTXODiff(), nil)
+	bp.multisetStore.Stage(stagingArea, blockHash, multiset.New())
 }
 
 func isHeaderOnlyBlock(block *externalapi.DomainBlock) bool {

@@ -70,7 +70,8 @@ func (flow *handleRequestPruningPointUTXOSetFlow) waitForRequestPruningPointUTXO
 	}
 	msgRequestPruningPointUTXOSet, ok := message.(*appmessage.MsgRequestPruningPointUTXOSet)
 	if !ok {
-		return nil, protocolerrors.Errorf(true, "received unexpected message type. "+
+		// TODO: Change to shouldBan: true once we fix the bug of getting redundant messages
+		return nil, protocolerrors.Errorf(false, "received unexpected message type. "+
 			"expected: %s, got: %s", appmessage.CmdRequestPruningPointUTXOSet, message.Command())
 	}
 	return msgRequestPruningPointUTXOSet, nil
@@ -102,14 +103,17 @@ func (flow *handleRequestPruningPointUTXOSetFlow) sendPruningPointUTXOSet(
 			return err
 		}
 
-		if len(pruningPointUTXOs) < step && chunksSent%ibdBatchSize == 0 {
+		finished := len(pruningPointUTXOs) < step
+		if finished && chunksSent%ibdBatchSize != 0 {
 			log.Debugf("Finished sending UTXOs for pruning block %s",
 				msgRequestPruningPointUTXOSet.PruningPointHash)
 
 			return flow.outgoingRoute.Enqueue(appmessage.NewMsgDonePruningPointUTXOSetChunks())
 		}
 
-		fromOutpoint = pruningPointUTXOs[len(pruningPointUTXOs)-1].Outpoint
+		if len(pruningPointUTXOs) > 0 {
+			fromOutpoint = pruningPointUTXOs[len(pruningPointUTXOs)-1].Outpoint
+		}
 		chunksSent++
 
 		// Wait for the peer to request more chunks every `ibdBatchSize` chunks
@@ -120,8 +124,16 @@ func (flow *handleRequestPruningPointUTXOSetFlow) sendPruningPointUTXOSet(
 			}
 			_, ok := message.(*appmessage.MsgRequestNextPruningPointUTXOSetChunk)
 			if !ok {
-				return protocolerrors.Errorf(true, "received unexpected message type. "+
+				// TODO: Change to shouldBan: true once we fix the bug of getting redundant messages
+				return protocolerrors.Errorf(false, "received unexpected message type. "+
 					"expected: %s, got: %s", appmessage.CmdRequestNextPruningPointUTXOSetChunk, message.Command())
+			}
+
+			if finished {
+				log.Debugf("Finished sending UTXOs for pruning block %s",
+					msgRequestPruningPointUTXOSet.PruningPointHash)
+
+				return flow.outgoingRoute.Enqueue(appmessage.NewMsgDonePruningPointUTXOSetChunks())
 			}
 		}
 	}

@@ -18,7 +18,7 @@ import (
 // relays newly unorphaned transactions and possibly rebroadcast
 // manually added transactions when not in IBD.
 func (f *FlowContext) OnNewBlock(block *externalapi.DomainBlock,
-	blockInsertionResult *externalapi.BlockInsertionResult) error {
+	virtualChangeSet *externalapi.VirtualChangeSet) error {
 
 	hash := consensushashing.BlockHash(block)
 	log.Debugf("OnNewBlock start for block %s", hash)
@@ -32,10 +32,10 @@ func (f *FlowContext) OnNewBlock(block *externalapi.DomainBlock,
 	log.Debugf("OnNewBlock: block %s unorphaned %d blocks", hash, len(unorphaningResults))
 
 	newBlocks := []*externalapi.DomainBlock{block}
-	newBlockInsertionResults := []*externalapi.BlockInsertionResult{blockInsertionResult}
+	newVirtualChangeSets := []*externalapi.VirtualChangeSet{virtualChangeSet}
 	for _, unorphaningResult := range unorphaningResults {
 		newBlocks = append(newBlocks, unorphaningResult.block)
-		newBlockInsertionResults = append(newBlockInsertionResults, unorphaningResult.blockInsertionResult)
+		newVirtualChangeSets = append(newVirtualChangeSets, unorphaningResult.virtualChangeSet)
 	}
 
 	allAcceptedTransactions := make([]*externalapi.DomainTransaction, 0)
@@ -49,8 +49,8 @@ func (f *FlowContext) OnNewBlock(block *externalapi.DomainBlock,
 
 		if f.onBlockAddedToDAGHandler != nil {
 			log.Debugf("OnNewBlock: calling f.onBlockAddedToDAGHandler for block %s", hash)
-			blockInsertionResult = newBlockInsertionResults[i]
-			err := f.onBlockAddedToDAGHandler(newBlock, blockInsertionResult)
+			virtualChangeSet = newVirtualChangeSets[i]
+			err := f.onBlockAddedToDAGHandler(newBlock, virtualChangeSet)
 			if err != nil {
 				return err
 			}
@@ -58,6 +58,15 @@ func (f *FlowContext) OnNewBlock(block *externalapi.DomainBlock,
 	}
 
 	return f.broadcastTransactionsAfterBlockAdded(newBlocks, allAcceptedTransactions)
+}
+
+// OnVirtualChange calls the handler function whenever the virtual block changes.
+func (f *FlowContext) OnVirtualChange(virtualChangeSet *externalapi.VirtualChangeSet) error {
+	if f.onVirtualChangeHandler != nil && virtualChangeSet != nil {
+		return f.onVirtualChangeHandler(virtualChangeSet)
+	}
+
+	return nil
 }
 
 // OnPruningPointUTXOSetOverride calls the handler function whenever the UTXO set
@@ -110,14 +119,14 @@ func (f *FlowContext) AddBlock(block *externalapi.DomainBlock) error {
 		return protocolerrors.Errorf(false, "cannot add header only block")
 	}
 
-	blockInsertionResult, err := f.Domain().Consensus().ValidateAndInsertBlock(block, true)
+	virtualChangeSet, err := f.Domain().Consensus().ValidateAndInsertBlock(block, true)
 	if err != nil {
 		if errors.As(err, &ruleerrors.RuleError{}) {
 			log.Warnf("Validation failed for block %s: %s", consensushashing.BlockHash(block), err)
 		}
 		return err
 	}
-	err = f.OnNewBlock(block, blockInsertionResult)
+	err = f.OnNewBlock(block, virtualChangeSet)
 	if err != nil {
 		return err
 	}

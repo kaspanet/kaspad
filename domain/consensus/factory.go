@@ -4,6 +4,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/daawindowstore"
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/processes/blockparentbuilder"
+	parentssanager "github.com/kaspanet/kaspad/domain/consensus/processes/parentsmanager"
 	"github.com/kaspanet/kaspad/domain/consensus/processes/pruningproofmanager"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
 	"io/ioutil"
@@ -158,12 +159,16 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 	dagTraversalManager := dagTraversalManagers[0]
 
 	// Processes
+	parentsManager := parentssanager.New(config.GenesisHash)
 	blockParentBuilder := blockparentbuilder.New(
 		dbManager,
 		blockHeaderStore,
 		dagTopologyManager,
+		parentsManager,
 		reachabilityDataStore,
 		pruningStore,
+
+		config.GenesisHash,
 	)
 	pastMedianTimeManager := f.pastMedianTimeConsructor(
 		config.TimestampDeviationTolerance,
@@ -302,6 +307,7 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 		config.MaxBlockParents,
 		config.TimestampDeviationTolerance,
 		config.TargetTimePerBlock,
+		config.IgnoreHeaderMass,
 
 		dbManager,
 		difficultyManager,
@@ -316,6 +322,7 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 		finalityManager,
 		blockParentBuilder,
 		pruningManager,
+		parentsManager,
 
 		pruningStore,
 		blockStore,
@@ -403,6 +410,7 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 		ghostdagManagers,
 		reachabilityManagers,
 		dagTraversalManagers,
+		parentsManager,
 
 		ghostdagDataStores,
 		pruningStore,
@@ -581,7 +589,7 @@ func dagStores(config *Config,
 			ghostdagDataStores[i] = ghostdagdatastore.New(prefixBucket, ghostdagDataCacheSize, preallocateCaches)
 		} else {
 			blockRelationStores[i] = blockrelationstore.New(prefixBucket, 200, false)
-			reachabilityDataStores[i] = reachabilitydatastore.New(prefixBucket, 200, false)
+			reachabilityDataStores[i] = reachabilitydatastore.New(prefixBucket, pruningWindowSizePlusFinalityDepthForCache, false)
 			ghostdagDataStores[i] = ghostdagdatastore.New(prefixBucket, 200, false)
 		}
 	}

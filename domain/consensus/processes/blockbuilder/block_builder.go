@@ -107,7 +107,7 @@ func (bb *blockBuilder) buildBlock(stagingArea *model.StagingArea, coinbaseData 
 	if err != nil {
 		return nil, err
 	}
-	coinbase, err := bb.newBlockCoinbaseTransaction(stagingArea, coinbaseData, newBlockPruningPoint)
+	coinbase, err := bb.newBlockCoinbaseTransaction(stagingArea, coinbaseData)
 	if err != nil {
 		return nil, err
 	}
@@ -175,18 +175,24 @@ func (bb *blockBuilder) validateTransaction(
 }
 
 func (bb *blockBuilder) newBlockCoinbaseTransaction(stagingArea *model.StagingArea,
-	coinbaseData *externalapi.DomainCoinbaseData, blockPruningPoint *externalapi.DomainHash) (*externalapi.DomainTransaction, error) {
+	coinbaseData *externalapi.DomainCoinbaseData) (*externalapi.DomainTransaction, error) {
 
-	return bb.coinbaseManager.ExpectedCoinbaseTransaction(stagingArea, model.VirtualBlockHash, coinbaseData, blockPruningPoint)
+	return bb.coinbaseManager.ExpectedCoinbaseTransaction(stagingArea, model.VirtualBlockHash, coinbaseData)
 }
 
 func (bb *blockBuilder) buildHeader(stagingArea *model.StagingArea, transactions []*externalapi.DomainTransaction,
 	newBlockPruningPoint *externalapi.DomainHash) (externalapi.BlockHeader, error) {
 
-	parents, err := bb.newBlockParents(stagingArea)
+	daaScore, err := bb.newBlockDAAScore(stagingArea)
 	if err != nil {
 		return nil, err
 	}
+
+	parents, err := bb.newBlockParents(stagingArea, daaScore)
+	if err != nil {
+		return nil, err
+	}
+
 	timeInMilliseconds, err := bb.newBlockTime(stagingArea)
 	if err != nil {
 		return nil, err
@@ -201,10 +207,6 @@ func (bb *blockBuilder) buildHeader(stagingArea *model.StagingArea, transactions
 		return nil, err
 	}
 	utxoCommitment, err := bb.newBlockUTXOCommitment(stagingArea)
-	if err != nil {
-		return nil, err
-	}
-	daaScore, err := bb.newBlockDAAScore(stagingArea)
 	if err != nil {
 		return nil, err
 	}
@@ -233,12 +235,12 @@ func (bb *blockBuilder) buildHeader(stagingArea *model.StagingArea, transactions
 	), nil
 }
 
-func (bb *blockBuilder) newBlockParents(stagingArea *model.StagingArea) ([]externalapi.BlockLevelParents, error) {
+func (bb *blockBuilder) newBlockParents(stagingArea *model.StagingArea, daaScore uint64) ([]externalapi.BlockLevelParents, error) {
 	virtualBlockRelations, err := bb.blockRelationStore.BlockRelation(bb.databaseContext, stagingArea, model.VirtualBlockHash)
 	if err != nil {
 		return nil, err
 	}
-	return bb.blockParentBuilder.BuildParents(stagingArea, virtualBlockRelations.Parents)
+	return bb.blockParentBuilder.BuildParents(stagingArea, daaScore, virtualBlockRelations.Parents)
 }
 
 func (bb *blockBuilder) newBlockTime(stagingArea *model.StagingArea) (int64, error) {

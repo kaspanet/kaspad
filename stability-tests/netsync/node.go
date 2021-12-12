@@ -38,6 +38,7 @@ func startNode(name string, rpcAddress, listen, connect, profilePort, dataDir st
 		"--listen", listen,
 		"--profile", profilePort,
 		"--loglevel", "debug",
+		"--allow-submit-block-when-not-synced",
 	}
 	if connect != "" {
 		args = append(args, "--connect", connect)

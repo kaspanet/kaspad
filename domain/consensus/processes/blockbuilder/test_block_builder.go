@@ -83,7 +83,7 @@ func (bb *testBlockBuilder) buildUTXOInvalidHeader(stagingArea *model.StagingAre
 		return nil, err
 	}
 
-	parents, err := bb.blockParentBuilder.BuildParents(stagingArea, parentHashes)
+	parents, err := bb.blockParentBuilder.BuildParents(stagingArea, daaScore, parentHashes)
 	if err != nil {
 		return nil, err
 	}
@@ -200,11 +200,7 @@ func (bb *testBlockBuilder) buildBlockWithParents(stagingArea *model.StagingArea
 
 	bb.acceptanceDataStore.Stage(stagingArea, tempBlockHash, acceptanceData)
 
-	pruningPoint, err := bb.newBlockPruningPoint(stagingArea, tempBlockHash)
-	if err != nil {
-		return nil, nil, err
-	}
-	coinbase, err := bb.coinbaseManager.ExpectedCoinbaseTransaction(stagingArea, tempBlockHash, coinbaseData, pruningPoint)
+	coinbase, err := bb.coinbaseManager.ExpectedCoinbaseTransaction(stagingArea, tempBlockHash, coinbaseData)
 	if err != nil {
 		return nil, nil, err
 	}

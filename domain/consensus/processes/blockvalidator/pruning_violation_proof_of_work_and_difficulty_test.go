@@ -101,10 +101,13 @@ func TestPOW(t *testing.T) {
 			t.Fatal(err)
 		}
 		random := rand.New(rand.NewSource(0))
-		mining.SolveBlock(validBlock, random)
-		_, err = tc.ValidateAndInsertBlock(validBlock, true)
-		if err != nil {
-			t.Fatal(err)
+		// Difficulty is too high on mainnet to actually mine.
+		if consensusConfig.Name != "kaspa-mainnet" {
+			mining.SolveBlock(validBlock, random)
+			_, err = tc.ValidateAndInsertBlock(validBlock, true)
+			if err != nil {
+				t.Fatal(err)
+			}
 		}
 	})
 }
@@ -296,7 +299,7 @@ func TestCheckPruningPointViolation(t *testing.T) {
 func TestValidateDifficulty(t *testing.T) {
 	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
 		factory := consensus.NewFactory()
-		mocDifficulty := &mocDifficultyManager{}
+		mocDifficulty := &mocDifficultyManager{genesisDaaScore: consensusConfig.GenesisBlock.Header.DAAScore()}
 		factory.SetTestDifficultyManager(func(_ model.DBReader, _ model.GHOSTDAGManager, _ model.GHOSTDAGDataStore,
 			_ model.BlockHeaderStore, daaBlocksStore model.DAABlocksStore, _ model.DAGTopologyManager,
 			_ model.DAGTraversalManager, _ *big.Int, _ int, _ bool, _ time.Duration,
@@ -342,6 +345,7 @@ type mocDifficultyManager struct {
 	testDifficulty  uint32
 	testGenesisBits uint32
 	daaBlocksStore  model.DAABlocksStore
+	genesisDaaScore uint64
 }
 
 // RequiredDifficulty returns the difficulty required for the test
@@ -352,7 +356,7 @@ func (dm *mocDifficultyManager) RequiredDifficulty(*model.StagingArea, *external
 // StageDAADataAndReturnRequiredDifficulty returns the difficulty required for the test
 func (dm *mocDifficultyManager) StageDAADataAndReturnRequiredDifficulty(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash, isBlockWithTrustedData bool) (uint32, error) {
 	// Populate daaBlocksStore with fake values
-	dm.daaBlocksStore.StageDAAScore(stagingArea, blockHash, 0)
+	dm.daaBlocksStore.StageDAAScore(stagingArea, blockHash, dm.genesisDaaScore)
 	dm.daaBlocksStore.StageBlockDAAAddedBlocks(stagingArea, blockHash, nil)
 
 	return dm.testDifficulty, nil

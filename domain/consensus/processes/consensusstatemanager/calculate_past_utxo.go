@@ -2,7 +2,6 @@ package consensusstatemanager
 
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/multiset"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/utxo"
 	"github.com/kaspanet/kaspad/infrastructure/logger"
 	"github.com/pkg/errors"
@@ -23,8 +22,16 @@ func (csm *consensusStateManager) CalculatePastUTXOAndAcceptanceData(stagingArea
 
 	if blockHash.Equal(csm.genesisHash) {
 		log.Debugf("Block %s is the genesis. By definition, "+
-			"it has an empty UTXO diff, empty acceptance data, and a blank multiset", blockHash)
-		return utxo.NewUTXODiff(), externalapi.AcceptanceData{}, multiset.New(), nil
+			"it has a predefined UTXO diff, empty acceptance data, and a predefined multiset", blockHash)
+		multiset, err := csm.multisetStore.Get(csm.databaseContext, stagingArea, blockHash)
+		if err != nil {
+			return nil, nil, nil, err
+		}
+		utxoDiff, err := csm.utxoDiffStore.UTXODiff(csm.databaseContext, stagingArea, blockHash)
+		if err != nil {
+			return nil, nil, nil, err
+		}
+		return utxoDiff, externalapi.AcceptanceData{}, multiset, nil
 	}
 
 	blockGHOSTDAGData, err := csm.ghostdagDataStore.Get(csm.databaseContext, stagingArea, blockHash, false)

@@ -49,7 +49,7 @@ func TestCheckLockTimeVerifyConditionedByDAAScore(t *testing.T) {
 		}
 		fees := uint64(1)
 		//Create a CLTV script:
-		targetDAAScore := uint64(30)
+		targetDAAScore := consensusConfig.GenesisBlock.Header.DAAScore() + uint64(30)
 		redeemScriptCLTV, err := createScriptCLTV(targetDAAScore)
 		if err != nil {
 			t.Fatalf("Failed to create a script using createScriptCLTV: %v", err)
@@ -156,7 +156,7 @@ func TestCheckLockTimeVerifyConditionedByDAAScoreWithWrongLockTime(t *testing.T)
 		}
 		fees := uint64(1)
 		//Create a CLTV script:
-		targetDAAScore := uint64(30)
+		targetDAAScore := consensusConfig.GenesisBlock.Header.DAAScore() + uint64(30)
 		redeemScriptCLTV, err := createScriptCLTV(targetDAAScore)
 		if err != nil {
 			t.Fatalf("Failed to create a script using createScriptCLTV: %v", err)
@@ -313,7 +313,7 @@ func TestCheckLockTimeVerifyConditionedByAbsoluteTime(t *testing.T) {
 		for i := int64(0); ; i++ {
 			tipBlock, err := testConsensus.BuildBlock(&emptyCoinbase, nil)
 			if err != nil {
-				t.Fatalf("Error creating tip using BuildBlock: %v", err)
+				t.Fatalf("Error creating tip using BuildBlock: %+v", err)
 			}
 			blockHeader := tipBlock.Header.ToMutable()
 			blockHeader.SetTimeInMilliseconds(timeStampBlockE + i*1000)

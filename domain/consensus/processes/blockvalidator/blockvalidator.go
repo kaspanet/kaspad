@@ -22,6 +22,7 @@ type blockValidator struct {
 	maxBlockParents             externalapi.KType
 	timestampDeviationTolerance int
 	targetTimePerBlock          time.Duration
+	ignoreHeaderMass            bool
 
 	databaseContext       model.DBReader
 	difficultyManager     model.DifficultyManager
@@ -37,6 +38,7 @@ type blockValidator struct {
 	finalityManager       model.FinalityManager
 	blockParentBuilder    model.BlockParentBuilder
 	pruningManager        model.PruningManager
+	parentsManager        model.ParentsManager
 
 	blockStore          model.BlockStore
 	ghostdagDataStores  []model.GHOSTDAGDataStore
@@ -57,6 +59,7 @@ func New(powMax *big.Int,
 	maxBlockParents externalapi.KType,
 	timestampDeviationTolerance int,
 	targetTimePerBlock time.Duration,
+	ignoreHeaderMass bool,
 
 	databaseContext model.DBReader,
 
@@ -72,6 +75,7 @@ func New(powMax *big.Int,
 	finalityManager model.FinalityManager,
 	blockParentBuilder model.BlockParentBuilder,
 	pruningManager model.PruningManager,
+	parentsManager model.ParentsManager,
 
 	pruningStore model.PruningStore,
 	blockStore model.BlockStore,
@@ -92,6 +96,7 @@ func New(powMax *big.Int,
 		maxBlockMass:               maxBlockMass,
 		mergeSetSizeLimit:          mergeSetSizeLimit,
 		maxBlockParents:            maxBlockParents,
+		ignoreHeaderMass:           ignoreHeaderMass,
 
 		timestampDeviationTolerance: timestampDeviationTolerance,
 		targetTimePerBlock:          targetTimePerBlock,
@@ -108,6 +113,7 @@ func New(powMax *big.Int,
 		finalityManager:             finalityManager,
 		blockParentBuilder:          blockParentBuilder,
 		pruningManager:              pruningManager,
+		parentsManager:              parentsManager,
 
 		pruningStore:        pruningStore,
 		blockStore:          blockStore,

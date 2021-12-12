@@ -44,6 +44,7 @@ func startNodes() (teardown func(), err error) {
 		"--rpclisten", syncerRPCAddress,
 		"--listen", syncerListen,
 		"--loglevel", "debug",
+		"--allow-submit-block-when-not-synced",
 	)
 	if err != nil {
 		return nil, err

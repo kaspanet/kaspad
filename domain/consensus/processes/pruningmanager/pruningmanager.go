@@ -219,7 +219,7 @@ func (pm *pruningManager) nextPruningPointAndCandidateByBlockHash(stagingArea *m
 	// We iterate until the selected parent of the given block, in order to allow a situation where the given block hash
 	// belongs to the virtual. This shouldn't change anything since the max blue score difference between a block and its
 	// selected parent is K, and K << pm.pruningDepth.
-	iterator, err := pm.dagTraversalManager.SelectedChildIterator(stagingArea, ghostdagData.SelectedParent(), lowHash)
+	iterator, err := pm.dagTraversalManager.SelectedChildIterator(stagingArea, ghostdagData.SelectedParent(), lowHash, true)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -675,7 +675,19 @@ func (pm *pruningManager) calculateDiffBetweenPreviousAndCurrentPruningPoints(st
 	onEnd := logger.LogAndMeasureExecutionTime(log, "pruningManager.calculateDiffBetweenPreviousAndCurrentPruningPoints")
 	defer onEnd()
 	if currentPruningHash.Equal(pm.genesisHash) {
-		return utxo.NewUTXODiff(), nil
+		iter, err := pm.consensusStateManager.RestorePastUTXOSetIterator(stagingArea, currentPruningHash)
+		if err != nil {
+			return nil, err
+		}
+		set := make(map[externalapi.DomainOutpoint]externalapi.UTXOEntry)
+		for ok := iter.First(); ok; ok = iter.Next() {
+			outpoint, entry, err := iter.Get()
+			if err != nil {
+				return nil, err
+			}
+			set[*outpoint] = entry
+		}
+		return utxo.NewUTXODiffFromCollections(utxo.NewUTXOCollection(set), utxo.NewUTXOCollection(make(map[externalapi.DomainOutpoint]externalapi.UTXOEntry)))
 	}
 
 	pruningPointIndex, err := pm.pruningStore.CurrentPruningPointIndex(pm.databaseContext, stagingArea)
@@ -907,8 +919,8 @@ func (pm *pruningManager) PruneAllBlocksBelow(stagingArea *model.StagingArea, pr
 	return nil
 }
 
-func (pm *pruningManager) PruningPointAndItsAnticoneWithTrustedData() ([]*externalapi.BlockWithTrustedData, error) {
-	onEnd := logger.LogAndMeasureExecutionTime(log, "PruningPointAndItsAnticoneWithTrustedData")
+func (pm *pruningManager) PruningPointAndItsAnticone() ([]*externalapi.DomainHash, error) {
+	onEnd := logger.LogAndMeasureExecutionTime(log, "PruningPointAndItsAnticone")
 	defer onEnd()
 
 	stagingArea := model.NewStagingArea()
@@ -922,34 +934,32 @@ func (pm *pruningManager) PruningPointAndItsAnticoneWithTrustedData() ([]*extern
 		return nil, err
 	}
 
-	blocks := make([]*externalapi.BlockWithTrustedData, 0, len(pruningPointAnticone)+1)
-
-	pruningPointWithTrustedData, err := pm.blockWithTrustedData(stagingArea, pruningPoint)
-	if err != nil {
-		return nil, err
-	}
-
-	for _, blockHash := range pruningPointAnticone {
-		blockWithTrustedData, err := pm.blockWithTrustedData(stagingArea, blockHash)
+	// Sorting the blocks in topological order
+	var sortErr error
+	sort.Slice(pruningPointAnticone, func(i, j int) bool {
+		headerI, err := pm.blockHeaderStore.BlockHeader(pm.databaseContext, stagingArea, pruningPointAnticone[i])
 		if err != nil {
-			return nil, err
+			sortErr = err
+			return false
 		}
 
-		blocks = append(blocks, blockWithTrustedData)
+		headerJ, err := pm.blockHeaderStore.BlockHeader(pm.databaseContext, stagingArea, pruningPointAnticone[j])
+		if err != nil {
+			sortErr = err
+			return false
+		}
+
+		return headerI.BlueWork().Cmp(headerJ.BlueWork()) < 0
+	})
+	if sortErr != nil {
+		return nil, sortErr
 	}
 
-	// Sorting the blocks in topological order
-	sort.Slice(blocks, func(i, j int) bool {
-		return blocks[i].Block.Header.BlueWork().Cmp(blocks[j].Block.Header.BlueWork()) < 0
-	})
-
 	// The pruning point should always come first
-	blocks = append([]*externalapi.BlockWithTrustedData{pruningPointWithTrustedData}, blocks...)
-
-	return blocks, nil
+	return append([]*externalapi.DomainHash{pruningPoint}, pruningPointAnticone...), nil
 }
 
-func (pm *pruningManager) blockWithTrustedData(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) (*externalapi.BlockWithTrustedData, error) {
+func (pm *pruningManager) BlockWithTrustedData(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) (*externalapi.BlockWithTrustedData, error) {
 	block, err := pm.blocksStore.Block(pm.databaseContext, stagingArea, blockHash)
 	if err != nil {
 		return nil, err
@@ -1041,7 +1051,19 @@ func (pm *pruningManager) ExpectedHeaderPruningPoint(stagingArea *model.StagingA
 	}
 
 	nextOrCurrentPruningPoint := selectedParentHeader.PruningPoint()
-	if pm.finalityScore(ghostdagData.BlueScore()) > pm.finalityScore(selectedParentPruningPointHeader.BlueScore()+pm.pruningDepth) {
+	pruningPoint, err := pm.pruningStore.PruningPoint(pm.databaseContext, stagingArea)
+	if err != nil {
+		return nil, err
+	}
+
+	// If the block doesn't have the pruning in its selected chain we know for sure that it can't trigger a pruning point
+	// change (we check the selected parent to take care of the case where the block is the virtual which doesn't have reachability data).
+	hasPruningPointInItsSelectedChain, err := pm.dagTopologyManager.IsInSelectedParentChainOf(stagingArea, pruningPoint, ghostdagData.SelectedParent())
+	if err != nil {
+		return nil, err
+	}
+
+	if hasPruningPointInItsSelectedChain && pm.finalityScore(ghostdagData.BlueScore()) > pm.finalityScore(selectedParentPruningPointHeader.BlueScore()+pm.pruningDepth) {
 		var suggestedLowHash *externalapi.DomainHash
 		hasReachabilityData, err := pm.reachabilityDataStore.HasReachabilityData(pm.databaseContext, stagingArea, selectedParentHeader.PruningPoint())
 		if err != nil {

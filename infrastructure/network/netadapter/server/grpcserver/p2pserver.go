@@ -18,7 +18,7 @@ type p2pServer struct {
 	gRPCServer
 }
 
-const p2pMaxMessageSize = 100 * 1024 * 1024 // 100MB
+const p2pMaxMessageSize = 1024 * 1024 * 1024 // 1GB
 
 // p2pMaxInboundConnections is the max amount of inbound connections for the P2P server.
 // Note that inbound connections are not limited by the gRPC server. (A value of 0 means
@@ -45,7 +45,7 @@ func (p *p2pServer) MessageStream(stream protowire.P2P_MessageStreamServer) erro
 func (p *p2pServer) Connect(address string) (server.Connection, error) {
 	log.Debugf("%s Dialing to %s", p.name, address)
 
-	const dialTimeout = 30 * time.Second
+	const dialTimeout = 1 * time.Second
 	ctx, cancel := context.WithTimeout(context.Background(), dialTimeout)
 	defer cancel()
 

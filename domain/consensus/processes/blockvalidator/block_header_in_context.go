@@ -6,7 +6,6 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/pow"
 	"github.com/kaspanet/kaspad/infrastructure/logger"
 	"github.com/pkg/errors"
 )
@@ -63,7 +62,7 @@ func (v *blockValidator) ValidateHeaderInContext(stagingArea *model.StagingArea,
 		return err
 	}
 	if !hasReachabilityData {
-		blockLevel := pow.BlockLevel(header)
+		blockLevel := header.BlockLevel()
 		for i := 0; i <= blockLevel; i++ {
 			err = v.reachabilityManagers[i].AddBlock(stagingArea, blockHash)
 			if err != nil {
@@ -195,7 +194,7 @@ func (v *blockValidator) checkMergeSizeLimit(stagingArea *model.StagingArea, has
 }
 
 func (v *blockValidator) checkIndirectParents(stagingArea *model.StagingArea, header externalapi.BlockHeader) error {
-	expectedParents, err := v.blockParentBuilder.BuildParents(stagingArea, header.DirectParents())
+	expectedParents, err := v.blockParentBuilder.BuildParents(stagingArea, header.DAAScore(), header.DirectParents())
 	if err != nil {
 		return err
 	}

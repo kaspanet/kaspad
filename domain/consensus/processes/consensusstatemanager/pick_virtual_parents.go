@@ -59,7 +59,8 @@ func (csm *consensusStateManager) pickVirtualParents(stagingArea *model.StagingA
 	selectedVirtualParents := []*externalapi.DomainHash{virtualSelectedParent}
 	mergeSetSize := uint64(1) // starts counting from 1 because selectedParent is already in the mergeSet
 
-	for len(candidates) > 0 && uint64(len(selectedVirtualParents)) < uint64(csm.maxBlockParents) {
+	// First condition implies that no point in searching since limit was already reached
+	for mergeSetSize < csm.mergeSetSizeLimit && len(candidates) > 0 && uint64(len(selectedVirtualParents)) < uint64(csm.maxBlockParents) {
 		candidate := candidates[0]
 		candidates = candidates[1:]
 

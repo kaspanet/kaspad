@@ -16,8 +16,8 @@ import (
 
 func TestFinality(t *testing.T) {
 	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
-		// Set finalityInterval to 50 blocks, so that test runs quickly
-		consensusConfig.FinalityDuration = 50 * consensusConfig.TargetTimePerBlock
+		// Set finalityInterval to 20 blocks, so that test runs quickly
+		consensusConfig.FinalityDuration = 20 * consensusConfig.TargetTimePerBlock
 
 		factory := consensus.NewFactory()
 		consensus, teardown, err := factory.NewTestConsensus(consensusConfig, "TestFinality")
@@ -180,7 +180,8 @@ func TestFinality(t *testing.T) {
 func TestBoundedMergeDepth(t *testing.T) {
 	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
 		// Set finalityInterval to 50 blocks, so that test runs quickly
-		consensusConfig.FinalityDuration = 50 * consensusConfig.TargetTimePerBlock
+		consensusConfig.K = 5
+		consensusConfig.FinalityDuration = 7 * consensusConfig.TargetTimePerBlock
 		finalityInterval := int(consensusConfig.FinalityDepth())
 
 		if int(consensusConfig.K) >= finalityInterval {

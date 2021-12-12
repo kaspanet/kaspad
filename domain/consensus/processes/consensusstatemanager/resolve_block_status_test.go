@@ -285,7 +285,7 @@ func TestTransactionAcceptance(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Error getting blockF: %+v", err)
 		}
-		updatedDAAScoreVirtualBlock := 26
+		updatedDAAScoreVirtualBlock := consensusConfig.GenesisBlock.Header.DAAScore() + 26
 		//We expect the second transaction in the "blue block" (blueChildOfRedBlock) to be accepted because the merge set is ordered topologically
 		//and the red block is ordered topologically before the "blue block" so the input is known in the UTXOSet.
 		expectedAcceptanceData := externalapi.AcceptanceData{

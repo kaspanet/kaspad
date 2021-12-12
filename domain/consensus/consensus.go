@@ -56,7 +56,7 @@ type consensus struct {
 	daaBlocksStore            model.DAABlocksStore
 }
 
-func (s *consensus) ValidateAndInsertBlockWithTrustedData(block *externalapi.BlockWithTrustedData, validateUTXO bool) (*externalapi.BlockInsertionResult, error) {
+func (s *consensus) ValidateAndInsertBlockWithTrustedData(block *externalapi.BlockWithTrustedData, validateUTXO bool) (*externalapi.VirtualChangeSet, error) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
@@ -137,11 +137,18 @@ func (s *consensus) Init(skipAddingGenesis bool) error {
 	return nil
 }
 
-func (s *consensus) PruningPointAndItsAnticoneWithTrustedData() ([]*externalapi.BlockWithTrustedData, error) {
+func (s *consensus) PruningPointAndItsAnticone() ([]*externalapi.DomainHash, error) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	return s.pruningManager.PruningPointAndItsAnticoneWithTrustedData()
+	return s.pruningManager.PruningPointAndItsAnticone()
+}
+
+func (s *consensus) BlockWithTrustedData(blockHash *externalapi.DomainHash) (*externalapi.BlockWithTrustedData, error) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	return s.pruningManager.BlockWithTrustedData(model.NewStagingArea(), blockHash)
 }
 
 // BuildBlock builds a block over the current state, with the transactions
@@ -157,7 +164,7 @@ func (s *consensus) BuildBlock(coinbaseData *externalapi.DomainCoinbaseData,
 
 // ValidateAndInsertBlock validates the given block and, if valid, applies it
 // to the current state
-func (s *consensus) ValidateAndInsertBlock(block *externalapi.DomainBlock, shouldValidateAgainstUTXO bool) (*externalapi.BlockInsertionResult, error) {
+func (s *consensus) ValidateAndInsertBlock(block *externalapi.DomainBlock, shouldValidateAgainstUTXO bool) (*externalapi.VirtualChangeSet, error) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
@@ -713,26 +720,13 @@ func (s *consensus) PopulateMass(transaction *externalapi.DomainTransaction) {
 	s.transactionValidator.PopulateMass(transaction)
 }
 
-func (s *consensus) ResolveVirtual() error {
+func (s *consensus) ResolveVirtual() (*externalapi.VirtualChangeSet, bool, error) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
 	// In order to prevent a situation that the consensus lock is held for too much time, we
 	// release the lock each time resolve 100 blocks.
-	for {
-		var isCompletelyResolved bool
-		var err error
-		func() {
-			s.lock.Lock()
-			defer s.lock.Unlock()
-
-			isCompletelyResolved, err = s.consensusStateManager.ResolveVirtual(100)
-		}()
-		if err != nil {
-			return err
-		}
-
-		if isCompletelyResolved {
-			return nil
-		}
-	}
+	return s.consensusStateManager.ResolveVirtual(100)
 }
 
 func (s *consensus) BuildPruningPointProof() (*externalapi.PruningPointProof, error) {
