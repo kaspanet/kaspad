@@ -56,7 +56,7 @@ type consensus struct {
 	daaBlocksStore            model.DAABlocksStore
 }
 
-func (s *consensus) ValidateAndInsertBlockWithTrustedData(block *externalapi.BlockWithTrustedData, validateUTXO bool) (*externalapi.BlockInsertionResult, error) {
+func (s *consensus) ValidateAndInsertBlockWithTrustedData(block *externalapi.BlockWithTrustedData, validateUTXO bool) (*externalapi.VirtualChangeSet, error) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
@@ -164,7 +164,7 @@ func (s *consensus) BuildBlock(coinbaseData *externalapi.DomainCoinbaseData,
 
 // ValidateAndInsertBlock validates the given block and, if valid, applies it
 // to the current state
-func (s *consensus) ValidateAndInsertBlock(block *externalapi.DomainBlock, shouldValidateAgainstUTXO bool) (*externalapi.BlockInsertionResult, error) {
+func (s *consensus) ValidateAndInsertBlock(block *externalapi.DomainBlock, shouldValidateAgainstUTXO bool) (*externalapi.VirtualChangeSet, error) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
@@ -720,30 +720,13 @@ func (s *consensus) PopulateMass(transaction *externalapi.DomainTransaction) {
 	s.transactionValidator.PopulateMass(transaction)
 }
 
-func (s *consensus) ResolveVirtual() error {
+func (s *consensus) ResolveVirtual() (*externalapi.VirtualChangeSet, bool, error) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
 	// In order to prevent a situation that the consensus lock is held for too much time, we
 	// release the lock each time resolve 100 blocks.
-	for i := 0; ; i++ {
-		if i%10 == 0 {
-			log.Infof("Resolving virtual. This may take some time...")
-		}
-		var isCompletelyResolved bool
-		var err error
-		func() {
-			s.lock.Lock()
-			defer s.lock.Unlock()
-
-			isCompletelyResolved, err = s.consensusStateManager.ResolveVirtual(100)
-		}()
-		if err != nil {
-			return err
-		}
-
-		if isCompletelyResolved {
-			log.Infof("Resolved virtual")
-			return nil
-		}
-	}
+	return s.consensusStateManager.ResolveVirtual(100)
 }
 
 func (s *consensus) BuildPruningPointProof() (*externalapi.PruningPointProof, error) {

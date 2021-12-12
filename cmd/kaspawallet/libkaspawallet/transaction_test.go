@@ -163,7 +163,7 @@ func TestMultisig(t *testing.T) {
 				t.Fatalf("Expected extractedSignedTxOneStep and extractedSignedTxStep2 IDs to be equal")
 			}
 
-			_, insertionResult, err := tc.AddBlock([]*externalapi.DomainHash{block1Hash}, nil, []*externalapi.DomainTransaction{extractedSignedTxStep2})
+			_, virtualChangeSet, err := tc.AddBlock([]*externalapi.DomainHash{block1Hash}, nil, []*externalapi.DomainTransaction{extractedSignedTxStep2})
 			if err != nil {
 				t.Fatalf("AddBlock: %+v", err)
 			}
@@ -172,7 +172,7 @@ func TestMultisig(t *testing.T) {
 				TransactionID: *consensushashing.TransactionID(extractedSignedTxStep2),
 				Index:         0,
 			}
-			if !insertionResult.VirtualUTXODiff.ToAdd().Contains(addedUTXO) {
+			if !virtualChangeSet.VirtualUTXODiff.ToAdd().Contains(addedUTXO) {
 				t.Fatalf("Transaction wasn't accepted in the DAG")
 			}
 		})
@@ -294,7 +294,7 @@ func TestP2PK(t *testing.T) {
 				t.Fatalf("ExtractTransaction: %+v", err)
 			}
 
-			_, insertionResult, err := tc.AddBlock([]*externalapi.DomainHash{block1Hash}, nil, []*externalapi.DomainTransaction{tx})
+			_, virtualChangeSet, err := tc.AddBlock([]*externalapi.DomainHash{block1Hash}, nil, []*externalapi.DomainTransaction{tx})
 			if err != nil {
 				t.Fatalf("AddBlock: %+v", err)
 			}
@@ -303,7 +303,7 @@ func TestP2PK(t *testing.T) {
 				TransactionID: *consensushashing.TransactionID(tx),
 				Index:         0,
 			}
-			if !insertionResult.VirtualUTXODiff.ToAdd().Contains(addedUTXO) {
+			if !virtualChangeSet.VirtualUTXODiff.ToAdd().Contains(addedUTXO) {
 				t.Fatalf("Transaction wasn't accepted in the DAG")
 			}
 		})

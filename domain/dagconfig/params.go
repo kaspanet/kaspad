@@ -186,6 +186,10 @@ type Params struct {
 	FixedSubsidySwitchPruningPointInterval uint64
 
 	FixedSubsidySwitchHashRateThreshold *big.Int
+
+	DisallowDirectBlocksOnTopOfGenesis bool
+
+	IgnoreHeaderMass bool
 }
 
 // NormalizeRPCServerAddress returns addr with the current network default
@@ -272,16 +276,17 @@ var MainnetParams = Params{
 	PruningProofM:                           defaultPruningProofM,
 	FixedSubsidySwitchPruningPointInterval:  defaultFixedSubsidySwitchPruningPointInterval,
 	FixedSubsidySwitchHashRateThreshold:     big.NewInt(150_000_000_000),
+	DisallowDirectBlocksOnTopOfGenesis:      true,
 }
 
 // TestnetParams defines the network parameters for the test Kaspa network.
 var TestnetParams = Params{
 	K:           defaultGHOSTDAGK,
-	Name:        "kaspa-testnet-6",
+	Name:        "kaspa-testnet-7",
 	Net:         appmessage.Testnet,
 	RPCPort:     "16210",
 	DefaultPort: "16211",
-	DNSSeeds:    []string{"testnet-6-dnsseed.daglabs-dev.com"},
+	DNSSeeds:    []string{"testnet-7-dnsseed.daglabs-dev.com"},
 
 	// DAG parameters
 	GenesisBlock:                    &testnetGenesisBlock,
@@ -334,6 +339,7 @@ var TestnetParams = Params{
 	PruningProofM:                           defaultPruningProofM,
 	FixedSubsidySwitchPruningPointInterval:  defaultFixedSubsidySwitchPruningPointInterval,
 	FixedSubsidySwitchHashRateThreshold:     big.NewInt(150_000_000_000),
+	IgnoreHeaderMass:                        true,
 }
 
 // SimnetParams defines the network parameters for the simulation test Kaspa
@@ -462,6 +468,7 @@ var DevnetParams = Params{
 	PruningProofM:                           defaultPruningProofM,
 	FixedSubsidySwitchPruningPointInterval:  defaultFixedSubsidySwitchPruningPointInterval,
 	FixedSubsidySwitchHashRateThreshold:     big.NewInt(150_000_000_000),
+	IgnoreHeaderMass:                        true,
 }
 
 var (

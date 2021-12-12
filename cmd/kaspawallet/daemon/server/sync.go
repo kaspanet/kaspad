@@ -1,20 +1,16 @@
 package server
 
 import (
+	"time"
+
+	"github.com/kaspanet/kaspad/cmd/kaspawallet/libkaspawallet"
+
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/pkg/errors"
-	"time"
 )
 
-const (
-	// externalKeychain is the key chain that is used to create receive addresses
-	externalKeychain = 0
-	// internalKeychain is used to create change addresses
-	internalKeychain = 1
-)
-
-var keyChains = []uint8{externalKeychain, internalKeychain}
+var keyChains = []uint8{libkaspawallet.ExternalKeychain, libkaspawallet.InternalKeychain}
 
 type walletAddressSet map[string]*walletAddress
 
@@ -180,7 +176,7 @@ func (s *server) updateLastUsedIndexes(addressSet walletAddressSet,
 			continue
 		}
 
-		if walletAddress.keyChain == externalKeychain {
+		if walletAddress.keyChain == libkaspawallet.ExternalKeychain {
 			if walletAddress.index > lastUsedExternalIndex {
 				lastUsedExternalIndex = walletAddress.index
 			}

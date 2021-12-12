@@ -307,6 +307,7 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 		config.MaxBlockParents,
 		config.TimestampDeviationTolerance,
 		config.TargetTimePerBlock,
+		config.IgnoreHeaderMass,
 
 		dbManager,
 		difficultyManager,
@@ -588,7 +589,7 @@ func dagStores(config *Config,
 			ghostdagDataStores[i] = ghostdagdatastore.New(prefixBucket, ghostdagDataCacheSize, preallocateCaches)
 		} else {
 			blockRelationStores[i] = blockrelationstore.New(prefixBucket, 200, false)
-			reachabilityDataStores[i] = reachabilitydatastore.New(prefixBucket, 86400, false)
+			reachabilityDataStores[i] = reachabilitydatastore.New(prefixBucket, pruningWindowSizePlusFinalityDepthForCache, false)
 			ghostdagDataStores[i] = ghostdagdatastore.New(prefixBucket, 200, false)
 		}
 	}

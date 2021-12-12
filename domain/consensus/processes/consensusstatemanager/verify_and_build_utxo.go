@@ -117,6 +117,10 @@ func (csm *consensusStateManager) validateUTXOCommitment(
 	log.Tracef("validateUTXOCommitment start for block %s", blockHash)
 	defer log.Tracef("validateUTXOCommitment end for block %s", blockHash)
 
+	if blockHash.Equal(csm.genesisHash) {
+		return nil
+	}
+
 	multisetHash := multiset.Hash()
 	if !block.Header.UTXOCommitment().Equal(multisetHash) {
 		return errors.Wrapf(ruleerrors.ErrBadUTXOCommitment, "block %s UTXO commitment is invalid - block "+
@@ -162,12 +166,8 @@ func (csm *consensusStateManager) validateCoinbaseTransaction(stagingArea *model
 	}
 
 	log.Tracef("Calculating the expected coinbase transaction for the given coinbase data and block %s", blockHash)
-	header, err := csm.blockHeaderStore.BlockHeader(csm.databaseContext, stagingArea, blockHash)
-	if err != nil {
-		return err
-	}
 	expectedCoinbaseTransaction, err :=
-		csm.coinbaseManager.ExpectedCoinbaseTransaction(stagingArea, blockHash, coinbaseData, header.PruningPoint())
+		csm.coinbaseManager.ExpectedCoinbaseTransaction(stagingArea, blockHash, coinbaseData)
 	if err != nil {
 		return err
 	}
