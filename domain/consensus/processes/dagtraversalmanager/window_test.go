@@ -205,32 +205,32 @@ func TestBlockWindow(t *testing.T) {
 			{
 				parents:        []string{"H", "F"},
 				id:             "I",
-				expectedWindow: []string{"F", "D", "H", "C", "B", "G"},
+				expectedWindow: []string{"F", "D", "H", "C", "G", "B"},
 			},
 			{
 				parents:        []string{"I"},
 				id:             "J",
-				expectedWindow: []string{"I", "F", "D", "H", "C", "B", "G"},
+				expectedWindow: []string{"I", "F", "D", "H", "C", "G", "B"},
 			},
 			{
 				parents:        []string{"J"},
 				id:             "K",
-				expectedWindow: []string{"J", "I", "F", "D", "H", "C", "B", "G"},
+				expectedWindow: []string{"J", "I", "F", "D", "H", "C", "G", "B"},
 			},
 			{
 				parents:        []string{"K"},
 				id:             "L",
-				expectedWindow: []string{"K", "J", "I", "F", "D", "H", "C", "B", "G"},
+				expectedWindow: []string{"K", "J", "I", "F", "D", "H", "C", "G", "B"},
 			},
 			{
 				parents:        []string{"L"},
 				id:             "M",
-				expectedWindow: []string{"L", "K", "J", "I", "F", "D", "H", "C", "B", "G"},
+				expectedWindow: []string{"L", "K", "J", "I", "F", "D", "H", "C", "G", "B"},
 			},
 			{
 				parents:        []string{"M"},
 				id:             "N",
-				expectedWindow: []string{"M", "L", "K", "J", "I", "F", "D", "H", "C", "B"},
+				expectedWindow: []string{"M", "L", "K", "J", "I", "F", "D", "H", "C", "G"},
 			},
 			{
 				parents:        []string{"N"},

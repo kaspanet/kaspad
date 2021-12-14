@@ -21,9 +21,8 @@ type blockProcessor struct {
 	pruningManager        model.PruningManager
 	blockValidator        model.BlockValidator
 	dagTopologyManager    model.DAGTopologyManager
-	reachabilityManager   model.ReachabilityManager
+	reachabilityManagers  []model.ReachabilityManager
 	difficultyManager     model.DifficultyManager
-	ghostdagManager       model.GHOSTDAGManager
 	pastMedianTimeManager model.PastMedianTimeManager
 	coinbaseManager       model.CoinbaseManager
 	headerTipsManager     model.HeadersSelectedTipManager
@@ -59,10 +58,9 @@ func New(
 	pruningManager model.PruningManager,
 	blockValidator model.BlockValidator,
 	dagTopologyManager model.DAGTopologyManager,
-	reachabilityManager model.ReachabilityManager,
+	reachabilityManagers []model.ReachabilityManager,
 	difficultyManager model.DifficultyManager,
 	pastMedianTimeManager model.PastMedianTimeManager,
-	ghostdagManager model.GHOSTDAGManager,
 	coinbaseManager model.CoinbaseManager,
 	headerTipsManager model.HeadersSelectedTipManager,
 	syncManager model.SyncManager,
@@ -93,10 +91,9 @@ func New(
 		pruningManager:        pruningManager,
 		blockValidator:        blockValidator,
 		dagTopologyManager:    dagTopologyManager,
-		reachabilityManager:   reachabilityManager,
+		reachabilityManagers:  reachabilityManagers,
 		difficultyManager:     difficultyManager,
 		pastMedianTimeManager: pastMedianTimeManager,
-		ghostdagManager:       ghostdagManager,
 		coinbaseManager:       coinbaseManager,
 		headerTipsManager:     headerTipsManager,
 		syncManager:           syncManager,
