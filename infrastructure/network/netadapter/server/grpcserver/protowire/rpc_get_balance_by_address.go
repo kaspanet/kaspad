@@ -5,21 +5,21 @@ import (
 	"github.com/pkg/errors"
 )
 
-func (x *KaspadMessage_GetBalanceByAddressRequest) toAppMessage() (appmessage.Message, error) {
+func (x *KaspadMessage_GetBalanceByAddressRequestMessage) toAppMessage() (appmessage.Message, error) {
 	if x == nil {
 		return nil, errors.Wrapf(errorNil, "KaspadMessage_GetBalanceByAddressRequest is nil")
 	}
-	return x.GetBalanceByAddressRequest.toAppMessage()
+	return x.GetBalanceByAddressRequestMessage.toAppMessage()
 }
 
-func (x *KaspadMessage_GetBalanceByAddressRequest) fromAppMessage(message *appmessage.GetBalanceByAddressRequestMessage) error {
-	x.GetBalanceByAddressRequest = &GetBalanceByAddressRequest{
+func (x *KaspadMessage_GetBalanceByAddressRequestMessage) fromAppMessage(message *appmessage.GetBalanceByAddressRequestMessage) error {
+	x.GetBalanceByAddressRequestMessage = &GetBalanceByAddressRequestMessage{
 		Address: message.Address,
 	}
 	return nil
 }
 
-func (x *GetBalanceByAddressRequest) toAppMessage() (appmessage.Message, error) {
+func (x *GetBalanceByAddressRequestMessage) toAppMessage() (appmessage.Message, error) {
 	if x == nil {
 		return nil, errors.Wrapf(errorNil, "GetBalanceByAddressRequest is nil")
 	}
@@ -28,19 +28,19 @@ func (x *GetBalanceByAddressRequest) toAppMessage() (appmessage.Message, error) 
 	}, nil
 }
 
-func (x *KaspadMessage_GetBalanceByAddressResponse) toAppMessage() (appmessage.Message, error) {
+func (x *KaspadMessage_GetBalanceByAddressResponseMessage) toAppMessage() (appmessage.Message, error) {
 	if x == nil {
 		return nil, errors.Wrapf(errorNil, "GetBalanceByAddressResponse is nil")
 	}
-	return x.GetBalanceByAddressResponse.toAppMessage()
+	return x.GetBalanceByAddressResponseMessage.toAppMessage()
 }
 
-func (x *KaspadMessage_GetBalanceByAddressResponse) fromAppMessage(message *appmessage.GetBalanceByAddressResponseMessage) error {
+func (x *KaspadMessage_GetBalanceByAddressResponseMessage) fromAppMessage(message *appmessage.GetBalanceByAddressResponseMessage) error {
 	var err *RPCError
 	if message.Error != nil {
 		err = &RPCError{Message: message.Error.Message}
 	}
-	x.GetBalanceByAddressResponse = &GetBalanceByAddressResponse{
+	x.GetBalanceByAddressResponseMessage = &GetBalanceByAddressResponseMessage{
 		Balance: message.Balance,
 
 		Error: err,
@@ -48,7 +48,7 @@ func (x *KaspadMessage_GetBalanceByAddressResponse) fromAppMessage(message *appm
 	return nil
 }
 
-func (x *GetBalanceByAddressResponse) toAppMessage() (appmessage.Message, error) {
+func (x *GetBalanceByAddressResponseMessage) toAppMessage() (appmessage.Message, error) {
 	if x == nil {
 		return nil, errors.Wrapf(errorNil, "GetBalanceByAddressResponse is nil")
 	}

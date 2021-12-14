@@ -17,8 +17,8 @@ const maxOrphans = 600
 
 // UnorphaningResult is the result of unorphaning a block
 type UnorphaningResult struct {
-	block                *externalapi.DomainBlock
-	blockInsertionResult *externalapi.BlockInsertionResult
+	block            *externalapi.DomainBlock
+	virtualChangeSet *externalapi.VirtualChangeSet
 }
 
 // AddOrphan adds the block to the orphan set
@@ -90,14 +90,14 @@ func (f *FlowContext) UnorphanBlocks(rootBlock *externalapi.DomainBlock) ([]*Uno
 			}
 		}
 		if canBeUnorphaned {
-			blockInsertionResult, unorphaningSucceeded, err := f.unorphanBlock(orphanHash)
+			virtualChangeSet, unorphaningSucceeded, err := f.unorphanBlock(orphanHash)
 			if err != nil {
 				return nil, err
 			}
 			if unorphaningSucceeded {
 				unorphaningResults = append(unorphaningResults, &UnorphaningResult{
-					block:                orphanBlock,
-					blockInsertionResult: blockInsertionResult,
+					block:            orphanBlock,
+					virtualChangeSet: virtualChangeSet,
 				})
 				processQueue = f.addChildOrphansToProcessQueue(&orphanHash, processQueue)
 			}
@@ -143,14 +143,14 @@ func (f *FlowContext) findChildOrphansOfBlock(blockHash *externalapi.DomainHash)
 	return childOrphans
 }
 
-func (f *FlowContext) unorphanBlock(orphanHash externalapi.DomainHash) (*externalapi.BlockInsertionResult, bool, error) {
+func (f *FlowContext) unorphanBlock(orphanHash externalapi.DomainHash) (*externalapi.VirtualChangeSet, bool, error) {
 	orphanBlock, ok := f.orphans[orphanHash]
 	if !ok {
 		return nil, false, errors.Errorf("attempted to unorphan a non-orphan block %s", orphanHash)
 	}
 	delete(f.orphans, orphanHash)
 
-	blockInsertionResult, err := f.domain.Consensus().ValidateAndInsertBlock(orphanBlock, true)
+	virtualChangeSet, err := f.domain.Consensus().ValidateAndInsertBlock(orphanBlock, true)
 	if err != nil {
 		if errors.As(err, &ruleerrors.RuleError{}) {
 			log.Warnf("Validation failed for orphan block %s: %s", orphanHash, err)
@@ -160,7 +160,7 @@ func (f *FlowContext) unorphanBlock(orphanHash externalapi.DomainHash) (*externa
 	}
 
 	log.Infof("Unorphaned block %s", orphanHash)
-	return blockInsertionResult, true, nil
+	return virtualChangeSet, true, nil
 }
 
 // GetOrphanRoots returns the roots of the missing ancestors DAG of the given orphan

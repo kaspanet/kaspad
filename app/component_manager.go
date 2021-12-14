@@ -152,6 +152,7 @@ func setupRPC(
 		utxoIndex,
 		shutDownChan,
 	)
+	protocolManager.SetOnVirtualChange(rpcManager.NotifyVirtualChange)
 	protocolManager.SetOnBlockAddedToDAGHandler(rpcManager.NotifyBlockAddedToDAG)
 	protocolManager.SetOnPruningPointUTXOSetOverrideHandler(rpcManager.NotifyPruningPointUTXOSetOverride)
 
