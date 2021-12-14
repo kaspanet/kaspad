@@ -12,7 +12,7 @@ func (x *KaspadMessage_GetBalanceByAddressRequest) toAppMessage() (appmessage.Me
 	return x.GetBalanceByAddressRequest.toAppMessage()
 }
 
-func (x *KaspadMessage_GetBalanceByAddressRequest) fromAppMessage(message *appmessage.GetBalanceByAddressRequest) error {
+func (x *KaspadMessage_GetBalanceByAddressRequest) fromAppMessage(message *appmessage.GetBalanceByAddressRequestMessage) error {
 	x.GetBalanceByAddressRequest = &GetBalanceByAddressRequest{
 		Address: message.Address,
 	}
@@ -23,7 +23,7 @@ func (x *GetBalanceByAddressRequest) toAppMessage() (appmessage.Message, error) 
 	if x == nil {
 		return nil, errors.Wrapf(errorNil, "GetBalanceByAddressRequest is nil")
 	}
-	return &appmessage.GetBalanceByAddressRequest{
+	return &appmessage.GetBalanceByAddressRequestMessage{
 		Address: x.Address,
 	}, nil
 }
@@ -35,7 +35,7 @@ func (x *KaspadMessage_GetBalanceByAddressResponse) toAppMessage() (appmessage.M
 	return x.GetBalanceByAddressResponse.toAppMessage()
 }
 
-func (x *KaspadMessage_GetBalanceByAddressResponse) fromAppMessage(message *appmessage.GetBalanceByAddressResponse) error {
+func (x *KaspadMessage_GetBalanceByAddressResponse) fromAppMessage(message *appmessage.GetBalanceByAddressResponseMessage) error {
 	var err *RPCError
 	if message.Error != nil {
 		err = &RPCError{Message: message.Error.Message}
@@ -62,7 +62,7 @@ func (x *GetBalanceByAddressResponse) toAppMessage() (appmessage.Message, error)
 		return nil, errors.New("GetBalanceByAddressResponse contains both an error and a response")
 	}
 
-	return &appmessage.GetBalanceByAddressResponse{
+	return &appmessage.GetBalanceByAddressResponseMessage{
 		Balance: x.Balance,
 		Error:   rpcErr,
 	}, nil

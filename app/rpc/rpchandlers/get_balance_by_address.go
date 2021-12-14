@@ -16,12 +16,17 @@ func HandleGetBalanceByAddress(context *rpccontext.Context, _ *router.Router, re
 		return errorMessage, nil
 	}
 
-	getBalanceByAddressRequest := request.(*appmessage.GetBalanceByAddressRequest)
+	getBalanceByAddressRequest := request.(*appmessage.GetBalanceByAddressRequestMessage)
 
 	var balance uint64 = 0
 	addressString := getBalanceByAddressRequest.Address
 
 	address, err := util.DecodeAddress(addressString, context.Config.ActiveNetParams.Prefix)
+	if err != nil {
+		errorMessage := &appmessage.GetUTXOsByAddressesResponseMessage{}
+		errorMessage.Error = appmessage.RPCErrorf("Could decode address '%s': %s", addressString, err)
+		return errorMessage, nil
+	}
 
 	scriptPublicKey, err := txscript.PayToAddrScript(address)
 	if err != nil {

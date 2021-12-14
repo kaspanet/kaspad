@@ -2,26 +2,26 @@ package appmessage
 
 // GetBalanceByAddressRequest is an appmessage corresponding to
 // its respective RPC message
-type GetBalanceByAddressRequest struct {
+type GetBalanceByAddressRequestMessage struct {
 	baseMessage
 	Address string
 }
 
 // Command returns the protocol command string for the message
-func (msg *GetBalanceByAddressRequest) Command() MessageCommand {
-	return CmdGetBalanceByAddressRequest
+func (msg *GetBalanceByAddressRequestMessage) Command() MessageCommand {
+	return CmdGetBalanceByAddressRequestMessage
 }
 
 // NewGetBalanceByAddressRequest returns a instance of the message
-func NewGetBalanceByAddressRequest(address string) *GetBalanceByAddressRequest {
-	return &GetBalanceByAddressRequest{
+func NewGetBalanceByAddressRequest(address string) *GetBalanceByAddressRequestMessage {
+	return &GetBalanceByAddressRequestMessage{
 		Address: address,
 	}
 }
 
 // GetBalanceByAddressResponse is an appmessage corresponding to
 // its respective RPC message
-type GetBalanceByAddressResponse struct {
+type GetBalanceByAddressResponseMessage struct {
 	baseMessage
 	Balance uint64
 
@@ -29,13 +29,13 @@ type GetBalanceByAddressResponse struct {
 }
 
 // Command returns the protocol command string for the message
-func (msg *GetBalanceByAddressResponse) Command() MessageCommand {
-	return CmdGetBalanceByAddressResponse
+func (msg *GetBalanceByAddressResponseMessage) Command() MessageCommand {
+	return CmdGetBalanceByAddressResponseMessage
 }
 
-// NewGetBalanceByAddressResponse returns a instance of the message
-func NewGetBalanceByAddressResponse(Balance uint64) *GetBalanceByAddressResponse {
-	return &GetBalanceByAddressResponse{
+// NewGetBalanceByAddressResponse returns an instance of the message
+func NewGetBalanceByAddressResponse(Balance uint64) *GetBalanceByAddressResponseMessage {
+	return &GetBalanceByAddressResponseMessage{
 		Balance: Balance,
 	}
 }
