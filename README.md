@@ -1,16 +1,13 @@
 
 Kaspad
 ====
-Warning: This is pre-alpha software. There's no guarantee anything works.
-====
 
 [![ISC License](http://img.shields.io/badge/license-ISC-blue.svg)](https://choosealicense.com/licenses/isc/)
 [![GoDoc](https://img.shields.io/badge/godoc-reference-blue.svg)](http://godoc.org/github.com/kaspanet/kaspad)
 
 Kaspad is the reference full node Kaspa implementation written in Go (golang).
 
-This project is currently under active development and is in a pre-Alpha state.
-Some things still don't work and APIs are far from finalized. The code is provided for reference only.
+This project is currently under active development and is in Beta state.
 
 ## What is kaspa
 
