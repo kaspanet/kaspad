@@ -8,7 +8,7 @@ import (
 	"github.com/kaspanet/kaspad/util"
 )
 
-// HandleBalanceByAddress handles the respectively named RPC command
+// HandleGetBalanceByAddress handles the respectively named RPC command
 func HandleGetBalanceByAddress(context *rpccontext.Context, _ *router.Router, request appmessage.Message) (appmessage.Message, error) {
 	if !context.Config.UTXOIndex {
 		errorMessage := &appmessage.GetUTXOsByAddressesResponseMessage{}
