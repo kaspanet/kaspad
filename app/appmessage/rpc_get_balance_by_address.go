@@ -1,6 +1,6 @@
 package appmessage
 
-// GetBalanceByAddressRequest is an appmessage corresponding to
+// GetBalanceByAddressRequestMessage is an appmessage corresponding to
 // its respective RPC message
 type GetBalanceByAddressRequestMessage struct {
 	baseMessage
@@ -19,7 +19,7 @@ func NewGetBalanceByAddressRequest(address string) *GetBalanceByAddressRequestMe
 	}
 }
 
-// GetBalanceByAddressResponse is an appmessage corresponding to
+// GetBalanceByAddressResponseMessage is an appmessage corresponding to
 // its respective RPC message
 type GetBalanceByAddressResponseMessage struct {
 	baseMessage
