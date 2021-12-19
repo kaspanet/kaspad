@@ -11,7 +11,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/kaspanet/kaspad/app/appmessage"
-	"github.com/kaspanet/kaspad/app/protocol/flows/blockrelay"
+	"github.com/kaspanet/kaspad/app/protocol/flows/v3/blockrelay"
 )
 
 // OnNewBlock updates the mempool after a new block arrival, and

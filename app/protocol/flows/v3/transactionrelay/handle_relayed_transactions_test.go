@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/kaspanet/kaspad/app/protocol/flows/transactionrelay"
+	"github.com/kaspanet/kaspad/app/protocol/flows/v3/transactionrelay"
 	"github.com/kaspanet/kaspad/app/protocol/protocolerrors"
 	"github.com/kaspanet/kaspad/domain"
 	"github.com/kaspanet/kaspad/domain/consensus"

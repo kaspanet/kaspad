@@ -10,8 +10,8 @@ import (
 
 	"github.com/kaspanet/kaspad/domain"
 
-	"github.com/kaspanet/kaspad/app/protocol/flows/blockrelay"
-	"github.com/kaspanet/kaspad/app/protocol/flows/transactionrelay"
+	"github.com/kaspanet/kaspad/app/protocol/flows/v3/blockrelay"
+	"github.com/kaspanet/kaspad/app/protocol/flows/v3/transactionrelay"
 	peerpkg "github.com/kaspanet/kaspad/app/protocol/peer"
 	"github.com/kaspanet/kaspad/infrastructure/config"
 	"github.com/kaspanet/kaspad/infrastructure/network/addressmanager"

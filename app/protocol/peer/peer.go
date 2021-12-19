@@ -76,6 +76,11 @@ func (p *Peer) AdvertisedProtocolVersion() uint32 {
 	return p.advertisedProtocolVerion
 }
 
+// ProtocolVersion returns the protocol version which is used when communicating with the peer.
+func (p *Peer) ProtocolVersion() uint32 {
+	return p.protocolVersion
+}
+
 // TimeConnected returns the time since the connection to this been has been started.
 func (p *Peer) TimeConnected() time.Duration {
 	return time.Since(p.connectionStarted)

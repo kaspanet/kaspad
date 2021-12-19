@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/kaspanet/kaspad/app/appmessage"
-	"github.com/kaspanet/kaspad/app/protocol/flows/transactionrelay"
+	"github.com/kaspanet/kaspad/app/protocol/flows/v3/transactionrelay"
 	"github.com/kaspanet/kaspad/domain"
 	"github.com/kaspanet/kaspad/domain/consensus"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
