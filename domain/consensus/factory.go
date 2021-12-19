@@ -153,7 +153,6 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 	reachabilityDataStore := reachabilityDataStores[0]
 	ghostdagDataStore := ghostdagDataStores[0]
 
-	reachabilityManager := reachabilityManagers[0]
 	dagTopologyManager := dagTopologyManagers[0]
 	ghostdagManager := ghostdagManagers[0]
 	dagTraversalManager := dagTraversalManagers[0]
@@ -379,10 +378,9 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 		pruningManager,
 		blockValidator,
 		dagTopologyManager,
-		reachabilityManager,
+		reachabilityManagers,
 		difficultyManager,
 		pastMedianTimeManager,
-		ghostdagManager,
 		coinbaseManager,
 		headerTipsManager,
 		syncManager,

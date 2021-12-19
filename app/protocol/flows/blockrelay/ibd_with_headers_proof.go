@@ -36,6 +36,11 @@ func (flow *handleRelayInvsFlow) ibdWithHeadersProof(highHash *externalapi.Domai
 		return err
 	}
 
+	err = flow.OnPruningPointUTXOSetOverride()
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -353,11 +358,6 @@ func (flow *handleRelayInvsFlow) fetchMissingUTXOSet(consensus externalapi.Conse
 			return false, nil
 		}
 		return false, protocolerrors.ConvertToBanningProtocolErrorIfRuleError(err, "error with pruning point UTXO set")
-	}
-
-	err = flow.OnPruningPointUTXOSetOverride()
-	if err != nil {
-		return false, err
 	}
 
 	return true, nil
