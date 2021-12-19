@@ -10,7 +10,7 @@ import (
 func TestCalcDeflationaryPeriodBlockSubsidy(t *testing.T) {
 	const secondsPerMonth = 2629800
 	const secondsPerHalving = secondsPerMonth * 12
-	const deflationaryPhaseDaaScore = secondsPerMonth * 12
+	const deflationaryPhaseDaaScore = secondsPerMonth * 6
 	const deflationaryPhaseBaseSubsidy = 440 * constants.SompiPerKaspa
 	coinbaseManagerInterface := New(
 		nil,
