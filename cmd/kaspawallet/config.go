@@ -15,7 +15,8 @@ const (
 	createUnsignedTransactionSubCmd = "create-unsigned-transaction"
 	signSubCmd                      = "sign"
 	broadcastSubCmd                 = "broadcast"
-	showAddressSubCmd               = "show-address"
+	showAddressesSubCmd             = "show-addresses"
+	newAddressSubCmd                = "new-address"
 	dumpUnencryptedDataSubCmd       = "dump-unencrypted-data"
 	startDaemonSubCmd               = "start-daemon"
 )
@@ -75,7 +76,12 @@ type broadcastConfig struct {
 	config.NetworkFlags
 }
 
-type showAddressConfig struct {
+type showAddressesConfig struct {
+	DaemonAddress string `long:"daemonaddress" short:"d" description:"Wallet daemon server to connect to (default: localhost:8082)"`
+	config.NetworkFlags
+}
+
+type newAddressConfig struct {
 	DaemonAddress string `long:"daemonaddress" short:"d" description:"Wallet daemon server to connect to (default: localhost:8082)"`
 	config.NetworkFlags
 }
@@ -85,6 +91,7 @@ type startDaemonConfig struct {
 	Password  string `long:"password" short:"p" description:"Wallet password"`
 	RPCServer string `long:"rpcserver" short:"s" description:"RPC server to connect to"`
 	Listen    string `short:"l" long:"listen" description:"Address to listen on (default: 0.0.0.0:8082)"`
+	Profile   string `long:"profile" description:"Enable HTTP profiling on given port -- NOTE port must be between 1024 and 65536"`
 	config.NetworkFlags
 }
 
@@ -123,9 +130,13 @@ func parseCommandLine() (subCommand string, config interface{}) {
 	parser.AddCommand(broadcastSubCmd, "Broadcast the given transaction",
 		"Broadcast the given transaction", broadcastConf)
 
-	showAddressConf := &showAddressConfig{DaemonAddress: defaultListen}
-	parser.AddCommand(showAddressSubCmd, "Shows the public address of the current wallet",
-		"Shows the public address of the current wallet", showAddressConf)
+	showAddressesConf := &showAddressesConfig{DaemonAddress: defaultListen}
+	parser.AddCommand(showAddressesSubCmd, "Shows all generated public addresses of the current wallet",
+		"Shows all generated public addresses of the current wallet", showAddressesConf)
+
+	newAddressConf := &newAddressConfig{DaemonAddress: defaultListen}
+	parser.AddCommand(newAddressSubCmd, "Generates new public address of the current wallet and shows it",
+		"Generates new public address of the current wallet and shows it", newAddressConf)
 
 	dumpUnencryptedDataConf := &dumpUnencryptedDataConfig{}
 	parser.AddCommand(dumpUnencryptedDataSubCmd, "Prints the unencrypted wallet data",
@@ -193,13 +204,20 @@ func parseCommandLine() (subCommand string, config interface{}) {
 			printErrorAndExit(err)
 		}
 		config = broadcastConf
-	case showAddressSubCmd:
-		combineNetworkFlags(&showAddressConf.NetworkFlags, &cfg.NetworkFlags)
-		err := showAddressConf.ResolveNetwork(parser)
+	case showAddressesSubCmd:
+		combineNetworkFlags(&showAddressesConf.NetworkFlags, &cfg.NetworkFlags)
+		err := showAddressesConf.ResolveNetwork(parser)
 		if err != nil {
 			printErrorAndExit(err)
 		}
-		config = showAddressConf
+		config = showAddressesConf
+	case newAddressSubCmd:
+		combineNetworkFlags(&newAddressConf.NetworkFlags, &cfg.NetworkFlags)
+		err := newAddressConf.ResolveNetwork(parser)
+		if err != nil {
+			printErrorAndExit(err)
+		}
+		config = newAddressConf
 	case dumpUnencryptedDataSubCmd:
 		combineNetworkFlags(&dumpUnencryptedDataConf.NetworkFlags, &cfg.NetworkFlags)
 		err := dumpUnencryptedDataConf.ResolveNetwork(parser)

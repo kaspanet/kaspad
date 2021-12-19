@@ -1,3 +1,28 @@
+Kaspad v0.11.8 - 2021-12-13
+===========================
+Bug fixes:
+* Update reindex root for each block level (#1881)
+
+Non-breaking changes:
+* Update readme (#1848)
+* Lower devnet's initial difficulty (#1869)
+
+Kaspad v0.11.7 - 2021-12-11
+===========================
+Breaking changes:
+* kaspawallet: show-address →new-address + show-addresses (#1870)
+
+Bug fixes:
+* Fix numThreads using getAEAD instead of decryptMnemonic (#1859)
+* Apply ResolveVirtual diffs to the UTXO index (#1868)
+
+Non-breaking changes:
+* Ignore header mass in devnet and testnet (#1879)
+* Remove unused args from CalcSubsidy (#1877)
+* ExpectedHeaderPruningPoint fix (#1876)
+* Changes to libkaspawallet to support Kaspaper (#1878)
+* Get rid of genesis's UTXO dump (#1867)
+
 Kaspad v0.11.2 - 2021-11-11
 ===========================
 Bug fixes:

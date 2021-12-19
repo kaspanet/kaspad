@@ -21,9 +21,8 @@ type blockProcessor struct {
 	pruningManager        model.PruningManager
 	blockValidator        model.BlockValidator
 	dagTopologyManager    model.DAGTopologyManager
-	reachabilityManager   model.ReachabilityManager
+	reachabilityManagers  []model.ReachabilityManager
 	difficultyManager     model.DifficultyManager
-	ghostdagManager       model.GHOSTDAGManager
 	pastMedianTimeManager model.PastMedianTimeManager
 	coinbaseManager       model.CoinbaseManager
 	headerTipsManager     model.HeadersSelectedTipManager
@@ -59,10 +58,9 @@ func New(
 	pruningManager model.PruningManager,
 	blockValidator model.BlockValidator,
 	dagTopologyManager model.DAGTopologyManager,
-	reachabilityManager model.ReachabilityManager,
+	reachabilityManagers []model.ReachabilityManager,
 	difficultyManager model.DifficultyManager,
 	pastMedianTimeManager model.PastMedianTimeManager,
-	ghostdagManager model.GHOSTDAGManager,
 	coinbaseManager model.CoinbaseManager,
 	headerTipsManager model.HeadersSelectedTipManager,
 	syncManager model.SyncManager,
@@ -93,10 +91,9 @@ func New(
 		pruningManager:        pruningManager,
 		blockValidator:        blockValidator,
 		dagTopologyManager:    dagTopologyManager,
-		reachabilityManager:   reachabilityManager,
+		reachabilityManagers:  reachabilityManagers,
 		difficultyManager:     difficultyManager,
 		pastMedianTimeManager: pastMedianTimeManager,
-		ghostdagManager:       ghostdagManager,
 		coinbaseManager:       coinbaseManager,
 		headerTipsManager:     headerTipsManager,
 		syncManager:           syncManager,
@@ -143,7 +140,7 @@ func New(
 
 // ValidateAndInsertBlock validates the given block and, if valid, applies it
 // to the current state
-func (bp *blockProcessor) ValidateAndInsertBlock(block *externalapi.DomainBlock, shouldValidateAgainstUTXO bool) (*externalapi.BlockInsertionResult, error) {
+func (bp *blockProcessor) ValidateAndInsertBlock(block *externalapi.DomainBlock, shouldValidateAgainstUTXO bool) (*externalapi.VirtualChangeSet, error) {
 	onEnd := logger.LogAndMeasureExecutionTime(log, "ValidateAndInsertBlock")
 	defer onEnd()
 
@@ -159,7 +156,7 @@ func (bp *blockProcessor) ValidateAndInsertImportedPruningPoint(newPruningPoint 
 	return bp.validateAndInsertImportedPruningPoint(stagingArea, newPruningPoint)
 }
 
-func (bp *blockProcessor) ValidateAndInsertBlockWithTrustedData(block *externalapi.BlockWithTrustedData, shouldValidateAgainstUTXO bool) (*externalapi.BlockInsertionResult, error) {
+func (bp *blockProcessor) ValidateAndInsertBlockWithTrustedData(block *externalapi.BlockWithTrustedData, shouldValidateAgainstUTXO bool) (*externalapi.VirtualChangeSet, error) {
 	onEnd := logger.LogAndMeasureExecutionTime(log, "ValidateAndInsertBlockWithTrustedData")
 	defer onEnd()
 

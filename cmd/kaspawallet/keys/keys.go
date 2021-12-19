@@ -6,11 +6,12 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"github.com/kaspanet/kaspad/cmd/kaspawallet/utils"
 	"os"
 	"path/filepath"
 	"runtime"
 	"strings"
+
+	"github.com/kaspanet/kaspad/cmd/kaspawallet/utils"
 
 	"github.com/kaspanet/kaspad/domain/dagconfig"
 	"github.com/kaspanet/kaspad/util"
@@ -87,6 +88,23 @@ func (d *File) toJSON() *keysFileJSON {
 		LastUsedExternalIndex: d.lastUsedExternalIndex,
 		LastUsedInternalIndex: d.lastUsedInternalIndex,
 	}
+}
+
+// NewFileFromMnemonic generates a new File from the given mnemonic string
+func NewFileFromMnemonic(params *dagconfig.Params, mnemonic string, password string) (*File, error) {
+	encryptedMnemonics, extendedPublicKeys, err :=
+		encryptedMnemonicExtendedPublicKeyPairs(params, []string{mnemonic}, password, false)
+	if err != nil {
+		return nil, err
+	}
+	return &File{
+		Version:            LastVersion,
+		NumThreads:         defaultNumThreads,
+		EncryptedMnemonics: encryptedMnemonics,
+		ExtendedPublicKeys: extendedPublicKeys,
+		MinimumSignatures:  1,
+		ECDSA:              false,
+	}, nil
 }
 
 func (d *File) fromJSON(fileJSON *keysFileJSON) error {
@@ -314,11 +332,7 @@ func (d *File) numThreads(password []byte) (uint8, error) {
 		return defaultNumThreads, nil
 	}
 
-	if d.NumThreads != 0 {
-		return d.NumThreads, nil
-	}
-
-	numThreads, err := d.detectNumThreads(password, d.EncryptedMnemonics[0].salt)
+	numThreads, err := d.detectNumThreads(password, d.EncryptedMnemonics[0])
 	if err != nil {
 		return 0, err
 	}
@@ -332,30 +346,33 @@ func (d *File) numThreads(password []byte) (uint8, error) {
 	return numThreads, nil
 }
 
-func (d *File) detectNumThreads(password, salt []byte) (uint8, error) {
-	numCPU := uint8(runtime.NumCPU())
-	_, err := getAEAD(numCPU, password, salt)
+func (d *File) detectNumThreads(password []byte, encryptedMnemonic *EncryptedMnemonic) (uint8, error) {
+	firstGuessNumThreads := d.NumThreads
+	if d.NumThreads == 0 {
+		firstGuessNumThreads = uint8(runtime.NumCPU())
+	}
+	_, err := decryptMnemonic(firstGuessNumThreads, encryptedMnemonic, password)
 	if err != nil {
 		if !strings.Contains(err.Error(), "message authentication failed") {
 			return 0, err
 		}
 	} else {
-		return numCPU, nil
+		return firstGuessNumThreads, nil
 	}
 
-	for i := uint8(1); ; i++ {
-		if i == numCPU {
+	for numThreadsGuess := uint8(1); ; numThreadsGuess++ {
+		if numThreadsGuess == firstGuessNumThreads {
 			continue
 		}
 
-		_, err := getAEAD(i, password, salt)
+		_, err := decryptMnemonic(numThreadsGuess, encryptedMnemonic, password)
 		if err != nil {
 			const maxTries = 32
-			if i > maxTries || !strings.Contains(err.Error(), "message authentication failed") {
+			if numThreadsGuess == maxTries || !strings.Contains(err.Error(), "message authentication failed") {
 				return 0, err
 			}
 		} else {
-			return i, nil
+			return numThreadsGuess, nil
 		}
 	}
 }

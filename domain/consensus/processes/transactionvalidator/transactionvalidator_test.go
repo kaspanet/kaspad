@@ -366,7 +366,7 @@ func TestSigningTwoInputs(t *testing.T) {
 			input.SignatureScript = signatureScript
 		}
 
-		_, insertionResult, err := tc.AddBlock([]*externalapi.DomainHash{block3Hash}, nil, []*externalapi.DomainTransaction{tx})
+		_, virtualChangeSet, err := tc.AddBlock([]*externalapi.DomainHash{block3Hash}, nil, []*externalapi.DomainTransaction{tx})
 		if err != nil {
 			t.Fatalf("AddBlock: %+v", err)
 		}
@@ -375,7 +375,7 @@ func TestSigningTwoInputs(t *testing.T) {
 			TransactionID: *consensushashing.TransactionID(tx),
 			Index:         0,
 		}
-		if !insertionResult.VirtualUTXODiff.ToAdd().Contains(txOutpoint) {
+		if !virtualChangeSet.VirtualUTXODiff.ToAdd().Contains(txOutpoint) {
 			t.Fatalf("tx was not accepted by the DAG")
 		}
 	})
@@ -492,7 +492,7 @@ func TestSigningTwoInputsECDSA(t *testing.T) {
 			input.SignatureScript = signatureScript
 		}
 
-		_, insertionResult, err := tc.AddBlock([]*externalapi.DomainHash{block3Hash}, nil, []*externalapi.DomainTransaction{tx})
+		_, virtualChangeSet, err := tc.AddBlock([]*externalapi.DomainHash{block3Hash}, nil, []*externalapi.DomainTransaction{tx})
 		if err != nil {
 			t.Fatalf("AddBlock: %+v", err)
 		}
@@ -501,7 +501,7 @@ func TestSigningTwoInputsECDSA(t *testing.T) {
 			TransactionID: *consensushashing.TransactionID(tx),
 			Index:         0,
 		}
-		if !insertionResult.VirtualUTXODiff.ToAdd().Contains(txOutpoint) {
+		if !virtualChangeSet.VirtualUTXODiff.ToAdd().Contains(txOutpoint) {
 			t.Fatalf("tx was not accepted by the DAG")
 		}
 	})

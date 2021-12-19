@@ -102,7 +102,7 @@ func NewComponentManager(cfg *config.Config, db infrastructuredatabase.Database,
 
 	var utxoIndex *utxoindex.UTXOIndex
 	if cfg.UTXOIndex {
-		utxoIndex, err = utxoindex.New(domain.Consensus(), db)
+		utxoIndex, err = utxoindex.New(domain, db)
 		if err != nil {
 			return nil, err
 		}
@@ -152,6 +152,7 @@ func setupRPC(
 		utxoIndex,
 		shutDownChan,
 	)
+	protocolManager.SetOnVirtualChange(rpcManager.NotifyVirtualChange)
 	protocolManager.SetOnBlockAddedToDAGHandler(rpcManager.NotifyBlockAddedToDAG)
 	protocolManager.SetOnPruningPointUTXOSetOverrideHandler(rpcManager.NotifyPruningPointUTXOSetOverride)
 

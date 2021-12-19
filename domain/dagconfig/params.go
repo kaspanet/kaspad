@@ -180,6 +180,14 @@ type Params struct {
 	// DeflationaryPhaseDaaScore is the DAA score after which the monetary policy switches
 	// to its deflationary phase
 	DeflationaryPhaseDaaScore uint64
+
+	FixedSubsidySwitchPruningPointInterval uint64
+
+	FixedSubsidySwitchHashRateThreshold *big.Int
+
+	DisallowDirectBlocksOnTopOfGenesis bool
+
+	IgnoreHeaderMass bool
 }
 
 // NormalizeRPCServerAddress returns addr with the current network default
@@ -262,16 +270,17 @@ var MainnetParams = Params{
 	CoinbasePayloadScriptPublicKeyMaxLength: defaultCoinbasePayloadScriptPublicKeyMaxLength,
 	PruningProofM:                           defaultPruningProofM,
 	DeflationaryPhaseDaaScore:               defaultDeflationaryPhaseDaaScore,
+	DisallowDirectBlocksOnTopOfGenesis:      true,
 }
 
 // TestnetParams defines the network parameters for the test Kaspa network.
 var TestnetParams = Params{
 	K:           defaultGHOSTDAGK,
-	Name:        "kaspa-testnet-6",
+	Name:        "kaspa-testnet-7",
 	Net:         appmessage.Testnet,
 	RPCPort:     "16210",
 	DefaultPort: "16211",
-	DNSSeeds:    []string{"testnet-6-dnsseed.daglabs-dev.com"},
+	DNSSeeds:    []string{"testnet-7-dnsseed.daglabs-dev.com"},
 
 	// DAG parameters
 	GenesisBlock:                   &testnetGenesisBlock,
@@ -320,6 +329,7 @@ var TestnetParams = Params{
 	CoinbasePayloadScriptPublicKeyMaxLength: defaultCoinbasePayloadScriptPublicKeyMaxLength,
 	PruningProofM:                           defaultPruningProofM,
 	DeflationaryPhaseDaaScore:               defaultDeflationaryPhaseDaaScore,
+	IgnoreHeaderMass:                        true,
 }
 
 // SimnetParams defines the network parameters for the simulation test Kaspa
@@ -440,6 +450,7 @@ var DevnetParams = Params{
 	CoinbasePayloadScriptPublicKeyMaxLength: defaultCoinbasePayloadScriptPublicKeyMaxLength,
 	PruningProofM:                           defaultPruningProofM,
 	DeflationaryPhaseDaaScore:               defaultDeflationaryPhaseDaaScore,
+	IgnoreHeaderMass:                        true,
 }
 
 var (

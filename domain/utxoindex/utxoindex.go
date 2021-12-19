@@ -1,6 +1,7 @@
 package utxoindex
 
 import (
+	"github.com/kaspanet/kaspad/domain"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/infrastructure/db/database"
 	"github.com/kaspanet/kaspad/infrastructure/logger"
@@ -10,8 +11,8 @@ import (
 // UTXOIndex maintains an index between transaction scriptPublicKeys
 // and UTXOs
 type UTXOIndex struct {
-	consensus externalapi.Consensus
-	store     *utxoIndexStore
+	domain domain.Domain
+	store  *utxoIndexStore
 
 	mutex sync.Mutex
 }
@@ -19,10 +20,10 @@ type UTXOIndex struct {
 // New creates a new UTXO index.
 //
 // NOTE: While this is called no new blocks can be added to the consensus.
-func New(consensus externalapi.Consensus, database database.Database) (*UTXOIndex, error) {
+func New(domain domain.Domain, database database.Database) (*UTXOIndex, error) {
 	utxoIndex := &UTXOIndex{
-		consensus: consensus,
-		store:     newUTXOIndexStore(database),
+		domain: domain,
+		store:  newUTXOIndexStore(database),
 	}
 
 	isSynced, err := utxoIndex.isSynced()
@@ -47,7 +48,7 @@ func (ui *UTXOIndex) Reset() error {
 		return err
 	}
 
-	virtualInfo, err := ui.consensus.GetVirtualInfo()
+	virtualInfo, err := ui.domain.Consensus().GetVirtualInfo()
 	if err != nil {
 		return err
 	}
@@ -55,7 +56,7 @@ func (ui *UTXOIndex) Reset() error {
 	var fromOutpoint *externalapi.DomainOutpoint
 	for {
 		const step = 1000
-		virtualUTXOs, err := ui.consensus.GetVirtualUTXOs(virtualInfo.ParentHashes, fromOutpoint, step)
+		virtualUTXOs, err := ui.domain.Consensus().GetVirtualUTXOs(virtualInfo.ParentHashes, fromOutpoint, step)
 		if err != nil {
 			return err
 		}
@@ -85,7 +86,7 @@ func (ui *UTXOIndex) isSynced() (bool, error) {
 		return false, err
 	}
 
-	virtualInfo, err := ui.consensus.GetVirtualInfo()
+	virtualInfo, err := ui.domain.Consensus().GetVirtualInfo()
 	if err != nil {
 		return false, err
 	}
@@ -94,25 +95,25 @@ func (ui *UTXOIndex) isSynced() (bool, error) {
 }
 
 // Update updates the UTXO index with the given DAG selected parent chain changes
-func (ui *UTXOIndex) Update(blockInsertionResult *externalapi.BlockInsertionResult) (*UTXOChanges, error) {
+func (ui *UTXOIndex) Update(virtualChangeSet *externalapi.VirtualChangeSet) (*UTXOChanges, error) {
 	onEnd := logger.LogAndMeasureExecutionTime(log, "UTXOIndex.Update")
 	defer onEnd()
 
 	ui.mutex.Lock()
 	defer ui.mutex.Unlock()
 
-	log.Tracef("Updating UTXO index with VirtualUTXODiff: %+v", blockInsertionResult.VirtualUTXODiff)
-	err := ui.removeUTXOs(blockInsertionResult.VirtualUTXODiff.ToRemove())
+	log.Tracef("Updating UTXO index with VirtualUTXODiff: %+v", virtualChangeSet.VirtualUTXODiff)
+	err := ui.removeUTXOs(virtualChangeSet.VirtualUTXODiff.ToRemove())
 	if err != nil {
 		return nil, err
 	}
 
-	err = ui.addUTXOs(blockInsertionResult.VirtualUTXODiff.ToAdd())
+	err = ui.addUTXOs(virtualChangeSet.VirtualUTXODiff.ToAdd())
 	if err != nil {
 		return nil, err
 	}
 
-	ui.store.updateVirtualParents(blockInsertionResult.VirtualParents)
+	ui.store.updateVirtualParents(virtualChangeSet.VirtualParents)
 
 	added, removed, _ := ui.store.stagedData()
 	utxoIndexChanges := &UTXOChanges{

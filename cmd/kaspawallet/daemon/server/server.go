@@ -2,6 +2,7 @@ package server
 
 import (
 	"fmt"
+	"github.com/kaspanet/kaspad/util/profiling"
 	"net"
 	"os"
 	"sync"
@@ -33,11 +34,15 @@ type server struct {
 }
 
 // Start starts the kaspawalletd server
-func Start(params *dagconfig.Params, listen, rpcServer string, keysFilePath string) error {
+func Start(params *dagconfig.Params, listen, rpcServer string, keysFilePath string, profile string) error {
 	initLog(defaultLogFile, defaultErrLogFile)
 
 	defer panics.HandlePanic(log, "MAIN", nil)
 	interrupt := signal.InterruptListener()
+
+	if profile != "" {
+		profiling.Start(profile, log)
+	}
 
 	listener, err := net.Listen("tcp", listen)
 	if err != nil {
