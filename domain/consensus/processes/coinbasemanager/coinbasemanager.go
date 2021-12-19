@@ -13,10 +13,11 @@ import (
 
 type coinbaseManager struct {
 	subsidyGenesisReward                    uint64
-	baseSubsidy                             uint64
+	preDeflationaryPhaseBaseSubsidy         uint64
 	coinbasePayloadScriptPublicKeyMaxLength uint8
 	genesisHash                             *externalapi.DomainHash
 	deflationaryPhaseDaaScore               uint64
+	deflationaryPhaseBaseSubsidy            uint64
 
 	databaseContext     model.DBReader
 	dagTraversalManager model.DAGTraversalManager
@@ -184,9 +185,17 @@ func (c *coinbaseManager) CalcBlockSubsidy(stagingArea *model.StagingArea, block
 		return 0, err
 	}
 	if blockDaaScore < c.deflationaryPhaseDaaScore {
-		return c.baseSubsidy, nil
+		return c.preDeflationaryPhaseBaseSubsidy, nil
 	}
-	return c.baseSubsidy, nil
+
+	blockSubsidy := c.calcDeflationaryPeriodBlockSubsidy(blockDaaScore)
+	return blockSubsidy, nil
+}
+
+func (c *coinbaseManager) calcDeflationaryPeriodBlockSubsidy(blockDaaScore uint64) uint64 {
+	const secondsPerMonth = 2629800
+	monthsSinceDeflationaryPhaseStarted := (blockDaaScore - c.deflationaryPhaseDaaScore) / secondsPerMonth
+	return c.deflationaryPhaseBaseSubsidy * (monthsSinceDeflationaryPhaseStarted + 1) * ((1 / 2) ^ (1 / 12))
 }
 
 func (c *coinbaseManager) calcMergedBlockReward(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash,
@@ -226,10 +235,11 @@ func New(
 	databaseContext model.DBReader,
 
 	subsidyGenesisReward uint64,
-	baseSubsidy uint64,
+	preDeflationaryPhaseBaseSubsidy uint64,
 	coinbasePayloadScriptPublicKeyMaxLength uint8,
 	genesisHash *externalapi.DomainHash,
 	deflationaryPhaseDaaScore uint64,
+	deflationaryPhaseBaseSubsidy uint64,
 
 	dagTraversalManager model.DAGTraversalManager,
 	ghostdagDataStore model.GHOSTDAGDataStore,
@@ -243,10 +253,11 @@ func New(
 		databaseContext: databaseContext,
 
 		subsidyGenesisReward:                    subsidyGenesisReward,
-		baseSubsidy:                             baseSubsidy,
+		preDeflationaryPhaseBaseSubsidy:         preDeflationaryPhaseBaseSubsidy,
 		coinbasePayloadScriptPublicKeyMaxLength: coinbasePayloadScriptPublicKeyMaxLength,
 		genesisHash:                             genesisHash,
 		deflationaryPhaseDaaScore:               deflationaryPhaseDaaScore,
+		deflationaryPhaseBaseSubsidy:            deflationaryPhaseBaseSubsidy,
 
 		dagTraversalManager: dagTraversalManager,
 		ghostdagDataStore:   ghostdagDataStore,

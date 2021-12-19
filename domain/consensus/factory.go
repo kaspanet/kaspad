@@ -203,10 +203,11 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 	coinbaseManager := coinbasemanager.New(
 		dbManager,
 		config.SubsidyGenesisReward,
-		config.BaseSubsidy,
+		config.PreDeflationaryPhaseBaseSubsidy,
 		config.CoinbasePayloadScriptPublicKeyMaxLength,
 		config.GenesisHash,
 		config.DeflationaryPhaseDaaScore,
+		config.DeflationaryPhaseBaseSubsidy,
 		dagTraversalManager,
 		ghostdagDataStore,
 		acceptanceDataStore,

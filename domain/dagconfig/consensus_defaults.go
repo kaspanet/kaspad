@@ -48,7 +48,8 @@ const (
 	// in block take longer)
 	defaultMergeSetSizeLimit                       = defaultGHOSTDAGK * 10
 	defaultSubsidyGenesisReward                    = 1 * constants.SompiPerKaspa
-	defaultBaseSubsidy                             = 500 * constants.SompiPerKaspa
+	defaultPreDeflationaryPhaseBaseSubsidy         = 500 * constants.SompiPerKaspa
+	defaultDeflationaryPhaseBaseSubsidy            = 440 * constants.SompiPerKaspa
 	defaultCoinbasePayloadScriptPublicKeyMaxLength = 150
 	// defaultDifficultyAdjustmentWindowSize is the number of blocks in a block's past used to calculate its difficulty
 	// target.

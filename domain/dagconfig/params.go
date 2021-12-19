@@ -91,8 +91,9 @@ type Params struct {
 	// SubsidyGenesisReward SubsidyMergeSetRewardMultiplier, and
 	// SubsidyPastRewardMultiplier are part of the block subsidy equation.
 	// Further details: https://hashdag.medium.com/kaspa-launch-plan-9a63f4d754a6
-	SubsidyGenesisReward uint64
-	BaseSubsidy          uint64
+	SubsidyGenesisReward            uint64
+	PreDeflationaryPhaseBaseSubsidy uint64
+	DeflationaryPhaseBaseSubsidy    uint64
 
 	// TargetTimePerBlock is the desired amount of time to generate each
 	// block.
@@ -220,16 +221,17 @@ var MainnetParams = Params{
 	},
 
 	// DAG parameters
-	GenesisBlock:                   &genesisBlock,
-	GenesisHash:                    genesisHash,
-	PowMax:                         mainPowMax,
-	BlockCoinbaseMaturity:          100,
-	SubsidyGenesisReward:           defaultSubsidyGenesisReward,
-	BaseSubsidy:                    defaultBaseSubsidy,
-	TargetTimePerBlock:             defaultTargetTimePerBlock,
-	FinalityDuration:               defaultFinalityDuration,
-	DifficultyAdjustmentWindowSize: defaultDifficultyAdjustmentWindowSize,
-	TimestampDeviationTolerance:    defaultTimestampDeviationTolerance,
+	GenesisBlock:                    &genesisBlock,
+	GenesisHash:                     genesisHash,
+	PowMax:                          mainPowMax,
+	BlockCoinbaseMaturity:           100,
+	SubsidyGenesisReward:            defaultSubsidyGenesisReward,
+	PreDeflationaryPhaseBaseSubsidy: defaultPreDeflationaryPhaseBaseSubsidy,
+	DeflationaryPhaseBaseSubsidy:    defaultDeflationaryPhaseBaseSubsidy,
+	TargetTimePerBlock:              defaultTargetTimePerBlock,
+	FinalityDuration:                defaultFinalityDuration,
+	DifficultyAdjustmentWindowSize:  defaultDifficultyAdjustmentWindowSize,
+	TimestampDeviationTolerance:     defaultTimestampDeviationTolerance,
 
 	// Consensus rule change deployments.
 	//
@@ -279,16 +281,17 @@ var TestnetParams = Params{
 	DNSSeeds:    []string{"testnet-7-dnsseed.daglabs-dev.com"},
 
 	// DAG parameters
-	GenesisBlock:                   &testnetGenesisBlock,
-	GenesisHash:                    testnetGenesisHash,
-	PowMax:                         testnetPowMax,
-	BlockCoinbaseMaturity:          100,
-	SubsidyGenesisReward:           defaultSubsidyGenesisReward,
-	BaseSubsidy:                    defaultBaseSubsidy,
-	TargetTimePerBlock:             defaultTargetTimePerBlock,
-	FinalityDuration:               defaultFinalityDuration,
-	DifficultyAdjustmentWindowSize: defaultDifficultyAdjustmentWindowSize,
-	TimestampDeviationTolerance:    defaultTimestampDeviationTolerance,
+	GenesisBlock:                    &testnetGenesisBlock,
+	GenesisHash:                     testnetGenesisHash,
+	PowMax:                          testnetPowMax,
+	BlockCoinbaseMaturity:           100,
+	SubsidyGenesisReward:            defaultSubsidyGenesisReward,
+	PreDeflationaryPhaseBaseSubsidy: defaultPreDeflationaryPhaseBaseSubsidy,
+	DeflationaryPhaseBaseSubsidy:    defaultDeflationaryPhaseBaseSubsidy,
+	TargetTimePerBlock:              defaultTargetTimePerBlock,
+	FinalityDuration:                defaultFinalityDuration,
+	DifficultyAdjustmentWindowSize:  defaultDifficultyAdjustmentWindowSize,
+	TimestampDeviationTolerance:     defaultTimestampDeviationTolerance,
 
 	// Consensus rule change deployments.
 	//
@@ -344,16 +347,17 @@ var SimnetParams = Params{
 	DNSSeeds:    []string{}, // NOTE: There must NOT be any seeds.
 
 	// DAG parameters
-	GenesisBlock:                   &simnetGenesisBlock,
-	GenesisHash:                    simnetGenesisHash,
-	PowMax:                         simnetPowMax,
-	BlockCoinbaseMaturity:          100,
-	SubsidyGenesisReward:           defaultSubsidyGenesisReward,
-	BaseSubsidy:                    defaultBaseSubsidy,
-	TargetTimePerBlock:             time.Millisecond,
-	FinalityDuration:               time.Minute,
-	DifficultyAdjustmentWindowSize: defaultDifficultyAdjustmentWindowSize,
-	TimestampDeviationTolerance:    defaultTimestampDeviationTolerance,
+	GenesisBlock:                    &simnetGenesisBlock,
+	GenesisHash:                     simnetGenesisHash,
+	PowMax:                          simnetPowMax,
+	BlockCoinbaseMaturity:           100,
+	SubsidyGenesisReward:            defaultSubsidyGenesisReward,
+	PreDeflationaryPhaseBaseSubsidy: defaultPreDeflationaryPhaseBaseSubsidy,
+	DeflationaryPhaseBaseSubsidy:    defaultDeflationaryPhaseBaseSubsidy,
+	TargetTimePerBlock:              time.Millisecond,
+	FinalityDuration:                time.Minute,
+	DifficultyAdjustmentWindowSize:  defaultDifficultyAdjustmentWindowSize,
+	TimestampDeviationTolerance:     defaultTimestampDeviationTolerance,
 
 	// Consensus rule change deployments.
 	//
@@ -400,16 +404,17 @@ var DevnetParams = Params{
 	DNSSeeds:    []string{}, // NOTE: There must NOT be any seeds.
 
 	// DAG parameters
-	GenesisBlock:                   &devnetGenesisBlock,
-	GenesisHash:                    devnetGenesisHash,
-	PowMax:                         devnetPowMax,
-	BlockCoinbaseMaturity:          100,
-	SubsidyGenesisReward:           defaultSubsidyGenesisReward,
-	BaseSubsidy:                    defaultBaseSubsidy,
-	TargetTimePerBlock:             defaultTargetTimePerBlock,
-	FinalityDuration:               defaultFinalityDuration,
-	DifficultyAdjustmentWindowSize: defaultDifficultyAdjustmentWindowSize,
-	TimestampDeviationTolerance:    defaultTimestampDeviationTolerance,
+	GenesisBlock:                    &devnetGenesisBlock,
+	GenesisHash:                     devnetGenesisHash,
+	PowMax:                          devnetPowMax,
+	BlockCoinbaseMaturity:           100,
+	SubsidyGenesisReward:            defaultSubsidyGenesisReward,
+	PreDeflationaryPhaseBaseSubsidy: defaultPreDeflationaryPhaseBaseSubsidy,
+	DeflationaryPhaseBaseSubsidy:    defaultDeflationaryPhaseBaseSubsidy,
+	TargetTimePerBlock:              defaultTargetTimePerBlock,
+	FinalityDuration:                defaultFinalityDuration,
+	DifficultyAdjustmentWindowSize:  defaultDifficultyAdjustmentWindowSize,
+	TimestampDeviationTolerance:     defaultTimestampDeviationTolerance,
 
 	// Consensus rule change deployments.
 	//
