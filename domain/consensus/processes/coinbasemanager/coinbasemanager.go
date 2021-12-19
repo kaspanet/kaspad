@@ -77,7 +77,7 @@ func (c *coinbaseManager) ExpectedCoinbaseTransaction(stagingArea *model.Staging
 		txOuts = append(txOuts, txOut)
 	}
 
-	subsidy, err := c.CalcBlockSubsidy(blockHash)
+	subsidy, err := c.CalcBlockSubsidy(stagingArea, blockHash)
 	if err != nil {
 		return nil, err
 	}
@@ -175,7 +175,7 @@ func acceptanceDataFromArrayToMap(acceptanceData externalapi.AcceptanceData) map
 // should have. This is mainly used for determining how much the coinbase for
 // newly generated blocks awards as well as validating the coinbase for blocks
 // has the expected value.
-func (c *coinbaseManager) CalcBlockSubsidy( blockHash *externalapi.DomainHash) (uint64, error) {
+func (c *coinbaseManager) CalcBlockSubsidy(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) (uint64, error) {
 	if blockHash.Equal(c.genesisHash) {
 		return c.subsidyGenesisReward, nil
 	}
