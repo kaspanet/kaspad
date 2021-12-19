@@ -181,10 +181,6 @@ type Params struct {
 	// to its deflationary phase
 	DeflationaryPhaseDaaScore uint64
 
-	FixedSubsidySwitchPruningPointInterval uint64
-
-	FixedSubsidySwitchHashRateThreshold *big.Int
-
 	DisallowDirectBlocksOnTopOfGenesis bool
 
 	IgnoreHeaderMass bool
