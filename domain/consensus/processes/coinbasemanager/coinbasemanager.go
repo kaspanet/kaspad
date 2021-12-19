@@ -195,7 +195,15 @@ func (c *coinbaseManager) CalcBlockSubsidy(stagingArea *model.StagingArea, block
 func (c *coinbaseManager) calcDeflationaryPeriodBlockSubsidy(blockDaaScore uint64) uint64 {
 	const secondsPerMonth = 2629800
 	monthsSinceDeflationaryPhaseStarted := (blockDaaScore - c.deflationaryPhaseDaaScore) / secondsPerMonth
-	return c.deflationaryPhaseBaseSubsidy * (monthsSinceDeflationaryPhaseStarted + 1) * ((1 / 2) ^ (1 / 12))
+	return c.deflationaryPhaseBaseSubsidy / (c.pow2(monthsSinceDeflationaryPhaseStarted / 6))
+}
+
+func (c *coinbaseManager) pow2(exponent uint64) uint64 {
+	result := uint64(1)
+	for i := uint64(0); i < exponent; i++ {
+		result *= 2
+	}
+	return result
 }
 
 func (c *coinbaseManager) calcMergedBlockReward(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash,

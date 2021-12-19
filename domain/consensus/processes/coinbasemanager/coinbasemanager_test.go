@@ -8,7 +8,8 @@ import (
 
 func TestCalcDeflationaryPeriodBlockSubsidy(t *testing.T) {
 	const secondsPerMonth = 2629800
-	const deflationaryPhaseDaaScore = secondsPerMonth * 6
+	const secondsPerSixMonths = secondsPerMonth * 6
+	const deflationaryPhaseDaaScore = secondsPerSixMonths
 	const deflationaryPhaseBaseSubsidy = 440 * constants.SompiPerKaspa
 	coinbaseManagerInterface := New(
 		nil,
@@ -39,17 +40,17 @@ func TestCalcDeflationaryPeriodBlockSubsidy(t *testing.T) {
 		},
 		{
 			name:                 "half a year after start of deflationary phase",
-			blockDaaScore:        deflationaryPhaseDaaScore * 2,
+			blockDaaScore:        deflationaryPhaseDaaScore + secondsPerSixMonths,
 			expectedBlockSubsidy: deflationaryPhaseBaseSubsidy / 2,
 		},
 		{
 			name:                 "a year after start of deflationary phase",
-			blockDaaScore:        deflationaryPhaseDaaScore * 3,
+			blockDaaScore:        deflationaryPhaseDaaScore + secondsPerSixMonths*2,
 			expectedBlockSubsidy: deflationaryPhaseBaseSubsidy / 4,
 		},
 		{
 			name:                 "two years after start of deflationary phase",
-			blockDaaScore:        deflationaryPhaseDaaScore * 5,
+			blockDaaScore:        deflationaryPhaseDaaScore + secondsPerSixMonths*4,
 			expectedBlockSubsidy: deflationaryPhaseBaseSubsidy / 16,
 		},
 	}
