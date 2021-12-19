@@ -10,6 +10,7 @@ import (
 	"github.com/kaspanet/kaspad/infrastructure/db/database"
 	"github.com/pkg/errors"
 	"math/big"
+	"time"
 )
 
 type coinbaseManager struct {
@@ -19,6 +20,7 @@ type coinbaseManager struct {
 	genesisHash                             *externalapi.DomainHash
 	deflationaryPhaseDaaScore               uint64
 	deflationaryPhaseBaseSubsidy            uint64
+	targetTimePerBlock                      time.Duration
 
 	databaseContext     model.DBReader
 	dagTraversalManager model.DAGTraversalManager
@@ -197,6 +199,11 @@ func (c *coinbaseManager) calcDeflationaryPeriodBlockSubsidy(blockDaaScore uint6
 	const secondsPerMonth = 2629800
 	monthsSinceDeflationaryPhaseStarted := (blockDaaScore - c.deflationaryPhaseDaaScore) / secondsPerMonth
 
+	// Adjust the base subsidy based on the target block rate. E.g. for two blocks per second,
+	// the adjusted base subsidy of each block is half of the base subsidy
+	targetBlocksPerSecond := time.Second.Seconds() / c.targetTimePerBlock.Seconds()
+	adjustedBaseSubsidy := c.deflationaryPhaseBaseSubsidy / uint64(targetBlocksPerSecond)
+
 	// enlargedDeflationConstant is the estimated deflation constant `2^1/12` multiplied by a big
 	// number so that it is no longer a float
 	enlargedDeflationConstant, _ := new(big.Int).SetString("10594630943592952645618252949463417007", 10)
@@ -209,7 +216,7 @@ func (c *coinbaseManager) calcDeflationaryPeriodBlockSubsidy(blockDaaScore uint6
 		enlargeFactorDivisor = new(big.Int).Mul(enlargeFactorDivisor, enlargeFactor)
 	}
 
-	deflationaryPhaseBaseSubsidy := new(big.Int).SetUint64(c.deflationaryPhaseBaseSubsidy)
+	deflationaryPhaseBaseSubsidy := new(big.Int).SetUint64(adjustedBaseSubsidy)
 	enlargedSubsidy := new(big.Int).Mul(deflationaryPhaseBaseSubsidy, enlargeFactorDivisor)
 	subsidy := new(big.Int).Div(enlargedSubsidy, enlargedDeflationMultiplier)
 	return subsidy.Uint64()
@@ -257,6 +264,7 @@ func New(
 	genesisHash *externalapi.DomainHash,
 	deflationaryPhaseDaaScore uint64,
 	deflationaryPhaseBaseSubsidy uint64,
+	targetTimePerBlock time.Duration,
 
 	dagTraversalManager model.DAGTraversalManager,
 	ghostdagDataStore model.GHOSTDAGDataStore,
@@ -275,6 +283,7 @@ func New(
 		genesisHash:                             genesisHash,
 		deflationaryPhaseDaaScore:               deflationaryPhaseDaaScore,
 		deflationaryPhaseBaseSubsidy:            deflationaryPhaseBaseSubsidy,
+		targetTimePerBlock:                      targetTimePerBlock,
 
 		dagTraversalManager: dagTraversalManager,
 		ghostdagDataStore:   ghostdagDataStore,

@@ -4,6 +4,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
 	"testing"
+	"time"
 )
 
 func TestCalcDeflationaryPeriodBlockSubsidy(t *testing.T) {
@@ -19,6 +20,7 @@ func TestCalcDeflationaryPeriodBlockSubsidy(t *testing.T) {
 		&externalapi.DomainHash{},
 		deflationaryPhaseDaaScore,
 		deflationaryPhaseBaseSubsidy,
+		time.Second,
 		nil,
 		nil,
 		nil,
