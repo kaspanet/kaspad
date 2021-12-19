@@ -9,6 +9,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/utils/transactionhelper"
 	"github.com/kaspanet/kaspad/infrastructure/db/database"
 	"github.com/pkg/errors"
+	"math/big"
 )
 
 type coinbaseManager struct {
@@ -195,15 +196,23 @@ func (c *coinbaseManager) CalcBlockSubsidy(stagingArea *model.StagingArea, block
 func (c *coinbaseManager) calcDeflationaryPeriodBlockSubsidy(blockDaaScore uint64) uint64 {
 	const secondsPerMonth = 2629800
 	monthsSinceDeflationaryPhaseStarted := (blockDaaScore - c.deflationaryPhaseDaaScore) / secondsPerMonth
-	return c.deflationaryPhaseBaseSubsidy / (c.pow2(monthsSinceDeflationaryPhaseStarted / 6))
-}
 
-func (c *coinbaseManager) pow2(exponent uint64) uint64 {
-	result := uint64(1)
-	for i := uint64(0); i < exponent; i++ {
-		result *= 2
+	// enlargedDeflationConstant is the estimated deflation constant `2^1/12` multiplied by a big
+	// number so that it is no longer a float
+	enlargedDeflationConstant, _ := new(big.Int).SetString("10594630943592952645618252949463417007", 10)
+	enlargeFactor, _ := new(big.Int).SetString("10000000000000000000000000000000000000", 10)
+
+	enlargedDeflationMultiplier := big.NewInt(1)
+	enlargeFactorDivisor := big.NewInt(1)
+	for i := uint64(0); i < monthsSinceDeflationaryPhaseStarted; i++ {
+		enlargedDeflationMultiplier = new(big.Int).Mul(enlargedDeflationMultiplier, enlargedDeflationConstant)
+		enlargeFactorDivisor = new(big.Int).Mul(enlargeFactorDivisor, enlargeFactor)
 	}
-	return result
+
+	deflationaryPhaseBaseSubsidy := new(big.Int).SetUint64(c.deflationaryPhaseBaseSubsidy)
+	enlargedSubsidy := new(big.Int).Mul(deflationaryPhaseBaseSubsidy, enlargeFactorDivisor)
+	subsidy := new(big.Int).Div(enlargedSubsidy, enlargedDeflationMultiplier)
+	return subsidy.Uint64()
 }
 
 func (c *coinbaseManager) calcMergedBlockReward(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash,
