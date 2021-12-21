@@ -8,7 +8,7 @@ protowire
 4. In the protowire directory: `go generate .`
 
 Documentation
--------------r
+-------------
 
 To generate `rpc.md`:
 1. `go install -u github.com/kaspanet/protoc-gen-doc/cmd/protoc-gen-doc`
