@@ -1,13 +1,14 @@
 package connmanager
 
 import (
-	"github.com/kaspanet/kaspad/app/appmessage"
-	"github.com/kaspanet/kaspad/infrastructure/network/dnsseed"
-	"github.com/pkg/errors"
 	"net"
 	"sync"
 	"sync/atomic"
 	"time"
+
+	"github.com/kaspanet/kaspad/app/appmessage"
+	"github.com/kaspanet/kaspad/infrastructure/network/dnsseed"
+	"github.com/pkg/errors"
 
 	"github.com/kaspanet/kaspad/infrastructure/network/addressmanager"
 
@@ -122,8 +123,6 @@ func (c *ConnectionManager) connectionsLoop() {
 		c.checkOutgoingConnections(connSet)
 
 		c.checkIncomingConnections(connSet)
-
-		c.seedFromDNS()
 
 		c.waitTillNextIteration()
 	}
@@ -257,8 +256,6 @@ func (c *ConnectionManager) extractAddressIPs(address string) ([]net.IP, error) 
 func (c *ConnectionManager) seedFromDNS() {
 	cfg := c.cfg
 	if len(c.activeOutgoing) == 0 && !cfg.DisableDNSSeed {
-		log.Infof("No ongoing connections, trying to get new addresses from seed...")
-
 		dnsseed.SeedFromDNS(cfg.NetParams(), cfg.DNSSeed, false, nil,
 			cfg.Lookup, func(addresses []*appmessage.NetAddress) {
 				// Kaspad uses a lookup of the dns seeder here. Since seeder returns
