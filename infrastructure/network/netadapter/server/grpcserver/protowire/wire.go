@@ -702,6 +702,20 @@ func toRPCPayload(message appmessage.Message) (isKaspadMessage_Payload, error) {
 			return nil, err
 		}
 		return payload, nil
+	case *appmessage.GetBalanceByAddressRequestMessage:
+		payload := new(KaspadMessage_GetBalanceByAddressRequestMessage)
+		err := payload.fromAppMessage(message)
+		if err != nil {
+			return nil, err
+		}
+		return payload, nil
+	case *appmessage.GetBalanceByAddressResponseMessage:
+		payload := new(KaspadMessage_GetBalanceByAddressResponseMessage)
+		err := payload.fromAppMessage(message)
+		if err != nil {
+			return nil, err
+		}
+		return payload, nil
 	case *appmessage.GetVirtualSelectedParentBlueScoreRequestMessage:
 		payload := new(KaspadMessage_GetVirtualSelectedParentBlueScoreRequest)
 		err := payload.fromAppMessage(message)

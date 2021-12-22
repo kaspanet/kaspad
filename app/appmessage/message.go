@@ -124,6 +124,8 @@ const (
 	CmdStopNotifyingUTXOsChangedResponseMessage
 	CmdGetUTXOsByAddressesRequestMessage
 	CmdGetUTXOsByAddressesResponseMessage
+	CmdGetBalanceByAddressRequestMessage
+	CmdGetBalanceByAddressResponseMessage
 	CmdGetVirtualSelectedParentBlueScoreRequestMessage
 	CmdGetVirtualSelectedParentBlueScoreResponseMessage
 	CmdNotifyVirtualSelectedParentBlueScoreChangedRequestMessage
@@ -243,6 +245,8 @@ var RPCMessageCommandToString = map[MessageCommand]string{
 	CmdStopNotifyingUTXOsChangedResponseMessage:                   "StopNotifyingUTXOsChangedResponse",
 	CmdGetUTXOsByAddressesRequestMessage:                          "GetUTXOsByAddressesRequest",
 	CmdGetUTXOsByAddressesResponseMessage:                         "GetUTXOsByAddressesResponse",
+	CmdGetBalanceByAddressRequestMessage:                          "GetBalanceByAddressRequest",
+	CmdGetBalanceByAddressResponseMessage:                         "GetBalancesByAddressResponse",
 	CmdGetVirtualSelectedParentBlueScoreRequestMessage:            "GetVirtualSelectedParentBlueScoreRequest",
 	CmdGetVirtualSelectedParentBlueScoreResponseMessage:           "GetVirtualSelectedParentBlueScoreResponse",
 	CmdNotifyVirtualSelectedParentBlueScoreChangedRequestMessage:  "NotifyVirtualSelectedParentBlueScoreChangedRequest",
