@@ -1,3 +1,12 @@
+Kaspad v0.11.8 - 2021-12-13
+===========================
+Bug fixes:
+* Update reindex root for each block level (#1881)
+
+Non-breaking changes:
+* Update readme (#1848)
+* Lower devnet's initial difficulty (#1869)
+
 Kaspad v0.11.7 - 2021-12-11
 ===========================
 Breaking changes:
