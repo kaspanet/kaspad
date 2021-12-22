@@ -225,6 +225,14 @@ var MainnetParams = Params{
 		"kaspa.turkel.in",
 		// This DNS seeder is run by Constantine Bytensky
 		"dnsseed.cbytensky.org",
+		// This DNS seeder is run by Georges Künzli
+		"seeder1.kaspad.net",
+		// This DNS seeder is run by Georges Künzli
+		"seeder2.kaspad.net",
+		// This DNS seeder is run by Georges Künzli
+		"seeder3.kaspad.net",
+		// This DNS seeder is run by Georges Künzli
+		"seeder4.kaspad.net",
 	},
 
 	// DAG parameters
