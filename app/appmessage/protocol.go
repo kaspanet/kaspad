@@ -12,7 +12,7 @@ import (
 
 const (
 	// ProtocolVersion is the latest protocol version this package supports.
-	ProtocolVersion uint32 = 3
+	ProtocolVersion uint32 = 4
 
 	// DefaultServices describes the default services that are supported by
 	// the server.

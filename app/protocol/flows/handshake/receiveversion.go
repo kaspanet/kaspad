@@ -17,7 +17,7 @@ var (
 
 	// minAcceptableProtocolVersion is the lowest protocol version that a
 	// connected peer may support.
-	minAcceptableProtocolVersion = appmessage.ProtocolVersion
+	minAcceptableProtocolVersion = uint32(3)
 )
 
 type receiveVersionFlow struct {

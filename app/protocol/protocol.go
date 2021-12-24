@@ -3,6 +3,7 @@ package protocol
 import (
 	"github.com/kaspanet/kaspad/app/protocol/common"
 	v3 "github.com/kaspanet/kaspad/app/protocol/flows/v3"
+	v4 "github.com/kaspanet/kaspad/app/protocol/flows/v4"
 	"sync"
 	"sync/atomic"
 
@@ -73,8 +74,14 @@ func (m *Manager) routerInitializer(router *routerpkg.Router, netConnection *net
 		defer m.context.RemoveFromPeers(peer)
 
 		var flows []*common.Flow
-		if peer.ProtocolVersion() == 3 {
+		log.Infof("Registering p2p flows for protocol version %d", peer.ProtocolVersion())
+		switch peer.ProtocolVersion() {
+		case 3:
 			flows = v3.Register(m, router, errChan, &isStopping)
+		case 4:
+			flows = v4.Register(m, router, errChan, &isStopping)
+		default:
+			panic(errors.Errorf("no way to handle protocol version %d", peer.ProtocolVersion()))
 		}
 
 		removeHandshakeRoutes(router)
