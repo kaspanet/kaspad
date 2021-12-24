@@ -10,8 +10,6 @@ import (
 
 	"github.com/kaspanet/kaspad/domain"
 
-	"github.com/kaspanet/kaspad/app/protocol/flows/v3/blockrelay"
-	"github.com/kaspanet/kaspad/app/protocol/flows/v3/transactionrelay"
 	peerpkg "github.com/kaspanet/kaspad/app/protocol/peer"
 	"github.com/kaspanet/kaspad/infrastructure/config"
 	"github.com/kaspanet/kaspad/infrastructure/network/addressmanager"
@@ -52,9 +50,9 @@ type FlowContext struct {
 	onTransactionAddedToMempoolHandler   OnTransactionAddedToMempoolHandler
 
 	lastRebroadcastTime         time.Time
-	sharedRequestedTransactions *transactionrelay.SharedRequestedTransactions
+	sharedRequestedTransactions *SharedRequestedTransactions
 
-	sharedRequestedBlocks *blockrelay.SharedRequestedBlocks
+	sharedRequestedBlocks *SharedRequestedBlocks
 
 	ibdPeer      *peerpkg.Peer
 	ibdPeerMutex sync.RWMutex
@@ -82,8 +80,8 @@ func New(cfg *config.Config, domain domain.Domain, addressManager *addressmanage
 		domain:                           domain,
 		addressManager:                   addressManager,
 		connectionManager:                connectionManager,
-		sharedRequestedTransactions:      transactionrelay.NewSharedRequestedTransactions(),
-		sharedRequestedBlocks:            blockrelay.NewSharedRequestedBlocks(),
+		sharedRequestedTransactions:      NewSharedRequestedTransactions(),
+		sharedRequestedBlocks:            NewSharedRequestedBlocks(),
 		peers:                            make(map[id.ID]*peerpkg.Peer),
 		orphans:                          make(map[externalapi.DomainHash]*externalapi.DomainBlock),
 		timeStarted:                      mstime.Now().UnixMilliseconds(),

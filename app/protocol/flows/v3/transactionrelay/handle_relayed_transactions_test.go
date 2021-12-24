@@ -2,6 +2,7 @@ package transactionrelay_test
 
 import (
 	"errors"
+	"github.com/kaspanet/kaspad/app/protocol/flowcontext"
 	"strings"
 	"testing"
 
@@ -24,7 +25,7 @@ import (
 type mocTransactionsRelayContext struct {
 	netAdapter                  *netadapter.NetAdapter
 	domain                      domain.Domain
-	sharedRequestedTransactions *transactionrelay.SharedRequestedTransactions
+	sharedRequestedTransactions *flowcontext.SharedRequestedTransactions
 }
 
 func (m *mocTransactionsRelayContext) NetAdapter() *netadapter.NetAdapter {
@@ -35,7 +36,7 @@ func (m *mocTransactionsRelayContext) Domain() domain.Domain {
 	return m.domain
 }
 
-func (m *mocTransactionsRelayContext) SharedRequestedTransactions() *transactionrelay.SharedRequestedTransactions {
+func (m *mocTransactionsRelayContext) SharedRequestedTransactions() *flowcontext.SharedRequestedTransactions {
 	return m.sharedRequestedTransactions
 }
 
@@ -60,7 +61,7 @@ func TestHandleRelayedTransactionsNotFound(t *testing.T) {
 		}
 		defer teardown(false)
 
-		sharedRequestedTransactions := transactionrelay.NewSharedRequestedTransactions()
+		sharedRequestedTransactions := flowcontext.NewSharedRequestedTransactions()
 		adapter, err := netadapter.NewNetAdapter(config.DefaultConfig())
 		if err != nil {
 			t.Fatalf("Failed to create a NetAdapter: %v", err)
@@ -153,7 +154,7 @@ func TestOnClosedIncomingRoute(t *testing.T) {
 		}
 		defer teardown(false)
 
-		sharedRequestedTransactions := transactionrelay.NewSharedRequestedTransactions()
+		sharedRequestedTransactions := flowcontext.NewSharedRequestedTransactions()
 		adapter, err := netadapter.NewNetAdapter(config.DefaultConfig())
 		if err != nil {
 			t.Fatalf("Failed to creat a NetAdapter : %v", err)
