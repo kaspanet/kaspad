@@ -144,13 +144,13 @@ func (as *addressStore) getAllNotBannedNetAddresses() []*appmessage.NetAddress {
 	return addresses
 }
 
-func (as *addressStore) getAllNotBannedNetAddressesWithout(ignoredAddresses []*appmessage.NetAddress) []*appmessage.NetAddress {
+func (as *addressStore) getAllNotBannedNetAddressesWithout(ignoredAddresses []*appmessage.NetAddress) []*address {
 	ignoredKeys := netAddressesKeys(ignoredAddresses)
 
-	addresses := make([]*appmessage.NetAddress, 0, len(as.notBannedAddresses))
+	addresses := make([]*address, 0, len(as.notBannedAddresses))
 	for key, address := range as.notBannedAddresses {
 		if !ignoredKeys[key] {
-			addresses = append(addresses, address.netAddress)
+			addresses = append(addresses, address)
 		}
 	}
 	return addresses
@@ -240,13 +240,13 @@ func (as *addressStore) deserializeAddressKey(serializedKey []byte) addressKey {
 }
 
 func (as *addressStore) serializeAddress(address *address) []byte {
-	serializedSize := 16 + 2 + 8 + 8 // ipv6 + port + timestamp + connectionFailedCount
+	serializedSize := 16 + 2 + 8 + 1 // ipv6 + port + timestamp + level
 	serializedNetAddress := make([]byte, serializedSize)
 
 	copy(serializedNetAddress[:], address.netAddress.IP.To16()[:])
 	binary.LittleEndian.PutUint16(serializedNetAddress[16:], address.netAddress.Port)
 	binary.LittleEndian.PutUint64(serializedNetAddress[18:], uint64(address.netAddress.Timestamp.UnixMilliseconds()))
-	binary.LittleEndian.PutUint64(serializedNetAddress[26:], uint64(address.connectionFailedCount))
+	serializedNetAddress[26] = address.level
 
 	return serializedNetAddress
 }
@@ -257,7 +257,11 @@ func (as *addressStore) deserializeAddress(serializedAddress []byte) *address {
 
 	port := binary.LittleEndian.Uint16(serializedAddress[16:])
 	timestamp := mstime.UnixMilliseconds(int64(binary.LittleEndian.Uint64(serializedAddress[18:])))
-	connectionFailedCount := binary.LittleEndian.Uint64(serializedAddress[26:])
+
+	level := level3
+	if len(serializedAddress) == 27 { // Migrating connectionFailedCount → level
+		level = serializedAddress[26]
+	}
 
 	return &address{
 		netAddress: &appmessage.NetAddress{
@@ -265,6 +269,6 @@ func (as *addressStore) deserializeAddress(serializedAddress []byte) *address {
 			Port:      port,
 			Timestamp: timestamp,
 		},
-		connectionFailedCount: connectionFailedCount,
+		level: level,
 	}
 }

@@ -35,7 +35,7 @@ func TestAddressSerialization(t *testing.T) {
 			Port:      12345,
 			Timestamp: mstime.Now(),
 		},
-		connectionFailedCount: 98465,
+		level: level3,
 	}
 
 	serializedTestAddress := addressStore.serializeAddress(testAddress)

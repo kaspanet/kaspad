@@ -123,8 +123,6 @@ func (c *ConnectionManager) connectionsLoop() {
 
 		c.checkIncomingConnections(connSet)
 
-		c.seedFromDNS()
-
 		c.waitTillNextIteration()
 	}
 }

@@ -19,8 +19,7 @@ const maxAddresses = 4096
 
 // addressRandomizer is the interface for the randomizer needed for the AddressManager.
 type addressRandomizer interface {
-	RandomAddress(addresses []*appmessage.NetAddress) *appmessage.NetAddress
-	RandomAddresses(addresses []*appmessage.NetAddress, count int) []*appmessage.NetAddress
+	RandomAddresses(addresses []*address, count int) []*appmessage.NetAddress
 }
 
 // addressKey represents a pair of IP and port, the IP is always in V6 representation
@@ -29,9 +28,20 @@ type addressKey struct {
 	address ipv6
 }
 
+// Levels of addresses
+const (
+	level0 = uint8(iota) // after 3 failed connection
+	level1               // after 2 failed connection
+	level2               // after 1 failed connection
+	level3               // default for new address
+	level4               // after successful connection
+)
+
+const maxLevel = level4
+
 type address struct {
-	netAddress            *appmessage.NetAddress
-	connectionFailedCount uint64
+	netAddress *appmessage.NetAddress
+	level      uint8
 }
 
 type ipv6 [net.IPv6len]byte
@@ -87,7 +97,7 @@ func (am *AddressManager) addAddressNoLock(netAddress *appmessage.NetAddress) er
 	}
 
 	key := netAddressKey(netAddress)
-	address := &address{netAddress: netAddress, connectionFailedCount: 0}
+	address := &address{netAddress: netAddress, level: level3}
 	err := am.store.add(key, address)
 	if err != nil {
 		return err
@@ -96,17 +106,16 @@ func (am *AddressManager) addAddressNoLock(netAddress *appmessage.NetAddress) er
 	if am.store.notBannedCount() > maxAddresses {
 		allAddresses := am.store.getAllNotBanned()
 
-		maxConnectionFailedCount := uint64(0)
+		minLevel := level4
 		toRemove := allAddresses[0]
 		for _, address := range allAddresses[1:] {
-			if address.connectionFailedCount > maxConnectionFailedCount {
-				maxConnectionFailedCount = address.connectionFailedCount
+			if address.level < minLevel {
+				minLevel = address.level
 				toRemove = address
 			}
 		}
 
-		toRemoveKey := netAddressKey(toRemove.netAddress)
-		err := am.store.remove(toRemoveKey)
+		err := am.removeAddressNoLock(toRemove.netAddress)
 		if err != nil {
 			return err
 		}
@@ -160,7 +169,14 @@ func (am *AddressManager) MarkConnectionFailure(address *appmessage.NetAddress) 
 	if !ok {
 		return errors.Errorf("address %s is not registered with the address manager", address.TCPAddress())
 	}
-	entry.connectionFailedCount = entry.connectionFailedCount + 1
+	if entry.level == level0 { // last failure
+		return am.removeAddressNoLock(entry.netAddress)
+	}
+	if entry.level > level2 { // first failure
+		entry.level = level2
+	} else { // not first not last failure
+		entry.level--
+	}
 	return am.store.updateNotBanned(key, entry)
 }
 
@@ -175,7 +191,7 @@ func (am *AddressManager) MarkConnectionSuccess(address *appmessage.NetAddress) 
 	if !ok {
 		return errors.Errorf("address %s is not registered with the address manager", address.TCPAddress())
 	}
-	entry.connectionFailedCount = 0
+	entry.level = level4
 	return am.store.updateNotBanned(key, entry)
 }
 
@@ -196,17 +212,11 @@ func (am *AddressManager) BannedAddresses() []*appmessage.NetAddress {
 }
 
 // notBannedAddressesWithException returns all not banned addresses with excpetion
-func (am *AddressManager) notBannedAddressesWithException(exceptions []*appmessage.NetAddress) []*appmessage.NetAddress {
+func (am *AddressManager) notBannedAddressesWithException(exceptions []*appmessage.NetAddress) []*address {
 	am.mutex.Lock()
 	defer am.mutex.Unlock()
 
 	return am.store.getAllNotBannedNetAddressesWithout(exceptions)
-}
-
-// RandomAddress returns a random address that isn't banned and isn't in exceptions
-func (am *AddressManager) RandomAddress(exceptions []*appmessage.NetAddress) *appmessage.NetAddress {
-	validAddresses := am.notBannedAddressesWithException(exceptions)
-	return am.random.RandomAddress(validAddresses)
 }
 
 // RandomAddresses returns count addresses at random that aren't banned and aren't in exceptions
