@@ -367,7 +367,7 @@ func (d *File) detectNumThreads(password []byte, encryptedMnemonic *EncryptedMne
 
 		_, err := decryptMnemonic(numThreadsGuess, encryptedMnemonic, password)
 		if err != nil {
-			const maxTries = 32
+			const maxTries = 255
 			if numThreadsGuess == maxTries || !strings.Contains(err.Error(), "message authentication failed") {
 				return 0, err
 			}
