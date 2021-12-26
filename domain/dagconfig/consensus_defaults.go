@@ -75,5 +75,11 @@ const (
 
 	defaultPruningProofM = 1000
 
-	defaultDeflationaryPhaseDaaScore = 15778800 // Half a year
+	// defaultDeflationaryPhaseDaaScore is the DAA score after which the pre-deflationary period
+	// switches to the deflationary period. This number is calculated as follows:
+	// We define a year as 365.25 days
+	// Half a year in seconds = 365.25 / 2 * 24 * 60 * 60 = 15778800
+	// The network was down for three days shortly after launch
+	// Three days in seconds = 3 * 24 * 60 * 60 = 259200
+	defaultDeflationaryPhaseDaaScore = 15778800 - 259200
 )
