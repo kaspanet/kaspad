@@ -196,6 +196,8 @@ func (c *coinbaseManager) CalcBlockSubsidy(stagingArea *model.StagingArea, block
 }
 
 func (c *coinbaseManager) calcDeflationaryPeriodBlockSubsidy(blockDaaScore uint64) uint64 {
+	// We define a year as 365.25 days and a month as 365.25 / 12 = 30.4375
+	// secondsPerMonth = 30.4375 * 24 * 60 * 60
 	const secondsPerMonth = 2629800
 	monthsSinceDeflationaryPhaseStarted := (blockDaaScore - c.deflationaryPhaseDaaScore) / secondsPerMonth
 
