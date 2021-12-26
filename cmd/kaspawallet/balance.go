@@ -8,6 +8,14 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
 )
 
+func formatKas(amount uint64) string {
+	res := "                   "
+	if amount > 0 {
+		res = fmt.Sprintf("%19.8f", float64(amount)/constants.SompiPerKaspa)
+	}
+	return res
+}
+
 func balance(conf *balanceConfig) error {
 	daemonClient, tearDown, err := client.Connect(conf.DaemonAddress)
 	if err != nil {
@@ -22,10 +30,21 @@ func balance(conf *balanceConfig) error {
 		return err
 	}
 
-	fmt.Printf("Balance:\t\tKAS %f\n", float64(response.Available)/constants.SompiPerKaspa)
+	pendingSuffix := ""
 	if response.Pending > 0 {
-		fmt.Printf("Pending balance:\tKAS %f\n", float64(response.Pending)/constants.SompiPerKaspa)
+		pendingSuffix = " (pending)"
 	}
+	if conf.Verbose {
+		pendingSuffix = ""
+		println("Address                                                                       Available             Pending")
+		println("-----------------------------------------------------------------------------------------------------------")
+		for _, addressBalance := range response.AddressBalances {
+			fmt.Printf("%s %s %s\n", addressBalance.Address, formatKas(addressBalance.Available), formatKas(addressBalance.Pending))
+		}
+		println("-----------------------------------------------------------------------------------------------------------")
+		print("                                                 ")
+	}
+	fmt.Printf("Total balance, KAS %s %s%s\n", formatKas(response.Available), formatKas(response.Pending), pendingSuffix)
 
 	return nil
 }

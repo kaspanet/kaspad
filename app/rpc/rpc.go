@@ -28,6 +28,7 @@ var handlers = map[appmessage.MessageCommand]handler{
 	appmessage.CmdGetVirtualSelectedParentChainFromBlockRequestMessage:      rpchandlers.HandleGetVirtualSelectedParentChainFromBlock,
 	appmessage.CmdGetBlocksRequestMessage:                                   rpchandlers.HandleGetBlocks,
 	appmessage.CmdGetBlockCountRequestMessage:                               rpchandlers.HandleGetBlockCount,
+	appmessage.CmdGetBalanceByAddressRequestMessage:                         rpchandlers.HandleGetBalanceByAddress,
 	appmessage.CmdGetBlockDAGInfoRequestMessage:                             rpchandlers.HandleGetBlockDAGInfo,
 	appmessage.CmdResolveFinalityConflictRequestMessage:                     rpchandlers.HandleResolveFinalityConflict,
 	appmessage.CmdNotifyFinalityConflictsRequestMessage:                     rpchandlers.HandleNotifyFinalityConflicts,
