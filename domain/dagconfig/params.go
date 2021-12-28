@@ -233,6 +233,8 @@ var MainnetParams = Params{
 		"seeder3.kaspad.net",
 		// This DNS seeder is run by Georges Künzli
 		"seeder4.kaspad.net",
+		// This DNS seeder is run by Tim
+		"kaspadns.kaspacalc.net",
 	},
 
 	// DAG parameters
@@ -481,16 +483,12 @@ var DevnetParams = Params{
 	IgnoreHeaderMass:                        true,
 }
 
-var (
-	// ErrDuplicateNet describes an error where the parameters for a Kaspa
-	// network could not be set due to the network already being a standard
-	// network or previously-registered into this package.
-	ErrDuplicateNet = errors.New("duplicate Kaspa network")
-)
+// ErrDuplicateNet describes an error where the parameters for a Kaspa
+// network could not be set due to the network already being a standard
+// network or previously-registered into this package.
+var ErrDuplicateNet = errors.New("duplicate Kaspa network")
 
-var (
-	registeredNets = make(map[appmessage.KaspaNet]struct{})
-)
+var registeredNets = make(map[appmessage.KaspaNet]struct{})
 
 // Register registers the network parameters for a Kaspa network. This may
 // error with ErrDuplicateNet if the network is already registered (either
