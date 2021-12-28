@@ -78,3 +78,45 @@ func TestCalcDeflationaryPeriodBlockSubsidy(t *testing.T) {
 		}
 	}
 }
+
+func TestBuildSubsidyTable(t *testing.T) {
+	const deflationaryPhaseBaseSubsidy = 440 * constants.SompiPerKaspa
+	coinbaseManagerInterface := New(
+		nil,
+		0,
+		0,
+		0,
+		&externalapi.DomainHash{},
+		0,
+		deflationaryPhaseBaseSubsidy,
+		nil,
+		nil,
+		nil,
+		nil,
+		nil,
+		nil,
+		nil)
+	coinbaseManagerInstance := coinbaseManagerInterface.(*coinbaseManager)
+
+	var subsidyTable []uint64
+	for M := uint64(0); ; M++ {
+		subsidy := coinbaseManagerInstance.calcDeflationaryPeriodBlockSubsidyFloatCalc(M)
+		subsidyTable = append(subsidyTable, subsidy)
+		if subsidy == 0 {
+			break
+		}
+	}
+
+	print("{")
+	for i := 0; i < (len(subsidyTable)+24)/25; i++ {
+		print("\t")
+		for j := 0; j < 25; j++ {
+			if i*25+j >= len(subsidyTable) {
+				break
+			}
+			print(subsidyTable[i*25+j], ", ")
+		}
+		println()
+	}
+	println("}")
+}
