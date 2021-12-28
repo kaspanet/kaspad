@@ -513,8 +513,8 @@ func (pm *pruningManager) ArePruningPointsViolatingFinality(stagingArea *model.S
 		return false, err
 	}
 
-	for _, header := range pruningPoints {
-		blockHash := consensushashing.HeaderHash(header)
+	for i := len(pruningPoints) - 1; i >= 0; i-- {
+		blockHash := consensushashing.HeaderHash(pruningPoints[i])
 		exists, err := pm.blockStatusStore.Exists(pm.databaseContext, stagingArea, blockHash)
 		if err != nil {
 			return false, err
