@@ -41,7 +41,8 @@ func HandleSubmitBlock(context *rpccontext.Context, _ *router.Router, request ap
 		}
 		// A simple heuristic check which signals that the mined block is out of date
 		// and should not be accepted unless user explicitly requests
-		if int(virtualDAAScore-domainBlock.Header.DAAScore()) > context.Config.NetParams().DifficultyAdjustmentWindowSize {
+		daaWindowSize := uint64(context.Config.NetParams().DifficultyAdjustmentWindowSize)
+		if virtualDAAScore > daaWindowSize && domainBlock.Header.DAAScore() < virtualDAAScore-daaWindowSize {
 			return &appmessage.SubmitBlockResponseMessage{
 				Error: appmessage.RPCErrorf("Block rejected. Reason: block DAA score %d is too far "+
 					"behind virtual's DAA score %d", domainBlock.Header.DAAScore(), virtualDAAScore),
