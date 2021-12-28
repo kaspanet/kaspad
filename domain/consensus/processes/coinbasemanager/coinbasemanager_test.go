@@ -4,6 +4,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
 	"github.com/kaspanet/kaspad/domain/dagconfig"
+	"strconv"
 	"testing"
 )
 
@@ -113,16 +114,13 @@ func TestBuildSubsidyTable(t *testing.T) {
 		}
 	}
 
-	print("{")
-	for i := 0; i < (len(subsidyTable)+24)/25; i++ {
-		print("\t")
-		for j := 0; j < 25; j++ {
-			if i*25+j >= len(subsidyTable) {
-				break
-			}
-			print(subsidyTable[i*25+j], ", ")
+	tableStr := "\n{\t"
+	for i := 0; i < len(subsidyTable); i++ {
+		tableStr += strconv.FormatUint(subsidyTable[i], 10) + ", "
+		if (i+1)%25 == 0 {
+			tableStr += "\n\t"
 		}
-		println()
 	}
-	println("}")
+	tableStr += "\n}"
+	t.Logf(tableStr)
 }
