@@ -3,6 +3,7 @@ package coinbasemanager
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
+	"github.com/kaspanet/kaspad/domain/dagconfig"
 	"testing"
 )
 
@@ -80,7 +81,12 @@ func TestCalcDeflationaryPeriodBlockSubsidy(t *testing.T) {
 }
 
 func TestBuildSubsidyTable(t *testing.T) {
-	const deflationaryPhaseBaseSubsidy = 440 * constants.SompiPerKaspa
+	deflationaryPhaseBaseSubsidy := dagconfig.MainnetParams.DeflationaryPhaseBaseSubsidy
+	if deflationaryPhaseBaseSubsidy != 440 * constants.SompiPerKaspa {
+		t.Errorf("TestBuildSubsidyTable: table generation function was not updated to reflect " +
+			"the new base subsidy %d. Please fix the constant above and replace subsidyByDeflationaryMonthTable " +
+			"in coinbasemanager.go with the printed table", deflationaryPhaseBaseSubsidy)
+	}
 	coinbaseManagerInterface := New(
 		nil,
 		0,
