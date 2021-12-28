@@ -82,9 +82,9 @@ func TestCalcDeflationaryPeriodBlockSubsidy(t *testing.T) {
 
 func TestBuildSubsidyTable(t *testing.T) {
 	deflationaryPhaseBaseSubsidy := dagconfig.MainnetParams.DeflationaryPhaseBaseSubsidy
-	if deflationaryPhaseBaseSubsidy != 440 * constants.SompiPerKaspa {
-		t.Errorf("TestBuildSubsidyTable: table generation function was not updated to reflect " +
-			"the new base subsidy %d. Please fix the constant above and replace subsidyByDeflationaryMonthTable " +
+	if deflationaryPhaseBaseSubsidy != 440*constants.SompiPerKaspa {
+		t.Errorf("TestBuildSubsidyTable: table generation function was not updated to reflect "+
+			"the new base subsidy %d. Please fix the constant above and replace subsidyByDeflationaryMonthTable "+
 			"in coinbasemanager.go with the printed table", deflationaryPhaseBaseSubsidy)
 	}
 	coinbaseManagerInterface := New(
