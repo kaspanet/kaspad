@@ -4,7 +4,7 @@ package appmessage
 // its respective RPC message
 type SubmitBlockRequestMessage struct {
 	baseMessage
-	Block *RPCBlock
+	Block             *RPCBlock
 	AllowNonDAABlocks bool
 }
 
