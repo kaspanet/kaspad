@@ -129,6 +129,7 @@ message GetCurrentNetworkResponseMessage{
 // See: GetBlockTemplateRequestMessage
 message SubmitBlockRequestMessage{
   RpcBlock block = 2;
+  bool allowNonDAABlocks = 3;
 }
 
 message SubmitBlockResponseMessage{
