@@ -18,7 +18,7 @@ import (
 
 const (
 	maxAddresses                   = 4096
-	connectionFailedCountForRemove = 10
+	connectionFailedCountForRemove = 3
 )
 
 // addressRandomizer is the interface for the randomizer needed for the AddressManager.
