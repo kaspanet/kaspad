@@ -92,10 +92,8 @@ type Params struct {
 	// SubsidyPastRewardMultiplier are part of the block subsidy equation.
 	// Further details: https://hashdag.medium.com/kaspa-launch-plan-9a63f4d754a6
 	SubsidyGenesisReward            uint64
-	MinSubsidy                      uint64
-	MaxSubsidy                      uint64
-	SubsidyPastRewardMultiplier     *big.Rat
-	SubsidyMergeSetRewardMultiplier *big.Rat
+	PreDeflationaryPhaseBaseSubsidy uint64
+	DeflationaryPhaseBaseSubsidy    uint64
 
 	// TargetTimePerBlock is the desired amount of time to generate each
 	// block.
@@ -180,12 +178,9 @@ type Params struct {
 	// PruningProofM is the 'm' constant in the pruning proof. For more details see: https://github.com/kaspanet/research/issues/3
 	PruningProofM uint64
 
-	// BaseSubsidy is the starting subsidy amount for mined blocks.
-	BaseSubsidy uint64
-
-	FixedSubsidySwitchPruningPointInterval uint64
-
-	FixedSubsidySwitchHashRateThreshold *big.Int
+	// DeflationaryPhaseDaaScore is the DAA score after which the monetary policy switches
+	// to its deflationary phase
+	DeflationaryPhaseDaaScore uint64
 
 	DisallowDirectBlocksOnTopOfGenesis bool
 
@@ -243,10 +238,8 @@ var MainnetParams = Params{
 	PowMax:                          mainPowMax,
 	BlockCoinbaseMaturity:           100,
 	SubsidyGenesisReward:            defaultSubsidyGenesisReward,
-	MinSubsidy:                      defaultMinSubsidy,
-	MaxSubsidy:                      defaultMaxSubsidy,
-	SubsidyPastRewardMultiplier:     big.NewRat(9, 10),
-	SubsidyMergeSetRewardMultiplier: big.NewRat(1, 10),
+	PreDeflationaryPhaseBaseSubsidy: defaultPreDeflationaryPhaseBaseSubsidy,
+	DeflationaryPhaseBaseSubsidy:    defaultDeflationaryPhaseBaseSubsidy,
 	TargetTimePerBlock:              defaultTargetTimePerBlock,
 	FinalityDuration:                defaultFinalityDuration,
 	DifficultyAdjustmentWindowSize:  defaultDifficultyAdjustmentWindowSize,
@@ -286,8 +279,7 @@ var MainnetParams = Params{
 	MergeSetSizeLimit:                       defaultMergeSetSizeLimit,
 	CoinbasePayloadScriptPublicKeyMaxLength: defaultCoinbasePayloadScriptPublicKeyMaxLength,
 	PruningProofM:                           defaultPruningProofM,
-	FixedSubsidySwitchPruningPointInterval:  defaultFixedSubsidySwitchPruningPointInterval,
-	FixedSubsidySwitchHashRateThreshold:     big.NewInt(150_000_000_000),
+	DeflationaryPhaseDaaScore:               defaultDeflationaryPhaseDaaScore,
 	DisallowDirectBlocksOnTopOfGenesis:      true,
 }
 
@@ -306,10 +298,8 @@ var TestnetParams = Params{
 	PowMax:                          testnetPowMax,
 	BlockCoinbaseMaturity:           100,
 	SubsidyGenesisReward:            defaultSubsidyGenesisReward,
-	MinSubsidy:                      defaultMinSubsidy,
-	MaxSubsidy:                      defaultMaxSubsidy,
-	SubsidyPastRewardMultiplier:     big.NewRat(9, 10),
-	SubsidyMergeSetRewardMultiplier: big.NewRat(1, 10),
+	PreDeflationaryPhaseBaseSubsidy: defaultPreDeflationaryPhaseBaseSubsidy,
+	DeflationaryPhaseBaseSubsidy:    defaultDeflationaryPhaseBaseSubsidy,
 	TargetTimePerBlock:              defaultTargetTimePerBlock,
 	FinalityDuration:                defaultFinalityDuration,
 	DifficultyAdjustmentWindowSize:  defaultDifficultyAdjustmentWindowSize,
@@ -349,8 +339,7 @@ var TestnetParams = Params{
 	MergeSetSizeLimit:                       defaultMergeSetSizeLimit,
 	CoinbasePayloadScriptPublicKeyMaxLength: defaultCoinbasePayloadScriptPublicKeyMaxLength,
 	PruningProofM:                           defaultPruningProofM,
-	FixedSubsidySwitchPruningPointInterval:  defaultFixedSubsidySwitchPruningPointInterval,
-	FixedSubsidySwitchHashRateThreshold:     big.NewInt(150_000_000_000),
+	DeflationaryPhaseDaaScore:               defaultDeflationaryPhaseDaaScore,
 	IgnoreHeaderMass:                        true,
 }
 
@@ -375,10 +364,8 @@ var SimnetParams = Params{
 	PowMax:                          simnetPowMax,
 	BlockCoinbaseMaturity:           100,
 	SubsidyGenesisReward:            defaultSubsidyGenesisReward,
-	MinSubsidy:                      defaultMinSubsidy,
-	MaxSubsidy:                      defaultMaxSubsidy,
-	SubsidyPastRewardMultiplier:     big.NewRat(9, 10),
-	SubsidyMergeSetRewardMultiplier: big.NewRat(1, 10),
+	PreDeflationaryPhaseBaseSubsidy: defaultPreDeflationaryPhaseBaseSubsidy,
+	DeflationaryPhaseBaseSubsidy:    defaultDeflationaryPhaseBaseSubsidy,
 	TargetTimePerBlock:              time.Millisecond,
 	FinalityDuration:                time.Minute,
 	DifficultyAdjustmentWindowSize:  defaultDifficultyAdjustmentWindowSize,
@@ -416,8 +403,7 @@ var SimnetParams = Params{
 	MergeSetSizeLimit:                       defaultMergeSetSizeLimit,
 	CoinbasePayloadScriptPublicKeyMaxLength: defaultCoinbasePayloadScriptPublicKeyMaxLength,
 	PruningProofM:                           defaultPruningProofM,
-	FixedSubsidySwitchPruningPointInterval:  defaultFixedSubsidySwitchPruningPointInterval,
-	FixedSubsidySwitchHashRateThreshold:     big.NewInt(150_000_000_000),
+	DeflationaryPhaseDaaScore:               defaultDeflationaryPhaseDaaScore,
 }
 
 // DevnetParams defines the network parameters for the development Kaspa network.
@@ -435,10 +421,8 @@ var DevnetParams = Params{
 	PowMax:                          devnetPowMax,
 	BlockCoinbaseMaturity:           100,
 	SubsidyGenesisReward:            defaultSubsidyGenesisReward,
-	MinSubsidy:                      defaultMinSubsidy,
-	MaxSubsidy:                      defaultMaxSubsidy,
-	SubsidyPastRewardMultiplier:     big.NewRat(9, 10),
-	SubsidyMergeSetRewardMultiplier: big.NewRat(1, 10),
+	PreDeflationaryPhaseBaseSubsidy: defaultPreDeflationaryPhaseBaseSubsidy,
+	DeflationaryPhaseBaseSubsidy:    defaultDeflationaryPhaseBaseSubsidy,
 	TargetTimePerBlock:              defaultTargetTimePerBlock,
 	FinalityDuration:                defaultFinalityDuration,
 	DifficultyAdjustmentWindowSize:  defaultDifficultyAdjustmentWindowSize,
@@ -478,8 +462,7 @@ var DevnetParams = Params{
 	MergeSetSizeLimit:                       defaultMergeSetSizeLimit,
 	CoinbasePayloadScriptPublicKeyMaxLength: defaultCoinbasePayloadScriptPublicKeyMaxLength,
 	PruningProofM:                           defaultPruningProofM,
-	FixedSubsidySwitchPruningPointInterval:  defaultFixedSubsidySwitchPruningPointInterval,
-	FixedSubsidySwitchHashRateThreshold:     big.NewInt(150_000_000_000),
+	DeflationaryPhaseDaaScore:               defaultDeflationaryPhaseDaaScore,
 	IgnoreHeaderMass:                        true,
 }
 
