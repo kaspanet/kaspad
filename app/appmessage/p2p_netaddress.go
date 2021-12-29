@@ -5,8 +5,9 @@
 package appmessage
 
 import (
-	"github.com/kaspanet/kaspad/util/mstime"
 	"net"
+
+	"github.com/kaspanet/kaspad/util/mstime"
 )
 
 // NetAddress defines information about a peer on the network including the time
@@ -56,4 +57,8 @@ func NewNetAddressTimestamp(
 // supported services with defaults for the remaining fields.
 func NewNetAddress(addr *net.TCPAddr) *NetAddress {
 	return NewNetAddressIPPort(addr.IP, uint16(addr.Port))
+}
+
+func (na NetAddress) String() string {
+	return na.TCPAddress().String()
 }
