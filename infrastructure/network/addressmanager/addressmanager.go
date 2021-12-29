@@ -5,17 +5,21 @@
 package addressmanager
 
 import (
-	"github.com/kaspanet/kaspad/infrastructure/db/database"
-	"github.com/kaspanet/kaspad/util/mstime"
 	"net"
 	"sync"
 	"time"
+
+	"github.com/kaspanet/kaspad/infrastructure/db/database"
+	"github.com/kaspanet/kaspad/util/mstime"
 
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/pkg/errors"
 )
 
-const maxAddresses = 4096
+const (
+	maxAddresses                   = 4096
+	connectionFailedCountForRemove = 3
+)
 
 // addressRandomizer is the interface for the randomizer needed for the AddressManager.
 type addressRandomizer interface {
@@ -161,6 +165,13 @@ func (am *AddressManager) MarkConnectionFailure(address *appmessage.NetAddress) 
 		return errors.Errorf("address %s is not registered with the address manager", address.TCPAddress())
 	}
 	entry.connectionFailedCount = entry.connectionFailedCount + 1
+
+	if entry.connectionFailedCount >= connectionFailedCountForRemove {
+		log.Debugf("Address %s has failed %d connection attempts - removing from address manager",
+			address, entry.connectionFailedCount)
+		return am.store.remove(key)
+	}
+
 	return am.store.updateNotBanned(key, entry)
 }
 
