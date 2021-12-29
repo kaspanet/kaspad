@@ -27,7 +27,7 @@ func (x *SubmitBlockRequestMessage) toAppMessage() (appmessage.Message, error) {
 		return nil, err
 	}
 	return &appmessage.SubmitBlockRequestMessage{
-		Block: blockAppMessage,
+		Block:             blockAppMessage,
 		AllowNonDAABlocks: x.GetAllowNonDAABlocks(),
 	}, nil
 }
