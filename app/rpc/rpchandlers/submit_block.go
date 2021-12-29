@@ -34,7 +34,7 @@ func HandleSubmitBlock(context *rpccontext.Context, _ *router.Router, request ap
 		}, nil
 	}
 
-	if !context.Config.AllowSubmittingNonDAABlocks {
+	if !submitBlockRequest.AllowNonDAABlocks {
 		virtualDAAScore, err := context.Domain.Consensus().GetVirtualDAAScore()
 		if err != nil {
 			return nil, err

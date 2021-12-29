@@ -5,6 +5,7 @@ package appmessage
 type SubmitBlockRequestMessage struct {
 	baseMessage
 	Block *RPCBlock
+	AllowNonDAABlocks bool
 }
 
 // Command returns the protocol command string for the message
