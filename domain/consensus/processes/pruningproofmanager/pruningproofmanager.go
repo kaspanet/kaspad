@@ -441,6 +441,11 @@ func (ppm *pruningProofManager) ValidatePruningPointProof(pruningPointProof *ext
 		return err
 	}
 
+	currentDAGPruningPointHeader, err := ppm.blockHeaderStore.BlockHeader(ppm.databaseContext, model.NewStagingArea(), currentDAGPruningPoint)
+	if err != nil {
+		return err
+	}
+
 	for blockLevel, selectedTip := range selectedTipByLevel {
 		if blockLevel <= pruningPointBlockLevel {
 			if !selectedTip.Equal(consensushashing.HeaderHash(pruningPointHeader)) {
@@ -493,10 +498,7 @@ func (ppm *pruningProofManager) ValidatePruningPointProof(pruningPointProof *ext
 
 		if commonAncestor != nil {
 			selectedTipBlueWorkDiff := big.NewInt(0).Sub(selectedTipGHOSTDAGData.BlueWork(), commonAncestorGHOSTDAGData.BlueWork())
-			currentDAGPruningPointParents, err := ppm.dagTopologyManagers[blockLevel].Parents(model.NewStagingArea(), currentDAGPruningPoint)
-			if err != nil {
-				return err
-			}
+			currentDAGPruningPointParents := ppm.parentsManager.ParentsAtLevel(currentDAGPruningPointHeader, blockLevel)
 
 			foundBetterParent := false
 			for _, parent := range currentDAGPruningPointParents {
