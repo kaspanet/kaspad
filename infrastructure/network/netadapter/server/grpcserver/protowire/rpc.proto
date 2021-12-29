@@ -129,6 +129,7 @@ message GetCurrentNetworkResponseMessage{
 // See: GetBlockTemplateRequestMessage
 message SubmitBlockRequestMessage{
   RpcBlock block = 2;
+  bool allowNonDAABlocks = 3;
 }
 
 message SubmitBlockResponseMessage{
@@ -494,6 +495,19 @@ message GetUtxosByAddressesRequestMessage {
 
 message GetUtxosByAddressesResponseMessage {
   repeated UtxosByAddressesEntry entries = 1;
+
+  RPCError error = 1000;
+}
+
+// GetBalanceByAddressRequest returns the total balance in unspent transactions towards a given address
+// 
+// This call is only available when this kaspad was started with `--utxoindex`
+message GetBalanceByAddressRequestMessage {
+  string address = 1;
+}
+
+message GetBalanceByAddressResponseMessage {
+  uint64 balance = 1;
 
   RPCError error = 1000;
 }

@@ -12,8 +12,7 @@ If you want to make a big change it's better to discuss it first by opening an i
 
 ## Pull Request process
 
-Any pull request should be opened against the development branch of the target version. The development branch format is
-as follows: `vx.y.z-dev`, for example: `v0.8.5-dev`.
+Any pull request should be opened against the development branch `dev`.
 
 All pull requests should pass the checks written in `build_and_test.sh`, so it's recommended to run this script before
 submitting your PR.

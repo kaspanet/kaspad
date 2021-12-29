@@ -44,6 +44,7 @@ type createConfig struct {
 
 type balanceConfig struct {
 	DaemonAddress string `long:"daemonaddress" short:"d" description:"Wallet daemon server to connect to (default: localhost:8082)"`
+	Verbose       bool   `long:"verbose" short:"v" description:"Verbose: show addresses with balance"`
 	config.NetworkFlags
 }
 
