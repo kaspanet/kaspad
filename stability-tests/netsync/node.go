@@ -199,5 +199,5 @@ func mineOnTips(client *rpc.Client) (appmessage.RejectReason, error) {
 		mine.SolveBlock(domainBlock)
 	}
 
-	return client.SubmitBlock(domainBlock)
+	return client.SubmitBlockAlsoIfNonDAA(domainBlock)
 }

@@ -297,7 +297,7 @@ func logMinedBlockStatsAndUpdateStatFields(t *testing.T, rpcClient *rpcclient.RP
 }
 
 func submitMinedBlock(t *testing.T, rpcClient *rpcclient.RPCClient, block *externalapi.DomainBlock) {
-	_, err := rpcClient.SubmitBlock(block)
+	_, err := rpcClient.SubmitBlockAlsoIfNonDAA(block)
 	if err != nil {
 		t.Fatalf("SubmitBlock: %s", err)
 	}
