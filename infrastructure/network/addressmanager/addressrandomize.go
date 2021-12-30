@@ -22,7 +22,8 @@ func NewAddressRandomize(maxFailedCount uint64) *AddressRandomize {
 	}
 }
 
-// Help function which returns a random index in the range [0, len(weights)-1] with probability weighted by `weights`
+// weightedRand is a help function which returns a random index in the
+// range [0, len(weights)-1] with probability weighted by `weights`
 func weightedRand(weights []float32) int {
 	sum := float32(0)
 	for _, weight := range weights {
