@@ -228,7 +228,7 @@ func mineNextBlockWithMockTimestamps(t *testing.T, harness *appHarness, rd *rand
 
 	mining.SolveBlock(block, rd)
 
-	_, err = harness.rpcClient.SubmitBlock(block)
+	_, err = harness.rpcClient.SubmitBlockAlsoIfNonDAA(block)
 	if err != nil {
 		t.Fatalf("Error submitting block: %s", err)
 	}
