@@ -1,3 +1,20 @@
+Kaspad v0.11.9 - 2021-12-30
+===========================
+Breaking changes:
+* Implement the new monetary policy. Breaking change effective only in ~4 months (#1892)
+
+Bug fixes:
+* Fix two pruning proof IBD crash bugs (#1913)
+* Fix UTXO index bug showing wrong wallet balance (#1891)
+
+Non-breaking changes:
+* Address search: cleanup repetitively-offline addresses and use randomization weighted by connection failures  (#1899, #1916)
+* New DNS seeders and removal of offline one (#1901, #1910, #1918)
+* Add request balance by address to kaspactl (#1885)
+* Wallet: show balance by addresses (#1904)
+* Reject outdated non-DAA blocks submitted via RPC  (#1914)
+* Add a profile option to kaspawallet daemon (#1854)
+
 Kaspad v0.11.8 - 2021-12-13
 ===========================
 Bug fixes:
