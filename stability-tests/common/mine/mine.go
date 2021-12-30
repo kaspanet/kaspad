@@ -75,7 +75,7 @@ func mineBlocks(consensusConfig *consensus.Config, rpcClient *rpc.Client, blockC
 		}
 
 		beforeSubmitBlockTime := time.Now()
-		rejectReason, err := rpcClient.SubmitBlock(block)
+		rejectReason, err := rpcClient.SubmitBlockAlsoIfNonDAA(block)
 		if err != nil {
 			return errors.Wrap(err, "error in SubmitBlock")
 		}

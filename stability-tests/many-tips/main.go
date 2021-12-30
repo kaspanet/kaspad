@@ -77,7 +77,7 @@ func realMain() error {
 	mutableHeader.SetTimeInMilliseconds(genesisTimestamp + 1000)
 	block.Header = mutableHeader.ToImmutable()
 	mining.SolveBlock(block, rand.New(rand.NewSource(time.Now().UnixNano())))
-	_, err = rpcClient.SubmitBlock(block)
+	_, err = rpcClient.SubmitBlockAlsoIfNonDAA(block)
 	if err != nil {
 		return err
 	}
@@ -183,7 +183,7 @@ func mineBlock(rpcClient *rpc.Client, miningAddress util.Address) error {
 		return err
 	}
 	mining.SolveBlock(block, rand.New(rand.NewSource(time.Now().UnixNano())))
-	_, err = rpcClient.SubmitBlock(block)
+	_, err = rpcClient.SubmitBlockAlsoIfNonDAA(block)
 	if err != nil {
 		return err
 	}
@@ -202,7 +202,7 @@ func mineTips(numOfTips int, miningAddress util.Address, rpcClient *rpc.Client) 
 	rd := rand.New(rand.NewSource(time.Now().UnixNano()))
 	for i := 0; i < numOfTips; i++ {
 		mining.SolveBlock(block, rd)
-		_, err = rpcClient.SubmitBlock(block)
+		_, err = rpcClient.SubmitBlockAlsoIfNonDAA(block)
 		if err != nil {
 			return err
 		}
