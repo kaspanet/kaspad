@@ -15,7 +15,10 @@ import (
 	"github.com/pkg/errors"
 )
 
-const maxAddresses = 4096
+const (
+	maxAddresses                   = 4096
+	connectionFailedCountForRemove = 4
+)
 
 // addressRandomizer is the interface for the randomizer needed for the AddressManager.
 type addressRandomizer interface {
@@ -28,20 +31,9 @@ type addressKey struct {
 	address ipv6
 }
 
-// Levels of addresses
-const (
-	level0 = uint8(iota) // after 3 failed connection
-	level1               // after 2 failed connection
-	level2               // after 1 failed connection
-	level3               // default for new address
-	level4               // after successful connection
-)
-
-const maxLevel = level4
-
 type address struct {
-	netAddress *appmessage.NetAddress
-	level      uint8
+	netAddress            *appmessage.NetAddress
+	connectionFailedCount uint64
 }
 
 type ipv6 [net.IPv6len]byte
@@ -86,7 +78,7 @@ func New(cfg *Config, database database.Database) (*AddressManager, error) {
 	return &AddressManager{
 		store:          addressStore,
 		localAddresses: localAddresses,
-		random:         NewAddressRandomize(),
+		random:         NewAddressRandomize(connectionFailedCountForRemove),
 		cfg:            cfg,
 	}, nil
 }
@@ -97,7 +89,8 @@ func (am *AddressManager) addAddressNoLock(netAddress *appmessage.NetAddress) er
 	}
 
 	key := netAddressKey(netAddress)
-	address := &address{netAddress: netAddress, level: level3}
+	// We mark `connectionFailedCount` as 0 only after first success
+	address := &address{netAddress: netAddress, connectionFailedCount: 1}
 	err := am.store.add(key, address)
 	if err != nil {
 		return err
@@ -106,11 +99,11 @@ func (am *AddressManager) addAddressNoLock(netAddress *appmessage.NetAddress) er
 	if am.store.notBannedCount() > maxAddresses {
 		allAddresses := am.store.getAllNotBanned()
 
-		minLevel := level4
+		maxConnectionFailedCount := uint64(0)
 		toRemove := allAddresses[0]
 		for _, address := range allAddresses[1:] {
-			if address.level < minLevel {
-				minLevel = address.level
+			if address.connectionFailedCount > maxConnectionFailedCount {
+				maxConnectionFailedCount = address.connectionFailedCount
 				toRemove = address
 			}
 		}
@@ -169,13 +162,12 @@ func (am *AddressManager) MarkConnectionFailure(address *appmessage.NetAddress) 
 	if !ok {
 		return errors.Errorf("address %s is not registered with the address manager", address.TCPAddress())
 	}
-	if entry.level == level0 { // last failure
-		return am.removeAddressNoLock(entry.netAddress)
-	}
-	if entry.level > level2 { // first failure
-		entry.level = level2
-	} else { // not first not last failure
-		entry.level--
+	entry.connectionFailedCount = entry.connectionFailedCount + 1
+
+	if entry.connectionFailedCount >= connectionFailedCountForRemove {
+		log.Debugf("Address %s has failed %d connection attempts - removing from address manager",
+			address, entry.connectionFailedCount)
+		return am.store.remove(key)
 	}
 	return am.store.updateNotBanned(key, entry)
 }
@@ -191,7 +183,7 @@ func (am *AddressManager) MarkConnectionSuccess(address *appmessage.NetAddress) 
 	if !ok {
 		return errors.Errorf("address %s is not registered with the address manager", address.TCPAddress())
 	}
-	entry.level = level4
+	entry.connectionFailedCount = 0
 	return am.store.updateNotBanned(key, entry)
 }
 

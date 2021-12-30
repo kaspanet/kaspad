@@ -240,13 +240,13 @@ func (as *addressStore) deserializeAddressKey(serializedKey []byte) addressKey {
 }
 
 func (as *addressStore) serializeAddress(address *address) []byte {
-	serializedSize := 16 + 2 + 8 + 1 // ipv6 + port + timestamp + level
+	serializedSize := 16 + 2 + 8 + 8 // ipv6 + port + timestamp + connectionFailedCount
 	serializedNetAddress := make([]byte, serializedSize)
 
 	copy(serializedNetAddress[:], address.netAddress.IP.To16()[:])
 	binary.LittleEndian.PutUint16(serializedNetAddress[16:], address.netAddress.Port)
 	binary.LittleEndian.PutUint64(serializedNetAddress[18:], uint64(address.netAddress.Timestamp.UnixMilliseconds()))
-	serializedNetAddress[26] = address.level
+	binary.LittleEndian.PutUint64(serializedNetAddress[26:], uint64(address.connectionFailedCount))
 
 	return serializedNetAddress
 }
@@ -257,11 +257,7 @@ func (as *addressStore) deserializeAddress(serializedAddress []byte) *address {
 
 	port := binary.LittleEndian.Uint16(serializedAddress[16:])
 	timestamp := mstime.UnixMilliseconds(int64(binary.LittleEndian.Uint64(serializedAddress[18:])))
-
-	level := level3
-	if len(serializedAddress) == 27 { // Migrating connectionFailedCount → level
-		level = serializedAddress[26]
-	}
+	connectionFailedCount := binary.LittleEndian.Uint64(serializedAddress[26:])
 
 	return &address{
 		netAddress: &appmessage.NetAddress{
@@ -269,6 +265,6 @@ func (as *addressStore) deserializeAddress(serializedAddress []byte) *address {
 			Port:      port,
 			Timestamp: timestamp,
 		},
-		level: level,
+		connectionFailedCount: connectionFailedCount,
 	}
 }

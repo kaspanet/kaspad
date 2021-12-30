@@ -49,6 +49,7 @@ func (c *ConnectionManager) checkOutgoingConnections(connSet connectionSet) {
 
 		c.activeOutgoing[addressString] = struct{}{}
 	}
+
 	if len(netAddresses) < connectionsNeededCount {
 		log.Debugf("Need %d more outgoing connections - seeding addresses from DNS",
 			connectionsNeededCount-len(netAddresses))
