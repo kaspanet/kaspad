@@ -216,8 +216,6 @@ var MainnetParams = Params{
 		"mainnet-dnsseed-1.kaspanet.org",
 		// This DNS seeder is run by Denis Mashkevich
 		"mainnet-dnsseed-2.kaspanet.org",
-		// This DNS seeder is run by Elichai Turkel
-		"kaspa.turkel.in",
 		// This DNS seeder is run by Constantine Bytensky
 		"dnsseed.cbytensky.org",
 		// This DNS seeder is run by Georges Künzli
