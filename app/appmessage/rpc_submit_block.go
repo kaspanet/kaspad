@@ -14,9 +14,10 @@ func (msg *SubmitBlockRequestMessage) Command() MessageCommand {
 }
 
 // NewSubmitBlockRequestMessage returns a instance of the message
-func NewSubmitBlockRequestMessage(block *RPCBlock) *SubmitBlockRequestMessage {
+func NewSubmitBlockRequestMessage(block *RPCBlock, allowNonDAABlocks bool) *SubmitBlockRequestMessage {
 	return &SubmitBlockRequestMessage{
-		Block: block,
+		Block:             block,
+		AllowNonDAABlocks: allowNonDAABlocks,
 	}
 }
 

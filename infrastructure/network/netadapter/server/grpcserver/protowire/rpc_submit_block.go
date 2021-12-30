@@ -15,6 +15,7 @@ func (x *KaspadMessage_SubmitBlockRequest) toAppMessage() (appmessage.Message, e
 
 func (x *KaspadMessage_SubmitBlockRequest) fromAppMessage(message *appmessage.SubmitBlockRequestMessage) error {
 	x.SubmitBlockRequest = &SubmitBlockRequestMessage{Block: &RpcBlock{}}
+	x.SubmitBlockRequest.AllowNonDAABlocks = message.AllowNonDAABlocks
 	return x.SubmitBlockRequest.Block.fromAppMessage(message.Block)
 }
 
