@@ -53,11 +53,8 @@ func (amc *AddressRandomize) RandomAddresses(addresses []*address, count int) []
 	for count > 0 {
 		i := weightedRand(weights)
 		result = append(result, addresses[i].netAddress)
-		// Delete entry i from both arrays
-		addresses[i] = addresses[len(addresses)-1]
-		weights[i] = weights[len(weights)-1]
-		addresses = addresses[:len(addresses)-1]
-		weights = weights[:len(weights)-1]
+		// Zero entry i to avoid re-selection
+		weights[i] = 0
 		// Update count
 		count--
 	}
