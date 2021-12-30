@@ -5,7 +5,6 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 )
 
-// SubmitBlock sends an RPC request respective to the function's name and returns the RPC server's response
 func (c *RPCClient) submitBlock(block *externalapi.DomainBlock, allowNonDAABlocks bool) (appmessage.RejectReason, error) {
 	err := c.rpcRouter.outgoingRoute().Enqueue(
 		appmessage.NewSubmitBlockRequestMessage(appmessage.DomainBlockToRPCBlock(block), allowNonDAABlocks))
@@ -23,10 +22,12 @@ func (c *RPCClient) submitBlock(block *externalapi.DomainBlock, allowNonDAABlock
 	return appmessage.RejectReasonNone, nil
 }
 
+// SubmitBlock sends an RPC request respective to the function's name and returns the RPC server's response
 func (c *RPCClient) SubmitBlock(block *externalapi.DomainBlock) (appmessage.RejectReason, error) {
 	return c.submitBlock(block, false)
 }
 
+// SubmitBlockAlsoIfNonDAA operates the same as SubmitBlock with the exception that `allowNonDAABlocks` is set to true
 func (c *RPCClient) SubmitBlockAlsoIfNonDAA(block *externalapi.DomainBlock) (appmessage.RejectReason, error) {
 	return c.submitBlock(block, true)
 }
