@@ -5,12 +5,11 @@
 package addressmanager
 
 import (
+	"github.com/kaspanet/kaspad/infrastructure/db/database"
+	"github.com/kaspanet/kaspad/util/mstime"
 	"net"
 	"sync"
 	"time"
-
-	"github.com/kaspanet/kaspad/infrastructure/db/database"
-	"github.com/kaspanet/kaspad/util/mstime"
 
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/pkg/errors"
@@ -18,13 +17,12 @@ import (
 
 const (
 	maxAddresses                   = 4096
-	connectionFailedCountForRemove = 3
+	connectionFailedCountForRemove = 4
 )
 
 // addressRandomizer is the interface for the randomizer needed for the AddressManager.
 type addressRandomizer interface {
-	RandomAddress(addresses []*appmessage.NetAddress) *appmessage.NetAddress
-	RandomAddresses(addresses []*appmessage.NetAddress, count int) []*appmessage.NetAddress
+	RandomAddresses(addresses []*address, count int) []*appmessage.NetAddress
 }
 
 // addressKey represents a pair of IP and port, the IP is always in V6 representation
@@ -80,7 +78,7 @@ func New(cfg *Config, database database.Database) (*AddressManager, error) {
 	return &AddressManager{
 		store:          addressStore,
 		localAddresses: localAddresses,
-		random:         NewAddressRandomize(),
+		random:         NewAddressRandomize(connectionFailedCountForRemove),
 		cfg:            cfg,
 	}, nil
 }
@@ -91,7 +89,8 @@ func (am *AddressManager) addAddressNoLock(netAddress *appmessage.NetAddress) er
 	}
 
 	key := netAddressKey(netAddress)
-	address := &address{netAddress: netAddress, connectionFailedCount: 0}
+	// We mark `connectionFailedCount` as 0 only after first success
+	address := &address{netAddress: netAddress, connectionFailedCount: 1}
 	err := am.store.add(key, address)
 	if err != nil {
 		return err
@@ -109,8 +108,7 @@ func (am *AddressManager) addAddressNoLock(netAddress *appmessage.NetAddress) er
 			}
 		}
 
-		toRemoveKey := netAddressKey(toRemove.netAddress)
-		err := am.store.remove(toRemoveKey)
+		err := am.removeAddressNoLock(toRemove.netAddress)
 		if err != nil {
 			return err
 		}
@@ -171,7 +169,6 @@ func (am *AddressManager) MarkConnectionFailure(address *appmessage.NetAddress) 
 			address, entry.connectionFailedCount)
 		return am.store.remove(key)
 	}
-
 	return am.store.updateNotBanned(key, entry)
 }
 
@@ -207,17 +204,11 @@ func (am *AddressManager) BannedAddresses() []*appmessage.NetAddress {
 }
 
 // notBannedAddressesWithException returns all not banned addresses with excpetion
-func (am *AddressManager) notBannedAddressesWithException(exceptions []*appmessage.NetAddress) []*appmessage.NetAddress {
+func (am *AddressManager) notBannedAddressesWithException(exceptions []*appmessage.NetAddress) []*address {
 	am.mutex.Lock()
 	defer am.mutex.Unlock()
 
 	return am.store.getAllNotBannedNetAddressesWithout(exceptions)
-}
-
-// RandomAddress returns a random address that isn't banned and isn't in exceptions
-func (am *AddressManager) RandomAddress(exceptions []*appmessage.NetAddress) *appmessage.NetAddress {
-	validAddresses := am.notBannedAddressesWithException(exceptions)
-	return am.random.RandomAddress(validAddresses)
 }
 
 // RandomAddresses returns count addresses at random that aren't banned and aren't in exceptions

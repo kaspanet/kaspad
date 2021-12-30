@@ -144,13 +144,13 @@ func (as *addressStore) getAllNotBannedNetAddresses() []*appmessage.NetAddress {
 	return addresses
 }
 
-func (as *addressStore) getAllNotBannedNetAddressesWithout(ignoredAddresses []*appmessage.NetAddress) []*appmessage.NetAddress {
+func (as *addressStore) getAllNotBannedNetAddressesWithout(ignoredAddresses []*appmessage.NetAddress) []*address {
 	ignoredKeys := netAddressesKeys(ignoredAddresses)
 
-	addresses := make([]*appmessage.NetAddress, 0, len(as.notBannedAddresses))
+	addresses := make([]*address, 0, len(as.notBannedAddresses))
 	for key, address := range as.notBannedAddresses {
 		if !ignoredKeys[key] {
-			addresses = append(addresses, address.netAddress)
+			addresses = append(addresses, address)
 		}
 	}
 	return addresses
