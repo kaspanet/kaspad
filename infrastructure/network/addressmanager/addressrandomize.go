@@ -1,6 +1,7 @@
 package addressmanager
 
 import (
+	"math"
 	"math/rand"
 	"time"
 
@@ -19,45 +20,45 @@ func NewAddressRandomize() *AddressRandomize {
 	}
 }
 
+// Help function which returns a random index in the range [0, len(weights)-1] with probability weighted by `weights`
+func weightedRand(weights []float32) int {
+	sum := float32(0)
+	for _, weight := range weights {
+		sum += weight
+	}
+	randPoint := rand.Float32()
+	scanPoint := float32(0)
+	for i, weight := range weights {
+		normalizedWeight := weight/sum
+		scanPoint += normalizedWeight
+		if randPoint <= scanPoint {
+			return i
+		}
+	}
+	return len(weights) - 1
+}
+
 // RandomAddresses returns count addresses at random from input list
 func (amc *AddressRandomize) RandomAddresses(addresses []*address, count int) []*appmessage.NetAddress {
-	lenAddresses := len(addresses)
-	if lenAddresses < count {
-		count = lenAddresses
+	if len(addresses) < count {
+		count = len(addresses)
 	}
-	const numLevels = maxLevel + 1
-	var addressesByLevels [numLevels][]*address
-	var lengthsByLevels [numLevels]struct{ lower, length int }
-	for i := range addressesByLevels {
-		addressesByLevels[i] = make([]*address, 0, lenAddresses/int(numLevels))
+	weights := make([]float32, 0, len(addresses))
+	for _, addr := range addresses {
+		weights = append(weights, float32(math.Pow(64, float64(addr.level))))
 	}
-	for _, address := range addresses {
-		addressesByLevels[address.level] = append(addressesByLevels[address.level], address)
-	}
-	upper := 0
-	for i, addressesOfLevel := range addressesByLevels {
-		length := len(addressesOfLevel)
-		lengthsByLevels[i].length, lengthsByLevels[i].lower = length, upper
-		upper += (1 << i) * length
-	}
-
 	result := make([]*appmessage.NetAddress, 0, count)
-
 	for count > 0 {
-		random := rand.Intn(upper)
-		for i := range lengthsByLevels {
-			e := lengthsByLevels[numLevels-uint8(i)-1]
-			if random > e.lower {
-				index := (random - e.lower) / e.length
-				address := addresses[index]
-				if address != nil {
-					result = append(result, address.netAddress)
-					addresses[index] = nil // use address only once
-					count--
-				}
-				break
-			}
-		}
+		i := weightedRand(weights)
+		result = append(result, addresses[i].netAddress)
+		// Delete entry i from both arrays
+		addresses[i] = addresses[len(addresses)-1]
+		weights[i] = weights[len(weights)-1]
+		addresses = addresses[:len(addresses)-1]
+		weights = weights[:len(weights)-1]
+		// Update count
+		count--
 	}
 	return result
 }
+
