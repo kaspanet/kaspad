@@ -81,7 +81,7 @@ func (m *Manager) runFlows(flows []*common.Flow, peer *peerpkg.Peer, errChan <-c
 	flowsWaitGroup.Add(len(flows))
 	for _, flow := range flows {
 		executeFunc := flow.ExecuteFunc // extract to new variable so that it's not overwritten
-		spawn(fmt.Sprintf("Flow-%s", flow.Name), func() {
+		spawn(fmt.Sprintf("flow-%s", flow.Name), func() {
 			executeFunc(peer)
 			flowsWaitGroup.Done()
 		})

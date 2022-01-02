@@ -2,6 +2,7 @@ package protocol
 
 import (
 	"github.com/kaspanet/kaspad/app/protocol/common"
+	"github.com/kaspanet/kaspad/app/protocol/flows/ready"
 	v3 "github.com/kaspanet/kaspad/app/protocol/flows/v3"
 	v4 "github.com/kaspanet/kaspad/app/protocol/flows/v4"
 	"sync"
@@ -20,12 +21,12 @@ import (
 
 func (m *Manager) routerInitializer(router *routerpkg.Router, netConnection *netadapter.NetConnection) {
 	// isStopping flag is raised the moment that the connection associated with this router is disconnected
-	// errChan is used by the Flow goroutines to return to runFlows when an error occurs.
+	// errChan is used by the flow goroutines to return to runFlows when an error occurs.
 	// They are both initialized here and passed to register flows.
 	isStopping := uint32(0)
 	errChan := make(chan error)
 
-	receiveVersionRoute, sendVersionRoute := registerHandshakeRoutes(router)
+	receiveVersionRoute, sendVersionRoute, receiveReadyRoute := registerHandshakeRoutes(router)
 
 	// After flows were registered - spawn a new thread that will wait for connection to finish initializing
 	// and start receiving messages
@@ -74,7 +75,7 @@ func (m *Manager) routerInitializer(router *routerpkg.Router, netConnection *net
 		defer m.context.RemoveFromPeers(peer)
 
 		var flows []*common.Flow
-		log.Infof("Registering p2p flows for protocol version %d", peer.ProtocolVersion())
+		log.Infof("Registering p2p flows for peer %s for protocol version %d", peer, peer.ProtocolVersion())
 		switch peer.ProtocolVersion() {
 		case 3:
 			flows = v3.Register(m, router, errChan, &isStopping)
@@ -82,6 +83,14 @@ func (m *Manager) routerInitializer(router *routerpkg.Router, netConnection *net
 			flows = v4.Register(m, router, errChan, &isStopping)
 		default:
 			panic(errors.Errorf("no way to handle protocol version %d", peer.ProtocolVersion()))
+		}
+
+		if peer.ProtocolVersion() > 3 {
+			err = ready.HandleReady(receiveReadyRoute, router.OutgoingRoute(), peer)
+			if err != nil {
+				m.handleError(err, netConnection, router.OutgoingRoute())
+				return
+			}
 		}
 
 		removeHandshakeRoutes(router)
@@ -199,7 +208,7 @@ func (m *Manager) RegisterOneTimeFlow(name string, router *routerpkg.Router, mes
 }
 
 func registerHandshakeRoutes(router *routerpkg.Router) (
-	receiveVersionRoute *routerpkg.Route, sendVersionRoute *routerpkg.Route) {
+	receiveVersionRoute, sendVersionRoute, receiveReadyRoute *routerpkg.Route) {
 	receiveVersionRoute, err := router.AddIncomingRoute("recieveVersion - incoming", []appmessage.MessageCommand{appmessage.CmdVersion})
 	if err != nil {
 		panic(err)
@@ -210,11 +219,16 @@ func registerHandshakeRoutes(router *routerpkg.Router) (
 		panic(err)
 	}
 
-	return receiveVersionRoute, sendVersionRoute
+	receiveReadyRoute, err = router.AddIncomingRoute("recieveReady - incoming", []appmessage.MessageCommand{appmessage.CmdReady})
+	if err != nil {
+		panic(err)
+	}
+
+	return receiveVersionRoute, sendVersionRoute, receiveReadyRoute
 }
 
 func removeHandshakeRoutes(router *routerpkg.Router) {
-	err := router.RemoveRoute([]appmessage.MessageCommand{appmessage.CmdVersion, appmessage.CmdVerAck})
+	err := router.RemoveRoute([]appmessage.MessageCommand{appmessage.CmdVersion, appmessage.CmdVerAck, appmessage.CmdReady})
 	if err != nil {
 		panic(err)
 	}

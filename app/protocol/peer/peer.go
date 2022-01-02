@@ -15,7 +15,7 @@ import (
 
 // maxProtocolVersion version is the maximum supported protocol
 // version this kaspad node supports
-const maxProtocolVersion = 3
+const maxProtocolVersion = 4
 
 // Peer holds data about a peer.
 type Peer struct {

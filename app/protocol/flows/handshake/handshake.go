@@ -28,7 +28,7 @@ type HandleHandshakeContext interface {
 	HandleError(err error, flowName string, isStopping *uint32, errChan chan<- error)
 }
 
-// HandleHandshake sets up the handshake protocol - It sends a version message and waits for an incoming
+// HandleHandshake sets up the new_handshake protocol - It sends a version message and waits for an incoming
 // version message, as well as a verack for the sent version
 func HandleHandshake(context HandleHandshakeContext, netConnection *netadapter.NetConnection,
 	receiveVersionRoute *routerpkg.Route, sendVersionRoute *routerpkg.Route, outgoingRoute *routerpkg.Route,
@@ -98,7 +98,7 @@ func HandleHandshake(context HandleHandshakeContext, netConnection *netadapter.N
 }
 
 // Handshake is different from other flows, since in it should forward router.ErrRouteClosed to errChan
-// Therefore we implement a separate handleError for handshake
+// Therefore we implement a separate handleError for new_handshake
 func handleError(err error, flowName string, isStopping *uint32, errChan chan error) {
 	if errors.Is(err, routerpkg.ErrRouteClosed) {
 		if atomic.AddUint32(isStopping, 1) == 1 {
