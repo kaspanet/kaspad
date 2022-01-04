@@ -6,7 +6,6 @@ import (
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/libkaspawallet"
 
 	"github.com/kaspanet/kaspad/app/appmessage"
-	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/pkg/errors"
 )
 
@@ -38,6 +37,7 @@ func (s *server) sync() error {
 		}
 
 		err = s.refreshExistingUTXOsWithLock()
+
 		if err != nil {
 			return err
 		}
@@ -219,18 +219,30 @@ func (s *server) addEntryToUTXOSet(entry *appmessage.UTXOsByAddressesEntry, addr
 		return errors.Errorf("Got result from address %s even though it wasn't requested", entry.Address)
 	}
 
-	s.utxos[*outpoint] = &walletUTXO{
+	s.insertUTXO(&walletUTXO{
 		Outpoint:  outpoint,
 		UTXOEntry: utxoEntry,
 		address:   address,
-	}
+	})
 
 	return nil
 }
 
+// insertUTXO inserts the given utxo into s.utxosSortedByAmount, while keeping it sorted.
+func (s *server) insertUTXO(utxo *walletUTXO) {
+	s.utxosSortedByAmount = append(s.utxosSortedByAmount, utxo)
+	// bubble up the new UTXO to keep the UTXOs sorted by value
+	index := len(s.utxosSortedByAmount) - 1
+	for index > 0 && utxo.UTXOEntry.Amount() > s.utxosSortedByAmount[index-1].UTXOEntry.Amount() {
+		s.utxosSortedByAmount[index] = s.utxosSortedByAmount[index-1]
+		index--
+	}
+	s.utxosSortedByAmount[index] = utxo
+}
+
 func (s *server) refreshExistingUTXOs() error {
-	addressSet := make(walletAddressSet, len(s.utxos))
-	for _, utxo := range s.utxos {
+	addressSet := make(walletAddressSet, len(s.utxosSortedByAmount))
+	for _, utxo := range s.utxosSortedByAmount {
 		addressString, err := s.walletAddressString(utxo.address)
 		if err != nil {
 			return err
@@ -244,13 +256,14 @@ func (s *server) refreshExistingUTXOs() error {
 		return err
 	}
 
-	s.utxos = make(map[externalapi.DomainOutpoint]*walletUTXO, len(getUTXOsByAddressesResponse.Entries))
+	s.utxosSortedByAmount = make([]*walletUTXO, 0, len(getUTXOsByAddressesResponse.Entries))
 	for _, entry := range getUTXOsByAddressesResponse.Entries {
 		err := s.addEntryToUTXOSet(entry, addressSet)
 		if err != nil {
 			return err
 		}
 	}
+
 	return nil
 }
 
