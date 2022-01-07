@@ -7,6 +7,7 @@ import (
 	"github.com/kaspanet/kaspad/infrastructure/logger"
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
 	"github.com/kaspanet/kaspad/version"
+	"github.com/pkg/errors"
 )
 
 var (
@@ -56,15 +57,18 @@ func (flow *sendVersionFlow) start() error {
 	// Version message.
 	localAddress := flow.AddressManager().BestLocalAddress(flow.peer.Connection().NetAddress())
 	subnetworkID := flow.Config().SubnetworkID
+	if flow.Config().ProtocolVersion < minAcceptableProtocolVersion {
+		return errors.Errorf("configured protocol version %d is obsolete", flow.Config().ProtocolVersion)
+	}
 	msg := appmessage.NewMsgVersion(localAddress, flow.NetAdapter().ID(),
-		flow.Config().ActiveNetParams.Name, subnetworkID)
+		flow.Config().ActiveNetParams.Name, subnetworkID, flow.Config().ProtocolVersion)
 	msg.AddUserAgent(userAgentName, userAgentVersion, flow.Config().UserAgentComments...)
 
 	// Advertise the services flag
 	msg.Services = defaultServices
 
 	// Advertise our max supported protocol version.
-	msg.ProtocolVersion = appmessage.ProtocolVersion
+	msg.ProtocolVersion = flow.Config().ProtocolVersion
 
 	// Advertise if inv messages for transactions are desired.
 	msg.DisableRelayTx = flow.Config().BlocksOnly

@@ -18,7 +18,7 @@ import (
 
 // TestBlock tests the MsgBlock API.
 func TestBlock(t *testing.T) {
-	pver := ProtocolVersion
+	pver := uint32(4)
 
 	// Block 1 header.
 	parents := blockOne.Header.Parents

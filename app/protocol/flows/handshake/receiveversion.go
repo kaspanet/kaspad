@@ -7,6 +7,7 @@ import (
 	"github.com/kaspanet/kaspad/app/protocol/protocolerrors"
 	"github.com/kaspanet/kaspad/infrastructure/logger"
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
+	"github.com/pkg/errors"
 )
 
 var (
@@ -18,6 +19,8 @@ var (
 	// minAcceptableProtocolVersion is the lowest protocol version that a
 	// connected peer may support.
 	minAcceptableProtocolVersion = uint32(3)
+
+	defaultMaxProtocolVersion = uint32(4)
 )
 
 type receiveVersionFlow struct {
@@ -97,7 +100,12 @@ func (flow *receiveVersionFlow) start() (*appmessage.NetAddress, error) {
 		return nil, protocolerrors.New(false, "incompatible subnetworks")
 	}
 
-	flow.peer.UpdateFieldsFromMsgVersion(msgVersion)
+	if flow.Config().ProtocolVersion > defaultMaxProtocolVersion {
+		return nil, errors.Errorf("%d is a non existing protocol version", flow.Config().ProtocolVersion)
+	}
+
+	maxProtocolVersion := flow.Config().ProtocolVersion
+	flow.peer.UpdateFieldsFromMsgVersion(msgVersion, maxProtocolVersion)
 	err = flow.outgoingRoute.Enqueue(appmessage.NewMsgVerAck())
 	if err != nil {
 		return nil, err

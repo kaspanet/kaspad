@@ -13,10 +13,6 @@ import (
 	"github.com/kaspanet/kaspad/util/mstime"
 )
 
-// maxProtocolVersion version is the maximum supported protocol
-// version this kaspad node supports
-const maxProtocolVersion = 4
-
 // Peer holds data about a peer.
 type Peer struct {
 	connection *netadapter.NetConnection
@@ -92,7 +88,7 @@ func (p *Peer) IsOutbound() bool {
 }
 
 // UpdateFieldsFromMsgVersion updates the peer with the data from the version message.
-func (p *Peer) UpdateFieldsFromMsgVersion(msg *appmessage.MsgVersion) {
+func (p *Peer) UpdateFieldsFromMsgVersion(msg *appmessage.MsgVersion, maxProtocolVersion uint32) {
 	// Negotiate the protocol version.
 	p.advertisedProtocolVerion = msg.ProtocolVersion
 	p.protocolVersion = mathUtil.MinUint32(maxProtocolVersion, p.advertisedProtocolVerion)

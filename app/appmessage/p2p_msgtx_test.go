@@ -22,7 +22,7 @@ import (
 
 // TestTx tests the MsgTx API.
 func TestTx(t *testing.T) {
-	pver := ProtocolVersion
+	pver := uint32(4)
 
 	txIDStr := "000000000003ba27aa200b1cecaad478d2b00432346c3f1f3986da1afd33e506"
 	txID, err := transactionid.FromString(txIDStr)
