@@ -4,6 +4,7 @@ import (
 	"github.com/kaspanet/kaspad/app/protocol/common"
 	"github.com/kaspanet/kaspad/app/protocol/flows/ready"
 	v3 "github.com/kaspanet/kaspad/app/protocol/flows/v3"
+	"github.com/kaspanet/kaspad/app/protocol/flows/v3/addressexchange"
 	v4 "github.com/kaspanet/kaspad/app/protocol/flows/v4"
 	"sync"
 	"sync/atomic"
@@ -54,6 +55,14 @@ func (m *Manager) routerInitializer(router *routerpkg.Router, netConnection *net
 			}
 		})
 
+		// TODO: This code was moved here to prevent a race condition when connecting to v3 peers. This should be moved to v4.registerAddressFlows
+		// once v3 is obsolete.
+		sendAddressesFlow := m.RegisterFlow("SendAddresses", router, []appmessage.MessageCommand{appmessage.CmdRequestAddresses}, &isStopping, errChan,
+			func(incomingRoute *routerpkg.Route, peer *peerpkg.Peer) error {
+				return addressexchange.SendAddresses(m.Context(), incomingRoute, router.OutgoingRoute())
+			},
+		)
+
 		peer, err := handshake.HandleHandshake(m.context, netConnection, receiveVersionRoute,
 			sendVersionRoute, router.OutgoingRoute())
 
@@ -84,6 +93,7 @@ func (m *Manager) routerInitializer(router *routerpkg.Router, netConnection *net
 		default:
 			panic(errors.Errorf("no way to handle protocol version %d", peer.ProtocolVersion()))
 		}
+		flows = append(flows, sendAddressesFlow)
 
 		if peer.ProtocolVersion() > 3 {
 			err = ready.HandleReady(receiveReadyRoute, router.OutgoingRoute(), peer)

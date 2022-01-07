@@ -39,12 +39,6 @@ func registerAddressFlows(m protocolManager, router *routerpkg.Router, isStoppin
 	outgoingRoute := router.OutgoingRoute()
 
 	return []*common.Flow{
-		m.RegisterFlow("SendAddresses", router, []appmessage.MessageCommand{appmessage.CmdRequestAddresses}, isStopping, errChan,
-			func(incomingRoute *routerpkg.Route, peer *peerpkg.Peer) error {
-				return addressexchange.SendAddresses(m.Context(), incomingRoute, outgoingRoute)
-			},
-		),
-
 		m.RegisterOneTimeFlow("ReceiveAddresses", router, []appmessage.MessageCommand{appmessage.CmdAddresses}, isStopping, errChan,
 			func(incomingRoute *routerpkg.Route, peer *peerpkg.Peer) error {
 				return addressexchange.ReceiveAddresses(m.Context(), incomingRoute, outgoingRoute, peer)
