@@ -968,26 +968,21 @@ func (pm *pruningManager) BlockWithTrustedData(stagingArea *model.StagingArea, b
 		return nil, err
 	}
 
-	daaScore, err := pm.daaBlocksStore.DAAScore(pm.databaseContext, stagingArea, blockHash)
-	if err != nil {
-		return nil, err
-	}
-
 	windowSize := pm.difficultyAdjustmentWindowSize
 	window, err := pm.dagTraversalManager.BlockWindowWithGHOSTDAGData(stagingArea, blockHash, windowSize)
 	if err != nil {
 		return nil, err
 	}
 
-	windowPairs := make([]*externalapi.TrustedDataDataDAABlock, len(window))
+	windowPairs := make([]*externalapi.TrustedDataDataDAAHeader, len(window))
 	for i, daaBlock := range window {
-		daaDomainBlock, err := pm.blocksStore.Block(pm.databaseContext, stagingArea, daaBlock.Hash)
+		daaDomainBlock, err := pm.blockHeaderStore.BlockHeader(pm.databaseContext, stagingArea, daaBlock.Hash)
 		if err != nil {
 			return nil, err
 		}
 
-		windowPairs[i] = &externalapi.TrustedDataDataDAABlock{
-			Block:        daaDomainBlock,
+		windowPairs[i] = &externalapi.TrustedDataDataDAAHeader{
+			Header:       daaDomainBlock,
 			GHOSTDAGData: daaBlock.GHOSTDAGData,
 		}
 	}
@@ -1027,7 +1022,6 @@ func (pm *pruningManager) BlockWithTrustedData(stagingArea *model.StagingArea, b
 
 	return &externalapi.BlockWithTrustedData{
 		Block:        block,
-		DAAScore:     daaScore,
 		DAAWindow:    windowPairs,
 		GHOSTDAGData: ghostdagDataHashPairs,
 	}, nil
@@ -1132,4 +1126,38 @@ func (pm *pruningManager) isPruningPointInPruningDepth(stagingArea *model.Stagin
 	}
 
 	return blockGHOSTDAGData.BlueScore() >= pruningPointHeader.BlueScore()+pm.pruningDepth, nil
+}
+
+func (pm *pruningManager) TrustedBlockAssociatedGHOSTDAGDataBlockHashes(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error) {
+	blockHashes := make([]*externalapi.DomainHash, 0, pm.k)
+	current := blockHash
+	isTrustedData := false
+	for i := externalapi.KType(0); i < pm.k+1; i++ {
+		ghostdagData, err := pm.ghostdagDataStore.Get(pm.databaseContext, stagingArea, current, isTrustedData)
+		isNotFoundError := database.IsNotFoundError(err)
+		if !isNotFoundError && err != nil {
+			return nil, err
+		}
+		if isNotFoundError || ghostdagData.SelectedParent().Equal(model.VirtualGenesisBlockHash) {
+			isTrustedData = true
+			ghostdagData, err = pm.ghostdagDataStore.Get(pm.databaseContext, stagingArea, current, true)
+			if err != nil {
+				return nil, err
+			}
+		}
+
+		blockHashes = append(blockHashes, current)
+
+		if ghostdagData.SelectedParent().Equal(pm.genesisHash) {
+			break
+		}
+
+		if current.Equal(pm.genesisHash) {
+			break
+		}
+
+		current = ghostdagData.SelectedParent()
+	}
+
+	return blockHashes, nil
 }

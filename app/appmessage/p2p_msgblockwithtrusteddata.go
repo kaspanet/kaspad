@@ -31,6 +31,11 @@ type TrustedDataDataDAABlock struct {
 	GHOSTDAGData *BlockGHOSTDAGData
 }
 
+type TrustedDataDataDAABlockV4 struct {
+	Header       *MsgBlockHeader
+	GHOSTDAGData *BlockGHOSTDAGData
+}
+
 // BlockGHOSTDAGData is an appmessage representation of externalapi.BlockGHOSTDAGData
 type BlockGHOSTDAGData struct {
 	BlueScore          uint64

@@ -6,14 +6,15 @@ import (
 	"github.com/kaspanet/kaspad/app/protocol/protocolerrors"
 	"github.com/kaspanet/kaspad/domain"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+	"github.com/kaspanet/kaspad/infrastructure/config"
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
-	"runtime"
 	"sync/atomic"
 )
 
 // PruningPointAndItsAnticoneRequestsContext is the interface for the context needed for the HandlePruningPointAndItsAnticoneRequests flow.
 type PruningPointAndItsAnticoneRequestsContext interface {
 	Domain() domain.Domain
+	Config() *config.Config
 }
 
 var isBusy uint32
@@ -57,8 +58,73 @@ func HandlePruningPointAndItsAnticoneRequests(context PruningPointAndItsAnticone
 				return err
 			}
 
+			windowSize := context.Config().NetParams().DifficultyAdjustmentWindowSize
+			daaWindowBlocks := make([]*externalapi.TrustedDataDataDAAHeader, 0, windowSize)
+			daaWindowHashesToIndex := make(map[externalapi.DomainHash]int, windowSize)
+			trustedDataDAABlockIndexes := make(map[externalapi.DomainHash][]uint64)
+
+			ghostdagData := make([]*externalapi.BlockGHOSTDAGDataHashPair, 0)
+			ghostdagDataHashToIndex := make(map[externalapi.DomainHash]int)
+			trustedDataGHOSTDAGDataIndexes := make(map[externalapi.DomainHash][]uint64)
 			for _, blockHash := range pointAndItsAnticone {
-				err := sendBlockWithTrustedData(context, outgoingRoute, blockHash)
+				blockDAAWindowHashes, err := context.Domain().Consensus().BlockDAAWindowHashes(blockHash)
+				if err != nil {
+					return err
+				}
+
+				trustedDataDAABlockIndexes[*blockHash] = make([]uint64, 0, windowSize)
+				for i, daaBlockHash := range blockDAAWindowHashes {
+					index, exists := daaWindowHashesToIndex[*daaBlockHash]
+					if !exists {
+						trustedDataDataDAAHeader, err := context.Domain().Consensus().TrustedDataDataDAAHeader(blockHash, daaBlockHash, uint64(i))
+						if err != nil {
+							return err
+						}
+						daaWindowBlocks = append(daaWindowBlocks, trustedDataDataDAAHeader)
+						index = len(daaWindowBlocks) - 1
+						daaWindowHashesToIndex[*daaBlockHash] = index
+					}
+
+					trustedDataDAABlockIndexes[*blockHash] = append(trustedDataDAABlockIndexes[*blockHash], uint64(index))
+				}
+
+				ghostdagDataBlockHashes, err := context.Domain().Consensus().TrustedBlockAssociatedGHOSTDAGDataBlockHashes(blockHash)
+				if err != nil {
+					return err
+				}
+
+				trustedDataGHOSTDAGDataIndexes[*blockHash] = make([]uint64, 0, context.Config().NetParams().K)
+				for _, ghostdagDataBlockHash := range ghostdagDataBlockHashes {
+					index, exists := ghostdagDataHashToIndex[*ghostdagDataBlockHash]
+					if !exists {
+						data, err := context.Domain().Consensus().TrustedGHOSTDAGData(ghostdagDataBlockHash)
+						if err != nil {
+							return err
+						}
+						ghostdagData = append(ghostdagData, &externalapi.BlockGHOSTDAGDataHashPair{
+							Hash:         ghostdagDataBlockHash,
+							GHOSTDAGData: data,
+						})
+						index = len(ghostdagData) - 1
+						ghostdagDataHashToIndex[*ghostdagDataBlockHash] = index
+					}
+
+					trustedDataGHOSTDAGDataIndexes[*blockHash] = append(trustedDataGHOSTDAGDataIndexes[*blockHash], uint64(index))
+				}
+			}
+
+			err = outgoingRoute.Enqueue(appmessage.DomainTrustedDataToTrustedData(daaWindowBlocks, ghostdagData))
+			if err != nil {
+				return err
+			}
+
+			for _, blockHash := range pointAndItsAnticone {
+				block, err := context.Domain().Consensus().GetBlock(blockHash)
+				if err != nil {
+					return err
+				}
+
+				err = outgoingRoute.Enqueue(appmessage.DomainBlockWithTrustedDataToBlockWithTrustedDataV4(block, trustedDataDAABlockIndexes[*blockHash], trustedDataGHOSTDAGDataIndexes[*blockHash]))
 				if err != nil {
 					return err
 				}
@@ -76,20 +142,4 @@ func HandlePruningPointAndItsAnticoneRequests(context PruningPointAndItsAnticone
 			return err
 		}
 	}
-}
-
-func sendBlockWithTrustedData(context PruningPointAndItsAnticoneRequestsContext, outgoingRoute *router.Route, blockHash *externalapi.DomainHash) error {
-	blockWithTrustedData, err := context.Domain().Consensus().BlockWithTrustedData(blockHash)
-	if err != nil {
-		return err
-	}
-
-	err = outgoingRoute.Enqueue(appmessage.DomainBlockWithTrustedDataToBlockWithTrustedData(blockWithTrustedData))
-	if err != nil {
-		return err
-	}
-
-	runtime.GC()
-
-	return nil
 }

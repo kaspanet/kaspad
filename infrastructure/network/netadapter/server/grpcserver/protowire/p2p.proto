@@ -216,6 +216,11 @@ message DaaBlock {
   GhostdagData ghostdagData = 2;
 }
 
+message DaaBlockV4 {
+  BlockHeader header = 1;
+  GhostdagData ghostdagData = 2;
+}
+
 message BlockGhostdagDataHashPair {
   Hash hash = 1;
   GhostdagData ghostdagData = 2;
@@ -254,4 +259,15 @@ message PruningPointProofHeaderArray {
 }
 
 message ReadyMessage {
+}
+
+message BlockWithTrustedDataV4Message {
+  BlockMessage block = 1;
+  repeated uint64 daaWindow = 2;
+  repeated uint64 ghostdagData = 3;
+}
+
+message TrustedDataMessage {
+  repeated DaaBlockV4 daaWindow = 1;
+  repeated BlockGhostdagDataHashPair ghostdagData = 2;
 }

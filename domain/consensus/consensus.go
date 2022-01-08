@@ -39,21 +39,22 @@ type consensus struct {
 	finalityManager       model.FinalityManager
 	pruningProofManager   model.PruningProofManager
 
-	acceptanceDataStore       model.AcceptanceDataStore
-	blockStore                model.BlockStore
-	blockHeaderStore          model.BlockHeaderStore
-	pruningStore              model.PruningStore
-	ghostdagDataStores        []model.GHOSTDAGDataStore
-	blockRelationStores       []model.BlockRelationStore
-	blockStatusStore          model.BlockStatusStore
-	consensusStateStore       model.ConsensusStateStore
-	headersSelectedTipStore   model.HeaderSelectedTipStore
-	multisetStore             model.MultisetStore
-	reachabilityDataStores    []model.ReachabilityDataStore
-	utxoDiffStore             model.UTXODiffStore
-	finalityStore             model.FinalityStore
-	headersSelectedChainStore model.HeadersSelectedChainStore
-	daaBlocksStore            model.DAABlocksStore
+	acceptanceDataStore                 model.AcceptanceDataStore
+	blockStore                          model.BlockStore
+	blockHeaderStore                    model.BlockHeaderStore
+	pruningStore                        model.PruningStore
+	ghostdagDataStores                  []model.GHOSTDAGDataStore
+	blockRelationStores                 []model.BlockRelationStore
+	blockStatusStore                    model.BlockStatusStore
+	consensusStateStore                 model.ConsensusStateStore
+	headersSelectedTipStore             model.HeaderSelectedTipStore
+	multisetStore                       model.MultisetStore
+	reachabilityDataStores              []model.ReachabilityDataStore
+	utxoDiffStore                       model.UTXODiffStore
+	finalityStore                       model.FinalityStore
+	headersSelectedChainStore           model.HeadersSelectedChainStore
+	daaBlocksStore                      model.DAABlocksStore
+	blocksWithTrustedDataDAAWindowStore model.BlocksWithTrustedDataDAAWindowStore
 }
 
 func (s *consensus) ValidateAndInsertBlockWithTrustedData(block *externalapi.BlockWithTrustedData, validateUTXO bool) (*externalapi.VirtualChangeSet, error) {
@@ -119,7 +120,6 @@ func (s *consensus) Init(skipAddingGenesis bool) error {
 	if !skipAddingGenesis && s.blockStore.Count(stagingArea) == 0 {
 		genesisWithTrustedData := &externalapi.BlockWithTrustedData{
 			Block:     s.genesisBlock,
-			DAAScore:  0,
 			DAAWindow: nil,
 			GHOSTDAGData: []*externalapi.BlockGHOSTDAGDataHashPair{
 				{
@@ -144,6 +144,7 @@ func (s *consensus) PruningPointAndItsAnticone() ([]*externalapi.DomainHash, err
 	return s.pruningManager.PruningPointAndItsAnticone()
 }
 
+// TODO: Remove this method once v3 is obsolete
 func (s *consensus) BlockWithTrustedData(blockHash *externalapi.DomainHash) (*externalapi.BlockWithTrustedData, error) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
@@ -744,6 +745,9 @@ func (s *consensus) ValidatePruningPointProof(pruningPointProof *externalapi.Pru
 }
 
 func (s *consensus) ApplyPruningPointProof(pruningPointProof *externalapi.PruningPointProof) error {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
 	stagingArea := model.NewStagingArea()
 	err := s.pruningProofManager.ApplyPruningPointProof(stagingArea, pruningPointProof)
 	if err != nil {
@@ -756,4 +760,67 @@ func (s *consensus) ApplyPruningPointProof(pruningPointProof *externalapi.Prunin
 	}
 
 	return nil
+}
+
+func (s *consensus) BlockDAAWindowHashes(blockHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	stagingArea := model.NewStagingArea()
+	return s.dagTraversalManager.DAABlockWindow(stagingArea, blockHash)
+}
+
+func (s *consensus) TrustedDataDataDAAHeader(trustedBlockHash, daaBlockHash *externalapi.DomainHash, daaBlockWindowIndex uint64) (*externalapi.TrustedDataDataDAAHeader, error) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	stagingArea := model.NewStagingArea()
+	header, err := s.blockHeaderStore.BlockHeader(s.databaseContext, stagingArea, daaBlockHash)
+	if err != nil {
+		return nil, err
+	}
+
+	ghostdagData, err := s.ghostdagDataStores[0].Get(s.databaseContext, stagingArea, daaBlockHash, false)
+	isNotFoundError := database.IsNotFoundError(err)
+	if !isNotFoundError && err != nil {
+		return nil, err
+	}
+
+	if !isNotFoundError {
+		return &externalapi.TrustedDataDataDAAHeader{
+			Header:       header,
+			GHOSTDAGData: ghostdagData,
+		}, nil
+	}
+
+	ghostdagDataHashPair, err := s.blocksWithTrustedDataDAAWindowStore.DAAWindowBlock(s.databaseContext, stagingArea, trustedBlockHash, daaBlockWindowIndex)
+	if err != nil {
+		return nil, err
+	}
+
+	return &externalapi.TrustedDataDataDAAHeader{
+		Header:       header,
+		GHOSTDAGData: ghostdagDataHashPair.GHOSTDAGData,
+	}, nil
+}
+
+func (s *consensus) TrustedBlockAssociatedGHOSTDAGDataBlockHashes(blockHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	return s.pruningManager.TrustedBlockAssociatedGHOSTDAGDataBlockHashes(model.NewStagingArea(), blockHash)
+}
+
+func (s *consensus) TrustedGHOSTDAGData(blockHash *externalapi.DomainHash) (*externalapi.BlockGHOSTDAGData, error) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	stagingArea := model.NewStagingArea()
+	ghostdagData, err := s.ghostdagDataStores[0].Get(s.databaseContext, stagingArea, blockHash, false)
+	isNotFoundError := database.IsNotFoundError(err)
+	if isNotFoundError || ghostdagData.SelectedParent().Equal(model.VirtualGenesisBlockHash) {
+		return s.ghostdagDataStores[0].Get(s.databaseContext, stagingArea, blockHash, true)
+	}
+
+	return ghostdagData, nil
 }

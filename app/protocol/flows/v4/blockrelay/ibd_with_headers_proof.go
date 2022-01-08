@@ -176,6 +176,17 @@ func (flow *handleRelayInvsFlow) syncPruningPointsAndPruningPointAnticone(proofP
 		return err
 	}
 
+	message, err := flow.dequeueIncomingMessageAndSkipInvs(common.DefaultTimeout)
+	if err != nil {
+		return err
+	}
+
+	msgTrustedData, ok := message.(*appmessage.MsgTrustedData)
+	if !ok {
+		return protocolerrors.Errorf(true, "received unexpected message type. "+
+			"expected: %s, got: %s", appmessage.CmdTrustedData, message.Command())
+	}
+
 	pruningPointWithMetaData, done, err := flow.receiveBlockWithTrustedData()
 	if err != nil {
 		return err
@@ -189,7 +200,7 @@ func (flow *handleRelayInvsFlow) syncPruningPointsAndPruningPointAnticone(proofP
 		return protocolerrors.Errorf(true, "first block with trusted data is not the pruning point")
 	}
 
-	err = flow.processBlockWithTrustedData(flow.Domain().StagingConsensus(), pruningPointWithMetaData)
+	err = flow.processBlockWithTrustedData(flow.Domain().StagingConsensus(), pruningPointWithMetaData, msgTrustedData)
 	if err != nil {
 		return err
 	}
@@ -204,7 +215,7 @@ func (flow *handleRelayInvsFlow) syncPruningPointsAndPruningPointAnticone(proofP
 			break
 		}
 
-		err = flow.processBlockWithTrustedData(flow.Domain().StagingConsensus(), blockWithTrustedData)
+		err = flow.processBlockWithTrustedData(flow.Domain().StagingConsensus(), blockWithTrustedData, msgTrustedData)
 		if err != nil {
 			return err
 		}
@@ -215,20 +226,34 @@ func (flow *handleRelayInvsFlow) syncPruningPointsAndPruningPointAnticone(proofP
 }
 
 func (flow *handleRelayInvsFlow) processBlockWithTrustedData(
-	consensus externalapi.Consensus, block *appmessage.MsgBlockWithTrustedData) error {
+	consensus externalapi.Consensus, block *appmessage.MsgBlockWithTrustedDataV4, data *appmessage.MsgTrustedData) error {
 
-	_, err := consensus.ValidateAndInsertBlockWithTrustedData(appmessage.BlockWithTrustedDataToDomainBlockWithTrustedData(block), false)
+	blockWithTrustedData := &externalapi.BlockWithTrustedData{
+		Block:        appmessage.MsgBlockToDomainBlock(block.Block),
+		DAAWindow:    make([]*externalapi.TrustedDataDataDAAHeader, 0, len(block.DAAWindow)),
+		GHOSTDAGData: make([]*externalapi.BlockGHOSTDAGDataHashPair, 0, len(block.GHOSTDAGData)),
+	}
+
+	for _, index := range block.DAAWindow {
+		blockWithTrustedData.DAAWindow = append(blockWithTrustedData.DAAWindow, appmessage.TrustedDataDataDAABlockV4ToTrustedDataDataDAAHeader(data.DAAWindow[index]))
+	}
+
+	for _, index := range block.GHOSTDAGData {
+		blockWithTrustedData.GHOSTDAGData = append(blockWithTrustedData.GHOSTDAGData, appmessage.GHOSTDAGHashPairToDomainGHOSTDAGHashPair(data.GHOSTDAGData[index]))
+	}
+
+	_, err := consensus.ValidateAndInsertBlockWithTrustedData(blockWithTrustedData, false)
 	return err
 }
 
-func (flow *handleRelayInvsFlow) receiveBlockWithTrustedData() (*appmessage.MsgBlockWithTrustedData, bool, error) {
+func (flow *handleRelayInvsFlow) receiveBlockWithTrustedData() (*appmessage.MsgBlockWithTrustedDataV4, bool, error) {
 	message, err := flow.dequeueIncomingMessageAndSkipInvs(common.DefaultTimeout)
 	if err != nil {
 		return nil, false, err
 	}
 
 	switch downCastedMessage := message.(type) {
-	case *appmessage.MsgBlockWithTrustedData:
+	case *appmessage.MsgBlockWithTrustedDataV4:
 		return downCastedMessage, false, nil
 	case *appmessage.MsgDoneBlocksWithTrustedData:
 		return nil, true, nil

@@ -11,12 +11,13 @@ import (
 type dagTraversalManager struct {
 	databaseContext model.DBReader
 
-	dagTopologyManager    model.DAGTopologyManager
-	ghostdagManager       model.GHOSTDAGManager
-	ghostdagDataStore     model.GHOSTDAGDataStore
-	reachabilityDataStore model.ReachabilityDataStore
-	daaWindowStore        model.BlocksWithTrustedDataDAAWindowStore
-	genesisHash           *externalapi.DomainHash
+	dagTopologyManager             model.DAGTopologyManager
+	ghostdagManager                model.GHOSTDAGManager
+	ghostdagDataStore              model.GHOSTDAGDataStore
+	reachabilityDataStore          model.ReachabilityDataStore
+	daaWindowStore                 model.BlocksWithTrustedDataDAAWindowStore
+	genesisHash                    *externalapi.DomainHash
+	difficultyAdjustmentWindowSize int
 }
 
 // New instantiates a new DAGTraversalManager
@@ -27,7 +28,8 @@ func New(
 	reachabilityDataStore model.ReachabilityDataStore,
 	ghostdagManager model.GHOSTDAGManager,
 	daaWindowStore model.BlocksWithTrustedDataDAAWindowStore,
-	genesisHash *externalapi.DomainHash) model.DAGTraversalManager {
+	genesisHash *externalapi.DomainHash,
+	difficultyAdjustmentWindowSize int) model.DAGTraversalManager {
 	return &dagTraversalManager{
 		databaseContext:       databaseContext,
 		dagTopologyManager:    dagTopologyManager,
@@ -36,7 +38,8 @@ func New(
 		ghostdagManager:       ghostdagManager,
 		daaWindowStore:        daaWindowStore,
 
-		genesisHash: genesisHash,
+		genesisHash:                    genesisHash,
+		difficultyAdjustmentWindowSize: difficultyAdjustmentWindowSize,
 	}
 }
 
