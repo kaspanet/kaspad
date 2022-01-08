@@ -5,10 +5,10 @@ import (
 	"github.com/kaspanet/kaspad/app/protocol/common"
 	"github.com/kaspanet/kaspad/app/protocol/flowcontext"
 	"github.com/kaspanet/kaspad/app/protocol/flows/v3/addressexchange"
-	"github.com/kaspanet/kaspad/app/protocol/flows/v3/blockrelay"
 	"github.com/kaspanet/kaspad/app/protocol/flows/v3/ping"
 	"github.com/kaspanet/kaspad/app/protocol/flows/v3/rejects"
 	"github.com/kaspanet/kaspad/app/protocol/flows/v3/transactionrelay"
+	"github.com/kaspanet/kaspad/app/protocol/flows/v4/blockrelay"
 	peerpkg "github.com/kaspanet/kaspad/app/protocol/peer"
 	routerpkg "github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
 )
