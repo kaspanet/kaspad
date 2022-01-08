@@ -214,6 +214,11 @@ outerLoop:
 			panic(errors.Wrap(err, "error registering everythingElseRoute"))
 		}
 
+		err = router.OutgoingRoute().Enqueue(appmessage.NewMsgReady())
+		if err != nil {
+			panic(errors.Wrap(err, "error sending ready message"))
+		}
+
 		spawn("netAdapterMock-routeInitializer-sendRoutesToChan", func() {
 			routesChan <- &Routes{
 				netConnection:  netConnection,
