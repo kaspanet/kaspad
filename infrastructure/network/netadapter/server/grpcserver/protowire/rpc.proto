@@ -512,6 +512,23 @@ message GetBalanceByAddressResponseMessage {
   RPCError error = 1000;
 }
 
+message GetBalancesByAddressesRequestMessage {
+  repeated string addresses = 1;
+}
+
+message BalancesByAddressEntry{
+  string address = 1;
+  uint64 balance = 2;
+
+  RPCError error = 1000;
+}
+
+message GetBalancesByAddressesResponseMessage {
+  repeated BalancesByAddressEntry entries = 1;
+
+  RPCError error = 1000;
+}
+
 // GetVirtualSelectedParentBlueScoreRequestMessage requests the blue score of the current selected parent
 // of the virtual block.
 message GetVirtualSelectedParentBlueScoreRequestMessage {

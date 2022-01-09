@@ -147,6 +147,8 @@ const (
 	CmdNotifyVirtualDaaScoreChangedRequestMessage
 	CmdNotifyVirtualDaaScoreChangedResponseMessage
 	CmdVirtualDaaScoreChangedNotificationMessage
+	CmdGetBalancesByAddressesRequestMessage
+	CmdGetBalancesByAddressesResponseMessage
 )
 
 // ProtocolMessageCommandToString maps all MessageCommands to their string representation
@@ -268,6 +270,8 @@ var RPCMessageCommandToString = map[MessageCommand]string{
 	CmdNotifyVirtualDaaScoreChangedRequestMessage:                 "NotifyVirtualDaaScoreChangedRequest",
 	CmdNotifyVirtualDaaScoreChangedResponseMessage:                "NotifyVirtualDaaScoreChangedResponse",
 	CmdVirtualDaaScoreChangedNotificationMessage:                  "VirtualDaaScoreChangedNotification",
+	CmdGetBalancesByAddressesRequestMessage:                       "GetBalancesByAddressesRequest",
+	CmdGetBalancesByAddressesResponseMessage:                      "GetBalancesByAddressesResponse",
 }
 
 // Message is an interface that describes a kaspa message. A type that
