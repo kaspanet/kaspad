@@ -1,4 +1,4 @@
-package transactionrelay
+package flowcontext
 
 import (
 	"sync"
@@ -13,13 +13,15 @@ type SharedRequestedTransactions struct {
 	sync.Mutex
 }
 
-func (s *SharedRequestedTransactions) remove(txID *externalapi.DomainTransactionID) {
+// Remove removes a transaction from the set.
+func (s *SharedRequestedTransactions) Remove(txID *externalapi.DomainTransactionID) {
 	s.Lock()
 	defer s.Unlock()
 	delete(s.transactions, *txID)
 }
 
-func (s *SharedRequestedTransactions) removeMany(txIDs []*externalapi.DomainTransactionID) {
+// RemoveMany removes a set of transactions from the set.
+func (s *SharedRequestedTransactions) RemoveMany(txIDs []*externalapi.DomainTransactionID) {
 	s.Lock()
 	defer s.Unlock()
 	for _, txID := range txIDs {
@@ -27,7 +29,8 @@ func (s *SharedRequestedTransactions) removeMany(txIDs []*externalapi.DomainTran
 	}
 }
 
-func (s *SharedRequestedTransactions) addIfNotExists(txID *externalapi.DomainTransactionID) (exists bool) {
+// AddIfNotExists adds a transaction to the set if it doesn't exist yet.
+func (s *SharedRequestedTransactions) AddIfNotExists(txID *externalapi.DomainTransactionID) (exists bool) {
 	s.Lock()
 	defer s.Unlock()
 	_, ok := s.transactions[*txID]

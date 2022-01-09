@@ -52,6 +52,7 @@ const (
 	defaultSigCacheMaxSize  = 100000
 	sampleConfigFilename    = "sample-kaspad.conf"
 	defaultMaxUTXOCacheSize = 5000000000
+	defaultProtocolVersion  = 4
 )
 
 var (
@@ -122,6 +123,7 @@ type Flags struct {
 	IsArchivalNode                  bool          `long:"archival" description:"Run as an archival node: don't delete old block data when moving the pruning point (Warning: heavy disk usage)'"`
 	AllowSubmitBlockWhenNotSynced   bool          `long:"allow-submit-block-when-not-synced" hidden:"true" description:"Allow the node to accept blocks from RPC while not synced (this flag is mainly used for testing)"`
 	EnableSanityCheckPruningUTXOSet bool          `long:"enable-sanity-check-pruning-utxo" hidden:"true" description:"When moving the pruning point - check that the utxo set matches the utxo commitment"`
+	ProtocolVersion                 uint32        `long:"protocol-version" description:"Use non default p2p protocol version"`
 	NetworkFlags
 	ServiceOptions *ServiceOptions
 }
@@ -188,6 +190,7 @@ func defaultFlags() *Flags {
 		MinRelayTxFee:        defaultMinRelayTxFee,
 		MaxUTXOCacheSize:     defaultMaxUTXOCacheSize,
 		ServiceOptions:       &ServiceOptions{},
+		ProtocolVersion:      defaultProtocolVersion,
 	}
 }
 

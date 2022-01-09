@@ -82,12 +82,12 @@ func (msg *MsgVersion) Command() MessageCommand {
 // Message interface using the passed parameters and defaults for the remaining
 // fields.
 func NewMsgVersion(addr *NetAddress, id *id.ID, network string,
-	subnetworkID *externalapi.DomainSubnetworkID) *MsgVersion {
+	subnetworkID *externalapi.DomainSubnetworkID, protocolVersion uint32) *MsgVersion {
 
 	// Limit the timestamp to one millisecond precision since the protocol
 	// doesn't support better.
 	return &MsgVersion{
-		ProtocolVersion: ProtocolVersion,
+		ProtocolVersion: protocolVersion,
 		Network:         network,
 		Services:        0,
 		Timestamp:       mstime.Now(),

@@ -513,6 +513,9 @@ func (pm *pruningManager) ArePruningPointsViolatingFinality(stagingArea *model.S
 		return false, err
 	}
 
+	// We need to check if virtualFinalityPointFinalityPoint is in the selected chain of
+	// the most recent known pruning point, so we iterate the pruning points from the most
+	// recent one until we find a known pruning point.
 	for i := len(pruningPoints) - 1; i >= 0; i-- {
 		blockHash := consensushashing.HeaderHash(pruningPoints[i])
 		exists, err := pm.blockStatusStore.Exists(pm.databaseContext, stagingArea, blockHash)

@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/kaspanet/kaspad/app/appmessage"
-	"github.com/kaspanet/kaspad/app/protocol/flows/addressexchange"
+	"github.com/kaspanet/kaspad/app/protocol/flows/v3/addressexchange"
 	peerpkg "github.com/kaspanet/kaspad/app/protocol/peer"
 	"github.com/kaspanet/kaspad/domain/consensus"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/testutils"

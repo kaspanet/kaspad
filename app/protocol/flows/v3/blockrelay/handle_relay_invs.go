@@ -3,6 +3,7 @@ package blockrelay
 import (
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/app/protocol/common"
+	"github.com/kaspanet/kaspad/app/protocol/flowcontext"
 	peerpkg "github.com/kaspanet/kaspad/app/protocol/peer"
 	"github.com/kaspanet/kaspad/app/protocol/protocolerrors"
 	"github.com/kaspanet/kaspad/domain"
@@ -26,7 +27,7 @@ type RelayInvsContext interface {
 	OnNewBlock(block *externalapi.DomainBlock, virtualChangeSet *externalapi.VirtualChangeSet) error
 	OnVirtualChange(virtualChangeSet *externalapi.VirtualChangeSet) error
 	OnPruningPointUTXOSetOverride() error
-	SharedRequestedBlocks() *SharedRequestedBlocks
+	SharedRequestedBlocks() *flowcontext.SharedRequestedBlocks
 	Broadcast(message appmessage.Message) error
 	AddOrphan(orphanBlock *externalapi.DomainBlock)
 	GetOrphanRoots(orphanHash *externalapi.DomainHash) ([]*externalapi.DomainHash, bool, error)
@@ -194,14 +195,14 @@ func (flow *handleRelayInvsFlow) readInv() (*appmessage.MsgInvRelayBlock, error)
 }
 
 func (flow *handleRelayInvsFlow) requestBlock(requestHash *externalapi.DomainHash) (*externalapi.DomainBlock, bool, error) {
-	exists := flow.SharedRequestedBlocks().addIfNotExists(requestHash)
+	exists := flow.SharedRequestedBlocks().AddIfNotExists(requestHash)
 	if exists {
 		return nil, true, nil
 	}
 
 	// In case the function returns earlier than expected, we want to make sure flow.SharedRequestedBlocks() is
 	// clean from any pending blocks.
-	defer flow.SharedRequestedBlocks().remove(requestHash)
+	defer flow.SharedRequestedBlocks().Remove(requestHash)
 
 	getRelayBlocksMsg := appmessage.NewMsgRequestRelayBlocks([]*externalapi.DomainHash{requestHash})
 	err := flow.outgoingRoute.Enqueue(getRelayBlocksMsg)

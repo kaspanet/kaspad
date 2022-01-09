@@ -15,7 +15,7 @@ import (
 
 // TestVersion tests the MsgVersion API.
 func TestVersion(t *testing.T) {
-	pver := ProtocolVersion
+	pver := uint32(4)
 
 	// Create version message data.
 	tcpAddrMe := &net.TCPAddr{IP: net.ParseIP("127.0.0.1"), Port: 16111}
@@ -26,7 +26,7 @@ func TestVersion(t *testing.T) {
 	}
 
 	// Ensure we get the correct data back out.
-	msg := NewMsgVersion(me, generatedID, "mainnet", nil)
+	msg := NewMsgVersion(me, generatedID, "mainnet", nil, 4)
 	if msg.ProtocolVersion != pver {
 		t.Errorf("NewMsgVersion: wrong protocol version - got %v, want %v",
 			msg.ProtocolVersion, pver)

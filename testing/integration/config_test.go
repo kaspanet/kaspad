@@ -30,13 +30,16 @@ const (
 	defaultTimeout = 10 * time.Second
 )
 
-func setConfig(t *testing.T, harness *appHarness) {
+func setConfig(t *testing.T, harness *appHarness, protocolVersion uint32) {
 	harness.config = commonConfig()
 	harness.config.AppDir = randomDirectory(t)
 	harness.config.Listeners = []string{harness.p2pAddress}
 	harness.config.RPCListeners = []string{harness.rpcAddress}
 	harness.config.UTXOIndex = harness.utxoIndex
 	harness.config.AllowSubmitBlockWhenNotSynced = true
+	if protocolVersion != 0 {
+		harness.config.ProtocolVersion = protocolVersion
+	}
 
 	if harness.overrideDAGParams != nil {
 		harness.config.ActiveNetParams = harness.overrideDAGParams

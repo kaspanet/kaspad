@@ -1,10 +1,11 @@
 package transactionrelay_test
 
 import (
+	"github.com/kaspanet/kaspad/app/protocol/flowcontext"
 	"testing"
 
 	"github.com/kaspanet/kaspad/app/appmessage"
-	"github.com/kaspanet/kaspad/app/protocol/flows/transactionrelay"
+	"github.com/kaspanet/kaspad/app/protocol/flows/v3/transactionrelay"
 	"github.com/kaspanet/kaspad/domain"
 	"github.com/kaspanet/kaspad/domain/consensus"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
@@ -31,7 +32,7 @@ func TestHandleRequestedTransactionsNotFound(t *testing.T) {
 		}
 		defer teardown(false)
 
-		sharedRequestedTransactions := transactionrelay.NewSharedRequestedTransactions()
+		sharedRequestedTransactions := flowcontext.NewSharedRequestedTransactions()
 		adapter, err := netadapter.NewNetAdapter(config.DefaultConfig())
 		if err != nil {
 			t.Fatalf("Failed to create a NetAdapter: %v", err)

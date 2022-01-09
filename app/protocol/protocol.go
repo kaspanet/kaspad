@@ -1,16 +1,16 @@
 package protocol
 
 import (
+	"github.com/kaspanet/kaspad/app/protocol/common"
+	"github.com/kaspanet/kaspad/app/protocol/flows/ready"
+	v3 "github.com/kaspanet/kaspad/app/protocol/flows/v3"
+	"github.com/kaspanet/kaspad/app/protocol/flows/v3/addressexchange"
+	v4 "github.com/kaspanet/kaspad/app/protocol/flows/v4"
 	"sync"
 	"sync/atomic"
 
 	"github.com/kaspanet/kaspad/app/appmessage"
-	"github.com/kaspanet/kaspad/app/protocol/flows/addressexchange"
-	"github.com/kaspanet/kaspad/app/protocol/flows/blockrelay"
 	"github.com/kaspanet/kaspad/app/protocol/flows/handshake"
-	"github.com/kaspanet/kaspad/app/protocol/flows/ping"
-	"github.com/kaspanet/kaspad/app/protocol/flows/rejects"
-	"github.com/kaspanet/kaspad/app/protocol/flows/transactionrelay"
 	peerpkg "github.com/kaspanet/kaspad/app/protocol/peer"
 	"github.com/kaspanet/kaspad/app/protocol/protocolerrors"
 	"github.com/kaspanet/kaspad/infrastructure/network/addressmanager"
@@ -20,14 +20,6 @@ import (
 	"github.com/pkg/errors"
 )
 
-type flowInitializeFunc func(route *routerpkg.Route, peer *peerpkg.Peer) error
-type flowExecuteFunc func(peer *peerpkg.Peer)
-
-type flow struct {
-	name        string
-	executeFunc flowExecuteFunc
-}
-
 func (m *Manager) routerInitializer(router *routerpkg.Router, netConnection *netadapter.NetConnection) {
 	// isStopping flag is raised the moment that the connection associated with this router is disconnected
 	// errChan is used by the flow goroutines to return to runFlows when an error occurs.
@@ -35,8 +27,7 @@ func (m *Manager) routerInitializer(router *routerpkg.Router, netConnection *net
 	isStopping := uint32(0)
 	errChan := make(chan error)
 
-	flows := m.registerFlows(router, errChan, &isStopping)
-	receiveVersionRoute, sendVersionRoute := registerHandshakeRoutes(router)
+	receiveVersionRoute, sendVersionRoute, receiveReadyRoute := registerHandshakeRoutes(router)
 
 	// After flows were registered - spawn a new thread that will wait for connection to finish initializing
 	// and start receiving messages
@@ -64,6 +55,14 @@ func (m *Manager) routerInitializer(router *routerpkg.Router, netConnection *net
 			}
 		})
 
+		// TODO: This code was moved here to prevent a race condition when connecting to v3 peers. This should be moved to v4.registerAddressFlows
+		// once v3 is obsolete.
+		sendAddressesFlow := m.RegisterFlow("SendAddresses", router, []appmessage.MessageCommand{appmessage.CmdRequestAddresses}, &isStopping, errChan,
+			func(incomingRoute *routerpkg.Route, peer *peerpkg.Peer) error {
+				return addressexchange.SendAddresses(m.Context(), incomingRoute, router.OutgoingRoute())
+			},
+		)
+
 		peer, err := handshake.HandleHandshake(m.context, netConnection, receiveVersionRoute,
 			sendVersionRoute, router.OutgoingRoute())
 
@@ -83,6 +82,26 @@ func (m *Manager) routerInitializer(router *routerpkg.Router, netConnection *net
 			return
 		}
 		defer m.context.RemoveFromPeers(peer)
+
+		var flows []*common.Flow
+		log.Infof("Registering p2p flows for peer %s for protocol version %d", peer, peer.ProtocolVersion())
+		switch peer.ProtocolVersion() {
+		case 3:
+			flows = v3.Register(m, router, errChan, &isStopping)
+		case 4:
+			flows = v4.Register(m, router, errChan, &isStopping)
+		default:
+			panic(errors.Errorf("no way to handle protocol version %d", peer.ProtocolVersion()))
+		}
+		flows = append(flows, sendAddressesFlow)
+
+		if peer.ProtocolVersion() > 3 {
+			err = ready.HandleReady(receiveReadyRoute, router.OutgoingRoute(), peer)
+			if err != nil {
+				m.handleError(err, netConnection, router.OutgoingRoute())
+				return
+			}
+		}
 
 		removeHandshakeRoutes(router)
 
@@ -130,167 +149,9 @@ func (m *Manager) handleError(err error, netConnection *netadapter.NetConnection
 	panic(err)
 }
 
-func (m *Manager) registerFlows(router *routerpkg.Router, errChan chan error, isStopping *uint32) (flows []*flow) {
-	flows = m.registerAddressFlows(router, isStopping, errChan)
-	flows = append(flows, m.registerBlockRelayFlows(router, isStopping, errChan)...)
-	flows = append(flows, m.registerPingFlows(router, isStopping, errChan)...)
-	flows = append(flows, m.registerTransactionRelayFlow(router, isStopping, errChan)...)
-	flows = append(flows, m.registerRejectsFlow(router, isStopping, errChan)...)
-
-	return flows
-}
-
-func (m *Manager) registerAddressFlows(router *routerpkg.Router, isStopping *uint32, errChan chan error) []*flow {
-	outgoingRoute := router.OutgoingRoute()
-
-	return []*flow{
-		m.registerFlow("SendAddresses", router, []appmessage.MessageCommand{appmessage.CmdRequestAddresses}, isStopping, errChan,
-			func(incomingRoute *routerpkg.Route, peer *peerpkg.Peer) error {
-				return addressexchange.SendAddresses(m.context, incomingRoute, outgoingRoute)
-			},
-		),
-
-		m.registerOneTimeFlow("ReceiveAddresses", router, []appmessage.MessageCommand{appmessage.CmdAddresses}, isStopping, errChan,
-			func(incomingRoute *routerpkg.Route, peer *peerpkg.Peer) error {
-				return addressexchange.ReceiveAddresses(m.context, incomingRoute, outgoingRoute, peer)
-			},
-		),
-	}
-}
-
-func (m *Manager) registerBlockRelayFlows(router *routerpkg.Router, isStopping *uint32, errChan chan error) []*flow {
-	outgoingRoute := router.OutgoingRoute()
-
-	return []*flow{
-		m.registerOneTimeFlow("SendVirtualSelectedParentInv", router, []appmessage.MessageCommand{},
-			isStopping, errChan, func(route *routerpkg.Route, peer *peerpkg.Peer) error {
-				return blockrelay.SendVirtualSelectedParentInv(m.context, outgoingRoute, peer)
-			}),
-
-		m.registerFlow("HandleRelayInvs", router, []appmessage.MessageCommand{
-			appmessage.CmdInvRelayBlock, appmessage.CmdBlock, appmessage.CmdBlockLocator,
-			appmessage.CmdDoneHeaders, appmessage.CmdUnexpectedPruningPoint, appmessage.CmdPruningPointUTXOSetChunk,
-			appmessage.CmdBlockHeaders, appmessage.CmdIBDBlockLocatorHighestHash, appmessage.CmdBlockWithTrustedData,
-			appmessage.CmdDoneBlocksWithTrustedData, appmessage.CmdIBDBlockLocatorHighestHashNotFound,
-			appmessage.CmdDonePruningPointUTXOSetChunks, appmessage.CmdIBDBlock, appmessage.CmdPruningPoints,
-			appmessage.CmdPruningPointProof,
-		},
-			isStopping, errChan, func(incomingRoute *routerpkg.Route, peer *peerpkg.Peer) error {
-				return blockrelay.HandleRelayInvs(m.context, incomingRoute,
-					outgoingRoute, peer)
-			},
-		),
-
-		m.registerFlow("HandleRelayBlockRequests", router, []appmessage.MessageCommand{appmessage.CmdRequestRelayBlocks}, isStopping, errChan,
-			func(incomingRoute *routerpkg.Route, peer *peerpkg.Peer) error {
-				return blockrelay.HandleRelayBlockRequests(m.context, incomingRoute, outgoingRoute, peer)
-			},
-		),
-
-		m.registerFlow("HandleRequestBlockLocator", router,
-			[]appmessage.MessageCommand{appmessage.CmdRequestBlockLocator}, isStopping, errChan,
-			func(incomingRoute *routerpkg.Route, peer *peerpkg.Peer) error {
-				return blockrelay.HandleRequestBlockLocator(m.context, incomingRoute, outgoingRoute)
-			},
-		),
-
-		m.registerFlow("HandleRequestHeaders", router,
-			[]appmessage.MessageCommand{appmessage.CmdRequestHeaders, appmessage.CmdRequestNextHeaders}, isStopping, errChan,
-			func(incomingRoute *routerpkg.Route, peer *peerpkg.Peer) error {
-				return blockrelay.HandleRequestHeaders(m.context, incomingRoute, outgoingRoute, peer)
-			},
-		),
-
-		m.registerFlow("HandleIBDBlockRequests", router,
-			[]appmessage.MessageCommand{appmessage.CmdRequestIBDBlocks}, isStopping, errChan,
-			func(incomingRoute *routerpkg.Route, peer *peerpkg.Peer) error {
-				return blockrelay.HandleIBDBlockRequests(m.context, incomingRoute, outgoingRoute)
-			},
-		),
-
-		m.registerFlow("HandleRequestPruningPointUTXOSet", router,
-			[]appmessage.MessageCommand{appmessage.CmdRequestPruningPointUTXOSet,
-				appmessage.CmdRequestNextPruningPointUTXOSetChunk}, isStopping, errChan,
-			func(incomingRoute *routerpkg.Route, peer *peerpkg.Peer) error {
-				return blockrelay.HandleRequestPruningPointUTXOSet(m.context, incomingRoute, outgoingRoute)
-			},
-		),
-
-		m.registerFlow("HandlePruningPointAndItsAnticoneRequests", router,
-			[]appmessage.MessageCommand{appmessage.CmdRequestPruningPointAndItsAnticone}, isStopping, errChan,
-			func(incomingRoute *routerpkg.Route, peer *peerpkg.Peer) error {
-				return blockrelay.HandlePruningPointAndItsAnticoneRequests(m.context, incomingRoute, outgoingRoute, peer)
-			},
-		),
-
-		m.registerFlow("HandleIBDBlockLocator", router,
-			[]appmessage.MessageCommand{appmessage.CmdIBDBlockLocator}, isStopping, errChan,
-			func(incomingRoute *routerpkg.Route, peer *peerpkg.Peer) error {
-				return blockrelay.HandleIBDBlockLocator(m.context, incomingRoute, outgoingRoute, peer)
-			},
-		),
-
-		m.registerFlow("HandlePruningPointProofRequests", router,
-			[]appmessage.MessageCommand{appmessage.CmdRequestPruningPointProof}, isStopping, errChan,
-			func(incomingRoute *routerpkg.Route, peer *peerpkg.Peer) error {
-				return blockrelay.HandlePruningPointProofRequests(m.context, incomingRoute, outgoingRoute, peer)
-			},
-		),
-	}
-}
-
-func (m *Manager) registerPingFlows(router *routerpkg.Router, isStopping *uint32, errChan chan error) []*flow {
-	outgoingRoute := router.OutgoingRoute()
-
-	return []*flow{
-		m.registerFlow("ReceivePings", router, []appmessage.MessageCommand{appmessage.CmdPing}, isStopping, errChan,
-			func(incomingRoute *routerpkg.Route, peer *peerpkg.Peer) error {
-				return ping.ReceivePings(m.context, incomingRoute, outgoingRoute)
-			},
-		),
-
-		m.registerFlow("SendPings", router, []appmessage.MessageCommand{appmessage.CmdPong}, isStopping, errChan,
-			func(incomingRoute *routerpkg.Route, peer *peerpkg.Peer) error {
-				return ping.SendPings(m.context, incomingRoute, outgoingRoute, peer)
-			},
-		),
-	}
-}
-
-func (m *Manager) registerTransactionRelayFlow(router *routerpkg.Router, isStopping *uint32, errChan chan error) []*flow {
-	outgoingRoute := router.OutgoingRoute()
-
-	return []*flow{
-		m.registerFlowWithCapacity("HandleRelayedTransactions", 10_000, router,
-			[]appmessage.MessageCommand{appmessage.CmdInvTransaction, appmessage.CmdTx, appmessage.CmdTransactionNotFound}, isStopping, errChan,
-			func(incomingRoute *routerpkg.Route, peer *peerpkg.Peer) error {
-				return transactionrelay.HandleRelayedTransactions(m.context, incomingRoute, outgoingRoute)
-			},
-		),
-		m.registerFlow("HandleRequestTransactions", router,
-			[]appmessage.MessageCommand{appmessage.CmdRequestTransactions}, isStopping, errChan,
-			func(incomingRoute *routerpkg.Route, peer *peerpkg.Peer) error {
-				return transactionrelay.HandleRequestedTransactions(m.context, incomingRoute, outgoingRoute)
-			},
-		),
-	}
-}
-
-func (m *Manager) registerRejectsFlow(router *routerpkg.Router, isStopping *uint32, errChan chan error) []*flow {
-	outgoingRoute := router.OutgoingRoute()
-
-	return []*flow{
-		m.registerFlow("HandleRejects", router,
-			[]appmessage.MessageCommand{appmessage.CmdReject}, isStopping, errChan,
-			func(incomingRoute *routerpkg.Route, peer *peerpkg.Peer) error {
-				return rejects.HandleRejects(m.context, incomingRoute, outgoingRoute)
-			},
-		),
-	}
-}
-
-func (m *Manager) registerFlow(name string, router *routerpkg.Router, messageTypes []appmessage.MessageCommand, isStopping *uint32,
-	errChan chan error, initializeFunc flowInitializeFunc) *flow {
+// RegisterFlow registers a flow to the given router.
+func (m *Manager) RegisterFlow(name string, router *routerpkg.Router, messageTypes []appmessage.MessageCommand, isStopping *uint32,
+	errChan chan error, initializeFunc common.FlowInitializeFunc) *common.Flow {
 
 	route, err := router.AddIncomingRoute(name, messageTypes)
 	if err != nil {
@@ -300,9 +161,10 @@ func (m *Manager) registerFlow(name string, router *routerpkg.Router, messageTyp
 	return m.registerFlowForRoute(route, name, isStopping, errChan, initializeFunc)
 }
 
-func (m *Manager) registerFlowWithCapacity(name string, capacity int, router *routerpkg.Router,
+// RegisterFlowWithCapacity registers a flow to the given router with a custom capacity.
+func (m *Manager) RegisterFlowWithCapacity(name string, capacity int, router *routerpkg.Router,
 	messageTypes []appmessage.MessageCommand, isStopping *uint32,
-	errChan chan error, initializeFunc flowInitializeFunc) *flow {
+	errChan chan error, initializeFunc common.FlowInitializeFunc) *common.Flow {
 
 	route, err := router.AddIncomingRouteWithCapacity(name, capacity, messageTypes)
 	if err != nil {
@@ -313,11 +175,11 @@ func (m *Manager) registerFlowWithCapacity(name string, capacity int, router *ro
 }
 
 func (m *Manager) registerFlowForRoute(route *routerpkg.Route, name string, isStopping *uint32,
-	errChan chan error, initializeFunc flowInitializeFunc) *flow {
+	errChan chan error, initializeFunc common.FlowInitializeFunc) *common.Flow {
 
-	return &flow{
-		name: name,
-		executeFunc: func(peer *peerpkg.Peer) {
+	return &common.Flow{
+		Name: name,
+		ExecuteFunc: func(peer *peerpkg.Peer) {
 			err := initializeFunc(route, peer)
 			if err != nil {
 				m.context.HandleError(err, name, isStopping, errChan)
@@ -327,17 +189,18 @@ func (m *Manager) registerFlowForRoute(route *routerpkg.Route, name string, isSt
 	}
 }
 
-func (m *Manager) registerOneTimeFlow(name string, router *routerpkg.Router, messageTypes []appmessage.MessageCommand,
-	isStopping *uint32, stopChan chan error, initializeFunc flowInitializeFunc) *flow {
+// RegisterOneTimeFlow registers a one-time flow (that exits once some operations are done) to the given router.
+func (m *Manager) RegisterOneTimeFlow(name string, router *routerpkg.Router, messageTypes []appmessage.MessageCommand,
+	isStopping *uint32, stopChan chan error, initializeFunc common.FlowInitializeFunc) *common.Flow {
 
 	route, err := router.AddIncomingRoute(name, messageTypes)
 	if err != nil {
 		panic(err)
 	}
 
-	return &flow{
-		name: name,
-		executeFunc: func(peer *peerpkg.Peer) {
+	return &common.Flow{
+		Name: name,
+		ExecuteFunc: func(peer *peerpkg.Peer) {
 			defer func() {
 				err := router.RemoveRoute(messageTypes)
 				if err != nil {
@@ -355,7 +218,7 @@ func (m *Manager) registerOneTimeFlow(name string, router *routerpkg.Router, mes
 }
 
 func registerHandshakeRoutes(router *routerpkg.Router) (
-	receiveVersionRoute *routerpkg.Route, sendVersionRoute *routerpkg.Route) {
+	receiveVersionRoute, sendVersionRoute, receiveReadyRoute *routerpkg.Route) {
 	receiveVersionRoute, err := router.AddIncomingRoute("recieveVersion - incoming", []appmessage.MessageCommand{appmessage.CmdVersion})
 	if err != nil {
 		panic(err)
@@ -366,11 +229,16 @@ func registerHandshakeRoutes(router *routerpkg.Router) (
 		panic(err)
 	}
 
-	return receiveVersionRoute, sendVersionRoute
+	receiveReadyRoute, err = router.AddIncomingRoute("recieveReady - incoming", []appmessage.MessageCommand{appmessage.CmdReady})
+	if err != nil {
+		panic(err)
+	}
+
+	return receiveVersionRoute, sendVersionRoute, receiveReadyRoute
 }
 
 func removeHandshakeRoutes(router *routerpkg.Router) {
-	err := router.RemoveRoute([]appmessage.MessageCommand{appmessage.CmdVersion, appmessage.CmdVerAck})
+	err := router.RemoveRoute([]appmessage.MessageCommand{appmessage.CmdVersion, appmessage.CmdVerAck, appmessage.CmdReady})
 	if err != nil {
 		panic(err)
 	}
