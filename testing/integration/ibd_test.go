@@ -191,7 +191,6 @@ func TestIBDWithPruning(t *testing.T) {
 			miningAddressPrivateKey: miningAddress3PrivateKey,
 			overrideDAGParams:       &overrideDAGParams,
 			utxoIndex:               true,
-			protocolVersion:         3,
 		},
 	})
 	defer teardown()
