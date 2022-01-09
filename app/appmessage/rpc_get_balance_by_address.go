@@ -9,7 +9,7 @@ type GetBalanceByAddressRequestMessage struct {
 
 // Command returns the protocol command string for the message
 func (msg *GetBalanceByAddressRequestMessage) Command() MessageCommand {
-	return CmdGetBalanceByAddressRequestMessage
+	return CmdGetBalancesByAddressesRequestMessage
 }
 
 // NewGetBalanceByAddressRequest returns a instance of the message
@@ -30,7 +30,7 @@ type GetBalanceByAddressResponseMessage struct {
 
 // Command returns the protocol command string for the message
 func (msg *GetBalanceByAddressResponseMessage) Command() MessageCommand {
-	return CmdGetBalanceByAddressResponseMessage
+	return CmdGetBalancesByAddressesResponseMessage
 }
 
 // NewGetBalanceByAddressResponse returns an instance of the message
