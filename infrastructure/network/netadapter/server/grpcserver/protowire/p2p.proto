@@ -263,8 +263,8 @@ message ReadyMessage {
 
 message BlockWithTrustedDataV4Message {
   BlockMessage block = 1;
-  repeated uint64 daaWindow = 2;
-  repeated uint64 ghostdagData = 3;
+  repeated uint64 daaWindowIndices = 2;
+  repeated uint64 ghostdagDataIndices = 3;
 }
 
 message TrustedDataMessage {

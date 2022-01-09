@@ -459,13 +459,15 @@ func BlockWithTrustedDataToDomainBlockWithTrustedData(block *MsgBlockWithTrusted
 	}
 }
 
-func TrustedDataDataDAABlockV4ToTrustedDataDataDAAHeader(daaBlock *TrustedDataDataDAABlockV4) *externalapi.TrustedDataDataDAAHeader {
+// TrustedDataDataDAABlockV4ToTrustedDataDataDAAHeader converts *TrustedDataDAAHeader to *externalapi.TrustedDataDataDAAHeader
+func TrustedDataDataDAABlockV4ToTrustedDataDataDAAHeader(daaBlock *TrustedDataDAAHeader) *externalapi.TrustedDataDataDAAHeader {
 	return &externalapi.TrustedDataDataDAAHeader{
 		Header:       BlockHeaderToDomainBlockHeader(daaBlock.Header),
 		GHOSTDAGData: ghostdagDataToDomainGHOSTDAGData(daaBlock.GHOSTDAGData),
 	}
 }
 
+// GHOSTDAGHashPairToDomainGHOSTDAGHashPair converts *BlockGHOSTDAGDataHashPair to *externalapi.BlockGHOSTDAGDataHashPair
 func GHOSTDAGHashPairToDomainGHOSTDAGHashPair(datum *BlockGHOSTDAGDataHashPair) *externalapi.BlockGHOSTDAGDataHashPair {
 	return &externalapi.BlockGHOSTDAGDataHashPair{
 		Hash:         datum.Hash,
@@ -536,19 +538,21 @@ func DomainBlockWithTrustedDataToBlockWithTrustedData(block *externalapi.BlockWi
 	}
 }
 
-func DomainBlockWithTrustedDataToBlockWithTrustedDataV4(block *externalapi.DomainBlock, daaWindow, ghostdagData []uint64) *MsgBlockWithTrustedDataV4 {
+// DomainBlockWithTrustedDataToBlockWithTrustedDataV4 converts a set of *externalapi.DomainBlock, daa window indices and ghostdag data indices
+// to *MsgBlockWithTrustedDataV4
+func DomainBlockWithTrustedDataToBlockWithTrustedDataV4(block *externalapi.DomainBlock, daaWindowIndices, ghostdagDataIndices []uint64) *MsgBlockWithTrustedDataV4 {
 	return &MsgBlockWithTrustedDataV4{
-		Block:        DomainBlockToMsgBlock(block),
-		DAAWindow:    daaWindow,
-		GHOSTDAGData: ghostdagData,
+		Block:               DomainBlockToMsgBlock(block),
+		DAAWindowIndices:    daaWindowIndices,
+		GHOSTDAGDataIndices: ghostdagDataIndices,
 	}
 }
 
 // DomainTrustedDataToTrustedData converts *externalapi.BlockWithTrustedData to *MsgBlockWithTrustedData
 func DomainTrustedDataToTrustedData(domainDAAWindow []*externalapi.TrustedDataDataDAAHeader, domainGHOSTDAGData []*externalapi.BlockGHOSTDAGDataHashPair) *MsgTrustedData {
-	daaWindow := make([]*TrustedDataDataDAABlockV4, len(domainDAAWindow))
+	daaWindow := make([]*TrustedDataDAAHeader, len(domainDAAWindow))
 	for i, daaBlock := range domainDAAWindow {
-		daaWindow[i] = &TrustedDataDataDAABlockV4{
+		daaWindow[i] = &TrustedDataDAAHeader{
 			Header:       DomainBlockHeaderToBlockHeader(daaBlock.Header),
 			GHOSTDAGData: domainGHOSTDAGDataGHOSTDAGData(daaBlock.GHOSTDAGData),
 		}

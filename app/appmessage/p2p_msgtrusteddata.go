@@ -4,7 +4,7 @@ package appmessage
 type MsgTrustedData struct {
 	baseMessage
 
-	DAAWindow    []*TrustedDataDataDAABlockV4
+	DAAWindow    []*TrustedDataDAAHeader
 	GHOSTDAGData []*BlockGHOSTDAGDataHashPair
 }
 
@@ -16,4 +16,10 @@ func (msg *MsgTrustedData) Command() MessageCommand {
 // NewMsgTrustedData returns a new MsgTrustedData.
 func NewMsgTrustedData() *MsgTrustedData {
 	return &MsgTrustedData{}
+}
+
+// TrustedDataDAAHeader is an appmessage representation of externalapi.TrustedDataDataDAAHeader
+type TrustedDataDAAHeader struct {
+	Header       *MsgBlockHeader
+	GHOSTDAGData *BlockGHOSTDAGData
 }

@@ -318,7 +318,7 @@ func toP2PPayload(message appmessage.Message) (isKaspadMessage_Payload, error) {
 		}
 		return payload, nil
 	case *appmessage.MsgTrustedData:
-		payload := new(KaspadMessage_TrustedDataMessage)
+		payload := new(KaspadMessage_TrustedData)
 		err := payload.fromAppMessage(message)
 		if err != nil {
 			return nil, err

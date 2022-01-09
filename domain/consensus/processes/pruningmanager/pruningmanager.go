@@ -1132,7 +1132,7 @@ func (pm *pruningManager) TrustedBlockAssociatedGHOSTDAGDataBlockHashes(stagingA
 	blockHashes := make([]*externalapi.DomainHash, 0, pm.k)
 	current := blockHash
 	isTrustedData := false
-	for i := externalapi.KType(0); i < pm.k+1; i++ {
+	for i := externalapi.KType(0); i <= pm.k; i++ {
 		ghostdagData, err := pm.ghostdagDataStore.Get(pm.databaseContext, stagingArea, current, isTrustedData)
 		isNotFoundError := database.IsNotFoundError(err)
 		if !isNotFoundError && err != nil {

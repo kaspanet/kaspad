@@ -230,15 +230,15 @@ func (flow *handleRelayInvsFlow) processBlockWithTrustedData(
 
 	blockWithTrustedData := &externalapi.BlockWithTrustedData{
 		Block:        appmessage.MsgBlockToDomainBlock(block.Block),
-		DAAWindow:    make([]*externalapi.TrustedDataDataDAAHeader, 0, len(block.DAAWindow)),
-		GHOSTDAGData: make([]*externalapi.BlockGHOSTDAGDataHashPair, 0, len(block.GHOSTDAGData)),
+		DAAWindow:    make([]*externalapi.TrustedDataDataDAAHeader, 0, len(block.DAAWindowIndices)),
+		GHOSTDAGData: make([]*externalapi.BlockGHOSTDAGDataHashPair, 0, len(block.GHOSTDAGDataIndices)),
 	}
 
-	for _, index := range block.DAAWindow {
+	for _, index := range block.DAAWindowIndices {
 		blockWithTrustedData.DAAWindow = append(blockWithTrustedData.DAAWindow, appmessage.TrustedDataDataDAABlockV4ToTrustedDataDataDAAHeader(data.DAAWindow[index]))
 	}
 
-	for _, index := range block.GHOSTDAGData {
+	for _, index := range block.GHOSTDAGDataIndices {
 		blockWithTrustedData.GHOSTDAGData = append(blockWithTrustedData.GHOSTDAGData, appmessage.GHOSTDAGHashPairToDomainGHOSTDAGHashPair(data.GHOSTDAGData[index]))
 	}
 

@@ -4,9 +4,9 @@ package appmessage
 type MsgBlockWithTrustedDataV4 struct {
 	baseMessage
 
-	Block        *MsgBlock
-	DAAWindow    []uint64
-	GHOSTDAGData []uint64
+	Block               *MsgBlock
+	DAAWindowIndices    []uint64
+	GHOSTDAGDataIndices []uint64
 }
 
 // Command returns the protocol command string for the message

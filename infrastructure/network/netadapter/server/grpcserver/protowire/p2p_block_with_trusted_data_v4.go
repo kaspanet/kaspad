@@ -16,17 +16,17 @@ func (x *KaspadMessage_BlockWithTrustedDataV4) toAppMessage() (appmessage.Messag
 	}
 
 	return &appmessage.MsgBlockWithTrustedDataV4{
-		Block:        msgBlock,
-		DAAWindow:    x.BlockWithTrustedDataV4.DaaWindow,
-		GHOSTDAGData: x.BlockWithTrustedDataV4.GhostdagData,
+		Block:               msgBlock,
+		DAAWindowIndices:    x.BlockWithTrustedDataV4.DaaWindowIndices,
+		GHOSTDAGDataIndices: x.BlockWithTrustedDataV4.GhostdagDataIndices,
 	}, nil
 }
 
 func (x *KaspadMessage_BlockWithTrustedDataV4) fromAppMessage(msgBlockWithTrustedData *appmessage.MsgBlockWithTrustedDataV4) error {
 	x.BlockWithTrustedDataV4 = &BlockWithTrustedDataV4Message{
-		Block:        &BlockMessage{},
-		DaaWindow:    msgBlockWithTrustedData.DAAWindow,
-		GhostdagData: msgBlockWithTrustedData.GHOSTDAGData,
+		Block:               &BlockMessage{},
+		DaaWindowIndices:    msgBlockWithTrustedData.DAAWindowIndices,
+		GhostdagDataIndices: msgBlockWithTrustedData.GHOSTDAGDataIndices,
 	}
 
 	err := x.BlockWithTrustedDataV4.Block.fromAppMessage(msgBlockWithTrustedData.Block)
@@ -37,7 +37,7 @@ func (x *KaspadMessage_BlockWithTrustedDataV4) fromAppMessage(msgBlockWithTruste
 	return nil
 }
 
-func (x *DaaBlockV4) toAppMessage() (*appmessage.TrustedDataDataDAABlockV4, error) {
+func (x *DaaBlockV4) toAppMessage() (*appmessage.TrustedDataDAAHeader, error) {
 	if x == nil {
 		return nil, errors.Wrapf(errorNil, "DaaBlockV4 is nil")
 	}
@@ -52,13 +52,13 @@ func (x *DaaBlockV4) toAppMessage() (*appmessage.TrustedDataDataDAABlockV4, erro
 		return nil, err
 	}
 
-	return &appmessage.TrustedDataDataDAABlockV4{
+	return &appmessage.TrustedDataDAAHeader{
 		Header:       msgBlockHeader,
 		GHOSTDAGData: ghostdagData,
 	}, nil
 }
 
-func (x *DaaBlockV4) fromAppMessage(daaBlock *appmessage.TrustedDataDataDAABlockV4) error {
+func (x *DaaBlockV4) fromAppMessage(daaBlock *appmessage.TrustedDataDAAHeader) error {
 	*x = DaaBlockV4{
 		Header:       &BlockHeader{},
 		GhostdagData: &GhostdagData{},
