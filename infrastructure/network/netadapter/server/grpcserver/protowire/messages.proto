@@ -45,6 +45,8 @@ message KaspadMessage {
     RequestPruningPointProofMessage requestPruningPointProof = 48;
     PruningPointProofMessage pruningPointProof = 49;
     ReadyMessage ready = 50;
+    BlockWithTrustedDataV4Message blockWithTrustedDataV4 = 51;
+    TrustedDataMessage trustedData = 52;
 
     GetCurrentNetworkRequestMessage getCurrentNetworkRequest = 1001;
     GetCurrentNetworkResponseMessage getCurrentNetworkResponse = 1002;

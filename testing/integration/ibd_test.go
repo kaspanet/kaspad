@@ -175,10 +175,27 @@ func TestIBDWithPruning(t *testing.T) {
 			overrideDAGParams:       &overrideDAGParams,
 			utxoIndex:               true,
 		},
+		{
+			p2pAddress:              p2pAddress4,
+			rpcAddress:              rpcAddress4,
+			miningAddress:           miningAddress3,
+			miningAddressPrivateKey: miningAddress3PrivateKey,
+			overrideDAGParams:       &overrideDAGParams,
+			utxoIndex:               true,
+			protocolVersion:         3,
+		},
+		{
+			p2pAddress:              p2pAddress5,
+			rpcAddress:              rpcAddress5,
+			miningAddress:           miningAddress3,
+			miningAddressPrivateKey: miningAddress3PrivateKey,
+			overrideDAGParams:       &overrideDAGParams,
+			utxoIndex:               true,
+		},
 	})
 	defer teardown()
 
-	syncer, syncee1, syncee2 := harnesses[0], harnesses[1], harnesses[2]
+	syncer, syncee1, syncee2, synceeV3, synceeV4 := harnesses[0], harnesses[1], harnesses[2], harnesses[3], harnesses[4]
 
 	// Let syncee1 have two blocks that the syncer
 	// doesn't have to test a situation where
@@ -199,6 +216,12 @@ func TestIBDWithPruning(t *testing.T) {
 
 	// Test a situation where a node with pruned headers syncs another fresh node.
 	testSync(syncee1, syncee2)
+
+	// Test syncing from p2p v4 to p2p v3
+	testSync(syncee2, synceeV3)
+
+	// Test syncing from p2p v3 to p2p v4
+	testSync(synceeV3, synceeV4)
 }
 
 var currentMockTimestamp int64 = 0
