@@ -20,7 +20,7 @@ var (
 	// connected peer may support.
 	minAcceptableProtocolVersion = uint32(3)
 
-	defaultMaxProtocolVersion = uint32(4)
+	maxAcceptableProtocolVersion = uint32(4)
 )
 
 type receiveVersionFlow struct {
@@ -100,7 +100,7 @@ func (flow *receiveVersionFlow) start() (*appmessage.NetAddress, error) {
 		return nil, protocolerrors.New(false, "incompatible subnetworks")
 	}
 
-	if flow.Config().ProtocolVersion > defaultMaxProtocolVersion {
+	if flow.Config().ProtocolVersion > maxAcceptableProtocolVersion {
 		return nil, errors.Errorf("%d is a non existing protocol version", flow.Config().ProtocolVersion)
 	}
 
