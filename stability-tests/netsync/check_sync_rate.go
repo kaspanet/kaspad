@@ -15,6 +15,11 @@ func checkSyncRate(syncerClient, syncedClient *rpc.Client) error {
 		return err
 	}
 
+	syncerGetSelectedTipHashResponse, err := syncerClient.GetSelectedTipHash()
+	if err != nil {
+		return err
+	}
+
 	syncerHeadersCount := syncerBlockCountResponse.HeaderCount
 	syncerBlockCount := syncerBlockCountResponse.BlockCount
 	log.Infof("SYNCER block count: %d headers and %d blocks", syncerHeadersCount, syncerBlockCount)
@@ -32,8 +37,13 @@ func checkSyncRate(syncerClient, syncedClient *rpc.Client) error {
 		}
 		log.Infof("SYNCED block count: %d headers and %d blocks", syncedBlockCountResponse.HeaderCount,
 			syncedBlockCountResponse.BlockCount)
-		if syncedBlockCountResponse.BlockCount >= syncerBlockCount &&
-			syncedBlockCountResponse.HeaderCount >= syncerHeadersCount {
+
+		syncedGetSelectedTipHashResponse, err := syncedClient.GetSelectedTipHash()
+		if err != nil {
+			return err
+		}
+
+		if syncedGetSelectedTipHashResponse.SelectedTipHash == syncerGetSelectedTipHashResponse.SelectedTipHash {
 			break
 		}
 		if time.Now().After(expectedTime) {
