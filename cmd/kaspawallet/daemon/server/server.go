@@ -31,6 +31,7 @@ type server struct {
 	nextSyncStartIndex  uint32
 	keysFile            *keys.File
 	shutdown            chan struct{}
+	addressSet          walletAddressSet
 }
 
 // Start starts the kaspawalletd server
@@ -67,6 +68,7 @@ func Start(params *dagconfig.Params, listen, rpcServer string, keysFilePath stri
 		nextSyncStartIndex:  0,
 		keysFile:            keysFile,
 		shutdown:            make(chan struct{}),
+		addressSet:          make(walletAddressSet),
 	}
 
 	spawn("serverInstance.sync", func() {

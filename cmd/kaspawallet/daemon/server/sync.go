@@ -27,12 +27,12 @@ func (s *server) sync() error {
 	defer ticker.Stop()
 
 	for range ticker.C {
-		err := s.collectUTXOsFromRecentAddresses()
+		err := s.collectRecentAddresses()
 		if err != nil {
 			return err
 		}
 
-		err = s.collectUTXOsFromFarAddresses()
+		err = s.collectFarAddresses()
 		if err != nil {
 			return err
 		}
@@ -75,12 +75,12 @@ func (s *server) addressesToQuery(start, end uint32) (walletAddressSet, error) {
 	return addresses, nil
 }
 
-// collectUTXOsFromFarAddresses collects numIndexesToQuery UTXOs
+// collectFarAddresses collects numIndexesToQuery addresses
 // from the last point it stopped in the previous call.
-func (s *server) collectUTXOsFromFarAddresses() error {
+func (s *server) collectFarAddresses() error {
 	s.lock.Lock()
 	defer s.lock.Unlock()
-	err := s.collectUTXOs(s.nextSyncStartIndex, s.nextSyncStartIndex+numIndexesToQuery)
+	err := s.collectAddresses(s.nextSyncStartIndex, s.nextSyncStartIndex+numIndexesToQuery)
 	if err != nil {
 		return err
 	}
@@ -101,14 +101,14 @@ func (s *server) maxUsedIndex() uint32 {
 	return maxUsedIndex
 }
 
-// collectUTXOsFromRecentAddresses collects UTXOs from used addresses until
+// collectRecentAddresses collects addresses from used addresses until
 // the address with the index of the last used address + 1000.
-// collectUTXOsFromRecentAddresses scans addresses in batches of numIndexesToQuery,
+// collectRecentAddresses scans addresses in batches of numIndexesToQuery,
 // and releases the lock between scans.
-func (s *server) collectUTXOsFromRecentAddresses() error {
+func (s *server) collectRecentAddresses() error {
 	maxUsedIndex := s.maxUsedIndex()
 	for i := uint32(0); i < maxUsedIndex+1000; i += numIndexesToQuery {
-		err := s.collectUTXOsWithLock(i, i+numIndexesToQuery)
+		err := s.collectAddressesWithLock(i, i+numIndexesToQuery)
 		if err != nil {
 			return err
 		}
@@ -117,30 +117,25 @@ func (s *server) collectUTXOsFromRecentAddresses() error {
 	return nil
 }
 
-func (s *server) collectUTXOsWithLock(start, end uint32) error {
+func (s *server) collectAddressesWithLock(start, end uint32) error {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	return s.collectUTXOs(start, end)
+	return s.collectAddresses(start, end)
 }
 
-func (s *server) collectUTXOs(start, end uint32) error {
+func (s *server) collectAddresses(start, end uint32) error {
 	addressSet, err := s.addressesToQuery(start, end)
 	if err != nil {
 		return err
 	}
 
-	getUTXOsByAddressesResponse, err := s.rpcClient.GetUTXOsByAddresses(addressSet.strings())
+	getBalancesByAddressesResponse, err := s.rpcClient.GetBalancesByAddresses(addressSet.strings())
 	if err != nil {
 		return err
 	}
 
-	err = s.updateLastUsedIndexes(addressSet, getUTXOsByAddressesResponse)
-	if err != nil {
-		return err
-	}
-
-	err = s.updateUTXOs(addressSet, getUTXOsByAddressesResponse)
+	err = s.updateAddressesAndLastUsedIndexes(addressSet, getBalancesByAddressesResponse)
 	if err != nil {
 		return err
 	}
@@ -148,27 +143,27 @@ func (s *server) collectUTXOs(start, end uint32) error {
 	return nil
 }
 
-func (s *server) updateUTXOs(addressSet walletAddressSet,
-	getUTXOsByAddressesResponse *appmessage.GetUTXOsByAddressesResponseMessage) error {
-
-	return s.addEntriesToUTXOSet(getUTXOsByAddressesResponse.Entries, addressSet)
-}
-
-func (s *server) updateLastUsedIndexes(addressSet walletAddressSet,
-	getUTXOsByAddressesResponse *appmessage.GetUTXOsByAddressesResponseMessage) error {
+func (s *server) updateAddressesAndLastUsedIndexes(requestedAddressSet walletAddressSet,
+	getBalancesByAddressesResponse *appmessage.GetBalancesByAddressesResponseMessage) error {
 
 	lastUsedExternalIndex := s.keysFile.LastUsedExternalIndex()
 	lastUsedInternalIndex := s.keysFile.LastUsedInternalIndex()
 
-	for _, entry := range getUTXOsByAddressesResponse.Entries {
-		walletAddress, ok := addressSet[entry.Address]
+	for _, entry := range getBalancesByAddressesResponse.Entries {
+		walletAddress, ok := requestedAddressSet[entry.Address]
 		if !ok {
 			return errors.Errorf("Got result from address %s even though it wasn't requested", entry.Address)
+		}
+
+		if entry.Balance == 0 {
+			continue
 		}
 
 		if walletAddress.cosignerIndex != s.keysFile.CosignerIndex {
 			continue
 		}
+
+		s.addressSet[entry.Address] = walletAddress
 
 		if walletAddress.keyChain == libkaspawallet.ExternalKeychain {
 			if walletAddress.index > lastUsedExternalIndex {
@@ -197,8 +192,10 @@ func (s *server) refreshExistingUTXOsWithLock() error {
 	return s.refreshExistingUTXOs()
 }
 
-func (s *server) addEntriesToUTXOSet(entries []*appmessage.UTXOsByAddressesEntry, addressSet walletAddressSet) error {
+// updateUTXOSet clears the current UTXO set, and re-fills it with the given entries
+func (s *server) updateUTXOSet(entries []*appmessage.UTXOsByAddressesEntry) error {
 	utxos := make([]*walletUTXO, len(entries))
+
 	for i, entry := range entries {
 		outpoint, err := appmessage.RPCOutpointToDomainOutpoint(entry.Outpoint)
 		if err != nil {
@@ -210,7 +207,7 @@ func (s *server) addEntriesToUTXOSet(entries []*appmessage.UTXOsByAddressesEntry
 			return err
 		}
 
-		address, ok := addressSet[entry.Address]
+		address, ok := s.addressSet[entry.Address]
 		if !ok {
 			return errors.Errorf("Got result from address %s even though it wasn't requested", entry.Address)
 		}
@@ -221,71 +218,20 @@ func (s *server) addEntriesToUTXOSet(entries []*appmessage.UTXOsByAddressesEntry
 		}
 	}
 
-	sort.Slice(utxos, func(i, j int) bool { return utxos[i].UTXOEntry.Amount() > utxos[i].UTXOEntry.Amount() })
+	sort.Slice(utxos, func(i, j int) bool { return utxos[i].UTXOEntry.Amount() > utxos[j].UTXOEntry.Amount() })
 
-	s.utxosSortedByAmount = mergeUTXOSlices(s.utxosSortedByAmount, utxos)
+	s.utxosSortedByAmount = utxos
 
 	return nil
 }
 
-func mergeUTXOSlices(left, right []*walletUTXO) []*walletUTXO {
-	result := make([]*walletUTXO, len(left)+len(right))
-
-	i := 0
-	for len(left) > 0 && len(right) > 0 {
-		if left[0].UTXOEntry.Amount() > right[0].UTXOEntry.Amount() {
-			result[i] = left[0]
-			left = left[1:]
-		} else {
-			result[i] = right[0]
-			right = right[1:]
-		}
-		i++
-	}
-
-	for j := 0; j < len(left); j++ {
-		result[i] = left[j]
-		i++
-	}
-	for j := 0; j < len(right); j++ {
-		result[i] = right[j]
-		i++
-	}
-
-	return result
-}
-
-// insertUTXO inserts the given utxo into s.utxosSortedByAmount, while keeping it sorted.
-func (s *server) insertUTXO(utxo *walletUTXO) {
-	s.utxosSortedByAmount = append(s.utxosSortedByAmount, utxo)
-	// bubble up the new UTXO to keep the UTXOs sorted by value
-	index := len(s.utxosSortedByAmount) - 1
-	for index > 0 && utxo.UTXOEntry.Amount() > s.utxosSortedByAmount[index-1].UTXOEntry.Amount() {
-		s.utxosSortedByAmount[index] = s.utxosSortedByAmount[index-1]
-		index--
-	}
-	s.utxosSortedByAmount[index] = utxo
-}
-
 func (s *server) refreshExistingUTXOs() error {
-	addressSet := make(walletAddressSet, len(s.utxosSortedByAmount))
-	for _, utxo := range s.utxosSortedByAmount {
-		addressString, err := s.walletAddressString(utxo.address)
-		if err != nil {
-			return err
-		}
-
-		addressSet[addressString] = utxo.address
-	}
-
-	getUTXOsByAddressesResponse, err := s.rpcClient.GetUTXOsByAddresses(addressSet.strings())
+	getUTXOsByAddressesResponse, err := s.rpcClient.GetUTXOsByAddresses(s.addressSet.strings())
 	if err != nil {
 		return err
 	}
 
-	s.utxosSortedByAmount = make([]*walletUTXO, 0)
-
-	return s.addEntriesToUTXOSet(getUTXOsByAddressesResponse.Entries, addressSet)
+	return s.updateUTXOSet(getUTXOsByAddressesResponse.Entries)
 }
 
 func (s *server) isSynced() bool {
