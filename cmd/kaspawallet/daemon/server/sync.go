@@ -1,6 +1,7 @@
 package server
 
 import (
+	"sort"
 	"time"
 
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/libkaspawallet"
@@ -150,14 +151,7 @@ func (s *server) collectUTXOs(start, end uint32) error {
 func (s *server) updateUTXOs(addressSet walletAddressSet,
 	getUTXOsByAddressesResponse *appmessage.GetUTXOsByAddressesResponseMessage) error {
 
-	for _, entry := range getUTXOsByAddressesResponse.Entries {
-		err := s.addEntryToUTXOSet(entry, addressSet)
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
+	return s.addEntriesToUTXOSet(getUTXOsByAddressesResponse.Entries, addressSet)
 }
 
 func (s *server) updateLastUsedIndexes(addressSet walletAddressSet,
@@ -203,29 +197,62 @@ func (s *server) refreshExistingUTXOsWithLock() error {
 	return s.refreshExistingUTXOs()
 }
 
-func (s *server) addEntryToUTXOSet(entry *appmessage.UTXOsByAddressesEntry, addressSet walletAddressSet) error {
-	outpoint, err := appmessage.RPCOutpointToDomainOutpoint(entry.Outpoint)
-	if err != nil {
-		return err
+func (s *server) addEntriesToUTXOSet(entries []*appmessage.UTXOsByAddressesEntry, addressSet walletAddressSet) error {
+	utxos := make([]*walletUTXO, len(entries))
+	for i, entry := range entries {
+		outpoint, err := appmessage.RPCOutpointToDomainOutpoint(entry.Outpoint)
+		if err != nil {
+			return err
+		}
+
+		utxoEntry, err := appmessage.RPCUTXOEntryToUTXOEntry(entry.UTXOEntry)
+		if err != nil {
+			return err
+		}
+
+		address, ok := addressSet[entry.Address]
+		if !ok {
+			return errors.Errorf("Got result from address %s even though it wasn't requested", entry.Address)
+		}
+		utxos[i] = &walletUTXO{
+			Outpoint:  outpoint,
+			UTXOEntry: utxoEntry,
+			address:   address,
+		}
 	}
 
-	utxoEntry, err := appmessage.RPCUTXOEntryToUTXOEntry(entry.UTXOEntry)
-	if err != nil {
-		return err
-	}
+	sort.Slice(utxos, func(i, j int) bool { return utxos[i].UTXOEntry.Amount() > utxos[i].UTXOEntry.Amount() })
 
-	address, ok := addressSet[entry.Address]
-	if !ok {
-		return errors.Errorf("Got result from address %s even though it wasn't requested", entry.Address)
-	}
-
-	s.insertUTXO(&walletUTXO{
-		Outpoint:  outpoint,
-		UTXOEntry: utxoEntry,
-		address:   address,
-	})
+	s.utxosSortedByAmount = mergeUTXOSlices(s.utxosSortedByAmount, utxos)
 
 	return nil
+}
+
+func mergeUTXOSlices(left, right []*walletUTXO) []*walletUTXO {
+	result := make([]*walletUTXO, len(left)+len(right))
+
+	i := 0
+	for len(left) > 0 && len(right) > 0 {
+		if left[0].UTXOEntry.Amount() > right[0].UTXOEntry.Amount() {
+			result[i] = left[0]
+			left = left[1:]
+		} else {
+			result[i] = right[0]
+			right = right[1:]
+		}
+		i++
+	}
+
+	for j := 0; j < len(left); j++ {
+		result[i] = left[j]
+		i++
+	}
+	for j := 0; j < len(right); j++ {
+		result[i] = right[j]
+		i++
+	}
+
+	return result
 }
 
 // insertUTXO inserts the given utxo into s.utxosSortedByAmount, while keeping it sorted.
@@ -256,15 +283,9 @@ func (s *server) refreshExistingUTXOs() error {
 		return err
 	}
 
-	s.utxosSortedByAmount = make([]*walletUTXO, 0, len(getUTXOsByAddressesResponse.Entries))
-	for _, entry := range getUTXOsByAddressesResponse.Entries {
-		err := s.addEntryToUTXOSet(entry, addressSet)
-		if err != nil {
-			return err
-		}
-	}
+	s.utxosSortedByAmount = make([]*walletUTXO, 0)
 
-	return nil
+	return s.addEntriesToUTXOSet(getUTXOsByAddressesResponse.Entries, addressSet)
 }
 
 func (s *server) isSynced() bool {
