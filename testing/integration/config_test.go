@@ -13,10 +13,14 @@ const (
 	p2pAddress1 = "127.0.0.1:54321"
 	p2pAddress2 = "127.0.0.1:54322"
 	p2pAddress3 = "127.0.0.1:54323"
+	p2pAddress4 = "127.0.0.1:54324"
+	p2pAddress5 = "127.0.0.1:54325"
 
 	rpcAddress1 = "127.0.0.1:12345"
 	rpcAddress2 = "127.0.0.1:12346"
 	rpcAddress3 = "127.0.0.1:12347"
+	rpcAddress4 = "127.0.0.1:12348"
+	rpcAddress5 = "127.0.0.1:12349"
 
 	miningAddress1           = "kaspasim:qqqqnc0pxg7qw3qkc7l6sge8kfhsvvyt7mkw8uamtndqup27ftnd6c769gn66"
 	miningAddress1PrivateKey = "0d81045b0deb2af36a25403c2154c87aa82d89dd337b575bae27ce7f5de53cee"
