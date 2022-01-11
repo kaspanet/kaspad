@@ -189,7 +189,7 @@ func (s *server) refreshExistingUTXOsWithLock() error {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	return s.refreshExistingUTXOs()
+	return s.refreshUTXOs()
 }
 
 // updateUTXOSet clears the current UTXO set, and re-fills it with the given entries
@@ -225,7 +225,7 @@ func (s *server) updateUTXOSet(entries []*appmessage.UTXOsByAddressesEntry) erro
 	return nil
 }
 
-func (s *server) refreshExistingUTXOs() error {
+func (s *server) refreshUTXOs() error {
 	getUTXOsByAddressesResponse, err := s.rpcClient.GetUTXOsByAddresses(s.addressSet.strings())
 	if err != nil {
 		return err

@@ -18,7 +18,7 @@ func (s *server) CreateUnsignedTransaction(_ context.Context, request *pb.Create
 		return nil, errors.New("server is not synced")
 	}
 
-	err := s.refreshExistingUTXOs()
+	err := s.refreshUTXOs()
 	if err != nil {
 		return nil, err
 	}
