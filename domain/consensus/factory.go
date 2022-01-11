@@ -1,15 +1,17 @@
 package consensus
 
 import (
+	"io/ioutil"
+	"os"
+	"sync"
+
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/daawindowstore"
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/processes/blockparentbuilder"
 	parentssanager "github.com/kaspanet/kaspad/domain/consensus/processes/parentsmanager"
 	"github.com/kaspanet/kaspad/domain/consensus/processes/pruningproofmanager"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
-	"io/ioutil"
-	"os"
-	"sync"
+	"github.com/kaspanet/kaspad/util/txmass"
 
 	"github.com/kaspanet/kaspad/domain/prefixmanager/prefix"
 
@@ -169,6 +171,9 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 
 		config.GenesisHash,
 	)
+
+	txMassCalculator := txmass.NewCalculator(config.MassPerTxByte, config.MassPerScriptPubKeyByte, config.MassPerSigOp)
+
 	pastMedianTimeManager := f.pastMedianTimeConsructor(
 		config.TimestampDeviationTolerance,
 		dbManager,
@@ -178,14 +183,12 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 		config.GenesisHash)
 	transactionValidator := transactionvalidator.New(config.BlockCoinbaseMaturity,
 		config.EnableNonNativeSubnetworks,
-		config.MassPerTxByte,
-		config.MassPerScriptPubKeyByte,
-		config.MassPerSigOp,
 		config.MaxCoinbasePayloadLength,
 		dbManager,
 		pastMedianTimeManager,
 		ghostdagDataStore,
-		daaBlocksStore)
+		daaBlocksStore,
+		txMassCalculator)
 	difficultyManager := f.difficultyConstructor(
 		dbManager,
 		ghostdagManager,
@@ -328,6 +331,8 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 		reachabilityDataStore,
 		consensusStateStore,
 		daaBlocksStore,
+
+		txMassCalculator,
 	)
 
 	syncManager := syncmanager.New(

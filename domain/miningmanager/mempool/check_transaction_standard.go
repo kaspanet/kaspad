@@ -3,7 +3,7 @@ package mempool
 import (
 	"fmt"
 
-	"github.com/kaspanet/kaspad/domain/consensus/processes/transactionvalidator"
+	"github.com/kaspanet/kaspad/util/txmass"
 
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
 
@@ -127,7 +127,7 @@ func (mp *mempool) IsTransactionOutputDust(output *externalapi.DomainTransaction
 	// The most common scripts are pay-to-pubkey, and as per the above
 	// breakdown, the minimum size of a p2pk input script is 148 bytes. So
 	// that figure is used.
-	totalSerializedSize := transactionvalidator.TransactionOutputEstimatedSerializedSize(output) + 148
+	totalSerializedSize := txmass.TransactionOutputEstimatedSerializedSize(output) + 148
 
 	// The output is considered dust if the cost to the network to spend the
 	// coins is more than 1/3 of the minimum free transaction relay fee.
