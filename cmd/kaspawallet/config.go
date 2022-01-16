@@ -65,15 +65,17 @@ type createUnsignedTransactionConfig struct {
 }
 
 type signConfig struct {
-	KeysFile    string `long:"keys-file" short:"f" description:"Keys file location (default: ~/.kaspawallet/keys.json (*nix), %USERPROFILE%\\AppData\\Local\\Kaspawallet\\key.json (Windows))"`
-	Password    string `long:"password" short:"p" description:"Wallet password"`
-	Transaction string `long:"transaction" short:"t" description:"The unsigned transaction to sign on (encoded in hex)" required:"true"`
+	KeysFile        string `long:"keys-file" short:"f" description:"Keys file location (default: ~/.kaspawallet/keys.json (*nix), %USERPROFILE%\\AppData\\Local\\Kaspawallet\\key.json (Windows))"`
+	Password        string `long:"password" short:"p" description:"Wallet password"`
+	Transaction     string `long:"transaction" short:"t" description:"The unsigned transaction to sign on (encoded in hex)"`
+	TransactionFile string `long:"transaction-file" short:"F" description:"The file containing the unsigned transaction to sign on (encoded in hex)"`
 	config.NetworkFlags
 }
 
 type broadcastConfig struct {
-	DaemonAddress string `long:"daemonaddress" short:"d" description:"Wallet daemon server to connect to (default: localhost:8082)"`
-	Transaction   string `long:"transaction" short:"t" description:"The signed transaction to broadcast (encoded in hex)" required:"true"`
+	DaemonAddress   string `long:"daemonaddress" short:"d" description:"Wallet daemon server to connect to (default: localhost:8082)"`
+	Transaction     string `long:"transaction" short:"t" description:"The signed transaction to broadcast (encoded in hex)"`
+	TransactionFile string `long:"transaction-file" short:"F" description:"The file containing the unsigned transaction to sign on (encoded in hex)"`
 	config.NetworkFlags
 }
 
