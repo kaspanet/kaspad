@@ -7,6 +7,7 @@ import (
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/libkaspawallet"
 	"github.com/pkg/errors"
 	"io/ioutil"
+	"strings"
 )
 
 func sign(conf *signConfig) error {
@@ -28,7 +29,7 @@ func sign(conf *signConfig) error {
 		if err != nil {
 			return errors.Wrapf(err, "Could not read hex from %s", conf.TransactionFile)
 		}
-		transactionHex = string(transactionHexBytes)
+		transactionHex = strings.TrimSpace(string(transactionHexBytes))
 	}
 
 	partiallySignedTransaction, err := hex.DecodeString(transactionHex)
