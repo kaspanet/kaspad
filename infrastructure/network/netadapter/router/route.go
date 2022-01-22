@@ -89,6 +89,20 @@ func (r *Route) DequeueWithTimeout(timeout time.Duration) (appmessage.Message, e
 	}
 }
 
+// DequeueWithTimeoutNoTimeoutError attempts to dequeue a message from the Route
+// and returns nil if the given timeout expires first.
+func (r *Route) DequeueWithTimeoutNoTimeoutError(timeout time.Duration) (appmessage.Message, error) {
+	select {
+	case <-time.After(timeout):
+		return nil, nil
+	case message, isOpen := <-r.channel:
+		if !isOpen {
+			return nil, errors.WithStack(ErrRouteClosed)
+		}
+		return message, nil
+	}
+}
+
 // Close closes this route
 func (r *Route) Close() {
 	r.closeLock.Lock()

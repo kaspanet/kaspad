@@ -236,7 +236,29 @@ func (flow *handleRelayInvsFlow) syncPruningPointFutureHeaders(consensus externa
 				return
 			}
 
-			blockHeadersMessageChan <- blockHeadersMessage
+			messagePendingProcessing := true
+			for messagePendingProcessing {
+				select {
+				case blockHeadersMessageChan <- blockHeadersMessage:
+					messagePendingProcessing = false
+				default:
+					message, err := flow.incomingRoute.DequeueWithTimeoutNoTimeoutError(10 * time.Millisecond)
+					if err != nil {
+						errChan <- err
+						return
+					}
+					if message != nil {
+						if _, ok := message.(*appmessage.MsgInvRelayBlock); !ok {
+							errChan <- protocolerrors.Errorf(true, "received unexpected message type. "+
+								"expected: %s or %s, got: %s",
+								appmessage.CmdBlockHeaders,
+								appmessage.CmdDoneHeaders,
+								message.Command())
+							return
+						}
+					}
+				}
+			}
 
 			err = flow.outgoingRoute.Enqueue(appmessage.NewMsgRequestNextHeaders())
 			if err != nil {
