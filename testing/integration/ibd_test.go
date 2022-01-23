@@ -89,7 +89,7 @@ func TestIBDWithPruning(t *testing.T) {
 
 		start := time.Now()
 		for range ticker.C {
-			if time.Since(start) > defaultTimeout {
+			if time.Since(start) > 2*defaultTimeout {
 				t.Fatalf("Timeout waiting for IBD to finish.")
 			}
 
