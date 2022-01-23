@@ -748,18 +748,7 @@ func (s *consensus) ApplyPruningPointProof(pruningPointProof *externalapi.Prunin
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	stagingArea := model.NewStagingArea()
-	err := s.pruningProofManager.ApplyPruningPointProof(stagingArea, pruningPointProof)
-	if err != nil {
-		return err
-	}
-
-	err = staging.CommitAllChanges(s.databaseContext, stagingArea)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return s.pruningProofManager.ApplyPruningPointProof(pruningPointProof)
 }
 
 func (s *consensus) BlockDAAWindowHashes(blockHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error) {

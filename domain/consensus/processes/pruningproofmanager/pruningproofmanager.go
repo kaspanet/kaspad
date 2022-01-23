@@ -17,6 +17,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/utils/hashset"
 	"github.com/kaspanet/kaspad/infrastructure/db/database"
 	"github.com/kaspanet/kaspad/infrastructure/logger"
+	"github.com/kaspanet/kaspad/util/staging"
 	"github.com/pkg/errors"
 	"math/big"
 )
@@ -607,13 +608,15 @@ func (ppm *pruningProofManager) dagProcesses(
 	return reachabilityManagers, dagTopologyManagers, ghostdagManagers
 }
 
-func (ppm *pruningProofManager) ApplyPruningPointProof(stagingArea *model.StagingArea, pruningPointProof *externalapi.PruningPointProof) error {
+func (ppm *pruningProofManager) ApplyPruningPointProof(pruningPointProof *externalapi.PruningPointProof) error {
 	onEnd := logger.LogAndMeasureExecutionTime(log, "ApplyPruningPointProof")
 	defer onEnd()
 
 	for blockLevel, headers := range pruningPointProof.Headers {
 		var selectedTip *externalapi.DomainHash
 		for i, header := range headers {
+			stagingArea := model.NewStagingArea()
+
 			blockHash := consensushashing.HeaderHash(header)
 			if header.BlockLevel() < blockLevel {
 				return errors.Wrapf(ruleerrors.ErrPruningProofWrongBlockLevel, "block %s level is %d when it's "+
@@ -693,11 +696,18 @@ func (ppm *pruningProofManager) ApplyPruningPointProof(stagingArea *model.Stagin
 					return err
 				}
 			}
+
+			err = staging.CommitAllChanges(ppm.databaseContext, stagingArea)
+			if err != nil {
+				return err
+			}
 		}
 	}
 
 	pruningPointHeader := pruningPointProof.Headers[0][len(pruningPointProof.Headers[0])-1]
 	pruningPoint := consensushashing.HeaderHash(pruningPointHeader)
+
+	stagingArea := model.NewStagingArea()
 	ppm.consensusStateStore.StageTips(stagingArea, []*externalapi.DomainHash{pruningPoint})
-	return nil
+	return staging.CommitAllChanges(ppm.databaseContext, stagingArea)
 }
