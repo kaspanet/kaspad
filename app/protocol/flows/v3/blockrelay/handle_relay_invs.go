@@ -41,13 +41,12 @@ type handleRelayInvsFlow struct {
 	incomingRoute, outgoingRoute *router.Route
 	peer                         *peerpkg.Peer
 	invsQueue                    []*appmessage.MsgInvRelayBlock
-	ibdChannel                   chan *externalapi.DomainBlock
 }
 
 // HandleRelayInvs listens to appmessage.MsgInvRelayBlock messages, requests their corresponding blocks if they
 // are missing, adds them to the DAG and propagates them to the rest of the network.
 func HandleRelayInvs(context RelayInvsContext, incomingRoute *router.Route, outgoingRoute *router.Route,
-	peer *peerpkg.Peer, ibdChannel chan *externalapi.DomainBlock) error {
+	peer *peerpkg.Peer) error {
 
 	flow := &handleRelayInvsFlow{
 		RelayInvsContext: context,
@@ -55,9 +54,11 @@ func HandleRelayInvs(context RelayInvsContext, incomingRoute *router.Route, outg
 		outgoingRoute:    outgoingRoute,
 		peer:             peer,
 		invsQueue:        make([]*appmessage.MsgInvRelayBlock, 0),
-		ibdChannel:       ibdChannel,
 	}
-	return flow.start()
+	err := flow.start()
+	// Currently, HandleRelayInvs flow is the only place where IBD is triggered, so the channel can be closed now
+	close(peer.IBDRequestChannel())
+	return err
 }
 
 func (flow *handleRelayInvsFlow) start() error {
@@ -306,8 +307,11 @@ func (flow *handleRelayInvsFlow) processOrphan(block *externalapi.DomainBlock) e
 	// Start IBD unless we already are in IBD
 	log.Debugf("Block %s is out of orphan resolution range. "+
 		"Attempting to start IBD against it.", blockHash)
+
+	// Send the block to IBD flow via the IBDRequestChannel.
+	// Note that this is a non-blocking send, since if IBD is already running, there is no need to trigger it
 	select {
-	case flow.ibdChannel <- block:
+	case flow.peer.IBDRequestChannel() <- block:
 	default:
 	}
 	return nil

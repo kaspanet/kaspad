@@ -10,7 +10,6 @@ import (
 	"github.com/kaspanet/kaspad/app/protocol/flows/v3/transactionrelay"
 	"github.com/kaspanet/kaspad/app/protocol/flows/v4/blockrelay"
 	peerpkg "github.com/kaspanet/kaspad/app/protocol/peer"
-	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	routerpkg "github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
 )
 
@@ -58,7 +57,6 @@ func registerAddressFlows(m protocolManager, router *routerpkg.Router, isStoppin
 
 func registerBlockRelayFlows(m protocolManager, router *routerpkg.Router, isStopping *uint32, errChan chan error) []*common.Flow {
 	outgoingRoute := router.OutgoingRoute()
-	ibdChannel := make(chan *externalapi.DomainBlock)
 
 	return []*common.Flow{
 		m.RegisterOneTimeFlow("SendVirtualSelectedParentInv", router, []appmessage.MessageCommand{},
@@ -70,10 +68,8 @@ func registerBlockRelayFlows(m protocolManager, router *routerpkg.Router, isStop
 			appmessage.CmdInvRelayBlock, appmessage.CmdBlock, appmessage.CmdBlockLocator,
 		},
 			isStopping, errChan, func(incomingRoute *routerpkg.Route, peer *peerpkg.Peer) error {
-				err := blockrelay.HandleRelayInvs(m.Context(), incomingRoute,
-					outgoingRoute, peer, ibdChannel)
-				close(ibdChannel)
-				return err
+				return blockrelay.HandleRelayInvs(m.Context(), incomingRoute,
+					outgoingRoute, peer)
 			},
 		),
 
@@ -87,7 +83,7 @@ func registerBlockRelayFlows(m protocolManager, router *routerpkg.Router, isStop
 		},
 			isStopping, errChan, func(incomingRoute *routerpkg.Route, peer *peerpkg.Peer) error {
 				return blockrelay.HandleIBD(m.Context(), incomingRoute,
-					outgoingRoute, peer, ibdChannel)
+					outgoingRoute, peer)
 			},
 		),
 

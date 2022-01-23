@@ -34,26 +34,25 @@ type handleIBDFlow struct {
 	IBDContext
 	incomingRoute, outgoingRoute *router.Route
 	peer                         *peerpkg.Peer
-	ibdChannel                   chan *externalapi.DomainBlock
 }
 
 // HandleIBD handles IBD
 func HandleIBD(context IBDContext, incomingRoute *router.Route, outgoingRoute *router.Route,
-	peer *peerpkg.Peer, ibdChannel chan *externalapi.DomainBlock) error {
+	peer *peerpkg.Peer) error {
 
 	flow := &handleIBDFlow{
 		IBDContext:    context,
 		incomingRoute: incomingRoute,
 		outgoingRoute: outgoingRoute,
 		peer:          peer,
-		ibdChannel:    ibdChannel,
 	}
 	return flow.start()
 }
 
 func (flow *handleIBDFlow) start() error {
 	for {
-		block, ok := <-flow.ibdChannel
+		// Wait for IBD requests triggered by other flows
+		block, ok := <-flow.peer.IBDRequestChannel()
 		if !ok {
 			return nil
 		}
