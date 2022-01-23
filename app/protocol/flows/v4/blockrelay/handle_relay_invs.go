@@ -33,8 +33,6 @@ type RelayInvsContext interface {
 	GetOrphanRoots(orphanHash *externalapi.DomainHash) ([]*externalapi.DomainHash, bool, error)
 	IsOrphan(blockHash *externalapi.DomainHash) bool
 	IsIBDRunning() bool
-	TrySetIBDRunning(ibdPeer *peerpkg.Peer) bool
-	UnsetIBDRunning()
 	IsRecoverableError(err error) bool
 }
 
@@ -43,12 +41,13 @@ type handleRelayInvsFlow struct {
 	incomingRoute, outgoingRoute *router.Route
 	peer                         *peerpkg.Peer
 	invsQueue                    []*appmessage.MsgInvRelayBlock
+	ibdChannel                   chan *externalapi.DomainBlock
 }
 
 // HandleRelayInvs listens to appmessage.MsgInvRelayBlock messages, requests their corresponding blocks if they
 // are missing, adds them to the DAG and propagates them to the rest of the network.
 func HandleRelayInvs(context RelayInvsContext, incomingRoute *router.Route, outgoingRoute *router.Route,
-	peer *peerpkg.Peer) error {
+	peer *peerpkg.Peer, ibdChannel chan *externalapi.DomainBlock) error {
 
 	flow := &handleRelayInvsFlow{
 		RelayInvsContext: context,
@@ -56,6 +55,7 @@ func HandleRelayInvs(context RelayInvsContext, incomingRoute *router.Route, outg
 		outgoingRoute:    outgoingRoute,
 		peer:             peer,
 		invsQueue:        make([]*appmessage.MsgInvRelayBlock, 0),
+		ibdChannel:       ibdChannel,
 	}
 	return flow.start()
 }
@@ -306,7 +306,11 @@ func (flow *handleRelayInvsFlow) processOrphan(block *externalapi.DomainBlock) e
 	// Start IBD unless we already are in IBD
 	log.Debugf("Block %s is out of orphan resolution range. "+
 		"Attempting to start IBD against it.", blockHash)
-	return flow.runIBDIfNotRunning(block)
+	select {
+	case flow.ibdChannel <- block:
+	default:
+	}
+	return nil
 }
 
 func (flow *handleRelayInvsFlow) isGenesisVirtualSelectedParent() (bool, error) {
