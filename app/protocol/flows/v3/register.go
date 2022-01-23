@@ -62,8 +62,10 @@ func registerBlockRelayFlows(m protocolManager, router *routerpkg.Router, isStop
 			appmessage.CmdInvRelayBlock, appmessage.CmdBlock, appmessage.CmdBlockLocator,
 		},
 			isStopping, errChan, func(incomingRoute *routerpkg.Route, peer *peerpkg.Peer) error {
-				return blockrelay.HandleRelayInvs(m.Context(), incomingRoute,
+				err := blockrelay.HandleRelayInvs(m.Context(), incomingRoute,
 					outgoingRoute, peer, ibdChannel)
+				close(ibdChannel)
+				return err
 			},
 		),
 
