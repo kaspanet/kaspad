@@ -13,15 +13,21 @@ func (flow *handleRelayInvsFlow) sendGetBlockLocator(highHash *externalapi.Domai
 }
 
 func (flow *handleRelayInvsFlow) receiveBlockLocator() (blockLocatorHashes []*externalapi.DomainHash, err error) {
-	message, err := flow.incomingRoute.DequeueWithTimeout(common.DefaultTimeout)
-	if err != nil {
-		return nil, err
+	for {
+		message, err := flow.incomingRoute.DequeueWithTimeout(common.DefaultTimeout)
+		if err != nil {
+			return nil, err
+		}
+
+		switch message := message.(type) {
+		case *appmessage.MsgInvRelayBlock:
+			flow.invsQueue = append(flow.invsQueue, message)
+		case *appmessage.MsgBlockLocator:
+			return message.BlockLocatorHashes, nil
+		default:
+			return nil,
+				protocolerrors.Errorf(true, "received unexpected message type. "+
+					"expected: %s, got: %s", appmessage.CmdBlockLocator, message.Command())
+		}
 	}
-	msgBlockLocator, ok := message.(*appmessage.MsgBlockLocator)
-	if !ok {
-		return nil,
-			protocolerrors.Errorf(true, "received unexpected message type. "+
-				"expected: %s, got: %s", appmessage.CmdBlockLocator, message.Command())
-	}
-	return msgBlockLocator.BlockLocatorHashes, nil
 }
