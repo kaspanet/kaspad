@@ -10,6 +10,7 @@ import (
 	"github.com/kaspanet/kaspad/app/protocol/flows/v3/rejects"
 	"github.com/kaspanet/kaspad/app/protocol/flows/v3/transactionrelay"
 	peerpkg "github.com/kaspanet/kaspad/app/protocol/peer"
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	routerpkg "github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
 )
 
@@ -49,6 +50,7 @@ func registerAddressFlows(m protocolManager, router *routerpkg.Router, isStoppin
 
 func registerBlockRelayFlows(m protocolManager, router *routerpkg.Router, isStopping *uint32, errChan chan error) []*common.Flow {
 	outgoingRoute := router.OutgoingRoute()
+	ibdChannel := make(chan *externalapi.DomainBlock)
 
 	return []*common.Flow{
 		m.RegisterOneTimeFlow("SendVirtualSelectedParentInv", router, []appmessage.MessageCommand{},
@@ -58,6 +60,14 @@ func registerBlockRelayFlows(m protocolManager, router *routerpkg.Router, isStop
 
 		m.RegisterFlow("HandleRelayInvs", router, []appmessage.MessageCommand{
 			appmessage.CmdInvRelayBlock, appmessage.CmdBlock, appmessage.CmdBlockLocator,
+		},
+			isStopping, errChan, func(incomingRoute *routerpkg.Route, peer *peerpkg.Peer) error {
+				return blockrelay.HandleRelayInvs(m.Context(), incomingRoute,
+					outgoingRoute, peer, ibdChannel)
+			},
+		),
+
+		m.RegisterFlow("HandleIBD", router, []appmessage.MessageCommand{
 			appmessage.CmdDoneHeaders, appmessage.CmdUnexpectedPruningPoint, appmessage.CmdPruningPointUTXOSetChunk,
 			appmessage.CmdBlockHeaders, appmessage.CmdIBDBlockLocatorHighestHash, appmessage.CmdBlockWithTrustedData,
 			appmessage.CmdDoneBlocksWithTrustedData, appmessage.CmdIBDBlockLocatorHighestHashNotFound,
@@ -65,8 +75,8 @@ func registerBlockRelayFlows(m protocolManager, router *routerpkg.Router, isStop
 			appmessage.CmdPruningPointProof,
 		},
 			isStopping, errChan, func(incomingRoute *routerpkg.Route, peer *peerpkg.Peer) error {
-				return blockrelay.HandleRelayInvs(m.Context(), incomingRoute,
-					outgoingRoute, peer)
+				return blockrelay.HandleIBD(m.Context(), incomingRoute,
+					outgoingRoute, peer, ibdChannel)
 			},
 		),
 
