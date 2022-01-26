@@ -28,6 +28,7 @@ func Start(port string, log *logger.Logger) {
 	})
 }
 
+// TrackHeap tracks the size of the heap and dumps a profile if it passes a limit
 func TrackHeap(appDir string, log *logger.Logger) {
 	spawn := panics.GoroutineWrapperFunc(log)
 	spawn("profiling.TrackHeap", func() {
