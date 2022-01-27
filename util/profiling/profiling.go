@@ -49,20 +49,24 @@ func trackHeapSize(heapLimit uint64, dumpFolder string, log *logger.Logger) {
 	for range ticker.C {
 		memStats := &runtime.MemStats{}
 		runtime.ReadMemStats(memStats)
-		// If we passed the expected heap limit, dump the heap report to a file
+		// If we passed the expected heap limit, dump the heap profile to a file
 		if memStats.HeapAlloc > heapLimit {
-			heapFile := filepath.Join(dumpFolder, "heap.out") // Should we keep a few recent files or override each time?
-			log.Infof("Saving heap statistics into %s (HeapAlloc=%d > %d=heapLimit)", heapFile, memStats.HeapAlloc, heapLimit)
-			f, err := os.Create(heapFile)
-			defer f.Close()
-			if err != nil {
-				log.Infof("Could not create heap profile: %s", err)
-				continue // or should we break?
-			}
-			//runtime.GC() // get up-to-date statistics
-			if err := pprof.WriteHeapProfile(f); err != nil {
-				log.Infof("Could not write heap profile: %s", err)
-			}
+			dumpHeapProfile(heapLimit, dumpFolder, memStats, log)
 		}
+	}
+}
+
+func dumpHeapProfile(heapLimit uint64, dumpFolder string, memStats *runtime.MemStats, log *logger.Logger) {
+	heapFile := filepath.Join(dumpFolder, "heap.out") // Should we keep a few recent files or override each time?
+	log.Infof("Saving heap statistics into %s (HeapAlloc=%d > %d=heapLimit)", heapFile, memStats.HeapAlloc, heapLimit)
+	f, err := os.Create(heapFile)
+	defer f.Close()
+	if err != nil {
+		log.Infof("Could not create heap profile: %s", err)
+		return
+	}
+	//runtime.GC() // get up-to-date statistics
+	if err := pprof.WriteHeapProfile(f); err != nil {
+		log.Infof("Could not write heap profile: %s", err)
 	}
 }
