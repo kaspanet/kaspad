@@ -73,7 +73,7 @@ func (window blockWindow) minMaxTimestamps() (min, max int64, minIndex int) {
 	minIndex = 0
 	max = 0
 	for i, block := range window {
-		// If timestamps ae equal we ghostdag compare in order to reach consensus on `minIndex`
+		// If timestamps are equal we ghostdag compare in order to reach consensus on `minIndex`
 		if block.timeInMilliseconds < min ||
 			(block.timeInMilliseconds == min && ghostdagLess(&block, &window[minIndex])) {
 			min = block.timeInMilliseconds
