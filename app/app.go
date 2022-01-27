@@ -87,6 +87,7 @@ func (app *kaspadApp) main(startedChan chan<- struct{}) error {
 	if app.cfg.Profile != "" {
 		profiling.Start(app.cfg.Profile, log)
 	}
+	profiling.TrackHeap(app.cfg.AppDir, log)
 
 	// Return now if an interrupt signal was triggered.
 	if signal.InterruptRequested(interrupt) {
