@@ -44,7 +44,7 @@ func TrackHeap(appDir string, log *logger.Logger) {
 }
 
 func trackHeapSize(heapLimit uint64, dumpFolder string, log *logger.Logger) {
-	ticker := time.NewTicker(30 * time.Second) // Should be 10? How much time is expected from memory peak to crash?
+	ticker := time.NewTicker(10 * time.Second)
 	defer ticker.Stop()
 	for range ticker.C {
 		memStats := &runtime.MemStats{}
@@ -65,7 +65,6 @@ func dumpHeapProfile(heapLimit uint64, dumpFolder string, memStats *runtime.MemS
 		log.Infof("Could not create heap profile: %s", err)
 		return
 	}
-	//runtime.GC() // get up-to-date statistics
 	if err := pprof.WriteHeapProfile(f); err != nil {
 		log.Infof("Could not write heap profile: %s", err)
 	}
