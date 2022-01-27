@@ -55,15 +55,27 @@ func (dm *difficultyManager) blockWindow(stagingArea *model.StagingArea, startin
 	return window, windowHashes, nil
 }
 
+func ghostdagLess(blockA *difficultyBlock, blockB *difficultyBlock) bool {
+	switch blockA.blueWork.Cmp(blockB.blueWork) {
+	case -1:
+		return true
+	case 1:
+		return false
+	case 0:
+		return blockA.hash.Less(blockB.hash)
+	default:
+		panic("big.Int.Cmp is defined to always return -1/1/0 and nothing else")
+	}
+}
+
 func (window blockWindow) minMaxTimestamps() (min, max int64, minIndex int) {
 	min = math.MaxInt64
 	minIndex = 0
 	max = 0
 	for i, block := range window {
-
+		// If timestamps ae equal we ghostdag compare in order to reach consensus on `minIndex`
 		if block.timeInMilliseconds < min ||
-			(block.timeInMilliseconds == min && block.blueWork.Cmp(window[minIndex].blueWork) < 0) ||
-			(block.timeInMilliseconds == min && block.blueWork.Cmp(window[minIndex].blueWork) == 0 && block.hash.Less(window[minIndex].hash)) {
+			(block.timeInMilliseconds == min && ghostdagLess(&block, &window[minIndex])) {
 			min = block.timeInMilliseconds
 			minIndex = i
 		}
