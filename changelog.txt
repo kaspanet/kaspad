@@ -1,3 +1,7 @@
+Kaspad v0.11.11 - 2022-01-27
+===========================
+* Fix for rare consensus bug regarding DAA window order. The bug only affected IBD from scratch and only today (#1934)
+
 Kaspad v0.11.10 - 2022-01-27
 ===========================
 * Add monitoring of heap and save heap profile if size is over some limit (#1932)
