@@ -115,9 +115,10 @@ func (dm *difficultyManager) requiredDifficultyFromTargetsWindow(targetsWindow b
 	if len(targetsWindow) < 2 || len(targetsWindow) < dm.difficultyAdjustmentWindowSize {
 		return dm.genesisBits, nil
 	}
-	windowMinTimestamp, windowMaxTimeStamp, windowsMinIndex, _ := targetsWindow.minMaxTimestamps()
+
+	windowMinTimestamp, windowMaxTimeStamp, windowMinIndex := targetsWindow.minMaxTimestamps()
 	// Remove the last block from the window so to calculate the average target of dag.difficultyAdjustmentWindowSize blocks
-	targetsWindow.remove(windowsMinIndex)
+	targetsWindow.remove(windowMinIndex)
 
 	// Calculate new target difficulty as:
 	// averageWindowTarget * (windowMinTimestamp / (targetTimePerBlock * windowSize))
