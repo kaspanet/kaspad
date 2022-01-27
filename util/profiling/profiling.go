@@ -1,6 +1,7 @@
 package profiling
 
 import (
+	"fmt"
 	"github.com/kaspanet/kaspad/infrastructure/logger"
 	"net"
 	"net/http"
@@ -15,6 +16,10 @@ import (
 	"runtime"
 	"runtime/pprof"
 )
+
+// heapDumpFileName is the name of the heap dump file. We want every run to have its own
+// file, so we append the timestamp of the program launch time to the file name.
+var heapDumpFileName = fmt.Sprintf("heap-%s.pprof", time.Now().Format(time.RFC3339))
 
 // Start starts the profiling server
 func Start(port string, log *logger.Logger) {
@@ -57,7 +62,7 @@ func trackHeapSize(heapLimit uint64, dumpFolder string, log *logger.Logger) {
 }
 
 func dumpHeapProfile(heapLimit uint64, dumpFolder string, memStats *runtime.MemStats, log *logger.Logger) {
-	heapFile := filepath.Join(dumpFolder, "heap.out") // Should we keep a few recent files or override each time?
+	heapFile := filepath.Join(dumpFolder, heapDumpFileName)
 	log.Infof("Saving heap statistics into %s (HeapAlloc=%d > %d=heapLimit)", heapFile, memStats.HeapAlloc, heapLimit)
 	f, err := os.Create(heapFile)
 	defer f.Close()
