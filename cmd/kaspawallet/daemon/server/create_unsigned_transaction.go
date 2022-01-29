@@ -10,7 +10,8 @@ import (
 	"github.com/pkg/errors"
 )
 
-func (s *server) CreateUnsignedTransaction(_ context.Context, request *pb.CreateUnsignedTransactionRequest) (*pb.CreateUnsignedTransactionResponse, error) {
+func (s *server) CreateUnsignedTransactions(_ context.Context, request *pb.CreateUnsignedTransactionsRequest) (
+	*pb.CreateUnsignedTransactionsResponse, error) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
@@ -53,7 +54,7 @@ func (s *server) CreateUnsignedTransaction(_ context.Context, request *pb.Create
 		return nil, err
 	}
 
-	return &pb.CreateUnsignedTransactionResponse{UnsignedTransaction: unsignedTransaction}, nil
+	return &pb.CreateUnsignedTransactionsResponse{UnsignedTransactions: [][]byte{unsignedTransaction}}, nil
 }
 
 func (s *server) selectUTXOs(spendAmount uint64, feePerInput uint64) (

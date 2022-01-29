@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/hex"
 	"fmt"
+
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/daemon/client"
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/daemon/pb"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
@@ -20,7 +21,7 @@ func createUnsignedTransaction(conf *createUnsignedTransactionConfig) error {
 	defer cancel()
 
 	sendAmountSompi := uint64(conf.SendAmount * constants.SompiPerKaspa)
-	response, err := daemonClient.CreateUnsignedTransaction(ctx, &pb.CreateUnsignedTransactionRequest{
+	response, err := daemonClient.CreateUnsignedTransactions(ctx, &pb.CreateUnsignedTransactionsRequest{
 		Address: conf.ToAddress,
 		Amount:  sendAmountSompi,
 	})
@@ -29,6 +30,8 @@ func createUnsignedTransaction(conf *createUnsignedTransactionConfig) error {
 	}
 
 	fmt.Println("Created unsigned transaction")
-	fmt.Println(hex.EncodeToString(response.UnsignedTransaction))
+	for _, unsignedTransaction := range response.UnsignedTransactions {
+		fmt.Println(hex.EncodeToString(unsignedTransaction))
+	}
 	return nil
 }
