@@ -58,6 +58,14 @@ func registerBlockRelayFlows(m protocolManager, router *routerpkg.Router, isStop
 
 		m.RegisterFlow("HandleRelayInvs", router, []appmessage.MessageCommand{
 			appmessage.CmdInvRelayBlock, appmessage.CmdBlock, appmessage.CmdBlockLocator,
+		},
+			isStopping, errChan, func(incomingRoute *routerpkg.Route, peer *peerpkg.Peer) error {
+				return blockrelay.HandleRelayInvs(m.Context(), incomingRoute,
+					outgoingRoute, peer)
+			},
+		),
+
+		m.RegisterFlow("HandleIBD", router, []appmessage.MessageCommand{
 			appmessage.CmdDoneHeaders, appmessage.CmdUnexpectedPruningPoint, appmessage.CmdPruningPointUTXOSetChunk,
 			appmessage.CmdBlockHeaders, appmessage.CmdIBDBlockLocatorHighestHash, appmessage.CmdBlockWithTrustedData,
 			appmessage.CmdDoneBlocksWithTrustedData, appmessage.CmdIBDBlockLocatorHighestHashNotFound,
@@ -65,7 +73,7 @@ func registerBlockRelayFlows(m protocolManager, router *routerpkg.Router, isStop
 			appmessage.CmdPruningPointProof,
 		},
 			isStopping, errChan, func(incomingRoute *routerpkg.Route, peer *peerpkg.Peer) error {
-				return blockrelay.HandleRelayInvs(m.Context(), incomingRoute,
+				return blockrelay.HandleIBD(m.Context(), incomingRoute,
 					outgoingRoute, peer)
 			},
 		),

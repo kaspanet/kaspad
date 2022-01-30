@@ -35,7 +35,7 @@ func (dm *difficultyManager) estimateNetworkHashesPerSecond(stagingArea *model.S
 		return 0, nil
 	}
 
-	minWindowTimestamp, maxWindowTimestamp, _, _ := blockWindow.minMaxTimestamps()
+	minWindowTimestamp, maxWindowTimestamp, _ := blockWindow.minMaxTimestamps()
 	if minWindowTimestamp == maxWindowTimestamp {
 		return 0, errors.Errorf("min window timestamp is equal to the max window timestamp")
 	}

@@ -31,6 +31,8 @@ type Peer struct {
 	lastPingNonce    uint64        // The nonce of the last ping we sent
 	lastPingTime     time.Time     // Time we sent last ping
 	lastPingDuration time.Duration // Time for last ping to return
+
+	ibdRequestChannel chan *externalapi.DomainBlock // A channel used to communicate IBD requests between flows
 }
 
 // New returns a new Peer
@@ -38,6 +40,7 @@ func New(connection *netadapter.NetConnection) *Peer {
 	return &Peer{
 		connection:        connection,
 		connectionStarted: time.Now(),
+		ibdRequestChannel: make(chan *externalapi.DomainBlock),
 	}
 }
 
@@ -142,4 +145,9 @@ func (p *Peer) LastPingDuration() time.Duration {
 	defer p.pingLock.Unlock()
 
 	return p.lastPingDuration
+}
+
+// IBDRequestChannel returns the channel used in order to communicate an IBD request between peer flows
+func (p *Peer) IBDRequestChannel() chan *externalapi.DomainBlock {
+	return p.ibdRequestChannel
 }

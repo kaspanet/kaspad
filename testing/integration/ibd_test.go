@@ -47,6 +47,8 @@ func TestIBD(t *testing.T) {
 	}
 
 	disableOnBlockAddedHandler = true
+	// Wait for syncee to exit IBD
+	time.Sleep(time.Second)
 	// This should trigger resolving the syncee virtual
 	mineNextBlock(t, syncer)
 	time.Sleep(time.Second)
@@ -87,7 +89,7 @@ func TestIBDWithPruning(t *testing.T) {
 
 		start := time.Now()
 		for range ticker.C {
-			if time.Since(start) > defaultTimeout {
+			if time.Since(start) > 2*defaultTimeout {
 				t.Fatalf("Timeout waiting for IBD to finish.")
 			}
 
@@ -121,6 +123,7 @@ func TestIBDWithPruning(t *testing.T) {
 		// This should trigger resolving the syncee virtual
 		syncerTip := mineNextBlockWithMockTimestamps(t, syncer, rand.New(rand.NewSource(time.Now().UnixNano())))
 		time.Sleep(time.Second)
+
 		synceeSelectedTip, err := syncee.rpcClient.GetSelectedTipHash()
 		if err != nil {
 			t.Fatalf("Error getting tip for syncee")

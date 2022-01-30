@@ -33,8 +33,6 @@ type RelayInvsContext interface {
 	GetOrphanRoots(orphanHash *externalapi.DomainHash) ([]*externalapi.DomainHash, bool, error)
 	IsOrphan(blockHash *externalapi.DomainHash) bool
 	IsIBDRunning() bool
-	TrySetIBDRunning(ibdPeer *peerpkg.Peer) bool
-	UnsetIBDRunning()
 	IsRecoverableError(err error) bool
 }
 
@@ -57,7 +55,10 @@ func HandleRelayInvs(context RelayInvsContext, incomingRoute *router.Route, outg
 		peer:             peer,
 		invsQueue:        make([]*appmessage.MsgInvRelayBlock, 0),
 	}
-	return flow.start()
+	err := flow.start()
+	// Currently, HandleRelayInvs flow is the only place where IBD is triggered, so the channel can be closed now
+	close(peer.IBDRequestChannel())
+	return err
 }
 
 func (flow *handleRelayInvsFlow) start() error {
@@ -306,7 +307,14 @@ func (flow *handleRelayInvsFlow) processOrphan(block *externalapi.DomainBlock) e
 	// Start IBD unless we already are in IBD
 	log.Debugf("Block %s is out of orphan resolution range. "+
 		"Attempting to start IBD against it.", blockHash)
-	return flow.runIBDIfNotRunning(block)
+
+	// Send the block to IBD flow via the IBDRequestChannel.
+	// Note that this is a non-blocking send, since if IBD is already running, there is no need to trigger it
+	select {
+	case flow.peer.IBDRequestChannel() <- block:
+	default:
+	}
+	return nil
 }
 
 func (flow *handleRelayInvsFlow) isGenesisVirtualSelectedParent() (bool, error) {

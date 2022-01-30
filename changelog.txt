@@ -1,3 +1,15 @@
+Kaspad v0.11.11 - 2022-01-27
+===========================
+* Fix for rare consensus bug regarding DAA window order. The bug only affected IBD from scratch and only today (#1934)
+
+Kaspad v0.11.10 - 2022-01-27
+===========================
+* Add monitoring of heap and save heap profile if size is over some limit (#1932)
+* Extract IBD management from invs relay flow to a new separated flow  (#1930)
+* Add --transaction-file options to the `sign` and `broadcast` wallet subcommands (#1927)
+* Filter redundant blocks from daa window on IBD (#1925)
+* Implement a P2P upgrade mechanism (#1921)
+
 Kaspad v0.11.9 - 2021-12-30
 ===========================
 Breaking changes:
