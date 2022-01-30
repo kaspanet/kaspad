@@ -97,7 +97,7 @@ func (flow *handleIBDFlow) runIBDIfNotRunning(block *externalapi.DomainBlock) er
 
 	if shouldDownloadHeadersProof {
 		log.Infof("Starting IBD with headers proof")
-		err := flow.ibdWithHeadersProof(highHash)
+		err := flow.ibdWithHeadersProof(highHash, block.Header.DAAScore())
 		if err != nil {
 			return err
 		}
@@ -115,7 +115,7 @@ func (flow *handleIBDFlow) runIBDIfNotRunning(block *externalapi.DomainBlock) er
 			}
 		}
 
-		err = flow.syncPruningPointFutureHeaders(flow.Domain().Consensus(), highestSharedBlockHash, highHash)
+		err = flow.syncPruningPointFutureHeaders(flow.Domain().Consensus(), highestSharedBlockHash, highHash, block.Header.DAAScore())
 		if err != nil {
 			return err
 		}
@@ -266,7 +266,7 @@ func (flow *handleIBDFlow) fetchHighestHash(
 }
 
 func (flow *handleIBDFlow) syncPruningPointFutureHeaders(consensus externalapi.Consensus, highestSharedBlockHash *externalapi.DomainHash,
-	highHash *externalapi.DomainHash) error {
+	highHash *externalapi.DomainHash, highBlockDAAScore uint64) error {
 
 	log.Infof("Downloading headers from %s", flow.peer)
 
@@ -274,6 +274,15 @@ func (flow *handleIBDFlow) syncPruningPointFutureHeaders(consensus externalapi.C
 	if err != nil {
 		return err
 	}
+
+	highestSharedBlockHeader, err := consensus.GetBlockHeader(highestSharedBlockHash)
+	if err != nil {
+		return err
+	}
+	highestSharedBlockDAAScore := highestSharedBlockHeader.DAAScore()
+	totalDAAScoreDifference := highBlockDAAScore - highestSharedBlockDAAScore
+	lastReportedProgressPercent := 0
+	headersProcessed := 0
 
 	// Keep a short queue of BlockHeadersMessages so that there's
 	// never a moment when the node is not validating and inserting
@@ -322,6 +331,16 @@ func (flow *handleIBDFlow) syncPruningPointFutureHeaders(consensus externalapi.C
 				if err != nil {
 					return err
 				}
+			}
+			headersProcessed += len(ibdBlocksMessage.BlockHeaders)
+
+			lastReceivedHeader := ibdBlocksMessage.BlockHeaders[len(ibdBlocksMessage.BlockHeaders)-1]
+			lastReceivedHeaderDAAScore := lastReceivedHeader.DAAScore
+			headerRelativeDAAScore := lastReceivedHeaderDAAScore - highestSharedBlockDAAScore
+			progressPercent := int((float64(headerRelativeDAAScore) / float64(totalDAAScoreDifference)) * 100)
+			if progressPercent > lastReportedProgressPercent {
+				log.Infof("IBD: Processed %d (%d%%) block headers", headersProcessed, progressPercent)
+				lastReportedProgressPercent = progressPercent
 			}
 		case err := <-errChan:
 			return err
