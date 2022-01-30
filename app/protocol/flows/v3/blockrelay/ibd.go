@@ -279,10 +279,7 @@ func (flow *handleIBDFlow) syncPruningPointFutureHeaders(consensus externalapi.C
 	if err != nil {
 		return err
 	}
-	highestSharedBlockDAAScore := highestSharedBlockHeader.DAAScore()
-	totalDAAScoreDifference := highBlockDAAScore - highestSharedBlockDAAScore
-	lastReportedProgressPercent := 0
-	headersProcessed := 0
+	progressReporter := newIBDProgressReporter(highestSharedBlockHeader.DAAScore(), highBlockDAAScore, "block headers")
 
 	// Keep a short queue of BlockHeadersMessages so that there's
 	// never a moment when the node is not validating and inserting
@@ -332,16 +329,9 @@ func (flow *handleIBDFlow) syncPruningPointFutureHeaders(consensus externalapi.C
 					return err
 				}
 			}
-			headersProcessed += len(ibdBlocksMessage.BlockHeaders)
 
 			lastReceivedHeader := ibdBlocksMessage.BlockHeaders[len(ibdBlocksMessage.BlockHeaders)-1]
-			lastReceivedHeaderDAAScore := lastReceivedHeader.DAAScore
-			headerRelativeDAAScore := lastReceivedHeaderDAAScore - highestSharedBlockDAAScore
-			progressPercent := int((float64(headerRelativeDAAScore) / float64(totalDAAScoreDifference)) * 100)
-			if progressPercent > lastReportedProgressPercent {
-				log.Infof("IBD: Processed %d (%d%%) block headers", headersProcessed, progressPercent)
-				lastReportedProgressPercent = progressPercent
-			}
+			progressReporter.reportProgress(len(ibdBlocksMessage.BlockHeaders), lastReceivedHeader.DAAScore)
 		case err := <-errChan:
 			return err
 		}
