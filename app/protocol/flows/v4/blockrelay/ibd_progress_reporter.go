@@ -26,7 +26,7 @@ func (ipr *ibdProgressReporter) reportProgress(processedDelta int, highestProces
 	relativeDAAScore := highestProcessedDAAScore - ipr.lowDAAScore
 	progressPercent := int((float64(relativeDAAScore) / float64(ipr.totalDAAScoreDifference)) * 100)
 	if progressPercent > ipr.lastReportedProgressPercent {
-		log.Infof("IBD: Processed %d (%d%%) %s", ipr.processed, progressPercent, ipr.objectName)
+		log.Infof("IBD: Processed %d %s (%d%%)", ipr.processed, ipr.objectName, progressPercent)
 		ipr.lastReportedProgressPercent = progressPercent
 	}
 }

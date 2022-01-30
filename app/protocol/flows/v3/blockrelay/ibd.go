@@ -500,6 +500,17 @@ func (flow *handleIBDFlow) syncMissingBlockBodies(highHash *externalapi.DomainHa
 		return nil
 	}
 
+	lowBlockHeader, err := flow.Domain().Consensus().GetBlockHeader(hashes[0])
+	if err != nil {
+		return err
+	}
+	highBlockHeader, err := flow.Domain().Consensus().GetBlockHeader(hashes[len(hashes)-1])
+	if err != nil {
+		return err
+	}
+	progressReporter := newIBDProgressReporter(lowBlockHeader.DAAScore(), highBlockHeader.DAAScore(), "blocks")
+	highestProcessedDAAScore := lowBlockHeader.DAAScore()
+
 	for offset := 0; offset < len(hashes); offset += ibdBatchSize {
 		var hashesToRequest []*externalapi.DomainHash
 		if offset+ibdBatchSize < len(hashes) {
@@ -548,7 +559,11 @@ func (flow *handleIBDFlow) syncMissingBlockBodies(highHash *externalapi.DomainHa
 			if err != nil {
 				return err
 			}
+
+			highestProcessedDAAScore = block.Header.DAAScore()
 		}
+
+		progressReporter.reportProgress(len(hashesToRequest), highestProcessedDAAScore)
 	}
 
 	return flow.resolveVirtual()
