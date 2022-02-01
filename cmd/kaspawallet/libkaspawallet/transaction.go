@@ -159,6 +159,7 @@ func createUnsignedTransaction(
 		Tx:                    domainTransaction,
 		PartiallySignedInputs: partiallySignedInputs,
 	}, nil
+
 }
 
 // IsTransactionFullySigned returns whether the transaction is fully signed and ready to broadcast.

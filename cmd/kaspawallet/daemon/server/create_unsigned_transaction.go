@@ -54,7 +54,12 @@ func (s *server) CreateUnsignedTransactions(_ context.Context, request *pb.Creat
 		return nil, err
 	}
 
-	return &pb.CreateUnsignedTransactionsResponse{UnsignedTransactions: [][]byte{unsignedTransaction}}, nil
+	unsignedTransactions, err := s.maybeSplitTransaction(unsignedTransaction)
+	if err != nil {
+		return nil, err
+	}
+
+	return &pb.CreateUnsignedTransactionsResponse{UnsignedTransactions: unsignedTransactions}, nil
 }
 
 func (s *server) selectUTXOs(spendAmount uint64, feePerInput uint64) (

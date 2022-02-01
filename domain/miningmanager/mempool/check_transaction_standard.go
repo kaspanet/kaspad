@@ -36,9 +36,9 @@ const (
 	// (1 + 15*74 + 3) + (15*34 + 3) + 23 = 1650
 	maximumStandardSignatureScriptSize = 1650
 
-	// maximumStandardTransactionMass is the maximum mass allowed for transactions that
+	// MaximumStandardTransactionMass is the maximum mass allowed for transactions that
 	// are considered standard and will therefore be relayed and considered for mining.
-	maximumStandardTransactionMass = 100000
+	MaximumStandardTransactionMass = 100_000
 )
 
 func (mp *mempool) checkTransactionStandardInIsolation(transaction *externalapi.DomainTransaction) error {
@@ -58,9 +58,9 @@ func (mp *mempool) checkTransactionStandardInIsolation(transaction *externalapi.
 	// almost as much to process as the sender fees, limit the maximum
 	// size of a transaction. This also helps mitigate CPU exhaustion
 	// attacks.
-	if transaction.Mass > maximumStandardTransactionMass {
+	if transaction.Mass > MaximumStandardTransactionMass {
 		str := fmt.Sprintf("transaction mass of %d is larger than max allowed size of %d",
-			transaction.Mass, maximumStandardTransactionMass)
+			transaction.Mass, MaximumStandardTransactionMass)
 		return transactionRuleError(RejectNonstandard, str)
 	}
 

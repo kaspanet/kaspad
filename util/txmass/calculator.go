@@ -21,6 +21,15 @@ func NewCalculator(massPerTxByte, massPerScriptPubKeyByte, massPerSigOp uint64) 
 	}
 }
 
+// MassPerTxByte returns the mass per transaction byte configured for this Calculator
+func (c *Calculator) MassPerTxByte() uint64 { return c.massPerTxByte }
+
+// MassPerScriptPubKeyByte returns the mass per ScriptPublicKey byte configured for this Calculator
+func (c *Calculator) MassPerScriptPubKeyByte() uint64 { return c.massPerScriptPubKeyByte }
+
+// MassPerSigOp returns the mass per SigOp byte configured for this Calculator
+func (c *Calculator) MassPerSigOp() uint64 { return c.massPerSigOp }
+
 // CalculateTransactionMass calculates the mass of the given transaction
 func (c *Calculator) CalculateTransactionMass(transaction *externalapi.DomainTransaction) uint64 {
 	if transactionhelper.IsCoinBase(transaction) {

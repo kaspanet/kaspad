@@ -7,6 +7,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/kaspanet/kaspad/util/txmass"
+
 	"github.com/kaspanet/kaspad/util/profiling"
 
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/daemon/pb"
@@ -32,6 +34,7 @@ type server struct {
 	keysFile            *keys.File
 	shutdown            chan struct{}
 	addressSet          walletAddressSet
+	txMassCalculator    *txmass.Calculator
 }
 
 // Start starts the kaspawalletd server
@@ -69,6 +72,7 @@ func Start(params *dagconfig.Params, listen, rpcServer string, keysFilePath stri
 		keysFile:            keysFile,
 		shutdown:            make(chan struct{}),
 		addressSet:          make(walletAddressSet),
+		txMassCalculator:    txmass.NewCalculator(params.MassPerTxByte, params.MassPerScriptPubKeyByte, params.MassPerSigOp),
 	}
 
 	spawn("serverInstance.sync", func() {
