@@ -97,7 +97,7 @@ func (flow *handleIBDFlow) runIBDIfNotRunning(block *externalapi.DomainBlock) er
 
 	if shouldDownloadHeadersProof {
 		log.Infof("Starting IBD with headers proof")
-		err := flow.ibdWithHeadersProof(highHash)
+		err := flow.ibdWithHeadersProof(highHash, block.Header.DAAScore())
 		if err != nil {
 			return err
 		}
@@ -115,7 +115,7 @@ func (flow *handleIBDFlow) runIBDIfNotRunning(block *externalapi.DomainBlock) er
 			}
 		}
 
-		err = flow.syncPruningPointFutureHeaders(flow.Domain().Consensus(), highestSharedBlockHash, highHash)
+		err = flow.syncPruningPointFutureHeaders(flow.Domain().Consensus(), highestSharedBlockHash, highHash, block.Header.DAAScore())
 		if err != nil {
 			return err
 		}
@@ -266,7 +266,7 @@ func (flow *handleIBDFlow) fetchHighestHash(
 }
 
 func (flow *handleIBDFlow) syncPruningPointFutureHeaders(consensus externalapi.Consensus, highestSharedBlockHash *externalapi.DomainHash,
-	highHash *externalapi.DomainHash) error {
+	highHash *externalapi.DomainHash, highBlockDAAScore uint64) error {
 
 	log.Infof("Downloading headers from %s", flow.peer)
 
@@ -274,6 +274,12 @@ func (flow *handleIBDFlow) syncPruningPointFutureHeaders(consensus externalapi.C
 	if err != nil {
 		return err
 	}
+
+	highestSharedBlockHeader, err := consensus.GetBlockHeader(highestSharedBlockHash)
+	if err != nil {
+		return err
+	}
+	progressReporter := newIBDProgressReporter(highestSharedBlockHeader.DAAScore(), highBlockDAAScore, "block headers")
 
 	// Keep a short queue of BlockHeadersMessages so that there's
 	// never a moment when the node is not validating and inserting
@@ -323,6 +329,9 @@ func (flow *handleIBDFlow) syncPruningPointFutureHeaders(consensus externalapi.C
 					return err
 				}
 			}
+
+			lastReceivedHeader := ibdBlocksMessage.BlockHeaders[len(ibdBlocksMessage.BlockHeaders)-1]
+			progressReporter.reportProgress(len(ibdBlocksMessage.BlockHeaders), lastReceivedHeader.DAAScore)
 		case err := <-errChan:
 			return err
 		}
@@ -491,6 +500,17 @@ func (flow *handleIBDFlow) syncMissingBlockBodies(highHash *externalapi.DomainHa
 		return nil
 	}
 
+	lowBlockHeader, err := flow.Domain().Consensus().GetBlockHeader(hashes[0])
+	if err != nil {
+		return err
+	}
+	highBlockHeader, err := flow.Domain().Consensus().GetBlockHeader(hashes[len(hashes)-1])
+	if err != nil {
+		return err
+	}
+	progressReporter := newIBDProgressReporter(lowBlockHeader.DAAScore(), highBlockHeader.DAAScore(), "blocks")
+	highestProcessedDAAScore := lowBlockHeader.DAAScore()
+
 	for offset := 0; offset < len(hashes); offset += ibdBatchSize {
 		var hashesToRequest []*externalapi.DomainHash
 		if offset+ibdBatchSize < len(hashes) {
@@ -539,7 +559,11 @@ func (flow *handleIBDFlow) syncMissingBlockBodies(highHash *externalapi.DomainHa
 			if err != nil {
 				return err
 			}
+
+			highestProcessedDAAScore = block.Header.DAAScore()
 		}
+
+		progressReporter.reportProgress(len(hashesToRequest), highestProcessedDAAScore)
 	}
 
 	return flow.resolveVirtual()
