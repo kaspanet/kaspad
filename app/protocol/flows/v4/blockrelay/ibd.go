@@ -590,8 +590,8 @@ func (flow *handleIBDFlow) resolveVirtual(estimatedVirtualDAAScoreTarget uint64)
 			if err != nil {
 				return err
 			}
-			log.Infof("Resolving virtual. Estimated progress: %f%%",
-				float64(virtualDAAScore-virtualDAAScoreStart)/float64(estimatedVirtualDAAScoreTarget-virtualDAAScoreStart)*100)
+			log.Infof("Resolving virtual. Estimated progress: %d%%",
+				int(float64(virtualDAAScore-virtualDAAScoreStart)/float64(estimatedVirtualDAAScoreTarget-virtualDAAScoreStart)*100))
 		}
 		virtualChangeSet, isCompletelyResolved, err := flow.Domain().Consensus().ResolveVirtual()
 		if err != nil {
