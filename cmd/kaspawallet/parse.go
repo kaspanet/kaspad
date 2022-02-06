@@ -3,6 +3,8 @@ package main
 import (
 	"encoding/hex"
 	"fmt"
+	"github.com/kaspanet/kaspad/cmd/kaspawallet/libkaspawallet/serialization"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
 	"github.com/pkg/errors"
 	"io/ioutil"
 	"strings"
@@ -30,7 +32,12 @@ func parse(conf *parseConfig) error {
 		return err
 	}
 
-	fmt.Printf("Transaction length: \t%d\n", len(transaction))
+	partiallySignedTransaction, err := serialization.DeserializePartiallySignedTransaction(transaction)
+	if err != nil {
+		return err
+	}
+
+	fmt.Printf("Transaction ID: \t%s\n", consensushashing.TransactionID(partiallySignedTransaction.Tx))
 
 	return nil
 }
