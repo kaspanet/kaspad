@@ -50,7 +50,6 @@ func TestAddressExchangeV3V4(t *testing.T) {
 			rpcAddress:              rpcAddress3,
 			miningAddress:           miningAddress3,
 			miningAddressPrivateKey: miningAddress3PrivateKey,
-			protocolVersion:         3,
 		},
 	})
 	defer teardown()
