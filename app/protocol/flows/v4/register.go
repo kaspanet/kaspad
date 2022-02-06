@@ -4,11 +4,11 @@ import (
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/app/protocol/common"
 	"github.com/kaspanet/kaspad/app/protocol/flowcontext"
-	"github.com/kaspanet/kaspad/app/protocol/flows/v3/addressexchange"
-	"github.com/kaspanet/kaspad/app/protocol/flows/v3/ping"
-	"github.com/kaspanet/kaspad/app/protocol/flows/v3/rejects"
-	"github.com/kaspanet/kaspad/app/protocol/flows/v3/transactionrelay"
+	"github.com/kaspanet/kaspad/app/protocol/flows/v4/addressexchange"
 	"github.com/kaspanet/kaspad/app/protocol/flows/v4/blockrelay"
+	"github.com/kaspanet/kaspad/app/protocol/flows/v4/ping"
+	"github.com/kaspanet/kaspad/app/protocol/flows/v4/rejects"
+	"github.com/kaspanet/kaspad/app/protocol/flows/v4/transactionrelay"
 	peerpkg "github.com/kaspanet/kaspad/app/protocol/peer"
 	routerpkg "github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
 )
@@ -39,13 +39,11 @@ func registerAddressFlows(m protocolManager, router *routerpkg.Router, isStoppin
 	outgoingRoute := router.OutgoingRoute()
 
 	return []*common.Flow{
-		// TODO: This code was moved to the upper level to prevent a race condition when connecting to v3 peers. This should be uncommented
-		// and removed from the upper level once v3 is obsolete.
-		//m.RegisterFlow("SendAddresses", router, []appmessage.MessageCommand{appmessage.CmdRequestAddresses}, isStopping, errChan,
-		//	func(incomingRoute *routerpkg.Route, peer *peerpkg.Peer) error {
-		//		return addressexchange.SendAddresses(m.Context(), incomingRoute, outgoingRoute)
-		//	},
-		//),
+		m.RegisterFlow("SendAddresses", router, []appmessage.MessageCommand{appmessage.CmdRequestAddresses}, isStopping, errChan,
+			func(incomingRoute *routerpkg.Route, peer *peerpkg.Peer) error {
+				return addressexchange.SendAddresses(m.Context(), incomingRoute, outgoingRoute)
+			},
+		),
 
 		m.RegisterOneTimeFlow("ReceiveAddresses", router, []appmessage.MessageCommand{appmessage.CmdAddresses}, isStopping, errChan,
 			func(incomingRoute *routerpkg.Route, peer *peerpkg.Peer) error {
