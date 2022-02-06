@@ -82,12 +82,10 @@ func (m *Manager) routerInitializer(router *routerpkg.Router, netConnection *net
 			panic(errors.Errorf("no way to handle protocol version %d", peer.ProtocolVersion()))
 		}
 
-		if peer.ProtocolVersion() > 3 {
-			err = ready.HandleReady(receiveReadyRoute, router.OutgoingRoute(), peer)
-			if err != nil {
-				m.handleError(err, netConnection, router.OutgoingRoute())
-				return
-			}
+		err = ready.HandleReady(receiveReadyRoute, router.OutgoingRoute(), peer)
+		if err != nil {
+			m.handleError(err, netConnection, router.OutgoingRoute())
+			return
 		}
 
 		removeHandshakeRoutes(router)
