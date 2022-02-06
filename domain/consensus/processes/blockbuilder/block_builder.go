@@ -166,7 +166,12 @@ func (bb *blockBuilder) validateTransaction(
 		return err
 	}
 
-	err = bb.transactionValidator.ValidateTransactionInContextIgnoringUTXO(stagingArea, transaction, model.VirtualBlockHash)
+	virtualPastMedianTime, err := bb.pastMedianTimeManager.PastMedianTime(stagingArea, model.VirtualBlockHash)
+	if err != nil {
+		return err
+	}
+
+	err = bb.transactionValidator.ValidateTransactionInContextIgnoringUTXO(stagingArea, transaction, model.VirtualBlockHash, virtualPastMedianTime)
 	if err != nil {
 		return err
 	}
