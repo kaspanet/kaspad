@@ -6,9 +6,9 @@ import (
 	"github.com/kaspanet/kaspad/app/protocol/flowcontext"
 	"github.com/kaspanet/kaspad/app/protocol/flows/v4/addressexchange"
 	"github.com/kaspanet/kaspad/app/protocol/flows/v4/blockrelay"
-	ping2 "github.com/kaspanet/kaspad/app/protocol/flows/v4/ping"
+	"github.com/kaspanet/kaspad/app/protocol/flows/v4/ping"
 	"github.com/kaspanet/kaspad/app/protocol/flows/v4/rejects"
-	transactionrelay2 "github.com/kaspanet/kaspad/app/protocol/flows/v4/transactionrelay"
+	"github.com/kaspanet/kaspad/app/protocol/flows/v4/transactionrelay"
 	peerpkg "github.com/kaspanet/kaspad/app/protocol/peer"
 	routerpkg "github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
 )
@@ -149,13 +149,13 @@ func registerPingFlows(m protocolManager, router *routerpkg.Router, isStopping *
 	return []*common.Flow{
 		m.RegisterFlow("ReceivePings", router, []appmessage.MessageCommand{appmessage.CmdPing}, isStopping, errChan,
 			func(incomingRoute *routerpkg.Route, peer *peerpkg.Peer) error {
-				return ping2.ReceivePings(m.Context(), incomingRoute, outgoingRoute)
+				return ping.ReceivePings(m.Context(), incomingRoute, outgoingRoute)
 			},
 		),
 
 		m.RegisterFlow("SendPings", router, []appmessage.MessageCommand{appmessage.CmdPong}, isStopping, errChan,
 			func(incomingRoute *routerpkg.Route, peer *peerpkg.Peer) error {
-				return ping2.SendPings(m.Context(), incomingRoute, outgoingRoute, peer)
+				return ping.SendPings(m.Context(), incomingRoute, outgoingRoute, peer)
 			},
 		),
 	}
@@ -168,13 +168,13 @@ func registerTransactionRelayFlow(m protocolManager, router *routerpkg.Router, i
 		m.RegisterFlowWithCapacity("HandleRelayedTransactions", 10_000, router,
 			[]appmessage.MessageCommand{appmessage.CmdInvTransaction, appmessage.CmdTx, appmessage.CmdTransactionNotFound}, isStopping, errChan,
 			func(incomingRoute *routerpkg.Route, peer *peerpkg.Peer) error {
-				return transactionrelay2.HandleRelayedTransactions(m.Context(), incomingRoute, outgoingRoute)
+				return transactionrelay.HandleRelayedTransactions(m.Context(), incomingRoute, outgoingRoute)
 			},
 		),
 		m.RegisterFlow("HandleRequestTransactions", router,
 			[]appmessage.MessageCommand{appmessage.CmdRequestTransactions}, isStopping, errChan,
 			func(incomingRoute *routerpkg.Route, peer *peerpkg.Peer) error {
-				return transactionrelay2.HandleRequestedTransactions(m.Context(), incomingRoute, outgoingRoute)
+				return transactionrelay.HandleRequestedTransactions(m.Context(), incomingRoute, outgoingRoute)
 			},
 		),
 	}
