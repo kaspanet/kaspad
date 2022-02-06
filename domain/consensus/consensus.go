@@ -190,7 +190,12 @@ func (s *consensus) ValidateTransactionAndPopulateWithConsensusData(transaction 
 		return err
 	}
 
-	err = s.transactionValidator.ValidateTransactionInContextIgnoringUTXO(stagingArea, transaction, model.VirtualBlockHash)
+	virtualPastMedianTime, err := s.pastMedianTimeManager.PastMedianTime(stagingArea, model.VirtualBlockHash)
+	if err != nil {
+		return err
+	}
+
+	err = s.transactionValidator.ValidateTransactionInContextIgnoringUTXO(stagingArea, transaction, model.VirtualBlockHash, virtualPastMedianTime)
 	if err != nil {
 		return err
 	}
