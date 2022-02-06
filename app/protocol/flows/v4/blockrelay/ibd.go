@@ -566,7 +566,7 @@ func (flow *handleIBDFlow) syncMissingBlockBodies(highHash *externalapi.DomainHa
 		progressReporter.reportProgress(len(hashesToRequest), highestProcessedDAAScore)
 	}
 
-	return flow.resolveVirtual()
+	return flow.resolveVirtual(highestProcessedDAAScore)
 }
 
 func (flow *handleIBDFlow) banIfBlockIsHeaderOnly(block *externalapi.DomainBlock) error {
@@ -578,10 +578,20 @@ func (flow *handleIBDFlow) banIfBlockIsHeaderOnly(block *externalapi.DomainBlock
 	return nil
 }
 
-func (flow *handleIBDFlow) resolveVirtual() error {
+func (flow *handleIBDFlow) resolveVirtual(estimatedVirtualDAAScoreTarget uint64) error {
+	virtualDAAScoreStart, err := flow.Domain().Consensus().GetVirtualDAAScore()
+	if err != nil {
+		return err
+	}
+
 	for i := 0; ; i++ {
 		if i%10 == 0 {
-			log.Infof("Resolving virtual. This may take some time...")
+			virtualDAAScore, err := flow.Domain().Consensus().GetVirtualDAAScore()
+			if err != nil {
+				return err
+			}
+			log.Infof("Resolving virtual. Estimated progress: %f%%",
+				float64(virtualDAAScore-virtualDAAScoreStart)/float64(estimatedVirtualDAAScoreTarget-virtualDAAScoreStart)*100)
 		}
 		virtualChangeSet, isCompletelyResolved, err := flow.Domain().Consensus().ResolveVirtual()
 		if err != nil {
