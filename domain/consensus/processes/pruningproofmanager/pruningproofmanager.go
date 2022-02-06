@@ -608,6 +608,10 @@ func (ppm *pruningProofManager) dagProcesses(
 	return reachabilityManagers, dagTopologyManagers, ghostdagManagers
 }
 
+// ApplyPruningPointProof applies the given pruning proof to the current consensus. Specifically,
+// it's meant to be used against the StagingConsensus during headers-proof IBD. Note that for
+// performance reasons this operation is NOT atomic. If the process fails for whatever reason
+// (e.g. the process was killed) then the database for this consensus MUST be discarded.
 func (ppm *pruningProofManager) ApplyPruningPointProof(pruningPointProof *externalapi.PruningPointProof) error {
 	onEnd := logger.LogAndMeasureExecutionTime(log, "ApplyPruningPointProof")
 	defer onEnd()
