@@ -18,7 +18,7 @@ var (
 
 	// minAcceptableProtocolVersion is the lowest protocol version that a
 	// connected peer may support.
-	minAcceptableProtocolVersion = uint32(3)
+	minAcceptableProtocolVersion = uint32(4)
 
 	maxAcceptableProtocolVersion = uint32(4)
 )

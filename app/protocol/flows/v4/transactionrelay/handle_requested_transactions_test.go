@@ -2,10 +2,10 @@ package transactionrelay_test
 
 import (
 	"github.com/kaspanet/kaspad/app/protocol/flowcontext"
+	"github.com/kaspanet/kaspad/app/protocol/flows/v4/transactionrelay"
 	"testing"
 
 	"github.com/kaspanet/kaspad/app/appmessage"
-	"github.com/kaspanet/kaspad/app/protocol/flows/v3/transactionrelay"
 	"github.com/kaspanet/kaspad/domain"
 	"github.com/kaspanet/kaspad/domain/consensus"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
