@@ -347,6 +347,7 @@ func (ppm *pruningProofManager) ValidatePruningPointProof(pruningPointProof *ext
 
 	selectedTipByLevel := make([]*externalapi.DomainHash, maxLevel+1)
 	for blockLevel := maxLevel; blockLevel >= 0; blockLevel-- {
+		log.Infof("Validating level %d from the pruning point proof", blockLevel)
 		headers := make([]externalapi.BlockHeader, len(pruningPointProof.Headers[blockLevel]))
 		copy(headers, pruningPointProof.Headers[blockLevel])
 
@@ -617,8 +618,12 @@ func (ppm *pruningProofManager) ApplyPruningPointProof(pruningPointProof *extern
 	defer onEnd()
 
 	for blockLevel, headers := range pruningPointProof.Headers {
+		log.Infof("Applying level %d from the pruning point proof", blockLevel)
 		var selectedTip *externalapi.DomainHash
 		for i, header := range headers {
+			if i%1000 == 0 {
+				log.Infof("Applying level %d from the pruning point proof - applied %d headers out of %d", blockLevel, i, len(headers))
+			}
 			stagingArea := model.NewStagingArea()
 
 			blockHash := consensushashing.HeaderHash(header)

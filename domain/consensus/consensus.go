@@ -741,14 +741,28 @@ func (s *consensus) ValidatePruningPointProof(pruningPointProof *externalapi.Pru
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	return s.pruningProofManager.ValidatePruningPointProof(pruningPointProof)
+	log.Infof("Validating the pruning point proof")
+	err := s.pruningProofManager.ValidatePruningPointProof(pruningPointProof)
+	if err != nil {
+		return err
+	}
+
+	log.Infof("Done validating the pruning point proof")
+	return nil
 }
 
 func (s *consensus) ApplyPruningPointProof(pruningPointProof *externalapi.PruningPointProof) error {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	return s.pruningProofManager.ApplyPruningPointProof(pruningPointProof)
+	log.Infof("Applying the pruning point proof")
+	err := s.pruningProofManager.ApplyPruningPointProof(pruningPointProof)
+	if err != nil {
+		return err
+	}
+
+	log.Infof("Done applying the pruning point proof")
+	return nil
 }
 
 func (s *consensus) BlockDAAWindowHashes(blockHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error) {
