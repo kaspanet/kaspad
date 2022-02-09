@@ -10,6 +10,9 @@ import (
 	"github.com/pkg/errors"
 )
 
+// TODO: Implement a better fee estimation mechanism
+const feePerInput = 10000
+
 func (s *server) CreateUnsignedTransactions(_ context.Context, request *pb.CreateUnsignedTransactionsRequest) (
 	*pb.CreateUnsignedTransactionsResponse, error) {
 	s.lock.Lock()
@@ -29,8 +32,6 @@ func (s *server) CreateUnsignedTransactions(_ context.Context, request *pb.Creat
 		return nil, err
 	}
 
-	// TODO: Implement a better fee estimation mechanism
-	const feePerInput = 10000
 	selectedUTXOs, changeSompi, err := s.selectUTXOs(request.Amount, feePerInput)
 	if err != nil {
 		return nil, err
