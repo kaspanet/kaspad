@@ -72,6 +72,9 @@ func (s *server) estimateMassIncreaseForSignatures(transaction *externalapi.Doma
 		signatureSize = secp256k1.SerializedSchnorrSignatureSize
 	}
 
-	return uint64(s.keysFile.MinimumSignatures) * signatureSize * s.txMassCalculator.MassPerTxByte()
+	return uint64(len(transaction.Inputs)) *
+		uint64(s.keysFile.MinimumSignatures) *
+		signatureSize *
+		s.txMassCalculator.MassPerTxByte()
 	// TODO: Add increase per sigop after https://github.com/kaspanet/kaspad/issues/1874 is handled
 }
