@@ -40,4 +40,8 @@ const (
 	// This is technically 255, but we clamped it at 256 - block level of mainnet genesis
 	// This means that any block that has a level lower or equal to genesis will be level 0.
 	MaxBlockLevel = 225
+
+	// UnacceptedDAAScore is used to for UTXOEntries that were created by transactions in the mempool, or otherwise
+	// not-yet-accepted transactions.
+	UnacceptedDAAScore = math.MaxUint64
 )

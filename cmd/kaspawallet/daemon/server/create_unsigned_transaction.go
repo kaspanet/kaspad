@@ -37,7 +37,7 @@ func (s *server) CreateUnsignedTransactions(_ context.Context, request *pb.Creat
 		return nil, err
 	}
 
-	changeAddress, err := s.changeAddress()
+	changeAddress, _, err := s.changeAddress()
 	if err != nil {
 		return nil, err
 	}

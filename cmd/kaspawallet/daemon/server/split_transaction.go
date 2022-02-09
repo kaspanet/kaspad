@@ -5,40 +5,91 @@ import (
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/libkaspawallet"
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/libkaspawallet/serialization"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/utxo"
 	"github.com/kaspanet/kaspad/domain/miningmanager/mempool"
 	"github.com/kaspanet/kaspad/util"
 )
 
-func (s *server) maybeSplitTransaction(partiallySignedTransactionBytes []byte) ([][]byte, error) {
-	partiallySignedTransaction, err := serialization.DeserializePartiallySignedTransaction(partiallySignedTransactionBytes)
+func (s *server) maybeSplitTransaction(transactionBytes []byte) ([][]byte, error) {
+	transaction, err := serialization.DeserializePartiallySignedTransaction(transactionBytes)
 	if err != nil {
 		return nil, err
 	}
 
-	partiallySignedTransactions, err := s.maybeSplitTransactionInner(partiallySignedTransaction)
+	splitAddress, splitWalletAddress, err := s.changeAddress()
 	if err != nil {
 		return nil, err
 	}
-	if len(partiallySignedTransactions) > 1 {
-		partiallySignedTransactions = append(partiallySignedTransactions, mergeTransaction(partiallySignedTransactions))
+
+	splitTransactions, err := s.maybeSplitTransactionInner(transaction, splitAddress)
+	if err != nil {
+		return nil, err
+	}
+	if len(splitTransactions) > 1 {
+		mergeTransaction, err := s.mergeTransaction(splitTransactions, transaction, splitAddress, splitWalletAddress)
+		if err != nil {
+			return nil, err
+		}
+		splitTransactions = append(splitTransactions, mergeTransaction)
 	}
 
-	partiallySignedTransactionsBytes := make([][]byte, len(partiallySignedTransactions))
-	for i, partiallySignedTransaction := range partiallySignedTransactions {
-		partiallySignedTransactionsBytes[i], err = serialization.SerializePartiallySignedTransaction(partiallySignedTransaction)
+	splitTransactionsBytes := make([][]byte, len(splitTransactions))
+	for i, splitTransaction := range splitTransactions {
+		splitTransactionsBytes[i], err = serialization.SerializePartiallySignedTransaction(splitTransaction)
 		if err != nil {
 			return nil, err
 		}
 	}
-	return partiallySignedTransactionsBytes, nil
+	return splitTransactionsBytes, nil
 }
 
-func mergeTransaction(transactions []*serialization.PartiallySignedTransaction) *serialization.PartiallySignedTransaction {
-	// TODO
+func (s *server) mergeTransaction(splitTransactions []*serialization.PartiallySignedTransaction,
+	originalTransaction *serialization.PartiallySignedTransaction, splitAddress util.Address,
+	splitWalletAddress *walletAddress) (*serialization.PartiallySignedTransaction, error) {
+
+	targetAddress, err := util.NewAddressScriptHash(originalTransaction.Tx.Outputs[0].ScriptPublicKey.Script, s.params.Prefix)
+	if err != nil {
+		return nil, err
+	}
+	changeAddress, err := util.NewAddressScriptHash(originalTransaction.Tx.Outputs[1].ScriptPublicKey.Script, s.params.Prefix)
+	if err != nil {
+		return nil, err
+	}
+
+	totalValue := uint64(0)
+	sentValue := originalTransaction.Tx.Outputs[0].Value
+	utxos := make([]*libkaspawallet.UTXO, len(splitTransactions))
+	for i, splitTransaction := range splitTransactions {
+		output := splitTransaction.Tx.Outputs[0]
+		utxos[i] = &libkaspawallet.UTXO{
+			Outpoint: &externalapi.DomainOutpoint{
+				TransactionID: *consensushashing.TransactionID(splitTransaction.Tx),
+				Index:         0,
+			},
+			UTXOEntry:      utxo.NewUTXOEntry(output.Value, output.ScriptPublicKey, false, constants.UnacceptedDAAScore),
+			DerivationPath: s.walletAddressPath(splitWalletAddress),
+		}
+		totalValue += output.Value
+		totalValue -= feePerInput
+	}
+
+	mergeTransactionBytes, err := libkaspawallet.CreateUnsignedTransaction(s.keysFile.ExtendedPublicKeys,
+		s.keysFile.MinimumSignatures,
+		[]*libkaspawallet.Payment{{
+			Address: targetAddress,
+			Amount:  sentValue,
+		}, {
+			Address: changeAddress,
+			Amount:  totalValue - sentValue,
+		}}, utxos)
+
+	return serialization.DeserializePartiallySignedTransaction(mergeTransactionBytes)
 }
 
-func (s *server) maybeSplitTransactionInner(transaction *serialization.PartiallySignedTransaction) (
-	[]*serialization.PartiallySignedTransaction, error) {
+func (s *server) maybeSplitTransactionInner(transaction *serialization.PartiallySignedTransaction,
+	splitAddress util.Address) ([]*serialization.PartiallySignedTransaction, error) {
 
 	transactionMass := s.txMassCalculator.CalculateTransactionMass(transaction.Tx)
 	transactionMass += s.estimateMassIncreaseForSignatures(transaction.Tx)
@@ -53,16 +104,12 @@ func (s *server) maybeSplitTransactionInner(transaction *serialization.Partially
 	}
 	inputCountPerSplit := len(transaction.Tx.Inputs) / splitCount
 
-	changeAddress, err := s.changeAddress()
-	if err != nil {
-		return nil, err
-	}
-
 	splitTransactions := make([]*serialization.PartiallySignedTransaction, splitCount)
 	for i := 0; i < splitCount; i++ {
 		startIndex := i * inputCountPerSplit
 		endIndex := startIndex + inputCountPerSplit
-		splitTransactions[i], err = s.createSplitTransaction(transaction, changeAddress, startIndex, endIndex)
+		var err error
+		splitTransactions[i], err = s.createSplitTransaction(transaction, splitAddress, startIndex, endIndex)
 		if err != nil {
 			return nil, err
 		}
