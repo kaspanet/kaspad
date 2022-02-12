@@ -44,7 +44,7 @@ func TrackHeap(appDir string, log *logger.Logger) {
 			log.Errorf("Could not create heap dumps folder at %s", dumpFolder)
 			return
 		}
-		const limitInGigabytes = 7  // We want to support 8 GB RAM, so we profile at 7
+		const limitInGigabytes = 7 // We want to support 8 GB RAM, so we profile at 7
 		trackHeapSize(limitInGigabytes*1024*1024*1024, dumpFolder, log)
 	})
 }
