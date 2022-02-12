@@ -18,8 +18,9 @@ import (
 )
 
 // heapDumpFileName is the name of the heap dump file. We want every run to have its own
-// file, so we append the timestamp of the program launch time to the file name.
-var heapDumpFileName = fmt.Sprintf("heap-%s.pprof", time.Now().Format(time.RFC3339))
+// file, so we append the timestamp of the program launch time to the file name (note the
+// custom format for compliance with file name rules on all OSes).
+var heapDumpFileName = fmt.Sprintf("heap-%s.pprof", time.Now().Format("01-02-2006T15.04.05"))
 
 // Start starts the profiling server
 func Start(port string, log *logger.Logger) {
@@ -43,7 +44,7 @@ func TrackHeap(appDir string, log *logger.Logger) {
 			log.Errorf("Could not create heap dumps folder at %s", dumpFolder)
 			return
 		}
-		const limitInGigabytes = 8
+		const limitInGigabytes = 7  // We want to support 8 GB RAM, so we profile at 7
 		trackHeapSize(limitInGigabytes*1024*1024*1024, dumpFolder, log)
 	})
 }
