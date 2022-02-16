@@ -125,10 +125,13 @@ func (s *server) createSplitTransaction(transaction *serialization.PartiallySign
 	totalSompi := uint64(0)
 
 	for i := startIndex; i < endIndex; i++ {
+		partiallySignedInput := transaction.PartiallySignedInputs[i]
 		selectedUTXOs[i-startIndex] = &libkaspawallet.UTXO{
-			Outpoint:       &transaction.Tx.Inputs[i].PreviousOutpoint,
-			UTXOEntry:      transaction.Tx.Inputs[i].UTXOEntry,
-			DerivationPath: transaction.PartiallySignedInputs[i].DerivationPath,
+			Outpoint: &transaction.Tx.Inputs[i].PreviousOutpoint,
+			UTXOEntry: utxo.NewUTXOEntry(
+				partiallySignedInput.PrevOutput.Value, partiallySignedInput.PrevOutput.ScriptPublicKey,
+				false, constants.UnacceptedDAAScore),
+			DerivationPath: partiallySignedInput.DerivationPath,
 		}
 
 		totalSompi += selectedUTXOs[i-startIndex].UTXOEntry.Amount()
