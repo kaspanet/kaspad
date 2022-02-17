@@ -3,6 +3,7 @@ package dagtraversalmanager
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/lrucache"
 	"github.com/kaspanet/kaspad/infrastructure/db/database"
 )
 
@@ -16,7 +17,7 @@ func (dtm *dagTraversalManager) DAABlockWindow(stagingArea *model.StagingArea, h
 func (dtm *dagTraversalManager) BlockWindow(stagingArea *model.StagingArea, highHash *externalapi.DomainHash,
 	windowSize int) ([]*externalapi.DomainHash, error) {
 
-	windowHeap, err := dtm.calculateBlockWindowHeap(stagingArea, highHash, windowSize)
+	windowHeap, err := dtm.blockWindowHeap(stagingArea, highHash, windowSize)
 	if err != nil {
 		return nil, err
 	}
@@ -31,12 +32,31 @@ func (dtm *dagTraversalManager) BlockWindow(stagingArea *model.StagingArea, high
 func (dtm *dagTraversalManager) BlockWindowWithGHOSTDAGData(stagingArea *model.StagingArea,
 	highHash *externalapi.DomainHash, windowSize int) ([]*externalapi.BlockGHOSTDAGDataHashPair, error) {
 
-	windowHeap, err := dtm.calculateBlockWindowHeap(stagingArea, highHash, windowSize)
+	windowHeap, err := dtm.blockWindowHeap(stagingArea, highHash, windowSize)
 	if err != nil {
 		return nil, err
 	}
 
 	return windowHeap.impl.slice, nil
+}
+
+func (dtm *dagTraversalManager) blockWindowHeap(stagingArea *model.StagingArea,
+	highHash *externalapi.DomainHash, windowSize int) (*sizedUpBlockHeap, error) {
+	if _, ok := dtm.blockWindowCacheByWindowSize[windowSize]; !ok {
+		dtm.blockWindowCacheByWindowSize[windowSize] = lrucache.New(1000, true)
+	} else if heap, ok := dtm.blockWindowCacheByWindowSize[windowSize].Get(highHash); ok {
+		return heap.(*sizedUpBlockHeap), nil
+	}
+
+	heap, err := dtm.calculateBlockWindowHeap(stagingArea, highHash, windowSize)
+	if err != nil {
+		return nil, err
+	}
+
+	if !highHash.Equal(model.VirtualBlockHash) {
+		dtm.blockWindowCacheByWindowSize[windowSize].Add(highHash, heap)
+	}
+	return heap, nil
 }
 
 func (dtm *dagTraversalManager) calculateBlockWindowHeap(stagingArea *model.StagingArea,
@@ -54,6 +74,34 @@ func (dtm *dagTraversalManager) calculateBlockWindowHeap(stagingArea *model.Stag
 	currentGHOSTDAGData, err := dtm.ghostdagDataStore.Get(dtm.databaseContext, stagingArea, highHash, false)
 	if err != nil {
 		return nil, err
+	}
+
+	_, err = dtm.daaWindowStore.DAAWindowBlock(dtm.databaseContext, stagingArea, current, 0)
+	isNotFoundError := database.IsNotFoundError(err)
+	if !isNotFoundError && err != nil {
+		return nil, err
+	}
+
+	if isNotFoundError && currentGHOSTDAGData.SelectedParent() != nil {
+		if heap, ok := dtm.blockWindowCacheByWindowSize[windowSize].Get(currentGHOSTDAGData.SelectedParent()); ok {
+			selectedParentWindowHeap := heap.(*sizedUpBlockHeap)
+			windowHeap.impl.slice = make([]*externalapi.BlockGHOSTDAGDataHashPair, len(selectedParentWindowHeap.impl.slice))
+			copy(windowHeap.impl.slice, selectedParentWindowHeap.impl.slice)
+			selectedParentGHOSTDAGData, err := dtm.ghostdagDataStore.Get(
+				dtm.databaseContext, stagingArea, currentGHOSTDAGData.SelectedParent(), false)
+			if err != nil {
+				return nil, err
+			}
+
+			if !currentGHOSTDAGData.SelectedParent().Equal(dtm.genesisHash) {
+				_, err = dtm.tryPushMergeSet(windowHeap, currentGHOSTDAGData, selectedParentGHOSTDAGData)
+				if err != nil {
+					return nil, err
+				}
+			}
+
+			return windowHeap, nil
+		}
 	}
 
 	for {
@@ -94,42 +142,13 @@ func (dtm *dagTraversalManager) calculateBlockWindowHeap(stagingArea *model.Stag
 		if err != nil {
 			return nil, err
 		}
-		added, err := windowHeap.tryPushWithGHOSTDAGData(currentGHOSTDAGData.SelectedParent(), selectedParentGHOSTDAGData)
+
+		done, err := dtm.tryPushMergeSet(windowHeap, currentGHOSTDAGData, selectedParentGHOSTDAGData)
 		if err != nil {
 			return nil, err
 		}
-
-		// If the window is full and the selected parent is less than the minimum then we break
-		// because this means that there cannot be any more blocks in the past with higher blueWork
-		if !added {
+		if done {
 			break
-		}
-
-		// Now we go over the merge set.
-		// Remove the SP from the blue merge set because we already added it.
-		mergeSetBlues := currentGHOSTDAGData.MergeSetBlues()[1:]
-		// Go over the merge set in reverse because it's ordered in reverse by blueWork.
-		for i := len(mergeSetBlues) - 1; i >= 0; i-- {
-			added, err := windowHeap.tryPush(mergeSetBlues[i])
-			if err != nil {
-				return nil, err
-			}
-			// If it's smaller than minimum then we won't be able to add the rest because they're even smaller.
-			if !added {
-				break
-			}
-		}
-
-		mergeSetReds := currentGHOSTDAGData.MergeSetReds()
-		for i := len(mergeSetReds) - 1; i >= 0; i-- {
-			added, err := windowHeap.tryPush(mergeSetReds[i])
-			if err != nil {
-				return nil, err
-			}
-			// If it's smaller than minimum then we won't be able to add the rest because they're even smaller.
-			if !added {
-				break
-			}
 		}
 
 		current = currentGHOSTDAGData.SelectedParent()
@@ -137,4 +156,46 @@ func (dtm *dagTraversalManager) calculateBlockWindowHeap(stagingArea *model.Stag
 	}
 
 	return windowHeap, nil
+}
+
+func (dtm *dagTraversalManager) tryPushMergeSet(windowHeap *sizedUpBlockHeap, currentGHOSTDAGData, selectedParentGHOSTDAGData *externalapi.BlockGHOSTDAGData) (bool, error) {
+	added, err := windowHeap.tryPushWithGHOSTDAGData(currentGHOSTDAGData.SelectedParent(), selectedParentGHOSTDAGData)
+	if err != nil {
+		return false, err
+	}
+
+	// If the window is full and the selected parent is less than the minimum then we break
+	// because this means that there cannot be any more blocks in the past with higher blueWork
+	if !added {
+		return true, nil
+	}
+
+	// Now we go over the merge set.
+	// Remove the SP from the blue merge set because we already added it.
+	mergeSetBlues := currentGHOSTDAGData.MergeSetBlues()[1:]
+	// Go over the merge set in reverse because it's ordered in reverse by blueWork.
+	for i := len(mergeSetBlues) - 1; i >= 0; i-- {
+		added, err := windowHeap.tryPush(mergeSetBlues[i])
+		if err != nil {
+			return false, err
+		}
+		// If it's smaller than minimum then we won't be able to add the rest because they're even smaller.
+		if !added {
+			break
+		}
+	}
+
+	mergeSetReds := currentGHOSTDAGData.MergeSetReds()
+	for i := len(mergeSetReds) - 1; i >= 0; i-- {
+		added, err := windowHeap.tryPush(mergeSetReds[i])
+		if err != nil {
+			return false, err
+		}
+		// If it's smaller than minimum then we won't be able to add the rest because they're even smaller.
+		if !added {
+			break
+		}
+	}
+
+	return false, nil
 }
