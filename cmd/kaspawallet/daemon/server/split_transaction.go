@@ -76,15 +76,25 @@ func (s *server) mergeTransaction(splitTransactions []*serialization.PartiallySi
 		totalValue -= feePerInput
 	}
 
-	mergeTransactionBytes, err := libkaspawallet.CreateUnsignedTransaction(s.keysFile.ExtendedPublicKeys,
-		s.keysFile.MinimumSignatures,
-		[]*libkaspawallet.Payment{{
+	var payments []*libkaspawallet.Payment
+	if totalValue >= sentValue {
+		payments = []*libkaspawallet.Payment{{
 			Address: targetAddress,
 			Amount:  sentValue,
 		}, {
 			Address: changeAddress,
 			Amount:  totalValue - sentValue,
-		}}, utxos)
+		}}
+	} else {
+		// sometimes the fees from compound transactions make the total output higher than what's available from selected
+		// utxos, in such cases, the remaining fee will be deduced from the resulting amount
+		payments = []*libkaspawallet.Payment{{
+			Address: targetAddress,
+			Amount:  totalValue,
+		}}
+	}
+	mergeTransactionBytes, err := libkaspawallet.CreateUnsignedTransaction(s.keysFile.ExtendedPublicKeys,
+		s.keysFile.MinimumSignatures, payments, utxos)
 
 	return serialization.DeserializePartiallySignedTransaction(mergeTransactionBytes)
 }
