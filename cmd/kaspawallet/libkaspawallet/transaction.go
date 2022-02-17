@@ -195,10 +195,10 @@ func ExtractTransaction(partiallySignedTransactionBytes []byte, ecdsa bool) (*ex
 		return nil, err
 	}
 
-	return extractTransaction(partiallySignedTransaction, ecdsa)
+	return ExtractTransactionDeserialized(partiallySignedTransaction, ecdsa)
 }
 
-func extractTransaction(partiallySignedTransaction *serialization.PartiallySignedTransaction, ecdsa bool) (*externalapi.DomainTransaction, error) {
+func ExtractTransactionDeserialized(partiallySignedTransaction *serialization.PartiallySignedTransaction, ecdsa bool) (*externalapi.DomainTransaction, error) {
 	for i, input := range partiallySignedTransaction.PartiallySignedInputs {
 		isMultisig := len(input.PubKeySignaturePairs) > 1
 		scriptBuilder := txscript.NewScriptBuilder()

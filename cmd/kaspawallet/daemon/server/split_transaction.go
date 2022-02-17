@@ -2,6 +2,7 @@ package server
 
 import (
 	"github.com/kaspanet/go-secp256k1"
+
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/libkaspawallet"
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/libkaspawallet/serialization"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
@@ -91,8 +92,10 @@ func (s *server) mergeTransaction(splitTransactions []*serialization.PartiallySi
 func (s *server) maybeSplitTransactionInner(transaction *serialization.PartiallySignedTransaction,
 	splitAddress util.Address) ([]*serialization.PartiallySignedTransaction, error) {
 
-	transactionMass := s.txMassCalculator.CalculateTransactionMass(transaction.Tx)
-	transactionMass += s.estimateMassIncreaseForSignatures(transaction.Tx)
+	transactionMass, err := s.estimateMassAfterSignatures(transaction)
+	if err != nil {
+		return nil, err
+	}
 
 	if transactionMass < mempool.MaximumStandardTransactionMass {
 		return []*serialization.PartiallySignedTransaction{transaction}, nil
@@ -150,7 +153,8 @@ func (s *server) createSplitTransaction(transaction *serialization.PartiallySign
 	return serialization.DeserializePartiallySignedTransaction(unsignedTransactionBytes)
 }
 
-func (s *server) estimateMassIncreaseForSignatures(transaction *externalapi.DomainTransaction) uint64 {
+func (s *server) estimateMassAfterSignatures(transaction *serialization.PartiallySignedTransaction) (uint64, error) {
+	transaction = transaction.Clone()
 	var signatureSize uint64
 	if s.keysFile.ECDSA {
 		signatureSize = secp256k1.SerializedECDSASignatureSize
@@ -158,9 +162,20 @@ func (s *server) estimateMassIncreaseForSignatures(transaction *externalapi.Doma
 		signatureSize = secp256k1.SerializedSchnorrSignatureSize
 	}
 
-	return uint64(len(transaction.Inputs)) *
-		uint64(s.keysFile.MinimumSignatures) *
-		signatureSize *
-		s.txMassCalculator.MassPerTxByte()
-	// TODO: Add increase per sigop after https://github.com/kaspanet/kaspad/issues/1874 is handled
+	for i, input := range transaction.PartiallySignedInputs {
+		for j, pubKeyPair := range input.PubKeySignaturePairs {
+			if uint32(j) >= s.keysFile.MinimumSignatures {
+				break
+			}
+			pubKeyPair.Signature = make([]byte, signatureSize+1) // +1 for SigHashType
+		}
+		transaction.Tx.Inputs[i].SigOpCount = byte(len(input.PubKeySignaturePairs))
+	}
+
+	transactionWithEverything, err := libkaspawallet.ExtractTransactionDeserialized(transaction, s.keysFile.ECDSA)
+	if err != nil {
+		return 0, err
+	}
+
+	return s.txMassCalculator.CalculateTransactionMass(transactionWithEverything), nil
 }

@@ -34,6 +34,39 @@ type PubKeySignaturePair struct {
 	Signature         []byte
 }
 
+func (pst *PartiallySignedTransaction) Clone() *PartiallySignedTransaction {
+	clone := &PartiallySignedTransaction{
+		Tx:                    pst.Tx.Clone(),
+		PartiallySignedInputs: make([]*PartiallySignedInput, len(pst.PartiallySignedInputs)),
+	}
+	for i, partiallySignedInput := range pst.PartiallySignedInputs {
+		clone.PartiallySignedInputs[i] = partiallySignedInput.Clone()
+	}
+	return clone
+}
+
+func (psi PartiallySignedInput) Clone() *PartiallySignedInput {
+	clone := &PartiallySignedInput{
+		PrevOutput:           psi.PrevOutput.Clone(),
+		MinimumSignatures:    psi.MinimumSignatures,
+		PubKeySignaturePairs: make([]*PubKeySignaturePair, len(psi.PubKeySignaturePairs)),
+		DerivationPath:       psi.DerivationPath,
+	}
+	for i, pubKeySignaturePair := range psi.PubKeySignaturePairs {
+		clone.PubKeySignaturePairs[i] = pubKeySignaturePair.Clone()
+	}
+	return clone
+}
+
+func (psp PubKeySignaturePair) Clone() *PubKeySignaturePair {
+	clone := &PubKeySignaturePair{
+		ExtendedPublicKey: psp.ExtendedPublicKey,
+		Signature:         make([]byte, len(psp.Signature)),
+	}
+	copy(clone.Signature, psp.Signature)
+	return clone
+}
+
 // DeserializePartiallySignedTransaction deserializes a byte slice into PartiallySignedTransaction.
 func DeserializePartiallySignedTransaction(serializedPartiallySignedTransaction []byte) (*PartiallySignedTransaction, error) {
 	protoPartiallySignedTransaction := &protoserialization.PartiallySignedTransaction{}
