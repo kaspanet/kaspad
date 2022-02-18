@@ -590,6 +590,10 @@ func (flow *handleIBDFlow) resolveVirtual(estimatedVirtualDAAScoreTarget uint64)
 			if err != nil {
 				return err
 			}
+			percents := int(float64(virtualDAAScore-virtualDAAScoreStart) / float64(estimatedVirtualDAAScoreTarget-virtualDAAScoreStart) * 100)
+			if percents < 0 {
+				percents = 100
+			}
 			log.Infof("Resolving virtual. Estimated progress: %d%%",
 				int(float64(virtualDAAScore-virtualDAAScoreStart)/float64(estimatedVirtualDAAScoreTarget-virtualDAAScoreStart)*100))
 		}
