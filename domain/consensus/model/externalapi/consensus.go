@@ -47,4 +47,8 @@ type Consensus interface {
 	EstimateNetworkHashesPerSecond(startHash *DomainHash, windowSize int) (uint64, error)
 	PopulateMass(transaction *DomainTransaction)
 	ResolveVirtual() (*VirtualChangeSet, bool, error)
+	BlockDAAWindowHashes(blockHash *DomainHash) ([]*DomainHash, error)
+	TrustedDataDataDAAHeader(trustedBlockHash, daaBlockHash *DomainHash, daaBlockWindowIndex uint64) (*TrustedDataDataDAAHeader, error)
+	TrustedBlockAssociatedGHOSTDAGDataBlockHashes(blockHash *DomainHash) ([]*DomainHash, error)
+	TrustedGHOSTDAGData(blockHash *DomainHash) (*BlockGHOSTDAGData, error)
 }

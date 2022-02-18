@@ -9,15 +9,16 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
 	"github.com/pkg/errors"
+	"time"
 )
 
-func (flow *handleRelayInvsFlow) ibdWithHeadersProof(highHash *externalapi.DomainHash) error {
+func (flow *handleIBDFlow) ibdWithHeadersProof(highHash *externalapi.DomainHash, highBlockDAAScore uint64) error {
 	err := flow.Domain().InitStagingConsensus()
 	if err != nil {
 		return err
 	}
 
-	err = flow.downloadHeadersAndPruningUTXOSet(highHash)
+	err = flow.downloadHeadersAndPruningUTXOSet(highHash, highBlockDAAScore)
 	if err != nil {
 		if !flow.IsRecoverableError(err) {
 			return err
@@ -44,7 +45,7 @@ func (flow *handleRelayInvsFlow) ibdWithHeadersProof(highHash *externalapi.Domai
 	return nil
 }
 
-func (flow *handleRelayInvsFlow) shouldSyncAndShouldDownloadHeadersProof(highBlock *externalapi.DomainBlock,
+func (flow *handleIBDFlow) shouldSyncAndShouldDownloadHeadersProof(highBlock *externalapi.DomainBlock,
 	highestSharedBlockFound bool) (shouldDownload, shouldSync bool, err error) {
 
 	if !highestSharedBlockFound {
@@ -63,7 +64,7 @@ func (flow *handleRelayInvsFlow) shouldSyncAndShouldDownloadHeadersProof(highBlo
 	return false, true, nil
 }
 
-func (flow *handleRelayInvsFlow) checkIfHighHashHasMoreBlueWorkThanSelectedTipAndPruningDepthMoreBlueScore(highBlock *externalapi.DomainBlock) (bool, error) {
+func (flow *handleIBDFlow) checkIfHighHashHasMoreBlueWorkThanSelectedTipAndPruningDepthMoreBlueScore(highBlock *externalapi.DomainBlock) (bool, error) {
 	headersSelectedTip, err := flow.Domain().Consensus().GetHeadersSelectedTip()
 	if err != nil {
 		return false, err
@@ -81,13 +82,13 @@ func (flow *handleRelayInvsFlow) checkIfHighHashHasMoreBlueWorkThanSelectedTipAn
 	return highBlock.Header.BlueWork().Cmp(headersSelectedTipInfo.BlueWork) > 0, nil
 }
 
-func (flow *handleRelayInvsFlow) syncAndValidatePruningPointProof() (*externalapi.DomainHash, error) {
+func (flow *handleIBDFlow) syncAndValidatePruningPointProof() (*externalapi.DomainHash, error) {
 	log.Infof("Downloading the pruning point proof from %s", flow.peer)
 	err := flow.outgoingRoute.Enqueue(appmessage.NewMsgRequestPruningPointProof())
 	if err != nil {
 		return nil, err
 	}
-	message, err := flow.dequeueIncomingMessageAndSkipInvs(common.DefaultTimeout)
+	message, err := flow.incomingRoute.DequeueWithTimeout(10 * time.Minute)
 	if err != nil {
 		return nil, err
 	}
@@ -113,7 +114,7 @@ func (flow *handleRelayInvsFlow) syncAndValidatePruningPointProof() (*externalap
 	return consensushashing.HeaderHash(pruningPointProof.Headers[0][len(pruningPointProof.Headers[0])-1]), nil
 }
 
-func (flow *handleRelayInvsFlow) downloadHeadersAndPruningUTXOSet(highHash *externalapi.DomainHash) error {
+func (flow *handleIBDFlow) downloadHeadersAndPruningUTXOSet(highHash *externalapi.DomainHash, highBlockDAAScore uint64) error {
 	proofPruningPoint, err := flow.syncAndValidatePruningPointProof()
 	if err != nil {
 		return err
@@ -130,7 +131,7 @@ func (flow *handleRelayInvsFlow) downloadHeadersAndPruningUTXOSet(highHash *exte
 		return protocolerrors.Errorf(true, "the genesis pruning point violates finality")
 	}
 
-	err = flow.syncPruningPointFutureHeaders(flow.Domain().StagingConsensus(), proofPruningPoint, highHash)
+	err = flow.syncPruningPointFutureHeaders(flow.Domain().StagingConsensus(), proofPruningPoint, highHash, highBlockDAAScore)
 	if err != nil {
 		return err
 	}
@@ -164,7 +165,7 @@ func (flow *handleRelayInvsFlow) downloadHeadersAndPruningUTXOSet(highHash *exte
 	return nil
 }
 
-func (flow *handleRelayInvsFlow) syncPruningPointsAndPruningPointAnticone(proofPruningPoint *externalapi.DomainHash) error {
+func (flow *handleIBDFlow) syncPruningPointsAndPruningPointAnticone(proofPruningPoint *externalapi.DomainHash) error {
 	log.Infof("Downloading the past pruning points and the pruning point anticone from %s", flow.peer)
 	err := flow.outgoingRoute.Enqueue(appmessage.NewMsgRequestPruningPointAndItsAnticone())
 	if err != nil {
@@ -174,6 +175,17 @@ func (flow *handleRelayInvsFlow) syncPruningPointsAndPruningPointAnticone(proofP
 	err = flow.validateAndInsertPruningPoints(proofPruningPoint)
 	if err != nil {
 		return err
+	}
+
+	message, err := flow.incomingRoute.DequeueWithTimeout(common.DefaultTimeout)
+	if err != nil {
+		return err
+	}
+
+	msgTrustedData, ok := message.(*appmessage.MsgTrustedData)
+	if !ok {
+		return protocolerrors.Errorf(true, "received unexpected message type. "+
+			"expected: %s, got: %s", appmessage.CmdTrustedData, message.Command())
 	}
 
 	pruningPointWithMetaData, done, err := flow.receiveBlockWithTrustedData()
@@ -189,7 +201,7 @@ func (flow *handleRelayInvsFlow) syncPruningPointsAndPruningPointAnticone(proofP
 		return protocolerrors.Errorf(true, "first block with trusted data is not the pruning point")
 	}
 
-	err = flow.processBlockWithTrustedData(flow.Domain().StagingConsensus(), pruningPointWithMetaData)
+	err = flow.processBlockWithTrustedData(flow.Domain().StagingConsensus(), pruningPointWithMetaData, msgTrustedData)
 	if err != nil {
 		return err
 	}
@@ -204,7 +216,7 @@ func (flow *handleRelayInvsFlow) syncPruningPointsAndPruningPointAnticone(proofP
 			break
 		}
 
-		err = flow.processBlockWithTrustedData(flow.Domain().StagingConsensus(), blockWithTrustedData)
+		err = flow.processBlockWithTrustedData(flow.Domain().StagingConsensus(), blockWithTrustedData, msgTrustedData)
 		if err != nil {
 			return err
 		}
@@ -214,21 +226,35 @@ func (flow *handleRelayInvsFlow) syncPruningPointsAndPruningPointAnticone(proofP
 	return nil
 }
 
-func (flow *handleRelayInvsFlow) processBlockWithTrustedData(
-	consensus externalapi.Consensus, block *appmessage.MsgBlockWithTrustedData) error {
+func (flow *handleIBDFlow) processBlockWithTrustedData(
+	consensus externalapi.Consensus, block *appmessage.MsgBlockWithTrustedDataV4, data *appmessage.MsgTrustedData) error {
 
-	_, err := consensus.ValidateAndInsertBlockWithTrustedData(appmessage.BlockWithTrustedDataToDomainBlockWithTrustedData(block), false)
+	blockWithTrustedData := &externalapi.BlockWithTrustedData{
+		Block:        appmessage.MsgBlockToDomainBlock(block.Block),
+		DAAWindow:    make([]*externalapi.TrustedDataDataDAAHeader, 0, len(block.DAAWindowIndices)),
+		GHOSTDAGData: make([]*externalapi.BlockGHOSTDAGDataHashPair, 0, len(block.GHOSTDAGDataIndices)),
+	}
+
+	for _, index := range block.DAAWindowIndices {
+		blockWithTrustedData.DAAWindow = append(blockWithTrustedData.DAAWindow, appmessage.TrustedDataDataDAABlockV4ToTrustedDataDataDAAHeader(data.DAAWindow[index]))
+	}
+
+	for _, index := range block.GHOSTDAGDataIndices {
+		blockWithTrustedData.GHOSTDAGData = append(blockWithTrustedData.GHOSTDAGData, appmessage.GHOSTDAGHashPairToDomainGHOSTDAGHashPair(data.GHOSTDAGData[index]))
+	}
+
+	_, err := consensus.ValidateAndInsertBlockWithTrustedData(blockWithTrustedData, false)
 	return err
 }
 
-func (flow *handleRelayInvsFlow) receiveBlockWithTrustedData() (*appmessage.MsgBlockWithTrustedData, bool, error) {
-	message, err := flow.dequeueIncomingMessageAndSkipInvs(common.DefaultTimeout)
+func (flow *handleIBDFlow) receiveBlockWithTrustedData() (*appmessage.MsgBlockWithTrustedDataV4, bool, error) {
+	message, err := flow.incomingRoute.DequeueWithTimeout(common.DefaultTimeout)
 	if err != nil {
 		return nil, false, err
 	}
 
 	switch downCastedMessage := message.(type) {
-	case *appmessage.MsgBlockWithTrustedData:
+	case *appmessage.MsgBlockWithTrustedDataV4:
 		return downCastedMessage, false, nil
 	case *appmessage.MsgDoneBlocksWithTrustedData:
 		return nil, true, nil
@@ -242,8 +268,8 @@ func (flow *handleRelayInvsFlow) receiveBlockWithTrustedData() (*appmessage.MsgB
 	}
 }
 
-func (flow *handleRelayInvsFlow) receivePruningPoints() (*appmessage.MsgPruningPoints, error) {
-	message, err := flow.dequeueIncomingMessageAndSkipInvs(common.DefaultTimeout)
+func (flow *handleIBDFlow) receivePruningPoints() (*appmessage.MsgPruningPoints, error) {
+	message, err := flow.incomingRoute.DequeueWithTimeout(common.DefaultTimeout)
 	if err != nil {
 		return nil, err
 	}
@@ -258,7 +284,7 @@ func (flow *handleRelayInvsFlow) receivePruningPoints() (*appmessage.MsgPruningP
 	return msgPruningPoints, nil
 }
 
-func (flow *handleRelayInvsFlow) validateAndInsertPruningPoints(proofPruningPoint *externalapi.DomainHash) error {
+func (flow *handleIBDFlow) validateAndInsertPruningPoints(proofPruningPoint *externalapi.DomainHash) error {
 	currentPruningPoint, err := flow.Domain().Consensus().PruningPoint()
 	if err != nil {
 		return err
@@ -302,7 +328,7 @@ func (flow *handleRelayInvsFlow) validateAndInsertPruningPoints(proofPruningPoin
 	return nil
 }
 
-func (flow *handleRelayInvsFlow) syncPruningPointUTXOSet(consensus externalapi.Consensus,
+func (flow *handleIBDFlow) syncPruningPointUTXOSet(consensus externalapi.Consensus,
 	pruningPoint *externalapi.DomainHash) (bool, error) {
 
 	log.Infof("Checking if the suggested pruning point %s is compatible to the node DAG", pruningPoint)
@@ -330,7 +356,7 @@ func (flow *handleRelayInvsFlow) syncPruningPointUTXOSet(consensus externalapi.C
 	return true, nil
 }
 
-func (flow *handleRelayInvsFlow) fetchMissingUTXOSet(consensus externalapi.Consensus, pruningPointHash *externalapi.DomainHash) (succeed bool, err error) {
+func (flow *handleIBDFlow) fetchMissingUTXOSet(consensus externalapi.Consensus, pruningPointHash *externalapi.DomainHash) (succeed bool, err error) {
 	defer func() {
 		err := flow.Domain().StagingConsensus().ClearImportedPruningPointData()
 		if err != nil {

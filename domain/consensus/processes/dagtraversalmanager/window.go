@@ -6,6 +6,10 @@ import (
 	"github.com/kaspanet/kaspad/infrastructure/db/database"
 )
 
+func (dtm *dagTraversalManager) DAABlockWindow(stagingArea *model.StagingArea, highHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error) {
+	return dtm.BlockWindow(stagingArea, highHash, dtm.difficultyAdjustmentWindowSize)
+}
+
 // BlockWindow returns a blockWindow of the given size that contains the
 // blocks in the past of highHash, the sorting is unspecified.
 // If the number of blocks in the past of startingNode is less then windowSize,

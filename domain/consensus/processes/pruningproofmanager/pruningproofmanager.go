@@ -17,6 +17,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/utils/hashset"
 	"github.com/kaspanet/kaspad/infrastructure/db/database"
 	"github.com/kaspanet/kaspad/infrastructure/logger"
+	"github.com/kaspanet/kaspad/util/staging"
 	"github.com/pkg/errors"
 	"math/big"
 )
@@ -346,6 +347,7 @@ func (ppm *pruningProofManager) ValidatePruningPointProof(pruningPointProof *ext
 
 	selectedTipByLevel := make([]*externalapi.DomainHash, maxLevel+1)
 	for blockLevel := maxLevel; blockLevel >= 0; blockLevel-- {
+		log.Infof("Validating level %d from the pruning point proof", blockLevel)
 		headers := make([]externalapi.BlockHeader, len(pruningPointProof.Headers[blockLevel]))
 		copy(headers, pruningPointProof.Headers[blockLevel])
 
@@ -607,13 +609,23 @@ func (ppm *pruningProofManager) dagProcesses(
 	return reachabilityManagers, dagTopologyManagers, ghostdagManagers
 }
 
-func (ppm *pruningProofManager) ApplyPruningPointProof(stagingArea *model.StagingArea, pruningPointProof *externalapi.PruningPointProof) error {
+// ApplyPruningPointProof applies the given pruning proof to the current consensus. Specifically,
+// it's meant to be used against the StagingConsensus during headers-proof IBD. Note that for
+// performance reasons this operation is NOT atomic. If the process fails for whatever reason
+// (e.g. the process was killed) then the database for this consensus MUST be discarded.
+func (ppm *pruningProofManager) ApplyPruningPointProof(pruningPointProof *externalapi.PruningPointProof) error {
 	onEnd := logger.LogAndMeasureExecutionTime(log, "ApplyPruningPointProof")
 	defer onEnd()
 
 	for blockLevel, headers := range pruningPointProof.Headers {
+		log.Infof("Applying level %d from the pruning point proof", blockLevel)
 		var selectedTip *externalapi.DomainHash
 		for i, header := range headers {
+			if i%1000 == 0 {
+				log.Infof("Applying level %d from the pruning point proof - applied %d headers out of %d", blockLevel, i, len(headers))
+			}
+			stagingArea := model.NewStagingArea()
+
 			blockHash := consensushashing.HeaderHash(header)
 			if header.BlockLevel() < blockLevel {
 				return errors.Wrapf(ruleerrors.ErrPruningProofWrongBlockLevel, "block %s level is %d when it's "+
@@ -693,11 +705,18 @@ func (ppm *pruningProofManager) ApplyPruningPointProof(stagingArea *model.Stagin
 					return err
 				}
 			}
+
+			err = staging.CommitAllChanges(ppm.databaseContext, stagingArea)
+			if err != nil {
+				return err
+			}
 		}
 	}
 
 	pruningPointHeader := pruningPointProof.Headers[0][len(pruningPointProof.Headers[0])-1]
 	pruningPoint := consensushashing.HeaderHash(pruningPointHeader)
+
+	stagingArea := model.NewStagingArea()
 	ppm.consensusStateStore.StageTips(stagingArea, []*externalapi.DomainHash{pruningPoint})
-	return nil
+	return staging.CommitAllChanges(ppm.databaseContext, stagingArea)
 }

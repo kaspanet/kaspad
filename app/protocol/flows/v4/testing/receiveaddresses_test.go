@@ -1,11 +1,11 @@
 package testing
 
 import (
+	"github.com/kaspanet/kaspad/app/protocol/flows/v4/addressexchange"
 	"testing"
 	"time"
 
 	"github.com/kaspanet/kaspad/app/appmessage"
-	"github.com/kaspanet/kaspad/app/protocol/flows/addressexchange"
 	peerpkg "github.com/kaspanet/kaspad/app/protocol/peer"
 	"github.com/kaspanet/kaspad/domain/consensus"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/testutils"

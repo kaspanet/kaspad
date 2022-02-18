@@ -3,6 +3,7 @@ package transactionrelay
 import (
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/app/protocol/common"
+	"github.com/kaspanet/kaspad/app/protocol/flowcontext"
 	"github.com/kaspanet/kaspad/app/protocol/protocolerrors"
 	"github.com/kaspanet/kaspad/domain"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
@@ -18,7 +19,7 @@ import (
 type TransactionsRelayContext interface {
 	NetAdapter() *netadapter.NetAdapter
 	Domain() domain.Domain
-	SharedRequestedTransactions() *SharedRequestedTransactions
+	SharedRequestedTransactions() *flowcontext.SharedRequestedTransactions
 	OnTransactionAddedToMempool()
 	EnqueueTransactionIDsForPropagation(transactionIDs []*externalapi.DomainTransactionID) error
 }
@@ -68,7 +69,7 @@ func (flow *handleRelayedTransactionsFlow) requestInvTransactions(
 		if flow.isKnownTransaction(txID) {
 			continue
 		}
-		exists := flow.SharedRequestedTransactions().addIfNotExists(txID)
+		exists := flow.SharedRequestedTransactions().AddIfNotExists(txID)
 		if exists {
 			continue
 		}
@@ -82,7 +83,7 @@ func (flow *handleRelayedTransactionsFlow) requestInvTransactions(
 	msgGetTransactions := appmessage.NewMsgRequestTransactions(idsToRequest)
 	err = flow.outgoingRoute.Enqueue(msgGetTransactions)
 	if err != nil {
-		flow.SharedRequestedTransactions().removeMany(idsToRequest)
+		flow.SharedRequestedTransactions().RemoveMany(idsToRequest)
 		return nil, err
 	}
 	return idsToRequest, nil
@@ -151,7 +152,7 @@ func (flow *handleRelayedTransactionsFlow) readMsgTxOrNotFound() (
 func (flow *handleRelayedTransactionsFlow) receiveTransactions(requestedTransactions []*externalapi.DomainTransactionID) error {
 	// In case the function returns earlier than expected, we want to make sure sharedRequestedTransactions is
 	// clean from any pending transactions.
-	defer flow.SharedRequestedTransactions().removeMany(requestedTransactions)
+	defer flow.SharedRequestedTransactions().RemoveMany(requestedTransactions)
 	for _, expectedID := range requestedTransactions {
 		msgTx, msgTxNotFound, err := flow.readMsgTxOrNotFound()
 		if err != nil {

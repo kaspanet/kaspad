@@ -11,7 +11,6 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/kaspanet/kaspad/app/appmessage"
-	"github.com/kaspanet/kaspad/app/protocol/flows/blockrelay"
 )
 
 // OnNewBlock updates the mempool after a new block arrival, and
@@ -109,7 +108,7 @@ func (f *FlowContext) broadcastTransactionsAfterBlockAdded(
 
 // SharedRequestedBlocks returns a *blockrelay.SharedRequestedBlocks for sharing
 // data about requested blocks between different peers.
-func (f *FlowContext) SharedRequestedBlocks() *blockrelay.SharedRequestedBlocks {
+func (f *FlowContext) SharedRequestedBlocks() *SharedRequestedBlocks {
 	return f.sharedRequestedBlocks
 }
 

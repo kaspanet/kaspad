@@ -2,6 +2,7 @@ package protocol
 
 import (
 	"fmt"
+	"github.com/kaspanet/kaspad/app/protocol/common"
 	"sync"
 	"sync/atomic"
 
@@ -71,11 +72,16 @@ func (m *Manager) AddBlock(block *externalapi.DomainBlock) error {
 	return m.context.AddBlock(block)
 }
 
-func (m *Manager) runFlows(flows []*flow, peer *peerpkg.Peer, errChan <-chan error, flowsWaitGroup *sync.WaitGroup) error {
+// Context returns the manager's flow context
+func (m *Manager) Context() *flowcontext.FlowContext {
+	return m.context
+}
+
+func (m *Manager) runFlows(flows []*common.Flow, peer *peerpkg.Peer, errChan <-chan error, flowsWaitGroup *sync.WaitGroup) error {
 	flowsWaitGroup.Add(len(flows))
 	for _, flow := range flows {
-		executeFunc := flow.executeFunc // extract to new variable so that it's not overwritten
-		spawn(fmt.Sprintf("flow-%s", flow.name), func() {
+		executeFunc := flow.ExecuteFunc // extract to new variable so that it's not overwritten
+		spawn(fmt.Sprintf("flow-%s", flow.Name), func() {
 			executeFunc(peer)
 			flowsWaitGroup.Done()
 		})

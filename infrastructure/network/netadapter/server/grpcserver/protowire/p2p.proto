@@ -78,7 +78,7 @@ message BlockHeader{
 }
 
 message BlockLevelParents {
-    repeated Hash parentHashes = 1;
+  repeated Hash parentHashes = 1;
 }
 
 message Hash{
@@ -216,6 +216,11 @@ message DaaBlock {
   GhostdagData ghostdagData = 2;
 }
 
+message DaaBlockV4 {
+  BlockHeader header = 1;
+  GhostdagData ghostdagData = 2;
+}
+
 message BlockGhostdagDataHashPair {
   Hash hash = 1;
   GhostdagData ghostdagData = 2;
@@ -251,4 +256,18 @@ message PruningPointProofMessage {
 
 message PruningPointProofHeaderArray {
   repeated BlockHeader headers = 1;
+}
+
+message ReadyMessage {
+}
+
+message BlockWithTrustedDataV4Message {
+  BlockMessage block = 1;
+  repeated uint64 daaWindowIndices = 2;
+  repeated uint64 ghostdagDataIndices = 3;
+}
+
+message TrustedDataMessage {
+  repeated DaaBlockV4 daaWindow = 1;
+  repeated BlockGhostdagDataHashPair ghostdagData = 2;
 }

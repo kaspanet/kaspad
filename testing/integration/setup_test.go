@@ -34,6 +34,7 @@ type harnessParams struct {
 	miningAddressPrivateKey string
 	utxoIndex               bool
 	overrideDAGParams       *dagconfig.Params
+	protocolVersion         uint32
 }
 
 // setupHarness creates a single appHarness with given parameters
@@ -47,7 +48,7 @@ func setupHarness(t *testing.T, params *harnessParams) (harness *appHarness, tea
 		overrideDAGParams:       params.overrideDAGParams,
 	}
 
-	setConfig(t, harness)
+	setConfig(t, harness, params.protocolVersion)
 	setDatabaseContext(t, harness)
 	setApp(t, harness)
 	harness.app.Start()

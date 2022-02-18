@@ -1,4 +1,4 @@
-package blockrelay
+package flowcontext
 
 import (
 	"sync"
@@ -13,13 +13,15 @@ type SharedRequestedBlocks struct {
 	sync.Mutex
 }
 
-func (s *SharedRequestedBlocks) remove(hash *externalapi.DomainHash) {
+// Remove removes a block from the set.
+func (s *SharedRequestedBlocks) Remove(hash *externalapi.DomainHash) {
 	s.Lock()
 	defer s.Unlock()
 	delete(s.blocks, *hash)
 }
 
-func (s *SharedRequestedBlocks) removeSet(blockHashes map[externalapi.DomainHash]struct{}) {
+// RemoveSet removes a set of blocks from the set.
+func (s *SharedRequestedBlocks) RemoveSet(blockHashes map[externalapi.DomainHash]struct{}) {
 	s.Lock()
 	defer s.Unlock()
 	for hash := range blockHashes {
@@ -27,7 +29,8 @@ func (s *SharedRequestedBlocks) removeSet(blockHashes map[externalapi.DomainHash
 	}
 }
 
-func (s *SharedRequestedBlocks) addIfNotExists(hash *externalapi.DomainHash) (exists bool) {
+// AddIfNotExists adds a block to the set if it doesn't exist yet.
+func (s *SharedRequestedBlocks) AddIfNotExists(hash *externalapi.DomainHash) (exists bool) {
 	s.Lock()
 	defer s.Unlock()
 	_, ok := s.blocks[*hash]

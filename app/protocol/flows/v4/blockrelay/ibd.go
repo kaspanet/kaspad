@@ -1,22 +1,69 @@
 package blockrelay
 
 import (
-	"time"
-
-	"github.com/kaspanet/kaspad/infrastructure/logger"
-
-	"github.com/kaspanet/kaspad/domain/consensus/model"
-
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/app/protocol/common"
+	peerpkg "github.com/kaspanet/kaspad/app/protocol/peer"
 	"github.com/kaspanet/kaspad/app/protocol/protocolerrors"
+	"github.com/kaspanet/kaspad/domain"
+	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
+	"github.com/kaspanet/kaspad/infrastructure/config"
+	"github.com/kaspanet/kaspad/infrastructure/logger"
+	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
 	"github.com/pkg/errors"
+	"time"
 )
 
-func (flow *handleRelayInvsFlow) runIBDIfNotRunning(block *externalapi.DomainBlock) error {
+// IBDContext is the interface for the context needed for the HandleIBD flow.
+type IBDContext interface {
+	Domain() domain.Domain
+	Config() *config.Config
+	OnNewBlock(block *externalapi.DomainBlock, virtualChangeSet *externalapi.VirtualChangeSet) error
+	OnVirtualChange(virtualChangeSet *externalapi.VirtualChangeSet) error
+	OnPruningPointUTXOSetOverride() error
+	IsIBDRunning() bool
+	TrySetIBDRunning(ibdPeer *peerpkg.Peer) bool
+	UnsetIBDRunning()
+	IsRecoverableError(err error) bool
+}
+
+type handleIBDFlow struct {
+	IBDContext
+	incomingRoute, outgoingRoute *router.Route
+	peer                         *peerpkg.Peer
+}
+
+// HandleIBD handles IBD
+func HandleIBD(context IBDContext, incomingRoute *router.Route, outgoingRoute *router.Route,
+	peer *peerpkg.Peer) error {
+
+	flow := &handleIBDFlow{
+		IBDContext:    context,
+		incomingRoute: incomingRoute,
+		outgoingRoute: outgoingRoute,
+		peer:          peer,
+	}
+	return flow.start()
+}
+
+func (flow *handleIBDFlow) start() error {
+	for {
+		// Wait for IBD requests triggered by other flows
+		block, ok := <-flow.peer.IBDRequestChannel()
+		if !ok {
+			return nil
+		}
+		err := flow.runIBDIfNotRunning(block)
+		if err != nil {
+			return err
+		}
+	}
+}
+
+func (flow *handleIBDFlow) runIBDIfNotRunning(block *externalapi.DomainBlock) error {
 	wasIBDNotRunning := flow.TrySetIBDRunning(flow.peer)
 	if !wasIBDNotRunning {
 		log.Debugf("IBD is already running")
@@ -50,7 +97,7 @@ func (flow *handleRelayInvsFlow) runIBDIfNotRunning(block *externalapi.DomainBlo
 
 	if shouldDownloadHeadersProof {
 		log.Infof("Starting IBD with headers proof")
-		err := flow.ibdWithHeadersProof(highHash)
+		err := flow.ibdWithHeadersProof(highHash, block.Header.DAAScore())
 		if err != nil {
 			return err
 		}
@@ -68,7 +115,7 @@ func (flow *handleRelayInvsFlow) runIBDIfNotRunning(block *externalapi.DomainBlo
 			}
 		}
 
-		err = flow.syncPruningPointFutureHeaders(flow.Domain().Consensus(), highestSharedBlockHash, highHash)
+		err = flow.syncPruningPointFutureHeaders(flow.Domain().Consensus(), highestSharedBlockHash, highHash, block.Header.DAAScore())
 		if err != nil {
 			return err
 		}
@@ -84,7 +131,16 @@ func (flow *handleRelayInvsFlow) runIBDIfNotRunning(block *externalapi.DomainBlo
 	return nil
 }
 
-func (flow *handleRelayInvsFlow) logIBDFinished(isFinishedSuccessfully bool) {
+func (flow *handleIBDFlow) isGenesisVirtualSelectedParent() (bool, error) {
+	virtualSelectedParent, err := flow.Domain().Consensus().GetVirtualSelectedParent()
+	if err != nil {
+		return false, err
+	}
+
+	return virtualSelectedParent.Equal(flow.Config().NetParams().GenesisHash), nil
+}
+
+func (flow *handleIBDFlow) logIBDFinished(isFinishedSuccessfully bool) {
 	successString := "successfully"
 	if !isFinishedSuccessfully {
 		successString = "(interrupted)"
@@ -95,7 +151,7 @@ func (flow *handleRelayInvsFlow) logIBDFinished(isFinishedSuccessfully bool) {
 // findHighestSharedBlock attempts to find the highest shared block between the peer
 // and this node. This method may fail because the peer and us have conflicting pruning
 // points. In that case we return (nil, false, nil) so that we may stop IBD gracefully.
-func (flow *handleRelayInvsFlow) findHighestSharedBlockHash(
+func (flow *handleIBDFlow) findHighestSharedBlockHash(
 	targetHash *externalapi.DomainHash) (*externalapi.DomainHash, bool, error) {
 
 	log.Debugf("Sending a blockLocator to %s between pruning point and headers selected tip", flow.peer)
@@ -138,7 +194,7 @@ func (flow *handleRelayInvsFlow) findHighestSharedBlockHash(
 	}
 }
 
-func (flow *handleRelayInvsFlow) nextBlockLocator(lowHash, highHash *externalapi.DomainHash) (externalapi.BlockLocator, error) {
+func (flow *handleIBDFlow) nextBlockLocator(lowHash, highHash *externalapi.DomainHash) (externalapi.BlockLocator, error) {
 	log.Debugf("Sending a blockLocator to %s between %s and %s", flow.peer, lowHash, highHash)
 	blockLocator, err := flow.Domain().Consensus().CreateHeadersSelectedChainBlockLocator(lowHash, highHash)
 	if err != nil {
@@ -156,7 +212,7 @@ func (flow *handleRelayInvsFlow) nextBlockLocator(lowHash, highHash *externalapi
 	return blockLocator, nil
 }
 
-func (flow *handleRelayInvsFlow) findHighestHashIndex(
+func (flow *handleIBDFlow) findHighestHashIndex(
 	highestHash *externalapi.DomainHash, blockLocator externalapi.BlockLocator) (int, error) {
 
 	highestHashIndex := 0
@@ -181,7 +237,7 @@ func (flow *handleRelayInvsFlow) findHighestHashIndex(
 // fetchHighestHash attempts to fetch the highest hash the peer knows amongst the given
 // blockLocator. This method may fail because the peer and us have conflicting pruning
 // points. In that case we return (nil, false, nil) so that we may stop IBD gracefully.
-func (flow *handleRelayInvsFlow) fetchHighestHash(
+func (flow *handleIBDFlow) fetchHighestHash(
 	targetHash *externalapi.DomainHash, blockLocator externalapi.BlockLocator) (*externalapi.DomainHash, bool, error) {
 
 	ibdBlockLocatorMessage := appmessage.NewMsgIBDBlockLocator(targetHash, blockLocator)
@@ -189,7 +245,7 @@ func (flow *handleRelayInvsFlow) fetchHighestHash(
 	if err != nil {
 		return nil, false, err
 	}
-	message, err := flow.dequeueIncomingMessageAndSkipInvs(common.DefaultTimeout)
+	message, err := flow.incomingRoute.DequeueWithTimeout(common.DefaultTimeout)
 	if err != nil {
 		return nil, false, err
 	}
@@ -209,8 +265,8 @@ func (flow *handleRelayInvsFlow) fetchHighestHash(
 	}
 }
 
-func (flow *handleRelayInvsFlow) syncPruningPointFutureHeaders(consensus externalapi.Consensus, highestSharedBlockHash *externalapi.DomainHash,
-	highHash *externalapi.DomainHash) error {
+func (flow *handleIBDFlow) syncPruningPointFutureHeaders(consensus externalapi.Consensus, highestSharedBlockHash *externalapi.DomainHash,
+	highHash *externalapi.DomainHash, highBlockDAAScore uint64) error {
 
 	log.Infof("Downloading headers from %s", flow.peer)
 
@@ -218,6 +274,12 @@ func (flow *handleRelayInvsFlow) syncPruningPointFutureHeaders(consensus externa
 	if err != nil {
 		return err
 	}
+
+	highestSharedBlockHeader, err := consensus.GetBlockHeader(highestSharedBlockHash)
+	if err != nil {
+		return err
+	}
+	progressReporter := newIBDProgressReporter(highestSharedBlockHeader.DAAScore(), highBlockDAAScore, "block headers")
 
 	// Keep a short queue of BlockHeadersMessages so that there's
 	// never a moment when the node is not validating and inserting
@@ -267,21 +329,24 @@ func (flow *handleRelayInvsFlow) syncPruningPointFutureHeaders(consensus externa
 					return err
 				}
 			}
+
+			lastReceivedHeader := ibdBlocksMessage.BlockHeaders[len(ibdBlocksMessage.BlockHeaders)-1]
+			progressReporter.reportProgress(len(ibdBlocksMessage.BlockHeaders), lastReceivedHeader.DAAScore)
 		case err := <-errChan:
 			return err
 		}
 	}
 }
 
-func (flow *handleRelayInvsFlow) sendRequestHeaders(highestSharedBlockHash *externalapi.DomainHash,
+func (flow *handleIBDFlow) sendRequestHeaders(highestSharedBlockHash *externalapi.DomainHash,
 	peerSelectedTipHash *externalapi.DomainHash) error {
 
 	msgGetBlockInvs := appmessage.NewMsgRequstHeaders(highestSharedBlockHash, peerSelectedTipHash)
 	return flow.outgoingRoute.Enqueue(msgGetBlockInvs)
 }
 
-func (flow *handleRelayInvsFlow) receiveHeaders() (msgIBDBlock *appmessage.BlockHeadersMessage, doneHeaders bool, err error) {
-	message, err := flow.dequeueIncomingMessageAndSkipInvs(common.DefaultTimeout)
+func (flow *handleIBDFlow) receiveHeaders() (msgIBDBlock *appmessage.BlockHeadersMessage, doneHeaders bool, err error) {
+	message, err := flow.incomingRoute.DequeueWithTimeout(common.DefaultTimeout)
 	if err != nil {
 		return nil, false, err
 	}
@@ -300,7 +365,7 @@ func (flow *handleRelayInvsFlow) receiveHeaders() (msgIBDBlock *appmessage.Block
 	}
 }
 
-func (flow *handleRelayInvsFlow) processHeader(consensus externalapi.Consensus, msgBlockHeader *appmessage.MsgBlockHeader) error {
+func (flow *handleIBDFlow) processHeader(consensus externalapi.Consensus, msgBlockHeader *appmessage.MsgBlockHeader) error {
 	header := appmessage.BlockHeaderToDomainBlockHeader(msgBlockHeader)
 	block := &externalapi.DomainBlock{
 		Header:       header,
@@ -333,7 +398,7 @@ func (flow *handleRelayInvsFlow) processHeader(consensus externalapi.Consensus, 
 	return nil
 }
 
-func (flow *handleRelayInvsFlow) validatePruningPointFutureHeaderTimestamps() error {
+func (flow *handleIBDFlow) validatePruningPointFutureHeaderTimestamps() error {
 	headerSelectedTipHash, err := flow.Domain().StagingConsensus().GetHeadersSelectedTip()
 	if err != nil {
 		return err
@@ -367,7 +432,7 @@ func (flow *handleRelayInvsFlow) validatePruningPointFutureHeaderTimestamps() er
 	return nil
 }
 
-func (flow *handleRelayInvsFlow) receiveAndInsertPruningPointUTXOSet(
+func (flow *handleIBDFlow) receiveAndInsertPruningPointUTXOSet(
 	consensus externalapi.Consensus, pruningPointHash *externalapi.DomainHash) (bool, error) {
 
 	onEnd := logger.LogAndMeasureExecutionTime(log, "receiveAndInsertPruningPointUTXOSet")
@@ -376,7 +441,7 @@ func (flow *handleRelayInvsFlow) receiveAndInsertPruningPointUTXOSet(
 	receivedChunkCount := 0
 	receivedUTXOCount := 0
 	for {
-		message, err := flow.dequeueIncomingMessageAndSkipInvs(common.DefaultTimeout)
+		message, err := flow.incomingRoute.DequeueWithTimeout(common.DefaultTimeout)
 		if err != nil {
 			return false, err
 		}
@@ -422,7 +487,7 @@ func (flow *handleRelayInvsFlow) receiveAndInsertPruningPointUTXOSet(
 	}
 }
 
-func (flow *handleRelayInvsFlow) syncMissingBlockBodies(highHash *externalapi.DomainHash) error {
+func (flow *handleIBDFlow) syncMissingBlockBodies(highHash *externalapi.DomainHash) error {
 	hashes, err := flow.Domain().Consensus().GetMissingBlockBodyHashes(highHash)
 	if err != nil {
 		return err
@@ -434,6 +499,17 @@ func (flow *handleRelayInvsFlow) syncMissingBlockBodies(highHash *externalapi.Do
 		log.Debugf("No missing block body hashes found.")
 		return nil
 	}
+
+	lowBlockHeader, err := flow.Domain().Consensus().GetBlockHeader(hashes[0])
+	if err != nil {
+		return err
+	}
+	highBlockHeader, err := flow.Domain().Consensus().GetBlockHeader(hashes[len(hashes)-1])
+	if err != nil {
+		return err
+	}
+	progressReporter := newIBDProgressReporter(lowBlockHeader.DAAScore(), highBlockHeader.DAAScore(), "blocks")
+	highestProcessedDAAScore := lowBlockHeader.DAAScore()
 
 	for offset := 0; offset < len(hashes); offset += ibdBatchSize {
 		var hashesToRequest []*externalapi.DomainHash
@@ -449,7 +525,7 @@ func (flow *handleRelayInvsFlow) syncMissingBlockBodies(highHash *externalapi.Do
 		}
 
 		for _, expectedHash := range hashesToRequest {
-			message, err := flow.dequeueIncomingMessageAndSkipInvs(common.DefaultTimeout)
+			message, err := flow.incomingRoute.DequeueWithTimeout(common.DefaultTimeout)
 			if err != nil {
 				return err
 			}
@@ -483,16 +559,39 @@ func (flow *handleRelayInvsFlow) syncMissingBlockBodies(highHash *externalapi.Do
 			if err != nil {
 				return err
 			}
+
+			highestProcessedDAAScore = block.Header.DAAScore()
 		}
+
+		progressReporter.reportProgress(len(hashesToRequest), highestProcessedDAAScore)
 	}
 
-	return flow.resolveVirtual()
+	return flow.resolveVirtual(highestProcessedDAAScore)
 }
 
-func (flow *handleRelayInvsFlow) resolveVirtual() error {
+func (flow *handleIBDFlow) banIfBlockIsHeaderOnly(block *externalapi.DomainBlock) error {
+	if len(block.Transactions) == 0 {
+		return protocolerrors.Errorf(true, "sent header of %s block where expected block with body",
+			consensushashing.BlockHash(block))
+	}
+
+	return nil
+}
+
+func (flow *handleIBDFlow) resolveVirtual(estimatedVirtualDAAScoreTarget uint64) error {
+	virtualDAAScoreStart, err := flow.Domain().Consensus().GetVirtualDAAScore()
+	if err != nil {
+		return err
+	}
+
 	for i := 0; ; i++ {
 		if i%10 == 0 {
-			log.Infof("Resolving virtual. This may take some time...")
+			virtualDAAScore, err := flow.Domain().Consensus().GetVirtualDAAScore()
+			if err != nil {
+				return err
+			}
+			log.Infof("Resolving virtual. Estimated progress: %d%%",
+				int(float64(virtualDAAScore-virtualDAAScoreStart)/float64(estimatedVirtualDAAScoreTarget-virtualDAAScoreStart)*100))
 		}
 		virtualChangeSet, isCompletelyResolved, err := flow.Domain().Consensus().ResolveVirtual()
 		if err != nil {
@@ -507,21 +606,6 @@ func (flow *handleRelayInvsFlow) resolveVirtual() error {
 		if isCompletelyResolved {
 			log.Infof("Resolved virtual")
 			return nil
-		}
-	}
-}
-
-// dequeueIncomingMessageAndSkipInvs is a convenience method to be used during
-// IBD. Inv messages are expected to arrive at any given moment, but should be
-// ignored while we're in IBD
-func (flow *handleRelayInvsFlow) dequeueIncomingMessageAndSkipInvs(timeout time.Duration) (appmessage.Message, error) {
-	for {
-		message, err := flow.incomingRoute.DequeueWithTimeout(timeout)
-		if err != nil {
-			return nil, err
-		}
-		if _, ok := message.(*appmessage.MsgInvRelayBlock); !ok {
-			return message, nil
 		}
 	}
 }

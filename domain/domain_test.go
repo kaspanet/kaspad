@@ -49,7 +49,6 @@ func TestCreateStagingConsensus(t *testing.T) {
 		addGenesisToStagingConsensus := func() {
 			genesisWithTrustedData := &externalapi.BlockWithTrustedData{
 				Block:     consensusConfig.GenesisBlock,
-				DAAScore:  0,
 				DAAWindow: nil,
 				GHOSTDAGData: []*externalapi.BlockGHOSTDAGDataHashPair{
 					{

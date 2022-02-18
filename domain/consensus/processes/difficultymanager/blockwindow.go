@@ -1,18 +1,18 @@
 package difficultymanager
 
 import (
-	"math"
-	"math/big"
-
 	"github.com/kaspanet/kaspad/domain/consensus/model"
-
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/util/difficulty"
+	"math"
+	"math/big"
 )
 
 type difficultyBlock struct {
 	timeInMilliseconds int64
 	Bits               uint32
+	hash               *externalapi.DomainHash
+	blueWork           *big.Int
 }
 
 type blockWindow []difficultyBlock
@@ -27,6 +27,8 @@ func (dm *difficultyManager) getDifficultyBlock(
 	return difficultyBlock{
 		timeInMilliseconds: header.TimeInMilliseconds(),
 		Bits:               header.Bits(),
+		hash:               blockHash,
+		blueWork:           header.BlueWork(),
 	}, nil
 }
 
@@ -53,19 +55,32 @@ func (dm *difficultyManager) blockWindow(stagingArea *model.StagingArea, startin
 	return window, windowHashes, nil
 }
 
-func (window blockWindow) minMaxTimestamps() (min, max int64, minIndex, maxIndex int) {
+func ghostdagLess(blockA *difficultyBlock, blockB *difficultyBlock) bool {
+	switch blockA.blueWork.Cmp(blockB.blueWork) {
+	case -1:
+		return true
+	case 1:
+		return false
+	case 0:
+		return blockA.hash.Less(blockB.hash)
+	default:
+		panic("big.Int.Cmp is defined to always return -1/1/0 and nothing else")
+	}
+}
+
+func (window blockWindow) minMaxTimestamps() (min, max int64, minIndex int) {
 	min = math.MaxInt64
-	minIndex = math.MaxInt64
+	minIndex = 0
 	max = 0
-	maxIndex = 0
 	for i, block := range window {
-		if block.timeInMilliseconds < min {
+		// If timestamps are equal we ghostdag compare in order to reach consensus on `minIndex`
+		if block.timeInMilliseconds < min ||
+			(block.timeInMilliseconds == min && ghostdagLess(&block, &window[minIndex])) {
 			min = block.timeInMilliseconds
 			minIndex = i
 		}
 		if block.timeInMilliseconds > max {
 			max = block.timeInMilliseconds
-			maxIndex = i
 		}
 	}
 	return
