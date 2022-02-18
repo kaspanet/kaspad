@@ -27,9 +27,13 @@ func (mp *mempool) removeTransaction(transactionID *externalapi.DomainTransactio
 	}
 
 	transactionsToRemove := []*model.MempoolTransaction{mempoolTransaction}
+	redeemers := mp.transactionsPool.getRedeemers(mempoolTransaction)
 	if removeRedeemers {
-		redeemers := mp.transactionsPool.getRedeemers(mempoolTransaction)
 		transactionsToRemove = append(transactionsToRemove, redeemers...)
+	} else {
+		for _, redeemer := range redeemers {
+			redeemer.RemoveParentTransactionInPool(transactionID)
+		}
 	}
 
 	for _, transactionToRemove := range transactionsToRemove {
