@@ -144,14 +144,6 @@ func (s *consensus) PruningPointAndItsAnticone() ([]*externalapi.DomainHash, err
 	return s.pruningManager.PruningPointAndItsAnticone()
 }
 
-// TODO: Remove this method once v3 is obsolete
-func (s *consensus) BlockWithTrustedData(blockHash *externalapi.DomainHash) (*externalapi.BlockWithTrustedData, error) {
-	s.lock.Lock()
-	defer s.lock.Unlock()
-
-	return s.pruningManager.BlockWithTrustedData(model.NewStagingArea(), blockHash)
-}
-
 // BuildBlock builds a block over the current state, with the transactions
 // selected by the given transactionSelector
 func (s *consensus) BuildBlock(coinbaseData *externalapi.DomainCoinbaseData,
