@@ -43,6 +43,7 @@ func (mt *MempoolTransaction) ParentTransactionsInPool() IDToTransactionMap {
 	return mt.parentTransactionsInPool
 }
 
+// RemoveParentTransactionInPool deletes a transaction from the parentTransactionsInPool set
 func (mt *MempoolTransaction) RemoveParentTransactionInPool(transactionID *externalapi.DomainTransactionID) {
 	delete(mt.parentTransactionsInPool, *transactionID)
 }
