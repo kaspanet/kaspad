@@ -1,35 +1,36 @@
 package mempool
 
 import (
+	"time"
+
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/miningmanager/mempool/model"
-	"time"
 )
 
 type transactionsPool struct {
-	mempool                               *mempool
-	allTransactions                       model.IDToTransactionMap
-	highPriorityTransactions              model.IDToTransactionMap
-	chainedTransactionsByPreviousOutpoint model.OutpointToTransactionMap
-	transactionsOrderedByFeeRate          model.TransactionsOrderedByFeeRate
-	lastExpireScanDAAScore                uint64
-	lastExpireScanTime                    time.Time
+	mempool                       *mempool
+	allTransactions               model.IDToTransactionMap
+	highPriorityTransactions      model.IDToTransactionMap
+	chainedTransactionsByParentID model.IDToTransactionsSliceMap
+	transactionsOrderedByFeeRate  model.TransactionsOrderedByFeeRate
+	lastExpireScanDAAScore        uint64
+	lastExpireScanTime            time.Time
 }
 
 func newTransactionsPool(mp *mempool) *transactionsPool {
 	return &transactionsPool{
-		mempool:                               mp,
-		allTransactions:                       model.IDToTransactionMap{},
-		highPriorityTransactions:              model.IDToTransactionMap{},
-		chainedTransactionsByPreviousOutpoint: model.OutpointToTransactionMap{},
-		transactionsOrderedByFeeRate:          model.TransactionsOrderedByFeeRate{},
-		lastExpireScanDAAScore:                0,
-		lastExpireScanTime:                    time.Now(),
+		mempool:                       mp,
+		allTransactions:               model.IDToTransactionMap{},
+		highPriorityTransactions:      model.IDToTransactionMap{},
+		chainedTransactionsByParentID: model.IDToTransactionsSliceMap{},
+		transactionsOrderedByFeeRate:  model.TransactionsOrderedByFeeRate{},
+		lastExpireScanDAAScore:        0,
+		lastExpireScanTime:            time.Now(),
 	}
 }
 
 func (tp *transactionsPool) addTransaction(transaction *externalapi.DomainTransaction,
-	parentTransactionsInPool model.OutpointToTransactionMap, isHighPriority bool) (*model.MempoolTransaction, error) {
+	parentTransactionsInPool model.IDToTransactionMap, isHighPriority bool) (*model.MempoolTransaction, error) {
 
 	virtualDAAScore, err := tp.mempool.consensusReference.Consensus().GetVirtualDAAScore()
 	if err != nil {
@@ -50,8 +51,13 @@ func (tp *transactionsPool) addTransaction(transaction *externalapi.DomainTransa
 func (tp *transactionsPool) addMempoolTransaction(transaction *model.MempoolTransaction) error {
 	tp.allTransactions[*transaction.TransactionID()] = transaction
 
-	for outpoint, parentTransactionInPool := range transaction.ParentTransactionsInPool() {
-		tp.chainedTransactionsByPreviousOutpoint[outpoint] = parentTransactionInPool
+	for _, parentTransactionInPool := range transaction.ParentTransactionsInPool() {
+		parentTransactionID := *parentTransactionInPool.TransactionID()
+		if tp.chainedTransactionsByParentID[parentTransactionID] == nil {
+			tp.chainedTransactionsByParentID[parentTransactionID] = []*model.MempoolTransaction{}
+		}
+		tp.chainedTransactionsByParentID[parentTransactionID] =
+			append(tp.chainedTransactionsByParentID[parentTransactionID], transaction)
 	}
 
 	tp.mempool.mempoolUTXOSet.addTransaction(transaction)
@@ -78,9 +84,7 @@ func (tp *transactionsPool) removeTransaction(transaction *model.MempoolTransact
 
 	delete(tp.highPriorityTransactions, *transaction.TransactionID())
 
-	for outpoint := range transaction.ParentTransactionsInPool() {
-		delete(tp.chainedTransactionsByPreviousOutpoint, outpoint)
-	}
+	delete(tp.chainedTransactionsByParentID, *transaction.TransactionID())
 
 	return nil
 }
@@ -132,13 +136,13 @@ func (tp *transactionsPool) allReadyTransactions() []*externalapi.DomainTransact
 }
 
 func (tp *transactionsPool) getParentTransactionsInPool(
-	transaction *externalapi.DomainTransaction) model.OutpointToTransactionMap {
+	transaction *externalapi.DomainTransaction) model.IDToTransactionMap {
 
-	parentsTransactionsInPool := model.OutpointToTransactionMap{}
+	parentsTransactionsInPool := model.IDToTransactionMap{}
 
 	for _, input := range transaction.Inputs {
 		if transaction, ok := tp.allTransactions[input.PreviousOutpoint.TransactionID]; ok {
-			parentsTransactionsInPool[input.PreviousOutpoint] = transaction
+			parentsTransactionsInPool[*transaction.TransactionID()] = transaction
 		}
 	}
 
@@ -153,13 +157,9 @@ func (tp *transactionsPool) getRedeemers(transaction *model.MempoolTransaction) 
 		last := len(stack) - 1
 		current, stack = stack[last], stack[:last]
 
-		outpoint := externalapi.DomainOutpoint{TransactionID: *current.TransactionID()}
-		for i := range current.Transaction().Outputs {
-			outpoint.Index = uint32(i)
-			if redeemerTransaction, ok := tp.chainedTransactionsByPreviousOutpoint[outpoint]; ok {
-				stack = append(stack, redeemerTransaction)
-				redeemers = append(redeemers, redeemerTransaction)
-			}
+		for _, redeemerTransaction := range tp.chainedTransactionsByParentID[*current.TransactionID()] {
+			stack = append(stack, redeemerTransaction)
+			redeemers = append(redeemers, redeemerTransaction)
 		}
 	}
 	return redeemers

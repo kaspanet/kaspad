@@ -126,6 +126,8 @@ message KaspadMessage {
     VirtualDaaScoreChangedNotificationMessage virtualDaaScoreChangedNotification = 1076;
     GetBalanceByAddressRequestMessage getBalanceByAddressRequest = 1077;
     GetBalanceByAddressResponseMessage getBalanceByAddressResponse = 1078;
+    GetBalancesByAddressesRequestMessage getBalancesByAddressesRequest = 1079;
+    GetBalancesByAddressesResponseMessage getBalancesByAddressesResponse = 1080;
   }
 }
 
