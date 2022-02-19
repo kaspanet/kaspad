@@ -93,9 +93,44 @@ func TestValidateAndInsertImportedPruningPoint(t *testing.T) {
 			}
 
 			for _, blockHash := range pruningPointAndItsAnticone {
-				blockWithTrustedData, err := tcSyncer.BlockWithTrustedData(blockHash)
+				block, err := tcSyncer.GetBlock(blockHash)
 				if err != nil {
-					return
+					t.Fatalf("GetBlock: %+v", err)
+				}
+
+				blockDAAWindowHashes, err := tcSyncer.BlockDAAWindowHashes(blockHash)
+				if err != nil {
+					t.Fatalf("BlockDAAWindowHashes: %+v", err)
+				}
+
+				ghostdagDataBlockHashes, err := tcSyncer.TrustedBlockAssociatedGHOSTDAGDataBlockHashes(blockHash)
+				if err != nil {
+					t.Fatalf("TrustedBlockAssociatedGHOSTDAGDataBlockHashes: %+v", err)
+				}
+
+				blockWithTrustedData := &externalapi.BlockWithTrustedData{
+					Block:        block,
+					DAAWindow:    make([]*externalapi.TrustedDataDataDAAHeader, 0, len(blockDAAWindowHashes)),
+					GHOSTDAGData: make([]*externalapi.BlockGHOSTDAGDataHashPair, 0, len(ghostdagDataBlockHashes)),
+				}
+
+				for i, daaBlockHash := range blockDAAWindowHashes {
+					trustedDataDataDAAHeader, err := tcSyncer.TrustedDataDataDAAHeader(blockHash, daaBlockHash, uint64(i))
+					if err != nil {
+						t.Fatalf("TrustedDataDataDAAHeader: %+v", err)
+					}
+					blockWithTrustedData.DAAWindow = append(blockWithTrustedData.DAAWindow, trustedDataDataDAAHeader)
+				}
+
+				for _, ghostdagDataBlockHash := range ghostdagDataBlockHashes {
+					data, err := tcSyncer.TrustedGHOSTDAGData(ghostdagDataBlockHash)
+					if err != nil {
+						t.Fatalf("TrustedGHOSTDAGData: %+v", err)
+					}
+					blockWithTrustedData.GHOSTDAGData = append(blockWithTrustedData.GHOSTDAGData, &externalapi.BlockGHOSTDAGDataHashPair{
+						Hash:         ghostdagDataBlockHash,
+						GHOSTDAGData: data,
+					})
 				}
 
 				_, err = synceeStaging.ValidateAndInsertBlockWithTrustedData(blockWithTrustedData, false)
