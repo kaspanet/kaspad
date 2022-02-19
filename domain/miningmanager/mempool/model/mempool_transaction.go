@@ -8,7 +8,7 @@ import (
 // MempoolTransaction represents a transaction inside the main TransactionPool
 type MempoolTransaction struct {
 	transaction              *externalapi.DomainTransaction
-	parentTransactionsInPool OutpointToTransactionMap
+	parentTransactionsInPool IDToTransactionMap
 	isHighPriority           bool
 	addedAtDAAScore          uint64
 }
@@ -16,7 +16,7 @@ type MempoolTransaction struct {
 // NewMempoolTransaction constructs a new MempoolTransaction
 func NewMempoolTransaction(
 	transaction *externalapi.DomainTransaction,
-	parentTransactionsInPool OutpointToTransactionMap,
+	parentTransactionsInPool IDToTransactionMap,
 	isHighPriority bool,
 	addedAtDAAScore uint64,
 ) *MempoolTransaction {
@@ -39,8 +39,13 @@ func (mt *MempoolTransaction) Transaction() *externalapi.DomainTransaction {
 }
 
 // ParentTransactionsInPool a list of parent transactions that exist in the mempool, indexed by outpoint
-func (mt *MempoolTransaction) ParentTransactionsInPool() OutpointToTransactionMap {
+func (mt *MempoolTransaction) ParentTransactionsInPool() IDToTransactionMap {
 	return mt.parentTransactionsInPool
+}
+
+// RemoveParentTransactionInPool deletes a transaction from the parentTransactionsInPool set
+func (mt *MempoolTransaction) RemoveParentTransactionInPool(transactionID *externalapi.DomainTransactionID) {
+	delete(mt.parentTransactionsInPool, *transactionID)
 }
 
 // IsHighPriority returns whether this MempoolTransaction is a high-priority one
