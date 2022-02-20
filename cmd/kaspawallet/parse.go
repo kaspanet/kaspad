@@ -66,7 +66,8 @@ func parse(conf *parseConfig) error {
 
 		addressString := scriptPublicKeyAddress.EncodeAddress()
 		if scriptPublicKeyType == txscript.NonStandardTy {
-			addressString = hex.EncodeToString(output.ScriptPublicKey.Script)
+			scriptPublicKeyHex := hex.EncodeToString(output.ScriptPublicKey.Script)
+			addressString = fmt.Sprintf("<Non-standard transaction script public key: %s>", scriptPublicKeyHex)
 		}
 
 		fmt.Printf("Output %d: \tRecipient: %s \tAmount: %.2f Kaspa\n",
