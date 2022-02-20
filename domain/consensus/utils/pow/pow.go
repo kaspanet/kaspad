@@ -3,7 +3,6 @@ package pow
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/hashes"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/serialization"
 	"github.com/kaspanet/kaspad/util/difficulty"
@@ -96,15 +95,15 @@ func toBig(hash *externalapi.DomainHash) *big.Int {
 }
 
 // BlockLevel returns the block level of the given header.
-func BlockLevel(header externalapi.BlockHeader) int {
+func BlockLevel(header externalapi.BlockHeader, maxBlockLevel int) int {
 	// Genesis is defined to be the root of all blocks at all levels, so we define it to be the maximal
 	// block level.
 	if len(header.DirectParents()) == 0 {
-		return constants.MaxBlockLevel
+		return maxBlockLevel
 	}
 
 	proofOfWorkValue := NewState(header.ToMutable()).CalculateProofOfWorkValue()
-	level := constants.MaxBlockLevel - proofOfWorkValue.BitLen()
+	level := maxBlockLevel - proofOfWorkValue.BitLen()
 	// If the block has a level lower than genesis make it zero.
 	if level < 0 {
 		level = 0
