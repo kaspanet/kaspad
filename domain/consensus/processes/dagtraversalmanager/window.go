@@ -3,7 +3,6 @@ package dagtraversalmanager
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/lrucache"
 	"github.com/kaspanet/kaspad/infrastructure/db/database"
 )
 
@@ -42,10 +41,13 @@ func (dtm *dagTraversalManager) BlockWindowWithGHOSTDAGData(stagingArea *model.S
 
 func (dtm *dagTraversalManager) blockWindowHeap(stagingArea *model.StagingArea,
 	highHash *externalapi.DomainHash, windowSize int) (*sizedUpBlockHeap, error) {
-	if _, ok := dtm.blockWindowCacheByWindowSize[windowSize]; !ok {
-		dtm.blockWindowCacheByWindowSize[windowSize] = lrucache.New(1000, true)
-	} else if heap, ok := dtm.blockWindowCacheByWindowSize[windowSize].Get(highHash); ok {
-		return heap.(*sizedUpBlockHeap), nil
+	windowHeapSlice, err := dtm.windowHeapSliceStore.Get(stagingArea, highHash, windowSize)
+	isNotFoundError := database.IsNotFoundError(err)
+	if !isNotFoundError && err != nil {
+		return nil, err
+	}
+	if !isNotFoundError {
+		return dtm.newSizedUpHeapFromSlice(stagingArea, windowHeapSlice), nil
 	}
 
 	heap, err := dtm.calculateBlockWindowHeap(stagingArea, highHash, windowSize)
@@ -54,7 +56,7 @@ func (dtm *dagTraversalManager) blockWindowHeap(stagingArea *model.StagingArea,
 	}
 
 	if !highHash.Equal(model.VirtualBlockHash) {
-		dtm.blockWindowCacheByWindowSize[windowSize].Add(highHash, heap)
+		dtm.windowHeapSliceStore.Stage(stagingArea, highHash, windowSize, heap.impl.slice)
 	}
 	return heap, nil
 }
@@ -83,10 +85,13 @@ func (dtm *dagTraversalManager) calculateBlockWindowHeap(stagingArea *model.Stag
 	}
 
 	if isNotFoundError && currentGHOSTDAGData.SelectedParent() != nil {
-		if heap, ok := dtm.blockWindowCacheByWindowSize[windowSize].Get(currentGHOSTDAGData.SelectedParent()); ok {
-			selectedParentWindowHeap := heap.(*sizedUpBlockHeap)
-			windowHeap.impl.slice = make([]*externalapi.BlockGHOSTDAGDataHashPair, len(selectedParentWindowHeap.impl.slice), windowSize)
-			copy(windowHeap.impl.slice, selectedParentWindowHeap.impl.slice)
+		windowHeapSlice, err := dtm.windowHeapSliceStore.Get(stagingArea, highHash, windowSize)
+		isNotFoundError := database.IsNotFoundError(err)
+		if !isNotFoundError && err != nil {
+			return nil, err
+		}
+		if !isNotFoundError {
+			windowHeap := dtm.newSizedUpHeapFromSlice(stagingArea, windowHeapSlice)
 			selectedParentGHOSTDAGData, err := dtm.ghostdagDataStore.Get(
 				dtm.databaseContext, stagingArea, currentGHOSTDAGData.SelectedParent(), false)
 			if err != nil {

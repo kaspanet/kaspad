@@ -152,6 +152,16 @@ func (dtm *dagTraversalManager) newSizedUpHeap(stagingArea *model.StagingArea, c
 	return &h
 }
 
+func (dtm *dagTraversalManager) newSizedUpHeapFromSlice(stagingArea *model.StagingArea, slice []*externalapi.BlockGHOSTDAGDataHashPair) *sizedUpBlockHeap {
+	h := sizedUpBlockHeap{
+		impl:          upHeap{baseHeap{slice: slice, ghostdagManager: dtm.ghostdagManager}},
+		ghostdagStore: dtm.ghostdagDataStore,
+		dbContext:     dtm.databaseContext,
+		stagingArea:   stagingArea,
+	}
+	return &h
+}
+
 // len returns the length of this heap
 func (sbh *sizedUpBlockHeap) len() int {
 	return sbh.impl.Len()

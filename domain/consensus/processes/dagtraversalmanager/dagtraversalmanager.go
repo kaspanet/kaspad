@@ -3,7 +3,6 @@ package dagtraversalmanager
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/lrucache"
 	"github.com/pkg/errors"
 )
 
@@ -19,7 +18,7 @@ type dagTraversalManager struct {
 	daaWindowStore                 model.BlocksWithTrustedDataDAAWindowStore
 	genesisHash                    *externalapi.DomainHash
 	difficultyAdjustmentWindowSize int
-	blockWindowCacheByWindowSize   map[int]*lrucache.LRUCache
+	windowHeapSliceStore           model.WindowHeapSliceStore
 }
 
 // New instantiates a new DAGTraversalManager
@@ -30,6 +29,7 @@ func New(
 	reachabilityDataStore model.ReachabilityDataStore,
 	ghostdagManager model.GHOSTDAGManager,
 	daaWindowStore model.BlocksWithTrustedDataDAAWindowStore,
+	windowHeapSliceStore model.WindowHeapSliceStore,
 	genesisHash *externalapi.DomainHash,
 	difficultyAdjustmentWindowSize int) model.DAGTraversalManager {
 	return &dagTraversalManager{
@@ -42,7 +42,7 @@ func New(
 
 		genesisHash:                    genesisHash,
 		difficultyAdjustmentWindowSize: difficultyAdjustmentWindowSize,
-		blockWindowCacheByWindowSize:   make(map[int]*lrucache.LRUCache),
+		windowHeapSliceStore:           windowHeapSliceStore,
 	}
 }
 
