@@ -347,7 +347,7 @@ var TestnetParams = Params{
 	DeflationaryPhaseDaaScore:               defaultDeflationaryPhaseDaaScore,
 	IgnoreHeaderMass:                        true,
 
-	MaxBlockLevel: 255,
+	MaxBlockLevel: 250,
 }
 
 // SimnetParams defines the network parameters for the simulation test Kaspa
@@ -412,7 +412,7 @@ var SimnetParams = Params{
 	PruningProofM:                           defaultPruningProofM,
 	DeflationaryPhaseDaaScore:               defaultDeflationaryPhaseDaaScore,
 
-	MaxBlockLevel: 255,
+	MaxBlockLevel: 250,
 }
 
 // DevnetParams defines the network parameters for the development Kaspa network.
@@ -474,7 +474,7 @@ var DevnetParams = Params{
 	DeflationaryPhaseDaaScore:               defaultDeflationaryPhaseDaaScore,
 	IgnoreHeaderMass:                        true,
 
-	MaxBlockLevel: 255,
+	MaxBlockLevel: 250,
 }
 
 // ErrDuplicateNet describes an error where the parameters for a Kaspa
