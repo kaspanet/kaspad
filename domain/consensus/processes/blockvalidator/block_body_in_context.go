@@ -136,8 +136,12 @@ func (v *blockValidator) checkBlockTransactions(
 	}
 
 	// Ensure all transactions in the block are finalized.
+	pastMedianTime, err := v.pastMedianTimeManager.PastMedianTime(stagingArea, blockHash)
+	if err != nil {
+		return err
+	}
 	for _, tx := range block.Transactions {
-		if err = v.transactionValidator.ValidateTransactionInContextIgnoringUTXO(stagingArea, tx, blockHash); err != nil {
+		if err = v.transactionValidator.ValidateTransactionInContextIgnoringUTXO(stagingArea, tx, blockHash, pastMedianTime); err != nil {
 			return err
 		}
 	}

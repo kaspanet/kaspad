@@ -12,11 +12,12 @@ var (
 )
 
 type configFlags struct {
-	RPCServer            string `short:"s" long:"rpcserver" description:"RPC server to connect to"`
-	Timeout              uint64 `short:"t" long:"timeout" description:"Timeout for the request (in seconds)"`
-	RequestJSON          string `short:"j" long:"json" description:"The request in JSON format"`
-	ListCommands         bool   `short:"l" long:"list-commands" description:"List all commands and exit"`
-	CommandAndParameters []string
+	RPCServer                          string `short:"s" long:"rpcserver" description:"RPC server to connect to"`
+	Timeout                            uint64 `short:"t" long:"timeout" description:"Timeout for the request (in seconds)"`
+	RequestJSON                        string `short:"j" long:"json" description:"The request in JSON format"`
+	ListCommands                       bool   `short:"l" long:"list-commands" description:"List all commands and exit"`
+	AllowConnectionToDifferentVersions bool   `short:"a" long:"allow-connection-to-different-versions" description:"Allow connections to versions different than kaspactl's version'"`
+	CommandAndParameters               []string
 	config.NetworkFlags
 }
 

@@ -11,7 +11,8 @@ import (
 
 // This is a compile-time assertion to ensure that this generated file
 // is compatible with the grpc package it is being compiled against.
-const _ = grpc.SupportPackageIsVersion6
+// Requires gRPC-Go v1.32.0 or later.
+const _ = grpc.SupportPackageIsVersion7
 
 // P2PClient is the client API for P2P service.
 //
@@ -29,7 +30,7 @@ func NewP2PClient(cc grpc.ClientConnInterface) P2PClient {
 }
 
 func (c *p2PClient) MessageStream(ctx context.Context, opts ...grpc.CallOption) (P2P_MessageStreamClient, error) {
-	stream, err := c.cc.NewStream(ctx, &_P2P_serviceDesc.Streams[0], "/protowire.P2P/MessageStream", opts...)
+	stream, err := c.cc.NewStream(ctx, &P2P_ServiceDesc.Streams[0], "/protowire.P2P/MessageStream", opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -71,13 +72,20 @@ type P2PServer interface {
 type UnimplementedP2PServer struct {
 }
 
-func (*UnimplementedP2PServer) MessageStream(P2P_MessageStreamServer) error {
+func (UnimplementedP2PServer) MessageStream(P2P_MessageStreamServer) error {
 	return status.Errorf(codes.Unimplemented, "method MessageStream not implemented")
 }
-func (*UnimplementedP2PServer) mustEmbedUnimplementedP2PServer() {}
+func (UnimplementedP2PServer) mustEmbedUnimplementedP2PServer() {}
 
-func RegisterP2PServer(s *grpc.Server, srv P2PServer) {
-	s.RegisterService(&_P2P_serviceDesc, srv)
+// UnsafeP2PServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to P2PServer will
+// result in compilation errors.
+type UnsafeP2PServer interface {
+	mustEmbedUnimplementedP2PServer()
+}
+
+func RegisterP2PServer(s grpc.ServiceRegistrar, srv P2PServer) {
+	s.RegisterService(&P2P_ServiceDesc, srv)
 }
 
 func _P2P_MessageStream_Handler(srv interface{}, stream grpc.ServerStream) error {
@@ -106,7 +114,10 @@ func (x *p2PMessageStreamServer) Recv() (*KaspadMessage, error) {
 	return m, nil
 }
 
-var _P2P_serviceDesc = grpc.ServiceDesc{
+// P2P_ServiceDesc is the grpc.ServiceDesc for P2P service.
+// It's only intended for direct use with grpc.RegisterService,
+// and not to be introspected or modified (even as a copy)
+var P2P_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "protowire.P2P",
 	HandlerType: (*P2PServer)(nil),
 	Methods:     []grpc.MethodDesc{},
@@ -137,7 +148,7 @@ func NewRPCClient(cc grpc.ClientConnInterface) RPCClient {
 }
 
 func (c *rPCClient) MessageStream(ctx context.Context, opts ...grpc.CallOption) (RPC_MessageStreamClient, error) {
-	stream, err := c.cc.NewStream(ctx, &_RPC_serviceDesc.Streams[0], "/protowire.RPC/MessageStream", opts...)
+	stream, err := c.cc.NewStream(ctx, &RPC_ServiceDesc.Streams[0], "/protowire.RPC/MessageStream", opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -179,13 +190,20 @@ type RPCServer interface {
 type UnimplementedRPCServer struct {
 }
 
-func (*UnimplementedRPCServer) MessageStream(RPC_MessageStreamServer) error {
+func (UnimplementedRPCServer) MessageStream(RPC_MessageStreamServer) error {
 	return status.Errorf(codes.Unimplemented, "method MessageStream not implemented")
 }
-func (*UnimplementedRPCServer) mustEmbedUnimplementedRPCServer() {}
+func (UnimplementedRPCServer) mustEmbedUnimplementedRPCServer() {}
 
-func RegisterRPCServer(s *grpc.Server, srv RPCServer) {
-	s.RegisterService(&_RPC_serviceDesc, srv)
+// UnsafeRPCServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to RPCServer will
+// result in compilation errors.
+type UnsafeRPCServer interface {
+	mustEmbedUnimplementedRPCServer()
+}
+
+func RegisterRPCServer(s grpc.ServiceRegistrar, srv RPCServer) {
+	s.RegisterService(&RPC_ServiceDesc, srv)
 }
 
 func _RPC_MessageStream_Handler(srv interface{}, stream grpc.ServerStream) error {
@@ -214,7 +232,10 @@ func (x *rPCMessageStreamServer) Recv() (*KaspadMessage, error) {
 	return m, nil
 }
 
-var _RPC_serviceDesc = grpc.ServiceDesc{
+// RPC_ServiceDesc is the grpc.ServiceDesc for RPC service.
+// It's only intended for direct use with grpc.RegisterService,
+// and not to be introspected or modified (even as a copy)
+var RPC_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "protowire.RPC",
 	HandlerType: (*RPCServer)(nil),
 	Methods:     []grpc.MethodDesc{},

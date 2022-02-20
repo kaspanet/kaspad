@@ -9,6 +9,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
 	"github.com/pkg/errors"
+	"time"
 )
 
 func (flow *handleIBDFlow) ibdWithHeadersProof(highHash *externalapi.DomainHash, highBlockDAAScore uint64) error {
@@ -87,7 +88,7 @@ func (flow *handleIBDFlow) syncAndValidatePruningPointProof() (*externalapi.Doma
 	if err != nil {
 		return nil, err
 	}
-	message, err := flow.incomingRoute.DequeueWithTimeout(common.DefaultTimeout)
+	message, err := flow.incomingRoute.DequeueWithTimeout(10 * time.Minute)
 	if err != nil {
 		return nil, err
 	}

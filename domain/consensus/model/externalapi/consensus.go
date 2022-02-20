@@ -26,7 +26,6 @@ type Consensus interface {
 	PruningPoint() (*DomainHash, error)
 	PruningPointHeaders() ([]BlockHeader, error)
 	PruningPointAndItsAnticone() ([]*DomainHash, error)
-	BlockWithTrustedData(blockHash *DomainHash) (*BlockWithTrustedData, error)
 	ClearImportedPruningPointData() error
 	AppendImportedPruningPointUTXOs(outpointAndUTXOEntryPairs []*OutpointAndUTXOEntryPair) error
 	ValidateAndInsertImportedPruningPoint(newPruningPoint *DomainHash) error
