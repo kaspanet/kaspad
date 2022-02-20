@@ -85,7 +85,7 @@ func (dtm *dagTraversalManager) calculateBlockWindowHeap(stagingArea *model.Stag
 	if isNotFoundError && currentGHOSTDAGData.SelectedParent() != nil {
 		if heap, ok := dtm.blockWindowCacheByWindowSize[windowSize].Get(currentGHOSTDAGData.SelectedParent()); ok {
 			selectedParentWindowHeap := heap.(*sizedUpBlockHeap)
-			windowHeap.impl.slice = make([]*externalapi.BlockGHOSTDAGDataHashPair, len(selectedParentWindowHeap.impl.slice))
+			windowHeap.impl.slice = make([]*externalapi.BlockGHOSTDAGDataHashPair, len(selectedParentWindowHeap.impl.slice), windowSize)
 			copy(windowHeap.impl.slice, selectedParentWindowHeap.impl.slice)
 			selectedParentGHOSTDAGData, err := dtm.ghostdagDataStore.Get(
 				dtm.databaseContext, stagingArea, currentGHOSTDAGData.SelectedParent(), false)
