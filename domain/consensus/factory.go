@@ -1,6 +1,7 @@
 package consensus
 
 import (
+	"github.com/kaspanet/kaspad/domain/consensus/datastructures/blockwindowheapslicestore"
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/daawindowstore"
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/processes/blockparentbuilder"
@@ -144,9 +145,10 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 	finalityStore := finalitystore.New(prefixBucket, 200, preallocateCaches)
 	headersSelectedChainStore := headersselectedchainstore.New(prefixBucket, pruningWindowSizeForCaches, preallocateCaches)
 	daaBlocksStore := daablocksstore.New(prefixBucket, pruningWindowSizeForCaches, int(config.FinalityDepth()), preallocateCaches)
+	windowHeapSliceStore := blockwindowheapslicestore.New(2000, preallocateCaches)
 
 	blockRelationStores, reachabilityDataStores, ghostdagDataStores := dagStores(config, prefixBucket, pruningWindowSizePlusFinalityDepthForCache, pruningWindowSizeForCaches, preallocateCaches)
-	reachabilityManagers, dagTopologyManagers, ghostdagManagers, dagTraversalManagers := f.dagProcesses(config, dbManager, blockHeaderStore, daaWindowStore, blockRelationStores, reachabilityDataStores, ghostdagDataStores)
+	reachabilityManagers, dagTopologyManagers, ghostdagManagers, dagTraversalManagers := f.dagProcesses(config, dbManager, blockHeaderStore, daaWindowStore, windowHeapSliceStore, blockRelationStores, reachabilityDataStores, ghostdagDataStores)
 
 	blockRelationStore := blockRelationStores[0]
 	reachabilityDataStore := reachabilityDataStores[0]
@@ -600,6 +602,7 @@ func (f *factory) dagProcesses(config *Config,
 	dbManager model.DBManager,
 	blockHeaderStore model.BlockHeaderStore,
 	daaWindowStore model.BlocksWithTrustedDataDAAWindowStore,
+	windowHeapSliceStore model.WindowHeapSliceStore,
 	blockRelationStores []model.BlockRelationStore,
 	reachabilityDataStores []model.ReachabilityDataStore,
 	ghostdagDataStores []model.GHOSTDAGDataStore) (
@@ -641,6 +644,7 @@ func (f *factory) dagProcesses(config *Config,
 			reachabilityDataStores[i],
 			ghostdagManagers[i],
 			daaWindowStore,
+			windowHeapSliceStore,
 			config.GenesisHash,
 			config.DifficultyAdjustmentWindowSize)
 	}
