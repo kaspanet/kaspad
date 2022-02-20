@@ -64,9 +64,11 @@ func (psi PartiallySignedInput) Clone() *PartiallySignedInput {
 func (psp PubKeySignaturePair) Clone() *PubKeySignaturePair {
 	clone := &PubKeySignaturePair{
 		ExtendedPublicKey: psp.ExtendedPublicKey,
-		Signature:         make([]byte, len(psp.Signature)),
 	}
-	copy(clone.Signature, psp.Signature)
+	if psp.Signature != nil {
+		clone.Signature = make([]byte, len(psp.Signature))
+		copy(clone.Signature, psp.Signature)
+	}
 	return clone
 }
 
