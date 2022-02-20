@@ -291,11 +291,11 @@ var MainnetParams = Params{
 // TestnetParams defines the network parameters for the test Kaspa network.
 var TestnetParams = Params{
 	K:           defaultGHOSTDAGK,
-	Name:        "kaspa-testnet-8",
+	Name:        "kaspa-testnet-9",
 	Net:         appmessage.Testnet,
 	RPCPort:     "16210",
 	DefaultPort: "16211",
-	DNSSeeds:    []string{"testnet-8-dnsseed.daglabs-dev.com"},
+	DNSSeeds:    []string{"testnet-9-dnsseed.daglabs-dev.com"},
 
 	// DAG parameters
 	GenesisBlock:                    &testnetGenesisBlock,
