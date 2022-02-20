@@ -13,7 +13,7 @@ import (
 	"github.com/kaspanet/kaspad/util"
 )
 
-func (s *server) maybeSplitTransaction(transactionBytes []byte) ([][]byte, error) {
+func (s *server) maybeAutoCompoundTransaction(transactionBytes []byte) ([][]byte, error) {
 	transaction, err := serialization.DeserializePartiallySignedTransaction(transactionBytes)
 	if err != nil {
 		return nil, err
@@ -24,7 +24,7 @@ func (s *server) maybeSplitTransaction(transactionBytes []byte) ([][]byte, error
 		return nil, err
 	}
 
-	splitTransactions, err := s.maybeSplitTransactionInner(transaction, splitAddress)
+	splitTransactions, err := s.maybeSplitTransaction(transaction, splitAddress)
 	if err != nil {
 		return nil, err
 	}
@@ -99,7 +99,7 @@ func (s *server) mergeTransaction(splitTransactions []*serialization.PartiallySi
 	return serialization.DeserializePartiallySignedTransaction(mergeTransactionBytes)
 }
 
-func (s *server) maybeSplitTransactionInner(transaction *serialization.PartiallySignedTransaction,
+func (s *server) maybeSplitTransaction(transaction *serialization.PartiallySignedTransaction,
 	splitAddress util.Address) ([]*serialization.PartiallySignedTransaction, error) {
 
 	transactionMass, err := s.estimateMassAfterSignatures(transaction)
@@ -182,10 +182,10 @@ func (s *server) estimateMassAfterSignatures(transaction *serialization.Partiall
 		transaction.Tx.Inputs[i].SigOpCount = byte(len(input.PubKeySignaturePairs))
 	}
 
-	transactionWithEverything, err := libkaspawallet.ExtractTransactionDeserialized(transaction, s.keysFile.ECDSA)
+	transactionWithSignatures, err := libkaspawallet.ExtractTransactionDeserialized(transaction, s.keysFile.ECDSA)
 	if err != nil {
 		return 0, err
 	}
 
-	return s.txMassCalculator.CalculateTransactionMass(transactionWithEverything), nil
+	return s.txMassCalculator.CalculateTransactionMass(transactionWithSignatures), nil
 }

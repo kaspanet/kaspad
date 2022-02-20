@@ -55,7 +55,7 @@ func (s *server) CreateUnsignedTransactions(_ context.Context, request *pb.Creat
 		return nil, err
 	}
 
-	unsignedTransactions, err := s.maybeSplitTransaction(unsignedTransaction)
+	unsignedTransactions, err := s.maybeAutoCompoundTransaction(unsignedTransaction)
 	if err != nil {
 		return nil, err
 	}
