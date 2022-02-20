@@ -83,6 +83,7 @@ type broadcastConfig struct {
 type parseConfig struct {
 	Transaction     string `long:"transaction" short:"t" description:"The transaction to parse (encoded in hex)"`
 	TransactionFile string `long:"transaction-file" short:"F" description:"The file containing the transaction to parse (encoded in hex)"`
+	Verbose         bool   `long:"verbose" short:"v" description:"Verbose: show transaction inputs"`
 	config.NetworkFlags
 }
 

@@ -45,12 +45,17 @@ func parse(conf *parseConfig) error {
 	allInputSompi := uint64(0)
 	for index, input := range partiallySignedTransaction.Tx.Inputs {
 		partiallySignedInput := partiallySignedTransaction.PartiallySignedInputs[index]
-		fmt.Printf("Input %d: \tOutpoint: %s:%d \tAmount: %.2f Kaspa\n", index, input.PreviousOutpoint.TransactionID,
-			input.PreviousOutpoint.Index, float64(partiallySignedInput.PrevOutput.Value)/float64(constants.SompiPerKaspa))
+
+		if conf.Verbose {
+			fmt.Printf("Input %d: \tOutpoint: %s:%d \tAmount: %.2f Kaspa\n", index, input.PreviousOutpoint.TransactionID,
+				input.PreviousOutpoint.Index, float64(partiallySignedInput.PrevOutput.Value)/float64(constants.SompiPerKaspa))
+		}
 
 		allInputSompi += partiallySignedInput.PrevOutput.Value
 	}
-	fmt.Println()
+	if conf.Verbose {
+		fmt.Println()
+	}
 
 	allOutputSompi := uint64(0)
 	for index, output := range partiallySignedTransaction.Tx.Outputs {
