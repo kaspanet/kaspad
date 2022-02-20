@@ -84,13 +84,13 @@ func (dtm *dagTraversalManager) calculateBlockWindowHeap(stagingArea *model.Stag
 		}
 		if !selectedParentNotCached {
 			windowHeap := dtm.newSizedUpHeapFromSlice(stagingArea, windowHeapSlice)
-			selectedParentGHOSTDAGData, err := dtm.ghostdagDataStore.Get(
-				dtm.databaseContext, stagingArea, currentGHOSTDAGData.SelectedParent(), false)
-			if err != nil {
-				return nil, err
-			}
-
 			if !currentGHOSTDAGData.SelectedParent().Equal(dtm.genesisHash) {
+				selectedParentGHOSTDAGData, err := dtm.ghostdagDataStore.Get(
+					dtm.databaseContext, stagingArea, currentGHOSTDAGData.SelectedParent(), false)
+				if err != nil {
+					return nil, err
+				}
+
 				_, err = dtm.tryPushMergeSet(windowHeap, currentGHOSTDAGData, selectedParentGHOSTDAGData)
 				if err != nil {
 					return nil, err
@@ -101,6 +101,8 @@ func (dtm *dagTraversalManager) calculateBlockWindowHeap(stagingArea *model.Stag
 		}
 	}
 
+	// Walk down the chain until you finish or find a trusted block and then take complete the rest
+	// of the window with the trusted window.
 	for {
 		if currentGHOSTDAGData.SelectedParent().Equal(dtm.genesisHash) {
 			break
