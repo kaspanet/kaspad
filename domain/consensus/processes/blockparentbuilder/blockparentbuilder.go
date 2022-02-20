@@ -16,7 +16,8 @@ type blockParentBuilder struct {
 	reachabilityDataStore model.ReachabilityDataStore
 	pruningStore          model.PruningStore
 
-	genesisHash *externalapi.DomainHash
+	genesisHash   *externalapi.DomainHash
+	maxBlockLevel int
 }
 
 // New creates a new instance of a BlockParentBuilder
@@ -30,6 +31,7 @@ func New(
 	pruningStore model.PruningStore,
 
 	genesisHash *externalapi.DomainHash,
+	maxBlockLevel int,
 ) model.BlockParentBuilder {
 	return &blockParentBuilder{
 		databaseContext:    databaseContext,
@@ -40,6 +42,7 @@ func New(
 		reachabilityDataStore: reachabilityDataStore,
 		pruningStore:          pruningStore,
 		genesisHash:           genesisHash,
+		maxBlockLevel:         maxBlockLevel,
 	}
 }
 
@@ -102,7 +105,7 @@ func (bpb *blockParentBuilder) BuildParents(stagingArea *model.StagingArea,
 	// all the block levels they occupy
 	for _, directParentHeader := range directParentHeaders {
 		directParentHash := consensushashing.HeaderHash(directParentHeader)
-		blockLevel := directParentHeader.BlockLevel()
+		blockLevel := directParentHeader.BlockLevel(bpb.maxBlockLevel)
 		for i := 0; i <= blockLevel; i++ {
 			if _, exists := candidatesByLevelToReferenceBlocksMap[i]; !exists {
 				candidatesByLevelToReferenceBlocksMap[i] = make(map[externalapi.DomainHash][]*externalapi.DomainHash)

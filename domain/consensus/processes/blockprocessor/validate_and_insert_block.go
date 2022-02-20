@@ -259,7 +259,7 @@ func (bp *blockProcessor) updateReachabilityReindexRoot(stagingArea *model.Stagi
 		return err
 	}
 
-	headersSelectedTipHeaderBlockLevel := headersSelectedTipHeader.BlockLevel()
+	headersSelectedTipHeaderBlockLevel := headersSelectedTipHeader.BlockLevel(bp.maxBlockLevel)
 	for blockLevel := 0; blockLevel <= headersSelectedTipHeaderBlockLevel; blockLevel++ {
 		err := bp.reachabilityManagers[blockLevel].UpdateReindexRoot(stagingArea, headersSelectedTip)
 		if err != nil {
