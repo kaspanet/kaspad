@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/daemon/pb"
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/libkaspawallet"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
@@ -17,7 +18,7 @@ func (s *server) CreateUnsignedTransaction(_ context.Context, request *pb.Create
 		return nil, errors.New("server is not synced")
 	}
 
-	err := s.refreshExistingUTXOs()
+	err := s.refreshUTXOs()
 	if err != nil {
 		return nil, err
 	}
@@ -66,7 +67,7 @@ func (s *server) selectUTXOs(spendAmount uint64, feePerInput uint64) (
 		return nil, 0, err
 	}
 
-	for _, utxo := range s.utxos {
+	for _, utxo := range s.utxosSortedByAmount {
 		if !isUTXOSpendable(utxo, dagInfo.VirtualDAAScore, s.params.BlockCoinbaseMaturity) {
 			continue
 		}

@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/daemon/pb"
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/libkaspawallet"
 )
@@ -21,7 +22,7 @@ func (s *server) GetBalance(_ context.Context, _ *pb.GetBalanceRequest) (*pb.Get
 	maturity := s.params.BlockCoinbaseMaturity
 
 	balancesMap := make(balancesMapType, 0)
-	for _, entry := range s.utxos {
+	for _, entry := range s.utxosSortedByAmount {
 		amount := entry.UTXOEntry.Amount()
 		address := entry.address
 		balances, ok := balancesMap[address]

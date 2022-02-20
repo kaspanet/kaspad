@@ -13,7 +13,6 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/processes/reachabilitymanager"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/hashset"
 	"github.com/kaspanet/kaspad/infrastructure/db/database"
 	"github.com/kaspanet/kaspad/infrastructure/logger"
@@ -41,6 +40,7 @@ type pruningProofManager struct {
 	genesisHash   *externalapi.DomainHash
 	k             externalapi.KType
 	pruningProofM uint64
+	maxBlockLevel int
 
 	cachedPruningPoint *externalapi.DomainHash
 	cachedProof        *externalapi.PruningPointProof
@@ -66,6 +66,7 @@ func New(
 	genesisHash *externalapi.DomainHash,
 	k externalapi.KType,
 	pruningProofM uint64,
+	maxBlockLevel int,
 ) model.PruningProofManager {
 
 	return &pruningProofManager{
@@ -86,6 +87,7 @@ func New(
 		genesisHash:   genesisHash,
 		k:             k,
 		pruningProofM: pruningProofM,
+		maxBlockLevel: maxBlockLevel,
 	}
 }
 
@@ -134,7 +136,7 @@ func (ppm *pruningProofManager) buildPruningPointProof(stagingArea *model.Stagin
 	maxLevel := len(ppm.parentsManager.Parents(pruningPointHeader)) - 1
 	headersByLevel := make(map[int][]externalapi.BlockHeader)
 	selectedTipByLevel := make([]*externalapi.DomainHash, maxLevel+1)
-	pruningPointLevel := pruningPointHeader.BlockLevel()
+	pruningPointLevel := pruningPointHeader.BlockLevel(ppm.maxBlockLevel)
 	for blockLevel := maxLevel; blockLevel >= 0; blockLevel-- {
 		var selectedTip *externalapi.DomainHash
 		if blockLevel <= pruningPointLevel {
@@ -310,7 +312,7 @@ func (ppm *pruningProofManager) ValidatePruningPointProof(pruningPointProof *ext
 	level0Headers := pruningPointProof.Headers[0]
 	pruningPointHeader := level0Headers[len(level0Headers)-1]
 	pruningPoint := consensushashing.HeaderHash(pruningPointHeader)
-	pruningPointBlockLevel := pruningPointHeader.BlockLevel()
+	pruningPointBlockLevel := pruningPointHeader.BlockLevel(ppm.maxBlockLevel)
 	maxLevel := len(ppm.parentsManager.Parents(pruningPointHeader)) - 1
 	if maxLevel >= len(pruningPointProof.Headers) {
 		return errors.Wrapf(ruleerrors.ErrPruningProofEmpty, "proof has only %d levels while pruning point "+
@@ -354,9 +356,9 @@ func (ppm *pruningProofManager) ValidatePruningPointProof(pruningPointProof *ext
 		var selectedTip *externalapi.DomainHash
 		for i, header := range headers {
 			blockHash := consensushashing.HeaderHash(header)
-			if header.BlockLevel() < blockLevel {
+			if header.BlockLevel(ppm.maxBlockLevel) < blockLevel {
 				return errors.Wrapf(ruleerrors.ErrPruningProofWrongBlockLevel, "block %s level is %d when it's "+
-					"expected to be at least %d", blockHash, header.BlockLevel(), blockLevel)
+					"expected to be at least %d", blockHash, header.BlockLevel(ppm.maxBlockLevel), blockLevel)
 			}
 
 			blockHeaderStore.Stage(stagingArea, blockHash, header)
@@ -581,9 +583,9 @@ func (ppm *pruningProofManager) dagProcesses(
 	[]model.GHOSTDAGManager,
 ) {
 
-	reachabilityManagers := make([]model.ReachabilityManager, constants.MaxBlockLevel+1)
-	dagTopologyManagers := make([]model.DAGTopologyManager, constants.MaxBlockLevel+1)
-	ghostdagManagers := make([]model.GHOSTDAGManager, constants.MaxBlockLevel+1)
+	reachabilityManagers := make([]model.ReachabilityManager, ppm.maxBlockLevel+1)
+	dagTopologyManagers := make([]model.DAGTopologyManager, ppm.maxBlockLevel+1)
+	ghostdagManagers := make([]model.GHOSTDAGManager, ppm.maxBlockLevel+1)
 
 	for i := 0; i <= maxLevel; i++ {
 		reachabilityManagers[i] = reachabilitymanager.New(
@@ -627,9 +629,9 @@ func (ppm *pruningProofManager) ApplyPruningPointProof(pruningPointProof *extern
 			stagingArea := model.NewStagingArea()
 
 			blockHash := consensushashing.HeaderHash(header)
-			if header.BlockLevel() < blockLevel {
+			if header.BlockLevel(ppm.maxBlockLevel) < blockLevel {
 				return errors.Wrapf(ruleerrors.ErrPruningProofWrongBlockLevel, "block %s level is %d when it's "+
-					"expected to be at least %d", blockHash, header.BlockLevel(), blockLevel)
+					"expected to be at least %d", blockHash, header.BlockLevel(ppm.maxBlockLevel), blockLevel)
 			}
 
 			ppm.blockHeaderStore.Stage(stagingArea, blockHash, header)

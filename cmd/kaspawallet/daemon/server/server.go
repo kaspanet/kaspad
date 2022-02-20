@@ -2,15 +2,15 @@ package server
 
 import (
 	"fmt"
-	"github.com/kaspanet/kaspad/util/profiling"
 	"net"
 	"os"
 	"sync"
 	"time"
 
+	"github.com/kaspanet/kaspad/util/profiling"
+
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/daemon/pb"
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/keys"
-	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/dagconfig"
 	"github.com/kaspanet/kaspad/infrastructure/network/rpcclient"
 	"github.com/kaspanet/kaspad/infrastructure/os/signal"
@@ -26,11 +26,12 @@ type server struct {
 	rpcClient *rpcclient.RPCClient
 	params    *dagconfig.Params
 
-	lock               sync.RWMutex
-	utxos              map[externalapi.DomainOutpoint]*walletUTXO
-	nextSyncStartIndex uint32
-	keysFile           *keys.File
-	shutdown           chan struct{}
+	lock                sync.RWMutex
+	utxosSortedByAmount []*walletUTXO
+	nextSyncStartIndex  uint32
+	keysFile            *keys.File
+	shutdown            chan struct{}
+	addressSet          walletAddressSet
 }
 
 // Start starts the kaspawalletd server
@@ -61,12 +62,13 @@ func Start(params *dagconfig.Params, listen, rpcServer string, keysFilePath stri
 	}
 
 	serverInstance := &server{
-		rpcClient:          rpcClient,
-		params:             params,
-		utxos:              make(map[externalapi.DomainOutpoint]*walletUTXO),
-		nextSyncStartIndex: 0,
-		keysFile:           keysFile,
-		shutdown:           make(chan struct{}),
+		rpcClient:           rpcClient,
+		params:              params,
+		utxosSortedByAmount: []*walletUTXO{},
+		nextSyncStartIndex:  0,
+		keysFile:            keysFile,
+		shutdown:            make(chan struct{}),
+		addressSet:          make(walletAddressSet),
 	}
 
 	spawn("serverInstance.sync", func() {
