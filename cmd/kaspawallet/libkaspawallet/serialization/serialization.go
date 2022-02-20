@@ -34,6 +34,7 @@ type PubKeySignaturePair struct {
 	Signature         []byte
 }
 
+// Clone creates a deep-clone of this PartiallySignedTransaction
 func (pst *PartiallySignedTransaction) Clone() *PartiallySignedTransaction {
 	clone := &PartiallySignedTransaction{
 		Tx:                    pst.Tx.Clone(),
@@ -45,6 +46,7 @@ func (pst *PartiallySignedTransaction) Clone() *PartiallySignedTransaction {
 	return clone
 }
 
+// Clone creates a deep-clone of this PartiallySignedInput
 func (psi PartiallySignedInput) Clone() *PartiallySignedInput {
 	clone := &PartiallySignedInput{
 		PrevOutput:           psi.PrevOutput.Clone(),
@@ -58,6 +60,7 @@ func (psi PartiallySignedInput) Clone() *PartiallySignedInput {
 	return clone
 }
 
+// Clone creates a deep-clone of this PubKeySignaturePair
 func (psp PubKeySignaturePair) Clone() *PubKeySignaturePair {
 	clone := &PubKeySignaturePair{
 		ExtendedPublicKey: psp.ExtendedPublicKey,
