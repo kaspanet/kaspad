@@ -39,6 +39,9 @@ func TestEstimateMassAfterSignatures(t *testing.T) {
 		}
 
 		estimatedMassAfterSignatures, err := serverInstance.estimateMassAfterSignatures(unsignedTransaction)
+		if err != nil {
+			t.Fatalf("Error from estimateMassAfterSignatures: %s", err)
+		}
 
 		signedTxStep1Bytes, err := libkaspawallet.Sign(params, mnemonics[:1], unsignedTransactionBytes, false)
 		if err != nil {

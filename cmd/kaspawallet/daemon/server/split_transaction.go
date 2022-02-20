@@ -29,7 +29,7 @@ func (s *server) maybeAutoCompoundTransaction(transactionBytes []byte) ([][]byte
 		return nil, err
 	}
 	if len(splitTransactions) > 1 {
-		mergeTransaction, err := s.mergeTransaction(splitTransactions, transaction, splitAddress, splitWalletAddress)
+		mergeTransaction, err := s.mergeTransaction(splitTransactions, transaction, splitWalletAddress)
 		if err != nil {
 			return nil, err
 		}
@@ -47,8 +47,8 @@ func (s *server) maybeAutoCompoundTransaction(transactionBytes []byte) ([][]byte
 }
 
 func (s *server) mergeTransaction(splitTransactions []*serialization.PartiallySignedTransaction,
-	originalTransaction *serialization.PartiallySignedTransaction, splitAddress util.Address,
-	splitWalletAddress *walletAddress) (*serialization.PartiallySignedTransaction, error) {
+	originalTransaction *serialization.PartiallySignedTransaction, splitWalletAddress *walletAddress) (
+	*serialization.PartiallySignedTransaction, error) {
 
 	targetAddress, err := util.NewAddressScriptHash(originalTransaction.Tx.Outputs[0].ScriptPublicKey.Script, s.params.Prefix)
 	if err != nil {
@@ -95,6 +95,9 @@ func (s *server) mergeTransaction(splitTransactions []*serialization.PartiallySi
 	}
 	mergeTransactionBytes, err := libkaspawallet.CreateUnsignedTransaction(s.keysFile.ExtendedPublicKeys,
 		s.keysFile.MinimumSignatures, payments, utxos)
+	if err != nil {
+		return nil, err
+	}
 
 	return serialization.DeserializePartiallySignedTransaction(mergeTransactionBytes)
 }
