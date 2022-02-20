@@ -31,11 +31,11 @@ func (dtm *dagTraversalManager) BlockWindow(stagingArea *model.StagingArea, high
 func (dtm *dagTraversalManager) blockWindowHeap(stagingArea *model.StagingArea,
 	highHash *externalapi.DomainHash, windowSize int) (*sizedUpBlockHeap, error) {
 	windowHeapSlice, err := dtm.windowHeapSliceStore.Get(stagingArea, highHash, windowSize)
-	isNotFoundError := database.IsNotFoundError(err)
-	if !isNotFoundError && err != nil {
+	sliceNotCached := database.IsNotFoundError(err)
+	if !sliceNotCached && err != nil {
 		return nil, err
 	}
-	if !isNotFoundError {
+	if !sliceNotCached {
 		return dtm.newSizedUpHeapFromSlice(stagingArea, windowHeapSlice), nil
 	}
 
@@ -67,19 +67,22 @@ func (dtm *dagTraversalManager) calculateBlockWindowHeap(stagingArea *model.Stag
 		return nil, err
 	}
 
+	// If the block has a trusted DAA window attached, we just take it as is and don't use cache of selected parent to
+	// build the window. This is because tryPushMergeSet might not be able to find all the GHOSTDAG data that is
+	// associated with the block merge set.
 	_, err = dtm.daaWindowStore.DAAWindowBlock(dtm.databaseContext, stagingArea, current, 0)
-	isNotFoundError := database.IsNotFoundError(err)
-	if !isNotFoundError && err != nil {
+	isNonTrustedBlock := database.IsNotFoundError(err)
+	if !isNonTrustedBlock && err != nil {
 		return nil, err
 	}
 
-	if isNotFoundError && currentGHOSTDAGData.SelectedParent() != nil {
-		windowHeapSlice, err := dtm.windowHeapSliceStore.Get(stagingArea, highHash, windowSize)
-		isNotFoundError := database.IsNotFoundError(err)
-		if !isNotFoundError && err != nil {
+	if isNonTrustedBlock && currentGHOSTDAGData.SelectedParent() != nil {
+		windowHeapSlice, err := dtm.windowHeapSliceStore.Get(stagingArea, currentGHOSTDAGData.SelectedParent(), windowSize)
+		selectedParentNotCached := database.IsNotFoundError(err)
+		if !selectedParentNotCached && err != nil {
 			return nil, err
 		}
-		if !isNotFoundError {
+		if !selectedParentNotCached {
 			windowHeap := dtm.newSizedUpHeapFromSlice(stagingArea, windowHeapSlice)
 			selectedParentGHOSTDAGData, err := dtm.ghostdagDataStore.Get(
 				dtm.databaseContext, stagingArea, currentGHOSTDAGData.SelectedParent(), false)
