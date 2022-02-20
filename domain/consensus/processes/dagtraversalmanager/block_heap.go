@@ -153,8 +153,10 @@ func (dtm *dagTraversalManager) newSizedUpHeap(stagingArea *model.StagingArea, c
 }
 
 func (dtm *dagTraversalManager) newSizedUpHeapFromSlice(stagingArea *model.StagingArea, slice []*externalapi.BlockGHOSTDAGDataHashPair) *sizedUpBlockHeap {
+	sliceClone := make([]*externalapi.BlockGHOSTDAGDataHashPair, len(slice), cap(slice))
+	copy(sliceClone, slice)
 	h := sizedUpBlockHeap{
-		impl:          upHeap{baseHeap{slice: slice, ghostdagManager: dtm.ghostdagManager}},
+		impl:          upHeap{baseHeap{slice: sliceClone, ghostdagManager: dtm.ghostdagManager}},
 		ghostdagStore: dtm.ghostdagDataStore,
 		dbContext:     dtm.databaseContext,
 		stagingArea:   stagingArea,
