@@ -2,6 +2,7 @@ package server
 
 import (
 	"github.com/kaspanet/go-secp256k1"
+	"github.com/pkg/errors"
 
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/libkaspawallet"
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/libkaspawallet/serialization"
@@ -49,6 +50,11 @@ func (s *server) maybeAutoCompoundTransaction(transactionBytes []byte) ([][]byte
 func (s *server) mergeTransaction(splitTransactions []*serialization.PartiallySignedTransaction,
 	originalTransaction *serialization.PartiallySignedTransaction, splitWalletAddress *walletAddress) (
 	*serialization.PartiallySignedTransaction, error) {
+
+	if len(originalTransaction.Tx.Outputs) != 2 {
+		return nil, errors.Errorf("original transaction has %d outputs, while 2 are expected",
+			len(originalTransaction.Tx.Outputs))
+	}
 
 	targetAddress, err := util.NewAddressScriptHash(originalTransaction.Tx.Outputs[0].ScriptPublicKey.Script, s.params.Prefix)
 	if err != nil {
