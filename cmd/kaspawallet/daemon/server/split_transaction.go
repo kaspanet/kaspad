@@ -73,23 +73,28 @@ func (s *server) mergeTransaction(
 		totalValue -= feePerInput
 	}
 
-	var payments []*libkaspawallet.Payment
-	if totalValue >= sentValue {
-		payments = []*libkaspawallet.Payment{{
-			Address: toAddress,
-			Amount:  sentValue,
-		}, {
+	if totalValue < sentValue {
+		// sometimes the fees from compound transactions make the total output higher than what's available from selected
+		// utxos, in such cases - find one more UTXO and use it.
+		oneMoreUTXO, err := s.oneMoreUTXOForMergeTransaction(utxos, sentValue-totalValue)
+		if err != nil {
+			return nil, err
+		}
+		utxos = append(utxos, oneMoreUTXO)
+		totalValue += oneMoreUTXO.UTXOEntry.Amount()
+	}
+
+	payments := []*libkaspawallet.Payment{{
+		Address: toAddress,
+		Amount:  sentValue,
+	}}
+	if totalValue > sentValue {
+		payments = append(payments, &libkaspawallet.Payment{
 			Address: changeAddress,
 			Amount:  totalValue - sentValue,
-		}}
-	} else {
-		// sometimes the fees from compound transactions make the total output higher than what's available from selected
-		// utxos, in such cases, the remaining fee will be deduced from the resulting amount
-		payments = []*libkaspawallet.Payment{{
-			Address: toAddress,
-			Amount:  totalValue,
-		}}
+		})
 	}
+
 	mergeTransactionBytes, err := libkaspawallet.CreateUnsignedTransaction(s.keysFile.ExtendedPublicKeys,
 		s.keysFile.MinimumSignatures, payments, utxos)
 	if err != nil {
