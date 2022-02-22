@@ -14,23 +14,19 @@ import (
 	"github.com/kaspanet/kaspad/util"
 )
 
-func (s *server) maybeAutoCompoundTransaction(transactionBytes []byte) ([][]byte, error) {
+func (s *server) maybeAutoCompoundTransaction(transactionBytes []byte, toAddress util.Address,
+	changeAddress util.Address, changeWalletAddress *walletAddress) ([][]byte, error) {
 	transaction, err := serialization.DeserializePartiallySignedTransaction(transactionBytes)
 	if err != nil {
 		return nil, err
 	}
 
-	splitAddress, splitWalletAddress, err := s.changeAddress()
-	if err != nil {
-		return nil, err
-	}
-
-	splitTransactions, err := s.maybeSplitTransaction(transaction, splitAddress)
+	splitTransactions, err := s.maybeSplitTransaction(transaction, changeAddress)
 	if err != nil {
 		return nil, err
 	}
 	if len(splitTransactions) > 1 {
-		mergeTransaction, err := s.mergeTransaction(splitTransactions, transaction, splitWalletAddress)
+		mergeTransaction, err := s.mergeTransaction(splitTransactions, transaction, toAddress, changeAddress, changeWalletAddress)
 		if err != nil {
 			return nil, err
 		}
@@ -47,22 +43,17 @@ func (s *server) maybeAutoCompoundTransaction(transactionBytes []byte) ([][]byte
 	return splitTransactionsBytes, nil
 }
 
-func (s *server) mergeTransaction(splitTransactions []*serialization.PartiallySignedTransaction,
-	originalTransaction *serialization.PartiallySignedTransaction, splitWalletAddress *walletAddress) (
-	*serialization.PartiallySignedTransaction, error) {
-
-	if len(originalTransaction.Tx.Outputs) != 2 {
-		return nil, errors.Errorf("original transaction has %d outputs, while 2 are expected",
+func (s *server) mergeTransaction(
+	splitTransactions []*serialization.PartiallySignedTransaction,
+	originalTransaction *serialization.PartiallySignedTransaction,
+	toAddress util.Address,
+	changeAddress util.Address,
+	changeWalletAddress *walletAddress,
+) (*serialization.PartiallySignedTransaction, error) {
+	numOutputs := len(originalTransaction.Tx.Outputs)
+	if numOutputs > 2 || numOutputs == 0 {
+		return nil, errors.Errorf("original transaction has %d outputs, while 1 or 2 are expected",
 			len(originalTransaction.Tx.Outputs))
-	}
-
-	targetAddress, err := util.NewAddressScriptHash(originalTransaction.Tx.Outputs[0].ScriptPublicKey.Script, s.params.Prefix)
-	if err != nil {
-		return nil, err
-	}
-	changeAddress, err := util.NewAddressScriptHash(originalTransaction.Tx.Outputs[1].ScriptPublicKey.Script, s.params.Prefix)
-	if err != nil {
-		return nil, err
 	}
 
 	totalValue := uint64(0)
@@ -76,7 +67,7 @@ func (s *server) mergeTransaction(splitTransactions []*serialization.PartiallySi
 				Index:         0,
 			},
 			UTXOEntry:      utxo.NewUTXOEntry(output.Value, output.ScriptPublicKey, false, constants.UnacceptedDAAScore),
-			DerivationPath: s.walletAddressPath(splitWalletAddress),
+			DerivationPath: s.walletAddressPath(changeWalletAddress),
 		}
 		totalValue += output.Value
 		totalValue -= feePerInput
@@ -85,7 +76,7 @@ func (s *server) mergeTransaction(splitTransactions []*serialization.PartiallySi
 	var payments []*libkaspawallet.Payment
 	if totalValue >= sentValue {
 		payments = []*libkaspawallet.Payment{{
-			Address: targetAddress,
+			Address: toAddress,
 			Amount:  sentValue,
 		}, {
 			Address: changeAddress,
@@ -95,7 +86,7 @@ func (s *server) mergeTransaction(splitTransactions []*serialization.PartiallySi
 		// sometimes the fees from compound transactions make the total output higher than what's available from selected
 		// utxos, in such cases, the remaining fee will be deduced from the resulting amount
 		payments = []*libkaspawallet.Payment{{
-			Address: targetAddress,
+			Address: toAddress,
 			Amount:  totalValue,
 		}}
 	}
@@ -109,7 +100,7 @@ func (s *server) mergeTransaction(splitTransactions []*serialization.PartiallySi
 }
 
 func (s *server) maybeSplitTransaction(transaction *serialization.PartiallySignedTransaction,
-	splitAddress util.Address) ([]*serialization.PartiallySignedTransaction, error) {
+	changeAddress util.Address) ([]*serialization.PartiallySignedTransaction, error) {
 
 	transactionMass, err := s.estimateMassAfterSignatures(transaction)
 	if err != nil {
@@ -131,7 +122,7 @@ func (s *server) maybeSplitTransaction(transaction *serialization.PartiallySigne
 		startIndex := i * inputCountPerSplit
 		endIndex := startIndex + inputCountPerSplit
 		var err error
-		splitTransactions[i], err = s.createSplitTransaction(transaction, splitAddress, startIndex, endIndex)
+		splitTransactions[i], err = s.createSplitTransaction(transaction, changeAddress, startIndex, endIndex)
 		if err != nil {
 			return nil, err
 		}

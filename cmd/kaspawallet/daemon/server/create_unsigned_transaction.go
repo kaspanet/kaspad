@@ -37,7 +37,7 @@ func (s *server) CreateUnsignedTransactions(_ context.Context, request *pb.Creat
 		return nil, err
 	}
 
-	changeAddress, _, err := s.changeAddress()
+	changeAddress, changeWalletAddress, err := s.changeAddress()
 	if err != nil {
 		return nil, err
 	}
@@ -55,7 +55,7 @@ func (s *server) CreateUnsignedTransactions(_ context.Context, request *pb.Creat
 		return nil, err
 	}
 
-	unsignedTransactions, err := s.maybeAutoCompoundTransaction(unsignedTransaction)
+	unsignedTransactions, err := s.maybeAutoCompoundTransaction(unsignedTransaction, toAddress, changeAddress, changeWalletAddress)
 	if err != nil {
 		return nil, err
 	}
