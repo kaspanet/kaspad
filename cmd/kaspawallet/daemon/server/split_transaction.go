@@ -121,6 +121,9 @@ func (s *server) maybeSplitTransaction(transaction *serialization.PartiallySigne
 		splitCount++
 	}
 	inputCountPerSplit := len(transaction.Tx.Inputs) / splitCount
+	if len(transaction.Tx.Inputs)%splitCount > 0 {
+		splitCount++
+	}
 
 	splitTransactions := make([]*serialization.PartiallySignedTransaction, splitCount)
 	for i := 0; i < splitCount; i++ {
@@ -139,18 +142,18 @@ func (s *server) maybeSplitTransaction(transaction *serialization.PartiallySigne
 func (s *server) createSplitTransaction(transaction *serialization.PartiallySignedTransaction,
 	changeAddress util.Address, startIndex int, endIndex int) (*serialization.PartiallySignedTransaction, error) {
 
-	selectedUTXOs := make([]*libkaspawallet.UTXO, endIndex-startIndex)
+	selectedUTXOs := make([]*libkaspawallet.UTXO, 0, endIndex-startIndex)
 	totalSompi := uint64(0)
 
-	for i := startIndex; i < endIndex; i++ {
+	for i := startIndex; i < endIndex && i < len(transaction.PartiallySignedInputs); i++ {
 		partiallySignedInput := transaction.PartiallySignedInputs[i]
-		selectedUTXOs[i-startIndex] = &libkaspawallet.UTXO{
+		selectedUTXOs = append(selectedUTXOs, &libkaspawallet.UTXO{
 			Outpoint: &transaction.Tx.Inputs[i].PreviousOutpoint,
 			UTXOEntry: utxo.NewUTXOEntry(
 				partiallySignedInput.PrevOutput.Value, partiallySignedInput.PrevOutput.ScriptPublicKey,
 				false, constants.UnacceptedDAAScore),
 			DerivationPath: partiallySignedInput.DerivationPath,
-		}
+		})
 
 		totalSompi += selectedUTXOs[i-startIndex].UTXOEntry.Amount()
 		totalSompi -= feePerInput
