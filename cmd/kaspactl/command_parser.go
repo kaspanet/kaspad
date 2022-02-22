@@ -3,6 +3,7 @@ package main
 import (
 	"reflect"
 	"strconv"
+	"strings"
 
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
@@ -149,12 +150,24 @@ func stringToValue(parameterDesc *parameterDescription, valueStr string) (reflec
 
 		value = pointer.Interface()
 
+	case reflect.Slice:
+		sliceType := parameterDesc.typeof.Elem()
+		if sliceType.Kind() != reflect.String {
+			return reflect.Value{},
+				errors.Errorf("Unsupported slice type '%s' for parameter '%s'",
+					sliceType,
+					parameterDesc.name)
+		}
+		if valueStr == "" {
+			value = []string{}
+		} else {
+			value = strings.Split(valueStr, ",")
+		}
 	// Int and uint are not supported because their size is platform-dependant
 	case reflect.Int,
 		reflect.Uint,
 		// Other types are not supported simply because they are not used in any command right now
 		// but support can be added if and when needed
-		reflect.Slice,
 		reflect.Func,
 		reflect.Interface,
 		reflect.Map,
