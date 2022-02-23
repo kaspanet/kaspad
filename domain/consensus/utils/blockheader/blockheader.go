@@ -179,9 +179,9 @@ func (bh *blockHeader) ToMutable() externalapi.MutableBlockHeader {
 	return bh.clone()
 }
 
-func (bh *blockHeader) BlockLevel() int {
+func (bh *blockHeader) BlockLevel(maxBlockLevel int) int {
 	if !bh.isBlockLevelCached {
-		bh.blockLevel = pow.BlockLevel(bh)
+		bh.blockLevel = pow.BlockLevel(bh, maxBlockLevel)
 		bh.isBlockLevelCached = true
 	}
 

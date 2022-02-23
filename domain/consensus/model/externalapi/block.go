@@ -69,7 +69,7 @@ type BaseBlockHeader interface {
 	BlueScore() uint64
 	BlueWork() *big.Int
 	PruningPoint() *DomainHash
-	BlockLevel() int
+	BlockLevel(maxBlockLevel int) int
 	Equal(other BaseBlockHeader) bool
 }
 

@@ -37,7 +37,7 @@ func mineLoop(syncerRPCClient, syncedRPCClient *rpc.Client) error {
 		}
 
 		start := time.Now()
-		const timeToPropagate = 10 * time.Second
+		const timeToPropagate = 30 * time.Second
 		select {
 		case <-syncedRPCClient.OnBlockAdded:
 		case <-time.After(timeToPropagate):

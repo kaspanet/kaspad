@@ -14,6 +14,7 @@ import (
 type blockProcessor struct {
 	genesisHash        *externalapi.DomainHash
 	targetTimePerBlock time.Duration
+	maxBlockLevel      int
 	databaseContext    model.DBManager
 	blockLogger        *blocklogger.BlockLogger
 
@@ -52,6 +53,7 @@ type blockProcessor struct {
 func New(
 	genesisHash *externalapi.DomainHash,
 	targetTimePerBlock time.Duration,
+	maxBlockLevel int,
 	databaseContext model.DBManager,
 
 	consensusStateManager model.ConsensusStateManager,
@@ -86,6 +88,7 @@ func New(
 	return &blockProcessor{
 		genesisHash:           genesisHash,
 		targetTimePerBlock:    targetTimePerBlock,
+		maxBlockLevel:         maxBlockLevel,
 		databaseContext:       databaseContext,
 		blockLogger:           blocklogger.NewBlockLogger(),
 		pruningManager:        pruningManager,

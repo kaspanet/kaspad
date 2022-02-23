@@ -9,7 +9,7 @@ import (
 )
 
 func (mp *mempool) fillInputsAndGetMissingParents(transaction *externalapi.DomainTransaction) (
-	parents model.OutpointToTransactionMap, missingOutpoints []*externalapi.DomainOutpoint, err error) {
+	parents model.IDToTransactionMap, missingOutpoints []*externalapi.DomainOutpoint, err error) {
 
 	parentsInPool := mp.transactionsPool.getParentTransactionsInPool(transaction)
 
@@ -34,9 +34,9 @@ func (mp *mempool) fillInputsAndGetMissingParents(transaction *externalapi.Domai
 	return parentsInPool, nil, nil
 }
 
-func fillInputs(transaction *externalapi.DomainTransaction, parentsInPool model.OutpointToTransactionMap) {
+func fillInputs(transaction *externalapi.DomainTransaction, parentsInPool model.IDToTransactionMap) {
 	for _, input := range transaction.Inputs {
-		parent, ok := parentsInPool[input.PreviousOutpoint]
+		parent, ok := parentsInPool[input.PreviousOutpoint.TransactionID]
 		if !ok {
 			continue
 		}

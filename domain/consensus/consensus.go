@@ -144,14 +144,6 @@ func (s *consensus) PruningPointAndItsAnticone() ([]*externalapi.DomainHash, err
 	return s.pruningManager.PruningPointAndItsAnticone()
 }
 
-// TODO: Remove this method once v3 is obsolete
-func (s *consensus) BlockWithTrustedData(blockHash *externalapi.DomainHash) (*externalapi.BlockWithTrustedData, error) {
-	s.lock.Lock()
-	defer s.lock.Unlock()
-
-	return s.pruningManager.BlockWithTrustedData(model.NewStagingArea(), blockHash)
-}
-
 // BuildBlock builds a block over the current state, with the transactions
 // selected by the given transactionSelector
 func (s *consensus) BuildBlock(coinbaseData *externalapi.DomainCoinbaseData,
@@ -190,7 +182,12 @@ func (s *consensus) ValidateTransactionAndPopulateWithConsensusData(transaction 
 		return err
 	}
 
-	err = s.transactionValidator.ValidateTransactionInContextIgnoringUTXO(stagingArea, transaction, model.VirtualBlockHash)
+	virtualPastMedianTime, err := s.pastMedianTimeManager.PastMedianTime(stagingArea, model.VirtualBlockHash)
+	if err != nil {
+		return err
+	}
+
+	err = s.transactionValidator.ValidateTransactionInContextIgnoringUTXO(stagingArea, transaction, model.VirtualBlockHash, virtualPastMedianTime)
 	if err != nil {
 		return err
 	}
@@ -741,24 +738,27 @@ func (s *consensus) ValidatePruningPointProof(pruningPointProof *externalapi.Pru
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	return s.pruningProofManager.ValidatePruningPointProof(pruningPointProof)
+	log.Infof("Validating the pruning point proof")
+	err := s.pruningProofManager.ValidatePruningPointProof(pruningPointProof)
+	if err != nil {
+		return err
+	}
+
+	log.Infof("Done validating the pruning point proof")
+	return nil
 }
 
 func (s *consensus) ApplyPruningPointProof(pruningPointProof *externalapi.PruningPointProof) error {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	stagingArea := model.NewStagingArea()
-	err := s.pruningProofManager.ApplyPruningPointProof(stagingArea, pruningPointProof)
+	log.Infof("Applying the pruning point proof")
+	err := s.pruningProofManager.ApplyPruningPointProof(pruningPointProof)
 	if err != nil {
 		return err
 	}
 
-	err = staging.CommitAllChanges(s.databaseContext, stagingArea)
-	if err != nil {
-		return err
-	}
-
+	log.Infof("Done applying the pruning point proof")
 	return nil
 }
 

@@ -9,15 +9,16 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
 	"github.com/pkg/errors"
+	"time"
 )
 
-func (flow *handleIBDFlow) ibdWithHeadersProof(highHash *externalapi.DomainHash) error {
+func (flow *handleIBDFlow) ibdWithHeadersProof(highHash *externalapi.DomainHash, highBlockDAAScore uint64) error {
 	err := flow.Domain().InitStagingConsensus()
 	if err != nil {
 		return err
 	}
 
-	err = flow.downloadHeadersAndPruningUTXOSet(highHash)
+	err = flow.downloadHeadersAndPruningUTXOSet(highHash, highBlockDAAScore)
 	if err != nil {
 		if !flow.IsRecoverableError(err) {
 			return err
@@ -87,7 +88,7 @@ func (flow *handleIBDFlow) syncAndValidatePruningPointProof() (*externalapi.Doma
 	if err != nil {
 		return nil, err
 	}
-	message, err := flow.incomingRoute.DequeueWithTimeout(common.DefaultTimeout)
+	message, err := flow.incomingRoute.DequeueWithTimeout(10 * time.Minute)
 	if err != nil {
 		return nil, err
 	}
@@ -113,7 +114,7 @@ func (flow *handleIBDFlow) syncAndValidatePruningPointProof() (*externalapi.Doma
 	return consensushashing.HeaderHash(pruningPointProof.Headers[0][len(pruningPointProof.Headers[0])-1]), nil
 }
 
-func (flow *handleIBDFlow) downloadHeadersAndPruningUTXOSet(highHash *externalapi.DomainHash) error {
+func (flow *handleIBDFlow) downloadHeadersAndPruningUTXOSet(highHash *externalapi.DomainHash, highBlockDAAScore uint64) error {
 	proofPruningPoint, err := flow.syncAndValidatePruningPointProof()
 	if err != nil {
 		return err
@@ -130,7 +131,7 @@ func (flow *handleIBDFlow) downloadHeadersAndPruningUTXOSet(highHash *externalap
 		return protocolerrors.Errorf(true, "the genesis pruning point violates finality")
 	}
 
-	err = flow.syncPruningPointFutureHeaders(flow.Domain().StagingConsensus(), proofPruningPoint, highHash)
+	err = flow.syncPruningPointFutureHeaders(flow.Domain().StagingConsensus(), proofPruningPoint, highHash, highBlockDAAScore)
 	if err != nil {
 		return err
 	}
