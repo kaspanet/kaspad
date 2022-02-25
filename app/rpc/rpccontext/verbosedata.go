@@ -56,21 +56,29 @@ func (ctx *Context) PopulateBlockWithVerboseData(block *appmessage.RPCBlock, dom
 			"invalid block")
 	}
 
-	_, selectedParentHash, childrenHashes, err := ctx.Domain.Consensus().GetBlockRelations(blockHash)
+	_, childrenHashes, err := ctx.Domain.Consensus().GetBlockRelations(blockHash)
+	if err != nil {
+		return err
+	}
+
+	isChainBlock, err := ctx.Domain.Consensus().IsChainBlock(blockHash)
 	if err != nil {
 		return err
 	}
 
 	block.VerboseData = &appmessage.RPCBlockVerboseData{
-		Hash:           blockHash.String(),
-		Difficulty:     ctx.GetDifficultyRatio(domainBlockHeader.Bits(), ctx.Config.ActiveNetParams),
-		ChildrenHashes: hashes.ToStrings(childrenHashes),
-		IsHeaderOnly:   blockInfo.BlockStatus == externalapi.StatusHeaderOnly,
-		BlueScore:      blockInfo.BlueScore,
+		Hash:                blockHash.String(),
+		Difficulty:          ctx.GetDifficultyRatio(domainBlockHeader.Bits(), ctx.Config.ActiveNetParams),
+		ChildrenHashes:      hashes.ToStrings(childrenHashes),
+		IsHeaderOnly:        blockInfo.BlockStatus == externalapi.StatusHeaderOnly,
+		BlueScore:           blockInfo.BlueScore,
+		MergeSetBluesHashes: hashes.ToStrings(blockInfo.MergeSetBlues),
+		MergeSetRedsHashes:  hashes.ToStrings(blockInfo.MergeSetReds),
+		IsChainBlock:        isChainBlock,
 	}
 	// selectedParentHash will be nil in the genesis block
-	if selectedParentHash != nil {
-		block.VerboseData.SelectedParentHash = selectedParentHash.String()
+	if blockInfo.SelectedParent != nil {
+		block.VerboseData.SelectedParentHash = blockInfo.SelectedParent.String()
 	}
 
 	if blockInfo.BlockStatus == externalapi.StatusHeaderOnly {

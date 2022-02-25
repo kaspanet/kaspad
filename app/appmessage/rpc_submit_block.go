@@ -92,11 +92,14 @@ type RPCBlockLevelParents struct {
 
 // RPCBlockVerboseData holds verbose data about a block
 type RPCBlockVerboseData struct {
-	Hash               string
-	Difficulty         float64
-	SelectedParentHash string
-	TransactionIDs     []string
-	IsHeaderOnly       bool
-	BlueScore          uint64
-	ChildrenHashes     []string
+	Hash                string
+	Difficulty          float64
+	SelectedParentHash  string
+	TransactionIDs      []string
+	IsHeaderOnly        bool
+	BlueScore           uint64
+	ChildrenHashes      []string
+	MergeSetBluesHashes []string
+	MergeSetRedsHashes  []string
+	IsChainBlock        bool
 }

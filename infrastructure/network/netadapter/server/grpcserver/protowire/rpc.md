@@ -79,6 +79,9 @@
     - [GetUtxosByAddressesResponseMessage](#protowire.GetUtxosByAddressesResponseMessage)
     - [GetBalanceByAddressRequestMessage](#protowire.GetBalanceByAddressRequestMessage)
     - [GetBalanceByAddressResponseMessage](#protowire.GetBalanceByAddressResponseMessage)
+    - [GetBalancesByAddressesRequestMessage](#protowire.GetBalancesByAddressesRequestMessage)
+    - [BalancesByAddressEntry](#protowire.BalancesByAddressEntry)
+    - [GetBalancesByAddressesResponseMessage](#protowire.GetBalancesByAddressesResponseMessage)
     - [GetVirtualSelectedParentBlueScoreRequestMessage](#protowire.GetVirtualSelectedParentBlueScoreRequestMessage)
     - [GetVirtualSelectedParentBlueScoreResponseMessage](#protowire.GetVirtualSelectedParentBlueScoreResponseMessage)
     - [NotifyVirtualSelectedParentBlueScoreChangedRequestMessage](#protowire.NotifyVirtualSelectedParentBlueScoreChangedRequestMessage)
@@ -211,6 +214,9 @@ Receivers of any ResponseMessage are expected to check whether its error field i
 | isHeaderOnly | [bool](#bool) |  |  |
 | blueScore | [uint64](#uint64) |  |  |
 | childrenHashes | [string](#string) | repeated |  |
+| mergeSetBluesHashes | [string](#string) | repeated |  |
+| mergeSetRedsHashes | [string](#string) | repeated |  |
+| isChainBlock | [bool](#bool) |  |  |
 
 
 
@@ -410,6 +416,7 @@ See: GetBlockTemplateRequestMessage
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | block | [RpcBlock](#protowire.RpcBlock) |  |  |
+| allowNonDAABlocks | [bool](#bool) |  |  |
 
 
 
@@ -1321,6 +1328,54 @@ This call is only available when this kaspad was started with `--utxoindex`
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | balance | [uint64](#uint64) |  |  |
+| error | [RPCError](#protowire.RPCError) |  |  |
+
+
+
+
+
+
+<a name="protowire.GetBalancesByAddressesRequestMessage"></a>
+
+### GetBalancesByAddressesRequestMessage
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| addresses | [string](#string) | repeated |  |
+
+
+
+
+
+
+<a name="protowire.BalancesByAddressEntry"></a>
+
+### BalancesByAddressEntry
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| address | [string](#string) |  |  |
+| balance | [uint64](#uint64) |  |  |
+| error | [RPCError](#protowire.RPCError) |  |  |
+
+
+
+
+
+
+<a name="protowire.GetBalancesByAddressesResponseMessage"></a>
+
+### GetBalancesByAddressesResponseMessage
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| entries | [BalancesByAddressEntry](#protowire.BalancesByAddressEntry) | repeated |  |
 | error | [RPCError](#protowire.RPCError) |  |  |
 
 
