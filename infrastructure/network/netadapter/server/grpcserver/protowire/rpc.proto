@@ -52,6 +52,9 @@ message RpcBlockVerboseData{
   bool isHeaderOnly = 15;
   uint64 blueScore = 16;
   repeated string childrenHashes = 17;
+  repeated string mergeSetBluesHashes = 18;
+  repeated string mergeSetRedsHashes = 19;
+  bool isChainBlock = 20;
 }
 
 message RpcTransaction {

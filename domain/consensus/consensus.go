@@ -286,13 +286,15 @@ func (s *consensus) GetBlockInfo(blockHash *externalapi.DomainHash) (*externalap
 
 	blockInfo.BlueScore = ghostdagData.BlueScore()
 	blockInfo.BlueWork = ghostdagData.BlueWork()
+	blockInfo.SelectedParent = ghostdagData.SelectedParent()
+	blockInfo.MergeSetBlues = ghostdagData.MergeSetBlues()
+	blockInfo.MergeSetReds = ghostdagData.MergeSetReds()
 
 	return blockInfo, nil
 }
 
 func (s *consensus) GetBlockRelations(blockHash *externalapi.DomainHash) (
-	parents []*externalapi.DomainHash, selectedParent *externalapi.DomainHash,
-	children []*externalapi.DomainHash, err error) {
+	parents []*externalapi.DomainHash, children []*externalapi.DomainHash, err error) {
 
 	s.lock.Lock()
 	defer s.lock.Unlock()
@@ -301,15 +303,10 @@ func (s *consensus) GetBlockRelations(blockHash *externalapi.DomainHash) (
 
 	blockRelation, err := s.blockRelationStores[0].BlockRelation(s.databaseContext, stagingArea, blockHash)
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, nil, err
 	}
 
-	blockGHOSTDAGData, err := s.ghostdagDataStores[0].Get(s.databaseContext, stagingArea, blockHash, false)
-	if err != nil {
-		return nil, nil, nil, err
-	}
-
-	return blockRelation.Parents, blockGHOSTDAGData.SelectedParent(), blockRelation.Children, nil
+	return blockRelation.Parents, blockRelation.Children, nil
 }
 
 func (s *consensus) GetBlockAcceptanceData(blockHash *externalapi.DomainHash) (externalapi.AcceptanceData, error) {
@@ -823,4 +820,17 @@ func (s *consensus) TrustedGHOSTDAGData(blockHash *externalapi.DomainHash) (*ext
 	}
 
 	return ghostdagData, nil
+}
+
+func (s *consensus) IsChainBlock(blockHash *externalapi.DomainHash) (bool, error) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	stagingArea := model.NewStagingArea()
+	virtualGHOSTDAGData, err := s.ghostdagDataStores[0].Get(s.databaseContext, stagingArea, model.VirtualBlockHash, false)
+	if err != nil {
+		return false, err
+	}
+
+	return s.dagTopologyManagers[0].IsInSelectedParentChainOf(stagingArea, blockHash, virtualGHOSTDAGData.SelectedParent())
 }
