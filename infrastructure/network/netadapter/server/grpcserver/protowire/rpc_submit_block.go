@@ -193,24 +193,30 @@ func (x *RpcBlockVerboseData) toAppMessage() (*appmessage.RPCBlockVerboseData, e
 		return nil, errors.Wrapf(errorNil, "RpcBlockVerboseData is nil")
 	}
 	return &appmessage.RPCBlockVerboseData{
-		Hash:               x.Hash,
-		Difficulty:         x.Difficulty,
-		SelectedParentHash: x.SelectedParentHash,
-		TransactionIDs:     x.TransactionIds,
-		IsHeaderOnly:       x.IsHeaderOnly,
-		BlueScore:          x.BlueScore,
-		ChildrenHashes:     x.ChildrenHashes,
+		Hash:                x.Hash,
+		Difficulty:          x.Difficulty,
+		SelectedParentHash:  x.SelectedParentHash,
+		TransactionIDs:      x.TransactionIds,
+		IsHeaderOnly:        x.IsHeaderOnly,
+		BlueScore:           x.BlueScore,
+		ChildrenHashes:      x.ChildrenHashes,
+		MergeSetBluesHashes: x.MergeSetBluesHashes,
+		MergeSetRedsHashes:  x.MergeSetRedsHashes,
+		IsChainBlock:        x.IsChainBlock,
 	}, nil
 }
 
 func (x *RpcBlockVerboseData) fromAppMessage(message *appmessage.RPCBlockVerboseData) {
 	*x = RpcBlockVerboseData{
-		Hash:               message.Hash,
-		Difficulty:         message.Difficulty,
-		SelectedParentHash: message.SelectedParentHash,
-		TransactionIds:     message.TransactionIDs,
-		IsHeaderOnly:       message.IsHeaderOnly,
-		BlueScore:          message.BlueScore,
-		ChildrenHashes:     message.ChildrenHashes,
+		Hash:                message.Hash,
+		Difficulty:          message.Difficulty,
+		SelectedParentHash:  message.SelectedParentHash,
+		TransactionIds:      message.TransactionIDs,
+		IsHeaderOnly:        message.IsHeaderOnly,
+		BlueScore:           message.BlueScore,
+		ChildrenHashes:      message.ChildrenHashes,
+		MergeSetBluesHashes: message.MergeSetBluesHashes,
+		MergeSetRedsHashes:  message.MergeSetRedsHashes,
+		IsChainBlock:        message.IsChainBlock,
 	}
 }
