@@ -16,9 +16,12 @@ type BlockInfo struct {
 // Clone returns a clone of BlockInfo
 func (bi *BlockInfo) Clone() *BlockInfo {
 	return &BlockInfo{
-		Exists:      bi.Exists,
-		BlockStatus: bi.BlockStatus.Clone(),
-		BlueScore:   bi.BlueScore,
-		BlueWork:    new(big.Int).Set(bi.BlueWork),
+		Exists:         bi.Exists,
+		BlockStatus:    bi.BlockStatus.Clone(),
+		BlueScore:      bi.BlueScore,
+		BlueWork:       new(big.Int).Set(bi.BlueWork),
+		SelectedParent: bi.SelectedParent,
+		MergeSetBlues:  CloneHashes(bi.MergeSetBlues),
+		MergeSetReds:   CloneHashes(bi.MergeSetReds),
 	}
 }
