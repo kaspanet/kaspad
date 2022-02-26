@@ -995,7 +995,10 @@ func (pm *pruningManager) ExpectedHeaderPruningPoint(stagingArea *model.StagingA
 		return nil, err
 	}
 
-	if hasPruningPointInItsSelectedChain && pm.finalityScore(ghostdagData.BlueScore()) > pm.finalityScore(selectedParentPruningPointHeader.BlueScore()+pm.pruningDepth) {
+	minRequiredBlueScoreForNextPruningPoint := (pm.finalityScore(selectedParentPruningPointHeader.BlueScore()) + 1) * pm.finalityInterval
+
+	if hasPruningPointInItsSelectedChain &&
+		minRequiredBlueScoreForNextPruningPoint+pm.pruningDepth <= ghostdagData.BlueScore() {
 		var suggestedLowHash *externalapi.DomainHash
 		hasReachabilityData, err := pm.reachabilityDataStore.HasReachabilityData(pm.databaseContext, stagingArea, selectedParentHeader.PruningPoint())
 		if err != nil {
