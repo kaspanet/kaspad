@@ -47,6 +47,10 @@ func (m *mocTransactionsRelayContext) EnqueueTransactionIDsForPropagation(transa
 func (m *mocTransactionsRelayContext) OnTransactionAddedToMempool() {
 }
 
+func (m *mocTransactionsRelayContext) IsIBDRunning() bool {
+	return false
+}
+
 // TestHandleRelayedTransactionsNotFound tests the flow of  HandleRelayedTransactions when the peer doesn't
 // have the requested transactions in the mempool.
 func TestHandleRelayedTransactionsNotFound(t *testing.T) {

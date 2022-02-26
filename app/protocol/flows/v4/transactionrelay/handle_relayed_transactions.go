@@ -22,6 +22,7 @@ type TransactionsRelayContext interface {
 	SharedRequestedTransactions() *flowcontext.SharedRequestedTransactions
 	OnTransactionAddedToMempool()
 	EnqueueTransactionIDsForPropagation(transactionIDs []*externalapi.DomainTransactionID) error
+	IsIBDRunning() bool
 }
 
 type handleRelayedTransactionsFlow struct {
@@ -47,6 +48,10 @@ func (flow *handleRelayedTransactionsFlow) start() error {
 		inv, err := flow.readInv()
 		if err != nil {
 			return err
+		}
+
+		if flow.IsIBDRunning() {
+			continue
 		}
 
 		requestedIDs, err := flow.requestInvTransactions(inv)
