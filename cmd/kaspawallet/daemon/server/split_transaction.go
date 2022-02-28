@@ -58,6 +58,9 @@ func (s *server) mergeTransaction(
 ) (*serialization.PartiallySignedTransaction, error) {
 	numOutputs := len(originalTransaction.Tx.Outputs)
 	if numOutputs > 2 || numOutputs == 0 {
+		// This is a sanity check to make sure originalTransaction has either 1 or 2 outputs:
+		// 1. For the payment itself
+		// 2. (optional) for change
 		return nil, errors.Errorf("original transaction has %d outputs, while 1 or 2 are expected",
 			len(originalTransaction.Tx.Outputs))
 	}
