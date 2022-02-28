@@ -85,12 +85,12 @@ func (s *server) mergeTransaction(
 	if totalValue < sentValue {
 		// sometimes the fees from compound transactions make the total output higher than what's available from selected
 		// utxos, in such cases - find one more UTXO and use it.
-		oneMoreUTXO, err := s.oneMoreUTXOForMergeTransaction(utxos, sentValue-totalValue)
+		additionalUTXOs, totalValueAdded, err := s.moreUTXOsForMergeTransaction(utxos, sentValue-totalValue)
 		if err != nil {
 			return nil, err
 		}
-		utxos = append(utxos, oneMoreUTXO)
-		totalValue += oneMoreUTXO.UTXOEntry.Amount()
+		utxos = append(utxos, additionalUTXOs...)
+		totalValue += totalValueAdded
 	}
 
 	payments := []*libkaspawallet.Payment{{
@@ -209,19 +209,17 @@ func (s *server) estimateMassAfterSignatures(transaction *serialization.Partiall
 	return s.txMassCalculator.CalculateTransactionMass(transactionWithSignatures), nil
 }
 
-func (s *server) oneMoreUTXOForMergeTransaction(alreadySelectedUTXOs []*libkaspawallet.UTXO, requiredAmount uint64) (*libkaspawallet.UTXO, error) {
+func (s *server) moreUTXOsForMergeTransaction(alreadySelectedUTXOs []*libkaspawallet.UTXO, requiredAmount uint64) (
+	additionalUTXOs []*libkaspawallet.UTXO, totalValueAdded uint64, err error) {
+
 	dagInfo, err := s.rpcClient.GetBlockDAGInfo()
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 
-	var utxo *walletUTXO
-	for _, utxo = range s.utxosSortedByAmount {
+	for _, utxo := range s.utxosSortedByAmount {
 		if !isUTXOSpendable(utxo, dagInfo.VirtualDAAScore, s.params.BlockCoinbaseMaturity) {
 			continue
-		}
-		if utxo.UTXOEntry.Amount() < requiredAmount+feePerInput {
-			return nil, errors.Errorf("Insufficient funds for merge transaction")
 		}
 		for _, alreadySelectedUTXO := range alreadySelectedUTXOs {
 			if alreadySelectedUTXO.Outpoint.Equal(utxo.Outpoint) {
@@ -229,11 +227,18 @@ func (s *server) oneMoreUTXOForMergeTransaction(alreadySelectedUTXOs []*libkaspa
 				continue
 			}
 		}
-		break
+		additionalUTXOs = append(additionalUTXOs, &libkaspawallet.UTXO{
+			Outpoint:       utxo.Outpoint,
+			UTXOEntry:      utxo.UTXOEntry,
+			DerivationPath: s.walletAddressPath(utxo.address)})
+		totalValueAdded += utxo.UTXOEntry.Amount() - feePerInput
+		if totalValueAdded >= requiredAmount {
+			break
+		}
 	}
-	return &libkaspawallet.UTXO{
-		Outpoint:       utxo.Outpoint,
-		UTXOEntry:      utxo.UTXOEntry,
-		DerivationPath: s.walletAddressPath(utxo.address),
-	}, nil
+	if totalValueAdded < requiredAmount {
+		return nil, 0, errors.Errorf("Insufficient funds for merge transaction")
+	}
+
+	return additionalUTXOs, totalValueAdded, nil
 }
