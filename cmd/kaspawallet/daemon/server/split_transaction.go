@@ -128,6 +128,8 @@ func (s *server) maybeSplitTransaction(transaction *serialization.PartiallySigne
 	}
 	inputCountPerSplit := len(transaction.Tx.Inputs) / splitCount
 	if len(transaction.Tx.Inputs)%splitCount > 0 {
+		// note we are incrementing splitCount, and not inputCountPerSplit, since incrementing inputCountPerSplit
+		// might make the transaction mass too high
 		splitCount++
 	}
 
