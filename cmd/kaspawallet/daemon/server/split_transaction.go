@@ -208,3 +208,32 @@ func (s *server) estimateMassAfterSignatures(transaction *serialization.Partiall
 
 	return s.txMassCalculator.CalculateTransactionMass(transactionWithSignatures), nil
 }
+
+func (s *server) oneMoreUTXOForMergeTransaction(alreadySelectedUTXOs []*libkaspawallet.UTXO, requiredAmount uint64) (*libkaspawallet.UTXO, error) {
+	dagInfo, err := s.rpcClient.GetBlockDAGInfo()
+	if err != nil {
+		return nil, err
+	}
+
+	var utxo *walletUTXO
+	for _, utxo = range s.utxosSortedByAmount {
+		if !isUTXOSpendable(utxo, dagInfo.VirtualDAAScore, s.params.BlockCoinbaseMaturity) {
+			continue
+		}
+		if utxo.UTXOEntry.Amount() < requiredAmount+feePerInput {
+			return nil, errors.Errorf("Insufficient funds for merge transaction")
+		}
+		for _, alreadySelectedUTXO := range alreadySelectedUTXOs {
+			if alreadySelectedUTXO.Outpoint.Equal(utxo.Outpoint) {
+				// comparing outpoints should be sufficient as they are unique per utxo entry
+				continue
+			}
+		}
+		break
+	}
+	return &libkaspawallet.UTXO{
+		Outpoint:       utxo.Outpoint,
+		UTXOEntry:      utxo.UTXOEntry,
+		DerivationPath: s.walletAddressPath(utxo.address),
+	}, nil
+}
