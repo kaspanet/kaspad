@@ -14,6 +14,12 @@ import (
 	"github.com/kaspanet/kaspad/util"
 )
 
+// maybeAutoCompoundTransaction checks if a transaction's mass is higher that what is allowed for a standard
+// transaction.
+// If it is - the transaction is split into multiple transactions, each with a portion of the inputs and a single output
+// into a change address.
+// An additional `mergeTransaction` is generated - which merges the outputs of the above splits into a single output
+// paying to the original transaction's payee.
 func (s *server) maybeAutoCompoundTransaction(transactionBytes []byte, toAddress util.Address,
 	changeAddress util.Address, changeWalletAddress *walletAddress) ([][]byte, error) {
 	transaction, err := serialization.DeserializePartiallySignedTransaction(transactionBytes)
