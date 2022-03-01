@@ -15,6 +15,7 @@ const (
 	createUnsignedTransactionSubCmd = "create-unsigned-transaction"
 	signSubCmd                      = "sign"
 	broadcastSubCmd                 = "broadcast"
+	parseSubCmd                     = "parse"
 	showAddressesSubCmd             = "show-addresses"
 	newAddressSubCmd                = "new-address"
 	dumpUnencryptedDataSubCmd       = "dump-unencrypted-data"
@@ -79,6 +80,13 @@ type broadcastConfig struct {
 	config.NetworkFlags
 }
 
+type parseConfig struct {
+	Transaction     string `long:"transaction" short:"t" description:"The transaction to parse (encoded in hex)"`
+	TransactionFile string `long:"transaction-file" short:"F" description:"The file containing the transaction to parse (encoded in hex)"`
+	Verbose         bool   `long:"verbose" short:"v" description:"Verbose: show transaction inputs"`
+	config.NetworkFlags
+}
+
 type showAddressesConfig struct {
 	DaemonAddress string `long:"daemonaddress" short:"d" description:"Wallet daemon server to connect to (default: localhost:8082)"`
 	config.NetworkFlags
@@ -132,6 +140,10 @@ func parseCommandLine() (subCommand string, config interface{}) {
 	broadcastConf := &broadcastConfig{DaemonAddress: defaultListen}
 	parser.AddCommand(broadcastSubCmd, "Broadcast the given transaction",
 		"Broadcast the given transaction", broadcastConf)
+
+	parseConf := &parseConfig{}
+	parser.AddCommand(parseSubCmd, "Parse the given transaction and print its contents",
+		"Parse the given transaction and print its contents", parseConf)
 
 	showAddressesConf := &showAddressesConfig{DaemonAddress: defaultListen}
 	parser.AddCommand(showAddressesSubCmd, "Shows all generated public addresses of the current wallet",
@@ -207,6 +219,13 @@ func parseCommandLine() (subCommand string, config interface{}) {
 			printErrorAndExit(err)
 		}
 		config = broadcastConf
+	case parseSubCmd:
+		combineNetworkFlags(&parseConf.NetworkFlags, &cfg.NetworkFlags)
+		err := parseConf.ResolveNetwork(parser)
+		if err != nil {
+			printErrorAndExit(err)
+		}
+		config = parseConf
 	case showAddressesSubCmd:
 		combineNetworkFlags(&showAddressesConf.NetworkFlags, &cfg.NetworkFlags)
 		err := showAddressesConf.ResolveNetwork(parser)

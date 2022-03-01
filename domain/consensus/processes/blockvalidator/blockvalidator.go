@@ -25,6 +25,7 @@ type blockValidator struct {
 	timestampDeviationTolerance int
 	targetTimePerBlock          time.Duration
 	ignoreHeaderMass            bool
+	maxBlockLevel               int
 
 	databaseContext       model.DBReader
 	difficultyManager     model.DifficultyManager
@@ -64,6 +65,7 @@ func New(powMax *big.Int,
 	timestampDeviationTolerance int,
 	targetTimePerBlock time.Duration,
 	ignoreHeaderMass bool,
+	maxBlockLevel int,
 
 	databaseContext model.DBReader,
 
@@ -103,6 +105,7 @@ func New(powMax *big.Int,
 		mergeSetSizeLimit:          mergeSetSizeLimit,
 		maxBlockParents:            maxBlockParents,
 		ignoreHeaderMass:           ignoreHeaderMass,
+		maxBlockLevel:              maxBlockLevel,
 
 		timestampDeviationTolerance: timestampDeviationTolerance,
 		targetTimePerBlock:          targetTimePerBlock,

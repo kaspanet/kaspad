@@ -185,6 +185,9 @@ type Params struct {
 	DisallowDirectBlocksOnTopOfGenesis bool
 
 	IgnoreHeaderMass bool
+
+	// MaxBlockLevel is the maximum possible block level.
+	MaxBlockLevel int
 }
 
 // NormalizeRPCServerAddress returns addr with the current network default
@@ -279,16 +282,20 @@ var MainnetParams = Params{
 	PruningProofM:                           defaultPruningProofM,
 	DeflationaryPhaseDaaScore:               defaultDeflationaryPhaseDaaScore,
 	DisallowDirectBlocksOnTopOfGenesis:      true,
+
+	// This is technically 255, but we clamped it at 256 - block level of mainnet genesis
+	// This means that any block that has a level lower or equal to genesis will be level 0.
+	MaxBlockLevel: 225,
 }
 
 // TestnetParams defines the network parameters for the test Kaspa network.
 var TestnetParams = Params{
 	K:           defaultGHOSTDAGK,
-	Name:        "kaspa-testnet-8",
+	Name:        "kaspa-testnet-9",
 	Net:         appmessage.Testnet,
 	RPCPort:     "16210",
 	DefaultPort: "16211",
-	DNSSeeds:    []string{"testnet-8-dnsseed.daglabs-dev.com"},
+	DNSSeeds:    []string{"testnet-9-dnsseed.daglabs-dev.com"},
 
 	// DAG parameters
 	GenesisBlock:                    &testnetGenesisBlock,
@@ -339,6 +346,8 @@ var TestnetParams = Params{
 	PruningProofM:                           defaultPruningProofM,
 	DeflationaryPhaseDaaScore:               defaultDeflationaryPhaseDaaScore,
 	IgnoreHeaderMass:                        true,
+
+	MaxBlockLevel: 250,
 }
 
 // SimnetParams defines the network parameters for the simulation test Kaspa
@@ -402,6 +411,8 @@ var SimnetParams = Params{
 	CoinbasePayloadScriptPublicKeyMaxLength: defaultCoinbasePayloadScriptPublicKeyMaxLength,
 	PruningProofM:                           defaultPruningProofM,
 	DeflationaryPhaseDaaScore:               defaultDeflationaryPhaseDaaScore,
+
+	MaxBlockLevel: 250,
 }
 
 // DevnetParams defines the network parameters for the development Kaspa network.
@@ -462,6 +473,8 @@ var DevnetParams = Params{
 	PruningProofM:                           defaultPruningProofM,
 	DeflationaryPhaseDaaScore:               defaultDeflationaryPhaseDaaScore,
 	IgnoreHeaderMass:                        true,
+
+	MaxBlockLevel: 250,
 }
 
 // ErrDuplicateNet describes an error where the parameters for a Kaspa
