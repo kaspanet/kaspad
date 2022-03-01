@@ -62,12 +62,9 @@ func (v *blockValidator) ValidateHeaderInContext(stagingArea *model.StagingArea,
 		return err
 	}
 	if !hasReachabilityData {
-		blockLevel := header.BlockLevel(v.maxBlockLevel)
-		for i := 0; i <= blockLevel; i++ {
-			err = v.reachabilityManagers[i].AddBlock(stagingArea, blockHash)
-			if err != nil {
-				return err
-			}
+		err = v.reachabilityManager.AddBlock(stagingArea, blockHash)
+		if err != nil {
+			return err
 		}
 	}
 

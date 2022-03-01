@@ -206,5 +206,21 @@ func (dtm *dagTopologyManager) ChildInSelectedParentChainOf(stagingArea *model.S
 			context, specifiedHighHash)
 	}
 
-	return dtm.reachabilityManager.FindNextAncestor(stagingArea, highHash, context)
+	children, err := dtm.Children(stagingArea, context)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, child := range children {
+		isInSelectedParentChain, err := dtm.IsInSelectedParentChainOf(stagingArea, child, highHash)
+		if err != nil {
+			return nil, err
+		}
+
+		if isInSelectedParentChain {
+			return child, nil
+		}
+	}
+
+	return nil, errors.Errorf("Couldn't find child in the selected chain of %s", highHash)
 }

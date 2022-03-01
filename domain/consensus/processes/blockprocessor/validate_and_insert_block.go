@@ -254,19 +254,7 @@ func (bp *blockProcessor) updateReachabilityReindexRoot(stagingArea *model.Stagi
 		return nil
 	}
 
-	headersSelectedTipHeader, err := bp.blockHeaderStore.BlockHeader(bp.databaseContext, stagingArea, headersSelectedTip)
-	if err != nil {
-		return err
-	}
-
-	headersSelectedTipHeaderBlockLevel := headersSelectedTipHeader.BlockLevel(bp.maxBlockLevel)
-	for blockLevel := 0; blockLevel <= headersSelectedTipHeaderBlockLevel; blockLevel++ {
-		err := bp.reachabilityManagers[blockLevel].UpdateReindexRoot(stagingArea, headersSelectedTip)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
+	return bp.reachabilityManager.UpdateReindexRoot(stagingArea, headersSelectedTip)
 }
 
 func (bp *blockProcessor) checkBlockStatus(stagingArea *model.StagingArea, block *externalapi.DomainBlock) error {

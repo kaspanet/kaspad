@@ -35,7 +35,7 @@ type consensus struct {
 	headerTipsManager     model.HeadersSelectedTipManager
 	mergeDepthManager     model.MergeDepthManager
 	pruningManager        model.PruningManager
-	reachabilityManagers  []model.ReachabilityManager
+	reachabilityManager   model.ReachabilityManager
 	finalityManager       model.FinalityManager
 	pruningProofManager   model.PruningProofManager
 
@@ -83,11 +83,9 @@ func (s *consensus) Init(skipAddingGenesis bool) error {
 	// on a node with pruned header all blocks without known parents points to it.
 	if !exists {
 		s.blockStatusStore.Stage(stagingArea, model.VirtualGenesisBlockHash, externalapi.StatusUTXOValid)
-		for _, reachabilityManager := range s.reachabilityManagers {
-			err = reachabilityManager.Init(stagingArea)
-			if err != nil {
-				return err
-			}
+		err = s.reachabilityManager.Init(stagingArea)
+		if err != nil {
+			return err
 		}
 
 		for _, dagTopologyManager := range s.dagTopologyManagers {
