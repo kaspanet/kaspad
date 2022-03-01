@@ -125,16 +125,7 @@ func (s *server) maybeSplitTransaction(transaction *serialization.PartiallySigne
 		return []*serialization.PartiallySignedTransaction{transaction}, nil
 	}
 
-	splitCount := int(transactionMass / mempool.MaximumStandardTransactionMass)
-	if transactionMass%mempool.MaximumStandardTransactionMass > 0 {
-		splitCount++
-	}
-	inputCountPerSplit := len(transaction.Tx.Inputs) / splitCount
-	if len(transaction.Tx.Inputs)%splitCount > 0 {
-		// note we are incrementing splitCount, and not inputCountPerSplit, since incrementing inputCountPerSplit
-		// might make the transaction mass too high
-		splitCount++
-	}
+	splitCount, inputCountPerSplit := s.splitAndInputPerSplitCounts(transaction, transactionMass)
 
 	splitTransactions := make([]*serialization.PartiallySignedTransaction, splitCount)
 	for i := 0; i < splitCount; i++ {
@@ -148,6 +139,29 @@ func (s *server) maybeSplitTransaction(transaction *serialization.PartiallySigne
 	}
 
 	return splitTransactions, nil
+}
+
+func (s *server) splitAndInputPerSplitCounts(transaction *serialization.PartiallySignedTransaction, transactionMass uint64) (
+	splitCount, inputPerSplitCount int) {
+	transactionWithoutInputs := transaction.Tx.Clone()
+	transactionWithoutInputs.Inputs = []*externalapi.DomainTransactionInput{}
+	massWithoutInputs := s.txMassCalculator.CalculateTransactionMass(transactionWithoutInputs)
+
+	massForInputs := transactionMass - massWithoutInputs
+
+	inputCount := len(transaction.Tx.Inputs)
+	massPerInput := massForInputs / uint64(inputCount)
+	if massForInputs%uint64(inputCount) > 0 {
+		massPerInput++
+	}
+
+	inputPerSplitCount = int((mempool.MaximumStandardTransactionMass - massWithoutInputs) / massPerInput)
+	splitCount = inputCount / inputPerSplitCount
+	if inputCount%inputPerSplitCount > 0 {
+		splitCount++
+	}
+
+	return splitCount, inputPerSplitCount
 }
 
 func (s *server) createSplitTransaction(transaction *serialization.PartiallySignedTransaction,
