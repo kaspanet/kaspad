@@ -995,6 +995,9 @@ func (pm *pruningManager) ExpectedHeaderPruningPoint(stagingArea *model.StagingA
 		return nil, err
 	}
 
+	// Note: the pruning point from the POV of the current block is the first block in its chain that is in depth of pm.pruningDepth and
+	// its finality score is greater than the previous pruning point. This is why the diff between finalityScore(selectedParent.blueScore + 1) * finalityInterval
+	// and the current block blue score is less than pm.pruningDepth we can know for sure that this block didn't trigger a pruning point change.
 	minRequiredBlueScoreForNextPruningPoint := (pm.finalityScore(selectedParentPruningPointHeader.BlueScore()) + 1) * pm.finalityInterval
 
 	if hasPruningPointInItsSelectedChain &&
