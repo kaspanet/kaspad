@@ -85,25 +85,27 @@ func (flow *handleIBDFlow) runIBDIfNotRunning(block *externalapi.DomainBlock) er
 		return err
 	}
 	log.Criticalf("Found highest shared chain block %s with peer %s", highestSharedBlockHash, flow.peer)
-	checkpoint, err := externalapi.NewDomainHashFromString("05ff0f2e1d201dcaee7c5e567cc2c1d42ca3cce9fefbd3b519dc68b5bb89d0b9")
-	if err != nil {
-		return err
-	}
-
-	info, err := flow.Domain().Consensus().GetBlockInfo(checkpoint)
-	if err != nil {
-		return err
-	}
-
-	if info.Exists {
-		isInSelectedParentChainOf, err := flow.Domain().Consensus().IsInSelectedParentChainOf(checkpoint, highestSharedBlockHash)
+	if highestSharedBlockFound {
+		checkpoint, err := externalapi.NewDomainHashFromString("05ff0f2e1d201dcaee7c5e567cc2c1d42ca3cce9fefbd3b519dc68b5bb89d0b9")
 		if err != nil {
 			return err
 		}
 
-		if !isInSelectedParentChainOf {
-			log.Criticalf("Stopped IBD because the checkpoint %s is not in the selected chain of %s", checkpoint, highestSharedBlockHash)
-			return nil
+		info, err := flow.Domain().Consensus().GetBlockInfo(checkpoint)
+		if err != nil {
+			return err
+		}
+
+		if info.Exists {
+			isInSelectedParentChainOf, err := flow.Domain().Consensus().IsInSelectedParentChainOf(checkpoint, highestSharedBlockHash)
+			if err != nil {
+				return err
+			}
+
+			if !isInSelectedParentChainOf {
+				log.Criticalf("Stopped IBD because the checkpoint %s is not in the selected chain of %s", checkpoint, highestSharedBlockHash)
+				return nil
+			}
 		}
 	}
 
