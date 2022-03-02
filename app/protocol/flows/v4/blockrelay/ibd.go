@@ -77,14 +77,35 @@ func (flow *handleIBDFlow) runIBDIfNotRunning(block *externalapi.DomainBlock) er
 	}()
 
 	highHash := consensushashing.BlockHash(block)
-	log.Debugf("IBD started with peer %s and highHash %s", flow.peer, highHash)
-	log.Debugf("Syncing blocks up to %s", highHash)
-	log.Debugf("Trying to find highest shared chain block with peer %s with high hash %s", flow.peer, highHash)
+	log.Criticalf("IBD started with peer %s and highHash %s", flow.peer, highHash)
+	log.Criticalf("Syncing blocks up to %s", highHash)
+	log.Criticalf("Trying to find highest shared chain block with peer %s with high hash %s", flow.peer, highHash)
 	highestSharedBlockHash, highestSharedBlockFound, err := flow.findHighestSharedBlockHash(highHash)
 	if err != nil {
 		return err
 	}
-	log.Debugf("Found highest shared chain block %s with peer %s", highestSharedBlockHash, flow.peer)
+	log.Criticalf("Found highest shared chain block %s with peer %s", highestSharedBlockHash, flow.peer)
+	checkpoint, err := externalapi.NewDomainHashFromString("05ff0f2e1d201dcaee7c5e567cc2c1d42ca3cce9fefbd3b519dc68b5bb89d0b9")
+	if err != nil {
+		return err
+	}
+
+	info, err := flow.Domain().Consensus().GetBlockInfo(checkpoint)
+	if err != nil {
+		return err
+	}
+
+	if info.Exists {
+		isInSelectedParentChainOf, err := flow.Domain().Consensus().IsInSelectedParentChainOf(checkpoint, highestSharedBlockHash)
+		if err != nil {
+			return err
+		}
+
+		if !isInSelectedParentChainOf {
+			log.Criticalf("Stopped IBD because the checkpoint %s is not in the selected chain of %s", checkpoint, highestSharedBlockHash)
+			return nil
+		}
+	}
 
 	shouldDownloadHeadersProof, shouldSync, err := flow.shouldSyncAndShouldDownloadHeadersProof(block, highestSharedBlockFound)
 	if err != nil {
@@ -308,6 +329,7 @@ func (flow *handleIBDFlow) syncPruningPointFutureHeaders(consensus externalapi.C
 		}
 	})
 
+	count := 0
 	for {
 		select {
 		case ibdBlocksMessage, ok := <-blockHeadersMessageChan:
@@ -324,9 +346,25 @@ func (flow *handleIBDFlow) syncPruningPointFutureHeaders(consensus externalapi.C
 				return nil
 			}
 			for _, header := range ibdBlocksMessage.BlockHeaders {
-				err = flow.processHeader(consensus, header)
+				added, err := flow.processHeader(consensus, header)
 				if err != nil {
 					return err
+				}
+
+				if added {
+					count++
+					log.Criticalf("LALA %d Accepted header %s DAA score %d blue score %d Arrived at %d ( %s ) timestamp %d ( %s ) diff %d ( %s )",
+						count,
+						header.BlockHash(),
+						header.DAAScore,
+						header.BlueScore,
+						time.Now().UnixMilli(),
+						time.Now(),
+						header.Timestamp.UnixMilliseconds(),
+						header.Timestamp,
+						time.Now().UnixMilli()-header.Timestamp.UnixMilliseconds(),
+						time.Millisecond*time.Duration(time.Now().UnixMilli()-header.Timestamp.UnixMilliseconds()),
+					)
 				}
 			}
 
@@ -365,7 +403,7 @@ func (flow *handleIBDFlow) receiveHeaders() (msgIBDBlock *appmessage.BlockHeader
 	}
 }
 
-func (flow *handleIBDFlow) processHeader(consensus externalapi.Consensus, msgBlockHeader *appmessage.MsgBlockHeader) error {
+func (flow *handleIBDFlow) processHeader(consensus externalapi.Consensus, msgBlockHeader *appmessage.MsgBlockHeader) (bool, error) {
 	header := appmessage.BlockHeaderToDomainBlockHeader(msgBlockHeader)
 	block := &externalapi.DomainBlock{
 		Header:       header,
@@ -375,27 +413,26 @@ func (flow *handleIBDFlow) processHeader(consensus externalapi.Consensus, msgBlo
 	blockHash := consensushashing.BlockHash(block)
 	blockInfo, err := consensus.GetBlockInfo(blockHash)
 	if err != nil {
-		return err
+		return false, err
 	}
 	if blockInfo.Exists {
 		log.Debugf("Block header %s is already in the DAG. Skipping...", blockHash)
-		return nil
+		return false, nil
 	}
 	_, err = consensus.ValidateAndInsertBlock(block, false)
 	if err != nil {
 		if !errors.As(err, &ruleerrors.RuleError{}) {
-			return errors.Wrapf(err, "failed to process header %s during IBD", blockHash)
+			return false, errors.Wrapf(err, "failed to process header %s during IBD", blockHash)
 		}
 
 		if errors.Is(err, ruleerrors.ErrDuplicateBlock) {
 			log.Debugf("Skipping block header %s as it is a duplicate", blockHash)
 		} else {
 			log.Infof("Rejected block header %s from %s during IBD: %s", blockHash, flow.peer, err)
-			return protocolerrors.Wrapf(true, err, "got invalid block header %s during IBD", blockHash)
+			return false, protocolerrors.Wrapf(true, err, "got invalid block header %s during IBD", blockHash)
 		}
 	}
-
-	return nil
+	return true, nil
 }
 
 func (flow *handleIBDFlow) validatePruningPointFutureHeaderTimestamps() error {
