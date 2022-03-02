@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"encoding/hex"
 	"fmt"
 
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/daemon/client"
@@ -30,8 +29,6 @@ func createUnsignedTransaction(conf *createUnsignedTransactionConfig) error {
 	}
 
 	fmt.Println("Created unsigned transaction")
-	for _, unsignedTransaction := range response.UnsignedTransactions {
-		fmt.Println(hex.EncodeToString(unsignedTransaction))
-	}
+	fmt.Println(encodeTransactionsToHex(response.UnsignedTransactions))
 	return nil
 }
