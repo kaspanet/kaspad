@@ -346,25 +346,9 @@ func (flow *handleIBDFlow) syncPruningPointFutureHeaders(consensus externalapi.C
 				return nil
 			}
 			for _, header := range ibdBlocksMessage.BlockHeaders {
-				added, err := flow.processHeader(consensus, header)
+				_, err := flow.processHeader(consensus, header)
 				if err != nil {
 					return err
-				}
-
-				if added {
-					count++
-					log.Criticalf("LALA %d Accepted header %s DAA score %d blue score %d Arrived at %d ( %s ) timestamp %d ( %s ) diff %d ( %s )",
-						count,
-						header.BlockHash(),
-						header.DAAScore,
-						header.BlueScore,
-						time.Now().UnixMilli(),
-						time.Now(),
-						header.Timestamp.UnixMilliseconds(),
-						header.Timestamp,
-						time.Now().UnixMilli()-header.Timestamp.UnixMilliseconds(),
-						time.Millisecond*time.Duration(time.Now().UnixMilli()-header.Timestamp.UnixMilliseconds()),
-					)
 				}
 			}
 
