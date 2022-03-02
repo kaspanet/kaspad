@@ -329,7 +329,6 @@ func (flow *handleIBDFlow) syncPruningPointFutureHeaders(consensus externalapi.C
 		}
 	})
 
-	count := 0
 	for {
 		select {
 		case ibdBlocksMessage, ok := <-blockHeadersMessageChan:
