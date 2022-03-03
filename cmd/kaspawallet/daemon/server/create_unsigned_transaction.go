@@ -41,10 +41,12 @@ func (s *server) createUnsignedTransactions(address string, amount uint64) ([][]
 		return nil, err
 	}
 
-	var fromAddress util.Address
-	fromAddress, err = util.DecodeAddress(request.From, s.params.Prefix)
-	if err != nil {
-		return nil, err
+	var fromAddress util.Address = nil
+	if request.From != "" {
+		fromAddress, err = util.DecodeAddress(request.From, s.params.Prefix)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	selectedUTXOs, changeSompi, err := s.selectUTXOs(amount, feePerInput)
