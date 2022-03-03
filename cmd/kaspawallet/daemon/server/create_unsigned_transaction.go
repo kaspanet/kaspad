@@ -41,6 +41,12 @@ func (s *server) createUnsignedTransactions(address string, amount uint64) ([][]
 		return nil, err
 	}
 
+	var fromAddress util.Address
+	fromAddress, err = util.DecodeAddress(request.From, s.params.Prefix)
+	if err != nil {
+		return nil, err
+	}
+
 	selectedUTXOs, changeSompi, err := s.selectUTXOs(amount, feePerInput)
 	if err != nil {
 		return nil, err
@@ -71,7 +77,7 @@ func (s *server) createUnsignedTransactions(address string, amount uint64) ([][]
 	return unsignedTransactions, nil
 }
 
-func (s *server) selectUTXOs(spendAmount uint64, feePerInput uint64) (
+func (s *server) selectUTXOs(spendAmount uint64, feePerInput uint64, from util.Address) (
 	selectedUTXOs []*libkaspawallet.UTXO, changeSompi uint64, err error) {
 
 	selectedUTXOs = []*libkaspawallet.UTXO{}
@@ -83,7 +89,9 @@ func (s *server) selectUTXOs(spendAmount uint64, feePerInput uint64) (
 	}
 
 	for _, utxo := range s.utxosSortedByAmount {
-		if !isUTXOSpendable(utxo, dagInfo.VirtualDAAScore, s.params.BlockCoinbaseMaturity) {
+		addr, err := s.walletAddressString(utxo.address)
+		if err != nil || (from != nil && addr != from.String()) ||
+			!isUTXOSpendable(utxo, dagInfo.VirtualDAAScore, s.params.BlockCoinbaseMaturity) {
 			continue
 		}
 

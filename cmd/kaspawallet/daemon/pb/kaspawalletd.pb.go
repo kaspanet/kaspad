@@ -191,6 +191,7 @@ type CreateUnsignedTransactionsRequest struct {
 
 	Address string `protobuf:"bytes,1,opt,name=address,proto3" json:"address,omitempty"`
 	Amount  uint64 `protobuf:"varint,2,opt,name=amount,proto3" json:"amount,omitempty"`
+	From    string `protobuf:"bytes,3,opt,name=from,proto3" json:"from,omitempty"`
 }
 
 func (x *CreateUnsignedTransactionsRequest) Reset() {
@@ -239,7 +240,14 @@ func (x *CreateUnsignedTransactionsRequest) GetAmount() uint64 {
 	return 0
 }
 
-type CreateUnsignedTransactionsResponse struct {
+func (x *CreateUnsignedTransactionRequest) GetFrom() string {
+	if x != nil {
+		return x.From
+	}
+	return ""
+}
+
+type CreateUnsignedTransactionResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields

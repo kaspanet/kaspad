@@ -35,6 +35,7 @@ message AddressBalances {
 message CreateUnsignedTransactionsRequest {
   string address = 1;
   uint64 amount = 2;
+  string from = 3;
 }
 
 message CreateUnsignedTransactionsResponse {
