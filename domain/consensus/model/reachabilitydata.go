@@ -104,6 +104,7 @@ type FutureCoveringTreeNodeSet []*externalapi.DomainHash
 
 // Clone returns a clone of FutureCoveringTreeNodeSet
 func (fctns FutureCoveringTreeNodeSet) Clone() FutureCoveringTreeNodeSet {
+	//return fctns
 	return externalapi.CloneHashes(fctns)
 }
 

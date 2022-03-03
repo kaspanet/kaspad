@@ -41,6 +41,27 @@ func (rds *reachabilityDataStore) StageReachabilityData(stagingArea *model.Stagi
 	stagingShard.reachabilityData[*blockHash] = reachabilityData
 }
 
+func (rds *reachabilityDataStore) Delete(dbContext model.DBWriter) error {
+	cursor, err := dbContext.Cursor(rds.reachabilityDataBucket)
+	if err != nil {
+		return err
+	}
+
+	for ok := cursor.First(); ok; ok = cursor.Next() {
+		key, err := cursor.Key()
+		if err != nil {
+			return err
+		}
+
+		err = dbContext.Delete(key)
+		if err != nil {
+			return err
+		}
+	}
+
+	return dbContext.Delete(rds.reachabilityReindexRootKey)
+}
+
 // StageReachabilityReindexRoot stages the given reachabilityReindexRoot
 func (rds *reachabilityDataStore) StageReachabilityReindexRoot(stagingArea *model.StagingArea, reachabilityReindexRoot *externalapi.DomainHash) {
 	stagingShard := rds.stagingShard(stagingArea)

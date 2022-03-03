@@ -49,7 +49,7 @@ type consensus struct {
 	consensusStateStore                 model.ConsensusStateStore
 	headersSelectedTipStore             model.HeaderSelectedTipStore
 	multisetStore                       model.MultisetStore
-	reachabilityDataStores              []model.ReachabilityDataStore
+	reachabilityDataStore               model.ReachabilityDataStore
 	utxoDiffStore                       model.UTXODiffStore
 	finalityStore                       model.FinalityStore
 	headersSelectedChainStore           model.HeadersSelectedChainStore

@@ -7,6 +7,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/processes/blockparentbuilder"
 	parentssanager "github.com/kaspanet/kaspad/domain/consensus/processes/parentsmanager"
 	"github.com/kaspanet/kaspad/domain/consensus/processes/pruningproofmanager"
+	"github.com/kaspanet/kaspad/util/staging"
 	"io/ioutil"
 	"os"
 	"sync"
@@ -147,15 +148,35 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 	daaBlocksStore := daablocksstore.New(prefixBucket, pruningWindowSizeForCaches, int(config.FinalityDepth()), preallocateCaches)
 	windowHeapSliceStore := blockwindowheapslicestore.New(2000, preallocateCaches)
 
+	newReachabilityDataStore := reachabilitydatastore.New(prefixBucket, pruningWindowSizePlusFinalityDepthForCache*2, preallocateCaches)
 	blockRelationStores, reachabilityDataStores, ghostdagDataStores := dagStores(config, prefixBucket, pruningWindowSizePlusFinalityDepthForCache, pruningWindowSizeForCaches, preallocateCaches)
-	reachabilityManager := reachabilitymanager.New(
+	oldReachabilityManager := reachabilitymanager.New(
 		dbManager,
 		ghostdagDataStores[0],
 		reachabilityDataStores[0])
-	dagTopologyManagers, ghostdagManagers, dagTraversalManagers := f.dagProcesses(config, dbManager, reachabilityManager, blockHeaderStore, daaWindowStore, windowHeapSliceStore, blockRelationStores, reachabilityDataStores, ghostdagDataStores)
+	isOldReachabilityInitialized, err := reachabilityDataStores[0].HasReachabilityData(dbManager, model.NewStagingArea(), model.VirtualGenesisBlockHash)
+	if err != nil {
+		return nil, err
+	}
+
+	newReachabilityManager := reachabilitymanager.New(
+		dbManager,
+		ghostdagDataStores[0],
+		newReachabilityDataStore)
+	reachabilityManager := newReachabilityManager
+	if isOldReachabilityInitialized {
+		reachabilityManager = oldReachabilityManager
+	} else {
+		for i := range reachabilityDataStores {
+			reachabilityDataStores[i] = newReachabilityDataStore
+		}
+	}
+	reachabilityDataStore := reachabilityDataStores[0]
+
+	dagTopologyManagers, ghostdagManagers, dagTraversalManagers := f.dagProcesses(config, dbManager, blockHeaderStore, daaWindowStore, windowHeapSliceStore, blockRelationStores, reachabilityDataStores, ghostdagDataStores, isOldReachabilityInitialized)
 
 	blockRelationStore := blockRelationStores[0]
-	reachabilityDataStore := reachabilityDataStores[0]
+
 	ghostdagDataStore := ghostdagDataStores[0]
 
 	dagTopologyManager := dagTopologyManagers[0]
@@ -414,6 +435,7 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 		reachabilityManager,
 		dagTraversalManagers,
 		parentsManager,
+		pruningManager,
 
 		ghostdagDataStores,
 		pruningStore,
@@ -422,6 +444,7 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 		finalityStore,
 		consensusStateStore,
 		blockRelationStore,
+		reachabilityDataStore,
 
 		genesisHash,
 		config.K,
@@ -465,12 +488,64 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 		consensusStateStore:                 consensusStateStore,
 		headersSelectedTipStore:             headersSelectedTipStore,
 		multisetStore:                       multisetStore,
-		reachabilityDataStores:              reachabilityDataStores,
+		reachabilityDataStore:               reachabilityDataStore,
 		utxoDiffStore:                       utxoDiffStore,
 		finalityStore:                       finalityStore,
 		headersSelectedChainStore:           headersSelectedChainStore,
 		daaBlocksStore:                      daaBlocksStore,
 		blocksWithTrustedDataDAAWindowStore: daaWindowStore,
+	}
+
+	if isOldReachabilityInitialized {
+		stagingArea := model.NewStagingArea()
+		dbTx, err := dbManager.Begin()
+		if err != nil {
+			return nil, err
+		}
+
+		err = newReachabilityDataStore.Delete(dbManager)
+		if err != nil {
+			return nil, err
+		}
+
+		err = dbTx.Commit()
+		if err != nil {
+			return nil, err
+		}
+
+		err = newReachabilityManager.Init(stagingArea)
+		if err != nil {
+			return nil, err
+		}
+
+		err = staging.CommitAllChanges(dbManager, stagingArea)
+		if err != nil {
+			return nil, err
+		}
+
+		err = c.pruningProofManager.RebuildReachability(newReachabilityDataStore)
+		if err != nil {
+			return nil, err
+		}
+
+		dbTx, err = dbManager.Begin()
+		if err != nil {
+			return nil, err
+		}
+
+		for _, store := range reachabilityDataStores {
+			err = store.Delete(dbManager)
+			if err != nil {
+				return nil, err
+			}
+		}
+
+		err = dbTx.Commit()
+		if err != nil {
+			return nil, err
+		}
+
+		return f.NewConsensus(config, db, dbPrefix)
 	}
 
 	err = c.Init(config.SkipAddingGenesis)
@@ -605,26 +680,41 @@ func dagStores(config *Config,
 
 func (f *factory) dagProcesses(config *Config,
 	dbManager model.DBManager,
-	reachabilityManager model.ReachabilityManager,
 	blockHeaderStore model.BlockHeaderStore,
 	daaWindowStore model.BlocksWithTrustedDataDAAWindowStore,
 	windowHeapSliceStore model.WindowHeapSliceStore,
 	blockRelationStores []model.BlockRelationStore,
 	reachabilityDataStores []model.ReachabilityDataStore,
-	ghostdagDataStores []model.GHOSTDAGDataStore) (
+	ghostdagDataStores []model.GHOSTDAGDataStore,
+	isOldReachabilityInitialized bool) (
 	[]model.DAGTopologyManager,
 	[]model.GHOSTDAGManager,
 	[]model.DAGTraversalManager,
 ) {
 
+	reachabilityManagers := make([]model.ReachabilityManager, config.MaxBlockLevel+1)
 	dagTopologyManagers := make([]model.DAGTopologyManager, config.MaxBlockLevel+1)
 	ghostdagManagers := make([]model.GHOSTDAGManager, config.MaxBlockLevel+1)
 	dagTraversalManagers := make([]model.DAGTraversalManager, config.MaxBlockLevel+1)
 
+	newReachabilityManager := reachabilitymanager.New(
+		dbManager,
+		ghostdagDataStores[0],
+		reachabilityDataStores[0])
+
 	for i := 0; i <= config.MaxBlockLevel; i++ {
+		if isOldReachabilityInitialized {
+			reachabilityManagers[i] = reachabilitymanager.New(
+				dbManager,
+				ghostdagDataStores[i],
+				reachabilityDataStores[i])
+		} else {
+			reachabilityManagers[i] = newReachabilityManager
+		}
+
 		dagTopologyManagers[i] = dagtopologymanager.New(
 			dbManager,
-			reachabilityManager,
+			reachabilityManagers[i],
 			blockRelationStores[i],
 			ghostdagDataStores[i])
 

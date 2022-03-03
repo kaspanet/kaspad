@@ -212,6 +212,10 @@ func (dtm *dagTopologyManager) ChildInSelectedParentChainOf(stagingArea *model.S
 	}
 
 	for _, child := range children {
+		if child.Equal(model.VirtualBlockHash) {
+			continue
+		}
+
 		isInSelectedParentChain, err := dtm.IsInSelectedParentChainOf(stagingArea, child, highHash)
 		if err != nil {
 			return nil, err
