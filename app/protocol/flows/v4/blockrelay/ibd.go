@@ -86,7 +86,7 @@ func (flow *handleIBDFlow) runIBDIfNotRunning(block *externalapi.DomainBlock) er
 	}
 	log.Criticalf("Found highest shared chain block %s with peer %s", highestSharedBlockHash, flow.peer)
 	if highestSharedBlockFound {
-		checkpoint, err := externalapi.NewDomainHashFromString("05ff0f2e1d201dcaee7c5e567cc2c1d42ca3cce9fefbd3b519dc68b5bb89d0b9")
+		checkpoint, err := externalapi.NewDomainHashFromString("efd297d4ff50c02571268bd47894503d2c8d02a0b2e0efa926fca193b00ec2b6")
 		if err != nil {
 			return err
 		}
