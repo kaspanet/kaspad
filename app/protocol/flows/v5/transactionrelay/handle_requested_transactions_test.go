@@ -2,7 +2,7 @@ package transactionrelay_test
 
 import (
 	"github.com/kaspanet/kaspad/app/protocol/flowcontext"
-	"github.com/kaspanet/kaspad/app/protocol/flows/v4/transactionrelay"
+	"github.com/kaspanet/kaspad/app/protocol/flows/v5/transactionrelay"
 	"testing"
 
 	"github.com/kaspanet/kaspad/app/appmessage"

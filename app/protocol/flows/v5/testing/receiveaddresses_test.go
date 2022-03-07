@@ -1,7 +1,7 @@
 package testing
 
 import (
-	"github.com/kaspanet/kaspad/app/protocol/flows/v4/addressexchange"
+	"github.com/kaspanet/kaspad/app/protocol/flows/v5/addressexchange"
 	"testing"
 	"time"
 

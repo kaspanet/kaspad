@@ -1,14 +1,14 @@
-package v4
+package v5
 
 import (
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/app/protocol/common"
 	"github.com/kaspanet/kaspad/app/protocol/flowcontext"
-	"github.com/kaspanet/kaspad/app/protocol/flows/v4/addressexchange"
-	"github.com/kaspanet/kaspad/app/protocol/flows/v4/blockrelay"
-	"github.com/kaspanet/kaspad/app/protocol/flows/v4/ping"
-	"github.com/kaspanet/kaspad/app/protocol/flows/v4/rejects"
-	"github.com/kaspanet/kaspad/app/protocol/flows/v4/transactionrelay"
+	"github.com/kaspanet/kaspad/app/protocol/flows/v5/addressexchange"
+	"github.com/kaspanet/kaspad/app/protocol/flows/v5/blockrelay"
+	"github.com/kaspanet/kaspad/app/protocol/flows/v5/ping"
+	"github.com/kaspanet/kaspad/app/protocol/flows/v5/rejects"
+	"github.com/kaspanet/kaspad/app/protocol/flows/v5/transactionrelay"
 	peerpkg "github.com/kaspanet/kaspad/app/protocol/peer"
 	routerpkg "github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
 )

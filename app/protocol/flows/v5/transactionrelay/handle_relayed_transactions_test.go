@@ -3,7 +3,7 @@ package transactionrelay_test
 import (
 	"errors"
 	"github.com/kaspanet/kaspad/app/protocol/flowcontext"
-	"github.com/kaspanet/kaspad/app/protocol/flows/v4/transactionrelay"
+	"github.com/kaspanet/kaspad/app/protocol/flows/v5/transactionrelay"
 	"strings"
 	"testing"
 
