@@ -13,7 +13,9 @@ import (
 	"github.com/kaspanet/kaspad/infrastructure/config"
 	"github.com/kaspanet/kaspad/infrastructure/logger"
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
+	"github.com/kaspanet/kaspad/util/difficulty"
 	"github.com/pkg/errors"
+	"math/big"
 	"time"
 )
 
@@ -85,25 +87,25 @@ func (flow *handleIBDFlow) runIBDIfNotRunning(block *externalapi.DomainBlock) er
 		return err
 	}
 	log.Criticalf("Found highest shared chain block %s with peer %s", highestSharedBlockHash, flow.peer)
+
 	if highestSharedBlockFound {
-		checkpoint, err := externalapi.NewDomainHashFromString("f4a415f28990806a899a208b77930fa5a58f3a94876c3cbe814e60a7ed22824f")
+		virtualSelectedParent, err := flow.Domain().Consensus().GetVirtualSelectedParent()
 		if err != nil {
 			return err
 		}
-
-		info, err := flow.Domain().Consensus().GetBlockInfo(checkpoint)
+		virtualSelectedParentHeader, err := flow.Domain().Consensus().GetBlockHeader(virtualSelectedParent)
 		if err != nil {
 			return err
 		}
-
-		if info.Exists {
-			isInSelectedParentChainOf, err := flow.Domain().Consensus().IsInSelectedParentChainOf(checkpoint, highestSharedBlockHash)
-			if err != nil {
-				return err
-			}
-
-			if !isInSelectedParentChainOf {
-				log.Criticalf("Stopped IBD because the checkpoint %s is not in the selected chain of %s", checkpoint, highestSharedBlockHash)
+		if virtualSelectedParentHeader.DAAScore() > block.Header.DAAScore()+2641*3 {
+			virtualDifficulty := difficulty.CalcWork(virtualSelectedParentHeader.Bits())
+			var virtualSub, difficultyMul big.Int
+			if difficultyMul.Mul(virtualDifficulty, big.NewInt(180)).
+				Cmp(virtualSub.Sub(virtualSelectedParentHeader.BlueWork(), block.Header.BlueWork())) < 0 {
+				log.Criticalf("Stopped IBD because it is coming from a deep (%d DAA score depth) "+
+					"side-chain which split at %s and has lower blue work (%d, %d)",
+					virtualSelectedParentHeader.DAAScore()-block.Header.DAAScore(),
+					highestSharedBlockHash, virtualSelectedParentHeader.BlueWork(), block.Header.BlueWork())
 				return nil
 			}
 		}
