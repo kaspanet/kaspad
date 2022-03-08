@@ -69,6 +69,8 @@ const (
 	CmdReady
 	CmdTrustedData
 	CmdBlockWithTrustedDataV4
+	CmdRequestIBDChainBlockLocator
+	CmdIBDChainBlockLocator
 
 	// rpc
 	CmdGetCurrentNetworkRequestMessage
@@ -195,6 +197,8 @@ var ProtocolMessageCommandToString = map[MessageCommand]string{
 	CmdReady:                               "Ready",
 	CmdTrustedData:                         "TrustedData",
 	CmdBlockWithTrustedDataV4:              "BlockWithTrustedDataV4",
+	CmdRequestIBDChainBlockLocator:         "RequestIBDChainBlockLocator",
+	CmdIBDChainBlockLocator:                "IBDChainBlockLocator",
 }
 
 // RPCMessageCommandToString maps all MessageCommands to their string representation

@@ -77,6 +77,59 @@ func (flow *handleIBDFlow) runIBDIfNotRunning(block *externalapi.DomainBlock) er
 	}()
 
 	highHash := consensushashing.BlockHash(block)
+
+	/*
+	Algorithm:
+		Request full selected chain block locator from syncer
+		Find the highest block which we know
+		Repeat the locator step over the new range until finding max(past(syncee) \cap chain(syncer))
+	*/
+
+	// Empty hashes indicate that the full chain is queried
+	locatorHashes, err := flow.getSyncerChainBlockLocator(nil, nil)
+	if err != nil {
+		return err
+	}
+	if len(locatorHashes) == 0 {
+		return protocolerrors.Errorf(true,"Expecting initial syncer chain block locator " +
+			"to contain at least one element")
+	}
+	var highestKnownHash *externalapi.DomainHash
+	for {
+		highSyncerChainHash := locatorHashes[0]
+		for _, syncerChainHash := range locatorHashes {
+			info, err := flow.Domain().Consensus().GetBlockInfo(syncerChainHash)
+			if err != nil {
+				return err
+			}
+			// TODO: what should be done if the block is header-only? seems like at
+			// this stage headers are enough since we sync missing bodies below anyhow
+			if info.Exists {
+				highestKnownHash = syncerChainHash
+				break
+			}
+		}
+
+		if highestKnownHash == nil || highSyncerChainHash.Equal(highestKnownHash){
+			break
+		}
+
+		locatorHashes, err = flow.getSyncerChainBlockLocator(highSyncerChainHash, highestKnownHash)
+		if err != nil {
+			return err
+		}
+		if len(locatorHashes) == 0 {
+			// An empty locator signals that the syncer chain was modified and no longer contains one of
+			// the queried hashes, so we restart the search
+			locatorHashes, err = flow.getSyncerChainBlockLocator(nil, nil)
+			if len(locatorHashes) == 0 {
+				return protocolerrors.Errorf(true, "Expecting initial syncer chain block locator "+
+					"to contain at least one element")
+			}
+		}
+	}
+
+
 	log.Debugf("IBD started with peer %s and highHash %s", flow.peer, highHash)
 	log.Debugf("Syncing blocks up to %s", highHash)
 	log.Debugf("Trying to find highest shared chain block with peer %s with high hash %s", flow.peer, highHash)
@@ -232,6 +285,27 @@ func (flow *handleIBDFlow) findHighestHashIndex(
 		"blockLocator sent to %s is %d", flow.peer, highestHashIndex)
 
 	return highestHashIndex, nil
+}
+
+func (flow *handleIBDFlow) getSyncerChainBlockLocator(
+	highHash, lowHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error) {
+
+	requestIbdChainBlockLocatorMessage := appmessage.NewMsgIBDRequestChainBlockLocator(highHash, lowHash)
+	err := flow.outgoingRoute.Enqueue(requestIbdChainBlockLocatorMessage)
+	if err != nil {
+		return nil, err
+	}
+	message, err := flow.incomingRoute.DequeueWithTimeout(common.DefaultTimeout)
+	if err != nil {
+		return nil, err
+	}
+	switch message := message.(type) {
+	case *appmessage.MsgIBDChainBlockLocator:
+		return message.BlockLocatorHashes, nil
+	default:
+		return nil, protocolerrors.Errorf(true, "received unexpected message type. "+
+			"expected: %s, got: %s", appmessage.CmdIBDChainBlockLocator, message.Command())
+	}
 }
 
 // fetchHighestHash attempts to fetch the highest hash the peer knows amongst the given
