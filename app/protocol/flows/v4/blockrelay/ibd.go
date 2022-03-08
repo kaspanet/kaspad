@@ -66,7 +66,9 @@ func (flow *handleIBDFlow) start() error {
 }
 
 func (flow *handleIBDFlow) runIBDIfNotRunning(block *externalapi.DomainBlock) error {
-	// Temp code to avoid IBD from lagging nodes publishing there side-chain
+	highHash := consensushashing.BlockHash(block)
+
+	// Temp code to avoid IBD from lagging nodes publishing their side-chain
 	virtualSelectedParent, err := flow.Domain().Consensus().GetVirtualSelectedParent()
 	if err == nil {
 		virtualSelectedParentHeader, err := flow.Domain().Consensus().GetBlockHeader(virtualSelectedParent)
@@ -76,8 +78,9 @@ func (flow *handleIBDFlow) runIBDIfNotRunning(block *externalapi.DomainBlock) er
 				var virtualSub, difficultyMul big.Int
 				if difficultyMul.Mul(virtualDifficulty, big.NewInt(180)).
 					Cmp(virtualSub.Sub(virtualSelectedParentHeader.BlueWork(), block.Header.BlueWork())) < 0 {
-					log.Criticalf("Avoiding IBD because it is coming from a deep (%d DAA score depth) "+
-						"side-chain which has much lower blue work (%d, %d)",
+					log.Criticalf("Avoiding IBD triggered by relay %s because it is coming from " +
+						"a deep (%d DAA score depth) side-chain which has much lower blue work (%d, %d)",
+						highHash,
 						virtualSelectedParentHeader.DAAScore()-block.Header.DAAScore(),
 						virtualSelectedParentHeader.BlueWork(), block.Header.BlueWork())
 					return nil
@@ -98,7 +101,6 @@ func (flow *handleIBDFlow) runIBDIfNotRunning(block *externalapi.DomainBlock) er
 		flow.logIBDFinished(isFinishedSuccessfully)
 	}()
 
-	highHash := consensushashing.BlockHash(block)
 	log.Criticalf("IBD started with peer %s and highHash %s", flow.peer, highHash)
 	log.Criticalf("Syncing blocks up to %s", highHash)
 	log.Criticalf("Trying to find highest shared chain block with peer %s with high hash %s", flow.peer, highHash)
