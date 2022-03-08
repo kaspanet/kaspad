@@ -66,6 +66,26 @@ func (flow *handleIBDFlow) start() error {
 }
 
 func (flow *handleIBDFlow) runIBDIfNotRunning(block *externalapi.DomainBlock) error {
+	// Temp code to avoid IBD from lagging nodes publishing there side-chain
+	virtualSelectedParent, err := flow.Domain().Consensus().GetVirtualSelectedParent()
+	if err == nil {
+		virtualSelectedParentHeader, err := flow.Domain().Consensus().GetBlockHeader(virtualSelectedParent)
+		if err == nil {
+			if virtualSelectedParentHeader.DAAScore() > block.Header.DAAScore()+2641 {
+				virtualDifficulty := difficulty.CalcWork(virtualSelectedParentHeader.Bits())
+				var virtualSub, difficultyMul big.Int
+				if difficultyMul.Mul(virtualDifficulty, big.NewInt(180)).
+					Cmp(virtualSub.Sub(virtualSelectedParentHeader.BlueWork(), block.Header.BlueWork())) < 0 {
+					log.Criticalf("Avoiding IBD because it is coming from a deep (%d DAA score depth) "+
+						"side-chain which has much lower blue work (%d, %d)",
+						virtualSelectedParentHeader.DAAScore()-block.Header.DAAScore(),
+						virtualSelectedParentHeader.BlueWork(), block.Header.BlueWork())
+					return nil
+				}
+			}
+		}
+	}
+
 	wasIBDNotRunning := flow.TrySetIBDRunning(flow.peer)
 	if !wasIBDNotRunning {
 		log.Debugf("IBD is already running")
@@ -87,29 +107,6 @@ func (flow *handleIBDFlow) runIBDIfNotRunning(block *externalapi.DomainBlock) er
 		return err
 	}
 	log.Criticalf("Found highest shared chain block %s with peer %s", highestSharedBlockHash, flow.peer)
-
-	if highestSharedBlockFound {
-		virtualSelectedParent, err := flow.Domain().Consensus().GetVirtualSelectedParent()
-		if err != nil {
-			return err
-		}
-		virtualSelectedParentHeader, err := flow.Domain().Consensus().GetBlockHeader(virtualSelectedParent)
-		if err != nil {
-			return err
-		}
-		if virtualSelectedParentHeader.DAAScore() > block.Header.DAAScore()+2641*3 {
-			virtualDifficulty := difficulty.CalcWork(virtualSelectedParentHeader.Bits())
-			var virtualSub, difficultyMul big.Int
-			if difficultyMul.Mul(virtualDifficulty, big.NewInt(180)).
-				Cmp(virtualSub.Sub(virtualSelectedParentHeader.BlueWork(), block.Header.BlueWork())) < 0 {
-				log.Criticalf("Stopped IBD because it is coming from a deep (%d DAA score depth) "+
-					"side-chain which split at %s and has lower blue work (%d, %d)",
-					virtualSelectedParentHeader.DAAScore()-block.Header.DAAScore(),
-					highestSharedBlockHash, virtualSelectedParentHeader.BlueWork(), block.Header.BlueWork())
-				return nil
-			}
-		}
-	}
 
 	shouldDownloadHeadersProof, shouldSync, err := flow.shouldSyncAndShouldDownloadHeadersProof(block, highestSharedBlockFound)
 	if err != nil {
