@@ -190,6 +190,15 @@ message IbdBlockLocatorMessage {
   repeated Hash blockLocatorHashes = 2;
 }
 
+message RequestIBDChainBlockLocatorMessage{
+  Hash lowHash = 1;
+  Hash highHash = 2;
+}
+
+message IbdChainBlockLocatorMessage {
+  repeated Hash blockLocatorHashes = 1;
+}
+
 message IbdBlockLocatorHighestHashMessage {
   Hash highestHash = 1;
 }
