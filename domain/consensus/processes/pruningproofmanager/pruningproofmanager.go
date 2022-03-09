@@ -668,6 +668,7 @@ func (ppm *pruningProofManager) RebuildReachability(targetReachabilityDataStore 
 	}
 
 	i := uint64(0)
+	selectedTip := pruningPoint
 	for queue.Len() > 0 {
 		current := queue.Pop()
 		if visited.Contains(current) {
@@ -689,6 +690,18 @@ func (ppm *pruningProofManager) RebuildReachability(targetReachabilityDataStore 
 			err = targetReachabilityManager.AddBlock(stagingArea, current)
 			if err != nil {
 				return err
+			}
+
+			selectedTip, err = ppm.ghostdagManagers[0].ChooseSelectedParent(stagingArea, current, selectedTip)
+			if err != nil {
+				return err
+			}
+
+			if current.Equal(selectedTip) {
+				err := targetReachabilityManager.UpdateReindexRoot(stagingArea, selectedTip)
+				if err != nil {
+					return err
+				}
 			}
 		}
 
