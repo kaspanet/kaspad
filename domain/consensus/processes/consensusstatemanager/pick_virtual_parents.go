@@ -336,12 +336,12 @@ func (csm *consensusStateManager) boundedMergeBreakingParents(stagingArea *model
 		log.Debugf("Checking whether parent %s breaks the bounded merge set", parent)
 		isBadRedInPast := false
 		for _, badRedBlock := range badReds {
-			isBadRedInPast, err = csm.dagTopologyManager.IsAncestorOf(stagingArea, parent, badRedBlock)
+			isBadRedInPast, err = csm.dagTopologyManager.IsAncestorOf(stagingArea, badRedBlock, parent)
 			if err != nil {
 				return nil, err
 			}
 			if isBadRedInPast {
-				log.Debugf("Parent %s is an ancestor of bad red %s", parent, badRedBlock)
+				log.Debugf("Parent %s is a descendant of bad red %s", parent, badRedBlock)
 				break
 			}
 		}
