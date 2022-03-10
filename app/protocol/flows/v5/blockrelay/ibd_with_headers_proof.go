@@ -45,10 +45,26 @@ func (flow *handleIBDFlow) ibdWithHeadersProof(highHash *externalapi.DomainHash,
 	return nil
 }
 
-func (flow *handleIBDFlow) shouldSyncAndShouldDownloadHeadersProof(highBlock *externalapi.DomainBlock,
-	highestSharedBlockFound bool) (shouldDownload, shouldSync bool, err error) {
+func (flow *handleIBDFlow) shouldSyncAndShouldDownloadHeadersProof(
+	highBlock  *externalapi.DomainBlock,
+	highestSharedBlockHash *externalapi.DomainHash) (shouldDownload, shouldSync bool, err error) {
 
-	if !highestSharedBlockFound {
+	var highestSharedBlockFound, isPruningPointInSharedBlockChain bool
+	if highestSharedBlockHash != nil {
+		highestSharedBlockFound = true
+		pruningPoint, err := flow.Domain().Consensus().PruningPoint()
+		if err != nil {
+			return false, false, err
+		}
+
+		isPruningPointInSharedBlockChain, err = flow.Domain().Consensus().IsInSelectedParentChainOf(
+			pruningPoint, highestSharedBlockHash)
+		if err != nil {
+			return false, false, err
+		}
+	}
+
+	if !highestSharedBlockFound || !isPruningPointInSharedBlockChain {
 		hasMoreBlueWorkThanSelectedTipAndPruningDepthMoreBlueScore, err := flow.checkIfHighHashHasMoreBlueWorkThanSelectedTipAndPruningDepthMoreBlueScore(highBlock)
 		if err != nil {
 			return false, false, err

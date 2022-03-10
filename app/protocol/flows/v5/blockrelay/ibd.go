@@ -80,7 +80,7 @@ func (flow *handleIBDFlow) runIBDIfNotRunning(block *externalapi.DomainBlock) er
 
 	log.Debugf("IBD started with peer %s and highHash %s", flow.peer, highHash)
 	log.Debugf("Syncing blocks up to %s", highHash)
-	log.Debugf("Trying to find highest known syncer chain block with peer %s with high hash %s", flow.peer, highHash)
+	log.Debugf("Trying to find highest known syncer chain block from peer %s with relay hash %s", flow.peer, highHash)
 
 	/*
 	Algorithm:
@@ -111,6 +111,10 @@ func (flow *handleIBDFlow) runIBDIfNotRunning(block *externalapi.DomainBlock) er
 				break
 			}
 			lowestUnknownSyncerChainHash = syncerChainHash
+		}
+		// No shared block, break
+		if currentHighestKnownSyncerChainHash == nil {
+			break
 		}
 		// No point in zooming further
 		if len(locatorHashes) == 1 {
@@ -145,11 +149,11 @@ func (flow *handleIBDFlow) runIBDIfNotRunning(block *externalapi.DomainBlock) er
 		}
 	}
 
-	log.Debugf("Found highest known syncer chain block %s with peer %s",
+	log.Debugf("Found highest known syncer chain block %s from peer %s",
 		highestKnownSyncerChainHash, flow.peer)
 
 	shouldDownloadHeadersProof, shouldSync, err := flow.shouldSyncAndShouldDownloadHeadersProof(
-		block, highestKnownSyncerChainHash != nil)
+		block, highestKnownSyncerChainHash)
 	if err != nil {
 		return err
 	}
