@@ -78,6 +78,10 @@ func (flow *handleIBDFlow) runIBDIfNotRunning(block *externalapi.DomainBlock) er
 
 	highHash := consensushashing.BlockHash(block)
 
+	log.Debugf("IBD started with peer %s and highHash %s", flow.peer, highHash)
+	log.Debugf("Syncing blocks up to %s", highHash)
+	log.Debugf("Trying to find highest known syncer chain block with peer %s with high hash %s", flow.peer, highHash)
+
 	/*
 	Algorithm:
 		Request full selected chain block locator from syncer
@@ -94,29 +98,41 @@ func (flow *handleIBDFlow) runIBDIfNotRunning(block *externalapi.DomainBlock) er
 		return protocolerrors.Errorf(true,"Expecting initial syncer chain block locator " +
 			"to contain at least one element")
 	}
-	var highestKnownHash *externalapi.DomainHash
+	var highestKnownSyncerChainHash *externalapi.DomainHash
 	for {
-		highSyncerChainHash := locatorHashes[0]
+		var lowestUnknownSyncerChainHash, currentHighestKnownSyncerChainHash *externalapi.DomainHash
 		for _, syncerChainHash := range locatorHashes {
 			info, err := flow.Domain().Consensus().GetBlockInfo(syncerChainHash)
 			if err != nil {
 				return err
 			}
-			// TODO: what should be done if the block is header-only? seems like at
-			// this stage headers are enough since we sync missing bodies below anyhow
 			if info.Exists {
-				highestKnownHash = syncerChainHash
+				currentHighestKnownSyncerChainHash = syncerChainHash
 				break
 			}
+			lowestUnknownSyncerChainHash = syncerChainHash
 		}
-
-		if highestKnownHash == nil || highSyncerChainHash.Equal(highestKnownHash){
+		// No point in zooming further
+		if len(locatorHashes) == 1 {
+			highestKnownSyncerChainHash = currentHighestKnownSyncerChainHash
 			break
 		}
-
-		locatorHashes, err = flow.getSyncerChainBlockLocator(highSyncerChainHash, highestKnownHash)
+		// Zoom in
+		locatorHashes, err = flow.getSyncerChainBlockLocator(
+			lowestUnknownSyncerChainHash,
+			currentHighestKnownSyncerChainHash)
 		if err != nil {
 			return err
+		}
+		if len(locatorHashes) == 2 {
+			if !locatorHashes[0].Equal(lowestUnknownSyncerChainHash) ||
+				!locatorHashes[1].Equal(currentHighestKnownSyncerChainHash) {
+				return protocolerrors.Errorf(true, "Expecting the high and low " +
+					"hashes to match the locatorHashes if len(locatorHashes) is 2")
+			}
+			// We found our search target
+			highestKnownSyncerChainHash = currentHighestKnownSyncerChainHash
+			break
 		}
 		if len(locatorHashes) == 0 {
 			// An empty locator signals that the syncer chain was modified and no longer contains one of
@@ -129,17 +145,11 @@ func (flow *handleIBDFlow) runIBDIfNotRunning(block *externalapi.DomainBlock) er
 		}
 	}
 
+	log.Debugf("Found highest known syncer chain block %s with peer %s",
+		highestKnownSyncerChainHash, flow.peer)
 
-	log.Debugf("IBD started with peer %s and highHash %s", flow.peer, highHash)
-	log.Debugf("Syncing blocks up to %s", highHash)
-	log.Debugf("Trying to find highest shared chain block with peer %s with high hash %s", flow.peer, highHash)
-	highestSharedBlockHash, highestSharedBlockFound, err := flow.findHighestSharedBlockHash(highHash)
-	if err != nil {
-		return err
-	}
-	log.Debugf("Found highest shared chain block %s with peer %s", highestSharedBlockHash, flow.peer)
-
-	shouldDownloadHeadersProof, shouldSync, err := flow.shouldSyncAndShouldDownloadHeadersProof(block, highestSharedBlockFound)
+	shouldDownloadHeadersProof, shouldSync, err := flow.shouldSyncAndShouldDownloadHeadersProof(
+		block, highestKnownSyncerChainHash != nil)
 	if err != nil {
 		return err
 	}
@@ -168,7 +178,9 @@ func (flow *handleIBDFlow) runIBDIfNotRunning(block *externalapi.DomainBlock) er
 			}
 		}
 
-		err = flow.syncPruningPointFutureHeaders(flow.Domain().Consensus(), highestSharedBlockHash, highHash, block.Header.DAAScore())
+		err = flow.syncPruningPointFutureHeaders(
+			flow.Domain().Consensus(),
+			highestKnownSyncerChainHash, highHash, block.Header.DAAScore())
 		if err != nil {
 			return err
 		}
@@ -204,7 +216,7 @@ func (flow *handleIBDFlow) logIBDFinished(isFinishedSuccessfully bool) {
 // findHighestSharedBlock attempts to find the highest shared block between the peer
 // and this node. This method may fail because the peer and us have conflicting pruning
 // points. In that case we return (nil, false, nil) so that we may stop IBD gracefully.
-func (flow *handleIBDFlow) findHighestSharedBlockHash(
+func (flow *handleIBDFlow) findHighestSharedBlockHash__(
 	targetHash *externalapi.DomainHash) (*externalapi.DomainHash, bool, error) {
 
 	log.Debugf("Sending a blockLocator to %s between pruning point and headers selected tip", flow.peer)
@@ -214,14 +226,14 @@ func (flow *handleIBDFlow) findHighestSharedBlockHash(
 	}
 
 	for {
-		highestHash, highestHashFound, err := flow.fetchHighestHash(targetHash, blockLocator)
+		highestHash, highestHashFound, err := flow.fetchHighestHash__(targetHash, blockLocator)
 		if err != nil {
 			return nil, false, err
 		}
 		if !highestHashFound {
 			return nil, false, nil
 		}
-		highestHashIndex, err := flow.findHighestHashIndex(highestHash, blockLocator)
+		highestHashIndex, err := flow.findHighestHashIndex__(highestHash, blockLocator)
 		if err != nil {
 			return nil, false, err
 		}
@@ -240,14 +252,14 @@ func (flow *handleIBDFlow) findHighestSharedBlockHash(
 			locatorHashAboveHighestHash = blockLocator[highestHashIndex-1]
 		}
 
-		blockLocator, err = flow.nextBlockLocator(highestHash, locatorHashAboveHighestHash)
+		blockLocator, err = flow.nextBlockLocator__(highestHash, locatorHashAboveHighestHash)
 		if err != nil {
 			return nil, false, err
 		}
 	}
 }
 
-func (flow *handleIBDFlow) nextBlockLocator(lowHash, highHash *externalapi.DomainHash) (externalapi.BlockLocator, error) {
+func (flow *handleIBDFlow) nextBlockLocator__(lowHash, highHash *externalapi.DomainHash) (externalapi.BlockLocator, error) {
 	log.Debugf("Sending a blockLocator to %s between %s and %s", flow.peer, lowHash, highHash)
 	blockLocator, err := flow.Domain().Consensus().CreateHeadersSelectedChainBlockLocator(lowHash, highHash)
 	if err != nil {
@@ -265,7 +277,7 @@ func (flow *handleIBDFlow) nextBlockLocator(lowHash, highHash *externalapi.Domai
 	return blockLocator, nil
 }
 
-func (flow *handleIBDFlow) findHighestHashIndex(
+func (flow *handleIBDFlow) findHighestHashIndex__(
 	highestHash *externalapi.DomainHash, blockLocator externalapi.BlockLocator) (int, error) {
 
 	highestHashIndex := 0
@@ -311,7 +323,7 @@ func (flow *handleIBDFlow) getSyncerChainBlockLocator(
 // fetchHighestHash attempts to fetch the highest hash the peer knows amongst the given
 // blockLocator. This method may fail because the peer and us have conflicting pruning
 // points. In that case we return (nil, false, nil) so that we may stop IBD gracefully.
-func (flow *handleIBDFlow) fetchHighestHash(
+func (flow *handleIBDFlow) fetchHighestHash__(
 	targetHash *externalapi.DomainHash, blockLocator externalapi.BlockLocator) (*externalapi.DomainHash, bool, error) {
 
 	ibdBlockLocatorMessage := appmessage.NewMsgIBDBlockLocator(targetHash, blockLocator)
