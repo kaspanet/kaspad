@@ -218,6 +218,9 @@ message BlockHeadersMessage {
 message RequestPruningPointAndItsAnticoneMessage {
 }
 
+message RequestNextPruningPointAndItsAnticoneBlocksMessage{
+}
+
 message BlockWithTrustedDataMessage {
   BlockMessage block = 1;
   uint64 daaScore = 2;

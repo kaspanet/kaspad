@@ -10,7 +10,7 @@ import (
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
 )
 
-const ibdBatchSize = router.DefaultMaxMessages
+const ibdBatchSize = router.DefaultMaxMessages - 1
 
 // RequestHeadersContext is the interface for the context needed for the HandleRequestHeaders flow.
 type RequestHeadersContext interface {

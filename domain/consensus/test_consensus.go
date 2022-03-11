@@ -2,6 +2,9 @@ package consensus
 
 import (
 	"encoding/json"
+	"fmt"
+	"github.com/kaspanet/kaspad/domain/consensus/model"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/hashset"
 	"io"
 
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
@@ -108,13 +111,13 @@ func (tc *testConsensus) AddUTXOInvalidBlock(parentHashes []*externalapi.DomainH
 	return consensushashing.BlockHash(block), virtualChangeSet, nil
 }
 
-func (tc *testConsensus) MineJSON(r io.Reader, blockType testapi.MineJSONBlockType) (tips []*externalapi.DomainHash, err error) {
-	// jsonBlock is a json representation of a block in mine format
-	type jsonBlock struct {
-		ID      string   `json:"id"`
-		Parents []string `json:"parents"`
-	}
+// jsonBlock is a json representation of a block in mine format
+type jsonBlock struct {
+	ID      string   `json:"id"`
+	Parents []string `json:"parents"`
+}
 
+func (tc *testConsensus) MineJSON(r io.Reader, blockType testapi.MineJSONBlockType) (tips []*externalapi.DomainHash, err error) {
 	tipSet := map[externalapi.DomainHash]*externalapi.DomainHash{}
 	tipSet[*tc.dagParams.GenesisHash] = tc.dagParams.GenesisHash
 
@@ -180,6 +183,64 @@ func (tc *testConsensus) MineJSON(r io.Reader, blockType testapi.MineJSONBlockTy
 		i++
 	}
 	return tips, nil
+}
+
+func (tc *testConsensus) ToJSON(w io.Writer) error {
+	hashToId := make(map[externalapi.DomainHash]string)
+	lastID := 0
+
+	encoder := json.NewEncoder(w)
+	visited := hashset.New()
+	queue := tc.dagTraversalManager.NewUpHeap(model.NewStagingArea())
+	err := queue.Push(tc.dagParams.GenesisHash)
+	if err != nil {
+		return err
+	}
+
+	blocksToAdd := make([]jsonBlock, 0)
+	for queue.Len() > 0 {
+		current := queue.Pop()
+		if visited.Contains(current) {
+			continue
+		}
+
+		visited.Add(current)
+
+		if current.Equal(model.VirtualBlockHash) {
+			continue
+		}
+
+		header, err := tc.blockHeaderStore.BlockHeader(tc.databaseContext, model.NewStagingArea(), current)
+		if err != nil {
+			return err
+		}
+
+		directParents := header.DirectParents()
+
+		parentIDs := make([]string, len(directParents))
+		for i, parent := range directParents {
+			parentIDs[i] = hashToId[*parent]
+		}
+		lastIDStr := fmt.Sprintf("%d", lastID)
+		blocksToAdd = append(blocksToAdd, jsonBlock{
+			ID:      lastIDStr,
+			Parents: parentIDs,
+		})
+		hashToId[*current] = lastIDStr
+		lastID++
+
+		children, err := tc.dagTopologyManagers[0].Children(model.NewStagingArea(), current)
+		if err != nil {
+			return err
+		}
+
+		err = queue.PushSlice(children)
+		if err != nil {
+			return err
+		}
+	}
+
+	return encoder.Encode(blocksToAdd)
 }
 
 func (tc *testConsensus) BuildUTXOInvalidBlock(parentHashes []*externalapi.DomainHash) (*externalapi.DomainBlock, error) {

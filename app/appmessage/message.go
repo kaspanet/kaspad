@@ -69,6 +69,7 @@ const (
 	CmdReady
 	CmdTrustedData
 	CmdBlockWithTrustedDataV4
+	CmdRequestNextPruningPointAndItsAnticoneBlocks
 	CmdRequestIBDChainBlockLocator
 	CmdIBDChainBlockLocator
 	CmdRequestAnticone
@@ -198,6 +199,7 @@ var ProtocolMessageCommandToString = map[MessageCommand]string{
 	CmdReady:                               "Ready",
 	CmdTrustedData:                         "TrustedData",
 	CmdBlockWithTrustedDataV4:              "BlockWithTrustedDataV4",
+	CmdRequestNextPruningPointAndItsAnticoneBlocks: "RequestNextPruningPointAndItsAnticoneBlocks",
 	CmdRequestIBDChainBlockLocator:         "RequestIBDChainBlockLocator",
 	CmdIBDChainBlockLocator:                "IBDChainBlockLocator",
 }

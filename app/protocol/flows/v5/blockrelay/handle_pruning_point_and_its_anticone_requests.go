@@ -118,7 +118,7 @@ func HandlePruningPointAndItsAnticoneRequests(context PruningPointAndItsAnticone
 				return err
 			}
 
-			for _, blockHash := range pointAndItsAnticone {
+			for i, blockHash := range pointAndItsAnticone {
 				block, err := context.Domain().Consensus().GetBlock(blockHash)
 				if err != nil {
 					return err
@@ -127,6 +127,17 @@ func HandlePruningPointAndItsAnticoneRequests(context PruningPointAndItsAnticone
 				err = outgoingRoute.Enqueue(appmessage.DomainBlockWithTrustedDataToBlockWithTrustedDataV4(block, trustedDataDAABlockIndexes[*blockHash], trustedDataGHOSTDAGDataIndexes[*blockHash]))
 				if err != nil {
 					return err
+				}
+
+				if (i+1)%ibdBatchSize == 0 {
+					message, err := incomingRoute.Dequeue()
+					if err != nil {
+						return err
+					}
+					if _, ok := message.(*appmessage.MsgRequestNextPruningPointAndItsAnticoneBlocks); !ok {
+						return protocolerrors.Errorf(true, "received unexpected message type. "+
+							"expected: %s, got: %s", appmessage.CmdRequestNextPruningPointAndItsAnticoneBlocks, message.Command())
+					}
 				}
 			}
 
