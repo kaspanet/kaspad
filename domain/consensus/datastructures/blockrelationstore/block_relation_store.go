@@ -75,6 +75,11 @@ func (brs *blockRelationStore) Has(dbContext model.DBReader, stagingArea *model.
 	return dbContext.Has(brs.hashAsKey(blockHash))
 }
 
+func (brs *blockRelationStore) UnstageAll(stagingArea *model.StagingArea) {
+	stagingShard := brs.stagingShard(stagingArea)
+	stagingShard.toAdd = make(map[externalapi.DomainHash]*model.BlockRelations)
+}
+
 func (brs *blockRelationStore) hashAsKey(hash *externalapi.DomainHash) model.DBKey {
 	return brs.bucket.Key(hash.ByteSlice())
 }

@@ -9,4 +9,5 @@ type BlockRelationStore interface {
 	IsStaged(stagingArea *StagingArea) bool
 	BlockRelation(dbContext DBReader, stagingArea *StagingArea, blockHash *externalapi.DomainHash) (*BlockRelations, error)
 	Has(dbContext DBReader, stagingArea *StagingArea, blockHash *externalapi.DomainHash) (bool, error)
+	UnstageAll(stagingArea *StagingArea)
 }

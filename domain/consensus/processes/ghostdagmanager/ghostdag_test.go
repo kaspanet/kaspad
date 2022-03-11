@@ -320,10 +320,6 @@ func (ds *GHOSTDAGDataStoreImpl) IsStaged(*model.StagingArea) bool {
 	panic("implement me")
 }
 
-func (ds *GHOSTDAGDataStoreImpl) Discard() {
-	panic("implement me")
-}
-
 func (ds *GHOSTDAGDataStoreImpl) Commit(dbTx model.DBTransaction) error {
 	panic("implement me")
 }
@@ -334,6 +330,10 @@ func (ds *GHOSTDAGDataStoreImpl) Get(dbContext model.DBReader, stagingArea *mode
 		return v, nil
 	}
 	return nil, nil
+}
+
+func (ds *GHOSTDAGDataStoreImpl) UnstageAll(stagingArea *model.StagingArea) {
+	panic("implement me")
 }
 
 type DAGTopologyManagerImpl struct {
