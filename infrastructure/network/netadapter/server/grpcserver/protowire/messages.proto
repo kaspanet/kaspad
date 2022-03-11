@@ -49,6 +49,7 @@ message KaspadMessage {
     TrustedDataMessage trustedData = 52;
     RequestIBDChainBlockLocatorMessage requestIBDChainBlockLocator = 53;
     IbdChainBlockLocatorMessage ibdChainBlockLocator = 54;
+    RequestPastDiffMessage requestPastDiff = 55;
 
     GetCurrentNetworkRequestMessage getCurrentNetworkRequest = 1001;
     GetCurrentNetworkResponseMessage getCurrentNetworkResponse = 1002;
