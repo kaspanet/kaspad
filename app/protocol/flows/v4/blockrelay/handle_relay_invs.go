@@ -10,6 +10,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/hashset"
 	"github.com/kaspanet/kaspad/infrastructure/config"
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
 	"github.com/pkg/errors"
@@ -131,6 +132,10 @@ func (flow *handleRelayInvsFlow) start() error {
 		}
 
 		log.Debugf("Processing block %s", inv.Hash)
+		oldVirtualInfo, err := flow.Domain().Consensus().GetVirtualInfo()
+		if err != nil {
+			return err
+		}
 		missingParents, virtualChangeSet, err := flow.processBlock(block)
 		if err != nil {
 			if errors.Is(err, ruleerrors.ErrPrunedBlock) {
@@ -153,11 +158,33 @@ func (flow *handleRelayInvsFlow) start() error {
 			continue
 		}
 
-		log.Debugf("Relaying block %s", inv.Hash)
-		err = flow.relayBlock(block)
+		oldVirtualParents := hashset.New()
+		for _, parent := range oldVirtualInfo.ParentHashes {
+			oldVirtualParents.Add(parent)
+		}
+
+		newVirtualInfo, err := flow.Domain().Consensus().GetVirtualInfo()
 		if err != nil {
 			return err
 		}
+
+		for _, parent := range newVirtualInfo.ParentHashes {
+			if oldVirtualParents.Contains(parent) {
+				continue
+			}
+
+			block, err := flow.Domain().Consensus().GetBlock(parent)
+			if err != nil {
+				return err
+			}
+			blockHash := consensushashing.BlockHash(block)
+			log.Debugf("Relaying block %s", blockHash)
+			err = flow.relayBlock(block)
+			if err != nil {
+				return err
+			}
+		}
+
 		log.Infof("Accepted block %s via relay", inv.Hash)
 		err = flow.OnNewBlock(block, virtualChangeSet)
 		if err != nil {
