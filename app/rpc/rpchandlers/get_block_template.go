@@ -7,6 +7,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/utils/txscript"
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
 	"github.com/kaspanet/kaspad/util"
+	"github.com/kaspanet/kaspad/version"
 )
 
 // HandleGetBlockTemplate handles the respectively named RPC command
@@ -25,7 +26,7 @@ func HandleGetBlockTemplate(context *rpccontext.Context, _ *router.Router, reque
 		return nil, err
 	}
 
-	coinbaseData := &externalapi.DomainCoinbaseData{ScriptPublicKey: scriptPublicKey}
+	coinbaseData := &externalapi.DomainCoinbaseData{ScriptPublicKey: scriptPublicKey, ExtraData: []byte(version.Version())}
 
 	templateBlock, err := context.Domain.MiningManager().GetBlockTemplate(coinbaseData)
 	if err != nil {
