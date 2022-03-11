@@ -343,6 +343,25 @@ func (s *consensus) GetHashesBetween(lowHash, highHash *externalapi.DomainHash, 
 	return s.syncManager.GetHashesBetween(stagingArea, lowHash, highHash, maxBlocks)
 }
 
+func (s *consensus) GetPastDiff(hasHash, requestedHash *externalapi.DomainHash,
+	maxBlocks uint64) (hashes []*externalapi.DomainHash, err error) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	stagingArea := model.NewStagingArea()
+
+	err = s.validateBlockHashExists(stagingArea, hasHash)
+	if err != nil {
+		return nil, err
+	}
+	err = s.validateBlockHashExists(stagingArea, requestedHash)
+	if err != nil {
+		return nil, err
+	}
+
+	return s.syncManager.GetPastDiff(stagingArea, hasHash, requestedHash, maxBlocks)
+}
+
 func (s *consensus) GetMissingBlockBodyHashes(highHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error) {
 	s.lock.Lock()
 	defer s.lock.Unlock()

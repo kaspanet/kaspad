@@ -12,13 +12,14 @@ import (
 	"time"
 )
 
-func (flow *handleIBDFlow) ibdWithHeadersProof(highHash *externalapi.DomainHash, highBlockDAAScore uint64) error {
+func (flow *handleIBDFlow) ibdWithHeadersProof(
+	syncerHeaderSelectedTipHash, relayBlockHash *externalapi.DomainHash, highBlockDAAScore uint64) error {
 	err := flow.Domain().InitStagingConsensus()
 	if err != nil {
 		return err
 	}
 
-	err = flow.downloadHeadersAndPruningUTXOSet(highHash, highBlockDAAScore)
+	err = flow.downloadHeadersAndPruningUTXOSet(syncerHeaderSelectedTipHash, relayBlockHash, highBlockDAAScore)
 	if err != nil {
 		if !flow.IsRecoverableError(err) {
 			return err
@@ -130,7 +131,10 @@ func (flow *handleIBDFlow) syncAndValidatePruningPointProof() (*externalapi.Doma
 	return consensushashing.HeaderHash(pruningPointProof.Headers[0][len(pruningPointProof.Headers[0])-1]), nil
 }
 
-func (flow *handleIBDFlow) downloadHeadersAndPruningUTXOSet(highHash *externalapi.DomainHash, highBlockDAAScore uint64) error {
+func (flow *handleIBDFlow) downloadHeadersAndPruningUTXOSet(
+	syncerHeaderSelectedTipHash, relayBlockHash *externalapi.DomainHash,
+	highBlockDAAScore uint64) error {
+
 	proofPruningPoint, err := flow.syncAndValidatePruningPointProof()
 	if err != nil {
 		return err
@@ -147,19 +151,20 @@ func (flow *handleIBDFlow) downloadHeadersAndPruningUTXOSet(highHash *externalap
 		return protocolerrors.Errorf(true, "the genesis pruning point violates finality")
 	}
 
-	err = flow.syncPruningPointFutureHeaders(flow.Domain().StagingConsensus(), proofPruningPoint, highHash, highBlockDAAScore)
+	err = flow.syncPruningPointFutureHeaders(flow.Domain().StagingConsensus(),
+		syncerHeaderSelectedTipHash, proofPruningPoint, relayBlockHash, highBlockDAAScore)
 	if err != nil {
 		return err
 	}
 
 	log.Infof("Headers downloaded from peer %s", flow.peer)
 
-	highHashInfo, err := flow.Domain().StagingConsensus().GetBlockInfo(highHash)
+	relayBlockInfo, err := flow.Domain().StagingConsensus().GetBlockInfo(relayBlockHash)
 	if err != nil {
 		return err
 	}
 
-	if !highHashInfo.Exists {
+	if !relayBlockInfo.Exists {
 		return protocolerrors.Errorf(true, "the triggering IBD block was not sent")
 	}
 

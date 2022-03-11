@@ -33,7 +33,7 @@ func (x *RequestIBDChainBlockLocatorMessage) toAppMessage() (appmessage.Message,
 	}
 	return &appmessage.MsgRequestIBDChainBlockLocator{
 		HighHash: highHash,
-		LowHash: lowHash,
+		LowHash:  lowHash,
 	}, nil
 
 }
@@ -48,7 +48,7 @@ func (x *KaspadMessage_RequestIBDChainBlockLocator) fromAppMessage(msgGetBlockLo
 	}
 	x.RequestIBDChainBlockLocator = &RequestIBDChainBlockLocatorMessage{
 		HighHash: highHash,
-		LowHash: lowHash,
+		LowHash:  lowHash,
 	}
 
 	return nil

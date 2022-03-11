@@ -41,48 +41,31 @@ func (flow *handleRequestPastDiffFlow) start() error {
 			return err
 		}
 		log.Debugf("Received requestPastDiff with hasHash: %s, requestedHash: %s", hasHash, requestedHash)
+		log.Debugf("Getting past(%s) setminus past(%s) to %s", requestedHash, hasHash, flow.peer)
 
-		// TODO: implement logic
-		for !hasHash.Equal(requestedHash) {
-			log.Debugf("Getting block headers between %s and %s to %s", hasHash, requestedHash, flow.peer)
+		// GetPastDiff is a relatively heavy operation so we limit it
+		// in order to avoid locking the consensus for too long
+		// maxBlocks MUST be >= MergeSetSizeLimit + 1
+		const maxBlocks = 1 << 10
+		blockHashes, err := flow.Domain().Consensus().GetPastDiff(hasHash, requestedHash, maxBlocks)
+		if err != nil {
+			return protocolerrors.Wrap(true, err, "Expected hashes in anticone one of the other")
+		}
+		log.Debugf("Got %d header hashes in past(%s) setminus past(%s)", len(blockHashes), requestedHash, hasHash)
 
-			// GetHashesBetween is a relatively heavy operation so we limit it
-			// in order to avoid locking the consensus for too long
-			// maxBlocks MUST be >= MergeSetSizeLimit + 1
-			const maxBlocks = 1 << 10
-			// TODO: implement past diff API
-			blockHashes, _, err := flow.Domain().Consensus().GetHashesBetween(hasHash, requestedHash, maxBlocks)
+		blockHeaders := make([]*appmessage.MsgBlockHeader, len(blockHashes))
+		for i, blockHash := range blockHashes {
+			blockHeader, err := flow.Domain().Consensus().GetBlockHeader(blockHash)
 			if err != nil {
 				return err
 			}
-			log.Debugf("Got %d header hashes above hasHash %s", len(blockHashes), hasHash)
+			blockHeaders[i] = appmessage.DomainBlockHeaderToBlockHeader(blockHeader)
+		}
 
-			blockHeaders := make([]*appmessage.MsgBlockHeader, len(blockHashes))
-			for i, blockHash := range blockHashes {
-				blockHeader, err := flow.Domain().Consensus().GetBlockHeader(blockHash)
-				if err != nil {
-					return err
-				}
-				blockHeaders[i] = appmessage.DomainBlockHeaderToBlockHeader(blockHeader)
-			}
-
-			blockHeadersMessage := appmessage.NewBlockHeadersMessage(blockHeaders)
-			err = flow.outgoingRoute.Enqueue(blockHeadersMessage)
-			if err != nil {
-				return err
-			}
-
-			message, err := flow.incomingRoute.Dequeue()
-			if err != nil {
-				return err
-			}
-			if _, ok := message.(*appmessage.MsgRequestNextHeaders); !ok {
-				return protocolerrors.Errorf(true, "received unexpected message type. "+
-					"expected: %s, got: %s", appmessage.CmdRequestNextHeaders, message.Command())
-			}
-
-			// The next hasHash is the last element in blockHashes
-			hasHash = blockHashes[len(blockHashes)-1]
+		blockHeadersMessage := appmessage.NewBlockHeadersMessage(blockHeaders)
+		err = flow.outgoingRoute.Enqueue(blockHeadersMessage)
+		if err != nil {
+			return err
 		}
 
 		err = flow.outgoingRoute.Enqueue(appmessage.NewMsgDoneHeaders())

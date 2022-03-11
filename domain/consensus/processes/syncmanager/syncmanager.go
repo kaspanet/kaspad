@@ -4,6 +4,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/infrastructure/logger"
+	"github.com/pkg/errors"
 )
 
 type syncManager struct {
@@ -67,6 +68,32 @@ func (sm *syncManager) GetHashesBetween(stagingArea *model.StagingArea, lowHash,
 	defer onEnd()
 
 	return sm.antiPastHashesBetween(stagingArea, lowHash, highHash, maxBlocks)
+}
+
+func (sm *syncManager) GetPastDiff(stagingArea *model.StagingArea, hasHash,
+	requestedHash *externalapi.DomainHash, maxBlocks uint64) (hashes []*externalapi.DomainHash, err error) {
+	onEnd := logger.LogAndMeasureExecutionTime(log, "GetPastDiff")
+	defer onEnd()
+	isHasAncestorOfRequested, err := sm.dagTopologyManager.IsAncestorOf(stagingArea, hasHash, requestedHash)
+	if err != nil {
+		return nil, err
+	}
+	if isHasAncestorOfRequested {
+		return nil, errors.Errorf("expected block %s to be in anticone of %s",
+			hasHash,
+			requestedHash)
+	}
+	isRequestedAncestorOfHas, err := sm.dagTopologyManager.IsAncestorOf(stagingArea, requestedHash, hasHash)
+	if err != nil {
+		return nil, err
+	}
+	if isRequestedAncestorOfHas {
+		return nil, errors.Errorf("expected block %s to be in anticone of %s",
+			hasHash,
+			requestedHash)
+	}
+	// TODO: use maxBlocks limit
+	return sm.dagTraversalManager.AnticoneFromBlocks(stagingArea, []*externalapi.DomainHash{requestedHash}, hasHash)
 }
 
 func (sm *syncManager) GetMissingBlockBodyHashes(stagingArea *model.StagingArea, highHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error) {

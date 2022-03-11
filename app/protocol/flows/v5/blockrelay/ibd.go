@@ -76,11 +76,11 @@ func (flow *handleIBDFlow) runIBDIfNotRunning(block *externalapi.DomainBlock) er
 		flow.logIBDFinished(isFinishedSuccessfully)
 	}()
 
-	highHash := consensushashing.BlockHash(block)
+	relayBlockHash := consensushashing.BlockHash(block)
 
-	log.Debugf("IBD started with peer %s and highHash %s", flow.peer, highHash)
-	log.Debugf("Syncing blocks up to %s", highHash)
-	log.Debugf("Trying to find highest known syncer chain block from peer %s with relay hash %s", flow.peer, highHash)
+	log.Debugf("IBD started with peer %s and relayBlockHash %s", flow.peer, relayBlockHash)
+	log.Debugf("Syncing blocks up to %s", relayBlockHash)
+	log.Debugf("Trying to find highest known syncer chain block from peer %s with relay hash %s", flow.peer, relayBlockHash)
 
 	/*
 	Algorithm:
@@ -98,6 +98,7 @@ func (flow *handleIBDFlow) runIBDIfNotRunning(block *externalapi.DomainBlock) er
 		return protocolerrors.Errorf(true,"Expecting initial syncer chain block locator " +
 			"to contain at least one element")
 	}
+	syncerHeaderSelectedTipHash := locatorHashes[0]
 	var highestKnownSyncerChainHash *externalapi.DomainHash
 	for {
 		var lowestUnknownSyncerChainHash, currentHighestKnownSyncerChainHash *externalapi.DomainHash
@@ -146,6 +147,8 @@ func (flow *handleIBDFlow) runIBDIfNotRunning(block *externalapi.DomainBlock) er
 				return protocolerrors.Errorf(true, "Expecting initial syncer chain block locator "+
 					"to contain at least one element")
 			}
+			// Reset syncer's header selected tip
+			syncerHeaderSelectedTipHash = locatorHashes[0]
 		}
 	}
 
@@ -164,7 +167,7 @@ func (flow *handleIBDFlow) runIBDIfNotRunning(block *externalapi.DomainBlock) er
 
 	if shouldDownloadHeadersProof {
 		log.Infof("Starting IBD with headers proof")
-		err := flow.ibdWithHeadersProof(highHash, block.Header.DAAScore())
+		err := flow.ibdWithHeadersProof(syncerHeaderSelectedTipHash, relayBlockHash, block.Header.DAAScore())
 		if err != nil {
 			return err
 		}
@@ -177,25 +180,26 @@ func (flow *handleIBDFlow) runIBDIfNotRunning(block *externalapi.DomainBlock) er
 
 			if isGenesisVirtualSelectedParent {
 				log.Infof("Cannot IBD to %s because it won't change the pruning point. The node needs to IBD "+
-					"to the recent pruning point before normal operation can resume.", highHash)
+					"to the recent pruning point before normal operation can resume.", relayBlockHash)
 				return nil
 			}
 		}
 
+		// TODO: need DAA score of syncerHeaderSelectedTipHash
 		err = flow.syncPruningPointFutureHeaders(
 			flow.Domain().Consensus(),
-			highestKnownSyncerChainHash, highHash, block.Header.DAAScore())
+			syncerHeaderSelectedTipHash, highestKnownSyncerChainHash, relayBlockHash, block.Header.DAAScore())
 		if err != nil {
 			return err
 		}
 	}
 
-	err = flow.syncMissingBlockBodies(highHash)
+	err = flow.syncMissingBlockBodies(relayBlockHash)
 	if err != nil {
 		return err
 	}
 
-	log.Debugf("Finished syncing blocks up to %s", highHash)
+	log.Debugf("Finished syncing blocks up to %s", relayBlockHash)
 	isFinishedSuccessfully = true
 	return nil
 }
@@ -355,17 +359,18 @@ func (flow *handleIBDFlow) fetchHighestHash__(
 	}
 }
 
-func (flow *handleIBDFlow) syncPruningPointFutureHeaders(consensus externalapi.Consensus, highestSharedBlockHash *externalapi.DomainHash,
-	highHash *externalapi.DomainHash, highBlockDAAScore uint64) error {
+func (flow *handleIBDFlow) syncPruningPointFutureHeaders(consensus externalapi.Consensus,
+	syncerHeaderSelectedTipHash, highestKnownSyncerChainHash, relayBlockHash *externalapi.DomainHash,
+	highBlockDAAScore uint64) error {
 
 	log.Infof("Downloading headers from %s", flow.peer)
 
-	err := flow.sendRequestHeaders(highestSharedBlockHash, highHash)
+	err := flow.sendRequestHeaders(highestKnownSyncerChainHash, syncerHeaderSelectedTipHash)
 	if err != nil {
 		return err
 	}
 
-	highestSharedBlockHeader, err := consensus.GetBlockHeader(highestSharedBlockHash)
+	highestSharedBlockHeader, err := consensus.GetBlockHeader(highestKnownSyncerChainHash)
 	if err != nil {
 		return err
 	}
@@ -402,14 +407,44 @@ func (flow *handleIBDFlow) syncPruningPointFutureHeaders(consensus externalapi.C
 		select {
 		case ibdBlocksMessage, ok := <-blockHeadersMessageChan:
 			if !ok {
-				// If the highHash has not been received, the peer is misbehaving
-				highHashBlockInfo, err := consensus.GetBlockInfo(highHash)
+				// Finished downloading syncer selected tip blocks,
+				// check if we already have the triggering relayBlockHash
+				relayBlockInfo, err := consensus.GetBlockInfo(relayBlockHash)
 				if err != nil {
 					return err
 				}
-				if !highHashBlockInfo.Exists {
+				if !relayBlockInfo.Exists {
+					// Send a special header request for the past diff. This is expected to be a small,
+					// as it is bounded to the size of virtual's mergeset
+					err = flow.sendRequestPastDiff(syncerHeaderSelectedTipHash, relayBlockHash)
+					if err != nil {
+						return err
+					}
+					pastDiffHeadersMessage, pastDiffDone, err := flow.receiveHeaders()
+					if err != nil {
+						return err
+					}
+					if !pastDiffDone {
+						return protocolerrors.Errorf(true,
+							"Expected only one past diff header chunk for past(%s) setminus past(%s)",
+							syncerHeaderSelectedTipHash, relayBlockHash)
+					}
+					for _, header := range pastDiffHeadersMessage.BlockHeaders {
+						err = flow.processHeader(consensus, header)
+						if err != nil {
+							return err
+						}
+					}
+				}
+
+				// If the relayBlockHash has still not been received, the peer is misbehaving
+				relayBlockInfo, err = consensus.GetBlockInfo(relayBlockHash)
+				if err != nil {
+					return err
+				}
+				if !relayBlockInfo.Exists {
 					return protocolerrors.Errorf(true, "did not receive "+
-						"highHash block %s from peer %s during block download", highHash, flow.peer)
+						"highHash block %s from peer %s during block download", relayBlockHash, flow.peer)
 				}
 				return nil
 			}
@@ -428,10 +463,17 @@ func (flow *handleIBDFlow) syncPruningPointFutureHeaders(consensus externalapi.C
 	}
 }
 
-func (flow *handleIBDFlow) sendRequestHeaders(highestSharedBlockHash *externalapi.DomainHash,
-	peerSelectedTipHash *externalapi.DomainHash) error {
+func (flow *handleIBDFlow) sendRequestPastDiff(
+	syncerHeaderSelectedTipHash, relayBlockHash *externalapi.DomainHash) error {
 
-	msgGetBlockInvs := appmessage.NewMsgRequstHeaders(highestSharedBlockHash, peerSelectedTipHash)
+	msgGetPastDiff := appmessage.NewMsgRequestPastDiff(syncerHeaderSelectedTipHash, relayBlockHash)
+	return flow.outgoingRoute.Enqueue(msgGetPastDiff)
+}
+
+func (flow *handleIBDFlow) sendRequestHeaders(
+	highestKnownSyncerChainHash, syncerHeaderSelectedTipHash *externalapi.DomainHash) error {
+
+	msgGetBlockInvs := appmessage.NewMsgRequstHeaders(highestKnownSyncerChainHash, syncerHeaderSelectedTipHash)
 	return flow.outgoingRoute.Enqueue(msgGetBlockInvs)
 }
 
