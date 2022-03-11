@@ -12,7 +12,7 @@ import (
 
 const (
 	// DefaultMaxMessages is the default capacity for a route with a capacity defined
-	DefaultMaxMessages = 100
+	DefaultMaxMessages = 1000
 )
 
 var (
