@@ -142,6 +142,9 @@ func (flow *handleIBDFlow) runIBDIfNotRunning(block *externalapi.DomainBlock) er
 			// An empty locator signals that the syncer chain was modified and no longer contains one of
 			// the queried hashes, so we restart the search
 			locatorHashes, err = flow.getSyncerChainBlockLocator(nil, nil)
+			if err != nil {
+				return err
+			}
 			if len(locatorHashes) == 0 {
 				return protocolerrors.Errorf(true, "Expecting initial syncer chain block locator "+
 					"to contain at least one element")
