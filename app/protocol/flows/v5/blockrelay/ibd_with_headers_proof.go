@@ -47,7 +47,7 @@ func (flow *handleIBDFlow) ibdWithHeadersProof(
 }
 
 func (flow *handleIBDFlow) shouldSyncAndShouldDownloadHeadersProof(
-	highBlock  *externalapi.DomainBlock,
+	highBlock *externalapi.DomainBlock,
 	highestSharedBlockHash *externalapi.DomainHash) (shouldDownload, shouldSync bool, err error) {
 
 	var highestSharedBlockFound, isPruningPointInSharedBlockChain bool

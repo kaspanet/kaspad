@@ -83,10 +83,10 @@ func (flow *handleIBDFlow) runIBDIfNotRunning(block *externalapi.DomainBlock) er
 	log.Debugf("Trying to find highest known syncer chain block from peer %s with relay hash %s", flow.peer, relayBlockHash)
 
 	/*
-	Algorithm:
-		Request full selected chain block locator from syncer
-		Find the highest block which we know
-		Repeat the locator step over the new range until finding max(past(syncee) \cap chain(syncer))
+		Algorithm:
+			Request full selected chain block locator from syncer
+			Find the highest block which we know
+			Repeat the locator step over the new range until finding max(past(syncee) \cap chain(syncer))
 	*/
 
 	// Empty hashes indicate that the full chain is queried
@@ -95,7 +95,7 @@ func (flow *handleIBDFlow) runIBDIfNotRunning(block *externalapi.DomainBlock) er
 		return err
 	}
 	if len(locatorHashes) == 0 {
-		return protocolerrors.Errorf(true,"Expecting initial syncer chain block locator " +
+		return protocolerrors.Errorf(true, "Expecting initial syncer chain block locator "+
 			"to contain at least one element")
 	}
 	syncerHeaderSelectedTipHash := locatorHashes[0]
@@ -132,7 +132,7 @@ func (flow *handleIBDFlow) runIBDIfNotRunning(block *externalapi.DomainBlock) er
 		if len(locatorHashes) == 2 {
 			if !locatorHashes[0].Equal(lowestUnknownSyncerChainHash) ||
 				!locatorHashes[1].Equal(currentHighestKnownSyncerChainHash) {
-				return protocolerrors.Errorf(true, "Expecting the high and low " +
+				return protocolerrors.Errorf(true, "Expecting the high and low "+
 					"hashes to match the locatorHashes if len(locatorHashes) is 2")
 			}
 			// We found our search target
