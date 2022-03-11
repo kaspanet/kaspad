@@ -720,7 +720,7 @@ func (s *consensus) Anticone(blockHash *externalapi.DomainHash) ([]*externalapi.
 		return nil, err
 	}
 
-	return s.dagTraversalManager.AnticoneFromBlocks(stagingArea, tips, blockHash)
+	return s.dagTraversalManager.AnticoneFromBlocks(stagingArea, tips, blockHash, 0)
 }
 
 func (s *consensus) EstimateNetworkHashesPerSecond(startHash *externalapi.DomainHash, windowSize int) (uint64, error) {

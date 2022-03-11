@@ -14,16 +14,18 @@ func (dtm *dagTraversalManager) AnticoneFromVirtualPOV(stagingArea *model.Stagin
 		return nil, err
 	}
 
-	return dtm.AnticoneFromBlocks(stagingArea, virtualParents, blockHash)
+	return dtm.AnticoneFromBlocks(stagingArea, virtualParents, blockHash, 0)
 }
 
-func (dtm *dagTraversalManager) AnticoneFromBlocks(stagingArea *model.StagingArea, tips []*externalapi.DomainHash, blockHash *externalapi.DomainHash) (
+func (dtm *dagTraversalManager) AnticoneFromBlocks(stagingArea *model.StagingArea, tips []*externalapi.DomainHash,
+	blockHash *externalapi.DomainHash, maxTraversalAllowed uint64) (
 	[]*externalapi.DomainHash, error) {
 
 	anticone := []*externalapi.DomainHash{}
 	queue := tips
 	visited := hashset.New()
 
+	traversalCounter := uint64(0)
 	for len(queue) > 0 {
 		var current *externalapi.DomainHash
 		current, queue = queue[0], queue[1:]
@@ -46,6 +48,13 @@ func (dtm *dagTraversalManager) AnticoneFromBlocks(stagingArea *model.StagingAre
 		blockIsAncestorOfCurrent, err := dtm.dagTopologyManager.IsAncestorOf(stagingArea, blockHash, current)
 		if err != nil {
 			return nil, err
+		}
+
+		// We count the number of blocks in past(tips) \setminus past(blockHash).
+		// We don't use `len(visited)` since it includes some maximal blocks in past(blockHash) as well.
+		traversalCounter++
+		if maxTraversalAllowed > 0 && traversalCounter > maxTraversalAllowed {
+			return nil, model.ErrReachedMaxTraversalAllowed
 		}
 
 		if !blockIsAncestorOfCurrent {

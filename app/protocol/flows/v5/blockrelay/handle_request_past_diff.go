@@ -1,18 +1,20 @@
 package blockrelay
 
 import (
+	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/app/protocol/peer"
 	"github.com/kaspanet/kaspad/app/protocol/protocolerrors"
-	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
-
-	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/domain"
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+	"github.com/kaspanet/kaspad/infrastructure/config"
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
+	"sort"
 )
 
 // RequestPastDiffContext is the interface for the context needed for the HandleRequestHeaders flow.
 type RequestPastDiffContext interface {
 	Domain() domain.Domain
+	Config() *config.Config
 }
 
 type handleRequestPastDiffFlow struct {
@@ -43,13 +45,13 @@ func (flow *handleRequestPastDiffFlow) start() error {
 		log.Debugf("Received requestPastDiff with hasHash: %s, requestedHash: %s", hasHash, requestedHash)
 		log.Debugf("Getting past(%s) setminus past(%s) to %s", requestedHash, hasHash, flow.peer)
 
-		// GetPastDiff is a relatively heavy operation so we limit it
-		// in order to avoid locking the consensus for too long
-		// maxBlocks MUST be >= MergeSetSizeLimit + 1
-		const maxBlocks = 1 << 10
-		blockHashes, err := flow.Domain().Consensus().GetPastDiff(hasHash, requestedHash, maxBlocks)
+		// GetPastDiff is expected to be called by the syncee for getting the anticone of the header selected tip
+		// intersected by past of relayed block, and is thus expected to be bounded by mergeset limit since
+		// we relay blocks only if they enter virtual's mergeset. We add 2 for a small margin error.
+		blockHashes, err := flow.Domain().Consensus().GetPastDiff(hasHash, requestedHash,
+			flow.Config().ActiveNetParams.MergeSetSizeLimit+2)
 		if err != nil {
-			return protocolerrors.Wrap(true, err, "Expected hashes in anticone one of the other")
+			return protocolerrors.Wrap(true, err, "Failed querying anticone")
 		}
 		log.Debugf("Got %d header hashes in past(%s) setminus past(%s)", len(blockHashes), requestedHash, hasHash)
 
@@ -60,6 +62,14 @@ func (flow *handleRequestPastDiffFlow) start() error {
 				return err
 			}
 			blockHeaders[i] = appmessage.DomainBlockHeaderToBlockHeader(blockHeader)
+		}
+
+		// We sort the headers in bottom-up topological order before sending
+		sort.Slice(blockHeaders, func(i, j int) bool {
+			return blockHeaders[i].BlueWork.Cmp(blockHeaders[j].BlueWork) < 0
+		})
+		if err != nil {
+			return err
 		}
 
 		blockHeadersMessage := appmessage.NewBlockHeadersMessage(blockHeaders)

@@ -92,8 +92,8 @@ func (sm *syncManager) GetPastDiff(stagingArea *model.StagingArea, hasHash,
 			hasHash,
 			requestedHash)
 	}
-	// TODO: use maxBlocks limit
-	return sm.dagTraversalManager.AnticoneFromBlocks(stagingArea, []*externalapi.DomainHash{requestedHash}, hasHash)
+	return sm.dagTraversalManager.AnticoneFromBlocks(stagingArea,
+		[]*externalapi.DomainHash{requestedHash}, hasHash, maxBlocks)
 }
 
 func (sm *syncManager) GetMissingBlockBodyHashes(stagingArea *model.StagingArea, highHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error) {
