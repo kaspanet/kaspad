@@ -6,7 +6,6 @@ import (
 	peerpkg "github.com/kaspanet/kaspad/app/protocol/peer"
 	"github.com/kaspanet/kaspad/app/protocol/protocolerrors"
 	"github.com/kaspanet/kaspad/domain"
-	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
@@ -221,92 +220,6 @@ func (flow *handleIBDFlow) logIBDFinished(isFinishedSuccessfully bool) {
 	log.Infof("IBD finished %s", successString)
 }
 
-// findHighestSharedBlock attempts to find the highest shared block between the peer
-// and this node. This method may fail because the peer and us have conflicting pruning
-// points. In that case we return (nil, false, nil) so that we may stop IBD gracefully.
-func (flow *handleIBDFlow) findHighestSharedBlockHash__(
-	targetHash *externalapi.DomainHash) (*externalapi.DomainHash, bool, error) {
-
-	log.Debugf("Sending a blockLocator to %s between pruning point and headers selected tip", flow.peer)
-	blockLocator, err := flow.Domain().Consensus().CreateFullHeadersSelectedChainBlockLocator()
-	if err != nil {
-		return nil, false, err
-	}
-
-	for {
-		highestHash, highestHashFound, err := flow.fetchHighestHash__(targetHash, blockLocator)
-		if err != nil {
-			return nil, false, err
-		}
-		if !highestHashFound {
-			return nil, false, nil
-		}
-		highestHashIndex, err := flow.findHighestHashIndex__(highestHash, blockLocator)
-		if err != nil {
-			return nil, false, err
-		}
-
-		if highestHashIndex == 0 ||
-			// If the block locator contains only two adjacent chain blocks, the
-			// syncer will always find the same highest chain block, so to avoid
-			// an endless loop, we explicitly stop the loop in such situation.
-			(len(blockLocator) == 2 && highestHashIndex == 1) {
-
-			return highestHash, true, nil
-		}
-
-		locatorHashAboveHighestHash := highestHash
-		if highestHashIndex > 0 {
-			locatorHashAboveHighestHash = blockLocator[highestHashIndex-1]
-		}
-
-		blockLocator, err = flow.nextBlockLocator__(highestHash, locatorHashAboveHighestHash)
-		if err != nil {
-			return nil, false, err
-		}
-	}
-}
-
-func (flow *handleIBDFlow) nextBlockLocator__(lowHash, highHash *externalapi.DomainHash) (externalapi.BlockLocator, error) {
-	log.Debugf("Sending a blockLocator to %s between %s and %s", flow.peer, lowHash, highHash)
-	blockLocator, err := flow.Domain().Consensus().CreateHeadersSelectedChainBlockLocator(lowHash, highHash)
-	if err != nil {
-		if errors.Is(model.ErrBlockNotInSelectedParentChain, err) {
-			return nil, err
-		}
-		log.Debugf("Headers selected parent chain moved since findHighestSharedBlockHash - " +
-			"restarting with full block locator")
-		blockLocator, err = flow.Domain().Consensus().CreateFullHeadersSelectedChainBlockLocator()
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	return blockLocator, nil
-}
-
-func (flow *handleIBDFlow) findHighestHashIndex__(
-	highestHash *externalapi.DomainHash, blockLocator externalapi.BlockLocator) (int, error) {
-
-	highestHashIndex := 0
-	highestHashIndexFound := false
-	for i, blockLocatorHash := range blockLocator {
-		if highestHash.Equal(blockLocatorHash) {
-			highestHashIndex = i
-			highestHashIndexFound = true
-			break
-		}
-	}
-	if !highestHashIndexFound {
-		return 0, protocolerrors.Errorf(true, "highest hash %s "+
-			"returned from peer %s is not in the original blockLocator", highestHash, flow.peer)
-	}
-	log.Debugf("The index of the highest hash in the original "+
-		"blockLocator sent to %s is %d", flow.peer, highestHashIndex)
-
-	return highestHashIndex, nil
-}
-
 func (flow *handleIBDFlow) getSyncerChainBlockLocator(
 	highHash, lowHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error) {
 
@@ -325,37 +238,6 @@ func (flow *handleIBDFlow) getSyncerChainBlockLocator(
 	default:
 		return nil, protocolerrors.Errorf(true, "received unexpected message type. "+
 			"expected: %s, got: %s", appmessage.CmdIBDChainBlockLocator, message.Command())
-	}
-}
-
-// fetchHighestHash attempts to fetch the highest hash the peer knows amongst the given
-// blockLocator. This method may fail because the peer and us have conflicting pruning
-// points. In that case we return (nil, false, nil) so that we may stop IBD gracefully.
-func (flow *handleIBDFlow) fetchHighestHash__(
-	targetHash *externalapi.DomainHash, blockLocator externalapi.BlockLocator) (*externalapi.DomainHash, bool, error) {
-
-	ibdBlockLocatorMessage := appmessage.NewMsgIBDBlockLocator(targetHash, blockLocator)
-	err := flow.outgoingRoute.Enqueue(ibdBlockLocatorMessage)
-	if err != nil {
-		return nil, false, err
-	}
-	message, err := flow.incomingRoute.DequeueWithTimeout(common.DefaultTimeout)
-	if err != nil {
-		return nil, false, err
-	}
-	switch message := message.(type) {
-	case *appmessage.MsgIBDBlockLocatorHighestHash:
-		highestHash := message.HighestHash
-		log.Debugf("The highest hash the peer %s knows is %s", flow.peer, highestHash)
-
-		return highestHash, true, nil
-	case *appmessage.MsgIBDBlockLocatorHighestHashNotFound:
-		log.Debugf("Peer %s does not know any block within our blockLocator. "+
-			"This should only happen if there's a DAG split deeper than the pruning point.", flow.peer)
-		return nil, false, nil
-	default:
-		return nil, false, protocolerrors.Errorf(true, "received unexpected message type. "+
-			"expected: %s, got: %s", appmessage.CmdIBDBlockLocatorHighestHash, message.Command())
 	}
 }
 
