@@ -47,6 +47,7 @@ message KaspadMessage {
     ReadyMessage ready = 50;
     BlockWithTrustedDataV4Message blockWithTrustedDataV4 = 51;
     TrustedDataMessage trustedData = 52;
+    RequestNextPruningPointAndItsAnticoneBlocksMessage requestNextPruningPointAndItsAnticoneBlocks = 53;
 
     GetCurrentNetworkRequestMessage getCurrentNetworkRequest = 1001;
     GetCurrentNetworkResponseMessage getCurrentNetworkResponse = 1002;

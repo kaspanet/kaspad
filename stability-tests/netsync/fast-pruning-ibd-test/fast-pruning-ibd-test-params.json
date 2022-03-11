@@ -1,1 +1,7 @@
-{"skipProofOfWork":true, "mergeSetSizeLimit": 30, "finalityDuration": 30000, "hardForkOmitGenesisFromParentsDaaScore": 2505}
+{
+  "skipProofOfWork": true,
+  "mergeSetSizeLimit": 30,
+  "finalityDuration": 200000,
+  "hardForkOmitGenesisFromParentsDaaScore": 2505,
+  "k": 0
+}
