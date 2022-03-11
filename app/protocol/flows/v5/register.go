@@ -142,10 +142,10 @@ func registerBlockRelayFlows(m protocolManager, router *routerpkg.Router, isStop
 			},
 		),
 
-		m.RegisterFlow("HandleRequestPastDiff", router,
-			[]appmessage.MessageCommand{appmessage.CmdRequestPastDiff}, isStopping, errChan,
+		m.RegisterFlow("HandleRequestAnticone", router,
+			[]appmessage.MessageCommand{appmessage.CmdRequestAnticone}, isStopping, errChan,
 			func(incomingRoute *routerpkg.Route, peer *peerpkg.Peer) error {
-				return blockrelay.HandleRequestPastDiff(m.Context(), incomingRoute, outgoingRoute, peer)
+				return blockrelay.HandleRequestAnticone(m.Context(), incomingRoute, outgoingRoute, peer)
 			},
 		),
 

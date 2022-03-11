@@ -301,7 +301,7 @@ func (flow *handleIBDFlow) syncPruningPointFutureHeaders(consensus externalapi.C
 				if !relayBlockInfo.Exists {
 					// Send a special header request for the past diff. This is expected to be a small,
 					// as it is bounded to the size of virtual's mergeset
-					err = flow.sendRequestPastDiff(syncerHeaderSelectedTipHash, relayBlockHash)
+					err = flow.sendRequestAnticone(syncerHeaderSelectedTipHash, relayBlockHash)
 					if err != nil {
 						return err
 					}
@@ -348,11 +348,11 @@ func (flow *handleIBDFlow) syncPruningPointFutureHeaders(consensus externalapi.C
 	}
 }
 
-func (flow *handleIBDFlow) sendRequestPastDiff(
+func (flow *handleIBDFlow) sendRequestAnticone(
 	syncerHeaderSelectedTipHash, relayBlockHash *externalapi.DomainHash) error {
 
-	msgRequestPastDiff := appmessage.NewMsgRequestPastDiff(syncerHeaderSelectedTipHash, relayBlockHash)
-	return flow.outgoingRoute.Enqueue(msgRequestPastDiff)
+	msgRequestAnticone := appmessage.NewMsgRequestAnticone(syncerHeaderSelectedTipHash, relayBlockHash)
+	return flow.outgoingRoute.Enqueue(msgRequestAnticone)
 }
 
 func (flow *handleIBDFlow) sendRequestHeaders(

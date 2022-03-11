@@ -345,8 +345,8 @@ func toP2PPayload(message appmessage.Message) (isKaspadMessage_Payload, error) {
 			return nil, err
 		}
 		return payload, nil
-	case *appmessage.MsgRequestPastDiff:
-		payload := new(KaspadMessage_RequestPastDiff)
+	case *appmessage.MsgRequestAnticone:
+		payload := new(KaspadMessage_RequestAnticone)
 		err := payload.fromAppMessage(message)
 		if err != nil {
 			return nil, err

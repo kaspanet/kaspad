@@ -67,7 +67,7 @@ type KaspadMessage struct {
 	//	*KaspadMessage_TrustedData
 	//	*KaspadMessage_RequestIBDChainBlockLocator
 	//	*KaspadMessage_IbdChainBlockLocator
-	//	*KaspadMessage_RequestPastDiff
+	//	*KaspadMessage_RequestAnticone
 	//	*KaspadMessage_GetCurrentNetworkRequest
 	//	*KaspadMessage_GetCurrentNetworkResponse
 	//	*KaspadMessage_SubmitBlockRequest
@@ -477,9 +477,9 @@ func (x *KaspadMessage) GetIbdChainBlockLocator() *IbdChainBlockLocatorMessage {
 	return nil
 }
 
-func (x *KaspadMessage) GetRequestPastDiff() *RequestPastDiffMessage {
-	if x, ok := x.GetPayload().(*KaspadMessage_RequestPastDiff); ok {
-		return x.RequestPastDiff
+func (x *KaspadMessage) GetRequestAnticone() *RequestAnticoneMessage {
+	if x, ok := x.GetPayload().(*KaspadMessage_RequestAnticone); ok {
+		return x.RequestAnticone
 	}
 	return nil
 }
@@ -1212,8 +1212,8 @@ type KaspadMessage_IbdChainBlockLocator struct {
 	IbdChainBlockLocator *IbdChainBlockLocatorMessage `protobuf:"bytes,54,opt,name=ibdChainBlockLocator,proto3,oneof"`
 }
 
-type KaspadMessage_RequestPastDiff struct {
-	RequestPastDiff *RequestPastDiffMessage `protobuf:"bytes,55,opt,name=requestPastDiff,proto3,oneof"`
+type KaspadMessage_RequestAnticone struct {
+	RequestAnticone *RequestAnticoneMessage `protobuf:"bytes,55,opt,name=requestAnticone,proto3,oneof"`
 }
 
 type KaspadMessage_GetCurrentNetworkRequest struct {
@@ -1618,7 +1618,7 @@ func (*KaspadMessage_RequestIBDChainBlockLocator) isKaspadMessage_Payload() {}
 
 func (*KaspadMessage_IbdChainBlockLocator) isKaspadMessage_Payload() {}
 
-func (*KaspadMessage_RequestPastDiff) isKaspadMessage_Payload() {}
+func (*KaspadMessage_RequestAnticone) isKaspadMessage_Payload() {}
 
 func (*KaspadMessage_GetCurrentNetworkRequest) isKaspadMessage_Payload() {}
 
@@ -2004,11 +2004,11 @@ var file_messages_proto_rawDesc = []byte{
 	0x42, 0x6c, 0x6f, 0x63, 0x6b, 0x4c, 0x6f, 0x63, 0x61, 0x74, 0x6f, 0x72, 0x4d, 0x65, 0x73, 0x73,
 	0x61, 0x67, 0x65, 0x48, 0x00, 0x52, 0x14, 0x69, 0x62, 0x64, 0x43, 0x68, 0x61, 0x69, 0x6e, 0x42,
 	0x6c, 0x6f, 0x63, 0x6b, 0x4c, 0x6f, 0x63, 0x61, 0x74, 0x6f, 0x72, 0x12, 0x4d, 0x0a, 0x0f, 0x72,
-	0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x50, 0x61, 0x73, 0x74, 0x44, 0x69, 0x66, 0x66, 0x18, 0x37,
+	0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x41, 0x6e, 0x74, 0x69, 0x63, 0x6f, 0x6e, 0x65, 0x18, 0x37,
 	0x20, 0x01, 0x28, 0x0b, 0x32, 0x21, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x77, 0x69, 0x72, 0x65,
-	0x2e, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x50, 0x61, 0x73, 0x74, 0x44, 0x69, 0x66, 0x66,
+	0x2e, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x41, 0x6e, 0x74, 0x69, 0x63, 0x6f, 0x6e, 0x65,
 	0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x48, 0x00, 0x52, 0x0f, 0x72, 0x65, 0x71, 0x75, 0x65,
-	0x73, 0x74, 0x50, 0x61, 0x73, 0x74, 0x44, 0x69, 0x66, 0x66, 0x12, 0x69, 0x0a, 0x18, 0x67, 0x65,
+	0x73, 0x74, 0x41, 0x6e, 0x74, 0x69, 0x63, 0x6f, 0x6e, 0x65, 0x12, 0x69, 0x0a, 0x18, 0x67, 0x65,
 	0x74, 0x43, 0x75, 0x72, 0x72, 0x65, 0x6e, 0x74, 0x4e, 0x65, 0x74, 0x77, 0x6f, 0x72, 0x6b, 0x52,
 	0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x18, 0xe9, 0x07, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x2a, 0x2e,
 	0x70, 0x72, 0x6f, 0x74, 0x6f, 0x77, 0x69, 0x72, 0x65, 0x2e, 0x47, 0x65, 0x74, 0x43, 0x75, 0x72,
@@ -2670,7 +2670,7 @@ var file_messages_proto_goTypes = []interface{}{
 	(*TrustedDataMessage)(nil),                                         // 38: protowire.TrustedDataMessage
 	(*RequestIBDChainBlockLocatorMessage)(nil),                         // 39: protowire.RequestIBDChainBlockLocatorMessage
 	(*IbdChainBlockLocatorMessage)(nil),                                // 40: protowire.IbdChainBlockLocatorMessage
-	(*RequestPastDiffMessage)(nil),                                     // 41: protowire.RequestPastDiffMessage
+	(*RequestAnticoneMessage)(nil),                                     // 41: protowire.RequestAnticoneMessage
 	(*GetCurrentNetworkRequestMessage)(nil),                            // 42: protowire.GetCurrentNetworkRequestMessage
 	(*GetCurrentNetworkResponseMessage)(nil),                           // 43: protowire.GetCurrentNetworkResponseMessage
 	(*SubmitBlockRequestMessage)(nil),                                  // 44: protowire.SubmitBlockRequestMessage
@@ -2794,7 +2794,7 @@ var file_messages_proto_depIdxs = []int32{
 	38,  // 38: protowire.KaspadMessage.trustedData:type_name -> protowire.TrustedDataMessage
 	39,  // 39: protowire.KaspadMessage.requestIBDChainBlockLocator:type_name -> protowire.RequestIBDChainBlockLocatorMessage
 	40,  // 40: protowire.KaspadMessage.ibdChainBlockLocator:type_name -> protowire.IbdChainBlockLocatorMessage
-	41,  // 41: protowire.KaspadMessage.requestPastDiff:type_name -> protowire.RequestPastDiffMessage
+	41,  // 41: protowire.KaspadMessage.requestAnticone:type_name -> protowire.RequestAnticoneMessage
 	42,  // 42: protowire.KaspadMessage.getCurrentNetworkRequest:type_name -> protowire.GetCurrentNetworkRequestMessage
 	43,  // 43: protowire.KaspadMessage.getCurrentNetworkResponse:type_name -> protowire.GetCurrentNetworkResponseMessage
 	44,  // 44: protowire.KaspadMessage.submitBlockRequest:type_name -> protowire.SubmitBlockRequestMessage
@@ -2949,7 +2949,7 @@ func file_messages_proto_init() {
 		(*KaspadMessage_TrustedData)(nil),
 		(*KaspadMessage_RequestIBDChainBlockLocator)(nil),
 		(*KaspadMessage_IbdChainBlockLocator)(nil),
-		(*KaspadMessage_RequestPastDiff)(nil),
+		(*KaspadMessage_RequestAnticone)(nil),
 		(*KaspadMessage_GetCurrentNetworkRequest)(nil),
 		(*KaspadMessage_GetCurrentNetworkResponse)(nil),
 		(*KaspadMessage_SubmitBlockRequest)(nil),

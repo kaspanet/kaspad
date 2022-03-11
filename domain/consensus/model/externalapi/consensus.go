@@ -20,7 +20,7 @@ type Consensus interface {
 	GetBlockAcceptanceData(blockHash *DomainHash) (AcceptanceData, error)
 
 	GetHashesBetween(lowHash, highHash *DomainHash, maxBlocks uint64) (hashes []*DomainHash, actualHighHash *DomainHash, err error)
-	GetPastDiff(hasHash, requestedHash *DomainHash, maxBlocks uint64) (hashes []*DomainHash, err error)
+	GetAnticone(blockHash, contextHash *DomainHash, maxBlocks uint64) (hashes []*DomainHash, err error)
 	GetMissingBlockBodyHashes(highHash *DomainHash) ([]*DomainHash, error)
 	GetPruningPointUTXOs(expectedPruningPointHash *DomainHash, fromOutpoint *DomainOutpoint, limit int) ([]*OutpointAndUTXOEntryPair, error)
 	GetVirtualUTXOs(expectedVirtualParents []*DomainHash, fromOutpoint *DomainOutpoint, limit int) ([]*OutpointAndUTXOEntryPair, error)

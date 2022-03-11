@@ -70,30 +70,19 @@ func (sm *syncManager) GetHashesBetween(stagingArea *model.StagingArea, lowHash,
 	return sm.antiPastHashesBetween(stagingArea, lowHash, highHash, maxBlocks)
 }
 
-func (sm *syncManager) GetPastDiff(stagingArea *model.StagingArea, hasHash,
-	requestedHash *externalapi.DomainHash, maxBlocks uint64) (hashes []*externalapi.DomainHash, err error) {
-	onEnd := logger.LogAndMeasureExecutionTime(log, "GetPastDiff")
+func (sm *syncManager) GetAnticone(stagingArea *model.StagingArea, blockHash, contextHash *externalapi.DomainHash, maxBlocks uint64) (hashes []*externalapi.DomainHash, err error) {
+	onEnd := logger.LogAndMeasureExecutionTime(log, "GetAnticone")
 	defer onEnd()
-	isHasAncestorOfRequested, err := sm.dagTopologyManager.IsAncestorOf(stagingArea, hasHash, requestedHash)
+	isContextAncestorOfBlock, err := sm.dagTopologyManager.IsAncestorOf(stagingArea, contextHash, blockHash)
 	if err != nil {
 		return nil, err
 	}
-	if isHasAncestorOfRequested {
-		return nil, errors.Errorf("expected block %s to be in anticone of %s",
-			hasHash,
-			requestedHash)
+	if isContextAncestorOfBlock {
+		return nil, errors.Errorf("expected block %s to not be in future of %s",
+			blockHash,
+			contextHash)
 	}
-	isRequestedAncestorOfHas, err := sm.dagTopologyManager.IsAncestorOf(stagingArea, requestedHash, hasHash)
-	if err != nil {
-		return nil, err
-	}
-	if isRequestedAncestorOfHas {
-		return nil, errors.Errorf("expected block %s to be in anticone of %s",
-			hasHash,
-			requestedHash)
-	}
-	return sm.dagTraversalManager.AnticoneFromBlocks(stagingArea,
-		[]*externalapi.DomainHash{requestedHash}, hasHash, maxBlocks)
+	return sm.dagTraversalManager.AnticoneFromBlocks(stagingArea, []*externalapi.DomainHash{contextHash}, blockHash, maxBlocks)
 }
 
 func (sm *syncManager) GetMissingBlockBodyHashes(stagingArea *model.StagingArea, highHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error) {

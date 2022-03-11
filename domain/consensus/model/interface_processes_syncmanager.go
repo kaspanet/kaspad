@@ -6,7 +6,7 @@ import "github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 type SyncManager interface {
 	GetHashesBetween(stagingArea *StagingArea, lowHash, highHash *externalapi.DomainHash, maxBlocks uint64) (
 		hashes []*externalapi.DomainHash, actualHighHash *externalapi.DomainHash, err error)
-	GetPastDiff(stagingArea *StagingArea, hasHash, requestedHash *externalapi.DomainHash, maxBlocks uint64) (hashes []*externalapi.DomainHash, err error)
+	GetAnticone(stagingArea *StagingArea, blockHash, contextHash *externalapi.DomainHash, maxBlocks uint64) (hashes []*externalapi.DomainHash, err error)
 	GetMissingBlockBodyHashes(stagingArea *StagingArea, highHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error)
 	CreateBlockLocator(stagingArea *StagingArea, lowHash, highHash *externalapi.DomainHash, limit uint32) (
 		externalapi.BlockLocator, error)

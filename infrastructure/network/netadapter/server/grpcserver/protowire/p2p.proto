@@ -199,9 +199,9 @@ message IbdChainBlockLocatorMessage {
   repeated Hash blockLocatorHashes = 1;
 }
 
-message RequestPastDiffMessage{
-  Hash hasHash = 1;
-  Hash requestedHash = 2;
+message RequestAnticoneMessage{
+  Hash blockHash = 1;
+  Hash contextHash = 2;
 }
 
 message IbdBlockLocatorHighestHashMessage {

@@ -11,24 +11,24 @@ import (
 	"sort"
 )
 
-// RequestPastDiffContext is the interface for the context needed for the HandleRequestHeaders flow.
-type RequestPastDiffContext interface {
+// RequestAnticoneContext is the interface for the context needed for the HandleRequestHeaders flow.
+type RequestAnticoneContext interface {
 	Domain() domain.Domain
 	Config() *config.Config
 }
 
-type handleRequestPastDiffFlow struct {
-	RequestPastDiffContext
+type handleRequestAnticoneFlow struct {
+	RequestAnticoneContext
 	incomingRoute, outgoingRoute *router.Route
 	peer                         *peer.Peer
 }
 
-// HandleRequestPastDiff handles RequestPastDiff messages
-func HandleRequestPastDiff(context RequestPastDiffContext, incomingRoute *router.Route,
+// HandleRequestAnticone handles RequestAnticone messages
+func HandleRequestAnticone(context RequestAnticoneContext, incomingRoute *router.Route,
 	outgoingRoute *router.Route, peer *peer.Peer) error {
 
-	flow := &handleRequestPastDiffFlow{
-		RequestPastDiffContext: context,
+	flow := &handleRequestAnticoneFlow{
+		RequestAnticoneContext: context,
 		incomingRoute:          incomingRoute,
 		outgoingRoute:          outgoingRoute,
 		peer:                   peer,
@@ -36,24 +36,24 @@ func HandleRequestPastDiff(context RequestPastDiffContext, incomingRoute *router
 	return flow.start()
 }
 
-func (flow *handleRequestPastDiffFlow) start() error {
+func (flow *handleRequestAnticoneFlow) start() error {
 	for {
-		hasHash, requestedHash, err := receiveRequestPastDiff(flow.incomingRoute)
+		blockHash, contextHash, err := receiveRequestAnticone(flow.incomingRoute)
 		if err != nil {
 			return err
 		}
-		log.Debugf("Received requestPastDiff with hasHash: %s, requestedHash: %s", hasHash, requestedHash)
-		log.Debugf("Getting past(%s) setminus past(%s) to %s", requestedHash, hasHash, flow.peer)
+		log.Debugf("Received requestAnticone with blockHash: %s, contextHash: %s", blockHash, contextHash)
+		log.Debugf("Getting past(%s) setminus past(%s) to %s", contextHash, blockHash, flow.peer)
 
-		// GetPastDiff is expected to be called by the syncee for getting the anticone of the header selected tip
+		// GetAnticone is expected to be called by the syncee for getting the anticone of the header selected tip
 		// intersected by past of relayed block, and is thus expected to be bounded by mergeset limit since
 		// we relay blocks only if they enter virtual's mergeset. We add 2 for a small margin error.
-		blockHashes, err := flow.Domain().Consensus().GetPastDiff(hasHash, requestedHash,
+		blockHashes, err := flow.Domain().Consensus().GetAnticone(blockHash, contextHash,
 			flow.Config().ActiveNetParams.MergeSetSizeLimit+2)
 		if err != nil {
 			return protocolerrors.Wrap(true, err, "Failed querying anticone")
 		}
-		log.Debugf("Got %d header hashes in past(%s) setminus past(%s)", len(blockHashes), requestedHash, hasHash)
+		log.Debugf("Got %d header hashes in past(%s) cap anticone(%s)", len(blockHashes), contextHash, blockHash)
 
 		blockHeaders := make([]*appmessage.MsgBlockHeader, len(blockHashes))
 		for i, blockHash := range blockHashes {
@@ -85,14 +85,14 @@ func (flow *handleRequestPastDiffFlow) start() error {
 	}
 }
 
-func receiveRequestPastDiff(incomingRoute *router.Route) (hasHash *externalapi.DomainHash,
-	requestedHash *externalapi.DomainHash, err error) {
+func receiveRequestAnticone(incomingRoute *router.Route) (blockHash *externalapi.DomainHash,
+	contextHash *externalapi.DomainHash, err error) {
 
 	message, err := incomingRoute.Dequeue()
 	if err != nil {
 		return nil, nil, err
 	}
-	msgRequestPastDiff := message.(*appmessage.MsgRequestPastDiff)
+	msgRequestAnticone := message.(*appmessage.MsgRequestAnticone)
 
-	return msgRequestPastDiff.HasHash, msgRequestPastDiff.RequestedHash, nil
+	return msgRequestAnticone.BlockHash, msgRequestAnticone.ContextHash, nil
 }

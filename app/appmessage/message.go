@@ -71,7 +71,7 @@ const (
 	CmdBlockWithTrustedDataV4
 	CmdRequestIBDChainBlockLocator
 	CmdIBDChainBlockLocator
-	CmdRequestPastDiff
+	CmdRequestAnticone
 
 	// rpc
 	CmdGetCurrentNetworkRequestMessage
