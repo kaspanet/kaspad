@@ -351,15 +351,15 @@ func (flow *handleIBDFlow) syncPruningPointFutureHeaders(consensus externalapi.C
 func (flow *handleIBDFlow) sendRequestPastDiff(
 	syncerHeaderSelectedTipHash, relayBlockHash *externalapi.DomainHash) error {
 
-	msgGetPastDiff := appmessage.NewMsgRequestPastDiff(syncerHeaderSelectedTipHash, relayBlockHash)
-	return flow.outgoingRoute.Enqueue(msgGetPastDiff)
+	msgRequestPastDiff := appmessage.NewMsgRequestPastDiff(syncerHeaderSelectedTipHash, relayBlockHash)
+	return flow.outgoingRoute.Enqueue(msgRequestPastDiff)
 }
 
 func (flow *handleIBDFlow) sendRequestHeaders(
 	highestKnownSyncerChainHash, syncerHeaderSelectedTipHash *externalapi.DomainHash) error {
 
-	msgGetBlockInvs := appmessage.NewMsgRequstHeaders(highestKnownSyncerChainHash, syncerHeaderSelectedTipHash)
-	return flow.outgoingRoute.Enqueue(msgGetBlockInvs)
+	msgRequestHeaders := appmessage.NewMsgRequstHeaders(highestKnownSyncerChainHash, syncerHeaderSelectedTipHash)
+	return flow.outgoingRoute.Enqueue(msgRequestHeaders)
 }
 
 func (flow *handleIBDFlow) receiveHeaders() (msgIBDBlock *appmessage.BlockHeadersMessage, doneHeaders bool, err error) {

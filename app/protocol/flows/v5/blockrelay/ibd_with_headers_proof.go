@@ -47,11 +47,11 @@ func (flow *handleIBDFlow) ibdWithHeadersProof(
 }
 
 func (flow *handleIBDFlow) shouldSyncAndShouldDownloadHeadersProof(
-	highBlock *externalapi.DomainBlock,
-	highestSharedBlockHash *externalapi.DomainHash) (shouldDownload, shouldSync bool, err error) {
+	relayBlock *externalapi.DomainBlock,
+	highestKnownSyncerChainHash *externalapi.DomainHash) (shouldDownload, shouldSync bool, err error) {
 
 	var highestSharedBlockFound, isPruningPointInSharedBlockChain bool
-	if highestSharedBlockHash != nil {
+	if highestKnownSyncerChainHash != nil {
 		highestSharedBlockFound = true
 		pruningPoint, err := flow.Domain().Consensus().PruningPoint()
 		if err != nil {
@@ -59,14 +59,16 @@ func (flow *handleIBDFlow) shouldSyncAndShouldDownloadHeadersProof(
 		}
 
 		isPruningPointInSharedBlockChain, err = flow.Domain().Consensus().IsInSelectedParentChainOf(
-			pruningPoint, highestSharedBlockHash)
+			pruningPoint, highestKnownSyncerChainHash)
 		if err != nil {
 			return false, false, err
 		}
 	}
-
+	// Note: in the case where `highestSharedBlockFound == true && isPruningPointInSharedBlockChain == false`
+	// we might have here info which is relevant to finality conflict decisions. This should be taken into
+	// account when we improve this aspect.
 	if !highestSharedBlockFound || !isPruningPointInSharedBlockChain {
-		hasMoreBlueWorkThanSelectedTipAndPruningDepthMoreBlueScore, err := flow.checkIfHighHashHasMoreBlueWorkThanSelectedTipAndPruningDepthMoreBlueScore(highBlock)
+		hasMoreBlueWorkThanSelectedTipAndPruningDepthMoreBlueScore, err := flow.checkIfHighHashHasMoreBlueWorkThanSelectedTipAndPruningDepthMoreBlueScore(relayBlock)
 		if err != nil {
 			return false, false, err
 		}
@@ -81,7 +83,7 @@ func (flow *handleIBDFlow) shouldSyncAndShouldDownloadHeadersProof(
 	return false, true, nil
 }
 
-func (flow *handleIBDFlow) checkIfHighHashHasMoreBlueWorkThanSelectedTipAndPruningDepthMoreBlueScore(highBlock *externalapi.DomainBlock) (bool, error) {
+func (flow *handleIBDFlow) checkIfHighHashHasMoreBlueWorkThanSelectedTipAndPruningDepthMoreBlueScore(relayBlock *externalapi.DomainBlock) (bool, error) {
 	headersSelectedTip, err := flow.Domain().Consensus().GetHeadersSelectedTip()
 	if err != nil {
 		return false, err
@@ -92,11 +94,11 @@ func (flow *handleIBDFlow) checkIfHighHashHasMoreBlueWorkThanSelectedTipAndPruni
 		return false, err
 	}
 
-	if highBlock.Header.BlueScore() < headersSelectedTipInfo.BlueScore+flow.Config().NetParams().PruningDepth() {
+	if relayBlock.Header.BlueScore() < headersSelectedTipInfo.BlueScore+flow.Config().NetParams().PruningDepth() {
 		return false, nil
 	}
 
-	return highBlock.Header.BlueWork().Cmp(headersSelectedTipInfo.BlueWork) > 0, nil
+	return relayBlock.Header.BlueWork().Cmp(headersSelectedTipInfo.BlueWork) > 0, nil
 }
 
 func (flow *handleIBDFlow) syncAndValidatePruningPointProof() (*externalapi.DomainHash, error) {
