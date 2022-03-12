@@ -503,7 +503,7 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 			return nil, err
 		}
 
-		err = newReachabilityDataStore.Delete(dbManager)
+		err = newReachabilityDataStore.Delete(dbTx)
 		if err != nil {
 			return nil, err
 		}
@@ -534,7 +534,7 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 		}
 
 		for _, store := range reachabilityDataStores {
-			err = store.Delete(dbManager)
+			err = store.Delete(dbTx)
 			if err != nil {
 				return nil, err
 			}
