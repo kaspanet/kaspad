@@ -497,12 +497,14 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 	}
 
 	if isOldReachabilityInitialized {
+		log.Infof("Migrating the database to the new reachability structure")
 		stagingArea := model.NewStagingArea()
 		dbTx, err := dbManager.Begin()
 		if err != nil {
 			return nil, err
 		}
 
+		log.Infof("Deleting the new reachability store (in case a previous migration failed)")
 		err = newReachabilityDataStore.Delete(dbTx)
 		if err != nil {
 			return nil, err
@@ -513,11 +515,13 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 			return nil, err
 		}
 
+		log.Infof("Initializing new reachability store")
 		err = newReachabilityManager.Init(stagingArea)
 		if err != nil {
 			return nil, err
 		}
 
+		log.Infof("Committing changes")
 		err = staging.CommitAllChanges(dbManager, stagingArea)
 		if err != nil {
 			return nil, err
@@ -528,16 +532,18 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 			return nil, err
 		}
 
+		// Because we use reachabilityDataStores[0] for the migration indication, this is the only store we
+		// need to delete in an atomic way. For the rest of the stores we don't need database transactions,
+		// so we can delete them directly, hence saving memory.
+		log.Infof("Deleting the old level 0 reachability store")
 		dbTx, err = dbManager.Begin()
 		if err != nil {
 			return nil, err
 		}
 
-		for _, store := range reachabilityDataStores {
-			err = store.Delete(dbTx)
-			if err != nil {
-				return nil, err
-			}
+		err = reachabilityDataStores[0].Delete(dbTx)
+		if err != nil {
+			return nil, err
 		}
 
 		err = dbTx.Commit()
@@ -545,6 +551,15 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 			return nil, err
 		}
 
+		for i, store := range reachabilityDataStores[1:] {
+			log.Infof("Deleting the old level %d reachability store", i+1)
+			err = store.Delete(dbManager)
+			if err != nil {
+				return nil, err
+			}
+		}
+
+		log.Infof("Restarting the consensus")
 		return f.NewConsensus(config, db, dbPrefix)
 	}
 
