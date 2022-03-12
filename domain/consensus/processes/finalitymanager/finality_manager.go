@@ -132,6 +132,12 @@ func (fm *finalityManager) calculateFinalityPoint(stagingArea *model.StagingArea
 	if err != nil {
 		return nil, err
 	}
+	// In this case we expect the pruning point or a block above it to be the finality point.
+	// Note that above we already verified the chain and distance conditions for this
+	if current.Equal(model.VirtualGenesisBlockHash) {
+		current = pruningPoint
+	}
+
 	requiredBlueScore := ghostdagData.BlueScore() - fm.finalityDepth
 	log.Debugf("%s's finality point is the one having the highest blue score lower then %d", blockHash, requiredBlueScore)
 
