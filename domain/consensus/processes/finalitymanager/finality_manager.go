@@ -13,6 +13,8 @@ type finalityManager struct {
 	dagTopologyManager model.DAGTopologyManager
 	finalityStore      model.FinalityStore
 	ghostdagDataStore  model.GHOSTDAGDataStore
+	pruningStore       model.PruningStore
+	blockHeaderStore   model.BlockHeaderStore
 	genesisHash        *externalapi.DomainHash
 	finalityDepth      uint64
 }
@@ -22,6 +24,8 @@ func New(databaseContext model.DBReader,
 	dagTopologyManager model.DAGTopologyManager,
 	finalityStore model.FinalityStore,
 	ghostdagDataStore model.GHOSTDAGDataStore,
+	pruningStore model.PruningStore,
+	blockHeaderStore model.BlockHeaderStore,
 	genesisHash *externalapi.DomainHash,
 	finalityDepth uint64) model.FinalityManager {
 
@@ -31,6 +35,8 @@ func New(databaseContext model.DBReader,
 		dagTopologyManager: dagTopologyManager,
 		finalityStore:      finalityStore,
 		ghostdagDataStore:  ghostdagDataStore,
+		pruningStore:       pruningStore,
+		blockHeaderStore:   blockHeaderStore,
 		finalityDepth:      finalityDepth,
 	}
 }
@@ -94,6 +100,27 @@ func (fm *finalityManager) calculateFinalityPoint(stagingArea *model.StagingArea
 	if ghostdagData.BlueScore() < fm.finalityDepth {
 		log.Debugf("%s blue score lower then finality depth - returning genesis as finality point", blockHash)
 		return fm.genesisHash, nil
+	}
+
+	pruningPoint, err := fm.pruningStore.PruningPoint(fm.databaseContext, stagingArea)
+	if err != nil {
+		return nil, err
+	}
+	pruningPointHeader, err := fm.blockHeaderStore.BlockHeader(fm.databaseContext, stagingArea, pruningPoint)
+	if err != nil {
+		return nil, err
+	}
+	if ghostdagData.BlueScore() < pruningPointHeader.BlueScore()+fm.finalityDepth {
+		log.Debugf("%s blue score less than finality distance over pruning point - returning virtual genesis as finality point", blockHash)
+		return model.VirtualGenesisBlockHash, nil
+	}
+	isPruningPointOnChain, err := fm.dagTopologyManager.IsInSelectedParentChainOf(stagingArea, pruningPoint, blockHash)
+	if err != nil {
+		return nil, err
+	}
+	if !isPruningPointOnChain {
+		log.Debugf("pruning point not in selected chain of %s - returning virtual genesis as finality point", blockHash)
+		return model.VirtualGenesisBlockHash, nil
 	}
 
 	selectedParent := ghostdagData.SelectedParent()
