@@ -47,10 +47,10 @@ message KaspadMessage {
     ReadyMessage ready = 50;
     BlockWithTrustedDataV4Message blockWithTrustedDataV4 = 51;
     TrustedDataMessage trustedData = 52;
-    RequestNextPruningPointAndItsAnticoneBlocksMessage requestNextPruningPointAndItsAnticoneBlocks = 53;
-    RequestIBDChainBlockLocatorMessage requestIBDChainBlockLocator = 54;
-    IbdChainBlockLocatorMessage ibdChainBlockLocator = 55;
-    RequestAnticoneMessage requestAnticone = 56;
+    RequestIBDChainBlockLocatorMessage requestIBDChainBlockLocator = 53;
+    IbdChainBlockLocatorMessage ibdChainBlockLocator = 54;
+    RequestAnticoneMessage requestAnticone = 55;
+    RequestNextPruningPointAndItsAnticoneBlocksMessage requestNextPruningPointAndItsAnticoneBlocks = 56;
 
     GetCurrentNetworkRequestMessage getCurrentNetworkRequest = 1001;
     GetCurrentNetworkResponseMessage getCurrentNetworkResponse = 1002;
