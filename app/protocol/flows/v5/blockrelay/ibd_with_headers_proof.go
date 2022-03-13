@@ -229,7 +229,8 @@ func (flow *handleIBDFlow) syncPruningPointsAndPruningPointAnticone(proofPruning
 		return err
 	}
 
-	for {
+	i := 0
+	for ; ; i++ {
 		blockWithTrustedData, done, err := flow.receiveBlockWithTrustedData()
 		if err != nil {
 			return err
@@ -243,9 +244,19 @@ func (flow *handleIBDFlow) syncPruningPointsAndPruningPointAnticone(proofPruning
 		if err != nil {
 			return err
 		}
+
+		// We're using i+2 because we want to check if the next block will belong to the next batch, but we already downloaded
+		// the pruning point outside the loop so we use i+2 instead of i+1.
+		if (i+2)%ibdBatchSize == 0 {
+			log.Infof("Downloaded %d blocks from the pruning point anticone", i+1)
+			err := flow.outgoingRoute.Enqueue(appmessage.NewMsgRequestNextPruningPointAndItsAnticoneBlocks())
+			if err != nil {
+				return err
+			}
+		}
 	}
 
-	log.Infof("Finished downloading pruning point and its anticone from %s", flow.peer)
+	log.Infof("Finished downloading pruning point and its anticone from %s. Total blocks downloaded: %d", flow.peer, i+1)
 	return nil
 }
 

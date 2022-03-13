@@ -50,6 +50,7 @@ message KaspadMessage {
     RequestIBDChainBlockLocatorMessage requestIBDChainBlockLocator = 53;
     IbdChainBlockLocatorMessage ibdChainBlockLocator = 54;
     RequestAnticoneMessage requestAnticone = 55;
+    RequestNextPruningPointAndItsAnticoneBlocksMessage requestNextPruningPointAndItsAnticoneBlocks = 56;
 
     GetCurrentNetworkRequestMessage getCurrentNetworkRequest = 1001;
     GetCurrentNetworkResponseMessage getCurrentNetworkResponse = 1002;
