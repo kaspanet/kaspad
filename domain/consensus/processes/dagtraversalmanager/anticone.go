@@ -4,6 +4,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/hashset"
+	"github.com/pkg/errors"
 )
 
 func (dtm *dagTraversalManager) AnticoneFromVirtualPOV(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) (
@@ -54,7 +55,8 @@ func (dtm *dagTraversalManager) AnticoneFromBlocks(stagingArea *model.StagingAre
 		// We don't use `len(visited)` since it includes some maximal blocks in past(blockHash) as well.
 		traversalCounter++
 		if maxTraversalAllowed > 0 && traversalCounter > maxTraversalAllowed {
-			return nil, model.ErrReachedMaxTraversalAllowed
+			return nil, errors.Wrapf(model.ErrReachedMaxTraversalAllowed,
+				"Passed max allowed traversal (%d > %d)", traversalCounter, maxTraversalAllowed)
 		}
 
 		if !blockIsAncestorOfCurrent {
