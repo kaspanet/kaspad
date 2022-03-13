@@ -14,7 +14,6 @@ type finalityManager struct {
 	finalityStore      model.FinalityStore
 	ghostdagDataStore  model.GHOSTDAGDataStore
 	pruningStore       model.PruningStore
-	blockHeaderStore   model.BlockHeaderStore
 	genesisHash        *externalapi.DomainHash
 	finalityDepth      uint64
 }
@@ -25,7 +24,6 @@ func New(databaseContext model.DBReader,
 	finalityStore model.FinalityStore,
 	ghostdagDataStore model.GHOSTDAGDataStore,
 	pruningStore model.PruningStore,
-	blockHeaderStore model.BlockHeaderStore,
 	genesisHash *externalapi.DomainHash,
 	finalityDepth uint64) model.FinalityManager {
 
@@ -36,7 +34,6 @@ func New(databaseContext model.DBReader,
 		finalityStore:      finalityStore,
 		ghostdagDataStore:  ghostdagDataStore,
 		pruningStore:       pruningStore,
-		blockHeaderStore:   blockHeaderStore,
 		finalityDepth:      finalityDepth,
 	}
 }
@@ -106,11 +103,11 @@ func (fm *finalityManager) calculateFinalityPoint(stagingArea *model.StagingArea
 	if err != nil {
 		return nil, err
 	}
-	pruningPointHeader, err := fm.blockHeaderStore.BlockHeader(fm.databaseContext, stagingArea, pruningPoint)
+	pruningPointGhostdagData, err := fm.ghostdagDataStore.Get(fm.databaseContext, stagingArea, pruningPoint, false)
 	if err != nil {
 		return nil, err
 	}
-	if ghostdagData.BlueScore() < pruningPointHeader.BlueScore()+fm.finalityDepth {
+	if ghostdagData.BlueScore() < pruningPointGhostdagData.BlueScore()+fm.finalityDepth {
 		log.Debugf("%s blue score less than finality distance over pruning point - returning virtual genesis as finality point", blockHash)
 		return model.VirtualGenesisBlockHash, nil
 	}

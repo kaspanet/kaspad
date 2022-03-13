@@ -251,7 +251,6 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 		finalityStore,
 		ghostdagDataStore,
 		pruningStore,
-		blockHeaderStore,
 		genesisHash,
 		config.FinalityDepth())
 	mergeDepthManager := mergedepthmanager.New(

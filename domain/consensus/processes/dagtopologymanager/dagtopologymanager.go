@@ -107,7 +107,7 @@ func (dtm *dagTopologyManager) IsAnyAncestorOf(stagingArea *model.StagingArea, p
 func (dtm *dagTopologyManager) IsInSelectedParentChainOf(stagingArea *model.StagingArea, blockHashA *externalapi.DomainHash, blockHashB *externalapi.DomainHash) (bool, error) {
 
 	// Virtual doesn't have reachability data, therefore, it should be treated as a special case -
-	// use it's selected parent as blockHashB.
+	// use its selected parent as blockHashB.
 	if blockHashB == model.VirtualBlockHash {
 		ghostdagData, err := dtm.ghostdagStore.Get(dtm.databaseContext, stagingArea, blockHashB, false)
 		if err != nil {
@@ -191,7 +191,7 @@ func (dtm *dagTopologyManager) SetParents(stagingArea *model.StagingArea, blockH
 func (dtm *dagTopologyManager) ChildInSelectedParentChainOf(stagingArea *model.StagingArea, lowHash, highHash *externalapi.DomainHash) (*externalapi.DomainHash, error) {
 
 	// Virtual doesn't have reachability data, therefore, it should be treated as a special case -
-	// use it's selected parent as highHash.
+	// use its selected parent as highHash.
 	specifiedHighHash := highHash
 	if highHash == model.VirtualBlockHash {
 		ghostdagData, err := dtm.ghostdagStore.Get(dtm.databaseContext, stagingArea, highHash, false)
