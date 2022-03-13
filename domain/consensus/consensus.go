@@ -343,6 +343,25 @@ func (s *consensus) GetHashesBetween(lowHash, highHash *externalapi.DomainHash, 
 	return s.syncManager.GetHashesBetween(stagingArea, lowHash, highHash, maxBlocks)
 }
 
+func (s *consensus) GetAnticone(blockHash, contextHash *externalapi.DomainHash,
+	maxBlocks uint64) (hashes []*externalapi.DomainHash, err error) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	stagingArea := model.NewStagingArea()
+
+	err = s.validateBlockHashExists(stagingArea, blockHash)
+	if err != nil {
+		return nil, err
+	}
+	err = s.validateBlockHashExists(stagingArea, contextHash)
+	if err != nil {
+		return nil, err
+	}
+
+	return s.syncManager.GetAnticone(stagingArea, blockHash, contextHash, maxBlocks)
+}
+
 func (s *consensus) GetMissingBlockBodyHashes(highHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
@@ -701,7 +720,7 @@ func (s *consensus) Anticone(blockHash *externalapi.DomainHash) ([]*externalapi.
 		return nil, err
 	}
 
-	return s.dagTraversalManager.AnticoneFromBlocks(stagingArea, tips, blockHash)
+	return s.dagTraversalManager.AnticoneFromBlocks(stagingArea, tips, blockHash, 0)
 }
 
 func (s *consensus) EstimateNetworkHashesPerSecond(startHash *externalapi.DomainHash, windowSize int) (uint64, error) {
