@@ -10,7 +10,7 @@ type DAGTraversalManager interface {
 	// from lowHash (exclusive) to highHash (inclusive) over highHash's selected parent chain
 	SelectedChildIterator(stagingArea *StagingArea, highHash, lowHash *externalapi.DomainHash, includeLowHash bool) (BlockIterator, error)
 	SelectedChild(stagingArea *StagingArea, highHash, lowHash *externalapi.DomainHash) (*externalapi.DomainHash, error)
-	AnticoneFromBlocks(stagingArea *StagingArea, tips []*externalapi.DomainHash, blockHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error)
+	AnticoneFromBlocks(stagingArea *StagingArea, tips []*externalapi.DomainHash, blockHash *externalapi.DomainHash, maxTraversalAllowed uint64) ([]*externalapi.DomainHash, error)
 	AnticoneFromVirtualPOV(stagingArea *StagingArea, blockHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error)
 	BlockWindow(stagingArea *StagingArea, highHash *externalapi.DomainHash, windowSize int) ([]*externalapi.DomainHash, error)
 	DAABlockWindow(stagingArea *StagingArea, highHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error)

@@ -48,6 +48,9 @@ message KaspadMessage {
     BlockWithTrustedDataV4Message blockWithTrustedDataV4 = 51;
     TrustedDataMessage trustedData = 52;
     RequestNextPruningPointAndItsAnticoneBlocksMessage requestNextPruningPointAndItsAnticoneBlocks = 53;
+    RequestIBDChainBlockLocatorMessage requestIBDChainBlockLocator = 54;
+    IbdChainBlockLocatorMessage ibdChainBlockLocator = 55;
+    RequestAnticoneMessage requestAnticone = 56;
 
     GetCurrentNetworkRequestMessage getCurrentNetworkRequest = 1001;
     GetCurrentNetworkResponseMessage getCurrentNetworkResponse = 1002;

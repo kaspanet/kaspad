@@ -78,6 +78,7 @@ func registerBlockRelayFlows(m protocolManager, router *routerpkg.Router, isStop
 			appmessage.CmdDonePruningPointUTXOSetChunks, appmessage.CmdIBDBlock, appmessage.CmdPruningPoints,
 			appmessage.CmdPruningPointProof,
 			appmessage.CmdTrustedData,
+			appmessage.CmdIBDChainBlockLocator,
 		},
 			isStopping, errChan, func(incomingRoute *routerpkg.Route, peer *peerpkg.Peer) error {
 				return blockrelay.HandleIBD(m.Context(), incomingRoute,
@@ -131,6 +132,20 @@ func registerBlockRelayFlows(m protocolManager, router *routerpkg.Router, isStop
 			[]appmessage.MessageCommand{appmessage.CmdIBDBlockLocator}, isStopping, errChan,
 			func(incomingRoute *routerpkg.Route, peer *peerpkg.Peer) error {
 				return blockrelay.HandleIBDBlockLocator(m.Context(), incomingRoute, outgoingRoute, peer)
+			},
+		),
+
+		m.RegisterFlow("HandleRequestIBDChainBlockLocator", router,
+			[]appmessage.MessageCommand{appmessage.CmdRequestIBDChainBlockLocator}, isStopping, errChan,
+			func(incomingRoute *routerpkg.Route, peer *peerpkg.Peer) error {
+				return blockrelay.HandleRequestIBDChainBlockLocator(m.Context(), incomingRoute, outgoingRoute)
+			},
+		),
+
+		m.RegisterFlow("HandleRequestAnticone", router,
+			[]appmessage.MessageCommand{appmessage.CmdRequestAnticone}, isStopping, errChan,
+			func(incomingRoute *routerpkg.Route, peer *peerpkg.Peer) error {
+				return blockrelay.HandleRequestAnticone(m.Context(), incomingRoute, outgoingRoute, peer)
 			},
 		),
 

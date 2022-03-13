@@ -12,13 +12,14 @@ import (
 	"time"
 )
 
-func (flow *handleIBDFlow) ibdWithHeadersProof(highHash *externalapi.DomainHash, highBlockDAAScore uint64) error {
+func (flow *handleIBDFlow) ibdWithHeadersProof(
+	syncerHeaderSelectedTipHash, relayBlockHash *externalapi.DomainHash, highBlockDAAScore uint64) error {
 	err := flow.Domain().InitStagingConsensus()
 	if err != nil {
 		return err
 	}
 
-	err = flow.downloadHeadersAndPruningUTXOSet(highHash, highBlockDAAScore)
+	err = flow.downloadHeadersAndPruningUTXOSet(syncerHeaderSelectedTipHash, relayBlockHash, highBlockDAAScore)
 	if err != nil {
 		if !flow.IsRecoverableError(err) {
 			return err
@@ -45,11 +46,29 @@ func (flow *handleIBDFlow) ibdWithHeadersProof(highHash *externalapi.DomainHash,
 	return nil
 }
 
-func (flow *handleIBDFlow) shouldSyncAndShouldDownloadHeadersProof(highBlock *externalapi.DomainBlock,
-	highestSharedBlockFound bool) (shouldDownload, shouldSync bool, err error) {
+func (flow *handleIBDFlow) shouldSyncAndShouldDownloadHeadersProof(
+	relayBlock *externalapi.DomainBlock,
+	highestKnownSyncerChainHash *externalapi.DomainHash) (shouldDownload, shouldSync bool, err error) {
 
-	if !highestSharedBlockFound {
-		hasMoreBlueWorkThanSelectedTipAndPruningDepthMoreBlueScore, err := flow.checkIfHighHashHasMoreBlueWorkThanSelectedTipAndPruningDepthMoreBlueScore(highBlock)
+	var highestSharedBlockFound, isPruningPointInSharedBlockChain bool
+	if highestKnownSyncerChainHash != nil {
+		highestSharedBlockFound = true
+		pruningPoint, err := flow.Domain().Consensus().PruningPoint()
+		if err != nil {
+			return false, false, err
+		}
+
+		isPruningPointInSharedBlockChain, err = flow.Domain().Consensus().IsInSelectedParentChainOf(
+			pruningPoint, highestKnownSyncerChainHash)
+		if err != nil {
+			return false, false, err
+		}
+	}
+	// Note: in the case where `highestSharedBlockFound == true && isPruningPointInSharedBlockChain == false`
+	// we might have here info which is relevant to finality conflict decisions. This should be taken into
+	// account when we improve this aspect.
+	if !highestSharedBlockFound || !isPruningPointInSharedBlockChain {
+		hasMoreBlueWorkThanSelectedTipAndPruningDepthMoreBlueScore, err := flow.checkIfHighHashHasMoreBlueWorkThanSelectedTipAndPruningDepthMoreBlueScore(relayBlock)
 		if err != nil {
 			return false, false, err
 		}
@@ -64,7 +83,7 @@ func (flow *handleIBDFlow) shouldSyncAndShouldDownloadHeadersProof(highBlock *ex
 	return false, true, nil
 }
 
-func (flow *handleIBDFlow) checkIfHighHashHasMoreBlueWorkThanSelectedTipAndPruningDepthMoreBlueScore(highBlock *externalapi.DomainBlock) (bool, error) {
+func (flow *handleIBDFlow) checkIfHighHashHasMoreBlueWorkThanSelectedTipAndPruningDepthMoreBlueScore(relayBlock *externalapi.DomainBlock) (bool, error) {
 	headersSelectedTip, err := flow.Domain().Consensus().GetHeadersSelectedTip()
 	if err != nil {
 		return false, err
@@ -75,11 +94,11 @@ func (flow *handleIBDFlow) checkIfHighHashHasMoreBlueWorkThanSelectedTipAndPruni
 		return false, err
 	}
 
-	if highBlock.Header.BlueScore() < headersSelectedTipInfo.BlueScore+flow.Config().NetParams().PruningDepth() {
+	if relayBlock.Header.BlueScore() < headersSelectedTipInfo.BlueScore+flow.Config().NetParams().PruningDepth() {
 		return false, nil
 	}
 
-	return highBlock.Header.BlueWork().Cmp(headersSelectedTipInfo.BlueWork) > 0, nil
+	return relayBlock.Header.BlueWork().Cmp(headersSelectedTipInfo.BlueWork) > 0, nil
 }
 
 func (flow *handleIBDFlow) syncAndValidatePruningPointProof() (*externalapi.DomainHash, error) {
@@ -114,7 +133,10 @@ func (flow *handleIBDFlow) syncAndValidatePruningPointProof() (*externalapi.Doma
 	return consensushashing.HeaderHash(pruningPointProof.Headers[0][len(pruningPointProof.Headers[0])-1]), nil
 }
 
-func (flow *handleIBDFlow) downloadHeadersAndPruningUTXOSet(highHash *externalapi.DomainHash, highBlockDAAScore uint64) error {
+func (flow *handleIBDFlow) downloadHeadersAndPruningUTXOSet(
+	syncerHeaderSelectedTipHash, relayBlockHash *externalapi.DomainHash,
+	highBlockDAAScore uint64) error {
+
 	proofPruningPoint, err := flow.syncAndValidatePruningPointProof()
 	if err != nil {
 		return err
@@ -131,19 +153,20 @@ func (flow *handleIBDFlow) downloadHeadersAndPruningUTXOSet(highHash *externalap
 		return protocolerrors.Errorf(true, "the genesis pruning point violates finality")
 	}
 
-	err = flow.syncPruningPointFutureHeaders(flow.Domain().StagingConsensus(), proofPruningPoint, highHash, highBlockDAAScore)
+	err = flow.syncPruningPointFutureHeaders(flow.Domain().StagingConsensus(),
+		syncerHeaderSelectedTipHash, proofPruningPoint, relayBlockHash, highBlockDAAScore)
 	if err != nil {
 		return err
 	}
 
 	log.Infof("Headers downloaded from peer %s", flow.peer)
 
-	highHashInfo, err := flow.Domain().StagingConsensus().GetBlockInfo(highHash)
+	relayBlockInfo, err := flow.Domain().StagingConsensus().GetBlockInfo(relayBlockHash)
 	if err != nil {
 		return err
 	}
 
-	if !highHashInfo.Exists {
+	if !relayBlockInfo.Exists {
 		return protocolerrors.Errorf(true, "the triggering IBD block was not sent")
 	}
 
@@ -206,8 +229,7 @@ func (flow *handleIBDFlow) syncPruningPointsAndPruningPointAnticone(proofPruning
 		return err
 	}
 
-	i := 0
-	for ; ; i++ {
+	for {
 		blockWithTrustedData, done, err := flow.receiveBlockWithTrustedData()
 		if err != nil {
 			return err
@@ -221,19 +243,9 @@ func (flow *handleIBDFlow) syncPruningPointsAndPruningPointAnticone(proofPruning
 		if err != nil {
 			return err
 		}
-
-		// We're using i+2 because we want to check if the next block will belong to the next batch, but we already downloaded
-		// the pruning point outside the loop so we use i+2 instead of i+1.
-		if (i+2)%ibdBatchSize == 0 {
-			log.Infof("Downloaded %d blocks from the pruning point anticone", i+1)
-			err := flow.outgoingRoute.Enqueue(appmessage.NewMsgRequestNextPruningPointAndItsAnticoneBlocks())
-			if err != nil {
-				return err
-			}
-		}
 	}
 
-	log.Infof("Finished downloading pruning point and its anticone from %s. Total blocks downloaded: %d", flow.peer, i+1)
+	log.Infof("Finished downloading pruning point and its anticone from %s", flow.peer)
 	return nil
 }
 
