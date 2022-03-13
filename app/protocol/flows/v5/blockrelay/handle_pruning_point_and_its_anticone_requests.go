@@ -2,6 +2,7 @@ package blockrelay
 
 import (
 	"github.com/kaspanet/kaspad/app/appmessage"
+	"github.com/kaspanet/kaspad/app/protocol/common"
 	peerpkg "github.com/kaspanet/kaspad/app/protocol/peer"
 	"github.com/kaspanet/kaspad/app/protocol/protocolerrors"
 	"github.com/kaspanet/kaspad/domain"
@@ -130,7 +131,7 @@ func HandlePruningPointAndItsAnticoneRequests(context PruningPointAndItsAnticone
 				}
 
 				if (i+1)%ibdBatchSize == 0 {
-					message, err := incomingRoute.Dequeue()
+					message, err := incomingRoute.DequeueWithTimeout(common.DefaultTimeout)
 					if err != nil {
 						return err
 					}
