@@ -69,6 +69,7 @@ const (
 	CmdReady
 	CmdTrustedData
 	CmdBlockWithTrustedDataV4
+	CmdRequestNextPruningPointAndItsAnticoneBlocks
 	CmdRequestIBDChainBlockLocator
 	CmdIBDChainBlockLocator
 	CmdRequestAnticone
@@ -198,8 +199,10 @@ var ProtocolMessageCommandToString = map[MessageCommand]string{
 	CmdReady:                               "Ready",
 	CmdTrustedData:                         "TrustedData",
 	CmdBlockWithTrustedDataV4:              "BlockWithTrustedDataV4",
-	CmdRequestIBDChainBlockLocator:         "RequestIBDChainBlockLocator",
-	CmdIBDChainBlockLocator:                "IBDChainBlockLocator",
+	CmdRequestNextPruningPointAndItsAnticoneBlocks: "RequestNextPruningPointAndItsAnticoneBlocks",
+	CmdRequestIBDChainBlockLocator:                 "RequestIBDChainBlockLocator",
+	CmdIBDChainBlockLocator:                        "IBDChainBlockLocator",
+	CmdRequestAnticone:                             "RequestAnticone",
 }
 
 // RPCMessageCommandToString maps all MessageCommands to their string representation

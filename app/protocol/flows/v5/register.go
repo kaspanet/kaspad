@@ -122,7 +122,7 @@ func registerBlockRelayFlows(m protocolManager, router *routerpkg.Router, isStop
 		),
 
 		m.RegisterFlow("HandlePruningPointAndItsAnticoneRequests", router,
-			[]appmessage.MessageCommand{appmessage.CmdRequestPruningPointAndItsAnticone}, isStopping, errChan,
+			[]appmessage.MessageCommand{appmessage.CmdRequestPruningPointAndItsAnticone, appmessage.CmdRequestNextPruningPointAndItsAnticoneBlocks}, isStopping, errChan,
 			func(incomingRoute *routerpkg.Route, peer *peerpkg.Peer) error {
 				return blockrelay.HandlePruningPointAndItsAnticoneRequests(m.Context(), incomingRoute, outgoingRoute, peer)
 			},
