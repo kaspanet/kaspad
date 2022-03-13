@@ -15,7 +15,7 @@ func (msg *MsgRequestNextPruningPointAndItsAnticoneBlocks) Command() MessageComm
 	return CmdRequestNextPruningPointAndItsAnticoneBlocks
 }
 
-// NewMsgRequestNextHeaders returns a new kaspa RequestNextPruningPointAndItsAnticoneBlocks message that conforms to the
+// NewMsgRequestNextPruningPointAndItsAnticoneBlocks returns a new kaspa RequestNextPruningPointAndItsAnticoneBlocks message that conforms to the
 // Message interface.
 func NewMsgRequestNextPruningPointAndItsAnticoneBlocks() *MsgRequestNextPruningPointAndItsAnticoneBlocks {
 	return &MsgRequestNextPruningPointAndItsAnticoneBlocks{}

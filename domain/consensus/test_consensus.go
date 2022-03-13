@@ -186,7 +186,7 @@ func (tc *testConsensus) MineJSON(r io.Reader, blockType testapi.MineJSONBlockTy
 }
 
 func (tc *testConsensus) ToJSON(w io.Writer) error {
-	hashToId := make(map[externalapi.DomainHash]string)
+	hashToID := make(map[externalapi.DomainHash]string)
 	lastID := 0
 
 	encoder := json.NewEncoder(w)
@@ -219,14 +219,14 @@ func (tc *testConsensus) ToJSON(w io.Writer) error {
 
 		parentIDs := make([]string, len(directParents))
 		for i, parent := range directParents {
-			parentIDs[i] = hashToId[*parent]
+			parentIDs[i] = hashToID[*parent]
 		}
 		lastIDStr := fmt.Sprintf("%d", lastID)
 		blocksToAdd = append(blocksToAdd, jsonBlock{
 			ID:      lastIDStr,
 			Parents: parentIDs,
 		})
-		hashToId[*current] = lastIDStr
+		hashToID[*current] = lastIDStr
 		lastID++
 
 		children, err := tc.dagTopologyManagers[0].Children(model.NewStagingArea(), current)
