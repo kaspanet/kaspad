@@ -29,6 +29,9 @@ func (tobf *TransactionsOrderedByFeeRate) Push(transaction *MempoolTransaction) 
 	return nil
 }
 
+// ErrTransactionNotFound  is returned bt tobf.TransactionsOrderedByFeeRate
+var ErrTransactionNotFound = errors.New("Couldn't find transaction in mp.orderedTransactionsByFeeRate")
+
 // Remove removes the given transaction from the set.
 // Returns an error if transaction does not exist in the set, or if the given transaction does not have mass
 // and fee filled in.
@@ -39,7 +42,8 @@ func (tobf *TransactionsOrderedByFeeRate) Remove(transaction *MempoolTransaction
 	}
 
 	if !wasFound {
-		return errors.Errorf("Couldn't find %s in mp.orderedTransactionsByFeeRate", transaction.TransactionID())
+		return errors.Wrapf(ErrTransactionNotFound,
+			"Couldn't find %s in mp.orderedTransactionsByFeeRate", transaction.TransactionID())
 	}
 
 	return tobf.RemoveAtIndex(index)
