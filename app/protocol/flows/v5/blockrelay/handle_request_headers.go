@@ -10,7 +10,9 @@ import (
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
 )
 
-const ibdBatchSize = router.DefaultMaxMessages - 1
+// This constant must be equal at both syncer and syncee. Therefore, never (!!) change this constant unless a new p2p
+// version is introduced. See `TestIBDBatchSizeLessThanRouteCapacity` as well.
+const ibdBatchSize = 99
 
 // RequestHeadersContext is the interface for the context needed for the HandleRequestHeaders flow.
 type RequestHeadersContext interface {
