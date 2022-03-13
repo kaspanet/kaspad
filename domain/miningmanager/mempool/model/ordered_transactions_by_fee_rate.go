@@ -60,7 +60,7 @@ func (tobf *TransactionsOrderedByFeeRate) RemoveAtIndex(index int) error {
 // while preserving the order.
 func (tobf *TransactionsOrderedByFeeRate) findTransactionIndex(transaction *MempoolTransaction) (index int, wasFound bool, err error) {
 	if transaction.Transaction().Fee == 0 || transaction.Transaction().Mass == 0 {
-		return 0, false, errors.Errorf("findTxIndexInOrderedTransactionsByFeeRate expects a transaction with " +
+		return 0, false, errors.Errorf("findTransactionIndex expects a transaction with " +
 			"populated fee and mass")
 	}
 	txID := transaction.TransactionID()
