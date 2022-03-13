@@ -331,6 +331,34 @@ func toP2PPayload(message appmessage.Message) (isKaspadMessage_Payload, error) {
 			return nil, err
 		}
 		return payload, nil
+	case *appmessage.MsgRequestNextPruningPointAndItsAnticoneBlocks:
+		payload := new(KaspadMessage_RequestNextPruningPointAndItsAnticoneBlocks)
+		err := payload.fromAppMessage(message)
+		if err != nil {
+			return nil, err
+		}
+		return payload, nil
+	case *appmessage.MsgRequestIBDChainBlockLocator:
+		payload := new(KaspadMessage_RequestIBDChainBlockLocator)
+		err := payload.fromAppMessage(message)
+		if err != nil {
+			return nil, err
+		}
+		return payload, nil
+	case *appmessage.MsgIBDChainBlockLocator:
+		payload := new(KaspadMessage_IbdChainBlockLocator)
+		err := payload.fromAppMessage(message)
+		if err != nil {
+			return nil, err
+		}
+		return payload, nil
+	case *appmessage.MsgRequestAnticone:
+		payload := new(KaspadMessage_RequestAnticone)
+		err := payload.fromAppMessage(message)
+		if err != nil {
+			return nil, err
+		}
+		return payload, nil
 	default:
 		return nil, nil
 	}
