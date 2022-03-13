@@ -99,6 +99,7 @@ func (flow *handleIBDFlow) runIBDIfNotRunning(block *externalapi.DomainBlock) er
 	}
 	syncerHeaderSelectedTipHash := locatorHashes[0]
 	var highestKnownSyncerChainHash *externalapi.DomainHash
+	chainNegotiationRestartCounter := 0
 	for {
 		var lowestUnknownSyncerChainHash, currentHighestKnownSyncerChainHash *externalapi.DomainHash
 		for _, syncerChainHash := range locatorHashes {
@@ -139,6 +140,12 @@ func (flow *handleIBDFlow) runIBDIfNotRunning(block *externalapi.DomainBlock) er
 			break
 		}
 		if len(locatorHashes) == 0 {
+			chainNegotiationRestartCounter++
+			if chainNegotiationRestartCounter > 64 {
+				return protocolerrors.Errorf(false,
+					"Chain negotiation with syncer %s exceeded restart limit %d", flow.peer, chainNegotiationRestartCounter)
+			}
+
 			// An empty locator signals that the syncer chain was modified and no longer contains one of
 			// the queried hashes, so we restart the search
 			locatorHashes, err = flow.getSyncerChainBlockLocator(nil, nil)
