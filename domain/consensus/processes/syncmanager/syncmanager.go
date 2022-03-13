@@ -4,6 +4,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/infrastructure/logger"
+	"github.com/pkg/errors"
 )
 
 type syncManager struct {
@@ -67,6 +68,21 @@ func (sm *syncManager) GetHashesBetween(stagingArea *model.StagingArea, lowHash,
 	defer onEnd()
 
 	return sm.antiPastHashesBetween(stagingArea, lowHash, highHash, maxBlocks)
+}
+
+func (sm *syncManager) GetAnticone(stagingArea *model.StagingArea, blockHash, contextHash *externalapi.DomainHash, maxBlocks uint64) (hashes []*externalapi.DomainHash, err error) {
+	onEnd := logger.LogAndMeasureExecutionTime(log, "GetAnticone")
+	defer onEnd()
+	isContextAncestorOfBlock, err := sm.dagTopologyManager.IsAncestorOf(stagingArea, contextHash, blockHash)
+	if err != nil {
+		return nil, err
+	}
+	if isContextAncestorOfBlock {
+		return nil, errors.Errorf("expected block %s to not be in future of %s",
+			blockHash,
+			contextHash)
+	}
+	return sm.dagTraversalManager.AnticoneFromBlocks(stagingArea, []*externalapi.DomainHash{contextHash}, blockHash, maxBlocks)
 }
 
 func (sm *syncManager) GetMissingBlockBodyHashes(stagingArea *model.StagingArea, highHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error) {

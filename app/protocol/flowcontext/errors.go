@@ -22,7 +22,7 @@ func (*FlowContext) HandleError(err error, flowName string, isStopping *uint32, 
 			panic(err)
 		}
 
-		log.Errorf("error from %s: %s", flowName, err)
+		log.Errorf("error from %s: %+v", flowName, err)
 	}
 
 	if atomic.AddUint32(isStopping, 1) == 1 {
