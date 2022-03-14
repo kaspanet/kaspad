@@ -24,6 +24,7 @@ func (flow *handleIBDFlow) ibdWithHeadersProof(highHash *externalapi.DomainHash,
 			return err
 		}
 
+		log.Infof("IBD with pruning proof from %s was unsuccessful. Deleting the staging consensus.", flow.peer)
 		deleteStagingConsensusErr := flow.Domain().DeleteStagingConsensus()
 		if deleteStagingConsensusErr != nil {
 			return deleteStagingConsensusErr
@@ -32,6 +33,8 @@ func (flow *handleIBDFlow) ibdWithHeadersProof(highHash *externalapi.DomainHash,
 		return err
 	}
 
+	log.Infof("Header download stage of IBD with pruning proof completed successfully from %s. "+
+		"Committing the staging consensus and deleting the previous obsolete one if such exists.", flow.peer)
 	err = flow.Domain().CommitStagingConsensus()
 	if err != nil {
 		return err
