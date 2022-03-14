@@ -306,22 +306,31 @@ func (flow *handleIBDFlow) syncPruningPointFutureHeaders(consensus externalapi.C
 					return err
 				}
 				if !relayBlockInfo.Exists {
-					// Send a special header request for the past diff. This is expected to be a small,
-					// as it is bounded to the size of virtual's mergeset
+					// Send a special header request for the selected tip anticone. This is expected to
+					// be a small set, as it is bounded to the size of virtual's mergeset.
 					err = flow.sendRequestAnticone(syncerHeaderSelectedTipHash, relayBlockHash)
 					if err != nil {
 						return err
 					}
-					pastDiffHeadersMessage, pastDiffDone, err := flow.receiveHeaders()
+					anticoneHeadersMessage, anticoneDone, err := flow.receiveHeaders()
 					if err != nil {
 						return err
 					}
-					if !pastDiffDone {
+					if anticoneDone {
 						return protocolerrors.Errorf(true,
-							"Expected only one past diff header chunk for past(%s) setminus past(%s)",
-							syncerHeaderSelectedTipHash, relayBlockHash)
+							"Expected one anticone header chunk for past(%s) cap anticone(%s) but got zero",
+							relayBlockHash, syncerHeaderSelectedTipHash)
 					}
-					for _, header := range pastDiffHeadersMessage.BlockHeaders {
+					_, anticoneDone, err = flow.receiveHeaders()
+					if err != nil {
+						return err
+					}
+					if !anticoneDone {
+						return protocolerrors.Errorf(true,
+							"Expected only one anticone header chunk for past(%s) cap anticone(%s)",
+							relayBlockHash, syncerHeaderSelectedTipHash)
+					}
+					for _, header := range anticoneHeadersMessage.BlockHeaders {
 						err = flow.processHeader(consensus, header)
 						if err != nil {
 							return err
@@ -336,7 +345,7 @@ func (flow *handleIBDFlow) syncPruningPointFutureHeaders(consensus externalapi.C
 				}
 				if !relayBlockInfo.Exists {
 					return protocolerrors.Errorf(true, "did not receive "+
-						"highHash block %s from peer %s during block download", relayBlockHash, flow.peer)
+						"relayBlockHash block %s from peer %s during block download", relayBlockHash, flow.peer)
 				}
 				return nil
 			}
