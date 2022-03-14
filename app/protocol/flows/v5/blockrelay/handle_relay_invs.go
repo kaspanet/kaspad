@@ -396,6 +396,10 @@ func (flow *handleRelayInvsFlow) AddOrphanRootsToQueue(orphan *externalapi.Domai
 			"probably happened because it was randomly evicted immediately after it was added.", orphan)
 	}
 
+	if len(orphanRoots) == 0 {
+		// In some rare cases we get here when there are no orphan roots already
+		return nil
+	}
 	log.Infof("Block %s has %d missing ancestors. Adding them to the invs queue...", orphan, len(orphanRoots))
 
 	invMessages := make([]*appmessage.MsgInvRelayBlock, len(orphanRoots))
