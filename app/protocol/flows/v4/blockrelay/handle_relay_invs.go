@@ -285,7 +285,7 @@ func (flow *handleRelayInvsFlow) processBlock(block *externalapi.DomainBlock) ([
 		if errors.As(err, missingParentsError) {
 			return missingParentsError.MissingParentHashes, nil, nil
 		}
-		// A duplicate blocks should not appear to the user as a warning and is already reported in the calling function
+		// A duplicate block should not appear to the user as a warning and is already reported in the calling function
 		if !errors.Is(err, ruleerrors.ErrDuplicateBlock) {
 			log.Warnf("Rejected block %s from %s: %s", blockHash, flow.peer, err)
 		}
