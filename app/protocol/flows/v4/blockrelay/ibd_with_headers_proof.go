@@ -344,6 +344,7 @@ func (flow *handleIBDFlow) syncPruningPointUTXOSet(consensus externalapi.Consens
 	log.Info("Fetching the pruning point UTXO set")
 	isSuccessful, err := flow.fetchMissingUTXOSet(consensus, pruningPoint)
 	if err != nil {
+		log.Infof("An error occurred while fetching the pruning point UTXO set. Stopping IBD. (%s)", err)
 		return false, err
 	}
 
