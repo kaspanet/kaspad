@@ -299,6 +299,11 @@ func (flow *handleIBDFlow) syncPruningPointFutureHeaders(consensus externalapi.C
 				close(blockHeadersMessageChan)
 				return
 			}
+			if len(blockHeadersMessage.BlockHeaders) == 0 {
+				// The syncer should have sent a done message if the search completed, and not an empty list
+				errChan <- protocolerrors.Errorf(true, "Received an empty headers message from peer %s", flow.peer)
+				return
+			}
 
 			blockHeadersMessageChan <- blockHeadersMessage
 
