@@ -194,7 +194,6 @@ func (flow *handleIBDFlow) runIBDIfNotRunning(block *externalapi.DomainBlock) er
 			}
 		}
 
-		// TODO: need DAA score of syncerHeaderSelectedTipHash
 		err = flow.syncPruningPointFutureHeaders(
 			flow.Domain().Consensus(),
 			syncerHeaderSelectedTipHash, highestKnownSyncerChainHash, relayBlockHash, block.Header.DAAScore())
@@ -268,7 +267,7 @@ func (flow *handleIBDFlow) getSyncerChainBlockLocator(
 
 func (flow *handleIBDFlow) syncPruningPointFutureHeaders(consensus externalapi.Consensus,
 	syncerHeaderSelectedTipHash, highestKnownSyncerChainHash, relayBlockHash *externalapi.DomainHash,
-	highBlockDAAScore uint64) error {
+	highBlockDAAScoreHint uint64) error {
 
 	log.Infof("Downloading headers from %s", flow.peer)
 
@@ -281,7 +280,7 @@ func (flow *handleIBDFlow) syncPruningPointFutureHeaders(consensus externalapi.C
 	if err != nil {
 		return err
 	}
-	progressReporter := newIBDProgressReporter(highestSharedBlockHeader.DAAScore(), highBlockDAAScore, "block headers")
+	progressReporter := newIBDProgressReporter(highestSharedBlockHeader.DAAScore(), highBlockDAAScoreHint, "block headers")
 
 	// Keep a short queue of BlockHeadersMessages so that there's
 	// never a moment when the node is not validating and inserting

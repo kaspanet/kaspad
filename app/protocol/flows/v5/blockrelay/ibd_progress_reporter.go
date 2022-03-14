@@ -23,6 +23,11 @@ func newIBDProgressReporter(lowDAAScore uint64, highDAAScore uint64, objectName 
 func (ipr *ibdProgressReporter) reportProgress(processedDelta int, highestProcessedDAAScore uint64) {
 	ipr.processed += processedDelta
 
+	// Avoid exploding numbers in the percentage report, since the original `highDAAScore` might have been only a hint
+	if highestProcessedDAAScore > ipr.highDAAScore {
+		ipr.highDAAScore = highestProcessedDAAScore + 1 // + 1 for keeping it at 99%
+		ipr.totalDAAScoreDifference = ipr.highDAAScore - ipr.lowDAAScore
+	}
 	relativeDAAScore := highestProcessedDAAScore - ipr.lowDAAScore
 	progressPercent := int((float64(relativeDAAScore) / float64(ipr.totalDAAScoreDifference)) * 100)
 	if progressPercent > ipr.lastReportedProgressPercent {
