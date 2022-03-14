@@ -285,7 +285,10 @@ func (flow *handleRelayInvsFlow) processBlock(block *externalapi.DomainBlock) ([
 		if errors.As(err, missingParentsError) {
 			return missingParentsError.MissingParentHashes, nil, nil
 		}
-		log.Warnf("Rejected block %s from %s: %s", blockHash, flow.peer, err)
+		// A duplicate block should not appear to the user as a warning and is already reported in the calling function
+		if !errors.Is(err, ruleerrors.ErrDuplicateBlock) {
+			log.Warnf("Rejected block %s from %s: %s", blockHash, flow.peer, err)
+		}
 		return nil, nil, protocolerrors.Wrapf(true, err, "got invalid block %s from relay", blockHash)
 	}
 	return nil, virtualChangeSet, nil
@@ -396,6 +399,10 @@ func (flow *handleRelayInvsFlow) AddOrphanRootsToQueue(orphan *externalapi.Domai
 			"probably happened because it was randomly evicted immediately after it was added.", orphan)
 	}
 
+	if len(orphanRoots) == 0 {
+		// In some rare cases we get here when there are no orphan roots already
+		return nil
+	}
 	log.Infof("Block %s has %d missing ancestors. Adding them to the invs queue...", orphan, len(orphanRoots))
 
 	invMessages := make([]*appmessage.MsgInvRelayBlock, len(orphanRoots))

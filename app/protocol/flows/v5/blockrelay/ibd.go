@@ -194,7 +194,6 @@ func (flow *handleIBDFlow) runIBDIfNotRunning(block *externalapi.DomainBlock) er
 			}
 		}
 
-		// TODO: need DAA score of syncerHeaderSelectedTipHash
 		err = flow.syncPruningPointFutureHeaders(
 			flow.Domain().Consensus(),
 			syncerHeaderSelectedTipHash, highestKnownSyncerChainHash, relayBlockHash, block.Header.DAAScore())
@@ -203,9 +202,24 @@ func (flow *handleIBDFlow) runIBDIfNotRunning(block *externalapi.DomainBlock) er
 		}
 	}
 
-	err = flow.syncMissingBlockBodies(relayBlockHash)
+	// We start by syncing missing bodies over the syncer selected chain
+	err = flow.syncMissingBlockBodies(syncerHeaderSelectedTipHash)
 	if err != nil {
 		return err
+	}
+	relayBlockInfo, err := flow.Domain().Consensus().GetBlockInfo(relayBlockHash)
+	if err != nil {
+		return err
+	}
+	// Relay block might be in the anticone of syncer selected tip, thus
+	// check his chain for missing bodies as well.
+	// Note: this operation can be slightly optimized to avoid the full chain search since relay block
+	// is in syncer virtual mergeset which has bounded size.
+	if relayBlockInfo.BlockStatus == externalapi.StatusHeaderOnly {
+		err = flow.syncMissingBlockBodies(relayBlockHash)
+		if err != nil {
+			return err
+		}
 	}
 
 	log.Debugf("Finished syncing blocks up to %s", relayBlockHash)
@@ -253,7 +267,7 @@ func (flow *handleIBDFlow) getSyncerChainBlockLocator(
 
 func (flow *handleIBDFlow) syncPruningPointFutureHeaders(consensus externalapi.Consensus,
 	syncerHeaderSelectedTipHash, highestKnownSyncerChainHash, relayBlockHash *externalapi.DomainHash,
-	highBlockDAAScore uint64) error {
+	highBlockDAAScoreHint uint64) error {
 
 	log.Infof("Downloading headers from %s", flow.peer)
 
@@ -266,7 +280,7 @@ func (flow *handleIBDFlow) syncPruningPointFutureHeaders(consensus externalapi.C
 	if err != nil {
 		return err
 	}
-	progressReporter := newIBDProgressReporter(highestSharedBlockHeader.DAAScore(), highBlockDAAScore, "block headers")
+	progressReporter := newIBDProgressReporter(highestSharedBlockHeader.DAAScore(), highBlockDAAScoreHint, "block headers")
 
 	// Keep a short queue of BlockHeadersMessages so that there's
 	// never a moment when the node is not validating and inserting
@@ -282,6 +296,11 @@ func (flow *handleIBDFlow) syncPruningPointFutureHeaders(consensus externalapi.C
 			}
 			if doneIBD {
 				close(blockHeadersMessageChan)
+				return
+			}
+			if len(blockHeadersMessage.BlockHeaders) == 0 {
+				// The syncer should have sent a done message if the search completed, and not an empty list
+				errChan <- protocolerrors.Errorf(true, "Received an empty headers message from peer %s", flow.peer)
 				return
 			}
 
@@ -306,22 +325,31 @@ func (flow *handleIBDFlow) syncPruningPointFutureHeaders(consensus externalapi.C
 					return err
 				}
 				if !relayBlockInfo.Exists {
-					// Send a special header request for the past diff. This is expected to be a small,
-					// as it is bounded to the size of virtual's mergeset
+					// Send a special header request for the selected tip anticone. This is expected to
+					// be a small set, as it is bounded to the size of virtual's mergeset.
 					err = flow.sendRequestAnticone(syncerHeaderSelectedTipHash, relayBlockHash)
 					if err != nil {
 						return err
 					}
-					pastDiffHeadersMessage, pastDiffDone, err := flow.receiveHeaders()
+					anticoneHeadersMessage, anticoneDone, err := flow.receiveHeaders()
 					if err != nil {
 						return err
 					}
-					if !pastDiffDone {
+					if anticoneDone {
 						return protocolerrors.Errorf(true,
-							"Expected only one past diff header chunk for past(%s) setminus past(%s)",
-							syncerHeaderSelectedTipHash, relayBlockHash)
+							"Expected one anticone header chunk for past(%s) cap anticone(%s) but got zero",
+							relayBlockHash, syncerHeaderSelectedTipHash)
 					}
-					for _, header := range pastDiffHeadersMessage.BlockHeaders {
+					_, anticoneDone, err = flow.receiveHeaders()
+					if err != nil {
+						return err
+					}
+					if !anticoneDone {
+						return protocolerrors.Errorf(true,
+							"Expected only one anticone header chunk for past(%s) cap anticone(%s)",
+							relayBlockHash, syncerHeaderSelectedTipHash)
+					}
+					for _, header := range anticoneHeadersMessage.BlockHeaders {
 						err = flow.processHeader(consensus, header)
 						if err != nil {
 							return err
@@ -336,7 +364,7 @@ func (flow *handleIBDFlow) syncPruningPointFutureHeaders(consensus externalapi.C
 				}
 				if !relayBlockInfo.Exists {
 					return protocolerrors.Errorf(true, "did not receive "+
-						"highHash block %s from peer %s during block download", relayBlockHash, flow.peer)
+						"relayBlockHash block %s from peer %s during block download", relayBlockHash, flow.peer)
 				}
 				return nil
 			}
