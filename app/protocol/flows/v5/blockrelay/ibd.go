@@ -203,9 +203,24 @@ func (flow *handleIBDFlow) runIBDIfNotRunning(block *externalapi.DomainBlock) er
 		}
 	}
 
-	err = flow.syncMissingBlockBodies(relayBlockHash)
+	// We start by syncing missing bodies over the syncer selected chain
+	err = flow.syncMissingBlockBodies(syncerHeaderSelectedTipHash)
 	if err != nil {
 		return err
+	}
+	relayBlockInfo, err := flow.Domain().Consensus().GetBlockInfo(relayBlockHash)
+	if err != nil {
+		return err
+	}
+	// Relay block might be in the anticone of syncer selected tip, thus
+	// check his chain for missing bodies as well.
+	// Note: this operation can be slightly optimized to avoid the full chain search since relay block
+	// is in syncer virtual mergeset which has bounded size.
+	if relayBlockInfo.BlockStatus == externalapi.StatusHeaderOnly {
+		err = flow.syncMissingBlockBodies(relayBlockHash)
+		if err != nil {
+			return err
+		}
 	}
 
 	log.Debugf("Finished syncing blocks up to %s", relayBlockHash)
