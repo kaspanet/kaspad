@@ -2,6 +2,8 @@ package ping
 
 import (
 	"github.com/kaspanet/kaspad/app/protocol/common"
+	"github.com/kaspanet/kaspad/app/protocol/flowcontext"
+	"github.com/pkg/errors"
 	"time"
 
 	"github.com/kaspanet/kaspad/app/appmessage"
@@ -61,6 +63,9 @@ func (flow *sendPingsFlow) start() error {
 
 		message, err := flow.incomingRoute.DequeueWithTimeout(common.DefaultTimeout)
 		if err != nil {
+			if errors.Is(err, router.ErrTimeout) {
+				return errors.Wrapf(flowcontext.ErrPingTimeout, err.Error())
+			}
 			return err
 		}
 		pongMessage := message.(*appmessage.MsgPong)
