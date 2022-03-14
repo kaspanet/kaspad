@@ -13,7 +13,9 @@ import (
 	"github.com/kaspanet/kaspad/infrastructure/config"
 	"github.com/kaspanet/kaspad/infrastructure/logger"
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
+	"github.com/kaspanet/kaspad/util/difficulty"
 	"github.com/pkg/errors"
+	"math/big"
 	"time"
 )
 
@@ -64,6 +66,28 @@ func (flow *handleIBDFlow) start() error {
 }
 
 func (flow *handleIBDFlow) runIBDIfNotRunning(block *externalapi.DomainBlock) error {
+	highHash := consensushashing.BlockHash(block)
+
+	// Temp code to avoid IBD from lagging nodes publishing their side-chain
+	virtualSelectedParent, err := flow.Domain().Consensus().GetVirtualSelectedParent()
+	if err == nil {
+		virtualSelectedParentHeader, err := flow.Domain().Consensus().GetBlockHeader(virtualSelectedParent)
+		if err == nil {
+			if virtualSelectedParentHeader.DAAScore() > block.Header.DAAScore()+2641 {
+				virtualDifficulty := difficulty.CalcWork(virtualSelectedParentHeader.Bits())
+				var virtualSub, difficultyMul big.Int
+				if difficultyMul.Mul(virtualDifficulty, big.NewInt(180)).
+					Cmp(virtualSub.Sub(virtualSelectedParentHeader.BlueWork(), block.Header.BlueWork())) < 0 {
+					log.Criticalf("Avoiding IBD triggered by relay %s with %d DAA score diff and lower blue work (%d, %d)",
+						highHash,
+						virtualSelectedParentHeader.DAAScore()-block.Header.DAAScore(),
+						virtualSelectedParentHeader.BlueWork(), block.Header.BlueWork())
+					return nil
+				}
+			}
+		}
+	}
+
 	wasIBDNotRunning := flow.TrySetIBDRunning(flow.peer)
 	if !wasIBDNotRunning {
 		log.Debugf("IBD is already running")
@@ -76,15 +100,14 @@ func (flow *handleIBDFlow) runIBDIfNotRunning(block *externalapi.DomainBlock) er
 		flow.logIBDFinished(isFinishedSuccessfully)
 	}()
 
-	highHash := consensushashing.BlockHash(block)
-	log.Debugf("IBD started with peer %s and highHash %s", flow.peer, highHash)
-	log.Debugf("Syncing blocks up to %s", highHash)
-	log.Debugf("Trying to find highest shared chain block with peer %s with high hash %s", flow.peer, highHash)
+	log.Infof("IBD started with peer %s and highHash %s", flow.peer, highHash)
+	log.Infof("Syncing blocks up to %s", highHash)
+	log.Infof("Trying to find highest shared chain block with peer %s with high hash %s", flow.peer, highHash)
 	highestSharedBlockHash, highestSharedBlockFound, err := flow.findHighestSharedBlockHash(highHash)
 	if err != nil {
 		return err
 	}
-	log.Debugf("Found highest shared chain block %s with peer %s", highestSharedBlockHash, flow.peer)
+	log.Infof("Found highest shared chain block %s with peer %s", highestSharedBlockHash, flow.peer)
 
 	shouldDownloadHeadersProof, shouldSync, err := flow.shouldSyncAndShouldDownloadHeadersProof(block, highestSharedBlockFound)
 	if err != nil {
