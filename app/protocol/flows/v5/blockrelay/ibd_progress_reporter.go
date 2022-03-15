@@ -10,6 +10,10 @@ type ibdProgressReporter struct {
 }
 
 func newIBDProgressReporter(lowDAAScore uint64, highDAAScore uint64, objectName string) *ibdProgressReporter {
+	if highDAAScore <= lowDAAScore {
+		// Avoid a zero or negative diff
+		highDAAScore = lowDAAScore + 1
+	}
 	return &ibdProgressReporter{
 		lowDAAScore:                 lowDAAScore,
 		highDAAScore:                highDAAScore,
@@ -28,7 +32,11 @@ func (ipr *ibdProgressReporter) reportProgress(processedDelta int, highestProces
 		ipr.highDAAScore = highestProcessedDAAScore + 1 // + 1 for keeping it at 99%
 		ipr.totalDAAScoreDifference = ipr.highDAAScore - ipr.lowDAAScore
 	}
-	relativeDAAScore := highestProcessedDAAScore - ipr.lowDAAScore
+	relativeDAAScore := uint64(0)
+	if highestProcessedDAAScore > ipr.lowDAAScore {
+		// Avoid a negative diff
+		relativeDAAScore = highestProcessedDAAScore - ipr.lowDAAScore
+	}
 	progressPercent := int((float64(relativeDAAScore) / float64(ipr.totalDAAScoreDifference)) * 100)
 	if progressPercent > ipr.lastReportedProgressPercent {
 		log.Infof("IBD: Processed %d %s (%d%%)", ipr.processed, ipr.objectName, progressPercent)
