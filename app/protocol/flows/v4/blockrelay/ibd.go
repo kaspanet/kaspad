@@ -68,12 +68,18 @@ func (flow *handleIBDFlow) start() error {
 func (flow *handleIBDFlow) runIBDIfNotRunning(block *externalapi.DomainBlock) error {
 	highHash := consensushashing.BlockHash(block)
 
-	// Temp code to avoid IBD from lagging nodes publishing their side-chain
+	// Temp code to avoid IBD from lagging nodes publishing their side-chain. This patch
+	// is applied only to p2p v4 since the implemented IBD negotiation has quadratic complexity in this worst-case.
+	// See IBD logic of p2p v5 for further details.
 	virtualSelectedParent, err := flow.Domain().Consensus().GetVirtualSelectedParent()
 	if err == nil {
 		virtualSelectedParentHeader, err := flow.Domain().Consensus().GetBlockHeader(virtualSelectedParent)
 		if err == nil {
+			// We first check that DAA score of the relay block is at distance of more than DAA window size.
+			// This indicates a side-chain which is not in the future of any block in the current virtual DAA window.
 			if virtualSelectedParentHeader.DAAScore() > block.Header.DAAScore()+2641 {
+				// We then find the 'unit' of current virtual difficulty. We check if the relay block is at least
+				// at distance of 180 such units. This signals another condition for a pow-weak side-chain.
 				virtualDifficulty := difficulty.CalcWork(virtualSelectedParentHeader.Bits())
 				var virtualSub, difficultyMul big.Int
 				if difficultyMul.Mul(virtualDifficulty, big.NewInt(180)).
