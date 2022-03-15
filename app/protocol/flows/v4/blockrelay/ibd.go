@@ -13,7 +13,9 @@ import (
 	"github.com/kaspanet/kaspad/infrastructure/config"
 	"github.com/kaspanet/kaspad/infrastructure/logger"
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
+	"github.com/kaspanet/kaspad/util/difficulty"
 	"github.com/pkg/errors"
+	"math/big"
 	"time"
 )
 
@@ -64,6 +66,34 @@ func (flow *handleIBDFlow) start() error {
 }
 
 func (flow *handleIBDFlow) runIBDIfNotRunning(block *externalapi.DomainBlock) error {
+	highHash := consensushashing.BlockHash(block)
+
+	// Temp code to avoid IBD from lagging nodes publishing their side-chain. This patch
+	// is applied only to p2p v4 since the implemented IBD negotiation has quadratic complexity in this worst-case.
+	// See IBD logic of p2p v5 for further details.
+	virtualSelectedParent, err := flow.Domain().Consensus().GetVirtualSelectedParent()
+	if err == nil {
+		virtualSelectedParentHeader, err := flow.Domain().Consensus().GetBlockHeader(virtualSelectedParent)
+		if err == nil {
+			// We first check that DAA score of the relay block is at distance of more than DAA window size.
+			// This indicates a side-chain which is not in the future of any block in the current virtual DAA window.
+			if virtualSelectedParentHeader.DAAScore() > block.Header.DAAScore()+2641 {
+				// We then find the 'unit' of current virtual difficulty. We check if the relay block is at least
+				// at distance of 180 such units. This signals another condition for a pow-weak side-chain.
+				virtualDifficulty := difficulty.CalcWork(virtualSelectedParentHeader.Bits())
+				var virtualSub, difficultyMul big.Int
+				if difficultyMul.Mul(virtualDifficulty, big.NewInt(180)).
+					Cmp(virtualSub.Sub(virtualSelectedParentHeader.BlueWork(), block.Header.BlueWork())) < 0 {
+					log.Criticalf("Avoiding IBD triggered by relay %s with %d DAA score diff and lower blue work (%d, %d)",
+						highHash,
+						virtualSelectedParentHeader.DAAScore()-block.Header.DAAScore(),
+						virtualSelectedParentHeader.BlueWork(), block.Header.BlueWork())
+					return nil
+				}
+			}
+		}
+	}
+
 	wasIBDNotRunning := flow.TrySetIBDRunning(flow.peer)
 	if !wasIBDNotRunning {
 		log.Debugf("IBD is already running")
@@ -76,15 +106,14 @@ func (flow *handleIBDFlow) runIBDIfNotRunning(block *externalapi.DomainBlock) er
 		flow.logIBDFinished(isFinishedSuccessfully)
 	}()
 
-	highHash := consensushashing.BlockHash(block)
-	log.Debugf("IBD started with peer %s and highHash %s", flow.peer, highHash)
-	log.Debugf("Syncing blocks up to %s", highHash)
-	log.Debugf("Trying to find highest shared chain block with peer %s with high hash %s", flow.peer, highHash)
+	log.Infof("IBD started with peer %s and highHash %s", flow.peer, highHash)
+	log.Infof("Syncing blocks up to %s", highHash)
+	log.Infof("Trying to find highest shared chain block with peer %s with high hash %s", flow.peer, highHash)
 	highestSharedBlockHash, highestSharedBlockFound, err := flow.findHighestSharedBlockHash(highHash)
 	if err != nil {
 		return err
 	}
-	log.Debugf("Found highest shared chain block %s with peer %s", highestSharedBlockHash, flow.peer)
+	log.Infof("Found highest shared chain block %s with peer %s", highestSharedBlockHash, flow.peer)
 
 	shouldDownloadHeadersProof, shouldSync, err := flow.shouldSyncAndShouldDownloadHeadersProof(block, highestSharedBlockFound)
 	if err != nil {
