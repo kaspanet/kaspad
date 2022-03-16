@@ -5,7 +5,7 @@ import (
 	"strings"
 )
 
-// hexTransactionsSeparator is used to mark the end of one transaction and the beggining of the next one.
+// hexTransactionsSeparator is used to mark the end of one transaction and the beginning of the next one.
 // We use a separator that is not in the hex alphabet, but which will not split selection with a double click
 const hexTransactionsSeparator = "_"
 
