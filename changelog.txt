@@ -1,3 +1,27 @@
+Kaspad v0.11.13 - 2022-03-16
+===========================
+* Display progress of IBD process in Kaspad logs (#1938, #1939, #1949, #1977)
+* Optimize DB writes during fresh IBD (#1937)
+* Add AllowConnectionToDifferentVersions flag to kaspactl (#1940)
+* Drop support for p2p v3 (#1942)
+* Various transaction processing fixes and workarounds (#1943, #1946, #1971, #1974)
+* Make kaspawallet store the utxos sorted by amount (#1947)
+* Implement a `parse` sub command in the kaspawallet (#1953)
+* Set MaxBlockLevels for non-mainnet networks to 250 (#1952)
+* Add cache to DAA block window (#1948)
+* kaspactl: string slice parser for GetUtxosByAddresses (#1955, first contribution by @icook)
+* Add MergeSet and IsChainBlock to RPC (#1961)
+* Ignore transaction invs during IBD (#1960)
+* Optimize validation of expected header pruning point (#1962)
+* Fix a bug in bounded marge depth validation (#1966)
+* Don't relay blocks in virtual anticone (#1970)
+* Add version to block template to allow tracking of miner's kaspad version (#1967)
+* New p2p version: v5 (#1969)
+* Fix IBD shared past negotiation to be non quadratic also in the worst-case (#1969, p2p v5)
+* Send pruning point anticone in batches (#1973, p2p v5)
+* Cleanup log output mistakes and try to be more clear to the user (#1976, #1978)
+* Apply avoiding IBD logic from patch10 to p2p v4 IBD handling (#1979)
+
 Kaspad v0.11.11 - 2022-01-27
 ===========================
 * Fix for rare consensus bug regarding DAA window order. The bug only affected IBD from scratch and only today (#1934)
