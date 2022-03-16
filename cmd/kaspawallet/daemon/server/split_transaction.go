@@ -230,16 +230,17 @@ func (s *server) moreUTXOsForMergeTransaction(alreadySelectedUTXOs []*libkaspawa
 	if err != nil {
 		return nil, 0, err
 	}
+	alreadySelectedUTXOsMap := make(map[externalapi.DomainOutpoint]struct{}, len(alreadySelectedUTXOs))
+	for _, alreadySelectedUTXO := range alreadySelectedUTXOs {
+		alreadySelectedUTXOsMap[*alreadySelectedUTXO.Outpoint] = struct{}{}
+	}
 
 	for _, utxo := range s.utxosSortedByAmount {
-		if !isUTXOSpendable(utxo, dagInfo.VirtualDAAScore, s.params.BlockCoinbaseMaturity) {
+		if _, ok := alreadySelectedUTXOsMap[*utxo.Outpoint]; ok {
 			continue
 		}
-		for _, alreadySelectedUTXO := range alreadySelectedUTXOs {
-			if alreadySelectedUTXO.Outpoint.Equal(utxo.Outpoint) {
-				// comparing outpoints should be sufficient as they are unique per utxo entry
-				continue
-			}
+		if !isUTXOSpendable(utxo, dagInfo.VirtualDAAScore, s.params.BlockCoinbaseMaturity) {
+			continue
 		}
 		additionalUTXOs = append(additionalUTXOs, &libkaspawallet.UTXO{
 			Outpoint:       utxo.Outpoint,
