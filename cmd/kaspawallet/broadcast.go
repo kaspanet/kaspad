@@ -21,18 +21,18 @@ func broadcast(conf *broadcastConfig) error {
 	ctx, cancel := context.WithTimeout(context.Background(), daemonTimeout)
 	defer cancel()
 
-	if conf.Transaction == "" && conf.TransactionFile == "" {
+	if conf.Transactions == "" && conf.TransactionsFile == "" {
 		return errors.Errorf("Either --transaction or --transaction-file is required")
 	}
-	if conf.Transaction != "" && conf.TransactionFile != "" {
+	if conf.Transactions != "" && conf.TransactionsFile != "" {
 		return errors.Errorf("Both --transaction and --transaction-file cannot be passed at the same time")
 	}
 
-	transactionsHex := conf.Transaction
-	if conf.TransactionFile != "" {
-		transactionHexBytes, err := ioutil.ReadFile(conf.TransactionFile)
+	transactionsHex := conf.Transactions
+	if conf.TransactionsFile != "" {
+		transactionHexBytes, err := ioutil.ReadFile(conf.TransactionsFile)
 		if err != nil {
-			return errors.Wrapf(err, "Could not read hex from %s", conf.TransactionFile)
+			return errors.Wrapf(err, "Could not read hex from %s", conf.TransactionsFile)
 		}
 		transactionsHex = strings.TrimSpace(string(transactionHexBytes))
 	}
@@ -49,11 +49,11 @@ func broadcast(conf *broadcastConfig) error {
 			return err
 		}
 		if transactionsCount == 1 {
-			fmt.Println("Transaction was sent successfully")
+			fmt.Println("Transactions was sent successfully")
 		} else {
-			fmt.Printf("Transaction %d (out of %d) was sent successfully\n", i+1, transactionsCount)
+			fmt.Printf("Transactions %d (out of %d) was sent successfully\n", i+1, transactionsCount)
 		}
-		fmt.Printf("Transaction ID: \t%s\n", response.TxID)
+		fmt.Printf("Transactions ID: \t%s\n", response.TxID)
 	}
 
 	return nil

@@ -5,11 +5,12 @@
 package appmessage
 
 import (
-	"github.com/davecgh/go-spew/spew"
-	"github.com/kaspanet/kaspad/util/mstime"
 	"math"
 	"reflect"
 	"testing"
+
+	"github.com/davecgh/go-spew/spew"
+	"github.com/kaspanet/kaspad/util/mstime"
 
 	"github.com/kaspanet/kaspad/domain/consensus/utils/subnetworks"
 
@@ -220,7 +221,7 @@ var blockOneBytes = []byte{
 	0x04, 0xff, 0xff, 0x00, 0x1d, 0x01, 0x04, // Signature script (coinbase)
 	0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, // Sequence
 	0x01,                                           // Varint for number of transaction outputs
-	0x00, 0xf2, 0x05, 0x2a, 0x01, 0x00, 0x00, 0x00, // Transaction amount
+	0x00, 0xf2, 0x05, 0x2a, 0x01, 0x00, 0x00, 0x00, // Transactions amount
 	0x43, // Varint for length of scriptPubKey
 	0x41, // OP_DATA_65
 	0x04, 0x96, 0xb5, 0x38, 0xe8, 0x53, 0x51, 0x9c,
@@ -239,7 +240,7 @@ var blockOneBytes = []byte{
 	0x00, 0x00, 0x00, 0x00, // SubnetworkID
 }
 
-// Transaction location information for block one transactions.
+// Transactions location information for block one transactions.
 var blockOneTxLocs = []TxLoc{
 	{TxStart: 186, TxLen: 162},
 }

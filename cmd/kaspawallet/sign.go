@@ -67,7 +67,7 @@ func sign(conf *signConfig) error {
 		fmt.Println("Successfully signed transaction")
 	}
 
-	fmt.Println("Transaction: ")
+	fmt.Println("Transactions: ")
 	fmt.Println(encodeTransactionsToHex(updatedPartiallySignedTransactions))
 	return nil
 }

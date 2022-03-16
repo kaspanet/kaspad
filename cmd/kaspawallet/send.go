@@ -69,8 +69,8 @@ func send(conf *sendConfig) error {
 				return err
 			}
 
-			fmt.Println("Transaction was sent successfully")
-			fmt.Printf("Transaction ID: \t%s\n", broadcastResponse.TxID)
+			fmt.Println("Transactions was sent successfully")
+			fmt.Printf("Transactions ID: \t%s\n", broadcastResponse.TxID)
 			return nil
 		}()
 		if err != nil {

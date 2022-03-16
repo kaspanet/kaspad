@@ -189,7 +189,7 @@ func (csm *consensusStateManager) applyMergeSetBlocks(stagingArea *model.Staging
 			if err != nil {
 				return nil, nil, err
 			}
-			log.Tracef("Transaction %s in block %s isAccepted: %t, fee: %d",
+			log.Tracef("Transactions %s in block %s isAccepted: %t, fee: %d",
 				transactionID, mergeSetBlockHash, isAccepted, transaction.Fee)
 
 			var transactionInputUTXOEntries []externalapi.UTXOEntry
@@ -235,12 +235,12 @@ func (csm *consensusStateManager) maybeAcceptTransaction(stagingArea *model.Stag
 	// Coinbase transaction outputs are added to the UTXO-set only if they are in the selected parent chain.
 	if transactionhelper.IsCoinBase(transaction) {
 		if !isSelectedParent {
-			log.Tracef("Transaction %s is the coinbase of block %s "+
+			log.Tracef("Transactions %s is the coinbase of block %s "+
 				"but said block is not in the selected parent chain. "+
 				"As such, it is not accepted", transactionID, blockHash)
 			return false, accumulatedMassBefore, nil
 		}
-		log.Tracef("Transaction %s is the coinbase of block %s", transactionID, blockHash)
+		log.Tracef("Transactions %s is the coinbase of block %s", transactionID, blockHash)
 	} else {
 		log.Tracef("Validating transaction %s in block %s", transactionID, blockHash)
 		err = csm.transactionValidator.ValidateTransactionInContextAndPopulateFee(

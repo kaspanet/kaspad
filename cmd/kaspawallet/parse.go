@@ -3,13 +3,14 @@ package main
 import (
 	"encoding/hex"
 	"fmt"
+	"io/ioutil"
+	"strings"
+
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/libkaspawallet/serialization"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/txscript"
 	"github.com/pkg/errors"
-	"io/ioutil"
-	"strings"
 )
 
 func parse(conf *parseConfig) error {
@@ -39,7 +40,7 @@ func parse(conf *parseConfig) error {
 		return err
 	}
 
-	fmt.Printf("Transaction ID: \t%s\n", consensushashing.TransactionID(partiallySignedTransaction.Tx))
+	fmt.Printf("Transactions ID: \t%s\n", consensushashing.TransactionID(partiallySignedTransaction.Tx))
 	fmt.Println()
 
 	allInputSompi := uint64(0)

@@ -84,7 +84,7 @@ func (s *server) mergeTransaction(
 
 	if totalValue < sentValue {
 		// sometimes the fees from compound transactions make the total output higher than what's available from selected
-		// utxos, in such cases - find one more UTXO and use it.
+		// utxos, in such cases - find more UTXO(s) and use them.
 		additionalUTXOs, totalValueAdded, err := s.moreUTXOsForMergeTransaction(utxos, sentValue-totalValue)
 		if err != nil {
 			return nil, err
