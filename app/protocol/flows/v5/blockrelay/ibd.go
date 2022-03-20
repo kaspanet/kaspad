@@ -172,6 +172,7 @@ func (flow *handleIBDFlow) negotiateMissingSyncerChainSegment() (*externalapi.Do
 	var highestKnownSyncerChainHash *externalapi.DomainHash
 	chainNegotiationRestartCounter := 0
 	chainNegotiationZoomCounts := 0
+	initialLocatorLen := len(locatorHashes)
 	for {
 		var lowestUnknownSyncerChainHash, currentHighestKnownSyncerChainHash *externalapi.DomainHash
 		for _, syncerChainHash := range locatorHashes {
@@ -200,21 +201,12 @@ func (flow *handleIBDFlow) negotiateMissingSyncerChainSegment() (*externalapi.Do
 			highestKnownSyncerChainHash = currentHighestKnownSyncerChainHash
 			break
 		}
-		prevLocatorLen := len(locatorHashes)
-		// Zoom in. Unlike the restart below, here we use a slightly larger timeout since
-		// the validation of locator bounds + size ensures progress of the zoom-in process.
+		// Zoom in
 		locatorHashes, err = flow.getSyncerChainBlockLocator(
 			lowestUnknownSyncerChainHash,
-			currentHighestKnownSyncerChainHash, time.Second*20)
+			currentHighestKnownSyncerChainHash, time.Second*10)
 		if err != nil {
 			return nil, nil, err
-		}
-		if len(locatorHashes) >= prevLocatorLen {
-			// Since the zoom-in always queries two consecutive entries in the previous locator, it is
-			// mathematically guaranteed that current locator should be smaller by at least 1
-			return nil, nil, protocolerrors.Errorf(true,
-				"IBD chain negotiation: Expecting current locator (%d) to be smaller than the previous one (%d)",
-				len(locatorHashes), prevLocatorLen)
 		}
 		if len(locatorHashes) > 0 {
 			if !locatorHashes[0].Equal(lowestUnknownSyncerChainHash) ||
@@ -222,6 +214,7 @@ func (flow *handleIBDFlow) negotiateMissingSyncerChainSegment() (*externalapi.Do
 				return nil, nil, protocolerrors.Errorf(true, "Expecting the high and low "+
 					"hashes to match the locator bounds")
 			}
+
 			chainNegotiationZoomCounts++
 			log.Debugf("IBD chain negotiation with peer %s zoomed in (%d) and received %d hashes (%s, %s)", flow.peer,
 				chainNegotiationZoomCounts, len(locatorHashes), locatorHashes[0], locatorHashes[len(locatorHashes)-1])
@@ -230,6 +223,14 @@ func (flow *handleIBDFlow) negotiateMissingSyncerChainSegment() (*externalapi.Do
 				// We found our search target
 				highestKnownSyncerChainHash = currentHighestKnownSyncerChainHash
 				break
+			}
+
+			if chainNegotiationZoomCounts > initialLocatorLen*2 {
+				// Since the zoom-in always queries two consecutive entries in the previous locator, it is
+				// expected to decrease in size at least every two iterations
+				return nil, nil, protocolerrors.Errorf(true,
+					"IBD chain negotiation: Number of zoom-in steps %d exceeded the upper bound of 2*%d",
+					chainNegotiationZoomCounts, initialLocatorLen)
 			}
 
 		} else { // Empty locator signals a restart due to chain changes
@@ -253,6 +254,8 @@ func (flow *handleIBDFlow) negotiateMissingSyncerChainSegment() (*externalapi.Do
 			}
 			log.Infof("IBD chain negotiation with peer %s restarted (%d) and received %d hashes (%s, %s)", flow.peer,
 				chainNegotiationRestartCounter, len(locatorHashes), locatorHashes[0], locatorHashes[len(locatorHashes)-1])
+
+			initialLocatorLen = len(locatorHashes)
 			// Reset syncer's header selected tip
 			syncerHeaderSelectedTipHash = locatorHashes[0]
 		}
