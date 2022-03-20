@@ -297,8 +297,8 @@ func (flow *handleIBDFlow) getSyncerChainBlockLocator(
 	case *appmessage.MsgIBDChainBlockLocator:
 		if len(message.BlockLocatorHashes) > 64 {
 			return nil, protocolerrors.Errorf(true,
-				"Got block locator of size %d>64 while expecting locator to have size " +
-				"which is logarithmic in DAG size (which should never exceed 2^64)",
+				"Got block locator of size %d>64 while expecting locator to have size "+
+					"which is logarithmic in DAG size (which should never exceed 2^64)",
 				len(message.BlockLocatorHashes))
 		}
 		return message.BlockLocatorHashes, nil
