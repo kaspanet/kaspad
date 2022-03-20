@@ -251,7 +251,7 @@ func (flow *handleIBDFlow) negotiateMissingSyncerChainSegment() (*externalapi.Do
 				return nil, nil, protocolerrors.Errorf(true, "Expecting initial syncer chain block locator "+
 					"to contain at least one element")
 			}
-			log.Debugf("IBD chain negotiation with peer %s restarted (%d) and received %d hashes (%s, %s)", flow.peer,
+			log.Infof("IBD chain negotiation with peer %s restarted (%d) and received %d hashes (%s, %s)", flow.peer,
 				chainNegotiationRestartCounter, len(locatorHashes), locatorHashes[0], locatorHashes[len(locatorHashes)-1])
 			// Reset syncer's header selected tip
 			syncerHeaderSelectedTipHash = locatorHashes[0]
@@ -297,7 +297,8 @@ func (flow *handleIBDFlow) getSyncerChainBlockLocator(
 	case *appmessage.MsgIBDChainBlockLocator:
 		if len(message.BlockLocatorHashes) > 64 {
 			return nil, protocolerrors.Errorf(true,
-				"Got block locator of size %d while expecting locator to have logarithmic size",
+				"Got block locator of size %d>64 while expecting locator to have size " +
+				"which is logarithmic in DAG size (which should never exceed 2^64)",
 				len(message.BlockLocatorHashes))
 		}
 		return message.BlockLocatorHashes, nil
