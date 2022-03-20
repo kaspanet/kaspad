@@ -81,103 +81,10 @@ func (flow *handleIBDFlow) runIBDIfNotRunning(block *externalapi.DomainBlock) er
 	log.Debugf("Syncing blocks up to %s", relayBlockHash)
 	log.Debugf("Trying to find highest known syncer chain block from peer %s with relay hash %s", flow.peer, relayBlockHash)
 
-	/*
-		Algorithm:
-			Request full selected chain block locator from syncer
-			Find the highest block which we know
-			Repeat the locator step over the new range until finding max(past(syncee) \cap chain(syncer))
-	*/
-
-	// Empty hashes indicate that the full chain is queried
-	locatorHashes, err := flow.getSyncerChainBlockLocator(nil, nil, common.DefaultTimeout)
+	syncerHeaderSelectedTipHash, highestKnownSyncerChainHash, err := flow.negotiateMissingSyncerChainSegment()
 	if err != nil {
 		return err
 	}
-	if len(locatorHashes) == 0 {
-		return protocolerrors.Errorf(true, "Expecting initial syncer chain block locator "+
-			"to contain at least one element")
-	}
-	syncerHeaderSelectedTipHash := locatorHashes[0]
-	var highestKnownSyncerChainHash *externalapi.DomainHash
-	chainNegotiationRestartCounter := 0
-	chainNegotiationZoomCounts := 0
-	for {
-		var lowestUnknownSyncerChainHash, currentHighestKnownSyncerChainHash *externalapi.DomainHash
-		for _, syncerChainHash := range locatorHashes {
-			info, err := flow.Domain().Consensus().GetBlockInfo(syncerChainHash)
-			if err != nil {
-				return err
-			}
-			if info.Exists {
-				currentHighestKnownSyncerChainHash = syncerChainHash
-				break
-			}
-			lowestUnknownSyncerChainHash = syncerChainHash
-		}
-		// No unknown blocks, break. Note this can only happen in the first iteration
-		if lowestUnknownSyncerChainHash == nil {
-			highestKnownSyncerChainHash = currentHighestKnownSyncerChainHash
-			break
-		}
-		// No shared block, break
-		if currentHighestKnownSyncerChainHash == nil {
-			highestKnownSyncerChainHash = nil
-			break
-		}
-		// No point in zooming further
-		if len(locatorHashes) == 1 {
-			highestKnownSyncerChainHash = currentHighestKnownSyncerChainHash
-			break
-		}
-		// Zoom in
-		locatorHashes, err = flow.getSyncerChainBlockLocator(
-			lowestUnknownSyncerChainHash,
-			currentHighestKnownSyncerChainHash, common.DefaultTimeout)
-		if err != nil {
-			return err
-		}
-		if len(locatorHashes) > 0 {
-			if !locatorHashes[0].Equal(lowestUnknownSyncerChainHash) ||
-				!locatorHashes[len(locatorHashes)-1].Equal(currentHighestKnownSyncerChainHash) {
-				return protocolerrors.Errorf(true, "Expecting the high and low "+
-					"hashes to match the locator bounds")
-			}
-			chainNegotiationZoomCounts++
-			log.Debugf("IBD chain negotiation with peer %s zoomed in (%d) and received %d hashes (%s, %s)", flow.peer,
-				chainNegotiationZoomCounts, len(locatorHashes), locatorHashes[0], locatorHashes[len(locatorHashes)-1])
-
-			if len(locatorHashes) == 2 {
-				// We found our search target
-				highestKnownSyncerChainHash = currentHighestKnownSyncerChainHash
-				break
-			}
-
-		} else { // Empty locator signals a restart due to chain changes
-			chainNegotiationZoomCounts = 0
-			chainNegotiationRestartCounter++
-			if chainNegotiationRestartCounter > 32 {
-				return protocolerrors.Errorf(false,
-					"IBD chain negotiation with syncer %s exceeded restart limit %d", flow.peer, chainNegotiationRestartCounter)
-			}
-			log.Warnf("IBD chain negotiation with syncer %s restarted %d times", flow.peer, chainNegotiationRestartCounter)
-
-			// An empty locator signals that the syncer chain was modified and no longer contains one of
-			// the queried hashes, so we restart the search. We use a shorter timeout here to avoid a timeout attack
-			locatorHashes, err = flow.getSyncerChainBlockLocator(nil, nil, time.Second*10)
-			if err != nil {
-				return err
-			}
-			if len(locatorHashes) == 0 {
-				return protocolerrors.Errorf(true, "Expecting initial syncer chain block locator "+
-					"to contain at least one element")
-			}
-			// Reset syncer's header selected tip
-			syncerHeaderSelectedTipHash = locatorHashes[0]
-		}
-	}
-
-	log.Debugf("Found highest known syncer chain block %s from peer %s",
-		highestKnownSyncerChainHash, flow.peer)
 
 	shouldDownloadHeadersProof, shouldSync, err := flow.shouldSyncAndShouldDownloadHeadersProof(
 		block, highestKnownSyncerChainHash)
@@ -240,6 +147,108 @@ func (flow *handleIBDFlow) runIBDIfNotRunning(block *externalapi.DomainBlock) er
 	log.Debugf("Finished syncing blocks up to %s", relayBlockHash)
 	isFinishedSuccessfully = true
 	return nil
+}
+
+func (flow *handleIBDFlow) negotiateMissingSyncerChainSegment() (*externalapi.DomainHash, *externalapi.DomainHash, error) {
+	/*
+		Algorithm:
+			Request full selected chain block locator from syncer
+			Find the highest block which we know
+			Repeat the locator step over the new range until finding max(past(syncee) \cap chain(syncer))
+	*/
+
+	// Empty hashes indicate that the full chain is queried
+	locatorHashes, err := flow.getSyncerChainBlockLocator(nil, nil, common.DefaultTimeout)
+	if err != nil {
+		return nil, nil, err
+	}
+	if len(locatorHashes) == 0 {
+		return nil, nil, protocolerrors.Errorf(true, "Expecting initial syncer chain block locator "+
+			"to contain at least one element")
+	}
+	syncerHeaderSelectedTipHash := locatorHashes[0]
+	var highestKnownSyncerChainHash *externalapi.DomainHash
+	chainNegotiationRestartCounter := 0
+	chainNegotiationZoomCounts := 0
+	for {
+		var lowestUnknownSyncerChainHash, currentHighestKnownSyncerChainHash *externalapi.DomainHash
+		for _, syncerChainHash := range locatorHashes {
+			info, err := flow.Domain().Consensus().GetBlockInfo(syncerChainHash)
+			if err != nil {
+				return nil, nil, err
+			}
+			if info.Exists {
+				currentHighestKnownSyncerChainHash = syncerChainHash
+				break
+			}
+			lowestUnknownSyncerChainHash = syncerChainHash
+		}
+		// No unknown blocks, break. Note this can only happen in the first iteration
+		if lowestUnknownSyncerChainHash == nil {
+			highestKnownSyncerChainHash = currentHighestKnownSyncerChainHash
+			break
+		}
+		// No shared block, break
+		if currentHighestKnownSyncerChainHash == nil {
+			highestKnownSyncerChainHash = nil
+			break
+		}
+		// No point in zooming further
+		if len(locatorHashes) == 1 {
+			highestKnownSyncerChainHash = currentHighestKnownSyncerChainHash
+			break
+		}
+		// Zoom in
+		locatorHashes, err = flow.getSyncerChainBlockLocator(
+			lowestUnknownSyncerChainHash,
+			currentHighestKnownSyncerChainHash, common.DefaultTimeout)
+		if err != nil {
+			return nil, nil, err
+		}
+		if len(locatorHashes) > 0 {
+			if !locatorHashes[0].Equal(lowestUnknownSyncerChainHash) ||
+				!locatorHashes[len(locatorHashes)-1].Equal(currentHighestKnownSyncerChainHash) {
+				return nil, nil, protocolerrors.Errorf(true, "Expecting the high and low "+
+					"hashes to match the locator bounds")
+			}
+			chainNegotiationZoomCounts++
+			log.Debugf("IBD chain negotiation with peer %s zoomed in (%d) and received %d hashes (%s, %s)", flow.peer,
+				chainNegotiationZoomCounts, len(locatorHashes), locatorHashes[0], locatorHashes[len(locatorHashes)-1])
+
+			if len(locatorHashes) == 2 {
+				// We found our search target
+				highestKnownSyncerChainHash = currentHighestKnownSyncerChainHash
+				break
+			}
+
+		} else { // Empty locator signals a restart due to chain changes
+			chainNegotiationZoomCounts = 0
+			chainNegotiationRestartCounter++
+			if chainNegotiationRestartCounter > 32 {
+				return nil, nil, protocolerrors.Errorf(false,
+					"IBD chain negotiation with syncer %s exceeded restart limit %d", flow.peer, chainNegotiationRestartCounter)
+			}
+			log.Warnf("IBD chain negotiation with syncer %s restarted %d times", flow.peer, chainNegotiationRestartCounter)
+
+			// An empty locator signals that the syncer chain was modified and no longer contains one of
+			// the queried hashes, so we restart the search. We use a shorter timeout here to avoid a timeout attack
+			locatorHashes, err = flow.getSyncerChainBlockLocator(nil, nil, time.Second*10)
+			if err != nil {
+				return nil, nil, err
+			}
+			if len(locatorHashes) == 0 {
+				return nil, nil, protocolerrors.Errorf(true, "Expecting initial syncer chain block locator "+
+					"to contain at least one element")
+			}
+			// Reset syncer's header selected tip
+			syncerHeaderSelectedTipHash = locatorHashes[0]
+		}
+	}
+
+	log.Debugf("Found highest known syncer chain block %s from peer %s",
+		highestKnownSyncerChainHash, flow.peer)
+
+	return syncerHeaderSelectedTipHash, highestKnownSyncerChainHash, nil
 }
 
 func (flow *handleIBDFlow) isGenesisVirtualSelectedParent() (bool, error) {
