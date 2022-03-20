@@ -1,3 +1,7 @@
+Kaspad v0.11.14 - 2022-03-20
+===========================
+* Fix a bug in the new p2p v5 IBD chain negotiation (#1981)
+
 Kaspad v0.11.13 - 2022-03-16
 ===========================
 * Display progress of IBD process in Kaspad logs (#1938, #1939, #1949, #1977)
