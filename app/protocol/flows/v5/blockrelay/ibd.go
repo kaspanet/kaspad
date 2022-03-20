@@ -166,6 +166,8 @@ func (flow *handleIBDFlow) negotiateMissingSyncerChainSegment() (*externalapi.Do
 		return nil, nil, protocolerrors.Errorf(true, "Expecting initial syncer chain block locator "+
 			"to contain at least one element")
 	}
+	log.Debugf("IBD chain negotiation with peer %s started and received %d hashes (%s, %s)", flow.peer,
+		len(locatorHashes), locatorHashes[0], locatorHashes[len(locatorHashes)-1])
 	syncerHeaderSelectedTipHash := locatorHashes[0]
 	var highestKnownSyncerChainHash *externalapi.DomainHash
 	chainNegotiationRestartCounter := 0
@@ -198,12 +200,21 @@ func (flow *handleIBDFlow) negotiateMissingSyncerChainSegment() (*externalapi.Do
 			highestKnownSyncerChainHash = currentHighestKnownSyncerChainHash
 			break
 		}
-		// Zoom in
+		prevLocatorLen := len(locatorHashes)
+		// Zoom in. Unlike the restart below, here we use a slightly larger timeout since
+		// the validation of locator bounds + size ensures progress of the zoom-in process.
 		locatorHashes, err = flow.getSyncerChainBlockLocator(
 			lowestUnknownSyncerChainHash,
-			currentHighestKnownSyncerChainHash, common.DefaultTimeout)
+			currentHighestKnownSyncerChainHash, time.Second*20)
 		if err != nil {
 			return nil, nil, err
+		}
+		if len(locatorHashes) >= prevLocatorLen {
+			// Since the zoom-in always queries two consecutive entries in the previous locator, it is
+			// mathematically guaranteed that current locator should be smaller by at least 1
+			return nil, nil, protocolerrors.Errorf(true,
+				"IBD chain negotiation: Expecting current locator (%d) to be smaller than the previous one (%d)",
+				len(locatorHashes), prevLocatorLen)
 		}
 		if len(locatorHashes) > 0 {
 			if !locatorHashes[0].Equal(lowestUnknownSyncerChainHash) ||
@@ -240,6 +251,8 @@ func (flow *handleIBDFlow) negotiateMissingSyncerChainSegment() (*externalapi.Do
 				return nil, nil, protocolerrors.Errorf(true, "Expecting initial syncer chain block locator "+
 					"to contain at least one element")
 			}
+			log.Debugf("IBD chain negotiation with peer %s restarted (%d) and received %d hashes (%s, %s)", flow.peer,
+				chainNegotiationRestartCounter, len(locatorHashes), locatorHashes[0], locatorHashes[len(locatorHashes)-1])
 			// Reset syncer's header selected tip
 			syncerHeaderSelectedTipHash = locatorHashes[0]
 		}
@@ -282,6 +295,11 @@ func (flow *handleIBDFlow) getSyncerChainBlockLocator(
 	}
 	switch message := message.(type) {
 	case *appmessage.MsgIBDChainBlockLocator:
+		if len(message.BlockLocatorHashes) > 64 {
+			return nil, protocolerrors.Errorf(true,
+				"Got block locator of size %d while expecting locator to have logarithmic size",
+				len(message.BlockLocatorHashes))
+		}
 		return message.BlockLocatorHashes, nil
 	default:
 		return nil, protocolerrors.Errorf(true, "received unexpected message type. "+
