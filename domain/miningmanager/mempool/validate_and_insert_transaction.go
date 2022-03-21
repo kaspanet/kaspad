@@ -31,7 +31,7 @@ func (mp *mempool) validateAndInsertTransaction(transaction *externalapi.DomainT
 
 	if len(missingOutpoints) > 0 {
 		if !allowOrphan {
-			str := fmt.Sprintf("Transactions %s is an orphan, where allowOrphan = false",
+			str := fmt.Sprintf("Transaction %s is an orphan, where allowOrphan = false",
 				consensushashing.TransactionID(transaction))
 			return nil, transactionRuleError(RejectBadOrphan, str)
 		}

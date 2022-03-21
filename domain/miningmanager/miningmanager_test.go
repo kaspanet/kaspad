@@ -1,11 +1,10 @@
 package miningmanager_test
 
 import (
+	"github.com/kaspanet/kaspad/domain/consensusreference"
 	"reflect"
 	"strings"
 	"testing"
-
-	"github.com/kaspanet/kaspad/domain/consensusreference"
 
 	"github.com/kaspanet/kaspad/domain/miningmanager/mempool"
 
@@ -368,7 +367,7 @@ func TestOrphanTransactions(t *testing.T) {
 				}
 			}
 			if !isContained {
-				t.Fatalf("Error: Unknown Transactions %s in a block.", consensushashing.TransactionID(transactionFromBlock))
+				t.Fatalf("Error: Unknown Transaction %s in a block.", consensushashing.TransactionID(transactionFromBlock))
 			}
 		}
 	})

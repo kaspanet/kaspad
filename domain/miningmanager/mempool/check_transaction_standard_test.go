@@ -26,7 +26,7 @@ import (
 func TestCalcMinRequiredTxRelayFee(t *testing.T) {
 	tests := []struct {
 		name                       string      // test description.
-		size                       uint64      // Transactions size in bytes.
+		size                       uint64      // Transaction size in bytes.
 		minimumRelayTransactionFee util.Amount // minimum relay transaction fee.
 		want                       uint64      // Expected fee.
 	}{
@@ -239,7 +239,7 @@ func TestCheckTransactionStandardInIsolation(t *testing.T) {
 			isStandard: true,
 		},
 		{
-			name:       "Transactions version too high",
+			name:       "Transaction version too high",
 			tx:         &externalapi.DomainTransaction{Version: constants.MaxTransactionVersion + 1, Inputs: []*externalapi.DomainTransactionInput{&dummyTxIn}, Outputs: []*externalapi.DomainTransactionOutput{&dummyTxOut}},
 			height:     300000,
 			isStandard: false,
@@ -247,7 +247,7 @@ func TestCheckTransactionStandardInIsolation(t *testing.T) {
 		},
 
 		{
-			name: "Transactions size is too large",
+			name: "Transaction size is too large",
 			tx: &externalapi.DomainTransaction{Version: 0, Inputs: []*externalapi.DomainTransactionInput{&dummyTxIn}, Outputs: []*externalapi.DomainTransactionOutput{{
 				Value:           0,
 				ScriptPublicKey: &externalapi.ScriptPublicKey{bytes.Repeat([]byte{0x00}, MaximumStandardTransactionMass+1), 0},

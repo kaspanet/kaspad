@@ -116,7 +116,7 @@ func TestMultisig(t *testing.T) {
 			}
 
 			if isFullySigned {
-				t.Fatalf("Transactions is not expected to be signed")
+				t.Fatalf("Transaction is not expected to be signed")
 			}
 
 			_, err = libkaspawallet.ExtractTransaction(unsignedTransaction, ecdsa)
@@ -135,7 +135,7 @@ func TestMultisig(t *testing.T) {
 			}
 
 			if isFullySigned {
-				t.Fatalf("Transactions is not expected to be fully signed")
+				t.Fatalf("Transaction is not expected to be fully signed")
 			}
 
 			signedTxStep2, err := libkaspawallet.Sign(params, mnemonics[1:2], signedTxStep1, ecdsa)
@@ -174,7 +174,7 @@ func TestMultisig(t *testing.T) {
 				Index:         0,
 			}
 			if !virtualChangeSet.VirtualUTXODiff.ToAdd().Contains(addedUTXO) {
-				t.Fatalf("Transactions wasn't accepted in the DAG")
+				t.Fatalf("Transaction wasn't accepted in the DAG")
 			}
 		})
 	})
@@ -277,7 +277,7 @@ func TestP2PK(t *testing.T) {
 			}
 
 			if isFullySigned {
-				t.Fatalf("Transactions is not expected to be signed")
+				t.Fatalf("Transaction is not expected to be signed")
 			}
 
 			_, err = libkaspawallet.ExtractTransaction(unsignedTransaction, ecdsa)
@@ -305,7 +305,7 @@ func TestP2PK(t *testing.T) {
 				Index:         0,
 			}
 			if !virtualChangeSet.VirtualUTXODiff.ToAdd().Contains(addedUTXO) {
-				t.Fatalf("Transactions wasn't accepted in the DAG")
+				t.Fatalf("Transaction wasn't accepted in the DAG")
 			}
 		})
 	})

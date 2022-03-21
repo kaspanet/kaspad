@@ -14,14 +14,14 @@ func HandleGetMempoolEntry(context *rpccontext.Context, _ *router.Router, reques
 	transactionID, err := transactionid.FromString(getMempoolEntryRequest.TxID)
 	if err != nil {
 		errorMessage := &appmessage.GetMempoolEntryResponseMessage{}
-		errorMessage.Error = appmessage.RPCErrorf("Transactions ID could not be parsed: %s", err)
+		errorMessage.Error = appmessage.RPCErrorf("Transaction ID could not be parsed: %s", err)
 		return errorMessage, nil
 	}
 
 	transaction, ok := context.Domain.MiningManager().GetTransaction(transactionID)
 	if !ok {
 		errorMessage := &appmessage.GetMempoolEntryResponseMessage{}
-		errorMessage.Error = appmessage.RPCErrorf("Transactions %s was not found", transactionID)
+		errorMessage.Error = appmessage.RPCErrorf("Transaction %s was not found", transactionID)
 		return errorMessage, nil
 	}
 	rpcTransaction := appmessage.DomainTransactionToRPCTransaction(transaction)

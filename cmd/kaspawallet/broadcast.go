@@ -49,11 +49,11 @@ func broadcast(conf *broadcastConfig) error {
 			return err
 		}
 		if transactionsCount == 1 {
-			fmt.Println("Transactions was sent successfully")
+			fmt.Println("Transaction was sent successfully")
 		} else {
-			fmt.Printf("Transactions %d (out of %d) was sent successfully\n", i+1, transactionsCount)
+			fmt.Printf("Transaction %d (out of %d) was sent successfully\n", i+1, transactionsCount)
 		}
-		fmt.Printf("Transactions ID: \t%s\n", response.TxID)
+		fmt.Printf("Transaction ID: \t%s\n", response.TxID)
 	}
 
 	return nil
