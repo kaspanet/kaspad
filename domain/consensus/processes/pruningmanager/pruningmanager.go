@@ -995,7 +995,13 @@ func (pm *pruningManager) ExpectedHeaderPruningPoint(stagingArea *model.StagingA
 		return nil, err
 	}
 
-	if hasPruningPointInItsSelectedChain && pm.finalityScore(ghostdagData.BlueScore()) > pm.finalityScore(selectedParentPruningPointHeader.BlueScore()+pm.pruningDepth) {
+	// Note: the pruning point from the POV of the current block is the first block in its chain that is in depth of pm.pruningDepth and
+	// its finality score is greater than the previous pruning point. This is why the diff between finalityScore(selectedParent.blueScore + 1) * finalityInterval
+	// and the current block blue score is less than pm.pruningDepth we can know for sure that this block didn't trigger a pruning point change.
+	minRequiredBlueScoreForNextPruningPoint := (pm.finalityScore(selectedParentPruningPointHeader.BlueScore()) + 1) * pm.finalityInterval
+
+	if hasPruningPointInItsSelectedChain &&
+		minRequiredBlueScoreForNextPruningPoint+pm.pruningDepth <= ghostdagData.BlueScore() {
 		var suggestedLowHash *externalapi.DomainHash
 		hasReachabilityData, err := pm.reachabilityDataStore.HasReachabilityData(pm.databaseContext, stagingArea, selectedParentHeader.PruningPoint())
 		if err != nil {
@@ -1003,7 +1009,15 @@ func (pm *pruningManager) ExpectedHeaderPruningPoint(stagingArea *model.StagingA
 		}
 
 		if hasReachabilityData {
-			suggestedLowHash = selectedParentHeader.PruningPoint()
+			// nextPruningPointAndCandidateByBlockHash needs suggestedLowHash to be in the future of the pruning point because
+			// otherwise reachability selected chain data is unreliable.
+			isInFutureOfCurrentPruningPoint, err := pm.dagTopologyManager.IsAncestorOf(stagingArea, pruningPoint, selectedParentHeader.PruningPoint())
+			if err != nil {
+				return nil, err
+			}
+			if isInFutureOfCurrentPruningPoint {
+				suggestedLowHash = selectedParentHeader.PruningPoint()
+			}
 		}
 
 		nextOrCurrentPruningPoint, _, err = pm.nextPruningPointAndCandidateByBlockHash(stagingArea, blockHash, suggestedLowHash)

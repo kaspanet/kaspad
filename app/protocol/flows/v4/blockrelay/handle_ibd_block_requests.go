@@ -33,7 +33,7 @@ func HandleIBDBlockRequests(context HandleIBDBlockRequestsContext, incomingRoute
 				return err
 			}
 			if !blockInfo.Exists || blockInfo.BlockStatus == externalapi.StatusHeaderOnly {
-				return protocolerrors.Errorf(true, "block %s not found", hash)
+				return protocolerrors.Errorf(true, "block %s not found (v4)", hash)
 			}
 			block, err := context.Domain().Consensus().GetBlock(hash)
 			if err != nil {

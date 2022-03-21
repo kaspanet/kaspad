@@ -20,7 +20,7 @@ var (
 	// connected peer may support.
 	minAcceptableProtocolVersion = uint32(4)
 
-	maxAcceptableProtocolVersion = uint32(4)
+	maxAcceptableProtocolVersion = uint32(5)
 )
 
 type receiveVersionFlow struct {

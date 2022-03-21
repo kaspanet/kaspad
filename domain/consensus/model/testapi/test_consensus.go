@@ -49,6 +49,7 @@ type TestConsensus interface {
 		*externalapi.VirtualChangeSet, error)
 
 	MineJSON(r io.Reader, blockType MineJSONBlockType) (tips []*externalapi.DomainHash, err error)
+	ToJSON(w io.Writer) error
 
 	RenderDAGToDot(filename string) error
 

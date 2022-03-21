@@ -4,6 +4,7 @@ import (
 	"github.com/kaspanet/kaspad/app/protocol/common"
 	"github.com/kaspanet/kaspad/app/protocol/flows/ready"
 	v4 "github.com/kaspanet/kaspad/app/protocol/flows/v4"
+	v5 "github.com/kaspanet/kaspad/app/protocol/flows/v5"
 	"sync"
 	"sync/atomic"
 
@@ -78,6 +79,8 @@ func (m *Manager) routerInitializer(router *routerpkg.Router, netConnection *net
 		switch peer.ProtocolVersion() {
 		case 4:
 			flows = v4.Register(m, router, errChan, &isStopping)
+		case 5:
+			flows = v5.Register(m, router, errChan, &isStopping)
 		default:
 			panic(errors.Errorf("no way to handle protocol version %d", peer.ProtocolVersion()))
 		}
