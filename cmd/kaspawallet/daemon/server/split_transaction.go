@@ -142,7 +142,7 @@ func (s *server) maybeSplitTransaction(transaction *serialization.PartiallySigne
 }
 
 func (s *server) splitAndInputPerSplitCounts(transaction *serialization.PartiallySignedTransaction, transactionMass uint64) (
-	splitCount, inputPerSplitCount int) {
+	splitCount, inputsPerSplitCount int) {
 	transactionWithoutInputs := transaction.Tx.Clone()
 	transactionWithoutInputs.Inputs = []*externalapi.DomainTransactionInput{}
 	massWithoutInputs := s.txMassCalculator.CalculateTransactionMass(transactionWithoutInputs)
@@ -157,13 +157,13 @@ func (s *server) splitAndInputPerSplitCounts(transaction *serialization.Partiall
 		massPerInput++
 	}
 
-	inputPerSplitCount = int((mempool.MaximumStandardTransactionMass - massWithoutInputs) / massPerInput)
-	splitCount = inputCount / inputPerSplitCount
-	if inputCount%inputPerSplitCount > 0 {
+	inputsPerSplitCount = int((mempool.MaximumStandardTransactionMass - massWithoutInputs) / massPerInput)
+	splitCount = inputCount / inputsPerSplitCount
+	if inputCount%inputsPerSplitCount > 0 {
 		splitCount++
 	}
 
-	return splitCount, inputPerSplitCount
+	return splitCount, inputsPerSplitCount
 }
 
 func (s *server) createSplitTransaction(transaction *serialization.PartiallySignedTransaction,
