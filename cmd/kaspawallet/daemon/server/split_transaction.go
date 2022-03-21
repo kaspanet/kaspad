@@ -141,8 +141,10 @@ func (s *server) maybeSplitTransaction(transaction *serialization.PartiallySigne
 	return splitTransactions, nil
 }
 
+// splitAndInputPerSplitCounts calculates the number of splits to create, and the number of inputs to assign per split.
 func (s *server) splitAndInputPerSplitCounts(transaction *serialization.PartiallySignedTransaction, transactionMass uint64) (
 	splitCount, inputsPerSplitCount int) {
+
 	transactionWithoutInputs := transaction.Tx.Clone()
 	transactionWithoutInputs.Inputs = []*externalapi.DomainTransactionInput{}
 	massWithoutInputs := s.txMassCalculator.CalculateTransactionMass(transactionWithoutInputs)
