@@ -44,7 +44,7 @@ func (flow *handleRequestHeadersFlow) start() error {
 		if err != nil {
 			return err
 		}
-		log.Debugf("Recieved requestHeaders with lowHash: %s, highHash: %s", lowHash, highHash)
+		log.Debugf("Received requestHeaders with lowHash: %s, highHash: %s", lowHash, highHash)
 
 		isLowSelectedAncestorOfHigh, err := flow.Domain().Consensus().IsInSelectedParentChainOf(lowHash, highHash)
 		if err != nil {
