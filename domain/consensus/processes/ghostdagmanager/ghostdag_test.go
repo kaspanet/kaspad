@@ -340,7 +340,7 @@ type DAGTopologyManagerImpl struct {
 	parentsMap map[externalapi.DomainHash][]*externalapi.DomainHash
 }
 
-func (dt *DAGTopologyManagerImpl) ChildInSelectedParentChainOf(stagingArea *model.StagingArea, context, highHash *externalapi.DomainHash) (*externalapi.DomainHash, error) {
+func (dt *DAGTopologyManagerImpl) ChildInSelectedParentChainOf(stagingArea *model.StagingArea, lowHash, highHash *externalapi.DomainHash) (*externalapi.DomainHash, error) {
 	panic("implement me")
 }
 

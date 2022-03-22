@@ -3,6 +3,8 @@ package mempool
 import (
 	"time"
 
+	"github.com/pkg/errors"
+
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/miningmanager/mempool/model"
 )
@@ -79,7 +81,12 @@ func (tp *transactionsPool) removeTransaction(transaction *model.MempoolTransact
 
 	err := tp.transactionsOrderedByFeeRate.Remove(transaction)
 	if err != nil {
-		return err
+		if errors.Is(err, model.ErrTransactionNotFound) {
+			log.Errorf("Transaction %s not found in tp.transactionsOrderedByFeeRate. This should never happen but sometime does",
+				transaction.TransactionID())
+		} else {
+			return err
+		}
 	}
 
 	delete(tp.highPriorityTransactions, *transaction.TransactionID())

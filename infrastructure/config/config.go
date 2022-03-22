@@ -52,7 +52,7 @@ const (
 	defaultSigCacheMaxSize  = 100000
 	sampleConfigFilename    = "sample-kaspad.conf"
 	defaultMaxUTXOCacheSize = 5000000000
-	defaultProtocolVersion  = 4
+	defaultProtocolVersion  = 5
 )
 
 var (

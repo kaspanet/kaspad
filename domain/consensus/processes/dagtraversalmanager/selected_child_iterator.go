@@ -97,25 +97,13 @@ func (dtm *dagTraversalManager) SelectedChildIterator(stagingArea *model.Staging
 var errNoSelectedChild = errors.New("errNoSelectedChild")
 
 func (dtm *dagTraversalManager) SelectedChild(stagingArea *model.StagingArea,
-	context, blockHash *externalapi.DomainHash) (*externalapi.DomainHash, error) {
+	highHash, lowHash *externalapi.DomainHash) (*externalapi.DomainHash, error) {
 
-	data, err := dtm.reachabilityDataStore.ReachabilityData(dtm.databaseContext, stagingArea, blockHash)
+	// The selected child is in fact the next reachability tree nextAncestor
+	nextAncestor, err := dtm.reachabilityManager.FindNextAncestor(stagingArea, highHash, lowHash)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrapf(errNoSelectedChild, "no selected child for %s from the point of view of %s",
+			lowHash, highHash)
 	}
-
-	for _, child := range data.Children() {
-		isChildInSelectedParentChainOfHighHash, err := dtm.dagTopologyManager.IsInSelectedParentChainOf(
-			stagingArea, child, context)
-		if err != nil {
-			return nil, err
-		}
-
-		if isChildInSelectedParentChainOfHighHash {
-			return child, nil
-		}
-	}
-
-	return nil, errors.Wrapf(errNoSelectedChild, "no selected child for %s from the point of view of %s",
-		blockHash, context)
+	return nextAncestor, nil
 }

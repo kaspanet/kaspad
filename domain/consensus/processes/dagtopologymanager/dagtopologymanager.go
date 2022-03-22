@@ -105,6 +105,17 @@ func (dtm *dagTopologyManager) IsAnyAncestorOf(stagingArea *model.StagingArea, p
 
 // IsInSelectedParentChainOf returns true if blockHashA is in the selected parent chain of blockHashB
 func (dtm *dagTopologyManager) IsInSelectedParentChainOf(stagingArea *model.StagingArea, blockHashA *externalapi.DomainHash, blockHashB *externalapi.DomainHash) (bool, error) {
+
+	// Virtual doesn't have reachability data, therefore, it should be treated as a special case -
+	// use its selected parent as blockHashB.
+	if blockHashB == model.VirtualBlockHash {
+		ghostdagData, err := dtm.ghostdagStore.Get(dtm.databaseContext, stagingArea, blockHashB, false)
+		if err != nil {
+			return false, err
+		}
+		blockHashB = ghostdagData.SelectedParent()
+	}
+
 	return dtm.reachabilityManager.IsReachabilityTreeAncestorOf(stagingArea, blockHashA, blockHashB)
 }
 
@@ -176,12 +187,11 @@ func (dtm *dagTopologyManager) SetParents(stagingArea *model.StagingArea, blockH
 	return nil
 }
 
-// ChildInSelectedParentChainOf returns the child of `context` that is in the selected-parent-chain of `highHash`
-func (dtm *dagTopologyManager) ChildInSelectedParentChainOf(stagingArea *model.StagingArea,
-	context, highHash *externalapi.DomainHash) (*externalapi.DomainHash, error) {
+// ChildInSelectedParentChainOf returns the child of `lowHash` that is in the selected-parent-chain of `highHash`
+func (dtm *dagTopologyManager) ChildInSelectedParentChainOf(stagingArea *model.StagingArea, lowHash, highHash *externalapi.DomainHash) (*externalapi.DomainHash, error) {
 
 	// Virtual doesn't have reachability data, therefore, it should be treated as a special case -
-	// use it's selected parent as highHash.
+	// use its selected parent as highHash.
 	specifiedHighHash := highHash
 	if highHash == model.VirtualBlockHash {
 		ghostdagData, err := dtm.ghostdagStore.Get(dtm.databaseContext, stagingArea, highHash, false)
@@ -191,40 +201,20 @@ func (dtm *dagTopologyManager) ChildInSelectedParentChainOf(stagingArea *model.S
 		selectedParent := ghostdagData.SelectedParent()
 
 		// In case where `context` is an immediate parent of `highHash`
-		if context.Equal(selectedParent) {
+		if lowHash.Equal(selectedParent) {
 			return highHash, nil
 		}
 		highHash = selectedParent
 	}
 
-	isInSelectedParentChain, err := dtm.IsInSelectedParentChainOf(stagingArea, context, highHash)
+	isInSelectedParentChain, err := dtm.IsInSelectedParentChainOf(stagingArea, lowHash, highHash)
 	if err != nil {
 		return nil, err
 	}
 	if !isInSelectedParentChain {
-		return nil, errors.Errorf("context(%s) is not in the selected-parent-chain of highHash(%s)",
-			context, specifiedHighHash)
+		return nil, errors.Errorf("Claimed chain ancestor (%s) is not in the selected-parent-chain of highHash (%s)",
+			lowHash, specifiedHighHash)
 	}
 
-	children, err := dtm.Children(stagingArea, context)
-	if err != nil {
-		return nil, err
-	}
-
-	for _, child := range children {
-		if child.Equal(model.VirtualBlockHash) {
-			continue
-		}
-
-		isInSelectedParentChain, err := dtm.IsInSelectedParentChainOf(stagingArea, child, highHash)
-		if err != nil {
-			return nil, err
-		}
-
-		if isInSelectedParentChain {
-			return child, nil
-		}
-	}
-
-	return nil, errors.Errorf("Couldn't find child in the selected chain of %s", highHash)
+	return dtm.reachabilityManager.FindNextAncestor(stagingArea, highHash, lowHash)
 }

@@ -250,6 +250,7 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 		dagTopologyManager,
 		finalityStore,
 		ghostdagDataStore,
+		pruningStore,
 		genesisHash,
 		config.FinalityDepth())
 	mergeDepthManager := mergedepthmanager.New(
@@ -745,7 +746,7 @@ func (f *factory) dagProcesses(config *Config,
 			dbManager,
 			dagTopologyManagers[i],
 			ghostdagDataStores[i],
-			reachabilityDataStores[i],
+			reachabilityManagers[i],
 			ghostdagManagers[i],
 			daaWindowStore,
 			windowHeapSliceStore,

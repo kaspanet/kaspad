@@ -1009,7 +1009,15 @@ func (pm *pruningManager) ExpectedHeaderPruningPoint(stagingArea *model.StagingA
 		}
 
 		if hasReachabilityData {
-			suggestedLowHash = selectedParentHeader.PruningPoint()
+			// nextPruningPointAndCandidateByBlockHash needs suggestedLowHash to be in the future of the pruning point because
+			// otherwise reachability selected chain data is unreliable.
+			isInFutureOfCurrentPruningPoint, err := pm.dagTopologyManager.IsAncestorOf(stagingArea, pruningPoint, selectedParentHeader.PruningPoint())
+			if err != nil {
+				return nil, err
+			}
+			if isInFutureOfCurrentPruningPoint {
+				suggestedLowHash = selectedParentHeader.PruningPoint()
+			}
 		}
 
 		nextOrCurrentPruningPoint, _, err = pm.nextPruningPointAndCandidateByBlockHash(stagingArea, blockHash, suggestedLowHash)

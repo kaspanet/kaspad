@@ -152,6 +152,10 @@ func (rt *reachabilityManager) IsReachabilityTreeAncestorOf(stagingArea *model.S
 func (rt *reachabilityManager) FindNextAncestor(stagingArea *model.StagingArea,
 	descendant, ancestor *externalapi.DomainHash) (*externalapi.DomainHash, error) {
 
+	if ancestor.Equal(descendant) {
+		return nil, errors.Errorf("ancestor is equal to descendant")
+	}
+
 	childrenOfAncestor, err := rt.children(stagingArea, ancestor)
 	if err != nil {
 		return nil, err
