@@ -24,10 +24,10 @@ type Router struct {
 }
 
 // NewRouter creates a new empty router
-func NewRouter() *Router {
+func NewRouter(name string) *Router {
 	router := Router{
 		incomingRoutes: make(map[appmessage.MessageCommand]*Route),
-		outgoingRoute:  newRouteWithCapacity("", outgoingRouteMaxMessages),
+		outgoingRoute:  newRouteWithCapacity(name, outgoingRouteMaxMessages),
 	}
 	return &router
 }
