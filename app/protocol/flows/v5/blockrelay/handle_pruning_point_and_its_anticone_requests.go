@@ -43,6 +43,8 @@ func HandlePruningPointAndItsAnticoneRequests(context PruningPointAndItsAnticone
 				return err
 			}
 
+			log.Criticalf("Pruning point anticone size is %d", len(pruningPointHeaders))
+
 			msgPruningPointHeaders := make([]*appmessage.MsgBlockHeader, len(pruningPointHeaders))
 			for i, header := range pruningPointHeaders {
 				msgPruningPointHeaders[i] = appmessage.DomainBlockHeaderToBlockHeader(header)
