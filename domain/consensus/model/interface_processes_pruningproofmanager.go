@@ -7,5 +7,4 @@ type PruningProofManager interface {
 	BuildPruningPointProof(stagingArea *StagingArea) (*externalapi.PruningPointProof, error)
 	ValidatePruningPointProof(pruningPointProof *externalapi.PruningPointProof) error
 	ApplyPruningPointProof(pruningPointProof *externalapi.PruningPointProof) error
-	RebuildReachability(targetReachabilityManager ReachabilityDataStore) error
 }

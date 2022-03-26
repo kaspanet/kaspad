@@ -7,7 +7,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/processes/blockparentbuilder"
 	parentssanager "github.com/kaspanet/kaspad/domain/consensus/processes/parentsmanager"
 	"github.com/kaspanet/kaspad/domain/consensus/processes/pruningproofmanager"
-	"github.com/kaspanet/kaspad/util/staging"
+	"github.com/pkg/errors"
 	"io/ioutil"
 	"os"
 	"sync"
@@ -74,7 +74,7 @@ type Config struct {
 // Factory instantiates new Consensuses
 type Factory interface {
 	NewConsensus(config *Config, db infrastructuredatabase.Database, dbPrefix *prefix.Prefix) (
-		externalapi.Consensus, error)
+		externalapi.Consensus, bool, error)
 	NewTestConsensus(config *Config, testName string) (
 		tc testapi.TestConsensus, teardown func(keepDataDir bool), err error)
 
@@ -106,7 +106,7 @@ func NewFactory() Factory {
 
 // NewConsensus instantiates a new Consensus
 func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Database, dbPrefix *prefix.Prefix) (
-	externalapi.Consensus, error) {
+	consensusInstance externalapi.Consensus, shouldMigrate bool, err error) {
 
 	dbManager := consensusdatabase.New(db)
 	prefixBucket := consensusdatabase.MakeBucket(dbPrefix.Serialize())
@@ -129,11 +129,11 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 	acceptanceDataStore := acceptancedatastore.New(prefixBucket, 200, preallocateCaches)
 	blockStore, err := blockstore.New(dbManager, prefixBucket, 200, preallocateCaches)
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 	blockHeaderStore, err := blockheaderstore.New(dbManager, prefixBucket, 10_000, preallocateCaches)
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 
 	blockStatusStore := blockstatusstore.New(prefixBucket, pruningWindowSizePlusFinalityDepthForCache, preallocateCaches)
@@ -156,7 +156,7 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 		reachabilityDataStores[0])
 	isOldReachabilityInitialized, err := reachabilityDataStores[0].HasReachabilityData(dbManager, model.NewStagingArea(), model.VirtualGenesisBlockHash)
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 
 	newReachabilityManager := reachabilitymanager.New(
@@ -288,7 +288,7 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 		pruningStore,
 		daaBlocksStore)
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 
 	pruningManager := pruningmanager.New(
@@ -498,91 +498,28 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 	}
 
 	if isOldReachabilityInitialized {
-		log.Infof("Migrating the database to the new reachability structure")
-		stagingArea := model.NewStagingArea()
-		dbTx, err := dbManager.Begin()
-		if err != nil {
-			return nil, err
-		}
-
-		log.Infof("Deleting the new reachability store (in case a previous migration failed)")
-		err = newReachabilityDataStore.Delete(dbTx)
-		if err != nil {
-			return nil, err
-		}
-
-		err = dbTx.Commit()
-		if err != nil {
-			return nil, err
-		}
-
-		log.Infof("Initializing new reachability store")
-		err = newReachabilityManager.Init(stagingArea)
-		if err != nil {
-			return nil, err
-		}
-
-		log.Infof("Committing changes")
-		err = staging.CommitAllChanges(dbManager, stagingArea)
-		if err != nil {
-			return nil, err
-		}
-
-		err = c.pruningProofManager.RebuildReachability(newReachabilityDataStore)
-		if err != nil {
-			return nil, err
-		}
-
-		// Because we use reachabilityDataStores[0] for the migration indication, this is the only store we
-		// need to delete in an atomic way. For the rest of the stores we don't need database transactions,
-		// so we can delete them directly, hence saving memory.
-		log.Infof("Deleting the old level 0 reachability store")
-		dbTx, err = dbManager.Begin()
-		if err != nil {
-			return nil, err
-		}
-
-		err = reachabilityDataStores[0].Delete(dbTx)
-		if err != nil {
-			return nil, err
-		}
-
-		err = dbTx.Commit()
-		if err != nil {
-			return nil, err
-		}
-
-		for i, store := range reachabilityDataStores[1:] {
-			log.Infof("Deleting the old level %d reachability store", i+1)
-			err = store.Delete(dbManager)
-			if err != nil {
-				return nil, err
-			}
-		}
-
-		log.Infof("Restarting the consensus")
-		return f.NewConsensus(config, db, dbPrefix)
+		return c, true, nil
 	}
 
 	err = c.Init(config.SkipAddingGenesis)
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 
 	err = consensusStateManager.RecoverUTXOIfRequired()
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 	err = pruningManager.ClearImportedPruningPointData()
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 	err = pruningManager.UpdatePruningPointIfRequired()
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 
-	return c, nil
+	return c, false, nil
 }
 
 func (f *factory) NewTestConsensus(config *Config, testName string) (
@@ -609,9 +546,13 @@ func (f *factory) NewTestConsensus(config *Config, testName string) (
 	}
 
 	testConsensusDBPrefix := &prefix.Prefix{}
-	consensusAsInterface, err := f.NewConsensus(config, db, testConsensusDBPrefix)
+	consensusAsInterface, shouldMigrate, err := f.NewConsensus(config, db, testConsensusDBPrefix)
 	if err != nil {
 		return nil, nil, err
+	}
+
+	if shouldMigrate {
+		return nil, nil, errors.Errorf("A fresh consensus should never return shouldMigrate=true")
 	}
 
 	consensusAsImplementation := consensusAsInterface.(*consensus)
