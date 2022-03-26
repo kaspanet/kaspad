@@ -44,7 +44,16 @@ func (flow *handleRequestHeadersFlow) start() error {
 		if err != nil {
 			return err
 		}
-		log.Debugf("Recieved requestHeaders with lowHash: %s, highHash: %s", lowHash, highHash)
+		log.Debugf("Received requestHeaders with lowHash: %s, highHash: %s", lowHash, highHash)
+
+		isLowSelectedAncestorOfHigh, err := flow.Domain().Consensus().IsInSelectedParentChainOf(lowHash, highHash)
+		if err != nil {
+			return err
+		}
+		if !isLowSelectedAncestorOfHigh {
+			return protocolerrors.Errorf(true, "Expected %s to be on the selected chain of %s",
+				lowHash, highHash)
+		}
 
 		for !lowHash.Equal(highHash) {
 			log.Debugf("Getting block headers between %s and %s to %s", lowHash, highHash, flow.peer)

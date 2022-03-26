@@ -25,6 +25,7 @@ func (flow *handleIBDFlow) ibdWithHeadersProof(
 			return err
 		}
 
+		log.Infof("IBD with pruning proof from %s was unsuccessful. Deleting the staging consensus.", flow.peer)
 		deleteStagingConsensusErr := flow.Domain().DeleteStagingConsensus()
 		if deleteStagingConsensusErr != nil {
 			return deleteStagingConsensusErr
@@ -33,6 +34,8 @@ func (flow *handleIBDFlow) ibdWithHeadersProof(
 		return err
 	}
 
+	log.Infof("Header download stage of IBD with pruning proof completed successfully from %s. "+
+		"Committing the staging consensus and deleting the previous obsolete one if such exists.", flow.peer)
 	err = flow.Domain().CommitStagingConsensus()
 	if err != nil {
 		return err
@@ -378,6 +381,7 @@ func (flow *handleIBDFlow) syncPruningPointUTXOSet(consensus externalapi.Consens
 	log.Info("Fetching the pruning point UTXO set")
 	isSuccessful, err := flow.fetchMissingUTXOSet(consensus, pruningPoint)
 	if err != nil {
+		log.Infof("An error occurred while fetching the pruning point UTXO set. Stopping IBD. (%s)", err)
 		return false, err
 	}
 

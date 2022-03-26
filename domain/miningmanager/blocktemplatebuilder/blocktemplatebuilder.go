@@ -135,7 +135,7 @@ func (btb *blockTemplateBuilder) GetBlockTemplate(coinbaseData *consensusexterna
 
 	invalidTxsErr := ruleerrors.ErrInvalidTransactionsInNewBlock{}
 	if errors.As(err, &invalidTxsErr) {
-		log.Criticalf("consensusReference.Consensus().BuildBlock returned invalid txs in GetBlockTemplate: %s", err)
+		log.Criticalf("consensusReference.Consensus().BuildBlock returned invalid txs in GetBlockTemplate")
 		invalidTxs := make([]*consensusexternalapi.DomainTransaction, 0, len(invalidTxsErr.InvalidTransactions))
 		for _, tx := range invalidTxsErr.InvalidTransactions {
 			invalidTxs = append(invalidTxs, tx.Transaction)
