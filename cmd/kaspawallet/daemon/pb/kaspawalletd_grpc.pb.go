@@ -19,7 +19,7 @@ const _ = grpc.SupportPackageIsVersion7
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type KaspawalletdClient interface {
 	GetBalance(ctx context.Context, in *GetBalanceRequest, opts ...grpc.CallOption) (*GetBalanceResponse, error)
-	CreateUnsignedTransaction(ctx context.Context, in *CreateUnsignedTransactionRequest, opts ...grpc.CallOption) (*CreateUnsignedTransactionResponse, error)
+	CreateUnsignedTransactions(ctx context.Context, in *CreateUnsignedTransactionsRequest, opts ...grpc.CallOption) (*CreateUnsignedTransactionsResponse, error)
 	ShowAddresses(ctx context.Context, in *ShowAddressesRequest, opts ...grpc.CallOption) (*ShowAddressesResponse, error)
 	NewAddress(ctx context.Context, in *NewAddressRequest, opts ...grpc.CallOption) (*NewAddressResponse, error)
 	Shutdown(ctx context.Context, in *ShutdownRequest, opts ...grpc.CallOption) (*ShutdownResponse, error)
@@ -43,9 +43,9 @@ func (c *kaspawalletdClient) GetBalance(ctx context.Context, in *GetBalanceReque
 	return out, nil
 }
 
-func (c *kaspawalletdClient) CreateUnsignedTransaction(ctx context.Context, in *CreateUnsignedTransactionRequest, opts ...grpc.CallOption) (*CreateUnsignedTransactionResponse, error) {
-	out := new(CreateUnsignedTransactionResponse)
-	err := c.cc.Invoke(ctx, "/kaspawalletd/CreateUnsignedTransaction", in, out, opts...)
+func (c *kaspawalletdClient) CreateUnsignedTransactions(ctx context.Context, in *CreateUnsignedTransactionsRequest, opts ...grpc.CallOption) (*CreateUnsignedTransactionsResponse, error) {
+	out := new(CreateUnsignedTransactionsResponse)
+	err := c.cc.Invoke(ctx, "/kaspawalletd/CreateUnsignedTransactions", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -93,7 +93,7 @@ func (c *kaspawalletdClient) Broadcast(ctx context.Context, in *BroadcastRequest
 // for forward compatibility
 type KaspawalletdServer interface {
 	GetBalance(context.Context, *GetBalanceRequest) (*GetBalanceResponse, error)
-	CreateUnsignedTransaction(context.Context, *CreateUnsignedTransactionRequest) (*CreateUnsignedTransactionResponse, error)
+	CreateUnsignedTransactions(context.Context, *CreateUnsignedTransactionsRequest) (*CreateUnsignedTransactionsResponse, error)
 	ShowAddresses(context.Context, *ShowAddressesRequest) (*ShowAddressesResponse, error)
 	NewAddress(context.Context, *NewAddressRequest) (*NewAddressResponse, error)
 	Shutdown(context.Context, *ShutdownRequest) (*ShutdownResponse, error)
@@ -108,8 +108,8 @@ type UnimplementedKaspawalletdServer struct {
 func (UnimplementedKaspawalletdServer) GetBalance(context.Context, *GetBalanceRequest) (*GetBalanceResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetBalance not implemented")
 }
-func (UnimplementedKaspawalletdServer) CreateUnsignedTransaction(context.Context, *CreateUnsignedTransactionRequest) (*CreateUnsignedTransactionResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method CreateUnsignedTransaction not implemented")
+func (UnimplementedKaspawalletdServer) CreateUnsignedTransactions(context.Context, *CreateUnsignedTransactionsRequest) (*CreateUnsignedTransactionsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CreateUnsignedTransactions not implemented")
 }
 func (UnimplementedKaspawalletdServer) ShowAddresses(context.Context, *ShowAddressesRequest) (*ShowAddressesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ShowAddresses not implemented")
@@ -154,20 +154,20 @@ func _Kaspawalletd_GetBalance_Handler(srv interface{}, ctx context.Context, dec 
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Kaspawalletd_CreateUnsignedTransaction_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(CreateUnsignedTransactionRequest)
+func _Kaspawalletd_CreateUnsignedTransactions_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateUnsignedTransactionsRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(KaspawalletdServer).CreateUnsignedTransaction(ctx, in)
+		return srv.(KaspawalletdServer).CreateUnsignedTransactions(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/kaspawalletd/CreateUnsignedTransaction",
+		FullMethod: "/kaspawalletd/CreateUnsignedTransactions",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(KaspawalletdServer).CreateUnsignedTransaction(ctx, req.(*CreateUnsignedTransactionRequest))
+		return srv.(KaspawalletdServer).CreateUnsignedTransactions(ctx, req.(*CreateUnsignedTransactionsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -256,8 +256,8 @@ var Kaspawalletd_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _Kaspawalletd_GetBalance_Handler,
 		},
 		{
-			MethodName: "CreateUnsignedTransaction",
-			Handler:    _Kaspawalletd_CreateUnsignedTransaction_Handler,
+			MethodName: "CreateUnsignedTransactions",
+			Handler:    _Kaspawalletd_CreateUnsignedTransactions_Handler,
 		},
 		{
 			MethodName: "ShowAddresses",

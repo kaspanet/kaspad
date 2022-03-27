@@ -10,15 +10,15 @@ import (
 	"github.com/pkg/errors"
 )
 
-func (s *server) changeAddress() (util.Address, error) {
+func (s *server) changeAddress() (util.Address, *walletAddress, error) {
 	err := s.keysFile.SetLastUsedInternalIndex(s.keysFile.LastUsedInternalIndex() + 1)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	err = s.keysFile.Save()
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	walletAddr := &walletAddress{
@@ -27,7 +27,11 @@ func (s *server) changeAddress() (util.Address, error) {
 		keyChain:      libkaspawallet.InternalKeychain,
 	}
 	path := s.walletAddressPath(walletAddr)
-	return libkaspawallet.Address(s.params, s.keysFile.ExtendedPublicKeys, s.keysFile.MinimumSignatures, path, s.keysFile.ECDSA)
+	address, err := libkaspawallet.Address(s.params, s.keysFile.ExtendedPublicKeys, s.keysFile.MinimumSignatures, path, s.keysFile.ECDSA)
+	if err != nil {
+		return nil, nil, err
+	}
+	return address, walletAddr, nil
 }
 
 func (s *server) ShowAddresses(_ context.Context, request *pb.ShowAddressesRequest) (*pb.ShowAddressesResponse, error) {

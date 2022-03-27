@@ -10,7 +10,11 @@ import (
 	"github.com/pkg/errors"
 )
 
-func (s *server) CreateUnsignedTransaction(_ context.Context, request *pb.CreateUnsignedTransactionRequest) (*pb.CreateUnsignedTransactionResponse, error) {
+// TODO: Implement a better fee estimation mechanism
+const feePerInput = 10000
+
+func (s *server) CreateUnsignedTransactions(_ context.Context, request *pb.CreateUnsignedTransactionsRequest) (
+	*pb.CreateUnsignedTransactionsResponse, error) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
@@ -28,14 +32,12 @@ func (s *server) CreateUnsignedTransaction(_ context.Context, request *pb.Create
 		return nil, err
 	}
 
-	// TODO: Implement a better fee estimation mechanism
-	const feePerInput = 10000
 	selectedUTXOs, changeSompi, err := s.selectUTXOs(request.Amount, feePerInput)
 	if err != nil {
 		return nil, err
 	}
 
-	changeAddress, err := s.changeAddress()
+	changeAddress, changeWalletAddress, err := s.changeAddress()
 	if err != nil {
 		return nil, err
 	}
@@ -53,7 +55,12 @@ func (s *server) CreateUnsignedTransaction(_ context.Context, request *pb.Create
 		return nil, err
 	}
 
-	return &pb.CreateUnsignedTransactionResponse{UnsignedTransaction: unsignedTransaction}, nil
+	unsignedTransactions, err := s.maybeAutoCompoundTransaction(unsignedTransaction, toAddress, changeAddress, changeWalletAddress)
+	if err != nil {
+		return nil, err
+	}
+
+	return &pb.CreateUnsignedTransactionsResponse{UnsignedTransactions: unsignedTransactions}, nil
 }
 
 func (s *server) selectUTXOs(spendAmount uint64, feePerInput uint64) (

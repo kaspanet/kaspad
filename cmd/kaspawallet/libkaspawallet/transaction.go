@@ -159,6 +159,7 @@ func createUnsignedTransaction(
 		Tx:                    domainTransaction,
 		PartiallySignedInputs: partiallySignedInputs,
 	}, nil
+
 }
 
 // IsTransactionFullySigned returns whether the transaction is fully signed and ready to broadcast.
@@ -194,10 +195,14 @@ func ExtractTransaction(partiallySignedTransactionBytes []byte, ecdsa bool) (*ex
 		return nil, err
 	}
 
-	return extractTransaction(partiallySignedTransaction, ecdsa)
+	return ExtractTransactionDeserialized(partiallySignedTransaction, ecdsa)
 }
 
-func extractTransaction(partiallySignedTransaction *serialization.PartiallySignedTransaction, ecdsa bool) (*externalapi.DomainTransaction, error) {
+// ExtractTransactionDeserialized does the same thing ExtractTransaction does, only receives the PartiallySignedTransaction
+// in an already deserialized format
+func ExtractTransactionDeserialized(partiallySignedTransaction *serialization.PartiallySignedTransaction, ecdsa bool) (
+	*externalapi.DomainTransaction, error) {
+
 	for i, input := range partiallySignedTransaction.PartiallySignedInputs {
 		isMultisig := len(input.PubKeySignaturePairs) > 1
 		scriptBuilder := txscript.NewScriptBuilder()
