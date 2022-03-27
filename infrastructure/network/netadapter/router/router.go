@@ -27,7 +27,7 @@ type Router struct {
 func NewRouter(name string) *Router {
 	router := Router{
 		incomingRoutes: make(map[appmessage.MessageCommand]*Route),
-		outgoingRoute:  newRouteWithCapacity(name, outgoingRouteMaxMessages),
+		outgoingRoute:  newRouteWithCapacity(fmt.Sprintf("%s - outgoing", name), outgoingRouteMaxMessages),
 	}
 	return &router
 }
