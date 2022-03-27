@@ -2,7 +2,6 @@ package domain
 
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
-	"github.com/pkg/errors"
 	"math"
 )
 
@@ -225,15 +224,6 @@ func syncConsensuses(syncer, syncee externalapi.Consensus) error {
 			log.Infof("Resolved virtual")
 			break
 		}
-	}
-
-	synceeTips, err := syncee.Tips()
-	if err != nil {
-		return err
-	}
-
-	if !externalapi.HashesEqual(synceeTips, syncerTips) {
-		return errors.Errorf("Syncee's tips are %s while syncer's are %s", synceeTips, syncerTips)
 	}
 
 	return nil
