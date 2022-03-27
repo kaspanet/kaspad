@@ -69,6 +69,12 @@ func (gds *ghostdagDataStore) Get(dbContext model.DBReader, stagingArea *model.S
 	return blockGHOSTDAGData, nil
 }
 
+func (gds *ghostdagDataStore) UnstageAll(stagingArea *model.StagingArea) {
+	stagingShard := gds.stagingShard(stagingArea)
+
+	stagingShard.toAdd = make(map[key]*externalapi.BlockGHOSTDAGData)
+}
+
 func (gds *ghostdagDataStore) serializeKey(k key) model.DBKey {
 	if k.isTrustedData {
 		return gds.trustedDataBucket.Key(k.hash.ByteSlice())

@@ -9,6 +9,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/processes/dagtopologymanager"
+	"github.com/kaspanet/kaspad/domain/consensus/processes/dagtraversalmanager"
 	"github.com/kaspanet/kaspad/domain/consensus/processes/ghostdagmanager"
 	"github.com/kaspanet/kaspad/domain/consensus/processes/reachabilitymanager"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
@@ -26,16 +27,19 @@ type pruningProofManager struct {
 
 	dagTopologyManagers  []model.DAGTopologyManager
 	ghostdagManagers     []model.GHOSTDAGManager
-	reachabilityManagers []model.ReachabilityManager
+	reachabilityManager  model.ReachabilityManager
 	dagTraversalManagers []model.DAGTraversalManager
 	parentsManager       model.ParentsManager
+	pruningManager       model.PruningManager
 
-	ghostdagDataStores  []model.GHOSTDAGDataStore
-	pruningStore        model.PruningStore
-	blockHeaderStore    model.BlockHeaderStore
-	blockStatusStore    model.BlockStatusStore
-	finalityStore       model.FinalityStore
-	consensusStateStore model.ConsensusStateStore
+	ghostdagDataStores    []model.GHOSTDAGDataStore
+	pruningStore          model.PruningStore
+	blockHeaderStore      model.BlockHeaderStore
+	blockStatusStore      model.BlockStatusStore
+	finalityStore         model.FinalityStore
+	consensusStateStore   model.ConsensusStateStore
+	blockRelationStore    model.BlockRelationStore
+	reachabilityDataStore model.ReachabilityDataStore
 
 	genesisHash   *externalapi.DomainHash
 	k             externalapi.KType
@@ -52,9 +56,10 @@ func New(
 
 	dagTopologyManagers []model.DAGTopologyManager,
 	ghostdagManagers []model.GHOSTDAGManager,
-	reachabilityManagers []model.ReachabilityManager,
+	reachabilityManager model.ReachabilityManager,
 	dagTraversalManagers []model.DAGTraversalManager,
 	parentsManager model.ParentsManager,
+	pruningManager model.PruningManager,
 
 	ghostdagDataStores []model.GHOSTDAGDataStore,
 	pruningStore model.PruningStore,
@@ -62,6 +67,8 @@ func New(
 	blockStatusStore model.BlockStatusStore,
 	finalityStore model.FinalityStore,
 	consensusStateStore model.ConsensusStateStore,
+	blockRelationStore model.BlockRelationStore,
+	reachabilityDataStore model.ReachabilityDataStore,
 
 	genesisHash *externalapi.DomainHash,
 	k externalapi.KType,
@@ -73,16 +80,19 @@ func New(
 		databaseContext:      databaseContext,
 		dagTopologyManagers:  dagTopologyManagers,
 		ghostdagManagers:     ghostdagManagers,
-		reachabilityManagers: reachabilityManagers,
+		reachabilityManager:  reachabilityManager,
 		dagTraversalManagers: dagTraversalManagers,
 		parentsManager:       parentsManager,
+		pruningManager:       pruningManager,
 
-		ghostdagDataStores:  ghostdagDataStores,
-		pruningStore:        pruningStore,
-		blockHeaderStore:    blockHeaderStore,
-		blockStatusStore:    blockStatusStore,
-		finalityStore:       finalityStore,
-		consensusStateStore: consensusStateStore,
+		ghostdagDataStores:    ghostdagDataStores,
+		pruningStore:          pruningStore,
+		blockHeaderStore:      blockHeaderStore,
+		blockStatusStore:      blockStatusStore,
+		finalityStore:         finalityStore,
+		consensusStateStore:   consensusStateStore,
+		blockRelationStore:    blockRelationStore,
+		reachabilityDataStore: reachabilityDataStore,
 
 		genesisHash:   genesisHash,
 		k:             k,
@@ -611,6 +621,209 @@ func (ppm *pruningProofManager) dagProcesses(
 	return reachabilityManagers, dagTopologyManagers, ghostdagManagers
 }
 
+func (ppm *pruningProofManager) ghostdagDataWithoutPrunedBlocks(stagingArea *model.StagingArea, targetReachabilityDataStore model.ReachabilityDataStore,
+	data *externalapi.BlockGHOSTDAGData) (*externalapi.BlockGHOSTDAGData, bool, error) {
+
+	changed := false
+	mergeSetBlues := make([]*externalapi.DomainHash, 0, len(data.MergeSetBlues()))
+	for _, blockHash := range data.MergeSetBlues() {
+		hasReachabilityData, err := targetReachabilityDataStore.HasReachabilityData(ppm.databaseContext, stagingArea, blockHash)
+		if err != nil {
+			return nil, false, err
+		}
+		if !hasReachabilityData {
+			changed = true
+			if data.SelectedParent().Equal(blockHash) {
+				mergeSetBlues = append(mergeSetBlues, model.VirtualGenesisBlockHash)
+			}
+			continue
+		}
+
+		mergeSetBlues = append(mergeSetBlues, blockHash)
+	}
+
+	mergeSetReds := make([]*externalapi.DomainHash, 0, len(data.MergeSetReds()))
+	for _, blockHash := range data.MergeSetReds() {
+		hasReachabilityData, err := targetReachabilityDataStore.HasReachabilityData(ppm.databaseContext, stagingArea, blockHash)
+		if err != nil {
+			return nil, false, err
+		}
+		if !hasReachabilityData {
+			changed = true
+			continue
+		}
+
+		mergeSetReds = append(mergeSetReds, blockHash)
+	}
+
+	selectedParent := data.SelectedParent()
+	hasReachabilityData, err := targetReachabilityDataStore.HasReachabilityData(ppm.databaseContext, stagingArea, data.SelectedParent())
+	if err != nil {
+		return nil, false, err
+	}
+
+	if !hasReachabilityData {
+		changed = true
+		selectedParent = model.VirtualGenesisBlockHash
+	}
+
+	return externalapi.NewBlockGHOSTDAGData(
+		data.BlueScore(),
+		data.BlueWork(),
+		selectedParent,
+		mergeSetBlues,
+		mergeSetReds,
+		data.BluesAnticoneSizes(),
+	), changed, nil
+}
+
+func (ppm *pruningProofManager) populateProofReachabilityAndHeaders(pruningPointProof *externalapi.PruningPointProof,
+	targetReachabilityDataStore model.ReachabilityDataStore) error {
+	// We build a DAG of all multi-level relations between blocks in the proof. We make a upHeap of all blocks, so we can iterate
+	// over them in a topological way, and then build a DAG where we use all multi-level parents of a block to create edges, except
+	// parents that are already in the past of another parent (This can happen between two levels). We run GHOSTDAG on each block of
+	// that DAG, because GHOSTDAG is a requirement to calculate reachability. We then dismiss the GHOSTDAG data because it's not related
+	// to the GHOSTDAG data of the real DAG, and was used only for reachability.
+
+	// We need two staging areas: stagingArea which is used to commit the reachability data, and tmpStagingArea for the GHOSTDAG data
+	// of allProofBlocksUpHeap. The reason we need two areas is that we use the real GHOSTDAG data in order to order the heap in a topological
+	// way, and fake GHOSTDAG data for calculating reachability.
+	stagingArea := model.NewStagingArea()
+	tmpStagingArea := model.NewStagingArea()
+
+	bucket := consensusDB.MakeBucket([]byte("TMP"))
+	ghostdagDataStoreForTargetReachabilityManager := ghostdagdatastore.New(bucket, 0, false)
+	ghostdagDataStoreForTargetReachabilityManager.Stage(stagingArea, model.VirtualGenesisBlockHash, externalapi.NewBlockGHOSTDAGData(
+		0,
+		big.NewInt(0),
+		nil,
+		nil,
+		nil,
+		nil,
+	), false)
+	targetReachabilityManager := reachabilitymanager.New(ppm.databaseContext, ghostdagDataStoreForTargetReachabilityManager, targetReachabilityDataStore)
+	blockRelationStoreForTargetReachabilityManager := blockrelationstore.New(bucket, 0, false)
+	dagTopologyManagerForTargetReachabilityManager := dagtopologymanager.New(ppm.databaseContext, targetReachabilityManager, blockRelationStoreForTargetReachabilityManager, nil)
+	ghostdagManagerForTargetReachabilityManager := ghostdagmanager.New(ppm.databaseContext, dagTopologyManagerForTargetReachabilityManager, ghostdagDataStoreForTargetReachabilityManager, ppm.blockHeaderStore, 0, nil)
+	err := dagTopologyManagerForTargetReachabilityManager.SetParents(stagingArea, model.VirtualGenesisBlockHash, nil)
+	if err != nil {
+		return err
+	}
+
+	dagTopologyManager := dagtopologymanager.New(ppm.databaseContext, targetReachabilityManager, nil, nil)
+	ghostdagDataStore := ghostdagdatastore.New(bucket, 0, false)
+	tmpGHOSTDAGManager := ghostdagmanager.New(ppm.databaseContext, nil, ghostdagDataStore, nil, 0, nil)
+	dagTraversalManager := dagtraversalmanager.New(ppm.databaseContext, nil, ghostdagDataStore, nil, tmpGHOSTDAGManager, nil, nil, nil, 0)
+	allProofBlocksUpHeap := dagTraversalManager.NewUpHeap(tmpStagingArea)
+	dag := make(map[externalapi.DomainHash]struct {
+		parents hashset.HashSet
+		header  externalapi.BlockHeader
+	})
+	for _, headers := range pruningPointProof.Headers {
+		for _, header := range headers {
+			blockHash := consensushashing.HeaderHash(header)
+			if _, ok := dag[*blockHash]; ok {
+				continue
+			}
+
+			dag[*blockHash] = struct {
+				parents hashset.HashSet
+				header  externalapi.BlockHeader
+			}{parents: hashset.New(), header: header}
+
+			for level := 0; level <= ppm.maxBlockLevel; level++ {
+				for _, parent := range ppm.parentsManager.ParentsAtLevel(header, level) {
+					parent := parent
+					dag[*blockHash].parents.Add(parent)
+				}
+			}
+
+			// We stage temporary GHOSTDAG data that is needed in order to sort allProofBlocksUpHeap.
+			ghostdagDataStore.Stage(tmpStagingArea, blockHash, externalapi.NewBlockGHOSTDAGData(header.BlueScore(), header.BlueWork(), nil, nil, nil, nil), false)
+			err := allProofBlocksUpHeap.Push(blockHash)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	var selectedTip *externalapi.DomainHash
+	for allProofBlocksUpHeap.Len() > 0 {
+		blockHash := allProofBlocksUpHeap.Pop()
+		block := dag[*blockHash]
+		parentsHeap := dagTraversalManager.NewDownHeap(tmpStagingArea)
+		for parent := range block.parents {
+			parent := parent
+			if _, ok := dag[parent]; !ok {
+				continue
+			}
+
+			err := parentsHeap.Push(&parent)
+			if err != nil {
+				return err
+			}
+		}
+
+		fakeParents := []*externalapi.DomainHash{}
+		for parentsHeap.Len() > 0 {
+			parent := parentsHeap.Pop()
+			isAncestorOfAny, err := dagTopologyManager.IsAncestorOfAny(stagingArea, parent, fakeParents)
+			if err != nil {
+				return err
+			}
+
+			if isAncestorOfAny {
+				continue
+			}
+
+			fakeParents = append(fakeParents, parent)
+		}
+
+		if len(fakeParents) == 0 {
+			fakeParents = append(fakeParents, model.VirtualGenesisBlockHash)
+		}
+
+		err := dagTopologyManagerForTargetReachabilityManager.SetParents(stagingArea, blockHash, fakeParents)
+		if err != nil {
+			return err
+		}
+
+		err = ghostdagManagerForTargetReachabilityManager.GHOSTDAG(stagingArea, blockHash)
+		if err != nil {
+			return err
+		}
+
+		err = targetReachabilityManager.AddBlock(stagingArea, blockHash)
+		if err != nil {
+			return err
+		}
+
+		if selectedTip == nil {
+			selectedTip = blockHash
+		} else {
+			selectedTip, err = ghostdagManagerForTargetReachabilityManager.ChooseSelectedParent(stagingArea, selectedTip, blockHash)
+			if err != nil {
+				return err
+			}
+		}
+
+		if selectedTip.Equal(blockHash) {
+			err := targetReachabilityManager.UpdateReindexRoot(stagingArea, selectedTip)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	ghostdagDataStoreForTargetReachabilityManager.UnstageAll(stagingArea)
+	blockRelationStoreForTargetReachabilityManager.UnstageAll(stagingArea)
+	err = staging.CommitAllChanges(ppm.databaseContext, stagingArea)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 // ApplyPruningPointProof applies the given pruning proof to the current consensus. Specifically,
 // it's meant to be used against the StagingConsensus during headers-proof IBD. Note that for
 // performance reasons this operation is NOT atomic. If the process fails for whatever reason
@@ -619,9 +832,25 @@ func (ppm *pruningProofManager) ApplyPruningPointProof(pruningPointProof *extern
 	onEnd := logger.LogAndMeasureExecutionTime(log, "ApplyPruningPointProof")
 	defer onEnd()
 
+	stagingArea := model.NewStagingArea()
+	for _, headers := range pruningPointProof.Headers {
+		for _, header := range headers {
+			blockHash := consensushashing.HeaderHash(header)
+			ppm.blockHeaderStore.Stage(stagingArea, blockHash, header)
+		}
+	}
+	err := staging.CommitAllChanges(ppm.databaseContext, stagingArea)
+	if err != nil {
+		return err
+	}
+
+	err = ppm.populateProofReachabilityAndHeaders(pruningPointProof, ppm.reachabilityDataStore)
+	if err != nil {
+		return err
+	}
+
 	for blockLevel, headers := range pruningPointProof.Headers {
 		log.Infof("Applying level %d from the pruning point proof", blockLevel)
-		var selectedTip *externalapi.DomainHash
 		for i, header := range headers {
 			if i%1000 == 0 {
 				log.Infof("Applying level %d from the pruning point proof - applied %d headers out of %d", blockLevel, i, len(headers))
@@ -687,27 +916,6 @@ func (ppm *pruningProofManager) ApplyPruningPointProof(pruningPointProof *extern
 				ppm.blockStatusStore.Stage(stagingArea, blockHash, externalapi.StatusHeaderOnly)
 			}
 
-			if selectedTip == nil {
-				selectedTip = blockHash
-			} else {
-				selectedTip, err = ppm.ghostdagManagers[blockLevel].ChooseSelectedParent(stagingArea, selectedTip, blockHash)
-				if err != nil {
-					return err
-				}
-			}
-
-			err = ppm.reachabilityManagers[blockLevel].AddBlock(stagingArea, blockHash)
-			if err != nil {
-				return err
-			}
-
-			if selectedTip.Equal(blockHash) {
-				err := ppm.reachabilityManagers[blockLevel].UpdateReindexRoot(stagingArea, selectedTip)
-				if err != nil {
-					return err
-				}
-			}
-
 			err = staging.CommitAllChanges(ppm.databaseContext, stagingArea)
 			if err != nil {
 				return err
@@ -718,7 +926,7 @@ func (ppm *pruningProofManager) ApplyPruningPointProof(pruningPointProof *extern
 	pruningPointHeader := pruningPointProof.Headers[0][len(pruningPointProof.Headers[0])-1]
 	pruningPoint := consensushashing.HeaderHash(pruningPointHeader)
 
-	stagingArea := model.NewStagingArea()
+	stagingArea = model.NewStagingArea()
 	ppm.consensusStateStore.StageTips(stagingArea, []*externalapi.DomainHash{pruningPoint})
 	return staging.CommitAllChanges(ppm.databaseContext, stagingArea)
 }

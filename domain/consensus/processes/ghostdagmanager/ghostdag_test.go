@@ -320,10 +320,6 @@ func (ds *GHOSTDAGDataStoreImpl) IsStaged(*model.StagingArea) bool {
 	panic("implement me")
 }
 
-func (ds *GHOSTDAGDataStoreImpl) Discard() {
-	panic("implement me")
-}
-
 func (ds *GHOSTDAGDataStoreImpl) Commit(dbTx model.DBTransaction) error {
 	panic("implement me")
 }
@@ -336,11 +332,15 @@ func (ds *GHOSTDAGDataStoreImpl) Get(dbContext model.DBReader, stagingArea *mode
 	return nil, nil
 }
 
+func (ds *GHOSTDAGDataStoreImpl) UnstageAll(stagingArea *model.StagingArea) {
+	panic("implement me")
+}
+
 type DAGTopologyManagerImpl struct {
 	parentsMap map[externalapi.DomainHash][]*externalapi.DomainHash
 }
 
-func (dt *DAGTopologyManagerImpl) ChildInSelectedParentChainOf(stagingArea *model.StagingArea, context, highHash *externalapi.DomainHash) (*externalapi.DomainHash, error) {
+func (dt *DAGTopologyManagerImpl) ChildInSelectedParentChainOf(stagingArea *model.StagingArea, lowHash, highHash *externalapi.DomainHash) (*externalapi.DomainHash, error) {
 	panic("implement me")
 }
 

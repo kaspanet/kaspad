@@ -13,7 +13,7 @@ type DAGTopologyManager interface {
 	IsAncestorOfAny(stagingArea *StagingArea, blockHash *externalapi.DomainHash, potentialDescendants []*externalapi.DomainHash) (bool, error)
 	IsAnyAncestorOf(stagingArea *StagingArea, potentialAncestors []*externalapi.DomainHash, blockHash *externalapi.DomainHash) (bool, error)
 	IsInSelectedParentChainOf(stagingArea *StagingArea, blockHashA *externalapi.DomainHash, blockHashB *externalapi.DomainHash) (bool, error)
-	ChildInSelectedParentChainOf(stagingArea *StagingArea, context, highHash *externalapi.DomainHash) (*externalapi.DomainHash, error)
+	ChildInSelectedParentChainOf(stagingArea *StagingArea, lowHash, highHash *externalapi.DomainHash) (*externalapi.DomainHash, error)
 
 	SetParents(stagingArea *StagingArea, blockHash *externalapi.DomainHash, parentHashes []*externalapi.DomainHash) error
 }

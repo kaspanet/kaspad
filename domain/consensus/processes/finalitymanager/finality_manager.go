@@ -13,6 +13,7 @@ type finalityManager struct {
 	dagTopologyManager model.DAGTopologyManager
 	finalityStore      model.FinalityStore
 	ghostdagDataStore  model.GHOSTDAGDataStore
+	pruningStore       model.PruningStore
 	genesisHash        *externalapi.DomainHash
 	finalityDepth      uint64
 }
@@ -22,6 +23,7 @@ func New(databaseContext model.DBReader,
 	dagTopologyManager model.DAGTopologyManager,
 	finalityStore model.FinalityStore,
 	ghostdagDataStore model.GHOSTDAGDataStore,
+	pruningStore model.PruningStore,
 	genesisHash *externalapi.DomainHash,
 	finalityDepth uint64) model.FinalityManager {
 
@@ -31,6 +33,7 @@ func New(databaseContext model.DBReader,
 		dagTopologyManager: dagTopologyManager,
 		finalityStore:      finalityStore,
 		ghostdagDataStore:  ghostdagDataStore,
+		pruningStore:       pruningStore,
 		finalityDepth:      finalityDepth,
 	}
 }
@@ -96,6 +99,27 @@ func (fm *finalityManager) calculateFinalityPoint(stagingArea *model.StagingArea
 		return fm.genesisHash, nil
 	}
 
+	pruningPoint, err := fm.pruningStore.PruningPoint(fm.databaseContext, stagingArea)
+	if err != nil {
+		return nil, err
+	}
+	pruningPointGhostdagData, err := fm.ghostdagDataStore.Get(fm.databaseContext, stagingArea, pruningPoint, false)
+	if err != nil {
+		return nil, err
+	}
+	if ghostdagData.BlueScore() < pruningPointGhostdagData.BlueScore()+fm.finalityDepth {
+		log.Debugf("%s blue score less than finality distance over pruning point - returning virtual genesis as finality point", blockHash)
+		return model.VirtualGenesisBlockHash, nil
+	}
+	isPruningPointOnChain, err := fm.dagTopologyManager.IsInSelectedParentChainOf(stagingArea, pruningPoint, blockHash)
+	if err != nil {
+		return nil, err
+	}
+	if !isPruningPointOnChain {
+		log.Debugf("pruning point not in selected chain of %s - returning virtual genesis as finality point", blockHash)
+		return model.VirtualGenesisBlockHash, nil
+	}
+
 	selectedParent := ghostdagData.SelectedParent()
 	if selectedParent.Equal(fm.genesisHash) {
 		return fm.genesisHash, nil
@@ -105,6 +129,12 @@ func (fm *finalityManager) calculateFinalityPoint(stagingArea *model.StagingArea
 	if err != nil {
 		return nil, err
 	}
+	// In this case we expect the pruning point or a block above it to be the finality point.
+	// Note that above we already verified the chain and distance conditions for this
+	if current.Equal(model.VirtualGenesisBlockHash) {
+		current = pruningPoint
+	}
+
 	requiredBlueScore := ghostdagData.BlueScore() - fm.finalityDepth
 	log.Debugf("%s's finality point is the one having the highest blue score lower then %d", blockHash, requiredBlueScore)
 
