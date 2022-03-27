@@ -4,6 +4,8 @@ import (
 	"math/big"
 	"time"
 
+	"github.com/kaspanet/kaspad/util/txmass"
+
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/util/difficulty"
@@ -48,6 +50,8 @@ type blockValidator struct {
 	reachabilityStore   model.ReachabilityDataStore
 	consensusStateStore model.ConsensusStateStore
 	daaBlocksStore      model.DAABlocksStore
+
+	txMassCalculator *txmass.Calculator
 }
 
 // New instantiates a new BlockValidator
@@ -87,6 +91,8 @@ func New(powMax *big.Int,
 	reachabilityStore model.ReachabilityDataStore,
 	consensusStateStore model.ConsensusStateStore,
 	daaBlocksStore model.DAABlocksStore,
+
+	txMassCalculator *txmass.Calculator,
 ) model.BlockValidator {
 
 	return &blockValidator{
@@ -126,5 +132,7 @@ func New(powMax *big.Int,
 		reachabilityStore:   reachabilityStore,
 		consensusStateStore: consensusStateStore,
 		daaBlocksStore:      daaBlocksStore,
+
+		txMassCalculator: txMassCalculator,
 	}
 }

@@ -40,7 +40,6 @@ func Sign(params *dagconfig.Params, mnemonics []string, serializedPSTx []byte, e
 			return nil, err
 		}
 	}
-
 	return serialization.SerializePartiallySignedTransaction(partiallySignedTransaction)
 }
 

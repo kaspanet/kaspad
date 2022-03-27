@@ -318,7 +318,7 @@ var TestnetParams = Params{
 	MinerConfirmationWindow:       2016,
 
 	// Mempool parameters
-	RelayNonStdTxs: true,
+	RelayNonStdTxs: false,
 
 	// AcceptUnroutable specifies whether this network accepts unroutable
 	// IP addresses, such as 10.0.0.0/8
@@ -386,7 +386,7 @@ var SimnetParams = Params{
 	MinerConfirmationWindow:       100,
 
 	// Mempool parameters
-	RelayNonStdTxs: true,
+	RelayNonStdTxs: false,
 
 	// AcceptUnroutable specifies whether this network accepts unroutable
 	// IP addresses, such as 10.0.0.0/8
@@ -445,7 +445,7 @@ var DevnetParams = Params{
 	MinerConfirmationWindow:       2016,
 
 	// Mempool parameters
-	RelayNonStdTxs: true,
+	RelayNonStdTxs: false,
 
 	// AcceptUnroutable specifies whether this network accepts unroutable
 	// IP addresses, such as 10.0.0.0/8

@@ -2,13 +2,13 @@ package main
 
 import (
 	"context"
-	"encoding/hex"
 	"fmt"
+	"io/ioutil"
+	"strings"
+
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/daemon/client"
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/daemon/pb"
 	"github.com/pkg/errors"
-	"io/ioutil"
-	"strings"
 )
 
 func broadcast(conf *broadcastConfig) error {
@@ -21,34 +21,40 @@ func broadcast(conf *broadcastConfig) error {
 	ctx, cancel := context.WithTimeout(context.Background(), daemonTimeout)
 	defer cancel()
 
-	if conf.Transaction == "" && conf.TransactionFile == "" {
+	if conf.Transactions == "" && conf.TransactionsFile == "" {
 		return errors.Errorf("Either --transaction or --transaction-file is required")
 	}
-	if conf.Transaction != "" && conf.TransactionFile != "" {
+	if conf.Transactions != "" && conf.TransactionsFile != "" {
 		return errors.Errorf("Both --transaction and --transaction-file cannot be passed at the same time")
 	}
 
-	transactionHex := conf.Transaction
-	if conf.TransactionFile != "" {
-		transactionHexBytes, err := ioutil.ReadFile(conf.TransactionFile)
+	transactionsHex := conf.Transactions
+	if conf.TransactionsFile != "" {
+		transactionHexBytes, err := ioutil.ReadFile(conf.TransactionsFile)
 		if err != nil {
-			return errors.Wrapf(err, "Could not read hex from %s", conf.TransactionFile)
+			return errors.Wrapf(err, "Could not read hex from %s", conf.TransactionsFile)
 		}
-		transactionHex = strings.TrimSpace(string(transactionHexBytes))
+		transactionsHex = strings.TrimSpace(string(transactionHexBytes))
 	}
 
-	transaction, err := hex.DecodeString(transactionHex)
+	transactions, err := decodeTransactionsFromHex(transactionsHex)
 	if err != nil {
 		return err
 	}
 
-	response, err := daemonClient.Broadcast(ctx, &pb.BroadcastRequest{Transaction: transaction})
-	if err != nil {
-		return err
+	transactionsCount := len(transactions)
+	for i, transaction := range transactions {
+		response, err := daemonClient.Broadcast(ctx, &pb.BroadcastRequest{Transaction: transaction})
+		if err != nil {
+			return err
+		}
+		if transactionsCount == 1 {
+			fmt.Println("Transaction was sent successfully")
+		} else {
+			fmt.Printf("Transaction %d (out of %d) was sent successfully\n", i+1, transactionsCount)
+		}
+		fmt.Printf("Transaction ID: \t%s\n", response.TxID)
 	}
-
-	fmt.Println("Transaction was sent successfully")
-	fmt.Printf("Transaction ID: \t%s\n", response.TxID)
 
 	return nil
 }

@@ -3,7 +3,7 @@ package mempool
 import (
 	"fmt"
 
-	"github.com/kaspanet/kaspad/domain/consensus/processes/transactionvalidator"
+	"github.com/kaspanet/kaspad/util/txmass"
 
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
 
@@ -36,9 +36,9 @@ const (
 	// (1 + 15*74 + 3) + (15*34 + 3) + 23 = 1650
 	maximumStandardSignatureScriptSize = 1650
 
-	// maximumStandardTransactionMass is the maximum mass allowed for transactions that
+	// MaximumStandardTransactionMass is the maximum mass allowed for transactions that
 	// are considered standard and will therefore be relayed and considered for mining.
-	maximumStandardTransactionMass = 100000
+	MaximumStandardTransactionMass = 100_000
 )
 
 func (mp *mempool) checkTransactionStandardInIsolation(transaction *externalapi.DomainTransaction) error {
@@ -58,9 +58,9 @@ func (mp *mempool) checkTransactionStandardInIsolation(transaction *externalapi.
 	// almost as much to process as the sender fees, limit the maximum
 	// size of a transaction. This also helps mitigate CPU exhaustion
 	// attacks.
-	if transaction.Mass > maximumStandardTransactionMass {
+	if transaction.Mass > MaximumStandardTransactionMass {
 		str := fmt.Sprintf("transaction mass of %d is larger than max allowed size of %d",
-			transaction.Mass, maximumStandardTransactionMass)
+			transaction.Mass, MaximumStandardTransactionMass)
 		return transactionRuleError(RejectNonstandard, str)
 	}
 
@@ -127,7 +127,7 @@ func (mp *mempool) IsTransactionOutputDust(output *externalapi.DomainTransaction
 	// The most common scripts are pay-to-pubkey, and as per the above
 	// breakdown, the minimum size of a p2pk input script is 148 bytes. So
 	// that figure is used.
-	totalSerializedSize := transactionvalidator.TransactionOutputEstimatedSerializedSize(output) + 148
+	totalSerializedSize := txmass.TransactionOutputEstimatedSerializedSize(output) + 148
 
 	// The output is considered dust if the cost to the network to spend the
 	// coins is more than 1/3 of the minimum free transaction relay fee.
