@@ -816,7 +816,6 @@ func (ppm *pruningProofManager) populateProofReachabilityAndHeaders(pruningPoint
 		}
 	}
 
-	targetReachabilityDataStore.StageReachabilityReindexRoot(stagingArea, pruningPoint)
 	ghostdagDataStoreForTargetReachabilityManager.UnstageAll(stagingArea)
 	blockRelationStoreForTargetReachabilityManager.UnstageAll(stagingArea)
 	err = staging.CommitAllChanges(ppm.databaseContext, stagingArea)
