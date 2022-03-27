@@ -762,12 +762,12 @@ func (s *consensus) ValidatePruningPointProof(pruningPointProof *externalapi.Pru
 	return nil
 }
 
-func (s *consensus) ApplyPruningPointProof(pruningPointProof *externalapi.PruningPointProof) error {
+func (s *consensus) ApplyPruningPointProof(pruningPointProof *externalapi.PruningPointProof, extraHeaders []externalapi.BlockHeader) error {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
 	log.Infof("Applying the pruning point proof")
-	err := s.pruningProofManager.ApplyPruningPointProof(pruningPointProof)
+	err := s.pruningProofManager.ApplyPruningPointProof(pruningPointProof, extraHeaders)
 	if err != nil {
 		return err
 	}

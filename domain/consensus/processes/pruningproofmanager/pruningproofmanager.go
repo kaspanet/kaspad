@@ -20,6 +20,7 @@ import (
 	"github.com/kaspanet/kaspad/util/staging"
 	"github.com/pkg/errors"
 	"math/big"
+	"sort"
 )
 
 type pruningProofManager struct {
@@ -678,7 +679,7 @@ func (ppm *pruningProofManager) ghostdagDataWithoutPrunedBlocks(stagingArea *mod
 }
 
 func (ppm *pruningProofManager) populateProofReachabilityAndHeaders(pruningPointProof *externalapi.PruningPointProof,
-	targetReachabilityDataStore model.ReachabilityDataStore) error {
+	targetReachabilityDataStore model.ReachabilityDataStore, pruningPoint *externalapi.DomainHash) error {
 	// We build a DAG of all multi-level relations between blocks in the proof. We make a upHeap of all blocks, so we can iterate
 	// over them in a topological way, and then build a DAG where we use all multi-level parents of a block to create edges, except
 	// parents that are already in the past of another parent (This can happen between two levels). We run GHOSTDAG on each block of
@@ -815,6 +816,7 @@ func (ppm *pruningProofManager) populateProofReachabilityAndHeaders(pruningPoint
 		}
 	}
 
+	targetReachabilityDataStore.StageReachabilityReindexRoot(stagingArea, pruningPoint)
 	ghostdagDataStoreForTargetReachabilityManager.UnstageAll(stagingArea)
 	blockRelationStoreForTargetReachabilityManager.UnstageAll(stagingArea)
 	err = staging.CommitAllChanges(ppm.databaseContext, stagingArea)
@@ -828,11 +830,27 @@ func (ppm *pruningProofManager) populateProofReachabilityAndHeaders(pruningPoint
 // it's meant to be used against the StagingConsensus during headers-proof IBD. Note that for
 // performance reasons this operation is NOT atomic. If the process fails for whatever reason
 // (e.g. the process was killed) then the database for this consensus MUST be discarded.
-func (ppm *pruningProofManager) ApplyPruningPointProof(pruningPointProof *externalapi.PruningPointProof) error {
+func (ppm *pruningProofManager) ApplyPruningPointProof(pruningPointProof *externalapi.PruningPointProof, extraHeaders []externalapi.BlockHeader) error {
 	onEnd := logger.LogAndMeasureExecutionTime(log, "ApplyPruningPointProof")
 	defer onEnd()
 
 	stagingArea := model.NewStagingArea()
+	level0Headers := pruningPointProof.Headers[0]
+	pruningPointHeader := level0Headers[len(level0Headers)-1]
+	pruningPoint := consensushashing.HeaderHash(pruningPointHeader)
+
+	var sortErr error
+	sort.Slice(extraHeaders, func(i, j int) bool {
+		headerI := extraHeaders[i]
+		headerJ := extraHeaders[j]
+
+		return headerI.BlueWork().Cmp(headerJ.BlueWork()) < 0
+	})
+	if sortErr != nil {
+		return sortErr
+	}
+
+	pruningPointProof.Headers[0] = append(extraHeaders, pruningPointProof.Headers[0]...)
 	for _, headers := range pruningPointProof.Headers {
 		for _, header := range headers {
 			blockHash := consensushashing.HeaderHash(header)
@@ -844,7 +862,7 @@ func (ppm *pruningProofManager) ApplyPruningPointProof(pruningPointProof *extern
 		return err
 	}
 
-	err = ppm.populateProofReachabilityAndHeaders(pruningPointProof, ppm.reachabilityDataStore)
+	err = ppm.populateProofReachabilityAndHeaders(pruningPointProof, ppm.reachabilityDataStore, pruningPoint)
 	if err != nil {
 		return err
 	}
@@ -863,8 +881,6 @@ func (ppm *pruningProofManager) ApplyPruningPointProof(pruningPointProof *extern
 					"expected to be at least %d", blockHash, header.BlockLevel(ppm.maxBlockLevel), blockLevel)
 			}
 
-			ppm.blockHeaderStore.Stage(stagingArea, blockHash, header)
-
 			var parents []*externalapi.DomainHash
 			for _, parent := range ppm.parentsManager.ParentsAtLevel(header, blockLevel) {
 				_, err := ppm.ghostdagDataStores[blockLevel].Get(ppm.databaseContext, stagingArea, parent, false)
@@ -879,10 +895,10 @@ func (ppm *pruningProofManager) ApplyPruningPointProof(pruningPointProof *extern
 			}
 
 			if len(parents) == 0 {
-				if i != 0 {
-					return errors.Wrapf(ruleerrors.ErrPruningProofHeaderWithNoKnownParents, "the proof header "+
-						"%s is missing known parents", blockHash)
-				}
+				//if i != 0 {
+				//	return errors.Wrapf(ruleerrors.ErrPruningProofHeaderWithNoKnownParents, "the proof header "+
+				//		"%s is missing known parents", blockHash)
+				//}
 				parents = append(parents, model.VirtualGenesisBlockHash)
 			}
 
@@ -922,9 +938,6 @@ func (ppm *pruningProofManager) ApplyPruningPointProof(pruningPointProof *extern
 			}
 		}
 	}
-
-	pruningPointHeader := pruningPointProof.Headers[0][len(pruningPointProof.Headers[0])-1]
-	pruningPoint := consensushashing.HeaderHash(pruningPointHeader)
 
 	stagingArea = model.NewStagingArea()
 	ppm.consensusStateStore.StageTips(stagingArea, []*externalapi.DomainHash{pruningPoint})

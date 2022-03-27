@@ -104,48 +104,43 @@ func (flow *handleIBDFlow) checkIfHighHashHasMoreBlueWorkThanSelectedTipAndPruni
 	return relayBlock.Header.BlueWork().Cmp(headersSelectedTipInfo.BlueWork) > 0, nil
 }
 
-func (flow *handleIBDFlow) syncAndValidatePruningPointProof() (*externalapi.DomainHash, error) {
+func (flow *handleIBDFlow) syncAndValidatePruningPointProof() (*externalapi.DomainHash, *externalapi.PruningPointProof, error) {
 	log.Infof("Downloading the pruning point proof from %s", flow.peer)
 	err := flow.outgoingRoute.Enqueue(appmessage.NewMsgRequestPruningPointProof())
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	message, err := flow.incomingRoute.DequeueWithTimeout(10 * time.Minute)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	pruningPointProofMessage, ok := message.(*appmessage.MsgPruningPointProof)
 	if !ok {
-		return nil, protocolerrors.Errorf(true, "received unexpected message type. "+
+		return nil, nil, protocolerrors.Errorf(true, "received unexpected message type. "+
 			"expected: %s, got: %s", appmessage.CmdPruningPointProof, message.Command())
 	}
 	pruningPointProof := appmessage.MsgPruningPointProofToDomainPruningPointProof(pruningPointProofMessage)
 	err = flow.Domain().Consensus().ValidatePruningPointProof(pruningPointProof)
 	if err != nil {
 		if errors.As(err, &ruleerrors.RuleError{}) {
-			return nil, protocolerrors.Wrapf(true, err, "pruning point proof validation failed")
+			return nil, nil, protocolerrors.Wrapf(true, err, "pruning point proof validation failed")
 		}
-		return nil, err
+		return nil, nil, err
 	}
 
-	err = flow.Domain().StagingConsensus().ApplyPruningPointProof(pruningPointProof)
-	if err != nil {
-		return nil, err
-	}
-
-	return consensushashing.HeaderHash(pruningPointProof.Headers[0][len(pruningPointProof.Headers[0])-1]), nil
+	return consensushashing.HeaderHash(pruningPointProof.Headers[0][len(pruningPointProof.Headers[0])-1]), pruningPointProof, nil
 }
 
 func (flow *handleIBDFlow) downloadHeadersAndPruningUTXOSet(
 	syncerHeaderSelectedTipHash, relayBlockHash *externalapi.DomainHash,
 	highBlockDAAScore uint64) error {
 
-	proofPruningPoint, err := flow.syncAndValidatePruningPointProof()
+	proofPruningPoint, proof, err := flow.syncAndValidatePruningPointProof()
 	if err != nil {
 		return err
 	}
 
-	err = flow.syncPruningPointsAndPruningPointAnticone(proofPruningPoint)
+	err = flow.syncPruningPointsAndPruningPointAnticone(proofPruningPoint, proof)
 	if err != nil {
 		return err
 	}
@@ -191,14 +186,14 @@ func (flow *handleIBDFlow) downloadHeadersAndPruningUTXOSet(
 	return nil
 }
 
-func (flow *handleIBDFlow) syncPruningPointsAndPruningPointAnticone(proofPruningPoint *externalapi.DomainHash) error {
+func (flow *handleIBDFlow) syncPruningPointsAndPruningPointAnticone(proofPruningPoint *externalapi.DomainHash, proof *externalapi.PruningPointProof) error {
 	log.Infof("Downloading the past pruning points and the pruning point anticone from %s", flow.peer)
 	err := flow.outgoingRoute.Enqueue(appmessage.NewMsgRequestPruningPointAndItsAnticone())
 	if err != nil {
 		return err
 	}
 
-	err = flow.validateAndInsertPruningPoints(proofPruningPoint)
+	pruningPoints, err := flow.validateAndInsertPruningPoints(proofPruningPoint)
 	if err != nil {
 		return err
 	}
@@ -212,6 +207,21 @@ func (flow *handleIBDFlow) syncPruningPointsAndPruningPointAnticone(proofPruning
 	if !ok {
 		return protocolerrors.Errorf(true, "received unexpected message type. "+
 			"expected: %s, got: %s", appmessage.CmdTrustedData, message.Command())
+	}
+
+	headers := make([]externalapi.BlockHeader, len(msgTrustedData.DAAWindow))
+	for i, trustedDataDAAHeader := range msgTrustedData.DAAWindow {
+		headers[i] = appmessage.BlockHeaderToDomainBlockHeader(trustedDataDAAHeader.Header)
+	}
+
+	err = flow.Domain().StagingConsensus().ApplyPruningPointProof(proof, headers)
+	if err != nil {
+		return err
+	}
+
+	err = flow.Domain().StagingConsensus().ImportPruningPoints(pruningPoints)
+	if err != nil {
+		return err
 	}
 
 	pruningPointWithMetaData, done, err := flow.receiveBlockWithTrustedData()
@@ -268,12 +278,7 @@ func (flow *handleIBDFlow) processBlockWithTrustedData(
 
 	blockWithTrustedData := &externalapi.BlockWithTrustedData{
 		Block:        appmessage.MsgBlockToDomainBlock(block.Block),
-		DAAWindow:    make([]*externalapi.TrustedDataDataDAAHeader, 0, len(block.DAAWindowIndices)),
 		GHOSTDAGData: make([]*externalapi.BlockGHOSTDAGDataHashPair, 0, len(block.GHOSTDAGDataIndices)),
-	}
-
-	for _, index := range block.DAAWindowIndices {
-		blockWithTrustedData.DAAWindow = append(blockWithTrustedData.DAAWindow, appmessage.TrustedDataDataDAABlockV4ToTrustedDataDataDAAHeader(data.DAAWindow[index]))
 	}
 
 	for _, index := range block.GHOSTDAGDataIndices {
@@ -281,6 +286,9 @@ func (flow *handleIBDFlow) processBlockWithTrustedData(
 	}
 
 	_, err := consensus.ValidateAndInsertBlockWithTrustedData(blockWithTrustedData, false)
+	if errors.As(err, &ruleerrors.RuleError{}) {
+		return protocolerrors.Wrapf(true, err, "failed validating block %s with trusted data", block.Block.Header.BlockHash())
+	}
 	return err
 }
 
@@ -321,19 +329,19 @@ func (flow *handleIBDFlow) receivePruningPoints() (*appmessage.MsgPruningPoints,
 	return msgPruningPoints, nil
 }
 
-func (flow *handleIBDFlow) validateAndInsertPruningPoints(proofPruningPoint *externalapi.DomainHash) error {
+func (flow *handleIBDFlow) validateAndInsertPruningPoints(proofPruningPoint *externalapi.DomainHash) ([]externalapi.BlockHeader, error) {
 	currentPruningPoint, err := flow.Domain().Consensus().PruningPoint()
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	if currentPruningPoint.Equal(proofPruningPoint) {
-		return protocolerrors.Errorf(true, "the proposed pruning point is the same as the current pruning point")
+		return nil, protocolerrors.Errorf(true, "the proposed pruning point is the same as the current pruning point")
 	}
 
 	pruningPoints, err := flow.receivePruningPoints()
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	headers := make([]externalapi.BlockHeader, len(pruningPoints.Headers))
@@ -343,26 +351,21 @@ func (flow *handleIBDFlow) validateAndInsertPruningPoints(proofPruningPoint *ext
 
 	arePruningPointsViolatingFinality, err := flow.Domain().Consensus().ArePruningPointsViolatingFinality(headers)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	if arePruningPointsViolatingFinality {
 		// TODO: Find a better way to deal with finality conflicts.
-		return protocolerrors.Errorf(false, "pruning points are violating finality")
+		return nil, protocolerrors.Errorf(false, "pruning points are violating finality")
 	}
 
 	lastPruningPoint := consensushashing.HeaderHash(headers[len(headers)-1])
 	if !lastPruningPoint.Equal(proofPruningPoint) {
-		return protocolerrors.Errorf(true, "the proof pruning point is not equal to the last pruning "+
+		return nil, protocolerrors.Errorf(true, "the proof pruning point is not equal to the last pruning "+
 			"point in the list")
 	}
 
-	err = flow.Domain().StagingConsensus().ImportPruningPoints(headers)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return headers, nil
 }
 
 func (flow *handleIBDFlow) syncPruningPointUTXOSet(consensus externalapi.Consensus,

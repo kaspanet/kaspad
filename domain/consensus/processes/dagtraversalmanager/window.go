@@ -158,6 +158,10 @@ func (dtm *dagTraversalManager) calculateBlockWindowHeap(stagingArea *model.Stag
 }
 
 func (dtm *dagTraversalManager) tryPushMergeSet(windowHeap *sizedUpBlockHeap, currentGHOSTDAGData, selectedParentGHOSTDAGData *externalapi.BlockGHOSTDAGData) (bool, error) {
+	if currentGHOSTDAGData.SelectedParent().Equal(model.VirtualGenesisBlockHash) {
+		return true, nil
+	}
+
 	added, err := windowHeap.tryPushWithGHOSTDAGData(currentGHOSTDAGData.SelectedParent(), selectedParentGHOSTDAGData)
 	if err != nil {
 		return false, err

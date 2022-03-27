@@ -32,7 +32,7 @@ func syncConsensuses(syncer, syncee externalapi.Consensus) error {
 		return err
 	}
 
-	err = syncee.ApplyPruningPointProof(pruningPointProof)
+	err = syncee.ApplyPruningPointProof(pruningPointProof, nil)
 	if err != nil {
 		return err
 	}

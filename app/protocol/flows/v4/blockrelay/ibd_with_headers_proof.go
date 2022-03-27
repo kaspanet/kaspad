@@ -109,7 +109,7 @@ func (flow *handleIBDFlow) syncAndValidatePruningPointProof() (*externalapi.Doma
 		return nil, err
 	}
 
-	err = flow.Domain().StagingConsensus().ApplyPruningPointProof(pruningPointProof)
+	err = flow.Domain().StagingConsensus().ApplyPruningPointProof(pruningPointProof, nil)
 	if err != nil {
 		return nil, err
 	}

@@ -63,7 +63,7 @@ func TestValidateAndInsertImportedPruningPoint(t *testing.T) {
 				t.Fatalf("Error setting up synceeStaging: %+v", err)
 			}
 
-			err = synceeStaging.ApplyPruningPointProof(pruningPointProof)
+			err = synceeStaging.ApplyPruningPointProof(pruningPointProof, nil)
 			if err != nil {
 				t.Fatalf("ApplyPruningPointProof: %+v", err)
 			}
