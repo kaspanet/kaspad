@@ -60,7 +60,7 @@ func (tc *testConsensus) PruningStore() model.PruningStore {
 }
 
 func (tc *testConsensus) ReachabilityDataStore() model.ReachabilityDataStore {
-	return tc.reachabilityDataStores[0]
+	return tc.reachabilityDataStore
 }
 
 func (tc *testConsensus) UTXODiffStore() model.UTXODiffStore {

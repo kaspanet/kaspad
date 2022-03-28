@@ -3,6 +3,8 @@ package mempool
 import (
 	"fmt"
 
+	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
+
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
 
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
@@ -42,7 +44,7 @@ func (mpus *mempoolUTXOSet) addTransaction(transaction *model.MempoolTransaction
 		outpoint := externalapi.DomainOutpoint{TransactionID: *transaction.TransactionID(), Index: uint32(i)}
 
 		mpus.poolUnspentOutputs[outpoint] =
-			utxo.NewUTXOEntry(output.Value, output.ScriptPublicKey, false, model.UnacceptedDAAScore)
+			utxo.NewUTXOEntry(output.Value, output.ScriptPublicKey, false, constants.UnacceptedDAAScore)
 	}
 }
 

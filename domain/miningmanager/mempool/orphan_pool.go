@@ -3,6 +3,8 @@ package mempool
 import (
 	"fmt"
 
+	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
+
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
 
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
@@ -153,7 +155,7 @@ func (op *orphansPool) processOrphansAfterAcceptedTransaction(acceptedTransactio
 			for _, input := range orphan.Transaction().Inputs {
 				if input.PreviousOutpoint.Equal(&outpoint) && input.UTXOEntry == nil {
 					input.UTXOEntry = utxo.NewUTXOEntry(output.Value, output.ScriptPublicKey, false,
-						model.UnacceptedDAAScore)
+						constants.UnacceptedDAAScore)
 					break
 				}
 			}

@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/daemon/client"
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/daemon/pb"
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/keys"
@@ -31,10 +32,11 @@ func send(conf *sendConfig) error {
 	defer cancel()
 
 	sendAmountSompi := uint64(conf.SendAmount * constants.SompiPerKaspa)
-	createUnsignedTransactionResponse, err := daemonClient.CreateUnsignedTransaction(ctx, &pb.CreateUnsignedTransactionRequest{
-		Address: conf.ToAddress,
-		Amount:  sendAmountSompi,
-	})
+	createUnsignedTransactionsResponse, err :=
+		daemonClient.CreateUnsignedTransactions(ctx, &pb.CreateUnsignedTransactionsRequest{
+			Address: conf.ToAddress,
+			Amount:  sendAmountSompi,
+		})
 	if err != nil {
 		return err
 	}
@@ -44,22 +46,37 @@ func send(conf *sendConfig) error {
 		return err
 	}
 
-	signedTransaction, err := libkaspawallet.Sign(conf.NetParams(), mnemonics, createUnsignedTransactionResponse.UnsignedTransaction, keysFile.ECDSA)
-	if err != nil {
-		return err
+	signedTransactions := make([][]byte, len(createUnsignedTransactionsResponse.UnsignedTransactions))
+	for i, unsignedTransaction := range createUnsignedTransactionsResponse.UnsignedTransactions {
+		signedTransaction, err := libkaspawallet.Sign(conf.NetParams(), mnemonics, unsignedTransaction, keysFile.ECDSA)
+		if err != nil {
+			return err
+		}
+		signedTransactions[i] = signedTransaction
 	}
 
-	ctx2, cancel2 := context.WithTimeout(context.Background(), daemonTimeout)
-	defer cancel2()
-	broadcastResponse, err := daemonClient.Broadcast(ctx2, &pb.BroadcastRequest{
-		Transaction: signedTransaction,
-	})
-	if err != nil {
-		return err
+	if len(signedTransactions) > 1 {
+		fmt.Printf("Broadcasting %d transactions\n", len(signedTransactions))
 	}
+	for _, signedTransaction := range signedTransactions {
+		err := func() error { // surround with func so that defer runs separately per transaction
+			ctx2, cancel2 := context.WithTimeout(context.Background(), daemonTimeout)
+			defer cancel2()
+			broadcastResponse, err := daemonClient.Broadcast(ctx2, &pb.BroadcastRequest{
+				Transaction: signedTransaction,
+			})
+			if err != nil {
+				return err
+			}
 
-	fmt.Println("Transaction was sent successfully")
-	fmt.Printf("Transaction ID: \t%s\n", broadcastResponse.TxID)
+			fmt.Println("Transaction was sent successfully")
+			fmt.Printf("Transaction ID: \t%s\n", broadcastResponse.TxID)
+			return nil
+		}()
+		if err != nil {
+			return err
+		}
+	}
 
 	return nil
 }

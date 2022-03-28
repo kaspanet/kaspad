@@ -1,8 +1,6 @@
 package consensus
 
 import (
-	"github.com/kaspanet/kaspad/infrastructure/logger"
-	"github.com/kaspanet/kaspad/util/staging"
 	"math/big"
 	"sync"
 
@@ -10,6 +8,8 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
+	"github.com/kaspanet/kaspad/infrastructure/logger"
+	"github.com/kaspanet/kaspad/util/staging"
 	"github.com/pkg/errors"
 )
 
@@ -35,7 +35,7 @@ type consensus struct {
 	headerTipsManager     model.HeadersSelectedTipManager
 	mergeDepthManager     model.MergeDepthManager
 	pruningManager        model.PruningManager
-	reachabilityManagers  []model.ReachabilityManager
+	reachabilityManager   model.ReachabilityManager
 	finalityManager       model.FinalityManager
 	pruningProofManager   model.PruningProofManager
 
@@ -49,7 +49,7 @@ type consensus struct {
 	consensusStateStore                 model.ConsensusStateStore
 	headersSelectedTipStore             model.HeaderSelectedTipStore
 	multisetStore                       model.MultisetStore
-	reachabilityDataStores              []model.ReachabilityDataStore
+	reachabilityDataStore               model.ReachabilityDataStore
 	utxoDiffStore                       model.UTXODiffStore
 	finalityStore                       model.FinalityStore
 	headersSelectedChainStore           model.HeadersSelectedChainStore
@@ -83,11 +83,9 @@ func (s *consensus) Init(skipAddingGenesis bool) error {
 	// on a node with pruned header all blocks without known parents points to it.
 	if !exists {
 		s.blockStatusStore.Stage(stagingArea, model.VirtualGenesisBlockHash, externalapi.StatusUTXOValid)
-		for _, reachabilityManager := range s.reachabilityManagers {
-			err = reachabilityManager.Init(stagingArea)
-			if err != nil {
-				return err
-			}
+		err = s.reachabilityManager.Init(stagingArea)
+		if err != nil {
+			return err
 		}
 
 		for _, dagTopologyManager := range s.dagTopologyManagers {

@@ -82,9 +82,13 @@ func (d *domain) InitStagingConsensus() error {
 	cfg := *d.consensusConfig
 	cfg.SkipAddingGenesis = true
 
-	consensusInstance, err := consensusFactory.NewConsensus(&cfg, d.db, inactivePrefix)
+	consensusInstance, shouldMigrate, err := consensusFactory.NewConsensus(&cfg, d.db, inactivePrefix)
 	if err != nil {
 		return err
+	}
+
+	if shouldMigrate {
+		return errors.Errorf("A fresh consensus should never return shouldMigrate=true")
 	}
 
 	d.stagingConsensus = &consensusInstance
@@ -183,7 +187,7 @@ func New(consensusConfig *consensus.Config, mempoolConfig *mempool.Config, db in
 	}
 
 	consensusFactory := consensus.NewFactory()
-	consensusInstance, err := consensusFactory.NewConsensus(consensusConfig, db, activePrefix)
+	consensusInstance, shouldMigrate, err := consensusFactory.NewConsensus(consensusConfig, db, activePrefix)
 	if err != nil {
 		return nil, err
 	}
@@ -192,6 +196,13 @@ func New(consensusConfig *consensus.Config, mempoolConfig *mempool.Config, db in
 		consensus:       &consensusInstance,
 		consensusConfig: consensusConfig,
 		db:              db,
+	}
+
+	if shouldMigrate {
+		err := domainInstance.migrate()
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	miningManagerFactory := miningmanager.NewFactory()

@@ -57,6 +57,7 @@ func (rd *reachabilityData) FutureCoveringSet() model.FutureCoveringTreeNodeSet 
 }
 
 func (rd *reachabilityData) CloneMutable() model.MutableReachabilityData {
+	//return rd
 	return &reachabilityData{
 		children:          externalapi.CloneHashes(rd.children),
 		parent:            rd.parent,

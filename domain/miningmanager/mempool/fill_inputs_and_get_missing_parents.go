@@ -3,6 +3,7 @@ package mempool
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/utxo"
 	"github.com/kaspanet/kaspad/domain/miningmanager/mempool/model"
 	"github.com/pkg/errors"
@@ -42,6 +43,6 @@ func fillInputs(transaction *externalapi.DomainTransaction, parentsInPool model.
 		}
 		relevantOutput := parent.Transaction().Outputs[input.PreviousOutpoint.Index]
 		input.UTXOEntry = utxo.NewUTXOEntry(relevantOutput.Value, relevantOutput.ScriptPublicKey,
-			false, model.UnacceptedDAAScore)
+			false, constants.UnacceptedDAAScore)
 	}
 }

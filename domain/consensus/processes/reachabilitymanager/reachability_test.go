@@ -16,7 +16,7 @@ type reachabilityDataStoreMock struct {
 	reachabilityReindexRootStaging *externalapi.DomainHash
 }
 
-func (r *reachabilityDataStoreMock) Discard() {
+func (r *reachabilityDataStoreMock) Delete(_ model.DBWriter) error {
 	panic("implement me")
 }
 

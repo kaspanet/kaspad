@@ -42,16 +42,16 @@ const (
 	defaultMaxRPCClients         = 10
 	defaultMaxRPCWebsockets      = 25
 	defaultMaxRPCConcurrentReqs  = 20
-	defaultBlockMaxMass          = 10000000
+	defaultBlockMaxMass          = 10_000_000
 	blockMaxMassMin              = 1000
-	blockMaxMassMax              = 10000000
+	blockMaxMassMax              = 10_000_000
 	defaultMinRelayTxFee         = 1e-5 // 1 sompi per byte
 	defaultMaxOrphanTransactions = 100
 	//DefaultMaxOrphanTxSize is the default maximum size for an orphan transaction
-	DefaultMaxOrphanTxSize  = 100000
-	defaultSigCacheMaxSize  = 100000
+	DefaultMaxOrphanTxSize  = 100_000
+	defaultSigCacheMaxSize  = 100_000
 	sampleConfigFilename    = "sample-kaspad.conf"
-	defaultMaxUTXOCacheSize = 5000000000
+	defaultMaxUTXOCacheSize = 5_000_000_000
 	defaultProtocolVersion  = 5
 )
 

@@ -34,6 +34,44 @@ type PubKeySignaturePair struct {
 	Signature         []byte
 }
 
+// Clone creates a deep-clone of this PartiallySignedTransaction
+func (pst *PartiallySignedTransaction) Clone() *PartiallySignedTransaction {
+	clone := &PartiallySignedTransaction{
+		Tx:                    pst.Tx.Clone(),
+		PartiallySignedInputs: make([]*PartiallySignedInput, len(pst.PartiallySignedInputs)),
+	}
+	for i, partiallySignedInput := range pst.PartiallySignedInputs {
+		clone.PartiallySignedInputs[i] = partiallySignedInput.Clone()
+	}
+	return clone
+}
+
+// Clone creates a deep-clone of this PartiallySignedInput
+func (psi PartiallySignedInput) Clone() *PartiallySignedInput {
+	clone := &PartiallySignedInput{
+		PrevOutput:           psi.PrevOutput.Clone(),
+		MinimumSignatures:    psi.MinimumSignatures,
+		PubKeySignaturePairs: make([]*PubKeySignaturePair, len(psi.PubKeySignaturePairs)),
+		DerivationPath:       psi.DerivationPath,
+	}
+	for i, pubKeySignaturePair := range psi.PubKeySignaturePairs {
+		clone.PubKeySignaturePairs[i] = pubKeySignaturePair.Clone()
+	}
+	return clone
+}
+
+// Clone creates a deep-clone of this PubKeySignaturePair
+func (psp PubKeySignaturePair) Clone() *PubKeySignaturePair {
+	clone := &PubKeySignaturePair{
+		ExtendedPublicKey: psp.ExtendedPublicKey,
+	}
+	if psp.Signature != nil {
+		clone.Signature = make([]byte, len(psp.Signature))
+		copy(clone.Signature, psp.Signature)
+	}
+	return clone
+}
+
 // DeserializePartiallySignedTransaction deserializes a byte slice into PartiallySignedTransaction.
 func DeserializePartiallySignedTransaction(serializedPartiallySignedTransaction []byte) (*PartiallySignedTransaction, error) {
 	protoPartiallySignedTransaction := &protoserialization.PartiallySignedTransaction{}

@@ -24,8 +24,12 @@ func TestNewConsensus(t *testing.T) {
 		t.Fatalf("error in NewLevelDB: %s", err)
 	}
 
-	_, err = f.NewConsensus(config, db, &prefix.Prefix{})
+	_, shouldMigrate, err := f.NewConsensus(config, db, &prefix.Prefix{})
 	if err != nil {
 		t.Fatalf("error in NewConsensus: %+v", err)
+	}
+
+	if shouldMigrate {
+		t.Fatalf("A fresh consensus should never return shouldMigrate=true")
 	}
 }
