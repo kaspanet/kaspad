@@ -132,6 +132,9 @@ message KaspadMessage {
     GetBalanceByAddressResponseMessage getBalanceByAddressResponse = 1078;
     GetBalancesByAddressesRequestMessage getBalancesByAddressesRequest = 1079;
     GetBalancesByAddressesResponseMessage getBalancesByAddressesResponse = 1080;
+    NotifyNewBlockTemplateRequestMessage notifyNewBlockTemplateRequest = 1081;
+    NotifyNewBlockTemplateResponseMessage notifyNewBlockTemplateResponse = 1082;
+    NewBlockTemplateNotificationMessage newBlockTemplateNotification = 1083;
   }
 }
 

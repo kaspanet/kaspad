@@ -654,4 +654,22 @@ message EstimateNetworkHashesPerSecondResponseMessage{
   RPCError error = 1000;
 }
 
+// NotifyNewBlockTemplateRequestMessage registers this connection for
+// NewBlockTemplate notifications.
+//
+// See: NewBlockTemplateNotificationMessage
+message NotifyNewBlockTemplateRequestMessage {
+}
+
+message NotifyNewBlockTemplateResponseMessage {
+  RPCError error = 1000;
+}
+
+// NewBlockTemplateNotificationMessage is sent whenever a new updated block template is
+// available for miners.
+//
+// See NotifyNewBlockTemplateRequestMessage
+message NewBlockTemplateNotificationMessage {
+}
+
 

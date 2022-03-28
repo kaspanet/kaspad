@@ -5542,6 +5542,137 @@ func (x *EstimateNetworkHashesPerSecondResponseMessage) GetError() *RPCError {
 	return nil
 }
 
+// NotifyNewBlockTemplateRequestMessage registers this connection for
+// NewBlockTemplate notifications.
+//
+// See: NewBlockTemplateNotificationMessage
+type NotifyNewBlockTemplateRequestMessage struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+}
+
+func (x *NotifyNewBlockTemplateRequestMessage) Reset() {
+	*x = NotifyNewBlockTemplateRequestMessage{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_rpc_proto_msgTypes[99]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *NotifyNewBlockTemplateRequestMessage) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*NotifyNewBlockTemplateRequestMessage) ProtoMessage() {}
+
+func (x *NotifyNewBlockTemplateRequestMessage) ProtoReflect() protoreflect.Message {
+	mi := &file_rpc_proto_msgTypes[99]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use NotifyNewBlockTemplateRequestMessage.ProtoReflect.Descriptor instead.
+func (*NotifyNewBlockTemplateRequestMessage) Descriptor() ([]byte, []int) {
+	return file_rpc_proto_rawDescGZIP(), []int{99}
+}
+
+type NotifyNewBlockTemplateResponseMessage struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Error *RPCError `protobuf:"bytes,1000,opt,name=error,proto3" json:"error,omitempty"`
+}
+
+func (x *NotifyNewBlockTemplateResponseMessage) Reset() {
+	*x = NotifyNewBlockTemplateResponseMessage{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_rpc_proto_msgTypes[100]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *NotifyNewBlockTemplateResponseMessage) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*NotifyNewBlockTemplateResponseMessage) ProtoMessage() {}
+
+func (x *NotifyNewBlockTemplateResponseMessage) ProtoReflect() protoreflect.Message {
+	mi := &file_rpc_proto_msgTypes[100]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use NotifyNewBlockTemplateResponseMessage.ProtoReflect.Descriptor instead.
+func (*NotifyNewBlockTemplateResponseMessage) Descriptor() ([]byte, []int) {
+	return file_rpc_proto_rawDescGZIP(), []int{100}
+}
+
+func (x *NotifyNewBlockTemplateResponseMessage) GetError() *RPCError {
+	if x != nil {
+		return x.Error
+	}
+	return nil
+}
+
+// NewBlockTemplateNotificationMessage is sent whenever a new updated block template is
+// available for miners.
+//
+// See NotifyNewBlockTemplateRequestMessage
+type NewBlockTemplateNotificationMessage struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+}
+
+func (x *NewBlockTemplateNotificationMessage) Reset() {
+	*x = NewBlockTemplateNotificationMessage{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_rpc_proto_msgTypes[101]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *NewBlockTemplateNotificationMessage) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*NewBlockTemplateNotificationMessage) ProtoMessage() {}
+
+func (x *NewBlockTemplateNotificationMessage) ProtoReflect() protoreflect.Message {
+	mi := &file_rpc_proto_msgTypes[101]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use NewBlockTemplateNotificationMessage.ProtoReflect.Descriptor instead.
+func (*NewBlockTemplateNotificationMessage) Descriptor() ([]byte, []int) {
+	return file_rpc_proto_rawDescGZIP(), []int{101}
+}
+
 var File_rpc_proto protoreflect.FileDescriptor
 
 var file_rpc_proto_rawDesc = []byte{
@@ -6244,10 +6375,21 @@ var file_rpc_proto_rawDesc = []byte{
 	0x6f, 0x72, 0x6b, 0x48, 0x61, 0x73, 0x68, 0x65, 0x73, 0x50, 0x65, 0x72, 0x53, 0x65, 0x63, 0x6f,
 	0x6e, 0x64, 0x12, 0x2a, 0x0a, 0x05, 0x65, 0x72, 0x72, 0x6f, 0x72, 0x18, 0xe8, 0x07, 0x20, 0x01,
 	0x28, 0x0b, 0x32, 0x13, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x77, 0x69, 0x72, 0x65, 0x2e, 0x52,
-	0x50, 0x43, 0x45, 0x72, 0x72, 0x6f, 0x72, 0x52, 0x05, 0x65, 0x72, 0x72, 0x6f, 0x72, 0x42, 0x26,
-	0x5a, 0x24, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x6b, 0x61, 0x73,
-	0x70, 0x61, 0x6e, 0x65, 0x74, 0x2f, 0x6b, 0x61, 0x73, 0x70, 0x61, 0x64, 0x2f, 0x70, 0x72, 0x6f,
-	0x74, 0x6f, 0x77, 0x69, 0x72, 0x65, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x50, 0x43, 0x45, 0x72, 0x72, 0x6f, 0x72, 0x52, 0x05, 0x65, 0x72, 0x72, 0x6f, 0x72, 0x22, 0x26,
+	0x0a, 0x24, 0x4e, 0x6f, 0x74, 0x69, 0x66, 0x79, 0x4e, 0x65, 0x77, 0x42, 0x6c, 0x6f, 0x63, 0x6b,
+	0x54, 0x65, 0x6d, 0x70, 0x6c, 0x61, 0x74, 0x65, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x4d,
+	0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x22, 0x53, 0x0a, 0x25, 0x4e, 0x6f, 0x74, 0x69, 0x66, 0x79,
+	0x4e, 0x65, 0x77, 0x42, 0x6c, 0x6f, 0x63, 0x6b, 0x54, 0x65, 0x6d, 0x70, 0x6c, 0x61, 0x74, 0x65,
+	0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x12,
+	0x2a, 0x0a, 0x05, 0x65, 0x72, 0x72, 0x6f, 0x72, 0x18, 0xe8, 0x07, 0x20, 0x01, 0x28, 0x0b, 0x32,
+	0x13, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x77, 0x69, 0x72, 0x65, 0x2e, 0x52, 0x50, 0x43, 0x45,
+	0x72, 0x72, 0x6f, 0x72, 0x52, 0x05, 0x65, 0x72, 0x72, 0x6f, 0x72, 0x22, 0x25, 0x0a, 0x23, 0x4e,
+	0x65, 0x77, 0x42, 0x6c, 0x6f, 0x63, 0x6b, 0x54, 0x65, 0x6d, 0x70, 0x6c, 0x61, 0x74, 0x65, 0x4e,
+	0x6f, 0x74, 0x69, 0x66, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x4d, 0x65, 0x73, 0x73, 0x61,
+	0x67, 0x65, 0x42, 0x26, 0x5a, 0x24, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d,
+	0x2f, 0x6b, 0x61, 0x73, 0x70, 0x61, 0x6e, 0x65, 0x74, 0x2f, 0x6b, 0x61, 0x73, 0x70, 0x61, 0x64,
+	0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x77, 0x69, 0x72, 0x65, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74,
+	0x6f, 0x33,
 }
 
 var (
@@ -6263,7 +6405,7 @@ func file_rpc_proto_rawDescGZIP() []byte {
 }
 
 var file_rpc_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_rpc_proto_msgTypes = make([]protoimpl.MessageInfo, 99)
+var file_rpc_proto_msgTypes = make([]protoimpl.MessageInfo, 102)
 var file_rpc_proto_goTypes = []interface{}{
 	(SubmitBlockResponseMessage_RejectReason)(0), // 0: protowire.SubmitBlockResponseMessage.RejectReason
 	(*RPCError)(nil),                                                   // 1: protowire.RPCError
@@ -6365,6 +6507,9 @@ var file_rpc_proto_goTypes = []interface{}{
 	(*GetInfoResponseMessage)(nil),                                     // 97: protowire.GetInfoResponseMessage
 	(*EstimateNetworkHashesPerSecondRequestMessage)(nil),               // 98: protowire.EstimateNetworkHashesPerSecondRequestMessage
 	(*EstimateNetworkHashesPerSecondResponseMessage)(nil),              // 99: protowire.EstimateNetworkHashesPerSecondResponseMessage
+	(*NotifyNewBlockTemplateRequestMessage)(nil),                       // 100: protowire.NotifyNewBlockTemplateRequestMessage
+	(*NotifyNewBlockTemplateResponseMessage)(nil),                      // 101: protowire.NotifyNewBlockTemplateResponseMessage
+	(*NewBlockTemplateNotificationMessage)(nil),                        // 102: protowire.NewBlockTemplateNotificationMessage
 }
 var file_rpc_proto_depIdxs = []int32{
 	3,  // 0: protowire.RpcBlock.header:type_name -> protowire.RpcBlockHeader
@@ -6435,11 +6580,12 @@ var file_rpc_proto_depIdxs = []int32{
 	1,  // 65: protowire.UnbanResponseMessage.error:type_name -> protowire.RPCError
 	1,  // 66: protowire.GetInfoResponseMessage.error:type_name -> protowire.RPCError
 	1,  // 67: protowire.EstimateNetworkHashesPerSecondResponseMessage.error:type_name -> protowire.RPCError
-	68, // [68:68] is the sub-list for method output_type
-	68, // [68:68] is the sub-list for method input_type
-	68, // [68:68] is the sub-list for extension type_name
-	68, // [68:68] is the sub-list for extension extendee
-	0,  // [0:68] is the sub-list for field type_name
+	1,  // 68: protowire.NotifyNewBlockTemplateResponseMessage.error:type_name -> protowire.RPCError
+	69, // [69:69] is the sub-list for method output_type
+	69, // [69:69] is the sub-list for method input_type
+	69, // [69:69] is the sub-list for extension type_name
+	69, // [69:69] is the sub-list for extension extendee
+	0,  // [0:69] is the sub-list for field type_name
 }
 
 func init() { file_rpc_proto_init() }
@@ -7636,6 +7782,42 @@ func file_rpc_proto_init() {
 				return nil
 			}
 		}
+		file_rpc_proto_msgTypes[99].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*NotifyNewBlockTemplateRequestMessage); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_rpc_proto_msgTypes[100].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*NotifyNewBlockTemplateResponseMessage); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_rpc_proto_msgTypes[101].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*NewBlockTemplateNotificationMessage); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
@@ -7643,7 +7825,7 @@ func file_rpc_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_rpc_proto_rawDesc,
 			NumEnums:      1,
-			NumMessages:   99,
+			NumMessages:   102,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
