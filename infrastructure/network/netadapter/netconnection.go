@@ -20,8 +20,8 @@ type NetConnection struct {
 	isRouterClosed        uint32
 }
 
-func newNetConnection(connection server.Connection, routerInitializer RouterInitializer) *NetConnection {
-	router := routerpkg.NewRouter()
+func newNetConnection(connection server.Connection, routerInitializer RouterInitializer, name string) *NetConnection {
+	router := routerpkg.NewRouter(name)
 
 	netConnection := &NetConnection{
 		connection: connection,

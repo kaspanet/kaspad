@@ -11,7 +11,7 @@ type rpcRouter struct {
 }
 
 func buildRPCRouter() (*rpcRouter, error) {
-	router := routerpkg.NewRouter()
+	router := routerpkg.NewRouter("RPC server")
 	routes := make(map[appmessage.MessageCommand]*routerpkg.Route, len(appmessage.RPCMessageCommandToString))
 	for messageType := range appmessage.RPCMessageCommandToString {
 		route, err := router.AddIncomingRoute("rpc client", []appmessage.MessageCommand{messageType})
