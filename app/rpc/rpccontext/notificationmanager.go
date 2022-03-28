@@ -32,6 +32,7 @@ type NotificationListener struct {
 	propagateVirtualSelectedParentBlueScoreChangedNotifications bool
 	propagateVirtualDaaScoreChangedNotifications                bool
 	propagatePruningPointUTXOSetOverrideNotifications           bool
+	propagateNewBlockTemplateNotifications                      bool
 
 	propagateUTXOsChangedNotificationAddresses map[utxoindex.ScriptPublicKeyString]*UTXOsChangedNotificationAddress
 }
@@ -201,6 +202,25 @@ func (nm *NotificationManager) NotifyVirtualDaaScoreChanged(
 	return nil
 }
 
+// NotifyNewBlockTemplate notifies the notification manager that a new
+// block template is available for miners
+func (nm *NotificationManager) NotifyNewBlockTemplate(
+	notification *appmessage.NewBlockTemplateNotificationMessage) error {
+
+	nm.RLock()
+	defer nm.RUnlock()
+
+	for router, listener := range nm.listeners {
+		if listener.propagateNewBlockTemplateNotifications {
+			err := router.OutgoingRoute().Enqueue(notification)
+			if err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
 // NotifyPruningPointUTXOSetOverride notifies the notification manager that the UTXO index
 // reset due to pruning point change via IBD.
 func (nm *NotificationManager) NotifyPruningPointUTXOSetOverride() error {
@@ -226,6 +246,7 @@ func newNotificationListener() *NotificationListener {
 		propagateFinalityConflictResolvedNotifications:              false,
 		propagateUTXOsChangedNotifications:                          false,
 		propagateVirtualSelectedParentBlueScoreChangedNotifications: false,
+		propagateNewBlockTemplateNotifications:                      false,
 		propagatePruningPointUTXOSetOverrideNotifications:           false,
 	}
 }
@@ -332,6 +353,12 @@ func (nl *NotificationListener) PropagateVirtualSelectedParentBlueScoreChangedNo
 // virtual DAA score notifications to the remote listener
 func (nl *NotificationListener) PropagateVirtualDaaScoreChangedNotifications() {
 	nl.propagateVirtualDaaScoreChangedNotifications = true
+}
+
+// PropagateNewBlockTemplateNotifications instructs the listener to send
+// new block template notifications to the remote listener
+func (nl *NotificationListener) PropagateNewBlockTemplateNotifications() {
+	nl.propagateNewBlockTemplateNotifications = true
 }
 
 // PropagatePruningPointUTXOSetOverrideNotifications instructs the listener to send pruning point UTXO set override notifications

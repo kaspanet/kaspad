@@ -27,6 +27,7 @@ type RelayInvsContext interface {
 	Config() *config.Config
 	OnNewBlock(block *externalapi.DomainBlock, virtualChangeSet *externalapi.VirtualChangeSet) error
 	OnVirtualChange(virtualChangeSet *externalapi.VirtualChangeSet) error
+	OnNewBlockTemplate() error
 	OnPruningPointUTXOSetOverride() error
 	SharedRequestedBlocks() *flowcontext.SharedRequestedBlocks
 	Broadcast(message appmessage.Message) error
@@ -168,11 +169,12 @@ func (flow *handleRelayInvsFlow) start() error {
 			return err
 		}
 
+		virtualHasNewParents := false
 		for _, parent := range newVirtualInfo.ParentHashes {
 			if oldVirtualParents.Contains(parent) {
 				continue
 			}
-
+			virtualHasNewParents = true
 			block, err := flow.Domain().Consensus().GetBlock(parent)
 			if err != nil {
 				return err
@@ -180,6 +182,14 @@ func (flow *handleRelayInvsFlow) start() error {
 			blockHash := consensushashing.BlockHash(block)
 			log.Debugf("Relaying block %s", blockHash)
 			err = flow.relayBlock(block)
+			if err != nil {
+				return err
+			}
+		}
+
+		if virtualHasNewParents {
+			log.Debugf("Virtual %d has new parents, raising new block template event", newVirtualInfo.DAAScore)
+			err = flow.OnNewBlockTemplate()
 			if err != nil {
 				return err
 			}

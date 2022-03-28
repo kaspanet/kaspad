@@ -96,6 +96,13 @@ func (m *Manager) NotifyVirtualChange(virtualChangeSet *externalapi.VirtualChang
 	return nil
 }
 
+// NotifyNewBlockTemplate notifies the manager that a new
+// block template is available for miners
+func (m *Manager) NotifyNewBlockTemplate() error {
+	notification := appmessage.NewNewBlockTemplateNotificationMessage()
+	return m.context.NotificationManager.NotifyNewBlockTemplate(notification)
+}
+
 // NotifyPruningPointUTXOSetOverride notifies the manager whenever the UTXO index
 // resets due to pruning point change via IBD.
 func (m *Manager) NotifyPruningPointUTXOSetOverride() error {

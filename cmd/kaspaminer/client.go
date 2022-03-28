@@ -13,8 +13,8 @@ const minerTimeout = 10 * time.Second
 type minerClient struct {
 	*rpcclient.RPCClient
 
-	cfg                        *configFlags
-	blockAddedNotificationChan chan struct{}
+	cfg                              *configFlags
+	newBlockTemplateNotificationChan chan struct{}
 }
 
 func (mc *minerClient) connect() error {
@@ -30,14 +30,14 @@ func (mc *minerClient) connect() error {
 	mc.SetTimeout(minerTimeout)
 	mc.SetLogger(backendLog, logger.LevelTrace)
 
-	err = mc.RegisterForBlockAddedNotifications(func(_ *appmessage.BlockAddedNotificationMessage) {
+	err = mc.RegisterForNewBlockTemplateNotifications(func(_ *appmessage.NewBlockTemplateNotificationMessage) {
 		select {
-		case mc.blockAddedNotificationChan <- struct{}{}:
+		case mc.newBlockTemplateNotificationChan <- struct{}{}:
 		default:
 		}
 	})
 	if err != nil {
-		return errors.Wrapf(err, "error requesting block-added notifications")
+		return errors.Wrapf(err, "error requesting new-block-template notifications")
 	}
 
 	log.Infof("Connected to %s", rpcAddress)
@@ -47,8 +47,8 @@ func (mc *minerClient) connect() error {
 
 func newMinerClient(cfg *configFlags) (*minerClient, error) {
 	minerClient := &minerClient{
-		cfg:                        cfg,
-		blockAddedNotificationChan: make(chan struct{}),
+		cfg:                              cfg,
+		newBlockTemplateNotificationChan: make(chan struct{}),
 	}
 
 	err := minerClient.connect()

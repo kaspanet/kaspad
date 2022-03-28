@@ -68,6 +68,15 @@ func (f *FlowContext) OnVirtualChange(virtualChangeSet *externalapi.VirtualChang
 	return nil
 }
 
+// OnNewBlockTemplate calls the handler function whenever a new block template is available for miners.
+func (f *FlowContext) OnNewBlockTemplate() error {
+	if f.onNewBlockTemplateHandler != nil {
+		return f.onNewBlockTemplateHandler()
+	}
+
+	return nil
+}
+
 // OnPruningPointUTXOSetOverride calls the handler function whenever the UTXO set
 // resets due to pruning point change via IBD.
 func (f *FlowContext) OnPruningPointUTXOSetOverride() error {
@@ -123,6 +132,10 @@ func (f *FlowContext) AddBlock(block *externalapi.DomainBlock) error {
 		if errors.As(err, &ruleerrors.RuleError{}) {
 			log.Warnf("Validation failed for block %s: %s", consensushashing.BlockHash(block), err)
 		}
+		return err
+	}
+	err = f.OnNewBlockTemplate()
+	if err != nil {
 		return err
 	}
 	err = f.OnNewBlock(block, virtualChangeSet)

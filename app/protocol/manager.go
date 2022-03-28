@@ -100,6 +100,11 @@ func (m *Manager) SetOnBlockAddedToDAGHandler(onBlockAddedToDAGHandler flowconte
 	m.context.SetOnBlockAddedToDAGHandler(onBlockAddedToDAGHandler)
 }
 
+// SetOnNewBlockTemplateHandler sets the onNewBlockTemplate handler
+func (m *Manager) SetOnNewBlockTemplateHandler(onNewBlockTemplateHandler flowcontext.OnNewBlockTemplateHandler) {
+	m.context.SetOnNewBlockTemplateHandler(onNewBlockTemplateHandler)
+}
+
 // SetOnPruningPointUTXOSetOverrideHandler sets the OnPruningPointUTXOSetOverride handler
 func (m *Manager) SetOnPruningPointUTXOSetOverrideHandler(onPruningPointUTXOSetOverrideHandler flowcontext.OnPruningPointUTXOSetOverrideHandler) {
 	m.context.SetOnPruningPointUTXOSetOverrideHandler(onPruningPointUTXOSetOverrideHandler)
