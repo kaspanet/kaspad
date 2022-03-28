@@ -25,6 +25,9 @@ type OnBlockAddedToDAGHandler func(block *externalapi.DomainBlock, virtualChange
 // OnVirtualChangeHandler is a handler function that's triggered when the virtual changes
 type OnVirtualChangeHandler func(virtualChangeSet *externalapi.VirtualChangeSet) error
 
+// OnNewBlockTemplateHandler is a handler function that's triggered when a new block template is available
+type OnNewBlockTemplateHandler func() error
+
 // OnPruningPointUTXOSetOverrideHandler is a handle function that's triggered whenever the UTXO set
 // resets due to pruning point change via IBD.
 type OnPruningPointUTXOSetOverrideHandler func() error
@@ -46,6 +49,7 @@ type FlowContext struct {
 
 	onVirtualChangeHandler               OnVirtualChangeHandler
 	onBlockAddedToDAGHandler             OnBlockAddedToDAGHandler
+	onNewBlockTemplateHandler            OnNewBlockTemplateHandler
 	onPruningPointUTXOSetOverrideHandler OnPruningPointUTXOSetOverrideHandler
 	onTransactionAddedToMempoolHandler   OnTransactionAddedToMempoolHandler
 
@@ -110,6 +114,11 @@ func (f *FlowContext) SetOnVirtualChangeHandler(onVirtualChangeHandler OnVirtual
 // SetOnBlockAddedToDAGHandler sets the onBlockAddedToDAG handler
 func (f *FlowContext) SetOnBlockAddedToDAGHandler(onBlockAddedToDAGHandler OnBlockAddedToDAGHandler) {
 	f.onBlockAddedToDAGHandler = onBlockAddedToDAGHandler
+}
+
+// SetOnNewBlockTemplateHandler sets the onNewBlockTemplateHandler handler
+func (f *FlowContext) SetOnNewBlockTemplateHandler(onNewBlockTemplateHandler OnNewBlockTemplateHandler) {
+	f.onNewBlockTemplateHandler = onNewBlockTemplateHandler
 }
 
 // SetOnPruningPointUTXOSetOverrideHandler sets the onPruningPointUTXOSetOverrideHandler handler

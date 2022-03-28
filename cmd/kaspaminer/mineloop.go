@@ -217,7 +217,7 @@ func templatesLoop(client *minerClient, miningAddr util.Address, errChan chan er
 	ticker := time.NewTicker(tickerTime)
 	for {
 		select {
-		case <-client.blockAddedNotificationChan:
+		case <-client.newBlockTemplateNotificationChan:
 			getBlockTemplate()
 			ticker.Reset(tickerTime)
 		case <-ticker.C:

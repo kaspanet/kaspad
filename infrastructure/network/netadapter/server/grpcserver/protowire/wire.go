@@ -919,6 +919,27 @@ func toRPCPayload(message appmessage.Message) (isKaspadMessage_Payload, error) {
 			return nil, err
 		}
 		return payload, nil
+	case *appmessage.NotifyNewBlockTemplateRequestMessage:
+		payload := new(KaspadMessage_NotifyNewBlockTemplateRequest)
+		err := payload.fromAppMessage(message)
+		if err != nil {
+			return nil, err
+		}
+		return payload, nil
+	case *appmessage.NotifyNewBlockTemplateResponseMessage:
+		payload := new(KaspadMessage_NotifyNewBlockTemplateResponse)
+		err := payload.fromAppMessage(message)
+		if err != nil {
+			return nil, err
+		}
+		return payload, nil
+	case *appmessage.NewBlockTemplateNotificationMessage:
+		payload := new(KaspadMessage_NewBlockTemplateNotification)
+		err := payload.fromAppMessage(message)
+		if err != nil {
+			return nil, err
+		}
+		return payload, nil
 	default:
 		return nil, nil
 	}

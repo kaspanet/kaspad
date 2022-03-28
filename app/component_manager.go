@@ -153,6 +153,7 @@ func setupRPC(
 		shutDownChan,
 	)
 	protocolManager.SetOnVirtualChange(rpcManager.NotifyVirtualChange)
+	protocolManager.SetOnNewBlockTemplateHandler(rpcManager.NotifyNewBlockTemplate)
 	protocolManager.SetOnBlockAddedToDAGHandler(rpcManager.NotifyBlockAddedToDAG)
 	protocolManager.SetOnPruningPointUTXOSetOverrideHandler(rpcManager.NotifyPruningPointUTXOSetOverride)
 

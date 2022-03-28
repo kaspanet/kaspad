@@ -103,6 +103,9 @@
     - [GetInfoResponseMessage](#protowire.GetInfoResponseMessage)
     - [EstimateNetworkHashesPerSecondRequestMessage](#protowire.EstimateNetworkHashesPerSecondRequestMessage)
     - [EstimateNetworkHashesPerSecondResponseMessage](#protowire.EstimateNetworkHashesPerSecondResponseMessage)
+    - [NotifyNewBlockTemplateRequestMessage](#protowire.NotifyNewBlockTemplateRequestMessage)
+    - [NotifyNewBlockTemplateResponseMessage](#protowire.NotifyNewBlockTemplateResponseMessage)
+    - [NewBlockTemplateNotificationMessage](#protowire.NewBlockTemplateNotificationMessage)
   
     - [SubmitBlockResponseMessage.RejectReason](#protowire.SubmitBlockResponseMessage.RejectReason)
   
@@ -1689,6 +1692,47 @@ GetInfoRequestMessage returns info about the node.
 | ----- | ---- | ----- | ----------- |
 | networkHashesPerSecond | [uint64](#uint64) |  |  |
 | error | [RPCError](#protowire.RPCError) |  |  |
+
+
+
+
+
+
+<a name="protowire.NotifyNewBlockTemplateRequestMessage"></a>
+
+### NotifyNewBlockTemplateRequestMessage
+NotifyNewBlockTemplateRequestMessage registers this connection for
+NewBlockTemplate notifications.
+
+See: NewBlockTemplateNotificationMessage
+
+
+
+
+
+
+<a name="protowire.NotifyNewBlockTemplateResponseMessage"></a>
+
+### NotifyNewBlockTemplateResponseMessage
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| error | [RPCError](#protowire.RPCError) |  |  |
+
+
+
+
+
+
+<a name="protowire.NewBlockTemplateNotificationMessage"></a>
+
+### NewBlockTemplateNotificationMessage
+NewBlockTemplateNotificationMessage is sent whenever a new updated block template is
+available for miners.
+
+See NotifyNewBlockTemplateRequestMessage
 
 
 
