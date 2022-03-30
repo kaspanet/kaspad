@@ -5,6 +5,8 @@ import (
 	"github.com/kaspanet/kaspad/domain/dagconfig"
 	"github.com/kaspanet/kaspad/domain/miningmanager/blocktemplatebuilder"
 	mempoolpkg "github.com/kaspanet/kaspad/domain/miningmanager/mempool"
+	"sync"
+	"time"
 )
 
 // Factory instantiates new mining managers
@@ -19,11 +21,14 @@ func (f *factory) NewMiningManager(consensusReference consensusreference.Consens
 	mempoolConfig *mempoolpkg.Config) MiningManager {
 
 	mempool := mempoolpkg.New(mempoolConfig, consensusReference)
-	blockTemplateBuilder := blocktemplatebuilder.New(consensusReference, mempool, params.MaxBlockMass)
+	blockTemplateBuilder := blocktemplatebuilder.New(consensusReference, mempool, params.MaxBlockMass, params.CoinbasePayloadScriptPublicKeyMaxLength)
 
 	return &miningManager{
+		consensusReference:   consensusReference,
 		mempool:              mempool,
 		blockTemplateBuilder: blockTemplateBuilder,
+		cachingTime:          time.Now(),
+		cacheLock:            &sync.Mutex{},
 	}
 }
 

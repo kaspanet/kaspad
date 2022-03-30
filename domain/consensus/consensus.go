@@ -150,6 +150,18 @@ func (s *consensus) BuildBlock(coinbaseData *externalapi.DomainCoinbaseData,
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
+	block, _, err := s.blockBuilder.BuildBlock(coinbaseData, transactions)
+	return block, err
+}
+
+// BuildBlockWithTemplateMetadata builds a block over the current state, with the transactions
+// selected by the given transactionSelector plus metadata information related to coinbase rewards
+func (s *consensus) BuildBlockWithTemplateMetadata(coinbaseData *externalapi.DomainCoinbaseData,
+	transactions []*externalapi.DomainTransaction) (block *externalapi.DomainBlock, coinbaseHasRedReward bool, err error) {
+
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
 	return s.blockBuilder.BuildBlock(coinbaseData, transactions)
 }
 

@@ -36,6 +36,30 @@ func (c *coinbaseManager) serializeCoinbasePayload(blueScore uint64,
 	return payload, nil
 }
 
+// ModifyCoinbasePayload modifies the coinbase payload based on the provided scriptPubKey and extra data.
+func ModifyCoinbasePayload(payload []byte, coinbaseData *externalapi.DomainCoinbaseData, coinbasePayloadScriptPublicKeyMaxLength uint8) ([]byte, error) {
+
+	scriptLengthOfScriptPubKey := len(coinbaseData.ScriptPublicKey.Script)
+	if scriptLengthOfScriptPubKey > int(coinbasePayloadScriptPublicKeyMaxLength) {
+		return nil, errors.Wrapf(ruleerrors.ErrBadCoinbasePayloadLen, "coinbase's payload script public key is "+
+			"longer than the max allowed length of %d", coinbasePayloadScriptPublicKeyMaxLength)
+	}
+
+	newPayloadLen := uint64Len + lengthOfVersionScriptPubKey + lengthOfScriptPubKeyLength + scriptLengthOfScriptPubKey + len(coinbaseData.ExtraData) + lengthOfSubsidy
+	if len(payload) != newPayloadLen {
+		newPayload := make([]byte, newPayloadLen)
+		copy(newPayload, payload[:uint64Len+lengthOfSubsidy])
+		payload = newPayload
+	}
+
+	payload[uint64Len+lengthOfSubsidy] = uint8(coinbaseData.ScriptPublicKey.Version)
+	payload[uint64Len+lengthOfSubsidy+lengthOfVersionScriptPubKey] = uint8(len(coinbaseData.ScriptPublicKey.Script))
+	copy(payload[uint64Len+lengthOfSubsidy+lengthOfVersionScriptPubKey+lengthOfScriptPubKeyLength:], coinbaseData.ScriptPublicKey.Script)
+	copy(payload[uint64Len+lengthOfSubsidy+lengthOfVersionScriptPubKey+lengthOfScriptPubKeyLength+scriptLengthOfScriptPubKey:], coinbaseData.ExtraData)
+
+	return payload, nil
+}
+
 // ExtractCoinbaseDataBlueScoreAndSubsidy deserializes the coinbase payload to its component (scriptPubKey, extra data, and subsidy).
 func (c *coinbaseManager) ExtractCoinbaseDataBlueScoreAndSubsidy(coinbaseTx *externalapi.DomainTransaction) (
 	blueScore uint64, coinbaseData *externalapi.DomainCoinbaseData, subsidy uint64, err error) {
