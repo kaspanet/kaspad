@@ -15,7 +15,7 @@ Kaspa is an attempt at a proof-of-work cryptocurrency with instant confirmations
 
 ## Requirements
 
-Go 1.16 or later.
+Go 1.18 or later.
 
 ## Installation
 
