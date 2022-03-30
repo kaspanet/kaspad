@@ -36,7 +36,7 @@ func NewKaspawalletdClient(cc grpc.ClientConnInterface) KaspawalletdClient {
 
 func (c *kaspawalletdClient) GetBalance(ctx context.Context, in *GetBalanceRequest, opts ...grpc.CallOption) (*GetBalanceResponse, error) {
 	out := new(GetBalanceResponse)
-	err := c.cc.Invoke(ctx, "/kaspawalletd/GetBalance", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/kaspawalletd.kaspawalletd/GetBalance", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -45,7 +45,7 @@ func (c *kaspawalletdClient) GetBalance(ctx context.Context, in *GetBalanceReque
 
 func (c *kaspawalletdClient) CreateUnsignedTransactions(ctx context.Context, in *CreateUnsignedTransactionsRequest, opts ...grpc.CallOption) (*CreateUnsignedTransactionsResponse, error) {
 	out := new(CreateUnsignedTransactionsResponse)
-	err := c.cc.Invoke(ctx, "/kaspawalletd/CreateUnsignedTransactions", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/kaspawalletd.kaspawalletd/CreateUnsignedTransactions", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -54,7 +54,7 @@ func (c *kaspawalletdClient) CreateUnsignedTransactions(ctx context.Context, in 
 
 func (c *kaspawalletdClient) ShowAddresses(ctx context.Context, in *ShowAddressesRequest, opts ...grpc.CallOption) (*ShowAddressesResponse, error) {
 	out := new(ShowAddressesResponse)
-	err := c.cc.Invoke(ctx, "/kaspawalletd/ShowAddresses", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/kaspawalletd.kaspawalletd/ShowAddresses", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -63,7 +63,7 @@ func (c *kaspawalletdClient) ShowAddresses(ctx context.Context, in *ShowAddresse
 
 func (c *kaspawalletdClient) NewAddress(ctx context.Context, in *NewAddressRequest, opts ...grpc.CallOption) (*NewAddressResponse, error) {
 	out := new(NewAddressResponse)
-	err := c.cc.Invoke(ctx, "/kaspawalletd/NewAddress", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/kaspawalletd.kaspawalletd/NewAddress", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -72,7 +72,7 @@ func (c *kaspawalletdClient) NewAddress(ctx context.Context, in *NewAddressReque
 
 func (c *kaspawalletdClient) Shutdown(ctx context.Context, in *ShutdownRequest, opts ...grpc.CallOption) (*ShutdownResponse, error) {
 	out := new(ShutdownResponse)
-	err := c.cc.Invoke(ctx, "/kaspawalletd/Shutdown", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/kaspawalletd.kaspawalletd/Shutdown", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -81,7 +81,7 @@ func (c *kaspawalletdClient) Shutdown(ctx context.Context, in *ShutdownRequest, 
 
 func (c *kaspawalletdClient) Broadcast(ctx context.Context, in *BroadcastRequest, opts ...grpc.CallOption) (*BroadcastResponse, error) {
 	out := new(BroadcastResponse)
-	err := c.cc.Invoke(ctx, "/kaspawalletd/Broadcast", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/kaspawalletd.kaspawalletd/Broadcast", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -146,7 +146,7 @@ func _Kaspawalletd_GetBalance_Handler(srv interface{}, ctx context.Context, dec 
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/kaspawalletd/GetBalance",
+		FullMethod: "/kaspawalletd.kaspawalletd/GetBalance",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(KaspawalletdServer).GetBalance(ctx, req.(*GetBalanceRequest))
@@ -164,7 +164,7 @@ func _Kaspawalletd_CreateUnsignedTransactions_Handler(srv interface{}, ctx conte
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/kaspawalletd/CreateUnsignedTransactions",
+		FullMethod: "/kaspawalletd.kaspawalletd/CreateUnsignedTransactions",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(KaspawalletdServer).CreateUnsignedTransactions(ctx, req.(*CreateUnsignedTransactionsRequest))
@@ -182,7 +182,7 @@ func _Kaspawalletd_ShowAddresses_Handler(srv interface{}, ctx context.Context, d
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/kaspawalletd/ShowAddresses",
+		FullMethod: "/kaspawalletd.kaspawalletd/ShowAddresses",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(KaspawalletdServer).ShowAddresses(ctx, req.(*ShowAddressesRequest))
@@ -200,7 +200,7 @@ func _Kaspawalletd_NewAddress_Handler(srv interface{}, ctx context.Context, dec 
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/kaspawalletd/NewAddress",
+		FullMethod: "/kaspawalletd.kaspawalletd/NewAddress",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(KaspawalletdServer).NewAddress(ctx, req.(*NewAddressRequest))
@@ -218,7 +218,7 @@ func _Kaspawalletd_Shutdown_Handler(srv interface{}, ctx context.Context, dec fu
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/kaspawalletd/Shutdown",
+		FullMethod: "/kaspawalletd.kaspawalletd/Shutdown",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(KaspawalletdServer).Shutdown(ctx, req.(*ShutdownRequest))
@@ -236,7 +236,7 @@ func _Kaspawalletd_Broadcast_Handler(srv interface{}, ctx context.Context, dec f
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/kaspawalletd/Broadcast",
+		FullMethod: "/kaspawalletd.kaspawalletd/Broadcast",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(KaspawalletdServer).Broadcast(ctx, req.(*BroadcastRequest))
@@ -248,7 +248,7 @@ func _Kaspawalletd_Broadcast_Handler(srv interface{}, ctx context.Context, dec f
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var Kaspawalletd_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "kaspawalletd",
+	ServiceName: "kaspawalletd.kaspawalletd",
 	HandlerType: (*KaspawalletdServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
