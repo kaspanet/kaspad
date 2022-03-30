@@ -5,8 +5,8 @@ FLAGS=$@
 go version
 
 go get $FLAGS -t -d ../...
-# This is to bypass a go bug: https://github.com/golang/go/issues/27643
-GO111MODULE=off go get $FLAGS honnef.co/go/tools/cmd/staticcheck
+GO111MODULE=off go get $FLAGS golang.org/x/lint/golint
+go install $FLAGS honnef.co/go/tools/cmd/staticcheck@latest
 
 test -z "$(go fmt ./...)"
 
