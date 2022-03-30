@@ -142,6 +142,8 @@ func (bpb *blockParentBuilder) BuildParents(stagingArea *model.StagingArea,
 					return nil, err
 				}
 				if hasReachabilityData {
+					// If a block is in the future of one of the virtual genesis children it means we have the full DAG between the current block
+					// and this parent, so there's no need for any indirect reference blocks, and normal reachability queries can be used.
 					isInFutureOfVirtualGenesisChildren, err = bpb.dagTopologyManager.IsAnyAncestorOf(stagingArea, virtualGenesisChildren, parent)
 					if err != nil {
 						return nil, err
