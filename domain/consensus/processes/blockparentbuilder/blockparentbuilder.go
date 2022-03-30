@@ -136,9 +136,16 @@ func (bpb *blockParentBuilder) BuildParents(stagingArea *model.StagingArea,
 			}
 
 			for _, parent := range blockLevelParentsInHeader {
+				isInFutureOfVirtualGenesisChildren := false
 				hasReachabilityData, err := bpb.reachabilityDataStore.HasReachabilityData(bpb.databaseContext, stagingArea, parent)
 				if err != nil {
 					return nil, err
+				}
+				if hasReachabilityData {
+					isInFutureOfVirtualGenesisChildren, err = bpb.dagTopologyManager.IsAnyAncestorOf(stagingArea, virtualGenesisChildren, parent)
+					if err != nil {
+						return nil, err
+					}
 				}
 
 				// Reference blocks are the blocks that are used in reachability queries to check if
@@ -152,7 +159,7 @@ func (bpb *blockParentBuilder) BuildParents(stagingArea *model.StagingArea,
 				// virtual genesis children have this block as parent and use those block as
 				// reference blocks.
 				var referenceBlocks []*externalapi.DomainHash
-				if hasReachabilityData {
+				if isInFutureOfVirtualGenesisChildren {
 					referenceBlocks = []*externalapi.DomainHash{parent}
 				} else {
 					for childHash, childHeader := range virtualGenesisChildrenHeaders {
@@ -168,7 +175,7 @@ func (bpb *blockParentBuilder) BuildParents(stagingArea *model.StagingArea,
 					continue
 				}
 
-				if !hasReachabilityData {
+				if !isInFutureOfVirtualGenesisChildren {
 					continue
 				}
 
