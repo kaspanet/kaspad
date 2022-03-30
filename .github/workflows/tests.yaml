@@ -33,7 +33,7 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v2
         with:
-          go-version: 1.16
+          go-version: 1.18
 
 
       # Source: https://github.com/actions/cache/blob/main/examples.md#go---modules
@@ -58,7 +58,7 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v2
         with:
-          go-version: 1.16
+          go-version: 1.18
 
       - name: Checkout
         uses: actions/checkout@v2
@@ -86,7 +86,7 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v2
         with:
-          go-version: 1.16
+          go-version: 1.18
 
       - name: Delete the stability tests from coverage
         run: rm -r stability-tests

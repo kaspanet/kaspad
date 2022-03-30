@@ -4,7 +4,7 @@ ARG KASPAMINER_IMAGE
 FROM ${KASPAD_IMAGE} as kaspad
 FROM ${KASPAMINER_IMAGE} as kaspaminer
 
-FROM golang:1.16-alpine
+FROM golang:1.18-alpine
 
 RUN mkdir -p /go/src/github.com/kaspanet/kaspad
 
