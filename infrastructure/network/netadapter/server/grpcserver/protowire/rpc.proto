@@ -152,6 +152,7 @@ message SubmitBlockResponseMessage{
 message GetBlockTemplateRequestMessage{
   // Which kaspa address should the coinbase block reward transaction pay into
   string payAddress = 1;
+  string extraData = 2;
 }
 
 message GetBlockTemplateResponseMessage{

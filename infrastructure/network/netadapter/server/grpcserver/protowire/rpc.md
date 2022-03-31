@@ -454,6 +454,7 @@ See: SubmitBlockRequestMessage
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | payAddress | [string](#string) |  | Which kaspa address should the coinbase block reward transaction pay into |
+| extraData | [string](#string) |  |  |
 
 
 

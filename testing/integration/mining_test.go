@@ -11,7 +11,7 @@ import (
 )
 
 func mineNextBlock(t *testing.T, harness *appHarness) *externalapi.DomainBlock {
-	blockTemplate, err := harness.rpcClient.GetBlockTemplate(harness.miningAddress)
+	blockTemplate, err := harness.rpcClient.GetBlockTemplate(harness.miningAddress, "integration")
 	if err != nil {
 		t.Fatalf("Error getting block template: %+v", err)
 	}

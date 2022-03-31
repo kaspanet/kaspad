@@ -98,7 +98,7 @@ func submitAnAmountOfTransactionsToTheMempool(t *testing.T, rpcClient *rpcclient
 }
 
 func mineBlockAndGetCoinbaseTransaction(t *testing.T, rpcClient *rpcclient.RPCClient) *externalapi.DomainTransaction {
-	getBlockTemplateResponse, err := rpcClient.GetBlockTemplate(payAddress)
+	getBlockTemplateResponse, err := rpcClient.GetBlockTemplate(payAddress, "")
 	if err != nil {
 		t.Fatalf("GetBlockTemplate: %+v", err)
 	}

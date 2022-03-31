@@ -185,7 +185,7 @@ func mineOnTips(client *rpc.Client) (appmessage.RejectReason, error) {
 		return appmessage.RejectReasonNone, err
 	}
 
-	template, err := client.GetBlockTemplate(addr.String())
+	template, err := client.GetBlockTemplate(addr.String(), "")
 	if err != nil {
 		return appmessage.RejectReasonNone, err
 	}
