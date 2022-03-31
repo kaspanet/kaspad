@@ -52,7 +52,7 @@ func (mm *miningManager) GetBlockTemplate(coinbaseData *externalapi.DomainCoinba
 				// If new time stamp is later than current, update the header
 				mutableHeader := immutableCachedTemplate.Block.Header.ToMutable()
 				mutableHeader.SetTimeInMilliseconds(newTimestamp)
-				
+
 				return &externalapi.DomainBlock{
 					Header:       mutableHeader.ToImmutable(),
 					Transactions: immutableCachedTemplate.Block.Transactions,
