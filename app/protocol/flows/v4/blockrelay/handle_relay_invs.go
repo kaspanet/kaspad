@@ -36,6 +36,7 @@ type RelayInvsContext interface {
 	IsOrphan(blockHash *externalapi.DomainHash) bool
 	IsIBDRunning() bool
 	IsRecoverableError(err error) bool
+	IsNearlySynced() (bool, error)
 }
 
 type handleRelayInvsFlow struct {
@@ -106,9 +107,13 @@ func (flow *handleRelayInvsFlow) start() error {
 			continue
 		}
 
-		// Block relay is disabled during IBD
-		if flow.IsIBDRunning() {
-			log.Debugf("Got block %s while in IBD. continuing...", inv.Hash)
+		// Block relay is disabled if the node is out of sync and is already during IBD
+		isNearlySynced, err := flow.IsNearlySynced()
+		if err != nil {
+			return err
+		}
+		if !isNearlySynced && flow.IsIBDRunning() {
+			log.Debugf("Got block %s while in IBD and the node is out of sync. Continuing...", inv.Hash)
 			continue
 		}
 
