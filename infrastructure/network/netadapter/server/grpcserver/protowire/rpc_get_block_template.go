@@ -15,6 +15,7 @@ func (x *KaspadMessage_GetBlockTemplateRequest) toAppMessage() (appmessage.Messa
 func (x *KaspadMessage_GetBlockTemplateRequest) fromAppMessage(message *appmessage.GetBlockTemplateRequestMessage) error {
 	x.GetBlockTemplateRequest = &GetBlockTemplateRequestMessage{
 		PayAddress: message.PayAddress,
+		ExtraData:  message.ExtraData,
 	}
 	return nil
 }
@@ -25,6 +26,7 @@ func (x *GetBlockTemplateRequestMessage) toAppMessage() (appmessage.Message, err
 	}
 	return &appmessage.GetBlockTemplateRequestMessage{
 		PayAddress: x.PayAddress,
+		ExtraData:  x.ExtraData,
 	}, nil
 }
 

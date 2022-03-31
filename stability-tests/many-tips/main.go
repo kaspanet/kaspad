@@ -64,7 +64,7 @@ func realMain() error {
 	defer rpcClient.Disconnect()
 
 	// Mine block that its timestamp is one second after the genesis timestamp.
-	blockTemplate, err := rpcClient.GetBlockTemplate(miningAddress.EncodeAddress())
+	blockTemplate, err := rpcClient.GetBlockTemplate(miningAddress.EncodeAddress(), "")
 	if err != nil {
 		return err
 	}
@@ -174,7 +174,7 @@ func generateAddress() (util.Address, error) {
 }
 
 func mineBlock(rpcClient *rpc.Client, miningAddress util.Address) error {
-	blockTemplate, err := rpcClient.GetBlockTemplate(miningAddress.EncodeAddress())
+	blockTemplate, err := rpcClient.GetBlockTemplate(miningAddress.EncodeAddress(), "")
 	if err != nil {
 		return err
 	}
@@ -191,7 +191,7 @@ func mineBlock(rpcClient *rpc.Client, miningAddress util.Address) error {
 }
 
 func mineTips(numOfTips int, miningAddress util.Address, rpcClient *rpc.Client) error {
-	blockTemplate, err := rpcClient.GetBlockTemplate(miningAddress.EncodeAddress())
+	blockTemplate, err := rpcClient.GetBlockTemplate(miningAddress.EncodeAddress(), "")
 	if err != nil {
 		return err
 	}

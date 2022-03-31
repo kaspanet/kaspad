@@ -252,7 +252,7 @@ func runDAATest(t *testing.T, testName string, runDuration time.Duration,
 }
 
 func fetchBlockForMining(t *testing.T, rpcClient *rpcclient.RPCClient) *externalapi.DomainBlock {
-	getBlockTemplateResponse, err := rpcClient.GetBlockTemplate(miningAddress)
+	getBlockTemplateResponse, err := rpcClient.GetBlockTemplate(miningAddress, "")
 	if err != nil {
 		t.Fatalf("GetBlockTemplate: %s", err)
 	}

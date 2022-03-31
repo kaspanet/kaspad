@@ -5,6 +5,7 @@ package appmessage
 type GetBlockTemplateRequestMessage struct {
 	baseMessage
 	PayAddress string
+	ExtraData  string
 }
 
 // Command returns the protocol command string for the message
@@ -13,9 +14,10 @@ func (msg *GetBlockTemplateRequestMessage) Command() MessageCommand {
 }
 
 // NewGetBlockTemplateRequestMessage returns a instance of the message
-func NewGetBlockTemplateRequestMessage(payAddress string) *GetBlockTemplateRequestMessage {
+func NewGetBlockTemplateRequestMessage(payAddress, extraData string) *GetBlockTemplateRequestMessage {
 	return &GetBlockTemplateRequestMessage{
 		PayAddress: payAddress,
+		ExtraData:  extraData,
 	}
 }
 

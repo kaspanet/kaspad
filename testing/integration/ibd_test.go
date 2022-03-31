@@ -115,7 +115,7 @@ func TestIBDWithPruning(t *testing.T) {
 		}
 
 		// Checking that the syncee can generate block templates before resolving the virtual
-		_, err = syncee.rpcClient.GetBlockTemplate(syncee.miningAddress)
+		_, err = syncee.rpcClient.GetBlockTemplate(syncee.miningAddress, "")
 		if err != nil {
 			t.Fatalf("Error getting block template: %+v", err)
 		}
@@ -210,7 +210,7 @@ var currentMockTimestamp int64 = 0
 // between every two blocks. This is done to avoid the timestamp threshold validation
 // of ibd-with-headers-proof
 func mineNextBlockWithMockTimestamps(t *testing.T, harness *appHarness, rd *rand.Rand) *externalapi.DomainBlock {
-	blockTemplate, err := harness.rpcClient.GetBlockTemplate(harness.miningAddress)
+	blockTemplate, err := harness.rpcClient.GetBlockTemplate(harness.miningAddress, "")
 	if err != nil {
 		t.Fatalf("Error getting block template: %+v", err)
 	}
