@@ -229,6 +229,19 @@ type ScriptPublicKey struct {
 	Version uint16
 }
 
+// Equal returns whether spk equals to other
+func (spk *ScriptPublicKey) Equal(other *ScriptPublicKey) bool {
+	if spk == nil || other == nil {
+		return spk == other
+	}
+
+	if spk.Version != other.Version {
+		return false
+	}
+
+	return bytes.Equal(spk.Script, other.Script)
+}
+
 // DomainTransactionOutput represents a Kaspad transaction output
 type DomainTransactionOutput struct {
 	Value           uint64
@@ -249,11 +262,7 @@ func (output *DomainTransactionOutput) Equal(other *DomainTransactionOutput) boo
 		return false
 	}
 
-	if !bytes.Equal(output.ScriptPublicKey.Script, other.ScriptPublicKey.Script) {
-		return false
-	}
-
-	return true
+	return output.ScriptPublicKey.Equal(other.ScriptPublicKey)
 }
 
 // Clone returns a clone of DomainTransactionOutput

@@ -30,13 +30,9 @@ func (dcd *DomainCoinbaseData) Equal(other *DomainCoinbaseData) bool {
 		return dcd == other
 	}
 
-	if dcd.ScriptPublicKey.Version != other.ScriptPublicKey.Version {
-		return false
-	}
-
 	if !bytes.Equal(dcd.ExtraData, other.ExtraData) {
 		return false
 	}
 
-	return bytes.Equal(dcd.ScriptPublicKey.Script, other.ScriptPublicKey.Script)
+	return dcd.ScriptPublicKey.Equal(other.ScriptPublicKey)
 }
