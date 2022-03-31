@@ -31,29 +31,29 @@ type coinbaseManager struct {
 }
 
 func (c *coinbaseManager) ExpectedCoinbaseTransaction(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash,
-	coinbaseData *externalapi.DomainCoinbaseData) (*externalapi.DomainTransaction, error) {
+	coinbaseData *externalapi.DomainCoinbaseData) (expectedTransaction *externalapi.DomainTransaction, hasRedReward bool, err error) {
 
 	ghostdagData, err := c.ghostdagDataStore.Get(c.databaseContext, stagingArea, blockHash, true)
 	if !database.IsNotFoundError(err) && err != nil {
-		return nil, err
+		return nil, false, err
 	}
 
 	// If there's ghostdag data with trusted data we prefer it because we need the original merge set non-pruned merge set.
 	if database.IsNotFoundError(err) {
 		ghostdagData, err = c.ghostdagDataStore.Get(c.databaseContext, stagingArea, blockHash, false)
 		if err != nil {
-			return nil, err
+			return nil, false, err
 		}
 	}
 
 	acceptanceData, err := c.acceptanceDataStore.Get(c.databaseContext, stagingArea, blockHash)
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 
 	daaAddedBlocksSet, err := c.daaAddedBlocksSet(stagingArea, blockHash)
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 
 	txOuts := make([]*externalapi.DomainTransactionOutput, 0, len(ghostdagData.MergeSetBlues()))
@@ -61,7 +61,7 @@ func (c *coinbaseManager) ExpectedCoinbaseTransaction(stagingArea *model.Staging
 	for _, blue := range ghostdagData.MergeSetBlues() {
 		txOut, hasReward, err := c.coinbaseOutputForBlueBlock(stagingArea, blue, acceptanceDataMap[*blue], daaAddedBlocksSet)
 		if err != nil {
-			return nil, err
+			return nil, false, err
 		}
 
 		if hasReward {
@@ -69,24 +69,24 @@ func (c *coinbaseManager) ExpectedCoinbaseTransaction(stagingArea *model.Staging
 		}
 	}
 
-	txOut, hasReward, err := c.coinbaseOutputForRewardFromRedBlocks(
+	txOut, hasRedReward, err := c.coinbaseOutputForRewardFromRedBlocks(
 		stagingArea, ghostdagData, acceptanceData, daaAddedBlocksSet, coinbaseData)
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 
-	if hasReward {
+	if hasRedReward {
 		txOuts = append(txOuts, txOut)
 	}
 
 	subsidy, err := c.CalcBlockSubsidy(stagingArea, blockHash)
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 
 	payload, err := c.serializeCoinbasePayload(ghostdagData.BlueScore(), coinbaseData, subsidy)
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 
 	return &externalapi.DomainTransaction{
@@ -97,7 +97,7 @@ func (c *coinbaseManager) ExpectedCoinbaseTransaction(stagingArea *model.Staging
 		SubnetworkID: subnetworks.SubnetworkIDCoinbase,
 		Gas:          0,
 		Payload:      payload,
-	}, nil
+	}, hasRedReward, nil
 }
 
 func (c *coinbaseManager) daaAddedBlocksSet(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) (

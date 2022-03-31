@@ -1,7 +1,11 @@
 package miningmanager_test
 
 import (
+	"github.com/kaspanet/kaspad/cmd/kaspawallet/libkaspawallet"
 	"github.com/kaspanet/kaspad/domain/consensusreference"
+	"github.com/kaspanet/kaspad/domain/miningmanager/model"
+	"github.com/kaspanet/kaspad/util"
+	"github.com/kaspanet/kaspad/version"
 	"reflect"
 	"strings"
 	"testing"
@@ -569,6 +573,279 @@ func TestRevalidateHighPriorityTransactions(t *testing.T) {
 			t.Fatalf("Expected to have empty allTransactions, but got %v instead", allTransactions)
 		}
 	})
+}
+
+// TestModifyBlockTemplate verifies that modifying a block template changes coinbase data correctly.
+func TestModifyBlockTemplate(t *testing.T) {
+	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
+		consensusConfig.BlockCoinbaseMaturity = 0
+		factory := consensus.NewFactory()
+		tc, teardown, err := factory.NewTestConsensus(consensusConfig, "TestModifyBlockTemplate")
+		if err != nil {
+			t.Fatalf("Error setting up TestConsensus: %+v", err)
+		}
+		defer teardown(false)
+
+		miningFactory := miningmanager.NewFactory()
+		tcAsConsensus := tc.(externalapi.Consensus)
+		tcAsConsensusPointer := &tcAsConsensus
+		consensusReference := consensusreference.NewConsensusReference(&tcAsConsensusPointer)
+		miningManager := miningFactory.NewMiningManager(consensusReference, &consensusConfig.Params, mempool.DefaultConfig(&consensusConfig.Params))
+
+		// Create some complex transactions. Logic taken from TestOrphanTransactions
+
+		// Before each parent transaction, We will add two blocks by consensus in order to fund the parent transactions.
+		parentTransactions, childTransactions, err := createArraysOfParentAndChildrenTransactions(tc)
+		if err != nil {
+			t.Fatalf("Error in createArraysOfParentAndChildrenTransactions: %v", err)
+		}
+		for _, orphanTransaction := range childTransactions {
+			_, err = miningManager.ValidateAndInsertTransaction(orphanTransaction, false, true)
+			if err != nil {
+				t.Fatalf("ValidateAndInsertTransaction: %v", err)
+			}
+		}
+		transactionsMempool := miningManager.AllTransactions()
+		for _, transaction := range transactionsMempool {
+			if contains(transaction, childTransactions) {
+				t.Fatalf("Error: an orphan transaction is exist in the mempool")
+			}
+		}
+
+		emptyCoinbaseData := &externalapi.DomainCoinbaseData{
+			ScriptPublicKey: &externalapi.ScriptPublicKey{Script: nil, Version: 0},
+			ExtraData:       nil}
+		block, err := miningManager.GetBlockTemplate(emptyCoinbaseData)
+		if err != nil {
+			t.Fatalf("Failed get a block template: %v", err)
+		}
+
+		for _, transactionFromBlock := range block.Transactions[1:] {
+			for _, orphanTransaction := range childTransactions {
+				if consensushashing.TransactionID(transactionFromBlock) == consensushashing.TransactionID(orphanTransaction) {
+					t.Fatalf("Tranasaction with unknown parents is exist in a block that was built from GetTemplate option.")
+				}
+			}
+		}
+
+		// Run the purpose of this test, compare modified block templates
+		sweepCompareModifiedTemplateToBuilt(t, consensusConfig, miningManager.GetBlockTemplateBuilder())
+
+		// Create some more complex blocks and transactions. Logic taken from TestOrphanTransactions
+		tips, err := tc.Tips()
+		if err != nil {
+			t.Fatalf("Tips: %v.", err)
+		}
+		blockParentsTransactionsHash, _, err := tc.AddBlock(tips, nil, parentTransactions)
+		if err != nil {
+			t.Fatalf("AddBlock: %v", err)
+		}
+
+		_, _, err = tc.AddBlock([]*externalapi.DomainHash{blockParentsTransactionsHash}, nil, nil)
+		if err != nil {
+			t.Fatalf("AddBlock: %v", err)
+		}
+
+		blockParentsTransactions, err := tc.GetBlock(blockParentsTransactionsHash)
+		if err != nil {
+			t.Fatalf("GetBlock: %v", err)
+		}
+		_, err = miningManager.HandleNewBlockTransactions(blockParentsTransactions.Transactions)
+		if err != nil {
+			t.Fatalf("HandleNewBlockTransactions: %+v", err)
+		}
+		transactionsMempool = miningManager.AllTransactions()
+		if len(transactionsMempool) != len(childTransactions) {
+			t.Fatalf("Expected %d transactions in the mempool but got %d", len(childTransactions), len(transactionsMempool))
+		}
+
+		for _, transaction := range transactionsMempool {
+			if !contains(transaction, childTransactions) {
+				t.Fatalf("Error: the transaction %s, should be in the mempool since its not "+
+					"oprhan anymore.", consensushashing.TransactionID(transaction))
+			}
+		}
+		block, err = miningManager.GetBlockTemplate(emptyCoinbaseData)
+		if err != nil {
+			t.Fatalf("GetBlockTemplate: %v", err)
+		}
+
+		for _, transactionFromBlock := range block.Transactions[1:] {
+			isContained := false
+			for _, childTransaction := range childTransactions {
+				if *consensushashing.TransactionID(transactionFromBlock) == *consensushashing.TransactionID(childTransaction) {
+					isContained = true
+					break
+				}
+			}
+			if !isContained {
+				t.Fatalf("Error: Unknown Transaction %s in a block.", consensushashing.TransactionID(transactionFromBlock))
+			}
+		}
+
+		// Run the purpose of this test, compare modified block templates
+		sweepCompareModifiedTemplateToBuilt(t, consensusConfig, miningManager.GetBlockTemplateBuilder())
+
+		// Create a real coinbase to use
+		coinbaseUsual, err := generateNewCoinbase(consensusConfig.Prefix, opUsual)
+		if err != nil {
+			t.Fatalf("Generate coinbase: %v.", err)
+		}
+		var emptyTransactions []*externalapi.DomainTransaction
+
+		// Create interesting DAG structures and rerun the template comparisons
+		tips, err = tc.Tips()
+		if err != nil {
+			t.Fatalf("Tips: %v.", err)
+		}
+		// Create a fork
+		_, _, err = tc.AddBlock(tips[:1], coinbaseUsual, emptyTransactions)
+		if err != nil {
+			t.Fatalf("AddBlock: %v", err)
+		}
+		chainTip, _, err := tc.AddBlock(tips[:1], coinbaseUsual, emptyTransactions)
+		if err != nil {
+			t.Fatalf("AddBlock: %v", err)
+		}
+
+		sweepCompareModifiedTemplateToBuilt(t, consensusConfig, miningManager.GetBlockTemplateBuilder())
+
+		// Create some blue blocks
+		for i := externalapi.KType(0); i < consensusConfig.K-2; i++ {
+			chainTip, _, err = tc.AddBlock([]*externalapi.DomainHash{chainTip}, coinbaseUsual, emptyTransactions)
+			if err != nil {
+				t.Fatalf("AddBlock: %v", err)
+			}
+		}
+
+		sweepCompareModifiedTemplateToBuilt(t, consensusConfig, miningManager.GetBlockTemplateBuilder())
+
+		// Mine more such that we have a merged red
+		for i := externalapi.KType(0); i < consensusConfig.K; i++ {
+			chainTip, _, err = tc.AddBlock([]*externalapi.DomainHash{chainTip}, coinbaseUsual, emptyTransactions)
+			if err != nil {
+				t.Fatalf("AddBlock: %v", err)
+			}
+		}
+		blockTemplate, err := miningManager.GetBlockTemplateBuilder().BuildBlockTemplate(emptyCoinbaseData)
+		if err != nil {
+			t.Fatalf("BuildBlockTemplate: %v", err)
+		}
+		if !blockTemplate.CoinbaseHasRedReward {
+			t.Fatalf("Expected block template to have red reward")
+		}
+
+		sweepCompareModifiedTemplateToBuilt(t, consensusConfig, miningManager.GetBlockTemplateBuilder())
+	})
+}
+
+func sweepCompareModifiedTemplateToBuilt(
+	t *testing.T, consensusConfig *consensus.Config, builder model.BlockTemplateBuilder) {
+	for i := 0; i < 4; i++ {
+		// Run a few times to get more randomness
+		compareModifiedTemplateToBuilt(t, consensusConfig, builder, opUsual, opUsual)
+		compareModifiedTemplateToBuilt(t, consensusConfig, builder, opECDSA, opECDSA)
+	}
+	compareModifiedTemplateToBuilt(t, consensusConfig, builder, opTrue, opUsual)
+	compareModifiedTemplateToBuilt(t, consensusConfig, builder, opUsual, opTrue)
+	compareModifiedTemplateToBuilt(t, consensusConfig, builder, opECDSA, opUsual)
+	compareModifiedTemplateToBuilt(t, consensusConfig, builder, opUsual, opECDSA)
+	compareModifiedTemplateToBuilt(t, consensusConfig, builder, opEmpty, opUsual)
+	compareModifiedTemplateToBuilt(t, consensusConfig, builder, opUsual, opEmpty)
+}
+
+type opType uint8
+
+const (
+	opUsual opType = iota
+	opECDSA
+	opTrue
+	opEmpty
+)
+
+func compareModifiedTemplateToBuilt(
+	t *testing.T, consensusConfig *consensus.Config, builder model.BlockTemplateBuilder,
+	firstCoinbaseOp, secondCoinbaseOp opType) {
+	coinbase1, err := generateNewCoinbase(consensusConfig.Params.Prefix, firstCoinbaseOp)
+	if err != nil {
+		t.Fatalf("Failed to generate new coinbase: %v", err)
+	}
+	coinbase2, err := generateNewCoinbase(consensusConfig.Params.Prefix, secondCoinbaseOp)
+	if err != nil {
+		t.Fatalf("Failed to generate new coinbase: %v", err)
+	}
+
+	// Build a fresh template for coinbase2 as a reference
+	expectedTemplate, err := builder.BuildBlockTemplate(coinbase2)
+	if err != nil {
+		t.Fatalf("Failed to build block template: %v", err)
+	}
+	// Modify to coinbase1
+	modifiedTemplate, err := builder.ModifyBlockTemplate(coinbase1, expectedTemplate.Clone())
+	if err != nil {
+		t.Fatalf("Failed to modify block template: %v", err)
+	}
+	// And modify back to coinbase2
+	modifiedTemplate, err = builder.ModifyBlockTemplate(coinbase2, modifiedTemplate.Clone())
+	if err != nil {
+		t.Fatalf("Failed to modify block template: %v", err)
+	}
+
+	// Make sure timestamps are equal before comparing the hash
+	mutableHeader := modifiedTemplate.Block.Header.ToMutable()
+	mutableHeader.SetTimeInMilliseconds(expectedTemplate.Block.Header.TimeInMilliseconds())
+	modifiedTemplate.Block.Header = mutableHeader.ToImmutable()
+
+	// Assert hashes are equal
+	expectedTemplateHash := consensushashing.BlockHash(expectedTemplate.Block)
+	modifiedTemplateHash := consensushashing.BlockHash(modifiedTemplate.Block)
+	if !expectedTemplateHash.Equal(modifiedTemplateHash) {
+		t.Fatalf("Expected block hashes %s, %s to be equal", expectedTemplateHash, modifiedTemplateHash)
+	}
+}
+
+func generateNewCoinbase(addressPrefix util.Bech32Prefix, op opType) (*externalapi.DomainCoinbaseData, error) {
+	if op == opTrue {
+		scriptPublicKey, _ := testutils.OpTrueScript()
+		return &externalapi.DomainCoinbaseData{
+			ScriptPublicKey: scriptPublicKey, ExtraData: []byte(version.Version()),
+		}, nil
+	}
+	if op == opEmpty {
+		return &externalapi.DomainCoinbaseData{
+			ScriptPublicKey: &externalapi.ScriptPublicKey{Script: nil, Version: 0},
+			ExtraData:       nil,
+		}, nil
+	}
+	_, publicKey, err := libkaspawallet.CreateKeyPair(op == opECDSA)
+	if err != nil {
+		return nil, err
+	}
+	var address string
+	if op == opECDSA {
+		addressPublicKeyECDSA, err := util.NewAddressPublicKeyECDSA(publicKey, addressPrefix)
+		if err != nil {
+			return nil, err
+		}
+		address = addressPublicKeyECDSA.EncodeAddress()
+	} else {
+		addressPublicKey, err := util.NewAddressPublicKey(publicKey, addressPrefix)
+		if err != nil {
+			return nil, err
+		}
+		address = addressPublicKey.EncodeAddress()
+	}
+	payAddress, err := util.DecodeAddress(address, addressPrefix)
+	if err != nil {
+		return nil, err
+	}
+	scriptPublicKey, err := txscript.PayToAddrScript(payAddress)
+	if err != nil {
+		return nil, err
+	}
+	return &externalapi.DomainCoinbaseData{
+		ScriptPublicKey: scriptPublicKey, ExtraData: []byte(version.Version()),
+	}, nil
 }
 
 func createTransactionWithUTXOEntry(t *testing.T, i int, daaScore uint64) *externalapi.DomainTransaction {

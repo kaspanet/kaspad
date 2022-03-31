@@ -113,7 +113,7 @@ func TestBuildBlockErrorCases(t *testing.T) {
 		}
 
 		for _, test := range tests {
-			_, err = testConsensus.BlockBuilder().BuildBlock(test.coinbaseData, test.transactions)
+			_, _, err = testConsensus.BlockBuilder().BuildBlock(test.coinbaseData, test.transactions)
 			if err == nil {
 				t.Errorf("%s: No error from BuildBlock", test.name)
 				return

@@ -54,6 +54,11 @@ func (bh *blockHeader) SetTimeInMilliseconds(timeInMilliseconds int64) {
 	bh.timeInMilliseconds = timeInMilliseconds
 }
 
+func (bh *blockHeader) SetHashMerkleRoot(hashMerkleRoot *externalapi.DomainHash) {
+	bh.isBlockLevelCached = false
+	bh.hashMerkleRoot = hashMerkleRoot
+}
+
 func (bh *blockHeader) Version() uint16 {
 	return bh.version
 }

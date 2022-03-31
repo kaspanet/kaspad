@@ -85,7 +85,7 @@ func New(
 // BuildBlock builds a block over the current state, with the given
 // coinbaseData and the given transactions
 func (bb *blockBuilder) BuildBlock(coinbaseData *externalapi.DomainCoinbaseData,
-	transactions []*externalapi.DomainTransaction) (*externalapi.DomainBlock, error) {
+	transactions []*externalapi.DomainTransaction) (block *externalapi.DomainBlock, coinbaseHasRedReward bool, err error) {
 
 	onEnd := logger.LogAndMeasureExecutionTime(log, "BuildBlock")
 	defer onEnd()
@@ -96,32 +96,32 @@ func (bb *blockBuilder) BuildBlock(coinbaseData *externalapi.DomainCoinbaseData,
 }
 
 func (bb *blockBuilder) buildBlock(stagingArea *model.StagingArea, coinbaseData *externalapi.DomainCoinbaseData,
-	transactions []*externalapi.DomainTransaction) (*externalapi.DomainBlock, error) {
+	transactions []*externalapi.DomainTransaction) (block *externalapi.DomainBlock, coinbaseHasRedReward bool, err error) {
 
-	err := bb.validateTransactions(stagingArea, transactions)
+	err = bb.validateTransactions(stagingArea, transactions)
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 
 	newBlockPruningPoint, err := bb.newBlockPruningPoint(stagingArea, model.VirtualBlockHash)
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
-	coinbase, err := bb.newBlockCoinbaseTransaction(stagingArea, coinbaseData)
+	coinbase, coinbaseHasRedReward, err := bb.newBlockCoinbaseTransaction(stagingArea, coinbaseData)
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 	transactionsWithCoinbase := append([]*externalapi.DomainTransaction{coinbase}, transactions...)
 
 	header, err := bb.buildHeader(stagingArea, transactionsWithCoinbase, newBlockPruningPoint)
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 
 	return &externalapi.DomainBlock{
 		Header:       header,
 		Transactions: transactionsWithCoinbase,
-	}, nil
+	}, coinbaseHasRedReward, nil
 }
 
 func (bb *blockBuilder) validateTransactions(stagingArea *model.StagingArea,
@@ -180,7 +180,7 @@ func (bb *blockBuilder) validateTransaction(
 }
 
 func (bb *blockBuilder) newBlockCoinbaseTransaction(stagingArea *model.StagingArea,
-	coinbaseData *externalapi.DomainCoinbaseData) (*externalapi.DomainTransaction, error) {
+	coinbaseData *externalapi.DomainCoinbaseData) (expectedTransaction *externalapi.DomainTransaction, hasRedReward bool, err error) {
 
 	return bb.coinbaseManager.ExpectedCoinbaseTransaction(stagingArea, model.VirtualBlockHash, coinbaseData)
 }

@@ -1,7 +1,11 @@
 package blocktemplatebuilder
 
 import (
+	"github.com/kaspanet/kaspad/domain/consensus/processes/coinbasemanager"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/merkle"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/transactionhelper"
 	"github.com/kaspanet/kaspad/domain/consensusreference"
+	"github.com/kaspanet/kaspad/util/mstime"
 	"math"
 	"sort"
 
@@ -31,19 +35,24 @@ type blockTemplateBuilder struct {
 	consensusReference consensusreference.ConsensusReference
 	mempool            miningmanagerapi.Mempool
 	policy             policy
+
+	coinbasePayloadScriptPublicKeyMaxLength uint8
 }
 
 // New creates a new blockTemplateBuilder
-func New(consensusReference consensusreference.ConsensusReference, mempool miningmanagerapi.Mempool, blockMaxMass uint64) miningmanagerapi.BlockTemplateBuilder {
+func New(consensusReference consensusreference.ConsensusReference, mempool miningmanagerapi.Mempool,
+	blockMaxMass uint64, coinbasePayloadScriptPublicKeyMaxLength uint8) miningmanagerapi.BlockTemplateBuilder {
 	return &blockTemplateBuilder{
 		consensusReference: consensusReference,
 		mempool:            mempool,
 		policy:             policy{BlockMaxMass: blockMaxMass},
+
+		coinbasePayloadScriptPublicKeyMaxLength: coinbasePayloadScriptPublicKeyMaxLength,
 	}
 }
 
-// GetBlockTemplate creates a block template for a miner to consume
-// GetBlockTemplate returns a new block template that is ready to be solved
+// BuildBlockTemplate creates a block template for a miner to consume
+// BuildBlockTemplate returns a new block template that is ready to be solved
 // using the transactions from the passed transaction source pool and a coinbase
 // that either pays to the passed address if it is not nil, or a coinbase that
 // is redeemable by anyone if the passed address is nil. The nil address
@@ -106,7 +115,9 @@ func New(consensusReference consensusreference.ConsensusReference, mempool minin
 //  |  <= policy.BlockMinSize)          |   |
 //   -----------------------------------  --
 
-func (btb *blockTemplateBuilder) GetBlockTemplate(coinbaseData *consensusexternalapi.DomainCoinbaseData) (*consensusexternalapi.DomainBlock, error) {
+func (btb *blockTemplateBuilder) BuildBlockTemplate(
+	coinbaseData *consensusexternalapi.DomainCoinbaseData) (*consensusexternalapi.DomainBlockTemplate, error) {
+
 	mempoolTransactions := btb.mempool.BlockCandidateTransactions()
 	candidateTxs := make([]*candidateTx, 0, len(mempoolTransactions))
 	for _, tx := range mempoolTransactions {
@@ -131,11 +142,11 @@ func (btb *blockTemplateBuilder) GetBlockTemplate(coinbaseData *consensusexterna
 		len(candidateTxs))
 
 	blockTxs := btb.selectTransactions(candidateTxs)
-	blk, err := btb.consensusReference.Consensus().BuildBlock(coinbaseData, blockTxs.selectedTxs)
+	blk, coinbaseHasRedReward, err := btb.consensusReference.Consensus().BuildBlockWithTemplateMetadata(coinbaseData, blockTxs.selectedTxs)
 
 	invalidTxsErr := ruleerrors.ErrInvalidTransactionsInNewBlock{}
 	if errors.As(err, &invalidTxsErr) {
-		log.Criticalf("consensusReference.Consensus().BuildBlock returned invalid txs in GetBlockTemplate")
+		log.Criticalf("consensusReference.Consensus().BuildBlock returned invalid txs in BuildBlockTemplate")
 		invalidTxs := make([]*consensusexternalapi.DomainTransaction, 0, len(invalidTxsErr.InvalidTransactions))
 		for _, tx := range invalidTxsErr.InvalidTransactions {
 			invalidTxs = append(invalidTxs, tx.Transaction)
@@ -148,7 +159,7 @@ func (btb *blockTemplateBuilder) GetBlockTemplate(coinbaseData *consensusexterna
 			log.Criticalf("Error from mempool.RemoveTransactions: %+v", err)
 		}
 		// We can call this recursively without worry because this should almost never happen
-		return btb.GetBlockTemplate(coinbaseData)
+		return btb.BuildBlockTemplate(coinbaseData)
 	}
 
 	if err != nil {
@@ -158,7 +169,44 @@ func (btb *blockTemplateBuilder) GetBlockTemplate(coinbaseData *consensusexterna
 	log.Debugf("Created new block template (%d transactions, %d in fees, %d mass, target difficulty %064x)",
 		len(blk.Transactions), blockTxs.totalFees, blockTxs.totalMass, difficulty.CompactToBig(blk.Header.Bits()))
 
-	return blk, nil
+	return &consensusexternalapi.DomainBlockTemplate{
+		Block:                blk,
+		CoinbaseData:         coinbaseData,
+		CoinbaseHasRedReward: coinbaseHasRedReward,
+	}, nil
+}
+
+// ModifyBlockTemplate modifies an existing block template to the requested coinbase data and updates the timestamp
+func (btb *blockTemplateBuilder) ModifyBlockTemplate(newCoinbaseData *consensusexternalapi.DomainCoinbaseData,
+	blockTemplateToModify *consensusexternalapi.DomainBlockTemplate) (*consensusexternalapi.DomainBlockTemplate, error) {
+
+	// The first transaction is always the coinbase transaction
+	coinbaseTx := blockTemplateToModify.Block.Transactions[transactionhelper.CoinbaseTransactionIndex]
+	newPayload, err := coinbasemanager.ModifyCoinbasePayload(coinbaseTx.Payload, newCoinbaseData, btb.coinbasePayloadScriptPublicKeyMaxLength)
+	if err != nil {
+		return nil, err
+	}
+	coinbaseTx.Payload = newPayload
+	if blockTemplateToModify.CoinbaseHasRedReward {
+		// The last output is always the coinbase red blocks reward
+		coinbaseTx.Outputs[len(coinbaseTx.Outputs)-1].ScriptPublicKey = newCoinbaseData.ScriptPublicKey
+	}
+	// Update the hash merkle root according to the modified transactions
+	mutableHeader := blockTemplateToModify.Block.Header.ToMutable()
+	// TODO: can be optimized to O(log(#transactions)) by caching the whole merkle tree in BlockTemplate and changing only the relevant path
+	mutableHeader.SetHashMerkleRoot(merkle.CalculateHashMerkleRoot(blockTemplateToModify.Block.Transactions))
+
+	newTimestamp := mstime.Now().UnixMilliseconds()
+	if newTimestamp >= mutableHeader.TimeInMilliseconds() {
+		// Only if new time stamp is later than current, update the header. Otherwise,
+		// we keep the previous time as built by internal consensus median time logic
+		mutableHeader.SetTimeInMilliseconds(newTimestamp)
+	}
+
+	blockTemplateToModify.Block.Header = mutableHeader.ToImmutable()
+	blockTemplateToModify.CoinbaseData = newCoinbaseData
+
+	return blockTemplateToModify, nil
 }
 
 // calcTxValue calculates a value to be used in transaction selection.

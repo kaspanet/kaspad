@@ -80,4 +80,5 @@ type MutableBlockHeader interface {
 	ToImmutable() BlockHeader
 	SetNonce(nonce uint64)
 	SetTimeInMilliseconds(timeInMilliseconds int64)
+	SetHashMerkleRoot(hashMerkleRoot *DomainHash)
 }

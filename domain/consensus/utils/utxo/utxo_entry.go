@@ -1,7 +1,6 @@
 package utxo
 
 import (
-	"bytes"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 )
 
@@ -60,11 +59,7 @@ func (u *utxoEntry) Equal(other externalapi.UTXOEntry) bool {
 		return false
 	}
 
-	if !bytes.Equal(u.ScriptPublicKey().Script, other.ScriptPublicKey().Script) {
-		return false
-	}
-
-	if u.ScriptPublicKey().Version != other.ScriptPublicKey().Version {
+	if !u.ScriptPublicKey().Equal(other.ScriptPublicKey()) {
 		return false
 	}
 
