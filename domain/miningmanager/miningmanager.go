@@ -4,6 +4,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensusreference"
 	miningmanagermodel "github.com/kaspanet/kaspad/domain/miningmanager/model"
+	"github.com/kaspanet/kaspad/util/mstime"
 	"sync"
 	"time"
 )
@@ -42,8 +43,19 @@ func (mm *miningManager) GetBlockTemplate(coinbaseData *externalapi.DomainCoinba
 		}
 		if externalapi.HashesEqual(virtualInfo.ParentHashes, immutableCachedTemplate.Block.Header.DirectParents()) {
 			if immutableCachedTemplate.CoinbaseData.Equal(coinbaseData) {
-				// Both, virtual parents and coinbase data are equal, simply return the cached block
-				return immutableCachedTemplate.Block, nil
+				// Both, virtual parents and coinbase data are equal, simply return the cached block with updated time
+				newTimestamp := mstime.Now().UnixMilliseconds()
+				if newTimestamp < immutableCachedTemplate.Block.Header.TimeInMilliseconds() {
+					// Keep the previous time as built by internal consensus median time logic
+					return immutableCachedTemplate.Block, nil
+				}
+				// If new time stamp is later than current, update the header
+				mutableHeader := immutableCachedTemplate.Block.Header.ToMutable()
+				mutableHeader.SetTimeInMilliseconds(newTimestamp)
+				clonedBlock := immutableCachedTemplate.Block.Clone()
+				clonedBlock.Header = mutableHeader.ToImmutable()
+
+				return clonedBlock, nil
 			}
 
 			// Virtual parents are equal, but coinbase data is new -- make the minimum changes required

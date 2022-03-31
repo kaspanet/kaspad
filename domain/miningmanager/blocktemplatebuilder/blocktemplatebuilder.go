@@ -5,6 +5,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/utils/merkle"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/transactionhelper"
 	"github.com/kaspanet/kaspad/domain/consensusreference"
+	"github.com/kaspanet/kaspad/util/mstime"
 	"math"
 	"sort"
 
@@ -175,7 +176,7 @@ func (btb *blockTemplateBuilder) BuildBlockTemplate(
 	}, nil
 }
 
-// ModifyBlockTemplate modifies an existing block template to the requested coinbase data
+// ModifyBlockTemplate modifies an existing block template to the requested coinbase data and updates the timestamp
 func (btb *blockTemplateBuilder) ModifyBlockTemplate(newCoinbaseData *consensusexternalapi.DomainCoinbaseData,
 	blockTemplateToModify *consensusexternalapi.DomainBlockTemplate) (*consensusexternalapi.DomainBlockTemplate, error) {
 
@@ -194,6 +195,13 @@ func (btb *blockTemplateBuilder) ModifyBlockTemplate(newCoinbaseData *consensuse
 	mutableHeader := blockTemplateToModify.Block.Header.ToMutable()
 	// TODO: can be optimized to O(log(#transactions)) by caching the whole merkle tree in BlockTemplate and changing only the relevant path
 	mutableHeader.SetHashMerkleRoot(merkle.CalculateHashMerkleRoot(blockTemplateToModify.Block.Transactions))
+
+	newTimestamp := mstime.Now().UnixMilliseconds()
+	if newTimestamp >= mutableHeader.TimeInMilliseconds() {
+		// Only if new time stamp is later than current, update the header. Otherwise,
+		// we keep the previous time as built by internal consensus median time logic
+		mutableHeader.SetTimeInMilliseconds(newTimestamp)
+	}
 
 	blockTemplateToModify.Block.Header = mutableHeader.ToImmutable()
 	blockTemplateToModify.CoinbaseData = newCoinbaseData
