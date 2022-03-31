@@ -52,10 +52,11 @@ func (mm *miningManager) GetBlockTemplate(coinbaseData *externalapi.DomainCoinba
 				// If new time stamp is later than current, update the header
 				mutableHeader := immutableCachedTemplate.Block.Header.ToMutable()
 				mutableHeader.SetTimeInMilliseconds(newTimestamp)
-				clonedBlock := immutableCachedTemplate.Block.Clone()
-				clonedBlock.Header = mutableHeader.ToImmutable()
-
-				return clonedBlock, nil
+				
+				return &externalapi.DomainBlock{
+					Header:       mutableHeader.ToImmutable(),
+					Transactions: immutableCachedTemplate.Block.Transactions,
+				}, nil
 			}
 
 			// Virtual parents are equal, but coinbase data is new -- make the minimum changes required
