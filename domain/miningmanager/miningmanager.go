@@ -12,6 +12,7 @@ import (
 // known transactions that have no yet been added to any block
 type MiningManager interface {
 	GetBlockTemplate(coinbaseData *externalapi.DomainCoinbaseData) (*externalapi.DomainBlock, error)
+	GetBlockTemplateBuilder() miningmanagermodel.BlockTemplateBuilder
 	GetTransaction(transactionID *externalapi.DomainTransactionID) (*externalapi.DomainTransaction, bool)
 	AllTransactions() []*externalapi.DomainTransaction
 	TransactionCount() int
@@ -71,8 +72,8 @@ func (mm *miningManager) getImmutableCachedTemplate() *externalapi.DomainBlockTe
 	mm.cacheLock.Lock()
 	defer mm.cacheLock.Unlock()
 	if time.Since(mm.cachingTime) > time.Second {
-		// TL;DR no point in cache optimizations if queries are more than a second apart -- we prefer rechecking the mempool.
-		// Explanation: On the one hand this is a sub-millisecond optimization, so there is no harm in doing the full block building
+		// No point in cache optimizations if queries are more than a second apart -- we prefer rechecking the mempool.
+		// Full explanation: On the one hand this is a sub-millisecond optimization, so there is no harm in doing the full block building
 		// every ~1 second. Additionally, we would like to refresh the mempool access even if virtual info was
 		// unmodified for a while. All in all, caching for max 1 second is a good compromise.
 		mm.cachedBlockTemplate = nil
@@ -85,6 +86,10 @@ func (mm *miningManager) setImmutableCachedTemplate(blockTemplate *externalapi.D
 	defer mm.cacheLock.Unlock()
 	mm.cachingTime = time.Now()
 	mm.cachedBlockTemplate = blockTemplate
+}
+
+func (mm *miningManager) GetBlockTemplateBuilder() miningmanagermodel.BlockTemplateBuilder {
+	return mm.blockTemplateBuilder
 }
 
 // HandleNewBlockTransactions handles the transactions for a new block that was just added to the DAG
