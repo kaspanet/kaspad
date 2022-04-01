@@ -22,7 +22,7 @@ type TransactionsRelayContext interface {
 	SharedRequestedTransactions() *flowcontext.SharedRequestedTransactions
 	OnTransactionAddedToMempool()
 	EnqueueTransactionIDsForPropagation(transactionIDs []*externalapi.DomainTransactionID) error
-	IsIBDRunning() bool
+	IsNearlySynced() (bool, error)
 }
 
 type handleRelayedTransactionsFlow struct {
@@ -50,7 +50,12 @@ func (flow *handleRelayedTransactionsFlow) start() error {
 			return err
 		}
 
-		if flow.IsIBDRunning() {
+		isNearlySynced, err := flow.IsNearlySynced()
+		if err != nil {
+			return err
+		}
+		// Transaction relay is disabled if the node is out of sync and thus not mining
+		if !isNearlySynced {
 			continue
 		}
 

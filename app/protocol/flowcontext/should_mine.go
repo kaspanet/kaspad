@@ -2,21 +2,12 @@ package flowcontext
 
 import "github.com/kaspanet/kaspad/util/mstime"
 
-const (
-	maxSelectedParentTimeDiffToAllowMiningInMilliSeconds = 60 * 60 * 1000 // 1 Hour
-)
-
-// ShouldMine returns whether it's ok to use block template from this node
-// for mining purposes.
-func (f *FlowContext) ShouldMine() (bool, error) {
+// IsNearlySynced returns whether this node is considered synced or close to being synced. This info
+// is used to determine if it's ok to use a block template from this node for mining purposes.
+func (f *FlowContext) IsNearlySynced() (bool, error) {
 	peers := f.Peers()
 	if len(peers) == 0 {
-		log.Debugf("The node is not connected, so ShouldMine returns false")
-		return false, nil
-	}
-
-	if f.IsIBDRunning() {
-		log.Debugf("IBD is running, so ShouldMine returns false")
+		log.Debugf("The node is not connected to peers, so IsNearlySynced returns false")
 		return false, nil
 	}
 
@@ -35,13 +26,15 @@ func (f *FlowContext) ShouldMine() (bool, error) {
 	}
 
 	now := mstime.Now().UnixMilliseconds()
-	if now-virtualSelectedParentHeader.TimeInMilliseconds() < maxSelectedParentTimeDiffToAllowMiningInMilliSeconds {
-		log.Debugf("The selected tip timestamp is recent (%d), so ShouldMine returns true",
+	// As a heuristic, we allow the node to mine if he is likely to be within the current DAA window of fully synced nodes.
+	// Such blocks contribute to security by maintaining the current difficulty despite possibly being slightly out of sync.
+	if now-virtualSelectedParentHeader.TimeInMilliseconds() < f.expectedDAAWindowDurationInMilliseconds {
+		log.Debugf("The selected tip timestamp is recent (%d), so IsNearlySynced returns true",
 			virtualSelectedParentHeader.TimeInMilliseconds())
 		return true, nil
 	}
 
-	log.Debugf("The selected tip timestamp is old (%d), so ShouldMine returns false",
+	log.Debugf("The selected tip timestamp is old (%d), so IsNearlySynced returns false",
 		virtualSelectedParentHeader.TimeInMilliseconds())
 	return false, nil
 }
