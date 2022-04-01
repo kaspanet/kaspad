@@ -107,14 +107,16 @@ func (flow *handleRelayInvsFlow) start() error {
 			continue
 		}
 
-		// Block relay is disabled if the node is out of sync and is already during IBD
-		isNearlySynced, err := flow.IsNearlySynced()
-		if err != nil {
-			return err
-		}
-		if !isNearlySynced && flow.IsIBDRunning() {
-			log.Debugf("Got block %s while in IBD and the node is out of sync. Continuing...", inv.Hash)
-			continue
+		// Block relay is disabled if the node is already during IBD AND considered out of sync
+		if flow.IsIBDRunning() {
+			isNearlySynced, err := flow.IsNearlySynced()
+			if err != nil {
+				return err
+			}
+			if !isNearlySynced {
+				log.Debugf("Got block %s while in IBD and the node is out of sync. Continuing...", inv.Hash)
+				continue
+			}
 		}
 
 		log.Debugf("Requesting block %s", inv.Hash)
