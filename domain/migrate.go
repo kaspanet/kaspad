@@ -201,7 +201,11 @@ func syncConsensuses(syncer, syncee externalapi.Consensus) error {
 		return err
 	}
 
-	virtualDAAScoreStart := uint64(0)
+	virtualDAAScoreStart, err := syncee.GetVirtualDAAScore()
+	if err != nil {
+		return err
+	}
+
 	percents = 0
 	for i := 0; ; i++ {
 		if i%10 == 0 {
