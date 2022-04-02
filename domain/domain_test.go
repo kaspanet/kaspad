@@ -36,12 +36,12 @@ func TestCreateStagingConsensus(t *testing.T) {
 			t.Fatalf("New: %+v", err)
 		}
 
-		err = domainInstance.InitStagingConsensus()
+		err = domainInstance.InitStagingConsensusWithoutGenesis()
 		if err != nil {
-			t.Fatalf("InitStagingConsensus: %+v", err)
+			t.Fatalf("InitStagingConsensusWithoutGenesis: %+v", err)
 		}
 
-		err = domainInstance.InitStagingConsensus()
+		err = domainInstance.InitStagingConsensusWithoutGenesis()
 		if !strings.Contains(err.Error(), "cannot create staging consensus when a staging consensus already exists") {
 			t.Fatalf("unexpected error: %+v", err)
 		}
@@ -114,9 +114,9 @@ func TestCreateStagingConsensus(t *testing.T) {
 
 		// Now we create a new staging consensus and check that it's deleted once we init a new domain. We also
 		// validate that the main consensus persisted the data from the committed temp consensus.
-		err = domainInstance.InitStagingConsensus()
+		err = domainInstance.InitStagingConsensusWithoutGenesis()
 		if err != nil {
-			t.Fatalf("InitStagingConsensus: %+v", err)
+			t.Fatalf("InitStagingConsensusWithoutGenesis: %+v", err)
 		}
 
 		addGenesisToStagingConsensus()
@@ -139,9 +139,9 @@ func TestCreateStagingConsensus(t *testing.T) {
 			t.Fatalf("a block from committed staging consensus was not persisted to the active consensus")
 		}
 
-		err = domainInstance2.InitStagingConsensus()
+		err = domainInstance2.InitStagingConsensusWithoutGenesis()
 		if err != nil {
-			t.Fatalf("InitStagingConsensus: %+v", err)
+			t.Fatalf("InitStagingConsensusWithoutGenesis: %+v", err)
 		}
 
 		blockInfo, err = domainInstance2.StagingConsensus().GetBlockInfo(blockHash)

@@ -7,14 +7,26 @@ import (
 
 func (d *domain) migrate() error {
 	log.Infof("Starting migration")
-	err := d.InitStagingConsensus()
+	pruningPoint, err := d.Consensus().PruningPoint()
 	if err != nil {
 		return err
 	}
 
-	err = syncConsensuses(d.Consensus(), d.StagingConsensus())
-	if err != nil {
-		return err
+	if d.consensusConfig.Params.GenesisHash.Equal(pruningPoint) {
+		err = d.initStagingConsensus(d.consensusConfig)
+		if err != nil {
+			return err
+		}
+	} else {
+		err = d.InitStagingConsensusWithoutGenesis()
+		if err != nil {
+			return err
+		}
+
+		err = syncConsensuses(d.Consensus(), d.StagingConsensus())
+		if err != nil {
+			return err
+		}
 	}
 
 	err = d.CommitStagingConsensus()
@@ -30,6 +42,10 @@ func syncConsensuses(syncer, syncee externalapi.Consensus) error {
 	pruningPointProof, err := syncer.BuildPruningPointProof()
 	if err != nil {
 		return err
+	}
+
+	if len(pruningPointProof.Headers) == 0 {
+		return nil
 	}
 
 	err = syncee.ApplyPruningPointProof(pruningPointProof)
