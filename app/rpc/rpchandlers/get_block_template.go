@@ -35,7 +35,7 @@ func HandleGetBlockTemplate(context *rpccontext.Context, _ *router.Router, reque
 
 	if uint64(len(templateBlock.Transactions[transactionhelper.CoinbaseTransactionIndex].Payload)) > context.Config.NetParams().MaxCoinbasePayloadLength {
 		errorMessage := &appmessage.GetBlockTemplateResponseMessage{}
-		errorMessage.Error = appmessage.RPCErrorf("Coinbase extra data \"%s\" is above max length (%d)", coinbaseData.ExtraData, context.Config.NetParams().MaxCoinbasePayloadLength)
+		errorMessage.Error = appmessage.RPCErrorf("Coinbase payload is above max length (%d). Try to shorten the extra data.", context.Config.NetParams().MaxCoinbasePayloadLength)
 		return errorMessage, nil
 	}
 
