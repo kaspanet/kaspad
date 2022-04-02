@@ -4,6 +4,7 @@ import (
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/app/rpc/rpccontext"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/transactionhelper"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/txscript"
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
 	"github.com/kaspanet/kaspad/util"
@@ -27,16 +28,17 @@ func HandleGetBlockTemplate(context *rpccontext.Context, _ *router.Router, reque
 	}
 
 	coinbaseData := &externalapi.DomainCoinbaseData{ScriptPublicKey: scriptPublicKey, ExtraData: []byte(version.Version() + "/" + getBlockTemplateRequest.ExtraData)}
-	if uint64(len(coinbaseData.ExtraData)) > context.Config.NetParams().MaxCoinbasePayloadLength {
+	templateBlock, err := context.Domain.MiningManager().GetBlockTemplate(coinbaseData)
+	if err != nil {
+		return nil, err
+	}
+
+	if uint64(len(templateBlock.Transactions[transactionhelper.CoinbaseTransactionIndex].Payload)) > context.Config.NetParams().MaxCoinbasePayloadLength {
 		errorMessage := &appmessage.GetBlockTemplateResponseMessage{}
 		errorMessage.Error = appmessage.RPCErrorf("Coinbase extra data \"%s\" is above max length (%d)", coinbaseData.ExtraData, context.Config.NetParams().MaxCoinbasePayloadLength)
 		return errorMessage, nil
 	}
 
-	templateBlock, err := context.Domain.MiningManager().GetBlockTemplate(coinbaseData)
-	if err != nil {
-		return nil, err
-	}
 	rpcBlock := appmessage.DomainBlockToRPCBlock(templateBlock)
 
 	isSynced, err := context.ProtocolManager.ShouldMine()
