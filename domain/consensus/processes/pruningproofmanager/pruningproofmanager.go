@@ -264,9 +264,15 @@ func (ppm *pruningProofManager) buildPruningPointProof(stagingArea *model.Stagin
 				return nil, err
 			}
 
-			err = queue.PushSlice(children)
-			if err != nil {
-				return nil, err
+			for _, child := range children {
+				if child.Equal(model.VirtualBlockHash) {
+					continue
+				}
+
+				err = queue.Push(child)
+				if err != nil {
+					return nil, err
+				}
 			}
 		}
 
