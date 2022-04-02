@@ -31,7 +31,7 @@ func (d fakeDomain) StagingConsensus() externalapi.Consensus {
 	panic("implement me")
 }
 
-func (d fakeDomain) InitStagingConsensus() error {
+func (d fakeDomain) InitStagingConsensusWithoutGenesis() error {
 	panic("implement me")
 }
 

@@ -14,7 +14,7 @@ import (
 
 func (flow *handleIBDFlow) ibdWithHeadersProof(
 	syncerHeaderSelectedTipHash, relayBlockHash *externalapi.DomainHash, highBlockDAAScore uint64) error {
-	err := flow.Domain().InitStagingConsensus()
+	err := flow.Domain().InitStagingConsensusWithoutGenesis()
 	if err != nil {
 		return err
 	}

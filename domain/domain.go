@@ -21,7 +21,7 @@ type Domain interface {
 	MiningManager() miningmanager.MiningManager
 	Consensus() externalapi.Consensus
 	StagingConsensus() externalapi.Consensus
-	InitStagingConsensus() error
+	InitStagingConsensusWithoutGenesis() error
 	CommitStagingConsensus() error
 	DeleteStagingConsensus() error
 }
@@ -49,7 +49,13 @@ func (d *domain) MiningManager() miningmanager.MiningManager {
 	return d.miningManager
 }
 
-func (d *domain) InitStagingConsensus() error {
+func (d *domain) InitStagingConsensusWithoutGenesis() error {
+	cfg := *d.consensusConfig
+	cfg.SkipAddingGenesis = true
+	return d.initStagingConsensus(&cfg)
+}
+
+func (d *domain) initStagingConsensus(cfg *consensus.Config) error {
 	d.stagingConsensusLock.Lock()
 	defer d.stagingConsensusLock.Unlock()
 
@@ -79,10 +85,8 @@ func (d *domain) InitStagingConsensus() error {
 	}
 
 	consensusFactory := consensus.NewFactory()
-	cfg := *d.consensusConfig
-	cfg.SkipAddingGenesis = true
 
-	consensusInstance, shouldMigrate, err := consensusFactory.NewConsensus(&cfg, d.db, inactivePrefix)
+	consensusInstance, shouldMigrate, err := consensusFactory.NewConsensus(cfg, d.db, inactivePrefix)
 	if err != nil {
 		return err
 	}
