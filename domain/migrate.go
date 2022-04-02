@@ -44,10 +44,6 @@ func syncConsensuses(syncer, syncee externalapi.Consensus) error {
 		return err
 	}
 
-	if len(pruningPointProof.Headers) == 0 {
-		return nil
-	}
-
 	err = syncee.ApplyPruningPointProof(pruningPointProof)
 	if err != nil {
 		return err
