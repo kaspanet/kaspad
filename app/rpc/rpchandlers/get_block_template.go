@@ -16,7 +16,7 @@ func HandleGetBlockTemplate(context *rpccontext.Context, _ *router.Router, reque
 
 	payAddress, err := util.DecodeAddress(getBlockTemplateRequest.PayAddress, context.Config.ActiveNetParams.Prefix)
 	if err != nil {
-		errorMessage := &appmessage.GetBlockResponseMessage{}
+		errorMessage := &appmessage.GetBlockTemplateResponseMessage{}
 		errorMessage.Error = appmessage.RPCErrorf("Could not decode address: %s", err)
 		return errorMessage, nil
 	}
@@ -27,6 +27,11 @@ func HandleGetBlockTemplate(context *rpccontext.Context, _ *router.Router, reque
 	}
 
 	coinbaseData := &externalapi.DomainCoinbaseData{ScriptPublicKey: scriptPublicKey, ExtraData: []byte(version.Version() + "/" + getBlockTemplateRequest.ExtraData)}
+	if uint64(len(coinbaseData.ExtraData)) > context.Config.NetParams().MaxCoinbasePayloadLength {
+		errorMessage := &appmessage.GetBlockTemplateResponseMessage{}
+		errorMessage.Error = appmessage.RPCErrorf("Coinbase extra data \"%s\" is above max length (%d)", coinbaseData.ExtraData, context.Config.NetParams().MaxCoinbasePayloadLength)
+		return errorMessage, nil
+	}
 
 	templateBlock, err := context.Domain.MiningManager().GetBlockTemplate(coinbaseData)
 	if err != nil {
