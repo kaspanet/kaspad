@@ -38,20 +38,52 @@ func (x *KaspadMessage_GetBlockTemplateResponse) toAppMessage() (appmessage.Mess
 }
 
 func (x *KaspadMessage_GetBlockTemplateResponse) fromAppMessage(message *appmessage.GetBlockTemplateResponseMessage) error {
-	x.GetBlockTemplateResponse = &GetBlockTemplateResponseMessage{
-		Block:    &RpcBlock{},
-		IsSynced: message.IsSynced,
+	var err *RPCError
+	if message.Error != nil {
+		err = &RPCError{Message: message.Error.Message}
 	}
-	return x.GetBlockTemplateResponse.Block.fromAppMessage(message.Block)
+
+	var block *RpcBlock
+	if message.Block != nil {
+		protoBlock := &RpcBlock{}
+		err := protoBlock.fromAppMessage(message.Block)
+		if err != nil {
+			return err
+		}
+		block = protoBlock
+	}
+
+	x.GetBlockTemplateResponse = &GetBlockTemplateResponseMessage{
+		Block:    block,
+		IsSynced: message.IsSynced,
+		Error:    err,
+	}
+	return nil
 }
 
 func (x *GetBlockTemplateResponseMessage) toAppMessage() (appmessage.Message, error) {
 	if x == nil {
 		return nil, errors.Wrapf(errorNil, "GetBlockTemplateResponseMessage is nil")
 	}
-	msgBlock, err := x.Block.toAppMessage()
-	if err != nil {
-		return nil, err
+	var msgBlock *appmessage.RPCBlock
+	if x.Block != nil {
+		var err error
+		msgBlock, err = x.Block.toAppMessage()
+		if err != nil {
+			return nil, err
+		}
 	}
-	return appmessage.NewGetBlockTemplateResponseMessage(msgBlock, x.IsSynced), nil
+	var rpcError *appmessage.RPCError
+	if x.Error != nil {
+		var err error
+		rpcError, err = x.Error.toAppMessage()
+		if err != nil {
+			return nil, err
+		}
+	}
+	return &appmessage.GetBlockTemplateResponseMessage{
+		Block:    msgBlock,
+		IsSynced: x.IsSynced,
+		Error:    rpcError,
+	}, nil
 }
