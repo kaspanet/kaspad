@@ -11,6 +11,7 @@ func (d *domain) migrate() error {
 	if err != nil {
 		return err
 	}
+	log.Infof("Current pruning point: %s", pruningPoint)
 
 	if d.consensusConfig.Params.GenesisHash.Equal(pruningPoint) {
 		err = d.initStagingConsensus(d.consensusConfig)
