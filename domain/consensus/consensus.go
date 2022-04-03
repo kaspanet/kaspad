@@ -750,7 +750,25 @@ func (s *consensus) ResolveVirtual() (*externalapi.VirtualChangeSet, bool, error
 
 	// In order to prevent a situation that the consensus lock is held for too much time, we
 	// release the lock each time resolve 100 blocks.
-	return s.consensusStateManager.ResolveVirtual(100)
+	// Note: maxBlocksToResolve should be smaller than finality interval in order to avoid a situation
+	// where UpdatePruningPointByVirtual skips a pruning point.
+	virtualChangeSet, isCompletelyResolved, err := s.consensusStateManager.ResolveVirtual(100)
+	if err != nil {
+		return nil, false, err
+	}
+
+	stagingArea := model.NewStagingArea()
+	err = s.pruningManager.UpdatePruningPointByVirtual(stagingArea)
+	if err != nil {
+		return nil, false, err
+	}
+
+	err = staging.CommitAllChanges(s.databaseContext, stagingArea)
+	if err != nil {
+		return nil, false, err
+	}
+
+	return virtualChangeSet, isCompletelyResolved, nil
 }
 
 func (s *consensus) BuildPruningPointProof() (*externalapi.PruningPointProof, error) {

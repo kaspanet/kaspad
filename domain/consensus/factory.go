@@ -7,6 +7,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/processes/blockparentbuilder"
 	parentssanager "github.com/kaspanet/kaspad/domain/consensus/processes/parentsmanager"
 	"github.com/kaspanet/kaspad/domain/consensus/processes/pruningproofmanager"
+	"github.com/kaspanet/kaspad/util/staging"
 	"github.com/pkg/errors"
 	"io/ioutil"
 	"os"
@@ -519,6 +520,17 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 		return nil, false, err
 	}
 	err = pruningManager.UpdatePruningPointIfRequired()
+	if err != nil {
+		return nil, false, err
+	}
+
+	stagingArea := model.NewStagingArea()
+	err = pruningManager.UpdatePruningPointByVirtual(stagingArea)
+	if err != nil {
+		return nil, false, err
+	}
+
+	err = staging.CommitAllChanges(dbManager, stagingArea)
 	if err != nil {
 		return nil, false, err
 	}
