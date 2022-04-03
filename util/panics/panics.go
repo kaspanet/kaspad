@@ -77,8 +77,8 @@ func exit(log *logger.Logger, reason string, currentThreadStackTrace []byte, gor
 func handleSpawnedFunction(log *logger.Logger, stackTrace []byte, spawnedFunctionName string, spawnedFunction func()) {
 	goroutineID := atomic.AddUint64(&goroutineLastID, 1)
 	goroutineName := fmt.Sprintf("%s %d", spawnedFunctionName, goroutineID)
-	utilLog.Tracef("Started goroutine `%s`", goroutineName)
-	defer utilLog.Tracef("Ended goroutine `%s`", goroutineName)
+	utilLog.Debugf("Started goroutine `%s`", goroutineName)
+	defer utilLog.Debugf("Ended goroutine `%s`", goroutineName)
 	defer HandlePanic(log, goroutineName, stackTrace)
 	spawnedFunction()
 }

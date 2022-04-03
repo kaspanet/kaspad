@@ -109,12 +109,12 @@ func (v *blockValidator) checkParentBlockBodiesExist(
 			// This will usually happen during IBD when getting the blocks
 			// in the pruning point anticone.
 			if isInPastOfPruningPoint {
-				log.Tracef("Block %s parent %s is missing a body, but is in the past of the pruning point",
+				log.Debugf("Block %s parent %s is missing a body, but is in the past of the pruning point",
 					blockHash, parent)
 				continue
 			}
 
-			log.Tracef("Block %s parent %s is missing a body", blockHash, parent)
+			log.Debugf("Block %s parent %s is missing a body", blockHash, parent)
 
 			missingParentHashes = append(missingParentHashes, parent)
 		}

@@ -39,27 +39,27 @@ func New(databaseContext model.DBReader,
 }
 
 func (fm *finalityManager) VirtualFinalityPoint(stagingArea *model.StagingArea) (*externalapi.DomainHash, error) {
-	log.Tracef("virtualFinalityPoint start")
-	defer log.Tracef("virtualFinalityPoint end")
+	log.Debugf("virtualFinalityPoint start")
+	defer log.Debugf("virtualFinalityPoint end")
 
 	virtualFinalityPoint, err := fm.calculateFinalityPoint(stagingArea, model.VirtualBlockHash, false)
 	if err != nil {
 		return nil, err
 	}
-	log.Tracef("The current virtual finality block is: %s", virtualFinalityPoint)
+	log.Debugf("The current virtual finality block is: %s", virtualFinalityPoint)
 
 	return virtualFinalityPoint, nil
 }
 
 func (fm *finalityManager) FinalityPoint(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash, isBlockWithTrustedData bool) (*externalapi.DomainHash, error) {
-	log.Tracef("FinalityPoint start")
-	defer log.Tracef("FinalityPoint end")
+	log.Debugf("FinalityPoint start")
+	defer log.Debugf("FinalityPoint end")
 	if blockHash.Equal(model.VirtualBlockHash) {
 		return fm.VirtualFinalityPoint(stagingArea)
 	}
 	finalityPoint, err := fm.finalityStore.FinalityPoint(fm.databaseContext, stagingArea, blockHash)
 	if err != nil {
-		log.Tracef("%s finality point not found in store - calculating", blockHash)
+		log.Debugf("%s finality point not found in store - calculating", blockHash)
 		if errors.Is(err, database.ErrNotFound) {
 			return fm.calculateAndStageFinalityPoint(stagingArea, blockHash, isBlockWithTrustedData)
 		}
@@ -82,8 +82,8 @@ func (fm *finalityManager) calculateAndStageFinalityPoint(
 func (fm *finalityManager) calculateFinalityPoint(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash, isBlockWithTrustedData bool) (
 	*externalapi.DomainHash, error) {
 
-	log.Tracef("calculateFinalityPoint start")
-	defer log.Tracef("calculateFinalityPoint end")
+	log.Debugf("calculateFinalityPoint start")
+	defer log.Debugf("calculateFinalityPoint end")
 
 	if isBlockWithTrustedData {
 		return model.VirtualGenesisBlockHash, nil
@@ -95,7 +95,7 @@ func (fm *finalityManager) calculateFinalityPoint(stagingArea *model.StagingArea
 	}
 
 	if ghostdagData.BlueScore() < fm.finalityDepth {
-		log.Tracef("%s blue score lower then finality depth - returning genesis as finality point", blockHash)
+		log.Debugf("%s blue score lower then finality depth - returning genesis as finality point", blockHash)
 		return fm.genesisHash, nil
 	}
 
@@ -108,7 +108,7 @@ func (fm *finalityManager) calculateFinalityPoint(stagingArea *model.StagingArea
 		return nil, err
 	}
 	if ghostdagData.BlueScore() < pruningPointGhostdagData.BlueScore()+fm.finalityDepth {
-		log.Tracef("%s blue score less than finality distance over pruning point - returning virtual genesis as finality point", blockHash)
+		log.Debugf("%s blue score less than finality distance over pruning point - returning virtual genesis as finality point", blockHash)
 		return model.VirtualGenesisBlockHash, nil
 	}
 	isPruningPointOnChain, err := fm.dagTopologyManager.IsInSelectedParentChainOf(stagingArea, pruningPoint, blockHash)
@@ -116,7 +116,7 @@ func (fm *finalityManager) calculateFinalityPoint(stagingArea *model.StagingArea
 		return nil, err
 	}
 	if !isPruningPointOnChain {
-		log.Tracef("pruning point not in selected chain of %s - returning virtual genesis as finality point", blockHash)
+		log.Debugf("pruning point not in selected chain of %s - returning virtual genesis as finality point", blockHash)
 		return model.VirtualGenesisBlockHash, nil
 	}
 
@@ -136,7 +136,7 @@ func (fm *finalityManager) calculateFinalityPoint(stagingArea *model.StagingArea
 	}
 
 	requiredBlueScore := ghostdagData.BlueScore() - fm.finalityDepth
-	log.Tracef("%s's finality point is the one having the highest blue score lower then %d", blockHash, requiredBlueScore)
+	log.Debugf("%s's finality point is the one having the highest blue score lower then %d", blockHash, requiredBlueScore)
 
 	var next *externalapi.DomainHash
 	for {
@@ -149,7 +149,7 @@ func (fm *finalityManager) calculateFinalityPoint(stagingArea *model.StagingArea
 			return nil, err
 		}
 		if nextGHOSTDAGData.BlueScore() >= requiredBlueScore {
-			log.Tracef("%s's finality point is %s", blockHash, current)
+			log.Debugf("%s's finality point is %s", blockHash, current)
 			return current, nil
 		}
 

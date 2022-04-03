@@ -30,8 +30,8 @@ func (csm *consensusStateManager) ImportPruningPointUTXOSet(stagingArea *model.S
 }
 
 func (csm *consensusStateManager) importPruningPointUTXOSet(stagingArea *model.StagingArea, newPruningPoint *externalapi.DomainHash) error {
-	log.Tracef("importPruningPointUTXOSet start")
-	defer log.Tracef("importPruningPointUTXOSet end")
+	log.Debugf("importPruningPointUTXOSet start")
+	defer log.Debugf("importPruningPointUTXOSet end")
 
 	// TODO: We should validate the imported pruning point doesn't violate finality as part of the headers proof.
 
@@ -44,31 +44,31 @@ func (csm *consensusStateManager) importPruningPointUTXOSet(stagingArea *model.S
 	if err != nil {
 		return err
 	}
-	log.Tracef("The UTXO commitment of the pruning point: %s",
+	log.Debugf("The UTXO commitment of the pruning point: %s",
 		newPruningPointHeader.UTXOCommitment())
 
 	if !newPruningPointHeader.UTXOCommitment().Equal(importedPruningPointMultiset.Hash()) {
 		return errors.Wrapf(ruleerrors.ErrBadPruningPointUTXOSet, "the expected multiset hash of the pruning "+
 			"point UTXO set is %s but got %s", newPruningPointHeader.UTXOCommitment(), *importedPruningPointMultiset.Hash())
 	}
-	log.Tracef("The new pruning point UTXO commitment validation passed")
+	log.Debugf("The new pruning point UTXO commitment validation passed")
 
-	log.Tracef("Setting the pruning point as the only virtual parent")
+	log.Debugf("Setting the pruning point as the only virtual parent")
 	err = csm.dagTopologyManager.SetParents(stagingArea, model.VirtualBlockHash, []*externalapi.DomainHash{newPruningPoint})
 	if err != nil {
 		return err
 	}
 
-	log.Tracef("Calculating GHOSTDAG for the new virtual")
+	log.Debugf("Calculating GHOSTDAG for the new virtual")
 	err = csm.ghostdagManager.GHOSTDAG(stagingArea, model.VirtualBlockHash)
 	if err != nil {
 		return err
 	}
 
-	log.Tracef("Updating the new pruning point to be the new virtual diff parent with an empty diff")
+	log.Debugf("Updating the new pruning point to be the new virtual diff parent with an empty diff")
 	csm.stageDiff(stagingArea, newPruningPoint, utxo.NewUTXODiff(), nil)
 
-	log.Tracef("Populating the pruning point with UTXO entries")
+	log.Debugf("Populating the pruning point with UTXO entries")
 	importedPruningPointUTXOIterator, err := csm.pruningStore.ImportedPruningPointUTXOIterator(csm.databaseContext)
 	if err != nil {
 		return err
@@ -87,7 +87,7 @@ func (csm *consensusStateManager) importPruningPointUTXOSet(stagingArea *model.S
 
 	// Before we manually mark the new pruning point as valid, we validate that all of its transactions are valid
 	// against the provided UTXO set.
-	log.Tracef("Validating that the pruning point is UTXO valid")
+	log.Debugf("Validating that the pruning point is UTXO valid")
 	newPruningPointSelectedParentMedianTime, err := csm.pastMedianTimeManager.PastMedianTime(stagingArea, newPruningPoint)
 	if err != nil {
 		return err
@@ -113,10 +113,10 @@ func (csm *consensusStateManager) importPruningPointUTXOSet(stagingArea *model.S
 			"passed for transaction %s", transactionID)
 	}
 
-	log.Tracef("Staging the new pruning point as %s", externalapi.StatusUTXOValid)
+	log.Debugf("Staging the new pruning point as %s", externalapi.StatusUTXOValid)
 	csm.blockStatusStore.Stage(stagingArea, newPruningPoint, externalapi.StatusUTXOValid)
 
-	log.Tracef("Staging the new pruning point multiset")
+	log.Debugf("Staging the new pruning point multiset")
 	csm.multisetStore.Stage(stagingArea, newPruningPoint, importedPruningPointMultiset)
 
 	_, err = csm.difficultyManager.StageDAADataAndReturnRequiredDifficulty(stagingArea, model.VirtualBlockHash, false)
@@ -155,13 +155,13 @@ func (csm *consensusStateManager) applyImportedPruningPointUTXOSet(stagingArea *
 		return err
 	}
 
-	log.Tracef("Starting to import virtual UTXO set and pruning point utxo set")
+	log.Debugf("Starting to import virtual UTXO set and pruning point utxo set")
 	err = csm.consensusStateStore.StartImportingPruningPointUTXOSet(dbTx)
 	if err != nil {
 		return err
 	}
 
-	log.Tracef("Committing all staged data for imported pruning point")
+	log.Debugf("Committing all staged data for imported pruning point")
 	err = dbTx.Commit()
 	if err != nil {
 		return err
@@ -174,20 +174,20 @@ func (csm *consensusStateManager) importVirtualUTXOSetAndPruningPointUTXOSet(pru
 	onEnd := logger.LogAndMeasureExecutionTime(log, "importVirtualUTXOSetAndPruningPointUTXOSet")
 	defer onEnd()
 
-	log.Tracef("Getting an iterator into the imported pruning point utxo set")
+	log.Debugf("Getting an iterator into the imported pruning point utxo set")
 	pruningPointUTXOSetIterator, err := csm.pruningStore.ImportedPruningPointUTXOIterator(csm.databaseContext)
 	if err != nil {
 		return err
 	}
 	defer pruningPointUTXOSetIterator.Close()
 
-	log.Tracef("Importing the virtual UTXO set")
+	log.Debugf("Importing the virtual UTXO set")
 	err = csm.consensusStateStore.ImportPruningPointUTXOSetIntoVirtualUTXOSet(csm.databaseContext, pruningPointUTXOSetIterator)
 	if err != nil {
 		return err
 	}
 
-	log.Tracef("Importing the new pruning point UTXO set")
+	log.Debugf("Importing the new pruning point UTXO set")
 	err = csm.pruningStore.CommitImportedPruningPointUTXOSet(csm.databaseContext)
 	if err != nil {
 		return err
@@ -205,7 +205,7 @@ func (csm *consensusStateManager) importVirtualUTXOSetAndPruningPointUTXOSet(pru
 		return err
 	}
 
-	log.Tracef("Finishing to import virtual UTXO set and pruning point UTXO set")
+	log.Debugf("Finishing to import virtual UTXO set and pruning point UTXO set")
 	return csm.consensusStateStore.FinishImportingPruningPointUTXOSet(csm.databaseContext)
 }
 

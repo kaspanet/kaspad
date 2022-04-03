@@ -18,7 +18,7 @@ func (csm *consensusStateManager) ReverseUTXODiffs(tipHash *externalapi.DomainHa
 
 	readStagingArea := model.NewStagingArea()
 
-	log.Tracef("Reversing utxoDiffs")
+	log.Debugf("Reversing utxoDiffs")
 
 	// Set previousUTXODiff and previousBlock to tip.SelectedParent before we start touching them,
 	// since previousBlock's UTXODiff is going to be over-written in the next step
@@ -45,7 +45,7 @@ func (csm *consensusStateManager) ReverseUTXODiffs(tipHash *externalapi.DomainHa
 	// Now go over the rest of the blocks and assign for every block Bi.UTXODiff = Bi+1.UTXODiff.Reversed()
 	for i := 1; ; i++ {
 		currentBlock := previousBlockGHOSTDAGData.SelectedParent()
-		log.Tracef("Reversing UTXO diff for %s", currentBlock)
+		log.Debugf("Reversing UTXO diff for %s", currentBlock)
 
 		currentBlockUTXODiffChild, err := csm.utxoDiffStore.UTXODiffChild(csm.databaseContext, readStagingArea, currentBlock)
 		if err != nil {
@@ -58,7 +58,7 @@ func (csm *consensusStateManager) ReverseUTXODiffs(tipHash *externalapi.DomainHa
 
 		// We stop reversing when current's UTXODiffChild is not current's SelectedParent
 		if !currentBlockGHOSTDAGData.SelectedParent().Equal(currentBlockUTXODiffChild) {
-			log.Tracef("Block %s's UTXODiffChild is not it's selected parent - finish reversing", currentBlock)
+			log.Debugf("Block %s's UTXODiffChild is not it's selected parent - finish reversing", currentBlock)
 			break
 		}
 

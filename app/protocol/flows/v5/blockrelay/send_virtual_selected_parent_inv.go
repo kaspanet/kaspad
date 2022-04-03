@@ -24,11 +24,11 @@ func SendVirtualSelectedParentInv(context SendVirtualSelectedParentInvContext,
 	}
 
 	if virtualSelectedParent.Equal(context.Config().NetParams().GenesisHash) {
-		log.Tracef("Skipping sending the virtual selected parent hash to peer %s because it's the genesis", peer)
+		log.Debugf("Skipping sending the virtual selected parent hash to peer %s because it's the genesis", peer)
 		return nil
 	}
 
-	log.Tracef("Sending virtual selected parent hash %s to peer %s", virtualSelectedParent, peer)
+	log.Debugf("Sending virtual selected parent hash %s to peer %s", virtualSelectedParent, peer)
 
 	virtualSelectedParentInv := appmessage.NewMsgInvBlock(virtualSelectedParent)
 	return outgoingRoute.Enqueue(virtualSelectedParentInv)

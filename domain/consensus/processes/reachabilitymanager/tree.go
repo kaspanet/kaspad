@@ -314,7 +314,7 @@ func (rt *reachabilityManager) addChild(stagingArea *model.StagingArea, node, ch
 		}
 
 		reindexTimeElapsed := time.Since(reindexStartTime)
-		log.Tracef("Reachability reindex triggered for "+
+		log.Debugf("Reachability reindex triggered for "+
 			"block %s. Took %dms.",
 			node, reindexTimeElapsed.Milliseconds())
 
@@ -352,7 +352,7 @@ func (rt *reachabilityManager) updateReindexRoot(stagingArea *model.StagingArea,
 	rc := newReindexContext(rt)
 
 	if !newReindexRoot.Equal(reindexRootAncestor) {
-		log.Tracef("Concentrating the intervals towards the new reindex root")
+		log.Debugf("Concentrating the intervals towards the new reindex root")
 		// Iterate from reindexRootAncestor towards newReindexRoot
 		for {
 			chosenChild, err := rt.FindNextAncestor(stagingArea, selectedTip, reindexRootAncestor)
@@ -375,12 +375,12 @@ func (rt *reachabilityManager) updateReindexRoot(stagingArea *model.StagingArea,
 			reindexRootAncestor = chosenChild
 		}
 	} else {
-		log.Tracef("newReindexRoot is the same as reindexRootAncestor. Skipping concentration...")
+		log.Debugf("newReindexRoot is the same as reindexRootAncestor. Skipping concentration...")
 	}
 
 	// Update reindex root data store
 	rt.stageReindexRoot(stagingArea, newReindexRoot)
-	log.Tracef("Updated the reindex root to %s", newReindexRoot)
+	log.Debugf("Updated the reindex root to %s", newReindexRoot)
 	return nil
 }
 

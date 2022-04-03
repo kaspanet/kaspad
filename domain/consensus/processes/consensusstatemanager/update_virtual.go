@@ -12,9 +12,9 @@ func (csm *consensusStateManager) updateVirtual(stagingArea *model.StagingArea, 
 	onEnd := logger.LogAndMeasureExecutionTime(log, "updateVirtual")
 	defer onEnd()
 
-	log.Tracef("updateVirtual start for block %s", newBlockHash)
+	log.Debugf("updateVirtual start for block %s", newBlockHash)
 
-	log.Tracef("Saving a reference to the GHOSTDAG data of the old virtual")
+	log.Debugf("Saving a reference to the GHOSTDAG data of the old virtual")
 	var oldVirtualSelectedParent *externalapi.DomainHash
 	if !newBlockHash.Equal(csm.genesisHash) {
 		oldVirtualGHOSTDAGData, err := csm.ghostdagDataStore.Get(csm.databaseContext, stagingArea, model.VirtualBlockHash, false)
@@ -24,19 +24,19 @@ func (csm *consensusStateManager) updateVirtual(stagingArea *model.StagingArea, 
 		oldVirtualSelectedParent = oldVirtualGHOSTDAGData.SelectedParent()
 	}
 
-	log.Tracef("Picking virtual parents from tips len: %d", len(tips))
+	log.Debugf("Picking virtual parents from tips len: %d", len(tips))
 	virtualParents, err := csm.pickVirtualParents(stagingArea, tips)
 	if err != nil {
 		return nil, nil, err
 	}
-	log.Tracef("Picked virtual parents: %s", virtualParents)
+	log.Debugf("Picked virtual parents: %s", virtualParents)
 
 	virtualUTXODiff, err := csm.updateVirtualWithParents(stagingArea, virtualParents)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	log.Tracef("Calculating selected parent chain changes")
+	log.Debugf("Calculating selected parent chain changes")
 	var selectedParentChainChanges *externalapi.SelectedChainPath
 	if !newBlockHash.Equal(csm.genesisHash) {
 		newVirtualGHOSTDAGData, err := csm.ghostdagDataStore.Get(csm.databaseContext, stagingArea, model.VirtualBlockHash, false)
@@ -49,7 +49,7 @@ func (csm *consensusStateManager) updateVirtual(stagingArea *model.StagingArea, 
 		if err != nil {
 			return nil, nil, err
 		}
-		log.Tracef("Selected parent chain changes: %d blocks were removed and %d blocks were added",
+		log.Debugf("Selected parent chain changes: %d blocks were removed and %d blocks were added",
 			len(selectedParentChainChanges.Removed), len(selectedParentChainChanges.Added))
 	}
 
@@ -62,7 +62,7 @@ func (csm *consensusStateManager) updateVirtualWithParents(
 	if err != nil {
 		return nil, err
 	}
-	log.Tracef("Set new parents for the virtual block hash")
+	log.Debugf("Set new parents for the virtual block hash")
 
 	err = csm.ghostdagManager.GHOSTDAG(stagingArea, model.VirtualBlockHash)
 	if err != nil {
@@ -75,27 +75,27 @@ func (csm *consensusStateManager) updateVirtualWithParents(
 		return nil, err
 	}
 
-	log.Tracef("Calculating past UTXO, acceptance data, and multiset for the new virtual block")
+	log.Debugf("Calculating past UTXO, acceptance data, and multiset for the new virtual block")
 	virtualUTXODiff, virtualAcceptanceData, virtualMultiset, err :=
 		csm.CalculatePastUTXOAndAcceptanceData(stagingArea, model.VirtualBlockHash)
 	if err != nil {
 		return nil, err
 	}
 
-	log.Tracef("Calculated the past UTXO of the new virtual. "+
+	log.Debugf("Calculated the past UTXO of the new virtual. "+
 		"Diff toAdd length: %d, toRemove length: %d",
 		virtualUTXODiff.ToAdd().Len(), virtualUTXODiff.ToRemove().Len())
 
-	log.Tracef("Staging new acceptance data for the virtual block")
+	log.Debugf("Staging new acceptance data for the virtual block")
 	csm.acceptanceDataStore.Stage(stagingArea, model.VirtualBlockHash, virtualAcceptanceData)
 
-	log.Tracef("Staging new multiset for the virtual block")
+	log.Debugf("Staging new multiset for the virtual block")
 	csm.multisetStore.Stage(stagingArea, model.VirtualBlockHash, virtualMultiset)
 
-	log.Tracef("Staging new UTXO diff for the virtual block")
+	log.Debugf("Staging new UTXO diff for the virtual block")
 	csm.consensusStateStore.StageVirtualUTXODiff(stagingArea, virtualUTXODiff)
 
-	log.Tracef("Updating the selected tip's utxo-diff")
+	log.Debugf("Updating the selected tip's utxo-diff")
 	err = csm.updateSelectedTipUTXODiff(stagingArea, virtualUTXODiff)
 	if err != nil {
 		return nil, err
@@ -115,7 +115,7 @@ func (csm *consensusStateManager) updateSelectedTipUTXODiff(
 		return err
 	}
 
-	log.Tracef("Calculating new UTXO diff for virtual diff parent %s", selectedTip)
+	log.Debugf("Calculating new UTXO diff for virtual diff parent %s", selectedTip)
 	selectedTipUTXODiff, err := csm.utxoDiffStore.UTXODiff(csm.databaseContext, stagingArea, selectedTip)
 	if err != nil {
 		return err
@@ -125,7 +125,7 @@ func (csm *consensusStateManager) updateSelectedTipUTXODiff(
 		return err
 	}
 
-	log.Tracef("Staging new UTXO diff for virtual diff parent %s", selectedTip)
+	log.Debugf("Staging new UTXO diff for virtual diff parent %s", selectedTip)
 	csm.stageDiff(stagingArea, selectedTip, newDiff, nil)
 
 	return nil

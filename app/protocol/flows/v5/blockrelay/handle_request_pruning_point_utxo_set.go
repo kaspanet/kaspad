@@ -56,7 +56,7 @@ func (flow *handleRequestPruningPointUTXOSetFlow) handleRequestPruningPointUTXOS
 	onEnd := logger.LogAndMeasureExecutionTime(log, "handleRequestPruningPointUTXOSetFlow")
 	defer onEnd()
 
-	log.Tracef("Got request for pruning point UTXO set")
+	log.Debugf("Got request for pruning point UTXO set")
 
 	return flow.sendPruningPointUTXOSet(msgRequestPruningPointUTXOSet)
 }
@@ -93,7 +93,7 @@ func (flow *handleRequestPruningPointUTXOSetFlow) sendPruningPointUTXOSet(
 			}
 		}
 
-		log.Tracef("Retrieved %d UTXOs for pruning block %s",
+		log.Debugf("Retrieved %d UTXOs for pruning block %s",
 			len(pruningPointUTXOs), msgRequestPruningPointUTXOSet.PruningPointHash)
 
 		outpointAndUTXOEntryPairs :=
@@ -105,7 +105,7 @@ func (flow *handleRequestPruningPointUTXOSetFlow) sendPruningPointUTXOSet(
 
 		finished := len(pruningPointUTXOs) < step
 		if finished && chunksSent%ibdBatchSize != 0 {
-			log.Tracef("Finished sending UTXOs for pruning block %s",
+			log.Debugf("Finished sending UTXOs for pruning block %s",
 				msgRequestPruningPointUTXOSet.PruningPointHash)
 
 			return flow.outgoingRoute.Enqueue(appmessage.NewMsgDonePruningPointUTXOSetChunks())
@@ -130,7 +130,7 @@ func (flow *handleRequestPruningPointUTXOSetFlow) sendPruningPointUTXOSet(
 			}
 
 			if finished {
-				log.Tracef("Finished sending UTXOs for pruning block %s",
+				log.Debugf("Finished sending UTXOs for pruning block %s",
 					msgRequestPruningPointUTXOSet.PruningPointHash)
 
 				return flow.outgoingRoute.Enqueue(appmessage.NewMsgDonePruningPointUTXOSetChunks())

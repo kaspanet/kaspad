@@ -69,7 +69,7 @@ func (c *gRPCConnection) Start(router *router.Router) {
 			if isStatus {
 				switch status.Code() {
 				case codes.Canceled:
-					log.Tracef("connectionLoop canceled connection for %s: %s", c.address, err)
+					log.Debugf("connectionLoop canceled connection for %s: %s", c.address, err)
 				default:
 					log.Errorf("status error from connectionLoops for %s: %s", c.address, err)
 				}
@@ -114,10 +114,10 @@ func (c *gRPCConnection) Disconnect() {
 
 	if c.IsOutbound() {
 		c.closeSend()
-		log.Tracef("Disconnected from %s", c)
+		log.Debugf("Disconnected from %s", c)
 	}
 
-	log.Tracef("Disconnecting from %s", c)
+	log.Debugf("Disconnecting from %s", c)
 	if c.onDisconnectedHandler != nil {
 		c.onDisconnectedHandler()
 	}

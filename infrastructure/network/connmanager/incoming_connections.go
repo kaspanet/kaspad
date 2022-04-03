@@ -8,12 +8,12 @@ func (c *ConnectionManager) checkIncomingConnections(incomingConnectionSet conne
 	}
 
 	numConnectionsOverMax := len(incomingConnectionSet) - c.maxIncoming
-	log.Tracef("Got %d incoming connections while only %d are allowed. Disconnecting "+
+	log.Debugf("Got %d incoming connections while only %d are allowed. Disconnecting "+
 		"%d", len(incomingConnectionSet), c.maxIncoming, numConnectionsOverMax)
 
 	// randomly disconnect nodes until the number of incoming connections is smaller than maxIncoming
 	for _, connection := range incomingConnectionSet {
-		log.Tracef("Disconnecting %s due to exceeding incoming connections", connection)
+		log.Debugf("Disconnecting %s due to exceeding incoming connections", connection)
 		connection.Disconnect()
 
 		numConnectionsOverMax--

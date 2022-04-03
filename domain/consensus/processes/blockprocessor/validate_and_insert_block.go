@@ -41,7 +41,7 @@ func (bp *blockProcessor) setBlockStatusAfterBlockValidation(
 				return errors.Errorf("block %s that is not the pruning point is not expected to be valid "+
 					"before adding to to the consensus state manager", blockHash)
 			}
-			log.Tracef("Block %s is the pruning point and has status %s, so leaving its status untouched",
+			log.Debugf("Block %s is the pruning point and has status %s, so leaving its status untouched",
 				blockHash, status)
 			return nil
 		}
@@ -49,11 +49,11 @@ func (bp *blockProcessor) setBlockStatusAfterBlockValidation(
 
 	isHeaderOnlyBlock := isHeaderOnlyBlock(block)
 	if isHeaderOnlyBlock {
-		log.Tracef("Block %s is a header-only block so setting its status as %s",
+		log.Debugf("Block %s is a header-only block so setting its status as %s",
 			blockHash, externalapi.StatusHeaderOnly)
 		bp.blockStatusStore.Stage(stagingArea, blockHash, externalapi.StatusHeaderOnly)
 	} else {
-		log.Tracef("Block %s has body so setting its status as %s",
+		log.Debugf("Block %s has body so setting its status as %s",
 			blockHash, externalapi.StatusUTXOPendingVerification)
 		bp.blockStatusStore.Stage(stagingArea, blockHash, externalapi.StatusUTXOPendingVerification)
 	}
@@ -68,10 +68,10 @@ func (bp *blockProcessor) updateVirtualAcceptanceDataAfterImportingPruningPoint(
 		return err
 	}
 
-	log.Tracef("Staging virtual acceptance data after importing the pruning point")
+	log.Debugf("Staging virtual acceptance data after importing the pruning point")
 	bp.acceptanceDataStore.Stage(stagingArea, model.VirtualBlockHash, virtualAcceptanceData)
 
-	log.Tracef("Staging virtual multiset after importing the pruning point")
+	log.Debugf("Staging virtual multiset after importing the pruning point")
 	bp.multisetStore.Stage(stagingArea, model.VirtualBlockHash, virtualMultiset)
 	return nil
 }
@@ -174,13 +174,13 @@ func (bp *blockProcessor) validateAndInsertBlock(stagingArea *model.StagingArea,
 		return nil, err
 	}
 
-	log.Trace(logger.NewLogClosure(func() string {
+	log.Debug(logger.NewLogClosure(func() string {
 		hashrate := difficulty.GetHashrateString(difficulty.CompactToBig(block.Header.Bits()), bp.targetTimePerBlock)
 		return fmt.Sprintf("Block %s validated and inserted, network hashrate: %s", blockHash, hashrate)
 	}))
 
 	var logClosureErr error
-	log.Trace(logger.NewLogClosure(func() string {
+	log.Debug(logger.NewLogClosure(func() string {
 		virtualGhostDAGData, err := bp.ghostdagDataStore.Get(bp.databaseContext, stagingArea, model.VirtualBlockHash, false)
 		if database.IsNotFoundError(err) {
 			return fmt.Sprintf("Cannot log data for non-existent virtual")
@@ -307,7 +307,7 @@ func (bp *blockProcessor) validatePreProofOfWork(stagingArea *model.StagingArea,
 	}
 
 	if hasValidatedHeader {
-		log.Tracef("Block %s header was already validated, so skip the rest of validatePreProofOfWork", blockHash)
+		log.Debugf("Block %s header was already validated, so skip the rest of validatePreProofOfWork", blockHash)
 		return nil
 	}
 
@@ -348,7 +348,7 @@ func (bp *blockProcessor) validatePostProofOfWork(stagingArea *model.StagingArea
 			return err
 		}
 	} else {
-		log.Tracef("Skipping ValidateBodyInContext for block %s because it's header only", blockHash)
+		log.Debugf("Skipping ValidateBodyInContext for block %s because it's header only", blockHash)
 	}
 
 	return nil

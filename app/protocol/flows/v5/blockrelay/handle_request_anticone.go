@@ -42,8 +42,8 @@ func (flow *handleRequestAnticoneFlow) start() error {
 		if err != nil {
 			return err
 		}
-		log.Tracef("Received requestAnticone with blockHash: %s, contextHash: %s", blockHash, contextHash)
-		log.Tracef("Getting past(%s) cap anticone(%s) for peer %s", contextHash, blockHash, flow.peer)
+		log.Debugf("Received requestAnticone with blockHash: %s, contextHash: %s", blockHash, contextHash)
+		log.Debugf("Getting past(%s) cap anticone(%s) for peer %s", contextHash, blockHash, flow.peer)
 
 		// GetAnticone is expected to be called by the syncee for getting the anticone of the header selected tip
 		// intersected by past of relayed block, and is thus expected to be bounded by mergeset limit since
@@ -53,7 +53,7 @@ func (flow *handleRequestAnticoneFlow) start() error {
 		if err != nil {
 			return protocolerrors.Wrap(true, err, "Failed querying anticone")
 		}
-		log.Tracef("Got %d header hashes in past(%s) cap anticone(%s)", len(blockHashes), contextHash, blockHash)
+		log.Debugf("Got %d header hashes in past(%s) cap anticone(%s)", len(blockHashes), contextHash, blockHash)
 
 		blockHeaders := make([]*appmessage.MsgBlockHeader, len(blockHashes))
 		for i, blockHash := range blockHashes {

@@ -18,10 +18,10 @@ func (csm *consensusStateManager) CalculatePastUTXOAndAcceptanceData(stagingArea
 	onEnd := logger.LogAndMeasureExecutionTime(log, "CalculatePastUTXOAndAcceptanceData")
 	defer onEnd()
 
-	log.Tracef("CalculatePastUTXOAndAcceptanceData start for block %s", blockHash)
+	log.Debugf("CalculatePastUTXOAndAcceptanceData start for block %s", blockHash)
 
 	if blockHash.Equal(csm.genesisHash) {
-		log.Tracef("Block %s is the genesis. By definition, "+
+		log.Debugf("Block %s is the genesis. By definition, "+
 			"it has a predefined UTXO diff, empty acceptance data, and a predefined multiset", blockHash)
 		multiset, err := csm.multisetStore.Get(csm.databaseContext, stagingArea, blockHash)
 		if err != nil {
@@ -39,14 +39,14 @@ func (csm *consensusStateManager) CalculatePastUTXOAndAcceptanceData(stagingArea
 		return nil, nil, nil, err
 	}
 
-	log.Tracef("Restoring the past UTXO of block %s with selectedParent %s",
+	log.Debugf("Restoring the past UTXO of block %s with selectedParent %s",
 		blockHash, blockGHOSTDAGData.SelectedParent())
 	selectedParentPastUTXO, err := csm.restorePastUTXO(stagingArea, blockGHOSTDAGData.SelectedParent())
 	if err != nil {
 		return nil, nil, nil, err
 	}
 
-	log.Tracef("Restored the past UTXO of block %s with selectedParent %s. "+
+	log.Debugf("Restored the past UTXO of block %s with selectedParent %s. "+
 		"Diff toAdd length: %d, toRemove length: %d", blockHash, blockGHOSTDAGData.SelectedParent(),
 		selectedParentPastUTXO.ToAdd().Len(), selectedParentPastUTXO.ToRemove().Len())
 
@@ -67,18 +67,18 @@ func (csm *consensusStateManager) calculatePastUTXOAndAcceptanceDataWithSelected
 		return nil, nil, nil, err
 	}
 
-	log.Tracef("Applying blue blocks to the selected parent past UTXO of block %s", blockHash)
+	log.Debugf("Applying blue blocks to the selected parent past UTXO of block %s", blockHash)
 	acceptanceData, utxoDiff, err := csm.applyMergeSetBlocks(stagingArea, blockHash, selectedParentPastUTXO, daaScore)
 	if err != nil {
 		return nil, nil, nil, err
 	}
 
-	log.Tracef("Calculating the multiset of %s", blockHash)
+	log.Debugf("Calculating the multiset of %s", blockHash)
 	multiset, err := csm.calculateMultiset(stagingArea, blockHash, acceptanceData, blockGHOSTDAGData, daaScore)
 	if err != nil {
 		return nil, nil, nil, err
 	}
-	log.Tracef("The multiset of block %s resolved to: %s", blockHash, multiset.Hash())
+	log.Debugf("The multiset of block %s resolved to: %s", blockHash, multiset.Hash())
 
 	return utxoDiff.ToImmutable(), acceptanceData, multiset, nil
 }
@@ -89,21 +89,21 @@ func (csm *consensusStateManager) restorePastUTXO(
 	onEnd := logger.LogAndMeasureExecutionTime(log, "restorePastUTXO")
 	defer onEnd()
 
-	log.Tracef("restorePastUTXO start for block %s", blockHash)
+	log.Debugf("restorePastUTXO start for block %s", blockHash)
 
 	var err error
 
-	log.Tracef("Collecting UTXO diffs for block %s", blockHash)
+	log.Debugf("Collecting UTXO diffs for block %s", blockHash)
 	var utxoDiffs []externalapi.UTXODiff
 	nextBlockHash := blockHash
 	for {
-		log.Tracef("Collecting UTXO diff for block %s", nextBlockHash)
+		log.Debugf("Collecting UTXO diff for block %s", nextBlockHash)
 		utxoDiff, err := csm.utxoDiffStore.UTXODiff(csm.databaseContext, stagingArea, nextBlockHash)
 		if err != nil {
 			return nil, err
 		}
 		utxoDiffs = append(utxoDiffs, utxoDiff)
-		log.Tracef("Collected UTXO diff for block %s: toAdd: %d, toRemove: %d",
+		log.Debugf("Collected UTXO diff for block %s: toAdd: %d, toRemove: %d",
 			nextBlockHash, utxoDiff.ToAdd().Len(), utxoDiff.ToRemove().Len())
 
 		exists, err := csm.utxoDiffStore.HasUTXODiffChild(csm.databaseContext, stagingArea, nextBlockHash)
@@ -111,7 +111,7 @@ func (csm *consensusStateManager) restorePastUTXO(
 			return nil, err
 		}
 		if !exists {
-			log.Tracef("Block %s does not have a UTXO diff child, "+
+			log.Debugf("Block %s does not have a UTXO diff child, "+
 				"meaning we reached the virtual", nextBlockHash)
 			break
 		}
@@ -121,14 +121,14 @@ func (csm *consensusStateManager) restorePastUTXO(
 			return nil, err
 		}
 		if nextBlockHash == nil {
-			log.Tracef("Block %s does not have a UTXO diff child, "+
+			log.Debugf("Block %s does not have a UTXO diff child, "+
 				"meaning we reached the virtual", nextBlockHash)
 			break
 		}
 	}
 
 	// apply the diffs in reverse order
-	log.Tracef("Applying the collected UTXO diffs for block %s in reverse order", blockHash)
+	log.Debugf("Applying the collected UTXO diffs for block %s in reverse order", blockHash)
 	accumulatedDiff := utxo.NewMutableUTXODiff()
 	for i := len(utxoDiffs) - 1; i >= 0; i-- {
 		err = accumulatedDiff.WithDiffInPlace(utxoDiffs[i])
@@ -145,14 +145,14 @@ func (csm *consensusStateManager) applyMergeSetBlocks(stagingArea *model.Staging
 	selectedParentPastUTXODiff externalapi.UTXODiff, daaScore uint64) (
 	externalapi.AcceptanceData, externalapi.MutableUTXODiff, error) {
 
-	log.Tracef("applyMergeSetBlocks start for block %s", blockHash)
-	defer log.Tracef("applyMergeSetBlocks end for block %s", blockHash)
+	log.Debugf("applyMergeSetBlocks start for block %s", blockHash)
+	defer log.Debugf("applyMergeSetBlocks end for block %s", blockHash)
 
 	mergeSetHashes, err := csm.ghostdagManager.GetSortedMergeSet(stagingArea, blockHash)
 	if err != nil {
 		return nil, nil, err
 	}
-	log.Tracef("Merge set for block %s is %v", blockHash, mergeSetHashes)
+	log.Debugf("Merge set for block %s is %v", blockHash, mergeSetHashes)
 	mergeSetBlocks, err := csm.blockStore.Blocks(csm.databaseContext, stagingArea, mergeSetHashes)
 	if err != nil {
 		return nil, nil, err
@@ -286,7 +286,7 @@ func (csm *consensusStateManager) RestorePastUTXOSetIterator(stagingArea *model.
 	log.Tracef("RestorePastUTXOSetIterator start for block %s", blockHash)
 	defer log.Tracef("RestorePastUTXOSetIterator end for block %s", blockHash)
 
-	log.Tracef("Calculating UTXO diff for block %s", blockHash)
+	log.Debugf("Calculating UTXO diff for block %s", blockHash)
 	blockDiff, err := csm.restorePastUTXO(stagingArea, blockHash)
 	if err != nil {
 		return nil, err

@@ -36,12 +36,12 @@ func (flow *handleRequestBlockLocatorFlow) start() error {
 		if err != nil {
 			return err
 		}
-		log.Tracef("Received getBlockLocator with highHash: %s, limit: %d", highHash, limit)
+		log.Debugf("Received getBlockLocator with highHash: %s, limit: %d", highHash, limit)
 
 		locator, err := flow.Domain().Consensus().CreateBlockLocatorFromPruningPoint(highHash, limit)
 		if err != nil || len(locator) == 0 {
 			if err != nil {
-				log.Tracef("Received error from CreateBlockLocatorFromPruningPoint: %s", err)
+				log.Debugf("Received error from CreateBlockLocatorFromPruningPoint: %s", err)
 			}
 			return protocolerrors.Errorf(true, "couldn't build a block "+
 				"locator between the pruning point and %s", highHash)

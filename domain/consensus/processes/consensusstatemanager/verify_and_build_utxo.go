@@ -19,33 +19,33 @@ func (csm *consensusStateManager) verifyUTXO(stagingArea *model.StagingArea, blo
 	blockHash *externalapi.DomainHash, pastUTXODiff externalapi.UTXODiff, acceptanceData externalapi.AcceptanceData,
 	multiset model.Multiset) error {
 
-	log.Tracef("verifyUTXO start for block %s", blockHash)
-	defer log.Tracef("verifyUTXO end for block %s", blockHash)
+	log.Debugf("verifyUTXO start for block %s", blockHash)
+	defer log.Debugf("verifyUTXO end for block %s", blockHash)
 
-	log.Tracef("Validating UTXO commitment for block %s", blockHash)
+	log.Debugf("Validating UTXO commitment for block %s", blockHash)
 	err := csm.validateUTXOCommitment(block, blockHash, multiset)
 	if err != nil {
 		return err
 	}
-	log.Tracef("UTXO commitment validation passed for block %s", blockHash)
+	log.Debugf("UTXO commitment validation passed for block %s", blockHash)
 
-	log.Tracef("Validating acceptedIDMerkleRoot for block %s", blockHash)
+	log.Debugf("Validating acceptedIDMerkleRoot for block %s", blockHash)
 	err = csm.validateAcceptedIDMerkleRoot(block, blockHash, acceptanceData)
 	if err != nil {
 		return err
 	}
-	log.Tracef("AcceptedIDMerkleRoot validation passed for block %s", blockHash)
+	log.Debugf("AcceptedIDMerkleRoot validation passed for block %s", blockHash)
 
 	coinbaseTransaction := block.Transactions[0]
-	log.Tracef("Validating coinbase transaction %s for block %s",
+	log.Debugf("Validating coinbase transaction %s for block %s",
 		consensushashing.TransactionID(coinbaseTransaction), blockHash)
 	err = csm.validateCoinbaseTransaction(stagingArea, blockHash, coinbaseTransaction)
 	if err != nil {
 		return err
 	}
-	log.Tracef("Coinbase transaction validation passed for block %s", blockHash)
+	log.Debugf("Coinbase transaction validation passed for block %s", blockHash)
 
-	log.Tracef("Validating transactions against past UTXO for block %s", blockHash)
+	log.Debugf("Validating transactions against past UTXO for block %s", blockHash)
 	err = csm.validateBlockTransactionsAgainstPastUTXO(stagingArea, block, pastUTXODiff)
 	if err != nil {
 		return err
