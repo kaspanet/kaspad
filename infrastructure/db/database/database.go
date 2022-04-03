@@ -14,6 +14,9 @@ type Database interface {
 	// Begin begins a new database transaction.
 	Begin() (Transaction, error)
 
+	// Compact compacts the database instance.
+	Compact() error
+
 	// Close closes the database.
 	Close() error
 }

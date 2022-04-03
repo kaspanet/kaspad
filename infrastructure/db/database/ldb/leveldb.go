@@ -6,6 +6,7 @@ import (
 	"github.com/syndtr/goleveldb/leveldb"
 	ldbErrors "github.com/syndtr/goleveldb/leveldb/errors"
 	"github.com/syndtr/goleveldb/leveldb/opt"
+	"github.com/syndtr/goleveldb/leveldb/util"
 )
 
 // LevelDB defines a thin wrapper around leveldb.
@@ -45,6 +46,12 @@ func NewLevelDB(path string, cacheSizeMiB int) (*LevelDB, error) {
 		ldb: ldb,
 	}
 	return db, nil
+}
+
+// Compact compacts the leveldb instance.
+func (db *LevelDB) Compact() error {
+	err := db.ldb.CompactRange(util.Range{Start: nil, Limit: nil})
+	return errors.WithStack(err)
 }
 
 // Close closes the leveldb instance.
