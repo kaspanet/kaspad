@@ -20,7 +20,7 @@ func LogAndMeasureExecutionTime(log *Logger, functionName string) (onEnd func())
 
 // LogMemoryStats logs memory stats for `functionName`
 func LogMemoryStats(log *Logger, functionName string) {
-	log.Trace(NewLogClosure(func() string {
+	log.Debug(NewLogClosure(func() string {
 		stats := runtime.MemStats{}
 		runtime.ReadMemStats(&stats)
 		return fmt.Sprintf("%s: used memory: %d bytes, total: %d bytes", functionName,
