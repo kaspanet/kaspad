@@ -153,7 +153,7 @@ func (pm *pruningManager) UpdatePruningPointByVirtual(stagingArea *model.Staging
 	}
 
 	if !newCandidate.Equal(currentCandidate) {
-		log.Debugf("Staged a new pruning candidate, old: %s, new: %s", currentCandidate, newCandidate)
+		log.Tracef("Staged a new pruning candidate, old: %s, new: %s", currentCandidate, newCandidate)
 		pm.pruningStore.StagePruningPointCandidate(stagingArea, newCandidate)
 	}
 
@@ -163,7 +163,7 @@ func (pm *pruningManager) UpdatePruningPointByVirtual(stagingArea *model.Staging
 	}
 
 	if !newPruningPoint.Equal(currentPruningPoint) {
-		log.Debugf("Moving pruning point from %s to %s", currentPruningPoint, newPruningPoint)
+		log.Tracef("Moving pruning point from %s to %s", currentPruningPoint, newPruningPoint)
 		err = pm.savePruningPoint(stagingArea, newPruningPoint)
 		if err != nil {
 			return err
@@ -667,7 +667,7 @@ func (pm *pruningManager) validateUTXOSetFitsCommitment(stagingArea *model.Stagi
 			pruningPointHash, utxoSetHash, expectedUTXOCommitment)
 	}
 
-	log.Debugf("Validated the pruning point %s UTXO commitment: %s", pruningPointHash, utxoSetHash)
+	log.Tracef("Validated the pruning point %s UTXO commitment: %s", pruningPointHash, utxoSetHash)
 
 	return nil
 }
@@ -840,12 +840,12 @@ func (pm *pruningManager) UpdatePruningPointIfRequired() error {
 		return nil
 	}
 
-	log.Debugf("Pruning point UTXO set update is required")
+	log.Tracef("Pruning point UTXO set update is required")
 	err = pm.updatePruningPoint()
 	if err != nil {
 		return err
 	}
-	log.Debugf("Pruning point UTXO set updated")
+	log.Tracef("Pruning point UTXO set updated")
 
 	return nil
 }
@@ -858,18 +858,18 @@ func (pm *pruningManager) updatePruningPoint() error {
 	defer logger.LogMemoryStats(log, "updatePruningPoint end")
 
 	stagingArea := model.NewStagingArea()
-	log.Debugf("Getting the pruning point")
+	log.Tracef("Getting the pruning point")
 	pruningPoint, err := pm.pruningStore.PruningPoint(pm.databaseContext, stagingArea)
 	if err != nil {
 		return err
 	}
 
-	log.Debugf("Restoring the pruning point UTXO set")
+	log.Tracef("Restoring the pruning point UTXO set")
 	utxoSetDiff, err := pm.calculateDiffBetweenPreviousAndCurrentPruningPoints(stagingArea, pruningPoint)
 	if err != nil {
 		return err
 	}
-	log.Debugf("Updating the pruning point UTXO set")
+	log.Tracef("Updating the pruning point UTXO set")
 	err = pm.pruningStore.UpdatePruningPointUTXOSet(pm.databaseContext, utxoSetDiff)
 	if err != nil {
 		return err
@@ -890,7 +890,7 @@ func (pm *pruningManager) updatePruningPoint() error {
 		return err
 	}
 
-	log.Debugf("Finishing updating the pruning point UTXO set")
+	log.Tracef("Finishing updating the pruning point UTXO set")
 	return pm.pruningStore.FinishUpdatingPruningPointUTXOSet(pm.databaseContext)
 }
 

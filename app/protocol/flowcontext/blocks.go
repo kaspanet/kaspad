@@ -20,15 +20,15 @@ func (f *FlowContext) OnNewBlock(block *externalapi.DomainBlock,
 	virtualChangeSet *externalapi.VirtualChangeSet) error {
 
 	hash := consensushashing.BlockHash(block)
-	log.Debugf("OnNewBlock start for block %s", hash)
-	defer log.Debugf("OnNewBlock end for block %s", hash)
+	log.Tracef("OnNewBlock start for block %s", hash)
+	defer log.Tracef("OnNewBlock end for block %s", hash)
 
 	unorphaningResults, err := f.UnorphanBlocks(block)
 	if err != nil {
 		return err
 	}
 
-	log.Debugf("OnNewBlock: block %s unorphaned %d blocks", hash, len(unorphaningResults))
+	log.Tracef("OnNewBlock: block %s unorphaned %d blocks", hash, len(unorphaningResults))
 
 	newBlocks := []*externalapi.DomainBlock{block}
 	newVirtualChangeSets := []*externalapi.VirtualChangeSet{virtualChangeSet}
@@ -39,7 +39,7 @@ func (f *FlowContext) OnNewBlock(block *externalapi.DomainBlock,
 
 	allAcceptedTransactions := make([]*externalapi.DomainTransaction, 0)
 	for i, newBlock := range newBlocks {
-		log.Debugf("OnNewBlock: passing block %s transactions to mining manager", hash)
+		log.Tracef("OnNewBlock: passing block %s transactions to mining manager", hash)
 		acceptedTransactions, err := f.Domain().MiningManager().HandleNewBlockTransactions(newBlock.Transactions)
 		if err != nil {
 			return err
@@ -47,7 +47,7 @@ func (f *FlowContext) OnNewBlock(block *externalapi.DomainBlock,
 		allAcceptedTransactions = append(allAcceptedTransactions, acceptedTransactions...)
 
 		if f.onBlockAddedToDAGHandler != nil {
-			log.Debugf("OnNewBlock: calling f.onBlockAddedToDAGHandler for block %s", hash)
+			log.Tracef("OnNewBlock: calling f.onBlockAddedToDAGHandler for block %s", hash)
 			virtualChangeSet = newVirtualChangeSets[i]
 			err := f.onBlockAddedToDAGHandler(newBlock, virtualChangeSet)
 			if err != nil {

@@ -27,7 +27,7 @@ func (c *ConnectionManager) checkOutgoingConnections(connSet connectionSet) {
 		return
 	}
 
-	log.Debugf("Have got %d outgoing connections out of target %d, adding %d more",
+	log.Tracef("Have got %d outgoing connections out of target %d, adding %d more",
 		liveConnections, c.targetOutgoing, c.targetOutgoing-liveConnections)
 
 	connectionsNeededCount := c.targetOutgoing - len(c.activeOutgoing)
@@ -36,12 +36,12 @@ func (c *ConnectionManager) checkOutgoingConnections(connSet connectionSet) {
 	for _, netAddress := range netAddresses {
 		addressString := netAddress.TCPAddress().String()
 
-		log.Debugf("Connecting to %s because we have %d outgoing connections and the target is "+
+		log.Tracef("Connecting to %s because we have %d outgoing connections and the target is "+
 			"%d", addressString, len(c.activeOutgoing), c.targetOutgoing)
 
 		err := c.initiateConnection(addressString)
 		if err != nil {
-			log.Debugf("Couldn't connect to %s: %s", addressString, err)
+			log.Tracef("Couldn't connect to %s: %s", addressString, err)
 			c.addressManager.MarkConnectionFailure(netAddress)
 			continue
 		}
@@ -51,7 +51,7 @@ func (c *ConnectionManager) checkOutgoingConnections(connSet connectionSet) {
 	}
 
 	if len(netAddresses) < connectionsNeededCount {
-		log.Debugf("Need %d more outgoing connections - seeding addresses from DNS",
+		log.Tracef("Need %d more outgoing connections - seeding addresses from DNS",
 			connectionsNeededCount-len(netAddresses))
 
 		// seedFromDNS is an asynchronous method, therefore addresses for connection

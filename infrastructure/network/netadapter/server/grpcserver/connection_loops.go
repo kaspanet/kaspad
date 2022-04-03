@@ -36,7 +36,7 @@ func (c *gRPCConnection) sendLoop() error {
 			return err
 		}
 
-		log.Debugf("outgoing '%s' message to %s", message.Command(), c)
+		log.Tracef("outgoing '%s' message to %s", message.Command(), c)
 		log.Tracef("outgoing '%s' message to %s: %s", message.Command(), c, logger.NewLogClosure(func() string {
 			return spew.Sdump(message)
 		}))
@@ -76,7 +76,7 @@ func (c *gRPCConnection) receiveLoop() error {
 		message.SetMessageNumber(messageNumber)
 		message.SetReceivedAt(time.Now())
 
-		log.Debugf("incoming '%s' message from %s (message number %d)", message.Command(), c,
+		log.Tracef("incoming '%s' message from %s (message number %d)", message.Command(), c,
 			message.MessageNumber())
 
 		log.Tracef("incoming '%s' message from %s  (message number %d): %s", message.Command(),

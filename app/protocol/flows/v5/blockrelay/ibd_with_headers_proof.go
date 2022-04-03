@@ -178,16 +178,16 @@ func (flow *handleIBDFlow) downloadHeadersAndPruningUTXOSet(
 		return err
 	}
 
-	log.Debugf("Syncing the current pruning point UTXO set")
+	log.Tracef("Syncing the current pruning point UTXO set")
 	syncedPruningPointUTXOSetSuccessfully, err := flow.syncPruningPointUTXOSet(flow.Domain().StagingConsensus(), proofPruningPoint)
 	if err != nil {
 		return err
 	}
 	if !syncedPruningPointUTXOSetSuccessfully {
-		log.Debugf("Aborting IBD because the pruning point UTXO set failed to sync")
+		log.Tracef("Aborting IBD because the pruning point UTXO set failed to sync")
 		return nil
 	}
-	log.Debugf("Finished syncing the current pruning point UTXO set")
+	log.Tracef("Finished syncing the current pruning point UTXO set")
 	return nil
 }
 

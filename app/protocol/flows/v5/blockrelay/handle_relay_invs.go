@@ -66,13 +66,13 @@ func HandleRelayInvs(context RelayInvsContext, incomingRoute *router.Route, outg
 
 func (flow *handleRelayInvsFlow) start() error {
 	for {
-		log.Debugf("Waiting for inv")
+		log.Tracef("Waiting for inv")
 		inv, err := flow.readInv()
 		if err != nil {
 			return err
 		}
 
-		log.Debugf("Got relay inv for block %s", inv.Hash)
+		log.Tracef("Got relay inv for block %s", inv.Hash)
 
 		blockInfo, err := flow.Domain().Consensus().GetBlockInfo(inv.Hash)
 		if err != nil {
@@ -83,7 +83,7 @@ func (flow *handleRelayInvsFlow) start() error {
 				return protocolerrors.Errorf(true, "sent inv of an invalid block %s",
 					inv.Hash)
 			}
-			log.Debugf("Block %s already exists. continuing...", inv.Hash)
+			log.Tracef("Block %s already exists. continuing...", inv.Hash)
 			continue
 		}
 
@@ -99,7 +99,7 @@ func (flow *handleRelayInvsFlow) start() error {
 				continue
 			}
 
-			log.Debugf("Block %s is a known orphan. Requesting its missing ancestors", inv.Hash)
+			log.Tracef("Block %s is a known orphan. Requesting its missing ancestors", inv.Hash)
 			err := flow.AddOrphanRootsToQueue(inv.Hash)
 			if err != nil {
 				return err
@@ -119,13 +119,13 @@ func (flow *handleRelayInvsFlow) start() error {
 			}
 		}
 
-		log.Debugf("Requesting block %s", inv.Hash)
+		log.Tracef("Requesting block %s", inv.Hash)
 		block, exists, err := flow.requestBlock(inv.Hash)
 		if err != nil {
 			return err
 		}
 		if exists {
-			log.Debugf("Aborting requesting block %s because it already exists", inv.Hash)
+			log.Tracef("Aborting requesting block %s because it already exists", inv.Hash)
 			continue
 		}
 
@@ -139,7 +139,7 @@ func (flow *handleRelayInvsFlow) start() error {
 			continue
 		}
 
-		log.Debugf("Processing block %s", inv.Hash)
+		log.Tracef("Processing block %s", inv.Hash)
 		oldVirtualInfo, err := flow.Domain().Consensus().GetVirtualInfo()
 		if err != nil {
 			return err
@@ -158,7 +158,7 @@ func (flow *handleRelayInvsFlow) start() error {
 			return err
 		}
 		if len(missingParents) > 0 {
-			log.Debugf("Block %s is orphan and has missing parents: %s", inv.Hash, missingParents)
+			log.Tracef("Block %s is orphan and has missing parents: %s", inv.Hash, missingParents)
 			err := flow.processOrphan(block)
 			if err != nil {
 				return err
@@ -187,7 +187,7 @@ func (flow *handleRelayInvsFlow) start() error {
 				return err
 			}
 			blockHash := consensushashing.BlockHash(block)
-			log.Debugf("Relaying block %s", blockHash)
+			log.Tracef("Relaying block %s", blockHash)
 			err = flow.relayBlock(block)
 			if err != nil {
 				return err
@@ -321,7 +321,7 @@ func (flow *handleRelayInvsFlow) processOrphan(block *externalapi.DomainBlock) e
 
 	// Return if the block has been orphaned from elsewhere already
 	if flow.IsOrphan(blockHash) {
-		log.Debugf("Skipping orphan processing for block %s because it is already an orphan", blockHash)
+		log.Tracef("Skipping orphan processing for block %s because it is already an orphan", blockHash)
 		return nil
 	}
 
@@ -344,15 +344,15 @@ func (flow *handleRelayInvsFlow) processOrphan(block *externalapi.DomainBlock) e
 			}
 		}
 
-		log.Debugf("Block %s is within orphan resolution range. "+
+		log.Tracef("Block %s is within orphan resolution range. "+
 			"Adding it to the orphan set", blockHash)
 		flow.AddOrphan(block)
-		log.Debugf("Requesting block %s missing ancestors", blockHash)
+		log.Tracef("Requesting block %s missing ancestors", blockHash)
 		return flow.AddOrphanRootsToQueue(blockHash)
 	}
 
 	// Start IBD unless we already are in IBD
-	log.Debugf("Block %s is out of orphan resolution range. "+
+	log.Tracef("Block %s is out of orphan resolution range. "+
 		"Attempting to start IBD against it.", blockHash)
 
 	// Send the block to IBD flow via the IBDRequestChannel.
@@ -424,7 +424,7 @@ func (flow *handleRelayInvsFlow) AddOrphanRootsToQueue(orphan *externalapi.Domai
 
 	invMessages := make([]*appmessage.MsgInvRelayBlock, len(orphanRoots))
 	for i, root := range orphanRoots {
-		log.Debugf("Adding block %s missing ancestor %s to the invs queue", orphan, root)
+		log.Tracef("Adding block %s missing ancestor %s to the invs queue", orphan, root)
 		invMessages[i] = appmessage.NewMsgInvBlock(root)
 	}
 

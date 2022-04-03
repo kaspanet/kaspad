@@ -43,7 +43,7 @@ func (p *p2pServer) MessageStream(stream protowire.P2P_MessageStreamServer) erro
 // Connect connects to the given address
 // This is part of the P2PServer interface
 func (p *p2pServer) Connect(address string) (server.Connection, error) {
-	log.Debugf("%s Dialing to %s", p.name, address)
+	log.Tracef("%s Dialing to %s", p.name, address)
 
 	const dialTimeout = 1 * time.Second
 	ctx, cancel := context.WithTimeout(context.Background(), dialTimeout)

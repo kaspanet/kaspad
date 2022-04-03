@@ -14,9 +14,9 @@ func (csm *consensusStateManager) pickVirtualParents(stagingArea *model.StagingA
 	onEnd := logger.LogAndMeasureExecutionTime(log, "pickVirtualParents")
 	defer onEnd()
 
-	log.Debugf("pickVirtualParents start for tips len: %d", len(tips))
+	log.Tracef("pickVirtualParents start for tips len: %d", len(tips))
 
-	log.Debugf("Pushing all tips into a DownHeap")
+	log.Tracef("Pushing all tips into a DownHeap")
 	candidatesHeap := csm.dagTraversalManager.NewDownHeap(stagingArea)
 	for _, tip := range tips {
 		err := candidatesHeap.Push(tip)
@@ -33,7 +33,7 @@ func (csm *consensusStateManager) pickVirtualParents(stagingArea *model.StagingA
 	if err != nil {
 		return nil, err
 	}
-	log.Debugf("The selected parent of the virtual is: %s", virtualSelectedParent)
+	log.Tracef("The selected parent of the virtual is: %s", virtualSelectedParent)
 
 	// Limit to maxBlockParents*3 candidates, that way we don't go over thousands of tips when the network isn't healthy.
 	// There's no specific reason for a factor of 3, and its not a consensus rule, just an estimation saying we probably
@@ -64,8 +64,8 @@ func (csm *consensusStateManager) pickVirtualParents(stagingArea *model.StagingA
 		candidate := candidates[0]
 		candidates = candidates[1:]
 
-		log.Debugf("Attempting to add %s to the virtual parents", candidate)
-		log.Debugf("The current merge set size is %d", mergeSetSize)
+		log.Tracef("Attempting to add %s to the virtual parents", candidate)
+		log.Tracef("The current merge set size is %d", mergeSetSize)
 
 		canBeParent, newCandidate, mergeSetIncrease, err := csm.mergeSetIncrease(
 			stagingArea, candidate, selectedVirtualParents, mergeSetSize)
@@ -92,7 +92,7 @@ func (csm *consensusStateManager) pickVirtualParents(stagingArea *model.StagingA
 			return nil, err
 		}
 		candidates = append(candidates, newCandidate)
-		log.Debugf("Block %s increases merge set too much, instead adding its ancestor %s", candidate, newCandidate)
+		log.Tracef("Block %s increases merge set too much, instead adding its ancestor %s", candidate, newCandidate)
 	}
 
 	boundedMergeBreakingParents, err := csm.boundedMergeBreakingParents(stagingArea, selectedVirtualParents)
@@ -112,7 +112,7 @@ func (csm *consensusStateManager) pickVirtualParents(stagingArea *model.StagingA
 			}
 		}
 	}
-	log.Debugf("The virtual parents resolved to be: %s", selectedVirtualParents)
+	log.Tracef("The virtual parents resolved to be: %s", selectedVirtualParents)
 	return selectedVirtualParents, nil
 }
 
@@ -148,30 +148,30 @@ func (csm *consensusStateManager) selectVirtualSelectedParent(stagingArea *model
 		}
 		selectedParentCandidate := candidatesHeap.Pop()
 
-		log.Debugf("Checking block %s for selected parent eligibility", selectedParentCandidate)
+		log.Tracef("Checking block %s for selected parent eligibility", selectedParentCandidate)
 		selectedParentCandidateStatus, err := csm.blockStatusStore.Get(csm.databaseContext, stagingArea, selectedParentCandidate)
 		if err != nil {
 			return nil, err
 		}
 		if selectedParentCandidateStatus == externalapi.StatusUTXOValid {
-			log.Debugf("Block %s is valid. Returning it as the selected parent", selectedParentCandidate)
+			log.Tracef("Block %s is valid. Returning it as the selected parent", selectedParentCandidate)
 			return selectedParentCandidate, nil
 		}
 
-		log.Debugf("Block %s is not valid. Adding it to the disqualified set", selectedParentCandidate)
+		log.Tracef("Block %s is not valid. Adding it to the disqualified set", selectedParentCandidate)
 		disqualifiedCandidates.Add(selectedParentCandidate)
 
 		candidateParents, err := csm.dagTopologyManager.Parents(stagingArea, selectedParentCandidate)
 		if err != nil {
 			return nil, err
 		}
-		log.Debugf("The parents of block %s are: %s", selectedParentCandidate, candidateParents)
+		log.Tracef("The parents of block %s are: %s", selectedParentCandidate, candidateParents)
 		for _, parent := range candidateParents {
 			allParentChildren, err := csm.dagTopologyManager.Children(stagingArea, parent)
 			if err != nil {
 				return nil, err
 			}
-			log.Debugf("The children of block %s are: %s", parent, allParentChildren)
+			log.Tracef("The children of block %s are: %s", parent, allParentChildren)
 
 			// remove virtual and any headers-only blocks from parentChildren if such are there
 			nonHeadersOnlyParentChildren := make([]*externalapi.DomainHash, 0, len(allParentChildren))
@@ -189,10 +189,10 @@ func (csm *consensusStateManager) selectVirtualSelectedParent(stagingArea *model
 				}
 				nonHeadersOnlyParentChildren = append(nonHeadersOnlyParentChildren, parentChild)
 			}
-			log.Debugf("The non-virtual, non-headers-only children of block %s are: %s", parent, nonHeadersOnlyParentChildren)
+			log.Tracef("The non-virtual, non-headers-only children of block %s are: %s", parent, nonHeadersOnlyParentChildren)
 
 			if disqualifiedCandidates.ContainsAllInSlice(nonHeadersOnlyParentChildren) {
-				log.Debugf("The disqualified set contains all the "+
+				log.Tracef("The disqualified set contains all the "+
 					"children of %s. Adding it to the candidate heap", nonHeadersOnlyParentChildren)
 				err := candidatesHeap.Push(parent)
 				if err != nil {
@@ -243,7 +243,7 @@ func (csm *consensusStateManager) mergeSetIncrease(stagingArea *model.StagingAre
 		mergeSetIncrease++
 
 		if (mergeSetSize + mergeSetIncrease) > csm.mergeSetSizeLimit {
-			log.Debugf("The merge set would increase by more than the limit with block %s", candidate)
+			log.Tracef("The merge set would increase by more than the limit with block %s", candidate)
 			return false, current, mergeSetIncrease, nil
 		}
 
@@ -258,7 +258,7 @@ func (csm *consensusStateManager) mergeSetIncrease(stagingArea *model.StagingAre
 			}
 		}
 	}
-	log.Debugf("The resolved merge set size increase is: %d", mergeSetIncrease)
+	log.Tracef("The resolved merge set size increase is: %d", mergeSetIncrease)
 
 	return true, nil, mergeSetIncrease, nil
 }
@@ -271,7 +271,7 @@ func (csm *consensusStateManager) boundedMergeBreakingParents(stagingArea *model
 
 	log.Tracef("boundedMergeBreakingParents start for parents: %s", parents)
 
-	log.Debug("Temporarily setting virtual to all parents, so that we can run ghostdag on it")
+	log.Trace("Temporarily setting virtual to all parents, so that we can run ghostdag on it")
 	err := csm.dagTopologyManager.SetParents(stagingArea, model.VirtualBlockHash, parents)
 	if err != nil {
 		return nil, err
@@ -287,13 +287,13 @@ func (csm *consensusStateManager) boundedMergeBreakingParents(stagingArea *model
 	if err != nil {
 		return nil, err
 	}
-	log.Debugf("The potentially kosherizing blocks are: %s", potentiallyKosherizingBlocks)
+	log.Tracef("The potentially kosherizing blocks are: %s", potentiallyKosherizingBlocks)
 
 	virtualFinalityPoint, err := csm.finalityManager.VirtualFinalityPoint(stagingArea)
 	if err != nil {
 		return nil, err
 	}
-	log.Debugf("The finality point of the virtual is: %s", virtualFinalityPoint)
+	log.Tracef("The finality point of the virtual is: %s", virtualFinalityPoint)
 
 	var badReds []*externalapi.DomainHash
 
@@ -302,13 +302,13 @@ func (csm *consensusStateManager) boundedMergeBreakingParents(stagingArea *model
 		return nil, err
 	}
 	for _, redBlock := range virtualGHOSTDAGData.MergeSetReds() {
-		log.Debugf("Check whether red block %s is kosherized", redBlock)
+		log.Tracef("Check whether red block %s is kosherized", redBlock)
 		isFinalityPointInPast, err := csm.dagTopologyManager.IsAncestorOf(stagingArea, virtualFinalityPoint, redBlock)
 		if err != nil {
 			return nil, err
 		}
 		if isFinalityPointInPast {
-			log.Debugf("Skipping red block %s because it has the virtual's"+
+			log.Tracef("Skipping red block %s because it has the virtual's"+
 				" finality point in its past", redBlock)
 			continue
 		}
@@ -319,21 +319,21 @@ func (csm *consensusStateManager) boundedMergeBreakingParents(stagingArea *model
 			if err != nil {
 				return nil, err
 			}
-			log.Debugf("Red block %s is an ancestor of potentially kosherizing "+
+			log.Tracef("Red block %s is an ancestor of potentially kosherizing "+
 				"block %s, therefore the red block is kosher", redBlock, potentiallyKosherizingBlock)
 			if isKosherized {
 				break
 			}
 		}
 		if !isKosherized {
-			log.Debugf("Red block %s is not kosher. Adding it to the bad reds set", redBlock)
+			log.Tracef("Red block %s is not kosher. Adding it to the bad reds set", redBlock)
 			badReds = append(badReds, redBlock)
 		}
 	}
 
 	var boundedMergeBreakingParents []*externalapi.DomainHash
 	for _, parent := range parents {
-		log.Debugf("Checking whether parent %s breaks the bounded merge set", parent)
+		log.Tracef("Checking whether parent %s breaks the bounded merge set", parent)
 		isBadRedInPast := false
 		for _, badRedBlock := range badReds {
 			isBadRedInPast, err = csm.dagTopologyManager.IsAncestorOf(stagingArea, badRedBlock, parent)
@@ -341,12 +341,12 @@ func (csm *consensusStateManager) boundedMergeBreakingParents(stagingArea *model
 				return nil, err
 			}
 			if isBadRedInPast {
-				log.Debugf("Parent %s is a descendant of bad red %s", parent, badRedBlock)
+				log.Tracef("Parent %s is a descendant of bad red %s", parent, badRedBlock)
 				break
 			}
 		}
 		if isBadRedInPast {
-			log.Debugf("Adding parent %s to the bounded merge breaking parents set", parent)
+			log.Tracef("Adding parent %s to the bounded merge breaking parents set", parent)
 			boundedMergeBreakingParents = append(boundedMergeBreakingParents, parent)
 		}
 	}

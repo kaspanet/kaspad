@@ -35,7 +35,7 @@ func (mp *mempool) revalidateTransaction(transaction *model.MempoolTransaction) 
 		return false, err
 	}
 	if len(missingParents) > 0 {
-		log.Debugf("Removing transaction %s, it failed revalidation", transaction.TransactionID())
+		log.Tracef("Removing transaction %s, it failed revalidation", transaction.TransactionID())
 		err := mp.removeTransaction(transaction.TransactionID(), true)
 		if err != nil {
 			return false, err

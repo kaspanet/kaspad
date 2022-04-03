@@ -138,7 +138,7 @@ func (btb *blockTemplateBuilder) BuildBlockTemplate(
 		return subnetworks.Less(candidateTxs[i].SubnetworkID, candidateTxs[j].SubnetworkID)
 	})
 
-	log.Debugf("Considering %d transactions for inclusion to new block",
+	log.Tracef("Considering %d transactions for inclusion to new block",
 		len(candidateTxs))
 
 	blockTxs := btb.selectTransactions(candidateTxs)
@@ -166,7 +166,7 @@ func (btb *blockTemplateBuilder) BuildBlockTemplate(
 		return nil, err
 	}
 
-	log.Debugf("Created new block template (%d transactions, %d in fees, %d mass, target difficulty %064x)",
+	log.Tracef("Created new block template (%d transactions, %d in fees, %d mass, target difficulty %064x)",
 		len(blk.Transactions), blockTxs.totalFees, blockTxs.totalMass, difficulty.CompactToBig(blk.Header.Bits()))
 
 	return &consensusexternalapi.DomainBlockTemplate{

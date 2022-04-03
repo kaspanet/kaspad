@@ -79,11 +79,11 @@ func (flow *sendVersionFlow) start() error {
 	}
 
 	// Wait for verack
-	log.Debugf("Waiting for verack")
+	log.Tracef("Waiting for verack")
 	_, err = flow.incomingRoute.DequeueWithTimeout(common.DefaultTimeout)
 	if err != nil {
 		return err
 	}
-	log.Debugf("Got verack")
+	log.Tracef("Got verack")
 	return nil
 }

@@ -11,7 +11,7 @@ import (
 
 func (bp *blockProcessor) validateBlock(stagingArea *model.StagingArea, block *externalapi.DomainBlock, isBlockWithTrustedData bool) error {
 	blockHash := consensushashing.HeaderHash(block.Header)
-	log.Debugf("Validating block %s", blockHash)
+	log.Tracef("Validating block %s", blockHash)
 
 	// Since genesis has a lot of special cases validation rules, we make sure it's not added unintentionally
 	// on uninitialized node.
@@ -30,10 +30,10 @@ func (bp *blockProcessor) validateBlock(stagingArea *model.StagingArea, block *e
 	}
 
 	if !hasValidatedHeader {
-		log.Debugf("Staging block %s header", blockHash)
+		log.Tracef("Staging block %s header", blockHash)
 		bp.blockHeaderStore.Stage(stagingArea, blockHash, block.Header)
 	} else {
-		log.Debugf("Block %s header is already known, so no need to stage it", blockHash)
+		log.Tracef("Block %s header is already known, so no need to stage it", blockHash)
 	}
 
 	// If any validation until (included) proof-of-work fails, simply

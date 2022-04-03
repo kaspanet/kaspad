@@ -58,6 +58,8 @@ func HandlePruningPointAndItsAnticoneRequests(context PruningPointAndItsAnticone
 				return err
 			}
 
+			log.Debugf("Sending pruning point and its anticone of size %d to %s", len(pointAndItsAnticone), peer)
+
 			windowSize := context.Config().NetParams().DifficultyAdjustmentWindowSize
 			daaWindowBlocks := make([]*externalapi.TrustedDataDataDAAHeader, 0, windowSize)
 			daaWindowHashesToIndex := make(map[externalapi.DomainHash]int, windowSize)

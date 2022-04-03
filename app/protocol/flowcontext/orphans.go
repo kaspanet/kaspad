@@ -30,7 +30,7 @@ func (f *FlowContext) AddOrphan(orphanBlock *externalapi.DomainBlock) {
 	f.orphans[*orphanHash] = orphanBlock
 
 	if len(f.orphans) > maxOrphans {
-		log.Debugf("Orphan collection size exceeded. Evicting a random orphan")
+		log.Tracef("Orphan collection size exceeded. Evicting a random orphan")
 		f.evictRandomOrphan()
 	}
 
@@ -44,7 +44,7 @@ func (f *FlowContext) evictRandomOrphan() {
 		break
 	}
 	delete(f.orphans, toEvict)
-	log.Debugf("Evicted %s from the orphan collection", toEvict)
+	log.Tracef("Evicted %s from the orphan collection", toEvict)
 }
 
 // IsOrphan returns whether the given blockHash belongs to an orphan block
@@ -72,7 +72,7 @@ func (f *FlowContext) UnorphanBlocks(rootBlock *externalapi.DomainBlock) ([]*Uno
 		orphanHash, processQueue = processQueue[0], processQueue[1:]
 		orphanBlock := f.orphans[orphanHash]
 
-		log.Debugf("Considering to unorphan block %s with parents %s",
+		log.Tracef("Considering to unorphan block %s with parents %s",
 			orphanHash, orphanBlock.Header.DirectParents())
 
 		canBeUnorphaned := true
@@ -82,7 +82,7 @@ func (f *FlowContext) UnorphanBlocks(rootBlock *externalapi.DomainBlock) ([]*Uno
 				return nil, err
 			}
 			if !orphanBlockParentInfo.Exists || orphanBlockParentInfo.BlockStatus == externalapi.StatusHeaderOnly {
-				log.Debugf("Cannot unorphan block %s. It's missing at "+
+				log.Tracef("Cannot unorphan block %s. It's missing at "+
 					"least the following parent: %s", orphanHash, orphanBlockParentHash)
 
 				canBeUnorphaned = false
@@ -195,7 +195,7 @@ func (f *FlowContext) GetOrphanRoots(orphan *externalapi.DomainHash) ([]*externa
 			if !blockInfo.Exists || blockInfo.BlockStatus == externalapi.StatusHeaderOnly {
 				roots = append(roots, current)
 			} else {
-				log.Debugf("Block %s was skipped when checking for orphan roots: "+
+				log.Tracef("Block %s was skipped when checking for orphan roots: "+
 					"exists: %t, status: %s", current, blockInfo.Exists, blockInfo.BlockStatus)
 			}
 			continue

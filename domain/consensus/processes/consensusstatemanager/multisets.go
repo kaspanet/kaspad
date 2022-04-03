@@ -13,11 +13,11 @@ func (csm *consensusStateManager) calculateMultiset(stagingArea *model.StagingAr
 	blockGHOSTDAGData *externalapi.BlockGHOSTDAGData,
 	daaScore uint64) (model.Multiset, error) {
 
-	log.Debugf("calculateMultiset start for block with selected parent %s", blockGHOSTDAGData.SelectedParent())
-	defer log.Debugf("calculateMultiset end for block with selected parent %s", blockGHOSTDAGData.SelectedParent())
+	log.Tracef("calculateMultiset start for block with selected parent %s", blockGHOSTDAGData.SelectedParent())
+	defer log.Tracef("calculateMultiset end for block with selected parent %s", blockGHOSTDAGData.SelectedParent())
 
 	if blockHash.Equal(csm.genesisHash) {
-		log.Debugf("Selected parent is nil, which could only happen for the genesis. " +
+		log.Tracef("Selected parent is nil, which could only happen for the genesis. " +
 			"The genesis has a predefined multiset")
 		return csm.multisetStore.Get(csm.databaseContext, stagingArea, blockHash)
 	}
@@ -26,7 +26,7 @@ func (csm *consensusStateManager) calculateMultiset(stagingArea *model.StagingAr
 	if err != nil {
 		return nil, err
 	}
-	log.Debugf("The multiset for the selected parent %s is: %s", blockGHOSTDAGData.SelectedParent(), ms.Hash())
+	log.Tracef("The multiset for the selected parent %s is: %s", blockGHOSTDAGData.SelectedParent(), ms.Hash())
 
 	for _, blockAcceptanceData := range acceptanceData {
 		for i, transactionAcceptanceData := range blockAcceptanceData.TransactionAcceptanceData {

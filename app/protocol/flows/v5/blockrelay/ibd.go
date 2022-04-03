@@ -66,7 +66,7 @@ func (flow *handleIBDFlow) start() error {
 func (flow *handleIBDFlow) runIBDIfNotRunning(block *externalapi.DomainBlock) error {
 	wasIBDNotRunning := flow.TrySetIBDRunning(flow.peer)
 	if !wasIBDNotRunning {
-		log.Debugf("IBD is already running")
+		log.Tracef("IBD is already running")
 		return nil
 	}
 
@@ -79,8 +79,8 @@ func (flow *handleIBDFlow) runIBDIfNotRunning(block *externalapi.DomainBlock) er
 	relayBlockHash := consensushashing.BlockHash(block)
 
 	log.Debugf("IBD started with peer %s and relayBlockHash %s", flow.peer, relayBlockHash)
-	log.Debugf("Syncing blocks up to %s", relayBlockHash)
-	log.Debugf("Trying to find highest known syncer chain block from peer %s with relay hash %s", flow.peer, relayBlockHash)
+	log.Tracef("Syncing blocks up to %s", relayBlockHash)
+	log.Tracef("Trying to find highest known syncer chain block from peer %s with relay hash %s", flow.peer, relayBlockHash)
 
 	syncerHeaderSelectedTipHash, highestKnownSyncerChainHash, err := flow.negotiateMissingSyncerChainSegment()
 	if err != nil {
@@ -145,7 +145,7 @@ func (flow *handleIBDFlow) runIBDIfNotRunning(block *externalapi.DomainBlock) er
 		}
 	}
 
-	log.Debugf("Finished syncing blocks up to %s", relayBlockHash)
+	log.Tracef("Finished syncing blocks up to %s", relayBlockHash)
 	isFinishedSuccessfully = true
 	return nil
 }
@@ -486,7 +486,7 @@ func (flow *handleIBDFlow) processHeader(consensus externalapi.Consensus, msgBlo
 		return err
 	}
 	if blockInfo.Exists {
-		log.Debugf("Block header %s is already in the DAG. Skipping...", blockHash)
+		log.Tracef("Block header %s is already in the DAG. Skipping...", blockHash)
 		return nil
 	}
 	_, err = consensus.ValidateAndInsertBlock(block, false)
@@ -496,7 +496,7 @@ func (flow *handleIBDFlow) processHeader(consensus externalapi.Consensus, msgBlo
 		}
 
 		if errors.Is(err, ruleerrors.ErrDuplicateBlock) {
-			log.Debugf("Skipping block header %s as it is a duplicate", blockHash)
+			log.Tracef("Skipping block header %s as it is a duplicate", blockHash)
 		} else {
 			log.Infof("Rejected block header %s from %s during IBD: %s", blockHash, flow.peer, err)
 			return protocolerrors.Wrapf(true, err, "got invalid block header %s during IBD", blockHash)
@@ -567,7 +567,7 @@ func (flow *handleIBDFlow) receiveAndInsertPruningPointUTXOSet(
 
 			receivedChunkCount++
 			if receivedChunkCount%ibdBatchSize == 0 {
-				log.Debugf("Received %d UTXO set chunks so far, totaling in %d UTXOs",
+				log.Tracef("Received %d UTXO set chunks so far, totaling in %d UTXOs",
 					receivedChunkCount, receivedUTXOCount)
 
 				requestNextPruningPointUTXOSetChunkMessage := appmessage.NewMsgRequestNextPruningPointUTXOSetChunk()
@@ -604,7 +604,7 @@ func (flow *handleIBDFlow) syncMissingBlockBodies(highHash *externalapi.DomainHa
 		// Blocks can be inserted inside the DAG during IBD if those were requested before IBD started.
 		// In rare cases, all the IBD blocks might be already inserted by the time we reach this point.
 		// In these cases - GetMissingBlockBodyHashes would return an empty array.
-		log.Debugf("No missing block body hashes found.")
+		log.Tracef("No missing block body hashes found.")
 		return nil
 	}
 
@@ -658,7 +658,7 @@ func (flow *handleIBDFlow) syncMissingBlockBodies(highHash *externalapi.DomainHa
 			virtualChangeSet, err := flow.Domain().Consensus().ValidateAndInsertBlock(block, false)
 			if err != nil {
 				if errors.Is(err, ruleerrors.ErrDuplicateBlock) {
-					log.Debugf("Skipping IBD Block %s as it has already been added to the DAG", blockHash)
+					log.Tracef("Skipping IBD Block %s as it has already been added to the DAG", blockHash)
 					continue
 				}
 				return protocolerrors.ConvertToBanningProtocolErrorIfRuleError(err, "invalid block %s", blockHash)

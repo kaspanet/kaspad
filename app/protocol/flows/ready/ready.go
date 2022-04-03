@@ -17,7 +17,7 @@ func HandleReady(incomingRoute *routerpkg.Route, outgoingRoute *routerpkg.Route,
 	peer *peerpkg.Peer,
 ) error {
 
-	log.Debugf("Sending ready message to %s", peer)
+	log.Tracef("Sending ready message to %s", peer)
 
 	isStopping := uint32(0)
 	err := outgoingRoute.Enqueue(appmessage.NewMsgReady())
@@ -30,7 +30,7 @@ func HandleReady(incomingRoute *routerpkg.Route, outgoingRoute *routerpkg.Route,
 		return handleError(err, "HandleReady", &isStopping)
 	}
 
-	log.Debugf("Got ready message from %s", peer)
+	log.Tracef("Got ready message from %s", peer)
 
 	return nil
 }

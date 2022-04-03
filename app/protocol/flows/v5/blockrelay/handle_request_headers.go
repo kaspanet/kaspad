@@ -44,7 +44,7 @@ func (flow *handleRequestHeadersFlow) start() error {
 		if err != nil {
 			return err
 		}
-		log.Debugf("Received requestHeaders with lowHash: %s, highHash: %s", lowHash, highHash)
+		log.Tracef("Received requestHeaders with lowHash: %s, highHash: %s", lowHash, highHash)
 
 		isLowSelectedAncestorOfHigh, err := flow.Domain().Consensus().IsInSelectedParentChainOf(lowHash, highHash)
 		if err != nil {
@@ -56,7 +56,7 @@ func (flow *handleRequestHeadersFlow) start() error {
 		}
 
 		for !lowHash.Equal(highHash) {
-			log.Debugf("Getting block headers between %s and %s to %s", lowHash, highHash, flow.peer)
+			log.Tracef("Getting block headers between %s and %s to %s", lowHash, highHash, flow.peer)
 
 			// GetHashesBetween is a relatively heavy operation so we limit it
 			// in order to avoid locking the consensus for too long
@@ -66,7 +66,7 @@ func (flow *handleRequestHeadersFlow) start() error {
 			if err != nil {
 				return err
 			}
-			log.Debugf("Got %d header hashes above lowHash %s", len(blockHashes), lowHash)
+			log.Tracef("Got %d header hashes above lowHash %s", len(blockHashes), lowHash)
 
 			blockHeaders := make([]*appmessage.MsgBlockHeader, len(blockHashes))
 			for i, blockHash := range blockHashes {
