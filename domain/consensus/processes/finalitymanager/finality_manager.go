@@ -39,8 +39,8 @@ func New(databaseContext model.DBReader,
 }
 
 func (fm *finalityManager) VirtualFinalityPoint(stagingArea *model.StagingArea) (*externalapi.DomainHash, error) {
-	log.Debugf("virtualFinalityPoint start")
-	defer log.Debugf("virtualFinalityPoint end")
+	log.Tracef("virtualFinalityPoint start")
+	defer log.Tracef("virtualFinalityPoint end")
 
 	virtualFinalityPoint, err := fm.calculateFinalityPoint(stagingArea, model.VirtualBlockHash, false)
 	if err != nil {
@@ -52,8 +52,8 @@ func (fm *finalityManager) VirtualFinalityPoint(stagingArea *model.StagingArea) 
 }
 
 func (fm *finalityManager) FinalityPoint(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash, isBlockWithTrustedData bool) (*externalapi.DomainHash, error) {
-	log.Debugf("FinalityPoint start")
-	defer log.Debugf("FinalityPoint end")
+	log.Tracef("FinalityPoint start")
+	defer log.Tracef("FinalityPoint end")
 	if blockHash.Equal(model.VirtualBlockHash) {
 		return fm.VirtualFinalityPoint(stagingArea)
 	}
@@ -82,8 +82,8 @@ func (fm *finalityManager) calculateAndStageFinalityPoint(
 func (fm *finalityManager) calculateFinalityPoint(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash, isBlockWithTrustedData bool) (
 	*externalapi.DomainHash, error) {
 
-	log.Debugf("calculateFinalityPoint start")
-	defer log.Debugf("calculateFinalityPoint end")
+	log.Tracef("calculateFinalityPoint start")
+	defer log.Tracef("calculateFinalityPoint end")
 
 	if isBlockWithTrustedData {
 		return model.VirtualGenesisBlockHash, nil

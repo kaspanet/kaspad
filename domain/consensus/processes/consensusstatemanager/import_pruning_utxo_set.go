@@ -30,8 +30,8 @@ func (csm *consensusStateManager) ImportPruningPointUTXOSet(stagingArea *model.S
 }
 
 func (csm *consensusStateManager) importPruningPointUTXOSet(stagingArea *model.StagingArea, newPruningPoint *externalapi.DomainHash) error {
-	log.Debugf("importPruningPointUTXOSet start")
-	defer log.Debugf("importPruningPointUTXOSet end")
+	log.Tracef("importPruningPointUTXOSet start")
+	defer log.Tracef("importPruningPointUTXOSet end")
 
 	// TODO: We should validate the imported pruning point doesn't violate finality as part of the headers proof.
 

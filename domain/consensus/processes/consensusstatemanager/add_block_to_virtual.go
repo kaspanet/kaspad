@@ -79,8 +79,8 @@ func (csm *consensusStateManager) AddBlock(stagingArea *model.StagingArea, block
 func (csm *consensusStateManager) isCandidateToBeNextVirtualSelectedParent(
 	stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) (bool, error) {
 
-	log.Debugf("isCandidateToBeNextVirtualSelectedParent start for block %s", blockHash)
-	defer log.Debugf("isCandidateToBeNextVirtualSelectedParent end for block %s", blockHash)
+	log.Tracef("isCandidateToBeNextVirtualSelectedParent start for block %s", blockHash)
+	defer log.Tracef("isCandidateToBeNextVirtualSelectedParent end for block %s", blockHash)
 
 	if blockHash.Equal(csm.genesisHash) {
 		log.Debugf("Block %s is the genesis block, therefore it is "+
@@ -106,8 +106,8 @@ func (csm *consensusStateManager) isCandidateToBeNextVirtualSelectedParent(
 }
 
 func (csm *consensusStateManager) addTip(stagingArea *model.StagingArea, newTipHash *externalapi.DomainHash) (newTips []*externalapi.DomainHash, err error) {
-	log.Debugf("addTip start for new tip %s", newTipHash)
-	defer log.Debugf("addTip end for new tip %s", newTipHash)
+	log.Tracef("addTip start for new tip %s", newTipHash)
+	defer log.Tracef("addTip end for new tip %s", newTipHash)
 
 	log.Debugf("Calculating the new tips for new tip %s", newTipHash)
 	newTips, err = csm.calculateNewTips(stagingArea, newTipHash)
@@ -124,8 +124,8 @@ func (csm *consensusStateManager) addTip(stagingArea *model.StagingArea, newTipH
 func (csm *consensusStateManager) calculateNewTips(
 	stagingArea *model.StagingArea, newTipHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error) {
 
-	log.Debugf("calculateNewTips start for new tip %s", newTipHash)
-	defer log.Debugf("calculateNewTips end for new tip %s", newTipHash)
+	log.Tracef("calculateNewTips start for new tip %s", newTipHash)
+	defer log.Tracef("calculateNewTips end for new tip %s", newTipHash)
 
 	if newTipHash.Equal(csm.genesisHash) {
 		log.Debugf("The new tip is the genesis block, therefore it is the only tip by definition")

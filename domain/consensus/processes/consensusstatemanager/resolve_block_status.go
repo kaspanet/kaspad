@@ -120,8 +120,8 @@ func (csm *consensusStateManager) selectedParentInfo(
 	stagingArea *model.StagingArea, unverifiedBlocks []*externalapi.DomainHash) (
 	*externalapi.DomainHash, externalapi.BlockStatus, externalapi.UTXODiff, error) {
 
-	log.Debugf("findSelectedParentStatus start")
-	defer log.Debugf("findSelectedParentStatus end")
+	log.Tracef("findSelectedParentStatus start")
+	defer log.Tracef("findSelectedParentStatus end")
 
 	lastUnverifiedBlock := unverifiedBlocks[len(unverifiedBlocks)-1]
 	if lastUnverifiedBlock.Equal(csm.genesisHash) {
@@ -156,8 +156,8 @@ func (csm *consensusStateManager) selectedParentInfo(
 func (csm *consensusStateManager) getUnverifiedChainBlocks(stagingArea *model.StagingArea,
 	blockHash *externalapi.DomainHash) ([]*externalapi.DomainHash, error) {
 
-	log.Debugf("getUnverifiedChainBlocks start for block %s", blockHash)
-	defer log.Debugf("getUnverifiedChainBlocks end for block %s", blockHash)
+	log.Tracef("getUnverifiedChainBlocks start for block %s", blockHash)
+	defer log.Tracef("getUnverifiedChainBlocks end for block %s", blockHash)
 
 	var unverifiedBlocks []*externalapi.DomainHash
 	currentHash := blockHash

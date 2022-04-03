@@ -13,8 +13,8 @@ func (csm *consensusStateManager) calculateMultiset(stagingArea *model.StagingAr
 	blockGHOSTDAGData *externalapi.BlockGHOSTDAGData,
 	daaScore uint64) (model.Multiset, error) {
 
-	log.Debugf("calculateMultiset start for block with selected parent %s", blockGHOSTDAGData.SelectedParent())
-	defer log.Debugf("calculateMultiset end for block with selected parent %s", blockGHOSTDAGData.SelectedParent())
+	log.Tracef("calculateMultiset start for block with selected parent %s", blockGHOSTDAGData.SelectedParent())
+	defer log.Tracef("calculateMultiset end for block with selected parent %s", blockGHOSTDAGData.SelectedParent())
 
 	if blockHash.Equal(csm.genesisHash) {
 		log.Debugf("Selected parent is nil, which could only happen for the genesis. " +
