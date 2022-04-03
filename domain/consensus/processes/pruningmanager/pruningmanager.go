@@ -935,7 +935,7 @@ func (pm *pruningManager) PruningPointAndItsAnticone() ([]*externalapi.DomainHas
 		return nil, err
 	}
 
-	// By the Prunality proof, The pruning point anticone is a closed set (i.e., guaranteed not to change) ,
+	// By the Prunality proof, the pruning point anticone is a closed set (i.e., guaranteed not to change) ,
 	// so we can safely cache it.
 	if pm.cachedPruningPoint != nil && pm.cachedPruningPoint.Equal(pruningPoint) {
 		return append([]*externalapi.DomainHash{pruningPoint}, pm.cachedPruningPointAnticone...), nil

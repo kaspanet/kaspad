@@ -47,8 +47,8 @@ func InactivePrefix(dataAccessor database.DataAccessor) (*prefix.Prefix, bool, e
 }
 
 // DeleteInactivePrefix deletes all data associated with the inactive database prefix, including itself.
-func DeleteInactivePrefix(dataAccessor database.DataAccessor) error {
-	prefixBytes, err := dataAccessor.Get(inactivePrefixKey)
+func DeleteInactivePrefix(db database.Database) error {
+	prefixBytes, err := db.Get(inactivePrefixKey)
 	if database.IsNotFoundError(err) {
 		return nil
 	}
@@ -62,12 +62,18 @@ func DeleteInactivePrefix(dataAccessor database.DataAccessor) error {
 		return err
 	}
 
-	err = deletePrefix(dataAccessor, prefix)
+	err = deletePrefix(db, prefix)
 	if err != nil {
 		return err
 	}
 
-	return dataAccessor.Delete(inactivePrefixKey)
+	err = db.Delete(inactivePrefixKey)
+	if err != nil {
+		return err
+	}
+
+	log.Infof("Compacting database after prefix delete")
+	return db.Compact()
 }
 
 func deletePrefix(dataAccessor database.DataAccessor, prefix *prefix.Prefix) error {
