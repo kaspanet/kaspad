@@ -19,8 +19,8 @@ func (csm *consensusStateManager) verifyUTXO(stagingArea *model.StagingArea, blo
 	blockHash *externalapi.DomainHash, pastUTXODiff externalapi.UTXODiff, acceptanceData externalapi.AcceptanceData,
 	multiset model.Multiset) error {
 
-	log.Debugf("verifyUTXO start for block %s", blockHash)
-	defer log.Debugf("verifyUTXO end for block %s", blockHash)
+	log.Tracef("verifyUTXO start for block %s", blockHash)
+	defer log.Tracef("verifyUTXO end for block %s", blockHash)
 
 	log.Debugf("Validating UTXO commitment for block %s", blockHash)
 	err := csm.validateUTXOCommitment(block, blockHash, multiset)

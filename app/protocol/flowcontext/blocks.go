@@ -20,8 +20,8 @@ func (f *FlowContext) OnNewBlock(block *externalapi.DomainBlock,
 	virtualChangeSet *externalapi.VirtualChangeSet) error {
 
 	hash := consensushashing.BlockHash(block)
-	log.Debugf("OnNewBlock start for block %s", hash)
-	defer log.Debugf("OnNewBlock end for block %s", hash)
+	log.Tracef("OnNewBlock start for block %s", hash)
+	defer log.Tracef("OnNewBlock end for block %s", hash)
 
 	unorphaningResults, err := f.UnorphanBlocks(block)
 	if err != nil {

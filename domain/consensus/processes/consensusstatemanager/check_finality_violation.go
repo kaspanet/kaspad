@@ -8,8 +8,8 @@ import (
 func (csm *consensusStateManager) isViolatingFinality(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash,
 ) (isViolatingFinality bool, shouldSendNotification bool, err error) {
 
-	log.Debugf("isViolatingFinality start for block %s", blockHash)
-	defer log.Debugf("isViolatingFinality end for block %s", blockHash)
+	log.Tracef("isViolatingFinality start for block %s", blockHash)
+	defer log.Tracef("isViolatingFinality end for block %s", blockHash)
 
 	if blockHash.Equal(csm.genesisHash) {
 		log.Debugf("Block %s is the genesis block, "+

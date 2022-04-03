@@ -145,8 +145,8 @@ func (csm *consensusStateManager) applyMergeSetBlocks(stagingArea *model.Staging
 	selectedParentPastUTXODiff externalapi.UTXODiff, daaScore uint64) (
 	externalapi.AcceptanceData, externalapi.MutableUTXODiff, error) {
 
-	log.Debugf("applyMergeSetBlocks start for block %s", blockHash)
-	defer log.Debugf("applyMergeSetBlocks end for block %s", blockHash)
+	log.Tracef("applyMergeSetBlocks start for block %s", blockHash)
+	defer log.Tracef("applyMergeSetBlocks end for block %s", blockHash)
 
 	mergeSetHashes, err := csm.ghostdagManager.GetSortedMergeSet(stagingArea, blockHash)
 	if err != nil {

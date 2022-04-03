@@ -12,9 +12,9 @@ import (
 // the time duration the function had ran.
 func LogAndMeasureExecutionTime(log *Logger, functionName string) (onEnd func()) {
 	start := time.Now()
-	log.Debugf("%s start", functionName)
+	log.Tracef("%s start", functionName)
 	return func() {
-		log.Debugf("%s end. Took: %s", functionName, time.Since(start))
+		log.Tracef("%s end. Took: %s", functionName, time.Since(start))
 	}
 }
 
