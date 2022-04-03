@@ -142,6 +142,10 @@ func (pm *pruningManager) UpdatePruningPointByVirtual(stagingArea *model.Staging
 		return err
 	}
 
+	if virtualGHOSTDAGData.SelectedParent().Equal(pm.genesisHash) {
+		return nil
+	}
+
 	newPruningPoint, newCandidate, err := pm.nextPruningPointAndCandidateByBlockHash(stagingArea, virtualGHOSTDAGData.SelectedParent(), nil)
 	if err != nil {
 		return err
@@ -163,6 +167,20 @@ func (pm *pruningManager) UpdatePruningPointByVirtual(stagingArea *model.Staging
 	}
 
 	if !newPruningPoint.Equal(currentPruningPoint) {
+		currentPruningPointGHOSTDAGData, err := pm.ghostdagDataStore.Get(pm.databaseContext, stagingArea, currentPruningPoint, false)
+		if err != nil {
+			return err
+		}
+
+		newPruningPointGHOSTDAGData, err := pm.ghostdagDataStore.Get(pm.databaseContext, stagingArea, newPruningPoint, false)
+		if err != nil {
+			return err
+		}
+
+		if pm.finalityScore(newPruningPointGHOSTDAGData.BlueScore()) > pm.finalityScore(currentPruningPointGHOSTDAGData.BlueScore())+1 {
+			return errors.Errorf("cannot advance pruning point by more than one finality interval at once")
+		}
+
 		log.Debugf("Moving pruning point from %s to %s", currentPruningPoint, newPruningPoint)
 		err = pm.savePruningPoint(stagingArea, newPruningPoint)
 		if err != nil {
