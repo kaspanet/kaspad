@@ -44,6 +44,9 @@ type pruningManager struct {
 	shouldSanityCheckPruningUTXOSet bool
 	k                               externalapi.KType
 	difficultyAdjustmentWindowSize  int
+
+	cachedPruningPoint         *externalapi.DomainHash
+	cachedPruningPointAnticone []*externalapi.DomainHash
 }
 
 // New instantiates a new PruningManager
@@ -932,6 +935,12 @@ func (pm *pruningManager) PruningPointAndItsAnticone() ([]*externalapi.DomainHas
 		return nil, err
 	}
 
+	// By the Prunality proof, The pruning point anticone is a closed set (i.e., guaranteed not to change) ,
+	// so we can safely cache it.
+	if pm.cachedPruningPoint != nil && pm.cachedPruningPoint.Equal(pruningPoint) {
+		return append([]*externalapi.DomainHash{pruningPoint}, pm.cachedPruningPointAnticone...), nil
+	}
+
 	pruningPointAnticone, err := pm.dagTraversalManager.AnticoneFromVirtualPOV(stagingArea, pruningPoint)
 	if err != nil {
 		return nil, err
@@ -957,6 +966,9 @@ func (pm *pruningManager) PruningPointAndItsAnticone() ([]*externalapi.DomainHas
 	if sortErr != nil {
 		return nil, sortErr
 	}
+
+	pm.cachedPruningPoint = pruningPoint
+	pm.cachedPruningPointAnticone = pruningPointAnticone
 
 	// The pruning point should always come first
 	return append([]*externalapi.DomainHash{pruningPoint}, pruningPointAnticone...), nil
