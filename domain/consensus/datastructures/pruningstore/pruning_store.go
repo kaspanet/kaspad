@@ -10,6 +10,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/lrucacheuint64tohash"
 	"github.com/kaspanet/kaspad/util/staging"
+	"github.com/pkg/errors"
 )
 
 var currentPruningPointIndexKeyName = []byte("pruning-block-index")
@@ -298,11 +299,17 @@ func (ps *pruningStore) StagePruningPointByIndex(dbContext model.DBReader, stagi
 	pruningPointBlockHash *externalapi.DomainHash, index uint64) error {
 
 	stagingShard := ps.stagingShard(stagingArea)
+	_, exists := stagingShard.pruningPointByIndex[index]
+	if exists {
+		return errors.Errorf("%s is already staged for pruning point with index %d", stagingShard.pruningPointByIndex[index], index)
+	}
+
 	stagingShard.pruningPointByIndex[index] = pruningPointBlockHash
 
 	pruningPointIndex, err := ps.CurrentPruningPointIndex(dbContext, stagingArea)
 	isNotFoundError := database.IsNotFoundError(err)
 	if !isNotFoundError && err != nil {
+		delete(stagingShard.pruningPointByIndex, index)
 		return err
 	}
 
