@@ -12,12 +12,12 @@ import (
 )
 
 func (s *server) Broadcast(_ context.Context, request *pb.BroadcastRequest) (*pb.BroadcastResponse, error) {
-	txIDs, err := s.broadcast([][]byte{request.Transaction})
+	txIDs, err := s.broadcast(request.Transactions)
 	if err != nil {
 		return nil, err
 	}
 
-	return &pb.BroadcastResponse{TxID: txIDs[0]}, nil
+	return &pb.BroadcastResponse{TxIDs: txIDs}, nil
 }
 
 func (s *server) broadcast(transactions [][]byte) ([]string, error) {

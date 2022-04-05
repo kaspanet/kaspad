@@ -58,24 +58,15 @@ func send(conf *sendConfig) error {
 	if len(signedTransactions) > 1 {
 		fmt.Printf("Broadcasting %d transactions\n", len(signedTransactions))
 	}
-	for _, signedTransaction := range signedTransactions {
-		err := func() error { // surround with func so that defer runs separately per transaction
-			ctx2, cancel2 := context.WithTimeout(context.Background(), daemonTimeout)
-			defer cancel2()
-			broadcastResponse, err := daemonClient.Broadcast(ctx2, &pb.BroadcastRequest{
-				Transaction: signedTransaction,
-			})
-			if err != nil {
-				return err
-			}
 
-			fmt.Println("Transaction was sent successfully")
-			fmt.Printf("Transaction ID: \t%s\n", broadcastResponse.TxID)
-			return nil
-		}()
-		if err != nil {
-			return err
-		}
+	response, err := daemonClient.Broadcast(ctx, &pb.BroadcastRequest{Transactions: signedTransactions})
+	if err != nil {
+		return err
+	}
+	fmt.Println("Transaction was sent successfully")
+	fmt.Println("Transaction ID(s): ")
+	for _, txID := range response.TxIDs {
+		fmt.Printf("\\t%s\\n", txID)
 	}
 
 	return nil

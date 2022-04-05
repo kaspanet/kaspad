@@ -53,11 +53,11 @@ message NewAddressResponse {
 }
 
 message BroadcastRequest {
-  bytes transaction = 1;
+  repeated bytes transactions = 1;
 }
 
 message BroadcastResponse {
-  string txID = 1;
+  repeated string txIDs = 1;
 }
 
 message ShutdownRequest {
@@ -69,6 +69,7 @@ message ShutdownResponse {
 message SendRequest{
   string toAddress = 1;
   uint64 amount = 2;
+
   string password = 3;
 }
 
