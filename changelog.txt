@@ -1,3 +1,7 @@
+Kaspad v0.11.16 - 2022-04-05
+===========================
+* Don't skip wallet address with different cosigner index (#2007)
+
 Kaspad v0.11.15 - 2022-04-05
 ===========================
 * Add support for auto-compound in `kaspawallet send` (#1951)
