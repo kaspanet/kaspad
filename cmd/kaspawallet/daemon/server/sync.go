@@ -159,10 +159,6 @@ func (s *server) updateAddressesAndLastUsedIndexes(requestedAddressSet walletAdd
 			continue
 		}
 
-		if walletAddress.cosignerIndex != s.keysFile.CosignerIndex {
-			continue
-		}
-
 		s.addressSet[entry.Address] = walletAddress
 
 		if walletAddress.keyChain == libkaspawallet.ExternalKeychain {
