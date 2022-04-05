@@ -4,11 +4,22 @@ import (
 	"context"
 
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/daemon/pb"
-
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 )
 
 func (s *server) Send(_ context.Context, request *pb.SendRequest) (*pb.SendResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Send not implemented")
+	unsignedTransactions, err := s.createUnsignedTransactions(request.ToAddress, request.Amount)
+	if err != nil {
+		return nil, err
+	}
+	signedTransactions, err := s.signTransactions(unsignedTransactions, request.Password)
+	if err != nil {
+		return nil, err
+	}
+
+	txIDs, err := s.broadcast(signedTransactions)
+	if err != nil {
+		return nil, err
+	}
+
+	return &pb.SendResponse{TransactionIDs: txIDs}, nil
 }
