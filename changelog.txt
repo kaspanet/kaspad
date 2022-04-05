@@ -1,3 +1,21 @@
+Kaspad v0.11.15 - 2022-04-05
+===========================
+* Add support for auto-compound in `kaspawallet send` (#1951)
+* Unite reachability stores (#1963, #1993, #2001)
+* Add names to nameless routes (#1986)
+* Optimize the miner-kaspad flow and latency (#1988)
+* Upgrade to go 1.18 (#1992)
+* Add package name to kaspawalletd .proto file (#1991)
+* Block template cache  (#1994)
+* Add extra data to GetBlockTemplate request (#1995, #1997)
+* New definition for "out of sync"  (#1996)
+* Remove v4 p2p version (#1998)
+* Remove increase pagefile from deploy.yaml (#2000)
+* Cache the pruning point anticone (#2002)
+* Add DB compaction after the deletion of a DB prefix (#2003)
+* Fixed a bug in staging of pruning point by index (#2005)
+* Clean up debug log level by moving many frequent logs to trace level (#2004)
+
 Kaspad v0.11.14 - 2022-03-20
 ===========================
 * Fix a bug in the new p2p v5 IBD chain negotiation (#1981)
