@@ -567,7 +567,7 @@ func (flow *handleIBDFlow) receiveAndInsertPruningPointUTXOSet(
 
 			receivedChunkCount++
 			if receivedChunkCount%ibdBatchSize == 0 {
-				log.Debugf("Received %d UTXO set chunks so far, totaling in %d UTXOs",
+				log.Infof("Received %d UTXO set chunks so far, totaling in %d UTXOs",
 					receivedChunkCount, receivedUTXOCount)
 
 				requestNextPruningPointUTXOSetChunkMessage := appmessage.NewMsgRequestNextPruningPointUTXOSetChunk()
