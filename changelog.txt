@@ -1,3 +1,7 @@
+Kaspad v0.11.16 - 2022-04-06
+===========================
+* Decrement estimatedHeaderUpperBound from mempool's MaxBlockMass (#2009)
+
 Kaspad v0.11.16 - 2022-04-05
 ===========================
 * Don't skip wallet address with different cosigner index (#2007)
