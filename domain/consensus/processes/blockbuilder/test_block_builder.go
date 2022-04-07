@@ -283,3 +283,7 @@ func (bb *testBlockBuilder) BuildUTXOInvalidBlock(parentHashes []*externalapi.Do
 		Transactions: transactions,
 	}, nil
 }
+
+func (bb *testBlockBuilder) SetNonceCounter(nonceCounter uint64) {
+	bb.nonceCounter = nonceCounter
+}

@@ -220,7 +220,7 @@ func (v *blockValidator) validateGasLimit(block *externalapi.DomainBlock) error 
 
 func (v *blockValidator) checkBlockMass(block *externalapi.DomainBlock) error {
 	mass := uint64(0)
-	if !v.ignoreHeaderMass {
+	if block.Header.DAAScore() < v.hf1DAAScore {
 		mass += v.headerEstimatedSerializedSize(block.Header)
 	}
 

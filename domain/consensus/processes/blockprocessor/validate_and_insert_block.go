@@ -129,6 +129,12 @@ func (bp *blockProcessor) validateAndInsertBlock(stagingArea *model.StagingArea,
 		}
 	}
 
+	// This will calculate and stage the finality point for this block if it doesn't exist yet.
+	_, err = bp.finalityManager.FinalityPoint(stagingArea, blockHash, isBlockWithTrustedData)
+	if err != nil {
+		return nil, err
+	}
+
 	bp.loadUTXODataForGenesis(stagingArea, block)
 	var selectedParentChainChanges *externalapi.SelectedChainPath
 	var virtualUTXODiff externalapi.UTXODiff

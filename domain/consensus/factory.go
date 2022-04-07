@@ -3,6 +3,7 @@ package consensus
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/blockwindowheapslicestore"
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/daawindowstore"
+	"github.com/kaspanet/kaspad/domain/consensus/datastructures/mergedepthrootstore"
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/processes/blockparentbuilder"
 	parentssanager "github.com/kaspanet/kaspad/domain/consensus/processes/parentsmanager"
@@ -127,6 +128,7 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 	pruningWindowSizePlusFinalityDepthForCache := int(config.PruningDepth() + config.FinalityDepth())
 
 	// Data Structures
+	mergeDepthRootStore := mergedepthrootstore.New(prefixBucket, 200, preallocateCaches)
 	daaWindowStore := daawindowstore.New(prefixBucket, 10_000, preallocateCaches)
 	acceptanceDataStore := acceptancedatastore.New(prefixBucket, 200, preallocateCaches)
 	blockStore, err := blockstore.New(dbManager, prefixBucket, 200, preallocateCaches)
@@ -261,7 +263,14 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 		dagTopologyManager,
 		dagTraversalManager,
 		finalityManager,
-		ghostdagDataStore)
+		genesisHash,
+		config.MergeDepth,
+		config.HF1DAAScore,
+		ghostdagDataStore,
+		mergeDepthRootStore,
+		daaBlocksStore,
+		pruningStore,
+		finalityStore)
 	consensusStateManager, err := consensusstatemanager.New(
 		dbManager,
 		config.MaxBlockParents,
@@ -334,7 +343,7 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 		config.MaxBlockParents,
 		config.TimestampDeviationTolerance,
 		config.TargetTimePerBlock,
-		config.IgnoreHeaderMass,
+		config.HF1DAAScore,
 		config.MaxBlockLevel,
 
 		dbManager,
@@ -416,6 +425,7 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 		coinbaseManager,
 		headerTipsManager,
 		syncManager,
+		finalityManager,
 
 		acceptanceDataStore,
 		blockStore,
