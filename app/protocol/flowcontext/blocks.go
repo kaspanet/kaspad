@@ -71,6 +71,7 @@ func (f *FlowContext) OnVirtualChange(virtualChangeSet *externalapi.VirtualChang
 // OnNewBlockTemplate calls the handler function whenever a new block template is available for miners.
 func (f *FlowContext) OnNewBlockTemplate() error {
 	if f.onNewBlockTemplateHandler != nil {
+		f.Domain().MiningManager().ClearBlockTemplate()
 		return f.onNewBlockTemplateHandler()
 	}
 

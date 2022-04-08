@@ -4,7 +4,6 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensusreference"
 	miningmanagermodel "github.com/kaspanet/kaspad/domain/miningmanager/model"
-	"github.com/kaspanet/kaspad/util/mstime"
 	"sync"
 	"time"
 )
@@ -12,7 +11,8 @@ import (
 // MiningManager creates block templates for mining as well as maintaining
 // known transactions that have no yet been added to any block
 type MiningManager interface {
-	GetBlockTemplate(coinbaseData *externalapi.DomainCoinbaseData) (*externalapi.DomainBlock, error)
+	GetBlockTemplate(coinbaseData *externalapi.DomainCoinbaseData) (*externalapi.DomainBlock, bool, error)
+	ClearBlockTemplate()
 	GetBlockTemplateBuilder() miningmanagermodel.BlockTemplateBuilder
 	GetTransaction(transactionID *externalapi.DomainTransactionID) (*externalapi.DomainTransaction, bool)
 	AllTransactions() []*externalapi.DomainTransaction
@@ -33,57 +33,45 @@ type miningManager struct {
 }
 
 // GetBlockTemplate obtains a block template for a miner to consume
-func (mm *miningManager) GetBlockTemplate(coinbaseData *externalapi.DomainCoinbaseData) (*externalapi.DomainBlock, error) {
+func (mm *miningManager) GetBlockTemplate(coinbaseData *externalapi.DomainCoinbaseData) (*externalapi.DomainBlock, bool, error) {
+	mm.cacheLock.Lock()
 	immutableCachedTemplate := mm.getImmutableCachedTemplate()
 	// We first try and use a cached template
 	if immutableCachedTemplate != nil {
-		virtualInfo, err := mm.consensusReference.Consensus().GetVirtualInfo()
+		mm.cacheLock.Unlock()
+		if immutableCachedTemplate.CoinbaseData.Equal(coinbaseData) {
+			return immutableCachedTemplate.Block, true, nil
+		}
+		// Coinbase data is new -- make the minimum changes required
+		// Note we first clone the block template since it is modified by the call
+		modifiedBlockTemplate, err := mm.blockTemplateBuilder.ModifyBlockTemplate(coinbaseData, immutableCachedTemplate.Clone())
 		if err != nil {
-			return nil, err
+			return nil, false, err
 		}
-		if externalapi.HashesEqual(virtualInfo.ParentHashes, immutableCachedTemplate.Block.Header.DirectParents()) {
-			if immutableCachedTemplate.CoinbaseData.Equal(coinbaseData) {
-				// Both, virtual parents and coinbase data are equal, simply return the cached block with updated time
-				newTimestamp := mstime.Now().UnixMilliseconds()
-				if newTimestamp < immutableCachedTemplate.Block.Header.TimeInMilliseconds() {
-					// Keep the previous time as built by internal consensus median time logic
-					return immutableCachedTemplate.Block, nil
-				}
-				// If new time stamp is later than current, update the header
-				mutableHeader := immutableCachedTemplate.Block.Header.ToMutable()
-				mutableHeader.SetTimeInMilliseconds(newTimestamp)
 
-				return &externalapi.DomainBlock{
-					Header:       mutableHeader.ToImmutable(),
-					Transactions: immutableCachedTemplate.Block.Transactions,
-				}, nil
-			}
-
-			// Virtual parents are equal, but coinbase data is new -- make the minimum changes required
-			// Note we first clone the block template since it is modified by the call
-			modifiedBlockTemplate, err := mm.blockTemplateBuilder.ModifyBlockTemplate(coinbaseData, immutableCachedTemplate.Clone())
-			if err != nil {
-				return nil, err
-			}
-
-			// No point in updating cache since we have no reason to believe this coinbase will be used more
-			// than the previous one, and we want to maintain the original template caching time
-			return modifiedBlockTemplate.Block, nil
-		}
+		// No point in updating cache since we have no reason to believe this coinbase will be used more
+		// than the previous one, and we want to maintain the original template caching time
+		return modifiedBlockTemplate.Block, true, nil
 	}
+	defer mm.cacheLock.Unlock()
 	// No relevant cache, build a template
 	blockTemplate, err := mm.blockTemplateBuilder.BuildBlockTemplate(coinbaseData)
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 	// Cache the built template
 	mm.setImmutableCachedTemplate(blockTemplate)
-	return blockTemplate.Block, nil
+	return blockTemplate.Block, false, nil
+}
+
+func (mm *miningManager) ClearBlockTemplate() {
+	mm.cacheLock.Lock()
+	mm.cachingTime = time.Time{}
+	mm.cachedBlockTemplate = nil
+	mm.cacheLock.Unlock()
 }
 
 func (mm *miningManager) getImmutableCachedTemplate() *externalapi.DomainBlockTemplate {
-	mm.cacheLock.Lock()
-	defer mm.cacheLock.Unlock()
 	if time.Since(mm.cachingTime) > time.Second {
 		// No point in cache optimizations if queries are more than a second apart -- we prefer rechecking the mempool.
 		// Full explanation: On the one hand this is a sub-millisecond optimization, so there is no harm in doing the full block building
@@ -95,8 +83,6 @@ func (mm *miningManager) getImmutableCachedTemplate() *externalapi.DomainBlockTe
 }
 
 func (mm *miningManager) setImmutableCachedTemplate(blockTemplate *externalapi.DomainBlockTemplate) {
-	mm.cacheLock.Lock()
-	defer mm.cacheLock.Unlock()
 	mm.cachingTime = time.Now()
 	mm.cachedBlockTemplate = blockTemplate
 }

@@ -20,6 +20,7 @@ type Context struct {
 	AddressManager    *addressmanager.AddressManager
 	UTXOIndex         *utxoindex.UTXOIndex
 	ShutDownChan      chan<- struct{}
+	IsSynced          bool
 
 	NotificationManager *NotificationManager
 }
@@ -43,6 +44,7 @@ func NewContext(cfg *config.Config,
 		AddressManager:    addressManager,
 		UTXOIndex:         utxoIndex,
 		ShutDownChan:      shutDownChan,
+		IsSynced:          false,
 	}
 	context.NotificationManager = NewNotificationManager()
 
