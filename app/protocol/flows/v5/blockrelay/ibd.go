@@ -93,7 +93,7 @@ func (flow *handleIBDFlow) runIBDIfNotRunning(block *externalapi.DomainBlock) er
 	}
 
 	if isViolatingBoundedMergeDepth {
-		return protocolerrors.Errorf(false, "cannot sync from node that violates the selected tip merge depth bound")
+		return nil
 	}
 
 	shouldDownloadHeadersProof, shouldSync, err := flow.shouldSyncAndShouldDownloadHeadersProof(
