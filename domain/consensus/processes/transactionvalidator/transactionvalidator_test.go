@@ -21,7 +21,7 @@ import (
 
 func TestValidateTransactionInContextAndPopulateFee(t *testing.T) {
 	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
-
+		consensusConfig.HF1DAAScore = consensusConfig.GenesisBlock.Header.DAAScore() + 1000
 		factory := consensus.NewFactory()
 		tc, tearDown, err := factory.NewTestConsensus(consensusConfig,
 			"TestValidateTransactionInContextAndPopulateFee")
@@ -85,17 +85,31 @@ func TestValidateTransactionInContextAndPopulateFee(t *testing.T) {
 				true,
 				uint64(6)),
 		}
+
 		txInputWithLargeAmount := externalapi.DomainTransactionInput{
 			PreviousOutpoint: prevOutPoint,
 			SignatureScript:  []byte{},
 			Sequence:         constants.MaxTxInSequenceNum,
 			SigOpCount:       1,
 			UTXOEntry: utxo.NewUTXOEntry(
-				constants.MaxSompiBeforeHF1,
+				constants.MaxSompiBeforeHF1+1,
 				scriptPublicKey,
-				true,
-				uint64(5)),
+				false,
+				0),
 		}
+
+		txInputWithLargeAmountAfterHF := externalapi.DomainTransactionInput{
+			PreviousOutpoint: prevOutPoint,
+			SignatureScript:  []byte{},
+			Sequence:         constants.MaxTxInSequenceNum,
+			SigOpCount:       1,
+			UTXOEntry: utxo.NewUTXOEntry(
+				constants.MaxSompiAfterHF1+1,
+				scriptPublicKey,
+				false,
+				0),
+		}
+
 		txInputWithBadSigOpCount := externalapi.DomainTransactionInput{
 			PreviousOutpoint: prevOutPoint,
 			SignatureScript:  []byte{},
@@ -141,13 +155,31 @@ func TestValidateTransactionInContextAndPopulateFee(t *testing.T) {
 			SubnetworkID: subnetworks.SubnetworkIDRegistry,
 			Gas:          0,
 			LockTime:     0}
-		txWithLargeAmount := externalapi.DomainTransaction{
+		txWithLargeAmountBeforeHF := externalapi.DomainTransaction{
 			Version:      constants.MaxTransactionVersion,
-			Inputs:       []*externalapi.DomainTransactionInput{&txInput, &txInputWithLargeAmount},
+			Inputs:       []*externalapi.DomainTransactionInput{&txInputWithLargeAmount},
 			Outputs:      []*externalapi.DomainTransactionOutput{&txOutput},
 			SubnetworkID: subnetworks.SubnetworkIDRegistry,
 			Gas:          0,
 			LockTime:     0}
+
+		txWithLargeAmountAfterHF := externalapi.DomainTransaction{
+			Version:      constants.MaxTransactionVersion,
+			Inputs:       []*externalapi.DomainTransactionInput{&txInputWithLargeAmountAfterHF},
+			Outputs:      []*externalapi.DomainTransactionOutput{&txOutput},
+			SubnetworkID: subnetworks.SubnetworkIDRegistry,
+			Gas:          0,
+			LockTime:     0}
+
+		for i, input := range txWithLargeAmountBeforeHF.Inputs {
+			signatureScript, err := txscript.SignatureScript(&txWithLargeAmountBeforeHF, i, consensushashing.SigHashAll, privateKey,
+				&consensushashing.SighashReusedValues{})
+			if err != nil {
+				t.Fatalf("Failed to create a sigScript: %v", err)
+			}
+			input.SignatureScript = signatureScript
+		}
+
 		txWithBigValue := externalapi.DomainTransaction{
 			Version:      constants.MaxTransactionVersion,
 			Inputs:       []*externalapi.DomainTransactionInput{&txInput},
@@ -174,6 +206,9 @@ func TestValidateTransactionInContextAndPopulateFee(t *testing.T) {
 
 		povBlockHash := externalapi.NewDomainHashFromByteArray(&[32]byte{0x01})
 		tc.DAABlocksStore().StageDAAScore(stagingArea, povBlockHash, consensusConfig.BlockCoinbaseMaturity+txInput.UTXOEntry.BlockDAAScore())
+
+		povAfterHFBlockHash := externalapi.NewDomainHashFromByteArray(&[32]byte{0x02})
+		tc.DAABlocksStore().StageDAAScore(stagingArea, povAfterHFBlockHash, consensusConfig.HF1DAAScore)
 
 		// Just use some stub ghostdag data
 		tc.GHOSTDAGDataStore().Stage(stagingArea, povBlockHash, externalapi.NewBlockGHOSTDAGData(
@@ -208,9 +243,23 @@ func TestValidateTransactionInContextAndPopulateFee(t *testing.T) {
 				expectedError: ruleerrors.ErrImmatureSpend,
 			},
 			{ // The total inputs amount is bigger than the allowed maximum (constants.MaxSompiBeforeHF1)
-				name:          "checkTransactionInputAmounts",
-				tx:            &txWithLargeAmount,
+				name:          "checkTransactionInputAmounts - invalid - before HF",
+				tx:            &txWithLargeAmountBeforeHF,
 				povBlockHash:  povBlockHash,
+				isValid:       false,
+				expectedError: ruleerrors.ErrBadTxOutValue,
+			},
+			{ // The total inputs amount is bigger than the allowed maximum (constants.MaxSompiBeforeHF1)
+				name:          "checkTransactionInputAmounts - valid - after HF",
+				tx:            &txWithLargeAmountBeforeHF,
+				povBlockHash:  povAfterHFBlockHash,
+				isValid:       true,
+				expectedError: nil,
+			},
+			{ // The total inputs amount is bigger than the allowed maximum (constants.MaxSompiBeforeHF1)
+				name:          "checkTransactionInputAmounts - invalid - after HF",
+				tx:            &txWithLargeAmountAfterHF,
+				povBlockHash:  povAfterHFBlockHash,
 				isValid:       false,
 				expectedError: ruleerrors.ErrBadTxOutValue,
 			},
