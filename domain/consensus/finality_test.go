@@ -340,13 +340,13 @@ func TestBoundedMergeDepth(t *testing.T) {
 			// submit a block pointing at tip(chain1) and on first block in chain2 directly
 			mergeDepthViolatingBlockBottom, isViolatingMergeDepth := checkViolatingMergeDepth(consensusReal, []*externalapi.DomainHash{consensushashing.BlockHash(blocksChain2[0]), consensushashing.BlockHash(selectedChain[len(selectedChain)-1])})
 			if isViolatingMergeDepth != isRealDepth {
-				t.Fatalf("TestBoundedMergeDepth: Expected mergeDepthViolatingBlockBottom to violate merge depth")
+				t.Fatalf("TestBoundedMergeDepth: Expects isViolatingMergeDepth to be %t", isRealDepth)
 			}
 
 			// submit a block pointing at tip(chain1) and tip(chain2) should also obviously violate merge depth (this points at first block in chain2 indirectly)
 			mergeDepthViolatingTop, isViolatingMergeDepth := checkViolatingMergeDepth(consensusReal, []*externalapi.DomainHash{consensushashing.BlockHash(blocksChain2[len(blocksChain2)-1]), consensushashing.BlockHash(selectedChain[len(selectedChain)-1])})
 			if isViolatingMergeDepth != isRealDepth {
-				t.Fatalf("TestBoundedMergeDepth: Expected mergeDepthViolatingTop to violate merge depth")
+				t.Fatalf("TestBoundedMergeDepth: Expects isViolatingMergeDepth to be %t", isRealDepth)
 			}
 
 			// the location of the parents in the slices need to be both `-X` so the `selectedChain` one will have higher blueScore (it's a chain longer by 1)
@@ -430,7 +430,7 @@ func TestBoundedMergeDepth(t *testing.T) {
 
 			pointAtRedKosherizing, isViolatingMergeDepth := checkViolatingMergeDepth(consensusReal, []*externalapi.DomainHash{kosherizingBlockHash, tip})
 			if isViolatingMergeDepth != isRealDepth {
-				t.Fatalf("TestBoundedMergeDepth: Expected selectedTipRedKosherize to violate merge depth")
+				t.Fatalf("TestBoundedMergeDepth: Expects isViolatingMergeDepth to be %t", isRealDepth)
 			}
 
 			// Now `pointAtBlueKosherizing` itself is actually still blue, so we can still point at that even though we can't point at kosherizing directly anymore

@@ -182,7 +182,12 @@ func (s *consensus) ValidateTransactionAndPopulateWithConsensusData(transaction 
 
 	stagingArea := model.NewStagingArea()
 
-	err := s.transactionValidator.ValidateTransactionInIsolation(transaction)
+	daaScore, err := s.daaBlocksStore.DAAScore(s.databaseContext, stagingArea, model.VirtualBlockHash)
+	if err != nil {
+		return err
+	}
+
+	err = s.transactionValidator.ValidateTransactionInIsolation(transaction, daaScore)
 	if err != nil {
 		return err
 	}

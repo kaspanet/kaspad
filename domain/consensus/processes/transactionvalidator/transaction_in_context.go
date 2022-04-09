@@ -58,6 +58,14 @@ func (v *transactionValidator) ValidateTransactionInContextIgnoringUTXO(stagingA
 		return errors.Wrapf(ruleerrors.ErrUnfinalizedTx, "unfinalized transaction %v", tx)
 	}
 
+	// TODO: Remove checkTransactionAmountRanges from here once HF was activated. It's only temporary
+	// because in the HF transition period checkTransactionAmountRanges is not context free.
+	isHF1Activated := povBlockDAAScore >= v.hf1DAAScore
+	err = v.checkTransactionAmountRanges(tx, isHF1Activated)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -73,7 +81,13 @@ func (v *transactionValidator) ValidateTransactionInContextAndPopulateFee(stagin
 		return err
 	}
 
-	totalSompiIn, err := v.checkTransactionInputAmounts(tx)
+	daaScore, err := v.daaBlocksStore.DAAScore(v.databaseContext, stagingArea, povBlockHash)
+	if err != nil {
+		return err
+	}
+
+	isHF1Activated := daaScore >= v.hf1DAAScore
+	totalSompiIn, err := v.checkTransactionInputAmounts(tx, isHF1Activated)
 	if err != nil {
 		return err
 	}
@@ -135,7 +149,7 @@ func (v *transactionValidator) checkTransactionCoinbaseMaturity(stagingArea *mod
 	return nil
 }
 
-func (v *transactionValidator) checkTransactionInputAmounts(tx *externalapi.DomainTransaction) (totalSompiIn uint64, err error) {
+func (v *transactionValidator) checkTransactionInputAmounts(tx *externalapi.DomainTransaction, isHF1Activated bool) (totalSompiIn uint64, err error) {
 	totalSompiIn = 0
 
 	var missingOutpoints []*externalapi.DomainOutpoint
@@ -152,7 +166,7 @@ func (v *transactionValidator) checkTransactionInputAmounts(tx *externalapi.Doma
 		// a transaction are in a unit value known as a sompi. One
 		// kaspa is a quantity of sompi as defined by the
 		// SompiPerKaspa constant.
-		totalSompiIn, err = v.checkEntryAmounts(utxoEntry, totalSompiIn)
+		totalSompiIn, err = v.checkEntryAmounts(utxoEntry, totalSompiIn, isHF1Activated)
 		if err != nil {
 			return 0, err
 		}
@@ -165,18 +179,24 @@ func (v *transactionValidator) checkTransactionInputAmounts(tx *externalapi.Doma
 	return totalSompiIn, nil
 }
 
-func (v *transactionValidator) checkEntryAmounts(entry externalapi.UTXOEntry, totalSompiInBefore uint64) (totalSompiInAfter uint64, err error) {
+func (v *transactionValidator) checkEntryAmounts(entry externalapi.UTXOEntry, totalSompiInBefore uint64, isHF1Activated bool) (totalSompiInAfter uint64, err error) {
 	// The total of all outputs must not be more than the max
 	// allowed per transaction. Also, we could potentially overflow
 	// the accumulator so check for overflow.
+
+	maxSompi := constants.MaxSompiBeforeHF1
+	if isHF1Activated {
+		maxSompi = constants.MaxSompiAfterHF1
+	}
+
 	originTxSompi := entry.Amount()
 	totalSompiInAfter = totalSompiInBefore + originTxSompi
 	if totalSompiInAfter < totalSompiInBefore ||
-		totalSompiInAfter > constants.MaxSompi {
+		totalSompiInAfter > maxSompi {
 		return 0, errors.Wrapf(ruleerrors.ErrBadTxOutValue, "total value of all transaction "+
 			"inputs is %d which is higher than max "+
 			"allowed value of %d", totalSompiInBefore,
-			constants.MaxSompi)
+			maxSompi)
 	}
 	return totalSompiInAfter, nil
 }
