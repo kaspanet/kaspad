@@ -38,7 +38,6 @@ func (s *server) sync() error {
 		}
 
 		err = s.refreshExistingUTXOsWithLock()
-
 		if err != nil {
 			return err
 		}
@@ -103,16 +102,24 @@ func (s *server) maxUsedIndex() uint32 {
 
 // collectRecentAddresses collects addresses from used addresses until
 // the address with the index of the last used address + 1000.
-// collectRecentAddresses scans addresses in batches of numIndexesToQuery,
+// collectRecentAddresses scans addresses in batches of 1000,
 // and releases the lock between scans.
 func (s *server) collectRecentAddresses() error {
-	maxUsedIndex := s.maxUsedIndex()
-	for i := uint32(0); i < maxUsedIndex+1000; i += numIndexesToQuery {
-		err := s.collectAddressesWithLock(i, i+numIndexesToQuery)
+	index := uint32(0)
+	maxUsedIndex := uint32(0)
+	for ; index < maxUsedIndex+1000; index += 1000 {
+		err := s.collectAddressesWithLock(index, index+1000)
 		if err != nil {
 			return err
 		}
+		maxUsedIndex = s.maxUsedIndex()
 	}
+
+	s.lock.Lock()
+	if index > s.nextSyncStartIndex {
+		s.nextSyncStartIndex = index
+	}
+	s.lock.Unlock()
 
 	return nil
 }
