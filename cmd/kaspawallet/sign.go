@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"strings"
+	"os"
 
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/keys"
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/libkaspawallet"
@@ -66,12 +67,11 @@ func sign(conf *signConfig) error {
 	}
 
 	if areAllTransactionsFullySigned {
-		fmt.Println("The transaction is signed and ready to broadcast")
+		fmt.Fprintln(os.Stderr, "The transaction is signed and ready to broadcast")
 	} else {
-		fmt.Println("Successfully signed transaction")
+		fmt.Fprintln(os.Stderr, "Successfully signed transaction")
 	}
 
-	fmt.Println("Transaction: ")
 	fmt.Println(encodeTransactionsToHex(updatedPartiallySignedTransactions))
 	return nil
 }
