@@ -86,6 +86,7 @@ func (flow *handleIBDFlow) runIBDIfNotRunning(block *externalapi.DomainBlock) er
 	if err != nil {
 		return err
 	}
+
 	shouldDownloadHeadersProof, shouldSync, err := flow.shouldSyncAndShouldDownloadHeadersProof(
 		block, highestKnownSyncerChainHash)
 	if err != nil {
