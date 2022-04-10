@@ -1,6 +1,7 @@
 package libkaspawallet
 
 import (
+	"github.com/kaspanet/go-secp256k1"
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/libkaspawallet/bip32"
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/libkaspawallet/serialization"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
@@ -41,6 +42,34 @@ func Sign(params *dagconfig.Params, mnemonics []string, serializedPSTx []byte, e
 		}
 	}
 	return serialization.SerializePartiallySignedTransaction(partiallySignedTransaction)
+}
+
+//Sign transactions with a shnorr private key
+//Implicat assumptions: 1) Private key is a schnorr private key (see no functions to test for type, in order to sign accordingly)
+func SignWithSchnorrPrivteKey(params *dagconfig.Params, privateKeyBytes []byte, partiallySignedTransaction *serialization.PartiallySignedTransaction) error {
+
+	schnorrkeyPair, err := secp256k1.DeserializeSchnorrPrivateKeyFromSlice(privateKeyBytes)
+	if err != nil {
+		return err
+	}
+
+	sighashReusedValues := &consensushashing.SighashReusedValues{}
+
+	for i, input := range partiallySignedTransaction.Tx.Inputs {
+		partiallySignedTransaction.Tx.Inputs[i].UTXOEntry = utxo.NewUTXOEntry(
+			partiallySignedTransaction.PartiallySignedInputs[i].PrevOutput.Value,
+			partiallySignedTransaction.PartiallySignedInputs[i].PrevOutput.ScriptPublicKey,
+			false,
+			0,
+		)
+		signature, err := txscript.SignatureScript(partiallySignedTransaction.Tx, i, consensushashing.SigHashAll, schnorrkeyPair, sighashReusedValues)
+		if err != nil {
+			return err
+		}
+		input.SignatureScript = signature
+	}
+
+	return nil
 }
 
 func sign(params *dagconfig.Params, mnemonic string, partiallySignedTransaction *serialization.PartiallySignedTransaction, ecdsa bool) error {
@@ -92,6 +121,7 @@ func sign(params *dagconfig.Params, mnemonic string, partiallySignedTransaction 
 	}
 
 	if !signed {
+
 		return errors.Errorf("Public key doesn't match any of the transaction public keys")
 	}
 

@@ -5,6 +5,7 @@ package kaspawalletd;
 
 service kaspawalletd {
   rpc GetBalance (GetBalanceRequest) returns (GetBalanceResponse) {}
+  rpc GetExternalSpendableUTXOs (GetExternalSpendableUTXOsRequest) returns (GetExternalSpendableUTXOsResponse) {}
   rpc CreateUnsignedTransactions (CreateUnsignedTransactionsRequest) returns (CreateUnsignedTransactionsResponse) {}
   rpc ShowAddresses (ShowAddressesRequest) returns (ShowAddressesResponse) {}
   rpc NewAddress (NewAddressRequest) returns (NewAddressResponse) {}
@@ -22,9 +23,9 @@ message GetBalanceResponse {
 }
 
 message AddressBalances {
-    string address = 1;
-    uint64 available = 2;
-    uint64 pending = 3;
+  string address = 1;
+  uint64 available = 2;
+  uint64 pending = 3;
 }
 
 message CreateUnsignedTransactionsRequest {
@@ -62,4 +63,35 @@ message ShutdownRequest {
 }
 
 message ShutdownResponse {
+}
+
+message Outpoint {
+  string transactionId = 1;
+  uint32 index = 2;
+}
+
+message UtxosByAddressesEntry {
+  string address = 1;
+  Outpoint outpoint = 2;
+  UtxoEntry utxoEntry = 3;
+}
+
+message ScriptPublicKey {
+  uint32 version = 1;
+  string scriptPublicKey = 2;
+}
+
+message UtxoEntry {
+  uint64 amount = 1;
+  ScriptPublicKey scriptPublicKey = 2;
+  uint64 blockDaaScore = 3;
+  bool isCoinbase = 4;
+}
+
+message GetExternalSpendableUTXOsRequest{
+  string address = 1;
+}
+
+message GetExternalSpendableUTXOsResponse{
+  repeated UtxosByAddressesEntry Entries = 1;
 }

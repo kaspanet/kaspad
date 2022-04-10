@@ -3,11 +3,11 @@ package serialization
 import (
 	"math"
 
-	"github.com/golang/protobuf/proto"
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/libkaspawallet/serialization/protoserialization"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/subnetworks"
 	"github.com/pkg/errors"
+	"google.golang.org/protobuf/proto"
 )
 
 // PartiallySignedTransaction is a type that is intended
@@ -86,6 +86,22 @@ func DeserializePartiallySignedTransaction(serializedPartiallySignedTransaction 
 // SerializePartiallySignedTransaction serializes a PartiallySignedTransaction.
 func SerializePartiallySignedTransaction(partiallySignedTransaction *PartiallySignedTransaction) ([]byte, error) {
 	return proto.Marshal(partiallySignedTransactionToProto(partiallySignedTransaction))
+}
+
+// Deserialize a Transaction to an *externalapi.DomainTransaction
+func DeserializeDomainTransaction(serializedTransactionMessage []byte) (*externalapi.DomainTransaction, error) {
+	protoTransactionMessage := &protoserialization.TransactionMessage{}
+	err := proto.Unmarshal(serializedTransactionMessage, protoTransactionMessage)
+	if err != nil {
+		return nil, err
+	}
+
+	return transactionFromProto(protoTransactionMessage)
+}
+
+// Serializes a *externalapi.DomainTransaction.
+func SerializeDomainTransaction(tx *externalapi.DomainTransaction) ([]byte, error) {
+	return proto.Marshal(transactionToProto(tx))
 }
 
 func partiallySignedTransactionFromProto(protoPartiallySignedTransaction *protoserialization.PartiallySignedTransaction) (*PartiallySignedTransaction, error) {

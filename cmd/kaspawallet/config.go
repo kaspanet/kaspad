@@ -13,6 +13,7 @@ const (
 	createSubCmd                    = "create"
 	balanceSubCmd                   = "balance"
 	sendSubCmd                      = "send"
+	sweepSubCmd                     = "sweep"
 	createUnsignedTransactionSubCmd = "create-unsigned-transaction"
 	signSubCmd                      = "sign"
 	broadcastSubCmd                 = "broadcast"
@@ -56,6 +57,12 @@ type sendConfig struct {
 	DaemonAddress string  `long:"daemonaddress" short:"d" description:"Wallet daemon server to connect to (default: localhost:8082)"`
 	ToAddress     string  `long:"to-address" short:"t" description:"The public address to send Kaspa to" required:"true"`
 	SendAmount    float64 `long:"send-amount" short:"v" description:"An amount to send in Kaspa (e.g. 1234.12345678)" required:"true"`
+	config.NetworkFlags
+}
+
+type sweepConfig struct {
+	PrivateKey    string `long:"private-key" short:"k" description:"Private key in hex format"`
+	DaemonAddress string `long:"daemonaddress" short:"d" description:"Wallet daemon server to connect to (default: localhost:8082)"`
 	config.NetworkFlags
 }
 
@@ -130,6 +137,10 @@ func parseCommandLine() (subCommand string, config interface{}) {
 	parser.AddCommand(sendSubCmd, "Sends a Kaspa transaction to a public address",
 		"Sends a Kaspa transaction to a public address", sendConf)
 
+	sweepConf := &sweepConfig{DaemonAddress: defaultListen}
+	parser.AddCommand(sweepSubCmd, "Sends all funds associated with the given private key, to a change address of the wallet",
+		"Sends all funds associated with the private key, to a given change address of the wallet", sweepConf)
+
 	createUnsignedTransactionConf := &createUnsignedTransactionConfig{DaemonAddress: defaultListen}
 	parser.AddCommand(createUnsignedTransactionSubCmd, "Create an unsigned Kaspa transaction",
 		"Create an unsigned Kaspa transaction", createUnsignedTransactionConf)
@@ -199,6 +210,13 @@ func parseCommandLine() (subCommand string, config interface{}) {
 			printErrorAndExit(err)
 		}
 		config = sendConf
+	case sweepSubCmd:
+		combineNetworkFlags(&sweepConf.NetworkFlags, &cfg.NetworkFlags)
+		err := sweepConf.ResolveNetwork(parser)
+		if err != nil {
+			printErrorAndExit(err)
+		}
+		config = sweepConf
 	case createUnsignedTransactionSubCmd:
 		combineNetworkFlags(&createUnsignedTransactionConf.NetworkFlags, &cfg.NetworkFlags)
 		err := createUnsignedTransactionConf.ResolveNetwork(parser)

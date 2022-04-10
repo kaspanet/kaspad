@@ -29,6 +29,8 @@ func main() {
 		err = dumpUnencryptedData(config.(*dumpUnencryptedDataConfig))
 	case startDaemonSubCmd:
 		err = startDaemon(config.(*startDaemonConfig))
+	case sweepSubCmd:
+		err = sweep(config.(*sweepConfig))
 	default:
 		err = errors.Errorf("Unknown sub-command '%s'\n", subCmd)
 	}

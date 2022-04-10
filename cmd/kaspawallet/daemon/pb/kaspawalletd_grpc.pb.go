@@ -19,6 +19,7 @@ const _ = grpc.SupportPackageIsVersion7
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type KaspawalletdClient interface {
 	GetBalance(ctx context.Context, in *GetBalanceRequest, opts ...grpc.CallOption) (*GetBalanceResponse, error)
+	GetExternalSpendableUTXOs(ctx context.Context, in *GetExternalSpendableUTXOsRequest, opts ...grpc.CallOption) (*GetExternalSpendableUTXOsResponse, error)
 	CreateUnsignedTransactions(ctx context.Context, in *CreateUnsignedTransactionsRequest, opts ...grpc.CallOption) (*CreateUnsignedTransactionsResponse, error)
 	ShowAddresses(ctx context.Context, in *ShowAddressesRequest, opts ...grpc.CallOption) (*ShowAddressesResponse, error)
 	NewAddress(ctx context.Context, in *NewAddressRequest, opts ...grpc.CallOption) (*NewAddressResponse, error)
@@ -37,6 +38,15 @@ func NewKaspawalletdClient(cc grpc.ClientConnInterface) KaspawalletdClient {
 func (c *kaspawalletdClient) GetBalance(ctx context.Context, in *GetBalanceRequest, opts ...grpc.CallOption) (*GetBalanceResponse, error) {
 	out := new(GetBalanceResponse)
 	err := c.cc.Invoke(ctx, "/kaspawalletd.kaspawalletd/GetBalance", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *kaspawalletdClient) GetExternalSpendableUTXOs(ctx context.Context, in *GetExternalSpendableUTXOsRequest, opts ...grpc.CallOption) (*GetExternalSpendableUTXOsResponse, error) {
+	out := new(GetExternalSpendableUTXOsResponse)
+	err := c.cc.Invoke(ctx, "/kaspawalletd.kaspawalletd/GetExternalSpendableUTXOs", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -93,6 +103,7 @@ func (c *kaspawalletdClient) Broadcast(ctx context.Context, in *BroadcastRequest
 // for forward compatibility
 type KaspawalletdServer interface {
 	GetBalance(context.Context, *GetBalanceRequest) (*GetBalanceResponse, error)
+	GetExternalSpendableUTXOs(context.Context, *GetExternalSpendableUTXOsRequest) (*GetExternalSpendableUTXOsResponse, error)
 	CreateUnsignedTransactions(context.Context, *CreateUnsignedTransactionsRequest) (*CreateUnsignedTransactionsResponse, error)
 	ShowAddresses(context.Context, *ShowAddressesRequest) (*ShowAddressesResponse, error)
 	NewAddress(context.Context, *NewAddressRequest) (*NewAddressResponse, error)
@@ -107,6 +118,9 @@ type UnimplementedKaspawalletdServer struct {
 
 func (UnimplementedKaspawalletdServer) GetBalance(context.Context, *GetBalanceRequest) (*GetBalanceResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetBalance not implemented")
+}
+func (UnimplementedKaspawalletdServer) GetExternalSpendableUTXOs(context.Context, *GetExternalSpendableUTXOsRequest) (*GetExternalSpendableUTXOsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetExternalSpendableUTXOs not implemented")
 }
 func (UnimplementedKaspawalletdServer) CreateUnsignedTransactions(context.Context, *CreateUnsignedTransactionsRequest) (*CreateUnsignedTransactionsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateUnsignedTransactions not implemented")
@@ -150,6 +164,24 @@ func _Kaspawalletd_GetBalance_Handler(srv interface{}, ctx context.Context, dec 
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(KaspawalletdServer).GetBalance(ctx, req.(*GetBalanceRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Kaspawalletd_GetExternalSpendableUTXOs_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetExternalSpendableUTXOsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(KaspawalletdServer).GetExternalSpendableUTXOs(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/kaspawalletd.kaspawalletd/GetExternalSpendableUTXOs",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(KaspawalletdServer).GetExternalSpendableUTXOs(ctx, req.(*GetExternalSpendableUTXOsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -254,6 +286,10 @@ var Kaspawalletd_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetBalance",
 			Handler:    _Kaspawalletd_GetBalance_Handler,
+		},
+		{
+			MethodName: "GetExternalSpendableUTXOs",
+			Handler:    _Kaspawalletd_GetExternalSpendableUTXOs_Handler,
 		},
 		{
 			MethodName: "CreateUnsignedTransactions",

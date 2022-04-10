@@ -234,7 +234,7 @@ func (s *server) estimateMassAfterSignatures(transaction *serialization.Partiall
 		transaction.Tx.Inputs[i].SigOpCount = byte(len(input.PubKeySignaturePairs))
 	}
 
-	transactionWithSignatures, err := libkaspawallet.ExtractTransactionDeserialized(transaction, s.keysFile.ECDSA)
+	transactionWithSignatures, err := libkaspawallet.DeserializedTransactionFromDeserializedPartiallySigned(transaction, s.keysFile.ECDSA)
 	if err != nil {
 		return 0, err
 	}

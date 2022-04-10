@@ -5,19 +5,18 @@ import (
 
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/daemon/pb"
-	"github.com/kaspanet/kaspad/cmd/kaspawallet/libkaspawallet"
+	"github.com/kaspanet/kaspad/cmd/kaspawallet/libkaspawallet/serialization"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/infrastructure/network/rpcclient"
 	"github.com/pkg/errors"
 )
 
 func (s *server) Broadcast(_ context.Context, request *pb.BroadcastRequest) (*pb.BroadcastResponse, error) {
-	tx, err := libkaspawallet.ExtractTransaction(request.Transaction, s.keysFile.ECDSA)
+	domainTransaction, err := serialization.DeserializeDomainTransaction(request.Transaction)
 	if err != nil {
 		return nil, err
 	}
-
-	txID, err := sendTransaction(s.rpcClient, tx)
+	txID, err := sendTransaction(s.rpcClient, domainTransaction)
 	if err != nil {
 		return nil, err
 	}
