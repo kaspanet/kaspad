@@ -74,7 +74,7 @@ message SendRequest{
 }
 
 message SendResponse{
-  repeated string transactionIDs = 1;
+  repeated string txIDs = 1;
 }
 
 message SignRequest{
