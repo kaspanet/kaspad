@@ -59,12 +59,8 @@ func New(
 
 }
 
+// CheckBoundedMergeDepth is used for validation, so must follow the HF1 DAA score for determining the correct depth to verify
 func (mdm *mergeDepthManager) CheckBoundedMergeDepth(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash, isBlockWithTrustedData bool) error {
-	nonBoundedMergeDepthViolatingBlues, err := mdm.NonBoundedMergeDepthViolatingBlues(stagingArea, blockHash, isBlockWithTrustedData)
-	if err != nil {
-		return err
-	}
-
 	ghostdagData, err := mdm.ghostdagDataStore.Get(mdm.databaseContext, stagingArea, blockHash, false)
 	if err != nil {
 		return err
@@ -75,28 +71,34 @@ func (mdm *mergeDepthManager) CheckBoundedMergeDepth(stagingArea *model.StagingA
 		return nil
 	}
 
-	finalityPoint, err := mdm.mergeDepthRootOrFinalityPoint(stagingArea, blockHash, isBlockWithTrustedData)
+	// For validation, we must follow the HF1 DAA score in order to determine the correct depth to verify
+	mergeDepthRootByHF1, err := mdm.mergeDepthRootByHF1DAAScoreForValidationOnly(stagingArea, blockHash, isBlockWithTrustedData)
+	if err != nil {
+		return err
+	}
+
+	nonBoundedMergeDepthViolatingBlues, err := mdm.nonBoundedMergeDepthViolatingBlues(stagingArea, blockHash, mergeDepthRootByHF1, isBlockWithTrustedData)
 	if err != nil {
 		return err
 	}
 
 	for _, red := range ghostdagData.MergeSetReds() {
-		doesRedHaveFinalityPointInPast, err := mdm.dagTopologyManager.IsAncestorOf(stagingArea, finalityPoint, red)
+		doesRedHaveMergeRootInPast, err := mdm.dagTopologyManager.IsAncestorOf(stagingArea, mergeDepthRootByHF1, red)
 		if err != nil {
 			return err
 		}
 
-		if doesRedHaveFinalityPointInPast {
+		if doesRedHaveMergeRootInPast {
 			continue
 		}
 
-		isRedInPastOfAnyNonFinalityViolatingBlue, err :=
+		isRedInPastOfAnyNonMergeDepthViolatingBlue, err :=
 			mdm.dagTopologyManager.IsAncestorOfAny(stagingArea, red, nonBoundedMergeDepthViolatingBlues)
 		if err != nil {
 			return err
 		}
 
-		if !isRedInPastOfAnyNonFinalityViolatingBlue {
+		if !isRedInPastOfAnyNonMergeDepthViolatingBlue {
 			return errors.Wrapf(ruleerrors.ErrViolatingBoundedMergeDepth, "block is violating bounded merge depth")
 		}
 	}
@@ -104,20 +106,33 @@ func (mdm *mergeDepthManager) CheckBoundedMergeDepth(stagingArea *model.StagingA
 	return nil
 }
 
+// NonBoundedMergeDepthViolatingBlues is currently called only by the `Pick virtual parents` algorithm,
+// hence, unlike validation, we can use the new more strict depth root
 func (mdm *mergeDepthManager) NonBoundedMergeDepthViolatingBlues(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash, isBlockWithTrustedData bool) ([]*externalapi.DomainHash, error) {
-	ghostdagData, err := mdm.ghostdagDataStore.Get(mdm.databaseContext, stagingArea, blockHash, false)
+	mergeDepthRoot, err := mdm.MergeDepthRoot(stagingArea, blockHash, isBlockWithTrustedData)
+	if err != nil {
+		return nil, err
+	}
+
+	return mdm.nonBoundedMergeDepthViolatingBlues(stagingArea, blockHash, mergeDepthRoot, isBlockWithTrustedData)
+}
+
+func (mdm *mergeDepthManager) nonBoundedMergeDepthViolatingBlues(
+	stagingArea *model.StagingArea, blockHash, mergeDepthRoot *externalapi.DomainHash,
+	isBlockWithTrustedData bool) ([]*externalapi.DomainHash, error) {
+
+	ghostdagData, err := mdm.ghostdagDataStore.Get(mdm.databaseContext, stagingArea, blockHash, isBlockWithTrustedData)
 	if err != nil {
 		return nil, err
 	}
 
 	nonBoundedMergeDepthViolatingBlues := make([]*externalapi.DomainHash, 0, len(ghostdagData.MergeSetBlues()))
 
-	finalityPoint, err := mdm.finalityManager.FinalityPoint(stagingArea, blockHash, isBlockWithTrustedData)
 	if err != nil {
 		return nil, err
 	}
 	for _, blue := range ghostdagData.MergeSetBlues() {
-		notViolatingFinality, err := mdm.dagTopologyManager.IsInSelectedParentChainOf(stagingArea, finalityPoint, blue)
+		notViolatingFinality, err := mdm.dagTopologyManager.IsInSelectedParentChainOf(stagingArea, mergeDepthRoot, blue)
 		if err != nil {
 			return nil, err
 		}
@@ -130,21 +145,41 @@ func (mdm *mergeDepthManager) NonBoundedMergeDepthViolatingBlues(stagingArea *mo
 	return nonBoundedMergeDepthViolatingBlues, nil
 }
 
-func (mdm *mergeDepthManager) mergeDepthRootOrFinalityPoint(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash, isBlockWithTrustedData bool) (*externalapi.DomainHash, error) {
+func (mdm *mergeDepthManager) mergeDepthRootByHF1DAAScoreForValidationOnly(
+	stagingArea *model.StagingArea, blockHash *externalapi.DomainHash, isBlockWithTrustedData bool) (*externalapi.DomainHash, error) {
 	daaScore, err := mdm.daaBlocksStore.DAAScore(mdm.databaseContext, stagingArea, blockHash)
 	if err != nil {
 		return nil, err
 	}
 
 	if daaScore >= mdm.hf1DAAScore {
-		return mdm.mergeDepthRoot(stagingArea, blockHash, isBlockWithTrustedData)
+		return mdm.MergeDepthRoot(stagingArea, blockHash, isBlockWithTrustedData)
 	}
 
+	// We fall back to the merge depth root before the HF, which was the finality point
 	return mdm.finalityManager.FinalityPoint(stagingArea, blockHash, isBlockWithTrustedData)
 }
 
-func (mdm *mergeDepthManager) mergeDepthRoot(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash, isBlockWithTrustedData bool) (*externalapi.DomainHash, error) {
-	finalityPoint, err := mdm.mergeDepthRootStore.MergeDepthRoot(mdm.databaseContext, stagingArea, blockHash)
+func (mdm *mergeDepthManager) VirtualMergeDepthRoot(stagingArea *model.StagingArea) (*externalapi.DomainHash, error) {
+	log.Tracef("VirtualMergeDepthRoot start")
+	defer log.Tracef("VirtualMergeDepthRoot end")
+
+	virtualMergeDepthRoot, err := mdm.calculateMergeDepthRoot(stagingArea, model.VirtualBlockHash, false)
+	if err != nil {
+		return nil, err
+	}
+	log.Debugf("The current virtual merge depth root is: %s", virtualMergeDepthRoot)
+
+	return virtualMergeDepthRoot, nil
+}
+
+func (mdm *mergeDepthManager) MergeDepthRoot(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash, isBlockWithTrustedData bool) (*externalapi.DomainHash, error) {
+	log.Tracef("MergeDepthRoot start")
+	defer log.Tracef("MergeDepthRoot end")
+	if blockHash.Equal(model.VirtualBlockHash) {
+		return mdm.VirtualMergeDepthRoot(stagingArea)
+	}
+	root, err := mdm.mergeDepthRootStore.MergeDepthRoot(mdm.databaseContext, stagingArea, blockHash)
 	if err != nil {
 		log.Debugf("%s merge depth root not found in store - calculating", blockHash)
 		if errors.Is(err, database.ErrNotFound) {
@@ -152,7 +187,7 @@ func (mdm *mergeDepthManager) mergeDepthRoot(stagingArea *model.StagingArea, blo
 		}
 		return nil, err
 	}
-	return finalityPoint, nil
+	return root, nil
 }
 
 func (mdm *mergeDepthManager) calculateAndStageMergeDepthRoot(
