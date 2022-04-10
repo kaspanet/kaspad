@@ -77,7 +77,7 @@ func (mdm *mergeDepthManager) CheckBoundedMergeDepth(stagingArea *model.StagingA
 		return err
 	}
 
-	nonBoundedMergeDepthViolatingBlues, err := mdm.nonBoundedMergeDepthViolatingBlues(stagingArea, blockHash, mergeDepthRootByHF1, isBlockWithTrustedData)
+	nonBoundedMergeDepthViolatingBlues, err := mdm.nonBoundedMergeDepthViolatingBlues(stagingArea, blockHash, mergeDepthRootByHF1)
 	if err != nil {
 		return err
 	}
@@ -114,14 +114,13 @@ func (mdm *mergeDepthManager) NonBoundedMergeDepthViolatingBlues(stagingArea *mo
 		return nil, err
 	}
 
-	return mdm.nonBoundedMergeDepthViolatingBlues(stagingArea, blockHash, mergeDepthRoot, isBlockWithTrustedData)
+	return mdm.nonBoundedMergeDepthViolatingBlues(stagingArea, blockHash, mergeDepthRoot)
 }
 
 func (mdm *mergeDepthManager) nonBoundedMergeDepthViolatingBlues(
-	stagingArea *model.StagingArea, blockHash, mergeDepthRoot *externalapi.DomainHash,
-	isBlockWithTrustedData bool) ([]*externalapi.DomainHash, error) {
+	stagingArea *model.StagingArea, blockHash, mergeDepthRoot *externalapi.DomainHash) ([]*externalapi.DomainHash, error) {
 
-	ghostdagData, err := mdm.ghostdagDataStore.Get(mdm.databaseContext, stagingArea, blockHash, isBlockWithTrustedData)
+	ghostdagData, err := mdm.ghostdagDataStore.Get(mdm.databaseContext, stagingArea, blockHash, false)
 	if err != nil {
 		return nil, err
 	}
