@@ -44,7 +44,7 @@ func Sign(params *dagconfig.Params, mnemonics []string, serializedPSTx []byte, e
 	return serialization.SerializePartiallySignedTransaction(partiallySignedTransaction)
 }
 
-//Sign transactions with a shnorr private key
+//SignWithSchnorrPrivteKey signs transactions with a shnorr private key
 //Implicat assumptions: 1) Private key is a schnorr private key (see no functions to test for type, in order to sign accordingly)
 func SignWithSchnorrPrivteKey(params *dagconfig.Params, privateKeyBytes []byte, partiallySignedTransaction *serialization.PartiallySignedTransaction) error {
 

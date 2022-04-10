@@ -3,6 +3,7 @@ package libkaspawallet
 import (
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/libkaspawallet/bip32"
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/libkaspawallet/serialization"
+	"github.com/kaspanet/kaspad/cmd/kaspawallet/utils"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/subnetworks"
@@ -98,8 +99,7 @@ func multiSigRedeemScript(extendedPublicKeys []string, minimumSignatures uint32,
 	return scriptBuilder.Script()
 }
 
-//sign transaction with private key only
-//fee per input currently unused / awaiting fee structure
+//CreateUnsignedTransactionWithSchnorrPublicKey signs transaction with private key only
 func CreateUnsignedTransactionWithSchnorrPublicKey(selectedUTXOs []*UTXO, publicKey string, payments []*Payment, changeAdress util.Address, feePerInput uint64) (*serialization.PartiallySignedTransaction, error) {
 
 	if len(payments) == 0 {
@@ -118,7 +118,7 @@ func CreateUnsignedTransactionWithSchnorrPublicKey(selectedUTXOs []*UTXO, public
 		totalPay = totalPay + payment.Amount
 	}
 	if totalPay <= totalfee {
-		return nil, errors.Errorf("Total send amount of ", totalPay, " is less then the required fee of ", totalfee)
+		return nil, errors.Errorf("Total send amount of ", utils.FormatKas(totalPay), " is less then the required fee of ", utils.FormatKas(totalfee))
 	}
 
 	//since we know the sizes a priori, do not use commitPaymentToUnsignedTransactionForSchnorrPrivateKey function!
@@ -238,9 +238,8 @@ func newDummyTransaction(template *serialization.PartiallySignedTransaction) *se
 	}
 }
 
-//Compounds by iterating each input, and checking for violation of TransactionMass, if it occurs, commits a split with the previous inputs.
-//outputs are sent as a whole to the payment address, leftovers are sent to the change address via the last split.
-//function is intended to be used for transactions signed with PrivatKeyOnly, untested otherwise.
+//CompoundUnsignedTransactionByMaxMassForScnorrPrivateKey Creates unsigned transactions in a sliding window,
+//it commits a transaction of size x inputs, if x + 1,  violates transaction mass, and so further.
 func CompoundUnsignedTransactionByMaxMassForScnorrPrivateKey(params *dagconfig.Params, partiallySignedTransaction *serialization.PartiallySignedTransaction,
 	payments []*Payment, changeAddress util.Address, feePerInput int) ([]*serialization.PartiallySignedTransaction, error) {
 
@@ -379,7 +378,6 @@ func CompoundUnsignedTransactionByMaxMassForScnorrPrivateKey(params *dagconfig.P
 		//Special case, end of inputs, with no violation, where we can assign dummyWindow[1] to split and break
 		if i == len(partiallySignedTransaction.Tx.Inputs)-1 {
 			splitTransactions = append(splitTransactions, dummyTransactionWindow[1])
-			totalAmount = totalAmount + currentIdxAmount
 			break
 
 		}
@@ -486,7 +484,7 @@ func isTransactionFullySigned(partiallySignedTransaction *serialization.Partiall
 	return true
 }
 
-//Extracts a serialized domain transaction from serialized partially signed transaction
+//SerializedTransactionFromSerializedPartiallySigned Extracts a serialized domain transaction from serialized partially signed transaction
 func SerializedTransactionFromSerializedPartiallySigned(partiallySignedTransactionBytes []byte, ecda bool) ([]byte, error) {
 	deserializedDomainTransaction, err := DeserializedTransactionFromSerializedPartiallySigned(partiallySignedTransactionBytes, ecda)
 	if err != nil {
@@ -495,7 +493,7 @@ func SerializedTransactionFromSerializedPartiallySigned(partiallySignedTransacti
 	return serialization.SerializeDomainTransaction(deserializedDomainTransaction)
 }
 
-//Extracts a serialized domain transaction from deserialized partially signed transaction
+//SerializedTransactionFromDeserializedPartiallySigned Extracts a serialized domain transaction from deserialized partially signed transaction
 func SerializedTransactionFromDeserializedPartiallySigned(partiallySignedTransaction *serialization.PartiallySignedTransaction, ecda bool) ([]byte, error) {
 	deserializedDomainTransaction, err := DeserializedTransactionFromDeserializedPartiallySigned(partiallySignedTransaction, ecda)
 	if err != nil {
@@ -504,7 +502,7 @@ func SerializedTransactionFromDeserializedPartiallySigned(partiallySignedTransac
 	return serialization.SerializeDomainTransaction(deserializedDomainTransaction)
 }
 
-//Extracts a deserialized domain transaction from serialized partially signed transaction
+//DeserializedTransactionFromSerializedPartiallySigned Extracts a deserialized domain transaction from serialized partially signed transaction
 func DeserializedTransactionFromSerializedPartiallySigned(partiallySignedTransactionBytes []byte, ecdsa bool) (*externalapi.DomainTransaction, error) {
 	partiallySignedTransaction, err := serialization.DeserializePartiallySignedTransaction(partiallySignedTransactionBytes)
 	if err != nil {
@@ -513,7 +511,7 @@ func DeserializedTransactionFromSerializedPartiallySigned(partiallySignedTransac
 	return DeserializedTransactionFromDeserializedPartiallySigned(partiallySignedTransaction, ecdsa)
 }
 
-//Extracts a deserialized domain transaction from deserialized partially signed transaction
+//DeserializedTransactionFromDeserializedPartiallySigned Extracts a deserialized domain transaction from deserialized partially signed transaction
 func DeserializedTransactionFromDeserializedPartiallySigned(partiallySignedTransaction *serialization.PartiallySignedTransaction, ecdsa bool) (
 	*externalapi.DomainTransaction, error) {
 

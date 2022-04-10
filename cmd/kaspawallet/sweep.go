@@ -9,6 +9,7 @@ import (
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/daemon/pb"
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/libkaspawallet"
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/libkaspawallet/serialization"
+	"github.com/kaspanet/kaspad/cmd/kaspawallet/utils"
 
 	"github.com/kaspanet/kaspad/util"
 )
@@ -82,7 +83,7 @@ func sweep(conf *sweepConfig) error {
 	for _, UTXO := range UTXOs {
 		paymentAmount = paymentAmount + UTXO.UTXOEntry.Amount()
 	}
-	fmt.Println("Found ", formatKas(paymentAmount), " Extractable KAS in address")
+	fmt.Println("Found ", utils.FormatKas(paymentAmount), " Extractable KAS in address")
 
 	payments := make([]*libkaspawallet.Payment, 1)
 	payments[0] = &libkaspawallet.Payment{
@@ -101,7 +102,9 @@ func sweep(conf *sweepConfig) error {
 	}
 
 	TotalSent := uint64(0)
-	fmt.Println("Sending to wallet change address:	", toAddress)
+	fmt.Println("Sweeping...")
+	fmt.Println("	From:	", addressPubKey)
+	fmt.Println("	To:	", toAddress)
 	for _, splitPartiallySignedTransaction := range splitPartiallySignedTransactions {
 		err := func() error {
 			ctx2, cancel2 := context.WithTimeout(context.Background(), daemonTimeout)
@@ -122,13 +125,12 @@ func sweep(conf *sweepConfig) error {
 				return err
 			}
 
-			fmt.Println("Transaction was sent successfully")
-			fmt.Printf("Transaction ID: \t%s\n", broadcastResponse.TxID)
+			fmt.Printf("	Transaction ID: \t%s\n", broadcastResponse.TxID)
 			for _, output := range splitPartiallySignedTransaction.Tx.Outputs {
 				TotalSent = TotalSent + output.Value
-				fmt.Println("Extracted ", formatKas(TotalSent), " out of ", formatKas(paymentAmount), " KAS")
 
 			}
+			fmt.Println("	Sweeped ", utils.FormatKas(TotalSent), " / ", utils.FormatKas(paymentAmount), " KAS")
 			return nil
 
 		}()
@@ -136,7 +138,8 @@ func sweep(conf *sweepConfig) error {
 			return err
 		}
 	}
-	fmt.Println("Done")
+	fmt.Println("Finished Sweeping")
+
 	return nil
 
 }
