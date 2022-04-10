@@ -285,7 +285,7 @@ func TestBoundedMergeDepth(t *testing.T) {
 			t.Fatalf("Depth is too small")
 		}
 
-		for i := uint64(0); i < depth+1; i++ {
+		for i := uint64(0); i < depth+ibdTriggerRange+1; i++ {
 			mineNextBlock(t, syncee)
 		}
 

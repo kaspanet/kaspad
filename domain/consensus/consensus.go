@@ -887,10 +887,10 @@ func (s *consensus) IsChainBlock(blockHash *externalapi.DomainHash) (bool, error
 	return s.dagTopologyManagers[0].IsInSelectedParentChainOf(stagingArea, blockHash, virtualGHOSTDAGData.SelectedParent())
 }
 
-func (s *consensus) MergeDepthRoot(blockHash *externalapi.DomainHash, isBlockWithTrustedData bool) (*externalapi.DomainHash, error) {
+func (s *consensus) VirtualMergeDepthRoot() (*externalapi.DomainHash, error) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
 	stagingArea := model.NewStagingArea()
-	return s.mergeDepthManager.MergeDepthRoot(stagingArea, blockHash, isBlockWithTrustedData)
+	return s.mergeDepthManager.VirtualMergeDepthRoot(stagingArea)
 }

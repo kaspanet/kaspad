@@ -141,16 +141,12 @@ func (flow *handleRelayInvsFlow) start() error {
 		}
 
 		// Test bounded merge depth to avoid requesting irrelevant data which cannot be merged under virtual
-		virtualSelectedParent, err := flow.Domain().Consensus().GetVirtualSelectedParent()
+		virtualMergeDepthRoot, err := flow.Domain().Consensus().VirtualMergeDepthRoot()
 		if err != nil {
 			return err
 		}
-		virtualSelectedParentMergeDepthRoot, err := flow.Domain().Consensus().MergeDepthRoot(virtualSelectedParent, false)
-		if err != nil {
-			return err
-		}
-		if !virtualSelectedParentMergeDepthRoot.Equal(model.VirtualGenesisBlockHash) {
-			mergeDepthRootHeader, err := flow.Domain().Consensus().GetBlockHeader(virtualSelectedParentMergeDepthRoot)
+		if !virtualMergeDepthRoot.Equal(model.VirtualGenesisBlockHash) {
+			mergeDepthRootHeader, err := flow.Domain().Consensus().GetBlockHeader(virtualMergeDepthRoot)
 			if err != nil {
 				return err
 			}
@@ -159,7 +155,7 @@ func (flow *handleRelayInvsFlow) start() error {
 			// other valid blocks Kosherize it, in which case it will be obtained once the merger is relayed
 			if block.Header.BlueWork().Cmp(mergeDepthRootHeader.BlueWork()) <= 0 {
 				log.Debugf("Block %s has lower blue work than virtual's sp merge root %s (%d <= %d), hence we are skipping it",
-					inv.Hash, virtualSelectedParentMergeDepthRoot, block.Header.BlueWork(), mergeDepthRootHeader.BlueWork())
+					inv.Hash, virtualMergeDepthRoot, block.Header.BlueWork(), mergeDepthRootHeader.BlueWork())
 				continue
 			}
 		}

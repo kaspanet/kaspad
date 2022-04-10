@@ -131,12 +131,12 @@ func (mdm *mergeDepthManager) nonBoundedMergeDepthViolatingBlues(
 		return nil, err
 	}
 	for _, blue := range ghostdagData.MergeSetBlues() {
-		notViolatingFinality, err := mdm.dagTopologyManager.IsInSelectedParentChainOf(stagingArea, mergeDepthRoot, blue)
+		isMergeDepthRootInSelectedChainOfBlue, err := mdm.dagTopologyManager.IsInSelectedParentChainOf(stagingArea, mergeDepthRoot, blue)
 		if err != nil {
 			return nil, err
 		}
 
-		if notViolatingFinality {
+		if isMergeDepthRootInSelectedChainOfBlue {
 			nonBoundedMergeDepthViolatingBlues = append(nonBoundedMergeDepthViolatingBlues, blue)
 		}
 	}
