@@ -887,61 +887,10 @@ func (s *consensus) IsChainBlock(blockHash *externalapi.DomainHash) (bool, error
 	return s.dagTopologyManagers[0].IsInSelectedParentChainOf(stagingArea, blockHash, virtualGHOSTDAGData.SelectedParent())
 }
 
-func (s *consensus) HighestChainBlockInPastOf(blockHash *externalapi.DomainHash) (*externalapi.DomainHash, bool, error) {
+func (s *consensus) MergeDepthRoot(blockHash *externalapi.DomainHash, isBlockWithTrustedData bool) (*externalapi.DomainHash, error) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
 	stagingArea := model.NewStagingArea()
-	pruningPoint, err := s.pruningStore.PruningPoint(s.databaseContext, stagingArea)
-	if err != nil {
-		return nil, false, err
-	}
-
-	isPruningPointAncestorOfBlock, err := s.dagTopologyManagers[0].IsAncestorOf(stagingArea, pruningPoint, blockHash)
-	if err != nil {
-		return nil, false, err
-	}
-
-	if !isPruningPointAncestorOfBlock {
-		return nil, false, nil
-	}
-
-	headersSelectedTip, err := s.headersSelectedTipStore.HeadersSelectedTip(s.databaseContext, stagingArea)
-	if err != nil {
-		return nil, false, err
-	}
-
-	lowHash := pruningPoint
-	highHash := headersSelectedTip
-	for {
-		blockLocator, err := s.syncManager.CreateHeadersSelectedChainBlockLocator(stagingArea, lowHash, highHash)
-		if err != nil {
-			return nil, false, err
-		}
-
-		if len(blockLocator) == 1 {
-			return blockLocator[0], true, nil
-		}
-
-		for i, chainBlock := range blockLocator {
-			isAncestorOfBlock, err := s.dagTopologyManagers[0].IsAncestorOf(stagingArea, chainBlock, blockHash)
-			if err != nil {
-				return nil, false, err
-			}
-
-			if isAncestorOfBlock {
-				lowHash = chainBlock
-				if i == 0 {
-					return lowHash, true, nil
-				}
-
-				if highHash.Equal(blockLocator[i-1]) {
-					return lowHash, true, nil
-				}
-
-				highHash = blockLocator[i-1]
-				break
-			}
-		}
-	}
+	return s.mergeDepthManager.MergeDepthRoot(stagingArea, blockHash, isBlockWithTrustedData)
 }

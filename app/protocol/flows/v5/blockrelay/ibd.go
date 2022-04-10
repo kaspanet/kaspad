@@ -86,16 +86,6 @@ func (flow *handleIBDFlow) runIBDIfNotRunning(block *externalapi.DomainBlock) er
 	if err != nil {
 		return err
 	}
-
-	isViolatingBoundedMergeDepth, err := flow.isViolatingBoundedMergeDepth(highestKnownSyncerChainHash, block)
-	if err != nil {
-		return err
-	}
-
-	if isViolatingBoundedMergeDepth {
-		return nil
-	}
-
 	shouldDownloadHeadersProof, shouldSync, err := flow.shouldSyncAndShouldDownloadHeadersProof(
 		block, highestKnownSyncerChainHash)
 	if err != nil {
@@ -275,42 +265,6 @@ func (flow *handleIBDFlow) negotiateMissingSyncerChainSegment() (*externalapi.Do
 		highestKnownSyncerChainHash, flow.peer)
 
 	return syncerHeaderSelectedTipHash, highestKnownSyncerChainHash, nil
-}
-
-func (flow *handleIBDFlow) isViolatingBoundedMergeDepth(highestKnownSyncerChainHash *externalapi.DomainHash, relayBlock *externalapi.DomainBlock) (bool, error) {
-	// Note: we don't wait until the hard fork is activated before applying these rules in the p2p leve.
-	// If such side chain is created before the hard fork, it will be downloaded if it'll be merged to
-	// the selected chain by another node.
-	virtualSelectedParent, err := flow.Domain().Consensus().GetVirtualSelectedParent()
-	if err != nil {
-		return false, err
-	}
-
-	virtualSelectedParentHeader, err := flow.Domain().Consensus().GetBlockHeader(virtualSelectedParent)
-	if err != nil {
-		return false, err
-	}
-
-	if virtualSelectedParentHeader.BlueWork().Cmp(relayBlock.Header.BlueWork()) <= 0 {
-		return false, nil
-	}
-
-	highestSharedChainBlock, found, err := flow.Domain().Consensus().HighestChainBlockInPastOf(highestKnownSyncerChainHash)
-	if err != nil {
-		return false, err
-	}
-
-	// If it's in the pruning point anticone it's for sure violating bounded merge depth.
-	if !found {
-		return true, nil
-	}
-
-	highestSharedChainBlockHeader, err := flow.Domain().Consensus().GetBlockHeader(highestSharedChainBlock)
-	if err != nil {
-		return false, err
-	}
-
-	return virtualSelectedParentHeader.BlueScore() > highestSharedChainBlockHeader.BlueScore()+flow.Config().NetParams().MergeDepth, nil
 }
 
 func (flow *handleIBDFlow) isGenesisVirtualSelectedParent() (bool, error) {

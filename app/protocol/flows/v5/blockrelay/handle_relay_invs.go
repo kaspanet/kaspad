@@ -139,6 +139,28 @@ func (flow *handleRelayInvsFlow) start() error {
 			continue
 		}
 
+		// Test bounded merge depth to avoid requesting irrelevant data which cannot be merged under virtual
+		virtualSelectedParent, err := flow.Domain().Consensus().GetVirtualSelectedParent()
+		if err != nil {
+			return err
+		}
+		virtualSelectedParentMergeDepthRoot, err := flow.Domain().Consensus().MergeDepthRoot(virtualSelectedParent, false)
+		if err != nil {
+			return err
+		}
+		mergeDepthRootHeader, err := flow.Domain().Consensus().GetBlockHeader(virtualSelectedParentMergeDepthRoot)
+		if err != nil {
+			return err
+		}
+		// Since `BlueWork` respects topology, this condition means that the relay
+		// block is not in the future of virtual's merge depth root, and thus cannot be merged unless
+		// other valid blocks Kosherize it, in which case it will be obtained once the merger is relayed
+		if block.Header.BlueWork().Cmp(mergeDepthRootHeader.BlueWork()) <= 0 {
+			log.Debugf("Block %s has lower blue work than virtual's sp merge root %s (%d <= %d), hence we are skipping it",
+				inv.Hash, virtualSelectedParentMergeDepthRoot, block.Header.BlueWork(), mergeDepthRootHeader.BlueWork())
+			continue
+		}
+
 		log.Debugf("Processing block %s", inv.Hash)
 		oldVirtualInfo, err := flow.Domain().Consensus().GetVirtualInfo()
 		if err != nil {
