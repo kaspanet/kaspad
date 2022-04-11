@@ -5,12 +5,13 @@ import (
 	"crypto/rand"
 	"crypto/subtle"
 	"fmt"
+	"os"
+
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/libkaspawallet"
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/utils"
 	"github.com/kaspanet/kaspad/domain/dagconfig"
 	"github.com/pkg/errors"
 	"github.com/tyler-smith/go-bip39"
-	"os"
 )
 
 // CreateMnemonics generates `numKeys` number of mnemonics.
@@ -52,8 +53,8 @@ func encryptedMnemonicExtendedPublicKeyPairs(params *dagconfig.Params, mnemonics
 	password := []byte(cmdLinePassword)
 	if len(password) == 0 {
 
-		password = getPassword("Enter password for the key file:")
-		confirmPassword := getPassword("Confirm password:")
+		password = []byte(GetPassword("Enter password for the key file:"))
+		confirmPassword := []byte(GetPassword("Confirm password:"))
 
 		if subtle.ConstantTimeCompare(password, confirmPassword) != 1 {
 			return nil, nil, errors.New("Passwords are not identical")

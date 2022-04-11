@@ -12,17 +12,30 @@ import (
 )
 
 func (s *server) Broadcast(_ context.Context, request *pb.BroadcastRequest) (*pb.BroadcastResponse, error) {
-	tx, err := libkaspawallet.ExtractTransaction(request.Transaction, s.keysFile.ECDSA)
+	txIDs, err := s.broadcast(request.Transactions)
 	if err != nil {
 		return nil, err
 	}
 
-	txID, err := sendTransaction(s.rpcClient, tx)
-	if err != nil {
-		return nil, err
+	return &pb.BroadcastResponse{TxIDs: txIDs}, nil
+}
+
+func (s *server) broadcast(transactions [][]byte) ([]string, error) {
+	txIDs := make([]string, len(transactions))
+
+	for i, transaction := range transactions {
+		tx, err := libkaspawallet.ExtractTransaction(transaction, s.keysFile.ECDSA)
+		if err != nil {
+			return nil, err
+		}
+
+		txIDs[i], err = sendTransaction(s.rpcClient, tx)
+		if err != nil {
+			return nil, err
+		}
 	}
 
-	return &pb.BroadcastResponse{TxID: txID}, nil
+	return txIDs, nil
 }
 
 func sendTransaction(client *rpcclient.RPCClient, tx *externalapi.DomainTransaction) (string, error) {

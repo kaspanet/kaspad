@@ -3,10 +3,11 @@ package main
 import (
 	"bufio"
 	"fmt"
+	"os"
+
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/keys"
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/libkaspawallet"
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/utils"
-	"os"
 
 	"github.com/pkg/errors"
 )
@@ -24,6 +25,9 @@ func dumpUnencryptedData(conf *dumpUnencryptedDataConfig) error {
 		return err
 	}
 
+	if len(conf.Password) == 0 {
+		conf.Password = keys.GetPassword("Password:")
+	}
 	mnemonics, err := keysFile.DecryptMnemonics(conf.Password)
 	if err != nil {
 		return err
