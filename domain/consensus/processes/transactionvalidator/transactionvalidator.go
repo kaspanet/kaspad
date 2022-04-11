@@ -21,6 +21,7 @@ type transactionValidator struct {
 	sigCache                   *txscript.SigCache
 	sigCacheECDSA              *txscript.SigCacheECDSA
 	txMassCalculator           *txmass.Calculator
+	hf1DAAScore                uint64
 }
 
 // New instantiates a new TransactionValidator
@@ -31,7 +32,8 @@ func New(blockCoinbaseMaturity uint64,
 	pastMedianTimeManager model.PastMedianTimeManager,
 	ghostdagDataStore model.GHOSTDAGDataStore,
 	daaBlocksStore model.DAABlocksStore,
-	txMassCalculator *txmass.Calculator) model.TransactionValidator {
+	txMassCalculator *txmass.Calculator,
+	hf1DAAScore uint64) model.TransactionValidator {
 
 	return &transactionValidator{
 		blockCoinbaseMaturity:      blockCoinbaseMaturity,
@@ -44,5 +46,6 @@ func New(blockCoinbaseMaturity uint64,
 		sigCache:                   txscript.NewSigCache(sigCacheSize),
 		sigCacheECDSA:              txscript.NewSigCacheECDSA(sigCacheSize),
 		txMassCalculator:           txMassCalculator,
+		hf1DAAScore:                hf1DAAScore,
 	}
 }

@@ -73,6 +73,8 @@ func round(f float64) Amount {
 // NewAmount is for specifically for converting KAS to Sompi.
 // For creating a new Amount with an int64 value which denotes a quantity of Sompi,
 // do a simple type conversion from type int64 to Amount.
+// TODO: Refactor NewAmount. When amounts are more than 1e9 KAS, the precision
+// can be higher than one sompi (1e9 and 1e9+1e-8 will result as the same number)
 func NewAmount(f float64) (Amount, error) {
 	// The amount is only considered invalid if it cannot be represented
 	// as an integer type. This may happen if f is NaN or +-Infinity.

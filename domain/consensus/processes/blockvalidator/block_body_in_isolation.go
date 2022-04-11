@@ -140,7 +140,7 @@ func (v *blockValidator) checkBlockTransactionOrder(block *externalapi.DomainBlo
 
 func (v *blockValidator) checkTransactionsInIsolation(block *externalapi.DomainBlock) error {
 	for _, tx := range block.Transactions {
-		err := v.transactionValidator.ValidateTransactionInIsolation(tx)
+		err := v.transactionValidator.ValidateTransactionInIsolation(tx, block.Header.DAAScore())
 		if err != nil {
 			return errors.Wrapf(err, "transaction %s failed isolation "+
 				"check", consensushashing.TransactionID(tx))
@@ -220,7 +220,7 @@ func (v *blockValidator) validateGasLimit(block *externalapi.DomainBlock) error 
 
 func (v *blockValidator) checkBlockMass(block *externalapi.DomainBlock) error {
 	mass := uint64(0)
-	if !v.ignoreHeaderMass {
+	if block.Header.DAAScore() < v.hf1DAAScore {
 		mass += v.headerEstimatedSerializedSize(block.Header)
 	}
 

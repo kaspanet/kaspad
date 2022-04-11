@@ -18,4 +18,6 @@ type TestBlockBuilder interface {
 
 	BuildUTXOInvalidBlock(parentHashes []*externalapi.DomainHash) (*externalapi.DomainBlock,
 		error)
+
+	SetNonceCounter(nonceCounter uint64)
 }

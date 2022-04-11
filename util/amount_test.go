@@ -30,13 +30,13 @@ func TestAmountCreation(t *testing.T) {
 			name:     "max producible",
 			amount:   21e6,
 			valid:    true,
-			expected: constants.MaxSompi,
+			expected: Amount(constants.MaxSompiBeforeHF1),
 		},
 		{
 			name:     "exceeds max producible",
 			amount:   21e6 + 1e-8,
 			valid:    true,
-			expected: constants.MaxSompi + 1,
+			expected: Amount(constants.MaxSompiBeforeHF1) + 1,
 		},
 		{
 			name:     "one hundred",
@@ -109,7 +109,7 @@ func TestAmountUnitConversions(t *testing.T) {
 	}{
 		{
 			name:      "MKAS",
-			amount:    constants.MaxSompi,
+			amount:    Amount(constants.MaxSompiBeforeHF1),
 			unit:      AmountMegaKAS,
 			converted: 21,
 			s:         "21 MKAS",

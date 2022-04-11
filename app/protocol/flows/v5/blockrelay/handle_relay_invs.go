@@ -7,6 +7,7 @@ import (
 	peerpkg "github.com/kaspanet/kaspad/app/protocol/peer"
 	"github.com/kaspanet/kaspad/app/protocol/protocolerrors"
 	"github.com/kaspanet/kaspad/domain"
+	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
@@ -137,6 +138,26 @@ func (flow *handleRelayInvsFlow) start() error {
 		if flow.Config().NetParams().DisallowDirectBlocksOnTopOfGenesis && !flow.Config().AllowSubmitBlockWhenNotSynced && !flow.Config().Devnet && flow.isChildOfGenesis(block) {
 			log.Infof("Cannot process %s because it's a direct child of genesis.", consensushashing.BlockHash(block))
 			continue
+		}
+
+		// Test bounded merge depth to avoid requesting irrelevant data which cannot be merged under virtual
+		virtualMergeDepthRoot, err := flow.Domain().Consensus().VirtualMergeDepthRoot()
+		if err != nil {
+			return err
+		}
+		if !virtualMergeDepthRoot.Equal(model.VirtualGenesisBlockHash) {
+			mergeDepthRootHeader, err := flow.Domain().Consensus().GetBlockHeader(virtualMergeDepthRoot)
+			if err != nil {
+				return err
+			}
+			// Since `BlueWork` respects topology, this condition means that the relay
+			// block is not in the future of virtual's merge depth root, and thus cannot be merged unless
+			// other valid blocks Kosherize it, in which case it will be obtained once the merger is relayed
+			if block.Header.BlueWork().Cmp(mergeDepthRootHeader.BlueWork()) <= 0 {
+				log.Debugf("Block %s has lower blue work than virtual's merge root %s (%d <= %d), hence we are skipping it",
+					inv.Hash, virtualMergeDepthRoot, block.Header.BlueWork(), mergeDepthRootHeader.BlueWork())
+				continue
+			}
 		}
 
 		log.Debugf("Processing block %s", inv.Hash)

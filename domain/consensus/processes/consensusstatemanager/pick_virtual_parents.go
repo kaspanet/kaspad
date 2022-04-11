@@ -282,18 +282,18 @@ func (csm *consensusStateManager) boundedMergeBreakingParents(stagingArea *model
 		return nil, err
 	}
 
+	virtualMergeDepthRoot, err := csm.mergeDepthManager.VirtualMergeDepthRoot(stagingArea)
+	if err != nil {
+		return nil, err
+	}
+	log.Debugf("The merge depth root of virtual is: %s", virtualMergeDepthRoot)
+
 	potentiallyKosherizingBlocks, err :=
-		csm.mergeDepthManager.NonBoundedMergeDepthViolatingBlues(stagingArea, model.VirtualBlockHash, false)
+		csm.mergeDepthManager.NonBoundedMergeDepthViolatingBlues(stagingArea, model.VirtualBlockHash, virtualMergeDepthRoot)
 	if err != nil {
 		return nil, err
 	}
 	log.Debugf("The potentially kosherizing blocks are: %s", potentiallyKosherizingBlocks)
-
-	virtualFinalityPoint, err := csm.finalityManager.VirtualFinalityPoint(stagingArea)
-	if err != nil {
-		return nil, err
-	}
-	log.Debugf("The finality point of the virtual is: %s", virtualFinalityPoint)
 
 	var badReds []*externalapi.DomainHash
 
@@ -303,13 +303,13 @@ func (csm *consensusStateManager) boundedMergeBreakingParents(stagingArea *model
 	}
 	for _, redBlock := range virtualGHOSTDAGData.MergeSetReds() {
 		log.Debugf("Check whether red block %s is kosherized", redBlock)
-		isFinalityPointInPast, err := csm.dagTopologyManager.IsAncestorOf(stagingArea, virtualFinalityPoint, redBlock)
+		isMergeDepthRootInPast, err := csm.dagTopologyManager.IsAncestorOf(stagingArea, virtualMergeDepthRoot, redBlock)
 		if err != nil {
 			return nil, err
 		}
-		if isFinalityPointInPast {
+		if isMergeDepthRootInPast {
 			log.Debugf("Skipping red block %s because it has the virtual's"+
-				" finality point in its past", redBlock)
+				" merge depth root in its past", redBlock)
 			continue
 		}
 

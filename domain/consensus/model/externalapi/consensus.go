@@ -53,4 +53,5 @@ type Consensus interface {
 	TrustedBlockAssociatedGHOSTDAGDataBlockHashes(blockHash *DomainHash) ([]*DomainHash, error)
 	TrustedGHOSTDAGData(blockHash *DomainHash) (*BlockGHOSTDAGData, error)
 	IsChainBlock(blockHash *DomainHash) (bool, error)
+	VirtualMergeDepthRoot() (*DomainHash, error)
 }

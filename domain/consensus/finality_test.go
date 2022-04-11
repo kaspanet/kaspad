@@ -3,8 +3,6 @@ package consensus_test
 import (
 	"fmt"
 	"github.com/kaspanet/kaspad/domain/consensus"
-	"testing"
-
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/model/testapi"
@@ -12,6 +10,9 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/testutils"
 	"github.com/pkg/errors"
+	"math"
+	"math/rand"
+	"testing"
 )
 
 func TestFinality(t *testing.T) {
@@ -179,13 +180,19 @@ func TestFinality(t *testing.T) {
 
 func TestBoundedMergeDepth(t *testing.T) {
 	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
+		rd := rand.New(rand.NewSource(0))
 		// Set finalityInterval to 50 blocks, so that test runs quickly
 		consensusConfig.K = 5
-		consensusConfig.FinalityDuration = 7 * consensusConfig.TargetTimePerBlock
-		finalityInterval := int(consensusConfig.FinalityDepth())
+		consensusConfig.MergeDepth = 7
+		consensusConfig.FinalityDuration = 20 * consensusConfig.TargetTimePerBlock
+		consensusConfig.HF1DAAScore = consensusConfig.GenesisBlock.Header.DAAScore() + 200
 
-		if int(consensusConfig.K) >= finalityInterval {
+		if uint64(consensusConfig.K) >= consensusConfig.FinalityDepth() {
 			t.Fatal("K must be smaller than finality duration for this test to run")
+		}
+
+		if uint64(consensusConfig.K) >= consensusConfig.MergeDepth {
+			t.Fatal("K must be smaller than merge depth for this test to run")
 		}
 
 		checkViolatingMergeDepth := func(consensus testapi.TestConsensus, parents []*externalapi.DomainHash) (*externalapi.DomainBlock, bool) {
@@ -217,7 +224,7 @@ func TestBoundedMergeDepth(t *testing.T) {
 		buildAndInsertBlock := func(consensus testapi.TestConsensus, parentHashes []*externalapi.DomainHash) *externalapi.DomainBlock {
 			block, _, err := consensus.BuildBlockWithParents(parentHashes, nil, nil)
 			if err != nil {
-				t.Fatalf("TestBoundedMergeDepth: Failed building block: %v", err)
+				t.Fatalf("TestBoundedMergeDepth: Failed building block: %+v", err)
 			}
 			_, err = consensus.ValidateAndInsertBlock(block, true)
 			if err != nil {
@@ -236,194 +243,296 @@ func TestBoundedMergeDepth(t *testing.T) {
 			return blockInfo.BlockStatus
 		}
 
-		factory := consensus.NewFactory()
-		consensusBuild, teardownFunc1, err := factory.NewTestConsensus(consensusConfig, "TestBoundedMergeTestBuild")
-		if err != nil {
-			t.Fatalf("TestBoundedMergeDepth: Error setting up consensus: %+v", err)
+		syncConsensuses := func(tcSyncer, tcSyncee testapi.TestConsensus) {
+			syncerVirtualSelectedParent, err := tcSyncer.GetVirtualSelectedParent()
+			if err != nil {
+				t.Fatalf("GetVirtualSelectedParent: %+v", err)
+			}
+
+			missingHeaderHashes, _, err := tcSyncer.GetHashesBetween(consensusConfig.GenesisHash, syncerVirtualSelectedParent, math.MaxUint64)
+			if err != nil {
+				t.Fatalf("GetHashesBetween: %+v", err)
+			}
+
+			for i, blocksHash := range missingHeaderHashes {
+				blockInfo, err := tcSyncee.GetBlockInfo(blocksHash)
+				if err != nil {
+					t.Fatalf("GetBlockInfo: %+v", err)
+				}
+
+				if blockInfo.Exists {
+					continue
+				}
+
+				block, err := tcSyncer.GetBlock(blocksHash)
+				if err != nil {
+					t.Fatalf("GetBlockHeader: %+v", err)
+				}
+
+				_, err = tcSyncee.ValidateAndInsertBlock(block, true)
+				if err != nil {
+					t.Fatalf("ValidateAndInsertBlock %d: %+v", i, err)
+				}
+			}
+
+			synceeVirtualSelectedParent, err := tcSyncee.GetVirtualSelectedParent()
+			if err != nil {
+				t.Fatalf("Tips: %+v", err)
+			}
+
+			if !syncerVirtualSelectedParent.Equal(synceeVirtualSelectedParent) {
+				t.Fatalf("Syncee's selected tip is %s while syncer's is %s", synceeVirtualSelectedParent, syncerVirtualSelectedParent)
+			}
 		}
 
+		factory := consensus.NewFactory()
 		consensusReal, teardownFunc2, err := factory.NewTestConsensus(consensusConfig, "TestBoundedMergeTestReal")
 		if err != nil {
 			t.Fatalf("TestBoundedMergeDepth: Error setting up consensus: %+v", err)
 		}
 		defer teardownFunc2(false)
 
-		// Create a block on top on genesis
-		block1 := buildAndInsertBlock(consensusBuild, []*externalapi.DomainHash{consensusConfig.GenesisHash})
+		test := func(depth uint64, root *externalapi.DomainHash, checkVirtual, isRealDepth bool) {
+			consensusBuild, teardownFunc1, err := factory.NewTestConsensus(consensusConfig, "TestBoundedMergeTestBuild")
+			if err != nil {
+				t.Fatalf("TestBoundedMergeDepth: Error setting up consensus: %+v", err)
+			}
+			defer teardownFunc1(false)
+			consensusBuild.BlockBuilder().SetNonceCounter(rd.Uint64())
 
-		// Create a chain
-		selectedChain := make([]*externalapi.DomainBlock, 0, finalityInterval+1)
-		parent := consensushashing.BlockHash(block1)
-		// Make sure this is always bigger than `blocksChain2` so it will stay the selected chain
-		for i := 0; i < finalityInterval+2; i++ {
-			block := buildAndInsertBlock(consensusBuild, []*externalapi.DomainHash{parent})
-			selectedChain = append(selectedChain, block)
-			parent = consensushashing.BlockHash(block)
-		}
+			syncConsensuses(consensusReal, consensusBuild)
+			// Create a block on top on genesis
+			block1 := buildAndInsertBlock(consensusBuild, []*externalapi.DomainHash{root})
 
-		// Create another chain
-		blocksChain2 := make([]*externalapi.DomainBlock, 0, finalityInterval+1)
-		parent = consensushashing.BlockHash(block1)
-		for i := 0; i < finalityInterval+1; i++ {
-			block := buildAndInsertBlock(consensusBuild, []*externalapi.DomainHash{parent})
-			blocksChain2 = append(blocksChain2, block)
-			parent = consensushashing.BlockHash(block)
-		}
+			// Create a chain
+			selectedChain := make([]*externalapi.DomainBlock, 0, depth+1)
+			parent := consensushashing.BlockHash(block1)
+			// Make sure this is always bigger than `blocksChain2` so it will stay the selected chain
+			for i := uint64(0); i < depth+2; i++ {
+				block := buildAndInsertBlock(consensusBuild, []*externalapi.DomainHash{parent})
+				selectedChain = append(selectedChain, block)
+				parent = consensushashing.BlockHash(block)
+			}
 
-		// Teardown and assign nil to make sure we use the right DAG from here on.
-		teardownFunc1(false)
-		consensusBuild = nil
+			// Create another chain
+			blocksChain2 := make([]*externalapi.DomainBlock, 0, depth+1)
+			parent = consensushashing.BlockHash(block1)
+			for i := uint64(0); i < depth+1; i++ {
+				block := buildAndInsertBlock(consensusBuild, []*externalapi.DomainHash{parent})
+				blocksChain2 = append(blocksChain2, block)
+				parent = consensushashing.BlockHash(block)
+			}
 
-		// Now test against the real DAG
-		// submit block1
-		processBlock(consensusReal, block1, "block1")
+			// Now test against the real DAG
+			// submit block1
+			processBlock(consensusReal, block1, "block1")
 
-		// submit chain1
-		for i, block := range selectedChain {
-			processBlock(consensusReal, block, fmt.Sprintf("selectedChain block No %d", i))
-		}
+			// submit chain1
+			for i, block := range selectedChain {
+				processBlock(consensusReal, block, fmt.Sprintf("selectedChain block No %d", i))
+			}
 
-		// submit chain2
-		for i, block := range blocksChain2 {
-			processBlock(consensusReal, block, fmt.Sprintf("blocksChain2 block No %d", i))
-		}
+			// submit chain2
+			for i, block := range blocksChain2 {
+				processBlock(consensusReal, block, fmt.Sprintf("blocksChain2 block No %d", i))
+			}
 
-		// submit a block pointing at tip(chain1) and on first block in chain2 directly
-		mergeDepthViolatingBlockBottom, isViolatingMergeDepth := checkViolatingMergeDepth(consensusReal, []*externalapi.DomainHash{consensushashing.BlockHash(blocksChain2[0]), consensushashing.BlockHash(selectedChain[len(selectedChain)-1])})
-		if !isViolatingMergeDepth {
-			t.Fatalf("TestBoundedMergeDepth: Expected mergeDepthViolatingBlockBottom to violate merge depth")
-		}
+			// submit a block pointing at tip(chain1) and on first block in chain2 directly
+			mergeDepthViolatingBlockBottom, isViolatingMergeDepth := checkViolatingMergeDepth(consensusReal, []*externalapi.DomainHash{consensushashing.BlockHash(blocksChain2[0]), consensushashing.BlockHash(selectedChain[len(selectedChain)-1])})
+			if isViolatingMergeDepth != isRealDepth {
+				t.Fatalf("TestBoundedMergeDepth: Expects isViolatingMergeDepth to be %t", isRealDepth)
+			}
 
-		// submit a block pointing at tip(chain1) and tip(chain2) should also obviously violate merge depth (this points at first block in chain2 indirectly)
-		mergeDepthViolatingTop, isViolatingMergeDepth := checkViolatingMergeDepth(consensusReal, []*externalapi.DomainHash{consensushashing.BlockHash(blocksChain2[len(blocksChain2)-1]), consensushashing.BlockHash(selectedChain[len(selectedChain)-1])})
-		if !isViolatingMergeDepth {
-			t.Fatalf("TestBoundedMergeDepth: Expected mergeDepthViolatingTop to violate merge depth")
-		}
+			// submit a block pointing at tip(chain1) and tip(chain2) should also obviously violate merge depth (this points at first block in chain2 indirectly)
+			mergeDepthViolatingTop, isViolatingMergeDepth := checkViolatingMergeDepth(consensusReal, []*externalapi.DomainHash{consensushashing.BlockHash(blocksChain2[len(blocksChain2)-1]), consensushashing.BlockHash(selectedChain[len(selectedChain)-1])})
+			if isViolatingMergeDepth != isRealDepth {
+				t.Fatalf("TestBoundedMergeDepth: Expects isViolatingMergeDepth to be %t", isRealDepth)
+			}
 
-		// the location of the parents in the slices need to be both `-X` so the `selectedChain` one will have higher blueScore (it's a chain longer by 1)
-		kosherizingBlock, isViolatingMergeDepth := checkViolatingMergeDepth(consensusReal, []*externalapi.DomainHash{consensushashing.BlockHash(blocksChain2[len(blocksChain2)-3]), consensushashing.BlockHash(selectedChain[len(selectedChain)-3])})
-		kosherizingBlockHash := consensushashing.BlockHash(kosherizingBlock)
-		if isViolatingMergeDepth {
-			t.Fatalf("TestBoundedMergeDepth: Expected blueKosherizingBlock to not violate merge depth")
-		}
+			// the location of the parents in the slices need to be both `-X` so the `selectedChain` one will have higher blueScore (it's a chain longer by 1)
+			kosherizingBlock, isViolatingMergeDepth := checkViolatingMergeDepth(consensusReal, []*externalapi.DomainHash{consensushashing.BlockHash(blocksChain2[len(blocksChain2)-3]), consensushashing.BlockHash(selectedChain[len(selectedChain)-3])})
+			kosherizingBlockHash := consensushashing.BlockHash(kosherizingBlock)
+			if isViolatingMergeDepth {
+				t.Fatalf("TestBoundedMergeDepth: Expected blueKosherizingBlock to not violate merge depth")
+			}
 
-		stagingArea := model.NewStagingArea()
-		virtualGhotDagData, err := consensusReal.GHOSTDAGDataStore().Get(consensusReal.DatabaseContext(),
-			stagingArea, model.VirtualBlockHash, false)
-		if err != nil {
-			t.Fatalf("TestBoundedMergeDepth: Failed getting the ghostdag data of the virtual: %v", err)
-		}
-		// Make sure it's actually blue
-		found := false
-		for _, blue := range virtualGhotDagData.MergeSetBlues() {
-			if blue.Equal(kosherizingBlockHash) {
-				found = true
-				break
+			if checkVirtual {
+				stagingArea := model.NewStagingArea()
+				virtualGhotDagData, err := consensusReal.GHOSTDAGDataStore().Get(consensusReal.DatabaseContext(),
+					stagingArea, model.VirtualBlockHash, false)
+				if err != nil {
+					t.Fatalf("TestBoundedMergeDepth: Failed getting the ghostdag data of the virtual: %v", err)
+				}
+				// Make sure it's actually blue
+				found := false
+				for _, blue := range virtualGhotDagData.MergeSetBlues() {
+					if blue.Equal(kosherizingBlockHash) {
+						found = true
+						break
+					}
+				}
+				if !found {
+					t.Fatalf("TestBoundedMergeDepth: Expected kosherizingBlock to be blue by the virtual")
+				}
+			}
+
+			pointAtBlueKosherizing, isViolatingMergeDepth := checkViolatingMergeDepth(consensusReal, []*externalapi.DomainHash{kosherizingBlockHash, consensushashing.BlockHash(selectedChain[len(selectedChain)-1])})
+			if isViolatingMergeDepth {
+				t.Fatalf("TestBoundedMergeDepth: Expected selectedTip to not violate merge depth")
+			}
+
+			if checkVirtual {
+				virtualSelectedParent, err := consensusReal.GetVirtualSelectedParent()
+				if err != nil {
+					t.Fatalf("TestBoundedMergeDepth: Failed getting the virtual selected parent %v", err)
+				}
+
+				if !virtualSelectedParent.Equal(consensushashing.BlockHash(pointAtBlueKosherizing)) {
+					t.Fatalf("TestBoundedMergeDepth: Expected %s to be the selectedTip but found %s instead", consensushashing.BlockHash(pointAtBlueKosherizing), virtualSelectedParent)
+				}
+			}
+
+			// Now let's make the kosherizing block red and try to merge again
+			tip := consensushashing.BlockHash(selectedChain[len(selectedChain)-1])
+			// we use k-1 because `kosherizingBlock` points at tip-2, so 2+k-1 = k+1 anticone.
+			for i := 0; i < int(consensusConfig.K)-1; i++ {
+				block := buildAndInsertBlock(consensusReal, []*externalapi.DomainHash{tip})
+				tip = consensushashing.BlockHash(block)
+			}
+
+			if checkVirtual {
+				virtualSelectedParent, err := consensusReal.GetVirtualSelectedParent()
+				if err != nil {
+					t.Fatalf("TestBoundedMergeDepth: Failed getting the virtual selected parent %v", err)
+				}
+
+				if !virtualSelectedParent.Equal(tip) {
+					t.Fatalf("TestBoundedMergeDepth: Expected %s to be the selectedTip but found %s instead", tip, virtualSelectedParent)
+				}
+
+				virtualGhotDagData, err := consensusReal.GHOSTDAGDataStore().Get(
+					consensusReal.DatabaseContext(), model.NewStagingArea(), model.VirtualBlockHash, false)
+				if err != nil {
+					t.Fatalf("TestBoundedMergeDepth: Failed getting the ghostdag data of the virtual: %v", err)
+				}
+				// Make sure it's actually blue
+				found := false
+				for _, blue := range virtualGhotDagData.MergeSetBlues() {
+					if blue.Equal(kosherizingBlockHash) {
+						found = true
+						break
+					}
+				}
+				if found {
+					t.Fatalf("expected kosherizingBlock to be red by the virtual")
+				}
+			}
+
+			pointAtRedKosherizing, isViolatingMergeDepth := checkViolatingMergeDepth(consensusReal, []*externalapi.DomainHash{kosherizingBlockHash, tip})
+			if isViolatingMergeDepth != isRealDepth {
+				t.Fatalf("TestBoundedMergeDepth: Expects isViolatingMergeDepth to be %t", isRealDepth)
+			}
+
+			// Now `pointAtBlueKosherizing` itself is actually still blue, so we can still point at that even though we can't point at kosherizing directly anymore
+			transitiveBlueKosherizing, isViolatingMergeDepth :=
+				checkViolatingMergeDepth(consensusReal, []*externalapi.DomainHash{consensushashing.BlockHash(pointAtBlueKosherizing), tip})
+			if isViolatingMergeDepth {
+				t.Fatalf("TestBoundedMergeDepth: Expected transitiveBlueKosherizing to not violate merge depth")
+			}
+
+			if checkVirtual {
+				virtualSelectedParent, err := consensusReal.GetVirtualSelectedParent()
+				if err != nil {
+					t.Fatalf("TestBoundedMergeDepth: Failed getting the virtual selected parent %v", err)
+				}
+
+				if !virtualSelectedParent.Equal(consensushashing.BlockHash(transitiveBlueKosherizing)) {
+					t.Fatalf("TestBoundedMergeDepth: Expected %s to be the selectedTip but found %s instead", consensushashing.BlockHash(transitiveBlueKosherizing), virtualSelectedParent)
+				}
+
+				// Lets validate the status of all the interesting blocks
+				if getStatus(consensusReal, pointAtBlueKosherizing) != externalapi.StatusUTXOValid {
+					t.Fatalf("TestBoundedMergeDepth: pointAtBlueKosherizing expected status '%s' but got '%s'", externalapi.StatusUTXOValid, getStatus(consensusReal, pointAtBlueKosherizing))
+				}
+				if getStatus(consensusReal, pointAtRedKosherizing) != externalapi.StatusInvalid {
+					t.Fatalf("TestBoundedMergeDepth: pointAtRedKosherizing expected status '%s' but got '%s'", externalapi.StatusInvalid, getStatus(consensusReal, pointAtRedKosherizing))
+				}
+				if getStatus(consensusReal, transitiveBlueKosherizing) != externalapi.StatusUTXOValid {
+					t.Fatalf("TestBoundedMergeDepth: transitiveBlueKosherizing expected status '%s' but got '%s'", externalapi.StatusUTXOValid, getStatus(consensusReal, transitiveBlueKosherizing))
+				}
+				if getStatus(consensusReal, mergeDepthViolatingBlockBottom) != externalapi.StatusInvalid {
+					t.Fatalf("TestBoundedMergeDepth: mergeDepthViolatingBlockBottom expected status '%s' but got '%s'", externalapi.StatusInvalid, getStatus(consensusReal, mergeDepthViolatingBlockBottom))
+				}
+				if getStatus(consensusReal, mergeDepthViolatingTop) != externalapi.StatusInvalid {
+					t.Fatalf("TestBoundedMergeDepth: mergeDepthViolatingTop expected status '%s' but got '%s'", externalapi.StatusInvalid, getStatus(consensusReal, mergeDepthViolatingTop))
+				}
+				if getStatus(consensusReal, kosherizingBlock) != externalapi.StatusUTXOPendingVerification {
+					t.Fatalf("kosherizingBlock expected status '%s' but got '%s'", externalapi.StatusUTXOPendingVerification, getStatus(consensusReal, kosherizingBlock))
+				}
+
+				for i, b := range blocksChain2 {
+					if getStatus(consensusReal, b) != externalapi.StatusUTXOPendingVerification {
+						t.Fatalf("blocksChain2[%d] expected status '%s' but got '%s'", i, externalapi.StatusUTXOPendingVerification, getStatus(consensusReal, b))
+					}
+				}
+				for i, b := range selectedChain {
+					if getStatus(consensusReal, b) != externalapi.StatusUTXOValid {
+						t.Fatalf("selectedChain[%d] expected status '%s' but got '%s'", i, externalapi.StatusUTXOValid, getStatus(consensusReal, b))
+					}
+				}
 			}
 		}
-		if !found {
-			t.Fatalf("TestBoundedMergeDepth: Expected kosherizingBlock to be blue by the virtual")
-		}
 
-		pointAtBlueKosherizing, isViolatingMergeDepth := checkViolatingMergeDepth(consensusReal, []*externalapi.DomainHash{kosherizingBlockHash, consensushashing.BlockHash(selectedChain[len(selectedChain)-1])})
-		if isViolatingMergeDepth {
-
-			t.Fatalf("TestBoundedMergeDepth: Expected selectedTip to not violate merge depth")
-		}
-
-		virtualSelectedParent, err := consensusReal.GetVirtualSelectedParent()
+		test(consensusConfig.FinalityDepth(), consensusConfig.GenesisHash, true, true)
+		virtualDAAScore, err := consensusReal.GetVirtualDAAScore()
 		if err != nil {
-			t.Fatalf("TestBoundedMergeDepth: Failed getting the virtual selected parent %v", err)
+			t.Fatalf("GetVirtualDAAScore: %+v", err)
 		}
 
-		if !virtualSelectedParent.Equal(consensushashing.BlockHash(pointAtBlueKosherizing)) {
-			t.Fatalf("TestBoundedMergeDepth: Expected %s to be the selectedTip but found %s instead", consensushashing.BlockHash(pointAtBlueKosherizing), virtualSelectedParent)
+		if virtualDAAScore > consensusConfig.HF1DAAScore {
+			t.Fatalf("Hard fork is already activated")
 		}
 
-		// Now let's make the kosherizing block red and try to merge again
-		tip := consensushashing.BlockHash(selectedChain[len(selectedChain)-1])
-		// we use k-1 because `kosherizingBlock` points at tip-2, so 2+k-1 = k+1 anticone.
-		for i := 0; i < int(consensusConfig.K)-1; i++ {
-			block := buildAndInsertBlock(consensusReal, []*externalapi.DomainHash{tip})
-			tip = consensushashing.BlockHash(block)
-		}
-
-		virtualSelectedParent, err = consensusReal.GetVirtualSelectedParent()
+		tipBeforeHFActivated, err := consensusReal.GetVirtualSelectedParent()
 		if err != nil {
-			t.Fatalf("TestBoundedMergeDepth: Failed getting the virtual selected parent %v", err)
+			t.Fatalf("GetVirtualSelectedParent: %+v", err)
 		}
 
-		if !virtualSelectedParent.Equal(tip) {
-			t.Fatalf("TestBoundedMergeDepth: Expected %s to be the selectedTip but found %s instead", tip, virtualSelectedParent)
-		}
+		tip := tipBeforeHFActivated
+		for {
+			tip, _, err = consensusReal.AddBlock([]*externalapi.DomainHash{tip}, nil, nil)
+			if err != nil {
+				t.Fatalf("Failed adding block: %+v", err)
+			}
 
-		virtualGhotDagData, err = consensusReal.GHOSTDAGDataStore().Get(
-			consensusReal.DatabaseContext(), stagingArea, model.VirtualBlockHash, false)
-		if err != nil {
-			t.Fatalf("TestBoundedMergeDepth: Failed getting the ghostdag data of the virtual: %v", err)
-		}
-		// Make sure it's actually blue
-		found = false
-		for _, blue := range virtualGhotDagData.MergeSetBlues() {
-			if blue.Equal(kosherizingBlockHash) {
-				found = true
-				break
+			daaScore, err := consensusReal.DAABlocksStore().DAAScore(consensusReal.DatabaseContext(), model.NewStagingArea(), tip)
+			if err != nil {
+				t.Fatalf("Failed adding block: %+v", err)
+			}
+
+			// We check what happens when on the transition between rules: if we merge a chain that
+			// started before the HF was activated, but the HF was already activated for the merging
+			// block, the HF rules should apply.
+			// The checked block in `test` is going to have a DAA score of `tip.DAAScore + depth + 5`,
+			// so this is why we started to test from this depth.
+			if daaScore == consensusConfig.HF1DAAScore-consensusConfig.MergeDepth-5 {
+				test(consensusConfig.MergeDepth, tip, true, true)
+			}
+
+			if daaScore > consensusConfig.HF1DAAScore {
+				virtualSelectedParent, err := consensusReal.GetVirtualSelectedParent()
+				if err != nil {
+					t.Fatalf("GetVirtualSelectedParent: %+v", err)
+				}
+
+				if virtualSelectedParent.Equal(tip) {
+					break
+				}
 			}
 		}
-		if found {
-			t.Fatalf("expected kosherizingBlock to be red by the virtual")
-		}
 
-		pointAtRedKosherizing, isViolatingMergeDepth := checkViolatingMergeDepth(consensusReal, []*externalapi.DomainHash{kosherizingBlockHash, tip})
-		if !isViolatingMergeDepth {
-			t.Fatalf("TestBoundedMergeDepth: Expected selectedTipRedKosherize to violate merge depth")
-		}
-
-		// Now `pointAtBlueKosherizing` itself is actually still blue, so we can still point at that even though we can't point at kosherizing directly anymore
-		transitiveBlueKosherizing, isViolatingMergeDepth :=
-			checkViolatingMergeDepth(consensusReal, []*externalapi.DomainHash{consensushashing.BlockHash(pointAtBlueKosherizing), tip})
-		if isViolatingMergeDepth {
-			t.Fatalf("TestBoundedMergeDepth: Expected transitiveBlueKosherizing to not violate merge depth")
-		}
-
-		virtualSelectedParent, err = consensusReal.GetVirtualSelectedParent()
-		if err != nil {
-			t.Fatalf("TestBoundedMergeDepth: Failed getting the virtual selected parent %v", err)
-		}
-
-		if !virtualSelectedParent.Equal(consensushashing.BlockHash(transitiveBlueKosherizing)) {
-			t.Fatalf("TestBoundedMergeDepth: Expected %s to be the selectedTip but found %s instead", consensushashing.BlockHash(transitiveBlueKosherizing), virtualSelectedParent)
-		}
-
-		// Lets validate the status of all the interesting blocks
-		if getStatus(consensusReal, pointAtBlueKosherizing) != externalapi.StatusUTXOValid {
-			t.Fatalf("TestBoundedMergeDepth: pointAtBlueKosherizing expected status '%s' but got '%s'", externalapi.StatusUTXOValid, getStatus(consensusReal, pointAtBlueKosherizing))
-		}
-		if getStatus(consensusReal, pointAtRedKosherizing) != externalapi.StatusInvalid {
-			t.Fatalf("TestBoundedMergeDepth: pointAtRedKosherizing expected status '%s' but got '%s'", externalapi.StatusInvalid, getStatus(consensusReal, pointAtRedKosherizing))
-		}
-		if getStatus(consensusReal, transitiveBlueKosherizing) != externalapi.StatusUTXOValid {
-			t.Fatalf("TestBoundedMergeDepth: transitiveBlueKosherizing expected status '%s' but got '%s'", externalapi.StatusUTXOValid, getStatus(consensusReal, transitiveBlueKosherizing))
-		}
-		if getStatus(consensusReal, mergeDepthViolatingBlockBottom) != externalapi.StatusInvalid {
-			t.Fatalf("TestBoundedMergeDepth: mergeDepthViolatingBlockBottom expected status '%s' but got '%s'", externalapi.StatusInvalid, getStatus(consensusReal, mergeDepthViolatingBlockBottom))
-		}
-		if getStatus(consensusReal, mergeDepthViolatingTop) != externalapi.StatusInvalid {
-			t.Fatalf("TestBoundedMergeDepth: mergeDepthViolatingTop expected status '%s' but got '%s'", externalapi.StatusInvalid, getStatus(consensusReal, mergeDepthViolatingTop))
-		}
-		if getStatus(consensusReal, kosherizingBlock) != externalapi.StatusUTXOPendingVerification {
-			t.Fatalf("kosherizingBlock expected status '%s' but got '%s'", externalapi.StatusUTXOPendingVerification, getStatus(consensusReal, kosherizingBlock))
-		}
-
-		for i, b := range blocksChain2 {
-			if getStatus(consensusReal, b) != externalapi.StatusUTXOPendingVerification {
-				t.Fatalf("blocksChain2[%d] expected status '%s' but got '%s'", i, externalapi.StatusUTXOPendingVerification, getStatus(consensusReal, b))
-			}
-		}
-		for i, b := range selectedChain {
-			if getStatus(consensusReal, b) != externalapi.StatusUTXOValid {
-				t.Fatalf("selectedChain[%d] expected status '%s' but got '%s'", i, externalapi.StatusUTXOValid, getStatus(consensusReal, b))
-			}
-		}
+		test(consensusConfig.MergeDepth, tip, true, true)
+		test(consensusConfig.FinalityDepth(), tipBeforeHFActivated, false, true)
+		test(consensusConfig.MergeDepth, tipBeforeHFActivated, false, false)
 	})
 }

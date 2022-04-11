@@ -238,3 +238,84 @@ func mineNextBlockWithMockTimestamps(t *testing.T, harness *appHarness, rd *rand
 
 	return block
 }
+
+func TestBoundedMergeDepth(t *testing.T) {
+	overrideDAGParams := dagconfig.SimnetParams
+
+	overrideDAGParams.MergeDepth = 50
+
+	harnesses, teardown := setupHarnesses(t, []*harnessParams{
+		{
+			p2pAddress:              p2pAddress1,
+			rpcAddress:              rpcAddress1,
+			miningAddress:           miningAddress1,
+			miningAddressPrivateKey: miningAddress1PrivateKey,
+			overrideDAGParams:       &overrideDAGParams,
+		},
+		{
+			p2pAddress:              p2pAddress2,
+			rpcAddress:              rpcAddress2,
+			miningAddress:           miningAddress2,
+			miningAddressPrivateKey: miningAddress2PrivateKey,
+			overrideDAGParams:       &overrideDAGParams,
+			utxoIndex:               true,
+		},
+		{
+			p2pAddress:              p2pAddress3,
+			rpcAddress:              rpcAddress3,
+			miningAddress:           miningAddress3,
+			miningAddressPrivateKey: miningAddress3PrivateKey,
+			overrideDAGParams:       &overrideDAGParams,
+			utxoIndex:               true,
+		},
+		{
+			p2pAddress:              p2pAddress4,
+			rpcAddress:              rpcAddress4,
+			miningAddress:           miningAddress3,
+			miningAddressPrivateKey: miningAddress3PrivateKey,
+			overrideDAGParams:       &overrideDAGParams,
+			utxoIndex:               true,
+		},
+	})
+	defer teardown()
+
+	test := func(syncer, syncee *appHarness, depth uint64, shouldSync bool) {
+		const ibdTriggerRange = 32
+		if depth <= ibdTriggerRange {
+			t.Fatalf("Depth is too small")
+		}
+
+		for i := uint64(0); i < depth+ibdTriggerRange+1; i++ {
+			mineNextBlock(t, syncee)
+		}
+
+		for i := uint64(0); i < ibdTriggerRange+1; i++ {
+			mineNextBlock(t, syncer)
+		}
+
+		countBefore, err := syncee.rpcClient.GetBlockCount()
+		if err != nil {
+			t.Fatalf("GetBlockCount: %+v", err)
+		}
+
+		connect(t, syncee, syncer)
+
+		time.Sleep(5 * time.Second)
+		countAfter, err := syncee.rpcClient.GetBlockCount()
+		if err != nil {
+			t.Fatalf("GetBlockCount: %+v", err)
+		}
+
+		if (countBefore.HeaderCount != countAfter.HeaderCount) != shouldSync {
+			t.Fatalf("countBefore.HeaderCount: %d, countAfter.HeaderCount: %d", countBefore.HeaderCount, countAfter.HeaderCount)
+		}
+	}
+
+	t.Run("mergeDepth", func(t *testing.T) {
+		test(harnesses[0], harnesses[1], overrideDAGParams.MergeDepth, false)
+	})
+
+	t.Run("mergeDepth-1", func(t *testing.T) {
+		test(harnesses[2], harnesses[3], overrideDAGParams.MergeDepth-1, true)
+	})
+}
