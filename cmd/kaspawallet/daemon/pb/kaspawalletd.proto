@@ -10,7 +10,9 @@ service kaspawalletd {
   rpc NewAddress (NewAddressRequest) returns (NewAddressResponse) {}
   rpc Shutdown (ShutdownRequest) returns (ShutdownResponse) {}
   rpc Broadcast (BroadcastRequest) returns (BroadcastResponse) {}
+  // Since SendRequest contains a password - this command should only be used on a trusted or secure connection
   rpc Send(SendRequest) returns (SendResponse) {}
+  // Since SignRequest contains a password - this command should only be used on a trusted or secure connection
   rpc Sign(SignRequest) returns (SignResponse) {}
 }
 
@@ -66,10 +68,10 @@ message ShutdownRequest {
 message ShutdownResponse {
 }
 
+// Since SendRequest contains a password - this command should only be used on a trusted or secure connection
 message SendRequest{
   string toAddress = 1;
   uint64 amount = 2;
-
   string password = 3;
 }
 
@@ -77,6 +79,7 @@ message SendResponse{
   repeated string transactionIDs = 1;
 }
 
+// Since SignRequest contains a password - this command should only be used on a trusted or secure connection
 message SignRequest{
   repeated bytes unsignedTransactions = 1;
   string password = 2;
