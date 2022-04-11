@@ -1,0 +1,25 @@
+package server
+
+import (
+	"context"
+
+	"github.com/kaspanet/kaspad/cmd/kaspawallet/daemon/pb"
+)
+
+func (s *server) Send(_ context.Context, request *pb.SendRequest) (*pb.SendResponse, error) {
+	unsignedTransactions, err := s.createUnsignedTransactions(request.ToAddress, request.Amount)
+	if err != nil {
+		return nil, err
+	}
+	signedTransactions, err := s.signTransactions(unsignedTransactions, request.Password)
+	if err != nil {
+		return nil, err
+	}
+
+	txIDs, err := s.broadcast(signedTransactions)
+	if err != nil {
+		return nil, err
+	}
+
+	return &pb.SendResponse{TxIDs: txIDs}, nil
+}

@@ -42,18 +42,14 @@ func broadcast(conf *broadcastConfig) error {
 		return err
 	}
 
-	transactionsCount := len(transactions)
-	for i, transaction := range transactions {
-		response, err := daemonClient.Broadcast(ctx, &pb.BroadcastRequest{Transaction: transaction})
-		if err != nil {
-			return err
-		}
-		if transactionsCount == 1 {
-			fmt.Println("Transaction was sent successfully")
-		} else {
-			fmt.Printf("Transaction %d (out of %d) was sent successfully\n", i+1, transactionsCount)
-		}
-		fmt.Printf("Transaction ID: \t%s\n", response.TxID)
+	response, err := daemonClient.Broadcast(ctx, &pb.BroadcastRequest{Transactions: transactions})
+	if err != nil {
+		return err
+	}
+	fmt.Println("Transactions were sent successfully")
+	fmt.Println("Transaction ID(s): ")
+	for _, txID := range response.TxIDs {
+		fmt.Printf("\\t%s\\n", txID)
 	}
 
 	return nil
