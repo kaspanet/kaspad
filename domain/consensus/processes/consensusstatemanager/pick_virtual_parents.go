@@ -282,18 +282,18 @@ func (csm *consensusStateManager) boundedMergeBreakingParents(stagingArea *model
 		return nil, err
 	}
 
-	potentiallyKosherizingBlocks, err :=
-		csm.mergeDepthManager.NonBoundedMergeDepthViolatingBlues(stagingArea, model.VirtualBlockHash, false)
-	if err != nil {
-		return nil, err
-	}
-	log.Debugf("The potentially kosherizing blocks are: %s", potentiallyKosherizingBlocks)
-
 	virtualMergeDepthRoot, err := csm.mergeDepthManager.VirtualMergeDepthRoot(stagingArea)
 	if err != nil {
 		return nil, err
 	}
 	log.Debugf("The merge depth root of virtual is: %s", virtualMergeDepthRoot)
+
+	potentiallyKosherizingBlocks, err :=
+		csm.mergeDepthManager.NonBoundedMergeDepthViolatingBlues(stagingArea, model.VirtualBlockHash, virtualMergeDepthRoot)
+	if err != nil {
+		return nil, err
+	}
+	log.Debugf("The potentially kosherizing blocks are: %s", potentiallyKosherizingBlocks)
 
 	var badReds []*externalapi.DomainHash
 

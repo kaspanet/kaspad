@@ -154,7 +154,7 @@ func (flow *handleRelayInvsFlow) start() error {
 			// block is not in the future of virtual's merge depth root, and thus cannot be merged unless
 			// other valid blocks Kosherize it, in which case it will be obtained once the merger is relayed
 			if block.Header.BlueWork().Cmp(mergeDepthRootHeader.BlueWork()) <= 0 {
-				log.Debugf("Block %s has lower blue work than virtual's sp merge root %s (%d <= %d), hence we are skipping it",
+				log.Debugf("Block %s has lower blue work than virtual's merge root %s (%d <= %d), hence we are skipping it",
 					inv.Hash, virtualMergeDepthRoot, block.Header.BlueWork(), mergeDepthRootHeader.BlueWork())
 				continue
 			}
