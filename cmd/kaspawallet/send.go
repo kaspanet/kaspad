@@ -41,6 +41,9 @@ func send(conf *sendConfig) error {
 		return err
 	}
 
+	if len(conf.Password) == 0 {
+		conf.Password = keys.GetPassword("Password:")
+	}
 	mnemonics, err := keysFile.DecryptMnemonics(conf.Password)
 	if err != nil {
 		return err

@@ -76,7 +76,7 @@ message SendRequest{
 }
 
 message SendResponse{
-  repeated string transactionIDs = 1;
+  repeated string txIDs = 1;
 }
 
 // Since SignRequest contains a password - this command should only be used on a trusted or secure connection

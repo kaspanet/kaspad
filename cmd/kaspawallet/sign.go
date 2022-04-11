@@ -22,6 +22,10 @@ func sign(conf *signConfig) error {
 	if err != nil {
 		return err
 	}
+
+	if len(conf.Password) == 0 {
+		conf.Password = keys.GetPassword("Password:")
+	}
 	privateKeys, err := keysFile.DecryptMnemonics(conf.Password)
 	if err != nil {
 		return err

@@ -21,5 +21,5 @@ func (s *server) Send(_ context.Context, request *pb.SendRequest) (*pb.SendRespo
 		return nil, err
 	}
 
-	return &pb.SendResponse{TransactionIDs: txIDs}, nil
+	return &pb.SendResponse{TxIDs: txIDs}, nil
 }
