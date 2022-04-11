@@ -20,6 +20,7 @@ import (
 type blockBuilder struct {
 	databaseContext model.DBManager
 	genesisHash     *externalapi.DomainHash
+	hf1DAAScore     uint64
 
 	difficultyManager     model.DifficultyManager
 	pastMedianTimeManager model.PastMedianTimeManager
@@ -42,6 +43,7 @@ type blockBuilder struct {
 func New(
 	databaseContext model.DBManager,
 	genesisHash *externalapi.DomainHash,
+	hf1DAAScore uint64,
 
 	difficultyManager model.DifficultyManager,
 	pastMedianTimeManager model.PastMedianTimeManager,
@@ -63,6 +65,7 @@ func New(
 	return &blockBuilder{
 		databaseContext: databaseContext,
 		genesisHash:     genesisHash,
+		hf1DAAScore:     hf1DAAScore,
 
 		difficultyManager:     difficultyManager,
 		pastMedianTimeManager: pastMedianTimeManager,
@@ -224,8 +227,13 @@ func (bb *blockBuilder) buildHeader(stagingArea *model.StagingArea, transactions
 		return nil, err
 	}
 
+	version := constants.BlockVersionBeforeHF1
+	if daaScore >= bb.hf1DAAScore {
+		version = constants.BlockVersionAfterHF1
+	}
+
 	return blockheader.NewImmutableBlockHeader(
-		constants.MaxBlockVersion,
+		version,
 		parents,
 		hashMerkleRoot,
 		acceptedIDMerkleRoot,

@@ -240,6 +240,7 @@ var (
 	ErrPruningProofMissesBlocksBelowPruningPoint      = newRuleError("ErrPruningProofMissesBlocksBelowPruningPoint")
 	ErrPruningProofEmpty                              = newRuleError("ErrPruningProofEmpty")
 	ErrWrongCoinbaseSubsidy                           = newRuleError("ErrWrongCoinbaseSubsidy")
+	ErrWrongBlockVersion                              = newRuleError("ErrWrongBlockVersion")
 )
 
 // RuleError identifies a rule violation. It is used to indicate that

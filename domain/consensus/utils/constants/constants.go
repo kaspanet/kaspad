@@ -3,9 +3,11 @@ package constants
 import "math"
 
 const (
-	// MaxBlockVersion represents the current version of blocks mined and the maximum block version
-	// this node is able to validate
-	MaxBlockVersion uint16 = 0
+	// BlockVersionBeforeHF1 represents the current version of blocks mined before HF1
+	BlockVersionBeforeHF1 uint16 = 0
+
+	// BlockVersionAfterHF1 represents the current version of blocks mined after HF1
+	BlockVersionAfterHF1 uint16 = 1
 
 	// MaxTransactionVersion is the current latest supported transaction version.
 	MaxTransactionVersion uint16 = 0

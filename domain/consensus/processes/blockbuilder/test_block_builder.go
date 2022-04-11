@@ -94,9 +94,14 @@ func (bb *testBlockBuilder) buildUTXOInvalidHeader(stagingArea *model.StagingAre
 		})
 	}
 
+	version := constants.BlockVersionBeforeHF1
+	if daaScore >= bb.hf1DAAScore {
+		version = constants.BlockVersionAfterHF1
+	}
+
 	bb.nonceCounter++
 	return blockheader.NewImmutableBlockHeader(
-		constants.MaxBlockVersion,
+		version,
 		parents,
 		hashMerkleRoot,
 		&externalapi.DomainHash{},

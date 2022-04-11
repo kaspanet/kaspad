@@ -393,6 +393,7 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 	blockBuilder := blockbuilder.New(
 		dbManager,
 		genesisHash,
+		config.HF1DAAScore,
 
 		difficultyManager,
 		pastMedianTimeManager,

@@ -22,9 +22,11 @@ func (v *blockValidator) ValidateHeaderInIsolation(stagingArea *model.StagingAre
 		return err
 	}
 
-	err = v.checkBlockVersion(header)
-	if err != nil {
-		return err
+	if !blockHash.Equal(v.genesisHash) {
+		err = v.checkBlockVersion(header)
+		if err != nil {
+			return err
+		}
 	}
 
 	err = v.checkBlockTimestampInIsolation(header)
@@ -54,9 +56,16 @@ func (v *blockValidator) checkParentsLimit(header externalapi.BlockHeader) error
 }
 
 func (v *blockValidator) checkBlockVersion(header externalapi.BlockHeader) error {
-	if header.Version() > constants.MaxBlockVersion {
-		return errors.Wrapf(
-			ruleerrors.ErrBlockVersionIsUnknown, "The block version is unknown.")
+	if header.DAAScore() >= v.hf1DAAScore {
+		if header.Version() != constants.BlockVersionAfterHF1 {
+			return errors.Wrapf(
+				ruleerrors.ErrWrongBlockVersion, "After HF1 the block version should be %d", constants.BlockVersionAfterHF1)
+		}
+	} else {
+		if header.Version() != constants.BlockVersionBeforeHF1 {
+			return errors.Wrapf(
+				ruleerrors.ErrWrongBlockVersion, "Beofre HF1 the block version should be %d", constants.BlockVersionBeforeHF1)
+		}
 	}
 	return nil
 }
