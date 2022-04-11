@@ -18,6 +18,15 @@ func (s *server) CreateUnsignedTransactions(_ context.Context, request *pb.Creat
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
+	unsignedTransactions, err := s.createUnsignedTransactions(request.Address, request.Amount)
+	if err != nil {
+		return nil, err
+	}
+
+	return &pb.CreateUnsignedTransactionsResponse{UnsignedTransactions: unsignedTransactions}, nil
+}
+
+func (s *server) createUnsignedTransactions(address string, amount uint64) ([][]byte, error) {
 	if !s.isSynced() {
 		return nil, errors.New("server is not synced")
 	}
@@ -27,12 +36,12 @@ func (s *server) CreateUnsignedTransactions(_ context.Context, request *pb.Creat
 		return nil, err
 	}
 
-	toAddress, err := util.DecodeAddress(request.Address, s.params.Prefix)
+	toAddress, err := util.DecodeAddress(address, s.params.Prefix)
 	if err != nil {
 		return nil, err
 	}
 
-	selectedUTXOs, changeSompi, err := s.selectUTXOs(request.Amount, feePerInput)
+	selectedUTXOs, changeSompi, err := s.selectUTXOs(amount, feePerInput)
 	if err != nil {
 		return nil, err
 	}
@@ -46,7 +55,7 @@ func (s *server) CreateUnsignedTransactions(_ context.Context, request *pb.Creat
 		s.keysFile.MinimumSignatures,
 		[]*libkaspawallet.Payment{{
 			Address: toAddress,
-			Amount:  request.Amount,
+			Amount:  amount,
 		}, {
 			Address: changeAddress,
 			Amount:  changeSompi,
@@ -59,8 +68,7 @@ func (s *server) CreateUnsignedTransactions(_ context.Context, request *pb.Creat
 	if err != nil {
 		return nil, err
 	}
-
-	return &pb.CreateUnsignedTransactionsResponse{UnsignedTransactions: unsignedTransactions}, nil
+	return unsignedTransactions, nil
 }
 
 func (s *server) selectUTXOs(spendAmount uint64, feePerInput uint64) (

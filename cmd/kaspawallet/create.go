@@ -50,9 +50,13 @@ func create(conf *createConfig) error {
 		extendedPublicKeys = append(extendedPublicKeys, string(extendedPublicKey))
 	}
 
-	cosignerIndex, err := libkaspawallet.MinimumCosignerIndex(signerExtendedPublicKeys, extendedPublicKeys)
-	if err != nil {
-		return err
+	// For a read only wallet the cosigner index is 0
+	cosignerIndex := uint32(0)
+	if len(signerExtendedPublicKeys) > 0 {
+		cosignerIndex, err = libkaspawallet.MinimumCosignerIndex(signerExtendedPublicKeys, extendedPublicKeys)
+		if err != nil {
+			return err
+		}
 	}
 
 	file := keys.File{

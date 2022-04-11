@@ -2,14 +2,15 @@ package keys
 
 import (
 	"fmt"
-	"golang.org/x/term"
 	"os"
 	"os/signal"
 	"syscall"
+
+	"golang.org/x/term"
 )
 
-// getPassword was adapted from https://gist.github.com/jlinoff/e8e26b4ffa38d379c7f1891fd174a6d0#file-getpassword2-go
-func getPassword(prompt string) []byte {
+// GetPassword was adapted from https://gist.github.com/jlinoff/e8e26b4ffa38d379c7f1891fd174a6d0#file-getpassword2-go
+func GetPassword(prompt string) string {
 	// Get the initial state of the terminal.
 	initialTermState, e1 := term.GetState(int(syscall.Stdin))
 	if e1 != nil {
@@ -37,5 +38,5 @@ func getPassword(prompt string) []byte {
 	// Stop looking for ^C on the channel.
 	signal.Stop(c)
 
-	return p
+	return string(p)
 }
