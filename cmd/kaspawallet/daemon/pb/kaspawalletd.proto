@@ -53,6 +53,7 @@ message NewAddressResponse {
 
 message BroadcastRequest {
   bytes transaction = 1;
+  bool isDomain = 2;
 }
 
 message BroadcastResponse {

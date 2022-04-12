@@ -5,6 +5,7 @@ import (
 
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/daemon/pb"
+	"github.com/kaspanet/kaspad/cmd/kaspawallet/libkaspawallet"
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/libkaspawallet/serialization"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/infrastructure/network/rpcclient"
@@ -12,10 +13,21 @@ import (
 )
 
 func (s *server) Broadcast(_ context.Context, request *pb.BroadcastRequest) (*pb.BroadcastResponse, error) {
-	domainTransaction, err := serialization.DeserializeDomainTransaction(request.Transaction)
-	if err != nil {
-		return nil, err
+	var domainTransaction *externalapi.DomainTransaction
+	var err error
+
+	if !request.IsDomain { 
+		domainTransaction, err = serialization.DeserializeDomainTransaction(request.Transaction)
+		if err != nil {
+			return nil, err
+		}
+	} else { //default in proto3 is false
+		domainTransaction, err = libkaspawallet.DeserializedTransactionFromSerializedPartiallySigned(request.Transaction, s.keysFile.ECDSA)
+		if err != nil {
+			return nil, err
+		}
 	}
+
 	txID, err := sendTransaction(s.rpcClient, domainTransaction)
 	if err != nil {
 		return nil, err

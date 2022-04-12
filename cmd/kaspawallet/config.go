@@ -138,7 +138,7 @@ func parseCommandLine() (subCommand string, config interface{}) {
 		"Sends a Kaspa transaction to a public address", sendConf)
 
 	sweepConf := &sweepConfig{DaemonAddress: defaultListen}
-	parser.AddCommand(sweepSubCmd, "Sends all funds associated with the given private key, to a change address of the wallet",
+	parser.AddCommand(sweepSubCmd, "Sends all funds associated with the given private key, to a new address of the wallet",
 		"Sends all funds associated with the private key, to a given change address of the wallet", sweepConf)
 
 	createUnsignedTransactionConf := &createUnsignedTransactionConfig{DaemonAddress: defaultListen}
