@@ -53,9 +53,9 @@ func TestEstimateMassAfterSignatures(t *testing.T) {
 			t.Fatalf("Sign: %+v", err)
 		}
 
-		extractedSignedTx, err := libkaspawallet.DeserializedTransactionFromSerializedPartiallySigned(signedTxStep2Bytes, false)
+		extractedSignedTx, err := libkaspawallet.ExtractTransaction(signedTxStep2Bytes, false)
 		if err != nil {
-			t.Fatalf("DeserializedTransactionFromSerializedPartiallySigned: %+v", err)
+			t.Fatalf("ExtractTransaction: %+v", err)
 		}
 
 		actualMassAfterSignatures := serverInstance.txMassCalculator.CalculateTransactionMass(extractedSignedTx)

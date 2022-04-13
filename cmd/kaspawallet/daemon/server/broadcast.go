@@ -34,8 +34,8 @@ func (s *server) broadcast(transactions [][]byte, isDomain bool) ([]string, erro
 			if err != nil {
 				return nil, err
 			}
-		} else { //default in proto3 is false
-			tx, err = libkaspawallet.DeserializedTransactionFromSerializedPartiallySigned(transaction, s.keysFile.ECDSA)
+		} else if !isDomain { //default in proto3 is false
+			tx, err = libkaspawallet.ExtractTransaction(transaction, s.keysFile.ECDSA)
 			if err != nil {
 				return nil, err
 			}

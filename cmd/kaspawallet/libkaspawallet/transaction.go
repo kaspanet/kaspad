@@ -187,35 +187,20 @@ func isTransactionFullySigned(partiallySignedTransaction *serialization.Partiall
 	return true
 }
 
-//SerializedTransactionFromSerializedPartiallySigned Extracts a serialized domain transaction from serialized partially signed transaction
-func SerializedTransactionFromSerializedPartiallySigned(partiallySignedTransactionBytes []byte, ecda bool) ([]byte, error) {
-	deserializedDomainTransaction, err := DeserializedTransactionFromSerializedPartiallySigned(partiallySignedTransactionBytes, ecda)
-	if err != nil {
-		return nil, err
-	}
-	return serialization.SerializeDomainTransaction(deserializedDomainTransaction)
-}
-
-//SerializedTransactionFromDeserializedPartiallySigned Extracts a serialized domain transaction from deserialized partially signed transaction
-func SerializedTransactionFromDeserializedPartiallySigned(partiallySignedTransaction *serialization.PartiallySignedTransaction, ecda bool) ([]byte, error) {
-	deserializedDomainTransaction, err := DeserializedTransactionFromDeserializedPartiallySigned(partiallySignedTransaction, ecda)
-	if err != nil {
-		return nil, err
-	}
-	return serialization.SerializeDomainTransaction(deserializedDomainTransaction)
-}
-
-//DeserializedTransactionFromSerializedPartiallySigned Extracts a deserialized domain transaction from serialized partially signed transaction
-func DeserializedTransactionFromSerializedPartiallySigned(partiallySignedTransactionBytes []byte, ecdsa bool) (*externalapi.DomainTransaction, error) {
+// ExtractTransaction extracts a domain transaction from partially signed transaction after all of the
+// relevant parties have signed it.
+func ExtractTransaction(partiallySignedTransactionBytes []byte, ecdsa bool) (*externalapi.DomainTransaction, error) {
 	partiallySignedTransaction, err := serialization.DeserializePartiallySignedTransaction(partiallySignedTransactionBytes)
 	if err != nil {
 		return nil, err
 	}
-	return DeserializedTransactionFromDeserializedPartiallySigned(partiallySignedTransaction, ecdsa)
+
+	return ExtractTransactionDeserialized(partiallySignedTransaction, ecdsa)
 }
 
-//DeserializedTransactionFromDeserializedPartiallySigned Extracts a deserialized domain transaction from deserialized partially signed transaction
-func DeserializedTransactionFromDeserializedPartiallySigned(partiallySignedTransaction *serialization.PartiallySignedTransaction, ecdsa bool) (
+// ExtractTransactionDeserialized does the same thing ExtractTransaction does, only receives the PartiallySignedTransaction
+// in an already deserialized format
+func ExtractTransactionDeserialized(partiallySignedTransaction *serialization.PartiallySignedTransaction, ecdsa bool) (
 	*externalapi.DomainTransaction, error) {
 
 	for i, input := range partiallySignedTransaction.PartiallySignedInputs {

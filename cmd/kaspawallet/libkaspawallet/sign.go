@@ -92,7 +92,6 @@ func sign(params *dagconfig.Params, mnemonic string, partiallySignedTransaction 
 	}
 
 	if !signed {
-
 		return errors.Errorf("Public key doesn't match any of the transaction public keys")
 	}
 

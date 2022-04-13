@@ -123,7 +123,7 @@ func TestMultisig(t *testing.T) {
 				t.Fatalf("Transaction is not expected to be signed")
 			}
 
-			_, err = libkaspawallet.DeserializedTransactionFromSerializedPartiallySigned(unsignedTransaction, ecdsa)
+			_, err = libkaspawallet.ExtractTransaction(unsignedTransaction, ecdsa)
 			if err == nil || !strings.Contains(err.Error(), fmt.Sprintf("missing %d signatures", minimumSignatures)) {
 				t.Fatal("Unexpectedly succeed to extract a valid transaction out of unsigned transaction")
 			}
@@ -147,9 +147,9 @@ func TestMultisig(t *testing.T) {
 				t.Fatalf("Sign: %+v", err)
 			}
 
-			extractedSignedTxStep2, err := libkaspawallet.DeserializedTransactionFromSerializedPartiallySigned(signedTxStep2, ecdsa)
+			extractedSignedTxStep2, err := libkaspawallet.ExtractTransaction(signedTxStep2, ecdsa)
 			if err != nil {
-				t.Fatalf("DeserializedTransactionFromSerializedPartiallySigned: %+v", err)
+				t.Fatalf("ExtractTransaction: %+v", err)
 			}
 
 			signedTxOneStep, err := libkaspawallet.Sign(params, mnemonics[:2], unsignedTransaction, ecdsa)
@@ -157,9 +157,9 @@ func TestMultisig(t *testing.T) {
 				t.Fatalf("Sign: %+v", err)
 			}
 
-			extractedSignedTxOneStep, err := libkaspawallet.DeserializedTransactionFromSerializedPartiallySigned(signedTxOneStep, ecdsa)
+			extractedSignedTxOneStep, err := libkaspawallet.ExtractTransaction(signedTxOneStep, ecdsa)
 			if err != nil {
-				t.Fatalf("DeserializedTransactionFromSerializedPartiallySigned: %+v", err)
+				t.Fatalf("ExtractTransaction: %+v", err)
 			}
 
 			// We check IDs instead of comparing the actual transactions because the actual transactions have different
@@ -284,7 +284,7 @@ func TestP2PK(t *testing.T) {
 				t.Fatalf("Transaction is not expected to be signed")
 			}
 
-			_, err = libkaspawallet.DeserializedTransactionFromSerializedPartiallySigned(unsignedTransaction, ecdsa)
+			_, err = libkaspawallet.ExtractTransaction(unsignedTransaction, ecdsa)
 			if err == nil || !strings.Contains(err.Error(), "missing signature") {
 				t.Fatal("Unexpectedly succeed to extract a valid transaction out of unsigned transaction")
 			}
@@ -294,9 +294,9 @@ func TestP2PK(t *testing.T) {
 				t.Fatalf("Sign: %+v", err)
 			}
 
-			tx, err := libkaspawallet.DeserializedTransactionFromSerializedPartiallySigned(signedTx, ecdsa)
+			tx, err := libkaspawallet.ExtractTransaction(signedTx, ecdsa)
 			if err != nil {
-				t.Fatalf("DeserializedTransactionFromSerializedPartiallySigned: %+v", err)
+				t.Fatalf("ExtractTransaction: %+v", err)
 			}
 
 			_, virtualChangeSet, err := tc.AddBlock([]*externalapi.DomainHash{block1Hash}, nil, []*externalapi.DomainTransaction{tx})
@@ -443,9 +443,9 @@ func TestMaxSompi(t *testing.T) {
 			t.Fatalf("Sign: %+v", err)
 		}
 
-		txWithLargeInputAmount, err := libkaspawallet.DeserializedTransactionFromSerializedPartiallySigned(signedTxWithLargeInputAmount, false)
+		txWithLargeInputAmount, err := libkaspawallet.ExtractTransaction(signedTxWithLargeInputAmount, false)
 		if err != nil {
-			t.Fatalf("DeserializedTransactionFromSerializedPartiallySigned: %+v", err)
+			t.Fatalf("ExtractTransaction: %+v", err)
 		}
 
 		_, virtualChangeSet, err := tc.AddBlock([]*externalapi.DomainHash{block1Hash}, nil, []*externalapi.DomainTransaction{txWithLargeInputAmount})
@@ -494,9 +494,9 @@ func TestMaxSompi(t *testing.T) {
 			t.Fatalf("Sign: %+v", err)
 		}
 
-		txWithLargeInputAndOutputAmount, err := libkaspawallet.DeserializedTransactionFromSerializedPartiallySigned(signedTxWithLargeInputAndOutputAmount, false)
+		txWithLargeInputAndOutputAmount, err := libkaspawallet.ExtractTransaction(signedTxWithLargeInputAndOutputAmount, false)
 		if err != nil {
-			t.Fatalf("DeserializedTransactionFromSerializedPartiallySigned: %+v", err)
+			t.Fatalf("ExtractTransaction: %+v", err)
 		}
 
 		_, _, err = tc.AddBlock([]*externalapi.DomainHash{block1Hash}, nil, []*externalapi.DomainTransaction{txWithLargeInputAndOutputAmount})

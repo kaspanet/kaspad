@@ -188,13 +188,13 @@ func createSplitTransactionsWithSchnorrPrivteKey(
 			dummyTransactionWindow[1].Inputs,
 			&externalapi.DomainTransactionInput{
 				PreviousOutpoint: *currentUTXO.Outpoint,
-				UTXOEntry:        utxo.NewUTXOEntry(
+				UTXOEntry: utxo.NewUTXOEntry(
 					currentUTXO.UTXOEntry.Amount(),
 					currentUTXO.UTXOEntry.ScriptPublicKey(),
 					false,
 					constants.UnacceptedDAAScore,
 				),
-				SigOpCount:       1,
+				SigOpCount: 1,
 			},
 		)
 
@@ -243,7 +243,7 @@ func signWithSchnorrPrivteKey(params *dagconfig.Params, privateKeyBytes []byte, 
 	serializedDomainTransactions := make([][]byte, len(domainTransactions))
 
 	for i1, domainTransaction := range domainTransactions {
-		
+
 		sighashReusedValues := &consensushashing.SighashReusedValues{}
 
 		for i2, input := range domainTransaction.Inputs {
@@ -256,8 +256,8 @@ func signWithSchnorrPrivteKey(params *dagconfig.Params, privateKeyBytes []byte, 
 		serializedDomainTransactions[i1], err = serialization.SerializeDomainTransaction(domainTransaction)
 		if err != nil {
 			return nil, err
-			}
 		}
+	}
 
 	return serializedDomainTransactions, nil
 }
