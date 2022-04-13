@@ -16,7 +16,6 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/subnetworks"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/txscript"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/utxo"
 	"github.com/kaspanet/kaspad/domain/dagconfig"
 	"github.com/kaspanet/kaspad/domain/miningmanager/mempool"
 	"github.com/kaspanet/kaspad/util"
@@ -77,16 +76,6 @@ func sweep(conf *sweepConfig) error {
 		return err
 	}
 
-	newAddressResponse, err := daemonClient.NewAddress(ctx, &pb.NewAddressRequest{})
-	if err != nil {
-		return err
-	}
-
-	toAddress, err := util.DecodeAddress(newAddressResponse.Address, conf.ActiveNetParams.Prefix)
-	if err != nil {
-		return err
-	}
-
 	paymentAmount := uint64(0)
 
 	if len(UTXOs) == 0 {
@@ -98,50 +87,43 @@ func sweep(conf *sweepConfig) error {
 	}
 	fmt.Println("Found ", utils.FormatKas(paymentAmount), " Extractable KAS in address")
 
+	newAddressResponse, err := daemonClient.NewAddress(ctx, &pb.NewAddressRequest{})
+	if err != nil {
+		return err
+	}
+
+	toAddress, err := util.DecodeAddress(newAddressResponse.Address, conf.ActiveNetParams.Prefix)
+	if err != nil {
+		return err
+	}
+
 	splitTransactions, err := createSplitTransactionsWithSchnorrPrivteKey(conf.NetParams(), UTXOs, toAddress, feePerInput)
 	if err != nil {
 		return err
 	}
 
-	TotalSent := uint64(0)
+	serializedSplitTransactions, err := signWithSchnorrPrivteKey(conf.NetParams(), privateKeyBytes, splitTransactions)
+	if err != nil {
+		return err
+	}
+
 	fmt.Println("Sweeping...")
 	fmt.Println("	From:	", addressPubKey)
 	fmt.Println("	To:	", toAddress)
-	for _, splitTransaction := range splitTransactions {
-		err := func() error {
-			ctx2, cancel2 := context.WithTimeout(context.Background(), daemonTimeout)
-			defer cancel2()
-			signWithSchnorrPrivteKey(conf.NetParams(), privateKeyBytes, splitTransaction)
 
-			serializedSplitTransaction, err := serialization.SerializeDomainTransaction(splitTransaction)
-			if err != nil {
-				fmt.Println(err)
-				return err
-			}
-
-			broadcastResponse, err := daemonClient.Broadcast(ctx2, &pb.BroadcastRequest{
-				Transaction: serializedSplitTransaction,
-				IsDomain:    true,
-			})
-			if err != nil {
-				fmt.Println(err)
-				return err
-			}
-
-			fmt.Printf("	Transaction ID: \t%s\n", broadcastResponse.TxID)
-			for _, output := range splitTransaction.Outputs {
-				TotalSent = TotalSent + output.Value
-
-			}
-			fmt.Println("	Sweeped ", utils.FormatKas(TotalSent), " / ", utils.FormatKas(paymentAmount), " KAS")
-			return nil
-
-		}()
-		if err != nil {
-			return err
-		}
+	response, err := daemonClient.Broadcast(ctx, &pb.BroadcastRequest{
+		IsDomain:     true,
+		Transactions: serializedSplitTransactions,
+	})
+	if err != nil {
+		return err
 	}
-	fmt.Println("Finished Sweeping")
+
+	fmt.Println("Transaction ID(s): ")
+	for i, txID := range response.TxIDs {
+		fmt.Printf("\\t%s\\n", txID)
+		fmt.Println("	Extracted: ", utils.FormatKas(splitTransactions[i].Outputs[0].Value), " KAS")
+	}
 
 	return nil
 }
@@ -205,19 +187,13 @@ func createSplitTransactionsWithSchnorrPrivteKey(
 			dummyTransactionWindow[1].Inputs,
 			&externalapi.DomainTransactionInput{
 				PreviousOutpoint: *currentUTXO.Outpoint,
-				SignatureScript:  currentUTXO.UTXOEntry.ScriptPublicKey().Script,
+				UTXOEntry:        currentUTXO.UTXOEntry,
 				SigOpCount:       1,
-				UTXOEntry: utxo.NewUTXOEntry(
-					currentUTXO.UTXOEntry.Amount()-uint64(feePerInput),
-					currentUTXO.UTXOEntry.ScriptPublicKey(),
-					false,
-					constants.UnacceptedDAAScore,
-				),
 			},
 		)
 
 		dummyTransactionWindow[1].Outputs[0] = &externalapi.DomainTransactionOutput{
-			Value:           currentAmount,
+			Value:           totalSplitAmount - uint64(len(dummyTransactionWindow[1].Inputs)*feePerInput),
 			ScriptPublicKey: ScriptPublicKey,
 		}
 
@@ -251,22 +227,31 @@ func createSplitTransactionsWithSchnorrPrivteKey(
 	return splitTransactions, nil
 }
 
-func signWithSchnorrPrivteKey(params *dagconfig.Params, privateKeyBytes []byte, domainTransaction *externalapi.DomainTransaction) error {
+func signWithSchnorrPrivteKey(params *dagconfig.Params, privateKeyBytes []byte, domainTransactions []*externalapi.DomainTransaction) ([][]byte, error) {
 
 	schnorrkeyPair, err := secp256k1.DeserializeSchnorrPrivateKeyFromSlice(privateKeyBytes)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	sighashReusedValues := &consensushashing.SighashReusedValues{}
 
-	for i, input := range domainTransaction.Inputs {
-		signature, err := txscript.SignatureScript(domainTransaction, i, consensushashing.SigHashAll, schnorrkeyPair, sighashReusedValues)
-		if err != nil {
-			return err
+	serializedDomainTransactions := make([][]byte, len(domainTransactions))
+
+	for i1, domainTransaction := range domainTransactions {
+
+		for i2, input := range domainTransaction.Inputs {
+			signature, err := txscript.SignatureScript(domainTransaction, i2, consensushashing.SigHashAll, schnorrkeyPair, sighashReusedValues)
+			if err != nil {
+				return nil, err
+			}
+			input.SignatureScript = signature
+			serializedDomainTransactions[i1], err = serialization.SerializeDomainTransaction(domainTransaction)
+			if err != nil {
+				return nil, err
+			}
 		}
-		input.SignatureScript = signature
 	}
 
-	return nil
+	return serializedDomainTransactions, nil
 }
