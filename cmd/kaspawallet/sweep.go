@@ -16,6 +16,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/subnetworks"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/txscript"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/utxo"
 	"github.com/kaspanet/kaspad/domain/dagconfig"
 	"github.com/kaspanet/kaspad/domain/miningmanager/mempool"
 	"github.com/kaspanet/kaspad/util"
@@ -121,8 +122,8 @@ func sweep(conf *sweepConfig) error {
 
 	fmt.Println("Transaction ID(s): ")
 	for i, txID := range response.TxIDs {
-		fmt.Printf("\\t%s\\n", txID)
-		fmt.Println("	Extracted: ", utils.FormatKas(splitTransactions[i].Outputs[0].Value), " KAS")
+		fmt.Printf("\t%s\n", txID)
+		fmt.Println("\tExtracted: ", utils.FormatKas(splitTransactions[i].Outputs[0].Value), " KAS \n")
 	}
 
 	return nil
@@ -187,7 +188,12 @@ func createSplitTransactionsWithSchnorrPrivteKey(
 			dummyTransactionWindow[1].Inputs,
 			&externalapi.DomainTransactionInput{
 				PreviousOutpoint: *currentUTXO.Outpoint,
-				UTXOEntry:        currentUTXO.UTXOEntry,
+				UTXOEntry:        utxo.NewUTXOEntry(
+					currentUTXO.UTXOEntry.Amount(),
+					currentUTXO.UTXOEntry.ScriptPublicKey(),
+					false,
+					constants.UnacceptedDAAScore,
+				),
 				SigOpCount:       1,
 			},
 		)
@@ -234,11 +240,11 @@ func signWithSchnorrPrivteKey(params *dagconfig.Params, privateKeyBytes []byte, 
 		return nil, err
 	}
 
-	sighashReusedValues := &consensushashing.SighashReusedValues{}
-
 	serializedDomainTransactions := make([][]byte, len(domainTransactions))
 
 	for i1, domainTransaction := range domainTransactions {
+		
+		sighashReusedValues := &consensushashing.SighashReusedValues{}
 
 		for i2, input := range domainTransaction.Inputs {
 			signature, err := txscript.SignatureScript(domainTransaction, i2, consensushashing.SigHashAll, schnorrkeyPair, sighashReusedValues)
@@ -246,12 +252,12 @@ func signWithSchnorrPrivteKey(params *dagconfig.Params, privateKeyBytes []byte, 
 				return nil, err
 			}
 			input.SignatureScript = signature
-			serializedDomainTransactions[i1], err = serialization.SerializeDomainTransaction(domainTransaction)
-			if err != nil {
-				return nil, err
+		}
+		serializedDomainTransactions[i1], err = serialization.SerializeDomainTransaction(domainTransaction)
+		if err != nil {
+			return nil, err
 			}
 		}
-	}
 
 	return serializedDomainTransactions, nil
 }
