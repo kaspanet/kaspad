@@ -49,7 +49,6 @@ func sweep(conf *sweepConfig) error {
 	if err != nil {
 		return err
 	}
-	fmt.Println("Found associated public address:	", addressPubKey)
 
 	address, err := util.DecodeAddress(addressPubKey.String(), conf.NetParams().Prefix)
 	if err != nil {
@@ -86,7 +85,6 @@ func sweep(conf *sweepConfig) error {
 	for _, UTXO := range UTXOs {
 		paymentAmount = paymentAmount + UTXO.UTXOEntry.Amount()
 	}
-	fmt.Println("Found ", utils.FormatKas(paymentAmount), " Extractable KAS in address")
 
 	newAddressResponse, err := daemonClient.NewAddress(ctx, &pb.NewAddressRequest{})
 	if err != nil {
@@ -108,9 +106,9 @@ func sweep(conf *sweepConfig) error {
 		return err
 	}
 
-	fmt.Println("Sweeping...")
-	fmt.Println("	From:	", addressPubKey)
-	fmt.Println("	To:	", toAddress)
+	fmt.Println("\nSweeping...")
+	fmt.Println("\tFrom:\t", addressPubKey)
+	fmt.Println("\tTo:\t", toAddress)
 
 	response, err := daemonClient.Broadcast(ctx, &pb.BroadcastRequest{
 		IsDomain:     true,
@@ -120,11 +118,17 @@ func sweep(conf *sweepConfig) error {
 		return err
 	}
 
-	fmt.Println("Transaction ID(s): ")
+	totalExtracted := uint64(0)
+
+	fmt.Println("\nTransaction ID(s):")
 	for i, txID := range response.TxIDs {
 		fmt.Printf("\t%s\n", txID)
-		fmt.Println("\tExtracted: ", utils.FormatKas(splitTransactions[i].Outputs[0].Value), " KAS \n")
+		fmt.Println("\tSweeped:\t", utils.FormatKas(splitTransactions[i].Outputs[0].Value), " KAS")
+		totalExtracted = totalExtracted + splitTransactions[i].Outputs[0].Value
 	}
+
+	fmt.Println("\nTotal Funds Sweeped (including transaction fees):")
+	fmt.Println("\t", utils.FormatKas(totalExtracted), " KAS")
 
 	return nil
 }
