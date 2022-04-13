@@ -28,23 +28,16 @@ const feePerInput = 10000
 
 func sweep(conf *sweepConfig) error {
 
-	//Sweep assumes the passed private key is a schnorr private key: I see no function to explictly test the type of key
-	//It will almost certainly fail somewhere if this is not the case
 	privateKeyBytes, err := hex.DecodeString(conf.PrivateKey)
 	if err != nil {
 		return err
 	}
 
-	if err != nil {
-		return err
-	}
 	publicKeybytes, err := libkaspawallet.PublicKeyFromPrivateKey(privateKeyBytes)
 	if err != nil {
 		return err
 	}
 
-	//NewAddress might seem confusing, but the function is entirely deterministic based on the public key
-	//hence, it should provide the same public key, as provided in genKeyPair
 	addressPubKey, err := util.NewAddressPublicKey(publicKeybytes, conf.NetParams().Prefix)
 	if err != nil {
 		return err
@@ -101,7 +94,7 @@ func sweep(conf *sweepConfig) error {
 		return err
 	}
 
-	serializedSplitTransactions, err := signWithSchnorrPrivteKey(conf.NetParams(), privateKeyBytes, splitTransactions)
+	serializedSplitTransactions, err := signWithSchnorrPrivateKey(conf.NetParams(), privateKeyBytes, splitTransactions)
 	if err != nil {
 		return err
 	}
@@ -123,7 +116,7 @@ func sweep(conf *sweepConfig) error {
 	fmt.Println("\nTransaction ID(s):")
 	for i, txID := range response.TxIDs {
 		fmt.Printf("\t%s\n", txID)
-		fmt.Println("\tSweeped:\t", utils.FormatKas(splitTransactions[i].Outputs[0].Value), " KAS")
+		fmt.Println("\tSwept:\t", utils.FormatKas(splitTransactions[i].Outputs[0].Value), " KAS")
 		totalExtracted = totalExtracted + splitTransactions[i].Outputs[0].Value
 	}
 
@@ -153,43 +146,38 @@ func createSplitTransactionsWithSchnorrPrivteKey(
 
 	var splitTransactions []*externalapi.DomainTransaction
 
-	// I need to add extra mass to transaction, txmasscalculater seems to undercalculate, by around this amount.
+	// Add extra mass to transaction, txmass calculater seems to undercalculate.
 	extraMass := uint64(7000)
 	massCalculater := txmass.NewCalculator(params.MassPerTxByte, params.MassPerScriptPubKeyByte, params.MassPerSigOp)
 
-	//for refernece this keeps track in respect to dummyWindow[0], not dummyWindow[1]
 	currentIdxOfSplit := 0
 
 	totalAmount := uint64(0)
 
 	totalSplitAmount := uint64(0)
 
-	ScriptPublicKey, err := txscript.PayToAddrScript(toAddress)
+	scriptPublicKey, err := txscript.PayToAddrScript(toAddress)
 	if err != nil {
 		return nil, err
 	}
 
-	dummyTransactionWindow := make([]*externalapi.DomainTransaction, 2)
-	//[0] is the last build that didn't violate mass, that can be added as a split
-	dummyTransactionWindow[0] = newDummyTransaction()
-	//[1] represents the tested unsigned transaction
-	dummyTransactionWindow[1] = newDummyTransaction()
+	lastValidTx := newDummyTransaction()
+	currentTx := newDummyTransaction() //i.e. the tested tx
 
 	//loop through utxos commit segments that don't violate max mass
 	for i, currentUTXO := range selectedUTXOs {
 
 		if currentIdxOfSplit == 0 {
-			dummyTransactionWindow[0] = newDummyTransaction()
-			dummyTransactionWindow[1] = newDummyTransaction()
-			//we assume a transaction without inputs, and 1 undefined output cannot violate transaction mass
+			lastValidTx = newDummyTransaction()
+			currentTx = newDummyTransaction()
 		}
 
 		currentAmount := currentUTXO.UTXOEntry.Amount()
 		totalSplitAmount = totalSplitAmount + currentAmount
 		totalAmount = totalAmount + currentAmount
 
-		dummyTransactionWindow[1].Inputs = append(
-			dummyTransactionWindow[1].Inputs,
+		currentTx.Inputs = append(
+			currentTx.Inputs,
 			&externalapi.DomainTransactionInput{
 				PreviousOutpoint: *currentUTXO.Outpoint,
 				UTXOEntry: utxo.NewUTXOEntry(
@@ -202,42 +190,44 @@ func createSplitTransactionsWithSchnorrPrivteKey(
 			},
 		)
 
-		dummyTransactionWindow[1].Outputs[0] = &externalapi.DomainTransactionOutput{
-			Value:           totalSplitAmount - uint64(len(dummyTransactionWindow[1].Inputs)*feePerInput),
-			ScriptPublicKey: ScriptPublicKey,
+		currentTx.Outputs[0] = &externalapi.DomainTransactionOutput{
+			Value:           totalSplitAmount - uint64(len(currentTx.Inputs)*feePerInput),
+			ScriptPublicKey: scriptPublicKey,
 		}
 
-		if massCalculater.CalculateTransactionMass(dummyTransactionWindow[1])+extraMass >= mempool.MaximumStandardTransactionMass {
-			splitTransactions = append(splitTransactions, dummyTransactionWindow[0])
+		if massCalculater.CalculateTransactionMass(currentTx)+extraMass >= mempool.MaximumStandardTransactionMass {
+
+			//in this loop we assume a transaction with one input and one output cannot violate max transaction mass, hence a sanity check.
+			if len(currentTx.Inputs) == 1 {
+				return nil, errors.Errorf("transaction with one input and one output violates transaction mass")
+			}
+
+			splitTransactions = append(splitTransactions, lastValidTx)
 			currentIdxOfSplit = 0
 			totalSplitAmount = 0
 			totalAmount = totalAmount + currentAmount
-			dummyTransactionWindow[0] = newDummyTransaction()
-			dummyTransactionWindow[1] = newDummyTransaction()
-			if i == len(selectedUTXOs)-1 {
-				splitTransactions = append(splitTransactions, dummyTransactionWindow[1])
-				break
-			}
+			lastValidTx = newDummyTransaction()
+			currentTx = newDummyTransaction()
 			continue
 		}
 
-		//Special case, end of inputs, with no violation, where we can assign dummyWindow[1] to split and break
+		//Special case, end of inputs, with no violation, where we can assign currentTX to split and break
 		if i == len(selectedUTXOs)-1 {
-			splitTransactions = append(splitTransactions, dummyTransactionWindow[1])
+			splitTransactions = append(splitTransactions, currentTx)
 			break
 
 		}
 		totalAmount = totalAmount + currentAmount
 		currentIdxOfSplit++
 
-		dummyTransactionWindow[0] = dummyTransactionWindow[1].Clone()
-		dummyTransactionWindow[1].Outputs = make([]*externalapi.DomainTransactionOutput, 1)
+		lastValidTx = currentTx.Clone()
+		currentTx.Outputs = make([]*externalapi.DomainTransactionOutput, 1)
 
 	}
 	return splitTransactions, nil
 }
 
-func signWithSchnorrPrivteKey(params *dagconfig.Params, privateKeyBytes []byte, domainTransactions []*externalapi.DomainTransaction) ([][]byte, error) {
+func signWithSchnorrPrivateKey(params *dagconfig.Params, privateKeyBytes []byte, domainTransactions []*externalapi.DomainTransaction) ([][]byte, error) {
 
 	schnorrkeyPair, err := secp256k1.DeserializeSchnorrPrivateKeyFromSlice(privateKeyBytes)
 	if err != nil {
