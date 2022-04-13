@@ -146,20 +146,16 @@ func createSplitTransactionsWithSchnorrPrivteKey(
 
 	var splitTransactions []*externalapi.DomainTransaction
 
-	// Add extra mass to transaction, to account for future signatures.
-	extraMass := uint64(7000)
+	extraMass := uint64(7000) // Account for future signatures.
+
 	massCalculater := txmass.NewCalculator(params.MassPerTxByte, params.MassPerScriptPubKeyByte, params.MassPerSigOp)
-
-	currentIdxOfSplit := 0
-
-	totalAmount := uint64(0)
-
-	totalSplitAmount := uint64(0)
 
 	scriptPublicKey, err := txscript.PayToAddrScript(toAddress)
 	if err != nil {
 		return nil, err
 	}
+
+	totalSplitAmount := uint64(0)
 
 	lastValidTx := newDummyTransaction()
 	currentTx := newDummyTransaction() //i.e. the tested tx
@@ -167,14 +163,7 @@ func createSplitTransactionsWithSchnorrPrivteKey(
 	//loop through utxos commit segments that don't violate max mass
 	for i, currentUTXO := range selectedUTXOs {
 
-		if currentIdxOfSplit == 0 {
-			lastValidTx = newDummyTransaction()
-			currentTx = newDummyTransaction()
-		}
-
-		currentAmount := currentUTXO.UTXOEntry.Amount()
-		totalSplitAmount = totalSplitAmount + currentAmount
-		totalAmount = totalAmount + currentAmount
+		totalSplitAmount = totalSplitAmount + currentUTXO.UTXOEntry.Amount()
 
 		currentTx.Inputs = append(
 			currentTx.Inputs,
@@ -203,9 +192,7 @@ func createSplitTransactionsWithSchnorrPrivteKey(
 			}
 
 			splitTransactions = append(splitTransactions, lastValidTx)
-			currentIdxOfSplit = 0
 			totalSplitAmount = 0
-			totalAmount = totalAmount + currentAmount
 			lastValidTx = newDummyTransaction()
 			currentTx = newDummyTransaction()
 			continue
@@ -217,8 +204,6 @@ func createSplitTransactionsWithSchnorrPrivteKey(
 			break
 
 		}
-		totalAmount = totalAmount + currentAmount
-		currentIdxOfSplit++
 
 		lastValidTx = currentTx.Clone()
 		currentTx.Outputs = make([]*externalapi.DomainTransactionOutput, 1)
