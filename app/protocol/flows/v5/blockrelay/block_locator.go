@@ -21,7 +21,7 @@ func (flow *handleRelayInvsFlow) receiveBlockLocator() (blockLocatorHashes []*ex
 
 		switch message := message.(type) {
 		case *appmessage.MsgInvRelayBlock:
-			flow.invsQueue = append(flow.invsQueue, message)
+			flow.invsQueue = append(flow.invsQueue, invRelayBlock{Hash: message.Hash, IsOrphanRoot: false})
 		case *appmessage.MsgBlockLocator:
 			return message.BlockLocatorHashes, nil
 		default:

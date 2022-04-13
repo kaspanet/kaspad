@@ -40,11 +40,16 @@ type RelayInvsContext interface {
 	IsNearlySynced() (bool, error)
 }
 
+type invRelayBlock struct {
+	Hash         *externalapi.DomainHash
+	IsOrphanRoot bool
+}
+
 type handleRelayInvsFlow struct {
 	RelayInvsContext
 	incomingRoute, outgoingRoute *router.Route
 	peer                         *peerpkg.Peer
-	invsQueue                    []*appmessage.MsgInvRelayBlock
+	invsQueue                    []invRelayBlock
 }
 
 // HandleRelayInvs listens to appmessage.MsgInvRelayBlock messages, requests their corresponding blocks if they
@@ -57,7 +62,7 @@ func HandleRelayInvs(context RelayInvsContext, incomingRoute *router.Route, outg
 		incomingRoute:    incomingRoute,
 		outgoingRoute:    outgoingRoute,
 		peer:             peer,
-		invsQueue:        make([]*appmessage.MsgInvRelayBlock, 0),
+		invsQueue:        make([]invRelayBlock, 0),
 	}
 	err := flow.start()
 	// Currently, HandleRelayInvs flow is the only place where IBD is triggered, so the channel can be closed now
@@ -140,23 +145,27 @@ func (flow *handleRelayInvsFlow) start() error {
 			continue
 		}
 
-		// Test bounded merge depth to avoid requesting irrelevant data which cannot be merged under virtual
-		virtualMergeDepthRoot, err := flow.Domain().Consensus().VirtualMergeDepthRoot()
-		if err != nil {
-			return err
-		}
-		if !virtualMergeDepthRoot.Equal(model.VirtualGenesisBlockHash) {
-			mergeDepthRootHeader, err := flow.Domain().Consensus().GetBlockHeader(virtualMergeDepthRoot)
+		// Note we do not apply the heuristic below if inv was queued as an orphan root, since
+		// that means the process started by a proper and relevant relay block
+		if !inv.IsOrphanRoot {
+			// Check bounded merge depth to avoid requesting irrelevant data which cannot be merged under virtual
+			virtualMergeDepthRoot, err := flow.Domain().Consensus().VirtualMergeDepthRoot()
 			if err != nil {
 				return err
 			}
-			// Since `BlueWork` respects topology, this condition means that the relay
-			// block is not in the future of virtual's merge depth root, and thus cannot be merged unless
-			// other valid blocks Kosherize it, in which case it will be obtained once the merger is relayed
-			if block.Header.BlueWork().Cmp(mergeDepthRootHeader.BlueWork()) <= 0 {
-				log.Debugf("Block %s has lower blue work than virtual's merge root %s (%d <= %d), hence we are skipping it",
-					inv.Hash, virtualMergeDepthRoot, block.Header.BlueWork(), mergeDepthRootHeader.BlueWork())
-				continue
+			if !virtualMergeDepthRoot.Equal(model.VirtualGenesisBlockHash) {
+				mergeDepthRootHeader, err := flow.Domain().Consensus().GetBlockHeader(virtualMergeDepthRoot)
+				if err != nil {
+					return err
+				}
+				// Since `BlueWork` respects topology, this condition means that the relay
+				// block is not in the future of virtual's merge depth root, and thus cannot be merged unless
+				// other valid blocks Kosherize it, in which case it will be obtained once the merger is relayed
+				if block.Header.BlueWork().Cmp(mergeDepthRootHeader.BlueWork()) <= 0 {
+					log.Debugf("Block %s has lower blue work than virtual's merge root %s (%d <= %d), hence we are skipping it",
+						inv.Hash, virtualMergeDepthRoot, block.Header.BlueWork(), mergeDepthRootHeader.BlueWork())
+					continue
+				}
 			}
 		}
 
@@ -240,24 +249,24 @@ func (flow *handleRelayInvsFlow) banIfBlockIsHeaderOnly(block *externalapi.Domai
 	return nil
 }
 
-func (flow *handleRelayInvsFlow) readInv() (*appmessage.MsgInvRelayBlock, error) {
+func (flow *handleRelayInvsFlow) readInv() (invRelayBlock, error) {
 	if len(flow.invsQueue) > 0 {
-		var inv *appmessage.MsgInvRelayBlock
+		var inv invRelayBlock
 		inv, flow.invsQueue = flow.invsQueue[0], flow.invsQueue[1:]
 		return inv, nil
 	}
 
 	msg, err := flow.incomingRoute.Dequeue()
 	if err != nil {
-		return nil, err
+		return invRelayBlock{}, err
 	}
 
-	inv, ok := msg.(*appmessage.MsgInvRelayBlock)
+	msgInv, ok := msg.(*appmessage.MsgInvRelayBlock)
 	if !ok {
-		return nil, protocolerrors.Errorf(true, "unexpected %s message in the block relay handleRelayInvsFlow while "+
+		return invRelayBlock{}, protocolerrors.Errorf(true, "unexpected %s message in the block relay handleRelayInvsFlow while "+
 			"expecting an inv message", msg.Command())
 	}
-	return inv, nil
+	return invRelayBlock{Hash: msgInv.Hash, IsOrphanRoot: false}, nil
 }
 
 func (flow *handleRelayInvsFlow) requestBlock(requestHash *externalapi.DomainHash) (*externalapi.DomainBlock, bool, error) {
@@ -302,7 +311,7 @@ func (flow *handleRelayInvsFlow) readMsgBlock() (msgBlock *appmessage.MsgBlock, 
 
 		switch message := message.(type) {
 		case *appmessage.MsgInvRelayBlock:
-			flow.invsQueue = append(flow.invsQueue, message)
+			flow.invsQueue = append(flow.invsQueue, invRelayBlock{Hash: message.Hash, IsOrphanRoot: false})
 		case *appmessage.MsgBlock:
 			return message, nil
 		default:
@@ -443,10 +452,10 @@ func (flow *handleRelayInvsFlow) AddOrphanRootsToQueue(orphan *externalapi.Domai
 	}
 	log.Infof("Block %s has %d missing ancestors. Adding them to the invs queue...", orphan, len(orphanRoots))
 
-	invMessages := make([]*appmessage.MsgInvRelayBlock, len(orphanRoots))
+	invMessages := make([]invRelayBlock, len(orphanRoots))
 	for i, root := range orphanRoots {
 		log.Debugf("Adding block %s missing ancestor %s to the invs queue", orphan, root)
-		invMessages[i] = appmessage.NewMsgInvBlock(root)
+		invMessages[i] = invRelayBlock{Hash: root, IsOrphanRoot: true}
 	}
 
 	flow.invsQueue = append(invMessages, flow.invsQueue...)
