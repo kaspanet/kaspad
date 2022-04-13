@@ -146,7 +146,7 @@ func createSplitTransactionsWithSchnorrPrivteKey(
 
 	var splitTransactions []*externalapi.DomainTransaction
 
-	// Add extra mass to transaction, txmass calculater seems to undercalculate.
+	// Add extra mass to transaction, to account for future signatures.
 	extraMass := uint64(7000)
 	massCalculater := txmass.NewCalculator(params.MassPerTxByte, params.MassPerScriptPubKeyByte, params.MassPerSigOp)
 
