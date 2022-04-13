@@ -62,8 +62,13 @@ func CheckBlockVersion(t *testing.T, tc testapi.TestConsensus, consensusConfig *
 		t.Fatalf("BuildBlockWithParents: %+v", err)
 	}
 
+	expectedVersion := constants.BlockVersionBeforeHF1
+	if consensusConfig.HF1DAAScore == 0 {
+		expectedVersion = constants.BlockVersionAfterHF1
+	}
+
 	block.Header = blockheader.NewImmutableBlockHeader(
-		constants.MaxBlockVersion+1,
+		expectedVersion+1,
 		block.Header.Parents(),
 		block.Header.HashMerkleRoot(),
 		block.Header.AcceptedIDMerkleRoot(),
@@ -78,7 +83,7 @@ func CheckBlockVersion(t *testing.T, tc testapi.TestConsensus, consensusConfig *
 	)
 
 	_, err = tc.ValidateAndInsertBlock(block, true)
-	if !errors.Is(err, ruleerrors.ErrBlockVersionIsUnknown) {
+	if !errors.Is(err, ruleerrors.ErrWrongBlockVersion) {
 		t.Fatalf("Unexpected error: %+v", err)
 	}
 }

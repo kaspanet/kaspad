@@ -21,8 +21,11 @@ type txSubnetworkData struct {
 
 func TestValidateTransactionInIsolationAndPopulateMass(t *testing.T) {
 	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
+		cfg := *consensusConfig
+		cfg.HF1DAAScore = 20
+
 		factory := consensus.NewFactory()
-		tc, teardown, err := factory.NewTestConsensus(consensusConfig, "TestValidateTransactionInIsolationAndPopulateMass")
+		tc, teardown, err := factory.NewTestConsensus(&cfg, "TestValidateTransactionInIsolationAndPopulateMass")
 		if err != nil {
 			t.Fatalf("Error setting up consensus: %+v", err)
 		}
@@ -37,25 +40,36 @@ func TestValidateTransactionInIsolationAndPopulateMass(t *testing.T) {
 			txSubnetworkData       *txSubnetworkData
 			extraModificationsFunc func(*externalapi.DomainTransaction)
 			expectedErr            error
+			daaScore               uint64
 		}{
-			{"good one", 1, 1, 1, subnetworks.SubnetworkIDNative, nil, nil, nil},
-			{"no inputs", 0, 1, 1, subnetworks.SubnetworkIDNative, nil, nil, ruleerrors.ErrNoTxInputs},
-			{"no outputs", 1, 0, 1, subnetworks.SubnetworkIDNative, nil, nil, nil},
-			{"too much sompi in one output", 1, 1, constants.MaxSompi + 1,
+			{"good one", 1, 1, 1, subnetworks.SubnetworkIDNative, nil, nil, nil, 0},
+			{"no inputs", 0, 1, 1, subnetworks.SubnetworkIDNative, nil, nil, ruleerrors.ErrNoTxInputs, 0},
+			{"no outputs", 1, 0, 1, subnetworks.SubnetworkIDNative, nil, nil, nil, 0},
+			{"too much sompi in one output", 1, 1, constants.MaxSompiBeforeHF1 + 1,
 				subnetworks.SubnetworkIDNative,
 				nil,
 				nil,
-				ruleerrors.ErrBadTxOutValue},
-			{"too much sompi in total outputs", 1, 2, constants.MaxSompi - 1,
+				ruleerrors.ErrBadTxOutValue, 0},
+			{"too much sompi before- valid now", 1, 1, constants.MaxSompiBeforeHF1 + 1,
 				subnetworks.SubnetworkIDNative,
 				nil,
 				nil,
-				ruleerrors.ErrBadTxOutValue},
+				nil, cfg.HF1DAAScore},
+			{"too much sompi in one output - after hf", 1, 1, constants.MaxSompiAfterHF1 + 1,
+				subnetworks.SubnetworkIDNative,
+				nil,
+				nil,
+				ruleerrors.ErrBadTxOutValue, cfg.HF1DAAScore},
+			{"too much sompi in one output", 1, 1, constants.MaxSompiAfterHF1 + 1,
+				subnetworks.SubnetworkIDNative,
+				nil,
+				nil,
+				ruleerrors.ErrBadTxOutValue, 0},
 			{"duplicate inputs", 2, 1, 1,
 				subnetworks.SubnetworkIDNative,
 				nil,
 				func(tx *externalapi.DomainTransaction) { tx.Inputs[1].PreviousOutpoint.Index = 0 },
-				ruleerrors.ErrDuplicateTxInputs},
+				ruleerrors.ErrDuplicateTxInputs, 0},
 			{"1 input coinbase",
 				1,
 				1,
@@ -63,7 +77,7 @@ func TestValidateTransactionInIsolationAndPopulateMass(t *testing.T) {
 				subnetworks.SubnetworkIDNative,
 				&txSubnetworkData{subnetworks.SubnetworkIDCoinbase, 0, nil},
 				nil,
-				nil},
+				nil, 0},
 			{"no inputs coinbase",
 				0,
 				1,
@@ -71,7 +85,7 @@ func TestValidateTransactionInIsolationAndPopulateMass(t *testing.T) {
 				subnetworks.SubnetworkIDNative,
 				&txSubnetworkData{subnetworks.SubnetworkIDCoinbase, 0, nil},
 				nil,
-				nil},
+				nil, 0},
 			{"too long payload coinbase",
 				1,
 				1,
@@ -79,26 +93,26 @@ func TestValidateTransactionInIsolationAndPopulateMass(t *testing.T) {
 				subnetworks.SubnetworkIDNative,
 				&txSubnetworkData{subnetworks.SubnetworkIDCoinbase, 0, make([]byte, consensusConfig.MaxCoinbasePayloadLength+1)},
 				nil,
-				ruleerrors.ErrBadCoinbasePayloadLen},
+				ruleerrors.ErrBadCoinbasePayloadLen, 0},
 			{"non-zero gas in Kaspa", 1, 1, 1,
 				subnetworks.SubnetworkIDNative,
 				nil,
 				func(tx *externalapi.DomainTransaction) {
 					tx.Gas = 1
 				},
-				ruleerrors.ErrInvalidGas},
+				ruleerrors.ErrInvalidGas, 0},
 			{"non-zero gas in subnetwork registry", 1, 1, 1,
 				subnetworks.SubnetworkIDRegistry,
 				&txSubnetworkData{subnetworks.SubnetworkIDRegistry, 1, []byte{}},
 				nil,
-				ruleerrors.ErrInvalidGas},
+				ruleerrors.ErrInvalidGas, 0},
 			{"non-zero payload in Kaspa", 1, 1, 1,
 				subnetworks.SubnetworkIDNative,
 				nil,
 				func(tx *externalapi.DomainTransaction) {
 					tx.Payload = []byte{1}
 				},
-				ruleerrors.ErrInvalidPayload},
+				ruleerrors.ErrInvalidPayload, 0},
 		}
 
 		for _, test := range tests {
@@ -108,7 +122,7 @@ func TestValidateTransactionInIsolationAndPopulateMass(t *testing.T) {
 				test.extraModificationsFunc(tx)
 			}
 
-			err := tc.TransactionValidator().ValidateTransactionInIsolation(tx)
+			err := tc.TransactionValidator().ValidateTransactionInIsolation(tx, test.daaScore)
 			if !errors.Is(err, test.expectedErr) {
 				t.Errorf("TestValidateTransactionInIsolationAndPopulateMass: '%s': unexpected error %+v", test.name, err)
 			}

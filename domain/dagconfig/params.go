@@ -188,6 +188,9 @@ type Params struct {
 
 	// MaxBlockLevel is the maximum possible block level.
 	MaxBlockLevel int
+
+	MergeDepth  uint64
+	HF1DAAScore uint64
 }
 
 // NormalizeRPCServerAddress returns addr with the current network default
@@ -286,12 +289,14 @@ var MainnetParams = Params{
 	// This is technically 255, but we clamped it at 256 - block level of mainnet genesis
 	// This means that any block that has a level lower or equal to genesis will be level 0.
 	MaxBlockLevel: 225,
+	MergeDepth:    defaultMergeDepth,
+	HF1DAAScore:   14360917,
 }
 
 // TestnetParams defines the network parameters for the test Kaspa network.
 var TestnetParams = Params{
 	K:           defaultGHOSTDAGK,
-	Name:        "kaspa-testnet-9",
+	Name:        "kaspa-testnet-10",
 	Net:         appmessage.Testnet,
 	RPCPort:     "16210",
 	DefaultPort: "16211",
@@ -348,6 +353,8 @@ var TestnetParams = Params{
 	IgnoreHeaderMass:                        true,
 
 	MaxBlockLevel: 250,
+	MergeDepth:    defaultMergeDepth,
+	HF1DAAScore:   172800,
 }
 
 // SimnetParams defines the network parameters for the simulation test Kaspa
@@ -413,6 +420,7 @@ var SimnetParams = Params{
 	DeflationaryPhaseDaaScore:               defaultDeflationaryPhaseDaaScore,
 
 	MaxBlockLevel: 250,
+	MergeDepth:    defaultMergeDepth,
 }
 
 // DevnetParams defines the network parameters for the development Kaspa network.
@@ -475,6 +483,7 @@ var DevnetParams = Params{
 	IgnoreHeaderMass:                        true,
 
 	MaxBlockLevel: 250,
+	MergeDepth:    defaultMergeDepth,
 }
 
 // ErrDuplicateNet describes an error where the parameters for a Kaspa

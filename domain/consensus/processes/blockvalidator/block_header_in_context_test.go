@@ -2,6 +2,7 @@ package blockvalidator_test
 
 import (
 	"errors"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
 	"math/big"
 	"testing"
 
@@ -107,9 +108,14 @@ func TestCheckParentsIncest(t *testing.T) {
 			t.Fatalf("AddBlock: %+v", err)
 		}
 
+		version := constants.BlockVersionBeforeHF1
+		if consensusConfig.HF1DAAScore == 0 {
+			version = constants.BlockVersionAfterHF1
+		}
+
 		directParentsRelationBlock := &externalapi.DomainBlock{
 			Header: blockheader.NewImmutableBlockHeader(
-				0,
+				version,
 				[]externalapi.BlockLevelParents{[]*externalapi.DomainHash{a, b}},
 				&externalapi.DomainHash{},
 				&externalapi.DomainHash{},
@@ -132,7 +138,7 @@ func TestCheckParentsIncest(t *testing.T) {
 
 		indirectParentsRelationBlock := &externalapi.DomainBlock{
 			Header: blockheader.NewImmutableBlockHeader(
-				0,
+				version,
 				[]externalapi.BlockLevelParents{[]*externalapi.DomainHash{consensusConfig.GenesisHash, b}},
 				&externalapi.DomainHash{},
 				&externalapi.DomainHash{},

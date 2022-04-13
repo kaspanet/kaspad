@@ -206,16 +206,13 @@ func (d *File) LastUsedInternalIndex() uint32 {
 
 // DecryptMnemonics asks the user to enter the password for the private keys and
 // returns the decrypted private keys.
-func (d *File) DecryptMnemonics(cmdLinePassword string) ([]string, error) {
-	password := []byte(cmdLinePassword)
-	if len(password) == 0 {
-		password = getPassword("Password:")
-	}
+func (d *File) DecryptMnemonics(password string) ([]string, error) {
+	passwordBytes := []byte(password)
 
 	var numThreads uint8
 	if len(d.EncryptedMnemonics) > 0 {
 		var err error
-		numThreads, err = d.numThreads(password)
+		numThreads, err = d.numThreads(passwordBytes)
 		if err != nil {
 			return nil, err
 		}
@@ -224,7 +221,7 @@ func (d *File) DecryptMnemonics(cmdLinePassword string) ([]string, error) {
 	privateKeys := make([]string, len(d.EncryptedMnemonics))
 	for i, encryptedPrivateKey := range d.EncryptedMnemonics {
 		var err error
-		privateKeys[i], err = decryptMnemonic(numThreads, encryptedPrivateKey, password)
+		privateKeys[i], err = decryptMnemonic(numThreads, encryptedPrivateKey, passwordBytes)
 		if err != nil {
 			return nil, err
 		}

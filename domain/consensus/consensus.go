@@ -182,7 +182,12 @@ func (s *consensus) ValidateTransactionAndPopulateWithConsensusData(transaction 
 
 	stagingArea := model.NewStagingArea()
 
-	err := s.transactionValidator.ValidateTransactionInIsolation(transaction)
+	daaScore, err := s.daaBlocksStore.DAAScore(s.databaseContext, stagingArea, model.VirtualBlockHash)
+	if err != nil {
+		return err
+	}
+
+	err = s.transactionValidator.ValidateTransactionInIsolation(transaction, daaScore)
 	if err != nil {
 		return err
 	}
@@ -880,4 +885,12 @@ func (s *consensus) IsChainBlock(blockHash *externalapi.DomainHash) (bool, error
 	}
 
 	return s.dagTopologyManagers[0].IsInSelectedParentChainOf(stagingArea, blockHash, virtualGHOSTDAGData.SelectedParent())
+}
+
+func (s *consensus) VirtualMergeDepthRoot() (*externalapi.DomainHash, error) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	stagingArea := model.NewStagingArea()
+	return s.mergeDepthManager.VirtualMergeDepthRoot(stagingArea)
 }

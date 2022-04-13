@@ -53,8 +53,8 @@ func TestCalcMinRequiredTxRelayFee(t *testing.T) {
 		{
 			"max standard tx size with max sompi relay fee",
 			MaximumStandardTransactionMass,
-			constants.MaxSompi,
-			constants.MaxSompi,
+			util.Amount(constants.MaxSompiBeforeHF1),
+			constants.MaxSompiBeforeHF1,
 		},
 		{
 			"1500 bytes with 5000 relay fee",
@@ -156,8 +156,8 @@ func TestIsTransactionOutputDust(t *testing.T) {
 		{
 			// Maximum allowed value is never dust.
 			"max sompi amount is never dust",
-			externalapi.DomainTransactionOutput{Value: constants.MaxSompi, ScriptPublicKey: scriptPublicKey},
-			constants.MaxSompi,
+			externalapi.DomainTransactionOutput{Value: constants.MaxSompiBeforeHF1, ScriptPublicKey: scriptPublicKey},
+			util.Amount(constants.MaxSompiBeforeHF1),
 			false,
 		},
 		{

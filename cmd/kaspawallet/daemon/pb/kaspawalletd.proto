@@ -11,6 +11,10 @@ service kaspawalletd {
   rpc NewAddress (NewAddressRequest) returns (NewAddressResponse) {}
   rpc Shutdown (ShutdownRequest) returns (ShutdownResponse) {}
   rpc Broadcast (BroadcastRequest) returns (BroadcastResponse) {}
+  // Since SendRequest contains a password - this command should only be used on a trusted or secure connection
+  rpc Send(SendRequest) returns (SendResponse) {}
+  // Since SignRequest contains a password - this command should only be used on a trusted or secure connection
+  rpc Sign(SignRequest) returns (SignResponse) {}
 }
 
 message GetBalanceRequest {
@@ -52,12 +56,12 @@ message NewAddressResponse {
 }
 
 message BroadcastRequest {
-  bytes transaction = 1;
-  bool isDomain = 2;
+        bool isDomain = 1;  
+        repeated bytes transactions = 2;
 }
 
 message BroadcastResponse {
-  string txID = 1;
+  repeated string txIDs = 1;
 }
 
 message ShutdownRequest {
@@ -95,4 +99,24 @@ message GetExternalSpendableUTXOsRequest{
 
 message GetExternalSpendableUTXOsResponse{
   repeated UtxosByAddressesEntry Entries = 1;
+}
+// Since SendRequest contains a password - this command should only be used on a trusted or secure connection
+message SendRequest{
+  string toAddress = 1;
+  uint64 amount = 2;
+  string password = 3;
+}
+
+message SendResponse{
+  repeated string txIDs = 1;
+}
+
+// Since SignRequest contains a password - this command should only be used on a trusted or secure connection
+message SignRequest{
+  repeated bytes unsignedTransactions = 1;
+  string password = 2;
+}
+
+message SignResponse{
+  repeated bytes signedTransactions = 1;
 }

@@ -13,27 +13,41 @@ import (
 )
 
 func (s *server) Broadcast(_ context.Context, request *pb.BroadcastRequest) (*pb.BroadcastResponse, error) {
-	var domainTransaction *externalapi.DomainTransaction
-	var err error
-
-	if !request.IsDomain { 
-		domainTransaction, err = serialization.DeserializeDomainTransaction(request.Transaction)
-		if err != nil {
-			return nil, err
-		}
-	} else { //default in proto3 is false
-		domainTransaction, err = libkaspawallet.DeserializedTransactionFromSerializedPartiallySigned(request.Transaction, s.keysFile.ECDSA)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	txID, err := sendTransaction(s.rpcClient, domainTransaction)
+	txIDs, err := s.broadcast(request.Transactions, request.IsDomain)
 	if err != nil {
 		return nil, err
 	}
 
-	return &pb.BroadcastResponse{TxID: txID}, nil
+	return &pb.BroadcastResponse{TxIDs: txIDs}, nil
+}
+
+func (s *server) broadcast(transactions [][]byte, isDomain bool) ([]string, error) {
+
+	txIDs := make([]string, len(transactions))
+	var tx *externalapi.DomainTransaction
+	var err error
+
+	for i, transaction := range transactions {
+
+		if isDomain {
+			tx, err = serialization.DeserializeDomainTransaction(transaction)
+			if err != nil {
+				return nil, err
+			}
+		} else { //default in proto3 is false
+			tx, err = libkaspawallet.DeserializedTransactionFromSerializedPartiallySigned(transaction, s.keysFile.ECDSA)
+			if err != nil {
+				return nil, err
+			}
+		}
+
+		txIDs[i], err = sendTransaction(s.rpcClient, tx)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return txIDs, nil
 }
 
 func sendTransaction(client *rpcclient.RPCClient, tx *externalapi.DomainTransaction) (string, error) {
