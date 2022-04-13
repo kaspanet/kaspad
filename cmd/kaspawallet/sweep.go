@@ -120,7 +120,7 @@ func sweep(conf *sweepConfig) error {
 		totalExtracted = totalExtracted + splitTransactions[i].Outputs[0].Value
 	}
 
-	fmt.Println("\nTotal Funds Sweeped (including transaction fees):")
+	fmt.Println("\nTotal Funds swept (including transaction fees):")
 	fmt.Println("\t", utils.FormatKas(totalExtracted), " KAS")
 
 	return nil
