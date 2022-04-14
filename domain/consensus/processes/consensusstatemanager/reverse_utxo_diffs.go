@@ -3,9 +3,17 @@ package consensusstatemanager
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+	"github.com/kaspanet/kaspad/infrastructure/db/database"
 	"github.com/kaspanet/kaspad/infrastructure/logger"
 	"github.com/kaspanet/kaspad/util/staging"
+	"github.com/pkg/errors"
 )
+
+// ErrReverseUTXODiffsUTXODiffChildNotFound indicates a UTXO diff child was not found while calling ReverseUTXODiffs.
+// It's still not known what causes this error, but we can ignore it and not reverse the UTXO diffs
+// and harm performance in some cases.
+// TODO: Investigate why this error happens in the first place, and remove the workaround.
+var ErrReverseUTXODiffsUTXODiffChildNotFound = errors.New("ErrReverseUTXODiffsUTXODiffChildNotFound")
 
 func (csm *consensusStateManager) ReverseUTXODiffs(tipHash *externalapi.DomainHash,
 	reversalData *model.UTXODiffReversalData) error {
@@ -49,6 +57,9 @@ func (csm *consensusStateManager) ReverseUTXODiffs(tipHash *externalapi.DomainHa
 
 		currentBlockUTXODiffChild, err := csm.utxoDiffStore.UTXODiffChild(csm.databaseContext, readStagingArea, currentBlock)
 		if err != nil {
+			if database.IsNotFoundError(err) {
+				return errors.Wrapf(ErrReverseUTXODiffsUTXODiffChildNotFound, "Not UTXO diff child was found for block %s", currentBlock)
+			}
 			return err
 		}
 		currentBlockGHOSTDAGData, err := csm.ghostdagDataStore.Get(csm.databaseContext, readStagingArea, currentBlock, false)

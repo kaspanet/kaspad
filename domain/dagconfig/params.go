@@ -184,8 +184,6 @@ type Params struct {
 
 	DisallowDirectBlocksOnTopOfGenesis bool
 
-	IgnoreHeaderMass bool
-
 	// MaxBlockLevel is the maximum possible block level.
 	MaxBlockLevel int
 
@@ -290,7 +288,7 @@ var MainnetParams = Params{
 	// This means that any block that has a level lower or equal to genesis will be level 0.
 	MaxBlockLevel: 225,
 	MergeDepth:    defaultMergeDepth,
-	HF1DAAScore:   14360917,
+	HF1DAAScore:   14687583,
 }
 
 // TestnetParams defines the network parameters for the test Kaspa network.
@@ -350,7 +348,6 @@ var TestnetParams = Params{
 	CoinbasePayloadScriptPublicKeyMaxLength: defaultCoinbasePayloadScriptPublicKeyMaxLength,
 	PruningProofM:                           defaultPruningProofM,
 	DeflationaryPhaseDaaScore:               defaultDeflationaryPhaseDaaScore,
-	IgnoreHeaderMass:                        true,
 
 	MaxBlockLevel: 250,
 	MergeDepth:    defaultMergeDepth,
@@ -480,7 +477,6 @@ var DevnetParams = Params{
 	CoinbasePayloadScriptPublicKeyMaxLength: defaultCoinbasePayloadScriptPublicKeyMaxLength,
 	PruningProofM:                           defaultPruningProofM,
 	DeflationaryPhaseDaaScore:               defaultDeflationaryPhaseDaaScore,
-	IgnoreHeaderMass:                        true,
 
 	MaxBlockLevel: 250,
 	MergeDepth:    defaultMergeDepth,
