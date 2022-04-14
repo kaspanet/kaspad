@@ -4,7 +4,7 @@ Breaking changes:
     Hard-fork at DAA score 14687583 (estimated to be on 28/04 16:38 UTC) which includes:
     * Using separate depth than finality depth for merge set calculations (#2013)
     * Not counting the header size as part of the block mass (#2013)
-    * Increasing block level to 1 (#2013)
+    * Increasing block version to 1 (#2013)
     * Removing the limit on amount of KAS that can be sent in one transaction (#2013)
 
 Bug fixes:
