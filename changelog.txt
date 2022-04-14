@@ -1,4 +1,22 @@
-Kaspad v0.11.16 - 2022-04-06
+Kaspad v0.12.0 - 2022-04-14
+===========================
+Breaking changes:
+    Hard-fork at DAA score 14687583 (estimated to be on 28/04 16:38 UTC) which includes:
+    * Using separate depth than finality depth for merge set calculations (#2013)
+    * Not counting the header size as part of the block mass (#2013)
+    * Increasing block level to 1 (#2013)
+    * Removing the limit on amount of KAS that can be sent in one transaction (#2013)
+
+Bug fixes:
+* Making a workaround for the UTXO diff child bug (#2020)
+* Use cosigner index 0 for read only wallets (#2014)
+
+Non-breaking changes:
+* Adding a "sweep" command to `kaspawallet` (#2018)
+* Use `blue work` heuristic to skip irrelevant relay blocks
+* Kaspawallet daemon: Add Send and Sign commands (#2016)
+
+Kaspad v0.11.17 - 2022-04-06
 ===========================
 * Decrement estimatedHeaderUpperBound from mempool's MaxBlockMass (#2009)
 
