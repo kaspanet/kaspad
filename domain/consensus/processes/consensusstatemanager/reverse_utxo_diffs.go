@@ -58,7 +58,7 @@ func (csm *consensusStateManager) ReverseUTXODiffs(tipHash *externalapi.DomainHa
 		currentBlockUTXODiffChild, err := csm.utxoDiffStore.UTXODiffChild(csm.databaseContext, readStagingArea, currentBlock)
 		if err != nil {
 			if database.IsNotFoundError(err) {
-				return errors.Wrapf(ErrReverseUTXODiffsUTXODiffChildNotFound, "Not UTXO diff child was not found for block %s", currentBlock)
+				return errors.Wrapf(ErrReverseUTXODiffsUTXODiffChildNotFound, "UTXO diff child was not found for block %s", currentBlock)
 			}
 			return err
 		}
