@@ -162,18 +162,18 @@ func (csm *consensusStateManager) getUnverifiedChainBlocks(stagingArea *model.St
 	var unverifiedBlocks []*externalapi.DomainHash
 	currentHash := blockHash
 	for {
-		log.Debugf("Getting status for block %s", currentHash)
+		log.Tracef("Getting status for block %s", currentHash)
 		currentBlockStatus, err := csm.blockStatusStore.Get(csm.databaseContext, stagingArea, currentHash)
 		if err != nil {
 			return nil, err
 		}
 		if currentBlockStatus != externalapi.StatusUTXOPendingVerification {
-			log.Debugf("Block %s has status %s. Returning all the "+
+			log.Tracef("Block %s has status %s. Returning all the "+
 				"unverified blocks prior to it: %s", currentHash, currentBlockStatus, unverifiedBlocks)
 			return unverifiedBlocks, nil
 		}
 
-		log.Debugf("Block %s is unverified. Adding it to the unverified block collection", currentHash)
+		log.Tracef("Block %s is unverified. Adding it to the unverified block collection", currentHash)
 		unverifiedBlocks = append(unverifiedBlocks, currentHash)
 
 		currentBlockGHOSTDAGData, err := csm.ghostdagDataStore.Get(csm.databaseContext, stagingArea, currentHash, false)
@@ -182,7 +182,7 @@ func (csm *consensusStateManager) getUnverifiedChainBlocks(stagingArea *model.St
 		}
 
 		if currentBlockGHOSTDAGData.SelectedParent() == nil {
-			log.Debugf("Genesis block reached. Returning all the "+
+			log.Tracef("Genesis block reached. Returning all the "+
 				"unverified blocks prior to it: %s", unverifiedBlocks)
 			return unverifiedBlocks, nil
 		}
