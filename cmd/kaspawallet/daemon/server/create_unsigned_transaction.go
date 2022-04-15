@@ -98,7 +98,7 @@ func (s *server) selectUTXOs(spendAmount uint64, feePerInput uint64, fromAddress
 
 	for _, utxo := range s.utxosSortedByAmount {
 		addr, err := s.walletAddressString(utxo.address)
-		if err != nil || slices.Contains(fromAddresses, addr) ||
+		if err != nil || (fromAddresses != nil && !slices.Contains(fromAddresses, addr)) ||
 			!isUTXOSpendable(utxo, dagInfo.VirtualDAAScore, s.params.BlockCoinbaseMaturity) {
 			continue
 		}

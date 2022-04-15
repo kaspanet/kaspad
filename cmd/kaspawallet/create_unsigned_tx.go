@@ -20,9 +20,14 @@ func createUnsignedTransaction(conf *createUnsignedTransactionConfig) error {
 	ctx, cancel := context.WithTimeout(context.Background(), daemonTimeout)
 	defer cancel()
 
+	var fromAddresses []string
+	if conf.FromAddresses != "" {
+		fromAddresses = strings.Split(conf.FromAddresses, ",");
+	}
+
 	sendAmountSompi := uint64(conf.SendAmount * constants.SompiPerKaspa)
 	response, err := daemonClient.CreateUnsignedTransactions(ctx, &pb.CreateUnsignedTransactionsRequest{
-		From:    strings.Split(conf.FromAddresses, ","),
+		From:    fromAddresses,
 		Address: conf.ToAddress,
 		Amount:  sendAmountSompi,
 	})

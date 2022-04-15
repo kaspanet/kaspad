@@ -33,9 +33,15 @@ func send(conf *sendConfig) error {
 	defer cancel()
 
 	sendAmountSompi := uint64(conf.SendAmount * constants.SompiPerKaspa)
+
+	var fromAddresses []string
+	if conf.FromAddresses != "" {
+		fromAddresses = strings.Split(conf.FromAddresses, ",");
+	}
+
 	createUnsignedTransactionsResponse, err :=
 		daemonClient.CreateUnsignedTransactions(ctx, &pb.CreateUnsignedTransactionsRequest{
-			From:    strings.Split(conf.FromAddresses, ","),
+			From:    fromAddresses,
 			Address: conf.ToAddress,
 			Amount:  sendAmountSompi,
 		})
