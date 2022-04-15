@@ -70,7 +70,7 @@ type sweepConfig struct {
 type createUnsignedTransactionConfig struct {
 	DaemonAddress string  `long:"daemonaddress" short:"d" description:"Wallet daemon server to connect to (default: localhost:8082)"`
 	ToAddress     string  `long:"to-address" short:"t" description:"The public address to send Kaspa to" required:"true"`
-	FromAddresses string  `long:"from-address" short:"a" description:"Specific public address to send Kaspa from" required:"false"`
+	FromAddresses string  `long:"from-addresses" short:"a" description:"Specific public addresses to send Kaspa from, separated by commas" required:"false"`
 	SendAmount    float64 `long:"send-amount" short:"v" description:"An amount to send in Kaspa (e.g. 1234.12345678)" required:"true"`
 	config.NetworkFlags
 }
