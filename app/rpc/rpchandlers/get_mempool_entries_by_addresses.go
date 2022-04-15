@@ -8,7 +8,7 @@ import (
 )
 
 // HandleGetMempoolEntriesByAddresses handles the respectively named RPC command
-func HandleGetMempoolEntriesByAddresses(context *rpccontext.Context, _ *router.Router, _ appmessage.Message, request appmessage.Message) (appmessage.Message, error) {
+func HandleGetMempoolEntriesByAddresses(context *rpccontext.Context, _ *router.Router, request appmessage.Message) (appmessage.Message, error) {
 
 	transactions := context.Domain.MiningManager().AllTransactions()
 	getMempoolEntriesByAddressesRequest := request.(*appmessage.GetMempoolEntriesByAddressesRequestMessage)
