@@ -108,6 +108,9 @@
     - [NotifyNewBlockTemplateRequestMessage](#notifynewblocktemplaterequestmessage)
     - [NotifyNewBlockTemplateResponseMessage](#notifynewblocktemplateresponsemessage)
     - [NewBlockTemplateNotificationMessage](#newblocktemplatenotificationmessage)
+    - [MempoolEntryByAddress](#mempoolentrybyaddress)
+    - [GetMempoolEntriesByAddressesRequestMessage](#getmempoolentriesbyaddressesrequestmessage)
+    - [GetMempoolEntriesByAddressesResponseMessage](#getmempoolentriesbyaddressesresponsemessage)
     - [SubmitBlockResponseMessage.RejectReason](#submitblockresponsemessagerejectreason)
   - [Scalar Value Types](#scalar-value-types)
   
@@ -1738,6 +1741,56 @@ NewBlockTemplateNotificationMessage is sent whenever a new updated block templat
 available for miners.
 
 See NotifyNewBlockTemplateRequestMessage
+
+
+
+
+
+
+<a name="protowire.MempoolEntryByAddress"></a>
+
+### MempoolEntryByAddress
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| address | [string](#string) |  |  |
+| sending | [MempoolEntry](#protowire.MempoolEntry) | repeated |  |
+| receiving | [MempoolEntry](#protowire.MempoolEntry) | repeated |  |
+
+
+
+
+
+
+<a name="protowire.GetMempoolEntriesByAddressesRequestMessage"></a>
+
+### GetMempoolEntriesByAddressesRequestMessage
+GetMempoolEntriesByAddressesRequestMessage requests all Sending and Receiving Txs for the given kaspad addresses
+
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| addresses | [string](#string) | repeated |  |
+
+
+
+
+
+
+<a name="protowire.GetMempoolEntriesByAddressesResponseMessage"></a>
+
+### GetMempoolEntriesByAddressesResponseMessage
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| entries | [MempoolEntryByAddress](#protowire.MempoolEntryByAddress) | repeated |  |
+| error | [RPCError](#protowire.RPCError) |  |  |
 
 
 
