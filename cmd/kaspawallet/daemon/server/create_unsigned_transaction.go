@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"golang.org/x/exp/slices"
 
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/daemon/pb"
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/libkaspawallet"
@@ -18,7 +19,7 @@ func (s *server) CreateUnsignedTransactions(_ context.Context, request *pb.Creat
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	unsignedTransactions, err := s.createUnsignedTransactions(request.Address, request.Amount)
+	unsignedTransactions, err := s.createUnsignedTransactions(request.Address, request.Amount, request.From)
 	if err != nil {
 		return nil, err
 	}
@@ -26,7 +27,7 @@ func (s *server) CreateUnsignedTransactions(_ context.Context, request *pb.Creat
 	return &pb.CreateUnsignedTransactionsResponse{UnsignedTransactions: unsignedTransactions}, nil
 }
 
-func (s *server) createUnsignedTransactions(address string, amount uint64) ([][]byte, error) {
+func (s *server) createUnsignedTransactions(address string, amount uint64, fromAddressesString []string) ([][]byte, error) {
 	if !s.isSynced() {
 		return nil, errors.New("server is not synced")
 	}
@@ -41,15 +42,16 @@ func (s *server) createUnsignedTransactions(address string, amount uint64) ([][]
 		return nil, err
 	}
 
-	var fromAddress util.Address = nil
-	if request.From != "" {
-		fromAddress, err = util.DecodeAddress(request.From, s.params.Prefix)
+	var fromAddresses []string
+	for _, from := range fromAddressesString {
+		decodedFrom, err := util.DecodeAddress(from, s.params.Prefix)
 		if err != nil {
 			return nil, err
 		}
+		fromAddresses = append(fromAddresses, decodedFrom.String())
 	}
 
-	selectedUTXOs, changeSompi, err := s.selectUTXOs(amount, feePerInput)
+	selectedUTXOs, changeSompi, err := s.selectUTXOs(amount, feePerInput, fromAddresses)
 	if err != nil {
 		return nil, err
 	}
@@ -59,15 +61,19 @@ func (s *server) createUnsignedTransactions(address string, amount uint64) ([][]
 		return nil, err
 	}
 
-	unsignedTransaction, err := libkaspawallet.CreateUnsignedTransaction(s.keysFile.ExtendedPublicKeys,
-		s.keysFile.MinimumSignatures,
-		[]*libkaspawallet.Payment{{
-			Address: toAddress,
-			Amount:  amount,
-		}, {
+	payments := []*libkaspawallet.Payment{{
+		Address: toAddress,
+		Amount:  amount,
+	}}
+	if changeSompi > 0 {
+		payments = append(payments, &libkaspawallet.Payment{
 			Address: changeAddress,
 			Amount:  changeSompi,
-		}}, selectedUTXOs)
+		})
+	}
+	unsignedTransaction, err := libkaspawallet.CreateUnsignedTransaction(s.keysFile.ExtendedPublicKeys,
+		s.keysFile.MinimumSignatures,
+		payments, selectedUTXOs)
 	if err != nil {
 		return nil, err
 	}
@@ -79,7 +85,7 @@ func (s *server) createUnsignedTransactions(address string, amount uint64) ([][]
 	return unsignedTransactions, nil
 }
 
-func (s *server) selectUTXOs(spendAmount uint64, feePerInput uint64, from util.Address) (
+func (s *server) selectUTXOs(spendAmount uint64, feePerInput uint64, fromAddresses []string) (
 	selectedUTXOs []*libkaspawallet.UTXO, changeSompi uint64, err error) {
 
 	selectedUTXOs = []*libkaspawallet.UTXO{}
@@ -92,7 +98,7 @@ func (s *server) selectUTXOs(spendAmount uint64, feePerInput uint64, from util.A
 
 	for _, utxo := range s.utxosSortedByAmount {
 		addr, err := s.walletAddressString(utxo.address)
-		if err != nil || (from != nil && addr != from.String()) ||
+		if err != nil || slices.Contains(fromAddresses, addr) ||
 			!isUTXOSpendable(utxo, dagInfo.VirtualDAAScore, s.params.BlockCoinbaseMaturity) {
 			continue
 		}
