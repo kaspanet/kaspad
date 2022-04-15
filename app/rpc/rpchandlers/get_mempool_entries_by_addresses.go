@@ -5,6 +5,7 @@ import (
 	"github.com/kaspanet/kaspad/app/rpc/rpccontext"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/txscript"
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
+	"github.com/kaspanet/kaspad/util"
 )
 
 // HandleGetMempoolEntriesByAddresses handles the respectively named RPC command
@@ -15,6 +16,13 @@ func HandleGetMempoolEntriesByAddresses(context *rpccontext.Context, _ *router.R
 	mempoolEntriesByAddresses := make([]*appmessage.MempoolEntryByAddress, 0)
 
 	for _, addressString := range getMempoolEntriesByAddressesRequest.Addresses {
+
+		_, err := util.DecodeAddress(addressString, context.Config.ActiveNetParams.Prefix)
+		if err != nil {
+			errorMessage := &appmessage.GetUTXOsByAddressesResponseMessage{}
+			errorMessage.Error = appmessage.RPCErrorf("Could not decode address '%s': %s", addressString, err)
+			return errorMessage, nil
+		}
 
 		sending := make([]*appmessage.MempoolEntry, 0)
 		receiving := make([]*appmessage.MempoolEntry, 0)

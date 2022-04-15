@@ -9,7 +9,7 @@ func (x *KaspadMessage_GetMempoolEntriesByAddressesRequest) toAppMessage() (appm
 	if x == nil {
 		return nil, errors.Wrapf(errorNil, "KaspadMessage_GetMempoolEntriesRequest is nil")
 	}
-	return x.toAppMessage()
+	return x.GetMempoolEntriesByAddressesRequest.toAppMessage()
 }
 
 func (x *KaspadMessage_GetMempoolEntriesByAddressesRequest) fromAppMessage(message *appmessage.GetMempoolEntriesByAddressesRequestMessage) error {
@@ -17,6 +17,15 @@ func (x *KaspadMessage_GetMempoolEntriesByAddressesRequest) fromAppMessage(messa
 		Addresses: message.Addresses,
 	}
 	return nil
+}
+
+func (x *GetMempoolEntriesByAddressesRequestMessage) toAppMessage() (appmessage.Message, error) {
+	if x == nil {
+		return nil, errors.Wrapf(errorNil, "KaspadMessage_GetMempoolEntriesRequest is nil")
+	}
+	return &appmessage.GetMempoolEntriesByAddressesRequestMessage{
+		Addresses: x.Addresses,
+	}, nil
 }
 
 func (x *KaspadMessage_GetMempoolEntriesByAddressesResponse) toAppMessage() (appmessage.Message, error) {
@@ -33,10 +42,8 @@ func (x *KaspadMessage_GetMempoolEntriesByAddressesResponse) fromAppMessage(mess
 	}
 	entries := make([]*MempoolEntryByAddress, len(message.Entries))
 	for i, entry := range message.Entries {
-		err := entries[i].fromAppMessage(entry)
-		if err != nil {
-			return err
-		}
+		entries[i] = &MempoolEntryByAddress{}
+		entries[i].fromAppMessage(entry)
 	}
 	x.GetMempoolEntriesByAddressesResponse = &GetMempoolEntriesByAddressesResponseMessage{
 		Entries: entries,
@@ -106,11 +113,19 @@ func (x *MempoolEntryByAddress) fromAppMessage(message *appmessage.MempoolEntryB
 
 	sending := make([]*MempoolEntry, len(message.Sending))
 	for i, mempoolEntry := range message.Sending {
-		sending[i].fromAppMessage(mempoolEntry)
+		sending[i] = &MempoolEntry{}
+		err := sending[i].fromAppMessage(mempoolEntry)
+		if err != nil {
+			return err
+		}
 	}
 	receiving := make([]*MempoolEntry, len(message.Receiving))
 	for i, mempoolEntry := range message.Receiving {
-		receiving[i].fromAppMessage(mempoolEntry)
+		receiving[i] = &MempoolEntry{}
+		err := receiving[i].fromAppMessage(mempoolEntry)
+		if err != nil {
+			return err
+		}
 	}
 
 	*x = MempoolEntryByAddress{
@@ -118,6 +133,5 @@ func (x *MempoolEntryByAddress) fromAppMessage(message *appmessage.MempoolEntryB
 		Sending:   sending,
 		Receiving: receiving,
 	}
-
 	return nil
 }
