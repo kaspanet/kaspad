@@ -106,6 +106,7 @@ message SendRequest{
   string toAddress = 1;
   uint64 amount = 2;
   string password = 3;
+  repeated string from = 4;
 }
 
 message SendResponse{
