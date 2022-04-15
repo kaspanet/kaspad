@@ -1,17 +1,17 @@
 package appmessage
 
+// MempoolEntryByAddress represents MempoolEntries associated with some address
 type MempoolEntryByAddress struct {
-	Address		string
-	Receiving	[]*MempoolEntry
-	Sending		[]*MempoolEntry
+	Address   string
+	Receiving []*MempoolEntry
+	Sending   []*MempoolEntry
 }
-
 
 // GetMempoolEntriesByAddressesRequestMessage is an appmessage corresponding to
 // its respective RPC message
 type GetMempoolEntriesByAddressesRequestMessage struct {
 	baseMessage
-	Addresses 	[]string
+	Addresses []string
 }
 
 // Command returns the protocol command string for the message
@@ -26,7 +26,7 @@ func NewGetMempoolEntriesByAddressesRequestMessage(addresses []string) *GetMempo
 	}
 }
 
-// GetMempoolEntriesResponseMessage is an appmessage corresponding to
+// GetMempoolEntriesByAddressesResponseMessage is an appmessage corresponding to
 // its respective RPC message
 type GetMempoolEntriesByAddressesResponseMessage struct {
 	baseMessage

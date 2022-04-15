@@ -2,7 +2,7 @@ package rpcclient
 
 import "github.com/kaspanet/kaspad/app/appmessage"
 
-// GetMempoolEntries sends an RPC request respective to the function's name and returns the RPC server's response
+// GetMempoolEntriesByAddresses sends an RPC request respective to the function's name and returns the RPC server's response
 func (c *RPCClient) GetMempoolEntriesByAddresses(addresses []string) (*appmessage.GetMempoolEntriesByAddressesResponseMessage, error) {
 	err := c.rpcRouter.outgoingRoute().Enqueue(appmessage.NewGetMempoolEntriesByAddressesRequestMessage(addresses))
 	if err != nil {

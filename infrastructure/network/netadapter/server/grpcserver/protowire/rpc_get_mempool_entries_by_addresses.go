@@ -80,7 +80,7 @@ func (x *MempoolEntryByAddress) toAppMessage() (*appmessage.MempoolEntryByAddres
 	var err error
 
 	sending := make([]*appmessage.MempoolEntry, len(x.Sending))
-	for i, mempoolEntry := range x.Sending{
+	for i, mempoolEntry := range x.Sending {
 		sending[i], err = mempoolEntry.toAppMessage()
 		if err != nil {
 			return nil, err
@@ -88,7 +88,7 @@ func (x *MempoolEntryByAddress) toAppMessage() (*appmessage.MempoolEntryByAddres
 	}
 
 	receiving := make([]*appmessage.MempoolEntry, len(x.Receiving))
-	for i, mempoolEntry := range x.Receiving{
+	for i, mempoolEntry := range x.Receiving {
 		receiving[i], err = mempoolEntry.toAppMessage()
 		if err != nil {
 			return nil, err
@@ -96,27 +96,27 @@ func (x *MempoolEntryByAddress) toAppMessage() (*appmessage.MempoolEntryByAddres
 	}
 
 	return &appmessage.MempoolEntryByAddress{
-		Address:     x.Address,
-		Sending:	sending,
-		Receiving:	receiving,
+		Address:   x.Address,
+		Sending:   sending,
+		Receiving: receiving,
 	}, nil
 }
 
 func (x *MempoolEntryByAddress) fromAppMessage(message *appmessage.MempoolEntryByAddress) error {
-	
+
 	sending := make([]*MempoolEntry, len(message.Sending))
-	for i, mempoolEntry := range message.Sending{
+	for i, mempoolEntry := range message.Sending {
 		sending[i].fromAppMessage(mempoolEntry)
-	} 
+	}
 	receiving := make([]*MempoolEntry, len(message.Receiving))
-	for i, mempoolEntry := range message.Receiving{
+	for i, mempoolEntry := range message.Receiving {
 		receiving[i].fromAppMessage(mempoolEntry)
 	}
 
 	*x = MempoolEntryByAddress{
-		Address:	message.Address,
-		Sending:	sending,
-		Receiving:	receiving,
+		Address:   message.Address,
+		Sending:   sending,
+		Receiving: receiving,
 	}
 
 	return nil
