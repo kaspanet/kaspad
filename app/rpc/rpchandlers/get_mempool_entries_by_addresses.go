@@ -1,0 +1,80 @@
+package rpchandlers
+
+import (
+	"github.com/kaspanet/kaspad/app/appmessage"
+	"github.com/kaspanet/kaspad/app/rpc/rpccontext"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/txscript"
+	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
+)
+
+// HandleGetMempoolEntries handles the respectively named RPC command
+func HandleGetMempoolEntriesByAddresses(context *rpccontext.Context, _ *router.Router, _ appmessage.Message,  request appmessage.Message) (appmessage.Message, error) {
+	
+	transactions := context.Domain.MiningManager().AllTransactions()
+	getMempoolEntriesByAddressesRequest := request.(*appmessage.GetMempoolEntriesByAddressesRequestMessage)
+	mempoolEntriesByAddresses := make([]*appmessage.MempoolEntryByAddress, 0) 
+	
+	for _, addressString := range getMempoolEntriesByAddressesRequest.Addresses{
+		
+		sending := make([]*appmessage.MempoolEntry, 0) 
+		receiving := make([]*appmessage.MempoolEntry, 0) 
+		
+		for _, transaction := range transactions {
+			
+			for _, input := range transaction.Inputs{
+				_, transactionSendingAddress, err := txscript.ExtractScriptPubKeyAddress(
+					input.UTXOEntry.ScriptPublicKey(), 
+					context.Config.ActiveNetParams)
+				if err != nil{
+					return nil, err
+				}
+				if addressString == transactionSendingAddress.String() {
+					rpcTransaction := appmessage.DomainTransactionToRPCTransaction(transaction)
+					sending = append(
+						sending, 
+						&appmessage.MempoolEntry{
+							Fee: transaction.Fee,
+							Transaction: rpcTransaction,
+						},
+					)
+					break //one input is enough
+				}
+			}
+			
+			for _, output := range transaction.Outputs{
+				_, transactionReceivingAddress, err := txscript.ExtractScriptPubKeyAddress(
+					output.ScriptPublicKey, 
+					context.Config.ActiveNetParams,
+				)
+				if err != nil{
+					return nil, err
+				}
+				if addressString == transactionReceivingAddress.String() {
+					rpcTransaction := appmessage.DomainTransactionToRPCTransaction(transaction)
+					receiving = append(
+						receiving, 
+						&appmessage.MempoolEntry{
+							Fee: transaction.Fee,
+							Transaction: rpcTransaction,
+						},
+					)
+					break //one output is enough
+				}
+			}
+			
+			if len(sending) > 0 || len(receiving) > 0{
+				mempoolEntriesByAddresses = append(
+					mempoolEntriesByAddresses,
+					&appmessage.MempoolEntryByAddress{
+						Address:	addressString,
+						Sending: 	sending,
+						Receiving: 	receiving,	
+					},
+				)
+			}
+
+		}
+	}
+
+	return appmessage.NewGetMempoolEntriesByAddressesResponseMessage(mempoolEntriesByAddresses), nil
+}
