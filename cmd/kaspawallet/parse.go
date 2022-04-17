@@ -20,64 +20,72 @@ func parse(conf *parseConfig) error {
 		return errors.Errorf("Both --transaction and --transaction-file cannot be passed at the same time")
 	}
 
-	transactionHex := conf.Transaction
+	transactionHexes := conf.Transaction
 	if conf.TransactionFile != "" {
 		transactionHexBytes, err := ioutil.ReadFile(conf.TransactionFile)
 		if err != nil {
 			return errors.Wrapf(err, "Could not read hex from %s", conf.TransactionFile)
 		}
-		transactionHex = strings.TrimSpace(string(transactionHexBytes))
-	}
-
-	transaction, err := hex.DecodeString(transactionHex)
-	if err != nil {
-		return err
-	}
-
-	partiallySignedTransaction, err := serialization.DeserializePartiallySignedTransaction(transaction)
-	if err != nil {
-		return err
-	}
-
-	fmt.Printf("Transaction ID: \t%s\n", consensushashing.TransactionID(partiallySignedTransaction.Tx))
-	fmt.Println()
-
-	allInputSompi := uint64(0)
-	for index, input := range partiallySignedTransaction.Tx.Inputs {
-		partiallySignedInput := partiallySignedTransaction.PartiallySignedInputs[index]
-
-		if conf.Verbose {
-			fmt.Printf("Input %d: \tOutpoint: %s:%d \tAmount: %.2f Kaspa\n", index, input.PreviousOutpoint.TransactionID,
-				input.PreviousOutpoint.Index, float64(partiallySignedInput.PrevOutput.Value)/float64(constants.SompiPerKaspa))
+		if len(transactionHexBytes) == 0 {
+			return errors.Errorf("Transaction file is empty")
 		}
-
-		allInputSompi += partiallySignedInput.PrevOutput.Value
-	}
-	if conf.Verbose {
-		fmt.Println()
+		transactionHexes = strings.TrimSpace(string(transactionHexBytes))
 	}
 
-	allOutputSompi := uint64(0)
-	for index, output := range partiallySignedTransaction.Tx.Outputs {
-		scriptPublicKeyType, scriptPublicKeyAddress, err := txscript.ExtractScriptPubKeyAddress(output.ScriptPublicKey, conf.ActiveNetParams)
+	for i, transactionHex := range strings.Split(transactionHexes, "_") {
+		if i > 0 {
+			fmt.Println()
+		}
+		transaction, err := hex.DecodeString(transactionHex)
 		if err != nil {
 			return err
 		}
 
-		addressString := scriptPublicKeyAddress.EncodeAddress()
-		if scriptPublicKeyType == txscript.NonStandardTy {
-			scriptPublicKeyHex := hex.EncodeToString(output.ScriptPublicKey.Script)
-			addressString = fmt.Sprintf("<Non-standard transaction script public key: %s>", scriptPublicKeyHex)
+		partiallySignedTransaction, err := serialization.DeserializePartiallySignedTransaction(transaction)
+		if err != nil {
+			return err
 		}
 
-		fmt.Printf("Output %d: \tRecipient: %s \tAmount: %.2f Kaspa\n",
-			index, addressString, float64(output.Value)/float64(constants.SompiPerKaspa))
+		fmt.Printf("Transaction ID: \t%s\n", consensushashing.TransactionID(partiallySignedTransaction.Tx))
+		fmt.Println()
 
-		allOutputSompi += output.Value
+		allInputSompi := uint64(0)
+		for index, input := range partiallySignedTransaction.Tx.Inputs {
+			partiallySignedInput := partiallySignedTransaction.PartiallySignedInputs[index]
+
+			if conf.Verbose {
+				fmt.Printf("Input %d: \tOutpoint: %s:%d \tAmount: %.2f Kaspa\n", index, input.PreviousOutpoint.TransactionID,
+					input.PreviousOutpoint.Index, float64(partiallySignedInput.PrevOutput.Value)/float64(constants.SompiPerKaspa))
+			}
+
+			allInputSompi += partiallySignedInput.PrevOutput.Value
+		}
+		if conf.Verbose {
+			fmt.Println()
+		}
+
+		allOutputSompi := uint64(0)
+		for index, output := range partiallySignedTransaction.Tx.Outputs {
+			scriptPublicKeyType, scriptPublicKeyAddress, err := txscript.ExtractScriptPubKeyAddress(output.ScriptPublicKey, conf.ActiveNetParams)
+			if err != nil {
+				return err
+			}
+
+			addressString := scriptPublicKeyAddress.EncodeAddress()
+			if scriptPublicKeyType == txscript.NonStandardTy {
+				scriptPublicKeyHex := hex.EncodeToString(output.ScriptPublicKey.Script)
+				addressString = fmt.Sprintf("<Non-standard transaction script public key: %s>", scriptPublicKeyHex)
+			}
+
+			fmt.Printf("Output %d: \tRecipient: %s \tAmount: %.2f Kaspa\n",
+				index, addressString, float64(output.Value)/float64(constants.SompiPerKaspa))
+
+			allOutputSompi += output.Value
+		}
+		fmt.Println()
+
+		fmt.Printf("Fee:\t%d Sompi\n", allInputSompi-allOutputSompi)
 	}
-	fmt.Println()
-
-	fmt.Printf("Fee:\t%d Sompi\n", allInputSompi-allOutputSompi)
 
 	return nil
 }
