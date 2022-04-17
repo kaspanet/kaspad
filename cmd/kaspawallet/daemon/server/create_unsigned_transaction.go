@@ -1,6 +1,7 @@
 package server
 
 import (
+	"fmt"
 	"context"
 	"golang.org/x/exp/slices"
 
@@ -42,13 +43,13 @@ func (s *server) createUnsignedTransactions(address string, amount uint64, fromA
 		return nil, err
 	}
 
-	var fromAddresses []string
+	var fromAddresses []*walletAddress
 	for _, from := range fromAddressesString {
-		decodedFrom, err := util.DecodeAddress(from, s.params.Prefix)
-		if err != nil {
-			return nil, err
+		fromAddress, exists := s.addressSet[from]
+		if !exists {
+			return nil,  fmt.Errorf("Specified from address %s does not exists", from)
 		}
-		fromAddresses = append(fromAddresses, decodedFrom.String())
+		fromAddresses = append(fromAddresses, fromAddress)
 	}
 
 	selectedUTXOs, changeSompi, err := s.selectUTXOs(amount, feePerInput, fromAddresses)
@@ -85,7 +86,7 @@ func (s *server) createUnsignedTransactions(address string, amount uint64, fromA
 	return unsignedTransactions, nil
 }
 
-func (s *server) selectUTXOs(spendAmount uint64, feePerInput uint64, fromAddresses []string) (
+func (s *server) selectUTXOs(spendAmount uint64, feePerInput uint64, fromAddresses []*walletAddress) (
 	selectedUTXOs []*libkaspawallet.UTXO, changeSompi uint64, err error) {
 
 	selectedUTXOs = []*libkaspawallet.UTXO{}
@@ -97,8 +98,7 @@ func (s *server) selectUTXOs(spendAmount uint64, feePerInput uint64, fromAddress
 	}
 
 	for _, utxo := range s.utxosSortedByAmount {
-		addr, err := s.walletAddressString(utxo.address)
-		if (fromAddresses != nil && (err != nil || !slices.Contains(fromAddresses, addr))) ||
+		if (fromAddresses != nil && !slices.Contains(fromAddresses, utxo.address)) ||
 			!isUTXOSpendable(utxo, dagInfo.VirtualDAAScore, s.params.BlockCoinbaseMaturity) {
 			continue
 		}
