@@ -455,7 +455,7 @@ message GetHeadersResponseMessage{
 //
 // See: UtxosChangedNotificationMessage
 message NotifyUtxosChangedRequestMessage {
-  repeated string addresses = 1;
+  repeated string addresses = 1; // Leave empty to get all updates
 }
 
 message NotifyUtxosChangedResponseMessage {
