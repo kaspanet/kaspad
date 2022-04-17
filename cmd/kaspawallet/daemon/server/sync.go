@@ -23,27 +23,42 @@ func (was walletAddressSet) strings() []string {
 }
 
 func (s *server) sync() error {
+	for !s.isSynced() {
+		err := s.syncIteration()
+		if err != nil {
+			return err
+		}
+	}
+	log.Infof("Initial sync complete")
+
 	ticker := time.NewTicker(time.Second)
 	defer ticker.Stop()
 
 	for range ticker.C {
-		err := s.collectRecentAddresses()
-		if err != nil {
-			return err
-		}
-
-		err = s.collectFarAddresses()
-		if err != nil {
-			return err
-		}
-
-		err = s.refreshExistingUTXOsWithLock()
-
+		err := s.syncIteration()
 		if err != nil {
 			return err
 		}
 	}
 
+	return nil
+}
+
+func (s *server) syncIteration() error {
+	err := s.collectRecentAddresses()
+	if err != nil {
+		return err
+	}
+
+	err = s.collectFarAddresses()
+	if err != nil {
+		return err
+	}
+
+	err = s.refreshExistingUTXOsWithLock()
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
