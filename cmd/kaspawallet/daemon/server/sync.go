@@ -26,13 +26,23 @@ func (s *server) sync() error {
 	ticker := time.NewTicker(time.Second)
 	defer ticker.Stop()
 
+	err := s.collectRecentAddresses()
+	if err != nil {
+		return err
+	}
+
+	err = s.refreshExistingUTXOsWithLock()
+	if err != nil {
+		return err
+	}
+
 	for range ticker.C {
-		err := s.collectRecentAddresses()
+		err = s.collectFarAddresses()
 		if err != nil {
 			return err
 		}
 
-		err = s.collectFarAddresses()
+		err = s.collectRecentAddresses()
 		if err != nil {
 			return err
 		}
