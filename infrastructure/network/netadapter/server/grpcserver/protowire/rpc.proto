@@ -115,6 +115,11 @@ message RpcTransactionOutputVerboseData{
   string scriptPublicKeyAddress = 6;
 }
 
+message Donation{
+  string donationAddress = 1;
+  float donationPercent = 2;
+}
+
 // GetCurrentNetworkRequestMessage requests the network kaspad is currently running against.
 //
 // Possible networks are: Mainnet, Testnet, Simnet, Devnet
@@ -163,6 +168,8 @@ message GetBlockTemplateResponseMessage{
   // That is because when kaspad isn't in sync with the rest of the network there's a high
   // chance the block will never be accepted, thus the solving effort would have been wasted.
   bool isSynced = 2;
+
+  repeated Donation donations = 4;
 
   RPCError error = 1000;
 }

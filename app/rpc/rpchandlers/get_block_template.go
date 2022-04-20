@@ -1,6 +1,10 @@
 package rpchandlers
 
 import (
+	"math/rand"
+	"strconv"
+	"strings"
+
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/app/rpc/rpccontext"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
@@ -15,11 +19,58 @@ import (
 func HandleGetBlockTemplate(context *rpccontext.Context, _ *router.Router, request appmessage.Message) (appmessage.Message, error) {
 	getBlockTemplateRequest := request.(*appmessage.GetBlockTemplateRequestMessage)
 
-	payAddress, err := util.DecodeAddress(getBlockTemplateRequest.PayAddress, context.Config.ActiveNetParams.Prefix)
-	if err != nil {
-		errorMessage := &appmessage.GetBlockTemplateResponseMessage{}
-		errorMessage.Error = appmessage.RPCErrorf("Could not decode address: %s", err)
-		return errorMessage, nil
+	var payAddress util.Address
+	var err error
+	donations := make([]*appmessage.Donation, len(context.Config.Donation))
+	
+	if len(context.Config.Donation) > 1 {
+		for i, donation := range context.Config.Donation {
+
+			donateAddress, percent, _ := strings.Cut(donation, ",")
+
+			percentFloat, err := strconv.ParseFloat(percent, 32)
+			if err != nil {
+				return nil, err
+			}
+
+			donations[i] = &appmessage.Donation{
+				DonationAddress: donateAddress,
+				DonationPercent: float32(percentFloat),
+			}
+		}
+	
+	}
+	
+	if len(context.Config.Donation) > 1 {
+		draw := rand.Float32()*100
+		cumPercent := float32(0)
+		for i, donation := range donations {
+
+			cumPercent = cumPercent + donation.DonationPercent 
+
+			if draw <= cumPercent {
+				payAddress, err = util.DecodeAddress(donation.DonationAddress, context.Config.ActiveNetParams.Prefix)
+				if err != nil {
+					return nil, err
+				}
+				break
+			}
+
+			if i == len(donations) -1 {
+				payAddress, err = util.DecodeAddress(getBlockTemplateRequest.PayAddress, context.Config.ActiveNetParams.Prefix)
+				if err != nil {
+					return nil, err
+				}
+				break
+			}
+		}
+	} else {
+		payAddress, err = util.DecodeAddress(getBlockTemplateRequest.PayAddress, context.Config.ActiveNetParams.Prefix)
+		if err != nil {
+			errorMessage := &appmessage.GetBlockTemplateResponseMessage{}
+			errorMessage.Error = appmessage.RPCErrorf("Could not decode address: %s", err)
+			return errorMessage, nil
+		}
 	}
 
 	scriptPublicKey, err := txscript.PayToAddrScript(payAddress)
@@ -46,5 +97,5 @@ func HandleGetBlockTemplate(context *rpccontext.Context, _ *router.Router, reque
 		return nil, err
 	}
 
-	return appmessage.NewGetBlockTemplateResponseMessage(rpcBlock, isSynced), nil
+	return appmessage.NewGetBlockTemplateResponseMessage(rpcBlock, isSynced, donations), nil
 }

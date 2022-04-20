@@ -124,6 +124,7 @@ type Flags struct {
 	AllowSubmitBlockWhenNotSynced   bool          `long:"allow-submit-block-when-not-synced" hidden:"true" description:"Allow the node to accept blocks from RPC while not synced (this flag is mainly used for testing)"`
 	EnableSanityCheckPruningUTXOSet bool          `long:"enable-sanity-check-pruning-utxo" hidden:"true" description:"When moving the pruning point - check that the utxo set matches the utxo commitment"`
 	ProtocolVersion                 uint32        `long:"protocol-version" description:"Use non default p2p protocol version"`
+	Donation			[]string      `short:"o" long:"Donation" description:"Send blocktemplates with a donation address to miners 'x'-percent of the time. Use the format: '<donation-address>,<donation-percent>' when setting the flag"`
 	NetworkFlags
 	ServiceOptions *ServiceOptions
 }
@@ -562,6 +563,27 @@ func LoadConfig() (*Config, error) {
 			Password: cfg.ProxyPass,
 		}
 		cfg.Dial = proxy.DialTimeout
+	}
+	if len(cfg.Donation) > 0 {
+		cumPercent := float32(0)
+		for _, donation := range cfg.Donation {
+			address, percent, found := strings.Cut(donation, ",")
+			if !found {
+				return nil, errors.Errorf("could not parse '%s' please use the format: '<donation-address>,<donation-percent>'", donation)
+			}
+			_, err := util.DecodeAddress(address, cfg.NetParams().Prefix) //check valid address
+			if err != nil {
+				return nil, err
+			}
+			percentFloat, err := strconv.ParseFloat(percent, 32)
+			if err != nil { //check valid float
+				return nil, err
+			}
+			cumPercent = cumPercent + float32(percentFloat)*100
+			if cumPercent > 100 { //check valid percentages
+				return nil, errors.Errorf("cannot set cumulative donation percentages to over 100 percent")
+			}
+		}
 	}
 
 	// Warn about missing config file only after all other configuration is

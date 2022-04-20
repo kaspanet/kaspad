@@ -27,8 +27,14 @@ type GetBlockTemplateResponseMessage struct {
 	baseMessage
 	Block    *RPCBlock
 	IsSynced bool
+	Donations []*Donation
 
 	Error *RPCError
+}
+
+type Donation struct {
+	DonationAddress string
+	DonationPercent float32
 }
 
 // Command returns the protocol command string for the message
@@ -37,9 +43,10 @@ func (msg *GetBlockTemplateResponseMessage) Command() MessageCommand {
 }
 
 // NewGetBlockTemplateResponseMessage returns a instance of the message
-func NewGetBlockTemplateResponseMessage(block *RPCBlock, isSynced bool) *GetBlockTemplateResponseMessage {
+func NewGetBlockTemplateResponseMessage(block *RPCBlock, isSynced bool, donations []*Donation) *GetBlockTemplateResponseMessage {
 	return &GetBlockTemplateResponseMessage{
 		Block:    block,
 		IsSynced: isSynced,
+		Donations: donations,
 	}
 }

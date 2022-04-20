@@ -18,6 +18,7 @@
     - [RpcTransactionVerboseData](#protowire.RpcTransactionVerboseData)
     - [RpcTransactionInputVerboseData](#protowire.RpcTransactionInputVerboseData)
     - [RpcTransactionOutputVerboseData](#protowire.RpcTransactionOutputVerboseData)
+    - [Donation](#protowire.Donation)
     - [GetCurrentNetworkRequestMessage](#protowire.GetCurrentNetworkRequestMessage)
     - [GetCurrentNetworkResponseMessage](#protowire.GetCurrentNetworkResponseMessage)
     - [SubmitBlockRequestMessage](#protowire.SubmitBlockRequestMessage)
@@ -379,6 +380,22 @@ Receivers of any ResponseMessage are expected to check whether its error field i
 
 
 
+<a name="protowire.Donation"></a>
+
+### Donation
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| donationAddress | [string](#string) |  |  |
+| donationPercent | [uint32](#uint32) |  |  |
+
+
+
+
+
+
 <a name="protowire.GetCurrentNetworkRequestMessage"></a>
 
 ### GetCurrentNetworkRequestMessage
@@ -471,6 +488,7 @@ See: SubmitBlockRequestMessage
 | ----- | ---- | ----- | ----------- |
 | block | [RpcBlock](#protowire.RpcBlock) |  |  |
 | isSynced | [bool](#bool) |  | Whether kaspad thinks that it&#39;s synced. Callers are discouraged (but not forbidden) from solving blocks when kaspad is not synced. That is because when kaspad isn&#39;t in sync with the rest of the network there&#39;s a high chance the block will never be accepted, thus the solving effort would have been wasted. |
+| donations | [Donation](#protowire.Donation) | repeated |  |
 | error | [RPCError](#protowire.RPCError) |  |  |
 
 

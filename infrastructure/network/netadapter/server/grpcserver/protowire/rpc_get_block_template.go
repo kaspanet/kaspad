@@ -53,9 +53,15 @@ func (x *KaspadMessage_GetBlockTemplateResponse) fromAppMessage(message *appmess
 		block = protoBlock
 	}
 
+	donations := make([]*Donation, len(message.Donations))
+	for i, donation := range message.Donations {
+		donations[i].fromAppMessage(donation)
+	}
+
 	x.GetBlockTemplateResponse = &GetBlockTemplateResponseMessage{
 		Block:    block,
 		IsSynced: message.IsSynced,
+		Donations: donations,
 		Error:    err,
 	}
 	return nil
@@ -81,9 +87,35 @@ func (x *GetBlockTemplateResponseMessage) toAppMessage() (appmessage.Message, er
 			return nil, err
 		}
 	}
+
+	var err error
+	
+	donations := make([]*appmessage.Donation, len(x.Donations))
+	for i, donation := range x.Donations {
+		donations[i], err = donation.toAppMessage()
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	return &appmessage.GetBlockTemplateResponseMessage{
 		Block:    msgBlock,
 		IsSynced: x.IsSynced,
+		Donations: donations,
 		Error:    rpcError,
+	}, nil
+}
+
+func (x *Donation) fromAppMessage(message *appmessage.Donation) {
+	*x = Donation{
+		DonationAddress: message.DonationAddress,
+		DonationPercent: message.DonationPercent,
+	}
+}
+
+func (x *Donation) toAppMessage() (*appmessage.Donation, error) {
+	return &appmessage.Donation{
+		DonationAddress: x.DonationAddress,
+		DonationPercent: x.DonationPercent,
 	}, nil
 }
