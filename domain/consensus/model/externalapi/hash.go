@@ -65,16 +65,13 @@ func (hash DomainHash) String() string {
 }
 
 // ByteArray returns the bytes in this hash represented as a byte array.
-// The hash bytes are cloned, therefore it is safe to modify the resulting array.
 func (hash *DomainHash) ByteArray() *[DomainHashSize]byte {
-	arrayClone := hash.hashArray
-	return &arrayClone
+	return &hash.hashArray
 }
 
 // ByteSlice returns the bytes in this hash represented as a byte slice.
-// The hash bytes are cloned, therefore it is safe to modify the resulting slice.
 func (hash *DomainHash) ByteSlice() []byte {
-	return hash.ByteArray()[:]
+	return hash.hashArray[:]
 }
 
 // If this doesn't compile, it means the type definition has been changed, so it's
