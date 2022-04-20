@@ -23,7 +23,7 @@ func HandleGetBlockTemplate(context *rpccontext.Context, _ *router.Router, reque
 	var err error
 	donations := make([]*appmessage.Donation, len(context.Config.Donation))
 	
-	if len(context.Config.Donation) > 1 {
+	if len(context.Config.Donation) > 0 {
 		for i, donation := range context.Config.Donation {
 
 			donateAddress, percent, _ := strings.Cut(donation, ",")
@@ -41,7 +41,7 @@ func HandleGetBlockTemplate(context *rpccontext.Context, _ *router.Router, reque
 	
 	}
 	
-	if len(context.Config.Donation) > 1 {
+	if len(donations) > 0 {
 		draw := rand.Float32()*100
 		cumPercent := float32(0)
 		for i, donation := range donations {
