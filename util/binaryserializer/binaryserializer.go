@@ -113,9 +113,10 @@ func PutUint16(w io.Writer, val uint16) error {
 // buffer from the free list and writes the resulting four bytes to the given
 // writer.
 func PutUint32(w io.Writer, val uint32) error {
-	var buf [4]byte
-	binary.LittleEndian.PutUint32(buf[:], val)
-	_, err := w.Write(buf[:])
+	buf := Borrow()[:4]
+	binary.LittleEndian.PutUint32(buf, val)
+	_, err := w.Write(buf)
+	Return(buf)
 	return errors.WithStack(err)
 }
 
@@ -123,9 +124,10 @@ func PutUint32(w io.Writer, val uint32) error {
 // buffer from the free list and writes the resulting eight bytes to the given
 // writer.
 func PutUint64(w io.Writer, val uint64) error {
-	var buf [8]byte
-	binary.LittleEndian.PutUint64(buf[:], val)
-	_, err := w.Write(buf[:])
+	buf := Borrow()[:8]
+	binary.LittleEndian.PutUint64(buf, val)
+	_, err := w.Write(buf)
+	Return(buf)
 	return errors.WithStack(err)
 }
 
