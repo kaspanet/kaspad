@@ -25,13 +25,15 @@ func NewGetBlockTemplateRequestMessage(payAddress, extraData string) *GetBlockTe
 // its respective RPC message
 type GetBlockTemplateResponseMessage struct {
 	baseMessage
-	Block    *RPCBlock
-	IsSynced bool
+	Block     *RPCBlock
+	IsSynced  bool
 	Donations []*Donation
 
 	Error *RPCError
 }
 
+// Donation is an appmessage corresponding to
+// its respective RPC message
 type Donation struct {
 	DonationAddress string
 	DonationPercent float32
@@ -45,8 +47,8 @@ func (msg *GetBlockTemplateResponseMessage) Command() MessageCommand {
 // NewGetBlockTemplateResponseMessage returns a instance of the message
 func NewGetBlockTemplateResponseMessage(block *RPCBlock, isSynced bool, donations []*Donation) *GetBlockTemplateResponseMessage {
 	return &GetBlockTemplateResponseMessage{
-		Block:    block,
-		IsSynced: isSynced,
+		Block:     block,
+		IsSynced:  isSynced,
 		Donations: donations,
 	}
 }

@@ -22,7 +22,7 @@ func HandleGetBlockTemplate(context *rpccontext.Context, _ *router.Router, reque
 	var payAddress util.Address
 	var err error
 	donations := make([]*appmessage.Donation, len(context.Config.Donation))
-	
+
 	if len(context.Config.Donation) > 0 {
 		for i, donation := range context.Config.Donation {
 
@@ -38,15 +38,15 @@ func HandleGetBlockTemplate(context *rpccontext.Context, _ *router.Router, reque
 				DonationPercent: float32(percentFloat),
 			}
 		}
-	
+
 	}
-	
+
 	if len(donations) > 0 {
-		draw := rand.Float32()*100
+		draw := rand.Float32() * 100
 		cumPercent := float32(0)
 		for i, donation := range donations {
 
-			cumPercent = cumPercent + donation.DonationPercent 
+			cumPercent = cumPercent + donation.DonationPercent
 
 			if draw <= cumPercent {
 				payAddress, err = util.DecodeAddress(donation.DonationAddress, context.Config.ActiveNetParams.Prefix)
@@ -56,7 +56,7 @@ func HandleGetBlockTemplate(context *rpccontext.Context, _ *router.Router, reque
 				break
 			}
 
-			if i == len(donations) -1 {
+			if i == len(donations)-1 {
 				payAddress, err = util.DecodeAddress(getBlockTemplateRequest.PayAddress, context.Config.ActiveNetParams.Prefix)
 				if err != nil {
 					return nil, err

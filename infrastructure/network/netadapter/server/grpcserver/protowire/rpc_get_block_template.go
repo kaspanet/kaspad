@@ -59,10 +59,10 @@ func (x *KaspadMessage_GetBlockTemplateResponse) fromAppMessage(message *appmess
 	}
 
 	x.GetBlockTemplateResponse = &GetBlockTemplateResponseMessage{
-		Block:    block,
-		IsSynced: message.IsSynced,
+		Block:     block,
+		IsSynced:  message.IsSynced,
 		Donations: donations,
-		Error:    err,
+		Error:     err,
 	}
 	return nil
 }
@@ -89,7 +89,7 @@ func (x *GetBlockTemplateResponseMessage) toAppMessage() (appmessage.Message, er
 	}
 
 	var err error
-	
+
 	donations := make([]*appmessage.Donation, len(x.Donations))
 	for i, donation := range x.Donations {
 		donations[i], err = donation.toAppMessage()
@@ -99,10 +99,10 @@ func (x *GetBlockTemplateResponseMessage) toAppMessage() (appmessage.Message, er
 	}
 
 	return &appmessage.GetBlockTemplateResponseMessage{
-		Block:    msgBlock,
-		IsSynced: x.IsSynced,
+		Block:     msgBlock,
+		IsSynced:  x.IsSynced,
 		Donations: donations,
-		Error:    rpcError,
+		Error:     rpcError,
 	}, nil
 }
 
