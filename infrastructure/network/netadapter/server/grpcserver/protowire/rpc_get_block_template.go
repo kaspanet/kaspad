@@ -55,6 +55,7 @@ func (x *KaspadMessage_GetBlockTemplateResponse) fromAppMessage(message *appmess
 
 	donations := make([]*Donation, len(message.Donations))
 	for i, donation := range message.Donations {
+		donations[i] = &Donation{}
 		donations[i].fromAppMessage(donation)
 	}
 
