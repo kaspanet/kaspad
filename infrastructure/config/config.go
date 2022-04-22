@@ -579,7 +579,7 @@ func LoadConfig() (*Config, error) {
 			if err != nil { //check valid float
 				return nil, err
 			}
-			cumPercent = cumPercent + float32(percentFloat)*100
+			cumPercent = cumPercent + float32(percentFloat)
 			if cumPercent > 100 { //check valid percentages
 				return nil, errors.Errorf("cannot set cumulative donation percentages to over 100 percent")
 			}
