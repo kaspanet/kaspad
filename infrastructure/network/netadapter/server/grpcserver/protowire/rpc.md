@@ -389,7 +389,7 @@ Receivers of any ResponseMessage are expected to check whether its error field i
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | donationAddress | [string](#string) |  |  |
-| donationPercent | [uint32](#uint32) |  |  |
+| donationPercent | [float](#float) |  |  |
 
 
 
