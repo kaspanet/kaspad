@@ -357,7 +357,7 @@ message GetVirtualSelectedParentChainFromBlockRequestMessage{
 
 message AcceptedTransactionIds{
   string acceptingBlockHash = 1;
-  repeated string acceptedTransactionId = 2;
+  repeated string acceptedTransactionIds = 2;
 }
 
 message GetVirtualSelectedParentChainFromBlockResponseMessage{
