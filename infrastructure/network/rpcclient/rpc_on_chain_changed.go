@@ -8,8 +8,11 @@ import (
 
 // RegisterForVirtualSelectedParentChainChangedNotifications sends an RPC request respective to the function's name and returns the RPC server's response.
 // Additionally, it starts listening for the appropriate notification using the given handler function
-func (c *RPCClient) RegisterForVirtualSelectedParentChainChangedNotifications(onChainChanged func(notification *appmessage.VirtualSelectedParentChainChangedNotificationMessage)) error {
-	err := c.rpcRouter.outgoingRoute().Enqueue(appmessage.NewNotifyVirtualSelectedParentChainChangedRequestMessage())
+func (c *RPCClient) RegisterForVirtualSelectedParentChainChangedNotifications(includeAcceptedTransactionIDs bool,
+	onChainChanged func(notification *appmessage.VirtualSelectedParentChainChangedNotificationMessage)) error {
+
+	err := c.rpcRouter.outgoingRoute().Enqueue(
+		appmessage.NewNotifyVirtualSelectedParentChainChangedRequestMessage(includeAcceptedTransactionIDs))
 	if err != nil {
 		return err
 	}

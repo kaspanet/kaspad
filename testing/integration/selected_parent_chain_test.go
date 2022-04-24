@@ -1,8 +1,9 @@
 package integration
 
 import (
-	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"testing"
+
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
@@ -15,7 +16,7 @@ func TestVirtualSelectedParentChain(t *testing.T) {
 
 	// Register to virtual selected parent chain changes
 	onVirtualSelectedParentChainChangedChan := make(chan *appmessage.VirtualSelectedParentChainChangedNotificationMessage)
-	err := kaspad1.rpcClient.RegisterForVirtualSelectedParentChainChangedNotifications(
+	err := kaspad1.rpcClient.RegisterForVirtualSelectedParentChainChangedNotifications(true,
 		func(notification *appmessage.VirtualSelectedParentChainChangedNotificationMessage) {
 			onVirtualSelectedParentChainChangedChan <- notification
 		})
@@ -104,7 +105,8 @@ func TestVirtualSelectedParentChain(t *testing.T) {
 
 	// Get the virtual selected parent chain from the tip of
 	// the first chain
-	virtualSelectedParentChainFromChain1Tip, err := kaspad1.rpcClient.GetVirtualSelectedParentChainFromBlock(chain1TipHashString)
+	virtualSelectedParentChainFromChain1Tip, err := kaspad1.rpcClient.GetVirtualSelectedParentChainFromBlock(
+		chain1TipHashString, true)
 	if err != nil {
 		t.Fatalf("GetVirtualSelectedParentChainFromBlock failed: %s", err)
 	}

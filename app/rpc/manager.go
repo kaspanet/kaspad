@@ -196,7 +196,7 @@ func (m *Manager) notifyVirtualSelectedParentChainChanged(virtualChangeSet *exte
 	defer onEnd()
 
 	notification, err := m.context.ConvertVirtualSelectedParentChainChangesToChainChangedNotificationMessage(
-		virtualChangeSet.VirtualSelectedParentChainChanges)
+		virtualChangeSet.VirtualSelectedParentChainChanges, true)
 	if err != nil {
 		return err
 	}

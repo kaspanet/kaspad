@@ -34,7 +34,8 @@ type NotificationListener struct {
 	propagatePruningPointUTXOSetOverrideNotifications           bool
 	propagateNewBlockTemplateNotifications                      bool
 
-	propagateUTXOsChangedNotificationAddresses map[utxoindex.ScriptPublicKeyString]*UTXOsChangedNotificationAddress
+	propagateUTXOsChangedNotificationAddresses                                    map[utxoindex.ScriptPublicKeyString]*UTXOsChangedNotificationAddress
+	includeAcceptedTransactionIDsInVirtualSelectedParentChainChangedNotifications bool
 }
 
 // NewNotificationManager creates a new NotificationManager
@@ -92,13 +93,27 @@ func (nm *NotificationManager) NotifyBlockAdded(notification *appmessage.BlockAd
 }
 
 // NotifyVirtualSelectedParentChainChanged notifies the notification manager that the DAG's selected parent chain has changed
-func (nm *NotificationManager) NotifyVirtualSelectedParentChainChanged(notification *appmessage.VirtualSelectedParentChainChangedNotificationMessage) error {
+func (nm *NotificationManager) NotifyVirtualSelectedParentChainChanged(
+	notification *appmessage.VirtualSelectedParentChainChangedNotificationMessage) error {
+
 	nm.RLock()
 	defer nm.RUnlock()
 
+	notificationWithoutAcceptedTransactionIDs := &appmessage.VirtualSelectedParentChainChangedNotificationMessage{
+		RemovedChainBlockHashes: notification.RemovedChainBlockHashes,
+		AddedChainBlockHashes:   notification.AddedChainBlockHashes,
+	}
+
 	for router, listener := range nm.listeners {
 		if listener.propagateVirtualSelectedParentChainChangedNotifications {
-			err := router.OutgoingRoute().Enqueue(notification)
+			var err error
+
+			if listener.includeAcceptedTransactionIDsInVirtualSelectedParentChainChangedNotifications {
+				err = router.OutgoingRoute().Enqueue(notification)
+			} else {
+				err = router.OutgoingRoute().Enqueue(notificationWithoutAcceptedTransactionIDs)
+			}
+
 			if err != nil {
 				return err
 			}
@@ -259,8 +274,9 @@ func (nl *NotificationListener) PropagateBlockAddedNotifications() {
 
 // PropagateVirtualSelectedParentChainChangedNotifications instructs the listener to send chain changed notifications
 // to the remote listener
-func (nl *NotificationListener) PropagateVirtualSelectedParentChainChangedNotifications() {
+func (nl *NotificationListener) PropagateVirtualSelectedParentChainChangedNotifications(includeAcceptedTransactionIDs bool) {
 	nl.propagateVirtualSelectedParentChainChangedNotifications = true
+	nl.includeAcceptedTransactionIDsInVirtualSelectedParentChainChangedNotifications = includeAcceptedTransactionIDs
 }
 
 // PropagateFinalityConflictNotifications instructs the listener to send finality conflict notifications
