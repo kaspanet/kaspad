@@ -70,6 +70,8 @@ func HandleGetMempoolEntriesByAddresses(context *rpccontext.Context, _ *router.R
 				}
 			}
 
+			//Only append mempoolEntriesByAddress, if at least 1 mempoolEntry for the address is found.
+			//This mimics the behaviour of GetUtxosByAddresses RPC call.
 			if len(sending) > 0 || len(receiving) > 0 {
 				mempoolEntriesByAddresses = append(
 					mempoolEntriesByAddresses,
