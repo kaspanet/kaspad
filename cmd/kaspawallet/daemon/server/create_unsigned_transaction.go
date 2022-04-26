@@ -1,8 +1,8 @@
 package server
 
 import (
-	"fmt"
 	"context"
+	"fmt"
 	"golang.org/x/exp/slices"
 
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/daemon/pb"
@@ -47,7 +47,7 @@ func (s *server) createUnsignedTransactions(address string, amount uint64, fromA
 	for _, from := range fromAddressesString {
 		fromAddress, exists := s.addressSet[from]
 		if !exists {
-			return nil,  fmt.Errorf("Specified from address %s does not exists", from)
+			return nil, fmt.Errorf("Specified from address %s does not exists", from)
 		}
 		fromAddresses = append(fromAddresses, fromAddress)
 	}

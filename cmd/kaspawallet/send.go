@@ -36,7 +36,7 @@ func send(conf *sendConfig) error {
 
 	var fromAddresses []string
 	if conf.FromAddresses != "" {
-		fromAddresses = strings.Split(conf.FromAddresses, ",");
+		fromAddresses = strings.Split(conf.FromAddresses, ",")
 	}
 
 	createUnsignedTransactionsResponse, err :=

@@ -22,7 +22,7 @@ func createUnsignedTransaction(conf *createUnsignedTransactionConfig) error {
 
 	var fromAddresses []string
 	if conf.FromAddresses != "" {
-		fromAddresses = strings.Split(conf.FromAddresses, ",");
+		fromAddresses = strings.Split(conf.FromAddresses, ",")
 	}
 
 	sendAmountSompi := uint64(conf.SendAmount * constants.SompiPerKaspa)
