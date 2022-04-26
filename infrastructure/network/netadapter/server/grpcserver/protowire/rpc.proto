@@ -301,6 +301,7 @@ message SubmitTransactionResponseMessage{
 //
 // See: VirtualSelectedParentChainChangedNotificationMessage
 message NotifyVirtualSelectedParentChainChangedRequestMessage{
+  bool includeAcceptedTransactionIds = 1;
 }
 
 message NotifyVirtualSelectedParentChainChangedResponseMessage{

@@ -9,11 +9,15 @@ func (x *KaspadMessage_NotifyVirtualSelectedParentChainChangedRequest) toAppMess
 	if x == nil {
 		return nil, errors.Wrapf(errorNil, "KaspadMessage_NotifyVirtualSelectedParentChainChangedRequest is nil")
 	}
-	return &appmessage.NotifyVirtualSelectedParentChainChangedRequestMessage{}, nil
+	return &appmessage.NotifyVirtualSelectedParentChainChangedRequestMessage{
+		IncludeAcceptedTransactionIDs: x.NotifyVirtualSelectedParentChainChangedRequest.IncludeAcceptedTransactionIds,
+	}, nil
 }
 
-func (x *KaspadMessage_NotifyVirtualSelectedParentChainChangedRequest) fromAppMessage(_ *appmessage.NotifyVirtualSelectedParentChainChangedRequestMessage) error {
-	x.NotifyVirtualSelectedParentChainChangedRequest = &NotifyVirtualSelectedParentChainChangedRequestMessage{}
+func (x *KaspadMessage_NotifyVirtualSelectedParentChainChangedRequest) fromAppMessage(appmessage *appmessage.NotifyVirtualSelectedParentChainChangedRequestMessage) error {
+	x.NotifyVirtualSelectedParentChainChangedRequest = &NotifyVirtualSelectedParentChainChangedRequestMessage{
+		IncludeAcceptedTransactionIds: appmessage.IncludeAcceptedTransactionIDs,
+	}
 	return nil
 }
 
