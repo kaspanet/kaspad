@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"strings"
 
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/daemon/client"
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/daemon/pb"
@@ -34,14 +33,9 @@ func send(conf *sendConfig) error {
 
 	sendAmountSompi := uint64(conf.SendAmount * constants.SompiPerKaspa)
 
-	var fromAddresses []string
-	if conf.FromAddresses != "" {
-		fromAddresses = strings.Split(conf.FromAddresses, ",")
-	}
-
 	createUnsignedTransactionsResponse, err :=
 		daemonClient.CreateUnsignedTransactions(ctx, &pb.CreateUnsignedTransactionsRequest{
-			From:    fromAddresses,
+			From:    conf.FromAddresses,
 			Address: conf.ToAddress,
 			Amount:  sendAmountSompi,
 		})
