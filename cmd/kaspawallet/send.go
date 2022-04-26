@@ -71,7 +71,7 @@ func send(conf *sendConfig) error {
 	fmt.Println("Transactions were sent successfully")
 	fmt.Println("Transaction ID(s): ")
 	for _, txID := range response.TxIDs {
-		fmt.Printf("\\t%s\\n", txID)
+		fmt.Printf("\t%s\n", txID)
 	}
 
 	return nil
