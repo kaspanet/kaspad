@@ -680,4 +680,19 @@ message NotifyNewBlockTemplateResponseMessage {
 message NewBlockTemplateNotificationMessage {
 }
 
+message MempoolEntryByAddress{
+  string address = 1;
+  repeated MempoolEntry sending = 2;
+  repeated MempoolEntry receiving = 3;
+}
+
+message GetMempoolEntriesByAddressesRequestMessage{
+  repeated string addresses = 1;
+}
+
+message  GetMempoolEntriesByAddressesResponseMessage{
+  repeated MempoolEntryByAddress entries = 1;
+
+  RPCError error = 1000;
+}
 

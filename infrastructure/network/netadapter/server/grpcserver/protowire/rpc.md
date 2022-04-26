@@ -107,6 +107,9 @@
     - [NotifyNewBlockTemplateRequestMessage](#protowire.NotifyNewBlockTemplateRequestMessage)
     - [NotifyNewBlockTemplateResponseMessage](#protowire.NotifyNewBlockTemplateResponseMessage)
     - [NewBlockTemplateNotificationMessage](#protowire.NewBlockTemplateNotificationMessage)
+    - [MempoolEntryByAddress](#protowire.MempoolEntryByAddress)
+    - [GetMempoolEntriesByAddressesRequestMessage](#protowire.GetMempoolEntriesByAddressesRequestMessage)
+    - [GetMempoolEntriesByAddressesResponseMessage](#protowire.GetMempoolEntriesByAddressesResponseMessage)
   
     - [SubmitBlockResponseMessage.RejectReason](#protowire.SubmitBlockResponseMessage.RejectReason)
   
@@ -1752,6 +1755,54 @@ NewBlockTemplateNotificationMessage is sent whenever a new updated block templat
 available for miners.
 
 See NotifyNewBlockTemplateRequestMessage
+
+
+
+
+
+
+<a name="protowire.MempoolEntryByAddress"></a>
+
+### MempoolEntryByAddress
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| address | [string](#string) |  |  |
+| sending | [MempoolEntry](#protowire.MempoolEntry) | repeated |  |
+| receiving | [MempoolEntry](#protowire.MempoolEntry) | repeated |  |
+
+
+
+
+
+
+<a name="protowire.GetMempoolEntriesByAddressesRequestMessage"></a>
+
+### GetMempoolEntriesByAddressesRequestMessage
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| addresses | [string](#string) | repeated |  |
+
+
+
+
+
+
+<a name="protowire.GetMempoolEntriesByAddressesResponseMessage"></a>
+
+### GetMempoolEntriesByAddressesResponseMessage
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| entries | [MempoolEntryByAddress](#protowire.MempoolEntryByAddress) | repeated |  |
+| error | [RPCError](#protowire.RPCError) |  |  |
 
 
 
