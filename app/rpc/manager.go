@@ -52,18 +52,18 @@ func (m *Manager) NotifyBlockAddedToDAG(block *externalapi.DomainBlock, virtualC
 	onEnd := logger.LogAndMeasureExecutionTime(log, "RPCManager.NotifyBlockAddedToDAG")
 	defer onEnd()
 
-	err := m.NotifyVirtualChange(virtualChangeSet)
-	if err != nil {
-		return err
-	}
-
 	rpcBlock := appmessage.DomainBlockToRPCBlock(block)
-	err = m.context.PopulateBlockWithVerboseData(rpcBlock, block.Header, block, false)
+	err := m.context.PopulateBlockWithVerboseData(rpcBlock, block.Header, block, true)
 	if err != nil {
 		return err
 	}
 	blockAddedNotification := appmessage.NewBlockAddedNotificationMessage(rpcBlock)
-	return m.context.NotificationManager.NotifyBlockAdded(blockAddedNotification)
+	err = m.context.NotificationManager.NotifyBlockAdded(blockAddedNotification)
+	if err != nil {
+		return err
+	}
+
+	return m.NotifyVirtualChange(virtualChangeSet)
 }
 
 // NotifyVirtualChange notifies the manager that the virtual block has been changed.
