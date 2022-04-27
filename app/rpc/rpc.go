@@ -119,6 +119,6 @@ func (m *Manager) handleError(err error, netConnection *netadapter.NetConnection
 	log.Warnf("Got bad incoming message from %s. ", netConnection)
 
 	//INFO: 1) trying to disconnect here causes tests to fail
-	//	2) on kaspactl client side this casues `timeout of 30s has been exceeded` error after 30 secs.
+	//	2) on kaspactl client side not disconnectiong casues `timeout of 30s has been exceeded` error after 30 secs.
 
 }
