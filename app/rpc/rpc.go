@@ -102,5 +102,23 @@ func (m *Manager) handleError(err error, netConnection *netadapter.NetConnection
 	if errors.Is(err, router.ErrRouteClosed) {
 		return
 	}
-	panic(err)
+
+	//INFO: `panic(err)` <- v. 0.12.0 kaspad Code that was here before, causing kaspad to crash with kaspactl.
+
+	//TO DO: find out what to do with the err, BUT DO NOT PANIC due to an incomming message!!!
+
+	//#######################################################################################
+	//# 											#
+	//#	Idea: 	1) find the appmessage response of the corrosponding request,		#
+	//#		2) fill the rpc error field with the err,				#
+	//#		3) process and send back to client.					#
+	//#											#
+	//#######################################################################################
+
+	//for now just log - better then crashing kaspad, or doing nothing-
+	log.Warnf("Got bad incoming message from %s. ", netConnection)
+
+	//INFO: 1) trying to disconnect here causes tests to fail
+	//	2) on kaspactl client side this casues `timeout of 30s has been exceeded` error after 30 secs.
+
 }
