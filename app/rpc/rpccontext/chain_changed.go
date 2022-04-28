@@ -3,6 +3,7 @@ package rpccontext
 import (
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
 )
 
 // ConvertVirtualSelectedParentChainChangesToChainChangedNotificationMessage converts
@@ -53,7 +54,7 @@ func (ctx *Context) getAndConvertAcceptedTransactionIDs(selectedParentChainChang
 				if transactionAcceptanceData.IsAccepted {
 					acceptedTransactionIDs[i].AcceptedTransactionIDs =
 						append(acceptedTransactionIDs[i].AcceptedTransactionIDs,
-							transactionAcceptanceData.Transaction.ID.String())
+							consensushashing.TransactionID(transactionAcceptanceData.Transaction).String())
 				}
 			}
 		}
