@@ -32,8 +32,10 @@ func send(conf *sendConfig) error {
 	defer cancel()
 
 	sendAmountSompi := uint64(conf.SendAmount * constants.SompiPerKaspa)
+
 	createUnsignedTransactionsResponse, err :=
 		daemonClient.CreateUnsignedTransactions(ctx, &pb.CreateUnsignedTransactionsRequest{
+			From:    conf.FromAddresses,
 			Address: conf.ToAddress,
 			Amount:  sendAmountSompi,
 		})
