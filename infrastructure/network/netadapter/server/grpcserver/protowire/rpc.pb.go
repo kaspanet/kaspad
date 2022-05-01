@@ -5772,6 +5772,171 @@ func (*NewBlockTemplateNotificationMessage) Descriptor() ([]byte, []int) {
 	return file_rpc_proto_rawDescGZIP(), []int{102}
 }
 
+type MempoolEntryByAddress struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Address   string          `protobuf:"bytes,1,opt,name=address,proto3" json:"address,omitempty"`
+	Sending   []*MempoolEntry `protobuf:"bytes,2,rep,name=sending,proto3" json:"sending,omitempty"`
+	Receiving []*MempoolEntry `protobuf:"bytes,3,rep,name=receiving,proto3" json:"receiving,omitempty"`
+}
+
+func (x *MempoolEntryByAddress) Reset() {
+	*x = MempoolEntryByAddress{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_rpc_proto_msgTypes[103]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *MempoolEntryByAddress) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*MempoolEntryByAddress) ProtoMessage() {}
+
+func (x *MempoolEntryByAddress) ProtoReflect() protoreflect.Message {
+	mi := &file_rpc_proto_msgTypes[103]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use MempoolEntryByAddress.ProtoReflect.Descriptor instead.
+func (*MempoolEntryByAddress) Descriptor() ([]byte, []int) {
+	return file_rpc_proto_rawDescGZIP(), []int{103}
+}
+
+func (x *MempoolEntryByAddress) GetAddress() string {
+	if x != nil {
+		return x.Address
+	}
+	return ""
+}
+
+func (x *MempoolEntryByAddress) GetSending() []*MempoolEntry {
+	if x != nil {
+		return x.Sending
+	}
+	return nil
+}
+
+func (x *MempoolEntryByAddress) GetReceiving() []*MempoolEntry {
+	if x != nil {
+		return x.Receiving
+	}
+	return nil
+}
+
+type GetMempoolEntriesByAddressesRequestMessage struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Addresses []string `protobuf:"bytes,1,rep,name=addresses,proto3" json:"addresses,omitempty"`
+}
+
+func (x *GetMempoolEntriesByAddressesRequestMessage) Reset() {
+	*x = GetMempoolEntriesByAddressesRequestMessage{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_rpc_proto_msgTypes[104]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *GetMempoolEntriesByAddressesRequestMessage) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetMempoolEntriesByAddressesRequestMessage) ProtoMessage() {}
+
+func (x *GetMempoolEntriesByAddressesRequestMessage) ProtoReflect() protoreflect.Message {
+	mi := &file_rpc_proto_msgTypes[104]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetMempoolEntriesByAddressesRequestMessage.ProtoReflect.Descriptor instead.
+func (*GetMempoolEntriesByAddressesRequestMessage) Descriptor() ([]byte, []int) {
+	return file_rpc_proto_rawDescGZIP(), []int{104}
+}
+
+func (x *GetMempoolEntriesByAddressesRequestMessage) GetAddresses() []string {
+	if x != nil {
+		return x.Addresses
+	}
+	return nil
+}
+
+type GetMempoolEntriesByAddressesResponseMessage struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Entries []*MempoolEntryByAddress `protobuf:"bytes,1,rep,name=entries,proto3" json:"entries,omitempty"`
+	Error   *RPCError                `protobuf:"bytes,1000,opt,name=error,proto3" json:"error,omitempty"`
+}
+
+func (x *GetMempoolEntriesByAddressesResponseMessage) Reset() {
+	*x = GetMempoolEntriesByAddressesResponseMessage{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_rpc_proto_msgTypes[105]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *GetMempoolEntriesByAddressesResponseMessage) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetMempoolEntriesByAddressesResponseMessage) ProtoMessage() {}
+
+func (x *GetMempoolEntriesByAddressesResponseMessage) ProtoReflect() protoreflect.Message {
+	mi := &file_rpc_proto_msgTypes[105]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetMempoolEntriesByAddressesResponseMessage.ProtoReflect.Descriptor instead.
+func (*GetMempoolEntriesByAddressesResponseMessage) Descriptor() ([]byte, []int) {
+	return file_rpc_proto_rawDescGZIP(), []int{105}
+}
+
+func (x *GetMempoolEntriesByAddressesResponseMessage) GetEntries() []*MempoolEntryByAddress {
+	if x != nil {
+		return x.Entries
+	}
+	return nil
+}
+
+func (x *GetMempoolEntriesByAddressesResponseMessage) GetError() *RPCError {
+	if x != nil {
+		return x.Error
+	}
+	return nil
+}
+
 var File_rpc_proto protoreflect.FileDescriptor
 
 var file_rpc_proto_rawDesc = []byte{
@@ -6515,10 +6680,34 @@ var file_rpc_proto_rawDesc = []byte{
 	0x52, 0x50, 0x43, 0x45, 0x72, 0x72, 0x6f, 0x72, 0x52, 0x05, 0x65, 0x72, 0x72, 0x6f, 0x72, 0x22,
 	0x25, 0x0a, 0x23, 0x4e, 0x65, 0x77, 0x42, 0x6c, 0x6f, 0x63, 0x6b, 0x54, 0x65, 0x6d, 0x70, 0x6c,
 	0x61, 0x74, 0x65, 0x4e, 0x6f, 0x74, 0x69, 0x66, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x4d,
-	0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x42, 0x26, 0x5a, 0x24, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62,
-	0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x6b, 0x61, 0x73, 0x70, 0x61, 0x6e, 0x65, 0x74, 0x2f, 0x6b, 0x61,
-	0x73, 0x70, 0x61, 0x64, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x77, 0x69, 0x72, 0x65, 0x62, 0x06,
-	0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x22, 0x9b, 0x01, 0x0a, 0x15, 0x4d, 0x65, 0x6d, 0x70, 0x6f,
+	0x6f, 0x6c, 0x45, 0x6e, 0x74, 0x72, 0x79, 0x42, 0x79, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73,
+	0x12, 0x18, 0x0a, 0x07, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x18, 0x01, 0x20, 0x01, 0x28,
+	0x09, 0x52, 0x07, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x12, 0x31, 0x0a, 0x07, 0x73, 0x65,
+	0x6e, 0x64, 0x69, 0x6e, 0x67, 0x18, 0x02, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x17, 0x2e, 0x70, 0x72,
+	0x6f, 0x74, 0x6f, 0x77, 0x69, 0x72, 0x65, 0x2e, 0x4d, 0x65, 0x6d, 0x70, 0x6f, 0x6f, 0x6c, 0x45,
+	0x6e, 0x74, 0x72, 0x79, 0x52, 0x07, 0x73, 0x65, 0x6e, 0x64, 0x69, 0x6e, 0x67, 0x12, 0x35, 0x0a,
+	0x09, 0x72, 0x65, 0x63, 0x65, 0x69, 0x76, 0x69, 0x6e, 0x67, 0x18, 0x03, 0x20, 0x03, 0x28, 0x0b,
+	0x32, 0x17, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x77, 0x69, 0x72, 0x65, 0x2e, 0x4d, 0x65, 0x6d,
+	0x70, 0x6f, 0x6f, 0x6c, 0x45, 0x6e, 0x74, 0x72, 0x79, 0x52, 0x09, 0x72, 0x65, 0x63, 0x65, 0x69,
+	0x76, 0x69, 0x6e, 0x67, 0x22, 0x4a, 0x0a, 0x2a, 0x47, 0x65, 0x74, 0x4d, 0x65, 0x6d, 0x70, 0x6f,
+	0x6f, 0x6c, 0x45, 0x6e, 0x74, 0x72, 0x69, 0x65, 0x73, 0x42, 0x79, 0x41, 0x64, 0x64, 0x72, 0x65,
+	0x73, 0x73, 0x65, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x4d, 0x65, 0x73, 0x73, 0x61,
+	0x67, 0x65, 0x12, 0x1c, 0x0a, 0x09, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x65, 0x73, 0x18,
+	0x01, 0x20, 0x03, 0x28, 0x09, 0x52, 0x09, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x65, 0x73,
+	0x22, 0x95, 0x01, 0x0a, 0x2b, 0x47, 0x65, 0x74, 0x4d, 0x65, 0x6d, 0x70, 0x6f, 0x6f, 0x6c, 0x45,
+	0x6e, 0x74, 0x72, 0x69, 0x65, 0x73, 0x42, 0x79, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x65,
+	0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65,
+	0x12, 0x3a, 0x0a, 0x07, 0x65, 0x6e, 0x74, 0x72, 0x69, 0x65, 0x73, 0x18, 0x01, 0x20, 0x03, 0x28,
+	0x0b, 0x32, 0x20, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x77, 0x69, 0x72, 0x65, 0x2e, 0x4d, 0x65,
+	0x6d, 0x70, 0x6f, 0x6f, 0x6c, 0x45, 0x6e, 0x74, 0x72, 0x79, 0x42, 0x79, 0x41, 0x64, 0x64, 0x72,
+	0x65, 0x73, 0x73, 0x52, 0x07, 0x65, 0x6e, 0x74, 0x72, 0x69, 0x65, 0x73, 0x12, 0x2a, 0x0a, 0x05,
+	0x65, 0x72, 0x72, 0x6f, 0x72, 0x18, 0xe8, 0x07, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x13, 0x2e, 0x70,
+	0x72, 0x6f, 0x74, 0x6f, 0x77, 0x69, 0x72, 0x65, 0x2e, 0x52, 0x50, 0x43, 0x45, 0x72, 0x72, 0x6f,
+	0x72, 0x52, 0x05, 0x65, 0x72, 0x72, 0x6f, 0x72, 0x42, 0x26, 0x5a, 0x24, 0x67, 0x69, 0x74, 0x68,
+	0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x6b, 0x61, 0x73, 0x70, 0x61, 0x6e, 0x65, 0x74, 0x2f,
+	0x6b, 0x61, 0x73, 0x70, 0x61, 0x64, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x77, 0x69, 0x72, 0x65,
+	0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -6534,7 +6723,7 @@ func file_rpc_proto_rawDescGZIP() []byte {
 }
 
 var file_rpc_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_rpc_proto_msgTypes = make([]protoimpl.MessageInfo, 103)
+var file_rpc_proto_msgTypes = make([]protoimpl.MessageInfo, 106)
 var file_rpc_proto_goTypes = []interface{}{
 	(SubmitBlockResponseMessage_RejectReason)(0), // 0: protowire.SubmitBlockResponseMessage.RejectReason
 	(*RPCError)(nil),                                                   // 1: protowire.RPCError
@@ -6640,84 +6829,91 @@ var file_rpc_proto_goTypes = []interface{}{
 	(*NotifyNewBlockTemplateRequestMessage)(nil),                       // 101: protowire.NotifyNewBlockTemplateRequestMessage
 	(*NotifyNewBlockTemplateResponseMessage)(nil),                      // 102: protowire.NotifyNewBlockTemplateResponseMessage
 	(*NewBlockTemplateNotificationMessage)(nil),                        // 103: protowire.NewBlockTemplateNotificationMessage
+	(*MempoolEntryByAddress)(nil),                                      // 104: protowire.MempoolEntryByAddress
+	(*GetMempoolEntriesByAddressesRequestMessage)(nil),                 // 105: protowire.GetMempoolEntriesByAddressesRequestMessage
+	(*GetMempoolEntriesByAddressesResponseMessage)(nil),                // 106: protowire.GetMempoolEntriesByAddressesResponseMessage
 }
 var file_rpc_proto_depIdxs = []int32{
-	3,  // 0: protowire.RpcBlock.header:type_name -> protowire.RpcBlockHeader
-	6,  // 1: protowire.RpcBlock.transactions:type_name -> protowire.RpcTransaction
-	5,  // 2: protowire.RpcBlock.verboseData:type_name -> protowire.RpcBlockVerboseData
-	4,  // 3: protowire.RpcBlockHeader.parents:type_name -> protowire.RpcBlockLevelParents
-	7,  // 4: protowire.RpcTransaction.inputs:type_name -> protowire.RpcTransactionInput
-	9,  // 5: protowire.RpcTransaction.outputs:type_name -> protowire.RpcTransactionOutput
-	12, // 6: protowire.RpcTransaction.verboseData:type_name -> protowire.RpcTransactionVerboseData
-	10, // 7: protowire.RpcTransactionInput.previousOutpoint:type_name -> protowire.RpcOutpoint
-	13, // 8: protowire.RpcTransactionInput.verboseData:type_name -> protowire.RpcTransactionInputVerboseData
-	8,  // 9: protowire.RpcTransactionOutput.scriptPublicKey:type_name -> protowire.RpcScriptPublicKey
-	14, // 10: protowire.RpcTransactionOutput.verboseData:type_name -> protowire.RpcTransactionOutputVerboseData
-	8,  // 11: protowire.RpcUtxoEntry.scriptPublicKey:type_name -> protowire.RpcScriptPublicKey
-	1,  // 12: protowire.GetCurrentNetworkResponseMessage.error:type_name -> protowire.RPCError
-	2,  // 13: protowire.SubmitBlockRequestMessage.block:type_name -> protowire.RpcBlock
-	0,  // 14: protowire.SubmitBlockResponseMessage.rejectReason:type_name -> protowire.SubmitBlockResponseMessage.RejectReason
-	1,  // 15: protowire.SubmitBlockResponseMessage.error:type_name -> protowire.RPCError
-	2,  // 16: protowire.GetBlockTemplateResponseMessage.block:type_name -> protowire.RpcBlock
-	1,  // 17: protowire.GetBlockTemplateResponseMessage.error:type_name -> protowire.RPCError
-	1,  // 18: protowire.NotifyBlockAddedResponseMessage.error:type_name -> protowire.RPCError
-	2,  // 19: protowire.BlockAddedNotificationMessage.block:type_name -> protowire.RpcBlock
-	26, // 20: protowire.GetPeerAddressesResponseMessage.addresses:type_name -> protowire.GetPeerAddressesKnownAddressMessage
-	26, // 21: protowire.GetPeerAddressesResponseMessage.bannedAddresses:type_name -> protowire.GetPeerAddressesKnownAddressMessage
-	1,  // 22: protowire.GetPeerAddressesResponseMessage.error:type_name -> protowire.RPCError
-	1,  // 23: protowire.GetSelectedTipHashResponseMessage.error:type_name -> protowire.RPCError
-	33, // 24: protowire.GetMempoolEntryResponseMessage.entry:type_name -> protowire.MempoolEntry
-	1,  // 25: protowire.GetMempoolEntryResponseMessage.error:type_name -> protowire.RPCError
-	33, // 26: protowire.GetMempoolEntriesResponseMessage.entries:type_name -> protowire.MempoolEntry
-	1,  // 27: protowire.GetMempoolEntriesResponseMessage.error:type_name -> protowire.RPCError
-	6,  // 28: protowire.MempoolEntry.transaction:type_name -> protowire.RpcTransaction
-	36, // 29: protowire.GetConnectedPeerInfoResponseMessage.infos:type_name -> protowire.GetConnectedPeerInfoMessage
-	1,  // 30: protowire.GetConnectedPeerInfoResponseMessage.error:type_name -> protowire.RPCError
-	1,  // 31: protowire.AddPeerResponseMessage.error:type_name -> protowire.RPCError
-	6,  // 32: protowire.SubmitTransactionRequestMessage.transaction:type_name -> protowire.RpcTransaction
-	1,  // 33: protowire.SubmitTransactionResponseMessage.error:type_name -> protowire.RPCError
-	1,  // 34: protowire.NotifyVirtualSelectedParentChainChangedResponseMessage.error:type_name -> protowire.RPCError
-	49, // 35: protowire.VirtualSelectedParentChainChangedNotificationMessage.acceptedTransactionIds:type_name -> protowire.AcceptedTransactionIds
-	2,  // 36: protowire.GetBlockResponseMessage.block:type_name -> protowire.RpcBlock
-	1,  // 37: protowire.GetBlockResponseMessage.error:type_name -> protowire.RPCError
-	1,  // 38: protowire.GetSubnetworkResponseMessage.error:type_name -> protowire.RPCError
-	49, // 39: protowire.GetVirtualSelectedParentChainFromBlockResponseMessage.acceptedTransactionIds:type_name -> protowire.AcceptedTransactionIds
-	1,  // 40: protowire.GetVirtualSelectedParentChainFromBlockResponseMessage.error:type_name -> protowire.RPCError
-	2,  // 41: protowire.GetBlocksResponseMessage.blocks:type_name -> protowire.RpcBlock
-	1,  // 42: protowire.GetBlocksResponseMessage.error:type_name -> protowire.RPCError
-	1,  // 43: protowire.GetBlockCountResponseMessage.error:type_name -> protowire.RPCError
-	1,  // 44: protowire.GetBlockDagInfoResponseMessage.error:type_name -> protowire.RPCError
-	1,  // 45: protowire.ResolveFinalityConflictResponseMessage.error:type_name -> protowire.RPCError
-	1,  // 46: protowire.NotifyFinalityConflictsResponseMessage.error:type_name -> protowire.RPCError
-	1,  // 47: protowire.ShutDownResponseMessage.error:type_name -> protowire.RPCError
-	1,  // 48: protowire.GetHeadersResponseMessage.error:type_name -> protowire.RPCError
-	1,  // 49: protowire.NotifyUtxosChangedResponseMessage.error:type_name -> protowire.RPCError
-	70, // 50: protowire.UtxosChangedNotificationMessage.added:type_name -> protowire.UtxosByAddressesEntry
-	70, // 51: protowire.UtxosChangedNotificationMessage.removed:type_name -> protowire.UtxosByAddressesEntry
-	10, // 52: protowire.UtxosByAddressesEntry.outpoint:type_name -> protowire.RpcOutpoint
-	11, // 53: protowire.UtxosByAddressesEntry.utxoEntry:type_name -> protowire.RpcUtxoEntry
-	1,  // 54: protowire.StopNotifyingUtxosChangedResponseMessage.error:type_name -> protowire.RPCError
-	70, // 55: protowire.GetUtxosByAddressesResponseMessage.entries:type_name -> protowire.UtxosByAddressesEntry
-	1,  // 56: protowire.GetUtxosByAddressesResponseMessage.error:type_name -> protowire.RPCError
-	1,  // 57: protowire.GetBalanceByAddressResponseMessage.error:type_name -> protowire.RPCError
-	1,  // 58: protowire.BalancesByAddressEntry.error:type_name -> protowire.RPCError
-	78, // 59: protowire.GetBalancesByAddressesResponseMessage.entries:type_name -> protowire.BalancesByAddressEntry
-	1,  // 60: protowire.GetBalancesByAddressesResponseMessage.error:type_name -> protowire.RPCError
-	1,  // 61: protowire.GetVirtualSelectedParentBlueScoreResponseMessage.error:type_name -> protowire.RPCError
-	1,  // 62: protowire.NotifyVirtualSelectedParentBlueScoreChangedResponseMessage.error:type_name -> protowire.RPCError
-	1,  // 63: protowire.NotifyVirtualDaaScoreChangedResponseMessage.error:type_name -> protowire.RPCError
-	1,  // 64: protowire.NotifyPruningPointUTXOSetOverrideResponseMessage.error:type_name -> protowire.RPCError
-	1,  // 65: protowire.StopNotifyingPruningPointUTXOSetOverrideResponseMessage.error:type_name -> protowire.RPCError
-	1,  // 66: protowire.BanResponseMessage.error:type_name -> protowire.RPCError
-	1,  // 67: protowire.UnbanResponseMessage.error:type_name -> protowire.RPCError
-	1,  // 68: protowire.GetInfoResponseMessage.error:type_name -> protowire.RPCError
-	1,  // 69: protowire.EstimateNetworkHashesPerSecondResponseMessage.error:type_name -> protowire.RPCError
-	1,  // 70: protowire.NotifyNewBlockTemplateResponseMessage.error:type_name -> protowire.RPCError
-	71, // [71:71] is the sub-list for method output_type
-	71, // [71:71] is the sub-list for method input_type
-	71, // [71:71] is the sub-list for extension type_name
-	71, // [71:71] is the sub-list for extension extendee
-	0,  // [0:71] is the sub-list for field type_name
+	3,   // 0: protowire.RpcBlock.header:type_name -> protowire.RpcBlockHeader
+	6,   // 1: protowire.RpcBlock.transactions:type_name -> protowire.RpcTransaction
+	5,   // 2: protowire.RpcBlock.verboseData:type_name -> protowire.RpcBlockVerboseData
+	4,   // 3: protowire.RpcBlockHeader.parents:type_name -> protowire.RpcBlockLevelParents
+	7,   // 4: protowire.RpcTransaction.inputs:type_name -> protowire.RpcTransactionInput
+	9,   // 5: protowire.RpcTransaction.outputs:type_name -> protowire.RpcTransactionOutput
+	12,  // 6: protowire.RpcTransaction.verboseData:type_name -> protowire.RpcTransactionVerboseData
+	10,  // 7: protowire.RpcTransactionInput.previousOutpoint:type_name -> protowire.RpcOutpoint
+	13,  // 8: protowire.RpcTransactionInput.verboseData:type_name -> protowire.RpcTransactionInputVerboseData
+	8,   // 9: protowire.RpcTransactionOutput.scriptPublicKey:type_name -> protowire.RpcScriptPublicKey
+	14,  // 10: protowire.RpcTransactionOutput.verboseData:type_name -> protowire.RpcTransactionOutputVerboseData
+	8,   // 11: protowire.RpcUtxoEntry.scriptPublicKey:type_name -> protowire.RpcScriptPublicKey
+	1,   // 12: protowire.GetCurrentNetworkResponseMessage.error:type_name -> protowire.RPCError
+	2,   // 13: protowire.SubmitBlockRequestMessage.block:type_name -> protowire.RpcBlock
+	0,   // 14: protowire.SubmitBlockResponseMessage.rejectReason:type_name -> protowire.SubmitBlockResponseMessage.RejectReason
+	1,   // 15: protowire.SubmitBlockResponseMessage.error:type_name -> protowire.RPCError
+	2,   // 16: protowire.GetBlockTemplateResponseMessage.block:type_name -> protowire.RpcBlock
+	1,   // 17: protowire.GetBlockTemplateResponseMessage.error:type_name -> protowire.RPCError
+	1,   // 18: protowire.NotifyBlockAddedResponseMessage.error:type_name -> protowire.RPCError
+	2,   // 19: protowire.BlockAddedNotificationMessage.block:type_name -> protowire.RpcBlock
+	26,  // 20: protowire.GetPeerAddressesResponseMessage.addresses:type_name -> protowire.GetPeerAddressesKnownAddressMessage
+	26,  // 21: protowire.GetPeerAddressesResponseMessage.bannedAddresses:type_name -> protowire.GetPeerAddressesKnownAddressMessage
+	1,   // 22: protowire.GetPeerAddressesResponseMessage.error:type_name -> protowire.RPCError
+	1,   // 23: protowire.GetSelectedTipHashResponseMessage.error:type_name -> protowire.RPCError
+	33,  // 24: protowire.GetMempoolEntryResponseMessage.entry:type_name -> protowire.MempoolEntry
+	1,   // 25: protowire.GetMempoolEntryResponseMessage.error:type_name -> protowire.RPCError
+	33,  // 26: protowire.GetMempoolEntriesResponseMessage.entries:type_name -> protowire.MempoolEntry
+	1,   // 27: protowire.GetMempoolEntriesResponseMessage.error:type_name -> protowire.RPCError
+	6,   // 28: protowire.MempoolEntry.transaction:type_name -> protowire.RpcTransaction
+	36,  // 29: protowire.GetConnectedPeerInfoResponseMessage.infos:type_name -> protowire.GetConnectedPeerInfoMessage
+	1,   // 30: protowire.GetConnectedPeerInfoResponseMessage.error:type_name -> protowire.RPCError
+	1,   // 31: protowire.AddPeerResponseMessage.error:type_name -> protowire.RPCError
+	6,   // 32: protowire.SubmitTransactionRequestMessage.transaction:type_name -> protowire.RpcTransaction
+	1,   // 33: protowire.SubmitTransactionResponseMessage.error:type_name -> protowire.RPCError
+	1,   // 34: protowire.NotifyVirtualSelectedParentChainChangedResponseMessage.error:type_name -> protowire.RPCError
+	49,  // 35: protowire.VirtualSelectedParentChainChangedNotificationMessage.acceptedTransactionIds:type_name -> protowire.AcceptedTransactionIds
+	2,   // 36: protowire.GetBlockResponseMessage.block:type_name -> protowire.RpcBlock
+	1,   // 37: protowire.GetBlockResponseMessage.error:type_name -> protowire.RPCError
+	1,   // 38: protowire.GetSubnetworkResponseMessage.error:type_name -> protowire.RPCError
+	49,  // 39: protowire.GetVirtualSelectedParentChainFromBlockResponseMessage.acceptedTransactionIds:type_name -> protowire.AcceptedTransactionIds
+	1,   // 40: protowire.GetVirtualSelectedParentChainFromBlockResponseMessage.error:type_name -> protowire.RPCError
+	2,   // 41: protowire.GetBlocksResponseMessage.blocks:type_name -> protowire.RpcBlock
+	1,   // 42: protowire.GetBlocksResponseMessage.error:type_name -> protowire.RPCError
+	1,   // 43: protowire.GetBlockCountResponseMessage.error:type_name -> protowire.RPCError
+	1,   // 44: protowire.GetBlockDagInfoResponseMessage.error:type_name -> protowire.RPCError
+	1,   // 45: protowire.ResolveFinalityConflictResponseMessage.error:type_name -> protowire.RPCError
+	1,   // 46: protowire.NotifyFinalityConflictsResponseMessage.error:type_name -> protowire.RPCError
+	1,   // 47: protowire.ShutDownResponseMessage.error:type_name -> protowire.RPCError
+	1,   // 48: protowire.GetHeadersResponseMessage.error:type_name -> protowire.RPCError
+	1,   // 49: protowire.NotifyUtxosChangedResponseMessage.error:type_name -> protowire.RPCError
+	70,  // 50: protowire.UtxosChangedNotificationMessage.added:type_name -> protowire.UtxosByAddressesEntry
+	70,  // 51: protowire.UtxosChangedNotificationMessage.removed:type_name -> protowire.UtxosByAddressesEntry
+	10,  // 52: protowire.UtxosByAddressesEntry.outpoint:type_name -> protowire.RpcOutpoint
+	11,  // 53: protowire.UtxosByAddressesEntry.utxoEntry:type_name -> protowire.RpcUtxoEntry
+	1,   // 54: protowire.StopNotifyingUtxosChangedResponseMessage.error:type_name -> protowire.RPCError
+	70,  // 55: protowire.GetUtxosByAddressesResponseMessage.entries:type_name -> protowire.UtxosByAddressesEntry
+	1,   // 56: protowire.GetUtxosByAddressesResponseMessage.error:type_name -> protowire.RPCError
+	1,   // 57: protowire.GetBalanceByAddressResponseMessage.error:type_name -> protowire.RPCError
+	1,   // 58: protowire.BalancesByAddressEntry.error:type_name -> protowire.RPCError
+	78,  // 59: protowire.GetBalancesByAddressesResponseMessage.entries:type_name -> protowire.BalancesByAddressEntry
+	1,   // 60: protowire.GetBalancesByAddressesResponseMessage.error:type_name -> protowire.RPCError
+	1,   // 61: protowire.GetVirtualSelectedParentBlueScoreResponseMessage.error:type_name -> protowire.RPCError
+	1,   // 62: protowire.NotifyVirtualSelectedParentBlueScoreChangedResponseMessage.error:type_name -> protowire.RPCError
+	1,   // 63: protowire.NotifyVirtualDaaScoreChangedResponseMessage.error:type_name -> protowire.RPCError
+	1,   // 64: protowire.NotifyPruningPointUTXOSetOverrideResponseMessage.error:type_name -> protowire.RPCError
+	1,   // 65: protowire.StopNotifyingPruningPointUTXOSetOverrideResponseMessage.error:type_name -> protowire.RPCError
+	1,   // 66: protowire.BanResponseMessage.error:type_name -> protowire.RPCError
+	1,   // 67: protowire.UnbanResponseMessage.error:type_name -> protowire.RPCError
+	1,   // 68: protowire.GetInfoResponseMessage.error:type_name -> protowire.RPCError
+	1,   // 69: protowire.EstimateNetworkHashesPerSecondResponseMessage.error:type_name -> protowire.RPCError
+	1,   // 70: protowire.NotifyNewBlockTemplateResponseMessage.error:type_name -> protowire.RPCError
+	33,  // 71: protowire.MempoolEntryByAddress.sending:type_name -> protowire.MempoolEntry
+	33,  // 72: protowire.MempoolEntryByAddress.receiving:type_name -> protowire.MempoolEntry
+	104, // 73: protowire.GetMempoolEntriesByAddressesResponseMessage.entries:type_name -> protowire.MempoolEntryByAddress
+	1,   // 74: protowire.GetMempoolEntriesByAddressesResponseMessage.error:type_name -> protowire.RPCError
+	75,  // [75:75] is the sub-list for method output_type
+	75,  // [75:75] is the sub-list for method input_type
+	75,  // [75:75] is the sub-list for extension type_name
+	75,  // [75:75] is the sub-list for extension extendee
+	0,   // [0:75] is the sub-list for field type_name
 }
 
 func init() { file_rpc_proto_init() }
@@ -7962,6 +8158,42 @@ func file_rpc_proto_init() {
 				return nil
 			}
 		}
+		file_rpc_proto_msgTypes[103].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*MempoolEntryByAddress); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_rpc_proto_msgTypes[104].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*GetMempoolEntriesByAddressesRequestMessage); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_rpc_proto_msgTypes[105].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*GetMempoolEntriesByAddressesResponseMessage); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
@@ -7969,7 +8201,7 @@ func file_rpc_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_rpc_proto_rawDesc,
 			NumEnums:      1,
-			NumMessages:   103,
+			NumMessages:   106,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

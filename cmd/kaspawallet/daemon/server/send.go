@@ -7,7 +7,7 @@ import (
 )
 
 func (s *server) Send(_ context.Context, request *pb.SendRequest) (*pb.SendResponse, error) {
-	unsignedTransactions, err := s.createUnsignedTransactions(request.ToAddress, request.Amount)
+	unsignedTransactions, err := s.createUnsignedTransactions(request.ToAddress, request.Amount, request.From)
 	if err != nil {
 		return nil, err
 	}
