@@ -202,10 +202,14 @@ func (m *Manager) notifyVirtualSelectedParentChainChanged(virtualChangeSet *exte
 	onEnd := logger.LogAndMeasureExecutionTime(log, "RPCManager.NotifyVirtualSelectedParentChainChanged")
 	defer onEnd()
 
-	notification, err := m.context.ConvertVirtualSelectedParentChainChangesToChainChangedNotificationMessage(
-		virtualChangeSet.VirtualSelectedParentChainChanges, true)
-	if err != nil {
-		return err
+	if m.context.NotificationManager.DoesAnyListenerPropagateVirtualSelectedParentChainChanged() {
+		notification, err := m.context.ConvertVirtualSelectedParentChainChangesToChainChangedNotificationMessage(
+			virtualChangeSet.VirtualSelectedParentChainChanges, true)
+		if err != nil {
+			return err
+		}
+		return m.context.NotificationManager.NotifyVirtualSelectedParentChainChanged(notification)
 	}
-	return m.context.NotificationManager.NotifyVirtualSelectedParentChainChanged(notification)
+
+	return nil
 }

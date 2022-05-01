@@ -122,6 +122,17 @@ func (nm *NotificationManager) NotifyVirtualSelectedParentChainChanged(
 	return nil
 }
 
+// DoesAnyListenerPropagateVirtualSelectedParentChainChanged returns true if there's any listener that is
+// subscribed to VirtualSelectedParentChainChanged notifications.
+func (nm *NotificationManager) DoesAnyListenerPropagateVirtualSelectedParentChainChanged() bool {
+	for _, listener := range nm.listeners {
+		if listener.propagateVirtualSelectedParentChainChangedNotifications {
+			return true
+		}
+	}
+	return false
+}
+
 // NotifyFinalityConflict notifies the notification manager that there's a finality conflict in the DAG
 func (nm *NotificationManager) NotifyFinalityConflict(notification *appmessage.FinalityConflictNotificationMessage) error {
 	nm.RLock()
