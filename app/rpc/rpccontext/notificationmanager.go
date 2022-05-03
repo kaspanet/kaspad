@@ -122,15 +122,16 @@ func (nm *NotificationManager) NotifyVirtualSelectedParentChainChanged(
 	return nil
 }
 
-// DoesAnyListenerPropagateVirtualSelectedParentChainChanged returns true if there's any listener that is
+// AllListenersThatPropagateVirtualSelectedParentChainChanged returns true if there's any listener that is
 // subscribed to VirtualSelectedParentChainChanged notifications.
-func (nm *NotificationManager) DoesAnyListenerPropagateVirtualSelectedParentChainChanged() bool {
+func (nm *NotificationManager) AllListenersThatPropagateVirtualSelectedParentChainChanged() []*NotificationListener {
+	var listenersThatPropagate []*NotificationListener
 	for _, listener := range nm.listeners {
 		if listener.propagateVirtualSelectedParentChainChangedNotifications {
-			return true
+			listenersThatPropagate = append(listenersThatPropagate, listener)
 		}
 	}
-	return false
+	return listenersThatPropagate
 }
 
 // NotifyFinalityConflict notifies the notification manager that there's a finality conflict in the DAG
@@ -275,6 +276,12 @@ func newNotificationListener() *NotificationListener {
 		propagateNewBlockTemplateNotifications:                      false,
 		propagatePruningPointUTXOSetOverrideNotifications:           false,
 	}
+}
+
+// IncludeAcceptedTransactionIDsInVirtualSelectedParentChainChangedNotifications returns true if this listener
+// includes accepted transaction IDs in it's virtual-selected-parent-chain-changed notifications
+func (nl *NotificationListener) IncludeAcceptedTransactionIDsInVirtualSelectedParentChainChangedNotifications() bool {
+	return nl.includeAcceptedTransactionIDsInVirtualSelectedParentChainChangedNotifications
 }
 
 // PropagateBlockAddedNotifications instructs the listener to send block added notifications
