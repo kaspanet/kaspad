@@ -2,10 +2,11 @@ package integration
 
 import (
 	"encoding/hex"
-	"github.com/kaspanet/kaspad/app/protocol/flowcontext"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/kaspanet/kaspad/app/protocol/flowcontext"
 
 	"github.com/kaspanet/kaspad/domain/consensus/utils/utxo"
 
@@ -60,11 +61,14 @@ func TestTxRelay(t *testing.T) {
 
 	txAddedToMempoolChan := make(chan struct{})
 
+	mempoolAddressQuery := []string{payee.miningAddress, payer.miningAddress}
+
 	spawn("TestTxRelay-WaitForTransactionPropagation", func() {
 		ticker := time.NewTicker(10 * time.Millisecond)
 		defer ticker.Stop()
 
 		for range ticker.C {
+
 			_, err := payee.rpcClient.GetMempoolEntry(txID)
 			if err != nil {
 				if strings.Contains(err.Error(), "not found") {
@@ -73,6 +77,31 @@ func TestTxRelay(t *testing.T) {
 
 				t.Fatalf("Error getting mempool entry: %+v", err)
 			}
+
+			mempoolEntriesByAddresses, err := payee.rpcClient.GetMempoolEntriesByAddresses(mempoolAddressQuery)
+			if err != nil {
+				t.Fatalf("Error getting mempool entry: %+v", err)
+			}
+			for _, mempoolEntryByAddress := range mempoolEntriesByAddresses.Entries {
+				if payee.miningAddress == mempoolEntryByAddress.Address {
+					if len(mempoolEntryByAddress.Sending) > 1 {
+						t.Fatal("Error payee is sending")
+					}
+					if len(mempoolEntryByAddress.Receiving) < 1 {
+						t.Fatal("Error payee is not reciving")
+					}
+				}
+				if payer.miningAddress == mempoolEntryByAddress.Address {
+					if len(mempoolEntryByAddress.Sending) < 1 {
+						t.Fatal("Error payer is not sending")
+					}
+					if len(mempoolEntryByAddress.Receiving) > 1 {
+						t.Fatal("Error payer is reciving")
+					}
+				}
+				continue
+			}
+
 			close(txAddedToMempoolChan)
 			return
 		}

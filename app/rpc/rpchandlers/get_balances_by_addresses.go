@@ -23,7 +23,7 @@ func HandleGetBalancesByAddresses(context *rpccontext.Context, _ *router.Router,
 
 		if err != nil {
 			rpcError := &appmessage.RPCError{}
-			if !errors.As(err, rpcError) {
+			if !errors.As(err, &rpcError) {
 				return nil, err
 			}
 			errorMessage := &appmessage.GetUTXOsByAddressesResponseMessage{}
