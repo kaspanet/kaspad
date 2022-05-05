@@ -35,13 +35,22 @@ func (x *VersionMessage) toAppMessage() (appmessage.Message, error) {
 		return nil, err
 	}
 
+	if x.Id == nil {
+		return nil, errors.Wrapf(errorNil, "VersionMessage.Id is nil")
+	}
+
+	appMsgID, err := id.FromBytes(x.Id)
+	if err != nil {
+		return nil, err
+	}
+
 	return &appmessage.MsgVersion{
 		ProtocolVersion: x.ProtocolVersion,
 		Network:         x.Network,
 		Services:        appmessage.ServiceFlag(x.Services),
 		Timestamp:       mstime.UnixMilliseconds(x.Timestamp),
 		Address:         address,
-		ID:              id.FromBytes(x.Id),
+		ID:              appMsgID,
 		UserAgent:       x.UserAgent,
 		DisableRelayTx:  x.DisableRelayTx,
 		SubnetworkID:    subnetworkID,

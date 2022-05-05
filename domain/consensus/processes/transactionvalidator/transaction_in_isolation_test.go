@@ -22,7 +22,6 @@ type txSubnetworkData struct {
 func TestValidateTransactionInIsolationAndPopulateMass(t *testing.T) {
 	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
 		cfg := *consensusConfig
-		cfg.HF1DAAScore = 20
 
 		factory := consensus.NewFactory()
 		tc, teardown, err := factory.NewTestConsensus(&cfg, "TestValidateTransactionInIsolationAndPopulateMass")
@@ -45,22 +44,22 @@ func TestValidateTransactionInIsolationAndPopulateMass(t *testing.T) {
 			{"good one", 1, 1, 1, subnetworks.SubnetworkIDNative, nil, nil, nil, 0},
 			{"no inputs", 0, 1, 1, subnetworks.SubnetworkIDNative, nil, nil, ruleerrors.ErrNoTxInputs, 0},
 			{"no outputs", 1, 0, 1, subnetworks.SubnetworkIDNative, nil, nil, nil, 0},
-			{"too much sompi in one output", 1, 1, constants.MaxSompiBeforeHF1 + 1,
+			{"too much sompi in one output", 1, 1, constants.MaxSompi + 1,
 				subnetworks.SubnetworkIDNative,
 				nil,
 				nil,
 				ruleerrors.ErrBadTxOutValue, 0},
-			{"too much sompi before- valid now", 1, 1, constants.MaxSompiBeforeHF1 + 1,
+			{"too much sompi before- valid now", 1, 1, 21e14 + 1,
 				subnetworks.SubnetworkIDNative,
 				nil,
 				nil,
-				nil, cfg.HF1DAAScore},
-			{"too much sompi in one output - after hf", 1, 1, constants.MaxSompiAfterHF1 + 1,
+				nil, 0},
+			{"too much sompi in one output - after hf", 1, 1, constants.MaxSompi + 1,
 				subnetworks.SubnetworkIDNative,
 				nil,
 				nil,
-				ruleerrors.ErrBadTxOutValue, cfg.HF1DAAScore},
-			{"too much sompi in one output", 1, 1, constants.MaxSompiAfterHF1 + 1,
+				ruleerrors.ErrBadTxOutValue, 0},
+			{"too much sompi in one output", 1, 1, constants.MaxSompi + 1,
 				subnetworks.SubnetworkIDNative,
 				nil,
 				nil,
