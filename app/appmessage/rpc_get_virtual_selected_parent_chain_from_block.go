@@ -4,7 +4,8 @@ package appmessage
 // its respective RPC message
 type GetVirtualSelectedParentChainFromBlockRequestMessage struct {
 	baseMessage
-	StartHash string
+	StartHash                     string
+	IncludeAcceptedTransactionIDs bool
 }
 
 // Command returns the protocol command string for the message
@@ -13,10 +14,20 @@ func (msg *GetVirtualSelectedParentChainFromBlockRequestMessage) Command() Messa
 }
 
 // NewGetVirtualSelectedParentChainFromBlockRequestMessage returns a instance of the message
-func NewGetVirtualSelectedParentChainFromBlockRequestMessage(startHash string) *GetVirtualSelectedParentChainFromBlockRequestMessage {
+func NewGetVirtualSelectedParentChainFromBlockRequestMessage(
+	startHash string, includeAcceptedTransactionIDs bool) *GetVirtualSelectedParentChainFromBlockRequestMessage {
+
 	return &GetVirtualSelectedParentChainFromBlockRequestMessage{
-		StartHash: startHash,
+		StartHash:                     startHash,
+		IncludeAcceptedTransactionIDs: includeAcceptedTransactionIDs,
 	}
+}
+
+// AcceptedTransactionIDs is a part of the GetVirtualSelectedParentChainFromBlockResponseMessage and
+// VirtualSelectedParentChainChangedNotificationMessage appmessages
+type AcceptedTransactionIDs struct {
+	AcceptingBlockHash     string
+	AcceptedTransactionIDs []string
 }
 
 // GetVirtualSelectedParentChainFromBlockResponseMessage is an appmessage corresponding to
@@ -25,6 +36,7 @@ type GetVirtualSelectedParentChainFromBlockResponseMessage struct {
 	baseMessage
 	RemovedChainBlockHashes []string
 	AddedChainBlockHashes   []string
+	AcceptedTransactionIDs  []*AcceptedTransactionIDs
 
 	Error *RPCError
 }
@@ -36,10 +48,11 @@ func (msg *GetVirtualSelectedParentChainFromBlockResponseMessage) Command() Mess
 
 // NewGetVirtualSelectedParentChainFromBlockResponseMessage returns a instance of the message
 func NewGetVirtualSelectedParentChainFromBlockResponseMessage(removedChainBlockHashes,
-	addedChainBlockHashes []string) *GetVirtualSelectedParentChainFromBlockResponseMessage {
+	addedChainBlockHashes []string, acceptedTransactionIDs []*AcceptedTransactionIDs) *GetVirtualSelectedParentChainFromBlockResponseMessage {
 
 	return &GetVirtualSelectedParentChainFromBlockResponseMessage{
 		RemovedChainBlockHashes: removedChainBlockHashes,
 		AddedChainBlockHashes:   addedChainBlockHashes,
+		AcceptedTransactionIDs:  acceptedTransactionIDs,
 	}
 }

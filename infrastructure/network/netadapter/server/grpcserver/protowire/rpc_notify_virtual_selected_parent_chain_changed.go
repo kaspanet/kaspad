@@ -9,11 +9,15 @@ func (x *KaspadMessage_NotifyVirtualSelectedParentChainChangedRequest) toAppMess
 	if x == nil {
 		return nil, errors.Wrapf(errorNil, "KaspadMessage_NotifyVirtualSelectedParentChainChangedRequest is nil")
 	}
-	return &appmessage.NotifyVirtualSelectedParentChainChangedRequestMessage{}, nil
+	return &appmessage.NotifyVirtualSelectedParentChainChangedRequestMessage{
+		IncludeAcceptedTransactionIDs: x.NotifyVirtualSelectedParentChainChangedRequest.IncludeAcceptedTransactionIds,
+	}, nil
 }
 
-func (x *KaspadMessage_NotifyVirtualSelectedParentChainChangedRequest) fromAppMessage(_ *appmessage.NotifyVirtualSelectedParentChainChangedRequestMessage) error {
-	x.NotifyVirtualSelectedParentChainChangedRequest = &NotifyVirtualSelectedParentChainChangedRequestMessage{}
+func (x *KaspadMessage_NotifyVirtualSelectedParentChainChangedRequest) fromAppMessage(appmessage *appmessage.NotifyVirtualSelectedParentChainChangedRequestMessage) error {
+	x.NotifyVirtualSelectedParentChainChangedRequest = &NotifyVirtualSelectedParentChainChangedRequestMessage{
+		IncludeAcceptedTransactionIds: appmessage.IncludeAcceptedTransactionIDs,
+	}
 	return nil
 }
 
@@ -60,6 +64,12 @@ func (x *KaspadMessage_VirtualSelectedParentChainChangedNotification) fromAppMes
 	x.VirtualSelectedParentChainChangedNotification = &VirtualSelectedParentChainChangedNotificationMessage{
 		RemovedChainBlockHashes: message.RemovedChainBlockHashes,
 		AddedChainBlockHashes:   message.AddedChainBlockHashes,
+		AcceptedTransactionIds:  make([]*AcceptedTransactionIds, len(message.AcceptedTransactionIDs)),
+	}
+
+	for i, acceptedTransactionIDs := range message.AcceptedTransactionIDs {
+		x.VirtualSelectedParentChainChangedNotification.AcceptedTransactionIds[i] = &AcceptedTransactionIds{}
+		x.VirtualSelectedParentChainChangedNotification.AcceptedTransactionIds[i].fromAppMessage(acceptedTransactionIDs)
 	}
 	return nil
 }
@@ -68,8 +78,14 @@ func (x *VirtualSelectedParentChainChangedNotificationMessage) toAppMessage() (a
 	if x == nil {
 		return nil, errors.Wrapf(errorNil, "VirtualSelectedParentChainChangedNotificationMessage is nil")
 	}
-	return &appmessage.VirtualSelectedParentChainChangedNotificationMessage{
+	message := &appmessage.VirtualSelectedParentChainChangedNotificationMessage{
 		RemovedChainBlockHashes: x.RemovedChainBlockHashes,
 		AddedChainBlockHashes:   x.AddedChainBlockHashes,
-	}, nil
+		AcceptedTransactionIDs:  make([]*appmessage.AcceptedTransactionIDs, len(x.AcceptedTransactionIds)),
+	}
+
+	for i, acceptedTransactionIds := range x.AcceptedTransactionIds {
+		message.AcceptedTransactionIDs[i] = acceptedTransactionIds.toAppMessage()
+	}
+	return message, nil
 }

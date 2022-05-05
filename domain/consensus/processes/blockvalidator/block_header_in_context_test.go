@@ -108,11 +108,7 @@ func TestCheckParentsIncest(t *testing.T) {
 			t.Fatalf("AddBlock: %+v", err)
 		}
 
-		version := constants.BlockVersionBeforeHF1
-		if consensusConfig.HF1DAAScore == 0 {
-			version = constants.BlockVersionAfterHF1
-		}
-
+		version := constants.BlockVersion
 		directParentsRelationBlock := &externalapi.DomainBlock{
 			Header: blockheader.NewImmutableBlockHeader(
 				version,
