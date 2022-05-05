@@ -52,18 +52,25 @@ func (m *Manager) NotifyBlockAddedToDAG(block *externalapi.DomainBlock, virtualC
 	onEnd := logger.LogAndMeasureExecutionTime(log, "RPCManager.NotifyBlockAddedToDAG")
 	defer onEnd()
 
-	err := m.NotifyVirtualChange(virtualChangeSet)
-	if err != nil {
-		return err
-	}
-
 	rpcBlock := appmessage.DomainBlockToRPCBlock(block)
-	err = m.context.PopulateBlockWithVerboseData(rpcBlock, block.Header, block, false)
+	err := m.context.PopulateBlockWithVerboseData(rpcBlock, block.Header, block, true)
 	if err != nil {
 		return err
 	}
 	blockAddedNotification := appmessage.NewBlockAddedNotificationMessage(rpcBlock)
-	return m.context.NotificationManager.NotifyBlockAdded(blockAddedNotification)
+	err = m.context.NotificationManager.NotifyBlockAdded(blockAddedNotification)
+	if err != nil {
+		return err
+	}
+
+	// When block was added during IBD - it doesn't incur any Virtual change,
+	// thus no notification is needed.
+	if len(virtualChangeSet.VirtualSelectedParentChainChanges.Added) == 0 &&
+		len(virtualChangeSet.VirtualSelectedParentChainChanges.Removed) == 0 {
+
+		return nil
+	}
+	return m.NotifyVirtualChange(virtualChangeSet)
 }
 
 // NotifyVirtualChange notifies the manager that the virtual block has been changed.
@@ -195,10 +202,25 @@ func (m *Manager) notifyVirtualSelectedParentChainChanged(virtualChangeSet *exte
 	onEnd := logger.LogAndMeasureExecutionTime(log, "RPCManager.NotifyVirtualSelectedParentChainChanged")
 	defer onEnd()
 
-	notification, err := m.context.ConvertVirtualSelectedParentChainChangesToChainChangedNotificationMessage(
-		virtualChangeSet.VirtualSelectedParentChainChanges)
-	if err != nil {
-		return err
+	listenersThatPropagateSelectedParentChanged :=
+		m.context.NotificationManager.AllListenersThatPropagateVirtualSelectedParentChainChanged()
+	if len(listenersThatPropagateSelectedParentChanged) > 0 {
+		// Generating acceptedTransactionIDs is a heavy operation, so we check if it's needed by any listener.
+		includeAcceptedTransactionIDs := false
+		for _, listener := range listenersThatPropagateSelectedParentChanged {
+			if listener.IncludeAcceptedTransactionIDsInVirtualSelectedParentChainChangedNotifications() {
+				includeAcceptedTransactionIDs = true
+				break
+			}
+		}
+
+		notification, err := m.context.ConvertVirtualSelectedParentChainChangesToChainChangedNotificationMessage(
+			virtualChangeSet.VirtualSelectedParentChainChanges, includeAcceptedTransactionIDs)
+		if err != nil {
+			return err
+		}
+		return m.context.NotificationManager.NotifyVirtualSelectedParentChainChanged(notification)
 	}
-	return m.context.NotificationManager.NotifyVirtualSelectedParentChainChanged(notification)
+
+	return nil
 }
