@@ -37,6 +37,19 @@ func (csm *consensusStateManager) ResolveVirtual(maxBlocksToResolve uint64) (*ex
 	isCompletelyResolved := true
 	for _, tip := range tips {
 		log.Debugf("Resolving tip %s", tip)
+		isViolatingFinality, shouldNotify, err := csm.isViolatingFinality(readStagingArea, tip)
+		if err != nil {
+			return nil, false, err
+		}
+
+		if isViolatingFinality {
+			if shouldNotify {
+				//TODO: Send finality conflict notification
+				log.Warnf("Skipping %s tip resolution because it violates finality", tip)
+			}
+			continue
+		}
+
 		resolveStagingArea := model.NewStagingArea()
 		unverifiedBlocks, err := csm.getUnverifiedChainBlocks(resolveStagingArea, tip)
 		if err != nil {
