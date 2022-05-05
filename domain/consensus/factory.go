@@ -476,6 +476,9 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 		genesisBlock: config.GenesisBlock,
 		genesisHash:  config.GenesisHash,
 
+		expectedDAAWindowDurationInMilliseconds: config.TargetTimePerBlock.Milliseconds() *
+			int64(config.DifficultyAdjustmentWindowSize),
+
 		blockProcessor:        blockProcessor,
 		blockBuilder:          blockBuilder,
 		consensusStateManager: consensusStateManager,

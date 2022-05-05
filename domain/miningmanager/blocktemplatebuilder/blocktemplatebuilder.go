@@ -142,7 +142,8 @@ func (btb *blockTemplateBuilder) BuildBlockTemplate(
 		len(candidateTxs))
 
 	blockTxs := btb.selectTransactions(candidateTxs)
-	blk, coinbaseHasRedReward, err := btb.consensusReference.Consensus().BuildBlockWithTemplateMetadata(coinbaseData, blockTxs.selectedTxs)
+	consensus := btb.consensusReference.Consensus()
+	blk, coinbaseHasRedReward, err := consensus.BuildBlockWithTemplateMetadata(coinbaseData, blockTxs.selectedTxs)
 
 	invalidTxsErr := ruleerrors.ErrInvalidTransactionsInNewBlock{}
 	if errors.As(err, &invalidTxsErr) {
@@ -169,10 +170,16 @@ func (btb *blockTemplateBuilder) BuildBlockTemplate(
 	log.Debugf("Created new block template (%d transactions, %d in fees, %d mass, target difficulty %064x)",
 		len(blk.Transactions), blockTxs.totalFees, blockTxs.totalMass, difficulty.CompactToBig(blk.Header.Bits()))
 
+	isNearlySynced, err := consensus.IsNearlySynced()
+	if err != nil {
+		return nil, err
+	}
+
 	return &consensusexternalapi.DomainBlockTemplate{
 		Block:                blk,
 		CoinbaseData:         coinbaseData,
 		CoinbaseHasRedReward: coinbaseHasRedReward,
+		IsNearlySynced:       isNearlySynced,
 	}, nil
 }
 

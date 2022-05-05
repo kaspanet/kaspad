@@ -5,6 +5,7 @@ type DomainBlockTemplate struct {
 	Block                *DomainBlock
 	CoinbaseData         *DomainCoinbaseData
 	CoinbaseHasRedReward bool
+	IsNearlySynced       bool
 }
 
 // Clone returns a clone of DomainBlockTemplate
@@ -13,5 +14,6 @@ func (bt *DomainBlockTemplate) Clone() *DomainBlockTemplate {
 		Block:                bt.Block.Clone(),
 		CoinbaseData:         bt.CoinbaseData.Clone(),
 		CoinbaseHasRedReward: bt.CoinbaseHasRedReward,
+		IsNearlySynced:       bt.IsNearlySynced,
 	}
 }

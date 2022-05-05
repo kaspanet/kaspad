@@ -1,6 +1,7 @@
 package consensus
 
 import (
+	"github.com/kaspanet/kaspad/util/mstime"
 	"math/big"
 	"sync"
 
@@ -19,6 +20,8 @@ type consensus struct {
 
 	genesisBlock *externalapi.DomainBlock
 	genesisHash  *externalapi.DomainHash
+
+	expectedDAAWindowDurationInMilliseconds int64
 
 	blockProcessor        model.BlockProcessor
 	blockBuilder          model.BlockBuilder
@@ -893,4 +896,39 @@ func (s *consensus) VirtualMergeDepthRoot() (*externalapi.DomainHash, error) {
 
 	stagingArea := model.NewStagingArea()
 	return s.mergeDepthManager.VirtualMergeDepthRoot(stagingArea)
+}
+
+// IsNearlySynced returns whether this node is considered synced or close to being synced. This info
+// is used to determine if it's ok to use a block template from this node for mining purposes.
+func (s *consensus) IsNearlySynced() (bool, error) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	stagingArea := model.NewStagingArea()
+	virtualGHOSTDAGData, err := s.ghostdagDataStores[0].Get(s.databaseContext, stagingArea, model.VirtualBlockHash, false)
+	if err != nil {
+		return false, err
+	}
+
+	if virtualGHOSTDAGData.SelectedParent().Equal(s.genesisHash) {
+		return false, nil
+	}
+
+	virtualSelectedParentHeader, err := s.blockHeaderStore.BlockHeader(s.databaseContext, stagingArea, virtualGHOSTDAGData.SelectedParent())
+	if err != nil {
+		return false, err
+	}
+
+	now := mstime.Now().UnixMilliseconds()
+	// As a heuristic, we allow the node to mine if he is likely to be within the current DAA window of fully synced nodes.
+	// Such blocks contribute to security by maintaining the current difficulty despite possibly being slightly out of sync.
+	if now-virtualSelectedParentHeader.TimeInMilliseconds() < s.expectedDAAWindowDurationInMilliseconds {
+		log.Debugf("The selected tip timestamp is recent (%d), so IsNearlySynced returns true",
+			virtualSelectedParentHeader.TimeInMilliseconds())
+		return true, nil
+	}
+
+	log.Debugf("The selected tip timestamp is old (%d), so IsNearlySynced returns false",
+		virtualSelectedParentHeader.TimeInMilliseconds())
+	return false, nil
 }
