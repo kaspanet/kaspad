@@ -58,12 +58,12 @@ func (id *ID) SerializeToBytes() ([]byte, error) {
 }
 
 // FromBytes returns an ID deserialized from the given byte slice.
-func FromBytes(serializedID []byte) *ID {
+func FromBytes(serializedID []byte) (*ID, error) {
 	r := bytes.NewReader(serializedID)
 	newID := new(ID)
 	err := newID.Deserialize(r)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
-	return newID
+	return newID, nil
 }

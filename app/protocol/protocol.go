@@ -23,7 +23,7 @@ func (m *Manager) routerInitializer(router *routerpkg.Router, netConnection *net
 	// errChan is used by the flow goroutines to return to runFlows when an error occurs.
 	// They are both initialized here and passed to register flows.
 	isStopping := uint32(0)
-	errChan := make(chan error)
+	errChan := make(chan error, 1)
 
 	receiveVersionRoute, sendVersionRoute, receiveReadyRoute := registerHandshakeRoutes(router)
 

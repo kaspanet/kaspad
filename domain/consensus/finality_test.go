@@ -185,7 +185,6 @@ func TestBoundedMergeDepth(t *testing.T) {
 		consensusConfig.K = 5
 		consensusConfig.MergeDepth = 7
 		consensusConfig.FinalityDuration = 20 * consensusConfig.TargetTimePerBlock
-		consensusConfig.HF1DAAScore = consensusConfig.GenesisBlock.Header.DAAScore() + 200
 
 		if uint64(consensusConfig.K) >= consensusConfig.FinalityDepth() {
 			t.Fatal("K must be smaller than finality duration for this test to run")
@@ -483,56 +482,6 @@ func TestBoundedMergeDepth(t *testing.T) {
 			}
 		}
 
-		test(consensusConfig.FinalityDepth(), consensusConfig.GenesisHash, true, true)
-		virtualDAAScore, err := consensusReal.GetVirtualDAAScore()
-		if err != nil {
-			t.Fatalf("GetVirtualDAAScore: %+v", err)
-		}
-
-		if virtualDAAScore > consensusConfig.HF1DAAScore {
-			t.Fatalf("Hard fork is already activated")
-		}
-
-		tipBeforeHFActivated, err := consensusReal.GetVirtualSelectedParent()
-		if err != nil {
-			t.Fatalf("GetVirtualSelectedParent: %+v", err)
-		}
-
-		tip := tipBeforeHFActivated
-		for {
-			tip, _, err = consensusReal.AddBlock([]*externalapi.DomainHash{tip}, nil, nil)
-			if err != nil {
-				t.Fatalf("Failed adding block: %+v", err)
-			}
-
-			daaScore, err := consensusReal.DAABlocksStore().DAAScore(consensusReal.DatabaseContext(), model.NewStagingArea(), tip)
-			if err != nil {
-				t.Fatalf("Failed adding block: %+v", err)
-			}
-
-			// We check what happens when on the transition between rules: if we merge a chain that
-			// started before the HF was activated, but the HF was already activated for the merging
-			// block, the HF rules should apply.
-			// The checked block in `test` is going to have a DAA score of `tip.DAAScore + depth + 5`,
-			// so this is why we started to test from this depth.
-			if daaScore == consensusConfig.HF1DAAScore-consensusConfig.MergeDepth-5 {
-				test(consensusConfig.MergeDepth, tip, true, true)
-			}
-
-			if daaScore > consensusConfig.HF1DAAScore {
-				virtualSelectedParent, err := consensusReal.GetVirtualSelectedParent()
-				if err != nil {
-					t.Fatalf("GetVirtualSelectedParent: %+v", err)
-				}
-
-				if virtualSelectedParent.Equal(tip) {
-					break
-				}
-			}
-		}
-
-		test(consensusConfig.MergeDepth, tip, true, true)
-		test(consensusConfig.FinalityDepth(), tipBeforeHFActivated, false, true)
-		test(consensusConfig.MergeDepth, tipBeforeHFActivated, false, false)
+		test(consensusConfig.MergeDepth, consensusConfig.GenesisHash, true, true)
 	})
 }
