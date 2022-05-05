@@ -157,15 +157,31 @@ func (s *consensus) BuildBlock(coinbaseData *externalapi.DomainCoinbaseData,
 	return block, err
 }
 
-// BuildBlockWithTemplateMetadata builds a block over the current state, with the transactions
-// selected by the given transactionSelector plus metadata information related to coinbase rewards
-func (s *consensus) BuildBlockWithTemplateMetadata(coinbaseData *externalapi.DomainCoinbaseData,
-	transactions []*externalapi.DomainTransaction) (block *externalapi.DomainBlock, coinbaseHasRedReward bool, err error) {
+// BuildBlockTemplate builds a block over the current state, with the transactions
+// selected by the given transactionSelector plus metadata information related to
+// coinbase rewards and node sync status
+func (s *consensus) BuildBlockTemplate(coinbaseData *externalapi.DomainCoinbaseData,
+	transactions []*externalapi.DomainTransaction) (*externalapi.DomainBlockTemplate, error) {
 
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	return s.blockBuilder.BuildBlock(coinbaseData, transactions)
+	block, hasRedReward, err := s.blockBuilder.BuildBlock(coinbaseData, transactions)
+	if err != nil {
+		return nil, err
+	}
+
+	isNearlySynced, err := s.isNearlySyncedNoLock()
+	if err != nil {
+		return nil, err
+	}
+
+	return &externalapi.DomainBlockTemplate{
+		Block:                block,
+		CoinbaseData:         coinbaseData,
+		CoinbaseHasRedReward: hasRedReward,
+		IsNearlySynced:       isNearlySynced,
+	}, nil
 }
 
 // ValidateAndInsertBlock validates the given block and, if valid, applies it
@@ -898,12 +914,16 @@ func (s *consensus) VirtualMergeDepthRoot() (*externalapi.DomainHash, error) {
 	return s.mergeDepthManager.VirtualMergeDepthRoot(stagingArea)
 }
 
-// IsNearlySynced returns whether this node is considered synced or close to being synced. This info
+// IsNearlySynced returns whether this consensus is considered synced or close to being synced. This info
 // is used to determine if it's ok to use a block template from this node for mining purposes.
 func (s *consensus) IsNearlySynced() (bool, error) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
+	return s.isNearlySyncedNoLock()
+}
+
+func (s *consensus) isNearlySyncedNoLock() (bool, error) {
 	stagingArea := model.NewStagingArea()
 	virtualGHOSTDAGData, err := s.ghostdagDataStores[0].Get(s.databaseContext, stagingArea, model.VirtualBlockHash, false)
 	if err != nil {
