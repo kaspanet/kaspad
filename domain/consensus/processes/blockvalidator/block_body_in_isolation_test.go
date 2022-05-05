@@ -1307,7 +1307,7 @@ func initBlockWithFirstTransactionDifferentThanCoinbase(consensusConfig *consens
 
 	return &externalapi.DomainBlock{
 		Header: blockheader.NewImmutableBlockHeader(
-			constants.BlockVersionBeforeHF1,
+			constants.BlockVersion,
 			[]externalapi.BlockLevelParents{[]*externalapi.DomainHash{consensusConfig.GenesisHash}},
 			merkle.CalculateHashMerkleRoot([]*externalapi.DomainTransaction{tx}),
 			&externalapi.DomainHash{},

@@ -217,8 +217,7 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 		pastMedianTimeManager,
 		ghostdagDataStore,
 		daaBlocksStore,
-		txMassCalculator,
-		config.HF1DAAScore)
+		txMassCalculator)
 	difficultyManager := f.difficultyConstructor(
 		dbManager,
 		ghostdagManager,
@@ -266,7 +265,6 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 		finalityManager,
 		genesisHash,
 		config.MergeDepth,
-		config.HF1DAAScore,
 		ghostdagDataStore,
 		mergeDepthRootStore,
 		daaBlocksStore,
@@ -344,7 +342,6 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 		config.MaxBlockParents,
 		config.TimestampDeviationTolerance,
 		config.TargetTimePerBlock,
-		config.HF1DAAScore,
 		config.MaxBlockLevel,
 
 		dbManager,
@@ -393,7 +390,6 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 	blockBuilder := blockbuilder.New(
 		dbManager,
 		genesisHash,
-		config.HF1DAAScore,
 
 		difficultyManager,
 		pastMedianTimeManager,

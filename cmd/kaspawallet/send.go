@@ -32,8 +32,10 @@ func send(conf *sendConfig) error {
 	defer cancel()
 
 	sendAmountSompi := uint64(conf.SendAmount * constants.SompiPerKaspa)
+
 	createUnsignedTransactionsResponse, err :=
 		daemonClient.CreateUnsignedTransactions(ctx, &pb.CreateUnsignedTransactionsRequest{
+			From:    conf.FromAddresses,
 			Address: conf.ToAddress,
 			Amount:  sendAmountSompi,
 		})
@@ -69,7 +71,7 @@ func send(conf *sendConfig) error {
 	fmt.Println("Transactions were sent successfully")
 	fmt.Println("Transaction ID(s): ")
 	for _, txID := range response.TxIDs {
-		fmt.Printf("\\t%s\\n", txID)
+		fmt.Printf("\t%s\n", txID)
 	}
 
 	return nil
