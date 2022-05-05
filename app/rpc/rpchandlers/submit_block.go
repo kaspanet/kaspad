@@ -19,7 +19,7 @@ func HandleSubmitBlock(context *rpccontext.Context, _ *router.Router, request ap
 	isSynced := false
 	// The node is considered synced if it has peers and consensus state is nearly synced
 	if context.ProtocolManager.Context().HasPeers() {
-		isSynced, err = context.ProtocolManager.Context().Domain().Consensus().IsNearlySynced()
+		isSynced, err = context.ProtocolManager.Context().IsNearlySynced()
 		if err != nil {
 			return nil, err
 		}
