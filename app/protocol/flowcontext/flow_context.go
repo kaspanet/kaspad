@@ -106,6 +106,7 @@ func (f *FlowContext) ShutdownChan() <-chan struct{} {
 	return f.shutdownChan
 }
 
+// IsNearlySynced returns whether current consensus is considered synced or close to being synced.
 func (f *FlowContext) IsNearlySynced() (bool, error) {
 	return f.Domain().Consensus().IsNearlySynced()
 }
