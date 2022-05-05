@@ -536,3 +536,136 @@ func TestBoundedMergeDepth(t *testing.T) {
 		test(consensusConfig.MergeDepth, tipBeforeHFActivated, false, false)
 	})
 }
+
+func TestFinalityResolveVirtual(t *testing.T) {
+	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
+		// Set finalityInterval to 20 blocks, so that test runs quickly
+		consensusConfig.FinalityDuration = 20 * consensusConfig.TargetTimePerBlock
+
+		factory := consensus.NewFactory()
+		tc, teardown, err := factory.NewTestConsensus(consensusConfig, "TestFinalityResolveVirtual")
+		if err != nil {
+			panic(err)
+		}
+		defer teardown(false)
+
+		tip := consensusConfig.GenesisHash
+		for {
+			tip, _, err = tc.AddBlock([]*externalapi.DomainHash{tip}, nil, nil)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			virtualFinalityPoint, err := tc.FinalityManager().VirtualFinalityPoint(model.NewStagingArea())
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if !virtualFinalityPoint.Equal(consensusConfig.GenesisHash) {
+				break
+			}
+		}
+
+		tcAttacker, teardownAttacker, err := factory.NewTestConsensus(consensusConfig, "TestFinalityResolveVirtual_attacker")
+		if err != nil {
+			panic(err)
+		}
+		defer teardownAttacker(false)
+
+		virtualSelectedParent, err := tc.GetVirtualSelectedParent()
+		if err != nil {
+			panic(err)
+		}
+
+		stagingArea := model.NewStagingArea()
+		virtualSelectedParentGHOSTDAGData, err := tc.GHOSTDAGDataStore().Get(tc.DatabaseContext(), stagingArea, virtualSelectedParent, false)
+		if err != nil {
+			panic(err)
+		}
+
+		t.Logf("Selected tip blue score %d", virtualSelectedParentGHOSTDAGData.BlueScore())
+
+		sideChain := make([]*externalapi.DomainBlock, 0)
+
+		for i := uint64(0); ; i++ {
+			tips, err := tcAttacker.Tips()
+			if err != nil {
+				panic(err)
+			}
+
+			block, _, err := tcAttacker.BuildBlockWithParents(tips, nil, nil)
+			if err != nil {
+				panic(err)
+			}
+
+			// We change the nonce of the first block so its hash won't be similar to any of the
+			// honest DAG blocks. As a result the rest of the side chain should have unique hashes
+			// as well.
+			if i == 0 {
+				mutableHeader := block.Header.ToMutable()
+				mutableHeader.SetNonce(uint64(rand.NewSource(84147).Int63()))
+				block.Header = mutableHeader.ToImmutable()
+			}
+
+			_, err = tcAttacker.ValidateAndInsertBlock(block, true)
+			if err != nil {
+				panic(err)
+			}
+
+			sideChain = append(sideChain, block)
+
+			blockHash := consensushashing.BlockHash(block)
+			ghostdagData, err := tcAttacker.GHOSTDAGDataStore().Get(tcAttacker.DatabaseContext(), stagingArea, blockHash, false)
+			if err != nil {
+				panic(err)
+			}
+
+			if virtualSelectedParentGHOSTDAGData.BlueWork().Cmp(ghostdagData.BlueWork()) == -1 {
+				break
+			}
+		}
+
+		sideChainTipHash := consensushashing.BlockHash(sideChain[len(sideChain)-1])
+		sideChainTipGHOSTDAGData, err := tcAttacker.GHOSTDAGDataStore().Get(tcAttacker.DatabaseContext(), stagingArea, sideChainTipHash, false)
+		if err != nil {
+			panic(err)
+		}
+
+		t.Logf("Side chain tip (%s) blue score %d", sideChainTipHash, sideChainTipGHOSTDAGData.BlueScore())
+
+		for _, block := range sideChain {
+			_, err := tc.ValidateAndInsertBlock(block, false)
+			if err != nil {
+				panic(err)
+			}
+		}
+
+		for i := 0; ; i++ {
+			_, isCompletelyResolved, err := tc.ResolveVirtual()
+			if err != nil {
+				panic(err)
+			}
+
+			if isCompletelyResolved {
+				t.Log("Resolved virtual")
+				break
+			}
+		}
+
+		sideChainTipGHOSTDAGData, err = tc.GHOSTDAGDataStore().Get(tc.DatabaseContext(), stagingArea, sideChainTipHash, false)
+		if err != nil {
+			panic(err)
+		}
+
+		t.Logf("Side chain tip (%s) blue score %d", sideChainTipHash, sideChainTipGHOSTDAGData.BlueScore())
+
+		newVirtualSelectedParent, err := tc.GetVirtualSelectedParent()
+		if err != nil {
+			panic(err)
+		}
+
+		if !newVirtualSelectedParent.Equal(virtualSelectedParent) {
+			t.Fatalf("A finality reorg has happened")
+		}
+	})
+}
