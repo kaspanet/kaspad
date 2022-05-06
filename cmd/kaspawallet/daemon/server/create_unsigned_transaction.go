@@ -82,8 +82,11 @@ func (s *server) selectUTXOs(spendAmount uint64, feePerInput uint64) (
 		return nil, 0, err
 	}
 
-	for _, utxo := range s.utxosSortedByAmount {
+	for _, utxo := range s.availableUtxosSortedByAmount {
+		s.tracker.trackOutpointAsReserved(*utxo.Outpoint)
+
 		if !isUTXOSpendable(utxo, dagInfo.VirtualDAAScore, s.params.BlockCoinbaseMaturity) {
+			s.tracker.untrackOutpointAsReserved(*utxo.Outpoint)
 			continue
 		}
 
@@ -104,6 +107,9 @@ func (s *server) selectUTXOs(spendAmount uint64, feePerInput uint64) (
 	fee := feePerInput * uint64(len(selectedUTXOs))
 	totalSpend := spendAmount + fee
 	if totalValue < totalSpend {
+		for _, utxo := range selectedUTXOs {
+			s.tracker.untrackOutpointAsReserved(*utxo.Outpoint)
+		}
 		return nil, 0, errors.Errorf("Insufficient funds for send: %f required, while only %f available",
 			float64(totalSpend)/constants.SompiPerKaspa, float64(totalValue)/constants.SompiPerKaspa)
 	}

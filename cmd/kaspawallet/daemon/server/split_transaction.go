@@ -254,13 +254,16 @@ func (s *server) moreUTXOsForMergeTransaction(alreadySelectedUTXOs []*libkaspawa
 		alreadySelectedUTXOsMap[*alreadySelectedUTXO.Outpoint] = struct{}{}
 	}
 
-	for _, utxo := range s.utxosSortedByAmount {
+	for _, utxo := range s.availableUtxosSortedByAmount {
 		if _, ok := alreadySelectedUTXOsMap[*utxo.Outpoint]; ok {
 			continue
 		}
 		if !isUTXOSpendable(utxo, dagInfo.VirtualDAAScore, s.params.BlockCoinbaseMaturity) {
 			continue
 		}
+
+		s.tracker.trackOutpointAsReserved(*utxo.Outpoint)
+
 		additionalUTXOs = append(additionalUTXOs, &libkaspawallet.UTXO{
 			Outpoint:       utxo.Outpoint,
 			UTXOEntry:      utxo.UTXOEntry,
