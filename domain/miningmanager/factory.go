@@ -27,7 +27,7 @@ func (f *factory) NewMiningManager(consensusReference consensusreference.Consens
 		consensusReference:   consensusReference,
 		mempool:              mempool,
 		blockTemplateBuilder: blockTemplateBuilder,
-		cachingTime:          time.Now(),
+		cachingTime:          time.Time{},
 		cacheLock:            &sync.Mutex{},
 	}
 }

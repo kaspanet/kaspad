@@ -115,12 +115,6 @@ func (m *Manager) SetOnTransactionAddedToMempoolHandler(onTransactionAddedToMemp
 	m.context.SetOnTransactionAddedToMempoolHandler(onTransactionAddedToMempoolHandler)
 }
 
-// ShouldMine returns whether it's ok to use block template from this node
-// for mining purposes.
-func (m *Manager) ShouldMine() (bool, error) {
-	return m.context.IsNearlySynced()
-}
-
 // IsIBDRunning returns true if IBD is currently marked as running
 func (m *Manager) IsIBDRunning() bool {
 	return m.context.IsIBDRunning()
