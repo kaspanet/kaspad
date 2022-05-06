@@ -43,7 +43,15 @@ func (s *server) broadcast(transactions [][]byte, isDomain bool) ([]string, erro
 
 		txIDs[i], err = sendTransaction(s.rpcClient, tx)
 		if err != nil {
+			for _, input := range tx.Inputs {
+				s.tracker.untrackOutpointAsReserved(input.PreviousOutpoint)
+			}
 			return nil, err
+		}
+
+		for _, input := range tx.Inputs {
+			s.tracker.trackOutpointAsSent(input.PreviousOutpoint)
+			s.tracker.untrackOutpointAsReserved(input.PreviousOutpoint)
 		}
 	}
 
