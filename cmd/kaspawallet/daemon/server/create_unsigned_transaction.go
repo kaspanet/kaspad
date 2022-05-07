@@ -83,7 +83,7 @@ func (s *server) selectUTXOs(spendAmount uint64, feePerInput uint64) (
 	}
 
 	for _, utxo := range s.availableUtxosSortedByAmount {
-		s.tracker.trackOutpointAsReserved(*utxo.Outpoint)
+		s.tracker.trackOutpointAsReserved(utxo.Outpoint)
 
 		if !isUTXOSpendable(utxo, dagInfo.VirtualDAAScore, s.params.BlockCoinbaseMaturity) {
 			s.tracker.untrackOutpointAsReserved(*utxo.Outpoint)

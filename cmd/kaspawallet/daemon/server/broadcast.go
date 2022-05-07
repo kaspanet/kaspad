@@ -46,8 +46,10 @@ func (s *server) broadcast(transactions [][]byte, isDomain bool) ([]string, erro
 			return nil, err
 		}
 
+		s.tracker.trackTransactionID(tx.ID)
+
 		for _, input := range tx.Inputs {
-			s.tracker.trackOutpointAsSent(input.PreviousOutpoint)
+			s.tracker.trackOutpointAsSent(input.PreviousOutpoint.Clone())
 			s.tracker.untrackOutpointAsReserved(input.PreviousOutpoint)
 		}
 	}
@@ -60,5 +62,6 @@ func sendTransaction(client *rpcclient.RPCClient, tx *externalapi.DomainTransact
 	if err != nil {
 		return "", errors.Wrapf(err, "error submitting transaction")
 	}
+
 	return submitTransactionResponse.TransactionID, nil
 }
