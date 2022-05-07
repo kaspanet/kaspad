@@ -240,8 +240,8 @@ func (s *server) updateUTXOSet(entries []*appmessage.UTXOsByAddressesEntry) erro
 			}
 		}
 	}
-		
-	s.tracker.untrackTransactionDifference(mempoolTransactions)   //clean up transaction tracker
+
+	s.tracker.untrackTransactionDifference(mempoolTransactions)  //clean up transaction tracker
 	s.tracker.mempoolOutpoints = mempoolWalletAddressesOutpoints //clean up sent outpoint tracker
 
 	for i, entry := range entries {
@@ -289,7 +289,6 @@ func (s *server) updateUTXOSet(entries []*appmessage.UTXOsByAddressesEntry) erro
 	fmt.Println("utxos mempool", len(s.tracker.mempoolOutpoints))
 	fmt.Println("utxos reserved", len(s.tracker.reservedOutpoints))
 	fmt.Println("transactions in mempool", len(s.tracker.sentTransactions))
-
 
 	s.tracker.untrackOutpointDifferenceViaWalletUTXOs(utxos) //clean up reserved tracker
 
