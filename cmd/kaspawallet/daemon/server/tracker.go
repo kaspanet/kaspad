@@ -1,8 +1,9 @@
 package server
 
 import (
-	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"time"
+
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 )
 
 type reservedOutpoints map[externalapi.DomainOutpoint]int64
@@ -11,7 +12,7 @@ type sentOutpoints map[externalapi.DomainOutpoint]int64
 //Tracker tracks wallet server utxos via outpoints.
 type Tracker struct {
 	reservedOutpoints        reservedOutpoints
-	sentOutpoints            sentOutpoints
+	sentOutpoints	         sentOutpoints
 	expiryDurationInSecounds int64
 }
 
@@ -20,19 +21,18 @@ func NewTracker() *Tracker {
 	return &Tracker{
 		reservedOutpoints:        make(reservedOutpoints),
 		sentOutpoints:            make(sentOutpoints),
-		expiryDurationInSecounds: 3, // 3 is somewhat aribitary
+		expiryDurationInSecounds: 1, // 1 corrosponds to a sync ticker interval, as well as current average BPS
 	}
 }
 
 func (tr *Tracker) isOutpointAvailable(outpoint *externalapi.DomainOutpoint) bool {
 	var found bool
 
-	_, found = tr.reservedOutpoints[*outpoint]
-	if found {
+	if _, found = tr.reservedOutpoints[*outpoint]; found {
 		return false
 	}
-	_, found = tr.sentOutpoints[*outpoint]
-	if found {
+
+	if _, found = tr.sentOutpoints[*outpoint]; found {
 		return false
 	}
 
@@ -47,37 +47,30 @@ func (tr *Tracker) untrackExpiredOutpointsAsResrved() {
 		}
 
 	}
+	for outpoint, sentTimestamp := range tr.reservedOutpoints {
+		if currentTimestamp-sentTimestamp >= tr.expiryDurationInSecounds {
+			delete(tr.sentOutpoints, outpoint)
+		}
+
+	}
 }
 
 func (tr *Tracker) untrackOutpointDifferenceViaWalletUTXOs(utxos []*walletUTXO) {
 
-	for trackedOutpoint := range tr.sentOutpoints {
-		for _, utxo := range utxos {
-			outpoint := externalapi.DomainOutpoint{
-				TransactionID: utxo.Outpoint.TransactionID,
-				Index:         utxo.Outpoint.Index,
-			}
-			if trackedOutpoint == outpoint {
-				break
-			}
-			delete(tr.sentOutpoints, trackedOutpoint)
-
+	validOutpoints := make(map[externalapi.DomainOutpoint]bool, len(utxos))
+	for _, utxo := range utxos {
+		validOutpoints[*utxo.Outpoint] = true
+	}
+	for reservedOutpoint := range tr.reservedOutpoints {
+		if _, found := validOutpoints[reservedOutpoint]; !found {
+			delete(tr.reservedOutpoints, reservedOutpoint)
 		}
 	}
-
-	for trackedOutpoint := range tr.reservedOutpoints {
-		for _, utxo := range utxos {
-			outpoint := externalapi.DomainOutpoint{
-				TransactionID: utxo.Outpoint.TransactionID,
-				Index:         utxo.Outpoint.Index,
-			}
-			if trackedOutpoint == outpoint {
-				break
-			}
-			delete(tr.reservedOutpoints, trackedOutpoint)
+	for sentOutpoint := range tr.sentOutpoints {
+		if _, found := validOutpoints[sentOutpoint]; !found {
+			delete(tr.sentOutpoints, sentOutpoint)
 		}
 	}
-
 }
 
 func (tr *Tracker) trackOutpointAsReserved(outpoint externalapi.DomainOutpoint) {

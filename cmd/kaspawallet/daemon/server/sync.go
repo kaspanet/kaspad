@@ -1,6 +1,7 @@
 package server
 
 import (
+	"fmt"
 	"sort"
 	"time"
 
@@ -193,7 +194,7 @@ func (s *server) updateUTXOSet(entries []*appmessage.UTXOsByAddressesEntry) erro
 	utxos := make([]*walletUTXO, len(entries))
 
 	s.tracker.untrackExpiredOutpointsAsResrved() //untrack all stale reserved outpoints, before comparing in loop
-	availableUtxos := make([]*walletUTXO, len(entries))
+	availableUtxos := make([]*walletUTXO, 0)
 
 	for i, entry := range entries {
 		outpoint, err := appmessage.RPCOutpointToDomainOutpoint(entry.Outpoint)
@@ -229,11 +230,11 @@ func (s *server) updateUTXOSet(entries []*appmessage.UTXOsByAddressesEntry) erro
 
 	s.utxosSortedByAmount = utxos
 
-	sort.Slice(availableUtxos, func(i, j int) bool { return utxos[i].UTXOEntry.Amount() > utxos[j].UTXOEntry.Amount() })
+	sort.Slice(availableUtxos, func(i, j int) bool { return availableUtxos[i].UTXOEntry.Amount() > availableUtxos[j].UTXOEntry.Amount() })
 
 	s.availableUtxosSortedByAmount = availableUtxos
 
-	s.tracker.untrackOutpointDifferenceViaWalletUTXOs(utxos) //keep this call after sorting! should speed things up.
+	s.tracker.untrackOutpointDifferenceViaWalletUTXOs(utxos) //clean up tracker
 
 	return nil
 }
