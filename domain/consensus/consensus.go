@@ -1,6 +1,7 @@
 package consensus
 
 import (
+	"github.com/kaspanet/kaspad/util/mstime"
 	"math/big"
 	"sync"
 
@@ -19,6 +20,8 @@ type consensus struct {
 
 	genesisBlock *externalapi.DomainBlock
 	genesisHash  *externalapi.DomainHash
+
+	expectedDAAWindowDurationInMilliseconds int64
 
 	blockProcessor        model.BlockProcessor
 	blockBuilder          model.BlockBuilder
@@ -154,15 +157,31 @@ func (s *consensus) BuildBlock(coinbaseData *externalapi.DomainCoinbaseData,
 	return block, err
 }
 
-// BuildBlockWithTemplateMetadata builds a block over the current state, with the transactions
-// selected by the given transactionSelector plus metadata information related to coinbase rewards
-func (s *consensus) BuildBlockWithTemplateMetadata(coinbaseData *externalapi.DomainCoinbaseData,
-	transactions []*externalapi.DomainTransaction) (block *externalapi.DomainBlock, coinbaseHasRedReward bool, err error) {
+// BuildBlockTemplate builds a block over the current state, with the transactions
+// selected by the given transactionSelector plus metadata information related to
+// coinbase rewards and node sync status
+func (s *consensus) BuildBlockTemplate(coinbaseData *externalapi.DomainCoinbaseData,
+	transactions []*externalapi.DomainTransaction) (*externalapi.DomainBlockTemplate, error) {
 
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	return s.blockBuilder.BuildBlock(coinbaseData, transactions)
+	block, hasRedReward, err := s.blockBuilder.BuildBlock(coinbaseData, transactions)
+	if err != nil {
+		return nil, err
+	}
+
+	isNearlySynced, err := s.isNearlySyncedNoLock()
+	if err != nil {
+		return nil, err
+	}
+
+	return &externalapi.DomainBlockTemplate{
+		Block:                block,
+		CoinbaseData:         coinbaseData,
+		CoinbaseHasRedReward: hasRedReward,
+		IsNearlySynced:       isNearlySynced,
+	}, nil
 }
 
 // ValidateAndInsertBlock validates the given block and, if valid, applies it
@@ -893,4 +912,43 @@ func (s *consensus) VirtualMergeDepthRoot() (*externalapi.DomainHash, error) {
 
 	stagingArea := model.NewStagingArea()
 	return s.mergeDepthManager.VirtualMergeDepthRoot(stagingArea)
+}
+
+// IsNearlySynced returns whether this consensus is considered synced or close to being synced. This info
+// is used to determine if it's ok to use a block template from this node for mining purposes.
+func (s *consensus) IsNearlySynced() (bool, error) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	return s.isNearlySyncedNoLock()
+}
+
+func (s *consensus) isNearlySyncedNoLock() (bool, error) {
+	stagingArea := model.NewStagingArea()
+	virtualGHOSTDAGData, err := s.ghostdagDataStores[0].Get(s.databaseContext, stagingArea, model.VirtualBlockHash, false)
+	if err != nil {
+		return false, err
+	}
+
+	if virtualGHOSTDAGData.SelectedParent().Equal(s.genesisHash) {
+		return false, nil
+	}
+
+	virtualSelectedParentHeader, err := s.blockHeaderStore.BlockHeader(s.databaseContext, stagingArea, virtualGHOSTDAGData.SelectedParent())
+	if err != nil {
+		return false, err
+	}
+
+	now := mstime.Now().UnixMilliseconds()
+	// As a heuristic, we allow the node to mine if he is likely to be within the current DAA window of fully synced nodes.
+	// Such blocks contribute to security by maintaining the current difficulty despite possibly being slightly out of sync.
+	if now-virtualSelectedParentHeader.TimeInMilliseconds() < s.expectedDAAWindowDurationInMilliseconds {
+		log.Debugf("The selected tip timestamp is recent (%d), so IsNearlySynced returns true",
+			virtualSelectedParentHeader.TimeInMilliseconds())
+		return true, nil
+	}
+
+	log.Debugf("The selected tip timestamp is old (%d), so IsNearlySynced returns false",
+		virtualSelectedParentHeader.TimeInMilliseconds())
+	return false, nil
 }

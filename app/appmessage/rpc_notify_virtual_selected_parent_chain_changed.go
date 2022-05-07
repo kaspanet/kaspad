@@ -4,6 +4,7 @@ package appmessage
 // its respective RPC message
 type NotifyVirtualSelectedParentChainChangedRequestMessage struct {
 	baseMessage
+	IncludeAcceptedTransactionIDs bool
 }
 
 // Command returns the protocol command string for the message
@@ -11,9 +12,13 @@ func (msg *NotifyVirtualSelectedParentChainChangedRequestMessage) Command() Mess
 	return CmdNotifyVirtualSelectedParentChainChangedRequestMessage
 }
 
-// NewNotifyVirtualSelectedParentChainChangedRequestMessage returns a instance of the message
-func NewNotifyVirtualSelectedParentChainChangedRequestMessage() *NotifyVirtualSelectedParentChainChangedRequestMessage {
-	return &NotifyVirtualSelectedParentChainChangedRequestMessage{}
+// NewNotifyVirtualSelectedParentChainChangedRequestMessage returns an instance of the message
+func NewNotifyVirtualSelectedParentChainChangedRequestMessage(
+	includeAcceptedTransactionIDs bool) *NotifyVirtualSelectedParentChainChangedRequestMessage {
+
+	return &NotifyVirtualSelectedParentChainChangedRequestMessage{
+		IncludeAcceptedTransactionIDs: includeAcceptedTransactionIDs,
+	}
 }
 
 // NotifyVirtualSelectedParentChainChangedResponseMessage is an appmessage corresponding to
@@ -39,6 +44,7 @@ type VirtualSelectedParentChainChangedNotificationMessage struct {
 	baseMessage
 	RemovedChainBlockHashes []string
 	AddedChainBlockHashes   []string
+	AcceptedTransactionIDs  []*AcceptedTransactionIDs
 }
 
 // Command returns the protocol command string for the message
@@ -48,10 +54,11 @@ func (msg *VirtualSelectedParentChainChangedNotificationMessage) Command() Messa
 
 // NewVirtualSelectedParentChainChangedNotificationMessage returns a instance of the message
 func NewVirtualSelectedParentChainChangedNotificationMessage(removedChainBlockHashes,
-	addedChainBlocks []string) *VirtualSelectedParentChainChangedNotificationMessage {
+	addedChainBlocks []string, acceptedTransactionIDs []*AcceptedTransactionIDs) *VirtualSelectedParentChainChangedNotificationMessage {
 
 	return &VirtualSelectedParentChainChangedNotificationMessage{
 		RemovedChainBlockHashes: removedChainBlockHashes,
 		AddedChainBlockHashes:   addedChainBlocks,
+		AcceptedTransactionIDs:  acceptedTransactionIDs,
 	}
 }

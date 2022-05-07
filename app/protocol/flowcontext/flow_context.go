@@ -53,9 +53,8 @@ type FlowContext struct {
 	onPruningPointUTXOSetOverrideHandler OnPruningPointUTXOSetOverrideHandler
 	onTransactionAddedToMempoolHandler   OnTransactionAddedToMempoolHandler
 
-	expectedDAAWindowDurationInMilliseconds int64
-	lastRebroadcastTime                     time.Time
-	sharedRequestedTransactions             *SharedRequestedTransactions
+	lastRebroadcastTime         time.Time
+	sharedRequestedTransactions *SharedRequestedTransactions
 
 	sharedRequestedBlocks *SharedRequestedBlocks
 
@@ -93,8 +92,6 @@ func New(cfg *config.Config, domain domain.Domain, addressManager *addressmanage
 		transactionIDsToPropagate:        []*externalapi.DomainTransactionID{},
 		lastTransactionIDPropagationTime: time.Now(),
 		shutdownChan:                     make(chan struct{}),
-		expectedDAAWindowDurationInMilliseconds: cfg.NetParams().TargetTimePerBlock.Milliseconds() *
-			int64(cfg.NetParams().DifficultyAdjustmentWindowSize),
 	}
 }
 
@@ -107,6 +104,11 @@ func (f *FlowContext) Close() {
 // event.
 func (f *FlowContext) ShutdownChan() <-chan struct{} {
 	return f.shutdownChan
+}
+
+// IsNearlySynced returns whether current consensus is considered synced or close to being synced.
+func (f *FlowContext) IsNearlySynced() (bool, error) {
+	return f.Domain().Consensus().IsNearlySynced()
 }
 
 // SetOnVirtualChangeHandler sets the onVirtualChangeHandler handler

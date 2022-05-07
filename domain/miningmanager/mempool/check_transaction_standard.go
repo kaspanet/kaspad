@@ -198,9 +198,8 @@ func (mp *mempool) minimumRequiredTransactionRelayFee(mass uint64) uint64 {
 
 	// Set the minimum fee to the maximum possible value if the calculated
 	// fee is not in the valid range for monetary amounts.
-	// TODO: Replace it with constants.MaxSompiAfterHF1 once HF is activated
-	if minimumFee > constants.MaxSompiBeforeHF1 {
-		minimumFee = constants.MaxSompiBeforeHF1
+	if minimumFee > constants.MaxSompi {
+		minimumFee = constants.MaxSompi
 	}
 
 	return minimumFee
