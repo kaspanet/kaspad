@@ -262,7 +262,7 @@ func (s *server) moreUTXOsForMergeTransaction(alreadySelectedUTXOs []*libkaspawa
 			continue
 		}
 
-		s.tracker.trackOutpointAsReserved(*utxo.Outpoint)
+		s.tracker.trackOutpointAsReserved(utxo.Outpoint)
 
 		additionalUTXOs = append(additionalUTXOs, &libkaspawallet.UTXO{
 			Outpoint:       utxo.Outpoint,

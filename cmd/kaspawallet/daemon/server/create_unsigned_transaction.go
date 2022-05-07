@@ -102,7 +102,7 @@ func (s *server) selectUTXOs(spendAmount uint64, feePerInput uint64, fromAddress
 			!isUTXOSpendable(utxo, dagInfo.VirtualDAAScore, s.params.BlockCoinbaseMaturity) {
 			continue
 		}
-		s.tracker.trackOutpointAsReserved(*utxo.Outpoint)
+		s.tracker.trackOutpointAsReserved(utxo.Outpoint)
 
 		selectedUTXOs = append(selectedUTXOs, &libkaspawallet.UTXO{
 			Outpoint:       utxo.Outpoint,

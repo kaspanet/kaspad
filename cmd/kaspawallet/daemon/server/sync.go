@@ -1,11 +1,12 @@
 package server
 
 import (
-	"fmt"
 	"sort"
 	"time"
 
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/libkaspawallet"
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/txscript"
 
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/pkg/errors"
@@ -191,10 +192,44 @@ func (s *server) refreshExistingUTXOsWithLock() error {
 
 // updateUTXOSet clears the current UTXO set, and re-fills it with the given entries
 func (s *server) updateUTXOSet(entries []*appmessage.UTXOsByAddressesEntry) error {
+
 	utxos := make([]*walletUTXO, len(entries))
 
 	s.tracker.untrackExpiredOutpointsAsResrved() //untrack all stale reserved outpoints, before comparing in loop
 	availableUtxos := make([]*walletUTXO, 0)
+
+	getMemepoolEntriesResponse, err := s.rpcClient.GetMempoolEntries()
+	if err != nil {
+		return err
+	}
+
+	mempoolWalletAddressesOutpoints := make(sentOutpoints)
+	mempoolTransactionIDs := make([]*externalapi.DomainTransactionID, 0)
+
+	for _, memepoolEntry := range getMemepoolEntriesResponse.Entries {
+		transaction, err := appmessage.RPCTransactionToDomainTransaction(memepoolEntry.Transaction)
+		if err != nil {
+			return err
+		}
+		mempoolTransactionIDs = append(
+			mempoolTransactionIDs,
+			transaction.ID,
+		)
+		if s.tracker.sentTransactions[*transaction.ID] {
+			for _, input := range transaction.Inputs {
+				_, address, err := txscript.ExtractScriptPubKeyAddress(input.UTXOEntry.ScriptPublicKey(), s.params)
+				if err != nil {
+					return err
+				}
+				if _, found := s.addressSet[address.String()]; found {
+					mempoolWalletAddressesOutpoints[input.PreviousOutpoint] = true
+				}
+			}
+		}
+	}
+
+	s.tracker.untrackTransactionIDDifference(mempoolTransactionIDs) // //clean up transactionIds
+	s.tracker.sentOutpoints = mempoolWalletAddressesOutpoints       //clean up sent tracker
 
 	for i, entry := range entries {
 		outpoint, err := appmessage.RPCOutpointToDomainOutpoint(entry.Outpoint)
@@ -230,11 +265,13 @@ func (s *server) updateUTXOSet(entries []*appmessage.UTXOsByAddressesEntry) erro
 
 	s.utxosSortedByAmount = utxos
 
-	sort.Slice(availableUtxos, func(i, j int) bool { return availableUtxos[i].UTXOEntry.Amount() > availableUtxos[j].UTXOEntry.Amount() })
+	sort.Slice(availableUtxos, func(i, j int) bool {
+		return availableUtxos[i].UTXOEntry.Amount() > availableUtxos[j].UTXOEntry.Amount()
+	})
 
 	s.availableUtxosSortedByAmount = availableUtxos
 
-	s.tracker.untrackOutpointDifferenceViaWalletUTXOs(utxos) //clean up tracker
+	s.tracker.untrackOutpointDifferenceViaWalletUTXOs(utxos) //clean up reserved tracker
 
 	return nil
 }
