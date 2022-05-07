@@ -219,7 +219,8 @@ func (s *server) updateUTXOSet(entries []*appmessage.UTXOsByAddressesEntry) erro
 		)
 		if s.tracker.isTransactionTracked(transaction) {
 			for _, input := range transaction.Inputs {
-				_, address, err := txscript.ExtractScriptPubKeyAddress(input.UTXOEntry.ScriptPublicKey(), s.params)
+				scriptPubKey := input.UTXOEntry.ScriptPublicKey()
+				_, address, err := txscript.ExtractScriptPubKeyAddress(scriptPubKey, s.params)
 				if err != nil {
 					return err
 				}
