@@ -1,6 +1,7 @@
 package server
 
 import (
+	"fmt"
 	"sort"
 	"time"
 
@@ -28,7 +29,8 @@ func (s *server) sync() error {
 	ticker := time.NewTicker(time.Second)
 	defer ticker.Stop()
 
-	for range ticker.C {
+	for i := range ticker.C {
+		fmt.Println(i)
 		err := s.collectRecentAddresses()
 		if err != nil {
 			return err
@@ -195,7 +197,7 @@ func (s *server) updateUTXOSet(entries []*appmessage.UTXOsByAddressesEntry) erro
 
 	utxos := make([]*walletUTXO, len(entries))
 
-	s.tracker.untrackExpiredOutpointsAsResrved() //untrack all stale reserved outpoints, before comparing in loop
+	s.tracker.untrackExpiredOutpointsAsReserved() //untrack all stale reserved outpoints, before comparing in loop
 	availableUtxos := make([]*walletUTXO, 0)
 
 	getMemepoolEntriesResponse, err := s.rpcClient.GetMempoolEntries()
@@ -203,19 +205,19 @@ func (s *server) updateUTXOSet(entries []*appmessage.UTXOsByAddressesEntry) erro
 		return err
 	}
 
-	mempoolWalletAddressesOutpoints := make(sentOutpoints)
-	mempoolTransactionIDs := make([]*externalapi.DomainTransactionID, 0)
+	mempoolWalletAddressesOutpoints := make(mempoolOutpoints)
+	mempoolTransactions := make([]*externalapi.DomainTransaction, 0)
 
 	for _, memepoolEntry := range getMemepoolEntriesResponse.Entries {
 		transaction, err := appmessage.RPCTransactionToDomainTransaction(memepoolEntry.Transaction)
 		if err != nil {
 			return err
 		}
-		mempoolTransactionIDs = append(
-			mempoolTransactionIDs,
-			transaction.ID,
+		mempoolTransactions = append(
+			mempoolTransactions,
+			transaction,
 		)
-		if s.tracker.sentTransactions[*transaction.ID] {
+		if s.tracker.isTransactionTracked(transaction) {
 			for _, input := range transaction.Inputs {
 				_, address, err := txscript.ExtractScriptPubKeyAddress(input.UTXOEntry.ScriptPublicKey(), s.params)
 				if err != nil {
@@ -228,8 +230,8 @@ func (s *server) updateUTXOSet(entries []*appmessage.UTXOsByAddressesEntry) erro
 		}
 	}
 
-	s.tracker.untrackTransactionIDDifference(mempoolTransactionIDs) // //clean up transactionIds
-	s.tracker.sentOutpoints = mempoolWalletAddressesOutpoints       //clean up sent tracker
+	s.tracker.untrackTransactionDifference(mempoolTransactions)   //clean up transaction tracker
+	s.tracker.mempoolOutpoints = mempoolWalletAddressesOutpoints //clean up sent outpoint tracker
 
 	for i, entry := range entries {
 		outpoint, err := appmessage.RPCOutpointToDomainOutpoint(entry.Outpoint)
@@ -270,6 +272,13 @@ func (s *server) updateUTXOSet(entries []*appmessage.UTXOsByAddressesEntry) erro
 	})
 
 	s.availableUtxosSortedByAmount = availableUtxos
+
+	fmt.Println("utxos total", len(s.utxosSortedByAmount))
+	fmt.Println("utxos available", len(s.availableUtxosSortedByAmount))
+	fmt.Println("utxos mempool", len(s.tracker.mempoolOutpoints))
+	fmt.Println("utxos reserved", len(s.tracker.reservedOutpoints))
+	fmt.Println("transactions in mempool", len(s.tracker.sentTransactions))
+
 
 	s.tracker.untrackOutpointDifferenceViaWalletUTXOs(utxos) //clean up reserved tracker
 
