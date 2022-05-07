@@ -7,7 +7,6 @@ import (
 
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/libkaspawallet"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/txscript"
 
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/pkg/errors"
@@ -39,7 +38,8 @@ func (s *server) sync() error {
 		return err
 	}
 
-	for range ticker.C {
+	for i := range ticker.C {
+		fmt.Println(i)
 		err = s.collectFarAddresses()
 		if err != nil {
 			return err
@@ -247,7 +247,7 @@ func (s *server) updateUTXOSet(entries []*appmessage.UTXOsByAddressesEntry) erro
 			}
 		}
 	}
-
+		
 	s.tracker.untrackTransactionDifference(mempoolTransactions)   //clean up transaction tracker
 	s.tracker.mempoolOutpoints = mempoolWalletAddressesOutpoints //clean up sent outpoint tracker
 
