@@ -21,7 +21,6 @@ import (
 
 func TestValidateTransactionInContextAndPopulateFee(t *testing.T) {
 	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
-		consensusConfig.HF1DAAScore = consensusConfig.GenesisBlock.Header.DAAScore() + 1000
 		factory := consensus.NewFactory()
 		tc, tearDown, err := factory.NewTestConsensus(consensusConfig,
 			"TestValidateTransactionInContextAndPopulateFee")
@@ -92,7 +91,7 @@ func TestValidateTransactionInContextAndPopulateFee(t *testing.T) {
 			Sequence:         constants.MaxTxInSequenceNum,
 			SigOpCount:       1,
 			UTXOEntry: utxo.NewUTXOEntry(
-				constants.MaxSompiBeforeHF1+1,
+				21e14+1,
 				scriptPublicKey,
 				false,
 				0),
@@ -104,7 +103,7 @@ func TestValidateTransactionInContextAndPopulateFee(t *testing.T) {
 			Sequence:         constants.MaxTxInSequenceNum,
 			SigOpCount:       1,
 			UTXOEntry: utxo.NewUTXOEntry(
-				constants.MaxSompiAfterHF1+1,
+				constants.MaxSompi+1,
 				scriptPublicKey,
 				false,
 				0),
@@ -163,7 +162,7 @@ func TestValidateTransactionInContextAndPopulateFee(t *testing.T) {
 			Gas:          0,
 			LockTime:     0}
 
-		txWithLargeAmountAfterHF := externalapi.DomainTransaction{
+		txWithInvalidAmount := externalapi.DomainTransaction{
 			Version:      constants.MaxTransactionVersion,
 			Inputs:       []*externalapi.DomainTransactionInput{&txInputWithLargeAmountAfterHF},
 			Outputs:      []*externalapi.DomainTransactionOutput{&txOutput},
@@ -207,9 +206,6 @@ func TestValidateTransactionInContextAndPopulateFee(t *testing.T) {
 		povBlockHash := externalapi.NewDomainHashFromByteArray(&[32]byte{0x01})
 		tc.DAABlocksStore().StageDAAScore(stagingArea, povBlockHash, consensusConfig.BlockCoinbaseMaturity+txInput.UTXOEntry.BlockDAAScore())
 
-		povAfterHFBlockHash := externalapi.NewDomainHashFromByteArray(&[32]byte{0x02})
-		tc.DAABlocksStore().StageDAAScore(stagingArea, povAfterHFBlockHash, consensusConfig.HF1DAAScore)
-
 		// Just use some stub ghostdag data
 		tc.GHOSTDAGDataStore().Stage(stagingArea, povBlockHash, externalapi.NewBlockGHOSTDAGData(
 			0,
@@ -242,24 +238,17 @@ func TestValidateTransactionInContextAndPopulateFee(t *testing.T) {
 				isValid:       false,
 				expectedError: ruleerrors.ErrImmatureSpend,
 			},
-			{ // The total inputs amount is bigger than the allowed maximum (constants.MaxSompiBeforeHF1)
-				name:          "checkTransactionInputAmounts - invalid - before HF",
+			{ // The total inputs amount is bigger than the allowed maximum before the HF (21e14)
+				name:          "checkTransactionInputAmounts - valid",
 				tx:            &txWithLargeAmountBeforeHF,
 				povBlockHash:  povBlockHash,
-				isValid:       false,
-				expectedError: ruleerrors.ErrBadTxOutValue,
-			},
-			{ // The total inputs amount is bigger than the allowed maximum (constants.MaxSompiBeforeHF1)
-				name:          "checkTransactionInputAmounts - valid - after HF",
-				tx:            &txWithLargeAmountBeforeHF,
-				povBlockHash:  povAfterHFBlockHash,
 				isValid:       true,
 				expectedError: nil,
 			},
-			{ // The total inputs amount is bigger than the allowed maximum (constants.MaxSompiBeforeHF1)
+			{ // The total inputs amount is bigger than the allowed maximum (constants.MaxSompi)
 				name:          "checkTransactionInputAmounts - invalid - after HF",
-				tx:            &txWithLargeAmountAfterHF,
-				povBlockHash:  povAfterHFBlockHash,
+				tx:            &txWithInvalidAmount,
+				povBlockHash:  povBlockHash,
 				isValid:       false,
 				expectedError: ruleerrors.ErrBadTxOutValue,
 			},

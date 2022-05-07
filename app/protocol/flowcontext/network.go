@@ -72,3 +72,10 @@ func (f *FlowContext) Peers() []*peerpkg.Peer {
 	}
 	return peers
 }
+
+// HasPeers returns whether there are currently active peers
+func (f *FlowContext) HasPeers() bool {
+	f.peersMutex.RLock()
+	defer f.peersMutex.RUnlock()
+	return len(f.peers) > 0
+}
