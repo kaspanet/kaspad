@@ -3,7 +3,6 @@ package server
 import (
 	"context"
 	"fmt"
-	"golang.org/x/exp/slices"
 
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/daemon/pb"
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/libkaspawallet"
