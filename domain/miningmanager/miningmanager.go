@@ -1,11 +1,12 @@
 package miningmanager
 
 import (
+	"sync"
+	"time"
+
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensusreference"
 	miningmanagermodel "github.com/kaspanet/kaspad/domain/miningmanager/model"
-	"sync"
-	"time"
 )
 
 // MiningManager creates block templates for mining as well as maintaining
@@ -16,6 +17,8 @@ type MiningManager interface {
 	GetBlockTemplateBuilder() miningmanagermodel.BlockTemplateBuilder
 	GetTransaction(transactionID *externalapi.DomainTransactionID) (*externalapi.DomainTransaction, bool)
 	AllTransactions() []*externalapi.DomainTransaction
+	GetOrphanTransaction(transactionID *externalapi.DomainTransactionID) (*externalapi.DomainTransaction, bool)
+	AllOrphanTransactions() []*externalapi.DomainTransaction
 	TransactionCount() int
 	HandleNewBlockTransactions(txs []*externalapi.DomainTransaction) ([]*externalapi.DomainTransaction, error)
 	ValidateAndInsertTransaction(transaction *externalapi.DomainTransaction, isHighPriority bool, allowOrphan bool) (
@@ -113,6 +116,17 @@ func (mm *miningManager) GetTransaction(
 
 func (mm *miningManager) AllTransactions() []*externalapi.DomainTransaction {
 	return mm.mempool.AllTransactions()
+}
+
+func (mm *miningManager) GetOrphanTransaction(
+	transactionID *externalapi.DomainTransactionID) (*externalapi.DomainTransaction, bool) {
+
+	return mm.mempool.GetOrphanTransaction(transactionID)
+}
+
+func (mm *miningManager) AllOrphanTransactions() []*externalapi.DomainTransaction {
+
+	return mm.mempool.AllOrphanTransactions()
 }
 
 func (mm *miningManager) TransactionCount() int {

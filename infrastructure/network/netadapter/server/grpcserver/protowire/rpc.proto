@@ -237,6 +237,7 @@ message GetMempoolEntriesResponseMessage{
 message MempoolEntry{
   uint64 fee = 1;
   RpcTransaction transaction = 3;
+  bool isOrphan = 4;
 }
 
 // GetConnectedPeerInfoRequestMessage requests information about all the p2p peers

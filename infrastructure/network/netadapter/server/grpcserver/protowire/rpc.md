@@ -3,116 +3,113 @@
 
 ## Table of Contents
 
-- [Protocol Documentation](#protocol-documentation)
-  - [Table of Contents](#table-of-contents)
-  - [rpc.proto](#rpcproto)
-    - [RPCError](#rpcerror)
-    - [RpcBlock](#rpcblock)
-    - [RpcBlockHeader](#rpcblockheader)
-    - [RpcBlockLevelParents](#rpcblocklevelparents)
-    - [RpcBlockVerboseData](#rpcblockverbosedata)
-    - [RpcTransaction](#rpctransaction)
-    - [RpcTransactionInput](#rpctransactioninput)
-    - [RpcScriptPublicKey](#rpcscriptpublickey)
-    - [RpcTransactionOutput](#rpctransactionoutput)
-    - [RpcOutpoint](#rpcoutpoint)
-    - [RpcUtxoEntry](#rpcutxoentry)
-    - [RpcTransactionVerboseData](#rpctransactionverbosedata)
-    - [RpcTransactionInputVerboseData](#rpctransactioninputverbosedata)
-    - [RpcTransactionOutputVerboseData](#rpctransactionoutputverbosedata)
-    - [GetCurrentNetworkRequestMessage](#getcurrentnetworkrequestmessage)
-    - [GetCurrentNetworkResponseMessage](#getcurrentnetworkresponsemessage)
-    - [SubmitBlockRequestMessage](#submitblockrequestmessage)
-    - [SubmitBlockResponseMessage](#submitblockresponsemessage)
-    - [GetBlockTemplateRequestMessage](#getblocktemplaterequestmessage)
-    - [GetBlockTemplateResponseMessage](#getblocktemplateresponsemessage)
-    - [NotifyBlockAddedRequestMessage](#notifyblockaddedrequestmessage)
-    - [NotifyBlockAddedResponseMessage](#notifyblockaddedresponsemessage)
-    - [BlockAddedNotificationMessage](#blockaddednotificationmessage)
-    - [GetPeerAddressesRequestMessage](#getpeeraddressesrequestmessage)
-    - [GetPeerAddressesResponseMessage](#getpeeraddressesresponsemessage)
-    - [GetPeerAddressesKnownAddressMessage](#getpeeraddressesknownaddressmessage)
-    - [GetSelectedTipHashRequestMessage](#getselectedtiphashrequestmessage)
-    - [GetSelectedTipHashResponseMessage](#getselectedtiphashresponsemessage)
-    - [GetMempoolEntryRequestMessage](#getmempoolentryrequestmessage)
-    - [GetMempoolEntryResponseMessage](#getmempoolentryresponsemessage)
-    - [GetMempoolEntriesRequestMessage](#getmempoolentriesrequestmessage)
-    - [GetMempoolEntriesResponseMessage](#getmempoolentriesresponsemessage)
-    - [MempoolEntry](#mempoolentry)
-    - [GetConnectedPeerInfoRequestMessage](#getconnectedpeerinforequestmessage)
-    - [GetConnectedPeerInfoResponseMessage](#getconnectedpeerinforesponsemessage)
-    - [GetConnectedPeerInfoMessage](#getconnectedpeerinfomessage)
-    - [AddPeerRequestMessage](#addpeerrequestmessage)
-    - [AddPeerResponseMessage](#addpeerresponsemessage)
-    - [SubmitTransactionRequestMessage](#submittransactionrequestmessage)
-    - [SubmitTransactionResponseMessage](#submittransactionresponsemessage)
-    - [NotifyVirtualSelectedParentChainChangedRequestMessage](#notifyvirtualselectedparentchainchangedrequestmessage)
-    - [NotifyVirtualSelectedParentChainChangedResponseMessage](#notifyvirtualselectedparentchainchangedresponsemessage)
-    - [VirtualSelectedParentChainChangedNotificationMessage](#virtualselectedparentchainchangednotificationmessage)
-    - [GetBlockRequestMessage](#getblockrequestmessage)
-    - [GetBlockResponseMessage](#getblockresponsemessage)
-    - [GetSubnetworkRequestMessage](#getsubnetworkrequestmessage)
-    - [GetSubnetworkResponseMessage](#getsubnetworkresponsemessage)
-    - [GetVirtualSelectedParentChainFromBlockRequestMessage](#getvirtualselectedparentchainfromblockrequestmessage)
-    - [GetVirtualSelectedParentChainFromBlockResponseMessage](#getvirtualselectedparentchainfromblockresponsemessage)
-    - [GetBlocksRequestMessage](#getblocksrequestmessage)
-    - [GetBlocksResponseMessage](#getblocksresponsemessage)
-    - [GetBlockCountRequestMessage](#getblockcountrequestmessage)
-    - [GetBlockCountResponseMessage](#getblockcountresponsemessage)
-    - [GetBlockDagInfoRequestMessage](#getblockdaginforequestmessage)
-    - [GetBlockDagInfoResponseMessage](#getblockdaginforesponsemessage)
-    - [ResolveFinalityConflictRequestMessage](#resolvefinalityconflictrequestmessage)
-    - [ResolveFinalityConflictResponseMessage](#resolvefinalityconflictresponsemessage)
-    - [NotifyFinalityConflictsRequestMessage](#notifyfinalityconflictsrequestmessage)
-    - [NotifyFinalityConflictsResponseMessage](#notifyfinalityconflictsresponsemessage)
-    - [FinalityConflictNotificationMessage](#finalityconflictnotificationmessage)
-    - [FinalityConflictResolvedNotificationMessage](#finalityconflictresolvednotificationmessage)
-    - [ShutDownRequestMessage](#shutdownrequestmessage)
-    - [ShutDownResponseMessage](#shutdownresponsemessage)
-    - [GetHeadersRequestMessage](#getheadersrequestmessage)
-    - [GetHeadersResponseMessage](#getheadersresponsemessage)
-    - [NotifyUtxosChangedRequestMessage](#notifyutxoschangedrequestmessage)
-    - [NotifyUtxosChangedResponseMessage](#notifyutxoschangedresponsemessage)
-    - [UtxosChangedNotificationMessage](#utxoschangednotificationmessage)
-    - [UtxosByAddressesEntry](#utxosbyaddressesentry)
-    - [StopNotifyingUtxosChangedRequestMessage](#stopnotifyingutxoschangedrequestmessage)
-    - [StopNotifyingUtxosChangedResponseMessage](#stopnotifyingutxoschangedresponsemessage)
-    - [GetUtxosByAddressesRequestMessage](#getutxosbyaddressesrequestmessage)
-    - [GetUtxosByAddressesResponseMessage](#getutxosbyaddressesresponsemessage)
-    - [GetBalanceByAddressRequestMessage](#getbalancebyaddressrequestmessage)
-    - [GetBalanceByAddressResponseMessage](#getbalancebyaddressresponsemessage)
-    - [GetBalancesByAddressesRequestMessage](#getbalancesbyaddressesrequestmessage)
-    - [BalancesByAddressEntry](#balancesbyaddressentry)
-    - [GetBalancesByAddressesResponseMessage](#getbalancesbyaddressesresponsemessage)
-    - [GetVirtualSelectedParentBlueScoreRequestMessage](#getvirtualselectedparentbluescorerequestmessage)
-    - [GetVirtualSelectedParentBlueScoreResponseMessage](#getvirtualselectedparentbluescoreresponsemessage)
-    - [NotifyVirtualSelectedParentBlueScoreChangedRequestMessage](#notifyvirtualselectedparentbluescorechangedrequestmessage)
-    - [NotifyVirtualSelectedParentBlueScoreChangedResponseMessage](#notifyvirtualselectedparentbluescorechangedresponsemessage)
-    - [VirtualSelectedParentBlueScoreChangedNotificationMessage](#virtualselectedparentbluescorechangednotificationmessage)
-    - [NotifyVirtualDaaScoreChangedRequestMessage](#notifyvirtualdaascorechangedrequestmessage)
-    - [NotifyVirtualDaaScoreChangedResponseMessage](#notifyvirtualdaascorechangedresponsemessage)
-    - [VirtualDaaScoreChangedNotificationMessage](#virtualdaascorechangednotificationmessage)
-    - [NotifyPruningPointUTXOSetOverrideRequestMessage](#notifypruningpointutxosetoverriderequestmessage)
-    - [NotifyPruningPointUTXOSetOverrideResponseMessage](#notifypruningpointutxosetoverrideresponsemessage)
-    - [PruningPointUTXOSetOverrideNotificationMessage](#pruningpointutxosetoverridenotificationmessage)
-    - [StopNotifyingPruningPointUTXOSetOverrideRequestMessage](#stopnotifyingpruningpointutxosetoverriderequestmessage)
-    - [StopNotifyingPruningPointUTXOSetOverrideResponseMessage](#stopnotifyingpruningpointutxosetoverrideresponsemessage)
-    - [BanRequestMessage](#banrequestmessage)
-    - [BanResponseMessage](#banresponsemessage)
-    - [UnbanRequestMessage](#unbanrequestmessage)
-    - [UnbanResponseMessage](#unbanresponsemessage)
-    - [GetInfoRequestMessage](#getinforequestmessage)
-    - [GetInfoResponseMessage](#getinforesponsemessage)
-    - [EstimateNetworkHashesPerSecondRequestMessage](#estimatenetworkhashespersecondrequestmessage)
-    - [EstimateNetworkHashesPerSecondResponseMessage](#estimatenetworkhashespersecondresponsemessage)
-    - [NotifyNewBlockTemplateRequestMessage](#notifynewblocktemplaterequestmessage)
-    - [NotifyNewBlockTemplateResponseMessage](#notifynewblocktemplateresponsemessage)
-    - [NewBlockTemplateNotificationMessage](#newblocktemplatenotificationmessage)
-    - [MempoolEntryByAddress](#mempoolentrybyaddress)
-    - [GetMempoolEntriesByAddressesRequestMessage](#getmempoolentriesbyaddressesrequestmessage)
-    - [GetMempoolEntriesByAddressesResponseMessage](#getmempoolentriesbyaddressesresponsemessage)
-    - [SubmitBlockResponseMessage.RejectReason](#submitblockresponsemessagerejectreason)
-  - [Scalar Value Types](#scalar-value-types)
+- [rpc.proto](#rpc.proto)
+    - [RPCError](#protowire.RPCError)
+    - [RpcBlock](#protowire.RpcBlock)
+    - [RpcBlockHeader](#protowire.RpcBlockHeader)
+    - [RpcBlockLevelParents](#protowire.RpcBlockLevelParents)
+    - [RpcBlockVerboseData](#protowire.RpcBlockVerboseData)
+    - [RpcTransaction](#protowire.RpcTransaction)
+    - [RpcTransactionInput](#protowire.RpcTransactionInput)
+    - [RpcScriptPublicKey](#protowire.RpcScriptPublicKey)
+    - [RpcTransactionOutput](#protowire.RpcTransactionOutput)
+    - [RpcOutpoint](#protowire.RpcOutpoint)
+    - [RpcUtxoEntry](#protowire.RpcUtxoEntry)
+    - [RpcTransactionVerboseData](#protowire.RpcTransactionVerboseData)
+    - [RpcTransactionInputVerboseData](#protowire.RpcTransactionInputVerboseData)
+    - [RpcTransactionOutputVerboseData](#protowire.RpcTransactionOutputVerboseData)
+    - [GetCurrentNetworkRequestMessage](#protowire.GetCurrentNetworkRequestMessage)
+    - [GetCurrentNetworkResponseMessage](#protowire.GetCurrentNetworkResponseMessage)
+    - [SubmitBlockRequestMessage](#protowire.SubmitBlockRequestMessage)
+    - [SubmitBlockResponseMessage](#protowire.SubmitBlockResponseMessage)
+    - [GetBlockTemplateRequestMessage](#protowire.GetBlockTemplateRequestMessage)
+    - [GetBlockTemplateResponseMessage](#protowire.GetBlockTemplateResponseMessage)
+    - [NotifyBlockAddedRequestMessage](#protowire.NotifyBlockAddedRequestMessage)
+    - [NotifyBlockAddedResponseMessage](#protowire.NotifyBlockAddedResponseMessage)
+    - [BlockAddedNotificationMessage](#protowire.BlockAddedNotificationMessage)
+    - [GetPeerAddressesRequestMessage](#protowire.GetPeerAddressesRequestMessage)
+    - [GetPeerAddressesResponseMessage](#protowire.GetPeerAddressesResponseMessage)
+    - [GetPeerAddressesKnownAddressMessage](#protowire.GetPeerAddressesKnownAddressMessage)
+    - [GetSelectedTipHashRequestMessage](#protowire.GetSelectedTipHashRequestMessage)
+    - [GetSelectedTipHashResponseMessage](#protowire.GetSelectedTipHashResponseMessage)
+    - [GetMempoolEntryRequestMessage](#protowire.GetMempoolEntryRequestMessage)
+    - [GetMempoolEntryResponseMessage](#protowire.GetMempoolEntryResponseMessage)
+    - [GetMempoolEntriesRequestMessage](#protowire.GetMempoolEntriesRequestMessage)
+    - [GetMempoolEntriesResponseMessage](#protowire.GetMempoolEntriesResponseMessage)
+    - [MempoolEntry](#protowire.MempoolEntry)
+    - [GetConnectedPeerInfoRequestMessage](#protowire.GetConnectedPeerInfoRequestMessage)
+    - [GetConnectedPeerInfoResponseMessage](#protowire.GetConnectedPeerInfoResponseMessage)
+    - [GetConnectedPeerInfoMessage](#protowire.GetConnectedPeerInfoMessage)
+    - [AddPeerRequestMessage](#protowire.AddPeerRequestMessage)
+    - [AddPeerResponseMessage](#protowire.AddPeerResponseMessage)
+    - [SubmitTransactionRequestMessage](#protowire.SubmitTransactionRequestMessage)
+    - [SubmitTransactionResponseMessage](#protowire.SubmitTransactionResponseMessage)
+    - [NotifyVirtualSelectedParentChainChangedRequestMessage](#protowire.NotifyVirtualSelectedParentChainChangedRequestMessage)
+    - [NotifyVirtualSelectedParentChainChangedResponseMessage](#protowire.NotifyVirtualSelectedParentChainChangedResponseMessage)
+    - [VirtualSelectedParentChainChangedNotificationMessage](#protowire.VirtualSelectedParentChainChangedNotificationMessage)
+    - [GetBlockRequestMessage](#protowire.GetBlockRequestMessage)
+    - [GetBlockResponseMessage](#protowire.GetBlockResponseMessage)
+    - [GetSubnetworkRequestMessage](#protowire.GetSubnetworkRequestMessage)
+    - [GetSubnetworkResponseMessage](#protowire.GetSubnetworkResponseMessage)
+    - [GetVirtualSelectedParentChainFromBlockRequestMessage](#protowire.GetVirtualSelectedParentChainFromBlockRequestMessage)
+    - [AcceptedTransactionIds](#protowire.AcceptedTransactionIds)
+    - [GetVirtualSelectedParentChainFromBlockResponseMessage](#protowire.GetVirtualSelectedParentChainFromBlockResponseMessage)
+    - [GetBlocksRequestMessage](#protowire.GetBlocksRequestMessage)
+    - [GetBlocksResponseMessage](#protowire.GetBlocksResponseMessage)
+    - [GetBlockCountRequestMessage](#protowire.GetBlockCountRequestMessage)
+    - [GetBlockCountResponseMessage](#protowire.GetBlockCountResponseMessage)
+    - [GetBlockDagInfoRequestMessage](#protowire.GetBlockDagInfoRequestMessage)
+    - [GetBlockDagInfoResponseMessage](#protowire.GetBlockDagInfoResponseMessage)
+    - [ResolveFinalityConflictRequestMessage](#protowire.ResolveFinalityConflictRequestMessage)
+    - [ResolveFinalityConflictResponseMessage](#protowire.ResolveFinalityConflictResponseMessage)
+    - [NotifyFinalityConflictsRequestMessage](#protowire.NotifyFinalityConflictsRequestMessage)
+    - [NotifyFinalityConflictsResponseMessage](#protowire.NotifyFinalityConflictsResponseMessage)
+    - [FinalityConflictNotificationMessage](#protowire.FinalityConflictNotificationMessage)
+    - [FinalityConflictResolvedNotificationMessage](#protowire.FinalityConflictResolvedNotificationMessage)
+    - [ShutDownRequestMessage](#protowire.ShutDownRequestMessage)
+    - [ShutDownResponseMessage](#protowire.ShutDownResponseMessage)
+    - [GetHeadersRequestMessage](#protowire.GetHeadersRequestMessage)
+    - [GetHeadersResponseMessage](#protowire.GetHeadersResponseMessage)
+    - [NotifyUtxosChangedRequestMessage](#protowire.NotifyUtxosChangedRequestMessage)
+    - [NotifyUtxosChangedResponseMessage](#protowire.NotifyUtxosChangedResponseMessage)
+    - [UtxosChangedNotificationMessage](#protowire.UtxosChangedNotificationMessage)
+    - [UtxosByAddressesEntry](#protowire.UtxosByAddressesEntry)
+    - [StopNotifyingUtxosChangedRequestMessage](#protowire.StopNotifyingUtxosChangedRequestMessage)
+    - [StopNotifyingUtxosChangedResponseMessage](#protowire.StopNotifyingUtxosChangedResponseMessage)
+    - [GetUtxosByAddressesRequestMessage](#protowire.GetUtxosByAddressesRequestMessage)
+    - [GetUtxosByAddressesResponseMessage](#protowire.GetUtxosByAddressesResponseMessage)
+    - [GetBalanceByAddressRequestMessage](#protowire.GetBalanceByAddressRequestMessage)
+    - [GetBalanceByAddressResponseMessage](#protowire.GetBalanceByAddressResponseMessage)
+    - [GetBalancesByAddressesRequestMessage](#protowire.GetBalancesByAddressesRequestMessage)
+    - [BalancesByAddressEntry](#protowire.BalancesByAddressEntry)
+    - [GetBalancesByAddressesResponseMessage](#protowire.GetBalancesByAddressesResponseMessage)
+    - [GetVirtualSelectedParentBlueScoreRequestMessage](#protowire.GetVirtualSelectedParentBlueScoreRequestMessage)
+    - [GetVirtualSelectedParentBlueScoreResponseMessage](#protowire.GetVirtualSelectedParentBlueScoreResponseMessage)
+    - [NotifyVirtualSelectedParentBlueScoreChangedRequestMessage](#protowire.NotifyVirtualSelectedParentBlueScoreChangedRequestMessage)
+    - [NotifyVirtualSelectedParentBlueScoreChangedResponseMessage](#protowire.NotifyVirtualSelectedParentBlueScoreChangedResponseMessage)
+    - [VirtualSelectedParentBlueScoreChangedNotificationMessage](#protowire.VirtualSelectedParentBlueScoreChangedNotificationMessage)
+    - [NotifyVirtualDaaScoreChangedRequestMessage](#protowire.NotifyVirtualDaaScoreChangedRequestMessage)
+    - [NotifyVirtualDaaScoreChangedResponseMessage](#protowire.NotifyVirtualDaaScoreChangedResponseMessage)
+    - [VirtualDaaScoreChangedNotificationMessage](#protowire.VirtualDaaScoreChangedNotificationMessage)
+    - [NotifyPruningPointUTXOSetOverrideRequestMessage](#protowire.NotifyPruningPointUTXOSetOverrideRequestMessage)
+    - [NotifyPruningPointUTXOSetOverrideResponseMessage](#protowire.NotifyPruningPointUTXOSetOverrideResponseMessage)
+    - [PruningPointUTXOSetOverrideNotificationMessage](#protowire.PruningPointUTXOSetOverrideNotificationMessage)
+    - [StopNotifyingPruningPointUTXOSetOverrideRequestMessage](#protowire.StopNotifyingPruningPointUTXOSetOverrideRequestMessage)
+    - [StopNotifyingPruningPointUTXOSetOverrideResponseMessage](#protowire.StopNotifyingPruningPointUTXOSetOverrideResponseMessage)
+    - [BanRequestMessage](#protowire.BanRequestMessage)
+    - [BanResponseMessage](#protowire.BanResponseMessage)
+    - [UnbanRequestMessage](#protowire.UnbanRequestMessage)
+    - [UnbanResponseMessage](#protowire.UnbanResponseMessage)
+    - [GetInfoRequestMessage](#protowire.GetInfoRequestMessage)
+    - [GetInfoResponseMessage](#protowire.GetInfoResponseMessage)
+    - [EstimateNetworkHashesPerSecondRequestMessage](#protowire.EstimateNetworkHashesPerSecondRequestMessage)
+    - [EstimateNetworkHashesPerSecondResponseMessage](#protowire.EstimateNetworkHashesPerSecondResponseMessage)
+    - [NotifyNewBlockTemplateRequestMessage](#protowire.NotifyNewBlockTemplateRequestMessage)
+    - [NotifyNewBlockTemplateResponseMessage](#protowire.NotifyNewBlockTemplateResponseMessage)
+    - [NewBlockTemplateNotificationMessage](#protowire.NewBlockTemplateNotificationMessage)
+    - [MempoolEntryByAddress](#protowire.MempoolEntryByAddress)
+    - [GetMempoolEntriesByAddressesRequestMessage](#protowire.GetMempoolEntriesByAddressesRequestMessage)
+    - [GetMempoolEntriesByAddressesResponseMessage](#protowire.GetMempoolEntriesByAddressesResponseMessage)
   
     - [SubmitBlockResponseMessage.RejectReason](#protowire.SubmitBlockResponseMessage.RejectReason)
   
@@ -669,6 +666,7 @@ currently in the mempool.
 | ----- | ---- | ----- | ----------- |
 | fee | [uint64](#uint64) |  |  |
 | transaction | [RpcTransaction](#protowire.RpcTransaction) |  |  |
+| isOrphan | [bool](#bool) |  |  |
 
 
 
@@ -797,6 +795,11 @@ NotifyVirtualSelectedParentChainChangedRequestMessage registers this connection 
 See: VirtualSelectedParentChainChangedNotificationMessage
 
 
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| includeAcceptedTransactionIds | [bool](#bool) |  |  |
+
+
 
 
 
@@ -829,6 +832,7 @@ See: NotifyVirtualSelectedParentChainChangedRequestMessage
 | ----- | ---- | ----- | ----------- |
 | removedChainBlockHashes | [string](#string) | repeated | The chain blocks that were removed, in high-to-low order |
 | addedChainBlockHashes | [string](#string) | repeated | The chain blocks that were added, in low-to-high order |
+| acceptedTransactionIds | [AcceptedTransactionIds](#protowire.AcceptedTransactionIds) | repeated | Will be filled only if `includeAcceptedTransactionIds = true` in the notify request. |
 
 
 
@@ -910,6 +914,23 @@ parent chain from some startHash to this kaspad&#39;s current virtual
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | startHash | [string](#string) |  |  |
+| includeAcceptedTransactionIds | [bool](#bool) |  |  |
+
+
+
+
+
+
+<a name="protowire.AcceptedTransactionIds"></a>
+
+### AcceptedTransactionIds
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| acceptingBlockHash | [string](#string) |  |  |
+| acceptedTransactionIds | [string](#string) | repeated |  |
 
 
 
@@ -926,6 +947,7 @@ parent chain from some startHash to this kaspad&#39;s current virtual
 | ----- | ---- | ----- | ----------- |
 | removedChainBlockHashes | [string](#string) | repeated | The chain blocks that were removed, in high-to-low order |
 | addedChainBlockHashes | [string](#string) | repeated | The chain blocks that were added, in low-to-high order |
+| acceptedTransactionIds | [AcceptedTransactionIds](#protowire.AcceptedTransactionIds) | repeated | The transactions accepted by each block in addedChainBlockHashes. Will be filled only if `includeAcceptedTransactionIds = true` in the request. |
 | error | [RPCError](#protowire.RPCError) |  |  |
 
 
@@ -1767,8 +1789,6 @@ See NotifyNewBlockTemplateRequestMessage
 <a name="protowire.GetMempoolEntriesByAddressesRequestMessage"></a>
 
 ### GetMempoolEntriesByAddressesRequestMessage
-GetMempoolEntriesByAddressesRequestMessage requests all Sending and Receiving Txs for the given kaspad addresses
-
 
 
 

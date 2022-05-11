@@ -30,6 +30,7 @@ type GetMempoolEntryResponseMessage struct {
 type MempoolEntry struct {
 	Fee         uint64
 	Transaction *RPCTransaction
+	IsOrphan    bool
 }
 
 // Command returns the protocol command string for the message
@@ -38,11 +39,12 @@ func (msg *GetMempoolEntryResponseMessage) Command() MessageCommand {
 }
 
 // NewGetMempoolEntryResponseMessage returns a instance of the message
-func NewGetMempoolEntryResponseMessage(fee uint64, transaction *RPCTransaction) *GetMempoolEntryResponseMessage {
+func NewGetMempoolEntryResponseMessage(fee uint64, transaction *RPCTransaction, isOrphan bool) *GetMempoolEntryResponseMessage {
 	return &GetMempoolEntryResponseMessage{
 		Entry: &MempoolEntry{
 			Fee:         fee,
 			Transaction: transaction,
+			IsOrphan:    isOrphan,
 		},
 	}
 }

@@ -9,6 +9,8 @@ import (
 
 // HandleGetMempoolEntry handles the respectively named RPC command
 func HandleGetMempoolEntry(context *rpccontext.Context, _ *router.Router, request appmessage.Message) (appmessage.Message, error) {
+
+	isOrphan := false
 	getMempoolEntryRequest := request.(*appmessage.GetMempoolEntryRequestMessage)
 
 	transactionID, err := transactionid.FromString(getMempoolEntryRequest.TxID)
@@ -20,9 +22,13 @@ func HandleGetMempoolEntry(context *rpccontext.Context, _ *router.Router, reques
 
 	transaction, ok := context.Domain.MiningManager().GetTransaction(transactionID)
 	if !ok {
-		errorMessage := &appmessage.GetMempoolEntryResponseMessage{}
-		errorMessage.Error = appmessage.RPCErrorf("Transaction %s was not found", transactionID)
-		return errorMessage, nil
+		transaction, ok = context.Domain.MiningManager().GetOrphanTransaction(transactionID)
+		if !ok {
+			errorMessage := &appmessage.GetMempoolEntryResponseMessage{}
+			errorMessage.Error = appmessage.RPCErrorf("Transaction %s was not found", transactionID)
+			return errorMessage, nil
+		}
+		isOrphan = true
 	}
 	rpcTransaction := appmessage.DomainTransactionToRPCTransaction(transaction)
 	err = context.PopulateTransactionWithVerboseData(rpcTransaction, nil)
@@ -30,5 +36,5 @@ func HandleGetMempoolEntry(context *rpccontext.Context, _ *router.Router, reques
 		return nil, err
 	}
 
-	return appmessage.NewGetMempoolEntryResponseMessage(transaction.Fee, rpcTransaction), nil
+	return appmessage.NewGetMempoolEntryResponseMessage(transaction.Fee, rpcTransaction, isOrphan), nil
 }

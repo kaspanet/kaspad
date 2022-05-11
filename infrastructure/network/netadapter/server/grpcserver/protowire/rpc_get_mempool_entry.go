@@ -91,6 +91,7 @@ func (x *MempoolEntry) toAppMessage() (*appmessage.MempoolEntry, error) {
 	return &appmessage.MempoolEntry{
 		Fee:         x.Fee,
 		Transaction: transaction,
+		IsOrphan:    x.IsOrphan,
 	}, nil
 }
 
@@ -103,6 +104,7 @@ func (x *MempoolEntry) fromAppMessage(message *appmessage.MempoolEntry) error {
 	*x = MempoolEntry{
 		Fee:         message.Fee,
 		Transaction: transaction,
+		IsOrphan:    message.IsOrphan,
 	}
 	return nil
 }
