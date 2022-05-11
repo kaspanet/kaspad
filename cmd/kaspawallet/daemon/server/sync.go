@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/libkaspawallet"
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/pkg/errors"
@@ -14,6 +15,31 @@ import (
 var keyChains = []uint8{libkaspawallet.ExternalKeychain, libkaspawallet.InternalKeychain}
 
 type walletAddressSet map[string]*walletAddress
+type walletUTXOSet map[externalapi.DomainOutpoint]*walletUTXO
+
+func (s *server) utxosSortedByAmount() []*walletUTXO {
+	utxos := make([]*walletUTXO, len(s.utxoSet))
+	i := 0
+	for _, walletUtxo := range s.utxoSet {
+		utxos[i] = walletUtxo
+		i = i + 1
+	}
+
+	sort.Slice(utxos, func(i, j int) bool { return utxos[i].UTXOEntry.Amount() > utxos[j].UTXOEntry.Amount() })
+	return utxos
+}
+
+func (s *server) availableUtxosSortedByAmount() []*walletUTXO {
+	utxos := make([]*walletUTXO, 0)
+	for _, walletUtxo := range s.utxoSet {
+		if s.tracker.isOutpointAvailable(walletUtxo.Outpoint) {
+			utxos = append(utxos, walletUtxo)
+		}
+	}
+
+	sort.Slice(utxos, func(i, j int) bool { return utxos[i].UTXOEntry.Amount() > utxos[j].UTXOEntry.Amount() })
+	return utxos
+}
 
 func (was walletAddressSet) strings() []string {
 	addresses := make([]string, 0, len(was))
@@ -36,6 +62,45 @@ func (s *server) onChainChanged(notification *appmessage.VirtualSelectedParentCh
 	}
 }
 
+func (s *server) onUtxoChange(notification *appmessage.UTXOsChangedNotificationMessage) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+	fmt.Println("chain changed", len(notification.Added))
+	for _, utxoRemoved := range notification.Removed {
+		_, found := s.addressSet[utxoRemoved.Address]
+		if found {
+			outpoint, err := appmessage.RPCOutpointToDomainOutpoint(utxoRemoved.Outpoint)
+			if err != nil {
+				log.Warn(err)
+			}
+
+			delete(s.utxoSet, *outpoint)
+		}
+
+	}
+	for _, utxoAdded := range notification.Added {
+		address, ok := s.addressSet[utxoAdded.Address]
+		if !ok {
+			continue
+		}
+		outpoint, err := appmessage.RPCOutpointToDomainOutpoint(utxoAdded.Outpoint)
+		if err != nil {
+			log.Warn(err)
+		}
+
+		utxoEntry, err := appmessage.RPCUTXOEntryToUTXOEntry(utxoAdded.UTXOEntry)
+		if err != nil {
+			log.Warn(err)
+		}
+
+		s.utxoSet[*outpoint] = &walletUTXO{
+			Outpoint:  outpoint,
+			UTXOEntry: utxoEntry,
+			address:   address,
+		}
+	}
+}
+
 func (s *server) intialize() error {
 	err := s.collectRecentAddresses()
 	if err != nil {
@@ -48,6 +113,13 @@ func (s *server) intialize() error {
 	}
 
 	err = s.rpcClient.RegisterForVirtualSelectedParentChainChangedNotifications(true, s.onChainChanged)
+	if err != nil {
+		return err
+	}
+
+	emptyStringSlice := []string{}
+
+	err = s.rpcClient.RegisterForUTXOsChangedNotifications(emptyStringSlice, s.onUtxoChange)
 	if err != nil {
 		return err
 	}
@@ -240,12 +312,10 @@ func (s *server) refreshExistingUTXOsWithLock() error {
 
 // updateUTXOSet clears the current UTXO set, and re-fills it with the given entries
 func (s *server) updateUTXOSet(entries []*appmessage.UTXOsByAddressesEntry) error {
-	utxos := make([]*walletUTXO, len(entries))
 
-	s.tracker.untrackExpiredOutpointsAsReserved() //untrack all stale reserved outpoints, before comparing in loop
-	availableUtxos := make([]*walletUTXO, 0)
+	newWalletUTXOSet := make(walletUTXOSet)
 
-	for i, entry := range entries {
+	for _, entry := range entries {
 		outpoint, err := appmessage.RPCOutpointToDomainOutpoint(entry.Outpoint)
 		if err != nil {
 			return err
@@ -260,37 +330,18 @@ func (s *server) updateUTXOSet(entries []*appmessage.UTXOsByAddressesEntry) erro
 		if !ok {
 			return errors.Errorf("Got result from address %s even though it wasn't requested", entry.Address)
 		}
-		utxos[i] = &walletUTXO{
+		newWalletUTXOSet[*outpoint] = &walletUTXO{
 			Outpoint:  outpoint,
 			UTXOEntry: utxoEntry,
 			address:   address,
 		}
-		if s.tracker.isOutpointAvailable(outpoint) {
-			availableUtxos = append(availableUtxos, &walletUTXO{
-				Outpoint:  outpoint,
-				UTXOEntry: utxoEntry,
-				address:   address,
-			})
-		}
 	}
+	s.utxoSet = newWalletUTXOSet
 
-	sort.Slice(utxos, func(i, j int) bool { return utxos[i].UTXOEntry.Amount() > utxos[j].UTXOEntry.Amount() })
-
-	s.utxosSortedByAmount = utxos
-
-	sort.Slice(availableUtxos, func(i, j int) bool {
-		return availableUtxos[i].UTXOEntry.Amount() > availableUtxos[j].UTXOEntry.Amount()
-	})
-
-	s.availableUtxosSortedByAmount = availableUtxos
-
-	fmt.Println("utxos total", len(s.utxosSortedByAmount))
-	fmt.Println("utxos available", len(s.availableUtxosSortedByAmount))
-	fmt.Println("utxos reserved", len(s.tracker.reservedOutpoints))
-	fmt.Println("transactions", len(s.tracker.sentTransactions))
-	fmt.Println("utxos in mempool", s.tracker.countOutpointsInmempool())
-
-	//s.tracker.untrackOutpointDifferenceViaWalletUTXOs(utxos) //clean up reserved tracker
+	fmt.Println("total", len(s.utxoSet))
+	fmt.Println("reserved", len(s.tracker.reservedOutpoints))
+	fmt.Println("followed txIDS", len(s.tracker.sentTransactions))
+	fmt.Println("UtxosSent", s.tracker.countOutpointsInmempool())
 
 	return nil
 }

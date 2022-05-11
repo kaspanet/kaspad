@@ -33,10 +33,10 @@ func (s *server) createUnsignedTransactions(address string, amount uint64, fromA
 		return nil, errors.New("server is not synced")
 	}
 
-	err := s.refreshUTXOs()
-	if err != nil {
-		return nil, err
-	}
+	//err := s.refreshUTXOs()
+	//if err != nil {
+	//	return nil, err
+	//}
 
 	toAddress, err := util.DecodeAddress(address, s.params.Prefix)
 	if err != nil {
@@ -97,7 +97,7 @@ func (s *server) selectUTXOs(spendAmount uint64, feePerInput uint64, fromAddress
 		return nil, 0, err
 	}
 
-	for _, utxo := range s.availableUtxosSortedByAmount {
+	for _, utxo := range s.availableUtxosSortedByAmount() {
 		if (fromAddresses != nil && !slices.Contains(fromAddresses, utxo.address)) ||
 			!isUTXOSpendable(utxo, dagInfo.VirtualDAAScore, s.params.BlockCoinbaseMaturity) {
 			continue

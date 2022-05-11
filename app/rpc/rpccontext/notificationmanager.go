@@ -3,6 +3,10 @@ package rpccontext
 import (
 	"sync"
 
+	"github.com/kaspanet/kaspad/domain/dagconfig"
+
+	"github.com/kaspanet/kaspad/domain/consensus/utils/txscript"
+
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/domain/utxoindex"
 	routerpkg "github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
@@ -13,6 +17,7 @@ import (
 type NotificationManager struct {
 	sync.RWMutex
 	listeners map[*routerpkg.Router]*NotificationListener
+	params    *dagconfig.Params
 }
 
 // UTXOsChangedNotificationAddress represents a kaspad address.
@@ -24,6 +29,8 @@ type UTXOsChangedNotificationAddress struct {
 
 // NotificationListener represents a registered RPC notification listener
 type NotificationListener struct {
+	params *dagconfig.Params
+
 	propagateBlockAddedNotifications                            bool
 	propagateVirtualSelectedParentChainChangedNotifications     bool
 	propagateFinalityConflictNotifications                      bool
@@ -39,8 +46,9 @@ type NotificationListener struct {
 }
 
 // NewNotificationManager creates a new NotificationManager
-func NewNotificationManager() *NotificationManager {
+func NewNotificationManager(params *dagconfig.Params) *NotificationManager {
 	return &NotificationManager{
+		params:    params,
 		listeners: make(map[*routerpkg.Router]*NotificationListener),
 	}
 }
@@ -50,7 +58,7 @@ func (nm *NotificationManager) AddListener(router *routerpkg.Router) {
 	nm.Lock()
 	defer nm.Unlock()
 
-	listener := newNotificationListener()
+	listener := newNotificationListener(nm.params)
 	nm.listeners[router] = listener
 }
 
@@ -265,8 +273,10 @@ func (nm *NotificationManager) NotifyPruningPointUTXOSetOverride() error {
 	return nil
 }
 
-func newNotificationListener() *NotificationListener {
+func newNotificationListener(params *dagconfig.Params) *NotificationListener {
 	return &NotificationListener{
+		params: params,
+
 		propagateBlockAddedNotifications:                            false,
 		propagateVirtualSelectedParentChainChangedNotifications:     false,
 		propagateFinalityConflictNotifications:                      false,
@@ -360,7 +370,7 @@ func (nl *NotificationListener) convertUTXOChangesToUTXOsChangedNotification(
 				notification.Removed = append(notification.Removed, utxosByAddressesEntries...)
 			}
 		}
-	} else {
+	} else if addressesSize > 0 {
 		for _, listenerAddress := range nl.propagateUTXOsChangedNotificationAddresses {
 			listenerScriptPublicKeyString := listenerAddress.ScriptPublicKeyString
 			if addedPairs, ok := utxoChanges.Added[listenerScriptPublicKeyString]; ok {
@@ -372,9 +382,32 @@ func (nl *NotificationListener) convertUTXOChangesToUTXOsChangedNotification(
 				notification.Removed = append(notification.Removed, utxosByAddressesEntries...)
 			}
 		}
+	} else {
+		for scriptPublicKeyString, addedPairs := range utxoChanges.Added {
+			addressString := nl.scriptPubKeyStringToAddressString(scriptPublicKeyString)
+			utxosByAddressesEntries := ConvertUTXOOutpointEntryPairsToUTXOsByAddressesEntries(addressString, addedPairs)
+			notification.Added = append(notification.Added, utxosByAddressesEntries...)
+		}
+		for scriptPublicKeyString, removedOutpoints := range utxoChanges.Removed {
+			addressString := nl.scriptPubKeyStringToAddressString(scriptPublicKeyString)
+			utxosByAddressesEntries := convertUTXOOutpointsToUTXOsByAddressesEntries(addressString, removedOutpoints)
+			notification.Removed = append(notification.Removed, utxosByAddressesEntries...)
+		}
+
 	}
 
 	return notification
+}
+
+func (nl *NotificationListener) scriptPubKeyStringToAddressString(scriptPublicKeyString utxoindex.ScriptPublicKeyString) string {
+	scriptPubKey := utxoindex.ConvertStringToScriptPublicKey(scriptPublicKeyString)
+	_, address, err := txscript.ExtractScriptPubKeyAddress(scriptPubKey, nl.params)
+	var addressString string
+	if err != nil { // This just means the script is not standard
+		addressString = ""
+	}
+	addressString = address.String()
+	return addressString
 }
 
 // PropagateVirtualSelectedParentBlueScoreChangedNotifications instructs the listener to send
