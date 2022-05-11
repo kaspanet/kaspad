@@ -30,10 +30,12 @@ type server struct {
 
 	lock                sync.RWMutex
 	utxosSortedByAmount []*walletUTXO
+	availableUtxosSortedByAmount []*walletUTXO
 	nextSyncStartIndex  uint32
 	keysFile            *keys.File
 	shutdown            chan struct{}
 	addressSet          walletAddressSet
+	tracker		    *Tracker
 	txMassCalculator    *txmass.Calculator
 }
 
@@ -68,10 +70,12 @@ func Start(params *dagconfig.Params, listen, rpcServer string, keysFilePath stri
 		rpcClient:           rpcClient,
 		params:              params,
 		utxosSortedByAmount: []*walletUTXO{},
+		availableUtxosSortedByAmount: []*walletUTXO{},
 		nextSyncStartIndex:  0,
 		keysFile:            keysFile,
 		shutdown:            make(chan struct{}),
 		addressSet:          make(walletAddressSet),
+		tracker: 	     NewTracker(),
 		txMassCalculator:    txmass.NewCalculator(params.MassPerTxByte, params.MassPerScriptPubKeyByte, params.MassPerSigOp),
 	}
 

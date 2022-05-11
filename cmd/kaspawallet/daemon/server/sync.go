@@ -1,6 +1,7 @@
 package server
 
 import (
+	"fmt"
 	"sort"
 	"time"
 
@@ -22,17 +23,58 @@ func (was walletAddressSet) strings() []string {
 	return addresses
 }
 
+func (s *server) onChainChanged(notification *appmessage.VirtualSelectedParentChainChangedNotificationMessage) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+	fmt.Println("chain changed", len(notification.AddedChainBlockHashes))
+	for _, transactionIDs := range notification.AcceptedTransactionIDs {
+		for _, transactionID := range transactionIDs.AcceptedTransactionIDs {
+			if s.tracker.isTransactionIDTracked(transactionID) {
+				s.tracker.untrackSentTransactionID(transactionID)
+			}
+		}
+	}
+}
+
+func (s *server) intialize() error {
+	err := s.collectRecentAddresses()
+	if err != nil {
+		return err
+	}
+
+	err = s.refreshExistingUTXOsWithLock()
+	if err != nil {
+		return err
+	}
+
+	err = s.rpcClient.RegisterForVirtualSelectedParentChainChangedNotifications(true, s.onChainChanged)
+	if err != nil {
+		return err
+	}
+
+	err = s.intializeMempool()
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func (s *server) sync() error {
+	err := s.intialize()
+	if err != nil {
+		return err
+	}
+
 	ticker := time.NewTicker(time.Second)
 	defer ticker.Stop()
 
 	for range ticker.C {
-		err := s.collectRecentAddresses()
+		err :=  s.collectFarAddresses()
 		if err != nil {
 			return err
 		}
 
-		err = s.collectFarAddresses()
+		err = s.collectRecentAddresses()
 		if err != nil {
 			return err
 		}
@@ -47,7 +89,8 @@ func (s *server) sync() error {
 	return nil
 }
 
-const numIndexesToQuery = 100
+const numIndexesToQueryForFarAddresses = 100
+const numIndexesToQueryForRecentAddresses = 1000
 
 // addressesToQuery scans the addresses in the given range. Because
 // each cosigner in a multisig has its own unique path for generating
@@ -75,17 +118,17 @@ func (s *server) addressesToQuery(start, end uint32) (walletAddressSet, error) {
 	return addresses, nil
 }
 
-// collectFarAddresses collects numIndexesToQuery addresses
+// collectFarAddresses collects numIndexesToQueryForFarAddresses addresses
 // from the last point it stopped in the previous call.
 func (s *server) collectFarAddresses() error {
 	s.lock.Lock()
 	defer s.lock.Unlock()
-	err := s.collectAddresses(s.nextSyncStartIndex, s.nextSyncStartIndex+numIndexesToQuery)
+	err := s.collectAddresses(s.nextSyncStartIndex, s.nextSyncStartIndex+numIndexesToQueryForFarAddresses)
 	if err != nil {
 		return err
 	}
 
-	s.nextSyncStartIndex += numIndexesToQuery
+	s.nextSyncStartIndex += numIndexesToQueryForFarAddresses
 	return nil
 }
 
@@ -106,13 +149,20 @@ func (s *server) maxUsedIndex() uint32 {
 // collectRecentAddresses scans addresses in batches of numIndexesToQuery,
 // and releases the lock between scans.
 func (s *server) collectRecentAddresses() error {
-	maxUsedIndex := s.maxUsedIndex()
-	for i := uint32(0); i < maxUsedIndex+1000; i += numIndexesToQuery {
-		err := s.collectAddressesWithLock(i, i+numIndexesToQuery)
+	index := uint32(0)
+	maxUsedIndex := uint32(0)
+	for ; index < maxUsedIndex+numIndexesToQueryForRecentAddresses; index += numIndexesToQueryForRecentAddresses {
+		err := s.collectAddressesWithLock(index, index+numIndexesToQueryForRecentAddresses)
 		if err != nil {
 			return err
 		}
+		maxUsedIndex = s.maxUsedIndex()
 	}
+	s.lock.Lock()
+	if index > s.nextSyncStartIndex {
+		s.nextSyncStartIndex = index
+	}
+	s.lock.Unlock()
 
 	return nil
 }
@@ -192,6 +242,9 @@ func (s *server) refreshExistingUTXOsWithLock() error {
 func (s *server) updateUTXOSet(entries []*appmessage.UTXOsByAddressesEntry) error {
 	utxos := make([]*walletUTXO, len(entries))
 
+	s.tracker.untrackExpiredOutpointsAsReserved() //untrack all stale reserved outpoints, before comparing in loop
+	availableUtxos := make([]*walletUTXO, 0)
+
 	for i, entry := range entries {
 		outpoint, err := appmessage.RPCOutpointToDomainOutpoint(entry.Outpoint)
 		if err != nil {
@@ -212,13 +265,56 @@ func (s *server) updateUTXOSet(entries []*appmessage.UTXOsByAddressesEntry) erro
 			UTXOEntry: utxoEntry,
 			address:   address,
 		}
+		if s.tracker.isOutpointAvailable(outpoint) {
+			availableUtxos = append(availableUtxos, &walletUTXO{
+				Outpoint:  outpoint,
+				UTXOEntry: utxoEntry,
+				address:   address,
+			})
+		}
 	}
 
 	sort.Slice(utxos, func(i, j int) bool { return utxos[i].UTXOEntry.Amount() > utxos[j].UTXOEntry.Amount() })
 
 	s.utxosSortedByAmount = utxos
 
+	sort.Slice(availableUtxos, func(i, j int) bool {
+		return availableUtxos[i].UTXOEntry.Amount() > availableUtxos[j].UTXOEntry.Amount()
+	})
+
+	s.availableUtxosSortedByAmount = availableUtxos
+
+	fmt.Println("utxos total", len(s.utxosSortedByAmount))
+	fmt.Println("utxos available", len(s.availableUtxosSortedByAmount))
+	fmt.Println("utxos reserved", len(s.tracker.reservedOutpoints))
+	fmt.Println("transactions", len(s.tracker.sentTransactions))
+	fmt.Println("utxos in mempool", s.tracker.countOutpointsInmempool())
+
+	//s.tracker.untrackOutpointDifferenceViaWalletUTXOs(utxos) //clean up reserved tracker
+
 	return nil
+}
+
+func (s *server) intializeMempool() error {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+	getMempoolEntriesResponse, err := s.rpcClient.GetMempoolEntries()
+	if err != nil {
+		return err
+	}
+	if getMempoolEntriesResponse.Error != nil {
+		return errors.Errorf(getMempoolEntriesResponse.Error.Message)
+	}
+	for _, mempoolEntry := range getMempoolEntriesResponse.Entries {
+		transaction, err := appmessage.RPCTransactionToDomainTransaction(mempoolEntry.Transaction)
+		if err != nil {
+			return err
+		}
+		s.tracker.trackTransaction(transaction)
+	}
+
+	return nil
+
 }
 
 func (s *server) refreshUTXOs() error {
