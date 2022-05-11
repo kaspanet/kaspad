@@ -114,9 +114,9 @@ func (s *server) intialize() error {
 		return err
 	}
 
-	emptyStringSlice := []string{}
+	//emptyStringSlice := []string{}
 
-	err = s.rpcClient.RegisterForUTXOsChangedNotifications(emptyStringSlice, s.onUtxoChange)
+	err = s.rpcClient.RegisterForUTXOsChangedNotifications(s.addressSet.strings(), s.onUtxoChange)
 	if err != nil {
 		return err
 	}
