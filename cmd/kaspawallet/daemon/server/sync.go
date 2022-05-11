@@ -69,7 +69,7 @@ func (s *server) sync() error {
 	defer ticker.Stop()
 
 	for range ticker.C {
-		err :=  s.collectFarAddresses()
+		err := s.collectFarAddresses()
 		if err != nil {
 			return err
 		}

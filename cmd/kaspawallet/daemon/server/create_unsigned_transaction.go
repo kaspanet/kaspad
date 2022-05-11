@@ -104,7 +104,6 @@ func (s *server) selectUTXOs(spendAmount uint64, feePerInput uint64, fromAddress
 		}
 		s.tracker.trackOutpointAsReserved(utxo.Outpoint)
 
-
 		selectedUTXOs = append(selectedUTXOs, &libkaspawallet.UTXO{
 			Outpoint:       utxo.Outpoint,
 			UTXOEntry:      utxo.UTXOEntry,
