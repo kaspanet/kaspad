@@ -14,6 +14,7 @@ func HandleGetMempoolEntriesByAddresses(context *rpccontext.Context, _ *router.R
 	transactions := context.Domain.MiningManager().AllTransactions()
 	orphanTransactions := context.Domain.MiningManager().AllOrphanTransactions()
 	AllTransactions := append(transactions, orphanTransactions...)
+	orphanCutoff := len(transactions)
 
 	getMempoolEntriesByAddressesRequest := request.(*appmessage.GetMempoolEntriesByAddressesRequestMessage)
 	mempoolEntriesByAddresses := make([]*appmessage.MempoolEntryByAddress, 0)
@@ -46,7 +47,7 @@ func HandleGetMempoolEntriesByAddresses(context *rpccontext.Context, _ *router.R
 						&appmessage.MempoolEntry{
 							Fee:         transaction.Fee,
 							Transaction: rpcTransaction,
-							IsOrphan:    i > (len(transactions) - 1),
+							IsOrphan:    i > orphanCutoff,
 						},
 					)
 					break //one input is enough
@@ -68,7 +69,7 @@ func HandleGetMempoolEntriesByAddresses(context *rpccontext.Context, _ *router.R
 						&appmessage.MempoolEntry{
 							Fee:         transaction.Fee,
 							Transaction: rpcTransaction,
-							IsOrphan:    i > (len(transactions) - 1),
+							IsOrphan:    i > orphanCutoff,
 						},
 					)
 					break //one output is enough
