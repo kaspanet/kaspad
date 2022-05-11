@@ -7,6 +7,9 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
 )
 
+type walletAddressSet map[string]*walletAddress
+type walletUTXOSet map[externalapi.DomainOutpoint]*walletUTXO
+
 type reservedOutpoints map[externalapi.DomainOutpoint]int64
 type sentTransactions map[string][]*externalapi.DomainOutpoint
 
@@ -83,7 +86,7 @@ func (tr *Tracker) untrackSentTransactionID(transactionID string) {
 }
 
 func (tr *Tracker) trackOutpointAsReserved(outpoint *externalapi.DomainOutpoint) {
-	tr.reservedOutpoints[*outpoint] = time.Now().Unix()
+	tr.reservedOutpoints[*outpoint.Clone()] = time.Now().Unix()
 }
 
 func (tr *Tracker) trackTransaction(transaction *externalapi.DomainTransaction) {
@@ -91,7 +94,7 @@ func (tr *Tracker) trackTransaction(transaction *externalapi.DomainTransaction) 
 	for i, transactionInput := range transaction.Inputs {
 		transactionOutpoints[i] = &transactionInput.PreviousOutpoint
 	}
-	tr.sentTransactions[consensushashing.TransactionID(transaction).String()] = transactionOutpoints
+	tr.sentTransactions[consensushashing.TransactionID(transaction).Clone().String()] = transactionOutpoints
 }
 
 func (tr *Tracker) untrackOutpointAsReserved(outpoint externalapi.DomainOutpoint) {

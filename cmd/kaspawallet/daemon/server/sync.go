@@ -6,16 +6,12 @@ import (
 	"time"
 
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/libkaspawallet"
-	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/pkg/errors"
 )
 
 var keyChains = []uint8{libkaspawallet.ExternalKeychain, libkaspawallet.InternalKeychain}
-
-type walletAddressSet map[string]*walletAddress
-type walletUTXOSet map[externalapi.DomainOutpoint]*walletUTXO
 
 func (s *server) utxosSortedByAmount() []*walletUTXO {
 	utxos := make([]*walletUTXO, len(s.utxoSet))
@@ -65,7 +61,8 @@ func (s *server) onChainChanged(notification *appmessage.VirtualSelectedParentCh
 func (s *server) onUtxoChange(notification *appmessage.UTXOsChangedNotificationMessage) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
-	fmt.Println("chain changed", len(notification.Added))
+	fmt.Println("utxo added", len(notification.Added))
+	fmt.Println("utxo removed", len(notification.Added))
 	for _, utxoRemoved := range notification.Removed {
 		_, found := s.addressSet[utxoRemoved.Address]
 		if found {
@@ -93,7 +90,7 @@ func (s *server) onUtxoChange(notification *appmessage.UTXOsChangedNotificationM
 			log.Warn(err)
 		}
 
-		s.utxoSet[*outpoint] = &walletUTXO{
+		s.utxoSet[*outpoint.Clone()] = &walletUTXO{
 			Outpoint:  outpoint,
 			UTXOEntry: utxoEntry,
 			address:   address,
@@ -330,7 +327,7 @@ func (s *server) updateUTXOSet(entries []*appmessage.UTXOsByAddressesEntry) erro
 		if !ok {
 			return errors.Errorf("Got result from address %s even though it wasn't requested", entry.Address)
 		}
-		newWalletUTXOSet[*outpoint] = &walletUTXO{
+		newWalletUTXOSet[*outpoint.Clone()] = &walletUTXO{
 			Outpoint:  outpoint,
 			UTXOEntry: utxoEntry,
 			address:   address,
