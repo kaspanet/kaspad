@@ -39,10 +39,10 @@ func (s *server) ShowAddresses(_ context.Context, request *pb.ShowAddressesReque
 	defer s.lock.Unlock()
 
 	if !s.isSynced() {
-		return nil, errors.New("server is not synced")
+		return nil, errors.Errorf("wallet daemon is not synced yet, %s", s.formatSyncStateReport())
 	}
 
-	addresses := make([]string, 0)
+	addresses := make([]string, 0, s.keysFile.LastUsedExternalIndex())
 	for i := uint32(1); i <= s.keysFile.LastUsedExternalIndex(); i++ {
 		walletAddr := &walletAddress{
 			index:         i,
@@ -65,7 +65,7 @@ func (s *server) NewAddress(_ context.Context, request *pb.NewAddressRequest) (*
 	defer s.lock.Unlock()
 
 	if !s.isSynced() {
-		return nil, errors.New("server is not synced")
+		return nil, errors.Errorf("wallet daemon is not synced yet, %s", s.formatSyncStateReport())
 	}
 
 	err := s.keysFile.SetLastUsedExternalIndex(s.keysFile.LastUsedExternalIndex() + 1)

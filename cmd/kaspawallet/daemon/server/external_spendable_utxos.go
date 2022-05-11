@@ -31,7 +31,6 @@ func (s *server) GetExternalSpendableUTXOs(_ context.Context, request *pb.GetExt
 }
 
 func (s *server) selectExternalSpendableUTXOs(externalUTXOs *appmessage.GetUTXOsByAddressesResponseMessage, address string) ([]*pb.UtxosByAddressesEntry, error) {
-
 	dagInfo, err := s.rpcClient.GetBlockDAGInfo()
 	if err != nil {
 		return nil, err
@@ -40,8 +39,9 @@ func (s *server) selectExternalSpendableUTXOs(externalUTXOs *appmessage.GetUTXOs
 	daaScore := dagInfo.VirtualDAAScore
 	maturity := s.params.BlockCoinbaseMaturity
 
-	//we do not make because we do not know size, because of unspendable utxos
-	var selectedExternalUtxos []*pb.UtxosByAddressesEntry
+	// even though we do not know size because of unspendable utxos,
+	// we still can make an assumption about the maximum possible UTXOs
+	selectedExternalUtxos := make([]*pb.UtxosByAddressesEntry, 0, len(externalUTXOs.Entries))
 
 	for _, entry := range externalUTXOs.Entries {
 		if !isExternalUTXOSpendable(entry, daaScore, maturity) {

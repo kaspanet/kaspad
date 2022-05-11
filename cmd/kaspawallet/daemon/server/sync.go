@@ -1,6 +1,7 @@
 package server
 
 import (
+	"fmt"
 	"sort"
 	"time"
 
@@ -89,10 +90,14 @@ func (s *server) collectFarAddresses() error {
 	return nil
 }
 
-func (s *server) maxUsedIndex() uint32 {
+func (s *server) maxUsedIndexWithLock() uint32 {
 	s.lock.RLock()
 	defer s.lock.RUnlock()
 
+	return s.maxUsedIndex()
+}
+
+func (s *server) maxUsedIndex() uint32 {
 	maxUsedIndex := s.keysFile.LastUsedExternalIndex()
 	if s.keysFile.LastUsedInternalIndex() > maxUsedIndex {
 		maxUsedIndex = s.keysFile.LastUsedInternalIndex()
@@ -106,7 +111,7 @@ func (s *server) maxUsedIndex() uint32 {
 // collectRecentAddresses scans addresses in batches of numIndexesToQuery,
 // and releases the lock between scans.
 func (s *server) collectRecentAddresses() error {
-	maxUsedIndex := s.maxUsedIndex()
+	maxUsedIndex := s.maxUsedIndexWithLock()
 	for i := uint32(0); i < maxUsedIndex+1000; i += numIndexesToQuery {
 		err := s.collectAddressesWithLock(i, i+numIndexesToQuery)
 		if err != nil {
@@ -231,5 +236,16 @@ func (s *server) refreshUTXOs() error {
 }
 
 func (s *server) isSynced() bool {
-	return s.nextSyncStartIndex > s.keysFile.LastUsedInternalIndex() && s.nextSyncStartIndex > s.keysFile.LastUsedExternalIndex()
+	return s.nextSyncStartIndex > s.maxUsedIndex()
+}
+
+func (s *server) formatSyncStateReport() string {
+	maxUsed := s.maxUsedIndex()
+
+	if s.nextSyncStartIndex > maxUsed {
+		maxUsed = s.nextSyncStartIndex
+	}
+
+	return fmt.Sprintf("scanned %d out of %d addresses (%.2f%%)",
+		s.nextSyncStartIndex, maxUsed, float64(s.nextSyncStartIndex)*100.0/float64(maxUsed))
 }
