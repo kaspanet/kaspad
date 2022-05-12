@@ -8,8 +8,6 @@ import (
 
 	"github.com/kaspanet/kaspad/version"
 
-	"github.com/pkg/errors"
-
 	_ "net/http/pprof"
 
 	"github.com/kaspanet/kaspad/infrastructure/os/signal"
@@ -23,8 +21,7 @@ func main() {
 
 	cfg, err := parseConfig()
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error parsing command-line arguments: %s\n", err)
-		os.Exit(1)
+		printErrorAndExit(fmt.Errorf("Error parsing command-line arguments: %s", err))
 	}
 	defer backendLog.Close()
 
@@ -38,20 +35,20 @@ func main() {
 
 	client, err := newMinerClient(cfg)
 	if err != nil {
-		panic(errors.Wrap(err, "error connecting to the RPC server"))
+		printErrorAndExit(fmt.Errorf("Error connecting to the RPC server: %s", err))
 	}
 	defer client.Disconnect()
 
 	miningAddr, err := util.DecodeAddress(cfg.MiningAddr, cfg.ActiveNetParams.Prefix)
 	if err != nil {
-		panic(errors.Wrap(err, "error decoding mining address"))
+		printErrorAndExit(fmt.Errorf("Error decoding mining address: %s", err))
 	}
 
 	doneChan := make(chan struct{})
 	spawn("mineLoop", func() {
 		err = mineLoop(client, cfg.NumberOfBlocks, *cfg.TargetBlocksPerSecond, cfg.MineWhenNotSynced, miningAddr)
 		if err != nil {
-			panic(errors.Wrap(err, "error in mine loop"))
+			printErrorAndExit(fmt.Errorf("Error in mine loop: %s", err))
 		}
 		doneChan <- struct{}{}
 	})
@@ -60,4 +57,9 @@ func main() {
 	case <-doneChan:
 	case <-interrupt:
 	}
+}
+
+func printErrorAndExit(err error) {
+	fmt.Fprintf(os.Stderr, "%+v\n", err)
+	os.Exit(1)
 }
