@@ -42,6 +42,9 @@ func (s *server) createUnsignedTransactionVerbose(inputs []externalapi.DomainOut
 	if err != nil {
 		return nil, err
 	}
+	if len(selectedUTXOs) < len(inputs) {
+		return nil, errors.New("Some UTXOs are unavailable")
+	}
 
 	totalSpend := uint64(0)
 	for _, payment := range payments {
