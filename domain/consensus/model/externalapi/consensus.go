@@ -23,8 +23,11 @@ type Consensus interface {
 	GetHashesBetween(lowHash, highHash *DomainHash, maxBlocks uint64) (hashes []*DomainHash, actualHighHash *DomainHash, err error)
 	GetAnticone(blockHash, contextHash *DomainHash, maxBlocks uint64) (hashes []*DomainHash, err error)
 	GetMissingBlockBodyHashes(highHash *DomainHash) ([]*DomainHash, error)
+
 	GetPruningPointUTXOs(expectedPruningPointHash *DomainHash, fromOutpoint *DomainOutpoint, limit int) ([]*OutpointAndUTXOEntryPair, error)
 	GetVirtualUTXOs(expectedVirtualParents []*DomainHash, fromOutpoint *DomainOutpoint, limit int) ([]*OutpointAndUTXOEntryPair, error)
+	FilterUTXOsNotInConsensus(Utxos []*OutpointAndUTXOEntryPair) ([]*OutpointAndUTXOEntryPair, error)
+
 	PruningPoint() (*DomainHash, error)
 	PruningPointHeaders() ([]BlockHeader, error)
 	PruningPointAndItsAnticone() ([]*DomainHash, error)

@@ -462,6 +462,29 @@ func (s *consensus) GetVirtualUTXOs(expectedVirtualParents []*externalapi.Domain
 	return virtualUTXOs, nil
 }
 
+func (s *consensus) FilterUTXOsNotInConsensus(Utxos []*externalapi.OutpointAndUTXOEntryPair) ([]*externalapi.OutpointAndUTXOEntryPair, error) {
+
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	filteredUtxos := make([]*externalapi.OutpointAndUTXOEntryPair, 0)
+
+	stagingArea := model.NewStagingArea()
+
+	for _, utxo := range Utxos {
+		isInConsensus, err := s.consensusStateStore.HasUTXOByOutpoint(s.databaseContext, stagingArea, utxo.Outpoint)
+		if err != nil {
+			return nil, err
+		}
+
+		if isInConsensus {
+			filteredUtxos = append(filteredUtxos, utxo)
+		}
+
+	}
+	return filteredUtxos, nil
+}
+
 func (s *consensus) PruningPoint() (*externalapi.DomainHash, error) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
