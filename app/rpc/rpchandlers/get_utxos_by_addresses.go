@@ -3,6 +3,7 @@ package rpchandlers
 import (
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/app/rpc/rpccontext"
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/txscript"
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
 	"github.com/kaspanet/kaspad/util"
@@ -36,7 +37,19 @@ func HandleGetUTXOsByAddresses(context *rpccontext.Context, _ *router.Router, re
 		if err != nil {
 			return nil, err
 		}
-		entries := rpccontext.ConvertUTXOOutpointEntryPairsToUTXOsByAddressesEntries(addressString, utxoOutpointEntryPairs)
+		OutpointEntryPairs := make([]*externalapi.OutpointAndUTXOEntryPair, 0)
+		for outpoint, utxoEntry := range utxoOutpointEntryPairs {
+			OutpointEntryPairs = append(OutpointEntryPairs, &externalapi.OutpointAndUTXOEntryPair{
+				Outpoint:  &outpoint,
+				UTXOEntry: utxoEntry,
+			})
+
+		}
+		filteredOutpointEntryPairs, err := context.Domain.Consensus().FilterOutpointAndUTXOEntryPairsNotInConsensus(OutpointEntryPairs)
+		if err != nil {
+			return nil, err
+		}
+		entries := rpccontext.ConvertDomainOutpointEntryPairsToUTXOsByAddressesEntries(addressString, filteredOutpointEntryPairs)
 		allEntries = append(allEntries, entries...)
 	}
 

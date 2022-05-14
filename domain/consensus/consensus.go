@@ -462,7 +462,7 @@ func (s *consensus) GetVirtualUTXOs(expectedVirtualParents []*externalapi.Domain
 	return virtualUTXOs, nil
 }
 
-func (s *consensus) FilterUTXOsNotInConsensus(Utxos []*externalapi.OutpointAndUTXOEntryPair) ([]*externalapi.OutpointAndUTXOEntryPair, error) {
+func (s *consensus) FilterOutpointAndUTXOEntryPairsNotInConsensus(Utxos []*externalapi.OutpointAndUTXOEntryPair) ([]*externalapi.OutpointAndUTXOEntryPair, error) {
 
 	s.lock.Lock()
 	defer s.lock.Unlock()

@@ -44,7 +44,7 @@ func NewContext(cfg *config.Config,
 		UTXOIndex:         utxoIndex,
 		ShutDownChan:      shutDownChan,
 	}
-	context.NotificationManager = NewNotificationManager()
+	context.NotificationManager = NewNotificationManager(context)
 
 	return context
 }

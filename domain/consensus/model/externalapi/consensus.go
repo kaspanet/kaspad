@@ -26,7 +26,7 @@ type Consensus interface {
 
 	GetPruningPointUTXOs(expectedPruningPointHash *DomainHash, fromOutpoint *DomainOutpoint, limit int) ([]*OutpointAndUTXOEntryPair, error)
 	GetVirtualUTXOs(expectedVirtualParents []*DomainHash, fromOutpoint *DomainOutpoint, limit int) ([]*OutpointAndUTXOEntryPair, error)
-	FilterUTXOsNotInConsensus(Utxos []*OutpointAndUTXOEntryPair) ([]*OutpointAndUTXOEntryPair, error)
+	FilterOutpointAndUTXOEntryPairsNotInConsensus(Utxos []*OutpointAndUTXOEntryPair) ([]*OutpointAndUTXOEntryPair, error)
 
 	PruningPoint() (*DomainHash, error)
 	PruningPointHeaders() ([]BlockHeader, error)

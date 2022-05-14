@@ -2,6 +2,8 @@ package rpccontext
 
 import (
 	"encoding/hex"
+
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/txscript"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/pkg/errors"
@@ -10,22 +12,24 @@ import (
 	"github.com/kaspanet/kaspad/domain/utxoindex"
 )
 
-// ConvertUTXOOutpointEntryPairsToUTXOsByAddressesEntries converts
-// UTXOOutpointEntryPairs to a slice of UTXOsByAddressesEntry
-func ConvertUTXOOutpointEntryPairsToUTXOsByAddressesEntries(address string, pairs utxoindex.UTXOOutpointEntryPairs) []*appmessage.UTXOsByAddressesEntry {
+// ConvertDomainOutpointEntryPairsToUTXOsByAddressesEntries converts
+// *externalapi.OutpointAndUTXOEntryPairs to a slice of UTXOsByAddressesEntry
+func ConvertDomainOutpointEntryPairsToUTXOsByAddressesEntries(address string, pairs []*externalapi.OutpointAndUTXOEntryPair) []*appmessage.UTXOsByAddressesEntry {
 	utxosByAddressesEntries := make([]*appmessage.UTXOsByAddressesEntry, 0, len(pairs))
-	for outpoint, utxoEntry := range pairs {
+	for _, outpointAndUTXOEntryPair := range pairs {
 		utxosByAddressesEntries = append(utxosByAddressesEntries, &appmessage.UTXOsByAddressesEntry{
 			Address: address,
 			Outpoint: &appmessage.RPCOutpoint{
-				TransactionID: outpoint.TransactionID.String(),
-				Index:         outpoint.Index,
+				TransactionID: outpointAndUTXOEntryPair.Outpoint.TransactionID.String(),
+				Index:         outpointAndUTXOEntryPair.Outpoint.Index,
 			},
 			UTXOEntry: &appmessage.RPCUTXOEntry{
-				Amount:          utxoEntry.Amount(),
-				ScriptPublicKey: &appmessage.RPCScriptPublicKey{Script: hex.EncodeToString(utxoEntry.ScriptPublicKey().Script), Version: utxoEntry.ScriptPublicKey().Version},
-				BlockDAAScore:   utxoEntry.BlockDAAScore(),
-				IsCoinbase:      utxoEntry.IsCoinbase(),
+				Amount: outpointAndUTXOEntryPair.UTXOEntry.Amount(),
+				ScriptPublicKey: &appmessage.RPCScriptPublicKey{
+					Script:  hex.EncodeToString(outpointAndUTXOEntryPair.UTXOEntry.ScriptPublicKey().Script),
+					Version: outpointAndUTXOEntryPair.UTXOEntry.ScriptPublicKey().Version},
+				BlockDAAScore: outpointAndUTXOEntryPair.UTXOEntry.BlockDAAScore(),
+				IsCoinbase:    outpointAndUTXOEntryPair.UTXOEntry.IsCoinbase(),
 			},
 		})
 	}

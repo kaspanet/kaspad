@@ -4,6 +4,7 @@ import (
 	"sync"
 
 	"github.com/kaspanet/kaspad/app/appmessage"
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/utxoindex"
 	routerpkg "github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
 	"github.com/pkg/errors"
@@ -13,6 +14,7 @@ import (
 type NotificationManager struct {
 	sync.RWMutex
 	listeners map[*routerpkg.Router]*NotificationListener
+	context   *Context
 }
 
 // UTXOsChangedNotificationAddress represents a kaspad address.
@@ -24,6 +26,8 @@ type UTXOsChangedNotificationAddress struct {
 
 // NotificationListener represents a registered RPC notification listener
 type NotificationListener struct {
+	context *Context
+
 	propagateBlockAddedNotifications                            bool
 	propagateVirtualSelectedParentChainChangedNotifications     bool
 	propagateFinalityConflictNotifications                      bool
@@ -39,9 +43,10 @@ type NotificationListener struct {
 }
 
 // NewNotificationManager creates a new NotificationManager
-func NewNotificationManager() *NotificationManager {
+func NewNotificationManager(context *Context) *NotificationManager {
 	return &NotificationManager{
 		listeners: make(map[*routerpkg.Router]*NotificationListener),
+		context:   context,
 	}
 }
 
@@ -50,7 +55,7 @@ func (nm *NotificationManager) AddListener(router *routerpkg.Router) {
 	nm.Lock()
 	defer nm.Unlock()
 
-	listener := newNotificationListener()
+	listener := newNotificationListener(nm.context)
 	nm.listeners[router] = listener
 }
 
@@ -173,7 +178,7 @@ func (nm *NotificationManager) NotifyUTXOsChanged(utxoChanges *utxoindex.UTXOCha
 
 	for router, listener := range nm.listeners {
 		if listener.propagateUTXOsChangedNotifications {
-			// Filter utxoChanges and create a notification
+
 			notification := listener.convertUTXOChangesToUTXOsChangedNotification(utxoChanges)
 
 			// Don't send the notification if it's empty
@@ -265,9 +270,10 @@ func (nm *NotificationManager) NotifyPruningPointUTXOSetOverride() error {
 	return nil
 }
 
-func newNotificationListener() *NotificationListener {
+func newNotificationListener(context *Context) *NotificationListener {
 	return &NotificationListener{
-		propagateBlockAddedNotifications:                            false,
+		context:                          context,
+		propagateBlockAddedNotifications: false,
 		propagateVirtualSelectedParentChainChangedNotifications:     false,
 		propagateFinalityConflictNotifications:                      false,
 		propagateFinalityConflictResolvedNotifications:              false,
@@ -345,18 +351,37 @@ func (nl *NotificationListener) convertUTXOChangesToUTXOsChangedNotification(
 	// and check existence over the larger set (O(1))
 	utxoChangesSize := len(utxoChanges.Added) + len(utxoChanges.Removed)
 	addressesSize := len(nl.propagateUTXOsChangedNotificationAddresses)
-
 	notification := &appmessage.UTXOsChangedNotificationMessage{}
 	if utxoChangesSize < addressesSize {
 		for scriptPublicKeyString, addedPairs := range utxoChanges.Added {
 			if listenerAddress, ok := nl.propagateUTXOsChangedNotificationAddresses[scriptPublicKeyString]; ok {
-				utxosByAddressesEntries := ConvertUTXOOutpointEntryPairsToUTXOsByAddressesEntries(listenerAddress.Address, addedPairs)
+				domainOutpointAndUTXOpairs := make([]*externalapi.OutpointAndUTXOEntryPair, 0)
+				for outpoint, utxoEntry := range addedPairs {
+					domainOutpointAndUTXOpairs = append(
+						domainOutpointAndUTXOpairs,
+						&externalapi.OutpointAndUTXOEntryPair{
+							Outpoint:  &outpoint,
+							UTXOEntry: utxoEntry,
+						})
+				}
+				filteredDomainOutpointAndUTXOpairs, _ := nl.context.Domain.Consensus().FilterOutpointAndUTXOEntryPairsNotInConsensus(domainOutpointAndUTXOpairs)
+				utxosByAddressesEntries := ConvertDomainOutpointEntryPairsToUTXOsByAddressesEntries(listenerAddress.Address, filteredDomainOutpointAndUTXOpairs)
 				notification.Added = append(notification.Added, utxosByAddressesEntries...)
 			}
 		}
 		for scriptPublicKeyString, removedOutpoints := range utxoChanges.Removed {
 			if listenerAddress, ok := nl.propagateUTXOsChangedNotificationAddresses[scriptPublicKeyString]; ok {
-				utxosByAddressesEntries := convertUTXOOutpointsToUTXOsByAddressesEntries(listenerAddress.Address, removedOutpoints)
+				domainOutpointAndUTXOpairs := make([]*externalapi.OutpointAndUTXOEntryPair, 0)
+				for outpoint := range removedOutpoints {
+					domainOutpointAndUTXOpairs = append(
+						domainOutpointAndUTXOpairs,
+						&externalapi.OutpointAndUTXOEntryPair{
+							Outpoint:  &outpoint,
+							UTXOEntry: nil,
+						})
+				}
+				filteredDomainOutpointAndUTXOpairs, _ := nl.context.Domain.Consensus().FilterOutpointAndUTXOEntryPairsNotInConsensus(domainOutpointAndUTXOpairs)
+				utxosByAddressesEntries := ConvertDomainOutpointEntryPairsToUTXOsByAddressesEntries(listenerAddress.Address, filteredDomainOutpointAndUTXOpairs)
 				notification.Removed = append(notification.Removed, utxosByAddressesEntries...)
 			}
 		}
@@ -364,16 +389,35 @@ func (nl *NotificationListener) convertUTXOChangesToUTXOsChangedNotification(
 		for _, listenerAddress := range nl.propagateUTXOsChangedNotificationAddresses {
 			listenerScriptPublicKeyString := listenerAddress.ScriptPublicKeyString
 			if addedPairs, ok := utxoChanges.Added[listenerScriptPublicKeyString]; ok {
-				utxosByAddressesEntries := ConvertUTXOOutpointEntryPairsToUTXOsByAddressesEntries(listenerAddress.Address, addedPairs)
+				domainOutpointAndUTXOpairs := make([]*externalapi.OutpointAndUTXOEntryPair, 0)
+				for outpoint, utxoEntry := range addedPairs {
+					domainOutpointAndUTXOpairs = append(
+						domainOutpointAndUTXOpairs,
+						&externalapi.OutpointAndUTXOEntryPair{
+							Outpoint:  &outpoint,
+							UTXOEntry: utxoEntry,
+						})
+				}
+				filteredDomainOutpointAndUTXOpairs, _ := nl.context.Domain.Consensus().FilterOutpointAndUTXOEntryPairsNotInConsensus(domainOutpointAndUTXOpairs)
+				utxosByAddressesEntries := ConvertDomainOutpointEntryPairsToUTXOsByAddressesEntries(listenerAddress.Address, filteredDomainOutpointAndUTXOpairs)
 				notification.Added = append(notification.Added, utxosByAddressesEntries...)
 			}
 			if removedOutpoints, ok := utxoChanges.Removed[listenerScriptPublicKeyString]; ok {
-				utxosByAddressesEntries := convertUTXOOutpointsToUTXOsByAddressesEntries(listenerAddress.Address, removedOutpoints)
+				domainOutpointAndUTXOpairs := make([]*externalapi.OutpointAndUTXOEntryPair, 0)
+				for outpoint := range removedOutpoints {
+					domainOutpointAndUTXOpairs = append(
+						domainOutpointAndUTXOpairs,
+						&externalapi.OutpointAndUTXOEntryPair{
+							Outpoint:  &outpoint,
+							UTXOEntry: nil,
+						})
+				}
+				filteredDomainOutpointAndUTXOpairs, _ := nl.context.Domain.Consensus().FilterOutpointAndUTXOEntryPairsNotInConsensus(domainOutpointAndUTXOpairs)
+				utxosByAddressesEntries := ConvertDomainOutpointEntryPairsToUTXOsByAddressesEntries(listenerAddress.Address, filteredDomainOutpointAndUTXOpairs)
 				notification.Removed = append(notification.Removed, utxosByAddressesEntries...)
 			}
 		}
 	}
-
 	return notification
 }
 
