@@ -11,7 +11,6 @@ import (
 	"github.com/pkg/errors"
 )
 
-
 func (s *server) CreateUnsignedTransactionVerbose(_ context.Context, request *pb.CreateUnsignedTransactionVerboseRequest) (
 	*pb.CreateUnsignedTransactionsResponse, error) {
 	s.lock.Lock()
@@ -51,7 +50,7 @@ func (s *server) createUnsignedTransactionVerbose(inputs []externalapi.DomainOut
 		totalSpend += payment.Amount
 	}
 
-	changeSompi := totalValue - totalSpend - feePerInput * uint64(len(selectedUTXOs))
+	changeSompi := totalValue - totalSpend - feePerInput*uint64(len(selectedUTXOs))
 	if changeSompi < 0 {
 		return nil, errors.New("Total input is not enough to cover total output and fees")
 	}
