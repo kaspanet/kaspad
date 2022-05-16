@@ -11,12 +11,11 @@ import (
 
 // ValidateTransactionInIsolation validates the parts of the transaction that can be validated context-free
 func (v *transactionValidator) ValidateTransactionInIsolation(tx *externalapi.DomainTransaction, povDAAScore uint64) error {
-	isHF1Activated := povDAAScore >= v.hf1DAAScore
 	err := v.checkTransactionInputCount(tx)
 	if err != nil {
 		return err
 	}
-	err = v.checkTransactionAmountRanges(tx, isHF1Activated)
+	err = v.checkTransactionAmountRanges(tx)
 	if err != nil {
 		return err
 	}
@@ -63,18 +62,13 @@ func (v *transactionValidator) checkTransactionInputCount(tx *externalapi.Domain
 	return nil
 }
 
-func (v *transactionValidator) checkTransactionAmountRanges(tx *externalapi.DomainTransaction, isHF1Activated bool) error {
+func (v *transactionValidator) checkTransactionAmountRanges(tx *externalapi.DomainTransaction) error {
 	// Ensure the transaction amounts are in range. Each transaction
 	// output must not be negative or more than the max allowed per
 	// transaction. Also, the total of all outputs must abide by the same
 	// restrictions. All amounts in a transaction are in a unit value known
 	// as a sompi. One kaspa is a quantity of sompi as defined by the
 	// sompiPerKaspa constant.
-	maxSompi := constants.MaxSompiBeforeHF1
-	if isHF1Activated {
-		maxSompi = constants.MaxSompiAfterHF1
-	}
-
 	var totalSompi uint64
 	for _, txOut := range tx.Outputs {
 		sompi := txOut.Value
@@ -82,9 +76,9 @@ func (v *transactionValidator) checkTransactionAmountRanges(tx *externalapi.Doma
 			return errors.Wrap(ruleerrors.ErrTxOutValueZero, "zero value outputs are forbidden")
 		}
 
-		if sompi > maxSompi {
+		if sompi > constants.MaxSompi {
 			return errors.Wrapf(ruleerrors.ErrBadTxOutValue, "transaction output value of %d is "+
-				"higher than max allowed value of %d", sompi, maxSompi)
+				"higher than max allowed value of %d", sompi, constants.MaxSompi)
 		}
 
 		// Binary arithmetic guarantees that any overflow is detected and reported.
@@ -94,14 +88,14 @@ func (v *transactionValidator) checkTransactionAmountRanges(tx *externalapi.Doma
 		if newTotalSompi < totalSompi {
 			return errors.Wrapf(ruleerrors.ErrBadTxOutValue, "total value of all transaction "+
 				"outputs exceeds max allowed value of %d",
-				maxSompi)
+				constants.MaxSompi)
 		}
 		totalSompi = newTotalSompi
-		if totalSompi > maxSompi {
+		if totalSompi > constants.MaxSompi {
 			return errors.Wrapf(ruleerrors.ErrBadTxOutValue, "total value of all transaction "+
 				"outputs is %d which is higher than max "+
 				"allowed value of %d", totalSompi,
-				maxSompi)
+				constants.MaxSompi)
 		}
 	}
 

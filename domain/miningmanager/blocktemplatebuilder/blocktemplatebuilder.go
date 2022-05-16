@@ -142,7 +142,7 @@ func (btb *blockTemplateBuilder) BuildBlockTemplate(
 		len(candidateTxs))
 
 	blockTxs := btb.selectTransactions(candidateTxs)
-	blk, coinbaseHasRedReward, err := btb.consensusReference.Consensus().BuildBlockWithTemplateMetadata(coinbaseData, blockTxs.selectedTxs)
+	blockTemplate, err := btb.consensusReference.Consensus().BuildBlockTemplate(coinbaseData, blockTxs.selectedTxs)
 
 	invalidTxsErr := ruleerrors.ErrInvalidTransactionsInNewBlock{}
 	if errors.As(err, &invalidTxsErr) {
@@ -167,13 +167,9 @@ func (btb *blockTemplateBuilder) BuildBlockTemplate(
 	}
 
 	log.Debugf("Created new block template (%d transactions, %d in fees, %d mass, target difficulty %064x)",
-		len(blk.Transactions), blockTxs.totalFees, blockTxs.totalMass, difficulty.CompactToBig(blk.Header.Bits()))
+		len(blockTemplate.Block.Transactions), blockTxs.totalFees, blockTxs.totalMass, difficulty.CompactToBig(blockTemplate.Block.Header.Bits()))
 
-	return &consensusexternalapi.DomainBlockTemplate{
-		Block:                blk,
-		CoinbaseData:         coinbaseData,
-		CoinbaseHasRedReward: coinbaseHasRedReward,
-	}, nil
+	return blockTemplate, nil
 }
 
 // ModifyBlockTemplate modifies an existing block template to the requested coinbase data and updates the timestamp

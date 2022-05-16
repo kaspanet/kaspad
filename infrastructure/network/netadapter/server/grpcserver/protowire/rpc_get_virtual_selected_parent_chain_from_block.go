@@ -43,7 +43,12 @@ func (x *KaspadMessage_GetVirtualSelectedParentChainFromBlockResponse) fromAppMe
 	x.GetVirtualSelectedParentChainFromBlockResponse = &GetVirtualSelectedParentChainFromBlockResponseMessage{
 		RemovedChainBlockHashes: message.RemovedChainBlockHashes,
 		AddedChainBlockHashes:   message.AddedChainBlockHashes,
+		AcceptedTransactionIds:  make([]*AcceptedTransactionIds, len(message.AcceptedTransactionIDs)),
 		Error:                   err,
+	}
+	for i, acceptedTransactionIDs := range message.AcceptedTransactionIDs {
+		x.GetVirtualSelectedParentChainFromBlockResponse.AcceptedTransactionIds[i] = &AcceptedTransactionIds{}
+		x.GetVirtualSelectedParentChainFromBlockResponse.AcceptedTransactionIds[i].fromAppMessage(acceptedTransactionIDs)
 	}
 	return nil
 }
@@ -62,9 +67,28 @@ func (x *GetVirtualSelectedParentChainFromBlockResponseMessage) toAppMessage() (
 		return nil, errors.New("GetVirtualSelectedParentChainFromBlockResponseMessage contains both an error and a response")
 	}
 
-	return &appmessage.GetVirtualSelectedParentChainFromBlockResponseMessage{
+	message := &appmessage.GetVirtualSelectedParentChainFromBlockResponseMessage{
 		RemovedChainBlockHashes: x.RemovedChainBlockHashes,
 		AddedChainBlockHashes:   x.AddedChainBlockHashes,
+		AcceptedTransactionIDs:  make([]*appmessage.AcceptedTransactionIDs, len(x.AcceptedTransactionIds)),
 		Error:                   rpcErr,
-	}, nil
+	}
+
+	for i, acceptedTransactionIds := range x.AcceptedTransactionIds {
+		message.AcceptedTransactionIDs[i] = acceptedTransactionIds.toAppMessage()
+	}
+
+	return message, nil
+}
+
+func (x *AcceptedTransactionIds) fromAppMessage(acceptedTransactionIDs *appmessage.AcceptedTransactionIDs) {
+	x.AcceptingBlockHash = acceptedTransactionIDs.AcceptingBlockHash
+	x.AcceptedTransactionIds = acceptedTransactionIDs.AcceptedTransactionIDs
+}
+
+func (x *AcceptedTransactionIds) toAppMessage() *appmessage.AcceptedTransactionIDs {
+	return &appmessage.AcceptedTransactionIDs{
+		AcceptingBlockHash:     x.AcceptingBlockHash,
+		AcceptedTransactionIDs: x.AcceptedTransactionIds,
+	}
 }
