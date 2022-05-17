@@ -16,7 +16,6 @@ type mergeDepthManager struct {
 
 	genesisHash *externalapi.DomainHash
 	mergeDepth  uint64
-	hf1DAAScore uint64
 
 	ghostdagDataStore   model.GHOSTDAGDataStore
 	mergeDepthRootStore model.MergeDepthRootStore
@@ -34,7 +33,6 @@ func New(
 
 	genesisHash *externalapi.DomainHash,
 	mergeDepth uint64,
-	hf1DAAScore uint64,
 
 	ghostdagDataStore model.GHOSTDAGDataStore,
 	mergeDepthRootStore model.MergeDepthRootStore,
@@ -49,7 +47,6 @@ func New(
 		finalityManager:     finalityManager,
 		genesisHash:         genesisHash,
 		mergeDepth:          mergeDepth,
-		hf1DAAScore:         hf1DAAScore,
 		ghostdagDataStore:   ghostdagDataStore,
 		mergeDepthRootStore: mergeDepthRootStore,
 		daaBlocksStore:      daaBlocksStore,
@@ -71,19 +68,24 @@ func (mdm *mergeDepthManager) CheckBoundedMergeDepth(stagingArea *model.StagingA
 		return nil
 	}
 
-	// For validation, we must follow the HF1 DAA score in order to determine the correct depth to verify
-	mergeDepthRootByHF1, err := mdm.mergeDepthRootByHF1DAAScoreForValidationOnly(stagingArea, blockHash, isBlockWithTrustedData)
+	mergeDepthRoot, err := mdm.MergeDepthRoot(stagingArea, blockHash, isBlockWithTrustedData)
 	if err != nil {
 		return err
 	}
 
-	nonBoundedMergeDepthViolatingBlues, err := mdm.NonBoundedMergeDepthViolatingBlues(stagingArea, blockHash, mergeDepthRootByHF1)
+	// We call FinalityPoint in order to save it to storage.
+	_, err = mdm.finalityManager.FinalityPoint(stagingArea, blockHash, isBlockWithTrustedData)
+	if err != nil {
+		return err
+	}
+
+	nonBoundedMergeDepthViolatingBlues, err := mdm.NonBoundedMergeDepthViolatingBlues(stagingArea, blockHash, mergeDepthRoot)
 	if err != nil {
 		return err
 	}
 
 	for _, red := range ghostdagData.MergeSetReds() {
-		doesRedHaveMergeRootInPast, err := mdm.dagTopologyManager.IsAncestorOf(stagingArea, mergeDepthRootByHF1, red)
+		doesRedHaveMergeRootInPast, err := mdm.dagTopologyManager.IsAncestorOf(stagingArea, mergeDepthRoot, red)
 		if err != nil {
 			return err
 		}
@@ -131,34 +133,6 @@ func (mdm *mergeDepthManager) NonBoundedMergeDepthViolatingBlues(
 	}
 
 	return nonBoundedMergeDepthViolatingBlues, nil
-}
-
-func (mdm *mergeDepthManager) mergeDepthRootByHF1DAAScoreForValidationOnly(
-	stagingArea *model.StagingArea, blockHash *externalapi.DomainHash, isBlockWithTrustedData bool) (*externalapi.DomainHash, error) {
-	daaScore, err := mdm.daaBlocksStore.DAAScore(mdm.databaseContext, stagingArea, blockHash)
-	if err != nil {
-		return nil, err
-	}
-
-	// We call both, merge depth root and finality, in order to trigger storage persistency for both,
-	// although only one of them is used below
-	mergeDepthRoot, err := mdm.MergeDepthRoot(stagingArea, blockHash, isBlockWithTrustedData)
-	if err != nil {
-		return nil, err
-	}
-	// As noted above, this line should not be removed following the HF, unless we validate that storage of
-	// finality point is not needed any more
-	finalityPoint, err := mdm.finalityManager.FinalityPoint(stagingArea, blockHash, isBlockWithTrustedData)
-	if err != nil {
-		return nil, err
-	}
-
-	if daaScore >= mdm.hf1DAAScore {
-		return mergeDepthRoot, nil
-	}
-
-	// We fall back to the merge depth root before the HF, which was the finality point
-	return finalityPoint, nil
 }
 
 func (mdm *mergeDepthManager) VirtualMergeDepthRoot(stagingArea *model.StagingArea) (*externalapi.DomainHash, error) {

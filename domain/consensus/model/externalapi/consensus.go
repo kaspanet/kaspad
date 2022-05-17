@@ -4,7 +4,7 @@ package externalapi
 type Consensus interface {
 	Init(skipAddingGenesis bool) error
 	BuildBlock(coinbaseData *DomainCoinbaseData, transactions []*DomainTransaction) (*DomainBlock, error)
-	BuildBlockWithTemplateMetadata(coinbaseData *DomainCoinbaseData, transactions []*DomainTransaction) (block *DomainBlock, coinbaseHasRedReward bool, err error)
+	BuildBlockTemplate(coinbaseData *DomainCoinbaseData, transactions []*DomainTransaction) (*DomainBlockTemplate, error)
 	ValidateAndInsertBlock(block *DomainBlock, shouldValidateAgainstUTXO bool) (*VirtualChangeSet, error)
 	ValidateAndInsertBlockWithTrustedData(block *BlockWithTrustedData, validateUTXO bool) (*VirtualChangeSet, error)
 	ValidateTransactionAndPopulateWithConsensusData(transaction *DomainTransaction) error
@@ -54,4 +54,5 @@ type Consensus interface {
 	TrustedGHOSTDAGData(blockHash *DomainHash) (*BlockGHOSTDAGData, error)
 	IsChainBlock(blockHash *DomainHash) (bool, error)
 	VirtualMergeDepthRoot() (*DomainHash, error)
+	IsNearlySynced() (bool, error)
 }

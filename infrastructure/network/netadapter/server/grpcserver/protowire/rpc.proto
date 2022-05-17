@@ -301,6 +301,7 @@ message SubmitTransactionResponseMessage{
 //
 // See: VirtualSelectedParentChainChangedNotificationMessage
 message NotifyVirtualSelectedParentChainChangedRequestMessage{
+  bool includeAcceptedTransactionIds = 1;
 }
 
 message NotifyVirtualSelectedParentChainChangedResponseMessage{
@@ -317,6 +318,9 @@ message VirtualSelectedParentChainChangedNotificationMessage{
 
   // The chain blocks that were added, in low-to-high order
   repeated string addedChainBlockHashes = 3;
+
+  // Will be filled only if `includeAcceptedTransactionIds = true` in the notify request.
+  repeated AcceptedTransactionIds acceptedTransactionIds = 2;
 }
 
 // GetBlockRequestMessage requests information about a specific block
@@ -349,6 +353,12 @@ message GetSubnetworkResponseMessage{
 // parent chain from some startHash to this kaspad's current virtual
 message GetVirtualSelectedParentChainFromBlockRequestMessage{
   string startHash = 1;
+  bool includeAcceptedTransactionIds = 2;
+}
+
+message AcceptedTransactionIds{
+  string acceptingBlockHash = 1;
+  repeated string acceptedTransactionIds = 2;
 }
 
 message GetVirtualSelectedParentChainFromBlockResponseMessage{
@@ -357,6 +367,10 @@ message GetVirtualSelectedParentChainFromBlockResponseMessage{
 
   // The chain blocks that were added, in low-to-high order
   repeated string addedChainBlockHashes = 3;
+
+  // The transactions accepted by each block in addedChainBlockHashes.
+  // Will be filled only if `includeAcceptedTransactionIds = true` in the request.
+  repeated AcceptedTransactionIds acceptedTransactionIds = 2;
 
   RPCError error = 1000;
 }

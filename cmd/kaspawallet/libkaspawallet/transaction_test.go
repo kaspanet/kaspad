@@ -2,10 +2,7 @@ package libkaspawallet_test
 
 import (
 	"fmt"
-	"github.com/kaspanet/kaspad/domain/consensus/model"
-	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
-	"github.com/pkg/errors"
 	"strings"
 	"testing"
 
@@ -321,7 +318,6 @@ func TestMaxSompi(t *testing.T) {
 		cfg := *consensusConfig
 		cfg.BlockCoinbaseMaturity = 0
 		cfg.PreDeflationaryPhaseBaseSubsidy = 20e6 * constants.SompiPerKaspa
-		cfg.HF1DAAScore = cfg.GenesisBlock.Header.DAAScore() + 10
 		tc, teardown, err := consensus.NewFactory().NewTestConsensus(&cfg, "TestMaxSompi")
 		if err != nil {
 			t.Fatalf("Error setting up tc: %+v", err)
@@ -457,8 +453,8 @@ func TestMaxSompi(t *testing.T) {
 			TransactionID: *consensushashing.TransactionID(txWithLargeInputAmount),
 			Index:         0,
 		}
-		if virtualChangeSet.VirtualUTXODiff.ToAdd().Contains(addedUTXO1) {
-			t.Fatalf("Transaction was accepted in the DAG")
+		if !virtualChangeSet.VirtualUTXODiff.ToAdd().Contains(addedUTXO1) {
+			t.Fatalf("Transaction wasn't accepted in the DAG")
 		}
 
 		selectedUTXOsForTxWithLargeInputAndOutputAmount := []*libkaspawallet.UTXO{
@@ -499,34 +495,13 @@ func TestMaxSompi(t *testing.T) {
 			t.Fatalf("ExtractTransaction: %+v", err)
 		}
 
-		_, _, err = tc.AddBlock([]*externalapi.DomainHash{block1Hash}, nil, []*externalapi.DomainTransaction{txWithLargeInputAndOutputAmount})
-		if !errors.Is(err, ruleerrors.ErrBadTxOutValue) {
+		// We're creating a new longer chain so we can double spend txWithLargeInputAmount
+		newChainRoot, _, err := tc.AddBlock([]*externalapi.DomainHash{block1Hash}, nil, nil)
+		if err != nil {
 			t.Fatalf("AddBlock: %+v", err)
 		}
 
-		tip := block1Hash
-		for {
-			tip, _, err = tc.AddBlock([]*externalapi.DomainHash{tip}, nil, nil)
-			if err != nil {
-				t.Fatalf("AddBlock: %+v", err)
-			}
-
-			selectedTip, err := tc.GetVirtualSelectedParent()
-			if err != nil {
-				t.Fatalf("GetVirtualDAAScore: %+v", err)
-			}
-
-			daaScore, err := tc.DAABlocksStore().DAAScore(tc.DatabaseContext(), model.NewStagingArea(), selectedTip)
-			if err != nil {
-				t.Fatalf("DAAScore: %+v", err)
-			}
-
-			if daaScore >= cfg.HF1DAAScore {
-				break
-			}
-		}
-
-		tip, virtualChangeSet, err = tc.AddBlock([]*externalapi.DomainHash{tip}, nil, []*externalapi.DomainTransaction{txWithLargeInputAndOutputAmount})
+		_, virtualChangeSet, err = tc.AddBlock([]*externalapi.DomainHash{newChainRoot}, nil, []*externalapi.DomainTransaction{txWithLargeInputAndOutputAmount})
 		if err != nil {
 			t.Fatalf("AddBlock: %+v", err)
 		}
@@ -538,15 +513,6 @@ func TestMaxSompi(t *testing.T) {
 
 		if !virtualChangeSet.VirtualUTXODiff.ToAdd().Contains(addedUTXO2) {
 			t.Fatalf("txWithLargeInputAndOutputAmount weren't accepted in the DAG")
-		}
-
-		_, virtualChangeSet, err = tc.AddBlock([]*externalapi.DomainHash{tip}, nil, []*externalapi.DomainTransaction{txWithLargeInputAmount})
-		if err != nil {
-			t.Fatalf("AddBlock: %+v", err)
-		}
-
-		if !virtualChangeSet.VirtualUTXODiff.ToAdd().Contains(addedUTXO1) {
-			t.Fatalf("txWithLargeInputAmount wasn't accepted in the DAG")
 		}
 	})
 }

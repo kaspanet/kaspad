@@ -15,9 +15,14 @@ import (
 func HandleSubmitBlock(context *rpccontext.Context, _ *router.Router, request appmessage.Message) (appmessage.Message, error) {
 	submitBlockRequest := request.(*appmessage.SubmitBlockRequestMessage)
 
-	isSynced, err := context.ProtocolManager.ShouldMine()
-	if err != nil {
-		return nil, err
+	var err error
+	isSynced := false
+	// The node is considered synced if it has peers and consensus state is nearly synced
+	if context.ProtocolManager.Context().HasPeers() {
+		isSynced, err = context.ProtocolManager.Context().IsNearlySynced()
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	if !context.Config.AllowSubmitBlockWhenNotSynced && !isSynced {
