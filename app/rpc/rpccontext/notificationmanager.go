@@ -400,12 +400,16 @@ func (nl *NotificationListener) convertUTXOChangesToUTXOsChangedNotification(
 
 func (nl *NotificationListener) scriptPubKeyStringToAddressString(scriptPublicKeyString utxoindex.ScriptPublicKeyString) string {
 	scriptPubKey := utxoindex.ConvertStringToScriptPublicKey(scriptPublicKeyString)
-	_, address, err := txscript.ExtractScriptPubKeyAddress(scriptPubKey, nl.params)
+
+	// ignore error because it is often returned when the script is of unknown type
+	scriptType, address, _ := txscript.ExtractScriptPubKeyAddress(scriptPubKey, nl.params)
+
 	var addressString string
-	if err != nil { // This just means the script is not standard
+	if scriptType == txscript.NonStandardTy {
 		addressString = ""
+	} else {
+		addressString = address.String()
 	}
-	addressString = address.String()
 	return addressString
 }
 
