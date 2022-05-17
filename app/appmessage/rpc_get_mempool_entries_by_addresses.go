@@ -11,7 +11,9 @@ type MempoolEntryByAddress struct {
 // its respective RPC message
 type GetMempoolEntriesByAddressesRequestMessage struct {
 	baseMessage
-	Addresses []string
+	Addresses              []string
+	IncludeOrphanPool      bool
+	IncludeTransactionPool bool
 }
 
 // Command returns the protocol command string for the message
@@ -20,9 +22,11 @@ func (msg *GetMempoolEntriesByAddressesRequestMessage) Command() MessageCommand 
 }
 
 // NewGetMempoolEntriesByAddressesRequestMessage returns a instance of the message
-func NewGetMempoolEntriesByAddressesRequestMessage(addresses []string) *GetMempoolEntriesByAddressesRequestMessage {
+func NewGetMempoolEntriesByAddressesRequestMessage(addresses []string, includeOrphanPool bool, includeTransactionPool bool) *GetMempoolEntriesByAddressesRequestMessage {
 	return &GetMempoolEntriesByAddressesRequestMessage{
-		Addresses: addresses,
+		Addresses:              addresses,
+		IncludeOrphanPool:      includeOrphanPool,
+		IncludeTransactionPool: includeTransactionPool,
 	}
 }
 

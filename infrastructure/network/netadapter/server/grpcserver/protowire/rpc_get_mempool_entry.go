@@ -24,7 +24,9 @@ func (x *GetMempoolEntryRequestMessage) toAppMessage() (appmessage.Message, erro
 		return nil, errors.Wrapf(errorNil, "GetMempoolEntryRequestMessage is nil")
 	}
 	return &appmessage.GetMempoolEntryRequestMessage{
-		TxID: x.TxId,
+		TxID:                   x.TxId,
+		IncludeOrphanPool:      x.IncludeOrphanPool,
+		IncludeTransactionPool: x.IncludeTransactionPool,
 	}, nil
 }
 

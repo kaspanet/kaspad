@@ -7,14 +7,16 @@ import (
 
 func (x *KaspadMessage_GetMempoolEntriesByAddressesRequest) toAppMessage() (appmessage.Message, error) {
 	if x == nil {
-		return nil, errors.Wrapf(errorNil, "KaspadMessage_GetMempoolEntriesRequest is nil")
+		return nil, errors.Wrapf(errorNil, "KaspadMessage_KaspadMessage_GetMempoolEntriesByAddressesRequest is nil")
 	}
 	return x.GetMempoolEntriesByAddressesRequest.toAppMessage()
 }
 
 func (x *KaspadMessage_GetMempoolEntriesByAddressesRequest) fromAppMessage(message *appmessage.GetMempoolEntriesByAddressesRequestMessage) error {
 	x.GetMempoolEntriesByAddressesRequest = &GetMempoolEntriesByAddressesRequestMessage{
-		Addresses: message.Addresses,
+		Addresses:              message.Addresses,
+		IncludeOrphanPool:      message.IncludeOrphanPool,
+		IncludeTransactionPool: message.IncludeTransactionPool,
 	}
 	return nil
 }
@@ -24,7 +26,9 @@ func (x *GetMempoolEntriesByAddressesRequestMessage) toAppMessage() (appmessage.
 		return nil, errors.Wrapf(errorNil, "KaspadMessage_GetMempoolEntriesRequest is nil")
 	}
 	return &appmessage.GetMempoolEntriesByAddressesRequestMessage{
-		Addresses: x.Addresses,
+		Addresses:              x.Addresses,
+		IncludeOrphanPool:      x.IncludeOrphanPool,
+		IncludeTransactionPool: x.IncludeTransactionPool,
 	}, nil
 }
 

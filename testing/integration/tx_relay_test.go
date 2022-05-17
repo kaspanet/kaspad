@@ -69,7 +69,7 @@ func TestTxRelay(t *testing.T) {
 
 		for range ticker.C {
 
-			_, err := payee.rpcClient.GetMempoolEntry(txID)
+			_, err := payee.rpcClient.GetMempoolEntry(txID, true, false)
 			if err != nil {
 				if strings.Contains(err.Error(), "not found") {
 					continue
@@ -78,7 +78,7 @@ func TestTxRelay(t *testing.T) {
 				t.Fatalf("Error getting mempool entry: %+v", err)
 			}
 
-			mempoolEntriesByAddresses, err := payee.rpcClient.GetMempoolEntriesByAddresses(mempoolAddressQuery)
+			mempoolEntriesByAddresses, err := payee.rpcClient.GetMempoolEntriesByAddresses(mempoolAddressQuery, true, false)
 			if err != nil {
 				t.Fatalf("Error getting mempool entry: %+v", err)
 			}
