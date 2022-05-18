@@ -1,7 +1,6 @@
 package rpc
 
 import (
-	"fmt"
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/app/protocol"
 	"github.com/kaspanet/kaspad/app/rpc/rpccontext"
@@ -46,7 +45,13 @@ func NewManager(
 	}
 	netAdapter.SetRPCRouterInitializer(manager.routerInitializer)
 
-	spawn(fmt.Sprintf("virtualChangeHandler"), func() {
+	manager.initVirtualChangeHandler(virtualChangeChan)
+
+	return &manager
+}
+
+func (m *Manager) initVirtualChangeHandler(virtualChangeChan chan *externalapi.VirtualChangeSet) {
+	spawn("virtualChangeHandler", func() {
 		for {
 			virtualChangeSet, ok := <-virtualChangeChan
 			if !ok {
@@ -54,15 +59,13 @@ func NewManager(
 			}
 			if virtualChangeSet != nil && virtualChangeSet.VirtualUTXODiff != nil &&
 				virtualChangeSet.VirtualSelectedParentChainChanges != nil && len(virtualChangeSet.VirtualSelectedParentChainChanges.Added) > 0 {
-				err := manager.notifyVirtualChange(virtualChangeSet)
+				err := m.notifyVirtualChange(virtualChangeSet)
 				if err != nil {
 					panic(err)
 				}
 			}
 		}
 	})
-
-	return &manager
 }
 
 // NotifyBlockAddedToDAG notifies the manager that a block has been added to the DAG
