@@ -52,7 +52,8 @@ func NewManager(
 			if !ok {
 				return
 			}
-			if virtualChangeSet.VirtualUTXODiff != nil {
+			if virtualChangeSet != nil && virtualChangeSet.VirtualUTXODiff != nil &&
+				virtualChangeSet.VirtualSelectedParentChainChanges != nil {
 				err := manager.notifyUTXOsChanged(virtualChangeSet)
 				if err != nil {
 					// TODO
