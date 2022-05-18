@@ -106,7 +106,9 @@ func (m *Manager) notifyVirtualChange(virtualChangeSet *externalapi.VirtualChang
 		return err
 	}
 
-	if virtualChangeSet.VirtualSelectedParentChainChanges != nil {
+	if virtualChangeSet.VirtualSelectedParentChainChanges != nil &&
+		(len(virtualChangeSet.VirtualSelectedParentChainChanges.Added) > 0 ||
+			len(virtualChangeSet.VirtualSelectedParentChainChanges.Removed) > 0) {
 		err = m.notifyVirtualSelectedParentChainChanged(virtualChangeSet)
 		if err != nil {
 			return err
