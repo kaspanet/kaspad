@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/libkaspawallet"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/txscript"
 
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/pkg/errors"
@@ -45,83 +46,18 @@ func (was walletAddressSet) strings() []string {
 	return addresses
 }
 
-func (s *server) onChainChanged(notification *appmessage.VirtualSelectedParentChainChangedNotificationMessage) {
-	s.lock.Lock()
-	defer s.lock.Unlock()
-	fmt.Println("chain changed", len(notification.AddedChainBlockHashes))
-	for _, transactionIDs := range notification.AcceptedTransactionIDs {
-		for _, transactionID := range transactionIDs.AcceptedTransactionIDs {
-			if s.tracker.isTransactionIDTracked(transactionID) {
-				s.tracker.untrackSentTransactionID(transactionID)
-			}
-		}
-	}
-}
-
-func (s *server) onUtxoChange(notification *appmessage.UTXOsChangedNotificationMessage) {
-	s.lock.Lock()
-	defer s.lock.Unlock()
-	fmt.Println("utxo added", len(notification.Added))
-	fmt.Println("utxo removed", len(notification.Added))
-	for _, utxoRemoved := range notification.Removed {
-		_, found := s.addressSet[utxoRemoved.Address]
-		if found {
-			outpoint, err := appmessage.RPCOutpointToDomainOutpoint(utxoRemoved.Outpoint)
-			if err != nil {
-				log.Warn(err)
-			}
-
-			delete(s.utxoSet, *outpoint)
-		}
-
-	}
-	for _, utxoAdded := range notification.Added {
-		address, ok := s.addressSet[utxoAdded.Address]
-		if !ok {
-			continue
-		}
-		outpoint, err := appmessage.RPCOutpointToDomainOutpoint(utxoAdded.Outpoint)
-		if err != nil {
-			log.Warn(err)
-		}
-
-		utxoEntry, err := appmessage.RPCUTXOEntryToUTXOEntry(utxoAdded.UTXOEntry)
-		if err != nil {
-			log.Warn(err)
-		}
-
-		s.utxoSet[*outpoint.Clone()] = &walletUTXO{
-			Outpoint:  outpoint,
-			UTXOEntry: utxoEntry,
-			address:   address,
-		}
-	}
-}
-
 func (s *server) intialize() error {
 	err := s.collectRecentAddresses()
 	if err != nil {
 		return err
 	}
 
-	err = s.refreshExistingUTXOsWithLock()
+	err = s.update()
 	if err != nil {
 		return err
 	}
 
-	err = s.rpcClient.RegisterForVirtualSelectedParentChainChangedNotifications(true, s.onChainChanged)
-	if err != nil {
-		return err
-	}
-
-	//emptyStringSlice := []string{}
-
-	err = s.rpcClient.RegisterForUTXOsChangedNotifications(s.addressSet.strings(), s.onUtxoChange)
-	if err != nil {
-		return err
-	}
-
-	err = s.intializeMempool()
+	err = s.trackMempool()
 	if err != nil {
 		return err
 	}
@@ -147,9 +83,7 @@ func (s *server) sync() error {
 		if err != nil {
 			return err
 		}
-
-		err = s.refreshExistingUTXOsWithLock()
-
+		err = s.update()
 		if err != nil {
 			return err
 		}
@@ -300,37 +234,37 @@ func (s *server) updateAddressesAndLastUsedIndexes(requestedAddressSet walletAdd
 	return s.keysFile.SetLastUsedInternalIndex(lastUsedInternalIndex)
 }
 
-func (s *server) refreshExistingUTXOsWithLock() error {
+func (s *server) collectUTXOsWithLock() error {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	return s.refreshUTXOs()
+	return s.collectAndRefreshUTXOs()
 }
 
 // updateUTXOSet clears the current UTXO set, and re-fills it with the given entries
-func (s *server) updateUTXOSet(entries []*appmessage.UTXOsByAddressesEntry) error {
+func (s *server) refreshUTXOs(utxosByAddresses []*appmessage.UTXOsByAddressesEntry) error {
 
-	newWalletUTXOSet := make(walletUTXOSet)
+	newWalletUTXOSet := make(walletUTXOSet, len(utxosByAddresses))
 
-	for _, entry := range entries {
-		outpoint, err := appmessage.RPCOutpointToDomainOutpoint(entry.Outpoint)
+	for _, utxosByAddress := range utxosByAddresses {
+		outpoint, err := appmessage.RPCOutpointToDomainOutpoint(utxosByAddress.Outpoint)
 		if err != nil {
 			return err
 		}
 
-		utxoEntry, err := appmessage.RPCUTXOEntryToUTXOEntry(entry.UTXOEntry)
+		utxoEntry, err := appmessage.RPCUTXOEntryToUTXOEntry(utxosByAddress.UTXOEntry)
 		if err != nil {
 			return err
 		}
+		walletAddress, found := s.addressSet[utxosByAddress.Address]
+		if !found {
+			return errors.Errorf("Got result from address %s even though it wasn't requested", utxosByAddress.Address)
 
-		address, ok := s.addressSet[entry.Address]
-		if !ok {
-			return errors.Errorf("Got result from address %s even though it wasn't requested", entry.Address)
 		}
-		newWalletUTXOSet[*outpoint.Clone()] = &walletUTXO{
+		newWalletUTXOSet[*outpoint] = &walletUTXO{
 			Outpoint:  outpoint,
 			UTXOEntry: utxoEntry,
-			address:   address,
+			address:   walletAddress,
 		}
 	}
 	s.utxoSet = newWalletUTXOSet
@@ -343,7 +277,52 @@ func (s *server) updateUTXOSet(entries []*appmessage.UTXOsByAddressesEntry) erro
 	return nil
 }
 
-func (s *server) intializeMempool() error {
+func (s *server) update() error {
+	err := s.untrackMempoolTransactions()
+	if err != nil {
+		return err
+	}
+	err = s.collectUTXOsWithLock()
+	if err != nil {
+		return err
+	}
+
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	s.tracker.untrackExpiredOutpointsAsReserved()
+
+	return nil
+}
+
+func (s *server) untrackMempoolTransactions() error {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+	getMempoolEntriesResponse, err := s.rpcClient.GetMempoolEntries()
+	if err != nil {
+		return err
+	}
+	if getMempoolEntriesResponse.Error != nil {
+		return errors.Errorf(getMempoolEntriesResponse.Error.Message)
+	}
+	mapMempoolTransactions := make(map[string]bool)
+	for _, mempoolEntry := range getMempoolEntriesResponse.Entries {
+		transaction, err := appmessage.RPCTransactionToDomainTransaction(mempoolEntry.Transaction)
+		if err != nil {
+			return err
+		}
+		mapMempoolTransactions[transaction.ID.String()] = true
+	}
+
+	for transactionID := range s.tracker.sentTransactions {
+		if _, found := mapMempoolTransactions[transactionID]; !found {
+			s.tracker.untrackSentTransactionID(transactionID)
+		}
+	}
+	return nil
+}
+
+func (s *server) trackMempool() error {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 	getMempoolEntriesResponse, err := s.rpcClient.GetMempoolEntries()
@@ -358,20 +337,28 @@ func (s *server) intializeMempool() error {
 		if err != nil {
 			return err
 		}
-		s.tracker.trackTransaction(transaction)
+		for _, input := range transaction.Inputs {
+			_, address, err := txscript.ExtractScriptPubKeyAddress(input.UTXOEntry.ScriptPublicKey(), s.params)
+			if err != nil {
+				return err
+			}
+			if _, found := s.addressSet[address.String()]; found {
+				s.tracker.trackTransaction(transaction)
+				break
+			}
+		}
 	}
 
 	return nil
 
 }
 
-func (s *server) refreshUTXOs() error {
+func (s *server) collectAndRefreshUTXOs() error {
 	getUTXOsByAddressesResponse, err := s.rpcClient.GetUTXOsByAddresses(s.addressSet.strings())
 	if err != nil {
 		return err
 	}
-
-	return s.updateUTXOSet(getUTXOsByAddressesResponse.Entries)
+	return s.refreshUTXOs(getUTXOsByAddressesResponse.Entries)
 }
 
 func (s *server) isSynced() bool {

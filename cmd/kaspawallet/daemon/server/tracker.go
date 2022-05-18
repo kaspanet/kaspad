@@ -48,26 +48,8 @@ func (tr *Tracker) isOutpointSent(outpoint *externalapi.DomainOutpoint) bool {
 	return false
 }
 
-func (tr *Tracker) untrackOutpointDifferenceViaWalletUTXOs(utxos []*walletUTXO) {
-
-	validOutpoints := make(map[externalapi.DomainOutpoint]bool, len(utxos))
-	for _, utxo := range utxos {
-		validOutpoints[*utxo.Outpoint] = true
-	}
-	for reservedOutpoint := range tr.reservedOutpoints {
-		if _, found := validOutpoints[reservedOutpoint]; !found {
-			delete(tr.reservedOutpoints, reservedOutpoint)
-		}
-	}
-}
-
 func (tr *Tracker) isOutpointReserved(outpoint *externalapi.DomainOutpoint) bool {
 	_, found := tr.reservedOutpoints[*outpoint]
-	return found
-}
-
-func (tr *Tracker) isTransactionIDTracked(transactionID string) bool {
-	_, found := tr.sentTransactions[transactionID]
 	return found
 }
 
