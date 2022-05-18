@@ -18,6 +18,12 @@ func (s *server) GetBalance(_ context.Context, _ *pb.GetBalanceRequest) (*pb.Get
 	if err != nil {
 		return nil, err
 	}
+
+	err = s.update()
+	if err != nil {
+		return nil, err
+	}
+
 	daaScore := dagInfo.VirtualDAAScore
 	maturity := s.params.BlockCoinbaseMaturity
 

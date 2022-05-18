@@ -83,10 +83,6 @@ func (s *server) sync() error {
 		if err != nil {
 			return err
 		}
-		err = s.update()
-		if err != nil {
-			return err
-		}
 	}
 
 	return nil
@@ -234,13 +230,6 @@ func (s *server) updateAddressesAndLastUsedIndexes(requestedAddressSet walletAdd
 	return s.keysFile.SetLastUsedInternalIndex(lastUsedInternalIndex)
 }
 
-func (s *server) collectUTXOsWithLock() error {
-	s.lock.Lock()
-	defer s.lock.Unlock()
-
-	return s.collectAndRefreshUTXOs()
-}
-
 // updateUTXOSet clears the current UTXO set, and re-fills it with the given entries
 func (s *server) refreshUTXOs(utxosByAddresses []*appmessage.UTXOsByAddressesEntry) error {
 
@@ -282,13 +271,10 @@ func (s *server) update() error {
 	if err != nil {
 		return err
 	}
-	err = s.collectUTXOsWithLock()
+	err = s.collectAndRefreshUTXOs()
 	if err != nil {
 		return err
 	}
-
-	s.lock.Lock()
-	defer s.lock.Unlock()
 
 	s.tracker.untrackExpiredOutpointsAsReserved()
 
@@ -296,8 +282,6 @@ func (s *server) update() error {
 }
 
 func (s *server) untrackMempoolTransactions() error {
-	s.lock.Lock()
-	defer s.lock.Unlock()
 	getMempoolEntriesResponse, err := s.rpcClient.GetMempoolEntries()
 	if err != nil {
 		return err
