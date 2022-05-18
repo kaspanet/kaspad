@@ -13,6 +13,7 @@ import (
 )
 
 var keyChains = []uint8{libkaspawallet.ExternalKeychain, libkaspawallet.InternalKeychain}
+type mempoolTransactionsMap map[string]bool
 
 func (s *server) utxosSortedByAmount() []*walletUTXO {
 	utxos := make([]*walletUTXO, len(s.utxoSet))
@@ -80,6 +81,11 @@ func (s *server) sync() error {
 		}
 
 		err = s.collectRecentAddresses()
+		if err != nil {
+			return err
+		}
+		
+		err = s.update()
 		if err != nil {
 			return err
 		}
@@ -267,6 +273,9 @@ func (s *server) refreshUTXOs(utxosByAddresses []*appmessage.UTXOsByAddressesEnt
 }
 
 func (s *server) update() error {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+	
 	err := s.untrackMempoolTransactions()
 	if err != nil {
 		return err
@@ -289,13 +298,16 @@ func (s *server) untrackMempoolTransactions() error {
 	if getMempoolEntriesResponse.Error != nil {
 		return errors.Errorf(getMempoolEntriesResponse.Error.Message)
 	}
-	mapMempoolTransactions := make(map[string]bool)
+	mapMempoolTransactions := make(mempoolTransactionsMap)
 	for _, mempoolEntry := range getMempoolEntriesResponse.Entries {
 		transaction, err := appmessage.RPCTransactionToDomainTransaction(mempoolEntry.Transaction)
 		if err != nil {
 			return err
 		}
-		mapMempoolTransactions[transaction.ID.String()] = true
+		if transaction.ID != nil{
+			fmt.Println(transaction.ID.String())
+			mapMempoolTransactions[transaction.ID.String()] = true
+		}
 	}
 
 	for transactionID := range s.tracker.sentTransactions {

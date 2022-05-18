@@ -33,7 +33,7 @@ func (s *server) createUnsignedTransactions(address string, amount uint64, fromA
 		return nil, errors.New("server is not synced")
 	}
 
-	err := s.update()
+	err := s.collectAndRefreshUTXOs()
 	if err != nil {
 		return nil, err
 	}
