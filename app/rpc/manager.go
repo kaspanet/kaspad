@@ -57,12 +57,9 @@ func (m *Manager) initVirtualChangeHandler(virtualChangeChan chan *externalapi.V
 			if !ok {
 				return
 			}
-			if virtualChangeSet != nil && virtualChangeSet.VirtualUTXODiff != nil &&
-				virtualChangeSet.VirtualSelectedParentChainChanges != nil && len(virtualChangeSet.VirtualSelectedParentChainChanges.Added) > 0 {
-				err := m.notifyVirtualChange(virtualChangeSet)
-				if err != nil {
-					panic(err)
-				}
+			err := m.notifyVirtualChange(virtualChangeSet)
+			if err != nil {
+				panic(err)
 			}
 		}
 	})
@@ -92,7 +89,7 @@ func (m *Manager) notifyVirtualChange(virtualChangeSet *externalapi.VirtualChang
 	onEnd := logger.LogAndMeasureExecutionTime(log, "RPCManager.NotifyVirtualChange")
 	defer onEnd()
 
-	if m.context.Config.UTXOIndex {
+	if m.context.Config.UTXOIndex && virtualChangeSet.VirtualUTXODiff != nil && virtualChangeSet.VirtualParents != nil {
 		err := m.notifyUTXOsChanged(virtualChangeSet)
 		if err != nil {
 			return err
@@ -109,9 +106,11 @@ func (m *Manager) notifyVirtualChange(virtualChangeSet *externalapi.VirtualChang
 		return err
 	}
 
-	err = m.notifyVirtualSelectedParentChainChanged(virtualChangeSet)
-	if err != nil {
-		return err
+	if virtualChangeSet.VirtualSelectedParentChainChanges != nil {
+		err = m.notifyVirtualSelectedParentChainChanged(virtualChangeSet)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
