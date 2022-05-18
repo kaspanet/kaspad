@@ -240,12 +240,12 @@ func (s *server) isSynced() bool {
 }
 
 func (s *server) formatSyncStateReport() string {
-	maxUsed := s.maxUsedIndex()
+	maxUsedIndex := s.maxUsedIndex()
 
-	if s.nextSyncStartIndex > maxUsed {
-		maxUsed = s.nextSyncStartIndex
+	if s.nextSyncStartIndex > maxUsedIndex {
+		maxUsedIndex = s.nextSyncStartIndex
 	}
 
 	return fmt.Sprintf("scanned %d out of %d addresses (%.2f%%)",
-		s.nextSyncStartIndex, maxUsed, float64(s.nextSyncStartIndex)*100.0/float64(maxUsed))
+		s.nextSyncStartIndex, maxUsedIndex, float64(s.nextSyncStartIndex)*100.0/float64(maxUsedIndex))
 }
