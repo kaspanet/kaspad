@@ -111,11 +111,6 @@ func (f *FlowContext) IsNearlySynced() (bool, error) {
 	return f.Domain().Consensus().IsNearlySynced()
 }
 
-//// SetOnVirtualChangeHandler sets the onVirtualChangeHandler handler
-//func (f *FlowContext) SetOnVirtualChangeHandler(onVirtualChangeHandler OnVirtualChangeHandler) {
-//	f.onVirtualChangeHandler = onVirtualChangeHandler
-//}
-
 // SetOnBlockAddedToDAGHandler sets the onBlockAddedToDAG handler
 func (f *FlowContext) SetOnBlockAddedToDAGHandler(onBlockAddedToDAGHandler OnBlockAddedToDAGHandler) {
 	f.onBlockAddedToDAGHandler = onBlockAddedToDAGHandler

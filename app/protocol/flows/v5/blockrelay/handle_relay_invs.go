@@ -27,7 +27,6 @@ type RelayInvsContext interface {
 	Domain() domain.Domain
 	Config() *config.Config
 	OnNewBlock(block *externalapi.DomainBlock, virtualChangeSet *externalapi.VirtualChangeSet) error
-	//OnVirtualChange(virtualChangeSet *externalapi.VirtualChangeSet) error
 	OnNewBlockTemplate() error
 	OnPruningPointUTXOSetOverride() error
 	SharedRequestedBlocks() *flowcontext.SharedRequestedBlocks

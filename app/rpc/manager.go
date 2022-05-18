@@ -83,14 +83,6 @@ func (m *Manager) NotifyBlockAddedToDAG(block *externalapi.DomainBlock, virtualC
 		return err
 	}
 
-	// When block was added during IBD - it doesn't incur any Virtual change,
-	// thus no notification is needed.
-	//if len(virtualChangeSet.VirtualSelectedParentChainChanges.Added) == 0 &&
-	//	len(virtualChangeSet.VirtualSelectedParentChainChanges.Removed) == 0 {
-	//
-	//	return nil
-	//}
-	//return m.NotifyVirtualChange(virtualChangeSet)
 	return nil
 }
 

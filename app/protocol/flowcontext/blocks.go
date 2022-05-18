@@ -59,15 +59,6 @@ func (f *FlowContext) OnNewBlock(block *externalapi.DomainBlock,
 	return f.broadcastTransactionsAfterBlockAdded(newBlocks, allAcceptedTransactions)
 }
 
-// OnVirtualChange calls the handler function whenever the virtual block changes.
-//func (f *FlowContext) OnVirtualChange(virtualChangeSet *externalapi.VirtualChangeSet) error {
-//	if f.onVirtualChangeHandler != nil && virtualChangeSet != nil {
-//		return f.onVirtualChangeHandler(virtualChangeSet)
-//	}
-//
-//	return nil
-//}
-
 // OnNewBlockTemplate calls the handler function whenever a new block template is available for miners.
 func (f *FlowContext) OnNewBlockTemplate() error {
 	// Clear current template cache. Note we call this even if the handler is nil, in order to keep the

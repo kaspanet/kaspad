@@ -21,7 +21,6 @@ type IBDContext interface {
 	Domain() domain.Domain
 	Config() *config.Config
 	OnNewBlock(block *externalapi.DomainBlock, virtualChangeSet *externalapi.VirtualChangeSet) error
-	//OnVirtualChange(virtualChangeSet *externalapi.VirtualChangeSet) error
 	OnNewBlockTemplate() error
 	OnPruningPointUTXOSetOverride() error
 	IsIBDRunning() bool
@@ -710,11 +709,6 @@ func (flow *handleIBDFlow) resolveVirtual(estimatedVirtualDAAScoreTarget uint64)
 		if err != nil {
 			return err
 		}
-
-		//err = flow.OnVirtualChange(virtualChangeSet)
-		//if err != nil {
-		//	return err
-		//}
 
 		if isCompletelyResolved {
 			log.Infof("Resolved virtual")
