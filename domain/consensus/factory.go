@@ -576,7 +576,7 @@ func (f *factory) NewTestConsensus(config *Config, testName string) (
 	}
 
 	testConsensusDBPrefix := &prefix.Prefix{}
-	consensusAsInterface, shouldMigrate, err := f.NewConsensus(config, db, testConsensusDBPrefix, make(chan *externalapi.VirtualChangeSet))
+	consensusAsInterface, shouldMigrate, err := f.NewConsensus(config, db, testConsensusDBPrefix, nil)
 	if err != nil {
 		return nil, nil, err
 	}

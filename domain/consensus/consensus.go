@@ -196,8 +196,16 @@ func (s *consensus) ValidateAndInsertBlock(block *externalapi.DomainBlock, shoul
 	if err != nil {
 		return nil, err
 	}
-	s.virtualChangeChan <- virtualChangeSet
+	s.onVirtualChangeSet(virtualChangeSet)
 	return virtualChangeSet, nil
+}
+
+func (s *consensus) onVirtualChangeSet(virtualChangeSet *externalapi.VirtualChangeSet) {
+	if s.virtualChangeChan == nil {
+		return
+	}
+
+	s.virtualChangeChan <- virtualChangeSet
 }
 
 // ValidateTransactionAndPopulateWithConsensusData validates the given transaction
@@ -799,7 +807,7 @@ func (s *consensus) ResolveVirtual() (*externalapi.VirtualChangeSet, bool, error
 		return nil, false, err
 	}
 
-	s.virtualChangeChan <- virtualChangeSet
+	s.onVirtualChangeSet(virtualChangeSet)
 	return virtualChangeSet, isCompletelyResolved, nil
 }
 
