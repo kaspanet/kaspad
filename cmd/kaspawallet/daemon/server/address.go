@@ -42,7 +42,7 @@ func (s *server) ShowAddresses(_ context.Context, request *pb.ShowAddressesReque
 		return nil, errors.Errorf("wallet daemon is not synced yet, %s", s.formatSyncStateReport())
 	}
 
-	addresses := make([]string, 0, s.keysFile.LastUsedExternalIndex())
+	addresses := make([]string, s.keysFile.LastUsedExternalIndex())
 	for i := uint32(1); i <= s.keysFile.LastUsedExternalIndex(); i++ {
 		walletAddr := &walletAddress{
 			index:         i,
@@ -54,7 +54,7 @@ func (s *server) ShowAddresses(_ context.Context, request *pb.ShowAddressesReque
 		if err != nil {
 			return nil, err
 		}
-		addresses = append(addresses, address.String())
+		addresses[i-1] = address.String()
 	}
 
 	return &pb.ShowAddressesResponse{Address: addresses}, nil
