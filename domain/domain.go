@@ -33,6 +33,7 @@ type domain struct {
 	stagingConsensusLock sync.RWMutex
 	consensusConfig      *consensus.Config
 	db                   infrastructuredatabase.Database
+	virtualChangeChan    chan *externalapi.VirtualChangeSet
 }
 
 func (d *domain) Consensus() externalapi.Consensus {
@@ -86,7 +87,7 @@ func (d *domain) initStagingConsensus(cfg *consensus.Config) error {
 
 	consensusFactory := consensus.NewFactory()
 
-	consensusInstance, shouldMigrate, err := consensusFactory.NewConsensus(cfg, d.db, inactivePrefix)
+	consensusInstance, shouldMigrate, err := consensusFactory.NewConsensus(cfg, d.db, inactivePrefix, d.virtualChangeChan)
 	if err != nil {
 		return err
 	}
@@ -171,7 +172,8 @@ func (d *domain) DeleteStagingConsensus() error {
 }
 
 // New instantiates a new instance of a Domain object
-func New(consensusConfig *consensus.Config, mempoolConfig *mempool.Config, db infrastructuredatabase.Database) (Domain, error) {
+func New(consensusConfig *consensus.Config, mempoolConfig *mempool.Config,
+	db infrastructuredatabase.Database, virtualChangeChan chan *externalapi.VirtualChangeSet) (Domain, error) {
 	err := prefixmanager.DeleteInactivePrefix(db)
 	if err != nil {
 		return nil, err
@@ -191,15 +193,16 @@ func New(consensusConfig *consensus.Config, mempoolConfig *mempool.Config, db in
 	}
 
 	consensusFactory := consensus.NewFactory()
-	consensusInstance, shouldMigrate, err := consensusFactory.NewConsensus(consensusConfig, db, activePrefix)
+	consensusInstance, shouldMigrate, err := consensusFactory.NewConsensus(consensusConfig, db, activePrefix, virtualChangeChan)
 	if err != nil {
 		return nil, err
 	}
 
 	domainInstance := &domain{
-		consensus:       &consensusInstance,
-		consensusConfig: consensusConfig,
-		db:              db,
+		consensus:         &consensusInstance,
+		consensusConfig:   consensusConfig,
+		db:                db,
+		virtualChangeChan: virtualChangeChan,
 	}
 
 	if shouldMigrate {

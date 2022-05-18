@@ -58,6 +58,8 @@ type consensus struct {
 	headersSelectedChainStore           model.HeadersSelectedChainStore
 	daaBlocksStore                      model.DAABlocksStore
 	blocksWithTrustedDataDAAWindowStore model.BlocksWithTrustedDataDAAWindowStore
+
+	virtualChangeChan chan *externalapi.VirtualChangeSet
 }
 
 func (s *consensus) ValidateAndInsertBlockWithTrustedData(block *externalapi.BlockWithTrustedData, validateUTXO bool) (*externalapi.VirtualChangeSet, error) {
@@ -190,7 +192,12 @@ func (s *consensus) ValidateAndInsertBlock(block *externalapi.DomainBlock, shoul
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	return s.blockProcessor.ValidateAndInsertBlock(block, shouldValidateAgainstUTXO)
+	virtualChangeSet, err := s.blockProcessor.ValidateAndInsertBlock(block, shouldValidateAgainstUTXO)
+	if err != nil {
+		return nil, err
+	}
+	s.virtualChangeChan <- virtualChangeSet
+	return virtualChangeSet, nil
 }
 
 // ValidateTransactionAndPopulateWithConsensusData validates the given transaction
@@ -792,6 +799,7 @@ func (s *consensus) ResolveVirtual() (*externalapi.VirtualChangeSet, bool, error
 		return nil, false, err
 	}
 
+	s.virtualChangeChan <- virtualChangeSet
 	return virtualChangeSet, isCompletelyResolved, nil
 }
 

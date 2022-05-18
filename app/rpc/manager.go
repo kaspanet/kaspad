@@ -1,6 +1,7 @@
 package rpc
 
 import (
+	"fmt"
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/app/protocol"
 	"github.com/kaspanet/kaspad/app/rpc/rpccontext"
@@ -28,6 +29,7 @@ func NewManager(
 	connectionManager *connmanager.ConnectionManager,
 	addressManager *addressmanager.AddressManager,
 	utxoIndex *utxoindex.UTXOIndex,
+	virtualChangeChan chan *externalapi.VirtualChangeSet,
 	shutDownChan chan<- struct{}) *Manager {
 
 	manager := Manager{
@@ -43,6 +45,22 @@ func NewManager(
 		),
 	}
 	netAdapter.SetRPCRouterInitializer(manager.routerInitializer)
+
+	spawn(fmt.Sprintf("virtualChangeHandler"), func() {
+		for {
+			virtualChangeSet, ok := <-virtualChangeChan
+			if !ok {
+				return
+			}
+			if virtualChangeSet.VirtualUTXODiff != nil {
+				err := manager.notifyUTXOsChanged(virtualChangeSet)
+				if err != nil {
+					// TODO
+					return
+				}
+			}
+		}
+	})
 
 	return &manager
 }
@@ -65,16 +83,17 @@ func (m *Manager) NotifyBlockAddedToDAG(block *externalapi.DomainBlock, virtualC
 
 	// When block was added during IBD - it doesn't incur any Virtual change,
 	// thus no notification is needed.
-	if len(virtualChangeSet.VirtualSelectedParentChainChanges.Added) == 0 &&
-		len(virtualChangeSet.VirtualSelectedParentChainChanges.Removed) == 0 {
-
-		return nil
-	}
-	return m.NotifyVirtualChange(virtualChangeSet)
+	//if len(virtualChangeSet.VirtualSelectedParentChainChanges.Added) == 0 &&
+	//	len(virtualChangeSet.VirtualSelectedParentChainChanges.Removed) == 0 {
+	//
+	//	return nil
+	//}
+	//return m.NotifyVirtualChange(virtualChangeSet)
+	return nil
 }
 
 // NotifyVirtualChange notifies the manager that the virtual block has been changed.
-func (m *Manager) NotifyVirtualChange(virtualChangeSet *externalapi.VirtualChangeSet) error {
+func (m *Manager) notifyVirtualChange(virtualChangeSet *externalapi.VirtualChangeSet) error {
 	onEnd := logger.LogAndMeasureExecutionTime(log, "RPCManager.NotifyVirtualChange")
 	defer onEnd()
 

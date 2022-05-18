@@ -91,9 +91,9 @@ func (m *Manager) runFlows(flows []*common.Flow, peer *peerpkg.Peer, errChan <-c
 }
 
 // SetOnVirtualChange sets the onVirtualChangeHandler handler
-func (m *Manager) SetOnVirtualChange(onVirtualChangeHandler flowcontext.OnVirtualChangeHandler) {
-	m.context.SetOnVirtualChangeHandler(onVirtualChangeHandler)
-}
+//func (m *Manager) SetOnVirtualChange(onVirtualChangeHandler flowcontext.OnVirtualChangeHandler) {
+//	m.context.SetOnVirtualChangeHandler(onVirtualChangeHandler)
+//}
 
 // SetOnBlockAddedToDAGHandler sets the onBlockAddedToDAG handler
 func (m *Manager) SetOnBlockAddedToDAGHandler(onBlockAddedToDAGHandler flowcontext.OnBlockAddedToDAGHandler) {

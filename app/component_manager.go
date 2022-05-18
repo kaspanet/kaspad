@@ -2,6 +2,7 @@ package app
 
 import (
 	"fmt"
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"sync/atomic"
 
 	"github.com/kaspanet/kaspad/domain/miningmanager/mempool"
@@ -85,7 +86,9 @@ func NewComponentManager(cfg *config.Config, db infrastructuredatabase.Database,
 	mempoolConfig.MaximumOrphanTransactionCount = cfg.MaxOrphanTxs
 	mempoolConfig.MinimumRelayTransactionFee = cfg.MinRelayTxFee
 
-	domain, err := domain.New(&consensusConfig, mempoolConfig, db)
+	virtualChangeChan := make(chan *externalapi.VirtualChangeSet, 10)
+
+	domain, err := domain.New(&consensusConfig, mempoolConfig, db, virtualChangeChan)
 	if err != nil {
 		return nil, err
 	}
@@ -118,7 +121,7 @@ func NewComponentManager(cfg *config.Config, db infrastructuredatabase.Database,
 	if err != nil {
 		return nil, err
 	}
-	rpcManager := setupRPC(cfg, domain, netAdapter, protocolManager, connectionManager, addressManager, utxoIndex, interrupt)
+	rpcManager := setupRPC(cfg, domain, netAdapter, protocolManager, connectionManager, addressManager, utxoIndex, virtualChangeChan, interrupt)
 
 	return &ComponentManager{
 		cfg:               cfg,
@@ -139,6 +142,7 @@ func setupRPC(
 	connectionManager *connmanager.ConnectionManager,
 	addressManager *addressmanager.AddressManager,
 	utxoIndex *utxoindex.UTXOIndex,
+	virtualChangeChan chan *externalapi.VirtualChangeSet,
 	shutDownChan chan<- struct{},
 ) *rpc.Manager {
 
@@ -150,9 +154,10 @@ func setupRPC(
 		connectionManager,
 		addressManager,
 		utxoIndex,
+		virtualChangeChan,
 		shutDownChan,
 	)
-	protocolManager.SetOnVirtualChange(rpcManager.NotifyVirtualChange)
+	//protocolManager.SetOnVirtualChange(rpcManager.NotifyVirtualChange)
 	protocolManager.SetOnNewBlockTemplateHandler(rpcManager.NotifyNewBlockTemplate)
 	protocolManager.SetOnBlockAddedToDAGHandler(rpcManager.NotifyBlockAddedToDAG)
 	protocolManager.SetOnPruningPointUTXOSetOverrideHandler(rpcManager.NotifyPruningPointUTXOSetOverride)

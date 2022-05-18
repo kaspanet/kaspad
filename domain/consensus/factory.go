@@ -76,9 +76,11 @@ type Config struct {
 
 // Factory instantiates new Consensuses
 type Factory interface {
-	NewConsensus(config *Config, db infrastructuredatabase.Database, dbPrefix *prefix.Prefix) (
+	NewConsensus(config *Config, db infrastructuredatabase.Database, dbPrefix *prefix.Prefix,
+		virtualChangeChan chan *externalapi.VirtualChangeSet) (
 		externalapi.Consensus, bool, error)
-	NewTestConsensus(config *Config, testName string) (
+	NewTestConsensus(config *Config, testName string,
+		virtualChangeChan chan *externalapi.VirtualChangeSet) (
 		tc testapi.TestConsensus, teardown func(keepDataDir bool), err error)
 
 	SetTestDataDir(dataDir string)
@@ -108,7 +110,8 @@ func NewFactory() Factory {
 }
 
 // NewConsensus instantiates a new Consensus
-func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Database, dbPrefix *prefix.Prefix) (
+func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Database, dbPrefix *prefix.Prefix,
+	virtualChangeChan chan *externalapi.VirtualChangeSet) (
 	consensusInstance externalapi.Consensus, shouldMigrate bool, err error) {
 
 	dbManager := consensusdatabase.New(db)
@@ -510,6 +513,8 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 		headersSelectedChainStore:           headersSelectedChainStore,
 		daaBlocksStore:                      daaBlocksStore,
 		blocksWithTrustedDataDAAWindowStore: daaWindowStore,
+
+		virtualChangeChan: virtualChangeChan,
 	}
 
 	if isOldReachabilityInitialized {
@@ -548,7 +553,8 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 	return c, false, nil
 }
 
-func (f *factory) NewTestConsensus(config *Config, testName string) (
+func (f *factory) NewTestConsensus(config *Config, testName string,
+	virtualChangeChan chan *externalapi.VirtualChangeSet) (
 	tc testapi.TestConsensus, teardown func(keepDataDir bool), err error) {
 	datadir := f.dataDir
 	if datadir == "" {
@@ -572,7 +578,7 @@ func (f *factory) NewTestConsensus(config *Config, testName string) (
 	}
 
 	testConsensusDBPrefix := &prefix.Prefix{}
-	consensusAsInterface, shouldMigrate, err := f.NewConsensus(config, db, testConsensusDBPrefix)
+	consensusAsInterface, shouldMigrate, err := f.NewConsensus(config, db, testConsensusDBPrefix, virtualChangeChan)
 	if err != nil {
 		return nil, nil, err
 	}
