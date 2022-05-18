@@ -89,7 +89,7 @@ func (s *server) createUnsignedTransactions(address string, amount uint64, fromA
 func (s *server) selectUTXOs(spendAmount uint64, feePerInput uint64, fromAddresses []*walletAddress) (
 	selectedUTXOs []*libkaspawallet.UTXO, changeSompi uint64, err error) {
 
-	selectedUTXOs = make([]*libkaspawallet.UTXO, 0, len(s.utxosSortedByAmount))
+	selectedUTXOs = []*libkaspawallet.UTXO{}
 	totalValue := uint64(0)
 
 	dagInfo, err := s.rpcClient.GetBlockDAGInfo()
