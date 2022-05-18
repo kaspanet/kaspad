@@ -53,12 +53,10 @@ func NewManager(
 				return
 			}
 			if virtualChangeSet != nil && virtualChangeSet.VirtualUTXODiff != nil &&
-				virtualChangeSet.VirtualSelectedParentChainChanges != nil {
-				if manager.context.Config.UTXOIndex {
-					err := manager.notifyUTXOsChanged(virtualChangeSet)
-					if err != nil {
-						panic(err)
-					}
+				virtualChangeSet.VirtualSelectedParentChainChanges != nil && len(virtualChangeSet.VirtualSelectedParentChainChanges.Added) > 0 {
+				err := manager.notifyVirtualChange(virtualChangeSet)
+				if err != nil {
+					panic(err)
 				}
 			}
 		}
