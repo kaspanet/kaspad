@@ -47,7 +47,6 @@ type FlowContext struct {
 
 	timeStarted int64
 
-	//onVirtualChangeHandler               OnVirtualChangeHandler
 	onBlockAddedToDAGHandler             OnBlockAddedToDAGHandler
 	onNewBlockTemplateHandler            OnNewBlockTemplateHandler
 	onPruningPointUTXOSetOverrideHandler OnPruningPointUTXOSetOverrideHandler
