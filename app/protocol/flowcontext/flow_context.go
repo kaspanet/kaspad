@@ -22,9 +22,6 @@ import (
 // when a block is added to the DAG
 type OnBlockAddedToDAGHandler func(block *externalapi.DomainBlock, virtualChangeSet *externalapi.VirtualChangeSet) error
 
-// OnVirtualChangeHandler is a handler function that's triggered when the virtual changes
-type OnVirtualChangeHandler func(virtualChangeSet *externalapi.VirtualChangeSet) error
-
 // OnNewBlockTemplateHandler is a handler function that's triggered when a new block template is available
 type OnNewBlockTemplateHandler func() error
 

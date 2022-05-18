@@ -87,7 +87,7 @@ func (m *Manager) NotifyBlockAddedToDAG(block *externalapi.DomainBlock, virtualC
 	return nil
 }
 
-// NotifyVirtualChange notifies the manager that the virtual block has been changed.
+// notifyVirtualChange notifies the manager that the virtual block has been changed.
 func (m *Manager) notifyVirtualChange(virtualChangeSet *externalapi.VirtualChangeSet) error {
 	onEnd := logger.LogAndMeasureExecutionTime(log, "RPCManager.NotifyVirtualChange")
 	defer onEnd()
