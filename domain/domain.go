@@ -24,6 +24,7 @@ type Domain interface {
 	InitStagingConsensusWithoutGenesis() error
 	CommitStagingConsensus() error
 	DeleteStagingConsensus() error
+	VirtualChangeChannel() chan *externalapi.VirtualChangeSet
 }
 
 type domain struct {
@@ -34,6 +35,10 @@ type domain struct {
 	consensusConfig      *consensus.Config
 	db                   infrastructuredatabase.Database
 	virtualChangeChan    chan *externalapi.VirtualChangeSet
+}
+
+func (d *domain) VirtualChangeChannel() chan *externalapi.VirtualChangeSet {
+	return d.virtualChangeChan
 }
 
 func (d *domain) Consensus() externalapi.Consensus {
@@ -172,8 +177,7 @@ func (d *domain) DeleteStagingConsensus() error {
 }
 
 // New instantiates a new instance of a Domain object
-func New(consensusConfig *consensus.Config, mempoolConfig *mempool.Config,
-	db infrastructuredatabase.Database, virtualChangeChan chan *externalapi.VirtualChangeSet) (Domain, error) {
+func New(consensusConfig *consensus.Config, mempoolConfig *mempool.Config, db infrastructuredatabase.Database) (Domain, error) {
 	err := prefixmanager.DeleteInactivePrefix(db)
 	if err != nil {
 		return nil, err
@@ -192,6 +196,7 @@ func New(consensusConfig *consensus.Config, mempoolConfig *mempool.Config,
 		}
 	}
 
+	virtualChangeChan := make(chan *externalapi.VirtualChangeSet, 10)
 	consensusFactory := consensus.NewFactory()
 	consensusInstance, shouldMigrate, err := consensusFactory.NewConsensus(consensusConfig, db, activePrefix, virtualChangeChan)
 	if err != nil {

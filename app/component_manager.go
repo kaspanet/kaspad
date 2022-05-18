@@ -68,6 +68,7 @@ func (a *ComponentManager) Stop() {
 	}
 
 	a.protocolManager.Close()
+	close(a.protocolManager.Context().Domain().VirtualChangeChannel())
 
 	return
 }
@@ -86,9 +87,7 @@ func NewComponentManager(cfg *config.Config, db infrastructuredatabase.Database,
 	mempoolConfig.MaximumOrphanTransactionCount = cfg.MaxOrphanTxs
 	mempoolConfig.MinimumRelayTransactionFee = cfg.MinRelayTxFee
 
-	virtualChangeChan := make(chan *externalapi.VirtualChangeSet, 10)
-
-	domain, err := domain.New(&consensusConfig, mempoolConfig, db, virtualChangeChan)
+	domain, err := domain.New(&consensusConfig, mempoolConfig, db)
 	if err != nil {
 		return nil, err
 	}
@@ -121,7 +120,7 @@ func NewComponentManager(cfg *config.Config, db infrastructuredatabase.Database,
 	if err != nil {
 		return nil, err
 	}
-	rpcManager := setupRPC(cfg, domain, netAdapter, protocolManager, connectionManager, addressManager, utxoIndex, virtualChangeChan, interrupt)
+	rpcManager := setupRPC(cfg, domain, netAdapter, protocolManager, connectionManager, addressManager, utxoIndex, domain.VirtualChangeChannel(), interrupt)
 
 	return &ComponentManager{
 		cfg:               cfg,

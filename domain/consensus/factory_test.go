@@ -1,6 +1,7 @@
 package consensus
 
 import (
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/prefixmanager/prefix"
 	"io/ioutil"
 	"testing"
@@ -24,7 +25,7 @@ func TestNewConsensus(t *testing.T) {
 		t.Fatalf("error in NewLevelDB: %s", err)
 	}
 
-	_, shouldMigrate, err := f.NewConsensus(config, db, &prefix.Prefix{})
+	_, shouldMigrate, err := f.NewConsensus(config, db, &prefix.Prefix{}, make(chan *externalapi.VirtualChangeSet))
 	if err != nil {
 		t.Fatalf("error in NewConsensus: %+v", err)
 	}

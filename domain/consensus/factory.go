@@ -79,8 +79,7 @@ type Factory interface {
 	NewConsensus(config *Config, db infrastructuredatabase.Database, dbPrefix *prefix.Prefix,
 		virtualChangeChan chan *externalapi.VirtualChangeSet) (
 		externalapi.Consensus, bool, error)
-	NewTestConsensus(config *Config, testName string,
-		virtualChangeChan chan *externalapi.VirtualChangeSet) (
+	NewTestConsensus(config *Config, testName string) (
 		tc testapi.TestConsensus, teardown func(keepDataDir bool), err error)
 
 	SetTestDataDir(dataDir string)
@@ -553,8 +552,7 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 	return c, false, nil
 }
 
-func (f *factory) NewTestConsensus(config *Config, testName string,
-	virtualChangeChan chan *externalapi.VirtualChangeSet) (
+func (f *factory) NewTestConsensus(config *Config, testName string) (
 	tc testapi.TestConsensus, teardown func(keepDataDir bool), err error) {
 	datadir := f.dataDir
 	if datadir == "" {
@@ -578,7 +576,7 @@ func (f *factory) NewTestConsensus(config *Config, testName string,
 	}
 
 	testConsensusDBPrefix := &prefix.Prefix{}
-	consensusAsInterface, shouldMigrate, err := f.NewConsensus(config, db, testConsensusDBPrefix, virtualChangeChan)
+	consensusAsInterface, shouldMigrate, err := f.NewConsensus(config, db, testConsensusDBPrefix, make(chan *externalapi.VirtualChangeSet))
 	if err != nil {
 		return nil, nil, err
 	}
