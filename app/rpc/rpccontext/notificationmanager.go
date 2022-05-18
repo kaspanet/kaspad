@@ -182,7 +182,10 @@ func (nm *NotificationManager) NotifyUTXOsChanged(utxoChanges *utxoindex.UTXOCha
 	for router, listener := range nm.listeners {
 		if listener.propagateUTXOsChangedNotifications {
 			// Filter utxoChanges and create a notification
-			notification := listener.convertUTXOChangesToUTXOsChangedNotification(utxoChanges)
+			notification, err := listener.convertUTXOChangesToUTXOsChangedNotification(utxoChanges)
+			if err != nil {
+				return err
+			}
 
 			// Don't send the notification if it's empty
 			if len(notification.Added) == 0 && len(notification.Removed) == 0 {
@@ -190,7 +193,7 @@ func (nm *NotificationManager) NotifyUTXOsChanged(utxoChanges *utxoindex.UTXOCha
 			}
 
 			// Enqueue the notification
-			err := router.OutgoingRoute().Enqueue(notification)
+			err = router.OutgoingRoute().Enqueue(notification)
 			if err != nil {
 				return err
 			}
@@ -349,7 +352,7 @@ func (nl *NotificationListener) StopPropagatingUTXOsChangedNotifications(address
 }
 
 func (nl *NotificationListener) convertUTXOChangesToUTXOsChangedNotification(
-	utxoChanges *utxoindex.UTXOChanges) *appmessage.UTXOsChangedNotificationMessage {
+	utxoChanges *utxoindex.UTXOChanges) (*appmessage.UTXOsChangedNotificationMessage, error) {
 
 	// As an optimization, we iterate over the smaller set (O(n)) among the two below
 	// and check existence over the larger set (O(1))
@@ -384,25 +387,36 @@ func (nl *NotificationListener) convertUTXOChangesToUTXOsChangedNotification(
 		}
 	} else {
 		for scriptPublicKeyString, addedPairs := range utxoChanges.Added {
-			addressString := nl.scriptPubKeyStringToAddressString(scriptPublicKeyString)
+			addressString, err := nl.scriptPubKeyStringToAddressString(scriptPublicKeyString)
+			if err != nil {
+				return nil, err
+			}
+
 			utxosByAddressesEntries := ConvertUTXOOutpointEntryPairsToUTXOsByAddressesEntries(addressString, addedPairs)
 			notification.Added = append(notification.Added, utxosByAddressesEntries...)
 		}
 		for scriptPublicKeyString, removedOutpoints := range utxoChanges.Removed {
-			addressString := nl.scriptPubKeyStringToAddressString(scriptPublicKeyString)
+			addressString, err := nl.scriptPubKeyStringToAddressString(scriptPublicKeyString)
+			if err != nil {
+				return nil, err
+			}
+
 			utxosByAddressesEntries := convertUTXOOutpointsToUTXOsByAddressesEntries(addressString, removedOutpoints)
 			notification.Removed = append(notification.Removed, utxosByAddressesEntries...)
 		}
 	}
 
-	return notification
+	return notification, nil
 }
 
-func (nl *NotificationListener) scriptPubKeyStringToAddressString(scriptPublicKeyString utxoindex.ScriptPublicKeyString) string {
+func (nl *NotificationListener) scriptPubKeyStringToAddressString(scriptPublicKeyString utxoindex.ScriptPublicKeyString) (string, error) {
 	scriptPubKey := utxoindex.ConvertStringToScriptPublicKey(scriptPublicKeyString)
 
 	// ignore error because it is often returned when the script is of unknown type
-	scriptType, address, _ := txscript.ExtractScriptPubKeyAddress(scriptPubKey, nl.params)
+	scriptType, address, err := txscript.ExtractScriptPubKeyAddress(scriptPubKey, nl.params)
+	if err != nil {
+		return "", err
+	}
 
 	var addressString string
 	if scriptType == txscript.NonStandardTy {
@@ -410,7 +424,7 @@ func (nl *NotificationListener) scriptPubKeyStringToAddressString(scriptPublicKe
 	} else {
 		addressString = address.String()
 	}
-	return addressString
+	return addressString, nil
 }
 
 // PropagateVirtualSelectedParentBlueScoreChangedNotifications instructs the listener to send
