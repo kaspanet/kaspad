@@ -21,7 +21,7 @@ func main() {
 
 	cfg, err := parseConfig()
 	if err != nil {
-		printErrorAndExit(fmt.Errorf("Error parsing command-line arguments: %s", err))
+		printErrorAndExit(errors.Errorf("Error parsing command-line arguments: %s", err))
 	}
 	defer backendLog.Close()
 
@@ -35,20 +35,20 @@ func main() {
 
 	client, err := newMinerClient(cfg)
 	if err != nil {
-		printErrorAndExit(fmt.Errorf("Error connecting to the RPC server: %s", err))
+		printErrorAndExit(errors.Errorf("Error connecting to the RPC server: %s", err))
 	}
 	defer client.Disconnect()
 
 	miningAddr, err := util.DecodeAddress(cfg.MiningAddr, cfg.ActiveNetParams.Prefix)
 	if err != nil {
-		printErrorAndExit(fmt.Errorf("Error decoding mining address: %s", err))
+		printErrorAndExit(errors.Errorf("Error decoding mining address: %s", err))
 	}
 
 	doneChan := make(chan struct{})
 	spawn("mineLoop", func() {
 		err = mineLoop(client, cfg.NumberOfBlocks, *cfg.TargetBlocksPerSecond, cfg.MineWhenNotSynced, miningAddr)
 		if err != nil {
-			printErrorAndExit(fmt.Errorf("Error in mine loop: %s", err))
+			printErrorAndExit(errors.Errorf("Error in mine loop: %s", err))
 		}
 		doneChan <- struct{}{}
 	})
