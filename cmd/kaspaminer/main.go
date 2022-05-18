@@ -7,7 +7,9 @@ import (
 	"github.com/kaspanet/kaspad/util"
 
 	"github.com/kaspanet/kaspad/version"
-
+	
+	"github.com/pkg/errors"
+	
 	_ "net/http/pprof"
 
 	"github.com/kaspanet/kaspad/infrastructure/os/signal"
