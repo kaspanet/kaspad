@@ -17,7 +17,13 @@ func (s *server) CreateUnsignedTransactionVerbose(_ context.Context, request *pb
 	defer s.lock.Unlock()
 
 	inputs, err := protoOutputsToDomainOutputs(request.Inputs)
+	if err != nil {
+		return nil, err
+	}
 	outputs, err := protoPaymentToLibPayment(request.Outputs, s.params.Prefix)
+	if err != nil {
+		return nil, err
+	}
 
 	unsignedTransactions, err := s.createUnsignedTransactionVerbose(inputs, outputs)
 	if err != nil {
@@ -50,8 +56,7 @@ func (s *server) createUnsignedTransactionVerbose(inputs []externalapi.DomainOut
 		totalSpend += payment.Amount
 	}
 
-	changeSompi := totalValue - totalSpend - feePerInput*uint64(len(selectedUTXOs))
-	if changeSompi < 0 {
+	if totalValue < totalSpend+feePerInput*uint64(len(selectedUTXOs)) {
 		return nil, errors.New("Total input is not enough to cover total output and fees")
 	}
 
@@ -60,6 +65,7 @@ func (s *server) createUnsignedTransactionVerbose(inputs []externalapi.DomainOut
 		return nil, err
 	}
 
+	changeSompi := totalValue - totalSpend - feePerInput*uint64(len(selectedUTXOs))
 	if changeSompi > 0 {
 		payments = append(payments, &libkaspawallet.Payment{
 			Address: changeAddress,
@@ -97,22 +103,22 @@ func (s *server) selectUTXOsByOutpoints(inputs []externalapi.DomainOutpoint) (se
 	return selectedUTXOs, totalValue, nil
 }
 
-func protoOutputsToDomainOutputs(request_inputs []*pb.Outpoint) (inputs []externalapi.DomainOutpoint, err error) {
-	for _, input := range request_inputs {
-		txId, err := externalapi.NewDomainTransactionIDFromString(input.TransactionId)
+func protoOutputsToDomainOutputs(requestInputs []*pb.Outpoint) (inputs []externalapi.DomainOutpoint, err error) {
+	for _, input := range requestInputs {
+		txID, err := externalapi.NewDomainTransactionIDFromString(input.TransactionId)
 		if err != nil {
 			return nil, err
 		}
 		inputs = append(inputs, externalapi.DomainOutpoint{
-			TransactionID: *txId,
+			TransactionID: *txID,
 			Index:         input.Index,
 		})
 	}
 	return inputs, nil
 }
 
-func protoPaymentToLibPayment(request_outputs []*pb.PaymentOutput, prefix util.Bech32Prefix) (outputs []*libkaspawallet.Payment, err error) {
-	for _, output := range request_outputs {
+func protoPaymentToLibPayment(requestOutputs []*pb.PaymentOutput, prefix util.Bech32Prefix) (outputs []*libkaspawallet.Payment, err error) {
+	for _, output := range requestOutputs {
 		address, err := util.DecodeAddress(output.Address, prefix)
 		if err != nil {
 			return nil, err
