@@ -197,7 +197,7 @@ func (s *consensus) ValidateAndInsertBlock(block *externalapi.DomainBlock, shoul
 		return nil, err
 	}
 
-	err = s.onVirtualChanged(virtualChangeSet, shouldValidateAgainstUTXO)
+	err = s.onVirtualChange(virtualChangeSet, shouldValidateAgainstUTXO)
 	if err != nil {
 		return nil, err
 	}
@@ -205,7 +205,7 @@ func (s *consensus) ValidateAndInsertBlock(block *externalapi.DomainBlock, shoul
 	return virtualChangeSet, nil
 }
 
-func (s *consensus) onVirtualChanged(virtualChangeSet *externalapi.VirtualChangeSet, wasVirtualUpdated bool) error {
+func (s *consensus) onVirtualChange(virtualChangeSet *externalapi.VirtualChangeSet, wasVirtualUpdated bool) error {
 	if !wasVirtualUpdated || s.virtualChangeChan == nil {
 		return nil
 	}
@@ -833,7 +833,7 @@ func (s *consensus) ResolveVirtual() (*externalapi.VirtualChangeSet, bool, error
 		return nil, false, err
 	}
 
-	err = s.onVirtualChanged(virtualChangeSet, true)
+	err = s.onVirtualChange(virtualChangeSet, true)
 	if err != nil {
 		return nil, false, err
 	}

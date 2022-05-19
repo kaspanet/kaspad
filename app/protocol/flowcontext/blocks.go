@@ -22,15 +22,15 @@ func (f *FlowContext) OnNewBlock(block *externalapi.DomainBlock) error {
 	log.Tracef("OnNewBlock start for block %s", hash)
 	defer log.Tracef("OnNewBlock end for block %s", hash)
 
-	unorphaningResults, err := f.UnorphanBlocks(block)
+	unorphanedBlocks, err := f.UnorphanBlocks(block)
 	if err != nil {
 		return err
 	}
 
-	log.Debugf("OnNewBlock: block %s unorphaned %d blocks", hash, len(unorphaningResults))
+	log.Debugf("OnNewBlock: block %s unorphaned %d blocks", hash, len(unorphanedBlocks))
 
 	newBlocks := []*externalapi.DomainBlock{block}
-	newBlocks = append(newBlocks, unorphaningResults...)
+	newBlocks = append(newBlocks, unorphanedBlocks...)
 
 	allAcceptedTransactions := make([]*externalapi.DomainTransaction, 0)
 	for _, newBlock := range newBlocks {

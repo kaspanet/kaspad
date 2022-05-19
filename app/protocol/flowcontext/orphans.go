@@ -60,7 +60,7 @@ func (f *FlowContext) UnorphanBlocks(rootBlock *externalapi.DomainBlock) ([]*ext
 	rootBlockHash := consensushashing.BlockHash(rootBlock)
 	processQueue := f.addChildOrphansToProcessQueue(rootBlockHash, []externalapi.DomainHash{})
 
-	var unorphaningResults []*externalapi.DomainBlock
+	var unorphanedBlocks []*externalapi.DomainBlock
 	for len(processQueue) > 0 {
 		var orphanHash externalapi.DomainHash
 		orphanHash, processQueue = processQueue[0], processQueue[1:]
@@ -89,13 +89,13 @@ func (f *FlowContext) UnorphanBlocks(rootBlock *externalapi.DomainBlock) ([]*ext
 				return nil, err
 			}
 			if unorphaningSucceeded {
-				unorphaningResults = append(unorphaningResults, orphanBlock)
+				unorphanedBlocks = append(unorphanedBlocks, orphanBlock)
 				processQueue = f.addChildOrphansToProcessQueue(&orphanHash, processQueue)
 			}
 		}
 	}
 
-	return unorphaningResults, nil
+	return unorphanedBlocks, nil
 }
 
 // addChildOrphansToProcessQueue finds all child orphans of `blockHash`
