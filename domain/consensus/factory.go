@@ -76,7 +76,8 @@ type Config struct {
 
 // Factory instantiates new Consensuses
 type Factory interface {
-	NewConsensus(config *Config, db infrastructuredatabase.Database, dbPrefix *prefix.Prefix) (
+	NewConsensus(config *Config, db infrastructuredatabase.Database, dbPrefix *prefix.Prefix,
+		virtualChangeChan chan *externalapi.VirtualChangeSet) (
 		externalapi.Consensus, bool, error)
 	NewTestConsensus(config *Config, testName string) (
 		tc testapi.TestConsensus, teardown func(keepDataDir bool), err error)
@@ -108,7 +109,8 @@ func NewFactory() Factory {
 }
 
 // NewConsensus instantiates a new Consensus
-func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Database, dbPrefix *prefix.Prefix) (
+func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Database, dbPrefix *prefix.Prefix,
+	virtualChangeChan chan *externalapi.VirtualChangeSet) (
 	consensusInstance externalapi.Consensus, shouldMigrate bool, err error) {
 
 	dbManager := consensusdatabase.New(db)
@@ -510,6 +512,8 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 		headersSelectedChainStore:           headersSelectedChainStore,
 		daaBlocksStore:                      daaBlocksStore,
 		blocksWithTrustedDataDAAWindowStore: daaWindowStore,
+
+		virtualChangeChan: virtualChangeChan,
 	}
 
 	if isOldReachabilityInitialized {
@@ -572,7 +576,7 @@ func (f *factory) NewTestConsensus(config *Config, testName string) (
 	}
 
 	testConsensusDBPrefix := &prefix.Prefix{}
-	consensusAsInterface, shouldMigrate, err := f.NewConsensus(config, db, testConsensusDBPrefix)
+	consensusAsInterface, shouldMigrate, err := f.NewConsensus(config, db, testConsensusDBPrefix, nil)
 	if err != nil {
 		return nil, nil, err
 	}
