@@ -19,7 +19,7 @@ func (s *server) GetBalance(_ context.Context, _ *pb.GetBalanceRequest) (*pb.Get
 		return nil, err
 	}
 
-	err = s.update()
+	err = s.collectAndRefreshUTXOs()
 	if err != nil {
 		return nil, err
 	}

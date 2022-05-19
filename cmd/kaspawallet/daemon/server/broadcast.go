@@ -46,6 +46,7 @@ func (s *server) broadcast(transactions [][]byte, isDomain bool) ([]string, erro
 		txIDs[i], err = sendTransaction(s.rpcClient, tx)
 		s.tracker.trackTransaction(tx)
 		if err != nil {
+			s.tracker.untrackSentTransactionID(tx.ID.String())
 			return nil, err
 		}
 	}
