@@ -20,7 +20,7 @@ import (
 
 // OnBlockAddedToDAGHandler is a handler function that's triggered
 // when a block is added to the DAG
-type OnBlockAddedToDAGHandler func(block *externalapi.DomainBlock, virtualChangeSet *externalapi.VirtualChangeSet) error
+type OnBlockAddedToDAGHandler func(block *externalapi.DomainBlock) error
 
 // OnNewBlockTemplateHandler is a handler function that's triggered when a new block template is available
 type OnNewBlockTemplateHandler func() error

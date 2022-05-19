@@ -196,16 +196,42 @@ func (s *consensus) ValidateAndInsertBlock(block *externalapi.DomainBlock, shoul
 	if err != nil {
 		return nil, err
 	}
-	s.onVirtualChangeSet(virtualChangeSet)
+
+	err = s.onVirtualChanged(virtualChangeSet, shouldValidateAgainstUTXO)
+	if err != nil {
+		return nil, err
+	}
+
 	return virtualChangeSet, nil
 }
 
-func (s *consensus) onVirtualChangeSet(virtualChangeSet *externalapi.VirtualChangeSet) {
-	if s.virtualChangeChan == nil {
-		return
+func (s *consensus) onVirtualChanged(virtualChangeSet *externalapi.VirtualChangeSet, wasVirtualUpdated bool) error {
+	if !wasVirtualUpdated || s.virtualChangeChan == nil {
+		return nil
 	}
 
+	stagingArea := model.NewStagingArea()
+	virtualGHOSTDAGData, err := s.ghostdagDataStores[0].Get(s.databaseContext, stagingArea, model.VirtualBlockHash, false)
+	if err != nil {
+		return err
+	}
+
+	virtualSelectedParentGHOSTDAGData, err := s.ghostdagDataStores[0].Get(s.databaseContext, stagingArea, virtualGHOSTDAGData.SelectedParent(), false)
+	if err != nil {
+		return err
+	}
+
+	virtualDAAScore, err := s.daaBlocksStore.DAAScore(s.databaseContext, stagingArea, model.VirtualBlockHash)
+	if err != nil {
+		return err
+	}
+
+	// Populate the change set with additional data before sending
+	virtualChangeSet.VirtualSelectedParentBlueScore = virtualSelectedParentGHOSTDAGData.BlueScore()
+	virtualChangeSet.VirtualDAAScore = virtualDAAScore
+
 	s.virtualChangeChan <- virtualChangeSet
+	return nil
 }
 
 // ValidateTransactionAndPopulateWithConsensusData validates the given transaction
@@ -807,7 +833,11 @@ func (s *consensus) ResolveVirtual() (*externalapi.VirtualChangeSet, bool, error
 		return nil, false, err
 	}
 
-	s.onVirtualChangeSet(virtualChangeSet)
+	err = s.onVirtualChanged(virtualChangeSet, true)
+	if err != nil {
+		return nil, false, err
+	}
+
 	return virtualChangeSet, isCompletelyResolved, nil
 }
 

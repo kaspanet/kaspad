@@ -15,12 +15,6 @@ import (
 // on: 2^orphanResolutionRange * PHANTOM K.
 const maxOrphans = 600
 
-// UnorphaningResult is the result of unorphaning a block
-type UnorphaningResult struct {
-	block            *externalapi.DomainBlock
-	virtualChangeSet *externalapi.VirtualChangeSet
-}
-
 // AddOrphan adds the block to the orphan set
 func (f *FlowContext) AddOrphan(orphanBlock *externalapi.DomainBlock) {
 	f.orphansMutex.Lock()
@@ -57,7 +51,7 @@ func (f *FlowContext) IsOrphan(blockHash *externalapi.DomainHash) bool {
 }
 
 // UnorphanBlocks removes the block from the orphan set, and remove all of the blocks that are not orphans anymore.
-func (f *FlowContext) UnorphanBlocks(rootBlock *externalapi.DomainBlock) ([]*UnorphaningResult, error) {
+func (f *FlowContext) UnorphanBlocks(rootBlock *externalapi.DomainBlock) ([]*externalapi.DomainBlock, error) {
 	f.orphansMutex.Lock()
 	defer f.orphansMutex.Unlock()
 
@@ -66,7 +60,7 @@ func (f *FlowContext) UnorphanBlocks(rootBlock *externalapi.DomainBlock) ([]*Uno
 	rootBlockHash := consensushashing.BlockHash(rootBlock)
 	processQueue := f.addChildOrphansToProcessQueue(rootBlockHash, []externalapi.DomainHash{})
 
-	var unorphaningResults []*UnorphaningResult
+	var unorphaningResults []*externalapi.DomainBlock
 	for len(processQueue) > 0 {
 		var orphanHash externalapi.DomainHash
 		orphanHash, processQueue = processQueue[0], processQueue[1:]
@@ -90,15 +84,12 @@ func (f *FlowContext) UnorphanBlocks(rootBlock *externalapi.DomainBlock) ([]*Uno
 			}
 		}
 		if canBeUnorphaned {
-			virtualChangeSet, unorphaningSucceeded, err := f.unorphanBlock(orphanHash)
+			unorphaningSucceeded, err := f.unorphanBlock(orphanHash)
 			if err != nil {
 				return nil, err
 			}
 			if unorphaningSucceeded {
-				unorphaningResults = append(unorphaningResults, &UnorphaningResult{
-					block:            orphanBlock,
-					virtualChangeSet: virtualChangeSet,
-				})
+				unorphaningResults = append(unorphaningResults, orphanBlock)
 				processQueue = f.addChildOrphansToProcessQueue(&orphanHash, processQueue)
 			}
 		}
@@ -143,24 +134,24 @@ func (f *FlowContext) findChildOrphansOfBlock(blockHash *externalapi.DomainHash)
 	return childOrphans
 }
 
-func (f *FlowContext) unorphanBlock(orphanHash externalapi.DomainHash) (*externalapi.VirtualChangeSet, bool, error) {
+func (f *FlowContext) unorphanBlock(orphanHash externalapi.DomainHash) (bool, error) {
 	orphanBlock, ok := f.orphans[orphanHash]
 	if !ok {
-		return nil, false, errors.Errorf("attempted to unorphan a non-orphan block %s", orphanHash)
+		return false, errors.Errorf("attempted to unorphan a non-orphan block %s", orphanHash)
 	}
 	delete(f.orphans, orphanHash)
 
-	virtualChangeSet, err := f.domain.Consensus().ValidateAndInsertBlock(orphanBlock, true)
+	_, err := f.domain.Consensus().ValidateAndInsertBlock(orphanBlock, true)
 	if err != nil {
 		if errors.As(err, &ruleerrors.RuleError{}) {
 			log.Warnf("Validation failed for orphan block %s: %s", orphanHash, err)
-			return nil, false, nil
+			return false, nil
 		}
-		return nil, false, err
+		return false, err
 	}
 
 	log.Infof("Unorphaned block %s", orphanHash)
-	return virtualChangeSet, true, nil
+	return true, nil
 }
 
 // GetOrphanRoots returns the roots of the missing ancestors DAG of the given orphan

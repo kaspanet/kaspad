@@ -66,9 +66,15 @@ func (m *Manager) initVirtualChangeHandler(virtualChangeChan chan *externalapi.V
 }
 
 // NotifyBlockAddedToDAG notifies the manager that a block has been added to the DAG
-func (m *Manager) NotifyBlockAddedToDAG(block *externalapi.DomainBlock, virtualChangeSet *externalapi.VirtualChangeSet) error {
+func (m *Manager) NotifyBlockAddedToDAG(block *externalapi.DomainBlock) error {
 	onEnd := logger.LogAndMeasureExecutionTime(log, "RPCManager.NotifyBlockAddedToDAG")
 	defer onEnd()
+
+	// Before converting the block and populating it, we check if any listeners are interested.
+	// This is done since most nodes do not use this event.
+	if !m.context.NotificationManager.HasBlockAddedListeners() {
+		return nil
+	}
 
 	rpcBlock := appmessage.DomainBlockToRPCBlock(block)
 	err := m.context.PopulateBlockWithVerboseData(rpcBlock, block.Header, block, true)
@@ -89,30 +95,33 @@ func (m *Manager) notifyVirtualChange(virtualChangeSet *externalapi.VirtualChang
 	onEnd := logger.LogAndMeasureExecutionTime(log, "RPCManager.NotifyVirtualChange")
 	defer onEnd()
 
-	if m.context.Config.UTXOIndex && virtualChangeSet.VirtualUTXODiff != nil && virtualChangeSet.VirtualParents != nil {
+	if m.context.Config.UTXOIndex && virtualChangeSet.VirtualUTXODiff != nil {
 		err := m.notifyUTXOsChanged(virtualChangeSet)
 		if err != nil {
 			return err
 		}
 	}
 
-	err := m.notifyVirtualSelectedParentBlueScoreChanged()
+	err := m.notifyVirtualSelectedParentBlueScoreChanged(virtualChangeSet.VirtualSelectedParentBlueScore)
 	if err != nil {
 		return err
 	}
 
-	err = m.notifyVirtualDaaScoreChanged()
+	err = m.notifyVirtualDaaScoreChanged(virtualChangeSet.VirtualDAAScore)
 	if err != nil {
 		return err
 	}
 
-	if virtualChangeSet.VirtualSelectedParentChainChanges != nil &&
-		(len(virtualChangeSet.VirtualSelectedParentChainChanges.Added) > 0 ||
-			len(virtualChangeSet.VirtualSelectedParentChainChanges.Removed) > 0) {
-		err = m.notifyVirtualSelectedParentChainChanged(virtualChangeSet)
-		if err != nil {
-			return err
-		}
+	if virtualChangeSet.VirtualSelectedParentChainChanges == nil ||
+		(len(virtualChangeSet.VirtualSelectedParentChainChanges.Added) == 0 &&
+			len(virtualChangeSet.VirtualSelectedParentChainChanges.Removed) == 0) {
+
+		return nil
+	}
+
+	err = m.notifyVirtualSelectedParentChainChanged(virtualChangeSet)
+	if err != nil {
+		return err
 	}
 
 	return nil
@@ -183,32 +192,17 @@ func (m *Manager) notifyPruningPointUTXOSetOverride() error {
 	return m.context.NotificationManager.NotifyPruningPointUTXOSetOverride()
 }
 
-func (m *Manager) notifyVirtualSelectedParentBlueScoreChanged() error {
+func (m *Manager) notifyVirtualSelectedParentBlueScoreChanged(virtualSelectedParentBlueScore uint64) error {
 	onEnd := logger.LogAndMeasureExecutionTime(log, "RPCManager.NotifyVirtualSelectedParentBlueScoreChanged")
 	defer onEnd()
 
-	virtualSelectedParent, err := m.context.Domain.Consensus().GetVirtualSelectedParent()
-	if err != nil {
-		return err
-	}
-
-	blockInfo, err := m.context.Domain.Consensus().GetBlockInfo(virtualSelectedParent)
-	if err != nil {
-		return err
-	}
-
-	notification := appmessage.NewVirtualSelectedParentBlueScoreChangedNotificationMessage(blockInfo.BlueScore)
+	notification := appmessage.NewVirtualSelectedParentBlueScoreChangedNotificationMessage(virtualSelectedParentBlueScore)
 	return m.context.NotificationManager.NotifyVirtualSelectedParentBlueScoreChanged(notification)
 }
 
-func (m *Manager) notifyVirtualDaaScoreChanged() error {
+func (m *Manager) notifyVirtualDaaScoreChanged(virtualDAAScore uint64) error {
 	onEnd := logger.LogAndMeasureExecutionTime(log, "RPCManager.NotifyVirtualDaaScoreChanged")
 	defer onEnd()
-
-	virtualDAAScore, err := m.context.Domain.Consensus().GetVirtualDAAScore()
-	if err != nil {
-		return err
-	}
 
 	notification := appmessage.NewVirtualDaaScoreChangedNotificationMessage(virtualDAAScore)
 	return m.context.NotificationManager.NotifyVirtualDaaScoreChanged(notification)

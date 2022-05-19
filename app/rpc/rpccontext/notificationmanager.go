@@ -82,6 +82,19 @@ func (nm *NotificationManager) Listener(router *routerpkg.Router) (*Notification
 	return listener, nil
 }
 
+// HasBlockAddedListeners indicates if the notification manager has any listeners for `BlockAdded` events
+func (nm *NotificationManager) HasBlockAddedListeners() bool {
+	nm.RLock()
+	defer nm.RUnlock()
+
+	for _, listener := range nm.listeners {
+		if listener.propagateBlockAddedNotifications {
+			return true
+		}
+	}
+	return false
+}
+
 // NotifyBlockAdded notifies the notification manager that a block has been added to the DAG
 func (nm *NotificationManager) NotifyBlockAdded(notification *appmessage.BlockAddedNotificationMessage) error {
 	nm.RLock()

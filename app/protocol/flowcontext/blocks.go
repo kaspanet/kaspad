@@ -16,8 +16,7 @@ import (
 // OnNewBlock updates the mempool after a new block arrival, and
 // relays newly unorphaned transactions and possibly rebroadcast
 // manually added transactions when not in IBD.
-func (f *FlowContext) OnNewBlock(block *externalapi.DomainBlock,
-	virtualChangeSet *externalapi.VirtualChangeSet) error {
+func (f *FlowContext) OnNewBlock(block *externalapi.DomainBlock) error {
 
 	hash := consensushashing.BlockHash(block)
 	log.Tracef("OnNewBlock start for block %s", hash)
@@ -31,14 +30,10 @@ func (f *FlowContext) OnNewBlock(block *externalapi.DomainBlock,
 	log.Debugf("OnNewBlock: block %s unorphaned %d blocks", hash, len(unorphaningResults))
 
 	newBlocks := []*externalapi.DomainBlock{block}
-	newVirtualChangeSets := []*externalapi.VirtualChangeSet{virtualChangeSet}
-	for _, unorphaningResult := range unorphaningResults {
-		newBlocks = append(newBlocks, unorphaningResult.block)
-		newVirtualChangeSets = append(newVirtualChangeSets, unorphaningResult.virtualChangeSet)
-	}
+	newBlocks = append(newBlocks, unorphaningResults...)
 
 	allAcceptedTransactions := make([]*externalapi.DomainTransaction, 0)
-	for i, newBlock := range newBlocks {
+	for _, newBlock := range newBlocks {
 		log.Debugf("OnNewBlock: passing block %s transactions to mining manager", hash)
 		acceptedTransactions, err := f.Domain().MiningManager().HandleNewBlockTransactions(newBlock.Transactions)
 		if err != nil {
@@ -48,8 +43,7 @@ func (f *FlowContext) OnNewBlock(block *externalapi.DomainBlock,
 
 		if f.onBlockAddedToDAGHandler != nil {
 			log.Debugf("OnNewBlock: calling f.onBlockAddedToDAGHandler for block %s", hash)
-			virtualChangeSet = newVirtualChangeSets[i]
-			err := f.onBlockAddedToDAGHandler(newBlock, virtualChangeSet)
+			err := f.onBlockAddedToDAGHandler(newBlock)
 			if err != nil {
 				return err
 			}
@@ -121,7 +115,7 @@ func (f *FlowContext) AddBlock(block *externalapi.DomainBlock) error {
 		return protocolerrors.Errorf(false, "cannot add header only block")
 	}
 
-	virtualChangeSet, err := f.Domain().Consensus().ValidateAndInsertBlock(block, true)
+	_, err := f.Domain().Consensus().ValidateAndInsertBlock(block, true)
 	if err != nil {
 		if errors.As(err, &ruleerrors.RuleError{}) {
 			log.Warnf("Validation failed for block %s: %s", consensushashing.BlockHash(block), err)
@@ -132,7 +126,7 @@ func (f *FlowContext) AddBlock(block *externalapi.DomainBlock) error {
 	if err != nil {
 		return err
 	}
-	err = f.OnNewBlock(block, virtualChangeSet)
+	err = f.OnNewBlock(block)
 	if err != nil {
 		return err
 	}
