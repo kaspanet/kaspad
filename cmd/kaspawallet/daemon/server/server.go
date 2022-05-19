@@ -2,6 +2,7 @@ package server
 
 import (
 	"fmt"
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"net"
 	"os"
 	"sync"
@@ -35,6 +36,7 @@ type server struct {
 	shutdown            chan struct{}
 	addressSet          walletAddressSet
 	txMassCalculator    *txmass.Calculator
+	usedOutpoints       map[externalapi.DomainOutpoint]time.Time
 }
 
 // Start starts the kaspawalletd server
@@ -73,6 +75,7 @@ func Start(params *dagconfig.Params, listen, rpcServer string, keysFilePath stri
 		shutdown:            make(chan struct{}),
 		addressSet:          make(walletAddressSet),
 		txMassCalculator:    txmass.NewCalculator(params.MassPerTxByte, params.MassPerScriptPubKeyByte, params.MassPerSigOp),
+		usedOutpoints:       map[externalapi.DomainOutpoint]time.Time{},
 	}
 
 	spawn("serverInstance.sync", func() {

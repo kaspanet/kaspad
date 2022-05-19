@@ -5,8 +5,9 @@ import (
 
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/app/rpc/rpccontext"
-	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/txscript"
+
+	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
+  "github.com/kaspanet/kaspad/domain/consensus/utils/txscript"
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
 	"github.com/kaspanet/kaspad/util"
 )
@@ -112,7 +113,13 @@ func extractMempoolEntriesByAddressesFromTransactions(context *rpccontext.Contex
 
 		for _, transaction := range transactions {
 
-			for _, input := range transaction.Inputs {
+			for i, input := range transaction.Inputs {
+				// TODO: Fix this
+				if input.UTXOEntry == nil {
+					log.Errorf("Couldn't find UTXO entry for input %d in mempool transaction %s. This is a bug and should be fixed.", i, consensushashing.TransactionID(transaction))
+					continue
+				}
+
 				_, transactionSendingAddress, err := txscript.ExtractScriptPubKeyAddress(
 					input.UTXOEntry.ScriptPublicKey(),
 					context.Config.ActiveNetParams)
