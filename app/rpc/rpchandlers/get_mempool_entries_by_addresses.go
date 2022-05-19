@@ -33,7 +33,7 @@ func HandleGetMempoolEntriesByAddresses(context *rpccontext.Context, _ *router.R
 			for i, input := range transaction.Inputs {
 				// TODO: Fix this
 				if input.UTXOEntry == nil {
-					log.Errorf("Couldn't find UTXO entry for input %d in mempool transaction %s. This should never happen.", i, consensushashing.TransactionID(transaction))
+					log.Errorf("Couldn't find UTXO entry for input %d in mempool transaction %s. This is a bug and should be fixed.", i, consensushashing.TransactionID(transaction))
 					continue
 				}
 
