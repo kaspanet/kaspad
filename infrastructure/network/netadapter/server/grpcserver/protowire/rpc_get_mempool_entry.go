@@ -14,7 +14,9 @@ func (x *KaspadMessage_GetMempoolEntryRequest) toAppMessage() (appmessage.Messag
 
 func (x *KaspadMessage_GetMempoolEntryRequest) fromAppMessage(message *appmessage.GetMempoolEntryRequestMessage) error {
 	x.GetMempoolEntryRequest = &GetMempoolEntryRequestMessage{
-		TxId: message.TxID,
+		TxId:                   message.TxID,
+		IncludeOrphanPool:      message.IncludeOrphanPool,
+		IncludeTransactionPool: message.IncludeTransactionPool,
 	}
 	return nil
 }

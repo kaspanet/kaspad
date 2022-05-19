@@ -3,8 +3,8 @@ package rpcclient
 import "github.com/kaspanet/kaspad/app/appmessage"
 
 // GetMempoolEntry sends an RPC request respective to the function's name and returns the RPC server's response
-func (c *RPCClient) GetMempoolEntry(txID string, inludeOrphanPool bool, includeTransactionPool bool) (*appmessage.GetMempoolEntryResponseMessage, error) {
-	err := c.rpcRouter.outgoingRoute().Enqueue(appmessage.NewGetMempoolEntryRequestMessage(txID, inludeOrphanPool, includeTransactionPool))
+func (c *RPCClient) GetMempoolEntry(txID string, includeOrphanPool bool, includeTransactionPool bool) (*appmessage.GetMempoolEntryResponseMessage, error) {
+	err := c.rpcRouter.outgoingRoute().Enqueue(appmessage.NewGetMempoolEntryRequestMessage(txID, includeOrphanPool, includeTransactionPool))
 	if err != nil {
 		return nil, err
 	}
