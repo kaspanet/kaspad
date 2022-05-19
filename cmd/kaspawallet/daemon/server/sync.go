@@ -235,6 +235,11 @@ func (s *server) updateUTXOSet(entries []*appmessage.UTXOsByAddressesEntry, memp
 }
 
 func (s *server) refreshUTXOs() error {
+	// It's important to check the mempool before calling `GetUTXOsByAddresses`:
+	// If we would do it the other way around an output can be spent in the mempool
+	// and not in consensus, and between the calls its spending transaction will be
+	// added to consensus and removed from the mempool, so `getUTXOsByAddressesResponse`
+	// will include an obsolete output.
 	mempoolEntriesByAddresses, err := s.rpcClient.GetMempoolEntriesByAddresses(s.addressSet.strings())
 	if err != nil {
 		return err
