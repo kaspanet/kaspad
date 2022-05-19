@@ -95,6 +95,11 @@ func (m *Manager) notifyVirtualChange(virtualChangeSet *externalapi.VirtualChang
 	onEnd := logger.LogAndMeasureExecutionTime(log, "RPCManager.NotifyVirtualChange")
 	defer onEnd()
 
+	/*
+		NOTE: nothing under this function is allowed to acquire the consensus lock, since
+		      the function is triggered by a channel call under consensus lock which might block
+	*/
+
 	if m.context.Config.UTXOIndex && virtualChangeSet.VirtualUTXODiff != nil {
 		err := m.notifyUTXOsChanged(virtualChangeSet)
 		if err != nil {
