@@ -38,7 +38,7 @@ func HandleGetMempoolEntry(context *rpccontext.Context, _ *router.Router, reques
 		}
 		isOrphan = false
 
-	} else if getMempoolEntryRequest.IncludeTransactionPool && !(getMempoolEntryRequest.IncludeOrphanPool) { //only transactions
+	} else if getMempoolEntryRequest.IncludeTransactionPool && !getMempoolEntryRequest.IncludeOrphanPool { //only transactions
 		transaction, ok = context.Domain.MiningManager().GetTransaction(transactionID)
 		if !ok {
 			errorMessage := &appmessage.GetMempoolEntryResponseMessage{}
@@ -47,8 +47,8 @@ func HandleGetMempoolEntry(context *rpccontext.Context, _ *router.Router, reques
 		}
 		isOrphan = true
 
-	} else if !(getMempoolEntryRequest.IncludeTransactionPool) && getMempoolEntryRequest.IncludeOrphanPool { //only orphans
-		transaction, ok = context.Domain.MiningManager().GetTransaction(transactionID)
+	} else if !getMempoolEntryRequest.IncludeTransactionPool && getMempoolEntryRequest.IncludeOrphanPool { //only orphans
+		transaction, ok = context.Domain.MiningManager().GetOrphanTransaction(transactionID)
 		if !ok {
 			errorMessage := &appmessage.GetMempoolEntryResponseMessage{}
 			errorMessage.Error = appmessage.RPCErrorf("Transaction %s was not found", transactionID)
