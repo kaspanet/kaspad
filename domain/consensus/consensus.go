@@ -58,6 +58,8 @@ type consensus struct {
 	headersSelectedChainStore           model.HeadersSelectedChainStore
 	daaBlocksStore                      model.DAABlocksStore
 	blocksWithTrustedDataDAAWindowStore model.BlocksWithTrustedDataDAAWindowStore
+
+	virtualChangeChan chan *externalapi.VirtualChangeSet
 }
 
 func (s *consensus) ValidateAndInsertBlockWithTrustedData(block *externalapi.BlockWithTrustedData, validateUTXO bool) (*externalapi.VirtualChangeSet, error) {
@@ -190,7 +192,46 @@ func (s *consensus) ValidateAndInsertBlock(block *externalapi.DomainBlock, shoul
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	return s.blockProcessor.ValidateAndInsertBlock(block, shouldValidateAgainstUTXO)
+	virtualChangeSet, err := s.blockProcessor.ValidateAndInsertBlock(block, shouldValidateAgainstUTXO)
+	if err != nil {
+		return nil, err
+	}
+
+	err = s.onVirtualChange(virtualChangeSet, shouldValidateAgainstUTXO)
+	if err != nil {
+		return nil, err
+	}
+
+	return virtualChangeSet, nil
+}
+
+func (s *consensus) onVirtualChange(virtualChangeSet *externalapi.VirtualChangeSet, wasVirtualUpdated bool) error {
+	if !wasVirtualUpdated || s.virtualChangeChan == nil {
+		return nil
+	}
+
+	stagingArea := model.NewStagingArea()
+	virtualGHOSTDAGData, err := s.ghostdagDataStores[0].Get(s.databaseContext, stagingArea, model.VirtualBlockHash, false)
+	if err != nil {
+		return err
+	}
+
+	virtualSelectedParentGHOSTDAGData, err := s.ghostdagDataStores[0].Get(s.databaseContext, stagingArea, virtualGHOSTDAGData.SelectedParent(), false)
+	if err != nil {
+		return err
+	}
+
+	virtualDAAScore, err := s.daaBlocksStore.DAAScore(s.databaseContext, stagingArea, model.VirtualBlockHash)
+	if err != nil {
+		return err
+	}
+
+	// Populate the change set with additional data before sending
+	virtualChangeSet.VirtualSelectedParentBlueScore = virtualSelectedParentGHOSTDAGData.BlueScore()
+	virtualChangeSet.VirtualDAAScore = virtualDAAScore
+
+	s.virtualChangeChan <- virtualChangeSet
+	return nil
 }
 
 // ValidateTransactionAndPopulateWithConsensusData validates the given transaction
@@ -788,6 +829,11 @@ func (s *consensus) ResolveVirtual() (*externalapi.VirtualChangeSet, bool, error
 	}
 
 	err = staging.CommitAllChanges(s.databaseContext, stagingArea)
+	if err != nil {
+		return nil, false, err
+	}
+
+	err = s.onVirtualChange(virtualChangeSet, true)
 	if err != nil {
 		return nil, false, err
 	}
