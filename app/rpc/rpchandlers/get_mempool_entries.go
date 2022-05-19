@@ -65,7 +65,7 @@ func getTransactionPoolMempoolEntries(context *rpccontext.Context) ([]*appmessag
 
 func getOrphanPoolMempoolEntries(context *rpccontext.Context) ([]*appmessage.MempoolEntry, error) {
 	orphanTransactions := context.Domain.MiningManager().AllOrphanTransactions()
-	entries := make([]*appmessage.MempoolEntry, len(orphanTransactions))
+	entries := make([]*appmessage.MempoolEntry, 0, len(orphanTransactions))
 	for _, orphanTransaction := range orphanTransactions {
 		rpcTransaction := appmessage.DomainTransactionToRPCTransaction(orphanTransaction)
 		err := context.PopulateTransactionWithVerboseData(rpcTransaction, nil)
