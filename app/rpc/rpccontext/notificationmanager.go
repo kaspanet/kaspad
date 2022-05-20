@@ -130,9 +130,9 @@ func (nm *NotificationManager) NotifyVirtualSelectedParentChainChanged(
 			var err error
 
 			if listener.includeAcceptedTransactionIDsInVirtualSelectedParentChainChangedNotifications {
-				err = router.OutgoingRoute().Enqueue(notification)
+				err = router.OutgoingRoute().MaybeEnqueue(notification)
 			} else {
-				err = router.OutgoingRoute().Enqueue(notificationWithoutAcceptedTransactionIDs)
+				err = router.OutgoingRoute().MaybeEnqueue(notificationWithoutAcceptedTransactionIDs)
 			}
 
 			if err != nil {
@@ -206,7 +206,7 @@ func (nm *NotificationManager) NotifyUTXOsChanged(utxoChanges *utxoindex.UTXOCha
 			}
 
 			// Enqueue the notification
-			err = router.OutgoingRoute().Enqueue(notification)
+			err = router.OutgoingRoute().MaybeEnqueue(notification)
 			if err != nil {
 				return err
 			}
@@ -225,7 +225,7 @@ func (nm *NotificationManager) NotifyVirtualSelectedParentBlueScoreChanged(
 
 	for router, listener := range nm.listeners {
 		if listener.propagateVirtualSelectedParentBlueScoreChangedNotifications {
-			err := router.OutgoingRoute().Enqueue(notification)
+			err := router.OutgoingRoute().MaybeEnqueue(notification)
 			if err != nil {
 				return err
 			}
@@ -244,7 +244,7 @@ func (nm *NotificationManager) NotifyVirtualDaaScoreChanged(
 
 	for router, listener := range nm.listeners {
 		if listener.propagateVirtualDaaScoreChangedNotifications {
-			err := router.OutgoingRoute().Enqueue(notification)
+			err := router.OutgoingRoute().MaybeEnqueue(notification)
 			if err != nil {
 				return err
 			}

@@ -210,6 +210,10 @@ func (s *consensus) onVirtualChange(virtualChangeSet *externalapi.VirtualChangeS
 		return nil
 	}
 
+	if len(s.virtualChangeChan) == cap(s.virtualChangeChan) {
+		return errors.Errorf("virtualChangeChan is full")
+	}
+
 	stagingArea := model.NewStagingArea()
 	virtualGHOSTDAGData, err := s.ghostdagDataStores[0].Get(s.databaseContext, stagingArea, model.VirtualBlockHash, false)
 	if err != nil {
