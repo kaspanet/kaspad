@@ -47,11 +47,7 @@ func New(
 }
 
 func (bpb *blockParentBuilder) BuildParents(stagingArea *model.StagingArea,
-	daaScore uint64, directParentHashes []*externalapi.DomainHash) ([]externalapi.BlockLevelParents, error) {
-
-	// Late on we'll mutate direct parent hashes, so we first clone it.
-	directParentHashesCopy := make([]*externalapi.DomainHash, len(directParentHashes))
-	copy(directParentHashesCopy, directParentHashes)
+	directParentHashes []*externalapi.DomainHash) ([]externalapi.BlockLevelParents, error) {
 
 	pruningPoint, err := bpb.pruningStore.PruningPoint(bpb.databaseContext, stagingArea)
 	if err != nil {
@@ -64,10 +60,10 @@ func (bpb *blockParentBuilder) BuildParents(stagingArea *model.StagingArea,
 	// considered as a valid candidate.
 	// This is why we sort the direct parent headers in a way that the first one will be
 	// in the future of the pruning point.
-	directParentHeaders := make([]externalapi.BlockHeader, len(directParentHashesCopy))
+	directParentHeaders := make([]externalapi.BlockHeader, len(directParentHashes))
 	firstParentInFutureOfPruningPointIndex := 0
 	foundFirstParentInFutureOfPruningPoint := false
-	for i, directParentHash := range directParentHashesCopy {
+	for i, directParentHash := range directParentHashes {
 		isInFutureOfPruningPoint, err := bpb.dagTopologyManager.IsAncestorOf(stagingArea, pruningPoint, directParentHash)
 		if err != nil {
 			return nil, err
@@ -86,16 +82,17 @@ func (bpb *blockParentBuilder) BuildParents(stagingArea *model.StagingArea,
 		return nil, errors.New("BuildParents should get at least one parent in the future of the pruning point")
 	}
 
-	oldFirstDirectParent := directParentHashesCopy[0]
-	directParentHashesCopy[0] = directParentHashesCopy[firstParentInFutureOfPruningPointIndex]
-	directParentHashesCopy[firstParentInFutureOfPruningPointIndex] = oldFirstDirectParent
-
-	for i, directParentHash := range directParentHashesCopy {
+	for i, directParentHash := range directParentHashes {
 		directParentHeader, err := bpb.blockHeaderStore.BlockHeader(bpb.databaseContext, stagingArea, directParentHash)
 		if err != nil {
 			return nil, err
 		}
-		directParentHeaders[i] = directParentHeader
+		if i > 0 && i == firstParentInFutureOfPruningPointIndex {
+			directParentHeaders[i] = directParentHeaders[0]
+			directParentHeaders[0] = directParentHeader
+		} else {
+			directParentHeaders[i] = directParentHeader
+		}
 	}
 
 	type blockToReferences map[externalapi.DomainHash][]*externalapi.DomainHash
