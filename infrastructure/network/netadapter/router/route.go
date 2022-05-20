@@ -66,6 +66,17 @@ func (r *Route) Enqueue(message appmessage.Message) error {
 	return nil
 }
 
+// MaybeEnqueue enqueues a message to the route, but doesn't throw an error
+// if it's closed.
+func (r *Route) MaybeEnqueue(message appmessage.Message) error {
+	err := r.Enqueue(message)
+	if errors.Is(err, ErrRouteClosed) {
+		return nil
+	}
+
+	return err
+}
+
 // Dequeue dequeues a message from the Route
 func (r *Route) Dequeue() (appmessage.Message, error) {
 	message, isOpen := <-r.channel

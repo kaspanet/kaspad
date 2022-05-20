@@ -196,7 +196,7 @@ func New(consensusConfig *consensus.Config, mempoolConfig *mempool.Config, db in
 		}
 	}
 
-	virtualChangeChan := make(chan *externalapi.VirtualChangeSet, 1000)
+	virtualChangeChan := make(chan *externalapi.VirtualChangeSet, 100e3)
 	consensusFactory := consensus.NewFactory()
 	consensusInstance, shouldMigrate, err := consensusFactory.NewConsensus(consensusConfig, db, activePrefix, virtualChangeChan)
 	if err != nil {

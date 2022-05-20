@@ -206,7 +206,7 @@ func (nm *NotificationManager) NotifyUTXOsChanged(utxoChanges *utxoindex.UTXOCha
 			}
 
 			// Enqueue the notification
-			err = router.OutgoingRoute().Enqueue(notification)
+			err = router.OutgoingRoute().MaybeEnqueue(notification)
 			if err != nil {
 				return err
 			}
