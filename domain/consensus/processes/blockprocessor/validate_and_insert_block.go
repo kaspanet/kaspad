@@ -54,12 +54,12 @@ func (bp *blockProcessor) setBlockStatusAfterBlockValidation(
 			blockHash, externalapi.StatusHeaderOnly)
 		bp.blockStatusStore.Stage(stagingArea, blockHash, externalapi.StatusHeaderOnly)
 		return externalapi.StatusHeaderOnly, nil
-	} else {
-		log.Debugf("Block %s has body so setting its status as %s",
-			blockHash, externalapi.StatusUTXOPendingVerification)
-		bp.blockStatusStore.Stage(stagingArea, blockHash, externalapi.StatusUTXOPendingVerification)
-		return externalapi.StatusUTXOPendingVerification, nil
 	}
+
+	log.Debugf("Block %s has body so setting its status as %s",
+		blockHash, externalapi.StatusUTXOPendingVerification)
+	bp.blockStatusStore.Stage(stagingArea, blockHash, externalapi.StatusUTXOPendingVerification)
+	return externalapi.StatusUTXOPendingVerification, nil
 }
 
 func (bp *blockProcessor) updateVirtualAcceptanceDataAfterImportingPruningPoint(stagingArea *model.StagingArea) error {
