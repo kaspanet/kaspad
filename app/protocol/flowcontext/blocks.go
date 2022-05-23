@@ -40,14 +40,6 @@ func (f *FlowContext) OnNewBlock(block *externalapi.DomainBlock) error {
 			return err
 		}
 		allAcceptedTransactions = append(allAcceptedTransactions, acceptedTransactions...)
-
-		if f.onBlockAddedToDAGHandler != nil {
-			log.Debugf("OnNewBlock: calling f.onBlockAddedToDAGHandler for block %s", hash)
-			err := f.onBlockAddedToDAGHandler(newBlock)
-			if err != nil {
-				return err
-			}
-		}
 	}
 
 	return f.broadcastTransactionsAfterBlockAdded(newBlocks, allAcceptedTransactions)
