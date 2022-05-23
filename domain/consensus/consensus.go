@@ -4,6 +4,8 @@ import (
 	"math/big"
 	"sync"
 
+	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
+
 	"github.com/kaspanet/kaspad/util/mstime"
 
 	"github.com/kaspanet/kaspad/domain/consensus/database"
@@ -213,6 +215,14 @@ func (s *consensus) ValidateAndInsertBlock(block *externalapi.DomainBlock, shoul
 
 func (s *consensus) sendBlockAddedEvent(block *externalapi.DomainBlock) error {
 	if s.consensusEventsChan != nil {
+		blockStatus, err := s.blockStatusStore.Get(s.databaseContext, model.NewStagingArea(), consensushashing.BlockHash(block))
+		if err != nil {
+			return err
+		}
+		if blockStatus == externalapi.StatusHeaderOnly || blockStatus == externalapi.StatusInvalid {
+			return nil
+		}
+
 		if len(s.consensusEventsChan) == cap(s.consensusEventsChan) {
 			return errors.Errorf("consensusEventsChan is full")
 		}
