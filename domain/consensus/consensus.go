@@ -1,9 +1,10 @@
 package consensus
 
 import (
-	"github.com/kaspanet/kaspad/util/mstime"
 	"math/big"
 	"sync"
+
+	"github.com/kaspanet/kaspad/util/mstime"
 
 	"github.com/kaspanet/kaspad/domain/consensus/database"
 	"github.com/kaspanet/kaspad/domain/consensus/model"
@@ -59,7 +60,7 @@ type consensus struct {
 	daaBlocksStore                      model.DAABlocksStore
 	blocksWithTrustedDataDAAWindowStore model.BlocksWithTrustedDataDAAWindowStore
 
-	virtualChangeChan chan *externalapi.VirtualChangeSet
+	consensusEventsChan chan externalapi.ConsensusEvent
 }
 
 func (s *consensus) ValidateAndInsertBlockWithTrustedData(block *externalapi.BlockWithTrustedData, validateUTXO bool) (*externalapi.VirtualChangeSet, error) {
@@ -197,7 +198,12 @@ func (s *consensus) ValidateAndInsertBlock(block *externalapi.DomainBlock, shoul
 		return nil, err
 	}
 
-	err = s.onVirtualChange(virtualChangeSet, shouldValidateAgainstUTXO)
+	err = s.sendBlockAddedEvent(block)
+	if err != nil {
+		return nil, err
+	}
+
+	err = s.sendVirtualChangedEvent(virtualChangeSet, shouldValidateAgainstUTXO)
 	if err != nil {
 		return nil, err
 	}
@@ -205,13 +211,23 @@ func (s *consensus) ValidateAndInsertBlock(block *externalapi.DomainBlock, shoul
 	return virtualChangeSet, nil
 }
 
-func (s *consensus) onVirtualChange(virtualChangeSet *externalapi.VirtualChangeSet, wasVirtualUpdated bool) error {
-	if !wasVirtualUpdated || s.virtualChangeChan == nil {
+func (s *consensus) sendBlockAddedEvent(block *externalapi.DomainBlock) error {
+	if s.consensusEventsChan != nil {
+		if len(s.consensusEventsChan) == cap(s.consensusEventsChan) {
+			return errors.Errorf("consensusEventsChan is full")
+		}
+		s.consensusEventsChan <- &externalapi.BlockAdded{Block: block}
+	}
+	return nil
+}
+
+func (s *consensus) sendVirtualChangedEvent(virtualChangeSet *externalapi.VirtualChangeSet, wasVirtualUpdated bool) error {
+	if !wasVirtualUpdated || s.consensusEventsChan == nil {
 		return nil
 	}
 
-	if len(s.virtualChangeChan) == cap(s.virtualChangeChan) {
-		return errors.Errorf("virtualChangeChan is full")
+	if len(s.consensusEventsChan) == cap(s.consensusEventsChan) {
+		return errors.Errorf("consensusEventsChan is full")
 	}
 
 	stagingArea := model.NewStagingArea()
@@ -234,7 +250,7 @@ func (s *consensus) onVirtualChange(virtualChangeSet *externalapi.VirtualChangeS
 	virtualChangeSet.VirtualSelectedParentBlueScore = virtualSelectedParentGHOSTDAGData.BlueScore()
 	virtualChangeSet.VirtualDAAScore = virtualDAAScore
 
-	s.virtualChangeChan <- virtualChangeSet
+	s.consensusEventsChan <- virtualChangeSet
 	return nil
 }
 
@@ -837,7 +853,7 @@ func (s *consensus) ResolveVirtual() (*externalapi.VirtualChangeSet, bool, error
 		return nil, false, err
 	}
 
-	err = s.onVirtualChange(virtualChangeSet, true)
+	err = s.sendVirtualChangedEvent(virtualChangeSet, true)
 	if err != nil {
 		return nil, false, err
 	}

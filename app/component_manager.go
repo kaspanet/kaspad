@@ -2,8 +2,9 @@ package app
 
 import (
 	"fmt"
-	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"sync/atomic"
+
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 
 	"github.com/kaspanet/kaspad/domain/miningmanager/mempool"
 
@@ -68,7 +69,7 @@ func (a *ComponentManager) Stop() {
 	}
 
 	a.protocolManager.Close()
-	close(a.protocolManager.Context().Domain().VirtualChangeChannel())
+	close(a.protocolManager.Context().Domain().ConsensusEventsChannel())
 
 	return
 }
@@ -120,7 +121,7 @@ func NewComponentManager(cfg *config.Config, db infrastructuredatabase.Database,
 	if err != nil {
 		return nil, err
 	}
-	rpcManager := setupRPC(cfg, domain, netAdapter, protocolManager, connectionManager, addressManager, utxoIndex, domain.VirtualChangeChannel(), interrupt)
+	rpcManager := setupRPC(cfg, domain, netAdapter, protocolManager, connectionManager, addressManager, utxoIndex, domain.ConsensusEventsChannel(), interrupt)
 
 	return &ComponentManager{
 		cfg:               cfg,
@@ -141,7 +142,7 @@ func setupRPC(
 	connectionManager *connmanager.ConnectionManager,
 	addressManager *addressmanager.AddressManager,
 	utxoIndex *utxoindex.UTXOIndex,
-	virtualChangeChan chan *externalapi.VirtualChangeSet,
+	consensusEventsChan chan externalapi.ConsensusEvent,
 	shutDownChan chan<- struct{},
 ) *rpc.Manager {
 
@@ -153,11 +154,10 @@ func setupRPC(
 		connectionManager,
 		addressManager,
 		utxoIndex,
-		virtualChangeChan,
+		consensusEventsChan,
 		shutDownChan,
 	)
 	protocolManager.SetOnNewBlockTemplateHandler(rpcManager.NotifyNewBlockTemplate)
-	protocolManager.SetOnBlockAddedToDAGHandler(rpcManager.NotifyBlockAddedToDAG)
 	protocolManager.SetOnPruningPointUTXOSetOverrideHandler(rpcManager.NotifyPruningPointUTXOSetOverride)
 
 	return rpcManager
