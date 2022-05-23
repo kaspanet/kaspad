@@ -4,8 +4,6 @@ import (
 	"math/big"
 	"sync"
 
-	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
-
 	"github.com/kaspanet/kaspad/util/mstime"
 
 	"github.com/kaspanet/kaspad/domain/consensus/database"
@@ -69,7 +67,11 @@ func (s *consensus) ValidateAndInsertBlockWithTrustedData(block *externalapi.Blo
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	return s.blockProcessor.ValidateAndInsertBlockWithTrustedData(block, validateUTXO)
+	virtualChangeSet, _, err := s.blockProcessor.ValidateAndInsertBlockWithTrustedData(block, validateUTXO)
+	if err != nil {
+		return nil, err
+	}
+	return virtualChangeSet, nil
 }
 
 // Init initializes consensus
@@ -134,7 +136,7 @@ func (s *consensus) Init(skipAddingGenesis bool) error {
 				},
 			},
 		}
-		_, err = s.blockProcessor.ValidateAndInsertBlockWithTrustedData(genesisWithTrustedData, true)
+		_, _, err = s.blockProcessor.ValidateAndInsertBlockWithTrustedData(genesisWithTrustedData, true)
 		if err != nil {
 			return err
 		}
@@ -195,12 +197,12 @@ func (s *consensus) ValidateAndInsertBlock(block *externalapi.DomainBlock, shoul
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	virtualChangeSet, err := s.blockProcessor.ValidateAndInsertBlock(block, shouldValidateAgainstUTXO)
+	virtualChangeSet, blockStatus, err := s.blockProcessor.ValidateAndInsertBlock(block, shouldValidateAgainstUTXO)
 	if err != nil {
 		return nil, err
 	}
 
-	err = s.sendBlockAddedEvent(block)
+	err = s.sendBlockAddedEvent(block, blockStatus)
 	if err != nil {
 		return nil, err
 	}
@@ -213,12 +215,8 @@ func (s *consensus) ValidateAndInsertBlock(block *externalapi.DomainBlock, shoul
 	return virtualChangeSet, nil
 }
 
-func (s *consensus) sendBlockAddedEvent(block *externalapi.DomainBlock) error {
+func (s *consensus) sendBlockAddedEvent(block *externalapi.DomainBlock, blockStatus externalapi.BlockStatus) error {
 	if s.consensusEventsChan != nil {
-		blockStatus, err := s.blockStatusStore.Get(s.databaseContext, model.NewStagingArea(), consensushashing.BlockHash(block))
-		if err != nil {
-			return err
-		}
 		if blockStatus == externalapi.StatusHeaderOnly || blockStatus == externalapi.StatusInvalid {
 			return nil
 		}
