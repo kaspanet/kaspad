@@ -16,7 +16,7 @@ type walletAddressSet map[string]*walletAddress
 
 var (
 	isProgressLogFinalLineShown bool   = false
-	maxAddressesProcessedForLog uint32 = 0
+	maxProcessedAddressesForLog uint32 = 0
 	maxUsedAddressesForLog      uint32 = 0
 )
 
@@ -284,25 +284,25 @@ func (s *server) isSynced() bool {
 	return s.nextSyncStartIndex > s.keysFile.LastUsedInternalIndex() && s.nextSyncStartIndex > s.keysFile.LastUsedExternalIndex()
 }
 
-func (s *server) updateSyncingProgressLog(currAddressesProcessed, currMaxUsedAddresses uint32) {
+func (s *server) updateSyncingProgressLog(currProcessedAddresses, currMaxUsedAddresses uint32) {
 	if currMaxUsedAddresses > maxUsedAddressesForLog {
 		maxUsedAddressesForLog = currMaxUsedAddresses
 		isProgressLogFinalLineShown = false
 	}
 
-	if currAddressesProcessed > maxAddressesProcessedForLog {
-		maxAddressesProcessedForLog = currAddressesProcessed
+	if currProcessedAddresses > maxProcessedAddressesForLog {
+		maxProcessedAddressesForLog = currProcessedAddresses
 	}
 
-	if maxAddressesProcessedForLog >= maxUsedAddressesForLog {
+	if maxProcessedAddressesForLog >= maxUsedAddressesForLog {
 		if !isProgressLogFinalLineShown {
 			log.Infof("Wallet is synced, ready for queries")
 			isProgressLogFinalLineShown = true
 		}
 	} else {
-		percentProcessed := float64(maxAddressesProcessedForLog) / float64(maxUsedAddressesForLog) * 100.0
+		percentProcessed := float64(maxProcessedAddressesForLog) / float64(maxUsedAddressesForLog) * 100.0
 
 		log.Infof("Gathering UTXOs set, %d addresses of %d processed (%.2f%%)...",
-			maxAddressesProcessedForLog, maxUsedAddressesForLog, percentProcessed)
+			maxProcessedAddressesForLog, maxUsedAddressesForLog, percentProcessed)
 	}
 }
