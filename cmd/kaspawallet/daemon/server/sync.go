@@ -14,6 +14,12 @@ var keyChains = []uint8{libkaspawallet.ExternalKeychain, libkaspawallet.Internal
 
 type walletAddressSet map[string]*walletAddress
 
+var (
+	isProgressLogFinalLineShown bool   = false
+	maxAddressesProcessedForLog uint32 = 0
+	maxUsedAddressesForLog      uint32 = 0
+)
+
 func (was walletAddressSet) strings() []string {
 	addresses := make([]string, 0, len(was))
 	for addr := range was {
@@ -56,8 +62,10 @@ func (s *server) sync() error {
 	return nil
 }
 
-const numIndexesToQueryForFarAddresses = 100
-const numIndexesToQueryForRecentAddresses = 1000
+const (
+	numIndexesToQueryForFarAddresses    = 100
+	numIndexesToQueryForRecentAddresses = 1000
+)
 
 // addressesToQuery scans the addresses in the given range. Because
 // each cosigner in a multisig has its own unique path for generating
@@ -124,6 +132,8 @@ func (s *server) collectRecentAddresses() error {
 			return err
 		}
 		maxUsedIndex = s.maxUsedIndex()
+
+		s.updateSyncingProgressLog(index, maxUsedIndex)
 	}
 
 	s.lock.Lock()
@@ -163,7 +173,6 @@ func (s *server) collectAddresses(start, end uint32) error {
 
 func (s *server) updateAddressesAndLastUsedIndexes(requestedAddressSet walletAddressSet,
 	getBalancesByAddressesResponse *appmessage.GetBalancesByAddressesResponseMessage) error {
-
 	lastUsedExternalIndex := s.keysFile.LastUsedExternalIndex()
 	lastUsedInternalIndex := s.keysFile.LastUsedInternalIndex()
 
@@ -273,4 +282,27 @@ func (s *server) refreshUTXOs() error {
 
 func (s *server) isSynced() bool {
 	return s.nextSyncStartIndex > s.keysFile.LastUsedInternalIndex() && s.nextSyncStartIndex > s.keysFile.LastUsedExternalIndex()
+}
+
+func (s *server) updateSyncingProgressLog(currAddressesProcessed, currMaxUsedAddresses uint32) {
+	if currMaxUsedAddresses > maxUsedAddressesForLog {
+		maxUsedAddressesForLog = currMaxUsedAddresses
+		isProgressLogFinalLineShown = false
+	}
+
+	if currAddressesProcessed > maxAddressesProcessedForLog {
+		maxAddressesProcessedForLog = currAddressesProcessed
+	}
+
+	if maxAddressesProcessedForLog >= maxUsedAddressesForLog {
+		if !isProgressLogFinalLineShown {
+			log.Infof("Wallet is synced, ready for queries")
+			isProgressLogFinalLineShown = true
+		}
+	} else {
+		percentProcessed := float64(maxAddressesProcessedForLog) / float64(maxUsedAddressesForLog) * 100.0
+
+		log.Infof("Gathering UTXOs set, %d addresses of %d processed (%.2f%%)...",
+			maxAddressesProcessedForLog, maxUsedAddressesForLog, percentProcessed)
+	}
 }
