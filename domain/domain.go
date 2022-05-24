@@ -1,10 +1,11 @@
 package domain
 
 import (
-	"github.com/kaspanet/kaspad/domain/consensusreference"
 	"sync"
 	"sync/atomic"
 	"unsafe"
+
+	"github.com/kaspanet/kaspad/domain/consensusreference"
 
 	"github.com/kaspanet/kaspad/domain/consensus"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
@@ -24,21 +25,21 @@ type Domain interface {
 	InitStagingConsensusWithoutGenesis() error
 	CommitStagingConsensus() error
 	DeleteStagingConsensus() error
-	VirtualChangeChannel() chan *externalapi.VirtualChangeSet
+	ConsensusEventsChannel() chan externalapi.ConsensusEvent
 }
 
 type domain struct {
-	miningManager        miningmanager.MiningManager
-	consensus            *externalapi.Consensus
-	stagingConsensus     *externalapi.Consensus
-	stagingConsensusLock sync.RWMutex
-	consensusConfig      *consensus.Config
-	db                   infrastructuredatabase.Database
-	virtualChangeChan    chan *externalapi.VirtualChangeSet
+	miningManager          miningmanager.MiningManager
+	consensus              *externalapi.Consensus
+	stagingConsensus       *externalapi.Consensus
+	stagingConsensusLock   sync.RWMutex
+	consensusConfig        *consensus.Config
+	db                     infrastructuredatabase.Database
+	consensusEventsChannel chan externalapi.ConsensusEvent
 }
 
-func (d *domain) VirtualChangeChannel() chan *externalapi.VirtualChangeSet {
-	return d.virtualChangeChan
+func (d *domain) ConsensusEventsChannel() chan externalapi.ConsensusEvent {
+	return d.consensusEventsChannel
 }
 
 func (d *domain) Consensus() externalapi.Consensus {
@@ -92,7 +93,7 @@ func (d *domain) initStagingConsensus(cfg *consensus.Config) error {
 
 	consensusFactory := consensus.NewFactory()
 
-	consensusInstance, shouldMigrate, err := consensusFactory.NewConsensus(cfg, d.db, inactivePrefix, d.virtualChangeChan)
+	consensusInstance, shouldMigrate, err := consensusFactory.NewConsensus(cfg, d.db, inactivePrefix, d.consensusEventsChannel)
 	if err != nil {
 		return err
 	}
@@ -196,18 +197,18 @@ func New(consensusConfig *consensus.Config, mempoolConfig *mempool.Config, db in
 		}
 	}
 
-	virtualChangeChan := make(chan *externalapi.VirtualChangeSet, 1000)
+	consensusEventsChan := make(chan externalapi.ConsensusEvent, 100e3)
 	consensusFactory := consensus.NewFactory()
-	consensusInstance, shouldMigrate, err := consensusFactory.NewConsensus(consensusConfig, db, activePrefix, virtualChangeChan)
+	consensusInstance, shouldMigrate, err := consensusFactory.NewConsensus(consensusConfig, db, activePrefix, consensusEventsChan)
 	if err != nil {
 		return nil, err
 	}
 
 	domainInstance := &domain{
-		consensus:         &consensusInstance,
-		consensusConfig:   consensusConfig,
-		db:                db,
-		virtualChangeChan: virtualChangeChan,
+		consensus:              &consensusInstance,
+		consensusConfig:        consensusConfig,
+		db:                     db,
+		consensusEventsChannel: consensusEventsChan,
 	}
 
 	if shouldMigrate {

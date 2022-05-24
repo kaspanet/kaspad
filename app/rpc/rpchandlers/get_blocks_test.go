@@ -23,7 +23,7 @@ type fakeDomain struct {
 	testapi.TestConsensus
 }
 
-func (d fakeDomain) VirtualChangeChannel() chan *externalapi.VirtualChangeSet {
+func (d fakeDomain) ConsensusEventsChannel() chan externalapi.ConsensusEvent {
 	panic("implement me")
 }
 

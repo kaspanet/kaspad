@@ -12,6 +12,7 @@ import (
 	"github.com/kaspanet/kaspad/infrastructure/network/addressmanager"
 	"github.com/kaspanet/kaspad/infrastructure/network/connmanager"
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter"
+	"github.com/pkg/errors"
 )
 
 // Manager is an RPC manager
@@ -28,7 +29,7 @@ func NewManager(
 	connectionManager *connmanager.ConnectionManager,
 	addressManager *addressmanager.AddressManager,
 	utxoIndex *utxoindex.UTXOIndex,
-	virtualChangeChan chan *externalapi.VirtualChangeSet,
+	consensusEventsChan chan externalapi.ConsensusEvent,
 	shutDownChan chan<- struct{}) *Manager {
 
 	manager := Manager{
@@ -45,29 +46,39 @@ func NewManager(
 	}
 	netAdapter.SetRPCRouterInitializer(manager.routerInitializer)
 
-	manager.initVirtualChangeHandler(virtualChangeChan)
+	manager.initConsensusEventsHandler(consensusEventsChan)
 
 	return &manager
 }
 
-func (m *Manager) initVirtualChangeHandler(virtualChangeChan chan *externalapi.VirtualChangeSet) {
-	spawn("virtualChangeHandler", func() {
+func (m *Manager) initConsensusEventsHandler(consensusEventsChan chan externalapi.ConsensusEvent) {
+	spawn("consensusEventsHandler", func() {
 		for {
-			virtualChangeSet, ok := <-virtualChangeChan
+			consensusEvent, ok := <-consensusEventsChan
 			if !ok {
 				return
 			}
-			err := m.notifyVirtualChange(virtualChangeSet)
-			if err != nil {
-				panic(err)
+			switch event := consensusEvent.(type) {
+			case *externalapi.VirtualChangeSet:
+				err := m.notifyVirtualChange(event)
+				if err != nil {
+					panic(err)
+				}
+			case *externalapi.BlockAdded:
+				err := m.notifyBlockAddedToDAG(event.Block)
+				if err != nil {
+					panic(err)
+				}
+			default:
+				panic(errors.Errorf("Got event of unsupported type %T", consensusEvent))
 			}
 		}
 	})
 }
 
-// NotifyBlockAddedToDAG notifies the manager that a block has been added to the DAG
-func (m *Manager) NotifyBlockAddedToDAG(block *externalapi.DomainBlock) error {
-	onEnd := logger.LogAndMeasureExecutionTime(log, "RPCManager.NotifyBlockAddedToDAG")
+// notifyBlockAddedToDAG notifies the manager that a block has been added to the DAG
+func (m *Manager) notifyBlockAddedToDAG(block *externalapi.DomainBlock) error {
+	onEnd := logger.LogAndMeasureExecutionTime(log, "RPCManager.notifyBlockAddedToDAG")
 	defer onEnd()
 
 	// Before converting the block and populating it, we check if any listeners are interested.
@@ -94,11 +105,6 @@ func (m *Manager) NotifyBlockAddedToDAG(block *externalapi.DomainBlock) error {
 func (m *Manager) notifyVirtualChange(virtualChangeSet *externalapi.VirtualChangeSet) error {
 	onEnd := logger.LogAndMeasureExecutionTime(log, "RPCManager.NotifyVirtualChange")
 	defer onEnd()
-
-	/*
-		NOTE: nothing under this function is allowed to acquire the consensus lock, since
-		      the function is triggered by a channel call under consensus lock which might block
-	*/
 
 	if m.context.Config.UTXOIndex && virtualChangeSet.VirtualUTXODiff != nil {
 		err := m.notifyUTXOsChanged(virtualChangeSet)
