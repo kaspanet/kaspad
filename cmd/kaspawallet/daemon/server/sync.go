@@ -282,7 +282,7 @@ func (s *server) updateSyncingProgressLog(currProcessedAddresses, currMaxUsedAdd
 	if currMaxUsedAddresses > s.maxUsedAddressesForLog {
 		s.maxUsedAddressesForLog = currMaxUsedAddresses
 		if s.isLogFinalProgressLineShown {
-			log.Infof("An additional set of previously used addresses found, updating UTXOs...")
+			log.Infof("An additional set of previously used addresses found, processing...")
 			s.maxProcessedAddressesForLog = 0
 			s.isLogFinalProgressLineShown = false
 		}
@@ -300,7 +300,7 @@ func (s *server) updateSyncingProgressLog(currProcessedAddresses, currMaxUsedAdd
 	} else {
 		percentProcessed := float64(s.maxProcessedAddressesForLog) / float64(s.maxUsedAddressesForLog) * 100.0
 
-		log.Infof("Gathering UTXOs set, %d addresses of %d processed (%.2f%%)...",
+		log.Infof("%d addresses of %d processed (%.2f%%)...",
 			s.maxProcessedAddressesForLog, s.maxUsedAddressesForLog, percentProcessed)
 	}
 }
