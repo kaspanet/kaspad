@@ -1,9 +1,10 @@
 package consensus
 
 import (
-	"github.com/kaspanet/kaspad/domain/prefixmanager/prefix"
 	"io/ioutil"
 	"testing"
+
+	"github.com/kaspanet/kaspad/domain/prefixmanager/prefix"
 
 	"github.com/kaspanet/kaspad/domain/dagconfig"
 	"github.com/kaspanet/kaspad/infrastructure/db/database/ldb"
@@ -24,7 +25,7 @@ func TestNewConsensus(t *testing.T) {
 		t.Fatalf("error in NewLevelDB: %s", err)
 	}
 
-	_, shouldMigrate, err := f.NewConsensus(config, db, &prefix.Prefix{})
+	_, shouldMigrate, err := f.NewConsensus(config, db, &prefix.Prefix{}, nil)
 	if err != nil {
 		t.Fatalf("error in NewConsensus: %+v", err)
 	}
