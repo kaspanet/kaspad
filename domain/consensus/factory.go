@@ -1,6 +1,10 @@
 package consensus
 
 import (
+	"io/ioutil"
+	"os"
+	"sync"
+
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/blockwindowheapslicestore"
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/daawindowstore"
 	"github.com/kaspanet/kaspad/domain/consensus/datastructures/mergedepthrootstore"
@@ -10,9 +14,6 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/processes/pruningproofmanager"
 	"github.com/kaspanet/kaspad/util/staging"
 	"github.com/pkg/errors"
-	"io/ioutil"
-	"os"
-	"sync"
 
 	"github.com/kaspanet/kaspad/domain/prefixmanager/prefix"
 	"github.com/kaspanet/kaspad/util/txmass"
@@ -76,7 +77,8 @@ type Config struct {
 
 // Factory instantiates new Consensuses
 type Factory interface {
-	NewConsensus(config *Config, db infrastructuredatabase.Database, dbPrefix *prefix.Prefix) (
+	NewConsensus(config *Config, db infrastructuredatabase.Database, dbPrefix *prefix.Prefix,
+		consensusEventsChan chan externalapi.ConsensusEvent) (
 		externalapi.Consensus, bool, error)
 	NewTestConsensus(config *Config, testName string) (
 		tc testapi.TestConsensus, teardown func(keepDataDir bool), err error)
@@ -108,7 +110,8 @@ func NewFactory() Factory {
 }
 
 // NewConsensus instantiates a new Consensus
-func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Database, dbPrefix *prefix.Prefix) (
+func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Database, dbPrefix *prefix.Prefix,
+	consensusEventsChan chan externalapi.ConsensusEvent) (
 	consensusInstance externalapi.Consensus, shouldMigrate bool, err error) {
 
 	dbManager := consensusdatabase.New(db)
@@ -510,6 +513,8 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 		headersSelectedChainStore:           headersSelectedChainStore,
 		daaBlocksStore:                      daaBlocksStore,
 		blocksWithTrustedDataDAAWindowStore: daaWindowStore,
+
+		consensusEventsChan: consensusEventsChan,
 	}
 
 	if isOldReachabilityInitialized {
@@ -572,7 +577,7 @@ func (f *factory) NewTestConsensus(config *Config, testName string) (
 	}
 
 	testConsensusDBPrefix := &prefix.Prefix{}
-	consensusAsInterface, shouldMigrate, err := f.NewConsensus(config, db, testConsensusDBPrefix)
+	consensusAsInterface, shouldMigrate, err := f.NewConsensus(config, db, testConsensusDBPrefix, nil)
 	if err != nil {
 		return nil, nil, err
 	}

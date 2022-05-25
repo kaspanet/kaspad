@@ -20,8 +20,7 @@ import (
 type IBDContext interface {
 	Domain() domain.Domain
 	Config() *config.Config
-	OnNewBlock(block *externalapi.DomainBlock, virtualChangeSet *externalapi.VirtualChangeSet) error
-	OnVirtualChange(virtualChangeSet *externalapi.VirtualChangeSet) error
+	OnNewBlock(block *externalapi.DomainBlock) error
 	OnNewBlockTemplate() error
 	OnPruningPointUTXOSetOverride() error
 	IsIBDRunning() bool
@@ -655,7 +654,7 @@ func (flow *handleIBDFlow) syncMissingBlockBodies(highHash *externalapi.DomainHa
 				return err
 			}
 
-			virtualChangeSet, err := flow.Domain().Consensus().ValidateAndInsertBlock(block, false)
+			_, err = flow.Domain().Consensus().ValidateAndInsertBlock(block, false)
 			if err != nil {
 				if errors.Is(err, ruleerrors.ErrDuplicateBlock) {
 					log.Debugf("Skipping IBD Block %s as it has already been added to the DAG", blockHash)
@@ -663,7 +662,7 @@ func (flow *handleIBDFlow) syncMissingBlockBodies(highHash *externalapi.DomainHa
 				}
 				return protocolerrors.ConvertToBanningProtocolErrorIfRuleError(err, "invalid block %s", blockHash)
 			}
-			err = flow.OnNewBlock(block, virtualChangeSet)
+			err = flow.OnNewBlock(block)
 			if err != nil {
 				return err
 			}
@@ -706,12 +705,7 @@ func (flow *handleIBDFlow) resolveVirtual(estimatedVirtualDAAScoreTarget uint64)
 			}
 			log.Infof("Resolving virtual. Estimated progress: %d%%", percents)
 		}
-		virtualChangeSet, isCompletelyResolved, err := flow.Domain().Consensus().ResolveVirtual()
-		if err != nil {
-			return err
-		}
-
-		err = flow.OnVirtualChange(virtualChangeSet)
+		_, isCompletelyResolved, err := flow.Domain().Consensus().ResolveVirtual()
 		if err != nil {
 			return err
 		}

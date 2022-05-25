@@ -43,6 +43,9 @@ func New(domain domain.Domain, database database.Database) (*UTXOIndex, error) {
 
 // Reset deletes the whole UTXO index and resyncs it from consensus.
 func (ui *UTXOIndex) Reset() error {
+	ui.mutex.Lock()
+	defer ui.mutex.Unlock()
+
 	err := ui.store.deleteAll()
 	if err != nil {
 		return err

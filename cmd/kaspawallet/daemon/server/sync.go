@@ -26,19 +26,28 @@ func (s *server) sync() error {
 	ticker := time.NewTicker(time.Second)
 	defer ticker.Stop()
 
-	for range ticker.C {
-		err := s.collectRecentAddresses()
-		if err != nil {
-			return err
-		}
+	err := s.collectRecentAddresses()
+	if err != nil {
+		return err
+	}
 
+	err = s.refreshExistingUTXOsWithLock()
+	if err != nil {
+		return err
+	}
+
+	for range ticker.C {
 		err = s.collectFarAddresses()
 		if err != nil {
 			return err
 		}
 
-		err = s.refreshExistingUTXOsWithLock()
+		err = s.collectRecentAddresses()
+		if err != nil {
+			return err
+		}
 
+		err = s.refreshExistingUTXOsWithLock()
 		if err != nil {
 			return err
 		}
@@ -47,7 +56,8 @@ func (s *server) sync() error {
 	return nil
 }
 
-const numIndexesToQuery = 100
+const numIndexesToQueryForFarAddresses = 100
+const numIndexesToQueryForRecentAddresses = 1000
 
 // addressesToQuery scans the addresses in the given range. Because
 // each cosigner in a multisig has its own unique path for generating
@@ -75,17 +85,17 @@ func (s *server) addressesToQuery(start, end uint32) (walletAddressSet, error) {
 	return addresses, nil
 }
 
-// collectFarAddresses collects numIndexesToQuery addresses
+// collectFarAddresses collects numIndexesToQueryForFarAddresses addresses
 // from the last point it stopped in the previous call.
 func (s *server) collectFarAddresses() error {
 	s.lock.Lock()
 	defer s.lock.Unlock()
-	err := s.collectAddresses(s.nextSyncStartIndex, s.nextSyncStartIndex+numIndexesToQuery)
+	err := s.collectAddresses(s.nextSyncStartIndex, s.nextSyncStartIndex+numIndexesToQueryForFarAddresses)
 	if err != nil {
 		return err
 	}
 
-	s.nextSyncStartIndex += numIndexesToQuery
+	s.nextSyncStartIndex += numIndexesToQueryForFarAddresses
 	return nil
 }
 
@@ -102,17 +112,25 @@ func (s *server) maxUsedIndex() uint32 {
 }
 
 // collectRecentAddresses collects addresses from used addresses until
-// the address with the index of the last used address + 1000.
-// collectRecentAddresses scans addresses in batches of numIndexesToQuery,
+// the address with the index of the last used address + numIndexesToQueryForRecentAddresses.
+// collectRecentAddresses scans addresses in batches of numIndexesToQueryForRecentAddresses,
 // and releases the lock between scans.
 func (s *server) collectRecentAddresses() error {
-	maxUsedIndex := s.maxUsedIndex()
-	for i := uint32(0); i < maxUsedIndex+1000; i += numIndexesToQuery {
-		err := s.collectAddressesWithLock(i, i+numIndexesToQuery)
+	index := uint32(0)
+	maxUsedIndex := uint32(0)
+	for ; index < maxUsedIndex+numIndexesToQueryForRecentAddresses; index += numIndexesToQueryForRecentAddresses {
+		err := s.collectAddressesWithLock(index, index+numIndexesToQueryForRecentAddresses)
 		if err != nil {
 			return err
 		}
+		maxUsedIndex = s.maxUsedIndex()
 	}
+
+	s.lock.Lock()
+	if index > s.nextSyncStartIndex {
+		s.nextSyncStartIndex = index
+	}
+	s.lock.Unlock()
 
 	return nil
 }
@@ -189,10 +207,23 @@ func (s *server) refreshExistingUTXOsWithLock() error {
 }
 
 // updateUTXOSet clears the current UTXO set, and re-fills it with the given entries
-func (s *server) updateUTXOSet(entries []*appmessage.UTXOsByAddressesEntry) error {
-	utxos := make([]*walletUTXO, len(entries))
+func (s *server) updateUTXOSet(entries []*appmessage.UTXOsByAddressesEntry, mempoolEntries []*appmessage.MempoolEntryByAddress) error {
+	utxos := make([]*walletUTXO, 0, len(entries))
 
-	for i, entry := range entries {
+	exclude := make(map[appmessage.RPCOutpoint]struct{})
+	for _, entriesByAddress := range mempoolEntries {
+		for _, entry := range entriesByAddress.Sending {
+			for _, input := range entry.Transaction.Inputs {
+				exclude[*input.PreviousOutpoint] = struct{}{}
+			}
+		}
+	}
+
+	for _, entry := range entries {
+		if _, ok := exclude[*entry.Outpoint]; ok {
+			continue
+		}
+
 		outpoint, err := appmessage.RPCOutpointToDomainOutpoint(entry.Outpoint)
 		if err != nil {
 			return err
@@ -207,11 +238,11 @@ func (s *server) updateUTXOSet(entries []*appmessage.UTXOsByAddressesEntry) erro
 		if !ok {
 			return errors.Errorf("Got result from address %s even though it wasn't requested", entry.Address)
 		}
-		utxos[i] = &walletUTXO{
+		utxos = append(utxos, &walletUTXO{
 			Outpoint:  outpoint,
 			UTXOEntry: utxoEntry,
 			address:   address,
-		}
+		})
 	}
 
 	sort.Slice(utxos, func(i, j int) bool { return utxos[i].UTXOEntry.Amount() > utxos[j].UTXOEntry.Amount() })
@@ -222,12 +253,22 @@ func (s *server) updateUTXOSet(entries []*appmessage.UTXOsByAddressesEntry) erro
 }
 
 func (s *server) refreshUTXOs() error {
+	// It's important to check the mempool before calling `GetUTXOsByAddresses`:
+	// If we would do it the other way around an output can be spent in the mempool
+	// and not in consensus, and between the calls its spending transaction will be
+	// added to consensus and removed from the mempool, so `getUTXOsByAddressesResponse`
+	// will include an obsolete output.
+	mempoolEntriesByAddresses, err := s.rpcClient.GetMempoolEntriesByAddresses(s.addressSet.strings())
+	if err != nil {
+		return err
+	}
+
 	getUTXOsByAddressesResponse, err := s.rpcClient.GetUTXOsByAddresses(s.addressSet.strings())
 	if err != nil {
 		return err
 	}
 
-	return s.updateUTXOSet(getUTXOsByAddressesResponse.Entries)
+	return s.updateUTXOSet(getUTXOsByAddressesResponse.Entries, mempoolEntriesByAddresses.Entries)
 }
 
 func (s *server) isSynced() bool {

@@ -60,7 +60,7 @@ func (tc *testConsensus) AddBlock(parentHashes []*externalapi.DomainHash, coinba
 		return nil, nil, err
 	}
 
-	virtualChangeSet, err := tc.blockProcessor.ValidateAndInsertBlock(block, true)
+	virtualChangeSet, _, err := tc.blockProcessor.ValidateAndInsertBlock(block, true)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -80,7 +80,7 @@ func (tc *testConsensus) AddUTXOInvalidHeader(parentHashes []*externalapi.Domain
 		return nil, nil, err
 	}
 
-	virtualChangeSet, err := tc.blockProcessor.ValidateAndInsertBlock(&externalapi.DomainBlock{
+	virtualChangeSet, _, err := tc.blockProcessor.ValidateAndInsertBlock(&externalapi.DomainBlock{
 		Header:       header,
 		Transactions: nil,
 	}, true)
@@ -103,7 +103,7 @@ func (tc *testConsensus) AddUTXOInvalidBlock(parentHashes []*externalapi.DomainH
 		return nil, nil, err
 	}
 
-	virtualChangeSet, err := tc.blockProcessor.ValidateAndInsertBlock(block, true)
+	virtualChangeSet, _, err := tc.blockProcessor.ValidateAndInsertBlock(block, true)
 	if err != nil {
 		return nil, nil, err
 	}
