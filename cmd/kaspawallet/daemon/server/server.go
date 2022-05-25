@@ -38,6 +38,10 @@ type server struct {
 	addressSet          walletAddressSet
 	txMassCalculator    *txmass.Calculator
 	usedOutpoints       map[externalapi.DomainOutpoint]time.Time
+
+	isLogFinalProgressLineShown bool
+	maxUsedAddressesForLog      uint32
+	maxProcessedAddressesForLog uint32
 }
 
 // Start starts the kaspawalletd server
@@ -70,15 +74,18 @@ func Start(params *dagconfig.Params, listen, rpcServer string, keysFilePath stri
 	}
 
 	serverInstance := &server{
-		rpcClient:           rpcClient,
-		params:              params,
-		utxosSortedByAmount: []*walletUTXO{},
-		nextSyncStartIndex:  0,
-		keysFile:            keysFile,
-		shutdown:            make(chan struct{}),
-		addressSet:          make(walletAddressSet),
-		txMassCalculator:    txmass.NewCalculator(params.MassPerTxByte, params.MassPerScriptPubKeyByte, params.MassPerSigOp),
-		usedOutpoints:       map[externalapi.DomainOutpoint]time.Time{},
+		rpcClient:                   rpcClient,
+		params:                      params,
+		utxosSortedByAmount:         []*walletUTXO{},
+		nextSyncStartIndex:          0,
+		keysFile:                    keysFile,
+		shutdown:                    make(chan struct{}),
+		addressSet:                  make(walletAddressSet),
+		txMassCalculator:            txmass.NewCalculator(params.MassPerTxByte, params.MassPerScriptPubKeyByte, params.MassPerSigOp),
+		usedOutpoints:               map[externalapi.DomainOutpoint]time.Time{},
+		isLogFinalProgressLineShown: false,
+		maxUsedAddressesForLog:      0,
+		maxProcessedAddressesForLog: 0,
 	}
 
 	log.Infof("Read, syncing the wallet...")

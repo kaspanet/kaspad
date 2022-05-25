@@ -14,12 +14,6 @@ var keyChains = []uint8{libkaspawallet.ExternalKeychain, libkaspawallet.Internal
 
 type walletAddressSet map[string]*walletAddress
 
-var (
-	isProgressLogFinalLineShown bool   = false
-	maxProcessedAddressesForLog uint32 = 0
-	maxUsedAddressesForLog      uint32 = 0
-)
-
 func (was walletAddressSet) strings() []string {
 	addresses := make([]string, 0, len(was))
 	for addr := range was {
@@ -285,24 +279,28 @@ func (s *server) isSynced() bool {
 }
 
 func (s *server) updateSyncingProgressLog(currProcessedAddresses, currMaxUsedAddresses uint32) {
-	if currMaxUsedAddresses > maxUsedAddressesForLog {
-		maxUsedAddressesForLog = currMaxUsedAddresses
-		isProgressLogFinalLineShown = false
+	if currMaxUsedAddresses > s.maxUsedAddressesForLog {
+		s.maxUsedAddressesForLog = currMaxUsedAddresses
+		if s.isLogFinalProgressLineShown {
+			log.Infof("An additional set of previously used addresses found, updating UTXOs...")
+			s.maxProcessedAddressesForLog = 0
+			s.isLogFinalProgressLineShown = false
+		}
 	}
 
-	if currProcessedAddresses > maxProcessedAddressesForLog {
-		maxProcessedAddressesForLog = currProcessedAddresses
+	if currProcessedAddresses > s.maxProcessedAddressesForLog {
+		s.maxProcessedAddressesForLog = currProcessedAddresses
 	}
 
-	if maxProcessedAddressesForLog >= maxUsedAddressesForLog {
-		if !isProgressLogFinalLineShown {
+	if s.maxProcessedAddressesForLog >= s.maxUsedAddressesForLog {
+		if !s.isLogFinalProgressLineShown {
 			log.Infof("Wallet is synced, ready for queries")
-			isProgressLogFinalLineShown = true
+			s.isLogFinalProgressLineShown = true
 		}
 	} else {
-		percentProcessed := float64(maxProcessedAddressesForLog) / float64(maxUsedAddressesForLog) * 100.0
+		percentProcessed := float64(s.maxProcessedAddressesForLog) / float64(s.maxUsedAddressesForLog) * 100.0
 
 		log.Infof("Gathering UTXOs set, %d addresses of %d processed (%.2f%%)...",
-			maxProcessedAddressesForLog, maxUsedAddressesForLog, percentProcessed)
+			s.maxProcessedAddressesForLog, s.maxUsedAddressesForLog, percentProcessed)
 	}
 }
