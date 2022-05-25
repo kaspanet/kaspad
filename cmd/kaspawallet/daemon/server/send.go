@@ -7,10 +7,14 @@ import (
 )
 
 func (s *server) Send(_ context.Context, request *pb.SendRequest) (*pb.SendResponse, error) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
 	unsignedTransactions, err := s.createUnsignedTransactions(request.ToAddress, request.Amount, request.From)
 	if err != nil {
 		return nil, err
 	}
+
 	signedTransactions, err := s.signTransactions(unsignedTransactions, request.Password)
 	if err != nil {
 		return nil, err
