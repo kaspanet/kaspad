@@ -2,7 +2,6 @@ package server
 
 import (
 	"context"
-
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/daemon/pb"
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/libkaspawallet"
@@ -10,9 +9,13 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/infrastructure/network/rpcclient"
 	"github.com/pkg/errors"
+	"time"
 )
 
 func (s *server) Broadcast(_ context.Context, request *pb.BroadcastRequest) (*pb.BroadcastResponse, error) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
 	txIDs, err := s.broadcast(request.Transactions, request.IsDomain)
 	if err != nil {
 		return nil, err
@@ -45,6 +48,15 @@ func (s *server) broadcast(transactions [][]byte, isDomain bool) ([]string, erro
 		if err != nil {
 			return nil, err
 		}
+
+		for _, input := range tx.Inputs {
+			s.usedOutpoints[input.PreviousOutpoint] = time.Now()
+		}
+	}
+
+	err = s.refreshUTXOs()
+	if err != nil {
+		return nil, err
 	}
 
 	return txIDs, nil

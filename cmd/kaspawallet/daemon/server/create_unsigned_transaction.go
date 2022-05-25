@@ -3,13 +3,13 @@ package server
 import (
 	"context"
 	"fmt"
-	"golang.org/x/exp/slices"
-
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/daemon/pb"
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/libkaspawallet"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/pkg/errors"
+	"golang.org/x/exp/slices"
+	"time"
 )
 
 // TODO: Implement a better fee estimation mechanism
@@ -101,6 +101,14 @@ func (s *server) selectUTXOs(spendAmount uint64, feePerInput uint64, fromAddress
 		if (fromAddresses != nil && !slices.Contains(fromAddresses, utxo.address)) ||
 			!isUTXOSpendable(utxo, dagInfo.VirtualDAAScore, s.params.BlockCoinbaseMaturity) {
 			continue
+		}
+
+		if broadcastTime, ok := s.usedOutpoints[*utxo.Outpoint]; ok {
+			if time.Since(broadcastTime) > time.Minute {
+				delete(s.usedOutpoints, *utxo.Outpoint)
+			} else {
+				continue
+			}
 		}
 
 		selectedUTXOs = append(selectedUTXOs, &libkaspawallet.UTXO{
