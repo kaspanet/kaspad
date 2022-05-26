@@ -62,6 +62,8 @@ func encryptedMnemonicExtendedPublicKeyPairs(params *dagconfig.Params, mnemonics
 	}
 
 	encryptedPrivateKeys = make([]*EncryptedMnemonic, 0, len(mnemonics))
+	extendedPublicKeys = make([]string, 0, len(mnemonics))
+
 	for _, mnemonic := range mnemonics {
 		extendedPublicKey, err := libkaspawallet.MasterPublicKeyFromMnemonic(params, mnemonic, isMultisig)
 		if err != nil {

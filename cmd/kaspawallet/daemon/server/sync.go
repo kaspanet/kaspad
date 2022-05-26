@@ -56,8 +56,10 @@ func (s *server) sync() error {
 	return nil
 }
 
-const numIndexesToQueryForFarAddresses = 100
-const numIndexesToQueryForRecentAddresses = 1000
+const (
+	numIndexesToQueryForFarAddresses    = 100
+	numIndexesToQueryForRecentAddresses = 1000
+)
 
 // addressesToQuery scans the addresses in the given range. Because
 // each cosigner in a multisig has its own unique path for generating
@@ -124,6 +126,8 @@ func (s *server) collectRecentAddresses() error {
 			return err
 		}
 		maxUsedIndex = s.maxUsedIndex()
+
+		s.updateSyncingProgressLog(index, maxUsedIndex)
 	}
 
 	s.lock.Lock()
@@ -163,7 +167,6 @@ func (s *server) collectAddresses(start, end uint32) error {
 
 func (s *server) updateAddressesAndLastUsedIndexes(requestedAddressSet walletAddressSet,
 	getBalancesByAddressesResponse *appmessage.GetBalancesByAddressesResponseMessage) error {
-
 	lastUsedExternalIndex := s.keysFile.LastUsedExternalIndex()
 	lastUsedInternalIndex := s.keysFile.LastUsedInternalIndex()
 
@@ -273,4 +276,31 @@ func (s *server) refreshUTXOs() error {
 
 func (s *server) isSynced() bool {
 	return s.nextSyncStartIndex > s.keysFile.LastUsedInternalIndex() && s.nextSyncStartIndex > s.keysFile.LastUsedExternalIndex()
+}
+
+func (s *server) updateSyncingProgressLog(currProcessedAddresses, currMaxUsedAddresses uint32) {
+	if currMaxUsedAddresses > s.maxUsedAddressesForLog {
+		s.maxUsedAddressesForLog = currMaxUsedAddresses
+		if s.isLogFinalProgressLineShown {
+			log.Infof("An additional set of previously used addresses found, processing...")
+			s.maxProcessedAddressesForLog = 0
+			s.isLogFinalProgressLineShown = false
+		}
+	}
+
+	if currProcessedAddresses > s.maxProcessedAddressesForLog {
+		s.maxProcessedAddressesForLog = currProcessedAddresses
+	}
+
+	if s.maxProcessedAddressesForLog >= s.maxUsedAddressesForLog {
+		if !s.isLogFinalProgressLineShown {
+			log.Infof("Wallet is synced, ready for queries")
+			s.isLogFinalProgressLineShown = true
+		}
+	} else {
+		percentProcessed := float64(s.maxProcessedAddressesForLog) / float64(s.maxUsedAddressesForLog) * 100.0
+
+		log.Infof("%d addresses of %d processed (%.2f%%)...",
+			s.maxProcessedAddressesForLog, s.maxUsedAddressesForLog, percentProcessed)
+	}
 }
