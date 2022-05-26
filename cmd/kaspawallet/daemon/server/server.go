@@ -2,11 +2,12 @@ package server
 
 import (
 	"fmt"
-	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"net"
 	"os"
 	"sync"
 	"time"
+
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 
 	"github.com/kaspanet/kaspad/util/txmass"
 
@@ -37,6 +38,10 @@ type server struct {
 	addressSet          walletAddressSet
 	txMassCalculator    *txmass.Calculator
 	usedOutpoints       map[externalapi.DomainOutpoint]time.Time
+
+	isLogFinalProgressLineShown bool
+	maxUsedAddressesForLog      uint32
+	maxProcessedAddressesForLog uint32
 }
 
 // Start starts the kaspawalletd server
@@ -52,32 +57,38 @@ func Start(params *dagconfig.Params, listen, rpcServer string, keysFilePath stri
 
 	listener, err := net.Listen("tcp", listen)
 	if err != nil {
-		return (errors.Wrapf(err, "Error listening to tcp at %s", listen))
+		return (errors.Wrapf(err, "Error listening to TCP on %s", listen))
 	}
-	log.Infof("Listening on %s", listen)
+	log.Infof("Listening to TCP on %s", listen)
 
+	log.Infof("Connecting to a node at %s...", rpcServer)
 	rpcClient, err := connectToRPC(params, rpcServer)
 	if err != nil {
 		return (errors.Wrapf(err, "Error connecting to RPC server %s", rpcServer))
 	}
 
+	log.Infof("Connected, reading keys file %s...", keysFilePath)
 	keysFile, err := keys.ReadKeysFile(params, keysFilePath)
 	if err != nil {
-		return (errors.Wrapf(err, "Error connecting to RPC server %s", rpcServer))
+		return (errors.Wrapf(err, "Error reading keys file %s", keysFilePath))
 	}
 
 	serverInstance := &server{
-		rpcClient:           rpcClient,
-		params:              params,
-		utxosSortedByAmount: []*walletUTXO{},
-		nextSyncStartIndex:  0,
-		keysFile:            keysFile,
-		shutdown:            make(chan struct{}),
-		addressSet:          make(walletAddressSet),
-		txMassCalculator:    txmass.NewCalculator(params.MassPerTxByte, params.MassPerScriptPubKeyByte, params.MassPerSigOp),
-		usedOutpoints:       map[externalapi.DomainOutpoint]time.Time{},
+		rpcClient:                   rpcClient,
+		params:                      params,
+		utxosSortedByAmount:         []*walletUTXO{},
+		nextSyncStartIndex:          0,
+		keysFile:                    keysFile,
+		shutdown:                    make(chan struct{}),
+		addressSet:                  make(walletAddressSet),
+		txMassCalculator:            txmass.NewCalculator(params.MassPerTxByte, params.MassPerScriptPubKeyByte, params.MassPerSigOp),
+		usedOutpoints:               map[externalapi.DomainOutpoint]time.Time{},
+		isLogFinalProgressLineShown: false,
+		maxUsedAddressesForLog:      0,
+		maxProcessedAddressesForLog: 0,
 	}
 
+	log.Infof("Read, syncing the wallet...")
 	spawn("serverInstance.sync", func() {
 		err := serverInstance.sync()
 		if err != nil {
