@@ -7,14 +7,14 @@ import (
 	"github.com/pkg/errors"
 )
 
-func (x *KaspadMessage_Transaction) toAppMessage() (appmessage.Message, error) {
+func (x *KaspadP2PMessage_Transaction) toAppMessage() (appmessage.Message, error) {
 	if x == nil {
 		return nil, errors.Wrapf(errorNil, "KaspadMessage_Transaction is nil")
 	}
 	return x.Transaction.toAppMessage()
 }
 
-func (x *KaspadMessage_Transaction) fromAppMessage(msgTx *appmessage.MsgTx) error {
+func (x *KaspadP2PMessage_Transaction) fromAppMessage(msgTx *appmessage.MsgTx) error {
 	x.Transaction = new(TransactionMessage)
 	x.Transaction.fromAppMessage(msgTx)
 	return nil

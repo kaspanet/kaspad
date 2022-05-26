@@ -28,14 +28,14 @@ func (x *GetUtxosByAddressesRequestMessage) toAppMessage() (appmessage.Message, 
 	}, nil
 }
 
-func (x *KaspadMessage_GetUtxosByAddressesResponse) toAppMessage() (appmessage.Message, error) {
+func (x *KaspadRPCResponseMessage_GetUtxosByAddressesResponse) toAppMessage() (appmessage.Message, error) {
 	if x == nil {
 		return nil, errors.Wrapf(errorNil, "GetUtxosByAddressesResponseMessage is nil")
 	}
 	return x.GetUtxosByAddressesResponse.toAppMessage()
 }
 
-func (x *KaspadMessage_GetUtxosByAddressesResponse) fromAppMessage(message *appmessage.GetUTXOsByAddressesResponseMessage) error {
+func (x *KaspadRPCResponseMessage_GetUtxosByAddressesResponse) fromAppMessage(message *appmessage.GetUTXOsByAddressesResponseMessage) error {
 	var err *RPCError
 	if message.Error != nil {
 		err = &RPCError{Message: message.Error.Message}

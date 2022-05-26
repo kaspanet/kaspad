@@ -28,14 +28,14 @@ func (x *GetVirtualSelectedParentChainFromBlockRequestMessage) toAppMessage() (a
 	}, nil
 }
 
-func (x *KaspadMessage_GetVirtualSelectedParentChainFromBlockResponse) toAppMessage() (appmessage.Message, error) {
+func (x *KaspadRPCResponseMessage_GetVirtualSelectedParentChainFromBlockResponse) toAppMessage() (appmessage.Message, error) {
 	if x == nil {
 		return nil, errors.Wrapf(errorNil, "KaspadMessage_GetVirtualSelectedParentChainFromBlockResponse is nil")
 	}
 	return x.GetVirtualSelectedParentChainFromBlockResponse.toAppMessage()
 }
 
-func (x *KaspadMessage_GetVirtualSelectedParentChainFromBlockResponse) fromAppMessage(message *appmessage.GetVirtualSelectedParentChainFromBlockResponseMessage) error {
+func (x *KaspadRPCResponseMessage_GetVirtualSelectedParentChainFromBlockResponse) fromAppMessage(message *appmessage.GetVirtualSelectedParentChainFromBlockResponseMessage) error {
 	var err *RPCError
 	if message.Error != nil {
 		err = &RPCError{Message: message.Error.Message}

@@ -14,14 +14,14 @@ func (x *KaspadMessage_GetInfoRequest) fromAppMessage(_ *appmessage.GetInfoReque
 	return nil
 }
 
-func (x *KaspadMessage_GetInfoResponse) toAppMessage() (appmessage.Message, error) {
+func (x *KaspadRPCResponseMessage_GetInfoResponse) toAppMessage() (appmessage.Message, error) {
 	if x == nil {
 		return nil, errors.Wrapf(errorNil, "KaspadMessage_GetInfoResponse is nil")
 	}
 	return x.GetInfoResponse.toAppMessage()
 }
 
-func (x *KaspadMessage_GetInfoResponse) fromAppMessage(message *appmessage.GetInfoResponseMessage) error {
+func (x *KaspadRPCResponseMessage_GetInfoResponse) fromAppMessage(message *appmessage.GetInfoResponseMessage) error {
 	var err *RPCError
 	if message.Error != nil {
 		err = &RPCError{Message: message.Error.Message}

@@ -32,14 +32,14 @@ func (x *GetBlocksRequestMessage) toAppMessage() (appmessage.Message, error) {
 	}, nil
 }
 
-func (x *KaspadMessage_GetBlocksResponse) toAppMessage() (appmessage.Message, error) {
+func (x *KaspadRPCResponseMessage_GetBlocksResponse) toAppMessage() (appmessage.Message, error) {
 	if x == nil {
 		return nil, errors.Wrapf(errorNil, "KaspadMessage_GetBlocksResponse is nil")
 	}
 	return x.GetBlocksResponse.toAppMessage()
 }
 
-func (x *KaspadMessage_GetBlocksResponse) fromAppMessage(message *appmessage.GetBlocksResponseMessage) error {
+func (x *KaspadRPCResponseMessage_GetBlocksResponse) fromAppMessage(message *appmessage.GetBlocksResponseMessage) error {
 	var err *RPCError
 	if message.Error != nil {
 		err = &RPCError{Message: message.Error.Message}

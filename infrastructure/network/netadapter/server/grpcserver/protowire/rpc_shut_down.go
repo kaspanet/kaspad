@@ -14,14 +14,14 @@ func (x *KaspadMessage_ShutDownRequest) fromAppMessage(_ *appmessage.ShutDownReq
 	return nil
 }
 
-func (x *KaspadMessage_ShutDownResponse) toAppMessage() (appmessage.Message, error) {
+func (x *KaspadRPCResponseMessage_ShutDownResponse) toAppMessage() (appmessage.Message, error) {
 	if x == nil {
 		return nil, errors.Wrapf(errorNil, "KaspadMessage_ShutDownResponse is nil")
 	}
 	return x.ShutDownResponse.toAppMessage()
 }
 
-func (x *KaspadMessage_ShutDownResponse) fromAppMessage(message *appmessage.ShutDownResponseMessage) error {
+func (x *KaspadRPCResponseMessage_ShutDownResponse) fromAppMessage(message *appmessage.ShutDownResponseMessage) error {
 	var err *RPCError
 	if message.Error != nil {
 		err = &RPCError{Message: message.Error.Message}

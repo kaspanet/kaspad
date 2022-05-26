@@ -13,14 +13,14 @@ func (x *KaspadMessage_GetCurrentNetworkRequest) fromAppMessage(_ *appmessage.Ge
 	return nil
 }
 
-func (x *KaspadMessage_GetCurrentNetworkResponse) toAppMessage() (appmessage.Message, error) {
+func (x *KaspadRPCResponseMessage_GetCurrentNetworkResponse) toAppMessage() (appmessage.Message, error) {
 	if x == nil {
 		return nil, errors.Wrapf(errorNil, "KaspadMessage_GetCurrentNetworkResponse is nil")
 	}
 	return x.toAppMessage()
 }
 
-func (x *KaspadMessage_GetCurrentNetworkResponse) fromAppMessage(message *appmessage.GetCurrentNetworkResponseMessage) error {
+func (x *KaspadRPCResponseMessage_GetCurrentNetworkResponse) fromAppMessage(message *appmessage.GetCurrentNetworkResponseMessage) error {
 	var err *RPCError
 	if message.Error != nil {
 		err = &RPCError{Message: message.Error.Message}

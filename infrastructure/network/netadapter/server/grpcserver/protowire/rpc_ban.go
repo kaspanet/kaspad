@@ -26,7 +26,7 @@ func (x *KaspadMessage_BanRequest) fromAppMessage(message *appmessage.BanRequest
 	return nil
 }
 
-func (x *KaspadMessage_BanResponse) toAppMessage() (appmessage.Message, error) {
+func (x *KaspadRPCResponseMessage_BanResponse) toAppMessage() (appmessage.Message, error) {
 	if x == nil {
 		return nil, errors.Wrapf(errorNil, "KaspadMessage_BanResponse is nil")
 	}
@@ -47,7 +47,7 @@ func (x *BanResponseMessage) toAppMessage() (appmessage.Message, error) {
 	}, nil
 }
 
-func (x *KaspadMessage_BanResponse) fromAppMessage(message *appmessage.BanResponseMessage) error {
+func (x *KaspadRPCResponseMessage_BanResponse) fromAppMessage(message *appmessage.BanResponseMessage) error {
 	var err *RPCError
 	if message.Error != nil {
 		err = &RPCError{Message: message.Error.Message}

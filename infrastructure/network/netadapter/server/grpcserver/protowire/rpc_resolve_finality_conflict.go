@@ -28,14 +28,14 @@ func (x *ResolveFinalityConflictRequestMessage) toAppMessage() (appmessage.Messa
 	}, nil
 }
 
-func (x *KaspadMessage_ResolveFinalityConflictResponse) toAppMessage() (appmessage.Message, error) {
+func (x *KaspadRPCResponseMessage_ResolveFinalityConflictResponse) toAppMessage() (appmessage.Message, error) {
 	if x == nil {
 		return nil, errors.Wrapf(errorNil, "KaspadMessage_ResolveFinalityConflictResponse is nil")
 	}
 	return x.ResolveFinalityConflictResponse.toAppMessage()
 }
 
-func (x *KaspadMessage_ResolveFinalityConflictResponse) fromAppMessage(message *appmessage.ResolveFinalityConflictResponseMessage) error {
+func (x *KaspadRPCResponseMessage_ResolveFinalityConflictResponse) fromAppMessage(message *appmessage.ResolveFinalityConflictResponseMessage) error {
 	var err *RPCError
 	if message.Error != nil {
 		err = &RPCError{Message: message.Error.Message}

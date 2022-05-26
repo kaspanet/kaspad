@@ -14,14 +14,14 @@ func (x *KaspadMessage_NotifyBlockAddedRequest) fromAppMessage(_ *appmessage.Not
 	return nil
 }
 
-func (x *KaspadMessage_NotifyBlockAddedResponse) toAppMessage() (appmessage.Message, error) {
+func (x *KaspadRPCResponseMessage_NotifyBlockAddedResponse) toAppMessage() (appmessage.Message, error) {
 	if x == nil {
 		return nil, errors.Wrapf(errorNil, "KaspadMessage_NotifyBlockAddedResponse is nil")
 	}
 	return x.NotifyBlockAddedResponse.toAppMessage()
 }
 
-func (x *KaspadMessage_NotifyBlockAddedResponse) fromAppMessage(message *appmessage.NotifyBlockAddedResponseMessage) error {
+func (x *KaspadRPCResponseMessage_NotifyBlockAddedResponse) fromAppMessage(message *appmessage.NotifyBlockAddedResponseMessage) error {
 	var err *RPCError
 	if message.Error != nil {
 		err = &RPCError{Message: message.Error.Message}
@@ -46,14 +46,14 @@ func (x *NotifyBlockAddedResponseMessage) toAppMessage() (appmessage.Message, er
 	}, nil
 }
 
-func (x *KaspadMessage_BlockAddedNotification) toAppMessage() (appmessage.Message, error) {
+func (x *KaspadRPCResponseMessage_BlockAddedNotification) toAppMessage() (appmessage.Message, error) {
 	if x == nil {
 		return nil, errors.Wrapf(errorNil, "KaspadMessage_BlockAddedNotification is nil")
 	}
 	return x.BlockAddedNotification.toAppMessage()
 }
 
-func (x *KaspadMessage_BlockAddedNotification) fromAppMessage(message *appmessage.BlockAddedNotificationMessage) error {
+func (x *KaspadRPCResponseMessage_BlockAddedNotification) fromAppMessage(message *appmessage.BlockAddedNotificationMessage) error {
 	block := &RpcBlock{}
 	err := block.fromAppMessage(message.Block)
 	if err != nil {

@@ -33,14 +33,14 @@ func (x *SubmitBlockRequestMessage) toAppMessage() (appmessage.Message, error) {
 	}, nil
 }
 
-func (x *KaspadMessage_SubmitBlockResponse) toAppMessage() (appmessage.Message, error) {
+func (x *KaspadRPCResponseMessage_SubmitBlockResponse) toAppMessage() (appmessage.Message, error) {
 	if x == nil {
 		return nil, errors.Wrapf(errorNil, "KaspadMessage_SubmitBlockResponse is nil")
 	}
 	return x.SubmitBlockResponse.toAppMessage()
 }
 
-func (x *KaspadMessage_SubmitBlockResponse) fromAppMessage(message *appmessage.SubmitBlockResponseMessage) error {
+func (x *KaspadRPCResponseMessage_SubmitBlockResponse) fromAppMessage(message *appmessage.SubmitBlockResponseMessage) error {
 	var err *RPCError
 	if message.Error != nil {
 		err = &RPCError{Message: message.Error.Message}

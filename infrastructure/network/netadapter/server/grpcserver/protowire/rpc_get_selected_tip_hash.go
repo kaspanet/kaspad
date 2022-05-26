@@ -13,14 +13,14 @@ func (x *KaspadMessage_GetSelectedTipHashRequest) fromAppMessage(_ *appmessage.G
 	return nil
 }
 
-func (x *KaspadMessage_GetSelectedTipHashResponse) toAppMessage() (appmessage.Message, error) {
+func (x *KaspadRPCResponseMessage_GetSelectedTipHashResponse) toAppMessage() (appmessage.Message, error) {
 	if x == nil {
 		return nil, errors.Wrapf(errorNil, "KaspadMessage_GetSelectedTipHashResponse is nil")
 	}
 	return x.GetSelectedTipHashResponse.toAppMessage()
 }
 
-func (x *KaspadMessage_GetSelectedTipHashResponse) fromAppMessage(message *appmessage.GetSelectedTipHashResponseMessage) error {
+func (x *KaspadRPCResponseMessage_GetSelectedTipHashResponse) fromAppMessage(message *appmessage.GetSelectedTipHashResponseMessage) error {
 	var err *RPCError
 	if message.Error != nil {
 		err = &RPCError{Message: message.Error.Message}

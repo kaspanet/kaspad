@@ -7,7 +7,7 @@ import (
 	"math/big"
 )
 
-func (x *KaspadMessage_BlockWithTrustedData) toAppMessage() (appmessage.Message, error) {
+func (x *KaspadP2PMessage_BlockWithTrustedData) toAppMessage() (appmessage.Message, error) {
 	if x == nil {
 		return nil, errors.Wrapf(errorNil, "KaspadMessage_BlockWithTrustedData is nil")
 	}
@@ -51,7 +51,7 @@ func (x *KaspadMessage_BlockWithTrustedData) toAppMessage() (appmessage.Message,
 	}, nil
 }
 
-func (x *KaspadMessage_BlockWithTrustedData) fromAppMessage(msgBlockWithTrustedData *appmessage.MsgBlockWithTrustedData) error {
+func (x *KaspadP2PMessage_BlockWithTrustedData) fromAppMessage(msgBlockWithTrustedData *appmessage.MsgBlockWithTrustedData) error {
 	x.BlockWithTrustedData = &BlockWithTrustedDataMessage{
 		Block:        &BlockMessage{},
 		DaaScore:     msgBlockWithTrustedData.DAAScore,

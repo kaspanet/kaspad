@@ -28,14 +28,14 @@ func (x *GetBalancesByAddressesRequestMessage) toAppMessage() (appmessage.Messag
 	}, nil
 }
 
-func (x *KaspadMessage_GetBalancesByAddressesResponse) toAppMessage() (appmessage.Message, error) {
+func (x *KaspadRPCResponseMessage_GetBalancesByAddressesResponse) toAppMessage() (appmessage.Message, error) {
 	if x == nil {
 		return nil, errors.Wrapf(errorNil, "GetBalanceByAddressResponse is nil")
 	}
 	return x.GetBalancesByAddressesResponse.toAppMessage()
 }
 
-func (x *KaspadMessage_GetBalancesByAddressesResponse) fromAppMessage(message *appmessage.GetBalancesByAddressesResponseMessage) error {
+func (x *KaspadRPCResponseMessage_GetBalancesByAddressesResponse) fromAppMessage(message *appmessage.GetBalancesByAddressesResponseMessage) error {
 	var err *RPCError
 	if message.Error != nil {
 		err = &RPCError{Message: message.Error.Message}

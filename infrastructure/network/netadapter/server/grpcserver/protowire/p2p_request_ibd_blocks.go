@@ -5,7 +5,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-func (x *KaspadMessage_RequestIBDBlocks) toAppMessage() (appmessage.Message, error) {
+func (x *KaspadP2PMessage_RequestIBDBlocks) toAppMessage() (appmessage.Message, error) {
 	if x == nil {
 		return nil, errors.Wrapf(errorNil, "KaspadMessage_RequestIBDBlocks is nil")
 	}
@@ -23,7 +23,7 @@ func (x *RequestIBDBlocksMessage) toAppMessage() (appmessage.Message, error) {
 	return &appmessage.MsgRequestIBDBlocks{Hashes: hashes}, nil
 }
 
-func (x *KaspadMessage_RequestIBDBlocks) fromAppMessage(msgRequestIBDBlocks *appmessage.MsgRequestIBDBlocks) error {
+func (x *KaspadP2PMessage_RequestIBDBlocks) fromAppMessage(msgRequestIBDBlocks *appmessage.MsgRequestIBDBlocks) error {
 	x.RequestIBDBlocks = &RequestIBDBlocksMessage{
 		Hashes: domainHashesToProto(msgRequestIBDBlocks.Hashes),
 	}

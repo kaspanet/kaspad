@@ -16,14 +16,14 @@ func (x *KaspadMessage_GetPeerAddressesRequest) fromAppMessage(_ *appmessage.Get
 	return nil
 }
 
-func (x *KaspadMessage_GetPeerAddressesResponse) toAppMessage() (appmessage.Message, error) {
+func (x *KaspadRPCResponseMessage_GetPeerAddressesResponse) toAppMessage() (appmessage.Message, error) {
 	if x == nil {
 		return nil, errors.Wrapf(errorNil, "KaspadMessage_GetPeerAddressesResponse is nil")
 	}
 	return x.GetPeerAddressesResponse.toAppMessage()
 }
 
-func (x *KaspadMessage_GetPeerAddressesResponse) fromAppMessage(message *appmessage.GetPeerAddressesResponseMessage) error {
+func (x *KaspadRPCResponseMessage_GetPeerAddressesResponse) fromAppMessage(message *appmessage.GetPeerAddressesResponseMessage) error {
 	var err *RPCError
 	if message.Error != nil {
 		err = &RPCError{Message: message.Error.Message}

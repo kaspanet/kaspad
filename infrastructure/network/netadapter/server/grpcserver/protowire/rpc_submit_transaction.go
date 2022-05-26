@@ -37,14 +37,14 @@ func (x *SubmitTransactionRequestMessage) toAppMessage() (appmessage.Message, er
 	}, nil
 }
 
-func (x *KaspadMessage_SubmitTransactionResponse) toAppMessage() (appmessage.Message, error) {
+func (x *KaspadRPCResponseMessage_SubmitTransactionResponse) toAppMessage() (appmessage.Message, error) {
 	if x == nil {
 		return nil, errors.Wrapf(errorNil, "KaspadMessage_SubmitTransactionResponse is nil")
 	}
 	return x.SubmitTransactionResponse.toAppMessage()
 }
 
-func (x *KaspadMessage_SubmitTransactionResponse) fromAppMessage(message *appmessage.SubmitTransactionResponseMessage) error {
+func (x *KaspadRPCResponseMessage_SubmitTransactionResponse) fromAppMessage(message *appmessage.SubmitTransactionResponseMessage) error {
 	var err *RPCError
 	if message.Error != nil {
 		err = &RPCError{Message: message.Error.Message}

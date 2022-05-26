@@ -5,7 +5,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-func (x *KaspadMessage_RequestRelayBlocks) toAppMessage() (appmessage.Message, error) {
+func (x *KaspadP2PMessage_RequestRelayBlocks) toAppMessage() (appmessage.Message, error) {
 	if x == nil {
 		return nil, errors.Wrapf(errorNil, "KaspadMessage_RequestRelayBlocks is nil")
 	}
@@ -28,7 +28,7 @@ func (x *RequestRelayBlocksMessage) toAppMessage() (appmessage.Message, error) {
 
 }
 
-func (x *KaspadMessage_RequestRelayBlocks) fromAppMessage(msgGetRelayBlocks *appmessage.MsgRequestRelayBlocks) error {
+func (x *KaspadP2PMessage_RequestRelayBlocks) fromAppMessage(msgGetRelayBlocks *appmessage.MsgRequestRelayBlocks) error {
 	if len(msgGetRelayBlocks.Hashes) > appmessage.MaxRequestRelayBlocksHashes {
 		return errors.Errorf("too many hashes for message "+
 			"[count %d, max %d]", len(msgGetRelayBlocks.Hashes), appmessage.MaxRequestRelayBlocksHashes)

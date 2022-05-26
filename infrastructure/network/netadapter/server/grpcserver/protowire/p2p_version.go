@@ -7,7 +7,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-func (x *KaspadMessage_Version) toAppMessage() (appmessage.Message, error) {
+func (x *KaspadP2PMessage_Version) toAppMessage() (appmessage.Message, error) {
 	if x == nil {
 		return nil, errors.Wrapf(errorNil, "KaspadMessage_Version is nil")
 	}
@@ -57,7 +57,7 @@ func (x *VersionMessage) toAppMessage() (appmessage.Message, error) {
 	}, nil
 }
 
-func (x *KaspadMessage_Version) fromAppMessage(msgVersion *appmessage.MsgVersion) error {
+func (x *KaspadP2PMessage_Version) fromAppMessage(msgVersion *appmessage.MsgVersion) error {
 	err := appmessage.ValidateUserAgent(msgVersion.UserAgent)
 	if err != nil {
 		return err

@@ -28,14 +28,14 @@ func (x *NotifyUtxosChangedRequestMessage) toAppMessage() (appmessage.Message, e
 	}, nil
 }
 
-func (x *KaspadMessage_NotifyUtxosChangedResponse) toAppMessage() (appmessage.Message, error) {
+func (x *KaspadRPCResponseMessage_NotifyUtxosChangedResponse) toAppMessage() (appmessage.Message, error) {
 	if x == nil {
 		return nil, errors.Wrapf(errorNil, "NotifyUtxosChangedResponseMessage is nil")
 	}
 	return x.NotifyUtxosChangedResponse.toAppMessage()
 }
 
-func (x *KaspadMessage_NotifyUtxosChangedResponse) fromAppMessage(message *appmessage.NotifyUTXOsChangedResponseMessage) error {
+func (x *KaspadRPCResponseMessage_NotifyUtxosChangedResponse) fromAppMessage(message *appmessage.NotifyUTXOsChangedResponseMessage) error {
 	var err *RPCError
 	if message.Error != nil {
 		err = &RPCError{Message: message.Error.Message}
@@ -60,14 +60,14 @@ func (x *NotifyUtxosChangedResponseMessage) toAppMessage() (appmessage.Message, 
 	}, nil
 }
 
-func (x *KaspadMessage_UtxosChangedNotification) toAppMessage() (appmessage.Message, error) {
+func (x *KaspadRPCResponseMessage_UtxosChangedNotification) toAppMessage() (appmessage.Message, error) {
 	if x == nil {
 		return nil, errors.Wrapf(errorNil, "KaspadMessage_UtxosChangedNotification is nil")
 	}
 	return x.UtxosChangedNotification.toAppMessage()
 }
 
-func (x *KaspadMessage_UtxosChangedNotification) fromAppMessage(message *appmessage.UTXOsChangedNotificationMessage) error {
+func (x *KaspadRPCResponseMessage_UtxosChangedNotification) fromAppMessage(message *appmessage.UTXOsChangedNotificationMessage) error {
 	added := make([]*UtxosByAddressesEntry, len(message.Added))
 	for i, entry := range message.Added {
 		added[i] = &UtxosByAddressesEntry{}

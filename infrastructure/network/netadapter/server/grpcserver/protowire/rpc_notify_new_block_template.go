@@ -14,14 +14,14 @@ func (x *KaspadMessage_NotifyNewBlockTemplateRequest) fromAppMessage(_ *appmessa
 	return nil
 }
 
-func (x *KaspadMessage_NotifyNewBlockTemplateResponse) toAppMessage() (appmessage.Message, error) {
+func (x *KaspadRPCResponseMessage_NotifyNewBlockTemplateResponse) toAppMessage() (appmessage.Message, error) {
 	if x == nil {
 		return nil, errors.Wrapf(errorNil, "KaspadMessage_NotifyNewBlockTemplateResponse is nil")
 	}
 	return x.NotifyNewBlockTemplateResponse.toAppMessage()
 }
 
-func (x *KaspadMessage_NotifyNewBlockTemplateResponse) fromAppMessage(message *appmessage.NotifyNewBlockTemplateResponseMessage) error {
+func (x *KaspadRPCResponseMessage_NotifyNewBlockTemplateResponse) fromAppMessage(message *appmessage.NotifyNewBlockTemplateResponseMessage) error {
 	var err *RPCError
 	if message.Error != nil {
 		err = &RPCError{Message: message.Error.Message}
@@ -46,14 +46,14 @@ func (x *NotifyNewBlockTemplateResponseMessage) toAppMessage() (appmessage.Messa
 	}, nil
 }
 
-func (x *KaspadMessage_NewBlockTemplateNotification) toAppMessage() (appmessage.Message, error) {
+func (x *KaspadRPCResponseMessage_NewBlockTemplateNotification) toAppMessage() (appmessage.Message, error) {
 	if x == nil {
 		return nil, errors.Wrapf(errorNil, "KaspadMessage_NewBlockTemplateNotification is nil")
 	}
 	return x.NewBlockTemplateNotification.toAppMessage()
 }
 
-func (x *KaspadMessage_NewBlockTemplateNotification) fromAppMessage(message *appmessage.NewBlockTemplateNotificationMessage) error {
+func (x *KaspadRPCResponseMessage_NewBlockTemplateNotification) fromAppMessage(message *appmessage.NewBlockTemplateNotificationMessage) error {
 	x.NewBlockTemplateNotification = &NewBlockTemplateNotificationMessage{}
 	return nil
 }

@@ -5,7 +5,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-func (x *KaspadMessage_PruningPointUtxoSetChunk) toAppMessage() (appmessage.Message, error) {
+func (x *KaspadP2PMessage_PruningPointUtxoSetChunk) toAppMessage() (appmessage.Message, error) {
 	if x == nil {
 		return nil, errors.Wrapf(errorNil, "KaspadMessage_PruningPointUtxoSetChunk is nil")
 	}
@@ -40,7 +40,7 @@ func (x *OutpointAndUtxoEntryPair) toAppMessage() (*appmessage.OutpointAndUTXOEn
 	}, nil
 }
 
-func (x *KaspadMessage_PruningPointUtxoSetChunk) fromAppMessage(message *appmessage.MsgPruningPointUTXOSetChunk) error {
+func (x *KaspadP2PMessage_PruningPointUtxoSetChunk) fromAppMessage(message *appmessage.MsgPruningPointUTXOSetChunk) error {
 	outpointAndUTXOEntryPairs := make([]*OutpointAndUtxoEntryPair, len(message.OutpointAndUTXOEntryPairs))
 	for i, outpointAndUTXOEntryPair := range message.OutpointAndUTXOEntryPairs {
 		transactionID := domainTransactionIDToProto(&outpointAndUTXOEntryPair.Outpoint.TxID)

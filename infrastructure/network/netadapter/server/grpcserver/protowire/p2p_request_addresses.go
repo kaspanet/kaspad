@@ -5,7 +5,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-func (x *KaspadMessage_RequestAddresses) toAppMessage() (appmessage.Message, error) {
+func (x *KaspadP2PMessage_RequestAddresses) toAppMessage() (appmessage.Message, error) {
 	if x == nil {
 		return nil, errors.Wrapf(errorNil, "KaspadMessage_RequestAddresses is nil")
 	}
@@ -29,7 +29,7 @@ func (x *RequestAddressesMessage) toAppMessage() (appmessage.Message, error) {
 
 }
 
-func (x *KaspadMessage_RequestAddresses) fromAppMessage(msgGetAddresses *appmessage.MsgRequestAddresses) error {
+func (x *KaspadP2PMessage_RequestAddresses) fromAppMessage(msgGetAddresses *appmessage.MsgRequestAddresses) error {
 	x.RequestAddresses = &RequestAddressesMessage{
 		IncludeAllSubnetworks: msgGetAddresses.IncludeAllSubnetworks,
 		SubnetworkId:          domainSubnetworkIDToProto(msgGetAddresses.SubnetworkID),

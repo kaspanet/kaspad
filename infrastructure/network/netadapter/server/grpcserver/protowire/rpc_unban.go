@@ -26,14 +26,14 @@ func (x *UnbanRequestMessage) toAppMessage() (appmessage.Message, error) {
 	}, nil
 }
 
-func (x *KaspadMessage_UnbanResponse) toAppMessage() (appmessage.Message, error) {
+func (x *KaspadRPCResponseMessage_UnbanResponse) toAppMessage() (appmessage.Message, error) {
 	if x == nil {
 		return nil, errors.Wrapf(errorNil, "KaspadMessage_UnbanResponse is nil")
 	}
 	return x.UnbanResponse.toAppMessage()
 }
 
-func (x *KaspadMessage_UnbanResponse) fromAppMessage(message *appmessage.UnbanResponseMessage) error {
+func (x *KaspadRPCResponseMessage_UnbanResponse) fromAppMessage(message *appmessage.UnbanResponseMessage) error {
 	var err *RPCError
 	if message.Error != nil {
 		err = &RPCError{Message: message.Error.Message}

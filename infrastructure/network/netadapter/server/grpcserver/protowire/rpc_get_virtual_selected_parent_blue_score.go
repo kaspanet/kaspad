@@ -17,14 +17,14 @@ func (x *KaspadMessage_GetVirtualSelectedParentBlueScoreRequest) fromAppMessage(
 	return nil
 }
 
-func (x *KaspadMessage_GetVirtualSelectedParentBlueScoreResponse) toAppMessage() (appmessage.Message, error) {
+func (x *KaspadRPCResponseMessage_GetVirtualSelectedParentBlueScoreResponse) toAppMessage() (appmessage.Message, error) {
 	if x == nil {
 		return nil, errors.Wrapf(errorNil, "KaspadMessage_GetVirtualSelectedParentBlueScoreResponse is nil")
 	}
 	return x.GetVirtualSelectedParentBlueScoreResponse.toAppMessage()
 }
 
-func (x *KaspadMessage_GetVirtualSelectedParentBlueScoreResponse) fromAppMessage(message *appmessage.GetVirtualSelectedParentBlueScoreResponseMessage) error {
+func (x *KaspadRPCResponseMessage_GetVirtualSelectedParentBlueScoreResponse) fromAppMessage(message *appmessage.GetVirtualSelectedParentBlueScoreResponseMessage) error {
 	var err *RPCError
 	if message.Error != nil {
 		err = &RPCError{Message: message.Error.Message}

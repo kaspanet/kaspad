@@ -30,14 +30,14 @@ func (x *EstimateNetworkHashesPerSecondRequestMessage) toAppMessage() (appmessag
 	}, nil
 }
 
-func (x *KaspadMessage_EstimateNetworkHashesPerSecondResponse) toAppMessage() (appmessage.Message, error) {
+func (x *KaspadRPCResponseMessage_EstimateNetworkHashesPerSecondResponse) toAppMessage() (appmessage.Message, error) {
 	if x == nil {
 		return nil, errors.Wrapf(errorNil, "KaspadMessage_EstimateNetworkHashesPerSecondResponse is nil")
 	}
 	return x.EstimateNetworkHashesPerSecondResponse.toAppMessage()
 }
 
-func (x *KaspadMessage_EstimateNetworkHashesPerSecondResponse) fromAppMessage(message *appmessage.EstimateNetworkHashesPerSecondResponseMessage) error {
+func (x *KaspadRPCResponseMessage_EstimateNetworkHashesPerSecondResponse) fromAppMessage(message *appmessage.EstimateNetworkHashesPerSecondResponseMessage) error {
 	var err *RPCError
 	if message.Error != nil {
 		err = &RPCError{Message: message.Error.Message}

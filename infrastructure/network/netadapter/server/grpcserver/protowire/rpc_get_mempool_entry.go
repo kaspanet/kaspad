@@ -28,14 +28,14 @@ func (x *GetMempoolEntryRequestMessage) toAppMessage() (appmessage.Message, erro
 	}, nil
 }
 
-func (x *KaspadMessage_GetMempoolEntryResponse) toAppMessage() (appmessage.Message, error) {
+func (x *KaspadRPCResponseMessage_GetMempoolEntryResponse) toAppMessage() (appmessage.Message, error) {
 	if x == nil {
 		return nil, errors.Wrapf(errorNil, "KaspadMessage_GetMempoolEntryResponse is nil")
 	}
 	return x.GetMempoolEntryResponse.toAppMessage()
 }
 
-func (x *KaspadMessage_GetMempoolEntryResponse) fromAppMessage(message *appmessage.GetMempoolEntryResponseMessage) error {
+func (x *KaspadRPCResponseMessage_GetMempoolEntryResponse) fromAppMessage(message *appmessage.GetMempoolEntryResponseMessage) error {
 	var rpcErr *RPCError
 	if message.Error != nil {
 		rpcErr = &RPCError{Message: message.Error.Message}

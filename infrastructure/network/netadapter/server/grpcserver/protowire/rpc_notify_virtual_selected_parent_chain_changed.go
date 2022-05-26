@@ -21,14 +21,14 @@ func (x *KaspadMessage_NotifyVirtualSelectedParentChainChangedRequest) fromAppMe
 	return nil
 }
 
-func (x *KaspadMessage_NotifyVirtualSelectedParentChainChangedResponse) toAppMessage() (appmessage.Message, error) {
+func (x *KaspadRPCResponseMessage_NotifyVirtualSelectedParentChainChangedResponse) toAppMessage() (appmessage.Message, error) {
 	if x == nil {
 		return nil, errors.Wrapf(errorNil, "KaspadMessage_NotifyVirtualSelectedParentChainChangedResponse is nil")
 	}
 	return x.NotifyVirtualSelectedParentChainChangedResponse.toAppMessage()
 }
 
-func (x *KaspadMessage_NotifyVirtualSelectedParentChainChangedResponse) fromAppMessage(message *appmessage.NotifyVirtualSelectedParentChainChangedResponseMessage) error {
+func (x *KaspadRPCResponseMessage_NotifyVirtualSelectedParentChainChangedResponse) fromAppMessage(message *appmessage.NotifyVirtualSelectedParentChainChangedResponseMessage) error {
 	var err *RPCError
 	if message.Error != nil {
 		err = &RPCError{Message: message.Error.Message}
@@ -53,14 +53,14 @@ func (x *NotifyVirtualSelectedParentChainChangedResponseMessage) toAppMessage() 
 	}, nil
 }
 
-func (x *KaspadMessage_VirtualSelectedParentChainChangedNotification) toAppMessage() (appmessage.Message, error) {
+func (x *KaspadRPCResponseMessage_VirtualSelectedParentChainChangedNotification) toAppMessage() (appmessage.Message, error) {
 	if x == nil {
 		return nil, errors.Wrapf(errorNil, "KaspadMessage_VirtualSelectedParentChainChangedNotification is nil")
 	}
 	return x.VirtualSelectedParentChainChangedNotification.toAppMessage()
 }
 
-func (x *KaspadMessage_VirtualSelectedParentChainChangedNotification) fromAppMessage(message *appmessage.VirtualSelectedParentChainChangedNotificationMessage) error {
+func (x *KaspadRPCResponseMessage_VirtualSelectedParentChainChangedNotification) fromAppMessage(message *appmessage.VirtualSelectedParentChainChangedNotificationMessage) error {
 	x.VirtualSelectedParentChainChangedNotification = &VirtualSelectedParentChainChangedNotificationMessage{
 		RemovedChainBlockHashes: message.RemovedChainBlockHashes,
 		AddedChainBlockHashes:   message.AddedChainBlockHashes,
