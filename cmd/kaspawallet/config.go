@@ -140,10 +140,10 @@ func parseCommandLine() (subCommand string, config interface{}) {
 		"Sends a Kaspa transaction to a public address", sendConf)
 
 	sweepConf := &sweepConfig{DaemonAddress: defaultListen}
-	parser.AddCommand(sweepSubCmd, "Sends all funds associated with the given private key to a new address of the current wallet",
-		"Sends all funds associated with the given private key to a newly created address of the wallet that's under the "+
-			"running daemon's contol. Useful for sending coins from the address generated with a genkeypair utilily "+
-			"to your main wallet.", sweepConf)
+	parser.AddCommand(sweepSubCmd, "Sends all funds associated with the given schnorr private key to a new address of the current wallet",
+		"Sends all funds associated with the given schnorr private key to a newly created external (i.e. not a change) address of the "+
+			"keyfile that is under the daemon's contol. Can be used with a private key generated with the genkeypair utilily "+
+			"to send funds to your main wallet.", sweepConf)
 
 	createUnsignedTransactionConf := &createUnsignedTransactionConfig{DaemonAddress: defaultListen}
 	parser.AddCommand(createUnsignedTransactionSubCmd, "Create an unsigned Kaspa transaction",
