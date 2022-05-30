@@ -20,11 +20,11 @@ func NewGetInfoRequestMessage() *GetInfoRequestMessage {
 // its respective RPC message
 type GetInfoResponseMessage struct {
 	baseMessage
-	P2PID          string
-	MempoolSize    uint64
-	ServerVersion  string
-	IsUtxoindexSet bool
-	IsNearlySynced bool
+	P2PID         string
+	MempoolSize   uint64
+	ServerVersion string
+	IsUtxoIndexed bool
+	IsSynced      bool
 
 	Error *RPCError
 }
@@ -35,12 +35,12 @@ func (msg *GetInfoResponseMessage) Command() MessageCommand {
 }
 
 // NewGetInfoResponseMessage returns a instance of the message
-func NewGetInfoResponseMessage(p2pID string, mempoolSize uint64, serverVersion string, isUtxoindexSet bool, isNearlySynced bool) *GetInfoResponseMessage {
+func NewGetInfoResponseMessage(p2pID string, mempoolSize uint64, serverVersion string, isUtxoIndexed bool, isSynced bool) *GetInfoResponseMessage {
 	return &GetInfoResponseMessage{
-		P2PID:          p2pID,
-		MempoolSize:    mempoolSize,
-		ServerVersion:  serverVersion,
-		IsUtxoindexSet: isUtxoindexSet,
-		IsNearlySynced: isNearlySynced,
+		P2PID:         p2pID,
+		MempoolSize:   mempoolSize,
+		ServerVersion: serverVersion,
+		IsUtxoIndexed: isUtxoIndexed,
+		IsSynced:      isSynced,
 	}
 }

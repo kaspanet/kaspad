@@ -27,12 +27,12 @@ func (x *KaspadMessage_GetInfoResponse) fromAppMessage(message *appmessage.GetIn
 		err = &RPCError{Message: message.Error.Message}
 	}
 	x.GetInfoResponse = &GetInfoResponseMessage{
-		P2PId:          message.P2PID,
-		ServerVersion:  message.ServerVersion,
-		MempoolSize:    message.MempoolSize,
-		IsUtxoindexSet: message.IsUtxoindexSet,
-		IsNearlySynced: message.IsNearlySynced,
-		Error:          err,
+		P2PId:         message.P2PID,
+		ServerVersion: message.ServerVersion,
+		MempoolSize:   message.MempoolSize,
+		IsUtxoIndexed: message.IsUtxoIndexed,
+		IsSynced:      message.IsSynced,
+		Error:         err,
 	}
 	return nil
 }
@@ -52,11 +52,11 @@ func (x *GetInfoResponseMessage) toAppMessage() (appmessage.Message, error) {
 	}
 
 	return &appmessage.GetInfoResponseMessage{
-		P2PID:          x.P2PId,
-		MempoolSize:    x.MempoolSize,
-		ServerVersion:  x.ServerVersion,
-		IsUtxoindexSet: x.IsUtxoindexSet,
-		IsNearlySynced: x.IsNearlySynced,
+		P2PID:         x.P2PId,
+		MempoolSize:   x.MempoolSize,
+		ServerVersion: x.ServerVersion,
+		IsUtxoIndexed: x.IsUtxoIndexed,
+		IsSynced:      x.IsSynced,
 
 		Error: rpcErr,
 	}, nil

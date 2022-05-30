@@ -1688,8 +1688,8 @@ GetInfoRequestMessage returns info about the node.
 | p2pId | [string](#string) |  |  |
 | mempoolSize | [uint64](#uint64) |  |  |
 | serverVersion | [string](#string) |  |  |
-| isUtxoindexSet | [bool](#bool) |  |  |
-| isNearlySynced | [bool](#bool) |  |  |
+| isUtxoIndexed | [bool](#bool) |  |  |
+| isSynced | [bool](#bool) |  |  |
 | error | [RPCError](#protowire.RPCError) |  |  |
 
 
