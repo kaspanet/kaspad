@@ -31,7 +31,7 @@ const (
 	miningAddress3           = "kaspasim:qqq754f2gdcjcnykwuwwr60c82rh5u6mxxe7yqxljnrxz9fu0h95kduq9ezng"
 	miningAddress3PrivateKey = "f6c8f31fd359cbb97007034780bc4021f6ad01c6bc10499b79849efd4cc7ca39"
 
-	defaultTimeout = 30 * time.Second
+	defaultTimeout = 10 * time.Second
 )
 
 func setConfig(t *testing.T, harness *appHarness, protocolVersion uint32) {
