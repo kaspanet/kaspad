@@ -161,7 +161,7 @@ func (ui *UTXOIndex) removeUTXOs(toRemove externalapi.UTXOCollection) error {
 		}
 
 		log.Tracef("Removing outpoint %s from UTXO index", outpoint)
-		err = ui.store.remove(entry.ScriptPublicKey(), outpoint)
+		err = ui.store.remove(entry.ScriptPublicKey(), outpoint, entry)
 		if err != nil {
 			return err
 		}
@@ -178,4 +178,11 @@ func (ui *UTXOIndex) UTXOs(scriptPublicKey *externalapi.ScriptPublicKey) (UTXOOu
 	defer ui.mutex.Unlock()
 
 	return ui.store.getUTXOOutpointEntryPairs(scriptPublicKey)
+}
+
+// GetCirculatingSupply returns the current circulating supply of sompis
+func (ui *UTXOIndex) GetCirculatingSupply() (uint64, error) {
+	ui.mutex.Lock()
+	defer ui.mutex.Unlock()
+	return ui.store.getCirculatingSupply()
 }

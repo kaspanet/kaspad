@@ -10,11 +10,13 @@ import (
 
 var utxoIndexBucket = database.MakeBucket([]byte("utxo-index"))
 var virtualParentsKey = database.MakeBucket([]byte("")).Key([]byte("utxo-index-virtual-parents"))
+var circulatingSupplyKey = database.MakeBucket([]byte("")).Key([]byte("circulating-supply"))
 
 type utxoIndexStore struct {
-	database       database.Database
-	toAdd          map[ScriptPublicKeyString]UTXOOutpointEntryPairs
-	toRemove       map[ScriptPublicKeyString]UTXOOutpoints
+	database database.Database
+	toAdd    map[ScriptPublicKeyString]UTXOOutpointEntryPairs
+	toRemove map[ScriptPublicKeyString]UTXOOutpointEntryPairs
+
 	virtualParents []*externalapi.DomainHash
 }
 
@@ -22,7 +24,7 @@ func newUTXOIndexStore(database database.Database) *utxoIndexStore {
 	return &utxoIndexStore{
 		database: database,
 		toAdd:    make(map[ScriptPublicKeyString]UTXOOutpointEntryPairs),
-		toRemove: make(map[ScriptPublicKeyString]UTXOOutpoints),
+		toRemove: make(map[ScriptPublicKeyString]UTXOOutpointEntryPairs),
 	}
 }
 
@@ -61,7 +63,7 @@ func (uis *utxoIndexStore) add(scriptPublicKey *externalapi.ScriptPublicKey, out
 	return nil
 }
 
-func (uis *utxoIndexStore) remove(scriptPublicKey *externalapi.ScriptPublicKey, outpoint *externalapi.DomainOutpoint) error {
+func (uis *utxoIndexStore) remove(scriptPublicKey *externalapi.ScriptPublicKey, outpoint *externalapi.DomainOutpoint, utxoEntry externalapi.UTXOEntry) error {
 	key := ConvertScriptPublicKeyToString(scriptPublicKey)
 	log.Tracef("Removing outpoint %s:%d from scriptPublicKey %s",
 		outpoint.TransactionID, outpoint.Index, key)
@@ -79,7 +81,7 @@ func (uis *utxoIndexStore) remove(scriptPublicKey *externalapi.ScriptPublicKey, 
 	// Create a UTXOOutpoints entry in `toRemove` if it doesn't exist
 	if _, ok := uis.toRemove[key]; !ok {
 		log.Tracef("Creating key %s in `toRemove`", key)
-		uis.toRemove[key] = make(UTXOOutpoints)
+		uis.toRemove[key] = make(UTXOOutpointEntryPairs)
 	}
 
 	// Return an error if the outpoint already exists in `toRemove`
@@ -88,7 +90,7 @@ func (uis *utxoIndexStore) remove(scriptPublicKey *externalapi.ScriptPublicKey, 
 		return errors.Errorf("cannot remove outpoint %s because it's being removed already", outpoint)
 	}
 
-	toRemoveOutpointsOfKey[*outpoint] = struct{}{}
+	toRemoveOutpointsOfKey[*outpoint] = utxoEntry
 
 	log.Tracef("Removed outpoint %s:%d from scriptPublicKey %s",
 		outpoint.TransactionID, outpoint.Index, key)
@@ -101,7 +103,7 @@ func (uis *utxoIndexStore) updateVirtualParents(virtualParents []*externalapi.Do
 
 func (uis *utxoIndexStore) discard() {
 	uis.toAdd = make(map[ScriptPublicKeyString]UTXOOutpointEntryPairs)
-	uis.toRemove = make(map[ScriptPublicKeyString]UTXOOutpoints)
+	uis.toRemove = make(map[ScriptPublicKeyString]UTXOOutpointEntryPairs)
 	uis.virtualParents = nil
 }
 
@@ -115,10 +117,12 @@ func (uis *utxoIndexStore) commit() error {
 	}
 	defer dbTransaction.RollbackUnlessClosed()
 
-	for scriptPublicKeyString, toRemoveOutpointsOfKey := range uis.toRemove {
+	toRemoveAmount := uint64(0)
+
+	for scriptPublicKeyString, toRemoveUTXOOutpointEntryPairs := range uis.toRemove {
 		scriptPublicKey := ConvertStringToScriptPublicKey(scriptPublicKeyString)
 		bucket := uis.bucketForScriptPublicKey(scriptPublicKey)
-		for outpointToRemove := range toRemoveOutpointsOfKey {
+		for outpointToRemove, utxoEntryToRemove := range toRemoveUTXOOutpointEntryPairs {
 			key, err := uis.convertOutpointToKey(bucket, &outpointToRemove)
 			if err != nil {
 				return err
@@ -127,8 +131,11 @@ func (uis *utxoIndexStore) commit() error {
 			if err != nil {
 				return err
 			}
+			toRemoveAmount = toRemoveAmount + utxoEntryToRemove.Amount()
 		}
 	}
+
+	toAddAmount := uint64(0)
 
 	for scriptPublicKeyString, toAddUTXOOutpointEntryPairs := range uis.toAdd {
 		scriptPublicKey := ConvertStringToScriptPublicKey(scriptPublicKeyString)
@@ -146,6 +153,7 @@ func (uis *utxoIndexStore) commit() error {
 			if err != nil {
 				return err
 			}
+			toAddAmount = toAddAmount + utxoEntryToAdd.Amount()
 		}
 	}
 
@@ -160,25 +168,40 @@ func (uis *utxoIndexStore) commit() error {
 		return err
 	}
 
+	if toAddAmount > toRemoveAmount {
+		uis.addToCirculatingSupply(toAddAmount - toRemoveAmount)
+	} else if toAddAmount < toRemoveAmount {
+		uis.subtractFromCirculatingSupply(toRemoveAmount - toAddAmount)
+	}
+
 	uis.discard()
 	return nil
 }
 
 func (uis *utxoIndexStore) addAndCommitOutpointsWithoutTransaction(utxoPairs []*externalapi.OutpointAndUTXOEntryPair) error {
+	toAddAmount := uint64(0)
 	for _, pair := range utxoPairs {
 		bucket := uis.bucketForScriptPublicKey(pair.UTXOEntry.ScriptPublicKey())
 		key, err := uis.convertOutpointToKey(bucket, pair.Outpoint)
 		if err != nil {
 			return err
 		}
+
 		serializedUTXOEntry, err := serializeUTXOEntry(pair.UTXOEntry)
 		if err != nil {
 			return err
 		}
+
 		err = uis.database.Put(key, serializedUTXOEntry)
 		if err != nil {
 			return err
 		}
+		toAddAmount = toAddAmount + pair.UTXOEntry.Amount()
+	}
+
+	err := uis.addToCirculatingSupply(toAddAmount)
+	if err != nil {
+		return err
 	}
 
 	return nil
@@ -312,4 +335,60 @@ func (uis *utxoIndexStore) deleteAll() error {
 	}
 
 	return nil
+}
+
+func (uis *utxoIndexStore) addToCirculatingSupply(toAddcirculatingSupply uint64) error {
+	circulatingSupply, err := uis.database.Get(circulatingSupplyKey)
+	if err != nil {
+		return err
+	}
+	oldCirculatingSupplyBytes := make([]byte, 8)
+	newCirculatingSupplyBytes := make([]byte, 8)
+
+	binary.BigEndian.PutUint64(oldCirculatingSupplyBytes, binary.BigEndian.Uint64(circulatingSupply)) //put circulating supply into b
+
+	binary.BigEndian.PutUint64(
+		newCirculatingSupplyBytes,
+		binary.BigEndian.Uint64(oldCirculatingSupplyBytes)+toAddcirculatingSupply,
+	)
+
+	uis.database.Put(
+		circulatingSupplyKey,
+		newCirculatingSupplyBytes,
+	)
+	return nil
+}
+
+func (uis *utxoIndexStore) subtractFromCirculatingSupply(toSubtractcirculatingSupply uint64) error {
+	circulatingSupply, err := uis.database.Get(circulatingSupplyKey)
+	if err != nil {
+		return err
+	}
+	oldCirculatingSupplyBytes := make([]byte, 8)
+	newCirculatingSupplyBytes := make([]byte, 8)
+
+	binary.BigEndian.PutUint64(oldCirculatingSupplyBytes, binary.BigEndian.Uint64(circulatingSupply)) //put circulating supply into b
+
+	binary.BigEndian.PutUint64(
+		newCirculatingSupplyBytes,
+		binary.BigEndian.Uint64(oldCirculatingSupplyBytes)-toSubtractcirculatingSupply,
+	)
+
+	uis.database.Put(
+		circulatingSupplyKey,
+		newCirculatingSupplyBytes,
+	)
+	return nil
+}
+
+func (uis *utxoIndexStore) getCirculatingSupply() (uint64, error) {
+	if uis.isAnythingStaged() {
+		return 0, errors.Errorf("cannot get circulatingSupply while staging isn't empty")
+	}
+	circulatingSupply, err := uis.database.Get(circulatingSupplyKey)
+	if err != nil {
+		return 0, err
+	}
+	return binary.BigEndian.Uint64(circulatingSupply), nil
+
 }
