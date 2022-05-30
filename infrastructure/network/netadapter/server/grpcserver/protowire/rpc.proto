@@ -656,6 +656,8 @@ message GetInfoResponseMessage{
   string p2pId = 1;
   uint64 mempoolSize = 2;
   string serverVersion = 3;
+  bool isUtxoindexSet = 4;
+  bool isNearlySynced = 5;
   RPCError error = 1000;
 }
 
