@@ -2,6 +2,8 @@ package utxoindex
 
 import (
 	"encoding/binary"
+
+	"github.com/kaspanet/kaspad/domain/consensus/database/binaryserialization"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/infrastructure/db/database"
 	"github.com/kaspanet/kaspad/infrastructure/logger"
@@ -10,7 +12,7 @@ import (
 
 var utxoIndexBucket = database.MakeBucket([]byte("utxo-index"))
 var virtualParentsKey = database.MakeBucket([]byte("")).Key([]byte("utxo-index-virtual-parents"))
-var circulatingSupplyKey = database.MakeBucket([]byte("")).Key([]byte("circulating-supply"))
+var circulatingSupplyKey = database.MakeBucket([]byte("")).Key([]byte("utxo-index-circulating-supply"))
 
 type utxoIndexStore struct {
 	database database.Database
@@ -78,19 +80,19 @@ func (uis *utxoIndexStore) remove(scriptPublicKey *externalapi.ScriptPublicKey, 
 		}
 	}
 
-	// Create a UTXOOutpoints entry in `toRemove` if it doesn't exist
+	// Create a UTXOOutpointEntryPair in `toRemove` if it doesn't exist
 	if _, ok := uis.toRemove[key]; !ok {
 		log.Tracef("Creating key %s in `toRemove`", key)
 		uis.toRemove[key] = make(UTXOOutpointEntryPairs)
 	}
 
 	// Return an error if the outpoint already exists in `toRemove`
-	toRemoveOutpointsOfKey := uis.toRemove[key]
-	if _, ok := toRemoveOutpointsOfKey[*outpoint]; ok {
+	toRemovePairsOfKey := uis.toRemove[key]
+	if _, ok := toRemovePairsOfKey[*outpoint]; ok {
 		return errors.Errorf("cannot remove outpoint %s because it's being removed already", outpoint)
 	}
 
-	toRemoveOutpointsOfKey[*outpoint] = utxoEntry
+	toRemovePairsOfKey[*outpoint] = utxoEntry
 
 	log.Tracef("Removed outpoint %s:%d from scriptPublicKey %s",
 		outpoint.TransactionID, outpoint.Index, key)
@@ -163,15 +165,28 @@ func (uis *utxoIndexStore) commit() error {
 		return err
 	}
 
+	if toAddAmount != toRemoveAmount {
+		circulatingSupplyBytes, err := dbTransaction.Get(circulatingSupplyKey)
+		if err != nil {
+			return err
+		}
+
+		circulatingSupply, err := binaryserialization.DeserializeUint64(circulatingSupplyBytes)
+		if err != nil {
+			return err
+		}
+		err = dbTransaction.Put(
+			circulatingSupplyKey,
+			binaryserialization.SerializeUint64(circulatingSupply+toAddAmount-toRemoveAmount),
+		)
+		if err != nil {
+			return err
+		}
+	}
+
 	err = dbTransaction.Commit()
 	if err != nil {
 		return err
-	}
-
-	if toAddAmount > toRemoveAmount {
-		uis.addToCirculatingSupply(toAddAmount - toRemoveAmount)
-	} else if toAddAmount < toRemoveAmount {
-		uis.subtractFromCirculatingSupply(toRemoveAmount - toAddAmount)
 	}
 
 	uis.discard()
@@ -199,7 +214,10 @@ func (uis *utxoIndexStore) addAndCommitOutpointsWithoutTransaction(utxoPairs []*
 		toAddAmount = toAddAmount + pair.UTXOEntry.Amount()
 	}
 
-	err := uis.addToCirculatingSupply(toAddAmount)
+	err := uis.database.Put(
+		circulatingSupplyKey,
+		binaryserialization.SerializeUint64(toAddAmount),
+	)
 	if err != nil {
 		return err
 	}
@@ -317,6 +335,11 @@ func (uis *utxoIndexStore) deleteAll() error {
 		return err
 	}
 
+	err = uis.database.Delete(circulatingSupplyKey)
+	if err != nil {
+		return err
+	}
+
 	cursor, err := uis.database.Cursor(utxoIndexBucket)
 	if err != nil {
 		return err
@@ -337,50 +360,6 @@ func (uis *utxoIndexStore) deleteAll() error {
 	return nil
 }
 
-func (uis *utxoIndexStore) addToCirculatingSupply(toAddcirculatingSupply uint64) error {
-	circulatingSupply, err := uis.database.Get(circulatingSupplyKey)
-	if err != nil {
-		return err
-	}
-	oldCirculatingSupplyBytes := make([]byte, 8)
-	newCirculatingSupplyBytes := make([]byte, 8)
-
-	binary.BigEndian.PutUint64(oldCirculatingSupplyBytes, binary.BigEndian.Uint64(circulatingSupply)) //put circulating supply into b
-
-	binary.BigEndian.PutUint64(
-		newCirculatingSupplyBytes,
-		binary.BigEndian.Uint64(oldCirculatingSupplyBytes)+toAddcirculatingSupply,
-	)
-
-	uis.database.Put(
-		circulatingSupplyKey,
-		newCirculatingSupplyBytes,
-	)
-	return nil
-}
-
-func (uis *utxoIndexStore) subtractFromCirculatingSupply(toSubtractcirculatingSupply uint64) error {
-	circulatingSupply, err := uis.database.Get(circulatingSupplyKey)
-	if err != nil {
-		return err
-	}
-	oldCirculatingSupplyBytes := make([]byte, 8)
-	newCirculatingSupplyBytes := make([]byte, 8)
-
-	binary.BigEndian.PutUint64(oldCirculatingSupplyBytes, binary.BigEndian.Uint64(circulatingSupply)) //put circulating supply into b
-
-	binary.BigEndian.PutUint64(
-		newCirculatingSupplyBytes,
-		binary.BigEndian.Uint64(oldCirculatingSupplyBytes)-toSubtractcirculatingSupply,
-	)
-
-	uis.database.Put(
-		circulatingSupplyKey,
-		newCirculatingSupplyBytes,
-	)
-	return nil
-}
-
 func (uis *utxoIndexStore) getCirculatingSupply() (uint64, error) {
 	if uis.isAnythingStaged() {
 		return 0, errors.Errorf("cannot get circulatingSupply while staging isn't empty")
@@ -389,6 +368,5 @@ func (uis *utxoIndexStore) getCirculatingSupply() (uint64, error) {
 	if err != nil {
 		return 0, err
 	}
-	return binary.BigEndian.Uint64(circulatingSupply), nil
-
+	return binaryserialization.DeserializeUint64(circulatingSupply)
 }
