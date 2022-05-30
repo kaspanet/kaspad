@@ -55,7 +55,7 @@ func (x *KaspadMessage_GetBlockTemplateResponse) fromAppMessage(message *appmess
 
 	x.GetBlockTemplateResponse = &GetBlockTemplateResponseMessage{
 		Block:    block,
-		IsSynced: message.IsSynced,
+		IsNearlySynced: message.IsNearlySynced,
 		Error:    err,
 	}
 	return nil
@@ -83,7 +83,7 @@ func (x *GetBlockTemplateResponseMessage) toAppMessage() (appmessage.Message, er
 	}
 	return &appmessage.GetBlockTemplateResponseMessage{
 		Block:    msgBlock,
-		IsSynced: x.IsSynced,
+		IsNearlySynced: x.IsNearlySynced,
 		Error:    rpcError,
 	}, nil
 }

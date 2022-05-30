@@ -26,7 +26,7 @@ func NewGetBlockTemplateRequestMessage(payAddress, extraData string) *GetBlockTe
 type GetBlockTemplateResponseMessage struct {
 	baseMessage
 	Block    *RPCBlock
-	IsSynced bool
+	IsNearlySynced bool
 
 	Error *RPCError
 }
@@ -37,9 +37,9 @@ func (msg *GetBlockTemplateResponseMessage) Command() MessageCommand {
 }
 
 // NewGetBlockTemplateResponseMessage returns a instance of the message
-func NewGetBlockTemplateResponseMessage(block *RPCBlock, isSynced bool) *GetBlockTemplateResponseMessage {
+func NewGetBlockTemplateResponseMessage(block *RPCBlock, isNearlySynced bool) *GetBlockTemplateResponseMessage {
 	return &GetBlockTemplateResponseMessage{
 		Block:    block,
-		IsSynced: isSynced,
+		IsNearlySynced: isNearlySynced,
 	}
 }

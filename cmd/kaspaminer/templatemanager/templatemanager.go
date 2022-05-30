@@ -9,7 +9,7 @@ import (
 
 var currentTemplate *externalapi.DomainBlock
 var currentState *pow.State
-var isSynced bool
+var isNearlySynced bool
 var lock = &sync.Mutex{}
 
 // Get returns the template to work on
@@ -22,7 +22,7 @@ func Get() (*externalapi.DomainBlock, *pow.State, bool) {
 	}
 	block := *currentTemplate
 	state := *currentState
-	return &block, &state, isSynced
+	return &block, &state, isNearlySynced
 }
 
 // Set sets the current template to work on
@@ -35,6 +35,6 @@ func Set(template *appmessage.GetBlockTemplateResponseMessage) error {
 	defer lock.Unlock()
 	currentTemplate = block
 	currentState = pow.NewState(block.Header.ToMutable())
-	isSynced = template.IsSynced
+	isNearlySynced = template.IsNearlySynced
 	return nil
 }
