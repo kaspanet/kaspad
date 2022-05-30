@@ -137,6 +137,8 @@ message KaspadMessage {
     NewBlockTemplateNotificationMessage newBlockTemplateNotification = 1083;
     GetMempoolEntriesByAddressesRequestMessage getMempoolEntriesByAddressesRequest = 1084;
     GetMempoolEntriesByAddressesResponseMessage getMempoolEntriesByAddressesResponse = 1085;
+    GetCoinSupplyRequestMessage getCoinSupplyRequest = 1086;
+    GetCoinSupplyResponseMessage getCoinSupplyResponse= 1087;
   }
 }
 

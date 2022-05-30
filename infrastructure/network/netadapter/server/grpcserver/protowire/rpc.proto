@@ -705,3 +705,12 @@ message  GetMempoolEntriesByAddressesResponseMessage{
   RPCError error = 1000;
 }
 
+message GetCoinSupplyRequestMessage{
+}
+
+message GetCoinSupplyResponseMessage{
+        uint64 totalSompi = 1; // note: this is only a theoretical total supply, actual total supply may is probably less by 1 - 5%.
+        uint64 circulatingSompi = 2;
+
+        RPCError error = 1000;
+}

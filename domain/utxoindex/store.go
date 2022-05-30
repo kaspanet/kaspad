@@ -360,7 +360,7 @@ func (uis *utxoIndexStore) deleteAll() error {
 	return nil
 }
 
-func (uis *utxoIndexStore) getCirculatingSupply() (uint64, error) {
+func (uis *utxoIndexStore) getCirculatingSompiSupply() (uint64, error) {
 	if uis.isAnythingStaged() {
 		return 0, errors.Errorf("cannot get circulatingSupply while staging isn't empty")
 	}

@@ -110,6 +110,8 @@
     - [MempoolEntryByAddress](#protowire.MempoolEntryByAddress)
     - [GetMempoolEntriesByAddressesRequestMessage](#protowire.GetMempoolEntriesByAddressesRequestMessage)
     - [GetMempoolEntriesByAddressesResponseMessage](#protowire.GetMempoolEntriesByAddressesResponseMessage)
+    - [GetCoinSupplyRequestMessage](#protowire.GetCoinSupplyRequestMessage)
+    - [GetCoinSupplyResponseMessage](#protowire.GetCoinSupplyResponseMessage)
   
     - [SubmitBlockResponseMessage.RejectReason](#protowire.SubmitBlockResponseMessage.RejectReason)
   
@@ -1811,6 +1813,33 @@ See NotifyNewBlockTemplateRequestMessage
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | entries | [MempoolEntryByAddress](#protowire.MempoolEntryByAddress) | repeated |  |
+| error | [RPCError](#protowire.RPCError) |  |  |
+
+
+
+
+
+
+<a name="protowire.GetCoinSupplyRequestMessage"></a>
+
+### GetCoinSupplyRequestMessage
+
+
+
+
+
+
+
+<a name="protowire.GetCoinSupplyResponseMessage"></a>
+
+### GetCoinSupplyResponseMessage
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| totalSompi | [uint64](#uint64) |  | note: this is only a theoretical total supply, actual total supply may is probably less by 1 - 5%. |
+| circulatingSompi | [uint64](#uint64) |  |  |
 | error | [RPCError](#protowire.RPCError) |  |  |
 
 
