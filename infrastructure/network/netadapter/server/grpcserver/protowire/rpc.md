@@ -1209,7 +1209,7 @@ See: UtxosChangedNotificationMessage
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| addresses | [string](#string) | repeated |  |
+| addresses | [string](#string) | repeated | Leave empty to get all updates |
 
 
 
@@ -1688,6 +1688,8 @@ GetInfoRequestMessage returns info about the node.
 | p2pId | [string](#string) |  |  |
 | mempoolSize | [uint64](#uint64) |  |  |
 | serverVersion | [string](#string) |  |  |
+| isUtxoIndexed | [bool](#bool) |  |  |
+| isSynced | [bool](#bool) |  |  |
 | error | [RPCError](#protowire.RPCError) |  |  |
 
 
