@@ -158,9 +158,9 @@ message GetBlockTemplateRequestMessage{
 message GetBlockTemplateResponseMessage{
   RpcBlock block = 3;
 
-  // Whether kaspad thinks that it's synced.
-  // Callers are discouraged (but not forbidden) from solving blocks when kaspad is not synced.
-  // That is because when kaspad isn't in sync with the rest of the network there's a high
+  // Whether kaspad thinks that it's nearly synced.
+  // Callers are discouraged (but not forbidden) from solving blocks when kaspad is not nearly synced.
+  // That is because when kaspad isn't nearly in sync with the rest of the network there's a high
   // chance the block will never be accepted, thus the solving effort would have been wasted.
   bool isNearlySynced = 2;
 
