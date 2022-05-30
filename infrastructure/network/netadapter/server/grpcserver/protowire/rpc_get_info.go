@@ -31,6 +31,7 @@ func (x *KaspadMessage_GetInfoResponse) fromAppMessage(message *appmessage.GetIn
 		ServerVersion:  message.ServerVersion,
 		MempoolSize:    message.MempoolSize,
 		IsUtxoindexSet: message.IsUtxoindexSet,
+		IsNearlySynced: message.IsNearlySynced,
 		Error:          err,
 	}
 	return nil
