@@ -13,7 +13,7 @@ func HandleGetInfo(context *rpccontext.Context, _ *router.Router, _ appmessage.M
 	if err != nil {
 		return nil, err
 	}
-	
+
 	response := appmessage.NewGetInfoResponseMessage(
 		context.NetAdapter.ID().String(),
 		uint64(context.Domain.MiningManager().TransactionCount()),
