@@ -709,7 +709,7 @@ message GetCoinSupplyRequestMessage{
 }
 
 message GetCoinSupplyResponseMessage{
-        uint64 totalSompi = 1; // note: this is only a theoretical total supply, actual total supply may is probably less by 1 - 5%.
+        uint64 totalSompi = 1; // note: this is a hard coded totalSupply, actual totalSupply is expected to deviate by upto -5%, but cannot be measured exactly.
         uint64 circulatingSompi = 2;
 
         RPCError error = 1000;

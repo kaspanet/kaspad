@@ -1838,7 +1838,7 @@ See NotifyNewBlockTemplateRequestMessage
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| totalSompi | [uint64](#uint64) |  | note: this is only a theoretical total supply, actual total supply may is probably less by 1 - 5%. |
+| totalSompi | [uint64](#uint64) |  | note: this is a hard coded totalSupply, actual totalSupply is expected to deviate by upto -5%, but cannot be measured exactly. |
 | circulatingSompi | [uint64](#uint64) |  |  |
 | error | [RPCError](#protowire.RPCError) |  |  |
 
