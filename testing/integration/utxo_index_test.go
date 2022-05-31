@@ -54,8 +54,6 @@ func TestCirculatingSupply(t *testing.T) {
 
 }
 
-
-
 func TestUTXOIndex(t *testing.T) {
 	// Setup a single kaspad instance
 	harnessParams := &harnessParams{
@@ -103,7 +101,7 @@ func TestUTXOIndex(t *testing.T) {
 	rewardsMinedViaBlockCountSompi := uint64(
 		(getBlockCountResponse.BlockCount - 2) * constants.SompiPerKaspa * 500, // -2 because of genesis and virtual.
 	)
-	
+
 	if getCoinSupplyResponse.CirculatingSompi != rewardsMinedSompi {
 		t.Fatalf("Error: Circulating supply Mismatch - Circulating Sompi: %d Sompi Mined: %d", getCoinSupplyResponse.CirculatingSompi, rewardsMinedSompi)
 	} else if getCoinSupplyResponse.CirculatingSompi != rewardsMinedViaBlockCountSompi {
