@@ -182,7 +182,7 @@ func (ui *UTXOIndex) removeUTXOs(toRemove externalapi.UTXOCollection) error {
 
 // UTXOs returns all the UTXOs for the given scriptPublicKey
 func (ui *UTXOIndex) UTXOs(scriptPublicKey *externalapi.ScriptPublicKey) (UTXOOutpointEntryPairs, error) {
-	onEnd := logger.LogAndMeasureExecutionTime(log, "UTXOIndex.UTXO")
+	onEnd := logger.LogAndMeasureExecutionTime(log, "UTXOIndex.UTXOs")
 	defer onEnd()
 
 	ui.mutex.Lock()
