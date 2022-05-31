@@ -3,7 +3,6 @@ Kaspad v0.12.1 - 2022-05-31
 
 * Fix utxoindex synchronization bug which resulted in kaspawallet orphan tx errors (#2052, #2056, #2059)
 * Add a channel mechanism for consensus events to be processed in the order they were produced (#2052, #2056, #2059)
-* Wallet address synchronization improvement (#2025)
 * Block template cache improvement (#2023)
 * Improved staging shard performance (#2034)
 * Add finality check to ResolveVirtual (#2041)
@@ -12,11 +11,12 @@ Kaspad v0.12.1 - 2022-05-31
 
 Kaspa wallet:
 * Various kaspawallet text fixes and log additions (#2032, #2047, #2062)
-* Add support for `from` address in `kaspawallet send` by @tmrlvi in https://github.com/kaspanet/kaspad/pull/1964
-* Make kaspawallet ignore outputs that exist in the mempool by @someone235 in https://github.com/kaspanet/kaspad/pull/2053
-* Wrap the entire wallet send operation with a lock by @michaelsutton in https://github.com/kaspanet/kaspad/pull/2063
+* Wallet address synchronization improvement (#2025)
+* Add support for `from` address in `kaspawallet send` (#1964)
+* Make kaspawallet ignore outputs that exist in the mempool (#2053)
+* Wrap the entire wallet send operation with a lock (#2063)
 
-RPC API: 
+RPC API:
 * Add "GetMempoolEntriesByAddresses" to kaspad RPC (#2022)
 * Make sure RPCErrors are returned and do not crash the system (#2039)
 * Add AcceptedTransactionIDs to ChainChanged notification and VirtualSelectedParentChain RPC (#2036, for exchanges to track tx confirmations)
