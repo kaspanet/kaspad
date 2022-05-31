@@ -171,8 +171,7 @@ func (ui *UTXOIndex) removeUTXOs(toRemove externalapi.UTXOCollection) error {
 
 // UTXOs returns all the UTXOs for the given scriptPublicKey
 func (ui *UTXOIndex) UTXOs(scriptPublicKey *externalapi.ScriptPublicKey) (UTXOOutpointEntryPairs, error) {
-	onEnd := logger.LogAndMeasureExecutionTime(log, "UTXOIndex.UTXOs")
-	defer onEnd()
+//	defer onEnd()
 
 	ui.mutex.Lock()
 	defer ui.mutex.Unlock()
@@ -180,9 +179,13 @@ func (ui *UTXOIndex) UTXOs(scriptPublicKey *externalapi.ScriptPublicKey) (UTXOOu
 	return ui.store.getUTXOOutpointEntryPairs(scriptPublicKey)
 }
 
-// GetCirculatingSupply returns the current circulating supply of sompis
+// GetCirculatingSompiSupply returns the current circulating supply of sompis in the network
 func (ui *UTXOIndex) GetCirculatingSompiSupply() (uint64, error) {
+//	onEnd := logger.LogAndMeasureExecutionTime(log, "UTXOIndex.GetCirculatingSompiSupply")
+//	defer onEnd()
+
 	ui.mutex.Lock()
 	defer ui.mutex.Unlock()
+
 	return ui.store.getCirculatingSompiSupply()
 }

@@ -1,6 +1,6 @@
 package appmessage
 
-// GetInfoRequestMessage is an appmessage corresponding to
+// GetCoinSupplyRequestMessage is an appmessage corresponding to
 // its respective RPC message
 type GetCoinSupplyRequestMessage struct {
 	baseMessage
@@ -11,16 +11,16 @@ func (msg *GetCoinSupplyRequestMessage) Command() MessageCommand {
 	return CmdGetCoinSupplyRequestMessage
 }
 
-// NewGetInfoRequestMessage returns a instance of the message
+// NewGetCoinSupplyRequestMessage returns a instance of the message
 func NewGetCoinSupplyRequestMessage() *GetCoinSupplyRequestMessage {
 	return &GetCoinSupplyRequestMessage{}
 }
 
-// GetInfoResponseMessage is an appmessage corresponding to
+// GetCoinSupplyResponseMessage is an appmessage corresponding to
 // its respective RPC message
 type GetCoinSupplyResponseMessage struct {
 	baseMessage
-	TotalSompi uint64
+	TotalSompi       uint64
 	CirculatingSompi uint64
 
 	Error *RPCError
@@ -31,10 +31,10 @@ func (msg *GetCoinSupplyResponseMessage) Command() MessageCommand {
 	return CmdGetCoinSupplyResponseMessage
 }
 
-// NewGetInfoResponseMessage returns a instance of the message
+// NewGetCoinSupplyResponseMessage returns a instance of the message
 func NewGetCoinSupplyResponseMessage(totalSompi uint64, circulatingSompi uint64) *GetCoinSupplyResponseMessage {
 	return &GetCoinSupplyResponseMessage{
-		TotalSompi:    		totalSompi,
-		CirculatingSompi:	circulatingSompi,
+		TotalSompi:       totalSompi,
+		CirculatingSompi: circulatingSompi,
 	}
 }

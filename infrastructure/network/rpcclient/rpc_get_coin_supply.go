@@ -2,7 +2,7 @@ package rpcclient
 
 import "github.com/kaspanet/kaspad/app/appmessage"
 
-// GetInfo sends an RPC request respective to the function's name and returns the RPC server's response
+// GetCoinSupply sends an RPC request respective to the function's name and returns the RPC server's response
 func (c *RPCClient) GetCoinSupply() (*appmessage.GetCoinSupplyResponseMessage, error) {
 	err := c.rpcRouter.outgoingRoute().Enqueue(appmessage.NewGetCoinSupplyRequestMessage())
 	if err != nil {

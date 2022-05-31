@@ -8,7 +8,7 @@ import (
 	"github.com/kaspanet/kaspad/infrastructure/network/rpcclient"
 )
 
-const rpcTimeout = 10 * time.Second
+const rpcTimeout = 60 * time.Second
 
 type testRPCClient struct {
 	*rpcclient.RPCClient

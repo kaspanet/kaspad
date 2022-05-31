@@ -6,7 +6,7 @@ import (
 )
 
 func (x *KaspadMessage_GetCoinSupplyRequest) toAppMessage() (appmessage.Message, error) {
-	return &appmessage.GetInfoRequestMessage{}, nil
+	return &appmessage.GetCoinSupplyRequestMessage{}, nil
 }
 
 func (x *KaspadMessage_GetCoinSupplyRequest) fromAppMessage(_ *appmessage.GetCoinSupplyRequestMessage) error {
@@ -16,7 +16,7 @@ func (x *KaspadMessage_GetCoinSupplyRequest) fromAppMessage(_ *appmessage.GetCoi
 
 func (x *KaspadMessage_GetCoinSupplyResponse) toAppMessage() (appmessage.Message, error) {
 	if x == nil {
-		return nil, errors.Wrapf(errorNil, "KaspadMessage_GetInfoResponse is nil")
+		return nil, errors.Wrapf(errorNil, "KaspadMessage_GetCoinSupplyResponse is nil")
 	}
 	return x.GetCoinSupplyResponse.toAppMessage()
 }
@@ -27,17 +27,17 @@ func (x *KaspadMessage_GetCoinSupplyResponse) fromAppMessage(message *appmessage
 		err = &RPCError{Message: message.Error.Message}
 	}
 	x.GetCoinSupplyResponse = &GetCoinSupplyResponseMessage{
-		TotalSompi:		message.TotalSompi,
-		CirculatingSompi:	message.CirculatingSompi,
+		TotalSompi:       message.TotalSompi,
+		CirculatingSompi: message.CirculatingSompi,
 
-		Error:         err,
+		Error: err,
 	}
 	return nil
 }
 
 func (x *GetCoinSupplyResponseMessage) toAppMessage() (appmessage.Message, error) {
 	if x == nil {
-		return nil, errors.Wrapf(errorNil, "GetInfoResponseMessage is nil")
+		return nil, errors.Wrapf(errorNil, "GetCoinSupplyResponseMessage is nil")
 	}
 	rpcErr, err := x.Error.toAppMessage()
 	// Error is an optional field
@@ -46,8 +46,8 @@ func (x *GetCoinSupplyResponseMessage) toAppMessage() (appmessage.Message, error
 	}
 
 	return &appmessage.GetCoinSupplyResponseMessage{
-		TotalSompi:		x.TotalSompi,
-		CirculatingSompi:	x.CirculatingSompi,
+		TotalSompi:       x.TotalSompi,
+		CirculatingSompi: x.CirculatingSompi,
 
 		Error: rpcErr,
 	}, nil
