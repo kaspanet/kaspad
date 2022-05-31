@@ -1,3 +1,28 @@
+Kaspad v0.12.1 - 2022-05-31
+===========================
+
+* Fix utxoindex synchronization bug which resulted in kaspawallet orphan tx errors (#2052, #2056, #2059)
+* Add a channel mechanism for consensus events to be processed in the order they were produced (#2052, #2056, #2059)
+* Block template cache improvement (#2023)
+* Improved staging shard performance (#2034)
+* Add finality check to ResolveVirtual (#2041)
+* Update Dockerfile for go 1.18 (#2038)
+* Remove HF1 activation code (#2042)
+
+Kaspa wallet:
+* Various kaspawallet text fixes and log additions (#2032, #2047, #2062)
+* Wallet address synchronization improvement (#2025)
+* Add support for `from` address in `kaspawallet send` (#1964)
+* Make kaspawallet ignore outputs that exist in the mempool (#2053)
+* Wrap the entire wallet send operation with a lock (#2063)
+
+RPC API:
+* Add "GetMempoolEntriesByAddresses" to kaspad RPC (#2022)
+* Make sure RPCErrors are returned and do not crash the system (#2039)
+* Add AcceptedTransactionIDs to ChainChanged notification and VirtualSelectedParentChain RPC (#2036, for exchanges to track tx confirmations)
+* Allow blank address in NotifyUTXOsChanged to get all updates (#2027)
+* Include isSynced and isUtxoIndexed in GetInfoResponse (#2068)
+
 Kaspad v0.12.0 - 2022-04-14
 ===========================
 Breaking changes:
