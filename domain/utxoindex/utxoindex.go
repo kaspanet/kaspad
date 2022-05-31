@@ -25,14 +25,20 @@ func New(domain domain.Domain, database database.Database) (*UTXOIndex, error) {
 		domain: domain,
 		store:  newUTXOIndexStore(database),
 	}
-
 	isSynced, err := utxoIndex.isSynced()
 	if err != nil {
 		return nil, err
 	}
 
-	if !isSynced {
-		err = utxoIndex.Reset()
+	///Has check is for migration to circulating supply, can be removed eventually.
+	hasCirculatingSupplyKey, err := utxoIndex.store.database.Has(circulatingSupplyKey)
+	if err != nil {
+		return nil, err
+	}
+
+	if !isSynced || !hasCirculatingSupplyKey {
+
+		err := utxoIndex.Reset()
 		if err != nil {
 			return nil, err
 		}
@@ -52,6 +58,11 @@ func (ui *UTXOIndex) Reset() error {
 	}
 
 	virtualInfo, err := ui.domain.Consensus().GetVirtualInfo()
+	if err != nil {
+		return err
+	}
+
+	err = ui.store.intalizeCirculatingSompiSupply() //calculate sompi supply from database before adding virtuals
 	if err != nil {
 		return err
 	}

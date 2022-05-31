@@ -378,9 +378,9 @@ func (nl *NotificationListener) convertUTXOChangesToUTXOsChangedNotification(
 				notification.Added = append(notification.Added, utxosByAddressesEntries...)
 			}
 		}
-		for scriptPublicKeyString, removedOutpoints := range utxoChanges.Removed {
+		for scriptPublicKeyString, removedPairs := range utxoChanges.Removed {
 			if listenerAddress, ok := nl.propagateUTXOsChangedNotificationAddresses[scriptPublicKeyString]; ok {
-				utxosByAddressesEntries := convertUTXOOutpointsToUTXOsByAddressesEntries(listenerAddress.Address, removedOutpoints)
+				utxosByAddressesEntries := ConvertUTXOOutpointEntryPairsToUTXOsByAddressesEntries(listenerAddress.Address, removedPairs)
 				notification.Removed = append(notification.Removed, utxosByAddressesEntries...)
 			}
 		}
@@ -391,8 +391,8 @@ func (nl *NotificationListener) convertUTXOChangesToUTXOsChangedNotification(
 				utxosByAddressesEntries := ConvertUTXOOutpointEntryPairsToUTXOsByAddressesEntries(listenerAddress.Address, addedPairs)
 				notification.Added = append(notification.Added, utxosByAddressesEntries...)
 			}
-			if removedOutpoints, ok := utxoChanges.Removed[listenerScriptPublicKeyString]; ok {
-				utxosByAddressesEntries := convertUTXOOutpointsToUTXOsByAddressesEntries(listenerAddress.Address, removedOutpoints)
+			if removedPairs, ok := utxoChanges.Removed[listenerScriptPublicKeyString]; ok {
+				utxosByAddressesEntries := ConvertUTXOOutpointEntryPairsToUTXOsByAddressesEntries(listenerAddress.Address, removedPairs)
 				notification.Removed = append(notification.Removed, utxosByAddressesEntries...)
 			}
 		}
@@ -406,13 +406,13 @@ func (nl *NotificationListener) convertUTXOChangesToUTXOsChangedNotification(
 			utxosByAddressesEntries := ConvertUTXOOutpointEntryPairsToUTXOsByAddressesEntries(addressString, addedPairs)
 			notification.Added = append(notification.Added, utxosByAddressesEntries...)
 		}
-		for scriptPublicKeyString, removedOutpoints := range utxoChanges.Removed {
+		for scriptPublicKeyString, removedPAirs := range utxoChanges.Removed {
 			addressString, err := nl.scriptPubKeyStringToAddressString(scriptPublicKeyString)
 			if err != nil {
 				return nil, err
 			}
 
-			utxosByAddressesEntries := convertUTXOOutpointsToUTXOsByAddressesEntries(addressString, removedOutpoints)
+			utxosByAddressesEntries := ConvertUTXOOutpointEntryPairsToUTXOsByAddressesEntries(addressString, removedPAirs)
 			notification.Removed = append(notification.Removed, utxosByAddressesEntries...)
 		}
 	}

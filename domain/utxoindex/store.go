@@ -119,7 +119,7 @@ func (uis *utxoIndexStore) commit() error {
 	}
 	defer dbTransaction.RollbackUnlessClosed()
 
-	toRemoveAmount := uint64(0)
+	toRemoveSompiSupply := uint64(0)
 
 	for scriptPublicKeyString, toRemoveUTXOOutpointEntryPairs := range uis.toRemove {
 		scriptPublicKey := ConvertStringToScriptPublicKey(scriptPublicKeyString)
@@ -133,11 +133,11 @@ func (uis *utxoIndexStore) commit() error {
 			if err != nil {
 				return err
 			}
-			toRemoveAmount = toRemoveAmount + utxoEntryToRemove.Amount()
+			toRemoveSompiSupply = toRemoveSompiSupply + utxoEntryToRemove.Amount()
 		}
 	}
 
-	toAddAmount := uint64(0)
+	toAddSompiSupply := uint64(0)
 
 	for scriptPublicKeyString, toAddUTXOOutpointEntryPairs := range uis.toAdd {
 		scriptPublicKey := ConvertStringToScriptPublicKey(scriptPublicKeyString)
@@ -155,7 +155,7 @@ func (uis *utxoIndexStore) commit() error {
 			if err != nil {
 				return err
 			}
-			toAddAmount = toAddAmount + utxoEntryToAdd.Amount()
+			toAddSompiSupply = toAddSompiSupply + utxoEntryToAdd.Amount()
 		}
 	}
 
@@ -165,23 +165,9 @@ func (uis *utxoIndexStore) commit() error {
 		return err
 	}
 
-	if toAddAmount != toRemoveAmount {
-		circulatingSupplyBytes, err := dbTransaction.Get(circulatingSupplyKey)
-		if err != nil {
-			return err
-		}
-
-		circulatingSupply, err := binaryserialization.DeserializeUint64(circulatingSupplyBytes)
-		if err != nil {
-			return err
-		}
-		err = dbTransaction.Put(
-			circulatingSupplyKey,
-			binaryserialization.SerializeUint64(circulatingSupply+toAddAmount-toRemoveAmount),
-		)
-		if err != nil {
-			return err
-		}
+	err = uis.updateCirculatingSompiSupply(dbTransaction, toAddSompiSupply, toRemoveSompiSupply)
+	if err != nil {
+		return err
 	}
 
 	err = dbTransaction.Commit()
@@ -194,7 +180,7 @@ func (uis *utxoIndexStore) commit() error {
 }
 
 func (uis *utxoIndexStore) addAndCommitOutpointsWithoutTransaction(utxoPairs []*externalapi.OutpointAndUTXOEntryPair) error {
-	toAddAmount := uint64(0)
+	toAddSompiSupply := uint64(0)
 	for _, pair := range utxoPairs {
 		bucket := uis.bucketForScriptPublicKey(pair.UTXOEntry.ScriptPublicKey())
 		key, err := uis.convertOutpointToKey(bucket, pair.Outpoint)
@@ -211,13 +197,10 @@ func (uis *utxoIndexStore) addAndCommitOutpointsWithoutTransaction(utxoPairs []*
 		if err != nil {
 			return err
 		}
-		toAddAmount = toAddAmount + pair.UTXOEntry.Amount()
+		toAddSompiSupply = toAddSompiSupply + pair.UTXOEntry.Amount()
 	}
 
-	err := uis.database.Put(
-		circulatingSupplyKey,
-		binaryserialization.SerializeUint64(toAddAmount),
-	)
+	err := uis.updateCirculatingSompiSupplyWithoutTransaction(toAddSompiSupply, uint64(0))
 	if err != nil {
 		return err
 	}
@@ -252,7 +235,7 @@ func (uis *utxoIndexStore) convertKeyToOutpoint(key *database.Key) (*externalapi
 
 func (uis *utxoIndexStore) stagedData() (
 	toAdd map[ScriptPublicKeyString]UTXOOutpointEntryPairs,
-	toRemove map[ScriptPublicKeyString]UTXOOutpoints,
+	toRemove map[ScriptPublicKeyString]UTXOOutpointEntryPairs,
 	virtualParents []*externalapi.DomainHash) {
 
 	toAddClone := make(map[ScriptPublicKeyString]UTXOOutpointEntryPairs, len(uis.toAdd))
@@ -264,13 +247,13 @@ func (uis *utxoIndexStore) stagedData() (
 		toAddClone[scriptPublicKeyString] = toAddUTXOOutpointEntryPairsClone
 	}
 
-	toRemoveClone := make(map[ScriptPublicKeyString]UTXOOutpoints, len(uis.toRemove))
-	for scriptPublicKeyString, toRemoveOutpoints := range uis.toRemove {
-		toRemoveOutpointsClone := make(UTXOOutpoints, len(toRemoveOutpoints))
-		for outpoint := range toRemoveOutpoints {
-			toRemoveOutpointsClone[outpoint] = struct{}{}
+	toRemoveClone := make(map[ScriptPublicKeyString]UTXOOutpointEntryPairs, len(uis.toRemove))
+	for scriptPublicKeyString, toRemoveUTXOOutpointEntryPairs := range uis.toRemove {
+		toRemoveUTXOOutpointEntryPairsClone := make(UTXOOutpointEntryPairs, len(toRemoveUTXOOutpointEntryPairs))
+		for outpoint, utxoEntry := range toRemoveUTXOOutpointEntryPairs {
+			toRemoveUTXOOutpointEntryPairsClone[outpoint] = utxoEntry
 		}
-		toRemoveClone[scriptPublicKeyString] = toRemoveOutpointsClone
+		toRemoveClone[scriptPublicKeyString] = toRemoveUTXOOutpointEntryPairsClone
 	}
 
 	return toAddClone, toRemoveClone, uis.virtualParents
@@ -357,6 +340,83 @@ func (uis *utxoIndexStore) deleteAll() error {
 		}
 	}
 
+	return nil
+}
+
+func (uis *utxoIndexStore) intalizeCirculatingSompiSupply() error {
+
+	cursor, err := uis.database.Cursor(utxoIndexBucket)
+	if err != nil {
+		return err
+	}
+	circulatingSompiSupplyInDatabase := uint64(0)
+	defer cursor.Close()
+	for cursor.Next() {
+		serializedUTXOEntry, err := cursor.Value()
+		if err != nil {
+			return err
+		}
+		utxoEntry, err := deserializeUTXOEntry(serializedUTXOEntry)
+		if err != nil {
+			return err
+		}
+
+		circulatingSompiSupplyInDatabase = circulatingSompiSupplyInDatabase + utxoEntry.Amount()
+	}
+
+	err = uis.database.Put(
+		circulatingSupplyKey,
+		binaryserialization.SerializeUint64(circulatingSompiSupplyInDatabase),
+	)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (uis *utxoIndexStore) updateCirculatingSompiSupply(dbTransaction database.Transaction, toAddSompiSupply uint64, toRemoveSompiSupply uint64) error {
+	if toAddSompiSupply != toRemoveSompiSupply {
+		circulatingSupplyBytes, err := dbTransaction.Get(circulatingSupplyKey)
+		if err != nil {
+			return err
+		}
+
+		circulatingSupply, err := binaryserialization.DeserializeUint64(circulatingSupplyBytes)
+		if err != nil {
+			return err
+		}
+		err = dbTransaction.Put(
+			circulatingSupplyKey,
+			binaryserialization.SerializeUint64(circulatingSupply+toAddSompiSupply-toRemoveSompiSupply),
+		)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (uis *utxoIndexStore) updateCirculatingSompiSupplyWithoutTransaction(toAddSompiSupply uint64, toRemoveSompiSupply uint64) error {
+	if toAddSompiSupply != toRemoveSompiSupply {
+		circulatingSupplyBytes, err := uis.database.Get(circulatingSupplyKey)
+		if err != nil {
+			return err
+		}
+
+		circulatingSupply, err := binaryserialization.DeserializeUint64(circulatingSupplyBytes)
+		if err != nil {
+			return err
+		}
+		err = uis.database.Put(
+			circulatingSupplyKey,
+			binaryserialization.SerializeUint64(circulatingSupply+toAddSompiSupply-toRemoveSompiSupply),
+		)
+		if err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
