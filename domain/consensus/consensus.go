@@ -426,6 +426,30 @@ func (s *consensus) GetBlockAcceptanceData(blockHash *externalapi.DomainHash) (e
 	return s.acceptanceDataStore.Get(s.databaseContext, stagingArea, blockHash)
 }
 
+func (s *consensus) GetBlocksAcceptanceData(blockHashes []*externalapi.DomainHash) ([]externalapi.AcceptanceData, error) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	stagingArea := model.NewStagingArea()
+	acceptanceData := make([]externalapi.AcceptanceData, len(blockHashes))
+
+	for i, blockHash := range blockHashes {
+		err := s.validateBlockHashExists(stagingArea, blockHash)
+		if err != nil {
+			return nil, err
+		}
+
+		blockData, err := s.acceptanceDataStore.Get(s.databaseContext, stagingArea, blockHash)
+		if err != nil {
+			return nil, err
+		}
+
+		acceptanceData[i] = blockData
+	}
+
+	return acceptanceData, nil
+}
+
 func (s *consensus) GetHashesBetween(lowHash, highHash *externalapi.DomainHash, maxBlocks uint64) (
 	hashes []*externalapi.DomainHash, actualHighHash *externalapi.DomainHash, err error) {
 
