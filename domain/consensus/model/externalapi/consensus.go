@@ -19,6 +19,7 @@ type Consensus interface {
 	GetBlockInfo(blockHash *DomainHash) (*BlockInfo, error)
 	GetBlockRelations(blockHash *DomainHash) (parents []*DomainHash, children []*DomainHash, err error)
 	GetBlockAcceptanceData(blockHash *DomainHash) (AcceptanceData, error)
+	GetBlocksAcceptanceData(blockHashes []*DomainHash) ([]AcceptanceData, error)
 
 	GetHashesBetween(lowHash, highHash *DomainHash, maxBlocks uint64) (hashes []*DomainHash, actualHighHash *DomainHash, err error)
 	GetAnticone(blockHash, contextHash *DomainHash, maxBlocks uint64) (hashes []*DomainHash, err error)

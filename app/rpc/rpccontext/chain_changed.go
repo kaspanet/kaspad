@@ -40,16 +40,18 @@ func (ctx *Context) getAndConvertAcceptedTransactionIDs(selectedParentChainChang
 
 	acceptedTransactionIDs := make([]*appmessage.AcceptedTransactionIDs, len(selectedParentChainChanges.Added))
 
+	chainBlocksAcceptanceData, err := ctx.Domain.Consensus().GetBlocksAcceptanceData(selectedParentChainChanges.Added)
+	if err != nil {
+		return nil, err
+	}
+
 	for i, addedChainBlock := range selectedParentChainChanges.Added {
-		blockAcceptanceData, err := ctx.Domain.Consensus().GetBlockAcceptanceData(addedChainBlock)
-		if err != nil {
-			return nil, err
-		}
+		chainBlockAcceptanceData := chainBlocksAcceptanceData[i]
 		acceptedTransactionIDs[i] = &appmessage.AcceptedTransactionIDs{
 			AcceptingBlockHash:     addedChainBlock.String(),
 			AcceptedTransactionIDs: nil,
 		}
-		for _, blockAcceptanceData := range blockAcceptanceData {
+		for _, blockAcceptanceData := range chainBlockAcceptanceData {
 			for _, transactionAcceptanceData := range blockAcceptanceData.TransactionAcceptanceData {
 				if transactionAcceptanceData.IsAccepted {
 					acceptedTransactionIDs[i].AcceptedTransactionIDs =
