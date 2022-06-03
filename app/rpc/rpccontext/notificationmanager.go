@@ -3,6 +3,10 @@ package rpccontext
 import (
 	"sync"
 
+	"github.com/kaspanet/kaspad/domain/dagconfig"
+
+	"github.com/kaspanet/kaspad/domain/consensus/utils/txscript"
+
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/domain/utxoindex"
 	routerpkg "github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
@@ -13,6 +17,7 @@ import (
 type NotificationManager struct {
 	sync.RWMutex
 	listeners map[*routerpkg.Router]*NotificationListener
+	params    *dagconfig.Params
 }
 
 // UTXOsChangedNotificationAddress represents a kaspad address.
@@ -24,6 +29,8 @@ type UTXOsChangedNotificationAddress struct {
 
 // NotificationListener represents a registered RPC notification listener
 type NotificationListener struct {
+	params *dagconfig.Params
+
 	propagateBlockAddedNotifications                            bool
 	propagateVirtualSelectedParentChainChangedNotifications     bool
 	propagateFinalityConflictNotifications                      bool
@@ -34,12 +41,14 @@ type NotificationListener struct {
 	propagatePruningPointUTXOSetOverrideNotifications           bool
 	propagateNewBlockTemplateNotifications                      bool
 
-	propagateUTXOsChangedNotificationAddresses map[utxoindex.ScriptPublicKeyString]*UTXOsChangedNotificationAddress
+	propagateUTXOsChangedNotificationAddresses                                    map[utxoindex.ScriptPublicKeyString]*UTXOsChangedNotificationAddress
+	includeAcceptedTransactionIDsInVirtualSelectedParentChainChangedNotifications bool
 }
 
 // NewNotificationManager creates a new NotificationManager
-func NewNotificationManager() *NotificationManager {
+func NewNotificationManager(params *dagconfig.Params) *NotificationManager {
 	return &NotificationManager{
+		params:    params,
 		listeners: make(map[*routerpkg.Router]*NotificationListener),
 	}
 }
@@ -49,7 +58,7 @@ func (nm *NotificationManager) AddListener(router *routerpkg.Router) {
 	nm.Lock()
 	defer nm.Unlock()
 
-	listener := newNotificationListener()
+	listener := newNotificationListener(nm.params)
 	nm.listeners[router] = listener
 }
 
@@ -73,6 +82,19 @@ func (nm *NotificationManager) Listener(router *routerpkg.Router) (*Notification
 	return listener, nil
 }
 
+// HasBlockAddedListeners indicates if the notification manager has any listeners for `BlockAdded` events
+func (nm *NotificationManager) HasBlockAddedListeners() bool {
+	nm.RLock()
+	defer nm.RUnlock()
+
+	for _, listener := range nm.listeners {
+		if listener.propagateBlockAddedNotifications {
+			return true
+		}
+	}
+	return false
+}
+
 // NotifyBlockAdded notifies the notification manager that a block has been added to the DAG
 func (nm *NotificationManager) NotifyBlockAdded(notification *appmessage.BlockAddedNotificationMessage) error {
 	nm.RLock()
@@ -80,10 +102,8 @@ func (nm *NotificationManager) NotifyBlockAdded(notification *appmessage.BlockAd
 
 	for router, listener := range nm.listeners {
 		if listener.propagateBlockAddedNotifications {
-			err := router.OutgoingRoute().Enqueue(notification)
-			if errors.Is(err, routerpkg.ErrRouteClosed) {
-				log.Warnf("Couldn't send notification: %s", err)
-			} else if err != nil {
+			err := router.OutgoingRoute().MaybeEnqueue(notification)
+			if err != nil {
 				return err
 			}
 		}
@@ -92,19 +112,45 @@ func (nm *NotificationManager) NotifyBlockAdded(notification *appmessage.BlockAd
 }
 
 // NotifyVirtualSelectedParentChainChanged notifies the notification manager that the DAG's selected parent chain has changed
-func (nm *NotificationManager) NotifyVirtualSelectedParentChainChanged(notification *appmessage.VirtualSelectedParentChainChangedNotificationMessage) error {
+func (nm *NotificationManager) NotifyVirtualSelectedParentChainChanged(
+	notification *appmessage.VirtualSelectedParentChainChangedNotificationMessage) error {
+
 	nm.RLock()
 	defer nm.RUnlock()
 
+	notificationWithoutAcceptedTransactionIDs := &appmessage.VirtualSelectedParentChainChangedNotificationMessage{
+		RemovedChainBlockHashes: notification.RemovedChainBlockHashes,
+		AddedChainBlockHashes:   notification.AddedChainBlockHashes,
+	}
+
 	for router, listener := range nm.listeners {
 		if listener.propagateVirtualSelectedParentChainChangedNotifications {
-			err := router.OutgoingRoute().Enqueue(notification)
+			var err error
+
+			if listener.includeAcceptedTransactionIDsInVirtualSelectedParentChainChangedNotifications {
+				err = router.OutgoingRoute().MaybeEnqueue(notification)
+			} else {
+				err = router.OutgoingRoute().MaybeEnqueue(notificationWithoutAcceptedTransactionIDs)
+			}
+
 			if err != nil {
 				return err
 			}
 		}
 	}
 	return nil
+}
+
+// AllListenersThatPropagateVirtualSelectedParentChainChanged returns true if there's any listener that is
+// subscribed to VirtualSelectedParentChainChanged notifications.
+func (nm *NotificationManager) AllListenersThatPropagateVirtualSelectedParentChainChanged() []*NotificationListener {
+	var listenersThatPropagate []*NotificationListener
+	for _, listener := range nm.listeners {
+		if listener.propagateVirtualSelectedParentChainChangedNotifications {
+			listenersThatPropagate = append(listenersThatPropagate, listener)
+		}
+	}
+	return listenersThatPropagate
 }
 
 // NotifyFinalityConflict notifies the notification manager that there's a finality conflict in the DAG
@@ -147,7 +193,10 @@ func (nm *NotificationManager) NotifyUTXOsChanged(utxoChanges *utxoindex.UTXOCha
 	for router, listener := range nm.listeners {
 		if listener.propagateUTXOsChangedNotifications {
 			// Filter utxoChanges and create a notification
-			notification := listener.convertUTXOChangesToUTXOsChangedNotification(utxoChanges)
+			notification, err := listener.convertUTXOChangesToUTXOsChangedNotification(utxoChanges)
+			if err != nil {
+				return err
+			}
 
 			// Don't send the notification if it's empty
 			if len(notification.Added) == 0 && len(notification.Removed) == 0 {
@@ -155,7 +204,7 @@ func (nm *NotificationManager) NotifyUTXOsChanged(utxoChanges *utxoindex.UTXOCha
 			}
 
 			// Enqueue the notification
-			err := router.OutgoingRoute().Enqueue(notification)
+			err = router.OutgoingRoute().MaybeEnqueue(notification)
 			if err != nil {
 				return err
 			}
@@ -174,7 +223,7 @@ func (nm *NotificationManager) NotifyVirtualSelectedParentBlueScoreChanged(
 
 	for router, listener := range nm.listeners {
 		if listener.propagateVirtualSelectedParentBlueScoreChangedNotifications {
-			err := router.OutgoingRoute().Enqueue(notification)
+			err := router.OutgoingRoute().MaybeEnqueue(notification)
 			if err != nil {
 				return err
 			}
@@ -193,7 +242,7 @@ func (nm *NotificationManager) NotifyVirtualDaaScoreChanged(
 
 	for router, listener := range nm.listeners {
 		if listener.propagateVirtualDaaScoreChangedNotifications {
-			err := router.OutgoingRoute().Enqueue(notification)
+			err := router.OutgoingRoute().MaybeEnqueue(notification)
 			if err != nil {
 				return err
 			}
@@ -238,8 +287,10 @@ func (nm *NotificationManager) NotifyPruningPointUTXOSetOverride() error {
 	return nil
 }
 
-func newNotificationListener() *NotificationListener {
+func newNotificationListener(params *dagconfig.Params) *NotificationListener {
 	return &NotificationListener{
+		params: params,
+
 		propagateBlockAddedNotifications:                            false,
 		propagateVirtualSelectedParentChainChangedNotifications:     false,
 		propagateFinalityConflictNotifications:                      false,
@@ -251,6 +302,12 @@ func newNotificationListener() *NotificationListener {
 	}
 }
 
+// IncludeAcceptedTransactionIDsInVirtualSelectedParentChainChangedNotifications returns true if this listener
+// includes accepted transaction IDs in it's virtual-selected-parent-chain-changed notifications
+func (nl *NotificationListener) IncludeAcceptedTransactionIDsInVirtualSelectedParentChainChangedNotifications() bool {
+	return nl.includeAcceptedTransactionIDsInVirtualSelectedParentChainChangedNotifications
+}
+
 // PropagateBlockAddedNotifications instructs the listener to send block added notifications
 // to the remote listener
 func (nl *NotificationListener) PropagateBlockAddedNotifications() {
@@ -259,8 +316,9 @@ func (nl *NotificationListener) PropagateBlockAddedNotifications() {
 
 // PropagateVirtualSelectedParentChainChangedNotifications instructs the listener to send chain changed notifications
 // to the remote listener
-func (nl *NotificationListener) PropagateVirtualSelectedParentChainChangedNotifications() {
+func (nl *NotificationListener) PropagateVirtualSelectedParentChainChangedNotifications(includeAcceptedTransactionIDs bool) {
 	nl.propagateVirtualSelectedParentChainChangedNotifications = true
+	nl.includeAcceptedTransactionIDsInVirtualSelectedParentChainChangedNotifications = includeAcceptedTransactionIDs
 }
 
 // PropagateFinalityConflictNotifications instructs the listener to send finality conflict notifications
@@ -305,7 +363,7 @@ func (nl *NotificationListener) StopPropagatingUTXOsChangedNotifications(address
 }
 
 func (nl *NotificationListener) convertUTXOChangesToUTXOsChangedNotification(
-	utxoChanges *utxoindex.UTXOChanges) *appmessage.UTXOsChangedNotificationMessage {
+	utxoChanges *utxoindex.UTXOChanges) (*appmessage.UTXOsChangedNotificationMessage, error) {
 
 	// As an optimization, we iterate over the smaller set (O(n)) among the two below
 	// and check existence over the larger set (O(1))
@@ -326,7 +384,7 @@ func (nl *NotificationListener) convertUTXOChangesToUTXOsChangedNotification(
 				notification.Removed = append(notification.Removed, utxosByAddressesEntries...)
 			}
 		}
-	} else {
+	} else if addressesSize > 0 {
 		for _, listenerAddress := range nl.propagateUTXOsChangedNotificationAddresses {
 			listenerScriptPublicKeyString := listenerAddress.ScriptPublicKeyString
 			if addedPairs, ok := utxoChanges.Added[listenerScriptPublicKeyString]; ok {
@@ -338,9 +396,46 @@ func (nl *NotificationListener) convertUTXOChangesToUTXOsChangedNotification(
 				notification.Removed = append(notification.Removed, utxosByAddressesEntries...)
 			}
 		}
+	} else {
+		for scriptPublicKeyString, addedPairs := range utxoChanges.Added {
+			addressString, err := nl.scriptPubKeyStringToAddressString(scriptPublicKeyString)
+			if err != nil {
+				return nil, err
+			}
+
+			utxosByAddressesEntries := ConvertUTXOOutpointEntryPairsToUTXOsByAddressesEntries(addressString, addedPairs)
+			notification.Added = append(notification.Added, utxosByAddressesEntries...)
+		}
+		for scriptPublicKeyString, removedOutpoints := range utxoChanges.Removed {
+			addressString, err := nl.scriptPubKeyStringToAddressString(scriptPublicKeyString)
+			if err != nil {
+				return nil, err
+			}
+
+			utxosByAddressesEntries := convertUTXOOutpointsToUTXOsByAddressesEntries(addressString, removedOutpoints)
+			notification.Removed = append(notification.Removed, utxosByAddressesEntries...)
+		}
 	}
 
-	return notification
+	return notification, nil
+}
+
+func (nl *NotificationListener) scriptPubKeyStringToAddressString(scriptPublicKeyString utxoindex.ScriptPublicKeyString) (string, error) {
+	scriptPubKey := utxoindex.ConvertStringToScriptPublicKey(scriptPublicKeyString)
+
+	// ignore error because it is often returned when the script is of unknown type
+	scriptType, address, err := txscript.ExtractScriptPubKeyAddress(scriptPubKey, nl.params)
+	if err != nil {
+		return "", err
+	}
+
+	var addressString string
+	if scriptType == txscript.NonStandardTy {
+		addressString = ""
+	} else {
+		addressString = address.String()
+	}
+	return addressString, nil
 }
 
 // PropagateVirtualSelectedParentBlueScoreChangedNotifications instructs the listener to send

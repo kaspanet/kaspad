@@ -2,9 +2,10 @@ package protocol
 
 import (
 	"fmt"
-	"github.com/kaspanet/kaspad/app/protocol/common"
 	"sync"
 	"sync/atomic"
+
+	"github.com/kaspanet/kaspad/app/protocol/common"
 
 	"github.com/pkg/errors"
 
@@ -90,16 +91,6 @@ func (m *Manager) runFlows(flows []*common.Flow, peer *peerpkg.Peer, errChan <-c
 	return <-errChan
 }
 
-// SetOnVirtualChange sets the onVirtualChangeHandler handler
-func (m *Manager) SetOnVirtualChange(onVirtualChangeHandler flowcontext.OnVirtualChangeHandler) {
-	m.context.SetOnVirtualChangeHandler(onVirtualChangeHandler)
-}
-
-// SetOnBlockAddedToDAGHandler sets the onBlockAddedToDAG handler
-func (m *Manager) SetOnBlockAddedToDAGHandler(onBlockAddedToDAGHandler flowcontext.OnBlockAddedToDAGHandler) {
-	m.context.SetOnBlockAddedToDAGHandler(onBlockAddedToDAGHandler)
-}
-
 // SetOnNewBlockTemplateHandler sets the onNewBlockTemplate handler
 func (m *Manager) SetOnNewBlockTemplateHandler(onNewBlockTemplateHandler flowcontext.OnNewBlockTemplateHandler) {
 	m.context.SetOnNewBlockTemplateHandler(onNewBlockTemplateHandler)
@@ -113,12 +104,6 @@ func (m *Manager) SetOnPruningPointUTXOSetOverrideHandler(onPruningPointUTXOSetO
 // SetOnTransactionAddedToMempoolHandler sets the onTransactionAddedToMempool handler
 func (m *Manager) SetOnTransactionAddedToMempoolHandler(onTransactionAddedToMempoolHandler flowcontext.OnTransactionAddedToMempoolHandler) {
 	m.context.SetOnTransactionAddedToMempoolHandler(onTransactionAddedToMempoolHandler)
-}
-
-// ShouldMine returns whether it's ok to use block template from this node
-// for mining purposes.
-func (m *Manager) ShouldMine() (bool, error) {
-	return m.context.IsNearlySynced()
 }
 
 // IsIBDRunning returns true if IBD is currently marked as running

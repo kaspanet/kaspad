@@ -4,7 +4,7 @@ package externalapi
 type Consensus interface {
 	Init(skipAddingGenesis bool) error
 	BuildBlock(coinbaseData *DomainCoinbaseData, transactions []*DomainTransaction) (*DomainBlock, error)
-	BuildBlockWithTemplateMetadata(coinbaseData *DomainCoinbaseData, transactions []*DomainTransaction) (block *DomainBlock, coinbaseHasRedReward bool, err error)
+	BuildBlockTemplate(coinbaseData *DomainCoinbaseData, transactions []*DomainTransaction) (*DomainBlockTemplate, error)
 	ValidateAndInsertBlock(block *DomainBlock, shouldValidateAgainstUTXO bool) (*VirtualChangeSet, error)
 	ValidateAndInsertBlockWithTrustedData(block *BlockWithTrustedData, validateUTXO bool) (*VirtualChangeSet, error)
 	ValidateTransactionAndPopulateWithConsensusData(transaction *DomainTransaction) error
@@ -19,6 +19,7 @@ type Consensus interface {
 	GetBlockInfo(blockHash *DomainHash) (*BlockInfo, error)
 	GetBlockRelations(blockHash *DomainHash) (parents []*DomainHash, children []*DomainHash, err error)
 	GetBlockAcceptanceData(blockHash *DomainHash) (AcceptanceData, error)
+	GetBlocksAcceptanceData(blockHashes []*DomainHash) ([]AcceptanceData, error)
 
 	GetHashesBetween(lowHash, highHash *DomainHash, maxBlocks uint64) (hashes []*DomainHash, actualHighHash *DomainHash, err error)
 	GetAnticone(blockHash, contextHash *DomainHash, maxBlocks uint64) (hashes []*DomainHash, err error)
@@ -54,4 +55,5 @@ type Consensus interface {
 	TrustedGHOSTDAGData(blockHash *DomainHash) (*BlockGHOSTDAGData, error)
 	IsChainBlock(blockHash *DomainHash) (bool, error)
 	VirtualMergeDepthRoot() (*DomainHash, error)
+	IsNearlySynced() (bool, error)
 }

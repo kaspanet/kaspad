@@ -12,6 +12,7 @@ import (
 	"github.com/kaspanet/kaspad/infrastructure/network/addressmanager"
 	"github.com/kaspanet/kaspad/infrastructure/network/connmanager"
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter"
+	"github.com/pkg/errors"
 )
 
 // Manager is an RPC manager
@@ -28,6 +29,7 @@ func NewManager(
 	connectionManager *connmanager.ConnectionManager,
 	addressManager *addressmanager.AddressManager,
 	utxoIndex *utxoindex.UTXOIndex,
+	consensusEventsChan chan externalapi.ConsensusEvent,
 	shutDownChan chan<- struct{}) *Manager {
 
 	manager := Manager{
@@ -44,48 +46,88 @@ func NewManager(
 	}
 	netAdapter.SetRPCRouterInitializer(manager.routerInitializer)
 
+	manager.initConsensusEventsHandler(consensusEventsChan)
+
 	return &manager
 }
 
-// NotifyBlockAddedToDAG notifies the manager that a block has been added to the DAG
-func (m *Manager) NotifyBlockAddedToDAG(block *externalapi.DomainBlock, virtualChangeSet *externalapi.VirtualChangeSet) error {
-	onEnd := logger.LogAndMeasureExecutionTime(log, "RPCManager.NotifyBlockAddedToDAG")
+func (m *Manager) initConsensusEventsHandler(consensusEventsChan chan externalapi.ConsensusEvent) {
+	spawn("consensusEventsHandler", func() {
+		for {
+			consensusEvent, ok := <-consensusEventsChan
+			if !ok {
+				return
+			}
+			switch event := consensusEvent.(type) {
+			case *externalapi.VirtualChangeSet:
+				err := m.notifyVirtualChange(event)
+				if err != nil {
+					panic(err)
+				}
+			case *externalapi.BlockAdded:
+				err := m.notifyBlockAddedToDAG(event.Block)
+				if err != nil {
+					panic(err)
+				}
+			default:
+				panic(errors.Errorf("Got event of unsupported type %T", consensusEvent))
+			}
+		}
+	})
+}
+
+// notifyBlockAddedToDAG notifies the manager that a block has been added to the DAG
+func (m *Manager) notifyBlockAddedToDAG(block *externalapi.DomainBlock) error {
+	onEnd := logger.LogAndMeasureExecutionTime(log, "RPCManager.notifyBlockAddedToDAG")
 	defer onEnd()
 
-	err := m.NotifyVirtualChange(virtualChangeSet)
-	if err != nil {
-		return err
+	// Before converting the block and populating it, we check if any listeners are interested.
+	// This is done since most nodes do not use this event.
+	if !m.context.NotificationManager.HasBlockAddedListeners() {
+		return nil
 	}
 
 	rpcBlock := appmessage.DomainBlockToRPCBlock(block)
-	err = m.context.PopulateBlockWithVerboseData(rpcBlock, block.Header, block, false)
+	err := m.context.PopulateBlockWithVerboseData(rpcBlock, block.Header, block, true)
 	if err != nil {
 		return err
 	}
 	blockAddedNotification := appmessage.NewBlockAddedNotificationMessage(rpcBlock)
-	return m.context.NotificationManager.NotifyBlockAdded(blockAddedNotification)
+	err = m.context.NotificationManager.NotifyBlockAdded(blockAddedNotification)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
-// NotifyVirtualChange notifies the manager that the virtual block has been changed.
-func (m *Manager) NotifyVirtualChange(virtualChangeSet *externalapi.VirtualChangeSet) error {
+// notifyVirtualChange notifies the manager that the virtual block has been changed.
+func (m *Manager) notifyVirtualChange(virtualChangeSet *externalapi.VirtualChangeSet) error {
 	onEnd := logger.LogAndMeasureExecutionTime(log, "RPCManager.NotifyVirtualChange")
 	defer onEnd()
 
-	if m.context.Config.UTXOIndex {
+	if m.context.Config.UTXOIndex && virtualChangeSet.VirtualUTXODiff != nil {
 		err := m.notifyUTXOsChanged(virtualChangeSet)
 		if err != nil {
 			return err
 		}
 	}
 
-	err := m.notifyVirtualSelectedParentBlueScoreChanged()
+	err := m.notifyVirtualSelectedParentBlueScoreChanged(virtualChangeSet.VirtualSelectedParentBlueScore)
 	if err != nil {
 		return err
 	}
 
-	err = m.notifyVirtualDaaScoreChanged()
+	err = m.notifyVirtualDaaScoreChanged(virtualChangeSet.VirtualDAAScore)
 	if err != nil {
 		return err
+	}
+
+	if virtualChangeSet.VirtualSelectedParentChainChanges == nil ||
+		(len(virtualChangeSet.VirtualSelectedParentChainChanges.Added) == 0 &&
+			len(virtualChangeSet.VirtualSelectedParentChainChanges.Removed) == 0) {
+
+		return nil
 	}
 
 	err = m.notifyVirtualSelectedParentChainChanged(virtualChangeSet)
@@ -145,6 +187,7 @@ func (m *Manager) notifyUTXOsChanged(virtualChangeSet *externalapi.VirtualChange
 	if err != nil {
 		return err
 	}
+
 	return m.context.NotificationManager.NotifyUTXOsChanged(utxoIndexChanges)
 }
 
@@ -160,32 +203,17 @@ func (m *Manager) notifyPruningPointUTXOSetOverride() error {
 	return m.context.NotificationManager.NotifyPruningPointUTXOSetOverride()
 }
 
-func (m *Manager) notifyVirtualSelectedParentBlueScoreChanged() error {
+func (m *Manager) notifyVirtualSelectedParentBlueScoreChanged(virtualSelectedParentBlueScore uint64) error {
 	onEnd := logger.LogAndMeasureExecutionTime(log, "RPCManager.NotifyVirtualSelectedParentBlueScoreChanged")
 	defer onEnd()
 
-	virtualSelectedParent, err := m.context.Domain.Consensus().GetVirtualSelectedParent()
-	if err != nil {
-		return err
-	}
-
-	blockInfo, err := m.context.Domain.Consensus().GetBlockInfo(virtualSelectedParent)
-	if err != nil {
-		return err
-	}
-
-	notification := appmessage.NewVirtualSelectedParentBlueScoreChangedNotificationMessage(blockInfo.BlueScore)
+	notification := appmessage.NewVirtualSelectedParentBlueScoreChangedNotificationMessage(virtualSelectedParentBlueScore)
 	return m.context.NotificationManager.NotifyVirtualSelectedParentBlueScoreChanged(notification)
 }
 
-func (m *Manager) notifyVirtualDaaScoreChanged() error {
+func (m *Manager) notifyVirtualDaaScoreChanged(virtualDAAScore uint64) error {
 	onEnd := logger.LogAndMeasureExecutionTime(log, "RPCManager.NotifyVirtualDaaScoreChanged")
 	defer onEnd()
-
-	virtualDAAScore, err := m.context.Domain.Consensus().GetVirtualDAAScore()
-	if err != nil {
-		return err
-	}
 
 	notification := appmessage.NewVirtualDaaScoreChangedNotificationMessage(virtualDAAScore)
 	return m.context.NotificationManager.NotifyVirtualDaaScoreChanged(notification)
@@ -195,10 +223,25 @@ func (m *Manager) notifyVirtualSelectedParentChainChanged(virtualChangeSet *exte
 	onEnd := logger.LogAndMeasureExecutionTime(log, "RPCManager.NotifyVirtualSelectedParentChainChanged")
 	defer onEnd()
 
-	notification, err := m.context.ConvertVirtualSelectedParentChainChangesToChainChangedNotificationMessage(
-		virtualChangeSet.VirtualSelectedParentChainChanges)
-	if err != nil {
-		return err
+	listenersThatPropagateSelectedParentChanged :=
+		m.context.NotificationManager.AllListenersThatPropagateVirtualSelectedParentChainChanged()
+	if len(listenersThatPropagateSelectedParentChanged) > 0 {
+		// Generating acceptedTransactionIDs is a heavy operation, so we check if it's needed by any listener.
+		includeAcceptedTransactionIDs := false
+		for _, listener := range listenersThatPropagateSelectedParentChanged {
+			if listener.IncludeAcceptedTransactionIDsInVirtualSelectedParentChainChangedNotifications() {
+				includeAcceptedTransactionIDs = true
+				break
+			}
+		}
+
+		notification, err := m.context.ConvertVirtualSelectedParentChainChangesToChainChangedNotificationMessage(
+			virtualChangeSet.VirtualSelectedParentChainChanges, includeAcceptedTransactionIDs)
+		if err != nil {
+			return err
+		}
+		return m.context.NotificationManager.NotifyVirtualSelectedParentChainChanged(notification)
 	}
-	return m.context.NotificationManager.NotifyVirtualSelectedParentChainChanged(notification)
+
+	return nil
 }

@@ -310,7 +310,7 @@ func TestOrphanTransactions(t *testing.T) {
 			}
 		}
 
-		block, err := miningManager.GetBlockTemplate(&externalapi.DomainCoinbaseData{
+		block, _, err := miningManager.GetBlockTemplate(&externalapi.DomainCoinbaseData{
 			ScriptPublicKey: &externalapi.ScriptPublicKey{Script: nil, Version: 0},
 			ExtraData:       nil})
 		if err != nil {
@@ -356,7 +356,7 @@ func TestOrphanTransactions(t *testing.T) {
 					"oprhan anymore.", consensushashing.TransactionID(transaction))
 			}
 		}
-		block, err = miningManager.GetBlockTemplate(&externalapi.DomainCoinbaseData{
+		block, _, err = miningManager.GetBlockTemplate(&externalapi.DomainCoinbaseData{
 			ScriptPublicKey: &externalapi.ScriptPublicKey{Script: nil, Version: 0},
 			ExtraData:       nil})
 		if err != nil {
@@ -615,7 +615,7 @@ func TestModifyBlockTemplate(t *testing.T) {
 		emptyCoinbaseData := &externalapi.DomainCoinbaseData{
 			ScriptPublicKey: &externalapi.ScriptPublicKey{Script: nil, Version: 0},
 			ExtraData:       nil}
-		block, err := miningManager.GetBlockTemplate(emptyCoinbaseData)
+		block, _, err := miningManager.GetBlockTemplate(emptyCoinbaseData)
 		if err != nil {
 			t.Fatalf("Failed get a block template: %v", err)
 		}
@@ -665,7 +665,7 @@ func TestModifyBlockTemplate(t *testing.T) {
 					"oprhan anymore.", consensushashing.TransactionID(transaction))
 			}
 		}
-		block, err = miningManager.GetBlockTemplate(emptyCoinbaseData)
+		block, _, err = miningManager.GetBlockTemplate(emptyCoinbaseData)
 		if err != nil {
 			t.Fatalf("GetBlockTemplate: %v", err)
 		}
