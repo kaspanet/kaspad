@@ -18,13 +18,6 @@ import (
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/id"
 )
 
-// OnBlockAddedToDAGHandler is a handler function that's triggered
-// when a block is added to the DAG
-type OnBlockAddedToDAGHandler func(block *externalapi.DomainBlock, virtualChangeSet *externalapi.VirtualChangeSet) error
-
-// OnVirtualChangeHandler is a handler function that's triggered when the virtual changes
-type OnVirtualChangeHandler func(virtualChangeSet *externalapi.VirtualChangeSet) error
-
 // OnNewBlockTemplateHandler is a handler function that's triggered when a new block template is available
 type OnNewBlockTemplateHandler func() error
 
@@ -47,8 +40,6 @@ type FlowContext struct {
 
 	timeStarted int64
 
-	onVirtualChangeHandler               OnVirtualChangeHandler
-	onBlockAddedToDAGHandler             OnBlockAddedToDAGHandler
 	onNewBlockTemplateHandler            OnNewBlockTemplateHandler
 	onPruningPointUTXOSetOverrideHandler OnPruningPointUTXOSetOverrideHandler
 	onTransactionAddedToMempoolHandler   OnTransactionAddedToMempoolHandler
@@ -109,16 +100,6 @@ func (f *FlowContext) ShutdownChan() <-chan struct{} {
 // IsNearlySynced returns whether current consensus is considered synced or close to being synced.
 func (f *FlowContext) IsNearlySynced() (bool, error) {
 	return f.Domain().Consensus().IsNearlySynced()
-}
-
-// SetOnVirtualChangeHandler sets the onVirtualChangeHandler handler
-func (f *FlowContext) SetOnVirtualChangeHandler(onVirtualChangeHandler OnVirtualChangeHandler) {
-	f.onVirtualChangeHandler = onVirtualChangeHandler
-}
-
-// SetOnBlockAddedToDAGHandler sets the onBlockAddedToDAG handler
-func (f *FlowContext) SetOnBlockAddedToDAGHandler(onBlockAddedToDAGHandler OnBlockAddedToDAGHandler) {
-	f.onBlockAddedToDAGHandler = onBlockAddedToDAGHandler
 }
 
 // SetOnNewBlockTemplateHandler sets the onNewBlockTemplateHandler handler

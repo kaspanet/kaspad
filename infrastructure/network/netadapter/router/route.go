@@ -66,6 +66,23 @@ func (r *Route) Enqueue(message appmessage.Message) error {
 	return nil
 }
 
+// MaybeEnqueue enqueues a message to the route, but doesn't throw an error
+// if it's closed or its capacity has been reached.
+func (r *Route) MaybeEnqueue(message appmessage.Message) error {
+	err := r.Enqueue(message)
+	if errors.Is(err, ErrRouteClosed) {
+		log.Infof("Couldn't send message to closed route '%s'", r.name)
+		return nil
+	}
+
+	if errors.Is(err, ErrRouteCapacityReached) {
+		log.Infof("Capacity (%d) of route '%s' has been reached. Couldn't send message", r.capacity, r.name)
+		return nil
+	}
+
+	return err
+}
+
 // Dequeue dequeues a message from the Route
 func (r *Route) Dequeue() (appmessage.Message, error) {
 	message, isOpen := <-r.channel

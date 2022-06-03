@@ -469,7 +469,7 @@ message GetHeadersResponseMessage{
 //
 // See: UtxosChangedNotificationMessage
 message NotifyUtxosChangedRequestMessage {
-  repeated string addresses = 1;
+  repeated string addresses = 1; // Leave empty to get all updates
 }
 
 message NotifyUtxosChangedResponseMessage {
@@ -656,6 +656,8 @@ message GetInfoResponseMessage{
   string p2pId = 1;
   uint64 mempoolSize = 2;
   string serverVersion = 3;
+  bool isUtxoIndexed = 4;
+  bool isSynced = 5;
   RPCError error = 1000;
 }
 

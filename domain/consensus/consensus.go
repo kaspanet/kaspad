@@ -1,9 +1,10 @@
 package consensus
 
 import (
-	"github.com/kaspanet/kaspad/util/mstime"
 	"math/big"
 	"sync"
+
+	"github.com/kaspanet/kaspad/util/mstime"
 
 	"github.com/kaspanet/kaspad/domain/consensus/database"
 	"github.com/kaspanet/kaspad/domain/consensus/model"
@@ -58,13 +59,19 @@ type consensus struct {
 	headersSelectedChainStore           model.HeadersSelectedChainStore
 	daaBlocksStore                      model.DAABlocksStore
 	blocksWithTrustedDataDAAWindowStore model.BlocksWithTrustedDataDAAWindowStore
+
+	consensusEventsChan chan externalapi.ConsensusEvent
 }
 
 func (s *consensus) ValidateAndInsertBlockWithTrustedData(block *externalapi.BlockWithTrustedData, validateUTXO bool) (*externalapi.VirtualChangeSet, error) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	return s.blockProcessor.ValidateAndInsertBlockWithTrustedData(block, validateUTXO)
+	virtualChangeSet, _, err := s.blockProcessor.ValidateAndInsertBlockWithTrustedData(block, validateUTXO)
+	if err != nil {
+		return nil, err
+	}
+	return virtualChangeSet, nil
 }
 
 // Init initializes consensus
@@ -129,7 +136,7 @@ func (s *consensus) Init(skipAddingGenesis bool) error {
 				},
 			},
 		}
-		_, err = s.blockProcessor.ValidateAndInsertBlockWithTrustedData(genesisWithTrustedData, true)
+		_, _, err = s.blockProcessor.ValidateAndInsertBlockWithTrustedData(genesisWithTrustedData, true)
 		if err != nil {
 			return err
 		}
@@ -190,7 +197,69 @@ func (s *consensus) ValidateAndInsertBlock(block *externalapi.DomainBlock, shoul
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	return s.blockProcessor.ValidateAndInsertBlock(block, shouldValidateAgainstUTXO)
+	virtualChangeSet, blockStatus, err := s.blockProcessor.ValidateAndInsertBlock(block, shouldValidateAgainstUTXO)
+	if err != nil {
+		return nil, err
+	}
+
+	err = s.sendBlockAddedEvent(block, blockStatus)
+	if err != nil {
+		return nil, err
+	}
+
+	err = s.sendVirtualChangedEvent(virtualChangeSet, shouldValidateAgainstUTXO)
+	if err != nil {
+		return nil, err
+	}
+
+	return virtualChangeSet, nil
+}
+
+func (s *consensus) sendBlockAddedEvent(block *externalapi.DomainBlock, blockStatus externalapi.BlockStatus) error {
+	if s.consensusEventsChan != nil {
+		if blockStatus == externalapi.StatusHeaderOnly || blockStatus == externalapi.StatusInvalid {
+			return nil
+		}
+
+		if len(s.consensusEventsChan) == cap(s.consensusEventsChan) {
+			return errors.Errorf("consensusEventsChan is full")
+		}
+		s.consensusEventsChan <- &externalapi.BlockAdded{Block: block}
+	}
+	return nil
+}
+
+func (s *consensus) sendVirtualChangedEvent(virtualChangeSet *externalapi.VirtualChangeSet, wasVirtualUpdated bool) error {
+	if !wasVirtualUpdated || s.consensusEventsChan == nil {
+		return nil
+	}
+
+	if len(s.consensusEventsChan) == cap(s.consensusEventsChan) {
+		return errors.Errorf("consensusEventsChan is full")
+	}
+
+	stagingArea := model.NewStagingArea()
+	virtualGHOSTDAGData, err := s.ghostdagDataStores[0].Get(s.databaseContext, stagingArea, model.VirtualBlockHash, false)
+	if err != nil {
+		return err
+	}
+
+	virtualSelectedParentGHOSTDAGData, err := s.ghostdagDataStores[0].Get(s.databaseContext, stagingArea, virtualGHOSTDAGData.SelectedParent(), false)
+	if err != nil {
+		return err
+	}
+
+	virtualDAAScore, err := s.daaBlocksStore.DAAScore(s.databaseContext, stagingArea, model.VirtualBlockHash)
+	if err != nil {
+		return err
+	}
+
+	// Populate the change set with additional data before sending
+	virtualChangeSet.VirtualSelectedParentBlueScore = virtualSelectedParentGHOSTDAGData.BlueScore()
+	virtualChangeSet.VirtualDAAScore = virtualDAAScore
+
+	s.consensusEventsChan <- virtualChangeSet
+	return nil
 }
 
 // ValidateTransactionAndPopulateWithConsensusData validates the given transaction
@@ -355,6 +424,30 @@ func (s *consensus) GetBlockAcceptanceData(blockHash *externalapi.DomainHash) (e
 	}
 
 	return s.acceptanceDataStore.Get(s.databaseContext, stagingArea, blockHash)
+}
+
+func (s *consensus) GetBlocksAcceptanceData(blockHashes []*externalapi.DomainHash) ([]externalapi.AcceptanceData, error) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	stagingArea := model.NewStagingArea()
+	blocksAcceptanceData := make([]externalapi.AcceptanceData, len(blockHashes))
+
+	for i, blockHash := range blockHashes {
+		err := s.validateBlockHashExists(stagingArea, blockHash)
+		if err != nil {
+			return nil, err
+		}
+
+		acceptanceData, err := s.acceptanceDataStore.Get(s.databaseContext, stagingArea, blockHash)
+		if err != nil {
+			return nil, err
+		}
+
+		blocksAcceptanceData[i] = acceptanceData
+	}
+
+	return blocksAcceptanceData, nil
 }
 
 func (s *consensus) GetHashesBetween(lowHash, highHash *externalapi.DomainHash, maxBlocks uint64) (
@@ -788,6 +881,11 @@ func (s *consensus) ResolveVirtual() (*externalapi.VirtualChangeSet, bool, error
 	}
 
 	err = staging.CommitAllChanges(s.databaseContext, stagingArea)
+	if err != nil {
+		return nil, false, err
+	}
+
+	err = s.sendVirtualChangedEvent(virtualChangeSet, true)
 	if err != nil {
 		return nil, false, err
 	}
