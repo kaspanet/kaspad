@@ -40,26 +40,39 @@ func (ctx *Context) getAndConvertAcceptedTransactionIDs(selectedParentChainChang
 
 	acceptedTransactionIDs := make([]*appmessage.AcceptedTransactionIDs, len(selectedParentChainChanges.Added))
 
-	chainBlocksAcceptanceData, err := ctx.Domain.Consensus().GetBlocksAcceptanceData(selectedParentChainChanges.Added)
-	if err != nil {
-		return nil, err
-	}
+	const chunk = 1000
+	position := 0
 
-	for i, addedChainBlock := range selectedParentChainChanges.Added {
-		chainBlockAcceptanceData := chainBlocksAcceptanceData[i]
-		acceptedTransactionIDs[i] = &appmessage.AcceptedTransactionIDs{
-			AcceptingBlockHash:     addedChainBlock.String(),
-			AcceptedTransactionIDs: nil,
+	for position < len(selectedParentChainChanges.Added) {
+		var chainBlocksChunk []*externalapi.DomainHash
+		if position+chunk > len(selectedParentChainChanges.Added) {
+			chainBlocksChunk = selectedParentChainChanges.Added[position:]
+		} else {
+			chainBlocksChunk = selectedParentChainChanges.Added[position : position+chunk]
 		}
-		for _, blockAcceptanceData := range chainBlockAcceptanceData {
-			for _, transactionAcceptanceData := range blockAcceptanceData.TransactionAcceptanceData {
-				if transactionAcceptanceData.IsAccepted {
-					acceptedTransactionIDs[i].AcceptedTransactionIDs =
-						append(acceptedTransactionIDs[i].AcceptedTransactionIDs,
-							consensushashing.TransactionID(transactionAcceptanceData.Transaction).String())
+		// We use chunks in order to avoid blocking consensus for too long
+		chainBlocksAcceptanceData, err := ctx.Domain.Consensus().GetBlocksAcceptanceData(chainBlocksChunk)
+		if err != nil {
+			return nil, err
+		}
+
+		for i, addedChainBlock := range chainBlocksChunk {
+			chainBlockAcceptanceData := chainBlocksAcceptanceData[i]
+			acceptedTransactionIDs[position+i] = &appmessage.AcceptedTransactionIDs{
+				AcceptingBlockHash:     addedChainBlock.String(),
+				AcceptedTransactionIDs: nil,
+			}
+			for _, blockAcceptanceData := range chainBlockAcceptanceData {
+				for _, transactionAcceptanceData := range blockAcceptanceData.TransactionAcceptanceData {
+					if transactionAcceptanceData.IsAccepted {
+						acceptedTransactionIDs[position+i].AcceptedTransactionIDs =
+							append(acceptedTransactionIDs[position+i].AcceptedTransactionIDs,
+								consensushashing.TransactionID(transactionAcceptanceData.Transaction).String())
+					}
 				}
 			}
 		}
+		position += chunk
 	}
 
 	return acceptedTransactionIDs, nil
