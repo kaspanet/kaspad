@@ -14,9 +14,9 @@ func (x *KaspadMessage_GetMempoolEntriesByAddressesRequest) toAppMessage() (appm
 
 func (x *KaspadMessage_GetMempoolEntriesByAddressesRequest) fromAppMessage(message *appmessage.GetMempoolEntriesByAddressesRequestMessage) error {
 	x.GetMempoolEntriesByAddressesRequest = &GetMempoolEntriesByAddressesRequestMessage{
-		Addresses:              message.Addresses,
-		IncludeOrphanPool:      message.IncludeOrphanPool,
-		FilterTransactionPool:  message.FilterTransactionPool,
+		Addresses:             message.Addresses,
+		IncludeOrphanPool:     message.IncludeOrphanPool,
+		FilterTransactionPool: message.FilterTransactionPool,
 	}
 	return nil
 }

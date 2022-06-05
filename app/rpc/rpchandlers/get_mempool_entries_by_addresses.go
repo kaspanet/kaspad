@@ -38,8 +38,8 @@ func HandleGetMempoolEntriesByAddresses(context *rpccontext.Context, _ *router.R
 		}
 		mempoolEntriesByAddresses = append(mempoolEntriesByAddresses, transactionPoolEntriesByAddresses...)
 	}
-	
-	if getMempoolEntriesByAddressesRequest.IncludeOrphanPool { 
+
+	if getMempoolEntriesByAddressesRequest.IncludeOrphanPool {
 
 		orphanPoolTransactions := context.Domain.MiningManager().AllOrphanTransactions()
 		orphanPoolEntriesByAddresse, err := extractMempoolEntriesByAddressesFromTransactions(
