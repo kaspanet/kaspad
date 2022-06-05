@@ -343,14 +343,15 @@ func (uis *utxoIndexStore) deleteAll() error {
 	return nil
 }
 
-func (uis *utxoIndexStore) intalizeCirculatingSompiSupply() error {
+func (uis *utxoIndexStore) initializeCirculatingSompiSupply() error {
 
 	cursor, err := uis.database.Cursor(utxoIndexBucket)
 	if err != nil {
 		return err
 	}
-	circulatingSompiSupplyInDatabase := uint64(0)
 	defer cursor.Close()
+
+	circulatingSompiSupplyInDatabase := uint64(0)
 	for cursor.Next() {
 		serializedUTXOEntry, err := cursor.Value()
 		if err != nil {

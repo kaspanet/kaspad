@@ -62,7 +62,7 @@ func (ui *UTXOIndex) Reset() error {
 		return err
 	}
 
-	err = ui.store.intalizeCirculatingSompiSupply() //calculate sompi supply from database before adding virtuals
+	err = ui.store.initializeCirculatingSompiSupply() //set key for circulating supply
 	if err != nil {
 		return err
 	}
