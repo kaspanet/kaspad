@@ -17,7 +17,8 @@ import (
 func HandleGetMempoolEntriesByAddresses(context *rpccontext.Context, _ *router.Router, request appmessage.Message) (appmessage.Message, error) {
 
 	getMempoolEntriesByAddressesRequest := request.(*appmessage.GetMempoolEntriesByAddressesRequestMessage)
-	var mempoolEntriesByAddresses []*appmessage.MempoolEntryByAddress
+
+	mempoolEntriesByAddresses := make([]*appmessage.MempoolEntryByAddress, 0)
 
 	if !getMempoolEntriesByAddressesRequest.FilterTransactionPool {
 		transactionPoolTransactions := context.Domain.MiningManager().AllTransactions()

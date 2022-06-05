@@ -10,7 +10,7 @@ import (
 func HandleGetMempoolEntries(context *rpccontext.Context, _ *router.Router, request appmessage.Message) (appmessage.Message, error) {
 	getMempoolEntriesRequest := request.(*appmessage.GetMempoolEntriesRequestMessage)
 
-	var entries []*appmessage.MempoolEntry
+	entries := make([]*appmessage.MempoolEntry, 0)
 
 	if !getMempoolEntriesRequest.FilterTransactionPool {
 		transactionPoolEntries, err := getTransactionPoolMempoolEntries(context)
@@ -21,7 +21,7 @@ func HandleGetMempoolEntries(context *rpccontext.Context, _ *router.Router, requ
 		entries = append(entries, transactionPoolEntries...)
 	}
 
-	if getMempoolEntriesRequest.IncludeOrphanPool { 
+	if getMempoolEntriesRequest.IncludeOrphanPool {
 		orphanPoolEntries, err := getOrphanPoolMempoolEntries(context)
 		if err != nil {
 			return nil, err
