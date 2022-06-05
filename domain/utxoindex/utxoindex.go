@@ -62,7 +62,7 @@ func (ui *UTXOIndex) Reset() error {
 		return err
 	}
 
-	err = ui.store.initializeCirculatingSompiSupply() //set key for circulating supply
+	err = ui.store.initializeCirculatingSompiSupply() //At this point the database is empty, so the sole purpose of this call is to initialize the circulating supply key
 	if err != nil {
 		return err
 	}
