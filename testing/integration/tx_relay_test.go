@@ -69,7 +69,7 @@ func TestTxRelay(t *testing.T) {
 
 		for range ticker.C {
 
-			getMempoolEntryResponse, err := payee.rpcClient.GetMempoolEntry(txID, true, true)
+			getMempoolEntryResponse, err := payee.rpcClient.GetMempoolEntry(txID, true, false)
 			if err != nil {
 				if strings.Contains(err.Error(), "not found") {
 					continue
@@ -82,7 +82,7 @@ func TestTxRelay(t *testing.T) {
 				t.Fatalf("transaction %s is an orphan, although it shouldn't be", mempoolEntry.Transaction.VerboseData.TransactionID)
 			}
 
-			getMempoolEntriesByAddressesResponse, err := payee.rpcClient.GetMempoolEntriesByAddresses(mempoolAddressQuery, true, true)
+			getMempoolEntriesByAddressesResponse, err := payee.rpcClient.GetMempoolEntriesByAddresses(mempoolAddressQuery, true, false)
 			if err != nil {
 				t.Fatalf("Error getting mempool entry: %+v", err)
 			}
