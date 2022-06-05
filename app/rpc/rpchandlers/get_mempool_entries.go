@@ -21,8 +21,7 @@ func HandleGetMempoolEntries(context *rpccontext.Context, _ *router.Router, requ
 		entries = append(entries, transactionPoolEntries...)
 	}
 
-	if getMempoolEntriesRequest.IncludeOrphanPool { //both true
-
+	if getMempoolEntriesRequest.IncludeOrphanPool { 
 		orphanPoolEntries, err := getOrphanPoolMempoolEntries(context)
 		if err != nil {
 			return nil, err
