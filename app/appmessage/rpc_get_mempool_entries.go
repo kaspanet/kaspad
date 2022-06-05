@@ -4,8 +4,8 @@ package appmessage
 // its respective RPC message
 type GetMempoolEntriesRequestMessage struct {
 	baseMessage
-	IncludeOrphanPool      bool
-	IncludeTransactionPool bool
+	IncludeOrphanPool     bool
+	FilterTransactionPool bool
 }
 
 // Command returns the protocol command string for the message
@@ -14,10 +14,10 @@ func (msg *GetMempoolEntriesRequestMessage) Command() MessageCommand {
 }
 
 // NewGetMempoolEntriesRequestMessage returns a instance of the message
-func NewGetMempoolEntriesRequestMessage(IncludeOrphanPool bool, IncludeTransactionPool bool) *GetMempoolEntriesRequestMessage {
+func NewGetMempoolEntriesRequestMessage(includeOrphanPool bool, filterTransactionPool bool) *GetMempoolEntriesRequestMessage {
 	return &GetMempoolEntriesRequestMessage{
-		IncludeOrphanPool:      IncludeOrphanPool,
-		IncludeTransactionPool: IncludeTransactionPool,
+		IncludeOrphanPool:     includeOrphanPool,
+		FilterTransactionPool: filterTransactionPool,
 	}
 }
 

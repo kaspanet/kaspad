@@ -16,7 +16,7 @@ func (x *KaspadMessage_GetMempoolEntriesByAddressesRequest) fromAppMessage(messa
 	x.GetMempoolEntriesByAddressesRequest = &GetMempoolEntriesByAddressesRequestMessage{
 		Addresses:              message.Addresses,
 		IncludeOrphanPool:      message.IncludeOrphanPool,
-		IncludeTransactionPool: message.IncludeTransactionPool,
+		FilterTransactionPool:  message.FilterTransactionPool,
 	}
 	return nil
 }
@@ -26,9 +26,9 @@ func (x *GetMempoolEntriesByAddressesRequestMessage) toAppMessage() (appmessage.
 		return nil, errors.Wrapf(errorNil, "KaspadMessage_GetMempoolEntriesRequest is nil")
 	}
 	return &appmessage.GetMempoolEntriesByAddressesRequestMessage{
-		Addresses:              x.Addresses,
-		IncludeOrphanPool:      x.IncludeOrphanPool,
-		IncludeTransactionPool: x.IncludeTransactionPool,
+		Addresses:             x.Addresses,
+		IncludeOrphanPool:     x.IncludeOrphanPool,
+		FilterTransactionPool: x.FilterTransactionPool,
 	}, nil
 }
 

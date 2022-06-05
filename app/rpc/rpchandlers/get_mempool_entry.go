@@ -24,7 +24,7 @@ func HandleGetMempoolEntry(context *rpccontext.Context, _ *router.Router, reques
 		return errorMessage, nil
 	}
 
-	if getMempoolEntryRequest.IncludeTransactionPool && getMempoolEntryRequest.IncludeOrphanPool { //both true
+	if getMempoolEntryRequest.FilterTransactionPool && getMempoolEntryRequest.IncludeOrphanPool { //both true
 
 		transaction, ok = context.Domain.MiningManager().GetTransaction(transactionID)
 		if !ok {
@@ -38,7 +38,7 @@ func HandleGetMempoolEntry(context *rpccontext.Context, _ *router.Router, reques
 		}
 		isOrphan = false
 
-	} else if getMempoolEntryRequest.IncludeTransactionPool && !getMempoolEntryRequest.IncludeOrphanPool { //only transactions
+	} else if getMempoolEntryRequest.FilterTransactionPool && !getMempoolEntryRequest.IncludeOrphanPool { //only transactions
 		transaction, ok = context.Domain.MiningManager().GetTransaction(transactionID)
 		if !ok {
 			errorMessage := &appmessage.GetMempoolEntryResponseMessage{}
@@ -47,7 +47,7 @@ func HandleGetMempoolEntry(context *rpccontext.Context, _ *router.Router, reques
 		}
 		isOrphan = true
 
-	} else if !getMempoolEntryRequest.IncludeTransactionPool && getMempoolEntryRequest.IncludeOrphanPool { //only orphans
+	} else if !getMempoolEntryRequest.FilterTransactionPool && getMempoolEntryRequest.IncludeOrphanPool { //only orphans
 		transaction, ok = context.Domain.MiningManager().GetOrphanTransaction(transactionID)
 		if !ok {
 			errorMessage := &appmessage.GetMempoolEntryResponseMessage{}
@@ -55,7 +55,7 @@ func HandleGetMempoolEntry(context *rpccontext.Context, _ *router.Router, reques
 			return errorMessage, nil
 		}
 		isOrphan = false
-	} else if !(getMempoolEntryRequest.IncludeTransactionPool || getMempoolEntryRequest.IncludeOrphanPool) {
+	} else if !(getMempoolEntryRequest.FilterTransactionPool || getMempoolEntryRequest.IncludeOrphanPool) {
 		errorMessage := &appmessage.GetMempoolEntryResponseMessage{}
 		errorMessage.Error = appmessage.RPCErrorf("Request is not querying any mempool pools")
 		return errorMessage, nil

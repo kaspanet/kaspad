@@ -608,7 +608,7 @@ in the mempool.
 | ----- | ---- | ----- | ----------- |
 | txId | [string](#string) |  | The transaction&#39;s TransactionID. |
 | includeOrphanPool | [bool](#bool) |  |  |
-| includeTransactionPool | [bool](#bool) |  |  |
+| filterTransactionPool | [bool](#bool) |  |  |
 
 
 
@@ -641,7 +641,7 @@ currently in the mempool.
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | includeOrphanPool | [bool](#bool) |  |  |
-| includeTransactionPool | [bool](#bool) |  |  |
+| filterTransactionPool | [bool](#bool) |  |  |
 
 
 
@@ -1806,7 +1806,7 @@ See NotifyNewBlockTemplateRequestMessage
 | ----- | ---- | ----- | ----------- |
 | addresses | [string](#string) | repeated |  |
 | includeOrphanPool | [bool](#bool) |  |  |
-| includeTransactionPool | [bool](#bool) |  |  |
+| filterTransactionPool | [bool](#bool) |  |  |
 
 
 

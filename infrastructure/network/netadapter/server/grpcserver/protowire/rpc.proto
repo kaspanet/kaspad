@@ -216,7 +216,7 @@ message GetMempoolEntryRequestMessage{
   // The transaction's TransactionID.
   string txId = 1;
   bool includeOrphanPool = 2;
-  bool includeTransactionPool = 3;
+  bool filterTransactionPool = 3;
 }
 
 message GetMempoolEntryResponseMessage{
@@ -229,7 +229,7 @@ message GetMempoolEntryResponseMessage{
 // currently in the mempool.
 message GetMempoolEntriesRequestMessage{
         bool includeOrphanPool = 1;
-        bool includeTransactionPool = 2;
+        bool filterTransactionPool = 2;
 }
 
 message GetMempoolEntriesResponseMessage{
@@ -703,7 +703,7 @@ message MempoolEntryByAddress{
 message GetMempoolEntriesByAddressesRequestMessage{
   repeated string addresses = 1;
   bool includeOrphanPool = 2;
-  bool includeTransactionPool = 3;
+  bool filterTransactionPool = 3;
 }
 
 message  GetMempoolEntriesByAddressesResponseMessage{

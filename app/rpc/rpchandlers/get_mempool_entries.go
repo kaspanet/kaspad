@@ -11,35 +11,23 @@ func HandleGetMempoolEntries(context *rpccontext.Context, _ *router.Router, requ
 	getMempoolEntriesRequest := request.(*appmessage.GetMempoolEntriesRequestMessage)
 
 	var entries []*appmessage.MempoolEntry
-	var err error
 
-	if getMempoolEntriesRequest.IncludeTransactionPool && getMempoolEntriesRequest.IncludeOrphanPool { //both true
-
+	if !getMempoolEntriesRequest.FilterTransactionPool {
 		transactionPoolEntries, err := getTransactionPoolMempoolEntries(context)
 		if err != nil {
 			return nil, err
 		}
+
+		entries = append(entries, transactionPoolEntries...)
+	}
+	
+	if getMempoolEntriesRequest.IncludeOrphanPool { //both true
+		
 		orphanPoolEntries, err := getOrphanPoolMempoolEntries(context)
 		if err != nil {
 			return nil, err
 		}
-		entries = append(transactionPoolEntries, orphanPoolEntries...)
-
-	} else if getMempoolEntriesRequest.IncludeTransactionPool && !(getMempoolEntriesRequest.IncludeOrphanPool) { //only transactions
-		entries, err = getTransactionPoolMempoolEntries(context)
-		if err != nil {
-			return nil, err
-		}
-
-	} else if !(getMempoolEntriesRequest.IncludeTransactionPool) && getMempoolEntriesRequest.IncludeOrphanPool { //only orphans
-		entries, err = getOrphanPoolMempoolEntries(context)
-		if err != nil {
-			return nil, err
-		}
-	} else if !(getMempoolEntriesRequest.IncludeTransactionPool || getMempoolEntriesRequest.IncludeOrphanPool) {
-		errorMessage := &appmessage.GetMempoolEntryResponseMessage{}
-		errorMessage.Error = appmessage.RPCErrorf("Request is not querying any mempool pools")
-		return errorMessage, nil
+		entries = append(entries, orphanPoolEntries...)
 	}
 
 	return appmessage.NewGetMempoolEntriesResponseMessage(entries), nil

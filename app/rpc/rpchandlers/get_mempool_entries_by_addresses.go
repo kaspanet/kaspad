@@ -19,8 +19,7 @@ func HandleGetMempoolEntriesByAddresses(context *rpccontext.Context, _ *router.R
 	getMempoolEntriesByAddressesRequest := request.(*appmessage.GetMempoolEntriesByAddressesRequestMessage)
 	var mempoolEntriesByAddresses []*appmessage.MempoolEntryByAddress
 
-	if getMempoolEntriesByAddressesRequest.IncludeTransactionPool && getMempoolEntriesByAddressesRequest.IncludeOrphanPool { //both true
-
+	if !getMempoolEntriesByAddressesRequest.FilterTransactionPool {
 		transactionPoolTransactions := context.Domain.MiningManager().AllTransactions()
 		transactionPoolEntriesByAddresses, err := extractMempoolEntriesByAddressesFromTransactions(
 			context,
@@ -37,6 +36,10 @@ func HandleGetMempoolEntriesByAddresses(context *rpccontext.Context, _ *router.R
 			errorMessage.Error = rpcError
 			return errorMessage, nil
 		}
+		mempoolEntriesByAddresses = append(mempoolEntriesByAddresses, transactionPoolEntriesByAddresses...)
+	}
+	
+	if getMempoolEntriesByAddressesRequest.IncludeOrphanPool { 
 
 		orphanPoolTransactions := context.Domain.MiningManager().AllOrphanTransactions()
 		orphanPoolEntriesByAddresse, err := extractMempoolEntriesByAddressesFromTransactions(
@@ -55,46 +58,7 @@ func HandleGetMempoolEntriesByAddresses(context *rpccontext.Context, _ *router.R
 			return errorMessage, nil
 		}
 
-		mempoolEntriesByAddresses = append(transactionPoolEntriesByAddresses, orphanPoolEntriesByAddresse...)
-
-	} else if getMempoolEntriesByAddressesRequest.IncludeTransactionPool && !(getMempoolEntriesByAddressesRequest.IncludeOrphanPool) { //only transactions
-		transactionPoolTransactions := context.Domain.MiningManager().AllTransactions()
-		transactionPoolEntriesByAddresses, err := extractMempoolEntriesByAddressesFromTransactions(
-			context,
-			getMempoolEntriesByAddressesRequest.Addresses,
-			transactionPoolTransactions,
-			true,
-		)
-		if err != nil {
-			return nil, err
-		}
-
-		mempoolEntriesByAddresses = transactionPoolEntriesByAddresses
-
-	} else if !(getMempoolEntriesByAddressesRequest.IncludeTransactionPool) && getMempoolEntriesByAddressesRequest.IncludeOrphanPool { //only orphans
-		orphanPoolTransactions := context.Domain.MiningManager().AllOrphanTransactions()
-		orphanPoolEntriesByAddresse, err := extractMempoolEntriesByAddressesFromTransactions(
-			context,
-			getMempoolEntriesByAddressesRequest.Addresses,
-			orphanPoolTransactions,
-			true,
-		)
-		if err != nil {
-			rpcError := &appmessage.RPCError{}
-			if !errors.As(err, &rpcError) {
-				return nil, err
-			}
-			errorMessage := &appmessage.GetUTXOsByAddressesResponseMessage{}
-			errorMessage.Error = rpcError
-			return errorMessage, nil
-		}
-
-		mempoolEntriesByAddresses = orphanPoolEntriesByAddresse
-
-	} else if !(getMempoolEntriesByAddressesRequest.IncludeTransactionPool || getMempoolEntriesByAddressesRequest.IncludeOrphanPool) {
-		errorMessage := &appmessage.GetMempoolEntryResponseMessage{}
-		errorMessage.Error = appmessage.RPCErrorf("Request is not querying any mempool pools")
-		return errorMessage, nil
+		mempoolEntriesByAddresses = append(mempoolEntriesByAddresses, orphanPoolEntriesByAddresse...)
 	}
 
 	return appmessage.NewGetMempoolEntriesByAddressesResponseMessage(mempoolEntriesByAddresses), nil
