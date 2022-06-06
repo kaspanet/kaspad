@@ -29,15 +29,35 @@ func balance(conf *balanceConfig) error {
 	}
 	if conf.Verbose {
 		pendingSuffix = ""
-		println("Address                                                                       Available             Pending")
-		println("-----------------------------------------------------------------------------------------------------------")
-		for _, addressBalance := range response.AddressBalances {
-			fmt.Printf("%s %s %s\n", addressBalance.Address, utils.FormatKas(addressBalance.Available), utils.FormatKas(addressBalance.Pending))
+		if conf.CountUtxos {
+			println("Address                                                                       Available   #UTXOs             Pending   #UTXOs")
+			println("-----------------------------------------------------------------------------------------------------------------------------")
+			for _, addressBalance := range response.AddressBalances {
+				fmt.Printf("%s %s %s %s %s\n", addressBalance.Address, utils.FormatKas(addressBalance.Available),
+					utils.FormatUtxos(addressBalance.NUtxosAvailable), utils.FormatKas(addressBalance.Pending),
+					utils.FormatUtxos(addressBalance.NUtxosPending))
+			}
+			println("-----------------------------------------------------------------------------------------------------------------------------")
+		} else {
+			println("Address                                                                       Available             Pending")
+			println("-----------------------------------------------------------------------------------------------------------")
+			for _, addressBalance := range response.AddressBalances {
+				fmt.Printf("%s %s %s\n", addressBalance.Address, utils.FormatKas(addressBalance.Available), utils.FormatKas(addressBalance.Pending))
+			}
+			println("-----------------------------------------------------------------------------------------------------------")
 		}
-		println("-----------------------------------------------------------------------------------------------------------")
 		print("                                                 ")
 	}
-	fmt.Printf("Total balance, KAS %s %s%s\n", utils.FormatKas(response.Available), utils.FormatKas(response.Pending), pendingSuffix)
+	if conf.CountUtxos {
+		if response.Pending > 0 {
+			fmt.Printf("Total balance, KAS %s (%d UTXOs) %s pending (%d UTXOs)\n", utils.FormatKas(response.Available),
+				response.NUtxosAvailable, utils.FormatKas(response.Pending), response.NUtxosPending)
+		} else {
+			fmt.Printf("Total balance, KAS %s (%d UTXOs)\n", utils.FormatKas(response.Available), response.NUtxosAvailable)
+		}
+	} else {
+		fmt.Printf("Total balance, KAS %s %s%s\n", utils.FormatKas(response.Available), utils.FormatKas(response.Pending), pendingSuffix)
+	}
 
 	return nil
 }
