@@ -469,7 +469,7 @@ message GetHeadersResponseMessage{
 //
 // See: UtxosChangedNotificationMessage
 message NotifyUtxosChangedRequestMessage {
-  repeated string addresses = 1;
+  repeated string addresses = 1; // Leave empty to get all updates
 }
 
 message NotifyUtxosChangedResponseMessage {
@@ -656,6 +656,8 @@ message GetInfoResponseMessage{
   string p2pId = 1;
   uint64 mempoolSize = 2;
   string serverVersion = 3;
+  bool isUtxoIndexed = 4;
+  bool isSynced = 5;
   RPCError error = 1000;
 }
 
@@ -703,3 +705,12 @@ message  GetMempoolEntriesByAddressesResponseMessage{
   RPCError error = 1000;
 }
 
+message GetCoinSupplyRequestMessage{
+}
+
+message GetCoinSupplyResponseMessage{
+        uint64 maxSompi = 1; // note: this is a hard coded maxSupply, actual maxSupply is expected to deviate by upto -5%, but cannot be measured exactly.
+        uint64 circulatingSompi = 2;
+
+        RPCError error = 1000;
+}

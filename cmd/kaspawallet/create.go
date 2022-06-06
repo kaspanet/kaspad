@@ -3,11 +3,12 @@ package main
 import (
 	"bufio"
 	"fmt"
+	"os"
+
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/libkaspawallet"
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/libkaspawallet/bip32"
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/utils"
 	"github.com/pkg/errors"
-	"os"
 
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/keys"
 )
@@ -29,6 +30,10 @@ func create(conf *createConfig) error {
 	for i, extendedPublicKey := range signerExtendedPublicKeys {
 		fmt.Printf("Extended public key of mnemonic #%d:\n%s\n\n", i+1, extendedPublicKey)
 	}
+
+	fmt.Printf("Notice the above is neither a secret key to your wallet " +
+		"(use \"kaspawallet dump-unencrypted-data\" to see a secret seed phrase) " +
+		"nor a wallet public address (use \"kaspawallet new-address\" to create and see one)\n\n")
 
 	extendedPublicKeys := make([]string, conf.NumPrivateKeys, conf.NumPublicKeys)
 	copy(extendedPublicKeys, signerExtendedPublicKeys)

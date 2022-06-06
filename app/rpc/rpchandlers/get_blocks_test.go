@@ -23,6 +23,10 @@ type fakeDomain struct {
 	testapi.TestConsensus
 }
 
+func (d fakeDomain) ConsensusEventsChannel() chan externalapi.ConsensusEvent {
+	panic("implement me")
+}
+
 func (d fakeDomain) DeleteStagingConsensus() error {
 	panic("implement me")
 }

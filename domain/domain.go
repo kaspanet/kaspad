@@ -1,10 +1,11 @@
 package domain
 
 import (
-	"github.com/kaspanet/kaspad/domain/consensusreference"
 	"sync"
 	"sync/atomic"
 	"unsafe"
+
+	"github.com/kaspanet/kaspad/domain/consensusreference"
 
 	"github.com/kaspanet/kaspad/domain/consensus"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
@@ -24,15 +25,21 @@ type Domain interface {
 	InitStagingConsensusWithoutGenesis() error
 	CommitStagingConsensus() error
 	DeleteStagingConsensus() error
+	ConsensusEventsChannel() chan externalapi.ConsensusEvent
 }
 
 type domain struct {
-	miningManager        miningmanager.MiningManager
-	consensus            *externalapi.Consensus
-	stagingConsensus     *externalapi.Consensus
-	stagingConsensusLock sync.RWMutex
-	consensusConfig      *consensus.Config
-	db                   infrastructuredatabase.Database
+	miningManager          miningmanager.MiningManager
+	consensus              *externalapi.Consensus
+	stagingConsensus       *externalapi.Consensus
+	stagingConsensusLock   sync.RWMutex
+	consensusConfig        *consensus.Config
+	db                     infrastructuredatabase.Database
+	consensusEventsChannel chan externalapi.ConsensusEvent
+}
+
+func (d *domain) ConsensusEventsChannel() chan externalapi.ConsensusEvent {
+	return d.consensusEventsChannel
 }
 
 func (d *domain) Consensus() externalapi.Consensus {
@@ -86,7 +93,7 @@ func (d *domain) initStagingConsensus(cfg *consensus.Config) error {
 
 	consensusFactory := consensus.NewFactory()
 
-	consensusInstance, shouldMigrate, err := consensusFactory.NewConsensus(cfg, d.db, inactivePrefix)
+	consensusInstance, shouldMigrate, err := consensusFactory.NewConsensus(cfg, d.db, inactivePrefix, d.consensusEventsChannel)
 	if err != nil {
 		return err
 	}
@@ -190,16 +197,18 @@ func New(consensusConfig *consensus.Config, mempoolConfig *mempool.Config, db in
 		}
 	}
 
+	consensusEventsChan := make(chan externalapi.ConsensusEvent, 100e3)
 	consensusFactory := consensus.NewFactory()
-	consensusInstance, shouldMigrate, err := consensusFactory.NewConsensus(consensusConfig, db, activePrefix)
+	consensusInstance, shouldMigrate, err := consensusFactory.NewConsensus(consensusConfig, db, activePrefix, consensusEventsChan)
 	if err != nil {
 		return nil, err
 	}
 
 	domainInstance := &domain{
-		consensus:       &consensusInstance,
-		consensusConfig: consensusConfig,
-		db:              db,
+		consensus:              &consensusInstance,
+		consensusConfig:        consensusConfig,
+		db:                     db,
+		consensusEventsChannel: consensusEventsChan,
 	}
 
 	if shouldMigrate {

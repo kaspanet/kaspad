@@ -34,14 +34,14 @@ func TestLowestChainBlockAboveOrEqualToBlueScore(t *testing.T) {
 			}
 		}
 
-		checkBlueScore := func(blockHash *externalapi.DomainHash, expectedBlueScoe uint64) {
+		checkBlueScore := func(blockHash *externalapi.DomainHash, expectedBlueScore uint64) {
 			ghostdagData, err := tc.GHOSTDAGDataStore().Get(tc.DatabaseContext(), stagingArea, blockHash, false)
 			if err != nil {
 				t.Fatalf("GHOSTDAGDataStore().Get: %+v", err)
 			}
 
-			if ghostdagData.BlueScore() != expectedBlueScoe {
-				t.Fatalf("Expected blue score %d but got %d", expectedBlueScoe, ghostdagData.BlueScore())
+			if ghostdagData.BlueScore() != expectedBlueScore {
+				t.Fatalf("Expected blue score %d but got %d", expectedBlueScore, ghostdagData.BlueScore())
 			}
 		}
 

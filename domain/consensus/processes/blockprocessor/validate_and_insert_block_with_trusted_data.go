@@ -8,7 +8,7 @@ import (
 )
 
 func (bp *blockProcessor) validateAndInsertBlockWithTrustedData(stagingArea *model.StagingArea,
-	block *externalapi.BlockWithTrustedData, validateUTXO bool) (*externalapi.VirtualChangeSet, error) {
+	block *externalapi.BlockWithTrustedData, validateUTXO bool) (*externalapi.VirtualChangeSet, externalapi.BlockStatus, error) {
 
 	blockHash := consensushashing.BlockHash(block.Block)
 	for i, daaBlock := range block.DAAWindow {
@@ -22,7 +22,7 @@ func (bp *blockProcessor) validateAndInsertBlockWithTrustedData(stagingArea *mod
 
 	blockReplacedGHOSTDAGData, err := bp.ghostdagDataWithoutPrunedBlocks(stagingArea, block.GHOSTDAGData[0].GHOSTDAGData)
 	if err != nil {
-		return nil, err
+		return nil, externalapi.StatusInvalid, err
 	}
 	bp.ghostdagDataStore.Stage(stagingArea, blockHash, blockReplacedGHOSTDAGData, false)
 

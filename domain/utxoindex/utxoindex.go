@@ -25,14 +25,20 @@ func New(domain domain.Domain, database database.Database) (*UTXOIndex, error) {
 		domain: domain,
 		store:  newUTXOIndexStore(database),
 	}
-
 	isSynced, err := utxoIndex.isSynced()
 	if err != nil {
 		return nil, err
 	}
 
-	if !isSynced {
-		err = utxoIndex.Reset()
+	///Has check is for migration to circulating supply, can be removed eventually.
+	hasCirculatingSupplyKey, err := utxoIndex.store.database.Has(circulatingSupplyKey)
+	if err != nil {
+		return nil, err
+	}
+
+	if !isSynced || !hasCirculatingSupplyKey {
+
+		err := utxoIndex.Reset()
 		if err != nil {
 			return nil, err
 		}
@@ -43,12 +49,20 @@ func New(domain domain.Domain, database database.Database) (*UTXOIndex, error) {
 
 // Reset deletes the whole UTXO index and resyncs it from consensus.
 func (ui *UTXOIndex) Reset() error {
+	ui.mutex.Lock()
+	defer ui.mutex.Unlock()
+
 	err := ui.store.deleteAll()
 	if err != nil {
 		return err
 	}
 
 	virtualInfo, err := ui.domain.Consensus().GetVirtualInfo()
+	if err != nil {
+		return err
+	}
+
+	err = ui.store.initializeCirculatingSompiSupply() //At this point the database is empty, so the sole purpose of this call is to initialize the circulating supply key
 	if err != nil {
 		return err
 	}
@@ -158,7 +172,7 @@ func (ui *UTXOIndex) removeUTXOs(toRemove externalapi.UTXOCollection) error {
 		}
 
 		log.Tracef("Removing outpoint %s from UTXO index", outpoint)
-		err = ui.store.remove(entry.ScriptPublicKey(), outpoint)
+		err = ui.store.remove(entry.ScriptPublicKey(), outpoint, entry)
 		if err != nil {
 			return err
 		}
@@ -175,4 +189,13 @@ func (ui *UTXOIndex) UTXOs(scriptPublicKey *externalapi.ScriptPublicKey) (UTXOOu
 	defer ui.mutex.Unlock()
 
 	return ui.store.getUTXOOutpointEntryPairs(scriptPublicKey)
+}
+
+// GetCirculatingSompiSupply returns the current circulating supply of sompis in the network
+func (ui *UTXOIndex) GetCirculatingSompiSupply() (uint64, error) {
+
+	ui.mutex.Lock()
+	defer ui.mutex.Unlock()
+
+	return ui.store.getCirculatingSompiSupply()
 }

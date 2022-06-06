@@ -2,6 +2,8 @@ package utxoindex
 
 import (
 	"encoding/binary"
+
+	"github.com/kaspanet/kaspad/domain/consensus/database/binaryserialization"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/infrastructure/db/database"
 	"github.com/kaspanet/kaspad/infrastructure/logger"
@@ -10,11 +12,13 @@ import (
 
 var utxoIndexBucket = database.MakeBucket([]byte("utxo-index"))
 var virtualParentsKey = database.MakeBucket([]byte("")).Key([]byte("utxo-index-virtual-parents"))
+var circulatingSupplyKey = database.MakeBucket([]byte("")).Key([]byte("utxo-index-circulating-supply"))
 
 type utxoIndexStore struct {
-	database       database.Database
-	toAdd          map[ScriptPublicKeyString]UTXOOutpointEntryPairs
-	toRemove       map[ScriptPublicKeyString]UTXOOutpoints
+	database database.Database
+	toAdd    map[ScriptPublicKeyString]UTXOOutpointEntryPairs
+	toRemove map[ScriptPublicKeyString]UTXOOutpointEntryPairs
+
 	virtualParents []*externalapi.DomainHash
 }
 
@@ -22,7 +26,7 @@ func newUTXOIndexStore(database database.Database) *utxoIndexStore {
 	return &utxoIndexStore{
 		database: database,
 		toAdd:    make(map[ScriptPublicKeyString]UTXOOutpointEntryPairs),
-		toRemove: make(map[ScriptPublicKeyString]UTXOOutpoints),
+		toRemove: make(map[ScriptPublicKeyString]UTXOOutpointEntryPairs),
 	}
 }
 
@@ -61,7 +65,7 @@ func (uis *utxoIndexStore) add(scriptPublicKey *externalapi.ScriptPublicKey, out
 	return nil
 }
 
-func (uis *utxoIndexStore) remove(scriptPublicKey *externalapi.ScriptPublicKey, outpoint *externalapi.DomainOutpoint) error {
+func (uis *utxoIndexStore) remove(scriptPublicKey *externalapi.ScriptPublicKey, outpoint *externalapi.DomainOutpoint, utxoEntry externalapi.UTXOEntry) error {
 	key := ConvertScriptPublicKeyToString(scriptPublicKey)
 	log.Tracef("Removing outpoint %s:%d from scriptPublicKey %s",
 		outpoint.TransactionID, outpoint.Index, key)
@@ -76,19 +80,19 @@ func (uis *utxoIndexStore) remove(scriptPublicKey *externalapi.ScriptPublicKey, 
 		}
 	}
 
-	// Create a UTXOOutpoints entry in `toRemove` if it doesn't exist
+	// Create a UTXOOutpointEntryPair in `toRemove` if it doesn't exist
 	if _, ok := uis.toRemove[key]; !ok {
 		log.Tracef("Creating key %s in `toRemove`", key)
-		uis.toRemove[key] = make(UTXOOutpoints)
+		uis.toRemove[key] = make(UTXOOutpointEntryPairs)
 	}
 
 	// Return an error if the outpoint already exists in `toRemove`
-	toRemoveOutpointsOfKey := uis.toRemove[key]
-	if _, ok := toRemoveOutpointsOfKey[*outpoint]; ok {
+	toRemovePairsOfKey := uis.toRemove[key]
+	if _, ok := toRemovePairsOfKey[*outpoint]; ok {
 		return errors.Errorf("cannot remove outpoint %s because it's being removed already", outpoint)
 	}
 
-	toRemoveOutpointsOfKey[*outpoint] = struct{}{}
+	toRemovePairsOfKey[*outpoint] = utxoEntry
 
 	log.Tracef("Removed outpoint %s:%d from scriptPublicKey %s",
 		outpoint.TransactionID, outpoint.Index, key)
@@ -101,7 +105,7 @@ func (uis *utxoIndexStore) updateVirtualParents(virtualParents []*externalapi.Do
 
 func (uis *utxoIndexStore) discard() {
 	uis.toAdd = make(map[ScriptPublicKeyString]UTXOOutpointEntryPairs)
-	uis.toRemove = make(map[ScriptPublicKeyString]UTXOOutpoints)
+	uis.toRemove = make(map[ScriptPublicKeyString]UTXOOutpointEntryPairs)
 	uis.virtualParents = nil
 }
 
@@ -115,10 +119,12 @@ func (uis *utxoIndexStore) commit() error {
 	}
 	defer dbTransaction.RollbackUnlessClosed()
 
-	for scriptPublicKeyString, toRemoveOutpointsOfKey := range uis.toRemove {
+	toRemoveSompiSupply := uint64(0)
+
+	for scriptPublicKeyString, toRemoveUTXOOutpointEntryPairs := range uis.toRemove {
 		scriptPublicKey := ConvertStringToScriptPublicKey(scriptPublicKeyString)
 		bucket := uis.bucketForScriptPublicKey(scriptPublicKey)
-		for outpointToRemove := range toRemoveOutpointsOfKey {
+		for outpointToRemove, utxoEntryToRemove := range toRemoveUTXOOutpointEntryPairs {
 			key, err := uis.convertOutpointToKey(bucket, &outpointToRemove)
 			if err != nil {
 				return err
@@ -127,8 +133,11 @@ func (uis *utxoIndexStore) commit() error {
 			if err != nil {
 				return err
 			}
+			toRemoveSompiSupply = toRemoveSompiSupply + utxoEntryToRemove.Amount()
 		}
 	}
+
+	toAddSompiSupply := uint64(0)
 
 	for scriptPublicKeyString, toAddUTXOOutpointEntryPairs := range uis.toAdd {
 		scriptPublicKey := ConvertStringToScriptPublicKey(scriptPublicKeyString)
@@ -146,11 +155,17 @@ func (uis *utxoIndexStore) commit() error {
 			if err != nil {
 				return err
 			}
+			toAddSompiSupply = toAddSompiSupply + utxoEntryToAdd.Amount()
 		}
 	}
 
 	serializeParentHashes := serializeHashes(uis.virtualParents)
 	err = dbTransaction.Put(virtualParentsKey, serializeParentHashes)
+	if err != nil {
+		return err
+	}
+
+	err = uis.updateCirculatingSompiSupply(dbTransaction, toAddSompiSupply, toRemoveSompiSupply)
 	if err != nil {
 		return err
 	}
@@ -165,20 +180,29 @@ func (uis *utxoIndexStore) commit() error {
 }
 
 func (uis *utxoIndexStore) addAndCommitOutpointsWithoutTransaction(utxoPairs []*externalapi.OutpointAndUTXOEntryPair) error {
+	toAddSompiSupply := uint64(0)
 	for _, pair := range utxoPairs {
 		bucket := uis.bucketForScriptPublicKey(pair.UTXOEntry.ScriptPublicKey())
 		key, err := uis.convertOutpointToKey(bucket, pair.Outpoint)
 		if err != nil {
 			return err
 		}
+
 		serializedUTXOEntry, err := serializeUTXOEntry(pair.UTXOEntry)
 		if err != nil {
 			return err
 		}
+
 		err = uis.database.Put(key, serializedUTXOEntry)
 		if err != nil {
 			return err
 		}
+		toAddSompiSupply = toAddSompiSupply + pair.UTXOEntry.Amount()
+	}
+
+	err := uis.updateCirculatingSompiSupplyWithoutTransaction(toAddSompiSupply, uint64(0))
+	if err != nil {
+		return err
 	}
 
 	return nil
@@ -211,7 +235,7 @@ func (uis *utxoIndexStore) convertKeyToOutpoint(key *database.Key) (*externalapi
 
 func (uis *utxoIndexStore) stagedData() (
 	toAdd map[ScriptPublicKeyString]UTXOOutpointEntryPairs,
-	toRemove map[ScriptPublicKeyString]UTXOOutpoints,
+	toRemove map[ScriptPublicKeyString]UTXOOutpointEntryPairs,
 	virtualParents []*externalapi.DomainHash) {
 
 	toAddClone := make(map[ScriptPublicKeyString]UTXOOutpointEntryPairs, len(uis.toAdd))
@@ -223,13 +247,13 @@ func (uis *utxoIndexStore) stagedData() (
 		toAddClone[scriptPublicKeyString] = toAddUTXOOutpointEntryPairsClone
 	}
 
-	toRemoveClone := make(map[ScriptPublicKeyString]UTXOOutpoints, len(uis.toRemove))
-	for scriptPublicKeyString, toRemoveOutpoints := range uis.toRemove {
-		toRemoveOutpointsClone := make(UTXOOutpoints, len(toRemoveOutpoints))
-		for outpoint := range toRemoveOutpoints {
-			toRemoveOutpointsClone[outpoint] = struct{}{}
+	toRemoveClone := make(map[ScriptPublicKeyString]UTXOOutpointEntryPairs, len(uis.toRemove))
+	for scriptPublicKeyString, toRemoveUTXOOutpointEntryPairs := range uis.toRemove {
+		toRemoveUTXOOutpointEntryPairsClone := make(UTXOOutpointEntryPairs, len(toRemoveUTXOOutpointEntryPairs))
+		for outpoint, utxoEntry := range toRemoveUTXOOutpointEntryPairs {
+			toRemoveUTXOOutpointEntryPairsClone[outpoint] = utxoEntry
 		}
-		toRemoveClone[scriptPublicKeyString] = toRemoveOutpointsClone
+		toRemoveClone[scriptPublicKeyString] = toRemoveUTXOOutpointEntryPairsClone
 	}
 
 	return toAddClone, toRemoveClone, uis.virtualParents
@@ -294,6 +318,11 @@ func (uis *utxoIndexStore) deleteAll() error {
 		return err
 	}
 
+	err = uis.database.Delete(circulatingSupplyKey)
+	if err != nil {
+		return err
+	}
+
 	cursor, err := uis.database.Cursor(utxoIndexBucket)
 	if err != nil {
 		return err
@@ -312,4 +341,93 @@ func (uis *utxoIndexStore) deleteAll() error {
 	}
 
 	return nil
+}
+
+func (uis *utxoIndexStore) initializeCirculatingSompiSupply() error {
+
+	cursor, err := uis.database.Cursor(utxoIndexBucket)
+	if err != nil {
+		return err
+	}
+	defer cursor.Close()
+
+	circulatingSompiSupplyInDatabase := uint64(0)
+	for cursor.Next() {
+		serializedUTXOEntry, err := cursor.Value()
+		if err != nil {
+			return err
+		}
+		utxoEntry, err := deserializeUTXOEntry(serializedUTXOEntry)
+		if err != nil {
+			return err
+		}
+
+		circulatingSompiSupplyInDatabase = circulatingSompiSupplyInDatabase + utxoEntry.Amount()
+	}
+
+	err = uis.database.Put(
+		circulatingSupplyKey,
+		binaryserialization.SerializeUint64(circulatingSompiSupplyInDatabase),
+	)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (uis *utxoIndexStore) updateCirculatingSompiSupply(dbTransaction database.Transaction, toAddSompiSupply uint64, toRemoveSompiSupply uint64) error {
+	if toAddSompiSupply != toRemoveSompiSupply {
+		circulatingSupplyBytes, err := dbTransaction.Get(circulatingSupplyKey)
+		if err != nil {
+			return err
+		}
+
+		circulatingSupply, err := binaryserialization.DeserializeUint64(circulatingSupplyBytes)
+		if err != nil {
+			return err
+		}
+		err = dbTransaction.Put(
+			circulatingSupplyKey,
+			binaryserialization.SerializeUint64(circulatingSupply+toAddSompiSupply-toRemoveSompiSupply),
+		)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (uis *utxoIndexStore) updateCirculatingSompiSupplyWithoutTransaction(toAddSompiSupply uint64, toRemoveSompiSupply uint64) error {
+	if toAddSompiSupply != toRemoveSompiSupply {
+		circulatingSupplyBytes, err := uis.database.Get(circulatingSupplyKey)
+		if err != nil {
+			return err
+		}
+
+		circulatingSupply, err := binaryserialization.DeserializeUint64(circulatingSupplyBytes)
+		if err != nil {
+			return err
+		}
+		err = uis.database.Put(
+			circulatingSupplyKey,
+			binaryserialization.SerializeUint64(circulatingSupply+toAddSompiSupply-toRemoveSompiSupply),
+		)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (uis *utxoIndexStore) getCirculatingSompiSupply() (uint64, error) {
+	if uis.isAnythingStaged() {
+		return 0, errors.Errorf("cannot get circulatingSupply while staging isn't empty")
+	}
+	circulatingSupply, err := uis.database.Get(circulatingSupplyKey)
+	if err != nil {
+		return 0, err
+	}
+	return binaryserialization.DeserializeUint64(circulatingSupply)
 }
