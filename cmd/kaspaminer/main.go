@@ -37,7 +37,7 @@ func main() {
 
 	client, err := newMinerClient(cfg)
 	if err != nil {
-		printErrorAndExit(errors.Errorf("Error connecting to the RPC server: %s", err))
+		panic(errors.Wrap(err, "error connecting to the RPC server"))
 	}
 	defer client.Disconnect()
 
@@ -50,7 +50,7 @@ func main() {
 	spawn("mineLoop", func() {
 		err = mineLoop(client, cfg.NumberOfBlocks, *cfg.TargetBlocksPerSecond, cfg.MineWhenNotSynced, miningAddr)
 		if err != nil {
-			printErrorAndExit(errors.Errorf("Error in mine loop: %s", err))
+			panic(errors.Wrap(err, "error in mine loop"))
 		}
 		doneChan <- struct{}{}
 	})
