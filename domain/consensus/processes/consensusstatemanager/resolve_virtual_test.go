@@ -94,14 +94,14 @@ func TestAddGenesisChildAfterOneResolveVirtualCall(t *testing.T) {
 	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
 		factory := consensus.NewFactory()
 
-		tc, teardown, err := factory.NewTestConsensus(consensusConfig, "TestAddBlockBetweenResolveVirtualCalls")
+		tc, teardown, err := factory.NewTestConsensus(consensusConfig, "TestAddGenesisChildAfterOneResolveVirtualCall")
 		if err != nil {
 			t.Fatalf("Error setting up consensus: %+v", err)
 		}
 		defer teardown(false)
 
 		// Create a chain of blocks
-		const initialChainLength = 10
+		const initialChainLength = 6
 		previousBlockHash := consensusConfig.GenesisHash
 		for i := 0; i < initialChainLength; i++ {
 			previousBlockHash, _, err = tc.AddBlock([]*externalapi.DomainHash{previousBlockHash}, nil, nil)
@@ -153,14 +153,14 @@ func TestAddGenesisChildAfterTwoResolveVirtualCalls(t *testing.T) {
 	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
 		factory := consensus.NewFactory()
 
-		tc, teardown, err := factory.NewTestConsensus(consensusConfig, "TestAddBlockBetweenResolveVirtualCalls")
+		tc, teardown, err := factory.NewTestConsensus(consensusConfig, "TestAddGenesisChildAfterTwoResolveVirtualCalls")
 		if err != nil {
 			t.Fatalf("Error setting up consensus: %+v", err)
 		}
 		defer teardown(false)
 
 		// Create a chain of blocks
-		const initialChainLength = 10
+		const initialChainLength = 6
 		previousBlockHash := consensusConfig.GenesisHash
 		for i := 0; i < initialChainLength; i++ {
 			previousBlockHash, _, err = tc.AddBlock([]*externalapi.DomainHash{previousBlockHash}, nil, nil)
