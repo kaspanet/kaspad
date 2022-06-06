@@ -134,6 +134,9 @@ func TestAddGenesisChildAfterOneResolveVirtualCall(t *testing.T) {
 		}
 
 		_, _, err = tc.AddBlock([]*externalapi.DomainHash{consensusConfig.GenesisHash}, nil, nil)
+		if err != nil {
+			t.Fatalf("Error adding block during virtual resolution of reorg: %+v", err)
+		}
 
 		// Complete resolving virtual
 		for !isCompletelyResolved {
@@ -196,6 +199,9 @@ func TestAddGenesisChildAfterTwoResolveVirtualCalls(t *testing.T) {
 		}
 
 		_, _, err = tc.AddBlock([]*externalapi.DomainHash{consensusConfig.GenesisHash}, nil, nil)
+		if err != nil {
+			t.Fatalf("Error adding block during virtual resolution of reorg: %+v", err)
+		}
 
 		// Complete resolving virtual
 		for !isCompletelyResolved {
