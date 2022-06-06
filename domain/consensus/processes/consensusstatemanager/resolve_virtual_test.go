@@ -22,7 +22,7 @@ func TestAddBlockBetweenResolveVirtualCalls(t *testing.T) {
 		defer teardown(false)
 
 		// Create a chain of blocks
-		const initialChainLength = 20
+		const initialChainLength = 10
 		previousBlockHash := consensusConfig.GenesisHash
 		for i := 0; i < initialChainLength; i++ {
 			previousBlockHash, _, err = tc.AddBlock([]*externalapi.DomainHash{previousBlockHash}, nil, nil)
@@ -31,35 +31,26 @@ func TestAddBlockBetweenResolveVirtualCalls(t *testing.T) {
 			}
 		}
 
-		initialChainTipHash := previousBlockHash
-		tips := []*externalapi.DomainHash{initialChainTipHash}
-
 		// Mine a chain with more blocks, to re-organize the DAG
 		const reorgChainLength = initialChainLength + 1
-		reorgChain := make([]*externalapi.DomainHash, reorgChainLength)
 		previousBlock := consensusConfig.GenesisBlock
 		previousBlockHash = consensusConfig.GenesisHash
 		for i := 0; i < reorgChainLength; i++ {
 			previousBlock, _, err = tc.BuildBlockWithParents([]*externalapi.DomainHash{previousBlockHash}, nil, nil)
+			if err != nil {
+				t.Fatalf("Error mining block no. %d in re-org chain: %+v", i, err)
+			}
 			previousBlockHash = consensushashing.BlockHash(previousBlock)
-			if err != nil {
-				t.Fatalf("Error mining block no. %d in re-org chain: %+v", i, err)
-			}
+
+			// Do not UTXO validate in order to resolve virtual later
 			_, err := tc.ValidateAndInsertBlock(previousBlock, false)
-			reorgChain[i] = previousBlockHash
 			if err != nil {
 				t.Fatalf("Error mining block no. %d in re-org chain: %+v", i, err)
 			}
 		}
 
-		reorgChainTipHash := previousBlockHash
-		tips = append(tips, reorgChainTipHash)
-
+		// Resolve one step
 		_, isCompletelyResolved, err := tc.ResolveVirtualWithMaxParam(2)
-		if err != nil {
-			t.Fatalf("Error resolving virtual in re-org chain: %+v", err)
-		}
-		_, isCompletelyResolved, err = tc.ResolveVirtualWithMaxParam(2)
 		if err != nil {
 			t.Fatalf("Error resolving virtual in re-org chain: %+v", err)
 		}
@@ -70,27 +61,26 @@ func TestAddBlockBetweenResolveVirtualCalls(t *testing.T) {
 				Version: 0,
 			},
 		}
+
+		// Get template based on current resolve state
 		blockTemplate, err := tc.BuildBlockTemplate(emptyCoinbase, nil)
 		if err != nil {
 			t.Fatalf("Error building block template during virtual resolution of reorg: %+v", err)
 		}
 
+		// Resolve one more step
 		_, isCompletelyResolved, err = tc.ResolveVirtualWithMaxParam(2)
 		if err != nil {
 			t.Fatalf("Error resolving virtual in re-org chain: %+v", err)
 		}
-		if !isCompletelyResolved {
-			_, isCompletelyResolved, err = tc.ResolveVirtualWithMaxParam(2)
-			if err != nil {
-				t.Fatalf("Error resolving virtual in re-org chain: %+v", err)
-			}
-		}
 
+		// Add the mined block (now virtual was modified)
 		_, err = tc.ValidateAndInsertBlock(blockTemplate.Block, true)
 		if err != nil {
 			t.Fatalf("Error mining block during virtual resolution of reorg: %+v", err)
 		}
 
+		// Complete resolving virtual
 		for !isCompletelyResolved {
 			_, isCompletelyResolved, err = tc.ResolveVirtualWithMaxParam(2)
 			if err != nil {
