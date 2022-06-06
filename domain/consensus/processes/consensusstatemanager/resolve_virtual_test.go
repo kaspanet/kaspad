@@ -33,24 +33,23 @@ func TestAddBlockBetweenResolveVirtualCalls(t *testing.T) {
 
 		// Mine a chain with more blocks, to re-organize the DAG
 		const reorgChainLength = initialChainLength + 1
-		previousBlock := consensusConfig.GenesisBlock
 		previousBlockHash = consensusConfig.GenesisHash
 		for i := 0; i < reorgChainLength; i++ {
-			previousBlock, _, err = tc.BuildBlockWithParents([]*externalapi.DomainHash{previousBlockHash}, nil, nil)
+			previousBlock, _, err := tc.BuildBlockWithParents([]*externalapi.DomainHash{previousBlockHash}, nil, nil)
 			if err != nil {
 				t.Fatalf("Error mining block no. %d in re-org chain: %+v", i, err)
 			}
 			previousBlockHash = consensushashing.BlockHash(previousBlock)
 
 			// Do not UTXO validate in order to resolve virtual later
-			_, err := tc.ValidateAndInsertBlock(previousBlock, false)
+			_, err = tc.ValidateAndInsertBlock(previousBlock, false)
 			if err != nil {
 				t.Fatalf("Error mining block no. %d in re-org chain: %+v", i, err)
 			}
 		}
 
 		// Resolve one step
-		_, isCompletelyResolved, err := tc.ResolveVirtualWithMaxParam(2)
+		_, _, err = tc.ResolveVirtualWithMaxParam(2)
 		if err != nil {
 			t.Fatalf("Error resolving virtual in re-org chain: %+v", err)
 		}
@@ -69,7 +68,7 @@ func TestAddBlockBetweenResolveVirtualCalls(t *testing.T) {
 		}
 
 		// Resolve one more step
-		_, isCompletelyResolved, err = tc.ResolveVirtualWithMaxParam(2)
+		_, isCompletelyResolved, err := tc.ResolveVirtualWithMaxParam(2)
 		if err != nil {
 			t.Fatalf("Error resolving virtual in re-org chain: %+v", err)
 		}
