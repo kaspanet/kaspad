@@ -84,6 +84,7 @@ func (csm *consensusStateManager) ResolveVirtual(maxBlocksToResolve uint64) (*ex
 				// TODO: Investigate why this error happens in the first place, and remove the workaround.
 				if errors.Is(err, ErrReverseUTXODiffsUTXODiffChildNotFound) {
 					log.Errorf("Could not reverse UTXO diffs while resolving virtual: %s", err)
+					return nil, false, err
 				} else if err != nil {
 					return nil, false, err
 				}

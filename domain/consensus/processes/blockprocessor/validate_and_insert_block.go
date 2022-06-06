@@ -170,6 +170,7 @@ func (bp *blockProcessor) validateAndInsertBlock(stagingArea *model.StagingArea,
 		// TODO: Investigate why this error happens in the first place, and remove the workaround.
 		if errors.Is(err, consensusstatemanager.ErrReverseUTXODiffsUTXODiffChildNotFound) {
 			log.Errorf("Could not reverse UTXO diffs while resolving virtual: %s", err)
+			return nil, externalapi.StatusInvalid, err
 		} else if err != nil {
 			return nil, externalapi.StatusInvalid, err
 		}
