@@ -58,7 +58,7 @@ func sweep(conf *sweepConfig) error {
 	defer cancel()
 
 	getExternalSpendableUTXOsResponse, err := daemonClient.GetExternalSpendableUTXOs(ctx, &pb.GetExternalSpendableUTXOsRequest{
-		Id: uuid.String(),
+		Id:      uuid.String(),
 		Address: address.String(),
 	})
 	if err != nil {
@@ -105,7 +105,7 @@ func sweep(conf *sweepConfig) error {
 	fmt.Println("\tTo:\t", toAddress)
 
 	response, err := daemonClient.Broadcast(ctx, &pb.BroadcastRequest{
-		Id: uuid.String(),
+		Id:           uuid.String(),
 		IsDomain:     true,
 		Transactions: serializedSplitTransactions,
 	})

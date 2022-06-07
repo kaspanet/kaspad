@@ -43,7 +43,7 @@ func broadcast(conf *broadcastConfig) error {
 	}
 
 	response, err := daemonClient.Broadcast(ctx, &pb.BroadcastRequest{
-		Id: uuid.String(),
+		Id:           uuid.String(),
 		Transactions: transactions})
 	if err != nil {
 		return err

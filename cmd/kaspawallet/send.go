@@ -35,7 +35,7 @@ func send(conf *sendConfig) error {
 
 	createUnsignedTransactionsResponse, err :=
 		daemonClient.CreateUnsignedTransactions(ctx, &pb.CreateUnsignedTransactionsRequest{
-			Id: uuid.String(),
+			Id:      uuid.String(),
 			From:    conf.FromAddresses,
 			Address: conf.ToAddress,
 			Amount:  sendAmountSompi,
@@ -66,7 +66,7 @@ func send(conf *sendConfig) error {
 	}
 
 	response, err := daemonClient.Broadcast(ctx, &pb.BroadcastRequest{
-		Id: uuid.String(),
+		Id:           uuid.String(),
 		Transactions: signedTransactions,
 	})
 	if err != nil {
