@@ -24,6 +24,7 @@ func NewGetBalanceByAddressRequest(address string) *GetBalanceByAddressRequestMe
 type GetBalanceByAddressResponseMessage struct {
 	baseMessage
 	Balance uint64
+	NUtxos  uint64
 
 	Error *RPCError
 }
@@ -34,8 +35,9 @@ func (msg *GetBalanceByAddressResponseMessage) Command() MessageCommand {
 }
 
 // NewGetBalanceByAddressResponse returns an instance of the message
-func NewGetBalanceByAddressResponse(Balance uint64) *GetBalanceByAddressResponseMessage {
+func NewGetBalanceByAddressResponse(balance, nUtxos uint64) *GetBalanceByAddressResponseMessage {
 	return &GetBalanceByAddressResponseMessage{
-		Balance: Balance,
+		Balance: balance,
+		NUtxos:  nUtxos,
 	}
 }

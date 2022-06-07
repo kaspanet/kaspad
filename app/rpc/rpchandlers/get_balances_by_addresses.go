@@ -19,8 +19,7 @@ func HandleGetBalancesByAddresses(context *rpccontext.Context, _ *router.Router,
 
 	allEntries := make([]*appmessage.BalancesByAddressesEntry, len(getBalancesByAddressesRequest.Addresses))
 	for i, address := range getBalancesByAddressesRequest.Addresses {
-		balance, err := getBalanceByAddress(context, address)
-
+		balance, nUtxos, err := getBalanceByAddress(context, address)
 		if err != nil {
 			rpcError := &appmessage.RPCError{}
 			if !errors.As(err, &rpcError) {
@@ -33,6 +32,7 @@ func HandleGetBalancesByAddresses(context *rpccontext.Context, _ *router.Router,
 		allEntries[i] = &appmessage.BalancesByAddressesEntry{
 			Address: address,
 			Balance: balance,
+			NUtxos:  nUtxos,
 		}
 	}
 

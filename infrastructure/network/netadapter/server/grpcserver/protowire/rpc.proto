@@ -526,6 +526,7 @@ message GetBalanceByAddressRequestMessage {
 
 message GetBalanceByAddressResponseMessage {
   uint64 balance = 1;
+  uint64 nUtxos = 2;
 
   RPCError error = 1000;
 }
@@ -537,6 +538,7 @@ message GetBalancesByAddressesRequestMessage {
 message BalancesByAddressEntry{
   string address = 1;
   uint64 balance = 2;
+  uint64 nUtxos = 3;
 
   RPCError error = 1000;
 }
