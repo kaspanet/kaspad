@@ -10,7 +10,7 @@ import (
 )
 
 func balance(conf *balanceConfig) error {
-	daemonClient, tearDown, err := client.Connect(conf.DaemonAddress)
+	daemonClient, tearDown, uuid, err := client.Connect(conf.DaemonAddress)
 	if err != nil {
 		return err
 	}
@@ -18,7 +18,7 @@ func balance(conf *balanceConfig) error {
 
 	ctx, cancel := context.WithTimeout(context.Background(), daemonTimeout)
 	defer cancel()
-	response, err := daemonClient.GetBalance(ctx, &pb.GetBalanceRequest{})
+	response, err := daemonClient.GetBalance(ctx, &pb.GetBalanceRequest{Id: uuid.String()})
 	if err != nil {
 		return err
 	}

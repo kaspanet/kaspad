@@ -18,57 +18,69 @@ service kaspawalletd {
 }
 
 message GetBalanceRequest {
+  string id = 1;
 }
 
 message GetBalanceResponse {
-  uint64 available = 1;
-  uint64 pending = 2;
-  repeated AddressBalances addressBalances = 3;
+  string id = 1;
+  uint64 available = 2;
+  uint64 pending = 3;
+  repeated AddressBalances addressBalances = 4;
 }
 
 message AddressBalances {
-  string address = 1;
-  uint64 available = 2;
-  uint64 pending = 3;
+  string address = 2;
+  uint64 available = 3;
+  uint64 pending = 4;
 }
 
 message CreateUnsignedTransactionsRequest {
-  string address = 1;
-  uint64 amount = 2;
-  repeated string from = 3;
+  string id = 1;
+  string address = 2;
+  uint64 amount = 3;
+  repeated string from = 4;
 }
 
 message CreateUnsignedTransactionsResponse {
-  repeated bytes unsignedTransactions = 1;
+  string id = 1;
+  repeated bytes unsignedTransactions = 2;
 }
 
 message ShowAddressesRequest {
+  string id = 1;
 }
 
 message ShowAddressesResponse {
-  repeated string address = 1;
+  string id = 1;
+  repeated string address = 2;
 }
 
 message NewAddressRequest {
+  string id = 1;
 }
 
 message NewAddressResponse {
-  string address = 1;
+  string id = 1;
+  string address = 2;
 }
 
 message BroadcastRequest {
-        bool isDomain = 1;  
-        repeated bytes transactions = 2;
+        string id = 1;
+        bool isDomain = 2;  
+        repeated bytes transactions = 3;
 }
 
 message BroadcastResponse {
-  repeated string txIDs = 1;
+  string id = 1;
+  repeated string txIDs = 2;
 }
 
 message ShutdownRequest {
+        string id = 1;
 }
 
 message ShutdownResponse {
+        string id = 1;
 }
 
 message Outpoint {
@@ -95,30 +107,37 @@ message UtxoEntry {
 }
 
 message GetExternalSpendableUTXOsRequest{
-  string address = 1;
+  string id = 1;
+  string address = 2;
 }
 
 message GetExternalSpendableUTXOsResponse{
-  repeated UtxosByAddressesEntry Entries = 1;
+  string id = 1;
+  repeated UtxosByAddressesEntry Entries = 2;
 }
+
 // Since SendRequest contains a password - this command should only be used on a trusted or secure connection
 message SendRequest{
-  string toAddress = 1;
-  uint64 amount = 2;
-  string password = 3;
-  repeated string from = 4;
+  string id = 1;
+  string toAddress = 2;
+  uint64 amount = 3;
+  string password = 4;
+  repeated string from = 5;
 }
 
 message SendResponse{
-  repeated string txIDs = 1;
+  string id = 1;
+  repeated string txIDs = 2;
 }
 
 // Since SignRequest contains a password - this command should only be used on a trusted or secure connection
 message SignRequest{
-  repeated bytes unsignedTransactions = 1;
-  string password = 2;
+  string id = 1;
+  repeated bytes unsignedTransactions = 2;
+  string password = 3;
 }
 
 message SignResponse{
-  repeated bytes signedTransactions = 1;
+  string id = 1;
+  repeated bytes signedTransactions = 2;
 }

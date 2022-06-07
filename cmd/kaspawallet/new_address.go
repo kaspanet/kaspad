@@ -8,7 +8,7 @@ import (
 )
 
 func newAddress(conf *newAddressConfig) error {
-	daemonClient, tearDown, err := client.Connect(conf.DaemonAddress)
+	daemonClient, tearDown, uuid, err := client.Connect(conf.DaemonAddress)
 	if err != nil {
 		return err
 	}
@@ -17,7 +17,9 @@ func newAddress(conf *newAddressConfig) error {
 	ctx, cancel := context.WithTimeout(context.Background(), daemonTimeout)
 	defer cancel()
 
-	response, err := daemonClient.NewAddress(ctx, &pb.NewAddressRequest{})
+	response, err := daemonClient.NewAddress(ctx, &pb.NewAddressRequest{
+		Id: uuid.String(),
+	})
 	if err != nil {
 		return err
 	}

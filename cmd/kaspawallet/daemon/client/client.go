@@ -6,12 +6,13 @@ import (
 
 	"github.com/pkg/errors"
 
+	"github.com/google/uuid"
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/daemon/pb"
 	"google.golang.org/grpc"
 )
 
 // Connect connects to the kaspawalletd server, and returns the client instance
-func Connect(address string) (pb.KaspawalletdClient, func(), error) {
+func Connect(address string) (pb.KaspawalletdClient, func(), uuid.UUID, error) {
 	// Connection is local, so 1 second timeout is sufficient
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
@@ -19,12 +20,12 @@ func Connect(address string) (pb.KaspawalletdClient, func(), error) {
 	conn, err := grpc.DialContext(ctx, address, grpc.WithInsecure(), grpc.WithBlock())
 	if err != nil {
 		if errors.Is(err, context.DeadlineExceeded) {
-			return nil, nil, errors.New("kaspawallet daemon is not running, start it with `kaspawallet start-daemon`")
+			return nil, nil, uuid.UUID{}, errors.New("kaspawallet daemon is not running, start it with `kaspawallet start-daemon`")
 		}
-		return nil, nil, err
+		return nil, nil, uuid.UUID{}, err
 	}
 
 	return pb.NewKaspawalletdClient(conn), func() {
 		conn.Close()
-	}, nil
+	}, uuid.New(), nil
 }

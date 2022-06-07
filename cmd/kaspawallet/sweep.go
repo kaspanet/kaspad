@@ -48,7 +48,7 @@ func sweep(conf *sweepConfig) error {
 		return err
 	}
 
-	daemonClient, tearDown, err := client.Connect(conf.DaemonAddress)
+	daemonClient, tearDown, uuid, err := client.Connect(conf.DaemonAddress)
 	if err != nil {
 		return err
 	}
@@ -58,6 +58,7 @@ func sweep(conf *sweepConfig) error {
 	defer cancel()
 
 	getExternalSpendableUTXOsResponse, err := daemonClient.GetExternalSpendableUTXOs(ctx, &pb.GetExternalSpendableUTXOsRequest{
+		Id: uuid.String(),
 		Address: address.String(),
 	})
 	if err != nil {
@@ -79,7 +80,7 @@ func sweep(conf *sweepConfig) error {
 		paymentAmount = paymentAmount + UTXO.UTXOEntry.Amount()
 	}
 
-	newAddressResponse, err := daemonClient.NewAddress(ctx, &pb.NewAddressRequest{})
+	newAddressResponse, err := daemonClient.NewAddress(ctx, &pb.NewAddressRequest{Id: uuid.String()})
 	if err != nil {
 		return err
 	}
@@ -104,6 +105,7 @@ func sweep(conf *sweepConfig) error {
 	fmt.Println("\tTo:\t", toAddress)
 
 	response, err := daemonClient.Broadcast(ctx, &pb.BroadcastRequest{
+		Id: uuid.String(),
 		IsDomain:     true,
 		Transactions: serializedSplitTransactions,
 	})

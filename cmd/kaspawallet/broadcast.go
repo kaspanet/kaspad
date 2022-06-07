@@ -12,7 +12,7 @@ import (
 )
 
 func broadcast(conf *broadcastConfig) error {
-	daemonClient, tearDown, err := client.Connect(conf.DaemonAddress)
+	daemonClient, tearDown, uuid, err := client.Connect(conf.DaemonAddress)
 	if err != nil {
 		return err
 	}
@@ -42,7 +42,9 @@ func broadcast(conf *broadcastConfig) error {
 		return err
 	}
 
-	response, err := daemonClient.Broadcast(ctx, &pb.BroadcastRequest{Transactions: transactions})
+	response, err := daemonClient.Broadcast(ctx, &pb.BroadcastRequest{
+		Id: uuid.String(),
+		Transactions: transactions})
 	if err != nil {
 		return err
 	}

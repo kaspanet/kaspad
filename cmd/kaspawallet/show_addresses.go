@@ -8,7 +8,7 @@ import (
 )
 
 func showAddresses(conf *showAddressesConfig) error {
-	daemonClient, tearDown, err := client.Connect(conf.DaemonAddress)
+	daemonClient, tearDown, uuid, err := client.Connect(conf.DaemonAddress)
 	if err != nil {
 		return err
 	}
@@ -17,7 +17,7 @@ func showAddresses(conf *showAddressesConfig) error {
 	ctx, cancel := context.WithTimeout(context.Background(), daemonTimeout)
 	defer cancel()
 
-	response, err := daemonClient.ShowAddresses(ctx, &pb.ShowAddressesRequest{})
+	response, err := daemonClient.ShowAddresses(ctx, &pb.ShowAddressesRequest{Id: uuid.String()})
 	if err != nil {
 		return err
 	}

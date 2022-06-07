@@ -22,7 +22,7 @@ func send(conf *sendConfig) error {
 		return errors.Errorf("Cannot use 'send' command for multisig wallet without all of the keys")
 	}
 
-	daemonClient, tearDown, err := client.Connect(conf.DaemonAddress)
+	daemonClient, tearDown, uuid, err := client.Connect(conf.DaemonAddress)
 	if err != nil {
 		return err
 	}
@@ -35,6 +35,7 @@ func send(conf *sendConfig) error {
 
 	createUnsignedTransactionsResponse, err :=
 		daemonClient.CreateUnsignedTransactions(ctx, &pb.CreateUnsignedTransactionsRequest{
+			Id: uuid.String(),
 			From:    conf.FromAddresses,
 			Address: conf.ToAddress,
 			Amount:  sendAmountSompi,
@@ -64,7 +65,10 @@ func send(conf *sendConfig) error {
 		fmt.Printf("Broadcasting %d transactions\n", len(signedTransactions))
 	}
 
-	response, err := daemonClient.Broadcast(ctx, &pb.BroadcastRequest{Transactions: signedTransactions})
+	response, err := daemonClient.Broadcast(ctx, &pb.BroadcastRequest{
+		Id: uuid.String(),
+		Transactions: signedTransactions,
+	})
 	if err != nil {
 		return err
 	}
