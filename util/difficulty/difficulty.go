@@ -136,11 +136,11 @@ func CalcWork(bits uint32) *big.Int {
 
 func getHashrate(target *big.Int, TargetTimePerBlock time.Duration) *big.Int {
 	// From: https://bitcoin.stackexchange.com/a/5557/40800
-	// difficulty = hashrate / (2^256 / max_target / block_rate_in_seconds)
-	// hashrate = difficulty * (2^256 / max_target / block_rate_in_seconds)
+	// difficulty = hashrate / (2^256 / max_target / seconds_per_block)
+	// hashrate = difficulty * (2^256 / max_target / seconds_per_block)
 	// difficulty = max_target / target
-	// hashrate = (max_target / target) * (2^256 / max_target / block_rate_in_seconds)
-	// hashrate = 2^256 / (target * block_rate_in_seconds)
+	// hashrate = (max_target / target) * (2^256 / max_target / seconds_per_block)
+	// hashrate = 2^256 / (target * seconds_per_block)
 
 	tmp := new(big.Int)
 	divisor := new(big.Int).Set(target)
