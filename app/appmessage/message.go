@@ -161,6 +161,8 @@ const (
 	CmdNewBlockTemplateNotificationMessage
 	CmdGetMempoolEntriesByAddressesRequestMessage
 	CmdGetMempoolEntriesByAddressesResponseMessage
+	CmdGetCoinSupplyRequestMessage
+	CmdGetCoinSupplyResponseMessage
 )
 
 // ProtocolMessageCommandToString maps all MessageCommands to their string representation
@@ -294,8 +296,10 @@ var RPCMessageCommandToString = map[MessageCommand]string{
 	CmdNotifyNewBlockTemplateRequestMessage:                       "NotifyNewBlockTemplateRequest",
 	CmdNotifyNewBlockTemplateResponseMessage:                      "NotifyNewBlockTemplateResponse",
 	CmdNewBlockTemplateNotificationMessage:                        "NewBlockTemplateNotification",
-	CmdGetMempoolEntriesByAddressesRequestMessage:                 "CmdGetMempoolEntriesByAddressesRequest",
-	CmdGetMempoolEntriesByAddressesResponseMessage:                "CmdGetMempoolEntriesByAddressesResponse",
+	CmdGetMempoolEntriesByAddressesRequestMessage:                 "GetMempoolEntriesByAddressesRequest",
+	CmdGetMempoolEntriesByAddressesResponseMessage:                "GetMempoolEntriesByAddressesResponse",
+	CmdGetCoinSupplyRequestMessage:                                "GetCoinSupplyRequest",
+	CmdGetCoinSupplyResponseMessage:                               "GetCoinSupplyResponse",
 }
 
 // Message is an interface that describes a kaspa message. A type that

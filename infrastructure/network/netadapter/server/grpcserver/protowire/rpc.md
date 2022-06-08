@@ -110,6 +110,8 @@
     - [MempoolEntryByAddress](#protowire.MempoolEntryByAddress)
     - [GetMempoolEntriesByAddressesRequestMessage](#protowire.GetMempoolEntriesByAddressesRequestMessage)
     - [GetMempoolEntriesByAddressesResponseMessage](#protowire.GetMempoolEntriesByAddressesResponseMessage)
+    - [GetCoinSupplyRequestMessage](#protowire.GetCoinSupplyRequestMessage)
+    - [GetCoinSupplyResponseMessage](#protowire.GetCoinSupplyResponseMessage)
   
     - [SubmitBlockResponseMessage.RejectReason](#protowire.SubmitBlockResponseMessage.RejectReason)
   
@@ -1822,6 +1824,33 @@ See NotifyNewBlockTemplateRequestMessage
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | entries | [MempoolEntryByAddress](#protowire.MempoolEntryByAddress) | repeated |  |
+| error | [RPCError](#protowire.RPCError) |  |  |
+
+
+
+
+
+
+<a name="protowire.GetCoinSupplyRequestMessage"></a>
+
+### GetCoinSupplyRequestMessage
+
+
+
+
+
+
+
+<a name="protowire.GetCoinSupplyResponseMessage"></a>
+
+### GetCoinSupplyResponseMessage
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| maxSompi | [uint64](#uint64) |  | note: this is a hard coded maxSupply, actual maxSupply is expected to deviate by upto -5%, but cannot be measured exactly. |
+| circulatingSompi | [uint64](#uint64) |  |  |
 | error | [RPCError](#protowire.RPCError) |  |  |
 
 
