@@ -222,12 +222,16 @@ func (pm *pruningManager) nextPruningPointAndCandidateByBlockHash(stagingArea *m
 		}
 	}
 
-	ghostdagData, err := pm.ghostdagDataStore.Get(pm.databaseContext, stagingArea, blockHash, false)
+	currentPruningPoint, err := pm.pruningStore.PruningPoint(pm.databaseContext, stagingArea)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	currentPruningPoint, err := pm.pruningStore.PruningPoint(pm.databaseContext, stagingArea)
+	if blockHash.Equal(lowHash) {
+		return currentPruningPoint, currentCandidate, nil
+	}
+
+	ghostdagData, err := pm.ghostdagDataStore.Get(pm.databaseContext, stagingArea, blockHash, false)
 	if err != nil {
 		return nil, nil, err
 	}
