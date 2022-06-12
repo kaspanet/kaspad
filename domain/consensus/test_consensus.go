@@ -61,6 +61,14 @@ func (tc *testConsensus) AddBlock(parentHashes []*externalapi.DomainHash, coinba
 		return nil, nil, err
 	}
 
+	if tc.resolvingVirtual {
+		_, _, err := tc.consensusStateManager.ResolveVirtual(0)
+		if err != nil {
+			return nil, nil, err
+		}
+		tc.resolvingVirtual = false
+	}
+
 	virtualChangeSet, _, err := tc.blockProcessor.ValidateAndInsertBlock(block, true)
 	if err != nil {
 		return nil, nil, err

@@ -61,6 +61,7 @@ type consensus struct {
 	blocksWithTrustedDataDAAWindowStore model.BlocksWithTrustedDataDAAWindowStore
 
 	consensusEventsChan chan externalapi.ConsensusEvent
+	resolvingVirtual    bool
 }
 
 func (s *consensus) ValidateAndInsertBlockWithTrustedData(block *externalapi.BlockWithTrustedData, validateUTXO bool) (*externalapi.VirtualChangeSet, error) {
@@ -196,6 +197,14 @@ func (s *consensus) BuildBlockTemplate(coinbaseData *externalapi.DomainCoinbaseD
 func (s *consensus) ValidateAndInsertBlock(block *externalapi.DomainBlock, shouldValidateAgainstUTXO bool) (*externalapi.VirtualChangeSet, error) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
+
+	if s.resolvingVirtual {
+		_, _, err := s.consensusStateManager.ResolveVirtual(0)
+		if err != nil {
+			return nil, err
+		}
+		s.resolvingVirtual = false
+	}
 
 	virtualChangeSet, blockStatus, err := s.blockProcessor.ValidateAndInsertBlock(block, shouldValidateAgainstUTXO)
 	if err != nil {
@@ -873,6 +882,7 @@ func (s *consensus) ResolveVirtual() (*externalapi.VirtualChangeSet, bool, error
 	if err != nil {
 		return nil, false, err
 	}
+	s.resolvingVirtual = !isCompletelyResolved
 
 	stagingArea := model.NewStagingArea()
 	err = s.pruningManager.UpdatePruningPointByVirtual(stagingArea)
@@ -905,6 +915,7 @@ func (s *consensus) ResolveVirtualWithMaxParam(maxBlocksToResolve uint64) (*exte
 	if err != nil {
 		return nil, false, err
 	}
+	s.resolvingVirtual = !isCompletelyResolved
 
 	stagingArea := model.NewStagingArea()
 	err = s.pruningManager.UpdatePruningPointByVirtual(stagingArea)
