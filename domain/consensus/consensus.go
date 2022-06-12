@@ -199,7 +199,7 @@ func (s *consensus) ValidateAndInsertBlock(block *externalapi.DomainBlock, shoul
 	defer s.lock.Unlock()
 
 	if s.resolvingVirtual {
-		_, _, err := s.consensusStateManager.ResolveVirtual(0)
+		_, _, err := s.resolveVirtualNoLock(0)
 		if err != nil {
 			return nil, err
 		}
@@ -907,10 +907,10 @@ func (s *consensus) ResolveVirtualWithMaxParam(maxBlocksToResolve uint64) (*exte
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	// In order to prevent a situation that the consensus lock is held for too much time, we
-	// release the lock each time resolve 100 blocks.
-	// Note: maxBlocksToResolve should be smaller than finality interval in order to avoid a situation
-	// where UpdatePruningPointByVirtual skips a pruning point.
+	return s.resolveVirtualNoLock(maxBlocksToResolve)
+}
+
+func (s *consensus) resolveVirtualNoLock(maxBlocksToResolve uint64) (*externalapi.VirtualChangeSet, bool, error) {
 	virtualChangeSet, isCompletelyResolved, err := s.consensusStateManager.ResolveVirtual(maxBlocksToResolve)
 	if err != nil {
 		return nil, false, err
