@@ -49,7 +49,7 @@ type TestConsensus interface {
 		*externalapi.VirtualChangeSet, error)
 	UpdatePruningPointByVirtual() error
 
-	ResolveVirtualWithMaxParam(maxBlocksToResolve uint64) (*externalapi.VirtualChangeSet, bool, error)
+	ResolveVirtualWithMaxParam(maxBlocksToResolve uint64) (bool, error)
 
 	MineJSON(r io.Reader, blockType MineJSONBlockType) (tips []*externalapi.DomainHash, err error)
 	ToJSON(w io.Writer) error

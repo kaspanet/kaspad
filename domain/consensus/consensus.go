@@ -64,15 +64,15 @@ type consensus struct {
 	virtualNotUpdated   bool
 }
 
-func (s *consensus) ValidateAndInsertBlockWithTrustedData(block *externalapi.BlockWithTrustedData, validateUTXO bool) (*externalapi.VirtualChangeSet, error) {
+func (s *consensus) ValidateAndInsertBlockWithTrustedData(block *externalapi.BlockWithTrustedData, validateUTXO bool) error {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	virtualChangeSet, _, err := s.blockProcessor.ValidateAndInsertBlockWithTrustedData(block, validateUTXO)
+	_, _, err := s.blockProcessor.ValidateAndInsertBlockWithTrustedData(block, validateUTXO)
 	if err != nil {
-		return nil, err
+		return err
 	}
-	return virtualChangeSet, nil
+	return nil
 }
 
 // Init initializes consensus
@@ -194,18 +194,22 @@ func (s *consensus) BuildBlockTemplate(coinbaseData *externalapi.DomainCoinbaseD
 
 // ValidateAndInsertBlock validates the given block and, if valid, applies it
 // to the current state
-func (s *consensus) ValidateAndInsertBlock(block *externalapi.DomainBlock, shouldValidateAgainstUTXO bool) (*externalapi.VirtualChangeSet, error) {
+func (s *consensus) ValidateAndInsertBlock(block *externalapi.DomainBlock, shouldValidateAgainstUTXO bool) error {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	return s.validateAndInsertBlockNoLock(block, shouldValidateAgainstUTXO)
+	_, err := s.validateAndInsertBlockNoLock(block, shouldValidateAgainstUTXO)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func (s *consensus) validateAndInsertBlockNoLock(block *externalapi.DomainBlock, updateVirtual bool) (*externalapi.VirtualChangeSet, error) {
 	// This indicates that virtual must be fully updated before processing this block
 	if updateVirtual && s.virtualNotUpdated {
 		for s.virtualNotUpdated {
-			_, _, err := s.resolveVirtualNoLock(10000) // Note `s.virtualNotUpdated` is updated within the call
+			_, err := s.resolveVirtualNoLock(10000) // Note `s.virtualNotUpdated` is updated within the call
 			if err != nil {
 				return nil, err
 			}
@@ -881,7 +885,7 @@ func (s *consensus) PopulateMass(transaction *externalapi.DomainTransaction) {
 	s.transactionValidator.PopulateMass(transaction)
 }
 
-func (s *consensus) ResolveVirtual() (*externalapi.VirtualChangeSet, bool, error) {
+func (s *consensus) ResolveVirtual() (bool, error) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
@@ -889,55 +893,33 @@ func (s *consensus) ResolveVirtual() (*externalapi.VirtualChangeSet, bool, error
 	// release the lock each time resolve 100 blocks.
 	// Note: maxBlocksToResolve should be smaller than finality interval in order to avoid a situation
 	// where UpdatePruningPointByVirtual skips a pruning point.
-	virtualChangeSet, isCompletelyResolved, err := s.consensusStateManager.ResolveVirtual(100)
-	if err != nil {
-		return nil, false, err
-	}
-	s.virtualNotUpdated = !isCompletelyResolved
-
-	stagingArea := model.NewStagingArea()
-	err = s.pruningManager.UpdatePruningPointByVirtual(stagingArea)
-	if err != nil {
-		return nil, false, err
-	}
-
-	err = staging.CommitAllChanges(s.databaseContext, stagingArea)
-	if err != nil {
-		return nil, false, err
-	}
-
-	err = s.sendVirtualChangedEvent(virtualChangeSet, true)
-	if err != nil {
-		return nil, false, err
-	}
-
-	return virtualChangeSet, isCompletelyResolved, nil
+	return s.resolveVirtualNoLock(100)
 }
 
-func (s *consensus) resolveVirtualNoLock(maxBlocksToResolve uint64) (*externalapi.VirtualChangeSet, bool, error) {
+func (s *consensus) resolveVirtualNoLock(maxBlocksToResolve uint64) (bool, error) {
 	virtualChangeSet, isCompletelyResolved, err := s.consensusStateManager.ResolveVirtual(maxBlocksToResolve)
 	if err != nil {
-		return nil, false, err
+		return false, err
 	}
 	s.virtualNotUpdated = !isCompletelyResolved
 
 	stagingArea := model.NewStagingArea()
 	err = s.pruningManager.UpdatePruningPointByVirtual(stagingArea)
 	if err != nil {
-		return nil, false, err
+		return false, err
 	}
 
 	err = staging.CommitAllChanges(s.databaseContext, stagingArea)
 	if err != nil {
-		return nil, false, err
+		return false, err
 	}
 
 	err = s.sendVirtualChangedEvent(virtualChangeSet, true)
 	if err != nil {
-		return nil, false, err
+		return false, err
 	}
 
-	return virtualChangeSet, isCompletelyResolved, nil
+	return isCompletelyResolved, nil
 }
 
 func (s *consensus) BuildPruningPointProof() (*externalapi.PruningPointProof, error) {

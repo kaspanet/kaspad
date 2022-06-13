@@ -26,7 +26,7 @@ func addBlock(tc testapi.TestConsensus, parentHashes []*externalapi.DomainHash, 
 	}
 
 	blockHash := consensushashing.BlockHash(block)
-	_, err = tc.ValidateAndInsertBlock(block, true)
+	err = tc.ValidateAndInsertBlock(block, true)
 	if err != nil {
 		t.Fatalf("ValidateAndInsertBlock: %+v", err)
 	}
@@ -133,7 +133,7 @@ func TestValidateAndInsertImportedPruningPoint(t *testing.T) {
 					})
 				}
 
-				_, err = synceeStaging.ValidateAndInsertBlockWithTrustedData(blockWithTrustedData, false)
+				err = synceeStaging.ValidateAndInsertBlockWithTrustedData(blockWithTrustedData, false)
 				if err != nil {
 					t.Fatalf("ValidateAndInsertBlockWithTrustedData: %+v", err)
 				}
@@ -169,7 +169,7 @@ func TestValidateAndInsertImportedPruningPoint(t *testing.T) {
 					t.Fatalf("GetBlockHeader: %+v", err)
 				}
 
-				_, err = synceeStaging.ValidateAndInsertBlock(&externalapi.DomainBlock{Header: header}, false)
+				err = synceeStaging.ValidateAndInsertBlock(&externalapi.DomainBlock{Header: header}, false)
 				if err != nil {
 					t.Fatalf("ValidateAndInsertBlock %d: %+v", i, err)
 				}
@@ -273,7 +273,7 @@ func TestValidateAndInsertImportedPruningPoint(t *testing.T) {
 					t.Fatalf("GetBlock: %+v", err)
 				}
 
-				_, err = synceeStaging.ValidateAndInsertBlock(block, true)
+				err = synceeStaging.ValidateAndInsertBlock(block, true)
 				if err != nil {
 					t.Fatalf("ValidateAndInsertBlock: %+v", err)
 				}
@@ -299,7 +299,7 @@ func TestValidateAndInsertImportedPruningPoint(t *testing.T) {
 				t.Fatalf("GetBlock: %+v", err)
 			}
 
-			_, err = synceeStaging.ValidateAndInsertBlock(tip, true)
+			err = synceeStaging.ValidateAndInsertBlock(tip, true)
 			if err != nil {
 				t.Fatalf("ValidateAndInsertBlock: %+v", err)
 			}
@@ -346,7 +346,7 @@ func TestValidateAndInsertImportedPruningPoint(t *testing.T) {
 				t.Fatalf("GetBlock: %+v", err)
 			}
 
-			_, err = tcSyncee1.ValidateAndInsertBlock(block, true)
+			err = tcSyncee1.ValidateAndInsertBlock(block, true)
 			if err != nil {
 				t.Fatalf("ValidateAndInsertBlock: %+v", err)
 			}
@@ -478,7 +478,7 @@ func TestGetPruningPointUTXOs(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Error building block above genesis: %+v", err)
 		}
-		_, err = testConsensus.ValidateAndInsertBlock(blockAboveGenesis, true)
+		err = testConsensus.ValidateAndInsertBlock(blockAboveGenesis, true)
 		if err != nil {
 			t.Fatalf("Error validating and inserting block above genesis: %+v", err)
 		}
@@ -490,7 +490,7 @@ func TestGetPruningPointUTXOs(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Error building block with spendable coinbase: %+v", err)
 		}
-		_, err = testConsensus.ValidateAndInsertBlock(blockWithSpendableCoinbase, true)
+		err = testConsensus.ValidateAndInsertBlock(blockWithSpendableCoinbase, true)
 		if err != nil {
 			t.Fatalf("Error validating and inserting block with spendable coinbase: %+v", err)
 		}
@@ -529,7 +529,7 @@ func TestGetPruningPointUTXOs(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Error building including block: %+v", err)
 		}
-		_, err = testConsensus.ValidateAndInsertBlock(includingBlock, true)
+		err = testConsensus.ValidateAndInsertBlock(includingBlock, true)
 		if err != nil {
 			t.Fatalf("Error validating and inserting including block: %+v", err)
 		}
@@ -540,7 +540,7 @@ func TestGetPruningPointUTXOs(t *testing.T) {
 			if err != nil {
 				t.Fatalf("Error building block: %+v", err)
 			}
-			_, err = testConsensus.ValidateAndInsertBlock(block, true)
+			err = testConsensus.ValidateAndInsertBlock(block, true)
 			if err != nil {
 				t.Fatalf("Error validating and inserting block: %+v", err)
 			}
@@ -636,7 +636,7 @@ func BenchmarkGetPruningPointUTXOs(b *testing.B) {
 	if err != nil {
 		b.Fatalf("Error building block with spendable coinbase: %+v", err)
 	}
-	_, err = testConsensus.ValidateAndInsertBlock(blockWithSpendableCoinbase, true)
+	err = testConsensus.ValidateAndInsertBlock(blockWithSpendableCoinbase, true)
 	if err != nil {
 		b.Fatalf("Error validating and inserting block with spendable coinbase: %+v", err)
 	}
@@ -674,7 +674,7 @@ func BenchmarkGetPruningPointUTXOs(b *testing.B) {
 		if err != nil {
 			b.Fatalf("Error building block: %+v", err)
 		}
-		_, err = testConsensus.ValidateAndInsertBlock(block, true)
+		err = testConsensus.ValidateAndInsertBlock(block, true)
 		if err != nil {
 			b.Fatalf("Error validating and inserting block: %+v", err)
 		}
@@ -694,7 +694,7 @@ func BenchmarkGetPruningPointUTXOs(b *testing.B) {
 		if err != nil {
 			b.Fatalf("Error building block: %+v", err)
 		}
-		_, err = testConsensus.ValidateAndInsertBlock(block, true)
+		err = testConsensus.ValidateAndInsertBlock(block, true)
 		if err != nil {
 			b.Fatalf("Error validating and inserting block: %+v", err)
 		}
