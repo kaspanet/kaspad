@@ -10,9 +10,6 @@ import (
 )
 
 // ErrReverseUTXODiffsUTXODiffChildNotFound indicates a UTXO diff child was not found while calling ReverseUTXODiffs.
-// It's still not known what causes this error, but we can ignore it and not reverse the UTXO diffs
-// and harm performance in some cases.
-// TODO: Investigate why this error happens in the first place, and remove the workaround.
 var ErrReverseUTXODiffsUTXODiffChildNotFound = errors.New("ErrReverseUTXODiffsUTXODiffChildNotFound")
 
 func (csm *consensusStateManager) ReverseUTXODiffs(tipHash *externalapi.DomainHash,
