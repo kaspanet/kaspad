@@ -903,13 +903,6 @@ func (s *consensus) ResolveVirtual() (*externalapi.VirtualChangeSet, bool, error
 	return virtualChangeSet, isCompletelyResolved, nil
 }
 
-func (s *consensus) ResolveVirtualWithMaxParam(maxBlocksToResolve uint64) (*externalapi.VirtualChangeSet, bool, error) {
-	s.lock.Lock()
-	defer s.lock.Unlock()
-
-	return s.resolveVirtualNoLock(maxBlocksToResolve)
-}
-
 func (s *consensus) resolveVirtualNoLock(maxBlocksToResolve uint64) (*externalapi.VirtualChangeSet, bool, error) {
 	virtualChangeSet, isCompletelyResolved, err := s.consensusStateManager.ResolveVirtual(maxBlocksToResolve)
 	if err != nil {
