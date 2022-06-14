@@ -44,7 +44,7 @@ func TestValidateAndInsertImportedPruningPoint(t *testing.T) {
 		consensusConfig.K = 0
 		consensusConfig.PruningProofM = 1
 
-		syncConsensuses := func(tcSyncerRef, tcSynceeRef *testapi.TestConsensus) {
+		syncConsensuses := func(tcSyncerRef, tcSynceeRef *testapi.TestConsensus, updatePruningPointJustAfterImportingPruningPoint bool) {
 			tcSyncer, tcSyncee := *tcSyncerRef, *tcSynceeRef
 			pruningPointProof, err := tcSyncer.BuildPruningPointProof()
 			if err != nil {
@@ -236,6 +236,13 @@ func TestValidateAndInsertImportedPruningPoint(t *testing.T) {
 				t.Fatalf("ValidateAndInsertImportedPruningPoint: %+v", err)
 			}
 
+			if updatePruningPointJustAfterImportingPruningPoint {
+				err = synceeStaging.UpdatePruningPointByVirtual()
+				if err != nil {
+					t.Fatal(err)
+				}
+			}
+
 			emptyCoinbase := &externalapi.DomainCoinbaseData{
 				ScriptPublicKey: &externalapi.ScriptPublicKey{
 					Script:  nil,
@@ -386,7 +393,7 @@ func TestValidateAndInsertImportedPruningPoint(t *testing.T) {
 		}
 
 		tcSyncee1Ref := &tcSyncee1
-		syncConsensuses(&tcSyncer, tcSyncee1Ref)
+		syncConsensuses(&tcSyncer, tcSyncee1Ref, false)
 
 		// Test a situation where a consensus with pruned headers syncs another fresh consensus.
 		tcSyncee2, teardownSyncee2, err := factory.NewTestConsensus(consensusConfig, "TestValidateAndInsertPruningPointSyncee2")
@@ -395,7 +402,17 @@ func TestValidateAndInsertImportedPruningPoint(t *testing.T) {
 		}
 		defer teardownSyncee2(false)
 
-		syncConsensuses(tcSyncee1Ref, &tcSyncee2)
+		syncConsensuses(tcSyncee1Ref, &tcSyncee2, false)
+
+		// Check the regular sync but try to update the pruning point after the pruning point was imported. It tests a situation where the node
+		// was restarted before the virtual was resolved and then it calls UpdatePruningPointByVirtual on init.
+		tcSyncee3, teardownSyncee3, err := factory.NewTestConsensus(consensusConfig, "TestValidateAndInsertPruningPointSyncee3")
+		if err != nil {
+			t.Fatalf("Error setting up tcSyncee1: %+v", err)
+		}
+		defer teardownSyncee3(false)
+
+		syncConsensuses(&tcSyncer, &tcSyncee3, true)
 	})
 }
 
