@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
-	"github.com/kaspanet/kaspad/domain/consensus/processes/consensusstatemanager"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/multiset"
@@ -165,10 +164,7 @@ func (bp *blockProcessor) validateAndInsertBlock(stagingArea *model.StagingArea,
 
 	if reversalData != nil {
 		err = bp.consensusStateManager.ReverseUTXODiffs(blockHash, reversalData)
-		if errors.Is(err, consensusstatemanager.ErrReverseUTXODiffsUTXODiffChildNotFound) {
-			log.Criticalf("Could not reverse UTXO diffs while resolving virtual: %s", err)
-			return nil, externalapi.StatusInvalid, err
-		} else if err != nil {
+		if err != nil {
 			return nil, externalapi.StatusInvalid, err
 		}
 	}

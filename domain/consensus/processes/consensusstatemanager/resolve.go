@@ -5,7 +5,6 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/infrastructure/logger"
 	"github.com/kaspanet/kaspad/util/staging"
-	"github.com/pkg/errors"
 	"sort"
 )
 
@@ -79,10 +78,7 @@ func (csm *consensusStateManager) ResolveVirtual(maxBlocksToResolve uint64) (*ex
 
 			if reversalData != nil {
 				err = csm.ReverseUTXODiffs(resolveTip, reversalData)
-				if errors.Is(err, ErrReverseUTXODiffsUTXODiffChildNotFound) {
-					log.Criticalf("Could not reverse UTXO diffs while resolving virtual: %s", err)
-					return nil, false, err
-				} else if err != nil {
+				if err != nil {
 					return nil, false, err
 				}
 			}
