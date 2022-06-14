@@ -206,9 +206,12 @@ func (s *consensus) ValidateAndInsertBlock(block *externalapi.DomainBlock, shoul
 }
 
 func (s *consensus) validateAndInsertBlockNoLock(block *externalapi.DomainBlock, updateVirtual bool) (*externalapi.VirtualChangeSet, error) {
-	// This indicates that virtual must be fully updated before processing this block
+	// If virtual is in non-updated state, and the caller requests updating virtual -- then we must first
+	// resolve virtual so that the new block can be fully processed properly
 	if updateVirtual && s.virtualNotUpdated {
 		for s.virtualNotUpdated {
+			// We use 10000 << finality interval. See comment in `ResolveVirtual`.
+			// We give up responsiveness of consensus in this rare case.
 			_, err := s.resolveVirtualNoLock(10000) // Note `s.virtualNotUpdated` is updated within the call
 			if err != nil {
 				return nil, err
@@ -221,8 +224,8 @@ func (s *consensus) validateAndInsertBlockNoLock(block *externalapi.DomainBlock,
 		return nil, err
 	}
 
-	// Signify that virtual is in non-updated state
-	if !updateVirtual {
+	// If block has a body, and yet virtual was not updated -- signify that virtual is in non-updated state
+	if !updateVirtual && blockStatus != externalapi.StatusHeaderOnly {
 		s.virtualNotUpdated = true
 	}
 
