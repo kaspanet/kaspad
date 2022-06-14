@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/hashset"
+	"github.com/kaspanet/kaspad/util/staging"
 	"io"
 
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
@@ -257,4 +258,17 @@ func (tc *testConsensus) BuildHeaderWithParents(parentHashes []*externalapi.Doma
 	defer tc.lock.Unlock()
 
 	return tc.testBlockBuilder.BuildUTXOInvalidHeader(parentHashes)
+}
+
+func (tc *testConsensus) UpdatePruningPointByVirtual() error {
+	tc.lock.Lock()
+	defer tc.lock.Unlock()
+
+	stagingArea := model.NewStagingArea()
+	err := tc.pruningManager.UpdatePruningPointByVirtual(stagingArea)
+	if err != nil {
+		return err
+	}
+
+	return staging.CommitAllChanges(tc.databaseContext, stagingArea)
 }

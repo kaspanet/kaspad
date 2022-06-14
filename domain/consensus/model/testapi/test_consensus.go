@@ -47,6 +47,7 @@ type TestConsensus interface {
 
 	AddUTXOInvalidBlock(parentHashes []*externalapi.DomainHash) (*externalapi.DomainHash,
 		*externalapi.VirtualChangeSet, error)
+	UpdatePruningPointByVirtual() error
 
 	MineJSON(r io.Reader, blockType MineJSONBlockType) (tips []*externalapi.DomainHash, err error)
 	ToJSON(w io.Writer) error
