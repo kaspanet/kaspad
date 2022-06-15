@@ -33,7 +33,7 @@ func TestFinality(t *testing.T) {
 				return nil, err
 			}
 
-			_, err = consensus.ValidateAndInsertBlock(block, true)
+			err = consensus.ValidateAndInsertBlock(block, true)
 			if err != nil {
 				return nil, err
 			}
@@ -201,7 +201,7 @@ func TestBoundedMergeDepth(t *testing.T) {
 				return nil, false // fo some reason go doesn't recognize that t.Fatalf never returns
 			}
 
-			_, err = consensus.ValidateAndInsertBlock(block, true)
+			err = consensus.ValidateAndInsertBlock(block, true)
 			if err == nil {
 				return block, false
 			} else if errors.Is(err, ruleerrors.ErrViolatingBoundedMergeDepth) {
@@ -213,7 +213,7 @@ func TestBoundedMergeDepth(t *testing.T) {
 		}
 
 		processBlock := func(consensus testapi.TestConsensus, block *externalapi.DomainBlock, name string) {
-			_, err := consensus.ValidateAndInsertBlock(block, true)
+			err := consensus.ValidateAndInsertBlock(block, true)
 			if err != nil {
 				t.Fatalf("TestBoundedMergeDepth: %s got unexpected error from ProcessBlock: %+v", name, err)
 
@@ -225,7 +225,7 @@ func TestBoundedMergeDepth(t *testing.T) {
 			if err != nil {
 				t.Fatalf("TestBoundedMergeDepth: Failed building block: %+v", err)
 			}
-			_, err = consensus.ValidateAndInsertBlock(block, true)
+			err = consensus.ValidateAndInsertBlock(block, true)
 			if err != nil {
 				t.Fatalf("TestBoundedMergeDepth: Failed Inserting block to consensus: %v", err)
 			}
@@ -268,7 +268,7 @@ func TestBoundedMergeDepth(t *testing.T) {
 					t.Fatalf("GetBlockHeader: %+v", err)
 				}
 
-				_, err = tcSyncee.ValidateAndInsertBlock(block, true)
+				err = tcSyncee.ValidateAndInsertBlock(block, true)
 				if err != nil {
 					t.Fatalf("ValidateAndInsertBlock %d: %+v", i, err)
 				}
@@ -556,7 +556,7 @@ func TestFinalityResolveVirtual(t *testing.T) {
 				block.Header = mutableHeader.ToImmutable()
 			}
 
-			_, err = tcAttacker.ValidateAndInsertBlock(block, true)
+			err = tcAttacker.ValidateAndInsertBlock(block, true)
 			if err != nil {
 				panic(err)
 			}
@@ -583,14 +583,14 @@ func TestFinalityResolveVirtual(t *testing.T) {
 		t.Logf("Side chain tip (%s) blue score %d", sideChainTipHash, sideChainTipGHOSTDAGData.BlueScore())
 
 		for _, block := range sideChain {
-			_, err := tc.ValidateAndInsertBlock(block, false)
+			err := tc.ValidateAndInsertBlock(block, false)
 			if err != nil {
 				panic(err)
 			}
 		}
 
 		for i := 0; ; i++ {
-			_, isCompletelyResolved, err := tc.ResolveVirtual()
+			isCompletelyResolved, err := tc.ResolveVirtual()
 			if err != nil {
 				panic(err)
 			}
