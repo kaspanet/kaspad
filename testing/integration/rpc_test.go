@@ -1,7 +1,7 @@
 package integration
 
 import (
-	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/server/grpcserver"
+	"github.com/kaspanet/kaspad/infrastructure/config"
 	"testing"
 	"time"
 
@@ -45,7 +45,7 @@ func TestRPCMaxInboundConnections(t *testing.T) {
 	rpcClients := []*testRPCClient{}
 	doneChan := make(chan error)
 	go func() {
-		for i := 0; i < grpcserver.RPCMaxInboundConnections; i++ {
+		for i := 0; i < config.DefaultMaxRPCClients; i++ {
 			rpcClient, err := newTestRPCClient(harness.rpcAddress)
 			if err != nil {
 				doneChan <- err
@@ -60,7 +60,7 @@ func TestRPCMaxInboundConnections(t *testing.T) {
 			t.Fatalf("newTestRPCClient: %s", err)
 		}
 	case <-time.After(time.Second * 5):
-		t.Fatalf("Timeout for connecting %d RPC connections elapsed", grpcserver.RPCMaxInboundConnections)
+		t.Fatalf("Timeout for connecting %d RPC connections elapsed", config.DefaultMaxRPCClients)
 	}
 
 	// Try to connect another client. We expect this to fail
