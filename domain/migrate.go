@@ -106,7 +106,7 @@ func syncConsensuses(syncer, syncee externalapi.Consensus) error {
 			})
 		}
 
-		_, err = syncee.ValidateAndInsertBlockWithTrustedData(blockWithTrustedData, false)
+		err = syncee.ValidateAndInsertBlockWithTrustedData(blockWithTrustedData, false)
 		if err != nil {
 			return err
 		}
@@ -161,7 +161,7 @@ func syncConsensuses(syncer, syncee externalapi.Consensus) error {
 			return err
 		}
 
-		_, err = syncee.ValidateAndInsertBlock(block, false)
+		err = syncee.ValidateAndInsertBlock(block, false)
 		if err != nil {
 			return err
 		}
@@ -232,7 +232,7 @@ func syncConsensuses(syncer, syncee externalapi.Consensus) error {
 				log.Infof("Resolving virtual. Estimated progress: %d%%", percents)
 			}
 		}
-		_, isCompletelyResolved, err := syncee.ResolveVirtual()
+		isCompletelyResolved, err := syncee.ResolveVirtual()
 		if err != nil {
 			return err
 		}

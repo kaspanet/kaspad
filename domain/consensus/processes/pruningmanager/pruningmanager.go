@@ -191,6 +191,46 @@ func (pm *pruningManager) UpdatePruningPointByVirtual(stagingArea *model.Staging
 	return nil
 }
 
+type blockIteratorFromOneBlock struct {
+	done, isClosed bool
+	hash           *externalapi.DomainHash
+}
+
+func (b *blockIteratorFromOneBlock) First() bool {
+	if b.isClosed {
+		panic("Tried using a closed blockIteratorFromOneBlock")
+	}
+
+	b.done = false
+	return true
+}
+
+func (b *blockIteratorFromOneBlock) Next() bool {
+	if b.isClosed {
+		panic("Tried using a closed blockIteratorFromOneBlock")
+	}
+
+	b.done = true
+	return false
+}
+
+func (b *blockIteratorFromOneBlock) Get() (*externalapi.DomainHash, error) {
+	if b.isClosed {
+		panic("Tried using a closed blockIteratorFromOneBlock")
+	}
+
+	return b.hash, nil
+}
+
+func (b *blockIteratorFromOneBlock) Close() error {
+	if b.isClosed {
+		panic("Tried using a closed blockIteratorFromOneBlock")
+	}
+
+	b.isClosed = true
+	return nil
+}
+
 func (pm *pruningManager) nextPruningPointAndCandidateByBlockHash(stagingArea *model.StagingArea,
 	blockHash, suggestedLowHash *externalapi.DomainHash) (*externalapi.DomainHash, *externalapi.DomainHash, error) {
 
@@ -222,12 +262,12 @@ func (pm *pruningManager) nextPruningPointAndCandidateByBlockHash(stagingArea *m
 		}
 	}
 
-	ghostdagData, err := pm.ghostdagDataStore.Get(pm.databaseContext, stagingArea, blockHash, false)
+	currentPruningPoint, err := pm.pruningStore.PruningPoint(pm.databaseContext, stagingArea)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	currentPruningPoint, err := pm.pruningStore.PruningPoint(pm.databaseContext, stagingArea)
+	ghostdagData, err := pm.ghostdagDataStore.Get(pm.databaseContext, stagingArea, blockHash, false)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -240,9 +280,14 @@ func (pm *pruningManager) nextPruningPointAndCandidateByBlockHash(stagingArea *m
 	// We iterate until the selected parent of the given block, in order to allow a situation where the given block hash
 	// belongs to the virtual. This shouldn't change anything since the max blue score difference between a block and its
 	// selected parent is K, and K << pm.pruningDepth.
-	iterator, err := pm.dagTraversalManager.SelectedChildIterator(stagingArea, ghostdagData.SelectedParent(), lowHash, true)
-	if err != nil {
-		return nil, nil, err
+	var iterator model.BlockIterator
+	if blockHash.Equal(lowHash) {
+		iterator = &blockIteratorFromOneBlock{hash: lowHash}
+	} else {
+		iterator, err = pm.dagTraversalManager.SelectedChildIterator(stagingArea, ghostdagData.SelectedParent(), lowHash, true)
+		if err != nil {
+			return nil, nil, err
+		}
 	}
 	defer iterator.Close()
 

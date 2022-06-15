@@ -38,8 +38,9 @@ const (
 	defaultBanDuration         = time.Hour * 24
 	defaultBanThreshold        = 100
 	//DefaultConnectTimeout is the default connection timeout when dialing
-	DefaultConnectTimeout        = time.Second * 30
-	defaultMaxRPCClients         = 10
+	DefaultConnectTimeout = time.Second * 30
+	//DefaultMaxRPCClients is the default max number of RPC clients
+	DefaultMaxRPCClients         = 128
 	defaultMaxRPCWebsockets      = 25
 	defaultMaxRPCConcurrentReqs  = 20
 	defaultBlockMaxMass          = 10_000_000
@@ -178,7 +179,7 @@ func defaultFlags() *Flags {
 		MaxInboundPeers:      defaultMaxInboundPeers,
 		BanDuration:          defaultBanDuration,
 		BanThreshold:         defaultBanThreshold,
-		RPCMaxClients:        defaultMaxRPCClients,
+		RPCMaxClients:        DefaultMaxRPCClients,
 		RPCMaxWebsockets:     defaultMaxRPCWebsockets,
 		RPCMaxConcurrentReqs: defaultMaxRPCConcurrentReqs,
 		AppDir:               defaultDataDir,

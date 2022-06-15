@@ -31,7 +31,6 @@ func (s *server) GetExternalSpendableUTXOs(_ context.Context, request *pb.GetExt
 }
 
 func (s *server) selectExternalSpendableUTXOs(externalUTXOs *appmessage.GetUTXOsByAddressesResponseMessage, address string) ([]*pb.UtxosByAddressesEntry, error) {
-
 	dagInfo, err := s.rpcClient.GetBlockDAGInfo()
 	if err != nil {
 		return nil, err
