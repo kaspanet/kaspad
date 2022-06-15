@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
-	"github.com/kaspanet/kaspad/domain/consensus/processes/consensusstatemanager"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/multiset"
@@ -165,12 +164,7 @@ func (bp *blockProcessor) validateAndInsertBlock(stagingArea *model.StagingArea,
 
 	if reversalData != nil {
 		err = bp.consensusStateManager.ReverseUTXODiffs(blockHash, reversalData)
-		// It's still not known what causes this error, but we can ignore it and not reverse the UTXO diffs
-		// and harm performance in some cases.
-		// TODO: Investigate why this error happens in the first place, and remove the workaround.
-		if errors.Is(err, consensusstatemanager.ErrReverseUTXODiffsUTXODiffChildNotFound) {
-			log.Errorf("Could not reverse UTXO diffs while resolving virtual: %s", err)
-		} else if err != nil {
+		if err != nil {
 			return nil, externalapi.StatusInvalid, err
 		}
 	}
