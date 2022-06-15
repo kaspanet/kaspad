@@ -9,14 +9,14 @@ import (
 // HandleNotifyVirtualDaaScoreChanged handles the respectively named RPC command
 func HandleNotifyVirtualDaaScoreChanged(context *rpccontext.Context, router *router.Router, request appmessage.Message) (appmessage.Message, error) {
 	
-	notifyUTXOsChangedRequest := request.(*appmessage.NotifyUTXOsChangedRequestMessage)
+	notifyVirtualDaaScoreChangedRequest := request.(*appmessage.NotifyVirtualDaaScoreChangedRequestMessage)
 	
 	listener, err := context.NotificationManager.Listener(router)
 	if err != nil {
 		return nil, err
 	}
-	listener.PropagateVirtualDaaScoreChangedNotifications()
+	listener.PropagateVirtualDaaScoreChangedNotifications(notifyVirtualDaaScoreChangedRequest.Id)
 
-	response := appmessage.NewNotifyVirtualDaaScoreChangedResponseMessage()
+	response := appmessage.NewNotifyVirtualDaaScoreChangedResponseMessage(notifyVirtualDaaScoreChangedRequest.Id)
 	return response, nil
 }

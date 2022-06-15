@@ -9,14 +9,14 @@ import (
 // HandleStopNotifyingPruningPointUTXOSetOverrideRequest handles the respectively named RPC command
 func HandleStopNotifyingPruningPointUTXOSetOverrideRequest(context *rpccontext.Context, router *router.Router, request appmessage.Message) (appmessage.Message, error) {
 	
-	notifyUTXOsChangedRequest := request.(*appmessage.NotifyUTXOsChangedRequestMessage)
+	stopNotifyingPruningPointUTXOSetOverrideRequest := request.(*appmessage.StopNotifyingPruningPointUTXOSetOverrideRequestMessage)
 	
 	listener, err := context.NotificationManager.Listener(router)
 	if err != nil {
 		return nil, err
 	}
-	listener.StopPropagatingPruningPointUTXOSetOverrideNotifications()
+	listener.StopPropagatingPruningPointUTXOSetOverrideNotifications(stopNotifyingPruningPointUTXOSetOverrideRequest.Id)
 
-	response := appmessage.NewStopNotifyingPruningPointUTXOSetOverrideResponseMessage()
+	response := appmessage.NewStopNotifyingPruningPointUTXOSetOverrideResponseMessage(stopNotifyingPruningPointUTXOSetOverrideRequest.Id)
 	return response, nil
 }

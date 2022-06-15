@@ -54,6 +54,7 @@ func NewPruningPointUTXOSetOverrideNotificationMessage(id string) *PruningPointU
 // its respective RPC message
 type StopNotifyingPruningPointUTXOSetOverrideRequestMessage struct {
 	baseMessage
+	Id string
 }
 
 // Command returns the protocol command string for the message
@@ -63,7 +64,7 @@ func (msg *StopNotifyingPruningPointUTXOSetOverrideRequestMessage) Command() Mes
 
 // NewStopNotifyingPruningPointUTXOSetOverrideRequestMessage returns a instance of the message
 func NewStopNotifyingPruningPointUTXOSetOverrideRequestMessage(id string) *StopNotifyingPruningPointUTXOSetOverrideRequestMessage {
-	return &StopNotifyingPruningPointUTXOSetOverrideRequestMessage{}
+	return &StopNotifyingPruningPointUTXOSetOverrideRequestMessage{Id: id}
 }
 
 // StopNotifyingPruningPointUTXOSetOverrideResponseMessage is an appmessage corresponding to

@@ -9,14 +9,14 @@ import (
 // HandleNotifyNewBlockTemplate handles the respectively named RPC command
 func HandleNotifyNewBlockTemplate(context *rpccontext.Context, router *router.Router, request appmessage.Message) (appmessage.Message, error) {
 	
-	notifyUTXOsChangedRequest := request.(*appmessage.NotifyUTXOsChangedRequestMessage)
+	notifyNewBlockTemplateRequest := request.(*appmessage.NotifyNewBlockTemplateRequestMessage)
 	
 	listener, err := context.NotificationManager.Listener(router)
 	if err != nil {
 		return nil, err
 	}
-	listener.PropagateNewBlockTemplateNotifications()
+	listener.PropagateNewBlockTemplateNotifications(notifyNewBlockTemplateRequest.Id)
 
-	response := appmessage.NewNotifyNewBlockTemplateResponseMessage()
+	response := appmessage.NewNotifyNewBlockTemplateResponseMessage(notifyNewBlockTemplateRequest.Id)
 	return response, nil
 }

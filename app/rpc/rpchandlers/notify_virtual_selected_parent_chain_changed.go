@@ -17,8 +17,9 @@ func HandleNotifyVirtualSelectedParentChainChanged(context *rpccontext.Context, 
 		return nil, err
 	}
 	listener.PropagateVirtualSelectedParentChainChangedNotifications(
-		notifyVirtualSelectedParentChainChangedRequest.IncludeAcceptedTransactionIDs)
+		notifyVirtualSelectedParentChainChangedRequest.IncludeAcceptedTransactionIDs,
+		notifyVirtualSelectedParentChainChangedRequest.Id)
 
-	response := appmessage.NewNotifyVirtualSelectedParentChainChangedResponseMessage()
+	response := appmessage.NewNotifyVirtualSelectedParentChainChangedResponseMessage(notifyVirtualSelectedParentChainChangedRequest.Id)
 	return response, nil
 }
