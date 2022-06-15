@@ -22,11 +22,11 @@ func (msg *GetMempoolEntriesByAddressesRequestMessage) Command() MessageCommand 
 }
 
 // NewGetMempoolEntriesByAddressesRequestMessage returns a instance of the message
-func NewGetMempoolEntriesByAddressesRequestMessage(addresses []string, includeOrphanPool bool, includeTransactionPool bool) *GetMempoolEntriesByAddressesRequestMessage {
+func NewGetMempoolEntriesByAddressesRequestMessage(addresses []string, includeOrphanPool bool, filterTransactionPool bool) *GetMempoolEntriesByAddressesRequestMessage {
 	return &GetMempoolEntriesByAddressesRequestMessage{
 		Addresses:             addresses,
 		IncludeOrphanPool:     includeOrphanPool,
-		FilterTransactionPool: includeTransactionPool,
+		FilterTransactionPool: filterTransactionPool,
 	}
 }
 
