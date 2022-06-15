@@ -127,8 +127,8 @@ func (s *gRPCServer) incrementInboundConnectionCountAndLimitIfRequired() (int, e
 	defer s.inboundConnectionCountLock.Unlock()
 
 	if s.maxInboundConnections > 0 && s.inboundConnectionCount == s.maxInboundConnections {
-		log.Warnf("Limit of %d inbound connections has been exceeded", s.maxInboundConnections)
-		return s.inboundConnectionCount, errors.Errorf("limit of %d inbound connections has been exceeded", s.maxInboundConnections)
+		log.Warnf("Limit of %d %s inbound connections has been exceeded", s.maxInboundConnections, s.name)
+		return s.inboundConnectionCount, errors.Errorf("limit of %d %s inbound connections has been exceeded", s.maxInboundConnections, s.name)
 	}
 
 	s.inboundConnectionCount++
