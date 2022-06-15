@@ -7,7 +7,10 @@ import (
 )
 
 // HandleNotifyPruningPointUTXOSetOverrideRequest handles the respectively named RPC command
-func HandleNotifyPruningPointUTXOSetOverrideRequest(context *rpccontext.Context, router *router.Router, _ appmessage.Message) (appmessage.Message, error) {
+func HandleNotifyPruningPointUTXOSetOverrideRequest(context *rpccontext.Context, router *router.Router, request appmessage.Message) (appmessage.Message, error) {
+	
+	notifyUTXOsChangedRequest := request.(*appmessage.NotifyUTXOsChangedRequestMessage)
+	
 	listener, err := context.NotificationManager.Listener(router)
 	if err != nil {
 		return nil, err

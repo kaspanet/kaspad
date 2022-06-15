@@ -7,13 +7,17 @@ import (
 )
 
 // HandleNotifyBlockAdded handles the respectively named RPC command
-func HandleNotifyBlockAdded(context *rpccontext.Context, router *router.Router, _ appmessage.Message) (appmessage.Message, error) {
+func HandleNotifyBlockAdded(context *rpccontext.Context, router *router.Router, request appmessage.Message) (appmessage.Message, error) {
+	notifyBlockAddedRequestMessage := request.(*appmessage.NotifyBlockAddedRequestMessage)
+	
+	notifyUTXOsChangedRequest := request.(*appmessage.NotifyUTXOsChangedRequestMessage)
+
 	listener, err := context.NotificationManager.Listener(router)
 	if err != nil {
 		return nil, err
 	}
 	listener.PropagateBlockAddedNotifications()
 
-	response := appmessage.NewNotifyBlockAddedResponseMessage()
+	response := appmessage.NewNotifyBlockAddedResponseMessage(notifyBlockAddedRequestMessage.Id)
 	return response, nil
 }

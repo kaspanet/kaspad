@@ -301,10 +301,12 @@ message SubmitTransactionResponseMessage{
 //
 // See: VirtualSelectedParentChainChangedNotificationMessage
 message NotifyVirtualSelectedParentChainChangedRequestMessage{
+  string id = 1001; 
   bool includeAcceptedTransactionIds = 1;
 }
 
 message NotifyVirtualSelectedParentChainChangedResponseMessage{
+  string id = 1001; 
   RPCError error = 1000;
 }
 
@@ -314,6 +316,7 @@ message NotifyVirtualSelectedParentChainChangedResponseMessage{
 // See: NotifyVirtualSelectedParentChainChangedRequestMessage
 message VirtualSelectedParentChainChangedNotificationMessage{
   // The chain blocks that were removed, in high-to-low order
+  string id = 1001; 
   repeated string removedChainBlockHashes = 1;
 
   // The chain blocks that were added, in low-to-high order
@@ -427,17 +430,21 @@ message ResolveFinalityConflictResponseMessage{
 }
 
 message NotifyFinalityConflictsRequestMessage{
+        string id = 1001; 
 }
 
 message NotifyFinalityConflictsResponseMessage{
+        string id = 1001; 
   RPCError error = 1000;
 }
 
 message FinalityConflictNotificationMessage{
+        string id = 1001; 
   string violatingBlockHash = 1;
 }
 
 message FinalityConflictResolvedNotificationMessage{
+        string id = 1001; 
   string finalityBlockHash = 1;
 }
 
@@ -469,10 +476,12 @@ message GetHeadersResponseMessage{
 //
 // See: UtxosChangedNotificationMessage
 message NotifyUtxosChangedRequestMessage {
+        string id = 1001; 
   repeated string addresses = 1; // Leave empty to get all updates
 }
 
 message NotifyUtxosChangedResponseMessage {
+        string id = 1001; 
   RPCError error = 1000;
 }
 
@@ -497,10 +506,12 @@ message UtxosByAddressesEntry {
 //
 // See: UtxosChangedNotificationMessage
 message StopNotifyingUtxosChangedRequestMessage {
+  string id = 1001; 
   repeated string addresses = 1;
 }
 
 message StopNotifyingUtxosChangedResponseMessage {
+  string id = 1001; 
   RPCError error = 1000;
 }
 
@@ -563,9 +574,11 @@ message GetVirtualSelectedParentBlueScoreResponseMessage {
 //
 // See: VirtualSelectedParentBlueScoreChangedNotificationMessage
 message NotifyVirtualSelectedParentBlueScoreChangedRequestMessage {
+  string id = 1001; 
 }
 
 message NotifyVirtualSelectedParentBlueScoreChangedResponseMessage {
+  string id = 1001; 
   RPCError error = 1000;
 }
 
@@ -574,6 +587,7 @@ message NotifyVirtualSelectedParentBlueScoreChangedResponseMessage {
 //
 // See NotifyVirtualSelectedParentBlueScoreChangedRequestMessage
 message VirtualSelectedParentBlueScoreChangedNotificationMessage {
+  string id = 1001; 
   uint64 virtualSelectedParentBlueScore = 1;
 }
 
@@ -582,9 +596,11 @@ message VirtualSelectedParentBlueScoreChangedNotificationMessage {
 //
 // See: VirtualDaaScoreChangedNotificationMessage
 message NotifyVirtualDaaScoreChangedRequestMessage {
+  string id = 1001; 
 }
 
 message NotifyVirtualDaaScoreChangedResponseMessage {
+  string id = 1001; 
   RPCError error = 1000;
 }
 
@@ -593,6 +609,7 @@ message NotifyVirtualDaaScoreChangedResponseMessage {
 //
 // See NotifyVirtualDaaScoreChangedRequestMessage
 message VirtualDaaScoreChangedNotificationMessage {
+  string id = 1001; 
   uint64 virtualDaaScore = 1;
 }
 
@@ -603,10 +620,12 @@ message VirtualDaaScoreChangedNotificationMessage {
 //
 // See: NotifyPruningPointUTXOSetOverrideResponseMessage
 message NotifyPruningPointUTXOSetOverrideRequestMessage {
+        string id = 1001; 
 }
 
 
 message NotifyPruningPointUTXOSetOverrideResponseMessage {
+        string id = 1001; 
   RPCError error = 1000;
 }
 
@@ -615,6 +634,7 @@ message NotifyPruningPointUTXOSetOverrideResponseMessage {
 //
 // See NotifyPruningPointUTXOSetOverrideRequestMessage
 message PruningPointUTXOSetOverrideNotificationMessage {
+        string id = 1001; 
 }
 
 // StopNotifyingPruningPointUTXOSetOverrideRequestMessage unregisters this connection for
@@ -624,9 +644,11 @@ message PruningPointUTXOSetOverrideNotificationMessage {
 //
 // See: PruningPointUTXOSetOverrideNotificationMessage
 message StopNotifyingPruningPointUTXOSetOverrideRequestMessage {
+        string id = 1001; 
 }
 
 message StopNotifyingPruningPointUTXOSetOverrideResponseMessage {
+        string id = 1001; 
   RPCError error = 1000;
 }
 
@@ -676,9 +698,11 @@ message EstimateNetworkHashesPerSecondResponseMessage{
 //
 // See: NewBlockTemplateNotificationMessage
 message NotifyNewBlockTemplateRequestMessage {
+        string id = 1001; 
 }
 
 message NotifyNewBlockTemplateResponseMessage {
+        string id = 1001; 
   RPCError error = 1000;
 }
 
@@ -687,6 +711,7 @@ message NotifyNewBlockTemplateResponseMessage {
 //
 // See NotifyNewBlockTemplateRequestMessage
 message NewBlockTemplateNotificationMessage {
+        string id = 1001; 
 }
 
 message MempoolEntryByAddress{

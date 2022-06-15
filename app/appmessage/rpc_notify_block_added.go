@@ -3,6 +3,7 @@ package appmessage
 // NotifyBlockAddedRequestMessage is an appmessage corresponding to
 // its respective RPC message
 type NotifyBlockAddedRequestMessage struct {
+	Id string
 	baseMessage
 }
 
@@ -12,14 +13,15 @@ func (msg *NotifyBlockAddedRequestMessage) Command() MessageCommand {
 }
 
 // NewNotifyBlockAddedRequestMessage returns a instance of the message
-func NewNotifyBlockAddedRequestMessage() *NotifyBlockAddedRequestMessage {
-	return &NotifyBlockAddedRequestMessage{}
+func NewNotifyBlockAddedRequestMessage(id string) *NotifyBlockAddedRequestMessage {
+	return &NotifyBlockAddedRequestMessage{Id: id}
 }
 
 // NotifyBlockAddedResponseMessage is an appmessage corresponding to
 // its respective RPC message
 type NotifyBlockAddedResponseMessage struct {
 	baseMessage
+	Id string
 	Error *RPCError
 }
 
@@ -29,14 +31,15 @@ func (msg *NotifyBlockAddedResponseMessage) Command() MessageCommand {
 }
 
 // NewNotifyBlockAddedResponseMessage returns a instance of the message
-func NewNotifyBlockAddedResponseMessage() *NotifyBlockAddedResponseMessage {
-	return &NotifyBlockAddedResponseMessage{}
+func NewNotifyBlockAddedResponseMessage(id string) *NotifyBlockAddedResponseMessage {
+	return &NotifyBlockAddedResponseMessage{Id: id}
 }
 
 // BlockAddedNotificationMessage is an appmessage corresponding to
 // its respective RPC message
 type BlockAddedNotificationMessage struct {
 	baseMessage
+	Id string
 	Block *RPCBlock
 }
 
@@ -46,8 +49,9 @@ func (msg *BlockAddedNotificationMessage) Command() MessageCommand {
 }
 
 // NewBlockAddedNotificationMessage returns a instance of the message
-func NewBlockAddedNotificationMessage(block *RPCBlock) *BlockAddedNotificationMessage {
+func NewBlockAddedNotificationMessage(block *RPCBlock, id string) *BlockAddedNotificationMessage {
 	return &BlockAddedNotificationMessage{
+		Id : id,
 		Block: block,
 	}
 }

@@ -4,6 +4,7 @@ package appmessage
 // its respective RPC message
 type NotifyUTXOsChangedRequestMessage struct {
 	baseMessage
+	Id string
 	Addresses []string
 }
 
@@ -13,7 +14,7 @@ func (msg *NotifyUTXOsChangedRequestMessage) Command() MessageCommand {
 }
 
 // NewNotifyUTXOsChangedRequestMessage returns a instance of the message
-func NewNotifyUTXOsChangedRequestMessage(addresses []string) *NotifyUTXOsChangedRequestMessage {
+func NewNotifyUTXOsChangedRequestMessage(addresses []string, id string) *NotifyUTXOsChangedRequestMessage {
 	return &NotifyUTXOsChangedRequestMessage{
 		Addresses: addresses,
 	}
@@ -22,7 +23,8 @@ func NewNotifyUTXOsChangedRequestMessage(addresses []string) *NotifyUTXOsChanged
 // NotifyUTXOsChangedResponseMessage is an appmessage corresponding to
 // its respective RPC message
 type NotifyUTXOsChangedResponseMessage struct {
-	baseMessage
+	baseMessage	
+	Id string
 	Error *RPCError
 }
 
@@ -32,14 +34,15 @@ func (msg *NotifyUTXOsChangedResponseMessage) Command() MessageCommand {
 }
 
 // NewNotifyUTXOsChangedResponseMessage returns a instance of the message
-func NewNotifyUTXOsChangedResponseMessage() *NotifyUTXOsChangedResponseMessage {
-	return &NotifyUTXOsChangedResponseMessage{}
+func NewNotifyUTXOsChangedResponseMessage(id string) *NotifyUTXOsChangedResponseMessage {
+	return &NotifyUTXOsChangedResponseMessage{Id: id}
 }
 
 // UTXOsChangedNotificationMessage is an appmessage corresponding to
 // its respective RPC message
 type UTXOsChangedNotificationMessage struct {
 	baseMessage
+	Id string
 	Added   []*UTXOsByAddressesEntry
 	Removed []*UTXOsByAddressesEntry
 }
@@ -57,6 +60,6 @@ func (msg *UTXOsChangedNotificationMessage) Command() MessageCommand {
 }
 
 // NewUTXOsChangedNotificationMessage returns a instance of the message
-func NewUTXOsChangedNotificationMessage() *UTXOsChangedNotificationMessage {
-	return &UTXOsChangedNotificationMessage{}
+func NewUTXOsChangedNotificationMessage(id string) *UTXOsChangedNotificationMessage {
+	return &UTXOsChangedNotificationMessage{Id: id}
 }

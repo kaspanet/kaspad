@@ -798,6 +798,7 @@ See: VirtualSelectedParentChainChangedNotificationMessage
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
+| id | [string](#string) |  |  |
 | includeAcceptedTransactionIds | [bool](#bool) |  |  |
 
 
@@ -813,6 +814,7 @@ See: VirtualSelectedParentChainChangedNotificationMessage
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
+| id | [string](#string) |  |  |
 | error | [RPCError](#protowire.RPCError) |  |  |
 
 
@@ -831,7 +833,8 @@ See: NotifyVirtualSelectedParentChainChangedRequestMessage
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| removedChainBlockHashes | [string](#string) | repeated | The chain blocks that were removed, in high-to-low order |
+| id | [string](#string) |  | The chain blocks that were removed, in high-to-low order |
+| removedChainBlockHashes | [string](#string) | repeated |  |
 | addedChainBlockHashes | [string](#string) | repeated | The chain blocks that were added, in low-to-high order |
 | acceptedTransactionIds | [AcceptedTransactionIds](#protowire.AcceptedTransactionIds) | repeated | Will be filled only if `includeAcceptedTransactionIds = true` in the notify request. |
 
@@ -1090,6 +1093,11 @@ of this kaspad&#39;s DAG.
 
 
 
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| id | [string](#string) |  |  |
+
+
 
 
 
@@ -1102,6 +1110,7 @@ of this kaspad&#39;s DAG.
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
+| id | [string](#string) |  |  |
 | error | [RPCError](#protowire.RPCError) |  |  |
 
 
@@ -1117,6 +1126,7 @@ of this kaspad&#39;s DAG.
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
+| id | [string](#string) |  |  |
 | violatingBlockHash | [string](#string) |  |  |
 
 
@@ -1132,6 +1142,7 @@ of this kaspad&#39;s DAG.
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
+| id | [string](#string) |  |  |
 | finalityBlockHash | [string](#string) |  |  |
 
 
@@ -1211,6 +1222,7 @@ See: UtxosChangedNotificationMessage
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
+| id | [string](#string) |  |  |
 | addresses | [string](#string) | repeated | Leave empty to get all updates |
 
 
@@ -1226,6 +1238,7 @@ See: UtxosChangedNotificationMessage
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
+| id | [string](#string) |  |  |
 | error | [RPCError](#protowire.RPCError) |  |  |
 
 
@@ -1281,6 +1294,7 @@ See: UtxosChangedNotificationMessage
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
+| id | [string](#string) |  |  |
 | addresses | [string](#string) | repeated |  |
 
 
@@ -1296,6 +1310,7 @@ See: UtxosChangedNotificationMessage
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
+| id | [string](#string) |  |  |
 | error | [RPCError](#protowire.RPCError) |  |  |
 
 
@@ -1453,6 +1468,11 @@ virtualSelectedParentBlueScoreChanged notifications.
 See: VirtualSelectedParentBlueScoreChangedNotificationMessage
 
 
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| id | [string](#string) |  |  |
+
+
 
 
 
@@ -1465,6 +1485,7 @@ See: VirtualSelectedParentBlueScoreChangedNotificationMessage
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
+| id | [string](#string) |  |  |
 | error | [RPCError](#protowire.RPCError) |  |  |
 
 
@@ -1483,6 +1504,7 @@ See NotifyVirtualSelectedParentBlueScoreChangedRequestMessage
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
+| id | [string](#string) |  |  |
 | virtualSelectedParentBlueScore | [uint64](#uint64) |  |  |
 
 
@@ -1499,6 +1521,11 @@ virtualDaaScoreChanged notifications.
 See: VirtualDaaScoreChangedNotificationMessage
 
 
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| id | [string](#string) |  |  |
+
+
 
 
 
@@ -1511,6 +1538,7 @@ See: VirtualDaaScoreChangedNotificationMessage
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
+| id | [string](#string) |  |  |
 | error | [RPCError](#protowire.RPCError) |  |  |
 
 
@@ -1529,6 +1557,7 @@ See NotifyVirtualDaaScoreChangedRequestMessage
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
+| id | [string](#string) |  |  |
 | virtualDaaScore | [uint64](#uint64) |  |  |
 
 
@@ -1547,6 +1576,11 @@ This call is only available when this kaspad was started with `--utxoindex`
 See: NotifyPruningPointUTXOSetOverrideResponseMessage
 
 
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| id | [string](#string) |  |  |
+
+
 
 
 
@@ -1559,6 +1593,7 @@ See: NotifyPruningPointUTXOSetOverrideResponseMessage
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
+| id | [string](#string) |  |  |
 | error | [RPCError](#protowire.RPCError) |  |  |
 
 
@@ -1573,6 +1608,11 @@ PruningPointUTXOSetOverrideNotificationMessage is sent whenever the UTXO index
 resets due to pruning point change via IBD.
 
 See NotifyPruningPointUTXOSetOverrideRequestMessage
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| id | [string](#string) |  |  |
 
 
 
@@ -1590,6 +1630,11 @@ This call is only available when this kaspad was started with `--utxoindex`
 See: PruningPointUTXOSetOverrideNotificationMessage
 
 
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| id | [string](#string) |  |  |
+
+
 
 
 
@@ -1602,6 +1647,7 @@ See: PruningPointUTXOSetOverrideNotificationMessage
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
+| id | [string](#string) |  |  |
 | error | [RPCError](#protowire.RPCError) |  |  |
 
 
@@ -1740,6 +1786,11 @@ NewBlockTemplate notifications.
 See: NewBlockTemplateNotificationMessage
 
 
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| id | [string](#string) |  |  |
+
+
 
 
 
@@ -1752,6 +1803,7 @@ See: NewBlockTemplateNotificationMessage
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
+| id | [string](#string) |  |  |
 | error | [RPCError](#protowire.RPCError) |  |  |
 
 
@@ -1766,6 +1818,11 @@ NewBlockTemplateNotificationMessage is sent whenever a new updated block templat
 available for miners.
 
 See NotifyNewBlockTemplateRequestMessage
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| id | [string](#string) |  |  |
 
 
 
