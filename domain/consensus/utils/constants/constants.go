@@ -3,11 +3,8 @@ package constants
 import "math"
 
 const (
-	// BlockVersionBeforeHF1 represents the current version of blocks mined before HF1
-	BlockVersionBeforeHF1 uint16 = 0
-
-	// BlockVersionAfterHF1 represents the current version of blocks mined after HF1
-	BlockVersionAfterHF1 uint16 = 1
+	// BlockVersion represents the current block version
+	BlockVersion uint16 = 1
 
 	// MaxTransactionVersion is the current latest supported transaction version.
 	MaxTransactionVersion uint16 = 0
@@ -18,11 +15,8 @@ const (
 	// SompiPerKaspa is the number of sompi in one kaspa (1 KAS).
 	SompiPerKaspa = 100_000_000
 
-	// MaxSompiBeforeHF1 is the maximum transaction amount allowed in sompi before the HF1 hard fork is activated.
-	MaxSompiBeforeHF1 = uint64(21_000_000 * SompiPerKaspa)
-
-	// MaxSompiAfterHF1 is the maximum transaction amount allowed in sompi after the HF1 hard fork is activated.
-	MaxSompiAfterHF1 = uint64(29_000_000_000 * SompiPerKaspa)
+	// MaxSompi is the maximum transaction amount allowed in sompi.
+	MaxSompi = uint64(29_000_000_000 * SompiPerKaspa)
 
 	// MaxTxInSequenceNum is the maximum sequence number the sequence field
 	// of a transaction input can be.

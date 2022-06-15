@@ -1,8 +1,9 @@
 package integration
 
 import (
-	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"testing"
+
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
@@ -15,7 +16,7 @@ func TestVirtualSelectedParentChain(t *testing.T) {
 
 	// Register to virtual selected parent chain changes
 	onVirtualSelectedParentChainChangedChan := make(chan *appmessage.VirtualSelectedParentChainChangedNotificationMessage)
-	err := kaspad1.rpcClient.RegisterForVirtualSelectedParentChainChangedNotifications(
+	err := kaspad1.rpcClient.RegisterForVirtualSelectedParentChainChangedNotifications(true,
 		func(notification *appmessage.VirtualSelectedParentChainChangedNotificationMessage) {
 			onVirtualSelectedParentChainChangedChan <- notification
 		})
@@ -64,36 +65,10 @@ func TestVirtualSelectedParentChain(t *testing.T) {
 	chain2TipHashString := chain2TipHash.String()
 
 	// For the first `blockAmountToMine - 1` blocks we don't expect
-	// the chain to change at all
-	for i := 0; i < blockAmountToMine-1; i++ {
-		notification := <-onVirtualSelectedParentChainChangedChan
-		if len(notification.RemovedChainBlockHashes) > 0 {
-			t.Fatalf("RemovedChainBlockHashes is unexpectedly not empty")
-		}
-		if len(notification.AddedChainBlockHashes) > 0 {
-			t.Fatalf("AddedChainBlockHashes is unexpectedly not empty")
-		}
-	}
+	// the chain to change at all, thus there will be no notifications
 
-	// Either the next block could cause a reorg or the one
-	// after it
-	potentialReorgNotification1 := <-onVirtualSelectedParentChainChangedChan
-	potentialReorgNotification2 := <-onVirtualSelectedParentChainChangedChan
-	var reorgNotification *appmessage.VirtualSelectedParentChainChangedNotificationMessage
-	var nonReorgNotification *appmessage.VirtualSelectedParentChainChangedNotificationMessage
-	if len(potentialReorgNotification1.RemovedChainBlockHashes) > 0 {
-		reorgNotification = potentialReorgNotification1
-		nonReorgNotification = potentialReorgNotification2
-	} else {
-		reorgNotification = potentialReorgNotification2
-		nonReorgNotification = potentialReorgNotification1
-	}
-
-	// Make sure that the non-reorg notification has nothing
-	// in `removed`
-	if len(nonReorgNotification.RemovedChainBlockHashes) > 0 {
-		t.Fatalf("nonReorgNotification.RemovedChainBlockHashes is unexpectedly not empty")
-	}
+	// Either the next block or the one after it will cause a reorg
+	reorgNotification := <-onVirtualSelectedParentChainChangedChan
 
 	// Make sure that the reorg notification contains exactly
 	// `blockAmountToMine` blocks in its `removed`
@@ -104,7 +79,8 @@ func TestVirtualSelectedParentChain(t *testing.T) {
 
 	// Get the virtual selected parent chain from the tip of
 	// the first chain
-	virtualSelectedParentChainFromChain1Tip, err := kaspad1.rpcClient.GetVirtualSelectedParentChainFromBlock(chain1TipHashString)
+	virtualSelectedParentChainFromChain1Tip, err := kaspad1.rpcClient.GetVirtualSelectedParentChainFromBlock(
+		chain1TipHashString, true)
 	if err != nil {
 		t.Fatalf("GetVirtualSelectedParentChainFromBlock failed: %s", err)
 	}

@@ -34,7 +34,7 @@ func TestValidateMedianTime(t *testing.T) {
 			newHeader := block.Header.ToMutable()
 			newHeader.SetTimeInMilliseconds(blockTime)
 			block.Header = newHeader.ToImmutable()
-			_, err = tc.ValidateAndInsertBlock(block, true)
+			err = tc.ValidateAndInsertBlock(block, true)
 			if !errors.Is(err, expectedErr) {
 				t.Fatalf("expected error %s but got %+v", expectedErr, err)
 			}
@@ -108,11 +108,7 @@ func TestCheckParentsIncest(t *testing.T) {
 			t.Fatalf("AddBlock: %+v", err)
 		}
 
-		version := constants.BlockVersionBeforeHF1
-		if consensusConfig.HF1DAAScore == 0 {
-			version = constants.BlockVersionAfterHF1
-		}
-
+		version := constants.BlockVersion
 		directParentsRelationBlock := &externalapi.DomainBlock{
 			Header: blockheader.NewImmutableBlockHeader(
 				version,
@@ -131,7 +127,7 @@ func TestCheckParentsIncest(t *testing.T) {
 			Transactions: nil,
 		}
 
-		_, err = tc.ValidateAndInsertBlock(directParentsRelationBlock, true)
+		err = tc.ValidateAndInsertBlock(directParentsRelationBlock, true)
 		if !errors.Is(err, ruleerrors.ErrInvalidParentsRelation) {
 			t.Fatalf("unexpected error %+v", err)
 		}
@@ -154,7 +150,7 @@ func TestCheckParentsIncest(t *testing.T) {
 			Transactions: nil,
 		}
 
-		_, err = tc.ValidateAndInsertBlock(indirectParentsRelationBlock, true)
+		err = tc.ValidateAndInsertBlock(indirectParentsRelationBlock, true)
 		if !errors.Is(err, ruleerrors.ErrInvalidParentsRelation) {
 			t.Fatalf("unexpected error %+v", err)
 		}

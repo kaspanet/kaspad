@@ -49,6 +49,27 @@ func TestUTXOIndex(t *testing.T) {
 		mineNextBlock(t, kaspad)
 	}
 
+	//check if rewards corrosponds to circulating supply.
+	getCoinSupplyResponse, err := kaspad.rpcClient.GetCoinSupply()
+	if err != nil {
+		t.Fatalf("Error Retriving Coin supply: %s", err)
+	}
+
+	rewardsMinedSompi := uint64(blockAmountToMine * constants.SompiPerKaspa * 500)
+	getBlockCountResponse, err := kaspad.rpcClient.GetBlockCount()
+	if err != nil {
+		t.Fatalf("Error Retriving BlockCount: %s", err)
+	}
+	rewardsMinedViaBlockCountSompi := uint64(
+		(getBlockCountResponse.BlockCount - 2) * constants.SompiPerKaspa * 500, // -2 because of genesis and virtual.
+	)
+
+	if getCoinSupplyResponse.CirculatingSompi != rewardsMinedSompi {
+		t.Fatalf("Error: Circulating supply Mismatch - Circulating Sompi: %d Sompi Mined: %d", getCoinSupplyResponse.CirculatingSompi, rewardsMinedSompi)
+	} else if getCoinSupplyResponse.CirculatingSompi != rewardsMinedViaBlockCountSompi {
+		t.Fatalf("Error: Circulating supply Mismatch - Circulating Sompi: %d Sompi Mined via Block count: %d", getCoinSupplyResponse.CirculatingSompi, rewardsMinedViaBlockCountSompi)
+	}
+
 	// Collect the UTXO and make sure there's nothing in Removed
 	// Note that we expect blockAmountToMine-1 messages because
 	// the last block won't be accepted until the next block is

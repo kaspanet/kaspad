@@ -4,9 +4,9 @@ package externalapi
 type Consensus interface {
 	Init(skipAddingGenesis bool) error
 	BuildBlock(coinbaseData *DomainCoinbaseData, transactions []*DomainTransaction) (*DomainBlock, error)
-	BuildBlockWithTemplateMetadata(coinbaseData *DomainCoinbaseData, transactions []*DomainTransaction) (block *DomainBlock, coinbaseHasRedReward bool, err error)
-	ValidateAndInsertBlock(block *DomainBlock, shouldValidateAgainstUTXO bool) (*VirtualChangeSet, error)
-	ValidateAndInsertBlockWithTrustedData(block *BlockWithTrustedData, validateUTXO bool) (*VirtualChangeSet, error)
+	BuildBlockTemplate(coinbaseData *DomainCoinbaseData, transactions []*DomainTransaction) (*DomainBlockTemplate, error)
+	ValidateAndInsertBlock(block *DomainBlock, shouldValidateAgainstUTXO bool) error
+	ValidateAndInsertBlockWithTrustedData(block *BlockWithTrustedData, validateUTXO bool) error
 	ValidateTransactionAndPopulateWithConsensusData(transaction *DomainTransaction) error
 	ImportPruningPoints(pruningPoints []BlockHeader) error
 	BuildPruningPointProof() (*PruningPointProof, error)
@@ -19,6 +19,7 @@ type Consensus interface {
 	GetBlockInfo(blockHash *DomainHash) (*BlockInfo, error)
 	GetBlockRelations(blockHash *DomainHash) (parents []*DomainHash, children []*DomainHash, err error)
 	GetBlockAcceptanceData(blockHash *DomainHash) (AcceptanceData, error)
+	GetBlocksAcceptanceData(blockHashes []*DomainHash) ([]AcceptanceData, error)
 
 	GetHashesBetween(lowHash, highHash *DomainHash, maxBlocks uint64) (hashes []*DomainHash, actualHighHash *DomainHash, err error)
 	GetAnticone(blockHash, contextHash *DomainHash, maxBlocks uint64) (hashes []*DomainHash, err error)
@@ -47,11 +48,12 @@ type Consensus interface {
 	Anticone(blockHash *DomainHash) ([]*DomainHash, error)
 	EstimateNetworkHashesPerSecond(startHash *DomainHash, windowSize int) (uint64, error)
 	PopulateMass(transaction *DomainTransaction)
-	ResolveVirtual() (*VirtualChangeSet, bool, error)
+	ResolveVirtual() (bool, error)
 	BlockDAAWindowHashes(blockHash *DomainHash) ([]*DomainHash, error)
 	TrustedDataDataDAAHeader(trustedBlockHash, daaBlockHash *DomainHash, daaBlockWindowIndex uint64) (*TrustedDataDataDAAHeader, error)
 	TrustedBlockAssociatedGHOSTDAGDataBlockHashes(blockHash *DomainHash) ([]*DomainHash, error)
 	TrustedGHOSTDAGData(blockHash *DomainHash) (*BlockGHOSTDAGData, error)
 	IsChainBlock(blockHash *DomainHash) (bool, error)
 	VirtualMergeDepthRoot() (*DomainHash, error)
+	IsNearlySynced() (bool, error)
 }

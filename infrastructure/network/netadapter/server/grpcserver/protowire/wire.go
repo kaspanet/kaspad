@@ -940,6 +940,34 @@ func toRPCPayload(message appmessage.Message) (isKaspadMessage_Payload, error) {
 			return nil, err
 		}
 		return payload, nil
+	case *appmessage.GetMempoolEntriesByAddressesRequestMessage:
+		payload := new(KaspadMessage_GetMempoolEntriesByAddressesRequest)
+		err := payload.fromAppMessage(message)
+		if err != nil {
+			return nil, err
+		}
+		return payload, nil
+	case *appmessage.GetMempoolEntriesByAddressesResponseMessage:
+		payload := new(KaspadMessage_GetMempoolEntriesByAddressesResponse)
+		err := payload.fromAppMessage(message)
+		if err != nil {
+			return nil, err
+		}
+		return payload, nil
+	case *appmessage.GetCoinSupplyRequestMessage:
+		payload := new(KaspadMessage_GetCoinSupplyRequest)
+		err := payload.fromAppMessage(message)
+		if err != nil {
+			return nil, err
+		}
+		return payload, nil
+	case *appmessage.GetCoinSupplyResponseMessage:
+		payload := new(KaspadMessage_GetCoinSupplyResponse)
+		err := payload.fromAppMessage(message)
+		if err != nil {
+			return nil, err
+		}
+		return payload, nil
 	default:
 		return nil, nil
 	}

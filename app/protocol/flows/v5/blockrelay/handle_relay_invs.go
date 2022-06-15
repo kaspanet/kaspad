@@ -26,8 +26,7 @@ var orphanResolutionRange uint32 = 5
 type RelayInvsContext interface {
 	Domain() domain.Domain
 	Config() *config.Config
-	OnNewBlock(block *externalapi.DomainBlock, virtualChangeSet *externalapi.VirtualChangeSet) error
-	OnVirtualChange(virtualChangeSet *externalapi.VirtualChangeSet) error
+	OnNewBlock(block *externalapi.DomainBlock) error
 	OnNewBlockTemplate() error
 	OnPruningPointUTXOSetOverride() error
 	SharedRequestedBlocks() *flowcontext.SharedRequestedBlocks
@@ -174,7 +173,7 @@ func (flow *handleRelayInvsFlow) start() error {
 		if err != nil {
 			return err
 		}
-		missingParents, virtualChangeSet, err := flow.processBlock(block)
+		missingParents, err := flow.processBlock(block)
 		if err != nil {
 			if errors.Is(err, ruleerrors.ErrPrunedBlock) {
 				log.Infof("Ignoring pruned block %s", inv.Hash)
@@ -233,7 +232,7 @@ func (flow *handleRelayInvsFlow) start() error {
 		}
 
 		log.Infof("Accepted block %s via relay", inv.Hash)
-		err = flow.OnNewBlock(block, virtualChangeSet)
+		err = flow.OnNewBlock(block)
 		if err != nil {
 			return err
 		}
@@ -320,25 +319,25 @@ func (flow *handleRelayInvsFlow) readMsgBlock() (msgBlock *appmessage.MsgBlock, 
 	}
 }
 
-func (flow *handleRelayInvsFlow) processBlock(block *externalapi.DomainBlock) ([]*externalapi.DomainHash, *externalapi.VirtualChangeSet, error) {
+func (flow *handleRelayInvsFlow) processBlock(block *externalapi.DomainBlock) ([]*externalapi.DomainHash, error) {
 	blockHash := consensushashing.BlockHash(block)
-	virtualChangeSet, err := flow.Domain().Consensus().ValidateAndInsertBlock(block, true)
+	err := flow.Domain().Consensus().ValidateAndInsertBlock(block, true)
 	if err != nil {
 		if !errors.As(err, &ruleerrors.RuleError{}) {
-			return nil, nil, errors.Wrapf(err, "failed to process block %s", blockHash)
+			return nil, errors.Wrapf(err, "failed to process block %s", blockHash)
 		}
 
 		missingParentsError := &ruleerrors.ErrMissingParents{}
 		if errors.As(err, missingParentsError) {
-			return missingParentsError.MissingParentHashes, nil, nil
+			return missingParentsError.MissingParentHashes, nil
 		}
 		// A duplicate block should not appear to the user as a warning and is already reported in the calling function
 		if !errors.Is(err, ruleerrors.ErrDuplicateBlock) {
 			log.Warnf("Rejected block %s from %s: %s", blockHash, flow.peer, err)
 		}
-		return nil, nil, protocolerrors.Wrapf(true, err, "got invalid block %s from relay", blockHash)
+		return nil, protocolerrors.Wrapf(true, err, "got invalid block %s from relay", blockHash)
 	}
-	return nil, virtualChangeSet, nil
+	return nil, nil
 }
 
 func (flow *handleRelayInvsFlow) relayBlock(block *externalapi.DomainBlock) error {

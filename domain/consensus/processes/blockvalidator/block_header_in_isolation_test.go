@@ -62,11 +62,7 @@ func CheckBlockVersion(t *testing.T, tc testapi.TestConsensus, consensusConfig *
 		t.Fatalf("BuildBlockWithParents: %+v", err)
 	}
 
-	expectedVersion := constants.BlockVersionBeforeHF1
-	if consensusConfig.HF1DAAScore == 0 {
-		expectedVersion = constants.BlockVersionAfterHF1
-	}
-
+	expectedVersion := constants.BlockVersion
 	block.Header = blockheader.NewImmutableBlockHeader(
 		expectedVersion+1,
 		block.Header.Parents(),
@@ -82,7 +78,7 @@ func CheckBlockVersion(t *testing.T, tc testapi.TestConsensus, consensusConfig *
 		block.Header.PruningPoint(),
 	)
 
-	_, err = tc.ValidateAndInsertBlock(block, true)
+	err = tc.ValidateAndInsertBlock(block, true)
 	if !errors.Is(err, ruleerrors.ErrWrongBlockVersion) {
 		t.Fatalf("Unexpected error: %+v", err)
 	}
@@ -122,7 +118,7 @@ func CheckBlockTimestampInIsolation(t *testing.T, tc testapi.TestConsensus, cfg 
 			block.Header.PruningPoint(),
 		)
 
-		_, err = tc.ValidateAndInsertBlock(block, true)
+		err = tc.ValidateAndInsertBlock(block, true)
 		if !errors.Is(err, ruleerrors.ErrTimeTooMuchInTheFuture) {
 			t.Fatalf("Unexpected error: %+v", err)
 		}

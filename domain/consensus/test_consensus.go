@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/hashset"
+	"github.com/kaspanet/kaspad/util/staging"
 	"io"
 
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
@@ -60,7 +61,7 @@ func (tc *testConsensus) AddBlock(parentHashes []*externalapi.DomainHash, coinba
 		return nil, nil, err
 	}
 
-	virtualChangeSet, err := tc.blockProcessor.ValidateAndInsertBlock(block, true)
+	virtualChangeSet, err := tc.validateAndInsertBlockNoLock(block, true)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -80,7 +81,7 @@ func (tc *testConsensus) AddUTXOInvalidHeader(parentHashes []*externalapi.Domain
 		return nil, nil, err
 	}
 
-	virtualChangeSet, err := tc.blockProcessor.ValidateAndInsertBlock(&externalapi.DomainBlock{
+	virtualChangeSet, err := tc.validateAndInsertBlockNoLock(&externalapi.DomainBlock{
 		Header:       header,
 		Transactions: nil,
 	}, true)
@@ -103,12 +104,19 @@ func (tc *testConsensus) AddUTXOInvalidBlock(parentHashes []*externalapi.DomainH
 		return nil, nil, err
 	}
 
-	virtualChangeSet, err := tc.blockProcessor.ValidateAndInsertBlock(block, true)
+	virtualChangeSet, err := tc.validateAndInsertBlockNoLock(block, true)
 	if err != nil {
 		return nil, nil, err
 	}
 
 	return consensushashing.BlockHash(block), virtualChangeSet, nil
+}
+
+func (tc *testConsensus) ResolveVirtualWithMaxParam(maxBlocksToResolve uint64) (bool, error) {
+	tc.lock.Lock()
+	defer tc.lock.Unlock()
+
+	return tc.resolveVirtualNoLock(maxBlocksToResolve)
 }
 
 // jsonBlock is a json representation of a block in mine format
@@ -257,4 +265,17 @@ func (tc *testConsensus) BuildHeaderWithParents(parentHashes []*externalapi.Doma
 	defer tc.lock.Unlock()
 
 	return tc.testBlockBuilder.BuildUTXOInvalidHeader(parentHashes)
+}
+
+func (tc *testConsensus) UpdatePruningPointByVirtual() error {
+	tc.lock.Lock()
+	defer tc.lock.Unlock()
+
+	stagingArea := model.NewStagingArea()
+	err := tc.pruningManager.UpdatePruningPointByVirtual(stagingArea)
+	if err != nil {
+		return err
+	}
+
+	return staging.CommitAllChanges(tc.databaseContext, stagingArea)
 }

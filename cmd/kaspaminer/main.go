@@ -23,8 +23,7 @@ func main() {
 
 	cfg, err := parseConfig()
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error parsing command-line arguments: %s\n", err)
-		os.Exit(1)
+		printErrorAndExit(errors.Errorf("Error parsing command-line arguments: %s", err))
 	}
 	defer backendLog.Close()
 
@@ -44,7 +43,7 @@ func main() {
 
 	miningAddr, err := util.DecodeAddress(cfg.MiningAddr, cfg.ActiveNetParams.Prefix)
 	if err != nil {
-		panic(errors.Wrap(err, "error decoding mining address"))
+		printErrorAndExit(errors.Errorf("Error decoding mining address: %s", err))
 	}
 
 	doneChan := make(chan struct{})
@@ -60,4 +59,9 @@ func main() {
 	case <-doneChan:
 	case <-interrupt:
 	}
+}
+
+func printErrorAndExit(err error) {
+	fmt.Fprintf(os.Stderr, "%+v\n", err)
+	os.Exit(1)
 }

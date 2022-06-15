@@ -31,10 +31,13 @@ var commandTypes = []reflect.Type{
 
 	reflect.TypeOf(protowire.KaspadMessage_GetMempoolEntryRequest{}),
 	reflect.TypeOf(protowire.KaspadMessage_GetMempoolEntriesRequest{}),
+	reflect.TypeOf(protowire.KaspadMessage_GetMempoolEntriesByAddressesRequest{}),
+
 	reflect.TypeOf(protowire.KaspadMessage_SubmitTransactionRequest{}),
 
 	reflect.TypeOf(protowire.KaspadMessage_GetUtxosByAddressesRequest{}),
 	reflect.TypeOf(protowire.KaspadMessage_GetBalanceByAddressRequest{}),
+	reflect.TypeOf(protowire.KaspadMessage_GetCoinSupplyRequest{}),
 
 	reflect.TypeOf(protowire.KaspadMessage_BanRequest{}),
 	reflect.TypeOf(protowire.KaspadMessage_UnbanRequest{}),

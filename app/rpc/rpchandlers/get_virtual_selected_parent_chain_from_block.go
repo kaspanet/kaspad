@@ -26,12 +26,14 @@ func HandleGetVirtualSelectedParentChainFromBlock(context *rpccontext.Context, _
 		return response, nil
 	}
 
-	chainChangedNotification, err := context.ConvertVirtualSelectedParentChainChangesToChainChangedNotificationMessage(virtualSelectedParentChain)
+	chainChangedNotification, err := context.ConvertVirtualSelectedParentChainChangesToChainChangedNotificationMessage(
+		virtualSelectedParentChain, getVirtualSelectedParentChainFromBlockRequest.IncludeAcceptedTransactionIDs)
 	if err != nil {
 		return nil, err
 	}
 
 	response := appmessage.NewGetVirtualSelectedParentChainFromBlockResponseMessage(
-		chainChangedNotification.RemovedChainBlockHashes, chainChangedNotification.AddedChainBlockHashes)
+		chainChangedNotification.RemovedChainBlockHashes, chainChangedNotification.AddedChainBlockHashes,
+		chainChangedNotification.AcceptedTransactionIDs)
 	return response, nil
 }

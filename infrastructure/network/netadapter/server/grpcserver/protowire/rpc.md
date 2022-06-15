@@ -52,6 +52,7 @@
     - [GetSubnetworkRequestMessage](#protowire.GetSubnetworkRequestMessage)
     - [GetSubnetworkResponseMessage](#protowire.GetSubnetworkResponseMessage)
     - [GetVirtualSelectedParentChainFromBlockRequestMessage](#protowire.GetVirtualSelectedParentChainFromBlockRequestMessage)
+    - [AcceptedTransactionIds](#protowire.AcceptedTransactionIds)
     - [GetVirtualSelectedParentChainFromBlockResponseMessage](#protowire.GetVirtualSelectedParentChainFromBlockResponseMessage)
     - [GetBlocksRequestMessage](#protowire.GetBlocksRequestMessage)
     - [GetBlocksResponseMessage](#protowire.GetBlocksResponseMessage)
@@ -106,6 +107,11 @@
     - [NotifyNewBlockTemplateRequestMessage](#protowire.NotifyNewBlockTemplateRequestMessage)
     - [NotifyNewBlockTemplateResponseMessage](#protowire.NotifyNewBlockTemplateResponseMessage)
     - [NewBlockTemplateNotificationMessage](#protowire.NewBlockTemplateNotificationMessage)
+    - [MempoolEntryByAddress](#protowire.MempoolEntryByAddress)
+    - [GetMempoolEntriesByAddressesRequestMessage](#protowire.GetMempoolEntriesByAddressesRequestMessage)
+    - [GetMempoolEntriesByAddressesResponseMessage](#protowire.GetMempoolEntriesByAddressesResponseMessage)
+    - [GetCoinSupplyRequestMessage](#protowire.GetCoinSupplyRequestMessage)
+    - [GetCoinSupplyResponseMessage](#protowire.GetCoinSupplyResponseMessage)
   
     - [SubmitBlockResponseMessage.RejectReason](#protowire.SubmitBlockResponseMessage.RejectReason)
   
@@ -790,6 +796,11 @@ NotifyVirtualSelectedParentChainChangedRequestMessage registers this connection 
 See: VirtualSelectedParentChainChangedNotificationMessage
 
 
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| includeAcceptedTransactionIds | [bool](#bool) |  |  |
+
+
 
 
 
@@ -822,6 +833,7 @@ See: NotifyVirtualSelectedParentChainChangedRequestMessage
 | ----- | ---- | ----- | ----------- |
 | removedChainBlockHashes | [string](#string) | repeated | The chain blocks that were removed, in high-to-low order |
 | addedChainBlockHashes | [string](#string) | repeated | The chain blocks that were added, in low-to-high order |
+| acceptedTransactionIds | [AcceptedTransactionIds](#protowire.AcceptedTransactionIds) | repeated | Will be filled only if `includeAcceptedTransactionIds = true` in the notify request. |
 
 
 
@@ -903,6 +915,23 @@ parent chain from some startHash to this kaspad&#39;s current virtual
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | startHash | [string](#string) |  |  |
+| includeAcceptedTransactionIds | [bool](#bool) |  |  |
+
+
+
+
+
+
+<a name="protowire.AcceptedTransactionIds"></a>
+
+### AcceptedTransactionIds
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| acceptingBlockHash | [string](#string) |  |  |
+| acceptedTransactionIds | [string](#string) | repeated |  |
 
 
 
@@ -919,6 +948,7 @@ parent chain from some startHash to this kaspad&#39;s current virtual
 | ----- | ---- | ----- | ----------- |
 | removedChainBlockHashes | [string](#string) | repeated | The chain blocks that were removed, in high-to-low order |
 | addedChainBlockHashes | [string](#string) | repeated | The chain blocks that were added, in low-to-high order |
+| acceptedTransactionIds | [AcceptedTransactionIds](#protowire.AcceptedTransactionIds) | repeated | The transactions accepted by each block in addedChainBlockHashes. Will be filled only if `includeAcceptedTransactionIds = true` in the request. |
 | error | [RPCError](#protowire.RPCError) |  |  |
 
 
@@ -1181,7 +1211,7 @@ See: UtxosChangedNotificationMessage
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| addresses | [string](#string) | repeated |  |
+| addresses | [string](#string) | repeated | Leave empty to get all updates |
 
 
 
@@ -1660,6 +1690,8 @@ GetInfoRequestMessage returns info about the node.
 | p2pId | [string](#string) |  |  |
 | mempoolSize | [uint64](#uint64) |  |  |
 | serverVersion | [string](#string) |  |  |
+| isUtxoIndexed | [bool](#bool) |  |  |
+| isSynced | [bool](#bool) |  |  |
 | error | [RPCError](#protowire.RPCError) |  |  |
 
 
@@ -1734,6 +1766,81 @@ NewBlockTemplateNotificationMessage is sent whenever a new updated block templat
 available for miners.
 
 See NotifyNewBlockTemplateRequestMessage
+
+
+
+
+
+
+<a name="protowire.MempoolEntryByAddress"></a>
+
+### MempoolEntryByAddress
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| address | [string](#string) |  |  |
+| sending | [MempoolEntry](#protowire.MempoolEntry) | repeated |  |
+| receiving | [MempoolEntry](#protowire.MempoolEntry) | repeated |  |
+
+
+
+
+
+
+<a name="protowire.GetMempoolEntriesByAddressesRequestMessage"></a>
+
+### GetMempoolEntriesByAddressesRequestMessage
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| addresses | [string](#string) | repeated |  |
+
+
+
+
+
+
+<a name="protowire.GetMempoolEntriesByAddressesResponseMessage"></a>
+
+### GetMempoolEntriesByAddressesResponseMessage
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| entries | [MempoolEntryByAddress](#protowire.MempoolEntryByAddress) | repeated |  |
+| error | [RPCError](#protowire.RPCError) |  |  |
+
+
+
+
+
+
+<a name="protowire.GetCoinSupplyRequestMessage"></a>
+
+### GetCoinSupplyRequestMessage
+
+
+
+
+
+
+
+<a name="protowire.GetCoinSupplyResponseMessage"></a>
+
+### GetCoinSupplyResponseMessage
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| maxSompi | [uint64](#uint64) |  | note: this is a hard coded maxSupply, actual maxSupply is expected to deviate by upto -5%, but cannot be measured exactly. |
+| circulatingSompi | [uint64](#uint64) |  |  |
+| error | [RPCError](#protowire.RPCError) |  |  |
 
 
 

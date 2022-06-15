@@ -46,30 +46,32 @@ type createConfig struct {
 }
 
 type balanceConfig struct {
-	DaemonAddress string `long:"daemonaddress" short:"d" description:"Wallet daemon server to connect to (default: localhost:8082)"`
+	DaemonAddress string `long:"daemonaddress" short:"d" description:"Wallet daemon server to connect to"`
 	Verbose       bool   `long:"verbose" short:"v" description:"Verbose: show addresses with balance"`
 	config.NetworkFlags
 }
 
 type sendConfig struct {
-	KeysFile      string  `long:"keys-file" short:"f" description:"Keys file location (default: ~/.kaspawallet/keys.json (*nix), %USERPROFILE%\\AppData\\Local\\Kaspawallet\\key.json (Windows))"`
-	Password      string  `long:"password" short:"p" description:"Wallet password"`
-	DaemonAddress string  `long:"daemonaddress" short:"d" description:"Wallet daemon server to connect to (default: localhost:8082)"`
-	ToAddress     string  `long:"to-address" short:"t" description:"The public address to send Kaspa to" required:"true"`
-	SendAmount    float64 `long:"send-amount" short:"v" description:"An amount to send in Kaspa (e.g. 1234.12345678)" required:"true"`
+	KeysFile      string   `long:"keys-file" short:"f" description:"Keys file location (default: ~/.kaspawallet/keys.json (*nix), %USERPROFILE%\\AppData\\Local\\Kaspawallet\\key.json (Windows))"`
+	Password      string   `long:"password" short:"p" description:"Wallet password"`
+	DaemonAddress string   `long:"daemonaddress" short:"d" description:"Wallet daemon server to connect to"`
+	ToAddress     string   `long:"to-address" short:"t" description:"The public address to send Kaspa to" required:"true"`
+	FromAddresses []string `long:"from-address" short:"a" description:"Specific public address to send Kaspa from. Use multiple times to accept several addresses" required:"false"`
+	SendAmount    float64  `long:"send-amount" short:"v" description:"An amount to send in Kaspa (e.g. 1234.12345678)" required:"true"`
 	config.NetworkFlags
 }
 
 type sweepConfig struct {
 	PrivateKey    string `long:"private-key" short:"k" description:"Private key in hex format"`
-	DaemonAddress string `long:"daemonaddress" short:"d" description:"Wallet daemon server to connect to (default: localhost:8082)"`
+	DaemonAddress string `long:"daemonaddress" short:"d" description:"Wallet daemon server to connect to"`
 	config.NetworkFlags
 }
 
 type createUnsignedTransactionConfig struct {
-	DaemonAddress string  `long:"daemonaddress" short:"d" description:"Wallet daemon server to connect to (default: localhost:8082)"`
-	ToAddress     string  `long:"to-address" short:"t" description:"The public address to send Kaspa to" required:"true"`
-	SendAmount    float64 `long:"send-amount" short:"v" description:"An amount to send in Kaspa (e.g. 1234.12345678)" required:"true"`
+	DaemonAddress string   `long:"daemonaddress" short:"d" description:"Wallet daemon server to connect to"`
+	ToAddress     string   `long:"to-address" short:"t" description:"The public address to send Kaspa to" required:"true"`
+	FromAddresses []string `long:"from-address" short:"a" description:"Specific public address to send Kaspa from. Use multiple times to accept several addresses" required:"false"`
+	SendAmount    float64  `long:"send-amount" short:"v" description:"An amount to send in Kaspa (e.g. 1234.12345678)" required:"true"`
 	config.NetworkFlags
 }
 
@@ -82,7 +84,7 @@ type signConfig struct {
 }
 
 type broadcastConfig struct {
-	DaemonAddress    string `long:"daemonaddress" short:"d" description:"Wallet daemon server to connect to (default: localhost:8082)"`
+	DaemonAddress    string `long:"daemonaddress" short:"d" description:"Wallet daemon server to connect to"`
 	Transactions     string `long:"transaction" short:"t" description:"The signed transaction to broadcast (encoded in hex)"`
 	TransactionsFile string `long:"transaction-file" short:"F" description:"The file containing the unsigned transaction to sign on (encoded in hex)"`
 	config.NetworkFlags
@@ -96,12 +98,12 @@ type parseConfig struct {
 }
 
 type showAddressesConfig struct {
-	DaemonAddress string `long:"daemonaddress" short:"d" description:"Wallet daemon server to connect to (default: localhost:8082)"`
+	DaemonAddress string `long:"daemonaddress" short:"d" description:"Wallet daemon server to connect to"`
 	config.NetworkFlags
 }
 
 type newAddressConfig struct {
-	DaemonAddress string `long:"daemonaddress" short:"d" description:"Wallet daemon server to connect to (default: localhost:8082)"`
+	DaemonAddress string `long:"daemonaddress" short:"d" description:"Wallet daemon server to connect to"`
 	config.NetworkFlags
 }
 
@@ -138,8 +140,10 @@ func parseCommandLine() (subCommand string, config interface{}) {
 		"Sends a Kaspa transaction to a public address", sendConf)
 
 	sweepConf := &sweepConfig{DaemonAddress: defaultListen}
-	parser.AddCommand(sweepSubCmd, "Sends all funds associated with the given private key, to a new address of the wallet",
-		"Sends all funds associated with the private key, to a given change address of the wallet", sweepConf)
+	parser.AddCommand(sweepSubCmd, "Sends all funds associated with the given schnorr private key to a new address of the current wallet",
+		"Sends all funds associated with the given schnorr private key to a newly created external (i.e. not a change) address of the "+
+			"keyfile that is under the daemon's contol. Can be used with a private key generated with the genkeypair utilily "+
+			"to send funds to your main wallet.", sweepConf)
 
 	createUnsignedTransactionConf := &createUnsignedTransactionConfig{DaemonAddress: defaultListen}
 	parser.AddCommand(createUnsignedTransactionSubCmd, "Create an unsigned Kaspa transaction",

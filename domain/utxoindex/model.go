@@ -20,7 +20,7 @@ type UTXOOutpoints map[externalapi.DomainOutpoint]interface{}
 // a successful update
 type UTXOChanges struct {
 	Added   map[ScriptPublicKeyString]UTXOOutpointEntryPairs
-	Removed map[ScriptPublicKeyString]UTXOOutpoints
+	Removed map[ScriptPublicKeyString]UTXOOutpointEntryPairs
 }
 
 // ConvertScriptPublicKeyToString converts the given scriptPublicKey to a string
