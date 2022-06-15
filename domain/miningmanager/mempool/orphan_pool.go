@@ -328,3 +328,18 @@ func (op *orphansPool) randomNonHighPriorityOrphan() *model.OrphanTransaction {
 
 	return nil
 }
+
+func (op *orphansPool) getOrphanTransaction(transactionID *externalapi.DomainTransactionID) (*externalapi.DomainTransaction, bool) {
+	if orphanTransaction, ok := op.allOrphans[*transactionID]; ok {
+		return orphanTransaction.Transaction(), true
+	}
+	return nil, false
+}
+
+func (op *orphansPool) getAllOrphanTransactions() []*externalapi.DomainTransaction {
+	allOrphanTransactions := make([]*externalapi.DomainTransaction, 0, len(op.allOrphans))
+	for _, mempoolTransaction := range op.allOrphans {
+		allOrphanTransactions = append(allOrphanTransactions, mempoolTransaction.Transaction())
+	}
+	return allOrphanTransactions
+}

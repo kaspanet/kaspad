@@ -215,6 +215,8 @@ message GetSelectedTipHashResponseMessage{
 message GetMempoolEntryRequestMessage{
   // The transaction's TransactionID.
   string txId = 1;
+  bool includeOrphanPool = 2;
+  bool filterTransactionPool = 3;
 }
 
 message GetMempoolEntryResponseMessage{
@@ -226,6 +228,8 @@ message GetMempoolEntryResponseMessage{
 // GetMempoolEntriesRequestMessage requests information about all the transactions
 // currently in the mempool.
 message GetMempoolEntriesRequestMessage{
+        bool includeOrphanPool = 1;
+        bool filterTransactionPool = 2;
 }
 
 message GetMempoolEntriesResponseMessage{
@@ -237,6 +241,7 @@ message GetMempoolEntriesResponseMessage{
 message MempoolEntry{
   uint64 fee = 1;
   RpcTransaction transaction = 3;
+  bool isOrphan = 4;
 }
 
 // GetConnectedPeerInfoRequestMessage requests information about all the p2p peers
@@ -697,6 +702,8 @@ message MempoolEntryByAddress{
 
 message GetMempoolEntriesByAddressesRequestMessage{
   repeated string addresses = 1;
+  bool includeOrphanPool = 2;
+  bool filterTransactionPool = 3;
 }
 
 message  GetMempoolEntriesByAddressesResponseMessage{
