@@ -23,6 +23,7 @@ func NewGetBalancesByAddressesRequest(addresses []string) *GetBalancesByAddresse
 type BalancesByAddressesEntry struct {
 	Address string
 	Balance uint64
+	NUtxos  uint64
 }
 
 // GetBalancesByAddressesResponseMessage is an appmessage corresponding to

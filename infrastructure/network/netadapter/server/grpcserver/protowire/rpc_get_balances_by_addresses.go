@@ -88,6 +88,7 @@ func (x *BalancesByAddressEntry) toAppMessage() (*appmessage.BalancesByAddresses
 	return &appmessage.BalancesByAddressesEntry{
 		Address: x.Address,
 		Balance: x.Balance,
+		NUtxos:  x.NUtxos,
 	}, nil
 }
 
@@ -95,5 +96,6 @@ func (x *BalancesByAddressEntry) fromAppMessage(message *appmessage.BalancesByAd
 	*x = BalancesByAddressEntry{
 		Address: message.Address,
 		Balance: message.Balance,
+		NUtxos:  message.NUtxos,
 	}
 }

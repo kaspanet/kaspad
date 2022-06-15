@@ -42,6 +42,7 @@ func (x *KaspadMessage_GetBalanceByAddressResponse) fromAppMessage(message *appm
 	}
 	x.GetBalanceByAddressResponse = &GetBalanceByAddressResponseMessage{
 		Balance: message.Balance,
+		NUtxos:  message.NUtxos,
 
 		Error: err,
 	}
@@ -64,6 +65,7 @@ func (x *GetBalanceByAddressResponseMessage) toAppMessage() (appmessage.Message,
 
 	return &appmessage.GetBalanceByAddressResponseMessage{
 		Balance: x.Balance,
+		NUtxos:  x.NUtxos,
 		Error:   rpcErr,
 	}, nil
 }
