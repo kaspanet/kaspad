@@ -2,9 +2,9 @@ package rpcclient
 
 import (
 	"github.com/kaspanet/kaspad/app/appmessage"
+	"github.com/kaspanet/kaspad/app/rpc/rpccontext"
 	routerpkg "github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
 	"github.com/pkg/errors"
-	"github.com/kaspanet/kaspad/app/rpc/rpccontext"
 )
 
 // RegisterForVirtualSelectedParentChainChangedNotifications sends an RPC request respective to the function's name and returns the RPC server's response.
@@ -13,7 +13,7 @@ func (c *RPCClient) RegisterForVirtualSelectedParentChainChangedNotifications(in
 	onChainChanged func(notification *appmessage.VirtualSelectedParentChainChangedNotificationMessage)) error {
 
 	err := c.rpcRouter.outgoingRoute().Enqueue(
-		appmessage.NewNotifyVirtualSelectedParentChainChangedRequestMessage(includeAcceptedTransactionIDs, rpccontext.DefaultNotificationId)) 
+		appmessage.NewNotifyVirtualSelectedParentChainChangedRequestMessage(includeAcceptedTransactionIDs, rpccontext.DefaultNotificationId))
 	if err != nil {
 		return err
 	}

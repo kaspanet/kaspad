@@ -14,14 +14,14 @@ func (msg *NotifyVirtualSelectedParentBlueScoreChangedRequestMessage) Command() 
 
 // NewNotifyVirtualSelectedParentBlueScoreChangedRequestMessage returns a instance of the message
 func NewNotifyVirtualSelectedParentBlueScoreChangedRequestMessage(id string) *NotifyVirtualSelectedParentBlueScoreChangedRequestMessage {
-	return &NotifyVirtualSelectedParentBlueScoreChangedRequestMessage{Id : id}
+	return &NotifyVirtualSelectedParentBlueScoreChangedRequestMessage{Id: id}
 }
 
 // NotifyVirtualSelectedParentBlueScoreChangedResponseMessage is an appmessage corresponding to
 // its respective RPC message
 type NotifyVirtualSelectedParentBlueScoreChangedResponseMessage struct {
 	baseMessage
-	Id string
+	Id    string
 	Error *RPCError
 }
 
@@ -39,7 +39,7 @@ func NewNotifyVirtualSelectedParentBlueScoreChangedResponseMessage(id string) *N
 // its respective RPC message
 type VirtualSelectedParentBlueScoreChangedNotificationMessage struct {
 	baseMessage
-	Id string
+	Id                             string
 	VirtualSelectedParentBlueScore uint64
 }
 
@@ -53,7 +53,7 @@ func NewVirtualSelectedParentBlueScoreChangedNotificationMessage(
 	virtualSelectedParentBlueScore uint64, id string) *VirtualSelectedParentBlueScoreChangedNotificationMessage {
 
 	return &VirtualSelectedParentBlueScoreChangedNotificationMessage{
-		Id : id,
+		Id:                             id,
 		VirtualSelectedParentBlueScore: virtualSelectedParentBlueScore,
 	}
 }

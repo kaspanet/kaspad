@@ -2,9 +2,9 @@ package rpcclient
 
 import (
 	"github.com/kaspanet/kaspad/app/appmessage"
+	"github.com/kaspanet/kaspad/app/rpc/rpccontext"
 	routerpkg "github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
 	"github.com/pkg/errors"
-	"github.com/kaspanet/kaspad/app/rpc/rpccontext"
 )
 
 // RegisterForUTXOsChangedNotifications sends an RPC request respective to the function's name and returns the RPC server's response.

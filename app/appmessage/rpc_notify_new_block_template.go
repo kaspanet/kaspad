@@ -21,7 +21,7 @@ func NewNotifyNewBlockTemplateRequestMessage(id string) *NotifyNewBlockTemplateR
 // its respective RPC message
 type NotifyNewBlockTemplateResponseMessage struct {
 	baseMessage
-	Id string
+	Id    string
 	Error *RPCError
 }
 

@@ -92,7 +92,7 @@ func (m *Manager) notifyBlockAddedToDAG(block *externalapi.DomainBlock) error {
 	if err != nil {
 		return err
 	}
-	blockAddedNotification := appmessage.NewBlockAddedNotificationMessage(rpcBlock,"")
+	blockAddedNotification := appmessage.NewBlockAddedNotificationMessage(rpcBlock, "")
 	err = m.context.NotificationManager.NotifyBlockAdded(blockAddedNotification)
 	if err != nil {
 		return err

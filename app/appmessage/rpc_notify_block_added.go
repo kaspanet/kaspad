@@ -21,7 +21,7 @@ func NewNotifyBlockAddedRequestMessage(id string) *NotifyBlockAddedRequestMessag
 // its respective RPC message
 type NotifyBlockAddedResponseMessage struct {
 	baseMessage
-	Id string
+	Id    string
 	Error *RPCError
 }
 
@@ -39,7 +39,7 @@ func NewNotifyBlockAddedResponseMessage(id string) *NotifyBlockAddedResponseMess
 // its respective RPC message
 type BlockAddedNotificationMessage struct {
 	baseMessage
-	Id string
+	Id    string
 	Block *RPCBlock
 }
 
@@ -51,7 +51,7 @@ func (msg *BlockAddedNotificationMessage) Command() MessageCommand {
 // NewBlockAddedNotificationMessage returns a instance of the message
 func NewBlockAddedNotificationMessage(block *RPCBlock, id string) *BlockAddedNotificationMessage {
 	return &BlockAddedNotificationMessage{
-		Id : id,
+		Id:    id,
 		Block: block,
 	}
 }

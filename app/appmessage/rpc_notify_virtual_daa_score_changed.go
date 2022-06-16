@@ -21,7 +21,7 @@ func NewNotifyVirtualDaaScoreChangedRequestMessage(id string) *NotifyVirtualDaaS
 // its respective RPC message
 type NotifyVirtualDaaScoreChangedResponseMessage struct {
 	baseMessage
-	Id string
+	Id    string
 	Error *RPCError
 }
 
@@ -39,7 +39,7 @@ func NewNotifyVirtualDaaScoreChangedResponseMessage(id string) *NotifyVirtualDaa
 // its respective RPC message
 type VirtualDaaScoreChangedNotificationMessage struct {
 	baseMessage
-	Id string
+	Id              string
 	VirtualDaaScore uint64
 }
 
@@ -53,7 +53,7 @@ func NewVirtualDaaScoreChangedNotificationMessage(
 	virtualDaaScore uint64, id string) *VirtualDaaScoreChangedNotificationMessage {
 
 	return &VirtualDaaScoreChangedNotificationMessage{
-		Id: id,
+		Id:              id,
 		VirtualDaaScore: virtualDaaScore,
 	}
 }

@@ -8,9 +8,9 @@ import (
 
 // HandleNotifyFinalityConflicts handles the respectively named RPC command
 func HandleNotifyFinalityConflicts(context *rpccontext.Context, router *router.Router, request appmessage.Message) (appmessage.Message, error) {
-	
+
 	notifyFinalityConflictsRequest := request.(*appmessage.NotifyFinalityConflictsRequestMessage)
-	
+
 	listener, err := context.NotificationManager.Listener(router)
 	if err != nil {
 		return nil, err

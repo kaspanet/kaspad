@@ -33,24 +33,24 @@ type UTXOsChangedNotificationAddress struct {
 type NotificationListener struct {
 	params *dagconfig.Params
 
-	propagateBlockAddedNotifications                            bool
-	propagateBlockAddedNotificationsId			    string
-	propagateVirtualSelectedParentChainChangedNotifications     bool
-	propagateVirtualSelectedParentChainChangedNotificationsId   string
-	propagateFinalityConflictNotifications                      bool
-	propagateFinalityConflictNotificationsId                    string
-	propagateFinalityConflictResolvedNotifications              bool
-	propagateFinalityConflictResolvedNotificationsId            string
-	propagateUTXOsChangedNotifications                          bool
-	propagateUTXOsChangedNotificationsId                        string
-	propagateVirtualSelectedParentBlueScoreChangedNotifications bool
+	propagateBlockAddedNotifications                              bool
+	propagateBlockAddedNotificationsId                            string
+	propagateVirtualSelectedParentChainChangedNotifications       bool
+	propagateVirtualSelectedParentChainChangedNotificationsId     string
+	propagateFinalityConflictNotifications                        bool
+	propagateFinalityConflictNotificationsId                      string
+	propagateFinalityConflictResolvedNotifications                bool
+	propagateFinalityConflictResolvedNotificationsId              string
+	propagateUTXOsChangedNotifications                            bool
+	propagateUTXOsChangedNotificationsId                          string
+	propagateVirtualSelectedParentBlueScoreChangedNotifications   bool
 	propagateVirtualSelectedParentBlueScoreChangedNotificationsId string
-	propagateVirtualDaaScoreChangedNotifications                bool
-	propagateVirtualDaaScoreChangedNotificationsId              string
-	propagatePruningPointUTXOSetOverrideNotifications           bool
-	propagatePruningPointUTXOSetOverrideNotificationsId         string
-	propagateNewBlockTemplateNotifications                      bool
-	propagateNewBlockTemplateNotificationsId                    string
+	propagateVirtualDaaScoreChangedNotifications                  bool
+	propagateVirtualDaaScoreChangedNotificationsId                string
+	propagatePruningPointUTXOSetOverrideNotifications             bool
+	propagatePruningPointUTXOSetOverrideNotificationsId           string
+	propagateNewBlockTemplateNotifications                        bool
+	propagateNewBlockTemplateNotificationsId                      string
 
 	propagateUTXOsChangedNotificationAddresses                                    map[utxoindex.ScriptPublicKeyString]*UTXOsChangedNotificationAddress
 	includeAcceptedTransactionIDsInVirtualSelectedParentChainChangedNotifications bool
@@ -176,9 +176,9 @@ func (nm *NotificationManager) NotifyFinalityConflict(notification *appmessage.F
 
 	for router, listener := range nm.listeners {
 		if listener.propagateFinalityConflictNotifications {
-			
+
 			notification.Id = listener.propagateFinalityConflictNotificationsId
-			
+
 			err := router.OutgoingRoute().Enqueue(notification)
 			if err != nil {
 				return err
@@ -195,9 +195,9 @@ func (nm *NotificationManager) NotifyFinalityConflictResolved(notification *appm
 
 	for router, listener := range nm.listeners {
 		if listener.propagateFinalityConflictResolvedNotifications {
-			
+
 			notification.Id = listener.propagateFinalityConflictResolvedNotificationsId
-			
+
 			err := router.OutgoingRoute().Enqueue(notification)
 			if err != nil {
 				return err
@@ -219,7 +219,7 @@ func (nm *NotificationManager) NotifyUTXOsChanged(utxoChanges *utxoindex.UTXOCha
 			if err != nil {
 				return err
 			}
-			
+
 			notification.Id = listener.propagateUTXOsChangedNotificationsId
 
 			// Don't send the notification if it's empty
@@ -247,9 +247,9 @@ func (nm *NotificationManager) NotifyVirtualSelectedParentBlueScoreChanged(
 
 	for router, listener := range nm.listeners {
 		if listener.propagateVirtualSelectedParentBlueScoreChangedNotifications {
-			
+
 			notification.Id = listener.propagateVirtualSelectedParentBlueScoreChangedNotificationsId
-			
+
 			err := router.OutgoingRoute().MaybeEnqueue(notification)
 			if err != nil {
 				return err
@@ -269,9 +269,9 @@ func (nm *NotificationManager) NotifyVirtualDaaScoreChanged(
 
 	for router, listener := range nm.listeners {
 		if listener.propagateVirtualDaaScoreChangedNotifications {
-			
+
 			notification.Id = listener.propagateVirtualDaaScoreChangedNotificationsId
-			
+
 			err := router.OutgoingRoute().MaybeEnqueue(notification)
 			if err != nil {
 				return err
@@ -291,9 +291,9 @@ func (nm *NotificationManager) NotifyNewBlockTemplate(
 
 	for router, listener := range nm.listeners {
 		if listener.propagateNewBlockTemplateNotifications {
-			
+
 			notification.Id = listener.propagateNewBlockTemplateNotificationsId
-			
+
 			err := router.OutgoingRoute().Enqueue(notification)
 			if err != nil {
 				return err

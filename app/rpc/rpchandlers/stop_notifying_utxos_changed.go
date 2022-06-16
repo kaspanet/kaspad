@@ -8,7 +8,7 @@ import (
 
 // HandleStopNotifyingUTXOsChanged handles the respectively named RPC command
 func HandleStopNotifyingUTXOsChanged(context *rpccontext.Context, router *router.Router, request appmessage.Message) (appmessage.Message, error) {
-	
+
 	stopNotifyingUTXOsChangedRequest := request.(*appmessage.StopNotifyingUTXOsChangedRequestMessage)
 
 	if !context.Config.UTXOIndex {

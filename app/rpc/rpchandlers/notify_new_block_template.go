@@ -8,9 +8,9 @@ import (
 
 // HandleNotifyNewBlockTemplate handles the respectively named RPC command
 func HandleNotifyNewBlockTemplate(context *rpccontext.Context, router *router.Router, request appmessage.Message) (appmessage.Message, error) {
-	
+
 	notifyNewBlockTemplateRequest := request.(*appmessage.NotifyNewBlockTemplateRequestMessage)
-	
+
 	listener, err := context.NotificationManager.Listener(router)
 	if err != nil {
 		return nil, err

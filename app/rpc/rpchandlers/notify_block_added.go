@@ -8,9 +8,9 @@ import (
 
 // HandleNotifyBlockAdded handles the respectively named RPC command
 func HandleNotifyBlockAdded(context *rpccontext.Context, router *router.Router, request appmessage.Message) (appmessage.Message, error) {
-	
+
 	notifyBlockAddedRequestMessage := request.(*appmessage.NotifyBlockAddedRequestMessage)
-	
+
 	listener, err := context.NotificationManager.Listener(router)
 	if err != nil {
 		return nil, err
