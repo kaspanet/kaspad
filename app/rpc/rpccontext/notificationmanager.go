@@ -13,7 +13,8 @@ import (
 	"github.com/pkg/errors"
 )
 
-const DefaultNotificationId = "" //empty string corrosponds to defualt grpc string value, and hence id value when not supplied
+// DefaultNotificationID corrosponds to defualt grpc string value, and hence id value when not supplied, or as placeholder
+const DefaultNotificationID = ""
 
 // NotificationManager manages notifications for the RPC
 type NotificationManager struct {
@@ -33,24 +34,25 @@ type UTXOsChangedNotificationAddress struct {
 type NotificationListener struct {
 	params *dagconfig.Params
 
-	propagateBlockAddedNotifications                              bool
-	propagateBlockAddedNotificationsId                            string
-	propagateVirtualSelectedParentChainChangedNotifications       bool
-	propagateVirtualSelectedParentChainChangedNotificationsId     string
-	propagateFinalityConflictNotifications                        bool
-	propagateFinalityConflictNotificationsId                      string
-	propagateFinalityConflictResolvedNotifications                bool
-	propagateFinalityConflictResolvedNotificationsId              string
-	propagateUTXOsChangedNotifications                            bool
-	propagateUTXOsChangedNotificationsId                          string
-	propagateVirtualSelectedParentBlueScoreChangedNotifications   bool
-	propagateVirtualSelectedParentBlueScoreChangedNotificationsId string
-	propagateVirtualDaaScoreChangedNotifications                  bool
-	propagateVirtualDaaScoreChangedNotificationsId                string
-	propagatePruningPointUTXOSetOverrideNotifications             bool
-	propagatePruningPointUTXOSetOverrideNotificationsId           string
-	propagateNewBlockTemplateNotifications                        bool
-	propagateNewBlockTemplateNotificationsId                      string
+	propagateBlockAddedNotifications                            bool
+	propagateVirtualSelectedParentChainChangedNotifications     bool
+	propagateFinalityConflictNotifications                      bool
+	propagateFinalityConflictResolvedNotifications              bool
+	propagateUTXOsChangedNotifications                          bool
+	propagateVirtualSelectedParentBlueScoreChangedNotifications bool
+	propagateVirtualDaaScoreChangedNotifications                bool
+	propagatePruningPointUTXOSetOverrideNotifications           bool
+	propagateNewBlockTemplateNotifications                      bool
+
+	propagateBlockAddedNotificationsID                            string
+	propagateVirtualSelectedParentChainChangedNotificationsID     string
+	propagateFinalityConflictNotificationsID                      string
+	propagateFinalityConflictResolvedNotificationsID              string
+	propagateUTXOsChangedNotificationsID                          string
+	propagateVirtualSelectedParentBlueScoreChangedNotificationsID string
+	propagateVirtualDaaScoreChangedNotificationsID                string
+	propagatePruningPointUTXOSetOverrideNotificationsID           string
+	propagateNewBlockTemplateNotificationsID                      string
 
 	propagateUTXOsChangedNotificationAddresses                                    map[utxoindex.ScriptPublicKeyString]*UTXOsChangedNotificationAddress
 	includeAcceptedTransactionIDsInVirtualSelectedParentChainChangedNotifications bool
@@ -114,7 +116,7 @@ func (nm *NotificationManager) NotifyBlockAdded(notification *appmessage.BlockAd
 	for router, listener := range nm.listeners {
 		if listener.propagateBlockAddedNotifications {
 
-			notification.Id = listener.propagateBlockAddedNotificationsId
+			notification.ID = listener.propagateBlockAddedNotificationsID
 
 			err := router.OutgoingRoute().MaybeEnqueue(notification)
 			if err != nil {
@@ -141,7 +143,7 @@ func (nm *NotificationManager) NotifyVirtualSelectedParentChainChanged(
 		if listener.propagateVirtualSelectedParentChainChangedNotifications {
 			var err error
 
-			notification.Id = listener.propagateVirtualSelectedParentChainChangedNotificationsId
+			notification.ID = listener.propagateVirtualSelectedParentChainChangedNotificationsID
 
 			if listener.includeAcceptedTransactionIDsInVirtualSelectedParentChainChangedNotifications {
 				err = router.OutgoingRoute().MaybeEnqueue(notification)
@@ -177,7 +179,7 @@ func (nm *NotificationManager) NotifyFinalityConflict(notification *appmessage.F
 	for router, listener := range nm.listeners {
 		if listener.propagateFinalityConflictNotifications {
 
-			notification.Id = listener.propagateFinalityConflictNotificationsId
+			notification.ID = listener.propagateFinalityConflictNotificationsID
 
 			err := router.OutgoingRoute().Enqueue(notification)
 			if err != nil {
@@ -196,7 +198,7 @@ func (nm *NotificationManager) NotifyFinalityConflictResolved(notification *appm
 	for router, listener := range nm.listeners {
 		if listener.propagateFinalityConflictResolvedNotifications {
 
-			notification.Id = listener.propagateFinalityConflictResolvedNotificationsId
+			notification.ID = listener.propagateFinalityConflictResolvedNotificationsID
 
 			err := router.OutgoingRoute().Enqueue(notification)
 			if err != nil {
@@ -220,7 +222,7 @@ func (nm *NotificationManager) NotifyUTXOsChanged(utxoChanges *utxoindex.UTXOCha
 				return err
 			}
 
-			notification.Id = listener.propagateUTXOsChangedNotificationsId
+			notification.ID = listener.propagateUTXOsChangedNotificationsID
 
 			// Don't send the notification if it's empty
 			if len(notification.Added) == 0 && len(notification.Removed) == 0 {
@@ -248,7 +250,7 @@ func (nm *NotificationManager) NotifyVirtualSelectedParentBlueScoreChanged(
 	for router, listener := range nm.listeners {
 		if listener.propagateVirtualSelectedParentBlueScoreChangedNotifications {
 
-			notification.Id = listener.propagateVirtualSelectedParentBlueScoreChangedNotificationsId
+			notification.ID = listener.propagateVirtualSelectedParentBlueScoreChangedNotificationsID
 
 			err := router.OutgoingRoute().MaybeEnqueue(notification)
 			if err != nil {
@@ -270,7 +272,7 @@ func (nm *NotificationManager) NotifyVirtualDaaScoreChanged(
 	for router, listener := range nm.listeners {
 		if listener.propagateVirtualDaaScoreChangedNotifications {
 
-			notification.Id = listener.propagateVirtualDaaScoreChangedNotificationsId
+			notification.ID = listener.propagateVirtualDaaScoreChangedNotificationsID
 
 			err := router.OutgoingRoute().MaybeEnqueue(notification)
 			if err != nil {
@@ -292,7 +294,7 @@ func (nm *NotificationManager) NotifyNewBlockTemplate(
 	for router, listener := range nm.listeners {
 		if listener.propagateNewBlockTemplateNotifications {
 
-			notification.Id = listener.propagateNewBlockTemplateNotificationsId
+			notification.ID = listener.propagateNewBlockTemplateNotificationsID
 
 			err := router.OutgoingRoute().Enqueue(notification)
 			if err != nil {
@@ -311,7 +313,7 @@ func (nm *NotificationManager) NotifyPruningPointUTXOSetOverride() error {
 
 	for router, listener := range nm.listeners {
 		if listener.propagatePruningPointUTXOSetOverrideNotifications {
-			err := router.OutgoingRoute().Enqueue(appmessage.NewPruningPointUTXOSetOverrideNotificationMessage(listener.propagatePruningPointUTXOSetOverrideNotificationsId))
+			err := router.OutgoingRoute().Enqueue(appmessage.NewPruningPointUTXOSetOverrideNotificationMessage(listener.propagatePruningPointUTXOSetOverrideNotificationsID))
 			if err != nil {
 				return err
 			}
@@ -344,7 +346,7 @@ func (nl *NotificationListener) IncludeAcceptedTransactionIDsInVirtualSelectedPa
 // PropagateBlockAddedNotifications instructs the listener to send block added notifications
 // to the remote listener
 func (nl *NotificationListener) PropagateBlockAddedNotifications(id string) {
-	nl.propagateBlockAddedNotificationsId = id
+	nl.propagateBlockAddedNotificationsID = id
 	nl.propagateBlockAddedNotifications = true
 }
 
@@ -358,14 +360,14 @@ func (nl *NotificationListener) PropagateVirtualSelectedParentChainChangedNotifi
 // PropagateFinalityConflictNotifications instructs the listener to send finality conflict notifications
 // to the remote listener
 func (nl *NotificationListener) PropagateFinalityConflictNotifications(id string) {
-	nl.propagateFinalityConflictNotificationsId = id
+	nl.propagateFinalityConflictNotificationsID = id
 	nl.propagateFinalityConflictNotifications = true
 }
 
 // PropagateFinalityConflictResolvedNotifications instructs the listener to send finality conflict resolved notifications
 // to the remote listener
 func (nl *NotificationListener) PropagateFinalityConflictResolvedNotifications(id string) {
-	nl.propagateFinalityConflictResolvedNotificationsId = id
+	nl.propagateFinalityConflictResolvedNotificationsID = id
 	nl.propagateFinalityConflictResolvedNotifications = true
 }
 
@@ -375,7 +377,7 @@ func (nl *NotificationListener) PropagateFinalityConflictResolvedNotifications(i
 // are ignored.
 func (nl *NotificationListener) PropagateUTXOsChangedNotifications(addresses []*UTXOsChangedNotificationAddress, id string) {
 	if !nl.propagateUTXOsChangedNotifications {
-		nl.propagateUTXOsChangedNotificationsId = id
+		nl.propagateUTXOsChangedNotificationsID = id
 		nl.propagateUTXOsChangedNotifications = true
 		nl.propagateUTXOsChangedNotificationAddresses =
 			make(map[utxoindex.ScriptPublicKeyString]*UTXOsChangedNotificationAddress, len(addresses))
@@ -478,34 +480,34 @@ func (nl *NotificationListener) scriptPubKeyStringToAddressString(scriptPublicKe
 // PropagateVirtualSelectedParentBlueScoreChangedNotifications instructs the listener to send
 // virtual selected parent blue score notifications to the remote listener
 func (nl *NotificationListener) PropagateVirtualSelectedParentBlueScoreChangedNotifications(id string) {
-	nl.propagateVirtualDaaScoreChangedNotificationsId = id
+	nl.propagateVirtualDaaScoreChangedNotificationsID = id
 	nl.propagateVirtualSelectedParentBlueScoreChangedNotifications = true
 }
 
 // PropagateVirtualDaaScoreChangedNotifications instructs the listener to send
 // virtual DAA score notifications to the remote listener
 func (nl *NotificationListener) PropagateVirtualDaaScoreChangedNotifications(id string) {
-	nl.propagateVirtualDaaScoreChangedNotificationsId = id
+	nl.propagateVirtualDaaScoreChangedNotificationsID = id
 	nl.propagateVirtualDaaScoreChangedNotifications = true
 }
 
 // PropagateNewBlockTemplateNotifications instructs the listener to send
 // new block template notifications to the remote listener
 func (nl *NotificationListener) PropagateNewBlockTemplateNotifications(id string) {
-	nl.propagateNewBlockTemplateNotificationsId = id
+	nl.propagateNewBlockTemplateNotificationsID = id
 	nl.propagateNewBlockTemplateNotifications = true
 }
 
 // PropagatePruningPointUTXOSetOverrideNotifications instructs the listener to send pruning point UTXO set override notifications
 // to the remote listener.
 func (nl *NotificationListener) PropagatePruningPointUTXOSetOverrideNotifications(id string) {
-	nl.propagatePruningPointUTXOSetOverrideNotificationsId = id
+	nl.propagatePruningPointUTXOSetOverrideNotificationsID = id
 	nl.propagatePruningPointUTXOSetOverrideNotifications = true
 }
 
 // StopPropagatingPruningPointUTXOSetOverrideNotifications instructs the listener to stop sending pruning
 // point UTXO set override notifications to the remote listener.
 func (nl *NotificationListener) StopPropagatingPruningPointUTXOSetOverrideNotifications(id string) {
-	nl.propagatePruningPointUTXOSetOverrideNotificationsId = id
+	nl.propagatePruningPointUTXOSetOverrideNotificationsID = id
 	nl.propagatePruningPointUTXOSetOverrideNotifications = false
 }

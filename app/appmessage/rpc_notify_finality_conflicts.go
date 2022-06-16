@@ -4,7 +4,7 @@ package appmessage
 // its respective RPC message
 type NotifyFinalityConflictsRequestMessage struct {
 	baseMessage
-	Id string
+	ID string
 }
 
 // Command returns the protocol command string for the message
@@ -14,14 +14,14 @@ func (msg *NotifyFinalityConflictsRequestMessage) Command() MessageCommand {
 
 // NewNotifyFinalityConflictsRequestMessage returns a instance of the message
 func NewNotifyFinalityConflictsRequestMessage(id string) *NotifyFinalityConflictsRequestMessage {
-	return &NotifyFinalityConflictsRequestMessage{Id: id}
+	return &NotifyFinalityConflictsRequestMessage{ID: id}
 }
 
 // NotifyFinalityConflictsResponseMessage is an appmessage corresponding to
 // its respective RPC message
 type NotifyFinalityConflictsResponseMessage struct {
 	baseMessage
-	Id    string
+	ID    string
 	Error *RPCError
 }
 
@@ -32,14 +32,14 @@ func (msg *NotifyFinalityConflictsResponseMessage) Command() MessageCommand {
 
 // NewNotifyFinalityConflictsResponseMessage returns a instance of the message
 func NewNotifyFinalityConflictsResponseMessage(id string) *NotifyFinalityConflictsResponseMessage {
-	return &NotifyFinalityConflictsResponseMessage{Id: id}
+	return &NotifyFinalityConflictsResponseMessage{ID: id}
 }
 
 // FinalityConflictNotificationMessage is an appmessage corresponding to
 // its respective RPC message
 type FinalityConflictNotificationMessage struct {
 	baseMessage
-	Id                 string
+	ID                 string
 	ViolatingBlockHash string
 }
 
@@ -51,6 +51,7 @@ func (msg *FinalityConflictNotificationMessage) Command() MessageCommand {
 // NewFinalityConflictNotificationMessage returns a instance of the message
 func NewFinalityConflictNotificationMessage(violatingBlockHash string, id string) *FinalityConflictNotificationMessage {
 	return &FinalityConflictNotificationMessage{
+		ID:                 id,
 		ViolatingBlockHash: violatingBlockHash,
 	}
 }
@@ -59,7 +60,7 @@ func NewFinalityConflictNotificationMessage(violatingBlockHash string, id string
 // its respective RPC message
 type FinalityConflictResolvedNotificationMessage struct {
 	baseMessage
-	Id                string
+	ID                string
 	FinalityBlockHash string
 }
 
@@ -71,7 +72,7 @@ func (msg *FinalityConflictResolvedNotificationMessage) Command() MessageCommand
 // NewFinalityConflictResolvedNotificationMessage returns a instance of the message
 func NewFinalityConflictResolvedNotificationMessage(finalityBlockHash string, id string) *FinalityConflictResolvedNotificationMessage {
 	return &FinalityConflictResolvedNotificationMessage{
-		Id:                id,
+		ID:                id,
 		FinalityBlockHash: finalityBlockHash,
 	}
 }

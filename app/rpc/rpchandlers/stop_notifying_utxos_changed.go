@@ -12,14 +12,14 @@ func HandleStopNotifyingUTXOsChanged(context *rpccontext.Context, router *router
 	stopNotifyingUTXOsChangedRequest := request.(*appmessage.StopNotifyingUTXOsChangedRequestMessage)
 
 	if !context.Config.UTXOIndex {
-		errorMessage := appmessage.NewStopNotifyingUTXOsChangedResponseMessage(stopNotifyingUTXOsChangedRequest.Id)
+		errorMessage := appmessage.NewStopNotifyingUTXOsChangedResponseMessage(stopNotifyingUTXOsChangedRequest.ID)
 		errorMessage.Error = appmessage.RPCErrorf("Method unavailable when kaspad is run without --utxoindex")
 		return errorMessage, nil
 	}
 
 	addresses, err := context.ConvertAddressStringsToUTXOsChangedNotificationAddresses(stopNotifyingUTXOsChangedRequest.Addresses)
 	if err != nil {
-		errorMessage := appmessage.NewNotifyUTXOsChangedResponseMessage(stopNotifyingUTXOsChangedRequest.Id)
+		errorMessage := appmessage.NewNotifyUTXOsChangedResponseMessage(stopNotifyingUTXOsChangedRequest.ID)
 		errorMessage.Error = appmessage.RPCErrorf("Parsing error: %s", err)
 		return errorMessage, nil
 	}
@@ -30,6 +30,6 @@ func HandleStopNotifyingUTXOsChanged(context *rpccontext.Context, router *router
 	}
 	listener.StopPropagatingUTXOsChangedNotifications(addresses)
 
-	response := appmessage.NewStopNotifyingUTXOsChangedResponseMessage(stopNotifyingUTXOsChangedRequest.Id)
+	response := appmessage.NewStopNotifyingUTXOsChangedResponseMessage(stopNotifyingUTXOsChangedRequest.ID)
 	return response, nil
 }

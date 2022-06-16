@@ -15,9 +15,9 @@ func HandleNotifyFinalityConflicts(context *rpccontext.Context, router *router.R
 	if err != nil {
 		return nil, err
 	}
-	listener.PropagateFinalityConflictNotifications(notifyFinalityConflictsRequest.Id)
-	listener.PropagateFinalityConflictResolvedNotifications(notifyFinalityConflictsRequest.Id)
+	listener.PropagateFinalityConflictNotifications(notifyFinalityConflictsRequest.ID)
+	listener.PropagateFinalityConflictResolvedNotifications(notifyFinalityConflictsRequest.ID)
 
-	response := appmessage.NewNotifyFinalityConflictsResponseMessage(notifyFinalityConflictsRequest.Id)
+	response := appmessage.NewNotifyFinalityConflictsResponseMessage(notifyFinalityConflictsRequest.ID)
 	return response, nil
 }

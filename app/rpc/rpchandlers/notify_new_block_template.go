@@ -15,8 +15,8 @@ func HandleNotifyNewBlockTemplate(context *rpccontext.Context, router *router.Ro
 	if err != nil {
 		return nil, err
 	}
-	listener.PropagateNewBlockTemplateNotifications(notifyNewBlockTemplateRequest.Id)
+	listener.PropagateNewBlockTemplateNotifications(notifyNewBlockTemplateRequest.ID)
 
-	response := appmessage.NewNotifyNewBlockTemplateResponseMessage(notifyNewBlockTemplateRequest.Id)
+	response := appmessage.NewNotifyNewBlockTemplateResponseMessage(notifyNewBlockTemplateRequest.ID)
 	return response, nil
 }

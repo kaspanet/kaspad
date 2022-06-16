@@ -15,8 +15,8 @@ func HandleNotifyBlockAdded(context *rpccontext.Context, router *router.Router, 
 	if err != nil {
 		return nil, err
 	}
-	listener.PropagateBlockAddedNotifications(notifyBlockAddedRequestMessage.Id)
+	listener.PropagateBlockAddedNotifications(notifyBlockAddedRequestMessage.ID)
 
-	response := appmessage.NewNotifyBlockAddedResponseMessage(notifyBlockAddedRequestMessage.Id)
+	response := appmessage.NewNotifyBlockAddedResponseMessage(notifyBlockAddedRequestMessage.ID)
 	return response, nil
 }

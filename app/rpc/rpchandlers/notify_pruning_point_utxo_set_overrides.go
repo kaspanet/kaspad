@@ -15,8 +15,8 @@ func HandleNotifyPruningPointUTXOSetOverrideRequest(context *rpccontext.Context,
 	if err != nil {
 		return nil, err
 	}
-	listener.PropagatePruningPointUTXOSetOverrideNotifications(notifyPruningPointUTXOSetOverrideRequest.Id)
+	listener.PropagatePruningPointUTXOSetOverrideNotifications(notifyPruningPointUTXOSetOverrideRequest.ID)
 
-	response := appmessage.NewNotifyPruningPointUTXOSetOverrideResponseMessage(notifyPruningPointUTXOSetOverrideRequest.Id)
+	response := appmessage.NewNotifyPruningPointUTXOSetOverrideResponseMessage(notifyPruningPointUTXOSetOverrideRequest.ID)
 	return response, nil
 }

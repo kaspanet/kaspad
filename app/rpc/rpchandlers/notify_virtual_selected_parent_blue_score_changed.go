@@ -15,8 +15,8 @@ func HandleNotifyVirtualSelectedParentBlueScoreChanged(context *rpccontext.Conte
 	if err != nil {
 		return nil, err
 	}
-	listener.PropagateVirtualSelectedParentBlueScoreChangedNotifications(notifyVirtualSelectedParentBlueScoreChangedRequest.Id)
+	listener.PropagateVirtualSelectedParentBlueScoreChangedNotifications(notifyVirtualSelectedParentBlueScoreChangedRequest.ID)
 
-	response := appmessage.NewNotifyVirtualSelectedParentBlueScoreChangedResponseMessage(notifyVirtualSelectedParentBlueScoreChangedRequest.Id)
+	response := appmessage.NewNotifyVirtualSelectedParentBlueScoreChangedResponseMessage(notifyVirtualSelectedParentBlueScoreChangedRequest.ID)
 	return response, nil
 }

@@ -15,8 +15,8 @@ func HandleNotifyVirtualDaaScoreChanged(context *rpccontext.Context, router *rou
 	if err != nil {
 		return nil, err
 	}
-	listener.PropagateVirtualDaaScoreChangedNotifications(notifyVirtualDaaScoreChangedRequest.Id)
+	listener.PropagateVirtualDaaScoreChangedNotifications(notifyVirtualDaaScoreChangedRequest.ID)
 
-	response := appmessage.NewNotifyVirtualDaaScoreChangedResponseMessage(notifyVirtualDaaScoreChangedRequest.Id)
+	response := appmessage.NewNotifyVirtualDaaScoreChangedResponseMessage(notifyVirtualDaaScoreChangedRequest.ID)
 	return response, nil
 }

@@ -13,7 +13,7 @@ import (
 func (c *RPCClient) RegisterForVirtualDaaScoreChangedNotifications(
 	onVirtualDaaScoreChanged func(notification *appmessage.VirtualDaaScoreChangedNotificationMessage)) error {
 
-	err := c.rpcRouter.outgoingRoute().Enqueue(appmessage.NewNotifyVirtualDaaScoreChangedRequestMessage(rpccontext.DefaultNotificationId))
+	err := c.rpcRouter.outgoingRoute().Enqueue(appmessage.NewNotifyVirtualDaaScoreChangedRequestMessage(rpccontext.DefaultNotificationID))
 	if err != nil {
 		return err
 	}

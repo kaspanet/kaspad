@@ -4,7 +4,7 @@ package appmessage
 // its respective RPC message
 type StopNotifyingUTXOsChangedRequestMessage struct {
 	baseMessage
-	Id        string
+	ID        string
 	Addresses []string
 }
 
@@ -16,7 +16,7 @@ func (msg *StopNotifyingUTXOsChangedRequestMessage) Command() MessageCommand {
 // NewStopNotifyingUTXOsChangedRequestMessage returns a instance of the message
 func NewStopNotifyingUTXOsChangedRequestMessage(addresses []string, id string) *StopNotifyingUTXOsChangedRequestMessage {
 	return &StopNotifyingUTXOsChangedRequestMessage{
-		Id:        id,
+		ID:        id,
 		Addresses: addresses,
 	}
 }
@@ -25,7 +25,7 @@ func NewStopNotifyingUTXOsChangedRequestMessage(addresses []string, id string) *
 // its respective RPC message
 type StopNotifyingUTXOsChangedResponseMessage struct {
 	baseMessage
-	Id    string
+	ID    string
 	Error *RPCError
 }
 
@@ -36,5 +36,5 @@ func (msg *StopNotifyingUTXOsChangedResponseMessage) Command() MessageCommand {
 
 // NewStopNotifyingUTXOsChangedResponseMessage returns a instance of the message
 func NewStopNotifyingUTXOsChangedResponseMessage(id string) *StopNotifyingUTXOsChangedResponseMessage {
-	return &StopNotifyingUTXOsChangedResponseMessage{Id: id}
+	return &StopNotifyingUTXOsChangedResponseMessage{ID: id}
 }

@@ -11,7 +11,7 @@ import (
 // Additionally, it starts listening for the appropriate notification using the given handler function
 func (c *RPCClient) RegisterPruningPointUTXOSetNotifications(onPruningPointUTXOSetNotifications func()) error {
 
-	err := c.rpcRouter.outgoingRoute().Enqueue(appmessage.NewNotifyPruningPointUTXOSetOverrideRequestMessage(rpccontext.DefaultNotificationId))
+	err := c.rpcRouter.outgoingRoute().Enqueue(appmessage.NewNotifyPruningPointUTXOSetOverrideRequestMessage(rpccontext.DefaultNotificationID))
 	if err != nil {
 		return err
 	}
@@ -43,7 +43,7 @@ func (c *RPCClient) RegisterPruningPointUTXOSetNotifications(onPruningPointUTXOS
 // Additionally, it stops listening for the appropriate notification using the given handler function
 func (c *RPCClient) UnregisterPruningPointUTXOSetNotifications() error {
 
-	err := c.rpcRouter.outgoingRoute().Enqueue(appmessage.NewStopNotifyingPruningPointUTXOSetOverrideRequestMessage(rpccontext.DefaultNotificationId))
+	err := c.rpcRouter.outgoingRoute().Enqueue(appmessage.NewStopNotifyingPruningPointUTXOSetOverrideRequestMessage(rpccontext.DefaultNotificationID))
 	if err != nil {
 		return err
 	}

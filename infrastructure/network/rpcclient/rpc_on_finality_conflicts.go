@@ -13,7 +13,7 @@ func (c *RPCClient) RegisterForFinalityConflictsNotifications(
 	onFinalityConflict func(notification *appmessage.FinalityConflictNotificationMessage),
 	onFinalityConflictResolved func(notification *appmessage.FinalityConflictResolvedNotificationMessage)) error {
 
-	err := c.rpcRouter.outgoingRoute().Enqueue(appmessage.NewNotifyFinalityConflictsRequestMessage(rpccontext.DefaultNotificationId))
+	err := c.rpcRouter.outgoingRoute().Enqueue(appmessage.NewNotifyFinalityConflictsRequestMessage(rpccontext.DefaultNotificationID))
 	if err != nil {
 		return err
 	}

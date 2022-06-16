@@ -13,7 +13,7 @@ func (c *RPCClient) RegisterForVirtualSelectedParentChainChangedNotifications(in
 	onChainChanged func(notification *appmessage.VirtualSelectedParentChainChangedNotificationMessage)) error {
 
 	err := c.rpcRouter.outgoingRoute().Enqueue(
-		appmessage.NewNotifyVirtualSelectedParentChainChangedRequestMessage(includeAcceptedTransactionIDs, rpccontext.DefaultNotificationId))
+		appmessage.NewNotifyVirtualSelectedParentChainChangedRequestMessage(includeAcceptedTransactionIDs, rpccontext.DefaultNotificationID))
 	if err != nil {
 		return err
 	}

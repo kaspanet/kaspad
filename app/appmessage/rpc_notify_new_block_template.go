@@ -4,7 +4,7 @@ package appmessage
 // its respective RPC message
 type NotifyNewBlockTemplateRequestMessage struct {
 	baseMessage
-	Id string
+	ID string
 }
 
 // Command returns the protocol command string for the message
@@ -14,14 +14,14 @@ func (msg *NotifyNewBlockTemplateRequestMessage) Command() MessageCommand {
 
 // NewNotifyNewBlockTemplateRequestMessage returns an instance of the message
 func NewNotifyNewBlockTemplateRequestMessage(id string) *NotifyNewBlockTemplateRequestMessage {
-	return &NotifyNewBlockTemplateRequestMessage{Id: id}
+	return &NotifyNewBlockTemplateRequestMessage{ID: id}
 }
 
 // NotifyNewBlockTemplateResponseMessage is an appmessage corresponding to
 // its respective RPC message
 type NotifyNewBlockTemplateResponseMessage struct {
 	baseMessage
-	Id    string
+	ID    string
 	Error *RPCError
 }
 
@@ -32,14 +32,14 @@ func (msg *NotifyNewBlockTemplateResponseMessage) Command() MessageCommand {
 
 // NewNotifyNewBlockTemplateResponseMessage returns an instance of the message
 func NewNotifyNewBlockTemplateResponseMessage(id string) *NotifyNewBlockTemplateResponseMessage {
-	return &NotifyNewBlockTemplateResponseMessage{Id: id}
+	return &NotifyNewBlockTemplateResponseMessage{ID: id}
 }
 
 // NewBlockTemplateNotificationMessage is an appmessage corresponding to
 // its respective RPC message
 type NewBlockTemplateNotificationMessage struct {
 	baseMessage
-	Id string
+	ID string
 }
 
 // Command returns the protocol command string for the message
@@ -49,5 +49,5 @@ func (msg *NewBlockTemplateNotificationMessage) Command() MessageCommand {
 
 // NewNewBlockTemplateNotificationMessage returns an instance of the message
 func NewNewBlockTemplateNotificationMessage(id string) *NewBlockTemplateNotificationMessage {
-	return &NewBlockTemplateNotificationMessage{Id: id}
+	return &NewBlockTemplateNotificationMessage{ID: id}
 }

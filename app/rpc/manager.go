@@ -166,7 +166,7 @@ func (m *Manager) NotifyFinalityConflict(violatingBlockHash string) error {
 	onEnd := logger.LogAndMeasureExecutionTime(log, "RPCManager.NotifyFinalityConflict")
 	defer onEnd()
 
-	notification := appmessage.NewFinalityConflictNotificationMessage(violatingBlockHash, rpccontext.DefaultNotificationId)
+	notification := appmessage.NewFinalityConflictNotificationMessage(violatingBlockHash, rpccontext.DefaultNotificationID)
 	return m.context.NotificationManager.NotifyFinalityConflict(notification)
 }
 
@@ -175,7 +175,7 @@ func (m *Manager) NotifyFinalityConflictResolved(finalityBlockHash string) error
 	onEnd := logger.LogAndMeasureExecutionTime(log, "RPCManager.NotifyFinalityConflictResolved")
 	defer onEnd()
 
-	notification := appmessage.NewFinalityConflictResolvedNotificationMessage(finalityBlockHash, rpccontext.DefaultNotificationId)
+	notification := appmessage.NewFinalityConflictResolvedNotificationMessage(finalityBlockHash, rpccontext.DefaultNotificationID)
 	return m.context.NotificationManager.NotifyFinalityConflictResolved(notification)
 }
 
@@ -207,7 +207,7 @@ func (m *Manager) notifyVirtualSelectedParentBlueScoreChanged(virtualSelectedPar
 	onEnd := logger.LogAndMeasureExecutionTime(log, "RPCManager.NotifyVirtualSelectedParentBlueScoreChanged")
 	defer onEnd()
 
-	notification := appmessage.NewVirtualSelectedParentBlueScoreChangedNotificationMessage(virtualSelectedParentBlueScore, rpccontext.DefaultNotificationId)
+	notification := appmessage.NewVirtualSelectedParentBlueScoreChangedNotificationMessage(virtualSelectedParentBlueScore, rpccontext.DefaultNotificationID)
 	return m.context.NotificationManager.NotifyVirtualSelectedParentBlueScoreChanged(notification)
 }
 
@@ -215,7 +215,7 @@ func (m *Manager) notifyVirtualDaaScoreChanged(virtualDAAScore uint64) error {
 	onEnd := logger.LogAndMeasureExecutionTime(log, "RPCManager.NotifyVirtualDaaScoreChanged")
 	defer onEnd()
 
-	notification := appmessage.NewVirtualDaaScoreChangedNotificationMessage(virtualDAAScore, rpccontext.DefaultNotificationId)
+	notification := appmessage.NewVirtualDaaScoreChangedNotificationMessage(virtualDAAScore, rpccontext.DefaultNotificationID)
 	return m.context.NotificationManager.NotifyVirtualDaaScoreChanged(notification)
 }
 

@@ -32,7 +32,7 @@ func (ctx *Context) ConvertVirtualSelectedParentChainChangesToChainChangedNotifi
 	}
 
 	return appmessage.NewVirtualSelectedParentChainChangedNotificationMessage(
-		removedChainBlockHashes, addedChainBlocks, acceptedTransactionIDs, DefaultNotificationId), nil
+		removedChainBlockHashes, addedChainBlocks, acceptedTransactionIDs, DefaultNotificationID), nil
 }
 
 func (ctx *Context) getAndConvertAcceptedTransactionIDs(selectedParentChainChanges *externalapi.SelectedChainPath) (

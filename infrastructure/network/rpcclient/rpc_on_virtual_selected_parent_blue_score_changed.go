@@ -13,7 +13,7 @@ import (
 func (c *RPCClient) RegisterForVirtualSelectedParentBlueScoreChangedNotifications(
 	onVirtualSelectedParentBlueScoreChanged func(notification *appmessage.VirtualSelectedParentBlueScoreChangedNotificationMessage)) error {
 
-	err := c.rpcRouter.outgoingRoute().Enqueue(appmessage.NewNotifyVirtualSelectedParentBlueScoreChangedRequestMessage(rpccontext.DefaultNotificationId))
+	err := c.rpcRouter.outgoingRoute().Enqueue(appmessage.NewNotifyVirtualSelectedParentBlueScoreChangedRequestMessage(rpccontext.DefaultNotificationID))
 	if err != nil {
 		return err
 	}

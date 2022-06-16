@@ -4,7 +4,7 @@ package appmessage
 // its respective RPC message
 type NotifyVirtualSelectedParentChainChangedRequestMessage struct {
 	baseMessage
-	Id                            string
+	ID                            string
 	IncludeAcceptedTransactionIDs bool
 }
 
@@ -18,7 +18,7 @@ func NewNotifyVirtualSelectedParentChainChangedRequestMessage(
 	includeAcceptedTransactionIDs bool, id string) *NotifyVirtualSelectedParentChainChangedRequestMessage {
 
 	return &NotifyVirtualSelectedParentChainChangedRequestMessage{
-		Id:                            id,
+		ID:                            id,
 		IncludeAcceptedTransactionIDs: includeAcceptedTransactionIDs,
 	}
 }
@@ -27,7 +27,7 @@ func NewNotifyVirtualSelectedParentChainChangedRequestMessage(
 // its respective RPC message
 type NotifyVirtualSelectedParentChainChangedResponseMessage struct {
 	baseMessage
-	Id    string
+	ID    string
 	Error *RPCError
 }
 
@@ -38,14 +38,14 @@ func (msg *NotifyVirtualSelectedParentChainChangedResponseMessage) Command() Mes
 
 // NewNotifyVirtualSelectedParentChainChangedResponseMessage returns a instance of the message
 func NewNotifyVirtualSelectedParentChainChangedResponseMessage(id string) *NotifyVirtualSelectedParentChainChangedResponseMessage {
-	return &NotifyVirtualSelectedParentChainChangedResponseMessage{Id: id}
+	return &NotifyVirtualSelectedParentChainChangedResponseMessage{ID: id}
 }
 
 // VirtualSelectedParentChainChangedNotificationMessage is an appmessage corresponding to
 // its respective RPC message
 type VirtualSelectedParentChainChangedNotificationMessage struct {
 	baseMessage
-	Id                      string
+	ID                      string
 	RemovedChainBlockHashes []string
 	AddedChainBlockHashes   []string
 	AcceptedTransactionIDs  []*AcceptedTransactionIDs
@@ -61,7 +61,7 @@ func NewVirtualSelectedParentChainChangedNotificationMessage(removedChainBlockHa
 	addedChainBlocks []string, acceptedTransactionIDs []*AcceptedTransactionIDs, id string) *VirtualSelectedParentChainChangedNotificationMessage {
 
 	return &VirtualSelectedParentChainChangedNotificationMessage{
-		Id:                      id,
+		ID:                      id,
 		RemovedChainBlockHashes: removedChainBlockHashes,
 		AddedChainBlockHashes:   addedChainBlocks,
 		AcceptedTransactionIDs:  acceptedTransactionIDs,

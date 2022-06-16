@@ -4,7 +4,7 @@ package appmessage
 // its respective RPC message
 type NotifyVirtualSelectedParentBlueScoreChangedRequestMessage struct {
 	baseMessage
-	Id string
+	ID string
 }
 
 // Command returns the protocol command string for the message
@@ -14,14 +14,14 @@ func (msg *NotifyVirtualSelectedParentBlueScoreChangedRequestMessage) Command() 
 
 // NewNotifyVirtualSelectedParentBlueScoreChangedRequestMessage returns a instance of the message
 func NewNotifyVirtualSelectedParentBlueScoreChangedRequestMessage(id string) *NotifyVirtualSelectedParentBlueScoreChangedRequestMessage {
-	return &NotifyVirtualSelectedParentBlueScoreChangedRequestMessage{Id: id}
+	return &NotifyVirtualSelectedParentBlueScoreChangedRequestMessage{ID: id}
 }
 
 // NotifyVirtualSelectedParentBlueScoreChangedResponseMessage is an appmessage corresponding to
 // its respective RPC message
 type NotifyVirtualSelectedParentBlueScoreChangedResponseMessage struct {
 	baseMessage
-	Id    string
+	ID    string
 	Error *RPCError
 }
 
@@ -32,14 +32,14 @@ func (msg *NotifyVirtualSelectedParentBlueScoreChangedResponseMessage) Command()
 
 // NewNotifyVirtualSelectedParentBlueScoreChangedResponseMessage returns a instance of the message
 func NewNotifyVirtualSelectedParentBlueScoreChangedResponseMessage(id string) *NotifyVirtualSelectedParentBlueScoreChangedResponseMessage {
-	return &NotifyVirtualSelectedParentBlueScoreChangedResponseMessage{}
+	return &NotifyVirtualSelectedParentBlueScoreChangedResponseMessage{ID: id}
 }
 
 // VirtualSelectedParentBlueScoreChangedNotificationMessage is an appmessage corresponding to
 // its respective RPC message
 type VirtualSelectedParentBlueScoreChangedNotificationMessage struct {
 	baseMessage
-	Id                             string
+	ID                             string
 	VirtualSelectedParentBlueScore uint64
 }
 
@@ -53,7 +53,7 @@ func NewVirtualSelectedParentBlueScoreChangedNotificationMessage(
 	virtualSelectedParentBlueScore uint64, id string) *VirtualSelectedParentBlueScoreChangedNotificationMessage {
 
 	return &VirtualSelectedParentBlueScoreChangedNotificationMessage{
-		Id:                             id,
+		ID:                             id,
 		VirtualSelectedParentBlueScore: virtualSelectedParentBlueScore,
 	}
 }

@@ -4,7 +4,7 @@ package appmessage
 // its respective RPC message
 type NotifyVirtualDaaScoreChangedRequestMessage struct {
 	baseMessage
-	Id string
+	ID string
 }
 
 // Command returns the protocol command string for the message
@@ -14,14 +14,14 @@ func (msg *NotifyVirtualDaaScoreChangedRequestMessage) Command() MessageCommand 
 
 // NewNotifyVirtualDaaScoreChangedRequestMessage returns a instance of the message
 func NewNotifyVirtualDaaScoreChangedRequestMessage(id string) *NotifyVirtualDaaScoreChangedRequestMessage {
-	return &NotifyVirtualDaaScoreChangedRequestMessage{Id: id}
+	return &NotifyVirtualDaaScoreChangedRequestMessage{ID: id}
 }
 
 // NotifyVirtualDaaScoreChangedResponseMessage is an appmessage corresponding to
 // its respective RPC message
 type NotifyVirtualDaaScoreChangedResponseMessage struct {
 	baseMessage
-	Id    string
+	ID    string
 	Error *RPCError
 }
 
@@ -32,14 +32,14 @@ func (msg *NotifyVirtualDaaScoreChangedResponseMessage) Command() MessageCommand
 
 // NewNotifyVirtualDaaScoreChangedResponseMessage returns a instance of the message
 func NewNotifyVirtualDaaScoreChangedResponseMessage(id string) *NotifyVirtualDaaScoreChangedResponseMessage {
-	return &NotifyVirtualDaaScoreChangedResponseMessage{Id: id}
+	return &NotifyVirtualDaaScoreChangedResponseMessage{ID: id}
 }
 
 // VirtualDaaScoreChangedNotificationMessage is an appmessage corresponding to
 // its respective RPC message
 type VirtualDaaScoreChangedNotificationMessage struct {
 	baseMessage
-	Id              string
+	ID              string
 	VirtualDaaScore uint64
 }
 
@@ -53,7 +53,7 @@ func NewVirtualDaaScoreChangedNotificationMessage(
 	virtualDaaScore uint64, id string) *VirtualDaaScoreChangedNotificationMessage {
 
 	return &VirtualDaaScoreChangedNotificationMessage{
-		Id:              id,
+		ID:              id,
 		VirtualDaaScore: virtualDaaScore,
 	}
 }
