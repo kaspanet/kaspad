@@ -4,6 +4,7 @@ import (
 	"github.com/kaspanet/kaspad/app/appmessage"
 	routerpkg "github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
 	"github.com/pkg/errors"
+	"github.com/kaspanet/kaspad/app/rpc/rpccontext"
 )
 
 // RegisterForVirtualDaaScoreChangedNotifications sends an RPC request respective to the function's
@@ -12,7 +13,7 @@ import (
 func (c *RPCClient) RegisterForVirtualDaaScoreChangedNotifications(
 	onVirtualDaaScoreChanged func(notification *appmessage.VirtualDaaScoreChangedNotificationMessage)) error {
 
-	err := c.rpcRouter.outgoingRoute().Enqueue(appmessage.NewNotifyVirtualDaaScoreChangedRequestMessage())
+	err := c.rpcRouter.outgoingRoute().Enqueue(appmessage.NewNotifyVirtualDaaScoreChangedRequestMessage(rpccontext.DefaultNotificationId))
 	if err != nil {
 		return err
 	}

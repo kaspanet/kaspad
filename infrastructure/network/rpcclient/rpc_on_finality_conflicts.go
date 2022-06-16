@@ -4,6 +4,7 @@ import (
 	"github.com/kaspanet/kaspad/app/appmessage"
 	routerpkg "github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
 	"github.com/pkg/errors"
+	"github.com/kaspanet/kaspad/app/rpc/rpccontext"
 )
 
 // RegisterForFinalityConflictsNotifications sends an RPC request respective to the function's name and returns the RPC server's response.
@@ -12,7 +13,7 @@ func (c *RPCClient) RegisterForFinalityConflictsNotifications(
 	onFinalityConflict func(notification *appmessage.FinalityConflictNotificationMessage),
 	onFinalityConflictResolved func(notification *appmessage.FinalityConflictResolvedNotificationMessage)) error {
 
-	err := c.rpcRouter.outgoingRoute().Enqueue(appmessage.NewNotifyFinalityConflictsRequestMessage())
+	err := c.rpcRouter.outgoingRoute().Enqueue(appmessage.NewNotifyFinalityConflictsRequestMessage(rpccontext.DefaultNotificationId))
 	if err != nil {
 		return err
 	}

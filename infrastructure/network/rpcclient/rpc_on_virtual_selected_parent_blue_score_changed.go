@@ -4,6 +4,7 @@ import (
 	"github.com/kaspanet/kaspad/app/appmessage"
 	routerpkg "github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
 	"github.com/pkg/errors"
+	"github.com/kaspanet/kaspad/app/rpc/rpccontext"
 )
 
 // RegisterForVirtualSelectedParentBlueScoreChangedNotifications sends an RPC request respective to the function's
@@ -12,7 +13,7 @@ import (
 func (c *RPCClient) RegisterForVirtualSelectedParentBlueScoreChangedNotifications(
 	onVirtualSelectedParentBlueScoreChanged func(notification *appmessage.VirtualSelectedParentBlueScoreChangedNotificationMessage)) error {
 
-	err := c.rpcRouter.outgoingRoute().Enqueue(appmessage.NewNotifyVirtualSelectedParentBlueScoreChangedRequestMessage())
+	err := c.rpcRouter.outgoingRoute().Enqueue(appmessage.NewNotifyVirtualSelectedParentBlueScoreChangedRequestMessage(rpccontext.DefaultNotificationId))
 	if err != nil {
 		return err
 	}

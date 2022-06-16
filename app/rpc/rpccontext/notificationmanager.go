@@ -13,6 +13,8 @@ import (
 	"github.com/pkg/errors"
 )
 
+const DefaultNotificationId = "" //empty string corrosponds to defualt grpc string value, and hence id value when not supplied
+
 // NotificationManager manages notifications for the RPC
 type NotificationManager struct {
 	sync.RWMutex
@@ -111,6 +113,9 @@ func (nm *NotificationManager) NotifyBlockAdded(notification *appmessage.BlockAd
 
 	for router, listener := range nm.listeners {
 		if listener.propagateBlockAddedNotifications {
+
+			notification.Id = listener.propagateBlockAddedNotificationsId
+
 			err := router.OutgoingRoute().MaybeEnqueue(notification)
 			if err != nil {
 				return err
@@ -135,6 +140,8 @@ func (nm *NotificationManager) NotifyVirtualSelectedParentChainChanged(
 	for router, listener := range nm.listeners {
 		if listener.propagateVirtualSelectedParentChainChangedNotifications {
 			var err error
+
+			notification.Id = listener.propagateVirtualSelectedParentChainChangedNotificationsId
 
 			if listener.includeAcceptedTransactionIDsInVirtualSelectedParentChainChangedNotifications {
 				err = router.OutgoingRoute().MaybeEnqueue(notification)
@@ -169,6 +176,9 @@ func (nm *NotificationManager) NotifyFinalityConflict(notification *appmessage.F
 
 	for router, listener := range nm.listeners {
 		if listener.propagateFinalityConflictNotifications {
+			
+			notification.Id = listener.propagateFinalityConflictNotificationsId
+			
 			err := router.OutgoingRoute().Enqueue(notification)
 			if err != nil {
 				return err
@@ -185,6 +195,9 @@ func (nm *NotificationManager) NotifyFinalityConflictResolved(notification *appm
 
 	for router, listener := range nm.listeners {
 		if listener.propagateFinalityConflictResolvedNotifications {
+			
+			notification.Id = listener.propagateFinalityConflictResolvedNotificationsId
+			
 			err := router.OutgoingRoute().Enqueue(notification)
 			if err != nil {
 				return err
@@ -206,6 +219,8 @@ func (nm *NotificationManager) NotifyUTXOsChanged(utxoChanges *utxoindex.UTXOCha
 			if err != nil {
 				return err
 			}
+			
+			notification.Id = listener.propagateUTXOsChangedNotificationsId
 
 			// Don't send the notification if it's empty
 			if len(notification.Added) == 0 && len(notification.Removed) == 0 {
@@ -232,6 +247,9 @@ func (nm *NotificationManager) NotifyVirtualSelectedParentBlueScoreChanged(
 
 	for router, listener := range nm.listeners {
 		if listener.propagateVirtualSelectedParentBlueScoreChangedNotifications {
+			
+			notification.Id = listener.propagateVirtualSelectedParentBlueScoreChangedNotificationsId
+			
 			err := router.OutgoingRoute().MaybeEnqueue(notification)
 			if err != nil {
 				return err
@@ -251,6 +269,9 @@ func (nm *NotificationManager) NotifyVirtualDaaScoreChanged(
 
 	for router, listener := range nm.listeners {
 		if listener.propagateVirtualDaaScoreChangedNotifications {
+			
+			notification.Id = listener.propagateVirtualDaaScoreChangedNotificationsId
+			
 			err := router.OutgoingRoute().MaybeEnqueue(notification)
 			if err != nil {
 				return err
@@ -270,6 +291,9 @@ func (nm *NotificationManager) NotifyNewBlockTemplate(
 
 	for router, listener := range nm.listeners {
 		if listener.propagateNewBlockTemplateNotifications {
+			
+			notification.Id = listener.propagateNewBlockTemplateNotificationsId
+			
 			err := router.OutgoingRoute().Enqueue(notification)
 			if err != nil {
 				return err
