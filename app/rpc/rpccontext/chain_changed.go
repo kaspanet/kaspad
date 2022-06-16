@@ -9,7 +9,7 @@ import (
 // ConvertVirtualSelectedParentChainChangesToChainChangedNotificationMessage converts
 // VirtualSelectedParentChainChanges to VirtualSelectedParentChainChangedNotificationMessage
 func (ctx *Context) ConvertVirtualSelectedParentChainChangesToChainChangedNotificationMessage(
-	selectedParentChainChanges *externalapi.SelectedChainPath, includeAcceptedTransactionIDs bool, id string) (
+	selectedParentChainChanges *externalapi.SelectedChainPath, includeAcceptedTransactionIDs bool) (
 	*appmessage.VirtualSelectedParentChainChangedNotificationMessage, error) {
 
 	removedChainBlockHashes := make([]string, len(selectedParentChainChanges.Removed))
@@ -32,7 +32,7 @@ func (ctx *Context) ConvertVirtualSelectedParentChainChangesToChainChangedNotifi
 	}
 
 	return appmessage.NewVirtualSelectedParentChainChangedNotificationMessage(
-		removedChainBlockHashes, addedChainBlocks, acceptedTransactionIDs, id), nil
+		removedChainBlockHashes, addedChainBlocks, acceptedTransactionIDs, DefaultNotificationId), nil
 }
 
 func (ctx *Context) getAndConvertAcceptedTransactionIDs(selectedParentChainChanges *externalapi.SelectedChainPath) (
