@@ -57,7 +57,7 @@ func TestGenerateFastPruningIBDTest(t *testing.T) {
 			}
 			header.SetNonce(tip.Header.Nonce() + i)
 			block := &externalapi.DomainBlock{Header: header.ToImmutable(), Transactions: tip.Transactions}
-			_, err = tc.ValidateAndInsertBlock(block, true)
+			err = tc.ValidateAndInsertBlock(block, true)
 			if err != nil {
 				t.Fatalf("ValidateAndInsertBlock: %+v", err)
 			}
@@ -103,7 +103,7 @@ func TestGenerateFastPruningIBDTest(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			_, err = tc.ValidateAndInsertBlock(block, true)
+			err = tc.ValidateAndInsertBlock(block, true)
 			if err != nil {
 				t.Fatalf("ValidateAndInsertBlock: %+v", err)
 			}
@@ -124,7 +124,7 @@ func TestGenerateFastPruningIBDTest(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			_, err = tc.ValidateAndInsertBlock(block, true)
+			err = tc.ValidateAndInsertBlock(block, true)
 			if err != nil {
 				t.Fatalf("ValidateAndInsertBlock: %+v", err)
 			}

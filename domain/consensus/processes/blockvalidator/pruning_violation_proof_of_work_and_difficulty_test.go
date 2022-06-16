@@ -39,7 +39,7 @@ func TestPOW(t *testing.T) {
 			t.Fatal(err)
 		}
 		invalidBlockWrongPOW = solveBlockWithWrongPOW(invalidBlockWrongPOW)
-		_, err = tc.ValidateAndInsertBlock(invalidBlockWrongPOW, true)
+		err = tc.ValidateAndInsertBlock(invalidBlockWrongPOW, true)
 		if !errors.Is(err, ruleerrors.ErrInvalidPoW) {
 			t.Fatalf("Expected block to be invalid with err: %v, instead found: %v", ruleerrors.ErrInvalidPoW, err)
 		}
@@ -65,7 +65,7 @@ func TestPOW(t *testing.T) {
 			abovePowMaxBlock.Header.PruningPoint(),
 		)
 
-		_, err = tc.ValidateAndInsertBlock(abovePowMaxBlock, true)
+		err = tc.ValidateAndInsertBlock(abovePowMaxBlock, true)
 		if !errors.Is(err, ruleerrors.ErrTargetTooHigh) {
 			t.Fatalf("Unexpected error: %+v", err)
 		}
@@ -90,7 +90,7 @@ func TestPOW(t *testing.T) {
 			negativeTargetBlock.Header.PruningPoint(),
 		)
 
-		_, err = tc.ValidateAndInsertBlock(negativeTargetBlock, true)
+		err = tc.ValidateAndInsertBlock(negativeTargetBlock, true)
 		if !errors.Is(err, ruleerrors.ErrNegativeTarget) {
 			t.Fatalf("Unexpected error: %+v", err)
 		}
@@ -104,7 +104,7 @@ func TestPOW(t *testing.T) {
 		// Difficulty is too high on mainnet to actually mine.
 		if consensusConfig.Name != "kaspa-mainnet" {
 			mining.SolveBlock(validBlock, random)
-			_, err = tc.ValidateAndInsertBlock(validBlock, true)
+			err = tc.ValidateAndInsertBlock(validBlock, true)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -161,7 +161,7 @@ func TestCheckParentHeadersExist(t *testing.T) {
 			orphanBlock.Header.PruningPoint(),
 		)
 
-		_, err = tc.ValidateAndInsertBlock(orphanBlock, true)
+		err = tc.ValidateAndInsertBlock(orphanBlock, true)
 		errMissingParents := &ruleerrors.ErrMissingParents{}
 		if !errors.As(err, errMissingParents) {
 			t.Fatalf("Unexpected error: %+v", err)
@@ -193,7 +193,7 @@ func TestCheckParentHeadersExist(t *testing.T) {
 			orphanBlock.Header.PruningPoint(),
 		)
 
-		_, err = tc.ValidateAndInsertBlock(invalidBlock, true)
+		err = tc.ValidateAndInsertBlock(invalidBlock, true)
 		if !errors.Is(err, ruleerrors.ErrTransactionVersionIsUnknown) {
 			t.Fatalf("Unexpected error: %+v", err)
 		}
@@ -220,7 +220,7 @@ func TestCheckParentHeadersExist(t *testing.T) {
 			invalidBlockChild.Header.PruningPoint(),
 		)
 
-		_, err = tc.ValidateAndInsertBlock(invalidBlockChild, true)
+		err = tc.ValidateAndInsertBlock(invalidBlockChild, true)
 		if !errors.Is(err, ruleerrors.ErrInvalidAncestorBlock) {
 			t.Fatalf("Unexpected error: %+v", err)
 		}
@@ -284,7 +284,7 @@ func TestCheckPruningPointViolation(t *testing.T) {
 			blockWithPruningViolation.Header.PruningPoint(),
 		)
 
-		_, err = tc.ValidateAndInsertBlock(blockWithPruningViolation, true)
+		err = tc.ValidateAndInsertBlock(blockWithPruningViolation, true)
 		if !errors.Is(err, ruleerrors.ErrPruningPointViolation) {
 			t.Fatalf("Unexpected error: %+v", err)
 		}

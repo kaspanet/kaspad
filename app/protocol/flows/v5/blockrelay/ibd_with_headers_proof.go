@@ -280,7 +280,7 @@ func (flow *handleIBDFlow) processBlockWithTrustedData(
 		blockWithTrustedData.GHOSTDAGData = append(blockWithTrustedData.GHOSTDAGData, appmessage.GHOSTDAGHashPairToDomainGHOSTDAGHashPair(data.GHOSTDAGData[index]))
 	}
 
-	_, err := consensus.ValidateAndInsertBlockWithTrustedData(blockWithTrustedData, false)
+	err := consensus.ValidateAndInsertBlockWithTrustedData(blockWithTrustedData, false)
 	return err
 }
 

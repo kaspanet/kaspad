@@ -30,7 +30,7 @@ func (s *server) CreateUnsignedTransactions(_ context.Context, request *pb.Creat
 
 func (s *server) createUnsignedTransactions(address string, amount uint64, fromAddressesString []string) ([][]byte, error) {
 	if !s.isSynced() {
-		return nil, errors.New("server is not synced")
+		return nil, errors.Errorf("wallet daemon is not synced yet, %s", s.formatSyncStateReport())
 	}
 
 	err := s.refreshUTXOs()

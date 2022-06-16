@@ -609,6 +609,8 @@ in the mempool.
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | txId | [string](#string) |  | The transaction&#39;s TransactionID. |
+| includeOrphanPool | [bool](#bool) |  |  |
+| filterTransactionPool | [bool](#bool) |  |  |
 
 
 
@@ -636,6 +638,12 @@ in the mempool.
 ### GetMempoolEntriesRequestMessage
 GetMempoolEntriesRequestMessage requests information about all the transactions
 currently in the mempool.
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| includeOrphanPool | [bool](#bool) |  |  |
+| filterTransactionPool | [bool](#bool) |  |  |
 
 
 
@@ -668,6 +676,7 @@ currently in the mempool.
 | ----- | ---- | ----- | ----------- |
 | fee | [uint64](#uint64) |  |  |
 | transaction | [RpcTransaction](#protowire.RpcTransaction) |  |  |
+| isOrphan | [bool](#bool) |  |  |
 
 
 
@@ -1855,6 +1864,8 @@ See NotifyNewBlockTemplateRequestMessage
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | addresses | [string](#string) | repeated |  |
+| includeOrphanPool | [bool](#bool) |  |  |
+| filterTransactionPool | [bool](#bool) |  |  |
 
 
 

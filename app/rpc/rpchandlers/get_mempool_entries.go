@@ -7,7 +7,32 @@ import (
 )
 
 // HandleGetMempoolEntries handles the respectively named RPC command
-func HandleGetMempoolEntries(context *rpccontext.Context, _ *router.Router, _ appmessage.Message) (appmessage.Message, error) {
+func HandleGetMempoolEntries(context *rpccontext.Context, _ *router.Router, request appmessage.Message) (appmessage.Message, error) {
+	getMempoolEntriesRequest := request.(*appmessage.GetMempoolEntriesRequestMessage)
+
+	entries := make([]*appmessage.MempoolEntry, 0)
+
+	if !getMempoolEntriesRequest.FilterTransactionPool {
+		transactionPoolEntries, err := getTransactionPoolMempoolEntries(context)
+		if err != nil {
+			return nil, err
+		}
+
+		entries = append(entries, transactionPoolEntries...)
+	}
+
+	if getMempoolEntriesRequest.IncludeOrphanPool {
+		orphanPoolEntries, err := getOrphanPoolMempoolEntries(context)
+		if err != nil {
+			return nil, err
+		}
+		entries = append(entries, orphanPoolEntries...)
+	}
+
+	return appmessage.NewGetMempoolEntriesResponseMessage(entries), nil
+}
+
+func getTransactionPoolMempoolEntries(context *rpccontext.Context) ([]*appmessage.MempoolEntry, error) {
 	transactions := context.Domain.MiningManager().AllTransactions()
 	entries := make([]*appmessage.MempoolEntry, 0, len(transactions))
 	for _, transaction := range transactions {
@@ -19,8 +44,26 @@ func HandleGetMempoolEntries(context *rpccontext.Context, _ *router.Router, _ ap
 		entries = append(entries, &appmessage.MempoolEntry{
 			Fee:         transaction.Fee,
 			Transaction: rpcTransaction,
+			IsOrphan:    false,
 		})
 	}
+	return entries, nil
+}
 
-	return appmessage.NewGetMempoolEntriesResponseMessage(entries), nil
+func getOrphanPoolMempoolEntries(context *rpccontext.Context) ([]*appmessage.MempoolEntry, error) {
+	orphanTransactions := context.Domain.MiningManager().AllOrphanTransactions()
+	entries := make([]*appmessage.MempoolEntry, 0, len(orphanTransactions))
+	for _, orphanTransaction := range orphanTransactions {
+		rpcTransaction := appmessage.DomainTransactionToRPCTransaction(orphanTransaction)
+		err := context.PopulateTransactionWithVerboseData(rpcTransaction, nil)
+		if err != nil {
+			return nil, err
+		}
+		entries = append(entries, &appmessage.MempoolEntry{
+			Fee:         orphanTransaction.Fee,
+			Transaction: rpcTransaction,
+			IsOrphan:    true,
+		})
+	}
+	return entries, nil
 }
