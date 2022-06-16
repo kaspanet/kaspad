@@ -59,7 +59,9 @@ func (mp *mempool) checkTransactionStandardInIsolation(transaction *externalapi.
 	// size of a transaction. This also helps mitigate CPU exhaustion
 	// attacks.
 	if transaction.Mass > MaximumStandardTransactionMass {
-		str := fmt.Sprintf("transaction mass of %d is larger than max allowed size of %d",
+		str := fmt.Sprintf("transaction mass of %d is larger than max allowed size of %d"+
+			" (available UTXOs are too small, so too many of them required to collect the requested amount - "+
+			"reduce the requested value of consider performing a compounding first)",
 			transaction.Mass, MaximumStandardTransactionMass)
 		return transactionRuleError(RejectNonstandard, str)
 	}
