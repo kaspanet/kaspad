@@ -324,8 +324,9 @@ message NotifyVirtualSelectedParentChainChangedResponseMessage{
 //
 // See: NotifyVirtualSelectedParentChainChangedRequestMessage
 message VirtualSelectedParentChainChangedNotificationMessage{
-  // The chain blocks that were removed, in high-to-low order
-  string id = 1001; 
+  string id = 1001;
+  
+    // The chain blocks that were removed, in high-to-low order
   repeated string removedChainBlockHashes = 1;
 
   // The chain blocks that were added, in low-to-high order

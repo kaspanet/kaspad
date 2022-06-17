@@ -849,8 +849,8 @@ See: NotifyVirtualSelectedParentChainChangedRequestMessage
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| id | [string](#string) |  | The chain blocks that were removed, in high-to-low order |
-| removedChainBlockHashes | [string](#string) | repeated |  |
+| id | [string](#string) |  |  |
+| removedChainBlockHashes | [string](#string) | repeated | The chain blocks that were removed, in high-to-low order |
 | addedChainBlockHashes | [string](#string) | repeated | The chain blocks that were added, in low-to-high order |
 | acceptedTransactionIds | [AcceptedTransactionIds](#protowire.AcceptedTransactionIds) | repeated | Will be filled only if `includeAcceptedTransactionIds = true` in the notify request. |
 

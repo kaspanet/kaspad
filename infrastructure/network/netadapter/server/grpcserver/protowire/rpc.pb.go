@@ -2683,8 +2683,8 @@ type VirtualSelectedParentChainChangedNotificationMessage struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
+	Id string `protobuf:"bytes,1001,opt,name=id,proto3" json:"id,omitempty"`
 	// The chain blocks that were removed, in high-to-low order
-	Id                      string   `protobuf:"bytes,1001,opt,name=id,proto3" json:"id,omitempty"`
 	RemovedChainBlockHashes []string `protobuf:"bytes,1,rep,name=removedChainBlockHashes,proto3" json:"removedChainBlockHashes,omitempty"`
 	// The chain blocks that were added, in low-to-high order
 	AddedChainBlockHashes []string `protobuf:"bytes,3,rep,name=addedChainBlockHashes,proto3" json:"addedChainBlockHashes,omitempty"`
