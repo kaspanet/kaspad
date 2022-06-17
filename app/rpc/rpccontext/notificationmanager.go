@@ -353,6 +353,7 @@ func (nl *NotificationListener) PropagateBlockAddedNotifications(id string) {
 // PropagateVirtualSelectedParentChainChangedNotifications instructs the listener to send chain changed notifications
 // to the remote listener
 func (nl *NotificationListener) PropagateVirtualSelectedParentChainChangedNotifications(includeAcceptedTransactionIDs bool, id string) {
+	nl.propagateVirtualSelectedParentChainChangedNotificationsID = id
 	nl.propagateVirtualSelectedParentChainChangedNotifications = true
 	nl.includeAcceptedTransactionIDsInVirtualSelectedParentChainChangedNotifications = includeAcceptedTransactionIDs
 }
@@ -480,7 +481,7 @@ func (nl *NotificationListener) scriptPubKeyStringToAddressString(scriptPublicKe
 // PropagateVirtualSelectedParentBlueScoreChangedNotifications instructs the listener to send
 // virtual selected parent blue score notifications to the remote listener
 func (nl *NotificationListener) PropagateVirtualSelectedParentBlueScoreChangedNotifications(id string) {
-	nl.propagateVirtualDaaScoreChangedNotificationsID = id
+	nl.propagateVirtualSelectedParentBlueScoreChangedNotificationsID = id
 	nl.propagateVirtualSelectedParentBlueScoreChangedNotifications = true
 }
 
