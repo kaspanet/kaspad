@@ -39,7 +39,7 @@ func (x *KaspadMessage_NotifyNewBlockTemplateResponse) fromAppMessage(message *a
 		err = &RPCError{Message: message.Error.Message}
 	}
 	x.NotifyNewBlockTemplateResponse = &NotifyNewBlockTemplateResponseMessage{
-		Id: message.ID,
+		Id:    message.ID,
 		Error: err,
 	}
 	return nil
@@ -55,7 +55,7 @@ func (x *NotifyNewBlockTemplateResponseMessage) toAppMessage() (appmessage.Messa
 		return nil, err
 	}
 	return &appmessage.NotifyNewBlockTemplateResponseMessage{
-		ID: x.Id,
+		ID:    x.Id,
 		Error: rpcErr,
 	}, nil
 }

@@ -39,7 +39,7 @@ func (x *KaspadMessage_NotifyVirtualSelectedParentBlueScoreChangedResponse) from
 		err = &RPCError{Message: message.Error.Message}
 	}
 	x.NotifyVirtualSelectedParentBlueScoreChangedResponse = &NotifyVirtualSelectedParentBlueScoreChangedResponseMessage{
-		Id: message.ID,
+		Id:    message.ID,
 		Error: err,
 	}
 	return nil
@@ -55,7 +55,7 @@ func (x *NotifyVirtualSelectedParentBlueScoreChangedResponseMessage) toAppMessag
 		return nil, err
 	}
 	return &appmessage.NotifyVirtualSelectedParentBlueScoreChangedResponseMessage{
-		ID: x.Id,
+		ID:    x.Id,
 		Error: rpcErr,
 	}, nil
 }
@@ -69,7 +69,7 @@ func (x *KaspadMessage_VirtualSelectedParentBlueScoreChangedNotification) toAppM
 
 func (x *KaspadMessage_VirtualSelectedParentBlueScoreChangedNotification) fromAppMessage(message *appmessage.VirtualSelectedParentBlueScoreChangedNotificationMessage) error {
 	x.VirtualSelectedParentBlueScoreChangedNotification = &VirtualSelectedParentBlueScoreChangedNotificationMessage{
-		Id: message.ID,
+		Id:                             message.ID,
 		VirtualSelectedParentBlueScore: message.VirtualSelectedParentBlueScore,
 	}
 	return nil
@@ -80,7 +80,7 @@ func (x *VirtualSelectedParentBlueScoreChangedNotificationMessage) toAppMessage(
 		return nil, errors.Wrapf(errorNil, "VirtualSelectedParentBlueScoreChangedNotificationMessage is nil")
 	}
 	return &appmessage.VirtualSelectedParentBlueScoreChangedNotificationMessage{
-		ID: x.Id,
+		ID:                             x.Id,
 		VirtualSelectedParentBlueScore: x.VirtualSelectedParentBlueScore,
 	}, nil
 }

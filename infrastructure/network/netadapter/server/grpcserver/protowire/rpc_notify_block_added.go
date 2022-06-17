@@ -39,7 +39,7 @@ func (x *KaspadMessage_NotifyBlockAddedResponse) fromAppMessage(message *appmess
 		err = &RPCError{Message: message.Error.Message}
 	}
 	x.NotifyBlockAddedResponse = &NotifyBlockAddedResponseMessage{
-		Id: message.ID,
+		Id:    message.ID,
 		Error: err,
 	}
 	return nil
@@ -55,7 +55,7 @@ func (x *NotifyBlockAddedResponseMessage) toAppMessage() (appmessage.Message, er
 		return nil, err
 	}
 	return &appmessage.NotifyBlockAddedResponseMessage{
-		ID: x.Id,
+		ID:    x.Id,
 		Error: rpcErr,
 	}, nil
 }
@@ -74,7 +74,7 @@ func (x *KaspadMessage_BlockAddedNotification) fromAppMessage(message *appmessag
 		return err
 	}
 	x.BlockAddedNotification = &BlockAddedNotificationMessage{
-		Id: message.ID,
+		Id:    message.ID,
 		Block: block,
 	}
 	return nil
@@ -89,7 +89,7 @@ func (x *BlockAddedNotificationMessage) toAppMessage() (appmessage.Message, erro
 		return nil, err
 	}
 	return &appmessage.BlockAddedNotificationMessage{
-		ID: x.Id,
+		ID:    x.Id,
 		Block: block,
 	}, nil
 }

@@ -37,7 +37,7 @@ func (x *KaspadMessage_NotifyVirtualDaaScoreChangedResponse) fromAppMessage(mess
 		err = &RPCError{Message: message.Error.Message}
 	}
 	x.NotifyVirtualDaaScoreChangedResponse = &NotifyVirtualDaaScoreChangedResponseMessage{
-		Id: message.ID,
+		Id:    message.ID,
 		Error: err,
 	}
 	return nil
@@ -53,7 +53,7 @@ func (x *NotifyVirtualDaaScoreChangedResponseMessage) toAppMessage() (appmessage
 		return nil, err
 	}
 	return &appmessage.NotifyVirtualDaaScoreChangedResponseMessage{
-		ID: x.Id,
+		ID:    x.Id,
 		Error: rpcErr,
 	}, nil
 }
@@ -67,7 +67,7 @@ func (x *KaspadMessage_VirtualDaaScoreChangedNotification) toAppMessage() (appme
 
 func (x *KaspadMessage_VirtualDaaScoreChangedNotification) fromAppMessage(message *appmessage.VirtualDaaScoreChangedNotificationMessage) error {
 	x.VirtualDaaScoreChangedNotification = &VirtualDaaScoreChangedNotificationMessage{
-		Id: message.ID,
+		Id:              message.ID,
 		VirtualDaaScore: message.VirtualDaaScore,
 	}
 	return nil
@@ -78,7 +78,7 @@ func (x *VirtualDaaScoreChangedNotificationMessage) toAppMessage() (appmessage.M
 		return nil, errors.Wrapf(errorNil, "VirtualDaaScoreChangedNotificationMessage is nil")
 	}
 	return &appmessage.VirtualDaaScoreChangedNotificationMessage{
-		ID: x.Id,
+		ID:              x.Id,
 		VirtualDaaScore: x.VirtualDaaScore,
 	}, nil
 }

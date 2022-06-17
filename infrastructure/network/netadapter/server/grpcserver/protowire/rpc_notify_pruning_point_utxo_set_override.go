@@ -39,7 +39,7 @@ func (x *KaspadMessage_NotifyPruningPointUTXOSetOverrideResponse) fromAppMessage
 		err = &RPCError{Message: message.Error.Message}
 	}
 	x.NotifyPruningPointUTXOSetOverrideResponse = &NotifyPruningPointUTXOSetOverrideResponseMessage{
-		Id: message.ID,
+		Id:    message.ID,
 		Error: err,
 	}
 	return nil
@@ -55,7 +55,7 @@ func (x *NotifyPruningPointUTXOSetOverrideResponseMessage) toAppMessage() (appme
 		return nil, err
 	}
 	return &appmessage.NotifyPruningPointUTXOSetOverrideResponseMessage{
-		ID: x.Id,
+		ID:    x.Id,
 		Error: rpcErr,
 	}, nil
 }
@@ -108,7 +108,7 @@ func (x *KaspadMessage_StopNotifyingPruningPointUTXOSetOverrideResponse) fromApp
 		err = &RPCError{Message: message.Error.Message}
 	}
 	x.StopNotifyingPruningPointUTXOSetOverrideResponse = &StopNotifyingPruningPointUTXOSetOverrideResponseMessage{
-		Id: message.ID,
+		Id:    message.ID,
 		Error: err,
 	}
 	return nil
@@ -124,7 +124,7 @@ func (x *StopNotifyingPruningPointUTXOSetOverrideResponseMessage) toAppMessage()
 		return nil, err
 	}
 	return &appmessage.StopNotifyingPruningPointUTXOSetOverrideResponseMessage{
-		ID: x.Id,
+		ID:    x.Id,
 		Error: rpcErr,
 	}, nil
 }
