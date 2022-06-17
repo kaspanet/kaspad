@@ -3,21 +3,29 @@ package grpcserver
 import (
 	"context"
 	"fmt"
+	"net"
+	"sync"
+	"time"
+
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/server"
 	"github.com/kaspanet/kaspad/util/panics"
 	"github.com/pkg/errors"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/peer"
-	"net"
-	"sync"
-	"time"
 )
 
+// RequestModifier can modify the http request
+type RequestModifier func(r *grpc.Server)
+
 type gRPCServer struct {
+	// modifiers are applied before any request
+	//modifiers          []RequestModifier
 	onConnectedHandler server.OnConnectedHandler
 	listeningAddresses []string
 	server             *grpc.Server
 	name               string
+	auth               string
 
 	maxInboundConnections      int
 	inboundConnectionCount     int
@@ -25,15 +33,30 @@ type gRPCServer struct {
 }
 
 // newGRPCServer creates a gRPC server
-func newGRPCServer(listeningAddresses []string, maxMessageSize int, maxInboundConnections int, name string) *gRPCServer {
+func newGRPCServer(listeningAddresses []string, maxMessageSize int, maxInboundConnections int, name string, auth string, certFile string, keyFile string) *gRPCServer {
 	log.Debugf("Created new %s GRPC server with maxMessageSize %d and maxInboundConnections %d", name, maxMessageSize, maxInboundConnections)
-	return &gRPCServer{
-		server:                     grpc.NewServer(grpc.MaxRecvMsgSize(maxMessageSize), grpc.MaxSendMsgSize(maxMessageSize)),
-		listeningAddresses:         listeningAddresses,
-		name:                       name,
-		maxInboundConnections:      maxInboundConnections,
-		inboundConnectionCount:     0,
-		inboundConnectionCountLock: &sync.Mutex{},
+	log.Warnf("Name: %s for grpc auth type: %s", name, auth)
+	if auth == "tls" {
+		creds, _ := credentials.NewServerTLSFromFile(certFile, keyFile)
+		return &gRPCServer{
+			server:                     grpc.NewServer(grpc.Creds(creds), grpc.MaxRecvMsgSize(maxMessageSize), grpc.MaxSendMsgSize(maxMessageSize)),
+			listeningAddresses:         listeningAddresses,
+			name:                       name,
+			auth:                       auth,
+			maxInboundConnections:      maxInboundConnections,
+			inboundConnectionCount:     0,
+			inboundConnectionCountLock: &sync.Mutex{},
+		}
+	} else {
+		return &gRPCServer{
+			server:                     grpc.NewServer(grpc.MaxRecvMsgSize(maxMessageSize), grpc.MaxSendMsgSize(maxMessageSize)),
+			listeningAddresses:         listeningAddresses,
+			name:                       name,
+			auth:                       auth,
+			maxInboundConnections:      maxInboundConnections,
+			inboundConnectionCount:     0,
+			inboundConnectionCountLock: &sync.Mutex{},
+		}
 	}
 }
 
