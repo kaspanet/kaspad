@@ -171,9 +171,12 @@ message GetBlockTemplateResponseMessage{
 //
 // See: BlockAddedNotificationMessage
 message NotifyBlockAddedRequestMessage{
+        string id = 1001; 
+
 }
 
 message NotifyBlockAddedResponseMessage{
+  string id = 1001; 
   RPCError error = 1000;
 }
 
@@ -182,6 +185,7 @@ message NotifyBlockAddedResponseMessage{
 //
 // See: NotifyBlockAddedRequestMessage
 message BlockAddedNotificationMessage{
+        string id = 1001; 
   RpcBlock block = 3;
 }
 
@@ -494,6 +498,7 @@ message NotifyUtxosChangedResponseMessage {
 //
 // See: NotifyUtxosChangedRequestMessage
 message UtxosChangedNotificationMessage {
+        string id = 1001; 
   repeated UtxosByAddressesEntry added = 1;
   repeated UtxosByAddressesEntry removed = 2;
 }

@@ -492,6 +492,11 @@ NotifyBlockAddedRequestMessage registers this connection for blockAdded notifica
 See: BlockAddedNotificationMessage
 
 
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| id | [string](#string) |  |  |
+
+
 
 
 
@@ -504,6 +509,7 @@ See: BlockAddedNotificationMessage
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
+| id | [string](#string) |  |  |
 | error | [RPCError](#protowire.RPCError) |  |  |
 
 
@@ -522,6 +528,7 @@ See: NotifyBlockAddedRequestMessage
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
+| id | [string](#string) |  |  |
 | block | [RpcBlock](#protowire.RpcBlock) |  |  |
 
 
@@ -1265,6 +1272,7 @@ See: NotifyUtxosChangedRequestMessage
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
+| id | [string](#string) |  |  |
 | added | [UtxosByAddressesEntry](#protowire.UtxosByAddressesEntry) | repeated |  |
 | removed | [UtxosByAddressesEntry](#protowire.UtxosByAddressesEntry) | repeated |  |
 

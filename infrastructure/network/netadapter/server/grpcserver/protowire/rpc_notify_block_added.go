@@ -6,12 +6,24 @@ import (
 )
 
 func (x *KaspadMessage_NotifyBlockAddedRequest) toAppMessage() (appmessage.Message, error) {
-	return &appmessage.NotifyBlockAddedRequestMessage{}, nil
+	if x == nil {
+		return nil, errors.Wrapf(errorNil, "KaspadMessage_NotifyBlockAddedRequest is nil")
+	}
+	return x.NotifyBlockAddedRequest.toAppMessage()
 }
 
-func (x *KaspadMessage_NotifyBlockAddedRequest) fromAppMessage(_ *appmessage.NotifyBlockAddedRequestMessage) error {
-	x.NotifyBlockAddedRequest = &NotifyBlockAddedRequestMessage{}
+func (x *KaspadMessage_NotifyBlockAddedRequest) fromAppMessage(message *appmessage.NotifyBlockAddedRequestMessage) error {
+	x.NotifyBlockAddedRequest = &NotifyBlockAddedRequestMessage{Id: message.ID}
 	return nil
+}
+
+func (x *NotifyBlockAddedRequestMessage) toAppMessage() (appmessage.Message, error) {
+	if x == nil {
+		return nil, errors.Wrapf(errorNil, "NotifyBlockAddedRequest is nil")
+	}
+	return &appmessage.NotifyBlockAddedRequestMessage{
+		ID: x.Id,
+	}, nil
 }
 
 func (x *KaspadMessage_NotifyBlockAddedResponse) toAppMessage() (appmessage.Message, error) {
@@ -27,6 +39,7 @@ func (x *KaspadMessage_NotifyBlockAddedResponse) fromAppMessage(message *appmess
 		err = &RPCError{Message: message.Error.Message}
 	}
 	x.NotifyBlockAddedResponse = &NotifyBlockAddedResponseMessage{
+		Id: message.ID,
 		Error: err,
 	}
 	return nil
@@ -42,6 +55,7 @@ func (x *NotifyBlockAddedResponseMessage) toAppMessage() (appmessage.Message, er
 		return nil, err
 	}
 	return &appmessage.NotifyBlockAddedResponseMessage{
+		ID: x.Id,
 		Error: rpcErr,
 	}, nil
 }
@@ -60,6 +74,7 @@ func (x *KaspadMessage_BlockAddedNotification) fromAppMessage(message *appmessag
 		return err
 	}
 	x.BlockAddedNotification = &BlockAddedNotificationMessage{
+		Id: message.ID,
 		Block: block,
 	}
 	return nil
@@ -74,6 +89,7 @@ func (x *BlockAddedNotificationMessage) toAppMessage() (appmessage.Message, erro
 		return nil, err
 	}
 	return &appmessage.BlockAddedNotificationMessage{
+		ID: x.Id,
 		Block: block,
 	}, nil
 }
