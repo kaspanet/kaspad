@@ -205,6 +205,7 @@ func DefaultConfig() *Config {
 	return config
 }
 
+// Test
 // LoadConfig initializes and parses the config using a config file and command
 // line options.
 //
