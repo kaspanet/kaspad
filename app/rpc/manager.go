@@ -236,7 +236,7 @@ func (m *Manager) notifyVirtualSelectedParentChainChanged(virtualChangeSet *exte
 		}
 
 		notification, err := m.context.ConvertVirtualSelectedParentChainChangesToChainChangedNotificationMessage(
-			virtualChangeSet.VirtualSelectedParentChainChanges, includeAcceptedTransactionIDs) //DefaultNotificationId added in func
+			virtualChangeSet.VirtualSelectedParentChainChanges, includeAcceptedTransactionIDs, rpccontext.DefaultNotificationID) //DefaultNotificationId added in func
 		if err != nil {
 			return err
 		}
