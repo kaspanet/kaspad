@@ -217,12 +217,10 @@ func (nm *NotificationManager) NotifyUTXOsChanged(utxoChanges *utxoindex.UTXOCha
 	for router, listener := range nm.listeners {
 		if listener.propagateUTXOsChangedNotifications {
 			// Filter utxoChanges and create a notification
-			notification, err := listener.convertUTXOChangesToUTXOsChangedNotification(utxoChanges)
+			notification, err := listener.convertUTXOChangesToUTXOsChangedNotification(utxoChanges, listener.propagateUTXOsChangedNotificationsID)
 			if err != nil {
 				return err
 			}
-
-			notification.ID = listener.propagateUTXOsChangedNotificationsID
 
 			// Don't send the notification if it's empty
 			if len(notification.Added) == 0 && len(notification.Removed) == 0 {
@@ -403,7 +401,7 @@ func (nl *NotificationListener) StopPropagatingUTXOsChangedNotifications(address
 }
 
 func (nl *NotificationListener) convertUTXOChangesToUTXOsChangedNotification(
-	utxoChanges *utxoindex.UTXOChanges) (*appmessage.UTXOsChangedNotificationMessage, error) {
+	utxoChanges *utxoindex.UTXOChanges, id string) (*appmessage.UTXOsChangedNotificationMessage, error) {
 
 	// As an optimization, we iterate over the smaller set (O(n)) among the two below
 	// and check existence over the larger set (O(1))
@@ -411,6 +409,9 @@ func (nl *NotificationListener) convertUTXOChangesToUTXOsChangedNotification(
 	addressesSize := len(nl.propagateUTXOsChangedNotificationAddresses)
 
 	notification := &appmessage.UTXOsChangedNotificationMessage{}
+
+	notification.ID = id
+
 	if utxoChangesSize < addressesSize {
 		for scriptPublicKeyString, addedPairs := range utxoChanges.Added {
 			if listenerAddress, ok := nl.propagateUTXOsChangedNotificationAddresses[scriptPublicKeyString]; ok {
