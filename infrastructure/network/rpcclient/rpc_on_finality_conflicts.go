@@ -53,3 +53,50 @@ func (c *RPCClient) RegisterForFinalityConflictsNotifications(
 	})
 	return nil
 }
+
+// RegisterForFinalityConflictsNotificationsWithID does the same as
+// RegisterForFinalityConflictsNotifications, but allows the client to specify an id
+func (c *RPCClient) RegisterForFinalityConflictsNotificationsWithID(
+	onFinalityConflict func(notification *appmessage.FinalityConflictNotificationMessage),
+	onFinalityConflictResolved func(notification *appmessage.FinalityConflictResolvedNotificationMessage), id string) error {
+
+	err := c.rpcRouter.outgoingRoute().Enqueue(appmessage.NewNotifyFinalityConflictsRequestMessage(id))
+	if err != nil {
+		return err
+	}
+	response, err := c.route(appmessage.CmdNotifyFinalityConflictsResponseMessage).DequeueWithTimeout(c.timeout)
+	if err != nil {
+		return err
+	}
+	notifyFinalityConflictsResponse := response.(*appmessage.NotifyFinalityConflictsResponseMessage)
+	if notifyFinalityConflictsResponse.Error != nil {
+		return c.convertRPCError(notifyFinalityConflictsResponse.Error)
+	}
+	spawn("RegisterForFinalityConflictsNotificationsWithID-finalityConflict", func() {
+		for {
+			notification, err := c.route(appmessage.CmdFinalityConflictNotificationMessage).Dequeue()
+			if err != nil {
+				if errors.Is(err, routerpkg.ErrRouteClosed) {
+					break
+				}
+				panic(err)
+			}
+			finalityConflictNotification := notification.(*appmessage.FinalityConflictNotificationMessage)
+			onFinalityConflict(finalityConflictNotification)
+		}
+	})
+	spawn("RegisterForFinalityConflictsNotificationsWithID-finalityConflictResolved", func() {
+		for {
+			notification, err := c.route(appmessage.CmdFinalityConflictResolvedNotificationMessage).Dequeue()
+			if err != nil {
+				if errors.Is(err, routerpkg.ErrRouteClosed) {
+					break
+				}
+				panic(err)
+			}
+			finalityConflictResolvedNotification := notification.(*appmessage.FinalityConflictResolvedNotificationMessage)
+			onFinalityConflictResolved(finalityConflictResolvedNotification)
+		}
+	})
+	return nil
+}

@@ -40,3 +40,37 @@ func (c *RPCClient) RegisterForVirtualSelectedParentChainChangedNotifications(in
 	})
 	return nil
 }
+
+// RegisterForVirtualSelectedParentChainChangedNotificationsWithID does the same as
+// RegisterForVirtualSelectedParentChainChangedNotifications, but allows the client to specify an id
+func (c *RPCClient) RegisterForVirtualSelectedParentChainChangedNotificationsWithID(includeAcceptedTransactionIDs bool,
+	onChainChanged func(notification *appmessage.VirtualSelectedParentChainChangedNotificationMessage), id string) error {
+
+	err := c.rpcRouter.outgoingRoute().Enqueue(
+		appmessage.NewNotifyVirtualSelectedParentChainChangedRequestMessage(includeAcceptedTransactionIDs, id))
+	if err != nil {
+		return err
+	}
+	response, err := c.route(appmessage.CmdNotifyVirtualSelectedParentChainChangedResponseMessage).DequeueWithTimeout(c.timeout)
+	if err != nil {
+		return err
+	}
+	notifyChainChangedResponse := response.(*appmessage.NotifyVirtualSelectedParentChainChangedResponseMessage)
+	if notifyChainChangedResponse.Error != nil {
+		return c.convertRPCError(notifyChainChangedResponse.Error)
+	}
+	spawn("RegisterForVirtualSelectedParentChainChangedNotificationsWithID", func() {
+		for {
+			notification, err := c.route(appmessage.CmdVirtualSelectedParentChainChangedNotificationMessage).Dequeue()
+			if err != nil {
+				if errors.Is(err, routerpkg.ErrRouteClosed) {
+					break
+				}
+				panic(err)
+			}
+			ChainChangedNotification := notification.(*appmessage.VirtualSelectedParentChainChangedNotificationMessage)
+			onChainChanged(ChainChangedNotification)
+		}
+	})
+	return nil
+}

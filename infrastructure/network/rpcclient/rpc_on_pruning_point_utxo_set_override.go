@@ -57,3 +57,54 @@ func (c *RPCClient) UnregisterPruningPointUTXOSetNotifications() error {
 	}
 	return nil
 }
+
+// RegisterPruningPointUTXOSetNotificationsWithID does the same as
+// RegisterPruningPointUTXOSetNotifications, but allows the client to specify an id
+func (c *RPCClient) RegisterPruningPointUTXOSetNotificationsWithID(onPruningPointUTXOSetNotifications func(), id string) error {
+
+	err := c.rpcRouter.outgoingRoute().Enqueue(appmessage.NewNotifyPruningPointUTXOSetOverrideRequestMessage(id))
+	if err != nil {
+		return err
+	}
+	response, err := c.route(appmessage.CmdNotifyPruningPointUTXOSetOverrideResponseMessage).DequeueWithTimeout(c.timeout)
+	if err != nil {
+		return err
+	}
+	notifyPruningPointUTXOSetOverrideResponse := response.(*appmessage.NotifyPruningPointUTXOSetOverrideResponseMessage)
+	if notifyPruningPointUTXOSetOverrideResponse.Error != nil {
+		return c.convertRPCError(notifyPruningPointUTXOSetOverrideResponse.Error)
+	}
+	spawn("RegisterPruningPointUTXOSetNotificationsWithID", func() {
+		for {
+			notification, err := c.route(appmessage.CmdPruningPointUTXOSetOverrideNotificationMessage).Dequeue()
+			if err != nil {
+				if errors.Is(err, routerpkg.ErrRouteClosed) {
+					break
+				}
+				panic(err)
+			}
+			_ = notification.(*appmessage.PruningPointUTXOSetOverrideNotificationMessage) // Sanity check the type
+			onPruningPointUTXOSetNotifications()
+		}
+	})
+	return nil
+}
+
+// UnregisterPruningPointUTXOSetNotificationsWithID does the same as
+// UnregisterPruningPointUTXOSetNotifications, but allows the client to specify an id
+func (c *RPCClient) UnregisterPruningPointUTXOSetNotificationsWithID(id string) error {
+
+	err := c.rpcRouter.outgoingRoute().Enqueue(appmessage.NewStopNotifyingPruningPointUTXOSetOverrideRequestMessage(id))
+	if err != nil {
+		return err
+	}
+	response, err := c.route(appmessage.CmdStopNotifyingPruningPointUTXOSetOverrideResponseMessage).DequeueWithTimeout(c.timeout)
+	if err != nil {
+		return err
+	}
+	stopNotifyPruningPointUTXOSetOverrideResponse := response.(*appmessage.StopNotifyingPruningPointUTXOSetOverrideResponseMessage)
+	if stopNotifyPruningPointUTXOSetOverrideResponse.Error != nil {
+		return c.convertRPCError(stopNotifyPruningPointUTXOSetOverrideResponse.Error)
+	}
+	return nil
+}

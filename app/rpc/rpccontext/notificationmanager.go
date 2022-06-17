@@ -135,6 +135,7 @@ func (nm *NotificationManager) NotifyVirtualSelectedParentChainChanged(
 	defer nm.RUnlock()
 
 	notificationWithoutAcceptedTransactionIDs := &appmessage.VirtualSelectedParentChainChangedNotificationMessage{
+		ID:                      DefaultNotificationID,
 		RemovedChainBlockHashes: notification.RemovedChainBlockHashes,
 		AddedChainBlockHashes:   notification.AddedChainBlockHashes,
 	}
@@ -143,11 +144,11 @@ func (nm *NotificationManager) NotifyVirtualSelectedParentChainChanged(
 		if listener.propagateVirtualSelectedParentChainChangedNotifications {
 			var err error
 
-			notification.ID = listener.propagateVirtualSelectedParentChainChangedNotificationsID
-
 			if listener.includeAcceptedTransactionIDsInVirtualSelectedParentChainChangedNotifications {
+				notification.ID = listener.propagateVirtualSelectedParentChainChangedNotificationsID
 				err = router.OutgoingRoute().MaybeEnqueue(notification)
 			} else {
+				notificationWithoutAcceptedTransactionIDs.ID = listener.propagateVirtualSelectedParentChainChangedNotificationsID
 				err = router.OutgoingRoute().MaybeEnqueue(notificationWithoutAcceptedTransactionIDs)
 			}
 
@@ -330,6 +331,7 @@ func newNotificationListener(params *dagconfig.Params) *NotificationListener {
 		propagateFinalityConflictResolvedNotifications:              false,
 		propagateUTXOsChangedNotifications:                          false,
 		propagateVirtualSelectedParentBlueScoreChangedNotifications: false,
+		propagateVirtualDaaScoreChangedNotifications:                false,
 		propagateNewBlockTemplateNotifications:                      false,
 		propagatePruningPointUTXOSetOverrideNotifications:           false,
 	}

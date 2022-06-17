@@ -40,3 +40,36 @@ func (c *RPCClient) RegisterForVirtualSelectedParentBlueScoreChangedNotification
 	})
 	return nil
 }
+
+// RegisterForVirtualSelectedParentBlueScoreChangedNotificationsWithID does the same as
+// RegisterForVirtualSelectedParentBlueScoreChangedNotifications, but allows the client to specify an id
+func (c *RPCClient) RegisterForVirtualSelectedParentBlueScoreChangedNotificationsWithID(
+	onVirtualSelectedParentBlueScoreChanged func(notification *appmessage.VirtualSelectedParentBlueScoreChangedNotificationMessage), id string) error {
+
+	err := c.rpcRouter.outgoingRoute().Enqueue(appmessage.NewNotifyVirtualSelectedParentBlueScoreChangedRequestMessage(id))
+	if err != nil {
+		return err
+	}
+	response, err := c.route(appmessage.CmdNotifyVirtualSelectedParentBlueScoreChangedResponseMessage).DequeueWithTimeout(c.timeout)
+	if err != nil {
+		return err
+	}
+	notifyVirtualSelectedParentBlueScoreChangedResponse := response.(*appmessage.NotifyVirtualSelectedParentBlueScoreChangedResponseMessage)
+	if notifyVirtualSelectedParentBlueScoreChangedResponse.Error != nil {
+		return c.convertRPCError(notifyVirtualSelectedParentBlueScoreChangedResponse.Error)
+	}
+	spawn("RegisterForVirtualSelectedParentBlueScoreChangedNotificationsWithID", func() {
+		for {
+			notification, err := c.route(appmessage.CmdVirtualSelectedParentBlueScoreChangedNotificationMessage).Dequeue()
+			if err != nil {
+				if errors.Is(err, routerpkg.ErrRouteClosed) {
+					break
+				}
+				panic(err)
+			}
+			VirtualSelectedParentBlueScoreChangedNotification := notification.(*appmessage.VirtualSelectedParentBlueScoreChangedNotificationMessage)
+			onVirtualSelectedParentBlueScoreChanged(VirtualSelectedParentBlueScoreChangedNotification)
+		}
+	})
+	return nil
+}
