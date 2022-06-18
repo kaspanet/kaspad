@@ -20,6 +20,12 @@ func HandleGetInfo(context *rpccontext.Context, _ *router.Router, _ appmessage.M
 		version.Version(),
 		context.Config.UTXOIndex,
 		context.ProtocolManager.Context().HasPeers() && isNearlySynced,
+		int64(context.Config.RPCMaxClients),
+		int64(context.ConnectionManager.ConnectionCount()),
+		int64(context.Config.MaxInboundPeers),
+		int64(context.NetAdapter.P2PConnectionCount()),
+		int64(context.Config.BanDuration.Seconds()),
+		
 	)
 
 	return response, nil

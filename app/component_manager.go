@@ -3,6 +3,7 @@ package app
 import (
 	"fmt"
 	"sync/atomic"
+	"time"
 
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 
@@ -30,7 +31,8 @@ type ComponentManager struct {
 	rpcManager        *rpc.Manager
 	connectionManager *connmanager.ConnectionManager
 	netAdapter        *netadapter.NetAdapter
-
+	
+	startTime	  time.Time
 	started, shutdown int32
 }
 
@@ -49,6 +51,7 @@ func (a *ComponentManager) Start() {
 	}
 
 	a.connectionManager.Start()
+	a.startTime = time.Now()
 }
 
 // Stop gracefully shuts down all the kaspad services.

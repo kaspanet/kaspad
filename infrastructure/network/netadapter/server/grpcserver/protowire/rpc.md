@@ -1701,6 +1701,12 @@ GetInfoRequestMessage returns info about the node.
 | serverVersion | [string](#string) |  |  |
 | isUtxoIndexed | [bool](#bool) |  |  |
 | isSynced | [bool](#bool) |  |  |
+| maxRPCClients | [int64](#int64) |  |  |
+| numberOfRPCConnections | [int64](#int64) |  |  |
+| maxP2PClients | [int64](#int64) |  |  |
+| numberOfP2PConnections | [int64](#int64) |  |  |
+| banDuration | [int64](#int64) |  |  |
+| uptimeInSeconds | [int64](#int64) |  |  |
 | error | [RPCError](#protowire.RPCError) |  |  |
 
 
