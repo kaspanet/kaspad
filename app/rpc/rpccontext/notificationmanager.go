@@ -14,7 +14,7 @@ import (
 )
 
 // DefaultNotificationID corrosponds to defualt grpc string value, and hence id value when not supplied, or as placeholder
-const DefaultNotificationID = ""
+const DefaultNotificationID string = ""
 
 // NotificationManager manages notifications for the RPC
 type NotificationManager struct {
@@ -410,9 +410,7 @@ func (nl *NotificationListener) convertUTXOChangesToUTXOsChangedNotification(
 	utxoChangesSize := len(utxoChanges.Added) + len(utxoChanges.Removed)
 	addressesSize := len(nl.propagateUTXOsChangedNotificationAddresses)
 
-	notification := &appmessage.UTXOsChangedNotificationMessage{}
-
-	notification.ID = id
+	notification := &appmessage.UTXOsChangedNotificationMessage{ID: id}
 
 	if utxoChangesSize < addressesSize {
 		for scriptPublicKeyString, addedPairs := range utxoChanges.Added {
@@ -484,7 +482,7 @@ func (nl *NotificationListener) scriptPubKeyStringToAddressString(scriptPublicKe
 // PropagateVirtualSelectedParentBlueScoreChangedNotifications instructs the listener to send
 // virtual selected parent blue score notifications to the remote listener
 func (nl *NotificationListener) PropagateVirtualSelectedParentBlueScoreChangedNotifications(id string) {
-	nl.propagateVirtualSelectedParentBlueScoreChangedNotificationsID = id
+	//nl.propagateVirtualSelectedParentBlueScoreChangedNotificationsID = id
 	nl.propagateVirtualSelectedParentBlueScoreChangedNotifications = true
 }
 
