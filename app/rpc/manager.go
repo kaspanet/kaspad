@@ -1,7 +1,6 @@
 package rpc
 
 import (
-	"github.com/kaspanet/kaspad/app"
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/app/protocol"
 	"github.com/kaspanet/kaspad/app/rpc/rpccontext"
@@ -30,7 +29,6 @@ func NewManager(
 	connectionManager *connmanager.ConnectionManager,
 	addressManager *addressmanager.AddressManager,
 	utxoIndex *utxoindex.UTXOIndex,
-	componentManager *app.ComponentManager,
 	consensusEventsChan chan externalapi.ConsensusEvent,
 	shutDownChan chan<- struct{}) *Manager {
 
@@ -43,7 +41,6 @@ func NewManager(
 			connectionManager,
 			addressManager,
 			utxoIndex,
-			componentManager,
 			shutDownChan,
 		),
 	}

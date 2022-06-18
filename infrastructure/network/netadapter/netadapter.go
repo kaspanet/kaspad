@@ -31,6 +31,8 @@ type NetAdapter struct {
 	rpcRouterInitializer RouterInitializer
 	stop                 uint32
 
+	startTime	  time.Time
+
 	p2pConnections     map[*NetConnection]struct{}
 	p2pConnectionsLock sync.RWMutex
 }

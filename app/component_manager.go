@@ -32,7 +32,6 @@ type ComponentManager struct {
 	connectionManager *connmanager.ConnectionManager
 	netAdapter        *netadapter.NetAdapter
 	
-	startTime	  time.Time
 	started, shutdown int32
 }
 
@@ -51,7 +50,6 @@ func (a *ComponentManager) Start() {
 	}
 
 	a.connectionManager.Start()
-	a.startTime = time.Now()
 }
 
 // Stop gracefully shuts down all the kaspad services.
