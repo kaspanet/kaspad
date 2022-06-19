@@ -3,20 +3,22 @@ package server
 import (
 	"context"
 	"fmt"
+	"time"
+
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/daemon/pb"
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/libkaspawallet"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/pkg/errors"
 	"golang.org/x/exp/slices"
-	"time"
 )
 
 // TODO: Implement a better fee estimation mechanism
 const feePerInput = 10000
 
 func (s *server) CreateUnsignedTransactions(_ context.Context, request *pb.CreateUnsignedTransactionsRequest) (
-	*pb.CreateUnsignedTransactionsResponse, error) {
+	*pb.CreateUnsignedTransactionsResponse, error,
+) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
@@ -33,12 +35,14 @@ func (s *server) createUnsignedTransactions(address string, amount uint64, fromA
 		return nil, errors.Errorf("wallet daemon is not synced yet, %s", s.formatSyncStateReport())
 	}
 
-	err := s.refreshUTXOs()
+	// make sure address string is correct before proceeding to a
+	// potentially long UTXO refreshment operation
+	toAddress, err := util.DecodeAddress(address, s.params.Prefix)
 	if err != nil {
 		return nil, err
 	}
 
-	toAddress, err := util.DecodeAddress(address, s.params.Prefix)
+	err = s.refreshUTXOs()
 	if err != nil {
 		return nil, err
 	}
@@ -87,8 +91,8 @@ func (s *server) createUnsignedTransactions(address string, amount uint64, fromA
 }
 
 func (s *server) selectUTXOs(spendAmount uint64, feePerInput uint64, fromAddresses []*walletAddress) (
-	selectedUTXOs []*libkaspawallet.UTXO, changeSompi uint64, err error) {
-
+	selectedUTXOs []*libkaspawallet.UTXO, changeSompi uint64, err error,
+) {
 	selectedUTXOs = []*libkaspawallet.UTXO{}
 	totalValue := uint64(0)
 

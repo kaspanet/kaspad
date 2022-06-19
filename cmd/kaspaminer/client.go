@@ -1,11 +1,12 @@
 package main
 
 import (
+	"time"
+
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/infrastructure/logger"
 	"github.com/kaspanet/kaspad/infrastructure/network/rpcclient"
 	"github.com/pkg/errors"
-	"time"
 )
 
 const minerTimeout = 10 * time.Second
@@ -22,7 +23,7 @@ func (mc *minerClient) connect() error {
 	if err != nil {
 		return err
 	}
-	rpcClient, err := rpcclient.NewRPCClient(rpcAddress)
+	rpcClient, err := rpcclient.NewRPCClient(rpcAddress, 0)
 	if err != nil {
 		return err
 	}

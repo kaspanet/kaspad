@@ -36,7 +36,7 @@ func ConnectToRPC(config *Config, dagParams *dagconfig.Params) (*Client, error) 
 	if err != nil {
 		return nil, err
 	}
-	rpcClient, err := rpcclient.NewRPCClient(rpcAddress)
+	rpcClient, err := rpcclient.NewRPCClient(rpcAddress, 0)
 	if err != nil {
 		return nil, err
 	}

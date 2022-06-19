@@ -1,10 +1,10 @@
 package integration
 
 import (
-	"github.com/kaspanet/kaspad/infrastructure/config"
 	"testing"
 	"time"
 
+	"github.com/kaspanet/kaspad/infrastructure/config"
 	"github.com/kaspanet/kaspad/infrastructure/network/rpcclient"
 )
 
@@ -15,7 +15,7 @@ type testRPCClient struct {
 }
 
 func newTestRPCClient(rpcAddress string) (*testRPCClient, error) {
-	rpcClient, err := rpcclient.NewRPCClient(rpcAddress)
+	rpcClient, err := rpcclient.NewRPCClient(rpcAddress, 0)
 	if err != nil {
 		return nil, err
 	}

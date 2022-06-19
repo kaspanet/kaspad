@@ -1,6 +1,9 @@
 package rpcclient
 
 import (
+	"sync/atomic"
+	"time"
+
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/infrastructure/logger"
 	routerpkg "github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
@@ -8,8 +11,6 @@ import (
 	"github.com/kaspanet/kaspad/util/panics"
 	"github.com/kaspanet/kaspad/version"
 	"github.com/pkg/errors"
-	"sync/atomic"
-	"time"
 )
 
 const defaultTimeout = 30 * time.Second
@@ -29,10 +30,16 @@ type RPCClient struct {
 }
 
 // NewRPCClient creates a new RPC client
-func NewRPCClient(rpcAddress string) (*RPCClient, error) {
+func NewRPCClient(rpcAddress string, timeout uint32) (*RPCClient, error) {
+	appliedTimeout := defaultTimeout
+
+	if timeout != 0 {
+		appliedTimeout = time.Duration(timeout) * time.Second
+	}
+
 	rpcClient := &RPCClient{
 		rpcAddress: rpcAddress,
-		timeout:    defaultTimeout,
+		timeout:    appliedTimeout,
 	}
 	err := rpcClient.connect()
 	if err != nil {
