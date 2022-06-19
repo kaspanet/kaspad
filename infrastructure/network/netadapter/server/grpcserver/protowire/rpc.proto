@@ -667,8 +667,8 @@ message GetInfoResponseMessage{
   int64 numberOfRPCConnections = 7;
   int64 maxP2PClients = 8;
   int64 numberOfP2PConnections = 9;
-  int64 banDurationInSeconds = 10;
-  int64 uptimeInSeconds = 11;
+  int64 banDurationInMilliseconds = 10;
+  int64 uptimeInMilliseconds = 11;
   RPCError error = 1000;
 }
 

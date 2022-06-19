@@ -32,12 +32,13 @@ type NetAdapter struct {
 	rpcRouterInitializer RouterInitializer
 	stop                 uint32
 
-	StartTime time.Time
+	startTime time.Time
 
 	p2pConnections map[*NetConnection]struct{}
 	rpcConnections map[*NetConnection]struct{}
 
 	p2pConnectionsLock sync.RWMutex
+	rpcConnectionsLock sync.RWMutex
 }
 
 // NewNetAdapter creates and starts a new NetAdapter on the
@@ -90,7 +91,7 @@ func (na *NetAdapter) Start() error {
 		return err
 	}
 
-	na.StartTime = time.Now()
+	na.startTime = time.Now()
 
 	return nil
 }
@@ -158,12 +159,23 @@ func (na *NetAdapter) onP2PConnectedHandler(connection server.Connection) error 
 
 // RPCConnectionCount returns the count of the connected rpc connections
 func (na *NetAdapter) RPCConnectionCount() int {
+	na.rpcConnectionsLock.RLock()
+	defer na.rpcConnectionsLock.RUnlock()
+
 	return len(na.rpcConnections)
 }
 
 func (na *NetAdapter) onRPCConnectedHandler(connection server.Connection) error {
+
+	na.rpcConnectionsLock.Lock()
+	defer na.rpcConnectionsLock.Unlock()
+
 	netConnection := newNetConnection(connection, na.rpcRouterInitializer, "on RPC connected")
 	netConnection.setOnDisconnectedHandler(func() {
+
+		na.rpcConnectionsLock.Lock()
+		defer na.rpcConnectionsLock.Unlock()
+
 		delete(na.rpcConnections, netConnection)
 	})
 	na.rpcConnections[netConnection] = struct{}{}
@@ -207,4 +219,8 @@ func (na *NetAdapter) P2PBroadcast(netConnections []*NetConnection, message appm
 		}
 	}
 	return nil
+}
+
+func (na *NetAdapter) UptimeInMilliseconds() int64 {
+	return time.Since(na.startTime).Milliseconds()
 }

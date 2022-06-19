@@ -39,9 +39,9 @@ func (x *KaspadMessage_GetInfoResponse) fromAppMessage(message *appmessage.GetIn
 		MaxP2PClients:          message.MaxP2PClients,
 		NumberOfP2PConnections: message.NumberOfP2PConnections,
 
-		BanDurationInSeconds: message.BanDurationInSeconds,
+		BanDurationInMilliseconds: message.BanDurationInMilliseconds,
 
-		UptimeInSeconds: message.UptimeInSeconds,
+		UptimeInMilliseconds: message.UptimeInMilliseconds,
 
 		Error: err,
 	}
@@ -76,8 +76,8 @@ func (x *GetInfoResponseMessage) toAppMessage() (appmessage.Message, error) {
 		MaxP2PClients:          x.MaxP2PClients,
 		NumberOfP2PConnections: x.NumberOfP2PConnections,
 
-		BanDurationInSeconds: x.BanDurationInSeconds,
-		UptimeInSeconds:      x.UptimeInSeconds,
+		BanDurationInMilliseconds: x.BanDurationInMilliseconds,
+		UptimeInMilliseconds: x.UptimeInMilliseconds,
 
 		Error: rpcErr,
 	}, nil
