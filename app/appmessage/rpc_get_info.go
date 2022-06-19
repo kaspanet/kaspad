@@ -53,7 +53,7 @@ func NewGetInfoResponseMessage(p2pID string, mempoolSize uint64, serverVersion s
 		IsSynced:               isSynced,
 		MaxRPCClients:          maxRPCClients,
 		NumberOfRPCConnections: numberOfRPCConnections,
-		MaxP2PClients:          numberOfP2PConnections,
+		MaxP2PClients:          maxP2PClients,
 		NumberOfP2PConnections: numberOfP2PConnections,
 		UptimeInSeconds:        uptimeInSeconds,
 	}
