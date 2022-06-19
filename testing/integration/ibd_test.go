@@ -107,7 +107,7 @@ func TestIBDWithPruning(t *testing.T) {
 			}
 		}
 
-		const timeout = 10 * time.Second
+		const timeout = 20 * time.Second
 		select {
 		case <-utxoSetOverriden:
 		case <-time.After(timeout):
