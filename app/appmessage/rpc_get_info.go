@@ -41,9 +41,9 @@ func (msg *GetInfoResponseMessage) Command() MessageCommand {
 }
 
 // NewGetInfoResponseMessage returns a instance of the message
-func NewGetInfoResponseMessage(p2pID string, mempoolSize uint64, serverVersion string, 
-	isUtxoIndexed bool, isSynced bool, maxRPCClients int64, numberOfRPCConnections int64, 
-	maxP2PClients int64, numberOfP2PConnections int64, banDuration int64, 
+func NewGetInfoResponseMessage(p2pID string, mempoolSize uint64, serverVersion string,
+	isUtxoIndexed bool, isSynced bool, maxRPCClients int64, numberOfRPCConnections int64,
+	maxP2PClients int64, numberOfP2PConnections int64, banDuration int64,
 	uptimeInSeconds int64) *GetInfoResponseMessage {
 	return &GetInfoResponseMessage{
 		P2PID:                  p2pID,

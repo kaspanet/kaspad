@@ -34,8 +34,8 @@ type NetAdapter struct {
 
 	StartTime time.Time
 
-	p2pConnections     map[*NetConnection]struct{}
-	rpcConnections     map[*NetConnection]struct{}
+	p2pConnections map[*NetConnection]struct{}
+	rpcConnections map[*NetConnection]struct{}
 
 	p2pConnectionsLock sync.RWMutex
 }
@@ -155,6 +155,7 @@ func (na *NetAdapter) onP2PConnectedHandler(connection server.Connection) error 
 	return nil
 }
 
+// RPCConnectionCount returns the count of the connected rpc connections
 func (na *NetAdapter) RPCConnectionCount() int {
 	return len(na.rpcConnections)
 }
