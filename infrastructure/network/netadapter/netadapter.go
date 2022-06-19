@@ -62,6 +62,7 @@ func NewNetAdapter(cfg *config.Config) (*NetAdapter, error) {
 		rpcServer: rpcServer,
 
 		p2pConnections: make(map[*NetConnection]struct{}),
+		rpcConnections: make(map[*NetConnection]struct{}),
 	}
 
 	adapter.p2pServer.SetOnConnectedHandler(adapter.onP2PConnectedHandler)
@@ -162,8 +163,11 @@ func (na *NetAdapter) RPCConnectionCount() int {
 
 func (na *NetAdapter) onRPCConnectedHandler(connection server.Connection) error {
 	netConnection := newNetConnection(connection, na.rpcRouterInitializer, "on RPC connected")
-	netConnection.setOnDisconnectedHandler(func() {})
+	netConnection.setOnDisconnectedHandler(func() {
+		delete(na.rpcConnections, netConnection)
+	})
 	na.rpcConnections[netConnection] = struct{}{}
+
 	netConnection.start()
 
 	return nil
