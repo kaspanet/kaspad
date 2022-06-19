@@ -221,6 +221,7 @@ func (na *NetAdapter) P2PBroadcast(netConnections []*NetConnection, message appm
 	return nil
 }
 
+// UptimeInMilliseconds returns this netAdapter's uptime in milliseconds
 func (na *NetAdapter) UptimeInMilliseconds() int64 {
 	return time.Since(na.startTime).Milliseconds()
 }

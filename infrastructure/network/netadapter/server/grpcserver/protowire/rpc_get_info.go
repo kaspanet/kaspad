@@ -77,7 +77,7 @@ func (x *GetInfoResponseMessage) toAppMessage() (appmessage.Message, error) {
 		NumberOfP2PConnections: x.NumberOfP2PConnections,
 
 		BanDurationInMilliseconds: x.BanDurationInMilliseconds,
-		UptimeInMilliseconds: x.UptimeInMilliseconds,
+		UptimeInMilliseconds:      x.UptimeInMilliseconds,
 
 		Error: rpcErr,
 	}, nil
