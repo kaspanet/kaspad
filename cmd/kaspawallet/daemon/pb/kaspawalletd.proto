@@ -23,13 +23,17 @@ message GetBalanceRequest {
 message GetBalanceResponse {
   uint64 available = 1;
   uint64 pending = 2;
-  repeated AddressBalances addressBalances = 3;
+  uint64 nUtxosAvailable = 3;
+  uint64 nUtxosPending = 4;
+  repeated AddressBalances addressBalances = 5;
 }
 
 message AddressBalances {
   string address = 1;
   uint64 available = 2;
   uint64 pending = 3;
+  uint64 nUtxosAvailable = 4;
+  uint64 nUtxosPending = 5;
 }
 
 message CreateUnsignedTransactionsRequest {

@@ -48,6 +48,7 @@ type createConfig struct {
 type balanceConfig struct {
 	DaemonAddress string `long:"daemonaddress" short:"d" description:"Wallet daemon server to connect to"`
 	Verbose       bool   `long:"verbose" short:"v" description:"Verbose: show addresses with balance"`
+	CountUtxos    bool   `long:"count-utxos" short:"u" description:"Display the number of UTXOs constituting a balance"`
 	config.NetworkFlags
 }
 
@@ -181,7 +182,6 @@ func parseCommandLine() (subCommand string, config interface{}) {
 	parser.AddCommand(startDaemonSubCmd, "Start the wallet daemon", "Start the wallet daemon", startDaemonConf)
 
 	_, err := parser.Parse()
-
 	if err != nil {
 		var flagsErr *flags.Error
 		if ok := errors.As(err, &flagsErr); ok && flagsErr.Type == flags.ErrHelp {

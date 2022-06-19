@@ -7,8 +7,10 @@ import (
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/libkaspawallet"
 )
 
-type balancesType struct{ available, pending uint64 }
-type balancesMapType map[*walletAddress]*balancesType
+type (
+	balancesType    struct{ available, pending, nUtxosAvailable, nUtxosPending uint64 }
+	balancesMapType map[*walletAddress]*balancesType
+)
 
 func (s *server) GetBalance(_ context.Context, _ *pb.GetBalanceRequest) (*pb.GetBalanceResponse, error) {
 	s.lock.RLock()
@@ -32,32 +34,40 @@ func (s *server) GetBalance(_ context.Context, _ *pb.GetBalanceRequest) (*pb.Get
 		}
 		if isUTXOSpendable(entry, daaScore, maturity) {
 			balances.available += amount
+			balances.nUtxosAvailable++
 		} else {
 			balances.pending += amount
+			balances.nUtxosPending++
 		}
 	}
 
 	addressBalances := make([]*pb.AddressBalances, len(balancesMap))
 	i := 0
-	var available, pending uint64
+	var available, pending, nUtxosAvailable, nUtxosPending uint64
 	for walletAddress, balances := range balancesMap {
 		address, err := libkaspawallet.Address(s.params, s.keysFile.ExtendedPublicKeys, s.keysFile.MinimumSignatures, s.walletAddressPath(walletAddress), s.keysFile.ECDSA)
 		if err != nil {
 			return nil, err
 		}
 		addressBalances[i] = &pb.AddressBalances{
-			Address:   address.String(),
-			Available: balances.available,
-			Pending:   balances.pending,
+			Address:         address.String(),
+			Available:       balances.available,
+			Pending:         balances.pending,
+			NUtxosAvailable: balances.nUtxosAvailable,
+			NUtxosPending:   balances.nUtxosPending,
 		}
 		i++
 		available += balances.available
 		pending += balances.pending
+		nUtxosAvailable += balances.nUtxosAvailable
+		nUtxosPending += balances.nUtxosPending
 	}
 
 	return &pb.GetBalanceResponse{
 		Available:       available,
 		Pending:         pending,
+		NUtxosAvailable: nUtxosAvailable,
+		NUtxosPending:   nUtxosPending,
 		AddressBalances: addressBalances,
 	}, nil
 }

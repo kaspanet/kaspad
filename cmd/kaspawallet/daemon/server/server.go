@@ -67,7 +67,12 @@ func Start(params *dagconfig.Params, listen, rpcServer string, keysFilePath stri
 		return (errors.Wrapf(err, "Error connecting to RPC server %s", rpcServer))
 	}
 
-	log.Infof("Connected, reading keys file %s...", keysFilePath)
+	if keysFilePath == "" {
+		log.Infof("Connected, reading keys file...")
+	} else {
+		log.Infof("Connected, reading keys file %s...", keysFilePath)
+	}
+
 	keysFile, err := keys.ReadKeysFile(params, keysFilePath)
 	if err != nil {
 		return (errors.Wrapf(err, "Error reading keys file %s", keysFilePath))
