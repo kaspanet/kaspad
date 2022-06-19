@@ -28,7 +28,6 @@ func NewManager(
 	protocolManager *protocol.Manager,
 	connectionManager *connmanager.ConnectionManager,
 	addressManager *addressmanager.AddressManager,
-	rpcManager *RpcManager,
 	utxoIndex *utxoindex.UTXOIndex,
 	consensusEventsChan chan externalapi.ConsensusEvent,
 	shutDownChan chan<- struct{}) *Manager {
