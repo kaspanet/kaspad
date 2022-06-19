@@ -36,7 +36,7 @@ func (x *KaspadMessage_GetInfoResponse) fromAppMessage(message *appmessage.GetIn
 
 		MaxRPCClients:          message.MaxRPCClients,
 		NumberOfRPCConnections: message.NumberOfRPCConnections,
-		MaxP2PClients:          message.MaxRPCClients,
+		MaxP2PClients:          message.MaxP2PClients,
 		NumberOfP2PConnections: message.NumberOfP2PConnections,
 
 		BanDurationInSeconds: message.BanDurationInSeconds,
