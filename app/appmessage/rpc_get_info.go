@@ -55,7 +55,7 @@ func NewGetInfoResponseMessage(p2pID string, mempoolSize uint64, serverVersion s
 		NumberOfRPCConnections: numberOfRPCConnections,
 		MaxP2PClients:          maxP2PClients,
 		NumberOfP2PConnections: numberOfP2PConnections,
-		BanDuration: 		banDuration,	
+		BanDuration:            banDuration,
 		UptimeInSeconds:        uptimeInSeconds,
 	}
 }
