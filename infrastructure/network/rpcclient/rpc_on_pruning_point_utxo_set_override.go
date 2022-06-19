@@ -9,7 +9,7 @@ import (
 
 // RegisterPruningPointUTXOSetNotifications sends an RPC request respective to the function's name and returns the RPC server's response.
 // Additionally, it starts listening for the appropriate notification using the given handler function
-func (c *RPCClient) RegisterPruningPointUTXOSetNotifications(onPruningPointUTXOSetNotifications func()) error {
+func (c *RPCClient) RegisterPruningPointUTXOSetNotifications(onPruningPointUTXOSetNotifications func(notification *appmessage.PruningPointUTXOSetOverrideNotificationMessage)) error {
 
 	err := c.rpcRouter.outgoingRoute().Enqueue(appmessage.NewNotifyPruningPointUTXOSetOverrideRequestMessage(rpccontext.DefaultNotificationID))
 	if err != nil {
@@ -32,8 +32,8 @@ func (c *RPCClient) RegisterPruningPointUTXOSetNotifications(onPruningPointUTXOS
 				}
 				panic(err)
 			}
-			_ = notification.(*appmessage.PruningPointUTXOSetOverrideNotificationMessage) // Sanity check the type
-			onPruningPointUTXOSetNotifications()
+			newPruningPointUTXOSetOverrideNotification := notification.(*appmessage.PruningPointUTXOSetOverrideNotificationMessage) // Sanity check the type
+			onPruningPointUTXOSetNotifications(newPruningPointUTXOSetOverrideNotification)
 		}
 	})
 	return nil
@@ -60,7 +60,7 @@ func (c *RPCClient) UnregisterPruningPointUTXOSetNotifications() error {
 
 // RegisterPruningPointUTXOSetNotificationsWithID does the same as
 // RegisterPruningPointUTXOSetNotifications, but allows the client to specify an id
-func (c *RPCClient) RegisterPruningPointUTXOSetNotificationsWithID(onPruningPointUTXOSetNotifications func(), id string) error {
+func (c *RPCClient) RegisterPruningPointUTXOSetNotificationsWithID(onPruningPointUTXOSetNotifications func(notification *appmessage.PruningPointUTXOSetOverrideNotificationMessage), id string) error {
 
 	err := c.rpcRouter.outgoingRoute().Enqueue(appmessage.NewNotifyPruningPointUTXOSetOverrideRequestMessage(id))
 	if err != nil {
@@ -83,8 +83,8 @@ func (c *RPCClient) RegisterPruningPointUTXOSetNotificationsWithID(onPruningPoin
 				}
 				panic(err)
 			}
-			_ = notification.(*appmessage.PruningPointUTXOSetOverrideNotificationMessage) // Sanity check the type
-			onPruningPointUTXOSetNotifications()
+			newPruningPointUTXOSetOverrideNotification := notification.(*appmessage.PruningPointUTXOSetOverrideNotificationMessage) // Sanity check the type
+			onPruningPointUTXOSetNotifications(newPruningPointUTXOSetOverrideNotification)
 		}
 	})
 	return nil

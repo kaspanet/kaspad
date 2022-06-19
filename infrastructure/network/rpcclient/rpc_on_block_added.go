@@ -53,7 +53,7 @@ func (c *RPCClient) RegisterForBlockAddedNotificationsWithID(onBlockAdded func(n
 	if notifyBlockAddedResponse.Error != nil {
 		return c.convertRPCError(notifyBlockAddedResponse.Error)
 	}
-	spawn("RegisterForBlockAddedNotificationsWithID", func() {
+	spawn("RegisterForBlockAddedNotifications", func() {
 		for {
 			notification, err := c.route(appmessage.CmdBlockAddedNotificationMessage).Dequeue()
 			if err != nil {

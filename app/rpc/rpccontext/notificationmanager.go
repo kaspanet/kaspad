@@ -482,7 +482,7 @@ func (nl *NotificationListener) scriptPubKeyStringToAddressString(scriptPublicKe
 // PropagateVirtualSelectedParentBlueScoreChangedNotifications instructs the listener to send
 // virtual selected parent blue score notifications to the remote listener
 func (nl *NotificationListener) PropagateVirtualSelectedParentBlueScoreChangedNotifications(id string) {
-	//nl.propagateVirtualSelectedParentBlueScoreChangedNotificationsID = id
+	nl.propagateVirtualSelectedParentBlueScoreChangedNotificationsID = id
 	nl.propagateVirtualSelectedParentBlueScoreChangedNotifications = true
 }
 

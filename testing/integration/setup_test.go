@@ -100,6 +100,33 @@ func standardSetup(t *testing.T) (appHarness1, appHarness2, appHarness3 *appHarn
 	return harnesses[0], harnesses[1], harnesses[2], teardown
 }
 
+func standardSetupWithUtxoindex(t *testing.T) (appHarness1, appHarness2, appHarness3 *appHarness, teardownFunc func()) {
+	harnesses, teardown := setupHarnesses(t, []*harnessParams{
+		{
+			p2pAddress:              p2pAddress1,
+			rpcAddress:              rpcAddress1,
+			miningAddress:           miningAddress1,
+			miningAddressPrivateKey: miningAddress1PrivateKey,
+			utxoIndex:               true,
+		},
+		{
+			p2pAddress:              p2pAddress2,
+			rpcAddress:              rpcAddress2,
+			miningAddress:           miningAddress2,
+			miningAddressPrivateKey: miningAddress2PrivateKey,
+			utxoIndex:               true,
+		}, {
+			p2pAddress:              p2pAddress3,
+			rpcAddress:              rpcAddress3,
+			miningAddress:           miningAddress3,
+			miningAddressPrivateKey: miningAddress3PrivateKey,
+			utxoIndex:               true,
+		},
+	})
+
+	return harnesses[0], harnesses[1], harnesses[2], teardown
+}
+
 func setRPCClient(t *testing.T, harness *appHarness) {
 	var err error
 	harness.rpcClient, err = newTestRPCClient(harness.rpcAddress)

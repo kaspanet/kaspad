@@ -73,7 +73,7 @@ func TestIBD(t *testing.T) {
 func TestIBDWithPruning(t *testing.T) {
 	testSync := func(syncer, syncee *appHarness) {
 		utxoSetOverriden := make(chan struct{})
-		err := syncee.rpcClient.RegisterPruningPointUTXOSetNotifications(func() {
+		err := syncee.rpcClient.RegisterPruningPointUTXOSetNotifications(func(notification *appmessage.PruningPointUTXOSetOverrideNotificationMessage) {
 			close(utxoSetOverriden)
 		})
 
