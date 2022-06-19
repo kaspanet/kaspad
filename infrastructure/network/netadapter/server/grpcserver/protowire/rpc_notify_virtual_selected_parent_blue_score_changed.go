@@ -23,7 +23,7 @@ func (x *NotifyVirtualSelectedParentBlueScoreChangedRequestMessage) toAppMessage
 	if x == nil {
 		return nil, errors.Wrapf(errorNil, "NotifyVirtualSelectedParentBlueScoreChangedRequestMessage is nil")
 	}
-	return &appmessage.NotifyVirtualDaaScoreChangedRequestMessage{ID: x.Id}, nil
+	return &appmessage.NotifyVirtualSelectedParentBlueScoreChangedRequestMessage{ID: x.Id}, nil
 }
 
 func (x *KaspadMessage_NotifyVirtualSelectedParentBlueScoreChangedResponse) toAppMessage() (appmessage.Message, error) {
