@@ -18,6 +18,7 @@ type Context struct {
 	ProtocolManager   *protocol.Manager
 	ConnectionManager *connmanager.ConnectionManager
 	AddressManager    *addressmanager.AddressManager
+	rpcManager	  *rpc.Manager
 	UTXOIndex         *utxoindex.UTXOIndex
 	ShutDownChan      chan<- struct{}
 
@@ -31,6 +32,7 @@ func NewContext(cfg *config.Config,
 	protocolManager *protocol.Manager,
 	connectionManager *connmanager.ConnectionManager,
 	addressManager *addressmanager.AddressManager,
+	rpcManager *rpc.Manager,
 	utxoIndex *utxoindex.UTXOIndex,
 	shutDownChan chan<- struct{}) *Context {
 
@@ -41,6 +43,7 @@ func NewContext(cfg *config.Config,
 		ProtocolManager:   protocolManager,
 		ConnectionManager: connectionManager,
 		AddressManager:    addressManager,
+		RPCManager:	   rpcManager,
 		UTXOIndex:         utxoIndex,
 		ShutDownChan:      shutDownChan,
 	}

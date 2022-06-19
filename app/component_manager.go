@@ -3,7 +3,6 @@ package app
 import (
 	"fmt"
 	"sync/atomic"
-	"time"
 
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 
@@ -31,7 +30,7 @@ type ComponentManager struct {
 	rpcManager        *rpc.Manager
 	connectionManager *connmanager.ConnectionManager
 	netAdapter        *netadapter.NetAdapter
-	
+
 	started, shutdown int32
 }
 

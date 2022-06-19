@@ -3,6 +3,7 @@ package netadapter
 import (
 	"sync"
 	"sync/atomic"
+	"time"
 
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/infrastructure/config"
@@ -31,9 +32,11 @@ type NetAdapter struct {
 	rpcRouterInitializer RouterInitializer
 	stop                 uint32
 
-	startTime	  time.Time
+	StartTime time.Time
 
 	p2pConnections     map[*NetConnection]struct{}
+	rpcConnections     map[*NetConnection]struct{}
+
 	p2pConnectionsLock sync.RWMutex
 }
 
@@ -80,10 +83,13 @@ func (na *NetAdapter) Start() error {
 	if err != nil {
 		return err
 	}
+
 	err = na.rpcServer.Start()
 	if err != nil {
 		return err
 	}
+
+	na.StartTime = time.Now()
 
 	return nil
 }
@@ -149,9 +155,14 @@ func (na *NetAdapter) onP2PConnectedHandler(connection server.Connection) error 
 	return nil
 }
 
+func (na *NetAdapter) RPCConnectionCount() int {
+	return len(na.rpcConnections)
+}
+
 func (na *NetAdapter) onRPCConnectedHandler(connection server.Connection) error {
 	netConnection := newNetConnection(connection, na.rpcRouterInitializer, "on RPC connected")
 	netConnection.setOnDisconnectedHandler(func() {})
+	na.rpcConnections[netConnection] = struct{}{}
 	netConnection.start()
 
 	return nil

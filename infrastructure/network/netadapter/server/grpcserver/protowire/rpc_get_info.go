@@ -27,23 +27,23 @@ func (x *KaspadMessage_GetInfoResponse) fromAppMessage(message *appmessage.GetIn
 		err = &RPCError{Message: message.Error.Message}
 	}
 	x.GetInfoResponse = &GetInfoResponseMessage{
-		P2PId:         		message.P2PID,
-		ServerVersion: 		message.ServerVersion,
-		MempoolSize:   		message.MempoolSize,
-		
-		IsUtxoIndexed: 		message.IsUtxoIndexed,
-		IsSynced:      		message.IsSynced,
-		
-		MaxRPCClients:		message.MaxRPCClients,
+		P2PId:         message.P2PID,
+		ServerVersion: message.ServerVersion,
+		MempoolSize:   message.MempoolSize,
+
+		IsUtxoIndexed: message.IsUtxoIndexed,
+		IsSynced:      message.IsSynced,
+
+		MaxRPCClients:          message.MaxRPCClients,
 		NumberOfRPCConnections: message.NumberOfRPCConnections,
-		MaxP2PClients:		message.MaxRPCClients,
+		MaxP2PClients:          message.MaxRPCClients,
 		NumberOfP2PConnections: message.NumberOfP2PConnections,
 
-		BanDuration:		message.BanDuration,
+		BanDuration: message.BanDuration,
 
-		UptimeInSeconds: 	message.UptimeInSeconds,
-		
-		Error:         err,
+		UptimeInSeconds: message.UptimeInSeconds,
+
+		Error: err,
 	}
 	return nil
 }
@@ -66,17 +66,17 @@ func (x *GetInfoResponseMessage) toAppMessage() (appmessage.Message, error) {
 		P2PID:         x.P2PId,
 		MempoolSize:   x.MempoolSize,
 		ServerVersion: x.ServerVersion,
-		
+
 		IsUtxoIndexed: x.IsUtxoIndexed,
 		IsSynced:      x.IsSynced,
-		
-		MaxRPCClients: x.MaxRPCClients,
+
+		MaxRPCClients:          x.MaxRPCClients,
 		NumberOfRPCConnections: x.NumberOfRPCConnections,
-		
-		MaxP2PClients: x.MaxP2PClients,
+
+		MaxP2PClients:          x.MaxP2PClients,
 		NumberOfP2PConnections: x.NumberOfP2PConnections,
-		
-		BanDuration: x.BanDuration,
+
+		BanDuration:     x.BanDuration,
 		UptimeInSeconds: x.UptimeInSeconds,
 
 		Error: rpcErr,
