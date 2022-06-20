@@ -163,3 +163,8 @@ message DbBlockGHOSTDAGDataHashPair {
   DbHash hash = 1;
   DbBlockGhostdagData GhostdagData = 2;
 }
+
+message DbTxBlockData {
+        DbHash acceptingBlock = 1;
+        DbHash mergeBlock = 2;
+}
