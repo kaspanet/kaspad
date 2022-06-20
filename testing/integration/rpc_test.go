@@ -1,10 +1,10 @@
 package integration
 
 import (
-	"github.com/kaspanet/kaspad/infrastructure/config"
 	"testing"
 	"time"
 
+	"github.com/kaspanet/kaspad/infrastructure/config"
 	"github.com/kaspanet/kaspad/infrastructure/network/rpcclient"
 )
 
