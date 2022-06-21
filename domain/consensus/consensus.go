@@ -820,6 +820,48 @@ func (s *consensus) GetVirtualSelectedParentChainFromBlock(blockHash *externalap
 	return s.consensusStateManager.GetVirtualSelectedParentChainFromBlock(stagingArea, blockHash)
 }
 
+func (s *consensus) GetVirtualSelectedParentChainBlockAcceptanceDataFromBlocksInBatches(blockHash *externalapi.DomainHash, *batchSize int) ([]*externalapi.AcceptanceData, error) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	stagingArea := model.NewStagingArea()
+
+	err :=  s.validateBlockHashExists(stagingArea, blockHash)
+	if err != nil {
+		return nil, err
+	}
+
+	BlocksAcceptanceData := make([]*externalapi.AcceptanceData, 0)
+
+	pruningPoint, err := s.pruningStore.PruningPoint(s.databaseContext, stagingArea)
+	if err != nil {
+		return nil, err
+	}
+
+	if blockHash.Less(pruningPoint) {
+		return 
+	}
+
+	for i := 0; i < batchSize; i++ {
+		virtualGHOSTDAGData, err := s.ghostdagDataStores[0].Get(s.databaseContext, stagingArea, blockHash, true)
+		if err != nil {
+			return nil, err
+		}
+		acceptanceData, err := s.acceptanceDataStore.Get(s.databaseContext, stagingArea, virtualGHOSTDAGData.SelectedParent())
+		if err != nil {
+			return nil, err
+		}
+		BlocksAcceptanceData = append(BlocksAcceptanceData, &acceptanceData)
+		
+		if virtualGHOSTDAGData.SelectedParent().Equal(pruningPoint) { //acceptnce data is pruned beyoned the pruning point
+			return BlocksAcceptanceData, nil
+		}
+
+	}
+
+	return BlocksAcceptanceData, nil
+}
+
 func (s *consensus) validateBlockHashExists(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) error {
 	exists, err := s.blockStatusStore.Exists(s.databaseContext, stagingArea, blockHash)
 	if err != nil {

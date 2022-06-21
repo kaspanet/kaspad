@@ -1,203 +1,238 @@
 package txindex
 
 import (
-	"encoding/binary"
 
-	"github.com/kaspanet/kaspad/domain/consensus/database/binaryserialization"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/infrastructure/db/database"
 	"github.com/kaspanet/kaspad/infrastructure/logger"
 	"github.com/pkg/errors"
 )
 
-var txMergeIndexBucket = database.MakeBucket([]byte("tx-merge-index"))
-var txAcceptedIndexBuced = database.MakeBucket([]byte("tx-accepted-index"))
-var virtualParentsKey = database.MakeBucket([]byte("")).Key([]byte("tx-index-virtual-parents"))
-var ghostDagBlocksKey = database.MakeBucket([]byte("")).Key([]byte("tx-index-ghostdagblocks"))
-
+var txAcceptedIndexBucket = database.MakeBucket([]byte("tx-index"))
+var virtualParentsKey = database.MakeBucket([]byte("")).Key([]byte("tx-index-virtual-parent"))
+var pruningPointKey = database.MakeBucket([]byte("")).Key([]byte("tx-index-prunning-point"))
 type txIndexStore struct {
 	database database.Database
-	toAddMerge map[externalapi.DomainHash][]*externalapi.DomainTransactionID
-	toRemoveMerge map[externalapi.DomainHash][]*externalapi.DomainTransactionID
-	toAddAccepted map[externalapi.DomainHash][]*externalapi.DomainTransactionID
-	toRemoveAccepted map[externalapi.DomainHash][]*externalapi.DomainTransactionID
+	toAdd map[externalapi.DomainTransactionID]*externalapi.DomainHash
 	virtualParents []*externalapi.DomainHash
-	ghostdagBlocks []*externalapi.DomainHash
+	pruningPoint *externalapi.DomainHash
 }
 
 func newTXIndexStore(database database.Database) *txIndexStore {
 	return &txIndexStore{
 		database: database,
-		toAddMerge:  make(map[externalapi.DomainHash][]*externalapi.DomainTransactionID),
-		toRemoveMerge: make(map[externalapi.DomainHash][]*externalapi.DomainTransactionID),
-		toAddAccepted: make(map[externalapi.DomainHash][]*externalapi.DomainTransactionID),
-		toRemoveAccepted: make(map[externalapi.DomainHash][]*externalapi.DomainTransactionID),
+		toAdd:  make(map[externalapi.DomainTransactionID]*externalapi.DomainHash),
 		virtualParents: nil,
-		ghostdagBlocks: nil,
+		pruningPoint: nil,
 	}	
 }
 
-func (tis *txIndexStore) addMerged(txIDs []*externalapi.DomainTransactionID, mergingBlockHash *externalapi.DomainHash) {
-	log.Tracef("Adding %d Txs from mergingBlockHash %s", len(txIDs), mergingBlockHash.String())
-	if _, found := tis.toRemoveMerge[*mergingBlockHash]; found {
-		delete(tis.toRemoveMerge, *mergingBlockHash)
+func (tis *txIndexStore) deleteAll() error {
+	err := tis.database.Delete(virtualParentsKey)
+	if err != nil {
+		return err
 	}
-	tis.toAddMerge[*mergingBlockHash] = txIDs
+
+	err = tis.database.Delete(pruningPointKey)
+	if err != nil {
+		return err
+	}
+
+	cursor, err := tis.database.Cursor(txAcceptedIndexBucket)
+	if err != nil {
+		return err
+	}
+	defer cursor.Close()
+	for cursor.Next() {
+		key, err := cursor.Key()
+		if err != nil {
+			return err
+		}
+
+		err = tis.database.Delete(key)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
-func (tis *txIndexStore) removeMerged(txIDs []*externalapi.DomainTransactionID, mergingBlockHash *externalapi.DomainHash) {
-	log.Tracef("Removing %d Txs from mergingBlockHash %s", len(txIDs), mergingBlockHash.String())
-	if _, found := tis.toAddMerge[*mergingBlockHash]; found {
-		delete(tis.toAddMerge, *mergingBlockHash)
+func (tis *txIndexStore) add(txID externalapi.DomainTransactionID, blockHash *externalapi.DomainHash) {
+	log.Tracef("Adding %d Txs from blockHash %s", len(txIDs), acceptingBlockHash.String())
+	for _, txID := range txID {
+		if _, found := tis.toRemove[*txID]; found {
+			delete(tis.toRemove, *txID)
+		}
+		tis.toAdd[*txID] = *blockHash
 	}
-	tis.toRemoveMerge[*mergingBlockHash] = txIDs
 }
 
-func (tis *txIndexStore) addAccepted(txIDs []*externalapi.DomainTransactionID, acceptingBlockHash *externalapi.DomainHash) {
-	log.Tracef("Adding %d Txs from acceptingBlockHash %s", len(txIDs), acceptingBlockHash.String())
-	if _, found := tis.toRemoveAccepted[*acceptingBlockHash]; found {
-		delete(tis.toRemoveAccepted, *acceptingBlockHash)
+func (tis *txIndexStore) remove(txIDs []*externalapi.DomainTransactionID, blockHash *externalapi.DomainHash) {
+	log.Tracef("Removing %d Txs from blockHash %s", len(txIDs), blockHash.String())
+	for _, txID := range txIDs {
+		if _, found := tis.toAdd[*txID]; found {
+			delete(tis.toAdd, *txID)
+		}
+		tis.toRemove[*txID] = *blockHash
 	}
-	tis.toAddAccepted[*acceptingBlockHash] = txIDs
 }
 
-func (tis *txIndexStore) removeAccepted(txIDs []*externalapi.DomainTransactionID, acceptingBlockHash *externalapi.DomainHash) {
-	log.Tracef("Removing %d Txs from acceptingBlockHash %s", len(txIDs), acceptingBlockHash.String())
-	if _, found := tis.toAddAccepted[*acceptingBlockHash]; found {
-		delete(tis.toAddAccepted, *acceptingBlockHash)
-	}
-	tis.toRemoveMerge[*acceptingBlockHash] = txIDs
-}
-
-func (tis *txIndexStore) discardMerged() {
-	tis.toAddMerge =  make(map[externalapi.DomainHash][]*externalapi.DomainTransactionID)
-	tis.toRemoveMerge =  make(map[externalapi.DomainHash][]*externalapi.DomainTransactionID)
+func (tis *txIndexStore) discard() {
+	tis.toAdd = make(map[externalapi.DomainTransactionID]*externalapi.DomainHash)
 	tis.virtualParents = nil
+	tis.pruningPoint = nil
 }
 
-func (tis *txIndexStore) discardAccepted() {
-	tis.toAddAccepted =  make(map[externalapi.DomainHash][]*externalapi.DomainTransactionID)
-	tis.toRemoveAccepted = make(map[externalapi.DomainHash][]*externalapi.DomainTransactionID)
-	tis.ghostdagBlocks = nil
-}
-
-func (tis *txIndexStore) discardAll() {
-	tis.discardAccepted()
-	tis.discardMerged()
-}
-
-func (tis *txIndexStore) removeAll() error {
-	tis.removeAccepted()
-	tis.removeAll()
-	return nil
-}
+func (tis *txIndexStore) commitAndReturnRemoved() (
+	removed map[externalapi.DomainTransactionID]*externalapi.DomainHash,
+	err error) {
+	onEnd := logger.LogAndMeasureExecutionTime(log, "txIndexStore.commit")
+	defer onEnd()
 
 
-func (tis *txIndexStore) commitAll() error {
-	tis.commitAccepted()
-	tis.commitMerged()
-	return nil
-}
 
-func (tis *txIndexStore) commitMerged() error {
-	if tis.isAnythingMergingStaged() {
-		return errors.Errorf("cannot commit merging TxIds while merge staging isn't empty")
+	dbTransaction, err := tis.database.Begin()
+	if err != nil {
+		return err
 	}
-	return nil
+
+	defer dbTransaction.RollbackUnlessClosed()
+
+	removed := make(map[externalapi.DomainTransactionID]*externalapi.DomainHash)
+
+	for txID, blockHash := range tis.toAdd {
+		key := convertTxIDToKey(txAcceptedIndexBucket, TxID)
+		if dbTransaction.Has(key) {
+			removedBlockHash, err := dbTransaction.Get(key)
+			if err != nil {
+				return nil, err
+			}
+			removed[txID] = externalapi.NewDomainHashFromByteSlice(removedBlockHash)
+		}
+		dbTransaction.Put(key, blockHash.ByteSlice())
+		if err != nil {
+			return nil, err
+		}
+	}
+	err = dbTransaction.Put(virtualParentsKey, serializeHashes(ti.virtualSelectedParents))
+	if err != nil {
+		return err
+	}
+	err = dbTransaction.Put(pruningPointKey, tis.pruningPoint.ByteSlice())
+	if err != nil {
+		return nil, err
+	}
+
+
+
+	err = dbTransaction.Commit()
+	if err != nil {
+		return nil, err
+	}
+
+	tis.discard()
+	
+	return removed, nil
 }
 
-func (tis *txIndexStore) commitAccepted() error {
-	return nil
+func (tis *txIndexStore) updateAndCommitVirtualParentsWithoutTransaction(virtualParents []*externalapi.DomainHash) error {
+	serializeParentHashes := serializeHashes(virtualParents)
+	return tis.database.Put(virtualParentsKey, serializeParentHashes)
 }
 
+func (tis *txIndexStore) updateAndCommitPruningPointWithoutTransaction(pruningPoint *externalapi.DomainHash) error {
+	return tis.database.Put(pruningPointKey, pruningPoint.ByteSlice())
 
-func (tis *txIndexStore) convertTxIDToKey(bucket *database.Bucket, txID *externalapi.DomainTransactionID) *database.Key {
-	return bucket.Key(txID.ByteSlice())
 }
 
 func (tis *txIndexStore) updateVirtualParents(virtualParents []*externalapi.DomainHash) {
 	tis.virtualParents = virtualParents
 }
 
-func (tis *txIndexStore) updateGhostDagBlocks(ghostdagBlocks []*externalapi.DomainHash) {
-	tis.ghostdagBlocks = ghostdagBlocks
+func (tis *txIndexStore) CommitWithoutTransaction() error {
+	for txID, blockHash := range tis.toAdd {
+		key := tis.convertTxIDToKey(txAcceptedIndexBucket, txID)
+		err = tis.database.Put(key, blockHash.ByteSlice())
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
+func (tis *txIndexStore) getVirtualParents() ([]*externalapi.DomainHash, error) {
+	if tis.isAnythingStaged() {
+		return nil, errors.Errorf("cannot get the virtual parent while staging isn't empty")
+	}
+
+	serializedVirtualParentHash, err := tis.database.Get(virtualParentsKey)
+	if err != nil {
+		return nil, err
+	}
+
+	return deserializeHashes(serializedVirtualParentHash)
+}
+
+func (tis *txIndexStore) getPruningPoint() (*externalapi.DomainHash, error) {
+	if tis.isAnythingStaged() {
+		return nil, errors.Errorf("cannot get the Pruning point while staging isn't empty")
+	}
+
+	serializedPruningPointHash, err := uis.database.Get(pruningPointKey)
+	if err != nil {
+		return nil, err
+	}
+
+	return externalapi.NewDomainHashFromByteSlice(serializedPruningPointHash)
+}
+
+func (tis *txIndexStore) convertTxIDToKey(bucket *database.Bucket, txID *externalapi.DomainTransactionID) *database.Key {
+	return bucket.Key(txID.ByteSlice())
+}
+
+func (tis *txIndexStore) updateVirtualParent(virtualParent externalapi.DomainHash) {
+	tis.virtualParents = virtualParent
+}
 
 func (tis *txIndexStore) convertKeyToTxID(key *database.Key) (*externalapi.DomainTransactionID, error) {
-	serializedTxID := key.Suffix()
-	return externalapi.NewDomainTransactionIDFromByteSlice(serializedTxID)
+	return externalapi.NewDomainTransactionIDFromByteSlice(key.Suffix())
 }
 
-func (tis *txIndexStore) stagedAcceptingData() error {
-	return nil
-}
+func (tis *txIndexStore) stagedData() (
+	toAdd map[externalapi.DomainTransactionID]*externalapi.DomainHash,
+	virtualParents []*externalapi.DomainHash,
+	pruningPoint *externalapi.DomainHash,) {
+	toAddClone := make(map[externalapi.DomainTransactionID]*externalapi.DomainHash)
+	for txID, blockHash := range tis.toAdd {
+		toAddClone[txID] = blockHash
 
-func (tis *txIndexStore) stagedMergingData() error {
-	return nil
-}
-
-func (tis *txIndexStore) stagedData() error {
-	return nil
+	}
+	return toAddClone, tis.virtualParents, tis.pruningPoint
 }
 
 func (tis *txIndexStore) isAnythingStaged() bool {
-	return tis.isAnythingAcceptingStaged() || tis.isAnythingMergingStaged()
+	return len(tis.toAdd) > 0 
 }
 
-func (tis *txIndexStore) isAnythingAcceptingStaged() bool {
-	return len(tis.toAddAccepted) > 0 || len(tis.toRemoveAccepted) > 0 
-}
-
-func (tis *txIndexStore) isAnythingMergingStaged() bool {
-	return len(tis.toAddMerge) > 0 || len(tis.ToRemoveMerge) > 0 
-}
-
-func (tis *txIndexStore) getTxAcceptingBlockHash(scriptPublicKey *externalapi.ScriptPublicKey) (externalapi.DomainHash, error) {
+func (tis *txIndexStore) getTxAcceptingBlockHash(txID *externalapi.DomainTransactionID) (externalapi.DomainHash, error) {
+	
 	if tis.isAnythingAcceptingStaged() {
-		return nil, errors.Errorf("cannot get utxo outpoint entry pairs while staging isn't empty")
+		return nil, errors.Errorf("cannot get TX accepting Block hash while staging isn't empty")
 	}
-	return nil, nil
-}
-
-func (tis *txIndexStore) getTxMergeBlockHash(scriptPublicKey *externalapi.ScriptPublicKey) (externalapi.DomainHash, error) {
-	if tis.isAnythingMergingMergingStaged() {
-		return nil, errors.Errorf("cannot get utxo outpoint entry pairs while staging isn't empty")
+	
+	key := tis.convertTxIDToKey(txAcceptedIndexBucket, txID)
+	serializedAcceptingBlockHash, err := tis.database.Get(key)
+	
+	if err != nil {
+		return nil, err
 	}
-	return nil, nil
-}
 
-func (tis *txIndexStore) getTxBlockHashes(scriptPublicKey *externalapi.ScriptPublicKey) (externalapi.DomainHash, error) {
-	if tis.isAnythingStaged() {
-		return nil, errors.Errorf("cannot get utxo outpoint entry pairs while staging isn't empty")
+	acceptingBlockHash, err := externalapi.NewDomainHashFromByteSlice(serializedAcceptingBlockHash)
+	if err != nil {
+		return nil, err
 	}
-	return nil, nil
-}
 
-func (tis *txIndexStore) deleteAccepptingData() error {
-	return nil
-}
-
-func (tis *txIndexStore) deleteMergingData() error {
-	return nil
-}
-
-func (tis *txIndexStore) deleteAll() error {
-	tis.deleteAccepptingData()
-	tis.deleteMergingData()
-	return nil
-}
-
-func (tis *txIndexStore) resetAcceptingData() error {
-	return nil
-}
-
-func (tis *txIndexStore) resetMergingData() error {
-	return nil
-}
-
-func (tis *txIndexStore) resetAll() error {
-	tis.resetAcceptingData()
-	tis.resetMergingData()
-	return nil
+	return acceptingBlockHash, nil
 }

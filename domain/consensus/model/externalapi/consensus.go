@@ -49,6 +49,7 @@ type Consensus interface {
 	EstimateNetworkHashesPerSecond(startHash *DomainHash, windowSize int) (uint64, error)
 	PopulateMass(transaction *DomainTransaction)
 	ResolveVirtual() (bool, error)
+	GetVirtualSelectedParentChainBlockAcceptanceDataFromBlocksInBatches(startHash *DomainHash, batchSize uint64) ([]*AcceptanceData, error)
 	BlockDAAWindowHashes(blockHash *DomainHash) ([]*DomainHash, error)
 	TrustedDataDataDAAHeader(trustedBlockHash, daaBlockHash *DomainHash, daaBlockWindowIndex uint64) (*TrustedDataDataDAAHeader, error)
 	TrustedBlockAssociatedGHOSTDAGDataBlockHashes(blockHash *DomainHash) ([]*DomainHash, error)

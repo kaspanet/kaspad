@@ -1,12 +1,15 @@
 package txindex
 
 import (
+	"sync"
+
 	"github.com/kaspanet/kaspad/domain"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/infrastructure/db/database"
 	"github.com/kaspanet/kaspad/infrastructure/logger"
-	"sync"
 )
+
+//TO DO: For archival nodes pruningPoint references should be substituted with the virtualchainBlock with the lowest bluescore!
 
 // TXIndex maintains an index between transaction IDs and accepting block hashes
 type TXIndex struct {
@@ -16,82 +19,83 @@ type TXIndex struct {
 	mutex sync.Mutex
 }
 
-// New creates a new UTXO index.
+// New creates a new TX index.
 //
 // NOTE: While this is called no new blocks can be added to the consensus.
 func New(domain domain.Domain, database database.Database) (*TXIndex, error) {
-	utxoIndex := &TXIndex{
+	txIndex := &TXIndex{
 		domain: domain,
 		store:  newTXIndexStore(database),
 	}
-	isSynced, err := utxoIndex.isSynced()
+	isSynced, err := txIndex.isSynced()
 	if err != nil {
 		return nil, err
 	}
 
-	///Has check is for migration to circulating supply, can be removed eventually.
-	hasCirculatingSupplyKey, err := utxoIndex.store.database.Has(circulatingSupplyKey)
-	if err != nil {
-		return nil, err
-	}
+	if !isSynced {
 
-	if !isSynced || !hasCirculatingSupplyKey {
-
-		err := utxoIndex.Reset()
+		err := txIndex.Reset()
 		if err != nil {
 			return nil, err
 		}
 	}
 
-	return utxoIndex, nil
+	return txIndex, nil
 }
 
-// Reset deletes the whole UTXO index and resyncs it from consensus.
-func (ui *UTXOIndex) Reset() error {
-	ui.mutex.Lock()
-	defer ui.mutex.Unlock()
+// Reset deletes the whole Txindex and resyncs it from consensus.
+func (ti *TXIndex) Reset() error {
+	ti.mutex.Lock()
+	defer ti.mutex.Unlock()
 
-	err := ui.store.deleteAll()
+	err := ti.store.deleteAll()
 	if err != nil {
 		return err
 	}
 
-	virtualInfo, err := ui.domain.Consensus().GetVirtualInfo()
+	virtualInfo, err := ti.domain.Consensus().GetVirtualInfo()
 	if err != nil {
 		return err
 	}
 
-	err = ui.store.initializeCirculatingSompiSupply() //At this point the database is empty, so the sole purpose of this call is to initialize the circulating supply key
+	pruningPoint, err := ti.domain.Consensus().PruningPoint()
 	if err != nil {
 		return err
 	}
 
-	var fromOutpoint *externalapi.DomainOutpoint
-	for {
-		const step = 1000
-		virtualUTXOs, err := ui.domain.Consensus().GetVirtualUTXOs(virtualInfo.ParentHashes, fromOutpoint, step)
-		if err != nil {
-			return err
-		}
+	const chunkSize = 1000
 
-		err = ui.store.addAndCommitOutpointsWithoutTransaction(virtualUTXOs)
-		if err != nil {
-			return err
-		}
-
-		if len(virtualUTXOs) < step {
-			break
-		}
-
-		fromOutpoint = virtualUTXOs[len(virtualUTXOs)-1].Outpoint
+	//we iterate from pruningPoint up - this gurantees that newer accepting blocks overwrite older ones in the store mapping
+	//we also do not collect data before pruning point, since relevent blockData is pruned (see `TO DO`` note at the top regarding archival nodes)
+	selectedParentChainChanges, err := ti.domain.Consensus().GetVirtualSelectedParentChainFromBlock(pruningPoint)
+	if err != nil {
+		return err
 	}
 
-	// This has to be done last to mark that the reset went smoothly and no reset has to be called next time.
-	return ui.store.updateAndCommitVirtualParentsWithoutTransaction(virtualInfo.ParentHashes)
+	ti.addTXIDs(selectedParentChainChanges, 1000)
+
+	err = ti.store.CommitWithoutTransaction()
+	if err != nil {
+		return err
+	}
+
+	err = ti.store.updateAndCommitPruningPointWithoutTransaction(pruningPoint)
+	if err != nil {
+		return err
+	}
+
+	return ti.store.updateAndCommitVirtualParentsWithoutTransaction(virtualInfo.ParentHashes)
+
 }
 
-func (ui *UTXOIndex) isSynced() (bool, error) {
-	utxoIndexVirtualParents, err := ui.store.getVirtualParents()
+func (ti *TXIndex) isSynced() (bool, error) {
+
+	txIndexVirtualParents, err := ti.store.getVirtualParents()
+	if err != nil {
+		return false, err
+	}
+
+	txIndexPruningPoint, err := ti.store.getPruningPoint()
 	if err != nil {
 		if database.IsNotFoundError(err) {
 			return false, nil
@@ -99,89 +103,91 @@ func (ui *UTXOIndex) isSynced() (bool, error) {
 		return false, err
 	}
 
-	virtualInfo, err := ui.domain.Consensus().GetVirtualInfo()
+	virtualInfo, err := ti.domain.Consensus().GetVirtualInfo()
 	if err != nil {
 		return false, err
 	}
 
-	return externalapi.HashesEqual(virtualInfo.ParentHashes, utxoIndexVirtualParents), nil
+	PruningPoint, err := ti.domain.Consensus().PruningPoint()
+	if err != nil {
+		return false, err
+	}
+
+	return externalapi.HashesEqual(virtualInfo.ParentHashes, txIndexVirtualParents) || txIndexPruningPoint.Equal(PruningPoint), nil
 }
 
-// Update updates the UTXO index with the given DAG selected parent chain changes
-func (ui *UTXOIndex) Update(virtualChangeSet *externalapi.VirtualChangeSet) (*UTXOChanges, error) {
-	onEnd := logger.LogAndMeasureExecutionTime(log, "UTXOIndex.Update")
+// Update updates the TX index with the given DAG selected parent chain changes
+func (ti *TXIndex) Update(virtualChangeSet *externalapi.VirtualChangeSet) (*TXAcceptanceChange, error) {
+	onEnd := logger.LogAndMeasureExecutionTime(log, "TXIndex.Update")
 	defer onEnd()
 
-	ui.mutex.Lock()
-	defer ui.mutex.Unlock()
+	ti.mutex.Lock()
+	defer ti.mutex.Unlock()
 
-	log.Tracef("Updating UTXO index with VirtualUTXODiff: %+v", virtualChangeSet.VirtualUTXODiff)
-	err := ui.removeUTXOs(virtualChangeSet.VirtualUTXODiff.ToRemove())
+	log.Tracef("Updating TX index with VirtualSelectedParentChainChanges: %+v", virtualChangeSet.VirtualSelectedParentChainChanges)
+
+	err := ti.addTXIDs(virtualChangeSet.VirtualSelectedParentChainChanges, 1000)
 	if err != nil {
 		return nil, err
 	}
 
-	err = ui.addUTXOs(virtualChangeSet.VirtualUTXODiff.ToAdd())
+	ti.store.updateVirtualParents(virtualChangeSet.VirtualParents)
+
+	added, _, _ := ti.store.stagedData()
+	txIndexChanges := &TXAcceptanceChange{
+		Added: added,
+	}
+
+	removed, err := ti.store.commitAndReturnRemoved()
 	if err != nil {
 		return nil, err
 	}
 
-	ui.store.updateVirtualParents(virtualChangeSet.VirtualParents)
+	txIndexChanges.Removed = removed
 
-	added, removed, _ := ui.store.stagedData()
-	utxoIndexChanges := &UTXOChanges{
-		Added:   added,
-		Removed: removed,
-	}
-
-	err = ui.store.commit()
-	if err != nil {
-		return nil, err
-	}
-
-	log.Tracef("UTXO index updated with the UTXOChanged: %+v", utxoIndexChanges)
-	return utxoIndexChanges, nil
+	log.Tracef("TX index updated with the TXAcceptanceChange: %+v", txIndexChanges)
+	return txIndexChanges, nil
 }
 
-func (ui *UTXOIndex) addUTXOs(toAdd externalapi.UTXOCollection) error {
-	iterator := toAdd.Iterator()
-	defer iterator.Close()
-	for ok := iterator.First(); ok; ok = iterator.Next() {
-		outpoint, entry, err := iterator.Get()
-		if err != nil {
-			return err
+func (ti *TXIndex) addTXIDs(selectedParentChainChanges *externalapi.SelectedChainPath, chunkSize int) error {
+	position := 0
+	for position < len(selectedParentChainChanges.Added) {
+		var chainBlocksChunk []*externalapi.DomainHash
+		if position+chunkSize > len(selectedParentChainChanges.Added) {
+			chainBlocksChunk = selectedParentChainChanges.Added[position:]
+		} else {
+			chainBlocksChunk = selectedParentChainChanges.Added[position : position+chunkSize]
 		}
 
-		log.Tracef("Adding outpoint %s to UTXO index", outpoint)
-		err = ui.store.add(entry.ScriptPublicKey(), outpoint, entry)
+		if position+chunkSize > len(selectedParentChainChanges.Added) {
+			chainBlocksChunk = selectedParentChainChanges.Added[position:]
+		} else {
+			chainBlocksChunk = selectedParentChainChanges.Added[position : position+chunkSize]
+		}
+		// We use chunks in order to avoid blocking consensus for too long
+		// note: this might not be needed here, but unsure how kaspad handles pruning / when reset might be called.
+		chainBlocksAcceptanceData, err := ti.domain.Consensus().GetBlocksAcceptanceData(chainBlocksChunk)
 		if err != nil {
 			return err
 		}
+		for i, addedChainBlock := range chainBlocksChunk {
+			chainBlockAcceptanceData := chainBlocksAcceptanceData[i]
+			for _, blockAcceptanceData := range chainBlockAcceptanceData {
+				for _, transactionAcceptanceData := range blockAcceptanceData.TransactionAcceptanceData {
+					if transactionAcceptanceData.IsAccepted {
+						ti.store.add(*transactionAcceptanceData.Transaction.ID, addedChainBlock)
+					}
+				}
+			}
+		}
+		position += chunkSize
 	}
 	return nil
 }
 
-func (ui *UTXOIndex) removeUTXOs(toRemove externalapi.UTXOCollection) error {
-	iterator := toRemove.Iterator()
-	defer iterator.Close()
-	for ok := iterator.First(); ok; ok = iterator.Next() {
-		outpoint, entry, err := iterator.Get()
-		if err != nil {
-			return err
-		}
-
-		log.Tracef("Removing outpoint %s from UTXO index", outpoint)
-		err = ui.store.remove(entry.ScriptPublicKey(), outpoint, entry)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-// UTXOs returns all the UTXOs for the given scriptPublicKey
-func (ui *UTXOIndex) UTXOs(scriptPublicKey *externalapi.ScriptPublicKey) (UTXOOutpointEntryPairs, error) {
-	onEnd := logger.LogAndMeasureExecutionTime(log, "UTXOIndex.UTXOs")
+// TXAcceptingBlockHash returns all the UTXOs for the given scriptPublicKey
+func (ui *TXIndex) TXAcceptingBlockHash(txID *externalapi.DomainTransactionID) (*externalapi.DomainHash, error) {
+	onEnd := logger.LogAndMeasureExecutionTime(log, "TXIndex.TXAcceptingBlockHash")
 	defer onEnd()
 
 	ui.mutex.Lock()
@@ -190,11 +196,20 @@ func (ui *UTXOIndex) UTXOs(scriptPublicKey *externalapi.ScriptPublicKey) (UTXOOu
 	return ui.store.getUTXOOutpointEntryPairs(scriptPublicKey)
 }
 
-// GetCirculatingSompiSupply returns the current circulating supply of sompis in the network
-func (ui *UTXOIndex) GetCirculatingSompiSupply() (uint64, error) {
+func (ti *TXIndex) TXAcceptingBlock(txID *externalapi.DomainTransactionID) (externalapi.DomainHash, error) {
+	onEnd := logger.LogAndMeasureExecutionTime(log, "TXIndex.TXAcceptingBlock")
+	defer onEnd()
 
-	ui.mutex.Lock()
-	defer ui.mutex.Unlock()
+	ti.mutex.Lock()
+	defer ti.mutex.Unlock()
 
-	return ui.store.getCirculatingSompiSupply()
+	return ti.store.getUTXOOutpointEntryPairs(scriptPublicKey)
 }
+
+//TO DO: Get Block from TxID
+
+//TO DO: Get Including BlockHash from AcceptingBlock
+
+//TO DO: Get Including Block from AcceptingBlock
+
+//TO DO: Get Confirmations

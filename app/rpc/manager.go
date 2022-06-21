@@ -7,6 +7,7 @@ import (
 	"github.com/kaspanet/kaspad/domain"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/utxoindex"
+	"github.com/kaspanet/kaspad/domain/txindex"
 	"github.com/kaspanet/kaspad/infrastructure/config"
 	"github.com/kaspanet/kaspad/infrastructure/logger"
 	"github.com/kaspanet/kaspad/infrastructure/network/addressmanager"
@@ -29,6 +30,7 @@ func NewManager(
 	connectionManager *connmanager.ConnectionManager,
 	addressManager *addressmanager.AddressManager,
 	utxoIndex *utxoindex.UTXOIndex,
+	txIndex *txindex.TXIndex,
 	consensusEventsChan chan externalapi.ConsensusEvent,
 	shutDownChan chan<- struct{}) *Manager {
 
@@ -41,6 +43,7 @@ func NewManager(
 			connectionManager,
 			addressManager,
 			utxoIndex,
+			txIndex,
 			shutDownChan,
 		),
 	}

@@ -164,7 +164,7 @@ message DbBlockGHOSTDAGDataHashPair {
   DbBlockGhostdagData GhostdagData = 2;
 }
 
-message DbTxBlockData {
-        DbHash acceptingBlock = 1;
-        DbHash mergeBlock = 2;
+message DbTxBlockHashes {
+        DbHash acceptingBlockHash = 1;
+        DbHash mergeBlockHash = 2;
 }
