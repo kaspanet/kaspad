@@ -1,3 +1,23 @@
+Kaspad v0.12.2 - 2022-06-17
+===========================
+
+* Clarify wallet message concerning a wallet daemon sync state  (#2045)
+* Change the way the miner executable reports execution errors (closes issue #1677) (#2048)
+* Fix kaspawallet help messages, clarify sweep command help string (#2067)
+* Wallet parse/send/create commands improvement (#2024)
+* Use chunks for `GetBlocksAcceptanceData` calls in order to avoid blocking consensus for too long (#2075)
+* Unite multiple `GetBlockAcceptanceData` consensus calls to one (#2074)
+* Update many-small-chains-and-one-big-chain DAG to not fail merge depth limit (#2072)
+
+RPC API Changes:
+* RPC: include orphans into mempool entries (#2046)
+* RPC & UtxoIndex: keep track of, query and test circulating supply. (#2070)
+
+Bug Fixes:
+* Fix RPC connections counting (#2026)
+* Fix UTXO diff child error  (#2084)
+* Fix `not in selected chain` crash  (#2082)
+
 Kaspad v0.12.1 - 2022-05-31
 ===========================
 
