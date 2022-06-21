@@ -11,6 +11,7 @@ import (
 var txAcceptedIndexBucket = database.MakeBucket([]byte("tx-index"))
 var virtualParentsKey = database.MakeBucket([]byte("")).Key([]byte("tx-index-virtual-parent"))
 var pruningPointKey = database.MakeBucket([]byte("")).Key([]byte("tx-index-prunning-point"))
+
 type txIndexStore struct {
 	database database.Database
 	toAdd map[externalapi.DomainTransactionID]*externalapi.DomainHash
@@ -59,24 +60,9 @@ func (tis *txIndexStore) deleteAll() error {
 }
 
 func (tis *txIndexStore) add(txID externalapi.DomainTransactionID, blockHash *externalapi.DomainHash) {
-	log.Tracef("Adding %d Txs from blockHash %s", len(txIDs), acceptingBlockHash.String())
-	for _, txID := range txID {
-		if _, found := tis.toRemove[*txID]; found {
-			delete(tis.toRemove, *txID)
-		}
-		tis.toAdd[*txID] = *blockHash
+	log.Tracef("Adding %s Txs from blockHash %s", txID.String(), blockHash.String())
+		tis.toAdd[txID] = blockHash
 	}
-}
-
-func (tis *txIndexStore) remove(txIDs []*externalapi.DomainTransactionID, blockHash *externalapi.DomainHash) {
-	log.Tracef("Removing %d Txs from blockHash %s", len(txIDs), blockHash.String())
-	for _, txID := range txIDs {
-		if _, found := tis.toAdd[*txID]; found {
-			delete(tis.toAdd, *txID)
-		}
-		tis.toRemove[*txID] = *blockHash
-	}
-}
 
 func (tis *txIndexStore) discard() {
 	tis.toAdd = make(map[externalapi.DomainTransactionID]*externalapi.DomainHash)
@@ -94,30 +80,40 @@ func (tis *txIndexStore) commitAndReturnRemoved() (
 
 	dbTransaction, err := tis.database.Begin()
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	defer dbTransaction.RollbackUnlessClosed()
 
-	removed := make(map[externalapi.DomainTransactionID]*externalapi.DomainHash)
+	removed = make(map[externalapi.DomainTransactionID]*externalapi.DomainHash)
 
 	for txID, blockHash := range tis.toAdd {
-		key := convertTxIDToKey(txAcceptedIndexBucket, TxID)
-		if dbTransaction.Has(key) {
-			removedBlockHash, err := dbTransaction.Get(key)
+		key := tis.convertTxIDToKey(txAcceptedIndexBucket, txID)
+		found, err := dbTransaction.Has(key) 
+		if err != nil {
+			return nil, err
+		}
+		
+		if found {
+			serializedRemovedBlockHash, err := dbTransaction.Get(key)
 			if err != nil {
 				return nil, err
 			}
-			removed[txID] = externalapi.NewDomainHashFromByteSlice(removedBlockHash)
+			removedBlockHash, err := externalapi.NewDomainHashFromByteSlice(serializedRemovedBlockHash)
+			if err != nil {
+				return nil, err
+			}
+			removed[txID] = removedBlockHash
 		}
+
 		dbTransaction.Put(key, blockHash.ByteSlice())
 		if err != nil {
 			return nil, err
 		}
 	}
-	err = dbTransaction.Put(virtualParentsKey, serializeHashes(ti.virtualSelectedParents))
+	err = dbTransaction.Put(virtualParentsKey, serializeHashes(tis.virtualParents))
 	if err != nil {
-		return err
+		return nil, err
 	}
 	err = dbTransaction.Put(pruningPointKey, tis.pruningPoint.ByteSlice())
 	if err != nil {
@@ -153,7 +149,7 @@ func (tis *txIndexStore) updateVirtualParents(virtualParents []*externalapi.Doma
 func (tis *txIndexStore) CommitWithoutTransaction() error {
 	for txID, blockHash := range tis.toAdd {
 		key := tis.convertTxIDToKey(txAcceptedIndexBucket, txID)
-		err = tis.database.Put(key, blockHash.ByteSlice())
+		err := tis.database.Put(key, blockHash.ByteSlice())
 		if err != nil {
 			return err
 		}
@@ -180,7 +176,7 @@ func (tis *txIndexStore) getPruningPoint() (*externalapi.DomainHash, error) {
 		return nil, errors.Errorf("cannot get the Pruning point while staging isn't empty")
 	}
 
-	serializedPruningPointHash, err := uis.database.Get(pruningPointKey)
+	serializedPruningPointHash, err := tis.database.Get(pruningPointKey)
 	if err != nil {
 		return nil, err
 	}
@@ -188,12 +184,8 @@ func (tis *txIndexStore) getPruningPoint() (*externalapi.DomainHash, error) {
 	return externalapi.NewDomainHashFromByteSlice(serializedPruningPointHash)
 }
 
-func (tis *txIndexStore) convertTxIDToKey(bucket *database.Bucket, txID *externalapi.DomainTransactionID) *database.Key {
+func (tis *txIndexStore) convertTxIDToKey(bucket *database.Bucket, txID externalapi.DomainTransactionID) *database.Key {
 	return bucket.Key(txID.ByteSlice())
-}
-
-func (tis *txIndexStore) updateVirtualParent(virtualParent externalapi.DomainHash) {
-	tis.virtualParents = virtualParent
 }
 
 func (tis *txIndexStore) convertKeyToTxID(key *database.Key) (*externalapi.DomainTransactionID, error) {
@@ -216,13 +208,13 @@ func (tis *txIndexStore) isAnythingStaged() bool {
 	return len(tis.toAdd) > 0 
 }
 
-func (tis *txIndexStore) getTxAcceptingBlockHash(txID *externalapi.DomainTransactionID) (externalapi.DomainHash, error) {
+func (tis *txIndexStore) getTxAcceptingBlockHash(txID *externalapi.DomainTransactionID) (*externalapi.DomainHash, error) {
 	
-	if tis.isAnythingAcceptingStaged() {
+	if tis.isAnythingStaged() {
 		return nil, errors.Errorf("cannot get TX accepting Block hash while staging isn't empty")
 	}
 	
-	key := tis.convertTxIDToKey(txAcceptedIndexBucket, txID)
+	key := tis.convertTxIDToKey(txAcceptedIndexBucket, *txID)
 	serializedAcceptingBlockHash, err := tis.database.Get(key)
 	
 	if err != nil {

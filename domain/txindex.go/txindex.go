@@ -186,24 +186,36 @@ func (ti *TXIndex) addTXIDs(selectedParentChainChanges *externalapi.SelectedChai
 }
 
 // TXAcceptingBlockHash returns all the UTXOs for the given scriptPublicKey
-func (ui *TXIndex) TXAcceptingBlockHash(txID *externalapi.DomainTransactionID) (*externalapi.DomainHash, error) {
+func (ti *TXIndex) TXAcceptingBlockHash(txID *externalapi.DomainTransactionID) (*externalapi.DomainHash, error) {
 	onEnd := logger.LogAndMeasureExecutionTime(log, "TXIndex.TXAcceptingBlockHash")
 	defer onEnd()
 
-	ui.mutex.Lock()
-	defer ui.mutex.Unlock()
+	ti.mutex.Lock()
+	defer ti.mutex.Unlock()
 
-	return ui.store.getUTXOOutpointEntryPairs(scriptPublicKey)
+	acceptingBlockHash, err := ti.store.getTxAcceptingBlockHash(txID)
+	if err != nil {
+		return nil, err
+	}
+	return acceptingBlockHash, nil
 }
 
-func (ti *TXIndex) TXAcceptingBlock(txID *externalapi.DomainTransactionID) (externalapi.DomainHash, error) {
+func (ti *TXIndex) TXAcceptingBlock(txID *externalapi.DomainTransactionID) (*externalapi.DomainBlock, error) {
 	onEnd := logger.LogAndMeasureExecutionTime(log, "TXIndex.TXAcceptingBlock")
 	defer onEnd()
 
 	ti.mutex.Lock()
 	defer ti.mutex.Unlock()
 
-	return ti.store.getUTXOOutpointEntryPairs(scriptPublicKey)
+	acceptingBlockHash, err := ti.store.getTxAcceptingBlockHash(txID)
+	if err != nil {
+		return nil, err
+	}
+	acceptingBlock, err :=  ti.domain.Consensus().GetBlock(acceptingBlockHash)
+	if err != nil {
+		return nil, err
+	}
+	return acceptingBlock, nil
 }
 
 //TO DO: Get Block from TxID
