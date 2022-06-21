@@ -186,7 +186,7 @@ func runDAATest(t *testing.T, testName string, runDuration time.Duration,
 	tearDownKaspad := common.RunKaspadForTesting(t, "kaspad-daa-test", rpcAddress)
 	defer tearDownKaspad()
 
-	rpcClient, err := rpcclient.NewRPCClient(rpcAddress)
+	rpcClient, err := rpcclient.NewRPCClient(rpcAddress, 0)
 	if err != nil {
 		t.Fatalf("NewRPCClient: %s", err)
 	}

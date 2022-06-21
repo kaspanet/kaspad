@@ -23,7 +23,7 @@ func (mc *minerClient) connect() error {
 	if err != nil {
 		return err
 	}
-	rpcClient, err := rpcclient.NewRPCClient(rpcAddress)
+	rpcClient, err := rpcclient.NewRPCClient(rpcAddress, 0)
 	if err != nil {
 		return err
 	}
