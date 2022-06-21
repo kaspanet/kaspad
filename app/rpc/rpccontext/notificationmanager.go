@@ -9,7 +9,6 @@ import (
 
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/domain/utxoindex"
-	//"github.com/kaspanet/kaspad/domain/txindex"
 	routerpkg "github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
 	"github.com/pkg/errors"
 )

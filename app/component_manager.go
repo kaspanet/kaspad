@@ -121,7 +121,7 @@ func NewComponentManager(cfg *config.Config, db infrastructuredatabase.Database,
 			return nil, err
 		}
 
-		log.Infof("UTXO index started")
+		log.Infof("TX index started")
 	}
 
 	connectionManager, err := connmanager.New(cfg, netAdapter, addressManager)
