@@ -188,10 +188,6 @@ func (tis *txIndexStore) convertTxIDToKey(bucket *database.Bucket, txID external
 	return bucket.Key(txID.ByteSlice())
 }
 
-func (tis *txIndexStore) convertKeyToTxID(key *database.Key) (*externalapi.DomainTransactionID, error) {
-	return externalapi.NewDomainTransactionIDFromByteSlice(key.Suffix())
-}
-
 func (tis *txIndexStore) stagedData() (
 	toAdd map[externalapi.DomainTransactionID]*externalapi.DomainHash,
 	virtualParents []*externalapi.DomainHash,

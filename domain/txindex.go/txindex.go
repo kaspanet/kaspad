@@ -63,8 +63,6 @@ func (ti *TXIndex) Reset() error {
 		return err
 	}
 
-	const chunkSize = 1000
-
 	//we iterate from pruningPoint up - this gurantees that newer accepting blocks overwrite older ones in the store mapping
 	//we also do not collect data before pruning point, since relevent blockData is pruned (see `TO DO`` note at the top regarding archival nodes)
 	selectedParentChainChanges, err := ti.domain.Consensus().GetVirtualSelectedParentChainFromBlock(pruningPoint)
@@ -153,11 +151,7 @@ func (ti *TXIndex) addTXIDs(selectedParentChainChanges *externalapi.SelectedChai
 	position := 0
 	for position < len(selectedParentChainChanges.Added) {
 		var chainBlocksChunk []*externalapi.DomainHash
-		if position+chunkSize > len(selectedParentChainChanges.Added) {
-			chainBlocksChunk = selectedParentChainChanges.Added[position:]
-		} else {
-			chainBlocksChunk = selectedParentChainChanges.Added[position : position+chunkSize]
-		}
+
 
 		if position+chunkSize > len(selectedParentChainChanges.Added) {
 			chainBlocksChunk = selectedParentChainChanges.Added[position:]
