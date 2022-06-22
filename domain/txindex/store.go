@@ -1,7 +1,6 @@
 package txindex
 
 import (
-
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/infrastructure/db/database"
 	"github.com/kaspanet/kaspad/infrastructure/logger"
@@ -13,19 +12,19 @@ var virtualParentsKey = database.MakeBucket([]byte("")).Key([]byte("tx-index-vir
 var pruningPointKey = database.MakeBucket([]byte("")).Key([]byte("tx-index-prunning-point"))
 
 type txIndexStore struct {
-	database database.Database
-	toAdd map[externalapi.DomainTransactionID]*externalapi.DomainHash
+	database       database.Database
+	toAdd          map[externalapi.DomainTransactionID]*externalapi.DomainHash
 	virtualParents []*externalapi.DomainHash
-	pruningPoint *externalapi.DomainHash
+	pruningPoint   *externalapi.DomainHash
 }
 
 func newTXIndexStore(database database.Database) *txIndexStore {
 	return &txIndexStore{
-		database: database,
-		toAdd:  make(map[externalapi.DomainTransactionID]*externalapi.DomainHash),
+		database:       database,
+		toAdd:          make(map[externalapi.DomainTransactionID]*externalapi.DomainHash),
 		virtualParents: nil,
-		pruningPoint: nil,
-	}	
+		pruningPoint:   nil,
+	}
 }
 
 func (tis *txIndexStore) deleteAll() error {
@@ -61,8 +60,8 @@ func (tis *txIndexStore) deleteAll() error {
 
 func (tis *txIndexStore) add(txID externalapi.DomainTransactionID, blockHash *externalapi.DomainHash) {
 	log.Tracef("Adding %s Txs from blockHash %s", txID.String(), blockHash.String())
-		tis.toAdd[txID] = blockHash
-	}
+	tis.toAdd[txID] = blockHash
+}
 
 func (tis *txIndexStore) discard() {
 	tis.toAdd = make(map[externalapi.DomainTransactionID]*externalapi.DomainHash)
@@ -76,8 +75,6 @@ func (tis *txIndexStore) commitAndReturnRemoved() (
 	onEnd := logger.LogAndMeasureExecutionTime(log, "txIndexStore.commit")
 	defer onEnd()
 
-
-
 	dbTransaction, err := tis.database.Begin()
 	if err != nil {
 		return nil, err
@@ -89,11 +86,11 @@ func (tis *txIndexStore) commitAndReturnRemoved() (
 
 	for txID, blockHash := range tis.toAdd {
 		key := tis.convertTxIDToKey(txAcceptedIndexBucket, txID)
-		found, err := dbTransaction.Has(key) 
+		found, err := dbTransaction.Has(key)
 		if err != nil {
 			return nil, err
 		}
-		
+
 		if found {
 			serializedRemovedBlockHash, err := dbTransaction.Get(key)
 			if err != nil {
@@ -120,15 +117,13 @@ func (tis *txIndexStore) commitAndReturnRemoved() (
 		return nil, err
 	}
 
-
-
 	err = dbTransaction.Commit()
 	if err != nil {
 		return nil, err
 	}
 
 	tis.discard()
-	
+
 	return removed, nil
 }
 
@@ -191,7 +186,7 @@ func (tis *txIndexStore) convertTxIDToKey(bucket *database.Bucket, txID external
 func (tis *txIndexStore) stagedData() (
 	toAdd map[externalapi.DomainTransactionID]*externalapi.DomainHash,
 	virtualParents []*externalapi.DomainHash,
-	pruningPoint *externalapi.DomainHash,) {
+	pruningPoint *externalapi.DomainHash) {
 	toAddClone := make(map[externalapi.DomainTransactionID]*externalapi.DomainHash)
 	for txID, blockHash := range tis.toAdd {
 		toAddClone[txID] = blockHash
@@ -201,18 +196,18 @@ func (tis *txIndexStore) stagedData() (
 }
 
 func (tis *txIndexStore) isAnythingStaged() bool {
-	return len(tis.toAdd) > 0 
+	return len(tis.toAdd) > 0
 }
 
 func (tis *txIndexStore) getTxAcceptingBlockHash(txID *externalapi.DomainTransactionID) (*externalapi.DomainHash, error) {
-	
+
 	if tis.isAnythingStaged() {
 		return nil, errors.Errorf("cannot get TX accepting Block hash while staging isn't empty")
 	}
-	
+
 	key := tis.convertTxIDToKey(txAcceptedIndexBucket, *txID)
 	serializedAcceptingBlockHash, err := tis.database.Get(key)
-	
+
 	if err != nil {
 		return nil, err
 	}

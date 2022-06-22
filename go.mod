@@ -1,6 +1,8 @@
-module github.com/kaspanet/kaspad
+module  github.com/kaspanet/kaspad
 
 go 1.18
+
+//replace github.com/kaspanet/kaspad/domain/txindex => /home/ds/Coding/kaspad/kaspad/domain/txindex
 
 require (
 	github.com/btcsuite/btcutil v1.0.2

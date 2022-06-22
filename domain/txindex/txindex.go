@@ -152,7 +152,6 @@ func (ti *TXIndex) addTXIDs(selectedParentChainChanges *externalapi.SelectedChai
 	for position < len(selectedParentChainChanges.Added) {
 		var chainBlocksChunk []*externalapi.DomainHash
 
-
 		if position+chunkSize > len(selectedParentChainChanges.Added) {
 			chainBlocksChunk = selectedParentChainChanges.Added[position:]
 		} else {
@@ -179,7 +178,7 @@ func (ti *TXIndex) addTXIDs(selectedParentChainChanges *externalapi.SelectedChai
 	return nil
 }
 
-// TXAcceptingBlockHash returns all the UTXOs for the given scriptPublicKey
+// TXAcceptingBlockHash returns the accepting block hash for for the given txID
 func (ti *TXIndex) TXAcceptingBlockHash(txID *externalapi.DomainTransactionID) (*externalapi.DomainHash, error) {
 	onEnd := logger.LogAndMeasureExecutionTime(log, "TXIndex.TXAcceptingBlockHash")
 	defer onEnd()
@@ -194,6 +193,7 @@ func (ti *TXIndex) TXAcceptingBlockHash(txID *externalapi.DomainTransactionID) (
 	return acceptingBlockHash, nil
 }
 
+// TXAcceptingBlock returns the accepting block for for the given txID
 func (ti *TXIndex) TXAcceptingBlock(txID *externalapi.DomainTransactionID) (*externalapi.DomainBlock, error) {
 	onEnd := logger.LogAndMeasureExecutionTime(log, "TXIndex.TXAcceptingBlock")
 	defer onEnd()
@@ -205,7 +205,7 @@ func (ti *TXIndex) TXAcceptingBlock(txID *externalapi.DomainTransactionID) (*ext
 	if err != nil {
 		return nil, err
 	}
-	acceptingBlock, err :=  ti.domain.Consensus().GetBlock(acceptingBlockHash)
+	acceptingBlock, err := ti.domain.Consensus().GetBlock(acceptingBlockHash)
 	if err != nil {
 		return nil, err
 	}

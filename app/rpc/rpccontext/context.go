@@ -3,8 +3,8 @@ package rpccontext
 import (
 	"github.com/kaspanet/kaspad/app/protocol"
 	"github.com/kaspanet/kaspad/domain"
-	"github.com/kaspanet/kaspad/domain/utxoindex"
 	"github.com/kaspanet/kaspad/domain/txindex"
+	"github.com/kaspanet/kaspad/domain/utxoindex"
 	"github.com/kaspanet/kaspad/infrastructure/config"
 	"github.com/kaspanet/kaspad/infrastructure/network/addressmanager"
 	"github.com/kaspanet/kaspad/infrastructure/network/connmanager"
@@ -34,7 +34,7 @@ func NewContext(cfg *config.Config,
 	connectionManager *connmanager.ConnectionManager,
 	addressManager *addressmanager.AddressManager,
 	utxoIndex *utxoindex.UTXOIndex,
-	txIndex *txindex.TXIndex
+	txIndex *txindex.TXIndex,
 	shutDownChan chan<- struct{}) *Context {
 
 	context := &Context{

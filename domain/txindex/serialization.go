@@ -1,12 +1,11 @@
 package txindex
 
 import (
-	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"	
 	"encoding/binary"
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/pkg/errors"
 	"io"
 )
-
 
 func serializeHashes(hashes []*externalapi.DomainHash) []byte {
 	serializedHashes := make([]byte, hashesLengthSize+externalapi.DomainHashSize*len(hashes))
