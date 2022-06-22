@@ -72,6 +72,11 @@ func (m *Manager) initConsensusEventsHandler(consensusEventsChan chan externalap
 				if err != nil {
 					panic(err)
 				}
+			case *externalapi.PruningPointChange:
+				err := m.notifyPruningPointChange()
+				if err != nil {
+					panic(err)
+				}
 			default:
 				panic(errors.Errorf("Got event of unsupported type %T", consensusEvent))
 			}
@@ -116,6 +121,13 @@ func (m *Manager) notifyVirtualChange(virtualChangeSet *externalapi.VirtualChang
 		}
 	}
 
+	if m.context.Config.TXIndex && virtualChangeSet.VirtualSelectedParentChainChanges.Added != nil {
+		err := m.notifyTXsChanged(virtualChangeSet)
+		if err != nil {
+			return err
+		}
+	}
+
 	err := m.notifyVirtualSelectedParentBlueScoreChanged(virtualChangeSet.VirtualSelectedParentBlueScore)
 	if err != nil {
 		return err
@@ -146,6 +158,19 @@ func (m *Manager) notifyVirtualChange(virtualChangeSet *externalapi.VirtualChang
 func (m *Manager) NotifyNewBlockTemplate() error {
 	notification := appmessage.NewNewBlockTemplateNotificationMessage()
 	return m.context.NotificationManager.NotifyNewBlockTemplate(notification)
+}
+
+func (m *Manager) notifyPruningPointChange() error {
+	onEnd := logger.LogAndMeasureExecutionTime(log, "RPCManager.NotifyPruningPointChange")
+	defer onEnd()
+
+	if m.context.Config.TXIndex {
+		err := m.notifyPruningPointChangeTXAcceptancePrune()
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // NotifyPruningPointUTXOSetOverride notifies the manager whenever the UTXO index
@@ -194,6 +219,18 @@ func (m *Manager) notifyUTXOsChanged(virtualChangeSet *externalapi.VirtualChange
 	return m.context.NotificationManager.NotifyUTXOsChanged(utxoIndexChanges)
 }
 
+func (m *Manager) notifyTXsChanged(virtualChangeSet *externalapi.VirtualChangeSet) error {
+	onEnd := logger.LogAndMeasureExecutionTime(log, "RPCManager.NotifyTXsChanged")
+	defer onEnd()
+
+	_, err := m.context.TXIndex.Update(virtualChangeSet)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (m *Manager) notifyPruningPointUTXOSetOverride() error {
 	onEnd := logger.LogAndMeasureExecutionTime(log, "RPCManager.notifyPruningPointUTXOSetOverride")
 	defer onEnd()
@@ -204,6 +241,18 @@ func (m *Manager) notifyPruningPointUTXOSetOverride() error {
 	}
 
 	return m.context.NotificationManager.NotifyPruningPointUTXOSetOverride()
+}
+
+func (m *Manager) notifyPruningPointChangeTXAcceptancePrune() error {
+	onEnd := logger.LogAndMeasureExecutionTime(log, "RPCManager.notifyPruningPointChange")
+	defer onEnd()
+
+	err := m.context.TXIndex.Reset() //TO Do: a full reset resync does the job, but a prune could be more effcient.
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (m *Manager) notifyVirtualSelectedParentBlueScoreChanged(virtualSelectedParentBlueScore uint64) error {

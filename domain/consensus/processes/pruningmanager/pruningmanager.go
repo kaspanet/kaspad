@@ -112,48 +112,52 @@ func New(
 	}
 }
 
-func (pm *pruningManager) UpdatePruningPointByVirtual(stagingArea *model.StagingArea) error {
+func (pm *pruningManager) UpdatePruningPointByVirtualAndReturnChange(stagingArea *model.StagingArea) (*externalapi.PruningPointChange, error) {
 	onEnd := logger.LogAndMeasureExecutionTime(log, "pruningManager.UpdatePruningPointByVirtual")
 	defer onEnd()
 	hasPruningPoint, err := pm.pruningStore.HasPruningPoint(pm.databaseContext, stagingArea)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	if !hasPruningPoint {
 		hasGenesis, err := pm.blocksStore.HasBlock(pm.databaseContext, stagingArea, pm.genesisHash)
 		if err != nil {
-			return err
+			return nil, err
 		}
 
 		if hasGenesis {
 			err = pm.savePruningPoint(stagingArea, pm.genesisHash)
 			if err != nil {
-				return err
+				return nil, err
 			}
 		}
 
 		// Pruning point should initially set manually on a pruned-headers node.
-		return nil
+		return &externalapi.PruningPointChange{
+			NewPruningPoint: pm.genesisHash,
+		}, err
 	}
 
 	virtualGHOSTDAGData, err := pm.ghostdagDataStore.Get(pm.databaseContext, stagingArea, model.VirtualBlockHash, false)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	if virtualGHOSTDAGData.SelectedParent().Equal(pm.genesisHash) {
-		return nil
+		return &externalapi.PruningPointChange{
+			OldPruningPoint: pm.genesisHash,
+		}, err
 	}
 
 	newPruningPoint, newCandidate, err := pm.nextPruningPointAndCandidateByBlockHash(stagingArea, virtualGHOSTDAGData.SelectedParent(), nil)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	currentCandidate, err := pm.pruningPointCandidate(stagingArea)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	if !newCandidate.Equal(currentCandidate) {
@@ -163,32 +167,35 @@ func (pm *pruningManager) UpdatePruningPointByVirtual(stagingArea *model.Staging
 
 	currentPruningPoint, err := pm.pruningStore.PruningPoint(pm.databaseContext, stagingArea)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	if !newPruningPoint.Equal(currentPruningPoint) {
 		currentPruningPointGHOSTDAGData, err := pm.ghostdagDataStore.Get(pm.databaseContext, stagingArea, currentPruningPoint, false)
 		if err != nil {
-			return err
+			return nil, err
 		}
 
 		newPruningPointGHOSTDAGData, err := pm.ghostdagDataStore.Get(pm.databaseContext, stagingArea, newPruningPoint, false)
 		if err != nil {
-			return err
+			return nil, err
 		}
 
 		if pm.finalityScore(newPruningPointGHOSTDAGData.BlueScore()) > pm.finalityScore(currentPruningPointGHOSTDAGData.BlueScore())+1 {
-			return errors.Errorf("cannot advance pruning point by more than one finality interval at once")
+			return nil, errors.Errorf("cannot advance pruning point by more than one finality interval at once")
 		}
 
 		log.Debugf("Moving pruning point from %s to %s", currentPruningPoint, newPruningPoint)
 		err = pm.savePruningPoint(stagingArea, newPruningPoint)
 		if err != nil {
-			return err
+			return nil, err
 		}
 	}
 
-	return nil
+	return &externalapi.PruningPointChange{
+		OldPruningPoint: currentPruningPoint,
+		NewPruningPoint: newPruningPoint,
+	}, err
 }
 
 type blockIteratorFromOneBlock struct {

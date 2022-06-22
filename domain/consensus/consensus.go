@@ -68,7 +68,7 @@ func (s *consensus) ValidateAndInsertBlockWithTrustedData(block *externalapi.Blo
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	_, _, err := s.blockProcessor.ValidateAndInsertBlockWithTrustedData(block, validateUTXO)
+	_, _, _, err := s.blockProcessor.ValidateAndInsertBlockWithTrustedData(block, validateUTXO)
 	if err != nil {
 		return err
 	}
@@ -137,7 +137,7 @@ func (s *consensus) Init(skipAddingGenesis bool) error {
 				},
 			},
 		}
-		_, _, err = s.blockProcessor.ValidateAndInsertBlockWithTrustedData(genesisWithTrustedData, true)
+		_, _, _, err = s.blockProcessor.ValidateAndInsertBlockWithTrustedData(genesisWithTrustedData, true)
 		if err != nil {
 			return err
 		}
@@ -219,7 +219,7 @@ func (s *consensus) validateAndInsertBlockNoLock(block *externalapi.DomainBlock,
 		}
 	}
 
-	virtualChangeSet, blockStatus, err := s.blockProcessor.ValidateAndInsertBlock(block, updateVirtual)
+	virtualChangeSet, pruningPointChange, blockStatus, err := s.blockProcessor.ValidateAndInsertBlock(block, updateVirtual)
 	if err != nil {
 		return nil, err
 	}
@@ -227,6 +227,14 @@ func (s *consensus) validateAndInsertBlockNoLock(block *externalapi.DomainBlock,
 	// If block has a body, and yet virtual was not updated -- signify that virtual is in non-updated state
 	if !updateVirtual && blockStatus != externalapi.StatusHeaderOnly {
 		s.virtualNotUpdated = true
+	}
+
+	if pruningPointChange != nil {
+		//always send before sendVirtualChangedEvent, since it will trigger the TXIndex reset before an update
+		err = s.sendPruningPointChangedEvent(pruningPointChange)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	err = s.sendBlockAddedEvent(block, blockStatus)
@@ -287,6 +295,21 @@ func (s *consensus) sendVirtualChangedEvent(virtualChangeSet *externalapi.Virtua
 
 	s.consensusEventsChan <- virtualChangeSet
 	return nil
+}
+
+func (s *consensus) sendPruningPointChangedEvent(pruningPointChange *externalapi.PruningPointChange) error {
+	if s.consensusEventsChan != nil {
+
+		if len(s.consensusEventsChan) == cap(s.consensusEventsChan) {
+			return errors.Errorf("consensusEventsChan is full")
+		}
+
+		s.consensusEventsChan <- pruningPointChange
+
+		return nil
+	}
+	return nil
+
 }
 
 // ValidateTransactionAndPopulateWithConsensusData validates the given transaction
@@ -907,12 +930,18 @@ func (s *consensus) resolveVirtualNoLock(maxBlocksToResolve uint64) (bool, error
 	s.virtualNotUpdated = !isCompletelyResolved
 
 	stagingArea := model.NewStagingArea()
-	err = s.pruningManager.UpdatePruningPointByVirtual(stagingArea)
+
+	pruningPointChange, err := s.pruningManager.UpdatePruningPointByVirtualAndReturnChange(stagingArea)
 	if err != nil {
 		return false, err
 	}
 
 	err = staging.CommitAllChanges(s.databaseContext, stagingArea)
+	if err != nil {
+		return false, err
+	}
+
+	err = s.sendPruningPointChangedEvent(pruningPointChange)
 	if err != nil {
 		return false, err
 	}

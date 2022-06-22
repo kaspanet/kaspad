@@ -540,7 +540,7 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 	}
 
 	stagingArea := model.NewStagingArea()
-	err = pruningManager.UpdatePruningPointByVirtual(stagingArea)
+	_, err = pruningManager.UpdatePruningPointByVirtualAndReturnChange(stagingArea)
 	if err != nil {
 		return nil, false, err
 	}
