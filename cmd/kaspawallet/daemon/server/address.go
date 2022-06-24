@@ -109,8 +109,7 @@ func (s *server) CheckIfAddressesAreValid(_ context.Context, request *pb.CheckIf
 		} else {
 			areValidAddresses[i] = &pb.IsValidAddress{
 				Address: address,
-				IsValid: false,
-				Error:   err.Error(),
+				IsValid: true,
 			}
 		}
 	}
