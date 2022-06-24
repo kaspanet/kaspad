@@ -98,6 +98,9 @@ func (ti *TXIndex) isSynced() (bool, error) {
 
 	txIndexVirtualParents, err := ti.store.getVirtualParents()
 	if err != nil {
+		if database.IsNotFoundError(err) {
+			return false, nil
+		}
 		return false, err
 	}
 
@@ -179,7 +182,7 @@ func (ti *TXIndex) addTXIDs(selectedParentChainChanges *externalapi.SelectedChai
 			chainBlockAcceptanceData := chainBlocksAcceptanceData[i]
 			for _, blockAcceptanceData := range chainBlockAcceptanceData {
 				for _, transactionAcceptanceData := range blockAcceptanceData.TransactionAcceptanceData {
-					if transactionAcceptanceData.IsAccepted {
+					if transactionAcceptanceData.IsAccepted && transactionAcceptanceData.Transaction.ID != nil {
 						ti.store.add(*transactionAcceptanceData.Transaction.ID, addedChainBlock)
 					}
 				}
@@ -210,7 +213,7 @@ func (ti *TXIndex) removeTXIDs(selectedParentChainChanges *externalapi.SelectedC
 			chainBlockAcceptanceData := chainBlocksAcceptanceData[i]
 			for _, blockAcceptanceData := range chainBlockAcceptanceData {
 				for _, transactionAcceptanceData := range blockAcceptanceData.TransactionAcceptanceData {
-					if transactionAcceptanceData.IsAccepted {
+					if transactionAcceptanceData.IsAccepted && transactionAcceptanceData.Transaction.ID != nil{
 						ti.store.remove(*transactionAcceptanceData.Transaction.ID, removedChainBlock)
 					}
 				}

@@ -60,13 +60,13 @@ func (tis *txIndexStore) deleteAll() error {
 }
 
 func (tis *txIndexStore) add(txID externalapi.DomainTransactionID, blockHash *externalapi.DomainHash) {
-	log.Tracef("Adding %s Txs from blockHash %s", txID.String(), blockHash.String())
+	log.Tracef("Adding %s Txs from blockHash %s", txID.String(), ConvertDomainHashToString(blockHash))
 	delete(tis.toRemove, txID) //adding takes precedence
 	tis.toAdd[txID] = blockHash
 }
 
 func (tis *txIndexStore) remove(txID externalapi.DomainTransactionID, blockHash *externalapi.DomainHash) {
-	log.Tracef("Removing %s Txs from blockHash %s", txID.String(), blockHash.String())
+	log.Tracef("Removing %s Txs from blockHash %s", txID.String(), ConvertDomainHashToString(blockHash))
 	if _, found := tis.toAdd[txID]; !found { //adding takes precedence
 		tis.toRemove[txID] = blockHash
 	}

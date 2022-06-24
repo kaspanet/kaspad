@@ -24,6 +24,7 @@ type appHarness struct {
 	config                  *config.Config
 	database                database.Database
 	utxoIndex               bool
+	txIndex			bool
 	overrideDAGParams       *dagconfig.Params
 }
 
@@ -33,6 +34,7 @@ type harnessParams struct {
 	miningAddress           string
 	miningAddressPrivateKey string
 	utxoIndex               bool
+	txIndex			bool
 	overrideDAGParams       *dagconfig.Params
 	protocolVersion         uint32
 }
@@ -45,6 +47,7 @@ func setupHarness(t *testing.T, params *harnessParams) (harness *appHarness, tea
 		miningAddress:           params.miningAddress,
 		miningAddressPrivateKey: params.miningAddressPrivateKey,
 		utxoIndex:               params.utxoIndex,
+		txIndex:		 params.txIndex,
 		overrideDAGParams:       params.overrideDAGParams,
 	}
 
@@ -94,6 +97,34 @@ func standardSetup(t *testing.T) (appHarness1, appHarness2, appHarness3 *appHarn
 			rpcAddress:              rpcAddress3,
 			miningAddress:           miningAddress3,
 			miningAddressPrivateKey: miningAddress3PrivateKey,
+		},
+	})
+
+	return harnesses[0], harnesses[1], harnesses[2], teardown
+}
+
+// standardSetupWithTxindex creates a standard setup of 3 appHarnesses, with txindexes.
+func standardSetupWithTxindex(t *testing.T) (appHarness1, appHarness2, appHarness3 *appHarness, teardownFunc func()) {
+	harnesses, teardown := setupHarnesses(t, []*harnessParams{
+		{
+			p2pAddress:              p2pAddress1,
+			rpcAddress:              rpcAddress1,
+			miningAddress:           miningAddress1,
+			miningAddressPrivateKey: miningAddress1PrivateKey,
+			txIndex:		 true,
+		},
+		{
+			p2pAddress:              p2pAddress2,
+			rpcAddress:              rpcAddress2,
+			miningAddress:           miningAddress2,
+			miningAddressPrivateKey: miningAddress2PrivateKey,
+			txIndex:		 true,
+		}, {
+			p2pAddress:              p2pAddress3,
+			rpcAddress:              rpcAddress3,
+			miningAddress:           miningAddress3,
+			miningAddressPrivateKey: miningAddress3PrivateKey,
+
 		},
 	})
 
