@@ -190,12 +190,13 @@ func (pm *pruningManager) UpdatePruningPointByVirtualAndReturnChange(stagingArea
 		if err != nil {
 			return nil, err
 		}
+		return &externalapi.PruningPointChange{
+			OldPruningPoint: currentPruningPoint,
+			NewPruningPoint: newPruningPoint,
+		}, nil
 	}
 
-	return &externalapi.PruningPointChange{
-		OldPruningPoint: currentPruningPoint,
-		NewPruningPoint: newPruningPoint,
-	}, err
+	return nil, nil
 }
 
 type blockIteratorFromOneBlock struct {

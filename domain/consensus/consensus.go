@@ -941,9 +941,11 @@ func (s *consensus) resolveVirtualNoLock(maxBlocksToResolve uint64) (bool, error
 		return false, err
 	}
 
-	err = s.sendPruningPointChangedEvent(pruningPointChange)
-	if err != nil {
-		return false, err
+	if pruningPointChange != nil {
+		err = s.sendPruningPointChangedEvent(pruningPointChange)
+		if err != nil {
+			return false, err
+		}
 	}
 
 	err = s.sendVirtualChangedEvent(virtualChangeSet, true)

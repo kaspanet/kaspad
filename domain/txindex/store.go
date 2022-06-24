@@ -90,17 +90,18 @@ func (tis *txIndexStore) commit() error {
 
 	defer dbTransaction.RollbackUnlessClosed()
 
-	for toRemoveTxID := range tis.toRemove { //safer to remove first
-		key := tis.convertTxIDToKey(txAcceptedIndexBucket, toRemoveTxID)
-		err := dbTransaction.Delete(key)
+	for toAddTxID, blockHash := range tis.toAdd {
+		delete(tis.toRemove, toAddTxID) //safeguard
+		key := tis.convertTxIDToKey(txAcceptedIndexBucket, toAddTxID)
+		dbTransaction.Put(key, blockHash.ByteSlice())
 		if err != nil {
 			return err
 		}
 	}
 
-	for toAddTxID, blockHash := range tis.toAdd {
-		key := tis.convertTxIDToKey(txAcceptedIndexBucket, toAddTxID)
-		dbTransaction.Put(key, blockHash.ByteSlice())
+	for toRemoveTxID := range tis.toRemove {
+		key := tis.convertTxIDToKey(txAcceptedIndexBucket, toRemoveTxID)
+		err := dbTransaction.Delete(key)
 		if err != nil {
 			return err
 		}

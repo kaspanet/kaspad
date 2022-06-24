@@ -49,6 +49,8 @@ func (ti *TXIndex) Reset() error {
 	ti.mutex.Lock()
 	defer ti.mutex.Unlock()
 
+	log.Info("Reseting TX Index")
+
 	err := ti.store.deleteAll()
 	if err != nil {
 		return err
@@ -188,7 +190,7 @@ func (ti *TXIndex) addTXIDs(selectedParentChainChanges *externalapi.SelectedChai
 			chainBlockAcceptanceData := chainBlocksAcceptanceData[i]
 			for _, blockAcceptanceData := range chainBlockAcceptanceData {
 				for _, transactionAcceptanceData := range blockAcceptanceData.TransactionAcceptanceData {
-					log.Info("TX index Adding: ", len(blockAcceptanceData.TransactionAcceptanceData))
+					log.Tracef("TX index Adding: %d transactions", len(blockAcceptanceData.TransactionAcceptanceData))
 					if transactionAcceptanceData.IsAccepted {
 						ti.store.add(
 							*consensushashing.TransactionID(transactionAcceptanceData.Transaction),
@@ -222,12 +224,12 @@ func (ti *TXIndex) removeTXIDs(selectedParentChainChanges *externalapi.SelectedC
 		for i, removedChainBlock := range chainBlocksChunk {
 			chainBlockAcceptanceData := chainBlocksAcceptanceData[i]
 			for _, blockAcceptanceData := range chainBlockAcceptanceData {
-				log.Info("TX index Removing: ", len(blockAcceptanceData.TransactionAcceptanceData))
+				log.Tracef("TX index Removing: %d transactions", len(blockAcceptanceData.TransactionAcceptanceData))
 				for _, transactionAcceptanceData := range blockAcceptanceData.TransactionAcceptanceData {
 					if transactionAcceptanceData.IsAccepted {
 						ti.store.remove(
-						*consensushashing.TransactionID(transactionAcceptanceData.Transaction),
-						removedChainBlock,
+							*consensushashing.TransactionID(transactionAcceptanceData.Transaction),
+							removedChainBlock,
 						)
 					}
 				}
