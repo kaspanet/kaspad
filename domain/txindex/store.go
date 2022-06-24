@@ -217,7 +217,7 @@ func (tis *txIndexStore) getTxAcceptingBlockHash(txID *externalapi.DomainTransac
 	key := tis.convertTxIDToKey(txAcceptedIndexBucket, *txID)
 	serializedAcceptingBlockHash, err := tis.database.Get(key)
 	if err != nil {
-		if err == database.ErrNotFound {
+		if database.IsNotFoundError(err) {
 			return nil, false, nil
 		}
 		return nil, false, err

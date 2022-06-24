@@ -15,6 +15,8 @@ var commandTypes = []reflect.Type{
 	reflect.TypeOf(protowire.KaspadMessage_GetCurrentNetworkRequest{}),
 	reflect.TypeOf(protowire.KaspadMessage_GetInfoRequest{}),
 
+	reflect.TypeOf(protowire.KaspadMessage_GetAcceptingBlockHashOfTxRequest{}),
+
 	reflect.TypeOf(protowire.KaspadMessage_GetBlockRequest{}),
 	reflect.TypeOf(protowire.KaspadMessage_GetBlocksRequest{}),
 	reflect.TypeOf(protowire.KaspadMessage_GetHeadersRequest{}),

@@ -5,6 +5,7 @@ import (
 
 	"github.com/kaspanet/kaspad/domain"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
 	"github.com/kaspanet/kaspad/infrastructure/db/database"
 	"github.com/kaspanet/kaspad/infrastructure/logger"
 )
@@ -139,7 +140,7 @@ func (ti *TXIndex) Update(virtualChangeSet *externalapi.VirtualChangeSet) (*TXAc
 	ti.mutex.Lock()
 	defer ti.mutex.Unlock()
 
-	log.Tracef("Updating TX index with VirtualSelectedParentChainChanges: %+v", virtualChangeSet.VirtualSelectedParentChainChanges)
+	log.Info("Updating TX index with VirtualSelectedParentChainChanges: %+v", virtualChangeSet.VirtualSelectedParentChainChanges)
 
 	err := ti.removeTXIDs(virtualChangeSet.VirtualSelectedParentChainChanges, 1000)
 	if err != nil {
@@ -164,7 +165,6 @@ func (ti *TXIndex) Update(virtualChangeSet *externalapi.VirtualChangeSet) (*TXAc
 		return nil, err
 	}
 
-	log.Tracef("TX index updated with the TXAcceptanceChange: %+v", txIndexChanges)
 	return txIndexChanges, nil
 }
 
@@ -188,8 +188,12 @@ func (ti *TXIndex) addTXIDs(selectedParentChainChanges *externalapi.SelectedChai
 			chainBlockAcceptanceData := chainBlocksAcceptanceData[i]
 			for _, blockAcceptanceData := range chainBlockAcceptanceData {
 				for _, transactionAcceptanceData := range blockAcceptanceData.TransactionAcceptanceData {
-					if transactionAcceptanceData.IsAccepted && transactionAcceptanceData.Transaction.ID != nil {
-						ti.store.add(*transactionAcceptanceData.Transaction.ID, addedChainBlock)
+					log.Info("TX index Adding: ", len(blockAcceptanceData.TransactionAcceptanceData))
+					if transactionAcceptanceData.IsAccepted {
+						ti.store.add(
+							*consensushashing.TransactionID(transactionAcceptanceData.Transaction),
+							addedChainBlock,
+						)
 					}
 				}
 			}
@@ -218,9 +222,13 @@ func (ti *TXIndex) removeTXIDs(selectedParentChainChanges *externalapi.SelectedC
 		for i, removedChainBlock := range chainBlocksChunk {
 			chainBlockAcceptanceData := chainBlocksAcceptanceData[i]
 			for _, blockAcceptanceData := range chainBlockAcceptanceData {
+				log.Info("TX index Removing: ", len(blockAcceptanceData.TransactionAcceptanceData))
 				for _, transactionAcceptanceData := range blockAcceptanceData.TransactionAcceptanceData {
-					if transactionAcceptanceData.IsAccepted && transactionAcceptanceData.Transaction.ID != nil {
-						ti.store.remove(*transactionAcceptanceData.Transaction.ID, removedChainBlock)
+					if transactionAcceptanceData.IsAccepted {
+						ti.store.remove(
+						*consensushashing.TransactionID(transactionAcceptanceData.Transaction),
+						removedChainBlock,
+						)
 					}
 				}
 			}
