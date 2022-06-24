@@ -968,6 +968,20 @@ func toRPCPayload(message appmessage.Message) (isKaspadMessage_Payload, error) {
 			return nil, err
 		}
 		return payload, nil
+	case *appmessage.GetAcceptingBlockHashOfTxRequestMessage:
+		payload := new(KaspadMessage_GetAcceptingBlockHashOfTxRequest)
+		err := payload.fromAppMessage(message)
+		if err != nil {
+			return nil, err
+		}
+		return payload, nil
+	case *appmessage.GetAcceptingBlockHashOfTxResponseMessage:
+		payload := new(KaspadMessage_GetAcceptingBlockHashOfTxResponse)
+		err := payload.fromAppMessage(message)
+		if err != nil {
+			return nil, err
+		}
+		return payload, nil
 	default:
 		return nil, nil
 	}

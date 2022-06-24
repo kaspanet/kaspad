@@ -666,6 +666,18 @@ message GetInfoResponseMessage{
   RPCError error = 1000;
 }
 
+
+//Kaspad most be started with the `--txindex` flag for this Request to work.
+message GetAcceptingBlockHashOfTxRequestMessage {
+        string txID = 1;    
+}
+
+ //the accepting block is defined as the virtual chain block that first knows about the transaction. This block may change, or be ommitted and resubmitted, during virtual changes at the tip of the blockDAG   
+message GetAcceptingBlockHashOfTxResponseMessage {
+        string hash = 1; //the accepting block is defined as the virtual chain block that first knows about the transaction. This block may change, or be ommitted and resubmitted, during virtual changes at the tip of the blockDAG   
+        RPCError error = 1000;
+}
+
 message EstimateNetworkHashesPerSecondRequestMessage{
   uint32 windowSize = 1;
   string startHash = 2;
@@ -706,7 +718,7 @@ message GetMempoolEntriesByAddressesRequestMessage{
   bool filterTransactionPool = 3;
 }
 
-message  GetMempoolEntriesByAddressesResponseMessage{
+message GetMempoolEntriesByAddressesResponseMessage{
   repeated MempoolEntryByAddress entries = 1;
 
   RPCError error = 1000;

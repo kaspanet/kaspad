@@ -199,23 +199,25 @@ func (tis *txIndexStore) isAnythingStaged() bool {
 	return len(tis.toAdd) > 0
 }
 
-func (tis *txIndexStore) getTxAcceptingBlockHash(txID *externalapi.DomainTransactionID) (*externalapi.DomainHash, error) {
+func (tis *txIndexStore) getTxAcceptingBlockHash(txID *externalapi.DomainTransactionID) (blockHash *externalapi.DomainHash, found bool, err error) {
 
 	if tis.isAnythingStaged() {
-		return nil, errors.Errorf("cannot get TX accepting Block hash while staging isn't empty")
+		return nil, false, errors.Errorf("cannot get TX accepting Block hash while staging isn't empty")
 	}
 
 	key := tis.convertTxIDToKey(txAcceptedIndexBucket, *txID)
 	serializedAcceptingBlockHash, err := tis.database.Get(key)
-
 	if err != nil {
-		return nil, err
+		if err == database.ErrNotFound {
+			return nil, false, nil
+		}
+		return nil, false, err
 	}
 
 	acceptingBlockHash, err := externalapi.NewDomainHashFromByteSlice(serializedAcceptingBlockHash)
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 
-	return acceptingBlockHash, nil
+	return acceptingBlockHash, true, nil
 }

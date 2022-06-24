@@ -139,6 +139,8 @@ message KaspadMessage {
     GetMempoolEntriesByAddressesResponseMessage getMempoolEntriesByAddressesResponse = 1085;
     GetCoinSupplyRequestMessage getCoinSupplyRequest = 1086;
     GetCoinSupplyResponseMessage getCoinSupplyResponse= 1087;
+    GetAcceptingBlockHashOfTxRequestMessage  getAcceptingBlockHashOfTxRequest = 1088;
+    GetAcceptingBlockHashOfTxResponseMessage getAcceptingBlockHashOfTxResponse = 1089;
   }
 }
 

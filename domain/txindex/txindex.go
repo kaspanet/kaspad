@@ -179,37 +179,18 @@ func (ti *TXIndex) addTXIDs(selectedParentChainChanges *externalapi.SelectedChai
 }
 
 // TXAcceptingBlockHash returns the accepting block hash for for the given txID
-func (ti *TXIndex) TXAcceptingBlockHash(txID *externalapi.DomainTransactionID) (*externalapi.DomainHash, error) {
+func (ti *TXIndex) TXAcceptingBlockHash(txID *externalapi.DomainTransactionID) (blockHash *externalapi.DomainHash, found bool, err error) {
 	onEnd := logger.LogAndMeasureExecutionTime(log, "TXIndex.TXAcceptingBlockHash")
 	defer onEnd()
 
 	ti.mutex.Lock()
 	defer ti.mutex.Unlock()
 
-	acceptingBlockHash, err := ti.store.getTxAcceptingBlockHash(txID)
+	acceptingBlockHash, found, err := ti.store.getTxAcceptingBlockHash(txID)
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
-	return acceptingBlockHash, nil
-}
-
-// TXAcceptingBlock returns the accepting block for for the given txID
-func (ti *TXIndex) TXAcceptingBlock(txID *externalapi.DomainTransactionID) (*externalapi.DomainBlock, error) {
-	onEnd := logger.LogAndMeasureExecutionTime(log, "TXIndex.TXAcceptingBlock")
-	defer onEnd()
-
-	ti.mutex.Lock()
-	defer ti.mutex.Unlock()
-
-	acceptingBlockHash, err := ti.store.getTxAcceptingBlockHash(txID)
-	if err != nil {
-		return nil, err
-	}
-	acceptingBlock, err := ti.domain.Consensus().GetBlock(acceptingBlockHash)
-	if err != nil {
-		return nil, err
-	}
-	return acceptingBlock, nil
+	return acceptingBlockHash, found, nil
 }
 
 //TO DO: Get Block from TxID

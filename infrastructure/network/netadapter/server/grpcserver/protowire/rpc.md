@@ -102,6 +102,8 @@
     - [UnbanResponseMessage](#protowire.UnbanResponseMessage)
     - [GetInfoRequestMessage](#protowire.GetInfoRequestMessage)
     - [GetInfoResponseMessage](#protowire.GetInfoResponseMessage)
+    - [GetAcceptingBlockHashOfTxRequestMessage](#protowire.GetAcceptingBlockHashOfTxRequestMessage)
+    - [GetAcceptingBlockHashOfTxResponseMessage](#protowire.GetAcceptingBlockHashOfTxResponseMessage)
     - [EstimateNetworkHashesPerSecondRequestMessage](#protowire.EstimateNetworkHashesPerSecondRequestMessage)
     - [EstimateNetworkHashesPerSecondResponseMessage](#protowire.EstimateNetworkHashesPerSecondResponseMessage)
     - [NotifyNewBlockTemplateRequestMessage](#protowire.NotifyNewBlockTemplateRequestMessage)
@@ -1701,6 +1703,37 @@ GetInfoRequestMessage returns info about the node.
 | serverVersion | [string](#string) |  |  |
 | isUtxoIndexed | [bool](#bool) |  |  |
 | isSynced | [bool](#bool) |  |  |
+| error | [RPCError](#protowire.RPCError) |  |  |
+
+
+
+
+
+
+<a name="protowire.GetAcceptingBlockHashOfTxRequestMessage"></a>
+
+### GetAcceptingBlockHashOfTxRequestMessage
+Kaspad most be started with the `--txindex` flag for this Request to work.
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| txID | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="protowire.GetAcceptingBlockHashOfTxResponseMessage"></a>
+
+### GetAcceptingBlockHashOfTxResponseMessage
+the accepting block is defined as the virtual chain block that first knows about the transaction. This block may change, or be ommitted and resubmitted, during virtual changes at the tip of the blockDAG
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| hash | [string](#string) |  | the accepting block is defined as the virtual chain block that first knows about the transaction. This block may change, or be ommitted and resubmitted, during virtual changes at the tip of the blockDAG |
 | error | [RPCError](#protowire.RPCError) |  |  |
 
 
