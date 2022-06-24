@@ -23,6 +23,7 @@ func newTXIndexStore(database database.Database) *txIndexStore {
 	return &txIndexStore{
 		database:       database,
 		toAdd:          make(map[externalapi.DomainTransactionID]*externalapi.DomainHash),
+		toRemove:       make(map[externalapi.DomainTransactionID]*externalapi.DomainHash),
 		virtualParents: nil,
 		pruningPoint:   nil,
 	}
@@ -72,10 +73,10 @@ func (tis *txIndexStore) remove(txID externalapi.DomainTransactionID, blockHash 
 	}
 }
 
-func (tis *txIndexStore) discard() {
+func (tis *txIndexStore) discardAllButPruningPoint() {
 	tis.toAdd = make(map[externalapi.DomainTransactionID]*externalapi.DomainHash)
+	tis.toRemove = make(map[externalapi.DomainTransactionID]*externalapi.DomainHash)
 	tis.virtualParents = nil
-	tis.pruningPoint = nil
 }
 
 func (tis *txIndexStore) commit() error {
@@ -109,47 +110,45 @@ func (tis *txIndexStore) commit() error {
 	if err != nil {
 		return err
 	}
-	err = dbTransaction.Put(pruningPointKey, tis.pruningPoint.ByteSlice())
-	if err != nil {
-		return err
-	}
 
 	err = dbTransaction.Commit()
 	if err != nil {
 		return err
 	}
 
-	tis.discard()
+	tis.discardAllButPruningPoint()
 
 	return nil
 }
 
-func (tis *txIndexStore) updateAndCommitVirtualParentsWithoutTransaction(virtualParents []*externalapi.DomainHash) error {
+func (tis *txIndexStore) commitVirtualParentsWithoutTransaction(virtualParents []*externalapi.DomainHash) error {
 	serializeParentHashes := serializeHashes(virtualParents)
 	return tis.database.Put(virtualParentsKey, serializeParentHashes)
-}
-
-func (tis *txIndexStore) updateAndCommitPruningPointWithoutTransaction(pruningPoint *externalapi.DomainHash) error {
-	return tis.database.Put(pruningPointKey, pruningPoint.ByteSlice())
-
 }
 
 func (tis *txIndexStore) updateVirtualParents(virtualParents []*externalapi.DomainHash) {
 	tis.virtualParents = virtualParents
 }
 
-func (tis *txIndexStore) CommitWithoutTransaction() error {
-	for txID := range tis.toRemove { //safer to remove first
+func (tis *txIndexStore) updateAndCommitPruningPointWithoutTransaction(pruningPoint *externalapi.DomainHash) error {
+	tis.pruningPoint = pruningPoint
+
+	return tis.database.Put(pruningPointKey, pruningPoint.ByteSlice())
+}
+
+func (tis *txIndexStore) commitTxIDsWithoutTransaction() error {
+	for txID, blockHash := range tis.toAdd {
+		delete(tis.toRemove, txID) //adding takes precedence
 		key := tis.convertTxIDToKey(txAcceptedIndexBucket, txID)
-		err := tis.database.Delete(key)
+		err := tis.database.Put(key, blockHash.ByteSlice())
 		if err != nil {
 			return err
 		}
 	}
 
-	for txID, blockHash := range tis.toAdd {
+	for txID := range tis.toRemove { //safer to remove first
 		key := tis.convertTxIDToKey(txAcceptedIndexBucket, txID)
-		err := tis.database.Put(key, blockHash.ByteSlice())
+		err := tis.database.Delete(key)
 		if err != nil {
 			return err
 		}

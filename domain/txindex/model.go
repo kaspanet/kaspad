@@ -18,18 +18,17 @@ func ConvertDomainHashToString(blockHash *externalapi.DomainHash) string {
 	return hex.EncodeToString(blockHash.ByteSlice())
 }
 
-// ConvertStringDomainHashToDomainHash converts the given string to a domainHash
+// ConvertStringToDomainHash converts the given string to a domainHash
 func ConvertStringToDomainHash(stringDomainHash string) (*externalapi.DomainHash, error) {
 	return externalapi.NewDomainHashFromString(stringDomainHash)
 }
 
-// ConvertDomainHashToString converts the given DomainHash to a string
+// ConvertTXIDToString converts the given DomainHash to a string
 func ConvertTXIDToString(txID *externalapi.DomainTransactionID) string {
 	return hex.EncodeToString(txID.ByteSlice())
 }
 
-// ConvertStringDomainHashToDomainHash converts the given string to a domainHash
+// ConvertStringTXID converts the given string to a domainHash
 func ConvertStringTXID(stringDomainTransactionID string) (*externalapi.DomainTransactionID, error) {
 	return externalapi.NewDomainTransactionIDFromString(stringDomainTransactionID)
 }
-

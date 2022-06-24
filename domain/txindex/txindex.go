@@ -70,28 +70,34 @@ func (ti *TXIndex) Reset() error {
 		return err
 	}
 
-	ti.removeTXIDs(selectedParentChainChanges, 1000)
+	ti.removeTXIDs(selectedParentChainChanges, len(selectedParentChainChanges.Removed))
 	if err != nil {
 		return err
 	}
 
-	ti.addTXIDs(selectedParentChainChanges, 1000)
+	ti.addTXIDs(selectedParentChainChanges, len(selectedParentChainChanges.Added))
 	if err != nil {
 		return err
 	}
 
-	err = ti.store.CommitWithoutTransaction()
+	err = ti.store.commitTxIDsWithoutTransaction()
 	if err != nil {
 		return err
 	}
 
-	err = ti.store.updateAndCommitPruningPointWithoutTransaction(pruningPoint)
+	ti.store.updateAndCommitPruningPointWithoutTransaction(pruningPoint)
 	if err != nil {
 		return err
 	}
 
-	return ti.store.updateAndCommitVirtualParentsWithoutTransaction(virtualInfo.ParentHashes)
+	ti.store.commitVirtualParentsWithoutTransaction(virtualInfo.ParentHashes)
+	if err != nil {
+		return err
+	}
 
+	ti.store.discardAllButPruningPoint()
+
+	return nil
 }
 
 func (ti *TXIndex) isSynced() (bool, error) {
@@ -145,13 +151,13 @@ func (ti *TXIndex) Update(virtualChangeSet *externalapi.VirtualChangeSet) (*TXAc
 		return nil, err
 	}
 
-	ti.store.updateVirtualParents(virtualChangeSet.VirtualParents)
-
 	added, removed, _, _ := ti.store.stagedData()
 	txIndexChanges := &TXAcceptanceChange{
 		Added:   added,
 		Removed: removed,
 	}
+
+	ti.store.updateVirtualParents(virtualChangeSet.VirtualParents)
 
 	err = ti.store.commit()
 	if err != nil {
@@ -213,7 +219,7 @@ func (ti *TXIndex) removeTXIDs(selectedParentChainChanges *externalapi.SelectedC
 			chainBlockAcceptanceData := chainBlocksAcceptanceData[i]
 			for _, blockAcceptanceData := range chainBlockAcceptanceData {
 				for _, transactionAcceptanceData := range blockAcceptanceData.TransactionAcceptanceData {
-					if transactionAcceptanceData.IsAccepted && transactionAcceptanceData.Transaction.ID != nil{
+					if transactionAcceptanceData.IsAccepted && transactionAcceptanceData.Transaction.ID != nil {
 						ti.store.remove(*transactionAcceptanceData.Transaction.ID, removedChainBlock)
 					}
 				}
