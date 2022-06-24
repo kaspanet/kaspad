@@ -49,7 +49,7 @@ func (ti *TXIndex) Reset() error {
 	ti.mutex.Lock()
 	defer ti.mutex.Unlock()
 
-	log.Info("Reseting TX Index")
+	log.Tracef("Reseting TX Index")
 
 	err := ti.store.deleteAll()
 	if err != nil {
@@ -142,7 +142,7 @@ func (ti *TXIndex) Update(virtualChangeSet *externalapi.VirtualChangeSet) (*TXAc
 	ti.mutex.Lock()
 	defer ti.mutex.Unlock()
 
-	log.Info("Updating TX index with VirtualSelectedParentChainChanges: %+v", virtualChangeSet.VirtualSelectedParentChainChanges)
+	log.Tracef("Updating TX index with VirtualSelectedParentChainChanges: %+v", virtualChangeSet.VirtualSelectedParentChainChanges)
 
 	err := ti.removeTXIDs(virtualChangeSet.VirtualSelectedParentChainChanges, 1000)
 	if err != nil {
