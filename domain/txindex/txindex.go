@@ -70,7 +70,15 @@ func (ti *TXIndex) Reset() error {
 		return err
 	}
 
+	ti.removeTXIDs(selectedParentChainChanges, 1000)
+	if err != nil {
+		return err
+	}
+
 	ti.addTXIDs(selectedParentChainChanges, 1000)
+	if err != nil {
+		return err
+	}
 
 	err = ti.store.CommitWithoutTransaction()
 	if err != nil {
@@ -124,24 +132,28 @@ func (ti *TXIndex) Update(virtualChangeSet *externalapi.VirtualChangeSet) (*TXAc
 
 	log.Tracef("Updating TX index with VirtualSelectedParentChainChanges: %+v", virtualChangeSet.VirtualSelectedParentChainChanges)
 
-	err := ti.addTXIDs(virtualChangeSet.VirtualSelectedParentChainChanges, 1000)
+	err := ti.removeTXIDs(virtualChangeSet.VirtualSelectedParentChainChanges, 1000)
+	if err != nil {
+		return nil, err
+	}
+
+	err = ti.addTXIDs(virtualChangeSet.VirtualSelectedParentChainChanges, 1000)
 	if err != nil {
 		return nil, err
 	}
 
 	ti.store.updateVirtualParents(virtualChangeSet.VirtualParents)
 
-	added, _, _ := ti.store.stagedData()
+	added, removed, _, _ := ti.store.stagedData()
 	txIndexChanges := &TXAcceptanceChange{
-		Added: added,
+		Added:   added,
+		Removed: removed,
 	}
 
-	removed, err := ti.store.commitAndReturnRemoved()
+	err = ti.store.commit()
 	if err != nil {
 		return nil, err
 	}
-
-	txIndexChanges.Removed = removed
 
 	log.Tracef("TX index updated with the TXAcceptanceChange: %+v", txIndexChanges)
 	return txIndexChanges, nil
@@ -178,6 +190,37 @@ func (ti *TXIndex) addTXIDs(selectedParentChainChanges *externalapi.SelectedChai
 	return nil
 }
 
+func (ti *TXIndex) removeTXIDs(selectedParentChainChanges *externalapi.SelectedChainPath, chunkSize int) error {
+	position := 0
+	for position < len(selectedParentChainChanges.Removed) {
+		var chainBlocksChunk []*externalapi.DomainHash
+
+		if position+chunkSize > len(selectedParentChainChanges.Removed) {
+			chainBlocksChunk = selectedParentChainChanges.Removed[position:]
+		} else {
+			chainBlocksChunk = selectedParentChainChanges.Removed[position : position+chunkSize]
+		}
+		// We use chunks in order to avoid blocking consensus for too long
+		// note: this might not be needed here, but unsure how kaspad handles pruning / when reset might be called.
+		chainBlocksAcceptanceData, err := ti.domain.Consensus().GetBlocksAcceptanceData(chainBlocksChunk)
+		if err != nil {
+			return err
+		}
+		for i, removedChainBlock := range chainBlocksChunk {
+			chainBlockAcceptanceData := chainBlocksAcceptanceData[i]
+			for _, blockAcceptanceData := range chainBlockAcceptanceData {
+				for _, transactionAcceptanceData := range blockAcceptanceData.TransactionAcceptanceData {
+					if transactionAcceptanceData.IsAccepted {
+						ti.store.remove(*transactionAcceptanceData.Transaction.ID, removedChainBlock)
+					}
+				}
+			}
+		}
+		position += chunkSize
+	}
+	return nil
+}
+
 // TXAcceptingBlockHash returns the accepting block hash for for the given txID
 func (ti *TXIndex) TXAcceptingBlockHash(txID *externalapi.DomainTransactionID) (blockHash *externalapi.DomainHash, found bool, err error) {
 	onEnd := logger.LogAndMeasureExecutionTime(log, "TXIndex.TXAcceptingBlockHash")
@@ -199,4 +242,4 @@ func (ti *TXIndex) TXAcceptingBlockHash(txID *externalapi.DomainTransactionID) (
 
 //TO DO: Get Including Block from AcceptingBlock
 
-//TO DO: Get Confirmations
+//TO DO: Get Number of confirmations
