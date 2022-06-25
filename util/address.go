@@ -173,15 +173,15 @@ func CheckIfAddressIsValid(addr string, expectedPrefix Bech32Prefix) bool {
 		return false
 	}
 
-	if version != pubKeyAddrID {
-		return false
-	} else if version != pubKeyECDSAAddrID {
-		return false
-	} else if version != scriptHashAddrID {
-		return false
+	if version == pubKeyAddrID {
+		return true
+	} else if version == pubKeyECDSAAddrID {
+		return true
+	} else if version == scriptHashAddrID {
+		return true
 	}
 
-	return true
+	return false
 }
 
 // PublicKeySize is the public key size for a schnorr public key
