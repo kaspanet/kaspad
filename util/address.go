@@ -5,9 +5,9 @@
 package util
 
 import (
+	"github.com/kaspanet/kaspad/util/bech32"
 	"github.com/pkg/errors"
 	"golang.org/x/crypto/blake2b"
-	"github.com/kaspanet/kaspad/util/bech32"
 )
 
 var (
@@ -153,8 +153,7 @@ func DecodeAddress(addr string, expectedPrefix Bech32Prefix) (Address, error) {
 	}
 }
 
-
-// CheckIfAddressIsValid decodes the string encoding of an address and returns true 
+// CheckIfAddressIsValid decodes the string encoding of an address and returns true
 // if addr is a valid encoding for a known address type else it returns false
 //
 // If any expectedPrefix except Bech32PrefixUnknown is passed, it is compared to the
@@ -169,17 +168,17 @@ func CheckIfAddressIsValid(addr string, expectedPrefix Bech32Prefix) bool {
 	if err != nil {
 		return false
 	}
-	
+
 	if expectedPrefix != Bech32PrefixUnknown && expectedPrefix != prefix {
 		return false
 	}
 
 	if version != pubKeyAddrID {
 		return false
-	} else if  version != pubKeyECDSAAddrID {
-		return false 
+	} else if version != pubKeyECDSAAddrID {
+		return false
 	} else if version != scriptHashAddrID {
-		return false 
+		return false
 	}
 
 	return true

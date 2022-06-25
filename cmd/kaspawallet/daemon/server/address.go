@@ -99,11 +99,11 @@ func (s *server) CheckIfAddressesAreValid(_ context.Context, request *pb.CheckIf
 
 	areValidAddresses := make([]*pb.IsValidAddress, len(request.Addresses))
 	for i, address := range request.Addresses {
-			areValidAddresses[i] = &pb.IsValidAddress{
-				Address: address,
-				IsValid: util.CheckIfAddressIsValid(address, s.params.Prefix),
-			}
+		areValidAddresses[i] = &pb.IsValidAddress{
+			Address: address,
+			IsValid: util.CheckIfAddressIsValid(address, s.params.Prefix),
 		}
+	}
 	return &pb.CheckIfAddressesAreValidResponse{
 		AreValidAddresses: areValidAddresses,
 	}, nil
