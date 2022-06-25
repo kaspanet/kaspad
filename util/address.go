@@ -7,7 +7,6 @@ package util
 import (
 	"github.com/pkg/errors"
 	"golang.org/x/crypto/blake2b"
-
 	"github.com/kaspanet/kaspad/util/bech32"
 )
 
@@ -152,6 +151,38 @@ func DecodeAddress(addr string, expectedPrefix Bech32Prefix) (Address, error) {
 	default:
 		return nil, ErrUnknownAddressType
 	}
+}
+
+
+// CheckIfAddressIsValid decodes the string encoding of an address and returns true 
+// if addr is a valid encoding for a known address type else it returns false
+//
+// If any expectedPrefix except Bech32PrefixUnknown is passed, it is compared to the
+// prefix extracted from the address, and if the two do not match false is returned
+func CheckIfAddressIsValid(addr string, expectedPrefix Bech32Prefix) bool {
+	prefixString, _, version, err := bech32.Decode(addr)
+	if err != nil {
+		return false
+	}
+
+	prefix, err := ParsePrefix(prefixString)
+	if err != nil {
+		return false
+	}
+	
+	if expectedPrefix != Bech32PrefixUnknown && expectedPrefix != prefix {
+		return false
+	}
+
+	if version != pubKeyAddrID {
+		return false
+	} else if  version != pubKeyECDSAAddrID {
+		return false 
+	} else if version != scriptHashAddrID {
+		return false 
+	}
+
+	return true
 }
 
 // PublicKeySize is the public key size for a schnorr public key
