@@ -1,8 +1,12 @@
 package rpchandlers
 
 import (
+	"errors"
+
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/app/rpc/rpccontext"
+
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/txscript"
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
@@ -12,17 +16,62 @@ import (
 // HandleGetMempoolEntriesByAddresses handles the respectively named RPC command
 func HandleGetMempoolEntriesByAddresses(context *rpccontext.Context, _ *router.Router, request appmessage.Message) (appmessage.Message, error) {
 
-	transactions := context.Domain.MiningManager().AllTransactions()
 	getMempoolEntriesByAddressesRequest := request.(*appmessage.GetMempoolEntriesByAddressesRequestMessage)
+
 	mempoolEntriesByAddresses := make([]*appmessage.MempoolEntryByAddress, 0)
 
-	for _, addressString := range getMempoolEntriesByAddressesRequest.Addresses {
+	if !getMempoolEntriesByAddressesRequest.FilterTransactionPool {
+		transactionPoolTransactions := context.Domain.MiningManager().AllTransactions()
+		transactionPoolEntriesByAddresses, err := extractMempoolEntriesByAddressesFromTransactions(
+			context,
+			getMempoolEntriesByAddressesRequest.Addresses,
+			transactionPoolTransactions,
+			false,
+		)
+		if err != nil {
+			rpcError := &appmessage.RPCError{}
+			if !errors.As(err, &rpcError) {
+				return nil, err
+			}
+			errorMessage := &appmessage.GetUTXOsByAddressesResponseMessage{}
+			errorMessage.Error = rpcError
+			return errorMessage, nil
+		}
+		mempoolEntriesByAddresses = append(mempoolEntriesByAddresses, transactionPoolEntriesByAddresses...)
+	}
 
+	if getMempoolEntriesByAddressesRequest.IncludeOrphanPool {
+
+		orphanPoolTransactions := context.Domain.MiningManager().AllOrphanTransactions()
+		orphanPoolEntriesByAddresse, err := extractMempoolEntriesByAddressesFromTransactions(
+			context,
+			getMempoolEntriesByAddressesRequest.Addresses,
+			orphanPoolTransactions,
+			true,
+		)
+		if err != nil {
+			rpcError := &appmessage.RPCError{}
+			if !errors.As(err, &rpcError) {
+				return nil, err
+			}
+			errorMessage := &appmessage.GetUTXOsByAddressesResponseMessage{}
+			errorMessage.Error = rpcError
+			return errorMessage, nil
+		}
+
+		mempoolEntriesByAddresses = append(mempoolEntriesByAddresses, orphanPoolEntriesByAddresse...)
+	}
+
+	return appmessage.NewGetMempoolEntriesByAddressesResponseMessage(mempoolEntriesByAddresses), nil
+}
+
+//TO DO: optimize extractMempoolEntriesByAddressesFromTransactions
+func extractMempoolEntriesByAddressesFromTransactions(context *rpccontext.Context, addresses []string, transactions []*externalapi.DomainTransaction, areOrphans bool) ([]*appmessage.MempoolEntryByAddress, error) {
+	mempoolEntriesByAddresses := make([]*appmessage.MempoolEntryByAddress, 0)
+	for _, addressString := range addresses {
 		_, err := util.DecodeAddress(addressString, context.Config.ActiveNetParams.Prefix)
 		if err != nil {
-			errorMessage := &appmessage.GetUTXOsByAddressesResponseMessage{}
-			errorMessage.Error = appmessage.RPCErrorf("Could not decode address '%s': %s", addressString, err)
-			return errorMessage, nil
+			return nil, appmessage.RPCErrorf("Could not decode address '%s': %s", addressString, err)
 		}
 
 		sending := make([]*appmessage.MempoolEntry, 0)
@@ -50,6 +99,7 @@ func HandleGetMempoolEntriesByAddresses(context *rpccontext.Context, _ *router.R
 						&appmessage.MempoolEntry{
 							Fee:         transaction.Fee,
 							Transaction: rpcTransaction,
+							IsOrphan:    areOrphans,
 						},
 					)
 					break //one input is enough
@@ -71,6 +121,7 @@ func HandleGetMempoolEntriesByAddresses(context *rpccontext.Context, _ *router.R
 						&appmessage.MempoolEntry{
 							Fee:         transaction.Fee,
 							Transaction: rpcTransaction,
+							IsOrphan:    areOrphans,
 						},
 					)
 					break //one output is enough
@@ -89,9 +140,8 @@ func HandleGetMempoolEntriesByAddresses(context *rpccontext.Context, _ *router.R
 					},
 				)
 			}
-
 		}
-	}
 
-	return appmessage.NewGetMempoolEntriesByAddressesResponseMessage(mempoolEntriesByAddresses), nil
+	}
+	return mempoolEntriesByAddresses, nil
 }

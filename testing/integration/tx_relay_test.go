@@ -69,7 +69,7 @@ func TestTxRelay(t *testing.T) {
 
 		for range ticker.C {
 
-			_, err := payee.rpcClient.GetMempoolEntry(txID)
+			getMempoolEntryResponse, err := payee.rpcClient.GetMempoolEntry(txID, true, false)
 			if err != nil {
 				if strings.Contains(err.Error(), "not found") {
 					continue
@@ -77,12 +77,16 @@ func TestTxRelay(t *testing.T) {
 
 				t.Fatalf("Error getting mempool entry: %+v", err)
 			}
+			mempoolEntry := getMempoolEntryResponse.Entry
+			if mempoolEntry.IsOrphan {
+				t.Fatalf("transaction %s is an orphan, although it shouldn't be", mempoolEntry.Transaction.VerboseData.TransactionID)
+			}
 
-			mempoolEntriesByAddresses, err := payee.rpcClient.GetMempoolEntriesByAddresses(mempoolAddressQuery)
+			getMempoolEntriesByAddressesResponse, err := payee.rpcClient.GetMempoolEntriesByAddresses(mempoolAddressQuery, true, false)
 			if err != nil {
 				t.Fatalf("Error getting mempool entry: %+v", err)
 			}
-			for _, mempoolEntryByAddress := range mempoolEntriesByAddresses.Entries {
+			for _, mempoolEntryByAddress := range getMempoolEntriesByAddressesResponse.Entries {
 				if payee.miningAddress == mempoolEntryByAddress.Address {
 					if len(mempoolEntryByAddress.Sending) > 1 {
 						t.Fatal("Error payee is sending")
@@ -99,7 +103,16 @@ func TestTxRelay(t *testing.T) {
 						t.Fatal("Error payer is reciving")
 					}
 				}
-				continue
+				for _, mempoolEntry := range mempoolEntryByAddress.Receiving {
+					if mempoolEntry.IsOrphan {
+						t.Fatalf("transaction %s is an orphan, although it shouldn't be", mempoolEntry.Transaction.VerboseData.TransactionID)
+					}
+				}
+				for _, mempoolEntry := range mempoolEntryByAddress.Sending {
+					if mempoolEntry.IsOrphan {
+						t.Fatalf("transaction %s is an orphan, although it shouldn't be", mempoolEntry.Transaction.VerboseData.TransactionID)
+					}
+				}
 			}
 
 			close(txAddedToMempoolChan)

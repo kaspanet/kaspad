@@ -1,6 +1,7 @@
 package server
 
 import (
+	"fmt"
 	"sort"
 	"time"
 
@@ -101,10 +102,14 @@ func (s *server) collectFarAddresses() error {
 	return nil
 }
 
-func (s *server) maxUsedIndex() uint32 {
+func (s *server) maxUsedIndexWithLock() uint32 {
 	s.lock.RLock()
 	defer s.lock.RUnlock()
 
+	return s.maxUsedIndex()
+}
+
+func (s *server) maxUsedIndex() uint32 {
 	maxUsedIndex := s.keysFile.LastUsedExternalIndex()
 	if s.keysFile.LastUsedInternalIndex() > maxUsedIndex {
 		maxUsedIndex = s.keysFile.LastUsedInternalIndex()
@@ -122,10 +127,11 @@ func (s *server) collectRecentAddresses() error {
 	maxUsedIndex := uint32(0)
 	for ; index < maxUsedIndex+numIndexesToQueryForRecentAddresses; index += numIndexesToQueryForRecentAddresses {
 		err := s.collectAddressesWithLock(index, index+numIndexesToQueryForRecentAddresses)
+
 		if err != nil {
 			return err
 		}
-		maxUsedIndex = s.maxUsedIndex()
+		maxUsedIndex = s.maxUsedIndexWithLock()
 
 		s.updateSyncingProgressLog(index, maxUsedIndex)
 	}
@@ -261,7 +267,7 @@ func (s *server) refreshUTXOs() error {
 	// and not in consensus, and between the calls its spending transaction will be
 	// added to consensus and removed from the mempool, so `getUTXOsByAddressesResponse`
 	// will include an obsolete output.
-	mempoolEntriesByAddresses, err := s.rpcClient.GetMempoolEntriesByAddresses(s.addressSet.strings())
+	mempoolEntriesByAddresses, err := s.rpcClient.GetMempoolEntriesByAddresses(s.addressSet.strings(), true, true)
 	if err != nil {
 		return err
 	}
@@ -275,7 +281,18 @@ func (s *server) refreshUTXOs() error {
 }
 
 func (s *server) isSynced() bool {
-	return s.nextSyncStartIndex > s.keysFile.LastUsedInternalIndex() && s.nextSyncStartIndex > s.keysFile.LastUsedExternalIndex()
+	return s.nextSyncStartIndex > s.maxUsedIndex()
+}
+
+func (s *server) formatSyncStateReport() string {
+	maxUsedIndex := s.maxUsedIndex()
+
+	if s.nextSyncStartIndex > maxUsedIndex {
+		maxUsedIndex = s.nextSyncStartIndex
+	}
+
+	return fmt.Sprintf("scanned %d out of %d addresses (%.2f%%)",
+		s.nextSyncStartIndex, maxUsedIndex, float64(s.nextSyncStartIndex)*100.0/float64(maxUsedIndex))
 }
 
 func (s *server) updateSyncingProgressLog(currProcessedAddresses, currMaxUsedAddresses uint32) {

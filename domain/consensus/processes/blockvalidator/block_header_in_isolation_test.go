@@ -78,7 +78,7 @@ func CheckBlockVersion(t *testing.T, tc testapi.TestConsensus, consensusConfig *
 		block.Header.PruningPoint(),
 	)
 
-	_, err = tc.ValidateAndInsertBlock(block, true)
+	err = tc.ValidateAndInsertBlock(block, true)
 	if !errors.Is(err, ruleerrors.ErrWrongBlockVersion) {
 		t.Fatalf("Unexpected error: %+v", err)
 	}
@@ -118,7 +118,7 @@ func CheckBlockTimestampInIsolation(t *testing.T, tc testapi.TestConsensus, cfg 
 			block.Header.PruningPoint(),
 		)
 
-		_, err = tc.ValidateAndInsertBlock(block, true)
+		err = tc.ValidateAndInsertBlock(block, true)
 		if !errors.Is(err, ruleerrors.ErrTimeTooMuchInTheFuture) {
 			t.Fatalf("Unexpected error: %+v", err)
 		}

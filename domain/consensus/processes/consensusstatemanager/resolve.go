@@ -5,7 +5,6 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/infrastructure/logger"
 	"github.com/kaspanet/kaspad/util/staging"
-	"github.com/pkg/errors"
 	"sort"
 )
 
@@ -79,12 +78,7 @@ func (csm *consensusStateManager) ResolveVirtual(maxBlocksToResolve uint64) (*ex
 
 			if reversalData != nil {
 				err = csm.ReverseUTXODiffs(resolveTip, reversalData)
-				// It's still not known what causes this error, but we can ignore it and not reverse the UTXO diffs
-				// and harm performance in some cases.
-				// TODO: Investigate why this error happens in the first place, and remove the workaround.
-				if errors.Is(err, ErrReverseUTXODiffsUTXODiffChildNotFound) {
-					log.Errorf("Could not reverse UTXO diffs while resolving virtual: %s", err)
-				} else if err != nil {
+				if err != nil {
 					return nil, false, err
 				}
 			}

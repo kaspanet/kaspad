@@ -14,7 +14,9 @@ func (x *KaspadMessage_GetMempoolEntryRequest) toAppMessage() (appmessage.Messag
 
 func (x *KaspadMessage_GetMempoolEntryRequest) fromAppMessage(message *appmessage.GetMempoolEntryRequestMessage) error {
 	x.GetMempoolEntryRequest = &GetMempoolEntryRequestMessage{
-		TxId: message.TxID,
+		TxId:                  message.TxID,
+		IncludeOrphanPool:     message.IncludeOrphanPool,
+		FilterTransactionPool: message.FilterTransactionPool,
 	}
 	return nil
 }
@@ -24,7 +26,9 @@ func (x *GetMempoolEntryRequestMessage) toAppMessage() (appmessage.Message, erro
 		return nil, errors.Wrapf(errorNil, "GetMempoolEntryRequestMessage is nil")
 	}
 	return &appmessage.GetMempoolEntryRequestMessage{
-		TxID: x.TxId,
+		TxID:                  x.TxId,
+		IncludeOrphanPool:     x.IncludeOrphanPool,
+		FilterTransactionPool: x.FilterTransactionPool,
 	}, nil
 }
 
@@ -91,6 +95,7 @@ func (x *MempoolEntry) toAppMessage() (*appmessage.MempoolEntry, error) {
 	return &appmessage.MempoolEntry{
 		Fee:         x.Fee,
 		Transaction: transaction,
+		IsOrphan:    x.IsOrphan,
 	}, nil
 }
 
@@ -103,6 +108,7 @@ func (x *MempoolEntry) fromAppMessage(message *appmessage.MempoolEntry) error {
 	*x = MempoolEntry{
 		Fee:         message.Fee,
 		Transaction: transaction,
+		IsOrphan:    message.IsOrphan,
 	}
 	return nil
 }

@@ -56,6 +56,20 @@ func (mp *mempool) AllTransactions() []*externalapi.DomainTransaction {
 	return mp.transactionsPool.getAllTransactions()
 }
 
+func (mp *mempool) GetOrphanTransaction(transactionID *externalapi.DomainTransactionID) (*externalapi.DomainTransaction, bool) {
+	mp.mtx.RLock()
+	defer mp.mtx.RUnlock()
+
+	return mp.orphansPool.getOrphanTransaction(transactionID)
+}
+
+func (mp *mempool) AllOrphanTransactions() []*externalapi.DomainTransaction {
+	mp.mtx.RLock()
+	defer mp.mtx.RUnlock()
+
+	return mp.orphansPool.getAllOrphanTransactions()
+}
+
 func (mp *mempool) TransactionCount() int {
 	mp.mtx.RLock()
 	defer mp.mtx.RUnlock()

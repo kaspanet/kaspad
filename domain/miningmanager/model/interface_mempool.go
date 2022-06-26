@@ -14,6 +14,8 @@ type Mempool interface {
 	RemoveTransactions(txs []*externalapi.DomainTransaction, removeRedeemers bool) error
 	GetTransaction(transactionID *externalapi.DomainTransactionID) (*externalapi.DomainTransaction, bool)
 	AllTransactions() []*externalapi.DomainTransaction
+	GetOrphanTransaction(transactionID *externalapi.DomainTransactionID) (*externalapi.DomainTransaction, bool)
+	AllOrphanTransactions() []*externalapi.DomainTransaction
 	TransactionCount() int
 	RevalidateHighPriorityTransactions() (validTransactions []*externalapi.DomainTransaction, err error)
 	IsTransactionOutputDust(output *externalapi.DomainTransactionOutput) bool
