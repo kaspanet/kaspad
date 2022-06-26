@@ -82,7 +82,7 @@ func extractMempoolEntriesByAddressesFromTransactions(context *rpccontext.Contex
 			for i, input := range transaction.Inputs {
 				// TODO: Fix this
 				if input.UTXOEntry == nil {
-					log.Errorf("Couldn't find UTXO entry for input %d in mempool transaction %s. This is a bug and should be fixed.", i, consensushashing.TransactionID(transaction))
+					log.Debugf("Couldn't find UTXO entry for input %d in mempool transaction %s. This is a bug and should be fixed.", i, consensushashing.TransactionID(transaction))
 					continue
 				}
 
