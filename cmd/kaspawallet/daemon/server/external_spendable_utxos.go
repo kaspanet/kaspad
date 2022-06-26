@@ -55,7 +55,7 @@ func (s *server) selectExternalSpendableUTXOs(externalUTXOs *appmessage.GetUTXOs
 func isExternalUTXOSpendable(entry *appmessage.UTXOsByAddressesEntry, virtualDAAScore uint64, coinbaseMaturity uint64) bool {
 	if !entry.UTXOEntry.IsCoinbase {
 		return true
-	} else if entry.UTXOEntry.Amount <= feePerInput {
+	} else if entry.UTXOEntry.Amount <= libkaspawallet.FeePerInput {
 		return false
 	}
 	return entry.UTXOEntry.BlockDAAScore+coinbaseMaturity < virtualDAAScore

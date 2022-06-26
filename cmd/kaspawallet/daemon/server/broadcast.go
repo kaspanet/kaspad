@@ -16,7 +16,7 @@ func (s *server) Broadcast(_ context.Context, request *pb.BroadcastRequest) (*pb
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	txIDs, err := s.broadcast(request.Transactions, request.IsDomain)
+	txIDs, _, err := s.broadcast(request.Transactions, request.IsDomain)
 	if err != nil {
 		return nil, err
 	}
@@ -24,30 +24,38 @@ func (s *server) Broadcast(_ context.Context, request *pb.BroadcastRequest) (*pb
 	return &pb.BroadcastResponse{TxIDs: txIDs}, nil
 }
 
-func (s *server) broadcast(transactions [][]byte, isDomain bool) ([]string, error) {
+func (s *server) broadcast(transactions [][]byte, isDomain bool) ([]string, uint64, error) {
 
 	txIDs := make([]string, len(transactions))
 	var tx *externalapi.DomainTransaction
 	var err error
+	var feePaid uint64
 
 	for i, transaction := range transactions {
 
 		if isDomain {
 			tx, err = serialization.DeserializeDomainTransaction(transaction)
 			if err != nil {
-				return nil, err
+				return nil, 0, err
 			}
 		} else if !isDomain { //default in proto3 is false
 			tx, err = libkaspawallet.ExtractTransaction(transaction, s.keysFile.ECDSA)
 			if err != nil {
-				return nil, err
+				return nil, 0, err
 			}
 		}
 
 		txIDs[i], err = sendTransaction(s.rpcClient, tx)
 		if err != nil {
-			return nil, err
+			return nil, 0, err
 		}
+
+		fee, err := libkaspawallet.CalculateFee(tx)
+		if err != nil {
+			return nil, 0, err
+		}
+
+		feePaid += fee
 
 		for _, input := range tx.Inputs {
 			s.usedOutpoints[input.PreviousOutpoint] = time.Now()
@@ -56,10 +64,10 @@ func (s *server) broadcast(transactions [][]byte, isDomain bool) ([]string, erro
 
 	err = s.refreshUTXOs()
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 
-	return txIDs, nil
+	return txIDs, feePaid, nil
 }
 
 func sendTransaction(client *rpcclient.RPCClient, tx *externalapi.DomainTransaction) (string, error) {
