@@ -47,9 +47,9 @@ func (flow *handleRequestAnticoneFlow) start() error {
 
 		// GetAnticone is expected to be called by the syncee for getting the anticone of the header selected tip
 		// intersected by past of relayed block, and is thus expected to be bounded by mergeset limit since
-		// we relay blocks only if they enter virtual's mergeset. We add 2 for a small margin error.
+		// we relay blocks only if they enter virtual's mergeset. We add a 2 factor for possible sync gaps.
 		blockHashes, err := flow.Domain().Consensus().GetAnticone(blockHash, contextHash,
-			flow.Config().ActiveNetParams.MergeSetSizeLimit+2)
+			flow.Config().ActiveNetParams.MergeSetSizeLimit*2)
 		if err != nil {
 			return protocolerrors.Wrap(true, err, "Failed querying anticone")
 		}
