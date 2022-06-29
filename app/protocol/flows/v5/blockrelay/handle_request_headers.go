@@ -46,7 +46,25 @@ func (flow *handleRequestHeadersFlow) start() error {
 		}
 		log.Debugf("Received requestHeaders with lowHash: %s, highHash: %s", lowHash, highHash)
 
-		isLowSelectedAncestorOfHigh, err := flow.Domain().Consensus().IsInSelectedParentChainOf(lowHash, highHash)
+		consensus := flow.Domain().Consensus()
+
+		lowHashInfo, err := consensus.GetBlockInfo(lowHash)
+		if err != nil {
+			return err
+		}
+		if !lowHashInfo.HasHeader() {
+			return protocolerrors.Errorf(true, "Block %s does not exist", lowHash)
+		}
+
+		highHashInfo, err := consensus.GetBlockInfo(highHash)
+		if err != nil {
+			return err
+		}
+		if !highHashInfo.HasHeader() {
+			return protocolerrors.Errorf(true, "Block %s does not exist", highHash)
+		}
+
+		isLowSelectedAncestorOfHigh, err := consensus.IsInSelectedParentChainOf(lowHash, highHash)
 		if err != nil {
 			return err
 		}
@@ -62,7 +80,7 @@ func (flow *handleRequestHeadersFlow) start() error {
 			// in order to avoid locking the consensus for too long
 			// maxBlocks MUST be >= MergeSetSizeLimit + 1
 			const maxBlocks = 1 << 10
-			blockHashes, _, err := flow.Domain().Consensus().GetHashesBetween(lowHash, highHash, maxBlocks)
+			blockHashes, _, err := consensus.GetHashesBetween(lowHash, highHash, maxBlocks)
 			if err != nil {
 				return err
 			}
@@ -70,7 +88,7 @@ func (flow *handleRequestHeadersFlow) start() error {
 
 			blockHeaders := make([]*appmessage.MsgBlockHeader, len(blockHashes))
 			for i, blockHash := range blockHashes {
-				blockHeader, err := flow.Domain().Consensus().GetBlockHeader(blockHash)
+				blockHeader, err := consensus.GetBlockHeader(blockHash)
 				if err != nil {
 					return err
 				}
