@@ -13,6 +13,16 @@ type BlockInfo struct {
 	MergeSetReds   []*DomainHash
 }
 
+// HasHeader returns whether the block exists and has a valid header
+func (bi *BlockInfo) HasHeader() bool {
+	return bi.Exists && bi.BlockStatus != StatusInvalid
+}
+
+// HasBody returns whether the block exists and has a valid body
+func (bi *BlockInfo) HasBody() bool {
+	return bi.Exists && bi.BlockStatus != StatusInvalid && bi.BlockStatus != StatusHeaderOnly
+}
+
 // Clone returns a clone of BlockInfo
 func (bi *BlockInfo) Clone() *BlockInfo {
 	return &BlockInfo{

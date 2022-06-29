@@ -27,6 +27,27 @@ func HandleEstimateNetworkHashesPerSecond(
 		}
 	}
 
+	if context.Config.SafeRPC {
+		const windowSizeLimit = 10000
+		if windowSize > windowSizeLimit {
+			response := &appmessage.EstimateNetworkHashesPerSecondResponseMessage{}
+			response.Error =
+				appmessage.RPCErrorf(
+					"Requested window size %d is larger than max allowed in RPC safe mode (%d)",
+					windowSize, windowSizeLimit)
+			return response, nil
+		}
+	}
+
+	if uint64(windowSize) > context.Config.ActiveNetParams.PruningDepth() {
+		response := &appmessage.EstimateNetworkHashesPerSecondResponseMessage{}
+		response.Error =
+			appmessage.RPCErrorf(
+				"Requested window size %d is larger than pruning point depth %d",
+				windowSize, context.Config.ActiveNetParams.PruningDepth())
+		return response, nil
+	}
+
 	networkHashesPerSecond, err := context.Domain.Consensus().EstimateNetworkHashesPerSecond(startHash, windowSize)
 	if err != nil {
 		response := &appmessage.EstimateNetworkHashesPerSecondResponseMessage{}
