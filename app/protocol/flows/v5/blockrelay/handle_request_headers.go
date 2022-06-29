@@ -52,22 +52,16 @@ func (flow *handleRequestHeadersFlow) start() error {
 		if err != nil {
 			return err
 		}
-		if !lowHashInfo.Exists {
+		if !lowHashInfo.HasHeader() {
 			return protocolerrors.Errorf(true, "Block %s does not exist", lowHash)
-		}
-		if lowHashInfo.BlockStatus == externalapi.StatusInvalid {
-			return protocolerrors.Errorf(true, "Block %s is invalid", lowHash)
 		}
 
 		highHashInfo, err := consensus.GetBlockInfo(highHash)
 		if err != nil {
 			return err
 		}
-		if !highHashInfo.Exists {
+		if !highHashInfo.HasHeader() {
 			return protocolerrors.Errorf(true, "Block %s does not exist", highHash)
-		}
-		if highHashInfo.BlockStatus == externalapi.StatusInvalid {
-			return protocolerrors.Errorf(true, "Block %s is invalid", highHash)
 		}
 
 		isLowSelectedAncestorOfHigh, err := consensus.IsInSelectedParentChainOf(lowHash, highHash)
