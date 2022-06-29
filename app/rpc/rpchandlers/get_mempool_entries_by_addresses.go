@@ -43,7 +43,7 @@ func HandleGetMempoolEntriesByAddresses(context *rpccontext.Context, _ *router.R
 	if getMempoolEntriesByAddressesRequest.IncludeOrphanPool {
 
 		orphanPoolTransactions := context.Domain.MiningManager().AllOrphanTransactions()
-		orphanPoolEntriesByAddresse, err := extractMempoolEntriesByAddressesFromTransactions(
+		orphanPoolEntriesByAddress, err := extractMempoolEntriesByAddressesFromTransactions(
 			context,
 			getMempoolEntriesByAddressesRequest.Addresses,
 			orphanPoolTransactions,
@@ -59,7 +59,7 @@ func HandleGetMempoolEntriesByAddresses(context *rpccontext.Context, _ *router.R
 			return errorMessage, nil
 		}
 
-		mempoolEntriesByAddresses = append(mempoolEntriesByAddresses, orphanPoolEntriesByAddresse...)
+		mempoolEntriesByAddresses = append(mempoolEntriesByAddresses, orphanPoolEntriesByAddress...)
 	}
 
 	return appmessage.NewGetMempoolEntriesByAddressesResponseMessage(mempoolEntriesByAddresses), nil
@@ -80,9 +80,13 @@ func extractMempoolEntriesByAddressesFromTransactions(context *rpccontext.Contex
 		for _, transaction := range transactions {
 
 			for i, input := range transaction.Inputs {
-				// TODO: Fix this
-				if input.UTXOEntry == nil && !areOrphans { //orphans can have `input.UTXOEntry == nil`, this is not a bug!
-					log.Debugf("Couldn't find UTXO entry for input %d in mempool transaction %s. This is a bug and should be fixed.", i, consensushashing.TransactionID(transaction))
+				if input.UTXOEntry == nil {
+					if !areOrphans { // Orphans can legitimately have `input.UTXOEntry == nil`
+						// TODO: Fix the underlying cause of the bug for non-orphan entries
+						log.Debugf(
+							"Couldn't find UTXO entry for input %d in mempool transaction %s. This is a bug and should be fixed.",
+							i, consensushashing.TransactionID(transaction))
+					}
 					continue
 				}
 
