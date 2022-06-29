@@ -9,6 +9,14 @@ import (
 
 // HandleAddPeer handles the respectively named RPC command
 func HandleAddPeer(context *rpccontext.Context, _ *router.Router, request appmessage.Message) (appmessage.Message, error) {
+	if context.Config.SafeRPC {
+		log.Warn("AddPeer RPC command called while node in safe RPC mode -- ignoring.")
+		response := appmessage.NewAddPeerResponseMessage()
+		response.Error =
+			appmessage.RPCErrorf("AddPeer RPC command called while node in safe RPC mode")
+		return response, nil
+	}
+
 	AddPeerRequest := request.(*appmessage.AddPeerRequestMessage)
 	address, err := network.NormalizeAddress(AddPeerRequest.Address, context.Config.ActiveNetParams.DefaultPort)
 	if err != nil {
