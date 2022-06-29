@@ -98,6 +98,7 @@ type Flags struct {
 	RPCMaxWebsockets                int           `long:"rpcmaxwebsockets" description:"Max number of RPC websocket connections"`
 	RPCMaxConcurrentReqs            int           `long:"rpcmaxconcurrentreqs" description:"Max number of concurrent RPC requests that may be processed concurrently"`
 	DisableRPC                      bool          `long:"norpc" description:"Disable built-in RPC server"`
+	SafeRPC                         bool          `long:"saferpc" description:"Disable RPC commands which affect the state of the node"`
 	DisableDNSSeed                  bool          `long:"nodnsseed" description:"Disable DNS seeding for peers"`
 	DNSSeed                         string        `long:"dnsseed" description:"Override DNS seeds with specified hostname (Only 1 hostname allowed)"`
 	GRPCSeed                        string        `long:"grpcseed" description:"Hostname of gRPC server for seeding peers"`
