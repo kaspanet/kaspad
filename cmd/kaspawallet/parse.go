@@ -73,7 +73,7 @@ func parse(conf *parseConfig) error {
 
 			fmt.Printf("Output %d: \tRecipient: %s \tAmount: %.2f Kaspa\n",
 				index, addressString, float64(output.Value)/float64(constants.SompiPerKaspa))
-				allOutputSompi += output.Value
+			allOutputSompi += output.Value
 
 		}
 		fmt.Println()

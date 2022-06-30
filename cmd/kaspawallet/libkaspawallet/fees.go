@@ -49,6 +49,6 @@ func CalculateFeeFromInputAndOutputTotalAmounts(totalInputAmount uint64, totalOu
 	if totalInputAmount > totalOutputAmount {
 		return 0, errors.Errorf("The input amount may not exceed the output amount, Cannot Calculate negative fees")
 	}
-	
+
 	return totalInputAmount - totalOutputAmount, nil
 }
