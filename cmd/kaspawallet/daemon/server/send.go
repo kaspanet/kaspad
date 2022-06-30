@@ -20,10 +20,10 @@ func (s *server) Send(_ context.Context, request *pb.SendRequest) (*pb.SendRespo
 		return nil, err
 	}
 
-	txIDs, feePaid, err := s.broadcast(signedTransactions, false)
+	txIDs, err := s.broadcast(signedTransactions, false)
 	if err != nil {
 		return nil, err
 	}
 
-	return &pb.SendResponse{TxIDs: txIDs, FeePaid: feePaid}, nil
+	return &pb.SendResponse{TxIDs: txIDs}, nil
 }
