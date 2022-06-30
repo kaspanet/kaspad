@@ -1,6 +1,8 @@
 package consensusstatemanager_test
 
 import (
+	"fmt"
+	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
 	"testing"
 
@@ -208,6 +210,100 @@ func TestAddGenesisChildAfterTwoResolveVirtualCalls(t *testing.T) {
 			isCompletelyResolved, err = tc.ResolveVirtualWithMaxParam(2)
 			if err != nil {
 				t.Fatalf("Error resolving virtual in re-org chain: %+v", err)
+			}
+		}
+	})
+}
+
+func TestResolveVirtualMess(t *testing.T) {
+
+	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
+		factory := consensus.NewFactory()
+
+		tc, teardown, err := factory.NewTestConsensus(consensusConfig, "TestAddGenesisChildAfterTwoResolveVirtualCalls")
+		if err != nil {
+			t.Fatalf("Error setting up consensus: %+v", err)
+		}
+		defer teardown(false)
+
+		hashes := []*externalapi.DomainHash{consensusConfig.GenesisHash}
+		blocks := make(map[externalapi.DomainHash]string)
+		blocks[*consensusConfig.GenesisHash] = "g"
+		fmt.Printf("%s\n\n", consensusConfig.GenesisHash)
+
+		// Create a chain of blocks
+		const initialChainLength = 6
+		previousBlockHash := consensusConfig.GenesisHash
+		for i := 0; i < initialChainLength; i++ {
+			previousBlockHash, _, err = tc.AddBlock([]*externalapi.DomainHash{previousBlockHash}, nil, nil)
+			blocks[*previousBlockHash] = fmt.Sprintf("A_%d", i)
+			hashes = append(hashes, previousBlockHash)
+			fmt.Printf("A_%d: %s\n", i, previousBlockHash)
+
+			if err != nil {
+				t.Fatalf("Error mining block no. %d in initial chain: %+v", i, err)
+			}
+		}
+
+		fmt.Printf("\n")
+
+		// Mine a chain with more blocks, to re-organize the DAG
+		const reorgChainLength = initialChainLength + 1
+		previousBlockHash = consensusConfig.GenesisHash
+		for i := 0; i < reorgChainLength; i++ {
+			previousBlock, _, err := tc.BuildBlockWithParents([]*externalapi.DomainHash{previousBlockHash}, nil, nil)
+			if err != nil {
+				t.Fatalf("Error mining block no. %d in re-org chain: %+v", i, err)
+			}
+			previousBlockHash = consensushashing.BlockHash(previousBlock)
+			blocks[*previousBlockHash] = fmt.Sprintf("B_%d", i)
+			hashes = append(hashes, previousBlockHash)
+			fmt.Printf("B_%d: %s\n", i, previousBlockHash)
+
+			// Do not UTXO validate in order to resolve virtual later
+			err = tc.ValidateAndInsertBlock(previousBlock, false)
+			if err != nil {
+				t.Fatalf("Error mining block no. %d in re-org chain: %+v", i, err)
+			}
+		}
+
+		fmt.Printf("\n")
+
+		// Resolve one step
+		_, err = tc.ResolveVirtualWithMaxParam(2)
+		if err != nil {
+			t.Fatalf("Error resolving virtual in re-org chain: %+v", err)
+		}
+
+		// Resolve one more step
+		isCompletelyResolved, err := tc.ResolveVirtualWithMaxParam(2)
+		if err != nil {
+			t.Fatalf("Error resolving virtual in re-org chain: %+v", err)
+		}
+
+		// Complete resolving virtual
+		for !isCompletelyResolved {
+			isCompletelyResolved, err = tc.ResolveVirtualWithMaxParam(2)
+			if err != nil {
+				t.Fatalf("Error resolving virtual in re-org chain: %+v", err)
+			}
+		}
+
+		fmt.Printf("Block\t\tDiff child\n")
+		stagingArea := model.NewStagingArea()
+		for _, block := range hashes {
+			hasUTXODiffChild, err := tc.UTXODiffStore().HasUTXODiffChild(tc.DatabaseContext(), stagingArea, block)
+			if err != nil {
+				t.Fatalf("Error while reading utxo diff store: %+v", err)
+			}
+			if hasUTXODiffChild {
+				utxoDiffChild, err := tc.UTXODiffStore().UTXODiffChild(tc.DatabaseContext(), stagingArea, block)
+				if err != nil {
+					t.Fatalf("Error while reading utxo diff store: %+v", err)
+				}
+				fmt.Printf("%s\t\t\t%s\n", blocks[*block], blocks[*utxoDiffChild])
+			} else {
+				fmt.Printf("%s\n", blocks[*block])
 			}
 		}
 	})
