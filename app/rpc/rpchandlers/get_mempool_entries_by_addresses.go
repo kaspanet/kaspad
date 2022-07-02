@@ -39,8 +39,8 @@ func HandleGetMempoolEntriesByAddresses(context *rpccontext.Context, _ *router.R
 				err := context.PopulateTransactionWithVerboseData(rpcTransaction, nil)
 				if err != nil {
 					return nil, err
-				}				
-				
+				}
+
 				sending = append(sending, &appmessage.MempoolEntry{
 					Fee:         transaction.Fee,
 					Transaction: rpcTransaction,
@@ -53,7 +53,7 @@ func HandleGetMempoolEntriesByAddresses(context *rpccontext.Context, _ *router.R
 				if err != nil {
 					return nil, err
 				}
-				
+
 				receiving = append(receiving, &appmessage.MempoolEntry{
 					Fee:         transaction.Fee,
 					Transaction: rpcTransaction,
@@ -73,7 +73,7 @@ func HandleGetMempoolEntriesByAddresses(context *rpccontext.Context, _ *router.R
 				if err != nil {
 					return nil, err
 				}
-				
+
 				sending = append(sending, &appmessage.MempoolEntry{
 					Fee:         transaction.Fee,
 					Transaction: rpcTransaction,
