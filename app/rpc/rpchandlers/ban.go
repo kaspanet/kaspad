@@ -9,6 +9,14 @@ import (
 
 // HandleBan handles the respectively named RPC command
 func HandleBan(context *rpccontext.Context, _ *router.Router, request appmessage.Message) (appmessage.Message, error) {
+	if context.Config.SafeRPC {
+		log.Warn("Ban RPC command called while node in safe RPC mode -- ignoring.")
+		response := appmessage.NewBanResponseMessage()
+		response.Error =
+			appmessage.RPCErrorf("Ban RPC command called while node in safe RPC mode")
+		return response, nil
+	}
+
 	banRequest := request.(*appmessage.BanRequestMessage)
 	ip := net.ParseIP(banRequest.IP)
 	if ip == nil {
