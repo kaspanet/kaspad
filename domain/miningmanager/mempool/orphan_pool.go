@@ -396,6 +396,7 @@ func (op *orphansPool) getAllOrphanTransactions(clone bool) []*externalapi.Domai
 		} else {
 			allOrphanTransactions[i] = mempoolTransaction.Transaction()
 		}
+		i++
 	}
 	return allOrphanTransactions
 }
