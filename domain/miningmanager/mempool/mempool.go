@@ -5,7 +5,6 @@ import (
 
 	"github.com/kaspanet/kaspad/domain/consensusreference"
 	"github.com/kaspanet/kaspad/domain/dagconfig"
-	"github.com/kaspanet/kaspad/util"
 
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	miningmanagermodel "github.com/kaspanet/kaspad/domain/miningmanager/model"
@@ -55,8 +54,8 @@ func (mp *mempool) GetTransaction(transactionID *externalapi.DomainTransactionID
 }
 
 func (mp *mempool) GetTransactionsByAddresses() (
-	sending map[util.Address]*externalapi.DomainTransaction,
-	receiving map[util.Address]*externalapi.DomainTransaction,
+	sending map[string]*externalapi.DomainTransaction,
+	receiving map[string]*externalapi.DomainTransaction,
 	err error,
 ) {
 	mp.mtx.RLock()
@@ -80,8 +79,8 @@ func (mp *mempool) GetOrphanTransaction(transactionID *externalapi.DomainTransac
 }
 
 func (mp *mempool) GetOrphanTransactionsByAddresses() (
-	sending map[util.Address]*externalapi.DomainTransaction,
-	receiving map[util.Address]*externalapi.DomainTransaction,
+	sending map[string]*externalapi.DomainTransaction,
+	receiving map[string]*externalapi.DomainTransaction,
 	err error,
 ) {
 	mp.mtx.RLock()

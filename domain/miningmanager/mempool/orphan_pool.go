@@ -5,7 +5,6 @@ import (
 
 	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/txscript"
-	"github.com/kaspanet/kaspad/util"
 
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
 
@@ -346,11 +345,11 @@ func (op *orphansPool) getOrphanTransaction(transactionID *externalapi.DomainTra
 }
 
 func (op *orphansPool) getOrphanTransactionsByAddresses(clone bool) (
-	sending map[util.Address]*externalapi.DomainTransaction,
-	receiving map[util.Address]*externalapi.DomainTransaction,
+	sending map[string]*externalapi.DomainTransaction,
+	receiving map[string]*externalapi.DomainTransaction,
 	err error) {
-	sending = make(map[util.Address]*externalapi.DomainTransaction)
-	receiving = make(map[util.Address]*externalapi.DomainTransaction)
+	sending = make(map[string]*externalapi.DomainTransaction)
+	receiving = make(map[string]*externalapi.DomainTransaction)
 	var transaction *externalapi.DomainTransaction
 	for _, mempoolTransaction := range op.allOrphans {
 		if clone {
@@ -369,21 +368,20 @@ func (op *orphansPool) getOrphanTransactionsByAddresses(clone bool) (
 			if address == nil { //none standard tx
 				continue
 			}
-			sending[address] = transaction
-			for _, output := range transaction.Outputs {
-				_, address, err := txscript.ExtractScriptPubKeyAddress(output.ScriptPublicKey, op.mempool.params)
-				if err != nil {
-					return nil, nil, err
-				}
-				if address == nil { //none standard tx
-					continue
-				}
-				receiving[address] = transaction
-
+			sending[address.String()] = transaction
+		}
+		for _, output := range transaction.Outputs {
+			_, address, err := txscript.ExtractScriptPubKeyAddress(output.ScriptPublicKey, op.mempool.params)
+			if err != nil {
+				return nil, nil, err
 			}
+			if address == nil { //none standard tx
+				continue
+			}
+			receiving[address.String()] = transaction
+
 		}
 	}
-
 	return sending, receiving, nil
 }
 

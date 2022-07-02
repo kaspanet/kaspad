@@ -8,7 +8,6 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/txscript"
 	"github.com/kaspanet/kaspad/domain/miningmanager/mempool/model"
-	"github.com/kaspanet/kaspad/util"
 )
 
 type transactionsPool struct {
@@ -221,11 +220,11 @@ func (tp *transactionsPool) getTransaction(transactionID *externalapi.DomainTran
 }
 
 func (tp *transactionsPool) getTransactionsByAddresses(clone bool) (
-	sending map[util.Address]*externalapi.DomainTransaction,
-	receiving map[util.Address]*externalapi.DomainTransaction,
+	sending map[string]*externalapi.DomainTransaction,
+	receiving map[string]*externalapi.DomainTransaction,
 	err error) {
-	sending = make(map[util.Address]*externalapi.DomainTransaction)
-	receiving = make(map[util.Address]*externalapi.DomainTransaction)
+	sending = make(map[string]*externalapi.DomainTransaction)
+	receiving = make(map[string]*externalapi.DomainTransaction)
 	var transaction *externalapi.DomainTransaction
 	for _, mempoolTransaction := range tp.allTransactions {
 		if clone {
@@ -234,6 +233,9 @@ func (tp *transactionsPool) getTransactionsByAddresses(clone bool) (
 			transaction = mempoolTransaction.Transaction()
 		}
 		for _, input := range transaction.Inputs {
+			if input.UTXOEntry == nil { //this should be fixed
+				return nil, nil, err
+			}
 			_, address, err := txscript.ExtractScriptPubKeyAddress(input.UTXOEntry.ScriptPublicKey(), tp.mempool.params)
 			if err != nil {
 				return nil, nil, err
@@ -241,19 +243,20 @@ func (tp *transactionsPool) getTransactionsByAddresses(clone bool) (
 			if address == nil { //ignore none-standard script
 				continue
 			}
-			sending[address] = transaction
-			for _, output := range transaction.Outputs {
-				_, address, err := txscript.ExtractScriptPubKeyAddress(output.ScriptPublicKey, tp.mempool.params)
-				if err != nil {
-					return nil, nil, err
-				}
-				if address == nil { //ignore none-standard script
-					continue
-				}
-				receiving[address] = transaction
+			sending[address.String()] = transaction
+		}
+		for _, output := range transaction.Outputs {
+			_, address, err := txscript.ExtractScriptPubKeyAddress(output.ScriptPublicKey, tp.mempool.params)
+			if err != nil {
+				return nil, nil, err
 			}
+			if address == nil { //ignore none-standard script
+				continue
+			}
+			receiving[address.String()] = transaction
 		}
 	}
+
 	return sending, receiving, nil
 }
 

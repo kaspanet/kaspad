@@ -7,7 +7,6 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensusreference"
 	miningmanagermodel "github.com/kaspanet/kaspad/domain/miningmanager/model"
-	"github.com/kaspanet/kaspad/util"
 )
 
 // MiningManager creates block templates for mining as well as maintaining
@@ -18,14 +17,14 @@ type MiningManager interface {
 	GetBlockTemplateBuilder() miningmanagermodel.BlockTemplateBuilder
 	GetTransaction(transactionID *externalapi.DomainTransactionID) (*externalapi.DomainTransaction, bool)
 	GetTransactionsByAddresses() (
-		sending map[util.Address]*externalapi.DomainTransaction,
-		receiving map[util.Address]*externalapi.DomainTransaction,
+		sending map[string]*externalapi.DomainTransaction,
+		receiving map[string]*externalapi.DomainTransaction,
 		err error)
 	AllTransactions() []*externalapi.DomainTransaction
 	GetOrphanTransaction(transactionID *externalapi.DomainTransactionID) (*externalapi.DomainTransaction, bool)
 	GetOrphanTransactionsByAddresses() (
-		sending map[util.Address]*externalapi.DomainTransaction,
-		receiving map[util.Address]*externalapi.DomainTransaction,
+		sending map[string]*externalapi.DomainTransaction,
+		receiving map[string]*externalapi.DomainTransaction,
 		err error)
 	AllOrphanTransactions() []*externalapi.DomainTransaction
 	TransactionCount() int
@@ -128,8 +127,8 @@ func (mm *miningManager) AllTransactions() []*externalapi.DomainTransaction {
 }
 
 func (mm *miningManager) GetTransactionsByAddresses() (
-	sending map[util.Address]*externalapi.DomainTransaction,
-	receiving map[util.Address]*externalapi.DomainTransaction,
+	sending map[string]*externalapi.DomainTransaction,
+	receiving map[string]*externalapi.DomainTransaction,
 	err error) {
 	return mm.mempool.GetTransactionsByAddresses()
 }
@@ -141,8 +140,8 @@ func (mm *miningManager) GetOrphanTransaction(
 }
 
 func (mm *miningManager) GetOrphanTransactionsByAddresses() (
-	sending map[util.Address]*externalapi.DomainTransaction,
-	receiving map[util.Address]*externalapi.DomainTransaction,
+	sending map[string]*externalapi.DomainTransaction,
+	receiving map[string]*externalapi.DomainTransaction,
 	err error) {
 	return mm.mempool.GetTransactionsByAddresses()
 }
