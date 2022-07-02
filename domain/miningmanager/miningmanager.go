@@ -7,6 +7,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensusreference"
 	miningmanagermodel "github.com/kaspanet/kaspad/domain/miningmanager/model"
+	"github.com/kaspanet/kaspad/util"
 )
 
 // MiningManager creates block templates for mining as well as maintaining
@@ -16,8 +17,16 @@ type MiningManager interface {
 	ClearBlockTemplate()
 	GetBlockTemplateBuilder() miningmanagermodel.BlockTemplateBuilder
 	GetTransaction(transactionID *externalapi.DomainTransactionID) (*externalapi.DomainTransaction, bool)
+	GetTransactionsByAddresses() (
+		sending map[util.Address]*externalapi.DomainTransaction,
+		receiving map[util.Address]*externalapi.DomainTransaction,
+		err error)
 	AllTransactions() []*externalapi.DomainTransaction
 	GetOrphanTransaction(transactionID *externalapi.DomainTransactionID) (*externalapi.DomainTransaction, bool)
+	GetOrphanTransactionsByAddresses() (
+		sending map[util.Address]*externalapi.DomainTransaction,
+		receiving map[util.Address]*externalapi.DomainTransaction,
+		err error)
 	AllOrphanTransactions() []*externalapi.DomainTransaction
 	TransactionCount() int
 	HandleNewBlockTransactions(txs []*externalapi.DomainTransaction) ([]*externalapi.DomainTransaction, error)
@@ -118,10 +127,24 @@ func (mm *miningManager) AllTransactions() []*externalapi.DomainTransaction {
 	return mm.mempool.AllTransactions()
 }
 
+func (mm *miningManager) GetTransactionsByAddresses() (
+	sending map[util.Address]*externalapi.DomainTransaction,
+	receiving map[util.Address]*externalapi.DomainTransaction,
+	err error) {
+	return mm.mempool.GetTransactionsByAddresses()
+}
+
 func (mm *miningManager) GetOrphanTransaction(
 	transactionID *externalapi.DomainTransactionID) (*externalapi.DomainTransaction, bool) {
 
 	return mm.mempool.GetOrphanTransaction(transactionID)
+}
+
+func (mm *miningManager) GetOrphanTransactionsByAddresses() (
+	sending map[util.Address]*externalapi.DomainTransaction,
+	receiving map[util.Address]*externalapi.DomainTransaction,
+	err error) {
+	return mm.mempool.GetTransactionsByAddresses()
 }
 
 func (mm *miningManager) AllOrphanTransactions() []*externalapi.DomainTransaction {

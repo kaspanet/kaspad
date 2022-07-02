@@ -1,8 +1,11 @@
 package mempool
 
 import (
-	"github.com/kaspanet/kaspad/domain/consensusreference"
 	"sync"
+
+	"github.com/kaspanet/kaspad/domain/consensusreference"
+	"github.com/kaspanet/kaspad/domain/dagconfig"
+	"github.com/kaspanet/kaspad/util"
 
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	miningmanagermodel "github.com/kaspanet/kaspad/domain/miningmanager/model"
@@ -12,6 +15,7 @@ type mempool struct {
 	mtx sync.RWMutex
 
 	config             *Config
+	params             *dagconfig.Params
 	consensusReference consensusreference.ConsensusReference
 
 	mempoolUTXOSet   *mempoolUTXOSet
@@ -20,9 +24,10 @@ type mempool struct {
 }
 
 // New constructs a new mempool
-func New(config *Config, consensusReference consensusreference.ConsensusReference) miningmanagermodel.Mempool {
+func New(config *Config, params *dagconfig.Params, consensusReference consensusreference.ConsensusReference) miningmanagermodel.Mempool {
 	mp := &mempool{
 		config:             config,
+		params:             params,
 		consensusReference: consensusReference,
 	}
 
@@ -39,35 +44,57 @@ func (mp *mempool) ValidateAndInsertTransaction(transaction *externalapi.DomainT
 	mp.mtx.Lock()
 	defer mp.mtx.Unlock()
 
-	return mp.validateAndInsertTransaction(transaction, isHighPriority, allowOrphan)
+	return mp.validateAndInsertTransaction(transaction, isHighPriority, allowOrphan, true)
 }
 
 func (mp *mempool) GetTransaction(transactionID *externalapi.DomainTransactionID) (*externalapi.DomainTransaction, bool) {
 	mp.mtx.RLock()
 	defer mp.mtx.RUnlock()
 
-	return mp.transactionsPool.getTransaction(transactionID)
+	return mp.transactionsPool.getTransaction(transactionID, true)
+}
+
+func (mp *mempool) GetTransactionsByAddresses() (
+	sending map[util.Address]*externalapi.DomainTransaction,
+	receiving map[util.Address]*externalapi.DomainTransaction,
+	err error,
+) {
+	mp.mtx.RLock()
+	defer mp.mtx.RUnlock()
+
+	return mp.transactionsPool.getTransactionsByAddresses(true)
 }
 
 func (mp *mempool) AllTransactions() []*externalapi.DomainTransaction {
 	mp.mtx.RLock()
 	defer mp.mtx.RUnlock()
 
-	return mp.transactionsPool.getAllTransactions()
+	return mp.transactionsPool.getAllTransactions(true)
 }
 
 func (mp *mempool) GetOrphanTransaction(transactionID *externalapi.DomainTransactionID) (*externalapi.DomainTransaction, bool) {
 	mp.mtx.RLock()
 	defer mp.mtx.RUnlock()
 
-	return mp.orphansPool.getOrphanTransaction(transactionID)
+	return mp.orphansPool.getOrphanTransaction(transactionID, true)
+}
+
+func (mp *mempool) GetOrphanTransactionsByAddresses() (
+	sending map[util.Address]*externalapi.DomainTransaction,
+	receiving map[util.Address]*externalapi.DomainTransaction,
+	err error,
+) {
+	mp.mtx.RLock()
+	defer mp.mtx.RUnlock()
+
+	return mp.orphansPool.getOrphanTransactionsByAddresses(true)
 }
 
 func (mp *mempool) AllOrphanTransactions() []*externalapi.DomainTransaction {
 	mp.mtx.RLock()
 	defer mp.mtx.RUnlock()
 
-	return mp.orphansPool.getAllOrphanTransactions()
+	return mp.orphansPool.getAllOrphanTransactions(true)
 }
 
 func (mp *mempool) TransactionCount() int {
@@ -83,21 +110,21 @@ func (mp *mempool) HandleNewBlockTransactions(transactions []*externalapi.Domain
 	mp.mtx.Lock()
 	defer mp.mtx.Unlock()
 
-	return mp.handleNewBlockTransactions(transactions)
+	return mp.handleNewBlockTransactions(transactions, true)
 }
 
 func (mp *mempool) BlockCandidateTransactions() []*externalapi.DomainTransaction {
 	mp.mtx.RLock()
 	defer mp.mtx.RUnlock()
 
-	return mp.transactionsPool.allReadyTransactions()
+	return mp.transactionsPool.allReadyTransactions(true)
 }
 
 func (mp *mempool) RevalidateHighPriorityTransactions() (validTransactions []*externalapi.DomainTransaction, err error) {
 	mp.mtx.Lock()
 	defer mp.mtx.Unlock()
 
-	return mp.revalidateHighPriorityTransactions()
+	return mp.revalidateHighPriorityTransactions(true)
 }
 
 func (mp *mempool) RemoveTransactions(transactions []*externalapi.DomainTransaction, removeRedeemers bool) error {

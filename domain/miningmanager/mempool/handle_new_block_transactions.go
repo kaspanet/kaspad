@@ -6,7 +6,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/utils/transactionhelper"
 )
 
-func (mp *mempool) handleNewBlockTransactions(blockTransactions []*externalapi.DomainTransaction) (
+func (mp *mempool) handleNewBlockTransactions(blockTransactions []*externalapi.DomainTransaction, clone bool) (
 	[]*externalapi.DomainTransaction, error) {
 
 	// Skip the coinbase transaction
@@ -30,7 +30,7 @@ func (mp *mempool) handleNewBlockTransactions(blockTransactions []*externalapi.D
 			return nil, err
 		}
 
-		acceptedOrphansFromThisTransaction, err := mp.orphansPool.processOrphansAfterAcceptedTransaction(transaction)
+		acceptedOrphansFromThisTransaction, err := mp.orphansPool.processOrphansAfterAcceptedTransaction(transaction, clone)
 		if err != nil {
 			return nil, err
 		}

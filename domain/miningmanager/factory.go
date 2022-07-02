@@ -20,7 +20,7 @@ type factory struct{}
 func (f *factory) NewMiningManager(consensusReference consensusreference.ConsensusReference, params *dagconfig.Params,
 	mempoolConfig *mempoolpkg.Config) MiningManager {
 
-	mempool := mempoolpkg.New(mempoolConfig, consensusReference)
+	mempool := mempoolpkg.New(mempoolConfig, params, consensusReference)
 	blockTemplateBuilder := blocktemplatebuilder.New(consensusReference, mempool, params.MaxBlockMass, params.CoinbasePayloadScriptPublicKeyMaxLength)
 
 	return &miningManager{

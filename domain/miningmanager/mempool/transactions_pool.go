@@ -6,7 +6,9 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/txscript"
 	"github.com/kaspanet/kaspad/domain/miningmanager/mempool/model"
+	"github.com/kaspanet/kaspad/util"
 )
 
 type transactionsPool struct {
@@ -130,12 +132,16 @@ func (tp *transactionsPool) expireOldTransactions() error {
 	return nil
 }
 
-func (tp *transactionsPool) allReadyTransactions() []*externalapi.DomainTransaction {
+func (tp *transactionsPool) allReadyTransactions(clone bool) []*externalapi.DomainTransaction {
 	result := []*externalapi.DomainTransaction{}
 
 	for _, mempoolTransaction := range tp.allTransactions {
 		if len(mempoolTransaction.ParentTransactionsInPool()) == 0 {
-			result = append(result, mempoolTransaction.Transaction())
+			if clone {
+				result = append(result, mempoolTransaction.Transaction().Clone())
+			} else {
+				result = append(result, mempoolTransaction.Transaction())
+			}
 		}
 	}
 
@@ -204,17 +210,63 @@ func (tp *transactionsPool) limitTransactionCount() error {
 	return nil
 }
 
-func (tp *transactionsPool) getTransaction(transactionID *externalapi.DomainTransactionID) (*externalapi.DomainTransaction, bool) {
+func (tp *transactionsPool) getTransaction(transactionID *externalapi.DomainTransactionID, clone bool) (*externalapi.DomainTransaction, bool) {
 	if mempoolTransaction, ok := tp.allTransactions[*transactionID]; ok {
+		if clone {
+			return mempoolTransaction.Transaction().Clone(), true
+		}
 		return mempoolTransaction.Transaction(), true
 	}
 	return nil, false
 }
 
-func (tp *transactionsPool) getAllTransactions() []*externalapi.DomainTransaction {
-	allTransactions := make([]*externalapi.DomainTransaction, 0, len(tp.allTransactions))
+func (tp *transactionsPool) getTransactionsByAddresses(clone bool) (
+	sending map[util.Address]*externalapi.DomainTransaction,
+	receiving map[util.Address]*externalapi.DomainTransaction,
+	err error) {
+	sending = make(map[util.Address]*externalapi.DomainTransaction)
+	receiving = make(map[util.Address]*externalapi.DomainTransaction)
+	var transaction *externalapi.DomainTransaction
 	for _, mempoolTransaction := range tp.allTransactions {
-		allTransactions = append(allTransactions, mempoolTransaction.Transaction())
+		if clone {
+			transaction = mempoolTransaction.Transaction().Clone()
+		} else {
+			transaction = mempoolTransaction.Transaction()
+		}
+		for _, input := range transaction.Inputs {
+			_, address, err := txscript.ExtractScriptPubKeyAddress(input.UTXOEntry.ScriptPublicKey(), tp.mempool.params)
+			if err != nil {
+				return nil, nil, err
+			}
+			if address == nil { //ignore none-standard script
+				continue
+			}
+			sending[address] = transaction
+			for _, output := range transaction.Outputs {
+				_, address, err := txscript.ExtractScriptPubKeyAddress(output.ScriptPublicKey, tp.mempool.params)
+				if err != nil {
+					return nil, nil, err
+				}
+				if address == nil { //ignore none-standard script
+					continue
+				}
+				receiving[address] = transaction
+			}
+		}
+	}
+	return sending, receiving, nil
+}
+
+func (tp *transactionsPool) getAllTransactions(clone bool) []*externalapi.DomainTransaction {
+	allTransactions := make([]*externalapi.DomainTransaction, len(tp.allTransactions))
+	i := 0
+	for _, mempoolTransaction := range tp.allTransactions {
+		if clone {
+			allTransactions[i] = mempoolTransaction.Transaction().Clone()
+		} else {
+			allTransactions[i] = mempoolTransaction.Transaction()
+		}
+		i++
 	}
 	return allTransactions
 }

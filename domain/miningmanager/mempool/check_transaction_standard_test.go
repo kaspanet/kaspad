@@ -95,7 +95,7 @@ func TestCalcMinRequiredTxRelayFee(t *testing.T) {
 			mempoolConfig.MinimumRelayTransactionFee = test.minimumRelayTransactionFee
 			tcAsConsensus := tc.(externalapi.Consensus)
 			tcAsConsensusPointer := &tcAsConsensus
-			mempool := New(mempoolConfig, consensusreference.NewConsensusReference(&tcAsConsensusPointer)).(*mempool)
+			mempool := New(mempoolConfig, tc.DAGParams(), consensusreference.NewConsensusReference(&tcAsConsensusPointer)).(*mempool)
 
 			got := mempool.minimumRequiredTransactionRelayFee(test.size)
 			if got != test.want {
@@ -184,7 +184,7 @@ func TestIsTransactionOutputDust(t *testing.T) {
 			mempoolConfig.MinimumRelayTransactionFee = test.minimumRelayTransactionFee
 			tcAsConsensus := tc.(externalapi.Consensus)
 			tcAsConsensusPointer := &tcAsConsensus
-			mempool := New(mempoolConfig, consensusreference.NewConsensusReference(&tcAsConsensusPointer)).(*mempool)
+			mempool := New(mempoolConfig, tc.DAGParams(), consensusreference.NewConsensusReference(&tcAsConsensusPointer)).(*mempool)
 
 			res := mempool.IsTransactionOutputDust(&test.txOut)
 			if res != test.isDust {
@@ -306,7 +306,7 @@ func TestCheckTransactionStandardInIsolation(t *testing.T) {
 			tcAsConsensus := tc.(externalapi.Consensus)
 			tcAsConsensusPointer := &tcAsConsensus
 			consensusReference := consensusreference.NewConsensusReference(&tcAsConsensusPointer)
-			mempool := New(mempoolConfig, consensusReference).(*mempool)
+			mempool := New(mempoolConfig, tc.DAGParams(), consensusReference).(*mempool)
 
 			// Ensure standardness is as expected.
 			err := mempool.checkTransactionStandardInIsolation(test.tx)

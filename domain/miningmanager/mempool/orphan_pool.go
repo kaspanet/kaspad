@@ -4,6 +4,8 @@ import (
 	"fmt"
 
 	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/txscript"
+	"github.com/kaspanet/kaspad/util"
 
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
 
@@ -134,7 +136,7 @@ func (op *orphansPool) addOrphan(transaction *externalapi.DomainTransaction, isH
 	return nil
 }
 
-func (op *orphansPool) processOrphansAfterAcceptedTransaction(acceptedTransaction *externalapi.DomainTransaction) (
+func (op *orphansPool) processOrphansAfterAcceptedTransaction(acceptedTransaction *externalapi.DomainTransaction, clone bool) (
 	acceptedOrphans []*externalapi.DomainTransaction, err error) {
 
 	acceptedOrphans = []*externalapi.DomainTransaction{}
@@ -169,7 +171,11 @@ func (op *orphansPool) processOrphansAfterAcceptedTransaction(acceptedTransactio
 					}
 					return nil, err
 				}
-				acceptedOrphans = append(acceptedOrphans, orphan.Transaction())
+				if clone {
+					acceptedOrphans = append(acceptedOrphans, orphan.Transaction().Clone())
+				} else {
+					acceptedOrphans = append(acceptedOrphans, orphan.Transaction())
+				}
 			}
 		}
 	}
@@ -329,17 +335,67 @@ func (op *orphansPool) randomNonHighPriorityOrphan() *model.OrphanTransaction {
 	return nil
 }
 
-func (op *orphansPool) getOrphanTransaction(transactionID *externalapi.DomainTransactionID) (*externalapi.DomainTransaction, bool) {
+func (op *orphansPool) getOrphanTransaction(transactionID *externalapi.DomainTransactionID, clone bool) (*externalapi.DomainTransaction, bool) {
 	if orphanTransaction, ok := op.allOrphans[*transactionID]; ok {
+		if clone {
+			return orphanTransaction.Transaction().Clone(), true
+		}
 		return orphanTransaction.Transaction(), true
 	}
 	return nil, false
 }
 
-func (op *orphansPool) getAllOrphanTransactions() []*externalapi.DomainTransaction {
-	allOrphanTransactions := make([]*externalapi.DomainTransaction, 0, len(op.allOrphans))
+func (op *orphansPool) getOrphanTransactionsByAddresses(clone bool) (
+	sending map[util.Address]*externalapi.DomainTransaction,
+	receiving map[util.Address]*externalapi.DomainTransaction,
+	err error) {
+	sending = make(map[util.Address]*externalapi.DomainTransaction)
+	receiving = make(map[util.Address]*externalapi.DomainTransaction)
+	var transaction *externalapi.DomainTransaction
 	for _, mempoolTransaction := range op.allOrphans {
-		allOrphanTransactions = append(allOrphanTransactions, mempoolTransaction.Transaction())
+		if clone {
+			transaction = mempoolTransaction.Transaction().Clone()
+		} else {
+			transaction = mempoolTransaction.Transaction()
+		}
+		for _, input := range transaction.Inputs {
+			if input.UTXOEntry == nil { //this is not a bug, but a valid state of orphan transactions with missing outpoints.
+				continue
+			}
+			_, address, err := txscript.ExtractScriptPubKeyAddress(input.UTXOEntry.ScriptPublicKey(), op.mempool.params)
+			if err != nil {
+				return nil, nil, err
+			}
+			if address == nil { //none standard tx
+				continue
+			}
+			sending[address] = transaction
+			for _, output := range transaction.Outputs {
+				_, address, err := txscript.ExtractScriptPubKeyAddress(output.ScriptPublicKey, op.mempool.params)
+				if err != nil {
+					return nil, nil, err
+				}
+				if address == nil { //none standard tx
+					continue
+				}
+				receiving[address] = transaction
+
+			}
+		}
+	}
+
+	return sending, receiving, nil
+}
+
+func (op *orphansPool) getAllOrphanTransactions(clone bool) []*externalapi.DomainTransaction {
+	allOrphanTransactions := make([]*externalapi.DomainTransaction, len(op.allOrphans))
+	i := 0
+	for _, mempoolTransaction := range op.allOrphans {
+		if clone {
+			allOrphanTransactions[i] = mempoolTransaction.Transaction().Clone()
+		} else {
+			allOrphanTransactions[i] = mempoolTransaction.Transaction()
+		}
 	}
 	return allOrphanTransactions
 }
