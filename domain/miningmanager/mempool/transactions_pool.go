@@ -6,6 +6,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/txscript"
 	"github.com/kaspanet/kaspad/domain/miningmanager/mempool/model"
 )
@@ -234,7 +235,7 @@ func (tp *transactionsPool) getTransactionsByAddresses(clone bool) (
 		}
 		for _, input := range transaction.Inputs {
 			if input.UTXOEntry == nil { //this should be fixed
-				return nil, nil, err
+				return nil, nil, errors.Errorf("Mempool transaction %s is missing an UTXOEntry. This should be fixed, and not happen", consensushashing.TransactionID(transaction))
 			}
 			_, address, err := txscript.ExtractScriptPubKeyAddress(input.UTXOEntry.ScriptPublicKey(), tp.mempool.params)
 			if err != nil {
