@@ -235,7 +235,7 @@ func (tp *transactionsPool) getTransactionsByAddresses(clone bool) (
 		}
 		for _, input := range transaction.Inputs {
 			if input.UTXOEntry == nil { //this should be fixed
-				return nil, nil, errors.Errorf("Mempool transaction %s is missing an UTXOEntry. This should be fixed, and not happen", consensushashing.TransactionID(transaction))
+				return nil, nil, errors.Errorf("Mempool transaction %s is missing an UTXOEntry. This should be fixed, and not happen", consensushashing.TransactionID(transaction).String())
 			}
 			_, address, err := txscript.ExtractScriptPubKeyAddress(input.UTXOEntry.ScriptPublicKey(), tp.mempool.params)
 			if err != nil {
