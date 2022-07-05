@@ -103,7 +103,7 @@ func TestTxRelay(t *testing.T) {
 						t.Fatal("Error payer is reciving")
 					}
 				}
-				
+
 				for _, mempoolEntry := range mempoolEntryByAddress.Receiving {
 					if mempoolEntry.IsOrphan {
 						t.Fatalf("transaction %s is an orphan, although it shouldn't be", mempoolEntry.Transaction.VerboseData.TransactionID)
