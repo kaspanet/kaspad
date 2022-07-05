@@ -6,6 +6,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/transactionid"
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
+	"github.com/pkg/errors"
 )
 
 // HandleGetMempoolEntry handles the respectively named RPC command
@@ -24,19 +25,22 @@ func HandleGetMempoolEntry(context *rpccontext.Context, _ *router.Router, reques
 		return errorMessage, nil
 	}
 
-	if !getMempoolEntryRequest.FilterTransactionPool {
-		transaction, found = context.Domain.MiningManager().GetTransaction(transactionID)
-	}
-
-	if getMempoolEntryRequest.IncludeOrphanPool && !found {
-		transaction, found = context.Domain.MiningManager().GetOrphanTransaction(transactionID)
-		isOrphan = true
-	}
+	transactionPoolTransaction, orphanPoolTransaction, found := context.Domain.MiningManager().GetTransaction(transactionID, !getMempoolEntryRequest.FilterTransactionPool, getMempoolEntryRequest.IncludeOrphanPool)
 
 	if !found {
 		errorMessage := &appmessage.GetMempoolEntryResponseMessage{}
 		errorMessage.Error = appmessage.RPCErrorf("Transaction %s was not found", transactionID)
 		return errorMessage, nil
+	}
+
+	if transactionPoolTransaction != nil && orphanPoolTransaction != nil {
+		return nil, errors.Errorf("Transaction %s is both an orphan, and not. This should never not happen", transactionID)
+	} else if transactionPoolTransaction != nil {
+		transaction = transactionPoolTransaction
+		isOrphan = false
+	} else if orphanPoolTransaction != nil {
+		transaction = orphanPoolTransaction
+		isOrphan = true
 	}
 
 	rpcTransaction := appmessage.DomainTransactionToRPCTransaction(transaction)

@@ -15,6 +15,11 @@ func HandleGetMempoolEntriesByAddresses(context *rpccontext.Context, _ *router.R
 
 	mempoolEntriesByAddresses := make([]*appmessage.MempoolEntryByAddress, 0)
 
+	sendingInTransactionPool, receivingInTransactionPool, sendingInOrphanPool, receivingInOrphanPool, err := context.Domain.MiningManager().GetTransactionsByAddresses(!getMempoolEntriesByAddressesRequest.FilterTransactionPool, getMempoolEntriesByAddressesRequest.IncludeOrphanPool)
+	if err != nil {
+		return nil, err
+	}
+
 	for _, addressString := range getMempoolEntriesByAddressesRequest.Addresses {
 
 		address, err := util.DecodeAddress(addressString, context.Config.NetParams().Prefix)
@@ -29,12 +34,7 @@ func HandleGetMempoolEntriesByAddresses(context *rpccontext.Context, _ *router.R
 
 		if !getMempoolEntriesByAddressesRequest.FilterTransactionPool {
 
-			sendingInMempool, receivingInMempool, err := context.Domain.MiningManager().GetTransactionsByAddresses()
-			if err != nil {
-				return nil, err
-			}
-
-			if transaction, found := sendingInMempool[address.String()]; found {
+			if transaction, found := sendingInTransactionPool[address.String()]; found {
 				rpcTransaction := appmessage.DomainTransactionToRPCTransaction(transaction)
 				err := context.PopulateTransactionWithVerboseData(rpcTransaction, nil)
 				if err != nil {
@@ -49,7 +49,7 @@ func HandleGetMempoolEntriesByAddresses(context *rpccontext.Context, _ *router.R
 				)
 			}
 
-			if transaction, found := receivingInMempool[address.String()]; found {
+			if transaction, found := receivingInTransactionPool[address.String()]; found {
 				rpcTransaction := appmessage.DomainTransactionToRPCTransaction(transaction)
 				err := context.PopulateTransactionWithVerboseData(rpcTransaction, nil)
 				if err != nil {
@@ -65,11 +65,6 @@ func HandleGetMempoolEntriesByAddresses(context *rpccontext.Context, _ *router.R
 			}
 		}
 		if getMempoolEntriesByAddressesRequest.IncludeOrphanPool {
-
-			sendingInOrphanPool, receivingInOrphanPool, err := context.Domain.MiningManager().GetOrphanTransactionsByAddresses()
-			if err != nil {
-				return nil, err
-			}
 
 			if transaction, found := sendingInOrphanPool[address.String()]; found {
 				rpcTransaction := appmessage.DomainTransactionToRPCTransaction(transaction)

@@ -398,3 +398,7 @@ func (op *orphansPool) getAllOrphanTransactions(clone bool) []*externalapi.Domai
 	}
 	return allOrphanTransactions
 }
+
+func (op *orphansPool) orphanTransactionCount() int {
+	return len(op.allOrphans)
+}

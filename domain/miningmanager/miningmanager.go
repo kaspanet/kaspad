@@ -15,19 +15,20 @@ type MiningManager interface {
 	GetBlockTemplate(coinbaseData *externalapi.DomainCoinbaseData) (block *externalapi.DomainBlock, isNearlySynced bool, err error)
 	ClearBlockTemplate()
 	GetBlockTemplateBuilder() miningmanagermodel.BlockTemplateBuilder
-	GetTransaction(transactionID *externalapi.DomainTransactionID) (*externalapi.DomainTransaction, bool)
-	GetTransactionsByAddresses() (
-		sending map[string]*externalapi.DomainTransaction,
-		receiving map[string]*externalapi.DomainTransaction,
+	GetTransaction(transactionID *externalapi.DomainTransactionID, includeTransactionPool bool, includeOrphanPool bool) (
+		transactionPoolTransaction *externalapi.DomainTransaction,
+		orphanPoolTransaction *externalapi.DomainTransaction,
+		found bool)
+	GetTransactionsByAddresses(includeTransactionPool bool, includeOrphanPool bool) (
+		sendingInTransactionPool map[string]*externalapi.DomainTransaction,
+		receivingInTransactionPool map[string]*externalapi.DomainTransaction,
+		sendingInOrphanPool map[string]*externalapi.DomainTransaction,
+		receivingInOrphanPool map[string]*externalapi.DomainTransaction,
 		err error)
-	AllTransactions() []*externalapi.DomainTransaction
-	GetOrphanTransaction(transactionID *externalapi.DomainTransactionID) (*externalapi.DomainTransaction, bool)
-	GetOrphanTransactionsByAddresses() (
-		sending map[string]*externalapi.DomainTransaction,
-		receiving map[string]*externalapi.DomainTransaction,
-		err error)
-	AllOrphanTransactions() []*externalapi.DomainTransaction
-	TransactionCount() int
+	AllTransactions(includeTransactionPool bool, includeOrphanPool bool) (
+		transactionPoolTransactions []*externalapi.DomainTransaction,
+		orphanPoolTransactions []*externalapi.DomainTransaction)
+	TransactionCount(includeTransactionPool bool, includeOrphanPool bool) int
 	HandleNewBlockTransactions(txs []*externalapi.DomainTransaction) ([]*externalapi.DomainTransaction, error)
 	ValidateAndInsertTransaction(transaction *externalapi.DomainTransaction, isHighPriority bool, allowOrphan bool) (
 		acceptedTransactions []*externalapi.DomainTransaction, err error)
@@ -117,42 +118,35 @@ func (mm *miningManager) ValidateAndInsertTransaction(transaction *externalapi.D
 }
 
 func (mm *miningManager) GetTransaction(
-	transactionID *externalapi.DomainTransactionID) (*externalapi.DomainTransaction, bool) {
+	transactionID *externalapi.DomainTransactionID,
+	includeTransactionPool bool,
+	includeOrphanPool bool) (
+	transactionPoolTransaction *externalapi.DomainTransaction,
+	orphanPoolTransaction *externalapi.DomainTransaction,
+	found bool) {
 
-	return mm.mempool.GetTransaction(transactionID)
+	return mm.mempool.GetTransaction(transactionID, includeTransactionPool, includeOrphanPool)
 }
 
-func (mm *miningManager) AllTransactions() []*externalapi.DomainTransaction {
-	return mm.mempool.AllTransactions()
+func (mm *miningManager) AllTransactions(includeTransactionPool bool, includeOrphanPool bool) (
+	transactionPoolTransactions []*externalapi.DomainTransaction,
+	orphanPoolTransactions []*externalapi.DomainTransaction) {
+
+	return mm.mempool.AllTransactions(includeTransactionPool, includeOrphanPool)
 }
 
-func (mm *miningManager) GetTransactionsByAddresses() (
-	sending map[string]*externalapi.DomainTransaction,
-	receiving map[string]*externalapi.DomainTransaction,
+func (mm *miningManager) GetTransactionsByAddresses(includeTransactionPool bool, includeOrphanPool bool) (
+	sendingInTransactionPool map[string]*externalapi.DomainTransaction,
+	receivingInTransactionPool map[string]*externalapi.DomainTransaction,
+	sendingInOrphanPool map[string]*externalapi.DomainTransaction,
+	receivingInOrphanPool map[string]*externalapi.DomainTransaction,
 	err error) {
-	return mm.mempool.GetTransactionsByAddresses()
+
+	return mm.mempool.GetTransactionsByAddresses(includeTransactionPool, includeOrphanPool)
 }
 
-func (mm *miningManager) GetOrphanTransaction(
-	transactionID *externalapi.DomainTransactionID) (*externalapi.DomainTransaction, bool) {
-
-	return mm.mempool.GetOrphanTransaction(transactionID)
-}
-
-func (mm *miningManager) GetOrphanTransactionsByAddresses() (
-	sending map[string]*externalapi.DomainTransaction,
-	receiving map[string]*externalapi.DomainTransaction,
-	err error) {
-	return mm.mempool.GetTransactionsByAddresses()
-}
-
-func (mm *miningManager) AllOrphanTransactions() []*externalapi.DomainTransaction {
-
-	return mm.mempool.AllOrphanTransactions()
-}
-
-func (mm *miningManager) TransactionCount() int {
-	return mm.mempool.TransactionCount()
+func (mm *miningManager) TransactionCount(includeTransactionPool bool, includeOrphanPool bool) int {
+	return mm.mempool.TransactionCount(includeTransactionPool, includeOrphanPool)
 }
 
 func (mm *miningManager) RevalidateHighPriorityTransactions() (
