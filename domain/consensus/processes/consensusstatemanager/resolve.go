@@ -9,16 +9,15 @@ import (
 	"sort"
 )
 
-func (csm *consensusStateManager) findNextPendingTip() (*externalapi.DomainHash, externalapi.BlockStatus, error) {
-	readStagingArea := model.NewStagingArea()
-	tips, err := csm.consensusStateStore.Tips(readStagingArea, csm.databaseContext)
+func (csm *consensusStateManager) findNextPendingTip(stagingArea *model.StagingArea) (*externalapi.DomainHash, externalapi.BlockStatus, error) {
+	tips, err := csm.consensusStateStore.Tips(stagingArea, csm.databaseContext)
 	if err != nil {
 		return nil, externalapi.StatusInvalid, err
 	}
 
 	var sortErr error
 	sort.Slice(tips, func(i, j int) bool {
-		selectedParent, err := csm.ghostdagManager.ChooseSelectedParent(readStagingArea, tips[i], tips[j])
+		selectedParent, err := csm.ghostdagManager.ChooseSelectedParent(stagingArea, tips[i], tips[j])
 		if err != nil {
 			sortErr = err
 			return false
@@ -32,7 +31,7 @@ func (csm *consensusStateManager) findNextPendingTip() (*externalapi.DomainHash,
 
 	for _, tip := range tips {
 		log.Debugf("Resolving tip %s", tip)
-		isViolatingFinality, shouldNotify, err := csm.isViolatingFinality(readStagingArea, tip)
+		isViolatingFinality, shouldNotify, err := csm.isViolatingFinality(stagingArea, tip)
 		if err != nil {
 			return nil, externalapi.StatusInvalid, err
 		}
@@ -45,7 +44,7 @@ func (csm *consensusStateManager) findNextPendingTip() (*externalapi.DomainHash,
 			continue
 		}
 
-		status, err := csm.blockStatusStore.Get(csm.databaseContext, readStagingArea, tip)
+		status, err := csm.blockStatusStore.Get(csm.databaseContext, stagingArea, tip)
 		if err != nil {
 			return nil, externalapi.StatusInvalid, err
 		}
@@ -57,13 +56,35 @@ func (csm *consensusStateManager) findNextPendingTip() (*externalapi.DomainHash,
 	return nil, externalapi.StatusInvalid, nil
 }
 
+func (csm *consensusStateManager) getLowerTips(stagingArea *model.StagingArea, pendingTip *externalapi.DomainHash) ([]*externalapi.DomainHash, error) {
+	tips, err := csm.consensusStateStore.Tips(stagingArea, csm.databaseContext)
+	if err != nil {
+		return nil, err
+	}
+
+	lowerTips := []*externalapi.DomainHash{pendingTip}
+	for _, tip := range tips {
+		if tip.Equal(pendingTip) {
+			continue
+		}
+		selectedParent, err := csm.ghostdagManager.ChooseSelectedParent(stagingArea, tip, pendingTip)
+		if err != nil {
+			return nil, err
+		}
+		if selectedParent.Equal(pendingTip) {
+			lowerTips = append(lowerTips, tip)
+		}
+	}
+	return lowerTips, nil
+}
+
 func (csm *consensusStateManager) ResolveVirtual(maxBlocksToResolve uint64) (*externalapi.VirtualChangeSet, bool, error) {
 	onEnd := logger.LogAndMeasureExecutionTime(log, "csm.ResolveVirtual")
 	defer onEnd()
 
 	readStagingArea := model.NewStagingArea()
 
-	pendingTip, pendingTipStatus, err := csm.findNextPendingTip()
+	pendingTip, pendingTipStatus, err := csm.findNextPendingTip(readStagingArea)
 	if err != nil {
 		return nil, false, err
 	}
@@ -144,8 +165,15 @@ func (csm *consensusStateManager) ResolveVirtual(maxBlocksToResolve uint64) (*ex
 
 	updateVirtualStagingArea := model.NewStagingArea()
 
-	// TODO: if `isCompletelyResolved`, set virtual correctly with all tips which have less blue work than pending
-	virtualUTXODiff, err := csm.updateVirtualWithParents(updateVirtualStagingArea, []*externalapi.DomainHash{intermediateTip})
+	// If `isCompletelyResolved`, set virtual correctly with all tips which have less blue work than pending
+	virtualTipCandidates := []*externalapi.DomainHash{intermediateTip}
+	if isCompletelyResolved {
+		virtualTipCandidates, err = csm.getLowerTips(readStagingArea, pendingTip)
+		if err != nil {
+			return nil, false, err
+		}
+	}
+	virtualUTXODiff, err := csm.updateVirtualWithParents(updateVirtualStagingArea, virtualTipCandidates)
 	if err != nil {
 		return nil, false, err
 	}
