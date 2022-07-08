@@ -590,7 +590,7 @@ func TestFinalityResolveVirtual(t *testing.T) {
 		}
 
 		for i := 0; ; i++ {
-			isCompletelyResolved, err := tc.ResolveVirtual()
+			err := tc.ResolveVirtual(nil)
 			if err != nil {
 				panic(err)
 			}

@@ -48,7 +48,7 @@ type Consensus interface {
 	Anticone(blockHash *DomainHash) ([]*DomainHash, error)
 	EstimateNetworkHashesPerSecond(startHash *DomainHash, windowSize int) (uint64, error)
 	PopulateMass(transaction *DomainTransaction)
-	ResolveVirtual() (bool, error)
+	ResolveVirtual(progressReportCallback func(uint64, uint64)) error
 	BlockDAAWindowHashes(blockHash *DomainHash) ([]*DomainHash, error)
 	TrustedDataDataDAAHeader(trustedBlockHash, daaBlockHash *DomainHash, daaBlockWindowIndex uint64) (*TrustedDataDataDAAHeader, error)
 	TrustedBlockAssociatedGHOSTDAGDataBlockHashes(blockHash *DomainHash) ([]*DomainHash, error)

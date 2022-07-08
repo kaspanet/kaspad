@@ -888,15 +888,42 @@ func (s *consensus) PopulateMass(transaction *externalapi.DomainTransaction) {
 	s.transactionValidator.PopulateMass(transaction)
 }
 
-func (s *consensus) ResolveVirtual() (bool, error) {
+func (s *consensus) ResolveVirtual(progressReportCallback func(uint64, uint64)) error {
+	virtualDAAScoreStart, err := s.GetVirtualDAAScore()
+	if err != nil {
+		return err
+	}
+
+	for i := 0; ; i++ {
+		if i%10 == 0 {
+			virtualDAAScore, err := s.GetVirtualDAAScore()
+			if err != nil {
+				return err
+			}
+			progressReportCallback(virtualDAAScoreStart, virtualDAAScore)
+		}
+
+		// In order to prevent a situation that the consensus lock is held for too much time, we
+		// release the lock each time resolve 100 blocks.
+		// Note: maxBlocksToResolve should be smaller than finality interval in order to avoid a situation
+		// where UpdatePruningPointByVirtual skips a pruning point.
+		isCompletelyResolved, err := s.resolveVirtualChunkWithLock(100)
+		if err != nil {
+			return err
+		}
+		if isCompletelyResolved {
+			break
+		}
+	}
+
+	return nil
+}
+
+func (s *consensus) resolveVirtualChunkWithLock(maxBlocksToResolve uint64) (bool, error) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	// In order to prevent a situation that the consensus lock is held for too much time, we
-	// release the lock each time resolve 100 blocks.
-	// Note: maxBlocksToResolve should be smaller than finality interval in order to avoid a situation
-	// where UpdatePruningPointByVirtual skips a pruning point.
-	return s.resolveVirtualNoLock(100)
+	return s.resolveVirtualNoLock(maxBlocksToResolve)
 }
 
 func (s *consensus) resolveVirtualNoLock(maxBlocksToResolve uint64) (bool, error) {
