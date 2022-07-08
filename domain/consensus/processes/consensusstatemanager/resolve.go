@@ -63,24 +63,6 @@ func (csm *consensusStateManager) ResolveVirtual(maxBlocksToResolve uint64) (*ex
 
 	readStagingArea := model.NewStagingArea()
 
-	/*
-		Algo (begin resolve):
-			Go over tips by GHOSTDAG select parent order ignoring UTXO disqualified blocks and finality violating blocks
-			Set pending tip to the first tip
-			if this tip is already UTXO valid, finalize virtual state and return
-			if the tip is UTXO pending, find the earliest UTXO pending block in its chain and set it as position
-			set the tip as resolving virtual pending
-			try resolving a chunk up the chain from position to pending tip
-
-		Algo (continue resolve):
-			Start from position and try to continue resolving another chunk up the chain to pending tip
-			If we encounter a UTXO disqualified block, we should
-				mark the whole chain up to pending tip as disqualified
-				set position and pending tip to the next candidate chain
-				return and let the next call continue the processing
-			If we reach the tip, and it is valid, only then set virtual parents to DAG tips, and clear resolving state
-	*/
-
 	pendingTip, pendingTipStatus, err := csm.findNextPendingTip()
 	if err != nil {
 		return nil, false, err

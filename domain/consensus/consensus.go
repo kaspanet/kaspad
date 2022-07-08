@@ -61,7 +61,6 @@ type consensus struct {
 	blocksWithTrustedDataDAAWindowStore model.BlocksWithTrustedDataDAAWindowStore
 
 	consensusEventsChan chan externalapi.ConsensusEvent
-	virtualNotUpdated   bool
 }
 
 func (s *consensus) ValidateAndInsertBlockWithTrustedData(block *externalapi.BlockWithTrustedData, validateUTXO bool) error {
@@ -194,11 +193,24 @@ func (s *consensus) BuildBlockTemplate(coinbaseData *externalapi.DomainCoinbaseD
 
 // ValidateAndInsertBlock validates the given block and, if valid, applies it
 // to the current state
-func (s *consensus) ValidateAndInsertBlock(block *externalapi.DomainBlock, shouldValidateAgainstUTXO bool) error {
+func (s *consensus) ValidateAndInsertBlock(block *externalapi.DomainBlock, updateVirtual bool) error {
+
+	if updateVirtual {
+		// Make sure virtual is resolved before adding the new block
+		err := s.ResolveVirtual(nil)
+		if err != nil {
+			return err
+		}
+	}
+
+	return s.validateAndInsertBlockWithLock(block, updateVirtual)
+}
+
+func (s *consensus) validateAndInsertBlockWithLock(block *externalapi.DomainBlock, updateVirtual bool) error {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	_, err := s.validateAndInsertBlockNoLock(block, shouldValidateAgainstUTXO)
+	_, err := s.validateAndInsertBlockNoLock(block, updateVirtual)
 	if err != nil {
 		return err
 	}
@@ -206,27 +218,9 @@ func (s *consensus) ValidateAndInsertBlock(block *externalapi.DomainBlock, shoul
 }
 
 func (s *consensus) validateAndInsertBlockNoLock(block *externalapi.DomainBlock, updateVirtual bool) (*externalapi.VirtualChangeSet, error) {
-	// If virtual is in non-updated state, and the caller requests updating virtual -- then we must first
-	// resolve virtual so that the new block can be fully processed properly
-	if updateVirtual && s.virtualNotUpdated {
-		for s.virtualNotUpdated {
-			// We use 10000 << finality interval. See comment in `ResolveVirtual`.
-			// We give up responsiveness of consensus in this rare case.
-			_, err := s.resolveVirtualNoLock(10000) // Note `s.virtualNotUpdated` is updated within the call
-			if err != nil {
-				return nil, err
-			}
-		}
-	}
-
 	virtualChangeSet, blockStatus, err := s.blockProcessor.ValidateAndInsertBlock(block, updateVirtual)
 	if err != nil {
 		return nil, err
-	}
-
-	// If block has a body, and yet virtual was not updated -- signify that virtual is in non-updated state
-	if !updateVirtual && blockStatus != externalapi.StatusHeaderOnly {
-		s.virtualNotUpdated = true
 	}
 
 	err = s.sendBlockAddedEvent(block, blockStatus)
@@ -257,7 +251,7 @@ func (s *consensus) sendBlockAddedEvent(block *externalapi.DomainBlock, blockSta
 }
 
 func (s *consensus) sendVirtualChangedEvent(virtualChangeSet *externalapi.VirtualChangeSet, wasVirtualUpdated bool) error {
-	if !wasVirtualUpdated || s.consensusEventsChan == nil {
+	if !wasVirtualUpdated || s.consensusEventsChan == nil || virtualChangeSet == nil {
 		return nil
 	}
 
@@ -895,7 +889,7 @@ func (s *consensus) ResolveVirtual(progressReportCallback func(uint64, uint64)) 
 	}
 
 	for i := 0; ; i++ {
-		if i%10 == 0 {
+		if i%10 == 0 && progressReportCallback != nil {
 			virtualDAAScore, err := s.GetVirtualDAAScore()
 			if err != nil {
 				return err
@@ -931,7 +925,6 @@ func (s *consensus) resolveVirtualNoLock(maxBlocksToResolve uint64) (bool, error
 	if err != nil {
 		return false, err
 	}
-	s.virtualNotUpdated = !isCompletelyResolved
 
 	stagingArea := model.NewStagingArea()
 	err = s.pruningManager.UpdatePruningPointByVirtual(stagingArea)
