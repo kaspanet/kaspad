@@ -91,7 +91,7 @@ func (csm *consensusStateManager) ResolveVirtual(maxBlocksToResolve uint64) (*ex
 
 	if pendingTip == nil {
 		log.Warnf("Non of the DAG tips are valid")
-		return &externalapi.VirtualChangeSet{}, true, nil
+		return nil, true, nil
 	}
 
 	prevVirtualSelectedParent, err := csm.virtualSelectedParent(readStagingArea)
@@ -100,7 +100,7 @@ func (csm *consensusStateManager) ResolveVirtual(maxBlocksToResolve uint64) (*ex
 	}
 
 	if pendingTipStatus == externalapi.StatusUTXOValid && prevVirtualSelectedParent.Equal(pendingTip) {
-		return &externalapi.VirtualChangeSet{}, true, nil
+		return nil, true, nil
 	}
 
 	// Resolve a chunk from the pending chain
