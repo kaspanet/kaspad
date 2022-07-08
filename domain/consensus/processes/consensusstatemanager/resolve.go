@@ -88,7 +88,7 @@ func (csm *consensusStateManager) ResolveVirtual(maxBlocksToResolve uint64) (*ex
 
 	if selectedTip == nil {
 		log.Warnf("Non of the DAG tips are valid")
-		return nil, true, nil
+		return &externalapi.VirtualChangeSet{}, true, nil
 	}
 
 	oldVirtualGHOSTDAGData, err := csm.ghostdagDataStore.Get(csm.databaseContext, readStagingArea, model.VirtualBlockHash, false)
