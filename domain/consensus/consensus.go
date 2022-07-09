@@ -196,10 +196,25 @@ func (s *consensus) BuildBlockTemplate(coinbaseData *externalapi.DomainCoinbaseD
 func (s *consensus) ValidateAndInsertBlock(block *externalapi.DomainBlock, updateVirtual bool) error {
 
 	if updateVirtual {
-		// Make sure virtual is resolved before adding the new block
-		err := s.ResolveVirtual(nil)
+		s.lock.Lock()
+		// Make sure virtual is resolved correctly before adding the new block
+		isCompletelyResolved, err := s.resolveVirtualNoLock(100)
 		if err != nil {
+			s.lock.Unlock()
 			return err
+		}
+		if isCompletelyResolved {
+			defer s.lock.Unlock()
+			_, err := s.validateAndInsertBlockNoLock(block, updateVirtual)
+			if err != nil {
+				return err
+			}
+			return nil
+		}
+		s.lock.Unlock()
+
+		for !isCompletelyResolved {
+			isCompletelyResolved, err = s.resolveVirtualChunkWithLock(100)
 		}
 	}
 
