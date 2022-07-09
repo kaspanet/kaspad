@@ -215,6 +215,9 @@ func (s *consensus) ValidateAndInsertBlock(block *externalapi.DomainBlock, updat
 
 		for !isCompletelyResolved {
 			isCompletelyResolved, err = s.resolveVirtualChunkWithLock(100)
+			if err != nil {
+				return err
+			}
 		}
 	}
 
