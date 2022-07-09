@@ -168,10 +168,17 @@ func (csm *consensusStateManager) ResolveVirtual(maxBlocksToResolve uint64) (*ex
 	// If `isCompletelyResolved`, set virtual correctly with all tips which have less blue work than pending
 	virtualTipCandidates := []*externalapi.DomainHash{intermediateTip}
 	if isCompletelyResolved {
-		virtualTipCandidates, err = csm.getLowerTips(readStagingArea, pendingTip)
+		lowerTips, err := csm.getLowerTips(readStagingArea, pendingTip)
 		if err != nil {
 			return nil, false, err
 		}
+
+		log.Debugf("Picking virtual parents from relevant tips len: %d", len(lowerTips))
+		virtualTipCandidates, err = csm.pickVirtualParents(readStagingArea, lowerTips)
+		if err != nil {
+			return nil, false, err
+		}
+		log.Debugf("Picked virtual parents: %s", virtualTipCandidates)
 	}
 	virtualUTXODiff, err := csm.updateVirtualWithParents(updateVirtualStagingArea, virtualTipCandidates)
 	if err != nil {
@@ -183,7 +190,6 @@ func (csm *consensusStateManager) ResolveVirtual(maxBlocksToResolve uint64) (*ex
 		return nil, false, err
 	}
 
-	// TODO: why was `readStagingArea` used here ?
 	selectedParentChainChanges, err := csm.dagTraversalManager.
 		CalculateChainPath(updateVirtualStagingArea, prevVirtualSelectedParent, pendingTip)
 	if err != nil {
