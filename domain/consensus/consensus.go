@@ -61,6 +61,7 @@ type consensus struct {
 	blocksWithTrustedDataDAAWindowStore model.BlocksWithTrustedDataDAAWindowStore
 
 	consensusEventsChan chan externalapi.ConsensusEvent
+	virtualNotUpdated   bool
 }
 
 func (s *consensus) ValidateAndInsertBlockWithTrustedData(block *externalapi.BlockWithTrustedData, validateUTXO bool) error {
@@ -194,31 +195,22 @@ func (s *consensus) BuildBlockTemplate(coinbaseData *externalapi.DomainCoinbaseD
 // ValidateAndInsertBlock validates the given block and, if valid, applies it
 // to the current state
 func (s *consensus) ValidateAndInsertBlock(block *externalapi.DomainBlock, updateVirtual bool) error {
-
 	if updateVirtual {
 		s.lock.Lock()
-		// Make sure virtual is resolved correctly before adding the new block
-		isCompletelyResolved, err := s.resolveVirtualNoLock(100)
-		if err != nil {
+		if s.virtualNotUpdated {
 			s.lock.Unlock()
+			err := s.ResolveVirtual(nil)
+			if err != nil {
+				return err
+			}
+			return s.validateAndInsertBlockWithLock(block, updateVirtual)
+		}
+		defer s.lock.Unlock()
+		_, err := s.validateAndInsertBlockNoLock(block, updateVirtual)
+		if err != nil {
 			return err
 		}
-		if isCompletelyResolved {
-			defer s.lock.Unlock()
-			_, err := s.validateAndInsertBlockNoLock(block, updateVirtual)
-			if err != nil {
-				return err
-			}
-			return nil
-		}
-		s.lock.Unlock()
-
-		for !isCompletelyResolved {
-			isCompletelyResolved, err = s.resolveVirtualChunkWithLock(100)
-			if err != nil {
-				return err
-			}
-		}
+		return nil
 	}
 
 	return s.validateAndInsertBlockWithLock(block, updateVirtual)
@@ -239,6 +231,11 @@ func (s *consensus) validateAndInsertBlockNoLock(block *externalapi.DomainBlock,
 	virtualChangeSet, blockStatus, err := s.blockProcessor.ValidateAndInsertBlock(block, updateVirtual)
 	if err != nil {
 		return nil, err
+	}
+
+	// If block has a body, and yet virtual was not updated -- signify that virtual is in non-updated state
+	if !updateVirtual && blockStatus != externalapi.StatusHeaderOnly {
+		s.virtualNotUpdated = true
 	}
 
 	err = s.sendBlockAddedEvent(block, blockStatus)
@@ -943,6 +940,7 @@ func (s *consensus) resolveVirtualNoLock(maxBlocksToResolve uint64) (bool, error
 	if err != nil {
 		return false, err
 	}
+	s.virtualNotUpdated = !isCompletelyResolved
 
 	stagingArea := model.NewStagingArea()
 	err = s.pruningManager.UpdatePruningPointByVirtual(stagingArea)
