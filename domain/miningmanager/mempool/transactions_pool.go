@@ -7,7 +7,6 @@ import (
 
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/txscript"
 	"github.com/kaspanet/kaspad/domain/miningmanager/mempool/model"
 )
 
@@ -221,11 +220,11 @@ func (tp *transactionsPool) getTransaction(transactionID *externalapi.DomainTran
 }
 
 func (tp *transactionsPool) getTransactionsByAddresses(clone bool) (
-	sending map[string]*externalapi.DomainTransaction,
-	receiving map[string]*externalapi.DomainTransaction,
+	sending model.ScriptPublicKeyStringToDomainTransaction,
+	receiving model.ScriptPublicKeyStringToDomainTransaction,
 	err error) {
-	sending = make(map[string]*externalapi.DomainTransaction)
-	receiving = make(map[string]*externalapi.DomainTransaction)
+	sending = make(model.ScriptPublicKeyStringToDomainTransaction)
+	receiving = make(model.ScriptPublicKeyStringToDomainTransaction)
 	var transaction *externalapi.DomainTransaction
 	for _, mempoolTransaction := range tp.allTransactions {
 		if clone {
@@ -237,27 +236,12 @@ func (tp *transactionsPool) getTransactionsByAddresses(clone bool) (
 			if input.UTXOEntry == nil { //this should be fixed
 				return nil, nil, errors.Errorf("Mempool transaction %s is missing an UTXOEntry. This should be fixed, and not happen", consensushashing.TransactionID(transaction).String())
 			}
-			_, address, err := txscript.ExtractScriptPubKeyAddress(input.UTXOEntry.ScriptPublicKey(), tp.mempool.params)
-			if err != nil {
-				return nil, nil, err
-			}
-			if address == nil { //ignore none-standard script
-				continue
-			}
-			sending[address.String()] = transaction
+			sending[input.UTXOEntry.ScriptPublicKey().String()] = transaction
 		}
 		for _, output := range transaction.Outputs {
-			_, address, err := txscript.ExtractScriptPubKeyAddress(output.ScriptPublicKey, tp.mempool.params)
-			if err != nil {
-				return nil, nil, err
-			}
-			if address == nil { //ignore none-standard script
-				continue
-			}
-			receiving[address.String()] = transaction
+			receiving[output.ScriptPublicKey.String()] = transaction
 		}
 	}
-
 	return sending, receiving, nil
 }
 

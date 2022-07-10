@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/txscript"
 
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
 
@@ -345,11 +344,11 @@ func (op *orphansPool) getOrphanTransaction(transactionID *externalapi.DomainTra
 }
 
 func (op *orphansPool) getOrphanTransactionsByAddresses(clone bool) (
-	sending map[string]*externalapi.DomainTransaction,
-	receiving map[string]*externalapi.DomainTransaction,
+	sending model.ScriptPublicKeyStringToDomainTransaction,
+	receiving model.ScriptPublicKeyStringToDomainTransaction,
 	err error) {
-	sending = make(map[string]*externalapi.DomainTransaction)
-	receiving = make(map[string]*externalapi.DomainTransaction)
+	sending = make(model.ScriptPublicKeyStringToDomainTransaction)
+	receiving = make(model.ScriptPublicKeyStringToDomainTransaction)
 	var transaction *externalapi.DomainTransaction
 	for _, mempoolTransaction := range op.allOrphans {
 		if clone {
@@ -361,24 +360,11 @@ func (op *orphansPool) getOrphanTransactionsByAddresses(clone bool) (
 			if input.UTXOEntry == nil { //this is not a bug, but a valid state of orphan transactions with missing outpoints.
 				continue
 			}
-			_, address, err := txscript.ExtractScriptPubKeyAddress(input.UTXOEntry.ScriptPublicKey(), op.mempool.params)
-			if err != nil {
-				return nil, nil, err
-			}
-			if address == nil { //none standard tx
-				continue
-			}
-			sending[address.String()] = transaction
+
+			sending[input.UTXOEntry.ScriptPublicKey().String()] = transaction
 		}
 		for _, output := range transaction.Outputs {
-			_, address, err := txscript.ExtractScriptPubKeyAddress(output.ScriptPublicKey, op.mempool.params)
-			if err != nil {
-				return nil, nil, err
-			}
-			if address == nil { //none standard tx
-				continue
-			}
-			receiving[address.String()] = transaction
+			receiving[output.ScriptPublicKey.String()] = transaction
 
 		}
 	}
