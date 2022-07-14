@@ -56,7 +56,7 @@ func TestAddBlockBetweenResolveVirtualCalls(t *testing.T) {
 		}
 
 		// Resolve one step
-		_, err = tc.ResolveVirtualWithMaxParam(2)
+		_, _, err = tc.ResolveVirtualWithMaxParam(2)
 		if err != nil {
 			t.Fatalf("Error resolving virtual in re-org chain: %+v", err)
 		}
@@ -75,7 +75,7 @@ func TestAddBlockBetweenResolveVirtualCalls(t *testing.T) {
 		}
 
 		// Resolve one more step
-		isCompletelyResolved, err := tc.ResolveVirtualWithMaxParam(2)
+		_, isCompletelyResolved, err := tc.ResolveVirtualWithMaxParam(2)
 		if err != nil {
 			t.Fatalf("Error resolving virtual in re-org chain: %+v", err)
 		}
@@ -89,7 +89,7 @@ func TestAddBlockBetweenResolveVirtualCalls(t *testing.T) {
 
 		// Complete resolving virtual
 		for !isCompletelyResolved {
-			isCompletelyResolved, err = tc.ResolveVirtualWithMaxParam(2)
+			_, isCompletelyResolved, err = tc.ResolveVirtualWithMaxParam(2)
 			if err != nil {
 				t.Fatalf("Error resolving virtual in re-org chain: %+v", err)
 			}
@@ -142,7 +142,7 @@ func TestAddGenesisChildAfterOneResolveVirtualCall(t *testing.T) {
 		}
 
 		// Resolve one step
-		isCompletelyResolved, err := tc.ResolveVirtualWithMaxParam(2)
+		_, isCompletelyResolved, err := tc.ResolveVirtualWithMaxParam(2)
 		if err != nil {
 			t.Fatalf("Error resolving virtual in re-org chain: %+v", err)
 		}
@@ -154,7 +154,7 @@ func TestAddGenesisChildAfterOneResolveVirtualCall(t *testing.T) {
 
 		// Complete resolving virtual
 		for !isCompletelyResolved {
-			isCompletelyResolved, err = tc.ResolveVirtualWithMaxParam(2)
+			_, isCompletelyResolved, err = tc.ResolveVirtualWithMaxParam(2)
 			if err != nil {
 				t.Fatalf("Error resolving virtual in re-org chain: %+v", err)
 			}
@@ -207,13 +207,13 @@ func TestAddGenesisChildAfterTwoResolveVirtualCalls(t *testing.T) {
 		}
 
 		// Resolve one step
-		_, err = tc.ResolveVirtualWithMaxParam(2)
+		_, _, err = tc.ResolveVirtualWithMaxParam(2)
 		if err != nil {
 			t.Fatalf("Error resolving virtual in re-org chain: %+v", err)
 		}
 
 		// Resolve one more step
-		isCompletelyResolved, err := tc.ResolveVirtualWithMaxParam(2)
+		_, isCompletelyResolved, err := tc.ResolveVirtualWithMaxParam(2)
 		if err != nil {
 			t.Fatalf("Error resolving virtual in re-org chain: %+v", err)
 		}
@@ -225,7 +225,7 @@ func TestAddGenesisChildAfterTwoResolveVirtualCalls(t *testing.T) {
 
 		// Complete resolving virtual
 		for !isCompletelyResolved {
-			isCompletelyResolved, err = tc.ResolveVirtualWithMaxParam(2)
+			_, isCompletelyResolved, err = tc.ResolveVirtualWithMaxParam(2)
 			if err != nil {
 				t.Fatalf("Error resolving virtual in re-org chain: %+v", err)
 			}
@@ -296,22 +296,45 @@ func TestResolveVirtualBackAndForthReorgs(t *testing.T) {
 		printUtxoDiffChildren(t, tc, hashes, blocks)
 		verifyUtxoDiffPaths(t, tc, hashes)
 
+		previousVirtualSelectedParent, err := tc.GetVirtualSelectedParent()
+		if err != nil {
+			t.Fatal(err)
+		}
+
 		// Resolve one step
-		_, err = tc.ResolveVirtualWithMaxParam(3)
+		virtualChangeSet, _, err := tc.ResolveVirtualWithMaxParam(3)
 		if err != nil {
 			printUtxoDiffChildren(t, tc, hashes, blocks)
 			t.Fatalf("Error resolving virtual in re-org chain: %+v", err)
 		}
 
+		newVirtualSelectedParent, err := tc.GetVirtualSelectedParent()
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		// Make sure the reported change-set is compatible with actual changes.
+		// Checking this for one call should suffice to avoid possible bugs.
+		reportedPreviousVirtualSelectedParent := virtualChangeSet.VirtualSelectedParentChainChanges.Removed[0]
+		reportedNewVirtualSelectedParent := virtualChangeSet.VirtualSelectedParentChainChanges.
+			Added[len(virtualChangeSet.VirtualSelectedParentChainChanges.Added)-1]
+
+		if !previousVirtualSelectedParent.Equal(reportedPreviousVirtualSelectedParent) {
+			t.Fatalf("The reported changeset is incompatible with actual changes")
+		}
+		if !newVirtualSelectedParent.Equal(reportedNewVirtualSelectedParent) {
+			t.Fatalf("The reported changeset is incompatible with actual changes")
+		}
+
 		// Resolve one more step
-		isCompletelyResolved, err := tc.ResolveVirtualWithMaxParam(3)
+		_, isCompletelyResolved, err := tc.ResolveVirtualWithMaxParam(3)
 		if err != nil {
 			t.Fatalf("Error resolving virtual in re-org chain: %+v", err)
 		}
 
 		// Complete resolving virtual
 		for !isCompletelyResolved {
-			isCompletelyResolved, err = tc.ResolveVirtualWithMaxParam(3)
+			_, isCompletelyResolved, err = tc.ResolveVirtualWithMaxParam(3)
 			if err != nil {
 				t.Fatalf("Error resolving virtual in re-org chain: %+v", err)
 			}

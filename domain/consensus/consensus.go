@@ -916,7 +916,7 @@ func (s *consensus) ResolveVirtual(progressReportCallback func(uint64, uint64)) 
 		// release the lock each time we resolve 100 blocks.
 		// Note: maxBlocksToResolve should be smaller than `params.FinalityDuration` in order to avoid a situation
 		// where UpdatePruningPointByVirtual skips a pruning point.
-		isCompletelyResolved, err := s.resolveVirtualChunkWithLock(100)
+		_, isCompletelyResolved, err := s.resolveVirtualChunkWithLock(100)
 		if err != nil {
 			return err
 		}
@@ -928,37 +928,37 @@ func (s *consensus) ResolveVirtual(progressReportCallback func(uint64, uint64)) 
 	return nil
 }
 
-func (s *consensus) resolveVirtualChunkWithLock(maxBlocksToResolve uint64) (bool, error) {
+func (s *consensus) resolveVirtualChunkWithLock(maxBlocksToResolve uint64) (*externalapi.VirtualChangeSet, bool, error) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
 	return s.resolveVirtualNoLock(maxBlocksToResolve)
 }
 
-func (s *consensus) resolveVirtualNoLock(maxBlocksToResolve uint64) (bool, error) {
+func (s *consensus) resolveVirtualNoLock(maxBlocksToResolve uint64) (*externalapi.VirtualChangeSet, bool, error) {
 	virtualChangeSet, isCompletelyResolved, err := s.consensusStateManager.ResolveVirtual(maxBlocksToResolve)
 	if err != nil {
-		return false, err
+		return nil, false, err
 	}
 	s.virtualNotUpdated = !isCompletelyResolved
 
 	stagingArea := model.NewStagingArea()
 	err = s.pruningManager.UpdatePruningPointByVirtual(stagingArea)
 	if err != nil {
-		return false, err
+		return nil, false, err
 	}
 
 	err = staging.CommitAllChanges(s.databaseContext, stagingArea)
 	if err != nil {
-		return false, err
+		return nil, false, err
 	}
 
 	err = s.sendVirtualChangedEvent(virtualChangeSet, true)
 	if err != nil {
-		return false, err
+		return nil, false, err
 	}
 
-	return isCompletelyResolved, nil
+	return virtualChangeSet, isCompletelyResolved, nil
 }
 
 func (s *consensus) BuildPruningPointProof() (*externalapi.PruningPointProof, error) {

@@ -203,7 +203,7 @@ func (csm *consensusStateManager) ResolveVirtual(maxBlocksToResolve uint64) (*ex
 	}
 
 	selectedParentChainChanges, err := csm.dagTraversalManager.
-		CalculateChainPath(updateVirtualStagingArea, previousVirtualSelectedParent, pendingTip)
+		CalculateChainPath(updateVirtualStagingArea, previousVirtualSelectedParent, processingPoint)
 	if err != nil {
 		return nil, false, err
 	}
