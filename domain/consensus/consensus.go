@@ -913,8 +913,8 @@ func (s *consensus) ResolveVirtual(progressReportCallback func(uint64, uint64)) 
 		}
 
 		// In order to prevent a situation that the consensus lock is held for too much time, we
-		// release the lock each time resolve 100 blocks.
-		// Note: maxBlocksToResolve should be smaller than finality interval in order to avoid a situation
+		// release the lock each time we resolve 100 blocks.
+		// Note: maxBlocksToResolve should be smaller than `params.FinalityDuration` in order to avoid a situation
 		// where UpdatePruningPointByVirtual skips a pruning point.
 		isCompletelyResolved, err := s.resolveVirtualChunkWithLock(100)
 		if err != nil {

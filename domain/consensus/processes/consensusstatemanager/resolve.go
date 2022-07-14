@@ -9,10 +9,10 @@ import (
 	"sort"
 )
 
-func (csm *consensusStateManager) findNextPendingTip(stagingArea *model.StagingArea) (*externalapi.DomainHash, externalapi.BlockStatus, error) {
+func (csm *consensusStateManager) tipsInDecreasingGHOSTDAGParentOrder(stagingArea *model.StagingArea) ([]*externalapi.DomainHash, error) {
 	tips, err := csm.consensusStateStore.Tips(stagingArea, csm.databaseContext)
 	if err != nil {
-		return nil, externalapi.StatusInvalid, err
+		return nil, err
 	}
 
 	var sortErr error
@@ -26,10 +26,18 @@ func (csm *consensusStateManager) findNextPendingTip(stagingArea *model.StagingA
 		return selectedParent.Equal(tips[i])
 	})
 	if sortErr != nil {
-		return nil, externalapi.StatusInvalid, sortErr
+		return nil, sortErr
+	}
+	return tips, nil
+}
+
+func (csm *consensusStateManager) findNextPendingTip(stagingArea *model.StagingArea) (*externalapi.DomainHash, externalapi.BlockStatus, error) {
+	orderedTips, err := csm.tipsInDecreasingGHOSTDAGParentOrder(stagingArea)
+	if err != nil {
+		return nil, externalapi.StatusInvalid, err
 	}
 
-	for _, tip := range tips {
+	for _, tip := range orderedTips {
 		log.Debugf("Resolving tip %s", tip)
 		isViolatingFinality, shouldNotify, err := csm.isViolatingFinality(stagingArea, tip)
 		if err != nil {
@@ -56,7 +64,9 @@ func (csm *consensusStateManager) findNextPendingTip(stagingArea *model.StagingA
 	return nil, externalapi.StatusInvalid, nil
 }
 
-func (csm *consensusStateManager) getLowerTips(stagingArea *model.StagingArea, pendingTip *externalapi.DomainHash) ([]*externalapi.DomainHash, error) {
+// getGHOSTDAGLowerTips returns the set of tips which are lower in GHOSTDAG parent order than `pendingTip`. i.e.,
+// they can be added to virtual parents but `pendingTip` will remain the virtual selected parent
+func (csm *consensusStateManager) getGHOSTDAGLowerTips(stagingArea *model.StagingArea, pendingTip *externalapi.DomainHash) ([]*externalapi.DomainHash, error) {
 	tips, err := csm.consensusStateStore.Tips(stagingArea, csm.databaseContext)
 	if err != nil {
 		return nil, err
@@ -82,6 +92,8 @@ func (csm *consensusStateManager) ResolveVirtual(maxBlocksToResolve uint64) (*ex
 	onEnd := logger.LogAndMeasureExecutionTime(log, "csm.ResolveVirtual")
 	defer onEnd()
 
+	// We use a read-only staging area for some read-only actions, to avoid
+	// confusion with the resolve/updateVirtual staging areas below
 	readStagingArea := model.NewStagingArea()
 
 	pendingTip, pendingTipStatus, err := csm.findNextPendingTip(readStagingArea)
@@ -90,16 +102,16 @@ func (csm *consensusStateManager) ResolveVirtual(maxBlocksToResolve uint64) (*ex
 	}
 
 	if pendingTip == nil {
-		log.Warnf("Non of the DAG tips are valid")
+		log.Warnf("None of the DAG tips are valid")
 		return nil, true, nil
 	}
 
-	prevVirtualSelectedParent, err := csm.virtualSelectedParent(readStagingArea)
+	previousVirtualSelectedParent, err := csm.virtualSelectedParent(readStagingArea)
 	if err != nil {
 		return nil, false, err
 	}
 
-	if pendingTipStatus == externalapi.StatusUTXOValid && prevVirtualSelectedParent.Equal(pendingTip) {
+	if pendingTipStatus == externalapi.StatusUTXOValid && previousVirtualSelectedParent.Equal(pendingTip) {
 		return nil, true, nil
 	}
 
@@ -110,77 +122,77 @@ func (csm *consensusStateManager) ResolveVirtual(maxBlocksToResolve uint64) (*ex
 		return nil, false, err
 	}
 
-	intermediateTip := pendingTip
+	// Initially set the resolve processing point to the pending tip
+	processingPoint := pendingTip
 
 	// Too many blocks to verify, so we only process a chunk and return
 	if maxBlocksToResolve != 0 && uint64(len(unverifiedBlocks)) > maxBlocksToResolve {
-
-		intermediateTipIndex := uint64(len(unverifiedBlocks)) - maxBlocksToResolve
-		intermediateTip = unverifiedBlocks[intermediateTipIndex]
-		isNewVirtualSelectedParent, err := csm.isNewSelectedTip(readStagingArea, intermediateTip, prevVirtualSelectedParent)
+		processingPointIndex := uint64(len(unverifiedBlocks)) - maxBlocksToResolve
+		processingPoint = unverifiedBlocks[processingPointIndex]
+		isNewVirtualSelectedParent, err := csm.isNewSelectedTip(readStagingArea, processingPoint, previousVirtualSelectedParent)
 		if err != nil {
 			return nil, false, err
 		}
 
-		// We must find an intermediate tip which wins previous virtual selected parent
+		// We must find a processing point which wins previous virtual selected parent
 		// even if we process more than `maxBlocksToResolve` for that.
 		// Otherwise, internal UTXO diff logic gets all messed up
 		for !isNewVirtualSelectedParent {
-			if intermediateTipIndex == 0 {
+			if processingPointIndex == 0 {
 				return nil, false, errors.Errorf(
-					"Expecting the pending tip %s to overcome the previous selected parent %s", pendingTip, prevVirtualSelectedParent)
+					"Expecting the pending tip %s to overcome the previous selected parent %s", pendingTip, previousVirtualSelectedParent)
 			}
-			intermediateTipIndex--
-			intermediateTip = unverifiedBlocks[intermediateTipIndex]
-			isNewVirtualSelectedParent, err = csm.isNewSelectedTip(readStagingArea, intermediateTip, prevVirtualSelectedParent)
+			processingPointIndex--
+			processingPoint = unverifiedBlocks[processingPointIndex]
+			isNewVirtualSelectedParent, err = csm.isNewSelectedTip(readStagingArea, processingPoint, previousVirtualSelectedParent)
 			if err != nil {
 				return nil, false, err
 			}
 		}
-		log.Debugf("Has more than %d blocks to resolve. Changing the resolve tip to %s", maxBlocksToResolve, intermediateTip)
+		log.Debugf("Has more than %d blocks to resolve. Setting the resolve processing point to %s", maxBlocksToResolve, processingPoint)
 	}
 
-	intermediateTipStatus, reversalData, err := csm.resolveBlockStatus(
-		resolveStagingArea, intermediateTip, true)
+	processingPointStatus, reversalData, err := csm.resolveBlockStatus(
+		resolveStagingArea, processingPoint, true)
 	if err != nil {
 		return nil, false, err
 	}
 
-	if intermediateTipStatus == externalapi.StatusUTXOValid {
+	if processingPointStatus == externalapi.StatusUTXOValid {
 		err = staging.CommitAllChanges(csm.databaseContext, resolveStagingArea)
 		if err != nil {
 			return nil, false, err
 		}
 
 		if reversalData != nil {
-			err = csm.ReverseUTXODiffs(intermediateTip, reversalData)
+			err = csm.ReverseUTXODiffs(processingPoint, reversalData)
 			if err != nil {
 				return nil, false, err
 			}
 		}
 	}
 
-	isActualTip := intermediateTip.Equal(pendingTip)
-	isCompletelyResolved := isActualTip && intermediateTipStatus == externalapi.StatusUTXOValid
+	isActualTip := processingPoint.Equal(pendingTip)
+	isCompletelyResolved := isActualTip && processingPointStatus == externalapi.StatusUTXOValid
 
 	updateVirtualStagingArea := model.NewStagingArea()
 
+	virtualParents := []*externalapi.DomainHash{processingPoint}
 	// If `isCompletelyResolved`, set virtual correctly with all tips which have less blue work than pending
-	virtualTipCandidates := []*externalapi.DomainHash{intermediateTip}
 	if isCompletelyResolved {
-		lowerTips, err := csm.getLowerTips(readStagingArea, pendingTip)
+		lowerTips, err := csm.getGHOSTDAGLowerTips(readStagingArea, pendingTip)
 		if err != nil {
 			return nil, false, err
 		}
-
 		log.Debugf("Picking virtual parents from relevant tips len: %d", len(lowerTips))
-		virtualTipCandidates, err = csm.pickVirtualParents(readStagingArea, lowerTips)
+
+		virtualParents, err = csm.pickVirtualParents(readStagingArea, lowerTips)
 		if err != nil {
 			return nil, false, err
 		}
-		log.Debugf("Picked virtual parents: %s", virtualTipCandidates)
+		log.Debugf("Picked virtual parents: %s", virtualParents)
 	}
-	virtualUTXODiff, err := csm.updateVirtualWithParents(updateVirtualStagingArea, virtualTipCandidates)
+	virtualUTXODiff, err := csm.updateVirtualWithParents(updateVirtualStagingArea, virtualParents)
 	if err != nil {
 		return nil, false, err
 	}
@@ -191,12 +203,12 @@ func (csm *consensusStateManager) ResolveVirtual(maxBlocksToResolve uint64) (*ex
 	}
 
 	selectedParentChainChanges, err := csm.dagTraversalManager.
-		CalculateChainPath(updateVirtualStagingArea, prevVirtualSelectedParent, pendingTip)
+		CalculateChainPath(updateVirtualStagingArea, previousVirtualSelectedParent, pendingTip)
 	if err != nil {
 		return nil, false, err
 	}
 
-	virtualParents, err := csm.dagTopologyManager.Parents(updateVirtualStagingArea, model.VirtualBlockHash)
+	virtualParentsOutcome, err := csm.dagTopologyManager.Parents(updateVirtualStagingArea, model.VirtualBlockHash)
 	if err != nil {
 		return nil, false, err
 	}
@@ -204,6 +216,6 @@ func (csm *consensusStateManager) ResolveVirtual(maxBlocksToResolve uint64) (*ex
 	return &externalapi.VirtualChangeSet{
 		VirtualSelectedParentChainChanges: selectedParentChainChanges,
 		VirtualUTXODiff:                   virtualUTXODiff,
-		VirtualParents:                    virtualParents,
+		VirtualParents:                    virtualParentsOutcome,
 	}, isCompletelyResolved, nil
 }
