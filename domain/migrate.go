@@ -214,34 +214,19 @@ func syncConsensuses(syncer, syncee externalapi.Consensus) error {
 		return err
 	}
 
-	virtualDAAScoreStart, err := syncee.GetVirtualDAAScore()
+	err = syncer.ResolveVirtual(func(virtualDAAScoreStart uint64, virtualDAAScore uint64) {
+		if estimatedVirtualDAAScoreTarget-virtualDAAScoreStart <= 0 {
+			percents = 100
+		} else {
+			percents = int(float64(virtualDAAScore-virtualDAAScoreStart) / float64(estimatedVirtualDAAScoreTarget-virtualDAAScoreStart) * 100)
+		}
+		log.Infof("Resolving virtual. Estimated progress: %d%%", percents)
+	})
 	if err != nil {
 		return err
 	}
 
-	percents = 0
-	for i := 0; ; i++ {
-		if i%10 == 0 {
-			virtualDAAScore, err := syncee.GetVirtualDAAScore()
-			if err != nil {
-				return err
-			}
-			newPercents := int(float64(virtualDAAScore-virtualDAAScoreStart) / float64(estimatedVirtualDAAScoreTarget-virtualDAAScoreStart) * 100)
-			if newPercents > percents {
-				percents = newPercents
-				log.Infof("Resolving virtual. Estimated progress: %d%%", percents)
-			}
-		}
-		isCompletelyResolved, err := syncee.ResolveVirtual()
-		if err != nil {
-			return err
-		}
-
-		if isCompletelyResolved {
-			log.Infof("Resolved virtual")
-			break
-		}
-	}
+	log.Infof("Resolved virtual")
 
 	return nil
 }
