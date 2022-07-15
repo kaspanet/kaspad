@@ -112,11 +112,11 @@ func (tc *testConsensus) AddUTXOInvalidBlock(parentHashes []*externalapi.DomainH
 	return consensushashing.BlockHash(block), virtualChangeSet, nil
 }
 
-func (tc *testConsensus) ResolveVirtualWithMaxParam(maxBlocksToResolve uint64) (bool, error) {
+func (tc *testConsensus) ResolveVirtualWithMaxParam(maxBlocksToResolve uint64) (*externalapi.VirtualChangeSet, bool, error) {
 	tc.lock.Lock()
 	defer tc.lock.Unlock()
 
-	return tc.resolveVirtualNoLock(maxBlocksToResolve)
+	return tc.resolveVirtualChunkNoLock(maxBlocksToResolve)
 }
 
 // jsonBlock is a json representation of a block in mine format

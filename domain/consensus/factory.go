@@ -515,6 +515,7 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 		blocksWithTrustedDataDAAWindowStore: daaWindowStore,
 
 		consensusEventsChan: consensusEventsChan,
+		virtualNotUpdated:   true,
 	}
 
 	if isOldReachabilityInitialized {
