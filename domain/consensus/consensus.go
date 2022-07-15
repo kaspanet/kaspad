@@ -932,10 +932,10 @@ func (s *consensus) resolveVirtualChunkWithLock(maxBlocksToResolve uint64) (*ext
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	return s.resolveVirtualNoLock(maxBlocksToResolve)
+	return s.resolveVirtualChunkNoLock(maxBlocksToResolve)
 }
 
-func (s *consensus) resolveVirtualNoLock(maxBlocksToResolve uint64) (*externalapi.VirtualChangeSet, bool, error) {
+func (s *consensus) resolveVirtualChunkNoLock(maxBlocksToResolve uint64) (*externalapi.VirtualChangeSet, bool, error) {
 	virtualChangeSet, isCompletelyResolved, err := s.consensusStateManager.ResolveVirtual(maxBlocksToResolve)
 	if err != nil {
 		return nil, false, err

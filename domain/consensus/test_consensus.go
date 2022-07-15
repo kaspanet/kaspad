@@ -116,7 +116,7 @@ func (tc *testConsensus) ResolveVirtualWithMaxParam(maxBlocksToResolve uint64) (
 	tc.lock.Lock()
 	defer tc.lock.Unlock()
 
-	return tc.resolveVirtualNoLock(maxBlocksToResolve)
+	return tc.resolveVirtualChunkNoLock(maxBlocksToResolve)
 }
 
 // jsonBlock is a json representation of a block in mine format

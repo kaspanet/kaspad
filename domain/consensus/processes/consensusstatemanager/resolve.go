@@ -9,7 +9,10 @@ import (
 	"sort"
 )
 
-func (csm *consensusStateManager) tipsInDecreasingGHOSTDAGParentOrder(stagingArea *model.StagingArea) ([]*externalapi.DomainHash, error) {
+// tipsInDecreasingGHOSTDAGParentSelectionOrder returns the current DAG tips in decreasing parent selection order.
+// This means that the first tip in the resulting list would be the GHOSTDAG selected parent, and if removed from the list,
+// the second tip would be the selected parent, and so on.
+func (csm *consensusStateManager) tipsInDecreasingGHOSTDAGParentSelectionOrder(stagingArea *model.StagingArea) ([]*externalapi.DomainHash, error) {
 	tips, err := csm.consensusStateStore.Tips(stagingArea, csm.databaseContext)
 	if err != nil {
 		return nil, err
@@ -32,7 +35,7 @@ func (csm *consensusStateManager) tipsInDecreasingGHOSTDAGParentOrder(stagingAre
 }
 
 func (csm *consensusStateManager) findNextPendingTip(stagingArea *model.StagingArea) (*externalapi.DomainHash, externalapi.BlockStatus, error) {
-	orderedTips, err := csm.tipsInDecreasingGHOSTDAGParentOrder(stagingArea)
+	orderedTips, err := csm.tipsInDecreasingGHOSTDAGParentSelectionOrder(stagingArea)
 	if err != nil {
 		return nil, externalapi.StatusInvalid, err
 	}
@@ -64,7 +67,7 @@ func (csm *consensusStateManager) findNextPendingTip(stagingArea *model.StagingA
 	return nil, externalapi.StatusInvalid, nil
 }
 
-// getGHOSTDAGLowerTips returns the set of tips which are lower in GHOSTDAG parent order than `pendingTip`. i.e.,
+// getGHOSTDAGLowerTips returns the set of tips which are lower in GHOSTDAG parent selection order than `pendingTip`. i.e.,
 // they can be added to virtual parents but `pendingTip` will remain the virtual selected parent
 func (csm *consensusStateManager) getGHOSTDAGLowerTips(stagingArea *model.StagingArea, pendingTip *externalapi.DomainHash) ([]*externalapi.DomainHash, error) {
 	tips, err := csm.consensusStateStore.Tips(stagingArea, csm.databaseContext)
