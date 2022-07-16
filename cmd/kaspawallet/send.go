@@ -64,14 +64,9 @@ func send(conf *sendConfig) error {
 		fmt.Printf("Broadcasting %d transactions\n", len(signedTransactions))
 	}
 
-	response, err := daemonClient.Broadcast(ctx, &pb.BroadcastRequest{Transactions: signedTransactions})
+	err = broadcastInBatches(ctx, daemonClient, signedTransactions)
 	if err != nil {
 		return err
-	}
-	fmt.Println("Transactions were sent successfully")
-	fmt.Println("Transaction ID(s): ")
-	for _, txID := range response.TxIDs {
-		fmt.Printf("\t%s\n", txID)
 	}
 
 	return nil
