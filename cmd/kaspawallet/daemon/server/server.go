@@ -24,6 +24,8 @@ import (
 	"google.golang.org/grpc"
 )
 
+const MaxDaemonMsgSize = 100_000_000
+
 type server struct {
 	pb.UnimplementedKaspawalletdServer
 
@@ -96,7 +98,9 @@ func Start(params *dagconfig.Params, listen, rpcServer string, keysFilePath stri
 		}
 	})
 
-	grpcServer := grpc.NewServer()
+	grpcServer := grpc.NewServer(
+		grpc.MaxRecvMsgSize(MaxDaemonMsgSize),
+		grpc.MaxSendMsgSize(MaxDaemonMsgSize))
 	pb.RegisterKaspawalletdServer(grpcServer, serverInstance)
 
 	spawn("grpcServer.Serve", func() {
