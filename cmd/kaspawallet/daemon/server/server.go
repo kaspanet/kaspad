@@ -24,6 +24,8 @@ import (
 	"google.golang.org/grpc"
 )
 
+// MaxDaemonMsgSize is the max send/receive message size used for the daemon client and server.
+// Currently, set to 100MB
 const MaxDaemonMsgSize = 100_000_000
 
 type server struct {
