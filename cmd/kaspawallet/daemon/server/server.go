@@ -96,7 +96,10 @@ func Start(params *dagconfig.Params, listen, rpcServer string, keysFilePath stri
 		}
 	})
 
-	grpcServer := grpc.NewServer()
+	const maxMsgSize = 100_000_000
+	grpcServer := grpc.NewServer(
+		grpc.MaxRecvMsgSize(maxMsgSize),
+		grpc.MaxSendMsgSize(maxMsgSize))
 	pb.RegisterKaspawalletdServer(grpcServer, serverInstance)
 
 	spawn("grpcServer.Serve", func() {
