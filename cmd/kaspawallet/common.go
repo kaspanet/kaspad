@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-const daemonTimeout = 2 * time.Minute
+const daemonTimeout = 5 * time.Minute
 
 func printErrorAndExit(err error) {
 	fmt.Fprintf(os.Stderr, "%s\n", err)
