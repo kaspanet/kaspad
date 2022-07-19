@@ -772,78 +772,112 @@ func (pm *pruningManager) calculateDiffBetweenPreviousAndCurrentPruningPoints(st
 	if err != nil {
 		return nil, err
 	}
-	currentPruningGhostDAG, err := pm.ghostdagDataStore.Get(pm.databaseContext, stagingArea, currentPruningHash, false)
+	//currentPruningGhostDAG, err := pm.ghostdagDataStore.Get(pm.databaseContext, stagingArea, currentPruningHash, false)
+	//if err != nil {
+	//	return nil, err
+	//}
+	//previousPruningGhostDAG, err := pm.ghostdagDataStore.Get(pm.databaseContext, stagingArea, previousPruningHash, false)
+	//if err != nil {
+	//	return nil, err
+	//}
+
+	utxoDiff := utxo.NewMutableUTXODiff()
+
+	iterator, err := pm.dagTraversalManager.SelectedChildIterator(stagingArea, currentPruningHash, previousPruningHash, false)
 	if err != nil {
 		return nil, err
 	}
-	previousPruningGhostDAG, err := pm.ghostdagDataStore.Get(pm.databaseContext, stagingArea, previousPruningHash, false)
-	if err != nil {
-		return nil, err
-	}
+	defer iterator.Close()
 
-	currentPruningCurrentDiffChild := currentPruningHash
-	previousPruningCurrentDiffChild := previousPruningHash
-	// We need to use BlueWork because it's the only thing that's monotonic in the whole DAG
-	// We use the BlueWork to know which point is currently lower on the DAG so we can keep climbing its children,
-	// that way we keep climbing on the lowest point until they both reach the exact same descendant
-	currentPruningCurrentDiffChildBlueWork := currentPruningGhostDAG.BlueWork()
-	previousPruningCurrentDiffChildBlueWork := previousPruningGhostDAG.BlueWork()
+	for ok := iterator.First(); ok; ok = iterator.Next() {
+		child, err := iterator.Get()
+		if err != nil {
+			return nil, err
+		}
+		chainBlockAcceptanceData, err := pm.acceptanceDataStore.Get(pm.databaseContext, stagingArea, child)
+		if err != nil {
+			return nil, err
+		}
+		for _, blockAcceptanceData := range chainBlockAcceptanceData {
+			blockHeader, err := pm.blockHeaderStore.BlockHeader(pm.databaseContext, stagingArea, blockAcceptanceData.BlockHash)
+			if err != nil {
+				return nil, err
+			}
+			for _, transactionAcceptanceData := range blockAcceptanceData.TransactionAcceptanceData {
+				if transactionAcceptanceData.IsAccepted {
+					err = utxoDiff.AddTransaction(transactionAcceptanceData.Transaction, blockHeader.DAAScore())
+					if err != nil {
+						return nil, err
+					}
+				}
+			}
+		}
+	}
+	return utxoDiff.ToImmutable(), nil
 
-	var diffHashesFromPrevious []*externalapi.DomainHash
-	var diffHashesFromCurrent []*externalapi.DomainHash
-	for {
-		// if currentPruningCurrentDiffChildBlueWork > previousPruningCurrentDiffChildBlueWork
-		if currentPruningCurrentDiffChildBlueWork.Cmp(previousPruningCurrentDiffChildBlueWork) == 1 {
-			diffHashesFromPrevious = append(diffHashesFromPrevious, previousPruningCurrentDiffChild)
-			previousPruningCurrentDiffChild, err = pm.utxoDiffStore.UTXODiffChild(pm.databaseContext, stagingArea, previousPruningCurrentDiffChild)
-			if err != nil {
-				return nil, err
-			}
-			diffChildGhostDag, err := pm.ghostdagDataStore.Get(pm.databaseContext, stagingArea, previousPruningCurrentDiffChild, false)
-			if err != nil {
-				return nil, err
-			}
-			previousPruningCurrentDiffChildBlueWork = diffChildGhostDag.BlueWork()
-		} else if currentPruningCurrentDiffChild.Equal(previousPruningCurrentDiffChild) {
-			break
-		} else {
-			diffHashesFromCurrent = append(diffHashesFromCurrent, currentPruningCurrentDiffChild)
-			currentPruningCurrentDiffChild, err = pm.utxoDiffStore.UTXODiffChild(pm.databaseContext, stagingArea, currentPruningCurrentDiffChild)
-			if err != nil {
-				return nil, err
-			}
-			diffChildGhostDag, err := pm.ghostdagDataStore.Get(pm.databaseContext, stagingArea, currentPruningCurrentDiffChild, false)
-			if err != nil {
-				return nil, err
-			}
-			currentPruningCurrentDiffChildBlueWork = diffChildGhostDag.BlueWork()
-		}
-	}
-	// The order in which we apply the diffs should be from top to bottom, but we traversed from bottom to top
-	// so we apply the diffs in reverse order.
-	oldDiff := utxo.NewMutableUTXODiff()
-	for i := len(diffHashesFromPrevious) - 1; i >= 0; i-- {
-		utxoDiff, err := pm.utxoDiffStore.UTXODiff(pm.databaseContext, stagingArea, diffHashesFromPrevious[i])
-		if err != nil {
-			return nil, err
-		}
-		err = oldDiff.WithDiffInPlace(utxoDiff)
-		if err != nil {
-			return nil, err
-		}
-	}
-	newDiff := utxo.NewMutableUTXODiff()
-	for i := len(diffHashesFromCurrent) - 1; i >= 0; i-- {
-		utxoDiff, err := pm.utxoDiffStore.UTXODiff(pm.databaseContext, stagingArea, diffHashesFromCurrent[i])
-		if err != nil {
-			return nil, err
-		}
-		err = newDiff.WithDiffInPlace(utxoDiff)
-		if err != nil {
-			return nil, err
-		}
-	}
-	return oldDiff.DiffFrom(newDiff.ToImmutable())
+	//currentPruningCurrentDiffChild := currentPruningHash
+	//previousPruningCurrentDiffChild := previousPruningHash
+	//// We need to use BlueWork because it's the only thing that's monotonic in the whole DAG
+	//// We use the BlueWork to know which point is currently lower on the DAG so we can keep climbing its children,
+	//// that way we keep climbing on the lowest point until they both reach the exact same descendant
+	//currentPruningCurrentDiffChildBlueWork := currentPruningGhostDAG.BlueWork()
+	//previousPruningCurrentDiffChildBlueWork := previousPruningGhostDAG.BlueWork()
+	//
+	//var diffHashesFromPrevious []*externalapi.DomainHash
+	//var diffHashesFromCurrent []*externalapi.DomainHash
+	//for {
+	//	// if currentPruningCurrentDiffChildBlueWork > previousPruningCurrentDiffChildBlueWork
+	//	if currentPruningCurrentDiffChildBlueWork.Cmp(previousPruningCurrentDiffChildBlueWork) == 1 {
+	//		diffHashesFromPrevious = append(diffHashesFromPrevious, previousPruningCurrentDiffChild)
+	//		previousPruningCurrentDiffChild, err = pm.utxoDiffStore.UTXODiffChild(pm.databaseContext, stagingArea, previousPruningCurrentDiffChild)
+	//		if err != nil {
+	//			return nil, err
+	//		}
+	//		diffChildGhostDag, err := pm.ghostdagDataStore.Get(pm.databaseContext, stagingArea, previousPruningCurrentDiffChild, false)
+	//		if err != nil {
+	//			return nil, err
+	//		}
+	//		previousPruningCurrentDiffChildBlueWork = diffChildGhostDag.BlueWork()
+	//	} else if currentPruningCurrentDiffChild.Equal(previousPruningCurrentDiffChild) {
+	//		break
+	//	} else {
+	//		diffHashesFromCurrent = append(diffHashesFromCurrent, currentPruningCurrentDiffChild)
+	//		currentPruningCurrentDiffChild, err = pm.utxoDiffStore.UTXODiffChild(pm.databaseContext, stagingArea, currentPruningCurrentDiffChild)
+	//		if err != nil {
+	//			return nil, err
+	//		}
+	//		diffChildGhostDag, err := pm.ghostdagDataStore.Get(pm.databaseContext, stagingArea, currentPruningCurrentDiffChild, false)
+	//		if err != nil {
+	//			return nil, err
+	//		}
+	//		currentPruningCurrentDiffChildBlueWork = diffChildGhostDag.BlueWork()
+	//	}
+	//}
+	//// The order in which we apply the diffs should be from top to bottom, but we traversed from bottom to top
+	//// so we apply the diffs in reverse order.
+	//oldDiff := utxo.NewMutableUTXODiff()
+	//for i := len(diffHashesFromPrevious) - 1; i >= 0; i-- {
+	//	utxoDiff, err := pm.utxoDiffStore.UTXODiff(pm.databaseContext, stagingArea, diffHashesFromPrevious[i])
+	//	if err != nil {
+	//		return nil, err
+	//	}
+	//	err = oldDiff.WithDiffInPlace(utxoDiff)
+	//	if err != nil {
+	//		return nil, err
+	//	}
+	//}
+	//newDiff := utxo.NewMutableUTXODiff()
+	//for i := len(diffHashesFromCurrent) - 1; i >= 0; i-- {
+	//	utxoDiff, err := pm.utxoDiffStore.UTXODiff(pm.databaseContext, stagingArea, diffHashesFromCurrent[i])
+	//	if err != nil {
+	//		return nil, err
+	//	}
+	//	err = newDiff.WithDiffInPlace(utxoDiff)
+	//	if err != nil {
+	//		return nil, err
+	//	}
+	//}
+	//return oldDiff.DiffFrom(newDiff.ToImmutable())
 }
 
 // finalityScore is the number of finality intervals passed since
