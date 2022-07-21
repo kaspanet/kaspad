@@ -1,3 +1,14 @@
+Kaspad v0.12.4 - 2022-07-17
+===========================
+
+* Crucial fix for the UTXO difference mechanism (#2114)
+* Implement multi-layer auto-compound (#2115)
+
+Kaspad v0.12.3 - 2022-06-29
+===========================
+
+* Fixes a few bugs which can lead to node crashes or out-of-memory errors
+
 Kaspad v0.12.2 - 2022-06-17
 ===========================
 

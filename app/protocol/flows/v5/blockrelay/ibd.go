@@ -686,37 +686,28 @@ func (flow *handleIBDFlow) banIfBlockIsHeaderOnly(block *externalapi.DomainBlock
 }
 
 func (flow *handleIBDFlow) resolveVirtual(estimatedVirtualDAAScoreTarget uint64) error {
-	virtualDAAScoreStart, err := flow.Domain().Consensus().GetVirtualDAAScore()
+	err := flow.Domain().Consensus().ResolveVirtual(func(virtualDAAScoreStart uint64, virtualDAAScore uint64) {
+		var percents int
+		if estimatedVirtualDAAScoreTarget-virtualDAAScoreStart <= 0 {
+			percents = 100
+		} else {
+			percents = int(float64(virtualDAAScore-virtualDAAScoreStart) / float64(estimatedVirtualDAAScoreTarget-virtualDAAScoreStart) * 100)
+		}
+		if percents < 0 {
+			percents = 0
+		} else if percents > 100 {
+			percents = 100
+		}
+		log.Infof("Resolving virtual. Estimated progress: %d%%", percents)
+	})
 	if err != nil {
 		return err
 	}
 
-	for i := 0; ; i++ {
-		if i%10 == 0 {
-			virtualDAAScore, err := flow.Domain().Consensus().GetVirtualDAAScore()
-			if err != nil {
-				return err
-			}
-			var percents int
-			if estimatedVirtualDAAScoreTarget-virtualDAAScoreStart <= 0 {
-				percents = 100
-			} else {
-				percents = int(float64(virtualDAAScore-virtualDAAScoreStart) / float64(estimatedVirtualDAAScoreTarget-virtualDAAScoreStart) * 100)
-			}
-			log.Infof("Resolving virtual. Estimated progress: %d%%", percents)
-		}
-		isCompletelyResolved, err := flow.Domain().Consensus().ResolveVirtual()
-		if err != nil {
-			return err
-		}
-
-		if isCompletelyResolved {
-			log.Infof("Resolved virtual")
-			err = flow.OnNewBlockTemplate()
-			if err != nil {
-				return err
-			}
-			return nil
-		}
+	log.Infof("Resolved virtual")
+	err = flow.OnNewBlockTemplate()
+	if err != nil {
+		return err
 	}
+	return nil
 }
