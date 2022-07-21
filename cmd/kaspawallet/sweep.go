@@ -24,8 +24,6 @@ import (
 	"github.com/pkg/errors"
 )
 
-const feePerInput = 10000
-
 func sweep(conf *sweepConfig) error {
 
 	privateKeyBytes, err := hex.DecodeString(conf.PrivateKey)
@@ -89,7 +87,7 @@ func sweep(conf *sweepConfig) error {
 		return err
 	}
 
-	splitTransactions, err := createSplitTransactionsWithSchnorrPrivteKey(conf.NetParams(), UTXOs, toAddress, feePerInput)
+	splitTransactions, err := createSplitTransactionsWithSchnorrPrivteKey(conf.NetParams(), UTXOs, toAddress)
 	if err != nil {
 		return err
 	}
@@ -141,8 +139,7 @@ func newDummyTransaction() *externalapi.DomainTransaction {
 func createSplitTransactionsWithSchnorrPrivteKey(
 	params *dagconfig.Params,
 	selectedUTXOs []*libkaspawallet.UTXO,
-	toAddress util.Address,
-	feePerInput int) ([]*externalapi.DomainTransaction, error) {
+	toAddress util.Address) ([]*externalapi.DomainTransaction, error) {
 
 	var splitTransactions []*externalapi.DomainTransaction
 
@@ -180,7 +177,7 @@ func createSplitTransactionsWithSchnorrPrivteKey(
 		)
 
 		currentTx.Outputs[0] = &externalapi.DomainTransactionOutput{
-			Value:           totalSplitAmount - uint64(len(currentTx.Inputs)*feePerInput),
+			Value:           totalSplitAmount - uint64(len(currentTx.Inputs)*int(libkaspawallet.FeePerInput)),
 			ScriptPublicKey: scriptPublicKey,
 		}
 

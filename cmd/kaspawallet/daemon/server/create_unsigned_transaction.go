@@ -13,9 +13,6 @@ import (
 	"golang.org/x/exp/slices"
 )
 
-// TODO: Implement a better fee estimation mechanism
-const feePerInput = 10000
-
 func (s *server) CreateUnsignedTransactions(_ context.Context, request *pb.CreateUnsignedTransactionsRequest) (
 	*pb.CreateUnsignedTransactionsResponse, error,
 ) {
@@ -56,7 +53,7 @@ func (s *server) createUnsignedTransactions(address string, amount uint64, fromA
 		fromAddresses = append(fromAddresses, fromAddress)
 	}
 
-	selectedUTXOs, changeSompi, err := s.selectUTXOs(amount, feePerInput, fromAddresses)
+	selectedUTXOs, changeSompi, err := s.selectUTXOs(amount, libkaspawallet.FeePerInput, fromAddresses)
 	if err != nil {
 		return nil, err
 	}

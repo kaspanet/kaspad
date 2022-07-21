@@ -71,7 +71,7 @@ func (s *server) mergeTransaction(
 			DerivationPath: s.walletAddressPath(changeWalletAddress),
 		}
 		totalValue += output.Value
-		totalValue -= feePerInput
+		totalValue -= libkaspawallet.FeePerInput
 	}
 
 	if totalValue < sentValue {
@@ -206,7 +206,7 @@ func (s *server) createSplitTransaction(transaction *serialization.PartiallySign
 		})
 
 		totalSompi += selectedUTXOs[i-startIndex].UTXOEntry.Amount()
-		totalSompi -= feePerInput
+		totalSompi -= libkaspawallet.FeePerInput
 	}
 	unsignedTransactionBytes, err := libkaspawallet.CreateUnsignedTransaction(s.keysFile.ExtendedPublicKeys,
 		s.keysFile.MinimumSignatures,
@@ -271,7 +271,7 @@ func (s *server) moreUTXOsForMergeTransaction(alreadySelectedUTXOs []*libkaspawa
 			Outpoint:       utxo.Outpoint,
 			UTXOEntry:      utxo.UTXOEntry,
 			DerivationPath: s.walletAddressPath(utxo.address)})
-		totalValueAdded += utxo.UTXOEntry.Amount() - feePerInput
+		totalValueAdded += utxo.UTXOEntry.Amount() - libkaspawallet.FeePerInput
 		if totalValueAdded >= requiredAmount {
 			break
 		}
