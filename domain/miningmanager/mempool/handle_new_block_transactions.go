@@ -6,7 +6,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/utils/transactionhelper"
 )
 
-func (mp *mempool) handleNewBlockTransactions(blockTransactions []*externalapi.DomainTransaction,) (
+func (mp *mempool) handleNewBlockTransactions(blockTransactions []*externalapi.DomainTransaction) (
 	[]*externalapi.DomainTransaction, error) {
 
 	// Skip the coinbase transaction

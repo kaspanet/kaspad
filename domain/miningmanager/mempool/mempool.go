@@ -64,7 +64,7 @@ func (mp *mempool) GetTransaction(transactionID *externalapi.DomainTransactionID
 		isOrphan = true
 	}
 
-	return transaction, isOrphan, transactionfound 
+	return transaction, isOrphan, transactionfound
 }
 
 func (mp *mempool) GetTransactionsByAddresses(includeTransactionPool bool, includeOrphanPool bool) (
