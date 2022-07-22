@@ -227,7 +227,6 @@ func TestHandleNewBlockTransactions(t *testing.T) {
 		}
 		mempoolTransactions, _ = miningManager.AllTransactions(true, false)
 		if len(mempoolTransactions) != 0 {
-			mempoolTransactions, _ = miningManager.AllTransactions(true, false)
 			blockIDs := domainBlocksToBlockIds(mempoolTransactions)
 			t.Fatalf("The mempool contains unexpected transactions: %s", blockIDs)
 		}
@@ -608,7 +607,7 @@ func TestModifyBlockTemplate(t *testing.T) {
 				t.Fatalf("ValidateAndInsertTransaction: %v", err)
 			}
 		}
-		transactionsMempool, _ := miningManager.AllTransactions(true, true)
+		transactionsMempool, _ := miningManager.AllTransactions(true, false)
 		for _, transaction := range transactionsMempool {
 			if contains(transaction, childTransactions) {
 				t.Fatalf("Error: an orphan transaction is exist in the mempool")
@@ -657,7 +656,7 @@ func TestModifyBlockTemplate(t *testing.T) {
 		if err != nil {
 			t.Fatalf("HandleNewBlockTransactions: %+v", err)
 		}
-		transactionsMempool, _ = miningManager.AllTransactions(true, true)
+		transactionsMempool, _ = miningManager.AllTransactions(true, false)
 		if len(transactionsMempool) != len(childTransactions) {
 			t.Fatalf("Expected %d transactions in the mempool but got %d", len(childTransactions), len(transactionsMempool))
 		}

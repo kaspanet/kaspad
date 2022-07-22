@@ -17,7 +17,7 @@ type MiningManager interface {
 	GetBlockTemplateBuilder() miningmanagermodel.BlockTemplateBuilder
 	GetTransaction(transactionID *externalapi.DomainTransactionID, includeTransactionPool bool, includeOrphanPool bool) (
 		transactionPoolTransaction *externalapi.DomainTransaction,
-		orphanPoolTransaction *externalapi.DomainTransaction,
+		isOrphan bool,
 		found bool)
 	GetTransactionsByAddresses(includeTransactionPool bool, includeOrphanPool bool) (
 		sendingInTransactionPool map[string]*externalapi.DomainTransaction,
@@ -122,7 +122,7 @@ func (mm *miningManager) GetTransaction(
 	includeTransactionPool bool,
 	includeOrphanPool bool) (
 	transactionPoolTransaction *externalapi.DomainTransaction,
-	orphanPoolTransaction *externalapi.DomainTransaction,
+	isOrphan bool,
 	found bool) {
 
 	return mm.mempool.GetTransaction(transactionID, includeTransactionPool, includeOrphanPool)

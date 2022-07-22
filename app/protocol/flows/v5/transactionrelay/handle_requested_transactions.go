@@ -30,10 +30,6 @@ func (flow *handleRequestedTransactionsFlow) start() error {
 		}
 
 		for _, transactionID := range msgRequestTransactions.IDs {
-			//note: below ignores orphan txs that are requested
-			//find out if this is good or bad practice
-			//only reference i found to this, is that nodes don't do this in btc
-			//source: https://arxiv.org/abs/1912.11541 (2nd sentence in abstract)
 			tx, _, ok := flow.Domain().MiningManager().GetTransaction(transactionID, true, false)
 
 			if !ok {

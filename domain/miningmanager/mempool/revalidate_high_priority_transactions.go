@@ -6,35 +6,21 @@ import (
 	"github.com/kaspanet/kaspad/infrastructure/logger"
 )
 
-func (mp *mempool) revalidateHighPriorityTransactions(clone bool) ([]*externalapi.DomainTransaction, error) {
+func (mp *mempool) revalidateHighPriorityTransactions() ([]*externalapi.DomainTransaction, error) {
 	onEnd := logger.LogAndMeasureExecutionTime(log, "revalidateHighPriorityTransactions")
 	defer onEnd()
 
 	validTransactions := []*externalapi.DomainTransaction{}
-	if !clone {
-		for _, transaction := range mp.transactionsPool.highPriorityTransactions {
-			isValid, err := mp.revalidateTransaction(transaction)
-			if err != nil {
-				return nil, err
-			}
-			if !isValid {
-				continue
-			}
-
-			validTransactions = append(validTransactions, transaction.Transaction())
+	for _, transaction := range mp.transactionsPool.highPriorityTransactions {
+		isValid, err := mp.revalidateTransaction(transaction)
+		if err != nil {
+			return nil, err
 		}
-	} else {
-		for _, transaction := range mp.transactionsPool.highPriorityTransactions {
-			isValid, err := mp.revalidateTransaction(transaction)
-			if err != nil {
-				return nil, err
-			}
-			if !isValid {
-				continue
-			}
-
-			validTransactions = append(validTransactions, transaction.Transaction().Clone())
+		if !isValid {
+			continue
 		}
+
+		validTransactions = append(validTransactions, transaction.Transaction().Clone())
 	}
 
 	return validTransactions, nil

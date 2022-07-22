@@ -131,16 +131,12 @@ func (tp *transactionsPool) expireOldTransactions() error {
 	return nil
 }
 
-func (tp *transactionsPool) allReadyTransactions(clone bool) []*externalapi.DomainTransaction {
+func (tp *transactionsPool) allReadyTransactions() []*externalapi.DomainTransaction {
 	result := []*externalapi.DomainTransaction{}
 
 	for _, mempoolTransaction := range tp.allTransactions {
 		if len(mempoolTransaction.ParentTransactionsInPool()) == 0 {
-			if clone {
-				result = append(result, mempoolTransaction.Transaction().Clone())
-			} else {
-				result = append(result, mempoolTransaction.Transaction())
-			}
+			result = append(result, mempoolTransaction.Transaction().Clone())
 		}
 	}
 
@@ -219,7 +215,7 @@ func (tp *transactionsPool) getTransaction(transactionID *externalapi.DomainTran
 	return nil, false
 }
 
-func (tp *transactionsPool) getTransactionsByAddresses(clone bool) (
+func (tp *transactionsPool) getTransactionsByAddresses() (
 	sending model.ScriptPublicKeyStringToDomainTransaction,
 	receiving model.ScriptPublicKeyStringToDomainTransaction,
 	err error) {
@@ -227,13 +223,9 @@ func (tp *transactionsPool) getTransactionsByAddresses(clone bool) (
 	receiving = make(model.ScriptPublicKeyStringToDomainTransaction)
 	var transaction *externalapi.DomainTransaction
 	for _, mempoolTransaction := range tp.allTransactions {
-		if clone {
-			transaction = mempoolTransaction.Transaction().Clone()
-		} else {
-			transaction = mempoolTransaction.Transaction()
-		}
+		transaction = mempoolTransaction.Transaction().Clone()
 		for _, input := range transaction.Inputs {
-			if input.UTXOEntry == nil { //this should be fixed
+			if input.UTXOEntry == nil {
 				return nil, nil, errors.Errorf("Mempool transaction %s is missing an UTXOEntry. This should be fixed, and not happen", consensushashing.TransactionID(transaction).String())
 			}
 			sending[input.UTXOEntry.ScriptPublicKey().String()] = transaction
@@ -245,15 +237,11 @@ func (tp *transactionsPool) getTransactionsByAddresses(clone bool) (
 	return sending, receiving, nil
 }
 
-func (tp *transactionsPool) getAllTransactions(clone bool) []*externalapi.DomainTransaction {
+func (tp *transactionsPool) getAllTransactions() []*externalapi.DomainTransaction {
 	allTransactions := make([]*externalapi.DomainTransaction, len(tp.allTransactions))
 	i := 0
 	for _, mempoolTransaction := range tp.allTransactions {
-		if clone {
-			allTransactions[i] = mempoolTransaction.Transaction().Clone()
-		} else {
-			allTransactions[i] = mempoolTransaction.Transaction()
-		}
+		allTransactions[i] = mempoolTransaction.Transaction().Clone()
 		i++
 	}
 	return allTransactions

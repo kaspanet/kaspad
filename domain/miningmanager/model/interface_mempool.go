@@ -18,7 +18,7 @@ type Mempool interface {
 		includeOrphanPool bool,
 	) (
 		transactionPoolTransaction *externalapi.DomainTransaction,
-		orphanPoolTransaction *externalapi.DomainTransaction,
+		isOrphan bool,
 		found bool)
 	GetTransactionsByAddresses(
 		includeTransactionPool bool,
