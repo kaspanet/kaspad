@@ -58,6 +58,7 @@ func (mp *mempool) GetTransaction(transactionID *externalapi.DomainTransactionID
 
 	if includeTransactionPool {
 		transaction, transactionfound = mp.transactionsPool.getTransaction(transactionID, true)
+		isOrphan = false
 	}
 	if !transactionfound && includeOrphanPool {
 		transaction, transactionfound = mp.orphansPool.getOrphanTransaction(transactionID)
