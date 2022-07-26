@@ -272,7 +272,7 @@
     "P2SH"
   ],
   [
-    "Argument negative with by-blueScore nLockTime=0"
+    "Argument negative with by-DAAScore nLockTime=0"
   ],
   [
     [
@@ -564,7 +564,7 @@
     "P2SH"
   ],
   [
-    "Argument negative with by-bluescore txin.nSequence=0"
+    "Argument negative with by-DAAScore txin.nSequence=0"
   ],
   [
     [
