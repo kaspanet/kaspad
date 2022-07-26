@@ -169,7 +169,7 @@ func (op *orphansPool) processOrphansAfterAcceptedTransaction(acceptedTransactio
 					}
 					return nil, err
 				}
-				acceptedOrphans = append(acceptedOrphans, orphan.Transaction())
+				acceptedOrphans = append(acceptedOrphans, orphan.Transaction().Clone()) //these pointers leave the mempool, hence the clone
 			}
 		}
 	}
@@ -331,15 +331,45 @@ func (op *orphansPool) randomNonHighPriorityOrphan() *model.OrphanTransaction {
 
 func (op *orphansPool) getOrphanTransaction(transactionID *externalapi.DomainTransactionID) (*externalapi.DomainTransaction, bool) {
 	if orphanTransaction, ok := op.allOrphans[*transactionID]; ok {
-		return orphanTransaction.Transaction(), true
+		return orphanTransaction.Transaction().Clone(), true //this pointer leaves the mempool, hence we clone.
 	}
 	return nil, false
 }
 
-func (op *orphansPool) getAllOrphanTransactions() []*externalapi.DomainTransaction {
-	allOrphanTransactions := make([]*externalapi.DomainTransaction, 0, len(op.allOrphans))
+func (op *orphansPool) getOrphanTransactionsByAddresses() (
+	sending model.ScriptPublicKeyStringToDomainTransaction,
+	receiving model.ScriptPublicKeyStringToDomainTransaction,
+	err error) {
+	sending = make(model.ScriptPublicKeyStringToDomainTransaction)
+	receiving = make(model.ScriptPublicKeyStringToDomainTransaction, op.orphanTransactionCount())
+	var transaction *externalapi.DomainTransaction
 	for _, mempoolTransaction := range op.allOrphans {
-		allOrphanTransactions = append(allOrphanTransactions, mempoolTransaction.Transaction())
+		transaction = mempoolTransaction.Transaction().Clone() //these pointers leave the mempool, hence we clone.
+		for _, input := range transaction.Inputs {
+			if input.UTXOEntry == nil { //this is not a bug, but a valid state of orphan transactions with missing outpoints.
+				continue
+			}
+
+			sending[input.UTXOEntry.ScriptPublicKey().String()] = transaction
+		}
+		for _, output := range transaction.Outputs {
+			receiving[output.ScriptPublicKey.String()] = transaction
+
+		}
+	}
+	return sending, receiving, nil
+}
+
+func (op *orphansPool) getAllOrphanTransactions() []*externalapi.DomainTransaction {
+	allOrphanTransactions := make([]*externalapi.DomainTransaction, len(op.allOrphans))
+	i := 0
+	for _, mempoolTransaction := range op.allOrphans {
+		allOrphanTransactions[i] = mempoolTransaction.Transaction().Clone() //these pointers leave the mempool, hence we clone.
+		i++
 	}
 	return allOrphanTransactions
+}
+
+func (op *orphansPool) orphanTransactionCount() int {
+	return len(op.allOrphans)
 }
