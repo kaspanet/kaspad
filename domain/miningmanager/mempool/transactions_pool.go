@@ -136,7 +136,7 @@ func (tp *transactionsPool) allReadyTransactions() []*externalapi.DomainTransact
 
 	for _, mempoolTransaction := range tp.allTransactions {
 		if len(mempoolTransaction.ParentTransactionsInPool()) == 0 {
-			result = append(result, mempoolTransaction.Transaction().Clone())
+			result = append(result, mempoolTransaction.Transaction().Clone()) //this pointer leaves the mempool, and gets its utxo set to nil, hence we clone.
 		}
 	}
 
@@ -208,7 +208,7 @@ func (tp *transactionsPool) limitTransactionCount() error {
 func (tp *transactionsPool) getTransaction(transactionID *externalapi.DomainTransactionID, clone bool) (*externalapi.DomainTransaction, bool) {
 	if mempoolTransaction, ok := tp.allTransactions[*transactionID]; ok {
 		if clone {
-			return mempoolTransaction.Transaction().Clone(), true
+			return mempoolTransaction.Transaction().Clone(), true //this pointer leaves the mempool, hence we clone.
 		}
 		return mempoolTransaction.Transaction(), true
 	}
@@ -219,11 +219,11 @@ func (tp *transactionsPool) getTransactionsByAddresses() (
 	sending model.ScriptPublicKeyStringToDomainTransaction,
 	receiving model.ScriptPublicKeyStringToDomainTransaction,
 	err error) {
-	sending = make(model.ScriptPublicKeyStringToDomainTransaction)
-	receiving = make(model.ScriptPublicKeyStringToDomainTransaction)
+	sending = make(model.ScriptPublicKeyStringToDomainTransaction, tp.transactionCount())
+	receiving = make(model.ScriptPublicKeyStringToDomainTransaction, tp.transactionCount())
 	var transaction *externalapi.DomainTransaction
 	for _, mempoolTransaction := range tp.allTransactions {
-		transaction = mempoolTransaction.Transaction().Clone()
+		transaction = mempoolTransaction.Transaction().Clone() //this pointer leaves the mempool, hence we clone.
 		for _, input := range transaction.Inputs {
 			if input.UTXOEntry == nil {
 				return nil, nil, errors.Errorf("Mempool transaction %s is missing an UTXOEntry. This should be fixed, and not happen", consensushashing.TransactionID(transaction).String())
@@ -241,7 +241,7 @@ func (tp *transactionsPool) getAllTransactions() []*externalapi.DomainTransactio
 	allTransactions := make([]*externalapi.DomainTransaction, len(tp.allTransactions))
 	i := 0
 	for _, mempoolTransaction := range tp.allTransactions {
-		allTransactions[i] = mempoolTransaction.Transaction().Clone()
+		allTransactions[i] = mempoolTransaction.Transaction().Clone() //this pointer leaves the mempool, hence we clone.
 		i++
 	}
 	return allTransactions

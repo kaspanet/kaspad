@@ -340,8 +340,8 @@ func (op *orphansPool) getOrphanTransactionsByAddresses() (
 	sending model.ScriptPublicKeyStringToDomainTransaction,
 	receiving model.ScriptPublicKeyStringToDomainTransaction,
 	err error) {
-	sending = make(model.ScriptPublicKeyStringToDomainTransaction)
-	receiving = make(model.ScriptPublicKeyStringToDomainTransaction)
+	sending = make(model.ScriptPublicKeyStringToDomainTransaction, op.orphanTransactionCount())
+	receiving = make(model.ScriptPublicKeyStringToDomainTransaction, op.orphanTransactionCount())
 	var transaction *externalapi.DomainTransaction
 	for _, mempoolTransaction := range op.allOrphans {
 		transaction = mempoolTransaction.Transaction().Clone() //these pointers leave the mempool, hence we clone.
