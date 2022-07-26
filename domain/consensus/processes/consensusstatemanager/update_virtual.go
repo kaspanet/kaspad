@@ -110,7 +110,7 @@ func (csm *consensusStateManager) updateSelectedTipUTXODiff(
 	onEnd := logger.LogAndMeasureExecutionTime(log, "updateSelectedTipUTXODiff")
 	defer onEnd()
 
-	selectedTip, err := csm.selectedTip(stagingArea)
+	selectedTip, err := csm.virtualSelectedParent(stagingArea)
 	if err != nil {
 		return err
 	}

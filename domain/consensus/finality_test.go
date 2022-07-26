@@ -589,17 +589,12 @@ func TestFinalityResolveVirtual(t *testing.T) {
 			}
 		}
 
-		for i := 0; ; i++ {
-			isCompletelyResolved, err := tc.ResolveVirtual()
-			if err != nil {
-				panic(err)
-			}
-
-			if isCompletelyResolved {
-				t.Log("Resolved virtual")
-				break
-			}
+		err = tc.ResolveVirtual(nil)
+		if err != nil {
+			panic(err)
 		}
+
+		t.Log("Resolved virtual")
 
 		sideChainTipGHOSTDAGData, err = tc.GHOSTDAGDataStore().Get(tc.DatabaseContext(), stagingArea, sideChainTipHash, false)
 		if err != nil {

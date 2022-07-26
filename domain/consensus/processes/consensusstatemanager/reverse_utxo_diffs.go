@@ -56,12 +56,6 @@ func (csm *consensusStateManager) ReverseUTXODiffs(tipHash *externalapi.DomainHa
 			return err
 		}
 
-		// We stop reversing when current's UTXODiffChild is not current's SelectedParent
-		if !currentBlockGHOSTDAGData.SelectedParent().Equal(currentBlockUTXODiffChild) {
-			log.Debugf("Block %s's UTXODiffChild is not it's selected parent - finish reversing", currentBlock)
-			break
-		}
-
 		currentUTXODiff := previousUTXODiff.Reversed()
 
 		// retrieve current utxoDiff for Bi, to be used by next block
@@ -73,6 +67,12 @@ func (csm *consensusStateManager) ReverseUTXODiffs(tipHash *externalapi.DomainHa
 		err = csm.commitUTXODiffInSeparateStagingArea(currentBlock, currentUTXODiff, previousBlock)
 		if err != nil {
 			return err
+		}
+
+		// We stop reversing when current's UTXODiffChild is not current's SelectedParent
+		if !currentBlockGHOSTDAGData.SelectedParent().Equal(currentBlockUTXODiffChild) {
+			log.Debugf("Block %s's UTXODiffChild is not it's selected parent - finish reversing", currentBlock)
+			break
 		}
 
 		previousBlock = currentBlock
