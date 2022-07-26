@@ -340,7 +340,7 @@ func (op *orphansPool) getOrphanTransactionsByAddresses() (
 	sending model.ScriptPublicKeyStringToDomainTransaction,
 	receiving model.ScriptPublicKeyStringToDomainTransaction,
 	err error) {
-	sending = make(model.ScriptPublicKeyStringToDomainTransaction, op.orphanTransactionCount())
+	sending = make(model.ScriptPublicKeyStringToDomainTransaction)
 	receiving = make(model.ScriptPublicKeyStringToDomainTransaction, op.orphanTransactionCount())
 	var transaction *externalapi.DomainTransaction
 	for _, mempoolTransaction := range op.allOrphans {
