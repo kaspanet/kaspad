@@ -194,11 +194,33 @@ func (s *consensus) BuildBlockTemplate(coinbaseData *externalapi.DomainCoinbaseD
 
 // ValidateAndInsertBlock validates the given block and, if valid, applies it
 // to the current state
-func (s *consensus) ValidateAndInsertBlock(block *externalapi.DomainBlock, shouldValidateAgainstUTXO bool) error {
+func (s *consensus) ValidateAndInsertBlock(block *externalapi.DomainBlock, updateVirtual bool) error {
+	if updateVirtual {
+		s.lock.Lock()
+		if s.virtualNotUpdated {
+			s.lock.Unlock()
+			err := s.ResolveVirtual(nil)
+			if err != nil {
+				return err
+			}
+			return s.validateAndInsertBlockWithLock(block, updateVirtual)
+		}
+		defer s.lock.Unlock()
+		_, err := s.validateAndInsertBlockNoLock(block, updateVirtual)
+		if err != nil {
+			return err
+		}
+		return nil
+	}
+
+	return s.validateAndInsertBlockWithLock(block, updateVirtual)
+}
+
+func (s *consensus) validateAndInsertBlockWithLock(block *externalapi.DomainBlock, updateVirtual bool) error {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	_, err := s.validateAndInsertBlockNoLock(block, shouldValidateAgainstUTXO)
+	_, err := s.validateAndInsertBlockNoLock(block, updateVirtual)
 	if err != nil {
 		return err
 	}
@@ -206,19 +228,6 @@ func (s *consensus) ValidateAndInsertBlock(block *externalapi.DomainBlock, shoul
 }
 
 func (s *consensus) validateAndInsertBlockNoLock(block *externalapi.DomainBlock, updateVirtual bool) (*externalapi.VirtualChangeSet, error) {
-	// If virtual is in non-updated state, and the caller requests updating virtual -- then we must first
-	// resolve virtual so that the new block can be fully processed properly
-	if updateVirtual && s.virtualNotUpdated {
-		for s.virtualNotUpdated {
-			// We use 10000 << finality interval. See comment in `ResolveVirtual`.
-			// We give up responsiveness of consensus in this rare case.
-			_, err := s.resolveVirtualNoLock(10000) // Note `s.virtualNotUpdated` is updated within the call
-			if err != nil {
-				return nil, err
-			}
-		}
-	}
-
 	virtualChangeSet, blockStatus, err := s.blockProcessor.ValidateAndInsertBlock(block, updateVirtual)
 	if err != nil {
 		return nil, err
@@ -257,7 +266,7 @@ func (s *consensus) sendBlockAddedEvent(block *externalapi.DomainBlock, blockSta
 }
 
 func (s *consensus) sendVirtualChangedEvent(virtualChangeSet *externalapi.VirtualChangeSet, wasVirtualUpdated bool) error {
-	if !wasVirtualUpdated || s.consensusEventsChan == nil {
+	if !wasVirtualUpdated || s.consensusEventsChan == nil || virtualChangeSet == nil {
 		return nil
 	}
 
@@ -888,41 +897,68 @@ func (s *consensus) PopulateMass(transaction *externalapi.DomainTransaction) {
 	s.transactionValidator.PopulateMass(transaction)
 }
 
-func (s *consensus) ResolveVirtual() (bool, error) {
+func (s *consensus) ResolveVirtual(progressReportCallback func(uint64, uint64)) error {
+	virtualDAAScoreStart, err := s.GetVirtualDAAScore()
+	if err != nil {
+		return err
+	}
+
+	for i := 0; ; i++ {
+		if i%10 == 0 && progressReportCallback != nil {
+			virtualDAAScore, err := s.GetVirtualDAAScore()
+			if err != nil {
+				return err
+			}
+			progressReportCallback(virtualDAAScoreStart, virtualDAAScore)
+		}
+
+		// In order to prevent a situation that the consensus lock is held for too much time, we
+		// release the lock each time we resolve 100 blocks.
+		// Note: maxBlocksToResolve should be smaller than `params.FinalityDuration` in order to avoid a situation
+		// where UpdatePruningPointByVirtual skips a pruning point.
+		_, isCompletelyResolved, err := s.resolveVirtualChunkWithLock(100)
+		if err != nil {
+			return err
+		}
+		if isCompletelyResolved {
+			break
+		}
+	}
+
+	return nil
+}
+
+func (s *consensus) resolveVirtualChunkWithLock(maxBlocksToResolve uint64) (*externalapi.VirtualChangeSet, bool, error) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	// In order to prevent a situation that the consensus lock is held for too much time, we
-	// release the lock each time resolve 100 blocks.
-	// Note: maxBlocksToResolve should be smaller than finality interval in order to avoid a situation
-	// where UpdatePruningPointByVirtual skips a pruning point.
-	return s.resolveVirtualNoLock(100)
+	return s.resolveVirtualChunkNoLock(maxBlocksToResolve)
 }
 
-func (s *consensus) resolveVirtualNoLock(maxBlocksToResolve uint64) (bool, error) {
+func (s *consensus) resolveVirtualChunkNoLock(maxBlocksToResolve uint64) (*externalapi.VirtualChangeSet, bool, error) {
 	virtualChangeSet, isCompletelyResolved, err := s.consensusStateManager.ResolveVirtual(maxBlocksToResolve)
 	if err != nil {
-		return false, err
+		return nil, false, err
 	}
 	s.virtualNotUpdated = !isCompletelyResolved
 
 	stagingArea := model.NewStagingArea()
 	err = s.pruningManager.UpdatePruningPointByVirtual(stagingArea)
 	if err != nil {
-		return false, err
+		return nil, false, err
 	}
 
 	err = staging.CommitAllChanges(s.databaseContext, stagingArea)
 	if err != nil {
-		return false, err
+		return nil, false, err
 	}
 
 	err = s.sendVirtualChangedEvent(virtualChangeSet, true)
 	if err != nil {
-		return false, err
+		return nil, false, err
 	}
 
-	return isCompletelyResolved, nil
+	return virtualChangeSet, isCompletelyResolved, nil
 }
 
 func (s *consensus) BuildPruningPointProof() (*externalapi.PruningPointProof, error) {

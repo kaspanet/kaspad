@@ -5,7 +5,7 @@ type Consensus interface {
 	Init(skipAddingGenesis bool) error
 	BuildBlock(coinbaseData *DomainCoinbaseData, transactions []*DomainTransaction) (*DomainBlock, error)
 	BuildBlockTemplate(coinbaseData *DomainCoinbaseData, transactions []*DomainTransaction) (*DomainBlockTemplate, error)
-	ValidateAndInsertBlock(block *DomainBlock, shouldValidateAgainstUTXO bool) error
+	ValidateAndInsertBlock(block *DomainBlock, updateVirtual bool) error
 	ValidateAndInsertBlockWithTrustedData(block *BlockWithTrustedData, validateUTXO bool) error
 	ValidateTransactionAndPopulateWithConsensusData(transaction *DomainTransaction) error
 	ImportPruningPoints(pruningPoints []BlockHeader) error
@@ -48,7 +48,7 @@ type Consensus interface {
 	Anticone(blockHash *DomainHash) ([]*DomainHash, error)
 	EstimateNetworkHashesPerSecond(startHash *DomainHash, windowSize int) (uint64, error)
 	PopulateMass(transaction *DomainTransaction)
-	ResolveVirtual() (bool, error)
+	ResolveVirtual(progressReportCallback func(uint64, uint64)) error
 	BlockDAAWindowHashes(blockHash *DomainHash) ([]*DomainHash, error)
 	TrustedDataDataDAAHeader(trustedBlockHash, daaBlockHash *DomainHash, daaBlockWindowIndex uint64) (*TrustedDataDataDAAHeader, error)
 	TrustedBlockAssociatedGHOSTDAGDataBlockHashes(blockHash *DomainHash) ([]*DomainHash, error)
