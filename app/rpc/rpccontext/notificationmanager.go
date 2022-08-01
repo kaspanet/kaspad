@@ -5,6 +5,7 @@ import (
 
 	"github.com/kaspanet/kaspad/domain/dagconfig"
 
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/txscript"
 
 	"github.com/kaspanet/kaspad/app/appmessage"
@@ -421,7 +422,7 @@ func (nl *NotificationListener) convertUTXOChangesToUTXOsChangedNotification(
 }
 
 func (nl *NotificationListener) scriptPubKeyStringToAddressString(scriptPublicKeyString utxoindex.ScriptPublicKeyString) (string, error) {
-	scriptPubKey := utxoindex.ConvertStringToScriptPublicKey(scriptPublicKeyString)
+	scriptPubKey := externalapi.NewScriptPublicKeyFromString(string(scriptPublicKeyString))
 
 	// ignore error because it is often returned when the script is of unknown type
 	scriptType, address, err := txscript.ExtractScriptPubKeyAddress(scriptPubKey, nl.params)

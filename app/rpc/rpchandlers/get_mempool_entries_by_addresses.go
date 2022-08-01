@@ -1,14 +1,10 @@
 package rpchandlers
 
 import (
-	"errors"
-
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/app/rpc/rpccontext"
-
-	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/txscript"
+
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
 	"github.com/kaspanet/kaspad/util"
 )
@@ -20,132 +16,107 @@ func HandleGetMempoolEntriesByAddresses(context *rpccontext.Context, _ *router.R
 
 	mempoolEntriesByAddresses := make([]*appmessage.MempoolEntryByAddress, 0)
 
-	if !getMempoolEntriesByAddressesRequest.FilterTransactionPool {
-		transactionPoolTransactions := context.Domain.MiningManager().AllTransactions()
-		transactionPoolEntriesByAddresses, err := extractMempoolEntriesByAddressesFromTransactions(
-			context,
-			getMempoolEntriesByAddressesRequest.Addresses,
-			transactionPoolTransactions,
-			false,
-		)
-		if err != nil {
-			rpcError := &appmessage.RPCError{}
-			if !errors.As(err, &rpcError) {
-				return nil, err
-			}
-			errorMessage := &appmessage.GetUTXOsByAddressesResponseMessage{}
-			errorMessage.Error = rpcError
-			return errorMessage, nil
-		}
-		mempoolEntriesByAddresses = append(mempoolEntriesByAddresses, transactionPoolEntriesByAddresses...)
+	sendingInTransactionPool, receivingInTransactionPool, sendingInOrphanPool, receivingInOrphanPool, err := context.Domain.MiningManager().GetTransactionsByAddresses(!getMempoolEntriesByAddressesRequest.FilterTransactionPool, getMempoolEntriesByAddressesRequest.IncludeOrphanPool)
+	if err != nil {
+		return nil, err
 	}
 
-	if getMempoolEntriesByAddressesRequest.IncludeOrphanPool {
+	for _, addressString := range getMempoolEntriesByAddressesRequest.Addresses {
 
-		orphanPoolTransactions := context.Domain.MiningManager().AllOrphanTransactions()
-		orphanPoolEntriesByAddress, err := extractMempoolEntriesByAddressesFromTransactions(
-			context,
-			getMempoolEntriesByAddressesRequest.Addresses,
-			orphanPoolTransactions,
-			true,
-		)
+		address, err := util.DecodeAddress(addressString, context.Config.NetParams().Prefix)
 		if err != nil {
-			rpcError := &appmessage.RPCError{}
-			if !errors.As(err, &rpcError) {
-				return nil, err
-			}
-			errorMessage := &appmessage.GetUTXOsByAddressesResponseMessage{}
-			errorMessage.Error = rpcError
+			errorMessage := &appmessage.GetMempoolEntriesByAddressesResponseMessage{}
+			errorMessage.Error = appmessage.RPCErrorf("Could not decode address '%s': %s", addressString, err)
 			return errorMessage, nil
-		}
-
-		mempoolEntriesByAddresses = append(mempoolEntriesByAddresses, orphanPoolEntriesByAddress...)
-	}
-
-	return appmessage.NewGetMempoolEntriesByAddressesResponseMessage(mempoolEntriesByAddresses), nil
-}
-
-//TO DO: optimize extractMempoolEntriesByAddressesFromTransactions
-func extractMempoolEntriesByAddressesFromTransactions(context *rpccontext.Context, addresses []string, transactions []*externalapi.DomainTransaction, areOrphans bool) ([]*appmessage.MempoolEntryByAddress, error) {
-	mempoolEntriesByAddresses := make([]*appmessage.MempoolEntryByAddress, 0)
-	for _, addressString := range addresses {
-		_, err := util.DecodeAddress(addressString, context.Config.ActiveNetParams.Prefix)
-		if err != nil {
-			return nil, appmessage.RPCErrorf("Could not decode address '%s': %s", addressString, err)
 		}
 
 		sending := make([]*appmessage.MempoolEntry, 0)
 		receiving := make([]*appmessage.MempoolEntry, 0)
 
-		for _, transaction := range transactions {
+		scriptPublicKey, err := txscript.PayToAddrScript(address)
+		if err != nil {
+			errorMessage := &appmessage.GetMempoolEntriesByAddressesResponseMessage{}
+			errorMessage.Error = appmessage.RPCErrorf("Could not extract scriptPublicKey from address '%s': %s", addressString, err)
+			return errorMessage, nil
+		}
 
-			for i, input := range transaction.Inputs {
-				if input.UTXOEntry == nil {
-					if !areOrphans { // Orphans can legitimately have `input.UTXOEntry == nil`
-						// TODO: Fix the underlying cause of the bug for non-orphan entries
-						log.Debugf(
-							"Couldn't find UTXO entry for input %d in mempool transaction %s. This is a bug and should be fixed.",
-							i, consensushashing.TransactionID(transaction))
-					}
-					continue
-				}
+		if !getMempoolEntriesByAddressesRequest.FilterTransactionPool {
 
-				_, transactionSendingAddress, err := txscript.ExtractScriptPubKeyAddress(
-					input.UTXOEntry.ScriptPublicKey(),
-					context.Config.ActiveNetParams)
+			if transaction, found := sendingInTransactionPool[scriptPublicKey.String()]; found {
+				rpcTransaction := appmessage.DomainTransactionToRPCTransaction(transaction)
+				err := context.PopulateTransactionWithVerboseData(rpcTransaction, nil)
 				if err != nil {
 					return nil, err
 				}
-				if addressString == transactionSendingAddress.String() {
-					rpcTransaction := appmessage.DomainTransactionToRPCTransaction(transaction)
-					sending = append(
-						sending,
-						&appmessage.MempoolEntry{
-							Fee:         transaction.Fee,
-							Transaction: rpcTransaction,
-							IsOrphan:    areOrphans,
-						},
-					)
-					break //one input is enough
-				}
-			}
 
-			for _, output := range transaction.Outputs {
-				_, transactionReceivingAddress, err := txscript.ExtractScriptPubKeyAddress(
-					output.ScriptPublicKey,
-					context.Config.ActiveNetParams,
+				sending = append(sending, &appmessage.MempoolEntry{
+					Fee:         transaction.Fee,
+					Transaction: rpcTransaction,
+					IsOrphan:    false,
+				},
 				)
+			}
+
+			if transaction, found := receivingInTransactionPool[scriptPublicKey.String()]; found {
+				rpcTransaction := appmessage.DomainTransactionToRPCTransaction(transaction)
+				err := context.PopulateTransactionWithVerboseData(rpcTransaction, nil)
 				if err != nil {
 					return nil, err
 				}
-				if addressString == transactionReceivingAddress.String() {
-					rpcTransaction := appmessage.DomainTransactionToRPCTransaction(transaction)
-					receiving = append(
-						receiving,
-						&appmessage.MempoolEntry{
-							Fee:         transaction.Fee,
-							Transaction: rpcTransaction,
-							IsOrphan:    areOrphans,
-						},
-					)
-					break //one output is enough
-				}
-			}
 
-			//Only append mempoolEntriesByAddress, if at least 1 mempoolEntry for the address is found.
-			//This mimics the behaviour of GetUtxosByAddresses RPC call.
-			if len(sending) > 0 || len(receiving) > 0 {
-				mempoolEntriesByAddresses = append(
-					mempoolEntriesByAddresses,
-					&appmessage.MempoolEntryByAddress{
-						Address:   addressString,
-						Sending:   sending,
-						Receiving: receiving,
-					},
+				receiving = append(receiving, &appmessage.MempoolEntry{
+					Fee:         transaction.Fee,
+					Transaction: rpcTransaction,
+					IsOrphan:    false,
+				},
 				)
 			}
 		}
+		if getMempoolEntriesByAddressesRequest.IncludeOrphanPool {
 
+			if transaction, found := sendingInOrphanPool[scriptPublicKey.String()]; found {
+				rpcTransaction := appmessage.DomainTransactionToRPCTransaction(transaction)
+				err := context.PopulateTransactionWithVerboseData(rpcTransaction, nil)
+				if err != nil {
+					return nil, err
+				}
+
+				sending = append(sending, &appmessage.MempoolEntry{
+					Fee:         transaction.Fee,
+					Transaction: rpcTransaction,
+					IsOrphan:    true,
+				},
+				)
+			}
+
+			if transaction, found := receivingInOrphanPool[scriptPublicKey.String()]; found {
+				rpcTransaction := appmessage.DomainTransactionToRPCTransaction(transaction)
+				err := context.PopulateTransactionWithVerboseData(rpcTransaction, nil)
+				if err != nil {
+					return nil, err
+				}
+
+				receiving = append(receiving, &appmessage.MempoolEntry{
+					Fee:         transaction.Fee,
+					Transaction: rpcTransaction,
+					IsOrphan:    true,
+				},
+				)
+			}
+
+		}
+
+		if len(sending) > 0 || len(receiving) > 0 {
+			mempoolEntriesByAddresses = append(
+				mempoolEntriesByAddresses,
+				&appmessage.MempoolEntryByAddress{
+					Address:   address.String(),
+					Sending:   sending,
+					Receiving: receiving,
+				},
+			)
+		}
 	}
-	return mempoolEntriesByAddresses, nil
+
+	return appmessage.NewGetMempoolEntriesByAddressesResponseMessage(mempoolEntriesByAddresses), nil
 }

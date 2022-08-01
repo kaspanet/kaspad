@@ -11,7 +11,6 @@ func (mp *mempool) revalidateHighPriorityTransactions() ([]*externalapi.DomainTr
 	defer onEnd()
 
 	validTransactions := []*externalapi.DomainTransaction{}
-
 	for _, transaction := range mp.transactionsPool.highPriorityTransactions {
 		isValid, err := mp.revalidateTransaction(transaction)
 		if err != nil {
@@ -21,7 +20,7 @@ func (mp *mempool) revalidateHighPriorityTransactions() ([]*externalapi.DomainTr
 			continue
 		}
 
-		validTransactions = append(validTransactions, transaction.Transaction())
+		validTransactions = append(validTransactions, transaction.Transaction().Clone())
 	}
 
 	return validTransactions, nil

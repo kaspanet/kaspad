@@ -32,22 +32,6 @@ func ConvertUTXOOutpointEntryPairsToUTXOsByAddressesEntries(address string, pair
 	return utxosByAddressesEntries
 }
 
-// convertUTXOOutpointsToUTXOsByAddressesEntries converts
-// UTXOOutpoints to a slice of UTXOsByAddressesEntry
-func convertUTXOOutpointsToUTXOsByAddressesEntries(address string, outpoints utxoindex.UTXOOutpoints) []*appmessage.UTXOsByAddressesEntry {
-	utxosByAddressesEntries := make([]*appmessage.UTXOsByAddressesEntry, 0, len(outpoints))
-	for outpoint := range outpoints {
-		utxosByAddressesEntries = append(utxosByAddressesEntries, &appmessage.UTXOsByAddressesEntry{
-			Address: address,
-			Outpoint: &appmessage.RPCOutpoint{
-				TransactionID: outpoint.TransactionID.String(),
-				Index:         outpoint.Index,
-			},
-		})
-	}
-	return utxosByAddressesEntries
-}
-
 // ConvertAddressStringsToUTXOsChangedNotificationAddresses converts address strings
 // to UTXOsChangedNotificationAddresses
 func (ctx *Context) ConvertAddressStringsToUTXOsChangedNotificationAddresses(
@@ -63,7 +47,7 @@ func (ctx *Context) ConvertAddressStringsToUTXOsChangedNotificationAddresses(
 		if err != nil {
 			return nil, errors.Errorf("Could not create a scriptPublicKey for address '%s': %s", addressString, err)
 		}
-		scriptPublicKeyString := utxoindex.ConvertScriptPublicKeyToString(scriptPublicKey)
+		scriptPublicKeyString := utxoindex.ScriptPublicKeyString(scriptPublicKey.String())
 		addresses[i] = &UTXOsChangedNotificationAddress{
 			Address:               addressString,
 			ScriptPublicKeyString: scriptPublicKeyString,
