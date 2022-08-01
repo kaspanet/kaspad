@@ -198,15 +198,33 @@ func (s *consensus) ValidateAndInsertBlock(block *externalapi.DomainBlock, updat
 	if updateVirtual {
 		s.lock.Lock()
 		if s.virtualNotUpdated {
-			s.lock.Unlock()
-			err := s.ResolveVirtual(nil)
-			if err != nil {
-				return err
+			// We enter the loop in locked state
+			for {
+				// See comment about the const used at `ResolveVirtual`
+				_, isCompletelyResolved, err := s.resolveVirtualChunkNoLock(100)
+				if err != nil {
+					s.lock.Unlock()
+					return err
+				}
+				if isCompletelyResolved {
+					// Make sure we enter the block insertion function w/o releasing the lock.
+					// Otherwise, we might actually enter it in `s.virtualNotUpdated == true` state
+					_, err = s.validateAndInsertBlockNoLock(block, updateVirtual)
+					// Finally, unlock for the last iteration and return
+					s.lock.Unlock()
+					if err != nil {
+						return err
+					}
+					return nil
+				}
+				// Unlock to allow other threads to enter consensus
+				s.lock.Unlock()
+				// Lock for the next iteration
+				s.lock.Lock()
 			}
-			return s.validateAndInsertBlockWithLock(block, updateVirtual)
 		}
-		defer s.lock.Unlock()
 		_, err := s.validateAndInsertBlockNoLock(block, updateVirtual)
+		s.lock.Unlock()
 		if err != nil {
 			return err
 		}
