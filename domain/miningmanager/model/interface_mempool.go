@@ -12,11 +12,31 @@ type Mempool interface {
 	ValidateAndInsertTransaction(transaction *externalapi.DomainTransaction, isHighPriority bool, allowOrphan bool) (
 		acceptedTransactions []*externalapi.DomainTransaction, err error)
 	RemoveTransactions(txs []*externalapi.DomainTransaction, removeRedeemers bool) error
-	GetTransaction(transactionID *externalapi.DomainTransactionID) (*externalapi.DomainTransaction, bool)
-	AllTransactions() []*externalapi.DomainTransaction
-	GetOrphanTransaction(transactionID *externalapi.DomainTransactionID) (*externalapi.DomainTransaction, bool)
-	AllOrphanTransactions() []*externalapi.DomainTransaction
-	TransactionCount() int
+	GetTransaction(
+		transactionID *externalapi.DomainTransactionID,
+		includeTransactionPool bool,
+		includeOrphanPool bool,
+	) (
+		transactionPoolTransaction *externalapi.DomainTransaction,
+		isOrphan bool,
+		found bool)
+	GetTransactionsByAddresses(
+		includeTransactionPool bool,
+		includeOrphanPool bool) (
+		sendingInTransactionPool map[string]*externalapi.DomainTransaction,
+		receivingInTransactionPool map[string]*externalapi.DomainTransaction,
+		sendingInOrphanPool map[string]*externalapi.DomainTransaction,
+		receivingInOrphanPool map[string]*externalapi.DomainTransaction,
+		err error)
+	AllTransactions(
+		includeTransactionPool bool,
+		includeOrphanPool bool,
+	) (
+		transactionPoolTransactions []*externalapi.DomainTransaction,
+		orphanPoolTransactions []*externalapi.DomainTransaction)
+	TransactionCount(
+		includeTransactionPool bool,
+		includeOrphanPool bool) int
 	RevalidateHighPriorityTransactions() (validTransactions []*externalapi.DomainTransaction, err error)
 	IsTransactionOutputDust(output *externalapi.DomainTransactionOutput) bool
 }

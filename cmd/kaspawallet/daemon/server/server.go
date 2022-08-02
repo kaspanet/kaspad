@@ -45,7 +45,7 @@ type server struct {
 }
 
 // Start starts the kaspawalletd server
-func Start(params *dagconfig.Params, listen, rpcServer string, keysFilePath string, profile string) error {
+func Start(params *dagconfig.Params, listen, rpcServer string, keysFilePath string, profile string, timeout uint32) error {
 	initLog(defaultLogFile, defaultErrLogFile)
 
 	defer panics.HandlePanic(log, "MAIN", nil)
@@ -62,7 +62,7 @@ func Start(params *dagconfig.Params, listen, rpcServer string, keysFilePath stri
 	log.Infof("Listening to TCP on %s", listen)
 
 	log.Infof("Connecting to a node at %s...", rpcServer)
-	rpcClient, err := connectToRPC(params, rpcServer)
+	rpcClient, err := connectToRPC(params, rpcServer, timeout)
 	if err != nil {
 		return (errors.Wrapf(err, "Error connecting to RPC server %s", rpcServer))
 	}
