@@ -64,6 +64,12 @@ type consensus struct {
 	virtualNotUpdated   bool
 }
 
+// In order to prevent a situation that the consensus lock is held for too much time, we
+// release the lock each time we resolve 100 blocks.
+// Note: `virtualResolveChunk` should be smaller than `params.FinalityDuration` in order to avoid a situation
+// where UpdatePruningPointByVirtual skips a pruning point.
+const virtualResolveChunk = 100
+
 func (s *consensus) ValidateAndInsertBlockWithTrustedData(block *externalapi.BlockWithTrustedData, validateUTXO bool) error {
 	s.lock.Lock()
 	defer s.lock.Unlock()
@@ -198,15 +204,32 @@ func (s *consensus) ValidateAndInsertBlock(block *externalapi.DomainBlock, updat
 	if updateVirtual {
 		s.lock.Lock()
 		if s.virtualNotUpdated {
-			s.lock.Unlock()
-			err := s.ResolveVirtual(nil)
-			if err != nil {
-				return err
+			// We enter the loop in locked state
+			for {
+				_, isCompletelyResolved, err := s.resolveVirtualChunkNoLock(virtualResolveChunk)
+				if err != nil {
+					s.lock.Unlock()
+					return err
+				}
+				if isCompletelyResolved {
+					// Make sure we enter the block insertion function w/o releasing the lock.
+					// Otherwise, we might actually enter it in `s.virtualNotUpdated == true` state
+					_, err = s.validateAndInsertBlockNoLock(block, updateVirtual)
+					// Finally, unlock for the last iteration and return
+					s.lock.Unlock()
+					if err != nil {
+						return err
+					}
+					return nil
+				}
+				// Unlock to allow other threads to enter consensus
+				s.lock.Unlock()
+				// Lock for the next iteration
+				s.lock.Lock()
 			}
-			return s.validateAndInsertBlockWithLock(block, updateVirtual)
 		}
-		defer s.lock.Unlock()
 		_, err := s.validateAndInsertBlockNoLock(block, updateVirtual)
+		s.lock.Unlock()
 		if err != nil {
 			return err
 		}
@@ -912,11 +935,7 @@ func (s *consensus) ResolveVirtual(progressReportCallback func(uint64, uint64)) 
 			progressReportCallback(virtualDAAScoreStart, virtualDAAScore)
 		}
 
-		// In order to prevent a situation that the consensus lock is held for too much time, we
-		// release the lock each time we resolve 100 blocks.
-		// Note: maxBlocksToResolve should be smaller than `params.FinalityDuration` in order to avoid a situation
-		// where UpdatePruningPointByVirtual skips a pruning point.
-		_, isCompletelyResolved, err := s.resolveVirtualChunkWithLock(100)
+		_, isCompletelyResolved, err := s.resolveVirtualChunkWithLock(virtualResolveChunk)
 		if err != nil {
 			return err
 		}
