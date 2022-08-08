@@ -92,6 +92,23 @@ func (s *server) NewAddress(_ context.Context, request *pb.NewAddressRequest) (*
 	return &pb.NewAddressResponse{Address: address.String()}, nil
 }
 
+func (s *server) CheckIfAddressesAreValid(_ context.Context, request *pb.CheckIfAddressesAreValidRequest) (*pb.CheckIfAddressesAreValidResponse, error) {
+
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	areValidAddresses := make([]*pb.IsValidAddress, len(request.Addresses))
+	for i, address := range request.Addresses {
+		areValidAddresses[i] = &pb.IsValidAddress{
+			Address: address,
+			IsValid: util.CheckIfAddressIsValid(address, s.params.Prefix),
+		}
+	}
+	return &pb.CheckIfAddressesAreValidResponse{
+		AreValidAddresses: areValidAddresses,
+	}, nil
+}
+
 func (s *server) walletAddressString(wAddr *walletAddress) (string, error) {
 	path := s.walletAddressPath(wAddr)
 	addr, err := libkaspawallet.Address(s.params, s.keysFile.ExtendedPublicKeys, s.keysFile.MinimumSignatures, path, s.keysFile.ECDSA)
