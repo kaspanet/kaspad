@@ -22,6 +22,7 @@ type OnDisconnectedHandler func()
 // GRPCClient is a gRPC-based RPC client
 type GRPCClient struct {
 	stream                protowire.RPC_MessageStreamClient
+	connection            *grpc.ClientConn
 	onErrorHandler        OnErrorHandler
 	onDisconnectedHandler OnDisconnectedHandler
 }
@@ -43,7 +44,12 @@ func Connect(address string) (*GRPCClient, error) {
 	if err != nil {
 		return nil, errors.Wrapf(err, "error getting client stream for %s", address)
 	}
-	return &GRPCClient{stream: stream}, nil
+	return &GRPCClient{stream: stream, connection: gRPCConnection}, nil
+}
+
+// Close closes the underlying grpc connection
+func (c *GRPCClient) Close() error {
+	return c.connection.Close()
 }
 
 // Disconnect disconnects from the RPC server
