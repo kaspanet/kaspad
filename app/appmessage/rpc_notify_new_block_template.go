@@ -4,6 +4,7 @@ package appmessage
 // its respective RPC message
 type NotifyNewBlockTemplateRequestMessage struct {
 	baseMessage
+	ID string
 }
 
 // Command returns the protocol command string for the message
@@ -12,14 +13,15 @@ func (msg *NotifyNewBlockTemplateRequestMessage) Command() MessageCommand {
 }
 
 // NewNotifyNewBlockTemplateRequestMessage returns an instance of the message
-func NewNotifyNewBlockTemplateRequestMessage() *NotifyNewBlockTemplateRequestMessage {
-	return &NotifyNewBlockTemplateRequestMessage{}
+func NewNotifyNewBlockTemplateRequestMessage(id string) *NotifyNewBlockTemplateRequestMessage {
+	return &NotifyNewBlockTemplateRequestMessage{ID: id}
 }
 
 // NotifyNewBlockTemplateResponseMessage is an appmessage corresponding to
 // its respective RPC message
 type NotifyNewBlockTemplateResponseMessage struct {
 	baseMessage
+	ID    string
 	Error *RPCError
 }
 
@@ -29,14 +31,15 @@ func (msg *NotifyNewBlockTemplateResponseMessage) Command() MessageCommand {
 }
 
 // NewNotifyNewBlockTemplateResponseMessage returns an instance of the message
-func NewNotifyNewBlockTemplateResponseMessage() *NotifyNewBlockTemplateResponseMessage {
-	return &NotifyNewBlockTemplateResponseMessage{}
+func NewNotifyNewBlockTemplateResponseMessage(id string) *NotifyNewBlockTemplateResponseMessage {
+	return &NotifyNewBlockTemplateResponseMessage{ID: id}
 }
 
 // NewBlockTemplateNotificationMessage is an appmessage corresponding to
 // its respective RPC message
 type NewBlockTemplateNotificationMessage struct {
 	baseMessage
+	ID string
 }
 
 // Command returns the protocol command string for the message
@@ -45,6 +48,6 @@ func (msg *NewBlockTemplateNotificationMessage) Command() MessageCommand {
 }
 
 // NewNewBlockTemplateNotificationMessage returns an instance of the message
-func NewNewBlockTemplateNotificationMessage() *NewBlockTemplateNotificationMessage {
-	return &NewBlockTemplateNotificationMessage{}
+func NewNewBlockTemplateNotificationMessage(id string) *NewBlockTemplateNotificationMessage {
+	return &NewBlockTemplateNotificationMessage{ID: id}
 }

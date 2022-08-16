@@ -7,13 +7,16 @@ import (
 )
 
 // HandleNotifyNewBlockTemplate handles the respectively named RPC command
-func HandleNotifyNewBlockTemplate(context *rpccontext.Context, router *router.Router, _ appmessage.Message) (appmessage.Message, error) {
+func HandleNotifyNewBlockTemplate(context *rpccontext.Context, router *router.Router, request appmessage.Message) (appmessage.Message, error) {
+
+	notifyNewBlockTemplateRequest := request.(*appmessage.NotifyNewBlockTemplateRequestMessage)
+
 	listener, err := context.NotificationManager.Listener(router)
 	if err != nil {
 		return nil, err
 	}
-	listener.PropagateNewBlockTemplateNotifications()
+	listener.PropagateNewBlockTemplateNotifications(notifyNewBlockTemplateRequest.ID)
 
-	response := appmessage.NewNotifyNewBlockTemplateResponseMessage()
+	response := appmessage.NewNotifyNewBlockTemplateResponseMessage(notifyNewBlockTemplateRequest.ID)
 	return response, nil
 }

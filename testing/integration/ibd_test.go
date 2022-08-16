@@ -73,7 +73,7 @@ func TestIBD(t *testing.T) {
 func TestIBDWithPruning(t *testing.T) {
 	testSync := func(syncer, syncee *appHarness) {
 		utxoSetOverriden := make(chan struct{})
-		err := syncee.rpcClient.RegisterPruningPointUTXOSetNotifications(func() {
+		err := syncee.rpcClient.RegisterPruningPointUTXOSetNotifications(func(notification *appmessage.PruningPointUTXOSetOverrideNotificationMessage) {
 			close(utxoSetOverriden)
 		})
 
@@ -107,7 +107,7 @@ func TestIBDWithPruning(t *testing.T) {
 			}
 		}
 
-		const timeout = 10 * time.Second
+		const timeout = 20 * time.Second
 		select {
 		case <-utxoSetOverriden:
 		case <-time.After(timeout):

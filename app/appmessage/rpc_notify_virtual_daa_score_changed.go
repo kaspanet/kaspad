@@ -4,6 +4,7 @@ package appmessage
 // its respective RPC message
 type NotifyVirtualDaaScoreChangedRequestMessage struct {
 	baseMessage
+	ID string
 }
 
 // Command returns the protocol command string for the message
@@ -12,14 +13,15 @@ func (msg *NotifyVirtualDaaScoreChangedRequestMessage) Command() MessageCommand 
 }
 
 // NewNotifyVirtualDaaScoreChangedRequestMessage returns a instance of the message
-func NewNotifyVirtualDaaScoreChangedRequestMessage() *NotifyVirtualDaaScoreChangedRequestMessage {
-	return &NotifyVirtualDaaScoreChangedRequestMessage{}
+func NewNotifyVirtualDaaScoreChangedRequestMessage(id string) *NotifyVirtualDaaScoreChangedRequestMessage {
+	return &NotifyVirtualDaaScoreChangedRequestMessage{ID: id}
 }
 
 // NotifyVirtualDaaScoreChangedResponseMessage is an appmessage corresponding to
 // its respective RPC message
 type NotifyVirtualDaaScoreChangedResponseMessage struct {
 	baseMessage
+	ID    string
 	Error *RPCError
 }
 
@@ -29,14 +31,15 @@ func (msg *NotifyVirtualDaaScoreChangedResponseMessage) Command() MessageCommand
 }
 
 // NewNotifyVirtualDaaScoreChangedResponseMessage returns a instance of the message
-func NewNotifyVirtualDaaScoreChangedResponseMessage() *NotifyVirtualDaaScoreChangedResponseMessage {
-	return &NotifyVirtualDaaScoreChangedResponseMessage{}
+func NewNotifyVirtualDaaScoreChangedResponseMessage(id string) *NotifyVirtualDaaScoreChangedResponseMessage {
+	return &NotifyVirtualDaaScoreChangedResponseMessage{ID: id}
 }
 
 // VirtualDaaScoreChangedNotificationMessage is an appmessage corresponding to
 // its respective RPC message
 type VirtualDaaScoreChangedNotificationMessage struct {
 	baseMessage
+	ID              string
 	VirtualDaaScore uint64
 }
 
@@ -47,9 +50,10 @@ func (msg *VirtualDaaScoreChangedNotificationMessage) Command() MessageCommand {
 
 // NewVirtualDaaScoreChangedNotificationMessage returns a instance of the message
 func NewVirtualDaaScoreChangedNotificationMessage(
-	virtualDaaScore uint64) *VirtualDaaScoreChangedNotificationMessage {
+	virtualDaaScore uint64, id string) *VirtualDaaScoreChangedNotificationMessage {
 
 	return &VirtualDaaScoreChangedNotificationMessage{
+		ID:              id,
 		VirtualDaaScore: virtualDaaScore,
 	}
 }

@@ -6,12 +6,24 @@ import (
 )
 
 func (x *KaspadMessage_NotifyNewBlockTemplateRequest) toAppMessage() (appmessage.Message, error) {
-	return &appmessage.NotifyNewBlockTemplateRequestMessage{}, nil
+	if x == nil {
+		return nil, errors.Wrapf(errorNil, "KaspadMessage_NotifyNewBlockTemplateRequest is nil")
+	}
+	return x.NotifyNewBlockTemplateRequest.toAppMessage()
 }
 
-func (x *KaspadMessage_NotifyNewBlockTemplateRequest) fromAppMessage(_ *appmessage.NotifyNewBlockTemplateRequestMessage) error {
-	x.NotifyNewBlockTemplateRequest = &NotifyNewBlockTemplateRequestMessage{}
+func (x *KaspadMessage_NotifyNewBlockTemplateRequest) fromAppMessage(message *appmessage.NotifyNewBlockTemplateRequestMessage) error {
+	x.NotifyNewBlockTemplateRequest = &NotifyNewBlockTemplateRequestMessage{Id: message.ID}
 	return nil
+}
+
+func (x *NotifyNewBlockTemplateRequestMessage) toAppMessage() (appmessage.Message, error) {
+	if x == nil {
+		return nil, errors.Wrapf(errorNil, "NotifyNewBlockTemplateRequestMessage is nil")
+	}
+	return &appmessage.NotifyNewBlockTemplateRequestMessage{
+		ID: x.Id,
+	}, nil
 }
 
 func (x *KaspadMessage_NotifyNewBlockTemplateResponse) toAppMessage() (appmessage.Message, error) {
@@ -27,6 +39,7 @@ func (x *KaspadMessage_NotifyNewBlockTemplateResponse) fromAppMessage(message *a
 		err = &RPCError{Message: message.Error.Message}
 	}
 	x.NotifyNewBlockTemplateResponse = &NotifyNewBlockTemplateResponseMessage{
+		Id:    message.ID,
 		Error: err,
 	}
 	return nil
@@ -42,6 +55,7 @@ func (x *NotifyNewBlockTemplateResponseMessage) toAppMessage() (appmessage.Messa
 		return nil, err
 	}
 	return &appmessage.NotifyNewBlockTemplateResponseMessage{
+		ID:    x.Id,
 		Error: rpcErr,
 	}, nil
 }
@@ -54,7 +68,7 @@ func (x *KaspadMessage_NewBlockTemplateNotification) toAppMessage() (appmessage.
 }
 
 func (x *KaspadMessage_NewBlockTemplateNotification) fromAppMessage(message *appmessage.NewBlockTemplateNotificationMessage) error {
-	x.NewBlockTemplateNotification = &NewBlockTemplateNotificationMessage{}
+	x.NewBlockTemplateNotification = &NewBlockTemplateNotificationMessage{Id: message.ID}
 	return nil
 }
 
@@ -62,5 +76,5 @@ func (x *NewBlockTemplateNotificationMessage) toAppMessage() (appmessage.Message
 	if x == nil {
 		return nil, errors.Wrapf(errorNil, "NewBlockTemplateNotificationMessage is nil")
 	}
-	return &appmessage.NewBlockTemplateNotificationMessage{}, nil
+	return &appmessage.NewBlockTemplateNotificationMessage{ID: x.Id}, nil
 }

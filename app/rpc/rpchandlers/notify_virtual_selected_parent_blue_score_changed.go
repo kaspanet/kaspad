@@ -7,13 +7,16 @@ import (
 )
 
 // HandleNotifyVirtualSelectedParentBlueScoreChanged handles the respectively named RPC command
-func HandleNotifyVirtualSelectedParentBlueScoreChanged(context *rpccontext.Context, router *router.Router, _ appmessage.Message) (appmessage.Message, error) {
+func HandleNotifyVirtualSelectedParentBlueScoreChanged(context *rpccontext.Context, router *router.Router, request appmessage.Message) (appmessage.Message, error) {
+
+	notifyVirtualSelectedParentBlueScoreChangedRequest := request.(*appmessage.NotifyVirtualSelectedParentBlueScoreChangedRequestMessage)
+
 	listener, err := context.NotificationManager.Listener(router)
 	if err != nil {
 		return nil, err
 	}
-	listener.PropagateVirtualSelectedParentBlueScoreChangedNotifications()
+	listener.PropagateVirtualSelectedParentBlueScoreChangedNotifications(notifyVirtualSelectedParentBlueScoreChangedRequest.ID)
 
-	response := appmessage.NewNotifyVirtualSelectedParentBlueScoreChangedResponseMessage()
+	response := appmessage.NewNotifyVirtualSelectedParentBlueScoreChangedResponseMessage(notifyVirtualSelectedParentBlueScoreChangedRequest.ID)
 	return response, nil
 }

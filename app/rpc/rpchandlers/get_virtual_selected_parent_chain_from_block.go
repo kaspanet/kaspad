@@ -27,7 +27,7 @@ func HandleGetVirtualSelectedParentChainFromBlock(context *rpccontext.Context, _
 	}
 
 	chainChangedNotification, err := context.ConvertVirtualSelectedParentChainChangesToChainChangedNotificationMessage(
-		virtualSelectedParentChain, getVirtualSelectedParentChainFromBlockRequest.IncludeAcceptedTransactionIDs)
+		virtualSelectedParentChain, getVirtualSelectedParentChainFromBlockRequest.IncludeAcceptedTransactionIDs, rpccontext.DefaultNotificationID)
 	if err != nil {
 		return nil, err
 	}

@@ -7,14 +7,17 @@ import (
 )
 
 // HandleNotifyFinalityConflicts handles the respectively named RPC command
-func HandleNotifyFinalityConflicts(context *rpccontext.Context, router *router.Router, _ appmessage.Message) (appmessage.Message, error) {
+func HandleNotifyFinalityConflicts(context *rpccontext.Context, router *router.Router, request appmessage.Message) (appmessage.Message, error) {
+
+	notifyFinalityConflictsRequest := request.(*appmessage.NotifyFinalityConflictsRequestMessage)
+
 	listener, err := context.NotificationManager.Listener(router)
 	if err != nil {
 		return nil, err
 	}
-	listener.PropagateFinalityConflictNotifications()
-	listener.PropagateFinalityConflictResolvedNotifications()
+	listener.PropagateFinalityConflictNotifications(notifyFinalityConflictsRequest.ID)
+	listener.PropagateFinalityConflictResolvedNotifications(notifyFinalityConflictsRequest.ID)
 
-	response := appmessage.NewNotifyFinalityConflictsResponseMessage()
+	response := appmessage.NewNotifyFinalityConflictsResponseMessage(notifyFinalityConflictsRequest.ID)
 	return response, nil
 }

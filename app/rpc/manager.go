@@ -92,7 +92,7 @@ func (m *Manager) notifyBlockAddedToDAG(block *externalapi.DomainBlock) error {
 	if err != nil {
 		return err
 	}
-	blockAddedNotification := appmessage.NewBlockAddedNotificationMessage(rpcBlock)
+	blockAddedNotification := appmessage.NewBlockAddedNotificationMessage(rpcBlock, "")
 	err = m.context.NotificationManager.NotifyBlockAdded(blockAddedNotification)
 	if err != nil {
 		return err
@@ -141,7 +141,7 @@ func (m *Manager) notifyVirtualChange(virtualChangeSet *externalapi.VirtualChang
 // NotifyNewBlockTemplate notifies the manager that a new
 // block template is available for miners
 func (m *Manager) NotifyNewBlockTemplate() error {
-	notification := appmessage.NewNewBlockTemplateNotificationMessage()
+	notification := appmessage.NewNewBlockTemplateNotificationMessage("")
 	return m.context.NotificationManager.NotifyNewBlockTemplate(notification)
 }
 
@@ -166,7 +166,7 @@ func (m *Manager) NotifyFinalityConflict(violatingBlockHash string) error {
 	onEnd := logger.LogAndMeasureExecutionTime(log, "RPCManager.NotifyFinalityConflict")
 	defer onEnd()
 
-	notification := appmessage.NewFinalityConflictNotificationMessage(violatingBlockHash)
+	notification := appmessage.NewFinalityConflictNotificationMessage(violatingBlockHash, rpccontext.DefaultNotificationID)
 	return m.context.NotificationManager.NotifyFinalityConflict(notification)
 }
 
@@ -175,7 +175,7 @@ func (m *Manager) NotifyFinalityConflictResolved(finalityBlockHash string) error
 	onEnd := logger.LogAndMeasureExecutionTime(log, "RPCManager.NotifyFinalityConflictResolved")
 	defer onEnd()
 
-	notification := appmessage.NewFinalityConflictResolvedNotificationMessage(finalityBlockHash)
+	notification := appmessage.NewFinalityConflictResolvedNotificationMessage(finalityBlockHash, rpccontext.DefaultNotificationID)
 	return m.context.NotificationManager.NotifyFinalityConflictResolved(notification)
 }
 
@@ -207,7 +207,7 @@ func (m *Manager) notifyVirtualSelectedParentBlueScoreChanged(virtualSelectedPar
 	onEnd := logger.LogAndMeasureExecutionTime(log, "RPCManager.NotifyVirtualSelectedParentBlueScoreChanged")
 	defer onEnd()
 
-	notification := appmessage.NewVirtualSelectedParentBlueScoreChangedNotificationMessage(virtualSelectedParentBlueScore)
+	notification := appmessage.NewVirtualSelectedParentBlueScoreChangedNotificationMessage(virtualSelectedParentBlueScore, rpccontext.DefaultNotificationID)
 	return m.context.NotificationManager.NotifyVirtualSelectedParentBlueScoreChanged(notification)
 }
 
@@ -215,7 +215,7 @@ func (m *Manager) notifyVirtualDaaScoreChanged(virtualDAAScore uint64) error {
 	onEnd := logger.LogAndMeasureExecutionTime(log, "RPCManager.NotifyVirtualDaaScoreChanged")
 	defer onEnd()
 
-	notification := appmessage.NewVirtualDaaScoreChangedNotificationMessage(virtualDAAScore)
+	notification := appmessage.NewVirtualDaaScoreChangedNotificationMessage(virtualDAAScore, rpccontext.DefaultNotificationID)
 	return m.context.NotificationManager.NotifyVirtualDaaScoreChanged(notification)
 }
 
@@ -236,7 +236,7 @@ func (m *Manager) notifyVirtualSelectedParentChainChanged(virtualChangeSet *exte
 		}
 
 		notification, err := m.context.ConvertVirtualSelectedParentChainChangesToChainChangedNotificationMessage(
-			virtualChangeSet.VirtualSelectedParentChainChanges, includeAcceptedTransactionIDs)
+			virtualChangeSet.VirtualSelectedParentChainChanges, includeAcceptedTransactionIDs, rpccontext.DefaultNotificationID) //DefaultNotificationId added in func
 		if err != nil {
 			return err
 		}

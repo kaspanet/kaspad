@@ -9,16 +9,22 @@ func (x *KaspadMessage_NotifyVirtualSelectedParentChainChangedRequest) toAppMess
 	if x == nil {
 		return nil, errors.Wrapf(errorNil, "KaspadMessage_NotifyVirtualSelectedParentChainChangedRequest is nil")
 	}
-	return &appmessage.NotifyVirtualSelectedParentChainChangedRequestMessage{
-		IncludeAcceptedTransactionIDs: x.NotifyVirtualSelectedParentChainChangedRequest.IncludeAcceptedTransactionIds,
-	}, nil
+	return x.NotifyVirtualSelectedParentChainChangedRequest.toAppMessage()
 }
 
-func (x *KaspadMessage_NotifyVirtualSelectedParentChainChangedRequest) fromAppMessage(appmessage *appmessage.NotifyVirtualSelectedParentChainChangedRequestMessage) error {
+func (x *KaspadMessage_NotifyVirtualSelectedParentChainChangedRequest) fromAppMessage(message *appmessage.NotifyVirtualSelectedParentChainChangedRequestMessage) error {
 	x.NotifyVirtualSelectedParentChainChangedRequest = &NotifyVirtualSelectedParentChainChangedRequestMessage{
-		IncludeAcceptedTransactionIds: appmessage.IncludeAcceptedTransactionIDs,
+		Id:                            message.ID,
+		IncludeAcceptedTransactionIds: message.IncludeAcceptedTransactionIDs,
 	}
 	return nil
+}
+
+func (x *NotifyVirtualSelectedParentChainChangedRequestMessage) toAppMessage() (appmessage.Message, error) {
+	if x == nil {
+		return nil, errors.Wrapf(errorNil, "NotifyVirtualSelectedParentChainChangedRequestMessage is nil")
+	}
+	return &appmessage.NotifyVirtualSelectedParentChainChangedRequestMessage{ID: x.Id}, nil
 }
 
 func (x *KaspadMessage_NotifyVirtualSelectedParentChainChangedResponse) toAppMessage() (appmessage.Message, error) {
@@ -34,6 +40,7 @@ func (x *KaspadMessage_NotifyVirtualSelectedParentChainChangedResponse) fromAppM
 		err = &RPCError{Message: message.Error.Message}
 	}
 	x.NotifyVirtualSelectedParentChainChangedResponse = &NotifyVirtualSelectedParentChainChangedResponseMessage{
+		Id:    message.ID,
 		Error: err,
 	}
 	return nil
@@ -49,6 +56,7 @@ func (x *NotifyVirtualSelectedParentChainChangedResponseMessage) toAppMessage() 
 		return nil, err
 	}
 	return &appmessage.NotifyVirtualSelectedParentChainChangedResponseMessage{
+		ID:    x.Id,
 		Error: rpcErr,
 	}, nil
 }
@@ -62,6 +70,7 @@ func (x *KaspadMessage_VirtualSelectedParentChainChangedNotification) toAppMessa
 
 func (x *KaspadMessage_VirtualSelectedParentChainChangedNotification) fromAppMessage(message *appmessage.VirtualSelectedParentChainChangedNotificationMessage) error {
 	x.VirtualSelectedParentChainChangedNotification = &VirtualSelectedParentChainChangedNotificationMessage{
+		Id:                      message.ID,
 		RemovedChainBlockHashes: message.RemovedChainBlockHashes,
 		AddedChainBlockHashes:   message.AddedChainBlockHashes,
 		AcceptedTransactionIds:  make([]*AcceptedTransactionIds, len(message.AcceptedTransactionIDs)),
@@ -79,6 +88,7 @@ func (x *VirtualSelectedParentChainChangedNotificationMessage) toAppMessage() (a
 		return nil, errors.Wrapf(errorNil, "VirtualSelectedParentChainChangedNotificationMessage is nil")
 	}
 	message := &appmessage.VirtualSelectedParentChainChangedNotificationMessage{
+		ID:                      x.Id,
 		RemovedChainBlockHashes: x.RemovedChainBlockHashes,
 		AddedChainBlockHashes:   x.AddedChainBlockHashes,
 		AcceptedTransactionIDs:  make([]*appmessage.AcceptedTransactionIDs, len(x.AcceptedTransactionIds)),

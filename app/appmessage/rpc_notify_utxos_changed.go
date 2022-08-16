@@ -4,6 +4,7 @@ package appmessage
 // its respective RPC message
 type NotifyUTXOsChangedRequestMessage struct {
 	baseMessage
+	ID        string
 	Addresses []string
 }
 
@@ -13,8 +14,9 @@ func (msg *NotifyUTXOsChangedRequestMessage) Command() MessageCommand {
 }
 
 // NewNotifyUTXOsChangedRequestMessage returns a instance of the message
-func NewNotifyUTXOsChangedRequestMessage(addresses []string) *NotifyUTXOsChangedRequestMessage {
+func NewNotifyUTXOsChangedRequestMessage(addresses []string, id string) *NotifyUTXOsChangedRequestMessage {
 	return &NotifyUTXOsChangedRequestMessage{
+		ID:        id,
 		Addresses: addresses,
 	}
 }
@@ -23,6 +25,7 @@ func NewNotifyUTXOsChangedRequestMessage(addresses []string) *NotifyUTXOsChanged
 // its respective RPC message
 type NotifyUTXOsChangedResponseMessage struct {
 	baseMessage
+	ID    string
 	Error *RPCError
 }
 
@@ -32,14 +35,15 @@ func (msg *NotifyUTXOsChangedResponseMessage) Command() MessageCommand {
 }
 
 // NewNotifyUTXOsChangedResponseMessage returns a instance of the message
-func NewNotifyUTXOsChangedResponseMessage() *NotifyUTXOsChangedResponseMessage {
-	return &NotifyUTXOsChangedResponseMessage{}
+func NewNotifyUTXOsChangedResponseMessage(id string) *NotifyUTXOsChangedResponseMessage {
+	return &NotifyUTXOsChangedResponseMessage{ID: id}
 }
 
 // UTXOsChangedNotificationMessage is an appmessage corresponding to
 // its respective RPC message
 type UTXOsChangedNotificationMessage struct {
 	baseMessage
+	ID      string
 	Added   []*UTXOsByAddressesEntry
 	Removed []*UTXOsByAddressesEntry
 }
@@ -57,6 +61,6 @@ func (msg *UTXOsChangedNotificationMessage) Command() MessageCommand {
 }
 
 // NewUTXOsChangedNotificationMessage returns a instance of the message
-func NewUTXOsChangedNotificationMessage() *UTXOsChangedNotificationMessage {
-	return &UTXOsChangedNotificationMessage{}
+func NewUTXOsChangedNotificationMessage(id string) *UTXOsChangedNotificationMessage {
+	return &UTXOsChangedNotificationMessage{ID: id}
 }

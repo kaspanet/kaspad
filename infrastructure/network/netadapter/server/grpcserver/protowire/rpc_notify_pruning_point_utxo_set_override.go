@@ -9,12 +9,21 @@ func (x *KaspadMessage_NotifyPruningPointUTXOSetOverrideRequest) toAppMessage() 
 	if x == nil {
 		return nil, errors.Wrapf(errorNil, "KaspadMessage_NotifyPruningPointUTXOSetOverrideRequest is nil")
 	}
-	return &appmessage.NotifyPruningPointUTXOSetOverrideRequestMessage{}, nil
+	return x.NotifyPruningPointUTXOSetOverrideRequest.toAppMessage()
 }
 
 func (x *KaspadMessage_NotifyPruningPointUTXOSetOverrideRequest) fromAppMessage(_ *appmessage.NotifyPruningPointUTXOSetOverrideRequestMessage) error {
 	x.NotifyPruningPointUTXOSetOverrideRequest = &NotifyPruningPointUTXOSetOverrideRequestMessage{}
 	return nil
+}
+
+func (x *NotifyPruningPointUTXOSetOverrideRequestMessage) toAppMessage() (appmessage.Message, error) {
+	if x == nil {
+		return nil, errors.Wrapf(errorNil, "NotifyPruningPointUTXOSetOverrideRequestMessage is nil")
+	}
+	return &appmessage.NotifyPruningPointUTXOSetOverrideRequestMessage{
+		ID: x.Id,
+	}, nil
 }
 
 func (x *KaspadMessage_NotifyPruningPointUTXOSetOverrideResponse) toAppMessage() (appmessage.Message, error) {
@@ -30,6 +39,7 @@ func (x *KaspadMessage_NotifyPruningPointUTXOSetOverrideResponse) fromAppMessage
 		err = &RPCError{Message: message.Error.Message}
 	}
 	x.NotifyPruningPointUTXOSetOverrideResponse = &NotifyPruningPointUTXOSetOverrideResponseMessage{
+		Id:    message.ID,
 		Error: err,
 	}
 	return nil
@@ -45,6 +55,7 @@ func (x *NotifyPruningPointUTXOSetOverrideResponseMessage) toAppMessage() (appme
 		return nil, err
 	}
 	return &appmessage.NotifyPruningPointUTXOSetOverrideResponseMessage{
+		ID:    x.Id,
 		Error: rpcErr,
 	}, nil
 }
@@ -53,11 +64,11 @@ func (x *KaspadMessage_PruningPointUTXOSetOverrideNotification) toAppMessage() (
 	if x == nil {
 		return nil, errors.Wrapf(errorNil, "KaspadMessage_PruningPointUTXOSetOverrideNotification is nil")
 	}
-	return &appmessage.PruningPointUTXOSetOverrideNotificationMessage{}, nil
+	return &appmessage.PruningPointUTXOSetOverrideNotificationMessage{ID: x.PruningPointUTXOSetOverrideNotification.Id}, nil
 }
 
-func (x *KaspadMessage_PruningPointUTXOSetOverrideNotification) fromAppMessage(_ *appmessage.PruningPointUTXOSetOverrideNotificationMessage) error {
-	x.PruningPointUTXOSetOverrideNotification = &PruningPointUTXOSetOverrideNotificationMessage{}
+func (x *KaspadMessage_PruningPointUTXOSetOverrideNotification) fromAppMessage(message *appmessage.PruningPointUTXOSetOverrideNotificationMessage) error {
+	x.PruningPointUTXOSetOverrideNotification = &PruningPointUTXOSetOverrideNotificationMessage{Id: message.ID}
 	return nil
 }
 
@@ -65,12 +76,21 @@ func (x *KaspadMessage_StopNotifyingPruningPointUTXOSetOverrideRequest) toAppMes
 	if x == nil {
 		return nil, errors.Wrapf(errorNil, "KaspadMessage_StopNotifyingPruningPointUTXOSetOverrideRequest is nil")
 	}
-	return &appmessage.StopNotifyingPruningPointUTXOSetOverrideRequestMessage{}, nil
+	return x.StopNotifyingPruningPointUTXOSetOverrideRequest.toAppMessage()
 }
 
-func (x *KaspadMessage_StopNotifyingPruningPointUTXOSetOverrideRequest) fromAppMessage(_ *appmessage.StopNotifyingPruningPointUTXOSetOverrideRequestMessage) error {
-	x.StopNotifyingPruningPointUTXOSetOverrideRequest = &StopNotifyingPruningPointUTXOSetOverrideRequestMessage{}
+func (x *KaspadMessage_StopNotifyingPruningPointUTXOSetOverrideRequest) fromAppMessage(message *appmessage.StopNotifyingPruningPointUTXOSetOverrideRequestMessage) error {
+	x.StopNotifyingPruningPointUTXOSetOverrideRequest = &StopNotifyingPruningPointUTXOSetOverrideRequestMessage{Id: message.ID}
 	return nil
+}
+
+func (x *StopNotifyingPruningPointUTXOSetOverrideRequestMessage) toAppMessage() (appmessage.Message, error) {
+	if x == nil {
+		return nil, errors.Wrapf(errorNil, "StopNotifyingPruningPointUTXOSetOverrideRequestMessage is nil")
+	}
+	return &appmessage.StopNotifyingPruningPointUTXOSetOverrideRequestMessage{
+		ID: x.Id,
+	}, nil
 }
 
 func (x *KaspadMessage_StopNotifyingPruningPointUTXOSetOverrideResponse) toAppMessage() (appmessage.Message, error) {
@@ -88,6 +108,7 @@ func (x *KaspadMessage_StopNotifyingPruningPointUTXOSetOverrideResponse) fromApp
 		err = &RPCError{Message: message.Error.Message}
 	}
 	x.StopNotifyingPruningPointUTXOSetOverrideResponse = &StopNotifyingPruningPointUTXOSetOverrideResponseMessage{
+		Id:    message.ID,
 		Error: err,
 	}
 	return nil
@@ -103,6 +124,7 @@ func (x *StopNotifyingPruningPointUTXOSetOverrideResponseMessage) toAppMessage()
 		return nil, err
 	}
 	return &appmessage.StopNotifyingPruningPointUTXOSetOverrideResponseMessage{
+		ID:    x.Id,
 		Error: rpcErr,
 	}, nil
 }

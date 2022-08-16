@@ -7,13 +7,16 @@ import (
 )
 
 // HandleNotifyVirtualDaaScoreChanged handles the respectively named RPC command
-func HandleNotifyVirtualDaaScoreChanged(context *rpccontext.Context, router *router.Router, _ appmessage.Message) (appmessage.Message, error) {
+func HandleNotifyVirtualDaaScoreChanged(context *rpccontext.Context, router *router.Router, request appmessage.Message) (appmessage.Message, error) {
+
+	notifyVirtualDaaScoreChangedRequest := request.(*appmessage.NotifyVirtualDaaScoreChangedRequestMessage)
+
 	listener, err := context.NotificationManager.Listener(router)
 	if err != nil {
 		return nil, err
 	}
-	listener.PropagateVirtualDaaScoreChangedNotifications()
+	listener.PropagateVirtualDaaScoreChangedNotifications(notifyVirtualDaaScoreChangedRequest.ID)
 
-	response := appmessage.NewNotifyVirtualDaaScoreChangedResponseMessage()
+	response := appmessage.NewNotifyVirtualDaaScoreChangedResponseMessage(notifyVirtualDaaScoreChangedRequest.ID)
 	return response, nil
 }

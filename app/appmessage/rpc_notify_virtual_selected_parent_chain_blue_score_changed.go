@@ -4,6 +4,7 @@ package appmessage
 // its respective RPC message
 type NotifyVirtualSelectedParentBlueScoreChangedRequestMessage struct {
 	baseMessage
+	ID string
 }
 
 // Command returns the protocol command string for the message
@@ -12,14 +13,15 @@ func (msg *NotifyVirtualSelectedParentBlueScoreChangedRequestMessage) Command() 
 }
 
 // NewNotifyVirtualSelectedParentBlueScoreChangedRequestMessage returns a instance of the message
-func NewNotifyVirtualSelectedParentBlueScoreChangedRequestMessage() *NotifyVirtualSelectedParentBlueScoreChangedRequestMessage {
-	return &NotifyVirtualSelectedParentBlueScoreChangedRequestMessage{}
+func NewNotifyVirtualSelectedParentBlueScoreChangedRequestMessage(id string) *NotifyVirtualSelectedParentBlueScoreChangedRequestMessage {
+	return &NotifyVirtualSelectedParentBlueScoreChangedRequestMessage{ID: id}
 }
 
 // NotifyVirtualSelectedParentBlueScoreChangedResponseMessage is an appmessage corresponding to
 // its respective RPC message
 type NotifyVirtualSelectedParentBlueScoreChangedResponseMessage struct {
 	baseMessage
+	ID    string
 	Error *RPCError
 }
 
@@ -29,14 +31,15 @@ func (msg *NotifyVirtualSelectedParentBlueScoreChangedResponseMessage) Command()
 }
 
 // NewNotifyVirtualSelectedParentBlueScoreChangedResponseMessage returns a instance of the message
-func NewNotifyVirtualSelectedParentBlueScoreChangedResponseMessage() *NotifyVirtualSelectedParentBlueScoreChangedResponseMessage {
-	return &NotifyVirtualSelectedParentBlueScoreChangedResponseMessage{}
+func NewNotifyVirtualSelectedParentBlueScoreChangedResponseMessage(id string) *NotifyVirtualSelectedParentBlueScoreChangedResponseMessage {
+	return &NotifyVirtualSelectedParentBlueScoreChangedResponseMessage{ID: id}
 }
 
 // VirtualSelectedParentBlueScoreChangedNotificationMessage is an appmessage corresponding to
 // its respective RPC message
 type VirtualSelectedParentBlueScoreChangedNotificationMessage struct {
 	baseMessage
+	ID                             string
 	VirtualSelectedParentBlueScore uint64
 }
 
@@ -47,9 +50,10 @@ func (msg *VirtualSelectedParentBlueScoreChangedNotificationMessage) Command() M
 
 // NewVirtualSelectedParentBlueScoreChangedNotificationMessage returns a instance of the message
 func NewVirtualSelectedParentBlueScoreChangedNotificationMessage(
-	virtualSelectedParentBlueScore uint64) *VirtualSelectedParentBlueScoreChangedNotificationMessage {
+	virtualSelectedParentBlueScore uint64, id string) *VirtualSelectedParentBlueScoreChangedNotificationMessage {
 
 	return &VirtualSelectedParentBlueScoreChangedNotificationMessage{
+		ID:                             id,
 		VirtualSelectedParentBlueScore: virtualSelectedParentBlueScore,
 	}
 }

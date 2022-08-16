@@ -14,6 +14,9 @@ import (
 	"github.com/pkg/errors"
 )
 
+// DefaultNotificationID corrosponds to defualt grpc string value, and hence id value when not supplied, or as placeholder
+const DefaultNotificationID string = ""
+
 // NotificationManager manages notifications for the RPC
 type NotificationManager struct {
 	sync.RWMutex
@@ -41,6 +44,16 @@ type NotificationListener struct {
 	propagateVirtualDaaScoreChangedNotifications                bool
 	propagatePruningPointUTXOSetOverrideNotifications           bool
 	propagateNewBlockTemplateNotifications                      bool
+
+	propagateBlockAddedNotificationsID                            string
+	propagateVirtualSelectedParentChainChangedNotificationsID     string
+	propagateFinalityConflictNotificationsID                      string
+	propagateFinalityConflictResolvedNotificationsID              string
+	propagateUTXOsChangedNotificationsID                          string
+	propagateVirtualSelectedParentBlueScoreChangedNotificationsID string
+	propagateVirtualDaaScoreChangedNotificationsID                string
+	propagatePruningPointUTXOSetOverrideNotificationsID           string
+	propagateNewBlockTemplateNotificationsID                      string
 
 	propagateUTXOsChangedNotificationAddresses                                    map[utxoindex.ScriptPublicKeyString]*UTXOsChangedNotificationAddress
 	includeAcceptedTransactionIDsInVirtualSelectedParentChainChangedNotifications bool
@@ -103,6 +116,9 @@ func (nm *NotificationManager) NotifyBlockAdded(notification *appmessage.BlockAd
 
 	for router, listener := range nm.listeners {
 		if listener.propagateBlockAddedNotifications {
+
+			notification.ID = listener.propagateBlockAddedNotificationsID
+
 			err := router.OutgoingRoute().MaybeEnqueue(notification)
 			if err != nil {
 				return err
@@ -120,6 +136,7 @@ func (nm *NotificationManager) NotifyVirtualSelectedParentChainChanged(
 	defer nm.RUnlock()
 
 	notificationWithoutAcceptedTransactionIDs := &appmessage.VirtualSelectedParentChainChangedNotificationMessage{
+		ID:                      DefaultNotificationID,
 		RemovedChainBlockHashes: notification.RemovedChainBlockHashes,
 		AddedChainBlockHashes:   notification.AddedChainBlockHashes,
 	}
@@ -129,8 +146,10 @@ func (nm *NotificationManager) NotifyVirtualSelectedParentChainChanged(
 			var err error
 
 			if listener.includeAcceptedTransactionIDsInVirtualSelectedParentChainChangedNotifications {
+				notification.ID = listener.propagateVirtualSelectedParentChainChangedNotificationsID
 				err = router.OutgoingRoute().MaybeEnqueue(notification)
 			} else {
+				notificationWithoutAcceptedTransactionIDs.ID = listener.propagateVirtualSelectedParentChainChangedNotificationsID
 				err = router.OutgoingRoute().MaybeEnqueue(notificationWithoutAcceptedTransactionIDs)
 			}
 
@@ -161,6 +180,9 @@ func (nm *NotificationManager) NotifyFinalityConflict(notification *appmessage.F
 
 	for router, listener := range nm.listeners {
 		if listener.propagateFinalityConflictNotifications {
+
+			notification.ID = listener.propagateFinalityConflictNotificationsID
+
 			err := router.OutgoingRoute().Enqueue(notification)
 			if err != nil {
 				return err
@@ -177,6 +199,9 @@ func (nm *NotificationManager) NotifyFinalityConflictResolved(notification *appm
 
 	for router, listener := range nm.listeners {
 		if listener.propagateFinalityConflictResolvedNotifications {
+
+			notification.ID = listener.propagateFinalityConflictResolvedNotificationsID
+
 			err := router.OutgoingRoute().Enqueue(notification)
 			if err != nil {
 				return err
@@ -194,7 +219,7 @@ func (nm *NotificationManager) NotifyUTXOsChanged(utxoChanges *utxoindex.UTXOCha
 	for router, listener := range nm.listeners {
 		if listener.propagateUTXOsChangedNotifications {
 			// Filter utxoChanges and create a notification
-			notification, err := listener.convertUTXOChangesToUTXOsChangedNotification(utxoChanges)
+			notification, err := listener.convertUTXOChangesToUTXOsChangedNotification(utxoChanges, listener.propagateUTXOsChangedNotificationsID)
 			if err != nil {
 				return err
 			}
@@ -224,6 +249,9 @@ func (nm *NotificationManager) NotifyVirtualSelectedParentBlueScoreChanged(
 
 	for router, listener := range nm.listeners {
 		if listener.propagateVirtualSelectedParentBlueScoreChangedNotifications {
+
+			notification.ID = listener.propagateVirtualSelectedParentBlueScoreChangedNotificationsID
+
 			err := router.OutgoingRoute().MaybeEnqueue(notification)
 			if err != nil {
 				return err
@@ -243,6 +271,9 @@ func (nm *NotificationManager) NotifyVirtualDaaScoreChanged(
 
 	for router, listener := range nm.listeners {
 		if listener.propagateVirtualDaaScoreChangedNotifications {
+
+			notification.ID = listener.propagateVirtualDaaScoreChangedNotificationsID
+
 			err := router.OutgoingRoute().MaybeEnqueue(notification)
 			if err != nil {
 				return err
@@ -262,6 +293,9 @@ func (nm *NotificationManager) NotifyNewBlockTemplate(
 
 	for router, listener := range nm.listeners {
 		if listener.propagateNewBlockTemplateNotifications {
+
+			notification.ID = listener.propagateNewBlockTemplateNotificationsID
+
 			err := router.OutgoingRoute().Enqueue(notification)
 			if err != nil {
 				return err
@@ -279,7 +313,7 @@ func (nm *NotificationManager) NotifyPruningPointUTXOSetOverride() error {
 
 	for router, listener := range nm.listeners {
 		if listener.propagatePruningPointUTXOSetOverrideNotifications {
-			err := router.OutgoingRoute().Enqueue(appmessage.NewPruningPointUTXOSetOverrideNotificationMessage())
+			err := router.OutgoingRoute().Enqueue(appmessage.NewPruningPointUTXOSetOverrideNotificationMessage(listener.propagatePruningPointUTXOSetOverrideNotificationsID))
 			if err != nil {
 				return err
 			}
@@ -298,6 +332,7 @@ func newNotificationListener(params *dagconfig.Params) *NotificationListener {
 		propagateFinalityConflictResolvedNotifications:              false,
 		propagateUTXOsChangedNotifications:                          false,
 		propagateVirtualSelectedParentBlueScoreChangedNotifications: false,
+		propagateVirtualDaaScoreChangedNotifications:                false,
 		propagateNewBlockTemplateNotifications:                      false,
 		propagatePruningPointUTXOSetOverrideNotifications:           false,
 	}
@@ -311,26 +346,30 @@ func (nl *NotificationListener) IncludeAcceptedTransactionIDsInVirtualSelectedPa
 
 // PropagateBlockAddedNotifications instructs the listener to send block added notifications
 // to the remote listener
-func (nl *NotificationListener) PropagateBlockAddedNotifications() {
+func (nl *NotificationListener) PropagateBlockAddedNotifications(id string) {
+	nl.propagateBlockAddedNotificationsID = id
 	nl.propagateBlockAddedNotifications = true
 }
 
 // PropagateVirtualSelectedParentChainChangedNotifications instructs the listener to send chain changed notifications
 // to the remote listener
-func (nl *NotificationListener) PropagateVirtualSelectedParentChainChangedNotifications(includeAcceptedTransactionIDs bool) {
+func (nl *NotificationListener) PropagateVirtualSelectedParentChainChangedNotifications(includeAcceptedTransactionIDs bool, id string) {
+	nl.propagateVirtualSelectedParentChainChangedNotificationsID = id
 	nl.propagateVirtualSelectedParentChainChangedNotifications = true
 	nl.includeAcceptedTransactionIDsInVirtualSelectedParentChainChangedNotifications = includeAcceptedTransactionIDs
 }
 
 // PropagateFinalityConflictNotifications instructs the listener to send finality conflict notifications
 // to the remote listener
-func (nl *NotificationListener) PropagateFinalityConflictNotifications() {
+func (nl *NotificationListener) PropagateFinalityConflictNotifications(id string) {
+	nl.propagateFinalityConflictNotificationsID = id
 	nl.propagateFinalityConflictNotifications = true
 }
 
 // PropagateFinalityConflictResolvedNotifications instructs the listener to send finality conflict resolved notifications
 // to the remote listener
-func (nl *NotificationListener) PropagateFinalityConflictResolvedNotifications() {
+func (nl *NotificationListener) PropagateFinalityConflictResolvedNotifications(id string) {
+	nl.propagateFinalityConflictResolvedNotificationsID = id
 	nl.propagateFinalityConflictResolvedNotifications = true
 }
 
@@ -338,8 +377,9 @@ func (nl *NotificationListener) PropagateFinalityConflictResolvedNotifications()
 // to the remote listener for the given addresses. Subsequent calls instruct the listener to
 // send UTXOs changed notifications for those addresses along with the old ones. Duplicate addresses
 // are ignored.
-func (nl *NotificationListener) PropagateUTXOsChangedNotifications(addresses []*UTXOsChangedNotificationAddress) {
+func (nl *NotificationListener) PropagateUTXOsChangedNotifications(addresses []*UTXOsChangedNotificationAddress, id string) {
 	if !nl.propagateUTXOsChangedNotifications {
+		nl.propagateUTXOsChangedNotificationsID = id
 		nl.propagateUTXOsChangedNotifications = true
 		nl.propagateUTXOsChangedNotificationAddresses =
 			make(map[utxoindex.ScriptPublicKeyString]*UTXOsChangedNotificationAddress, len(addresses))
@@ -364,14 +404,15 @@ func (nl *NotificationListener) StopPropagatingUTXOsChangedNotifications(address
 }
 
 func (nl *NotificationListener) convertUTXOChangesToUTXOsChangedNotification(
-	utxoChanges *utxoindex.UTXOChanges) (*appmessage.UTXOsChangedNotificationMessage, error) {
+	utxoChanges *utxoindex.UTXOChanges, id string) (*appmessage.UTXOsChangedNotificationMessage, error) {
 
 	// As an optimization, we iterate over the smaller set (O(n)) among the two below
 	// and check existence over the larger set (O(1))
 	utxoChangesSize := len(utxoChanges.Added) + len(utxoChanges.Removed)
 	addressesSize := len(nl.propagateUTXOsChangedNotificationAddresses)
 
-	notification := &appmessage.UTXOsChangedNotificationMessage{}
+	notification := &appmessage.UTXOsChangedNotificationMessage{ID: id}
+
 	if utxoChangesSize < addressesSize {
 		for scriptPublicKeyString, addedPairs := range utxoChanges.Added {
 			if listenerAddress, ok := nl.propagateUTXOsChangedNotificationAddresses[scriptPublicKeyString]; ok {
@@ -441,30 +482,35 @@ func (nl *NotificationListener) scriptPubKeyStringToAddressString(scriptPublicKe
 
 // PropagateVirtualSelectedParentBlueScoreChangedNotifications instructs the listener to send
 // virtual selected parent blue score notifications to the remote listener
-func (nl *NotificationListener) PropagateVirtualSelectedParentBlueScoreChangedNotifications() {
+func (nl *NotificationListener) PropagateVirtualSelectedParentBlueScoreChangedNotifications(id string) {
+	nl.propagateVirtualSelectedParentBlueScoreChangedNotificationsID = id
 	nl.propagateVirtualSelectedParentBlueScoreChangedNotifications = true
 }
 
 // PropagateVirtualDaaScoreChangedNotifications instructs the listener to send
 // virtual DAA score notifications to the remote listener
-func (nl *NotificationListener) PropagateVirtualDaaScoreChangedNotifications() {
+func (nl *NotificationListener) PropagateVirtualDaaScoreChangedNotifications(id string) {
+	nl.propagateVirtualDaaScoreChangedNotificationsID = id
 	nl.propagateVirtualDaaScoreChangedNotifications = true
 }
 
 // PropagateNewBlockTemplateNotifications instructs the listener to send
 // new block template notifications to the remote listener
-func (nl *NotificationListener) PropagateNewBlockTemplateNotifications() {
+func (nl *NotificationListener) PropagateNewBlockTemplateNotifications(id string) {
+	nl.propagateNewBlockTemplateNotificationsID = id
 	nl.propagateNewBlockTemplateNotifications = true
 }
 
 // PropagatePruningPointUTXOSetOverrideNotifications instructs the listener to send pruning point UTXO set override notifications
 // to the remote listener.
-func (nl *NotificationListener) PropagatePruningPointUTXOSetOverrideNotifications() {
+func (nl *NotificationListener) PropagatePruningPointUTXOSetOverrideNotifications(id string) {
+	nl.propagatePruningPointUTXOSetOverrideNotificationsID = id
 	nl.propagatePruningPointUTXOSetOverrideNotifications = true
 }
 
 // StopPropagatingPruningPointUTXOSetOverrideNotifications instructs the listener to stop sending pruning
 // point UTXO set override notifications to the remote listener.
-func (nl *NotificationListener) StopPropagatingPruningPointUTXOSetOverrideNotifications() {
+func (nl *NotificationListener) StopPropagatingPruningPointUTXOSetOverrideNotifications(id string) {
+	nl.propagatePruningPointUTXOSetOverrideNotificationsID = id
 	nl.propagatePruningPointUTXOSetOverrideNotifications = false
 }

@@ -9,12 +9,19 @@ func (x *KaspadMessage_NotifyVirtualDaaScoreChangedRequest) toAppMessage() (appm
 	if x == nil {
 		return nil, errors.Wrapf(errorNil, "KaspadMessage_NotifyVirtualDaaScoreChangedRequest is nil")
 	}
-	return &appmessage.NotifyVirtualDaaScoreChangedRequestMessage{}, nil
+	return x.NotifyVirtualDaaScoreChangedRequest.toAppMessage()
 }
 
-func (x *KaspadMessage_NotifyVirtualDaaScoreChangedRequest) fromAppMessage(_ *appmessage.NotifyVirtualDaaScoreChangedRequestMessage) error {
-	x.NotifyVirtualDaaScoreChangedRequest = &NotifyVirtualDaaScoreChangedRequestMessage{}
+func (x *KaspadMessage_NotifyVirtualDaaScoreChangedRequest) fromAppMessage(message *appmessage.NotifyVirtualDaaScoreChangedRequestMessage) error {
+	x.NotifyVirtualDaaScoreChangedRequest = &NotifyVirtualDaaScoreChangedRequestMessage{Id: message.ID}
 	return nil
+}
+
+func (x *NotifyVirtualDaaScoreChangedRequestMessage) toAppMessage() (appmessage.Message, error) {
+	if x == nil {
+		return nil, errors.Wrapf(errorNil, "NotifyVirtualDaaScoreChangedRequestMessage is nil")
+	}
+	return &appmessage.NotifyVirtualDaaScoreChangedRequestMessage{ID: x.Id}, nil
 }
 
 func (x *KaspadMessage_NotifyVirtualDaaScoreChangedResponse) toAppMessage() (appmessage.Message, error) {
@@ -30,6 +37,7 @@ func (x *KaspadMessage_NotifyVirtualDaaScoreChangedResponse) fromAppMessage(mess
 		err = &RPCError{Message: message.Error.Message}
 	}
 	x.NotifyVirtualDaaScoreChangedResponse = &NotifyVirtualDaaScoreChangedResponseMessage{
+		Id:    message.ID,
 		Error: err,
 	}
 	return nil
@@ -45,6 +53,7 @@ func (x *NotifyVirtualDaaScoreChangedResponseMessage) toAppMessage() (appmessage
 		return nil, err
 	}
 	return &appmessage.NotifyVirtualDaaScoreChangedResponseMessage{
+		ID:    x.Id,
 		Error: rpcErr,
 	}, nil
 }
@@ -58,6 +67,7 @@ func (x *KaspadMessage_VirtualDaaScoreChangedNotification) toAppMessage() (appme
 
 func (x *KaspadMessage_VirtualDaaScoreChangedNotification) fromAppMessage(message *appmessage.VirtualDaaScoreChangedNotificationMessage) error {
 	x.VirtualDaaScoreChangedNotification = &VirtualDaaScoreChangedNotificationMessage{
+		Id:              message.ID,
 		VirtualDaaScore: message.VirtualDaaScore,
 	}
 	return nil
@@ -68,6 +78,7 @@ func (x *VirtualDaaScoreChangedNotificationMessage) toAppMessage() (appmessage.M
 		return nil, errors.Wrapf(errorNil, "VirtualDaaScoreChangedNotificationMessage is nil")
 	}
 	return &appmessage.VirtualDaaScoreChangedNotificationMessage{
+		ID:              x.Id,
 		VirtualDaaScore: x.VirtualDaaScore,
 	}, nil
 }
