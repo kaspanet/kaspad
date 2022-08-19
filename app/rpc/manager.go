@@ -223,18 +223,9 @@ func (m *Manager) notifyVirtualSelectedParentChainChanged(virtualChangeSet *exte
 	onEnd := logger.LogAndMeasureExecutionTime(log, "RPCManager.NotifyVirtualSelectedParentChainChanged")
 	defer onEnd()
 
-	listenersThatPropagateSelectedParentChanged :=
-		m.context.NotificationManager.AllListenersThatPropagateVirtualSelectedParentChainChanged()
-	if len(listenersThatPropagateSelectedParentChanged) > 0 {
-		// Generating acceptedTransactionIDs is a heavy operation, so we check if it's needed by any listener.
-		includeAcceptedTransactionIDs := false
-		for _, listener := range listenersThatPropagateSelectedParentChanged {
-			if listener.IncludeAcceptedTransactionIDsInVirtualSelectedParentChainChangedNotifications() {
-				includeAcceptedTransactionIDs = true
-				break
-			}
-		}
+	hasListeners, includeAcceptedTransactionIDs := m.context.NotificationManager.HasListenersThatPropagateVirtualSelectedParentChainChanged()
 
+	if hasListeners {
 		notification, err := m.context.ConvertVirtualSelectedParentChainChangesToChainChangedNotificationMessage(
 			virtualChangeSet.VirtualSelectedParentChainChanges, includeAcceptedTransactionIDs)
 		if err != nil {
