@@ -296,7 +296,7 @@ var TestnetParams = Params{
 	Net:         appmessage.Testnet,
 	RPCPort:     "16210",
 	DefaultPort: "16211",
-	DNSSeeds:    []string{"testnet-9-dnsseed.daglabs-dev.com"},
+	DNSSeeds:    []string{"testnet-10-dnsseed.kas.pa"},
 
 	// DAG parameters
 	GenesisBlock:                    &testnetGenesisBlock,
