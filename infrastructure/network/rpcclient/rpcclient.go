@@ -143,6 +143,9 @@ func (c *RPCClient) handleClientDisconnected() {
 }
 
 func (c *RPCClient) handleClientError(err error) {
+	if atomic.LoadUint32(&c.isClosed) == 1 {
+		return
+	}
 	log.Warnf("Received error from client: %s", err)
 	c.handleClientDisconnected()
 }
@@ -159,7 +162,7 @@ func (c *RPCClient) Close() error {
 		return errors.Errorf("Cannot close a client that had already been closed")
 	}
 	c.rpcRouter.router.Close()
-	return nil
+	return c.GRPCClient.Close()
 }
 
 // Address returns the address the RPC client connected to
