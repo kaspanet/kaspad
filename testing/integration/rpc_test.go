@@ -2,6 +2,7 @@ package integration
 
 import (
 	"github.com/kaspanet/kaspad/infrastructure/config"
+	"runtime"
 	"testing"
 	"time"
 
@@ -24,6 +25,37 @@ func newTestRPCClient(rpcAddress string) (*testRPCClient, error) {
 	return &testRPCClient{
 		RPCClient: rpcClient,
 	}, nil
+}
+
+func connectAndClose(rpcAddress string) error {
+	client, err := rpcclient.NewRPCClient(rpcAddress)
+	if err != nil {
+		return err
+	}
+	defer client.Close()
+	return nil
+}
+
+func TestRPCClientGoroutineLeak(t *testing.T) {
+	_, teardown := setupHarness(t, &harnessParams{
+		p2pAddress:              p2pAddress1,
+		rpcAddress:              rpcAddress1,
+		miningAddress:           miningAddress1,
+		miningAddressPrivateKey: miningAddress1PrivateKey,
+	})
+	defer teardown()
+	numGoroutinesBefore := runtime.NumGoroutine()
+	for i := 1; i < 100; i++ {
+		err := connectAndClose(rpcAddress1)
+		if err != nil {
+			t.Fatalf("Failed to set up an RPC client: %s", err)
+		}
+		time.Sleep(10 * time.Millisecond)
+		if runtime.NumGoroutine() > numGoroutinesBefore+10 {
+			t.Fatalf("Number of goroutines is increasing for each RPC client open (%d -> %d), which indicates a memory leak",
+				numGoroutinesBefore, runtime.NumGoroutine())
+		}
+	}
 }
 
 func TestRPCMaxInboundConnections(t *testing.T) {
