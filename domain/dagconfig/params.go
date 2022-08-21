@@ -214,7 +214,8 @@ var MainnetParams = Params{
 	RPCPort:     "16110",
 	DefaultPort: "16111",
 	DNSSeeds: []string{
-		"mainnet-dnsseed.daglabs-dev.com",
+		// This DNS seeder is run by Wolfie
+		"mainnet-dnsseed.kas.pa",
 		// This DNS seeder is run by Denis Mashkevich
 		"mainnet-dnsseed-1.kaspanet.org",
 		// This DNS seeder is run by Denis Mashkevich
