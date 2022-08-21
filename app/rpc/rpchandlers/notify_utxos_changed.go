@@ -26,7 +26,7 @@ func HandleNotifyUTXOsChanged(context *rpccontext.Context, router *router.Router
 	if err != nil {
 		return nil, err
 	}
-	listener.PropagateUTXOsChangedNotifications(addresses)
+	context.NotificationManager.PropagateUTXOsChangedNotifications(listener, addresses)
 
 	response := appmessage.NewNotifyUTXOsChangedResponseMessage()
 	return response, nil
