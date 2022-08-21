@@ -22,7 +22,7 @@ func (s *server) CreateUnsignedTransactions(_ context.Context, request *pb.Creat
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	unsignedTransactions, err := s.createUnsignedTransactions(request.Address, request.Amount, request.From)
+	unsignedTransactions, err := s.createUnsignedTransactions(request.Address, request.Amount, request.From, request.UseExistingChangeAddress)
 	if err != nil {
 		return nil, err
 	}
@@ -30,7 +30,7 @@ func (s *server) CreateUnsignedTransactions(_ context.Context, request *pb.Creat
 	return &pb.CreateUnsignedTransactionsResponse{UnsignedTransactions: unsignedTransactions}, nil
 }
 
-func (s *server) createUnsignedTransactions(address string, amount uint64, fromAddressesString []string) ([][]byte, error) {
+func (s *server) createUnsignedTransactions(address string, amount uint64, fromAddressesString []string, useExistingChangeAddress bool) ([][]byte, error) {
 	if !s.isSynced() {
 		return nil, errors.Errorf("wallet daemon is not synced yet, %s", s.formatSyncStateReport())
 	}
@@ -61,7 +61,7 @@ func (s *server) createUnsignedTransactions(address string, amount uint64, fromA
 		return nil, err
 	}
 
-	changeAddress, changeWalletAddress, err := s.changeAddress()
+	changeAddress, changeWalletAddress, err := s.changeAddress(useExistingChangeAddress)
 	if err != nil {
 		return nil, err
 	}
