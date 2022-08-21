@@ -36,6 +36,7 @@ message CreateUnsignedTransactionsRequest {
   string address = 1;
   uint64 amount = 2;
   repeated string from = 3;
+  bool useExistingChangeAddress = 4;
 }
 
 message CreateUnsignedTransactionsResponse {
@@ -57,8 +58,8 @@ message NewAddressResponse {
 }
 
 message BroadcastRequest {
-        bool isDomain = 1;  
-        repeated bytes transactions = 2;
+  bool isDomain = 1;
+  repeated bytes transactions = 2;
 }
 
 message BroadcastResponse {
@@ -107,6 +108,7 @@ message SendRequest{
   uint64 amount = 2;
   string password = 3;
   repeated string from = 4;
+  bool useExistingChangeAddress = 5;
 }
 
 message SendResponse{

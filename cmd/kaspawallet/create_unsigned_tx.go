@@ -22,9 +22,10 @@ func createUnsignedTransaction(conf *createUnsignedTransactionConfig) error {
 
 	sendAmountSompi := uint64(conf.SendAmount * constants.SompiPerKaspa)
 	response, err := daemonClient.CreateUnsignedTransactions(ctx, &pb.CreateUnsignedTransactionsRequest{
-		From:    conf.FromAddresses,
-		Address: conf.ToAddress,
-		Amount:  sendAmountSompi,
+		From:                     conf.FromAddresses,
+		Address:                  conf.ToAddress,
+		Amount:                   sendAmountSompi,
+		UseExistingChangeAddress: conf.UseExistingChangeAddress,
 	})
 	if err != nil {
 		return err
