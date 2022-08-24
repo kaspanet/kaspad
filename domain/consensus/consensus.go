@@ -972,6 +972,11 @@ func (s *consensus) resolveVirtualChunkNoLock(maxBlocksToResolve uint64) (*exter
 		return nil, false, err
 	}
 
+	err = s.pruningManager.UpdatePruningPointIfRequired()
+	if err != nil {
+		return nil, false, err
+	}
+
 	err = s.sendVirtualChangedEvent(virtualChangeSet, true)
 	if err != nil {
 		return nil, false, err
