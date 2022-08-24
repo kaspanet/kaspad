@@ -900,7 +900,7 @@ func (pm *pruningManager) updatePruningPoint() error {
 	if err != nil {
 		return err
 	}
-	if pm.shouldSanityCheckPruningUTXOSet {
+	if pm.shouldSanityCheckPruningUTXOSet && !pruningPoint.Equal(pm.genesisHash) {
 		err = pm.validateUTXOSetFitsCommitment(stagingArea, pruningPoint)
 		if err != nil {
 			return err
