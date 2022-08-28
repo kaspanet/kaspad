@@ -233,7 +233,7 @@ func (csm *consensusStateManager) resolveSingleBlockStatus(stagingArea *model.St
 		return externalapi.StatusUTXOValid, nil, nil
 	}
 
-	oldSelectedTip, err := csm.selectedTip(stagingArea)
+	oldSelectedTip, err := csm.virtualSelectedParent(stagingArea)
 	if err != nil {
 		return 0, nil, err
 	}
@@ -298,7 +298,7 @@ func (csm *consensusStateManager) isNewSelectedTip(stagingArea *model.StagingAre
 	return blockHash.Equal(newSelectedTip), nil
 }
 
-func (csm *consensusStateManager) selectedTip(stagingArea *model.StagingArea) (*externalapi.DomainHash, error) {
+func (csm *consensusStateManager) virtualSelectedParent(stagingArea *model.StagingArea) (*externalapi.DomainHash, error) {
 	virtualGHOSTDAGData, err := csm.ghostdagDataStore.Get(csm.databaseContext, stagingArea, model.VirtualBlockHash, false)
 	if err != nil {
 		return nil, err

@@ -35,9 +35,10 @@ func send(conf *sendConfig) error {
 
 	createUnsignedTransactionsResponse, err :=
 		daemonClient.CreateUnsignedTransactions(ctx, &pb.CreateUnsignedTransactionsRequest{
-			From:    conf.FromAddresses,
-			Address: conf.ToAddress,
-			Amount:  sendAmountSompi,
+			From:                     conf.FromAddresses,
+			Address:                  conf.ToAddress,
+			Amount:                   sendAmountSompi,
+			UseExistingChangeAddress: conf.UseExistingChangeAddress,
 		})
 	if err != nil {
 		return err
@@ -64,7 +65,12 @@ func send(conf *sendConfig) error {
 		fmt.Printf("Broadcasting %d transactions\n", len(signedTransactions))
 	}
 
-	response, err := daemonClient.Broadcast(ctx, &pb.BroadcastRequest{Transactions: signedTransactions})
+	// Since we waited for user input when getting the password, which could take unbound amount of time -
+	// create a new context for broadcast, to reset the timeout.
+	broadcastCtx, broadcastCancel := context.WithTimeout(context.Background(), daemonTimeout)
+	defer broadcastCancel()
+
+	response, err := daemonClient.Broadcast(broadcastCtx, &pb.BroadcastRequest{Transactions: signedTransactions})
 	if err != nil {
 		return err
 	}

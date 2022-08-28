@@ -24,14 +24,7 @@ func HandleGetMempoolEntry(context *rpccontext.Context, _ *router.Router, reques
 		return errorMessage, nil
 	}
 
-	if !getMempoolEntryRequest.FilterTransactionPool {
-		transaction, found = context.Domain.MiningManager().GetTransaction(transactionID)
-	}
-
-	if getMempoolEntryRequest.IncludeOrphanPool && !found {
-		transaction, found = context.Domain.MiningManager().GetOrphanTransaction(transactionID)
-		isOrphan = true
-	}
+	mempoolTransaction, isOrphan, found := context.Domain.MiningManager().GetTransaction(transactionID, !getMempoolEntryRequest.FilterTransactionPool, getMempoolEntryRequest.IncludeOrphanPool)
 
 	if !found {
 		errorMessage := &appmessage.GetMempoolEntryResponseMessage{}
@@ -39,7 +32,7 @@ func HandleGetMempoolEntry(context *rpccontext.Context, _ *router.Router, reques
 		return errorMessage, nil
 	}
 
-	rpcTransaction := appmessage.DomainTransactionToRPCTransaction(transaction)
+	rpcTransaction := appmessage.DomainTransactionToRPCTransaction(mempoolTransaction)
 	err = context.PopulateTransactionWithVerboseData(rpcTransaction, nil)
 	if err != nil {
 		return nil, err

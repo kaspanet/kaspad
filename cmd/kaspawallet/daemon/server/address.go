@@ -10,19 +10,24 @@ import (
 	"github.com/pkg/errors"
 )
 
-func (s *server) changeAddress() (util.Address, *walletAddress, error) {
-	err := s.keysFile.SetLastUsedInternalIndex(s.keysFile.LastUsedInternalIndex() + 1)
-	if err != nil {
-		return nil, nil, err
-	}
+func (s *server) changeAddress(useFirst bool) (util.Address, *walletAddress, error) {
+	internalIndex := uint32(0)
+	if !useFirst {
+		err := s.keysFile.SetLastUsedInternalIndex(s.keysFile.LastUsedInternalIndex() + 1)
+		if err != nil {
+			return nil, nil, err
+		}
 
-	err = s.keysFile.Save()
-	if err != nil {
-		return nil, nil, err
+		err = s.keysFile.Save()
+		if err != nil {
+			return nil, nil, err
+		}
+
+		internalIndex = s.keysFile.LastUsedInternalIndex()
 	}
 
 	walletAddr := &walletAddress{
-		index:         s.keysFile.LastUsedInternalIndex(),
+		index:         internalIndex,
 		cosignerIndex: s.keysFile.CosignerIndex,
 		keyChain:      libkaspawallet.InternalKeychain,
 	}

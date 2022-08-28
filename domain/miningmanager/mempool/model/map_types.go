@@ -15,3 +15,6 @@ type OutpointToUTXOEntryMap map[externalapi.DomainOutpoint]externalapi.UTXOEntry
 
 // OutpointToTransactionMap maps an outpoint to a MempoolTransaction
 type OutpointToTransactionMap map[externalapi.DomainOutpoint]*MempoolTransaction
+
+// ScriptPublicKeyStringToDomainTransaction maps an outpoint to a DomainTransaction
+type ScriptPublicKeyStringToDomainTransaction map[string]*externalapi.DomainTransaction

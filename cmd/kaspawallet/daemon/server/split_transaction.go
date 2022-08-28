@@ -27,18 +27,10 @@ func (s *server) maybeAutoCompoundTransaction(transactionBytes []byte, toAddress
 		return nil, err
 	}
 
-	splitTransactions, err := s.maybeSplitTransaction(transaction, changeAddress)
+	splitTransactions, err := s.maybeSplitAndMergeTransaction(transaction, toAddress, changeAddress, changeWalletAddress)
 	if err != nil {
 		return nil, err
 	}
-	if len(splitTransactions) > 1 {
-		mergeTransaction, err := s.mergeTransaction(splitTransactions, transaction, toAddress, changeAddress, changeWalletAddress)
-		if err != nil {
-			return nil, err
-		}
-		splitTransactions = append(splitTransactions, mergeTransaction)
-	}
-
 	splitTransactionsBytes := make([][]byte, len(splitTransactions))
 	for i, splitTransaction := range splitTransactions {
 		splitTransactionsBytes[i], err = serialization.SerializePartiallySignedTransaction(splitTransaction)
@@ -113,8 +105,8 @@ func (s *server) mergeTransaction(
 	return serialization.DeserializePartiallySignedTransaction(mergeTransactionBytes)
 }
 
-func (s *server) maybeSplitTransaction(transaction *serialization.PartiallySignedTransaction,
-	changeAddress util.Address) ([]*serialization.PartiallySignedTransaction, error) {
+func (s *server) maybeSplitAndMergeTransaction(transaction *serialization.PartiallySignedTransaction, toAddress util.Address,
+	changeAddress util.Address, changeWalletAddress *walletAddress) ([]*serialization.PartiallySignedTransaction, error) {
 
 	transactionMass, err := s.estimateMassAfterSignatures(transaction)
 	if err != nil {
@@ -139,6 +131,20 @@ func (s *server) maybeSplitTransaction(transaction *serialization.PartiallySigne
 		if err != nil {
 			return nil, err
 		}
+	}
+
+	if len(splitTransactions) > 1 {
+		mergeTransaction, err := s.mergeTransaction(splitTransactions, transaction, toAddress, changeAddress, changeWalletAddress)
+		if err != nil {
+			return nil, err
+		}
+		// Recursion will be 2-3 iterations deep even in the rarest` cases, so considered safe..
+		splitMergeTransaction, err := s.maybeSplitAndMergeTransaction(mergeTransaction, toAddress, changeAddress, changeWalletAddress)
+		if err != nil {
+			return nil, err
+		}
+		splitTransactions = append(splitTransactions, splitMergeTransaction...)
+
 	}
 
 	return splitTransactions, nil

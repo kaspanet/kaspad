@@ -16,7 +16,7 @@ func HandleGetInfo(context *rpccontext.Context, _ *router.Router, _ appmessage.M
 
 	response := appmessage.NewGetInfoResponseMessage(
 		context.NetAdapter.ID().String(),
-		uint64(context.Domain.MiningManager().TransactionCount()),
+		uint64(context.Domain.MiningManager().TransactionCount(true, false)),
 		version.Version(),
 		context.Config.UTXOIndex,
 		context.ProtocolManager.Context().HasPeers() && isNearlySynced,

@@ -5,6 +5,7 @@ import (
 
 	"github.com/kaspanet/kaspad/domain/dagconfig"
 
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/txscript"
 
 	"github.com/kaspanet/kaspad/app/appmessage"
@@ -141,16 +142,29 @@ func (nm *NotificationManager) NotifyVirtualSelectedParentChainChanged(
 	return nil
 }
 
-// AllListenersThatPropagateVirtualSelectedParentChainChanged returns true if there's any listener that is
-// subscribed to VirtualSelectedParentChainChanged notifications.
-func (nm *NotificationManager) AllListenersThatPropagateVirtualSelectedParentChainChanged() []*NotificationListener {
-	var listenersThatPropagate []*NotificationListener
+// HasListenersThatPropagateVirtualSelectedParentChainChanged returns whether there's any listener that is
+// subscribed to VirtualSelectedParentChainChanged notifications as well as checks if any such listener requested
+// to include AcceptedTransactionIDs.
+func (nm *NotificationManager) HasListenersThatPropagateVirtualSelectedParentChainChanged() (hasListeners, hasListenersThatRequireAcceptedTransactionIDs bool) {
+
+	nm.RLock()
+	defer nm.RUnlock()
+
+	hasListeners = false
+	hasListenersThatRequireAcceptedTransactionIDs = false
+
 	for _, listener := range nm.listeners {
 		if listener.propagateVirtualSelectedParentChainChangedNotifications {
-			listenersThatPropagate = append(listenersThatPropagate, listener)
+			hasListeners = true
+			// Generating acceptedTransactionIDs is a heavy operation, so we check if it's needed by any listener.
+			if listener.includeAcceptedTransactionIDsInVirtualSelectedParentChainChangedNotifications {
+				hasListenersThatRequireAcceptedTransactionIDs = true
+				break
+			}
 		}
 	}
-	return listenersThatPropagate
+
+	return hasListeners, hasListenersThatRequireAcceptedTransactionIDs
 }
 
 // NotifyFinalityConflict notifies the notification manager that there's a finality conflict in the DAG
@@ -337,7 +351,11 @@ func (nl *NotificationListener) PropagateFinalityConflictResolvedNotifications()
 // to the remote listener for the given addresses. Subsequent calls instruct the listener to
 // send UTXOs changed notifications for those addresses along with the old ones. Duplicate addresses
 // are ignored.
-func (nl *NotificationListener) PropagateUTXOsChangedNotifications(addresses []*UTXOsChangedNotificationAddress) {
+func (nm *NotificationManager) PropagateUTXOsChangedNotifications(nl *NotificationListener, addresses []*UTXOsChangedNotificationAddress) {
+	// Apply a write-lock since the internal listener address map is modified
+	nm.Lock()
+	defer nm.Unlock()
+
 	if !nl.propagateUTXOsChangedNotifications {
 		nl.propagateUTXOsChangedNotifications = true
 		nl.propagateUTXOsChangedNotificationAddresses =
@@ -352,7 +370,11 @@ func (nl *NotificationListener) PropagateUTXOsChangedNotifications(addresses []*
 // StopPropagatingUTXOsChangedNotifications instructs the listener to stop sending UTXOs
 // changed notifications to the remote listener for the given addresses. Addresses for which
 // notifications are not currently sent are ignored.
-func (nl *NotificationListener) StopPropagatingUTXOsChangedNotifications(addresses []*UTXOsChangedNotificationAddress) {
+func (nm *NotificationManager) StopPropagatingUTXOsChangedNotifications(nl *NotificationListener, addresses []*UTXOsChangedNotificationAddress) {
+	// Apply a write-lock since the internal listener address map is modified
+	nm.Lock()
+	defer nm.Unlock()
+
 	if !nl.propagateUTXOsChangedNotifications {
 		return
 	}
@@ -421,7 +443,7 @@ func (nl *NotificationListener) convertUTXOChangesToUTXOsChangedNotification(
 }
 
 func (nl *NotificationListener) scriptPubKeyStringToAddressString(scriptPublicKeyString utxoindex.ScriptPublicKeyString) (string, error) {
-	scriptPubKey := utxoindex.ConvertStringToScriptPublicKey(scriptPublicKeyString)
+	scriptPubKey := externalapi.NewScriptPublicKeyFromString(string(scriptPublicKeyString))
 
 	// ignore error because it is often returned when the script is of unknown type
 	scriptType, address, err := txscript.ExtractScriptPubKeyAddress(scriptPubKey, nl.params)

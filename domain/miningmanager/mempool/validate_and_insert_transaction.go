@@ -54,7 +54,7 @@ func (mp *mempool) validateAndInsertTransaction(transaction *externalapi.DomainT
 		return nil, err
 	}
 
-	acceptedTransactions = append([]*externalapi.DomainTransaction{transaction}, acceptedOrphans...)
+	acceptedTransactions = append([]*externalapi.DomainTransaction{transaction.Clone()}, acceptedOrphans...) //these pointer leave the mempool, hence we clone.
 
 	err = mp.transactionsPool.limitTransactionCount()
 	if err != nil {
