@@ -16,6 +16,7 @@ Bug fixes:
 * Fix RPC client memory/goroutine leak (#2122)
 * Fix a subtle lock sync issue in consensus insert block  (#2121)
 * Mempool: Retrieve stable state of the mempool. Optimze get mempool entries by addresses (#2111)
+* Kaspawallet.send(): Make separate context for Broadcast, to prolong timeout (#2131)
 
 
 
