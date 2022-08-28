@@ -64,7 +64,11 @@ func send(conf *sendConfig) error {
 		fmt.Printf("Broadcasting %d transactions\n", len(signedTransactions))
 	}
 
-	response, err := daemonClient.Broadcast(ctx, &pb.BroadcastRequest{Transactions: signedTransactions})
+	// Create separate context to prolong the timeout,since broadcastan take long
+	broadcastCtx, broadcastCancel := context.WithTimeout(context.Background(), daemonTimeout)
+	defer broadcastCancel()
+
+	response, err := daemonClient.Broadcast(broadcastCtx, &pb.BroadcastRequest{Transactions: signedTransactions})
 	if err != nil {
 		return err
 	}
