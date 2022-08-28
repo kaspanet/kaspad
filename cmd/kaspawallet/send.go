@@ -64,7 +64,8 @@ func send(conf *sendConfig) error {
 		fmt.Printf("Broadcasting %d transactions\n", len(signedTransactions))
 	}
 
-	// Create separate context to prolong the timeout,since broadcastan take long
+	// Since we waited for user input when getting the password, which could take unbound amount of time -
+	// create a new context for broadcast, to reset the timeout.
 	broadcastCtx, broadcastCancel := context.WithTimeout(context.Background(), daemonTimeout)
 	defer broadcastCancel()
 
