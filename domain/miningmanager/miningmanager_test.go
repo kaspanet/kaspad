@@ -52,7 +52,7 @@ func TestValidateAndInsertTransaction(t *testing.T) {
 		}
 		// The UTXOEntry was filled manually for those transactions, so the transactions won't be considered orphans.
 		// Therefore, all the transactions expected to be contained in the mempool.
-		transactionsFromMempool := miningManager.AllTransactions()
+		transactionsFromMempool, _ := miningManager.AllTransactions(true, false)
 		if len(transactionsToInsert) != len(transactionsFromMempool) {
 			t.Fatalf("Wrong number of transactions in mempool: expected: %d, got: %d", len(transactionsToInsert), len(transactionsFromMempool))
 		}
@@ -72,7 +72,7 @@ func TestValidateAndInsertTransaction(t *testing.T) {
 		if err != nil {
 			t.Fatalf("ValidateAndInsertTransaction: %v", err)
 		}
-		transactionsFromMempool = miningManager.AllTransactions()
+		transactionsFromMempool, _ = miningManager.AllTransactions(true, false)
 		if !contains(transactionNotAnOrphan, transactionsFromMempool) {
 			t.Fatalf("Missing transaction %s in the mempool", consensushashing.TransactionID(transactionNotAnOrphan))
 		}
@@ -99,7 +99,7 @@ func TestImmatureSpend(t *testing.T) {
 		if !errors.As(err, txRuleError) || txRuleError.RejectCode != mempool.RejectImmatureSpend {
 			t.Fatalf("Unexpected error %+v", err)
 		}
-		transactionsFromMempool := miningManager.AllTransactions()
+		transactionsFromMempool, _ := miningManager.AllTransactions(true, false)
 		if contains(tx, transactionsFromMempool) {
 			t.Fatalf("Mempool contains a transaction with immature coinbase")
 		}
@@ -205,7 +205,7 @@ func TestHandleNewBlockTransactions(t *testing.T) {
 		if err != nil {
 			t.Fatalf("HandleNewBlockTransactions: %v", err)
 		}
-		mempoolTransactions := miningManager.AllTransactions()
+		mempoolTransactions, _ := miningManager.AllTransactions(true, false)
 		for _, removedTransaction := range blockWithFirstPartOfTheTransactions {
 			if contains(removedTransaction, mempoolTransactions) {
 				t.Fatalf("This transaction shouldnt be in mempool: %s", consensushashing.TransactionID(removedTransaction))
@@ -214,7 +214,7 @@ func TestHandleNewBlockTransactions(t *testing.T) {
 
 		// There are no chained/double-spends transactions, and hence it is expected that all the other
 		// transactions, will still be included in the mempool.
-		mempoolTransactions = miningManager.AllTransactions()
+		mempoolTransactions, _ = miningManager.AllTransactions(true, false)
 		for _, transaction := range blockWithRestOfTheTransactions[transactionhelper.CoinbaseTransactionIndex+1:] {
 			if !contains(transaction, mempoolTransactions) {
 				t.Fatalf("This transaction %s should be in mempool.", consensushashing.TransactionID(transaction))
@@ -225,8 +225,9 @@ func TestHandleNewBlockTransactions(t *testing.T) {
 		if err != nil {
 			t.Fatalf("HandleNewBlockTransactions: %v", err)
 		}
-		if len(miningManager.AllTransactions()) != 0 {
-			blockIDs := domainBlocksToBlockIds(miningManager.AllTransactions())
+		mempoolTransactions, _ = miningManager.AllTransactions(true, false)
+		if len(mempoolTransactions) != 0 {
+			blockIDs := domainBlocksToBlockIds(mempoolTransactions)
 			t.Fatalf("The mempool contains unexpected transactions: %s", blockIDs)
 		}
 	})
@@ -269,7 +270,8 @@ func TestDoubleSpendWithBlock(t *testing.T) {
 		if err != nil {
 			t.Fatalf("HandleNewBlockTransactions: %v", err)
 		}
-		if contains(transactionInTheMempool, miningManager.AllTransactions()) {
+		mempoolTransactions, _ := miningManager.AllTransactions(true, false)
+		if contains(transactionInTheMempool, mempoolTransactions) {
 			t.Fatalf("The transaction %s, shouldn't be in the mempool, since at least one "+
 				"output was already spent.", consensushashing.TransactionID(transactionInTheMempool))
 		}
@@ -303,7 +305,7 @@ func TestOrphanTransactions(t *testing.T) {
 				t.Fatalf("ValidateAndInsertTransaction: %v", err)
 			}
 		}
-		transactionsMempool := miningManager.AllTransactions()
+		transactionsMempool, _ := miningManager.AllTransactions(true, false)
 		for _, transaction := range transactionsMempool {
 			if contains(transaction, childTransactions) {
 				t.Fatalf("Error: an orphan transaction is exist in the mempool")
@@ -345,7 +347,7 @@ func TestOrphanTransactions(t *testing.T) {
 		if err != nil {
 			t.Fatalf("HandleNewBlockTransactions: %+v", err)
 		}
-		transactionsMempool = miningManager.AllTransactions()
+		transactionsMempool, _ = miningManager.AllTransactions(true, false)
 		if len(transactionsMempool) != len(childTransactions) {
 			t.Fatalf("Expected %d transactions in the mempool but got %d", len(childTransactions), len(transactionsMempool))
 		}
@@ -553,8 +555,8 @@ func TestRevalidateHighPriorityTransactions(t *testing.T) {
 		}
 
 		// Make sure spendingTransaction is still in mempool
-		allTransactions := miningManager.AllTransactions()
-		if len(allTransactions) != 1 || !allTransactions[0].Equal(spendingTransaction) {
+		mempoolTransactions, _ := miningManager.AllTransactions(true, false)
+		if len(mempoolTransactions) != 1 || !mempoolTransactions[0].Equal(spendingTransaction) {
 			t.Fatalf("Expected to have spendingTransaction as only validTransaction returned from "+
 				"RevalidateHighPriorityTransactions, but got %v instead", validTransactions)
 		}
@@ -568,9 +570,9 @@ func TestRevalidateHighPriorityTransactions(t *testing.T) {
 			t.Fatalf("Expected to have empty validTransactions, but got %v instead", validTransactions)
 		}
 		// And also AllTransactions should be empty as well
-		allTransactions = miningManager.AllTransactions()
-		if len(allTransactions) != 0 {
-			t.Fatalf("Expected to have empty allTransactions, but got %v instead", allTransactions)
+		mempoolTransactions, _ = miningManager.AllTransactions(true, false)
+		if len(mempoolTransactions) != 0 {
+			t.Fatalf("Expected to have empty allTransactions, but got %v instead", mempoolTransactions)
 		}
 	})
 }
@@ -605,7 +607,7 @@ func TestModifyBlockTemplate(t *testing.T) {
 				t.Fatalf("ValidateAndInsertTransaction: %v", err)
 			}
 		}
-		transactionsMempool := miningManager.AllTransactions()
+		transactionsMempool, _ := miningManager.AllTransactions(true, false)
 		for _, transaction := range transactionsMempool {
 			if contains(transaction, childTransactions) {
 				t.Fatalf("Error: an orphan transaction is exist in the mempool")
@@ -654,7 +656,7 @@ func TestModifyBlockTemplate(t *testing.T) {
 		if err != nil {
 			t.Fatalf("HandleNewBlockTransactions: %+v", err)
 		}
-		transactionsMempool = miningManager.AllTransactions()
+		transactionsMempool, _ = miningManager.AllTransactions(true, false)
 		if len(transactionsMempool) != len(childTransactions) {
 			t.Fatalf("Expected %d transactions in the mempool but got %d", len(childTransactions), len(transactionsMempool))
 		}
