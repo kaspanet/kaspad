@@ -296,7 +296,7 @@ func (s *consensus) sendBlockAddedEvent(block *externalapi.DomainBlock, blockSta
 }
 
 func (s *consensus) sendVirtualChangedEvent(virtualChangeSet *externalapi.VirtualChangeSet, wasVirtualUpdated bool) error {
-	if !wasVirtualUpdated || s.consensusEventsChan == nil {
+	if !wasVirtualUpdated || s.consensusEventsChan == nil || virtualChangeSet == nil {
 		return nil
 	}
 
