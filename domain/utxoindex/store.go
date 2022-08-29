@@ -32,7 +32,7 @@ func newUTXOIndexStore(database database.Database) *utxoIndexStore {
 
 func (uis *utxoIndexStore) add(scriptPublicKey *externalapi.ScriptPublicKey, outpoint *externalapi.DomainOutpoint, utxoEntry externalapi.UTXOEntry) error {
 
-	key := ConvertScriptPublicKeyToString(scriptPublicKey)
+	key := ScriptPublicKeyString(scriptPublicKey.String())
 	log.Tracef("Adding outpoint %s:%d to scriptPublicKey %s",
 		outpoint.TransactionID, outpoint.Index, key)
 
@@ -66,7 +66,7 @@ func (uis *utxoIndexStore) add(scriptPublicKey *externalapi.ScriptPublicKey, out
 }
 
 func (uis *utxoIndexStore) remove(scriptPublicKey *externalapi.ScriptPublicKey, outpoint *externalapi.DomainOutpoint, utxoEntry externalapi.UTXOEntry) error {
-	key := ConvertScriptPublicKeyToString(scriptPublicKey)
+	key := ScriptPublicKeyString(scriptPublicKey.String())
 	log.Tracef("Removing outpoint %s:%d from scriptPublicKey %s",
 		outpoint.TransactionID, outpoint.Index, key)
 
@@ -122,7 +122,7 @@ func (uis *utxoIndexStore) commit() error {
 	toRemoveSompiSupply := uint64(0)
 
 	for scriptPublicKeyString, toRemoveUTXOOutpointEntryPairs := range uis.toRemove {
-		scriptPublicKey := ConvertStringToScriptPublicKey(scriptPublicKeyString)
+		scriptPublicKey := externalapi.NewScriptPublicKeyFromString(string(scriptPublicKeyString))
 		bucket := uis.bucketForScriptPublicKey(scriptPublicKey)
 		for outpointToRemove, utxoEntryToRemove := range toRemoveUTXOOutpointEntryPairs {
 			key, err := uis.convertOutpointToKey(bucket, &outpointToRemove)
@@ -140,7 +140,7 @@ func (uis *utxoIndexStore) commit() error {
 	toAddSompiSupply := uint64(0)
 
 	for scriptPublicKeyString, toAddUTXOOutpointEntryPairs := range uis.toAdd {
-		scriptPublicKey := ConvertStringToScriptPublicKey(scriptPublicKeyString)
+		scriptPublicKey := externalapi.NewScriptPublicKeyFromString(string(scriptPublicKeyString))
 		bucket := uis.bucketForScriptPublicKey(scriptPublicKey)
 		for outpointToAdd, utxoEntryToAdd := range toAddUTXOOutpointEntryPairs {
 			key, err := uis.convertOutpointToKey(bucket, &outpointToAdd)

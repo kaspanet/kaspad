@@ -1,8 +1,9 @@
 package mempool
 
 import (
-	"github.com/kaspanet/kaspad/domain/consensusreference"
 	"sync"
+
+	"github.com/kaspanet/kaspad/domain/consensusreference"
 
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	miningmanagermodel "github.com/kaspanet/kaspad/domain/miningmanager/model"
@@ -42,39 +43,89 @@ func (mp *mempool) ValidateAndInsertTransaction(transaction *externalapi.DomainT
 	return mp.validateAndInsertTransaction(transaction, isHighPriority, allowOrphan)
 }
 
-func (mp *mempool) GetTransaction(transactionID *externalapi.DomainTransactionID) (*externalapi.DomainTransaction, bool) {
+func (mp *mempool) GetTransaction(transactionID *externalapi.DomainTransactionID,
+	includeTransactionPool bool,
+	includeOrphanPool bool) (
+	transaction *externalapi.DomainTransaction,
+	isOrphan bool,
+	found bool) {
+
 	mp.mtx.RLock()
 	defer mp.mtx.RUnlock()
 
-	return mp.transactionsPool.getTransaction(transactionID)
+	var transactionfound bool
+	isOrphan = false
+
+	if includeTransactionPool {
+		transaction, transactionfound = mp.transactionsPool.getTransaction(transactionID, true)
+		isOrphan = false
+	}
+	if !transactionfound && includeOrphanPool {
+		transaction, transactionfound = mp.orphansPool.getOrphanTransaction(transactionID)
+		isOrphan = true
+	}
+
+	return transaction, isOrphan, transactionfound
 }
 
-func (mp *mempool) AllTransactions() []*externalapi.DomainTransaction {
+func (mp *mempool) GetTransactionsByAddresses(includeTransactionPool bool, includeOrphanPool bool) (
+	sendingInTransactionPool map[string]*externalapi.DomainTransaction,
+	receivingInTransactionPool map[string]*externalapi.DomainTransaction,
+	sendingInOrphanPool map[string]*externalapi.DomainTransaction,
+	receivingInOrphanPool map[string]*externalapi.DomainTransaction,
+	err error) {
 	mp.mtx.RLock()
 	defer mp.mtx.RUnlock()
 
-	return mp.transactionsPool.getAllTransactions()
+	if includeTransactionPool {
+		sendingInTransactionPool, receivingInTransactionPool, err = mp.transactionsPool.getTransactionsByAddresses()
+		if err != nil {
+			return nil, nil, nil, nil, err
+		}
+	}
+
+	if includeOrphanPool {
+		sendingInTransactionPool, receivingInOrphanPool, err = mp.orphansPool.getOrphanTransactionsByAddresses()
+		if err != nil {
+			return nil, nil, nil, nil, err
+		}
+	}
+
+	return sendingInTransactionPool, receivingInTransactionPool, sendingInTransactionPool, receivingInOrphanPool, nil
 }
 
-func (mp *mempool) GetOrphanTransaction(transactionID *externalapi.DomainTransactionID) (*externalapi.DomainTransaction, bool) {
+func (mp *mempool) AllTransactions(includeTransactionPool bool, includeOrphanPool bool) (
+	transactionPoolTransactions []*externalapi.DomainTransaction,
+	orphanPoolTransactions []*externalapi.DomainTransaction) {
+
 	mp.mtx.RLock()
 	defer mp.mtx.RUnlock()
 
-	return mp.orphansPool.getOrphanTransaction(transactionID)
+	if includeTransactionPool {
+		transactionPoolTransactions = mp.transactionsPool.getAllTransactions()
+	}
+
+	if includeOrphanPool {
+		orphanPoolTransactions = mp.orphansPool.getAllOrphanTransactions()
+	}
+
+	return transactionPoolTransactions, orphanPoolTransactions
 }
 
-func (mp *mempool) AllOrphanTransactions() []*externalapi.DomainTransaction {
+func (mp *mempool) TransactionCount(includeTransactionPool bool, includeOrphanPool bool) int {
 	mp.mtx.RLock()
 	defer mp.mtx.RUnlock()
 
-	return mp.orphansPool.getAllOrphanTransactions()
-}
+	transactionCount := 0
 
-func (mp *mempool) TransactionCount() int {
-	mp.mtx.RLock()
-	defer mp.mtx.RUnlock()
+	if includeOrphanPool {
+		transactionCount += mp.orphansPool.orphanTransactionCount()
+	}
+	if includeTransactionPool {
+		transactionCount += mp.transactionsPool.transactionCount()
+	}
 
-	return mp.transactionsPool.transactionCount()
+	return transactionCount
 }
 
 func (mp *mempool) HandleNewBlockTransactions(transactions []*externalapi.DomainTransaction) (
