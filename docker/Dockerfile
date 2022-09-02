@@ -10,19 +10,13 @@ RUN apk add --no-cache curl git openssh binutils gcc musl-dev
 COPY go.mod .
 COPY go.sum .
 
-RUN go get -u golang.org/x/lint/golint \
-      github.com/kisielk/errcheck \
-      github.com/opennota/check/cmd/aligncheck \
-      github.com/opennota/check/cmd/structcheck \
-      github.com/opennota/check/cmd/varcheck \
-      honnef.co/go/tools/cmd/staticcheck
 
 # Cache kaspad dependencies
 RUN go mod download
 
 COPY . .
 
-RUN ./build_and_test.sh
+RUN go build $FLAGS -o kaspad .
 
 # --- multistage docker build: stage #2: runtime image
 FROM alpine

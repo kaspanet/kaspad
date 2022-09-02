@@ -7,5 +7,4 @@ type MergeDepthManager interface {
 	CheckBoundedMergeDepth(stagingArea *StagingArea, blockHash *externalapi.DomainHash, isBlockWithTrustedData bool) error
 	NonBoundedMergeDepthViolatingBlues(stagingArea *StagingArea, blockHash, mergeDepthRoot *externalapi.DomainHash) ([]*externalapi.DomainHash, error)
 	VirtualMergeDepthRoot(stagingArea *StagingArea) (*externalapi.DomainHash, error)
-	MergeDepthRoot(stagingArea *StagingArea, blockHash *externalapi.DomainHash, isBlockWithTrustedData bool) (*externalapi.DomainHash, error)
 }
