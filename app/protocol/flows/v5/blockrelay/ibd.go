@@ -679,7 +679,15 @@ func (flow *handleIBDFlow) syncMissingBlockBodies(highHash *externalapi.DomainHa
 		progressReporter.reportProgress(len(hashesToRequest), highestProcessedDAAScore)
 	}
 
-	return flow.resolveVirtual(highestProcessedDAAScore)
+	// We need to resolve virtual only if it wasn't updated while syncing block bodies
+	if !updateVirtual {
+		err := flow.resolveVirtual(highestProcessedDAAScore)
+		if err != nil {
+			return err
+		}
+	}
+
+	return flow.OnNewBlockTemplate()
 }
 
 func (flow *handleIBDFlow) banIfBlockIsHeaderOnly(block *externalapi.DomainBlock) error {
@@ -711,9 +719,5 @@ func (flow *handleIBDFlow) resolveVirtual(estimatedVirtualDAAScoreTarget uint64)
 	}
 
 	log.Infof("Resolved virtual")
-	err = flow.OnNewBlockTemplate()
-	if err != nil {
-		return err
-	}
 	return nil
 }
