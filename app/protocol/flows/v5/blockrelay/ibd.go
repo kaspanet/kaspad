@@ -618,6 +618,12 @@ func (flow *handleIBDFlow) syncMissingBlockBodies(highHash *externalapi.DomainHa
 	progressReporter := newIBDProgressReporter(lowBlockHeader.DAAScore(), highBlockHeader.DAAScore(), "blocks")
 	highestProcessedDAAScore := lowBlockHeader.DAAScore()
 
+	// If the IBD is small, we want to update the virtual after each block in order to avoid complications and possible bugs.
+	updateVirtual, err := flow.Domain().Consensus().IsNearlySynced()
+	if err != nil {
+		return err
+	}
+
 	for offset := 0; offset < len(hashes); offset += ibdBatchSize {
 		var hashesToRequest []*externalapi.DomainHash
 		if offset+ibdBatchSize < len(hashes) {
@@ -654,7 +660,7 @@ func (flow *handleIBDFlow) syncMissingBlockBodies(highHash *externalapi.DomainHa
 				return err
 			}
 
-			err = flow.Domain().Consensus().ValidateAndInsertBlock(block, false)
+			err = flow.Domain().Consensus().ValidateAndInsertBlock(block, updateVirtual)
 			if err != nil {
 				if errors.Is(err, ruleerrors.ErrDuplicateBlock) {
 					log.Debugf("Skipping IBD Block %s as it has already been added to the DAG", blockHash)
@@ -673,7 +679,15 @@ func (flow *handleIBDFlow) syncMissingBlockBodies(highHash *externalapi.DomainHa
 		progressReporter.reportProgress(len(hashesToRequest), highestProcessedDAAScore)
 	}
 
-	return flow.resolveVirtual(highestProcessedDAAScore)
+	// We need to resolve virtual only if it wasn't updated while syncing block bodies
+	if !updateVirtual {
+		err := flow.resolveVirtual(highestProcessedDAAScore)
+		if err != nil {
+			return err
+		}
+	}
+
+	return flow.OnNewBlockTemplate()
 }
 
 func (flow *handleIBDFlow) banIfBlockIsHeaderOnly(block *externalapi.DomainBlock) error {
@@ -705,9 +719,5 @@ func (flow *handleIBDFlow) resolveVirtual(estimatedVirtualDAAScoreTarget uint64)
 	}
 
 	log.Infof("Resolved virtual")
-	err = flow.OnNewBlockTemplate()
-	if err != nil {
-		return err
-	}
 	return nil
 }
