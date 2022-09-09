@@ -1,3 +1,14 @@
+Kaspad v0.12.6 - 2022-09-09
+===========================
+
+* Remove tests from docker files (#2133)
+
+Wallet new features:
+* Optionally show serialized transactions on send (#2135)
+
+Bug fixes:
+* Update virtual on IBD if nearly synced (#2134)
+
 Kaspad v0.12.5 - 2022-08-28
 ===========================
 
