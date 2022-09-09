@@ -80,5 +80,12 @@ func send(conf *sendConfig) error {
 		fmt.Printf("\t%s\n", txID)
 	}
 
+	if conf.Verbose {
+		fmt.Println("Serialized Transaction(s): ")
+		for _, signedTx := range signedTransactions {
+			fmt.Printf("\t%x\n", signedTx)
+		}
+	}
+
 	return nil
 }
