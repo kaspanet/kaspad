@@ -44,6 +44,10 @@ type server struct {
 	maxProcessedAddressesForLog uint32
 }
 
+// MaxDaemonSendMsgSize is the max send message size used for the daemon server.
+// Currently, set to 100MB
+const MaxDaemonSendMsgSize = 100_000_000
+
 // Start starts the kaspawalletd server
 func Start(params *dagconfig.Params, listen, rpcServer string, keysFilePath string, profile string, timeout uint32) error {
 	initLog(defaultLogFile, defaultErrLogFile)
@@ -96,7 +100,7 @@ func Start(params *dagconfig.Params, listen, rpcServer string, keysFilePath stri
 		}
 	})
 
-	grpcServer := grpc.NewServer()
+	grpcServer := grpc.NewServer(grpc.MaxSendMsgSize(MaxDaemonSendMsgSize))
 	pb.RegisterKaspawalletdServer(grpcServer, serverInstance)
 
 	spawn("grpcServer.Serve", func() {
