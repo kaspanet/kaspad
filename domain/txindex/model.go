@@ -13,6 +13,12 @@ type TXAcceptanceChange struct {
 	Removed map[externalapi.DomainTransactionID]*externalapi.DomainHash
 }
 
+//TxIDsToBlocks is a map of TxIDs to corrospnding blockHashes
+type TxIDsToBlockHashes map[*externalapi.DomainTransactionID]*externalapi.DomainHash
+
+//TxIDsToBlocks is a map of TxIDs to corrospnding blocks
+type TxIDsToBlocks map[*externalapi.DomainTransactionID]*externalapi.DomainBlock
+
 // ConvertDomainHashToString converts the given DomainHash to a string
 func ConvertDomainHashToString(blockHash *externalapi.DomainHash) string {
 	return hex.EncodeToString(blockHash.ByteSlice())

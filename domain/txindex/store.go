@@ -231,3 +231,32 @@ func (tis *txIndexStore) getTxAcceptingBlockHash(txID *externalapi.DomainTransac
 
 	return acceptingBlockHash, true, nil
 }
+
+func (tis *txIndexStore) getTxAcceptingBlockHashes(txIDs []*externalapi.DomainTransactionID) (acceptingBlockHashes TxIDsToBlockHashes, found bool, err error) {
+
+	if tis.isAnythingStaged() {
+		return nil, false, errors.Errorf("cannot get TX accepting Block hash while staging isn't empty")
+	}
+
+	keys := make([]*database.Key, len(txIDs))
+
+	acceptingBlockHashes = make(TxIDsToBlockHashes)
+
+	for i, key := range keys {
+		key = tis.convertTxIDToKey(txAcceptedIndexBucket, *txIDs[i])
+		serializedAcceptingBlockHash, err := tis.database.Get(key)
+		if err != nil {
+			if database.IsNotFoundError(err) {
+				return nil, false, nil
+			}
+			return nil, false, err
+		}
+		acceptingBlockHash, err := externalapi.NewDomainHashFromByteSlice(serializedAcceptingBlockHash)
+		if err != nil {
+			return nil, false, err
+		}
+		acceptingBlockHashes[txIDs[i]] = acceptingBlockHash
+	}
+
+	return acceptingBlockHashes, true, nil
+}

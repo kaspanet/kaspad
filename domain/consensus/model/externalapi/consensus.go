@@ -14,6 +14,7 @@ type Consensus interface {
 	ApplyPruningPointProof(pruningPointProof *PruningPointProof) error
 
 	GetBlock(blockHash *DomainHash) (*DomainBlock, error)
+	GetBlocks(blockHashes []*DomainHash) (*DomainBlock, error)
 	GetBlockEvenIfHeaderOnly(blockHash *DomainHash) (*DomainBlock, error)
 	GetBlockHeader(blockHash *DomainHash) (BlockHeader, error)
 	GetBlockInfo(blockHash *DomainHash) (*BlockInfo, error)

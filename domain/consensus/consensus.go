@@ -395,6 +395,22 @@ func (s *consensus) GetBlock(blockHash *externalapi.DomainHash) (*externalapi.Do
 	return block, nil
 }
 
+func (s *consensus) GetBlocks(blockHashes []*externalapi.DomainHash) ([]*externalapi.DomainBlock, error) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	stagingArea := model.NewStagingArea()
+
+	blocks, err := s.blockStore.Blocks(s.databaseContext, stagingArea, blockHashes)
+	if err != nil {
+		if errors.Is(err, database.ErrNotFound) {
+			return nil, errors.Wrapf(err, "Quried block %s does not exist")
+		}
+		return nil, err
+	}
+	return blocks, nil
+}
+
 func (s *consensus) GetBlockEvenIfHeaderOnly(blockHash *externalapi.DomainHash) (*externalapi.DomainBlock, error) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
