@@ -134,7 +134,7 @@ func TestTx(t *testing.T) {
 // TestTxHash tests the ability to generate the hash of a transaction accurately.
 func TestTxHashAndID(t *testing.T) {
 	txHash1Str := "93663e597f6c968d32d229002f76408edf30d6a0151ff679fc729812d8cb2acc"
-	txID1Str := "24079c6d2bdf602fc389cc307349054937744a9c8dc0f07c023e6af0e949a4e7"
+	txID1Str := "e20225c3d065ee41743607ee627db44d01ef396dc9779b05b2caf55bac50e12d"
 	wantTxID1, err := transactionid.FromString(txID1Str)
 	if err != nil {
 		t.Fatalf("NewTxIDFromStr: %v", err)

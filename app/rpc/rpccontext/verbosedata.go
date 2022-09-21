@@ -122,9 +122,20 @@ func (ctx *Context) PopulateTransactionWithVerboseData(
 	}
 
 	ctx.Domain.Consensus().PopulateMass(domainTransaction)
+
+	var daaScore uint64
+	if domainBlockHeader != nil {
+		daaScore = domainBlockHeader.DAAScore()
+	} else {
+		daaScore, err = ctx.Domain.Consensus().GetVirtualDAAScore()
+		if err != nil {
+			return err
+		}
+	}
+
 	transaction.VerboseData = &appmessage.RPCTransactionVerboseData{
 		TransactionID: consensushashing.TransactionID(domainTransaction).String(),
-		Hash:          consensushashing.TransactionHash(domainTransaction).String(),
+		Hash:          consensushashing.TransactionHash(domainTransaction, daaScore >= ctx.Config.NetParams().HFDAAScore).String(),
 		Mass:          domainTransaction.Mass,
 	}
 	if domainBlockHeader != nil {

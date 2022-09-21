@@ -2,8 +2,12 @@ package grpcserver
 
 import (
 	"github.com/davecgh/go-spew/spew"
+	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/infrastructure/logger"
 	"io"
+	"os"
+	"strconv"
+	"sync"
 	"time"
 
 	routerpkg "github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
@@ -25,6 +29,9 @@ func (c *gRPCConnection) connectionLoops() error {
 	return err
 }
 
+var blockDelayOnce sync.Once
+var blockDelay = 0
+
 func (c *gRPCConnection) sendLoop() error {
 	outgoingRoute := c.router.OutgoingRoute()
 	for c.IsConnected() {
@@ -34,6 +41,20 @@ func (c *gRPCConnection) sendLoop() error {
 				return nil
 			}
 			return err
+		}
+
+		blockDelayOnce.Do(func() {
+			experimentalDelayEnv := os.Getenv("KASPA_EXPERIMENTAL_DELAY")
+			if experimentalDelayEnv != "" {
+				blockDelay, err = strconv.Atoi(experimentalDelayEnv)
+				if err != nil {
+					panic(err)
+				}
+			}
+		})
+
+		if blockDelay != 0 && message.Command() == appmessage.CmdBlock {
+			time.Sleep(time.Duration(blockDelay) * time.Second)
 		}
 
 		log.Debugf("outgoing '%s' message to %s", message.Command(), c)

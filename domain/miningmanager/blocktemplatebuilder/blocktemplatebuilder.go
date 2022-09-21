@@ -37,17 +37,19 @@ type blockTemplateBuilder struct {
 	policy             policy
 
 	coinbasePayloadScriptPublicKeyMaxLength uint8
+	hfDAAScore                              uint64
 }
 
 // New creates a new blockTemplateBuilder
 func New(consensusReference consensusreference.ConsensusReference, mempool miningmanagerapi.Mempool,
-	blockMaxMass uint64, coinbasePayloadScriptPublicKeyMaxLength uint8) miningmanagerapi.BlockTemplateBuilder {
+	blockMaxMass uint64, coinbasePayloadScriptPublicKeyMaxLength uint8, hfDAAScore uint64) miningmanagerapi.BlockTemplateBuilder {
 	return &blockTemplateBuilder{
 		consensusReference: consensusReference,
 		mempool:            mempool,
 		policy:             policy{BlockMaxMass: blockMaxMass},
 
 		coinbasePayloadScriptPublicKeyMaxLength: coinbasePayloadScriptPublicKeyMaxLength,
+		hfDAAScore:                              hfDAAScore,
 	}
 }
 
@@ -190,7 +192,7 @@ func (btb *blockTemplateBuilder) ModifyBlockTemplate(newCoinbaseData *consensuse
 	// Update the hash merkle root according to the modified transactions
 	mutableHeader := blockTemplateToModify.Block.Header.ToMutable()
 	// TODO: can be optimized to O(log(#transactions)) by caching the whole merkle tree in BlockTemplate and changing only the relevant path
-	mutableHeader.SetHashMerkleRoot(merkle.CalculateHashMerkleRoot(blockTemplateToModify.Block.Transactions))
+	mutableHeader.SetHashMerkleRoot(merkle.CalculateHashMerkleRoot(blockTemplateToModify.Block.Transactions, mutableHeader.DAAScore() >= btb.hfDAAScore))
 
 	newTimestamp := mstime.Now().UnixMilliseconds()
 	if newTimestamp >= mutableHeader.TimeInMilliseconds() {

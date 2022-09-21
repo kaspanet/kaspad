@@ -20,6 +20,7 @@ import (
 type blockBuilder struct {
 	databaseContext model.DBManager
 	genesisHash     *externalapi.DomainHash
+	hfDAAScore      uint64
 
 	difficultyManager     model.DifficultyManager
 	pastMedianTimeManager model.PastMedianTimeManager
@@ -42,6 +43,7 @@ type blockBuilder struct {
 func New(
 	databaseContext model.DBManager,
 	genesisHash *externalapi.DomainHash,
+	hfDAAScore uint64,
 
 	difficultyManager model.DifficultyManager,
 	pastMedianTimeManager model.PastMedianTimeManager,
@@ -63,6 +65,7 @@ func New(
 	return &blockBuilder{
 		databaseContext: databaseContext,
 		genesisHash:     genesisHash,
+		hfDAAScore:      hfDAAScore,
 
 		difficultyManager:     difficultyManager,
 		pastMedianTimeManager: pastMedianTimeManager,
@@ -206,7 +209,7 @@ func (bb *blockBuilder) buildHeader(stagingArea *model.StagingArea, transactions
 	if err != nil {
 		return nil, err
 	}
-	hashMerkleRoot := bb.newBlockHashMerkleRoot(transactions)
+	hashMerkleRoot := bb.newBlockHashMerkleRoot(transactions, daaScore >= bb.hfDAAScore)
 	acceptedIDMerkleRoot, err := bb.newBlockAcceptedIDMerkleRoot(stagingArea)
 	if err != nil {
 		return nil, err
@@ -279,8 +282,8 @@ func (bb *blockBuilder) newBlockDifficulty(stagingArea *model.StagingArea) (uint
 	return bb.difficultyManager.RequiredDifficulty(stagingArea, model.VirtualBlockHash)
 }
 
-func (bb *blockBuilder) newBlockHashMerkleRoot(transactions []*externalapi.DomainTransaction) *externalapi.DomainHash {
-	return merkle.CalculateHashMerkleRoot(transactions)
+func (bb *blockBuilder) newBlockHashMerkleRoot(transactions []*externalapi.DomainTransaction, postHF bool) *externalapi.DomainHash {
+	return merkle.CalculateHashMerkleRoot(transactions, postHF)
 }
 
 func (bb *blockBuilder) newBlockAcceptedIDMerkleRoot(stagingArea *model.StagingArea) (*externalapi.DomainHash, error) {

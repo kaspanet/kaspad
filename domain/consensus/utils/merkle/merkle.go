@@ -37,10 +37,10 @@ func hashMerkleBranches(left, right *externalapi.DomainHash) *externalapi.Domain
 
 // CalculateHashMerkleRoot calculates the merkle root of a tree consisted of the given transaction hashes.
 // See `merkleRoot` for more info.
-func CalculateHashMerkleRoot(transactions []*externalapi.DomainTransaction) *externalapi.DomainHash {
+func CalculateHashMerkleRoot(transactions []*externalapi.DomainTransaction, postHF bool) *externalapi.DomainHash {
 	txHashes := make([]*externalapi.DomainHash, len(transactions))
 	for i, tx := range transactions {
-		txHashes[i] = consensushashing.TransactionHash(tx)
+		txHashes[i] = consensushashing.TransactionHash(tx, postHF)
 	}
 	return merkleRoot(txHashes)
 }

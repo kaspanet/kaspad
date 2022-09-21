@@ -34,6 +34,7 @@ func TestBlockValidator_ValidateBodyInIsolation(t *testing.T) {
 		CheckFirstBlockTransactionIsCoinbase,
 	}
 	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
+		consensusConfig.HFDAAScore = 10
 		tc, teardown, err := consensus.NewFactory().NewTestConsensus(consensusConfig, "TestChainedTransactions")
 		if err != nil {
 			t.Fatalf("Error setting up consensus: %+v", err)
@@ -1309,7 +1310,7 @@ func initBlockWithFirstTransactionDifferentThanCoinbase(consensusConfig *consens
 		Header: blockheader.NewImmutableBlockHeader(
 			constants.BlockVersion,
 			[]externalapi.BlockLevelParents{[]*externalapi.DomainHash{consensusConfig.GenesisHash}},
-			merkle.CalculateHashMerkleRoot([]*externalapi.DomainTransaction{tx}),
+			merkle.CalculateHashMerkleRoot([]*externalapi.DomainTransaction{tx}, consensusConfig.HFDAAScore == 0),
 			&externalapi.DomainHash{},
 			externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{
 				0x80, 0xf7, 0x00, 0xe3, 0x16, 0x3d, 0x04, 0x95,
