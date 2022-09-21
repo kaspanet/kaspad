@@ -159,7 +159,7 @@ func (msg *MsgTx) IsCoinBase() bool {
 
 // TxHash generates the Hash for the transaction.
 func (msg *MsgTx) TxHash() *externalapi.DomainHash {
-	return consensushashing.TransactionHash(MsgTxToDomainTransaction(msg))
+	return consensushashing.TransactionHash(MsgTxToDomainTransaction(msg), false)
 }
 
 // TxID generates the Hash for the transaction without the signature script, gas and payload fields.

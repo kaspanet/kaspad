@@ -19,6 +19,7 @@ type coinbaseManager struct {
 	genesisHash                             *externalapi.DomainHash
 	deflationaryPhaseDaaScore               uint64
 	deflationaryPhaseBaseSubsidy            uint64
+	hfDAAScore                              uint64
 
 	databaseContext     model.DBReader
 	dagTraversalManager model.DAGTraversalManager
@@ -127,7 +128,8 @@ func (c *coinbaseManager) coinbaseOutputForBlueBlock(stagingArea *model.StagingA
 	}
 
 	// the ScriptPublicKey for the coinbase is parsed from the coinbase payload
-	_, coinbaseData, _, err := c.ExtractCoinbaseDataBlueScoreAndSubsidy(blockAcceptanceData.TransactionAcceptanceData[0].Transaction)
+	// We pass postHF=true since it only affects the deserialization of the subsidy, which is not used in this context.
+	_, coinbaseData, _, err := c.ExtractCoinbaseDataBlueScoreAndSubsidy(blockAcceptanceData.TransactionAcceptanceData[0].Transaction, true)
 	if err != nil {
 		return nil, false, err
 	}
@@ -265,7 +267,7 @@ func (c *coinbaseManager) calcMergedBlockReward(stagingArea *model.StagingArea, 
 		return 0, err
 	}
 
-	_, _, subsidy, err := c.ExtractCoinbaseDataBlueScoreAndSubsidy(block.Transactions[transactionhelper.CoinbaseTransactionIndex])
+	_, _, subsidy, err := c.ExtractCoinbaseDataBlueScoreAndSubsidy(block.Transactions[transactionhelper.CoinbaseTransactionIndex], block.Header.DAAScore() >= c.hfDAAScore)
 	if err != nil {
 		return 0, err
 	}
@@ -283,6 +285,7 @@ func New(
 	genesisHash *externalapi.DomainHash,
 	deflationaryPhaseDaaScore uint64,
 	deflationaryPhaseBaseSubsidy uint64,
+	hfDAAScore uint64,
 
 	dagTraversalManager model.DAGTraversalManager,
 	ghostdagDataStore model.GHOSTDAGDataStore,
@@ -301,6 +304,7 @@ func New(
 		genesisHash:                             genesisHash,
 		deflationaryPhaseDaaScore:               deflationaryPhaseDaaScore,
 		deflationaryPhaseBaseSubsidy:            deflationaryPhaseBaseSubsidy,
+		hfDAAScore:                              hfDAAScore,
 
 		dagTraversalManager: dagTraversalManager,
 		ghostdagDataStore:   ghostdagDataStore,

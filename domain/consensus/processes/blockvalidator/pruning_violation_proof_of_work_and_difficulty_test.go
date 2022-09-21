@@ -181,7 +181,7 @@ func TestCheckParentHeadersExist(t *testing.T) {
 		invalidBlock.Header = blockheader.NewImmutableBlockHeader(
 			invalidBlock.Header.Version(),
 			invalidBlock.Header.Parents(),
-			merkle.CalculateHashMerkleRoot(invalidBlock.Transactions),
+			merkle.CalculateHashMerkleRoot(invalidBlock.Transactions, orphanBlock.Header.DAAScore() >= consensusConfig.HFDAAScore),
 			orphanBlock.Header.AcceptedIDMerkleRoot(),
 			orphanBlock.Header.UTXOCommitment(),
 			orphanBlock.Header.TimeInMilliseconds(),

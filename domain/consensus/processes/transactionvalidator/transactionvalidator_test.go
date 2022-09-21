@@ -109,18 +109,6 @@ func TestValidateTransactionInContextAndPopulateFee(t *testing.T) {
 				0),
 		}
 
-		txInputWithBadSigOpCount := externalapi.DomainTransactionInput{
-			PreviousOutpoint: prevOutPoint,
-			SignatureScript:  []byte{},
-			Sequence:         constants.MaxTxInSequenceNum,
-			SigOpCount:       2,
-			UTXOEntry: utxo.NewUTXOEntry(
-				100_000_000, // 1 KAS
-				scriptPublicKey,
-				true,
-				uint64(5)),
-		}
-
 		txOutput := externalapi.DomainTransactionOutput{
 			Value:           100000000, // 1 KAS
 			ScriptPublicKey: scriptPublicKey,
@@ -193,13 +181,6 @@ func TestValidateTransactionInContextAndPopulateFee(t *testing.T) {
 			SubnetworkID: subnetworks.SubnetworkIDRegistry,
 			Gas:          0,
 			LockTime:     0}
-		txWithBadSigOpCount := externalapi.DomainTransaction{
-			Version:      constants.MaxTransactionVersion,
-			Inputs:       []*externalapi.DomainTransactionInput{&txInputWithBadSigOpCount},
-			Outputs:      []*externalapi.DomainTransactionOutput{&txOutput},
-			SubnetworkID: subnetworks.SubnetworkIDRegistry,
-			Gas:          0,
-			LockTime:     0}
 
 		stagingArea := model.NewStagingArea()
 
@@ -265,13 +246,6 @@ func TestValidateTransactionInContextAndPopulateFee(t *testing.T) {
 				povBlockHash:  povBlockHash,
 				isValid:       false,
 				expectedError: ruleerrors.ErrScriptValidation,
-			},
-			{ // the SigOpCount in the input is wrong, and hence invalid
-				name:          "checkTransactionSigOpCounts",
-				tx:            &txWithBadSigOpCount,
-				povBlockHash:  povBlockHash,
-				isValid:       false,
-				expectedError: ruleerrors.ErrWrongSigOpCount,
 			},
 		}
 

@@ -23,11 +23,11 @@ const (
 )
 
 // TransactionHash returns the transaction hash.
-func TransactionHash(tx *externalapi.DomainTransaction) *externalapi.DomainHash {
+func TransactionHash(tx *externalapi.DomainTransaction, postHF bool) *externalapi.DomainHash {
 	// Encode the header and hash everything prior to the number of
 	// transactions.
 	writer := hashes.NewTransactionHashWriter()
-	err := serializeTransaction(writer, tx, txEncodingFull)
+	err := serializeTransaction(writer, tx, txEncodingFull, postHF)
 	if err != nil {
 		// It seems like this could only happen if the writer returned an error.
 		// and this writer should never return an error (no allocations or possible failures)
@@ -52,7 +52,7 @@ func TransactionID(tx *externalapi.DomainTransaction) *externalapi.DomainTransac
 		encodingFlags = txEncodingExcludeSignatureScript
 	}
 	writer := hashes.NewTransactionIDWriter()
-	err := serializeTransaction(writer, tx, encodingFlags)
+	err := serializeTransaction(writer, tx, encodingFlags, true)
 	if err != nil {
 		// this writer never return errors (no allocations or possible failures) so errors can only come from validity checks,
 		// and we assume we never construct malformed transactions.
@@ -74,7 +74,7 @@ func TransactionIDs(txs []*externalapi.DomainTransaction) []*externalapi.DomainT
 	return txIDs
 }
 
-func serializeTransaction(w io.Writer, tx *externalapi.DomainTransaction, encodingFlags txEncoding) error {
+func serializeTransaction(w io.Writer, tx *externalapi.DomainTransaction, encodingFlags txEncoding, postHF bool) error {
 	err := binaryserializer.PutUint16(w, tx.Version)
 	if err != nil {
 		return err
@@ -87,7 +87,7 @@ func serializeTransaction(w io.Writer, tx *externalapi.DomainTransaction, encodi
 	}
 
 	for _, ti := range tx.Inputs {
-		err = writeTransactionInput(w, ti, encodingFlags)
+		err = writeTransactionInput(w, ti, encodingFlags, postHF)
 		if err != nil {
 			return err
 		}
@@ -131,7 +131,7 @@ func serializeTransaction(w io.Writer, tx *externalapi.DomainTransaction, encodi
 
 // writeTransactionInput encodes ti to the kaspa protocol encoding for a transaction
 // input to w.
-func writeTransactionInput(w io.Writer, ti *externalapi.DomainTransactionInput, encodingFlags txEncoding) error {
+func writeTransactionInput(w io.Writer, ti *externalapi.DomainTransactionInput, encodingFlags txEncoding, postHF bool) error {
 	err := writeOutpoint(w, &ti.PreviousOutpoint)
 	if err != nil {
 		return err
@@ -139,11 +139,21 @@ func writeTransactionInput(w io.Writer, ti *externalapi.DomainTransactionInput, 
 
 	if encodingFlags&txEncodingExcludeSignatureScript != txEncodingExcludeSignatureScript {
 		err = writeVarBytes(w, ti.SignatureScript)
+		if err != nil {
+			return err
+		}
+
+		if postHF {
+			_, err = w.Write([]byte{ti.SigOpCount})
+			if err != nil {
+				return err
+			}
+		}
 	} else {
 		err = writeVarBytes(w, []byte{})
-	}
-	if err != nil {
-		return err
+		if err != nil {
+			return err
+		}
 	}
 
 	return binaryserializer.PutUint64(w, ti.Sequence)
