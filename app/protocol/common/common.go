@@ -35,7 +35,7 @@ var isDNSSeederOnce sync.Once
 // doesn't need to actually stay synced, and is mainly used for scanning the p2p network.
 func IsDNSSeeder() bool {
 	isDNSSeederOnce.Do(func() {
-		isDNSSeederEnv := os.Getenv("DNSSEEDER")
+		isDNSSeederEnv := os.Getenv("KASPA_DNSSEEDER")
 		if isDNSSeederEnv != "" {
 			isDNSSeeder = true
 		}
