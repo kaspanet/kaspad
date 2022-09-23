@@ -10,6 +10,7 @@ type consensusStateManager struct {
 	maxBlockParents   externalapi.KType
 	mergeSetSizeLimit uint64
 	genesisHash       *externalapi.DomainHash
+	hfDAAScore        uint64
 	databaseContext   model.DBManager
 
 	ghostdagManager       model.GHOSTDAGManager
@@ -44,6 +45,7 @@ func New(
 	maxBlockParents externalapi.KType,
 	mergeSetSizeLimit uint64,
 	genesisHash *externalapi.DomainHash,
+	hfDAAScore uint64,
 
 	ghostdagManager model.GHOSTDAGManager,
 	dagTopologyManager model.DAGTopologyManager,
@@ -72,7 +74,9 @@ func New(
 		maxBlockParents:   maxBlockParents,
 		mergeSetSizeLimit: mergeSetSizeLimit,
 		genesisHash:       genesisHash,
-		databaseContext:   databaseContext,
+		hfDAAScore:        hfDAAScore,
+
+		databaseContext: databaseContext,
 
 		ghostdagManager:       ghostdagManager,
 		dagTopologyManager:    dagTopologyManager,

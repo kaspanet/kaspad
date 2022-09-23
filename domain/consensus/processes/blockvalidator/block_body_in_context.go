@@ -187,7 +187,7 @@ func (v *blockValidator) checkCoinbaseSubsidy(
 		return err
 	}
 
-	_, _, subsidy, err := v.coinbaseManager.ExtractCoinbaseDataBlueScoreAndSubsidy(block.Transactions[transactionhelper.CoinbaseTransactionIndex])
+	_, _, subsidy, err := v.coinbaseManager.ExtractCoinbaseDataBlueScoreAndSubsidy(block.Transactions[transactionhelper.CoinbaseTransactionIndex], block.Header.DAAScore() >= v.hfDAAScore)
 	if err != nil {
 		return err
 	}

@@ -31,7 +31,7 @@ func (c *Calculator) MassPerScriptPubKeyByte() uint64 { return c.massPerScriptPu
 func (c *Calculator) MassPerSigOp() uint64 { return c.massPerSigOp }
 
 // CalculateTransactionMass calculates the mass of the given transaction
-func (c *Calculator) CalculateTransactionMass(transaction *externalapi.DomainTransaction) uint64 {
+func (c *Calculator) CalculateTransactionMass(transaction *externalapi.DomainTransaction, postHF bool) uint64 {
 	if transactionhelper.IsCoinBase(transaction) {
 		return 0
 	}
@@ -49,11 +49,14 @@ func (c *Calculator) CalculateTransactionMass(transaction *externalapi.DomainTra
 	massForScriptPubKey := totalScriptPubKeySize * c.massPerScriptPubKeyByte
 
 	// calculate mass for SigOps
-	totalSigOpCount := uint64(0)
-	for _, input := range transaction.Inputs {
-		totalSigOpCount += uint64(input.SigOpCount)
+	massForSigOps := uint64(0)
+	if postHF {
+		totalSigOpCount := uint64(0)
+		for _, input := range transaction.Inputs {
+			totalSigOpCount += uint64(input.SigOpCount)
+		}
+		massForSigOps = totalSigOpCount * c.massPerSigOp
 	}
-	massForSigOps := totalSigOpCount * c.massPerSigOp
 
 	// Sum all components of mass
 	return massForSize + massForScriptPubKey + massForSigOps

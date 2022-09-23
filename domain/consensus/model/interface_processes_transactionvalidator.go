@@ -12,5 +12,5 @@ type TransactionValidator interface {
 		povBlockHash *externalapi.DomainHash, povBlockPastMedianTime int64) error
 	ValidateTransactionInContextAndPopulateFee(stagingArea *StagingArea,
 		tx *externalapi.DomainTransaction, povBlockHash *externalapi.DomainHash) error
-	PopulateMass(transaction *externalapi.DomainTransaction)
+	PopulateMass(transaction *externalapi.DomainTransaction, daaScore uint64)
 }

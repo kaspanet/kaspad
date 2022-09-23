@@ -90,7 +90,12 @@ func (v *transactionValidator) ValidateTransactionInContextAndPopulateFee(stagin
 		return err
 	}
 
-	err = v.validateTransactionSigOpCounts(tx)
+	daaScore, err := v.daaBlocksStore.DAAScore(v.databaseContext, stagingArea, povBlockHash)
+	if err != nil {
+		return err
+	}
+
+	err = v.validateTransactionSigOpCounts(tx, daaScore >= v.hfDAAScore)
 	if err != nil {
 		return err
 	}
@@ -341,7 +346,7 @@ func (v *transactionValidator) sequenceLockActive(sequenceLock *sequenceLock, bl
 	return true
 }
 
-func (v *transactionValidator) validateTransactionSigOpCounts(tx *externalapi.DomainTransaction) error {
+func (v *transactionValidator) validateTransactionSigOpCounts(tx *externalapi.DomainTransaction, postHF bool) error {
 	for i, input := range tx.Inputs {
 		utxoEntry := input.UTXOEntry
 
@@ -350,10 +355,20 @@ func (v *transactionValidator) validateTransactionSigOpCounts(tx *externalapi.Do
 		sigScript := input.SignatureScript
 		isP2SH := txscript.IsPayToScriptHash(utxoEntry.ScriptPublicKey())
 		sigOpCount := txscript.GetPreciseSigOpCount(sigScript, utxoEntry.ScriptPublicKey(), isP2SH)
-		if sigOpCount != int(input.SigOpCount) {
-			return errors.Wrapf(ruleerrors.ErrWrongSigOpCount,
-				"input %d specifies SigOpCount %d while actual SigOpCount is %d",
-				i, input.SigOpCount, sigOpCount)
+
+		if postHF {
+			if sigOpCount != int(input.SigOpCount) {
+				return errors.Wrapf(ruleerrors.ErrWrongSigOpCount,
+					"input %d specifies SigOpCount %d while actual SigOpCount is %d",
+					i, input.SigOpCount, sigOpCount)
+			}
+		} else {
+			const sigOpCountLimit = 10
+			if sigOpCount > sigOpCountLimit {
+				return errors.Wrapf(ruleerrors.ErrWrongSigOpCount,
+					"input %d is using SigOpCount %d while the limit is %d",
+					i, sigOpCount, sigOpCountLimit)
+			}
 		}
 	}
 	return nil

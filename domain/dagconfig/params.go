@@ -188,6 +188,8 @@ type Params struct {
 	MaxBlockLevel int
 
 	MergeDepth uint64
+
+	HFDAAScore uint64
 }
 
 // NormalizeRPCServerAddress returns addr with the current network default
@@ -288,6 +290,8 @@ var MainnetParams = Params{
 	// This means that any block that has a level lower or equal to genesis will be level 0.
 	MaxBlockLevel: 225,
 	MergeDepth:    defaultMergeDepth,
+
+	HFDAAScore: 27905000,
 }
 
 // TestnetParams defines the network parameters for the test Kaspa network.
@@ -350,6 +354,7 @@ var TestnetParams = Params{
 
 	MaxBlockLevel: 250,
 	MergeDepth:    defaultMergeDepth,
+	HFDAAScore:    14106400,
 }
 
 // SimnetParams defines the network parameters for the simulation test Kaspa
