@@ -25,7 +25,7 @@ func (flow *handleIBDFlow) ibdWithHeadersProof(
 			return err
 		}
 
-		log.Infof("IBD with pruning proof from %s was unsuccessful. Deleting the staging consensus.", flow.peer)
+		log.Infof("IBD with pruning proof from %s was unsuccessful. Deleting the staging consensus. (%s)", flow.peer, err)
 		deleteStagingConsensusErr := flow.Domain().DeleteStagingConsensus()
 		if deleteStagingConsensusErr != nil {
 			return deleteStagingConsensusErr
