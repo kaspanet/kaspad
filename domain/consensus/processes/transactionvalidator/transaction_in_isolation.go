@@ -23,7 +23,7 @@ func (v *transactionValidator) ValidateTransactionInIsolation(tx *externalapi.Do
 	if err != nil {
 		return err
 	}
-	err = v.checkCoinbaseInIsolation(tx, povDAAScore >= v.hfDAAScore)
+	err = v.checkCoinbaseInIsolation(tx)
 	if err != nil {
 		return err
 	}
@@ -114,7 +114,7 @@ func (v *transactionValidator) checkDuplicateTransactionInputs(tx *externalapi.D
 	return nil
 }
 
-func (v *transactionValidator) checkCoinbaseInIsolation(tx *externalapi.DomainTransaction, postHF bool) error {
+func (v *transactionValidator) checkCoinbaseInIsolation(tx *externalapi.DomainTransaction) error {
 	if !transactionhelper.IsCoinBase(tx) {
 		return nil
 	}
@@ -127,21 +127,19 @@ func (v *transactionValidator) checkCoinbaseInIsolation(tx *externalapi.DomainTr
 			payloadLen, v.maxCoinbasePayloadLength)
 	}
 
-	if postHF {
-		if len(tx.Inputs) != 0 {
-			return errors.Wrap(ruleerrors.ErrCoinbaseWithInputs, "coinbase has inputs")
-		}
+	if len(tx.Inputs) != 0 {
+		return errors.Wrap(ruleerrors.ErrCoinbaseWithInputs, "coinbase has inputs")
+	}
 
-		outputsLimit := uint64(v.ghostdagK) + 2
-		if uint64(len(tx.Outputs)) > outputsLimit {
-			return errors.Wrapf(ruleerrors.ErrCoinbaseTooManyOutputs, "coinbase has too many outputs: got %d where the limit is %d", len(tx.Outputs), outputsLimit)
-		}
+	outputsLimit := uint64(v.ghostdagK) + 2
+	if uint64(len(tx.Outputs)) > outputsLimit {
+		return errors.Wrapf(ruleerrors.ErrCoinbaseTooManyOutputs, "coinbase has too many outputs: got %d where the limit is %d", len(tx.Outputs), outputsLimit)
+	}
 
-		for i, output := range tx.Outputs {
-			if len(output.ScriptPublicKey.Script) > int(v.coinbasePayloadScriptPublicKeyMaxLength) {
-				return errors.Wrapf(ruleerrors.ErrCoinbaseTooLongScriptPublicKey, "coinbase output %d has a too long script public key", i)
+	for i, output := range tx.Outputs {
+		if len(output.ScriptPublicKey.Script) > int(v.coinbasePayloadScriptPublicKeyMaxLength) {
+			return errors.Wrapf(ruleerrors.ErrCoinbaseTooLongScriptPublicKey, "coinbase output %d has a too long script public key", i)
 
-			}
 		}
 	}
 

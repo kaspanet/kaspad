@@ -5,9 +5,9 @@ import (
 )
 
 // PopulateMass calculates and populates the mass of the given transaction
-func (v *transactionValidator) PopulateMass(transaction *externalapi.DomainTransaction, daaScore uint64) {
+func (v *transactionValidator) PopulateMass(transaction *externalapi.DomainTransaction) {
 	if transaction.Mass != 0 {
 		return
 	}
-	transaction.Mass = v.txMassCalculator.CalculateTransactionMass(transaction, daaScore >= v.hfDAAScore)
+	transaction.Mass = v.txMassCalculator.CalculateTransactionMass(transaction)
 }

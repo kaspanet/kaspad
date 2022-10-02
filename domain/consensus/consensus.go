@@ -21,7 +21,6 @@ type consensus struct {
 
 	genesisBlock *externalapi.DomainBlock
 	genesisHash  *externalapi.DomainHash
-	hfDAAScore   uint64
 
 	expectedDAAWindowDurationInMilliseconds int64
 
@@ -918,7 +917,7 @@ func (s *consensus) EstimateNetworkHashesPerSecond(startHash *externalapi.Domain
 }
 
 func (s *consensus) PopulateMass(transaction *externalapi.DomainTransaction) {
-	s.transactionValidator.PopulateMass(transaction, s.hfDAAScore)
+	s.transactionValidator.PopulateMass(transaction)
 }
 
 func (s *consensus) ResolveVirtual(progressReportCallback func(uint64, uint64)) error {

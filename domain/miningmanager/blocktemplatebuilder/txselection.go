@@ -1,7 +1,6 @@
 package blocktemplatebuilder
 
 import (
-	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
 	"math"
 	"math/rand"
 	"sort"
@@ -102,10 +101,6 @@ func (btb *blockTemplateBuilder) selectTransactions(candidateTxs []*candidateTx)
 		}
 		tx := selectedTx.DomainTransaction
 
-		if totalInputs+len(tx.Inputs) > maxBlockInputsPreHF(btb.hfDAAScore) {
-			continue
-		}
-
 		// Enforce maximum transaction mass per block. Also check
 		// for overflow.
 		if txsForBlockTemplate.totalMass+selectedTx.Mass < txsForBlockTemplate.totalMass ||
@@ -158,10 +153,6 @@ func (btb *blockTemplateBuilder) selectTransactions(candidateTxs []*candidateTx)
 			consensushashing.TransactionID(tx), selectedTx.Fee*1e6/selectedTx.Mass)
 
 		markCandidateTxForDeletion(selectedTx)
-
-		if totalInputs == maxBlockInputsPreHF(btb.hfDAAScore) {
-			break
-		}
 	}
 
 	sort.Slice(selectedTxs, func(i, j int) bool {
@@ -173,10 +164,6 @@ func (btb *blockTemplateBuilder) selectTransactions(candidateTxs []*candidateTx)
 		txsForBlockTemplate.txFees = append(txsForBlockTemplate.txFees, selectedTx.Fee)
 	}
 	return txsForBlockTemplate
-}
-
-func maxBlockInputsPreHF(hfDAAScore uint64) int {
-	return constants.MaxBlockInputsPreHF
 }
 
 func rebalanceCandidates(oldCandidateTxs []*candidateTx, isFirstRun bool) (
