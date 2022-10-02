@@ -77,6 +77,11 @@ func Start(params *dagconfig.Params, listen, rpcServer string, keysFilePath stri
 		return (errors.Wrapf(err, "Error reading keys file %s", keysFilePath))
 	}
 
+	err = keysFile.TryLock()
+	if err != nil {
+		return err
+	}
+
 	serverInstance := &server{
 		rpcClient:                   rpcClient,
 		params:                      params,
