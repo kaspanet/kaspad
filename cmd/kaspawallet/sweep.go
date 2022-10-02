@@ -184,7 +184,7 @@ func createSplitTransactionsWithSchnorrPrivteKey(
 			ScriptPublicKey: scriptPublicKey,
 		}
 
-		if massCalculater.CalculateTransactionMass(currentTx, true)+extraMass >= mempool.MaximumStandardTransactionMass {
+		if massCalculater.CalculateTransactionMass(currentTx)+extraMass >= mempool.MaximumStandardTransactionMass {
 
 			//in this loop we assume a transaction with one input and one output cannot violate max transaction mass, hence a sanity check.
 			if len(currentTx.Inputs) == 1 {

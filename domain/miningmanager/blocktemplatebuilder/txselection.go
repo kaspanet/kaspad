@@ -1,7 +1,6 @@
 package blocktemplatebuilder
 
 import (
-	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
 	"math"
 	"math/rand"
 	"sort"
@@ -75,8 +74,6 @@ func (btb *blockTemplateBuilder) selectTransactions(candidateTxs []*candidateTx)
 		usedP += candidateTx.p
 	}
 
-	totalInputs := 0
-
 	selectedTxs := make([]*candidateTx, 0)
 	for len(candidateTxs)-usedCount > 0 {
 		// Rebalance the candidates if it's required
@@ -101,10 +98,6 @@ func (btb *blockTemplateBuilder) selectTransactions(candidateTxs []*candidateTx)
 			continue
 		}
 		tx := selectedTx.DomainTransaction
-
-		if totalInputs+len(tx.Inputs) > maxBlockInputsPreHF(btb.hfDAAScore) {
-			continue
-		}
 
 		// Enforce maximum transaction mass per block. Also check
 		// for overflow.
@@ -150,7 +143,6 @@ func (btb *blockTemplateBuilder) selectTransactions(candidateTxs []*candidateTx)
 		// save the masses, fees, and signature operation counts to the
 		// result.
 		selectedTxs = append(selectedTxs, selectedTx)
-		totalInputs += len(selectedTx.Inputs)
 		txsForBlockTemplate.totalMass += selectedTx.Mass
 		txsForBlockTemplate.totalFees += selectedTx.Fee
 
@@ -158,10 +150,6 @@ func (btb *blockTemplateBuilder) selectTransactions(candidateTxs []*candidateTx)
 			consensushashing.TransactionID(tx), selectedTx.Fee*1e6/selectedTx.Mass)
 
 		markCandidateTxForDeletion(selectedTx)
-
-		if totalInputs == maxBlockInputsPreHF(btb.hfDAAScore) {
-			break
-		}
 	}
 
 	sort.Slice(selectedTxs, func(i, j int) bool {
@@ -173,10 +161,6 @@ func (btb *blockTemplateBuilder) selectTransactions(candidateTxs []*candidateTx)
 		txsForBlockTemplate.txFees = append(txsForBlockTemplate.txFees, selectedTx.Fee)
 	}
 	return txsForBlockTemplate
-}
-
-func maxBlockInputsPreHF(hfDAAScore uint64) int {
-	return constants.MaxBlockInputsPreHF
 }
 
 func rebalanceCandidates(oldCandidateTxs []*candidateTx, isFirstRun bool) (

@@ -244,7 +244,6 @@ var (
 	ErrCoinbaseWithInputs                             = newRuleError("ErrCoinbaseWithInputs")
 	ErrCoinbaseTooManyOutputs                         = newRuleError("ErrCoinbaseTooManyOutputs")
 	ErrCoinbaseTooLongScriptPublicKey                 = newRuleError("ErrCoinbaseTooLongScriptPublicKey")
-	ErrOverMaxBlockInputsPreHF                        = newRuleError("ErrOverMaxBlockInputsPreHF")
 )
 
 // RuleError identifies a rule violation. It is used to indicate that

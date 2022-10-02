@@ -38,7 +38,4 @@ const (
 	// UnacceptedDAAScore is used to for UTXOEntries that were created by transactions in the mempool, or otherwise
 	// not-yet-accepted transactions.
 	UnacceptedDAAScore = math.MaxUint64
-
-	// MaxBlockInputsPreHF is the maximum number of inputs a block can hold before the HF
-	MaxBlockInputsPreHF = 900
 )

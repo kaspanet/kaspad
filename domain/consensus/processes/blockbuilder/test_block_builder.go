@@ -76,7 +76,7 @@ func (bb *testBlockBuilder) buildUTXOInvalidHeader(stagingArea *model.StagingAre
 		return nil, err
 	}
 
-	hashMerkleRoot := bb.newBlockHashMerkleRoot(transactions, daaScore >= bb.hfDAAScore)
+	hashMerkleRoot := bb.newBlockHashMerkleRoot(transactions)
 
 	pruningPoint, err := bb.newBlockPruningPoint(stagingArea, tempBlockHash)
 	if err != nil {
@@ -120,7 +120,7 @@ func (bb *testBlockBuilder) buildHeaderWithParents(stagingArea *model.StagingAre
 		return nil, err
 	}
 
-	hashMerkleRoot := bb.newBlockHashMerkleRoot(transactions, daaScore >= bb.hfDAAScore)
+	hashMerkleRoot := bb.newBlockHashMerkleRoot(transactions)
 	acceptedIDMerkleRoot, err := bb.calculateAcceptedIDMerkleRoot(acceptanceData)
 	if err != nil {
 		return nil, err

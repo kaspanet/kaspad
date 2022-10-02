@@ -58,7 +58,7 @@ func TestEstimateMassAfterSignatures(t *testing.T) {
 			t.Fatalf("ExtractTransaction: %+v", err)
 		}
 
-		actualMassAfterSignatures := serverInstance.txMassCalculator.CalculateTransactionMass(extractedSignedTx, true)
+		actualMassAfterSignatures := serverInstance.txMassCalculator.CalculateTransactionMass(extractedSignedTx)
 
 		if estimatedMassAfterSignatures != actualMassAfterSignatures {
 			t.Errorf("Estimated mass after signatures: %d but actually got %d",

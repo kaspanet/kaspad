@@ -22,7 +22,6 @@ type txSubnetworkData struct {
 func TestValidateTransactionInIsolationAndPopulateMass(t *testing.T) {
 	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
 		cfg := *consensusConfig
-		cfg.HFDAAScore = 1000
 
 		factory := consensus.NewFactory()
 		tc, teardown, err := factory.NewTestConsensus(&cfg, "TestValidateTransactionInIsolationAndPopulateMass")
@@ -70,22 +69,14 @@ func TestValidateTransactionInIsolationAndPopulateMass(t *testing.T) {
 				nil,
 				func(tx *externalapi.DomainTransaction) { tx.Inputs[1].PreviousOutpoint.Index = 0 },
 				ruleerrors.ErrDuplicateTxInputs, 0},
-			{"1 input coinbase - pre HF",
+			{"1 input coinbase",
 				1,
 				1,
 				1,
 				subnetworks.SubnetworkIDNative,
 				&txSubnetworkData{subnetworks.SubnetworkIDCoinbase, 0, nil},
 				nil,
-				nil, 0},
-			{"1 input coinbase - post HF",
-				1,
-				1,
-				1,
-				subnetworks.SubnetworkIDNative,
-				&txSubnetworkData{subnetworks.SubnetworkIDCoinbase, 0, nil},
-				nil,
-				ruleerrors.ErrCoinbaseWithInputs, cfg.HFDAAScore},
+				ruleerrors.ErrCoinbaseWithInputs, 0},
 			{"no inputs coinbase",
 				0,
 				1,
