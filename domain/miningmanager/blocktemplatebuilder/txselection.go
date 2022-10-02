@@ -74,8 +74,6 @@ func (btb *blockTemplateBuilder) selectTransactions(candidateTxs []*candidateTx)
 		usedP += candidateTx.p
 	}
 
-	totalInputs := 0
-
 	selectedTxs := make([]*candidateTx, 0)
 	for len(candidateTxs)-usedCount > 0 {
 		// Rebalance the candidates if it's required
@@ -145,7 +143,6 @@ func (btb *blockTemplateBuilder) selectTransactions(candidateTxs []*candidateTx)
 		// save the masses, fees, and signature operation counts to the
 		// result.
 		selectedTxs = append(selectedTxs, selectedTx)
-		totalInputs += len(selectedTx.Inputs)
 		txsForBlockTemplate.totalMass += selectedTx.Mass
 		txsForBlockTemplate.totalFees += selectedTx.Fee
 
