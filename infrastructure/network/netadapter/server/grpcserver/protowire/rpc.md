@@ -918,13 +918,14 @@ Currently unimplemented
 
 ### GetVirtualSelectedParentChainFromBlockRequestMessage
 GetVirtualSelectedParentChainFromBlockRequestMessage requests the virtual selected
-parent chain from some startHash to this kaspad&#39;s current virtual
+parent chain from some startHash to this kaspad&#39;s current virtual.
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | startHash | [string](#string) |  |  |
 | includeAcceptedTransactionIds | [bool](#bool) |  |  |
+| batchSize | [uint64](#uint64) |  | If batchSize is specified and &gt; 0, then the response will contain at most batchSize added blocks. Note: batchSize does not restrict the number of removed blocks. |
 
 
 
@@ -1315,7 +1316,10 @@ See: UtxosChangedNotificationMessage
 <a name="protowire.GetUtxosByAddressesRequestMessage"></a>
 
 ### GetUtxosByAddressesRequestMessage
-GetUtxosByAddressesRequestMessage requests all current UTXOs for the given kaspad addresses
+GetUtxosByAddressesRequestMessage requests all current UTXOs for the given kaspad addresses.
+Both batchDaaScoreStart, batchSize parameters allow querying the entries in a batched process
+by using the DAA score of the last entry as a starting point for the next batch (note that some
+duplications are possible on the bordering DAA score).
 
 This call is only available when this kaspad was started with `--utxoindex`
 
@@ -1323,6 +1327,8 @@ This call is only available when this kaspad was started with `--utxoindex`
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | addresses | [string](#string) | repeated |  |
+| batchDaaScoreStart | [uint64](#uint64) |  | If batchDaaScoreStart is specified it sends only entries starting from that DAA score (inclusive). |
+| batchSize | [uint64](#uint64) |  | If batchSize is specified and &gt; 0, the response will contain at most batchSize entries (by DAA score order). |
 
 
 

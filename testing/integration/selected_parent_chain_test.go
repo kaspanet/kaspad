@@ -80,7 +80,7 @@ func TestVirtualSelectedParentChain(t *testing.T) {
 	// Get the virtual selected parent chain from the tip of
 	// the first chain
 	virtualSelectedParentChainFromChain1Tip, err := kaspad1.rpcClient.GetVirtualSelectedParentChainFromBlock(
-		chain1TipHashString, true)
+		chain1TipHashString, true, 0)
 	if err != nil {
 		t.Fatalf("GetVirtualSelectedParentChainFromBlock failed: %s", err)
 	}

@@ -16,6 +16,7 @@ func (x *KaspadMessage_GetVirtualSelectedParentChainFromBlockRequest) fromAppMes
 	x.GetVirtualSelectedParentChainFromBlockRequest = &GetVirtualSelectedParentChainFromBlockRequestMessage{
 		StartHash:                     message.StartHash,
 		IncludeAcceptedTransactionIds: message.IncludeAcceptedTransactionIDs,
+		BatchSize:                     message.BatchSize,
 	}
 	return nil
 }
@@ -27,6 +28,7 @@ func (x *GetVirtualSelectedParentChainFromBlockRequestMessage) toAppMessage() (a
 	return &appmessage.GetVirtualSelectedParentChainFromBlockRequestMessage{
 		StartHash:                     x.StartHash,
 		IncludeAcceptedTransactionIDs: x.IncludeAcceptedTransactionIds,
+		BatchSize:                     x.BatchSize,
 	}, nil
 }
 
