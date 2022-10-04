@@ -94,7 +94,7 @@ func TestBlockStatus(t *testing.T) {
 		invalidBlock.Header = blockheader.NewImmutableBlockHeader(
 			disqualifiedBlock.Header.Version(),
 			disqualifiedBlock.Header.Parents(),
-			merkle.CalculateHashMerkleRoot(invalidBlock.Transactions, invalidBlock.Header.DAAScore() >= consensusConfig.HFDAAScore),
+			merkle.CalculateHashMerkleRoot(invalidBlock.Transactions),
 			disqualifiedBlock.Header.AcceptedIDMerkleRoot(),
 			disqualifiedBlock.Header.UTXOCommitment(),
 			disqualifiedBlock.Header.TimeInMilliseconds(),

@@ -216,7 +216,6 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 	transactionValidator := transactionvalidator.New(config.BlockCoinbaseMaturity,
 		config.EnableNonNativeSubnetworks,
 		config.MaxCoinbasePayloadLength,
-		config.HFDAAScore,
 		config.K,
 		config.CoinbasePayloadScriptPublicKeyMaxLength,
 		dbManager,
@@ -247,7 +246,6 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 		config.GenesisHash,
 		config.DeflationaryPhaseDaaScore,
 		config.DeflationaryPhaseBaseSubsidy,
-		config.HFDAAScore,
 
 		dagTraversalManager,
 		ghostdagDataStore,
@@ -284,7 +282,6 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 		config.MaxBlockParents,
 		config.MergeSetSizeLimit,
 		genesisHash,
-		config.HFDAAScore,
 
 		ghostdagManager,
 		dagTopologyManager,
@@ -353,7 +350,6 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 		config.TimestampDeviationTolerance,
 		config.TargetTimePerBlock,
 		config.MaxBlockLevel,
-		config.HFDAAScore,
 
 		dbManager,
 		difficultyManager,
@@ -401,7 +397,6 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 	blockBuilder := blockbuilder.New(
 		dbManager,
 		genesisHash,
-		config.HFDAAScore,
 
 		difficultyManager,
 		pastMedianTimeManager,
@@ -483,7 +478,6 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 
 		genesisBlock: config.GenesisBlock,
 		genesisHash:  config.GenesisHash,
-		hfDAAScore:   config.HFDAAScore,
 
 		expectedDAAWindowDurationInMilliseconds: config.TargetTimePerBlock.Milliseconds() *
 			int64(config.DifficultyAdjustmentWindowSize),

@@ -61,7 +61,7 @@ func ModifyCoinbasePayload(payload []byte, coinbaseData *externalapi.DomainCoinb
 }
 
 // ExtractCoinbaseDataBlueScoreAndSubsidy deserializes the coinbase payload to its component (scriptPubKey, extra data, and subsidy).
-func (c *coinbaseManager) ExtractCoinbaseDataBlueScoreAndSubsidy(coinbaseTx *externalapi.DomainTransaction, postHF bool) (
+func (c *coinbaseManager) ExtractCoinbaseDataBlueScoreAndSubsidy(coinbaseTx *externalapi.DomainTransaction) (
 	blueScore uint64, coinbaseData *externalapi.DomainCoinbaseData, subsidy uint64, err error) {
 
 	minLength := uint64Len + lengthOfSubsidy + lengthOfVersionScriptPubKey + lengthOfScriptPubKeyLength
@@ -73,10 +73,7 @@ func (c *coinbaseManager) ExtractCoinbaseDataBlueScoreAndSubsidy(coinbaseTx *ext
 	blueScore = binary.LittleEndian.Uint64(coinbaseTx.Payload[:uint64Len])
 	subsidy = binary.LittleEndian.Uint64(coinbaseTx.Payload[uint64Len:])
 
-	scriptPubKeyVersion := uint16(coinbaseTx.Payload[uint64Len+lengthOfSubsidy])
-	if postHF {
-		scriptPubKeyVersion = binary.LittleEndian.Uint16(coinbaseTx.Payload[uint64Len+lengthOfSubsidy : uint64Len+lengthOfSubsidy+uint16Len])
-	}
+	scriptPubKeyVersion := binary.LittleEndian.Uint16(coinbaseTx.Payload[uint64Len+lengthOfSubsidy : uint64Len+lengthOfSubsidy+uint16Len])
 
 	scriptPubKeyScriptLength := coinbaseTx.Payload[uint64Len+lengthOfSubsidy+lengthOfVersionScriptPubKey]
 

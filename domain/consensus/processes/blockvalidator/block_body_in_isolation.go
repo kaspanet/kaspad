@@ -5,7 +5,6 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/merkle"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/subnetworks"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/transactionhelper"
@@ -89,21 +88,11 @@ func (v *blockValidator) ValidateBodyInIsolation(stagingArea *model.StagingArea,
 		return err
 	}
 
-	if block.Header.DAAScore() < v.hfDAAScore {
-		totalInputs := 0
-		for _, tx := range block.Transactions {
-			totalInputs += len(tx.Inputs)
-			if totalInputs > constants.MaxBlockInputsPreHF {
-				return errors.Wrapf(ruleerrors.ErrOverMaxBlockInputsPreHF, "block has more than %d inputs", constants.MaxBlockInputsPreHF)
-			}
-		}
-	}
-
 	return nil
 }
 
 func (v *blockValidator) checkCoinbaseBlueScore(block *externalapi.DomainBlock) error {
-	coinbaseBlueScore, _, _, err := v.coinbaseManager.ExtractCoinbaseDataBlueScoreAndSubsidy(block.Transactions[transactionhelper.CoinbaseTransactionIndex], block.Header.DAAScore() >= v.hfDAAScore)
+	coinbaseBlueScore, _, _, err := v.coinbaseManager.ExtractCoinbaseDataBlueScoreAndSubsidy(block.Transactions[transactionhelper.CoinbaseTransactionIndex])
 	if err != nil {
 		return err
 	}
@@ -162,7 +151,7 @@ func (v *blockValidator) checkTransactionsInIsolation(block *externalapi.DomainB
 }
 
 func (v *blockValidator) checkBlockHashMerkleRoot(block *externalapi.DomainBlock) error {
-	calculatedHashMerkleRoot := merkle.CalculateHashMerkleRoot(block.Transactions, block.Header.DAAScore() >= v.hfDAAScore)
+	calculatedHashMerkleRoot := merkle.CalculateHashMerkleRoot(block.Transactions)
 	if !block.Header.HashMerkleRoot().Equal(calculatedHashMerkleRoot) {
 		return errors.Wrapf(ruleerrors.ErrBadMerkleRoot, "block hash merkle root is invalid - block "+
 			"header indicates %s, but calculated value is %s",
@@ -232,7 +221,7 @@ func (v *blockValidator) validateGasLimit(block *externalapi.DomainBlock) error 
 func (v *blockValidator) checkBlockMass(block *externalapi.DomainBlock) error {
 	mass := uint64(0)
 	for _, transaction := range block.Transactions {
-		v.transactionValidator.PopulateMass(transaction, block.Header.DAAScore())
+		v.transactionValidator.PopulateMass(transaction)
 
 		massBefore := mass
 		mass += transaction.Mass

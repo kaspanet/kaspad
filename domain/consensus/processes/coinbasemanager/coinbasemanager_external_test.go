@@ -18,19 +18,16 @@ func TestExtractCoinbaseDataBlueScoreAndSubsidy(t *testing.T) {
 		defer teardown(false)
 
 		tests := []struct {
-			name                                   string
-			scriptPublicKeyVersion                 uint16
-			expectedScriptPublicKeyVersionBeforeHF uint16
+			name                   string
+			scriptPublicKeyVersion uint16
 		}{
 			{
-				name:                                   "below 255",
-				scriptPublicKeyVersion:                 100,
-				expectedScriptPublicKeyVersionBeforeHF: 100,
+				name:                   "below 255",
+				scriptPublicKeyVersion: 100,
 			},
 			{
-				name:                                   "above 255",
-				scriptPublicKeyVersion:                 300,
-				expectedScriptPublicKeyVersionBeforeHF: 44,
+				name:                   "above 255",
+				scriptPublicKeyVersion: 300,
 			},
 		}
 
@@ -46,16 +43,7 @@ func TestExtractCoinbaseDataBlueScoreAndSubsidy(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			_, cbData, _, err := tc.CoinbaseManager().ExtractCoinbaseDataBlueScoreAndSubsidy(coinbaseTx, false)
-			if err != nil {
-				t.Fatal(err)
-			}
-
-			if cbData.ScriptPublicKey.Version != test.expectedScriptPublicKeyVersionBeforeHF {
-				t.Fatalf("test %s pre HF expected %d but got %d", test.name, test.expectedScriptPublicKeyVersionBeforeHF, cbData.ScriptPublicKey.Version)
-			}
-
-			_, cbData, _, err = tc.CoinbaseManager().ExtractCoinbaseDataBlueScoreAndSubsidy(coinbaseTx, true)
+			_, cbData, _, err := tc.CoinbaseManager().ExtractCoinbaseDataBlueScoreAndSubsidy(coinbaseTx)
 			if err != nil {
 				t.Fatal(err)
 			}

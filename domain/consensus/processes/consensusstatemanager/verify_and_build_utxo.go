@@ -39,7 +39,7 @@ func (csm *consensusStateManager) verifyUTXO(stagingArea *model.StagingArea, blo
 	coinbaseTransaction := block.Transactions[0]
 	log.Debugf("Validating coinbase transaction %s for block %s",
 		consensushashing.TransactionID(coinbaseTransaction), blockHash)
-	err = csm.validateCoinbaseTransaction(stagingArea, blockHash, coinbaseTransaction, block.Header.DAAScore() >= csm.hfDAAScore)
+	err = csm.validateCoinbaseTransaction(stagingArea, blockHash, coinbaseTransaction)
 	if err != nil {
 		return err
 	}
@@ -153,14 +153,14 @@ func calculateAcceptedIDMerkleRoot(multiblockAcceptanceData externalapi.Acceptan
 }
 
 func (csm *consensusStateManager) validateCoinbaseTransaction(stagingArea *model.StagingArea,
-	blockHash *externalapi.DomainHash, coinbaseTransaction *externalapi.DomainTransaction, postHF bool) error {
+	blockHash *externalapi.DomainHash, coinbaseTransaction *externalapi.DomainTransaction) error {
 
 	log.Tracef("validateCoinbaseTransaction start for block %s", blockHash)
 	defer log.Tracef("validateCoinbaseTransaction end for block %s", blockHash)
 
 	log.Tracef("Extracting coinbase data for coinbase transaction %s in block %s",
 		consensushashing.TransactionID(coinbaseTransaction), blockHash)
-	_, coinbaseData, _, err := csm.coinbaseManager.ExtractCoinbaseDataBlueScoreAndSubsidy(coinbaseTransaction, postHF)
+	_, coinbaseData, _, err := csm.coinbaseManager.ExtractCoinbaseDataBlueScoreAndSubsidy(coinbaseTransaction)
 	if err != nil {
 		return err
 	}
@@ -172,8 +172,8 @@ func (csm *consensusStateManager) validateCoinbaseTransaction(stagingArea *model
 		return err
 	}
 
-	coinbaseTransactionHash := consensushashing.TransactionHash(coinbaseTransaction, true)
-	expectedCoinbaseTransactionHash := consensushashing.TransactionHash(expectedCoinbaseTransaction, true)
+	coinbaseTransactionHash := consensushashing.TransactionHash(coinbaseTransaction)
+	expectedCoinbaseTransactionHash := consensushashing.TransactionHash(expectedCoinbaseTransaction)
 	log.Tracef("given coinbase hash: %s, expected coinbase hash: %s",
 		coinbaseTransactionHash, expectedCoinbaseTransactionHash)
 

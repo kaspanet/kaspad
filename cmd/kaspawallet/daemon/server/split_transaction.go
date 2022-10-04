@@ -158,7 +158,7 @@ func (s *server) splitAndInputPerSplitCounts(transaction *serialization.Partiall
 	// to calculate how much mass do all the inputs have
 	transactionWithoutInputs := transaction.Tx.Clone()
 	transactionWithoutInputs.Inputs = []*externalapi.DomainTransactionInput{}
-	massWithoutInputs := s.txMassCalculator.CalculateTransactionMass(transactionWithoutInputs, true)
+	massWithoutInputs := s.txMassCalculator.CalculateTransactionMass(transactionWithoutInputs)
 
 	massOfAllInputs := transactionMass - massWithoutInputs
 
@@ -177,7 +177,7 @@ func (s *server) splitAndInputPerSplitCounts(transaction *serialization.Partiall
 		return 0, 0, err
 	}
 	massForEverythingExceptInputsInSplitTransaction :=
-		s.txMassCalculator.CalculateTransactionMass(splitTransactionWithoutInputs.Tx, true)
+		s.txMassCalculator.CalculateTransactionMass(splitTransactionWithoutInputs.Tx)
 	massForInputsInSplitTransaction := mempool.MaximumStandardTransactionMass - massForEverythingExceptInputsInSplitTransaction
 
 	inputsPerSplitCount = int(massForInputsInSplitTransaction / massPerInput)
@@ -245,7 +245,7 @@ func (s *server) estimateMassAfterSignatures(transaction *serialization.Partiall
 		return 0, err
 	}
 
-	return s.txMassCalculator.CalculateTransactionMass(transactionWithSignatures, true), nil
+	return s.txMassCalculator.CalculateTransactionMass(transactionWithSignatures), nil
 }
 
 func (s *server) moreUTXOsForMergeTransaction(alreadySelectedUTXOs []*libkaspawallet.UTXO, requiredAmount uint64) (

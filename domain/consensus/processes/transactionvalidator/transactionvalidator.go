@@ -19,7 +19,6 @@ type transactionValidator struct {
 	daaBlocksStore                          model.DAABlocksStore
 	enableNonNativeSubnetworks              bool
 	maxCoinbasePayloadLength                uint64
-	hfDAAScore                              uint64
 	ghostdagK                               externalapi.KType
 	coinbasePayloadScriptPublicKeyMaxLength uint8
 	sigCache                                *txscript.SigCache
@@ -31,7 +30,6 @@ type transactionValidator struct {
 func New(blockCoinbaseMaturity uint64,
 	enableNonNativeSubnetworks bool,
 	maxCoinbasePayloadLength uint64,
-	hfDAAScore uint64,
 	ghostdagK externalapi.KType,
 	coinbasePayloadScriptPublicKeyMaxLength uint8,
 	databaseContext model.DBReader,
@@ -44,7 +42,6 @@ func New(blockCoinbaseMaturity uint64,
 		blockCoinbaseMaturity:                   blockCoinbaseMaturity,
 		enableNonNativeSubnetworks:              enableNonNativeSubnetworks,
 		maxCoinbasePayloadLength:                maxCoinbasePayloadLength,
-		hfDAAScore:                              hfDAAScore,
 		ghostdagK:                               ghostdagK,
 		coinbasePayloadScriptPublicKeyMaxLength: coinbasePayloadScriptPublicKeyMaxLength,
 		databaseContext:                         databaseContext,
