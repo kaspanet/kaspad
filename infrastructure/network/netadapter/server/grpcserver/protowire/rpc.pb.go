@@ -6215,6 +6215,987 @@ func (x *GetCoinSupplyResponseMessage) GetError() *RPCError {
 	return nil
 }
 
+type TxIDConfirmations struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	TxID          string `protobuf:"bytes,1,opt,name=txID,proto3" json:"txID,omitempty"`
+	Confirmations int32  `protobuf:"varint,2,opt,name=confirmations,proto3" json:"confirmations,omitempty"`
+}
+
+func (x *TxIDConfirmations) Reset() {
+	*x = TxIDConfirmations{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_rpc_proto_msgTypes[110]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *TxIDConfirmations) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*TxIDConfirmations) ProtoMessage() {}
+
+func (x *TxIDConfirmations) ProtoReflect() protoreflect.Message {
+	mi := &file_rpc_proto_msgTypes[110]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use TxIDConfirmations.ProtoReflect.Descriptor instead.
+func (*TxIDConfirmations) Descriptor() ([]byte, []int) {
+	return file_rpc_proto_rawDescGZIP(), []int{110}
+}
+
+func (x *TxIDConfirmations) GetTxID() string {
+	if x != nil {
+		return x.TxID
+	}
+	return ""
+}
+
+func (x *TxIDConfirmations) GetConfirmations() int32 {
+	if x != nil {
+		return x.Confirmations
+	}
+	return 0
+}
+
+type TxIDBlockHashPair struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	TxID      string `protobuf:"bytes,1,opt,name=txID,proto3" json:"txID,omitempty"`
+	BlockHash string `protobuf:"bytes,2,opt,name=blockHash,proto3" json:"blockHash,omitempty"`
+}
+
+func (x *TxIDBlockHashPair) Reset() {
+	*x = TxIDBlockHashPair{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_rpc_proto_msgTypes[111]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *TxIDBlockHashPair) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*TxIDBlockHashPair) ProtoMessage() {}
+
+func (x *TxIDBlockHashPair) ProtoReflect() protoreflect.Message {
+	mi := &file_rpc_proto_msgTypes[111]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use TxIDBlockHashPair.ProtoReflect.Descriptor instead.
+func (*TxIDBlockHashPair) Descriptor() ([]byte, []int) {
+	return file_rpc_proto_rawDescGZIP(), []int{111}
+}
+
+func (x *TxIDBlockHashPair) GetTxID() string {
+	if x != nil {
+		return x.TxID
+	}
+	return ""
+}
+
+func (x *TxIDBlockHashPair) GetBlockHash() string {
+	if x != nil {
+		return x.BlockHash
+	}
+	return ""
+}
+
+type TxIDBlockPair struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	TxID  string    `protobuf:"bytes,1,opt,name=txID,proto3" json:"txID,omitempty"`
+	Block *RpcBlock `protobuf:"bytes,2,opt,name=block,proto3" json:"block,omitempty"`
+}
+
+func (x *TxIDBlockPair) Reset() {
+	*x = TxIDBlockPair{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_rpc_proto_msgTypes[112]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *TxIDBlockPair) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*TxIDBlockPair) ProtoMessage() {}
+
+func (x *TxIDBlockPair) ProtoReflect() protoreflect.Message {
+	mi := &file_rpc_proto_msgTypes[112]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use TxIDBlockPair.ProtoReflect.Descriptor instead.
+func (*TxIDBlockPair) Descriptor() ([]byte, []int) {
+	return file_rpc_proto_rawDescGZIP(), []int{112}
+}
+
+func (x *TxIDBlockPair) GetTxID() string {
+	if x != nil {
+		return x.TxID
+	}
+	return ""
+}
+
+func (x *TxIDBlockPair) GetBlock() *RpcBlock {
+	if x != nil {
+		return x.Block
+	}
+	return nil
+}
+
+type GetAcceptingBlockHashesOfTxsRequestMessage struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	TxID []string `protobuf:"bytes,1,rep,name=txID,proto3" json:"txID,omitempty"`
+}
+
+func (x *GetAcceptingBlockHashesOfTxsRequestMessage) Reset() {
+	*x = GetAcceptingBlockHashesOfTxsRequestMessage{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_rpc_proto_msgTypes[113]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *GetAcceptingBlockHashesOfTxsRequestMessage) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetAcceptingBlockHashesOfTxsRequestMessage) ProtoMessage() {}
+
+func (x *GetAcceptingBlockHashesOfTxsRequestMessage) ProtoReflect() protoreflect.Message {
+	mi := &file_rpc_proto_msgTypes[113]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetAcceptingBlockHashesOfTxsRequestMessage.ProtoReflect.Descriptor instead.
+func (*GetAcceptingBlockHashesOfTxsRequestMessage) Descriptor() ([]byte, []int) {
+	return file_rpc_proto_rawDescGZIP(), []int{113}
+}
+
+func (x *GetAcceptingBlockHashesOfTxsRequestMessage) GetTxID() []string {
+	if x != nil {
+		return x.TxID
+	}
+	return nil
+}
+
+type GetAcceptingBlockHashesOfTxsResponseMessage struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	TxIDBlockHashPair []*TxIDBlockHashPair `protobuf:"bytes,1,rep,name=txIDBlockHashPair,proto3" json:"txIDBlockHashPair,omitempty"`
+	Error             *RPCError            `protobuf:"bytes,1000,opt,name=error,proto3" json:"error,omitempty"`
+}
+
+func (x *GetAcceptingBlockHashesOfTxsResponseMessage) Reset() {
+	*x = GetAcceptingBlockHashesOfTxsResponseMessage{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_rpc_proto_msgTypes[114]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *GetAcceptingBlockHashesOfTxsResponseMessage) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetAcceptingBlockHashesOfTxsResponseMessage) ProtoMessage() {}
+
+func (x *GetAcceptingBlockHashesOfTxsResponseMessage) ProtoReflect() protoreflect.Message {
+	mi := &file_rpc_proto_msgTypes[114]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetAcceptingBlockHashesOfTxsResponseMessage.ProtoReflect.Descriptor instead.
+func (*GetAcceptingBlockHashesOfTxsResponseMessage) Descriptor() ([]byte, []int) {
+	return file_rpc_proto_rawDescGZIP(), []int{114}
+}
+
+func (x *GetAcceptingBlockHashesOfTxsResponseMessage) GetTxIDBlockHashPair() []*TxIDBlockHashPair {
+	if x != nil {
+		return x.TxIDBlockHashPair
+	}
+	return nil
+}
+
+func (x *GetAcceptingBlockHashesOfTxsResponseMessage) GetError() *RPCError {
+	if x != nil {
+		return x.Error
+	}
+	return nil
+}
+
+type GetAcceptingBlockOfTxRequestMessage struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	TxID string `protobuf:"bytes,1,opt,name=txID,proto3" json:"txID,omitempty"`
+}
+
+func (x *GetAcceptingBlockOfTxRequestMessage) Reset() {
+	*x = GetAcceptingBlockOfTxRequestMessage{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_rpc_proto_msgTypes[115]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *GetAcceptingBlockOfTxRequestMessage) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetAcceptingBlockOfTxRequestMessage) ProtoMessage() {}
+
+func (x *GetAcceptingBlockOfTxRequestMessage) ProtoReflect() protoreflect.Message {
+	mi := &file_rpc_proto_msgTypes[115]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetAcceptingBlockOfTxRequestMessage.ProtoReflect.Descriptor instead.
+func (*GetAcceptingBlockOfTxRequestMessage) Descriptor() ([]byte, []int) {
+	return file_rpc_proto_rawDescGZIP(), []int{115}
+}
+
+func (x *GetAcceptingBlockOfTxRequestMessage) GetTxID() string {
+	if x != nil {
+		return x.TxID
+	}
+	return ""
+}
+
+type GetAcceptingBlockOfTxResponseMessage struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Block *RpcBlock `protobuf:"bytes,1,opt,name=block,proto3" json:"block,omitempty"`
+	Error *RPCError `protobuf:"bytes,1000,opt,name=error,proto3" json:"error,omitempty"`
+}
+
+func (x *GetAcceptingBlockOfTxResponseMessage) Reset() {
+	*x = GetAcceptingBlockOfTxResponseMessage{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_rpc_proto_msgTypes[116]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *GetAcceptingBlockOfTxResponseMessage) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetAcceptingBlockOfTxResponseMessage) ProtoMessage() {}
+
+func (x *GetAcceptingBlockOfTxResponseMessage) ProtoReflect() protoreflect.Message {
+	mi := &file_rpc_proto_msgTypes[116]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetAcceptingBlockOfTxResponseMessage.ProtoReflect.Descriptor instead.
+func (*GetAcceptingBlockOfTxResponseMessage) Descriptor() ([]byte, []int) {
+	return file_rpc_proto_rawDescGZIP(), []int{116}
+}
+
+func (x *GetAcceptingBlockOfTxResponseMessage) GetBlock() *RpcBlock {
+	if x != nil {
+		return x.Block
+	}
+	return nil
+}
+
+func (x *GetAcceptingBlockOfTxResponseMessage) GetError() *RPCError {
+	if x != nil {
+		return x.Error
+	}
+	return nil
+}
+
+type GetAcceptingBlocksOfTxsRequestMessage struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	TxID []string `protobuf:"bytes,1,rep,name=txID,proto3" json:"txID,omitempty"`
+}
+
+func (x *GetAcceptingBlocksOfTxsRequestMessage) Reset() {
+	*x = GetAcceptingBlocksOfTxsRequestMessage{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_rpc_proto_msgTypes[117]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *GetAcceptingBlocksOfTxsRequestMessage) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetAcceptingBlocksOfTxsRequestMessage) ProtoMessage() {}
+
+func (x *GetAcceptingBlocksOfTxsRequestMessage) ProtoReflect() protoreflect.Message {
+	mi := &file_rpc_proto_msgTypes[117]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetAcceptingBlocksOfTxsRequestMessage.ProtoReflect.Descriptor instead.
+func (*GetAcceptingBlocksOfTxsRequestMessage) Descriptor() ([]byte, []int) {
+	return file_rpc_proto_rawDescGZIP(), []int{117}
+}
+
+func (x *GetAcceptingBlocksOfTxsRequestMessage) GetTxID() []string {
+	if x != nil {
+		return x.TxID
+	}
+	return nil
+}
+
+type GetAcceptingBlocksOfTxsResponseMessage struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	TxIDBlockPair []*TxIDBlockPair `protobuf:"bytes,1,rep,name=txIDBlockPair,proto3" json:"txIDBlockPair,omitempty"`
+	Error         *RPCError        `protobuf:"bytes,1000,opt,name=error,proto3" json:"error,omitempty"`
+}
+
+func (x *GetAcceptingBlocksOfTxsResponseMessage) Reset() {
+	*x = GetAcceptingBlocksOfTxsResponseMessage{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_rpc_proto_msgTypes[118]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *GetAcceptingBlocksOfTxsResponseMessage) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetAcceptingBlocksOfTxsResponseMessage) ProtoMessage() {}
+
+func (x *GetAcceptingBlocksOfTxsResponseMessage) ProtoReflect() protoreflect.Message {
+	mi := &file_rpc_proto_msgTypes[118]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetAcceptingBlocksOfTxsResponseMessage.ProtoReflect.Descriptor instead.
+func (*GetAcceptingBlocksOfTxsResponseMessage) Descriptor() ([]byte, []int) {
+	return file_rpc_proto_rawDescGZIP(), []int{118}
+}
+
+func (x *GetAcceptingBlocksOfTxsResponseMessage) GetTxIDBlockPair() []*TxIDBlockPair {
+	if x != nil {
+		return x.TxIDBlockPair
+	}
+	return nil
+}
+
+func (x *GetAcceptingBlocksOfTxsResponseMessage) GetError() *RPCError {
+	if x != nil {
+		return x.Error
+	}
+	return nil
+}
+
+type GetIncludingBlockHashOfTxRequestMessage struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	TxID string `protobuf:"bytes,1,opt,name=txID,proto3" json:"txID,omitempty"`
+}
+
+func (x *GetIncludingBlockHashOfTxRequestMessage) Reset() {
+	*x = GetIncludingBlockHashOfTxRequestMessage{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_rpc_proto_msgTypes[119]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *GetIncludingBlockHashOfTxRequestMessage) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetIncludingBlockHashOfTxRequestMessage) ProtoMessage() {}
+
+func (x *GetIncludingBlockHashOfTxRequestMessage) ProtoReflect() protoreflect.Message {
+	mi := &file_rpc_proto_msgTypes[119]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetIncludingBlockHashOfTxRequestMessage.ProtoReflect.Descriptor instead.
+func (*GetIncludingBlockHashOfTxRequestMessage) Descriptor() ([]byte, []int) {
+	return file_rpc_proto_rawDescGZIP(), []int{119}
+}
+
+func (x *GetIncludingBlockHashOfTxRequestMessage) GetTxID() string {
+	if x != nil {
+		return x.TxID
+	}
+	return ""
+}
+
+type GetIncludingBlockHashOfTxResponseMessage struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	BlockHash string    `protobuf:"bytes,1,opt,name=blockHash,proto3" json:"blockHash,omitempty"`
+	Error     *RPCError `protobuf:"bytes,1000,opt,name=error,proto3" json:"error,omitempty"`
+}
+
+func (x *GetIncludingBlockHashOfTxResponseMessage) Reset() {
+	*x = GetIncludingBlockHashOfTxResponseMessage{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_rpc_proto_msgTypes[120]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *GetIncludingBlockHashOfTxResponseMessage) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetIncludingBlockHashOfTxResponseMessage) ProtoMessage() {}
+
+func (x *GetIncludingBlockHashOfTxResponseMessage) ProtoReflect() protoreflect.Message {
+	mi := &file_rpc_proto_msgTypes[120]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetIncludingBlockHashOfTxResponseMessage.ProtoReflect.Descriptor instead.
+func (*GetIncludingBlockHashOfTxResponseMessage) Descriptor() ([]byte, []int) {
+	return file_rpc_proto_rawDescGZIP(), []int{120}
+}
+
+func (x *GetIncludingBlockHashOfTxResponseMessage) GetBlockHash() string {
+	if x != nil {
+		return x.BlockHash
+	}
+	return ""
+}
+
+func (x *GetIncludingBlockHashOfTxResponseMessage) GetError() *RPCError {
+	if x != nil {
+		return x.Error
+	}
+	return nil
+}
+
+type GetTxRequestMessage struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	TxID string `protobuf:"bytes,1,opt,name=txID,proto3" json:"txID,omitempty"`
+}
+
+func (x *GetTxRequestMessage) Reset() {
+	*x = GetTxRequestMessage{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_rpc_proto_msgTypes[121]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *GetTxRequestMessage) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetTxRequestMessage) ProtoMessage() {}
+
+func (x *GetTxRequestMessage) ProtoReflect() protoreflect.Message {
+	mi := &file_rpc_proto_msgTypes[121]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetTxRequestMessage.ProtoReflect.Descriptor instead.
+func (*GetTxRequestMessage) Descriptor() ([]byte, []int) {
+	return file_rpc_proto_rawDescGZIP(), []int{121}
+}
+
+func (x *GetTxRequestMessage) GetTxID() string {
+	if x != nil {
+		return x.TxID
+	}
+	return ""
+}
+
+type GetTxResponseMessage struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Transaction *RpcTransaction `protobuf:"bytes,1,opt,name=transaction,proto3" json:"transaction,omitempty"`
+	Error       *RPCError       `protobuf:"bytes,1000,opt,name=error,proto3" json:"error,omitempty"`
+}
+
+func (x *GetTxResponseMessage) Reset() {
+	*x = GetTxResponseMessage{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_rpc_proto_msgTypes[122]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *GetTxResponseMessage) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetTxResponseMessage) ProtoMessage() {}
+
+func (x *GetTxResponseMessage) ProtoReflect() protoreflect.Message {
+	mi := &file_rpc_proto_msgTypes[122]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetTxResponseMessage.ProtoReflect.Descriptor instead.
+func (*GetTxResponseMessage) Descriptor() ([]byte, []int) {
+	return file_rpc_proto_rawDescGZIP(), []int{122}
+}
+
+func (x *GetTxResponseMessage) GetTransaction() *RpcTransaction {
+	if x != nil {
+		return x.Transaction
+	}
+	return nil
+}
+
+func (x *GetTxResponseMessage) GetError() *RPCError {
+	if x != nil {
+		return x.Error
+	}
+	return nil
+}
+
+type GetTxsRequestMessage struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	TxID []string `protobuf:"bytes,1,rep,name=txID,proto3" json:"txID,omitempty"`
+}
+
+func (x *GetTxsRequestMessage) Reset() {
+	*x = GetTxsRequestMessage{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_rpc_proto_msgTypes[123]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *GetTxsRequestMessage) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetTxsRequestMessage) ProtoMessage() {}
+
+func (x *GetTxsRequestMessage) ProtoReflect() protoreflect.Message {
+	mi := &file_rpc_proto_msgTypes[123]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetTxsRequestMessage.ProtoReflect.Descriptor instead.
+func (*GetTxsRequestMessage) Descriptor() ([]byte, []int) {
+	return file_rpc_proto_rawDescGZIP(), []int{123}
+}
+
+func (x *GetTxsRequestMessage) GetTxID() []string {
+	if x != nil {
+		return x.TxID
+	}
+	return nil
+}
+
+type GetTxsResponseMessage struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Transactions []*RpcTransaction `protobuf:"bytes,1,rep,name=transactions,proto3" json:"transactions,omitempty"`
+	Error        *RPCError         `protobuf:"bytes,1000,opt,name=error,proto3" json:"error,omitempty"`
+}
+
+func (x *GetTxsResponseMessage) Reset() {
+	*x = GetTxsResponseMessage{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_rpc_proto_msgTypes[124]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *GetTxsResponseMessage) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetTxsResponseMessage) ProtoMessage() {}
+
+func (x *GetTxsResponseMessage) ProtoReflect() protoreflect.Message {
+	mi := &file_rpc_proto_msgTypes[124]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetTxsResponseMessage.ProtoReflect.Descriptor instead.
+func (*GetTxsResponseMessage) Descriptor() ([]byte, []int) {
+	return file_rpc_proto_rawDescGZIP(), []int{124}
+}
+
+func (x *GetTxsResponseMessage) GetTransactions() []*RpcTransaction {
+	if x != nil {
+		return x.Transactions
+	}
+	return nil
+}
+
+func (x *GetTxsResponseMessage) GetError() *RPCError {
+	if x != nil {
+		return x.Error
+	}
+	return nil
+}
+
+type GetTxConfirmationRequestMessage struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	TxID string `protobuf:"bytes,1,opt,name=txID,proto3" json:"txID,omitempty"`
+}
+
+func (x *GetTxConfirmationRequestMessage) Reset() {
+	*x = GetTxConfirmationRequestMessage{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_rpc_proto_msgTypes[125]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *GetTxConfirmationRequestMessage) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetTxConfirmationRequestMessage) ProtoMessage() {}
+
+func (x *GetTxConfirmationRequestMessage) ProtoReflect() protoreflect.Message {
+	mi := &file_rpc_proto_msgTypes[125]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetTxConfirmationRequestMessage.ProtoReflect.Descriptor instead.
+func (*GetTxConfirmationRequestMessage) Descriptor() ([]byte, []int) {
+	return file_rpc_proto_rawDescGZIP(), []int{125}
+}
+
+func (x *GetTxConfirmationRequestMessage) GetTxID() string {
+	if x != nil {
+		return x.TxID
+	}
+	return ""
+}
+
+type GetTxConfirmationResponseMessage struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Confirmations int64     `protobuf:"varint,1,opt,name=confirmations,proto3" json:"confirmations,omitempty"`
+	Error         *RPCError `protobuf:"bytes,1000,opt,name=error,proto3" json:"error,omitempty"`
+}
+
+func (x *GetTxConfirmationResponseMessage) Reset() {
+	*x = GetTxConfirmationResponseMessage{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_rpc_proto_msgTypes[126]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *GetTxConfirmationResponseMessage) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetTxConfirmationResponseMessage) ProtoMessage() {}
+
+func (x *GetTxConfirmationResponseMessage) ProtoReflect() protoreflect.Message {
+	mi := &file_rpc_proto_msgTypes[126]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetTxConfirmationResponseMessage.ProtoReflect.Descriptor instead.
+func (*GetTxConfirmationResponseMessage) Descriptor() ([]byte, []int) {
+	return file_rpc_proto_rawDescGZIP(), []int{126}
+}
+
+func (x *GetTxConfirmationResponseMessage) GetConfirmations() int64 {
+	if x != nil {
+		return x.Confirmations
+	}
+	return 0
+}
+
+func (x *GetTxConfirmationResponseMessage) GetError() *RPCError {
+	if x != nil {
+		return x.Error
+	}
+	return nil
+}
+
+type GetTxsConfirmationRequestMessage struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	TxID []string `protobuf:"bytes,1,rep,name=txID,proto3" json:"txID,omitempty"`
+}
+
+func (x *GetTxsConfirmationRequestMessage) Reset() {
+	*x = GetTxsConfirmationRequestMessage{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_rpc_proto_msgTypes[127]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *GetTxsConfirmationRequestMessage) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetTxsConfirmationRequestMessage) ProtoMessage() {}
+
+func (x *GetTxsConfirmationRequestMessage) ProtoReflect() protoreflect.Message {
+	mi := &file_rpc_proto_msgTypes[127]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetTxsConfirmationRequestMessage.ProtoReflect.Descriptor instead.
+func (*GetTxsConfirmationRequestMessage) Descriptor() ([]byte, []int) {
+	return file_rpc_proto_rawDescGZIP(), []int{127}
+}
+
+func (x *GetTxsConfirmationRequestMessage) GetTxID() []string {
+	if x != nil {
+		return x.TxID
+	}
+	return nil
+}
+
+type GetTxsConfirmationResponseMessage struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	TxIDConfirmations []*TxIDConfirmations `protobuf:"bytes,1,rep,name=txIDConfirmations,proto3" json:"txIDConfirmations,omitempty"`
+	Error             *RPCError            `protobuf:"bytes,1000,opt,name=error,proto3" json:"error,omitempty"`
+}
+
+func (x *GetTxsConfirmationResponseMessage) Reset() {
+	*x = GetTxsConfirmationResponseMessage{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_rpc_proto_msgTypes[128]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *GetTxsConfirmationResponseMessage) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetTxsConfirmationResponseMessage) ProtoMessage() {}
+
+func (x *GetTxsConfirmationResponseMessage) ProtoReflect() protoreflect.Message {
+	mi := &file_rpc_proto_msgTypes[128]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetTxsConfirmationResponseMessage.ProtoReflect.Descriptor instead.
+func (*GetTxsConfirmationResponseMessage) Descriptor() ([]byte, []int) {
+	return file_rpc_proto_rawDescGZIP(), []int{128}
+}
+
+func (x *GetTxsConfirmationResponseMessage) GetTxIDConfirmations() []*TxIDConfirmations {
+	if x != nil {
+		return x.TxIDConfirmations
+	}
+	return nil
+}
+
+func (x *GetTxsConfirmationResponseMessage) GetError() *RPCError {
+	if x != nil {
+		return x.Error
+	}
+	return nil
+}
+
 var File_rpc_proto protoreflect.FileDescriptor
 
 var file_rpc_proto_rawDesc = []byte{
@@ -7029,10 +8010,121 @@ var file_rpc_proto_rawDesc = []byte{
 	0x69, 0x6e, 0x67, 0x53, 0x6f, 0x6d, 0x70, 0x69, 0x12, 0x2a, 0x0a, 0x05, 0x65, 0x72, 0x72, 0x6f,
 	0x72, 0x18, 0xe8, 0x07, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x13, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f,
 	0x77, 0x69, 0x72, 0x65, 0x2e, 0x52, 0x50, 0x43, 0x45, 0x72, 0x72, 0x6f, 0x72, 0x52, 0x05, 0x65,
-	0x72, 0x72, 0x6f, 0x72, 0x42, 0x26, 0x5a, 0x24, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63,
-	0x6f, 0x6d, 0x2f, 0x6b, 0x61, 0x73, 0x70, 0x61, 0x6e, 0x65, 0x74, 0x2f, 0x6b, 0x61, 0x73, 0x70,
-	0x61, 0x64, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x77, 0x69, 0x72, 0x65, 0x62, 0x06, 0x70, 0x72,
-	0x6f, 0x74, 0x6f, 0x33,
+	0x72, 0x72, 0x6f, 0x72, 0x22, 0x4d, 0x0a, 0x11, 0x54, 0x78, 0x49, 0x44, 0x43, 0x6f, 0x6e, 0x66,
+	0x69, 0x72, 0x6d, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x12, 0x12, 0x0a, 0x04, 0x74, 0x78, 0x49,
+	0x44, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x04, 0x74, 0x78, 0x49, 0x44, 0x12, 0x24, 0x0a,
+	0x0d, 0x63, 0x6f, 0x6e, 0x66, 0x69, 0x72, 0x6d, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x18, 0x02,
+	0x20, 0x01, 0x28, 0x05, 0x52, 0x0d, 0x63, 0x6f, 0x6e, 0x66, 0x69, 0x72, 0x6d, 0x61, 0x74, 0x69,
+	0x6f, 0x6e, 0x73, 0x22, 0x45, 0x0a, 0x11, 0x54, 0x78, 0x49, 0x44, 0x42, 0x6c, 0x6f, 0x63, 0x6b,
+	0x48, 0x61, 0x73, 0x68, 0x50, 0x61, 0x69, 0x72, 0x12, 0x12, 0x0a, 0x04, 0x74, 0x78, 0x49, 0x44,
+	0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x04, 0x74, 0x78, 0x49, 0x44, 0x12, 0x1c, 0x0a, 0x09,
+	0x62, 0x6c, 0x6f, 0x63, 0x6b, 0x48, 0x61, 0x73, 0x68, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52,
+	0x09, 0x62, 0x6c, 0x6f, 0x63, 0x6b, 0x48, 0x61, 0x73, 0x68, 0x22, 0x4e, 0x0a, 0x0d, 0x54, 0x78,
+	0x49, 0x44, 0x42, 0x6c, 0x6f, 0x63, 0x6b, 0x50, 0x61, 0x69, 0x72, 0x12, 0x12, 0x0a, 0x04, 0x74,
+	0x78, 0x49, 0x44, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x04, 0x74, 0x78, 0x49, 0x44, 0x12,
+	0x29, 0x0a, 0x05, 0x62, 0x6c, 0x6f, 0x63, 0x6b, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x13,
+	0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x77, 0x69, 0x72, 0x65, 0x2e, 0x52, 0x70, 0x63, 0x42, 0x6c,
+	0x6f, 0x63, 0x6b, 0x52, 0x05, 0x62, 0x6c, 0x6f, 0x63, 0x6b, 0x22, 0x40, 0x0a, 0x2a, 0x47, 0x65,
+	0x74, 0x41, 0x63, 0x63, 0x65, 0x70, 0x74, 0x69, 0x6e, 0x67, 0x42, 0x6c, 0x6f, 0x63, 0x6b, 0x48,
+	0x61, 0x73, 0x68, 0x65, 0x73, 0x4f, 0x66, 0x54, 0x78, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73,
+	0x74, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x12, 0x12, 0x0a, 0x04, 0x74, 0x78, 0x49, 0x44,
+	0x18, 0x01, 0x20, 0x03, 0x28, 0x09, 0x52, 0x04, 0x74, 0x78, 0x49, 0x44, 0x22, 0xa5, 0x01, 0x0a,
+	0x2b, 0x47, 0x65, 0x74, 0x41, 0x63, 0x63, 0x65, 0x70, 0x74, 0x69, 0x6e, 0x67, 0x42, 0x6c, 0x6f,
+	0x63, 0x6b, 0x48, 0x61, 0x73, 0x68, 0x65, 0x73, 0x4f, 0x66, 0x54, 0x78, 0x73, 0x52, 0x65, 0x73,
+	0x70, 0x6f, 0x6e, 0x73, 0x65, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x12, 0x4a, 0x0a, 0x11,
+	0x74, 0x78, 0x49, 0x44, 0x42, 0x6c, 0x6f, 0x63, 0x6b, 0x48, 0x61, 0x73, 0x68, 0x50, 0x61, 0x69,
+	0x72, 0x18, 0x01, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x1c, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x77,
+	0x69, 0x72, 0x65, 0x2e, 0x54, 0x78, 0x49, 0x44, 0x42, 0x6c, 0x6f, 0x63, 0x6b, 0x48, 0x61, 0x73,
+	0x68, 0x50, 0x61, 0x69, 0x72, 0x52, 0x11, 0x74, 0x78, 0x49, 0x44, 0x42, 0x6c, 0x6f, 0x63, 0x6b,
+	0x48, 0x61, 0x73, 0x68, 0x50, 0x61, 0x69, 0x72, 0x12, 0x2a, 0x0a, 0x05, 0x65, 0x72, 0x72, 0x6f,
+	0x72, 0x18, 0xe8, 0x07, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x13, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f,
+	0x77, 0x69, 0x72, 0x65, 0x2e, 0x52, 0x50, 0x43, 0x45, 0x72, 0x72, 0x6f, 0x72, 0x52, 0x05, 0x65,
+	0x72, 0x72, 0x6f, 0x72, 0x22, 0x39, 0x0a, 0x23, 0x47, 0x65, 0x74, 0x41, 0x63, 0x63, 0x65, 0x70,
+	0x74, 0x69, 0x6e, 0x67, 0x42, 0x6c, 0x6f, 0x63, 0x6b, 0x4f, 0x66, 0x54, 0x78, 0x52, 0x65, 0x71,
+	0x75, 0x65, 0x73, 0x74, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x12, 0x12, 0x0a, 0x04, 0x74,
+	0x78, 0x49, 0x44, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x04, 0x74, 0x78, 0x49, 0x44, 0x22,
+	0x7d, 0x0a, 0x24, 0x47, 0x65, 0x74, 0x41, 0x63, 0x63, 0x65, 0x70, 0x74, 0x69, 0x6e, 0x67, 0x42,
+	0x6c, 0x6f, 0x63, 0x6b, 0x4f, 0x66, 0x54, 0x78, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65,
+	0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x12, 0x29, 0x0a, 0x05, 0x62, 0x6c, 0x6f, 0x63, 0x6b,
+	0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x13, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x77, 0x69,
+	0x72, 0x65, 0x2e, 0x52, 0x70, 0x63, 0x42, 0x6c, 0x6f, 0x63, 0x6b, 0x52, 0x05, 0x62, 0x6c, 0x6f,
+	0x63, 0x6b, 0x12, 0x2a, 0x0a, 0x05, 0x65, 0x72, 0x72, 0x6f, 0x72, 0x18, 0xe8, 0x07, 0x20, 0x01,
+	0x28, 0x0b, 0x32, 0x13, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x77, 0x69, 0x72, 0x65, 0x2e, 0x52,
+	0x50, 0x43, 0x45, 0x72, 0x72, 0x6f, 0x72, 0x52, 0x05, 0x65, 0x72, 0x72, 0x6f, 0x72, 0x22, 0x3b,
+	0x0a, 0x25, 0x47, 0x65, 0x74, 0x41, 0x63, 0x63, 0x65, 0x70, 0x74, 0x69, 0x6e, 0x67, 0x42, 0x6c,
+	0x6f, 0x63, 0x6b, 0x73, 0x4f, 0x66, 0x54, 0x78, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74,
+	0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x12, 0x12, 0x0a, 0x04, 0x74, 0x78, 0x49, 0x44, 0x18,
+	0x01, 0x20, 0x03, 0x28, 0x09, 0x52, 0x04, 0x74, 0x78, 0x49, 0x44, 0x22, 0x94, 0x01, 0x0a, 0x26,
+	0x47, 0x65, 0x74, 0x41, 0x63, 0x63, 0x65, 0x70, 0x74, 0x69, 0x6e, 0x67, 0x42, 0x6c, 0x6f, 0x63,
+	0x6b, 0x73, 0x4f, 0x66, 0x54, 0x78, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x4d,
+	0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x12, 0x3e, 0x0a, 0x0d, 0x74, 0x78, 0x49, 0x44, 0x42, 0x6c,
+	0x6f, 0x63, 0x6b, 0x50, 0x61, 0x69, 0x72, 0x18, 0x01, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x18, 0x2e,
+	0x70, 0x72, 0x6f, 0x74, 0x6f, 0x77, 0x69, 0x72, 0x65, 0x2e, 0x54, 0x78, 0x49, 0x44, 0x42, 0x6c,
+	0x6f, 0x63, 0x6b, 0x50, 0x61, 0x69, 0x72, 0x52, 0x0d, 0x74, 0x78, 0x49, 0x44, 0x42, 0x6c, 0x6f,
+	0x63, 0x6b, 0x50, 0x61, 0x69, 0x72, 0x12, 0x2a, 0x0a, 0x05, 0x65, 0x72, 0x72, 0x6f, 0x72, 0x18,
+	0xe8, 0x07, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x13, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x77, 0x69,
+	0x72, 0x65, 0x2e, 0x52, 0x50, 0x43, 0x45, 0x72, 0x72, 0x6f, 0x72, 0x52, 0x05, 0x65, 0x72, 0x72,
+	0x6f, 0x72, 0x22, 0x3d, 0x0a, 0x27, 0x47, 0x65, 0x74, 0x49, 0x6e, 0x63, 0x6c, 0x75, 0x64, 0x69,
+	0x6e, 0x67, 0x42, 0x6c, 0x6f, 0x63, 0x6b, 0x48, 0x61, 0x73, 0x68, 0x4f, 0x66, 0x54, 0x78, 0x52,
+	0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x12, 0x12, 0x0a,
+	0x04, 0x74, 0x78, 0x49, 0x44, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x04, 0x74, 0x78, 0x49,
+	0x44, 0x22, 0x74, 0x0a, 0x28, 0x47, 0x65, 0x74, 0x49, 0x6e, 0x63, 0x6c, 0x75, 0x64, 0x69, 0x6e,
+	0x67, 0x42, 0x6c, 0x6f, 0x63, 0x6b, 0x48, 0x61, 0x73, 0x68, 0x4f, 0x66, 0x54, 0x78, 0x52, 0x65,
+	0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x12, 0x1c, 0x0a,
+	0x09, 0x62, 0x6c, 0x6f, 0x63, 0x6b, 0x48, 0x61, 0x73, 0x68, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09,
+	0x52, 0x09, 0x62, 0x6c, 0x6f, 0x63, 0x6b, 0x48, 0x61, 0x73, 0x68, 0x12, 0x2a, 0x0a, 0x05, 0x65,
+	0x72, 0x72, 0x6f, 0x72, 0x18, 0xe8, 0x07, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x13, 0x2e, 0x70, 0x72,
+	0x6f, 0x74, 0x6f, 0x77, 0x69, 0x72, 0x65, 0x2e, 0x52, 0x50, 0x43, 0x45, 0x72, 0x72, 0x6f, 0x72,
+	0x52, 0x05, 0x65, 0x72, 0x72, 0x6f, 0x72, 0x22, 0x29, 0x0a, 0x13, 0x47, 0x65, 0x74, 0x54, 0x78,
+	0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x12, 0x12,
+	0x0a, 0x04, 0x74, 0x78, 0x49, 0x44, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x04, 0x74, 0x78,
+	0x49, 0x44, 0x22, 0x7f, 0x0a, 0x14, 0x47, 0x65, 0x74, 0x54, 0x78, 0x52, 0x65, 0x73, 0x70, 0x6f,
+	0x6e, 0x73, 0x65, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x12, 0x3b, 0x0a, 0x0b, 0x74, 0x72,
+	0x61, 0x6e, 0x73, 0x61, 0x63, 0x74, 0x69, 0x6f, 0x6e, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32,
+	0x19, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x77, 0x69, 0x72, 0x65, 0x2e, 0x52, 0x70, 0x63, 0x54,
+	0x72, 0x61, 0x6e, 0x73, 0x61, 0x63, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x0b, 0x74, 0x72, 0x61, 0x6e,
+	0x73, 0x61, 0x63, 0x74, 0x69, 0x6f, 0x6e, 0x12, 0x2a, 0x0a, 0x05, 0x65, 0x72, 0x72, 0x6f, 0x72,
+	0x18, 0xe8, 0x07, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x13, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x77,
+	0x69, 0x72, 0x65, 0x2e, 0x52, 0x50, 0x43, 0x45, 0x72, 0x72, 0x6f, 0x72, 0x52, 0x05, 0x65, 0x72,
+	0x72, 0x6f, 0x72, 0x22, 0x2a, 0x0a, 0x14, 0x47, 0x65, 0x74, 0x54, 0x78, 0x73, 0x52, 0x65, 0x71,
+	0x75, 0x65, 0x73, 0x74, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x12, 0x12, 0x0a, 0x04, 0x74,
+	0x78, 0x49, 0x44, 0x18, 0x01, 0x20, 0x03, 0x28, 0x09, 0x52, 0x04, 0x74, 0x78, 0x49, 0x44, 0x22,
+	0x82, 0x01, 0x0a, 0x15, 0x47, 0x65, 0x74, 0x54, 0x78, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e,
+	0x73, 0x65, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x12, 0x3d, 0x0a, 0x0c, 0x74, 0x72, 0x61,
+	0x6e, 0x73, 0x61, 0x63, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x18, 0x01, 0x20, 0x03, 0x28, 0x0b, 0x32,
+	0x19, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x77, 0x69, 0x72, 0x65, 0x2e, 0x52, 0x70, 0x63, 0x54,
+	0x72, 0x61, 0x6e, 0x73, 0x61, 0x63, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x0c, 0x74, 0x72, 0x61, 0x6e,
+	0x73, 0x61, 0x63, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x12, 0x2a, 0x0a, 0x05, 0x65, 0x72, 0x72, 0x6f,
+	0x72, 0x18, 0xe8, 0x07, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x13, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f,
+	0x77, 0x69, 0x72, 0x65, 0x2e, 0x52, 0x50, 0x43, 0x45, 0x72, 0x72, 0x6f, 0x72, 0x52, 0x05, 0x65,
+	0x72, 0x72, 0x6f, 0x72, 0x22, 0x35, 0x0a, 0x1f, 0x47, 0x65, 0x74, 0x54, 0x78, 0x43, 0x6f, 0x6e,
+	0x66, 0x69, 0x72, 0x6d, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74,
+	0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x12, 0x12, 0x0a, 0x04, 0x74, 0x78, 0x49, 0x44, 0x18,
+	0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x04, 0x74, 0x78, 0x49, 0x44, 0x22, 0x74, 0x0a, 0x20, 0x47,
+	0x65, 0x74, 0x54, 0x78, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x72, 0x6d, 0x61, 0x74, 0x69, 0x6f, 0x6e,
+	0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x12,
+	0x24, 0x0a, 0x0d, 0x63, 0x6f, 0x6e, 0x66, 0x69, 0x72, 0x6d, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x73,
+	0x18, 0x01, 0x20, 0x01, 0x28, 0x03, 0x52, 0x0d, 0x63, 0x6f, 0x6e, 0x66, 0x69, 0x72, 0x6d, 0x61,
+	0x74, 0x69, 0x6f, 0x6e, 0x73, 0x12, 0x2a, 0x0a, 0x05, 0x65, 0x72, 0x72, 0x6f, 0x72, 0x18, 0xe8,
+	0x07, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x13, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x77, 0x69, 0x72,
+	0x65, 0x2e, 0x52, 0x50, 0x43, 0x45, 0x72, 0x72, 0x6f, 0x72, 0x52, 0x05, 0x65, 0x72, 0x72, 0x6f,
+	0x72, 0x22, 0x36, 0x0a, 0x20, 0x47, 0x65, 0x74, 0x54, 0x78, 0x73, 0x43, 0x6f, 0x6e, 0x66, 0x69,
+	0x72, 0x6d, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x4d, 0x65,
+	0x73, 0x73, 0x61, 0x67, 0x65, 0x12, 0x12, 0x0a, 0x04, 0x74, 0x78, 0x49, 0x44, 0x18, 0x01, 0x20,
+	0x03, 0x28, 0x09, 0x52, 0x04, 0x74, 0x78, 0x49, 0x44, 0x22, 0x9b, 0x01, 0x0a, 0x21, 0x47, 0x65,
+	0x74, 0x54, 0x78, 0x73, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x72, 0x6d, 0x61, 0x74, 0x69, 0x6f, 0x6e,
+	0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x12,
+	0x4a, 0x0a, 0x11, 0x74, 0x78, 0x49, 0x44, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x72, 0x6d, 0x61, 0x74,
+	0x69, 0x6f, 0x6e, 0x73, 0x18, 0x01, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x1c, 0x2e, 0x70, 0x72, 0x6f,
+	0x74, 0x6f, 0x77, 0x69, 0x72, 0x65, 0x2e, 0x54, 0x78, 0x49, 0x44, 0x43, 0x6f, 0x6e, 0x66, 0x69,
+	0x72, 0x6d, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x52, 0x11, 0x74, 0x78, 0x49, 0x44, 0x43, 0x6f,
+	0x6e, 0x66, 0x69, 0x72, 0x6d, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x12, 0x2a, 0x0a, 0x05, 0x65,
+	0x72, 0x72, 0x6f, 0x72, 0x18, 0xe8, 0x07, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x13, 0x2e, 0x70, 0x72,
+	0x6f, 0x74, 0x6f, 0x77, 0x69, 0x72, 0x65, 0x2e, 0x52, 0x50, 0x43, 0x45, 0x72, 0x72, 0x6f, 0x72,
+	0x52, 0x05, 0x65, 0x72, 0x72, 0x6f, 0x72, 0x42, 0x26, 0x5a, 0x24, 0x67, 0x69, 0x74, 0x68, 0x75,
+	0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x6b, 0x61, 0x73, 0x70, 0x61, 0x6e, 0x65, 0x74, 0x2f, 0x6b,
+	0x61, 0x73, 0x70, 0x61, 0x64, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x77, 0x69, 0x72, 0x65, 0x62,
+	0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -7048,7 +8140,7 @@ func file_rpc_proto_rawDescGZIP() []byte {
 }
 
 var file_rpc_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_rpc_proto_msgTypes = make([]protoimpl.MessageInfo, 110)
+var file_rpc_proto_msgTypes = make([]protoimpl.MessageInfo, 129)
 var file_rpc_proto_goTypes = []interface{}{
 	(SubmitBlockResponseMessage_RejectReason)(0), // 0: protowire.SubmitBlockResponseMessage.RejectReason
 	(*RPCError)(nil),                                                   // 1: protowire.RPCError
@@ -7161,6 +8253,25 @@ var file_rpc_proto_goTypes = []interface{}{
 	(*GetMempoolEntriesByAddressesResponseMessage)(nil),                // 108: protowire.GetMempoolEntriesByAddressesResponseMessage
 	(*GetCoinSupplyRequestMessage)(nil),                                // 109: protowire.GetCoinSupplyRequestMessage
 	(*GetCoinSupplyResponseMessage)(nil),                               // 110: protowire.GetCoinSupplyResponseMessage
+	(*TxIDConfirmations)(nil),                                          // 111: protowire.TxIDConfirmations
+	(*TxIDBlockHashPair)(nil),                                          // 112: protowire.TxIDBlockHashPair
+	(*TxIDBlockPair)(nil),                                              // 113: protowire.TxIDBlockPair
+	(*GetAcceptingBlockHashesOfTxsRequestMessage)(nil),                 // 114: protowire.GetAcceptingBlockHashesOfTxsRequestMessage
+	(*GetAcceptingBlockHashesOfTxsResponseMessage)(nil),                // 115: protowire.GetAcceptingBlockHashesOfTxsResponseMessage
+	(*GetAcceptingBlockOfTxRequestMessage)(nil),                        // 116: protowire.GetAcceptingBlockOfTxRequestMessage
+	(*GetAcceptingBlockOfTxResponseMessage)(nil),                       // 117: protowire.GetAcceptingBlockOfTxResponseMessage
+	(*GetAcceptingBlocksOfTxsRequestMessage)(nil),                      // 118: protowire.GetAcceptingBlocksOfTxsRequestMessage
+	(*GetAcceptingBlocksOfTxsResponseMessage)(nil),                     // 119: protowire.GetAcceptingBlocksOfTxsResponseMessage
+	(*GetIncludingBlockHashOfTxRequestMessage)(nil),                    // 120: protowire.GetIncludingBlockHashOfTxRequestMessage
+	(*GetIncludingBlockHashOfTxResponseMessage)(nil),                   // 121: protowire.GetIncludingBlockHashOfTxResponseMessage
+	(*GetTxRequestMessage)(nil),                                        // 122: protowire.GetTxRequestMessage
+	(*GetTxResponseMessage)(nil),                                       // 123: protowire.GetTxResponseMessage
+	(*GetTxsRequestMessage)(nil),                                       // 124: protowire.GetTxsRequestMessage
+	(*GetTxsResponseMessage)(nil),                                      // 125: protowire.GetTxsResponseMessage
+	(*GetTxConfirmationRequestMessage)(nil),                            // 126: protowire.GetTxConfirmationRequestMessage
+	(*GetTxConfirmationResponseMessage)(nil),                           // 127: protowire.GetTxConfirmationResponseMessage
+	(*GetTxsConfirmationRequestMessage)(nil),                           // 128: protowire.GetTxsConfirmationRequestMessage
+	(*GetTxsConfirmationResponseMessage)(nil),                          // 129: protowire.GetTxsConfirmationResponseMessage
 }
 var file_rpc_proto_depIdxs = []int32{
 	3,   // 0: protowire.RpcBlock.header:type_name -> protowire.RpcBlockHeader
@@ -7240,11 +8351,26 @@ var file_rpc_proto_depIdxs = []int32{
 	106, // 74: protowire.GetMempoolEntriesByAddressesResponseMessage.entries:type_name -> protowire.MempoolEntryByAddress
 	1,   // 75: protowire.GetMempoolEntriesByAddressesResponseMessage.error:type_name -> protowire.RPCError
 	1,   // 76: protowire.GetCoinSupplyResponseMessage.error:type_name -> protowire.RPCError
-	77,  // [77:77] is the sub-list for method output_type
-	77,  // [77:77] is the sub-list for method input_type
-	77,  // [77:77] is the sub-list for extension type_name
-	77,  // [77:77] is the sub-list for extension extendee
-	0,   // [0:77] is the sub-list for field type_name
+	2,   // 77: protowire.TxIDBlockPair.block:type_name -> protowire.RpcBlock
+	112, // 78: protowire.GetAcceptingBlockHashesOfTxsResponseMessage.txIDBlockHashPair:type_name -> protowire.TxIDBlockHashPair
+	1,   // 79: protowire.GetAcceptingBlockHashesOfTxsResponseMessage.error:type_name -> protowire.RPCError
+	2,   // 80: protowire.GetAcceptingBlockOfTxResponseMessage.block:type_name -> protowire.RpcBlock
+	1,   // 81: protowire.GetAcceptingBlockOfTxResponseMessage.error:type_name -> protowire.RPCError
+	113, // 82: protowire.GetAcceptingBlocksOfTxsResponseMessage.txIDBlockPair:type_name -> protowire.TxIDBlockPair
+	1,   // 83: protowire.GetAcceptingBlocksOfTxsResponseMessage.error:type_name -> protowire.RPCError
+	1,   // 84: protowire.GetIncludingBlockHashOfTxResponseMessage.error:type_name -> protowire.RPCError
+	6,   // 85: protowire.GetTxResponseMessage.transaction:type_name -> protowire.RpcTransaction
+	1,   // 86: protowire.GetTxResponseMessage.error:type_name -> protowire.RPCError
+	6,   // 87: protowire.GetTxsResponseMessage.transactions:type_name -> protowire.RpcTransaction
+	1,   // 88: protowire.GetTxsResponseMessage.error:type_name -> protowire.RPCError
+	1,   // 89: protowire.GetTxConfirmationResponseMessage.error:type_name -> protowire.RPCError
+	111, // 90: protowire.GetTxsConfirmationResponseMessage.txIDConfirmations:type_name -> protowire.TxIDConfirmations
+	1,   // 91: protowire.GetTxsConfirmationResponseMessage.error:type_name -> protowire.RPCError
+	92,  // [92:92] is the sub-list for method output_type
+	92,  // [92:92] is the sub-list for method input_type
+	92,  // [92:92] is the sub-list for extension type_name
+	92,  // [92:92] is the sub-list for extension extendee
+	0,   // [0:92] is the sub-list for field type_name
 }
 
 func init() { file_rpc_proto_init() }
@@ -8573,6 +9699,234 @@ func file_rpc_proto_init() {
 				return nil
 			}
 		}
+		file_rpc_proto_msgTypes[110].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*TxIDConfirmations); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_rpc_proto_msgTypes[111].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*TxIDBlockHashPair); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_rpc_proto_msgTypes[112].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*TxIDBlockPair); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_rpc_proto_msgTypes[113].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*GetAcceptingBlockHashesOfTxsRequestMessage); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_rpc_proto_msgTypes[114].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*GetAcceptingBlockHashesOfTxsResponseMessage); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_rpc_proto_msgTypes[115].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*GetAcceptingBlockOfTxRequestMessage); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_rpc_proto_msgTypes[116].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*GetAcceptingBlockOfTxResponseMessage); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_rpc_proto_msgTypes[117].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*GetAcceptingBlocksOfTxsRequestMessage); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_rpc_proto_msgTypes[118].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*GetAcceptingBlocksOfTxsResponseMessage); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_rpc_proto_msgTypes[119].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*GetIncludingBlockHashOfTxRequestMessage); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_rpc_proto_msgTypes[120].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*GetIncludingBlockHashOfTxResponseMessage); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_rpc_proto_msgTypes[121].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*GetTxRequestMessage); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_rpc_proto_msgTypes[122].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*GetTxResponseMessage); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_rpc_proto_msgTypes[123].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*GetTxsRequestMessage); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_rpc_proto_msgTypes[124].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*GetTxsResponseMessage); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_rpc_proto_msgTypes[125].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*GetTxConfirmationRequestMessage); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_rpc_proto_msgTypes[126].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*GetTxConfirmationResponseMessage); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_rpc_proto_msgTypes[127].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*GetTxsConfirmationRequestMessage); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_rpc_proto_msgTypes[128].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*GetTxsConfirmationResponseMessage); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
@@ -8580,7 +9934,7 @@ func file_rpc_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_rpc_proto_rawDesc,
 			NumEnums:      1,
-			NumMessages:   110,
+			NumMessages:   129,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

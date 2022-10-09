@@ -114,6 +114,25 @@
     - [GetMempoolEntriesByAddressesResponseMessage](#protowire.GetMempoolEntriesByAddressesResponseMessage)
     - [GetCoinSupplyRequestMessage](#protowire.GetCoinSupplyRequestMessage)
     - [GetCoinSupplyResponseMessage](#protowire.GetCoinSupplyResponseMessage)
+    - [TxIDConfirmations](#protowire.TxIDConfirmations)
+    - [TxIDBlockHashPair](#protowire.TxIDBlockHashPair)
+    - [TxIDBlockPair](#protowire.TxIDBlockPair)
+    - [GetAcceptingBlockHashesOfTxsRequestMessage](#protowire.GetAcceptingBlockHashesOfTxsRequestMessage)
+    - [GetAcceptingBlockHashesOfTxsResponseMessage](#protowire.GetAcceptingBlockHashesOfTxsResponseMessage)
+    - [GetAcceptingBlockOfTxRequestMessage](#protowire.GetAcceptingBlockOfTxRequestMessage)
+    - [GetAcceptingBlockOfTxResponseMessage](#protowire.GetAcceptingBlockOfTxResponseMessage)
+    - [GetAcceptingBlocksOfTxsRequestMessage](#protowire.GetAcceptingBlocksOfTxsRequestMessage)
+    - [GetAcceptingBlocksOfTxsResponseMessage](#protowire.GetAcceptingBlocksOfTxsResponseMessage)
+    - [GetIncludingBlockHashOfTxRequestMessage](#protowire.GetIncludingBlockHashOfTxRequestMessage)
+    - [GetIncludingBlockHashOfTxResponseMessage](#protowire.GetIncludingBlockHashOfTxResponseMessage)
+    - [GetTxRequestMessage](#protowire.GetTxRequestMessage)
+    - [GetTxResponseMessage](#protowire.GetTxResponseMessage)
+    - [GetTxsRequestMessage](#protowire.GetTxsRequestMessage)
+    - [GetTxsResponseMessage](#protowire.GetTxsResponseMessage)
+    - [GetTxConfirmationRequestMessage](#protowire.GetTxConfirmationRequestMessage)
+    - [GetTxConfirmationResponseMessage](#protowire.GetTxConfirmationResponseMessage)
+    - [GetTxsConfirmationRequestMessage](#protowire.GetTxsConfirmationRequestMessage)
+    - [GetTxsConfirmationResponseMessage](#protowire.GetTxsConfirmationResponseMessage)
   
     - [SubmitBlockResponseMessage.RejectReason](#protowire.SubmitBlockResponseMessage.RejectReason)
   
@@ -1884,6 +1903,302 @@ See NotifyNewBlockTemplateRequestMessage
 | ----- | ---- | ----- | ----------- |
 | maxSompi | [uint64](#uint64) |  | note: this is a hard coded maxSupply, actual maxSupply is expected to deviate by upto -5%, but cannot be measured exactly. |
 | circulatingSompi | [uint64](#uint64) |  |  |
+| error | [RPCError](#protowire.RPCError) |  |  |
+
+
+
+
+
+
+<a name="protowire.TxIDConfirmations"></a>
+
+### TxIDConfirmations
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| txID | [string](#string) |  |  |
+| confirmations | [int32](#int32) |  |  |
+
+
+
+
+
+
+<a name="protowire.TxIDBlockHashPair"></a>
+
+### TxIDBlockHashPair
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| txID | [string](#string) |  |  |
+| blockHash | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="protowire.TxIDBlockPair"></a>
+
+### TxIDBlockPair
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| txID | [string](#string) |  |  |
+| block | [RpcBlock](#protowire.RpcBlock) |  |  |
+
+
+
+
+
+
+<a name="protowire.GetAcceptingBlockHashesOfTxsRequestMessage"></a>
+
+### GetAcceptingBlockHashesOfTxsRequestMessage
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| txID | [string](#string) | repeated |  |
+
+
+
+
+
+
+<a name="protowire.GetAcceptingBlockHashesOfTxsResponseMessage"></a>
+
+### GetAcceptingBlockHashesOfTxsResponseMessage
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| txIDBlockHashPair | [TxIDBlockHashPair](#protowire.TxIDBlockHashPair) | repeated |  |
+| error | [RPCError](#protowire.RPCError) |  |  |
+
+
+
+
+
+
+<a name="protowire.GetAcceptingBlockOfTxRequestMessage"></a>
+
+### GetAcceptingBlockOfTxRequestMessage
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| txID | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="protowire.GetAcceptingBlockOfTxResponseMessage"></a>
+
+### GetAcceptingBlockOfTxResponseMessage
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| block | [RpcBlock](#protowire.RpcBlock) |  |  |
+| error | [RPCError](#protowire.RPCError) |  |  |
+
+
+
+
+
+
+<a name="protowire.GetAcceptingBlocksOfTxsRequestMessage"></a>
+
+### GetAcceptingBlocksOfTxsRequestMessage
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| txID | [string](#string) | repeated |  |
+
+
+
+
+
+
+<a name="protowire.GetAcceptingBlocksOfTxsResponseMessage"></a>
+
+### GetAcceptingBlocksOfTxsResponseMessage
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| txIDBlockPair | [TxIDBlockPair](#protowire.TxIDBlockPair) | repeated |  |
+| error | [RPCError](#protowire.RPCError) |  |  |
+
+
+
+
+
+
+<a name="protowire.GetIncludingBlockHashOfTxRequestMessage"></a>
+
+### GetIncludingBlockHashOfTxRequestMessage
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| txID | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="protowire.GetIncludingBlockHashOfTxResponseMessage"></a>
+
+### GetIncludingBlockHashOfTxResponseMessage
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| blockHash | [string](#string) |  |  |
+| error | [RPCError](#protowire.RPCError) |  |  |
+
+
+
+
+
+
+<a name="protowire.GetTxRequestMessage"></a>
+
+### GetTxRequestMessage
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| txID | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="protowire.GetTxResponseMessage"></a>
+
+### GetTxResponseMessage
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| transaction | [RpcTransaction](#protowire.RpcTransaction) |  |  |
+| error | [RPCError](#protowire.RPCError) |  |  |
+
+
+
+
+
+
+<a name="protowire.GetTxsRequestMessage"></a>
+
+### GetTxsRequestMessage
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| txID | [string](#string) | repeated |  |
+
+
+
+
+
+
+<a name="protowire.GetTxsResponseMessage"></a>
+
+### GetTxsResponseMessage
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| transactions | [RpcTransaction](#protowire.RpcTransaction) | repeated |  |
+| error | [RPCError](#protowire.RPCError) |  |  |
+
+
+
+
+
+
+<a name="protowire.GetTxConfirmationRequestMessage"></a>
+
+### GetTxConfirmationRequestMessage
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| txID | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="protowire.GetTxConfirmationResponseMessage"></a>
+
+### GetTxConfirmationResponseMessage
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| confirmations | [int64](#int64) |  |  |
+| error | [RPCError](#protowire.RPCError) |  |  |
+
+
+
+
+
+
+<a name="protowire.GetTxsConfirmationRequestMessage"></a>
+
+### GetTxsConfirmationRequestMessage
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| txID | [string](#string) | repeated |  |
+
+
+
+
+
+
+<a name="protowire.GetTxsConfirmationResponseMessage"></a>
+
+### GetTxsConfirmationResponseMessage
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| txIDConfirmations | [TxIDConfirmations](#protowire.TxIDConfirmations) | repeated |  |
 | error | [RPCError](#protowire.RPCError) |  |  |
 
 

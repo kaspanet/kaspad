@@ -733,3 +733,100 @@ message GetCoinSupplyResponseMessage{
 
         RPCError error = 1000;
 }
+
+message TxIDConfirmations {
+        string txID = 1;
+        int32 confirmations = 2;   
+}
+
+message TxIDBlockHashPair {
+        string txID = 1;
+        string blockHash = 2;   
+}
+
+message TxIDBlockPair {
+        string txID = 1;
+        RpcBlock block = 2;   
+}
+
+message GetAcceptingBlockHashesOfTxsRequestMessage{
+        repeated string txID = 1;
+}
+
+message GetAcceptingBlockHashesOfTxsResponseMessage{
+        repeated TxIDBlockHashPair txIDBlockHashPair = 1;
+        
+        RPCError error = 1000;
+}
+
+message GetAcceptingBlockOfTxRequestMessage{
+        string txID = 1;
+}
+
+message GetAcceptingBlockOfTxResponseMessage{
+        RpcBlock block = 1;
+
+        RPCError error = 1000;
+}
+
+message GetAcceptingBlocksOfTxsRequestMessage{
+        repeated string txID = 1;
+}
+
+message GetAcceptingBlocksOfTxsResponseMessage{
+        repeated TxIDBlockPair txIDBlockPair = 1;
+
+        RPCError error = 1000;
+}
+
+message GetIncludingBlockHashOfTxRequestMessage{
+        string txID = 1;
+}
+
+message GetIncludingBlockHashOfTxResponseMessage{
+        string blockHash = 1;
+
+        RPCError error = 1000;
+}
+
+message GetTxRequestMessage{
+        string txID = 1;
+}
+
+message GetTxResponseMessage{
+        RpcTransaction transaction = 1;
+
+
+        RPCError error = 1000;
+}
+
+message GetTxsRequestMessage{
+        repeated string txID = 1;
+}
+
+message GetTxsResponseMessage{
+        repeated RpcTransaction transactions = 1;
+
+
+        RPCError error = 1000;
+}
+
+message GetTxConfirmationRequestMessage{
+        string txID = 1;
+}
+
+message GetTxConfirmationResponseMessage{
+        int64 confirmations = 1;
+
+        RPCError error = 1000;
+}
+
+message GetTxsConfirmationRequestMessage{
+        repeated string txID = 1;
+}
+
+message GetTxsConfirmationResponseMessage{
+        repeated TxIDConfirmations txIDConfirmations = 1; 
+
+        RPCError error = 1000;
+}
