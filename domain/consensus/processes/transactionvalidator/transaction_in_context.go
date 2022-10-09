@@ -350,6 +350,7 @@ func (v *transactionValidator) validateTransactionSigOpCounts(tx *externalapi.Do
 		sigScript := input.SignatureScript
 		isP2SH := txscript.IsPayToScriptHash(utxoEntry.ScriptPublicKey())
 		sigOpCount := txscript.GetPreciseSigOpCount(sigScript, utxoEntry.ScriptPublicKey(), isP2SH)
+
 		if sigOpCount != int(input.SigOpCount) {
 			return errors.Wrapf(ruleerrors.ErrWrongSigOpCount,
 				"input %d specifies SigOpCount %d while actual SigOpCount is %d",

@@ -122,6 +122,7 @@ func (ctx *Context) PopulateTransactionWithVerboseData(
 	}
 
 	ctx.Domain.Consensus().PopulateMass(domainTransaction)
+
 	transaction.VerboseData = &appmessage.RPCTransactionVerboseData{
 		TransactionID: consensushashing.TransactionID(domainTransaction).String(),
 		Hash:          consensushashing.TransactionHash(domainTransaction).String(),

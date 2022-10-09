@@ -3,6 +3,8 @@ package main
 import (
 	"context"
 	"fmt"
+	"os"
+	"strings"
 
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/daemon/client"
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/daemon/pb"
@@ -49,6 +51,10 @@ func send(conf *sendConfig) error {
 	}
 	mnemonics, err := keysFile.DecryptMnemonics(conf.Password)
 	if err != nil {
+		if strings.Contains(err.Error(), "message authentication failed") {
+			fmt.Fprintf(os.Stderr, "Password decryption failed. Sometimes this is a result of not "+
+				"specifying the same keys file used by the wallet daemon process.\n")
+		}
 		return err
 	}
 

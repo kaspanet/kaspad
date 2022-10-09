@@ -139,11 +139,19 @@ func writeTransactionInput(w io.Writer, ti *externalapi.DomainTransactionInput, 
 
 	if encodingFlags&txEncodingExcludeSignatureScript != txEncodingExcludeSignatureScript {
 		err = writeVarBytes(w, ti.SignatureScript)
+		if err != nil {
+			return err
+		}
+
+		_, err = w.Write([]byte{ti.SigOpCount})
+		if err != nil {
+			return err
+		}
 	} else {
 		err = writeVarBytes(w, []byte{})
-	}
-	if err != nil {
-		return err
+		if err != nil {
+			return err
+		}
 	}
 
 	return binaryserializer.PutUint64(w, ti.Sequence)

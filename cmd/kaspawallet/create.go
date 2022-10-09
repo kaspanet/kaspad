@@ -78,6 +78,11 @@ func create(conf *createConfig) error {
 		return err
 	}
 
+	err = file.TryLock()
+	if err != nil {
+		return err
+	}
+
 	err = file.Save()
 	if err != nil {
 		return err

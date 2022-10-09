@@ -216,6 +216,8 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 	transactionValidator := transactionvalidator.New(config.BlockCoinbaseMaturity,
 		config.EnableNonNativeSubnetworks,
 		config.MaxCoinbasePayloadLength,
+		config.K,
+		config.CoinbasePayloadScriptPublicKeyMaxLength,
 		dbManager,
 		pastMedianTimeManager,
 		ghostdagDataStore,
@@ -237,12 +239,14 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 		config.GenesisBlock.Header.Bits())
 	coinbaseManager := coinbasemanager.New(
 		dbManager,
+
 		config.SubsidyGenesisReward,
 		config.PreDeflationaryPhaseBaseSubsidy,
 		config.CoinbasePayloadScriptPublicKeyMaxLength,
 		config.GenesisHash,
 		config.DeflationaryPhaseDaaScore,
 		config.DeflationaryPhaseBaseSubsidy,
+
 		dagTraversalManager,
 		ghostdagDataStore,
 		acceptanceDataStore,

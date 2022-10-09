@@ -72,7 +72,7 @@ func (c *RPCClient) connect() error {
 	remoteVersion := getInfoResponse.ServerVersion
 
 	if localVersion != remoteVersion {
-		return errors.Errorf("Server version mismatch, expect: %s, got: %s", localVersion, remoteVersion)
+		log.Warnf("version mismatch, client: %s, server: %s - expected responses and requests may deviate", localVersion, remoteVersion)
 	}
 
 	return nil

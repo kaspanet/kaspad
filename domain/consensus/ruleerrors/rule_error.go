@@ -241,6 +241,9 @@ var (
 	ErrPruningProofEmpty                              = newRuleError("ErrPruningProofEmpty")
 	ErrWrongCoinbaseSubsidy                           = newRuleError("ErrWrongCoinbaseSubsidy")
 	ErrWrongBlockVersion                              = newRuleError("ErrWrongBlockVersion")
+	ErrCoinbaseWithInputs                             = newRuleError("ErrCoinbaseWithInputs")
+	ErrCoinbaseTooManyOutputs                         = newRuleError("ErrCoinbaseTooManyOutputs")
+	ErrCoinbaseTooLongScriptPublicKey                 = newRuleError("ErrCoinbaseTooLongScriptPublicKey")
 )
 
 // RuleError identifies a rule violation. It is used to indicate that
