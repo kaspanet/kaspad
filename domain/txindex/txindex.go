@@ -1,13 +1,11 @@
 package txindex
 
 import (
-	"errors"
 	"fmt"
 	"sync"
 
 	"github.com/kaspanet/kaspad/domain"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
-	"github.com/kaspanet/kaspad/domain/consensus/processes/dagtraversalmanager"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
 	"github.com/kaspanet/kaspad/infrastructure/db/database"
 	"github.com/kaspanet/kaspad/infrastructure/logger"
@@ -262,6 +260,7 @@ func (ti *TXIndex) TXAcceptingBlockHash(txID *externalapi.DomainTransactionID) (
 	return acceptingBlockHash, found, nil
 }
 
+// TXAcceptingBlockHashes returns the accepting block hashes for for the given txIDs
 func (ti *TXIndex) TXAcceptingBlockHashes(txIDs []*externalapi.DomainTransactionID) (acceptingBlockHashes TxIDsToBlockHashes, found bool, err error) {
 	onEnd := logger.LogAndMeasureExecutionTime(log, "TXIndex.TXAcceptingBlockHash")
 	defer onEnd()
@@ -280,9 +279,9 @@ func (ti *TXIndex) TXAcceptingBlockHashes(txIDs []*externalapi.DomainTransaction
 	return acceptingBlockHashes, found, nil
 }
 
-
-
-func (ti *TXIndex) TXAcceptingBlock(txID *externalapi.DomainTransactionID) (block *externalapi.DomainBlock, found bool, err error) {
+// TXAcceptingBlock returns the accepting block for for the given txID
+func (ti *TXIndex) TXAcceptingBlock(txID *externalapi.DomainTransactionID) (
+	block *externalapi.DomainBlock, found bool, err error) {
 	onEnd := logger.LogAndMeasureExecutionTime(log, "TXIndex.TXAcceptingBlock")
 	defer onEnd()
 
@@ -301,28 +300,43 @@ func (ti *TXIndex) TXAcceptingBlock(txID *externalapi.DomainTransactionID) (bloc
 	return acceptingBlock, true, nil
 }
 
-func (ti *TXIndex) TXAcceptingBlocks(txIDs []*externalapi.DomainTransactionID) (acceptingBlocks TxIDsToBlocks, found bool, err error) {
+// TXAcceptingBlocks returns the accepting blocks for for the given txIDs
+func (ti *TXIndex) TXAcceptingBlocks(txIDs []*externalapi.DomainTransactionID) (
+	acceptingBlocks []*externalapi.DomainBlock, found bool, err error) {
 	onEnd := logger.LogAndMeasureExecutionTime(log, "TXIndex.TXAcceptingBlock")
 	defer onEnd()
 
 	ti.mutex.Lock()
 	defer ti.mutex.Unlock()
 
-	acceptingBlockHash, found, err := ti.store.getTxAcceptingBlockHashes(txIDs)
+	acceptingBlockHashTxIDPairs, found, err := ti.store.getTxAcceptingBlockHashes(txIDs)
 	if err != nil {
 		return nil, false, err
 	}
 
-	acceptingBlocks, err = ti.domain.Consensus().GetBlocks(acceptingBlockHash)
+	acceptingBlockHashes := make([]*externalapi.DomainHash, len(acceptingBlockHashTxIDPairs))
+
+	i := 0
+	for _, acceptingBlockHash := range acceptingBlockHashTxIDPairs {
+		acceptingBlockHashes[i] = acceptingBlockHash
+		i++
+	}
+
+	if !found {
+		return nil, false, nil
+	}
+
+	acceptingBlocks, err = ti.domain.Consensus().GetBlocks(acceptingBlockHashes)
 	if err != nil {
 		return nil, false, err
 	}
-	return acceptingBlock, true, nil
+
+	return acceptingBlocks, true, nil
 }
 
-
-
-func (ti *TXIndex) GetTX(txID *externalapi.DomainTransactionID) (block *externalapi.DomainTransaction, found bool, err error) {
+// GetTX returns the domain transaction for for the given txID
+func (ti *TXIndex) GetTX(txID *externalapi.DomainTransactionID) (
+	block *externalapi.DomainTransaction, found bool, err error) {
 	onEnd := logger.LogAndMeasureExecutionTime(log, "TXIndex.GetTX")
 	defer onEnd()
 
@@ -348,12 +362,13 @@ func (ti *TXIndex) GetTX(txID *externalapi.DomainTransactionID) (block *external
 		}
 	}
 
-
 	return nil, false, fmt.Errorf("Could not find transaction with ID %s in Txindex database", txID.String())
 }
 
-func (ti *TXIndex) GetTXConfirmations(txID *externalapi.DomainTransactionID) (BlockHashTxIDPair uint64, found bool, err error) {
-	onEnd := logger.LogAndMeasureExecutionTime(log, "TXIndex.GetTX")
+// GetTXConfirmations returns the tx confirmations for for the given txID
+func (ti *TXIndex) GetTXConfirmations(txID *externalapi.DomainTransactionID) (
+	BlockHashTxIDPair uint64, found bool, err error) {
+	onEnd := logger.LogAndMeasureExecutionTime(log, "TXIndex.GetTXConfirmations")
 	defer onEnd()
 
 	ti.mutex.Lock()
@@ -377,6 +392,7 @@ func (ti *TXIndex) GetTXConfirmations(txID *externalapi.DomainTransactionID) (Bl
 	return virtualBlock.BlueScore - acceptingBlockHeader.BlueScore(), true, nil
 }
 
+// TXIncludingBlockHash returns the including block hash for the given txID
 func (ti *TXIndex) TXIncludingBlockHash(txID *externalapi.DomainTransactionID) (includingBlockHash *externalapi.DomainHash, found bool, err error) {
 	onEnd := logger.LogAndMeasureExecutionTime(log, "TXIndex.TXAcceptingBlock")
 	defer onEnd()
@@ -404,11 +420,3 @@ func (ti *TXIndex) TXIncludingBlockHash(txID *externalapi.DomainTransactionID) (
 
 	return nil, false, fmt.Errorf("Could not find including blockHash for transaction with ID %s in Txindex database", txID.String())
 }
-
-//TO DO: Get Block from TxID
-
-//TO DO: Get Including BlockHash from AcceptingBlock
-
-//TO DO: Get Including Block from AcceptingBlock
-
-//TO DO: Get Number of confirmations

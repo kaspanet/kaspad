@@ -13,7 +13,7 @@ type TXAcceptanceChange struct {
 	Removed map[externalapi.DomainTransactionID]*externalapi.DomainHash
 }
 
-//TxIDsToBlocks is a map of TxIDs to corrospnding blockHashes
+//TxIDsToBlockHashes is a map of TxIDs to corrospnding blockHashes
 type TxIDsToBlockHashes map[*externalapi.DomainTransactionID]*externalapi.DomainHash
 
 //TxIDsToBlocks is a map of TxIDs to corrospnding blocks

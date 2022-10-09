@@ -404,7 +404,7 @@ func (s *consensus) GetBlocks(blockHashes []*externalapi.DomainHash) ([]*externa
 	blocks, err := s.blockStore.Blocks(s.databaseContext, stagingArea, blockHashes)
 	if err != nil {
 		if errors.Is(err, database.ErrNotFound) {
-			return nil, errors.Wrapf(err, "Quried block %s does not exist")
+			return nil, errors.Wrapf(err, "could not find Quried blocks")
 		}
 		return nil, err
 	}
