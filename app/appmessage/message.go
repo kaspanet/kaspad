@@ -165,6 +165,23 @@ const (
 	CmdGetCoinSupplyResponseMessage
 	CmdGetAcceptingBlockHashOfTxRequestMessage
 	CmdGetAcceptingBlockHashOfTxResponseMessage
+
+	CmdGetAcceptingBlockHashesOfTxsRequestMessage
+	CmdGetAcceptingBlockHashesOfTxsResponseMessage
+	CmdGetAcceptingBlockOfTxRequestMessage
+	CmdGetAcceptingBlockOfTxResponseMessage
+	CmdGetAcceptingBlocksOfTxsRequestMessage
+	CmdGetAcceptingBlocksOfTxsResponseMessage
+	CmdGetIncludingBlockHashOfTxRequestMessage
+	CmdGetIncludingBlockHashOfTxResponseMessage
+	CmdGetTxRequestMessage
+	CmdGetTxResponseMessage
+	CmdGetTxsRequestMessage
+	CmdGetTxsResponseMessage
+	CmdGetTxConfirmationRequestMessage
+	CmdGetTxConfirmationResponseMessage
+	CmdGetTxsConfirmationRequestMessage
+	CmdGetTxsConfirmationResponseMessage
 )
 
 // ProtocolMessageCommandToString maps all MessageCommands to their string representation
@@ -304,6 +321,22 @@ var RPCMessageCommandToString = map[MessageCommand]string{
 	CmdGetCoinSupplyResponseMessage:                               "GetCoinSupplyResponse",
 	CmdGetAcceptingBlockHashOfTxRequestMessage:                    "GetAcceptingBlockHashOfTxRequest",
 	CmdGetAcceptingBlockHashOfTxResponseMessage:                   "GetAcceptingBlockHashOfTxResponse",
+	CmdGetAcceptingBlockHashesOfTxsRequestMessage:                 "GetAcceptingBlockHashesOfTxsRequest",
+	CmdGetAcceptingBlockHashesOfTxsResponseMessage:                "GetAcceptingBlockHashesOfTxsResponse",
+	CmdGetAcceptingBlockOfTxRequestMessage:                        "GetAcceptingBlockOfTxRequest",
+	CmdGetAcceptingBlockOfTxResponseMessage:                       "GetAcceptingBlockOfTxResponse",
+	CmdGetAcceptingBlocksOfTxsRequestMessage:                      "GetAcceptingBlocksOfTxsRequest",
+	CmdGetAcceptingBlocksOfTxsResponseMessage:                     "GetAcceptingBlocksOfTxsResponse",
+	CmdGetIncludingBlockHashOfTxRequestMessage:                    "GetIncludingBlockHashOfTxRequest",
+	CmdGetIncludingBlockHashOfTxResponseMessage:                   "GetIncludingBlockHashOfTxResponse",
+	CmdGetTxRequestMessage:                                        "GetTxRequest",
+	CmdGetTxResponseMessage:                                       "GetTxResponse",
+	CmdGetTxsRequestMessage:                                       "GetTxsRequest",
+	CmdGetTxsResponseMessage:                                      "GetTxsResponse",
+	CmdGetTxConfirmationRequestMessage:                            "GetTxConfirmationRequest",
+	CmdGetTxConfirmationResponseMessage:                           "GetTxConfirmationResponse",
+	CmdGetTxsConfirmationRequestMessage:                           "GetTxsConfirmationRequest",
+	CmdGetTxsConfirmationResponseMessage:                          "GetTxsConfirmationResponse",
 }
 
 // Message is an interface that describes a kaspa message. A type that
