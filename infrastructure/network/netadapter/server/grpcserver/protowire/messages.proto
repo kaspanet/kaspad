@@ -154,10 +154,10 @@ message KaspadMessage {
     GetTxResponseMessage getTxResponse = 1099;
     GetTxsRequestMessage  getTxsRequest = 1100;
     GetTxsResponseMessage getTxsResponse = 1101;
-    GetTxConfirmationRequestMessage  getTxConfirmationRequest = 1102;
-    GetTxConfirmationResponseMessage getTxConfirmationResponse = 1103;
-    GetTxsConfirmationRequestMessage  getTxsConfirmationRequest = 1104;
-    GetTxsConfirmationResponseMessage getTxsConfirmationResponse = 1105;
+    GetTxConfirmationsRequestMessage  getTxConfirmationsRequest = 1102;
+    GetTxConfirmationsResponseMessage getTxConfirmationsResponse = 1103;
+    GetTxsConfirmationsRequestMessage  getTxsConfirmationsRequest = 1104;
+    GetTxsConfirmationsResponseMessage getTxsConfirmationsResponse = 1105;
   }
 }
 

@@ -178,10 +178,10 @@ const (
 	CmdGetTxResponseMessage
 	CmdGetTxsRequestMessage
 	CmdGetTxsResponseMessage
-	CmdGetTxConfirmationRequestMessage
-	CmdGetTxConfirmationResponseMessage
-	CmdGetTxsConfirmationRequestMessage
-	CmdGetTxsConfirmationResponseMessage
+	CmdGetTxConfirmationsRequestMessage
+	CmdGetTxConfirmationsResponseMessage
+	CmdGetTxsConfirmationsRequestMessage
+	CmdGetTxsConfirmationsResponseMessage
 )
 
 // ProtocolMessageCommandToString maps all MessageCommands to their string representation
@@ -333,10 +333,10 @@ var RPCMessageCommandToString = map[MessageCommand]string{
 	CmdGetTxResponseMessage:                                       "GetTxResponse",
 	CmdGetTxsRequestMessage:                                       "GetTxsRequest",
 	CmdGetTxsResponseMessage:                                      "GetTxsResponse",
-	CmdGetTxConfirmationRequestMessage:                            "GetTxConfirmationRequest",
-	CmdGetTxConfirmationResponseMessage:                           "GetTxConfirmationResponse",
-	CmdGetTxsConfirmationRequestMessage:                           "GetTxsConfirmationRequest",
-	CmdGetTxsConfirmationResponseMessage:                          "GetTxsConfirmationResponse",
+	CmdGetTxConfirmationsRequestMessage:                            "GetTxConfirmationsRequest",
+	CmdGetTxConfirmationsResponseMessage:                           "GetTxConfirmationsResponse",
+	CmdGetTxsConfirmationsRequestMessage:                           "GetTxsConfirmationsRequest",
+	CmdGetTxsConfirmationsResponseMessage:                          "GetTxsConfirmationsResponse",
 }
 
 // Message is an interface that describes a kaspa message. A type that

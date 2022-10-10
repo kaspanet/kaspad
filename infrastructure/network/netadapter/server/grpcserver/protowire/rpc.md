@@ -114,7 +114,7 @@
     - [GetMempoolEntriesByAddressesResponseMessage](#protowire.GetMempoolEntriesByAddressesResponseMessage)
     - [GetCoinSupplyRequestMessage](#protowire.GetCoinSupplyRequestMessage)
     - [GetCoinSupplyResponseMessage](#protowire.GetCoinSupplyResponseMessage)
-    - [TxIDConfirmations](#protowire.TxIDConfirmations)
+    - [TxIDConfirmationsPair](#protowire.TxIDConfirmationsPair)
     - [TxIDBlockHashPair](#protowire.TxIDBlockHashPair)
     - [TxIDBlockPair](#protowire.TxIDBlockPair)
     - [GetAcceptingBlockHashesOfTxsRequestMessage](#protowire.GetAcceptingBlockHashesOfTxsRequestMessage)
@@ -129,10 +129,10 @@
     - [GetTxResponseMessage](#protowire.GetTxResponseMessage)
     - [GetTxsRequestMessage](#protowire.GetTxsRequestMessage)
     - [GetTxsResponseMessage](#protowire.GetTxsResponseMessage)
-    - [GetTxConfirmationRequestMessage](#protowire.GetTxConfirmationRequestMessage)
-    - [GetTxConfirmationResponseMessage](#protowire.GetTxConfirmationResponseMessage)
-    - [GetTxsConfirmationRequestMessage](#protowire.GetTxsConfirmationRequestMessage)
-    - [GetTxsConfirmationResponseMessage](#protowire.GetTxsConfirmationResponseMessage)
+    - [GetTxConfirmationsRequestMessage](#protowire.GetTxConfirmationsRequestMessage)
+    - [GetTxConfirmationsResponseMessage](#protowire.GetTxConfirmationsResponseMessage)
+    - [GetTxsConfirmationsRequestMessage](#protowire.GetTxsConfirmationsRequestMessage)
+    - [GetTxsConfirmationsResponseMessage](#protowire.GetTxsConfirmationsResponseMessage)
   
     - [SubmitBlockResponseMessage.RejectReason](#protowire.SubmitBlockResponseMessage.RejectReason)
   
@@ -1910,9 +1910,9 @@ See NotifyNewBlockTemplateRequestMessage
 
 
 
-<a name="protowire.TxIDConfirmations"></a>
+<a name="protowire.TxIDConfirmationsPair"></a>
 
-### TxIDConfirmations
+### TxIDConfirmationsPair
 
 
 
@@ -2144,9 +2144,9 @@ See NotifyNewBlockTemplateRequestMessage
 
 
 
-<a name="protowire.GetTxConfirmationRequestMessage"></a>
+<a name="protowire.GetTxConfirmationsRequestMessage"></a>
 
-### GetTxConfirmationRequestMessage
+### GetTxConfirmationsRequestMessage
 
 
 
@@ -2159,9 +2159,9 @@ See NotifyNewBlockTemplateRequestMessage
 
 
 
-<a name="protowire.GetTxConfirmationResponseMessage"></a>
+<a name="protowire.GetTxConfirmationsResponseMessage"></a>
 
-### GetTxConfirmationResponseMessage
+### GetTxConfirmationsResponseMessage
 
 
 
@@ -2175,9 +2175,9 @@ See NotifyNewBlockTemplateRequestMessage
 
 
 
-<a name="protowire.GetTxsConfirmationRequestMessage"></a>
+<a name="protowire.GetTxsConfirmationsRequestMessage"></a>
 
-### GetTxsConfirmationRequestMessage
+### GetTxsConfirmationsRequestMessage
 
 
 
@@ -2190,15 +2190,15 @@ See NotifyNewBlockTemplateRequestMessage
 
 
 
-<a name="protowire.GetTxsConfirmationResponseMessage"></a>
+<a name="protowire.GetTxsConfirmationsResponseMessage"></a>
 
-### GetTxsConfirmationResponseMessage
+### GetTxsConfirmationsResponseMessage
 
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| txIDConfirmations | [TxIDConfirmations](#protowire.TxIDConfirmations) | repeated |  |
+| txIDConfirmations | [TxIDConfirmationsPair](#protowire.TxIDConfirmationsPair) | repeated |  |
 | error | [RPCError](#protowire.RPCError) |  |  |
 
 

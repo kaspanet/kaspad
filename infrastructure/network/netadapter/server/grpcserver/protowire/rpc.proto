@@ -734,7 +734,7 @@ message GetCoinSupplyResponseMessage{
         RPCError error = 1000;
 }
 
-message TxIDConfirmations {
+message TxIDConfirmationsPair {
         string txID = 1;
         int32 confirmations = 2;   
 }
@@ -811,22 +811,22 @@ message GetTxsResponseMessage{
         RPCError error = 1000;
 }
 
-message GetTxConfirmationRequestMessage{
+message GetTxConfirmationsRequestMessage{
         string txID = 1;
 }
 
-message GetTxConfirmationResponseMessage{
+message GetTxConfirmationsResponseMessage{
         int64 confirmations = 1;
 
         RPCError error = 1000;
 }
 
-message GetTxsConfirmationRequestMessage{
+message GetTxsConfirmationsRequestMessage{
         repeated string txID = 1;
 }
 
-message GetTxsConfirmationResponseMessage{
-        repeated TxIDConfirmations txIDConfirmations = 1; 
+message GetTxsConfirmationsResponseMessage{
+        repeated TxIDConfirmationsPair txIDConfirmations = 1; 
 
         RPCError error = 1000;
 }
