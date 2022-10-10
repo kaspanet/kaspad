@@ -2,7 +2,7 @@ package rpcclient
 
 import "github.com/kaspanet/kaspad/app/appmessage"
 
-// GetTXsConfirmations sends an RPC request respective to the function's name and returns the RPC server's response
+// GetTxsConfirmations sends an RPC request respective to the function's name and returns the RPC server's response
 func (c *RPCClient) GetTxsConfirmations(txIDs []string) (*appmessage.GetTxsConfirmationsResponseMessage, error) {
 	err := c.rpcRouter.outgoingRoute().Enqueue(appmessage.NewGetTxsConfirmationsRequest(txIDs))
 	if err != nil {
@@ -18,4 +18,3 @@ func (c *RPCClient) GetTxsConfirmations(txIDs []string) (*appmessage.GetTxsConfi
 	}
 	return getTxsConfirmationsResponse, nil
 }
-

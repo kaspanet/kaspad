@@ -18,4 +18,3 @@ func (c *RPCClient) GetTxs(txIDs []string) (*appmessage.GetTxsResponseMessage, e
 	}
 	return getTxsResponse, nil
 }
-
