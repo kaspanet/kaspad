@@ -446,7 +446,7 @@ func (ti *TXIndex) GetTXsConfirmations(txIDs []*externalapi.DomainTransactionID)
 		if err != nil {
 			return nil, false, err
 		}
-		Confirmations[txID] = int64(acceptingBlockHeader.BlueScore() - virtualBlock.BlueScore)
+		Confirmations[txID] = int64(virtualBlock.BlueScore - acceptingBlockHeader.BlueScore() )
 	}
 
 	return Confirmations, true, nil

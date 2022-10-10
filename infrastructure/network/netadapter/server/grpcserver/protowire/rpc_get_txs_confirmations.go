@@ -42,8 +42,9 @@ func (x *KaspadMessage_GetTxsConfirmationsResponse) fromAppMessage(message *appm
 		rpcErr = &RPCError{Message: message.Error.Message}
 	}
 
-	rpcTxIDConfirmationsPairs := make([]*TxIDConfirmationsPair, len(message.TxIDConfirmationsPairs))
+	rpcTxIDConfirmationsPairs := make([]*RpcTxIDConfirmationsPair, len(message.TxIDConfirmationsPairs))
 	for i := range rpcTxIDConfirmationsPairs {
+		rpcTxIDConfirmationsPairs[i] = &RpcTxIDConfirmationsPair{}
 		rpcTxIDConfirmationsPairs[i].fromAppMessage(message.TxIDConfirmationsPairs[i])
 	}
 
@@ -83,7 +84,7 @@ func (x *GetTxsConfirmationsResponseMessage) toAppMessage() (appmessage.Message,
 	}, nil
 }
 
-func (x *TxIDConfirmationsPair) toAppMessage() (*appmessage.TxIDConfirmationsPair, error) {
+func (x *RpcTxIDConfirmationsPair) toAppMessage() (*appmessage.TxIDConfirmationsPair, error) {
 	if x == nil {
 		return nil, errors.Wrapf(errorNil, "TxIDConfirmationsPair is nil")
 	}
@@ -94,9 +95,9 @@ func (x *TxIDConfirmationsPair) toAppMessage() (*appmessage.TxIDConfirmationsPai
 	}, nil
 }
 
-func (x *TxIDConfirmationsPair) fromAppMessage(message *appmessage.TxIDConfirmationsPair) {
+func (x *RpcTxIDConfirmationsPair) fromAppMessage(message *appmessage.TxIDConfirmationsPair) {
 
-	*x = TxIDConfirmationsPair{
+	*x = RpcTxIDConfirmationsPair{
 		TxID:          message.TxID,
 		Confirmations: message.Confirmations,
 	}

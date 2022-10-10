@@ -44,6 +44,7 @@ func (x *KaspadMessage_GetTxsResponse) fromAppMessage(message *appmessage.GetTxs
 
 	rpcTransactions := make([]*RpcTransaction, len(message.Transactions))
 	for i := range rpcTransactions {
+		rpcTransactions[i] = &RpcTransaction{}
 		rpcTransactions[i].fromAppMessage(message.Transactions[i])
 	}
 

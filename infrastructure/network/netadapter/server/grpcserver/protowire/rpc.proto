@@ -734,17 +734,17 @@ message GetCoinSupplyResponseMessage{
         RPCError error = 1000;
 }
 
-message TxIDConfirmationsPair {
+message RpcTxIDConfirmationsPair {
         string txID = 1;
         int64 confirmations = 2;   
 }
 
-message TxIDBlockHashPair {
+message RpcTxIDBlockHashPair {
         string txID = 1;
         string Hash = 2;   
 }
 
-message TxIDBlockPair {
+message RpcTxIDBlockPair {
         string txID = 1;
         RpcBlock block = 2;   
 }
@@ -754,7 +754,7 @@ message GetAcceptingBlockHashesOfTxsRequestMessage{
 }
 
 message GetAcceptingBlockHashesOfTxsResponseMessage{
-        repeated TxIDBlockHashPair txIDBlockHashPairs = 1;
+        repeated RpcTxIDBlockHashPair txIDBlockHashPairs = 1;
         
         RPCError error = 1000;
 }
@@ -776,7 +776,7 @@ message GetAcceptingBlocksOfTxsRequestMessage{
 }
 
 message GetAcceptingBlocksOfTxsResponseMessage{
-        repeated TxIDBlockPair txIDBlockPairs = 1;
+        repeated RpcTxIDBlockPair txIDBlockPairs = 1;
 
         RPCError error = 1000;
 }
@@ -828,7 +828,7 @@ message GetTxsConfirmationsRequestMessage{
 }
 
 message GetTxsConfirmationsResponseMessage{
-        repeated TxIDConfirmationsPair txIDConfirmationsPairs = 1; 
+        repeated RpcTxIDConfirmationsPair txIDConfirmationsPairs = 1; 
 
         RPCError error = 1000;
 }

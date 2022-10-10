@@ -44,8 +44,9 @@ func (x *KaspadMessage_GetAcceptingBlocksOfTxsResponse) fromAppMessage(message *
 		rpcErr = &RPCError{Message: message.Error.Message}
 	}
 
-	rpcTxIDBlockPairs := make([]*TxIDBlockPair, len(message.TxIDBlockPairs))
+	rpcTxIDBlockPairs := make([]*RpcTxIDBlockPair, len(message.TxIDBlockPairs))
 	for i := range rpcTxIDBlockPairs {
+		rpcTxIDBlockPairs[i] = &RpcTxIDBlockPair{}
 		err := rpcTxIDBlockPairs[i].fromAppMessage(message.TxIDBlockPairs[i])
 		if err != nil {
 			return err
@@ -88,7 +89,7 @@ func (x *GetAcceptingBlocksOfTxsResponseMessage) toAppMessage() (appmessage.Mess
 	}, nil
 }
 
-func (x *TxIDBlockPair) toAppMessage() (*appmessage.TxIDBlockPair, error) {
+func (x *RpcTxIDBlockPair) toAppMessage() (*appmessage.TxIDBlockPair, error) {
 	if x == nil {
 		return nil, errors.Wrapf(errorNil, "TxIDBlockPair is nil")
 	}
@@ -104,7 +105,7 @@ func (x *TxIDBlockPair) toAppMessage() (*appmessage.TxIDBlockPair, error) {
 	}, nil
 }
 
-func (x *TxIDBlockPair) fromAppMessage(message *appmessage.TxIDBlockPair) error {
+func (x *RpcTxIDBlockPair) fromAppMessage(message *appmessage.TxIDBlockPair) error {
 
 	rpcBlock := &RpcBlock{}
 
@@ -112,7 +113,7 @@ func (x *TxIDBlockPair) fromAppMessage(message *appmessage.TxIDBlockPair) error 
 	if err != nil {
 		return err
 	}
-	*x = TxIDBlockPair{
+	*x = RpcTxIDBlockPair{
 		TxID:  message.TxID,
 		Block: rpcBlock,
 	}
