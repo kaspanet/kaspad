@@ -56,11 +56,10 @@ var handlers = map[appmessage.MessageCommand]handler{
 	appmessage.CmdGetAcceptingBlockOfTxRequestMessage:                       rpchandlers.HandleGetAcceptingBlockOfTx,
 	appmessage.CmdGetAcceptingBlocksOfTxsRequestMessage:                     rpchandlers.HandleGetAcceptingBlocksOfTxs,
 	appmessage.CmdGetIncludingBlockHashOfTxRequestMessage:                   rpchandlers.HandleGetIncludingBlockHashOfTx,
-	appmessage.CmdGetTxRequestMessage:	                   		 rpchandlers.HandleGetTx,
-	appmessage.CmdGetTxsRequestMessage:			                 rpchandlers.HandleGetTxs,
-	appmessage.CmdGetTxConfirmationsRequestMessage:                   	 rpchandlers.HandleGetTxConfirmations,
-	appmessage.CmdGetTxsConfirmationsRequestMessage:                   	 rpchandlers.HandleGetTxsConfirmations,
-
+	appmessage.CmdGetTxRequestMessage:                                       rpchandlers.HandleGetTx,
+	appmessage.CmdGetTxsRequestMessage:                                      rpchandlers.HandleGetTxs,
+	appmessage.CmdGetTxConfirmationsRequestMessage:                          rpchandlers.HandleGetTxConfirmations,
+	appmessage.CmdGetTxsConfirmationsRequestMessage:                         rpchandlers.HandleGetTxsConfirmations,
 }
 
 func (m *Manager) routerInitializer(router *router.Router, netConnection *netadapter.NetConnection) {

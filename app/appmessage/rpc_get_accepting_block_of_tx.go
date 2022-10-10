@@ -16,7 +16,7 @@ func (msg *GetAcceptingBlockOfTxRequestMessage) Command() MessageCommand {
 // NewGetAcceptingBlockOfTxRequest returns a instance of the message
 func NewGetAcceptingBlockOfTxRequest(txID string, includeTransactions bool) *GetAcceptingBlockOfTxRequestMessage {
 	return &GetAcceptingBlockOfTxRequestMessage{
-		TxID: txID,
+		TxID:                txID,
 		IncludeTransactions: includeTransactions,
 	}
 }
