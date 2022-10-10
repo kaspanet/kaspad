@@ -37,7 +37,7 @@ func HandleGetAcceptingBlocksOfTx(context *rpccontext.Context, _ *router.Router,
 		if !errors.As(err, &rpcError) {
 			return nil, err
 		}
-		errorMessage := &appmessage.GetUTXOsByAddressesResponseMessage{}
+		errorMessage := &appmessage.GetAcceptingBlocksOfTxsResponseMessage{}
 		errorMessage.Error = rpcError
 		return errorMessage, nil
 	}
