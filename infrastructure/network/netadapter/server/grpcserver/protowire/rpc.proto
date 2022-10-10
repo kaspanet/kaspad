@@ -736,12 +736,12 @@ message GetCoinSupplyResponseMessage{
 
 message TxIDConfirmationsPair {
         string txID = 1;
-        int32 confirmations = 2;   
+        int64 confirmations = 2;   
 }
 
 message TxIDBlockHashPair {
         string txID = 1;
-        string blockHash = 2;   
+        string Hash = 2;   
 }
 
 message TxIDBlockPair {
@@ -750,11 +750,11 @@ message TxIDBlockPair {
 }
 
 message GetAcceptingBlockHashesOfTxsRequestMessage{
-        repeated string txID = 1;
+        repeated string txIDs = 1;
 }
 
 message GetAcceptingBlockHashesOfTxsResponseMessage{
-        repeated TxIDBlockHashPair txIDBlockHashPair = 1;
+        repeated TxIDBlockHashPair txIDBlockHashPairs = 1;
         
         RPCError error = 1000;
 }
@@ -770,11 +770,11 @@ message GetAcceptingBlockOfTxResponseMessage{
 }
 
 message GetAcceptingBlocksOfTxsRequestMessage{
-        repeated string txID = 1;
+        repeated string txIDs = 1;
 }
 
 message GetAcceptingBlocksOfTxsResponseMessage{
-        repeated TxIDBlockPair txIDBlockPair = 1;
+        repeated TxIDBlockPair txIDBlockPairs = 1;
 
         RPCError error = 1000;
 }
@@ -784,7 +784,7 @@ message GetIncludingBlockHashOfTxRequestMessage{
 }
 
 message GetIncludingBlockHashOfTxResponseMessage{
-        string blockHash = 1;
+        string hash = 1;
 
         RPCError error = 1000;
 }
@@ -801,7 +801,7 @@ message GetTxResponseMessage{
 }
 
 message GetTxsRequestMessage{
-        repeated string txID = 1;
+        repeated string txIDs = 1;
 }
 
 message GetTxsResponseMessage{
@@ -822,11 +822,11 @@ message GetTxConfirmationsResponseMessage{
 }
 
 message GetTxsConfirmationsRequestMessage{
-        repeated string txID = 1;
+        repeated string txIDs = 1;
 }
 
 message GetTxsConfirmationsResponseMessage{
-        repeated TxIDConfirmationsPair txIDConfirmations = 1; 
+        repeated TxIDConfirmationsPair txIDConfirmationsPairs = 1; 
 
         RPCError error = 1000;
 }

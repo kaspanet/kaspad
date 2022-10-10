@@ -1919,7 +1919,7 @@ See NotifyNewBlockTemplateRequestMessage
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | txID | [string](#string) |  |  |
-| confirmations | [int32](#int32) |  |  |
+| confirmations | [int64](#int64) |  |  |
 
 
 
@@ -1935,7 +1935,7 @@ See NotifyNewBlockTemplateRequestMessage
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | txID | [string](#string) |  |  |
-| blockHash | [string](#string) |  |  |
+| Hash | [string](#string) |  |  |
 
 
 
@@ -1966,7 +1966,7 @@ See NotifyNewBlockTemplateRequestMessage
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| txID | [string](#string) | repeated |  |
+| txIDs | [string](#string) | repeated |  |
 
 
 
@@ -1981,7 +1981,7 @@ See NotifyNewBlockTemplateRequestMessage
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| txIDBlockHashPair | [TxIDBlockHashPair](#protowire.TxIDBlockHashPair) | repeated |  |
+| txIDBlockHashPairs | [TxIDBlockHashPair](#protowire.TxIDBlockHashPair) | repeated |  |
 | error | [RPCError](#protowire.RPCError) |  |  |
 
 
@@ -2028,7 +2028,7 @@ See NotifyNewBlockTemplateRequestMessage
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| txID | [string](#string) | repeated |  |
+| txIDs | [string](#string) | repeated |  |
 
 
 
@@ -2043,7 +2043,7 @@ See NotifyNewBlockTemplateRequestMessage
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| txIDBlockPair | [TxIDBlockPair](#protowire.TxIDBlockPair) | repeated |  |
+| txIDBlockPairs | [TxIDBlockPair](#protowire.TxIDBlockPair) | repeated |  |
 | error | [RPCError](#protowire.RPCError) |  |  |
 
 
@@ -2074,7 +2074,7 @@ See NotifyNewBlockTemplateRequestMessage
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| blockHash | [string](#string) |  |  |
+| hash | [string](#string) |  |  |
 | error | [RPCError](#protowire.RPCError) |  |  |
 
 
@@ -2121,7 +2121,7 @@ See NotifyNewBlockTemplateRequestMessage
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| txID | [string](#string) | repeated |  |
+| txIDs | [string](#string) | repeated |  |
 
 
 
@@ -2183,7 +2183,7 @@ See NotifyNewBlockTemplateRequestMessage
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| txID | [string](#string) | repeated |  |
+| txIDs | [string](#string) | repeated |  |
 
 
 
@@ -2198,7 +2198,7 @@ See NotifyNewBlockTemplateRequestMessage
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| txIDConfirmations | [TxIDConfirmationsPair](#protowire.TxIDConfirmationsPair) | repeated |  |
+| txIDConfirmationsPairs | [TxIDConfirmationsPair](#protowire.TxIDConfirmationsPair) | repeated |  |
 | error | [RPCError](#protowire.RPCError) |  |  |
 
 

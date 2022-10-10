@@ -146,8 +146,8 @@ message KaspadMessage {
     GetAcceptingBlockHashesOfTxsResponseMessage getAcceptingBlockHashesOfTxsResponse = 1091;
     GetAcceptingBlockOfTxRequestMessage  getAcceptingBlockOfTxRequest = 1092;
     GetAcceptingBlockOfTxResponseMessage getAcceptingBlockOfTxResponse = 1093;
-    GetAcceptingBlocksOfTxsRequestMessage  getAcceptingBlocksOfTxRequest = 1094;
-    GetAcceptingBlocksOfTxsResponseMessage getAcceptingBlocksOfTxResponse = 1095;
+    GetAcceptingBlocksOfTxsRequestMessage  getAcceptingBlocksOfTxsRequest = 1094;
+    GetAcceptingBlocksOfTxsResponseMessage getAcceptingBlocksOfTxsResponse = 1095;
     GetIncludingBlockHashOfTxRequestMessage  getIncludingBlockHashOfTxRequest = 1096;
     GetIncludingBlockHashOfTxResponseMessage getIncludingBlockHashOfTxResponse = 1097;
     GetTxRequestMessage  getTxRequest = 1098;
