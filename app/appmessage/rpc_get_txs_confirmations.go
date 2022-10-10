@@ -3,8 +3,8 @@ package appmessage
 // TxIDConfirmationsPair is an appmessage corresponding to
 // its respective RPC message
 type TxIDConfirmationsPair struct {
-        TxID string
-        Confirmations int64   
+	TxID          string
+	Confirmations int64
 }
 
 // GetTxsConfirmationsRequestMessage is an appmessage corresponding to

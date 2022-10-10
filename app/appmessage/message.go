@@ -333,10 +333,10 @@ var RPCMessageCommandToString = map[MessageCommand]string{
 	CmdGetTxResponseMessage:                                       "GetTxResponse",
 	CmdGetTxsRequestMessage:                                       "GetTxsRequest",
 	CmdGetTxsResponseMessage:                                      "GetTxsResponse",
-	CmdGetTxConfirmationsRequestMessage:                            "GetTxConfirmationsRequest",
-	CmdGetTxConfirmationsResponseMessage:                           "GetTxConfirmationsResponse",
-	CmdGetTxsConfirmationsRequestMessage:                           "GetTxsConfirmationsRequest",
-	CmdGetTxsConfirmationsResponseMessage:                          "GetTxsConfirmationsResponse",
+	CmdGetTxConfirmationsRequestMessage:                           "GetTxConfirmationsRequest",
+	CmdGetTxConfirmationsResponseMessage:                          "GetTxConfirmationsResponse",
+	CmdGetTxsConfirmationsRequestMessage:                          "GetTxsConfirmationsRequest",
+	CmdGetTxsConfirmationsResponseMessage:                         "GetTxsConfirmationsResponse",
 }
 
 // Message is an interface that describes a kaspa message. A type that

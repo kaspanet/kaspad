@@ -12,7 +12,7 @@ func (msg *GetTxRequestMessage) Command() MessageCommand {
 	return CmdGetTxRequestMessage
 }
 
-// NewTxRequest returns a instance of the message
+// NewGetTxRequest returns a instance of the message
 func NewGetTxRequest(txID string) *GetTxRequestMessage {
 	return &GetTxRequestMessage{
 		TxID: txID,

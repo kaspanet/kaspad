@@ -1,9 +1,10 @@
 package appmessage
 
-
-type TxIdBlockPair struct {
-	TxId string
-	blockhash RPCBlock
+// TxIDBlockPair is an appmessage corresponding to
+// its respective RPC message
+type TxIDBlockPair struct {
+	TxID      string
+	BlockHash RPCBlock
 }
 
 // GetAcceptingBlocksOfTxsRequestMessage is an appmessage corresponding to
@@ -29,7 +30,7 @@ func NewGetAcceptingBlocksOfTxsRequest(txIDs []string) *GetAcceptingBlocksOfTxsR
 // its respective RPC message
 type GetAcceptingBlocksOfTxsResponseMessage struct {
 	baseMessage
-	TxIdBlockPairs []*TxIdBlockPair
+	TxIDBlockPairs []*TxIDBlockPair
 
 	Error *RPCError
 }
@@ -40,8 +41,8 @@ func (msg *GetAcceptingBlocksOfTxsResponseMessage) Command() MessageCommand {
 }
 
 // NewGetAcceptingBlocksOfTxsResponse returns an instance of the message
-func NewGetAcceptingBlocksOfTxsResponse(txIdBlockPairs []*TxIdBlockPair) *GetAcceptingBlocksOfTxsResponseMessage {
+func NewGetAcceptingBlocksOfTxsResponse(txIDBlockPairs []*TxIDBlockPair) *GetAcceptingBlocksOfTxsResponseMessage {
 	return &GetAcceptingBlocksOfTxsResponseMessage{
-		TxIdBlockPairs: txIdBlockPairs,
+		TxIDBlockPairs: txIDBlockPairs,
 	}
 }
