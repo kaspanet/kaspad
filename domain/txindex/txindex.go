@@ -34,7 +34,7 @@ func New(domain domain.Domain, database database.Database) (*TXIndex, error) {
 		return nil, err
 	}
 
-	if !isSynced {
+	if !isSynced || true {
 
 		err := txIndex.Reset()
 		if err != nil {
@@ -187,7 +187,7 @@ func (ti *TXIndex) addTXIDs(selectedParentChainChanges *externalapi.SelectedChai
 		if err != nil {
 			return err
 		}
-		for i, addedChainBlock := range chainBlocksChunk {
+		for i := range chainBlocksChunk {
 			chainBlockAcceptanceData := chainBlocksAcceptanceData[i]
 			for _, blockAcceptanceData := range chainBlockAcceptanceData {
 				for _, transactionAcceptanceData := range blockAcceptanceData.TransactionAcceptanceData {
@@ -195,7 +195,7 @@ func (ti *TXIndex) addTXIDs(selectedParentChainChanges *externalapi.SelectedChai
 					if transactionAcceptanceData.IsAccepted {
 						ti.store.add(
 							*consensushashing.TransactionID(transactionAcceptanceData.Transaction),
-							addedChainBlock,
+							blockAcceptanceData.BlockHash,
 						)
 					}
 				}
@@ -222,7 +222,7 @@ func (ti *TXIndex) removeTXIDs(selectedParentChainChanges *externalapi.SelectedC
 		if err != nil {
 			return err
 		}
-		for i, removedChainBlock := range chainBlocksChunk {
+		for i := range chainBlocksChunk {
 			chainBlockAcceptanceData := chainBlocksAcceptanceData[i]
 			for _, blockAcceptanceData := range chainBlockAcceptanceData {
 				log.Tracef("TX index Removing: %d transactions", len(blockAcceptanceData.TransactionAcceptanceData))
@@ -230,7 +230,7 @@ func (ti *TXIndex) removeTXIDs(selectedParentChainChanges *externalapi.SelectedC
 					if transactionAcceptanceData.IsAccepted {
 						ti.store.remove(
 							*consensushashing.TransactionID(transactionAcceptanceData.Transaction),
-							removedChainBlock,
+							blockAcceptanceData.BlockHash,
 						)
 					}
 				}
@@ -350,12 +350,9 @@ func (ti *TXIndex) GetTX(txID *externalapi.DomainTransactionID) (
 		return nil, false, err
 	}
 
-	var transaction *externalapi.DomainTransaction
-
-	for _, tx := range acceptingBlock.Transactions {
-		if consensushashing.TransactionID(tx).Equal(txID) {
-			transaction = tx
-			return transaction, true, nil
+	for i := range acceptingBlock.Transactions {
+		if consensushashing.TransactionID(acceptingBlock.Transactions[i]).Equal(txID) {
+			return acceptingBlock.Transactions[i].Clone(), true, nil
 		}
 	}
 

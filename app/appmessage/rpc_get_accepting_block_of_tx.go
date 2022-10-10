@@ -10,13 +10,14 @@ type GetAcceptingBlockOfTxRequestMessage struct {
 
 // Command returns the protocol command string for the message
 func (msg *GetAcceptingBlockOfTxRequestMessage) Command() MessageCommand {
-	return CmdGetAcceptingBlockHashOfTxRequestMessage
+	return CmdGetAcceptingBlockOfTxRequestMessage
 }
 
 // NewGetAcceptingBlockOfTxRequest returns a instance of the message
-func NewGetAcceptingBlockOfTxRequest(txID string) *GetAcceptingBlockOfTxRequestMessage {
+func NewGetAcceptingBlockOfTxRequest(txID string, includeTransactions bool) *GetAcceptingBlockOfTxRequestMessage {
 	return &GetAcceptingBlockOfTxRequestMessage{
 		TxID: txID,
+		IncludeTransactions: includeTransactions,
 	}
 }
 

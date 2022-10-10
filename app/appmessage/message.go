@@ -165,7 +165,6 @@ const (
 	CmdGetCoinSupplyResponseMessage
 	CmdGetAcceptingBlockHashOfTxRequestMessage
 	CmdGetAcceptingBlockHashOfTxResponseMessage
-
 	CmdGetAcceptingBlockHashesOfTxsRequestMessage
 	CmdGetAcceptingBlockHashesOfTxsResponseMessage
 	CmdGetAcceptingBlockOfTxRequestMessage

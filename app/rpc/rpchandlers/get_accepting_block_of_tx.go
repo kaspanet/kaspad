@@ -18,9 +18,9 @@ func HandleGetAcceptingBlockOfTx(context *rpccontext.Context, _ *router.Router, 
 		return errorMessage, nil
 	}
 
-	getAcceptingBlockHashOfTxRequest := request.(*appmessage.GetAcceptingBlockOfTxRequestMessage)
+	getAcceptingBlockOfTxRequest := request.(*appmessage.GetAcceptingBlockOfTxRequestMessage)
 
-	domainTxID, err := externalapi.NewDomainTransactionIDFromString(getAcceptingBlockHashOfTxRequest.TxID)
+	domainTxID, err := externalapi.NewDomainTransactionIDFromString(getAcceptingBlockOfTxRequest.TxID)
 	if err != nil {
 		rpcError := &appmessage.RPCError{}
 		if !errors.As(err, &rpcError) {
@@ -48,7 +48,7 @@ func HandleGetAcceptingBlockOfTx(context *rpccontext.Context, _ *router.Router, 
 	}
 
 	rpcAcceptingBlock := appmessage.DomainBlockToRPCBlock(acceptingBlock)
-	err = context.PopulateBlockWithVerboseData(rpcAcceptingBlock, acceptingBlock.Header, acceptingBlock, getAcceptingBlockHashOfTxRequest.IncludeTransactions)
+	err = context.PopulateBlockWithVerboseData(rpcAcceptingBlock, acceptingBlock.Header, acceptingBlock, getAcceptingBlockOfTxRequest.IncludeTransactions)
 	if err != nil {
 		if errors.Is(err, rpccontext.ErrBuildBlockVerboseDataInvalidBlock) {
 			errorMessage := &appmessage.GetAcceptingBlockOfTxResponseMessage{}

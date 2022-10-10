@@ -2,6 +2,7 @@ package rpchandlers
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/app/rpc/rpccontext"
@@ -53,6 +54,9 @@ func HandleGetTxsConfirmations(context *rpccontext.Context, _ *router.Router, re
 		}
 		i++
 	}
+
+	fmt.Println(txIDConfirmationPairs[0].Confirmations)
+	fmt.Println(txIDConfirmationPairs[1].Confirmations)
 
 	response := appmessage.NewGetTxsConfirmationsResponse(txIDConfirmationPairs)
 

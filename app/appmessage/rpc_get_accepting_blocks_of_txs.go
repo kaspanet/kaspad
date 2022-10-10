@@ -21,9 +21,10 @@ func (msg *GetAcceptingBlocksOfTxsRequestMessage) Command() MessageCommand {
 }
 
 // NewGetAcceptingBlocksOfTxsRequest returns a instance of the message
-func NewGetAcceptingBlocksOfTxsRequest(txIDs []string) *GetAcceptingBlocksOfTxsRequestMessage {
+func NewGetAcceptingBlocksOfTxsRequest(txIDs []string, 	includeTransactions bool) *GetAcceptingBlocksOfTxsRequestMessage {
 	return &GetAcceptingBlocksOfTxsRequestMessage{
 		TxIDs: txIDs,
+		IncludeTransactions: includeTransactions,
 	}
 }
 

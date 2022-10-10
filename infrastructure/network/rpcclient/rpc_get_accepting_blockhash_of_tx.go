@@ -2,8 +2,8 @@ package rpcclient
 
 import "github.com/kaspanet/kaspad/app/appmessage"
 
-// GetAcceptingBlockHashOfTxs sends an RPC request respective to the function's name and returns the RPC server's response
-func (c *RPCClient) GetAcceptingBlockHashOfTxs(txID string) (*appmessage.GetAcceptingBlockHashOfTxResponseMessage, error) {
+// GetAcceptingBlockHashOfTx sends an RPC request respective to the function's name and returns the RPC server's response
+func (c *RPCClient) GetAcceptingBlockHashOfTx(txID string) (*appmessage.GetAcceptingBlockHashOfTxResponseMessage, error) {
 	err := c.rpcRouter.outgoingRoute().Enqueue(appmessage.NewGetAcceptingBlockHashOfTxRequest(txID))
 	if err != nil {
 		return nil, err

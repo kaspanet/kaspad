@@ -10,8 +10,8 @@ import (
 	"github.com/pkg/errors"
 )
 
-// HandleGetAcceptingBlocksOfTx handles the respectively named RPC command
-func HandleGetAcceptingBlocksOfTx(context *rpccontext.Context, _ *router.Router, request appmessage.Message) (appmessage.Message, error) {
+// HandleGetAcceptingBlocksOfTxs handles the respectively named RPC command
+func HandleGetAcceptingBlocksOfTxs(context *rpccontext.Context, _ *router.Router, request appmessage.Message) (appmessage.Message, error) {
 	var err error
 
 	if !context.Config.TXIndex {

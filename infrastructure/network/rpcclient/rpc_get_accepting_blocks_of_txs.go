@@ -3,8 +3,8 @@ package rpcclient
 import "github.com/kaspanet/kaspad/app/appmessage"
 
 // GetAcceptingBlocksTxs sends an RPC request respective to the function's name and returns the RPC server's response
-func (c *RPCClient) GetAcceptingBlocksTxs(txIDs []string) (*appmessage.GetAcceptingBlocksOfTxsResponseMessage, error) {
-	err := c.rpcRouter.outgoingRoute().Enqueue(appmessage.NewGetAcceptingBlocksOfTxsRequest(txIDs))
+func (c *RPCClient) GetAcceptingBlocksTxs(txIDs []string, includeTransactions bool) (*appmessage.GetAcceptingBlocksOfTxsResponseMessage, error) {
+	err := c.rpcRouter.outgoingRoute().Enqueue(appmessage.NewGetAcceptingBlocksOfTxsRequest(txIDs, includeTransactions))
 	if err != nil {
 		return nil, err
 	}
