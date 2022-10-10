@@ -302,7 +302,7 @@ func (ti *TXIndex) TXAcceptingBlock(txID *externalapi.DomainTransactionID) (
 
 // TXAcceptingBlocks returns the accepting blocks for for the given txIDs
 func (ti *TXIndex) TXAcceptingBlocks(txIDs []*externalapi.DomainTransactionID) (
-	acceptingBlocks []*externalapi.DomainBlock, found bool, err error) {
+	acceptingBlocks TxIDsToBlocks, found bool, err error) {
 	onEnd := logger.LogAndMeasureExecutionTime(log, "TXIndex.TXAcceptingBlock")
 	defer onEnd()
 
@@ -314,21 +314,18 @@ func (ti *TXIndex) TXAcceptingBlocks(txIDs []*externalapi.DomainTransactionID) (
 		return nil, false, err
 	}
 
-	acceptingBlockHashes := make([]*externalapi.DomainHash, len(acceptingBlockHashTxIDPairs))
-
+	acceptingBlocks = make(TxIDsToBlocks)
 	i := 0
-	for _, acceptingBlockHash := range acceptingBlockHashTxIDPairs {
-		acceptingBlockHashes[i] = acceptingBlockHash
+	for txID, blockHash := range acceptingBlockHashTxIDPairs {
+		acceptingBlocks[txID], err = ti.domain.Consensus().GetBlock(blockHash)
+		if err != nil {
+			if database.IsNotFoundError(err) {
+				continue // ignore
+			} else {
+				return nil, false, err
+			}
+		}
 		i++
-	}
-
-	if !found {
-		return nil, false, nil
-	}
-
-	acceptingBlocks, err = ti.domain.Consensus().GetBlocks(acceptingBlockHashes)
-	if err != nil {
-		return nil, false, err
 	}
 
 	return acceptingBlocks, true, nil
@@ -365,9 +362,44 @@ func (ti *TXIndex) GetTX(txID *externalapi.DomainTransactionID) (
 	return nil, false, fmt.Errorf("Could not find transaction with ID %s in Txindex database", txID.String())
 }
 
+// GetTXs returns the domain transaction for for the given txIDs
+func (ti *TXIndex) GetTXs(txIDs []*externalapi.DomainTransactionID) (
+	txs []*externalapi.DomainTransaction, found bool, err error) {
+	onEnd := logger.LogAndMeasureExecutionTime(log, "TXIndex.GetTXs")
+	defer onEnd()
+
+	ti.mutex.Lock()
+	defer ti.mutex.Unlock()
+
+	acceptingBlockHashes, found, err := ti.store.getTxAcceptingBlockHashes(txIDs)
+	if err != nil {
+		return nil, false, err
+	}
+
+	txs = make([]*externalapi.DomainTransaction, 0)
+	for txID, acceptingBlockHash := range acceptingBlockHashes {
+		acceptingBlock, err := ti.domain.Consensus().GetBlock(acceptingBlockHash)
+		if err != nil {
+			if database.IsNotFoundError(err) {
+				continue // ignore
+			} else {
+				return nil, false, err
+			}
+		}
+		for _, tx := range acceptingBlock.Transactions {
+			if consensushashing.TransactionID(tx).Equal(txID) {
+				txs = append(txs, tx)
+			}
+		}
+
+	}
+
+	return txs, true, nil
+}
+
 // GetTXConfirmations returns the tx confirmations for for the given txID
 func (ti *TXIndex) GetTXConfirmations(txID *externalapi.DomainTransactionID) (
-	BlockHashTxIDPair uint64, found bool, err error) {
+	Confirmations int64, found bool, err error) {
 	onEnd := logger.LogAndMeasureExecutionTime(log, "TXIndex.GetTXConfirmations")
 	defer onEnd()
 
@@ -381,7 +413,7 @@ func (ti *TXIndex) GetTXConfirmations(txID *externalapi.DomainTransactionID) (
 
 	acceptingBlockHeader, err := ti.domain.Consensus().GetBlockHeader(acceptingBlockHash)
 	if err != nil {
-		return 0, false, err
+		return -1, false, err
 	}
 
 	virtualBlock, err := ti.domain.Consensus().GetVirtualInfo()
@@ -389,7 +421,38 @@ func (ti *TXIndex) GetTXConfirmations(txID *externalapi.DomainTransactionID) (
 		return 0, false, err
 	}
 
-	return virtualBlock.BlueScore - acceptingBlockHeader.BlueScore(), true, nil
+	return int64(virtualBlock.BlueScore - acceptingBlockHeader.BlueScore()), true, nil
+}
+
+// GetTXsConfirmations returns the tx confirmations for for the given txIDs
+func (ti *TXIndex) GetTXsConfirmations(txIDs []*externalapi.DomainTransactionID) (
+	Confirmations TxIDsToConfirmations, found bool, err error) {
+	onEnd := logger.LogAndMeasureExecutionTime(log, "TXIndex.GetTXsConfirmations")
+	defer onEnd()
+
+	ti.mutex.Lock()
+	defer ti.mutex.Unlock()
+
+	virtualBlock, err := ti.domain.Consensus().GetVirtualInfo()
+	if err != nil {
+		return nil, false, err
+	}
+
+	acceptingBlockHashes, _, err := ti.store.getTxAcceptingBlockHashes(txIDs)
+	if err != nil {
+		return nil, false, err
+	}
+
+	Confirmations = make(TxIDsToConfirmations)
+	for txID, acceptingBlockHash := range acceptingBlockHashes {
+		acceptingBlockHeader, err := ti.domain.Consensus().GetBlockHeader(acceptingBlockHash)
+		if err != nil {
+			return nil, false, err
+		}
+		Confirmations[txID] = int64(acceptingBlockHeader.BlueScore() - virtualBlock.BlueScore)
+	}
+
+	return Confirmations, true, nil
 }
 
 // TXIncludingBlockHash returns the including block hash for the given txID

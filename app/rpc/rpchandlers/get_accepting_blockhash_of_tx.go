@@ -25,7 +25,7 @@ func HandleGetAcceptingBlockHashOfTx(context *rpccontext.Context, _ *router.Rout
 		if !errors.As(err, &rpcError) {
 			return nil, err
 		}
-		errorMessage := &appmessage.GetUTXOsByAddressesResponseMessage{}
+		errorMessage := &appmessage.GetAcceptingBlockHashOfTxResponseMessage{}
 		errorMessage.Error = rpcError
 		return errorMessage, nil
 	}
@@ -36,7 +36,7 @@ func HandleGetAcceptingBlockHashOfTx(context *rpccontext.Context, _ *router.Rout
 		if !errors.As(err, &rpcError) {
 			return nil, err
 		}
-		errorMessage := &appmessage.GetUTXOsByAddressesResponseMessage{}
+		errorMessage := &appmessage.GetAcceptingBlockHashOfTxResponseMessage{}
 		errorMessage.Error = rpcError
 		return errorMessage, nil
 	}

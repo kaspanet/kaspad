@@ -41,7 +41,7 @@ func (x *KaspadMessage_GetTxConfirmationsResponse) fromAppMessage(message *appme
 	if message.Error != nil {
 		rpcErr = &RPCError{Message: message.Error.Message}
 	}
-	
+
 	x.GetTxConfirmationsResponse = &GetTxConfirmationsResponseMessage{
 		Confirmations: message.Confirmations,
 
@@ -65,7 +65,7 @@ func (x *GetTxConfirmationsResponseMessage) toAppMessage() (appmessage.Message, 
 	}
 
 	return &appmessage.GetTxConfirmationsResponseMessage{
-		Confirmations:  x.Confirmations,
-		Error: rpcErr,
+		Confirmations: x.Confirmations,
+		Error:         rpcErr,
 	}, nil
 }

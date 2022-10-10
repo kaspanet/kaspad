@@ -3,15 +3,16 @@ package appmessage
 // TxIDBlockPair is an appmessage corresponding to
 // its respective RPC message
 type TxIDBlockPair struct {
-	TxID      string
-	Block RPCBlock
+	TxID  string
+	Block *RPCBlock
 }
 
 // GetAcceptingBlocksOfTxsRequestMessage is an appmessage corresponding to
 // its respective RPC message
 type GetAcceptingBlocksOfTxsRequestMessage struct {
 	baseMessage
-	TxIDs []string
+	TxIDs               []string
+	IncludeTransactions bool
 }
 
 // Command returns the protocol command string for the message

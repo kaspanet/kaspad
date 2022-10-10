@@ -247,7 +247,7 @@ func (tis *txIndexStore) getTxAcceptingBlockHashes(txIDs []*externalapi.DomainTr
 		serializedAcceptingBlockHash, err := tis.database.Get(key)
 		if err != nil {
 			if database.IsNotFoundError(err) {
-				return nil, false, nil
+				continue //ignore not found errors we expect this to happen frequently with queries
 			}
 			return nil, false, err
 		}

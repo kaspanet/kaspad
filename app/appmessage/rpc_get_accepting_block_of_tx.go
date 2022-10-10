@@ -4,7 +4,8 @@ package appmessage
 // its respective RPC message
 type GetAcceptingBlockOfTxRequestMessage struct {
 	baseMessage
-	TxID string
+	TxID                string
+	IncludeTransactions bool
 }
 
 // Command returns the protocol command string for the message

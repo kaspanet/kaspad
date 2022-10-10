@@ -761,6 +761,7 @@ message GetAcceptingBlockHashesOfTxsResponseMessage{
 
 message GetAcceptingBlockOfTxRequestMessage{
         string txID = 1;
+        bool includeTransactions = 2;
 }
 
 message GetAcceptingBlockOfTxResponseMessage{
@@ -771,6 +772,7 @@ message GetAcceptingBlockOfTxResponseMessage{
 
 message GetAcceptingBlocksOfTxsRequestMessage{
         repeated string txIDs = 1;
+        bool includeTransactions = 2;
 }
 
 message GetAcceptingBlocksOfTxsResponseMessage{

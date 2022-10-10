@@ -1998,6 +1998,7 @@ See NotifyNewBlockTemplateRequestMessage
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | txID | [string](#string) |  |  |
+| includeTransactions | [bool](#bool) |  |  |
 
 
 
@@ -2029,6 +2030,7 @@ See NotifyNewBlockTemplateRequestMessage
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | txIDs | [string](#string) | repeated |  |
+| includeTransactions | [bool](#bool) |  |  |
 
 
 

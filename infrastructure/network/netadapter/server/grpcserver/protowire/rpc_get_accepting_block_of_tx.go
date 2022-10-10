@@ -14,7 +14,8 @@ func (x *KaspadMessage_GetAcceptingBlockOfTxRequest) toAppMessage() (appmessage.
 
 func (x *KaspadMessage_GetAcceptingBlockOfTxRequest) fromAppMessage(message *appmessage.GetAcceptingBlockOfTxRequestMessage) error {
 	x.GetAcceptingBlockOfTxRequest = &GetAcceptingBlockOfTxRequestMessage{
-		TxID: message.TxID,
+		TxID:                message.TxID,
+		IncludeTransactions: message.IncludeTransactions,
 	}
 	return nil
 }
@@ -24,7 +25,8 @@ func (x *GetAcceptingBlockOfTxRequestMessage) toAppMessage() (appmessage.Message
 		return nil, errors.Wrapf(errorNil, "GetAcceptingBlockOfTxRequestMessage is nil")
 	}
 	return &appmessage.GetAcceptingBlockOfTxRequestMessage{
-		TxID: x.TxID,
+		TxID:                x.TxID,
+		IncludeTransactions: x.IncludeTransactions,
 	}, nil
 }
 
@@ -42,7 +44,7 @@ func (x *KaspadMessage_GetAcceptingBlockOfTxResponse) fromAppMessage(message *ap
 		rpcErr = &RPCError{Message: message.Error.Message}
 	}
 	rpcBlock := &RpcBlock{}
-	
+
 	err := rpcBlock.fromAppMessage(message.Block)
 	if err != nil {
 		return err
@@ -75,7 +77,7 @@ func (x *GetAcceptingBlockOfTxResponseMessage) toAppMessage() (appmessage.Messag
 	}
 
 	return &appmessage.GetAcceptingBlockOfTxResponseMessage{
-		Block:  appBlock,
+		Block: appBlock,
 		Error: rpcErr,
 	}, nil
 }

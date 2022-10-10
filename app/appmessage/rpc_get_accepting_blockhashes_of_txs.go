@@ -3,8 +3,8 @@ package appmessage
 // TxIDBlockHashPair is an appmessage corresponding to
 // its respective RPC message
 type TxIDBlockHashPair struct {
-	TxID      string
-	Hash 	  string
+	TxID string
+	Hash string
 }
 
 // GetAcceptingBlockHashesOfTxsRequestMessage is an appmessage corresponding to

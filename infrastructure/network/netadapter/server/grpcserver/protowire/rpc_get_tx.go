@@ -43,7 +43,7 @@ func (x *KaspadMessage_GetTxResponse) fromAppMessage(message *appmessage.GetTxRe
 	}
 	rpcTransaction := &RpcTransaction{}
 	rpcTransaction.fromAppMessage(message.Transaction)
-	
+
 	x.GetTxResponse = &GetTxResponseMessage{
 		Transaction: rpcTransaction,
 
@@ -72,7 +72,7 @@ func (x *GetTxResponseMessage) toAppMessage() (appmessage.Message, error) {
 	}
 
 	return &appmessage.GetTxResponseMessage{
-		Transaction:  appTransaction,
-		Error: rpcErr,
+		Transaction: appTransaction,
+		Error:       rpcErr,
 	}, nil
 }

@@ -19,6 +19,9 @@ type TxIDsToBlockHashes map[*externalapi.DomainTransactionID]*externalapi.Domain
 //TxIDsToBlocks is a map of TxIDs to corrospnding blocks
 type TxIDsToBlocks map[*externalapi.DomainTransactionID]*externalapi.DomainBlock
 
+//TxIDsToConfirmations is a map of TxIDs to corrospnding Confirmations
+type TxIDsToConfirmations map[*externalapi.DomainTransactionID]int64
+
 // ConvertDomainHashToString converts the given DomainHash to a string
 func ConvertDomainHashToString(blockHash *externalapi.DomainHash) string {
 	return hex.EncodeToString(blockHash.ByteSlice())

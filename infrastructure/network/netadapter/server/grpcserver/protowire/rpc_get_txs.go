@@ -46,7 +46,7 @@ func (x *KaspadMessage_GetTxsResponse) fromAppMessage(message *appmessage.GetTxs
 	for i := range rpcTransactions {
 		rpcTransactions[i].fromAppMessage(message.Transactions[i])
 	}
-	
+
 	x.GetTxsResponse = &GetTxsResponseMessage{
 		Transactions: rpcTransactions,
 
@@ -78,7 +78,7 @@ func (x *GetTxsResponseMessage) toAppMessage() (appmessage.Message, error) {
 	}
 
 	return &appmessage.GetTxsResponseMessage{
-		Transactions:  appTransactions,
-		Error: rpcErr,
+		Transactions: appTransactions,
+		Error:        rpcErr,
 	}, nil
 }
