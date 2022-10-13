@@ -2,43 +2,42 @@ package txindex
 
 import (
 	"encoding/binary"
-	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
-	"github.com/pkg/errors"
-	"io"
 	"math/rand"
 	"testing"
+
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 )
 
-func Test_serializeHashes(t *testing.T) {
+func Test_serializeTxIndexData(t *testing.T) {
 	r := rand.New(rand.NewSource(0))
 
-	for length := 0; length < 32; length++ {
-		hashes := make([]*externalapi.DomainHash, length)
-		for i := range hashes {
-			var hashBytes [32]byte
-			r.Read(hashBytes[:])
-			hashes[i] = externalapi.NewDomainHashFromByteArray(&hashBytes)
-		}
-		result, err := deserializeHashes(serializeHashes(hashes))
-		if err != nil {
-			t.Fatalf("Failed deserializing hashes: %v", err)
-		}
-		if !externalapi.HashesEqual(hashes, result) {
-			t.Fatalf("Expected \n %s \n==\n %s\n", hashes, result)
-		}
+	serializedtxIndex := make([]byte, 68) // 32 bytes including block hash 32 bytes accepting blockhash and 4 bytes uint32
+	r.Read(serializedtxIndex[:])
+	includingBlockHash, err := externalapi.NewDomainHashFromByteSlice(serializedtxIndex[:32])
+	if err != nil {
+		t.Fatalf(err.Error())
 	}
-}
+	acceptingBlockHash, err := externalapi.NewDomainHashFromByteSlice(serializedtxIndex[32:64])
+	if err != nil {
+		t.Fatalf(err.Error())
+	}
+	includingIndex := binary.BigEndian.Uint32(serializedtxIndex[64:68])
 
-func Test_deserializeHashesFailure(t *testing.T) {
-	hashes := []*externalapi.DomainHash{
-		externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{1}),
-		externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{2}),
-		externalapi.NewDomainHashFromByteArray(&[externalapi.DomainHashSize]byte{3}),
+	testdeserializedtxIndex := &TxData{
+		IncludingBlockHash: includingBlockHash,
+		AcceptingBlockHash: acceptingBlockHash,
+		IncludingIndex:     includingIndex,
 	}
-	serialized := serializeHashes(hashes)
-	binary.LittleEndian.PutUint64(serialized[:8], uint64(len(hashes)+1))
-	_, err := deserializeHashes(serialized)
-	if !errors.Is(err, io.ErrUnexpectedEOF) {
-		t.Fatalf("Expected error to be EOF, instead got: %v", err)
+
+	result, err := deserializeTxIndexData(serializeTxIndexData(testdeserializedtxIndex))
+	if err != nil {
+		t.Fatalf("Failed deserializing txIndexData: %v", err)
+	}
+	if !testdeserializedtxIndex.IncludingBlockHash.Equal(result.IncludingBlockHash) {
+		t.Fatalf("Expected including block hash: \n %s \n Got: \n %s\n", testdeserializedtxIndex.IncludingBlockHash.String(), result.IncludingBlockHash.String())
+	} else if !testdeserializedtxIndex.AcceptingBlockHash.Equal(result.AcceptingBlockHash) {
+		t.Fatalf("Expected accepting block hash \n %s \n Got: \n %s\n", testdeserializedtxIndex.AcceptingBlockHash.String(), result.AcceptingBlockHash.String())
+	} else if testdeserializedtxIndex.IncludingIndex != result.IncludingIndex {
+		t.Fatalf("Expected including index \n %d \n Got: \n %d\n", testdeserializedtxIndex.IncludingIndex, result.IncludingIndex)
 	}
 }

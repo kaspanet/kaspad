@@ -13,8 +13,8 @@ var pruningPointKey = database.MakeBucket([]byte("")).Key([]byte("tx-index-prunn
 
 type txIndexStore struct {
 	database       database.Database
-	toAdd          map[externalapi.DomainTransactionID]*externalapi.DomainHash
-	toRemove       map[externalapi.DomainTransactionID]*externalapi.DomainHash
+	toAdd          map[externalapi.DomainTransactionID]*TxData
+	toRemove       map[externalapi.DomainTransactionID]*TxData
 	virtualParents []*externalapi.DomainHash
 	pruningPoint   *externalapi.DomainHash
 }
@@ -22,8 +22,8 @@ type txIndexStore struct {
 func newTXIndexStore(database database.Database) *txIndexStore {
 	return &txIndexStore{
 		database:       database,
-		toAdd:          make(map[externalapi.DomainTransactionID]*externalapi.DomainHash),
-		toRemove:       make(map[externalapi.DomainTransactionID]*externalapi.DomainHash),
+		toAdd:          make(map[externalapi.DomainTransactionID]*TxData),
+		toRemove:       make(map[externalapi.DomainTransactionID]*TxData),
 		virtualParents: nil,
 		pruningPoint:   nil,
 	}
@@ -60,22 +60,32 @@ func (tis *txIndexStore) deleteAll() error {
 	return nil
 }
 
-func (tis *txIndexStore) add(txID externalapi.DomainTransactionID, blockHash *externalapi.DomainHash) {
-	log.Tracef("Adding %s Txs from blockHash %s", txID.String(), ConvertDomainHashToString(blockHash))
+func (tis *txIndexStore) add(txID externalapi.DomainTransactionID, includingIndex uint32,
+	includingBlockHash *externalapi.DomainHash, acceptingBlockHash *externalapi.DomainHash) {
+	log.Tracef("Adding %s Txs from blockHash %s", txID.String(), includingBlockHash.String())
 	delete(tis.toRemove, txID) //adding takes precedence
-	tis.toAdd[txID] = blockHash
+	tis.toAdd[txID] = &TxData{
+		IncludingBlockHash: includingBlockHash,
+		IncludingIndex:     includingIndex,
+		AcceptingBlockHash: acceptingBlockHash,
+	}
 }
 
-func (tis *txIndexStore) remove(txID externalapi.DomainTransactionID, blockHash *externalapi.DomainHash) {
-	log.Tracef("Removing %s Txs from blockHash %s", txID.String(), ConvertDomainHashToString(blockHash))
+func (tis *txIndexStore) remove(txID externalapi.DomainTransactionID, includingIndex uint32,
+	includingBlockHash *externalapi.DomainHash, acceptingBlockHash *externalapi.DomainHash) {
+	log.Tracef("Removing %s Txs from blockHash %s", txID.String(), includingBlockHash.String())
 	if _, found := tis.toAdd[txID]; !found { //adding takes precedence
-		tis.toRemove[txID] = blockHash
+		tis.toRemove[txID] = &TxData{
+			IncludingBlockHash: includingBlockHash,
+			IncludingIndex:     includingIndex,
+			AcceptingBlockHash: acceptingBlockHash,
+		}
 	}
 }
 
 func (tis *txIndexStore) discardAllButPruningPoint() {
-	tis.toAdd = make(map[externalapi.DomainTransactionID]*externalapi.DomainHash)
-	tis.toRemove = make(map[externalapi.DomainTransactionID]*externalapi.DomainHash)
+	tis.toAdd = make(map[externalapi.DomainTransactionID]*TxData)
+	tis.toRemove = make(map[externalapi.DomainTransactionID]*TxData)
 	tis.virtualParents = nil
 }
 
@@ -90,10 +100,10 @@ func (tis *txIndexStore) commit() error {
 
 	defer dbTransaction.RollbackUnlessClosed()
 
-	for toAddTxID, blockHash := range tis.toAdd {
+	for toAddTxID, txData := range tis.toAdd {
 		delete(tis.toRemove, toAddTxID) //safeguard
 		key := tis.convertTxIDToKey(txAcceptedIndexBucket, toAddTxID)
-		dbTransaction.Put(key, blockHash.ByteSlice())
+		dbTransaction.Put(key, serializeTxIndexData(txData))
 		if err != nil {
 			return err
 		}
@@ -138,10 +148,10 @@ func (tis *txIndexStore) updateAndCommitPruningPointWithoutTransaction(pruningPo
 }
 
 func (tis *txIndexStore) commitTxIDsWithoutTransaction() error {
-	for txID, blockHash := range tis.toAdd {
+	for txID, txData := range tis.toAdd {
 		delete(tis.toRemove, txID) //adding takes precedence
 		key := tis.convertTxIDToKey(txAcceptedIndexBucket, txID)
-		err := tis.database.Put(key, blockHash.ByteSlice())
+		err := tis.database.Put(key, serializeTxIndexData(txData))
 		if err != nil {
 			return err
 		}
@@ -189,18 +199,18 @@ func (tis *txIndexStore) convertTxIDToKey(bucket *database.Bucket, txID external
 }
 
 func (tis *txIndexStore) stagedData() (
-	toAdd map[externalapi.DomainTransactionID]*externalapi.DomainHash,
-	toRemove map[externalapi.DomainTransactionID]*externalapi.DomainHash,
+	toAdd map[externalapi.DomainTransactionID]*TxData,
+	toRemove map[externalapi.DomainTransactionID]*TxData,
 	virtualParents []*externalapi.DomainHash,
 	pruningPoint *externalapi.DomainHash) {
-	toAddClone := make(map[externalapi.DomainTransactionID]*externalapi.DomainHash)
-	toRemoveClone := make(map[externalapi.DomainTransactionID]*externalapi.DomainHash)
-	for txID, blockHash := range tis.toAdd {
-		toAddClone[txID] = blockHash
+	toAddClone := make(map[externalapi.DomainTransactionID]*TxData)
+	toRemoveClone := make(map[externalapi.DomainTransactionID]*TxData)
+	for txID, txData := range tis.toAdd {
+		toAddClone[txID] = txData
 
 	}
-	for txID, blockHash := range tis.toRemove {
-		toRemoveClone[txID] = blockHash
+	for txID, txData := range tis.toRemove {
+		toRemoveClone[txID] = txData
 	}
 	return toAddClone, toRemoveClone, tis.virtualParents, tis.pruningPoint
 }
@@ -209,14 +219,14 @@ func (tis *txIndexStore) isAnythingStaged() bool {
 	return len(tis.toAdd) > 0 || len(tis.toRemove) > 0
 }
 
-func (tis *txIndexStore) getTxAcceptingBlockHash(txID *externalapi.DomainTransactionID) (blockHash *externalapi.DomainHash, found bool, err error) {
+func (tis *txIndexStore) getTxData(txID *externalapi.DomainTransactionID) (txData *TxData, found bool, err error) {
 
 	if tis.isAnythingStaged() {
 		return nil, false, errors.Errorf("cannot get TX accepting Block hash while staging isn't empty")
 	}
 
 	key := tis.convertTxIDToKey(txAcceptedIndexBucket, *txID)
-	serializedAcceptingBlockHash, err := tis.database.Get(key)
+	serializedTxData, err := tis.database.Get(key)
 	if err != nil {
 		if database.IsNotFoundError(err) {
 			return nil, false, nil
@@ -224,39 +234,43 @@ func (tis *txIndexStore) getTxAcceptingBlockHash(txID *externalapi.DomainTransac
 		return nil, false, err
 	}
 
-	acceptingBlockHash, err := externalapi.NewDomainHashFromByteSlice(serializedAcceptingBlockHash)
+	deserializedTxData, err := deserializeTxIndexData(serializedTxData)
 	if err != nil {
 		return nil, false, err
 	}
 
-	return acceptingBlockHash, true, nil
+	return deserializedTxData, true, nil
 }
 
-func (tis *txIndexStore) getTxAcceptingBlockHashes(txIDs []*externalapi.DomainTransactionID) (acceptingBlockHashes TxIDsToBlockHashes, found bool, err error) {
+func (tis *txIndexStore) getTxsData(txIDs []*externalapi.DomainTransactionID) (
+	txsData TxIDsToTxIndexData, notFoundTxIDs []*externalapi.DomainTransactionID, err error) {
 
 	if tis.isAnythingStaged() {
-		return nil, false, errors.Errorf("cannot get TX accepting Block hash while staging isn't empty")
+		return nil, nil, errors.Errorf("cannot get TX accepting Block hash while staging isn't empty")
 	}
 
 	keys := make([]*database.Key, len(txIDs))
 
-	acceptingBlockHashes = make(TxIDsToBlockHashes)
+	txsData = make(TxIDsToTxIndexData)
+	notFoundTxIDs = make([]*externalapi.DomainTransactionID, 0)
 
 	for i, key := range keys {
 		key = tis.convertTxIDToKey(txAcceptedIndexBucket, *txIDs[i])
-		serializedAcceptingBlockHash, err := tis.database.Get(key)
+		serializedTxData, err := tis.database.Get(key)
 		if err != nil {
 			if database.IsNotFoundError(err) {
-				continue //ignore not found errors we expect this to happen frequently with queries
+				notFoundTxIDs = append(notFoundTxIDs, txIDs[i])
+			} else {
+				return nil, nil, err
 			}
-			return nil, false, err
 		}
-		acceptingBlockHash, err := externalapi.NewDomainHashFromByteSlice(serializedAcceptingBlockHash)
+		deserializedTxData, err := deserializeTxIndexData(serializedTxData)
 		if err != nil {
-			return nil, false, err
+			return nil, nil, err
 		}
-		acceptingBlockHashes[txIDs[i]] = acceptingBlockHash
+
+		txsData[*txIDs[i]] = deserializedTxData
 	}
 
-	return acceptingBlockHashes, true, nil
+	return txsData, notFoundTxIDs, nil
 }

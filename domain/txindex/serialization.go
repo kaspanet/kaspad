@@ -2,9 +2,10 @@ package txindex
 
 import (
 	"encoding/binary"
+	"io"
+
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/pkg/errors"
-	"io"
 )
 
 func serializeHashes(hashes []*externalapi.DomainHash) []byte {
@@ -39,4 +40,34 @@ func deserializeHashes(serializedHashes []byte) ([]*externalapi.DomainHash, erro
 	}
 
 	return hashes, nil
+}
+
+func deserializeTxIndexData(serializedTxIndexData []byte) (*TxData, error) {
+	var err error
+
+	deserializedTxIndexData := &TxData{}
+	deserializedTxIndexData.IncludingBlockHash, err = externalapi.NewDomainHashFromByteSlice(serializedTxIndexData[:32])
+	if err != nil {
+		return nil, err
+	}
+	deserializedTxIndexData.AcceptingBlockHash, err = externalapi.NewDomainHashFromByteSlice(serializedTxIndexData[32:64])
+	if err != nil {
+		return nil, err
+	}
+	deserializedTxIndexData.IncludingIndex = binary.BigEndian.Uint32(serializedTxIndexData[64:68])
+
+	return deserializedTxIndexData, nil
+}
+
+func serializeTxIndexData(blockTxIndexData *TxData) []byte {
+	indexBytes := make([]byte, 4)
+	binary.BigEndian.PutUint32(indexBytes, blockTxIndexData.IncludingIndex)
+	serializedTxIndexData := append(
+		append(
+			blockTxIndexData.IncludingBlockHash.ByteSlice(),
+			blockTxIndexData.AcceptingBlockHash.ByteSlice()...,
+		),
+		indexBytes...,
+	)
+	return serializedTxIndexData
 }

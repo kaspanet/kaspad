@@ -1,43 +1,34 @@
 package txindex
 
 import (
-	"encoding/hex"
-
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 )
 
 // TXAcceptanceChange is the set of changes made to the TX index after
 // a successful update
 type TXAcceptanceChange struct {
-	Added   map[externalapi.DomainTransactionID]*externalapi.DomainHash
-	Removed map[externalapi.DomainTransactionID]*externalapi.DomainHash
+	Added   map[externalapi.DomainTransactionID]*TxData
+	Removed map[externalapi.DomainTransactionID]*TxData
 }
+
+//TxData holds tx data stored in the TXIndex database
+type TxData struct {
+	IncludingBlockHash *externalapi.DomainHash
+	AcceptingBlockHash *externalapi.DomainHash
+	IncludingIndex     uint32
+}
+
+//TxIDsToTxIndexData is a map of TxIDs to corrospnding TxIndexData
+type TxIDsToTxIndexData map[externalapi.DomainTransactionID]*TxData
 
 //TxIDsToBlockHashes is a map of TxIDs to corrospnding blockHashes
-type TxIDsToBlockHashes map[*externalapi.DomainTransactionID]*externalapi.DomainHash
+type TxIDsToBlockHashes map[externalapi.DomainTransactionID]*externalapi.DomainHash
 
 //TxIDsToBlocks is a map of TxIDs to corrospnding blocks
-type TxIDsToBlocks map[*externalapi.DomainTransactionID]*externalapi.DomainBlock
+type TxIDsToBlocks map[externalapi.DomainTransactionID]*externalapi.DomainBlock
 
 //TxIDsToConfirmations is a map of TxIDs to corrospnding Confirmations
-type TxIDsToConfirmations map[*externalapi.DomainTransactionID]int64
+type TxIDsToConfirmations map[externalapi.DomainTransactionID]int64
 
-// ConvertDomainHashToString converts the given DomainHash to a string
-func ConvertDomainHashToString(blockHash *externalapi.DomainHash) string {
-	return hex.EncodeToString(blockHash.ByteSlice())
-}
-
-// ConvertStringToDomainHash converts the given string to a domainHash
-func ConvertStringToDomainHash(stringDomainHash string) (*externalapi.DomainHash, error) {
-	return externalapi.NewDomainHashFromString(stringDomainHash)
-}
-
-// ConvertTXIDToString converts the given DomainHash to a string
-func ConvertTXIDToString(txID *externalapi.DomainTransactionID) string {
-	return hex.EncodeToString(txID.ByteSlice())
-}
-
-// ConvertStringTXID converts the given string to a domainHash
-func ConvertStringTXID(stringDomainTransactionID string) (*externalapi.DomainTransactionID, error) {
-	return externalapi.NewDomainTransactionIDFromString(stringDomainTransactionID)
-}
+//TxIDsToBlueScores is a map of TxIDs to corrospnding Confirmations
+type TxIDsToBlueScores map[externalapi.DomainTransactionID]uint64
