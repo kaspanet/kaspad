@@ -37,7 +37,7 @@ func HandleGetBlocks(context *rpccontext.Context, _ *router.Router, request appm
 			return nil, err
 		}
 
-		if !blockInfo.Exists {
+		if !blockInfo.Exists || blockInfo.BlockStatus == externalapi.StatusInvalid {
 			return &appmessage.GetBlocksResponseMessage{
 				Error: appmessage.RPCErrorf("Could not find lowHash %s", getBlocksRequest.LowHash),
 			}, nil

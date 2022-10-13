@@ -181,6 +181,10 @@ func (flow *handleIBDFlow) negotiateMissingSyncerChainSegment() (*externalapi.Do
 				return nil, nil, err
 			}
 			if info.Exists {
+				if info.BlockStatus == externalapi.StatusInvalid {
+					return nil, nil, protocolerrors.Errorf(true, "Sent invalid chain block %s", syncerChainHash)
+				}
+
 				currentHighestKnownSyncerChainHash = syncerChainHash
 				break
 			}
