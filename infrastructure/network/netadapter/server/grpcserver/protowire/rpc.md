@@ -139,6 +139,29 @@
     - [GetTxConfirmationsResponseMessage](#protowire.GetTxConfirmationsResponseMessage)
     - [GetTxsConfirmationsRequestMessage](#protowire.GetTxsConfirmationsRequestMessage)
     - [GetTxsConfirmationsResponseMessage](#protowire.GetTxsConfirmationsResponseMessage)
+    - [NotifyTxsConfirmationChangedRequstMessage](#protowire.NotifyTxsConfirmationChangedRequstMessage)
+    - [NotifyTxsConfirmationChangedResponseMessage](#protowire.NotifyTxsConfirmationChangedResponseMessage)
+    - [TxsConfirmationChangedNotficationMessage](#protowire.TxsConfirmationChangedNotficationMessage)
+    - [TxsConfirmationChangedNotficationMessage.Pending](#protowire.TxsConfirmationChangedNotficationMessage.Pending)
+    - [TxsConfirmationChangedNotficationMessage.Confirmed](#protowire.TxsConfirmationChangedNotficationMessage.Confirmed)
+    - [StopNotifyTxsConfirmationChangedRequestMessage](#protowire.StopNotifyTxsConfirmationChangedRequestMessage)
+    - [StopNotifyTxsConfirmationChangedResponseMessage](#protowire.StopNotifyTxsConfirmationChangedResponseMessage)
+    - [StartNotifyTxsConfirmationChangedRequestMessage](#protowire.StartNotifyTxsConfirmationChangedRequestMessage)
+    - [StartNotifyTxsConfirmationChangedResponseMessage](#protowire.StartNotifyTxsConfirmationChangedResponseMessage)
+    - [ChangeNotifyTxsConfirmationChangedRequiredConfirmationsRequestMessage](#protowire.ChangeNotifyTxsConfirmationChangedRequiredConfirmationsRequestMessage)
+    - [ChangeNotifyTxsConfirmationChangedRequiredConfirmationsResponseMessage](#protowire.ChangeNotifyTxsConfirmationChangedRequiredConfirmationsResponseMessage)
+    - [TxEntryByAddress](#protowire.TxEntryByAddress)
+    - [NotifyTxListenerRequestMessage](#protowire.NotifyTxListenerRequestMessage)
+    - [NotifyTxListenerResponseMessage](#protowire.NotifyTxListenerResponseMessage)
+    - [StopNotifyTxListenerRequestMessage](#protowire.StopNotifyTxListenerRequestMessage)
+    - [StopNotifyTxListenerResponseMessage](#protowire.StopNotifyTxListenerResponseMessage)
+    - [StartNotifyTxListenerRequestMessage](#protowire.StartNotifyTxListenerRequestMessage)
+    - [StartNotifyTxListenerResponseMessage](#protowire.StartNotifyTxListenerResponseMessage)
+    - [ChangeNotifyTxListenerRequiredConfirmationsRequestMessage](#protowire.ChangeNotifyTxListenerRequiredConfirmationsRequestMessage)
+    - [ChangeNotifyTxListenerRequiredConfirmationsResponseMessage](#protowire.ChangeNotifyTxListenerRequiredConfirmationsResponseMessage)
+    - [TxListenerNotificationMessage](#protowire.TxListenerNotificationMessage)
+    - [TxListenerNotificationMessage.Pending](#protowire.TxListenerNotificationMessage.Pending)
+    - [TxListenerNotificationMessage.Confirmed](#protowire.TxListenerNotificationMessage.Confirmed)
   
     - [SubmitBlockResponseMessage.RejectReason](#protowire.SubmitBlockResponseMessage.RejectReason)
   
@@ -2303,6 +2326,323 @@ See NotifyNewBlockTemplateRequestMessage
 | ----- | ---- | ----- | ----------- |
 | txIDConfirmationsPairs | [RpcTxIDConfirmationsPair](#protowire.RpcTxIDConfirmationsPair) | repeated |  |
 | error | [RPCError](#protowire.RPCError) |  |  |
+
+
+
+
+
+
+<a name="protowire.NotifyTxsConfirmationChangedRequstMessage"></a>
+
+### NotifyTxsConfirmationChangedRequstMessage
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| TxIDs | [string](#string) | repeated |  |
+| requiredConfirmations | [uint32](#uint32) |  |  |
+| includePending | [bool](#bool) |  |  |
+
+
+
+
+
+
+<a name="protowire.NotifyTxsConfirmationChangedResponseMessage"></a>
+
+### NotifyTxsConfirmationChangedResponseMessage
+
+
+
+
+
+
+
+<a name="protowire.TxsConfirmationChangedNotficationMessage"></a>
+
+### TxsConfirmationChangedNotficationMessage
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| pending | [TxsConfirmationChangedNotficationMessage.Pending](#protowire.TxsConfirmationChangedNotficationMessage.Pending) | repeated |  |
+| confirmed | [TxsConfirmationChangedNotficationMessage.Confirmed](#protowire.TxsConfirmationChangedNotficationMessage.Confirmed) | repeated |  |
+| error | [RPCError](#protowire.RPCError) |  |  |
+
+
+
+
+
+
+<a name="protowire.TxsConfirmationChangedNotficationMessage.Pending"></a>
+
+### TxsConfirmationChangedNotficationMessage.Pending
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| txIDConfirmationsPairs | [RpcTxIDConfirmationsPair](#protowire.RpcTxIDConfirmationsPair) | repeated |  |
+
+
+
+
+
+
+<a name="protowire.TxsConfirmationChangedNotficationMessage.Confirmed"></a>
+
+### TxsConfirmationChangedNotficationMessage.Confirmed
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| txIDConfirmationsPairs | [RpcTxIDConfirmationsPair](#protowire.RpcTxIDConfirmationsPair) | repeated |  |
+
+
+
+
+
+
+<a name="protowire.StopNotifyTxsConfirmationChangedRequestMessage"></a>
+
+### StopNotifyTxsConfirmationChangedRequestMessage
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| TxIDs | [string](#string) | repeated |  |
+
+
+
+
+
+
+<a name="protowire.StopNotifyTxsConfirmationChangedResponseMessage"></a>
+
+### StopNotifyTxsConfirmationChangedResponseMessage
+
+
+
+
+
+
+
+<a name="protowire.StartNotifyTxsConfirmationChangedRequestMessage"></a>
+
+### StartNotifyTxsConfirmationChangedRequestMessage
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| TxIDs | [string](#string) | repeated |  |
+
+
+
+
+
+
+<a name="protowire.StartNotifyTxsConfirmationChangedResponseMessage"></a>
+
+### StartNotifyTxsConfirmationChangedResponseMessage
+
+
+
+
+
+
+
+<a name="protowire.ChangeNotifyTxsConfirmationChangedRequiredConfirmationsRequestMessage"></a>
+
+### ChangeNotifyTxsConfirmationChangedRequiredConfirmationsRequestMessage
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| requiredConfirmations | [uint32](#uint32) |  |  |
+
+
+
+
+
+
+<a name="protowire.ChangeNotifyTxsConfirmationChangedRequiredConfirmationsResponseMessage"></a>
+
+### ChangeNotifyTxsConfirmationChangedRequiredConfirmationsResponseMessage
+
+
+
+
+
+
+
+<a name="protowire.TxEntryByAddress"></a>
+
+### TxEntryByAddress
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| address | [string](#string) |  |  |
+| txId | [string](#string) |  |  |
+| confirmations | [uint32](#uint32) |  |  |
+
+
+
+
+
+
+<a name="protowire.NotifyTxListenerRequestMessage"></a>
+
+### NotifyTxListenerRequestMessage
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| addresses | [string](#string) | repeated |  |
+| requiredConfirmations | [uint32](#uint32) |  |  |
+| includePending | [bool](#bool) |  |  |
+
+
+
+
+
+
+<a name="protowire.NotifyTxListenerResponseMessage"></a>
+
+### NotifyTxListenerResponseMessage
+
+
+
+
+
+
+
+<a name="protowire.StopNotifyTxListenerRequestMessage"></a>
+
+### StopNotifyTxListenerRequestMessage
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| addresses | [string](#string) | repeated |  |
+
+
+
+
+
+
+<a name="protowire.StopNotifyTxListenerResponseMessage"></a>
+
+### StopNotifyTxListenerResponseMessage
+
+
+
+
+
+
+
+<a name="protowire.StartNotifyTxListenerRequestMessage"></a>
+
+### StartNotifyTxListenerRequestMessage
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| addresses | [string](#string) | repeated |  |
+
+
+
+
+
+
+<a name="protowire.StartNotifyTxListenerResponseMessage"></a>
+
+### StartNotifyTxListenerResponseMessage
+
+
+
+
+
+
+
+<a name="protowire.ChangeNotifyTxListenerRequiredConfirmationsRequestMessage"></a>
+
+### ChangeNotifyTxListenerRequiredConfirmationsRequestMessage
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| requiredConfirmations | [uint32](#uint32) |  |  |
+
+
+
+
+
+
+<a name="protowire.ChangeNotifyTxListenerRequiredConfirmationsResponseMessage"></a>
+
+### ChangeNotifyTxListenerRequiredConfirmationsResponseMessage
+
+
+
+
+
+
+
+<a name="protowire.TxListenerNotificationMessage"></a>
+
+### TxListenerNotificationMessage
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| pending | [TxListenerNotificationMessage.Pending](#protowire.TxListenerNotificationMessage.Pending) |  |  |
+| confirmed | [TxListenerNotificationMessage.Confirmed](#protowire.TxListenerNotificationMessage.Confirmed) |  |  |
+
+
+
+
+
+
+<a name="protowire.TxListenerNotificationMessage.Pending"></a>
+
+### TxListenerNotificationMessage.Pending
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| sent | [TxEntryByAddress](#protowire.TxEntryByAddress) | repeated |  |
+| received | [TxEntryByAddress](#protowire.TxEntryByAddress) | repeated |  |
+
+
+
+
+
+
+<a name="protowire.TxListenerNotificationMessage.Confirmed"></a>
+
+### TxListenerNotificationMessage.Confirmed
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| requiredConfirmations | [uint32](#uint32) |  |  |
+| sent | [TxEntryByAddress](#protowire.TxEntryByAddress) | repeated |  |
+| received | [TxEntryByAddress](#protowire.TxEntryByAddress) | repeated |  |
 
 
 

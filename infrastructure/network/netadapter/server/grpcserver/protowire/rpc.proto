@@ -864,3 +864,105 @@ message GetTxsConfirmationsResponseMessage{
 
         RPCError error = 1000;
 }
+
+message NotifyTxsConfirmationChangedRequstMessage{
+        repeated string TxIDs = 1;
+        uint32 requiredConfirmations = 2;
+        bool includePending = 3;        
+}
+
+message NotifyTxsConfirmationChangedResponseMessage{
+   
+}
+
+message TxsConfirmationChangedNotficationMessage{
+        message Pending{
+                repeated RpcTxIDConfirmationsPair txIDConfirmationsPairs = 1; 
+        }
+        message Confirmed{
+                repeated RpcTxIDConfirmationsPair txIDConfirmationsPairs = 1;       
+        }
+        repeated Pending pending = 1; 
+        repeated Confirmed confirmed = 2; 
+
+        RPCError error = 1000;
+}
+
+message StopNotifyTxsConfirmationChangedRequestMessage{
+        repeated string TxIDs = 1;
+}
+
+message StopNotifyTxsConfirmationChangedResponseMessage{
+
+}
+
+message StartNotifyTxsConfirmationChangedRequestMessage{
+        repeated string TxIDs = 1;
+}
+
+message StartNotifyTxsConfirmationChangedResponseMessage{
+
+}
+
+message ChangeNotifyTxsConfirmationChangedRequiredConfirmationsRequestMessage{
+        uint32 requiredConfirmations = 1;
+}
+
+message ChangeNotifyTxsConfirmationChangedRequiredConfirmationsResponseMessage{
+
+}
+
+message TxEntryByAddress{
+        string address = 1;
+        string txId = 2;
+        uint32 confirmations = 3;
+      }
+
+message NotifyTxListenerRequestMessage{
+        repeated string addresses = 1;
+        uint32 requiredConfirmations = 2;
+        bool includePending = 3;
+}
+
+message NotifyTxListenerResponseMessage{
+
+}
+
+message StopNotifyTxListenerRequestMessage{
+        repeated string addresses = 1;
+}
+
+message StopNotifyTxListenerResponseMessage{
+
+}
+
+message StartNotifyTxListenerRequestMessage{
+        repeated string addresses = 1;
+}
+
+message StartNotifyTxListenerResponseMessage{
+
+}
+
+
+message ChangeNotifyTxListenerRequiredConfirmationsRequestMessage{
+        uint32 requiredConfirmations = 1;
+}
+
+message ChangeNotifyTxListenerRequiredConfirmationsResponseMessage{
+
+}
+
+message TxListenerNotificationMessage{
+        message Pending{
+                repeated TxEntryByAddress sent = 1; 
+                repeated TxEntryByAddress received = 2; 
+        }
+        message Confirmed{
+                uint32 requiredConfirmations = 1;
+                repeated TxEntryByAddress sent = 2; 
+                repeated TxEntryByAddress received = 3; 
+        }
+        Pending pending = 1;
+        Confirmed confirmed = 2;
+}

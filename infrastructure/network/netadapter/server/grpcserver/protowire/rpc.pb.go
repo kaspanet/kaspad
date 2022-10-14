@@ -7534,6 +7534,1111 @@ func (x *GetTxsConfirmationsResponseMessage) GetError() *RPCError {
 	return nil
 }
 
+type NotifyTxsConfirmationChangedRequstMessage struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	TxIDs                 []string `protobuf:"bytes,1,rep,name=TxIDs,proto3" json:"TxIDs,omitempty"`
+	RequiredConfirmations uint32   `protobuf:"varint,2,opt,name=requiredConfirmations,proto3" json:"requiredConfirmations,omitempty"`
+	IncludePending        bool     `protobuf:"varint,3,opt,name=includePending,proto3" json:"includePending,omitempty"`
+}
+
+func (x *NotifyTxsConfirmationChangedRequstMessage) Reset() {
+	*x = NotifyTxsConfirmationChangedRequstMessage{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_rpc_proto_msgTypes[135]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *NotifyTxsConfirmationChangedRequstMessage) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*NotifyTxsConfirmationChangedRequstMessage) ProtoMessage() {}
+
+func (x *NotifyTxsConfirmationChangedRequstMessage) ProtoReflect() protoreflect.Message {
+	mi := &file_rpc_proto_msgTypes[135]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use NotifyTxsConfirmationChangedRequstMessage.ProtoReflect.Descriptor instead.
+func (*NotifyTxsConfirmationChangedRequstMessage) Descriptor() ([]byte, []int) {
+	return file_rpc_proto_rawDescGZIP(), []int{135}
+}
+
+func (x *NotifyTxsConfirmationChangedRequstMessage) GetTxIDs() []string {
+	if x != nil {
+		return x.TxIDs
+	}
+	return nil
+}
+
+func (x *NotifyTxsConfirmationChangedRequstMessage) GetRequiredConfirmations() uint32 {
+	if x != nil {
+		return x.RequiredConfirmations
+	}
+	return 0
+}
+
+func (x *NotifyTxsConfirmationChangedRequstMessage) GetIncludePending() bool {
+	if x != nil {
+		return x.IncludePending
+	}
+	return false
+}
+
+type NotifyTxsConfirmationChangedResponseMessage struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+}
+
+func (x *NotifyTxsConfirmationChangedResponseMessage) Reset() {
+	*x = NotifyTxsConfirmationChangedResponseMessage{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_rpc_proto_msgTypes[136]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *NotifyTxsConfirmationChangedResponseMessage) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*NotifyTxsConfirmationChangedResponseMessage) ProtoMessage() {}
+
+func (x *NotifyTxsConfirmationChangedResponseMessage) ProtoReflect() protoreflect.Message {
+	mi := &file_rpc_proto_msgTypes[136]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use NotifyTxsConfirmationChangedResponseMessage.ProtoReflect.Descriptor instead.
+func (*NotifyTxsConfirmationChangedResponseMessage) Descriptor() ([]byte, []int) {
+	return file_rpc_proto_rawDescGZIP(), []int{136}
+}
+
+type TxsConfirmationChangedNotficationMessage struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Pending   []*TxsConfirmationChangedNotficationMessage_Pending   `protobuf:"bytes,1,rep,name=pending,proto3" json:"pending,omitempty"`
+	Confirmed []*TxsConfirmationChangedNotficationMessage_Confirmed `protobuf:"bytes,2,rep,name=confirmed,proto3" json:"confirmed,omitempty"`
+	Error     *RPCError                                             `protobuf:"bytes,1000,opt,name=error,proto3" json:"error,omitempty"`
+}
+
+func (x *TxsConfirmationChangedNotficationMessage) Reset() {
+	*x = TxsConfirmationChangedNotficationMessage{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_rpc_proto_msgTypes[137]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *TxsConfirmationChangedNotficationMessage) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*TxsConfirmationChangedNotficationMessage) ProtoMessage() {}
+
+func (x *TxsConfirmationChangedNotficationMessage) ProtoReflect() protoreflect.Message {
+	mi := &file_rpc_proto_msgTypes[137]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use TxsConfirmationChangedNotficationMessage.ProtoReflect.Descriptor instead.
+func (*TxsConfirmationChangedNotficationMessage) Descriptor() ([]byte, []int) {
+	return file_rpc_proto_rawDescGZIP(), []int{137}
+}
+
+func (x *TxsConfirmationChangedNotficationMessage) GetPending() []*TxsConfirmationChangedNotficationMessage_Pending {
+	if x != nil {
+		return x.Pending
+	}
+	return nil
+}
+
+func (x *TxsConfirmationChangedNotficationMessage) GetConfirmed() []*TxsConfirmationChangedNotficationMessage_Confirmed {
+	if x != nil {
+		return x.Confirmed
+	}
+	return nil
+}
+
+func (x *TxsConfirmationChangedNotficationMessage) GetError() *RPCError {
+	if x != nil {
+		return x.Error
+	}
+	return nil
+}
+
+type StopNotifyTxsConfirmationChangedRequestMessage struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	TxIDs []string `protobuf:"bytes,1,rep,name=TxIDs,proto3" json:"TxIDs,omitempty"`
+}
+
+func (x *StopNotifyTxsConfirmationChangedRequestMessage) Reset() {
+	*x = StopNotifyTxsConfirmationChangedRequestMessage{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_rpc_proto_msgTypes[138]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *StopNotifyTxsConfirmationChangedRequestMessage) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*StopNotifyTxsConfirmationChangedRequestMessage) ProtoMessage() {}
+
+func (x *StopNotifyTxsConfirmationChangedRequestMessage) ProtoReflect() protoreflect.Message {
+	mi := &file_rpc_proto_msgTypes[138]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use StopNotifyTxsConfirmationChangedRequestMessage.ProtoReflect.Descriptor instead.
+func (*StopNotifyTxsConfirmationChangedRequestMessage) Descriptor() ([]byte, []int) {
+	return file_rpc_proto_rawDescGZIP(), []int{138}
+}
+
+func (x *StopNotifyTxsConfirmationChangedRequestMessage) GetTxIDs() []string {
+	if x != nil {
+		return x.TxIDs
+	}
+	return nil
+}
+
+type StopNotifyTxsConfirmationChangedResponseMessage struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+}
+
+func (x *StopNotifyTxsConfirmationChangedResponseMessage) Reset() {
+	*x = StopNotifyTxsConfirmationChangedResponseMessage{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_rpc_proto_msgTypes[139]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *StopNotifyTxsConfirmationChangedResponseMessage) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*StopNotifyTxsConfirmationChangedResponseMessage) ProtoMessage() {}
+
+func (x *StopNotifyTxsConfirmationChangedResponseMessage) ProtoReflect() protoreflect.Message {
+	mi := &file_rpc_proto_msgTypes[139]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use StopNotifyTxsConfirmationChangedResponseMessage.ProtoReflect.Descriptor instead.
+func (*StopNotifyTxsConfirmationChangedResponseMessage) Descriptor() ([]byte, []int) {
+	return file_rpc_proto_rawDescGZIP(), []int{139}
+}
+
+type StartNotifyTxsConfirmationChangedRequestMessage struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	TxIDs []string `protobuf:"bytes,1,rep,name=TxIDs,proto3" json:"TxIDs,omitempty"`
+}
+
+func (x *StartNotifyTxsConfirmationChangedRequestMessage) Reset() {
+	*x = StartNotifyTxsConfirmationChangedRequestMessage{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_rpc_proto_msgTypes[140]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *StartNotifyTxsConfirmationChangedRequestMessage) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*StartNotifyTxsConfirmationChangedRequestMessage) ProtoMessage() {}
+
+func (x *StartNotifyTxsConfirmationChangedRequestMessage) ProtoReflect() protoreflect.Message {
+	mi := &file_rpc_proto_msgTypes[140]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use StartNotifyTxsConfirmationChangedRequestMessage.ProtoReflect.Descriptor instead.
+func (*StartNotifyTxsConfirmationChangedRequestMessage) Descriptor() ([]byte, []int) {
+	return file_rpc_proto_rawDescGZIP(), []int{140}
+}
+
+func (x *StartNotifyTxsConfirmationChangedRequestMessage) GetTxIDs() []string {
+	if x != nil {
+		return x.TxIDs
+	}
+	return nil
+}
+
+type StartNotifyTxsConfirmationChangedResponseMessage struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+}
+
+func (x *StartNotifyTxsConfirmationChangedResponseMessage) Reset() {
+	*x = StartNotifyTxsConfirmationChangedResponseMessage{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_rpc_proto_msgTypes[141]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *StartNotifyTxsConfirmationChangedResponseMessage) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*StartNotifyTxsConfirmationChangedResponseMessage) ProtoMessage() {}
+
+func (x *StartNotifyTxsConfirmationChangedResponseMessage) ProtoReflect() protoreflect.Message {
+	mi := &file_rpc_proto_msgTypes[141]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use StartNotifyTxsConfirmationChangedResponseMessage.ProtoReflect.Descriptor instead.
+func (*StartNotifyTxsConfirmationChangedResponseMessage) Descriptor() ([]byte, []int) {
+	return file_rpc_proto_rawDescGZIP(), []int{141}
+}
+
+type ChangeNotifyTxsConfirmationChangedRequiredConfirmationsRequestMessage struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	RequiredConfirmations uint32 `protobuf:"varint,1,opt,name=requiredConfirmations,proto3" json:"requiredConfirmations,omitempty"`
+}
+
+func (x *ChangeNotifyTxsConfirmationChangedRequiredConfirmationsRequestMessage) Reset() {
+	*x = ChangeNotifyTxsConfirmationChangedRequiredConfirmationsRequestMessage{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_rpc_proto_msgTypes[142]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *ChangeNotifyTxsConfirmationChangedRequiredConfirmationsRequestMessage) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ChangeNotifyTxsConfirmationChangedRequiredConfirmationsRequestMessage) ProtoMessage() {}
+
+func (x *ChangeNotifyTxsConfirmationChangedRequiredConfirmationsRequestMessage) ProtoReflect() protoreflect.Message {
+	mi := &file_rpc_proto_msgTypes[142]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ChangeNotifyTxsConfirmationChangedRequiredConfirmationsRequestMessage.ProtoReflect.Descriptor instead.
+func (*ChangeNotifyTxsConfirmationChangedRequiredConfirmationsRequestMessage) Descriptor() ([]byte, []int) {
+	return file_rpc_proto_rawDescGZIP(), []int{142}
+}
+
+func (x *ChangeNotifyTxsConfirmationChangedRequiredConfirmationsRequestMessage) GetRequiredConfirmations() uint32 {
+	if x != nil {
+		return x.RequiredConfirmations
+	}
+	return 0
+}
+
+type ChangeNotifyTxsConfirmationChangedRequiredConfirmationsResponseMessage struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+}
+
+func (x *ChangeNotifyTxsConfirmationChangedRequiredConfirmationsResponseMessage) Reset() {
+	*x = ChangeNotifyTxsConfirmationChangedRequiredConfirmationsResponseMessage{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_rpc_proto_msgTypes[143]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *ChangeNotifyTxsConfirmationChangedRequiredConfirmationsResponseMessage) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ChangeNotifyTxsConfirmationChangedRequiredConfirmationsResponseMessage) ProtoMessage() {}
+
+func (x *ChangeNotifyTxsConfirmationChangedRequiredConfirmationsResponseMessage) ProtoReflect() protoreflect.Message {
+	mi := &file_rpc_proto_msgTypes[143]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ChangeNotifyTxsConfirmationChangedRequiredConfirmationsResponseMessage.ProtoReflect.Descriptor instead.
+func (*ChangeNotifyTxsConfirmationChangedRequiredConfirmationsResponseMessage) Descriptor() ([]byte, []int) {
+	return file_rpc_proto_rawDescGZIP(), []int{143}
+}
+
+type TxEntryByAddress struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Address       string `protobuf:"bytes,1,opt,name=address,proto3" json:"address,omitempty"`
+	TxId          string `protobuf:"bytes,2,opt,name=txId,proto3" json:"txId,omitempty"`
+	Confirmations uint32 `protobuf:"varint,3,opt,name=confirmations,proto3" json:"confirmations,omitempty"`
+}
+
+func (x *TxEntryByAddress) Reset() {
+	*x = TxEntryByAddress{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_rpc_proto_msgTypes[144]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *TxEntryByAddress) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*TxEntryByAddress) ProtoMessage() {}
+
+func (x *TxEntryByAddress) ProtoReflect() protoreflect.Message {
+	mi := &file_rpc_proto_msgTypes[144]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use TxEntryByAddress.ProtoReflect.Descriptor instead.
+func (*TxEntryByAddress) Descriptor() ([]byte, []int) {
+	return file_rpc_proto_rawDescGZIP(), []int{144}
+}
+
+func (x *TxEntryByAddress) GetAddress() string {
+	if x != nil {
+		return x.Address
+	}
+	return ""
+}
+
+func (x *TxEntryByAddress) GetTxId() string {
+	if x != nil {
+		return x.TxId
+	}
+	return ""
+}
+
+func (x *TxEntryByAddress) GetConfirmations() uint32 {
+	if x != nil {
+		return x.Confirmations
+	}
+	return 0
+}
+
+type NotifyTxListenerRequestMessage struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Addresses             []string `protobuf:"bytes,1,rep,name=addresses,proto3" json:"addresses,omitempty"`
+	RequiredConfirmations uint32   `protobuf:"varint,2,opt,name=requiredConfirmations,proto3" json:"requiredConfirmations,omitempty"`
+	IncludePending        bool     `protobuf:"varint,3,opt,name=includePending,proto3" json:"includePending,omitempty"`
+}
+
+func (x *NotifyTxListenerRequestMessage) Reset() {
+	*x = NotifyTxListenerRequestMessage{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_rpc_proto_msgTypes[145]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *NotifyTxListenerRequestMessage) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*NotifyTxListenerRequestMessage) ProtoMessage() {}
+
+func (x *NotifyTxListenerRequestMessage) ProtoReflect() protoreflect.Message {
+	mi := &file_rpc_proto_msgTypes[145]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use NotifyTxListenerRequestMessage.ProtoReflect.Descriptor instead.
+func (*NotifyTxListenerRequestMessage) Descriptor() ([]byte, []int) {
+	return file_rpc_proto_rawDescGZIP(), []int{145}
+}
+
+func (x *NotifyTxListenerRequestMessage) GetAddresses() []string {
+	if x != nil {
+		return x.Addresses
+	}
+	return nil
+}
+
+func (x *NotifyTxListenerRequestMessage) GetRequiredConfirmations() uint32 {
+	if x != nil {
+		return x.RequiredConfirmations
+	}
+	return 0
+}
+
+func (x *NotifyTxListenerRequestMessage) GetIncludePending() bool {
+	if x != nil {
+		return x.IncludePending
+	}
+	return false
+}
+
+type NotifyTxListenerResponseMessage struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+}
+
+func (x *NotifyTxListenerResponseMessage) Reset() {
+	*x = NotifyTxListenerResponseMessage{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_rpc_proto_msgTypes[146]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *NotifyTxListenerResponseMessage) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*NotifyTxListenerResponseMessage) ProtoMessage() {}
+
+func (x *NotifyTxListenerResponseMessage) ProtoReflect() protoreflect.Message {
+	mi := &file_rpc_proto_msgTypes[146]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use NotifyTxListenerResponseMessage.ProtoReflect.Descriptor instead.
+func (*NotifyTxListenerResponseMessage) Descriptor() ([]byte, []int) {
+	return file_rpc_proto_rawDescGZIP(), []int{146}
+}
+
+type StopNotifyTxListenerRequestMessage struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Addresses []string `protobuf:"bytes,1,rep,name=addresses,proto3" json:"addresses,omitempty"`
+}
+
+func (x *StopNotifyTxListenerRequestMessage) Reset() {
+	*x = StopNotifyTxListenerRequestMessage{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_rpc_proto_msgTypes[147]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *StopNotifyTxListenerRequestMessage) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*StopNotifyTxListenerRequestMessage) ProtoMessage() {}
+
+func (x *StopNotifyTxListenerRequestMessage) ProtoReflect() protoreflect.Message {
+	mi := &file_rpc_proto_msgTypes[147]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use StopNotifyTxListenerRequestMessage.ProtoReflect.Descriptor instead.
+func (*StopNotifyTxListenerRequestMessage) Descriptor() ([]byte, []int) {
+	return file_rpc_proto_rawDescGZIP(), []int{147}
+}
+
+func (x *StopNotifyTxListenerRequestMessage) GetAddresses() []string {
+	if x != nil {
+		return x.Addresses
+	}
+	return nil
+}
+
+type StopNotifyTxListenerResponseMessage struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+}
+
+func (x *StopNotifyTxListenerResponseMessage) Reset() {
+	*x = StopNotifyTxListenerResponseMessage{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_rpc_proto_msgTypes[148]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *StopNotifyTxListenerResponseMessage) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*StopNotifyTxListenerResponseMessage) ProtoMessage() {}
+
+func (x *StopNotifyTxListenerResponseMessage) ProtoReflect() protoreflect.Message {
+	mi := &file_rpc_proto_msgTypes[148]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use StopNotifyTxListenerResponseMessage.ProtoReflect.Descriptor instead.
+func (*StopNotifyTxListenerResponseMessage) Descriptor() ([]byte, []int) {
+	return file_rpc_proto_rawDescGZIP(), []int{148}
+}
+
+type StartNotifyTxListenerRequestMessage struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Addresses []string `protobuf:"bytes,1,rep,name=addresses,proto3" json:"addresses,omitempty"`
+}
+
+func (x *StartNotifyTxListenerRequestMessage) Reset() {
+	*x = StartNotifyTxListenerRequestMessage{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_rpc_proto_msgTypes[149]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *StartNotifyTxListenerRequestMessage) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*StartNotifyTxListenerRequestMessage) ProtoMessage() {}
+
+func (x *StartNotifyTxListenerRequestMessage) ProtoReflect() protoreflect.Message {
+	mi := &file_rpc_proto_msgTypes[149]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use StartNotifyTxListenerRequestMessage.ProtoReflect.Descriptor instead.
+func (*StartNotifyTxListenerRequestMessage) Descriptor() ([]byte, []int) {
+	return file_rpc_proto_rawDescGZIP(), []int{149}
+}
+
+func (x *StartNotifyTxListenerRequestMessage) GetAddresses() []string {
+	if x != nil {
+		return x.Addresses
+	}
+	return nil
+}
+
+type StartNotifyTxListenerResponseMessage struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+}
+
+func (x *StartNotifyTxListenerResponseMessage) Reset() {
+	*x = StartNotifyTxListenerResponseMessage{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_rpc_proto_msgTypes[150]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *StartNotifyTxListenerResponseMessage) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*StartNotifyTxListenerResponseMessage) ProtoMessage() {}
+
+func (x *StartNotifyTxListenerResponseMessage) ProtoReflect() protoreflect.Message {
+	mi := &file_rpc_proto_msgTypes[150]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use StartNotifyTxListenerResponseMessage.ProtoReflect.Descriptor instead.
+func (*StartNotifyTxListenerResponseMessage) Descriptor() ([]byte, []int) {
+	return file_rpc_proto_rawDescGZIP(), []int{150}
+}
+
+type ChangeNotifyTxListenerRequiredConfirmationsRequestMessage struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	RequiredConfirmations uint32 `protobuf:"varint,1,opt,name=requiredConfirmations,proto3" json:"requiredConfirmations,omitempty"`
+}
+
+func (x *ChangeNotifyTxListenerRequiredConfirmationsRequestMessage) Reset() {
+	*x = ChangeNotifyTxListenerRequiredConfirmationsRequestMessage{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_rpc_proto_msgTypes[151]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *ChangeNotifyTxListenerRequiredConfirmationsRequestMessage) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ChangeNotifyTxListenerRequiredConfirmationsRequestMessage) ProtoMessage() {}
+
+func (x *ChangeNotifyTxListenerRequiredConfirmationsRequestMessage) ProtoReflect() protoreflect.Message {
+	mi := &file_rpc_proto_msgTypes[151]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ChangeNotifyTxListenerRequiredConfirmationsRequestMessage.ProtoReflect.Descriptor instead.
+func (*ChangeNotifyTxListenerRequiredConfirmationsRequestMessage) Descriptor() ([]byte, []int) {
+	return file_rpc_proto_rawDescGZIP(), []int{151}
+}
+
+func (x *ChangeNotifyTxListenerRequiredConfirmationsRequestMessage) GetRequiredConfirmations() uint32 {
+	if x != nil {
+		return x.RequiredConfirmations
+	}
+	return 0
+}
+
+type ChangeNotifyTxListenerRequiredConfirmationsResponseMessage struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+}
+
+func (x *ChangeNotifyTxListenerRequiredConfirmationsResponseMessage) Reset() {
+	*x = ChangeNotifyTxListenerRequiredConfirmationsResponseMessage{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_rpc_proto_msgTypes[152]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *ChangeNotifyTxListenerRequiredConfirmationsResponseMessage) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ChangeNotifyTxListenerRequiredConfirmationsResponseMessage) ProtoMessage() {}
+
+func (x *ChangeNotifyTxListenerRequiredConfirmationsResponseMessage) ProtoReflect() protoreflect.Message {
+	mi := &file_rpc_proto_msgTypes[152]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ChangeNotifyTxListenerRequiredConfirmationsResponseMessage.ProtoReflect.Descriptor instead.
+func (*ChangeNotifyTxListenerRequiredConfirmationsResponseMessage) Descriptor() ([]byte, []int) {
+	return file_rpc_proto_rawDescGZIP(), []int{152}
+}
+
+type TxListenerNotificationMessage struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Pending   *TxListenerNotificationMessage_Pending   `protobuf:"bytes,1,opt,name=pending,proto3" json:"pending,omitempty"`
+	Confirmed *TxListenerNotificationMessage_Confirmed `protobuf:"bytes,2,opt,name=confirmed,proto3" json:"confirmed,omitempty"`
+}
+
+func (x *TxListenerNotificationMessage) Reset() {
+	*x = TxListenerNotificationMessage{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_rpc_proto_msgTypes[153]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *TxListenerNotificationMessage) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*TxListenerNotificationMessage) ProtoMessage() {}
+
+func (x *TxListenerNotificationMessage) ProtoReflect() protoreflect.Message {
+	mi := &file_rpc_proto_msgTypes[153]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use TxListenerNotificationMessage.ProtoReflect.Descriptor instead.
+func (*TxListenerNotificationMessage) Descriptor() ([]byte, []int) {
+	return file_rpc_proto_rawDescGZIP(), []int{153}
+}
+
+func (x *TxListenerNotificationMessage) GetPending() *TxListenerNotificationMessage_Pending {
+	if x != nil {
+		return x.Pending
+	}
+	return nil
+}
+
+func (x *TxListenerNotificationMessage) GetConfirmed() *TxListenerNotificationMessage_Confirmed {
+	if x != nil {
+		return x.Confirmed
+	}
+	return nil
+}
+
+type TxsConfirmationChangedNotficationMessage_Pending struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	TxIDConfirmationsPairs []*RpcTxIDConfirmationsPair `protobuf:"bytes,1,rep,name=txIDConfirmationsPairs,proto3" json:"txIDConfirmationsPairs,omitempty"`
+}
+
+func (x *TxsConfirmationChangedNotficationMessage_Pending) Reset() {
+	*x = TxsConfirmationChangedNotficationMessage_Pending{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_rpc_proto_msgTypes[154]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *TxsConfirmationChangedNotficationMessage_Pending) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*TxsConfirmationChangedNotficationMessage_Pending) ProtoMessage() {}
+
+func (x *TxsConfirmationChangedNotficationMessage_Pending) ProtoReflect() protoreflect.Message {
+	mi := &file_rpc_proto_msgTypes[154]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use TxsConfirmationChangedNotficationMessage_Pending.ProtoReflect.Descriptor instead.
+func (*TxsConfirmationChangedNotficationMessage_Pending) Descriptor() ([]byte, []int) {
+	return file_rpc_proto_rawDescGZIP(), []int{137, 0}
+}
+
+func (x *TxsConfirmationChangedNotficationMessage_Pending) GetTxIDConfirmationsPairs() []*RpcTxIDConfirmationsPair {
+	if x != nil {
+		return x.TxIDConfirmationsPairs
+	}
+	return nil
+}
+
+type TxsConfirmationChangedNotficationMessage_Confirmed struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	TxIDConfirmationsPairs []*RpcTxIDConfirmationsPair `protobuf:"bytes,1,rep,name=txIDConfirmationsPairs,proto3" json:"txIDConfirmationsPairs,omitempty"`
+}
+
+func (x *TxsConfirmationChangedNotficationMessage_Confirmed) Reset() {
+	*x = TxsConfirmationChangedNotficationMessage_Confirmed{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_rpc_proto_msgTypes[155]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *TxsConfirmationChangedNotficationMessage_Confirmed) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*TxsConfirmationChangedNotficationMessage_Confirmed) ProtoMessage() {}
+
+func (x *TxsConfirmationChangedNotficationMessage_Confirmed) ProtoReflect() protoreflect.Message {
+	mi := &file_rpc_proto_msgTypes[155]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use TxsConfirmationChangedNotficationMessage_Confirmed.ProtoReflect.Descriptor instead.
+func (*TxsConfirmationChangedNotficationMessage_Confirmed) Descriptor() ([]byte, []int) {
+	return file_rpc_proto_rawDescGZIP(), []int{137, 1}
+}
+
+func (x *TxsConfirmationChangedNotficationMessage_Confirmed) GetTxIDConfirmationsPairs() []*RpcTxIDConfirmationsPair {
+	if x != nil {
+		return x.TxIDConfirmationsPairs
+	}
+	return nil
+}
+
+type TxListenerNotificationMessage_Pending struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Sent     []*TxEntryByAddress `protobuf:"bytes,1,rep,name=sent,proto3" json:"sent,omitempty"`
+	Received []*TxEntryByAddress `protobuf:"bytes,2,rep,name=received,proto3" json:"received,omitempty"`
+}
+
+func (x *TxListenerNotificationMessage_Pending) Reset() {
+	*x = TxListenerNotificationMessage_Pending{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_rpc_proto_msgTypes[156]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *TxListenerNotificationMessage_Pending) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*TxListenerNotificationMessage_Pending) ProtoMessage() {}
+
+func (x *TxListenerNotificationMessage_Pending) ProtoReflect() protoreflect.Message {
+	mi := &file_rpc_proto_msgTypes[156]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use TxListenerNotificationMessage_Pending.ProtoReflect.Descriptor instead.
+func (*TxListenerNotificationMessage_Pending) Descriptor() ([]byte, []int) {
+	return file_rpc_proto_rawDescGZIP(), []int{153, 0}
+}
+
+func (x *TxListenerNotificationMessage_Pending) GetSent() []*TxEntryByAddress {
+	if x != nil {
+		return x.Sent
+	}
+	return nil
+}
+
+func (x *TxListenerNotificationMessage_Pending) GetReceived() []*TxEntryByAddress {
+	if x != nil {
+		return x.Received
+	}
+	return nil
+}
+
+type TxListenerNotificationMessage_Confirmed struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	RequiredConfirmations uint32              `protobuf:"varint,1,opt,name=requiredConfirmations,proto3" json:"requiredConfirmations,omitempty"`
+	Sent                  []*TxEntryByAddress `protobuf:"bytes,2,rep,name=sent,proto3" json:"sent,omitempty"`
+	Received              []*TxEntryByAddress `protobuf:"bytes,3,rep,name=received,proto3" json:"received,omitempty"`
+}
+
+func (x *TxListenerNotificationMessage_Confirmed) Reset() {
+	*x = TxListenerNotificationMessage_Confirmed{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_rpc_proto_msgTypes[157]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *TxListenerNotificationMessage_Confirmed) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*TxListenerNotificationMessage_Confirmed) ProtoMessage() {}
+
+func (x *TxListenerNotificationMessage_Confirmed) ProtoReflect() protoreflect.Message {
+	mi := &file_rpc_proto_msgTypes[157]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use TxListenerNotificationMessage_Confirmed.ProtoReflect.Descriptor instead.
+func (*TxListenerNotificationMessage_Confirmed) Descriptor() ([]byte, []int) {
+	return file_rpc_proto_rawDescGZIP(), []int{153, 1}
+}
+
+func (x *TxListenerNotificationMessage_Confirmed) GetRequiredConfirmations() uint32 {
+	if x != nil {
+		return x.RequiredConfirmations
+	}
+	return 0
+}
+
+func (x *TxListenerNotificationMessage_Confirmed) GetSent() []*TxEntryByAddress {
+	if x != nil {
+		return x.Sent
+	}
+	return nil
+}
+
+func (x *TxListenerNotificationMessage_Confirmed) GetReceived() []*TxEntryByAddress {
+	if x != nil {
+		return x.Received
+	}
+	return nil
+}
+
 var File_rpc_proto protoreflect.FileDescriptor
 
 var file_rpc_proto_rawDesc = []byte{
@@ -8514,10 +9619,154 @@ var file_rpc_proto_rawDesc = []byte{
 	0x69, 0x6f, 0x6e, 0x73, 0x50, 0x61, 0x69, 0x72, 0x73, 0x12, 0x2a, 0x0a, 0x05, 0x65, 0x72, 0x72,
 	0x6f, 0x72, 0x18, 0xe8, 0x07, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x13, 0x2e, 0x70, 0x72, 0x6f, 0x74,
 	0x6f, 0x77, 0x69, 0x72, 0x65, 0x2e, 0x52, 0x50, 0x43, 0x45, 0x72, 0x72, 0x6f, 0x72, 0x52, 0x05,
-	0x65, 0x72, 0x72, 0x6f, 0x72, 0x42, 0x26, 0x5a, 0x24, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e,
-	0x63, 0x6f, 0x6d, 0x2f, 0x6b, 0x61, 0x73, 0x70, 0x61, 0x6e, 0x65, 0x74, 0x2f, 0x6b, 0x61, 0x73,
-	0x70, 0x61, 0x64, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x77, 0x69, 0x72, 0x65, 0x62, 0x06, 0x70,
-	0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x65, 0x72, 0x72, 0x6f, 0x72, 0x22, 0x9f, 0x01, 0x0a, 0x29, 0x4e, 0x6f, 0x74, 0x69, 0x66, 0x79,
+	0x54, 0x78, 0x73, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x72, 0x6d, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x43,
+	0x68, 0x61, 0x6e, 0x67, 0x65, 0x64, 0x52, 0x65, 0x71, 0x75, 0x73, 0x74, 0x4d, 0x65, 0x73, 0x73,
+	0x61, 0x67, 0x65, 0x12, 0x14, 0x0a, 0x05, 0x54, 0x78, 0x49, 0x44, 0x73, 0x18, 0x01, 0x20, 0x03,
+	0x28, 0x09, 0x52, 0x05, 0x54, 0x78, 0x49, 0x44, 0x73, 0x12, 0x34, 0x0a, 0x15, 0x72, 0x65, 0x71,
+	0x75, 0x69, 0x72, 0x65, 0x64, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x72, 0x6d, 0x61, 0x74, 0x69, 0x6f,
+	0x6e, 0x73, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0d, 0x52, 0x15, 0x72, 0x65, 0x71, 0x75, 0x69, 0x72,
+	0x65, 0x64, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x72, 0x6d, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x12,
+	0x26, 0x0a, 0x0e, 0x69, 0x6e, 0x63, 0x6c, 0x75, 0x64, 0x65, 0x50, 0x65, 0x6e, 0x64, 0x69, 0x6e,
+	0x67, 0x18, 0x03, 0x20, 0x01, 0x28, 0x08, 0x52, 0x0e, 0x69, 0x6e, 0x63, 0x6c, 0x75, 0x64, 0x65,
+	0x50, 0x65, 0x6e, 0x64, 0x69, 0x6e, 0x67, 0x22, 0x2d, 0x0a, 0x2b, 0x4e, 0x6f, 0x74, 0x69, 0x66,
+	0x79, 0x54, 0x78, 0x73, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x72, 0x6d, 0x61, 0x74, 0x69, 0x6f, 0x6e,
+	0x43, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x64, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x4d,
+	0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x22, 0xdc, 0x03, 0x0a, 0x28, 0x54, 0x78, 0x73, 0x43, 0x6f,
+	0x6e, 0x66, 0x69, 0x72, 0x6d, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x43, 0x68, 0x61, 0x6e, 0x67, 0x65,
+	0x64, 0x4e, 0x6f, 0x74, 0x66, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x4d, 0x65, 0x73, 0x73,
+	0x61, 0x67, 0x65, 0x12, 0x55, 0x0a, 0x07, 0x70, 0x65, 0x6e, 0x64, 0x69, 0x6e, 0x67, 0x18, 0x01,
+	0x20, 0x03, 0x28, 0x0b, 0x32, 0x3b, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x77, 0x69, 0x72, 0x65,
+	0x2e, 0x54, 0x78, 0x73, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x72, 0x6d, 0x61, 0x74, 0x69, 0x6f, 0x6e,
+	0x43, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x64, 0x4e, 0x6f, 0x74, 0x66, 0x69, 0x63, 0x61, 0x74, 0x69,
+	0x6f, 0x6e, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x2e, 0x50, 0x65, 0x6e, 0x64, 0x69, 0x6e,
+	0x67, 0x52, 0x07, 0x70, 0x65, 0x6e, 0x64, 0x69, 0x6e, 0x67, 0x12, 0x5b, 0x0a, 0x09, 0x63, 0x6f,
+	0x6e, 0x66, 0x69, 0x72, 0x6d, 0x65, 0x64, 0x18, 0x02, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x3d, 0x2e,
+	0x70, 0x72, 0x6f, 0x74, 0x6f, 0x77, 0x69, 0x72, 0x65, 0x2e, 0x54, 0x78, 0x73, 0x43, 0x6f, 0x6e,
+	0x66, 0x69, 0x72, 0x6d, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x43, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x64,
+	0x4e, 0x6f, 0x74, 0x66, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x4d, 0x65, 0x73, 0x73, 0x61,
+	0x67, 0x65, 0x2e, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x72, 0x6d, 0x65, 0x64, 0x52, 0x09, 0x63, 0x6f,
+	0x6e, 0x66, 0x69, 0x72, 0x6d, 0x65, 0x64, 0x12, 0x2a, 0x0a, 0x05, 0x65, 0x72, 0x72, 0x6f, 0x72,
+	0x18, 0xe8, 0x07, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x13, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x77,
+	0x69, 0x72, 0x65, 0x2e, 0x52, 0x50, 0x43, 0x45, 0x72, 0x72, 0x6f, 0x72, 0x52, 0x05, 0x65, 0x72,
+	0x72, 0x6f, 0x72, 0x1a, 0x66, 0x0a, 0x07, 0x50, 0x65, 0x6e, 0x64, 0x69, 0x6e, 0x67, 0x12, 0x5b,
+	0x0a, 0x16, 0x74, 0x78, 0x49, 0x44, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x72, 0x6d, 0x61, 0x74, 0x69,
+	0x6f, 0x6e, 0x73, 0x50, 0x61, 0x69, 0x72, 0x73, 0x18, 0x01, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x23,
+	0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x77, 0x69, 0x72, 0x65, 0x2e, 0x52, 0x70, 0x63, 0x54, 0x78,
+	0x49, 0x44, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x72, 0x6d, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x50,
+	0x61, 0x69, 0x72, 0x52, 0x16, 0x74, 0x78, 0x49, 0x44, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x72, 0x6d,
+	0x61, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x50, 0x61, 0x69, 0x72, 0x73, 0x1a, 0x68, 0x0a, 0x09, 0x43,
+	0x6f, 0x6e, 0x66, 0x69, 0x72, 0x6d, 0x65, 0x64, 0x12, 0x5b, 0x0a, 0x16, 0x74, 0x78, 0x49, 0x44,
+	0x43, 0x6f, 0x6e, 0x66, 0x69, 0x72, 0x6d, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x50, 0x61, 0x69,
+	0x72, 0x73, 0x18, 0x01, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x23, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f,
+	0x77, 0x69, 0x72, 0x65, 0x2e, 0x52, 0x70, 0x63, 0x54, 0x78, 0x49, 0x44, 0x43, 0x6f, 0x6e, 0x66,
+	0x69, 0x72, 0x6d, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x50, 0x61, 0x69, 0x72, 0x52, 0x16, 0x74,
+	0x78, 0x49, 0x44, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x72, 0x6d, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x73,
+	0x50, 0x61, 0x69, 0x72, 0x73, 0x22, 0x46, 0x0a, 0x2e, 0x53, 0x74, 0x6f, 0x70, 0x4e, 0x6f, 0x74,
+	0x69, 0x66, 0x79, 0x54, 0x78, 0x73, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x72, 0x6d, 0x61, 0x74, 0x69,
+	0x6f, 0x6e, 0x43, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x64, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74,
+	0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x12, 0x14, 0x0a, 0x05, 0x54, 0x78, 0x49, 0x44, 0x73,
+	0x18, 0x01, 0x20, 0x03, 0x28, 0x09, 0x52, 0x05, 0x54, 0x78, 0x49, 0x44, 0x73, 0x22, 0x31, 0x0a,
+	0x2f, 0x53, 0x74, 0x6f, 0x70, 0x4e, 0x6f, 0x74, 0x69, 0x66, 0x79, 0x54, 0x78, 0x73, 0x43, 0x6f,
+	0x6e, 0x66, 0x69, 0x72, 0x6d, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x43, 0x68, 0x61, 0x6e, 0x67, 0x65,
+	0x64, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65,
+	0x22, 0x47, 0x0a, 0x2f, 0x53, 0x74, 0x61, 0x72, 0x74, 0x4e, 0x6f, 0x74, 0x69, 0x66, 0x79, 0x54,
+	0x78, 0x73, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x72, 0x6d, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x43, 0x68,
+	0x61, 0x6e, 0x67, 0x65, 0x64, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x4d, 0x65, 0x73, 0x73,
+	0x61, 0x67, 0x65, 0x12, 0x14, 0x0a, 0x05, 0x54, 0x78, 0x49, 0x44, 0x73, 0x18, 0x01, 0x20, 0x03,
+	0x28, 0x09, 0x52, 0x05, 0x54, 0x78, 0x49, 0x44, 0x73, 0x22, 0x32, 0x0a, 0x30, 0x53, 0x74, 0x61,
+	0x72, 0x74, 0x4e, 0x6f, 0x74, 0x69, 0x66, 0x79, 0x54, 0x78, 0x73, 0x43, 0x6f, 0x6e, 0x66, 0x69,
+	0x72, 0x6d, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x43, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x64, 0x52, 0x65,
+	0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x22, 0x7d, 0x0a,
+	0x45, 0x43, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x4e, 0x6f, 0x74, 0x69, 0x66, 0x79, 0x54, 0x78, 0x73,
+	0x43, 0x6f, 0x6e, 0x66, 0x69, 0x72, 0x6d, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x43, 0x68, 0x61, 0x6e,
+	0x67, 0x65, 0x64, 0x52, 0x65, 0x71, 0x75, 0x69, 0x72, 0x65, 0x64, 0x43, 0x6f, 0x6e, 0x66, 0x69,
+	0x72, 0x6d, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x4d,
+	0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x12, 0x34, 0x0a, 0x15, 0x72, 0x65, 0x71, 0x75, 0x69, 0x72,
+	0x65, 0x64, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x72, 0x6d, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x18,
+	0x01, 0x20, 0x01, 0x28, 0x0d, 0x52, 0x15, 0x72, 0x65, 0x71, 0x75, 0x69, 0x72, 0x65, 0x64, 0x43,
+	0x6f, 0x6e, 0x66, 0x69, 0x72, 0x6d, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x22, 0x48, 0x0a, 0x46,
+	0x43, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x4e, 0x6f, 0x74, 0x69, 0x66, 0x79, 0x54, 0x78, 0x73, 0x43,
+	0x6f, 0x6e, 0x66, 0x69, 0x72, 0x6d, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x43, 0x68, 0x61, 0x6e, 0x67,
+	0x65, 0x64, 0x52, 0x65, 0x71, 0x75, 0x69, 0x72, 0x65, 0x64, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x72,
+	0x6d, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x4d,
+	0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x22, 0x66, 0x0a, 0x10, 0x54, 0x78, 0x45, 0x6e, 0x74, 0x72,
+	0x79, 0x42, 0x79, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x12, 0x18, 0x0a, 0x07, 0x61, 0x64,
+	0x64, 0x72, 0x65, 0x73, 0x73, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x07, 0x61, 0x64, 0x64,
+	0x72, 0x65, 0x73, 0x73, 0x12, 0x12, 0x0a, 0x04, 0x74, 0x78, 0x49, 0x64, 0x18, 0x02, 0x20, 0x01,
+	0x28, 0x09, 0x52, 0x04, 0x74, 0x78, 0x49, 0x64, 0x12, 0x24, 0x0a, 0x0d, 0x63, 0x6f, 0x6e, 0x66,
+	0x69, 0x72, 0x6d, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x18, 0x03, 0x20, 0x01, 0x28, 0x0d, 0x52,
+	0x0d, 0x63, 0x6f, 0x6e, 0x66, 0x69, 0x72, 0x6d, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x22, 0x9c,
+	0x01, 0x0a, 0x1e, 0x4e, 0x6f, 0x74, 0x69, 0x66, 0x79, 0x54, 0x78, 0x4c, 0x69, 0x73, 0x74, 0x65,
+	0x6e, 0x65, 0x72, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67,
+	0x65, 0x12, 0x1c, 0x0a, 0x09, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x65, 0x73, 0x18, 0x01,
+	0x20, 0x03, 0x28, 0x09, 0x52, 0x09, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x65, 0x73, 0x12,
+	0x34, 0x0a, 0x15, 0x72, 0x65, 0x71, 0x75, 0x69, 0x72, 0x65, 0x64, 0x43, 0x6f, 0x6e, 0x66, 0x69,
+	0x72, 0x6d, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0d, 0x52, 0x15,
+	0x72, 0x65, 0x71, 0x75, 0x69, 0x72, 0x65, 0x64, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x72, 0x6d, 0x61,
+	0x74, 0x69, 0x6f, 0x6e, 0x73, 0x12, 0x26, 0x0a, 0x0e, 0x69, 0x6e, 0x63, 0x6c, 0x75, 0x64, 0x65,
+	0x50, 0x65, 0x6e, 0x64, 0x69, 0x6e, 0x67, 0x18, 0x03, 0x20, 0x01, 0x28, 0x08, 0x52, 0x0e, 0x69,
+	0x6e, 0x63, 0x6c, 0x75, 0x64, 0x65, 0x50, 0x65, 0x6e, 0x64, 0x69, 0x6e, 0x67, 0x22, 0x21, 0x0a,
+	0x1f, 0x4e, 0x6f, 0x74, 0x69, 0x66, 0x79, 0x54, 0x78, 0x4c, 0x69, 0x73, 0x74, 0x65, 0x6e, 0x65,
+	0x72, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65,
+	0x22, 0x42, 0x0a, 0x22, 0x53, 0x74, 0x6f, 0x70, 0x4e, 0x6f, 0x74, 0x69, 0x66, 0x79, 0x54, 0x78,
+	0x4c, 0x69, 0x73, 0x74, 0x65, 0x6e, 0x65, 0x72, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x4d,
+	0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x12, 0x1c, 0x0a, 0x09, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73,
+	0x73, 0x65, 0x73, 0x18, 0x01, 0x20, 0x03, 0x28, 0x09, 0x52, 0x09, 0x61, 0x64, 0x64, 0x72, 0x65,
+	0x73, 0x73, 0x65, 0x73, 0x22, 0x25, 0x0a, 0x23, 0x53, 0x74, 0x6f, 0x70, 0x4e, 0x6f, 0x74, 0x69,
+	0x66, 0x79, 0x54, 0x78, 0x4c, 0x69, 0x73, 0x74, 0x65, 0x6e, 0x65, 0x72, 0x52, 0x65, 0x73, 0x70,
+	0x6f, 0x6e, 0x73, 0x65, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x22, 0x43, 0x0a, 0x23, 0x53,
+	0x74, 0x61, 0x72, 0x74, 0x4e, 0x6f, 0x74, 0x69, 0x66, 0x79, 0x54, 0x78, 0x4c, 0x69, 0x73, 0x74,
+	0x65, 0x6e, 0x65, 0x72, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x4d, 0x65, 0x73, 0x73, 0x61,
+	0x67, 0x65, 0x12, 0x1c, 0x0a, 0x09, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x65, 0x73, 0x18,
+	0x01, 0x20, 0x03, 0x28, 0x09, 0x52, 0x09, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x65, 0x73,
+	0x22, 0x26, 0x0a, 0x24, 0x53, 0x74, 0x61, 0x72, 0x74, 0x4e, 0x6f, 0x74, 0x69, 0x66, 0x79, 0x54,
+	0x78, 0x4c, 0x69, 0x73, 0x74, 0x65, 0x6e, 0x65, 0x72, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73,
+	0x65, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x22, 0x71, 0x0a, 0x39, 0x43, 0x68, 0x61, 0x6e,
+	0x67, 0x65, 0x4e, 0x6f, 0x74, 0x69, 0x66, 0x79, 0x54, 0x78, 0x4c, 0x69, 0x73, 0x74, 0x65, 0x6e,
+	0x65, 0x72, 0x52, 0x65, 0x71, 0x75, 0x69, 0x72, 0x65, 0x64, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x72,
+	0x6d, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x4d, 0x65,
+	0x73, 0x73, 0x61, 0x67, 0x65, 0x12, 0x34, 0x0a, 0x15, 0x72, 0x65, 0x71, 0x75, 0x69, 0x72, 0x65,
+	0x64, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x72, 0x6d, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x18, 0x01,
+	0x20, 0x01, 0x28, 0x0d, 0x52, 0x15, 0x72, 0x65, 0x71, 0x75, 0x69, 0x72, 0x65, 0x64, 0x43, 0x6f,
+	0x6e, 0x66, 0x69, 0x72, 0x6d, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x22, 0x3c, 0x0a, 0x3a, 0x43,
+	0x68, 0x61, 0x6e, 0x67, 0x65, 0x4e, 0x6f, 0x74, 0x69, 0x66, 0x79, 0x54, 0x78, 0x4c, 0x69, 0x73,
+	0x74, 0x65, 0x6e, 0x65, 0x72, 0x52, 0x65, 0x71, 0x75, 0x69, 0x72, 0x65, 0x64, 0x43, 0x6f, 0x6e,
+	0x66, 0x69, 0x72, 0x6d, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e,
+	0x73, 0x65, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x22, 0xe0, 0x03, 0x0a, 0x1d, 0x54, 0x78,
+	0x4c, 0x69, 0x73, 0x74, 0x65, 0x6e, 0x65, 0x72, 0x4e, 0x6f, 0x74, 0x69, 0x66, 0x69, 0x63, 0x61,
+	0x74, 0x69, 0x6f, 0x6e, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x12, 0x4a, 0x0a, 0x07, 0x70,
+	0x65, 0x6e, 0x64, 0x69, 0x6e, 0x67, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x30, 0x2e, 0x70,
+	0x72, 0x6f, 0x74, 0x6f, 0x77, 0x69, 0x72, 0x65, 0x2e, 0x54, 0x78, 0x4c, 0x69, 0x73, 0x74, 0x65,
+	0x6e, 0x65, 0x72, 0x4e, 0x6f, 0x74, 0x69, 0x66, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x4d,
+	0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x2e, 0x50, 0x65, 0x6e, 0x64, 0x69, 0x6e, 0x67, 0x52, 0x07,
+	0x70, 0x65, 0x6e, 0x64, 0x69, 0x6e, 0x67, 0x12, 0x50, 0x0a, 0x09, 0x63, 0x6f, 0x6e, 0x66, 0x69,
+	0x72, 0x6d, 0x65, 0x64, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x32, 0x2e, 0x70, 0x72, 0x6f,
+	0x74, 0x6f, 0x77, 0x69, 0x72, 0x65, 0x2e, 0x54, 0x78, 0x4c, 0x69, 0x73, 0x74, 0x65, 0x6e, 0x65,
+	0x72, 0x4e, 0x6f, 0x74, 0x69, 0x66, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x4d, 0x65, 0x73,
+	0x73, 0x61, 0x67, 0x65, 0x2e, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x72, 0x6d, 0x65, 0x64, 0x52, 0x09,
+	0x63, 0x6f, 0x6e, 0x66, 0x69, 0x72, 0x6d, 0x65, 0x64, 0x1a, 0x73, 0x0a, 0x07, 0x50, 0x65, 0x6e,
+	0x64, 0x69, 0x6e, 0x67, 0x12, 0x2f, 0x0a, 0x04, 0x73, 0x65, 0x6e, 0x74, 0x18, 0x01, 0x20, 0x03,
+	0x28, 0x0b, 0x32, 0x1b, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x77, 0x69, 0x72, 0x65, 0x2e, 0x54,
+	0x78, 0x45, 0x6e, 0x74, 0x72, 0x79, 0x42, 0x79, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x52,
+	0x04, 0x73, 0x65, 0x6e, 0x74, 0x12, 0x37, 0x0a, 0x08, 0x72, 0x65, 0x63, 0x65, 0x69, 0x76, 0x65,
+	0x64, 0x18, 0x02, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x1b, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x77,
+	0x69, 0x72, 0x65, 0x2e, 0x54, 0x78, 0x45, 0x6e, 0x74, 0x72, 0x79, 0x42, 0x79, 0x41, 0x64, 0x64,
+	0x72, 0x65, 0x73, 0x73, 0x52, 0x08, 0x72, 0x65, 0x63, 0x65, 0x69, 0x76, 0x65, 0x64, 0x1a, 0xab,
+	0x01, 0x0a, 0x09, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x72, 0x6d, 0x65, 0x64, 0x12, 0x34, 0x0a, 0x15,
+	0x72, 0x65, 0x71, 0x75, 0x69, 0x72, 0x65, 0x64, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x72, 0x6d, 0x61,
+	0x74, 0x69, 0x6f, 0x6e, 0x73, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0d, 0x52, 0x15, 0x72, 0x65, 0x71,
+	0x75, 0x69, 0x72, 0x65, 0x64, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x72, 0x6d, 0x61, 0x74, 0x69, 0x6f,
+	0x6e, 0x73, 0x12, 0x2f, 0x0a, 0x04, 0x73, 0x65, 0x6e, 0x74, 0x18, 0x02, 0x20, 0x03, 0x28, 0x0b,
+	0x32, 0x1b, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x77, 0x69, 0x72, 0x65, 0x2e, 0x54, 0x78, 0x45,
+	0x6e, 0x74, 0x72, 0x79, 0x42, 0x79, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x52, 0x04, 0x73,
+	0x65, 0x6e, 0x74, 0x12, 0x37, 0x0a, 0x08, 0x72, 0x65, 0x63, 0x65, 0x69, 0x76, 0x65, 0x64, 0x18,
+	0x03, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x1b, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x77, 0x69, 0x72,
+	0x65, 0x2e, 0x54, 0x78, 0x45, 0x6e, 0x74, 0x72, 0x79, 0x42, 0x79, 0x41, 0x64, 0x64, 0x72, 0x65,
+	0x73, 0x73, 0x52, 0x08, 0x72, 0x65, 0x63, 0x65, 0x69, 0x76, 0x65, 0x64, 0x42, 0x26, 0x5a, 0x24,
+	0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x6b, 0x61, 0x73, 0x70, 0x61,
+	0x6e, 0x65, 0x74, 0x2f, 0x6b, 0x61, 0x73, 0x70, 0x61, 0x64, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f,
+	0x77, 0x69, 0x72, 0x65, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -8533,144 +9782,167 @@ func file_rpc_proto_rawDescGZIP() []byte {
 }
 
 var file_rpc_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_rpc_proto_msgTypes = make([]protoimpl.MessageInfo, 135)
+var file_rpc_proto_msgTypes = make([]protoimpl.MessageInfo, 158)
 var file_rpc_proto_goTypes = []interface{}{
 	(SubmitBlockResponseMessage_RejectReason)(0), // 0: protowire.SubmitBlockResponseMessage.RejectReason
-	(*RPCError)(nil),                                                   // 1: protowire.RPCError
-	(*RpcBlock)(nil),                                                   // 2: protowire.RpcBlock
-	(*RpcBlockHeader)(nil),                                             // 3: protowire.RpcBlockHeader
-	(*RpcBlockLevelParents)(nil),                                       // 4: protowire.RpcBlockLevelParents
-	(*RpcBlockVerboseData)(nil),                                        // 5: protowire.RpcBlockVerboseData
-	(*RpcTransaction)(nil),                                             // 6: protowire.RpcTransaction
-	(*RpcTransactionInput)(nil),                                        // 7: protowire.RpcTransactionInput
-	(*RpcScriptPublicKey)(nil),                                         // 8: protowire.RpcScriptPublicKey
-	(*RpcTransactionOutput)(nil),                                       // 9: protowire.RpcTransactionOutput
-	(*RpcOutpoint)(nil),                                                // 10: protowire.RpcOutpoint
-	(*RpcUtxoEntry)(nil),                                               // 11: protowire.RpcUtxoEntry
-	(*RpcTransactionVerboseData)(nil),                                  // 12: protowire.RpcTransactionVerboseData
-	(*RpcTransactionInputVerboseData)(nil),                             // 13: protowire.RpcTransactionInputVerboseData
-	(*RpcTransactionOutputVerboseData)(nil),                            // 14: protowire.RpcTransactionOutputVerboseData
-	(*GetCurrentNetworkRequestMessage)(nil),                            // 15: protowire.GetCurrentNetworkRequestMessage
-	(*GetCurrentNetworkResponseMessage)(nil),                           // 16: protowire.GetCurrentNetworkResponseMessage
-	(*SubmitBlockRequestMessage)(nil),                                  // 17: protowire.SubmitBlockRequestMessage
-	(*SubmitBlockResponseMessage)(nil),                                 // 18: protowire.SubmitBlockResponseMessage
-	(*GetBlockTemplateRequestMessage)(nil),                             // 19: protowire.GetBlockTemplateRequestMessage
-	(*GetBlockTemplateResponseMessage)(nil),                            // 20: protowire.GetBlockTemplateResponseMessage
-	(*NotifyBlockAddedRequestMessage)(nil),                             // 21: protowire.NotifyBlockAddedRequestMessage
-	(*NotifyBlockAddedResponseMessage)(nil),                            // 22: protowire.NotifyBlockAddedResponseMessage
-	(*BlockAddedNotificationMessage)(nil),                              // 23: protowire.BlockAddedNotificationMessage
-	(*GetPeerAddressesRequestMessage)(nil),                             // 24: protowire.GetPeerAddressesRequestMessage
-	(*GetPeerAddressesResponseMessage)(nil),                            // 25: protowire.GetPeerAddressesResponseMessage
-	(*GetPeerAddressesKnownAddressMessage)(nil),                        // 26: protowire.GetPeerAddressesKnownAddressMessage
-	(*GetSelectedTipHashRequestMessage)(nil),                           // 27: protowire.GetSelectedTipHashRequestMessage
-	(*GetSelectedTipHashResponseMessage)(nil),                          // 28: protowire.GetSelectedTipHashResponseMessage
-	(*GetMempoolEntryRequestMessage)(nil),                              // 29: protowire.GetMempoolEntryRequestMessage
-	(*GetMempoolEntryResponseMessage)(nil),                             // 30: protowire.GetMempoolEntryResponseMessage
-	(*GetMempoolEntriesRequestMessage)(nil),                            // 31: protowire.GetMempoolEntriesRequestMessage
-	(*GetMempoolEntriesResponseMessage)(nil),                           // 32: protowire.GetMempoolEntriesResponseMessage
-	(*MempoolEntry)(nil),                                               // 33: protowire.MempoolEntry
-	(*GetConnectedPeerInfoRequestMessage)(nil),                         // 34: protowire.GetConnectedPeerInfoRequestMessage
-	(*GetConnectedPeerInfoResponseMessage)(nil),                        // 35: protowire.GetConnectedPeerInfoResponseMessage
-	(*GetConnectedPeerInfoMessage)(nil),                                // 36: protowire.GetConnectedPeerInfoMessage
-	(*AddPeerRequestMessage)(nil),                                      // 37: protowire.AddPeerRequestMessage
-	(*AddPeerResponseMessage)(nil),                                     // 38: protowire.AddPeerResponseMessage
-	(*SubmitTransactionRequestMessage)(nil),                            // 39: protowire.SubmitTransactionRequestMessage
-	(*SubmitTransactionResponseMessage)(nil),                           // 40: protowire.SubmitTransactionResponseMessage
-	(*NotifyVirtualSelectedParentChainChangedRequestMessage)(nil),      // 41: protowire.NotifyVirtualSelectedParentChainChangedRequestMessage
-	(*NotifyVirtualSelectedParentChainChangedResponseMessage)(nil),     // 42: protowire.NotifyVirtualSelectedParentChainChangedResponseMessage
-	(*VirtualSelectedParentChainChangedNotificationMessage)(nil),       // 43: protowire.VirtualSelectedParentChainChangedNotificationMessage
-	(*GetBlockRequestMessage)(nil),                                     // 44: protowire.GetBlockRequestMessage
-	(*GetBlockResponseMessage)(nil),                                    // 45: protowire.GetBlockResponseMessage
-	(*GetSubnetworkRequestMessage)(nil),                                // 46: protowire.GetSubnetworkRequestMessage
-	(*GetSubnetworkResponseMessage)(nil),                               // 47: protowire.GetSubnetworkResponseMessage
-	(*GetVirtualSelectedParentChainFromBlockRequestMessage)(nil),       // 48: protowire.GetVirtualSelectedParentChainFromBlockRequestMessage
-	(*AcceptedTransactionIds)(nil),                                     // 49: protowire.AcceptedTransactionIds
-	(*GetVirtualSelectedParentChainFromBlockResponseMessage)(nil),      // 50: protowire.GetVirtualSelectedParentChainFromBlockResponseMessage
-	(*GetBlocksRequestMessage)(nil),                                    // 51: protowire.GetBlocksRequestMessage
-	(*GetBlocksResponseMessage)(nil),                                   // 52: protowire.GetBlocksResponseMessage
-	(*GetBlockCountRequestMessage)(nil),                                // 53: protowire.GetBlockCountRequestMessage
-	(*GetBlockCountResponseMessage)(nil),                               // 54: protowire.GetBlockCountResponseMessage
-	(*GetBlockDagInfoRequestMessage)(nil),                              // 55: protowire.GetBlockDagInfoRequestMessage
-	(*GetBlockDagInfoResponseMessage)(nil),                             // 56: protowire.GetBlockDagInfoResponseMessage
-	(*ResolveFinalityConflictRequestMessage)(nil),                      // 57: protowire.ResolveFinalityConflictRequestMessage
-	(*ResolveFinalityConflictResponseMessage)(nil),                     // 58: protowire.ResolveFinalityConflictResponseMessage
-	(*NotifyFinalityConflictsRequestMessage)(nil),                      // 59: protowire.NotifyFinalityConflictsRequestMessage
-	(*NotifyFinalityConflictsResponseMessage)(nil),                     // 60: protowire.NotifyFinalityConflictsResponseMessage
-	(*FinalityConflictNotificationMessage)(nil),                        // 61: protowire.FinalityConflictNotificationMessage
-	(*FinalityConflictResolvedNotificationMessage)(nil),                // 62: protowire.FinalityConflictResolvedNotificationMessage
-	(*ShutDownRequestMessage)(nil),                                     // 63: protowire.ShutDownRequestMessage
-	(*ShutDownResponseMessage)(nil),                                    // 64: protowire.ShutDownResponseMessage
-	(*GetHeadersRequestMessage)(nil),                                   // 65: protowire.GetHeadersRequestMessage
-	(*GetHeadersResponseMessage)(nil),                                  // 66: protowire.GetHeadersResponseMessage
-	(*NotifyUtxosChangedRequestMessage)(nil),                           // 67: protowire.NotifyUtxosChangedRequestMessage
-	(*NotifyUtxosChangedResponseMessage)(nil),                          // 68: protowire.NotifyUtxosChangedResponseMessage
-	(*UtxosChangedNotificationMessage)(nil),                            // 69: protowire.UtxosChangedNotificationMessage
-	(*UtxosByAddressesEntry)(nil),                                      // 70: protowire.UtxosByAddressesEntry
-	(*StopNotifyingUtxosChangedRequestMessage)(nil),                    // 71: protowire.StopNotifyingUtxosChangedRequestMessage
-	(*StopNotifyingUtxosChangedResponseMessage)(nil),                   // 72: protowire.StopNotifyingUtxosChangedResponseMessage
-	(*GetUtxosByAddressesRequestMessage)(nil),                          // 73: protowire.GetUtxosByAddressesRequestMessage
-	(*GetUtxosByAddressesResponseMessage)(nil),                         // 74: protowire.GetUtxosByAddressesResponseMessage
-	(*GetBalanceByAddressRequestMessage)(nil),                          // 75: protowire.GetBalanceByAddressRequestMessage
-	(*GetBalanceByAddressResponseMessage)(nil),                         // 76: protowire.GetBalanceByAddressResponseMessage
-	(*GetBalancesByAddressesRequestMessage)(nil),                       // 77: protowire.GetBalancesByAddressesRequestMessage
-	(*BalancesByAddressEntry)(nil),                                     // 78: protowire.BalancesByAddressEntry
-	(*GetBalancesByAddressesResponseMessage)(nil),                      // 79: protowire.GetBalancesByAddressesResponseMessage
-	(*GetVirtualSelectedParentBlueScoreRequestMessage)(nil),            // 80: protowire.GetVirtualSelectedParentBlueScoreRequestMessage
-	(*GetVirtualSelectedParentBlueScoreResponseMessage)(nil),           // 81: protowire.GetVirtualSelectedParentBlueScoreResponseMessage
-	(*NotifyVirtualSelectedParentBlueScoreChangedRequestMessage)(nil),  // 82: protowire.NotifyVirtualSelectedParentBlueScoreChangedRequestMessage
-	(*NotifyVirtualSelectedParentBlueScoreChangedResponseMessage)(nil), // 83: protowire.NotifyVirtualSelectedParentBlueScoreChangedResponseMessage
-	(*VirtualSelectedParentBlueScoreChangedNotificationMessage)(nil),   // 84: protowire.VirtualSelectedParentBlueScoreChangedNotificationMessage
-	(*NotifyVirtualDaaScoreChangedRequestMessage)(nil),                 // 85: protowire.NotifyVirtualDaaScoreChangedRequestMessage
-	(*NotifyVirtualDaaScoreChangedResponseMessage)(nil),                // 86: protowire.NotifyVirtualDaaScoreChangedResponseMessage
-	(*VirtualDaaScoreChangedNotificationMessage)(nil),                  // 87: protowire.VirtualDaaScoreChangedNotificationMessage
-	(*NotifyPruningPointUTXOSetOverrideRequestMessage)(nil),            // 88: protowire.NotifyPruningPointUTXOSetOverrideRequestMessage
-	(*NotifyPruningPointUTXOSetOverrideResponseMessage)(nil),           // 89: protowire.NotifyPruningPointUTXOSetOverrideResponseMessage
-	(*PruningPointUTXOSetOverrideNotificationMessage)(nil),             // 90: protowire.PruningPointUTXOSetOverrideNotificationMessage
-	(*StopNotifyingPruningPointUTXOSetOverrideRequestMessage)(nil),     // 91: protowire.StopNotifyingPruningPointUTXOSetOverrideRequestMessage
-	(*StopNotifyingPruningPointUTXOSetOverrideResponseMessage)(nil),    // 92: protowire.StopNotifyingPruningPointUTXOSetOverrideResponseMessage
-	(*BanRequestMessage)(nil),                                          // 93: protowire.BanRequestMessage
-	(*BanResponseMessage)(nil),                                         // 94: protowire.BanResponseMessage
-	(*UnbanRequestMessage)(nil),                                        // 95: protowire.UnbanRequestMessage
-	(*UnbanResponseMessage)(nil),                                       // 96: protowire.UnbanResponseMessage
-	(*GetInfoRequestMessage)(nil),                                      // 97: protowire.GetInfoRequestMessage
-	(*GetInfoResponseMessage)(nil),                                     // 98: protowire.GetInfoResponseMessage
-	(*GetAcceptingBlockHashOfTxRequestMessage)(nil),                    // 99: protowire.GetAcceptingBlockHashOfTxRequestMessage
-	(*GetAcceptingBlockHashOfTxResponseMessage)(nil),                   // 100: protowire.GetAcceptingBlockHashOfTxResponseMessage
-	(*EstimateNetworkHashesPerSecondRequestMessage)(nil),               // 101: protowire.EstimateNetworkHashesPerSecondRequestMessage
-	(*EstimateNetworkHashesPerSecondResponseMessage)(nil),              // 102: protowire.EstimateNetworkHashesPerSecondResponseMessage
-	(*NotifyNewBlockTemplateRequestMessage)(nil),                       // 103: protowire.NotifyNewBlockTemplateRequestMessage
-	(*NotifyNewBlockTemplateResponseMessage)(nil),                      // 104: protowire.NotifyNewBlockTemplateResponseMessage
-	(*NewBlockTemplateNotificationMessage)(nil),                        // 105: protowire.NewBlockTemplateNotificationMessage
-	(*MempoolEntryByAddress)(nil),                                      // 106: protowire.MempoolEntryByAddress
-	(*GetMempoolEntriesByAddressesRequestMessage)(nil),                 // 107: protowire.GetMempoolEntriesByAddressesRequestMessage
-	(*GetMempoolEntriesByAddressesResponseMessage)(nil),                // 108: protowire.GetMempoolEntriesByAddressesResponseMessage
-	(*GetCoinSupplyRequestMessage)(nil),                                // 109: protowire.GetCoinSupplyRequestMessage
-	(*GetCoinSupplyResponseMessage)(nil),                               // 110: protowire.GetCoinSupplyResponseMessage
-	(*RpcTxIDConfirmationsPair)(nil),                                   // 111: protowire.RpcTxIDConfirmationsPair
-	(*RpcTxIDBlockHashPair)(nil),                                       // 112: protowire.RpcTxIDBlockHashPair
-	(*RpcTxIDBlockPair)(nil),                                           // 113: protowire.RpcTxIDBlockPair
-	(*GetAcceptingBlockHashesOfTxsRequestMessage)(nil),                 // 114: protowire.GetAcceptingBlockHashesOfTxsRequestMessage
-	(*GetAcceptingBlockHashesOfTxsResponseMessage)(nil),                // 115: protowire.GetAcceptingBlockHashesOfTxsResponseMessage
-	(*GetAcceptingBlockOfTxRequestMessage)(nil),                        // 116: protowire.GetAcceptingBlockOfTxRequestMessage
-	(*GetAcceptingBlockOfTxResponseMessage)(nil),                       // 117: protowire.GetAcceptingBlockOfTxResponseMessage
-	(*GetAcceptingBlocksOfTxsRequestMessage)(nil),                      // 118: protowire.GetAcceptingBlocksOfTxsRequestMessage
-	(*GetAcceptingBlocksOfTxsResponseMessage)(nil),                     // 119: protowire.GetAcceptingBlocksOfTxsResponseMessage
-	(*GetIncludingBlockHashOfTxRequestMessage)(nil),                    // 120: protowire.GetIncludingBlockHashOfTxRequestMessage
-	(*GetIncludingBlockHashOfTxResponseMessage)(nil),                   // 121: protowire.GetIncludingBlockHashOfTxResponseMessage
-	(*GetIncludingBlockHashesOfTxsRequestMessage)(nil),                 // 122: protowire.GetIncludingBlockHashesOfTxsRequestMessage
-	(*GetIncludingBlockHashesOfTxsResponseMessage)(nil),                // 123: protowire.GetIncludingBlockHashesOfTxsResponseMessage
-	(*GetIncludingBlockOfTxRequestMessage)(nil),                        // 124: protowire.GetIncludingBlockOfTxRequestMessage
-	(*GetIncludingBlockOfTxResponseMessage)(nil),                       // 125: protowire.GetIncludingBlockOfTxResponseMessage
-	(*GetIncludingBlocksOfTxsRequestMessage)(nil),                      // 126: protowire.GetIncludingBlocksOfTxsRequestMessage
-	(*GetIncludingBlocksOfTxsResponseMessage)(nil),                     // 127: protowire.GetIncludingBlocksOfTxsResponseMessage
-	(*GetTxRequestMessage)(nil),                                        // 128: protowire.GetTxRequestMessage
-	(*GetTxResponseMessage)(nil),                                       // 129: protowire.GetTxResponseMessage
-	(*GetTxsRequestMessage)(nil),                                       // 130: protowire.GetTxsRequestMessage
-	(*GetTxsResponseMessage)(nil),                                      // 131: protowire.GetTxsResponseMessage
-	(*GetTxConfirmationsRequestMessage)(nil),                           // 132: protowire.GetTxConfirmationsRequestMessage
-	(*GetTxConfirmationsResponseMessage)(nil),                          // 133: protowire.GetTxConfirmationsResponseMessage
-	(*GetTxsConfirmationsRequestMessage)(nil),                          // 134: protowire.GetTxsConfirmationsRequestMessage
-	(*GetTxsConfirmationsResponseMessage)(nil),                         // 135: protowire.GetTxsConfirmationsResponseMessage
+	(*RPCError)(nil),                                                               // 1: protowire.RPCError
+	(*RpcBlock)(nil),                                                               // 2: protowire.RpcBlock
+	(*RpcBlockHeader)(nil),                                                         // 3: protowire.RpcBlockHeader
+	(*RpcBlockLevelParents)(nil),                                                   // 4: protowire.RpcBlockLevelParents
+	(*RpcBlockVerboseData)(nil),                                                    // 5: protowire.RpcBlockVerboseData
+	(*RpcTransaction)(nil),                                                         // 6: protowire.RpcTransaction
+	(*RpcTransactionInput)(nil),                                                    // 7: protowire.RpcTransactionInput
+	(*RpcScriptPublicKey)(nil),                                                     // 8: protowire.RpcScriptPublicKey
+	(*RpcTransactionOutput)(nil),                                                   // 9: protowire.RpcTransactionOutput
+	(*RpcOutpoint)(nil),                                                            // 10: protowire.RpcOutpoint
+	(*RpcUtxoEntry)(nil),                                                           // 11: protowire.RpcUtxoEntry
+	(*RpcTransactionVerboseData)(nil),                                              // 12: protowire.RpcTransactionVerboseData
+	(*RpcTransactionInputVerboseData)(nil),                                         // 13: protowire.RpcTransactionInputVerboseData
+	(*RpcTransactionOutputVerboseData)(nil),                                        // 14: protowire.RpcTransactionOutputVerboseData
+	(*GetCurrentNetworkRequestMessage)(nil),                                        // 15: protowire.GetCurrentNetworkRequestMessage
+	(*GetCurrentNetworkResponseMessage)(nil),                                       // 16: protowire.GetCurrentNetworkResponseMessage
+	(*SubmitBlockRequestMessage)(nil),                                              // 17: protowire.SubmitBlockRequestMessage
+	(*SubmitBlockResponseMessage)(nil),                                             // 18: protowire.SubmitBlockResponseMessage
+	(*GetBlockTemplateRequestMessage)(nil),                                         // 19: protowire.GetBlockTemplateRequestMessage
+	(*GetBlockTemplateResponseMessage)(nil),                                        // 20: protowire.GetBlockTemplateResponseMessage
+	(*NotifyBlockAddedRequestMessage)(nil),                                         // 21: protowire.NotifyBlockAddedRequestMessage
+	(*NotifyBlockAddedResponseMessage)(nil),                                        // 22: protowire.NotifyBlockAddedResponseMessage
+	(*BlockAddedNotificationMessage)(nil),                                          // 23: protowire.BlockAddedNotificationMessage
+	(*GetPeerAddressesRequestMessage)(nil),                                         // 24: protowire.GetPeerAddressesRequestMessage
+	(*GetPeerAddressesResponseMessage)(nil),                                        // 25: protowire.GetPeerAddressesResponseMessage
+	(*GetPeerAddressesKnownAddressMessage)(nil),                                    // 26: protowire.GetPeerAddressesKnownAddressMessage
+	(*GetSelectedTipHashRequestMessage)(nil),                                       // 27: protowire.GetSelectedTipHashRequestMessage
+	(*GetSelectedTipHashResponseMessage)(nil),                                      // 28: protowire.GetSelectedTipHashResponseMessage
+	(*GetMempoolEntryRequestMessage)(nil),                                          // 29: protowire.GetMempoolEntryRequestMessage
+	(*GetMempoolEntryResponseMessage)(nil),                                         // 30: protowire.GetMempoolEntryResponseMessage
+	(*GetMempoolEntriesRequestMessage)(nil),                                        // 31: protowire.GetMempoolEntriesRequestMessage
+	(*GetMempoolEntriesResponseMessage)(nil),                                       // 32: protowire.GetMempoolEntriesResponseMessage
+	(*MempoolEntry)(nil),                                                           // 33: protowire.MempoolEntry
+	(*GetConnectedPeerInfoRequestMessage)(nil),                                     // 34: protowire.GetConnectedPeerInfoRequestMessage
+	(*GetConnectedPeerInfoResponseMessage)(nil),                                    // 35: protowire.GetConnectedPeerInfoResponseMessage
+	(*GetConnectedPeerInfoMessage)(nil),                                            // 36: protowire.GetConnectedPeerInfoMessage
+	(*AddPeerRequestMessage)(nil),                                                  // 37: protowire.AddPeerRequestMessage
+	(*AddPeerResponseMessage)(nil),                                                 // 38: protowire.AddPeerResponseMessage
+	(*SubmitTransactionRequestMessage)(nil),                                        // 39: protowire.SubmitTransactionRequestMessage
+	(*SubmitTransactionResponseMessage)(nil),                                       // 40: protowire.SubmitTransactionResponseMessage
+	(*NotifyVirtualSelectedParentChainChangedRequestMessage)(nil),                  // 41: protowire.NotifyVirtualSelectedParentChainChangedRequestMessage
+	(*NotifyVirtualSelectedParentChainChangedResponseMessage)(nil),                 // 42: protowire.NotifyVirtualSelectedParentChainChangedResponseMessage
+	(*VirtualSelectedParentChainChangedNotificationMessage)(nil),                   // 43: protowire.VirtualSelectedParentChainChangedNotificationMessage
+	(*GetBlockRequestMessage)(nil),                                                 // 44: protowire.GetBlockRequestMessage
+	(*GetBlockResponseMessage)(nil),                                                // 45: protowire.GetBlockResponseMessage
+	(*GetSubnetworkRequestMessage)(nil),                                            // 46: protowire.GetSubnetworkRequestMessage
+	(*GetSubnetworkResponseMessage)(nil),                                           // 47: protowire.GetSubnetworkResponseMessage
+	(*GetVirtualSelectedParentChainFromBlockRequestMessage)(nil),                   // 48: protowire.GetVirtualSelectedParentChainFromBlockRequestMessage
+	(*AcceptedTransactionIds)(nil),                                                 // 49: protowire.AcceptedTransactionIds
+	(*GetVirtualSelectedParentChainFromBlockResponseMessage)(nil),                  // 50: protowire.GetVirtualSelectedParentChainFromBlockResponseMessage
+	(*GetBlocksRequestMessage)(nil),                                                // 51: protowire.GetBlocksRequestMessage
+	(*GetBlocksResponseMessage)(nil),                                               // 52: protowire.GetBlocksResponseMessage
+	(*GetBlockCountRequestMessage)(nil),                                            // 53: protowire.GetBlockCountRequestMessage
+	(*GetBlockCountResponseMessage)(nil),                                           // 54: protowire.GetBlockCountResponseMessage
+	(*GetBlockDagInfoRequestMessage)(nil),                                          // 55: protowire.GetBlockDagInfoRequestMessage
+	(*GetBlockDagInfoResponseMessage)(nil),                                         // 56: protowire.GetBlockDagInfoResponseMessage
+	(*ResolveFinalityConflictRequestMessage)(nil),                                  // 57: protowire.ResolveFinalityConflictRequestMessage
+	(*ResolveFinalityConflictResponseMessage)(nil),                                 // 58: protowire.ResolveFinalityConflictResponseMessage
+	(*NotifyFinalityConflictsRequestMessage)(nil),                                  // 59: protowire.NotifyFinalityConflictsRequestMessage
+	(*NotifyFinalityConflictsResponseMessage)(nil),                                 // 60: protowire.NotifyFinalityConflictsResponseMessage
+	(*FinalityConflictNotificationMessage)(nil),                                    // 61: protowire.FinalityConflictNotificationMessage
+	(*FinalityConflictResolvedNotificationMessage)(nil),                            // 62: protowire.FinalityConflictResolvedNotificationMessage
+	(*ShutDownRequestMessage)(nil),                                                 // 63: protowire.ShutDownRequestMessage
+	(*ShutDownResponseMessage)(nil),                                                // 64: protowire.ShutDownResponseMessage
+	(*GetHeadersRequestMessage)(nil),                                               // 65: protowire.GetHeadersRequestMessage
+	(*GetHeadersResponseMessage)(nil),                                              // 66: protowire.GetHeadersResponseMessage
+	(*NotifyUtxosChangedRequestMessage)(nil),                                       // 67: protowire.NotifyUtxosChangedRequestMessage
+	(*NotifyUtxosChangedResponseMessage)(nil),                                      // 68: protowire.NotifyUtxosChangedResponseMessage
+	(*UtxosChangedNotificationMessage)(nil),                                        // 69: protowire.UtxosChangedNotificationMessage
+	(*UtxosByAddressesEntry)(nil),                                                  // 70: protowire.UtxosByAddressesEntry
+	(*StopNotifyingUtxosChangedRequestMessage)(nil),                                // 71: protowire.StopNotifyingUtxosChangedRequestMessage
+	(*StopNotifyingUtxosChangedResponseMessage)(nil),                               // 72: protowire.StopNotifyingUtxosChangedResponseMessage
+	(*GetUtxosByAddressesRequestMessage)(nil),                                      // 73: protowire.GetUtxosByAddressesRequestMessage
+	(*GetUtxosByAddressesResponseMessage)(nil),                                     // 74: protowire.GetUtxosByAddressesResponseMessage
+	(*GetBalanceByAddressRequestMessage)(nil),                                      // 75: protowire.GetBalanceByAddressRequestMessage
+	(*GetBalanceByAddressResponseMessage)(nil),                                     // 76: protowire.GetBalanceByAddressResponseMessage
+	(*GetBalancesByAddressesRequestMessage)(nil),                                   // 77: protowire.GetBalancesByAddressesRequestMessage
+	(*BalancesByAddressEntry)(nil),                                                 // 78: protowire.BalancesByAddressEntry
+	(*GetBalancesByAddressesResponseMessage)(nil),                                  // 79: protowire.GetBalancesByAddressesResponseMessage
+	(*GetVirtualSelectedParentBlueScoreRequestMessage)(nil),                        // 80: protowire.GetVirtualSelectedParentBlueScoreRequestMessage
+	(*GetVirtualSelectedParentBlueScoreResponseMessage)(nil),                       // 81: protowire.GetVirtualSelectedParentBlueScoreResponseMessage
+	(*NotifyVirtualSelectedParentBlueScoreChangedRequestMessage)(nil),              // 82: protowire.NotifyVirtualSelectedParentBlueScoreChangedRequestMessage
+	(*NotifyVirtualSelectedParentBlueScoreChangedResponseMessage)(nil),             // 83: protowire.NotifyVirtualSelectedParentBlueScoreChangedResponseMessage
+	(*VirtualSelectedParentBlueScoreChangedNotificationMessage)(nil),               // 84: protowire.VirtualSelectedParentBlueScoreChangedNotificationMessage
+	(*NotifyVirtualDaaScoreChangedRequestMessage)(nil),                             // 85: protowire.NotifyVirtualDaaScoreChangedRequestMessage
+	(*NotifyVirtualDaaScoreChangedResponseMessage)(nil),                            // 86: protowire.NotifyVirtualDaaScoreChangedResponseMessage
+	(*VirtualDaaScoreChangedNotificationMessage)(nil),                              // 87: protowire.VirtualDaaScoreChangedNotificationMessage
+	(*NotifyPruningPointUTXOSetOverrideRequestMessage)(nil),                        // 88: protowire.NotifyPruningPointUTXOSetOverrideRequestMessage
+	(*NotifyPruningPointUTXOSetOverrideResponseMessage)(nil),                       // 89: protowire.NotifyPruningPointUTXOSetOverrideResponseMessage
+	(*PruningPointUTXOSetOverrideNotificationMessage)(nil),                         // 90: protowire.PruningPointUTXOSetOverrideNotificationMessage
+	(*StopNotifyingPruningPointUTXOSetOverrideRequestMessage)(nil),                 // 91: protowire.StopNotifyingPruningPointUTXOSetOverrideRequestMessage
+	(*StopNotifyingPruningPointUTXOSetOverrideResponseMessage)(nil),                // 92: protowire.StopNotifyingPruningPointUTXOSetOverrideResponseMessage
+	(*BanRequestMessage)(nil),                                                      // 93: protowire.BanRequestMessage
+	(*BanResponseMessage)(nil),                                                     // 94: protowire.BanResponseMessage
+	(*UnbanRequestMessage)(nil),                                                    // 95: protowire.UnbanRequestMessage
+	(*UnbanResponseMessage)(nil),                                                   // 96: protowire.UnbanResponseMessage
+	(*GetInfoRequestMessage)(nil),                                                  // 97: protowire.GetInfoRequestMessage
+	(*GetInfoResponseMessage)(nil),                                                 // 98: protowire.GetInfoResponseMessage
+	(*GetAcceptingBlockHashOfTxRequestMessage)(nil),                                // 99: protowire.GetAcceptingBlockHashOfTxRequestMessage
+	(*GetAcceptingBlockHashOfTxResponseMessage)(nil),                               // 100: protowire.GetAcceptingBlockHashOfTxResponseMessage
+	(*EstimateNetworkHashesPerSecondRequestMessage)(nil),                           // 101: protowire.EstimateNetworkHashesPerSecondRequestMessage
+	(*EstimateNetworkHashesPerSecondResponseMessage)(nil),                          // 102: protowire.EstimateNetworkHashesPerSecondResponseMessage
+	(*NotifyNewBlockTemplateRequestMessage)(nil),                                   // 103: protowire.NotifyNewBlockTemplateRequestMessage
+	(*NotifyNewBlockTemplateResponseMessage)(nil),                                  // 104: protowire.NotifyNewBlockTemplateResponseMessage
+	(*NewBlockTemplateNotificationMessage)(nil),                                    // 105: protowire.NewBlockTemplateNotificationMessage
+	(*MempoolEntryByAddress)(nil),                                                  // 106: protowire.MempoolEntryByAddress
+	(*GetMempoolEntriesByAddressesRequestMessage)(nil),                             // 107: protowire.GetMempoolEntriesByAddressesRequestMessage
+	(*GetMempoolEntriesByAddressesResponseMessage)(nil),                            // 108: protowire.GetMempoolEntriesByAddressesResponseMessage
+	(*GetCoinSupplyRequestMessage)(nil),                                            // 109: protowire.GetCoinSupplyRequestMessage
+	(*GetCoinSupplyResponseMessage)(nil),                                           // 110: protowire.GetCoinSupplyResponseMessage
+	(*RpcTxIDConfirmationsPair)(nil),                                               // 111: protowire.RpcTxIDConfirmationsPair
+	(*RpcTxIDBlockHashPair)(nil),                                                   // 112: protowire.RpcTxIDBlockHashPair
+	(*RpcTxIDBlockPair)(nil),                                                       // 113: protowire.RpcTxIDBlockPair
+	(*GetAcceptingBlockHashesOfTxsRequestMessage)(nil),                             // 114: protowire.GetAcceptingBlockHashesOfTxsRequestMessage
+	(*GetAcceptingBlockHashesOfTxsResponseMessage)(nil),                            // 115: protowire.GetAcceptingBlockHashesOfTxsResponseMessage
+	(*GetAcceptingBlockOfTxRequestMessage)(nil),                                    // 116: protowire.GetAcceptingBlockOfTxRequestMessage
+	(*GetAcceptingBlockOfTxResponseMessage)(nil),                                   // 117: protowire.GetAcceptingBlockOfTxResponseMessage
+	(*GetAcceptingBlocksOfTxsRequestMessage)(nil),                                  // 118: protowire.GetAcceptingBlocksOfTxsRequestMessage
+	(*GetAcceptingBlocksOfTxsResponseMessage)(nil),                                 // 119: protowire.GetAcceptingBlocksOfTxsResponseMessage
+	(*GetIncludingBlockHashOfTxRequestMessage)(nil),                                // 120: protowire.GetIncludingBlockHashOfTxRequestMessage
+	(*GetIncludingBlockHashOfTxResponseMessage)(nil),                               // 121: protowire.GetIncludingBlockHashOfTxResponseMessage
+	(*GetIncludingBlockHashesOfTxsRequestMessage)(nil),                             // 122: protowire.GetIncludingBlockHashesOfTxsRequestMessage
+	(*GetIncludingBlockHashesOfTxsResponseMessage)(nil),                            // 123: protowire.GetIncludingBlockHashesOfTxsResponseMessage
+	(*GetIncludingBlockOfTxRequestMessage)(nil),                                    // 124: protowire.GetIncludingBlockOfTxRequestMessage
+	(*GetIncludingBlockOfTxResponseMessage)(nil),                                   // 125: protowire.GetIncludingBlockOfTxResponseMessage
+	(*GetIncludingBlocksOfTxsRequestMessage)(nil),                                  // 126: protowire.GetIncludingBlocksOfTxsRequestMessage
+	(*GetIncludingBlocksOfTxsResponseMessage)(nil),                                 // 127: protowire.GetIncludingBlocksOfTxsResponseMessage
+	(*GetTxRequestMessage)(nil),                                                    // 128: protowire.GetTxRequestMessage
+	(*GetTxResponseMessage)(nil),                                                   // 129: protowire.GetTxResponseMessage
+	(*GetTxsRequestMessage)(nil),                                                   // 130: protowire.GetTxsRequestMessage
+	(*GetTxsResponseMessage)(nil),                                                  // 131: protowire.GetTxsResponseMessage
+	(*GetTxConfirmationsRequestMessage)(nil),                                       // 132: protowire.GetTxConfirmationsRequestMessage
+	(*GetTxConfirmationsResponseMessage)(nil),                                      // 133: protowire.GetTxConfirmationsResponseMessage
+	(*GetTxsConfirmationsRequestMessage)(nil),                                      // 134: protowire.GetTxsConfirmationsRequestMessage
+	(*GetTxsConfirmationsResponseMessage)(nil),                                     // 135: protowire.GetTxsConfirmationsResponseMessage
+	(*NotifyTxsConfirmationChangedRequstMessage)(nil),                              // 136: protowire.NotifyTxsConfirmationChangedRequstMessage
+	(*NotifyTxsConfirmationChangedResponseMessage)(nil),                            // 137: protowire.NotifyTxsConfirmationChangedResponseMessage
+	(*TxsConfirmationChangedNotficationMessage)(nil),                               // 138: protowire.TxsConfirmationChangedNotficationMessage
+	(*StopNotifyTxsConfirmationChangedRequestMessage)(nil),                         // 139: protowire.StopNotifyTxsConfirmationChangedRequestMessage
+	(*StopNotifyTxsConfirmationChangedResponseMessage)(nil),                        // 140: protowire.StopNotifyTxsConfirmationChangedResponseMessage
+	(*StartNotifyTxsConfirmationChangedRequestMessage)(nil),                        // 141: protowire.StartNotifyTxsConfirmationChangedRequestMessage
+	(*StartNotifyTxsConfirmationChangedResponseMessage)(nil),                       // 142: protowire.StartNotifyTxsConfirmationChangedResponseMessage
+	(*ChangeNotifyTxsConfirmationChangedRequiredConfirmationsRequestMessage)(nil),  // 143: protowire.ChangeNotifyTxsConfirmationChangedRequiredConfirmationsRequestMessage
+	(*ChangeNotifyTxsConfirmationChangedRequiredConfirmationsResponseMessage)(nil), // 144: protowire.ChangeNotifyTxsConfirmationChangedRequiredConfirmationsResponseMessage
+	(*TxEntryByAddress)(nil),                                                       // 145: protowire.TxEntryByAddress
+	(*NotifyTxListenerRequestMessage)(nil),                                         // 146: protowire.NotifyTxListenerRequestMessage
+	(*NotifyTxListenerResponseMessage)(nil),                                        // 147: protowire.NotifyTxListenerResponseMessage
+	(*StopNotifyTxListenerRequestMessage)(nil),                                     // 148: protowire.StopNotifyTxListenerRequestMessage
+	(*StopNotifyTxListenerResponseMessage)(nil),                                    // 149: protowire.StopNotifyTxListenerResponseMessage
+	(*StartNotifyTxListenerRequestMessage)(nil),                                    // 150: protowire.StartNotifyTxListenerRequestMessage
+	(*StartNotifyTxListenerResponseMessage)(nil),                                   // 151: protowire.StartNotifyTxListenerResponseMessage
+	(*ChangeNotifyTxListenerRequiredConfirmationsRequestMessage)(nil),              // 152: protowire.ChangeNotifyTxListenerRequiredConfirmationsRequestMessage
+	(*ChangeNotifyTxListenerRequiredConfirmationsResponseMessage)(nil),             // 153: protowire.ChangeNotifyTxListenerRequiredConfirmationsResponseMessage
+	(*TxListenerNotificationMessage)(nil),                                          // 154: protowire.TxListenerNotificationMessage
+	(*TxsConfirmationChangedNotficationMessage_Pending)(nil),                       // 155: protowire.TxsConfirmationChangedNotficationMessage.Pending
+	(*TxsConfirmationChangedNotficationMessage_Confirmed)(nil),                     // 156: protowire.TxsConfirmationChangedNotficationMessage.Confirmed
+	(*TxListenerNotificationMessage_Pending)(nil),                                  // 157: protowire.TxListenerNotificationMessage.Pending
+	(*TxListenerNotificationMessage_Confirmed)(nil),                                // 158: protowire.TxListenerNotificationMessage.Confirmed
 }
 var file_rpc_proto_depIdxs = []int32{
 	3,   // 0: protowire.RpcBlock.header:type_name -> protowire.RpcBlockHeader
@@ -8771,11 +10043,22 @@ var file_rpc_proto_depIdxs = []int32{
 	1,   // 95: protowire.GetTxConfirmationsResponseMessage.error:type_name -> protowire.RPCError
 	111, // 96: protowire.GetTxsConfirmationsResponseMessage.txIDConfirmationsPairs:type_name -> protowire.RpcTxIDConfirmationsPair
 	1,   // 97: protowire.GetTxsConfirmationsResponseMessage.error:type_name -> protowire.RPCError
-	98,  // [98:98] is the sub-list for method output_type
-	98,  // [98:98] is the sub-list for method input_type
-	98,  // [98:98] is the sub-list for extension type_name
-	98,  // [98:98] is the sub-list for extension extendee
-	0,   // [0:98] is the sub-list for field type_name
+	155, // 98: protowire.TxsConfirmationChangedNotficationMessage.pending:type_name -> protowire.TxsConfirmationChangedNotficationMessage.Pending
+	156, // 99: protowire.TxsConfirmationChangedNotficationMessage.confirmed:type_name -> protowire.TxsConfirmationChangedNotficationMessage.Confirmed
+	1,   // 100: protowire.TxsConfirmationChangedNotficationMessage.error:type_name -> protowire.RPCError
+	157, // 101: protowire.TxListenerNotificationMessage.pending:type_name -> protowire.TxListenerNotificationMessage.Pending
+	158, // 102: protowire.TxListenerNotificationMessage.confirmed:type_name -> protowire.TxListenerNotificationMessage.Confirmed
+	111, // 103: protowire.TxsConfirmationChangedNotficationMessage.Pending.txIDConfirmationsPairs:type_name -> protowire.RpcTxIDConfirmationsPair
+	111, // 104: protowire.TxsConfirmationChangedNotficationMessage.Confirmed.txIDConfirmationsPairs:type_name -> protowire.RpcTxIDConfirmationsPair
+	145, // 105: protowire.TxListenerNotificationMessage.Pending.sent:type_name -> protowire.TxEntryByAddress
+	145, // 106: protowire.TxListenerNotificationMessage.Pending.received:type_name -> protowire.TxEntryByAddress
+	145, // 107: protowire.TxListenerNotificationMessage.Confirmed.sent:type_name -> protowire.TxEntryByAddress
+	145, // 108: protowire.TxListenerNotificationMessage.Confirmed.received:type_name -> protowire.TxEntryByAddress
+	109, // [109:109] is the sub-list for method output_type
+	109, // [109:109] is the sub-list for method input_type
+	109, // [109:109] is the sub-list for extension type_name
+	109, // [109:109] is the sub-list for extension extendee
+	0,   // [0:109] is the sub-list for field type_name
 }
 
 func init() { file_rpc_proto_init() }
@@ -10404,6 +11687,282 @@ func file_rpc_proto_init() {
 				return nil
 			}
 		}
+		file_rpc_proto_msgTypes[135].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*NotifyTxsConfirmationChangedRequstMessage); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_rpc_proto_msgTypes[136].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*NotifyTxsConfirmationChangedResponseMessage); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_rpc_proto_msgTypes[137].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*TxsConfirmationChangedNotficationMessage); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_rpc_proto_msgTypes[138].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*StopNotifyTxsConfirmationChangedRequestMessage); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_rpc_proto_msgTypes[139].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*StopNotifyTxsConfirmationChangedResponseMessage); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_rpc_proto_msgTypes[140].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*StartNotifyTxsConfirmationChangedRequestMessage); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_rpc_proto_msgTypes[141].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*StartNotifyTxsConfirmationChangedResponseMessage); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_rpc_proto_msgTypes[142].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*ChangeNotifyTxsConfirmationChangedRequiredConfirmationsRequestMessage); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_rpc_proto_msgTypes[143].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*ChangeNotifyTxsConfirmationChangedRequiredConfirmationsResponseMessage); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_rpc_proto_msgTypes[144].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*TxEntryByAddress); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_rpc_proto_msgTypes[145].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*NotifyTxListenerRequestMessage); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_rpc_proto_msgTypes[146].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*NotifyTxListenerResponseMessage); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_rpc_proto_msgTypes[147].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*StopNotifyTxListenerRequestMessage); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_rpc_proto_msgTypes[148].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*StopNotifyTxListenerResponseMessage); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_rpc_proto_msgTypes[149].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*StartNotifyTxListenerRequestMessage); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_rpc_proto_msgTypes[150].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*StartNotifyTxListenerResponseMessage); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_rpc_proto_msgTypes[151].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*ChangeNotifyTxListenerRequiredConfirmationsRequestMessage); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_rpc_proto_msgTypes[152].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*ChangeNotifyTxListenerRequiredConfirmationsResponseMessage); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_rpc_proto_msgTypes[153].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*TxListenerNotificationMessage); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_rpc_proto_msgTypes[154].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*TxsConfirmationChangedNotficationMessage_Pending); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_rpc_proto_msgTypes[155].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*TxsConfirmationChangedNotficationMessage_Confirmed); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_rpc_proto_msgTypes[156].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*TxListenerNotificationMessage_Pending); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_rpc_proto_msgTypes[157].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*TxListenerNotificationMessage_Confirmed); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
@@ -10411,7 +11970,7 @@ func file_rpc_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_rpc_proto_rawDesc,
 			NumEnums:      1,
-			NumMessages:   135,
+			NumMessages:   158,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

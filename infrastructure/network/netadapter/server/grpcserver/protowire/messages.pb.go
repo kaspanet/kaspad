@@ -180,6 +180,22 @@ type KaspadMessage struct {
 	//	*KaspadMessage_GetTxConfirmationsResponse
 	//	*KaspadMessage_GetTxsConfirmationsRequest
 	//	*KaspadMessage_GetTxsConfirmationsResponse
+	//	*KaspadMessage_NotifyTxsConfirmationChangedRequstMessage
+	//	*KaspadMessage_NotifyTxsConfirmationChangedResponseMessage
+	//	*KaspadMessage_StopNotifyTxsConfirmationChangedRequestMessage
+	//	*KaspadMessage_StopNotifyTxsConfirmationChangedResponseMessage
+	//	*KaspadMessage_StartNotifyTxsConfirmationChangedRequestMessage
+	//	*KaspadMessage_StartNotifyTxsConfirmationChangedResponseMessage
+	//	*KaspadMessage_ChangeNotifyTxsConfirmationChangedRequiredConfirmationsResponseMessage
+	//	*KaspadMessage_TxsConfirmationChangedNotficationMessage
+	//	*KaspadMessage_NotifyTxListenerRequestMessage
+	//	*KaspadMessage_StopNotifyTxListenerRequestMessage
+	//	*KaspadMessage_StopNotifyTxListenerResponseMessage
+	//	*KaspadMessage_StartNotifyTxListenerRequestMessage
+	//	*KaspadMessage_StartNotifyTxListenerResponseMessage
+	//	*KaspadMessage_ChangeNotifyTxListenerRequiredConfirmationsRequestMessage
+	//	*KaspadMessage_ChangeNotifyTxListenerRequiredConfirmationsResponseMessage
+	//	*KaspadMessage_TxListenerNotificationMessage
 	Payload isKaspadMessage_Payload `protobuf_oneof:"payload"`
 }
 
@@ -1300,6 +1316,118 @@ func (x *KaspadMessage) GetGetTxsConfirmationsResponse() *GetTxsConfirmationsRes
 	return nil
 }
 
+func (x *KaspadMessage) GetNotifyTxsConfirmationChangedRequstMessage() *NotifyTxsConfirmationChangedRequstMessage {
+	if x, ok := x.GetPayload().(*KaspadMessage_NotifyTxsConfirmationChangedRequstMessage); ok {
+		return x.NotifyTxsConfirmationChangedRequstMessage
+	}
+	return nil
+}
+
+func (x *KaspadMessage) GetNotifyTxsConfirmationChangedResponseMessage() *NotifyTxsConfirmationChangedResponseMessage {
+	if x, ok := x.GetPayload().(*KaspadMessage_NotifyTxsConfirmationChangedResponseMessage); ok {
+		return x.NotifyTxsConfirmationChangedResponseMessage
+	}
+	return nil
+}
+
+func (x *KaspadMessage) GetStopNotifyTxsConfirmationChangedRequestMessage() *StopNotifyTxsConfirmationChangedRequestMessage {
+	if x, ok := x.GetPayload().(*KaspadMessage_StopNotifyTxsConfirmationChangedRequestMessage); ok {
+		return x.StopNotifyTxsConfirmationChangedRequestMessage
+	}
+	return nil
+}
+
+func (x *KaspadMessage) GetStopNotifyTxsConfirmationChangedResponseMessage() *StopNotifyTxsConfirmationChangedResponseMessage {
+	if x, ok := x.GetPayload().(*KaspadMessage_StopNotifyTxsConfirmationChangedResponseMessage); ok {
+		return x.StopNotifyTxsConfirmationChangedResponseMessage
+	}
+	return nil
+}
+
+func (x *KaspadMessage) GetStartNotifyTxsConfirmationChangedRequestMessage() *StartNotifyTxsConfirmationChangedRequestMessage {
+	if x, ok := x.GetPayload().(*KaspadMessage_StartNotifyTxsConfirmationChangedRequestMessage); ok {
+		return x.StartNotifyTxsConfirmationChangedRequestMessage
+	}
+	return nil
+}
+
+func (x *KaspadMessage) GetStartNotifyTxsConfirmationChangedResponseMessage() *StartNotifyTxsConfirmationChangedResponseMessage {
+	if x, ok := x.GetPayload().(*KaspadMessage_StartNotifyTxsConfirmationChangedResponseMessage); ok {
+		return x.StartNotifyTxsConfirmationChangedResponseMessage
+	}
+	return nil
+}
+
+func (x *KaspadMessage) GetChangeNotifyTxsConfirmationChangedRequiredConfirmationsResponseMessage() *ChangeNotifyTxsConfirmationChangedRequiredConfirmationsResponseMessage {
+	if x, ok := x.GetPayload().(*KaspadMessage_ChangeNotifyTxsConfirmationChangedRequiredConfirmationsResponseMessage); ok {
+		return x.ChangeNotifyTxsConfirmationChangedRequiredConfirmationsResponseMessage
+	}
+	return nil
+}
+
+func (x *KaspadMessage) GetTxsConfirmationChangedNotficationMessage() *TxsConfirmationChangedNotficationMessage {
+	if x, ok := x.GetPayload().(*KaspadMessage_TxsConfirmationChangedNotficationMessage); ok {
+		return x.TxsConfirmationChangedNotficationMessage
+	}
+	return nil
+}
+
+func (x *KaspadMessage) GetNotifyTxListenerRequestMessage() *NotifyTxListenerRequestMessage {
+	if x, ok := x.GetPayload().(*KaspadMessage_NotifyTxListenerRequestMessage); ok {
+		return x.NotifyTxListenerRequestMessage
+	}
+	return nil
+}
+
+func (x *KaspadMessage) GetStopNotifyTxListenerRequestMessage() *StopNotifyTxListenerRequestMessage {
+	if x, ok := x.GetPayload().(*KaspadMessage_StopNotifyTxListenerRequestMessage); ok {
+		return x.StopNotifyTxListenerRequestMessage
+	}
+	return nil
+}
+
+func (x *KaspadMessage) GetStopNotifyTxListenerResponseMessage() *StopNotifyTxListenerResponseMessage {
+	if x, ok := x.GetPayload().(*KaspadMessage_StopNotifyTxListenerResponseMessage); ok {
+		return x.StopNotifyTxListenerResponseMessage
+	}
+	return nil
+}
+
+func (x *KaspadMessage) GetStartNotifyTxListenerRequestMessage() *StartNotifyTxListenerRequestMessage {
+	if x, ok := x.GetPayload().(*KaspadMessage_StartNotifyTxListenerRequestMessage); ok {
+		return x.StartNotifyTxListenerRequestMessage
+	}
+	return nil
+}
+
+func (x *KaspadMessage) GetStartNotifyTxListenerResponseMessage() *StartNotifyTxListenerResponseMessage {
+	if x, ok := x.GetPayload().(*KaspadMessage_StartNotifyTxListenerResponseMessage); ok {
+		return x.StartNotifyTxListenerResponseMessage
+	}
+	return nil
+}
+
+func (x *KaspadMessage) GetChangeNotifyTxListenerRequiredConfirmationsRequestMessage() *ChangeNotifyTxListenerRequiredConfirmationsRequestMessage {
+	if x, ok := x.GetPayload().(*KaspadMessage_ChangeNotifyTxListenerRequiredConfirmationsRequestMessage); ok {
+		return x.ChangeNotifyTxListenerRequiredConfirmationsRequestMessage
+	}
+	return nil
+}
+
+func (x *KaspadMessage) GetChangeNotifyTxListenerRequiredConfirmationsResponseMessage() *ChangeNotifyTxListenerRequiredConfirmationsResponseMessage {
+	if x, ok := x.GetPayload().(*KaspadMessage_ChangeNotifyTxListenerRequiredConfirmationsResponseMessage); ok {
+		return x.ChangeNotifyTxListenerRequiredConfirmationsResponseMessage
+	}
+	return nil
+}
+
+func (x *KaspadMessage) GetTxListenerNotificationMessage() *TxListenerNotificationMessage {
+	if x, ok := x.GetPayload().(*KaspadMessage_TxListenerNotificationMessage); ok {
+		return x.TxListenerNotificationMessage
+	}
+	return nil
+}
+
 type isKaspadMessage_Payload interface {
 	isKaspadMessage_Payload()
 }
@@ -1920,6 +2048,70 @@ type KaspadMessage_GetTxsConfirmationsResponse struct {
 	GetTxsConfirmationsResponse *GetTxsConfirmationsResponseMessage `protobuf:"bytes,1111,opt,name=getTxsConfirmationsResponse,proto3,oneof"`
 }
 
+type KaspadMessage_NotifyTxsConfirmationChangedRequstMessage struct {
+	NotifyTxsConfirmationChangedRequstMessage *NotifyTxsConfirmationChangedRequstMessage `protobuf:"bytes,1112,opt,name=notifyTxsConfirmationChangedRequstMessage,proto3,oneof"`
+}
+
+type KaspadMessage_NotifyTxsConfirmationChangedResponseMessage struct {
+	NotifyTxsConfirmationChangedResponseMessage *NotifyTxsConfirmationChangedResponseMessage `protobuf:"bytes,1113,opt,name=notifyTxsConfirmationChangedResponseMessage,proto3,oneof"`
+}
+
+type KaspadMessage_StopNotifyTxsConfirmationChangedRequestMessage struct {
+	StopNotifyTxsConfirmationChangedRequestMessage *StopNotifyTxsConfirmationChangedRequestMessage `protobuf:"bytes,1114,opt,name=stopNotifyTxsConfirmationChangedRequestMessage,proto3,oneof"`
+}
+
+type KaspadMessage_StopNotifyTxsConfirmationChangedResponseMessage struct {
+	StopNotifyTxsConfirmationChangedResponseMessage *StopNotifyTxsConfirmationChangedResponseMessage `protobuf:"bytes,1115,opt,name=stopNotifyTxsConfirmationChangedResponseMessage,proto3,oneof"`
+}
+
+type KaspadMessage_StartNotifyTxsConfirmationChangedRequestMessage struct {
+	StartNotifyTxsConfirmationChangedRequestMessage *StartNotifyTxsConfirmationChangedRequestMessage `protobuf:"bytes,1116,opt,name=startNotifyTxsConfirmationChangedRequestMessage,proto3,oneof"`
+}
+
+type KaspadMessage_StartNotifyTxsConfirmationChangedResponseMessage struct {
+	StartNotifyTxsConfirmationChangedResponseMessage *StartNotifyTxsConfirmationChangedResponseMessage `protobuf:"bytes,1117,opt,name=startNotifyTxsConfirmationChangedResponseMessage,proto3,oneof"`
+}
+
+type KaspadMessage_ChangeNotifyTxsConfirmationChangedRequiredConfirmationsResponseMessage struct {
+	ChangeNotifyTxsConfirmationChangedRequiredConfirmationsResponseMessage *ChangeNotifyTxsConfirmationChangedRequiredConfirmationsResponseMessage `protobuf:"bytes,1118,opt,name=changeNotifyTxsConfirmationChangedRequiredConfirmationsResponseMessage,proto3,oneof"`
+}
+
+type KaspadMessage_TxsConfirmationChangedNotficationMessage struct {
+	TxsConfirmationChangedNotficationMessage *TxsConfirmationChangedNotficationMessage `protobuf:"bytes,1119,opt,name=txsConfirmationChangedNotficationMessage,proto3,oneof"`
+}
+
+type KaspadMessage_NotifyTxListenerRequestMessage struct {
+	NotifyTxListenerRequestMessage *NotifyTxListenerRequestMessage `protobuf:"bytes,1120,opt,name=notifyTxListenerRequestMessage,proto3,oneof"`
+}
+
+type KaspadMessage_StopNotifyTxListenerRequestMessage struct {
+	StopNotifyTxListenerRequestMessage *StopNotifyTxListenerRequestMessage `protobuf:"bytes,1121,opt,name=stopNotifyTxListenerRequestMessage,proto3,oneof"`
+}
+
+type KaspadMessage_StopNotifyTxListenerResponseMessage struct {
+	StopNotifyTxListenerResponseMessage *StopNotifyTxListenerResponseMessage `protobuf:"bytes,1122,opt,name=stopNotifyTxListenerResponseMessage,proto3,oneof"`
+}
+
+type KaspadMessage_StartNotifyTxListenerRequestMessage struct {
+	StartNotifyTxListenerRequestMessage *StartNotifyTxListenerRequestMessage `protobuf:"bytes,1123,opt,name=startNotifyTxListenerRequestMessage,proto3,oneof"`
+}
+
+type KaspadMessage_StartNotifyTxListenerResponseMessage struct {
+	StartNotifyTxListenerResponseMessage *StartNotifyTxListenerResponseMessage `protobuf:"bytes,1124,opt,name=startNotifyTxListenerResponseMessage,proto3,oneof"`
+}
+
+type KaspadMessage_ChangeNotifyTxListenerRequiredConfirmationsRequestMessage struct {
+	ChangeNotifyTxListenerRequiredConfirmationsRequestMessage *ChangeNotifyTxListenerRequiredConfirmationsRequestMessage `protobuf:"bytes,1125,opt,name=changeNotifyTxListenerRequiredConfirmationsRequestMessage,proto3,oneof"`
+}
+
+type KaspadMessage_ChangeNotifyTxListenerRequiredConfirmationsResponseMessage struct {
+	ChangeNotifyTxListenerRequiredConfirmationsResponseMessage *ChangeNotifyTxListenerRequiredConfirmationsResponseMessage `protobuf:"bytes,1126,opt,name=changeNotifyTxListenerRequiredConfirmationsResponseMessage,proto3,oneof"`
+}
+
+type KaspadMessage_TxListenerNotificationMessage struct {
+	TxListenerNotificationMessage *TxListenerNotificationMessage `protobuf:"bytes,1127,opt,name=txListenerNotificationMessage,proto3,oneof"`
+}
+
 func (*KaspadMessage_Addresses) isKaspadMessage_Payload() {}
 
 func (*KaspadMessage_Block) isKaspadMessage_Payload() {}
@@ -2228,13 +2420,48 @@ func (*KaspadMessage_GetTxsConfirmationsRequest) isKaspadMessage_Payload() {}
 
 func (*KaspadMessage_GetTxsConfirmationsResponse) isKaspadMessage_Payload() {}
 
+func (*KaspadMessage_NotifyTxsConfirmationChangedRequstMessage) isKaspadMessage_Payload() {}
+
+func (*KaspadMessage_NotifyTxsConfirmationChangedResponseMessage) isKaspadMessage_Payload() {}
+
+func (*KaspadMessage_StopNotifyTxsConfirmationChangedRequestMessage) isKaspadMessage_Payload() {}
+
+func (*KaspadMessage_StopNotifyTxsConfirmationChangedResponseMessage) isKaspadMessage_Payload() {}
+
+func (*KaspadMessage_StartNotifyTxsConfirmationChangedRequestMessage) isKaspadMessage_Payload() {}
+
+func (*KaspadMessage_StartNotifyTxsConfirmationChangedResponseMessage) isKaspadMessage_Payload() {}
+
+func (*KaspadMessage_ChangeNotifyTxsConfirmationChangedRequiredConfirmationsResponseMessage) isKaspadMessage_Payload() {
+}
+
+func (*KaspadMessage_TxsConfirmationChangedNotficationMessage) isKaspadMessage_Payload() {}
+
+func (*KaspadMessage_NotifyTxListenerRequestMessage) isKaspadMessage_Payload() {}
+
+func (*KaspadMessage_StopNotifyTxListenerRequestMessage) isKaspadMessage_Payload() {}
+
+func (*KaspadMessage_StopNotifyTxListenerResponseMessage) isKaspadMessage_Payload() {}
+
+func (*KaspadMessage_StartNotifyTxListenerRequestMessage) isKaspadMessage_Payload() {}
+
+func (*KaspadMessage_StartNotifyTxListenerResponseMessage) isKaspadMessage_Payload() {}
+
+func (*KaspadMessage_ChangeNotifyTxListenerRequiredConfirmationsRequestMessage) isKaspadMessage_Payload() {
+}
+
+func (*KaspadMessage_ChangeNotifyTxListenerRequiredConfirmationsResponseMessage) isKaspadMessage_Payload() {
+}
+
+func (*KaspadMessage_TxListenerNotificationMessage) isKaspadMessage_Payload() {}
+
 var File_messages_proto protoreflect.FileDescriptor
 
 var file_messages_proto_rawDesc = []byte{
 	0x0a, 0x0e, 0x6d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x73, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f,
 	0x12, 0x09, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x77, 0x69, 0x72, 0x65, 0x1a, 0x09, 0x70, 0x32, 0x70,
 	0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x1a, 0x09, 0x72, 0x70, 0x63, 0x2e, 0x70, 0x72, 0x6f, 0x74,
-	0x6f, 0x22, 0xd7, 0x83, 0x01, 0x0a, 0x0d, 0x4b, 0x61, 0x73, 0x70, 0x61, 0x64, 0x4d, 0x65, 0x73,
+	0x6f, 0x22, 0xcd, 0x97, 0x01, 0x0a, 0x0d, 0x4b, 0x61, 0x73, 0x70, 0x61, 0x64, 0x4d, 0x65, 0x73,
 	0x73, 0x61, 0x67, 0x65, 0x12, 0x3b, 0x0a, 0x09, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x65,
 	0x73, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1b, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x77,
 	0x69, 0x72, 0x65, 0x2e, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x65, 0x73, 0x4d, 0x65, 0x73,
@@ -3287,20 +3514,180 @@ var file_messages_proto_rawDesc = []byte{
 	0x6f, 0x6e, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x4d, 0x65, 0x73, 0x73, 0x61,
 	0x67, 0x65, 0x48, 0x00, 0x52, 0x1b, 0x67, 0x65, 0x74, 0x54, 0x78, 0x73, 0x43, 0x6f, 0x6e, 0x66,
 	0x69, 0x72, 0x6d, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73,
-	0x65, 0x42, 0x09, 0x0a, 0x07, 0x70, 0x61, 0x79, 0x6c, 0x6f, 0x61, 0x64, 0x32, 0x50, 0x0a, 0x03,
-	0x50, 0x32, 0x50, 0x12, 0x49, 0x0a, 0x0d, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x53, 0x74,
-	0x72, 0x65, 0x61, 0x6d, 0x12, 0x18, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x77, 0x69, 0x72, 0x65,
-	0x2e, 0x4b, 0x61, 0x73, 0x70, 0x61, 0x64, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x1a, 0x18,
-	0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x77, 0x69, 0x72, 0x65, 0x2e, 0x4b, 0x61, 0x73, 0x70, 0x61,
-	0x64, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x22, 0x00, 0x28, 0x01, 0x30, 0x01, 0x32, 0x50,
-	0x0a, 0x03, 0x52, 0x50, 0x43, 0x12, 0x49, 0x0a, 0x0d, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65,
-	0x53, 0x74, 0x72, 0x65, 0x61, 0x6d, 0x12, 0x18, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x77, 0x69,
+	0x65, 0x12, 0x95, 0x01, 0x0a, 0x29, 0x6e, 0x6f, 0x74, 0x69, 0x66, 0x79, 0x54, 0x78, 0x73, 0x43,
+	0x6f, 0x6e, 0x66, 0x69, 0x72, 0x6d, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x43, 0x68, 0x61, 0x6e, 0x67,
+	0x65, 0x64, 0x52, 0x65, 0x71, 0x75, 0x73, 0x74, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x18,
+	0xd8, 0x08, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x34, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x77, 0x69,
+	0x72, 0x65, 0x2e, 0x4e, 0x6f, 0x74, 0x69, 0x66, 0x79, 0x54, 0x78, 0x73, 0x43, 0x6f, 0x6e, 0x66,
+	0x69, 0x72, 0x6d, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x43, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x64, 0x52,
+	0x65, 0x71, 0x75, 0x73, 0x74, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x48, 0x00, 0x52, 0x29,
+	0x6e, 0x6f, 0x74, 0x69, 0x66, 0x79, 0x54, 0x78, 0x73, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x72, 0x6d,
+	0x61, 0x74, 0x69, 0x6f, 0x6e, 0x43, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x64, 0x52, 0x65, 0x71, 0x75,
+	0x73, 0x74, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x12, 0x9b, 0x01, 0x0a, 0x2b, 0x6e, 0x6f,
+	0x74, 0x69, 0x66, 0x79, 0x54, 0x78, 0x73, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x72, 0x6d, 0x61, 0x74,
+	0x69, 0x6f, 0x6e, 0x43, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x64, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e,
+	0x73, 0x65, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x18, 0xd9, 0x08, 0x20, 0x01, 0x28, 0x0b,
+	0x32, 0x36, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x77, 0x69, 0x72, 0x65, 0x2e, 0x4e, 0x6f, 0x74,
+	0x69, 0x66, 0x79, 0x54, 0x78, 0x73, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x72, 0x6d, 0x61, 0x74, 0x69,
+	0x6f, 0x6e, 0x43, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x64, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73,
+	0x65, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x48, 0x00, 0x52, 0x2b, 0x6e, 0x6f, 0x74, 0x69,
+	0x66, 0x79, 0x54, 0x78, 0x73, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x72, 0x6d, 0x61, 0x74, 0x69, 0x6f,
+	0x6e, 0x43, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x64, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65,
+	0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x12, 0xa4, 0x01, 0x0a, 0x2e, 0x73, 0x74, 0x6f, 0x70,
+	0x4e, 0x6f, 0x74, 0x69, 0x66, 0x79, 0x54, 0x78, 0x73, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x72, 0x6d,
+	0x61, 0x74, 0x69, 0x6f, 0x6e, 0x43, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x64, 0x52, 0x65, 0x71, 0x75,
+	0x65, 0x73, 0x74, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x18, 0xda, 0x08, 0x20, 0x01, 0x28,
+	0x0b, 0x32, 0x39, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x77, 0x69, 0x72, 0x65, 0x2e, 0x53, 0x74,
+	0x6f, 0x70, 0x4e, 0x6f, 0x74, 0x69, 0x66, 0x79, 0x54, 0x78, 0x73, 0x43, 0x6f, 0x6e, 0x66, 0x69,
+	0x72, 0x6d, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x43, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x64, 0x52, 0x65,
+	0x71, 0x75, 0x65, 0x73, 0x74, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x48, 0x00, 0x52, 0x2e,
+	0x73, 0x74, 0x6f, 0x70, 0x4e, 0x6f, 0x74, 0x69, 0x66, 0x79, 0x54, 0x78, 0x73, 0x43, 0x6f, 0x6e,
+	0x66, 0x69, 0x72, 0x6d, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x43, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x64,
+	0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x12, 0xa7,
+	0x01, 0x0a, 0x2f, 0x73, 0x74, 0x6f, 0x70, 0x4e, 0x6f, 0x74, 0x69, 0x66, 0x79, 0x54, 0x78, 0x73,
+	0x43, 0x6f, 0x6e, 0x66, 0x69, 0x72, 0x6d, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x43, 0x68, 0x61, 0x6e,
+	0x67, 0x65, 0x64, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x4d, 0x65, 0x73, 0x73, 0x61,
+	0x67, 0x65, 0x18, 0xdb, 0x08, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x3a, 0x2e, 0x70, 0x72, 0x6f, 0x74,
+	0x6f, 0x77, 0x69, 0x72, 0x65, 0x2e, 0x53, 0x74, 0x6f, 0x70, 0x4e, 0x6f, 0x74, 0x69, 0x66, 0x79,
+	0x54, 0x78, 0x73, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x72, 0x6d, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x43,
+	0x68, 0x61, 0x6e, 0x67, 0x65, 0x64, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x4d, 0x65,
+	0x73, 0x73, 0x61, 0x67, 0x65, 0x48, 0x00, 0x52, 0x2f, 0x73, 0x74, 0x6f, 0x70, 0x4e, 0x6f, 0x74,
+	0x69, 0x66, 0x79, 0x54, 0x78, 0x73, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x72, 0x6d, 0x61, 0x74, 0x69,
+	0x6f, 0x6e, 0x43, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x64, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73,
+	0x65, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x12, 0xa7, 0x01, 0x0a, 0x2f, 0x73, 0x74, 0x61,
+	0x72, 0x74, 0x4e, 0x6f, 0x74, 0x69, 0x66, 0x79, 0x54, 0x78, 0x73, 0x43, 0x6f, 0x6e, 0x66, 0x69,
+	0x72, 0x6d, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x43, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x64, 0x52, 0x65,
+	0x71, 0x75, 0x65, 0x73, 0x74, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x18, 0xdc, 0x08, 0x20,
+	0x01, 0x28, 0x0b, 0x32, 0x3a, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x77, 0x69, 0x72, 0x65, 0x2e,
+	0x53, 0x74, 0x61, 0x72, 0x74, 0x4e, 0x6f, 0x74, 0x69, 0x66, 0x79, 0x54, 0x78, 0x73, 0x43, 0x6f,
+	0x6e, 0x66, 0x69, 0x72, 0x6d, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x43, 0x68, 0x61, 0x6e, 0x67, 0x65,
+	0x64, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x48,
+	0x00, 0x52, 0x2f, 0x73, 0x74, 0x61, 0x72, 0x74, 0x4e, 0x6f, 0x74, 0x69, 0x66, 0x79, 0x54, 0x78,
+	0x73, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x72, 0x6d, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x43, 0x68, 0x61,
+	0x6e, 0x67, 0x65, 0x64, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x4d, 0x65, 0x73, 0x73, 0x61,
+	0x67, 0x65, 0x12, 0xaa, 0x01, 0x0a, 0x30, 0x73, 0x74, 0x61, 0x72, 0x74, 0x4e, 0x6f, 0x74, 0x69,
+	0x66, 0x79, 0x54, 0x78, 0x73, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x72, 0x6d, 0x61, 0x74, 0x69, 0x6f,
+	0x6e, 0x43, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x64, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65,
+	0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x18, 0xdd, 0x08, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x3b,
+	0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x77, 0x69, 0x72, 0x65, 0x2e, 0x53, 0x74, 0x61, 0x72, 0x74,
+	0x4e, 0x6f, 0x74, 0x69, 0x66, 0x79, 0x54, 0x78, 0x73, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x72, 0x6d,
+	0x61, 0x74, 0x69, 0x6f, 0x6e, 0x43, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x64, 0x52, 0x65, 0x73, 0x70,
+	0x6f, 0x6e, 0x73, 0x65, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x48, 0x00, 0x52, 0x30, 0x73,
+	0x74, 0x61, 0x72, 0x74, 0x4e, 0x6f, 0x74, 0x69, 0x66, 0x79, 0x54, 0x78, 0x73, 0x43, 0x6f, 0x6e,
+	0x66, 0x69, 0x72, 0x6d, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x43, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x64,
+	0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x12,
+	0xec, 0x01, 0x0a, 0x46, 0x63, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x4e, 0x6f, 0x74, 0x69, 0x66, 0x79,
+	0x54, 0x78, 0x73, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x72, 0x6d, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x43,
+	0x68, 0x61, 0x6e, 0x67, 0x65, 0x64, 0x52, 0x65, 0x71, 0x75, 0x69, 0x72, 0x65, 0x64, 0x43, 0x6f,
+	0x6e, 0x66, 0x69, 0x72, 0x6d, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f,
+	0x6e, 0x73, 0x65, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x18, 0xde, 0x08, 0x20, 0x01, 0x28,
+	0x0b, 0x32, 0x51, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x77, 0x69, 0x72, 0x65, 0x2e, 0x43, 0x68,
+	0x61, 0x6e, 0x67, 0x65, 0x4e, 0x6f, 0x74, 0x69, 0x66, 0x79, 0x54, 0x78, 0x73, 0x43, 0x6f, 0x6e,
+	0x66, 0x69, 0x72, 0x6d, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x43, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x64,
+	0x52, 0x65, 0x71, 0x75, 0x69, 0x72, 0x65, 0x64, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x72, 0x6d, 0x61,
+	0x74, 0x69, 0x6f, 0x6e, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x4d, 0x65, 0x73,
+	0x73, 0x61, 0x67, 0x65, 0x48, 0x00, 0x52, 0x46, 0x63, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x4e, 0x6f,
+	0x74, 0x69, 0x66, 0x79, 0x54, 0x78, 0x73, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x72, 0x6d, 0x61, 0x74,
+	0x69, 0x6f, 0x6e, 0x43, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x64, 0x52, 0x65, 0x71, 0x75, 0x69, 0x72,
+	0x65, 0x64, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x72, 0x6d, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x52,
+	0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x12, 0x92,
+	0x01, 0x0a, 0x28, 0x74, 0x78, 0x73, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x72, 0x6d, 0x61, 0x74, 0x69,
+	0x6f, 0x6e, 0x43, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x64, 0x4e, 0x6f, 0x74, 0x66, 0x69, 0x63, 0x61,
+	0x74, 0x69, 0x6f, 0x6e, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x18, 0xdf, 0x08, 0x20, 0x01,
+	0x28, 0x0b, 0x32, 0x33, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x77, 0x69, 0x72, 0x65, 0x2e, 0x54,
+	0x78, 0x73, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x72, 0x6d, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x43, 0x68,
+	0x61, 0x6e, 0x67, 0x65, 0x64, 0x4e, 0x6f, 0x74, 0x66, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e,
+	0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x48, 0x00, 0x52, 0x28, 0x74, 0x78, 0x73, 0x43, 0x6f,
+	0x6e, 0x66, 0x69, 0x72, 0x6d, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x43, 0x68, 0x61, 0x6e, 0x67, 0x65,
+	0x64, 0x4e, 0x6f, 0x74, 0x66, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x4d, 0x65, 0x73, 0x73,
+	0x61, 0x67, 0x65, 0x12, 0x74, 0x0a, 0x1e, 0x6e, 0x6f, 0x74, 0x69, 0x66, 0x79, 0x54, 0x78, 0x4c,
+	0x69, 0x73, 0x74, 0x65, 0x6e, 0x65, 0x72, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x4d, 0x65,
+	0x73, 0x73, 0x61, 0x67, 0x65, 0x18, 0xe0, 0x08, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x29, 0x2e, 0x70,
+	0x72, 0x6f, 0x74, 0x6f, 0x77, 0x69, 0x72, 0x65, 0x2e, 0x4e, 0x6f, 0x74, 0x69, 0x66, 0x79, 0x54,
+	0x78, 0x4c, 0x69, 0x73, 0x74, 0x65, 0x6e, 0x65, 0x72, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74,
+	0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x48, 0x00, 0x52, 0x1e, 0x6e, 0x6f, 0x74, 0x69, 0x66,
+	0x79, 0x54, 0x78, 0x4c, 0x69, 0x73, 0x74, 0x65, 0x6e, 0x65, 0x72, 0x52, 0x65, 0x71, 0x75, 0x65,
+	0x73, 0x74, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x12, 0x80, 0x01, 0x0a, 0x22, 0x73, 0x74,
+	0x6f, 0x70, 0x4e, 0x6f, 0x74, 0x69, 0x66, 0x79, 0x54, 0x78, 0x4c, 0x69, 0x73, 0x74, 0x65, 0x6e,
+	0x65, 0x72, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65,
+	0x18, 0xe1, 0x08, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x2d, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x77,
+	0x69, 0x72, 0x65, 0x2e, 0x53, 0x74, 0x6f, 0x70, 0x4e, 0x6f, 0x74, 0x69, 0x66, 0x79, 0x54, 0x78,
+	0x4c, 0x69, 0x73, 0x74, 0x65, 0x6e, 0x65, 0x72, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x4d,
+	0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x48, 0x00, 0x52, 0x22, 0x73, 0x74, 0x6f, 0x70, 0x4e, 0x6f,
+	0x74, 0x69, 0x66, 0x79, 0x54, 0x78, 0x4c, 0x69, 0x73, 0x74, 0x65, 0x6e, 0x65, 0x72, 0x52, 0x65,
+	0x71, 0x75, 0x65, 0x73, 0x74, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x12, 0x83, 0x01, 0x0a,
+	0x23, 0x73, 0x74, 0x6f, 0x70, 0x4e, 0x6f, 0x74, 0x69, 0x66, 0x79, 0x54, 0x78, 0x4c, 0x69, 0x73,
+	0x74, 0x65, 0x6e, 0x65, 0x72, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x4d, 0x65, 0x73,
+	0x73, 0x61, 0x67, 0x65, 0x18, 0xe2, 0x08, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x2e, 0x2e, 0x70, 0x72,
+	0x6f, 0x74, 0x6f, 0x77, 0x69, 0x72, 0x65, 0x2e, 0x53, 0x74, 0x6f, 0x70, 0x4e, 0x6f, 0x74, 0x69,
+	0x66, 0x79, 0x54, 0x78, 0x4c, 0x69, 0x73, 0x74, 0x65, 0x6e, 0x65, 0x72, 0x52, 0x65, 0x73, 0x70,
+	0x6f, 0x6e, 0x73, 0x65, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x48, 0x00, 0x52, 0x23, 0x73,
+	0x74, 0x6f, 0x70, 0x4e, 0x6f, 0x74, 0x69, 0x66, 0x79, 0x54, 0x78, 0x4c, 0x69, 0x73, 0x74, 0x65,
+	0x6e, 0x65, 0x72, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x4d, 0x65, 0x73, 0x73, 0x61,
+	0x67, 0x65, 0x12, 0x83, 0x01, 0x0a, 0x23, 0x73, 0x74, 0x61, 0x72, 0x74, 0x4e, 0x6f, 0x74, 0x69,
+	0x66, 0x79, 0x54, 0x78, 0x4c, 0x69, 0x73, 0x74, 0x65, 0x6e, 0x65, 0x72, 0x52, 0x65, 0x71, 0x75,
+	0x65, 0x73, 0x74, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x18, 0xe3, 0x08, 0x20, 0x01, 0x28,
+	0x0b, 0x32, 0x2e, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x77, 0x69, 0x72, 0x65, 0x2e, 0x53, 0x74,
+	0x61, 0x72, 0x74, 0x4e, 0x6f, 0x74, 0x69, 0x66, 0x79, 0x54, 0x78, 0x4c, 0x69, 0x73, 0x74, 0x65,
+	0x6e, 0x65, 0x72, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67,
+	0x65, 0x48, 0x00, 0x52, 0x23, 0x73, 0x74, 0x61, 0x72, 0x74, 0x4e, 0x6f, 0x74, 0x69, 0x66, 0x79,
+	0x54, 0x78, 0x4c, 0x69, 0x73, 0x74, 0x65, 0x6e, 0x65, 0x72, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73,
+	0x74, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x12, 0x86, 0x01, 0x0a, 0x24, 0x73, 0x74, 0x61,
+	0x72, 0x74, 0x4e, 0x6f, 0x74, 0x69, 0x66, 0x79, 0x54, 0x78, 0x4c, 0x69, 0x73, 0x74, 0x65, 0x6e,
+	0x65, 0x72, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67,
+	0x65, 0x18, 0xe4, 0x08, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x2f, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f,
+	0x77, 0x69, 0x72, 0x65, 0x2e, 0x53, 0x74, 0x61, 0x72, 0x74, 0x4e, 0x6f, 0x74, 0x69, 0x66, 0x79,
+	0x54, 0x78, 0x4c, 0x69, 0x73, 0x74, 0x65, 0x6e, 0x65, 0x72, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e,
+	0x73, 0x65, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x48, 0x00, 0x52, 0x24, 0x73, 0x74, 0x61,
+	0x72, 0x74, 0x4e, 0x6f, 0x74, 0x69, 0x66, 0x79, 0x54, 0x78, 0x4c, 0x69, 0x73, 0x74, 0x65, 0x6e,
+	0x65, 0x72, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67,
+	0x65, 0x12, 0xc5, 0x01, 0x0a, 0x39, 0x63, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x4e, 0x6f, 0x74, 0x69,
+	0x66, 0x79, 0x54, 0x78, 0x4c, 0x69, 0x73, 0x74, 0x65, 0x6e, 0x65, 0x72, 0x52, 0x65, 0x71, 0x75,
+	0x69, 0x72, 0x65, 0x64, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x72, 0x6d, 0x61, 0x74, 0x69, 0x6f, 0x6e,
+	0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x18,
+	0xe5, 0x08, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x44, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x77, 0x69,
+	0x72, 0x65, 0x2e, 0x43, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x4e, 0x6f, 0x74, 0x69, 0x66, 0x79, 0x54,
+	0x78, 0x4c, 0x69, 0x73, 0x74, 0x65, 0x6e, 0x65, 0x72, 0x52, 0x65, 0x71, 0x75, 0x69, 0x72, 0x65,
+	0x64, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x72, 0x6d, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x52, 0x65,
+	0x71, 0x75, 0x65, 0x73, 0x74, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x48, 0x00, 0x52, 0x39,
+	0x63, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x4e, 0x6f, 0x74, 0x69, 0x66, 0x79, 0x54, 0x78, 0x4c, 0x69,
+	0x73, 0x74, 0x65, 0x6e, 0x65, 0x72, 0x52, 0x65, 0x71, 0x75, 0x69, 0x72, 0x65, 0x64, 0x43, 0x6f,
+	0x6e, 0x66, 0x69, 0x72, 0x6d, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65,
+	0x73, 0x74, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x12, 0xc8, 0x01, 0x0a, 0x3a, 0x63, 0x68,
+	0x61, 0x6e, 0x67, 0x65, 0x4e, 0x6f, 0x74, 0x69, 0x66, 0x79, 0x54, 0x78, 0x4c, 0x69, 0x73, 0x74,
+	0x65, 0x6e, 0x65, 0x72, 0x52, 0x65, 0x71, 0x75, 0x69, 0x72, 0x65, 0x64, 0x43, 0x6f, 0x6e, 0x66,
+	0x69, 0x72, 0x6d, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73,
+	0x65, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x18, 0xe6, 0x08, 0x20, 0x01, 0x28, 0x0b, 0x32,
+	0x45, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x77, 0x69, 0x72, 0x65, 0x2e, 0x43, 0x68, 0x61, 0x6e,
+	0x67, 0x65, 0x4e, 0x6f, 0x74, 0x69, 0x66, 0x79, 0x54, 0x78, 0x4c, 0x69, 0x73, 0x74, 0x65, 0x6e,
+	0x65, 0x72, 0x52, 0x65, 0x71, 0x75, 0x69, 0x72, 0x65, 0x64, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x72,
+	0x6d, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x4d,
+	0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x48, 0x00, 0x52, 0x3a, 0x63, 0x68, 0x61, 0x6e, 0x67, 0x65,
+	0x4e, 0x6f, 0x74, 0x69, 0x66, 0x79, 0x54, 0x78, 0x4c, 0x69, 0x73, 0x74, 0x65, 0x6e, 0x65, 0x72,
+	0x52, 0x65, 0x71, 0x75, 0x69, 0x72, 0x65, 0x64, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x72, 0x6d, 0x61,
+	0x74, 0x69, 0x6f, 0x6e, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x4d, 0x65, 0x73,
+	0x73, 0x61, 0x67, 0x65, 0x12, 0x71, 0x0a, 0x1d, 0x74, 0x78, 0x4c, 0x69, 0x73, 0x74, 0x65, 0x6e,
+	0x65, 0x72, 0x4e, 0x6f, 0x74, 0x69, 0x66, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x4d, 0x65,
+	0x73, 0x73, 0x61, 0x67, 0x65, 0x18, 0xe7, 0x08, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x28, 0x2e, 0x70,
+	0x72, 0x6f, 0x74, 0x6f, 0x77, 0x69, 0x72, 0x65, 0x2e, 0x54, 0x78, 0x4c, 0x69, 0x73, 0x74, 0x65,
+	0x6e, 0x65, 0x72, 0x4e, 0x6f, 0x74, 0x69, 0x66, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x4d,
+	0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x48, 0x00, 0x52, 0x1d, 0x74, 0x78, 0x4c, 0x69, 0x73, 0x74,
+	0x65, 0x6e, 0x65, 0x72, 0x4e, 0x6f, 0x74, 0x69, 0x66, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e,
+	0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x42, 0x09, 0x0a, 0x07, 0x70, 0x61, 0x79, 0x6c, 0x6f,
+	0x61, 0x64, 0x32, 0x50, 0x0a, 0x03, 0x50, 0x32, 0x50, 0x12, 0x49, 0x0a, 0x0d, 0x4d, 0x65, 0x73,
+	0x73, 0x61, 0x67, 0x65, 0x53, 0x74, 0x72, 0x65, 0x61, 0x6d, 0x12, 0x18, 0x2e, 0x70, 0x72, 0x6f,
+	0x74, 0x6f, 0x77, 0x69, 0x72, 0x65, 0x2e, 0x4b, 0x61, 0x73, 0x70, 0x61, 0x64, 0x4d, 0x65, 0x73,
+	0x73, 0x61, 0x67, 0x65, 0x1a, 0x18, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x77, 0x69, 0x72, 0x65,
+	0x2e, 0x4b, 0x61, 0x73, 0x70, 0x61, 0x64, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x22, 0x00,
+	0x28, 0x01, 0x30, 0x01, 0x32, 0x50, 0x0a, 0x03, 0x52, 0x50, 0x43, 0x12, 0x49, 0x0a, 0x0d, 0x4d,
+	0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x53, 0x74, 0x72, 0x65, 0x61, 0x6d, 0x12, 0x18, 0x2e, 0x70,
+	0x72, 0x6f, 0x74, 0x6f, 0x77, 0x69, 0x72, 0x65, 0x2e, 0x4b, 0x61, 0x73, 0x70, 0x61, 0x64, 0x4d,
+	0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x1a, 0x18, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x77, 0x69,
 	0x72, 0x65, 0x2e, 0x4b, 0x61, 0x73, 0x70, 0x61, 0x64, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65,
-	0x1a, 0x18, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x77, 0x69, 0x72, 0x65, 0x2e, 0x4b, 0x61, 0x73,
-	0x70, 0x61, 0x64, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x22, 0x00, 0x28, 0x01, 0x30, 0x01,
-	0x42, 0x26, 0x5a, 0x24, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x6b,
-	0x61, 0x73, 0x70, 0x61, 0x6e, 0x65, 0x74, 0x2f, 0x6b, 0x61, 0x73, 0x70, 0x61, 0x64, 0x2f, 0x70,
-	0x72, 0x6f, 0x74, 0x6f, 0x77, 0x69, 0x72, 0x65, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x22, 0x00, 0x28, 0x01, 0x30, 0x01, 0x42, 0x26, 0x5a, 0x24, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62,
+	0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x6b, 0x61, 0x73, 0x70, 0x61, 0x6e, 0x65, 0x74, 0x2f, 0x6b, 0x61,
+	0x73, 0x70, 0x61, 0x64, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x77, 0x69, 0x72, 0x65, 0x62, 0x06,
+	0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -3317,160 +3704,176 @@ func file_messages_proto_rawDescGZIP() []byte {
 
 var file_messages_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
 var file_messages_proto_goTypes = []interface{}{
-	(*KaspadMessage)(nil),                                              // 0: protowire.KaspadMessage
-	(*AddressesMessage)(nil),                                           // 1: protowire.AddressesMessage
-	(*BlockMessage)(nil),                                               // 2: protowire.BlockMessage
-	(*TransactionMessage)(nil),                                         // 3: protowire.TransactionMessage
-	(*BlockLocatorMessage)(nil),                                        // 4: protowire.BlockLocatorMessage
-	(*RequestAddressesMessage)(nil),                                    // 5: protowire.RequestAddressesMessage
-	(*RequestRelayBlocksMessage)(nil),                                  // 6: protowire.RequestRelayBlocksMessage
-	(*RequestTransactionsMessage)(nil),                                 // 7: protowire.RequestTransactionsMessage
-	(*InvRelayBlockMessage)(nil),                                       // 8: protowire.InvRelayBlockMessage
-	(*InvTransactionsMessage)(nil),                                     // 9: protowire.InvTransactionsMessage
-	(*PingMessage)(nil),                                                // 10: protowire.PingMessage
-	(*PongMessage)(nil),                                                // 11: protowire.PongMessage
-	(*VerackMessage)(nil),                                              // 12: protowire.VerackMessage
-	(*VersionMessage)(nil),                                             // 13: protowire.VersionMessage
-	(*TransactionNotFoundMessage)(nil),                                 // 14: protowire.TransactionNotFoundMessage
-	(*RejectMessage)(nil),                                              // 15: protowire.RejectMessage
-	(*PruningPointUtxoSetChunkMessage)(nil),                            // 16: protowire.PruningPointUtxoSetChunkMessage
-	(*RequestIBDBlocksMessage)(nil),                                    // 17: protowire.RequestIBDBlocksMessage
-	(*UnexpectedPruningPointMessage)(nil),                              // 18: protowire.UnexpectedPruningPointMessage
-	(*IbdBlockLocatorMessage)(nil),                                     // 19: protowire.IbdBlockLocatorMessage
-	(*IbdBlockLocatorHighestHashMessage)(nil),                          // 20: protowire.IbdBlockLocatorHighestHashMessage
-	(*RequestNextPruningPointUtxoSetChunkMessage)(nil),                 // 21: protowire.RequestNextPruningPointUtxoSetChunkMessage
-	(*DonePruningPointUtxoSetChunksMessage)(nil),                       // 22: protowire.DonePruningPointUtxoSetChunksMessage
-	(*IbdBlockLocatorHighestHashNotFoundMessage)(nil),                  // 23: protowire.IbdBlockLocatorHighestHashNotFoundMessage
-	(*BlockWithTrustedDataMessage)(nil),                                // 24: protowire.BlockWithTrustedDataMessage
-	(*DoneBlocksWithTrustedDataMessage)(nil),                           // 25: protowire.DoneBlocksWithTrustedDataMessage
-	(*RequestPruningPointAndItsAnticoneMessage)(nil),                   // 26: protowire.RequestPruningPointAndItsAnticoneMessage
-	(*BlockHeadersMessage)(nil),                                        // 27: protowire.BlockHeadersMessage
-	(*RequestNextHeadersMessage)(nil),                                  // 28: protowire.RequestNextHeadersMessage
-	(*DoneHeadersMessage)(nil),                                         // 29: protowire.DoneHeadersMessage
-	(*RequestPruningPointUTXOSetMessage)(nil),                          // 30: protowire.RequestPruningPointUTXOSetMessage
-	(*RequestHeadersMessage)(nil),                                      // 31: protowire.RequestHeadersMessage
-	(*RequestBlockLocatorMessage)(nil),                                 // 32: protowire.RequestBlockLocatorMessage
-	(*PruningPointsMessage)(nil),                                       // 33: protowire.PruningPointsMessage
-	(*RequestPruningPointProofMessage)(nil),                            // 34: protowire.RequestPruningPointProofMessage
-	(*PruningPointProofMessage)(nil),                                   // 35: protowire.PruningPointProofMessage
-	(*ReadyMessage)(nil),                                               // 36: protowire.ReadyMessage
-	(*BlockWithTrustedDataV4Message)(nil),                              // 37: protowire.BlockWithTrustedDataV4Message
-	(*TrustedDataMessage)(nil),                                         // 38: protowire.TrustedDataMessage
-	(*RequestIBDChainBlockLocatorMessage)(nil),                         // 39: protowire.RequestIBDChainBlockLocatorMessage
-	(*IbdChainBlockLocatorMessage)(nil),                                // 40: protowire.IbdChainBlockLocatorMessage
-	(*RequestAnticoneMessage)(nil),                                     // 41: protowire.RequestAnticoneMessage
-	(*RequestNextPruningPointAndItsAnticoneBlocksMessage)(nil),         // 42: protowire.RequestNextPruningPointAndItsAnticoneBlocksMessage
-	(*GetCurrentNetworkRequestMessage)(nil),                            // 43: protowire.GetCurrentNetworkRequestMessage
-	(*GetCurrentNetworkResponseMessage)(nil),                           // 44: protowire.GetCurrentNetworkResponseMessage
-	(*SubmitBlockRequestMessage)(nil),                                  // 45: protowire.SubmitBlockRequestMessage
-	(*SubmitBlockResponseMessage)(nil),                                 // 46: protowire.SubmitBlockResponseMessage
-	(*GetBlockTemplateRequestMessage)(nil),                             // 47: protowire.GetBlockTemplateRequestMessage
-	(*GetBlockTemplateResponseMessage)(nil),                            // 48: protowire.GetBlockTemplateResponseMessage
-	(*NotifyBlockAddedRequestMessage)(nil),                             // 49: protowire.NotifyBlockAddedRequestMessage
-	(*NotifyBlockAddedResponseMessage)(nil),                            // 50: protowire.NotifyBlockAddedResponseMessage
-	(*BlockAddedNotificationMessage)(nil),                              // 51: protowire.BlockAddedNotificationMessage
-	(*GetPeerAddressesRequestMessage)(nil),                             // 52: protowire.GetPeerAddressesRequestMessage
-	(*GetPeerAddressesResponseMessage)(nil),                            // 53: protowire.GetPeerAddressesResponseMessage
-	(*GetSelectedTipHashRequestMessage)(nil),                           // 54: protowire.GetSelectedTipHashRequestMessage
-	(*GetSelectedTipHashResponseMessage)(nil),                          // 55: protowire.GetSelectedTipHashResponseMessage
-	(*GetMempoolEntryRequestMessage)(nil),                              // 56: protowire.GetMempoolEntryRequestMessage
-	(*GetMempoolEntryResponseMessage)(nil),                             // 57: protowire.GetMempoolEntryResponseMessage
-	(*GetConnectedPeerInfoRequestMessage)(nil),                         // 58: protowire.GetConnectedPeerInfoRequestMessage
-	(*GetConnectedPeerInfoResponseMessage)(nil),                        // 59: protowire.GetConnectedPeerInfoResponseMessage
-	(*AddPeerRequestMessage)(nil),                                      // 60: protowire.AddPeerRequestMessage
-	(*AddPeerResponseMessage)(nil),                                     // 61: protowire.AddPeerResponseMessage
-	(*SubmitTransactionRequestMessage)(nil),                            // 62: protowire.SubmitTransactionRequestMessage
-	(*SubmitTransactionResponseMessage)(nil),                           // 63: protowire.SubmitTransactionResponseMessage
-	(*NotifyVirtualSelectedParentChainChangedRequestMessage)(nil),      // 64: protowire.NotifyVirtualSelectedParentChainChangedRequestMessage
-	(*NotifyVirtualSelectedParentChainChangedResponseMessage)(nil),     // 65: protowire.NotifyVirtualSelectedParentChainChangedResponseMessage
-	(*VirtualSelectedParentChainChangedNotificationMessage)(nil),       // 66: protowire.VirtualSelectedParentChainChangedNotificationMessage
-	(*GetBlockRequestMessage)(nil),                                     // 67: protowire.GetBlockRequestMessage
-	(*GetBlockResponseMessage)(nil),                                    // 68: protowire.GetBlockResponseMessage
-	(*GetSubnetworkRequestMessage)(nil),                                // 69: protowire.GetSubnetworkRequestMessage
-	(*GetSubnetworkResponseMessage)(nil),                               // 70: protowire.GetSubnetworkResponseMessage
-	(*GetVirtualSelectedParentChainFromBlockRequestMessage)(nil),       // 71: protowire.GetVirtualSelectedParentChainFromBlockRequestMessage
-	(*GetVirtualSelectedParentChainFromBlockResponseMessage)(nil),      // 72: protowire.GetVirtualSelectedParentChainFromBlockResponseMessage
-	(*GetBlocksRequestMessage)(nil),                                    // 73: protowire.GetBlocksRequestMessage
-	(*GetBlocksResponseMessage)(nil),                                   // 74: protowire.GetBlocksResponseMessage
-	(*GetBlockCountRequestMessage)(nil),                                // 75: protowire.GetBlockCountRequestMessage
-	(*GetBlockCountResponseMessage)(nil),                               // 76: protowire.GetBlockCountResponseMessage
-	(*GetBlockDagInfoRequestMessage)(nil),                              // 77: protowire.GetBlockDagInfoRequestMessage
-	(*GetBlockDagInfoResponseMessage)(nil),                             // 78: protowire.GetBlockDagInfoResponseMessage
-	(*ResolveFinalityConflictRequestMessage)(nil),                      // 79: protowire.ResolveFinalityConflictRequestMessage
-	(*ResolveFinalityConflictResponseMessage)(nil),                     // 80: protowire.ResolveFinalityConflictResponseMessage
-	(*NotifyFinalityConflictsRequestMessage)(nil),                      // 81: protowire.NotifyFinalityConflictsRequestMessage
-	(*NotifyFinalityConflictsResponseMessage)(nil),                     // 82: protowire.NotifyFinalityConflictsResponseMessage
-	(*FinalityConflictNotificationMessage)(nil),                        // 83: protowire.FinalityConflictNotificationMessage
-	(*FinalityConflictResolvedNotificationMessage)(nil),                // 84: protowire.FinalityConflictResolvedNotificationMessage
-	(*GetMempoolEntriesRequestMessage)(nil),                            // 85: protowire.GetMempoolEntriesRequestMessage
-	(*GetMempoolEntriesResponseMessage)(nil),                           // 86: protowire.GetMempoolEntriesResponseMessage
-	(*ShutDownRequestMessage)(nil),                                     // 87: protowire.ShutDownRequestMessage
-	(*ShutDownResponseMessage)(nil),                                    // 88: protowire.ShutDownResponseMessage
-	(*GetHeadersRequestMessage)(nil),                                   // 89: protowire.GetHeadersRequestMessage
-	(*GetHeadersResponseMessage)(nil),                                  // 90: protowire.GetHeadersResponseMessage
-	(*NotifyUtxosChangedRequestMessage)(nil),                           // 91: protowire.NotifyUtxosChangedRequestMessage
-	(*NotifyUtxosChangedResponseMessage)(nil),                          // 92: protowire.NotifyUtxosChangedResponseMessage
-	(*UtxosChangedNotificationMessage)(nil),                            // 93: protowire.UtxosChangedNotificationMessage
-	(*GetUtxosByAddressesRequestMessage)(nil),                          // 94: protowire.GetUtxosByAddressesRequestMessage
-	(*GetUtxosByAddressesResponseMessage)(nil),                         // 95: protowire.GetUtxosByAddressesResponseMessage
-	(*GetVirtualSelectedParentBlueScoreRequestMessage)(nil),            // 96: protowire.GetVirtualSelectedParentBlueScoreRequestMessage
-	(*GetVirtualSelectedParentBlueScoreResponseMessage)(nil),           // 97: protowire.GetVirtualSelectedParentBlueScoreResponseMessage
-	(*NotifyVirtualSelectedParentBlueScoreChangedRequestMessage)(nil),  // 98: protowire.NotifyVirtualSelectedParentBlueScoreChangedRequestMessage
-	(*NotifyVirtualSelectedParentBlueScoreChangedResponseMessage)(nil), // 99: protowire.NotifyVirtualSelectedParentBlueScoreChangedResponseMessage
-	(*VirtualSelectedParentBlueScoreChangedNotificationMessage)(nil),   // 100: protowire.VirtualSelectedParentBlueScoreChangedNotificationMessage
-	(*BanRequestMessage)(nil),                                          // 101: protowire.BanRequestMessage
-	(*BanResponseMessage)(nil),                                         // 102: protowire.BanResponseMessage
-	(*UnbanRequestMessage)(nil),                                        // 103: protowire.UnbanRequestMessage
-	(*UnbanResponseMessage)(nil),                                       // 104: protowire.UnbanResponseMessage
-	(*GetInfoRequestMessage)(nil),                                      // 105: protowire.GetInfoRequestMessage
-	(*GetInfoResponseMessage)(nil),                                     // 106: protowire.GetInfoResponseMessage
-	(*StopNotifyingUtxosChangedRequestMessage)(nil),                    // 107: protowire.StopNotifyingUtxosChangedRequestMessage
-	(*StopNotifyingUtxosChangedResponseMessage)(nil),                   // 108: protowire.StopNotifyingUtxosChangedResponseMessage
-	(*NotifyPruningPointUTXOSetOverrideRequestMessage)(nil),            // 109: protowire.NotifyPruningPointUTXOSetOverrideRequestMessage
-	(*NotifyPruningPointUTXOSetOverrideResponseMessage)(nil),           // 110: protowire.NotifyPruningPointUTXOSetOverrideResponseMessage
-	(*PruningPointUTXOSetOverrideNotificationMessage)(nil),             // 111: protowire.PruningPointUTXOSetOverrideNotificationMessage
-	(*StopNotifyingPruningPointUTXOSetOverrideRequestMessage)(nil),     // 112: protowire.StopNotifyingPruningPointUTXOSetOverrideRequestMessage
-	(*StopNotifyingPruningPointUTXOSetOverrideResponseMessage)(nil),    // 113: protowire.StopNotifyingPruningPointUTXOSetOverrideResponseMessage
-	(*EstimateNetworkHashesPerSecondRequestMessage)(nil),               // 114: protowire.EstimateNetworkHashesPerSecondRequestMessage
-	(*EstimateNetworkHashesPerSecondResponseMessage)(nil),              // 115: protowire.EstimateNetworkHashesPerSecondResponseMessage
-	(*NotifyVirtualDaaScoreChangedRequestMessage)(nil),                 // 116: protowire.NotifyVirtualDaaScoreChangedRequestMessage
-	(*NotifyVirtualDaaScoreChangedResponseMessage)(nil),                // 117: protowire.NotifyVirtualDaaScoreChangedResponseMessage
-	(*VirtualDaaScoreChangedNotificationMessage)(nil),                  // 118: protowire.VirtualDaaScoreChangedNotificationMessage
-	(*GetBalanceByAddressRequestMessage)(nil),                          // 119: protowire.GetBalanceByAddressRequestMessage
-	(*GetBalanceByAddressResponseMessage)(nil),                         // 120: protowire.GetBalanceByAddressResponseMessage
-	(*GetBalancesByAddressesRequestMessage)(nil),                       // 121: protowire.GetBalancesByAddressesRequestMessage
-	(*GetBalancesByAddressesResponseMessage)(nil),                      // 122: protowire.GetBalancesByAddressesResponseMessage
-	(*NotifyNewBlockTemplateRequestMessage)(nil),                       // 123: protowire.NotifyNewBlockTemplateRequestMessage
-	(*NotifyNewBlockTemplateResponseMessage)(nil),                      // 124: protowire.NotifyNewBlockTemplateResponseMessage
-	(*NewBlockTemplateNotificationMessage)(nil),                        // 125: protowire.NewBlockTemplateNotificationMessage
-	(*GetMempoolEntriesByAddressesRequestMessage)(nil),                 // 126: protowire.GetMempoolEntriesByAddressesRequestMessage
-	(*GetMempoolEntriesByAddressesResponseMessage)(nil),                // 127: protowire.GetMempoolEntriesByAddressesResponseMessage
-	(*GetCoinSupplyRequestMessage)(nil),                                // 128: protowire.GetCoinSupplyRequestMessage
-	(*GetCoinSupplyResponseMessage)(nil),                               // 129: protowire.GetCoinSupplyResponseMessage
-	(*GetAcceptingBlockHashOfTxRequestMessage)(nil),                    // 130: protowire.GetAcceptingBlockHashOfTxRequestMessage
-	(*GetAcceptingBlockHashOfTxResponseMessage)(nil),                   // 131: protowire.GetAcceptingBlockHashOfTxResponseMessage
-	(*GetAcceptingBlockHashesOfTxsRequestMessage)(nil),                 // 132: protowire.GetAcceptingBlockHashesOfTxsRequestMessage
-	(*GetAcceptingBlockHashesOfTxsResponseMessage)(nil),                // 133: protowire.GetAcceptingBlockHashesOfTxsResponseMessage
-	(*GetAcceptingBlockOfTxRequestMessage)(nil),                        // 134: protowire.GetAcceptingBlockOfTxRequestMessage
-	(*GetAcceptingBlockOfTxResponseMessage)(nil),                       // 135: protowire.GetAcceptingBlockOfTxResponseMessage
-	(*GetAcceptingBlocksOfTxsRequestMessage)(nil),                      // 136: protowire.GetAcceptingBlocksOfTxsRequestMessage
-	(*GetAcceptingBlocksOfTxsResponseMessage)(nil),                     // 137: protowire.GetAcceptingBlocksOfTxsResponseMessage
-	(*GetIncludingBlockHashOfTxRequestMessage)(nil),                    // 138: protowire.GetIncludingBlockHashOfTxRequestMessage
-	(*GetIncludingBlockHashOfTxResponseMessage)(nil),                   // 139: protowire.GetIncludingBlockHashOfTxResponseMessage
-	(*GetIncludingBlockHashesOfTxsRequestMessage)(nil),                 // 140: protowire.GetIncludingBlockHashesOfTxsRequestMessage
-	(*GetIncludingBlockHashesOfTxsResponseMessage)(nil),                // 141: protowire.GetIncludingBlockHashesOfTxsResponseMessage
-	(*GetIncludingBlockOfTxRequestMessage)(nil),                        // 142: protowire.GetIncludingBlockOfTxRequestMessage
-	(*GetIncludingBlockOfTxResponseMessage)(nil),                       // 143: protowire.GetIncludingBlockOfTxResponseMessage
-	(*GetIncludingBlocksOfTxsRequestMessage)(nil),                      // 144: protowire.GetIncludingBlocksOfTxsRequestMessage
-	(*GetIncludingBlocksOfTxsResponseMessage)(nil),                     // 145: protowire.GetIncludingBlocksOfTxsResponseMessage
-	(*GetTxRequestMessage)(nil),                                        // 146: protowire.GetTxRequestMessage
-	(*GetTxResponseMessage)(nil),                                       // 147: protowire.GetTxResponseMessage
-	(*GetTxsRequestMessage)(nil),                                       // 148: protowire.GetTxsRequestMessage
-	(*GetTxsResponseMessage)(nil),                                      // 149: protowire.GetTxsResponseMessage
-	(*GetTxConfirmationsRequestMessage)(nil),                           // 150: protowire.GetTxConfirmationsRequestMessage
-	(*GetTxConfirmationsResponseMessage)(nil),                          // 151: protowire.GetTxConfirmationsResponseMessage
-	(*GetTxsConfirmationsRequestMessage)(nil),                          // 152: protowire.GetTxsConfirmationsRequestMessage
-	(*GetTxsConfirmationsResponseMessage)(nil),                         // 153: protowire.GetTxsConfirmationsResponseMessage
+	(*KaspadMessage)(nil),                                                          // 0: protowire.KaspadMessage
+	(*AddressesMessage)(nil),                                                       // 1: protowire.AddressesMessage
+	(*BlockMessage)(nil),                                                           // 2: protowire.BlockMessage
+	(*TransactionMessage)(nil),                                                     // 3: protowire.TransactionMessage
+	(*BlockLocatorMessage)(nil),                                                    // 4: protowire.BlockLocatorMessage
+	(*RequestAddressesMessage)(nil),                                                // 5: protowire.RequestAddressesMessage
+	(*RequestRelayBlocksMessage)(nil),                                              // 6: protowire.RequestRelayBlocksMessage
+	(*RequestTransactionsMessage)(nil),                                             // 7: protowire.RequestTransactionsMessage
+	(*InvRelayBlockMessage)(nil),                                                   // 8: protowire.InvRelayBlockMessage
+	(*InvTransactionsMessage)(nil),                                                 // 9: protowire.InvTransactionsMessage
+	(*PingMessage)(nil),                                                            // 10: protowire.PingMessage
+	(*PongMessage)(nil),                                                            // 11: protowire.PongMessage
+	(*VerackMessage)(nil),                                                          // 12: protowire.VerackMessage
+	(*VersionMessage)(nil),                                                         // 13: protowire.VersionMessage
+	(*TransactionNotFoundMessage)(nil),                                             // 14: protowire.TransactionNotFoundMessage
+	(*RejectMessage)(nil),                                                          // 15: protowire.RejectMessage
+	(*PruningPointUtxoSetChunkMessage)(nil),                                        // 16: protowire.PruningPointUtxoSetChunkMessage
+	(*RequestIBDBlocksMessage)(nil),                                                // 17: protowire.RequestIBDBlocksMessage
+	(*UnexpectedPruningPointMessage)(nil),                                          // 18: protowire.UnexpectedPruningPointMessage
+	(*IbdBlockLocatorMessage)(nil),                                                 // 19: protowire.IbdBlockLocatorMessage
+	(*IbdBlockLocatorHighestHashMessage)(nil),                                      // 20: protowire.IbdBlockLocatorHighestHashMessage
+	(*RequestNextPruningPointUtxoSetChunkMessage)(nil),                             // 21: protowire.RequestNextPruningPointUtxoSetChunkMessage
+	(*DonePruningPointUtxoSetChunksMessage)(nil),                                   // 22: protowire.DonePruningPointUtxoSetChunksMessage
+	(*IbdBlockLocatorHighestHashNotFoundMessage)(nil),                              // 23: protowire.IbdBlockLocatorHighestHashNotFoundMessage
+	(*BlockWithTrustedDataMessage)(nil),                                            // 24: protowire.BlockWithTrustedDataMessage
+	(*DoneBlocksWithTrustedDataMessage)(nil),                                       // 25: protowire.DoneBlocksWithTrustedDataMessage
+	(*RequestPruningPointAndItsAnticoneMessage)(nil),                               // 26: protowire.RequestPruningPointAndItsAnticoneMessage
+	(*BlockHeadersMessage)(nil),                                                    // 27: protowire.BlockHeadersMessage
+	(*RequestNextHeadersMessage)(nil),                                              // 28: protowire.RequestNextHeadersMessage
+	(*DoneHeadersMessage)(nil),                                                     // 29: protowire.DoneHeadersMessage
+	(*RequestPruningPointUTXOSetMessage)(nil),                                      // 30: protowire.RequestPruningPointUTXOSetMessage
+	(*RequestHeadersMessage)(nil),                                                  // 31: protowire.RequestHeadersMessage
+	(*RequestBlockLocatorMessage)(nil),                                             // 32: protowire.RequestBlockLocatorMessage
+	(*PruningPointsMessage)(nil),                                                   // 33: protowire.PruningPointsMessage
+	(*RequestPruningPointProofMessage)(nil),                                        // 34: protowire.RequestPruningPointProofMessage
+	(*PruningPointProofMessage)(nil),                                               // 35: protowire.PruningPointProofMessage
+	(*ReadyMessage)(nil),                                                           // 36: protowire.ReadyMessage
+	(*BlockWithTrustedDataV4Message)(nil),                                          // 37: protowire.BlockWithTrustedDataV4Message
+	(*TrustedDataMessage)(nil),                                                     // 38: protowire.TrustedDataMessage
+	(*RequestIBDChainBlockLocatorMessage)(nil),                                     // 39: protowire.RequestIBDChainBlockLocatorMessage
+	(*IbdChainBlockLocatorMessage)(nil),                                            // 40: protowire.IbdChainBlockLocatorMessage
+	(*RequestAnticoneMessage)(nil),                                                 // 41: protowire.RequestAnticoneMessage
+	(*RequestNextPruningPointAndItsAnticoneBlocksMessage)(nil),                     // 42: protowire.RequestNextPruningPointAndItsAnticoneBlocksMessage
+	(*GetCurrentNetworkRequestMessage)(nil),                                        // 43: protowire.GetCurrentNetworkRequestMessage
+	(*GetCurrentNetworkResponseMessage)(nil),                                       // 44: protowire.GetCurrentNetworkResponseMessage
+	(*SubmitBlockRequestMessage)(nil),                                              // 45: protowire.SubmitBlockRequestMessage
+	(*SubmitBlockResponseMessage)(nil),                                             // 46: protowire.SubmitBlockResponseMessage
+	(*GetBlockTemplateRequestMessage)(nil),                                         // 47: protowire.GetBlockTemplateRequestMessage
+	(*GetBlockTemplateResponseMessage)(nil),                                        // 48: protowire.GetBlockTemplateResponseMessage
+	(*NotifyBlockAddedRequestMessage)(nil),                                         // 49: protowire.NotifyBlockAddedRequestMessage
+	(*NotifyBlockAddedResponseMessage)(nil),                                        // 50: protowire.NotifyBlockAddedResponseMessage
+	(*BlockAddedNotificationMessage)(nil),                                          // 51: protowire.BlockAddedNotificationMessage
+	(*GetPeerAddressesRequestMessage)(nil),                                         // 52: protowire.GetPeerAddressesRequestMessage
+	(*GetPeerAddressesResponseMessage)(nil),                                        // 53: protowire.GetPeerAddressesResponseMessage
+	(*GetSelectedTipHashRequestMessage)(nil),                                       // 54: protowire.GetSelectedTipHashRequestMessage
+	(*GetSelectedTipHashResponseMessage)(nil),                                      // 55: protowire.GetSelectedTipHashResponseMessage
+	(*GetMempoolEntryRequestMessage)(nil),                                          // 56: protowire.GetMempoolEntryRequestMessage
+	(*GetMempoolEntryResponseMessage)(nil),                                         // 57: protowire.GetMempoolEntryResponseMessage
+	(*GetConnectedPeerInfoRequestMessage)(nil),                                     // 58: protowire.GetConnectedPeerInfoRequestMessage
+	(*GetConnectedPeerInfoResponseMessage)(nil),                                    // 59: protowire.GetConnectedPeerInfoResponseMessage
+	(*AddPeerRequestMessage)(nil),                                                  // 60: protowire.AddPeerRequestMessage
+	(*AddPeerResponseMessage)(nil),                                                 // 61: protowire.AddPeerResponseMessage
+	(*SubmitTransactionRequestMessage)(nil),                                        // 62: protowire.SubmitTransactionRequestMessage
+	(*SubmitTransactionResponseMessage)(nil),                                       // 63: protowire.SubmitTransactionResponseMessage
+	(*NotifyVirtualSelectedParentChainChangedRequestMessage)(nil),                  // 64: protowire.NotifyVirtualSelectedParentChainChangedRequestMessage
+	(*NotifyVirtualSelectedParentChainChangedResponseMessage)(nil),                 // 65: protowire.NotifyVirtualSelectedParentChainChangedResponseMessage
+	(*VirtualSelectedParentChainChangedNotificationMessage)(nil),                   // 66: protowire.VirtualSelectedParentChainChangedNotificationMessage
+	(*GetBlockRequestMessage)(nil),                                                 // 67: protowire.GetBlockRequestMessage
+	(*GetBlockResponseMessage)(nil),                                                // 68: protowire.GetBlockResponseMessage
+	(*GetSubnetworkRequestMessage)(nil),                                            // 69: protowire.GetSubnetworkRequestMessage
+	(*GetSubnetworkResponseMessage)(nil),                                           // 70: protowire.GetSubnetworkResponseMessage
+	(*GetVirtualSelectedParentChainFromBlockRequestMessage)(nil),                   // 71: protowire.GetVirtualSelectedParentChainFromBlockRequestMessage
+	(*GetVirtualSelectedParentChainFromBlockResponseMessage)(nil),                  // 72: protowire.GetVirtualSelectedParentChainFromBlockResponseMessage
+	(*GetBlocksRequestMessage)(nil),                                                // 73: protowire.GetBlocksRequestMessage
+	(*GetBlocksResponseMessage)(nil),                                               // 74: protowire.GetBlocksResponseMessage
+	(*GetBlockCountRequestMessage)(nil),                                            // 75: protowire.GetBlockCountRequestMessage
+	(*GetBlockCountResponseMessage)(nil),                                           // 76: protowire.GetBlockCountResponseMessage
+	(*GetBlockDagInfoRequestMessage)(nil),                                          // 77: protowire.GetBlockDagInfoRequestMessage
+	(*GetBlockDagInfoResponseMessage)(nil),                                         // 78: protowire.GetBlockDagInfoResponseMessage
+	(*ResolveFinalityConflictRequestMessage)(nil),                                  // 79: protowire.ResolveFinalityConflictRequestMessage
+	(*ResolveFinalityConflictResponseMessage)(nil),                                 // 80: protowire.ResolveFinalityConflictResponseMessage
+	(*NotifyFinalityConflictsRequestMessage)(nil),                                  // 81: protowire.NotifyFinalityConflictsRequestMessage
+	(*NotifyFinalityConflictsResponseMessage)(nil),                                 // 82: protowire.NotifyFinalityConflictsResponseMessage
+	(*FinalityConflictNotificationMessage)(nil),                                    // 83: protowire.FinalityConflictNotificationMessage
+	(*FinalityConflictResolvedNotificationMessage)(nil),                            // 84: protowire.FinalityConflictResolvedNotificationMessage
+	(*GetMempoolEntriesRequestMessage)(nil),                                        // 85: protowire.GetMempoolEntriesRequestMessage
+	(*GetMempoolEntriesResponseMessage)(nil),                                       // 86: protowire.GetMempoolEntriesResponseMessage
+	(*ShutDownRequestMessage)(nil),                                                 // 87: protowire.ShutDownRequestMessage
+	(*ShutDownResponseMessage)(nil),                                                // 88: protowire.ShutDownResponseMessage
+	(*GetHeadersRequestMessage)(nil),                                               // 89: protowire.GetHeadersRequestMessage
+	(*GetHeadersResponseMessage)(nil),                                              // 90: protowire.GetHeadersResponseMessage
+	(*NotifyUtxosChangedRequestMessage)(nil),                                       // 91: protowire.NotifyUtxosChangedRequestMessage
+	(*NotifyUtxosChangedResponseMessage)(nil),                                      // 92: protowire.NotifyUtxosChangedResponseMessage
+	(*UtxosChangedNotificationMessage)(nil),                                        // 93: protowire.UtxosChangedNotificationMessage
+	(*GetUtxosByAddressesRequestMessage)(nil),                                      // 94: protowire.GetUtxosByAddressesRequestMessage
+	(*GetUtxosByAddressesResponseMessage)(nil),                                     // 95: protowire.GetUtxosByAddressesResponseMessage
+	(*GetVirtualSelectedParentBlueScoreRequestMessage)(nil),                        // 96: protowire.GetVirtualSelectedParentBlueScoreRequestMessage
+	(*GetVirtualSelectedParentBlueScoreResponseMessage)(nil),                       // 97: protowire.GetVirtualSelectedParentBlueScoreResponseMessage
+	(*NotifyVirtualSelectedParentBlueScoreChangedRequestMessage)(nil),              // 98: protowire.NotifyVirtualSelectedParentBlueScoreChangedRequestMessage
+	(*NotifyVirtualSelectedParentBlueScoreChangedResponseMessage)(nil),             // 99: protowire.NotifyVirtualSelectedParentBlueScoreChangedResponseMessage
+	(*VirtualSelectedParentBlueScoreChangedNotificationMessage)(nil),               // 100: protowire.VirtualSelectedParentBlueScoreChangedNotificationMessage
+	(*BanRequestMessage)(nil),                                                      // 101: protowire.BanRequestMessage
+	(*BanResponseMessage)(nil),                                                     // 102: protowire.BanResponseMessage
+	(*UnbanRequestMessage)(nil),                                                    // 103: protowire.UnbanRequestMessage
+	(*UnbanResponseMessage)(nil),                                                   // 104: protowire.UnbanResponseMessage
+	(*GetInfoRequestMessage)(nil),                                                  // 105: protowire.GetInfoRequestMessage
+	(*GetInfoResponseMessage)(nil),                                                 // 106: protowire.GetInfoResponseMessage
+	(*StopNotifyingUtxosChangedRequestMessage)(nil),                                // 107: protowire.StopNotifyingUtxosChangedRequestMessage
+	(*StopNotifyingUtxosChangedResponseMessage)(nil),                               // 108: protowire.StopNotifyingUtxosChangedResponseMessage
+	(*NotifyPruningPointUTXOSetOverrideRequestMessage)(nil),                        // 109: protowire.NotifyPruningPointUTXOSetOverrideRequestMessage
+	(*NotifyPruningPointUTXOSetOverrideResponseMessage)(nil),                       // 110: protowire.NotifyPruningPointUTXOSetOverrideResponseMessage
+	(*PruningPointUTXOSetOverrideNotificationMessage)(nil),                         // 111: protowire.PruningPointUTXOSetOverrideNotificationMessage
+	(*StopNotifyingPruningPointUTXOSetOverrideRequestMessage)(nil),                 // 112: protowire.StopNotifyingPruningPointUTXOSetOverrideRequestMessage
+	(*StopNotifyingPruningPointUTXOSetOverrideResponseMessage)(nil),                // 113: protowire.StopNotifyingPruningPointUTXOSetOverrideResponseMessage
+	(*EstimateNetworkHashesPerSecondRequestMessage)(nil),                           // 114: protowire.EstimateNetworkHashesPerSecondRequestMessage
+	(*EstimateNetworkHashesPerSecondResponseMessage)(nil),                          // 115: protowire.EstimateNetworkHashesPerSecondResponseMessage
+	(*NotifyVirtualDaaScoreChangedRequestMessage)(nil),                             // 116: protowire.NotifyVirtualDaaScoreChangedRequestMessage
+	(*NotifyVirtualDaaScoreChangedResponseMessage)(nil),                            // 117: protowire.NotifyVirtualDaaScoreChangedResponseMessage
+	(*VirtualDaaScoreChangedNotificationMessage)(nil),                              // 118: protowire.VirtualDaaScoreChangedNotificationMessage
+	(*GetBalanceByAddressRequestMessage)(nil),                                      // 119: protowire.GetBalanceByAddressRequestMessage
+	(*GetBalanceByAddressResponseMessage)(nil),                                     // 120: protowire.GetBalanceByAddressResponseMessage
+	(*GetBalancesByAddressesRequestMessage)(nil),                                   // 121: protowire.GetBalancesByAddressesRequestMessage
+	(*GetBalancesByAddressesResponseMessage)(nil),                                  // 122: protowire.GetBalancesByAddressesResponseMessage
+	(*NotifyNewBlockTemplateRequestMessage)(nil),                                   // 123: protowire.NotifyNewBlockTemplateRequestMessage
+	(*NotifyNewBlockTemplateResponseMessage)(nil),                                  // 124: protowire.NotifyNewBlockTemplateResponseMessage
+	(*NewBlockTemplateNotificationMessage)(nil),                                    // 125: protowire.NewBlockTemplateNotificationMessage
+	(*GetMempoolEntriesByAddressesRequestMessage)(nil),                             // 126: protowire.GetMempoolEntriesByAddressesRequestMessage
+	(*GetMempoolEntriesByAddressesResponseMessage)(nil),                            // 127: protowire.GetMempoolEntriesByAddressesResponseMessage
+	(*GetCoinSupplyRequestMessage)(nil),                                            // 128: protowire.GetCoinSupplyRequestMessage
+	(*GetCoinSupplyResponseMessage)(nil),                                           // 129: protowire.GetCoinSupplyResponseMessage
+	(*GetAcceptingBlockHashOfTxRequestMessage)(nil),                                // 130: protowire.GetAcceptingBlockHashOfTxRequestMessage
+	(*GetAcceptingBlockHashOfTxResponseMessage)(nil),                               // 131: protowire.GetAcceptingBlockHashOfTxResponseMessage
+	(*GetAcceptingBlockHashesOfTxsRequestMessage)(nil),                             // 132: protowire.GetAcceptingBlockHashesOfTxsRequestMessage
+	(*GetAcceptingBlockHashesOfTxsResponseMessage)(nil),                            // 133: protowire.GetAcceptingBlockHashesOfTxsResponseMessage
+	(*GetAcceptingBlockOfTxRequestMessage)(nil),                                    // 134: protowire.GetAcceptingBlockOfTxRequestMessage
+	(*GetAcceptingBlockOfTxResponseMessage)(nil),                                   // 135: protowire.GetAcceptingBlockOfTxResponseMessage
+	(*GetAcceptingBlocksOfTxsRequestMessage)(nil),                                  // 136: protowire.GetAcceptingBlocksOfTxsRequestMessage
+	(*GetAcceptingBlocksOfTxsResponseMessage)(nil),                                 // 137: protowire.GetAcceptingBlocksOfTxsResponseMessage
+	(*GetIncludingBlockHashOfTxRequestMessage)(nil),                                // 138: protowire.GetIncludingBlockHashOfTxRequestMessage
+	(*GetIncludingBlockHashOfTxResponseMessage)(nil),                               // 139: protowire.GetIncludingBlockHashOfTxResponseMessage
+	(*GetIncludingBlockHashesOfTxsRequestMessage)(nil),                             // 140: protowire.GetIncludingBlockHashesOfTxsRequestMessage
+	(*GetIncludingBlockHashesOfTxsResponseMessage)(nil),                            // 141: protowire.GetIncludingBlockHashesOfTxsResponseMessage
+	(*GetIncludingBlockOfTxRequestMessage)(nil),                                    // 142: protowire.GetIncludingBlockOfTxRequestMessage
+	(*GetIncludingBlockOfTxResponseMessage)(nil),                                   // 143: protowire.GetIncludingBlockOfTxResponseMessage
+	(*GetIncludingBlocksOfTxsRequestMessage)(nil),                                  // 144: protowire.GetIncludingBlocksOfTxsRequestMessage
+	(*GetIncludingBlocksOfTxsResponseMessage)(nil),                                 // 145: protowire.GetIncludingBlocksOfTxsResponseMessage
+	(*GetTxRequestMessage)(nil),                                                    // 146: protowire.GetTxRequestMessage
+	(*GetTxResponseMessage)(nil),                                                   // 147: protowire.GetTxResponseMessage
+	(*GetTxsRequestMessage)(nil),                                                   // 148: protowire.GetTxsRequestMessage
+	(*GetTxsResponseMessage)(nil),                                                  // 149: protowire.GetTxsResponseMessage
+	(*GetTxConfirmationsRequestMessage)(nil),                                       // 150: protowire.GetTxConfirmationsRequestMessage
+	(*GetTxConfirmationsResponseMessage)(nil),                                      // 151: protowire.GetTxConfirmationsResponseMessage
+	(*GetTxsConfirmationsRequestMessage)(nil),                                      // 152: protowire.GetTxsConfirmationsRequestMessage
+	(*GetTxsConfirmationsResponseMessage)(nil),                                     // 153: protowire.GetTxsConfirmationsResponseMessage
+	(*NotifyTxsConfirmationChangedRequstMessage)(nil),                              // 154: protowire.NotifyTxsConfirmationChangedRequstMessage
+	(*NotifyTxsConfirmationChangedResponseMessage)(nil),                            // 155: protowire.NotifyTxsConfirmationChangedResponseMessage
+	(*StopNotifyTxsConfirmationChangedRequestMessage)(nil),                         // 156: protowire.StopNotifyTxsConfirmationChangedRequestMessage
+	(*StopNotifyTxsConfirmationChangedResponseMessage)(nil),                        // 157: protowire.StopNotifyTxsConfirmationChangedResponseMessage
+	(*StartNotifyTxsConfirmationChangedRequestMessage)(nil),                        // 158: protowire.StartNotifyTxsConfirmationChangedRequestMessage
+	(*StartNotifyTxsConfirmationChangedResponseMessage)(nil),                       // 159: protowire.StartNotifyTxsConfirmationChangedResponseMessage
+	(*ChangeNotifyTxsConfirmationChangedRequiredConfirmationsResponseMessage)(nil), // 160: protowire.ChangeNotifyTxsConfirmationChangedRequiredConfirmationsResponseMessage
+	(*TxsConfirmationChangedNotficationMessage)(nil),                               // 161: protowire.TxsConfirmationChangedNotficationMessage
+	(*NotifyTxListenerRequestMessage)(nil),                                         // 162: protowire.NotifyTxListenerRequestMessage
+	(*StopNotifyTxListenerRequestMessage)(nil),                                     // 163: protowire.StopNotifyTxListenerRequestMessage
+	(*StopNotifyTxListenerResponseMessage)(nil),                                    // 164: protowire.StopNotifyTxListenerResponseMessage
+	(*StartNotifyTxListenerRequestMessage)(nil),                                    // 165: protowire.StartNotifyTxListenerRequestMessage
+	(*StartNotifyTxListenerResponseMessage)(nil),                                   // 166: protowire.StartNotifyTxListenerResponseMessage
+	(*ChangeNotifyTxListenerRequiredConfirmationsRequestMessage)(nil),              // 167: protowire.ChangeNotifyTxListenerRequiredConfirmationsRequestMessage
+	(*ChangeNotifyTxListenerRequiredConfirmationsResponseMessage)(nil),             // 168: protowire.ChangeNotifyTxListenerRequiredConfirmationsResponseMessage
+	(*TxListenerNotificationMessage)(nil),                                          // 169: protowire.TxListenerNotificationMessage
 }
 var file_messages_proto_depIdxs = []int32{
 	1,   // 0: protowire.KaspadMessage.addresses:type_name -> protowire.AddressesMessage
@@ -3627,15 +4030,31 @@ var file_messages_proto_depIdxs = []int32{
 	151, // 151: protowire.KaspadMessage.getTxConfirmationsResponse:type_name -> protowire.GetTxConfirmationsResponseMessage
 	152, // 152: protowire.KaspadMessage.getTxsConfirmationsRequest:type_name -> protowire.GetTxsConfirmationsRequestMessage
 	153, // 153: protowire.KaspadMessage.getTxsConfirmationsResponse:type_name -> protowire.GetTxsConfirmationsResponseMessage
-	0,   // 154: protowire.P2P.MessageStream:input_type -> protowire.KaspadMessage
-	0,   // 155: protowire.RPC.MessageStream:input_type -> protowire.KaspadMessage
-	0,   // 156: protowire.P2P.MessageStream:output_type -> protowire.KaspadMessage
-	0,   // 157: protowire.RPC.MessageStream:output_type -> protowire.KaspadMessage
-	156, // [156:158] is the sub-list for method output_type
-	154, // [154:156] is the sub-list for method input_type
-	154, // [154:154] is the sub-list for extension type_name
-	154, // [154:154] is the sub-list for extension extendee
-	0,   // [0:154] is the sub-list for field type_name
+	154, // 154: protowire.KaspadMessage.notifyTxsConfirmationChangedRequstMessage:type_name -> protowire.NotifyTxsConfirmationChangedRequstMessage
+	155, // 155: protowire.KaspadMessage.notifyTxsConfirmationChangedResponseMessage:type_name -> protowire.NotifyTxsConfirmationChangedResponseMessage
+	156, // 156: protowire.KaspadMessage.stopNotifyTxsConfirmationChangedRequestMessage:type_name -> protowire.StopNotifyTxsConfirmationChangedRequestMessage
+	157, // 157: protowire.KaspadMessage.stopNotifyTxsConfirmationChangedResponseMessage:type_name -> protowire.StopNotifyTxsConfirmationChangedResponseMessage
+	158, // 158: protowire.KaspadMessage.startNotifyTxsConfirmationChangedRequestMessage:type_name -> protowire.StartNotifyTxsConfirmationChangedRequestMessage
+	159, // 159: protowire.KaspadMessage.startNotifyTxsConfirmationChangedResponseMessage:type_name -> protowire.StartNotifyTxsConfirmationChangedResponseMessage
+	160, // 160: protowire.KaspadMessage.changeNotifyTxsConfirmationChangedRequiredConfirmationsResponseMessage:type_name -> protowire.ChangeNotifyTxsConfirmationChangedRequiredConfirmationsResponseMessage
+	161, // 161: protowire.KaspadMessage.txsConfirmationChangedNotficationMessage:type_name -> protowire.TxsConfirmationChangedNotficationMessage
+	162, // 162: protowire.KaspadMessage.notifyTxListenerRequestMessage:type_name -> protowire.NotifyTxListenerRequestMessage
+	163, // 163: protowire.KaspadMessage.stopNotifyTxListenerRequestMessage:type_name -> protowire.StopNotifyTxListenerRequestMessage
+	164, // 164: protowire.KaspadMessage.stopNotifyTxListenerResponseMessage:type_name -> protowire.StopNotifyTxListenerResponseMessage
+	165, // 165: protowire.KaspadMessage.startNotifyTxListenerRequestMessage:type_name -> protowire.StartNotifyTxListenerRequestMessage
+	166, // 166: protowire.KaspadMessage.startNotifyTxListenerResponseMessage:type_name -> protowire.StartNotifyTxListenerResponseMessage
+	167, // 167: protowire.KaspadMessage.changeNotifyTxListenerRequiredConfirmationsRequestMessage:type_name -> protowire.ChangeNotifyTxListenerRequiredConfirmationsRequestMessage
+	168, // 168: protowire.KaspadMessage.changeNotifyTxListenerRequiredConfirmationsResponseMessage:type_name -> protowire.ChangeNotifyTxListenerRequiredConfirmationsResponseMessage
+	169, // 169: protowire.KaspadMessage.txListenerNotificationMessage:type_name -> protowire.TxListenerNotificationMessage
+	0,   // 170: protowire.P2P.MessageStream:input_type -> protowire.KaspadMessage
+	0,   // 171: protowire.RPC.MessageStream:input_type -> protowire.KaspadMessage
+	0,   // 172: protowire.P2P.MessageStream:output_type -> protowire.KaspadMessage
+	0,   // 173: protowire.RPC.MessageStream:output_type -> protowire.KaspadMessage
+	172, // [172:174] is the sub-list for method output_type
+	170, // [170:172] is the sub-list for method input_type
+	170, // [170:170] is the sub-list for extension type_name
+	170, // [170:170] is the sub-list for extension extendee
+	0,   // [0:170] is the sub-list for field type_name
 }
 
 func init() { file_messages_proto_init() }
@@ -3814,6 +4233,22 @@ func file_messages_proto_init() {
 		(*KaspadMessage_GetTxConfirmationsResponse)(nil),
 		(*KaspadMessage_GetTxsConfirmationsRequest)(nil),
 		(*KaspadMessage_GetTxsConfirmationsResponse)(nil),
+		(*KaspadMessage_NotifyTxsConfirmationChangedRequstMessage)(nil),
+		(*KaspadMessage_NotifyTxsConfirmationChangedResponseMessage)(nil),
+		(*KaspadMessage_StopNotifyTxsConfirmationChangedRequestMessage)(nil),
+		(*KaspadMessage_StopNotifyTxsConfirmationChangedResponseMessage)(nil),
+		(*KaspadMessage_StartNotifyTxsConfirmationChangedRequestMessage)(nil),
+		(*KaspadMessage_StartNotifyTxsConfirmationChangedResponseMessage)(nil),
+		(*KaspadMessage_ChangeNotifyTxsConfirmationChangedRequiredConfirmationsResponseMessage)(nil),
+		(*KaspadMessage_TxsConfirmationChangedNotficationMessage)(nil),
+		(*KaspadMessage_NotifyTxListenerRequestMessage)(nil),
+		(*KaspadMessage_StopNotifyTxListenerRequestMessage)(nil),
+		(*KaspadMessage_StopNotifyTxListenerResponseMessage)(nil),
+		(*KaspadMessage_StartNotifyTxListenerRequestMessage)(nil),
+		(*KaspadMessage_StartNotifyTxListenerResponseMessage)(nil),
+		(*KaspadMessage_ChangeNotifyTxListenerRequiredConfirmationsRequestMessage)(nil),
+		(*KaspadMessage_ChangeNotifyTxListenerRequiredConfirmationsResponseMessage)(nil),
+		(*KaspadMessage_TxListenerNotificationMessage)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
