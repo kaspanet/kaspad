@@ -791,6 +791,38 @@ message GetIncludingBlockHashOfTxResponseMessage{
         RPCError error = 1000;
 }
 
+message GetIncludingBlockHashesOfTxsRequestMessage{
+        repeated string txIDs = 1;
+}
+
+message GetIncludingBlockHashesOfTxsResponseMessage{
+        repeated RpcTxIDBlockHashPair txIDBlockHashPairs = 1;
+        
+        RPCError error = 1000;
+}
+
+message GetIncludingBlockOfTxRequestMessage{
+        string txID = 1;
+        bool includeTransactions = 2;
+}
+
+message GetIncludingBlockOfTxResponseMessage{
+        RpcBlock block = 1;
+
+        RPCError error = 1000;
+}
+
+message GetIncludingBlocksOfTxsRequestMessage{
+        repeated string txIDs = 1;
+        bool includeTransactions = 2;
+}
+
+message GetIncludingBlocksOfTxsResponseMessage{
+        repeated RpcTxIDBlockPair txIDBlockPairs = 1;
+
+        RPCError error = 1000;
+}
+
 message GetTxRequestMessage{
         string txID = 1;
 }

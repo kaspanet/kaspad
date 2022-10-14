@@ -41,7 +41,7 @@ func HandleGetIncludingBlockHashOfTx(context *rpccontext.Context, _ *router.Rout
 		return errorMessage, nil
 	}
 	if !found {
-		errorMessage := &appmessage.GetAcceptingBlockHashOfTxResponseMessage{}
+		errorMessage := &appmessage.GetIncludingBlockHashOfTxResponseMessage{}
 		errorMessage.Error = appmessage.RPCErrorf("Could not find including block hash in the txindex database for txID: %s", domainTxID.String())
 		return errorMessage, nil
 	}

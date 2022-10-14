@@ -1,0 +1,64 @@
+package rpchandlers
+
+import (
+	"github.com/kaspanet/kaspad/app/appmessage"
+	"github.com/kaspanet/kaspad/app/rpc/rpccontext"
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
+	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
+
+	"github.com/pkg/errors"
+)
+
+// HandleGetIncludingBlockOfTx handles the respectively named RPC command
+func HandleGetIncludingBlockOfTx(context *rpccontext.Context, _ *router.Router, request appmessage.Message) (appmessage.Message, error) {
+	if !context.Config.TXIndex {
+		errorMessage := &appmessage.GetIncludingBlockHashOfTxResponseMessage{}
+		errorMessage.Error = appmessage.RPCErrorf("Method unavailable when kaspad is run without --txindex")
+		return errorMessage, nil
+	}
+
+	getIncludingBlockOfTxRequest := request.(*appmessage.GetIncludingBlockOfTxRequestMessage)
+
+	domainTxID, err := externalapi.NewDomainTransactionIDFromString(getIncludingBlockOfTxRequest.TxID)
+	if err != nil {
+		rpcError := &appmessage.RPCError{}
+		if !errors.As(err, &rpcError) {
+			return nil, err
+		}
+		errorMessage := &appmessage.GetIncludingBlockOfTxResponseMessage{}
+		errorMessage.Error = rpcError
+		return errorMessage, nil
+	}
+
+	includingBlock, found, err := context.TXIndex.TXIncludingBlock(domainTxID)
+	if err != nil {
+		rpcError := &appmessage.RPCError{}
+		if !errors.As(err, &rpcError) {
+			return nil, err
+		}
+		errorMessage := &appmessage.GetIncludingBlockOfTxResponseMessage{}
+		errorMessage.Error = rpcError
+		return errorMessage, nil
+	}
+	if !found {
+		errorMessage := &appmessage.GetIncludingBlockOfTxResponseMessage{}
+		errorMessage.Error = appmessage.RPCErrorf("Could not find including block in the txindex database for txID: %s", domainTxID.String())
+		return errorMessage, nil
+	}
+
+	rpcIncludingBlock := appmessage.DomainBlockToRPCBlock(includingBlock)
+	err = context.PopulateBlockWithVerboseData(rpcIncludingBlock, includingBlock.Header, includingBlock, getIncludingBlockOfTxRequest.IncludeTransactions)
+	if err != nil {
+		if errors.Is(err, rpccontext.ErrBuildBlockVerboseDataInvalidBlock) {
+			errorMessage := &appmessage.GetIncludingBlockOfTxResponseMessage{}
+			errorMessage.Error = appmessage.RPCErrorf("Block %s is invalid", consensushashing.BlockHash(includingBlock).String())
+			return errorMessage, nil
+		}
+		return nil, err
+	}
+
+	response := appmessage.NewGetIncludingBlockOfTxResponse(rpcIncludingBlock)
+
+	return response, nil
+}

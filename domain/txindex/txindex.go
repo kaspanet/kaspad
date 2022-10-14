@@ -306,6 +306,7 @@ func (ti *TXIndex) TXAcceptingBlock(txID *externalapi.DomainTransactionID) (
 	}
 
 	acceptingBlock, err := ti.domain.Consensus().GetBlockEvenIfHeaderOnly(txIndexData.AcceptingBlockHash)
+
 	if err != nil {
 		if database.IsNotFoundError(err) {
 			return nil, false, fmt.Errorf("accepting block %s missing for txID %s ", txIndexData.AcceptingBlockHash.String(), txID.String())
@@ -475,6 +476,31 @@ func (ti *TXIndex) TXIncludingBlockHash(txID *externalapi.DomainTransactionID) (
 	}
 
 	return txIndexData.IncludingBlockHash, true, nil
+}
+
+// TXIncludingBlock returns the including block hashes for for the given txIDs
+func (ti *TXIndex) TXIncludingBlock(txID *externalapi.DomainTransactionID) (
+	block *externalapi.DomainBlock, found bool, err error) {
+	onEnd := logger.LogAndMeasureExecutionTime(log, "TXIndex.TXIncludingBlock")
+	defer onEnd()
+
+	ti.mutex.Lock()
+	defer ti.mutex.Unlock()
+
+	txIndexData, found, err := ti.store.getTxData(txID)
+	if err != nil {
+		return nil, false, err
+	}
+
+	includingBlock, err := ti.domain.Consensus().GetBlockEvenIfHeaderOnly(txIndexData.IncludingBlockHash)
+
+	if err != nil {
+		if database.IsNotFoundError(err) {
+			return nil, false, fmt.Errorf("including block %s missing for txID %s ", txIndexData.IncludingBlockHash.String(), txID.String())
+		}
+		return nil, false, err
+	}
+	return includingBlock, true, nil
 }
 
 // TXIncludingBlockHashes returns the including block hashes for for the given txI

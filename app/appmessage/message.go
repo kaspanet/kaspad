@@ -173,6 +173,12 @@ const (
 	CmdGetAcceptingBlocksOfTxsResponseMessage
 	CmdGetIncludingBlockHashOfTxRequestMessage
 	CmdGetIncludingBlockHashOfTxResponseMessage
+	CmdGetIncludingBlockHashesOfTxsRequestMessage
+	CmdGetIncludingBlockHashesOfTxsResponseMessage
+	CmdGetIncludingBlockOfTxRequestMessage
+	CmdGetIncludingBlockOfTxResponseMessage
+	CmdGetIncludingBlocksOfTxsRequestMessage
+	CmdGetIncludingBlocksOfTxsResponseMessage
 	CmdGetTxRequestMessage
 	CmdGetTxResponseMessage
 	CmdGetTxsRequestMessage
@@ -328,6 +334,12 @@ var RPCMessageCommandToString = map[MessageCommand]string{
 	CmdGetAcceptingBlocksOfTxsResponseMessage:                     "GetAcceptingBlocksOfTxsResponse",
 	CmdGetIncludingBlockHashOfTxRequestMessage:                    "GetIncludingBlockHashOfTxRequest",
 	CmdGetIncludingBlockHashOfTxResponseMessage:                   "GetIncludingBlockHashOfTxResponse",
+	CmdGetIncludingBlockHashesOfTxsRequestMessage:                 "GetIncludingBlockHashesOfTxsRequest",
+	CmdGetIncludingBlockHashesOfTxsResponseMessage:                "GetIncludingBlockHashesOfTxsResponse",
+	CmdGetIncludingBlockOfTxRequestMessage:                        "GetIncludingBlockOfTxRequest",
+	CmdGetIncludingBlockOfTxResponseMessage:                       "GetIncludingBlockOfTxResponse",
+	CmdGetIncludingBlocksOfTxsRequestMessage:                      "GetIncludingBlocksOfTxsRequest",
+	CmdGetIncludingBlocksOfTxsResponseMessage:                     "GetIncludingBlocksOfTxsResponse",
 	CmdGetTxRequestMessage:                                        "GetTxRequest",
 	CmdGetTxResponseMessage:                                       "GetTxResponse",
 	CmdGetTxsRequestMessage:                                       "GetTxsRequest",

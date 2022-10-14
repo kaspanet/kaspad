@@ -150,14 +150,20 @@ message KaspadMessage {
     GetAcceptingBlocksOfTxsResponseMessage getAcceptingBlocksOfTxsResponse = 1095;
     GetIncludingBlockHashOfTxRequestMessage  getIncludingBlockHashOfTxRequest = 1096;
     GetIncludingBlockHashOfTxResponseMessage getIncludingBlockHashOfTxResponse = 1097;
-    GetTxRequestMessage  getTxRequest = 1098;
-    GetTxResponseMessage getTxResponse = 1099;
-    GetTxsRequestMessage  getTxsRequest = 1100;
-    GetTxsResponseMessage getTxsResponse = 1101;
-    GetTxConfirmationsRequestMessage  getTxConfirmationsRequest = 1102;
-    GetTxConfirmationsResponseMessage getTxConfirmationsResponse = 1103;
-    GetTxsConfirmationsRequestMessage  getTxsConfirmationsRequest = 1104;
-    GetTxsConfirmationsResponseMessage getTxsConfirmationsResponse = 1105;
+    GetIncludingBlockHashesOfTxsRequestMessage  getIncludingBlockHashesOfTxsRequest = 1098;
+    GetIncludingBlockHashesOfTxsResponseMessage getIncludingBlockHashesOfTxsResponse = 1099;
+    GetIncludingBlockOfTxRequestMessage  getIncludingBlockOfTxRequest = 1100;
+    GetIncludingBlockOfTxResponseMessage getIncludingBlockOfTxResponse = 1101;
+    GetIncludingBlocksOfTxsRequestMessage  getIncludingBlocksOfTxsRequest = 1102;
+    GetIncludingBlocksOfTxsResponseMessage getIncludingBlocksOfTxsResponse = 1103;
+    GetTxRequestMessage  getTxRequest = 1104;
+    GetTxResponseMessage getTxResponse = 1105;
+    GetTxsRequestMessage  getTxsRequest = 1106;
+    GetTxsResponseMessage getTxsResponse = 1107;
+    GetTxConfirmationsRequestMessage  getTxConfirmationsRequest = 1108;
+    GetTxConfirmationsResponseMessage getTxConfirmationsResponse = 1109;
+    GetTxsConfirmationsRequestMessage  getTxsConfirmationsRequest = 1110;
+    GetTxsConfirmationsResponseMessage getTxsConfirmationsResponse = 1111;
   }
 }
 
