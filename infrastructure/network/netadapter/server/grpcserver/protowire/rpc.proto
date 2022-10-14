@@ -749,16 +749,17 @@ message RpcTxIDBlockPair {
         RpcBlock block = 2;   
 }
 
+//Kaspad most be started with the `--txindex` flag for this Request to work.
 message GetAcceptingBlockHashesOfTxsRequestMessage{
         repeated string txIDs = 1;
 }
-
 message GetAcceptingBlockHashesOfTxsResponseMessage{
         repeated RpcTxIDBlockHashPair txIDBlockHashPairs = 1;
         
         RPCError error = 1000;
 }
 
+//Kaspad most be started with the `--txindex` flag for this Request to work.
 message GetAcceptingBlockOfTxRequestMessage{
         string txID = 1;
         bool includeTransactions = 2;
@@ -770,6 +771,7 @@ message GetAcceptingBlockOfTxResponseMessage{
         RPCError error = 1000;
 }
 
+//Kaspad most be started with the `--txindex` flag for this Request to work.
 message GetAcceptingBlocksOfTxsRequestMessage{
         repeated string txIDs = 1;
         bool includeTransactions = 2;
@@ -781,6 +783,7 @@ message GetAcceptingBlocksOfTxsResponseMessage{
         RPCError error = 1000;
 }
 
+//Kaspad most be started with the `--txindex` flag for this Request to work.
 message GetIncludingBlockHashOfTxRequestMessage{
         string txID = 1;
 }
@@ -791,6 +794,8 @@ message GetIncludingBlockHashOfTxResponseMessage{
         RPCError error = 1000;
 }
 
+
+//Kaspad most be started with the `--txindex` flag for this Request to work.
 message GetIncludingBlockHashesOfTxsRequestMessage{
         repeated string txIDs = 1;
 }
@@ -801,6 +806,8 @@ message GetIncludingBlockHashesOfTxsResponseMessage{
         RPCError error = 1000;
 }
 
+
+//Kaspad most be started with the `--txindex` flag for this Request to work.
 message GetIncludingBlockOfTxRequestMessage{
         string txID = 1;
         bool includeTransactions = 2;
@@ -812,6 +819,8 @@ message GetIncludingBlockOfTxResponseMessage{
         RPCError error = 1000;
 }
 
+
+//Kaspad most be started with the `--txindex` flag for this Request to work.
 message GetIncludingBlocksOfTxsRequestMessage{
         repeated string txIDs = 1;
         bool includeTransactions = 2;
@@ -823,6 +832,7 @@ message GetIncludingBlocksOfTxsResponseMessage{
         RPCError error = 1000;
 }
 
+//Kaspad most be started with the `--txindex` flag for this Request to work.
 message GetTxRequestMessage{
         string txID = 1;
 }
@@ -834,6 +844,7 @@ message GetTxResponseMessage{
         RPCError error = 1000;
 }
 
+//Kaspad most be started with the `--txindex` flag for this Request to work.
 message GetTxsRequestMessage{
         repeated string txIDs = 1;
 }
@@ -845,6 +856,7 @@ message GetTxsResponseMessage{
         RPCError error = 1000;
 }
 
+//Kaspad most be started with the `--txindex` flag for this Request to work.
 message GetTxConfirmationsRequestMessage{
         string txID = 1;
 }
@@ -855,6 +867,7 @@ message GetTxConfirmationsResponseMessage{
         RPCError error = 1000;
 }
 
+//Kaspad most be started with the `--txindex` flag for this Request to work.
 message GetTxsConfirmationsRequestMessage{
         repeated string txIDs = 1;
 }
@@ -865,51 +878,61 @@ message GetTxsConfirmationsResponseMessage{
         RPCError error = 1000;
 }
 
+// NotifyTxsConfirmationChangedRequstMessage is a listener that registers confirmations from supplied TxIDs
+// Kaspad most be started with the `--txindex` flag for this Request to work.
 message NotifyTxsConfirmationChangedRequstMessage{
-        repeated string TxIDs = 1;
-        uint32 requiredConfirmations = 2;
-        bool includePending = 3;        
+        repeated string TxIDs = 1; //initial TxIds to listen for when regestering for notifications
+        message Params {
+                uint32 requiredConfirmations = 1; // number of confirmations until a transaction is considered confirmed
+                bool includePending = 2; // weather to notify confirmation changes during pre-Confirmed states
+        }
+        Params params = 2;       
 }
 
 message NotifyTxsConfirmationChangedResponseMessage{
    
 }
 
-message TxsConfirmationChangedNotficationMessage{
-        message Pending{
-                repeated RpcTxIDConfirmationsPair txIDConfirmationsPairs = 1; 
-        }
-        message Confirmed{
-                repeated RpcTxIDConfirmationsPair txIDConfirmationsPairs = 1;       
-        }
-        repeated Pending pending = 1; 
-        repeated Confirmed confirmed = 2; 
+// TxsConfirmationChangedNotificationMessage is the notification about txs pertaining to specified TxIDs
+message TxsConfirmationChangedNotificationMessage{
+        uint32 requiredConfirmations = 1; //the required confirmations set when notification was sent
+        repeated RpcTxIDConfirmationsPair pending = 2; // RpcTxIDConfirmationsPairs which have entered the virtual chain but not passed the required confirmations
+        repeated RpcTxIDConfirmationsPair confirmed = 3; // RpcTxIDConfirmationsPairs which have entered the virtual chain and passed the required confirmations
+        repeated string unconfirmedTxIds = 4; // TxIds which were not confirmed within the required confirmations.
 
         RPCError error = 1000;
 }
 
+// most be registered to NotifyTxsConfirmationChangedRequstMessage for this command to work
 message StopNotifyTxsConfirmationChangedRequestMessage{
         repeated string TxIDs = 1;
 }
 
 message StopNotifyTxsConfirmationChangedResponseMessage{
 
+        RPCError error = 1000;
 }
 
+// StartNotifyTxsConfirmationChangedRequestMessage starts listening for Transaction confirmations with the specified TxIDs 
+// Most be registered to NotifyTxsConfirmationChangedRequstMessage for this command to work
 message StartNotifyTxsConfirmationChangedRequestMessage{
         repeated string TxIDs = 1;
 }
 
 message StartNotifyTxsConfirmationChangedResponseMessage{
-
+        
+        RPCError error = 1000;
 }
 
-message ChangeNotifyTxsConfirmationChangedRequiredConfirmationsRequestMessage{
+// ModifyNotifyTxsConfirmationChangedParamsRequestMessage modfies the params of a registered `NotifyTxsConfirmationChangedRequstMessage`
+// most be registered to NotifyTxsConfirmationChangedRequstMessage for this command to work
+message ModifyNotifyTxsConfirmationChangedParamsRequestMessage{
         uint32 requiredConfirmations = 1;
+        bool includePending = 2;
 }
 
-message ChangeNotifyTxsConfirmationChangedRequiredConfirmationsResponseMessage{
-
+message ModifyNotifyTxsConfirmationChangedParamsResponseMessage{
+        RPCError error = 1000;
 }
 
 message TxEntryByAddress{
@@ -918,51 +941,68 @@ message TxEntryByAddress{
         uint32 confirmations = 3;
       }
 
-message NotifyTxListenerRequestMessage{
+message TxEntriesByAddresses{
+        repeated TxEntryByAddress sent = 1; 
+        repeated TxEntryByAddress received = 2;
+      }
+
+// NotifyAddressesTxsChangedRequestMessage Listens for Txs pertaining to specified addresses according to the params specified
+message NotifyAddressesTxsRequestMessage{
+        repeated string addresses = 1; //initial addresses to listen for Tx changes when regestering for notifications
+        message Params {
+                uint32 requiredConfirmations = 2;  // number of confirmations until a transaction is considered confirmed
+                bool includePending = 3; //whether to notify confirmation changes during pre-Confirmed states
+                bool includeSending = 4; //whether to listen on addresses sending txs
+                bool includeReceiving = 5; //whether to listen on addresses reciving txs
+        }
+        Params params = 2;
+}
+
+message NotifyAddressesTxsResponseMessage{
+        
+        RPCError error = 1000;
+}
+
+// StopNotifyAddressesTxsRequestMessage stops listening for Txs pertaining to specified addresses
+// Most be registered to NotifyAddressTxChangedRequestMessage for this command to work
+message StopNotifyAddressesTxsRequestMessage{
         repeated string addresses = 1;
-        uint32 requiredConfirmations = 2;
-        bool includePending = 3;
 }
 
-message NotifyTxListenerResponseMessage{
-
+message StopNotifyAddressesTxsResponseMessage{
+        
+        RPCError error = 1000;
 }
 
-message StopNotifyTxListenerRequestMessage{
+// StartNotifyAddressesTxsRequestMessage starts listening for Txs pertaining to specified addresses 
+// Most be registered to NotifyAddressTxChangedRequestMessage for this command to work
+message StartNotifyAddressesTxsRequestMessage{
         repeated string addresses = 1;
 }
 
-message StopNotifyTxListenerResponseMessage{
-
+message StartNotifyAddressesTxsResponseMessage{
+        
+        RPCError error = 1000;
 }
 
-message StartNotifyTxListenerRequestMessage{
-        repeated string addresses = 1;
-}
-
-message StartNotifyTxListenerResponseMessage{
-
-}
-
-
-message ChangeNotifyTxListenerRequiredConfirmationsRequestMessage{
+// ModifyNotifyAddressesTxsParamsRequestMessage modifies the params used for a regesitered `NotifyAddressesTxsRequest`
+// Most be registered to NotifyAddressTxChangedRequestMessage for this command to work
+message ModifyNotifyAddressesTxsParamsRequestMessage{
         uint32 requiredConfirmations = 1;
+        bool includePending = 3;
+        bool includeSending = 4;
+        bool includeReceiving = 5;
 }
 
-message ChangeNotifyTxListenerRequiredConfirmationsResponseMessage{
+message ModifyNotifyAddressesTxsParamsResponseMessage{
 
+        RPCError error = 1000;
 }
 
-message TxListenerNotificationMessage{
-        message Pending{
-                repeated TxEntryByAddress sent = 1; 
-                repeated TxEntryByAddress received = 2; 
-        }
-        message Confirmed{
-                uint32 requiredConfirmations = 1;
-                repeated TxEntryByAddress sent = 2; 
-                repeated TxEntryByAddress received = 3; 
-        }
-        Pending pending = 1;
-        Confirmed confirmed = 2;
+// AddressesTxsNotificationMessage is the notification about txs pertaining to specified addresses
+message AddressesTxsNotificationMessage{
+        uint32 requiredConfirmations = 1; //the required confirmations set when notification was sent
+        TxEntriesByAddresses pending = 2; // TxEntriesByAddresses which have entered the blockdag but not passed the required confirmations
+        TxEntriesByAddresses confirmed = 3; // TxEntriesByAddresses which have entered the blockdag and passed the required confirmations
+        TxEntriesByAddresses unconfirmed = 4; // TxEntriesByAddresses which have been pending, but removed via a reorg within the number of required confirmations.
 }

@@ -164,23 +164,24 @@ message KaspadMessage {
     GetTxConfirmationsResponseMessage getTxConfirmationsResponse = 1109;
     GetTxsConfirmationsRequestMessage  getTxsConfirmationsRequest = 1110;
     GetTxsConfirmationsResponseMessage getTxsConfirmationsResponse = 1111;
-    NotifyTxsConfirmationChangedRequstMessage  notifyTxsConfirmationChangedRequstMessage = 1112;
-    NotifyTxsConfirmationChangedResponseMessage notifyTxsConfirmationChangedResponseMessage = 1113;
-    StopNotifyTxsConfirmationChangedRequestMessage stopNotifyTxsConfirmationChangedRequestMessage = 1114;
-    StopNotifyTxsConfirmationChangedResponseMessage stopNotifyTxsConfirmationChangedResponseMessage = 1115;
-    StartNotifyTxsConfirmationChangedRequestMessage startNotifyTxsConfirmationChangedRequestMessage= 1116;
-    StartNotifyTxsConfirmationChangedResponseMessage startNotifyTxsConfirmationChangedResponseMessage = 1117;
-    ChangeNotifyTxsConfirmationChangedRequiredConfirmationsResponseMessage changeNotifyTxsConfirmationChangedRequiredConfirmationsResponseMessage = 1118;
-    TxsConfirmationChangedNotficationMessage txsConfirmationChangedNotficationMessage = 1119;
-    NotifyTxListenerRequestMessage notifyTxListenerRequestMessage = 1120;
-    StopNotifyTxListenerRequestMessage stopNotifyTxListenerRequestMessage = 1121;
-    StopNotifyTxListenerResponseMessage stopNotifyTxListenerResponseMessage = 1122;
-    StartNotifyTxListenerRequestMessage startNotifyTxListenerRequestMessage = 1123;
-    StartNotifyTxListenerResponseMessage startNotifyTxListenerResponseMessage = 1124;
-    ChangeNotifyTxListenerRequiredConfirmationsRequestMessage changeNotifyTxListenerRequiredConfirmationsRequestMessage = 1125;
-    ChangeNotifyTxListenerRequiredConfirmationsResponseMessage changeNotifyTxListenerRequiredConfirmationsResponseMessage = 1126;
-    TxListenerNotificationMessage txListenerNotificationMessage = 1127;
-
+    NotifyTxsConfirmationChangedRequstMessage  notifyTxsConfirmationChangedRequst = 1112;
+    NotifyTxsConfirmationChangedResponseMessage notifyTxsConfirmationChangedResponse = 1113;
+    StopNotifyTxsConfirmationChangedRequestMessage stopNotifyTxsConfirmationChangedRequest = 1114;
+    StopNotifyTxsConfirmationChangedResponseMessage stopNotifyTxsConfirmationChangedResponse = 1115;
+    StartNotifyTxsConfirmationChangedRequestMessage startNotifyTxsConfirmationChangedRequest = 1116;
+    StartNotifyTxsConfirmationChangedResponseMessage startNotifyTxsConfirmationChangedResponse = 1117;
+    ModifyNotifyTxsConfirmationChangedParamsRequestMessage modifyNotifyTxsConfirmationChangedParamsRequest = 1118;
+    ModifyNotifyTxsConfirmationChangedParamsResponseMessage modifyNotifyTxsConfirmationChangedParamsResponse = 1119;
+    TxsConfirmationChangedNotificationMessage txsConfirmationChangedNotification = 1120;
+    NotifyAddressesTxsRequestMessage notifyNotifyAddressesTxsRequest = 1121;
+    NotifyAddressesTxsResponseMessage notifyNotifyAddressesTxsResponse = 1122;
+    StopNotifyAddressesTxsRequestMessage stopNotifyAddressesTxsRequest = 1123;
+    StopNotifyAddressesTxsResponseMessage stopNotifyAddressesTxsResponse = 1124;
+    StartNotifyAddressesTxsRequestMessage startNotifyAddressesTxsRequest = 1125;
+    StartNotifyAddressesTxsResponseMessage startNotifyAddressesTxsResponse = 1126;
+    ModifyNotifyAddressesTxsParamsRequestMessage modifyNotifyAddressesTxsParamsRequest = 1127;
+    ModifyNotifyAddressesTxsParamsResponseMessage modifyNotifyAddressesTxsParamsResponse = 1128;
+    AddressesTxsNotificationMessage AddressesTxsNotification = 1129;
   }
 }
 
