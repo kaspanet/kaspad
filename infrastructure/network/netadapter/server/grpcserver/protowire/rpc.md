@@ -139,8 +139,7 @@
     - [GetTxConfirmationsResponseMessage](#protowire.GetTxConfirmationsResponseMessage)
     - [GetTxsConfirmationsRequestMessage](#protowire.GetTxsConfirmationsRequestMessage)
     - [GetTxsConfirmationsResponseMessage](#protowire.GetTxsConfirmationsResponseMessage)
-    - [NotifyTxsConfirmationChangedRequstMessage](#protowire.NotifyTxsConfirmationChangedRequstMessage)
-    - [NotifyTxsConfirmationChangedRequstMessage.Params](#protowire.NotifyTxsConfirmationChangedRequstMessage.Params)
+    - [NotifyTxsConfirmationChangedRequestMessage](#protowire.NotifyTxsConfirmationChangedRequestMessage)
     - [NotifyTxsConfirmationChangedResponseMessage](#protowire.NotifyTxsConfirmationChangedResponseMessage)
     - [TxsConfirmationChangedNotificationMessage](#protowire.TxsConfirmationChangedNotificationMessage)
     - [StopNotifyTxsConfirmationChangedRequestMessage](#protowire.StopNotifyTxsConfirmationChangedRequestMessage)
@@ -152,7 +151,6 @@
     - [TxEntryByAddress](#protowire.TxEntryByAddress)
     - [TxEntriesByAddresses](#protowire.TxEntriesByAddresses)
     - [NotifyAddressesTxsRequestMessage](#protowire.NotifyAddressesTxsRequestMessage)
-    - [NotifyAddressesTxsRequestMessage.Params](#protowire.NotifyAddressesTxsRequestMessage.Params)
     - [NotifyAddressesTxsResponseMessage](#protowire.NotifyAddressesTxsResponseMessage)
     - [StopNotifyAddressesTxsRequestMessage](#protowire.StopNotifyAddressesTxsRequestMessage)
     - [StopNotifyAddressesTxsResponseMessage](#protowire.StopNotifyAddressesTxsResponseMessage)
@@ -2331,9 +2329,9 @@ Kaspad most be started with the `--txindex` flag for this Request to work.
 
 
 
-<a name="protowire.NotifyTxsConfirmationChangedRequstMessage"></a>
+<a name="protowire.NotifyTxsConfirmationChangedRequestMessage"></a>
 
-### NotifyTxsConfirmationChangedRequstMessage
+### NotifyTxsConfirmationChangedRequestMessage
 NotifyTxsConfirmationChangedRequstMessage is a listener that registers confirmations from supplied TxIDs
 Kaspad most be started with the `--txindex` flag for this Request to work.
 
@@ -2341,21 +2339,6 @@ Kaspad most be started with the `--txindex` flag for this Request to work.
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | TxIDs | [string](#string) | repeated | initial TxIds to listen for when regestering for notifications |
-| params | [NotifyTxsConfirmationChangedRequstMessage.Params](#protowire.NotifyTxsConfirmationChangedRequstMessage.Params) |  |  |
-
-
-
-
-
-
-<a name="protowire.NotifyTxsConfirmationChangedRequstMessage.Params"></a>
-
-### NotifyTxsConfirmationChangedRequstMessage.Params
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
 | requiredConfirmations | [uint32](#uint32) |  | number of confirmations until a transaction is considered confirmed |
 | includePending | [bool](#bool) |  | weather to notify confirmation changes during pre-Confirmed states |
 
@@ -2368,6 +2351,11 @@ Kaspad most be started with the `--txindex` flag for this Request to work.
 
 ### NotifyTxsConfirmationChangedResponseMessage
 
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| error | [RPCError](#protowire.RPCError) |  |  |
 
 
 
@@ -2528,21 +2516,6 @@ NotifyAddressesTxsChangedRequestMessage Listens for Txs pertaining to specified 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | addresses | [string](#string) | repeated | initial addresses to listen for Tx changes when regestering for notifications |
-| params | [NotifyAddressesTxsRequestMessage.Params](#protowire.NotifyAddressesTxsRequestMessage.Params) |  |  |
-
-
-
-
-
-
-<a name="protowire.NotifyAddressesTxsRequestMessage.Params"></a>
-
-### NotifyAddressesTxsRequestMessage.Params
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
 | requiredConfirmations | [uint32](#uint32) |  | number of confirmations until a transaction is considered confirmed |
 | includePending | [bool](#bool) |  | whether to notify confirmation changes during pre-Confirmed states |
 | includeSending | [bool](#bool) |  | whether to listen on addresses sending txs |

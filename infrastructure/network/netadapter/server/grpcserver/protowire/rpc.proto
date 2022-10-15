@@ -880,17 +880,17 @@ message GetTxsConfirmationsResponseMessage{
 
 // NotifyTxsConfirmationChangedRequstMessage is a listener that registers confirmations from supplied TxIDs
 // Kaspad most be started with the `--txindex` flag for this Request to work.
-message NotifyTxsConfirmationChangedRequstMessage{
+message NotifyTxsConfirmationChangedRequestMessage{
         repeated string TxIDs = 1; //initial TxIds to listen for when regestering for notifications
-        message Params {
-                uint32 requiredConfirmations = 1; // number of confirmations until a transaction is considered confirmed
-                bool includePending = 2; // weather to notify confirmation changes during pre-Confirmed states
-        }
-        Params params = 2;       
+
+        uint32 requiredConfirmations = 2; // number of confirmations until a transaction is considered confirmed
+        bool includePending = 3; // weather to notify confirmation changes during pre-Confirmed states
+               
 }
 
 message NotifyTxsConfirmationChangedResponseMessage{
    
+        RPCError error = 1000;
 }
 
 // TxsConfirmationChangedNotificationMessage is the notification about txs pertaining to specified TxIDs
@@ -949,13 +949,10 @@ message TxEntriesByAddresses{
 // NotifyAddressesTxsChangedRequestMessage Listens for Txs pertaining to specified addresses according to the params specified
 message NotifyAddressesTxsRequestMessage{
         repeated string addresses = 1; //initial addresses to listen for Tx changes when regestering for notifications
-        message Params {
-                uint32 requiredConfirmations = 2;  // number of confirmations until a transaction is considered confirmed
-                bool includePending = 3; //whether to notify confirmation changes during pre-Confirmed states
-                bool includeSending = 4; //whether to listen on addresses sending txs
-                bool includeReceiving = 5; //whether to listen on addresses reciving txs
-        }
-        Params params = 2;
+        uint32 requiredConfirmations = 2;  // number of confirmations until a transaction is considered confirmed
+        bool includePending = 3; //whether to notify confirmation changes during pre-Confirmed states
+        bool includeSending = 4; //whether to listen on addresses sending txs
+        bool includeReceiving = 5; //whether to listen on addresses reciving txs
 }
 
 message NotifyAddressesTxsResponseMessage{

@@ -164,7 +164,7 @@ message KaspadMessage {
     GetTxConfirmationsResponseMessage getTxConfirmationsResponse = 1109;
     GetTxsConfirmationsRequestMessage  getTxsConfirmationsRequest = 1110;
     GetTxsConfirmationsResponseMessage getTxsConfirmationsResponse = 1111;
-    NotifyTxsConfirmationChangedRequstMessage  notifyTxsConfirmationChangedRequst = 1112;
+    NotifyTxsConfirmationChangedRequestMessage  notifyTxsConfirmationChangedRequst = 1112;
     NotifyTxsConfirmationChangedResponseMessage notifyTxsConfirmationChangedResponse = 1113;
     StopNotifyTxsConfirmationChangedRequestMessage stopNotifyTxsConfirmationChangedRequest = 1114;
     StopNotifyTxsConfirmationChangedResponseMessage stopNotifyTxsConfirmationChangedResponse = 1115;
@@ -173,8 +173,8 @@ message KaspadMessage {
     ModifyNotifyTxsConfirmationChangedParamsRequestMessage modifyNotifyTxsConfirmationChangedParamsRequest = 1118;
     ModifyNotifyTxsConfirmationChangedParamsResponseMessage modifyNotifyTxsConfirmationChangedParamsResponse = 1119;
     TxsConfirmationChangedNotificationMessage txsConfirmationChangedNotification = 1120;
-    NotifyAddressesTxsRequestMessage notifyNotifyAddressesTxsRequest = 1121;
-    NotifyAddressesTxsResponseMessage notifyNotifyAddressesTxsResponse = 1122;
+    NotifyAddressesTxsRequestMessage notifyAddressesTxsRequest = 1121;
+    NotifyAddressesTxsResponseMessage notifyAddressesTxsResponse = 1122;
     StopNotifyAddressesTxsRequestMessage stopNotifyAddressesTxsRequest = 1123;
     StopNotifyAddressesTxsResponseMessage stopNotifyAddressesTxsResponse = 1124;
     StartNotifyAddressesTxsRequestMessage startNotifyAddressesTxsRequest = 1125;
