@@ -31,8 +31,8 @@ func (x *KaspadMessage_GetInfoResponse) fromAppMessage(message *appmessage.GetIn
 		ServerVersion: message.ServerVersion,
 		MempoolSize:   message.MempoolSize,
 		IsUtxoIndexed: message.IsUtxoIndexed,
-		IsTxIndexed:   message.IsTxIndexed;
-		IsArchival:    message.IsArchival;
+		IsTxIndexed:   message.IsTxIndexed,
+		IsArchival:    message.IsArchival,
 		IsSynced:      message.IsSynced,
 		Error:         err,
 	}
@@ -58,8 +58,8 @@ func (x *GetInfoResponseMessage) toAppMessage() (appmessage.Message, error) {
 		MempoolSize:   x.MempoolSize,
 		ServerVersion: x.ServerVersion,
 		IsUtxoIndexed: x.IsUtxoIndexed,
-		IsTxIndexed:   x.IsTxIndexed;
-		IsArchival:    x.IsArchival;
+		IsTxIndexed:   x.IsTxIndexed,
+		IsArchival:    x.IsArchival,
 		IsSynced:      x.IsSynced,
 
 		Error: rpcErr,

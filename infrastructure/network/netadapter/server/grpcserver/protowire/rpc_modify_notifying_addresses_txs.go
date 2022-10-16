@@ -45,12 +45,26 @@ func (x *KaspadMessage_ModifyNotifyingAddressesTxsResponse) toAppMessage() (appm
 	return x.ModifyNotifyingAddressesTxsResponse.toAppMessage()
 }
 
+func (x *ModifyNotifyingAddressesTxsResponseMessage) toAppMessage() (appmessage.Message, error) {
+	if x == nil {
+		return nil, errors.Wrapf(errorNil, "ModifyNotifyingAddressesTxsResponseMessage is nil")
+	}
+	rpcErr, err := x.Error.toAppMessage()
+	// Error is an optional field
+	if err != nil && !errors.Is(err, errorNil) {
+		return nil, err
+	}
+	return &appmessage.ModifyNotifyingAddressesTxsResponseMessage{
+		Error: rpcErr,
+	}, nil
+}
+
 func (x *KaspadMessage_ModifyNotifyingAddressesTxsResponse) fromAppMessage(message *appmessage.ModifyNotifyingAddressesTxsResponseMessage) error {
 	var err *RPCError
 	if message.Error != nil {
 		err = &RPCError{Message: message.Error.Message}
 	}
-	x.ModifyNotifyingAddressesTxsResponse = &ModifyNotifytTxsConfirmingationChangedResponseMessage{
+	x.ModifyNotifyingAddressesTxsResponse = &ModifyNotifyingAddressesTxsResponseMessage{
 		Error: err,
 	}
 	return nil

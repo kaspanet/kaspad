@@ -77,11 +77,14 @@ func (x *KaspadMessage_AddressesTxsNotification) toAppMessage() (appmessage.Mess
 
 func (x *KaspadMessage_AddressesTxsNotification) fromAppMessage(message *appmessage.AddressesTxsNotificationMessage) error {
 
-	pending := message.Pending.fromAppMessage()
+	pending := &TxEntriesByAddresses{}
+	pending.fromAppMessage(message.Pending)
 
-	confirmed := message.Confirmed.fromAppMessage()
+	confirmed := &TxEntriesByAddresses{}
+	confirmed.fromAppMessage(message.Confirmed)
 
-	unconfirmed := message.Unconfirmed.fromAppMessage()
+	unconfirmed := &TxEntriesByAddresses{}
+	unconfirmed.fromAppMessage(message.Unconfirmed)
 
 	x.AddressesTxsNotification = &AddressesTxsNotificationMessage{
 		RequiredConfirmations: message.RequiredConfirmations,
@@ -125,7 +128,7 @@ func (x *TxEntriesByAddresses) toAppMessage() (*appmessage.TxEntriesByAddresses,
 		return nil, errors.Wrapf(errorNil, "TxEntriesByAddresses is nil")
 	}
 
-	sent := make([]*appmessage.TxEntriesByAddresses, len(x.Sent))
+	sent := make([]*appmessage.TxEntryByAddress, len(x.Sent))
 	for i, entry := range x.Sent {
 		entry, err := entry.toAppMessage()
 		if err != nil {
@@ -134,34 +137,34 @@ func (x *TxEntriesByAddresses) toAppMessage() (*appmessage.TxEntriesByAddresses,
 		sent[i] = entry
 	}
 
-	received := make([]*appmessage.TxEntriesByAddresses, len(x.Received))
+	received := make([]*appmessage.TxEntryByAddress, len(x.Received))
 	for i, entry := range x.Received {
 		entry, err := entry.toAppMessage()
 		if err != nil {
 			return nil, err
 		}
-		sent[i] = entry
+		received[i] = entry
 	}
 
 
 	return &appmessage.TxEntriesByAddresses{
 		Sent:		sent,
-		Recived:	received,
+		Received:		received,
 	}, nil
 }
 
 func (x *TxEntriesByAddresses) fromAppMessage(message *appmessage.TxEntriesByAddresses) {
 
 	sent := make([]*TxEntryByAddress, len(message.Sent))
-	for i, entry := range message.Confirmed {
-		entry[i] = &TxEntryByAddress{}
-		entry[i].fromAppMessage(entry)
+	for i, entry := range message.Sent {
+		sent[i] = &TxEntryByAddress{}
+		sent[i].fromAppMessage(entry)
 	}
 
 	received := make([]*TxEntryByAddress, len(message.Received))
-	for i, entry := range message.Confirmed {
-		entry[i] = &TxEntryByAddress{}
-		entry[i].fromAppMessage(entry)
+	for i, entry := range message.Received {
+		received[i] = &TxEntryByAddress{}
+		received[i].fromAppMessage(entry)
 	}
 
 	*x = TxEntriesByAddresses{
@@ -177,8 +180,8 @@ func (x *TxEntryByAddress) toAppMessage() (*appmessage.TxEntryByAddress, error) 
 
 	return &appmessage.TxEntryByAddress{
 		Address: x.Address,
-		TxId: x.Address,
-		Confirmations: x.Address,
+		TxID: x.TxId,
+		Confirmations: x.Confirmations,
 	}, nil
 }
 
@@ -186,7 +189,7 @@ func (x *TxEntryByAddress) fromAppMessage(message *appmessage.TxEntryByAddress) 
 
 	*x = TxEntryByAddress{
 		Address: message.Address,
-		TxId: message.Address,
-		Confirmations: message.Address,
+		TxId: message.TxID,
+		Confirmations: message.Confirmations,
 	}
 }

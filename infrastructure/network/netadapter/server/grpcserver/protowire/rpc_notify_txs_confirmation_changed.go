@@ -12,8 +12,8 @@ func (x *KaspadMessage_NotifyTxsConfirmationChangedRequst) toAppMessage() (appme
 	return x.NotifyTxsConfirmationChangedRequst.toAppMessage()
 }
 
-func (x *KaspadMessage_NotifyTxsConfirmationChangedRequst) fromAppMessage(message *appmessage.NotifyTxsConfirmationChangedRequstMessage) error {
-	x.NotifyTxsConfirmationChangedRequst = &NotifyTxsConfirmationChangedRequstMessage{
+func (x *KaspadMessage_NotifyTxsConfirmationChangedRequst) fromAppMessage(message *appmessage.NotifyTxsConfirmationChangedRequestMessage) error {
+	x.NotifyTxsConfirmationChangedRequst = &NotifyTxsConfirmationChangedRequestMessage{
 		TxIDs: message.TxIDs,
 		RequiredConfirmations: message.RequiredConfirmations,
 		IncludePending: message.IncludePending,
@@ -88,7 +88,7 @@ func (x *KaspadMessage_TxsConfirmationChangedNotification) fromAppMessage(messag
 		RequiredConfirmations: message.RequiredConfirmations,
 		Pending: pending,
 		Confirmed: confirmed,
-		UnconfirmedTxIds: message.UnconfirmedTxIds,
+		UnconfirmedTxIds : message.UnconfirmedTxIds ,
 	}
 	return nil
 }

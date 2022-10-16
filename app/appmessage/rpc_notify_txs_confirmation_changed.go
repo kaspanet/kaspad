@@ -47,8 +47,8 @@ type TxsConfirmationChangedNotificationMessage struct {
 	baseMessage
 	RequiredConfirmations uint32
 	Pending	[]*TxIDConfirmationsPair
-	Confirmed []TxIDConfirmationsPair
-	Unconfirmed []string
+	Confirmed []*TxIDConfirmationsPair
+	UnconfirmedTxIds []string
 	
 }
 
@@ -59,11 +59,11 @@ func (msg *TxsConfirmationChangedNotificationMessage) Command() MessageCommand {
 
 // NewTxsChangedNotificationMessage returns a instance of the message
 func NewTxsChangedNotificationMessage(requiredConfirmations uint32, pending []*TxIDConfirmationsPair, 
-	confirmed []TxIDConfirmationsPair, unconfirmed []string) *TxsConfirmationChangedNotificationMessage {
+	confirmed []*TxIDConfirmationsPair, unconfirmedTxIds  []string) *TxsConfirmationChangedNotificationMessage {
 	return &TxsConfirmationChangedNotificationMessage{
 		RequiredConfirmations: requiredConfirmations,
 		Pending:	pending,
 		Confirmed:	confirmed,
-		Unconfirmed: 	unconfirmed,
+		UnconfirmedTxIds : 	unconfirmedTxIds ,
 	}
 }

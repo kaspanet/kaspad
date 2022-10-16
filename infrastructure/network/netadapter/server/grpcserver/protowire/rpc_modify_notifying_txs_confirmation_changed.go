@@ -41,12 +41,27 @@ func (x *KaspadMessage_ModifyNotifyingTxsConfirmationChangedResponse) toAppMessa
 	return x.ModifyNotifyingTxsConfirmationChangedResponse.toAppMessage()
 }
 
+func (x *ModifyNotifyingTxsConfirmationChangedResponseMessage) toAppMessage() (appmessage.Message, error) {
+	if x == nil {
+		return nil, errors.Wrapf(errorNil, "ModifyNotifyingTxsConfirmationChangedResponseMessage is nil")
+	}
+	rpcErr, err := x.Error.toAppMessage()
+	// Error is an optional field
+	if err != nil && !errors.Is(err, errorNil) {
+		return nil, err
+	}
+	return &appmessage.ModifyNotifyingTxsConfirmationChangedResponseMessage{
+		Error: rpcErr,
+	}, nil
+}
+
+
 func (x *KaspadMessage_ModifyNotifyingTxsConfirmationChangedResponse) fromAppMessage(message *appmessage.ModifyNotifyingTxsConfirmationChangedResponseMessage) error {
 	var err *RPCError
 	if message.Error != nil {
 		err = &RPCError{Message: message.Error.Message}
 	}
-	x.ModifyNotifyingTxsConfirmationChangedResponse = &ModifyNotifytingTxsConfirmationChangedResponseMessage{
+	x.ModifyNotifyingTxsConfirmationChangedResponse = &ModifyNotifyingTxsConfirmationChangedResponseMessage{
 		Error: err,
 	}
 	return nil

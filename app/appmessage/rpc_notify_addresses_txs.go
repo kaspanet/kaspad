@@ -51,9 +51,9 @@ func NewNotifyAddressesTxsResponseMessage() *NotifyAddressesTxsResponseMessage {
 type AddressesTxsNotificationMessage struct {
 	baseMessage
 	RequiredConfirmations uint32
-	Pending	[]*TxEntriesByAddresses
-	Confirmed []*TxEntriesByAddresses
-	Unconfirmed []string
+	Pending	*TxEntriesByAddresses
+	Confirmed *TxEntriesByAddresses
+	Unconfirmed *TxEntriesByAddresses
 	
 }
 
@@ -63,8 +63,8 @@ func (msg *AddressesTxsNotificationMessage) Command() MessageCommand {
 }
 
 // NewAddressesTxsNotificationMessage returns a instance of the message
-func NewAddressesTxsNotificationMessage(requiredConfirmations uint32, pending []*TxEntriesByAddresses, 
-	confirmed []*TxEntriesByAddresses, unconfirmed []string) *AddressesTxsNotificationMessage {
+func NewAddressesTxsNotificationMessage(requiredConfirmations uint32, pending *TxEntriesByAddresses, 
+	confirmed *TxEntriesByAddresses, unconfirmed *TxEntriesByAddresses) *AddressesTxsNotificationMessage {
 	return &AddressesTxsNotificationMessage{
 		RequiredConfirmations: requiredConfirmations,
 		Pending:	pending,
@@ -76,8 +76,8 @@ func NewAddressesTxsNotificationMessage(requiredConfirmations uint32, pending []
 // TxEntriesByAddresses is an appmessage corresponding to
 // its respective RPC message
 type TxEntriesByAddresses struct {
-	Sending []*TxEntryByAddress
-	Reciving []*TxEntryByAddress
+	Sent []*TxEntryByAddress
+	Received []*TxEntryByAddress
 }
 
 // TxEntryByAddress is an appmessage corresponding to

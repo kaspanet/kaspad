@@ -376,7 +376,7 @@ Receivers of any ResponseMessage are expected to check whether its error field i
 | mass | [uint64](#uint64) |  |  |
 | blockHash | [string](#string) |  |  |
 | blockTime | [uint64](#uint64) |  |  |
-| txIndexed | [bool](#bool) |  | whether the transaction is stored in the txindex database. Kaspad must be started with the `--txindex` flag, for parameter to display. |
+| txIndexed | [bool](#bool) |  | whether the transaction is stored in the txindex database, regardless if kaspad is run with the `--txindex` flag, or not. |
 | acceptingBlockHash | [string](#string) |  | Kaspad must be started with the `--txindex` flag, for parameter to display. |
 | confirmations | [uint32](#uint32) |  | Kaspad must be started with the `--txindex` flag for parameter to display. |
 
@@ -1726,6 +1726,8 @@ GetInfoRequestMessage returns info about the node.
 | mempoolSize | [uint64](#uint64) |  |  |
 | serverVersion | [string](#string) |  |  |
 | isUtxoIndexed | [bool](#bool) |  |  |
+| isTxIndexed | [bool](#bool) |  |  |
+| isArchival | [bool](#bool) |  |  |
 | isSynced | [bool](#bool) |  |  |
 | error | [RPCError](#protowire.RPCError) |  |  |
 

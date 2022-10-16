@@ -668,7 +668,7 @@ message GetInfoResponseMessage{
   bool isTxIndexed = 5;
   bool isArchival = 6;
   bool isSynced = 7;
-  
+
   RPCError error = 1000;
 }
 
