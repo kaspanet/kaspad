@@ -171,12 +171,14 @@ const (
 	CmdGetTxsConfirmationsResponseMessage
 	CmdNotifyTxsConfirmationChangedRequestMessage
 	CmdNotifyTxsConfirmationChangedResponseMessage
-	CmdStartNotifyingTxsConfirmationChangedRequestMessage
-	CmdStartNotifyingTxsConfirmationChangedResponseMessage
-	CmdStopNotifyingTxsConfirmationChangedRequestMessage
-	CmdStopNotifyingTxsConfirmationChangedResponseMessage
-	CmdModifyNotifyTxsConfirmationChangedParamsRequestMessage
-	CmdModifyNotifyTxsConfirmationChangedParamsResponseMessage
+	CmdModifyNotifyingTxsConfirmationChangedRequestMessage
+	CmdModifyNotifyingTxsConfirmationChangedResponseMessage
+	CmdTxsConfirmationChangedNotificationMessage
+	CmdNotifyAddressesTxsRequestMessage
+	CmdNotifyAddressesTxsResponseMessage
+	CmdModifyNotifyingAddressesTxsRequestMessage
+	CmdModifyNotifyingAddressesTxsResponseMessage
+	CmdAddressesTxsNotificationMessage
 )
 
 // ProtocolMessageCommandToString maps all MessageCommands to their string representation
@@ -320,6 +322,16 @@ var RPCMessageCommandToString = map[MessageCommand]string{
 	CmdGetTxsResponseMessage:                                      "GetTxsResponse",
 	CmdGetTxsConfirmationsRequestMessage:                          "GetTxsConfirmationsRequest",
 	CmdGetTxsConfirmationsResponseMessage:                         "GetTxsConfirmationsResponse",
+	CmdNotifyTxsConfirmationChangedRequestMessage:  		"NotifyTxsConfirmationChangedRequest",
+	CmdNotifyTxsConfirmationChangedResponseMessage:			"ModifyNotifyingTxsConfirmationChangedRequest",
+	CmdModifyNotifyingTxsConfirmationChangedRequestMessage:		"ModifyNotifyingTxsConfirmationChangedResponse",
+	CmdModifyNotifyingTxsConfirmationChangedResponseMessage:	"TxsConfirmationChangedNotification",
+	CmdTxsConfirmationChangedNotificationMessage:			"TxsConfirmationChangedNotification",
+	CmdNotifyAddressesTxsRequestMessage:				"NotifyAddressesTxsRequest",
+	CmdNotifyAddressesTxsResponseMessage:				"NotifyAddressesTxsResponse",
+	CmdModifyNotifyingAddressesTxsRequestMessage:			"ModifyNotifyingAddressesTxsRequest",
+	CmdModifyNotifyingAddressesTxsResponseMessage:			"ModifyNotifyingAddressesTxsResponse",
+	CmdAddressesTxsNotificationMessage:				"AddressesTxsNotification",
 }
 
 // Message is an interface that describes a kaspa message. A type that

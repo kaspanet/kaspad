@@ -1,62 +1,69 @@
 package appmessage
 
-// NotifyUTXOsChangedRequestMessage is an appmessage corresponding to
+// NotifyTxsConfirmationChangedRequestMessage is an appmessage corresponding to
 // its respective RPC message
-type NotifyTxsConfirmationChangedRequstMessage struct {
+type NotifyTxsConfirmationChangedRequestMessage struct {
 	baseMessage
-	Addresses []string
+	TxIDs []string
+	RequiredConfirmations uint32 
+	IncludePending bool
 }
 
 // Command returns the protocol command string for the message
-func (msg *NotifyUTXOsChangedRequestMessage) Command() MessageCommand {
-	return CmdNotifyUTXOsChangedRequestMessage
+func (msg *NotifyTxsConfirmationChangedRequestMessage) Command() MessageCommand {
+	return CmdNotifyTxsConfirmationChangedRequestMessage
 }
 
-// NewNotifyUTXOsChangedRequestMessage returns a instance of the message
-func NewNotifyUTXOsChangedRequestMessage(addresses []string) *NotifyUTXOsChangedRequestMessage {
-	return &NotifyUTXOsChangedRequestMessage{
-		Addresses: addresses,
+// NewNotifyTxsConfirmationChangedRequestMessage returns a instance of the message
+func NewNotifyTxsConfirmationChangedRequestMessage(TxIDs []string, requiredConfirmations uint32, 
+	includePending bool) *NotifyTxsConfirmationChangedRequestMessage {
+	return &NotifyTxsConfirmationChangedRequestMessage{
+		TxIDs: TxIDs,
+		RequiredConfirmations:  requiredConfirmations,
+		IncludePending: includePending,
 	}
 }
 
-// NotifyUTXOsChangedResponseMessage is an appmessage corresponding to
+// NotifyTxsConfirmationChangedResponseMessage is an appmessage corresponding to
 // its respective RPC message
-type NotifyUTXOsChangedResponseMessage struct {
+type NotifyTxsConfirmationChangedResponseMessage struct {
 	baseMessage
 	Error *RPCError
 }
 
 // Command returns the protocol command string for the message
-func (msg *NotifyUTXOsChangedResponseMessage) Command() MessageCommand {
-	return CmdNotifyUTXOsChangedResponseMessage
+func (msg *NotifyTxsConfirmationChangedResponseMessage) Command() MessageCommand {
+	return CmdNotifyTxsConfirmationChangedResponseMessage
 }
 
-// NewNotifyUTXOsChangedResponseMessage returns a instance of the message
-func NewNotifyTXChangedResponseMessage() *NotifyUTXOsChangedResponseMessage {
-	return &NotifyUTXOsChangedResponseMessage{}
+// NewNotifyTXChangedResponseMessage returns a instance of the message
+func NewNotifyTxsChangedResponseMessage() *NotifyTxsConfirmationChangedResponseMessage {
+	return &NotifyTxsConfirmationChangedResponseMessage{}
 }
 
-// UTXOsChangedNotificationMessage is an appmessage corresponding to
+// TxsConfirmationChangedNotificationMessage is an appmessage corresponding to
 // its respective RPC message
-type UTXOsChangedNotificationMessage struct {
+type TxsConfirmationChangedNotificationMessage struct {
 	baseMessage
-	Added   []*UTXOsByAddressesEntry
-	Removed []*UTXOsByAddressesEntry
-}
-
-// UTXOsByAddressesEntry represents a UTXO of some address
-type UTXOsByAddressesEntry struct {
-	Address   string
-	Outpoint  *RPCOutpoint
-	UTXOEntry *RPCUTXOEntry
+	RequiredConfirmations uint32
+	Pending	[]*TxIDConfirmationsPair
+	Confirmed []TxIDConfirmationsPair
+	Unconfirmed []string
+	
 }
 
 // Command returns the protocol command string for the message
-func (msg *UTXOsChangedNotificationMessage) Command() MessageCommand {
-	return CmdUTXOsChangedNotificationMessage
+func (msg *TxsConfirmationChangedNotificationMessage) Command() MessageCommand {
+	return CmdTxsConfirmationChangedNotificationMessage
 }
 
-// NewUTXOsChangedNotificationMessage returns a instance of the message
-func NewUTXOsChangedNotificationMessage() *UTXOsChangedNotificationMessage {
-	return &UTXOsChangedNotificationMessage{}
+// NewTxsChangedNotificationMessage returns a instance of the message
+func NewTxsChangedNotificationMessage(requiredConfirmations uint32, pending []*TxIDConfirmationsPair, 
+	confirmed []TxIDConfirmationsPair, unconfirmed []string) *TxsConfirmationChangedNotificationMessage {
+	return &TxsConfirmationChangedNotificationMessage{
+		RequiredConfirmations: requiredConfirmations,
+		Pending:	pending,
+		Confirmed:	confirmed,
+		Unconfirmed: 	unconfirmed,
+	}
 }
