@@ -299,6 +299,9 @@ func (x *RpcTransactionVerboseData) toAppMessage() (*appmessage.RPCTransactionVe
 		Mass:          x.Mass,
 		BlockHash:     x.BlockHash,
 		BlockTime:     x.BlockTime,
+		TxIndexed:     x.TxIndexed,
+		AcceptingBlockHash:     x.AcceptingBlockHash,
+		Confirmations:          x.Confirmations,
 	}, nil
 }
 
@@ -309,6 +312,9 @@ func (x *RpcTransactionVerboseData) fromAppMessage(message *appmessage.RPCTransa
 		Mass:          message.Mass,
 		BlockHash:     message.BlockHash,
 		BlockTime:     message.BlockTime,
+		TxIndexed:     message.TxIndexed,
+		AcceptingBlockHash:     message.AcceptingBlockHash,
+		Confirmations:          message.Confirmations,
 	}
 }
 

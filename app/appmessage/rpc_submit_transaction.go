@@ -102,6 +102,9 @@ type RPCTransactionVerboseData struct {
 	Mass          uint64
 	BlockHash     string
 	BlockTime     uint64
+	TxIndexed     bool
+	AcceptingBlockHash string
+	Confirmations      uint32
 }
 
 // RPCTransactionInputVerboseData holds data about a transaction input

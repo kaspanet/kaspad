@@ -376,6 +376,9 @@ Receivers of any ResponseMessage are expected to check whether its error field i
 | mass | [uint64](#uint64) |  |  |
 | blockHash | [string](#string) |  |  |
 | blockTime | [uint64](#uint64) |  |  |
+| txIndexed | [bool](#bool) |  | whether the transaction is stored in the txindex database. Kaspad must be started with the `--txindex` flag, for parameter to display. |
+| acceptingBlockHash | [string](#string) |  | Kaspad must be started with the `--txindex` flag, for parameter to display. |
+| confirmations | [uint32](#uint32) |  | Kaspad must be started with the `--txindex` flag for parameter to display. |
 
 
 
@@ -1963,7 +1966,7 @@ See NotifyNewBlockTemplateRequestMessage
 <a name="protowire.GetAcceptingBlockHashesOfTxsRequestMessage"></a>
 
 ### GetAcceptingBlockHashesOfTxsRequestMessage
-Kaspad most be started with the `--txindex` flag for this Request to work.
+Kaspad must be started with the `--txindex` flag for this Request to work.
 
 
 | Field | Type | Label | Description |
@@ -1994,7 +1997,7 @@ Kaspad most be started with the `--txindex` flag for this Request to work.
 <a name="protowire.GetTxsRequestMessage"></a>
 
 ### GetTxsRequestMessage
-Kaspad most be started with the `--txindex` flag for this Request to work.
+Kaspad must be started with the `--txindex` flag for this Request to work.
 
 
 | Field | Type | Label | Description |
@@ -2025,7 +2028,7 @@ Kaspad most be started with the `--txindex` flag for this Request to work.
 <a name="protowire.GetTxsConfirmationsRequestMessage"></a>
 
 ### GetTxsConfirmationsRequestMessage
-Kaspad most be started with the `--txindex` flag for this Request to work.
+Kaspad must be started with the `--txindex` flag for this Request to work.
 
 
 | Field | Type | Label | Description |
@@ -2057,7 +2060,7 @@ Kaspad most be started with the `--txindex` flag for this Request to work.
 
 ### NotifyTxsConfirmationChangedRequestMessage
 NotifyTxsConfirmationChangedRequstMessage is a listener that registers confirmations from supplied TxIDs
-Kaspad most be started with the `--txindex` flag for this Request to work.
+Kaspad must be started with the `--txindex` flag for this Request to work.
 
 
 | Field | Type | Label | Description |
@@ -2109,13 +2112,13 @@ TxsConfirmationChangedNotificationMessage is the notification about txs pertaini
 
 ### ModifyNotifyingTxsConfirmationChangedRequestMessage
 ModifyNotifyingTxsConfirmationChangedRequestMessage modfies the params of a registered `NotifyTxsConfirmationChangedRequstMessage`
-most be registered to NotifyTxsConfirmationChangedRequstMessage for this command to work
+must be registered to NotifyTxsConfirmationChangedRequstMessage for this command to work
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| addTxIDs | [string](#string) | repeated |  |
-| removeTxIDs | [string](#string) | repeated |  |
+| addTxIDs | [string](#string) | repeated | add txIds to the notification stream |
+| removeTxIDs | [string](#string) | repeated | remove txIds to the notification stream |
 | requiredConfirmations | [uint32](#uint32) |  |  |
 | includePending | [bool](#bool) |  |  |
 
@@ -2210,13 +2213,13 @@ NotifyAddressesTxsChangedRequestMessage Listens for Txs pertaining to specified 
 
 ### ModifyNotifyingAddressesTxsRequestMessage
 ModifyNotifyAddressesTxsParamsRequestMessage modifies the params used for a regesitered `NotifyAddressesTxsRequest`
-Most be registered to NotifyAddressTxChangedRequestMessage for this command to work
+Must be registered to NotifyAddressTxChangedRequestMessage for this command to work
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| AddAddresses | [string](#string) | repeated |  |
-| RemoveAddresses | [string](#string) | repeated |  |
+| AddAddresses | [string](#string) | repeated | add addresses to the notification stream |
+| RemoveAddresses | [string](#string) | repeated | remove addresses to the notification stream |
 | requiredConfirmations | [uint32](#uint32) |  |  |
 | includePending | [bool](#bool) |  |  |
 | includeSending | [bool](#bool) |  |  |

@@ -14,6 +14,8 @@ func (x *KaspadMessage_ModifyNotifyingTxsConfirmationChangedRequest) toAppMessag
 
 func (x *KaspadMessage_ModifyNotifyingTxsConfirmationChangedRequest) fromAppMessage(message *appmessage.ModifyNotifyingTxsConfirmationChangedRequestMessage) error {
 	x.ModifyNotifyingTxsConfirmationChangedRequest = &ModifyNotifyingTxsConfirmationChangedRequestMessage{
+		AddTxIDs: message.AddTxIDs,
+		RemoveTxIDs: message.RemoveTxIDs,
 		RequiredConfirmations: message.RequiredConfirmations,
 		IncludePending: message.IncludePending,
 	}
@@ -25,6 +27,8 @@ func (x *ModifyNotifyingTxsConfirmationChangedRequestMessage) toAppMessage() (ap
 		return nil, errors.Wrapf(errorNil, "ModifyNotifyingTxsConfirmationChangedRequestMessage is nil")
 	}
 	return &appmessage.ModifyNotifyingTxsConfirmationChangedRequestMessage{
+		AddTxIDs: x.AddTxIDs,
+		RemoveTxIDs: x.RemoveTxIDs,
 		RequiredConfirmations: x.RequiredConfirmations,
 		IncludePending: x.IncludePending,
 	}, nil

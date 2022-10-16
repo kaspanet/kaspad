@@ -249,6 +249,26 @@ func (ti *TXIndex) removeTXIDs(selectedParentChainChanges *externalapi.SelectedC
 	return nil
 }
 
+// TXAcceptingBlockHash returns the accepting block hash for for the given txID
+func (ti *TXIndex) TXAcceptingBlockHash(txID *externalapi.DomainTransactionID) (
+	acceptingBlockHash *externalapi.DomainHash, found bool, err error) {
+	onEnd := logger.LogAndMeasureExecutionTime(log, "TXIndex.TXAcceptingBlockHash")
+	defer onEnd()
+
+	ti.mutex.Lock()
+	defer ti.mutex.Unlock()
+
+	txData, found, err := ti.store.getTxData(txID)
+	if err != nil {
+		return nil, false, err
+	}
+	if !found {
+		return nil, false, nil
+	}
+
+	return txData.AcceptingBlockHash, found, nil
+}
+
 // TXAcceptingBlockHashes returns the accepting block hashes for for the given txIDs
 func (ti *TXIndex) TXAcceptingBlockHashes(txIDs []*externalapi.DomainTransactionID) (
 	txIDsToAcceptingBlockHashes TxIDsToBlockHashes, missingTxIds []*externalapi.DomainTransactionID, err error) {
@@ -303,6 +323,33 @@ func (ti *TXIndex) GetTXs(txIDs []*externalapi.DomainTransactionID) (
 	}
 
 	return txs, notFound, nil
+}
+
+// GetTXConfirmations returns the tx confirmations for for the given txID
+func (ti *TXIndex) GetTXConfirmations(txID *externalapi.DomainTransactionID) (
+	confirmations int64, found bool, err error) {
+	onEnd := logger.LogAndMeasureExecutionTime(log, "TXIndex.GetTXConfirmations")
+	defer onEnd()
+
+	ti.mutex.Lock()
+	defer ti.mutex.Unlock()
+
+	txdata, found, err := ti.store.getTxData(txID)
+	if err != nil {
+		return 0, false, err
+	}
+
+	acceptingBlockHeader, err := ti.domain.Consensus().GetBlockHeader(txdata.AcceptingBlockHash)
+	if err != nil {
+		return -1, false, err
+	}
+
+	virtualBlock, err := ti.domain.Consensus().GetVirtualInfo()
+	if err != nil {
+		return 0, false, err
+	}
+
+	return int64(virtualBlock.BlueScore - acceptingBlockHeader.BlueScore()), true, nil
 }
 
 // GetTXsConfirmations returns the tx confirmations for for the given txIDs

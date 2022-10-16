@@ -14,6 +14,8 @@ func (x *KaspadMessage_ModifyNotifyingAddressesTxsRequest) toAppMessage() (appme
 
 func (x *KaspadMessage_ModifyNotifyingAddressesTxsRequest) fromAppMessage(message *appmessage.ModifyNotifyingAddressesTxsRequestMessage) error {
 	x.ModifyNotifyingAddressesTxsRequest = &ModifyNotifyingAddressesTxsRequestMessage{
+		AddAddresses: message.AddAddresses,
+		RemoveAddresses: message.RemoveAddresses,
 		RequiredConfirmations: message.RequiredConfirmations,
 		IncludePending: message.IncludePending,
 		IncludeSending: message.IncludeSending,
@@ -27,6 +29,8 @@ func (x *ModifyNotifyingAddressesTxsRequestMessage) toAppMessage() (appmessage.M
 		return nil, errors.Wrapf(errorNil, "ModifyNotifyingAddressesTxsRequestMessage is nil")
 	}
 	return &appmessage.ModifyNotifyingAddressesTxsRequestMessage{
+		AddAddresses: x.AddAddresses,
+		RemoveAddresses: x.RemoveAddresses,
 		RequiredConfirmations: x.RequiredConfirmations,
 		IncludePending: x.IncludePending,
 		IncludeSending: x.IncludeSending,
