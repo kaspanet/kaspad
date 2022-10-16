@@ -51,17 +51,8 @@ var handlers = map[appmessage.MessageCommand]handler{
 	appmessage.CmdNotifyNewBlockTemplateRequestMessage:                      rpchandlers.HandleNotifyNewBlockTemplate,
 	appmessage.CmdGetCoinSupplyRequestMessage:                               rpchandlers.HandleGetCoinSupply,
 	appmessage.CmdGetMempoolEntriesByAddressesRequestMessage:                rpchandlers.HandleGetMempoolEntriesByAddresses,
-	appmessage.CmdGetAcceptingBlockHashOfTxRequestMessage:                   rpchandlers.HandleGetAcceptingBlockHashOfTx,
 	appmessage.CmdGetAcceptingBlockHashesOfTxsRequestMessage:                rpchandlers.HandleGetAcceptingBlockHashesOfTxs,
-	appmessage.CmdGetAcceptingBlockOfTxRequestMessage:                       rpchandlers.HandleGetAcceptingBlockOfTx,
-	appmessage.CmdGetAcceptingBlocksOfTxsRequestMessage:                     rpchandlers.HandleGetAcceptingBlocksOfTxs,
-	appmessage.CmdGetIncludingBlockHashOfTxRequestMessage:                   rpchandlers.HandleGetIncludingBlockHashOfTx,
-	appmessage.CmdGetIncludingBlockHashesOfTxsRequestMessage:                rpchandlers.HandleGetIncludingBlockHashesOfTxs,
-	appmessage.CmdGetIncludingBlockOfTxRequestMessage:                       rpchandlers.HandleGetIncludingBlockOfTx,
-	appmessage.CmdGetIncludingBlocksOfTxsRequestMessage:                     rpchandlers.HandleGetIncludingBlocksOfTxs,
-	appmessage.CmdGetTxRequestMessage:                                       rpchandlers.HandleGetTx,
 	appmessage.CmdGetTxsRequestMessage:                                      rpchandlers.HandleGetTxs,
-	appmessage.CmdGetTxConfirmationsRequestMessage:                          rpchandlers.HandleGetTxConfirmations,
 	appmessage.CmdGetTxsConfirmationsRequestMessage:                         rpchandlers.HandleGetTxsConfirmations,
 }
 

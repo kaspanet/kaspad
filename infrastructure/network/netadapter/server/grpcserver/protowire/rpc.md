@@ -119,45 +119,21 @@
     - [RpcTxIDBlockPair](#protowire.RpcTxIDBlockPair)
     - [GetAcceptingBlockHashesOfTxsRequestMessage](#protowire.GetAcceptingBlockHashesOfTxsRequestMessage)
     - [GetAcceptingBlockHashesOfTxsResponseMessage](#protowire.GetAcceptingBlockHashesOfTxsResponseMessage)
-    - [GetAcceptingBlockOfTxRequestMessage](#protowire.GetAcceptingBlockOfTxRequestMessage)
-    - [GetAcceptingBlockOfTxResponseMessage](#protowire.GetAcceptingBlockOfTxResponseMessage)
-    - [GetAcceptingBlocksOfTxsRequestMessage](#protowire.GetAcceptingBlocksOfTxsRequestMessage)
-    - [GetAcceptingBlocksOfTxsResponseMessage](#protowire.GetAcceptingBlocksOfTxsResponseMessage)
-    - [GetIncludingBlockHashOfTxRequestMessage](#protowire.GetIncludingBlockHashOfTxRequestMessage)
-    - [GetIncludingBlockHashOfTxResponseMessage](#protowire.GetIncludingBlockHashOfTxResponseMessage)
-    - [GetIncludingBlockHashesOfTxsRequestMessage](#protowire.GetIncludingBlockHashesOfTxsRequestMessage)
-    - [GetIncludingBlockHashesOfTxsResponseMessage](#protowire.GetIncludingBlockHashesOfTxsResponseMessage)
-    - [GetIncludingBlockOfTxRequestMessage](#protowire.GetIncludingBlockOfTxRequestMessage)
-    - [GetIncludingBlockOfTxResponseMessage](#protowire.GetIncludingBlockOfTxResponseMessage)
-    - [GetIncludingBlocksOfTxsRequestMessage](#protowire.GetIncludingBlocksOfTxsRequestMessage)
-    - [GetIncludingBlocksOfTxsResponseMessage](#protowire.GetIncludingBlocksOfTxsResponseMessage)
-    - [GetTxRequestMessage](#protowire.GetTxRequestMessage)
-    - [GetTxResponseMessage](#protowire.GetTxResponseMessage)
     - [GetTxsRequestMessage](#protowire.GetTxsRequestMessage)
     - [GetTxsResponseMessage](#protowire.GetTxsResponseMessage)
-    - [GetTxConfirmationsRequestMessage](#protowire.GetTxConfirmationsRequestMessage)
-    - [GetTxConfirmationsResponseMessage](#protowire.GetTxConfirmationsResponseMessage)
     - [GetTxsConfirmationsRequestMessage](#protowire.GetTxsConfirmationsRequestMessage)
     - [GetTxsConfirmationsResponseMessage](#protowire.GetTxsConfirmationsResponseMessage)
     - [NotifyTxsConfirmationChangedRequestMessage](#protowire.NotifyTxsConfirmationChangedRequestMessage)
     - [NotifyTxsConfirmationChangedResponseMessage](#protowire.NotifyTxsConfirmationChangedResponseMessage)
     - [TxsConfirmationChangedNotificationMessage](#protowire.TxsConfirmationChangedNotificationMessage)
-    - [StopNotifyTxsConfirmationChangedRequestMessage](#protowire.StopNotifyTxsConfirmationChangedRequestMessage)
-    - [StopNotifyTxsConfirmationChangedResponseMessage](#protowire.StopNotifyTxsConfirmationChangedResponseMessage)
-    - [StartNotifyTxsConfirmationChangedRequestMessage](#protowire.StartNotifyTxsConfirmationChangedRequestMessage)
-    - [StartNotifyTxsConfirmationChangedResponseMessage](#protowire.StartNotifyTxsConfirmationChangedResponseMessage)
-    - [ModifyNotifyTxsConfirmationChangedParamsRequestMessage](#protowire.ModifyNotifyTxsConfirmationChangedParamsRequestMessage)
-    - [ModifyNotifyTxsConfirmationChangedParamsResponseMessage](#protowire.ModifyNotifyTxsConfirmationChangedParamsResponseMessage)
+    - [ModifyNotifyingTxsConfirmationChangedRequestMessage](#protowire.ModifyNotifyingTxsConfirmationChangedRequestMessage)
+    - [ModifyNotifyingTxsConfirmationChangedResponseMessage](#protowire.ModifyNotifyingTxsConfirmationChangedResponseMessage)
     - [TxEntryByAddress](#protowire.TxEntryByAddress)
     - [TxEntriesByAddresses](#protowire.TxEntriesByAddresses)
     - [NotifyAddressesTxsRequestMessage](#protowire.NotifyAddressesTxsRequestMessage)
     - [NotifyAddressesTxsResponseMessage](#protowire.NotifyAddressesTxsResponseMessage)
-    - [StopNotifyAddressesTxsRequestMessage](#protowire.StopNotifyAddressesTxsRequestMessage)
-    - [StopNotifyAddressesTxsResponseMessage](#protowire.StopNotifyAddressesTxsResponseMessage)
-    - [StartNotifyAddressesTxsRequestMessage](#protowire.StartNotifyAddressesTxsRequestMessage)
-    - [StartNotifyAddressesTxsResponseMessage](#protowire.StartNotifyAddressesTxsResponseMessage)
-    - [ModifyNotifyAddressesTxsParamsRequestMessage](#protowire.ModifyNotifyAddressesTxsParamsRequestMessage)
-    - [ModifyNotifyAddressesTxsParamsResponseMessage](#protowire.ModifyNotifyAddressesTxsParamsResponseMessage)
+    - [ModifyNotifyingAddressesTxsRequestMessage](#protowire.ModifyNotifyingAddressesTxsRequestMessage)
+    - [ModifyNotifyingAddressesTxsResponseMessage](#protowire.ModifyNotifyingAddressesTxsResponseMessage)
     - [AddressesTxsNotificationMessage](#protowire.AddressesTxsNotificationMessage)
   
     - [SubmitBlockResponseMessage.RejectReason](#protowire.SubmitBlockResponseMessage.RejectReason)
@@ -2015,227 +1991,6 @@ Kaspad most be started with the `--txindex` flag for this Request to work.
 
 
 
-<a name="protowire.GetAcceptingBlockOfTxRequestMessage"></a>
-
-### GetAcceptingBlockOfTxRequestMessage
-Kaspad most be started with the `--txindex` flag for this Request to work.
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| txID | [string](#string) |  |  |
-| includeTransactions | [bool](#bool) |  |  |
-
-
-
-
-
-
-<a name="protowire.GetAcceptingBlockOfTxResponseMessage"></a>
-
-### GetAcceptingBlockOfTxResponseMessage
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| block | [RpcBlock](#protowire.RpcBlock) |  |  |
-| error | [RPCError](#protowire.RPCError) |  |  |
-
-
-
-
-
-
-<a name="protowire.GetAcceptingBlocksOfTxsRequestMessage"></a>
-
-### GetAcceptingBlocksOfTxsRequestMessage
-Kaspad most be started with the `--txindex` flag for this Request to work.
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| txIDs | [string](#string) | repeated |  |
-| includeTransactions | [bool](#bool) |  |  |
-
-
-
-
-
-
-<a name="protowire.GetAcceptingBlocksOfTxsResponseMessage"></a>
-
-### GetAcceptingBlocksOfTxsResponseMessage
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| txIDBlockPairs | [RpcTxIDBlockPair](#protowire.RpcTxIDBlockPair) | repeated |  |
-| error | [RPCError](#protowire.RPCError) |  |  |
-
-
-
-
-
-
-<a name="protowire.GetIncludingBlockHashOfTxRequestMessage"></a>
-
-### GetIncludingBlockHashOfTxRequestMessage
-Kaspad most be started with the `--txindex` flag for this Request to work.
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| txID | [string](#string) |  |  |
-
-
-
-
-
-
-<a name="protowire.GetIncludingBlockHashOfTxResponseMessage"></a>
-
-### GetIncludingBlockHashOfTxResponseMessage
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| hash | [string](#string) |  |  |
-| error | [RPCError](#protowire.RPCError) |  |  |
-
-
-
-
-
-
-<a name="protowire.GetIncludingBlockHashesOfTxsRequestMessage"></a>
-
-### GetIncludingBlockHashesOfTxsRequestMessage
-Kaspad most be started with the `--txindex` flag for this Request to work.
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| txIDs | [string](#string) | repeated |  |
-
-
-
-
-
-
-<a name="protowire.GetIncludingBlockHashesOfTxsResponseMessage"></a>
-
-### GetIncludingBlockHashesOfTxsResponseMessage
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| txIDBlockHashPairs | [RpcTxIDBlockHashPair](#protowire.RpcTxIDBlockHashPair) | repeated |  |
-| error | [RPCError](#protowire.RPCError) |  |  |
-
-
-
-
-
-
-<a name="protowire.GetIncludingBlockOfTxRequestMessage"></a>
-
-### GetIncludingBlockOfTxRequestMessage
-Kaspad most be started with the `--txindex` flag for this Request to work.
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| txID | [string](#string) |  |  |
-| includeTransactions | [bool](#bool) |  |  |
-
-
-
-
-
-
-<a name="protowire.GetIncludingBlockOfTxResponseMessage"></a>
-
-### GetIncludingBlockOfTxResponseMessage
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| block | [RpcBlock](#protowire.RpcBlock) |  |  |
-| error | [RPCError](#protowire.RPCError) |  |  |
-
-
-
-
-
-
-<a name="protowire.GetIncludingBlocksOfTxsRequestMessage"></a>
-
-### GetIncludingBlocksOfTxsRequestMessage
-Kaspad most be started with the `--txindex` flag for this Request to work.
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| txIDs | [string](#string) | repeated |  |
-| includeTransactions | [bool](#bool) |  |  |
-
-
-
-
-
-
-<a name="protowire.GetIncludingBlocksOfTxsResponseMessage"></a>
-
-### GetIncludingBlocksOfTxsResponseMessage
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| txIDBlockPairs | [RpcTxIDBlockPair](#protowire.RpcTxIDBlockPair) | repeated |  |
-| error | [RPCError](#protowire.RPCError) |  |  |
-
-
-
-
-
-
-<a name="protowire.GetTxRequestMessage"></a>
-
-### GetTxRequestMessage
-Kaspad most be started with the `--txindex` flag for this Request to work.
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| txID | [string](#string) |  |  |
-
-
-
-
-
-
-<a name="protowire.GetTxResponseMessage"></a>
-
-### GetTxResponseMessage
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| transaction | [RpcTransaction](#protowire.RpcTransaction) |  |  |
-| error | [RPCError](#protowire.RPCError) |  |  |
-
-
-
-
-
-
 <a name="protowire.GetTxsRequestMessage"></a>
 
 ### GetTxsRequestMessage
@@ -2260,37 +2015,6 @@ Kaspad most be started with the `--txindex` flag for this Request to work.
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | transactions | [RpcTransaction](#protowire.RpcTransaction) | repeated |  |
-| error | [RPCError](#protowire.RPCError) |  |  |
-
-
-
-
-
-
-<a name="protowire.GetTxConfirmationsRequestMessage"></a>
-
-### GetTxConfirmationsRequestMessage
-Kaspad most be started with the `--txindex` flag for this Request to work.
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| txID | [string](#string) |  |  |
-
-
-
-
-
-
-<a name="protowire.GetTxConfirmationsResponseMessage"></a>
-
-### GetTxConfirmationsResponseMessage
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| confirmations | [int64](#int64) |  |  |
 | error | [RPCError](#protowire.RPCError) |  |  |
 
 
@@ -2381,76 +2105,17 @@ TxsConfirmationChangedNotificationMessage is the notification about txs pertaini
 
 
 
-<a name="protowire.StopNotifyTxsConfirmationChangedRequestMessage"></a>
+<a name="protowire.ModifyNotifyingTxsConfirmationChangedRequestMessage"></a>
 
-### StopNotifyTxsConfirmationChangedRequestMessage
+### ModifyNotifyingTxsConfirmationChangedRequestMessage
+ModifyNotifyingTxsConfirmationChangedRequestMessage modfies the params of a registered `NotifyTxsConfirmationChangedRequstMessage`
 most be registered to NotifyTxsConfirmationChangedRequstMessage for this command to work
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| TxIDs | [string](#string) | repeated |  |
-
-
-
-
-
-
-<a name="protowire.StopNotifyTxsConfirmationChangedResponseMessage"></a>
-
-### StopNotifyTxsConfirmationChangedResponseMessage
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| error | [RPCError](#protowire.RPCError) |  |  |
-
-
-
-
-
-
-<a name="protowire.StartNotifyTxsConfirmationChangedRequestMessage"></a>
-
-### StartNotifyTxsConfirmationChangedRequestMessage
-StartNotifyTxsConfirmationChangedRequestMessage starts listening for Transaction confirmations with the specified TxIDs 
-Most be registered to NotifyTxsConfirmationChangedRequstMessage for this command to work
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| TxIDs | [string](#string) | repeated |  |
-
-
-
-
-
-
-<a name="protowire.StartNotifyTxsConfirmationChangedResponseMessage"></a>
-
-### StartNotifyTxsConfirmationChangedResponseMessage
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| error | [RPCError](#protowire.RPCError) |  |  |
-
-
-
-
-
-
-<a name="protowire.ModifyNotifyTxsConfirmationChangedParamsRequestMessage"></a>
-
-### ModifyNotifyTxsConfirmationChangedParamsRequestMessage
-ModifyNotifyTxsConfirmationChangedParamsRequestMessage modfies the params of a registered `NotifyTxsConfirmationChangedRequstMessage`
-most be registered to NotifyTxsConfirmationChangedRequstMessage for this command to work
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
+| addTxIDs | [string](#string) | repeated |  |
+| removeTxIDs | [string](#string) | repeated |  |
 | requiredConfirmations | [uint32](#uint32) |  |  |
 | includePending | [bool](#bool) |  |  |
 
@@ -2459,9 +2124,9 @@ most be registered to NotifyTxsConfirmationChangedRequstMessage for this command
 
 
 
-<a name="protowire.ModifyNotifyTxsConfirmationChangedParamsResponseMessage"></a>
+<a name="protowire.ModifyNotifyingTxsConfirmationChangedResponseMessage"></a>
 
-### ModifyNotifyTxsConfirmationChangedParamsResponseMessage
+### ModifyNotifyingTxsConfirmationChangedResponseMessage
 
 
 
@@ -2541,77 +2206,17 @@ NotifyAddressesTxsChangedRequestMessage Listens for Txs pertaining to specified 
 
 
 
-<a name="protowire.StopNotifyAddressesTxsRequestMessage"></a>
+<a name="protowire.ModifyNotifyingAddressesTxsRequestMessage"></a>
 
-### StopNotifyAddressesTxsRequestMessage
-StopNotifyAddressesTxsRequestMessage stops listening for Txs pertaining to specified addresses
-Most be registered to NotifyAddressTxChangedRequestMessage for this command to work
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| addresses | [string](#string) | repeated |  |
-
-
-
-
-
-
-<a name="protowire.StopNotifyAddressesTxsResponseMessage"></a>
-
-### StopNotifyAddressesTxsResponseMessage
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| error | [RPCError](#protowire.RPCError) |  |  |
-
-
-
-
-
-
-<a name="protowire.StartNotifyAddressesTxsRequestMessage"></a>
-
-### StartNotifyAddressesTxsRequestMessage
-StartNotifyAddressesTxsRequestMessage starts listening for Txs pertaining to specified addresses 
-Most be registered to NotifyAddressTxChangedRequestMessage for this command to work
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| addresses | [string](#string) | repeated |  |
-
-
-
-
-
-
-<a name="protowire.StartNotifyAddressesTxsResponseMessage"></a>
-
-### StartNotifyAddressesTxsResponseMessage
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| error | [RPCError](#protowire.RPCError) |  |  |
-
-
-
-
-
-
-<a name="protowire.ModifyNotifyAddressesTxsParamsRequestMessage"></a>
-
-### ModifyNotifyAddressesTxsParamsRequestMessage
+### ModifyNotifyingAddressesTxsRequestMessage
 ModifyNotifyAddressesTxsParamsRequestMessage modifies the params used for a regesitered `NotifyAddressesTxsRequest`
 Most be registered to NotifyAddressTxChangedRequestMessage for this command to work
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
+| AddAddresses | [string](#string) | repeated |  |
+| RemoveAddresses | [string](#string) | repeated |  |
 | requiredConfirmations | [uint32](#uint32) |  |  |
 | includePending | [bool](#bool) |  |  |
 | includeSending | [bool](#bool) |  |  |
@@ -2622,9 +2227,9 @@ Most be registered to NotifyAddressTxChangedRequestMessage for this command to w
 
 
 
-<a name="protowire.ModifyNotifyAddressesTxsParamsResponseMessage"></a>
+<a name="protowire.ModifyNotifyingAddressesTxsResponseMessage"></a>
 
-### ModifyNotifyAddressesTxsParamsResponseMessage
+### ModifyNotifyingAddressesTxsResponseMessage
 
 
 

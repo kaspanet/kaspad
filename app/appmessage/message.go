@@ -163,30 +163,20 @@ const (
 	CmdGetMempoolEntriesByAddressesResponseMessage
 	CmdGetCoinSupplyRequestMessage
 	CmdGetCoinSupplyResponseMessage
-	CmdGetAcceptingBlockHashOfTxRequestMessage
-	CmdGetAcceptingBlockHashOfTxResponseMessage
 	CmdGetAcceptingBlockHashesOfTxsRequestMessage
 	CmdGetAcceptingBlockHashesOfTxsResponseMessage
-	CmdGetAcceptingBlockOfTxRequestMessage
-	CmdGetAcceptingBlockOfTxResponseMessage
-	CmdGetAcceptingBlocksOfTxsRequestMessage
-	CmdGetAcceptingBlocksOfTxsResponseMessage
-	CmdGetIncludingBlockHashOfTxRequestMessage
-	CmdGetIncludingBlockHashOfTxResponseMessage
-	CmdGetIncludingBlockHashesOfTxsRequestMessage
-	CmdGetIncludingBlockHashesOfTxsResponseMessage
-	CmdGetIncludingBlockOfTxRequestMessage
-	CmdGetIncludingBlockOfTxResponseMessage
-	CmdGetIncludingBlocksOfTxsRequestMessage
-	CmdGetIncludingBlocksOfTxsResponseMessage
-	CmdGetTxRequestMessage
-	CmdGetTxResponseMessage
 	CmdGetTxsRequestMessage
 	CmdGetTxsResponseMessage
-	CmdGetTxConfirmationsRequestMessage
-	CmdGetTxConfirmationsResponseMessage
 	CmdGetTxsConfirmationsRequestMessage
 	CmdGetTxsConfirmationsResponseMessage
+	CmdNotifyTxsConfirmationChangedRequestMessage
+	CmdNotifyTxsConfirmationChangedResponseMessage
+	CmdStartNotifyingTxsConfirmationChangedRequestMessage
+	CmdStartNotifyingTxsConfirmationChangedResponseMessage
+	CmdStopNotifyingTxsConfirmationChangedRequestMessage
+	CmdStopNotifyingTxsConfirmationChangedResponseMessage
+	CmdModifyNotifyTxsConfirmationChangedParamsRequestMessage
+	CmdModifyNotifyTxsConfirmationChangedParamsResponseMessage
 )
 
 // ProtocolMessageCommandToString maps all MessageCommands to their string representation
@@ -324,28 +314,10 @@ var RPCMessageCommandToString = map[MessageCommand]string{
 	CmdGetMempoolEntriesByAddressesResponseMessage:                "GetMempoolEntriesByAddressesResponse",
 	CmdGetCoinSupplyRequestMessage:                                "GetCoinSupplyRequest",
 	CmdGetCoinSupplyResponseMessage:                               "GetCoinSupplyResponse",
-	CmdGetAcceptingBlockHashOfTxRequestMessage:                    "GetAcceptingBlockHashOfTxRequest",
-	CmdGetAcceptingBlockHashOfTxResponseMessage:                   "GetAcceptingBlockHashOfTxResponse",
 	CmdGetAcceptingBlockHashesOfTxsRequestMessage:                 "GetAcceptingBlockHashesOfTxsRequest",
 	CmdGetAcceptingBlockHashesOfTxsResponseMessage:                "GetAcceptingBlockHashesOfTxsResponse",
-	CmdGetAcceptingBlockOfTxRequestMessage:                        "GetAcceptingBlockOfTxRequest",
-	CmdGetAcceptingBlockOfTxResponseMessage:                       "GetAcceptingBlockOfTxResponse",
-	CmdGetAcceptingBlocksOfTxsRequestMessage:                      "GetAcceptingBlocksOfTxsRequest",
-	CmdGetAcceptingBlocksOfTxsResponseMessage:                     "GetAcceptingBlocksOfTxsResponse",
-	CmdGetIncludingBlockHashOfTxRequestMessage:                    "GetIncludingBlockHashOfTxRequest",
-	CmdGetIncludingBlockHashOfTxResponseMessage:                   "GetIncludingBlockHashOfTxResponse",
-	CmdGetIncludingBlockHashesOfTxsRequestMessage:                 "GetIncludingBlockHashesOfTxsRequest",
-	CmdGetIncludingBlockHashesOfTxsResponseMessage:                "GetIncludingBlockHashesOfTxsResponse",
-	CmdGetIncludingBlockOfTxRequestMessage:                        "GetIncludingBlockOfTxRequest",
-	CmdGetIncludingBlockOfTxResponseMessage:                       "GetIncludingBlockOfTxResponse",
-	CmdGetIncludingBlocksOfTxsRequestMessage:                      "GetIncludingBlocksOfTxsRequest",
-	CmdGetIncludingBlocksOfTxsResponseMessage:                     "GetIncludingBlocksOfTxsResponse",
-	CmdGetTxRequestMessage:                                        "GetTxRequest",
-	CmdGetTxResponseMessage:                                       "GetTxResponse",
 	CmdGetTxsRequestMessage:                                       "GetTxsRequest",
 	CmdGetTxsResponseMessage:                                      "GetTxsResponse",
-	CmdGetTxConfirmationsRequestMessage:                           "GetTxConfirmationsRequest",
-	CmdGetTxConfirmationsResponseMessage:                          "GetTxConfirmationsResponse",
 	CmdGetTxsConfirmationsRequestMessage:                          "GetTxsConfirmationsRequest",
 	CmdGetTxsConfirmationsResponseMessage:                         "GetTxsConfirmationsResponse",
 }

@@ -15,19 +15,8 @@ var commandTypes = []reflect.Type{
 	reflect.TypeOf(protowire.KaspadMessage_GetCurrentNetworkRequest{}),
 	reflect.TypeOf(protowire.KaspadMessage_GetInfoRequest{}),
 
-	reflect.TypeOf(protowire.KaspadMessage_GetAcceptingBlockHashOfTxRequest{}),
 	reflect.TypeOf(protowire.KaspadMessage_GetAcceptingBlockHashesOfTxsRequest{}),
-	reflect.TypeOf(protowire.KaspadMessage_GetAcceptingBlockOfTxRequest{}),
-	reflect.TypeOf(protowire.KaspadMessage_GetAcceptingBlocksOfTxsRequest{}),
-
-	reflect.TypeOf(protowire.KaspadMessage_GetIncludingBlockHashOfTxRequest{}),
-	reflect.TypeOf(protowire.KaspadMessage_GetIncludingBlockHashesOfTxsRequest{}),
-	reflect.TypeOf(protowire.KaspadMessage_GetIncludingBlockOfTxRequest{}),
-	reflect.TypeOf(protowire.KaspadMessage_GetIncludingBlocksOfTxsRequest{}),
-
-	reflect.TypeOf(protowire.KaspadMessage_GetTxRequest{}),
 	reflect.TypeOf(protowire.KaspadMessage_GetTxsRequest{}),
-	reflect.TypeOf(protowire.KaspadMessage_GetTxConfirmationsRequest{}),
 	reflect.TypeOf(protowire.KaspadMessage_GetTxsConfirmationsRequest{}),
 
 	reflect.TypeOf(protowire.KaspadMessage_GetBlockRequest{}),

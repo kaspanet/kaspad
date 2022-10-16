@@ -3,17 +3,17 @@ package protowire
 import (
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/pkg/errors"
-) NotifyAddressesTxsParams
+)
 
 func (x *KaspadMessage_NotifyAddressesTxsRequest) toAppMessage() (appmessage.Message, error) {
 	if x == nil {
 		return nil, errors.Wrapf(errorNil, "KaspadMessage_NotifyAddressesTxsRequest is nil")
 	}
-	return x.NotifyAddressesTxsRequst.toAppMessage()
+	return x.NotifyAddressesTxsRequest.toAppMessage()
 }
 
-func (x *KaspadMessage_NotifyAddressesTxsRequest) fromAppMessage(message *appmessage.NotifyAddressesTxsRequstMessage) error {
-	x.NotifyAddressesTxsRequest = &NotifyAddressesTxsRequstMessage{
+func (x *KaspadMessage_NotifyAddressesTxsRequest) fromAppMessage(message *appmessage.NotifyAddressesTxsRequestMessage) error {
+	x.NotifyAddressesTxsRequest = &NotifyAddressesTxsRequestMessage{
 		Addresses : message.Addresses,
 		RequiredConfirmations: message.RequiredConfirmations,
 		IncludePending: message.IncludePending,
@@ -76,23 +76,12 @@ func (x *KaspadMessage_AddressesTxsNotification) toAppMessage() (appmessage.Mess
 }
 
 func (x *KaspadMessage_AddressesTxsNotification) fromAppMessage(message *appmessage.AddressesTxsNotificationMessage) error {
-	pending := make([]*TxEntriesByAddresses, len(message.Pending))
-	for i, entry := range message.Pending {
-		entry[i] = &TxEntriesByAddresses{}
-		entry[i].fromAppMessage(entry)
-	}
 
-	confirmed := make([]*TxEntriesByAddresses, len(message.Confirmed))
-	for i, entry := range message.Confirmed {
-		entry[i] = &TxEntriesByAddresses{}
-		entry[i].fromAppMessage(entry)
-	}
+	pending := message.Pending.fromAppMessage()
 
-	unconfirmed := make([]*TxEntriesByAddresses, len(message.Unconfirmed))
-	for i, entry := range message.Confirmed {
-		entry[i] = &TxEntriesByAddresses{}
-		entry[i].fromAppMessage(entry)
-	}
+	confirmed := message.Confirmed.fromAppMessage()
+
+	unconfirmed := message.Unconfirmed.fromAppMessage()
 
 	x.AddressesTxsNotification = &AddressesTxsNotificationMessage{
 		RequiredConfirmations: message.RequiredConfirmations,
@@ -107,33 +96,20 @@ func (x *AddressesTxsNotificationMessage) toAppMessage() (appmessage.Message, er
 	if x == nil {
 		return nil, errors.Wrapf(errorNil, "AddressesTxsNotificationMessage is nil")
 	}
-	pending := make([]*appmessage.TxEntriesByAddresses, len(x.Pending))
-	for i, entry := range x.Pending {
-		entry, err := entry.toAppMessage()
-		if err != nil {
-			return nil, err
-		}
-		pending[i] = entry
+	pending, err := x.Pending.toAppMessage()
+	if err != nil {
+		return nil, err
 	}
 
-	confirmed := make([]*appmessage.TxEntriesByAddresses, len(x.Confirmed))
-	for i, entry := range x.Confirmed {
-		entry, err := entry.toAppMessage()
-		if err != nil {
-			return nil, err
-		}
-		confirmed[i] = entry
+	confirmed, err := x.Pending.toAppMessage()
+	if err != nil {
+		return nil, err
 	}
 
-	unconfirmed := make([]*appmessage.TxEntriesByAddresses, len(x.Unconfirmed))
-	for i, entry := range x.Unconfirmed {
-		entry, err := entry.toAppMessage()
-		if err != nil {
-			return nil, err
-		}
-		confirmed[i] = entry
+	unconfirmed, err := x.Unconfirmed.toAppMessage()
+	if err != nil {
+		return nil, err
 	}
-
 
 	return &appmessage.AddressesTxsNotificationMessage{
 		RequiredConfirmations: x.RequiredConfirmations,

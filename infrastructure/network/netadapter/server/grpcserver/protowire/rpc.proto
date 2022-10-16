@@ -749,7 +749,7 @@ message RpcTxIDBlockPair {
         RpcBlock block = 2;   
 }
 
-//Kaspad most be started with the `--txindex` flag for this Request to work.
+// Kaspad most be started with the `--txindex` flag for this Request to work.
 message GetAcceptingBlockHashesOfTxsRequestMessage{
         repeated string txIDs = 1;
 }
@@ -759,92 +759,7 @@ message GetAcceptingBlockHashesOfTxsResponseMessage{
         RPCError error = 1000;
 }
 
-//Kaspad most be started with the `--txindex` flag for this Request to work.
-message GetAcceptingBlockOfTxRequestMessage{
-        string txID = 1;
-        bool includeTransactions = 2;
-}
-
-message GetAcceptingBlockOfTxResponseMessage{
-        RpcBlock block = 1;
-
-        RPCError error = 1000;
-}
-
-//Kaspad most be started with the `--txindex` flag for this Request to work.
-message GetAcceptingBlocksOfTxsRequestMessage{
-        repeated string txIDs = 1;
-        bool includeTransactions = 2;
-}
-
-message GetAcceptingBlocksOfTxsResponseMessage{
-        repeated RpcTxIDBlockPair txIDBlockPairs = 1;
-
-        RPCError error = 1000;
-}
-
-//Kaspad most be started with the `--txindex` flag for this Request to work.
-message GetIncludingBlockHashOfTxRequestMessage{
-        string txID = 1;
-}
-
-message GetIncludingBlockHashOfTxResponseMessage{
-        string hash = 1;
-
-        RPCError error = 1000;
-}
-
-
-//Kaspad most be started with the `--txindex` flag for this Request to work.
-message GetIncludingBlockHashesOfTxsRequestMessage{
-        repeated string txIDs = 1;
-}
-
-message GetIncludingBlockHashesOfTxsResponseMessage{
-        repeated RpcTxIDBlockHashPair txIDBlockHashPairs = 1;
-        
-        RPCError error = 1000;
-}
-
-
-//Kaspad most be started with the `--txindex` flag for this Request to work.
-message GetIncludingBlockOfTxRequestMessage{
-        string txID = 1;
-        bool includeTransactions = 2;
-}
-
-message GetIncludingBlockOfTxResponseMessage{
-        RpcBlock block = 1;
-
-        RPCError error = 1000;
-}
-
-
-//Kaspad most be started with the `--txindex` flag for this Request to work.
-message GetIncludingBlocksOfTxsRequestMessage{
-        repeated string txIDs = 1;
-        bool includeTransactions = 2;
-}
-
-message GetIncludingBlocksOfTxsResponseMessage{
-        repeated RpcTxIDBlockPair txIDBlockPairs = 1;
-
-        RPCError error = 1000;
-}
-
-//Kaspad most be started with the `--txindex` flag for this Request to work.
-message GetTxRequestMessage{
-        string txID = 1;
-}
-
-message GetTxResponseMessage{
-        RpcTransaction transaction = 1;
-
-
-        RPCError error = 1000;
-}
-
-//Kaspad most be started with the `--txindex` flag for this Request to work.
+// Kaspad most be started with the `--txindex` flag for this Request to work.
 message GetTxsRequestMessage{
         repeated string txIDs = 1;
 }
@@ -856,16 +771,6 @@ message GetTxsResponseMessage{
         RPCError error = 1000;
 }
 
-//Kaspad most be started with the `--txindex` flag for this Request to work.
-message GetTxConfirmationsRequestMessage{
-        string txID = 1;
-}
-
-message GetTxConfirmationsResponseMessage{
-        int64 confirmations = 1;
-
-        RPCError error = 1000;
-}
 
 //Kaspad most be started with the `--txindex` flag for this Request to work.
 message GetTxsConfirmationsRequestMessage{
@@ -903,35 +808,16 @@ message TxsConfirmationChangedNotificationMessage{
         RPCError error = 1000;
 }
 
+// ModifyNotifyingTxsConfirmationChangedRequestMessage modfies the params of a registered `NotifyTxsConfirmationChangedRequstMessage`
 // most be registered to NotifyTxsConfirmationChangedRequstMessage for this command to work
-message StopNotifyTxsConfirmationChangedRequestMessage{
-        repeated string TxIDs = 1;
+message ModifyNotifyingTxsConfirmationChangedRequestMessage{
+        repeated string addTxIDs = 1;
+        repeated string removeTxIDs = 2;
+        uint32 requiredConfirmations = 3;
+        bool includePending = 4;
 }
 
-message StopNotifyTxsConfirmationChangedResponseMessage{
-
-        RPCError error = 1000;
-}
-
-// StartNotifyTxsConfirmationChangedRequestMessage starts listening for Transaction confirmations with the specified TxIDs 
-// Most be registered to NotifyTxsConfirmationChangedRequstMessage for this command to work
-message StartNotifyTxsConfirmationChangedRequestMessage{
-        repeated string TxIDs = 1;
-}
-
-message StartNotifyTxsConfirmationChangedResponseMessage{
-        
-        RPCError error = 1000;
-}
-
-// ModifyNotifyTxsConfirmationChangedParamsRequestMessage modfies the params of a registered `NotifyTxsConfirmationChangedRequstMessage`
-// most be registered to NotifyTxsConfirmationChangedRequstMessage for this command to work
-message ModifyNotifyTxsConfirmationChangedParamsRequestMessage{
-        uint32 requiredConfirmations = 1;
-        bool includePending = 2;
-}
-
-message ModifyNotifyTxsConfirmationChangedParamsResponseMessage{
+message ModifyNotifyingTxsConfirmationChangedResponseMessage{
         RPCError error = 1000;
 }
 
@@ -960,38 +846,18 @@ message NotifyAddressesTxsResponseMessage{
         RPCError error = 1000;
 }
 
-// StopNotifyAddressesTxsRequestMessage stops listening for Txs pertaining to specified addresses
-// Most be registered to NotifyAddressTxChangedRequestMessage for this command to work
-message StopNotifyAddressesTxsRequestMessage{
-        repeated string addresses = 1;
-}
-
-message StopNotifyAddressesTxsResponseMessage{
-        
-        RPCError error = 1000;
-}
-
-// StartNotifyAddressesTxsRequestMessage starts listening for Txs pertaining to specified addresses 
-// Most be registered to NotifyAddressTxChangedRequestMessage for this command to work
-message StartNotifyAddressesTxsRequestMessage{
-        repeated string addresses = 1;
-}
-
-message StartNotifyAddressesTxsResponseMessage{
-        
-        RPCError error = 1000;
-}
-
 // ModifyNotifyAddressesTxsParamsRequestMessage modifies the params used for a regesitered `NotifyAddressesTxsRequest`
 // Most be registered to NotifyAddressTxChangedRequestMessage for this command to work
-message ModifyNotifyAddressesTxsParamsRequestMessage{
-        uint32 requiredConfirmations = 1;
-        bool includePending = 3;
-        bool includeSending = 4;
-        bool includeReceiving = 5;
+message ModifyNotifyingAddressesTxsRequestMessage{
+        repeated string AddAddresses = 1;
+        repeated string RemoveAddresses = 2;
+        uint32 requiredConfirmations = 3;
+        bool includePending = 4;
+        bool includeSending = 5;
+        bool includeReceiving = 6;
 }
 
-message ModifyNotifyAddressesTxsParamsResponseMessage{
+message ModifyNotifyingAddressesTxsResponseMessage{
 
         RPCError error = 1000;
 }

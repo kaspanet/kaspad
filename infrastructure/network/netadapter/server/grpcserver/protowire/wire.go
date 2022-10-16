@@ -968,20 +968,6 @@ func toRPCPayload(message appmessage.Message) (isKaspadMessage_Payload, error) {
 			return nil, err
 		}
 		return payload, nil
-	case *appmessage.GetAcceptingBlockHashOfTxRequestMessage:
-		payload := new(KaspadMessage_GetAcceptingBlockHashOfTxRequest)
-		err := payload.fromAppMessage(message)
-		if err != nil {
-			return nil, err
-		}
-		return payload, nil
-	case *appmessage.GetAcceptingBlockHashOfTxResponseMessage:
-		payload := new(KaspadMessage_GetAcceptingBlockHashOfTxResponse)
-		err := payload.fromAppMessage(message)
-		if err != nil {
-			return nil, err
-		}
-		return payload, nil
 	case *appmessage.GetAcceptingBlockHashesOfTxsRequestMessage:
 		payload := new(KaspadMessage_GetAcceptingBlockHashesOfTxsRequest)
 		err := payload.fromAppMessage(message)
@@ -996,104 +982,6 @@ func toRPCPayload(message appmessage.Message) (isKaspadMessage_Payload, error) {
 			return nil, err
 		}
 		return payload, nil
-	case *appmessage.GetAcceptingBlockOfTxRequestMessage:
-		payload := new(KaspadMessage_GetAcceptingBlockOfTxRequest)
-		err := payload.fromAppMessage(message)
-		if err != nil {
-			return nil, err
-		}
-		return payload, nil
-	case *appmessage.GetAcceptingBlockOfTxResponseMessage:
-		payload := new(KaspadMessage_GetAcceptingBlockOfTxResponse)
-		err := payload.fromAppMessage(message)
-		if err != nil {
-			return nil, err
-		}
-		return payload, nil
-	case *appmessage.GetAcceptingBlocksOfTxsRequestMessage:
-		payload := new(KaspadMessage_GetAcceptingBlocksOfTxsRequest)
-		err := payload.fromAppMessage(message)
-		if err != nil {
-			return nil, err
-		}
-		return payload, nil
-	case *appmessage.GetAcceptingBlocksOfTxsResponseMessage:
-		payload := new(KaspadMessage_GetAcceptingBlocksOfTxsResponse)
-		err := payload.fromAppMessage(message)
-		if err != nil {
-			return nil, err
-		}
-		return payload, nil
-	case *appmessage.GetIncludingBlockHashesOfTxsRequestMessage:
-		payload := new(KaspadMessage_GetIncludingBlockHashesOfTxsRequest)
-		err := payload.fromAppMessage(message)
-		if err != nil {
-			return nil, err
-		}
-		return payload, nil
-	case *appmessage.GetIncludingBlockHashesOfTxsResponseMessage:
-		payload := new(KaspadMessage_GetIncludingBlockHashesOfTxsResponse)
-		err := payload.fromAppMessage(message)
-		if err != nil {
-			return nil, err
-		}
-		return payload, nil
-	case *appmessage.GetIncludingBlockOfTxRequestMessage:
-		payload := new(KaspadMessage_GetIncludingBlockOfTxRequest)
-		err := payload.fromAppMessage(message)
-		if err != nil {
-			return nil, err
-		}
-		return payload, nil
-	case *appmessage.GetIncludingBlockOfTxResponseMessage:
-		payload := new(KaspadMessage_GetIncludingBlockOfTxResponse)
-		err := payload.fromAppMessage(message)
-		if err != nil {
-			return nil, err
-		}
-		return payload, nil
-	case *appmessage.GetIncludingBlocksOfTxsRequestMessage:
-		payload := new(KaspadMessage_GetIncludingBlocksOfTxsRequest)
-		err := payload.fromAppMessage(message)
-		if err != nil {
-			return nil, err
-		}
-		return payload, nil
-	case *appmessage.GetIncludingBlocksOfTxsResponseMessage:
-		payload := new(KaspadMessage_GetIncludingBlocksOfTxsResponse)
-		err := payload.fromAppMessage(message)
-		if err != nil {
-			return nil, err
-		}
-		return payload, nil
-	case *appmessage.GetIncludingBlockHashOfTxRequestMessage:
-		payload := new(KaspadMessage_GetIncludingBlockHashOfTxRequest)
-		err := payload.fromAppMessage(message)
-		if err != nil {
-			return nil, err
-		}
-		return payload, nil
-	case *appmessage.GetIncludingBlockHashOfTxResponseMessage:
-		payload := new(KaspadMessage_GetIncludingBlockHashOfTxResponse)
-		err := payload.fromAppMessage(message)
-		if err != nil {
-			return nil, err
-		}
-		return payload, nil
-	case *appmessage.GetTxRequestMessage:
-		payload := new(KaspadMessage_GetTxRequest)
-		err := payload.fromAppMessage(message)
-		if err != nil {
-			return nil, err
-		}
-		return payload, nil
-	case *appmessage.GetTxResponseMessage:
-		payload := new(KaspadMessage_GetTxResponse)
-		err := payload.fromAppMessage(message)
-		if err != nil {
-			return nil, err
-		}
-		return payload, nil
 	case *appmessage.GetTxsRequestMessage:
 		payload := new(KaspadMessage_GetTxsRequest)
 		err := payload.fromAppMessage(message)
@@ -1103,20 +991,6 @@ func toRPCPayload(message appmessage.Message) (isKaspadMessage_Payload, error) {
 		return payload, nil
 	case *appmessage.GetTxsResponseMessage:
 		payload := new(KaspadMessage_GetTxsResponse)
-		err := payload.fromAppMessage(message)
-		if err != nil {
-			return nil, err
-		}
-		return payload, nil
-	case *appmessage.GetTxConfirmationsRequestMessage:
-		payload := new(KaspadMessage_GetTxConfirmationsRequest)
-		err := payload.fromAppMessage(message)
-		if err != nil {
-			return nil, err
-		}
-		return payload, nil
-	case *appmessage.GetTxConfirmationsResponseMessage:
-		payload := new(KaspadMessage_GetTxConfirmationsResponse)
 		err := payload.fromAppMessage(message)
 		if err != nil {
 			return nil, err
