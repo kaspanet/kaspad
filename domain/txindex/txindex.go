@@ -187,7 +187,12 @@ func (ti *TXIndex) addTXIDs(selectedParentChainChanges *externalapi.SelectedChai
 		if err != nil {
 			return err
 		}
-		for i, acceptingBlock := range chainBlocksChunk {
+		for i, acceptingBlockHash := range chainBlocksChunk {
+			acceptingBlockHeader, err := ti.domain.Consensus().GetBlockHeader(acceptingBlockHash)
+			if err != nil {
+				return err
+			}
+			acceptingBlueScore := acceptingBlockHeader.BlueScore()
 			chainBlockAcceptanceData := chainBlocksAcceptanceData[i]
 			for _, blockAcceptanceData := range chainBlockAcceptanceData {
 				for j, transactionAcceptanceData := range blockAcceptanceData.TransactionAcceptanceData {
@@ -199,9 +204,9 @@ func (ti *TXIndex) addTXIDs(selectedParentChainChanges *externalapi.SelectedChai
 						transactionID := consensushashing.TransactionID(transactionAcceptanceData.Transaction)
 						ti.store.add(
 							*transactionID,
-							uint32(j),                     //index of including block where transaction is found
-							blockAcceptanceData.BlockHash, //this is the including block
-							acceptingBlock,                //this is the accepting block
+							uint32(j),                     // index of including block where transaction is found
+							blockAcceptanceData.BlockHash, // this is the including block
+							acceptingBlockHash,	       // this is the accepting block
 						)
 					}
 				}

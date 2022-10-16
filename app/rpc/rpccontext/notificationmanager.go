@@ -4,6 +4,7 @@ import (
 	"sync"
 
 	"github.com/kaspanet/kaspad/domain/dagconfig"
+	"github.com/kaspanet/kaspad/domain/txindex"
 
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/txscript"
@@ -42,7 +43,9 @@ type NotificationListener struct {
 	propagatePruningPointUTXOSetOverrideNotifications           bool
 	propagateNewBlockTemplateNotifications                      bool
 
-	propagateUTXOsChangedNotificationAddresses                                    map[utxoindex.ScriptPublicKeyString]*UTXOsChangedNotificationAddress
+	propagateUTXOsChangedNotificationAddresses                  map[utxoindex.ScriptPublicKeyString]*UTXOsChangedNotificationAddress
+	propagateAddressesTxsNotifications           		    TXsConfirmationChangedNotificationHolder
+	propagateTxsConfirmationChhangedNotifications               TXsConfirmationChangedNotificationHolder
 	includeAcceptedTransactionIDsInVirtualSelectedParentChainChangedNotifications bool
 }
 
@@ -191,6 +194,29 @@ func (nm *NotificationManager) NotifyFinalityConflictResolved(notification *appm
 	for router, listener := range nm.listeners {
 		if listener.propagateFinalityConflictResolvedNotifications {
 			err := router.OutgoingRoute().Enqueue(notification)
+			if err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+// NotifyUTXOsChanged notifies the notification manager that UTXOs have been changed
+func (nm *NotificationManager) NotifyTXAcceptanceChange(txChanges *txindex.TXAcceptanceChange) error {
+	nm.RLock()
+	defer nm.RUnlock()
+
+	for router, listener := range nm.listeners {
+		if listener.propagateTXsConfirmationChangedNotifications {
+			// Filter utxoChanges and create a notification
+			notification, err := listener.convertUTXOChangesToUTXOsChangedNotification(utxoChanges)
+			if err != nil {
+				return err
+			}
+
+			// Enqueue the notification
+			err = router.OutgoingRoute().MaybeEnqueue(notification)
 			if err != nil {
 				return err
 			}
@@ -352,6 +378,26 @@ func (nl *NotificationListener) PropagateFinalityConflictResolvedNotifications()
 // send UTXOs changed notifications for those addresses along with the old ones. Duplicate addresses
 // are ignored.
 func (nm *NotificationManager) PropagateUTXOsChangedNotifications(nl *NotificationListener, addresses []*UTXOsChangedNotificationAddress) {
+	// Apply a write-lock since the internal listener address map is modified
+	nm.Lock()
+	defer nm.Unlock()
+
+	if !nl.propagateUTXOsChangedNotifications {
+		nl.propagateUTXOsChangedNotifications = true
+		nl.propagateUTXOsChangedNotificationAddresses =
+			make(map[utxoindex.ScriptPublicKeyString]*UTXOsChangedNotificationAddress, len(addresses))
+	}
+
+	for _, address := range addresses {
+		nl.propagateUTXOsChangedNotificationAddresses[address.ScriptPublicKeyString] = address
+	}
+}
+
+// PropagateUTXOsChangedNotifications instructs the listener to send UTXOs changed notifications
+// to the remote listener for the given addresses. Subsequent calls instruct the listener to
+// send UTXOs changed notifications for those addresses along with the old ones. Duplicate addresses
+// are ignored.
+func (nm *NotificationManager) PropagateTXsConfirmationChangedNotifications(nl *NotificationListener, addresses []*UTXOsChangedNotificationAddress) {
 	// Apply a write-lock since the internal listener address map is modified
 	nm.Lock()
 	defer nm.Unlock()

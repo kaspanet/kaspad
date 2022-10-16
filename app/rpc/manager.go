@@ -223,12 +223,12 @@ func (m *Manager) notifyTXsChanged(virtualChangeSet *externalapi.VirtualChangeSe
 	onEnd := logger.LogAndMeasureExecutionTime(log, "RPCManager.NotifyTXsChanged")
 	defer onEnd()
 
-	_, err := m.context.TXIndex.Update(virtualChangeSet)
+	txIndexChanges, err := m.context.TXIndex.Update(virtualChangeSet)
 	if err != nil {
 		return err
 	}
 
-	return nil
+	return m.context.NotifyTXAcceptanceChange(txIndexChanges)
 }
 
 func (m *Manager) notifyPruningPointUTXOSetOverride() error {
