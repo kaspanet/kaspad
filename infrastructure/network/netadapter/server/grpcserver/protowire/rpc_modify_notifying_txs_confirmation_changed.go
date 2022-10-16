@@ -14,10 +14,10 @@ func (x *KaspadMessage_ModifyNotifyingTxsConfirmationChangedRequest) toAppMessag
 
 func (x *KaspadMessage_ModifyNotifyingTxsConfirmationChangedRequest) fromAppMessage(message *appmessage.ModifyNotifyingTxsConfirmationChangedRequestMessage) error {
 	x.ModifyNotifyingTxsConfirmationChangedRequest = &ModifyNotifyingTxsConfirmationChangedRequestMessage{
-		AddTxIDs: message.AddTxIDs,
-		RemoveTxIDs: message.RemoveTxIDs,
+		AddTxIDs:              message.AddTxIDs,
+		RemoveTxIDs:           message.RemoveTxIDs,
 		RequiredConfirmations: message.RequiredConfirmations,
-		IncludePending: message.IncludePending,
+		IncludePending:        message.IncludePending,
 	}
 	return nil
 }
@@ -27,10 +27,10 @@ func (x *ModifyNotifyingTxsConfirmationChangedRequestMessage) toAppMessage() (ap
 		return nil, errors.Wrapf(errorNil, "ModifyNotifyingTxsConfirmationChangedRequestMessage is nil")
 	}
 	return &appmessage.ModifyNotifyingTxsConfirmationChangedRequestMessage{
-		AddTxIDs: x.AddTxIDs,
-		RemoveTxIDs: x.RemoveTxIDs,
+		AddTxIDs:              x.AddTxIDs,
+		RemoveTxIDs:           x.RemoveTxIDs,
 		RequiredConfirmations: x.RequiredConfirmations,
-		IncludePending: x.IncludePending,
+		IncludePending:        x.IncludePending,
 	}, nil
 }
 
@@ -54,7 +54,6 @@ func (x *ModifyNotifyingTxsConfirmationChangedResponseMessage) toAppMessage() (a
 		Error: rpcErr,
 	}, nil
 }
-
 
 func (x *KaspadMessage_ModifyNotifyingTxsConfirmationChangedResponse) fromAppMessage(message *appmessage.ModifyNotifyingTxsConfirmationChangedResponseMessage) error {
 	var err *RPCError

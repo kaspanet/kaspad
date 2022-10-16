@@ -294,27 +294,27 @@ func (x *RpcTransactionVerboseData) toAppMessage() (*appmessage.RPCTransactionVe
 		return nil, errors.Wrapf(errorNil, "RpcTransactionVerboseData is nil")
 	}
 	return &appmessage.RPCTransactionVerboseData{
-		TransactionID: x.TransactionId,
-		Hash:          x.Hash,
-		Mass:          x.Mass,
-		BlockHash:     x.BlockHash,
-		BlockTime:     x.BlockTime,
-		TxIndexed:     x.TxIndexed,
-		AcceptingBlockHash:     x.AcceptingBlockHash,
-		Confirmations:          x.Confirmations,
+		TransactionID:      x.TransactionId,
+		Hash:               x.Hash,
+		Mass:               x.Mass,
+		BlockHash:          x.BlockHash,
+		BlockTime:          x.BlockTime,
+		TxIndexed:          x.TxIndexed,
+		AcceptingBlockHash: x.AcceptingBlockHash,
+		Confirmations:      x.Confirmations,
 	}, nil
 }
 
 func (x *RpcTransactionVerboseData) fromAppMessage(message *appmessage.RPCTransactionVerboseData) {
 	*x = RpcTransactionVerboseData{
-		TransactionId: message.TransactionID,
-		Hash:          message.Hash,
-		Mass:          message.Mass,
-		BlockHash:     message.BlockHash,
-		BlockTime:     message.BlockTime,
-		TxIndexed:     message.TxIndexed,
-		AcceptingBlockHash:     message.AcceptingBlockHash,
-		Confirmations:          message.Confirmations,
+		TransactionId:      message.TransactionID,
+		Hash:               message.Hash,
+		Mass:               message.Mass,
+		BlockHash:          message.BlockHash,
+		BlockTime:          message.BlockTime,
+		TxIndexed:          message.TxIndexed,
+		AcceptingBlockHash: message.AcceptingBlockHash,
+		Confirmations:      message.Confirmations,
 	}
 }
 

@@ -97,12 +97,12 @@ type RPCUTXOEntry struct {
 
 // RPCTransactionVerboseData holds verbose data about a transaction
 type RPCTransactionVerboseData struct {
-	TransactionID string
-	Hash          string
-	Mass          uint64
-	BlockHash     string
-	BlockTime     uint64
-	TxIndexed     bool
+	TransactionID      string
+	Hash               string
+	Mass               uint64
+	BlockHash          string
+	BlockTime          uint64
+	TxIndexed          bool
 	AcceptingBlockHash string
 	Confirmations      uint32
 }

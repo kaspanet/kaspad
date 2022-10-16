@@ -14,12 +14,12 @@ func (x *KaspadMessage_ModifyNotifyingAddressesTxsRequest) toAppMessage() (appme
 
 func (x *KaspadMessage_ModifyNotifyingAddressesTxsRequest) fromAppMessage(message *appmessage.ModifyNotifyingAddressesTxsRequestMessage) error {
 	x.ModifyNotifyingAddressesTxsRequest = &ModifyNotifyingAddressesTxsRequestMessage{
-		AddAddresses: message.AddAddresses,
-		RemoveAddresses: message.RemoveAddresses,
+		AddAddresses:          message.AddAddresses,
+		RemoveAddresses:       message.RemoveAddresses,
 		RequiredConfirmations: message.RequiredConfirmations,
-		IncludePending: message.IncludePending,
-		IncludeSending: message.IncludeSending,
-		IncludeReceiving: message.IncludeReceiving,
+		IncludePending:        message.IncludePending,
+		IncludeSending:        message.IncludeSending,
+		IncludeReceiving:      message.IncludeReceiving,
 	}
 	return nil
 }
@@ -29,12 +29,12 @@ func (x *ModifyNotifyingAddressesTxsRequestMessage) toAppMessage() (appmessage.M
 		return nil, errors.Wrapf(errorNil, "ModifyNotifyingAddressesTxsRequestMessage is nil")
 	}
 	return &appmessage.ModifyNotifyingAddressesTxsRequestMessage{
-		AddAddresses: x.AddAddresses,
-		RemoveAddresses: x.RemoveAddresses,
+		AddAddresses:          x.AddAddresses,
+		RemoveAddresses:       x.RemoveAddresses,
 		RequiredConfirmations: x.RequiredConfirmations,
-		IncludePending: x.IncludePending,
-		IncludeSending: x.IncludeSending,
-		IncludeReceiving: x.IncludeReceiving,
+		IncludePending:        x.IncludePending,
+		IncludeSending:        x.IncludeSending,
+		IncludeReceiving:      x.IncludeReceiving,
 	}, nil
 }
 

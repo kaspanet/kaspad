@@ -14,9 +14,9 @@ func (x *KaspadMessage_NotifyTxsConfirmationChangedRequst) toAppMessage() (appme
 
 func (x *KaspadMessage_NotifyTxsConfirmationChangedRequst) fromAppMessage(message *appmessage.NotifyTxsConfirmationChangedRequestMessage) error {
 	x.NotifyTxsConfirmationChangedRequst = &NotifyTxsConfirmationChangedRequestMessage{
-		TxIDs: message.TxIDs,
+		TxIDs:                 message.TxIDs,
 		RequiredConfirmations: message.RequiredConfirmations,
-		IncludePending: message.IncludePending,
+		IncludePending:        message.IncludePending,
 	}
 	return nil
 }
@@ -26,9 +26,9 @@ func (x *NotifyTxsConfirmationChangedRequestMessage) toAppMessage() (appmessage.
 		return nil, errors.Wrapf(errorNil, "NotifyTxsConfirmationChangedRequestMessage is nil")
 	}
 	return &appmessage.NotifyTxsConfirmationChangedRequestMessage{
-		TxIDs: x.TxIDs,
+		TxIDs:                 x.TxIDs,
 		RequiredConfirmations: x.RequiredConfirmations,
-		IncludePending: x.IncludePending,
+		IncludePending:        x.IncludePending,
 	}, nil
 }
 
@@ -86,9 +86,9 @@ func (x *KaspadMessage_TxsConfirmationChangedNotification) fromAppMessage(messag
 
 	x.TxsConfirmationChangedNotification = &TxsConfirmationChangedNotificationMessage{
 		RequiredConfirmations: message.RequiredConfirmations,
-		Pending: pending,
-		Confirmed: confirmed,
-		UnconfirmedTxIds : message.UnconfirmedTxIds ,
+		Pending:               pending,
+		Confirmed:             confirmed,
+		UnconfirmedTxIds:      message.UnconfirmedTxIds,
 	}
 	return nil
 }
@@ -117,8 +117,8 @@ func (x *TxsConfirmationChangedNotificationMessage) toAppMessage() (appmessage.M
 
 	return &appmessage.TxsConfirmationChangedNotificationMessage{
 		RequiredConfirmations: x.RequiredConfirmations,
-		Pending: pending,
-		Confirmed: confirmed,
-		UnconfirmedTxIds: x.UnconfirmedTxIds,
+		Pending:               pending,
+		Confirmed:             confirmed,
+		UnconfirmedTxIds:      x.UnconfirmedTxIds,
 	}, nil
 }

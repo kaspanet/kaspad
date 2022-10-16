@@ -14,11 +14,11 @@ func (x *KaspadMessage_NotifyAddressesTxsRequest) toAppMessage() (appmessage.Mes
 
 func (x *KaspadMessage_NotifyAddressesTxsRequest) fromAppMessage(message *appmessage.NotifyAddressesTxsRequestMessage) error {
 	x.NotifyAddressesTxsRequest = &NotifyAddressesTxsRequestMessage{
-		Addresses : message.Addresses,
+		Addresses:             message.Addresses,
 		RequiredConfirmations: message.RequiredConfirmations,
-		IncludePending: message.IncludePending,
-		IncludeSending: message.IncludeSending,
-		IncludeReceiving: message.IncludeReceiving,
+		IncludePending:        message.IncludePending,
+		IncludeSending:        message.IncludeSending,
+		IncludeReceiving:      message.IncludeReceiving,
 	}
 	return nil
 }
@@ -28,11 +28,11 @@ func (x *NotifyAddressesTxsRequestMessage) toAppMessage() (appmessage.Message, e
 		return nil, errors.Wrapf(errorNil, "NotifyAddressesTxsRequestMessage is nil")
 	}
 	return &appmessage.NotifyAddressesTxsRequestMessage{
-		Addresses : x.Addresses,
+		Addresses:             x.Addresses,
 		RequiredConfirmations: x.RequiredConfirmations,
-		IncludePending: x.IncludePending,
-		IncludeSending: x.IncludeSending,
-		IncludeReceiving: x.IncludeReceiving,
+		IncludePending:        x.IncludePending,
+		IncludeSending:        x.IncludeSending,
+		IncludeReceiving:      x.IncludeReceiving,
 	}, nil
 }
 
@@ -88,9 +88,9 @@ func (x *KaspadMessage_AddressesTxsNotification) fromAppMessage(message *appmess
 
 	x.AddressesTxsNotification = &AddressesTxsNotificationMessage{
 		RequiredConfirmations: message.RequiredConfirmations,
-		Pending: pending,
-		Confirmed: confirmed,
-		Unconfirmed: unconfirmed,
+		Pending:               pending,
+		Confirmed:             confirmed,
+		Unconfirmed:           unconfirmed,
 	}
 	return nil
 }
@@ -116,12 +116,11 @@ func (x *AddressesTxsNotificationMessage) toAppMessage() (appmessage.Message, er
 
 	return &appmessage.AddressesTxsNotificationMessage{
 		RequiredConfirmations: x.RequiredConfirmations,
-		Pending: pending,
-		Confirmed: confirmed,
-		Unconfirmed: unconfirmed,
+		Pending:               pending,
+		Confirmed:             confirmed,
+		Unconfirmed:           unconfirmed,
 	}, nil
 }
-
 
 func (x *TxEntriesByAddresses) toAppMessage() (*appmessage.TxEntriesByAddresses, error) {
 	if x == nil {
@@ -146,10 +145,9 @@ func (x *TxEntriesByAddresses) toAppMessage() (*appmessage.TxEntriesByAddresses,
 		received[i] = entry
 	}
 
-
 	return &appmessage.TxEntriesByAddresses{
-		Sent:		sent,
-		Received:		received,
+		Sent:     sent,
+		Received: received,
 	}, nil
 }
 
@@ -168,8 +166,8 @@ func (x *TxEntriesByAddresses) fromAppMessage(message *appmessage.TxEntriesByAdd
 	}
 
 	*x = TxEntriesByAddresses{
-		Sent:		sent,
-		Received:	received,
+		Sent:     sent,
+		Received: received,
 	}
 }
 
@@ -179,8 +177,8 @@ func (x *TxEntryByAddress) toAppMessage() (*appmessage.TxEntryByAddress, error) 
 	}
 
 	return &appmessage.TxEntryByAddress{
-		Address: x.Address,
-		TxID: x.TxId,
+		Address:       x.Address,
+		TxID:          x.TxId,
 		Confirmations: x.Confirmations,
 	}, nil
 }
@@ -188,8 +186,8 @@ func (x *TxEntryByAddress) toAppMessage() (*appmessage.TxEntryByAddress, error) 
 func (x *TxEntryByAddress) fromAppMessage(message *appmessage.TxEntryByAddress) {
 
 	*x = TxEntryByAddress{
-		Address: message.Address,
-		TxId: message.TxID,
+		Address:       message.Address,
+		TxId:          message.TxID,
 		Confirmations: message.Confirmations,
 	}
 }

@@ -1,15 +1,14 @@
-
 package appmessage
 
 // NotifyAddressesTxsRequestMessage is an appmessage corresponding to
 // its respective RPC message
 type NotifyAddressesTxsRequestMessage struct {
 	baseMessage
-	Addresses []string
-	RequiredConfirmations uint32 
-	IncludePending bool
-	IncludeSending bool
-	IncludeReceiving bool
+	Addresses             []string
+	RequiredConfirmations uint32
+	IncludePending        bool
+	IncludeSending        bool
+	IncludeReceiving      bool
 }
 
 // Command returns the protocol command string for the message
@@ -18,14 +17,14 @@ func (msg *NotifyAddressesTxsRequestMessage) Command() MessageCommand {
 }
 
 // NewNotifyAddressesTxsRequestMessage returns a instance of the message
-func NewNotifyAddressesTxsRequestMessage(addresses []string, requiredConfirmations uint32, 
+func NewNotifyAddressesTxsRequestMessage(addresses []string, requiredConfirmations uint32,
 	includePending bool, includeSending bool, includeReceiving bool) *NotifyAddressesTxsRequestMessage {
 	return &NotifyAddressesTxsRequestMessage{
-		Addresses: addresses,
-		RequiredConfirmations:  requiredConfirmations,
-		IncludePending: includePending,
-		IncludeSending: includeSending,
-		IncludeReceiving: includeReceiving,
+		Addresses:             addresses,
+		RequiredConfirmations: requiredConfirmations,
+		IncludePending:        includePending,
+		IncludeSending:        includeSending,
+		IncludeReceiving:      includeReceiving,
 	}
 }
 
@@ -41,7 +40,7 @@ func (msg *NotifyAddressesTxsResponseMessage) Command() MessageCommand {
 	return CmdNotifyAddressesTxsResponseMessage
 }
 
-// NewNotifyTXChangedResponseMessage returns a instance of the message
+// NewNotifyAddressesTxsResponseMessage returns a instance of the message
 func NewNotifyAddressesTxsResponseMessage() *NotifyAddressesTxsResponseMessage {
 	return &NotifyAddressesTxsResponseMessage{}
 }
@@ -51,10 +50,9 @@ func NewNotifyAddressesTxsResponseMessage() *NotifyAddressesTxsResponseMessage {
 type AddressesTxsNotificationMessage struct {
 	baseMessage
 	RequiredConfirmations uint32
-	Pending	*TxEntriesByAddresses
-	Confirmed *TxEntriesByAddresses
-	Unconfirmed *TxEntriesByAddresses
-	
+	Pending               *TxEntriesByAddresses
+	Confirmed             *TxEntriesByAddresses
+	Unconfirmed           *TxEntriesByAddresses
 }
 
 // Command returns the protocol command string for the message
@@ -63,27 +61,27 @@ func (msg *AddressesTxsNotificationMessage) Command() MessageCommand {
 }
 
 // NewAddressesTxsNotificationMessage returns a instance of the message
-func NewAddressesTxsNotificationMessage(requiredConfirmations uint32, pending *TxEntriesByAddresses, 
+func NewAddressesTxsNotificationMessage(requiredConfirmations uint32, pending *TxEntriesByAddresses,
 	confirmed *TxEntriesByAddresses, unconfirmed *TxEntriesByAddresses) *AddressesTxsNotificationMessage {
 	return &AddressesTxsNotificationMessage{
 		RequiredConfirmations: requiredConfirmations,
-		Pending:	pending,
-		Confirmed:	confirmed,
-		Unconfirmed: 	unconfirmed,
+		Pending:               pending,
+		Confirmed:             confirmed,
+		Unconfirmed:           unconfirmed,
 	}
 }
 
 // TxEntriesByAddresses is an appmessage corresponding to
 // its respective RPC message
 type TxEntriesByAddresses struct {
-	Sent []*TxEntryByAddress
+	Sent     []*TxEntryByAddress
 	Received []*TxEntryByAddress
 }
 
 // TxEntryByAddress is an appmessage corresponding to
 // its respective RPC message
 type TxEntryByAddress struct {
-	Address string
-	TxID string
+	Address       string
+	TxID          string
 	Confirmations uint32
 }
