@@ -249,26 +249,6 @@ func (ti *TXIndex) removeTXIDs(selectedParentChainChanges *externalapi.SelectedC
 	return nil
 }
 
-// TXAcceptingBlockHash returns the accepting block hash for for the given txID
-func (ti *TXIndex) TXAcceptingBlockHash(txID *externalapi.DomainTransactionID) (
-	acceptingBlockHash *externalapi.DomainHash, found bool, err error) {
-	onEnd := logger.LogAndMeasureExecutionTime(log, "TXIndex.TXAcceptingBlockHash")
-	defer onEnd()
-
-	ti.mutex.Lock()
-	defer ti.mutex.Unlock()
-
-	txData, found, err := ti.store.getTxData(txID)
-	if err != nil {
-		return nil, false, err
-	}
-	if !found {
-		return nil, false, nil
-	}
-
-	return txData.AcceptingBlockHash, found, nil
-}
-
 // TXAcceptingBlockHashes returns the accepting block hashes for for the given txIDs
 func (ti *TXIndex) TXAcceptingBlockHashes(txIDs []*externalapi.DomainTransactionID) (
 	txIDsToAcceptingBlockHashes TxIDsToBlockHashes, missingTxIds []*externalapi.DomainTransactionID, err error) {
@@ -289,82 +269,6 @@ func (ti *TXIndex) TXAcceptingBlockHashes(txIDs []*externalapi.DomainTransaction
 	}
 
 	return txIDsToAcceptingBlockHashes, missingTxIds, nil
-}
-
-// TXAcceptingBlock returns the accepting block for for the given txID
-func (ti *TXIndex) TXAcceptingBlock(txID *externalapi.DomainTransactionID) (
-	block *externalapi.DomainBlock, found bool, err error) {
-	onEnd := logger.LogAndMeasureExecutionTime(log, "TXIndex.TXAcceptingBlock")
-	defer onEnd()
-
-	ti.mutex.Lock()
-	defer ti.mutex.Unlock()
-
-	txIndexData, found, err := ti.store.getTxData(txID)
-	if err != nil {
-		return nil, false, err
-	}
-
-	acceptingBlock, err := ti.domain.Consensus().GetBlockEvenIfHeaderOnly(txIndexData.AcceptingBlockHash)
-
-	if err != nil {
-		if database.IsNotFoundError(err) {
-			return nil, false, fmt.Errorf("accepting block %s missing for txID %s ", txIndexData.AcceptingBlockHash.String(), txID.String())
-		}
-		return nil, false, err
-	}
-	return acceptingBlock, true, nil
-}
-
-// TXAcceptingBlocks returns the accepting blocks for for the given txIDs
-func (ti *TXIndex) TXAcceptingBlocks(txIDs []*externalapi.DomainTransactionID) (
-	txIDsToAcceptingBlocks TxIDsToBlocks, notFound []*externalapi.DomainTransactionID, err error) {
-	onEnd := logger.LogAndMeasureExecutionTime(log, "TXIndex.TXAcceptingBlocks")
-	defer onEnd()
-
-	ti.mutex.Lock()
-	defer ti.mutex.Unlock()
-
-	txIDsToTxIndexData, notFound, err := ti.store.getTxsData(txIDs)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	txIDsToAcceptingBlocks = make(TxIDsToBlocks)
-
-	for txID, txIndexData := range txIDsToTxIndexData {
-		txIDsToAcceptingBlocks[txID], err = ti.domain.Consensus().GetBlockEvenIfHeaderOnly(txIndexData.AcceptingBlockHash)
-		if err != nil {
-			if database.IsNotFoundError(err) {
-				return nil, nil, fmt.Errorf("accepting block %s missing for txID %s ", txIndexData.IncludingBlockHash.String(), txID.String())
-			}
-			return nil, notFound, err
-		}
-	}
-
-	return txIDsToAcceptingBlocks, notFound, nil
-}
-
-// GetTX returns the domain transaction for for the given txID
-func (ti *TXIndex) GetTX(txID *externalapi.DomainTransactionID) (
-	tx *externalapi.DomainTransaction, found bool, err error) {
-	onEnd := logger.LogAndMeasureExecutionTime(log, "TXIndex.GetTX")
-	defer onEnd()
-
-	ti.mutex.Lock()
-	defer ti.mutex.Unlock()
-
-	txIndexData, found, err := ti.store.getTxData(txID)
-	if err != nil {
-		return nil, false, err
-	}
-
-	acceptingBlock, err := ti.domain.Consensus().GetBlock(txIndexData.AcceptingBlockHash)
-	if err != nil {
-		return nil, false, err
-	}
-
-	return acceptingBlock.Transactions[txIndexData.IncludingIndex], true, nil
 }
 
 // GetTXs returns the domain transaction for for the given txIDs
@@ -401,33 +305,6 @@ func (ti *TXIndex) GetTXs(txIDs []*externalapi.DomainTransactionID) (
 	return txs, notFound, nil
 }
 
-// GetTXConfirmations returns the tx confirmations for for the given txID
-func (ti *TXIndex) GetTXConfirmations(txID *externalapi.DomainTransactionID) (
-	confirmations int64, found bool, err error) {
-	onEnd := logger.LogAndMeasureExecutionTime(log, "TXIndex.GetTXConfirmations")
-	defer onEnd()
-
-	ti.mutex.Lock()
-	defer ti.mutex.Unlock()
-
-	txdata, found, err := ti.store.getTxData(txID)
-	if err != nil {
-		return 0, false, err
-	}
-
-	acceptingBlockHeader, err := ti.domain.Consensus().GetBlockHeader(txdata.AcceptingBlockHash)
-	if err != nil {
-		return -1, false, err
-	}
-
-	virtualBlock, err := ti.domain.Consensus().GetVirtualInfo()
-	if err != nil {
-		return 0, false, err
-	}
-
-	return int64(virtualBlock.BlueScore - acceptingBlockHeader.BlueScore()), true, nil
-}
-
 // GetTXsConfirmations returns the tx confirmations for for the given txIDs
 func (ti *TXIndex) GetTXsConfirmations(txIDs []*externalapi.DomainTransactionID) (
 	txIDsToConfirmations TxIDsToConfirmations, notFound []*externalapi.DomainTransactionID, err error) {
@@ -460,99 +337,6 @@ func (ti *TXIndex) GetTXsConfirmations(txIDs []*externalapi.DomainTransactionID)
 	}
 
 	return txIDsToConfirmations, notFound, nil
-}
-
-// TXIncludingBlockHash returns the including block hash for the given txID
-func (ti *TXIndex) TXIncludingBlockHash(txID *externalapi.DomainTransactionID) (includingBlockHash *externalapi.DomainHash, found bool, err error) {
-	onEnd := logger.LogAndMeasureExecutionTime(log, "TXIndex.TXIncludingBlockHash")
-	defer onEnd()
-
-	ti.mutex.Lock()
-	defer ti.mutex.Unlock()
-
-	txIndexData, found, err := ti.store.getTxData(txID)
-	if err != nil {
-		return nil, false, err
-	}
-
-	return txIndexData.IncludingBlockHash, true, nil
-}
-
-// TXIncludingBlock returns the including block hashes for for the given txIDs
-func (ti *TXIndex) TXIncludingBlock(txID *externalapi.DomainTransactionID) (
-	block *externalapi.DomainBlock, found bool, err error) {
-	onEnd := logger.LogAndMeasureExecutionTime(log, "TXIndex.TXIncludingBlock")
-	defer onEnd()
-
-	ti.mutex.Lock()
-	defer ti.mutex.Unlock()
-
-	txIndexData, found, err := ti.store.getTxData(txID)
-	if err != nil {
-		return nil, false, err
-	}
-
-	includingBlock, err := ti.domain.Consensus().GetBlockEvenIfHeaderOnly(txIndexData.IncludingBlockHash)
-
-	if err != nil {
-		if database.IsNotFoundError(err) {
-			return nil, false, fmt.Errorf("including block %s missing for txID %s ", txIndexData.IncludingBlockHash.String(), txID.String())
-		}
-		return nil, false, err
-	}
-	return includingBlock, true, nil
-}
-
-// TXIncludingBlockHashes returns the including block hashes for for the given txI
-func (ti *TXIndex) TXIncludingBlockHashes(txIDs []*externalapi.DomainTransactionID) (
-	txIDsToIncludinglockHashes TxIDsToBlockHashes, missingTxIds []*externalapi.DomainTransactionID, err error) {
-	onEnd := logger.LogAndMeasureExecutionTime(log, "TXIndex.TXIncludingBlockHashes")
-	defer onEnd()
-
-	ti.mutex.Lock()
-	defer ti.mutex.Unlock()
-
-	txIDsToTxIndexData, notFound, err := ti.store.getTxsData(txIDs)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	txIDsToIncludinglockHashes = make(TxIDsToBlockHashes)
-
-	for txID, txIndexData := range txIDsToTxIndexData {
-		txIDsToIncludinglockHashes[txID] = txIndexData.IncludingBlockHash
-	}
-
-	return txIDsToIncludinglockHashes, notFound, nil
-}
-
-// TXIncludingBlocks returns the including block hashes for for the given txIDs
-func (ti *TXIndex) TXIncludingBlocks(txIDs []*externalapi.DomainTransactionID) (
-	txIDsToIncludingBlocks TxIDsToBlocks, notFound []*externalapi.DomainTransactionID, err error) {
-	onEnd := logger.LogAndMeasureExecutionTime(log, "TXIndex.TXIncludingBlocks")
-	defer onEnd()
-
-	ti.mutex.Lock()
-	defer ti.mutex.Unlock()
-
-	txIDsToTxIndexData, notFound, err := ti.store.getTxsData(txIDs)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	txIDsToIncludingBlocks = make(TxIDsToBlocks)
-
-	for txID, txIndexData := range txIDsToTxIndexData {
-		txIDsToIncludingBlocks[txID], err = ti.domain.Consensus().GetBlockEvenIfHeaderOnly(txIndexData.IncludingBlockHash)
-		if err != nil {
-			if database.IsNotFoundError(err) {
-				return nil, nil, fmt.Errorf("including block %s missing for txID %s ", txIndexData.IncludingBlockHash.String(), txID.String())
-			}
-			return nil, nil, err
-		}
-	}
-
-	return txIDsToIncludingBlocks, notFound, nil
 }
 
 // GetTXsBlueScores returns the tx's accepting bluescore for for the given txID
