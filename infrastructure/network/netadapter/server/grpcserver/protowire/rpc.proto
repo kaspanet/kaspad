@@ -791,6 +791,8 @@ message GetTxsConfirmationsResponseMessage{
 
 // NotifyTxsConfirmationChangedRequstMessage is a listener that registers confirmations from supplied TxIDs
 // Kaspad must be started with the `--txindex` flag for this Request to work.
+// Note: this listener will try to retroactively confirm historic txs when such TxIds are added. But, any confirmed txIds supplied beyond pruning (~3 days), 
+// will erroneously be displayed as unconfirmed, since it will be missing from the kaspad's pruned txindex database.
 message NotifyTxsConfirmationChangedRequestMessage{
         repeated string TxIDs = 1; //initial TxIds to listen for when regestering for notifications
 
@@ -809,7 +811,7 @@ message TxsConfirmationChangedNotificationMessage{
         uint32 requiredConfirmations = 1; //the required confirmations set when notification was sent
         repeated RpcTxIDConfirmationsPair pending = 2; // RpcTxIDConfirmationsPairs which have entered the virtual chain but not passed the required confirmations
         repeated RpcTxIDConfirmationsPair confirmed = 3; // RpcTxIDConfirmationsPairs which have entered the virtual chain and passed the required confirmations
-        repeated string unconfirmedTxIds = 4; // TxIds which were not confirmed within the required confirmations.
+        repeated string unconfirmedTxIds = 4; // TxIds which were not confirmed within the required confirmations. 
 
         RPCError error = 1000;
 }
@@ -839,6 +841,9 @@ message TxEntriesByAddresses{
       }
 
 // NotifyAddressesTxsChangedRequestMessage Listens for Txs pertaining to specified addresses according to the params specified
+// Kaspad must be started with the `--txindex` flag for this Request to work.
+// Note: this listener will not try to retroactively confirm historic txs pertaining to specified addresses when new addresses are added. 
+// as such, add addresses / start listener before incoming transactions are expected.
 message NotifyAddressesTxsRequestMessage{
         repeated string addresses = 1; //initial addresses to listen for Tx changes when regestering for notifications
         uint32 requiredConfirmations = 2;  // number of confirmations until a transaction is considered confirmed

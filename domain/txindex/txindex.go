@@ -136,7 +136,7 @@ func (ti *TXIndex) isSynced() (bool, error) {
 }
 
 // Update updates the TX index with the given DAG selected parent chain changes
-func (ti *TXIndex) Update(virtualChangeSet *externalapi.VirtualChangeSet) (*TXAcceptanceChange, error) {
+func (ti *TXIndex) Update(virtualChangeSet *externalapi.VirtualChangeSet) (*TXsChanges, *AddrsChanges, error) {
 	onEnd := logger.LogAndMeasureExecutionTime(log, "TXIndex.Update")
 	defer onEnd()
 
@@ -147,28 +147,35 @@ func (ti *TXIndex) Update(virtualChangeSet *externalapi.VirtualChangeSet) (*TXAc
 
 	err := ti.removeTXIDs(virtualChangeSet.VirtualSelectedParentChainChanges, 1000)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	err = ti.addTXIDs(virtualChangeSet.VirtualSelectedParentChainChanges, 1000)
 	if err != nil {
-		return nil, err
-	}
-
-	added, removed, _, _ := ti.store.stagedData()
-	txIndexChanges := &TXAcceptanceChange{
-		Added:   added,
-		Removed: removed,
+		return nil, nil, err
 	}
 
 	ti.store.updateVirtualParents(virtualChangeSet.VirtualParents)
 
-	err = ti.store.commit()
-	if err != nil {
-		return nil, err
+	txsAdded, txsRemoved, addrsSentTxsAdded, addrsSentTxsRemoved, addrsReceivedAdded, addrsReceivedTxsRemoved, _, _ := ti.store.stagedData()
+	txChanges := &TXsChanges{
+		Added:   txsAdded,
+		Removed: txsRemoved,
 	}
 
-	return txIndexChanges, nil
+	AddrsChanges := &AddrsChanges{
+		AddedSent:   addrsSentTxsAdded,
+		RemovedSent: addrsSentTxsRemoved,
+		AddedReceived:   addrsReceivedAdded,
+		RemovedReceived: addrsReceivedTxsRemoved,
+	}
+
+	err = ti.store.commit()
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return txChanges, AddrsChanges, nil
 }
 
 func (ti *TXIndex) addTXIDs(selectedParentChainChanges *externalapi.SelectedChainPath, chunkSize int) error {
@@ -188,11 +195,6 @@ func (ti *TXIndex) addTXIDs(selectedParentChainChanges *externalapi.SelectedChai
 			return err
 		}
 		for i, acceptingBlockHash := range chainBlocksChunk {
-			acceptingBlockHeader, err := ti.domain.Consensus().GetBlockHeader(acceptingBlockHash)
-			if err != nil {
-				return err
-			}
-			acceptingBlueScore := acceptingBlockHeader.BlueScore()
 			chainBlockAcceptanceData := chainBlocksAcceptanceData[i]
 			for _, blockAcceptanceData := range chainBlockAcceptanceData {
 				for j, transactionAcceptanceData := range blockAcceptanceData.TransactionAcceptanceData {
@@ -201,12 +203,23 @@ func (ti *TXIndex) addTXIDs(selectedParentChainChanges *externalapi.SelectedChai
 						if err != nil {
 							return err
 						}
-						transactionID := consensushashing.TransactionID(transactionAcceptanceData.Transaction)
+					
+						senders := make([]*externalapi.ScriptPublicKey, len(transactionAcceptanceData.Transaction.Inputs))
+						for i, input := range transactionAcceptanceData.Transaction.Inputs {
+							senders[i] = input.UTXOEntry.ScriptPublicKey()
+						}
+
+						receivers := make([]*externalapi.ScriptPublicKey, len(transactionAcceptanceData.Transaction.Outputs))
+						for i, output := range transactionAcceptanceData.Transaction.Outputs {
+							receivers[i] = output.ScriptPublicKey
+						}
 						ti.store.add(
-							*transactionID,
+							*consensushashing.TransactionID(transactionAcceptanceData.Transaction),
 							uint32(j),                     // index of including block where transaction is found
 							blockAcceptanceData.BlockHash, // this is the including block
 							acceptingBlockHash,	       // this is the accepting block
+							senders,
+							receivers,
 						)
 					}
 				}
@@ -239,11 +252,22 @@ func (ti *TXIndex) removeTXIDs(selectedParentChainChanges *externalapi.SelectedC
 				log.Tracef("TX index Removing: %d transactions", len(blockAcceptanceData.TransactionAcceptanceData))
 				for j, transactionAcceptanceData := range blockAcceptanceData.TransactionAcceptanceData {
 					if transactionAcceptanceData.IsAccepted {
-						ti.store.remove(
+						senders := make([]*externalapi.ScriptPublicKey, len(transactionAcceptanceData.Transaction.Inputs))
+						for i, input := range transactionAcceptanceData.Transaction.Inputs {
+							senders[i] = input.UTXOEntry.ScriptPublicKey()
+						}
+
+						receivers := make([]*externalapi.ScriptPublicKey, len(transactionAcceptanceData.Transaction.Outputs))
+						for i, output := range transactionAcceptanceData.Transaction.Outputs {
+							receivers[i] = output.ScriptPublicKey
+						}
+						ti.store.add(
 							*consensushashing.TransactionID(transactionAcceptanceData.Transaction),
-							uint32(j),
-							blockAcceptanceData.BlockHash,
-							acceptingBlockHash,
+							uint32(j),                     // index of including block where transaction is found
+							blockAcceptanceData.BlockHash, // this is the including block
+							acceptingBlockHash,	       // this is the accepting block
+							senders,
+							receivers,
 						)
 					}
 				}
@@ -374,12 +398,12 @@ func (ti *TXIndex) GetTXConfirmations(txID *externalapi.DomainTransactionID) (
 		return -1, false, err
 	}
 
-	virtualBlock, err := ti.domain.Consensus().GetVirtualInfo()
+	virtualBlueScore, err := ti.store.getBlueScore()
 	if err != nil {
 		return 0, false, err
 	}
 
-	return int64(virtualBlock.BlueScore - acceptingBlockHeader.BlueScore()), true, nil
+	return int64(virtualBlueScore - acceptingBlockHeader.BlueScore()), true, nil
 }
 
 // GetTXsConfirmations returns the tx confirmations for for the given txIDs
@@ -391,7 +415,7 @@ func (ti *TXIndex) GetTXsConfirmations(txIDs []*externalapi.DomainTransactionID)
 	ti.mutex.Lock()
 	defer ti.mutex.Unlock()
 
-	virtualBlock, err := ti.domain.Consensus().GetVirtualInfo()
+	virtualBlueScore, err := ti.store.getBlueScore()
 	if err != nil {
 		return nil, nil, err
 	}
@@ -410,7 +434,7 @@ func (ti *TXIndex) GetTXsConfirmations(txIDs []*externalapi.DomainTransactionID)
 			}
 			return nil, nil, err
 		}
-		txIDsToConfirmations[txID] = int64(virtualBlock.BlueScore - acceptingBlockHeader.BlueScore())
+		txIDsToConfirmations[txID] = int64(virtualBlueScore - acceptingBlockHeader.BlueScore())
 	}
 
 	return txIDsToConfirmations, notFound, nil

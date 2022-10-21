@@ -4,14 +4,28 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 )
 
-// TXAcceptanceChange is the set of changes made to the TX index after
+// TXsChanges is the set of changes made to the TX index after
 // a successful update
-type TXAcceptanceChange struct {
-	Added   map[externalapi.DomainTransactionID]*TxData
-	Removed map[externalapi.DomainTransactionID]*TxData
+type TXsChanges struct {
+	Added   TxChange
+	Removed TxChange
 }
 
+type AddrsChanges struct {
+	AddedSent   AddrsChange
+	RemovedSent AddrsChange
+	AddedReceived   AddrsChange
+	RemovedReceived AddrsChange
+}
+
+type TxChange map[externalapi.DomainTransactionID]*TxData
+type AddrsChange map[ScriptPublicKeyString][]*externalapi.DomainTransactionID
+
+type VirtualBlueScore uint64
+
+type ScriptPublicKeyString string
 //TxData holds tx data stored in the TXIndex database
+
 type TxData struct {
 	IncludingBlockHash *externalapi.DomainHash
 	AcceptingBlockHash *externalapi.DomainHash
