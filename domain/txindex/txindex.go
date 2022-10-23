@@ -598,16 +598,122 @@ func (ti *TXIndex) GetTXIdsOfScriptPublicKeys(scriptPublicKeys []*externalapi.Sc
 
 func (ti *TXIndex) GetTXsOfScriptPublicKey(scriptPublicKey *externalapi.ScriptPublicKey, includeRecieved bool, includeSent bool) (
 	receivedTxs []*externalapi.DomainTransaction, sensentTxst []*externalapi.DomainTransaction, found bool, err error) {
-	onEnd := logger.LogAndMeasureExecutionTime(log, "TXIndex.GetTXIdsOfScriptPublicKey")
+	onEnd := logger.LogAndMeasureExecutionTime(log, "TXIndex.GetTXsOfScriptPublicKey")
 	defer onEnd()
 
 	ti.mutex.Lock()
 	defer ti.mutex.Unlock()
 
-	receivedTxIds, sentTxIds, err = ti.store.getTxIdsFromScriptPublicKey(scriptPublicKey, includeRecieved, includeSent)
+	receivedTxIds, sentTxIds, err := ti.store.getTxIdsFromScriptPublicKey(scriptPublicKey, includeRecieved, includeSent)
 	if err != nil {
 		return nil, nil, false, err
 	}
 	
-	return receivedTxs, sentTxs, received == nil && sent == nil, nil
+	txIDsToTxIndexData, _, err := ti.store.getTxsData(receivedTxIds)
+	if err != nil {
+		return nil, nil, false, err
+	}
+
+	receivedTxs = make([]*externalapi.DomainTransaction, len(receivedTxIds))
+	i := 0
+	for txID, txData := range txIDsToTxIndexData {
+		includingBlock, err := ti.domain.Consensus().GetBlock(txData.IncludingBlockHash)
+
+		if err != nil {
+			if database.IsNotFoundError(err) {
+				return nil, nil, false, fmt.Errorf("including block %s missing for txID %s ", txData.IncludingBlockHash.String(), txID.String())
+			}
+			return nil, nil, false, err
+		}
+		receivedTxs[i] = includingBlock.Transactions[txData.IncludingIndex]
+		i++
+	}
+
+	txIDsToTxIndexData, _, err = ti.store.getTxsData(sentTxIds)
+	if err != nil {
+		return nil, nil, false, err
+	}
+
+	sentTxs := make([]*externalapi.DomainTransaction, len(receivedTxIds))
+	i = 0
+	for txID, txData := range txIDsToTxIndexData {
+		includingBlock, err := ti.domain.Consensus().GetBlock(txData.IncludingBlockHash)
+
+		if err != nil {
+			if database.IsNotFoundError(err) {
+				return nil, nil, false, fmt.Errorf("including block %s missing for txID %s ", txData.IncludingBlockHash.String(), txID.String())
+			}
+			return nil, nil, false, err
+		}
+		sentTxs[i] = includingBlock.Transactions[txData.IncludingIndex]
+		i++
+	}
+	
+	return receivedTxs, sentTxs, receivedTxs == nil && sentTxs == nil, nil
+}
+
+func (ti *TXIndex) GetTXsOfScriptPublicKeys(scriptPublicKeys []*externalapi.ScriptPublicKey, includeRecieved bool, includeSent bool) (
+	receivedTxs map[ScriptPublicKeyString][]*externalapi.DomainTransaction, sentTxs map[ScriptPublicKeyString][]*externalapi.DomainTransaction, err error) {
+	onEnd := logger.LogAndMeasureExecutionTime(log, "TXIndex.GetTXsOfScriptPublicKey")
+	defer onEnd()
+
+	ti.mutex.Lock()
+	defer ti.mutex.Unlock()
+
+	receivedTxIds, sentTxIds, err := ti.store.getTxIdsOfScriptPublicKeys(scriptPublicKeys, includeRecieved, includeSent)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	receivedTxs = make(map[ScriptPublicKeyString][]*externalapi.DomainTransaction)
+	i := 0
+	for scriptPublicKeyString, txIds := range receivedTxIds {
+		
+		txIDsToTxIndexData, _, err := ti.store.getTxsData(txIds)
+		if err != nil {
+			return nil, nil, err
+		}
+		i = 0
+
+		for txID, txData := range txIDsToTxIndexData{
+			
+			includingBlock, err := ti.domain.Consensus().GetBlock(txData.IncludingBlockHash)
+			if err != nil {
+				if database.IsNotFoundError(err) {
+					return nil, nil, fmt.Errorf("including block %s missing for txID %s ", txData.IncludingBlockHash.String(), txID.String())
+				}
+				return nil, nil, err
+			}
+			receivedTxs[scriptPublicKeyString] = append(receivedTxs[scriptPublicKeyString], includingBlock.Transactions[txData.IncludingIndex])
+			i++
+
+		}
+	}
+	sentTxs = make(map[ScriptPublicKeyString][]*externalapi.DomainTransaction)
+	i = 0
+	for scriptPublicKeyString, txIds := range sentTxIds {
+		
+		txIDsToTxIndexData, _, err := ti.store.getTxsData(txIds)
+		if err != nil {
+			return nil, nil, err
+		}
+		i = 0
+
+		for txID, txData := range txIDsToTxIndexData{
+			
+			includingBlock, err := ti.domain.Consensus().GetBlock(txData.IncludingBlockHash)
+			if err != nil {
+				if database.IsNotFoundError(err) {
+					return nil, nil, fmt.Errorf("including block %s missing for txID %s ", txData.IncludingBlockHash.String(), txID.String())
+				}
+				return nil, nil, err
+			}
+			sentTxs[scriptPublicKeyString] = append(sentTxs[scriptPublicKeyString], includingBlock.Transactions[txData.IncludingIndex])
+			i++
+
+		}
+	}
+
+	
+	return receivedTxs, sentTxs, nil
 }
