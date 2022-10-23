@@ -146,7 +146,6 @@ func (tis *txIndexStore) discardAllButPruningPoint() {
 	tis.toAddReceived =	   make(AddrsChange)
 	tis.toRemoveReceived =   make(AddrsChange)
 	tis.virtualParents = nil
-	tis.virtualBlueScore = 0
 }
 
 func (tis *txIndexStore) commit() error {
@@ -479,4 +478,89 @@ func (tis *txIndexStore) getTxsData(txIDs []*externalapi.DomainTransactionID) (
 	}
 
 	return txsData, notFoundTxIDs, nil
+}
+
+func (tis *txIndexStore) getTxIdsFromScriptPublicKey(scriptPublicKey *externalapi.ScriptPublicKey, includeReceived bool, includeSent bool) (
+	received []*externalapi.DomainTransactionID, sent []*externalapi.DomainTransactionID, err error) {
+
+	if tis.isAnythingStaged() {
+		return nil, nil, errors.Errorf("cannot get TX accepting Block hash while staging isn't empty")
+	}
+
+	if includeReceived {
+		key := tis.convertScriptPublicKeyToKey(addrIndexReceivedBucket, scriptPublicKey)
+		serializedTxIds, err := tis.database.Get(key)
+		if err != nil && !database.IsNotFoundError(err){
+			return nil, nil, err
+		}
+		received, err = deserializeTxIds(serializedTxIds)
+		if err != nil {
+			return nil, nil, err
+		}
+
+	}
+	if includeSent {
+		key := tis.convertScriptPublicKeyToKey(addrIndexSentBucket, scriptPublicKey)
+		serializedTxIds, err := tis.database.Get(key)
+		if err != nil && !database.IsNotFoundError(err) {
+			return nil, nil, err
+		}
+		
+		sent, err = deserializeTxIds(serializedTxIds)
+		if err != nil {
+			return nil, nil, err
+		}		
+	}
+
+	return received, sent, nil
+}
+
+func (tis *txIndexStore) getTxIdsOfScriptPublicKeys(scriptPublicKeys []*externalapi.ScriptPublicKey, includeReceived bool, includeSent bool) (
+	AddrsChange, AddrsChange, error) {
+
+	if tis.isAnythingStaged() {
+		return nil, nil, errors.Errorf("cannot get TXs of scriptPublicKeys while staging isn't empty")
+	}
+
+	AddressesToReceivedTxIds := make(AddrsChange)
+	AddressesToSentTxIds := make(AddrsChange)
+
+	for _, scriptPublicKey := range scriptPublicKeys {
+		if includeReceived {
+			key := tis.convertScriptPublicKeyToKey(addrIndexReceivedBucket, scriptPublicKey)
+			serializedTxIds, err := tis.database.Get(key)
+			if err != nil {
+				if database.IsNotFoundError(err) {
+					continue
+				} else {
+					return nil, nil, err
+				}
+			}
+			deserializedTxIds, err := deserializeTxIds(serializedTxIds)
+			if err != nil {
+				return nil, nil, err
+			}
+
+			AddressesToReceivedTxIds[ScriptPublicKeyString(scriptPublicKey.String())] = deserializedTxIds
+		}
+		if includeSent {
+			key := tis.convertScriptPublicKeyToKey(addrIndexSentBucket, scriptPublicKey)
+			serializedTxIds, err := tis.database.Get(key)
+			if err != nil {
+				if database.IsNotFoundError(err) {
+					continue
+				} else {
+					return nil, nil, err
+				}
+			}
+			deserializedTxIds, err := deserializeTxIds(serializedTxIds)
+			if err != nil {
+				return nil, nil, err
+			}
+			
+			AddressesToSentTxIds[ScriptPublicKeyString(scriptPublicKey.String())] = deserializedTxIds
+		}
+	}
+
+	return AddressesToReceivedTxIds, AddressesToSentTxIds, nil
 }

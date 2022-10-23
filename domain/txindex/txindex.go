@@ -563,3 +563,51 @@ func (ti *TXIndex) GetTXsBlueScores(txIDs []*externalapi.DomainTransactionID) (
 
 	return txIDsToBlueScores, notFound, nil
 }
+
+func (ti *TXIndex) GetTXIdsOfScriptPublicKey(scriptPublicKey *externalapi.ScriptPublicKey, includeRecieved bool, includeSent bool) (
+	received []*externalapi.DomainTransactionID, sent []*externalapi.DomainTransactionID, found bool, err error) {
+	onEnd := logger.LogAndMeasureExecutionTime(log, "TXIndex.GetTXIdsOfScriptPublicKey")
+	defer onEnd()
+
+	ti.mutex.Lock()
+	defer ti.mutex.Unlock()
+
+	received, sent, err = ti.store.getTxIdsFromScriptPublicKey(scriptPublicKey, includeRecieved, includeSent)
+	if err != nil {
+		return nil, nil, false, err
+	}
+
+	return received, sent, received == nil && sent == nil, nil
+}
+
+func (ti *TXIndex) GetTXIdsOfScriptPublicKeys(scriptPublicKeys []*externalapi.ScriptPublicKey, includeRecieved bool, includeSent bool) (
+	received AddrsChange, sent AddrsChange, err error) {
+	onEnd := logger.LogAndMeasureExecutionTime(log, "TXIndex.GetTXIdsOfScriptPublicKey")
+	defer onEnd()
+
+	ti.mutex.Lock()
+	defer ti.mutex.Unlock()
+
+	received, sent, err = ti.store.getTxIdsOfScriptPublicKeys(scriptPublicKeys, includeRecieved, includeSent)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return received, sent, nil
+}
+
+func (ti *TXIndex) GetTXsOfScriptPublicKey(scriptPublicKey *externalapi.ScriptPublicKey, includeRecieved bool, includeSent bool) (
+	receivedTxs []*externalapi.DomainTransaction, sensentTxst []*externalapi.DomainTransaction, found bool, err error) {
+	onEnd := logger.LogAndMeasureExecutionTime(log, "TXIndex.GetTXIdsOfScriptPublicKey")
+	defer onEnd()
+
+	ti.mutex.Lock()
+	defer ti.mutex.Unlock()
+
+	receivedTxIds, sentTxIds, err = ti.store.getTxIdsFromScriptPublicKey(scriptPublicKey, includeRecieved, includeSent)
+	if err != nil {
+		return nil, nil, false, err
+	}
+	
+	return receivedTxs, sentTxs, received == nil && sent == nil, nil
+}
