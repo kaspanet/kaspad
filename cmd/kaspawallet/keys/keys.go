@@ -414,6 +414,11 @@ func (d *File) TryLock() error {
 	}
 
 	lockFile := flock.New(d.path + ".lock")
+	err := createFileDirectoryIfDoesntExist(lockFile.Path())
+	if err != nil {
+		return err
+	}
+
 	flockMap[d.path] = lockFile
 
 	success, err := lockFile.TryLock()
