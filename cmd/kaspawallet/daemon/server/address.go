@@ -10,27 +10,33 @@ import (
 	"github.com/pkg/errors"
 )
 
-func (s *server) changeAddress(useFirst bool) (util.Address, *walletAddress, error) {
+func (s *server) changeAddress(useFirst bool, fromAddresses []*walletAddress) (util.Address, *walletAddress, error) {
 	internalIndex := uint32(0)
-	if !useFirst {
-		err := s.keysFile.SetLastUsedInternalIndex(s.keysFile.LastUsedInternalIndex() + 1)
-		if err != nil {
-			return nil, nil, err
+	var walletAddr *walletAddress
+	if len(fromAddresses) != 0 {
+		walletAddr = fromAddresses[0]
+	} else {
+		if !useFirst {
+			err := s.keysFile.SetLastUsedInternalIndex(s.keysFile.LastUsedInternalIndex() + 1)
+			if err != nil {
+				return nil, nil, err
+			}
+
+			err = s.keysFile.Save()
+			if err != nil {
+				return nil, nil, err
+			}
+
+			internalIndex = s.keysFile.LastUsedInternalIndex()
 		}
 
-		err = s.keysFile.Save()
-		if err != nil {
-			return nil, nil, err
+		walletAddr = &walletAddress{
+			index:         internalIndex,
+			cosignerIndex: s.keysFile.CosignerIndex,
+			keyChain:      libkaspawallet.InternalKeychain,
 		}
-
-		internalIndex = s.keysFile.LastUsedInternalIndex()
 	}
 
-	walletAddr := &walletAddress{
-		index:         internalIndex,
-		cosignerIndex: s.keysFile.CosignerIndex,
-		keyChain:      libkaspawallet.InternalKeychain,
-	}
 	path := s.walletAddressPath(walletAddr)
 	address, err := libkaspawallet.Address(s.params, s.keysFile.ExtendedPublicKeys, s.keysFile.MinimumSignatures, path, s.keysFile.ECDSA)
 	if err != nil {

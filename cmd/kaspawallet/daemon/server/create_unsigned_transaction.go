@@ -61,7 +61,7 @@ func (s *server) createUnsignedTransactions(address string, amount uint64, fromA
 		return nil, err
 	}
 
-	changeAddress, changeWalletAddress, err := s.changeAddress(useExistingChangeAddress)
+	changeAddress, changeWalletAddress, err := s.changeAddress(useExistingChangeAddress, fromAddresses)
 	if err != nil {
 		return nil, err
 	}
