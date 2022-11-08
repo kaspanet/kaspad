@@ -70,7 +70,7 @@ func TestChainedTransactions(t *testing.T) {
 			t.Fatalf("AddBlock: %+v", err)
 		}
 
-		block1, err := tc.GetBlock(block1Hash)
+		block1, _, err := tc.GetBlock(block1Hash)
 		if err != nil {
 			t.Fatalf("Error getting block1: %+v", err)
 		}
@@ -97,7 +97,7 @@ func TestChainedTransactions(t *testing.T) {
 			t.Fatalf("unexpected error %+v", err)
 		}
 
-		block2, err := tc.GetBlock(block2Hash)
+		block2, _, err := tc.GetBlock(block2Hash)
 		if err != nil {
 			t.Fatalf("Error getting block2: %+v", err)
 		}

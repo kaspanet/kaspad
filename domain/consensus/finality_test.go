@@ -263,7 +263,7 @@ func TestBoundedMergeDepth(t *testing.T) {
 					continue
 				}
 
-				block, err := tcSyncer.GetBlock(blocksHash)
+				block, _, err := tcSyncer.GetBlock(blocksHash)
 				if err != nil {
 					t.Fatalf("GetBlockHeader: %+v", err)
 				}

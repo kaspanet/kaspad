@@ -40,7 +40,7 @@ func TestUTXOCommitment(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Error creating block B: %+v", err)
 		}
-		blockB, err := consensus.GetBlock(blockBHash)
+		blockB, _, err := consensus.GetBlock(blockBHash)
 		if err != nil {
 			t.Fatalf("Error getting block B: %+v", err)
 		}
@@ -73,7 +73,7 @@ func TestUTXOCommitment(t *testing.T) {
 }
 
 func checkBlockUTXOCommitment(t *testing.T, consensus testapi.TestConsensus, blockHash *externalapi.DomainHash, blockName string) {
-	block, err := consensus.GetBlock(blockHash)
+	block, _, err := consensus.GetBlock(blockHash)
 	if err != nil {
 		t.Fatalf("Error getting block %s: %+v", blockName, err)
 	}

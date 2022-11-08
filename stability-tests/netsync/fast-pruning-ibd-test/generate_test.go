@@ -44,7 +44,7 @@ func TestGenerateFastPruningIBDTest(t *testing.T) {
 			}
 		}
 
-		tip, err := tc.GetBlock(tipHash)
+		tip, _, err := tc.GetBlock(tipHash)
 		if err != nil {
 			t.Fatal(err)
 		}

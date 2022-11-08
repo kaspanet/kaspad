@@ -2,6 +2,7 @@ package domain
 
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+	"github.com/pkg/errors"
 	"math"
 )
 
@@ -66,9 +67,13 @@ func syncConsensuses(syncer, syncee externalapi.Consensus) error {
 	}
 
 	for _, blockHash := range pruningPointAndItsAnticone {
-		block, err := syncer.GetBlock(blockHash)
+		block, found, err := syncer.GetBlock(blockHash)
 		if err != nil {
 			return err
+		}
+
+		if !found {
+			return errors.Errorf("block %s is missing", blockHash)
 		}
 
 		blockDAAWindowHashes, err := syncer.BlockDAAWindowHashes(blockHash)
@@ -156,11 +161,14 @@ func syncConsensuses(syncer, syncee externalapi.Consensus) error {
 			continue
 		}
 
-		block, err := syncer.GetBlock(blocksHash)
+		block, found, err := syncer.GetBlock(blocksHash)
 		if err != nil {
 			return err
 		}
 
+		if !found {
+			return errors.Errorf("block %s is missing", blocksHash)
+		}
 		err = syncee.ValidateAndInsertBlock(block, false)
 		if err != nil {
 			return err
