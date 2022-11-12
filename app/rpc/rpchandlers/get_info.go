@@ -19,6 +19,8 @@ func HandleGetInfo(context *rpccontext.Context, _ *router.Router, _ appmessage.M
 		uint64(context.Domain.MiningManager().TransactionCount(true, false)),
 		version.Version(),
 		context.Config.UTXOIndex,
+		context.Config.TXIndex,
+		context.Config.IsArchivalNode,
 		context.ProtocolManager.Context().HasPeers() && isNearlySynced,
 	)
 

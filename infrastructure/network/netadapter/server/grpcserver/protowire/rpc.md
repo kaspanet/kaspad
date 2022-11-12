@@ -102,6 +102,8 @@
     - [UnbanResponseMessage](#protowire.UnbanResponseMessage)
     - [GetInfoRequestMessage](#protowire.GetInfoRequestMessage)
     - [GetInfoResponseMessage](#protowire.GetInfoResponseMessage)
+    - [GetAcceptingBlockHashOfTxRequestMessage](#protowire.GetAcceptingBlockHashOfTxRequestMessage)
+    - [GetAcceptingBlockHashOfTxResponseMessage](#protowire.GetAcceptingBlockHashOfTxResponseMessage)
     - [EstimateNetworkHashesPerSecondRequestMessage](#protowire.EstimateNetworkHashesPerSecondRequestMessage)
     - [EstimateNetworkHashesPerSecondResponseMessage](#protowire.EstimateNetworkHashesPerSecondResponseMessage)
     - [NotifyNewBlockTemplateRequestMessage](#protowire.NotifyNewBlockTemplateRequestMessage)
@@ -112,6 +114,27 @@
     - [GetMempoolEntriesByAddressesResponseMessage](#protowire.GetMempoolEntriesByAddressesResponseMessage)
     - [GetCoinSupplyRequestMessage](#protowire.GetCoinSupplyRequestMessage)
     - [GetCoinSupplyResponseMessage](#protowire.GetCoinSupplyResponseMessage)
+    - [RpcTxIDConfirmationsPair](#protowire.RpcTxIDConfirmationsPair)
+    - [RpcTxIDBlockHashPair](#protowire.RpcTxIDBlockHashPair)
+    - [RpcTxIDBlockPair](#protowire.RpcTxIDBlockPair)
+    - [GetAcceptingBlockHashesOfTxsRequestMessage](#protowire.GetAcceptingBlockHashesOfTxsRequestMessage)
+    - [GetAcceptingBlockHashesOfTxsResponseMessage](#protowire.GetAcceptingBlockHashesOfTxsResponseMessage)
+    - [GetTxsRequestMessage](#protowire.GetTxsRequestMessage)
+    - [GetTxsResponseMessage](#protowire.GetTxsResponseMessage)
+    - [GetTxsConfirmationsRequestMessage](#protowire.GetTxsConfirmationsRequestMessage)
+    - [GetTxsConfirmationsResponseMessage](#protowire.GetTxsConfirmationsResponseMessage)
+    - [NotifyTxsConfirmationChangedRequestMessage](#protowire.NotifyTxsConfirmationChangedRequestMessage)
+    - [NotifyTxsConfirmationChangedResponseMessage](#protowire.NotifyTxsConfirmationChangedResponseMessage)
+    - [TxsConfirmationChangedNotificationMessage](#protowire.TxsConfirmationChangedNotificationMessage)
+    - [ModifyNotifyingTxsConfirmationChangedRequestMessage](#protowire.ModifyNotifyingTxsConfirmationChangedRequestMessage)
+    - [ModifyNotifyingTxsConfirmationChangedResponseMessage](#protowire.ModifyNotifyingTxsConfirmationChangedResponseMessage)
+    - [TxEntryByAddress](#protowire.TxEntryByAddress)
+    - [TxEntriesByAddresses](#protowire.TxEntriesByAddresses)
+    - [NotifyAddressesTxsRequestMessage](#protowire.NotifyAddressesTxsRequestMessage)
+    - [NotifyAddressesTxsResponseMessage](#protowire.NotifyAddressesTxsResponseMessage)
+    - [ModifyNotifyingAddressesTxsRequestMessage](#protowire.ModifyNotifyingAddressesTxsRequestMessage)
+    - [ModifyNotifyingAddressesTxsResponseMessage](#protowire.ModifyNotifyingAddressesTxsResponseMessage)
+    - [AddressesTxsNotificationMessage](#protowire.AddressesTxsNotificationMessage)
   
     - [SubmitBlockResponseMessage.RejectReason](#protowire.SubmitBlockResponseMessage.RejectReason)
   
@@ -353,6 +376,9 @@ Receivers of any ResponseMessage are expected to check whether its error field i
 | mass | [uint64](#uint64) |  |  |
 | blockHash | [string](#string) |  |  |
 | blockTime | [uint64](#uint64) |  |  |
+| txIndexed | [bool](#bool) |  | whether the transaction is stored in the txindex database, regardless if kaspad is run with the `--txindex` flag, or not. |
+| acceptingBlockHash | [string](#string) |  | Kaspad must be started with the `--txindex` flag, for parameter to display. |
+| confirmations | [uint32](#uint32) |  | Kaspad must be started with the `--txindex` flag for parameter to display. |
 
 
 
@@ -1700,7 +1726,40 @@ GetInfoRequestMessage returns info about the node.
 | mempoolSize | [uint64](#uint64) |  |  |
 | serverVersion | [string](#string) |  |  |
 | isUtxoIndexed | [bool](#bool) |  |  |
+| isTxIndexed | [bool](#bool) |  |  |
+| isArchival | [bool](#bool) |  |  |
 | isSynced | [bool](#bool) |  |  |
+| error | [RPCError](#protowire.RPCError) |  |  |
+
+
+
+
+
+
+<a name="protowire.GetAcceptingBlockHashOfTxRequestMessage"></a>
+
+### GetAcceptingBlockHashOfTxRequestMessage
+Kaspad most be started with the `--txindex` flag for this Request to work.
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| txID | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="protowire.GetAcceptingBlockHashOfTxResponseMessage"></a>
+
+### GetAcceptingBlockHashOfTxResponseMessage
+the accepting block is defined as the virtual chain block that first knows about the transaction. This block may change, or be ommitted and resubmitted, during virtual changes at the tip of the blockDAG
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| hash | [string](#string) |  | the accepting block is defined as the virtual chain block that first knows about the transaction. This block may change, or be ommitted and resubmitted, during virtual changes at the tip of the blockDAG |
 | error | [RPCError](#protowire.RPCError) |  |  |
 
 
@@ -1852,6 +1911,354 @@ See NotifyNewBlockTemplateRequestMessage
 | maxSompi | [uint64](#uint64) |  | note: this is a hard coded maxSupply, actual maxSupply is expected to deviate by upto -5%, but cannot be measured exactly. |
 | circulatingSompi | [uint64](#uint64) |  |  |
 | error | [RPCError](#protowire.RPCError) |  |  |
+
+
+
+
+
+
+<a name="protowire.RpcTxIDConfirmationsPair"></a>
+
+### RpcTxIDConfirmationsPair
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| txID | [string](#string) |  |  |
+| confirmations | [int64](#int64) |  |  |
+
+
+
+
+
+
+<a name="protowire.RpcTxIDBlockHashPair"></a>
+
+### RpcTxIDBlockHashPair
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| txID | [string](#string) |  |  |
+| Hash | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="protowire.RpcTxIDBlockPair"></a>
+
+### RpcTxIDBlockPair
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| txID | [string](#string) |  |  |
+| block | [RpcBlock](#protowire.RpcBlock) |  |  |
+
+
+
+
+
+
+<a name="protowire.GetAcceptingBlockHashesOfTxsRequestMessage"></a>
+
+### GetAcceptingBlockHashesOfTxsRequestMessage
+Kaspad must be started with the `--txindex` flag for this Request to work.
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| txIDs | [string](#string) | repeated |  |
+
+
+
+
+
+
+<a name="protowire.GetAcceptingBlockHashesOfTxsResponseMessage"></a>
+
+### GetAcceptingBlockHashesOfTxsResponseMessage
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| txIDBlockHashPairs | [RpcTxIDBlockHashPair](#protowire.RpcTxIDBlockHashPair) | repeated |  |
+| error | [RPCError](#protowire.RPCError) |  |  |
+
+
+
+
+
+
+<a name="protowire.GetTxsRequestMessage"></a>
+
+### GetTxsRequestMessage
+Kaspad must be started with the `--txindex` flag for this Request to work.
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| txIDs | [string](#string) | repeated |  |
+
+
+
+
+
+
+<a name="protowire.GetTxsResponseMessage"></a>
+
+### GetTxsResponseMessage
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| transactions | [RpcTransaction](#protowire.RpcTransaction) | repeated |  |
+| error | [RPCError](#protowire.RPCError) |  |  |
+
+
+
+
+
+
+<a name="protowire.GetTxsConfirmationsRequestMessage"></a>
+
+### GetTxsConfirmationsRequestMessage
+Kaspad must be started with the `--txindex` flag for this Request to work.
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| txIDs | [string](#string) | repeated |  |
+
+
+
+
+
+
+<a name="protowire.GetTxsConfirmationsResponseMessage"></a>
+
+### GetTxsConfirmationsResponseMessage
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| txIDConfirmationsPairs | [RpcTxIDConfirmationsPair](#protowire.RpcTxIDConfirmationsPair) | repeated |  |
+| error | [RPCError](#protowire.RPCError) |  |  |
+
+
+
+
+
+
+<a name="protowire.NotifyTxsConfirmationChangedRequestMessage"></a>
+
+### NotifyTxsConfirmationChangedRequestMessage
+NotifyTxsConfirmationChangedRequstMessage is a listener that registers confirmations from supplied TxIDs
+Kaspad must be started with the `--txindex` flag for this Request to work.
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| TxIDs | [string](#string) | repeated | initial TxIds to listen for when regestering for notifications |
+| requiredConfirmations | [uint32](#uint32) |  | number of confirmations until a transaction is considered confirmed |
+| includePending | [bool](#bool) |  | weather to notify confirmation changes during pre-Confirmed states |
+
+
+
+
+
+
+<a name="protowire.NotifyTxsConfirmationChangedResponseMessage"></a>
+
+### NotifyTxsConfirmationChangedResponseMessage
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| error | [RPCError](#protowire.RPCError) |  |  |
+
+
+
+
+
+
+<a name="protowire.TxsConfirmationChangedNotificationMessage"></a>
+
+### TxsConfirmationChangedNotificationMessage
+TxsConfirmationChangedNotificationMessage is the notification about txs pertaining to specified TxIDs
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| requiredConfirmations | [uint32](#uint32) |  | the required confirmations set when notification was sent |
+| pending | [RpcTxIDConfirmationsPair](#protowire.RpcTxIDConfirmationsPair) | repeated | RpcTxIDConfirmationsPairs which have entered the virtual chain but not passed the required confirmations |
+| confirmed | [RpcTxIDConfirmationsPair](#protowire.RpcTxIDConfirmationsPair) | repeated | RpcTxIDConfirmationsPairs which have entered the virtual chain and passed the required confirmations |
+| unconfirmedTxIds | [string](#string) | repeated | TxIds which were not confirmed within the required confirmations. |
+| error | [RPCError](#protowire.RPCError) |  |  |
+
+
+
+
+
+
+<a name="protowire.ModifyNotifyingTxsConfirmationChangedRequestMessage"></a>
+
+### ModifyNotifyingTxsConfirmationChangedRequestMessage
+ModifyNotifyingTxsConfirmationChangedRequestMessage modfies the params of a registered `NotifyTxsConfirmationChangedRequstMessage`
+must be registered to NotifyTxsConfirmationChangedRequstMessage for this command to work
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| addTxIDs | [string](#string) | repeated | add txIds to the notification stream |
+| removeTxIDs | [string](#string) | repeated | remove txIds to the notification stream |
+| requiredConfirmations | [uint32](#uint32) |  |  |
+| includePending | [bool](#bool) |  |  |
+
+
+
+
+
+
+<a name="protowire.ModifyNotifyingTxsConfirmationChangedResponseMessage"></a>
+
+### ModifyNotifyingTxsConfirmationChangedResponseMessage
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| error | [RPCError](#protowire.RPCError) |  |  |
+
+
+
+
+
+
+<a name="protowire.TxEntryByAddress"></a>
+
+### TxEntryByAddress
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| address | [string](#string) |  |  |
+| txId | [string](#string) |  |  |
+| confirmations | [uint32](#uint32) |  |  |
+
+
+
+
+
+
+<a name="protowire.TxEntriesByAddresses"></a>
+
+### TxEntriesByAddresses
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| sent | [TxEntryByAddress](#protowire.TxEntryByAddress) | repeated |  |
+| received | [TxEntryByAddress](#protowire.TxEntryByAddress) | repeated |  |
+
+
+
+
+
+
+<a name="protowire.NotifyAddressesTxsRequestMessage"></a>
+
+### NotifyAddressesTxsRequestMessage
+NotifyAddressesTxsChangedRequestMessage Listens for Txs pertaining to specified addresses according to the params specified
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| addresses | [string](#string) | repeated | initial addresses to listen for Tx changes when regestering for notifications |
+| requiredConfirmations | [uint32](#uint32) |  | number of confirmations until a transaction is considered confirmed |
+| includePending | [bool](#bool) |  | whether to notify confirmation changes during pre-Confirmed states |
+| includeSending | [bool](#bool) |  | whether to listen on addresses sending txs |
+| includeReceiving | [bool](#bool) |  | whether to listen on addresses reciving txs |
+
+
+
+
+
+
+<a name="protowire.NotifyAddressesTxsResponseMessage"></a>
+
+### NotifyAddressesTxsResponseMessage
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| error | [RPCError](#protowire.RPCError) |  |  |
+
+
+
+
+
+
+<a name="protowire.ModifyNotifyingAddressesTxsRequestMessage"></a>
+
+### ModifyNotifyingAddressesTxsRequestMessage
+ModifyNotifyAddressesTxsParamsRequestMessage modifies the params used for a regesitered `NotifyAddressesTxsRequest`
+Must be registered to NotifyAddressTxChangedRequestMessage for this command to work
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| AddAddresses | [string](#string) | repeated | add addresses to the notification stream |
+| RemoveAddresses | [string](#string) | repeated | remove addresses to the notification stream |
+| requiredConfirmations | [uint32](#uint32) |  |  |
+| includePending | [bool](#bool) |  |  |
+| includeSending | [bool](#bool) |  |  |
+| includeReceiving | [bool](#bool) |  |  |
+
+
+
+
+
+
+<a name="protowire.ModifyNotifyingAddressesTxsResponseMessage"></a>
+
+### ModifyNotifyingAddressesTxsResponseMessage
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| error | [RPCError](#protowire.RPCError) |  |  |
+
+
+
+
+
+
+<a name="protowire.AddressesTxsNotificationMessage"></a>
+
+### AddressesTxsNotificationMessage
+AddressesTxsNotificationMessage is the notification about txs pertaining to specified addresses
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| requiredConfirmations | [uint32](#uint32) |  | the required confirmations set when notification was sent |
+| pending | [TxEntriesByAddresses](#protowire.TxEntriesByAddresses) |  | TxEntriesByAddresses which have entered the blockdag but not passed the required confirmations |
+| confirmed | [TxEntriesByAddresses](#protowire.TxEntriesByAddresses) |  | TxEntriesByAddresses which have entered the blockdag and passed the required confirmations |
+| unconfirmed | [TxEntriesByAddresses](#protowire.TxEntriesByAddresses) |  | TxEntriesByAddresses which have been pending, but removed via a reorg within the number of required confirmations. |
 
 
 

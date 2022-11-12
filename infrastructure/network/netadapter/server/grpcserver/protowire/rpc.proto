@@ -105,6 +105,9 @@ message RpcTransactionVerboseData{
   uint64 mass = 4;
   string blockHash = 12;
   uint64 blockTime = 14;
+  bool txIndexed = 15; //whether the transaction is stored in the txindex database, regardless if kaspad is run with the `--txindex` flag, or not. 
+  string acceptingBlockHash = 16; // Kaspad must be started with the `--txindex` flag, for parameter to display. 
+  uint32 confirmations = 17;  // Kaspad must be started with the `--txindex` flag for parameter to display.
 }
 
 message RpcTransactionInputVerboseData{
@@ -662,8 +665,23 @@ message GetInfoResponseMessage{
   uint64 mempoolSize = 2;
   string serverVersion = 3;
   bool isUtxoIndexed = 4;
-  bool isSynced = 5;
+  bool isTxIndexed = 5;
+  bool isArchival = 6;
+  bool isSynced = 7;
+
   RPCError error = 1000;
+}
+
+
+//Kaspad most be started with the `--txindex` flag for this Request to work.
+message GetAcceptingBlockHashOfTxRequestMessage {
+        string txID = 1;    
+}
+
+ //the accepting block is defined as the virtual chain block that first knows about the transaction. This block may change, or be ommitted and resubmitted, during virtual changes at the tip of the blockDAG   
+message GetAcceptingBlockHashOfTxResponseMessage {
+        string hash = 1; //the accepting block is defined as the virtual chain block that first knows about the transaction. This block may change, or be ommitted and resubmitted, during virtual changes at the tip of the blockDAG   
+        RPCError error = 1000;
 }
 
 message EstimateNetworkHashesPerSecondRequestMessage{
@@ -706,7 +724,7 @@ message GetMempoolEntriesByAddressesRequestMessage{
   bool filterTransactionPool = 3;
 }
 
-message  GetMempoolEntriesByAddressesResponseMessage{
+message GetMempoolEntriesByAddressesResponseMessage{
   repeated MempoolEntryByAddress entries = 1;
 
   RPCError error = 1000;
@@ -720,4 +738,144 @@ message GetCoinSupplyResponseMessage{
         uint64 circulatingSompi = 2;
 
         RPCError error = 1000;
+}
+
+message RpcTxIDConfirmationsPair {
+        string txID = 1;
+        int64 confirmations = 2;   
+}
+
+message RpcTxIDBlockHashPair {
+        string txID = 1;
+        string Hash = 2;   
+}
+
+message RpcTxIDBlockPair {
+        string txID = 1;
+        RpcBlock block = 2;   
+}
+
+// Kaspad must be started with the `--txindex` flag for this Request to work.
+message GetAcceptingBlockHashesOfTxsRequestMessage{
+        repeated string txIDs = 1;
+}
+message GetAcceptingBlockHashesOfTxsResponseMessage{
+        repeated RpcTxIDBlockHashPair txIDBlockHashPairs = 1;
+        
+        RPCError error = 1000;
+}
+
+// Kaspad must be started with the `--txindex` flag for this Request to work.
+message GetTxsRequestMessage{
+        repeated string txIDs = 1;
+}
+
+message GetTxsResponseMessage{
+        repeated RpcTransaction transactions = 1;
+
+
+        RPCError error = 1000;
+}
+
+
+// Kaspad must be started with the `--txindex` flag for this Request to work.
+message GetTxsConfirmationsRequestMessage{
+        repeated string txIDs = 1;
+}
+
+message GetTxsConfirmationsResponseMessage{
+        repeated RpcTxIDConfirmationsPair txIDConfirmationsPairs = 1; 
+
+        RPCError error = 1000;
+}
+
+// NotifyTxsConfirmationChangedRequstMessage is a listener that registers confirmations from supplied TxIDs
+// Kaspad must be started with the `--txindex` flag for this Request to work.
+// Note: this listener will try to retroactively confirm historic txs when such TxIds are added. But, any confirmed txIds supplied beyond pruning (~3 days), 
+// will erroneously be displayed as unconfirmed, since it will be missing from the kaspad's pruned txindex database.
+message NotifyTxsConfirmationChangedRequestMessage{
+        repeated string TxIDs = 1; //initial TxIds to listen for when regestering for notifications
+
+        uint32 requiredConfirmations = 2; // number of confirmations until a transaction is considered confirmed
+        bool includePending = 3; // weather to notify confirmation changes during pre-Confirmed states
+               
+}
+
+message NotifyTxsConfirmationChangedResponseMessage{
+   
+        RPCError error = 1000;
+}
+
+// TxsConfirmationChangedNotificationMessage is the notification about txs pertaining to specified TxIDs
+message TxsConfirmationChangedNotificationMessage{
+        uint32 requiredConfirmations = 1; //the required confirmations set when notification was sent
+        repeated RpcTxIDConfirmationsPair pending = 2; // RpcTxIDConfirmationsPairs which have entered the virtual chain but not passed the required confirmations
+        repeated RpcTxIDConfirmationsPair confirmed = 3; // RpcTxIDConfirmationsPairs which have entered the virtual chain and passed the required confirmations
+        repeated string unconfirmedTxIds = 4; // TxIds which were not confirmed within the required confirmations. 
+
+        RPCError error = 1000;
+}
+
+// ModifyNotifyingTxsConfirmationChangedRequestMessage modfies the params of a registered `NotifyTxsConfirmationChangedRequstMessage`
+// must be registered to NotifyTxsConfirmationChangedRequstMessage for this command to work
+message ModifyNotifyingTxsConfirmationChangedRequestMessage{
+        repeated string addTxIDs = 1; //add txIds to the notification stream
+        repeated string removeTxIDs = 2; //remove txIds to the notification stream
+        uint32 requiredConfirmations = 3;
+        bool includePending = 4;
+}
+
+message ModifyNotifyingTxsConfirmationChangedResponseMessage{
+        RPCError error = 1000;
+}
+
+message TxEntryByAddress{
+        string address = 1;
+        string txId = 2;
+        uint32 confirmations = 3;
+      }
+
+message TxEntriesByAddresses{
+        repeated TxEntryByAddress sent = 1; 
+        repeated TxEntryByAddress received = 2;
+      }
+
+// NotifyAddressesTxsChangedRequestMessage Listens for Txs pertaining to specified addresses according to the params specified
+// Kaspad must be started with the `--txindex` flag for this Request to work.
+// Note: this listener will not try to retroactively confirm historic txs pertaining to specified addresses when new addresses are added. 
+// as such, add addresses / start listener before incoming transactions are expected.
+message NotifyAddressesTxsRequestMessage{
+        repeated string addresses = 1; //initial addresses to listen for Tx changes when regestering for notifications
+        uint32 requiredConfirmations = 2;  // number of confirmations until a transaction is considered confirmed
+        bool includePending = 3; //whether to notify confirmation changes during pre-Confirmed states
+        bool includeSending = 4; //whether to listen on addresses sending txs
+        bool includeReceiving = 5; //whether to listen on addresses reciving txs
+}
+
+message NotifyAddressesTxsResponseMessage{
+        RPCError error = 1000;
+}
+
+// ModifyNotifyAddressesTxsParamsRequestMessage modifies the params used for a regesitered `NotifyAddressesTxsRequest`
+// Must be registered to NotifyAddressTxChangedRequestMessage for this command to work
+message ModifyNotifyingAddressesTxsRequestMessage{
+        repeated string AddAddresses = 1;  //add addresses to the notification stream
+        repeated string RemoveAddresses = 2; //remove addresses to the notification stream
+        uint32 requiredConfirmations = 3;
+        bool includePending = 4;
+        bool includeSending = 5;
+        bool includeReceiving = 6;
+}
+
+message ModifyNotifyingAddressesTxsResponseMessage{
+
+        RPCError error = 1000;
+}
+
+// AddressesTxsNotificationMessage is the notification about txs pertaining to specified addresses
+message AddressesTxsNotificationMessage{
+        uint32 requiredConfirmations = 1; //the required confirmations set when notification was sent
+        TxEntriesByAddresses pending = 2; // TxEntriesByAddresses which have entered the blockdag but not passed the required confirmations
+        TxEntriesByAddresses confirmed = 3; // TxEntriesByAddresses which have entered the blockdag and passed the required confirmations
+        TxEntriesByAddresses unconfirmed = 4; // TxEntriesByAddresses which have been pending, but removed via a reorg within the number of required confirmations.
 }

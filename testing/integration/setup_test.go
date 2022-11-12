@@ -24,6 +24,7 @@ type appHarness struct {
 	config                  *config.Config
 	database                database.Database
 	utxoIndex               bool
+	txIndex                 bool
 	overrideDAGParams       *dagconfig.Params
 }
 
@@ -33,6 +34,7 @@ type harnessParams struct {
 	miningAddress           string
 	miningAddressPrivateKey string
 	utxoIndex               bool
+	txIndex                 bool
 	overrideDAGParams       *dagconfig.Params
 	protocolVersion         uint32
 }
@@ -45,6 +47,7 @@ func setupHarness(t *testing.T, params *harnessParams) (harness *appHarness, tea
 		miningAddress:           params.miningAddress,
 		miningAddressPrivateKey: params.miningAddressPrivateKey,
 		utxoIndex:               params.utxoIndex,
+		txIndex:                 params.txIndex,
 		overrideDAGParams:       params.overrideDAGParams,
 	}
 

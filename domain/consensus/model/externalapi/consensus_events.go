@@ -5,6 +5,14 @@ type ConsensusEvent interface {
 	isConsensusEvent()
 }
 
+// PruningPointChange is an event raised by consensus when a new pruning point was added to the dag
+type PruningPointChange struct {
+	OldPruningPoint *DomainHash
+	NewPruningPoint *DomainHash
+}
+
+func (*PruningPointChange) isConsensusEvent() {}
+
 // BlockAdded is an event raised by consensus when a block was added to the dag
 type BlockAdded struct {
 	Block *DomainBlock

@@ -968,6 +968,48 @@ func toRPCPayload(message appmessage.Message) (isKaspadMessage_Payload, error) {
 			return nil, err
 		}
 		return payload, nil
+	case *appmessage.GetAcceptingBlockHashesOfTxsRequestMessage:
+		payload := new(KaspadMessage_GetAcceptingBlockHashesOfTxsRequest)
+		err := payload.fromAppMessage(message)
+		if err != nil {
+			return nil, err
+		}
+		return payload, nil
+	case *appmessage.GetAcceptingBlockHashesOfTxsResponseMessage:
+		payload := new(KaspadMessage_GetAcceptingBlockHashesOfTxsResponse)
+		err := payload.fromAppMessage(message)
+		if err != nil {
+			return nil, err
+		}
+		return payload, nil
+	case *appmessage.GetTxsRequestMessage:
+		payload := new(KaspadMessage_GetTxsRequest)
+		err := payload.fromAppMessage(message)
+		if err != nil {
+			return nil, err
+		}
+		return payload, nil
+	case *appmessage.GetTxsResponseMessage:
+		payload := new(KaspadMessage_GetTxsResponse)
+		err := payload.fromAppMessage(message)
+		if err != nil {
+			return nil, err
+		}
+		return payload, nil
+	case *appmessage.GetTxsConfirmationsRequestMessage:
+		payload := new(KaspadMessage_GetTxsConfirmationsRequest)
+		err := payload.fromAppMessage(message)
+		if err != nil {
+			return nil, err
+		}
+		return payload, nil
+	case *appmessage.GetTxsConfirmationsResponseMessage:
+		payload := new(KaspadMessage_GetTxsConfirmationsResponse)
+		err := payload.fromAppMessage(message)
+		if err != nil {
+			return nil, err
+		}
+		return payload, nil
 	default:
 		return nil, nil
 	}

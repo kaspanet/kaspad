@@ -547,7 +547,7 @@ func (f *factory) NewConsensus(config *Config, db infrastructuredatabase.Databas
 	// If the virtual moved before shutdown but the pruning point hasn't, we
 	// move it if needed.
 	stagingArea := model.NewStagingArea()
-	err = pruningManager.UpdatePruningPointByVirtual(stagingArea)
+	_, err = pruningManager.UpdatePruningPointByVirtualAndReturnChange(stagingArea)
 	if err != nil {
 		return nil, false, err
 	}

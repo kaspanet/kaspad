@@ -272,7 +272,7 @@ func (tc *testConsensus) UpdatePruningPointByVirtual() error {
 	defer tc.lock.Unlock()
 
 	stagingArea := model.NewStagingArea()
-	err := tc.pruningManager.UpdatePruningPointByVirtual(stagingArea)
+	_, err := tc.pruningManager.UpdatePruningPointByVirtualAndReturnChange(stagingArea)
 	if err != nil {
 		return err
 	}

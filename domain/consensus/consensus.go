@@ -74,7 +74,7 @@ func (s *consensus) ValidateAndInsertBlockWithTrustedData(block *externalapi.Blo
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	_, _, err := s.blockProcessor.ValidateAndInsertBlockWithTrustedData(block, validateUTXO)
+	_, _, _, err := s.blockProcessor.ValidateAndInsertBlockWithTrustedData(block, validateUTXO)
 	if err != nil {
 		return err
 	}
@@ -143,7 +143,7 @@ func (s *consensus) Init(skipAddingGenesis bool) error {
 				},
 			},
 		}
-		_, _, err = s.blockProcessor.ValidateAndInsertBlockWithTrustedData(genesisWithTrustedData, true)
+		_, _, _, err = s.blockProcessor.ValidateAndInsertBlockWithTrustedData(genesisWithTrustedData, true)
 		if err != nil {
 			return err
 		}
@@ -249,9 +249,8 @@ func (s *consensus) validateAndInsertBlockWithLock(block *externalapi.DomainBloc
 	}
 	return nil
 }
-
 func (s *consensus) validateAndInsertBlockNoLock(block *externalapi.DomainBlock, updateVirtual bool) (*externalapi.VirtualChangeSet, error) {
-	virtualChangeSet, blockStatus, err := s.blockProcessor.ValidateAndInsertBlock(block, updateVirtual)
+	virtualChangeSet, pruningPointChange, blockStatus, err := s.blockProcessor.ValidateAndInsertBlock(block, updateVirtual)
 	if err != nil {
 		return nil, err
 	}
@@ -259,6 +258,14 @@ func (s *consensus) validateAndInsertBlockNoLock(block *externalapi.DomainBlock,
 	// If block has a body, and yet virtual was not updated -- signify that virtual is in non-updated state
 	if !updateVirtual && blockStatus != externalapi.StatusHeaderOnly {
 		s.virtualNotUpdated = true
+	}
+
+	if pruningPointChange != nil {
+		//always send before sendVirtualChangedEvent, since it will trigger the TXIndex reset before an update
+		err = s.sendPruningPointChangedEvent(pruningPointChange)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	err = s.sendBlockAddedEvent(block, blockStatus)
@@ -321,6 +328,21 @@ func (s *consensus) sendVirtualChangedEvent(virtualChangeSet *externalapi.Virtua
 	return nil
 }
 
+func (s *consensus) sendPruningPointChangedEvent(pruningPointChange *externalapi.PruningPointChange) error {
+	if s.consensusEventsChan != nil {
+
+		if len(s.consensusEventsChan) == cap(s.consensusEventsChan) {
+			return errors.Errorf("consensusEventsChan is full")
+		}
+
+		s.consensusEventsChan <- pruningPointChange
+
+		return nil
+	}
+	return nil
+
+}
+
 // ValidateTransactionAndPopulateWithConsensusData validates the given transaction
 // and populates it with any missing consensus data
 func (s *consensus) ValidateTransactionAndPopulateWithConsensusData(transaction *externalapi.DomainTransaction) error {
@@ -371,6 +393,22 @@ func (s *consensus) GetBlock(blockHash *externalapi.DomainHash) (*externalapi.Do
 		return nil, err
 	}
 	return block, nil
+}
+
+func (s *consensus) GetBlocks(blockHashes []*externalapi.DomainHash) ([]*externalapi.DomainBlock, error) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	stagingArea := model.NewStagingArea()
+
+	blocks, err := s.blockStore.Blocks(s.databaseContext, stagingArea, blockHashes)
+	if err != nil {
+		if errors.Is(err, database.ErrNotFound) {
+			return nil, errors.Wrapf(err, "could not find Quried blocks")
+		}
+		return nil, err
+	}
+	return blocks, nil
 }
 
 func (s *consensus) GetBlockEvenIfHeaderOnly(blockHash *externalapi.DomainHash) (*externalapi.DomainBlock, error) {
@@ -966,7 +1004,8 @@ func (s *consensus) resolveVirtualChunkNoLock(maxBlocksToResolve uint64) (*exter
 	s.virtualNotUpdated = !isCompletelyResolved
 
 	stagingArea := model.NewStagingArea()
-	err = s.pruningManager.UpdatePruningPointByVirtual(stagingArea)
+
+	pruningPointChange, err := s.pruningManager.UpdatePruningPointByVirtualAndReturnChange(stagingArea)
 	if err != nil {
 		return nil, false, err
 	}
@@ -979,6 +1018,13 @@ func (s *consensus) resolveVirtualChunkNoLock(maxBlocksToResolve uint64) (*exter
 	err = s.pruningManager.UpdatePruningPointIfRequired()
 	if err != nil {
 		return nil, false, err
+	}
+
+	if pruningPointChange != nil {
+		err = s.sendPruningPointChangedEvent(pruningPointChange)
+		if err != nil {
+			return nil, false, err
+		}
 	}
 
 	err = s.sendVirtualChangedEvent(virtualChangeSet, true)

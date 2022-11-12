@@ -12,6 +12,7 @@ import (
 	"github.com/kaspanet/kaspad/app/rpc"
 	"github.com/kaspanet/kaspad/domain"
 	"github.com/kaspanet/kaspad/domain/consensus"
+	"github.com/kaspanet/kaspad/domain/txindex"
 	"github.com/kaspanet/kaspad/domain/utxoindex"
 	"github.com/kaspanet/kaspad/infrastructure/config"
 	infrastructuredatabase "github.com/kaspanet/kaspad/infrastructure/db/database"
@@ -113,6 +114,16 @@ func NewComponentManager(cfg *config.Config, db infrastructuredatabase.Database,
 		log.Infof("UTXO index started")
 	}
 
+	var txIndex *txindex.TXIndex
+	if cfg.TXIndex {
+		txIndex, err = txindex.New(domain, db)
+		if err != nil {
+			return nil, err
+		}
+
+		log.Infof("TX index started")
+	}
+
 	connectionManager, err := connmanager.New(cfg, netAdapter, addressManager)
 	if err != nil {
 		return nil, err
@@ -121,7 +132,7 @@ func NewComponentManager(cfg *config.Config, db infrastructuredatabase.Database,
 	if err != nil {
 		return nil, err
 	}
-	rpcManager := setupRPC(cfg, domain, netAdapter, protocolManager, connectionManager, addressManager, utxoIndex, domain.ConsensusEventsChannel(), interrupt)
+	rpcManager := setupRPC(cfg, domain, netAdapter, protocolManager, connectionManager, addressManager, utxoIndex, txIndex, domain.ConsensusEventsChannel(), interrupt)
 
 	return &ComponentManager{
 		cfg:               cfg,
@@ -142,6 +153,7 @@ func setupRPC(
 	connectionManager *connmanager.ConnectionManager,
 	addressManager *addressmanager.AddressManager,
 	utxoIndex *utxoindex.UTXOIndex,
+	txIndex *txindex.TXIndex,
 	consensusEventsChan chan externalapi.ConsensusEvent,
 	shutDownChan chan<- struct{},
 ) *rpc.Manager {
@@ -154,6 +166,7 @@ func setupRPC(
 		connectionManager,
 		addressManager,
 		utxoIndex,
+		txIndex,
 		consensusEventsChan,
 		shutDownChan,
 	)

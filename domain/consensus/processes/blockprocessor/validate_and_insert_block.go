@@ -77,44 +77,47 @@ func (bp *blockProcessor) updateVirtualAcceptanceDataAfterImportingPruningPoint(
 }
 
 func (bp *blockProcessor) validateAndInsertBlock(stagingArea *model.StagingArea, block *externalapi.DomainBlock,
-	isPruningPoint bool, shouldValidateAgainstUTXO bool, isBlockWithTrustedData bool) (*externalapi.VirtualChangeSet, externalapi.BlockStatus, error) {
+	isPruningPoint bool, shouldValidateAgainstUTXO bool, isBlockWithTrustedData bool) (*externalapi.VirtualChangeSet, *externalapi.PruningPointChange, externalapi.BlockStatus, error) {
 
 	blockHash := consensushashing.HeaderHash(block.Header)
 	err := bp.validateBlock(stagingArea, block, isBlockWithTrustedData)
 	if err != nil {
-		return nil, externalapi.StatusInvalid, err
+		return nil, nil, externalapi.StatusInvalid, err
 	}
 
 	status, err := bp.setBlockStatusAfterBlockValidation(stagingArea, block, isPruningPoint)
 	if err != nil {
-		return nil, externalapi.StatusInvalid, err
+		return nil, nil, externalapi.StatusInvalid, err
 	}
 
 	var oldHeadersSelectedTip *externalapi.DomainHash
+
 	hasHeaderSelectedTip, err := bp.headersSelectedTipStore.Has(bp.databaseContext, stagingArea)
 	if err != nil {
-		return nil, externalapi.StatusInvalid, err
+		return nil, nil, externalapi.StatusInvalid, err
 	}
 	if hasHeaderSelectedTip {
 		var err error
 		oldHeadersSelectedTip, err = bp.headersSelectedTipStore.HeadersSelectedTip(bp.databaseContext, stagingArea)
 		if err != nil {
-			return nil, externalapi.StatusInvalid, err
+			return nil, nil, externalapi.StatusInvalid, err
 		}
 	}
+
+	var oldPruningPoint *externalapi.DomainHash
 
 	shouldAddHeaderSelectedTip := false
 	if !hasHeaderSelectedTip {
 		shouldAddHeaderSelectedTip = true
 	} else {
-		pruningPoint, err := bp.pruningStore.PruningPoint(bp.databaseContext, stagingArea)
+		oldPruningPoint, err = bp.pruningStore.PruningPoint(bp.databaseContext, stagingArea)
 		if err != nil {
-			return nil, externalapi.StatusInvalid, err
+			return nil, nil, externalapi.StatusInvalid, err
 		}
 
-		isInSelectedChainOfPruningPoint, err := bp.dagTopologyManager.IsInSelectedParentChainOf(stagingArea, pruningPoint, blockHash)
+		isInSelectedChainOfPruningPoint, err := bp.dagTopologyManager.IsInSelectedParentChainOf(stagingArea, oldPruningPoint, blockHash)
 		if err != nil {
-			return nil, externalapi.StatusInvalid, err
+			return nil, nil, externalapi.StatusInvalid, err
 		}
 
 		// Don't set blocks in the anticone of the pruning point as header selected tip.
@@ -125,7 +128,7 @@ func (bp *blockProcessor) validateAndInsertBlock(stagingArea *model.StagingArea,
 		// Don't set blocks in the anticone of the pruning point as header selected tip.
 		err = bp.headerTipsManager.AddHeaderTip(stagingArea, blockHash)
 		if err != nil {
-			return nil, externalapi.StatusInvalid, err
+			return nil, nil, externalapi.StatusInvalid, err
 		}
 	}
 
@@ -138,40 +141,42 @@ func (bp *blockProcessor) validateAndInsertBlock(stagingArea *model.StagingArea,
 		// Attempt to add the block to the virtual
 		selectedParentChainChanges, virtualUTXODiff, reversalData, err = bp.consensusStateManager.AddBlock(stagingArea, blockHash, shouldValidateAgainstUTXO)
 		if err != nil {
-			return nil, externalapi.StatusInvalid, err
+			return nil, nil, externalapi.StatusInvalid, err
 		}
 	}
 
 	if hasHeaderSelectedTip {
 		err := bp.updateReachabilityReindexRoot(stagingArea, oldHeadersSelectedTip)
 		if err != nil {
-			return nil, externalapi.StatusInvalid, err
+			return nil, nil, externalapi.StatusInvalid, err
 		}
 	}
 
+	var pruningPointChange *externalapi.PruningPointChange
+
 	if !isHeaderOnlyBlock && shouldValidateAgainstUTXO {
 		// Trigger pruning, which will check if the pruning point changed and delete the data if it did.
-		err = bp.pruningManager.UpdatePruningPointByVirtual(stagingArea)
+		pruningPointChange, err = bp.pruningManager.UpdatePruningPointByVirtualAndReturnChange(stagingArea)
 		if err != nil {
-			return nil, externalapi.StatusInvalid, err
+			return nil, nil, externalapi.StatusInvalid, err
 		}
 	}
 
 	err = staging.CommitAllChanges(bp.databaseContext, stagingArea)
 	if err != nil {
-		return nil, externalapi.StatusInvalid, err
+		return nil, nil, externalapi.StatusInvalid, err
 	}
 
 	if reversalData != nil {
 		err = bp.consensusStateManager.ReverseUTXODiffs(blockHash, reversalData)
 		if err != nil {
-			return nil, externalapi.StatusInvalid, err
+			return nil, nil, externalapi.StatusInvalid, err
 		}
 	}
 
 	err = bp.pruningManager.UpdatePruningPointIfRequired()
 	if err != nil {
-		return nil, externalapi.StatusInvalid, err
+		return nil, nil, externalapi.StatusInvalid, err
 	}
 
 	log.Debug(logger.NewLogClosure(func() string {
@@ -196,14 +201,14 @@ func (bp *blockProcessor) validateAndInsertBlock(stagingArea *model.StagingArea,
 			virtualGhostDAGData.BlueScore(), blockCount, headerCount)
 	}))
 	if logClosureErr != nil {
-		return nil, externalapi.StatusInvalid, logClosureErr
+		return nil, nil, externalapi.StatusInvalid, logClosureErr
 	}
 
 	virtualParents, err := bp.dagTopologyManager.Parents(stagingArea, model.VirtualBlockHash)
 	if database.IsNotFoundError(err) {
 		virtualParents = nil
 	} else if err != nil {
-		return nil, externalapi.StatusInvalid, err
+		return nil, nil, externalapi.StatusInvalid, err
 	}
 
 	bp.pastMedianTimeManager.InvalidateVirtualPastMedianTimeCache()
@@ -214,7 +219,7 @@ func (bp *blockProcessor) validateAndInsertBlock(stagingArea *model.StagingArea,
 		VirtualSelectedParentChainChanges: selectedParentChainChanges,
 		VirtualUTXODiff:                   virtualUTXODiff,
 		VirtualParents:                    virtualParents,
-	}, status, nil
+	}, pruningPointChange, status, nil
 }
 
 func (bp *blockProcessor) loadUTXODataForGenesis(stagingArea *model.StagingArea, block *externalapi.DomainBlock) {

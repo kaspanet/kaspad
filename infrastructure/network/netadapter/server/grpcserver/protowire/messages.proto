@@ -139,6 +139,23 @@ message KaspadMessage {
     GetMempoolEntriesByAddressesResponseMessage getMempoolEntriesByAddressesResponse = 1085;
     GetCoinSupplyRequestMessage getCoinSupplyRequest = 1086;
     GetCoinSupplyResponseMessage getCoinSupplyResponse= 1087;
+
+    GetAcceptingBlockHashesOfTxsRequestMessage  getAcceptingBlockHashesOfTxsRequest = 1088;
+    GetAcceptingBlockHashesOfTxsResponseMessage getAcceptingBlockHashesOfTxsResponse = 1089;
+    GetTxsRequestMessage  getTxsRequest = 1090;
+    GetTxsResponseMessage getTxsResponse = 1091;
+    GetTxsConfirmationsRequestMessage  getTxsConfirmationsRequest = 1092;
+    GetTxsConfirmationsResponseMessage getTxsConfirmationsResponse = 1093;
+    NotifyTxsConfirmationChangedRequestMessage  notifyTxsConfirmationChangedRequst = 1094;
+    NotifyTxsConfirmationChangedResponseMessage notifyTxsConfirmationChangedResponse = 1095;
+    ModifyNotifyingTxsConfirmationChangedRequestMessage modifyNotifyingTxsConfirmationChangedRequest = 1096;
+    ModifyNotifyingTxsConfirmationChangedResponseMessage modifyNotifyingTxsConfirmationChangedResponse = 1097;
+    TxsConfirmationChangedNotificationMessage txsConfirmationChangedNotification = 1098;
+    NotifyAddressesTxsRequestMessage notifyAddressesTxsRequest = 1099;
+    NotifyAddressesTxsResponseMessage notifyAddressesTxsResponse = 1100;
+    ModifyNotifyingAddressesTxsRequestMessage modifyNotifyingAddressesTxsRequest = 1101;
+    ModifyNotifyingAddressesTxsResponseMessage modifyNotifyingAddressesTxsResponse = 1102;
+    AddressesTxsNotificationMessage AddressesTxsNotification = 1103;
   }
 }
 

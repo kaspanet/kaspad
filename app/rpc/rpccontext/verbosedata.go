@@ -8,6 +8,7 @@ import (
 	difficultyPackage "github.com/kaspanet/kaspad/util/difficulty"
 	"github.com/pkg/errors"
 
+	"github.com/kaspanet/kaspad/domain/consensus/database"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/hashes"
 
 	"github.com/kaspanet/kaspad/domain/consensus/utils/txscript"
@@ -128,6 +129,31 @@ func (ctx *Context) PopulateTransactionWithVerboseData(
 		Hash:          consensushashing.TransactionHash(domainTransaction).String(),
 		Mass:          domainTransaction.Mass,
 	}
+	if ctx.Config.TXIndex {
+		acceptingBlockHash, foundAcceptingBlockHash, err := ctx.TXIndex.TXAcceptingBlockHash(domainTransaction.ID)
+		if err != nil {
+			if !database.IsNotFoundError(err) {
+				return err
+			}
+			return err
+		}
+		confirmations, foundConfirmations, err := ctx.TXIndex.GetTXConfirmations(domainTransaction.ID)
+		if err != nil {
+			if !database.IsNotFoundError(err) {
+				return err
+			}
+		}
+		if !foundAcceptingBlockHash || !foundConfirmations {
+			transaction.VerboseData.TxIndexed = false
+		} else {
+			transaction.VerboseData.TxIndexed = true
+			transaction.VerboseData.AcceptingBlockHash = acceptingBlockHash.String()
+			transaction.VerboseData.Confirmations = uint32(confirmations)
+		}
+	} else {
+		transaction.VerboseData.TxIndexed = false
+	}
+
 	if domainBlockHeader != nil {
 		transaction.VerboseData.BlockHash = consensushashing.HeaderHash(domainBlockHeader).String()
 		transaction.VerboseData.BlockTime = uint64(domainBlockHeader.TimeInMilliseconds())

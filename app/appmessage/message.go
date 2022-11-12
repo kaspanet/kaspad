@@ -163,6 +163,22 @@ const (
 	CmdGetMempoolEntriesByAddressesResponseMessage
 	CmdGetCoinSupplyRequestMessage
 	CmdGetCoinSupplyResponseMessage
+	CmdGetAcceptingBlockHashesOfTxsRequestMessage
+	CmdGetAcceptingBlockHashesOfTxsResponseMessage
+	CmdGetTxsRequestMessage
+	CmdGetTxsResponseMessage
+	CmdGetTxsConfirmationsRequestMessage
+	CmdGetTxsConfirmationsResponseMessage
+	CmdNotifyTxsConfirmationChangedRequestMessage
+	CmdNotifyTxsConfirmationChangedResponseMessage
+	CmdModifyNotifyingTxsConfirmationChangedRequestMessage
+	CmdModifyNotifyingTxsConfirmationChangedResponseMessage
+	CmdTxsConfirmationChangedNotificationMessage
+	CmdNotifyAddressesTxsRequestMessage
+	CmdNotifyAddressesTxsResponseMessage
+	CmdModifyNotifyingAddressesTxsRequestMessage
+	CmdModifyNotifyingAddressesTxsResponseMessage
+	CmdAddressesTxsNotificationMessage
 )
 
 // ProtocolMessageCommandToString maps all MessageCommands to their string representation
@@ -300,6 +316,22 @@ var RPCMessageCommandToString = map[MessageCommand]string{
 	CmdGetMempoolEntriesByAddressesResponseMessage:                "GetMempoolEntriesByAddressesResponse",
 	CmdGetCoinSupplyRequestMessage:                                "GetCoinSupplyRequest",
 	CmdGetCoinSupplyResponseMessage:                               "GetCoinSupplyResponse",
+	CmdGetAcceptingBlockHashesOfTxsRequestMessage:                 "GetAcceptingBlockHashesOfTxsRequest",
+	CmdGetAcceptingBlockHashesOfTxsResponseMessage:                "GetAcceptingBlockHashesOfTxsResponse",
+	CmdGetTxsRequestMessage:                                       "GetTxsRequest",
+	CmdGetTxsResponseMessage:                                      "GetTxsResponse",
+	CmdGetTxsConfirmationsRequestMessage:                          "GetTxsConfirmationsRequest",
+	CmdGetTxsConfirmationsResponseMessage:                         "GetTxsConfirmationsResponse",
+	CmdNotifyTxsConfirmationChangedRequestMessage:                 "NotifyTxsConfirmationChangedRequest",
+	CmdNotifyTxsConfirmationChangedResponseMessage:                "ModifyNotifyingTxsConfirmationChangedRequest",
+	CmdModifyNotifyingTxsConfirmationChangedRequestMessage:        "ModifyNotifyingTxsConfirmationChangedResponse",
+	CmdModifyNotifyingTxsConfirmationChangedResponseMessage:       "TxsConfirmationChangedNotification",
+	CmdTxsConfirmationChangedNotificationMessage:                  "TxsConfirmationChangedNotification",
+	CmdNotifyAddressesTxsRequestMessage:                           "NotifyAddressesTxsRequest",
+	CmdNotifyAddressesTxsResponseMessage:                          "NotifyAddressesTxsResponse",
+	CmdModifyNotifyingAddressesTxsRequestMessage:                  "ModifyNotifyingAddressesTxsRequest",
+	CmdModifyNotifyingAddressesTxsResponseMessage:                 "ModifyNotifyingAddressesTxsResponse",
+	CmdAddressesTxsNotificationMessage:                            "AddressesTxsNotification",
 }
 
 // Message is an interface that describes a kaspa message. A type that
