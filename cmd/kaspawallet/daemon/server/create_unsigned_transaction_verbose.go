@@ -25,7 +25,7 @@ func (s *server) CreateUnsignedTransactionVerbose(_ context.Context, request *pb
 		return nil, err
 	}
 
-	unsignedTransactions, err := s.createUnsignedTransactionVerbose(inputs, outputs)
+	unsignedTransactions, err := s.createUnsignedTransactionVerbose(inputs, outputs, request.UseExistingChangeAddress)
 	if err != nil {
 		return nil, err
 	}
@@ -33,7 +33,7 @@ func (s *server) CreateUnsignedTransactionVerbose(_ context.Context, request *pb
 	return &pb.CreateUnsignedTransactionsResponse{UnsignedTransactions: unsignedTransactions}, nil
 }
 
-func (s *server) createUnsignedTransactionVerbose(inputs []externalapi.DomainOutpoint, payments []*libkaspawallet.Payment) ([][]byte, error) {
+func (s *server) createUnsignedTransactionVerbose(inputs []externalapi.DomainOutpoint, payments []*libkaspawallet.Payment, useExistingChangeAddress bool) ([][]byte, error) {
 	if !s.isSynced() {
 		return nil, errors.New("server is not synced")
 	}
@@ -60,7 +60,7 @@ func (s *server) createUnsignedTransactionVerbose(inputs []externalapi.DomainOut
 		return nil, errors.New("Total input is not enough to cover total output and fees")
 	}
 
-	changeAddress, _, err := s.changeAddress()
+	changeAddress, _, err := s.changeAddress(useExistingChangeAddress)
 	if err != nil {
 		return nil, err
 	}

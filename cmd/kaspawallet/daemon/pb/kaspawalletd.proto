@@ -48,6 +48,7 @@ message PaymentOutput {
 message CreateUnsignedTransactionVerboseRequest {
   repeated Outpoint inputs = 1;
   repeated PaymentOutput outputs = 2;
+  bool useExistingChangeAddress = 3;
 }
 
 message CreateUnsignedTransactionsResponse {
