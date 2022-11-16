@@ -121,7 +121,7 @@ func testEstimateMassIncreaseForSignaturesSetUp(t *testing.T, consensusConfig *c
 		t.Fatalf("AddBlock: %+v", err)
 	}
 
-	block1, err := tc.GetBlock(block1Hash)
+	block1, _, err := tc.GetBlock(block1Hash)
 	if err != nil {
 		t.Fatalf("GetBlock: %+v", err)
 	}

@@ -93,7 +93,7 @@ func TestValidateAndInsertImportedPruningPoint(t *testing.T) {
 			}
 
 			for _, blockHash := range pruningPointAndItsAnticone {
-				block, err := tcSyncer.GetBlock(blockHash)
+				block, _, err := tcSyncer.GetBlock(blockHash)
 				if err != nil {
 					t.Fatalf("GetBlock: %+v", err)
 				}
@@ -268,7 +268,7 @@ func TestValidateAndInsertImportedPruningPoint(t *testing.T) {
 			}
 
 			for _, blocksHash := range missingBlockHashes {
-				block, err := tcSyncer.GetBlock(blocksHash)
+				block, _, err := tcSyncer.GetBlock(blocksHash)
 				if err != nil {
 					t.Fatalf("GetBlock: %+v", err)
 				}
@@ -294,7 +294,7 @@ func TestValidateAndInsertImportedPruningPoint(t *testing.T) {
 			}
 
 			tipHash := addBlock(tcSyncer, syncerTips, t)
-			tip, err := tcSyncer.GetBlock(tipHash)
+			tip, _, err := tcSyncer.GetBlock(tipHash)
 			if err != nil {
 				t.Fatalf("GetBlock: %+v", err)
 			}
@@ -341,7 +341,7 @@ func TestValidateAndInsertImportedPruningPoint(t *testing.T) {
 		tipHash := consensusConfig.GenesisHash
 		for i := 0; i < numSharedBlocks; i++ {
 			tipHash = addBlock(tcSyncer, []*externalapi.DomainHash{tipHash}, t)
-			block, err := tcSyncer.GetBlock(tipHash)
+			block, _, err := tcSyncer.GetBlock(tipHash)
 			if err != nil {
 				t.Fatalf("GetBlock: %+v", err)
 			}

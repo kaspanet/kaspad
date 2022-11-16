@@ -28,16 +28,13 @@ func HandleRelayBlockRequests(context RelayBlockRequestsContext, incomingRoute *
 		log.Debugf("Got request for relay blocks with hashes %s", getRelayBlocksMessage.Hashes)
 		for _, hash := range getRelayBlocksMessage.Hashes {
 			// Fetch the block from the database.
-			blockInfo, err := context.Domain().Consensus().GetBlockInfo(hash)
-			if err != nil {
-				return err
-			}
-			if !blockInfo.HasBody() {
-				return protocolerrors.Errorf(true, "block %s not found", hash)
-			}
-			block, err := context.Domain().Consensus().GetBlock(hash)
+			block, found, err := context.Domain().Consensus().GetBlock(hash)
 			if err != nil {
 				return errors.Wrapf(err, "unable to fetch requested block hash %s", hash)
+			}
+
+			if !found {
+				return protocolerrors.Errorf(false, "Relay block %s not found", hash)
 			}
 
 			// TODO (Partial nodes): Convert block to partial block if needed

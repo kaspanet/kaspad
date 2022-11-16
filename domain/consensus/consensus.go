@@ -357,7 +357,7 @@ func (s *consensus) ValidateTransactionAndPopulateWithConsensusData(transaction 
 		stagingArea, transaction, model.VirtualBlockHash)
 }
 
-func (s *consensus) GetBlock(blockHash *externalapi.DomainHash) (*externalapi.DomainBlock, error) {
+func (s *consensus) GetBlock(blockHash *externalapi.DomainHash) (*externalapi.DomainBlock, bool, error) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
@@ -366,11 +366,11 @@ func (s *consensus) GetBlock(blockHash *externalapi.DomainHash) (*externalapi.Do
 	block, err := s.blockStore.Block(s.databaseContext, stagingArea, blockHash)
 	if err != nil {
 		if errors.Is(err, database.ErrNotFound) {
-			return nil, errors.Wrapf(err, "block %s does not exist", blockHash)
+			return nil, false, nil
 		}
-		return nil, err
+		return nil, false, err
 	}
-	return block, nil
+	return block, true, nil
 }
 
 func (s *consensus) GetBlockEvenIfHeaderOnly(blockHash *externalapi.DomainHash) (*externalapi.DomainBlock, error) {

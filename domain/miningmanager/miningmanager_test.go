@@ -339,7 +339,7 @@ func TestOrphanTransactions(t *testing.T) {
 			t.Fatalf("AddBlock: %v", err)
 		}
 
-		blockParentsTransactions, err := tc.GetBlock(blockParentsTransactionsHash)
+		blockParentsTransactions, _, err := tc.GetBlock(blockParentsTransactionsHash)
 		if err != nil {
 			t.Fatalf("GetBlock: %v", err)
 		}
@@ -648,7 +648,7 @@ func TestModifyBlockTemplate(t *testing.T) {
 			t.Fatalf("AddBlock: %v", err)
 		}
 
-		blockParentsTransactions, err := tc.GetBlock(blockParentsTransactionsHash)
+		blockParentsTransactions, _, err := tc.GetBlock(blockParentsTransactionsHash)
 		if err != nil {
 			t.Fatalf("GetBlock: %v", err)
 		}
@@ -924,7 +924,7 @@ func createParentAndChildrenTransactions(tc testapi.TestConsensus) (txParent *ex
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "AddBlock: ")
 	}
-	fundingBlockForParent, err := tc.GetBlock(fundingBlockHashForParent)
+	fundingBlockForParent, _, err := tc.GetBlock(fundingBlockHashForParent)
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "GetBlock: ")
 	}
@@ -949,7 +949,7 @@ func createChildAndParentTxsAndAddParentToConsensus(tc testapi.TestConsensus) (*
 	if err != nil {
 		return nil, errors.Wrap(err, "AddBlock: ")
 	}
-	ParentBlock, err := tc.GetBlock(ParentBlockHash)
+	ParentBlock, _, err := tc.GetBlock(ParentBlockHash)
 	if err != nil {
 		return nil, errors.Wrap(err, "GetBlock: ")
 	}

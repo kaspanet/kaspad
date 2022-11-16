@@ -84,7 +84,7 @@ func TestMultisig(t *testing.T) {
 				t.Fatalf("AddBlock: %+v", err)
 			}
 
-			block1, err := tc.GetBlock(block1Hash)
+			block1, _, err := tc.GetBlock(block1Hash)
 			if err != nil {
 				t.Fatalf("GetBlock: %+v", err)
 			}
@@ -245,7 +245,7 @@ func TestP2PK(t *testing.T) {
 				t.Fatalf("AddBlock: %+v", err)
 			}
 
-			block1, err := tc.GetBlock(block1Hash)
+			block1, _, err := tc.GetBlock(block1Hash)
 			if err != nil {
 				t.Fatalf("GetBlock: %+v", err)
 			}
@@ -377,17 +377,17 @@ func TestMaxSompi(t *testing.T) {
 			t.Fatalf("AddBlock: %+v", err)
 		}
 
-		fundingBlock2, err := tc.GetBlock(fundingBlock2Hash)
+		fundingBlock2, _, err := tc.GetBlock(fundingBlock2Hash)
 		if err != nil {
 			t.Fatalf("GetBlock: %+v", err)
 		}
 
-		fundingBlock3, err := tc.GetBlock(fundingBlock3Hash)
+		fundingBlock3, _, err := tc.GetBlock(fundingBlock3Hash)
 		if err != nil {
 			t.Fatalf("GetBlock: %+v", err)
 		}
 
-		fundingBlock4, err := tc.GetBlock(fundingBlock4Hash)
+		fundingBlock4, _, err := tc.GetBlock(fundingBlock4Hash)
 		if err != nil {
 			t.Fatalf("GetBlock: %+v", err)
 		}
@@ -397,7 +397,7 @@ func TestMaxSompi(t *testing.T) {
 			t.Fatalf("AddBlock: %+v", err)
 		}
 
-		block1, err := tc.GetBlock(block1Hash)
+		block1, _, err := tc.GetBlock(block1Hash)
 		if err != nil {
 			t.Fatalf("GetBlock: %+v", err)
 		}
