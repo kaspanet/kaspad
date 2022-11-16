@@ -10,13 +10,13 @@ import (
 	"github.com/pkg/errors"
 )
 
-func (s *server) changeAddress(useFirst bool, fromAddresses []*walletAddress) (util.Address, *walletAddress, error) {
-	internalIndex := uint32(0)
+func (s *server) changeAddress(useExisting bool, fromAddresses []*walletAddress) (util.Address, *walletAddress, error) {
 	var walletAddr *walletAddress
-	if len(fromAddresses) != 0 {
+	if len(fromAddresses) != 0 && useExisting {
 		walletAddr = fromAddresses[0]
 	} else {
-		if !useFirst {
+		internalIndex := uint32(0)
+		if !useExisting {
 			err := s.keysFile.SetLastUsedInternalIndex(s.keysFile.LastUsedInternalIndex() + 1)
 			if err != nil {
 				return nil, nil, err
