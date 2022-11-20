@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/daemon/client"
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/daemon/pb"
-	"os"
 )
 
 func showAddresses(conf *showAddressesConfig) error {
@@ -28,7 +27,7 @@ func showAddresses(conf *showAddressesConfig) error {
 		fmt.Println(address)
 	}
 
-	fmt.Fprintf(os.Stderr, "Note: the above are only addresses that were manually created by the 'new-address' command. If you want to see a list of all addresses, including change addresses, "+
-		"that have a positive balance, use the command 'balance -v'")
+	fmt.Printf("\nNote: the above are only addresses that were manually created by the 'new-address' command. If you want to see a list of all addresses, including change addresses, " +
+		"that have a positive balance, use the command 'balance -v'\n")
 	return nil
 }
