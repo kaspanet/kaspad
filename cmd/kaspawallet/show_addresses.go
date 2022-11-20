@@ -26,5 +26,8 @@ func showAddresses(conf *showAddressesConfig) error {
 	for _, address := range response.Address {
 		fmt.Println(address)
 	}
+
+	fmt.Printf("\nNote: the above are only addresses that were manually created by the 'new-address' command. If you want to see a list of all addresses, including change addresses, " +
+		"that have a positive balance, use the command 'balance -v'\n")
 	return nil
 }
