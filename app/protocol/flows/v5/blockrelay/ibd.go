@@ -100,7 +100,7 @@ func (flow *handleIBDFlow) runIBDIfNotRunning(block *externalapi.DomainBlock) er
 
 	if shouldDownloadHeadersProof {
 		log.Infof("Starting IBD with headers proof")
-		err := flow.ibdWithHeadersProof(syncerHeaderSelectedTipHash, relayBlockHash, block.Header.DAAScore())
+		err = flow.ibdWithHeadersProof(syncerHeaderSelectedTipHash, relayBlockHash, block.Header.DAAScore())
 		if err != nil {
 			return err
 		}
