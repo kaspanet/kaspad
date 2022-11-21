@@ -286,7 +286,13 @@ func (flow *handleIBDFlow) processBlockWithTrustedData(
 	}
 
 	err := consensus.ValidateAndInsertBlockWithTrustedData(blockWithTrustedData, false)
-	return err
+	if err != nil {
+		if errors.As(err, &ruleerrors.RuleError{}) {
+			return protocolerrors.Wrapf(true, err, "failed validating block with trusted data")
+		}
+		return err
+	}
+	return nil
 }
 
 func (flow *handleIBDFlow) receiveBlockWithTrustedData() (*appmessage.MsgBlockWithTrustedDataV4, bool, error) {
