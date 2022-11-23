@@ -1,3 +1,16 @@
+Kaspad v0.12.10 - 2022-11-23
+===========================
+
+* Increase devnet's initial difficulty (#2167)
+
+Bug fixes:
+* Check rule errors when validating blocks with trusted data (#2171)
+* Compare blue score with selected tip when checking if a pruning point proof is needed (#2169)
+* Add found to GetBlock (#2165)
+
+Wallet new features:
+* Use one of the From addresses as a change address (#2164)
+
 Kaspad v0.12.9 - 2022-10-23
 ===========================
 
