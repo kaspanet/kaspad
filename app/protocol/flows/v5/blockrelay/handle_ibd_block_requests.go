@@ -27,16 +27,13 @@ func HandleIBDBlockRequests(context HandleIBDBlockRequestsContext, incomingRoute
 		log.Debugf("Got request for %d ibd blocks", len(msgRequestIBDBlocks.Hashes))
 		for i, hash := range msgRequestIBDBlocks.Hashes {
 			// Fetch the block from the database.
-			blockInfo, err := context.Domain().Consensus().GetBlockInfo(hash)
-			if err != nil {
-				return err
-			}
-			if !blockInfo.HasBody() {
-				return protocolerrors.Errorf(true, "block %s not found (v5)", hash)
-			}
-			block, err := context.Domain().Consensus().GetBlock(hash)
+			block, found, err := context.Domain().Consensus().GetBlock(hash)
 			if err != nil {
 				return errors.Wrapf(err, "unable to fetch requested block hash %s", hash)
+			}
+
+			if !found {
+				return protocolerrors.Errorf(false, "IBD block %s not found", hash)
 			}
 
 			// TODO (Partial nodes): Convert block to partial block if needed

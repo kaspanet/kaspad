@@ -318,12 +318,12 @@ func TestSigningTwoInputs(t *testing.T) {
 			t.Fatalf("AddBlock: %+v", err)
 		}
 
-		block2, err := tc.GetBlock(block2Hash)
+		block2, _, err := tc.GetBlock(block2Hash)
 		if err != nil {
 			t.Fatalf("Error getting block2: %+v", err)
 		}
 
-		block3, err := tc.GetBlock(block3Hash)
+		block3, _, err := tc.GetBlock(block3Hash)
 		if err != nil {
 			t.Fatalf("Error getting block3: %+v", err)
 		}
@@ -444,12 +444,12 @@ func TestSigningTwoInputsECDSA(t *testing.T) {
 			t.Fatalf("AddBlock: %+v", err)
 		}
 
-		block2, err := tc.GetBlock(block2Hash)
+		block2, _, err := tc.GetBlock(block2Hash)
 		if err != nil {
 			t.Fatalf("Error getting block2: %+v", err)
 		}
 
-		block3, err := tc.GetBlock(block3Hash)
+		block3, _, err := tc.GetBlock(block3Hash)
 		if err != nil {
 			t.Fatalf("Error getting block3: %+v", err)
 		}

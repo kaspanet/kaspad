@@ -211,9 +211,13 @@ func (flow *handleRelayInvsFlow) start() error {
 				continue
 			}
 			virtualHasNewParents = true
-			block, err := flow.Domain().Consensus().GetBlock(parent)
+			block, found, err := flow.Domain().Consensus().GetBlock(parent)
 			if err != nil {
 				return err
+			}
+
+			if !found {
+				return protocolerrors.Errorf(false, "Virtual parent %s not found", parent)
 			}
 			blockHash := consensushashing.BlockHash(block)
 			log.Debugf("Relaying block %s", blockHash)

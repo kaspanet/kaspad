@@ -55,7 +55,12 @@ func (flow *handleIBDFlow) shouldSyncAndShouldDownloadHeadersProof(
 
 	var highestSharedBlockFound, isPruningPointInSharedBlockChain bool
 	if highestKnownSyncerChainHash != nil {
-		highestSharedBlockFound = true
+		blockInfo, err := flow.Domain().Consensus().GetBlockInfo(highestKnownSyncerChainHash)
+		if err != nil {
+			return false, false, err
+		}
+
+		highestSharedBlockFound = blockInfo.HasBody()
 		pruningPoint, err := flow.Domain().Consensus().PruningPoint()
 		if err != nil {
 			return false, false, err
@@ -87,21 +92,21 @@ func (flow *handleIBDFlow) shouldSyncAndShouldDownloadHeadersProof(
 }
 
 func (flow *handleIBDFlow) checkIfHighHashHasMoreBlueWorkThanSelectedTipAndPruningDepthMoreBlueScore(relayBlock *externalapi.DomainBlock) (bool, error) {
-	headersSelectedTip, err := flow.Domain().Consensus().GetHeadersSelectedTip()
+	virtualSelectedParent, err := flow.Domain().Consensus().GetVirtualSelectedParent()
 	if err != nil {
 		return false, err
 	}
 
-	headersSelectedTipInfo, err := flow.Domain().Consensus().GetBlockInfo(headersSelectedTip)
+	virtualSelectedTipInfo, err := flow.Domain().Consensus().GetBlockInfo(virtualSelectedParent)
 	if err != nil {
 		return false, err
 	}
 
-	if relayBlock.Header.BlueScore() < headersSelectedTipInfo.BlueScore+flow.Config().NetParams().PruningDepth() {
+	if relayBlock.Header.BlueScore() < virtualSelectedTipInfo.BlueScore+flow.Config().NetParams().PruningDepth() {
 		return false, nil
 	}
 
-	return relayBlock.Header.BlueWork().Cmp(headersSelectedTipInfo.BlueWork) > 0, nil
+	return relayBlock.Header.BlueWork().Cmp(virtualSelectedTipInfo.BlueWork) > 0, nil
 }
 
 func (flow *handleIBDFlow) syncAndValidatePruningPointProof() (*externalapi.DomainHash, error) {
@@ -281,7 +286,13 @@ func (flow *handleIBDFlow) processBlockWithTrustedData(
 	}
 
 	err := consensus.ValidateAndInsertBlockWithTrustedData(blockWithTrustedData, false)
-	return err
+	if err != nil {
+		if errors.As(err, &ruleerrors.RuleError{}) {
+			return protocolerrors.Wrapf(true, err, "failed validating block with trusted data")
+		}
+		return err
+	}
+	return nil
 }
 
 func (flow *handleIBDFlow) receiveBlockWithTrustedData() (*appmessage.MsgBlockWithTrustedDataV4, bool, error) {

@@ -1,3 +1,36 @@
+Kaspad v0.12.10 - 2022-11-23
+===========================
+
+* Increase devnet's initial difficulty (#2167)
+
+Bug fixes:
+* Check rule errors when validating blocks with trusted data (#2171)
+* Compare blue score with selected tip when checking if a pruning point proof is needed (#2169)
+* Add found to GetBlock (#2165)
+
+Wallet new features:
+* Use one of the From addresses as a change address (#2164)
+
+Kaspad v0.12.9 - 2022-10-23
+===========================
+
+* Create directory before locking lock file (#2160)
+
+Kaspad v0.12.8 - 2022-10-23
+===========================
+
+* Remove hard fork activation rules (#2152)
+* Add lock file to kaspawallet (#2154)
+* Add a new testnet DNS seeder (#2156)
+* Use utxo diff algo for pruning point move and use acceptance data method only as a fall-back (#2157)
+* Make more checks if status is invalid even if the block exists (#2158)
+
+
+Kaspad v0.12.7 - 2022-09-21
+===========================
+
+* Security Fix + Hard fork - Full details can be seen here: https://medium.com/@michaelsuttonil/kaspa-security-patch-and-hard-fork-september-2022-12da617b0094
+
 Kaspad v0.12.6 - 2022-09-09
 ===========================
 

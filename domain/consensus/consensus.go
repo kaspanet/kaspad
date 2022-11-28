@@ -357,7 +357,7 @@ func (s *consensus) ValidateTransactionAndPopulateWithConsensusData(transaction 
 		stagingArea, transaction, model.VirtualBlockHash)
 }
 
-func (s *consensus) GetBlock(blockHash *externalapi.DomainHash) (*externalapi.DomainBlock, error) {
+func (s *consensus) GetBlock(blockHash *externalapi.DomainHash) (*externalapi.DomainBlock, bool, error) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
@@ -366,11 +366,11 @@ func (s *consensus) GetBlock(blockHash *externalapi.DomainHash) (*externalapi.Do
 	block, err := s.blockStore.Block(s.databaseContext, stagingArea, blockHash)
 	if err != nil {
 		if errors.Is(err, database.ErrNotFound) {
-			return nil, errors.Wrapf(err, "block %s does not exist", blockHash)
+			return nil, false, nil
 		}
-		return nil, err
+		return nil, false, err
 	}
-	return block, nil
+	return block, true, nil
 }
 
 func (s *consensus) GetBlockEvenIfHeaderOnly(blockHash *externalapi.DomainHash) (*externalapi.DomainBlock, error) {
@@ -853,12 +853,16 @@ func (s *consensus) GetVirtualSelectedParentChainFromBlock(blockHash *externalap
 }
 
 func (s *consensus) validateBlockHashExists(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) error {
-	exists, err := s.blockStatusStore.Exists(s.databaseContext, stagingArea, blockHash)
+	status, err := s.blockStatusStore.Get(s.databaseContext, stagingArea, blockHash)
+	if database.IsNotFoundError(err) {
+		return errors.Errorf("block %s does not exist", blockHash)
+	}
 	if err != nil {
 		return err
 	}
-	if !exists {
-		return errors.Errorf("block %s does not exist", blockHash)
+
+	if status == externalapi.StatusInvalid {
+		return errors.Errorf("block %s is invalid", blockHash)
 	}
 	return nil
 }

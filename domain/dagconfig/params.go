@@ -297,7 +297,11 @@ var TestnetParams = Params{
 	Net:         appmessage.Testnet,
 	RPCPort:     "16210",
 	DefaultPort: "16211",
-	DNSSeeds:    []string{"testnet-10-dnsseed.kas.pa"},
+	DNSSeeds: []string{
+		"testnet-10-dnsseed.kas.pa",
+		// This DNS seeder is run by Tiram
+		"seeder1-testnet.kaspad.net",
+	},
 
 	// DAG parameters
 	GenesisBlock:                    &testnetGenesisBlock,

@@ -1,6 +1,7 @@
 package blockrelay
 
 import (
+	"fmt"
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/app/protocol/common"
 	peerpkg "github.com/kaspanet/kaspad/app/protocol/peer"
@@ -70,16 +71,17 @@ func (flow *handleIBDFlow) runIBDIfNotRunning(block *externalapi.DomainBlock) er
 	}
 
 	isFinishedSuccessfully := false
+	var err error
 	defer func() {
 		flow.UnsetIBDRunning()
-		flow.logIBDFinished(isFinishedSuccessfully)
+		flow.logIBDFinished(isFinishedSuccessfully, err)
 	}()
 
 	relayBlockHash := consensushashing.BlockHash(block)
 
-	log.Debugf("IBD started with peer %s and relayBlockHash %s", flow.peer, relayBlockHash)
-	log.Debugf("Syncing blocks up to %s", relayBlockHash)
-	log.Debugf("Trying to find highest known syncer chain block from peer %s with relay hash %s", flow.peer, relayBlockHash)
+	log.Infof("IBD started with peer %s and relayBlockHash %s", flow.peer, relayBlockHash)
+	log.Infof("Syncing blocks up to %s", relayBlockHash)
+	log.Infof("Trying to find highest known syncer chain block from peer %s with relay hash %s", flow.peer, relayBlockHash)
 
 	syncerHeaderSelectedTipHash, highestKnownSyncerChainHash, err := flow.negotiateMissingSyncerChainSegment()
 	if err != nil {
@@ -98,7 +100,7 @@ func (flow *handleIBDFlow) runIBDIfNotRunning(block *externalapi.DomainBlock) er
 
 	if shouldDownloadHeadersProof {
 		log.Infof("Starting IBD with headers proof")
-		err := flow.ibdWithHeadersProof(syncerHeaderSelectedTipHash, relayBlockHash, block.Header.DAAScore())
+		err = flow.ibdWithHeadersProof(syncerHeaderSelectedTipHash, relayBlockHash, block.Header.DAAScore())
 		if err != nil {
 			return err
 		}
@@ -181,6 +183,10 @@ func (flow *handleIBDFlow) negotiateMissingSyncerChainSegment() (*externalapi.Do
 				return nil, nil, err
 			}
 			if info.Exists {
+				if info.BlockStatus == externalapi.StatusInvalid {
+					return nil, nil, protocolerrors.Errorf(true, "Sent invalid chain block %s", syncerChainHash)
+				}
+
 				currentHighestKnownSyncerChainHash = syncerChainHash
 				break
 			}
@@ -261,7 +267,7 @@ func (flow *handleIBDFlow) negotiateMissingSyncerChainSegment() (*externalapi.Do
 		}
 	}
 
-	log.Debugf("Found highest known syncer chain block %s from peer %s",
+	log.Infof("Found highest known syncer chain block %s from peer %s",
 		highestKnownSyncerChainHash, flow.peer)
 
 	return syncerHeaderSelectedTipHash, highestKnownSyncerChainHash, nil
@@ -276,10 +282,10 @@ func (flow *handleIBDFlow) isGenesisVirtualSelectedParent() (bool, error) {
 	return virtualSelectedParent.Equal(flow.Config().NetParams().GenesisHash), nil
 }
 
-func (flow *handleIBDFlow) logIBDFinished(isFinishedSuccessfully bool) {
+func (flow *handleIBDFlow) logIBDFinished(isFinishedSuccessfully bool, err error) {
 	successString := "successfully"
 	if !isFinishedSuccessfully {
-		successString = "(interrupted)"
+		successString = fmt.Sprintf("(interrupted: %s)", err)
 	}
 	log.Infof("IBD with peer %s finished %s", flow.peer, successString)
 }
