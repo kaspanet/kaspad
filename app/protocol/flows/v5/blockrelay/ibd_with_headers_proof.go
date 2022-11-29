@@ -55,12 +55,7 @@ func (flow *handleIBDFlow) shouldSyncAndShouldDownloadHeadersProof(
 
 	var highestSharedBlockFound, isPruningPointInSharedBlockChain bool
 	if highestKnownSyncerChainHash != nil {
-		blockInfo, err := flow.Domain().Consensus().GetBlockInfo(highestKnownSyncerChainHash)
-		if err != nil {
-			return false, false, err
-		}
-
-		highestSharedBlockFound = blockInfo.HasBody()
+		highestSharedBlockFound = true
 		pruningPoint, err := flow.Domain().Consensus().PruningPoint()
 		if err != nil {
 			return false, false, err
