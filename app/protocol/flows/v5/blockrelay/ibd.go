@@ -288,7 +288,7 @@ func (flow *handleIBDFlow) logIBDFinished(isFinishedSuccessfully bool, err error
 		if err != nil {
 			successString = fmt.Sprintf("(interrupted: %s)", err)
 		} else {
-			successString = fmt.Sprintf("(interrupted)", err)
+			successString = fmt.Sprintf("(interrupted)")
 		}
 	}
 	log.Infof("IBD with peer %s finished %s", flow.peer, successString)
