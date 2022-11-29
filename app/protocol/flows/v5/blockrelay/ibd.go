@@ -199,7 +199,8 @@ func (flow *handleIBDFlow) negotiateMissingSyncerChainSegment() (*externalapi.Do
 
 				// We're only interested in syncer chain blocks that have our pruning
 				// point in their selected chain. Otherwise, it means one of the following:
-				// 1) We cannot merge their selected tip without violating the merge depth rule.
+				// 1) We will not switch the virtual selected chain to the syncers chain since it will violate finality
+				//    (hence we can ignore it unless merged by others).
 				// 2) syncerChainHash is actually in the past of our pruning point so there's no
 				//    point in syncing from it.
 				if err == nil && isPruningPointOnSyncerChain {
