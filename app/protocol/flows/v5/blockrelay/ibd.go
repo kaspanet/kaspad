@@ -285,7 +285,11 @@ func (flow *handleIBDFlow) isGenesisVirtualSelectedParent() (bool, error) {
 func (flow *handleIBDFlow) logIBDFinished(isFinishedSuccessfully bool, err error) {
 	successString := "successfully"
 	if !isFinishedSuccessfully {
-		successString = fmt.Sprintf("(interrupted: %s)", err)
+		if err != nil {
+			successString = fmt.Sprintf("(interrupted: %s)", err)
+		} else {
+			successString = fmt.Sprintf("(interrupted)", err)
+		}
 	}
 	log.Infof("IBD with peer %s finished %s", flow.peer, successString)
 }
