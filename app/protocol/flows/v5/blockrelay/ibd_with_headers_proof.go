@@ -85,7 +85,7 @@ func (flow *handleIBDFlow) shouldSyncAndShouldDownloadHeadersProof(
 			return true, true, nil
 		}
 
-		if !highestKnownSyncerChainHash {
+		if highestKnownSyncerChainHash == nil {
 			log.Infof("Stopping IBD since IBD from this node will cause a finality conflict")
 			return false, false, nil
 		}
