@@ -192,12 +192,17 @@ func (flow *handleIBDFlow) negotiateMissingSyncerChainSegment() (*externalapi.Do
 					return nil, nil, protocolerrors.Errorf(true, "Sent invalid chain block %s", syncerChainHash)
 				}
 
-				isInSelectedParentChainOfPruningPoint, err := flow.Domain().Consensus().IsInSelectedParentChainOf(pruningPoint, syncerChainHash)
+				isPruningPointOnSyncerChain, err := flow.Domain().Consensus().IsInSelectedParentChainOf(pruningPoint, syncerChainHash)
 				if err != nil {
-					return nil, nil, err
+					log.Errorf("Error checking isPruningPointOnSyncerChain: %s", err)
 				}
 
-				if isInSelectedParentChainOfPruningPoint {
+				// We're only interested in syncer chain blocks that have our pruning
+				// point in their selected chain. Otherwise, it means one of the following:
+				// 1) We cannot merge their selected tip without violating the merge depth rule.
+				// 2) syncerChainHash is actually in the past of our pruning point so there's no
+				//    point in syncing from it.
+				if err == nil && isPruningPointOnSyncerChain {
 					currentHighestKnownSyncerChainHash = syncerChainHash
 					break
 				}
