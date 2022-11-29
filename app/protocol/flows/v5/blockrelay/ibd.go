@@ -175,6 +175,11 @@ func (flow *handleIBDFlow) negotiateMissingSyncerChainSegment() (*externalapi.Do
 	chainNegotiationRestartCounter := 0
 	chainNegotiationZoomCounts := 0
 	initialLocatorLen := len(locatorHashes)
+	pruningPoint, err := flow.Domain().Consensus().PruningPoint()
+	if err != nil {
+		return nil, nil, err
+	}
+
 	for {
 		var lowestUnknownSyncerChainHash, currentHighestKnownSyncerChainHash *externalapi.DomainHash
 		for _, syncerChainHash := range locatorHashes {
@@ -187,8 +192,15 @@ func (flow *handleIBDFlow) negotiateMissingSyncerChainSegment() (*externalapi.Do
 					return nil, nil, protocolerrors.Errorf(true, "Sent invalid chain block %s", syncerChainHash)
 				}
 
-				currentHighestKnownSyncerChainHash = syncerChainHash
-				break
+				isInSelectedParentChainOfPruningPoint, err := flow.Domain().Consensus().IsInSelectedParentChainOf(pruningPoint, syncerChainHash)
+				if err != nil {
+					return nil, nil, err
+				}
+
+				if isInSelectedParentChainOfPruningPoint {
+					currentHighestKnownSyncerChainHash = syncerChainHash
+					break
+				}
 			}
 			lowestUnknownSyncerChainHash = syncerChainHash
 		}
