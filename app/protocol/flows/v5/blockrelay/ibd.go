@@ -175,6 +175,11 @@ func (flow *handleIBDFlow) negotiateMissingSyncerChainSegment() (*externalapi.Do
 	chainNegotiationRestartCounter := 0
 	chainNegotiationZoomCounts := 0
 	initialLocatorLen := len(locatorHashes)
+	pruningPoint, err := flow.Domain().Consensus().PruningPoint()
+	if err != nil {
+		return nil, nil, err
+	}
+
 	for {
 		var lowestUnknownSyncerChainHash, currentHighestKnownSyncerChainHash *externalapi.DomainHash
 		for _, syncerChainHash := range locatorHashes {
@@ -187,8 +192,21 @@ func (flow *handleIBDFlow) negotiateMissingSyncerChainSegment() (*externalapi.Do
 					return nil, nil, protocolerrors.Errorf(true, "Sent invalid chain block %s", syncerChainHash)
 				}
 
-				currentHighestKnownSyncerChainHash = syncerChainHash
-				break
+				isPruningPointOnSyncerChain, err := flow.Domain().Consensus().IsInSelectedParentChainOf(pruningPoint, syncerChainHash)
+				if err != nil {
+					log.Errorf("Error checking isPruningPointOnSyncerChain: %s", err)
+				}
+
+				// We're only interested in syncer chain blocks that have our pruning
+				// point in their selected chain. Otherwise, it means one of the following:
+				// 1) We will not switch the virtual selected chain to the syncers chain since it will violate finality
+				//    (hence we can ignore it unless merged by others).
+				// 2) syncerChainHash is actually in the past of our pruning point so there's no
+				//    point in syncing from it.
+				if err == nil && isPruningPointOnSyncerChain {
+					currentHighestKnownSyncerChainHash = syncerChainHash
+					break
+				}
 			}
 			lowestUnknownSyncerChainHash = syncerChainHash
 		}
@@ -285,7 +303,11 @@ func (flow *handleIBDFlow) isGenesisVirtualSelectedParent() (bool, error) {
 func (flow *handleIBDFlow) logIBDFinished(isFinishedSuccessfully bool, err error) {
 	successString := "successfully"
 	if !isFinishedSuccessfully {
-		successString = fmt.Sprintf("(interrupted: %s)", err)
+		if err != nil {
+			successString = fmt.Sprintf("(interrupted: %s)", err)
+		} else {
+			successString = fmt.Sprintf("(interrupted)")
+		}
 	}
 	log.Infof("IBD with peer %s finished %s", flow.peer, successString)
 }
