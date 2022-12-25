@@ -7,6 +7,7 @@ service kaspawalletd {
   rpc GetBalance (GetBalanceRequest) returns (GetBalanceResponse) {}
   rpc GetExternalSpendableUTXOs (GetExternalSpendableUTXOsRequest) returns (GetExternalSpendableUTXOsResponse) {}
   rpc CreateUnsignedTransactions (CreateUnsignedTransactionsRequest) returns (CreateUnsignedTransactionsResponse) {}
+  rpc CreateUnsignedTransactionVerbose (CreateUnsignedTransactionVerboseRequest) returns (CreateUnsignedTransactionsResponse) {}
   rpc ShowAddresses (ShowAddressesRequest) returns (ShowAddressesResponse) {}
   rpc NewAddress (NewAddressRequest) returns (NewAddressResponse) {}
   rpc Shutdown (ShutdownRequest) returns (ShutdownResponse) {}
@@ -37,6 +38,17 @@ message CreateUnsignedTransactionsRequest {
   uint64 amount = 2;
   repeated string from = 3;
   bool useExistingChangeAddress = 4;
+}
+
+message PaymentOutput {
+  string address = 1;
+  uint64 amount = 2;
+}
+
+message CreateUnsignedTransactionVerboseRequest {
+  repeated Outpoint inputs = 1;
+  repeated PaymentOutput outputs = 2;
+  bool useExistingChangeAddress = 3;
 }
 
 message CreateUnsignedTransactionsResponse {
