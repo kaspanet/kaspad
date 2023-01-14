@@ -58,7 +58,7 @@ type sendConfig struct {
 	ToAddress                string   `long:"to-address" short:"t" description:"The public address to send Kaspa to" required:"true"`
 	FromAddresses            []string `long:"from-address" short:"a" description:"Specific public address to send Kaspa from. Use multiple times to accept several addresses" required:"false"`
 	SendAmount               float64  `long:"send-amount" short:"v" description:"An amount to send in Kaspa (e.g. 1234.12345678)"`
-	IsSendAll                bool     `long:"all" description:"Send all the Kaspa in the wallet (mutually exclusive with --send-aomount)"`
+	IsSendAll                bool     `long:"send-all" description:"Send all the Kaspa in the wallet (mutually exclusive with --send-amount)"`
 	UseExistingChangeAddress bool     `long:"use-existing-change-address" short:"u" description:"Will use an existing change address (in case no change address was ever used, it will use a new one)"`
 	Verbose                  bool     `long:"show-serialized" short:"s" description:"Show a list of hex encoded sent transactions"`
 	config.NetworkFlags
@@ -75,7 +75,7 @@ type createUnsignedTransactionConfig struct {
 	ToAddress                string   `long:"to-address" short:"t" description:"The public address to send Kaspa to" required:"true"`
 	FromAddresses            []string `long:"from-address" short:"a" description:"Specific public address to send Kaspa from. Use multiple times to accept several addresses" required:"false"`
 	SendAmount               float64  `long:"send-amount" short:"v" description:"An amount to send in Kaspa (e.g. 1234.12345678)"`
-	IsSendAll                bool     `long:"all" description:"Send all the Kaspa in the wallet (mutually exclusive with --send-aomount)"`
+	IsSendAll                bool     `long:"send-all" description:"Send all the Kaspa in the wallet (mutually exclusive with --send-amount)"`
 	UseExistingChangeAddress bool     `long:"use-existing-change-address" short:"u" description:"Will use an existing change address (in case no change address was ever used, it will use a new one)"`
 	config.NetworkFlags
 }
