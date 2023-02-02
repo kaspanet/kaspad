@@ -387,7 +387,7 @@ func ExtractAtomicSwapDataPushes(version uint16, scriptPubKey []byte) (*AtomicSw
 		return nil, err
 	}
 
-	if len(pops) != 20 {
+	if len(pops) != 19 {
 		return nil, nil
 	}
 	isAtomicSwap := pops[0].opcode.value == OpIf &&
@@ -403,13 +403,12 @@ func ExtractAtomicSwapDataPushes(version uint16, scriptPubKey []byte) (*AtomicSw
 		pops[10].opcode.value == OpElse &&
 		canonicalPush(pops[11]) &&
 		pops[12].opcode.value == OpCheckLockTimeVerify &&
-		pops[13].opcode.value == OpDrop &&
-		pops[14].opcode.value == OpDup &&
-		pops[15].opcode.value == OpBlake2b &&
-		pops[16].opcode.value == OpData32 &&
-		pops[17].opcode.value == OpEndIf &&
-		pops[18].opcode.value == OpEqualVerify &&
-		pops[19].opcode.value == OpCheckSig
+		pops[13].opcode.value == OpDup &&
+		pops[14].opcode.value == OpBlake2b &&
+		pops[15].opcode.value == OpData32 &&
+		pops[16].opcode.value == OpEndIf &&
+		pops[17].opcode.value == OpEqualVerify &&
+		pops[18].opcode.value == OpCheckSig
 	if !isAtomicSwap {
 		return nil, nil
 	}
