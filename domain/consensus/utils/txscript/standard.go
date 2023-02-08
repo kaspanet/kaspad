@@ -418,7 +418,7 @@ func ExtractAtomicSwapDataPushes(version uint16, scriptPubKey []byte) (*AtomicSw
 	copy(pushes.RecipientBlake2b[:], pops[9].data)
 	copy(pushes.RefundBlake2b[:], pops[16].data)
 	if pops[2].data != nil {
-		locktime, err := makeScriptNum(pops[2].data, 5)
+		locktime, err := makeScriptNum(pops[2].data, 8)
 		if err != nil {
 			return nil, nil
 		}
@@ -429,7 +429,7 @@ func ExtractAtomicSwapDataPushes(version uint16, scriptPubKey []byte) (*AtomicSw
 		return nil, nil
 	}
 	if pops[11].data != nil {
-		locktime, err := makeScriptNum(pops[11].data, 5)
+		locktime, err := makeScriptNum(pops[11].data, 8)
 		if err != nil {
 			return nil, nil
 		}
