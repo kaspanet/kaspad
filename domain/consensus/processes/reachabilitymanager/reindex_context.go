@@ -42,13 +42,13 @@ Core (BFS) algorithms used during reindexing
 // and populates the provided subTreeSizeMap with the results.
 // It is equivalent to the following recursive implementation:
 //
-// func (rt *reachabilityManager) countSubtrees(node *model.ReachabilityTreeNode) uint64 {
-//     subtreeSize := uint64(0)
-//     for _, child := range node.children {
-//         subtreeSize += child.countSubtrees()
-//     }
-//     return subtreeSize + 1
-// }
+//	func (rt *reachabilityManager) countSubtrees(node *model.ReachabilityTreeNode) uint64 {
+//	    subtreeSize := uint64(0)
+//	    for _, child := range node.children {
+//	        subtreeSize += child.countSubtrees()
+//	    }
+//	    return subtreeSize + 1
+//	}
 //
 // However, we are expecting (linearly) deep trees, and so a
 // recursive stack-based approach is inefficient and will hit

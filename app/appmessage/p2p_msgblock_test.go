@@ -132,7 +132,7 @@ func TestConvertToPartial(t *testing.T) {
 	}
 }
 
-//blockOne is the first block in the mainnet block DAG.
+// blockOne is the first block in the mainnet block DAG.
 var blockOne = MsgBlock{
 	Header: MsgBlockHeader{
 		Version:              0,

@@ -25,6 +25,7 @@ func createUnsignedTransaction(conf *createUnsignedTransactionConfig) error {
 		From:                     conf.FromAddresses,
 		Address:                  conf.ToAddress,
 		Amount:                   sendAmountSompi,
+		IsSendAll:                conf.IsSendAll,
 		UseExistingChangeAddress: conf.UseExistingChangeAddress,
 	})
 	if err != nil {

@@ -37,6 +37,7 @@ message CreateUnsignedTransactionsRequest {
   uint64 amount = 2;
   repeated string from = 3;
   bool useExistingChangeAddress = 4;
+  bool isSendAll = 5;
 }
 
 message CreateUnsignedTransactionsResponse {
@@ -109,6 +110,7 @@ message SendRequest{
   string password = 3;
   repeated string from = 4;
   bool useExistingChangeAddress = 5;
+  bool isSendAll = 6;
 }
 
 message SendResponse{

@@ -1,7 +1,7 @@
 /*
 Package database provides a database for kaspad.
 
-Overview
+# Overview
 
 This package provides a database layer to store and retrieve data in a simple
 and efficient manner.
@@ -11,23 +11,23 @@ checksums in key areas to ensure data integrity.
 
 Implementors of additional backends are required to implement the following interfaces:
 
-DataAccessor
+# DataAccessor
 
 This defines the common interface by which data gets accessed in a generic kaspad
 database. Both the Database and the Transaction interfaces (see below) implement it.
 
-Database
+# Database
 
 This defines the interface of a database that can begin transactions and close itself.
 
-Transaction
+# Transaction
 
 This defines the interface of a generic kaspad database transaction.
 Note: transactions provide data consistency over the state of the database as it was
 when the transaction started. There is NO guarantee that if one puts data into the
 transaction then it will be available to get within the same transaction.
 
-Cursor
+# Cursor
 
 This iterates over database entries given some bucket.
 */
