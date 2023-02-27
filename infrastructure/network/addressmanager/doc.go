@@ -1,7 +1,7 @@
 /*
 Package addressmanager implements concurrency safe Kaspa address manager.
 
-Address Manager Overview
+# Address Manager Overview
 
 In order maintain the peer-to-peer Kaspa network, there needs to be a source
 of addresses to connect to as nodes come and go. The Kaspa protocol provides

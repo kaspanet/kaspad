@@ -146,8 +146,8 @@ func (v *blockValidator) validateDifficulty(stagingArea *model.StagingArea,
 // target difficulty as claimed.
 //
 // The flags modify the behavior of this function as follows:
-//  - BFNoPoWCheck: The check to ensure the block hash is less than the target
-//    difficulty is not performed.
+//   - BFNoPoWCheck: The check to ensure the block hash is less than the target
+//     difficulty is not performed.
 func (v *blockValidator) checkProofOfWork(header externalapi.BlockHeader) error {
 	// The target difficulty must be larger than zero.
 	state := pow.NewState(header.ToMutable())

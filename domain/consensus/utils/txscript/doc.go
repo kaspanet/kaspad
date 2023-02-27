@@ -4,7 +4,7 @@ Package txscript implements the kaspa transaction script language.
 This package provides data structures and functions to parse and execute
 kaspa transaction scripts.
 
-Script Overview
+# Script Overview
 
 Kaspa transaction scripts are written in a stack-base, FORTH-like language.
 
@@ -22,7 +22,7 @@ is used to prove the the spender is authorized to perform the transaction.
 One benefit of using a scripting language is added flexibility in specifying
 what conditions must be met in order to spend kaspa.
 
-Errors
+# Errors
 
 Errors returned by this package are of type txscript.Error. This allows the
 caller to programmatically determine the specific error by examining the

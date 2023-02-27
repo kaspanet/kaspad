@@ -12,13 +12,13 @@ import (
 // interval contains B's interval, it replaces it.
 //
 // Notes:
-// * Intervals never intersect unless one contains the other
-//   (this follows from the tree structure and the indexing rule).
-// * Since node.FutureCoveringSet is kept ordered, a binary search can be
-//   used for insertion/queries.
-// * Although reindexing may change a block's interval, the
-//   is-superset relation will by definition
-//   be always preserved.
+//   - Intervals never intersect unless one contains the other
+//     (this follows from the tree structure and the indexing rule).
+//   - Since node.FutureCoveringSet is kept ordered, a binary search can be
+//     used for insertion/queries.
+//   - Although reindexing may change a block's interval, the
+//     is-superset relation will by definition
+//     be always preserved.
 func (rt *reachabilityManager) insertToFutureCoveringSet(stagingArea *model.StagingArea, node, futureNode *externalapi.DomainHash) error {
 	reachabilityData, err := rt.reachabilityDataForInsertion(stagingArea, node)
 	if err != nil {
