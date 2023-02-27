@@ -159,8 +159,9 @@ func TestDoubleSpends(t *testing.T) {
 // TestTransactionAcceptance checks that block transactions are accepted correctly when the merge set is sorted topologically.
 // DAG diagram:
 // genesis <- blockA <- blockB <- blockC   <- ..(chain of k-blocks).. lastBlockInChain <- blockD <- blockE <- blockF <- blockG
-//                                ^								           ^									          |
-//								  | redBlock <------------------------ blueChildOfRedBlock <-------------------------------
+//
+//	                               ^								           ^									          |
+//									  | redBlock <------------------------ blueChildOfRedBlock <-------------------------------
 func TestTransactionAcceptance(t *testing.T) {
 	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
 		stagingArea := model.NewStagingArea()

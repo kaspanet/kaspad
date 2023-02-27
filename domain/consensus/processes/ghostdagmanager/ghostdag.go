@@ -30,14 +30,14 @@ func (bg *blockGHOSTDAGData) toModel() *externalapi.BlockGHOSTDAGData {
 //
 // 1) |anticone-of-candidate-block ∩ blue-set-of-newBlock| ≤ K
 //
-// 2) For every blue block in blue-set-of-newBlock:
-//    |(anticone-of-blue-block ∩ blue-set-newBlock) ∪ {candidate-block}| ≤ K.
-//    We validate this condition by maintaining a map BluesAnticoneSizes for
-//    each block which holds all the blue anticone sizes that were affected by
-//    the new added blue blocks.
-//    So to find out what is |anticone-of-blue ∩ blue-set-of-newBlock| we just iterate in
-//    the selected parent chain of the new block until we find an existing entry in
-//    BluesAnticoneSizes.
+//  2. For every blue block in blue-set-of-newBlock:
+//     |(anticone-of-blue-block ∩ blue-set-newBlock) ∪ {candidate-block}| ≤ K.
+//     We validate this condition by maintaining a map BluesAnticoneSizes for
+//     each block which holds all the blue anticone sizes that were affected by
+//     the new added blue blocks.
+//     So to find out what is |anticone-of-blue ∩ blue-set-of-newBlock| we just iterate in
+//     the selected parent chain of the new block until we find an existing entry in
+//     BluesAnticoneSizes.
 //
 // For further details see the article https://eprint.iacr.org/2018/104.pdf
 func (gm *ghostdagManager) GHOSTDAG(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) error {

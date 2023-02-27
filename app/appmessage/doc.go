@@ -6,7 +6,7 @@ supported kaspa messages to and from the appmessage. This package does not deal
 with the specifics of message handling such as what to do when a message is
 received. This provides the caller with a high level of flexibility.
 
-Kaspa Message Overview
+# Kaspa Message Overview
 
 The kaspa protocol consists of exchanging messages between peers. Each
 message is preceded by a header which identifies information about it such as
@@ -22,7 +22,7 @@ messages, all of the details of marshalling and unmarshalling to and from the
 appmessage using kaspa encoding are handled so the caller doesn't have to concern
 themselves with the specifics.
 
-Message Interaction
+# Message Interaction
 
 The following provides a quick summary of how the kaspa messages are intended
 to interact with one another. As stated above, these interactions are not
@@ -45,13 +45,13 @@ interactions in no particular order.
 	                                        notfound message (MsgNotFound)
 	ping message (MsgPing)                  pong message (MsgPong)
 
-Common Parameters
+# Common Parameters
 
 There are several common parameters that arise when using this package to read
 and write kaspa messages. The following sections provide a quick overview of
 these parameters so the next sections can build on them.
 
-Protocol Version
+# Protocol Version
 
 The protocol version should be negotiated with the remote peer at a higher
 level than this package via the version (MsgVersion) message exchange, however,
@@ -60,18 +60,18 @@ latest protocol version this package supports and is typically the value to use
 for all outbound connections before a potentially lower protocol version is
 negotiated.
 
-Kaspa Network
+# Kaspa Network
 
 The kaspa network is a magic number which is used to identify the start of a
 message and which kaspa network the message applies to. This package provides
 the following constants:
 
-    appmessage.Mainnet
-    appmessage.Testnet (Test network)
-    appmessage.Simnet  (Simulation test network)
-    appmessage.Devnet  (Development network)
+	appmessage.Mainnet
+	appmessage.Testnet (Test network)
+	appmessage.Simnet  (Simulation test network)
+	appmessage.Devnet  (Development network)
 
-Determining Message Type
+# Determining Message Type
 
 As discussed in the kaspa message overview section, this package reads
 and writes kaspa messages using a generic interface named Message. In
@@ -89,7 +89,7 @@ switch or type assertion. An example of a type switch follows:
 		fmt.Printf("Number of tx in block: %d", msg.Header.TxnCount)
 	}
 
-Reading Messages
+# Reading Messages
 
 In order to unmarshall kaspa messages from the appmessage, use the ReadMessage
 function. It accepts any io.Reader, but typically this will be a net.Conn to
@@ -104,7 +104,7 @@ a remote node running a kaspa peer. Example syntax is:
 		// Log and handle the error
 	}
 
-Writing Messages
+# Writing Messages
 
 In order to marshall kaspa messages to the appmessage, use the WriteMessage
 function. It accepts any io.Writer, but typically this will be a net.Conn to
@@ -122,7 +122,7 @@ from a remote peer is:
 		// Log and handle the error
 	}
 
-Errors
+# Errors
 
 Errors returned by this package are either the raw errors provided by underlying
 calls to read/write from streams such as io.EOF, io.ErrUnexpectedEOF, and

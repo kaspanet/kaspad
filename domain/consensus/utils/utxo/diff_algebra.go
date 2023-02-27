@@ -75,15 +75,21 @@ func subtractionWithRemainderHavingDAAScoreInPlace(collection1, collection2, res
 //
 // diffFrom follows a set of rules represented by the following 3 by 3 table:
 //
-//          |           | this      |           |
+//	|           | this      |           |
+//
 // ---------+-----------+-----------+-----------+-----------
-//          |           | toAdd     | toRemove  | None
+//
+//	|           | toAdd     | toRemove  | None
+//
 // ---------+-----------+-----------+-----------+-----------
 // other    | toAdd     | -         | X         | toAdd
 // ---------+-----------+-----------+-----------+-----------
-//          | toRemove  | X         | -         | toRemove
+//
+//	| toRemove  | X         | -         | toRemove
+//
 // ---------+-----------+-----------+-----------+-----------
-//          | None      | toRemove  | toAdd     | -
+//
+//	| None      | toRemove  | toAdd     | -
 //
 // Key:
 // -		Don't add anything to the result
@@ -92,10 +98,10 @@ func subtractionWithRemainderHavingDAAScoreInPlace(collection1, collection2, res
 // toRemove	Add the UTXO into the toRemove collection of the result
 //
 // Examples:
-// 1. This diff contains a UTXO in toAdd, and the other diff contains it in toRemove
-//    diffFrom results in an error
-// 2. This diff contains a UTXO in toRemove, and the other diff does not contain it
-//    diffFrom results in the UTXO being added to toAdd
+//  1. This diff contains a UTXO in toAdd, and the other diff contains it in toRemove
+//     diffFrom results in an error
+//  2. This diff contains a UTXO in toRemove, and the other diff does not contain it
+//     diffFrom results in the UTXO being added to toAdd
 func diffFrom(this, other *mutableUTXODiff) (*mutableUTXODiff, error) {
 	// Note that the following cases are not accounted for, as they are impossible
 	// as long as the base utxoSet is the same:
