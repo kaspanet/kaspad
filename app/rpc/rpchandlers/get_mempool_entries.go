@@ -12,58 +12,36 @@ func HandleGetMempoolEntries(context *rpccontext.Context, _ *router.Router, requ
 
 	entries := make([]*appmessage.MempoolEntry, 0)
 
+	transactionPoolTransactions, orphanPoolTransactions := context.Domain.MiningManager().AllTransactions(!getMempoolEntriesRequest.FilterTransactionPool, getMempoolEntriesRequest.IncludeOrphanPool)
+
 	if !getMempoolEntriesRequest.FilterTransactionPool {
-		transactionPoolEntries, err := getTransactionPoolMempoolEntries(context)
-		if err != nil {
-			return nil, err
+		for _, transaction := range transactionPoolTransactions {
+			rpcTransaction := appmessage.DomainTransactionToRPCTransaction(transaction)
+			err := context.PopulateTransactionWithVerboseData(rpcTransaction, nil)
+			if err != nil {
+				return nil, err
+			}
+			entries = append(entries, &appmessage.MempoolEntry{
+				Fee:         transaction.Fee,
+				Transaction: rpcTransaction,
+				IsOrphan:    false,
+			})
 		}
-
-		entries = append(entries, transactionPoolEntries...)
 	}
-
 	if getMempoolEntriesRequest.IncludeOrphanPool {
-		orphanPoolEntries, err := getOrphanPoolMempoolEntries(context)
-		if err != nil {
-			return nil, err
+		for _, transaction := range orphanPoolTransactions {
+			rpcTransaction := appmessage.DomainTransactionToRPCTransaction(transaction)
+			err := context.PopulateTransactionWithVerboseData(rpcTransaction, nil)
+			if err != nil {
+				return nil, err
+			}
+			entries = append(entries, &appmessage.MempoolEntry{
+				Fee:         transaction.Fee,
+				Transaction: rpcTransaction,
+				IsOrphan:    true,
+			})
 		}
-		entries = append(entries, orphanPoolEntries...)
 	}
 
 	return appmessage.NewGetMempoolEntriesResponseMessage(entries), nil
-}
-
-func getTransactionPoolMempoolEntries(context *rpccontext.Context) ([]*appmessage.MempoolEntry, error) {
-	transactions := context.Domain.MiningManager().AllTransactions()
-	entries := make([]*appmessage.MempoolEntry, 0, len(transactions))
-	for _, transaction := range transactions {
-		rpcTransaction := appmessage.DomainTransactionToRPCTransaction(transaction)
-		err := context.PopulateTransactionWithVerboseData(rpcTransaction, nil)
-		if err != nil {
-			return nil, err
-		}
-		entries = append(entries, &appmessage.MempoolEntry{
-			Fee:         transaction.Fee,
-			Transaction: rpcTransaction,
-			IsOrphan:    false,
-		})
-	}
-	return entries, nil
-}
-
-func getOrphanPoolMempoolEntries(context *rpccontext.Context) ([]*appmessage.MempoolEntry, error) {
-	orphanTransactions := context.Domain.MiningManager().AllOrphanTransactions()
-	entries := make([]*appmessage.MempoolEntry, 0, len(orphanTransactions))
-	for _, orphanTransaction := range orphanTransactions {
-		rpcTransaction := appmessage.DomainTransactionToRPCTransaction(orphanTransaction)
-		err := context.PopulateTransactionWithVerboseData(rpcTransaction, nil)
-		if err != nil {
-			return nil, err
-		}
-		entries = append(entries, &appmessage.MempoolEntry{
-			Fee:         orphanTransaction.Fee,
-			Transaction: rpcTransaction,
-			IsOrphan:    true,
-		})
-	}
-	return entries, nil
 }

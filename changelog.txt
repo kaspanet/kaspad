@@ -1,3 +1,74 @@
+Kaspad v0.12.11 - 2022-12-1
+===========================
+
+* Fix IBD sync conditions (#2174)
+
+Kaspad v0.12.10 - 2022-11-23
+===========================
+
+* Increase devnet's initial difficulty (#2167)
+
+Bug fixes:
+* Check rule errors when validating blocks with trusted data (#2171)
+* Compare blue score with selected tip when checking if a pruning point proof is needed (#2169)
+* Add found to GetBlock (#2165)
+
+Wallet new features:
+* Use one of the From addresses as a change address (#2164)
+
+Kaspad v0.12.9 - 2022-10-23
+===========================
+
+* Create directory before locking lock file (#2160)
+
+Kaspad v0.12.8 - 2022-10-23
+===========================
+
+* Remove hard fork activation rules (#2152)
+* Add lock file to kaspawallet (#2154)
+* Add a new testnet DNS seeder (#2156)
+* Use utxo diff algo for pruning point move and use acceptance data method only as a fall-back (#2157)
+* Make more checks if status is invalid even if the block exists (#2158)
+
+
+Kaspad v0.12.7 - 2022-09-21
+===========================
+
+* Security Fix + Hard fork - Full details can be seen here: https://medium.com/@michaelsuttonil/kaspa-security-patch-and-hard-fork-september-2022-12da617b0094
+
+Kaspad v0.12.6 - 2022-09-09
+===========================
+
+* Remove tests from docker files (#2133)
+
+Wallet new features:
+* Optionally show serialized transactions on send (#2135)
+
+Bug fixes:
+* Update virtual on IBD if nearly synced (#2134)
+
+Kaspad v0.12.5 - 2022-08-28
+===========================
+
+* Add tests for hash writers (#2120)
+* Replace daglabs's dnsseeder with Wolfie's (#2119)
+* Change testnet dnsseeder (#2126)
+* Add RPC timeout parameter to wallet daemon (#2104)
+
+Wallet new features:
+* Add UseExistingChangeAddress option to the wallet (#2127)
+
+Bug fixes:
+* Call update pruning point if required on resolve virtual or startup (#2129)
+* Add missing locks to notification listener modifications (#2124)
+* Calculate pruning point utxo set from acceptance data (#2123)
+* Fix RPC client memory/goroutine leak (#2122)
+* Fix a subtle lock sync issue in consensus insert block  (#2121)
+* Mempool: Retrieve stable state of the mempool. Optimze get mempool entries by addresses (#2111)
+* Kaspawallet.send(): Make separate context for Broadcast, to prolong timeout (#2131)
+
+
+
 Kaspad v0.12.4 - 2022-07-17
 ===========================
 

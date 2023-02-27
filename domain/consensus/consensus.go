@@ -64,6 +64,12 @@ type consensus struct {
 	virtualNotUpdated   bool
 }
 
+// In order to prevent a situation that the consensus lock is held for too much time, we
+// release the lock each time we resolve 100 blocks.
+// Note: `virtualResolveChunk` should be smaller than `params.FinalityDuration` in order to avoid a situation
+// where UpdatePruningPointByVirtual skips a pruning point.
+const virtualResolveChunk = 100
+
 func (s *consensus) ValidateAndInsertBlockWithTrustedData(block *externalapi.BlockWithTrustedData, validateUTXO bool) error {
 	s.lock.Lock()
 	defer s.lock.Unlock()
@@ -198,15 +204,32 @@ func (s *consensus) ValidateAndInsertBlock(block *externalapi.DomainBlock, updat
 	if updateVirtual {
 		s.lock.Lock()
 		if s.virtualNotUpdated {
-			s.lock.Unlock()
-			err := s.ResolveVirtual(nil)
-			if err != nil {
-				return err
+			// We enter the loop in locked state
+			for {
+				_, isCompletelyResolved, err := s.resolveVirtualChunkNoLock(virtualResolveChunk)
+				if err != nil {
+					s.lock.Unlock()
+					return err
+				}
+				if isCompletelyResolved {
+					// Make sure we enter the block insertion function w/o releasing the lock.
+					// Otherwise, we might actually enter it in `s.virtualNotUpdated == true` state
+					_, err = s.validateAndInsertBlockNoLock(block, updateVirtual)
+					// Finally, unlock for the last iteration and return
+					s.lock.Unlock()
+					if err != nil {
+						return err
+					}
+					return nil
+				}
+				// Unlock to allow other threads to enter consensus
+				s.lock.Unlock()
+				// Lock for the next iteration
+				s.lock.Lock()
 			}
-			return s.validateAndInsertBlockWithLock(block, updateVirtual)
 		}
-		defer s.lock.Unlock()
 		_, err := s.validateAndInsertBlockNoLock(block, updateVirtual)
+		s.lock.Unlock()
 		if err != nil {
 			return err
 		}
@@ -334,7 +357,7 @@ func (s *consensus) ValidateTransactionAndPopulateWithConsensusData(transaction 
 		stagingArea, transaction, model.VirtualBlockHash)
 }
 
-func (s *consensus) GetBlock(blockHash *externalapi.DomainHash) (*externalapi.DomainBlock, error) {
+func (s *consensus) GetBlock(blockHash *externalapi.DomainHash) (*externalapi.DomainBlock, bool, error) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
@@ -343,11 +366,11 @@ func (s *consensus) GetBlock(blockHash *externalapi.DomainHash) (*externalapi.Do
 	block, err := s.blockStore.Block(s.databaseContext, stagingArea, blockHash)
 	if err != nil {
 		if errors.Is(err, database.ErrNotFound) {
-			return nil, errors.Wrapf(err, "block %s does not exist", blockHash)
+			return nil, false, nil
 		}
-		return nil, err
+		return nil, false, err
 	}
-	return block, nil
+	return block, true, nil
 }
 
 func (s *consensus) GetBlockEvenIfHeaderOnly(blockHash *externalapi.DomainHash) (*externalapi.DomainBlock, error) {
@@ -830,12 +853,16 @@ func (s *consensus) GetVirtualSelectedParentChainFromBlock(blockHash *externalap
 }
 
 func (s *consensus) validateBlockHashExists(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) error {
-	exists, err := s.blockStatusStore.Exists(s.databaseContext, stagingArea, blockHash)
+	status, err := s.blockStatusStore.Get(s.databaseContext, stagingArea, blockHash)
+	if database.IsNotFoundError(err) {
+		return errors.Errorf("block %s does not exist", blockHash)
+	}
 	if err != nil {
 		return err
 	}
-	if !exists {
-		return errors.Errorf("block %s does not exist", blockHash)
+
+	if status == externalapi.StatusInvalid {
+		return errors.Errorf("block %s is invalid", blockHash)
 	}
 	return nil
 }
@@ -912,11 +939,7 @@ func (s *consensus) ResolveVirtual(progressReportCallback func(uint64, uint64)) 
 			progressReportCallback(virtualDAAScoreStart, virtualDAAScore)
 		}
 
-		// In order to prevent a situation that the consensus lock is held for too much time, we
-		// release the lock each time we resolve 100 blocks.
-		// Note: maxBlocksToResolve should be smaller than `params.FinalityDuration` in order to avoid a situation
-		// where UpdatePruningPointByVirtual skips a pruning point.
-		_, isCompletelyResolved, err := s.resolveVirtualChunkWithLock(100)
+		_, isCompletelyResolved, err := s.resolveVirtualChunkWithLock(virtualResolveChunk)
 		if err != nil {
 			return err
 		}
@@ -949,6 +972,11 @@ func (s *consensus) resolveVirtualChunkNoLock(maxBlocksToResolve uint64) (*exter
 	}
 
 	err = staging.CommitAllChanges(s.databaseContext, stagingArea)
+	if err != nil {
+		return nil, false, err
+	}
+
+	err = s.pruningManager.UpdatePruningPointIfRequired()
 	if err != nil {
 		return nil, false, err
 	}

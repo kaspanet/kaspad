@@ -43,7 +43,7 @@ func TestCheckLockTimeVerifyConditionedByDAAScore(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Error creating blockD: %v", err)
 		}
-		blockD, err := testConsensus.GetBlock(blockDHash)
+		blockD, _, err := testConsensus.GetBlock(blockDHash)
 		if err != nil {
 			t.Fatalf("Failed getting blockD: %v", err)
 		}
@@ -150,7 +150,7 @@ func TestCheckLockTimeVerifyConditionedByDAAScoreWithWrongLockTime(t *testing.T)
 		if err != nil {
 			t.Fatalf("Error creating blockD: %v", err)
 		}
-		blockD, err := testConsensus.GetBlock(blockDHash)
+		blockD, _, err := testConsensus.GetBlock(blockDHash)
 		if err != nil {
 			t.Fatalf("Failed getting blockD: %v", err)
 		}
@@ -252,7 +252,7 @@ func TestCheckLockTimeVerifyConditionedByAbsoluteTime(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Error creating blockD: %v", err)
 		}
-		blockD, err := testConsensus.GetBlock(blockDHash)
+		blockD, _, err := testConsensus.GetBlock(blockDHash)
 		if err != nil {
 			t.Fatalf("Failed getting blockD: %v", err)
 		}
@@ -283,7 +283,7 @@ func TestCheckLockTimeVerifyConditionedByAbsoluteTime(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Error creating blockE: %v", err)
 		}
-		blockE, err := testConsensus.GetBlock(blockEHash)
+		blockE, _, err := testConsensus.GetBlock(blockEHash)
 		if err != nil {
 			t.Fatalf("Failed getting blockE: %v", err)
 		}
@@ -380,7 +380,7 @@ func TestCheckLockTimeVerifyConditionedByAbsoluteTimeWithWrongLockTime(t *testin
 		if err != nil {
 			t.Fatalf("Error creating blockD: %v", err)
 		}
-		blockD, err := testConsensus.GetBlock(blockDHash)
+		blockD, _, err := testConsensus.GetBlock(blockDHash)
 		if err != nil {
 			t.Fatalf("Failed getting blockD: %v", err)
 		}
@@ -411,7 +411,7 @@ func TestCheckLockTimeVerifyConditionedByAbsoluteTimeWithWrongLockTime(t *testin
 		if err != nil {
 			t.Fatalf("Error creating blockE: %v", err)
 		}
-		blockE, err := testConsensus.GetBlock(blockEHash)
+		blockE, _, err := testConsensus.GetBlock(blockEHash)
 		if err != nil {
 			t.Fatalf("Failed getting blockE: %v", err)
 		}

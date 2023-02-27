@@ -40,7 +40,7 @@ func TestDoubleSpends(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Error creating fundingBlock: %+v", err)
 		}
-		fundingBlock, err := consensus.GetBlock(fundingBlockHash)
+		fundingBlock, _, err := consensus.GetBlock(fundingBlockHash)
 		if err != nil {
 			t.Fatalf("Error getting fundingBlock: %+v", err)
 		}
@@ -159,8 +159,9 @@ func TestDoubleSpends(t *testing.T) {
 // TestTransactionAcceptance checks that block transactions are accepted correctly when the merge set is sorted topologically.
 // DAG diagram:
 // genesis <- blockA <- blockB <- blockC   <- ..(chain of k-blocks).. lastBlockInChain <- blockD <- blockE <- blockF <- blockG
-//                                ^								           ^									          |
-//								  | redBlock <------------------------ blueChildOfRedBlock <-------------------------------
+//
+//	                               ^								           ^									          |
+//									  | redBlock <------------------------ blueChildOfRedBlock <-------------------------------
 func TestTransactionAcceptance(t *testing.T) {
 	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
 		stagingArea := model.NewStagingArea()
@@ -195,7 +196,7 @@ func TestTransactionAcceptance(t *testing.T) {
 			}
 		}
 		lastBlockInChain := chainTipHash
-		blockC, err := testConsensus.GetBlock(blockHashC)
+		blockC, _, err := testConsensus.GetBlock(blockHashC)
 		if err != nil {
 			t.Fatalf("Error getting blockC: %+v", err)
 		}
@@ -269,22 +270,27 @@ func TestTransactionAcceptance(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Error getting acceptance data: %+v", err)
 		}
-		blueChildOfRedBlock, err := testConsensus.GetBlock(hashBlueChildOfRedBlock)
+		blueChildOfRedBlock, _, err := testConsensus.GetBlock(hashBlueChildOfRedBlock)
 		if err != nil {
 			t.Fatalf("Error getting blueChildOfRedBlock: %+v", err)
 		}
-		blockE, err := testConsensus.GetBlock(blockHashF)
+		blockE, _, err := testConsensus.GetBlock(blockHashF)
 		if err != nil {
 			t.Fatalf("Error getting blockE: %+v", err)
 		}
-		redBlock, err := testConsensus.GetBlock(redHash)
+		redBlock, _, err := testConsensus.GetBlock(redHash)
 		if err != nil {
 			t.Fatalf("Error getting redBlock: %+v", err)
 		}
-		_, err = testConsensus.GetBlock(blockHashG)
+		_, found, err := testConsensus.GetBlock(blockHashG)
 		if err != nil {
-			t.Fatalf("Error getting blockF: %+v", err)
+			t.Fatalf("Error getting blockG: %+v", err)
 		}
+
+		if !found {
+			t.Fatalf("block G is missing")
+		}
+
 		updatedDAAScoreVirtualBlock := consensusConfig.GenesisBlock.Header.DAAScore() + 26
 		//We expect the second transaction in the "blue block" (blueChildOfRedBlock) to be accepted because the merge set is ordered topologically
 		//and the red block is ordered topologically before the "blue block" so the input is known in the UTXOSet.

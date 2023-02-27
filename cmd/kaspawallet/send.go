@@ -3,6 +3,8 @@ package main
 import (
 	"context"
 	"fmt"
+	"os"
+	"strings"
 
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/daemon/client"
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/daemon/pb"
@@ -31,13 +33,18 @@ func send(conf *sendConfig) error {
 	ctx, cancel := context.WithTimeout(context.Background(), daemonTimeout)
 	defer cancel()
 
-	sendAmountSompi := uint64(conf.SendAmount * constants.SompiPerKaspa)
+	var sendAmountSompi uint64
+	if !conf.IsSendAll {
+		sendAmountSompi = uint64(conf.SendAmount * constants.SompiPerKaspa)
+	}
 
 	createUnsignedTransactionsResponse, err :=
 		daemonClient.CreateUnsignedTransactions(ctx, &pb.CreateUnsignedTransactionsRequest{
-			From:    conf.FromAddresses,
-			Address: conf.ToAddress,
-			Amount:  sendAmountSompi,
+			From:                     conf.FromAddresses,
+			Address:                  conf.ToAddress,
+			Amount:                   sendAmountSompi,
+			IsSendAll:                conf.IsSendAll,
+			UseExistingChangeAddress: conf.UseExistingChangeAddress,
 		})
 	if err != nil {
 		return err
@@ -48,6 +55,10 @@ func send(conf *sendConfig) error {
 	}
 	mnemonics, err := keysFile.DecryptMnemonics(conf.Password)
 	if err != nil {
+		if strings.Contains(err.Error(), "message authentication failed") {
+			fmt.Fprintf(os.Stderr, "Password decryption failed. Sometimes this is a result of not "+
+				"specifying the same keys file used by the wallet daemon process.\n")
+		}
 		return err
 	}
 
@@ -64,7 +75,12 @@ func send(conf *sendConfig) error {
 		fmt.Printf("Broadcasting %d transactions\n", len(signedTransactions))
 	}
 
-	response, err := daemonClient.Broadcast(ctx, &pb.BroadcastRequest{Transactions: signedTransactions})
+	// Since we waited for user input when getting the password, which could take unbound amount of time -
+	// create a new context for broadcast, to reset the timeout.
+	broadcastCtx, broadcastCancel := context.WithTimeout(context.Background(), daemonTimeout)
+	defer broadcastCancel()
+
+	response, err := daemonClient.Broadcast(broadcastCtx, &pb.BroadcastRequest{Transactions: signedTransactions})
 	if err != nil {
 		return err
 	}
@@ -72,6 +88,13 @@ func send(conf *sendConfig) error {
 	fmt.Println("Transaction ID(s): ")
 	for _, txID := range response.TxIDs {
 		fmt.Printf("\t%s\n", txID)
+	}
+
+	if conf.Verbose {
+		fmt.Println("Serialized Transaction(s) (can be parsed via the `parse` command or resent via `broadcast`): ")
+		for _, signedTx := range signedTransactions {
+			fmt.Printf("\t%x\n\n", signedTx)
+		}
 	}
 
 	return nil

@@ -119,9 +119,13 @@ func HandlePruningPointAndItsAnticoneRequests(context PruningPointAndItsAnticone
 			}
 
 			for i, blockHash := range pointAndItsAnticone {
-				block, err := context.Domain().Consensus().GetBlock(blockHash)
+				block, found, err := context.Domain().Consensus().GetBlock(blockHash)
 				if err != nil {
 					return err
+				}
+
+				if !found {
+					return protocolerrors.Errorf(false, "pruning point anticone block %s not found", blockHash)
 				}
 
 				err = outgoingRoute.Enqueue(appmessage.DomainBlockWithTrustedDataToBlockWithTrustedDataV4(block, trustedDataDAABlockIndexes[*blockHash], trustedDataGHOSTDAGDataIndexes[*blockHash]))

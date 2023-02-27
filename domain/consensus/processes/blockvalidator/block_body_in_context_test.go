@@ -41,7 +41,7 @@ func TestCheckBlockIsNotPruned(t *testing.T) {
 			t.Fatalf("AddBlock: %+v", err)
 		}
 
-		beforePruningBlock, err := tc.GetBlock(tipHash)
+		beforePruningBlock, _, err := tc.GetBlock(tipHash)
 		if err != nil {
 			t.Fatalf("beforePruningBlock: %+v", err)
 		}
@@ -199,7 +199,7 @@ func TestIsFinalizedTransaction(t *testing.T) {
 			t.Fatalf("Error getting block DAA score : %+v", err)
 		}
 		blockParents := block.Header.DirectParents()
-		parentToSpend, err := tc.GetBlock(blockParents[0])
+		parentToSpend, _, err := tc.GetBlock(blockParents[0])
 		if err != nil {
 			t.Fatalf("Error getting block1: %+v", err)
 		}

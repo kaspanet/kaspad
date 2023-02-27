@@ -88,7 +88,7 @@ func SerializePartiallySignedTransaction(partiallySignedTransaction *PartiallySi
 	return proto.Marshal(partiallySignedTransactionToProto(partiallySignedTransaction))
 }
 
-//DeserializeDomainTransaction Deserialize a Transaction to an *externalapi.DomainTransaction
+// DeserializeDomainTransaction Deserialize a Transaction to an *externalapi.DomainTransaction
 func DeserializeDomainTransaction(serializedTransactionMessage []byte) (*externalapi.DomainTransaction, error) {
 	protoTransactionMessage := &protoserialization.TransactionMessage{}
 	err := proto.Unmarshal(serializedTransactionMessage, protoTransactionMessage)

@@ -72,7 +72,7 @@ func (c *RPCClient) connect() error {
 	remoteVersion := getInfoResponse.ServerVersion
 
 	if localVersion != remoteVersion {
-		return errors.Errorf("Server version mismatch, expect: %s, got: %s", localVersion, remoteVersion)
+		log.Warnf("version mismatch, client: %s, server: %s - expected responses and requests may deviate", localVersion, remoteVersion)
 	}
 
 	return nil
@@ -143,6 +143,9 @@ func (c *RPCClient) handleClientDisconnected() {
 }
 
 func (c *RPCClient) handleClientError(err error) {
+	if atomic.LoadUint32(&c.isClosed) == 1 {
+		return
+	}
 	log.Warnf("Received error from client: %s", err)
 	c.handleClientDisconnected()
 }
@@ -159,7 +162,7 @@ func (c *RPCClient) Close() error {
 		return errors.Errorf("Cannot close a client that had already been closed")
 	}
 	c.rpcRouter.router.Close()
-	return nil
+	return c.GRPCClient.Close()
 }
 
 // Address returns the address the RPC client connected to

@@ -35,7 +35,7 @@ func (x *KaspadMessage_GetConnectedPeerInfoResponse) fromAppMessage(message *app
 			TimeOffset:                info.TimeOffset,
 			UserAgent:                 info.UserAgent,
 			AdvertisedProtocolVersion: info.AdvertisedProtocolVersion,
-			TimeConnected:             info.TimeOffset,
+			TimeConnected:             info.TimeConnected,
 			IsIbdPeer:                 info.IsIBDPeer,
 		}
 	}

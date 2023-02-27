@@ -72,7 +72,8 @@ func New(
 		maxBlockParents:   maxBlockParents,
 		mergeSetSizeLimit: mergeSetSizeLimit,
 		genesisHash:       genesisHash,
-		databaseContext:   databaseContext,
+
+		databaseContext: databaseContext,
 
 		ghostdagManager:       ghostdagManager,
 		dagTopologyManager:    dagTopologyManager,

@@ -846,6 +846,77 @@ func (pm *pruningManager) calculateDiffBetweenPreviousAndCurrentPruningPoints(st
 	return oldDiff.DiffFrom(newDiff.ToImmutable())
 }
 
+// This function takes 2 chain blocks (currentPruningHash, previousPruningHash) and finds
+// the UTXO diff between them by iterating over acceptance data of the chain blocks in between.
+func (pm *pruningManager) calculateDiffBetweenPreviousAndCurrentPruningPointsUsingAcceptanceData(stagingArea *model.StagingArea, currentPruningHash *externalapi.DomainHash) (externalapi.UTXODiff, error) {
+	onEnd := logger.LogAndMeasureExecutionTime(log, "pruningManager.calculateDiffBetweenPreviousAndCurrentPruningPoints__UsingAcceptanceData")
+	defer onEnd()
+	if currentPruningHash.Equal(pm.genesisHash) {
+		iter, err := pm.consensusStateManager.RestorePastUTXOSetIterator(stagingArea, currentPruningHash)
+		if err != nil {
+			return nil, err
+		}
+		set := make(map[externalapi.DomainOutpoint]externalapi.UTXOEntry)
+		for ok := iter.First(); ok; ok = iter.Next() {
+			outpoint, entry, err := iter.Get()
+			if err != nil {
+				return nil, err
+			}
+			set[*outpoint] = entry
+		}
+		return utxo.NewUTXODiffFromCollections(utxo.NewUTXOCollection(set), utxo.NewUTXOCollection(make(map[externalapi.DomainOutpoint]externalapi.UTXOEntry)))
+	}
+
+	pruningPointIndex, err := pm.pruningStore.CurrentPruningPointIndex(pm.databaseContext, stagingArea)
+	if err != nil {
+		return nil, err
+	}
+
+	if pruningPointIndex == 0 {
+		return nil, errors.Errorf("previous pruning point doesn't exist")
+	}
+
+	previousPruningHash, err := pm.pruningStore.PruningPointByIndex(pm.databaseContext, stagingArea, pruningPointIndex-1)
+	if err != nil {
+		return nil, err
+	}
+
+	utxoDiff := utxo.NewMutableUTXODiff()
+
+	iterator, err := pm.dagTraversalManager.SelectedChildIterator(stagingArea, currentPruningHash, previousPruningHash, false)
+	if err != nil {
+		return nil, err
+	}
+	defer iterator.Close()
+
+	for ok := iterator.First(); ok; ok = iterator.Next() {
+		child, err := iterator.Get()
+		if err != nil {
+			return nil, err
+		}
+		chainBlockAcceptanceData, err := pm.acceptanceDataStore.Get(pm.databaseContext, stagingArea, child)
+		if err != nil {
+			return nil, err
+		}
+		chainBlockHeader, err := pm.blockHeaderStore.BlockHeader(pm.databaseContext, stagingArea, child)
+		if err != nil {
+			return nil, err
+		}
+		for _, blockAcceptanceData := range chainBlockAcceptanceData {
+			for _, transactionAcceptanceData := range blockAcceptanceData.TransactionAcceptanceData {
+				if transactionAcceptanceData.IsAccepted {
+					err = utxoDiff.AddTransaction(transactionAcceptanceData.Transaction, chainBlockHeader.DAAScore())
+					if err != nil {
+						return nil, err
+					}
+				}
+			}
+		}
+	}
+
+	return utxoDiff.ToImmutable(), err
+}
+
 // finalityScore is the number of finality intervals passed since
 // the given block.
 func (pm *pruningManager) finalityScore(blueScore uint64) uint64 {
@@ -930,14 +1001,20 @@ func (pm *pruningManager) updatePruningPoint() error {
 	log.Debugf("Restoring the pruning point UTXO set")
 	utxoSetDiff, err := pm.calculateDiffBetweenPreviousAndCurrentPruningPoints(stagingArea, pruningPoint)
 	if err != nil {
-		return err
+		log.Infof("Calculating pruning points diff through utxo diff children failed %s. Falling back to calculation "+
+			"through acceptance data", err)
+
+		utxoSetDiff, err = pm.calculateDiffBetweenPreviousAndCurrentPruningPointsUsingAcceptanceData(stagingArea, pruningPoint)
+		if err != nil {
+			return err
+		}
 	}
 	log.Debugf("Updating the pruning point UTXO set")
 	err = pm.pruningStore.UpdatePruningPointUTXOSet(pm.databaseContext, utxoSetDiff)
 	if err != nil {
 		return err
 	}
-	if pm.shouldSanityCheckPruningUTXOSet {
+	if pm.shouldSanityCheckPruningUTXOSet && !pruningPoint.Equal(pm.genesisHash) {
 		err = pm.validateUTXOSetFitsCommitment(stagingArea, pruningPoint)
 		if err != nil {
 			return err

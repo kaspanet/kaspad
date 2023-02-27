@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"github.com/gofrs/flock"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -399,4 +400,34 @@ func decryptMnemonic(numThreads uint8, encryptedPrivateKey *EncryptedMnemonic, p
 	}
 
 	return string(decrypted), nil
+}
+
+// flockMap is a map that holds all lock file handlers. This map guarantees that
+// the associated locked file handler will never get cleaned by the GC, because
+// once they are cleaned the associated file will be unlocked.
+var flockMap = make(map[string]*flock.Flock)
+
+// TryLock tries to acquire an exclusive lock for the file.
+func (d *File) TryLock() error {
+	if _, ok := flockMap[d.path]; ok {
+		return errors.Errorf("file %s is already locked", d.path)
+	}
+
+	lockFile := flock.New(d.path + ".lock")
+	err := createFileDirectoryIfDoesntExist(lockFile.Path())
+	if err != nil {
+		return err
+	}
+
+	flockMap[d.path] = lockFile
+
+	success, err := lockFile.TryLock()
+	if err != nil {
+		return err
+	}
+
+	if !success {
+		return errors.Errorf("%s is locked and cannot be used. Make sure that no other active wallet command is using it.", d.path)
+	}
+	return nil
 }

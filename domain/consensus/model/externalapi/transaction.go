@@ -2,6 +2,7 @@ package externalapi
 
 import (
 	"bytes"
+	"encoding/binary"
 	"fmt"
 
 	"github.com/pkg/errors"
@@ -240,6 +241,23 @@ func (spk *ScriptPublicKey) Equal(other *ScriptPublicKey) bool {
 	}
 
 	return bytes.Equal(spk.Script, other.Script)
+}
+
+// String stringifies a ScriptPublicKey.
+func (spk *ScriptPublicKey) String() string {
+	var versionBytes = make([]byte, 2) // uint16
+	binary.LittleEndian.PutUint16(versionBytes, spk.Version)
+	versionString := string(versionBytes)
+	scriptString := string(spk.Script)
+	return versionString + scriptString
+}
+
+// NewScriptPublicKeyFromString converts the given string to a scriptPublicKey
+func NewScriptPublicKeyFromString(ScriptPublicKeyString string) *ScriptPublicKey {
+	bytes := []byte(ScriptPublicKeyString)
+	version := binary.LittleEndian.Uint16(bytes[:2])
+	script := bytes[2:]
+	return &ScriptPublicKey{Script: script, Version: version}
 }
 
 // DomainTransactionOutput represents a Kaspad transaction output

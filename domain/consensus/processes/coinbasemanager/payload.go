@@ -28,7 +28,7 @@ func (c *coinbaseManager) serializeCoinbasePayload(blueScore uint64,
 	binary.LittleEndian.PutUint64(payload[:uint64Len], blueScore)
 	binary.LittleEndian.PutUint64(payload[uint64Len:], subsidy)
 
-	payload[uint64Len+lengthOfSubsidy] = uint8(coinbaseData.ScriptPublicKey.Version)
+	binary.LittleEndian.PutUint16(payload[uint64Len+lengthOfSubsidy:], coinbaseData.ScriptPublicKey.Version)
 	payload[uint64Len+lengthOfSubsidy+lengthOfVersionScriptPubKey] = uint8(len(coinbaseData.ScriptPublicKey.Script))
 	copy(payload[uint64Len+lengthOfSubsidy+lengthOfVersionScriptPubKey+lengthOfScriptPubKeyLength:], coinbaseData.ScriptPublicKey.Script)
 	copy(payload[uint64Len+lengthOfSubsidy+lengthOfVersionScriptPubKey+lengthOfScriptPubKeyLength+scriptLengthOfScriptPubKey:], coinbaseData.ExtraData)
@@ -52,7 +52,7 @@ func ModifyCoinbasePayload(payload []byte, coinbaseData *externalapi.DomainCoinb
 		payload = newPayload
 	}
 
-	payload[uint64Len+lengthOfSubsidy] = uint8(coinbaseData.ScriptPublicKey.Version)
+	binary.LittleEndian.PutUint16(payload[uint64Len+lengthOfSubsidy:uint64Len+lengthOfSubsidy+lengthOfVersionScriptPubKey], coinbaseData.ScriptPublicKey.Version)
 	payload[uint64Len+lengthOfSubsidy+lengthOfVersionScriptPubKey] = uint8(len(coinbaseData.ScriptPublicKey.Script))
 	copy(payload[uint64Len+lengthOfSubsidy+lengthOfVersionScriptPubKey+lengthOfScriptPubKeyLength:], coinbaseData.ScriptPublicKey.Script)
 	copy(payload[uint64Len+lengthOfSubsidy+lengthOfVersionScriptPubKey+lengthOfScriptPubKeyLength+scriptLengthOfScriptPubKey:], coinbaseData.ExtraData)
@@ -73,7 +73,8 @@ func (c *coinbaseManager) ExtractCoinbaseDataBlueScoreAndSubsidy(coinbaseTx *ext
 	blueScore = binary.LittleEndian.Uint64(coinbaseTx.Payload[:uint64Len])
 	subsidy = binary.LittleEndian.Uint64(coinbaseTx.Payload[uint64Len:])
 
-	scriptPubKeyVersion := uint16(coinbaseTx.Payload[uint64Len+lengthOfSubsidy])
+	scriptPubKeyVersion := binary.LittleEndian.Uint16(coinbaseTx.Payload[uint64Len+lengthOfSubsidy : uint64Len+lengthOfSubsidy+uint16Len])
+
 	scriptPubKeyScriptLength := coinbaseTx.Payload[uint64Len+lengthOfSubsidy+lengthOfVersionScriptPubKey]
 
 	if scriptPubKeyScriptLength > c.coinbasePayloadScriptPublicKeyMaxLength {

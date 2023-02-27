@@ -214,7 +214,8 @@ var MainnetParams = Params{
 	RPCPort:     "16110",
 	DefaultPort: "16111",
 	DNSSeeds: []string{
-		"mainnet-dnsseed.daglabs-dev.com",
+		// This DNS seeder is run by Wolfie
+		"mainnet-dnsseed.kas.pa",
 		// This DNS seeder is run by Denis Mashkevich
 		"mainnet-dnsseed-1.kaspanet.org",
 		// This DNS seeder is run by Denis Mashkevich
@@ -296,7 +297,11 @@ var TestnetParams = Params{
 	Net:         appmessage.Testnet,
 	RPCPort:     "16210",
 	DefaultPort: "16211",
-	DNSSeeds:    []string{"testnet-9-dnsseed.daglabs-dev.com"},
+	DNSSeeds: []string{
+		"testnet-10-dnsseed.kas.pa",
+		// This DNS seeder is run by Tiram
+		"seeder1-testnet.kaspad.net",
+	},
 
 	// DAG parameters
 	GenesisBlock:                    &testnetGenesisBlock,

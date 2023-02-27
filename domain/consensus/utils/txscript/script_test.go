@@ -6,6 +6,7 @@ package txscript
 
 import (
 	"bytes"
+	"encoding/hex"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"reflect"
 	"testing"
@@ -3581,50 +3582,92 @@ func TestHasCanonicalPush(t *testing.T) {
 	}
 }
 
+func hexDecode(src string) []byte {
+	decoded, err := hex.DecodeString(src)
+	if err != nil {
+		panic(err)
+	}
+	return decoded
+}
+
 // TestGetPreciseSigOps ensures the more precise signature operation counting
 // mechanism which includes signatures in P2SH scripts works as expected.
 func TestGetPreciseSigOps(t *testing.T) {
 	t.Parallel()
 
-	tests := []struct {
-		name      string
-		scriptSig []byte
-		nSigOps   int
-	}{
-		{
-			name:      "scriptSig doesn't parse",
-			scriptSig: mustParseShortForm("PUSHDATA1 0x02", 0),
-		},
-		{
-			name:      "scriptSig isn't push only",
-			scriptSig: mustParseShortForm("1 DUP", 0),
-			nSigOps:   0,
-		},
-		{
-			name:      "scriptSig length 0",
-			scriptSig: nil,
-			nSigOps:   0,
-		},
-		{
-			name: "No script at the end",
-			// No script at end but still push only.
-			scriptSig: mustParseShortForm("1 1", 0),
-			nSigOps:   0,
-		},
-		{
-			name:      "pushed script doesn't parse",
-			scriptSig: mustParseShortForm("DATA_2 PUSHDATA1 0x02", 0),
-		},
-	}
-
-	// The signature in the p2sh script is nonsensical for the tests since
+	// The signature in the p2sh script is nonsensical for most tests since
 	// this script will never be executed. What matters is that it matches
 	// the right pattern.
 	scriptOnly := mustParseShortForm("BLAKE2B DATA_32 0x433ec2ac1ffa1b7b7d0"+
 		"27f564529c57197f9ae88 EQUAL", 0)
 	scriptPubKey := &externalapi.ScriptPublicKey{scriptOnly, 0}
+
+	tests := []struct {
+		name            string
+		scriptSig       []byte
+		scriptPublicKey *externalapi.ScriptPublicKey
+		nSigOps         int
+	}{
+		{
+			name:            "scriptSig doesn't parse",
+			scriptSig:       mustParseShortForm("PUSHDATA1 0x02", 0),
+			scriptPublicKey: scriptPubKey,
+		},
+		{
+			name:            "scriptSig isn't push only",
+			scriptSig:       mustParseShortForm("1 DUP", 0),
+			nSigOps:         0,
+			scriptPublicKey: scriptPubKey,
+		},
+		{
+			name:            "scriptSig length 0",
+			scriptSig:       nil,
+			nSigOps:         0,
+			scriptPublicKey: scriptPubKey,
+		},
+		{
+			name: "No script at the end",
+			// No script at end but still push only.
+			scriptSig:       mustParseShortForm("1 1", 0),
+			nSigOps:         0,
+			scriptPublicKey: scriptPubKey,
+		},
+		{
+			name:            "pushed script doesn't parse",
+			scriptSig:       mustParseShortForm("DATA_2 PUSHDATA1 0x02", 0),
+			scriptPublicKey: scriptPubKey,
+		},
+		{
+			name:      "mainnet multisig transaction 487f94ffa63106f72644068765b9dc629bb63e481210f382667d4a93b69af412",
+			scriptSig: hexDecode("41eb577889fa28283709201ef5b056745c6cf0546dd31666cecd41c40a581b256e885d941b86b14d44efacec12d614e7fcabf7b341660f95bab16b71d766ab010501411c0eeef117ca485d34e4bc0cf6d5b578aa250c5d13ebff0882a7e2eeea1f31e8ecb6755696d194b1b0fcb853afab28b61f3f7cec487bd611df7e57252802f535014c875220ab64c7691713a32ea6dfced9155c5c26e8186426f0697af0db7a4b1340f992d12041ae738d66fe3d21105483e5851778ad73c5cddf0819c5e8fd8a589260d967e72065120722c36d3fac19646258481dd3661fa767da151304af514cb30af5cb5692203cd7690ecb67cbbe6cafad00a7c9133da535298ab164549e0cce2658f7b3032754ae"),
+			scriptPublicKey: &externalapi.ScriptPublicKey{
+				Script:  hexDecode("aa20f38031f61ca23d70844f63a477d07f0b2c2decab907c2e096e548b0e08721c7987"),
+				Version: 0,
+			},
+			nSigOps: 4,
+		},
+		{
+			name:      "a partially parseable script public key",
+			scriptSig: nil,
+			scriptPublicKey: &externalapi.ScriptPublicKey{
+				Script:  mustParseShortForm("CHECKSIG CHECKSIG DATA_1", 0),
+				Version: 0,
+			},
+			nSigOps: 2,
+		},
+		{
+			name:      "p2pk",
+			scriptSig: hexDecode("416db0c0ce824a6d076c8e73aae9987416933df768e07760829cb0685dc0a2bbb11e2c0ced0cab806e111a11cbda19784098fd25db176b6a9d7c93e5747674d32301"),
+			scriptPublicKey: &externalapi.ScriptPublicKey{
+				Script:  hexDecode("208a457ca74ade0492c44c440da1cab5b008d8449150fe2794f0d8f4cce7e8aa27ac"),
+				Version: 0,
+			},
+			nSigOps: 1,
+		},
+	}
+
 	for _, test := range tests {
-		count := GetPreciseSigOpCount(test.scriptSig, scriptPubKey, true)
+		count := GetPreciseSigOpCount(test.scriptSig, test.scriptPublicKey, true)
 		if count != test.nSigOps {
 			t.Errorf("%s: expected count of %d, got %d", test.name,
 				test.nSigOps, count)

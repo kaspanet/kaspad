@@ -76,7 +76,7 @@ func TestValidateTransactionInIsolationAndPopulateMass(t *testing.T) {
 				subnetworks.SubnetworkIDNative,
 				&txSubnetworkData{subnetworks.SubnetworkIDCoinbase, 0, nil},
 				nil,
-				nil, 0},
+				ruleerrors.ErrCoinbaseWithInputs, 0},
 			{"no inputs coinbase",
 				0,
 				1,

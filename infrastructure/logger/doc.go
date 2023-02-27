@@ -15,9 +15,9 @@ variable and overridden per-Backend by using the WithFlags call option. Multiple
 LOGFLAGS options can be specified, separated by commas. The following options
 are recognized:
 
-  longfile: Include the full filepath and line number in all log messages
+	longfile: Include the full filepath and line number in all log messages
 
-  shortfile: Include the filename and line number in all log messages.
-  Overrides longfile.
+	shortfile: Include the filename and line number in all log messages.
+	Overrides longfile.
 */
 package logger

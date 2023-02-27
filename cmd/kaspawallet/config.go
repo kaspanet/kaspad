@@ -52,12 +52,15 @@ type balanceConfig struct {
 }
 
 type sendConfig struct {
-	KeysFile      string   `long:"keys-file" short:"f" description:"Keys file location (default: ~/.kaspawallet/keys.json (*nix), %USERPROFILE%\\AppData\\Local\\Kaspawallet\\key.json (Windows))"`
-	Password      string   `long:"password" short:"p" description:"Wallet password"`
-	DaemonAddress string   `long:"daemonaddress" short:"d" description:"Wallet daemon server to connect to"`
-	ToAddress     string   `long:"to-address" short:"t" description:"The public address to send Kaspa to" required:"true"`
-	FromAddresses []string `long:"from-address" short:"a" description:"Specific public address to send Kaspa from. Use multiple times to accept several addresses" required:"false"`
-	SendAmount    float64  `long:"send-amount" short:"v" description:"An amount to send in Kaspa (e.g. 1234.12345678)" required:"true"`
+	KeysFile                 string   `long:"keys-file" short:"f" description:"Keys file location (default: ~/.kaspawallet/keys.json (*nix), %USERPROFILE%\\AppData\\Local\\Kaspawallet\\key.json (Windows))"`
+	Password                 string   `long:"password" short:"p" description:"Wallet password"`
+	DaemonAddress            string   `long:"daemonaddress" short:"d" description:"Wallet daemon server to connect to"`
+	ToAddress                string   `long:"to-address" short:"t" description:"The public address to send Kaspa to" required:"true"`
+	FromAddresses            []string `long:"from-address" short:"a" description:"Specific public address to send Kaspa from. Use multiple times to accept several addresses" required:"false"`
+	SendAmount               float64  `long:"send-amount" short:"v" description:"An amount to send in Kaspa (e.g. 1234.12345678)"`
+	IsSendAll                bool     `long:"send-all" description:"Send all the Kaspa in the wallet (mutually exclusive with --send-amount)"`
+	UseExistingChangeAddress bool     `long:"use-existing-change-address" short:"u" description:"Will use an existing change address (in case no change address was ever used, it will use a new one)"`
+	Verbose                  bool     `long:"show-serialized" short:"s" description:"Show a list of hex encoded sent transactions"`
 	config.NetworkFlags
 }
 
@@ -68,10 +71,12 @@ type sweepConfig struct {
 }
 
 type createUnsignedTransactionConfig struct {
-	DaemonAddress string   `long:"daemonaddress" short:"d" description:"Wallet daemon server to connect to"`
-	ToAddress     string   `long:"to-address" short:"t" description:"The public address to send Kaspa to" required:"true"`
-	FromAddresses []string `long:"from-address" short:"a" description:"Specific public address to send Kaspa from. Use multiple times to accept several addresses" required:"false"`
-	SendAmount    float64  `long:"send-amount" short:"v" description:"An amount to send in Kaspa (e.g. 1234.12345678)" required:"true"`
+	DaemonAddress            string   `long:"daemonaddress" short:"d" description:"Wallet daemon server to connect to"`
+	ToAddress                string   `long:"to-address" short:"t" description:"The public address to send Kaspa to" required:"true"`
+	FromAddresses            []string `long:"from-address" short:"a" description:"Specific public address to send Kaspa from. Use multiple times to accept several addresses" required:"false"`
+	SendAmount               float64  `long:"send-amount" short:"v" description:"An amount to send in Kaspa (e.g. 1234.12345678)"`
+	IsSendAll                bool     `long:"send-all" description:"Send all the Kaspa in the wallet (mutually exclusive with --send-amount)"`
+	UseExistingChangeAddress bool     `long:"use-existing-change-address" short:"u" description:"Will use an existing change address (in case no change address was ever used, it will use a new one)"`
 	config.NetworkFlags
 }
 
@@ -213,6 +218,10 @@ func parseCommandLine() (subCommand string, config interface{}) {
 		if err != nil {
 			printErrorAndExit(err)
 		}
+		err = validateSendConfig(sendConf)
+		if err != nil {
+			printErrorAndExit(err)
+		}
 		config = sendConf
 	case sweepSubCmd:
 		combineNetworkFlags(&sweepConf.NetworkFlags, &cfg.NetworkFlags)
@@ -224,6 +233,10 @@ func parseCommandLine() (subCommand string, config interface{}) {
 	case createUnsignedTransactionSubCmd:
 		combineNetworkFlags(&createUnsignedTransactionConf.NetworkFlags, &cfg.NetworkFlags)
 		err := createUnsignedTransactionConf.ResolveNetwork(parser)
+		if err != nil {
+			printErrorAndExit(err)
+		}
+		err = validateCreateUnsignedTransactionConf(createUnsignedTransactionConf)
 		if err != nil {
 			printErrorAndExit(err)
 		}
@@ -280,6 +293,24 @@ func parseCommandLine() (subCommand string, config interface{}) {
 	}
 
 	return parser.Command.Active.Name, config
+}
+
+func validateCreateUnsignedTransactionConf(conf *createUnsignedTransactionConfig) error {
+	if (!conf.IsSendAll && conf.SendAmount == 0) ||
+		(conf.IsSendAll && conf.SendAmount > 0) {
+
+		return errors.New("exactly one of '--send-amount' or '--all' must be specified")
+	}
+	return nil
+}
+
+func validateSendConfig(conf *sendConfig) error {
+	if (!conf.IsSendAll && conf.SendAmount == 0) ||
+		(conf.IsSendAll && conf.SendAmount > 0) {
+
+		return errors.New("exactly one of '--send-amount' or '--all' must be specified")
+	}
+	return nil
 }
 
 func combineNetworkFlags(dst, src *config.NetworkFlags) {

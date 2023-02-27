@@ -105,7 +105,16 @@ func mineBlocks(consensusConfig *consensus.Config, rpcClient *rpc.Client, blockC
 func mineOrFetchBlock(blockData JSONBlock, mdb *miningDB, testConsensus testapi.TestConsensus) (*externalapi.DomainBlock, error) {
 	hash := mdb.hashByID(blockData.ID)
 	if mdb.hashByID(blockData.ID) != nil {
-		return testConsensus.GetBlock(hash)
+		block, found, err := testConsensus.GetBlock(hash)
+		if err != nil {
+			return nil, err
+		}
+
+		if !found {
+			return nil, errors.Errorf("block %s is missing", hash)
+		}
+
+		return block, nil
 	}
 
 	parentHashes := make([]*externalapi.DomainHash, len(blockData.Parents))
