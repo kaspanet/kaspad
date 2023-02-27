@@ -13,10 +13,12 @@ the box' for most users. However, there are also a wide variety of flags that
 can be used to control it.
 
 Usage:
-  kaspad [OPTIONS]
+
+	kaspad [OPTIONS]
 
 For an up-to-date help message:
-  kaspad --help
+
+	kaspad --help
 
 The long form of all option flags (except -C) can be specified in a configuration
 file that is automatically parsed when kaspad starts up. By default, the

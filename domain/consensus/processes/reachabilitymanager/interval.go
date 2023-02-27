@@ -161,7 +161,9 @@ func intervalSplitWithExponentialBias(ri *model.ReachabilityInterval, sizes []ui
 
 // exponentialFractions returns a fraction of each size in sizes
 // as follows:
-//   fraction[i] = 2^size[i] / sum_j(2^size[j])
+//
+//	fraction[i] = 2^size[i] / sum_j(2^size[j])
+//
 // In the code below the above equation is divided by 2^max(size)
 // to avoid exploding numbers. Note that in 1 / 2^(max(size)-size[i])
 // we divide 1 by potentially a very large number, which will

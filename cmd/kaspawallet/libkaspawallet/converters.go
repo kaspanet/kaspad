@@ -10,7 +10,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/utils/utxo"
 )
 
-//KaspawalletdUTXOsTolibkaspawalletUTXOs converts a  []*pb.UtxosByAddressesEntry to a []*libkaspawallet.UTXO
+// KaspawalletdUTXOsTolibkaspawalletUTXOs converts a  []*pb.UtxosByAddressesEntry to a []*libkaspawallet.UTXO
 func KaspawalletdUTXOsTolibkaspawalletUTXOs(kaspawalletdUtxoEntires []*pb.UtxosByAddressesEntry) ([]*UTXO, error) {
 	UTXOs := make([]*UTXO, len(kaspawalletdUtxoEntires))
 	for i, entry := range kaspawalletdUtxoEntires {
