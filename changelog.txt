@@ -1,4 +1,11 @@
-Kaspad v0.12.12 - 2023-02-28
+Kaspad v0.12.13 - 2023-03-06
+===========================
+
+* Bump golang.org/x/crypto from 0.0.0-20210513164829-c07d793c2f9a to 0.1.0 (#2195)
+* Bump golang.org/x/net from 0.0.0-20210405180319-a5a99cb37ef4 to 0.7.0 (#2194)
+* Avoid sending transactions with no funds (#2193)
+
+Kaspad v0.12.12 - 2023-03-06
 ===========================
 
 * Rename last references to blockheight (#2089)
