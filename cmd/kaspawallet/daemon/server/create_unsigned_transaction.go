@@ -62,6 +62,10 @@ func (s *server) createUnsignedTransactions(address string, amount uint64, isSen
 		return nil, err
 	}
 
+	if len(selectedUTXOs) == 0 {
+		return nil, errors.Errorf("couldn't find funds to spend")
+	}
+
 	changeAddress, changeWalletAddress, err := s.changeAddress(useExistingChangeAddress, fromAddresses)
 	if err != nil {
 		return nil, err
