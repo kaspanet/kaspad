@@ -1,3 +1,21 @@
+Kaspad v0.12.13 - 2023-03-06
+===========================
+
+* Bump golang.org/x/crypto from 0.0.0-20210513164829-c07d793c2f9a to 0.1.0 (#2195)
+* Bump golang.org/x/net from 0.0.0-20210405180319-a5a99cb37ef4 to 0.7.0 (#2194)
+* Avoid sending transactions with no funds (#2193)
+
+Kaspad v0.12.12 - 2023-03-06
+===========================
+
+* Rename last references to blockheight (#2089)
+* Add code of conduct (#2183)
+* Extend TestGetPreciseSigOps with more tests (#2188)
+* Add Dockerfile to kaspawallet (#2187)
+* Add `--send-all` to `kaspawallet send` command (#2181)
+* Bump golang.org/x/text from 0.3.5 to 0.3.8 (#2190)
+* Upgrade to go 1.19 (#2191)
+
 Kaspad v0.12.11 - 2022-12-1
 ===========================
 

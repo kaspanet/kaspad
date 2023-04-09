@@ -22,7 +22,8 @@ func (s *server) CreateUnsignedTransactions(_ context.Context, request *pb.Creat
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	unsignedTransactions, err := s.createUnsignedTransactions(request.Address, request.Amount, request.From, request.UseExistingChangeAddress)
+	unsignedTransactions, err := s.createUnsignedTransactions(request.Address, request.Amount, request.IsSendAll,
+		request.From, request.UseExistingChangeAddress)
 	if err != nil {
 		return nil, err
 	}
@@ -30,7 +31,7 @@ func (s *server) CreateUnsignedTransactions(_ context.Context, request *pb.Creat
 	return &pb.CreateUnsignedTransactionsResponse{UnsignedTransactions: unsignedTransactions}, nil
 }
 
-func (s *server) createUnsignedTransactions(address string, amount uint64, fromAddressesString []string, useExistingChangeAddress bool) ([][]byte, error) {
+func (s *server) createUnsignedTransactions(address string, amount uint64, isSendAll bool, fromAddressesString []string, useExistingChangeAddress bool) ([][]byte, error) {
 	if !s.isSynced() {
 		return nil, errors.Errorf("wallet daemon is not synced yet, %s", s.formatSyncStateReport())
 	}
@@ -56,9 +57,13 @@ func (s *server) createUnsignedTransactions(address string, amount uint64, fromA
 		fromAddresses = append(fromAddresses, fromAddress)
 	}
 
-	selectedUTXOs, changeSompi, err := s.selectUTXOs(amount, feePerInput, fromAddresses)
+	selectedUTXOs, spendValue, changeSompi, err := s.selectUTXOs(amount, isSendAll, feePerInput, fromAddresses)
 	if err != nil {
 		return nil, err
+	}
+
+	if len(selectedUTXOs) == 0 {
+		return nil, errors.Errorf("couldn't find funds to spend")
 	}
 
 	changeAddress, changeWalletAddress, err := s.changeAddress(useExistingChangeAddress, fromAddresses)
@@ -68,7 +73,7 @@ func (s *server) createUnsignedTransactions(address string, amount uint64, fromA
 
 	payments := []*libkaspawallet.Payment{{
 		Address: toAddress,
-		Amount:  amount,
+		Amount:  spendValue,
 	}}
 	if changeSompi > 0 {
 		payments = append(payments, &libkaspawallet.Payment{
@@ -90,15 +95,15 @@ func (s *server) createUnsignedTransactions(address string, amount uint64, fromA
 	return unsignedTransactions, nil
 }
 
-func (s *server) selectUTXOs(spendAmount uint64, feePerInput uint64, fromAddresses []*walletAddress) (
-	selectedUTXOs []*libkaspawallet.UTXO, changeSompi uint64, err error,
-) {
+func (s *server) selectUTXOs(spendAmount uint64, isSendAll bool, feePerInput uint64, fromAddresses []*walletAddress) (
+	selectedUTXOs []*libkaspawallet.UTXO, totalReceived uint64, changeSompi uint64, err error) {
+
 	selectedUTXOs = []*libkaspawallet.UTXO{}
 	totalValue := uint64(0)
 
 	dagInfo, err := s.rpcClient.GetBlockDAGInfo()
 	if err != nil {
-		return nil, 0, err
+		return nil, 0, 0, err
 	}
 
 	for _, utxo := range s.utxosSortedByAmount {
@@ -120,21 +125,29 @@ func (s *server) selectUTXOs(spendAmount uint64, feePerInput uint64, fromAddress
 			UTXOEntry:      utxo.UTXOEntry,
 			DerivationPath: s.walletAddressPath(utxo.address),
 		})
+
 		totalValue += utxo.UTXOEntry.Amount()
 
 		fee := feePerInput * uint64(len(selectedUTXOs))
 		totalSpend := spendAmount + fee
-		if totalValue >= totalSpend {
+		if !isSendAll && totalValue >= totalSpend {
 			break
 		}
 	}
 
 	fee := feePerInput * uint64(len(selectedUTXOs))
-	totalSpend := spendAmount + fee
+	var totalSpend uint64
+	if isSendAll {
+		totalSpend = totalValue
+		totalReceived = totalValue - fee
+	} else {
+		totalSpend = spendAmount + fee
+		totalReceived = spendAmount
+	}
 	if totalValue < totalSpend {
-		return nil, 0, errors.Errorf("Insufficient funds for send: %f required, while only %f available",
+		return nil, 0, 0, errors.Errorf("Insufficient funds for send: %f required, while only %f available",
 			float64(totalSpend)/constants.SompiPerKaspa, float64(totalValue)/constants.SompiPerKaspa)
 	}
 
-	return selectedUTXOs, totalValue - totalSpend, nil
+	return selectedUTXOs, totalReceived, totalValue - totalSpend, nil
 }

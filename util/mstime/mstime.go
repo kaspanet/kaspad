@@ -28,6 +28,7 @@ func (t Time) UnixSeconds() int64 {
 }
 
 // String returns the time formatted using the format string
+//
 //	"2006-01-02 15:04:05.999999999 -0700 MST"
 func (t Time) String() string {
 	return t.time.String()

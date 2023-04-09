@@ -33,13 +33,17 @@ func send(conf *sendConfig) error {
 	ctx, cancel := context.WithTimeout(context.Background(), daemonTimeout)
 	defer cancel()
 
-	sendAmountSompi := uint64(conf.SendAmount * constants.SompiPerKaspa)
+	var sendAmountSompi uint64
+	if !conf.IsSendAll {
+		sendAmountSompi = uint64(conf.SendAmount * constants.SompiPerKaspa)
+	}
 
 	createUnsignedTransactionsResponse, err :=
 		daemonClient.CreateUnsignedTransactions(ctx, &pb.CreateUnsignedTransactionsRequest{
 			From:                     conf.FromAddresses,
 			Address:                  conf.ToAddress,
 			Amount:                   sendAmountSompi,
+			IsSendAll:                conf.IsSendAll,
 			UseExistingChangeAddress: conf.UseExistingChangeAddress,
 		})
 	if err != nil {

@@ -10,10 +10,12 @@ package externalapi
 //
 // For example, assume a selected parent chain with IDs as depicted below, and the
 // stop block is genesis:
-// 	genesis -> 1 -> 2 -> ... -> 15 -> 16  -> 17  -> 18
+//
+//	genesis -> 1 -> 2 -> ... -> 15 -> 16  -> 17  -> 18
 //
 // The block locator for block 17 would be the hashes of blocks:
-//  [17 16 14 11 7 2 genesis]
+//
+//	[17 16 14 11 7 2 genesis]
 type BlockLocator []*DomainHash
 
 // Clone returns a clone of BlockLocator
