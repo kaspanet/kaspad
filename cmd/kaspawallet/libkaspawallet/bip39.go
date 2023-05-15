@@ -38,7 +38,7 @@ func defaultPath(isMultisig bool) string {
 // MasterPublicKeyFromMnemonic returns the master public key with the correct derivation for the given mnemonic.
 func MasterPublicKeyFromMnemonic(params *dagconfig.Params, mnemonic string, passPhrase string, isMultisig bool) (string, error) {
 	path := defaultPath(isMultisig)
-	extendedKey, err := extendedKeyFromMnemonicAndPath(mnemonic, path, params)
+	extendedKey, err := extendedKeyFromMnemonicAndPath(mnemonic, path, passPhrase, params)
 	if err != nil {
 		return "", err
 	}
@@ -52,7 +52,7 @@ func MasterPublicKeyFromMnemonic(params *dagconfig.Params, mnemonic string, pass
 }
 
 func extendedKeyFromMnemonicAndPath(mnemonic string, path string, passPhrase string, params *dagconfig.Params) (*bip32.ExtendedKey, error) {
-	seed := bip39.NewSeed(mnemonic, "")
+	seed := bip39.NewSeed(mnemonic, passPhrase)
 	version, err := versionFromParams(params)
 	if err != nil {
 		return nil, err

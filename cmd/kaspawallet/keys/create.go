@@ -59,13 +59,22 @@ func encryptedMnemonicExtendedPublicKeyPairs(params *dagconfig.Params, mnemonics
 		if subtle.ConstantTimeCompare(password, confirmPassword) != 1 {
 			return nil, nil, errors.New("Passwords are not identical")
 		}
+
+		passPhrase = []byte(GetPassword("Enter passphrase (press 'ENTER' to skip):"))
+		if len(passPhrase) == 0 {
+			confirmPassPhrase := []byte(GetPassword("Confirm passphrase:"))
+
+			if subtle.ConstantTimeCompare(passPhrase, confirmPassPhrase) != 1 {
+				return nil, nil, errors.New("PassPhrase are not identical")
+			}
+		}
 	}
 
 	encryptedPrivateKeys = make([]*EncryptedMnemonic, 0, len(mnemonics))
 	extendedPublicKeys = make([]string, 0, len(mnemonics))
 
 	for _, mnemonic := range mnemonics {
-		extendedPublicKey, err := libkaspawallet.MasterPublicKeyFromMnemonic(params, mnemonic, isMultisig)
+		extendedPublicKey, err := libkaspawallet.MasterPublicKeyFromMnemonic(params, mnemonic, passPhrase, isMultisig)
 		if err != nil {
 			return nil, nil, err
 		}

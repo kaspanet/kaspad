@@ -59,12 +59,13 @@ func sign(params *dagconfig.Params, mnemonic string, partiallySignedTransaction 
 		)
 		partiallySignedTransaction.Tx.Inputs[i].SigOpCount = byte(len(partiallySignedInput.PubKeySignaturePairs))
 	}
-
+	
+	passPhrase = []byte(GetPassword("Enter passphrase (press 'ENTER' to skip):"))
 	signed := false
 	for i, partiallySignedInput := range partiallySignedTransaction.PartiallySignedInputs {
 		isMultisig := len(partiallySignedInput.PubKeySignaturePairs) > 1
 		path := defaultPath(isMultisig)
-		extendedKey, err := extendedKeyFromMnemonicAndPath(mnemonic, path, params)
+		extendedKey, err := extendedKeyFromMnemonicAndPath(mnemonic, path, passPhrase, params)
 		if err != nil {
 			return err
 		}
