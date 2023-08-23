@@ -268,6 +268,12 @@ Non-breaking changes:
 * ExpectedHeaderPruningPoint fix (#1876)
 * Changes to libkaspawallet to support Kaspaper (#1878)
 * Get rid of genesis's UTXO dump (#1867)
+주요 변경 사항:
+* devnet 및 testnet에서 헤더 질량을 무시합니다(#1879)
+* CalcSubsidy에서 사용하지 않는 인수 제거(#1877)
+* ExpectedHeaderPruningPoint 수정(#1876)
+* Kaspaper를 지원하기 위해 libkaspwallet 변경(#1878)
+* Genesis의 UTXO 덤프 제거(#1867)
 
 Kaspad v0.11.2 - 2021-11-11
 ===========================

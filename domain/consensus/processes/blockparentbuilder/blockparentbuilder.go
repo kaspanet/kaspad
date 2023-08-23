@@ -83,6 +83,7 @@ func (bpb *blockParentBuilder) BuildParents(stagingArea *model.StagingArea,
 	}
 
 	if !foundFirstParentInFutureOfPruningPoint {
+		// BuildParents는 향후 가지치기 지점에서 적어도 하나의 부모를 얻어야 합니다.
 		return nil, errors.New("BuildParents should get at least one parent in the future of the pruning point")
 	}
 
@@ -144,6 +145,8 @@ func (bpb *blockParentBuilder) BuildParents(stagingArea *model.StagingArea,
 				if hasReachabilityData {
 					// If a block is in the future of one of the virtual genesis children it means we have the full DAG between the current block
 					// and this parent, so there's no need for any indirect reference blocks, and normal reachability queries can be used.
+					// 블록이 가상 창세기 자식 중 하나의 미래에 있는 경우 이는 현재 블록 사이에 전체 DAG가 있음을 의미합니다.
+					// 및 이 부모이므로 간접 참조 블록이 필요하지 않으며 일반적인 연결 가능성 쿼리를 사용할 수 있습니다.
 					isInFutureOfVirtualGenesisChildren, err = bpb.dagTopologyManager.IsAnyAncestorOf(stagingArea, virtualGenesisChildren, parent)
 					if err != nil {
 						return nil, err
@@ -160,6 +163,16 @@ func (bpb *blockParentBuilder) BuildParents(stagingArea *model.StagingArea,
 				// the virtual genesis children in the pruning point anticone. So we can check which
 				// virtual genesis children have this block as parent and use those block as
 				// reference blocks.
+				// 참조 블록은 도달 가능성 쿼리에서 다음을 확인하는 데 사용되는 블록입니다.
+				// 후보자는 다른 후보자의 미래에 있습니다. 대부분의 경우 이는 단지
+				// 자체를 차단하지만 블록에 필요한 도달 가능성 데이터가 없는 경우
+				// 대신 미래에 일부 블록을 참조로 사용합니다.
+				// 먼저 가지치기 지점의 미래에 부모를 추가했는지 확인하면 다음을 수행할 수 있습니다.
+				// 가지치기에서 일부 블록의 과거에 있는 가지치기된 후보를 알고 있습니다.
+				// 포인트 안티콘은 다음 중 하나의 상위(관련 수준)여야 합니다.
+				// 가지치기 지점 안티콘의 가상 기원 자식. 그래서 우리는 어느 것을 확인할 수 있습니다
+				// 가상 제네시스 자식은 이 블록을 부모로 갖고 해당 블록을 다음과 같이 사용합니다.
+				// 참조 블록.
 				var referenceBlocks []*externalapi.DomainHash
 				if isInFutureOfVirtualGenesisChildren {
 					referenceBlocks = []*externalapi.DomainHash{parent}
@@ -217,6 +230,8 @@ func (bpb *blockParentBuilder) BuildParents(stagingArea *model.StagingArea,
 
 				// We should add the block as a candidate if it's in the future of another candidate
 				// or in the anticone of all candidates.
+				// 블록이 다른 후보의 미래에 있는 경우 해당 블록을 후보로 추가해야 합니다.
+				// 또는 모든 후보자의 반대쪽에 있습니다.
 				if !isAncestorOfAnyCandidate || toRemove.Length() > 0 {
 					candidatesByLevelToReferenceBlocksMap[blockLevel][*parent] = referenceBlocks
 				}

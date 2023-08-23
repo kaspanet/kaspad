@@ -4,6 +4,7 @@ import (
 	// we need to embed the utxoset of mainnet genesis here
 	_ "embed"
 	"fmt"
+
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
@@ -233,6 +234,16 @@ func (bp *blockProcessor) loadUTXODataForGenesis(stagingArea *model.StagingArea,
 	// The actual UTXO set that fits Mainnet's genesis' UTXO commitment was removed from the codebase in order
 	// to make reduce the consensus initialization time and the compiled binary size, but can be still
 	// found here for anyone to verify: https://github.com/kaspanet/kaspad/blob/dbf18d8052f000ba0079be9e79b2d6f5a98b74ca/domain/consensus/processes/blockprocessor/resources/utxos.gz
+	// 참고: 적용된 UTXO 집합 및 다중 집합은 UTXO 약속을 충족하지 않습니다.
+	// 메인넷의 탄생. 그렇기 때문에 모든 블록은 제네시스 위에 구축될 것입니다.
+	// 잘못된 UTXO 약속도 갖게 되며 합의에 도달할 수 없습니다.
+	// 나머지 네트워크와 함께.
+	// 이것이 바로 제네시스 위에 직접 블록을 가져오는 것이 금지된 이유이며, 유일한 방법은
+	// 최근 노드에 대한 증명을 요청하여 생성된 노드의 최신 상태를 얻습니다.
+	// 가지치기 지점.
+	// 메인넷 제네시스의 UTXO 공약에 맞는 실제 UTXO 세트는 순서대로 코드베이스에서 제거되었습니다.
+	// 합의 초기화 시간과 컴파일된 바이너리 크기를 줄이기 위해 하지만 여전히
+	// 누구나 확인할 수 있도록 여기에 있습니다: https://github.com/kaspanet/kaspad/blob/dbf18d8052f000ba0079be9e79b2d6f5a98b74ca/domain/consensus/processes/blockprocessor/resources/utxos.gz
 	bp.consensusStateStore.StageVirtualUTXODiff(stagingArea, utxo.NewUTXODiff())
 	bp.utxoDiffStore.Stage(stagingArea, blockHash, utxo.NewUTXODiff(), nil)
 	bp.multisetStore.Stage(stagingArea, blockHash, multiset.New())

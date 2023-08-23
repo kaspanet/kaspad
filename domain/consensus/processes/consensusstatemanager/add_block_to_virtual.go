@@ -83,6 +83,7 @@ func (csm *consensusStateManager) isCandidateToBeNextVirtualSelectedParent(
 	defer log.Tracef("isCandidateToBeNextVirtualSelectedParent end for block %s", blockHash)
 
 	if blockHash.Equal(csm.genesisHash) {
+		// "블록 %s은(는) 최초 블록이므로 "+"정의에 따라 선택된 부모"
 		log.Debugf("Block %s is the genesis block, therefore it is "+
 			"the selected parent by definition", blockHash)
 		return true, nil
@@ -128,6 +129,7 @@ func (csm *consensusStateManager) calculateNewTips(
 	defer log.Tracef("calculateNewTips end for new tip %s", newTipHash)
 
 	if newTipHash.Equal(csm.genesisHash) {
+		// 새로운 팁은 제네시스 블록이므로 정의상 유일한 팁입니다.
 		log.Debugf("The new tip is the genesis block, therefore it is the only tip by definition")
 		return []*externalapi.DomainHash{newTipHash}, nil
 	}
