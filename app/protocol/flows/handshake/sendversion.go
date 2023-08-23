@@ -1,12 +1,12 @@
 package handshake
 
 import (
-	"github.com/c4ei/YunSeokYeol/app/appmessage"
-	"github.com/c4ei/YunSeokYeol/app/protocol/common"
-	peerpkg "github.com/c4ei/YunSeokYeol/app/protocol/peer"
-	"github.com/c4ei/YunSeokYeol/infrastructure/logger"
-	"github.com/c4ei/YunSeokYeol/infrastructure/network/netadapter/router"
-	"github.com/c4ei/YunSeokYeol/version"
+	"github.com/c4ei/yunseokyeol/app/appmessage"
+	"github.com/c4ei/yunseokyeol/app/protocol/common"
+	peerpkg "github.com/c4ei/yunseokyeol/app/protocol/peer"
+	"github.com/c4ei/yunseokyeol/infrastructure/logger"
+	"github.com/c4ei/yunseokyeol/infrastructure/network/netadapter/router"
+	"github.com/c4ei/yunseokyeol/version"
 	"github.com/pkg/errors"
 )
 

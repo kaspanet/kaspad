@@ -7,18 +7,18 @@ import (
 	"sync"
 	"time"
 
-	"github.com/c4ei/YunSeokYeol/domain/consensus/model/externalapi"
+	"github.com/c4ei/yunseokyeol/domain/consensus/model/externalapi"
 
-	"github.com/c4ei/YunSeokYeol/util/txmass"
+	"github.com/c4ei/yunseokyeol/util/txmass"
 
-	"github.com/c4ei/YunSeokYeol/util/profiling"
+	"github.com/c4ei/yunseokyeol/util/profiling"
 
-	"github.com/c4ei/YunSeokYeol/cmd/kaspawallet/daemon/pb"
-	"github.com/c4ei/YunSeokYeol/cmd/kaspawallet/keys"
-	"github.com/c4ei/YunSeokYeol/domain/dagconfig"
-	"github.com/c4ei/YunSeokYeol/infrastructure/network/rpcclient"
-	"github.com/c4ei/YunSeokYeol/infrastructure/os/signal"
-	"github.com/c4ei/YunSeokYeol/util/panics"
+	"github.com/c4ei/yunseokyeol/cmd/kaspawallet/daemon/pb"
+	"github.com/c4ei/yunseokyeol/cmd/kaspawallet/keys"
+	"github.com/c4ei/yunseokyeol/domain/dagconfig"
+	"github.com/c4ei/yunseokyeol/infrastructure/network/rpcclient"
+	"github.com/c4ei/yunseokyeol/infrastructure/os/signal"
+	"github.com/c4ei/yunseokyeol/util/panics"
 	"github.com/pkg/errors"
 
 	"google.golang.org/grpc"

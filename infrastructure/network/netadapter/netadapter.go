@@ -4,12 +4,12 @@ import (
 	"sync"
 	"sync/atomic"
 
-	"github.com/c4ei/YunSeokYeol/app/appmessage"
-	"github.com/c4ei/YunSeokYeol/infrastructure/config"
-	"github.com/c4ei/YunSeokYeol/infrastructure/network/netadapter/id"
-	routerpkg "github.com/c4ei/YunSeokYeol/infrastructure/network/netadapter/router"
-	"github.com/c4ei/YunSeokYeol/infrastructure/network/netadapter/server"
-	"github.com/c4ei/YunSeokYeol/infrastructure/network/netadapter/server/grpcserver"
+	"github.com/c4ei/yunseokyeol/app/appmessage"
+	"github.com/c4ei/yunseokyeol/infrastructure/config"
+	"github.com/c4ei/yunseokyeol/infrastructure/network/netadapter/id"
+	routerpkg "github.com/c4ei/yunseokyeol/infrastructure/network/netadapter/router"
+	"github.com/c4ei/yunseokyeol/infrastructure/network/netadapter/server"
+	"github.com/c4ei/yunseokyeol/infrastructure/network/netadapter/server/grpcserver"
 	"github.com/pkg/errors"
 )
 

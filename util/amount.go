@@ -8,7 +8,7 @@ import (
 	"math"
 	"strconv"
 
-	"github.com/c4ei/YunSeokYeol/domain/consensus/utils/constants"
+	"github.com/c4ei/yunseokyeol/domain/consensus/utils/constants"
 	"github.com/pkg/errors"
 )
 

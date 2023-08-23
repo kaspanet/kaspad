@@ -1,7 +1,7 @@
 package serialization
 
 import (
-	"github.com/c4ei/YunSeokYeol/domain/consensus/model/externalapi"
+	"github.com/c4ei/yunseokyeol/domain/consensus/model/externalapi"
 )
 
 // BlockGHOSTDAGDataHashPairToDbBlockGhostdagDataHashPair converts *externalapi.BlockGHOSTDAGDataHashPair to *DbBlockGHOSTDAGDataHashPair

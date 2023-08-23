@@ -3,10 +3,10 @@ package server
 import (
 	"context"
 
-	"github.com/c4ei/YunSeokYeol/app/appmessage"
-	"github.com/c4ei/YunSeokYeol/cmd/kaspawallet/daemon/pb"
-	"github.com/c4ei/YunSeokYeol/cmd/kaspawallet/libkaspawallet"
-	"github.com/c4ei/YunSeokYeol/util"
+	"github.com/c4ei/yunseokyeol/app/appmessage"
+	"github.com/c4ei/yunseokyeol/cmd/kaspawallet/daemon/pb"
+	"github.com/c4ei/yunseokyeol/cmd/kaspawallet/libkaspawallet"
+	"github.com/c4ei/yunseokyeol/util"
 )
 
 func (s *server) GetExternalSpendableUTXOs(_ context.Context, request *pb.GetExternalSpendableUTXOsRequest) (*pb.GetExternalSpendableUTXOsResponse, error) {

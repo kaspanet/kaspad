@@ -4,8 +4,8 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/c4ei/YunSeokYeol/domain/consensus/model"
-	"github.com/c4ei/YunSeokYeol/domain/consensus/model/externalapi"
+	"github.com/c4ei/yunseokyeol/domain/consensus/model"
+	"github.com/c4ei/yunseokyeol/domain/consensus/model/externalapi"
 )
 
 func TestReachabilityData_Equal(t *testing.T) {

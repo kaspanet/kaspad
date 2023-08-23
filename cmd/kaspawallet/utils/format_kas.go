@@ -3,7 +3,7 @@ package utils
 import (
 	"fmt"
 
-	"github.com/c4ei/YunSeokYeol/domain/consensus/utils/constants"
+	"github.com/c4ei/yunseokyeol/domain/consensus/utils/constants"
 )
 
 // FormatKas takes the amount of sompis as uint64, and returns amount of KAS with 8  decimal places

@@ -7,10 +7,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/c4ei/YunSeokYeol/domain/consensus"
-	"github.com/c4ei/YunSeokYeol/domain/consensus/model/externalapi"
-	"github.com/c4ei/YunSeokYeol/domain/consensus/utils/testutils"
-	"github.com/c4ei/YunSeokYeol/domain/dagconfig"
+	"github.com/c4ei/yunseokyeol/domain/consensus"
+	"github.com/c4ei/yunseokyeol/domain/consensus/model/externalapi"
+	"github.com/c4ei/yunseokyeol/domain/consensus/utils/testutils"
+	"github.com/c4ei/yunseokyeol/domain/dagconfig"
 )
 
 // TestGenerateFastPruningIBDTest generates the json needed for dag-for-fast-pruning-ibd-test.json.gz

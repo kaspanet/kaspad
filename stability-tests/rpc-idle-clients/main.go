@@ -3,10 +3,10 @@ package main
 import (
 	"time"
 
-	"github.com/c4ei/YunSeokYeol/stability-tests/common"
-	"github.com/c4ei/YunSeokYeol/stability-tests/common/rpc"
-	"github.com/c4ei/YunSeokYeol/util/panics"
-	"github.com/c4ei/YunSeokYeol/util/profiling"
+	"github.com/c4ei/yunseokyeol/stability-tests/common"
+	"github.com/c4ei/yunseokyeol/stability-tests/common/rpc"
+	"github.com/c4ei/yunseokyeol/util/panics"
+	"github.com/c4ei/yunseokyeol/util/profiling"
 	"github.com/pkg/errors"
 )
 

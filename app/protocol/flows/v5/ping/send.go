@@ -3,15 +3,15 @@ package ping
 import (
 	"time"
 
-	"github.com/c4ei/YunSeokYeol/app/protocol/common"
-	"github.com/c4ei/YunSeokYeol/app/protocol/flowcontext"
+	"github.com/c4ei/yunseokyeol/app/protocol/common"
+	"github.com/c4ei/yunseokyeol/app/protocol/flowcontext"
 	"github.com/pkg/errors"
 
-	"github.com/c4ei/YunSeokYeol/app/appmessage"
-	peerpkg "github.com/c4ei/YunSeokYeol/app/protocol/peer"
-	"github.com/c4ei/YunSeokYeol/app/protocol/protocolerrors"
-	"github.com/c4ei/YunSeokYeol/infrastructure/network/netadapter/router"
-	"github.com/c4ei/YunSeokYeol/util/random"
+	"github.com/c4ei/yunseokyeol/app/appmessage"
+	peerpkg "github.com/c4ei/yunseokyeol/app/protocol/peer"
+	"github.com/c4ei/yunseokyeol/app/protocol/protocolerrors"
+	"github.com/c4ei/yunseokyeol/infrastructure/network/netadapter/router"
+	"github.com/c4ei/yunseokyeol/util/random"
 )
 
 // SendPingsContext is the interface for the context needed for the SendPings flow.

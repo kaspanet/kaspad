@@ -3,13 +3,13 @@ package mempool
 import (
 	"fmt"
 
-	"github.com/c4ei/YunSeokYeol/util/txmass"
+	"github.com/c4ei/yunseokyeol/util/txmass"
 
-	"github.com/c4ei/YunSeokYeol/domain/consensus/utils/consensushashing"
+	"github.com/c4ei/yunseokyeol/domain/consensus/utils/consensushashing"
 
-	"github.com/c4ei/YunSeokYeol/domain/consensus/model/externalapi"
-	"github.com/c4ei/YunSeokYeol/domain/consensus/utils/constants"
-	"github.com/c4ei/YunSeokYeol/domain/consensus/utils/txscript"
+	"github.com/c4ei/yunseokyeol/domain/consensus/model/externalapi"
+	"github.com/c4ei/yunseokyeol/domain/consensus/utils/constants"
+	"github.com/c4ei/yunseokyeol/domain/consensus/utils/txscript"
 )
 
 const (

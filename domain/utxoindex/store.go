@@ -3,10 +3,10 @@ package utxoindex
 import (
 	"encoding/binary"
 
-	"github.com/c4ei/YunSeokYeol/domain/consensus/database/binaryserialization"
-	"github.com/c4ei/YunSeokYeol/domain/consensus/model/externalapi"
-	"github.com/c4ei/YunSeokYeol/infrastructure/db/database"
-	"github.com/c4ei/YunSeokYeol/infrastructure/logger"
+	"github.com/c4ei/yunseokyeol/domain/consensus/database/binaryserialization"
+	"github.com/c4ei/yunseokyeol/domain/consensus/model/externalapi"
+	"github.com/c4ei/yunseokyeol/infrastructure/db/database"
+	"github.com/c4ei/yunseokyeol/infrastructure/logger"
 	"github.com/pkg/errors"
 )
 

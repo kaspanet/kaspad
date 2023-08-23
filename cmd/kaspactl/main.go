@@ -5,14 +5,14 @@ import (
 	"os"
 	"time"
 
-	"github.com/c4ei/YunSeokYeol/version"
+	"github.com/c4ei/yunseokyeol/version"
 
-	"github.com/c4ei/YunSeokYeol/infrastructure/network/netadapter/server/grpcserver/protowire"
+	"github.com/c4ei/yunseokyeol/infrastructure/network/netadapter/server/grpcserver/protowire"
 
 	"github.com/pkg/errors"
 	"google.golang.org/protobuf/encoding/protojson"
 
-	"github.com/c4ei/YunSeokYeol/infrastructure/network/rpcclient/grpcclient"
+	"github.com/c4ei/yunseokyeol/infrastructure/network/rpcclient/grpcclient"
 )
 
 func main() {

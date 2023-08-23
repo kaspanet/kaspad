@@ -3,11 +3,11 @@ package dagtraversalmanager_test
 import (
 	"testing"
 
-	"github.com/c4ei/YunSeokYeol/domain/consensus/model"
+	"github.com/c4ei/yunseokyeol/domain/consensus/model"
 
-	"github.com/c4ei/YunSeokYeol/domain/consensus"
-	"github.com/c4ei/YunSeokYeol/domain/consensus/model/externalapi"
-	"github.com/c4ei/YunSeokYeol/domain/consensus/utils/testutils"
+	"github.com/c4ei/yunseokyeol/domain/consensus"
+	"github.com/c4ei/yunseokyeol/domain/consensus/model/externalapi"
+	"github.com/c4ei/yunseokyeol/domain/consensus/utils/testutils"
 )
 
 func TestLowestChainBlockAboveOrEqualToBlueScore(t *testing.T) {

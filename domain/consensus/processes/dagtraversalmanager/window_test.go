@@ -5,13 +5,13 @@ import (
 	"sort"
 	"testing"
 
-	"github.com/c4ei/YunSeokYeol/domain/consensus/model"
+	"github.com/c4ei/yunseokyeol/domain/consensus/model"
 
-	"github.com/c4ei/YunSeokYeol/domain/consensus"
-	"github.com/c4ei/YunSeokYeol/domain/consensus/model/externalapi"
-	"github.com/c4ei/YunSeokYeol/domain/consensus/utils/hashset"
-	"github.com/c4ei/YunSeokYeol/domain/consensus/utils/testutils"
-	"github.com/c4ei/YunSeokYeol/domain/dagconfig"
+	"github.com/c4ei/yunseokyeol/domain/consensus"
+	"github.com/c4ei/yunseokyeol/domain/consensus/model/externalapi"
+	"github.com/c4ei/yunseokyeol/domain/consensus/utils/hashset"
+	"github.com/c4ei/yunseokyeol/domain/consensus/utils/testutils"
+	"github.com/c4ei/yunseokyeol/domain/dagconfig"
 	"github.com/pkg/errors"
 )
 

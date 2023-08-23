@@ -5,20 +5,20 @@ import (
 	"sync"
 	"sync/atomic"
 
-	"github.com/c4ei/YunSeokYeol/app/protocol/common"
+	"github.com/c4ei/yunseokyeol/app/protocol/common"
 
 	"github.com/pkg/errors"
 
-	"github.com/c4ei/YunSeokYeol/domain"
+	"github.com/c4ei/yunseokyeol/domain"
 
-	"github.com/c4ei/YunSeokYeol/domain/consensus/model/externalapi"
+	"github.com/c4ei/yunseokyeol/domain/consensus/model/externalapi"
 
-	"github.com/c4ei/YunSeokYeol/app/protocol/flowcontext"
-	peerpkg "github.com/c4ei/YunSeokYeol/app/protocol/peer"
-	"github.com/c4ei/YunSeokYeol/infrastructure/config"
-	"github.com/c4ei/YunSeokYeol/infrastructure/network/addressmanager"
-	"github.com/c4ei/YunSeokYeol/infrastructure/network/connmanager"
-	"github.com/c4ei/YunSeokYeol/infrastructure/network/netadapter"
+	"github.com/c4ei/yunseokyeol/app/protocol/flowcontext"
+	peerpkg "github.com/c4ei/yunseokyeol/app/protocol/peer"
+	"github.com/c4ei/yunseokyeol/infrastructure/config"
+	"github.com/c4ei/yunseokyeol/infrastructure/network/addressmanager"
+	"github.com/c4ei/yunseokyeol/infrastructure/network/connmanager"
+	"github.com/c4ei/yunseokyeol/infrastructure/network/netadapter"
 )
 
 // Manager manages the p2p protocol

@@ -8,7 +8,7 @@ import (
 	_ "net/http/pprof"
 	"os"
 
-	"github.com/c4ei/YunSeokYeol/app"
+	"github.com/c4ei/yunseokyeol/app"
 )
 
 func main() {

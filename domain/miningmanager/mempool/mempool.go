@@ -3,10 +3,10 @@ package mempool
 import (
 	"sync"
 
-	"github.com/c4ei/YunSeokYeol/domain/consensusreference"
+	"github.com/c4ei/yunseokyeol/domain/consensusreference"
 
-	"github.com/c4ei/YunSeokYeol/domain/consensus/model/externalapi"
-	miningmanagermodel "github.com/c4ei/YunSeokYeol/domain/miningmanager/model"
+	"github.com/c4ei/yunseokyeol/domain/consensus/model/externalapi"
+	miningmanagermodel "github.com/c4ei/yunseokyeol/domain/miningmanager/model"
 )
 
 type mempool struct {

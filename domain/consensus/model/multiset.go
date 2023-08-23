@@ -1,6 +1,6 @@
 package model
 
-import "github.com/c4ei/YunSeokYeol/domain/consensus/model/externalapi"
+import "github.com/c4ei/yunseokyeol/domain/consensus/model/externalapi"
 
 // Multiset represents a secp256k1 multiset
 type Multiset interface {

@@ -13,10 +13,10 @@ import (
 
 	"github.com/gofrs/flock"
 
-	"github.com/c4ei/YunSeokYeol/cmd/kaspawallet/utils"
+	"github.com/c4ei/yunseokyeol/cmd/kaspawallet/utils"
 
-	"github.com/c4ei/YunSeokYeol/domain/dagconfig"
-	"github.com/c4ei/YunSeokYeol/util"
+	"github.com/c4ei/yunseokyeol/domain/dagconfig"
+	"github.com/c4ei/yunseokyeol/util"
 	"github.com/pkg/errors"
 	"golang.org/x/crypto/argon2"
 	"golang.org/x/crypto/chacha20poly1305"

@@ -6,13 +6,13 @@ import (
 	"strings"
 	"time"
 
-	"github.com/c4ei/YunSeokYeol/app/appmessage"
-	"github.com/c4ei/YunSeokYeol/domain/consensus"
-	"github.com/c4ei/YunSeokYeol/domain/consensus/model/externalapi"
-	"github.com/c4ei/YunSeokYeol/domain/consensus/model/testapi"
-	"github.com/c4ei/YunSeokYeol/domain/consensus/utils/consensushashing"
-	"github.com/c4ei/YunSeokYeol/domain/consensus/utils/mining"
-	"github.com/c4ei/YunSeokYeol/stability-tests/common/rpc"
+	"github.com/c4ei/yunseokyeol/app/appmessage"
+	"github.com/c4ei/yunseokyeol/domain/consensus"
+	"github.com/c4ei/yunseokyeol/domain/consensus/model/externalapi"
+	"github.com/c4ei/yunseokyeol/domain/consensus/model/testapi"
+	"github.com/c4ei/yunseokyeol/domain/consensus/utils/consensushashing"
+	"github.com/c4ei/yunseokyeol/domain/consensus/utils/mining"
+	"github.com/c4ei/yunseokyeol/stability-tests/common/rpc"
 	"github.com/pkg/errors"
 )
 

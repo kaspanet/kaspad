@@ -24,8 +24,8 @@ WORKDIR /app
 
 RUN apk add --no-cache ca-certificates tini
 
-COPY --from=build /go/src/github.com/c4ei/YunSeokYeol/kaspad /app/
-COPY --from=build /go/src/github.com/c4ei/YunSeokYeol/infrastructure/config/sample-kaspad.conf /app/
+COPY --from=build /go/src/github.com/c4ei/yunseokyeol/kaspad /app/
+COPY --from=build /go/src/github.com/c4ei/yunseokyeol/infrastructure/config/sample-kaspad.conf /app/
 
 USER nobody
 ENTRYPOINT [ "/sbin/tini", "--" ]

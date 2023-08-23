@@ -3,13 +3,13 @@ package coinbasemanager
 import (
 	"math"
 
-	"github.com/c4ei/YunSeokYeol/domain/consensus/model"
-	"github.com/c4ei/YunSeokYeol/domain/consensus/model/externalapi"
-	"github.com/c4ei/YunSeokYeol/domain/consensus/utils/constants"
-	"github.com/c4ei/YunSeokYeol/domain/consensus/utils/hashset"
-	"github.com/c4ei/YunSeokYeol/domain/consensus/utils/subnetworks"
-	"github.com/c4ei/YunSeokYeol/domain/consensus/utils/transactionhelper"
-	"github.com/c4ei/YunSeokYeol/infrastructure/db/database"
+	"github.com/c4ei/yunseokyeol/domain/consensus/model"
+	"github.com/c4ei/yunseokyeol/domain/consensus/model/externalapi"
+	"github.com/c4ei/yunseokyeol/domain/consensus/utils/constants"
+	"github.com/c4ei/yunseokyeol/domain/consensus/utils/hashset"
+	"github.com/c4ei/yunseokyeol/domain/consensus/utils/subnetworks"
+	"github.com/c4ei/yunseokyeol/domain/consensus/utils/transactionhelper"
+	"github.com/c4ei/yunseokyeol/infrastructure/db/database"
 	"github.com/pkg/errors"
 )
 

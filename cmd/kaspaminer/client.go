@@ -3,9 +3,9 @@ package main
 import (
 	"time"
 
-	"github.com/c4ei/YunSeokYeol/app/appmessage"
-	"github.com/c4ei/YunSeokYeol/infrastructure/logger"
-	"github.com/c4ei/YunSeokYeol/infrastructure/network/rpcclient"
+	"github.com/c4ei/yunseokyeol/app/appmessage"
+	"github.com/c4ei/yunseokyeol/infrastructure/logger"
+	"github.com/c4ei/yunseokyeol/infrastructure/network/rpcclient"
 	"github.com/pkg/errors"
 )
 

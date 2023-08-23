@@ -7,17 +7,17 @@ import (
 	"runtime"
 	"time"
 
-	"github.com/c4ei/YunSeokYeol/infrastructure/config"
-	"github.com/c4ei/YunSeokYeol/infrastructure/db/database"
-	"github.com/c4ei/YunSeokYeol/infrastructure/db/database/ldb"
-	"github.com/c4ei/YunSeokYeol/infrastructure/logger"
-	"github.com/c4ei/YunSeokYeol/infrastructure/os/execenv"
-	"github.com/c4ei/YunSeokYeol/infrastructure/os/limits"
-	"github.com/c4ei/YunSeokYeol/infrastructure/os/signal"
-	"github.com/c4ei/YunSeokYeol/infrastructure/os/winservice"
-	"github.com/c4ei/YunSeokYeol/util/panics"
-	"github.com/c4ei/YunSeokYeol/util/profiling"
-	"github.com/c4ei/YunSeokYeol/version"
+	"github.com/c4ei/yunseokyeol/infrastructure/config"
+	"github.com/c4ei/yunseokyeol/infrastructure/db/database"
+	"github.com/c4ei/yunseokyeol/infrastructure/db/database/ldb"
+	"github.com/c4ei/yunseokyeol/infrastructure/logger"
+	"github.com/c4ei/yunseokyeol/infrastructure/os/execenv"
+	"github.com/c4ei/yunseokyeol/infrastructure/os/limits"
+	"github.com/c4ei/yunseokyeol/infrastructure/os/signal"
+	"github.com/c4ei/yunseokyeol/infrastructure/os/winservice"
+	"github.com/c4ei/yunseokyeol/util/panics"
+	"github.com/c4ei/yunseokyeol/util/profiling"
+	"github.com/c4ei/yunseokyeol/version"
 )
 
 const (

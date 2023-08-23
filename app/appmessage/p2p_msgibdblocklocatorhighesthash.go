@@ -1,7 +1,7 @@
 package appmessage
 
 import (
-	"github.com/c4ei/YunSeokYeol/domain/consensus/model/externalapi"
+	"github.com/c4ei/yunseokyeol/domain/consensus/model/externalapi"
 )
 
 // MsgIBDBlockLocatorHighestHash represents a kaspa BlockLocatorHighestHash message

@@ -3,7 +3,7 @@ package mempoollimits
 import (
 	"path/filepath"
 
-	"github.com/c4ei/YunSeokYeol/stability-tests/common"
+	"github.com/c4ei/yunseokyeol/stability-tests/common"
 	"github.com/jessevdk/go-flags"
 )
 

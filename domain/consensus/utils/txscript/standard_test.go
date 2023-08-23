@@ -9,10 +9,10 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/c4ei/YunSeokYeol/domain/consensus/model/externalapi"
+	"github.com/c4ei/yunseokyeol/domain/consensus/model/externalapi"
 
-	"github.com/c4ei/YunSeokYeol/domain/dagconfig"
-	"github.com/c4ei/YunSeokYeol/util"
+	"github.com/c4ei/yunseokyeol/domain/dagconfig"
+	"github.com/c4ei/yunseokyeol/util"
 )
 
 // mustParseShortForm parses the passed short form script and returns the

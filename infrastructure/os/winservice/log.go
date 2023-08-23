@@ -5,8 +5,8 @@
 package winservice
 
 import (
-	"github.com/c4ei/YunSeokYeol/infrastructure/logger"
-	"github.com/c4ei/YunSeokYeol/util/panics"
+	"github.com/c4ei/yunseokyeol/infrastructure/logger"
+	"github.com/c4ei/yunseokyeol/util/panics"
 )
 
 var log = logger.RegisterSubSystem("CNFG")

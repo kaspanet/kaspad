@@ -5,9 +5,9 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/c4ei/YunSeokYeol/cmd/kaspawallet/libkaspawallet/bip32"
-	"github.com/c4ei/YunSeokYeol/domain/dagconfig"
-	"github.com/c4ei/YunSeokYeol/util"
+	"github.com/c4ei/yunseokyeol/cmd/kaspawallet/libkaspawallet/bip32"
+	"github.com/c4ei/yunseokyeol/domain/dagconfig"
+	"github.com/c4ei/yunseokyeol/util"
 	"github.com/kaspanet/go-secp256k1"
 	"github.com/pkg/errors"
 )

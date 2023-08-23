@@ -4,9 +4,9 @@ import (
 	"encoding/binary"
 	"net"
 
-	"github.com/c4ei/YunSeokYeol/app/appmessage"
-	"github.com/c4ei/YunSeokYeol/infrastructure/db/database"
-	"github.com/c4ei/YunSeokYeol/util/mstime"
+	"github.com/c4ei/yunseokyeol/app/appmessage"
+	"github.com/c4ei/yunseokyeol/infrastructure/db/database"
+	"github.com/c4ei/yunseokyeol/util/mstime"
 	"github.com/pkg/errors"
 )
 

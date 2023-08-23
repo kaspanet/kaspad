@@ -4,14 +4,14 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/c4ei/YunSeokYeol/domain/dagconfig"
+	"github.com/c4ei/yunseokyeol/domain/dagconfig"
 
-	"github.com/c4ei/YunSeokYeol/infrastructure/db/database/ldb"
+	"github.com/c4ei/yunseokyeol/infrastructure/db/database/ldb"
 
-	"github.com/c4ei/YunSeokYeol/infrastructure/db/database"
+	"github.com/c4ei/yunseokyeol/infrastructure/db/database"
 
-	"github.com/c4ei/YunSeokYeol/app"
-	"github.com/c4ei/YunSeokYeol/infrastructure/config"
+	"github.com/c4ei/yunseokyeol/app"
+	"github.com/c4ei/yunseokyeol/infrastructure/config"
 )
 
 type appHarness struct {

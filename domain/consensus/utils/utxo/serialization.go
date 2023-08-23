@@ -4,9 +4,9 @@ import (
 	"bytes"
 	"io"
 
-	"github.com/c4ei/YunSeokYeol/domain/consensus/model/externalapi"
-	"github.com/c4ei/YunSeokYeol/domain/consensus/utils/serialization"
-	"github.com/c4ei/YunSeokYeol/domain/consensus/utils/transactionid"
+	"github.com/c4ei/yunseokyeol/domain/consensus/model/externalapi"
+	"github.com/c4ei/yunseokyeol/domain/consensus/utils/serialization"
+	"github.com/c4ei/yunseokyeol/domain/consensus/utils/transactionid"
 	"github.com/pkg/errors"
 )
 

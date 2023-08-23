@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/c4ei/YunSeokYeol/infrastructure/logger"
-	"github.com/c4ei/YunSeokYeol/stability-tests/common/mine"
-	"github.com/c4ei/YunSeokYeol/stability-tests/common/rpc"
-	"github.com/c4ei/YunSeokYeol/util/panics"
+	"github.com/c4ei/yunseokyeol/infrastructure/logger"
+	"github.com/c4ei/yunseokyeol/stability-tests/common/mine"
+	"github.com/c4ei/yunseokyeol/stability-tests/common/rpc"
+	"github.com/c4ei/yunseokyeol/util/panics"
 )
 
 // log is a logger that is initialized with no output filters. This

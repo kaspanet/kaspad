@@ -1,21 +1,21 @@
 package transactionvalidator_test
 
 import (
-	"github.com/c4ei/YunSeokYeol/domain/consensus"
-	"github.com/c4ei/YunSeokYeol/domain/consensus/ruleerrors"
-	"github.com/c4ei/YunSeokYeol/domain/consensus/utils/consensushashing"
-	"github.com/c4ei/YunSeokYeol/domain/consensus/utils/testutils"
-	"github.com/c4ei/YunSeokYeol/domain/consensus/utils/txscript"
-	"github.com/c4ei/YunSeokYeol/domain/consensus/utils/utxo"
-	"github.com/c4ei/YunSeokYeol/util"
+	"github.com/c4ei/yunseokyeol/domain/consensus"
+	"github.com/c4ei/yunseokyeol/domain/consensus/ruleerrors"
+	"github.com/c4ei/yunseokyeol/domain/consensus/utils/consensushashing"
+	"github.com/c4ei/yunseokyeol/domain/consensus/utils/testutils"
+	"github.com/c4ei/yunseokyeol/domain/consensus/utils/txscript"
+	"github.com/c4ei/yunseokyeol/domain/consensus/utils/utxo"
+	"github.com/c4ei/yunseokyeol/util"
 	"github.com/kaspanet/go-secp256k1"
 
 	"testing"
 
-	"github.com/c4ei/YunSeokYeol/domain/consensus/model"
-	"github.com/c4ei/YunSeokYeol/domain/consensus/model/externalapi"
-	"github.com/c4ei/YunSeokYeol/domain/consensus/utils/constants"
-	"github.com/c4ei/YunSeokYeol/domain/consensus/utils/subnetworks"
+	"github.com/c4ei/yunseokyeol/domain/consensus/model"
+	"github.com/c4ei/yunseokyeol/domain/consensus/model/externalapi"
+	"github.com/c4ei/yunseokyeol/domain/consensus/utils/constants"
+	"github.com/c4ei/yunseokyeol/domain/consensus/utils/subnetworks"
 	"github.com/pkg/errors"
 )
 

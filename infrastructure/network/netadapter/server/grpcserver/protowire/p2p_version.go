@@ -1,9 +1,9 @@
 package protowire
 
 import (
-	"github.com/c4ei/YunSeokYeol/app/appmessage"
-	"github.com/c4ei/YunSeokYeol/infrastructure/network/netadapter/id"
-	"github.com/c4ei/YunSeokYeol/util/mstime"
+	"github.com/c4ei/yunseokyeol/app/appmessage"
+	"github.com/c4ei/yunseokyeol/infrastructure/network/netadapter/id"
+	"github.com/c4ei/yunseokyeol/util/mstime"
 	"github.com/pkg/errors"
 )
 

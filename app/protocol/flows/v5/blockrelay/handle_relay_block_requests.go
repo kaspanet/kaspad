@@ -1,11 +1,11 @@
 package blockrelay
 
 import (
-	"github.com/c4ei/YunSeokYeol/app/appmessage"
-	peerpkg "github.com/c4ei/YunSeokYeol/app/protocol/peer"
-	"github.com/c4ei/YunSeokYeol/app/protocol/protocolerrors"
-	"github.com/c4ei/YunSeokYeol/domain"
-	"github.com/c4ei/YunSeokYeol/infrastructure/network/netadapter/router"
+	"github.com/c4ei/yunseokyeol/app/appmessage"
+	peerpkg "github.com/c4ei/yunseokyeol/app/protocol/peer"
+	"github.com/c4ei/yunseokyeol/app/protocol/protocolerrors"
+	"github.com/c4ei/yunseokyeol/domain"
+	"github.com/c4ei/yunseokyeol/infrastructure/network/netadapter/router"
 	"github.com/pkg/errors"
 )
 

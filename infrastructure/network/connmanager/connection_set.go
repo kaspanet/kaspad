@@ -1,7 +1,7 @@
 package connmanager
 
 import (
-	"github.com/c4ei/YunSeokYeol/infrastructure/network/netadapter"
+	"github.com/c4ei/yunseokyeol/infrastructure/network/netadapter"
 )
 
 type connectionSet map[string]*netadapter.NetConnection

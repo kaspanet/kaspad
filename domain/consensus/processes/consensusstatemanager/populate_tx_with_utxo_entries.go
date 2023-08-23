@@ -1,10 +1,10 @@
 package consensusstatemanager
 
 import (
-	"github.com/c4ei/YunSeokYeol/domain/consensus/model"
-	"github.com/c4ei/YunSeokYeol/domain/consensus/model/externalapi"
-	"github.com/c4ei/YunSeokYeol/domain/consensus/ruleerrors"
-	"github.com/c4ei/YunSeokYeol/domain/consensus/utils/consensushashing"
+	"github.com/c4ei/yunseokyeol/domain/consensus/model"
+	"github.com/c4ei/yunseokyeol/domain/consensus/model/externalapi"
+	"github.com/c4ei/yunseokyeol/domain/consensus/ruleerrors"
+	"github.com/c4ei/yunseokyeol/domain/consensus/utils/consensushashing"
 )
 
 // PopulateTransactionWithUTXOEntries populates the transaction UTXO entries with data from the virtual's UTXO set.

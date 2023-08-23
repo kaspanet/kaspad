@@ -7,8 +7,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/c4ei/YunSeokYeol/infrastructure/network/netadapter/server"
-	"github.com/c4ei/YunSeokYeol/util/panics"
+	"github.com/c4ei/yunseokyeol/infrastructure/network/netadapter/server"
+	"github.com/c4ei/yunseokyeol/util/panics"
 	"github.com/pkg/errors"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/peer"

@@ -1,10 +1,10 @@
 package rpchandlers
 
 import (
-	"github.com/c4ei/YunSeokYeol/app/appmessage"
-	"github.com/c4ei/YunSeokYeol/app/rpc/rpccontext"
-	"github.com/c4ei/YunSeokYeol/infrastructure/network/netadapter/router"
-	"github.com/c4ei/YunSeokYeol/version"
+	"github.com/c4ei/yunseokyeol/app/appmessage"
+	"github.com/c4ei/yunseokyeol/app/rpc/rpccontext"
+	"github.com/c4ei/yunseokyeol/infrastructure/network/netadapter/router"
+	"github.com/c4ei/yunseokyeol/version"
 )
 
 // HandleGetInfo handles the respectively named RPC command

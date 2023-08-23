@@ -7,7 +7,7 @@ package dagconfig
 import (
 	"testing"
 
-	"github.com/c4ei/YunSeokYeol/domain/consensus/utils/consensushashing"
+	"github.com/c4ei/yunseokyeol/domain/consensus/utils/consensushashing"
 )
 
 // TestGenesisBlock tests the genesis block of the main network for validity by

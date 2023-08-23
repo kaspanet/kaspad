@@ -14,7 +14,7 @@ RUN go mod download
 
 COPY . .
 
-WORKDIR /go/src/github.com/c4ei/YunSeokYeol/cmd/kaspaminer
+WORKDIR /go/src/github.com/c4ei/yunseokyeol/cmd/kaspaminer
 RUN GOOS=linux go build -a -installsuffix cgo -o kaspaminer .
 
 # --- multistage docker build: stage #2: runtime image
@@ -23,7 +23,7 @@ WORKDIR /app
 
 RUN apk add --no-cache ca-certificates tini
 
-COPY --from=build /go/src/github.com/c4ei/YunSeokYeol/cmd/kaspaminer/kaspaminer /app/
+COPY --from=build /go/src/github.com/c4ei/yunseokyeol/cmd/kaspaminer/kaspaminer /app/
 
 USER nobody
 ENTRYPOINT [ "/sbin/tini", "--" ]

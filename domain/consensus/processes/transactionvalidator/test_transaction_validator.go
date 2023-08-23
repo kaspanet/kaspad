@@ -1,9 +1,9 @@
 package transactionvalidator
 
 import (
-	"github.com/c4ei/YunSeokYeol/domain/consensus/model"
-	"github.com/c4ei/YunSeokYeol/domain/consensus/model/testapi"
-	"github.com/c4ei/YunSeokYeol/domain/consensus/utils/txscript"
+	"github.com/c4ei/yunseokyeol/domain/consensus/model"
+	"github.com/c4ei/yunseokyeol/domain/consensus/model/testapi"
+	"github.com/c4ei/yunseokyeol/domain/consensus/utils/txscript"
 )
 
 type testTransactionValidator struct {

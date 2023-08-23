@@ -1,6 +1,6 @@
 package model
 
-import "github.com/c4ei/YunSeokYeol/domain/consensus/model/externalapi"
+import "github.com/c4ei/yunseokyeol/domain/consensus/model/externalapi"
 
 // BlockParentBuilder exposes a method to build super-block parents for
 // a given set of direct parents

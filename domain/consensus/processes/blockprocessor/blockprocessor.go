@@ -3,10 +3,10 @@ package blockprocessor
 import (
 	"time"
 
-	"github.com/c4ei/YunSeokYeol/domain/consensus/model"
-	"github.com/c4ei/YunSeokYeol/domain/consensus/model/externalapi"
-	"github.com/c4ei/YunSeokYeol/domain/consensus/processes/blockprocessor/blocklogger"
-	"github.com/c4ei/YunSeokYeol/infrastructure/logger"
+	"github.com/c4ei/yunseokyeol/domain/consensus/model"
+	"github.com/c4ei/yunseokyeol/domain/consensus/model/externalapi"
+	"github.com/c4ei/yunseokyeol/domain/consensus/processes/blockprocessor/blocklogger"
+	"github.com/c4ei/yunseokyeol/infrastructure/logger"
 )
 
 // blockProcessor is responsible for processing incoming blocks

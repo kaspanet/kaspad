@@ -4,12 +4,12 @@ import (
 	"context"
 	"time"
 
-	"github.com/c4ei/YunSeokYeol/app/appmessage"
-	"github.com/c4ei/YunSeokYeol/cmd/kaspawallet/daemon/pb"
-	"github.com/c4ei/YunSeokYeol/cmd/kaspawallet/libkaspawallet"
-	"github.com/c4ei/YunSeokYeol/cmd/kaspawallet/libkaspawallet/serialization"
-	"github.com/c4ei/YunSeokYeol/domain/consensus/model/externalapi"
-	"github.com/c4ei/YunSeokYeol/infrastructure/network/rpcclient"
+	"github.com/c4ei/yunseokyeol/app/appmessage"
+	"github.com/c4ei/yunseokyeol/cmd/kaspawallet/daemon/pb"
+	"github.com/c4ei/yunseokyeol/cmd/kaspawallet/libkaspawallet"
+	"github.com/c4ei/yunseokyeol/cmd/kaspawallet/libkaspawallet/serialization"
+	"github.com/c4ei/yunseokyeol/domain/consensus/model/externalapi"
+	"github.com/c4ei/yunseokyeol/infrastructure/network/rpcclient"
 	"github.com/pkg/errors"
 )
 

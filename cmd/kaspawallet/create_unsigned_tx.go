@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/c4ei/YunSeokYeol/cmd/kaspawallet/daemon/client"
-	"github.com/c4ei/YunSeokYeol/cmd/kaspawallet/daemon/pb"
-	"github.com/c4ei/YunSeokYeol/domain/consensus/utils/constants"
+	"github.com/c4ei/yunseokyeol/cmd/kaspawallet/daemon/client"
+	"github.com/c4ei/yunseokyeol/cmd/kaspawallet/daemon/pb"
+	"github.com/c4ei/yunseokyeol/domain/consensus/utils/constants"
 )
 
 func createUnsignedTransaction(conf *createUnsignedTransactionConfig) error {

@@ -4,22 +4,22 @@ import (
 	"fmt"
 	"sync/atomic"
 
-	"github.com/c4ei/YunSeokYeol/domain/consensus/model/externalapi"
+	"github.com/c4ei/yunseokyeol/domain/consensus/model/externalapi"
 
-	"github.com/c4ei/YunSeokYeol/domain/miningmanager/mempool"
+	"github.com/c4ei/yunseokyeol/domain/miningmanager/mempool"
 
-	"github.com/c4ei/YunSeokYeol/app/protocol"
-	"github.com/c4ei/YunSeokYeol/app/rpc"
-	"github.com/c4ei/YunSeokYeol/domain"
-	"github.com/c4ei/YunSeokYeol/domain/consensus"
-	"github.com/c4ei/YunSeokYeol/domain/utxoindex"
-	"github.com/c4ei/YunSeokYeol/infrastructure/config"
-	infrastructuredatabase "github.com/c4ei/YunSeokYeol/infrastructure/db/database"
-	"github.com/c4ei/YunSeokYeol/infrastructure/network/addressmanager"
-	"github.com/c4ei/YunSeokYeol/infrastructure/network/connmanager"
-	"github.com/c4ei/YunSeokYeol/infrastructure/network/netadapter"
-	"github.com/c4ei/YunSeokYeol/infrastructure/network/netadapter/id"
-	"github.com/c4ei/YunSeokYeol/util/panics"
+	"github.com/c4ei/yunseokyeol/app/protocol"
+	"github.com/c4ei/yunseokyeol/app/rpc"
+	"github.com/c4ei/yunseokyeol/domain"
+	"github.com/c4ei/yunseokyeol/domain/consensus"
+	"github.com/c4ei/yunseokyeol/domain/utxoindex"
+	"github.com/c4ei/yunseokyeol/infrastructure/config"
+	infrastructuredatabase "github.com/c4ei/yunseokyeol/infrastructure/db/database"
+	"github.com/c4ei/yunseokyeol/infrastructure/network/addressmanager"
+	"github.com/c4ei/yunseokyeol/infrastructure/network/connmanager"
+	"github.com/c4ei/yunseokyeol/infrastructure/network/netadapter"
+	"github.com/c4ei/yunseokyeol/infrastructure/network/netadapter/id"
+	"github.com/c4ei/yunseokyeol/util/panics"
 )
 
 // ComponentManager is a wrapper for all the kaspad services

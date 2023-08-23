@@ -4,18 +4,18 @@ import (
 	"sync"
 	"time"
 
-	"github.com/c4ei/YunSeokYeol/util/mstime"
+	"github.com/c4ei/yunseokyeol/util/mstime"
 
-	"github.com/c4ei/YunSeokYeol/domain/consensus/model/externalapi"
+	"github.com/c4ei/yunseokyeol/domain/consensus/model/externalapi"
 
-	"github.com/c4ei/YunSeokYeol/domain"
+	"github.com/c4ei/yunseokyeol/domain"
 
-	peerpkg "github.com/c4ei/YunSeokYeol/app/protocol/peer"
-	"github.com/c4ei/YunSeokYeol/infrastructure/config"
-	"github.com/c4ei/YunSeokYeol/infrastructure/network/addressmanager"
-	"github.com/c4ei/YunSeokYeol/infrastructure/network/connmanager"
-	"github.com/c4ei/YunSeokYeol/infrastructure/network/netadapter"
-	"github.com/c4ei/YunSeokYeol/infrastructure/network/netadapter/id"
+	peerpkg "github.com/c4ei/yunseokyeol/app/protocol/peer"
+	"github.com/c4ei/yunseokyeol/infrastructure/config"
+	"github.com/c4ei/yunseokyeol/infrastructure/network/addressmanager"
+	"github.com/c4ei/yunseokyeol/infrastructure/network/connmanager"
+	"github.com/c4ei/yunseokyeol/infrastructure/network/netadapter"
+	"github.com/c4ei/yunseokyeol/infrastructure/network/netadapter/id"
 )
 
 // OnNewBlockTemplateHandler is a handler function that's triggered when a new block template is available

@@ -1,6 +1,6 @@
 package model
 
-import "github.com/c4ei/YunSeokYeol/domain/consensus/model/externalapi"
+import "github.com/c4ei/yunseokyeol/domain/consensus/model/externalapi"
 
 // BlockBuilder is responsible for creating blocks from the current state
 type BlockBuilder interface {

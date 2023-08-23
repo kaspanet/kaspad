@@ -1,8 +1,8 @@
 package syncmanager
 
 import (
-	"github.com/c4ei/YunSeokYeol/domain/consensus/model"
-	"github.com/c4ei/YunSeokYeol/domain/consensus/model/externalapi"
+	"github.com/c4ei/yunseokyeol/domain/consensus/model"
+	"github.com/c4ei/yunseokyeol/domain/consensus/model/externalapi"
 	"github.com/pkg/errors"
 )
 
@@ -151,7 +151,7 @@ func (sm *syncManager) missingBlockBodyHashes(stagingArea *model.StagingArea, hi
 			// In these cases - return an empty list of blocks to sync
 			return []*externalapi.DomainHash{}, nil
 		}
-		// TODO: Once block children are fixed (https://github.com/c4ei/YunSeokYeol/issues/1499),
+		// TODO: Once block children are fixed (https://github.com/c4ei/yunseokyeol/issues/1499),
 		// this error should be returned rather the logged
 		log.Errorf("No header-only blocks between %s and %s",
 			lowHash, highHash)

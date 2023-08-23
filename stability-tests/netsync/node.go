@@ -8,14 +8,14 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/c4ei/YunSeokYeol/domain/consensus"
+	"github.com/c4ei/yunseokyeol/domain/consensus"
 
-	"github.com/c4ei/YunSeokYeol/app/appmessage"
-	"github.com/c4ei/YunSeokYeol/stability-tests/common"
-	"github.com/c4ei/YunSeokYeol/stability-tests/common/mine"
-	"github.com/c4ei/YunSeokYeol/stability-tests/common/rpc"
-	"github.com/c4ei/YunSeokYeol/util"
-	"github.com/c4ei/YunSeokYeol/util/panics"
+	"github.com/c4ei/yunseokyeol/app/appmessage"
+	"github.com/c4ei/yunseokyeol/stability-tests/common"
+	"github.com/c4ei/yunseokyeol/stability-tests/common/mine"
+	"github.com/c4ei/yunseokyeol/stability-tests/common/rpc"
+	"github.com/c4ei/yunseokyeol/util"
+	"github.com/c4ei/yunseokyeol/util/panics"
 	"github.com/pkg/errors"
 )
 

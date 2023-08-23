@@ -6,10 +6,10 @@ import (
 	"io/ioutil"
 	"strings"
 
-	"github.com/c4ei/YunSeokYeol/cmd/kaspawallet/libkaspawallet/serialization"
-	"github.com/c4ei/YunSeokYeol/domain/consensus/utils/consensushashing"
-	"github.com/c4ei/YunSeokYeol/domain/consensus/utils/constants"
-	"github.com/c4ei/YunSeokYeol/domain/consensus/utils/txscript"
+	"github.com/c4ei/yunseokyeol/cmd/kaspawallet/libkaspawallet/serialization"
+	"github.com/c4ei/yunseokyeol/domain/consensus/utils/consensushashing"
+	"github.com/c4ei/yunseokyeol/domain/consensus/utils/constants"
+	"github.com/c4ei/yunseokyeol/domain/consensus/utils/txscript"
 	"github.com/pkg/errors"
 )
 

@@ -4,18 +4,18 @@ import (
 	"math"
 	"sort"
 
-	"github.com/c4ei/YunSeokYeol/domain/consensus/processes/coinbasemanager"
-	"github.com/c4ei/YunSeokYeol/domain/consensus/utils/merkle"
-	"github.com/c4ei/YunSeokYeol/domain/consensus/utils/transactionhelper"
-	"github.com/c4ei/YunSeokYeol/domain/consensusreference"
-	"github.com/c4ei/YunSeokYeol/util/mstime"
+	"github.com/c4ei/yunseokyeol/domain/consensus/processes/coinbasemanager"
+	"github.com/c4ei/yunseokyeol/domain/consensus/utils/merkle"
+	"github.com/c4ei/yunseokyeol/domain/consensus/utils/transactionhelper"
+	"github.com/c4ei/yunseokyeol/domain/consensusreference"
+	"github.com/c4ei/yunseokyeol/util/mstime"
 
-	"github.com/c4ei/YunSeokYeol/util/difficulty"
+	"github.com/c4ei/yunseokyeol/util/difficulty"
 
-	consensusexternalapi "github.com/c4ei/YunSeokYeol/domain/consensus/model/externalapi"
-	"github.com/c4ei/YunSeokYeol/domain/consensus/ruleerrors"
-	"github.com/c4ei/YunSeokYeol/domain/consensus/utils/subnetworks"
-	miningmanagerapi "github.com/c4ei/YunSeokYeol/domain/miningmanager/model"
+	consensusexternalapi "github.com/c4ei/yunseokyeol/domain/consensus/model/externalapi"
+	"github.com/c4ei/yunseokyeol/domain/consensus/ruleerrors"
+	"github.com/c4ei/yunseokyeol/domain/consensus/utils/subnetworks"
+	miningmanagerapi "github.com/c4ei/yunseokyeol/domain/miningmanager/model"
 	"github.com/pkg/errors"
 )
 
@@ -156,7 +156,7 @@ func (btb *blockTemplateBuilder) BuildBlockTemplate(
 		if err != nil {
 			// mempool.RemoveTransactions might return errors in situations that are perfectly fine in this context.
 			// TODO: Once the mempool invariants are clear, this should be converted back `return nil, err`:
-			// https://github.com/c4ei/YunSeokYeol/issues/1553
+			// https://github.com/c4ei/yunseokyeol/issues/1553
 			log.Criticalf("Error from mempool.RemoveTransactions: %+v", err)
 		}
 		// We can call this recursively without worry because this should almost never happen

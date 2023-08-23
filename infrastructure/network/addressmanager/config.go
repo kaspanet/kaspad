@@ -3,7 +3,7 @@ package addressmanager
 import (
 	"net"
 
-	"github.com/c4ei/YunSeokYeol/infrastructure/config"
+	"github.com/c4ei/yunseokyeol/infrastructure/config"
 )
 
 // Config is a descriptor which specifies the AddressManager instance configuration.

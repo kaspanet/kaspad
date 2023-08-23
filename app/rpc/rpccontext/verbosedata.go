@@ -5,17 +5,17 @@ import (
 	"math"
 	"math/big"
 
-	difficultyPackage "github.com/c4ei/YunSeokYeol/util/difficulty"
+	difficultyPackage "github.com/c4ei/yunseokyeol/util/difficulty"
 	"github.com/pkg/errors"
 
-	"github.com/c4ei/YunSeokYeol/domain/consensus/utils/hashes"
+	"github.com/c4ei/yunseokyeol/domain/consensus/utils/hashes"
 
-	"github.com/c4ei/YunSeokYeol/domain/consensus/utils/txscript"
+	"github.com/c4ei/yunseokyeol/domain/consensus/utils/txscript"
 
-	"github.com/c4ei/YunSeokYeol/app/appmessage"
-	"github.com/c4ei/YunSeokYeol/domain/consensus/model/externalapi"
-	"github.com/c4ei/YunSeokYeol/domain/consensus/utils/consensushashing"
-	"github.com/c4ei/YunSeokYeol/domain/dagconfig"
+	"github.com/c4ei/yunseokyeol/app/appmessage"
+	"github.com/c4ei/yunseokyeol/domain/consensus/model/externalapi"
+	"github.com/c4ei/yunseokyeol/domain/consensus/utils/consensushashing"
+	"github.com/c4ei/yunseokyeol/domain/dagconfig"
 )
 
 // ErrBuildBlockVerboseDataInvalidBlock indicates that a block that was given to BuildBlockVerboseData is invalid.

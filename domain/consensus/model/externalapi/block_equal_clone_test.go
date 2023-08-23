@@ -5,8 +5,8 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/c4ei/YunSeokYeol/domain/consensus/model/externalapi"
-	"github.com/c4ei/YunSeokYeol/domain/consensus/utils/blockheader"
+	"github.com/c4ei/yunseokyeol/domain/consensus/model/externalapi"
+	"github.com/c4ei/yunseokyeol/domain/consensus/utils/blockheader"
 )
 
 type blockToCompare struct {

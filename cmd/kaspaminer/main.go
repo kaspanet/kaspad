@@ -4,17 +4,17 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/c4ei/YunSeokYeol/util"
+	"github.com/c4ei/yunseokyeol/util"
 
-	"github.com/c4ei/YunSeokYeol/version"
+	"github.com/c4ei/yunseokyeol/version"
 
 	"github.com/pkg/errors"
 
 	_ "net/http/pprof"
 
-	"github.com/c4ei/YunSeokYeol/infrastructure/os/signal"
-	"github.com/c4ei/YunSeokYeol/util/panics"
-	"github.com/c4ei/YunSeokYeol/util/profiling"
+	"github.com/c4ei/yunseokyeol/infrastructure/os/signal"
+	"github.com/c4ei/yunseokyeol/util/panics"
+	"github.com/c4ei/yunseokyeol/util/profiling"
 )
 
 func main() {

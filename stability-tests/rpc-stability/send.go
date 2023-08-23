@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/c4ei/YunSeokYeol/infrastructure/network/rpcclient/grpcclient"
+	"github.com/c4ei/yunseokyeol/infrastructure/network/rpcclient/grpcclient"
 	"github.com/pkg/errors"
 )
 

@@ -5,7 +5,7 @@ import (
 	"os"
 	"runtime"
 
-	"github.com/c4ei/YunSeokYeol/infrastructure/os/limits"
+	"github.com/c4ei/yunseokyeol/infrastructure/os/limits"
 )
 
 // Initialize initializes the execution environment required to run kaspad

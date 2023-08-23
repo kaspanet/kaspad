@@ -4,7 +4,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/c4ei/YunSeokYeol/infrastructure/logger"
+	"github.com/c4ei/yunseokyeol/infrastructure/logger"
 )
 
 const logLevel = logger.LevelWarn

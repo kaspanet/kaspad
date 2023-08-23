@@ -3,21 +3,21 @@ package server
 import (
 	"testing"
 
-	"github.com/c4ei/YunSeokYeol/cmd/kaspawallet/libkaspawallet/serialization"
+	"github.com/c4ei/yunseokyeol/cmd/kaspawallet/libkaspawallet/serialization"
 
-	"github.com/c4ei/YunSeokYeol/cmd/kaspawallet/keys"
-	"github.com/c4ei/YunSeokYeol/util/txmass"
+	"github.com/c4ei/yunseokyeol/cmd/kaspawallet/keys"
+	"github.com/c4ei/yunseokyeol/util/txmass"
 
-	"github.com/c4ei/YunSeokYeol/domain/dagconfig"
+	"github.com/c4ei/yunseokyeol/domain/dagconfig"
 
-	"github.com/c4ei/YunSeokYeol/domain/consensus/model/externalapi"
-	"github.com/c4ei/YunSeokYeol/domain/consensus/utils/consensushashing"
-	"github.com/c4ei/YunSeokYeol/domain/consensus/utils/txscript"
-	"github.com/c4ei/YunSeokYeol/domain/consensus/utils/utxo"
+	"github.com/c4ei/yunseokyeol/domain/consensus/model/externalapi"
+	"github.com/c4ei/yunseokyeol/domain/consensus/utils/consensushashing"
+	"github.com/c4ei/yunseokyeol/domain/consensus/utils/txscript"
+	"github.com/c4ei/yunseokyeol/domain/consensus/utils/utxo"
 
-	"github.com/c4ei/YunSeokYeol/cmd/kaspawallet/libkaspawallet"
-	"github.com/c4ei/YunSeokYeol/domain/consensus"
-	"github.com/c4ei/YunSeokYeol/domain/consensus/utils/testutils"
+	"github.com/c4ei/yunseokyeol/cmd/kaspawallet/libkaspawallet"
+	"github.com/c4ei/yunseokyeol/domain/consensus"
+	"github.com/c4ei/yunseokyeol/domain/consensus/utils/testutils"
 )
 
 func TestEstimateMassAfterSignatures(t *testing.T) {

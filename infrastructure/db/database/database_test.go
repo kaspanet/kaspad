@@ -9,7 +9,7 @@ import (
 	"bytes"
 	"testing"
 
-	"github.com/c4ei/YunSeokYeol/infrastructure/db/database"
+	"github.com/c4ei/yunseokyeol/infrastructure/db/database"
 )
 
 func TestDatabasePut(t *testing.T) {

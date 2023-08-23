@@ -3,12 +3,12 @@ package standalone
 import (
 	"time"
 
-	"github.com/c4ei/YunSeokYeol/infrastructure/network/netadapter"
+	"github.com/c4ei/yunseokyeol/infrastructure/network/netadapter"
 
 	"github.com/pkg/errors"
 
-	"github.com/c4ei/YunSeokYeol/app/appmessage"
-	"github.com/c4ei/YunSeokYeol/infrastructure/network/netadapter/router"
+	"github.com/c4ei/yunseokyeol/app/appmessage"
+	"github.com/c4ei/yunseokyeol/infrastructure/network/netadapter/router"
 )
 
 // Routes holds the incoming and outgoing routes of a connection created by MinimalNetAdapter

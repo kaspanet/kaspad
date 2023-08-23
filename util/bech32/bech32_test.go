@@ -7,7 +7,7 @@ package bech32_test
 import (
 	"testing"
 
-	"github.com/c4ei/YunSeokYeol/util/bech32"
+	"github.com/c4ei/yunseokyeol/util/bech32"
 )
 
 var checkEncodingStringTests = []struct {

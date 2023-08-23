@@ -6,11 +6,11 @@ import (
 	"math/big"
 	"testing"
 
-	"github.com/c4ei/YunSeokYeol/domain/consensus"
+	"github.com/c4ei/yunseokyeol/domain/consensus"
 
-	"github.com/c4ei/YunSeokYeol/domain/consensus/utils/testutils"
-	"github.com/c4ei/YunSeokYeol/domain/dagconfig"
-	"github.com/c4ei/YunSeokYeol/util/difficulty"
+	"github.com/c4ei/yunseokyeol/domain/consensus/utils/testutils"
+	"github.com/c4ei/yunseokyeol/domain/dagconfig"
+	"github.com/c4ei/yunseokyeol/util/difficulty"
 )
 
 func TestGetHashrateString(t *testing.T) {

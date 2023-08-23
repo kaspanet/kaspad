@@ -5,7 +5,7 @@
 package appmessage
 
 import (
-	"github.com/c4ei/YunSeokYeol/domain/consensus/model/externalapi"
+	"github.com/c4ei/yunseokyeol/domain/consensus/model/externalapi"
 )
 
 // MsgRequestAnticone implements the Message interface and represents a kaspa

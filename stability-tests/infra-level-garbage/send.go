@@ -5,7 +5,7 @@ import (
 	"net"
 	"time"
 
-	"github.com/c4ei/YunSeokYeol/app/protocol/common"
+	"github.com/c4ei/yunseokyeol/app/protocol/common"
 	"github.com/pkg/errors"
 )
 

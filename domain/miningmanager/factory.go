@@ -4,10 +4,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/c4ei/YunSeokYeol/domain/consensusreference"
-	"github.com/c4ei/YunSeokYeol/domain/dagconfig"
-	"github.com/c4ei/YunSeokYeol/domain/miningmanager/blocktemplatebuilder"
-	mempoolpkg "github.com/c4ei/YunSeokYeol/domain/miningmanager/mempool"
+	"github.com/c4ei/yunseokyeol/domain/consensusreference"
+	"github.com/c4ei/yunseokyeol/domain/dagconfig"
+	"github.com/c4ei/yunseokyeol/domain/miningmanager/blocktemplatebuilder"
+	mempoolpkg "github.com/c4ei/yunseokyeol/domain/miningmanager/mempool"
 )
 
 // Factory instantiates new mining managers

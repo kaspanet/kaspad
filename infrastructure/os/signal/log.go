@@ -5,7 +5,7 @@
 package signal
 
 import (
-	"github.com/c4ei/YunSeokYeol/infrastructure/logger"
+	"github.com/c4ei/yunseokyeol/infrastructure/logger"
 )
 
 var kasdLog = logger.RegisterSubSystem("KASD")

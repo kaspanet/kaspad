@@ -1,6 +1,6 @@
 package appmessage
 
-import "github.com/c4ei/YunSeokYeol/domain/consensus/model/externalapi"
+import "github.com/c4ei/yunseokyeol/domain/consensus/model/externalapi"
 
 // GetBlockCountRequestMessage is an appmessage corresponding to
 // its respective RPC message

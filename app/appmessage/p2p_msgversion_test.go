@@ -9,7 +9,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/c4ei/YunSeokYeol/infrastructure/network/netadapter/id"
+	"github.com/c4ei/yunseokyeol/infrastructure/network/netadapter/id"
 	"github.com/davecgh/go-spew/spew"
 )
 

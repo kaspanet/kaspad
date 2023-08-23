@@ -3,8 +3,8 @@ package main
 import (
 	"fmt"
 
-	"github.com/c4ei/YunSeokYeol/cmd/kaspawallet/libkaspawallet"
-	"github.com/c4ei/YunSeokYeol/util"
+	"github.com/c4ei/yunseokyeol/cmd/kaspawallet/libkaspawallet"
+	"github.com/c4ei/yunseokyeol/util"
 )
 
 func main() {

@@ -4,10 +4,10 @@ import (
 	"os"
 	"testing"
 
-	"github.com/c4ei/YunSeokYeol/infrastructure/network/rpcclient"
-	"github.com/c4ei/YunSeokYeol/stability-tests/common"
-	"github.com/c4ei/YunSeokYeol/util/panics"
-	"github.com/c4ei/YunSeokYeol/util/profiling"
+	"github.com/c4ei/yunseokyeol/infrastructure/network/rpcclient"
+	"github.com/c4ei/yunseokyeol/stability-tests/common"
+	"github.com/c4ei/yunseokyeol/util/panics"
+	"github.com/c4ei/yunseokyeol/util/profiling"
 )
 
 const (

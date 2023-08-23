@@ -4,9 +4,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/c4ei/YunSeokYeol/app/protocol/protocolerrors"
+	"github.com/c4ei/yunseokyeol/app/protocol/protocolerrors"
 
-	"github.com/c4ei/YunSeokYeol/app/appmessage"
+	"github.com/c4ei/yunseokyeol/app/appmessage"
 	"github.com/pkg/errors"
 )
 

@@ -2,7 +2,7 @@ dagconfig
 ========
 
 [![ISC License](http://img.shields.io/badge/license-ISC-blue.svg)](https://choosealicense.com/licenses/isc/)
-[![GoDoc](https://img.shields.io/badge/godoc-reference-blue.svg)](http://godoc.org/github.com/c4ei/YunSeokYeol/dagconfig)
+[![GoDoc](https://img.shields.io/badge/godoc-reference-blue.svg)](http://godoc.org/github.com/c4ei/yunseokyeol/dagconfig)
 
 Package dagconfig defines DAG configuration parameters for the standard
 Kaspad networks and provides the ability for callers to define their own custom
@@ -18,8 +18,8 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/c4ei/YunSeokYeol/util"
-	"github.com/c4ei/YunSeokYeol/domain/dagconfig"
+	"github.com/c4ei/yunseokyeol/util"
+	"github.com/c4ei/yunseokyeol/domain/dagconfig"
 )
 
 var testnet = flag.Bool("testnet", false, "operate on the testnet Kaspa network")

@@ -1,6 +1,6 @@
 package model
 
-import "github.com/c4ei/YunSeokYeol/domain/consensus/model/externalapi"
+import "github.com/c4ei/yunseokyeol/domain/consensus/model/externalapi"
 
 // ReachabilityManager maintains a structure that allows to answer
 // reachability queries in sub-linear time

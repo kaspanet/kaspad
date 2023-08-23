@@ -4,11 +4,11 @@ import (
 	"context"
 	"time"
 
-	"github.com/c4ei/YunSeokYeol/cmd/kaspawallet/daemon/server"
+	"github.com/c4ei/yunseokyeol/cmd/kaspawallet/daemon/server"
 
 	"github.com/pkg/errors"
 
-	"github.com/c4ei/YunSeokYeol/cmd/kaspawallet/daemon/pb"
+	"github.com/c4ei/yunseokyeol/cmd/kaspawallet/daemon/pb"
 	"google.golang.org/grpc"
 )
 
