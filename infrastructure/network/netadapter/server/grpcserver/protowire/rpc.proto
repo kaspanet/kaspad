@@ -115,7 +115,7 @@ message RpcTransactionOutputVerboseData{
   string scriptPublicKeyAddress = 6;
 }
 
-// GetCurrentNetworkRequestMessage requests the network kaspad is currently running against.
+// GetCurrentNetworkRequestMessage requests the network c4exd is currently running against.
 //
 // Possible networks are: Mainnet, Testnet, Simnet, Devnet
 message GetCurrentNetworkRequestMessage{
@@ -150,7 +150,7 @@ message SubmitBlockResponseMessage{
 //
 // See: SubmitBlockRequestMessage
 message GetBlockTemplateRequestMessage{
-  // Which kaspa address should the coinbase block reward transaction pay into
+  // Which c4ex address should the coinbase block reward transaction pay into
   string payAddress = 1;
   string extraData = 2;
 }
@@ -158,9 +158,9 @@ message GetBlockTemplateRequestMessage{
 message GetBlockTemplateResponseMessage{
   RpcBlock block = 3;
 
-  // Whether kaspad thinks that it's synced.
-  // Callers are discouraged (but not forbidden) from solving blocks when kaspad is not synced.
-  // That is because when kaspad isn't in sync with the rest of the network there's a high
+  // Whether c4exd thinks that it's synced.
+  // Callers are discouraged (but not forbidden) from solving blocks when c4exd is not synced.
+  // That is because when c4exd isn't in sync with the rest of the network there's a high
   // chance the block will never be accepted, thus the solving effort would have been wasted.
   bool isSynced = 2;
 
@@ -185,7 +185,7 @@ message BlockAddedNotificationMessage{
   RpcBlock block = 3;
 }
 
-// GetPeerAddressesRequestMessage requests the list of known kaspad addresses in the
+// GetPeerAddressesRequestMessage requests the list of known c4exd addresses in the
 // current network. (mainnet, testnet, etc.)
 message GetPeerAddressesRequestMessage{
 }
@@ -245,7 +245,7 @@ message MempoolEntry{
 }
 
 // GetConnectedPeerInfoRequestMessage requests information about all the p2p peers
-// currently connected to this kaspad.
+// currently connected to this c4exd.
 message GetConnectedPeerInfoRequestMessage{
 }
 
@@ -261,7 +261,7 @@ message GetConnectedPeerInfoMessage{
   // How long did the last ping/pong exchange take
   int64 lastPingDuration = 3;
 
-  // Whether this kaspad initiated the connection
+  // Whether this c4exd initiated the connection
   bool isOutbound = 6;
   int64 timeOffset = 7;
   string userAgent = 8;
@@ -269,15 +269,15 @@ message GetConnectedPeerInfoMessage{
   // The protocol version that this peer claims to support
   uint32 advertisedProtocolVersion = 9;
 
-  // The timestamp of when this peer connected to this kaspad
+  // The timestamp of when this peer connected to this c4exd
   int64 timeConnected = 10;
 
   // Whether this peer is the IBD peer (if IBD is running)
   bool isIbdPeer = 11;
 }
 
-// AddPeerRequestMessage adds a peer to kaspad's outgoing connection list.
-// This will, in most cases, result in kaspad connecting to said peer.
+// AddPeerRequestMessage adds a peer to c4exd's outgoing connection list.
+// This will, in most cases, result in c4exd connecting to said peer.
 message AddPeerRequestMessage{
   string address = 1;
 
@@ -355,7 +355,7 @@ message GetSubnetworkResponseMessage{
 }
 
 // GetVirtualSelectedParentChainFromBlockRequestMessage requests the virtual selected
-// parent chain from some startHash to this kaspad's current virtual
+// parent chain from some startHash to this c4exd's current virtual
 message GetVirtualSelectedParentChainFromBlockRequestMessage{
   string startHash = 1;
   bool includeAcceptedTransactionIds = 2;
@@ -381,7 +381,7 @@ message GetVirtualSelectedParentChainFromBlockResponseMessage{
 }
 
 // GetBlocksRequestMessage requests blocks between a certain block lowHash up to this
-// kaspad's current virtual.
+// c4exd's current virtual.
 message GetBlocksRequestMessage{
   string lowHash = 1;
   bool includeBlocks = 2;
@@ -394,7 +394,7 @@ message GetBlocksResponseMessage{
   RPCError error = 1000;
 }
 
-// GetBlockCountRequestMessage requests the current number of blocks in this kaspad.
+// GetBlockCountRequestMessage requests the current number of blocks in this c4exd.
 // Note that this number may decrease as pruning occurs.
 message GetBlockCountRequestMessage{
 }
@@ -406,7 +406,7 @@ message GetBlockCountResponseMessage{
 }
 
 // GetBlockDagInfoRequestMessage requests general information about the current state
-// of this kaspad's DAG.
+// of this c4exd's DAG.
 message GetBlockDagInfoRequestMessage{
 }
 
@@ -446,7 +446,7 @@ message FinalityConflictResolvedNotificationMessage{
   string finalityBlockHash = 1;
 }
 
-// ShutDownRequestMessage shuts down this kaspad.
+// ShutDownRequestMessage shuts down this c4exd.
 message ShutDownRequestMessage{
 }
 
@@ -470,7 +470,7 @@ message GetHeadersResponseMessage{
 // NotifyUtxosChangedRequestMessage registers this connection for utxoChanged notifications
 // for the given addresses.
 //
-// This call is only available when this kaspad was started with `--utxoindex`
+// This call is only available when this c4exd was started with `--utxoindex`
 //
 // See: UtxosChangedNotificationMessage
 message NotifyUtxosChangedRequestMessage {
@@ -498,7 +498,7 @@ message UtxosByAddressesEntry {
 // StopNotifyingUtxosChangedRequestMessage unregisters this connection for utxoChanged notifications
 // for the given addresses.
 //
-// This call is only available when this kaspad was started with `--utxoindex`
+// This call is only available when this c4exd was started with `--utxoindex`
 //
 // See: UtxosChangedNotificationMessage
 message StopNotifyingUtxosChangedRequestMessage {
@@ -509,9 +509,9 @@ message StopNotifyingUtxosChangedResponseMessage {
   RPCError error = 1000;
 }
 
-// GetUtxosByAddressesRequestMessage requests all current UTXOs for the given kaspad addresses
+// GetUtxosByAddressesRequestMessage requests all current UTXOs for the given c4exd addresses
 //
-// This call is only available when this kaspad was started with `--utxoindex`
+// This call is only available when this c4exd was started with `--utxoindex`
 message GetUtxosByAddressesRequestMessage {
   repeated string addresses = 1;
 }
@@ -524,7 +524,7 @@ message GetUtxosByAddressesResponseMessage {
 
 // GetBalanceByAddressRequest returns the total balance in unspent transactions towards a given address
 // 
-// This call is only available when this kaspad was started with `--utxoindex`
+// This call is only available when this c4exd was started with `--utxoindex`
 message GetBalanceByAddressRequestMessage {
   string address = 1;
 }
@@ -604,7 +604,7 @@ message VirtualDaaScoreChangedNotificationMessage {
 // NotifyPruningPointUTXOSetOverrideRequestMessage registers this connection for
 // pruning point UTXO set override notifications.
 //
-// This call is only available when this kaspad was started with `--utxoindex`
+// This call is only available when this c4exd was started with `--utxoindex`
 //
 // See: NotifyPruningPointUTXOSetOverrideResponseMessage
 message NotifyPruningPointUTXOSetOverrideRequestMessage {
@@ -625,7 +625,7 @@ message PruningPointUTXOSetOverrideNotificationMessage {
 // StopNotifyingPruningPointUTXOSetOverrideRequestMessage unregisters this connection for
 // pruning point UTXO set override notifications.
 //
-// This call is only available when this kaspad was started with `--utxoindex`
+// This call is only available when this c4exd was started with `--utxoindex`
 //
 // See: PruningPointUTXOSetOverrideNotificationMessage
 message StopNotifyingPruningPointUTXOSetOverrideRequestMessage {

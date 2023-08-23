@@ -17,7 +17,7 @@ import (
 
 	"github.com/c4ei/yunseokyeol/domain/consensus/utils/constants"
 
-	"github.com/kaspanet/go-secp256k1"
+	"github.com/c4exnet/go-secp256k1"
 )
 
 // An opcode defines the information related to a txscript opcode. opfunc, if
@@ -31,7 +31,7 @@ type opcode struct {
 	opfunc func(*parsedOpcode, *Engine) error
 }
 
-// These constants are the values of the kaspa script opcodes.
+// These constants are the values of the c4ex script opcodes.
 const (
 	Op0                   = 0x00 // 0
 	OpFalse               = 0x00 // 0 - AKA Op0

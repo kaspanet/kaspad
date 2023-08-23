@@ -17,7 +17,7 @@ func (x *RequestAddressesMessage) toAppMessage() (appmessage.Message, error) {
 		return nil, errors.Wrapf(errorNil, "RequestAddressesMessage is nil")
 	}
 	subnetworkID, err := x.SubnetworkId.toDomain()
-	//  Full kaspa nodes set SubnetworkId==nil
+	//  Full c4ex nodes set SubnetworkId==nil
 	if err != nil && !errors.Is(err, errorNil) {
 		return nil, err
 	}

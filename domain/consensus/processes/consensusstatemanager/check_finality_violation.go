@@ -61,7 +61,7 @@ func (csm *consensusStateManager) isViolatingFinality(stagingArea *model.Staging
 		// On IBD it's pretty normal to get blocks in the anticone of the pruning
 		// point, so we don't notify on cases when the pruning point is in the future
 		// of the finality point.
-		log.Debugf("Block %s violates finality, but kaspad is currently doing IBD, so this is normal", blockHash)
+		log.Debugf("Block %s violates finality, but c4exd is currently doing IBD, so this is normal", blockHash)
 		return true, false, nil
 	}
 	log.Debugf("Block %s does not violate finality", blockHash)

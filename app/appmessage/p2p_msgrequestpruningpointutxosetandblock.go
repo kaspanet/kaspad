@@ -4,7 +4,7 @@ import (
 	"github.com/c4ei/yunseokyeol/domain/consensus/model/externalapi"
 )
 
-// MsgRequestPruningPointUTXOSet represents a kaspa RequestPruningPointUTXOSet message
+// MsgRequestPruningPointUTXOSet represents a c4ex RequestPruningPointUTXOSet message
 type MsgRequestPruningPointUTXOSet struct {
 	baseMessage
 	PruningPointHash *externalapi.DomainHash

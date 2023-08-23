@@ -8,7 +8,7 @@ import (
 	"github.com/c4ei/yunseokyeol/domain/consensus/model/externalapi"
 )
 
-// MsgRequestHeaders implements the Message interface and represents a kaspa
+// MsgRequestHeaders implements the Message interface and represents a c4ex
 // RequestHeaders message. It is used to request a list of blocks starting after the
 // low hash and until the high hash.
 type MsgRequestHeaders struct {
@@ -23,7 +23,7 @@ func (msg *MsgRequestHeaders) Command() MessageCommand {
 	return CmdRequestHeaders
 }
 
-// NewMsgRequstHeaders returns a new kaspa RequestHeaders message that conforms to the
+// NewMsgRequstHeaders returns a new c4ex RequestHeaders message that conforms to the
 // Message interface using the passed parameters and defaults for the remaining
 // fields.
 func NewMsgRequstHeaders(lowHash, highHash *externalapi.DomainHash) *MsgRequestHeaders {

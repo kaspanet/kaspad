@@ -1,7 +1,7 @@
 #!/bin/bash
-rm -rf /tmp/kaspad-temp
+rm -rf /tmp/c4exd-temp
 
-kaspad --devnet --appdir=/tmp/kaspad-temp --profile=6061 --loglevel=debug &
+c4exd --devnet --appdir=/tmp/c4exd-temp --profile=6061 --loglevel=debug &
 KASPAD_PID=$!
 KASPAD_KILLED=0
 function killKaspadIfNotKilled() {

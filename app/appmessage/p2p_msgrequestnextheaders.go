@@ -1,6 +1,6 @@
 package appmessage
 
-// MsgRequestNextHeaders implements the Message interface and represents a kaspa
+// MsgRequestNextHeaders implements the Message interface and represents a c4ex
 // RequestNextHeaders message. It is used to notify the IBD syncer peer to send
 // more headers.
 //
@@ -15,7 +15,7 @@ func (msg *MsgRequestNextHeaders) Command() MessageCommand {
 	return CmdRequestNextHeaders
 }
 
-// NewMsgRequestNextHeaders returns a new kaspa RequestNextHeaders message that conforms to the
+// NewMsgRequestNextHeaders returns a new c4ex RequestNextHeaders message that conforms to the
 // Message interface.
 func NewMsgRequestNextHeaders() *MsgRequestNextHeaders {
 	return &MsgRequestNextHeaders{}

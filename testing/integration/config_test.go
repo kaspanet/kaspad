@@ -22,13 +22,13 @@ const (
 	rpcAddress4 = "127.0.0.1:12348"
 	rpcAddress5 = "127.0.0.1:12349"
 
-	miningAddress1           = "kaspasim:qqqqnc0pxg7qw3qkc7l6sge8kfhsvvyt7mkw8uamtndqup27ftnd6c769gn66"
+	miningAddress1           = "c4exsim:qqqqnc0pxg7qw3qkc7l6sge8kfhsvvyt7mkw8uamtndqup27ftnd6c769gn66"
 	miningAddress1PrivateKey = "0d81045b0deb2af36a25403c2154c87aa82d89dd337b575bae27ce7f5de53cee"
 
-	miningAddress2           = "kaspasim:qqqqnc0pxg7qw3qkc7l6sge8kfhsvvyt7mkw8uamtndqup27ftnd6c769gn66"
+	miningAddress2           = "c4exsim:qqqqnc0pxg7qw3qkc7l6sge8kfhsvvyt7mkw8uamtndqup27ftnd6c769gn66"
 	miningAddress2PrivateKey = "0d81045b0deb2af36a25403c2154c87aa82d89dd337b575bae27ce7f5de53cee"
 
-	miningAddress3           = "kaspasim:qqq754f2gdcjcnykwuwwr60c82rh5u6mxxe7yqxljnrxz9fu0h95kduq9ezng"
+	miningAddress3           = "c4exsim:qqq754f2gdcjcnykwuwwr60c82rh5u6mxxe7yqxljnrxz9fu0h95kduq9ezng"
 	miningAddress3PrivateKey = "f6c8f31fd359cbb97007034780bc4021f6ad01c6bc10499b79849efd4cc7ca39"
 
 	defaultTimeout = 30 * time.Second

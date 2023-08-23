@@ -49,7 +49,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	// Wait a second to let kaspad process orphans
+	// Wait a second to let c4exd process orphans
 	<-time.After(1 * time.Second)
 
 	err = checkTopBlockIsTip(rpcClient, topBlock)

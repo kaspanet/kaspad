@@ -14,7 +14,7 @@ import (
 	"github.com/c4ei/yunseokyeol/app/appmessage"
 	"github.com/c4ei/yunseokyeol/domain/consensus/utils/mining"
 	"github.com/c4ei/yunseokyeol/util"
-	"github.com/kaspanet/go-secp256k1"
+	"github.com/c4exnet/go-secp256k1"
 
 	"github.com/c4ei/yunseokyeol/stability-tests/common"
 	"github.com/c4ei/yunseokyeol/stability-tests/common/rpc"
@@ -103,14 +103,14 @@ func realMain() error {
 
 func startNode() (teardown func(), err error) {
 	log.Infof("Starting node")
-	dataDir, err := common.TempDir("kaspad-datadir")
+	dataDir, err := common.TempDir("c4exd-datadir")
 	if err != nil {
 		panic(errors.Wrapf(err, "Error in Tempdir"))
 	}
-	log.Infof("kaspad datadir: %s", dataDir)
+	log.Infof("c4exd datadir: %s", dataDir)
 
-	kaspadCmd, err := common.StartCmd("KASPAD",
-		"kaspad",
+	c4exdCmd, err := common.StartCmd("KASPAD",
+		"c4exd",
 		common.NetworkCliArgumentFromNetParams(activeConfig().NetParams()),
 		"--appdir", dataDir,
 		"--logdir", dataDir,
@@ -125,15 +125,15 @@ func startNode() (teardown func(), err error) {
 
 	processesStoppedWg := sync.WaitGroup{}
 	processesStoppedWg.Add(1)
-	spawn("startNode-kaspadCmd.Wait", func() {
-		err := kaspadCmd.Wait()
+	spawn("startNode-c4exdCmd.Wait", func() {
+		err := c4exdCmd.Wait()
 		if err != nil {
 			if atomic.LoadUint64(&shutdown) == 0 {
-				panics.Exit(log, fmt.Sprintf("kaspadCmd closed unexpectedly: %s. See logs at: %s", err, dataDir))
+				panics.Exit(log, fmt.Sprintf("c4exdCmd closed unexpectedly: %s. See logs at: %s", err, dataDir))
 			}
 			if !strings.Contains(err.Error(), "signal: killed") {
-				// TODO: Panic here and check why sometimes kaspad closes ungracefully
-				log.Errorf("kaspadCmd closed with an error: %s. See logs at: %s", err, dataDir)
+				// TODO: Panic here and check why sometimes c4exd closes ungracefully
+				log.Errorf("c4exdCmd closed with an error: %s. See logs at: %s", err, dataDir)
 			}
 		}
 		processesStoppedWg.Done()
@@ -141,7 +141,7 @@ func startNode() (teardown func(), err error) {
 	return func() {
 		log.Infof("defer start-node")
 		atomic.StoreUint64(&shutdown, 1)
-		killWithSigterm(kaspadCmd, "kaspadCmd")
+		killWithSigterm(c4exdCmd, "c4exdCmd")
 
 		processesStoppedChan := make(chan struct{})
 		spawn("startNode-processStoppedWg.Wait", func() {
@@ -227,8 +227,8 @@ func mineLoopUntilHavingOnlyOneTipInDAG(rpcClient *rpc.Client, miningAddress uti
 	}
 	numOfBlocksBeforeMining := dagInfo.BlockCount
 
-	kaspaMinerCmd, err := common.StartCmd("MINER",
-		"kaspaminer",
+	c4exMinerCmd, err := common.StartCmd("MINER",
+		"c4exminer",
 		common.NetworkCliArgumentFromNetParams(activeConfig().NetParams()),
 		"-s", rpcAddress,
 		"--mine-when-not-synced",
@@ -241,8 +241,8 @@ func mineLoopUntilHavingOnlyOneTipInDAG(rpcClient *rpc.Client, miningAddress uti
 	startMiningTime := time.Now()
 	shutdown := uint64(0)
 
-	spawn("kaspa-miner-Cmd.Wait", func() {
-		err := kaspaMinerCmd.Wait()
+	spawn("c4ex-miner-Cmd.Wait", func() {
+		err := c4exMinerCmd.Wait()
 		if err != nil {
 			if atomic.LoadUint64(&shutdown) == 0 {
 				panics.Exit(log, fmt.Sprintf("minerCmd closed unexpectedly: %s.", err))
@@ -284,7 +284,7 @@ func mineLoopUntilHavingOnlyOneTipInDAG(rpcClient *rpc.Client, miningAddress uti
 	numOfAddedBlocks := dagInfo.BlockCount - numOfBlocksBeforeMining
 	log.Infof("Added %d blocks to reach this.", numOfAddedBlocks)
 	atomic.StoreUint64(&shutdown, 1)
-	killWithSigterm(kaspaMinerCmd, "kaspaMinerCmd")
+	killWithSigterm(c4exMinerCmd, "c4exMinerCmd")
 	return nil
 }
 

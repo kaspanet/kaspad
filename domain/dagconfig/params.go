@@ -95,10 +95,10 @@ type Params struct {
 
 	// SubsidyGenesisReward SubsidyMergeSetRewardMultiplier, and
 	// SubsidyPastRewardMultiplier are part of the block subsidy equation.
-	// Further details: https://hashdag.medium.com/kaspa-launch-plan-9a63f4d754a6
+	// Further details: https://hashdag.medium.com/c4ex-launch-plan-9a63f4d754a6
 	// SubsidyGenesisReward SubsidyMergeSetRewardMultiplier 및
 	// SubsidyPastRewardMultiplier는 블록 보조금 방정식의 일부입니다.
-	// 자세한 내용: https://hashdag.medium.com/kaspa-launch-plan-9a63f4d754a6
+	// 자세한 내용: https://hashdag.medium.com/c4ex-launch-plan-9a63f4d754a6
 	SubsidyGenesisReward            uint64
 	PreDeflationaryPhaseBaseSubsidy uint64
 	DeflationaryPhaseBaseSubsidy    uint64
@@ -214,8 +214,8 @@ type Params struct {
 	// CoinbasePayloadScriptPublicKeyMaxLength는 코인베이스 페이로드에서 허용되는 최대 스크립트 공개 키입니다.
 	CoinbasePayloadScriptPublicKeyMaxLength uint8
 
-	// PruningProofM is the 'm' constant in the pruning proof. For more details see: https://github.com/kaspanet/research/issues/3
-	// PruningProofM은 가지치기 증명의 'm' 상수입니다. 자세한 내용은 https://github.com/kaspanet/research/issues/3을 참조하세요.
+	// PruningProofM is the 'm' constant in the pruning proof. For more details see: https://github.com/c4exnet/research/issues/3
+	// PruningProofM은 가지치기 증명의 'm' 상수입니다. 자세한 내용은 https://github.com/c4exnet/research/issues/3을 참조하세요.
 	PruningProofM uint64
 
 	// DeflationaryPhaseDaaScore is the DAA score after which the monetary policy switches
@@ -266,21 +266,21 @@ var MainnetParams = Params{
 		"dnsseed.c4ex.net",
 		// "mainnet-dnsseed.kas.pa",
 		// This DNS seeder is run by Denis Mashkevich
-		// "mainnet-dnsseed-1.kaspanet.org",
+		// "mainnet-dnsseed-1.c4exnet.org",
 		// // This DNS seeder is run by Denis Mashkevich
-		// "mainnet-dnsseed-2.kaspanet.org",
+		// "mainnet-dnsseed-2.c4exnet.org",
 		// // This DNS seeder is run by Constantine Bytensky
 		// "dnsseed.cbytensky.org",
 		// // This DNS seeder is run by Georges Künzli
-		// "seeder1.kaspad.net",
+		// "seeder1.c4exd.net",
 		// // This DNS seeder is run by Georges Künzli
-		// "seeder2.kaspad.net",
+		// "seeder2.c4exd.net",
 		// // This DNS seeder is run by Georges Künzli
-		// "seeder3.kaspad.net",
+		// "seeder3.c4exd.net",
 		// // This DNS seeder is run by Georges Künzli
-		// "seeder4.kaspad.net",
+		// "seeder4.c4exd.net",
 		// // This DNS seeder is run by Tim
-		// "kaspadns.kaspacalc.net",
+		// "c4exdns.c4excalc.net",
 	},
 
 	// DAG parameters
@@ -342,7 +342,7 @@ var MainnetParams = Params{
 // TestnetParams defines the network parameters for the test Kaspa network.
 var TestnetParams = Params{
 	K:           defaultGHOSTDAGK,
-	Name:        "c4ex-testnet", // kaspa-testnet-10
+	Name:        "c4ex-testnet", // c4ex-testnet-10
 	Net:         appmessage.Testnet,
 	RPCPort:     "22000", // 16210 --> 22000
 	DefaultPort: "22001", // 16211 --> 22001
@@ -350,7 +350,7 @@ var TestnetParams = Params{
 		"test-dnsseed.c4ex.net",
 		// "testnet-10-dnsseed.kas.pa",
 		// This DNS seeder is run by Tiram
-		// "seeder1-testnet.kaspad.net",
+		// "seeder1-testnet.c4exd.net",
 	},
 
 	// DAG parameters

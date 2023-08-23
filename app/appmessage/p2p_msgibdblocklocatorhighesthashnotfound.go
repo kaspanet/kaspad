@@ -1,6 +1,6 @@
 package appmessage
 
-// MsgIBDBlockLocatorHighestHashNotFound represents a kaspa BlockLocatorHighestHashNotFound message
+// MsgIBDBlockLocatorHighestHashNotFound represents a c4ex BlockLocatorHighestHashNotFound message
 type MsgIBDBlockLocatorHighestHashNotFound struct {
 	baseMessage
 }

@@ -10,13 +10,13 @@ import (
 )
 
 func TestVirtualSelectedParentChain(t *testing.T) {
-	// Setup a couple of kaspad instances
-	kaspad1, kaspad2, _, teardown := standardSetup(t)
+	// Setup a couple of c4exd instances
+	c4exd1, c4exd2, _, teardown := standardSetup(t)
 	defer teardown()
 
 	// Register to virtual selected parent chain changes
 	onVirtualSelectedParentChainChangedChan := make(chan *appmessage.VirtualSelectedParentChainChangedNotificationMessage)
-	err := kaspad1.rpcClient.RegisterForVirtualSelectedParentChainChangedNotifications(true,
+	err := c4exd1.rpcClient.RegisterForVirtualSelectedParentChainChangedNotifications(true,
 		func(notification *appmessage.VirtualSelectedParentChainChangedNotificationMessage) {
 			onVirtualSelectedParentChainChangedChan <- notification
 		})
@@ -24,14 +24,14 @@ func TestVirtualSelectedParentChain(t *testing.T) {
 		t.Fatalf("Failed to register for virtual selected parent chain change notifications: %s", err)
 	}
 
-	// In kaspad1, mine a chain over the genesis and make sure
+	// In c4exd1, mine a chain over the genesis and make sure
 	// each chain changed notifications contains only one entry
 	// in `added` and nothing in `removed`
-	chain1TipHash := consensushashing.BlockHash(kaspad1.config.NetParams().GenesisBlock)
+	chain1TipHash := consensushashing.BlockHash(c4exd1.config.NetParams().GenesisBlock)
 	chain1TipHashString := chain1TipHash.String()
 	const blockAmountToMine = 10
 	for i := 0; i < blockAmountToMine; i++ {
-		minedBlock := mineNextBlock(t, kaspad1)
+		minedBlock := mineNextBlock(t, c4exd1)
 		notification := <-onVirtualSelectedParentChainChangedChan
 		if len(notification.RemovedChainBlockHashes) > 0 {
 			t.Fatalf("RemovedChainBlockHashes is unexpectedly not empty")
@@ -50,16 +50,16 @@ func TestVirtualSelectedParentChain(t *testing.T) {
 		chain1TipHashString = minedBlockHashString
 	}
 
-	// In kaspad2, mine a different chain of `blockAmountToMine` + 1
+	// In c4exd2, mine a different chain of `blockAmountToMine` + 1
 	// blocks over the genesis
 	var chain2Tip *externalapi.DomainBlock
 	for i := 0; i < blockAmountToMine+1; i++ {
-		chain2Tip = mineNextBlock(t, kaspad2)
+		chain2Tip = mineNextBlock(t, c4exd2)
 	}
 
-	// Connect the two kaspads. This should trigger sync
+	// Connect the two c4exds. This should trigger sync
 	// between the two nodes
-	connect(t, kaspad1, kaspad2)
+	connect(t, c4exd1, c4exd2)
 
 	chain2TipHash := consensushashing.BlockHash(chain2Tip)
 	chain2TipHashString := chain2TipHash.String()
@@ -79,7 +79,7 @@ func TestVirtualSelectedParentChain(t *testing.T) {
 
 	// Get the virtual selected parent chain from the tip of
 	// the first chain
-	virtualSelectedParentChainFromChain1Tip, err := kaspad1.rpcClient.GetVirtualSelectedParentChainFromBlock(
+	virtualSelectedParentChainFromChain1Tip, err := c4exd1.rpcClient.GetVirtualSelectedParentChainFromBlock(
 		chain1TipHashString, true)
 	if err != nil {
 		t.Fatalf("GetVirtualSelectedParentChainFromBlock failed: %s", err)

@@ -8,7 +8,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-// MaxInvPerMsg is the maximum number of inventory vectors that can be in any type of kaspa inv message.
+// MaxInvPerMsg is the maximum number of inventory vectors that can be in any type of c4ex inv message.
 const MaxInvPerMsg = 1 << 17
 
 // errNonCanonicalVarInt is the common format string used for non-canonically

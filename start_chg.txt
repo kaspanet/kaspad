@@ -1,6 +1,6 @@
-kaspa-mainnet --> c4ex-mainnet
+c4ex-mainnet --> c4ex-mainnet
 
-/home/dev/coin/kaspad/domain/dagconfig/params.go
+/home/dev/coin/c4exd/domain/dagconfig/params.go
 var MainnetParams = Params{
 	K:           defaultGHOSTDAGK,
 	Name:        "c4ex-mainnet",

@@ -1,7 +1,7 @@
 package database
 
 // DataAccessor defines the common interface by which data gets
-// accessed in a generic kaspad database.
+// accessed in a generic c4exd database.
 type DataAccessor interface {
 	// Put sets the value for the given key. It overwrites
 	// any previous value for that key.

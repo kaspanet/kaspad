@@ -26,7 +26,7 @@ func StartCmd(name string, args ...string) (*exec.Cmd, error) {
 	return cmd, nil
 }
 
-// NetworkCliArgumentFromNetParams returns the kaspad command line argument that starts the given network.
+// NetworkCliArgumentFromNetParams returns the c4exd command line argument that starts the given network.
 func NetworkCliArgumentFromNetParams(params *dagconfig.Params) string {
-	return fmt.Sprintf("--%s", strings.TrimPrefix(params.Name, "kaspa-"))
+	return fmt.Sprintf("--%s", strings.TrimPrefix(params.Name, "c4ex-"))
 }

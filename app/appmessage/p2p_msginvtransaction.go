@@ -8,7 +8,7 @@ import (
 // be in a single CmdInvTransaction message.
 const MaxInvPerTxInvMsg = MaxInvPerMsg
 
-// MsgInvTransaction implements the Message interface and represents a kaspa
+// MsgInvTransaction implements the Message interface and represents a c4ex
 // TxInv message. It is used to notify the network about new transactions
 // by sending their ID, and let the receiving node decide if it needs it.
 type MsgInvTransaction struct {
@@ -22,7 +22,7 @@ func (msg *MsgInvTransaction) Command() MessageCommand {
 	return CmdInvTransaction
 }
 
-// NewMsgInvTransaction returns a new kaspa TxInv message that conforms to
+// NewMsgInvTransaction returns a new c4ex TxInv message that conforms to
 // the Message interface. See MsgInvTransaction for details.
 func NewMsgInvTransaction(ids []*externalapi.DomainTransactionID) *MsgInvTransaction {
 	return &MsgInvTransaction{

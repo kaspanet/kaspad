@@ -1,6 +1,6 @@
 package appmessage
 
-// MsgRequestPruningPointAndItsAnticone represents a kaspa RequestPruningPointAndItsAnticone message
+// MsgRequestPruningPointAndItsAnticone represents a c4ex RequestPruningPointAndItsAnticone message
 type MsgRequestPruningPointAndItsAnticone struct {
 	baseMessage
 }

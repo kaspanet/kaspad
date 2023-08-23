@@ -11,7 +11,7 @@ import (
 	"github.com/c4ei/yunseokyeol/domain/consensus/utils/blockheader"
 	"github.com/c4ei/yunseokyeol/domain/consensus/utils/subnetworks"
 	"github.com/c4ei/yunseokyeol/domain/consensus/utils/transactionhelper"
-	"github.com/kaspanet/go-muhash"
+	"github.com/c4exnet/go-muhash"
 )
 
 var genesisTxOuts = []*externalapi.DomainTransactionOutput{}
@@ -94,7 +94,7 @@ var devnetGenesisTxPayload = []byte{
 	0x00, 0x00, // Script version
 	0x01,                                                                   // Varint
 	0x00,                                                                   // OP-FALSE
-	0x6b, 0x61, 0x73, 0x70, 0x61, 0x2d, 0x64, 0x65, 0x76, 0x6e, 0x65, 0x74, // kaspa-devnet
+	0x6b, 0x61, 0x73, 0x70, 0x61, 0x2d, 0x64, 0x65, 0x76, 0x6e, 0x65, 0x74, // c4ex-devnet
 }
 
 // devnetGenesisCoinbaseTx is the coinbase transaction for the genesis blocks for
@@ -200,7 +200,7 @@ var testnetGenesisTxPayload = []byte{
 	0x00, 0x00, // Script version
 	0x01,                                                                         // Varint
 	0x00,                                                                         // OP-FALSE
-	0x6b, 0x61, 0x73, 0x70, 0x61, 0x2d, 0x74, 0x65, 0x73, 0x74, 0x6e, 0x65, 0x74, // kaspa-testnet
+	0x6b, 0x61, 0x73, 0x70, 0x61, 0x2d, 0x74, 0x65, 0x73, 0x74, 0x6e, 0x65, 0x74, // c4ex-testnet
 }
 
 // testnetGenesisCoinbaseTx is the coinbase transaction for the testnet genesis block.

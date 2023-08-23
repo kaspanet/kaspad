@@ -7,7 +7,7 @@ This tool:
 
 ## Running
 
-1. `go install` kaspad and mempool-limits.
+1. `go install` c4exd and mempool-limits.
 2. `cd run`
 3. `./run.sh`
 

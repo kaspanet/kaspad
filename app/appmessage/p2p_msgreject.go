@@ -1,6 +1,6 @@
 package appmessage
 
-// MsgReject implements the Message interface and represents a kaspa
+// MsgReject implements the Message interface and represents a c4ex
 // Reject message. It is used to notify peers why they are banned.
 type MsgReject struct {
 	baseMessage
@@ -13,7 +13,7 @@ func (msg *MsgReject) Command() MessageCommand {
 	return CmdReject
 }
 
-// NewMsgReject returns a new kaspa Reject message that conforms to the
+// NewMsgReject returns a new c4ex Reject message that conforms to the
 // Message interface.
 func NewMsgReject(reason string) *MsgReject {
 	return &MsgReject{

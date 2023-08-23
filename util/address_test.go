@@ -30,8 +30,8 @@ func TestAddresses(t *testing.T) {
 		// Positive P2PK tests.
 		{
 			name:    "mainnet p2pk",
-			addr:    "kaspa:qr35ennsep3hxfe7lnz5ee7j5jgmkjswsn35ennsep3hxfe7ln35cdv0dy335",
-			encoded: "kaspa:qr35ennsep3hxfe7lnz5ee7j5jgmkjswsn35ennsep3hxfe7ln35cdv0dy335",
+			addr:    "c4ex:qr35ennsep3hxfe7lnz5ee7j5jgmkjswsn35ennsep3hxfe7ln35cdv0dy335",
+			encoded: "c4ex:qr35ennsep3hxfe7lnz5ee7j5jgmkjswsn35ennsep3hxfe7ln35cdv0dy335",
 			valid:   true,
 			result: util.TstAddressPubKey(
 				util.Bech32PrefixKaspa,
@@ -54,8 +54,8 @@ func TestAddresses(t *testing.T) {
 		},
 		{
 			name:    "mainnet p2pk 2",
-			addr:    "kaspa:qq80qvqs0lfxuzmt7sz3909ze6camq9d4t35ennsep3hxfe7ln35cvfqgz3z8",
-			encoded: "kaspa:qq80qvqs0lfxuzmt7sz3909ze6camq9d4t35ennsep3hxfe7ln35cvfqgz3z8",
+			addr:    "c4ex:qq80qvqs0lfxuzmt7sz3909ze6camq9d4t35ennsep3hxfe7ln35cvfqgz3z8",
+			encoded: "c4ex:qq80qvqs0lfxuzmt7sz3909ze6camq9d4t35ennsep3hxfe7ln35cvfqgz3z8",
 			valid:   true,
 			result: util.TstAddressPubKey(
 				util.Bech32PrefixKaspa,
@@ -79,8 +79,8 @@ func TestAddresses(t *testing.T) {
 		},
 		{
 			name:    "testnet p2pk",
-			addr:    "kaspatest:qputx94qseratdmjs0j395mq8u03er0x3l35ennsep3hxfe7ln35ckquw528z",
-			encoded: "kaspatest:qputx94qseratdmjs0j395mq8u03er0x3l35ennsep3hxfe7ln35ckquw528z",
+			addr:    "c4extest:qputx94qseratdmjs0j395mq8u03er0x3l35ennsep3hxfe7ln35ckquw528z",
+			encoded: "c4extest:qputx94qseratdmjs0j395mq8u03er0x3l35ennsep3hxfe7ln35ckquw528z",
 			valid:   true,
 			result: util.TstAddressPubKey(
 				util.Bech32PrefixKaspaTest,
@@ -106,8 +106,8 @@ func TestAddresses(t *testing.T) {
 		// ECDSA P2PK tests.
 		{
 			name:    "mainnet ecdsa p2pk",
-			addr:    "kaspa:q835ennsep3hxfe7lnz5ee7j5jgmkjswsn35ennsep3hxfe7ln35e2sm7yrlr4w",
-			encoded: "kaspa:q835ennsep3hxfe7lnz5ee7j5jgmkjswsn35ennsep3hxfe7ln35e2sm7yrlr4w",
+			addr:    "c4ex:q835ennsep3hxfe7lnz5ee7j5jgmkjswsn35ennsep3hxfe7ln35e2sm7yrlr4w",
+			encoded: "c4ex:q835ennsep3hxfe7lnz5ee7j5jgmkjswsn35ennsep3hxfe7ln35e2sm7yrlr4w",
 			valid:   true,
 			result: util.TstAddressPubKeyECDSA(
 				util.Bech32PrefixKaspa,
@@ -146,7 +146,7 @@ func TestAddresses(t *testing.T) {
 		},
 		{
 			name:           "p2pk bad checksum",
-			addr:           "kaspa:qr35ennsep3hxfe7lnz5ee7j5jgmkjswss74as46gx",
+			addr:           "c4ex:qr35ennsep3hxfe7lnz5ee7j5jgmkjswss74as46gx",
 			valid:          false,
 			passedPrefix:   util.Bech32PrefixKaspa,
 			expectedPrefix: util.Bech32PrefixKaspa,
@@ -155,8 +155,8 @@ func TestAddresses(t *testing.T) {
 		// Positive P2SH tests.
 		{
 			name:    "mainnet p2sh",
-			addr:    "kaspa:prq20q4qd9ulr044cauyy9wtpeupqpjv67pn2vyc6acly7xqkrjdzmh8rj9f4",
-			encoded: "kaspa:prq20q4qd9ulr044cauyy9wtpeupqpjv67pn2vyc6acly7xqkrjdzmh8rj9f4",
+			addr:    "c4ex:prq20q4qd9ulr044cauyy9wtpeupqpjv67pn2vyc6acly7xqkrjdzmh8rj9f4",
+			encoded: "c4ex:prq20q4qd9ulr044cauyy9wtpeupqpjv67pn2vyc6acly7xqkrjdzmh8rj9f4",
 			valid:   true,
 			result: util.TstAddressScriptHash(
 				util.Bech32PrefixKaspa,
@@ -196,8 +196,8 @@ func TestAddresses(t *testing.T) {
 		},
 		{
 			name:    "mainnet p2sh 2",
-			addr:    "kaspa:pr5vxqxg0xrwl2zvxlq9rxffqx00sm44kn5vxqxg0xrwl2zvxl5vxyhvsake2",
-			encoded: "kaspa:pr5vxqxg0xrwl2zvxlq9rxffqx00sm44kn5vxqxg0xrwl2zvxl5vxyhvsake2",
+			addr:    "c4ex:pr5vxqxg0xrwl2zvxlq9rxffqx00sm44kn5vxqxg0xrwl2zvxl5vxyhvsake2",
+			encoded: "c4ex:pr5vxqxg0xrwl2zvxlq9rxffqx00sm44kn5vxqxg0xrwl2zvxl5vxyhvsake2",
 			valid:   true,
 			result: util.TstAddressScriptHash(
 				util.Bech32PrefixKaspa,
@@ -221,8 +221,8 @@ func TestAddresses(t *testing.T) {
 		},
 		{
 			name:    "testnet p2sh",
-			addr:    "kaspatest:przhjdpv93xfygpqtckdc2zkzuzqeyj2pt5vxqxg0xrwl2zvxl5vx35yyy2h9",
-			encoded: "kaspatest:przhjdpv93xfygpqtckdc2zkzuzqeyj2pt5vxqxg0xrwl2zvxl5vx35yyy2h9",
+			addr:    "c4extest:przhjdpv93xfygpqtckdc2zkzuzqeyj2pt5vxqxg0xrwl2zvxl5vx35yyy2h9",
+			encoded: "c4extest:przhjdpv93xfygpqtckdc2zkzuzqeyj2pt5vxqxg0xrwl2zvxl5vx35yyy2h9",
 			valid:   true,
 			result: util.TstAddressScriptHash(
 				util.Bech32PrefixKaspaTest,
@@ -388,17 +388,17 @@ func TestDecodeAddressErrorConditions(t *testing.T) {
 			"decoded address's prefix could not be parsed",
 		},
 		{
-			"kaspasim:raskzctpv9skzctpv9skzctpv9skzctpvy37ct7zafpv9skzctpvymmnd3gh8",
+			"c4exsim:raskzctpv9skzctpv9skzctpv9skzctpvy37ct7zafpv9skzctpvymmnd3gh8",
 			util.Bech32PrefixKaspaSim,
 			"unknown address type",
 		},
 		{
-			"kaspasim:raskzcg58mth0an",
+			"c4exsim:raskzcg58mth0an",
 			util.Bech32PrefixKaspaSim,
 			"unknown address type",
 		},
 		{
-			"kaspatest:qqq65mvpxcmajeq44n2n8vfn6u9f8l4zsy0xez0tzw",
+			"c4extest:qqq65mvpxcmajeq44n2n8vfn6u9f8l4zsy0xez0tzw",
 			util.Bech32PrefixKaspa,
 			"decoded address is of wrong network",
 		},
@@ -421,9 +421,9 @@ func TestParsePrefix(t *testing.T) {
 		expectedPrefix util.Bech32Prefix
 		expectedError  bool
 	}{
-		{"kaspa", util.Bech32PrefixKaspa, false},
-		{"kaspatest", util.Bech32PrefixKaspaTest, false},
-		{"kaspasim", util.Bech32PrefixKaspaSim, false},
+		{"c4ex", util.Bech32PrefixKaspa, false},
+		{"c4extest", util.Bech32PrefixKaspaTest, false},
+		{"c4exsim", util.Bech32PrefixKaspaSim, false},
 		{"blabla", util.Bech32PrefixUnknown, true},
 		{"unknown", util.Bech32PrefixUnknown, true},
 		{"", util.Bech32PrefixUnknown, true},
@@ -448,9 +448,9 @@ func TestPrefixToString(t *testing.T) {
 		prefix            util.Bech32Prefix
 		expectedPrefixStr string
 	}{
-		{util.Bech32PrefixKaspa, "kaspa"},
-		{util.Bech32PrefixKaspaTest, "kaspatest"},
-		{util.Bech32PrefixKaspaSim, "kaspasim"},
+		{util.Bech32PrefixKaspa, "c4ex"},
+		{util.Bech32PrefixKaspaTest, "c4extest"},
+		{util.Bech32PrefixKaspaSim, "c4exsim"},
 		{util.Bech32PrefixUnknown, ""},
 	}
 

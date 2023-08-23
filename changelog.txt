@@ -11,8 +11,8 @@ Kaspad v0.12.12 - 2023-03-06
 * Rename last references to blockheight (#2089)
 * Add code of conduct (#2183)
 * Extend TestGetPreciseSigOps with more tests (#2188)
-* Add Dockerfile to kaspawallet (#2187)
-* Add `--send-all` to `kaspawallet send` command (#2181)
+* Add Dockerfile to c4exwallet (#2187)
+* Add `--send-all` to `c4exwallet send` command (#2181)
 * Bump golang.org/x/text from 0.3.5 to 0.3.8 (#2190)
 * Upgrade to go 1.19 (#2191)
 
@@ -43,7 +43,7 @@ Kaspad v0.12.8 - 2022-10-23
 ===========================
 
 * Remove hard fork activation rules (#2152)
-* Add lock file to kaspawallet (#2154)
+* Add lock file to c4exwallet (#2154)
 * Add a new testnet DNS seeder (#2156)
 * Use utxo diff algo for pruning point move and use acceptance data method only as a fall-back (#2157)
 * Make more checks if status is invalid even if the block exists (#2158)
@@ -52,7 +52,7 @@ Kaspad v0.12.8 - 2022-10-23
 Kaspad v0.12.7 - 2022-09-21
 ===========================
 
-* Security Fix + Hard fork - Full details can be seen here: https://medium.com/@michaelsuttonil/kaspa-security-patch-and-hard-fork-september-2022-12da617b0094
+* Security Fix + Hard fork - Full details can be seen here: https://medium.com/@michaelsuttonil/c4ex-security-patch-and-hard-fork-september-2022-12da617b0094
 
 Kaspad v0.12.6 - 2022-09-09
 ===========================
@@ -103,7 +103,7 @@ Kaspad v0.12.2 - 2022-06-17
 
 * Clarify wallet message concerning a wallet daemon sync state  (#2045)
 * Change the way the miner executable reports execution errors (closes issue #1677) (#2048)
-* Fix kaspawallet help messages, clarify sweep command help string (#2067)
+* Fix c4exwallet help messages, clarify sweep command help string (#2067)
 * Wallet parse/send/create commands improvement (#2024)
 * Use chunks for `GetBlocksAcceptanceData` calls in order to avoid blocking consensus for too long (#2075)
 * Unite multiple `GetBlockAcceptanceData` consensus calls to one (#2074)
@@ -121,7 +121,7 @@ Bug Fixes:
 Kaspad v0.12.1 - 2022-05-31
 ===========================
 
-* Fix utxoindex synchronization bug which resulted in kaspawallet orphan tx errors (#2052, #2056, #2059)
+* Fix utxoindex synchronization bug which resulted in c4exwallet orphan tx errors (#2052, #2056, #2059)
 * Add a channel mechanism for consensus events to be processed in the order they were produced (#2052, #2056, #2059)
 * Block template cache improvement (#2023)
 * Improved staging shard performance (#2034)
@@ -130,14 +130,14 @@ Kaspad v0.12.1 - 2022-05-31
 * Remove HF1 activation code (#2042)
 
 Kaspa wallet:
-* Various kaspawallet text fixes and log additions (#2032, #2047, #2062)
+* Various c4exwallet text fixes and log additions (#2032, #2047, #2062)
 * Wallet address synchronization improvement (#2025)
-* Add support for `from` address in `kaspawallet send` (#1964)
-* Make kaspawallet ignore outputs that exist in the mempool (#2053)
+* Add support for `from` address in `c4exwallet send` (#1964)
+* Make c4exwallet ignore outputs that exist in the mempool (#2053)
 * Wrap the entire wallet send operation with a lock (#2063)
 
 RPC API:
-* Add "GetMempoolEntriesByAddresses" to kaspad RPC (#2022)
+* Add "GetMempoolEntriesByAddresses" to c4exd RPC (#2022)
 * Make sure RPCErrors are returned and do not crash the system (#2039)
 * Add AcceptedTransactionIDs to ChainChanged notification and VirtualSelectedParentChain RPC (#2036, for exchanges to track tx confirmations)
 * Allow blank address in NotifyUTXOsChanged to get all updates (#2027)
@@ -157,7 +157,7 @@ Bug fixes:
 * Use cosigner index 0 for read only wallets (#2014)
 
 Non-breaking changes:
-* Adding a "sweep" command to `kaspawallet` (#2018)
+* Adding a "sweep" command to `c4exwallet` (#2018)
 * Use `blue work` heuristic to skip irrelevant relay blocks
 * Kaspawallet daemon: Add Send and Sign commands (#2016)
 
@@ -171,12 +171,12 @@ Kaspad v0.11.16 - 2022-04-05
 
 Kaspad v0.11.15 - 2022-04-05
 ===========================
-* Add support for auto-compound in `kaspawallet send` (#1951)
+* Add support for auto-compound in `c4exwallet send` (#1951)
 * Unite reachability stores (#1963, #1993, #2001)
 * Add names to nameless routes (#1986)
-* Optimize the miner-kaspad flow and latency (#1988)
+* Optimize the miner-c4exd flow and latency (#1988)
 * Upgrade to go 1.18 (#1992)
-* Add package name to kaspawalletd .proto file (#1991)
+* Add package name to c4exwalletd .proto file (#1991)
 * Block template cache  (#1994)
 * Add extra data to GetBlockTemplate request (#1995, #1997)
 * New definition for "out of sync"  (#1996)
@@ -195,20 +195,20 @@ Kaspad v0.11.13 - 2022-03-16
 ===========================
 * Display progress of IBD process in Kaspad logs (#1938, #1939, #1949, #1977)
 * Optimize DB writes during fresh IBD (#1937)
-* Add AllowConnectionToDifferentVersions flag to kaspactl (#1940)
+* Add AllowConnectionToDifferentVersions flag to c4exctl (#1940)
 * Drop support for p2p v3 (#1942)
 * Various transaction processing fixes and workarounds (#1943, #1946, #1971, #1974)
-* Make kaspawallet store the utxos sorted by amount (#1947)
-* Implement a `parse` sub command in the kaspawallet (#1953)
+* Make c4exwallet store the utxos sorted by amount (#1947)
+* Implement a `parse` sub command in the c4exwallet (#1953)
 * Set MaxBlockLevels for non-mainnet networks to 250 (#1952)
 * Add cache to DAA block window (#1948)
-* kaspactl: string slice parser for GetUtxosByAddresses (#1955, first contribution by @icook)
+* c4exctl: string slice parser for GetUtxosByAddresses (#1955, first contribution by @icook)
 * Add MergeSet and IsChainBlock to RPC (#1961)
 * Ignore transaction invs during IBD (#1960)
 * Optimize validation of expected header pruning point (#1962)
 * Fix a bug in bounded marge depth validation (#1966)
 * Don't relay blocks in virtual anticone (#1970)
-* Add version to block template to allow tracking of miner's kaspad version (#1967)
+* Add version to block template to allow tracking of miner's c4exd version (#1967)
 * New p2p version: v5 (#1969)
 * Fix IBD shared past negotiation to be non quadratic also in the worst-case (#1969, p2p v5)
 * Send pruning point anticone in batches (#1973, p2p v5)
@@ -239,10 +239,10 @@ Bug fixes:
 Non-breaking changes:
 * Address search: cleanup repetitively-offline addresses and use randomization weighted by connection failures  (#1899, #1916)
 * New DNS seeders and removal of offline one (#1901, #1910, #1918)
-* Add request balance by address to kaspactl (#1885)
+* Add request balance by address to c4exctl (#1885)
 * Wallet: show balance by addresses (#1904)
 * Reject outdated non-DAA blocks submitted via RPC  (#1914)
-* Add a profile option to kaspawallet daemon (#1854)
+* Add a profile option to c4exwallet daemon (#1854)
 
 Kaspad v0.11.8 - 2021-12-13
 ===========================
@@ -256,7 +256,7 @@ Non-breaking changes:
 Kaspad v0.11.7 - 2021-12-11
 ===========================
 Breaking changes:
-* kaspawallet: show-address →new-address + show-addresses (#1870)
+* c4exwallet: show-address →new-address + show-addresses (#1870)
 
 Bug fixes:
 * Fix numThreads using getAEAD instead of decryptMnemonic (#1859)
@@ -266,7 +266,7 @@ Non-breaking changes:
 * Ignore header mass in devnet and testnet (#1879)
 * Remove unused args from CalcSubsidy (#1877)
 * ExpectedHeaderPruningPoint fix (#1876)
-* Changes to libkaspawallet to support Kaspaper (#1878)
+* Changes to libc4exwallet to support Kaspaper (#1878)
 * Get rid of genesis's UTXO dump (#1867)
 주요 변경 사항:
 * devnet 및 testnet에서 헤더 질량을 무시합니다(#1879)
@@ -309,7 +309,7 @@ Major changes include:
 * Removing RIPEMD160 and SHA1 from the codebase entirely
 * Making P2PKH transactions non-standard
 * Vastly enhancing the CLI wallet
-* Restructuring kaspad's app/home directory
+* Restructuring c4exd's app/home directory
 * Modifying block and transaction types in the RPC to be easier to consume clientside
 
 A partial list of the more-important commits is as follows:
@@ -322,7 +322,7 @@ A partial list of the more-important commits is as follows:
 * Use DAA score where needed (#1602)
 * Remove the Services field from NetAddress. (#1610)
 * Fix getBlocks to not add the anticone when some blocks were filtered by GetHashesBetween (#1611)
-* Restructure the default ~/.kaspad directory layout (#1613)
+* Restructure the default ~/.c4exd directory layout (#1613)
 * Replace the HomeDir flag with a AppDir flag (#1615)
 * Implement BIP-143-like sighash (#1598)
 * Change --datadir to --appdir and remove symmetrical connection in stability tests (#1617)
@@ -334,7 +334,7 @@ A partial list of the more-important commits is as follows:
 * Add mass limit to mempool (#1627)
 * In RPC, use RPCTransactions and RPCBlocks instead of TransactionMessages and BlockMessages (#1609)
 * Use go-secp256k1 v0.0.5 (#1640)
-* Add a show-address subcommand to kaspawallet (#1653)
+* Add a show-address subcommand to c4exwallet (#1653)
 * Replace p2pkh with p2pk (#1650)
 * Implement importing private keys into the wallet (#1655)
 * Add dump unencrypted data sub command to the wallet (#1661)
@@ -363,7 +363,7 @@ Kaspad v0.9.0 - 2021-03-04
 * Add default dns-seeder to testnet (#1568)
 * Fix utxoindex deserialization (#1566)
 * Add pruning point hash to GetBlockDagInfo response (#1565)
-* Use EmitUnpopulated so that kaspactl prints all fields, even the default ones (#1561)
+* Use EmitUnpopulated so that c4exctl prints all fields, even the default ones (#1561)
 * Stop logging an error whenever an RPC/P2P connection is canceled  (#1562)
 * Cleanup the logger and make it asynchronous (#1524)
 * Close all iterators (#1542)
@@ -379,6 +379,6 @@ Kaspad v0.8.10 - 2021-02-25
 * Remove virtual diff parents - only selectedTip is virtualDiffParent now (#1550)
 * Fix UTXO index (#1548)
 * Prevent fast failing (#1545)
-* Increase the sleep time in kaspaminer when the node is not synced (#1544)
+* Increase the sleep time in c4exminer when the node is not synced (#1544)
 * Disallow header only blocks on RPC, relay and when requesting IBD full blocks (#1537)
 * Make templateManager hold a DomainBlock and isSynced bool instead of a GetBlockTemplateResponseMessage (#1538)

@@ -10,7 +10,7 @@ import (
 func HandleNotifyUTXOsChanged(context *rpccontext.Context, router *router.Router, request appmessage.Message) (appmessage.Message, error) {
 	if !context.Config.UTXOIndex {
 		errorMessage := appmessage.NewNotifyUTXOsChangedResponseMessage()
-		errorMessage.Error = appmessage.RPCErrorf("Method unavailable when kaspad is run without --utxoindex")
+		errorMessage.Error = appmessage.RPCErrorf("Method unavailable when c4exd is run without --utxoindex")
 		return errorMessage, nil
 	}
 

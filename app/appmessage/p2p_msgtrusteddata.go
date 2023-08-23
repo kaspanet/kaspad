@@ -1,6 +1,6 @@
 package appmessage
 
-// MsgTrustedData represents a kaspa TrustedData message
+// MsgTrustedData represents a c4ex TrustedData message
 type MsgTrustedData struct {
 	baseMessage
 

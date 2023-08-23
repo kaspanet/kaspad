@@ -12,11 +12,11 @@ import (
 
 var (
 	// userAgentName is the user agent name and is used to help identify
-	// ourselves to other kaspa peers.
-	userAgentName = "kaspad"
+	// ourselves to other c4ex peers.
+	userAgentName = "c4exd"
 
 	// userAgentVersion is the user agent version and is used to help
-	// identify ourselves to other kaspa peers.
+	// identify ourselves to other c4ex peers.
 	userAgentVersion = version.Version()
 
 	// defaultServices describes the default services that are supported by

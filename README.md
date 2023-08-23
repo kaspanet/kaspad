@@ -3,11 +3,11 @@ Kaspad
 ====
 
 [![ISC License](http://img.shields.io/badge/license-ISC-blue.svg)](https://choosealicense.com/licenses/isc/)
-[![GoDoc](https://img.shields.io/badge/godoc-reference-blue.svg)](http://godoc.org/github.com/c4ei/kaspad)
+[![GoDoc](https://img.shields.io/badge/godoc-reference-blue.svg)](http://godoc.org/github.com/c4ei/c4exd)
 
 Kaspad is the reference full node Kaspa implementation written in Go (golang).
 
-## What is kaspa
+## What is c4ex
 
 Kaspa is an attempt at a proof-of-work cryptocurrency with instant confirmations and sub-second block times. It is based on [the PHANTOM protocol](https://eprint.iacr.org/2018/104.pdf), a generalization of Nakamoto consensus.
 
@@ -28,11 +28,11 @@ Go 1.18 or later.
 $ go version
 ```
 
-- Run the following commands to obtain and install kaspad including all dependencies:
+- Run the following commands to obtain and install c4exd including all dependencies:
 
 ```bash
-$ git clone https://github.com/c4ei/kaspad
-$ cd kaspad
+$ git clone https://github.com/c4ei/c4exd
+$ cd c4exd
 $ go install . ./cmd/...
 ```
 
@@ -47,7 +47,7 @@ Kaspad has several configuration options available to tweak how it runs, but all
 of the basic operations work with zero configuration.
 
 ```bash
-$ kaspad
+$ c4exd
 ```
 
 ## Discord
@@ -58,11 +58,11 @@ Join our discord server using the following link: https://discord.gg/YNYnNN5Pf2
 The [integrated github issue tracker](https://github.com/c4ei/yunseokyeol/issues)
 is used for this project.
 
-Issue priorities may be seen at https://github.com/orgs/kaspanet/projects/4
+Issue priorities may be seen at https://github.com/orgs/c4exnet/projects/4
 
 ## Documentation
 
-The [documentation](https://github.com/kaspanet/docs) is a work-in-progress
+The [documentation](https://github.com/c4exnet/docs) is a work-in-progress
 
 ## License
 

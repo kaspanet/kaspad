@@ -39,7 +39,7 @@ func (s *Service) performServiceCommand() error {
 	return err
 }
 
-// installService attempts to install the kaspad service. Typically this should
+// installService attempts to install the c4exd service. Typically this should
 // be done by the msi installer, but it is provided here since it can be useful
 // for development.
 func (s *Service) installService() error {
@@ -91,7 +91,7 @@ func (s *Service) installService() error {
 	return eventlog.InstallAsEventCreate(s.description.Name, eventsSupported)
 }
 
-// removeService attempts to uninstall the kaspad service. Typically this should
+// removeService attempts to uninstall the c4exd service. Typically this should
 // be done by the msi uninstaller, but it is provided here since it can be
 // useful for development. Not the eventlog entry is intentionally not removed
 // since it would invalidate any existing event log messages.
@@ -114,7 +114,7 @@ func (s *Service) removeService() error {
 	return service.Delete()
 }
 
-// startService attempts to Start the kaspad service.
+// startService attempts to Start the c4exd service.
 func (s *Service) startService() error {
 	// Connect to the windows service manager.
 	serviceManager, err := mgr.Connect()

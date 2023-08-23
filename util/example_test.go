@@ -58,7 +58,7 @@ func ExampleNewAmount() {
 	// Output: 1 KAS
 	// 0.01234567 KAS
 	// 0 KAS
-	// invalid kaspa amount
+	// invalid c4ex amount
 }
 
 func ExampleAmount_unitConversions() {

@@ -13,12 +13,12 @@ import (
 )
 
 // AmountUnit describes a method of converting an Amount to something
-// other than the base unit of a kaspa. The value of the AmountUnit
+// other than the base unit of a c4ex. The value of the AmountUnit
 // is the exponent component of the decadic multiple to convert from
-// an amount in kaspa to an amount counted in units.
+// an amount in c4ex to an amount counted in units.
 type AmountUnit int
 
-// These constants define various units used when describing a kaspa
+// These constants define various units used when describing a c4ex
 // monetary amount.
 const (
 	AmountMegaKAS  AmountUnit = 6
@@ -51,8 +51,8 @@ func (u AmountUnit) String() string {
 	}
 }
 
-// Amount represents the base kaspa monetary unit (colloquially referred
-// to as a `Sompi'). A single Amount is equal to 1e-8 of a kaspa.
+// Amount represents the base c4ex monetary unit (colloquially referred
+// to as a `Sompi'). A single Amount is equal to 1e-8 of a c4ex.
 type Amount uint64
 
 // round converts a floating point number, which may or may not be representable
@@ -67,8 +67,8 @@ func round(f float64) Amount {
 }
 
 // NewAmount creates an Amount from a floating point value representing
-// some value in kaspa. NewAmount errors if f is NaN or +-Infinity, but
-// does not check that the amount is within the total amount of kaspa
+// some value in c4ex. NewAmount errors if f is NaN or +-Infinity, but
+// does not check that the amount is within the total amount of c4ex
 // producible as f may not refer to an amount at a single moment in time.
 //
 // NewAmount is for specifically for converting KAS to Sompi.
@@ -85,14 +85,14 @@ func NewAmount(f float64) (Amount, error) {
 	case math.IsInf(f, 1):
 		fallthrough
 	case math.IsInf(f, -1):
-		return 0, errors.New("invalid kaspa amount")
+		return 0, errors.New("invalid c4ex amount")
 	}
 
 	return round(f * constants.SompiPerKaspa), nil
 }
 
-// ToUnit converts a monetary amount counted in kaspa base units to a
-// floating point value representing an amount of kaspa.
+// ToUnit converts a monetary amount counted in c4ex base units to a
+// floating point value representing an amount of c4ex.
 func (a Amount) ToUnit(u AmountUnit) float64 {
 	return float64(a) / math.Pow10(int(u+8))
 }
@@ -102,7 +102,7 @@ func (a Amount) ToKAS() float64 {
 	return a.ToUnit(AmountKAS)
 }
 
-// Format formats a monetary amount counted in kaspa base units as a
+// Format formats a monetary amount counted in c4ex base units as a
 // string for a given unit. The conversion will succeed for any unit,
 // however, known units will be formated with an appended label describing
 // the units with SI notation, or "Sompi" for the base unit.
@@ -118,7 +118,7 @@ func (a Amount) String() string {
 
 // MulF64 multiplies an Amount by a floating point value. While this is not
 // an operation that must typically be done by a full node or wallet, it is
-// useful for services that build on top of kaspa (for example, calculating
+// useful for services that build on top of c4ex (for example, calculating
 // a fee by multiplying by a percentage).
 func (a Amount) MulF64(f float64) Amount {
 	return round(float64(a) * f)

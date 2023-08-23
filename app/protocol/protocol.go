@@ -6,7 +6,7 @@ import (
 
 	"github.com/c4ei/yunseokyeol/app/protocol/common"
 	"github.com/c4ei/yunseokyeol/app/protocol/flows/ready"
-	v5 "github.com/kaspanet/kaspad/app/protocol/flows/v5"
+	v5 "github.com/c4exnet/c4exd/app/protocol/flows/v5"
 
 	"github.com/c4ei/yunseokyeol/app/appmessage"
 	"github.com/c4ei/yunseokyeol/app/protocol/flows/handshake"

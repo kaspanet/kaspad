@@ -7,7 +7,7 @@ import (
 )
 
 func TestVirtualSelectedParentBlueScoreAndVirtualDAAScore(t *testing.T) {
-	// Setup a single kaspad instance
+	// Setup a single c4exd instance
 	harnessParams := &harnessParams{
 		p2pAddress:              p2pAddress1,
 		rpcAddress:              rpcAddress1,
@@ -15,11 +15,11 @@ func TestVirtualSelectedParentBlueScoreAndVirtualDAAScore(t *testing.T) {
 		miningAddressPrivateKey: miningAddress1PrivateKey,
 		utxoIndex:               true,
 	}
-	kaspad, teardown := setupHarness(t, harnessParams)
+	c4exd, teardown := setupHarness(t, harnessParams)
 	defer teardown()
 
 	// Make sure that the initial selected parent blue score is 0
-	response, err := kaspad.rpcClient.GetVirtualSelectedParentBlueScore()
+	response, err := c4exd.rpcClient.GetVirtualSelectedParentBlueScore()
 	if err != nil {
 		t.Fatalf("Error getting virtual selected parent blue score: %s", err)
 	}
@@ -30,7 +30,7 @@ func TestVirtualSelectedParentBlueScoreAndVirtualDAAScore(t *testing.T) {
 
 	// Register to virtual selected parent blue score changes
 	onVirtualSelectedParentBlueScoreChangedChan := make(chan *appmessage.VirtualSelectedParentBlueScoreChangedNotificationMessage)
-	err = kaspad.rpcClient.RegisterForVirtualSelectedParentBlueScoreChangedNotifications(
+	err = c4exd.rpcClient.RegisterForVirtualSelectedParentBlueScoreChangedNotifications(
 		func(notification *appmessage.VirtualSelectedParentBlueScoreChangedNotificationMessage) {
 			onVirtualSelectedParentBlueScoreChangedChan <- notification
 		})
@@ -41,7 +41,7 @@ func TestVirtualSelectedParentBlueScoreAndVirtualDAAScore(t *testing.T) {
 
 	// Register to virtual DAA score changes
 	onVirtualDaaScoreChangedChan := make(chan *appmessage.VirtualDaaScoreChangedNotificationMessage)
-	err = kaspad.rpcClient.RegisterForVirtualDaaScoreChangedNotifications(
+	err = c4exd.rpcClient.RegisterForVirtualDaaScoreChangedNotifications(
 		func(notification *appmessage.VirtualDaaScoreChangedNotificationMessage) {
 			onVirtualDaaScoreChangedChan <- notification
 		})
@@ -53,7 +53,7 @@ func TestVirtualSelectedParentBlueScoreAndVirtualDAAScore(t *testing.T) {
 	// report correct values
 	const blockAmountToMine = 100
 	for i := 0; i < blockAmountToMine; i++ {
-		mineNextBlock(t, kaspad)
+		mineNextBlock(t, c4exd)
 		blueScoreChangedNotification := <-onVirtualSelectedParentBlueScoreChangedChan
 		if blueScoreChangedNotification.VirtualSelectedParentBlueScore != 1+uint64(i) {
 			t.Fatalf("Unexpected virtual selected parent blue score. Want: %d, got: %d",
@@ -67,7 +67,7 @@ func TestVirtualSelectedParentBlueScoreAndVirtualDAAScore(t *testing.T) {
 	}
 
 	// Make sure that the blue score after all that mining is as expected
-	response, err = kaspad.rpcClient.GetVirtualSelectedParentBlueScore()
+	response, err = c4exd.rpcClient.GetVirtualSelectedParentBlueScore()
 	if err != nil {
 		t.Fatalf("Error getting virtual selected parent blue score: %s", err)
 	}

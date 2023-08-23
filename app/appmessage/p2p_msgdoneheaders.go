@@ -1,6 +1,6 @@
 package appmessage
 
-// MsgDoneHeaders implements the Message interface and represents a kaspa
+// MsgDoneHeaders implements the Message interface and represents a c4ex
 // DoneHeaders message. It is used to notify the IBD syncing peer that the
 // syncer sent all the requested headers.
 //
@@ -15,7 +15,7 @@ func (msg *MsgDoneHeaders) Command() MessageCommand {
 	return CmdDoneHeaders
 }
 
-// NewMsgDoneHeaders returns a new kaspa DoneIBDBlocks message that conforms to the
+// NewMsgDoneHeaders returns a new c4ex DoneIBDBlocks message that conforms to the
 // Message interface.
 func NewMsgDoneHeaders() *MsgDoneHeaders {
 	return &MsgDoneHeaders{}

@@ -8,7 +8,7 @@ import (
 	"github.com/c4ei/yunseokyeol/domain/consensus/model/externalapi"
 )
 
-// MsgRequestAnticone implements the Message interface and represents a kaspa
+// MsgRequestAnticone implements the Message interface and represents a c4ex
 // RequestHeaders message. It is used to request the set past(ContextHash) \cap anticone(BlockHash)
 type MsgRequestAnticone struct {
 	baseMessage
@@ -22,7 +22,7 @@ func (msg *MsgRequestAnticone) Command() MessageCommand {
 	return CmdRequestAnticone
 }
 
-// NewMsgRequestAnticone returns a new kaspa RequestPastDiff message that conforms to the
+// NewMsgRequestAnticone returns a new c4ex RequestPastDiff message that conforms to the
 // Message interface using the passed parameters and defaults for the remaining
 // fields.
 func NewMsgRequestAnticone(blockHash, contextHash *externalapi.DomainHash) *MsgRequestAnticone {

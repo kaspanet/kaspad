@@ -18,13 +18,13 @@ const (
 	DefaultServices = SFNodeNetwork | SFNodeBloom | SFNodeCF
 )
 
-// ServiceFlag identifies services supported by a kaspa peer.
-// ServiceFlag는 kaspa 피어가 지원하는 서비스를 식별합니다.
+// ServiceFlag identifies services supported by a c4ex peer.
+// ServiceFlag는 c4ex 피어가 지원하는 서비스를 식별합니다.
 type ServiceFlag uint64
 
 const (
 	// SFNodeNetwork is a flag used to indicate a peer is a full node.
-	// ServiceFlag는 kaspa 액세서리가 지원하는 서비스를 정의합니다.
+	// ServiceFlag는 c4ex 액세서리가 지원하는 서비스를 정의합니다.
 	SFNodeNetwork ServiceFlag = 1 << iota
 
 	// SFNodeGetUTXO is a flag used to indicate a peer supports the
@@ -106,21 +106,21 @@ func (f ServiceFlag) String() string {
 	return s
 }
 
-// C4exNet represents which kaspa network a message belongs to.
+// C4exNet represents which c4ex network a message belongs to.
 // C4exNet은 메시지가 속한 Kaspa 네트워크를 나타냅니다.
 type C4exNet uint32
 
-// Constants used to indicate the message kaspa network. They can also be
+// Constants used to indicate the message c4ex network. They can also be
 // used to seek to the next message when a stream's state is unknown, but
 // this package does not provide that functionality since it's generally a
 // better idea to simply disconnect clients that are misbehaving over TCP.
-// 메시지 kaspa 네트워크를 나타내는 데 사용되는 상수입니다. 그들은 또한
+// 메시지 c4ex 네트워크를 나타내는 데 사용되는 상수입니다. 그들은 또한
 // 스트림 상태를 알 수 없을 때 다음 메시지를 찾는 데 사용되지만,
 // 이 패키지는 일반적으로 다음과 같은 기능을 제공하므로 해당 기능을 제공하지 않습니다.
 // TCP를 통해 오작동하는 클라이언트의 연결을 끊는 것이 더 나은 아이디어입니다.
 const (
-	// Mainnet represents the main kaspa network.
-	// 메인넷은 주요 kaspa 네트워크를 나타냅니다.
+	// Mainnet represents the main c4ex network.
+	// 메인넷은 주요 c4ex 네트워크를 나타냅니다.
 	Mainnet C4exNet = 0x3ddcf71d
 
 	// Testnet represents the test network.
@@ -133,9 +133,9 @@ const (
 	Devnet C4exNet = 0x732d87e1
 )
 
-// bnStrings is a map of kaspa networks back to their constant names for
+// bnStrings is a map of c4ex networks back to their constant names for
 // pretty printing.
-// bnStrings는 kaspa 네트워크의 상수 이름으로 돌아가는 맵입니다.
+// bnStrings는 c4ex 네트워크의 상수 이름으로 돌아가는 맵입니다.
 // 예쁜 인쇄.
 var bnStrings = map[C4exNet]string{
 	Mainnet: "Mainnet",

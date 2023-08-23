@@ -33,7 +33,7 @@ func TestServiceFlagStringer(t *testing.T) {
 	}
 }
 
-// TestC4exNetStringer tests the stringized output for kaspa net types.
+// TestC4exNetStringer tests the stringized output for c4ex net types.
 func TestC4exNetStringer(t *testing.T) {
 	tests := []struct {
 		in   C4exNet

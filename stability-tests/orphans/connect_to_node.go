@@ -11,10 +11,10 @@ import (
 func connectToNode() *standalone.Routes {
 	cfg := activeConfig()
 
-	kaspadConfig := config.DefaultConfig()
-	kaspadConfig.NetworkFlags = cfg.NetworkFlags
+	c4exdConfig := config.DefaultConfig()
+	c4exdConfig.NetworkFlags = cfg.NetworkFlags
 
-	minimalNetAdapter, err := standalone.NewMinimalNetAdapter(kaspadConfig)
+	minimalNetAdapter, err := standalone.NewMinimalNetAdapter(c4exdConfig)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "error creating minimalNetAdapter: %+v", err)
 		os.Exit(1)

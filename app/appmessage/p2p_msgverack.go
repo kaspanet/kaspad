@@ -4,7 +4,7 @@
 
 package appmessage
 
-// MsgVerAck defines a kaspa verack message which is used for a peer to
+// MsgVerAck defines a c4ex verack message which is used for a peer to
 // acknowledge a version message (MsgVersion) after it has used the information
 // to negotiate parameters. It implements the Message interface.
 //
@@ -19,7 +19,7 @@ func (msg *MsgVerAck) Command() MessageCommand {
 	return CmdVerAck
 }
 
-// NewMsgVerAck returns a new kaspa verack message that conforms to the
+// NewMsgVerAck returns a new c4ex verack message that conforms to the
 // Message interface.
 func NewMsgVerAck() *MsgVerAck {
 	return &MsgVerAck{}

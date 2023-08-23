@@ -2,7 +2,7 @@
 *~
 
 # Databases
-kaspad.db
+c4exd.db
 *-shm
 *-wal
 
@@ -19,10 +19,10 @@ kaspad.db
 *.test
 
 # Real binaries, build with `go build .`
-kaspad
+c4exd
 cmd/gencerts/gencerts
-cmd/kaspactl/kaspactl
-cmd/kasminer/kaspaminer
+cmd/c4exctl/c4exctl
+cmd/kasminer/c4exminer
 *.exe
 *.exe~
 

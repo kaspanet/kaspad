@@ -4,7 +4,7 @@ import (
 	"github.com/c4ei/yunseokyeol/domain/consensus/model/externalapi"
 )
 
-// MsgInvRelayBlock implements the Message interface and represents a kaspa
+// MsgInvRelayBlock implements the Message interface and represents a c4ex
 // block inventory message. It is used to notify the network about new block
 // by sending their hash, and let the receiving node decide if it needs it.
 type MsgInvRelayBlock struct {
@@ -18,7 +18,7 @@ func (msg *MsgInvRelayBlock) Command() MessageCommand {
 	return CmdInvRelayBlock
 }
 
-// NewMsgInvBlock returns a new kaspa invrelblk message that conforms to
+// NewMsgInvBlock returns a new c4ex invrelblk message that conforms to
 // the Message interface. See MsgInvRelayBlock for details.
 func NewMsgInvBlock(hash *externalapi.DomainHash) *MsgInvRelayBlock {
 	return &MsgInvRelayBlock{

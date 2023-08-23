@@ -150,7 +150,7 @@ func (v *transactionValidator) checkTransactionInputAmounts(tx *externalapi.Doma
 		// output values of the input transactions must not be negative
 		// or more than the max allowed per transaction. All amounts in
 		// a transaction are in a unit value known as a sompi. One
-		// kaspa is a quantity of sompi as defined by the
+		// c4ex is a quantity of sompi as defined by the
 		// SompiPerKaspa constant.
 		totalSompiIn, err = v.checkEntryAmounts(utxoEntry, totalSompiIn)
 		if err != nil {

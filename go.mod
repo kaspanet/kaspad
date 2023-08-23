@@ -1,4 +1,4 @@
-module github.com/c4ei/kaspad
+module github.com/c4ei/c4exd
 
 go 1.18
 
@@ -11,8 +11,8 @@ require (
 	github.com/golang/protobuf v1.5.2
 	github.com/jessevdk/go-flags v1.4.0
 	github.com/jrick/logrotate v1.0.0
-	github.com/kaspanet/go-muhash v0.0.4
-	github.com/kaspanet/go-secp256k1 v0.0.7
+	github.com/c4exnet/go-muhash v0.0.4
+	github.com/c4exnet/go-secp256k1 v0.0.7
 	github.com/pkg/errors v0.9.1
 	github.com/syndtr/goleveldb v1.0.1-0.20190923125748-758128399b1d
 	github.com/tyler-smith/go-bip39 v1.1.0

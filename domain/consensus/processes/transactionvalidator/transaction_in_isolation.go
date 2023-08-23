@@ -67,7 +67,7 @@ func (v *transactionValidator) checkTransactionAmountRanges(tx *externalapi.Doma
 	// output must not be negative or more than the max allowed per
 	// transaction. Also, the total of all outputs must abide by the same
 	// restrictions. All amounts in a transaction are in a unit value known
-	// as a sompi. One kaspa is a quantity of sompi as defined by the
+	// as a sompi. One c4ex is a quantity of sompi as defined by the
 	// sompiPerKaspa constant.
 	var totalSompi uint64
 	for _, txOut := range tx.Outputs {

@@ -1,6 +1,6 @@
 package appmessage
 
-// MsgDoneBlocksWithTrustedData implements the Message interface and represents a kaspa
+// MsgDoneBlocksWithTrustedData implements the Message interface and represents a c4ex
 // DoneBlocksWithTrustedData message
 //
 // This message has no payload.
@@ -14,7 +14,7 @@ func (msg *MsgDoneBlocksWithTrustedData) Command() MessageCommand {
 	return CmdDoneBlocksWithTrustedData
 }
 
-// NewMsgDoneBlocksWithTrustedData returns a new kaspa DoneBlocksWithTrustedData message that conforms to the
+// NewMsgDoneBlocksWithTrustedData returns a new c4ex DoneBlocksWithTrustedData message that conforms to the
 // Message interface.
 func NewMsgDoneBlocksWithTrustedData() *MsgDoneBlocksWithTrustedData {
 	return &MsgDoneBlocksWithTrustedData{}

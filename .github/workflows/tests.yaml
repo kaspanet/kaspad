@@ -65,7 +65,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Install kaspad
+      - name: Install c4exd
         run: go install ./...
 
       - name: Install golint

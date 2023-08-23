@@ -6,7 +6,7 @@ import (
 	"github.com/c4ei/yunseokyeol/domain/consensus/model/externalapi"
 )
 
-// MsgBlockWithTrustedData represents a kaspa BlockWithTrustedData message
+// MsgBlockWithTrustedData represents a c4ex BlockWithTrustedData message
 type MsgBlockWithTrustedData struct {
 	baseMessage
 

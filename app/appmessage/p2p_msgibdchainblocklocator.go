@@ -4,7 +4,7 @@ import (
 	"github.com/c4ei/yunseokyeol/domain/consensus/model/externalapi"
 )
 
-// MsgIBDChainBlockLocator implements the Message interface and represents a kaspa
+// MsgIBDChainBlockLocator implements the Message interface and represents a c4ex
 // locator message. It is used to find the blockLocator of a peer that is
 // syncing with you.
 type MsgIBDChainBlockLocator struct {
@@ -18,7 +18,7 @@ func (msg *MsgIBDChainBlockLocator) Command() MessageCommand {
 	return CmdIBDChainBlockLocator
 }
 
-// NewMsgIBDChainBlockLocator returns a new kaspa locator message that conforms to
+// NewMsgIBDChainBlockLocator returns a new c4ex locator message that conforms to
 // the Message interface. See MsgBlockLocator for details.
 func NewMsgIBDChainBlockLocator(locatorHashes []*externalapi.DomainHash) *MsgIBDChainBlockLocator {
 	return &MsgIBDChainBlockLocator{

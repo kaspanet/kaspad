@@ -27,7 +27,7 @@ func (cmd MessageCommand) String() string {
 	return fmt.Sprintf("%s [code %d]", cmdString, uint8(cmd))
 }
 
-// Commands used in kaspa message headers which describe the type of message.
+// Commands used in c4ex message headers which describe the type of message.
 const (
 	// protocol
 	CmdVersion MessageCommand = iota
@@ -302,7 +302,7 @@ var RPCMessageCommandToString = map[MessageCommand]string{
 	CmdGetCoinSupplyResponseMessage:                               "GetCoinSupplyResponse",
 }
 
-// Message is an interface that describes a kaspa message. A type that
+// Message is an interface that describes a c4ex message. A type that
 // implements Message has complete control over the representation of its data
 // and may therefore contain additional or fewer fields than those which
 // are used directly in the protocol encoded message.

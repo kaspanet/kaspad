@@ -4,7 +4,7 @@ import (
 	"github.com/c4ei/yunseokyeol/domain/consensus/model/externalapi"
 )
 
-// MsgIBDBlockLocatorHighestHash represents a kaspa BlockLocatorHighestHash message
+// MsgIBDBlockLocatorHighestHash represents a c4ex BlockLocatorHighestHash message
 type MsgIBDBlockLocatorHighestHash struct {
 	baseMessage
 	HighestHash *externalapi.DomainHash

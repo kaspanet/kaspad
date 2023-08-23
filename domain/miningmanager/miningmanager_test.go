@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/c4ei/yunseokyeol/cmd/kaspawallet/libkaspawallet"
+	"github.com/c4ei/yunseokyeol/cmd/c4exwallet/libc4exwallet"
 	"github.com/c4ei/yunseokyeol/domain/consensusreference"
 	"github.com/c4ei/yunseokyeol/domain/miningmanager/model"
 	"github.com/c4ei/yunseokyeol/util"
@@ -820,7 +820,7 @@ func generateNewCoinbase(addressPrefix util.Bech32Prefix, op opType) (*externala
 			ExtraData:       nil,
 		}, nil
 	}
-	_, publicKey, err := libkaspawallet.CreateKeyPair(op == opECDSA)
+	_, publicKey, err := libc4exwallet.CreateKeyPair(op == opECDSA)
 	if err != nil {
 		return nil, err
 	}

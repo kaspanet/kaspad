@@ -8,7 +8,7 @@ import (
 	"github.com/c4ei/yunseokyeol/infrastructure/os/limits"
 )
 
-// Initialize initializes the execution environment required to run kaspad
+// Initialize initializes the execution environment required to run c4exd
 func Initialize(desiredLimits *limits.DesiredLimits) {
 	// Use all processor cores.
 	runtime.GOMAXPROCS(runtime.NumCPU())

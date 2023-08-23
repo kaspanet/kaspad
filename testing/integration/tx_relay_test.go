@@ -17,7 +17,7 @@ import (
 	"github.com/c4ei/yunseokyeol/domain/consensus/utils/transactionhelper"
 	"github.com/c4ei/yunseokyeol/domain/consensus/utils/txscript"
 	"github.com/c4ei/yunseokyeol/util"
-	"github.com/kaspanet/go-secp256k1"
+	"github.com/c4exnet/go-secp256k1"
 )
 
 func TestTxRelay(t *testing.T) {

@@ -11,7 +11,7 @@ import (
 func HandleGetCoinSupply(context *rpccontext.Context, _ *router.Router, _ appmessage.Message) (appmessage.Message, error) {
 	if !context.Config.UTXOIndex {
 		errorMessage := &appmessage.GetCoinSupplyResponseMessage{}
-		errorMessage.Error = appmessage.RPCErrorf("Method unavailable when kaspad is run without --utxoindex")
+		errorMessage.Error = appmessage.RPCErrorf("Method unavailable when c4exd is run without --utxoindex")
 		return errorMessage, nil
 	}
 
