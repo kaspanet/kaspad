@@ -5,12 +5,13 @@
 package dagconfig
 
 import (
+	"math/big"
+
 	"github.com/kaspanet/go-muhash"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/blockheader"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/subnetworks"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/transactionhelper"
-	"math/big"
 )
 
 var genesisTxOuts = []*externalapi.DomainTransactionOutput{}
@@ -145,7 +146,7 @@ var simnetGenesisTxPayload = []byte{
 	0x00, 0x00, // Script version
 	0x01,                                                                   // Varint
 	0x00,                                                                   // OP-FALSE
-	0x6b, 0x61, 0x73, 0x70, 0x61, 0x2d, 0x73, 0x69, 0x6d, 0x6e, 0x65, 0x74, // kaspa-simnet
+	0x6b, 0x61, 0x73, 0x70, 0x61, 0x2d, 0x73, 0x69, 0x6d, 0x6e, 0x65, 0x74, // c4ex-simnet
 }
 
 // simnetGenesisCoinbaseTx is the coinbase transaction for the simnet genesis block.

@@ -6,7 +6,7 @@ KASPAD_PID=$!
 
 sleep 1
 
-orphans --simnet -alocalhost:16511 -n20 --profile=7000
+orphans --simnet -alocalhost:22511 -n20 --profile=7000
 TEST_EXIT_CODE=$?
 
 kill $KASPAD_PID

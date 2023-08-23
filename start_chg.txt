@@ -1,0 +1,13 @@
+kaspa-mainnet --> c4ex-mainnet
+
+/home/dev/coin/kaspad/domain/dagconfig/params.go
+var MainnetParams = Params{
+	K:           defaultGHOSTDAGK,
+	Name:        "c4ex-mainnet",
+	Net:         appmessage.Mainnet,
+	RPCPort:     "21000", // 16110 --> 21000
+	DefaultPort: "21001", // 16111 --> 21001
+	DNSSeeds: []string{
+		// This DNS seeder is run by Wolfie
+		"dnsseed.c4ex.net",
+	},

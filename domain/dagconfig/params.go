@@ -209,29 +209,30 @@ func (p *Params) PruningDepth() uint64 {
 // MainnetParams defines the network parameters for the main Kaspa network.
 var MainnetParams = Params{
 	K:           defaultGHOSTDAGK,
-	Name:        "kaspa-mainnet",
+	Name:        "c4ex-mainnet",
 	Net:         appmessage.Mainnet,
-	RPCPort:     "16110",
-	DefaultPort: "16111",
+	RPCPort:     "21000", // 16110 --> 21000
+	DefaultPort: "21001", // 16111 --> 21001
 	DNSSeeds: []string{
 		// This DNS seeder is run by Wolfie
-		"mainnet-dnsseed.kas.pa",
+		"dnsseed.c4ex.net",
+		// "mainnet-dnsseed.kas.pa",
 		// This DNS seeder is run by Denis Mashkevich
-		"mainnet-dnsseed-1.kaspanet.org",
-		// This DNS seeder is run by Denis Mashkevich
-		"mainnet-dnsseed-2.kaspanet.org",
-		// This DNS seeder is run by Constantine Bytensky
-		"dnsseed.cbytensky.org",
-		// This DNS seeder is run by Georges Künzli
-		"seeder1.kaspad.net",
-		// This DNS seeder is run by Georges Künzli
-		"seeder2.kaspad.net",
-		// This DNS seeder is run by Georges Künzli
-		"seeder3.kaspad.net",
-		// This DNS seeder is run by Georges Künzli
-		"seeder4.kaspad.net",
-		// This DNS seeder is run by Tim
-		"kaspadns.kaspacalc.net",
+		// "mainnet-dnsseed-1.kaspanet.org",
+		// // This DNS seeder is run by Denis Mashkevich
+		// "mainnet-dnsseed-2.kaspanet.org",
+		// // This DNS seeder is run by Constantine Bytensky
+		// "dnsseed.cbytensky.org",
+		// // This DNS seeder is run by Georges Künzli
+		// "seeder1.kaspad.net",
+		// // This DNS seeder is run by Georges Künzli
+		// "seeder2.kaspad.net",
+		// // This DNS seeder is run by Georges Künzli
+		// "seeder3.kaspad.net",
+		// // This DNS seeder is run by Georges Künzli
+		// "seeder4.kaspad.net",
+		// // This DNS seeder is run by Tim
+		// "kaspadns.kaspacalc.net",
 	},
 
 	// DAG parameters
@@ -293,14 +294,15 @@ var MainnetParams = Params{
 // TestnetParams defines the network parameters for the test Kaspa network.
 var TestnetParams = Params{
 	K:           defaultGHOSTDAGK,
-	Name:        "kaspa-testnet-10",
+	Name:        "c4ex-testnet", // kaspa-testnet-10
 	Net:         appmessage.Testnet,
-	RPCPort:     "16210",
-	DefaultPort: "16211",
+	RPCPort:     "22000", // 16210 --> 22000
+	DefaultPort: "22001", // 16211 --> 22001
 	DNSSeeds: []string{
-		"testnet-10-dnsseed.kas.pa",
+		"test-dnsseed.c4ex.net",
+		// "testnet-10-dnsseed.kas.pa",
 		// This DNS seeder is run by Tiram
-		"seeder1-testnet.kaspad.net",
+		// "seeder1-testnet.kaspad.net",
 	},
 
 	// DAG parameters
@@ -365,10 +367,10 @@ var TestnetParams = Params{
 // just turn into another public testnet.
 var SimnetParams = Params{
 	K:           defaultGHOSTDAGK,
-	Name:        "kaspa-simnet",
+	Name:        "c4ex-simnet",
 	Net:         appmessage.Simnet,
-	RPCPort:     "16510",
-	DefaultPort: "16511",
+	RPCPort:     "22510",    // 16510 --> 22510
+	DefaultPort: "22511",    // 16511 --> 22511
 	DNSSeeds:    []string{}, // NOTE: There must NOT be any seeds.
 
 	// DAG parameters
@@ -425,10 +427,10 @@ var SimnetParams = Params{
 // DevnetParams defines the network parameters for the development Kaspa network.
 var DevnetParams = Params{
 	K:           defaultGHOSTDAGK,
-	Name:        "kaspa-devnet",
+	Name:        "c4ex-devnet",
 	Net:         appmessage.Devnet,
-	RPCPort:     "16610",
-	DefaultPort: "16611",
+	RPCPort:     "22610",    // 16610 --> 22610
+	DefaultPort: "22611",    // 16611 --> 22611
 	DNSSeeds:    []string{}, // NOTE: There must NOT be any seeds.
 
 	// DAG parameters
