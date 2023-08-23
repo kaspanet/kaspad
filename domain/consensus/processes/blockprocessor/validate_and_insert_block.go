@@ -5,16 +5,16 @@ import (
 	_ "embed"
 	"fmt"
 
-	"github.com/kaspanet/kaspad/domain/consensus/model"
-	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
-	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/multiset"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/utxo"
-	"github.com/kaspanet/kaspad/infrastructure/db/database"
-	"github.com/kaspanet/kaspad/infrastructure/logger"
-	"github.com/kaspanet/kaspad/util/difficulty"
-	"github.com/kaspanet/kaspad/util/staging"
+	"github.com/c4ei/kaspad/domain/consensus/model"
+	"github.com/c4ei/kaspad/domain/consensus/model/externalapi"
+	"github.com/c4ei/kaspad/domain/consensus/ruleerrors"
+	"github.com/c4ei/kaspad/domain/consensus/utils/consensushashing"
+	"github.com/c4ei/kaspad/domain/consensus/utils/multiset"
+	"github.com/c4ei/kaspad/domain/consensus/utils/utxo"
+	"github.com/c4ei/kaspad/infrastructure/db/database"
+	"github.com/c4ei/kaspad/infrastructure/logger"
+	"github.com/c4ei/kaspad/util/difficulty"
+	"github.com/c4ei/kaspad/util/staging"
 	"github.com/pkg/errors"
 )
 
@@ -233,7 +233,7 @@ func (bp *blockProcessor) loadUTXODataForGenesis(stagingArea *model.StagingArea,
 	// pruning point.
 	// The actual UTXO set that fits Mainnet's genesis' UTXO commitment was removed from the codebase in order
 	// to make reduce the consensus initialization time and the compiled binary size, but can be still
-	// found here for anyone to verify: https://github.com/kaspanet/kaspad/blob/dbf18d8052f000ba0079be9e79b2d6f5a98b74ca/domain/consensus/processes/blockprocessor/resources/utxos.gz
+	// found here for anyone to verify: https://github.com/c4ei/kaspad/blob/dbf18d8052f000ba0079be9e79b2d6f5a98b74ca/domain/consensus/processes/blockprocessor/resources/utxos.gz
 	// 참고: 적용된 UTXO 집합 및 다중 집합은 UTXO 약속을 충족하지 않습니다.
 	// 메인넷의 탄생. 그렇기 때문에 모든 블록은 제네시스 위에 구축될 것입니다.
 	// 잘못된 UTXO 약속도 갖게 되며 합의에 도달할 수 없습니다.
@@ -243,7 +243,7 @@ func (bp *blockProcessor) loadUTXODataForGenesis(stagingArea *model.StagingArea,
 	// 가지치기 지점.
 	// 메인넷 제네시스의 UTXO 공약에 맞는 실제 UTXO 세트는 순서대로 코드베이스에서 제거되었습니다.
 	// 합의 초기화 시간과 컴파일된 바이너리 크기를 줄이기 위해 하지만 여전히
-	// 누구나 확인할 수 있도록 여기에 있습니다: https://github.com/kaspanet/kaspad/blob/dbf18d8052f000ba0079be9e79b2d6f5a98b74ca/domain/consensus/processes/blockprocessor/resources/utxos.gz
+	// 누구나 확인할 수 있도록 여기에 있습니다: https://github.com/c4ei/kaspad/blob/dbf18d8052f000ba0079be9e79b2d6f5a98b74ca/domain/consensus/processes/blockprocessor/resources/utxos.gz
 	bp.consensusStateStore.StageVirtualUTXODiff(stagingArea, utxo.NewUTXODiff())
 	bp.utxoDiffStore.Stage(stagingArea, blockHash, utxo.NewUTXODiff(), nil)
 	bp.multisetStore.Stage(stagingArea, blockHash, multiset.New())

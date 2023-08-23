@@ -1,9 +1,9 @@
 # -- multistage docker build: stage #1: build stage
 FROM golang:1.18-alpine AS build
 
-RUN mkdir -p /go/src/github.com/kaspanet/kaspad
+RUN mkdir -p /go/src/github.com/c4ei/kaspad
 
-WORKDIR /go/src/github.com/kaspanet/kaspad
+WORKDIR /go/src/github.com/c4ei/kaspad
 
 RUN apk add --no-cache curl git openssh binutils gcc musl-dev
 
@@ -14,7 +14,7 @@ RUN go mod download
 
 COPY . .
 
-WORKDIR /go/src/github.com/kaspanet/kaspad/cmd/kaspawallet
+WORKDIR /go/src/github.com/c4ei/kaspad/cmd/kaspawallet
 RUN GOOS=linux go build -a -installsuffix cgo -o kaspawallet .
 
 # --- multistage docker build: stage #2: runtime image
@@ -23,7 +23,7 @@ WORKDIR /app
 
 RUN apk add --no-cache ca-certificates tini
 
-COPY --from=build /go/src/github.com/kaspanet/kaspad/cmd/kaspawallet/kaspawallet /app/
+COPY --from=build /go/src/github.com/c4ei/kaspad/cmd/kaspawallet/kaspawallet /app/
 
 USER nobody
 ENTRYPOINT [ "/sbin/tini", "--" ]

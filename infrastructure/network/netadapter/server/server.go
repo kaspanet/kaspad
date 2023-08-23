@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"net"
 
-	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
+	"github.com/c4ei/kaspad/infrastructure/network/netadapter/router"
 )
 
 // OnConnectedHandler is a function that is to be called

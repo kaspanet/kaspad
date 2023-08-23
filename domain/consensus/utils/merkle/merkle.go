@@ -3,9 +3,9 @@ package merkle
 import (
 	"math"
 
-	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/hashes"
+	"github.com/c4ei/kaspad/domain/consensus/model/externalapi"
+	"github.com/c4ei/kaspad/domain/consensus/utils/consensushashing"
+	"github.com/c4ei/kaspad/domain/consensus/utils/hashes"
 )
 
 // nextPowerOfTwo returns the next highest power of two from a given number if

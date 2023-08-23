@@ -9,8 +9,8 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/c4ei/kaspad/domain/consensus/model/externalapi"
 	"github.com/davecgh/go-spew/spew"
-	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 )
 
 // TestBlockHeader tests the MsgBlockHeader API.

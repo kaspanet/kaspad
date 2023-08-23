@@ -4,22 +4,22 @@ import (
 	"fmt"
 	"sync/atomic"
 
-	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+	"github.com/c4ei/kaspad/domain/consensus/model/externalapi"
 
-	"github.com/kaspanet/kaspad/domain/miningmanager/mempool"
+	"github.com/c4ei/kaspad/domain/miningmanager/mempool"
 
-	"github.com/kaspanet/kaspad/app/protocol"
-	"github.com/kaspanet/kaspad/app/rpc"
-	"github.com/kaspanet/kaspad/domain"
-	"github.com/kaspanet/kaspad/domain/consensus"
-	"github.com/kaspanet/kaspad/domain/utxoindex"
-	"github.com/kaspanet/kaspad/infrastructure/config"
-	infrastructuredatabase "github.com/kaspanet/kaspad/infrastructure/db/database"
-	"github.com/kaspanet/kaspad/infrastructure/network/addressmanager"
-	"github.com/kaspanet/kaspad/infrastructure/network/connmanager"
-	"github.com/kaspanet/kaspad/infrastructure/network/netadapter"
-	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/id"
-	"github.com/kaspanet/kaspad/util/panics"
+	"github.com/c4ei/kaspad/app/protocol"
+	"github.com/c4ei/kaspad/app/rpc"
+	"github.com/c4ei/kaspad/domain"
+	"github.com/c4ei/kaspad/domain/consensus"
+	"github.com/c4ei/kaspad/domain/utxoindex"
+	"github.com/c4ei/kaspad/infrastructure/config"
+	infrastructuredatabase "github.com/c4ei/kaspad/infrastructure/db/database"
+	"github.com/c4ei/kaspad/infrastructure/network/addressmanager"
+	"github.com/c4ei/kaspad/infrastructure/network/connmanager"
+	"github.com/c4ei/kaspad/infrastructure/network/netadapter"
+	"github.com/c4ei/kaspad/infrastructure/network/netadapter/id"
+	"github.com/c4ei/kaspad/util/panics"
 )
 
 // ComponentManager is a wrapper for all the kaspad services

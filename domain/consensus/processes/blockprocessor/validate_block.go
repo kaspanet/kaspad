@@ -1,11 +1,11 @@
 package blockprocessor
 
 import (
-	"github.com/kaspanet/kaspad/domain/consensus/model"
-	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
-	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
-	"github.com/kaspanet/kaspad/util/staging"
+	"github.com/c4ei/kaspad/domain/consensus/model"
+	"github.com/c4ei/kaspad/domain/consensus/model/externalapi"
+	"github.com/c4ei/kaspad/domain/consensus/ruleerrors"
+	"github.com/c4ei/kaspad/domain/consensus/utils/consensushashing"
+	"github.com/c4ei/kaspad/util/staging"
 	"github.com/pkg/errors"
 )
 

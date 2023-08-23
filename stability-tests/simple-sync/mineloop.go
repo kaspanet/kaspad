@@ -3,11 +3,11 @@ package main
 import (
 	"time"
 
+	"github.com/c4ei/kaspad/app/appmessage"
+	"github.com/c4ei/kaspad/stability-tests/common"
+	"github.com/c4ei/kaspad/stability-tests/common/rpc"
+	"github.com/c4ei/kaspad/util"
 	"github.com/kaspanet/go-secp256k1"
-	"github.com/kaspanet/kaspad/app/appmessage"
-	"github.com/kaspanet/kaspad/stability-tests/common"
-	"github.com/kaspanet/kaspad/stability-tests/common/rpc"
-	"github.com/kaspanet/kaspad/util"
 	"github.com/pkg/errors"
 )
 

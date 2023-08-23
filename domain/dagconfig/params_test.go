@@ -7,7 +7,7 @@ package dagconfig
 import (
 	"testing"
 
-	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+	"github.com/c4ei/kaspad/domain/consensus/model/externalapi"
 )
 
 func TestNewHashFromStr(t *testing.T) {

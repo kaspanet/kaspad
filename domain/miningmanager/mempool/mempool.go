@@ -3,10 +3,10 @@ package mempool
 import (
 	"sync"
 
-	"github.com/kaspanet/kaspad/domain/consensusreference"
+	"github.com/c4ei/kaspad/domain/consensusreference"
 
-	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
-	miningmanagermodel "github.com/kaspanet/kaspad/domain/miningmanager/model"
+	"github.com/c4ei/kaspad/domain/consensus/model/externalapi"
+	miningmanagermodel "github.com/c4ei/kaspad/domain/miningmanager/model"
 )
 
 type mempool struct {

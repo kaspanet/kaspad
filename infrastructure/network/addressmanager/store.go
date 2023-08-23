@@ -2,11 +2,12 @@ package addressmanager
 
 import (
 	"encoding/binary"
-	"github.com/kaspanet/kaspad/app/appmessage"
-	"github.com/kaspanet/kaspad/infrastructure/db/database"
-	"github.com/kaspanet/kaspad/util/mstime"
-	"github.com/pkg/errors"
 	"net"
+
+	"github.com/c4ei/kaspad/app/appmessage"
+	"github.com/c4ei/kaspad/infrastructure/db/database"
+	"github.com/c4ei/kaspad/util/mstime"
+	"github.com/pkg/errors"
 )
 
 var notBannedAddressBucket = database.MakeBucket([]byte("not-banned-addresses"))

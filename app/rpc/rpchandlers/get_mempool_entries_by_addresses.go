@@ -1,12 +1,12 @@
 package rpchandlers
 
 import (
-	"github.com/kaspanet/kaspad/app/appmessage"
-	"github.com/kaspanet/kaspad/app/rpc/rpccontext"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/txscript"
+	"github.com/c4ei/kaspad/app/appmessage"
+	"github.com/c4ei/kaspad/app/rpc/rpccontext"
+	"github.com/c4ei/kaspad/domain/consensus/utils/txscript"
 
-	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
-	"github.com/kaspanet/kaspad/util"
+	"github.com/c4ei/kaspad/infrastructure/network/netadapter/router"
+	"github.com/c4ei/kaspad/util"
 )
 
 // HandleGetMempoolEntriesByAddresses handles the respectively named RPC command

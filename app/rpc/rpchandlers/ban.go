@@ -1,10 +1,11 @@
 package rpchandlers
 
 import (
-	"github.com/kaspanet/kaspad/app/appmessage"
-	"github.com/kaspanet/kaspad/app/rpc/rpccontext"
-	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
 	"net"
+
+	"github.com/c4ei/kaspad/app/appmessage"
+	"github.com/c4ei/kaspad/app/rpc/rpccontext"
+	"github.com/c4ei/kaspad/infrastructure/network/netadapter/router"
 )
 
 // HandleBan handles the respectively named RPC command

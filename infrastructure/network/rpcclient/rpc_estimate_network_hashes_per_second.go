@@ -1,6 +1,6 @@
 package rpcclient
 
-import "github.com/kaspanet/kaspad/app/appmessage"
+import "github.com/c4ei/kaspad/app/appmessage"
 
 // EstimateNetworkHashesPerSecond sends an RPC request respective to the function's name and returns the RPC server's response
 func (c *RPCClient) EstimateNetworkHashesPerSecond(startHash string, windowSize uint32) (*appmessage.EstimateNetworkHashesPerSecondResponseMessage, error) {

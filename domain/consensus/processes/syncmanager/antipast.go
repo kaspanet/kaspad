@@ -1,8 +1,8 @@
 package syncmanager
 
 import (
-	"github.com/kaspanet/kaspad/domain/consensus/model"
-	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+	"github.com/c4ei/kaspad/domain/consensus/model"
+	"github.com/c4ei/kaspad/domain/consensus/model/externalapi"
 	"github.com/pkg/errors"
 )
 
@@ -151,7 +151,7 @@ func (sm *syncManager) missingBlockBodyHashes(stagingArea *model.StagingArea, hi
 			// In these cases - return an empty list of blocks to sync
 			return []*externalapi.DomainHash{}, nil
 		}
-		// TODO: Once block children are fixed (https://github.com/kaspanet/kaspad/issues/1499),
+		// TODO: Once block children are fixed (https://github.com/c4ei/kaspad/issues/1499),
 		// this error should be returned rather the logged
 		log.Errorf("No header-only blocks between %s and %s",
 			lowHash, highHash)

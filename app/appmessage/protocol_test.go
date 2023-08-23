@@ -33,16 +33,16 @@ func TestServiceFlagStringer(t *testing.T) {
 	}
 }
 
-// TestKaspaNetStringer tests the stringized output for kaspa net types.
-func TestKaspaNetStringer(t *testing.T) {
+// TestC4exNetStringer tests the stringized output for kaspa net types.
+func TestC4exNetStringer(t *testing.T) {
 	tests := []struct {
-		in   KaspaNet
+		in   C4exNet
 		want string
 	}{
 		{Mainnet, "Mainnet"},
 		{Testnet, "Testnet"},
 		{Simnet, "Simnet"},
-		{0xffffffff, "Unknown KaspaNet (4294967295)"},
+		{0xffffffff, "Unknown C4exNet (4294967295)"},
 	}
 
 	t.Logf("Running %d tests", len(tests))

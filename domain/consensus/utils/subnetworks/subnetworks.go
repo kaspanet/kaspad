@@ -1,6 +1,6 @@
 package subnetworks
 
-import "github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+import "github.com/c4ei/kaspad/domain/consensus/model/externalapi"
 
 var (
 	// SubnetworkIDNative is the default subnetwork ID which is used for transactions without related payload data

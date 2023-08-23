@@ -2,11 +2,12 @@ package panics
 
 import (
 	"fmt"
-	"github.com/kaspanet/kaspad/infrastructure/logger"
 	"os"
 	"runtime/debug"
 	"sync/atomic"
 	"time"
+
+	"github.com/c4ei/kaspad/infrastructure/logger"
 )
 
 const exitHandlerTimeout = 5 * time.Second

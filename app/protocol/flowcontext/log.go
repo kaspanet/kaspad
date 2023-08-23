@@ -1,7 +1,7 @@
 package flowcontext
 
 import (
-	"github.com/kaspanet/kaspad/infrastructure/logger"
+	"github.com/c4ei/kaspad/infrastructure/logger"
 )
 
 var log = logger.RegisterSubSystem("PROT")

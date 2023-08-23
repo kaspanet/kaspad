@@ -1,12 +1,12 @@
 package main
 
 import (
-	"github.com/kaspanet/kaspad/domain/consensus"
-	"github.com/kaspanet/kaspad/stability-tests/common"
-	"github.com/kaspanet/kaspad/stability-tests/common/mine"
-	"github.com/kaspanet/kaspad/stability-tests/common/rpc"
-	"github.com/kaspanet/kaspad/util/panics"
-	"github.com/kaspanet/kaspad/util/profiling"
+	"github.com/c4ei/kaspad/domain/consensus"
+	"github.com/c4ei/kaspad/stability-tests/common"
+	"github.com/c4ei/kaspad/stability-tests/common/mine"
+	"github.com/c4ei/kaspad/stability-tests/common/rpc"
+	"github.com/c4ei/kaspad/util/panics"
+	"github.com/c4ei/kaspad/util/profiling"
 	"github.com/pkg/errors"
 )
 

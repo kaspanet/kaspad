@@ -1,6 +1,6 @@
 package rpcclient
 
-import "github.com/kaspanet/kaspad/app/appmessage"
+import "github.com/c4ei/kaspad/app/appmessage"
 
 // GetBlockCount sends an RPC request respective to the function's name and returns the RPC server's response
 func (c *RPCClient) GetBlockCount() (*appmessage.GetBlockCountResponseMessage, error) {

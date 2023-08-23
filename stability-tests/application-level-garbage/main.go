@@ -4,11 +4,11 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/kaspanet/kaspad/infrastructure/config"
-	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/standalone"
-	"github.com/kaspanet/kaspad/stability-tests/common"
-	"github.com/kaspanet/kaspad/util/panics"
-	"github.com/kaspanet/kaspad/util/profiling"
+	"github.com/c4ei/kaspad/infrastructure/config"
+	"github.com/c4ei/kaspad/infrastructure/network/netadapter/standalone"
+	"github.com/c4ei/kaspad/stability-tests/common"
+	"github.com/c4ei/kaspad/util/panics"
+	"github.com/c4ei/kaspad/util/profiling"
 )
 
 func main() {

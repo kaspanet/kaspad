@@ -1,6 +1,6 @@
 package model
 
-import "github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+import "github.com/c4ei/kaspad/domain/consensus/model/externalapi"
 
 // ConsensusStateManager manages the node's consensus state
 type ConsensusStateManager interface {

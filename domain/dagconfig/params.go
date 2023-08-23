@@ -8,14 +8,14 @@ import (
 	"math/big"
 	"time"
 
-	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+	"github.com/c4ei/kaspad/domain/consensus/model/externalapi"
 
-	"github.com/kaspanet/kaspad/app/appmessage"
-	"github.com/kaspanet/kaspad/util/network"
+	"github.com/c4ei/kaspad/app/appmessage"
+	"github.com/c4ei/kaspad/util/network"
 
 	"github.com/pkg/errors"
 
-	"github.com/kaspanet/kaspad/util"
+	"github.com/c4ei/kaspad/util"
 )
 
 // These variables are the DAG proof-of-work limit parameters for each default
@@ -61,7 +61,7 @@ type Params struct {
 	Name string
 
 	// Net defines the magic bytes used to identify the network.
-	Net appmessage.KaspaNet
+	Net appmessage.C4exNet
 
 	// RPCPort defines the rpc server port
 	RPCPort string
@@ -546,7 +546,7 @@ var DevnetParams = Params{
 // network or previously-registered into this package.
 var ErrDuplicateNet = errors.New("duplicate Kaspa network")
 
-var registeredNets = make(map[appmessage.KaspaNet]struct{})
+var registeredNets = make(map[appmessage.C4exNet]struct{})
 
 // Register registers the network parameters for a Kaspa network. This may
 // error with ErrDuplicateNet if the network is already registered (either

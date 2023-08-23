@@ -1,7 +1,7 @@
 package database
 
 import (
-	"github.com/kaspanet/kaspad/infrastructure/db/database"
+	"github.com/c4ei/kaspad/infrastructure/db/database"
 )
 
 // ErrNotFound denotes that the requested item was not

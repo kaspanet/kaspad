@@ -4,17 +4,17 @@ import (
 	"math/big"
 	"sort"
 
-	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/blockheader"
+	"github.com/c4ei/kaspad/domain/consensus/ruleerrors"
+	"github.com/c4ei/kaspad/domain/consensus/utils/blockheader"
 	"github.com/pkg/errors"
 
-	"github.com/kaspanet/kaspad/domain/consensus/model"
-	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/merkle"
-	"github.com/kaspanet/kaspad/infrastructure/logger"
-	"github.com/kaspanet/kaspad/util/mstime"
+	"github.com/c4ei/kaspad/domain/consensus/model"
+	"github.com/c4ei/kaspad/domain/consensus/model/externalapi"
+	"github.com/c4ei/kaspad/domain/consensus/utils/consensushashing"
+	"github.com/c4ei/kaspad/domain/consensus/utils/constants"
+	"github.com/c4ei/kaspad/domain/consensus/utils/merkle"
+	"github.com/c4ei/kaspad/infrastructure/logger"
+	"github.com/c4ei/kaspad/util/mstime"
 )
 
 type blockBuilder struct {

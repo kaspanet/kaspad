@@ -5,18 +5,18 @@ import (
 	"sort"
 	"testing"
 
-	"github.com/kaspanet/kaspad/domain/consensus/model"
+	"github.com/c4ei/kaspad/domain/consensus/model"
 
-	"github.com/kaspanet/kaspad/app/appmessage"
-	"github.com/kaspanet/kaspad/app/rpc/rpccontext"
-	"github.com/kaspanet/kaspad/app/rpc/rpchandlers"
-	"github.com/kaspanet/kaspad/domain/consensus"
-	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
-	"github.com/kaspanet/kaspad/domain/consensus/model/testapi"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/hashes"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/testutils"
-	"github.com/kaspanet/kaspad/domain/miningmanager"
-	"github.com/kaspanet/kaspad/infrastructure/config"
+	"github.com/c4ei/kaspad/app/appmessage"
+	"github.com/c4ei/kaspad/app/rpc/rpccontext"
+	"github.com/c4ei/kaspad/app/rpc/rpchandlers"
+	"github.com/c4ei/kaspad/domain/consensus"
+	"github.com/c4ei/kaspad/domain/consensus/model/externalapi"
+	"github.com/c4ei/kaspad/domain/consensus/model/testapi"
+	"github.com/c4ei/kaspad/domain/consensus/utils/hashes"
+	"github.com/c4ei/kaspad/domain/consensus/utils/testutils"
+	"github.com/c4ei/kaspad/domain/miningmanager"
+	"github.com/c4ei/kaspad/infrastructure/config"
 )
 
 type fakeDomain struct {

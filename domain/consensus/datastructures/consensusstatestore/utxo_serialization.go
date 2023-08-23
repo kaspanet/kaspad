@@ -1,9 +1,9 @@
 package consensusstatestore
 
 import (
+	"github.com/c4ei/kaspad/domain/consensus/database/serialization"
+	"github.com/c4ei/kaspad/domain/consensus/model/externalapi"
 	"github.com/golang/protobuf/proto"
-	"github.com/kaspanet/kaspad/domain/consensus/database/serialization"
-	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 )
 
 func serializeOutpoint(outpoint *externalapi.DomainOutpoint) ([]byte, error) {

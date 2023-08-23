@@ -1,9 +1,10 @@
 package common
 
 import (
-	peerpkg "github.com/kaspanet/kaspad/app/protocol/peer"
-	routerpkg "github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
 	"time"
+
+	peerpkg "github.com/c4ei/kaspad/app/protocol/peer"
+	routerpkg "github.com/c4ei/kaspad/infrastructure/network/netadapter/router"
 
 	"github.com/pkg/errors"
 )

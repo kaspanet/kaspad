@@ -1,9 +1,10 @@
 package math_test
 
 import (
-	utilMath "github.com/kaspanet/kaspad/util/math"
 	"math"
 	"testing"
+
+	utilMath "github.com/c4ei/kaspad/util/math"
 )
 
 const (

@@ -1,10 +1,11 @@
 package protowire
 
 import (
-	"github.com/kaspanet/kaspad/app/appmessage"
-	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
-	"github.com/pkg/errors"
 	"math/big"
+
+	"github.com/c4ei/kaspad/app/appmessage"
+	"github.com/c4ei/kaspad/domain/consensus/model/externalapi"
+	"github.com/pkg/errors"
 )
 
 func (x *KaspadMessage_BlockWithTrustedData) toAppMessage() (appmessage.Message, error) {

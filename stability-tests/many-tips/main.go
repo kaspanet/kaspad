@@ -2,10 +2,10 @@ package main
 
 import (
 	"fmt"
+	"github.com/c4ei/kaspad/app/appmessage"
+	"github.com/c4ei/kaspad/domain/consensus/utils/mining"
+	"github.com/c4ei/kaspad/util"
 	"github.com/kaspanet/go-secp256k1"
-	"github.com/kaspanet/kaspad/app/appmessage"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/mining"
-	"github.com/kaspanet/kaspad/util"
 	"math/rand"
 	"os"
 	"os/exec"
@@ -15,10 +15,10 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/kaspanet/kaspad/stability-tests/common"
-	"github.com/kaspanet/kaspad/stability-tests/common/rpc"
-	"github.com/kaspanet/kaspad/util/panics"
-	"github.com/kaspanet/kaspad/util/profiling"
+	"github.com/c4ei/kaspad/stability-tests/common"
+	"github.com/c4ei/kaspad/stability-tests/common/rpc"
+	"github.com/c4ei/kaspad/util/panics"
+	"github.com/c4ei/kaspad/util/profiling"
 	"github.com/pkg/errors"
 )
 

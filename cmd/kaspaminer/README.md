@@ -22,7 +22,7 @@ $ go version
 - Run the following commands to obtain and install kaspad including all dependencies:
 
 ```bash
-$ git clone https://github.com/kaspanet/kaspad
+$ git clone https://github.com/c4ei/kaspad
 $ cd kaspad/cmd/kaspaminer
 $ go install .
 ```

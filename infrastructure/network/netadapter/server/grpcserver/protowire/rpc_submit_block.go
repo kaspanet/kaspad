@@ -1,9 +1,10 @@
 package protowire
 
 import (
-	"github.com/kaspanet/kaspad/app/appmessage"
-	"github.com/pkg/errors"
 	"math"
+
+	"github.com/c4ei/kaspad/app/appmessage"
+	"github.com/pkg/errors"
 )
 
 func (x *KaspadMessage_SubmitBlockRequest) toAppMessage() (appmessage.Message, error) {

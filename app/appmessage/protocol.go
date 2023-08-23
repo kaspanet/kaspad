@@ -106,9 +106,9 @@ func (f ServiceFlag) String() string {
 	return s
 }
 
-// KaspaNet represents which kaspa network a message belongs to.
-// KaspaNet은 메시지가 속한 Kaspa 네트워크를 나타냅니다.
-type KaspaNet uint32
+// C4exNet represents which kaspa network a message belongs to.
+// C4exNet은 메시지가 속한 Kaspa 네트워크를 나타냅니다.
+type C4exNet uint32
 
 // Constants used to indicate the message kaspa network. They can also be
 // used to seek to the next message when a stream's state is unknown, but
@@ -121,35 +121,35 @@ type KaspaNet uint32
 const (
 	// Mainnet represents the main kaspa network.
 	// 메인넷은 주요 kaspa 네트워크를 나타냅니다.
-	Mainnet KaspaNet = 0x3ddcf71d
+	Mainnet C4exNet = 0x3ddcf71d
 
 	// Testnet represents the test network.
-	Testnet KaspaNet = 0xddb8af8f
+	Testnet C4exNet = 0xddb8af8f
 
 	// Simnet represents the simulation test network.
-	Simnet KaspaNet = 0x374dcf1c
+	Simnet C4exNet = 0x374dcf1c
 
 	// Devnet represents the development test network.
-	Devnet KaspaNet = 0x732d87e1
+	Devnet C4exNet = 0x732d87e1
 )
 
 // bnStrings is a map of kaspa networks back to their constant names for
 // pretty printing.
 // bnStrings는 kaspa 네트워크의 상수 이름으로 돌아가는 맵입니다.
 // 예쁜 인쇄.
-var bnStrings = map[KaspaNet]string{
+var bnStrings = map[C4exNet]string{
 	Mainnet: "Mainnet",
 	Testnet: "Testnet",
 	Simnet:  "Simnet",
 	Devnet:  "Devnet",
 }
 
-// String returns the KaspaNet in human-readable form.
-// 문자열은 사람이 읽을 수 있는 형식으로 KaspaNet을 반환합니다.
-func (n KaspaNet) String() string {
+// String returns the C4exNet in human-readable form.
+// 문자열은 사람이 읽을 수 있는 형식으로 C4exNet을 반환합니다.
+func (n C4exNet) String() string {
 	if s, ok := bnStrings[n]; ok {
 		return s
 	}
 
-	return fmt.Sprintf("Unknown KaspaNet (%d)", uint32(n))
+	return fmt.Sprintf("Unknown C4exNet (%d)", uint32(n))
 }

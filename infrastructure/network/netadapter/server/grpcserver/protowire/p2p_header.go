@@ -1,12 +1,13 @@
 package protowire
 
 import (
-	"github.com/kaspanet/kaspad/app/appmessage"
-	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
-	"github.com/kaspanet/kaspad/util/mstime"
-	"github.com/pkg/errors"
 	"math"
 	"math/big"
+
+	"github.com/c4ei/kaspad/app/appmessage"
+	"github.com/c4ei/kaspad/domain/consensus/model/externalapi"
+	"github.com/c4ei/kaspad/util/mstime"
+	"github.com/pkg/errors"
 )
 
 func (x *BlockHeader) toAppMessage() (*appmessage.MsgBlockHeader, error) {
