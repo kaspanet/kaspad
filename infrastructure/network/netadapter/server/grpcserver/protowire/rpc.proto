@@ -1,9 +1,9 @@
 // RPC-related types. Request messages, response messages, and dependant types.
 //
-// Clients are expected to build RequestMessages and wrap them in KaspadMessage. (see messages.proto)
+// Clients are expected to build RequestMessages and wrap them in C4exdMessage. (see messages.proto)
 //
-// Having received a RequestMessage, (wrapped in a KaspadMessage) the RPC server will respond with a
-// ResponseMessage (likewise wrapped in a KaspadMessage) respective to the original RequestMessage.
+// Having received a RequestMessage, (wrapped in a C4exdMessage) the RPC server will respond with a
+// ResponseMessage (likewise wrapped in a C4exdMessage) respective to the original RequestMessage.
 //
 // **IMPORTANT:** This API is a work in progress and is subject to break between versions.
 //

@@ -88,7 +88,7 @@ func NewAmount(f float64) (Amount, error) {
 		return 0, errors.New("invalid c4ex amount")
 	}
 
-	return round(f * constants.SompiPerKaspa), nil
+	return round(f * constants.SompiPerC4ex), nil
 }
 
 // ToUnit converts a monetary amount counted in c4ex base units to a

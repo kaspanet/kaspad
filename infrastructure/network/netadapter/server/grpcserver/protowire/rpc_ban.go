@@ -5,9 +5,9 @@ import (
 	"github.com/pkg/errors"
 )
 
-func (x *KaspadMessage_BanRequest) toAppMessage() (appmessage.Message, error) {
+func (x *C4exdMessage_BanRequest) toAppMessage() (appmessage.Message, error) {
 	if x == nil {
-		return nil, errors.Wrapf(errorNil, "KaspadMessage_BanRequest is nil")
+		return nil, errors.Wrapf(errorNil, "C4exdMessage_BanRequest is nil")
 	}
 	return x.BanRequest.toAppMessage()
 }
@@ -21,14 +21,14 @@ func (x *BanRequestMessage) toAppMessage() (appmessage.Message, error) {
 	}, nil
 }
 
-func (x *KaspadMessage_BanRequest) fromAppMessage(message *appmessage.BanRequestMessage) error {
+func (x *C4exdMessage_BanRequest) fromAppMessage(message *appmessage.BanRequestMessage) error {
 	x.BanRequest = &BanRequestMessage{Ip: message.IP}
 	return nil
 }
 
-func (x *KaspadMessage_BanResponse) toAppMessage() (appmessage.Message, error) {
+func (x *C4exdMessage_BanResponse) toAppMessage() (appmessage.Message, error) {
 	if x == nil {
-		return nil, errors.Wrapf(errorNil, "KaspadMessage_BanResponse is nil")
+		return nil, errors.Wrapf(errorNil, "C4exdMessage_BanResponse is nil")
 	}
 	return x.BanResponse.toAppMessage()
 }
@@ -47,7 +47,7 @@ func (x *BanResponseMessage) toAppMessage() (appmessage.Message, error) {
 	}, nil
 }
 
-func (x *KaspadMessage_BanResponse) fromAppMessage(message *appmessage.BanResponseMessage) error {
+func (x *C4exdMessage_BanResponse) fromAppMessage(message *appmessage.BanResponseMessage) error {
 	var err *RPCError
 	if message.Error != nil {
 		err = &RPCError{Message: message.Error.Message}

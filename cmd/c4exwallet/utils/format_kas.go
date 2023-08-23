@@ -10,7 +10,7 @@ import (
 func FormatKas(amount uint64) string {
 	res := "                   "
 	if amount > 0 {
-		res = fmt.Sprintf("%19.8f", float64(amount)/constants.SompiPerKaspa)
+		res = fmt.Sprintf("%19.8f", float64(amount)/constants.SompiPerC4ex)
 	}
 	return res
 }

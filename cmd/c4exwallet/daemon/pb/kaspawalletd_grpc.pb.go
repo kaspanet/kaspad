@@ -14,10 +14,10 @@ import (
 // Requires gRPC-Go v1.32.0 or later.
 const _ = grpc.SupportPackageIsVersion7
 
-// KaspawalletdClient is the client API for Kaspawalletd service.
+// C4exwalletdClient is the client API for C4exwalletd service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
-type KaspawalletdClient interface {
+type C4exwalletdClient interface {
 	GetBalance(ctx context.Context, in *GetBalanceRequest, opts ...grpc.CallOption) (*GetBalanceResponse, error)
 	GetExternalSpendableUTXOs(ctx context.Context, in *GetExternalSpendableUTXOsRequest, opts ...grpc.CallOption) (*GetExternalSpendableUTXOsResponse, error)
 	CreateUnsignedTransactions(ctx context.Context, in *CreateUnsignedTransactionsRequest, opts ...grpc.CallOption) (*CreateUnsignedTransactionsResponse, error)
@@ -35,7 +35,7 @@ type c4exwalletdClient struct {
 	cc grpc.ClientConnInterface
 }
 
-func NewKaspawalletdClient(cc grpc.ClientConnInterface) KaspawalletdClient {
+func NewC4exwalletdClient(cc grpc.ClientConnInterface) C4exwalletdClient {
 	return &c4exwalletdClient{cc}
 }
 
@@ -120,10 +120,10 @@ func (c *c4exwalletdClient) Sign(ctx context.Context, in *SignRequest, opts ...g
 	return out, nil
 }
 
-// KaspawalletdServer is the server API for Kaspawalletd service.
-// All implementations must embed UnimplementedKaspawalletdServer
+// C4exwalletdServer is the server API for C4exwalletd service.
+// All implementations must embed UnimplementedC4exwalletdServer
 // for forward compatibility
-type KaspawalletdServer interface {
+type C4exwalletdServer interface {
 	GetBalance(context.Context, *GetBalanceRequest) (*GetBalanceResponse, error)
 	GetExternalSpendableUTXOs(context.Context, *GetExternalSpendableUTXOsRequest) (*GetExternalSpendableUTXOsResponse, error)
 	CreateUnsignedTransactions(context.Context, *CreateUnsignedTransactionsRequest) (*CreateUnsignedTransactionsResponse, error)
@@ -135,257 +135,257 @@ type KaspawalletdServer interface {
 	Send(context.Context, *SendRequest) (*SendResponse, error)
 	// Since SignRequest contains a password - this command should only be used on a trusted or secure connection
 	Sign(context.Context, *SignRequest) (*SignResponse, error)
-	mustEmbedUnimplementedKaspawalletdServer()
+	mustEmbedUnimplementedC4exwalletdServer()
 }
 
-// UnimplementedKaspawalletdServer must be embedded to have forward compatible implementations.
-type UnimplementedKaspawalletdServer struct {
+// UnimplementedC4exwalletdServer must be embedded to have forward compatible implementations.
+type UnimplementedC4exwalletdServer struct {
 }
 
-func (UnimplementedKaspawalletdServer) GetBalance(context.Context, *GetBalanceRequest) (*GetBalanceResponse, error) {
+func (UnimplementedC4exwalletdServer) GetBalance(context.Context, *GetBalanceRequest) (*GetBalanceResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetBalance not implemented")
 }
-func (UnimplementedKaspawalletdServer) GetExternalSpendableUTXOs(context.Context, *GetExternalSpendableUTXOsRequest) (*GetExternalSpendableUTXOsResponse, error) {
+func (UnimplementedC4exwalletdServer) GetExternalSpendableUTXOs(context.Context, *GetExternalSpendableUTXOsRequest) (*GetExternalSpendableUTXOsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetExternalSpendableUTXOs not implemented")
 }
-func (UnimplementedKaspawalletdServer) CreateUnsignedTransactions(context.Context, *CreateUnsignedTransactionsRequest) (*CreateUnsignedTransactionsResponse, error) {
+func (UnimplementedC4exwalletdServer) CreateUnsignedTransactions(context.Context, *CreateUnsignedTransactionsRequest) (*CreateUnsignedTransactionsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateUnsignedTransactions not implemented")
 }
-func (UnimplementedKaspawalletdServer) ShowAddresses(context.Context, *ShowAddressesRequest) (*ShowAddressesResponse, error) {
+func (UnimplementedC4exwalletdServer) ShowAddresses(context.Context, *ShowAddressesRequest) (*ShowAddressesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ShowAddresses not implemented")
 }
-func (UnimplementedKaspawalletdServer) NewAddress(context.Context, *NewAddressRequest) (*NewAddressResponse, error) {
+func (UnimplementedC4exwalletdServer) NewAddress(context.Context, *NewAddressRequest) (*NewAddressResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method NewAddress not implemented")
 }
-func (UnimplementedKaspawalletdServer) Shutdown(context.Context, *ShutdownRequest) (*ShutdownResponse, error) {
+func (UnimplementedC4exwalletdServer) Shutdown(context.Context, *ShutdownRequest) (*ShutdownResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Shutdown not implemented")
 }
-func (UnimplementedKaspawalletdServer) Broadcast(context.Context, *BroadcastRequest) (*BroadcastResponse, error) {
+func (UnimplementedC4exwalletdServer) Broadcast(context.Context, *BroadcastRequest) (*BroadcastResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Broadcast not implemented")
 }
-func (UnimplementedKaspawalletdServer) Send(context.Context, *SendRequest) (*SendResponse, error) {
+func (UnimplementedC4exwalletdServer) Send(context.Context, *SendRequest) (*SendResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Send not implemented")
 }
-func (UnimplementedKaspawalletdServer) Sign(context.Context, *SignRequest) (*SignResponse, error) {
+func (UnimplementedC4exwalletdServer) Sign(context.Context, *SignRequest) (*SignResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Sign not implemented")
 }
-func (UnimplementedKaspawalletdServer) mustEmbedUnimplementedKaspawalletdServer() {}
+func (UnimplementedC4exwalletdServer) mustEmbedUnimplementedC4exwalletdServer() {}
 
-// UnsafeKaspawalletdServer may be embedded to opt out of forward compatibility for this service.
-// Use of this interface is not recommended, as added methods to KaspawalletdServer will
+// UnsafeC4exwalletdServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to C4exwalletdServer will
 // result in compilation errors.
-type UnsafeKaspawalletdServer interface {
-	mustEmbedUnimplementedKaspawalletdServer()
+type UnsafeC4exwalletdServer interface {
+	mustEmbedUnimplementedC4exwalletdServer()
 }
 
-func RegisterKaspawalletdServer(s grpc.ServiceRegistrar, srv KaspawalletdServer) {
-	s.RegisterService(&Kaspawalletd_ServiceDesc, srv)
+func RegisterC4exwalletdServer(s grpc.ServiceRegistrar, srv C4exwalletdServer) {
+	s.RegisterService(&C4exwalletd_ServiceDesc, srv)
 }
 
-func _Kaspawalletd_GetBalance_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _C4exwalletd_GetBalance_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetBalanceRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(KaspawalletdServer).GetBalance(ctx, in)
+		return srv.(C4exwalletdServer).GetBalance(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
 		FullMethod: "/c4exwalletd.c4exwalletd/GetBalance",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(KaspawalletdServer).GetBalance(ctx, req.(*GetBalanceRequest))
+		return srv.(C4exwalletdServer).GetBalance(ctx, req.(*GetBalanceRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Kaspawalletd_GetExternalSpendableUTXOs_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _C4exwalletd_GetExternalSpendableUTXOs_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetExternalSpendableUTXOsRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(KaspawalletdServer).GetExternalSpendableUTXOs(ctx, in)
+		return srv.(C4exwalletdServer).GetExternalSpendableUTXOs(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
 		FullMethod: "/c4exwalletd.c4exwalletd/GetExternalSpendableUTXOs",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(KaspawalletdServer).GetExternalSpendableUTXOs(ctx, req.(*GetExternalSpendableUTXOsRequest))
+		return srv.(C4exwalletdServer).GetExternalSpendableUTXOs(ctx, req.(*GetExternalSpendableUTXOsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Kaspawalletd_CreateUnsignedTransactions_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _C4exwalletd_CreateUnsignedTransactions_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(CreateUnsignedTransactionsRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(KaspawalletdServer).CreateUnsignedTransactions(ctx, in)
+		return srv.(C4exwalletdServer).CreateUnsignedTransactions(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
 		FullMethod: "/c4exwalletd.c4exwalletd/CreateUnsignedTransactions",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(KaspawalletdServer).CreateUnsignedTransactions(ctx, req.(*CreateUnsignedTransactionsRequest))
+		return srv.(C4exwalletdServer).CreateUnsignedTransactions(ctx, req.(*CreateUnsignedTransactionsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Kaspawalletd_ShowAddresses_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _C4exwalletd_ShowAddresses_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ShowAddressesRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(KaspawalletdServer).ShowAddresses(ctx, in)
+		return srv.(C4exwalletdServer).ShowAddresses(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
 		FullMethod: "/c4exwalletd.c4exwalletd/ShowAddresses",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(KaspawalletdServer).ShowAddresses(ctx, req.(*ShowAddressesRequest))
+		return srv.(C4exwalletdServer).ShowAddresses(ctx, req.(*ShowAddressesRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Kaspawalletd_NewAddress_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _C4exwalletd_NewAddress_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(NewAddressRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(KaspawalletdServer).NewAddress(ctx, in)
+		return srv.(C4exwalletdServer).NewAddress(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
 		FullMethod: "/c4exwalletd.c4exwalletd/NewAddress",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(KaspawalletdServer).NewAddress(ctx, req.(*NewAddressRequest))
+		return srv.(C4exwalletdServer).NewAddress(ctx, req.(*NewAddressRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Kaspawalletd_Shutdown_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _C4exwalletd_Shutdown_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ShutdownRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(KaspawalletdServer).Shutdown(ctx, in)
+		return srv.(C4exwalletdServer).Shutdown(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
 		FullMethod: "/c4exwalletd.c4exwalletd/Shutdown",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(KaspawalletdServer).Shutdown(ctx, req.(*ShutdownRequest))
+		return srv.(C4exwalletdServer).Shutdown(ctx, req.(*ShutdownRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Kaspawalletd_Broadcast_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _C4exwalletd_Broadcast_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(BroadcastRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(KaspawalletdServer).Broadcast(ctx, in)
+		return srv.(C4exwalletdServer).Broadcast(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
 		FullMethod: "/c4exwalletd.c4exwalletd/Broadcast",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(KaspawalletdServer).Broadcast(ctx, req.(*BroadcastRequest))
+		return srv.(C4exwalletdServer).Broadcast(ctx, req.(*BroadcastRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Kaspawalletd_Send_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _C4exwalletd_Send_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(SendRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(KaspawalletdServer).Send(ctx, in)
+		return srv.(C4exwalletdServer).Send(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
 		FullMethod: "/c4exwalletd.c4exwalletd/Send",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(KaspawalletdServer).Send(ctx, req.(*SendRequest))
+		return srv.(C4exwalletdServer).Send(ctx, req.(*SendRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Kaspawalletd_Sign_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _C4exwalletd_Sign_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(SignRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(KaspawalletdServer).Sign(ctx, in)
+		return srv.(C4exwalletdServer).Sign(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
 		FullMethod: "/c4exwalletd.c4exwalletd/Sign",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(KaspawalletdServer).Sign(ctx, req.(*SignRequest))
+		return srv.(C4exwalletdServer).Sign(ctx, req.(*SignRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-// Kaspawalletd_ServiceDesc is the grpc.ServiceDesc for Kaspawalletd service.
+// C4exwalletd_ServiceDesc is the grpc.ServiceDesc for C4exwalletd service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
-var Kaspawalletd_ServiceDesc = grpc.ServiceDesc{
+var C4exwalletd_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "c4exwalletd.c4exwalletd",
-	HandlerType: (*KaspawalletdServer)(nil),
+	HandlerType: (*C4exwalletdServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
 			MethodName: "GetBalance",
-			Handler:    _Kaspawalletd_GetBalance_Handler,
+			Handler:    _C4exwalletd_GetBalance_Handler,
 		},
 		{
 			MethodName: "GetExternalSpendableUTXOs",
-			Handler:    _Kaspawalletd_GetExternalSpendableUTXOs_Handler,
+			Handler:    _C4exwalletd_GetExternalSpendableUTXOs_Handler,
 		},
 		{
 			MethodName: "CreateUnsignedTransactions",
-			Handler:    _Kaspawalletd_CreateUnsignedTransactions_Handler,
+			Handler:    _C4exwalletd_CreateUnsignedTransactions_Handler,
 		},
 		{
 			MethodName: "ShowAddresses",
-			Handler:    _Kaspawalletd_ShowAddresses_Handler,
+			Handler:    _C4exwalletd_ShowAddresses_Handler,
 		},
 		{
 			MethodName: "NewAddress",
-			Handler:    _Kaspawalletd_NewAddress_Handler,
+			Handler:    _C4exwalletd_NewAddress_Handler,
 		},
 		{
 			MethodName: "Shutdown",
-			Handler:    _Kaspawalletd_Shutdown_Handler,
+			Handler:    _C4exwalletd_Shutdown_Handler,
 		},
 		{
 			MethodName: "Broadcast",
-			Handler:    _Kaspawalletd_Broadcast_Handler,
+			Handler:    _C4exwalletd_Broadcast_Handler,
 		},
 		{
 			MethodName: "Send",
-			Handler:    _Kaspawalletd_Send_Handler,
+			Handler:    _C4exwalletd_Send_Handler,
 		},
 		{
 			MethodName: "Sign",
-			Handler:    _Kaspawalletd_Sign_Handler,
+			Handler:    _C4exwalletd_Sign_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

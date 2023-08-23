@@ -25,19 +25,19 @@ var (
 	// the overhead of creating it multiple times.
 	bigOne = big.NewInt(1)
 
-	// mainPowMax is the highest proof of work value a Kaspa block can
+	// mainPowMax is the highest proof of work value a C4ex block can
 	// have for the main network. It is the value 2^255 - 1.
 	mainPowMax = new(big.Int).Sub(new(big.Int).Lsh(bigOne, 255), bigOne)
 
-	// testnetPowMax is the highest proof of work value a Kaspa block
+	// testnetPowMax is the highest proof of work value a C4ex block
 	// can have for the test network. It is the value 2^255 - 1.
 	testnetPowMax = new(big.Int).Sub(new(big.Int).Lsh(bigOne, 255), bigOne)
 
-	// simnetPowMax is the highest proof of work value a Kaspa block
+	// simnetPowMax is the highest proof of work value a C4ex block
 	// can have for the simulation test network. It is the value 2^255 - 1.
 	simnetPowMax = new(big.Int).Sub(new(big.Int).Lsh(bigOne, 255), bigOne)
 
-	// devnetPowMax is the highest proof of work value a Kaspa block
+	// devnetPowMax is the highest proof of work value a C4ex block
 	// can have for the development network. It is the value
 	// 2^255 - 1.
 	devnetPowMax = new(big.Int).Sub(new(big.Int).Lsh(bigOne, 255), bigOne)
@@ -46,11 +46,11 @@ var (
 // KType defines the size of GHOSTDAG consensus algorithm K parameter.
 type KType uint8
 
-// Params defines a Kaspa network by its parameters. These parameters may be
-// used by Kaspa applications to differentiate networks as well as addresses
+// Params defines a C4ex network by its parameters. These parameters may be
+// used by C4ex applications to differentiate networks as well as addresses
 // and keys for one network from those intended for use on another network.
-// Params는 매개변수로 Kaspa 네트워크를 정의합니다. 이러한 매개변수는 다음과 같습니다.
-// 네트워크와 주소를 구별하기 위해 Kaspa 애플리케이션에서 사용됩니다.
+// Params는 매개변수로 C4ex 네트워크를 정의합니다. 이러한 매개변수는 다음과 같습니다.
+// 네트워크와 주소를 구별하기 위해 C4ex 애플리케이션에서 사용됩니다.
 // 그리고 다른 네트워크에서 사용하기 위한 키 중 하나의 네트워크에 대한 키입니다.
 type Params struct {
 	// K defines the K parameter for GHOSTDAG consensus algorithm.
@@ -253,8 +253,8 @@ func (p *Params) PruningDepth() uint64 {
 	return 2*p.FinalityDepth() + 4*p.MergeSetSizeLimit*uint64(p.K) + 2*uint64(p.K) + 2
 }
 
-// MainnetParams defines the network parameters for the main Kaspa network.
-// MainnetParams는 기본 Kaspa 네트워크에 대한 네트워크 매개변수를 정의합니다.
+// MainnetParams defines the network parameters for the main C4ex network.
+// MainnetParams는 기본 C4ex 네트워크에 대한 네트워크 매개변수를 정의합니다.
 var MainnetParams = Params{
 	K:           defaultGHOSTDAGK,
 	Name:        "c4ex-mainnet",
@@ -311,7 +311,7 @@ var MainnetParams = Params{
 	AcceptUnroutable: false,
 
 	// Human-readable part for Bech32 encoded addresses
-	Prefix: util.Bech32PrefixKaspa,
+	Prefix: util.Bech32PrefixC4ex,
 
 	// Address encoding magics
 	PrivateKeyID: 0x80, // starts with 5 (uncompressed) or K (compressed)
@@ -339,7 +339,7 @@ var MainnetParams = Params{
 	MergeDepth:    defaultMergeDepth,
 }
 
-// TestnetParams defines the network parameters for the test Kaspa network.
+// TestnetParams defines the network parameters for the test C4ex network.
 var TestnetParams = Params{
 	K:           defaultGHOSTDAGK,
 	Name:        "c4ex-testnet", // c4ex-testnet-10
@@ -381,7 +381,7 @@ var TestnetParams = Params{
 	AcceptUnroutable: false,
 
 	// Human-readable part for Bech32 encoded addresses
-	Prefix: util.Bech32PrefixKaspaTest,
+	Prefix: util.Bech32PrefixC4exTest,
 
 	// Address encoding magics
 	PrivateKeyID: 0xef, // starts with 9 (uncompressed) or c (compressed)
@@ -406,14 +406,14 @@ var TestnetParams = Params{
 	MergeDepth:    defaultMergeDepth,
 }
 
-// SimnetParams defines the network parameters for the simulation test Kaspa
+// SimnetParams defines the network parameters for the simulation test C4ex
 // network. This network is similar to the normal test network except it is
 // intended for private use within a group of individuals doing simulation
 // testing. The functionality is intended to differ in that the only nodes
 // which are specifically specified are used to create the network rather than
 // following normal discovery rules. This is important as otherwise it would
 // just turn into another public testnet.
-// SimnetParams는 Kaspa 시뮬레이션 테스트를 위한 네트워크 매개변수를 정의합니다.
+// SimnetParams는 C4ex 시뮬레이션 테스트를 위한 네트워크 매개변수를 정의합니다.
 // 네트워크. 이 네트워크는 다음을 제외하면 일반 테스트 네트워크와 유사합니다.
 // 시뮬레이션을 수행하는 개인 그룹 내에서 개인적으로 사용하기 위한 것입니다.
 // 테스트 중입니다. 기능은 유일한 노드라는 점에서 다릅니다.
@@ -457,7 +457,7 @@ var SimnetParams = Params{
 
 	PrivateKeyID: 0x64, // starts with 4 (uncompressed) or F (compressed)
 	// Human-readable part for Bech32 encoded addresses
-	Prefix: util.Bech32PrefixKaspaSim,
+	Prefix: util.Bech32PrefixC4exSim,
 
 	// EnableNonNativeSubnetworks enables non-native/coinbase transactions
 	EnableNonNativeSubnetworks: false,
@@ -479,7 +479,7 @@ var SimnetParams = Params{
 	MergeDepth:    defaultMergeDepth,
 }
 
-// DevnetParams defines the network parameters for the development Kaspa network.
+// DevnetParams defines the network parameters for the development C4ex network.
 var DevnetParams = Params{
 	K:           defaultGHOSTDAGK,
 	Name:        "c4ex-devnet",
@@ -516,7 +516,7 @@ var DevnetParams = Params{
 	AcceptUnroutable: true,
 
 	// Human-readable part for Bech32 encoded addresses
-	Prefix: util.Bech32PrefixKaspaDev,
+	Prefix: util.Bech32PrefixC4exDev,
 
 	// Address encoding magics
 	PrivateKeyID: 0xef, // starts with 9 (uncompressed) or c (compressed)
@@ -541,14 +541,14 @@ var DevnetParams = Params{
 	MergeDepth:    defaultMergeDepth,
 }
 
-// ErrDuplicateNet describes an error where the parameters for a Kaspa
+// ErrDuplicateNet describes an error where the parameters for a C4ex
 // network could not be set due to the network already being a standard
 // network or previously-registered into this package.
-var ErrDuplicateNet = errors.New("duplicate Kaspa network")
+var ErrDuplicateNet = errors.New("duplicate C4ex network")
 
 var registeredNets = make(map[appmessage.C4exNet]struct{})
 
-// Register registers the network parameters for a Kaspa network. This may
+// Register registers the network parameters for a C4ex network. This may
 // error with ErrDuplicateNet if the network is already registered (either
 // due to a previous Register call, or the network being one of the default
 // networks).

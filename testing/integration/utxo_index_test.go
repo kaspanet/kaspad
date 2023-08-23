@@ -55,13 +55,13 @@ func TestUTXOIndex(t *testing.T) {
 		t.Fatalf("Error Retriving Coin supply: %s", err)
 	}
 
-	rewardsMinedSompi := uint64(blockAmountToMine * constants.SompiPerKaspa * 500)
+	rewardsMinedSompi := uint64(blockAmountToMine * constants.SompiPerC4ex * 500)
 	getBlockCountResponse, err := c4exd.rpcClient.GetBlockCount()
 	if err != nil {
 		t.Fatalf("Error Retriving BlockCount: %s", err)
 	}
 	rewardsMinedViaBlockCountSompi := uint64(
-		(getBlockCountResponse.BlockCount - 2) * constants.SompiPerKaspa * 500, // -2 because of genesis and virtual.
+		(getBlockCountResponse.BlockCount - 2) * constants.SompiPerC4ex * 500, // -2 because of genesis and virtual.
 	)
 
 	if getCoinSupplyResponse.CirculatingSompi != rewardsMinedSompi {
@@ -184,7 +184,7 @@ func buildTransactionForUTXOIndexTest(t *testing.T, entry *appmessage.UTXOsByAdd
 	txIns := make([]*appmessage.TxIn, 1)
 	txIns[0] = appmessage.NewTxIn(appmessage.NewOutpoint(transactionID, entry.Outpoint.Index), []byte{}, 0, 1)
 
-	payeeAddress, err := util.DecodeAddress(miningAddress1, util.Bech32PrefixKaspaSim)
+	payeeAddress, err := util.DecodeAddress(miningAddress1, util.Bech32PrefixC4exSim)
 	if err != nil {
 		t.Fatalf("Error decoding payeeAddress: %+v", err)
 	}

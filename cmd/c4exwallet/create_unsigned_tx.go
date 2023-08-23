@@ -20,7 +20,7 @@ func createUnsignedTransaction(conf *createUnsignedTransactionConfig) error {
 	ctx, cancel := context.WithTimeout(context.Background(), daemonTimeout)
 	defer cancel()
 
-	sendAmountSompi := uint64(conf.SendAmount * constants.SompiPerKaspa)
+	sendAmountSompi := uint64(conf.SendAmount * constants.SompiPerC4ex)
 	response, err := daemonClient.CreateUnsignedTransactions(ctx, &pb.CreateUnsignedTransactionsRequest{
 		From:                     conf.FromAddresses,
 		Address:                  conf.ToAddress,

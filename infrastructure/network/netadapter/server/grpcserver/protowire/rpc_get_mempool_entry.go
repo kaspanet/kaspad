@@ -5,14 +5,14 @@ import (
 	"github.com/pkg/errors"
 )
 
-func (x *KaspadMessage_GetMempoolEntryRequest) toAppMessage() (appmessage.Message, error) {
+func (x *C4exdMessage_GetMempoolEntryRequest) toAppMessage() (appmessage.Message, error) {
 	if x == nil {
-		return nil, errors.Wrapf(errorNil, "KaspadMessage_GetMempoolEntryRequest is nil")
+		return nil, errors.Wrapf(errorNil, "C4exdMessage_GetMempoolEntryRequest is nil")
 	}
 	return x.GetMempoolEntryRequest.toAppMessage()
 }
 
-func (x *KaspadMessage_GetMempoolEntryRequest) fromAppMessage(message *appmessage.GetMempoolEntryRequestMessage) error {
+func (x *C4exdMessage_GetMempoolEntryRequest) fromAppMessage(message *appmessage.GetMempoolEntryRequestMessage) error {
 	x.GetMempoolEntryRequest = &GetMempoolEntryRequestMessage{
 		TxId:                  message.TxID,
 		IncludeOrphanPool:     message.IncludeOrphanPool,
@@ -32,14 +32,14 @@ func (x *GetMempoolEntryRequestMessage) toAppMessage() (appmessage.Message, erro
 	}, nil
 }
 
-func (x *KaspadMessage_GetMempoolEntryResponse) toAppMessage() (appmessage.Message, error) {
+func (x *C4exdMessage_GetMempoolEntryResponse) toAppMessage() (appmessage.Message, error) {
 	if x == nil {
-		return nil, errors.Wrapf(errorNil, "KaspadMessage_GetMempoolEntryResponse is nil")
+		return nil, errors.Wrapf(errorNil, "C4exdMessage_GetMempoolEntryResponse is nil")
 	}
 	return x.GetMempoolEntryResponse.toAppMessage()
 }
 
-func (x *KaspadMessage_GetMempoolEntryResponse) fromAppMessage(message *appmessage.GetMempoolEntryResponseMessage) error {
+func (x *C4exdMessage_GetMempoolEntryResponse) fromAppMessage(message *appmessage.GetMempoolEntryResponseMessage) error {
 	var rpcErr *RPCError
 	if message.Error != nil {
 		rpcErr = &RPCError{Message: message.Error.Message}

@@ -5,14 +5,14 @@ import (
 	"github.com/pkg/errors"
 )
 
-func (x *KaspadMessage_ResolveFinalityConflictRequest) toAppMessage() (appmessage.Message, error) {
+func (x *C4exdMessage_ResolveFinalityConflictRequest) toAppMessage() (appmessage.Message, error) {
 	if x == nil {
-		return nil, errors.Wrapf(errorNil, "KaspadMessage_ResolveFinalityConflictRequest is nil")
+		return nil, errors.Wrapf(errorNil, "C4exdMessage_ResolveFinalityConflictRequest is nil")
 	}
 	return x.ResolveFinalityConflictRequest.toAppMessage()
 }
 
-func (x *KaspadMessage_ResolveFinalityConflictRequest) fromAppMessage(message *appmessage.ResolveFinalityConflictRequestMessage) error {
+func (x *C4exdMessage_ResolveFinalityConflictRequest) fromAppMessage(message *appmessage.ResolveFinalityConflictRequestMessage) error {
 	x.ResolveFinalityConflictRequest = &ResolveFinalityConflictRequestMessage{
 		FinalityBlockHash: message.FinalityBlockHash,
 	}
@@ -28,14 +28,14 @@ func (x *ResolveFinalityConflictRequestMessage) toAppMessage() (appmessage.Messa
 	}, nil
 }
 
-func (x *KaspadMessage_ResolveFinalityConflictResponse) toAppMessage() (appmessage.Message, error) {
+func (x *C4exdMessage_ResolveFinalityConflictResponse) toAppMessage() (appmessage.Message, error) {
 	if x == nil {
-		return nil, errors.Wrapf(errorNil, "KaspadMessage_ResolveFinalityConflictResponse is nil")
+		return nil, errors.Wrapf(errorNil, "C4exdMessage_ResolveFinalityConflictResponse is nil")
 	}
 	return x.ResolveFinalityConflictResponse.toAppMessage()
 }
 
-func (x *KaspadMessage_ResolveFinalityConflictResponse) fromAppMessage(message *appmessage.ResolveFinalityConflictResponseMessage) error {
+func (x *C4exdMessage_ResolveFinalityConflictResponse) fromAppMessage(message *appmessage.ResolveFinalityConflictResponseMessage) error {
 	var err *RPCError
 	if message.Error != nil {
 		err = &RPCError{Message: message.Error.Message}

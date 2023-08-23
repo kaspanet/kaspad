@@ -139,7 +139,7 @@ func generateTx(t *testing.T, firstBlockCoinbase *externalapi.DomainTransaction,
 	txIns := make([]*appmessage.TxIn, 1)
 	txIns[0] = appmessage.NewTxIn(appmessage.NewOutpoint(consensushashing.TransactionID(firstBlockCoinbase), 0), []byte{}, 0, 1)
 
-	payeeAddress, err := util.DecodeAddress(payee.miningAddress, util.Bech32PrefixKaspaSim)
+	payeeAddress, err := util.DecodeAddress(payee.miningAddress, util.Bech32PrefixC4exSim)
 	if err != nil {
 		t.Fatalf("Error decoding payeeAddress: %+v", err)
 	}

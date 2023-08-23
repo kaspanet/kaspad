@@ -5,14 +5,14 @@ import (
 	"github.com/pkg/errors"
 )
 
-func (x *KaspadMessage_GetHeadersRequest) toAppMessage() (appmessage.Message, error) {
+func (x *C4exdMessage_GetHeadersRequest) toAppMessage() (appmessage.Message, error) {
 	if x == nil {
-		return nil, errors.Wrapf(errorNil, "KaspadMessage_GetHeadersRequest is nil")
+		return nil, errors.Wrapf(errorNil, "C4exdMessage_GetHeadersRequest is nil")
 	}
 	return x.GetHeadersRequest.toAppMessage()
 }
 
-func (x *KaspadMessage_GetHeadersRequest) fromAppMessage(message *appmessage.GetHeadersRequestMessage) error {
+func (x *C4exdMessage_GetHeadersRequest) fromAppMessage(message *appmessage.GetHeadersRequestMessage) error {
 	x.GetHeadersRequest = &GetHeadersRequestMessage{
 		StartHash:   message.StartHash,
 		Limit:       message.Limit,
@@ -32,14 +32,14 @@ func (x *GetHeadersRequestMessage) toAppMessage() (appmessage.Message, error) {
 	}, nil
 }
 
-func (x *KaspadMessage_GetHeadersResponse) toAppMessage() (appmessage.Message, error) {
+func (x *C4exdMessage_GetHeadersResponse) toAppMessage() (appmessage.Message, error) {
 	if x == nil {
-		return nil, errors.Wrapf(errorNil, "KaspadMessage_GetHeadersResponse is nil")
+		return nil, errors.Wrapf(errorNil, "C4exdMessage_GetHeadersResponse is nil")
 	}
 	return x.GetHeadersResponse.toAppMessage()
 }
 
-func (x *KaspadMessage_GetHeadersResponse) fromAppMessage(message *appmessage.GetHeadersResponseMessage) error {
+func (x *C4exdMessage_GetHeadersResponse) fromAppMessage(message *appmessage.GetHeadersResponseMessage) error {
 	var err *RPCError
 	if message.Error != nil {
 		err = &RPCError{Message: message.Error.Message}

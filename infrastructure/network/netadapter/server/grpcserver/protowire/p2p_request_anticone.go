@@ -5,9 +5,9 @@ import (
 	"github.com/pkg/errors"
 )
 
-func (x *KaspadMessage_RequestAnticone) toAppMessage() (appmessage.Message, error) {
+func (x *C4exdMessage_RequestAnticone) toAppMessage() (appmessage.Message, error) {
 	if x == nil {
-		return nil, errors.Wrapf(errorNil, "KaspadMessage_RequestAnticone is nil")
+		return nil, errors.Wrapf(errorNil, "C4exdMessage_RequestAnticone is nil")
 	}
 	return x.RequestAnticone.toAppMessage()
 }
@@ -33,7 +33,7 @@ func (x *RequestAnticoneMessage) toAppMessage() (appmessage.Message, error) {
 
 }
 
-func (x *KaspadMessage_RequestAnticone) fromAppMessage(msgRequestPastDiff *appmessage.MsgRequestAnticone) error {
+func (x *C4exdMessage_RequestAnticone) fromAppMessage(msgRequestPastDiff *appmessage.MsgRequestAnticone) error {
 	x.RequestAnticone = &RequestAnticoneMessage{
 		BlockHash:   domainHashToProto(msgRequestPastDiff.BlockHash),
 		ContextHash: domainHashToProto(msgRequestPastDiff.ContextHash),

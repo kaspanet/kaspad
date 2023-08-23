@@ -146,7 +146,7 @@ func (s *server) selectUTXOs(spendAmount uint64, isSendAll bool, feePerInput uin
 	}
 	if totalValue < totalSpend {
 		return nil, 0, 0, errors.Errorf("Insufficient funds for send: %f required, while only %f available",
-			float64(totalSpend)/constants.SompiPerKaspa, float64(totalValue)/constants.SompiPerKaspa)
+			float64(totalSpend)/constants.SompiPerC4ex, float64(totalValue)/constants.SompiPerC4ex)
 	}
 
 	return selectedUTXOs, totalReceived, totalValue - totalSpend, nil

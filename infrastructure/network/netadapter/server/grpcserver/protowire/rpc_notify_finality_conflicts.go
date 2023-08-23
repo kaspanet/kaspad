@@ -5,23 +5,23 @@ import (
 	"github.com/pkg/errors"
 )
 
-func (x *KaspadMessage_NotifyFinalityConflictsRequest) toAppMessage() (appmessage.Message, error) {
+func (x *C4exdMessage_NotifyFinalityConflictsRequest) toAppMessage() (appmessage.Message, error) {
 	return &appmessage.NotifyFinalityConflictsRequestMessage{}, nil
 }
 
-func (x *KaspadMessage_NotifyFinalityConflictsRequest) fromAppMessage(_ *appmessage.NotifyFinalityConflictsRequestMessage) error {
+func (x *C4exdMessage_NotifyFinalityConflictsRequest) fromAppMessage(_ *appmessage.NotifyFinalityConflictsRequestMessage) error {
 	x.NotifyFinalityConflictsRequest = &NotifyFinalityConflictsRequestMessage{}
 	return nil
 }
 
-func (x *KaspadMessage_NotifyFinalityConflictsResponse) toAppMessage() (appmessage.Message, error) {
+func (x *C4exdMessage_NotifyFinalityConflictsResponse) toAppMessage() (appmessage.Message, error) {
 	if x == nil {
-		return nil, errors.Wrapf(errorNil, "KaspadMessage_NotifyFinalityConflictsResponse is nil")
+		return nil, errors.Wrapf(errorNil, "C4exdMessage_NotifyFinalityConflictsResponse is nil")
 	}
 	return x.NotifyFinalityConflictsResponse.toAppMessage()
 }
 
-func (x *KaspadMessage_NotifyFinalityConflictsResponse) fromAppMessage(message *appmessage.NotifyFinalityConflictsResponseMessage) error {
+func (x *C4exdMessage_NotifyFinalityConflictsResponse) fromAppMessage(message *appmessage.NotifyFinalityConflictsResponseMessage) error {
 	var err *RPCError
 	if message.Error != nil {
 		err = &RPCError{Message: message.Error.Message}
@@ -46,14 +46,14 @@ func (x *NotifyFinalityConflictsResponseMessage) toAppMessage() (appmessage.Mess
 	}, nil
 }
 
-func (x *KaspadMessage_FinalityConflictNotification) toAppMessage() (appmessage.Message, error) {
+func (x *C4exdMessage_FinalityConflictNotification) toAppMessage() (appmessage.Message, error) {
 	if x == nil {
-		return nil, errors.Wrapf(errorNil, "KaspadMessage_FinalityConflictNotification is nil")
+		return nil, errors.Wrapf(errorNil, "C4exdMessage_FinalityConflictNotification is nil")
 	}
 	return x.FinalityConflictNotification.toAppMessage()
 }
 
-func (x *KaspadMessage_FinalityConflictNotification) fromAppMessage(message *appmessage.FinalityConflictNotificationMessage) error {
+func (x *C4exdMessage_FinalityConflictNotification) fromAppMessage(message *appmessage.FinalityConflictNotificationMessage) error {
 	x.FinalityConflictNotification = &FinalityConflictNotificationMessage{
 		ViolatingBlockHash: message.ViolatingBlockHash,
 	}
@@ -69,14 +69,14 @@ func (x *FinalityConflictNotificationMessage) toAppMessage() (appmessage.Message
 	}, nil
 }
 
-func (x *KaspadMessage_FinalityConflictResolvedNotification) toAppMessage() (appmessage.Message, error) {
+func (x *C4exdMessage_FinalityConflictResolvedNotification) toAppMessage() (appmessage.Message, error) {
 	if x == nil {
-		return nil, errors.Wrapf(errorNil, "KaspadMessage_FinalityConflictResolvedNotification is nil")
+		return nil, errors.Wrapf(errorNil, "C4exdMessage_FinalityConflictResolvedNotification is nil")
 	}
 	return x.FinalityConflictResolvedNotification.toAppMessage()
 }
 
-func (x *KaspadMessage_FinalityConflictResolvedNotification) fromAppMessage(message *appmessage.FinalityConflictResolvedNotificationMessage) error {
+func (x *C4exdMessage_FinalityConflictResolvedNotification) fromAppMessage(message *appmessage.FinalityConflictResolvedNotificationMessage) error {
 	x.FinalityConflictResolvedNotification = &FinalityConflictResolvedNotificationMessage{
 		FinalityBlockHash: message.FinalityBlockHash,
 	}

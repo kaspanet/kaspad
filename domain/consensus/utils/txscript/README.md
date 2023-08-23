@@ -7,9 +7,9 @@ txscript
 Package txscript implements the c4ex transaction script language. There is
 a comprehensive test suite.
 
-## Kaspa Scripts
+## C4ex Scripts
 
-Kaspa provides a stack-based, FORTH-like language for the scripts in
+C4ex provides a stack-based, FORTH-like language for the scripts in
 the c4ex transactions. This language is not turing complete
 although it is still fairly powerful. 
 

@@ -1,10 +1,10 @@
 /*
-Package addressmanager implements concurrency safe Kaspa address manager.
+Package addressmanager implements concurrency safe C4ex address manager.
 
 # Address Manager Overview
 
-In order maintain the peer-to-peer Kaspa network, there needs to be a source
-of addresses to connect to as nodes come and go. The Kaspa protocol provides
+In order maintain the peer-to-peer C4ex network, there needs to be a source
+of addresses to connect to as nodes come and go. The C4ex protocol provides
 the getaddr and addr messages to allow peers to communicate known addresses with
 each other. However, there needs to a mechanism to store those results and
 select peers from them. It is also important to note that remote peers can't

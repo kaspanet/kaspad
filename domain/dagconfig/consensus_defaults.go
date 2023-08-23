@@ -79,9 +79,9 @@ const (
 	// (값이 높을수록 상수에 의한 가지치기 공격이 더 쉬워지고, 값이 낮을수록 분할 또는 스파이크 후에 병합됩니다.
 	// 블록에서는 시간이 더 오래 걸립니다)
 	defaultMergeSetSizeLimit                       = defaultGHOSTDAGK * 10
-	defaultSubsidyGenesisReward                    = 1 * constants.SompiPerKaspa
-	defaultPreDeflationaryPhaseBaseSubsidy         = 500 * constants.SompiPerKaspa
-	defaultDeflationaryPhaseBaseSubsidy            = 440 * constants.SompiPerKaspa
+	defaultSubsidyGenesisReward                    = 1 * constants.SompiPerC4ex
+	defaultPreDeflationaryPhaseBaseSubsidy         = 500 * constants.SompiPerC4ex
+	defaultDeflationaryPhaseBaseSubsidy            = 440 * constants.SompiPerC4ex
 	defaultCoinbasePayloadScriptPublicKeyMaxLength = 150
 	// defaultDifficultyAdjustmentWindowSize is the number of blocks in a block's past used to calculate its difficulty
 	// target.

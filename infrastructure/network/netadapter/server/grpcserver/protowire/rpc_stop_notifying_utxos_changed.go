@@ -5,14 +5,14 @@ import (
 	"github.com/pkg/errors"
 )
 
-func (x *KaspadMessage_StopNotifyingUtxosChangedRequest) toAppMessage() (appmessage.Message, error) {
+func (x *C4exdMessage_StopNotifyingUtxosChangedRequest) toAppMessage() (appmessage.Message, error) {
 	if x == nil {
-		return nil, errors.Wrapf(errorNil, "KaspadMessage_StopNotifyingUtxosChangedRequest is nil")
+		return nil, errors.Wrapf(errorNil, "C4exdMessage_StopNotifyingUtxosChangedRequest is nil")
 	}
 	return x.StopNotifyingUtxosChangedRequest.toAppMessage()
 }
 
-func (x *KaspadMessage_StopNotifyingUtxosChangedRequest) fromAppMessage(message *appmessage.StopNotifyingUTXOsChangedRequestMessage) error {
+func (x *C4exdMessage_StopNotifyingUtxosChangedRequest) fromAppMessage(message *appmessage.StopNotifyingUTXOsChangedRequestMessage) error {
 	x.StopNotifyingUtxosChangedRequest = &StopNotifyingUtxosChangedRequestMessage{
 		Addresses: message.Addresses,
 	}
@@ -28,14 +28,14 @@ func (x *StopNotifyingUtxosChangedRequestMessage) toAppMessage() (appmessage.Mes
 	}, nil
 }
 
-func (x *KaspadMessage_StopNotifyingUtxosChangedResponse) toAppMessage() (appmessage.Message, error) {
+func (x *C4exdMessage_StopNotifyingUtxosChangedResponse) toAppMessage() (appmessage.Message, error) {
 	if x == nil {
-		return nil, errors.Wrapf(errorNil, "KaspadMessage_StopNotifyingUtxosChangedResponse is nil")
+		return nil, errors.Wrapf(errorNil, "C4exdMessage_StopNotifyingUtxosChangedResponse is nil")
 	}
 	return x.StopNotifyingUtxosChangedResponse.toAppMessage()
 }
 
-func (x *KaspadMessage_StopNotifyingUtxosChangedResponse) fromAppMessage(message *appmessage.StopNotifyingUTXOsChangedResponseMessage) error {
+func (x *C4exdMessage_StopNotifyingUtxosChangedResponse) fromAppMessage(message *appmessage.StopNotifyingUTXOsChangedResponseMessage) error {
 	var err *RPCError
 	if message.Error != nil {
 		err = &RPCError{Message: message.Error.Message}

@@ -107,7 +107,7 @@ func (f ServiceFlag) String() string {
 }
 
 // C4exNet represents which c4ex network a message belongs to.
-// C4exNet은 메시지가 속한 Kaspa 네트워크를 나타냅니다.
+// C4exNet은 메시지가 속한 C4ex 네트워크를 나타냅니다.
 type C4exNet uint32
 
 // Constants used to indicate the message c4ex network. They can also be

@@ -5,9 +5,9 @@ import (
 	"github.com/pkg/errors"
 )
 
-func (x *KaspadMessage_IbdBlockLocatorHighestHash) toAppMessage() (appmessage.Message, error) {
+func (x *C4exdMessage_IbdBlockLocatorHighestHash) toAppMessage() (appmessage.Message, error) {
 	if x == nil {
-		return nil, errors.Wrapf(errorNil, "KaspadMessage_IbdBlockLocatorHighestHash is nil")
+		return nil, errors.Wrapf(errorNil, "C4exdMessage_IbdBlockLocatorHighestHash is nil")
 	}
 	return x.IbdBlockLocatorHighestHash.toAppMessgage()
 }
@@ -27,7 +27,7 @@ func (x *IbdBlockLocatorHighestHashMessage) toAppMessgage() (appmessage.Message,
 
 }
 
-func (x *KaspadMessage_IbdBlockLocatorHighestHash) fromAppMessage(message *appmessage.MsgIBDBlockLocatorHighestHash) error {
+func (x *C4exdMessage_IbdBlockLocatorHighestHash) fromAppMessage(message *appmessage.MsgIBDBlockLocatorHighestHash) error {
 	x.IbdBlockLocatorHighestHash = &IbdBlockLocatorHighestHashMessage{
 		HighestHash: domainHashToProto(message.HighestHash),
 	}

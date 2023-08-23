@@ -5,14 +5,14 @@ import (
 	"github.com/pkg/errors"
 )
 
-func (x *KaspadMessage_GetMempoolEntriesByAddressesRequest) toAppMessage() (appmessage.Message, error) {
+func (x *C4exdMessage_GetMempoolEntriesByAddressesRequest) toAppMessage() (appmessage.Message, error) {
 	if x == nil {
-		return nil, errors.Wrapf(errorNil, "KaspadMessage_KaspadMessage_GetMempoolEntriesByAddressesRequest is nil")
+		return nil, errors.Wrapf(errorNil, "C4exdMessage_C4exdMessage_GetMempoolEntriesByAddressesRequest is nil")
 	}
 	return x.GetMempoolEntriesByAddressesRequest.toAppMessage()
 }
 
-func (x *KaspadMessage_GetMempoolEntriesByAddressesRequest) fromAppMessage(message *appmessage.GetMempoolEntriesByAddressesRequestMessage) error {
+func (x *C4exdMessage_GetMempoolEntriesByAddressesRequest) fromAppMessage(message *appmessage.GetMempoolEntriesByAddressesRequestMessage) error {
 	x.GetMempoolEntriesByAddressesRequest = &GetMempoolEntriesByAddressesRequestMessage{
 		Addresses:             message.Addresses,
 		IncludeOrphanPool:     message.IncludeOrphanPool,
@@ -23,7 +23,7 @@ func (x *KaspadMessage_GetMempoolEntriesByAddressesRequest) fromAppMessage(messa
 
 func (x *GetMempoolEntriesByAddressesRequestMessage) toAppMessage() (appmessage.Message, error) {
 	if x == nil {
-		return nil, errors.Wrapf(errorNil, "KaspadMessage_GetMempoolEntriesRequest is nil")
+		return nil, errors.Wrapf(errorNil, "C4exdMessage_GetMempoolEntriesRequest is nil")
 	}
 	return &appmessage.GetMempoolEntriesByAddressesRequestMessage{
 		Addresses:             x.Addresses,
@@ -32,14 +32,14 @@ func (x *GetMempoolEntriesByAddressesRequestMessage) toAppMessage() (appmessage.
 	}, nil
 }
 
-func (x *KaspadMessage_GetMempoolEntriesByAddressesResponse) toAppMessage() (appmessage.Message, error) {
+func (x *C4exdMessage_GetMempoolEntriesByAddressesResponse) toAppMessage() (appmessage.Message, error) {
 	if x == nil {
-		return nil, errors.Wrapf(errorNil, "KaspadMessage_GetMempoolEntriesByAddressesResponse is nil")
+		return nil, errors.Wrapf(errorNil, "C4exdMessage_GetMempoolEntriesByAddressesResponse is nil")
 	}
 	return x.GetMempoolEntriesByAddressesResponse.toAppMessage()
 }
 
-func (x *KaspadMessage_GetMempoolEntriesByAddressesResponse) fromAppMessage(message *appmessage.GetMempoolEntriesByAddressesResponseMessage) error {
+func (x *C4exdMessage_GetMempoolEntriesByAddressesResponse) fromAppMessage(message *appmessage.GetMempoolEntriesByAddressesResponseMessage) error {
 	var rpcErr *RPCError
 	if message.Error != nil {
 		rpcErr = &RPCError{Message: message.Error.Message}

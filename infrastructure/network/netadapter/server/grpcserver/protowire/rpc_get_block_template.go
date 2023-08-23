@@ -5,14 +5,14 @@ import (
 	"github.com/pkg/errors"
 )
 
-func (x *KaspadMessage_GetBlockTemplateRequest) toAppMessage() (appmessage.Message, error) {
+func (x *C4exdMessage_GetBlockTemplateRequest) toAppMessage() (appmessage.Message, error) {
 	if x == nil {
-		return nil, errors.Wrapf(errorNil, "KaspadMessage_GetBlockTemplateRequest is nil")
+		return nil, errors.Wrapf(errorNil, "C4exdMessage_GetBlockTemplateRequest is nil")
 	}
 	return x.GetBlockTemplateRequest.toAppMessage()
 }
 
-func (x *KaspadMessage_GetBlockTemplateRequest) fromAppMessage(message *appmessage.GetBlockTemplateRequestMessage) error {
+func (x *C4exdMessage_GetBlockTemplateRequest) fromAppMessage(message *appmessage.GetBlockTemplateRequestMessage) error {
 	x.GetBlockTemplateRequest = &GetBlockTemplateRequestMessage{
 		PayAddress: message.PayAddress,
 		ExtraData:  message.ExtraData,
@@ -30,14 +30,14 @@ func (x *GetBlockTemplateRequestMessage) toAppMessage() (appmessage.Message, err
 	}, nil
 }
 
-func (x *KaspadMessage_GetBlockTemplateResponse) toAppMessage() (appmessage.Message, error) {
+func (x *C4exdMessage_GetBlockTemplateResponse) toAppMessage() (appmessage.Message, error) {
 	if x == nil {
-		return nil, errors.Wrapf(errorNil, "KaspadMessage_GetBlockTemplateResponse is nil")
+		return nil, errors.Wrapf(errorNil, "C4exdMessage_GetBlockTemplateResponse is nil")
 	}
 	return x.GetBlockTemplateResponse.toAppMessage()
 }
 
-func (x *KaspadMessage_GetBlockTemplateResponse) fromAppMessage(message *appmessage.GetBlockTemplateResponseMessage) error {
+func (x *C4exdMessage_GetBlockTemplateResponse) fromAppMessage(message *appmessage.GetBlockTemplateResponseMessage) error {
 	var err *RPCError
 	if message.Error != nil {
 		err = &RPCError{Message: message.Error.Message}

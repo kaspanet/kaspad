@@ -22,80 +22,80 @@ var BitcoinMainnetPublic = [4]byte{
 	0x1e,
 }
 
-// KaspaMainnetPrivate is the version that is used for
+// C4exMainnetPrivate is the version that is used for
 // c4ex mainnet bip32 private extended keys.
 // Ecnodes to xprv in base58.
-var KaspaMainnetPrivate = [4]byte{
+var C4exMainnetPrivate = [4]byte{
 	0x03,
 	0x8f,
 	0x2e,
 	0xf4,
 }
 
-// KaspaMainnetPublic is the version that is used for
+// C4exMainnetPublic is the version that is used for
 // c4ex mainnet bip32 public extended keys.
 // Ecnodes to kpub in base58.
-var KaspaMainnetPublic = [4]byte{
+var C4exMainnetPublic = [4]byte{
 	0x03,
 	0x8f,
 	0x33,
 	0x2e,
 }
 
-// KaspaTestnetPrivate is the version that is used for
+// C4exTestnetPrivate is the version that is used for
 // c4ex testnet bip32 public extended keys.
 // Ecnodes to ktrv in base58.
-var KaspaTestnetPrivate = [4]byte{
+var C4exTestnetPrivate = [4]byte{
 	0x03,
 	0x90,
 	0x9e,
 	0x07,
 }
 
-// KaspaTestnetPublic is the version that is used for
+// C4exTestnetPublic is the version that is used for
 // c4ex testnet bip32 public extended keys.
 // Ecnodes to ktub in base58.
-var KaspaTestnetPublic = [4]byte{
+var C4exTestnetPublic = [4]byte{
 	0x03,
 	0x90,
 	0xa2,
 	0x41,
 }
 
-// KaspaDevnetPrivate is the version that is used for
+// C4exDevnetPrivate is the version that is used for
 // c4ex devnet bip32 public extended keys.
 // Ecnodes to kdrv in base58.
-var KaspaDevnetPrivate = [4]byte{
+var C4exDevnetPrivate = [4]byte{
 	0x03,
 	0x8b,
 	0x3d,
 	0x80,
 }
 
-// KaspaDevnetPublic is the version that is used for
+// C4exDevnetPublic is the version that is used for
 // c4ex devnet bip32 public extended keys.
 // Ecnodes to xdub in base58.
-var KaspaDevnetPublic = [4]byte{
+var C4exDevnetPublic = [4]byte{
 	0x03,
 	0x8b,
 	0x41,
 	0xba,
 }
 
-// KaspaSimnetPrivate is the version that is used for
+// C4exSimnetPrivate is the version that is used for
 // c4ex simnet bip32 public extended keys.
 // Ecnodes to ksrv in base58.
-var KaspaSimnetPrivate = [4]byte{
+var C4exSimnetPrivate = [4]byte{
 	0x03,
 	0x90,
 	0x42,
 	0x42,
 }
 
-// KaspaSimnetPublic is the version that is used for
+// C4exSimnetPublic is the version that is used for
 // c4ex simnet bip32 public extended keys.
 // Ecnodes to xsub in base58.
-var KaspaSimnetPublic = [4]byte{
+var C4exSimnetPublic = [4]byte{
 	0x03,
 	0x90,
 	0x46,
@@ -106,14 +106,14 @@ func toPublicVersion(version [4]byte) ([4]byte, error) {
 	switch version {
 	case BitcoinMainnetPrivate:
 		return BitcoinMainnetPublic, nil
-	case KaspaMainnetPrivate:
-		return KaspaMainnetPublic, nil
-	case KaspaTestnetPrivate:
-		return KaspaTestnetPublic, nil
-	case KaspaDevnetPrivate:
-		return KaspaDevnetPublic, nil
-	case KaspaSimnetPrivate:
-		return KaspaSimnetPublic, nil
+	case C4exMainnetPrivate:
+		return C4exMainnetPublic, nil
+	case C4exTestnetPrivate:
+		return C4exTestnetPublic, nil
+	case C4exDevnetPrivate:
+		return C4exDevnetPublic, nil
+	case C4exSimnetPrivate:
+		return C4exSimnetPublic, nil
 	}
 
 	return [4]byte{}, errors.Errorf("unknown version %x", version)
@@ -123,13 +123,13 @@ func isPrivateVersion(version [4]byte) bool {
 	switch version {
 	case BitcoinMainnetPrivate:
 		return true
-	case KaspaMainnetPrivate:
+	case C4exMainnetPrivate:
 		return true
-	case KaspaTestnetPrivate:
+	case C4exTestnetPrivate:
 		return true
-	case KaspaDevnetPrivate:
+	case C4exDevnetPrivate:
 		return true
-	case KaspaSimnetPrivate:
+	case C4exSimnetPrivate:
 		return true
 	}
 

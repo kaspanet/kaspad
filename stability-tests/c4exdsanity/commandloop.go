@@ -41,8 +41,8 @@ func commandLoop(argsChan <-chan []string) ([]commandFailure, error) {
 		}
 
 		cmd := exec.Command("c4exd", args...)
-		cmd.Stdout = common.NewLogWriter(log, logger.LevelTrace, "KASPAD-STDOUT")
-		cmd.Stderr = common.NewLogWriter(log, logger.LevelWarn, "KASPAD-STDERR")
+		cmd.Stdout = common.NewLogWriter(log, logger.LevelTrace, "C4exD-STDOUT")
+		cmd.Stderr = common.NewLogWriter(log, logger.LevelWarn, "C4exD-STDERR")
 
 		log.Infof("Running `%s`", cmd)
 		errChan := make(chan error)

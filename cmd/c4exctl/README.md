@@ -27,9 +27,9 @@ $ cd c4exd/cmd/c4exctl
 $ go install .
 ```
 
-- Kaspactl should now be installed in `$(go env GOPATH)/bin`. If you did not already add the bin directory to your
+- C4exctl should now be installed in `$(go env GOPATH)/bin`. If you did not already add the bin directory to your
   system path during Go installation, you are encouraged to do so now.
-- 이제 Kaspad(및 유틸리티)가 $(go env GOPATH)/bin에 설치됩니다. Go 설치 중에 시스템 경로에 bin 디렉터리를 아직 추가하지 않았다면 지금 추가하는 것이 좋습니다.
+- 이제 C4exd(및 유틸리티)가 $(go env GOPATH)/bin에 설치됩니다. Go 설치 중에 시스템 경로에 bin 디렉터리를 아직 추가하지 않았다면 지금 추가하는 것이 좋습니다.
 
 ## Usage
 

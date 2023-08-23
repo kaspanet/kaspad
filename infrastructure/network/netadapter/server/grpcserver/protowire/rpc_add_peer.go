@@ -5,14 +5,14 @@ import (
 	"github.com/pkg/errors"
 )
 
-func (x *KaspadMessage_AddPeerRequest) toAppMessage() (appmessage.Message, error) {
+func (x *C4exdMessage_AddPeerRequest) toAppMessage() (appmessage.Message, error) {
 	if x == nil {
-		return nil, errors.Wrapf(errorNil, "KaspadMessage_AddPeerRequest is nil")
+		return nil, errors.Wrapf(errorNil, "C4exdMessage_AddPeerRequest is nil")
 	}
 	return x.AddPeerRequest.toAppMessage()
 }
 
-func (x *KaspadMessage_AddPeerRequest) fromAppMessage(message *appmessage.AddPeerRequestMessage) error {
+func (x *C4exdMessage_AddPeerRequest) fromAppMessage(message *appmessage.AddPeerRequestMessage) error {
 	x.AddPeerRequest = &AddPeerRequestMessage{
 		Address:     message.Address,
 		IsPermanent: message.IsPermanent,
@@ -30,14 +30,14 @@ func (x *AddPeerRequestMessage) toAppMessage() (appmessage.Message, error) {
 	}, nil
 }
 
-func (x *KaspadMessage_AddPeerResponse) toAppMessage() (appmessage.Message, error) {
+func (x *C4exdMessage_AddPeerResponse) toAppMessage() (appmessage.Message, error) {
 	if x == nil {
-		return nil, errors.Wrapf(errorNil, "KaspadMessage_AddPeerResponse is nil")
+		return nil, errors.Wrapf(errorNil, "C4exdMessage_AddPeerResponse is nil")
 	}
 	return x.AddPeerResponse.toAppMessage()
 }
 
-func (x *KaspadMessage_AddPeerResponse) fromAppMessage(message *appmessage.AddPeerResponseMessage) error {
+func (x *C4exdMessage_AddPeerResponse) fromAppMessage(message *appmessage.AddPeerResponseMessage) error {
 	var err *RPCError
 	if message.Error != nil {
 		err = &RPCError{Message: message.Error.Message}

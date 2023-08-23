@@ -13,7 +13,7 @@ import (
 )
 
 // Connect connects to the c4exwalletd server, and returns the client instance
-func Connect(address string) (pb.KaspawalletdClient, func(), error) {
+func Connect(address string) (pb.C4exwalletdClient, func(), error) {
 	// Connection is local, so 1 second timeout is sufficient
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
@@ -26,7 +26,7 @@ func Connect(address string) (pb.KaspawalletdClient, func(), error) {
 		return nil, nil, err
 	}
 
-	return pb.NewKaspawalletdClient(conn), func() {
+	return pb.NewC4exwalletdClient(conn), func() {
 		conn.Close()
 	}, nil
 }

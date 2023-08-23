@@ -6,7 +6,7 @@ supported c4ex messages to and from the appmessage. This package does not deal
 with the specifics of message handling such as what to do when a message is
 received. This provides the caller with a high level of flexibility.
 
-# Kaspa Message Overview
+# C4ex Message Overview
 
 The c4ex protocol consists of exchanging messages between peers. Each
 message is preceded by a header which identifies information about it such as
@@ -60,7 +60,7 @@ latest protocol version this package supports and is typically the value to use
 for all outbound connections before a potentially lower protocol version is
 negotiated.
 
-# Kaspa Network
+# C4ex Network
 
 The c4ex network is a magic number which is used to identify the start of a
 message and which c4ex network the message applies to. This package provides

@@ -5,14 +5,14 @@ import (
 	"github.com/pkg/errors"
 )
 
-func (x *KaspadMessage_EstimateNetworkHashesPerSecondRequest) toAppMessage() (appmessage.Message, error) {
+func (x *C4exdMessage_EstimateNetworkHashesPerSecondRequest) toAppMessage() (appmessage.Message, error) {
 	if x == nil {
-		return nil, errors.Wrapf(errorNil, "KaspadMessage_EstimateNetworkHashesPerSecondRequest is nil")
+		return nil, errors.Wrapf(errorNil, "C4exdMessage_EstimateNetworkHashesPerSecondRequest is nil")
 	}
 	return x.EstimateNetworkHashesPerSecondRequest.toAppMessage()
 }
 
-func (x *KaspadMessage_EstimateNetworkHashesPerSecondRequest) fromAppMessage(message *appmessage.EstimateNetworkHashesPerSecondRequestMessage) error {
+func (x *C4exdMessage_EstimateNetworkHashesPerSecondRequest) fromAppMessage(message *appmessage.EstimateNetworkHashesPerSecondRequestMessage) error {
 	x.EstimateNetworkHashesPerSecondRequest = &EstimateNetworkHashesPerSecondRequestMessage{
 		WindowSize: message.WindowSize,
 		StartHash:  message.StartHash,
@@ -30,14 +30,14 @@ func (x *EstimateNetworkHashesPerSecondRequestMessage) toAppMessage() (appmessag
 	}, nil
 }
 
-func (x *KaspadMessage_EstimateNetworkHashesPerSecondResponse) toAppMessage() (appmessage.Message, error) {
+func (x *C4exdMessage_EstimateNetworkHashesPerSecondResponse) toAppMessage() (appmessage.Message, error) {
 	if x == nil {
-		return nil, errors.Wrapf(errorNil, "KaspadMessage_EstimateNetworkHashesPerSecondResponse is nil")
+		return nil, errors.Wrapf(errorNil, "C4exdMessage_EstimateNetworkHashesPerSecondResponse is nil")
 	}
 	return x.EstimateNetworkHashesPerSecondResponse.toAppMessage()
 }
 
-func (x *KaspadMessage_EstimateNetworkHashesPerSecondResponse) fromAppMessage(message *appmessage.EstimateNetworkHashesPerSecondResponseMessage) error {
+func (x *C4exdMessage_EstimateNetworkHashesPerSecondResponse) fromAppMessage(message *appmessage.EstimateNetworkHashesPerSecondResponseMessage) error {
 	var err *RPCError
 	if message.Error != nil {
 		err = &RPCError{Message: message.Error.Message}

@@ -12,11 +12,11 @@ const (
 	// MaxScriptPublicKeyVersion is the current latest supported public key script version.
 	MaxScriptPublicKeyVersion uint16 = 0
 
-	// SompiPerKaspa is the number of sompi in one c4ex (1 KAS).
-	SompiPerKaspa = 100_000_000
+	// SompiPerC4ex is the number of sompi in one c4ex (1 KAS).
+	SompiPerC4ex = 100_000_000
 
 	// MaxSompi is the maximum transaction amount allowed in sompi.
-	MaxSompi = uint64(29_000_000_000 * SompiPerKaspa)
+	MaxSompi = uint64(29_000_000_000 * SompiPerC4ex)
 
 	// MaxTxInSequenceNum is the maximum sequence number the sequence field
 	// of a transaction input can be.

@@ -7,14 +7,14 @@ import (
 	"github.com/pkg/errors"
 )
 
-func (x *KaspadMessage_SubmitTransactionRequest) toAppMessage() (appmessage.Message, error) {
+func (x *C4exdMessage_SubmitTransactionRequest) toAppMessage() (appmessage.Message, error) {
 	if x == nil {
-		return nil, errors.Wrapf(errorNil, "KaspadMessage_SubmitTransactionRequest is nil")
+		return nil, errors.Wrapf(errorNil, "C4exdMessage_SubmitTransactionRequest is nil")
 	}
 	return x.SubmitTransactionRequest.toAppMessage()
 }
 
-func (x *KaspadMessage_SubmitTransactionRequest) fromAppMessage(message *appmessage.SubmitTransactionRequestMessage) error {
+func (x *C4exdMessage_SubmitTransactionRequest) fromAppMessage(message *appmessage.SubmitTransactionRequestMessage) error {
 	x.SubmitTransactionRequest = &SubmitTransactionRequestMessage{
 		Transaction: &RpcTransaction{},
 		AllowOrphan: message.AllowOrphan,
@@ -37,14 +37,14 @@ func (x *SubmitTransactionRequestMessage) toAppMessage() (appmessage.Message, er
 	}, nil
 }
 
-func (x *KaspadMessage_SubmitTransactionResponse) toAppMessage() (appmessage.Message, error) {
+func (x *C4exdMessage_SubmitTransactionResponse) toAppMessage() (appmessage.Message, error) {
 	if x == nil {
-		return nil, errors.Wrapf(errorNil, "KaspadMessage_SubmitTransactionResponse is nil")
+		return nil, errors.Wrapf(errorNil, "C4exdMessage_SubmitTransactionResponse is nil")
 	}
 	return x.SubmitTransactionResponse.toAppMessage()
 }
 
-func (x *KaspadMessage_SubmitTransactionResponse) fromAppMessage(message *appmessage.SubmitTransactionResponseMessage) error {
+func (x *C4exdMessage_SubmitTransactionResponse) fromAppMessage(message *appmessage.SubmitTransactionResponseMessage) error {
 	var err *RPCError
 	if message.Error != nil {
 		err = &RPCError{Message: message.Error.Message}

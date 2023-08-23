@@ -6,9 +6,9 @@ import (
 	"github.com/pkg/errors"
 )
 
-func (x *KaspadMessage_RequestIBDChainBlockLocator) toAppMessage() (appmessage.Message, error) {
+func (x *C4exdMessage_RequestIBDChainBlockLocator) toAppMessage() (appmessage.Message, error) {
 	if x == nil {
-		return nil, errors.Wrapf(errorNil, "KaspadMessage_RequestIBDChainBlockLocator is nil")
+		return nil, errors.Wrapf(errorNil, "C4exdMessage_RequestIBDChainBlockLocator is nil")
 	}
 	return x.RequestIBDChainBlockLocator.toAppMessage()
 }
@@ -38,7 +38,7 @@ func (x *RequestIBDChainBlockLocatorMessage) toAppMessage() (appmessage.Message,
 
 }
 
-func (x *KaspadMessage_RequestIBDChainBlockLocator) fromAppMessage(msgGetBlockLocator *appmessage.MsgRequestIBDChainBlockLocator) error {
+func (x *C4exdMessage_RequestIBDChainBlockLocator) fromAppMessage(msgGetBlockLocator *appmessage.MsgRequestIBDChainBlockLocator) error {
 	var highHash, lowHash *Hash
 	if msgGetBlockLocator.HighHash != nil {
 		highHash = domainHashToProto(msgGetBlockLocator.HighHash)

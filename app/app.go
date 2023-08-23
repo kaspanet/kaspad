@@ -32,8 +32,8 @@ var desiredLimits = &limits.DesiredLimits{
 
 var serviceDescription = &winservice.ServiceDescription{
 	Name:        "c4exdsvc",
-	DisplayName: "Kaspad Service",
-	Description: "Downloads and stays synchronized with the Kaspa blockDAG and " +
+	DisplayName: "C4exd Service",
+	Description: "Downloads and stays synchronized with the C4ex blockDAG and " +
 		"provides DAG services to applications.",
 }
 
@@ -145,7 +145,7 @@ func (app *c4exdApp) main(startedChan chan<- struct{}) error {
 		case <-time.After(shutdownTimeout):
 			log.Criticalf("Graceful shutdown timed out %s. Terminating...", shutdownTimeout)
 		}
-		log.Infof("Kaspad shutdown complete")
+		log.Infof("C4exd shutdown complete")
 	}()
 
 	componentManager.Start()

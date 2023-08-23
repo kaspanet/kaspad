@@ -35,7 +35,7 @@ func send(conf *sendConfig) error {
 
 	var sendAmountSompi uint64
 	if !conf.IsSendAll {
-		sendAmountSompi = uint64(conf.SendAmount * constants.SompiPerKaspa)
+		sendAmountSompi = uint64(conf.SendAmount * constants.SompiPerC4ex)
 	}
 
 	createUnsignedTransactionsResponse, err :=

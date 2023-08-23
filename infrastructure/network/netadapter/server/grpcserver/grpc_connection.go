@@ -37,8 +37,8 @@ type gRPCConnection struct {
 }
 
 type grpcStream interface {
-	Send(*protowire.KaspadMessage) error
-	Recv() (*protowire.KaspadMessage, error)
+	Send(*protowire.C4exdMessage) error
+	Recv() (*protowire.C4exdMessage, error)
 }
 
 func newConnection(server *gRPCServer, address *net.TCPAddr, stream grpcStream,
@@ -127,7 +127,7 @@ func (c *gRPCConnection) Address() *net.TCPAddr {
 	return c.address
 }
 
-func (c *gRPCConnection) receive() (*protowire.KaspadMessage, error) {
+func (c *gRPCConnection) receive() (*protowire.C4exdMessage, error) {
 	// We use RLock here and in send() because they can work
 	// in parallel. closeSend(), however, must not have either
 	// receive() nor send() running while it's running.
@@ -137,7 +137,7 @@ func (c *gRPCConnection) receive() (*protowire.KaspadMessage, error) {
 	return c.stream.Recv()
 }
 
-func (c *gRPCConnection) send(message *protowire.KaspadMessage) error {
+func (c *gRPCConnection) send(message *protowire.C4exdMessage) error {
 	// We use RLock here and in receive() because they can work
 	// in parallel. closeSend(), however, must not have either
 	// receive() nor send() running while it's running.

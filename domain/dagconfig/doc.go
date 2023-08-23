@@ -1,7 +1,7 @@
 /*
 Package dagconfig defines DAG configuration parameters.
 
-In addition to the main Kaspa network, which is intended for the transfer
+In addition to the main C4ex network, which is intended for the transfer
 of monetary value, there also exists the following standard networks:
   - testnet
   - simnet
@@ -31,7 +31,7 @@ variable (either directly, or hidden in a library call).
 		"github.com/c4ei/yunseokyeol/domain/dagconfig"
 	)
 
-	var testnet = flag.Bool("testnet", false, "operate on the testnet Kaspa network")
+	var testnet = flag.Bool("testnet", false, "operate on the testnet C4ex network")
 
 	// By default (without --testnet), use mainnet.
 	var dagParams = &dagconfig.MainnetParams
@@ -55,7 +55,7 @@ variable (either directly, or hidden in a library call).
 		fmt.Println(addr)
 	}
 
-If an application does not use one of the standard Kaspa networks, a new
+If an application does not use one of the standard C4ex networks, a new
 Params struct may be created which defines the parameters for the non-
 standard network. As a general rule of thumb, all network parameters
 should be unique to the network, but parameter collisions can still occur.

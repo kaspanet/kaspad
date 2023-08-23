@@ -25,7 +25,7 @@ import (
 )
 
 type server struct {
-	pb.UnimplementedKaspawalletdServer
+	pb.UnimplementedC4exwalletdServer
 
 	rpcClient *rpcclient.RPCClient
 	params    *dagconfig.Params
@@ -106,7 +106,7 @@ func Start(params *dagconfig.Params, listen, rpcServer string, keysFilePath stri
 	})
 
 	grpcServer := grpc.NewServer(grpc.MaxSendMsgSize(MaxDaemonSendMsgSize))
-	pb.RegisterKaspawalletdServer(grpcServer, serverInstance)
+	pb.RegisterC4exwalletdServer(grpcServer, serverInstance)
 
 	spawn("grpcServer.Serve", func() {
 		err := grpcServer.Serve(listener)

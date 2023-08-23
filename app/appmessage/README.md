@@ -7,7 +7,7 @@ wire
 
 Package wire implements the c4ex wire protocol.
 
-## Kaspa Message Overview
+## C4ex Message Overview
 
 The c4ex protocol consists of exchanging messages between peers. Each message
 is preceded by a header which identifies information about it such as which

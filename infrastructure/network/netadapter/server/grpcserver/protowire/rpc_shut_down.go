@@ -5,23 +5,23 @@ import (
 	"github.com/pkg/errors"
 )
 
-func (x *KaspadMessage_ShutDownRequest) toAppMessage() (appmessage.Message, error) {
+func (x *C4exdMessage_ShutDownRequest) toAppMessage() (appmessage.Message, error) {
 	return &appmessage.ShutDownRequestMessage{}, nil
 }
 
-func (x *KaspadMessage_ShutDownRequest) fromAppMessage(_ *appmessage.ShutDownRequestMessage) error {
+func (x *C4exdMessage_ShutDownRequest) fromAppMessage(_ *appmessage.ShutDownRequestMessage) error {
 	x.ShutDownRequest = &ShutDownRequestMessage{}
 	return nil
 }
 
-func (x *KaspadMessage_ShutDownResponse) toAppMessage() (appmessage.Message, error) {
+func (x *C4exdMessage_ShutDownResponse) toAppMessage() (appmessage.Message, error) {
 	if x == nil {
-		return nil, errors.Wrapf(errorNil, "KaspadMessage_ShutDownResponse is nil")
+		return nil, errors.Wrapf(errorNil, "C4exdMessage_ShutDownResponse is nil")
 	}
 	return x.ShutDownResponse.toAppMessage()
 }
 
-func (x *KaspadMessage_ShutDownResponse) fromAppMessage(message *appmessage.ShutDownResponseMessage) error {
+func (x *C4exdMessage_ShutDownResponse) fromAppMessage(message *appmessage.ShutDownResponseMessage) error {
 	var err *RPCError
 	if message.Error != nil {
 		err = &RPCError{Message: message.Error.Message}

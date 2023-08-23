@@ -1,6 +1,6 @@
 # c4exminer
 
-Kaspaminer is a CPU-based miner for c4exd
+C4exminer is a CPU-based miner for c4exd
 
 ## Requirements
 

@@ -36,7 +36,7 @@ func main() {
 	defer client.Disconnect()
 
 	if !cfg.AllowConnectionToDifferentVersions {
-		c4exdMessage, err := client.Post(&protowire.KaspadMessage{Payload: &protowire.KaspadMessage_GetInfoRequest{GetInfoRequest: &protowire.GetInfoRequestMessage{}}})
+		c4exdMessage, err := client.Post(&protowire.C4exdMessage{Payload: &protowire.C4exdMessage_GetInfoRequest{GetInfoRequest: &protowire.GetInfoRequestMessage{}}})
 		if err != nil {
 			printErrorAndExit(fmt.Sprintf("Cannot post GetInfo message: %s", err))
 		}
@@ -101,7 +101,7 @@ func postJSON(cfg *configFlags, client *grpcclient.GRPCClient, doneChan chan str
 }
 
 func prettifyResponse(response string) string {
-	c4exdMessage := &protowire.KaspadMessage{}
+	c4exdMessage := &protowire.C4exdMessage{}
 	err := protojson.Unmarshal([]byte(response), c4exdMessage)
 	if err != nil {
 		printErrorAndExit(fmt.Sprintf("error parsing the response from the RPC server: %s", err))

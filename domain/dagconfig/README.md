@@ -5,8 +5,8 @@ dagconfig
 [![GoDoc](https://img.shields.io/badge/godoc-reference-blue.svg)](http://godoc.org/github.com/c4ei/yunseokyeol/dagconfig)
 
 Package dagconfig defines DAG configuration parameters for the standard
-Kaspad networks and provides the ability for callers to define their own custom
-Kaspad networks.
+C4exd networks and provides the ability for callers to define their own custom
+C4exd networks.
 
 ## Sample Use
 
@@ -22,7 +22,7 @@ import (
 	"github.com/c4ei/yunseokyeol/domain/dagconfig"
 )
 
-var testnet = flag.Bool("testnet", false, "operate on the testnet Kaspa network")
+var testnet = flag.Bool("testnet", false, "operate on the testnet C4ex network")
 
 // By default (without --testnet), use mainnet.
 var dagParams = &dagconfig.MainnetParams

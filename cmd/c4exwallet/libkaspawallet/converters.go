@@ -10,8 +10,8 @@ import (
 	"github.com/c4ei/yunseokyeol/domain/consensus/utils/utxo"
 )
 
-// KaspawalletdUTXOsTolibc4exwalletUTXOs converts a  []*pb.UtxosByAddressesEntry to a []*libc4exwallet.UTXO
-func KaspawalletdUTXOsTolibc4exwalletUTXOs(c4exwalletdUtxoEntires []*pb.UtxosByAddressesEntry) ([]*UTXO, error) {
+// C4exwalletdUTXOsTolibc4exwalletUTXOs converts a  []*pb.UtxosByAddressesEntry to a []*libc4exwallet.UTXO
+func C4exwalletdUTXOsTolibc4exwalletUTXOs(c4exwalletdUtxoEntires []*pb.UtxosByAddressesEntry) ([]*UTXO, error) {
 	UTXOs := make([]*UTXO, len(c4exwalletdUtxoEntires))
 	for i, entry := range c4exwalletdUtxoEntires {
 		script, err := hex.DecodeString(entry.UtxoEntry.ScriptPublicKey.ScriptPublicKey)
@@ -41,8 +41,8 @@ func KaspawalletdUTXOsTolibc4exwalletUTXOs(c4exwalletdUtxoEntires []*pb.UtxosByA
 	return UTXOs, nil
 }
 
-// AppMessageUTXOToKaspawalletdUTXO converts an appmessage.UTXOsByAddressesEntry to a  pb.UtxosByAddressesEntry
-func AppMessageUTXOToKaspawalletdUTXO(appUTXOsByAddressesEntry *appmessage.UTXOsByAddressesEntry) *pb.UtxosByAddressesEntry {
+// AppMessageUTXOToC4exwalletdUTXO converts an appmessage.UTXOsByAddressesEntry to a  pb.UtxosByAddressesEntry
+func AppMessageUTXOToC4exwalletdUTXO(appUTXOsByAddressesEntry *appmessage.UTXOsByAddressesEntry) *pb.UtxosByAddressesEntry {
 	return &pb.UtxosByAddressesEntry{
 		Outpoint: &pb.Outpoint{
 			TransactionId: appUTXOsByAddressesEntry.Outpoint.TransactionID,

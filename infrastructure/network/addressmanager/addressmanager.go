@@ -56,7 +56,7 @@ func netAddressKey(netAddress *appmessage.NetAddress) addressKey {
 }
 
 // AddressManager provides a concurrency safe address manager for caching potential
-// peers on the Kaspa network.
+// peers on the C4ex network.
 type AddressManager struct {
 	store          *addressStore
 	localAddresses *localAddressManager
@@ -65,7 +65,7 @@ type AddressManager struct {
 	random         addressRandomizer
 }
 
-// New returns a new Kaspa address manager.
+// New returns a new C4ex address manager.
 func New(cfg *Config, database database.Database) (*AddressManager, error) {
 	addressStore, err := newAddressStore(database)
 	if err != nil {
