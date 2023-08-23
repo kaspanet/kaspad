@@ -1,15 +1,16 @@
 package fast_pruning_ibd_test
 
 import (
-	"github.com/c4ei/kaspad/domain/consensus"
-	"github.com/c4ei/kaspad/domain/consensus/model/externalapi"
-	"github.com/c4ei/kaspad/domain/consensus/utils/testutils"
-	"github.com/c4ei/kaspad/domain/dagconfig"
 	"io/ioutil"
 	"os"
 	"path"
 	"testing"
 	"time"
+
+	"github.com/c4ei/YunSeokYeol/domain/consensus"
+	"github.com/c4ei/YunSeokYeol/domain/consensus/model/externalapi"
+	"github.com/c4ei/YunSeokYeol/domain/consensus/utils/testutils"
+	"github.com/c4ei/YunSeokYeol/domain/dagconfig"
 )
 
 // TestGenerateFastPruningIBDTest generates the json needed for dag-for-fast-pruning-ibd-test.json.gz

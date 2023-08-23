@@ -5,9 +5,9 @@ import (
 	"strings"
 	"sync/atomic"
 
-	"github.com/c4ei/kaspad/infrastructure/network/netadapter/router"
+	"github.com/c4ei/YunSeokYeol/infrastructure/network/netadapter/router"
 
-	"github.com/c4ei/kaspad/app/protocol/protocolerrors"
+	"github.com/c4ei/YunSeokYeol/app/protocol/protocolerrors"
 )
 
 var (

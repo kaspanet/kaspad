@@ -1,12 +1,13 @@
 package miningmanager
 
 import (
-	"github.com/c4ei/kaspad/domain/consensusreference"
-	"github.com/c4ei/kaspad/domain/dagconfig"
-	"github.com/c4ei/kaspad/domain/miningmanager/blocktemplatebuilder"
-	mempoolpkg "github.com/c4ei/kaspad/domain/miningmanager/mempool"
 	"sync"
 	"time"
+
+	"github.com/c4ei/YunSeokYeol/domain/consensusreference"
+	"github.com/c4ei/YunSeokYeol/domain/dagconfig"
+	"github.com/c4ei/YunSeokYeol/domain/miningmanager/blocktemplatebuilder"
+	mempoolpkg "github.com/c4ei/YunSeokYeol/domain/miningmanager/mempool"
 )
 
 // Factory instantiates new mining managers

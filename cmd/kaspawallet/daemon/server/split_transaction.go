@@ -4,14 +4,14 @@ import (
 	"github.com/kaspanet/go-secp256k1"
 	"github.com/pkg/errors"
 
-	"github.com/c4ei/kaspad/cmd/kaspawallet/libkaspawallet"
-	"github.com/c4ei/kaspad/cmd/kaspawallet/libkaspawallet/serialization"
-	"github.com/c4ei/kaspad/domain/consensus/model/externalapi"
-	"github.com/c4ei/kaspad/domain/consensus/utils/consensushashing"
-	"github.com/c4ei/kaspad/domain/consensus/utils/constants"
-	"github.com/c4ei/kaspad/domain/consensus/utils/utxo"
-	"github.com/c4ei/kaspad/domain/miningmanager/mempool"
-	"github.com/c4ei/kaspad/util"
+	"github.com/c4ei/YunSeokYeol/cmd/kaspawallet/libkaspawallet"
+	"github.com/c4ei/YunSeokYeol/cmd/kaspawallet/libkaspawallet/serialization"
+	"github.com/c4ei/YunSeokYeol/domain/consensus/model/externalapi"
+	"github.com/c4ei/YunSeokYeol/domain/consensus/utils/consensushashing"
+	"github.com/c4ei/YunSeokYeol/domain/consensus/utils/constants"
+	"github.com/c4ei/YunSeokYeol/domain/consensus/utils/utxo"
+	"github.com/c4ei/YunSeokYeol/domain/miningmanager/mempool"
+	"github.com/c4ei/YunSeokYeol/util"
 )
 
 // maybeAutoCompoundTransaction checks if a transaction's mass is higher that what is allowed for a standard

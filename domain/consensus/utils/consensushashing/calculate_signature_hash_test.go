@@ -3,18 +3,19 @@ package consensushashing_test
 import (
 	"encoding/hex"
 	"fmt"
-	"github.com/c4ei/kaspad/domain/consensus/utils/subnetworks"
 	"testing"
+
+	"github.com/c4ei/YunSeokYeol/domain/consensus/utils/subnetworks"
 
 	"github.com/kaspanet/go-secp256k1"
 
-	"github.com/c4ei/kaspad/domain/consensus/utils/consensushashing"
-	"github.com/c4ei/kaspad/domain/consensus/utils/txscript"
-	"github.com/c4ei/kaspad/domain/consensus/utils/utxo"
-	"github.com/c4ei/kaspad/domain/dagconfig"
-	"github.com/c4ei/kaspad/util"
+	"github.com/c4ei/YunSeokYeol/domain/consensus/utils/consensushashing"
+	"github.com/c4ei/YunSeokYeol/domain/consensus/utils/txscript"
+	"github.com/c4ei/YunSeokYeol/domain/consensus/utils/utxo"
+	"github.com/c4ei/YunSeokYeol/domain/dagconfig"
+	"github.com/c4ei/YunSeokYeol/util"
 
-	"github.com/c4ei/kaspad/domain/consensus/model/externalapi"
+	"github.com/c4ei/YunSeokYeol/domain/consensus/model/externalapi"
 )
 
 // shortened versions of SigHash types to fit in single line of test case

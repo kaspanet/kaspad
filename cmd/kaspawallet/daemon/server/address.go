@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/c4ei/kaspad/cmd/kaspawallet/daemon/pb"
-	"github.com/c4ei/kaspad/cmd/kaspawallet/libkaspawallet"
-	"github.com/c4ei/kaspad/util"
+	"github.com/c4ei/YunSeokYeol/cmd/kaspawallet/daemon/pb"
+	"github.com/c4ei/YunSeokYeol/cmd/kaspawallet/libkaspawallet"
+	"github.com/c4ei/YunSeokYeol/util"
 	"github.com/pkg/errors"
 )
 

@@ -1,8 +1,9 @@
 package integration
 
 import (
-	"github.com/c4ei/kaspad/app/appmessage"
 	"testing"
+
+	"github.com/c4ei/YunSeokYeol/app/appmessage"
 )
 
 func TestVirtualSelectedParentBlueScoreAndVirtualDAAScore(t *testing.T) {

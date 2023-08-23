@@ -1,6 +1,6 @@
 package model
 
-import "github.com/c4ei/kaspad/domain/consensus/model/externalapi"
+import "github.com/c4ei/YunSeokYeol/domain/consensus/model/externalapi"
 
 // HeadersSelectedChainStore represents a store of the headers selected chain
 type HeadersSelectedChainStore interface {

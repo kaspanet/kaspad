@@ -3,8 +3,8 @@ package serialization
 import (
 	"io"
 
-	"github.com/c4ei/kaspad/domain/consensus/model/externalapi"
-	"github.com/c4ei/kaspad/util/binaryserializer"
+	"github.com/c4ei/YunSeokYeol/domain/consensus/model/externalapi"
+	"github.com/c4ei/YunSeokYeol/util/binaryserializer"
 	"github.com/pkg/errors"
 )
 

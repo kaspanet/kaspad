@@ -7,12 +7,12 @@ package txscript
 import (
 	"fmt"
 
-	"github.com/c4ei/kaspad/domain/consensus/model/externalapi"
-	"github.com/c4ei/kaspad/domain/consensus/utils/constants"
+	"github.com/c4ei/YunSeokYeol/domain/consensus/model/externalapi"
+	"github.com/c4ei/YunSeokYeol/domain/consensus/utils/constants"
 	"github.com/pkg/errors"
 
-	"github.com/c4ei/kaspad/domain/dagconfig"
-	"github.com/c4ei/kaspad/util"
+	"github.com/c4ei/YunSeokYeol/domain/dagconfig"
+	"github.com/c4ei/YunSeokYeol/util"
 )
 
 // ScriptClass is an enumeration for the list of standard types of script.

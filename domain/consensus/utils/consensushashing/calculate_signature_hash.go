@@ -1,10 +1,10 @@
 package consensushashing
 
 import (
-	"github.com/c4ei/kaspad/domain/consensus/model/externalapi"
-	"github.com/c4ei/kaspad/domain/consensus/utils/hashes"
-	"github.com/c4ei/kaspad/domain/consensus/utils/serialization"
-	"github.com/c4ei/kaspad/domain/consensus/utils/subnetworks"
+	"github.com/c4ei/YunSeokYeol/domain/consensus/model/externalapi"
+	"github.com/c4ei/YunSeokYeol/domain/consensus/utils/hashes"
+	"github.com/c4ei/YunSeokYeol/domain/consensus/utils/serialization"
+	"github.com/c4ei/YunSeokYeol/domain/consensus/utils/subnetworks"
 	"github.com/pkg/errors"
 )
 

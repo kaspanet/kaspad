@@ -1,11 +1,12 @@
 package difficultymanager
 
 import (
-	"github.com/c4ei/kaspad/domain/consensus/model"
-	"github.com/c4ei/kaspad/domain/consensus/model/externalapi"
-	"github.com/c4ei/kaspad/util/difficulty"
 	"math"
 	"math/big"
+
+	"github.com/c4ei/YunSeokYeol/domain/consensus/model"
+	"github.com/c4ei/YunSeokYeol/domain/consensus/model/externalapi"
+	"github.com/c4ei/YunSeokYeol/util/difficulty"
 )
 
 type difficultyBlock struct {

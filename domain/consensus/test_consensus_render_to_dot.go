@@ -8,7 +8,7 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/c4ei/kaspad/domain/consensus/model"
+	"github.com/c4ei/YunSeokYeol/domain/consensus/model"
 )
 
 // RenderDAGToDot is a helper function for debugging tests.

@@ -9,10 +9,10 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/c4ei/kaspad/app/appmessage"
-	"github.com/c4ei/kaspad/infrastructure/config"
-	"github.com/c4ei/kaspad/infrastructure/db/database/ldb"
-	"github.com/c4ei/kaspad/util/mstime"
+	"github.com/c4ei/YunSeokYeol/app/appmessage"
+	"github.com/c4ei/YunSeokYeol/infrastructure/config"
+	"github.com/c4ei/YunSeokYeol/infrastructure/db/database/ldb"
+	"github.com/c4ei/YunSeokYeol/util/mstime"
 )
 
 func newAddressManagerForTest(t *testing.T, testName string) (addressManager *AddressManager, teardown func()) {

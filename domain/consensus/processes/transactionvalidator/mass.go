@@ -1,7 +1,7 @@
 package transactionvalidator
 
 import (
-	"github.com/c4ei/kaspad/domain/consensus/model/externalapi"
+	"github.com/c4ei/YunSeokYeol/domain/consensus/model/externalapi"
 )
 
 // PopulateMass calculates and populates the mass of the given transaction

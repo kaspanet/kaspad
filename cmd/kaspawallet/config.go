@@ -3,7 +3,7 @@ package main
 import (
 	"os"
 
-	"github.com/c4ei/kaspad/infrastructure/config"
+	"github.com/c4ei/YunSeokYeol/infrastructure/config"
 	"github.com/pkg/errors"
 
 	"github.com/jessevdk/go-flags"

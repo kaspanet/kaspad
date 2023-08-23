@@ -1,6 +1,6 @@
 package appmessage
 
-import "github.com/c4ei/kaspad/domain/consensus/model/externalapi"
+import "github.com/c4ei/YunSeokYeol/domain/consensus/model/externalapi"
 
 // MsgPruningPointUTXOSetChunk represents a kaspa PruningPointUTXOSetChunk message
 type MsgPruningPointUTXOSetChunk struct {

@@ -1,7 +1,7 @@
 package model
 
 import (
-	"github.com/c4ei/kaspad/domain/consensus/model/externalapi"
+	"github.com/c4ei/YunSeokYeol/domain/consensus/model/externalapi"
 )
 
 // BlocksWithTrustedDataDAAWindowStore stores the DAA window of blocks with trusted data

@@ -7,12 +7,13 @@ package util_test
 import (
 	"bytes"
 	"fmt"
-	"golang.org/x/crypto/blake2b"
 	"reflect"
 	"strings"
 	"testing"
 
-	"github.com/c4ei/kaspad/util"
+	"golang.org/x/crypto/blake2b"
+
+	"github.com/c4ei/YunSeokYeol/util"
 )
 
 func TestAddresses(t *testing.T) {

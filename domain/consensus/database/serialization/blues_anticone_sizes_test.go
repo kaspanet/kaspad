@@ -1,8 +1,9 @@
 package serialization
 
 import (
-	"github.com/c4ei/kaspad/domain/consensus/model/externalapi"
 	"testing"
+
+	"github.com/c4ei/YunSeokYeol/domain/consensus/model/externalapi"
 )
 
 // TestBlueAnticoneSizesSize tests that no data can be loss when converting externalapi.KType to the corresponding type in

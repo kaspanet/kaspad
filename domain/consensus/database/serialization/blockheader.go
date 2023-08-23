@@ -1,11 +1,12 @@
 package serialization
 
 import (
-	"github.com/c4ei/kaspad/domain/consensus/model/externalapi"
-	"github.com/c4ei/kaspad/domain/consensus/utils/blockheader"
-	"github.com/pkg/errors"
 	"math"
 	"math/big"
+
+	"github.com/c4ei/YunSeokYeol/domain/consensus/model/externalapi"
+	"github.com/c4ei/YunSeokYeol/domain/consensus/utils/blockheader"
+	"github.com/pkg/errors"
 )
 
 // DomainBlockHeaderToDbBlockHeader converts BlockHeader to DbBlockHeader

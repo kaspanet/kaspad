@@ -4,10 +4,10 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/c4ei/kaspad/infrastructure/config"
-	"github.com/c4ei/kaspad/infrastructure/logger"
-	"github.com/c4ei/kaspad/stability-tests/common"
-	"github.com/c4ei/kaspad/stability-tests/common/rpc"
+	"github.com/c4ei/YunSeokYeol/infrastructure/config"
+	"github.com/c4ei/YunSeokYeol/infrastructure/logger"
+	"github.com/c4ei/YunSeokYeol/stability-tests/common"
+	"github.com/c4ei/YunSeokYeol/stability-tests/common/rpc"
 
 	"github.com/jessevdk/go-flags"
 )

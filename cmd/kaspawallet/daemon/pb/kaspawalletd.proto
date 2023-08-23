@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-option go_package = "github.com/c4ei/kaspad/cmd/kaspawallet/daemon/pb";
+option go_package = "github.com/c4ei/YunSeokYeol/cmd/kaspawallet/daemon/pb";
 package kaspawalletd;
 
 service kaspawalletd {

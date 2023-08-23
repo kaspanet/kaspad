@@ -5,9 +5,9 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/c4ei/kaspad/domain/consensus/model/externalapi"
-	"github.com/c4ei/kaspad/domain/consensus/utils/consensushashing"
-	"github.com/c4ei/kaspad/domain/miningmanager/mempool/model"
+	"github.com/c4ei/YunSeokYeol/domain/consensus/model/externalapi"
+	"github.com/c4ei/YunSeokYeol/domain/consensus/utils/consensushashing"
+	"github.com/c4ei/YunSeokYeol/domain/miningmanager/mempool/model"
 )
 
 type transactionsPool struct {

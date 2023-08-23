@@ -3,13 +3,14 @@ package main
 import (
 	"encoding/hex"
 	"fmt"
-	"github.com/c4ei/kaspad/cmd/kaspawallet/libkaspawallet/serialization"
-	"github.com/c4ei/kaspad/domain/consensus/utils/consensushashing"
-	"github.com/c4ei/kaspad/domain/consensus/utils/constants"
-	"github.com/c4ei/kaspad/domain/consensus/utils/txscript"
-	"github.com/pkg/errors"
 	"io/ioutil"
 	"strings"
+
+	"github.com/c4ei/YunSeokYeol/cmd/kaspawallet/libkaspawallet/serialization"
+	"github.com/c4ei/YunSeokYeol/domain/consensus/utils/consensushashing"
+	"github.com/c4ei/YunSeokYeol/domain/consensus/utils/constants"
+	"github.com/c4ei/YunSeokYeol/domain/consensus/utils/txscript"
+	"github.com/pkg/errors"
 )
 
 func parse(conf *parseConfig) error {

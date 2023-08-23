@@ -1,8 +1,9 @@
 package utxo
 
 import (
-	"github.com/c4ei/kaspad/domain/consensus/model/externalapi"
 	"testing"
+
+	"github.com/c4ei/YunSeokYeol/domain/consensus/model/externalapi"
 )
 
 func TestUTXOEntry_Equal(t *testing.T) {

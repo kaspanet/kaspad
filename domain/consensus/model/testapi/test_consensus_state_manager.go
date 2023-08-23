@@ -1,8 +1,8 @@
 package testapi
 
 import (
-	"github.com/c4ei/kaspad/domain/consensus/model"
-	"github.com/c4ei/kaspad/domain/consensus/model/externalapi"
+	"github.com/c4ei/YunSeokYeol/domain/consensus/model"
+	"github.com/c4ei/YunSeokYeol/domain/consensus/model/externalapi"
 )
 
 // TestConsensusStateManager  adds to the main ConsensusStateManager methods required by tests

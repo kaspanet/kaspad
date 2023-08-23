@@ -3,7 +3,7 @@ package appmessage
 import (
 	"math/big"
 
-	"github.com/c4ei/kaspad/domain/consensus/model/externalapi"
+	"github.com/c4ei/YunSeokYeol/domain/consensus/model/externalapi"
 )
 
 // MsgBlockWithTrustedData represents a kaspa BlockWithTrustedData message

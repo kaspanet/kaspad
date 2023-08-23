@@ -14,7 +14,7 @@ RUN go mod download
 
 COPY . .
 
-WORKDIR /go/src/github.com/c4ei/kaspad/cmd/kaspawallet
+WORKDIR /go/src/github.com/c4ei/YunSeokYeol/cmd/kaspawallet
 RUN GOOS=linux go build -a -installsuffix cgo -o kaspawallet .
 
 # --- multistage docker build: stage #2: runtime image
@@ -23,7 +23,7 @@ WORKDIR /app
 
 RUN apk add --no-cache ca-certificates tini
 
-COPY --from=build /go/src/github.com/c4ei/kaspad/cmd/kaspawallet/kaspawallet /app/
+COPY --from=build /go/src/github.com/c4ei/YunSeokYeol/cmd/kaspawallet/kaspawallet /app/
 
 USER nobody
 ENTRYPOINT [ "/sbin/tini", "--" ]

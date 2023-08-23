@@ -1,6 +1,6 @@
 package model
 
-import "github.com/c4ei/kaspad/domain/consensus/model/externalapi"
+import "github.com/c4ei/YunSeokYeol/domain/consensus/model/externalapi"
 
 // MultisetStore represents a store of Multisets
 type MultisetStore interface {

@@ -1,6 +1,6 @@
 package lrucachehashpairtoblockghostdagdatahashpair
 
-import "github.com/c4ei/kaspad/domain/consensus/model/externalapi"
+import "github.com/c4ei/YunSeokYeol/domain/consensus/model/externalapi"
 
 type lruKey struct {
 	blockHash externalapi.DomainHash

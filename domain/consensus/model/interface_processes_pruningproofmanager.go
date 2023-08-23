@@ -1,6 +1,6 @@
 package model
 
-import "github.com/c4ei/kaspad/domain/consensus/model/externalapi"
+import "github.com/c4ei/YunSeokYeol/domain/consensus/model/externalapi"
 
 // PruningProofManager builds, validates and applies pruning proofs.
 type PruningProofManager interface {

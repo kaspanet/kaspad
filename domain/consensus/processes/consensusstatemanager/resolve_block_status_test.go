@@ -2,19 +2,20 @@ package consensusstatemanager_test
 
 import (
 	"errors"
-	"github.com/c4ei/kaspad/domain/consensus/utils/utxo"
 	"testing"
 
-	"github.com/c4ei/kaspad/domain/consensus/model"
+	"github.com/c4ei/YunSeokYeol/domain/consensus/utils/utxo"
 
-	"github.com/c4ei/kaspad/domain/consensus/ruleerrors"
+	"github.com/c4ei/YunSeokYeol/domain/consensus/model"
 
-	"github.com/c4ei/kaspad/domain/consensus/utils/consensushashing"
+	"github.com/c4ei/YunSeokYeol/domain/consensus/ruleerrors"
 
-	"github.com/c4ei/kaspad/domain/consensus"
-	"github.com/c4ei/kaspad/domain/consensus/model/externalapi"
-	"github.com/c4ei/kaspad/domain/consensus/utils/testutils"
-	"github.com/c4ei/kaspad/domain/consensus/utils/transactionhelper"
+	"github.com/c4ei/YunSeokYeol/domain/consensus/utils/consensushashing"
+
+	"github.com/c4ei/YunSeokYeol/domain/consensus"
+	"github.com/c4ei/YunSeokYeol/domain/consensus/model/externalapi"
+	"github.com/c4ei/YunSeokYeol/domain/consensus/utils/testutils"
+	"github.com/c4ei/YunSeokYeol/domain/consensus/utils/transactionhelper"
 )
 
 func TestDoubleSpends(t *testing.T) {

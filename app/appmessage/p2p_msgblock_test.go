@@ -9,12 +9,12 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/c4ei/kaspad/util/mstime"
+	"github.com/c4ei/YunSeokYeol/util/mstime"
 	"github.com/davecgh/go-spew/spew"
 
-	"github.com/c4ei/kaspad/domain/consensus/utils/subnetworks"
+	"github.com/c4ei/YunSeokYeol/domain/consensus/utils/subnetworks"
 
-	"github.com/c4ei/kaspad/domain/consensus/model/externalapi"
+	"github.com/c4ei/YunSeokYeol/domain/consensus/model/externalapi"
 )
 
 // TestBlock tests the MsgBlock API.

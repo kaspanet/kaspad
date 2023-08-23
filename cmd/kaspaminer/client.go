@@ -1,11 +1,12 @@
 package main
 
 import (
-	"github.com/c4ei/kaspad/app/appmessage"
-	"github.com/c4ei/kaspad/infrastructure/logger"
-	"github.com/c4ei/kaspad/infrastructure/network/rpcclient"
-	"github.com/pkg/errors"
 	"time"
+
+	"github.com/c4ei/YunSeokYeol/app/appmessage"
+	"github.com/c4ei/YunSeokYeol/infrastructure/logger"
+	"github.com/c4ei/YunSeokYeol/infrastructure/network/rpcclient"
+	"github.com/pkg/errors"
 )
 
 const minerTimeout = 10 * time.Second

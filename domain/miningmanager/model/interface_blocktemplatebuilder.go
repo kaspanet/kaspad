@@ -1,7 +1,7 @@
 package model
 
 import (
-	consensusexternalapi "github.com/c4ei/kaspad/domain/consensus/model/externalapi"
+	consensusexternalapi "github.com/c4ei/YunSeokYeol/domain/consensus/model/externalapi"
 )
 
 // BlockTemplateBuilder builds block templates for miners to consume

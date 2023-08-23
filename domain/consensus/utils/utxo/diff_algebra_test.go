@@ -4,9 +4,9 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/c4ei/kaspad/domain/consensus/utils/transactionid"
+	"github.com/c4ei/YunSeokYeol/domain/consensus/utils/transactionid"
 
-	"github.com/c4ei/kaspad/domain/consensus/model/externalapi"
+	"github.com/c4ei/YunSeokYeol/domain/consensus/model/externalapi"
 )
 
 func (mud *mutableUTXODiff) equal(other *mutableUTXODiff) bool {

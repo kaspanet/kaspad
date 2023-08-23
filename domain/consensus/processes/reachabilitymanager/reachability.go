@@ -1,8 +1,8 @@
 package reachabilitymanager
 
 import (
-	"github.com/c4ei/kaspad/domain/consensus/model"
-	"github.com/c4ei/kaspad/domain/consensus/model/externalapi"
+	"github.com/c4ei/YunSeokYeol/domain/consensus/model"
+	"github.com/c4ei/YunSeokYeol/domain/consensus/model/externalapi"
 )
 
 // IsDAGAncestorOf returns true if blockHashA is an ancestor of

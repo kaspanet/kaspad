@@ -9,17 +9,17 @@ import (
 	"math"
 	"testing"
 
-	"github.com/c4ei/kaspad/domain/consensusreference"
+	"github.com/c4ei/YunSeokYeol/domain/consensusreference"
 
-	"github.com/c4ei/kaspad/domain/consensus/utils/testutils"
+	"github.com/c4ei/YunSeokYeol/domain/consensus/utils/testutils"
 
-	"github.com/c4ei/kaspad/domain/consensus"
+	"github.com/c4ei/YunSeokYeol/domain/consensus"
 
-	"github.com/c4ei/kaspad/domain/consensus/utils/constants"
+	"github.com/c4ei/YunSeokYeol/domain/consensus/utils/constants"
 
-	"github.com/c4ei/kaspad/domain/consensus/model/externalapi"
-	"github.com/c4ei/kaspad/domain/consensus/utils/txscript"
-	"github.com/c4ei/kaspad/util"
+	"github.com/c4ei/YunSeokYeol/domain/consensus/model/externalapi"
+	"github.com/c4ei/YunSeokYeol/domain/consensus/utils/txscript"
+	"github.com/c4ei/YunSeokYeol/util"
 	"github.com/pkg/errors"
 )
 

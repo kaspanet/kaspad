@@ -5,8 +5,8 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/c4ei/kaspad/app/appmessage"
-	"github.com/c4ei/kaspad/util/mstime"
+	"github.com/c4ei/YunSeokYeol/app/appmessage"
+	"github.com/c4ei/YunSeokYeol/util/mstime"
 )
 
 func TestAddressKeySerialization(t *testing.T) {

@@ -2,11 +2,12 @@ package util_test
 
 import (
 	"fmt"
-	"github.com/c4ei/kaspad/util/difficulty"
 	"math"
 	"math/big"
 
-	"github.com/c4ei/kaspad/util"
+	"github.com/c4ei/YunSeokYeol/util/difficulty"
+
+	"github.com/c4ei/YunSeokYeol/util"
 )
 
 func ExampleAmount() {

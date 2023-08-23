@@ -1,9 +1,9 @@
 package main
 
 import (
-	"github.com/c4ei/kaspad/domain/consensus/model/externalapi"
-	"github.com/c4ei/kaspad/domain/consensus/utils/consensushashing"
-	"github.com/c4ei/kaspad/stability-tests/common/rpc"
+	"github.com/c4ei/YunSeokYeol/domain/consensus/model/externalapi"
+	"github.com/c4ei/YunSeokYeol/domain/consensus/utils/consensushashing"
+	"github.com/c4ei/YunSeokYeol/stability-tests/common/rpc"
 	"github.com/pkg/errors"
 )
 

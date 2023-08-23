@@ -8,7 +8,7 @@ import (
 	"net"
 	"testing"
 
-	"github.com/c4ei/kaspad/app/appmessage"
+	"github.com/c4ei/YunSeokYeol/app/appmessage"
 )
 
 // TestIPTypes ensures the various functions which determine the type of an IP

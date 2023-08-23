@@ -4,14 +4,14 @@ import (
 	"testing"
 	"time"
 
-	"github.com/c4ei/kaspad/app/protocol/flows/v5/addressexchange"
+	"github.com/c4ei/YunSeokYeol/app/protocol/flows/v5/addressexchange"
 
-	"github.com/c4ei/kaspad/app/appmessage"
-	peerpkg "github.com/c4ei/kaspad/app/protocol/peer"
-	"github.com/c4ei/kaspad/domain/consensus"
-	"github.com/c4ei/kaspad/domain/consensus/utils/testutils"
-	"github.com/c4ei/kaspad/infrastructure/network/addressmanager"
-	"github.com/c4ei/kaspad/infrastructure/network/netadapter/router"
+	"github.com/c4ei/YunSeokYeol/app/appmessage"
+	peerpkg "github.com/c4ei/YunSeokYeol/app/protocol/peer"
+	"github.com/c4ei/YunSeokYeol/domain/consensus"
+	"github.com/c4ei/YunSeokYeol/domain/consensus/utils/testutils"
+	"github.com/c4ei/YunSeokYeol/infrastructure/network/addressmanager"
+	"github.com/c4ei/YunSeokYeol/infrastructure/network/netadapter/router"
 )
 
 type fakeReceiveAddressesContext struct{}

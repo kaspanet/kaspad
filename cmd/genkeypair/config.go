@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/c4ei/kaspad/infrastructure/config"
+	"github.com/c4ei/YunSeokYeol/infrastructure/config"
 	"github.com/jessevdk/go-flags"
 )
 

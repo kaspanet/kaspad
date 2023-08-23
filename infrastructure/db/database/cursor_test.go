@@ -12,7 +12,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/c4ei/kaspad/infrastructure/db/database"
+	"github.com/c4ei/YunSeokYeol/infrastructure/db/database"
 )
 
 func prepareCursorForTest(t *testing.T, db database.Database, testName string) database.Cursor {

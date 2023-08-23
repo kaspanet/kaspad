@@ -23,7 +23,7 @@ COPY --from=kaspad /app/ /app/
 COPY --from=kaspaminer /app/ /app/
 ENV PATH="/app:${PATH}"
 
-WORKDIR /go/src/github.com/c4ei/kaspad/stability-tests
+WORKDIR /go/src/github.com/c4ei/YunSeokYeol/stability-tests
 
 RUN go install ./...
 

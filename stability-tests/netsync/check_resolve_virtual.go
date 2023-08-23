@@ -2,10 +2,11 @@ package main
 
 import (
 	"fmt"
-	"github.com/c4ei/kaspad/app/appmessage"
-	"github.com/c4ei/kaspad/stability-tests/common/rpc"
-	"github.com/pkg/errors"
 	"time"
+
+	"github.com/c4ei/YunSeokYeol/app/appmessage"
+	"github.com/c4ei/YunSeokYeol/stability-tests/common/rpc"
+	"github.com/pkg/errors"
 )
 
 func checkResolveVirtual(syncerClient, syncedClient *rpc.Client) error {

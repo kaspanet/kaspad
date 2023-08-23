@@ -1,8 +1,9 @@
 package serialization
 
 import (
-	"github.com/c4ei/kaspad/domain/consensus/model/externalapi"
 	"math/big"
+
+	"github.com/c4ei/YunSeokYeol/domain/consensus/model/externalapi"
 )
 
 // BlockGHOSTDAGDataToDBBlockGHOSTDAGData converts BlockGHOSTDAGData to DbBlockGhostdagData

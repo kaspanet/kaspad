@@ -1,6 +1,6 @@
 package rpcclient
 
-import "github.com/c4ei/kaspad/app/appmessage"
+import "github.com/c4ei/YunSeokYeol/app/appmessage"
 
 // GetSelectedTipHash sends an RPC request respective to the function's name and returns the RPC server's response
 func (c *RPCClient) GetSelectedTipHash() (*appmessage.GetSelectedTipHashResponseMessage, error) {

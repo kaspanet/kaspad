@@ -1,13 +1,13 @@
 package consensusstatemanager
 
 import (
-	"github.com/c4ei/kaspad/infrastructure/logger"
-	"github.com/c4ei/kaspad/util/math"
+	"github.com/c4ei/YunSeokYeol/infrastructure/logger"
+	"github.com/c4ei/YunSeokYeol/util/math"
 	"github.com/pkg/errors"
 
-	"github.com/c4ei/kaspad/domain/consensus/model"
-	"github.com/c4ei/kaspad/domain/consensus/model/externalapi"
-	"github.com/c4ei/kaspad/domain/consensus/utils/hashset"
+	"github.com/c4ei/YunSeokYeol/domain/consensus/model"
+	"github.com/c4ei/YunSeokYeol/domain/consensus/model/externalapi"
+	"github.com/c4ei/YunSeokYeol/domain/consensus/utils/hashset"
 )
 
 func (csm *consensusStateManager) pickVirtualParents(stagingArea *model.StagingArea, tips []*externalapi.DomainHash) ([]*externalapi.DomainHash, error) {

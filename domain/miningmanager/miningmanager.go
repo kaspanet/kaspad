@@ -4,9 +4,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/c4ei/kaspad/domain/consensus/model/externalapi"
-	"github.com/c4ei/kaspad/domain/consensusreference"
-	miningmanagermodel "github.com/c4ei/kaspad/domain/miningmanager/model"
+	"github.com/c4ei/YunSeokYeol/domain/consensus/model/externalapi"
+	"github.com/c4ei/YunSeokYeol/domain/consensusreference"
+	miningmanagermodel "github.com/c4ei/YunSeokYeol/domain/miningmanager/model"
 )
 
 // MiningManager creates block templates for mining as well as maintaining

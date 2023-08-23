@@ -14,7 +14,7 @@ RUN go mod download
 
 COPY . .
 
-WORKDIR /go/src/github.com/c4ei/kaspad/cmd/kaspactl
+WORKDIR /go/src/github.com/c4ei/YunSeokYeol/cmd/kaspactl
 
 RUN GOOS=linux go build -a -installsuffix cgo -o kaspactl .
 
@@ -24,7 +24,7 @@ WORKDIR /app
 
 RUN apk add --no-cache ca-certificates tini
 
-COPY --from=build /go/src/github.com/c4ei/kaspad/cmd/kaspactl/kaspactl /app/
+COPY --from=build /go/src/github.com/c4ei/YunSeokYeol/cmd/kaspactl/kaspactl /app/
 
 USER nobody
 ENTRYPOINT [ "/sbin/tini", "--" ]

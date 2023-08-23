@@ -1,7 +1,7 @@
 package lrucache
 
 import (
-	"github.com/c4ei/kaspad/domain/consensus/model/externalapi"
+	"github.com/c4ei/YunSeokYeol/domain/consensus/model/externalapi"
 )
 
 // LRUCache is a least-recently-used cache for any type

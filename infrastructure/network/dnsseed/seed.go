@@ -12,15 +12,15 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/c4ei/kaspad/domain/consensus/model/externalapi"
+	"github.com/c4ei/YunSeokYeol/domain/consensus/model/externalapi"
 
-	"github.com/c4ei/kaspad/app/appmessage"
-	pb2 "github.com/c4ei/kaspad/infrastructure/network/dnsseed/pb"
+	"github.com/c4ei/YunSeokYeol/app/appmessage"
+	pb2 "github.com/c4ei/YunSeokYeol/infrastructure/network/dnsseed/pb"
 	"google.golang.org/grpc"
 
-	"github.com/c4ei/kaspad/util/mstime"
+	"github.com/c4ei/YunSeokYeol/util/mstime"
 
-	"github.com/c4ei/kaspad/domain/dagconfig"
+	"github.com/c4ei/YunSeokYeol/domain/dagconfig"
 )
 
 const (

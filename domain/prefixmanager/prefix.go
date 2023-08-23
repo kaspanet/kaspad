@@ -1,8 +1,8 @@
 package prefixmanager
 
 import (
-	"github.com/c4ei/kaspad/domain/prefixmanager/prefix"
-	"github.com/c4ei/kaspad/infrastructure/db/database"
+	"github.com/c4ei/YunSeokYeol/domain/prefixmanager/prefix"
+	"github.com/c4ei/YunSeokYeol/infrastructure/db/database"
 )
 
 var activePrefixKey = database.MakeBucket(nil).Key([]byte("active-prefix"))

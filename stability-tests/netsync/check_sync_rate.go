@@ -3,7 +3,7 @@ package main
 import (
 	"time"
 
-	"github.com/c4ei/kaspad/stability-tests/common/rpc"
+	"github.com/c4ei/YunSeokYeol/stability-tests/common/rpc"
 
 	"github.com/pkg/errors"
 )

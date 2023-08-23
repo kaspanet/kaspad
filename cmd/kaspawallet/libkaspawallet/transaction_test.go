@@ -2,18 +2,19 @@ package libkaspawallet_test
 
 import (
 	"fmt"
-	"github.com/c4ei/kaspad/domain/consensus/utils/constants"
 	"strings"
 	"testing"
 
-	"github.com/c4ei/kaspad/cmd/kaspawallet/libkaspawallet"
-	"github.com/c4ei/kaspad/domain/consensus"
-	"github.com/c4ei/kaspad/domain/consensus/model/externalapi"
-	"github.com/c4ei/kaspad/domain/consensus/utils/consensushashing"
-	"github.com/c4ei/kaspad/domain/consensus/utils/testutils"
-	"github.com/c4ei/kaspad/domain/consensus/utils/txscript"
-	"github.com/c4ei/kaspad/domain/consensus/utils/utxo"
-	"github.com/c4ei/kaspad/util"
+	"github.com/c4ei/YunSeokYeol/domain/consensus/utils/constants"
+
+	"github.com/c4ei/YunSeokYeol/cmd/kaspawallet/libkaspawallet"
+	"github.com/c4ei/YunSeokYeol/domain/consensus"
+	"github.com/c4ei/YunSeokYeol/domain/consensus/model/externalapi"
+	"github.com/c4ei/YunSeokYeol/domain/consensus/utils/consensushashing"
+	"github.com/c4ei/YunSeokYeol/domain/consensus/utils/testutils"
+	"github.com/c4ei/YunSeokYeol/domain/consensus/utils/txscript"
+	"github.com/c4ei/YunSeokYeol/domain/consensus/utils/utxo"
+	"github.com/c4ei/YunSeokYeol/util"
 )
 
 func forSchnorrAndECDSA(t *testing.T, testFunc func(t *testing.T, ecdsa bool)) {

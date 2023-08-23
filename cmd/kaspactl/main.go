@@ -2,16 +2,17 @@ package main
 
 import (
 	"fmt"
-	"github.com/c4ei/kaspad/version"
 	"os"
 	"time"
 
-	"github.com/c4ei/kaspad/infrastructure/network/netadapter/server/grpcserver/protowire"
+	"github.com/c4ei/YunSeokYeol/version"
+
+	"github.com/c4ei/YunSeokYeol/infrastructure/network/netadapter/server/grpcserver/protowire"
 
 	"github.com/pkg/errors"
 	"google.golang.org/protobuf/encoding/protojson"
 
-	"github.com/c4ei/kaspad/infrastructure/network/rpcclient/grpcclient"
+	"github.com/c4ei/YunSeokYeol/infrastructure/network/rpcclient/grpcclient"
 )
 
 func main() {

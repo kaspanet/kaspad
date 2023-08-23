@@ -8,7 +8,7 @@ import (
 	"encoding/hex"
 	"fmt"
 
-	"github.com/c4ei/kaspad/util/bech32"
+	"github.com/c4ei/YunSeokYeol/util/bech32"
 )
 
 // This example demonstrates how to decode a bech32 encoded string.

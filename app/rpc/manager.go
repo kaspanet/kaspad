@@ -1,17 +1,17 @@
 package rpc
 
 import (
-	"github.com/c4ei/kaspad/app/appmessage"
-	"github.com/c4ei/kaspad/app/protocol"
-	"github.com/c4ei/kaspad/app/rpc/rpccontext"
-	"github.com/c4ei/kaspad/domain"
-	"github.com/c4ei/kaspad/domain/consensus/model/externalapi"
-	"github.com/c4ei/kaspad/domain/utxoindex"
-	"github.com/c4ei/kaspad/infrastructure/config"
-	"github.com/c4ei/kaspad/infrastructure/logger"
-	"github.com/c4ei/kaspad/infrastructure/network/addressmanager"
-	"github.com/c4ei/kaspad/infrastructure/network/connmanager"
-	"github.com/c4ei/kaspad/infrastructure/network/netadapter"
+	"github.com/c4ei/YunSeokYeol/app/appmessage"
+	"github.com/c4ei/YunSeokYeol/app/protocol"
+	"github.com/c4ei/YunSeokYeol/app/rpc/rpccontext"
+	"github.com/c4ei/YunSeokYeol/domain"
+	"github.com/c4ei/YunSeokYeol/domain/consensus/model/externalapi"
+	"github.com/c4ei/YunSeokYeol/domain/utxoindex"
+	"github.com/c4ei/YunSeokYeol/infrastructure/config"
+	"github.com/c4ei/YunSeokYeol/infrastructure/logger"
+	"github.com/c4ei/YunSeokYeol/infrastructure/network/addressmanager"
+	"github.com/c4ei/YunSeokYeol/infrastructure/network/connmanager"
+	"github.com/c4ei/YunSeokYeol/infrastructure/network/netadapter"
 	"github.com/pkg/errors"
 )
 

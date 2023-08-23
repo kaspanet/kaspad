@@ -17,12 +17,12 @@ import (
 	"time"
 
 	"github.com/btcsuite/go-socks/socks"
-	"github.com/c4ei/kaspad/domain/consensus/model/externalapi"
-	"github.com/c4ei/kaspad/domain/dagconfig"
-	"github.com/c4ei/kaspad/infrastructure/logger"
-	"github.com/c4ei/kaspad/util"
-	"github.com/c4ei/kaspad/util/network"
-	"github.com/c4ei/kaspad/version"
+	"github.com/c4ei/YunSeokYeol/domain/consensus/model/externalapi"
+	"github.com/c4ei/YunSeokYeol/domain/dagconfig"
+	"github.com/c4ei/YunSeokYeol/infrastructure/logger"
+	"github.com/c4ei/YunSeokYeol/util"
+	"github.com/c4ei/YunSeokYeol/util/network"
+	"github.com/c4ei/YunSeokYeol/version"
 	"github.com/jessevdk/go-flags"
 	"github.com/pkg/errors"
 )

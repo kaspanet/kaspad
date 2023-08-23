@@ -2,18 +2,19 @@ package main
 
 import (
 	nativeerrors "errors"
-	"github.com/c4ei/kaspad/version"
 	"math/rand"
 	"sync/atomic"
 	"time"
 
-	"github.com/c4ei/kaspad/app/appmessage"
-	"github.com/c4ei/kaspad/cmd/kaspaminer/templatemanager"
-	"github.com/c4ei/kaspad/domain/consensus/model/externalapi"
-	"github.com/c4ei/kaspad/domain/consensus/utils/consensushashing"
-	"github.com/c4ei/kaspad/domain/consensus/utils/pow"
-	"github.com/c4ei/kaspad/infrastructure/network/netadapter/router"
-	"github.com/c4ei/kaspad/util"
+	"github.com/c4ei/YunSeokYeol/version"
+
+	"github.com/c4ei/YunSeokYeol/app/appmessage"
+	"github.com/c4ei/YunSeokYeol/cmd/kaspaminer/templatemanager"
+	"github.com/c4ei/YunSeokYeol/domain/consensus/model/externalapi"
+	"github.com/c4ei/YunSeokYeol/domain/consensus/utils/consensushashing"
+	"github.com/c4ei/YunSeokYeol/domain/consensus/utils/pow"
+	"github.com/c4ei/YunSeokYeol/infrastructure/network/netadapter/router"
+	"github.com/c4ei/YunSeokYeol/util"
 	"github.com/pkg/errors"
 )
 

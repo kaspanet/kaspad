@@ -2,12 +2,13 @@ package client
 
 import (
 	"context"
-	"github.com/c4ei/kaspad/cmd/kaspawallet/daemon/server"
 	"time"
+
+	"github.com/c4ei/YunSeokYeol/cmd/kaspawallet/daemon/server"
 
 	"github.com/pkg/errors"
 
-	"github.com/c4ei/kaspad/cmd/kaspawallet/daemon/pb"
+	"github.com/c4ei/YunSeokYeol/cmd/kaspawallet/daemon/pb"
 	"google.golang.org/grpc"
 )
 

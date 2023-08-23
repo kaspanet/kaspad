@@ -3,9 +3,9 @@ package server
 import (
 	"context"
 
-	"github.com/c4ei/kaspad/cmd/kaspawallet/libkaspawallet"
+	"github.com/c4ei/YunSeokYeol/cmd/kaspawallet/libkaspawallet"
 
-	"github.com/c4ei/kaspad/cmd/kaspawallet/daemon/pb"
+	"github.com/c4ei/YunSeokYeol/cmd/kaspawallet/daemon/pb"
 )
 
 func (s *server) Sign(_ context.Context, request *pb.SignRequest) (*pb.SignResponse, error) {

@@ -4,12 +4,12 @@ import (
 	"fmt"
 	"sync/atomic"
 
-	"github.com/c4ei/kaspad/app/appmessage"
-	routerpkg "github.com/c4ei/kaspad/infrastructure/network/netadapter/router"
+	"github.com/c4ei/YunSeokYeol/app/appmessage"
+	routerpkg "github.com/c4ei/YunSeokYeol/infrastructure/network/netadapter/router"
 	"github.com/pkg/errors"
 
-	"github.com/c4ei/kaspad/infrastructure/network/netadapter/id"
-	"github.com/c4ei/kaspad/infrastructure/network/netadapter/server"
+	"github.com/c4ei/YunSeokYeol/infrastructure/network/netadapter/id"
+	"github.com/c4ei/YunSeokYeol/infrastructure/network/netadapter/server"
 )
 
 // NetConnection is a wrapper to a server connection for use by services external to NetAdapter

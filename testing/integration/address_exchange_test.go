@@ -1,8 +1,9 @@
 package integration
 
 import (
-	"github.com/c4ei/kaspad/infrastructure/network/addressmanager"
 	"testing"
+
+	"github.com/c4ei/YunSeokYeol/infrastructure/network/addressmanager"
 )
 
 func TestAddressExchange(t *testing.T) {

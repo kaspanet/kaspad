@@ -4,13 +4,13 @@ import (
 	"math/big"
 	"time"
 
-	"github.com/c4ei/kaspad/infrastructure/logger"
-	"github.com/c4ei/kaspad/util/math"
+	"github.com/c4ei/YunSeokYeol/infrastructure/logger"
+	"github.com/c4ei/YunSeokYeol/util/math"
 
-	"github.com/c4ei/kaspad/util/difficulty"
+	"github.com/c4ei/YunSeokYeol/util/difficulty"
 
-	"github.com/c4ei/kaspad/domain/consensus/model"
-	"github.com/c4ei/kaspad/domain/consensus/model/externalapi"
+	"github.com/c4ei/YunSeokYeol/domain/consensus/model"
+	"github.com/c4ei/YunSeokYeol/domain/consensus/model/externalapi"
 )
 
 // DifficultyManager provides a method to resolve the

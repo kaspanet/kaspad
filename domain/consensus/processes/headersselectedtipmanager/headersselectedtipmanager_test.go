@@ -3,12 +3,12 @@ package headersselectedtipmanager_test
 import (
 	"testing"
 
-	"github.com/c4ei/kaspad/domain/consensus/model"
+	"github.com/c4ei/YunSeokYeol/domain/consensus/model"
 
-	"github.com/c4ei/kaspad/domain/consensus"
-	"github.com/c4ei/kaspad/domain/consensus/model/externalapi"
-	"github.com/c4ei/kaspad/domain/consensus/utils/testutils"
-	"github.com/c4ei/kaspad/infrastructure/db/database"
+	"github.com/c4ei/YunSeokYeol/domain/consensus"
+	"github.com/c4ei/YunSeokYeol/domain/consensus/model/externalapi"
+	"github.com/c4ei/YunSeokYeol/domain/consensus/utils/testutils"
+	"github.com/c4ei/YunSeokYeol/infrastructure/db/database"
 	"github.com/pkg/errors"
 )
 

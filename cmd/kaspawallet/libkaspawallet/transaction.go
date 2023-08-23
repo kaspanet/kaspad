@@ -1,13 +1,13 @@
 package libkaspawallet
 
 import (
-	"github.com/c4ei/kaspad/cmd/kaspawallet/libkaspawallet/bip32"
-	"github.com/c4ei/kaspad/cmd/kaspawallet/libkaspawallet/serialization"
-	"github.com/c4ei/kaspad/domain/consensus/model/externalapi"
-	"github.com/c4ei/kaspad/domain/consensus/utils/constants"
-	"github.com/c4ei/kaspad/domain/consensus/utils/subnetworks"
-	"github.com/c4ei/kaspad/domain/consensus/utils/txscript"
-	"github.com/c4ei/kaspad/util"
+	"github.com/c4ei/YunSeokYeol/cmd/kaspawallet/libkaspawallet/bip32"
+	"github.com/c4ei/YunSeokYeol/cmd/kaspawallet/libkaspawallet/serialization"
+	"github.com/c4ei/YunSeokYeol/domain/consensus/model/externalapi"
+	"github.com/c4ei/YunSeokYeol/domain/consensus/utils/constants"
+	"github.com/c4ei/YunSeokYeol/domain/consensus/utils/subnetworks"
+	"github.com/c4ei/YunSeokYeol/domain/consensus/utils/txscript"
+	"github.com/c4ei/YunSeokYeol/util"
 	"github.com/pkg/errors"
 )
 

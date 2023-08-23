@@ -1,12 +1,13 @@
 package integration
 
 import (
-	"github.com/c4ei/kaspad/infrastructure/config"
 	"runtime"
 	"testing"
 	"time"
 
-	"github.com/c4ei/kaspad/infrastructure/network/rpcclient"
+	"github.com/c4ei/YunSeokYeol/infrastructure/config"
+
+	"github.com/c4ei/YunSeokYeol/infrastructure/network/rpcclient"
 )
 
 const rpcTimeout = 10 * time.Second

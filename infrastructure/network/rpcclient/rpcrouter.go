@@ -1,8 +1,8 @@
 package rpcclient
 
 import (
-	"github.com/c4ei/kaspad/app/appmessage"
-	routerpkg "github.com/c4ei/kaspad/infrastructure/network/netadapter/router"
+	"github.com/c4ei/YunSeokYeol/app/appmessage"
+	routerpkg "github.com/c4ei/YunSeokYeol/infrastructure/network/netadapter/router"
 )
 
 type rpcRouter struct {

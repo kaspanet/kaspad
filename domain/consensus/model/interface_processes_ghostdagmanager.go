@@ -1,6 +1,6 @@
 package model
 
-import "github.com/c4ei/kaspad/domain/consensus/model/externalapi"
+import "github.com/c4ei/YunSeokYeol/domain/consensus/model/externalapi"
 
 // GHOSTDAGManager resolves and manages GHOSTDAG block data
 type GHOSTDAGManager interface {

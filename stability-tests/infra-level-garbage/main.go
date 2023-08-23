@@ -5,8 +5,8 @@ import (
 	"os"
 	"time"
 
-	"github.com/c4ei/kaspad/stability-tests/common"
-	"github.com/c4ei/kaspad/util/profiling"
+	"github.com/c4ei/YunSeokYeol/stability-tests/common"
+	"github.com/c4ei/YunSeokYeol/util/profiling"
 )
 
 const timeout = 5 * time.Second

@@ -3,7 +3,7 @@ package dagconfig
 import (
 	"time"
 
-	"github.com/c4ei/kaspad/domain/consensus/utils/constants"
+	"github.com/c4ei/YunSeokYeol/domain/consensus/utils/constants"
 )
 
 // The documentation refers to the following constants which aren't explicated in the code:

@@ -7,9 +7,9 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/c4ei/kaspad/stability-tests/common"
-	"github.com/c4ei/kaspad/stability-tests/common/rpc"
-	"github.com/c4ei/kaspad/util/profiling"
+	"github.com/c4ei/YunSeokYeol/stability-tests/common"
+	"github.com/c4ei/YunSeokYeol/stability-tests/common/rpc"
+	"github.com/c4ei/YunSeokYeol/util/profiling"
 )
 
 var timeout = 30 * time.Second

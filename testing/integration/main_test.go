@@ -1,9 +1,10 @@
 package integration
 
 import (
-	"github.com/c4ei/kaspad/infrastructure/logger"
 	"os"
 	"testing"
+
+	"github.com/c4ei/YunSeokYeol/infrastructure/logger"
 )
 
 func TestMain(m *testing.M) {

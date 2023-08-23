@@ -3,8 +3,9 @@ package main
 import (
 	"context"
 	"fmt"
-	"github.com/c4ei/kaspad/cmd/kaspawallet/daemon/client"
-	"github.com/c4ei/kaspad/cmd/kaspawallet/daemon/pb"
+
+	"github.com/c4ei/YunSeokYeol/cmd/kaspawallet/daemon/client"
+	"github.com/c4ei/YunSeokYeol/cmd/kaspawallet/daemon/pb"
 )
 
 func showAddresses(conf *showAddressesConfig) error {

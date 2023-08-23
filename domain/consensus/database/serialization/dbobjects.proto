@@ -1,7 +1,7 @@
 syntax = "proto3";
 package serialization;
 
-option go_package = "github.com/c4ei/kaspad/serialization";
+option go_package = "github.com/c4ei/YunSeokYeol/serialization";
 
 message DbBlock {
   DbBlockHeader header = 1;

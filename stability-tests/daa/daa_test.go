@@ -1,17 +1,18 @@
 package daa
 
 import (
-	"github.com/c4ei/kaspad/app/appmessage"
-	"github.com/c4ei/kaspad/domain/consensus/model/externalapi"
-	"github.com/c4ei/kaspad/domain/consensus/utils/pow"
-	"github.com/c4ei/kaspad/domain/dagconfig"
-	"github.com/c4ei/kaspad/infrastructure/network/rpcclient"
-	"github.com/c4ei/kaspad/stability-tests/common"
 	"math"
 	"math/rand"
 	"os"
 	"testing"
 	"time"
+
+	"github.com/c4ei/YunSeokYeol/app/appmessage"
+	"github.com/c4ei/YunSeokYeol/domain/consensus/model/externalapi"
+	"github.com/c4ei/YunSeokYeol/domain/consensus/utils/pow"
+	"github.com/c4ei/YunSeokYeol/domain/dagconfig"
+	"github.com/c4ei/YunSeokYeol/infrastructure/network/rpcclient"
+	"github.com/c4ei/YunSeokYeol/stability-tests/common"
 )
 
 const rpcAddress = "localhost:9000"

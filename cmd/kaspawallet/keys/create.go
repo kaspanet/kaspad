@@ -7,9 +7,9 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/c4ei/kaspad/cmd/kaspawallet/libkaspawallet"
-	"github.com/c4ei/kaspad/cmd/kaspawallet/utils"
-	"github.com/c4ei/kaspad/domain/dagconfig"
+	"github.com/c4ei/YunSeokYeol/cmd/kaspawallet/libkaspawallet"
+	"github.com/c4ei/YunSeokYeol/cmd/kaspawallet/utils"
+	"github.com/c4ei/YunSeokYeol/domain/dagconfig"
 	"github.com/pkg/errors"
 	"github.com/tyler-smith/go-bip39"
 )

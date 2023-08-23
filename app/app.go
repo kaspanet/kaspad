@@ -7,17 +7,17 @@ import (
 	"runtime"
 	"time"
 
-	"github.com/c4ei/kaspad/infrastructure/config"
-	"github.com/c4ei/kaspad/infrastructure/db/database"
-	"github.com/c4ei/kaspad/infrastructure/db/database/ldb"
-	"github.com/c4ei/kaspad/infrastructure/logger"
-	"github.com/c4ei/kaspad/infrastructure/os/execenv"
-	"github.com/c4ei/kaspad/infrastructure/os/limits"
-	"github.com/c4ei/kaspad/infrastructure/os/signal"
-	"github.com/c4ei/kaspad/infrastructure/os/winservice"
-	"github.com/c4ei/kaspad/util/panics"
-	"github.com/c4ei/kaspad/util/profiling"
-	"github.com/c4ei/kaspad/version"
+	"github.com/c4ei/YunSeokYeol/infrastructure/config"
+	"github.com/c4ei/YunSeokYeol/infrastructure/db/database"
+	"github.com/c4ei/YunSeokYeol/infrastructure/db/database/ldb"
+	"github.com/c4ei/YunSeokYeol/infrastructure/logger"
+	"github.com/c4ei/YunSeokYeol/infrastructure/os/execenv"
+	"github.com/c4ei/YunSeokYeol/infrastructure/os/limits"
+	"github.com/c4ei/YunSeokYeol/infrastructure/os/signal"
+	"github.com/c4ei/YunSeokYeol/infrastructure/os/winservice"
+	"github.com/c4ei/YunSeokYeol/util/panics"
+	"github.com/c4ei/YunSeokYeol/util/profiling"
+	"github.com/c4ei/YunSeokYeol/version"
 )
 
 const (

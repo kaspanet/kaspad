@@ -12,7 +12,7 @@ interface. The functions are only exported while the tests are being run.
 package util
 
 import (
-	"github.com/c4ei/kaspad/util/bech32"
+	"github.com/c4ei/YunSeokYeol/util/bech32"
 	"golang.org/x/crypto/blake2b"
 )
 

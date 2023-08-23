@@ -5,13 +5,13 @@ import (
 	"sync"
 	"sync/atomic"
 
-	"github.com/c4ei/kaspad/infrastructure/network/netadapter/router"
-	"github.com/c4ei/kaspad/infrastructure/network/netadapter/server/grpcserver/protowire"
+	"github.com/c4ei/YunSeokYeol/infrastructure/network/netadapter/router"
+	"github.com/c4ei/YunSeokYeol/infrastructure/network/netadapter/server/grpcserver/protowire"
 	"github.com/pkg/errors"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"github.com/c4ei/kaspad/infrastructure/network/netadapter/server"
+	"github.com/c4ei/YunSeokYeol/infrastructure/network/netadapter/server"
 	"google.golang.org/grpc"
 )
 

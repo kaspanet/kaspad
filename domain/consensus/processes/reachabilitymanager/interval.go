@@ -1,9 +1,10 @@
 package reachabilitymanager
 
 import (
-	"github.com/c4ei/kaspad/domain/consensus/model"
-	"github.com/pkg/errors"
 	"math"
+
+	"github.com/c4ei/YunSeokYeol/domain/consensus/model"
+	"github.com/pkg/errors"
 )
 
 func newReachabilityInterval(start uint64, end uint64) *model.ReachabilityInterval {

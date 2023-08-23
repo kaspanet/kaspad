@@ -1,7 +1,7 @@
 package appmessage
 
 import (
-	"github.com/c4ei/kaspad/domain/consensus/model/externalapi"
+	"github.com/c4ei/YunSeokYeol/domain/consensus/model/externalapi"
 )
 
 // MsgInvRelayBlock implements the Message interface and represents a kaspa

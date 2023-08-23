@@ -2,19 +2,21 @@ package profiling
 
 import (
 	"fmt"
-	"github.com/c4ei/kaspad/infrastructure/logger"
 	"net"
 	"net/http"
 	"os"
 	"path/filepath"
 	"time"
 
+	"github.com/c4ei/YunSeokYeol/infrastructure/logger"
+
 	// Required for profiling
 	_ "net/http/pprof"
 
-	"github.com/c4ei/kaspad/util/panics"
 	"runtime"
 	"runtime/pprof"
+
+	"github.com/c4ei/YunSeokYeol/util/panics"
 )
 
 // heapDumpFileName is the name of the heap dump file. We want every run to have its own

@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/c4ei/kaspad/stability-tests/common"
-	"github.com/c4ei/kaspad/util/profiling"
+	"github.com/c4ei/YunSeokYeol/stability-tests/common"
+	"github.com/c4ei/YunSeokYeol/util/profiling"
 
-	"github.com/c4ei/kaspad/util/panics"
+	"github.com/c4ei/YunSeokYeol/util/panics"
 	"github.com/pkg/errors"
 )
 

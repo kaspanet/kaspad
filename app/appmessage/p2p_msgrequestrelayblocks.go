@@ -1,7 +1,7 @@
 package appmessage
 
 import (
-	"github.com/c4ei/kaspad/domain/consensus/model/externalapi"
+	"github.com/c4ei/YunSeokYeol/domain/consensus/model/externalapi"
 )
 
 // MaxRequestRelayBlocksHashes is the maximum number of hashes that can

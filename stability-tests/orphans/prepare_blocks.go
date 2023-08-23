@@ -1,12 +1,12 @@
 package main
 
 import (
-	"github.com/c4ei/kaspad/domain/consensus"
-	"github.com/c4ei/kaspad/domain/consensus/model/externalapi"
-	"github.com/c4ei/kaspad/domain/consensus/utils/consensushashing"
-	"github.com/c4ei/kaspad/infrastructure/db/database/ldb"
-	"github.com/c4ei/kaspad/stability-tests/common"
-	"github.com/c4ei/kaspad/stability-tests/common/mine"
+	"github.com/c4ei/YunSeokYeol/domain/consensus"
+	"github.com/c4ei/YunSeokYeol/domain/consensus/model/externalapi"
+	"github.com/c4ei/YunSeokYeol/domain/consensus/utils/consensushashing"
+	"github.com/c4ei/YunSeokYeol/infrastructure/db/database/ldb"
+	"github.com/c4ei/YunSeokYeol/stability-tests/common"
+	"github.com/c4ei/YunSeokYeol/stability-tests/common/mine"
 	"github.com/pkg/errors"
 )
 

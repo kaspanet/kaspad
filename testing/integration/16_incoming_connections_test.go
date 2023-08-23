@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/c4ei/kaspad/app/appmessage"
+	"github.com/c4ei/YunSeokYeol/app/appmessage"
 )
 
 func Test16IncomingConnections(t *testing.T) {

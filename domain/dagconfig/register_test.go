@@ -3,7 +3,7 @@ package dagconfig_test
 import (
 	"testing"
 
-	. "github.com/c4ei/kaspad/domain/dagconfig"
+	. "github.com/c4ei/YunSeokYeol/domain/dagconfig"
 )
 
 // Define some of the required parameters for a user-registered

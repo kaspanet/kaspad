@@ -5,7 +5,7 @@ import (
 	"math/rand"
 	"time"
 
-	"github.com/c4ei/kaspad/app/appmessage"
+	"github.com/c4ei/YunSeokYeol/app/appmessage"
 )
 
 // AddressRandomize implement addressRandomizer interface

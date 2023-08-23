@@ -1,9 +1,9 @@
 package daawindowstore
 
 import (
-	"github.com/c4ei/kaspad/domain/consensus/database/serialization"
-	"github.com/c4ei/kaspad/domain/consensus/model"
-	"github.com/c4ei/kaspad/domain/consensus/model/externalapi"
+	"github.com/c4ei/YunSeokYeol/domain/consensus/database/serialization"
+	"github.com/c4ei/YunSeokYeol/domain/consensus/model"
+	"github.com/c4ei/YunSeokYeol/domain/consensus/model/externalapi"
 	"github.com/golang/protobuf/proto"
 )
 

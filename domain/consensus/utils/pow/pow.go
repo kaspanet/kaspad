@@ -1,14 +1,15 @@
 package pow
 
 import (
-	"github.com/c4ei/kaspad/domain/consensus/model/externalapi"
-	"github.com/c4ei/kaspad/domain/consensus/utils/consensushashing"
-	"github.com/c4ei/kaspad/domain/consensus/utils/hashes"
-	"github.com/c4ei/kaspad/domain/consensus/utils/serialization"
-	"github.com/c4ei/kaspad/util/difficulty"
+	"github.com/c4ei/YunSeokYeol/domain/consensus/model/externalapi"
+	"github.com/c4ei/YunSeokYeol/domain/consensus/utils/consensushashing"
+	"github.com/c4ei/YunSeokYeol/domain/consensus/utils/hashes"
+	"github.com/c4ei/YunSeokYeol/domain/consensus/utils/serialization"
+	"github.com/c4ei/YunSeokYeol/util/difficulty"
+
+	"math/big"
 
 	"github.com/pkg/errors"
-	"math/big"
 )
 
 // State is an intermediate data structure with pre-computed values to speed up mining.

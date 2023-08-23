@@ -3,7 +3,7 @@ package appmessage
 import (
 	"testing"
 
-	"github.com/c4ei/kaspad/domain/consensus/model/externalapi"
+	"github.com/c4ei/YunSeokYeol/domain/consensus/model/externalapi"
 
 	"github.com/davecgh/go-spew/spew"
 )

@@ -7,8 +7,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/c4ei/kaspad/infrastructure/logger"
-	"github.com/c4ei/kaspad/stability-tests/common"
+	"github.com/c4ei/YunSeokYeol/infrastructure/logger"
+	"github.com/c4ei/YunSeokYeol/stability-tests/common"
 	"github.com/pkg/errors"
 )
 

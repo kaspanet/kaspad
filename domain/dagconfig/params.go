@@ -8,14 +8,14 @@ import (
 	"math/big"
 	"time"
 
-	"github.com/c4ei/kaspad/domain/consensus/model/externalapi"
+	"github.com/c4ei/YunSeokYeol/domain/consensus/model/externalapi"
 
-	"github.com/c4ei/kaspad/app/appmessage"
-	"github.com/c4ei/kaspad/util/network"
+	"github.com/c4ei/YunSeokYeol/app/appmessage"
+	"github.com/c4ei/YunSeokYeol/util/network"
 
 	"github.com/pkg/errors"
 
-	"github.com/c4ei/kaspad/util"
+	"github.com/c4ei/YunSeokYeol/util"
 )
 
 // These variables are the DAG proof-of-work limit parameters for each default
