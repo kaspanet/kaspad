@@ -1,7 +1,7 @@
 package externalapi
 
 // BlockLevelParents represent the parents within a single super-block level
-// See https://github.com/c4exnet/research/issues/3 for further details
+// See https://github.com/c4ei/research/issues/3 for further details
 type BlockLevelParents []*DomainHash
 
 // Equal returns true if this BlockLevelParents is equal to `other`

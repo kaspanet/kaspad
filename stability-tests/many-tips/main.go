@@ -11,10 +11,10 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/c4ei/go-secp256k1"
 	"github.com/c4ei/yunseokyeol/app/appmessage"
 	"github.com/c4ei/yunseokyeol/domain/consensus/utils/mining"
 	"github.com/c4ei/yunseokyeol/util"
-	"github.com/c4exnet/go-secp256k1"
 
 	"github.com/c4ei/yunseokyeol/stability-tests/common"
 	"github.com/c4ei/yunseokyeol/stability-tests/common/rpc"

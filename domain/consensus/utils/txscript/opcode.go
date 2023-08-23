@@ -17,7 +17,7 @@ import (
 
 	"github.com/c4ei/yunseokyeol/domain/consensus/utils/constants"
 
-	"github.com/c4exnet/go-secp256k1"
+	"github.com/c4ei/go-secp256k1"
 )
 
 // An opcode defines the information related to a txscript opcode. opfunc, if

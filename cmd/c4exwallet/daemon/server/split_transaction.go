@@ -1,7 +1,7 @@
 package server
 
 import (
-	"github.com/c4exnet/go-secp256k1"
+	"github.com/c4ei/go-secp256k1"
 	"github.com/pkg/errors"
 
 	"github.com/c4ei/yunseokyeol/cmd/c4exwallet/libc4exwallet"

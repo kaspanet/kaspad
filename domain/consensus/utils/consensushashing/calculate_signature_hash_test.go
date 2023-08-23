@@ -7,7 +7,7 @@ import (
 
 	"github.com/c4ei/yunseokyeol/domain/consensus/utils/subnetworks"
 
-	"github.com/c4exnet/go-secp256k1"
+	"github.com/c4ei/go-secp256k1"
 
 	"github.com/c4ei/yunseokyeol/domain/consensus/utils/consensushashing"
 	"github.com/c4ei/yunseokyeol/domain/consensus/utils/txscript"

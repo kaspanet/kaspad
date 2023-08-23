@@ -6,6 +6,7 @@ import (
 
 	"github.com/c4ei/yunseokyeol/domain/consensus/utils/utxo"
 
+	"github.com/c4ei/go-secp256k1"
 	"github.com/c4ei/yunseokyeol/app/appmessage"
 	"github.com/c4ei/yunseokyeol/domain/consensus/model/externalapi"
 	"github.com/c4ei/yunseokyeol/domain/consensus/utils/consensushashing"
@@ -13,7 +14,6 @@ import (
 	"github.com/c4ei/yunseokyeol/domain/consensus/utils/transactionid"
 	"github.com/c4ei/yunseokyeol/domain/consensus/utils/txscript"
 	"github.com/c4ei/yunseokyeol/util"
-	"github.com/c4exnet/go-secp256k1"
 )
 
 func TestUTXOIndex(t *testing.T) {

@@ -8,7 +8,7 @@ import (
 	"crypto/rand"
 	"testing"
 
-	"github.com/c4exnet/go-secp256k1"
+	"github.com/c4ei/go-secp256k1"
 )
 
 // genRandomSig returns a random message, a signature of the message under the

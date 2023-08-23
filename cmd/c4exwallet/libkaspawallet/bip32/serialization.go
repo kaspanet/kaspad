@@ -3,8 +3,8 @@ package bip32
 import (
 	"encoding/binary"
 
+	"github.com/c4ei/go-secp256k1"
 	"github.com/c4ei/yunseokyeol/cmd/c4exwallet/libc4exwallet/bip32/base58"
-	"github.com/c4exnet/go-secp256k1"
 	"github.com/pkg/errors"
 )
 

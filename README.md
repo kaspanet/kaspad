@@ -62,7 +62,7 @@ Issue priorities may be seen at https://github.com/orgs/c4exnet/projects/4
 
 ## Documentation
 
-The [documentation](https://github.com/c4exnet/docs) is a work-in-progress
+The [documentation](https://github.com/c4ei/docs) is a work-in-progress
 
 ## License
 

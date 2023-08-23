@@ -214,8 +214,8 @@ type Params struct {
 	// CoinbasePayloadScriptPublicKeyMaxLength는 코인베이스 페이로드에서 허용되는 최대 스크립트 공개 키입니다.
 	CoinbasePayloadScriptPublicKeyMaxLength uint8
 
-	// PruningProofM is the 'm' constant in the pruning proof. For more details see: https://github.com/c4exnet/research/issues/3
-	// PruningProofM은 가지치기 증명의 'm' 상수입니다. 자세한 내용은 https://github.com/c4exnet/research/issues/3을 참조하세요.
+	// PruningProofM is the 'm' constant in the pruning proof. For more details see: https://github.com/c4ei/research/issues/3
+	// PruningProofM은 가지치기 증명의 'm' 상수입니다. 자세한 내용은 https://github.com/c4ei/research/issues/3을 참조하세요.
 	PruningProofM uint64
 
 	// DeflationaryPhaseDaaScore is the DAA score after which the monetary policy switches

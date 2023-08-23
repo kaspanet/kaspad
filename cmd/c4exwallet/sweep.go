@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"fmt"
 
+	"github.com/c4ei/go-secp256k1"
 	"github.com/c4ei/yunseokyeol/cmd/c4exwallet/daemon/client"
 	"github.com/c4ei/yunseokyeol/cmd/c4exwallet/daemon/pb"
 	"github.com/c4ei/yunseokyeol/cmd/c4exwallet/libc4exwallet"
@@ -20,7 +21,6 @@ import (
 	"github.com/c4ei/yunseokyeol/domain/miningmanager/mempool"
 	"github.com/c4ei/yunseokyeol/util"
 	"github.com/c4ei/yunseokyeol/util/txmass"
-	"github.com/c4exnet/go-secp256k1"
 	"github.com/pkg/errors"
 )
 

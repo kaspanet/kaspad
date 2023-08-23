@@ -1,6 +1,7 @@
 package transactionvalidator_test
 
 import (
+	"github.com/c4ei/go-secp256k1"
 	"github.com/c4ei/yunseokyeol/domain/consensus"
 	"github.com/c4ei/yunseokyeol/domain/consensus/ruleerrors"
 	"github.com/c4ei/yunseokyeol/domain/consensus/utils/consensushashing"
@@ -8,7 +9,6 @@ import (
 	"github.com/c4ei/yunseokyeol/domain/consensus/utils/txscript"
 	"github.com/c4ei/yunseokyeol/domain/consensus/utils/utxo"
 	"github.com/c4ei/yunseokyeol/util"
-	"github.com/c4exnet/go-secp256k1"
 
 	"testing"
 

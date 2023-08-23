@@ -2,7 +2,7 @@ package bip32
 
 import (
 	"github.com/btcsuite/btcutil/base58"
-	"github.com/c4exnet/go-secp256k1"
+	"github.com/c4ei/go-secp256k1"
 	"github.com/pkg/errors"
 )
 
