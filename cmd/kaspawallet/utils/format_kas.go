@@ -2,6 +2,8 @@ package utils
 
 import (
 	"fmt"
+	"strconv"
+	"strings"
 
 	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
 )
@@ -13,4 +15,29 @@ func FormatKas(amount uint64) string {
 		res = fmt.Sprintf("%19.8f", float64(amount)/constants.SompiPerKaspa)
 	}
 	return res
+}
+
+// Takes in a string representation of the Kas value to convert to Sompi
+func KasToSompi(amount string) (uint64, error) {
+	err := ValidateAmountFormat(amount)
+
+	if err != nil {
+		return 0, err
+	}
+
+	// after validation, amount can only be either an int OR
+	// a float with an int component and decimal places
+	parts := strings.Split(amount, ".")
+	amountStr := ""
+
+	if len(parts) == 2 {
+		amountStr = fmt.Sprintf("%s%-*s", parts[0], 8, parts[1]) // Padded with spaces at the end to fill for missing decimals: Sample "0.01234    "
+		amountStr = strings.ReplaceAll(amountStr, " ", "0")      // Make the spaces be 0s. Sample "0.012340000"
+	} else {
+		amountStr = fmt.Sprintf("%s00000000", parts[0])
+	}
+
+	convertedAmount, err := strconv.ParseUint(amountStr, 10, 64)
+
+	return convertedAmount, err
 }

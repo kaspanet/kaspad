@@ -4,13 +4,13 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"strconv"
 	"strings"
 
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/daemon/client"
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/daemon/pb"
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/keys"
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/libkaspawallet"
+	"github.com/kaspanet/kaspad/cmd/kaspawallet/utils"
 	"github.com/pkg/errors"
 )
 
@@ -35,7 +35,13 @@ func send(conf *sendConfig) error {
 
 	var sendAmountSompi uint64
 	if !conf.IsSendAll {
-		sendAmountSompi = kasToSompi(conf.SendAmount)
+		parsedAmountSompi, err := utils.KasToSompi(conf.SendAmount)
+
+		if err != nil {
+			return err
+		}
+
+		sendAmountSompi = parsedAmountSompi
 	}
 
 	createUnsignedTransactionsResponse, err :=
@@ -98,16 +104,4 @@ func send(conf *sendConfig) error {
 	}
 
 	return nil
-}
-
-/**
- */
-func kasToSompi(amount float64) uint64 {
-	amountInStr := fmt.Sprintf("%.8f", amount)
-
-	parts := strings.Split(amountInStr, ".")
-
-	convertedAmount, _ := strconv.ParseUint(strings.Join(parts, ""), 10, 64)
-
-	return convertedAmount
 }
