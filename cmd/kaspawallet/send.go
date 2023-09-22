@@ -35,13 +35,11 @@ func send(conf *sendConfig) error {
 
 	var sendAmountSompi uint64
 	if !conf.IsSendAll {
-		parsedAmountSompi, err := utils.KasToSompi(conf.SendAmount)
+		sendAmountSompi, err = utils.KasToSompi(conf.SendAmount)
 
 		if err != nil {
 			return err
 		}
-
-		sendAmountSompi = parsedAmountSompi
 	}
 
 	createUnsignedTransactionsResponse, err :=
