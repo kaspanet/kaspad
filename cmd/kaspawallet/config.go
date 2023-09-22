@@ -297,7 +297,7 @@ func parseCommandLine() (subCommand string, config interface{}) {
 
 func validateCreateUnsignedTransactionConf(conf *createUnsignedTransactionConfig) error {
 	if (!conf.IsSendAll && conf.SendAmount == "") ||
-		(conf.IsSendAll && conf.SendAmount > "") {
+		(conf.IsSendAll && conf.SendAmount != "") {
 
 		return errors.New("exactly one of '--send-amount' or '--all' must be specified")
 	}
