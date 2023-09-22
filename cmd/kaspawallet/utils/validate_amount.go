@@ -2,7 +2,6 @@ package utils
 
 import (
 	"regexp"
-	"strconv"
 
 	"github.com/pkg/errors"
 )
@@ -13,18 +12,11 @@ import (
  */
 func ValidateAmountFormat(amount string) error {
 	// Check whether it's an integer, or a float with max 8 digits
-	match, err := regexp.MatchString("^\\d{1,19}(.\\d{0,8})?$", amount)
+	match, err := regexp.MatchString("^([1-9]\\d{0,11}|0)(\\.\\d{0,8})?$", amount)
 
 	if !match {
 		return errors.Errorf("Invalid send amount")
 	}
-
-	if err != nil {
-		return err
-	}
-
-	// If it parses properly, then this is valid
-	_, err = strconv.ParseFloat(amount, 64)
 
 	if err != nil {
 		return err
