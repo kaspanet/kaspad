@@ -22,7 +22,7 @@ func FormatKas(amount uint64) string {
 
 // KasToSompi takes in a string representation of the Kas value to convert to Sompi
 func KasToSompi(amount string) (uint64, error) {
-	err := validateAmountFormat(amount)
+	err := validateKASAmountFormat(amount)
 
 	if err != nil {
 		return 0, err
@@ -52,12 +52,12 @@ func KasToSompi(amount string) (uint64, error) {
 	return convertedAmount, err
 }
 
-func validateAmountFormat(amount string) error {
+func validateKASAmountFormat(amount string) error {
 	// Check whether it's an integer, or a float with max 8 digits
 	match, err := regexp.MatchString("^([1-9]\\d{0,11}|0)(\\.\\d{0,8})?$", amount)
 
 	if !match {
-		return errors.Errorf("Invalid send amount")
+		return errors.Errorf("Invalid amount")
 	}
 
 	if err != nil {

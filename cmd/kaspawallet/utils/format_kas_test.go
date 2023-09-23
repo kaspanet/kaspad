@@ -57,7 +57,7 @@ func TestValidateAmountFormat(t *testing.T) {
 	}
 
 	for _, testCase := range validCases {
-		err := validateAmountFormat(testCase)
+		err := validateKASAmountFormat(testCase)
 
 		if err != nil {
 			t.Error(err)
@@ -81,7 +81,7 @@ func TestValidateAmountFormat(t *testing.T) {
 	}
 
 	for _, testCase := range invalidCases {
-		err := validateAmountFormat(testCase)
+		err := validateKASAmountFormat(testCase)
 
 		if err == nil {
 			t.Errorf("Expected an error but succeeded validation for test case %s", testCase)
