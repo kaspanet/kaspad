@@ -2,6 +2,7 @@ package mempool
 
 import (
 	"fmt"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
 
 	"github.com/kaspanet/kaspad/infrastructure/logger"
 
@@ -15,6 +16,18 @@ func (mp *mempool) validateAndInsertTransaction(transaction *externalapi.DomainT
 	onEnd := logger.LogAndMeasureExecutionTime(log,
 		fmt.Sprintf("validateAndInsertTransaction %s", consensushashing.TransactionID(transaction)))
 	defer onEnd()
+
+	numOutsLessThanOneKas := 0
+	for _, output := range transaction.Outputs {
+		if output.Value < constants.SompiPerKaspa {
+			numOutsLessThanOneKas += 1
+		}
+	}
+
+	if numOutsLessThanOneKas > len(transaction.Inputs) {
+		log.Warnf("Rejected transaction with %d outputs with less than 1 KAS")
+		return nil, nil
+	}
 
 	// Populate mass in the beginning, it will be used in multiple places throughout the validation and insertion.
 	mp.consensusReference.Consensus().PopulateMass(transaction)
