@@ -17,15 +17,8 @@ func (mp *mempool) validateAndInsertTransaction(transaction *externalapi.DomainT
 		fmt.Sprintf("validateAndInsertTransaction %s", consensushashing.TransactionID(transaction)))
 	defer onEnd()
 
-	numOutsLessThanOneKas := 0
-	for _, output := range transaction.Outputs {
-		if output.Value < constants.SompiPerKaspa {
-			numOutsLessThanOneKas += 1
-		}
-	}
-
-	if numOutsLessThanOneKas > len(transaction.Inputs) {
-		log.Warnf("Rejected transaction with %d outputs with less than 1 KAS")
+	if numOutsLessThanOneKas, isSpamming := isTXSpamming(transaction); isSpamming {
+		log.Warnf("Rejected from mempool transaction %s with %d outputs with less than 1 KAS", consensushashing.TransactionID(transaction), numOutsLessThanOneKas)
 		return nil, nil
 	}
 
@@ -75,4 +68,15 @@ func (mp *mempool) validateAndInsertTransaction(transaction *externalapi.DomainT
 	}
 
 	return acceptedTransactions, nil
+}
+
+func isTXSpamming(transaction *externalapi.DomainTransaction) (int, bool) {
+	numOutsLessThanOneKas := 0
+	for _, output := range transaction.Outputs {
+		if output.Value < constants.SompiPerKaspa {
+			numOutsLessThanOneKas += 1
+		}
+	}
+
+	return numOutsLessThanOneKas, numOutsLessThanOneKas > len(transaction.Inputs)
 }

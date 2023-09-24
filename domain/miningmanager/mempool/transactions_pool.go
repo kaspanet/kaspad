@@ -138,6 +138,11 @@ func (tp *transactionsPool) allReadyTransactions() []*externalapi.DomainTransact
 		if len(mempoolTransaction.ParentTransactionsInPool()) == 0 {
 			result = append(result, mempoolTransaction.Transaction().Clone()) //this pointer leaves the mempool, and gets its utxo set to nil, hence we clone.
 		}
+
+		if numOutsLessThanOneKas, isSpamming := isTXSpamming(mempoolTransaction.Transaction()); isSpamming {
+			log.Warnf("Filtered from allReadyTransactions transaction %s with %d outputs with less than 1 KAS", mempoolTransaction.TransactionID(), numOutsLessThanOneKas)
+			continue
+		}
 	}
 
 	return result
