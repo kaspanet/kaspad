@@ -2,6 +2,7 @@ package mempool
 
 import (
 	"fmt"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
 
 	"github.com/kaspanet/kaspad/infrastructure/logger"
 
@@ -27,6 +28,12 @@ func (mp *mempool) validateAndInsertTransaction(transaction *externalapi.DomainT
 	parentsInPool, missingOutpoints, err := mp.fillInputsAndGetMissingParents(transaction)
 	if err != nil {
 		return nil, err
+	}
+
+	numExtraOuts := len(transaction.Outputs) - len(transaction.Inputs)
+	if numExtraOuts > 2 && transaction.Fee < uint64(numExtraOuts)*constants.SompiPerKaspa {
+		log.Warnf("Rejected spam tx %s from mempool", consensushashing.TransactionID(transaction))
+		return nil, nil
 	}
 
 	if len(missingOutpoints) > 0 {
