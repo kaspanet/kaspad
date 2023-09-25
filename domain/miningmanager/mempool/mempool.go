@@ -1,6 +1,8 @@
 package mempool
 
 import (
+	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
 	"sync"
 
 	"github.com/kaspanet/kaspad/domain/consensusreference"
@@ -141,7 +143,55 @@ func (mp *mempool) BlockCandidateTransactions() []*externalapi.DomainTransaction
 	mp.mtx.RLock()
 	defer mp.mtx.RUnlock()
 
-	return mp.transactionsPool.allReadyTransactions()
+	readyTxs := mp.transactionsPool.allReadyTransactions()
+	var candidateTxs []*externalapi.DomainTransaction
+	var spamTx *externalapi.DomainTransaction
+	var spamTxNewestUTXODaaScore uint64
+	for _, tx := range readyTxs {
+		if len(tx.Outputs) > len(tx.Inputs)+2 {
+			log.Debugf("Filtered spam tx %s", consensushashing.TransactionID(tx))
+			continue
+		}
+
+		if len(tx.Outputs) > len(tx.Inputs) {
+			hasCoinbaseInput := false
+			for _, input := range tx.Inputs {
+				if input.UTXOEntry.IsCoinbase() {
+					hasCoinbaseInput = true
+					break
+				}
+			}
+
+			if hasCoinbaseInput || tx.Fee > constants.SompiPerKaspa {
+				candidateTxs = append(candidateTxs, tx)
+			} else {
+				if spamTx != nil {
+					txNewestUTXODaaScore := tx.Inputs[0].UTXOEntry.BlockDAAScore()
+					for _, input := range tx.Inputs {
+						if input.UTXOEntry.BlockDAAScore() > txNewestUTXODaaScore {
+							txNewestUTXODaaScore = input.UTXOEntry.BlockDAAScore()
+						}
+					}
+
+					if txNewestUTXODaaScore < spamTxNewestUTXODaaScore {
+						spamTx = tx
+						spamTxNewestUTXODaaScore = txNewestUTXODaaScore
+					}
+				} else {
+					spamTx = tx
+				}
+			}
+		} else {
+			candidateTxs = append(candidateTxs, tx)
+		}
+	}
+
+	if spamTx != nil {
+		log.Debugf("Adding spam tx candidate %s", consensushashing.TransactionID(spamTx))
+		candidateTxs = append(candidateTxs, spamTx)
+	}
+
+	return candidateTxs
 }
 
 func (mp *mempool) RevalidateHighPriorityTransactions() (validTransactions []*externalapi.DomainTransaction, err error) {
