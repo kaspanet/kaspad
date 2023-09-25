@@ -2,8 +2,6 @@ package mempool
 
 import (
 	"fmt"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
-
 	"github.com/kaspanet/kaspad/infrastructure/logger"
 
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
@@ -28,20 +26,6 @@ func (mp *mempool) validateAndInsertTransaction(transaction *externalapi.DomainT
 	parentsInPool, missingOutpoints, err := mp.fillInputsAndGetMissingParents(transaction)
 	if err != nil {
 		return nil, err
-	}
-
-	hasCoinbaseInput := false
-	for _, input := range transaction.Inputs {
-		if input.UTXOEntry.IsCoinbase() {
-			hasCoinbaseInput = true
-			break
-		}
-	}
-
-	numExtraOuts := len(transaction.Outputs) - len(transaction.Inputs)
-	if !hasCoinbaseInput && numExtraOuts > 2 && transaction.Fee < uint64(numExtraOuts)*constants.SompiPerKaspa {
-		log.Warnf("Rejected spam tx %s from mempool (%d outputs)", consensushashing.TransactionID(transaction), len(transaction.Outputs))
-		return nil, transactionRuleError(RejectSpamTx, fmt.Sprintf("Rejected spam tx %s from mempool", consensushashing.TransactionID(transaction)))
 	}
 
 	if len(missingOutpoints) > 0 {
