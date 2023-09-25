@@ -30,9 +30,17 @@ func (mp *mempool) validateAndInsertTransaction(transaction *externalapi.DomainT
 		return nil, err
 	}
 
+	hasCoinbaseInput := false
+	for _, input := range transaction.Inputs {
+		if input.UTXOEntry.IsCoinbase() {
+			hasCoinbaseInput = true
+			break
+		}
+	}
+
 	numExtraOuts := len(transaction.Outputs) - len(transaction.Inputs)
-	if numExtraOuts > 2 && transaction.Fee < uint64(numExtraOuts)*constants.SompiPerKaspa {
-		log.Warnf("Rejected spam tx %s from mempool", consensushashing.TransactionID(transaction))
+	if !hasCoinbaseInput && numExtraOuts > 2 && transaction.Fee < uint64(numExtraOuts)*constants.SompiPerKaspa {
+		log.Warnf("Rejected spam tx %s from mempool (%d outputs)", consensushashing.TransactionID(transaction), len(transaction.Outputs))
 		return nil, transactionRuleError(RejectSpamTx, fmt.Sprintf("Rejected spam tx %s from mempool", consensushashing.TransactionID(transaction)))
 	}
 

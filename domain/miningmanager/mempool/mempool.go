@@ -149,18 +149,18 @@ func (mp *mempool) BlockCandidateTransactions() []*externalapi.DomainTransaction
 	var spamTxNewestUTXODaaScore uint64
 	for _, tx := range readyTxs {
 		if len(tx.Outputs) > len(tx.Inputs) {
-			numExtraOuts := len(tx.Outputs) - len(tx.Inputs)
-			if numExtraOuts > 2 && tx.Fee < uint64(numExtraOuts)*constants.SompiPerKaspa {
-				log.Debugf("Filtered spam tx %s", consensushashing.TransactionID(tx))
-				continue
-			}
-
 			hasCoinbaseInput := false
 			for _, input := range tx.Inputs {
 				if input.UTXOEntry.IsCoinbase() {
 					hasCoinbaseInput = true
 					break
 				}
+			}
+
+			numExtraOuts := len(tx.Outputs) - len(tx.Inputs)
+			if !hasCoinbaseInput && numExtraOuts > 2 && tx.Fee < uint64(numExtraOuts)*constants.SompiPerKaspa {
+				log.Debugf("Filtered spam tx %s", consensushashing.TransactionID(tx))
+				continue
 			}
 
 			if hasCoinbaseInput || tx.Fee > uint64(numExtraOuts)*constants.SompiPerKaspa {
