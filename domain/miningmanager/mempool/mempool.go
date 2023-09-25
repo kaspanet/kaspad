@@ -166,20 +166,21 @@ func (mp *mempool) BlockCandidateTransactions() []*externalapi.DomainTransaction
 			if hasCoinbaseInput || tx.Fee > uint64(numExtraOuts)*constants.SompiPerKaspa {
 				candidateTxs = append(candidateTxs, tx)
 			} else {
-				if spamTx != nil {
-					txNewestUTXODaaScore := tx.Inputs[0].UTXOEntry.BlockDAAScore()
-					for _, input := range tx.Inputs {
-						if input.UTXOEntry.BlockDAAScore() > txNewestUTXODaaScore {
-							txNewestUTXODaaScore = input.UTXOEntry.BlockDAAScore()
-						}
+				txNewestUTXODaaScore := tx.Inputs[0].UTXOEntry.BlockDAAScore()
+				for _, input := range tx.Inputs {
+					if input.UTXOEntry.BlockDAAScore() > txNewestUTXODaaScore {
+						txNewestUTXODaaScore = input.UTXOEntry.BlockDAAScore()
 					}
+				}
 
+				if spamTx != nil {
 					if txNewestUTXODaaScore < spamTxNewestUTXODaaScore {
 						spamTx = tx
 						spamTxNewestUTXODaaScore = txNewestUTXODaaScore
 					}
 				} else {
 					spamTx = tx
+					spamTxNewestUTXODaaScore = txNewestUTXODaaScore
 				}
 			}
 		} else {
