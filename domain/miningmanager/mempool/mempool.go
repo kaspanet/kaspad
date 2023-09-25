@@ -148,7 +148,7 @@ func (mp *mempool) BlockCandidateTransactions() []*externalapi.DomainTransaction
 	var spamTx *externalapi.DomainTransaction
 	var spamTxNewestUTXODaaScore uint64
 	for _, tx := range readyTxs {
-		if len(tx.Outputs) > len(tx.Inputs)+2 {
+		if len(tx.Outputs) > len(tx.Inputs)+2 && tx.Fee < constants.SompiPerKaspa {
 			log.Debugf("Filtered spam tx %s", consensushashing.TransactionID(tx))
 			continue
 		}
