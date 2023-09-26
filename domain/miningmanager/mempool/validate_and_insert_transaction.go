@@ -2,7 +2,6 @@ package mempool
 
 import (
 	"fmt"
-
 	"github.com/kaspanet/kaspad/infrastructure/logger"
 
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
