@@ -1,7 +1,7 @@
 package integration
 
 import (
-	"io/ioutil"
+	"os"
 	"testing"
 	"time"
 
@@ -63,7 +63,7 @@ func commonConfig() *config.Config {
 }
 
 func randomDirectory(t *testing.T) string {
-	dir, err := ioutil.TempDir("", "integration-test")
+	dir, err := os.MkdirTemp("", "integration-test")
 	if err != nil {
 		t.Fatalf("Error creating temporary directory for test: %+v", err)
 	}

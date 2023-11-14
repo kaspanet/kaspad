@@ -8,7 +8,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"os"
 	"strconv"
 	"strings"
 	"testing"
@@ -380,7 +380,7 @@ func testScripts(t *testing.T, tests [][]interface{}, useSigCache bool) {
 // TestScripts ensures all of the tests in script_tests.json execute with the
 // expected results as defined in the test data.
 func TestScripts(t *testing.T) {
-	file, err := ioutil.ReadFile("data/script_tests.json")
+	file, err := os.ReadFile("data/script_tests.json")
 	if err != nil {
 		t.Fatalf("TestScripts: %v\n", err)
 	}

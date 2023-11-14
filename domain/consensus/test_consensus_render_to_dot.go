@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"io"
-	"io/ioutil"
+	"os"
 	"os/exec"
 	"strings"
 
@@ -79,5 +79,5 @@ func renderDotScript(dotScript string, filename string) error {
 		return fmt.Errorf("Error getting output of dot: %s\nstderr:\n%s", err, stderr.String())
 	}
 
-	return ioutil.WriteFile(filename, svg, 0600)
+	return os.WriteFile(filename, svg, 0600)
 }

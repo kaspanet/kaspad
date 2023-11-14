@@ -3,7 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
+	"os"
 	"strings"
 
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/daemon/client"
@@ -30,7 +30,7 @@ func broadcast(conf *broadcastConfig) error {
 
 	transactionsHex := conf.Transactions
 	if conf.TransactionsFile != "" {
-		transactionHexBytes, err := ioutil.ReadFile(conf.TransactionsFile)
+		transactionHexBytes, err := os.ReadFile(conf.TransactionsFile)
 		if err != nil {
 			return errors.Wrapf(err, "Could not read hex from %s", conf.TransactionsFile)
 		}

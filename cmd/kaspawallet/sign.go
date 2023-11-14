@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"strings"
 
@@ -34,7 +33,7 @@ func sign(conf *signConfig) error {
 
 	transactionsHex := conf.Transaction
 	if conf.TransactionFile != "" {
-		transactionHexBytes, err := ioutil.ReadFile(conf.TransactionFile)
+		transactionHexBytes, err := os.ReadFile(conf.TransactionFile)
 		if err != nil {
 			return errors.Wrapf(err, "Could not read hex from %s", conf.TransactionFile)
 		}
