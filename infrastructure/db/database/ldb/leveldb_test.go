@@ -1,7 +1,7 @@
 package ldb
 
 import (
-	"io/ioutil"
+	"os"
 	"reflect"
 	"testing"
 
@@ -10,7 +10,7 @@ import (
 
 func prepareDatabaseForTest(t *testing.T, testName string) (ldb *LevelDB, teardownFunc func()) {
 	// Create a temp db to run tests against
-	path, err := ioutil.TempDir("", testName)
+	path, err := os.MkdirTemp("", testName)
 	if err != nil {
 		t.Fatalf("%s: TempDir unexpectedly "+
 			"failed: %s", testName, err)

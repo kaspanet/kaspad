@@ -1,7 +1,7 @@
 package consensus
 
 import (
-	"io/ioutil"
+	"os"
 	"testing"
 
 	"github.com/kaspanet/kaspad/domain/prefixmanager/prefix"
@@ -15,7 +15,7 @@ func TestNewConsensus(t *testing.T) {
 
 	config := &Config{Params: dagconfig.DevnetParams}
 
-	tmpDir, err := ioutil.TempDir("", "TestNewConsensus")
+	tmpDir, err := os.MkdirTemp("", "TestNewConsensus")
 	if err != nil {
 		return
 	}

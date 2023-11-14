@@ -2,7 +2,7 @@ package database_test
 
 import (
 	"fmt"
-	"io/ioutil"
+	"os"
 	"testing"
 
 	"github.com/kaspanet/kaspad/infrastructure/db/database"
@@ -20,7 +20,7 @@ var databasePrepareFuncs = []databasePrepareFunc{
 
 func prepareLDBForTest(t *testing.T, testName string) (db database.Database, name string, teardownFunc func()) {
 	// Create a temp db to run tests against
-	path, err := ioutil.TempDir("", testName)
+	path, err := os.MkdirTemp("", testName)
 	if err != nil {
 		t.Fatalf("%s: TempDir unexpectedly "+
 			"failed: %s", testName, err)

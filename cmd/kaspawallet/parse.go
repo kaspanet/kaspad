@@ -3,13 +3,14 @@ package main
 import (
 	"encoding/hex"
 	"fmt"
+	"os"
+	"strings"
+
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/libkaspawallet/serialization"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/txscript"
 	"github.com/pkg/errors"
-	"io/ioutil"
-	"strings"
 )
 
 func parse(conf *parseConfig) error {
@@ -22,7 +23,7 @@ func parse(conf *parseConfig) error {
 
 	transactionHex := conf.Transaction
 	if conf.TransactionFile != "" {
-		transactionHexBytes, err := ioutil.ReadFile(conf.TransactionFile)
+		transactionHexBytes, err := os.ReadFile(conf.TransactionFile)
 		if err != nil {
 			return errors.Wrapf(err, "Could not read hex from %s", conf.TransactionFile)
 		}

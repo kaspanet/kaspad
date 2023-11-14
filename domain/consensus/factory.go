@@ -1,7 +1,6 @@
 package consensus
 
 import (
-	"io/ioutil"
 	"os"
 	"sync"
 
@@ -569,7 +568,7 @@ func (f *factory) NewTestConsensus(config *Config, testName string) (
 	tc testapi.TestConsensus, teardown func(keepDataDir bool), err error) {
 	datadir := f.dataDir
 	if datadir == "" {
-		datadir, err = ioutil.TempDir("", testName)
+		datadir, err = os.MkdirTemp("", testName)
 		if err != nil {
 			return nil, nil, err
 		}
