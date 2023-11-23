@@ -7,6 +7,14 @@ import (
 )
 
 func (mp *mempool) revalidateHighPriorityTransactions() ([]*externalapi.DomainTransaction, error) {
+	type txNode struct {
+		children          map[externalapi.DomainTransactionID]struct{}
+		isInvalid         bool
+		nonVisitedParents int
+		tx                *model.MempoolTransaction
+		visited           bool
+	}
+
 	onEnd := logger.LogAndMeasureExecutionTime(log, "revalidateHighPriorityTransactions")
 	defer onEnd()
 
@@ -14,47 +22,65 @@ func (mp *mempool) revalidateHighPriorityTransactions() ([]*externalapi.DomainTr
 
 	// Naturally transactions points to their dependencies, but since we want to start processing the dependencies
 	// first, we build the opposite DAG. We initially fill `queue` with transactions with no dependencies.
-	childrenByID := make(map[externalapi.DomainTransactionID]map[externalapi.DomainTransactionID]struct{})
-	queue := make([]externalapi.DomainTransactionID, 0, len(mp.transactionsPool.highPriorityTransactions))
+	txDAG := make(map[externalapi.DomainTransactionID]*txNode)
+
+	maybeAddNode := func(txID externalapi.DomainTransactionID) *txNode {
+		if node, ok := txDAG[txID]; ok {
+			return node
+		}
+
+		node := &txNode{
+			children:          make(map[externalapi.DomainTransactionID]struct{}),
+			isInvalid:         false,
+			nonVisitedParents: 0,
+			tx:                mp.transactionsPool.highPriorityTransactions[txID],
+		}
+		txDAG[txID] = node
+		return node
+	}
+
+	queue := make([]*txNode, 0, len(mp.transactionsPool.highPriorityTransactions))
 	for id, transaction := range mp.transactionsPool.highPriorityTransactions {
-		hasParents := false
+		node := &txNode{
+			children:          make(map[externalapi.DomainTransactionID]struct{}),
+			isInvalid:         false,
+			nonVisitedParents: 0,
+			tx:                transaction,
+		}
+		txDAG[id] = node
+
+		parents := make(map[externalapi.DomainTransactionID]struct{})
 		for _, input := range transaction.Transaction().Inputs {
 			if _, ok := mp.transactionsPool.highPriorityTransactions[input.PreviousOutpoint.TransactionID]; !ok {
 				continue
 			}
 
-			hasParents = true
-			if _, ok := childrenByID[input.PreviousOutpoint.TransactionID]; !ok {
-				childrenByID[input.PreviousOutpoint.TransactionID] = make(map[externalapi.DomainTransactionID]struct{})
-			}
-
-			childrenByID[input.PreviousOutpoint.TransactionID][id] = struct{}{}
+			parents[input.PreviousOutpoint.TransactionID] = struct{}{} // To avoid duplicate parents, we first add it to a set and then count it
+			maybeAddNode(input.PreviousOutpoint.TransactionID).children[id] = struct{}{}
 		}
+		node.nonVisitedParents = len(parents)
 
-		if !hasParents {
-			queue = append(queue, id)
+		if node.nonVisitedParents == 0 {
+			queue = append(queue, node)
 		}
 	}
 
-	invalidTransactions := make(map[externalapi.DomainTransactionID]struct{})
-	visited := make(map[externalapi.DomainTransactionID]struct{})
 	validTransactions := []*externalapi.DomainTransaction{}
 
 	// Now we iterate the DAG in topological order using BFS
 	for len(queue) > 0 {
-		var txID externalapi.DomainTransactionID
-		txID, queue = queue[0], queue[1:]
+		var node *txNode
+		node, queue = queue[0], queue[1:]
 
-		if _, ok := visited[txID]; ok {
+		if node.visited {
 			continue
 		}
-		visited[txID] = struct{}{}
-
-		if _, ok := invalidTransactions[txID]; ok {
+		node.visited = true
+		if node.isInvalid {
 			continue
 		}
 
-		transaction := mp.transactionsPool.highPriorityTransactions[txID]
+		transaction := node.tx
 		isValid, err := mp.revalidateTransaction(transaction)
 		if err != nil {
 			return nil, err
@@ -62,28 +88,27 @@ func (mp *mempool) revalidateHighPriorityTransactions() ([]*externalapi.DomainTr
 
 		if !isValid {
 			// Invalidate the offspring of this transaction
-			invalidateQueue := []externalapi.DomainTransactionID{txID}
+			invalidateQueue := []*txNode{node}
 			for len(invalidateQueue) > 0 {
-				var current externalapi.DomainTransactionID
+				var current *txNode
 				current, invalidateQueue = invalidateQueue[0], invalidateQueue[1:]
 
-				if _, ok := invalidTransactions[current]; ok {
+				if current.isInvalid {
 					continue
 				}
-
-				invalidTransactions[current] = struct{}{}
-				if children, ok := childrenByID[current]; ok {
-					for child := range children {
-						invalidateQueue = append(invalidateQueue, child)
-					}
+				current.isInvalid = true
+				for child := range current.children {
+					invalidateQueue = append(invalidateQueue, txDAG[child])
 				}
 			}
 			continue
 		}
 
-		if children, ok := childrenByID[txID]; ok {
-			for child := range children {
-				queue = append(queue, child)
+		for child := range node.children {
+			childNode := txDAG[child]
+			childNode.nonVisitedParents--
+			if childNode.nonVisitedParents == 0 {
+				queue = append(queue, txDAG[child])
 			}
 		}
 
