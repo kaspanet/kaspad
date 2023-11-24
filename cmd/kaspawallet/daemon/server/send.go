@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"errors"
 
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/daemon/pb"
 )
@@ -10,8 +11,10 @@ func (s *server) Send(_ context.Context, request *pb.SendRequest) (*pb.SendRespo
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
+	log.Infof("===wallet server get request: %+v", request)
+
 	unsignedTransactions, err := s.createUnsignedTransactions(request.ToAddress, request.Amount, request.IsSendAll,
-		request.From, request.UseExistingChangeAddress)
+		request.From, request.UseExistingChangeAddress, "")
 
 	if err != nil {
 		return nil, err
@@ -22,10 +25,14 @@ func (s *server) Send(_ context.Context, request *pb.SendRequest) (*pb.SendRespo
 		return nil, err
 	}
 
-	txIDs, err := s.broadcast(signedTransactions, false)
-	if err != nil {
-		return nil, err
-	}
+	log.Infof("===wallet server signedTransactions: %+v", signedTransactions)
 
-	return &pb.SendResponse{TxIDs: txIDs, SignedTransactions: signedTransactions}, nil
+	return nil, errors.New("test")
+
+	// txIDs, err := s.broadcast(signedTransactions, false)
+	// if err != nil {
+	// 	return nil, err
+	// }
+
+	// return &pb.SendResponse{TxIDs: txIDs, SignedTransactions: signedTransactions}, nil
 }

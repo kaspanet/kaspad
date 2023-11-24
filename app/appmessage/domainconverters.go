@@ -2,8 +2,10 @@ package appmessage
 
 import (
 	"encoding/hex"
-	"github.com/pkg/errors"
+	"fmt"
 	"math/big"
+
+	"github.com/pkg/errors"
 
 	"github.com/kaspanet/kaspad/domain/consensus/utils/blockheader"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/hashes"
@@ -207,6 +209,7 @@ func RPCTransactionToDomainTransaction(rpcTransaction *RPCTransaction) (*externa
 	if err != nil {
 		return nil, err
 	}
+	fmt.Printf("=======payload %+v", rpcTransaction.Payload)
 	payload, err := hex.DecodeString(rpcTransaction.Payload)
 	if err != nil {
 		return nil, err

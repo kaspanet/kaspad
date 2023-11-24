@@ -2,6 +2,9 @@ package server
 
 import (
 	"context"
+	"fmt"
+	"time"
+
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/daemon/pb"
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/libkaspawallet"
@@ -9,7 +12,6 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/infrastructure/network/rpcclient"
 	"github.com/pkg/errors"
-	"time"
 )
 
 func (s *server) Broadcast(_ context.Context, request *pb.BroadcastRequest) (*pb.BroadcastResponse, error) {
@@ -63,7 +65,9 @@ func (s *server) broadcast(transactions [][]byte, isDomain bool) ([]string, erro
 }
 
 func sendTransaction(client *rpcclient.RPCClient, tx *externalapi.DomainTransaction) (string, error) {
-	submitTransactionResponse, err := client.SubmitTransaction(appmessage.DomainTransactionToRPCTransaction(tx), false)
+	rpcTx := appmessage.DomainTransactionToRPCTransaction(tx)
+	fmt.Printf("send rpc-tx: %+v from domain-tx: %+v\n", rpcTx, tx)
+	submitTransactionResponse, err := client.SubmitTransaction(rpcTx, false)
 	if err != nil {
 		return "", errors.Wrapf(err, "error submitting transaction")
 	}

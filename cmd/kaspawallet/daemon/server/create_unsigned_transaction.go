@@ -23,7 +23,7 @@ func (s *server) CreateUnsignedTransactions(_ context.Context, request *pb.Creat
 	defer s.lock.Unlock()
 
 	unsignedTransactions, err := s.createUnsignedTransactions(request.Address, request.Amount, request.IsSendAll,
-		request.From, request.UseExistingChangeAddress)
+		request.From, request.UseExistingChangeAddress, request.Payload)
 	if err != nil {
 		return nil, err
 	}
@@ -31,7 +31,7 @@ func (s *server) CreateUnsignedTransactions(_ context.Context, request *pb.Creat
 	return &pb.CreateUnsignedTransactionsResponse{UnsignedTransactions: unsignedTransactions}, nil
 }
 
-func (s *server) createUnsignedTransactions(address string, amount uint64, isSendAll bool, fromAddressesString []string, useExistingChangeAddress bool) ([][]byte, error) {
+func (s *server) createUnsignedTransactions(address string, amount uint64, isSendAll bool, fromAddressesString []string, useExistingChangeAddress bool, payload string) ([][]byte, error) {
 	if !s.isSynced() {
 		return nil, errors.Errorf("wallet daemon is not synced yet, %s", s.formatSyncStateReport())
 	}
@@ -83,7 +83,7 @@ func (s *server) createUnsignedTransactions(address string, amount uint64, isSen
 	}
 	unsignedTransaction, err := libkaspawallet.CreateUnsignedTransaction(s.keysFile.ExtendedPublicKeys,
 		s.keysFile.MinimumSignatures,
-		payments, selectedUTXOs)
+		payments, selectedUTXOs, payload)
 	if err != nil {
 		return nil, err
 	}

@@ -2,9 +2,10 @@ package main
 
 import (
 	"fmt"
-	"github.com/kaspanet/kaspad/version"
 	"os"
 	"time"
+
+	"github.com/kaspanet/kaspad/version"
 
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/server/grpcserver/protowire"
 
@@ -33,6 +34,8 @@ func main() {
 		printErrorAndExit(fmt.Sprintf("error connecting to the RPC server: %s", err))
 	}
 	defer client.Disconnect()
+
+	fmt.Printf("======test %+v\n", cfg)
 
 	if !cfg.AllowConnectionToDifferentVersions {
 		kaspadMessage, err := client.Post(&protowire.KaspadMessage{Payload: &protowire.KaspadMessage_GetInfoRequest{GetInfoRequest: &protowire.GetInfoRequestMessage{}}})

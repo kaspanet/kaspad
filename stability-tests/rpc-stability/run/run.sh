@@ -1,7 +1,9 @@
 #!/bin/bash
 rm -rf /tmp/kaspad-temp
 
-kaspad --devnet --appdir=/tmp/kaspad-temp --profile=6061 --loglevel=debug &
+# kaspadbin=(go run ~/dev/kaspa-net/kaspad)
+go run ~/dev/kaspa-net/kaspad --devnet --appdir=/tmp/kaspad-temp --profile=6061 --loglevel=debug &
+#kaspad --devnet --appdir=/tmp/kaspad-temp --profile=6061 --loglevel=debug &
 KASPAD_PID=$!
 
 sleep 1

@@ -48,13 +48,19 @@ func StartApp() error {
 	// Load configuration and parse command line. This function also
 	// initializes logging and configures it accordingly.
 	cfg, err := config.LoadConfig()
+
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		return err
 	}
 	defer logger.BackendLog.Close()
 	defer panics.HandlePanic(log, "MAIN", nil)
+	cfg.Flags.ActiveNetParams.EnableNonNativeSubnetworks = true
 
+	fmt.Printf("===config flags: %#v\n", cfg.Flags)
+	fmt.Printf("===config flags active-net: %#v\n", cfg.Flags.ActiveNetParams)
+
+	// os.Exit(0)
 	app := &kaspadApp{cfg: cfg}
 
 	// Call serviceMain on Windows to handle running as a service. When

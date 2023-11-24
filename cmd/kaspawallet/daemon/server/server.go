@@ -77,6 +77,8 @@ func Start(params *dagconfig.Params, listen, rpcServer string, keysFilePath stri
 		return (errors.Wrapf(err, "Error reading keys file %s", keysFilePath))
 	}
 
+	log.Infof("Connected, using keys file-path: %s...", keysFile.Path())
+
 	err = keysFile.TryLock()
 	if err != nil {
 		return err
@@ -97,7 +99,7 @@ func Start(params *dagconfig.Params, listen, rpcServer string, keysFilePath stri
 		maxProcessedAddressesForLog: 0,
 	}
 
-	log.Infof("Read, syncing the wallet...")
+	log.Infof("Read, syncing the wallet with %#v...", rpcClient)
 	spawn("serverInstance.sync", func() {
 		err := serverInstance.sync()
 		if err != nil {

@@ -143,7 +143,7 @@ func testEstimateMassIncreaseForSignaturesSetUp(t *testing.T, consensusConfig *c
 		[]*libkaspawallet.Payment{{
 			Address: address,
 			Amount:  10,
-		}}, selectedUTXOs)
+		}}, selectedUTXOs, "")
 	if err != nil {
 		t.Fatalf("CreateUnsignedTransactions: %+v", err)
 	}

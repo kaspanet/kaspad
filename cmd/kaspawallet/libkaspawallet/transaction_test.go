@@ -2,9 +2,10 @@ package libkaspawallet_test
 
 import (
 	"fmt"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
 	"strings"
 	"testing"
+
+	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
 
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/libkaspawallet"
 	"github.com/kaspanet/kaspad/domain/consensus"
@@ -106,7 +107,7 @@ func TestMultisig(t *testing.T) {
 				[]*libkaspawallet.Payment{{
 					Address: address,
 					Amount:  10,
-				}}, selectedUTXOs)
+				}}, selectedUTXOs, "")
 			if err != nil {
 				t.Fatalf("CreateUnsignedTransactions: %+v", err)
 			}
@@ -267,7 +268,7 @@ func TestP2PK(t *testing.T) {
 				[]*libkaspawallet.Payment{{
 					Address: address,
 					Amount:  10,
-				}}, selectedUTXOs)
+				}}, selectedUTXOs, "")
 			if err != nil {
 				t.Fatalf("CreateUnsignedTransactions: %+v", err)
 			}
@@ -429,7 +430,7 @@ func TestMaxSompi(t *testing.T) {
 			[]*libkaspawallet.Payment{{
 				Address: address,
 				Amount:  10,
-			}}, selectedUTXOsForTxWithLargeInputAmount)
+			}}, selectedUTXOsForTxWithLargeInputAmount, "")
 		if err != nil {
 			t.Fatalf("CreateUnsignedTransactions: %+v", err)
 		}
@@ -480,7 +481,7 @@ func TestMaxSompi(t *testing.T) {
 			[]*libkaspawallet.Payment{{
 				Address: address,
 				Amount:  22e6 * constants.SompiPerKaspa,
-			}}, selectedUTXOsForTxWithLargeInputAndOutputAmount)
+			}}, selectedUTXOsForTxWithLargeInputAndOutputAmount, "")
 		if err != nil {
 			t.Fatalf("CreateUnsignedTransactions: %+v", err)
 		}

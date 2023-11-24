@@ -45,10 +45,15 @@ func send(conf *sendConfig) error {
 			Amount:                   sendAmountSompi,
 			IsSendAll:                conf.IsSendAll,
 			UseExistingChangeAddress: conf.UseExistingChangeAddress,
+			Payload:                  conf.Payload,
 		})
 	if err != nil {
 		return err
 	}
+
+	fmt.Printf("tx-request: %+v", createUnsignedTransactionsResponse.UnsignedTransactions)
+
+	// return errors.New("\ntest send")
 
 	if len(conf.Password) == 0 {
 		conf.Password = keys.GetPassword("Password:")

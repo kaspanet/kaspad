@@ -97,7 +97,7 @@ func (s *server) mergeTransaction(
 	}
 
 	mergeTransactionBytes, err := libkaspawallet.CreateUnsignedTransaction(s.keysFile.ExtendedPublicKeys,
-		s.keysFile.MinimumSignatures, payments, utxos)
+		s.keysFile.MinimumSignatures, payments, utxos, "")
 	if err != nil {
 		return nil, err
 	}
@@ -213,7 +213,7 @@ func (s *server) createSplitTransaction(transaction *serialization.PartiallySign
 		[]*libkaspawallet.Payment{{
 			Address: changeAddress,
 			Amount:  totalSompi,
-		}}, selectedUTXOs)
+		}}, selectedUTXOs, "")
 	if err != nil {
 		return nil, err
 	}

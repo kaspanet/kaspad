@@ -1,11 +1,12 @@
 package libkaspawallet
 
 import (
+	"encoding/hex"
+
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/libkaspawallet/bip32"
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/libkaspawallet/serialization"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/subnetworks"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/txscript"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/pkg/errors"
@@ -31,10 +32,10 @@ func CreateUnsignedTransaction(
 	extendedPublicKeys []string,
 	minimumSignatures uint32,
 	payments []*Payment,
-	selectedUTXOs []*UTXO) ([]byte, error) {
+	selectedUTXOs []*UTXO, payload string) ([]byte, error) {
 
 	sortPublicKeys(extendedPublicKeys)
-	unsignedTransaction, err := createUnsignedTransaction(extendedPublicKeys, minimumSignatures, payments, selectedUTXOs)
+	unsignedTransaction, err := createUnsignedTransaction(extendedPublicKeys, minimumSignatures, payments, selectedUTXOs, payload)
 	if err != nil {
 		return nil, err
 	}
@@ -98,7 +99,7 @@ func createUnsignedTransaction(
 	extendedPublicKeys []string,
 	minimumSignatures uint32,
 	payments []*Payment,
-	selectedUTXOs []*UTXO) (*serialization.PartiallySignedTransaction, error) {
+	selectedUTXOs []*UTXO, payload string) (*serialization.PartiallySignedTransaction, error) {
 
 	inputs := make([]*externalapi.DomainTransactionInput, len(selectedUTXOs))
 	partiallySignedInputs := make([]*serialization.PartiallySignedInput, len(selectedUTXOs))
@@ -145,14 +146,21 @@ func createUnsignedTransaction(
 		}
 	}
 
+	pay_bs, err := hex.DecodeString(payload)
+	if err != nil {
+		return nil, err
+	}
+
 	domainTransaction := &externalapi.DomainTransaction{
-		Version:      constants.MaxTransactionVersion,
-		Inputs:       inputs,
-		Outputs:      outputs,
-		LockTime:     0,
-		SubnetworkID: subnetworks.SubnetworkIDNative,
+		Version:  constants.MaxTransactionVersion,
+		Inputs:   inputs,
+		Outputs:  outputs,
+		LockTime: 0,
+		// SubnetworkID: subnetworks.SubnetworkIDNative,
+		SubnetworkID: externalapi.DomainSubnetworkID{3},
 		Gas:          0,
-		Payload:      nil,
+		// Payload:      nil,
+		Payload: pay_bs,
 	}
 
 	return &serialization.PartiallySignedTransaction{

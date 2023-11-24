@@ -1,0 +1,16 @@
+# https://taskfile.dev
+version: "3"
+tasks:
+  run:
+    cmds:
+      - kaspad --rpclisten=":26110" --listen=":26111"
+
+  build: go install . ./cmd/...
+  build-wallet: go install ./cmd/kaspawallet
+  run-wallet:
+    deps:
+      - build-wallet
+    cmds:
+      - kaspawallet start-daemon
+
+  send: kaspawallet send -t kaspa:qq2fjsr65u7hmnarff53hk0fd9d9jcf4388qx4j0t3g4hy3kzsc9sehjjhdt6 -v 0.001 -s --payload "6869" -p test
