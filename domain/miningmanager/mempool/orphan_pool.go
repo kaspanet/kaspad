@@ -218,6 +218,7 @@ func (op *orphansPool) unorphanTransaction(transaction *model.OrphanTransaction)
 		op.mempool.transactionsPool.getParentTransactionsInPool(transaction.Transaction()),
 		false,
 		virtualDAAScore,
+		0,
 	)
 	err = op.mempool.transactionsPool.addMempoolTransaction(mempoolTransaction)
 	if err != nil {

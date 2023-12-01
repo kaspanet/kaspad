@@ -5,6 +5,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/utils/merkle"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/transactionhelper"
 	"github.com/kaspanet/kaspad/domain/consensusreference"
+	"github.com/kaspanet/kaspad/domain/miningmanager/mempool/model"
 	"github.com/kaspanet/kaspad/util/mstime"
 	"math"
 	"sort"
@@ -22,6 +23,7 @@ type candidateTx struct {
 	*consensusexternalapi.DomainTransaction
 	txValue  float64
 	gasLimit uint64
+	mass     uint64
 
 	p     float64
 	start float64
@@ -41,11 +43,11 @@ type blockTemplateBuilder struct {
 
 // New creates a new blockTemplateBuilder
 func New(consensusReference consensusreference.ConsensusReference, mempool miningmanagerapi.Mempool,
-	blockMaxMass uint64, coinbasePayloadScriptPublicKeyMaxLength uint8) miningmanagerapi.BlockTemplateBuilder {
+	blockMaxMass uint64, coinbasePayloadScriptPublicKeyMaxLength uint8, dustConst uint64) miningmanagerapi.BlockTemplateBuilder {
 	return &blockTemplateBuilder{
 		consensusReference: consensusReference,
 		mempool:            mempool,
-		policy:             policy{BlockMaxMass: blockMaxMass},
+		policy:             policy{BlockMaxMass: blockMaxMass, DustConst: dustConst},
 
 		coinbasePayloadScriptPublicKeyMaxLength: coinbasePayloadScriptPublicKeyMaxLength,
 	}
@@ -121,15 +123,18 @@ func (btb *blockTemplateBuilder) BuildBlockTemplate(
 	mempoolTransactions := btb.mempool.BlockCandidateTransactions()
 	candidateTxs := make([]*candidateTx, 0, len(mempoolTransactions))
 	for _, tx := range mempoolTransactions {
-		// Calculate the tx value
+		if tx.Mass() == 0 {
+			panic(errors.Errorf("BuildBlockTemplate expects transactions with populated mass: %s has 0 mass", tx.TransactionID()))
+		}
 		gasLimit := uint64(0)
-		if !subnetworks.IsBuiltInOrNative(tx.SubnetworkID) {
+		if !subnetworks.IsBuiltInOrNative(tx.Transaction().SubnetworkID) {
 			panic("We currently don't support non native subnetworks")
 		}
 		candidateTxs = append(candidateTxs, &candidateTx{
-			DomainTransaction: tx,
+			DomainTransaction: tx.Transaction(),
 			txValue:           btb.calcTxValue(tx),
 			gasLimit:          gasLimit,
+			mass:              tx.Mass(),
 		})
 	}
 
@@ -208,15 +213,15 @@ func (btb *blockTemplateBuilder) ModifyBlockTemplate(newCoinbaseData *consensuse
 // calcTxValue calculates a value to be used in transaction selection.
 // The higher the number the more likely it is that the transaction will be
 // included in the block.
-func (btb *blockTemplateBuilder) calcTxValue(tx *consensusexternalapi.DomainTransaction) float64 {
+func (btb *blockTemplateBuilder) calcTxValue(tx *model.MempoolTransaction) float64 {
 	massLimit := btb.policy.BlockMaxMass
 
-	mass := tx.Mass
-	fee := tx.Fee
-	if subnetworks.IsBuiltInOrNative(tx.SubnetworkID) {
+	mass := tx.Mass()
+	fee := tx.Transaction().Fee
+	if subnetworks.IsBuiltInOrNative(tx.Transaction().SubnetworkID) {
 		return float64(fee) / (float64(mass) / float64(massLimit))
 	}
 	// TODO: Replace with real gas once implemented
 	gasLimit := uint64(math.MaxUint64)
-	return float64(fee) / (float64(mass)/float64(massLimit) + float64(tx.Gas)/float64(gasLimit))
+	return float64(fee) / (float64(mass)/float64(massLimit) + float64(tx.Transaction().Gas)/float64(gasLimit))
 }

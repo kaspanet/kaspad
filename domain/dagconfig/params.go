@@ -188,6 +188,8 @@ type Params struct {
 	MaxBlockLevel int
 
 	MergeDepth uint64
+
+	DustConst uint64
 }
 
 // NormalizeRPCServerAddress returns addr with the current network default
@@ -288,6 +290,7 @@ var MainnetParams = Params{
 	// This means that any block that has a level lower or equal to genesis will be level 0.
 	MaxBlockLevel: 225,
 	MergeDepth:    defaultMergeDepth,
+	DustConst:     defaultDustConst,
 }
 
 // TestnetParams defines the network parameters for the test Kaspa network.
@@ -354,6 +357,7 @@ var TestnetParams = Params{
 
 	MaxBlockLevel: 250,
 	MergeDepth:    defaultMergeDepth,
+	DustConst:     defaultDustConst,
 }
 
 // SimnetParams defines the network parameters for the simulation test Kaspa
@@ -420,6 +424,7 @@ var SimnetParams = Params{
 
 	MaxBlockLevel: 250,
 	MergeDepth:    defaultMergeDepth,
+	DustConst:     defaultDustConst,
 }
 
 // DevnetParams defines the network parameters for the development Kaspa network.
@@ -482,6 +487,7 @@ var DevnetParams = Params{
 
 	MaxBlockLevel: 250,
 	MergeDepth:    defaultMergeDepth,
+	DustConst:     defaultDustConst,
 }
 
 // ErrDuplicateNet describes an error where the parameters for a Kaspa

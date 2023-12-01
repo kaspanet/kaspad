@@ -101,8 +101,8 @@ func (btb *blockTemplateBuilder) selectTransactions(candidateTxs []*candidateTx)
 
 		// Enforce maximum transaction mass per block. Also check
 		// for overflow.
-		if txsForBlockTemplate.totalMass+selectedTx.Mass < txsForBlockTemplate.totalMass ||
-			txsForBlockTemplate.totalMass+selectedTx.Mass > btb.policy.BlockMaxMass {
+		if txsForBlockTemplate.totalMass+selectedTx.mass < txsForBlockTemplate.totalMass ||
+			txsForBlockTemplate.totalMass+selectedTx.mass > btb.policy.BlockMaxMass {
 			log.Tracef("Tx %s would exceed the max block mass. "+
 				"As such, stopping.", consensushashing.TransactionID(tx))
 			break
@@ -143,11 +143,11 @@ func (btb *blockTemplateBuilder) selectTransactions(candidateTxs []*candidateTx)
 		// save the masses, fees, and signature operation counts to the
 		// result.
 		selectedTxs = append(selectedTxs, selectedTx)
-		txsForBlockTemplate.totalMass += selectedTx.Mass
+		txsForBlockTemplate.totalMass += selectedTx.mass
 		txsForBlockTemplate.totalFees += selectedTx.Fee
 
 		log.Tracef("Adding tx %s (feePerMegaGram %d)",
-			consensushashing.TransactionID(tx), selectedTx.Fee*1e6/selectedTx.Mass)
+			consensushashing.TransactionID(tx), selectedTx.Fee*1e6/selectedTx.mass)
 
 		markCandidateTxForDeletion(selectedTx)
 	}
@@ -157,7 +157,7 @@ func (btb *blockTemplateBuilder) selectTransactions(candidateTxs []*candidateTx)
 	})
 	for _, selectedTx := range selectedTxs {
 		txsForBlockTemplate.selectedTxs = append(txsForBlockTemplate.selectedTxs, selectedTx.DomainTransaction)
-		txsForBlockTemplate.txMasses = append(txsForBlockTemplate.txMasses, selectedTx.Mass)
+		txsForBlockTemplate.txMasses = append(txsForBlockTemplate.txMasses, selectedTx.mass)
 		txsForBlockTemplate.txFees = append(txsForBlockTemplate.txFees, selectedTx.Fee)
 	}
 	return txsForBlockTemplate

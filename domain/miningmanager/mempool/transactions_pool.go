@@ -41,7 +41,7 @@ func (tp *transactionsPool) addTransaction(transaction *externalapi.DomainTransa
 	}
 
 	mempoolTransaction := model.NewMempoolTransaction(
-		transaction, parentTransactionsInPool, isHighPriority, virtualDAAScore)
+		transaction, parentTransactionsInPool, isHighPriority, virtualDAAScore, tp.calcMass(transaction))
 
 	err = tp.addMempoolTransaction(mempoolTransaction)
 	if err != nil {
@@ -49,6 +49,27 @@ func (tp *transactionsPool) addTransaction(transaction *externalapi.DomainTransa
 	}
 
 	return mempoolTransaction, nil
+}
+
+func (tp *transactionsPool) calcMass(tx *externalapi.DomainTransaction) uint64 {
+	// TODO: Insert link for relevant KIP
+	if tx.Mass == 0 {
+		panic(errors.Errorf("tx %s is expected to have a populated mass", consensushashing.TransactionID(tx)))
+	}
+
+	addedMass := uint64(0)
+	sumOutsValue := uint64(0)
+	for _, output := range tx.Outputs {
+		addedMass += tp.mempool.config.DustConst / output.Value
+		sumOutsValue += output.Value
+	}
+
+	reducedMass := uint64(len(tx.Inputs)*len(tx.Inputs)) * tp.mempool.config.DustConst / sumOutsValue
+	if addedMass < reducedMass {
+		return tx.Mass
+	}
+
+	return tx.Mass + addedMass - reducedMass
 }
 
 func (tp *transactionsPool) addMempoolTransaction(transaction *model.MempoolTransaction) error {
@@ -131,12 +152,12 @@ func (tp *transactionsPool) expireOldTransactions() error {
 	return nil
 }
 
-func (tp *transactionsPool) allReadyTransactions() []*externalapi.DomainTransaction {
-	result := []*externalapi.DomainTransaction{}
+func (tp *transactionsPool) allReadyTransactions() []*model.MempoolTransaction {
+	result := []*model.MempoolTransaction{}
 
 	for _, mempoolTransaction := range tp.allTransactions {
 		if len(mempoolTransaction.ParentTransactionsInPool()) == 0 {
-			result = append(result, mempoolTransaction.Transaction().Clone()) //this pointer leaves the mempool, and gets its utxo set to nil, hence we clone.
+			result = append(result, mempoolTransaction.Clone()) //this pointer leaves the mempool, and gets its utxo set to nil, hence we clone.
 		}
 	}
 

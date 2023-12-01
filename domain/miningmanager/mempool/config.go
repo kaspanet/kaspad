@@ -33,6 +33,7 @@ const (
 	// as consensus.
 	defaultMinimumStandardTransactionVersion = constants.MaxTransactionVersion
 	defaultMaximumStandardTransactionVersion = constants.MaxTransactionVersion
+	defaultDustConst                         = 1e12 // TODO: Determine real value
 )
 
 // Config represents a mempool configuration
@@ -50,6 +51,7 @@ type Config struct {
 	MinimumRelayTransactionFee            util.Amount
 	MinimumStandardTransactionVersion     uint16
 	MaximumStandardTransactionVersion     uint16
+	DustConst                             uint64
 }
 
 // DefaultConfig returns the default mempool configuration
@@ -70,5 +72,6 @@ func DefaultConfig(dagParams *dagconfig.Params) *Config {
 		MinimumRelayTransactionFee:            defaultMinimumRelayTransactionFee,
 		MinimumStandardTransactionVersion:     defaultMinimumStandardTransactionVersion,
 		MaximumStandardTransactionVersion:     defaultMaximumStandardTransactionVersion,
+		DustConst:                             defaultDustConst,
 	}
 }

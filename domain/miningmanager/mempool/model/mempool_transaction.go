@@ -11,6 +11,7 @@ type MempoolTransaction struct {
 	parentTransactionsInPool IDToTransactionMap
 	isHighPriority           bool
 	addedAtDAAScore          uint64
+	mass                     uint64
 }
 
 // NewMempoolTransaction constructs a new MempoolTransaction
@@ -19,12 +20,14 @@ func NewMempoolTransaction(
 	parentTransactionsInPool IDToTransactionMap,
 	isHighPriority bool,
 	addedAtDAAScore uint64,
+	mass uint64,
 ) *MempoolTransaction {
 	return &MempoolTransaction{
 		transaction:              transaction,
 		parentTransactionsInPool: parentTransactionsInPool,
 		isHighPriority:           isHighPriority,
 		addedAtDAAScore:          addedAtDAAScore,
+		mass:                     mass,
 	}
 }
 
@@ -56,4 +59,18 @@ func (mt *MempoolTransaction) IsHighPriority() bool {
 // AddedAtDAAScore returns the virtual DAA score at which this MempoolTransaction was added to the mempool
 func (mt *MempoolTransaction) AddedAtDAAScore() uint64 {
 	return mt.addedAtDAAScore
+}
+
+func (mt *MempoolTransaction) Mass() uint64 {
+	return mt.mass
+}
+
+func (mt *MempoolTransaction) Clone() *MempoolTransaction {
+	return &MempoolTransaction{
+		transaction:              mt.transaction.Clone(),
+		parentTransactionsInPool: mt.parentTransactionsInPool,
+		isHighPriority:           mt.isHighPriority,
+		addedAtDAAScore:          mt.addedAtDAAScore,
+		mass:                     mt.mass,
+	}
 }
