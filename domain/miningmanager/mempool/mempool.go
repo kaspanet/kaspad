@@ -1,6 +1,7 @@
 package mempool
 
 import (
+	"github.com/kaspanet/kaspad/domain/miningmanager/mempool/model"
 	"sync"
 
 	"github.com/kaspanet/kaspad/domain/consensusreference"
@@ -137,7 +138,7 @@ func (mp *mempool) HandleNewBlockTransactions(transactions []*externalapi.Domain
 	return mp.handleNewBlockTransactions(transactions)
 }
 
-func (mp *mempool) BlockCandidateTransactions() []*externalapi.DomainTransaction {
+func (mp *mempool) BlockCandidateTransactions() []*model.MempoolTransaction {
 	mp.mtx.RLock()
 	defer mp.mtx.RUnlock()
 
