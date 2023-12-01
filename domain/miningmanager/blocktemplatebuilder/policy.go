@@ -11,4 +11,6 @@ type policy struct {
 	// BlockMaxMass is the maximum block mass to be used when generating a
 	// block template.
 	BlockMaxMass uint64
+
+	DustConst uint64
 }

@@ -22,6 +22,7 @@ type candidateTx struct {
 	*consensusexternalapi.DomainTransaction
 	txValue  float64
 	gasLimit uint64
+	mass     uint64
 
 	p     float64
 	start float64
@@ -41,11 +42,11 @@ type blockTemplateBuilder struct {
 
 // New creates a new blockTemplateBuilder
 func New(consensusReference consensusreference.ConsensusReference, mempool miningmanagerapi.Mempool,
-	blockMaxMass uint64, coinbasePayloadScriptPublicKeyMaxLength uint8) miningmanagerapi.BlockTemplateBuilder {
+	blockMaxMass uint64, coinbasePayloadScriptPublicKeyMaxLength uint8, dustConst uint64) miningmanagerapi.BlockTemplateBuilder {
 	return &blockTemplateBuilder{
 		consensusReference: consensusReference,
 		mempool:            mempool,
-		policy:             policy{BlockMaxMass: blockMaxMass},
+		policy:             policy{BlockMaxMass: blockMaxMass, DustConst: dustConst},
 
 		coinbasePayloadScriptPublicKeyMaxLength: coinbasePayloadScriptPublicKeyMaxLength,
 	}
@@ -130,6 +131,7 @@ func (btb *blockTemplateBuilder) BuildBlockTemplate(
 			DomainTransaction: tx,
 			txValue:           btb.calcTxValue(tx),
 			gasLimit:          gasLimit,
+			mass:              btb.calcMass(tx),
 		})
 	}
 
@@ -170,6 +172,23 @@ func (btb *blockTemplateBuilder) BuildBlockTemplate(
 		len(blockTemplate.Block.Transactions), blockTxs.totalFees, blockTxs.totalMass, difficulty.CompactToBig(blockTemplate.Block.Header.Bits()))
 
 	return blockTemplate, nil
+}
+
+func (btb *blockTemplateBuilder) calcMass(tx *consensusexternalapi.DomainTransaction) uint64 {
+	// TODO: Insert link for relevant KIP
+	addedMass := uint64(0)
+	sumOutsValue := uint64(0)
+	for _, output := range tx.Outputs {
+		addedMass += btb.policy.DustConst / output.Value
+		sumOutsValue += output.Value
+	}
+
+	reducedMass := uint64(len(tx.Inputs)*len(tx.Inputs)) * btb.policy.DustConst / sumOutsValue
+	if addedMass < reducedMass {
+		return tx.Mass
+	}
+
+	return tx.Mass + addedMass - reducedMass
 }
 
 // ModifyBlockTemplate modifies an existing block template to the requested coinbase data and updates the timestamp

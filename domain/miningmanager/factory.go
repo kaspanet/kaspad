@@ -21,7 +21,7 @@ func (f *factory) NewMiningManager(consensusReference consensusreference.Consens
 	mempoolConfig *mempoolpkg.Config) MiningManager {
 
 	mempool := mempoolpkg.New(mempoolConfig, consensusReference)
-	blockTemplateBuilder := blocktemplatebuilder.New(consensusReference, mempool, params.MaxBlockMass, params.CoinbasePayloadScriptPublicKeyMaxLength)
+	blockTemplateBuilder := blocktemplatebuilder.New(consensusReference, mempool, params.MaxBlockMass, params.CoinbasePayloadScriptPublicKeyMaxLength, params.DustConst)
 
 	return &miningManager{
 		consensusReference:   consensusReference,

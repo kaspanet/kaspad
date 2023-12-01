@@ -84,4 +84,6 @@ const (
 	defaultDeflationaryPhaseDaaScore = 15778800 - 259200
 
 	defaultMergeDepth = 3600
+
+	defaultDustConst = 1e12 // TODO: Determine the right value
 )
