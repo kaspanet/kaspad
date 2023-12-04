@@ -28,14 +28,14 @@ func rawTxInSignature(extendedKey *bip32.ExtendedKey, tx *externalapi.DomainTran
 }
 
 // Sign signs the transaction with the given private keys
-func Sign(params *dagconfig.Params, mnemonics []string, serializedPSTx []byte, ecdsa bool) ([]byte, error) {
+func Sign(params *dagconfig.Params, mnemonics []string, passphrases []string, serializedPSTx []byte, ecdsa bool) ([]byte, error) {
 	partiallySignedTransaction, err := serialization.DeserializePartiallySignedTransaction(serializedPSTx)
 	if err != nil {
 		return nil, err
 	}
 
-	for _, mnemonic := range mnemonics {
-		err = sign(params, mnemonic, partiallySignedTransaction, ecdsa)
+	for i, mnemonic := range mnemonics {
+		err = sign(params, mnemonic, passphrases[i], partiallySignedTransaction, ecdsa)
 		if err != nil {
 			return nil, err
 		}
@@ -43,7 +43,7 @@ func Sign(params *dagconfig.Params, mnemonics []string, serializedPSTx []byte, e
 	return serialization.SerializePartiallySignedTransaction(partiallySignedTransaction)
 }
 
-func sign(params *dagconfig.Params, mnemonic string, partiallySignedTransaction *serialization.PartiallySignedTransaction, ecdsa bool) error {
+func sign(params *dagconfig.Params, mnemonic string, passphrase string, partiallySignedTransaction *serialization.PartiallySignedTransaction, ecdsa bool) error {
 	if isTransactionFullySigned(partiallySignedTransaction) {
 		return nil
 	}
@@ -64,7 +64,7 @@ func sign(params *dagconfig.Params, mnemonic string, partiallySignedTransaction 
 	for i, partiallySignedInput := range partiallySignedTransaction.PartiallySignedInputs {
 		isMultisig := len(partiallySignedInput.PubKeySignaturePairs) > 1
 		path := defaultPath(isMultisig)
-		extendedKey, err := extendedKeyFromMnemonicAndPath(mnemonic, path, params)
+		extendedKey, err := extendedKeyFromMnemonicAndPath(mnemonic, path, passphrase, params)
 		if err != nil {
 			return err
 		}

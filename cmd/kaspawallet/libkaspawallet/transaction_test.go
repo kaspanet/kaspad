@@ -125,7 +125,7 @@ func TestMultisig(t *testing.T) {
 				t.Fatal("Unexpectedly succeed to extract a valid transaction out of unsigned transaction")
 			}
 
-			signedTxStep1, err := libkaspawallet.Sign(params, mnemonics[:1], unsignedTransaction, ecdsa)
+			signedTxStep1, err := libkaspawallet.Sign(params, mnemonics[:1], []string{""}, unsignedTransaction, ecdsa)
 			if err != nil {
 				t.Fatalf("Sign: %+v", err)
 			}
@@ -139,7 +139,7 @@ func TestMultisig(t *testing.T) {
 				t.Fatalf("Transaction is not expected to be fully signed")
 			}
 
-			signedTxStep2, err := libkaspawallet.Sign(params, mnemonics[1:2], signedTxStep1, ecdsa)
+			signedTxStep2, err := libkaspawallet.Sign(params, mnemonics[1:2], []string{""}, signedTxStep1, ecdsa)
 			if err != nil {
 				t.Fatalf("Sign: %+v", err)
 			}
@@ -149,7 +149,7 @@ func TestMultisig(t *testing.T) {
 				t.Fatalf("ExtractTransaction: %+v", err)
 			}
 
-			signedTxOneStep, err := libkaspawallet.Sign(params, mnemonics[:2], unsignedTransaction, ecdsa)
+			signedTxOneStep, err := libkaspawallet.Sign(params, mnemonics[:2], []string{""}, unsignedTransaction, ecdsa)
 			if err != nil {
 				t.Fatalf("Sign: %+v", err)
 			}
@@ -286,7 +286,7 @@ func TestP2PK(t *testing.T) {
 				t.Fatal("Unexpectedly succeed to extract a valid transaction out of unsigned transaction")
 			}
 
-			signedTx, err := libkaspawallet.Sign(params, mnemonics, unsignedTransaction, ecdsa)
+			signedTx, err := libkaspawallet.Sign(params, mnemonics, []string{""}, unsignedTransaction, ecdsa)
 			if err != nil {
 				t.Fatalf("Sign: %+v", err)
 			}
@@ -434,7 +434,7 @@ func TestMaxSompi(t *testing.T) {
 			t.Fatalf("CreateUnsignedTransactions: %+v", err)
 		}
 
-		signedTxWithLargeInputAmount, err := libkaspawallet.Sign(params, mnemonics, unsignedTxWithLargeInputAmount, false)
+		signedTxWithLargeInputAmount, err := libkaspawallet.Sign(params, mnemonics, []string{""}, unsignedTxWithLargeInputAmount, false)
 		if err != nil {
 			t.Fatalf("Sign: %+v", err)
 		}
@@ -485,7 +485,7 @@ func TestMaxSompi(t *testing.T) {
 			t.Fatalf("CreateUnsignedTransactions: %+v", err)
 		}
 
-		signedTxWithLargeInputAndOutputAmount, err := libkaspawallet.Sign(params, mnemonics, unsignedTxWithLargeInputAndOutputAmount, false)
+		signedTxWithLargeInputAndOutputAmount, err := libkaspawallet.Sign(params, mnemonics, []string{""}, unsignedTxWithLargeInputAndOutputAmount, false)
 		if err != nil {
 			t.Fatalf("Sign: %+v", err)
 		}
