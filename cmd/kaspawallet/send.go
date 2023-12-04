@@ -64,7 +64,8 @@ func send(conf *sendConfig) error {
 
 	signedTransactions := make([][]byte, len(createUnsignedTransactionsResponse.UnsignedTransactions))
 	for i, unsignedTransaction := range createUnsignedTransactionsResponse.UnsignedTransactions {
-		signedTransaction, err := libkaspawallet.Sign(conf.NetParams(), mnemonics, unsignedTransaction, keysFile.ECDSA)
+		passphrase := keys.GetPassphrase("Passphrase:")
+		signedTransaction, err := libkaspawallet.Sign(conf.NetParams(), mnemonics, []string{passphrase}, unsignedTransaction, keysFile.ECDSA)
 		if err != nil {
 			return err
 		}

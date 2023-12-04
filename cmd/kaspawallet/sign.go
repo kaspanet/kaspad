@@ -47,8 +47,9 @@ func sign(conf *signConfig) error {
 
 	updatedPartiallySignedTransactions := make([][]byte, len(partiallySignedTransactions))
 	for i, partiallySignedTransaction := range partiallySignedTransactions {
+		passphrase := keys.GetPassphrase("Passphrase:")
 		updatedPartiallySignedTransactions[i], err =
-			libkaspawallet.Sign(conf.NetParams(), privateKeys, partiallySignedTransaction, keysFile.ECDSA)
+			libkaspawallet.Sign(conf.NetParams(), privateKeys, []string{passphrase}, partiallySignedTransaction, keysFile.ECDSA)
 		if err != nil {
 			return err
 		}
