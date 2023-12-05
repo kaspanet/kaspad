@@ -577,6 +577,76 @@ func TestRevalidateHighPriorityTransactions(t *testing.T) {
 	})
 }
 
+func TestRevalidateHighPriorityTransactionsWithChain(t *testing.T) {
+	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
+		consensusConfig.BlockCoinbaseMaturity = 0
+		factory := consensus.NewFactory()
+		tc, teardown, err := factory.NewTestConsensus(consensusConfig, "TestRevalidateHighPriorityTransactions")
+		if err != nil {
+			t.Fatalf("Failed setting up TestConsensus: %+v", err)
+		}
+		defer teardown(false)
+
+		miningFactory := miningmanager.NewFactory()
+		mempoolConfig := mempool.DefaultConfig(&consensusConfig.Params)
+		tcAsConsensus := tc.(externalapi.Consensus)
+		tcAsConsensusPointer := &tcAsConsensus
+		consensusReference := consensusreference.NewConsensusReference(&tcAsConsensusPointer)
+		miningManager := miningFactory.NewMiningManager(consensusReference, &consensusConfig.Params, mempoolConfig)
+
+		const chainSize = 10
+		chain, err := createTxChain(tc, chainSize)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		for i, transaction := range chain {
+			t.Logf("chain %d %s", i, consensushashing.TransactionID(transaction))
+		}
+
+		_, err = miningManager.ValidateAndInsertTransaction(chain[0], true, false)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		blockHash, _, err := tc.AddBlockOnTips(nil, []*externalapi.DomainTransaction{chain[0].Clone()})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		block, _, err := tc.GetBlock(blockHash)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		_, err = miningManager.HandleNewBlockTransactions(block.Transactions)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		for _, transaction := range chain[1:] {
+			_, err = miningManager.ValidateAndInsertTransaction(transaction, true, false)
+			if err != nil {
+				t.Fatal(err)
+			}
+		}
+
+		_, _, err = tc.AddBlockOnTips(nil, []*externalapi.DomainTransaction{chain[1].Clone()})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		revalidated, err := miningManager.RevalidateHighPriorityTransactions()
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if len(revalidated) != chainSize-2 {
+			t.Fatalf("expected %d transactions to revalidate but instead only %d revalidated", chainSize-2, len(revalidated))
+		}
+	})
+}
+
 // TestModifyBlockTemplate verifies that modifying a block template changes coinbase data correctly.
 func TestModifyBlockTemplate(t *testing.T) {
 	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
@@ -904,40 +974,58 @@ func createArraysOfParentAndChildrenTransactions(tc testapi.TestConsensus) ([]*e
 func createParentAndChildrenTransactions(tc testapi.TestConsensus) (txParent *externalapi.DomainTransaction,
 	txChild *externalapi.DomainTransaction, err error) {
 
+	chain, err := createTxChain(tc, 2)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return chain[0], chain[1], nil
+}
+
+func createTxChain(tc testapi.TestConsensus, numTxs int) ([]*externalapi.DomainTransaction, error) {
 	// We will add two blocks by consensus before the parent transactions, in order to fund the parent transactions.
 	tips, err := tc.Tips()
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	_, _, err = tc.AddBlock(tips, nil, nil)
 	if err != nil {
-		return nil, nil, errors.Wrapf(err, "AddBlock: %v", err)
+		return nil, errors.Wrapf(err, "AddBlock: %v", err)
 	}
 
 	tips, err = tc.Tips()
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	fundingBlockHashForParent, _, err := tc.AddBlock(tips, nil, nil)
 	if err != nil {
-		return nil, nil, errors.Wrap(err, "AddBlock: ")
+		return nil, errors.Wrap(err, "AddBlock: ")
 	}
 	fundingBlockForParent, _, err := tc.GetBlock(fundingBlockHashForParent)
 	if err != nil {
-		return nil, nil, errors.Wrap(err, "GetBlock: ")
+		return nil, errors.Wrap(err, "GetBlock: ")
 	}
 	fundingTransactionForParent := fundingBlockForParent.Transactions[transactionhelper.CoinbaseTransactionIndex]
-	txParent, err = testutils.CreateTransaction(fundingTransactionForParent, 1000)
+
+	transactions := make([]*externalapi.DomainTransaction, numTxs)
+	transactions[0], err = testutils.CreateTransaction(fundingTransactionForParent, 1000)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
-	txChild, err = testutils.CreateTransaction(txParent, 1000)
-	if err != nil {
-		return nil, nil, err
+
+	txParent := transactions[0]
+	for i := 1; i < numTxs; i++ {
+		transactions[i], err = testutils.CreateTransaction(txParent, 1000)
+		if err != nil {
+			return nil, err
+		}
+
+		txParent = transactions[i]
 	}
-	return txParent, txChild, nil
+
+	return transactions, nil
 }
 
 func createChildAndParentTxsAndAddParentToConsensus(tc testapi.TestConsensus) (*externalapi.DomainTransaction, error) {

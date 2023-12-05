@@ -9,7 +9,6 @@ import (
 func (mp *mempool) revalidateHighPriorityTransactions() ([]*externalapi.DomainTransaction, error) {
 	type txNode struct {
 		children          map[externalapi.DomainTransactionID]struct{}
-		isInvalid         bool
 		nonVisitedParents int
 		tx                *model.MempoolTransaction
 		visited           bool
@@ -31,7 +30,6 @@ func (mp *mempool) revalidateHighPriorityTransactions() ([]*externalapi.DomainTr
 
 		node := &txNode{
 			children:          make(map[externalapi.DomainTransactionID]struct{}),
-			isInvalid:         false,
 			nonVisitedParents: 0,
 			tx:                mp.transactionsPool.highPriorityTransactions[txID],
 		}
@@ -41,13 +39,7 @@ func (mp *mempool) revalidateHighPriorityTransactions() ([]*externalapi.DomainTr
 
 	queue := make([]*txNode, 0, len(mp.transactionsPool.highPriorityTransactions))
 	for id, transaction := range mp.transactionsPool.highPriorityTransactions {
-		node := &txNode{
-			children:          make(map[externalapi.DomainTransactionID]struct{}),
-			isInvalid:         false,
-			nonVisitedParents: 0,
-			tx:                transaction,
-		}
-		txDAG[id] = node
+		node := maybeAddNode(id)
 
 		parents := make(map[externalapi.DomainTransactionID]struct{})
 		for _, input := range transaction.Transaction().Inputs {
@@ -76,32 +68,11 @@ func (mp *mempool) revalidateHighPriorityTransactions() ([]*externalapi.DomainTr
 			continue
 		}
 		node.visited = true
-		if node.isInvalid {
-			continue
-		}
 
 		transaction := node.tx
 		isValid, err := mp.revalidateTransaction(transaction)
 		if err != nil {
 			return nil, err
-		}
-
-		if !isValid {
-			// Invalidate the offspring of this transaction
-			invalidateQueue := []*txNode{node}
-			for len(invalidateQueue) > 0 {
-				var current *txNode
-				current, invalidateQueue = invalidateQueue[0], invalidateQueue[1:]
-
-				if current.isInvalid {
-					continue
-				}
-				current.isInvalid = true
-				for child := range current.children {
-					invalidateQueue = append(invalidateQueue, txDAG[child])
-				}
-			}
-			continue
 		}
 
 		for child := range node.children {
@@ -112,7 +83,9 @@ func (mp *mempool) revalidateHighPriorityTransactions() ([]*externalapi.DomainTr
 			}
 		}
 
-		validTransactions = append(validTransactions, transaction.Transaction().Clone())
+		if isValid {
+			validTransactions = append(validTransactions, transaction.Transaction().Clone())
+		}
 	}
 
 	return validTransactions, nil
@@ -132,6 +105,11 @@ func (mp *mempool) revalidateTransaction(transaction *model.MempoolTransaction) 
 			return false, err
 		}
 		return false, nil
+	}
+
+	_, err = mp.validateAndInsertTransaction(transaction.Transaction(), false, false)
+	if err != nil {
+		return false, err
 	}
 
 	return true, nil
