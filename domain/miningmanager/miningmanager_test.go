@@ -600,10 +600,6 @@ func TestRevalidateHighPriorityTransactionsWithChain(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		for i, transaction := range chain {
-			t.Logf("chain %d %s", i, consensushashing.TransactionID(transaction))
-		}
-
 		_, err = miningManager.ValidateAndInsertTransaction(chain[0], true, false)
 		if err != nil {
 			t.Fatal(err)

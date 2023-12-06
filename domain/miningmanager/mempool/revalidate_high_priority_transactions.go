@@ -4,7 +4,6 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/miningmanager/mempool/model"
 	"github.com/kaspanet/kaspad/infrastructure/logger"
-	"github.com/pkg/errors"
 )
 
 func (mp *mempool) revalidateHighPriorityTransactions() ([]*externalapi.DomainTransaction, error) {
@@ -101,25 +100,11 @@ func (mp *mempool) revalidateTransaction(transaction *model.MempoolTransaction) 
 	}
 	if len(missingParents) > 0 {
 		log.Debugf("Removing transaction %s, it failed revalidation", transaction.TransactionID())
-		err := mp.removeTransaction(transaction.TransactionID(), true)
+		err := mp.removeTransaction(transaction.TransactionID(), false)
 		if err != nil {
 			return false, err
 		}
 		return false, nil
-	}
-
-	_, err = mp.validateAndInsertTransaction(transaction.Transaction(), false, false)
-	if err != nil {
-		ruleError := TxRuleError{}
-		if errors.As(err, &ruleError) {
-			if ruleError.RejectCode == RejectDuplicate {
-				return true, nil
-			}
-
-			log.Debugf("Validation for high priority transaction %s failed: %s", transaction.TransactionID(), err)
-			return false, nil
-		}
-		return false, err
 	}
 
 	return true, nil
