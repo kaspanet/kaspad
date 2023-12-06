@@ -51,6 +51,7 @@ const (
 	RejectDifficulty      RejectCode = 0x44
 	RejectImmatureSpend   RejectCode = 0x45
 	RejectBadOrphan       RejectCode = 0x64
+	RejectSpamTx          RejectCode = 0x65
 )
 
 // Map of reject codes back strings for pretty printing.
