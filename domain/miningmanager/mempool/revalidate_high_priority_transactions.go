@@ -20,7 +20,7 @@ func (mp *mempool) revalidateHighPriorityTransactions() ([]*externalapi.DomainTr
 
 	// We revalidate transactions in topological order in case there are dependencies between them
 
-	// Naturally transactions points to their dependencies, but since we want to start processing the dependencies
+	// Naturally transactions point to their dependencies, but since we want to start processing the dependencies
 	// first, we build the opposite DAG. We initially fill `queue` with transactions with no dependencies.
 	txDAG := make(map[externalapi.DomainTransactionID]*txNode)
 
