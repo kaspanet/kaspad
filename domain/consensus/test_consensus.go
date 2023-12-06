@@ -69,6 +69,17 @@ func (tc *testConsensus) AddBlock(parentHashes []*externalapi.DomainHash, coinba
 	return consensushashing.BlockHash(block), virtualChangeSet, nil
 }
 
+func (tc *testConsensus) AddBlockOnTips(coinbaseData *externalapi.DomainCoinbaseData,
+	transactions []*externalapi.DomainTransaction) (*externalapi.DomainHash, *externalapi.VirtualChangeSet, error) {
+
+	tips, err := tc.Tips()
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return tc.AddBlock(tips, coinbaseData, transactions)
+}
+
 func (tc *testConsensus) AddUTXOInvalidHeader(parentHashes []*externalapi.DomainHash) (*externalapi.DomainHash,
 	*externalapi.VirtualChangeSet, error) {
 

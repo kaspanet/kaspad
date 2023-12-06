@@ -2,6 +2,7 @@ package model
 
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
 )
 
 // Mempool maintains a set of known transactions that
@@ -11,7 +12,7 @@ type Mempool interface {
 	BlockCandidateTransactions() []*externalapi.DomainTransaction
 	ValidateAndInsertTransaction(transaction *externalapi.DomainTransaction, isHighPriority bool, allowOrphan bool) (
 		acceptedTransactions []*externalapi.DomainTransaction, err error)
-	RemoveTransactions(txs []*externalapi.DomainTransaction, removeRedeemers bool) error
+	RemoveInvalidTransactions(err *ruleerrors.ErrInvalidTransactionsInNewBlock) error
 	GetTransaction(
 		transactionID *externalapi.DomainTransactionID,
 		includeTransactionPool bool,
