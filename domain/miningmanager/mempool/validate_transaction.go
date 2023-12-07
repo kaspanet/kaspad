@@ -2,7 +2,6 @@ package mempool
 
 import (
 	"fmt"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
 
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"

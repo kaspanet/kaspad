@@ -21,10 +21,12 @@ require (
 	golang.org/x/term v0.5.0
 	google.golang.org/grpc v1.38.0
 	google.golang.org/protobuf v1.28.1
+	lukechampine.com/blake3 v1.2.1
 )
 
 require (
 	github.com/golang/snappy v0.0.1 // indirect
+	github.com/klauspost/cpuid/v2 v2.0.9 // indirect
 	golang.org/x/net v0.7.0 // indirect
 	golang.org/x/sys v0.5.0 // indirect
 	golang.org/x/text v0.7.0 // indirect

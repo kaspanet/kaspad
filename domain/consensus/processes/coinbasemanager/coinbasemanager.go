@@ -237,7 +237,7 @@ func (c *coinbaseManager) getDeflationaryPeriodBlockSubsidyFromTable(month uint6
 
 func (c *coinbaseManager) calcDeflationaryPeriodBlockSubsidyFloatCalc(month uint64) uint64 {
 	baseSubsidy := c.deflationaryPhaseBaseSubsidy
-	subsidy := float64(baseSubsidy) / math.Pow(2, float64(month)/12)
+	subsidy := float64(baseSubsidy) / math.Pow(1.4, float64(month)/12)
 	return uint64(subsidy)
 }
 

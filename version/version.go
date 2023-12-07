@@ -9,9 +9,9 @@ import (
 const validCharacters = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-"
 
 const (
-	appMajor uint = 0
-	appMinor uint = 12
-	appPatch uint = 14
+	appMajor uint = 1
+	appMinor uint = 0
+	appPatch uint = 0
 )
 
 // appBuild is defined as a variable so it can be overridden during the build

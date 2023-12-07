@@ -22,6 +22,9 @@ func (v *blockValidator) ValidateHeaderInIsolation(stagingArea *model.StagingAre
 		return err
 	}
 
+	//todo : drop this
+	//log.Info("blockHash %s - genesisHash %s", blockHash, v.genesisHash)
+
 	if !blockHash.Equal(v.genesisHash) {
 		err = v.checkBlockVersion(header)
 		if err != nil {

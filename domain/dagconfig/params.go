@@ -211,27 +211,12 @@ var MainnetParams = Params{
 	K:           defaultGHOSTDAGK,
 	Name:        "kaspa-mainnet",
 	Net:         appmessage.Mainnet,
-	RPCPort:     "16110",
-	DefaultPort: "16111",
+	RPCPort:     "42110",
+	DefaultPort: "42111",
 	DNSSeeds: []string{
-		// This DNS seeder is run by Wolfie
-		"mainnet-dnsseed.kas.pa",
-		// This DNS seeder is run by Denis Mashkevich
-		"mainnet-dnsseed-1.kaspanet.org",
-		// This DNS seeder is run by Denis Mashkevich
-		"mainnet-dnsseed-2.kaspanet.org",
-		// This DNS seeder is run by Constantine Bytensky
-		"dnsseed.cbytensky.org",
-		// This DNS seeder is run by Georges Künzli
-		"seeder1.kaspad.net",
-		// This DNS seeder is run by Georges Künzli
-		"seeder2.kaspad.net",
-		// This DNS seeder is run by Georges Künzli
-		"seeder3.kaspad.net",
-		// This DNS seeder is run by Georges Künzli
-		"seeder4.kaspad.net",
-		// This DNS seeder is run by Tim
-		"kaspadns.kaspacalc.net",
+		// Team DNS seed
+		"mainnet-dnsseed-1.kaspacoin.com",
+		"mainnet-dnsseed-2.kaspacoin.com",
 	},
 
 	// DAG parameters
@@ -282,7 +267,8 @@ var MainnetParams = Params{
 	CoinbasePayloadScriptPublicKeyMaxLength: defaultCoinbasePayloadScriptPublicKeyMaxLength,
 	PruningProofM:                           defaultPruningProofM,
 	DeflationaryPhaseDaaScore:               defaultDeflationaryPhaseDaaScore,
-	DisallowDirectBlocksOnTopOfGenesis:      true,
+	// 	DisallowDirectBlocksOnTopOfGenesis:      true,
+	DisallowDirectBlocksOnTopOfGenesis: false,
 
 	// This is technically 255, but we clamped it at 256 - block level of mainnet genesis
 	// This means that any block that has a level lower or equal to genesis will be level 0.

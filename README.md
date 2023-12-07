@@ -1,14 +1,14 @@
-
 Kaspad
 ====
 
 [![ISC License](http://img.shields.io/badge/license-ISC-blue.svg)](https://choosealicense.com/licenses/isc/)
-[![GoDoc](https://img.shields.io/badge/godoc-reference-blue.svg)](http://godoc.org/github.com/kaspanet/kaspad)
+[![GoDoc](https://img.shields.io/badge/godoc-reference-blue.svg)](http://godoc.org/github.com/kaspanet/kaspad/)
 
 Kaspad is the reference full node Kaspa implementation written in Go (golang).
 
 ## What is kaspa
 
+Kaspa is a fork of Kaspa with an ASIC resistance implementation
 Kaspa is an attempt at a proof-of-work cryptocurrency with instant confirmations and sub-second block times. It is based on [the PHANTOM protocol](https://eprint.iacr.org/2018/104.pdf), a generalization of Nakamoto consensus.
 
 ## Requirements
@@ -51,14 +51,13 @@ $ kaspad
 ```
 
 ## Discord
-Join our discord server using the following link: https://discord.gg/YNYnNN5Pf2
+Join our discord server using the following link: https://discord.gg/ZPZRvgMJDT
 
 ## Issue Tracker
 
 The [integrated github issue tracker](https://github.com/kaspanet/kaspad/issues)
 is used for this project.
 
-Issue priorities may be seen at https://github.com/orgs/kaspanet/projects/4
 
 ## Documentation
 

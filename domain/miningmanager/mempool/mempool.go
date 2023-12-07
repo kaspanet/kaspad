@@ -1,8 +1,6 @@
 package mempool
 
 import (
-	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
 	"sync"
 
 	"github.com/kaspanet/kaspad/domain/consensusreference"

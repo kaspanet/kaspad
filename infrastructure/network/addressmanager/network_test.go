@@ -40,7 +40,7 @@ func TestIPTypes(t *testing.T) {
 		rfc4193, rfc4380, rfc4843, rfc4862, rfc5737, rfc6052, rfc6145, rfc6598,
 		local, valid, routable bool) ipTest {
 		nip := net.ParseIP(ip)
-		na := *appmessage.NewNetAddressIPPort(nip, 16111)
+		na := *appmessage.NewNetAddressIPPort(nip, 42111)
 		test := ipTest{na, rfc1918, rfc2544, rfc3849, rfc3927, rfc3964, rfc4193, rfc4380,
 			rfc4843, rfc4862, rfc5737, rfc6052, rfc6145, rfc6598, local, valid, routable}
 		return test

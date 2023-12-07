@@ -37,8 +37,22 @@ type ShakeHashWriter struct {
 	sha3.ShakeHash
 }
 
+// Blake3HashWriter is exactly the same as HashWriter but for Blake3
+type Blake3HashWriter struct {
+	*blake3.Hasher
+}
+
 // InfallibleWrite is just like write but doesn't return anything
 func (h *ShakeHashWriter) InfallibleWrite(p []byte) {
+	// This write can never return an error, this is part of the hash.Hash interface contract.
+	_, err := h.Write(p)
+	if err != nil {
+		panic(errors.Wrap(err, "this should never happen. sha3.ShakeHash interface promises to not return errors."))
+	}
+}
+
+// InfallibleWrite is just like write but doesn't return anything
+func (h *Blake3HashWriter) InfallibleWrite(p []byte) {
 	// This write can never return an error, this is part of the hash.Hash interface contract.
 	_, err := h.Write(p)
 	if err != nil {
@@ -55,5 +69,18 @@ func (h *ShakeHashWriter) Finalize() *externalapi.DomainHash {
 		panic(errors.Wrap(err, "this should never happen. sha3.ShakeHash interface promises to not return errors."))
 	}
 	h.ShakeHash = nil // prevent double reading as it will return a different hash
+	return externalapi.NewDomainHashFromByteArray(&sum)
+}
+
+// Finalize returns the resulting hash
+func (h *Blake3HashWriter) Finalize() *externalapi.DomainHash {
+	var sum [externalapi.DomainHashSize]byte
+	// This should prevent `Sum` for allocating an output buffer, by using the DomainHash buffer. we still copy because we don't want to rely on that.
+	_, err := h.XOF().Read(sum[:])
+	//_, err := h.Read(sum[:])
+	if err != nil {
+		panic(errors.Wrap(err, "this should never happen. sha3.ShakeHash interface promises to not return errors."))
+	}
+	h.Hasher = nil // prevent double reading as it will return a different hash
 	return externalapi.NewDomainHashFromByteArray(&sum)
 }
