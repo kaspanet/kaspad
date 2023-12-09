@@ -1,8 +1,8 @@
 package standalone
 
 import (
-	"github.com/kaspanet/kaspad/infrastructure/logger"
-	"github.com/kaspanet/kaspad/util/panics"
+	"github.com/zoomy-network/zoomyd/infrastructure/logger"
+	"github.com/zoomy-network/zoomyd/util/panics"
 )
 
 var log = logger.RegisterSubSystem("NTAR")

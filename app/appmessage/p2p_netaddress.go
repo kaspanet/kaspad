@@ -7,7 +7,7 @@ package appmessage
 import (
 	"net"
 
-	"github.com/kaspanet/kaspad/util/mstime"
+	"github.com/zoomy-network/zoomyd/util/mstime"
 )
 
 // NetAddress defines information about a peer on the network including the time

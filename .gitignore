@@ -2,7 +2,7 @@
 *~
 
 # Databases
-kaspad.db
+zoomyd.db
 *-shm
 *-wal
 
@@ -19,10 +19,10 @@ kaspad.db
 *.test
 
 # Real binaries, build with `go build .`
-kaspad
+zoomyd
 cmd/gencerts/gencerts
-cmd/kaspactl/kaspactl
-cmd/kasminer/kaspaminer
+cmd/zoomyctl/zoomyctl
+cmd/zoomyminer/zoomyminer
 *.exe
 *.exe~
 

@@ -1,7 +1,7 @@
 package connmanager
 
 import (
-	"github.com/kaspanet/kaspad/infrastructure/network/netadapter"
+	"github.com/zoomy-network/zoomyd/infrastructure/network/netadapter"
 )
 
 type connectionSet map[string]*netadapter.NetConnection

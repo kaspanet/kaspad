@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/kaspanet/kaspad/infrastructure/logger"
-	"github.com/kaspanet/kaspad/stability-tests/common/mine"
-	"github.com/kaspanet/kaspad/stability-tests/common/rpc"
-	"github.com/kaspanet/kaspad/util/panics"
+	"github.com/zoomy-network/zoomyd/infrastructure/logger"
+	"github.com/zoomy-network/zoomyd/stability-tests/common/mine"
+	"github.com/zoomy-network/zoomyd/stability-tests/common/rpc"
+	"github.com/zoomy-network/zoomyd/util/panics"
 )
 
 // log is a logger that is initialized with no output filters. This

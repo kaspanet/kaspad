@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/kaspanet/kaspad/cmd/kaspawallet/daemon/pb"
-	"github.com/kaspanet/kaspad/cmd/kaspawallet/libkaspawallet"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
-	"github.com/kaspanet/kaspad/util"
+	"github.com/zoomy-network/zoomyd/cmd/zoomywallet/daemon/pb"
+	"github.com/zoomy-network/zoomyd/cmd/zoomywallet/libkaspawallet"
+	"github.com/zoomy-network/zoomyd/domain/consensus/utils/constants"
+	"github.com/zoomy-network/zoomyd/util"
 	"github.com/pkg/errors"
 	"golang.org/x/exp/slices"
 )

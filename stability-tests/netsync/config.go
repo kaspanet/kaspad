@@ -3,8 +3,8 @@ package main
 import (
 	"path/filepath"
 
-	"github.com/kaspanet/kaspad/infrastructure/config"
-	"github.com/kaspanet/kaspad/stability-tests/common"
+	"github.com/zoomy-network/zoomyd/infrastructure/config"
+	"github.com/zoomy-network/zoomyd/stability-tests/common"
 
 	"github.com/jessevdk/go-flags"
 )

@@ -6,8 +6,8 @@ import (
 	"os"
 	"strings"
 
-	"github.com/kaspanet/kaspad/cmd/kaspawallet/keys"
-	"github.com/kaspanet/kaspad/cmd/kaspawallet/libkaspawallet"
+	"github.com/zoomy-network/zoomyd/cmd/zoomywallet/keys"
+	"github.com/zoomy-network/zoomyd/cmd/zoomywallet/libkaspawallet"
 	"github.com/pkg/errors"
 )
 

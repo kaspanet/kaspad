@@ -4,11 +4,11 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/kaspanet/kaspad/infrastructure/logger"
-	"github.com/kaspanet/kaspad/stability-tests/common"
+	"github.com/zoomy-network/zoomyd/infrastructure/logger"
+	"github.com/zoomy-network/zoomyd/stability-tests/common"
 
 	"github.com/jessevdk/go-flags"
-	"github.com/kaspanet/kaspad/infrastructure/config"
+	"github.com/zoomy-network/zoomyd/infrastructure/config"
 )
 
 const (

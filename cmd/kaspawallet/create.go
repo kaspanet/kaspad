@@ -5,12 +5,12 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/kaspanet/kaspad/cmd/kaspawallet/libkaspawallet"
-	"github.com/kaspanet/kaspad/cmd/kaspawallet/libkaspawallet/bip32"
-	"github.com/kaspanet/kaspad/cmd/kaspawallet/utils"
+	"github.com/zoomy-network/zoomyd/cmd/zoomywallet/libkaspawallet"
+	"github.com/zoomy-network/zoomyd/cmd/zoomywallet/libkaspawallet/bip32"
+	"github.com/zoomy-network/zoomyd/cmd/zoomywallet/utils"
 	"github.com/pkg/errors"
 
-	"github.com/kaspanet/kaspad/cmd/kaspawallet/keys"
+	"github.com/zoomy-network/zoomyd/cmd/zoomywallet/keys"
 )
 
 func create(conf *createConfig) error {
@@ -32,8 +32,8 @@ func create(conf *createConfig) error {
 	}
 
 	fmt.Printf("Notice the above is neither a secret key to your wallet " +
-		"(use \"kaspawallet dump-unencrypted-data\" to see a secret seed phrase) " +
-		"nor a wallet public address (use \"kaspawallet new-address\" to create and see one)\n\n")
+		"(use \"zoomywallet dump-unencrypted-data\" to see a secret seed phrase) " +
+		"nor a wallet public address (use \"zoomywallet new-address\" to create and see one)\n\n")
 
 	extendedPublicKeys := make([]string, conf.NumPrivateKeys, conf.NumPublicKeys)
 	copy(extendedPublicKeys, signerExtendedPublicKeys)

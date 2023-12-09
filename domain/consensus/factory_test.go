@@ -4,10 +4,10 @@ import (
 	"io/ioutil"
 	"testing"
 
-	"github.com/kaspanet/kaspad/domain/prefixmanager/prefix"
+	"github.com/zoomy-network/zoomyd/domain/prefixmanager/prefix"
 
-	"github.com/kaspanet/kaspad/domain/dagconfig"
-	"github.com/kaspanet/kaspad/infrastructure/db/database/ldb"
+	"github.com/zoomy-network/zoomyd/domain/dagconfig"
+	"github.com/zoomy-network/zoomyd/infrastructure/db/database/ldb"
 )
 
 func TestNewConsensus(t *testing.T) {

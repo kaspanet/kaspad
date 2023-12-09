@@ -2,7 +2,7 @@ package panics
 
 import (
 	"fmt"
-	"github.com/kaspanet/kaspad/infrastructure/logger"
+	"github.com/zoomy-network/zoomyd/infrastructure/logger"
 	"os"
 	"runtime/debug"
 	"sync/atomic"

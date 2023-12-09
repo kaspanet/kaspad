@@ -35,7 +35,7 @@ package logger
 import (
 	"bytes"
 	"fmt"
-	"github.com/kaspanet/kaspad/util/mstime"
+	"github.com/zoomy-network/zoomyd/util/mstime"
 	"os"
 	"runtime"
 	"sync/atomic"

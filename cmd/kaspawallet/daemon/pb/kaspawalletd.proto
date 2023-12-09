@@ -1,9 +1,9 @@
 syntax = "proto3";
 
-option go_package = "github.com/kaspanet/kaspad/cmd/kaspawallet/daemon/pb";
-package kaspawalletd;
+option go_package = "github.com/zoomy-network/zoomyd/cmd/zoomywallet/daemon/pb";
+package zoomywalletd;
 
-service kaspawalletd {
+service zoomywalletd {
   rpc GetBalance (GetBalanceRequest) returns (GetBalanceResponse) {}
   rpc GetExternalSpendableUTXOs (GetExternalSpendableUTXOsRequest) returns (GetExternalSpendableUTXOsResponse) {}
   rpc CreateUnsignedTransactions (CreateUnsignedTransactionsRequest) returns (CreateUnsignedTransactionsResponse) {}

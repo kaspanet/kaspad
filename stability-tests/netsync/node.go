@@ -2,19 +2,19 @@ package main
 
 import (
 	"fmt"
-	"github.com/kaspanet/kaspad/domain/consensus"
+	"github.com/zoomy-network/zoomyd/domain/consensus"
 	"os/exec"
 	"strings"
 	"sync/atomic"
 	"syscall"
 	"time"
 
-	"github.com/kaspanet/kaspad/app/appmessage"
-	"github.com/kaspanet/kaspad/stability-tests/common"
-	"github.com/kaspanet/kaspad/stability-tests/common/mine"
-	"github.com/kaspanet/kaspad/stability-tests/common/rpc"
-	"github.com/kaspanet/kaspad/util"
-	"github.com/kaspanet/kaspad/util/panics"
+	"github.com/zoomy-network/zoomyd/app/appmessage"
+	"github.com/zoomy-network/zoomyd/stability-tests/common"
+	"github.com/zoomy-network/zoomyd/stability-tests/common/mine"
+	"github.com/zoomy-network/zoomyd/stability-tests/common/rpc"
+	"github.com/zoomy-network/zoomyd/util"
+	"github.com/zoomy-network/zoomyd/util/panics"
 	"github.com/pkg/errors"
 )
 

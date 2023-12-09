@@ -1,7 +1,7 @@
 package model
 
 import (
-	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+	"github.com/zoomy-network/zoomyd/domain/consensus/model/externalapi"
 )
 
 // BlocksWithTrustedDataDAAWindowStore stores the DAA window of blocks with trusted data

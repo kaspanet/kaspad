@@ -16,7 +16,7 @@ const (
 	SompiPerKaspa = 100_000_000
 
 	// MaxSompi is the maximum transaction amount allowed in sompi.
-	MaxSompi = uint64(29_000_000_000 * SompiPerKaspa)
+	MaxSompi = uint64(10_800_000_000_000 * SompiPerKaspa)
 
 	// MaxTxInSequenceNum is the maximum sequence number the sequence field
 	// of a transaction input can be.

@@ -7,9 +7,9 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/kaspanet/kaspad/stability-tests/common"
-	"github.com/kaspanet/kaspad/stability-tests/common/rpc"
-	"github.com/kaspanet/kaspad/util/profiling"
+	"github.com/zoomy-network/zoomyd/stability-tests/common"
+	"github.com/zoomy-network/zoomyd/stability-tests/common/rpc"
+	"github.com/zoomy-network/zoomyd/util/profiling"
 )
 
 var timeout = 30 * time.Second

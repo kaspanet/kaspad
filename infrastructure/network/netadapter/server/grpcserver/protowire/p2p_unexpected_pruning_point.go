@@ -1,6 +1,6 @@
 package protowire
 
-import "github.com/kaspanet/kaspad/app/appmessage"
+import "github.com/zoomy-network/zoomyd/app/appmessage"
 
 func (x *KaspadMessage_UnexpectedPruningPoint) toAppMessage() (appmessage.Message, error) {
 	return &appmessage.MsgUnexpectedPruningPoint{}, nil

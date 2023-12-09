@@ -5,7 +5,7 @@ import (
 	"net"
 	"time"
 
-	"github.com/kaspanet/kaspad/app/protocol/common"
+	"github.com/zoomy-network/zoomyd/app/protocol/common"
 	"github.com/pkg/errors"
 )
 

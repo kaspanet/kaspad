@@ -2,9 +2,11 @@ package hashes
 
 import (
 	"crypto/sha256"
+
 	"github.com/pkg/errors"
 	"golang.org/x/crypto/blake2b"
 	"golang.org/x/crypto/sha3"
+	"lukechampine.com/blake3"
 )
 
 const (
@@ -67,9 +69,9 @@ func NewBlockHashWriter() HashWriter {
 }
 
 // NewPoWHashWriter Returns a new HashWriter used for the PoW function
-func NewPoWHashWriter() ShakeHashWriter {
-	shake256 := sha3.NewCShake256(nil, []byte(proofOfWorkDomain))
-	return ShakeHashWriter{shake256}
+func NewPoWHashWriter() Blake3HashWriter {
+	blake := blake3.New(32, nil)
+	return Blake3HashWriter{blake}
 }
 
 // NewHeavyHashWriter Returns a new HashWriter used for the HeavyHash function

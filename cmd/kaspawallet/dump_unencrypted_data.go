@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/kaspanet/kaspad/cmd/kaspawallet/keys"
-	"github.com/kaspanet/kaspad/cmd/kaspawallet/libkaspawallet"
-	"github.com/kaspanet/kaspad/cmd/kaspawallet/utils"
+	"github.com/zoomy-network/zoomyd/cmd/zoomywallet/keys"
+	"github.com/zoomy-network/zoomyd/cmd/zoomywallet/libkaspawallet"
+	"github.com/zoomy-network/zoomyd/cmd/zoomywallet/utils"
 
 	"github.com/pkg/errors"
 )

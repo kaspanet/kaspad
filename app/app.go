@@ -7,17 +7,17 @@ import (
 	"runtime"
 	"time"
 
-	"github.com/kaspanet/kaspad/infrastructure/config"
-	"github.com/kaspanet/kaspad/infrastructure/db/database"
-	"github.com/kaspanet/kaspad/infrastructure/db/database/ldb"
-	"github.com/kaspanet/kaspad/infrastructure/logger"
-	"github.com/kaspanet/kaspad/infrastructure/os/execenv"
-	"github.com/kaspanet/kaspad/infrastructure/os/limits"
-	"github.com/kaspanet/kaspad/infrastructure/os/signal"
-	"github.com/kaspanet/kaspad/infrastructure/os/winservice"
-	"github.com/kaspanet/kaspad/util/panics"
-	"github.com/kaspanet/kaspad/util/profiling"
-	"github.com/kaspanet/kaspad/version"
+	"github.com/zoomy-network/zoomyd/infrastructure/config"
+	"github.com/zoomy-network/zoomyd/infrastructure/db/database"
+	"github.com/zoomy-network/zoomyd/infrastructure/db/database/ldb"
+	"github.com/zoomy-network/zoomyd/infrastructure/logger"
+	"github.com/zoomy-network/zoomyd/infrastructure/os/execenv"
+	"github.com/zoomy-network/zoomyd/infrastructure/os/limits"
+	"github.com/zoomy-network/zoomyd/infrastructure/os/signal"
+	"github.com/zoomy-network/zoomyd/infrastructure/os/winservice"
+	"github.com/zoomy-network/zoomyd/util/panics"
+	"github.com/zoomy-network/zoomyd/util/profiling"
+	"github.com/zoomy-network/zoomyd/version"
 )
 
 const (
@@ -31,17 +31,17 @@ var desiredLimits = &limits.DesiredLimits{
 }
 
 var serviceDescription = &winservice.ServiceDescription{
-	Name:        "kaspadsvc",
-	DisplayName: "Kaspad Service",
+	Name:        "zoomydsvc",
+	DisplayName: "Zoomyd Service",
 	Description: "Downloads and stays synchronized with the Kaspa blockDAG and " +
 		"provides DAG services to applications.",
 }
 
-type kaspadApp struct {
+type ZoomydApp struct {
 	cfg *config.Config
 }
 
-// StartApp starts the kaspad app, and blocks until it finishes running
+// StartApp starts the zoomyd app, and blocks until it finishes running
 func StartApp() error {
 	execenv.Initialize(desiredLimits)
 
@@ -55,7 +55,7 @@ func StartApp() error {
 	defer logger.BackendLog.Close()
 	defer panics.HandlePanic(log, "MAIN", nil)
 
-	app := &kaspadApp{cfg: cfg}
+	app := &zoomydApp{cfg: cfg}
 
 	// Call serviceMain on Windows to handle running as a service. When
 	// the return isService flag is true, exit now since we ran as a
@@ -73,7 +73,7 @@ func StartApp() error {
 	return app.main(nil)
 }
 
-func (app *kaspadApp) main(startedChan chan<- struct{}) error {
+func (app *zoomydApp) main(startedChan chan<- struct{}) error {
 	// Get a channel that will be closed when a shutdown signal has been
 	// triggered either from an OS signal such as SIGINT (Ctrl+C) or from
 	// another subsystem such as the RPC server.
@@ -125,12 +125,12 @@ func (app *kaspadApp) main(startedChan chan<- struct{}) error {
 	// Create componentManager and start it.
 	componentManager, err := NewComponentManager(app.cfg, databaseContext, interrupt)
 	if err != nil {
-		log.Errorf("Unable to start kaspad: %+v", err)
+		log.Errorf("Unable to start zoomyd: %+v", err)
 		return err
 	}
 
 	defer func() {
-		log.Infof("Gracefully shutting down kaspad...")
+		log.Infof("Gracefully shutting down zoomyd...")
 
 		shutdownDone := make(chan struct{})
 		go func() {
@@ -145,7 +145,7 @@ func (app *kaspadApp) main(startedChan chan<- struct{}) error {
 		case <-time.After(shutdownTimeout):
 			log.Criticalf("Graceful shutdown timed out %s. Terminating...", shutdownTimeout)
 		}
-		log.Infof("Kaspad shutdown complete")
+		log.Infof("Zoomyd shutdown complete")
 	}()
 
 	componentManager.Start()

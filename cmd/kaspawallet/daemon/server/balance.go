@@ -3,8 +3,8 @@ package server
 import (
 	"context"
 
-	"github.com/kaspanet/kaspad/cmd/kaspawallet/daemon/pb"
-	"github.com/kaspanet/kaspad/cmd/kaspawallet/libkaspawallet"
+	"github.com/zoomy-network/zoomyd/cmd/zoomywallet/daemon/pb"
+	"github.com/zoomy-network/zoomyd/cmd/zoomywallet/libkaspawallet"
 )
 
 type balancesType struct{ available, pending uint64 }

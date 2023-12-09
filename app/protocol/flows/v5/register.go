@@ -1,16 +1,16 @@
 package v5
 
 import (
-	"github.com/kaspanet/kaspad/app/appmessage"
-	"github.com/kaspanet/kaspad/app/protocol/common"
-	"github.com/kaspanet/kaspad/app/protocol/flowcontext"
-	"github.com/kaspanet/kaspad/app/protocol/flows/v5/addressexchange"
-	"github.com/kaspanet/kaspad/app/protocol/flows/v5/blockrelay"
-	"github.com/kaspanet/kaspad/app/protocol/flows/v5/ping"
-	"github.com/kaspanet/kaspad/app/protocol/flows/v5/rejects"
-	"github.com/kaspanet/kaspad/app/protocol/flows/v5/transactionrelay"
-	peerpkg "github.com/kaspanet/kaspad/app/protocol/peer"
-	routerpkg "github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
+	"github.com/zoomy-network/zoomyd/app/appmessage"
+	"github.com/zoomy-network/zoomyd/app/protocol/common"
+	"github.com/zoomy-network/zoomyd/app/protocol/flowcontext"
+	"github.com/zoomy-network/zoomyd/app/protocol/flows/v5/addressexchange"
+	"github.com/zoomy-network/zoomyd/app/protocol/flows/v5/blockrelay"
+	"github.com/zoomy-network/zoomyd/app/protocol/flows/v5/ping"
+	"github.com/zoomy-network/zoomyd/app/protocol/flows/v5/rejects"
+	"github.com/zoomy-network/zoomyd/app/protocol/flows/v5/transactionrelay"
+	peerpkg "github.com/zoomy-network/zoomyd/app/protocol/peer"
+	routerpkg "github.com/zoomy-network/zoomyd/infrastructure/network/netadapter/router"
 )
 
 type protocolManager interface {

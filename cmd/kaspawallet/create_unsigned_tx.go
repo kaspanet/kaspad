@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/kaspanet/kaspad/cmd/kaspawallet/daemon/client"
-	"github.com/kaspanet/kaspad/cmd/kaspawallet/daemon/pb"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
+	"github.com/zoomy-network/zoomyd/cmd/zoomywallet/daemon/client"
+	"github.com/zoomy-network/zoomyd/cmd/zoomywallet/daemon/pb"
+	"github.com/zoomy-network/zoomyd/domain/consensus/utils/constants"
 )
 
 func createUnsignedTransaction(conf *createUnsignedTransactionConfig) error {

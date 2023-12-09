@@ -4,17 +4,17 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/kaspanet/kaspad/util"
+	"github.com/zoomy-network/zoomyd/util"
 
-	"github.com/kaspanet/kaspad/version"
+	"github.com/zoomy-network/zoomyd/version"
 
 	"github.com/pkg/errors"
 
 	_ "net/http/pprof"
 
-	"github.com/kaspanet/kaspad/infrastructure/os/signal"
-	"github.com/kaspanet/kaspad/util/panics"
-	"github.com/kaspanet/kaspad/util/profiling"
+	"github.com/zoomy-network/zoomyd/infrastructure/os/signal"
+	"github.com/zoomy-network/zoomyd/util/panics"
+	"github.com/zoomy-network/zoomyd/util/profiling"
 )
 
 func main() {

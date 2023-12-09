@@ -1,6 +1,6 @@
 package winservice
 
-import "github.com/kaspanet/kaspad/infrastructure/config"
+import "github.com/zoomy-network/zoomyd/infrastructure/config"
 
 // ServiceDescription contains information about a service, needed to administer it
 type ServiceDescription struct {

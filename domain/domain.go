@@ -5,15 +5,15 @@ import (
 	"sync/atomic"
 	"unsafe"
 
-	"github.com/kaspanet/kaspad/domain/consensusreference"
+	"github.com/zoomy-network/zoomyd/domain/consensusreference"
 
-	"github.com/kaspanet/kaspad/domain/consensus"
-	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
-	"github.com/kaspanet/kaspad/domain/miningmanager"
-	"github.com/kaspanet/kaspad/domain/miningmanager/mempool"
-	"github.com/kaspanet/kaspad/domain/prefixmanager"
-	"github.com/kaspanet/kaspad/domain/prefixmanager/prefix"
-	infrastructuredatabase "github.com/kaspanet/kaspad/infrastructure/db/database"
+	"github.com/zoomy-network/zoomyd/domain/consensus"
+	"github.com/zoomy-network/zoomyd/domain/consensus/model/externalapi"
+	"github.com/zoomy-network/zoomyd/domain/miningmanager"
+	"github.com/zoomy-network/zoomyd/domain/miningmanager/mempool"
+	"github.com/zoomy-network/zoomyd/domain/prefixmanager"
+	"github.com/zoomy-network/zoomyd/domain/prefixmanager/prefix"
+	infrastructuredatabase "github.com/zoomy-network/zoomyd/infrastructure/db/database"
 	"github.com/pkg/errors"
 )
 

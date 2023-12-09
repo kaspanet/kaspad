@@ -5,7 +5,7 @@
 package bech32_test
 
 import (
-	"github.com/kaspanet/kaspad/util/bech32"
+	"github.com/zoomy-network/zoomyd/util/bech32"
 	"testing"
 )
 

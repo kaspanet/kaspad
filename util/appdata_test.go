@@ -12,7 +12,7 @@ import (
 	"testing"
 	"unicode"
 
-	"github.com/kaspanet/kaspad/util"
+	"github.com/zoomy-network/zoomyd/util"
 )
 
 // TestAppDataDir tests the API for AppDir to ensure it gives expected

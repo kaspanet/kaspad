@@ -8,7 +8,7 @@ package database_test
 import (
 	"bytes"
 	"fmt"
-	"github.com/kaspanet/kaspad/infrastructure/db/database"
+	"github.com/zoomy-network/zoomyd/infrastructure/db/database"
 	"reflect"
 	"strings"
 	"testing"

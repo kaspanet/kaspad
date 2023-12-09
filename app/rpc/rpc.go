@@ -1,11 +1,11 @@
 package rpc
 
 import (
-	"github.com/kaspanet/kaspad/app/appmessage"
-	"github.com/kaspanet/kaspad/app/rpc/rpccontext"
-	"github.com/kaspanet/kaspad/app/rpc/rpchandlers"
-	"github.com/kaspanet/kaspad/infrastructure/network/netadapter"
-	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
+	"github.com/zoomy-network/zoomyd/app/appmessage"
+	"github.com/zoomy-network/zoomyd/app/rpc/rpccontext"
+	"github.com/zoomy-network/zoomyd/app/rpc/rpchandlers"
+	"github.com/zoomy-network/zoomyd/infrastructure/network/netadapter"
+	"github.com/zoomy-network/zoomyd/infrastructure/network/netadapter/router"
 	"github.com/pkg/errors"
 )
 

@@ -10,7 +10,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/kaspanet/kaspad/infrastructure/db/database"
+	"github.com/zoomy-network/zoomyd/infrastructure/db/database"
 )
 
 func TestTransactionPut(t *testing.T) {

@@ -1,6 +1,6 @@
 package rpcclient
 
-import "github.com/kaspanet/kaspad/app/appmessage"
+import "github.com/zoomy-network/zoomyd/app/appmessage"
 
 // GetBlockDAGInfo sends an RPC request respective to the function's name and returns the RPC server's response
 func (c *RPCClient) GetBlockDAGInfo() (*appmessage.GetBlockDAGInfoResponseMessage, error) {

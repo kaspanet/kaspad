@@ -4,10 +4,10 @@ import (
 	"os"
 	"sync/atomic"
 
-	"github.com/kaspanet/kaspad/stability-tests/common"
-	"github.com/kaspanet/kaspad/stability-tests/common/rpc"
-	"github.com/kaspanet/kaspad/util/panics"
-	"github.com/kaspanet/kaspad/util/profiling"
+	"github.com/zoomy-network/zoomyd/stability-tests/common"
+	"github.com/zoomy-network/zoomyd/stability-tests/common/rpc"
+	"github.com/zoomy-network/zoomyd/util/panics"
+	"github.com/zoomy-network/zoomyd/util/profiling"
 	"github.com/pkg/errors"
 )
 

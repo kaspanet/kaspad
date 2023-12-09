@@ -1,12 +1,12 @@
 package integration
 
 import (
-	"github.com/kaspanet/kaspad/infrastructure/config"
+	"github.com/zoomy-network/zoomyd/infrastructure/config"
 	"runtime"
 	"testing"
 	"time"
 
-	"github.com/kaspanet/kaspad/infrastructure/network/rpcclient"
+	"github.com/zoomy-network/zoomyd/infrastructure/network/rpcclient"
 )
 
 const rpcTimeout = 10 * time.Second

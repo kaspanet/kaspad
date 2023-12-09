@@ -4,12 +4,12 @@ import (
 	"sync"
 	"sync/atomic"
 
-	"github.com/kaspanet/kaspad/app/appmessage"
-	"github.com/kaspanet/kaspad/infrastructure/config"
-	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/id"
-	routerpkg "github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
-	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/server"
-	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/server/grpcserver"
+	"github.com/zoomy-network/zoomyd/app/appmessage"
+	"github.com/zoomy-network/zoomyd/infrastructure/config"
+	"github.com/zoomy-network/zoomyd/infrastructure/network/netadapter/id"
+	routerpkg "github.com/zoomy-network/zoomyd/infrastructure/network/netadapter/router"
+	"github.com/zoomy-network/zoomyd/infrastructure/network/netadapter/server"
+	"github.com/zoomy-network/zoomyd/infrastructure/network/netadapter/server/grpcserver"
 	"github.com/pkg/errors"
 )
 
