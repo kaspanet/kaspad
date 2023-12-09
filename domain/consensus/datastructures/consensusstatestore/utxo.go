@@ -1,10 +1,16 @@
 package consensusstatestore
 
 import (
+<<<<<<< Updated upstream
 	"github.com/zoomy-network/zoomyd/domain/consensus/model"
 	"github.com/zoomy-network/zoomyd/domain/consensus/model/externalapi"
 	"github.com/zoomy-network/zoomyd/domain/consensus/utils/utxo"
+=======
+>>>>>>> Stashed changes
 	"github.com/pkg/errors"
+	"github.com/zoomy-network/zoomyd/domain/consensus/model"
+	"github.com/zoomy-network/zoomyd/domain/consensus/model/externalapi"
+	"github.com/zoomy-network/zoomyd/domain/consensus/utils/utxo"
 )
 
 var utxoSetBucketName = []byte("virtual-utxo-set")

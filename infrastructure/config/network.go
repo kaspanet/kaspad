@@ -9,9 +9,14 @@ import (
 	"time"
 
 	"github.com/jessevdk/go-flags"
+<<<<<<< Updated upstream
 	"github.com/zoomy-network/zoomyd/domain/dagconfig"
 	"github.com/zoomy-network/zoomyd/util/difficulty"
+=======
+>>>>>>> Stashed changes
 	"github.com/pkg/errors"
+	"github.com/zoomy-network/zoomyd/domain/dagconfig"
+	"github.com/zoomy-network/zoomyd/util/difficulty"
 )
 
 // NetworkFlags holds the network configuration, that is which network is selected.

@@ -7,8 +7,12 @@ import (
 	"strings"
 	"sync"
 
+<<<<<<< Updated upstream
 	"github.com/zoomy-network/zoomyd/app/appmessage"
+=======
+>>>>>>> Stashed changes
 	"github.com/pkg/errors"
+	"github.com/zoomy-network/zoomyd/app/appmessage"
 )
 
 // AddressPriority type is used to describe the hierarchy of local address

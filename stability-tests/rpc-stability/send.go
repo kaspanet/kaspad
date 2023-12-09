@@ -1,8 +1,12 @@
 package main
 
 import (
+<<<<<<< Updated upstream
 	"github.com/zoomy-network/zoomyd/infrastructure/network/rpcclient/grpcclient"
+=======
+>>>>>>> Stashed changes
 	"github.com/pkg/errors"
+	"github.com/zoomy-network/zoomyd/infrastructure/network/rpcclient/grpcclient"
 )
 
 func sendCommands(rpcClient *grpcclient.GRPCClient, commandsChan <-chan string) error {

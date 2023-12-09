@@ -1,11 +1,18 @@
 package serialization
 
 import (
+<<<<<<< Updated upstream
 	"github.com/zoomy-network/zoomyd/domain/consensus/model/externalapi"
 	"github.com/zoomy-network/zoomyd/domain/consensus/utils/blockheader"
 	"github.com/pkg/errors"
+=======
+>>>>>>> Stashed changes
 	"math"
 	"math/big"
+
+	"github.com/pkg/errors"
+	"github.com/zoomy-network/zoomyd/domain/consensus/model/externalapi"
+	"github.com/zoomy-network/zoomyd/domain/consensus/utils/blockheader"
 )
 
 // DomainBlockHeaderToDbBlockHeader converts BlockHeader to DbBlockHeader

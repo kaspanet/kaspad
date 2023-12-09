@@ -7,9 +7,14 @@ package txscript
 import (
 	"fmt"
 
+<<<<<<< Updated upstream
 	"github.com/zoomy-network/zoomyd/domain/consensus/model/externalapi"
 	"github.com/zoomy-network/zoomyd/domain/consensus/utils/constants"
+=======
+>>>>>>> Stashed changes
 	"github.com/pkg/errors"
+	"github.com/zoomy-network/zoomyd/domain/consensus/model/externalapi"
+	"github.com/zoomy-network/zoomyd/domain/consensus/utils/constants"
 
 	"github.com/zoomy-network/zoomyd/domain/dagconfig"
 	"github.com/zoomy-network/zoomyd/util"

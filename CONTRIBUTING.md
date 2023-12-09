@@ -4,7 +4,11 @@ Any contribution to Zoomyd is very welcome.
 
 ## Getting started
 
+<<<<<<< Updated upstream
 If you want to start contributing to Zoomyd and don't know where to start, you can pick an issue from
+=======
+If you want to start contributing to Kaspad and don't know where to start, you can pick an issue from
+>>>>>>> Stashed changes
 the [list](https://github.com/zoomy-network/zoomyd/issues).
 
 If you want to make a big change it's better to discuss it first by opening an issue or talk about it in

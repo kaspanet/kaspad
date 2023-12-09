@@ -3,6 +3,7 @@ package transactionvalidator
 import (
 	"math"
 
+<<<<<<< Updated upstream
 	"github.com/zoomy-network/zoomyd/domain/consensus/model"
 	"github.com/zoomy-network/zoomyd/domain/consensus/model/externalapi"
 	"github.com/zoomy-network/zoomyd/domain/consensus/ruleerrors"
@@ -10,7 +11,16 @@ import (
 	"github.com/zoomy-network/zoomyd/domain/consensus/utils/constants"
 	"github.com/zoomy-network/zoomyd/domain/consensus/utils/transactionhelper"
 	"github.com/zoomy-network/zoomyd/domain/consensus/utils/txscript"
+=======
+>>>>>>> Stashed changes
 	"github.com/pkg/errors"
+	"github.com/zoomy-network/zoomyd/domain/consensus/model"
+	"github.com/zoomy-network/zoomyd/domain/consensus/model/externalapi"
+	"github.com/zoomy-network/zoomyd/domain/consensus/ruleerrors"
+	"github.com/zoomy-network/zoomyd/domain/consensus/utils/consensushashing"
+	"github.com/zoomy-network/zoomyd/domain/consensus/utils/constants"
+	"github.com/zoomy-network/zoomyd/domain/consensus/utils/transactionhelper"
+	"github.com/zoomy-network/zoomyd/domain/consensus/utils/txscript"
 )
 
 // IsFinalizedTransaction determines whether or not a transaction is finalized.

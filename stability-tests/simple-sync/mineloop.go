@@ -4,11 +4,18 @@ import (
 	"time"
 
 	"github.com/kaspanet/go-secp256k1"
+<<<<<<< Updated upstream
 	"github.com/zoomy-network/zoomyd/app/appmessage"
 	"github.com/zoomy-network/zoomyd/stability-tests/common"
 	"github.com/zoomy-network/zoomyd/stability-tests/common/rpc"
 	"github.com/zoomy-network/zoomyd/util"
+=======
+>>>>>>> Stashed changes
 	"github.com/pkg/errors"
+	"github.com/zoomy-network/zoomyd/app/appmessage"
+	"github.com/zoomy-network/zoomyd/stability-tests/common"
+	"github.com/zoomy-network/zoomyd/stability-tests/common/rpc"
+	"github.com/zoomy-network/zoomyd/util"
 )
 
 func mineLoop(syncerRPCClient, syncedRPCClient *rpc.Client) error {

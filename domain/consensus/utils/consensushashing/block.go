@@ -5,9 +5,14 @@ import (
 
 	"github.com/zoomy-network/zoomyd/domain/consensus/utils/serialization"
 
+<<<<<<< Updated upstream
 	"github.com/zoomy-network/zoomyd/domain/consensus/model/externalapi"
 	"github.com/zoomy-network/zoomyd/domain/consensus/utils/hashes"
+=======
+>>>>>>> Stashed changes
 	"github.com/pkg/errors"
+	"github.com/zoomy-network/zoomyd/domain/consensus/model/externalapi"
+	"github.com/zoomy-network/zoomyd/domain/consensus/utils/hashes"
 )
 
 // BlockHash returns the given block's hash

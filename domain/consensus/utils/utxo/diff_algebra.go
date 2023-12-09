@@ -1,8 +1,12 @@
 package utxo
 
 import (
+<<<<<<< Updated upstream
 	"github.com/zoomy-network/zoomyd/domain/consensus/model/externalapi"
+=======
+>>>>>>> Stashed changes
 	"github.com/pkg/errors"
+	"github.com/zoomy-network/zoomyd/domain/consensus/model/externalapi"
 )
 
 // checkIntersection checks if there is an intersection between two utxoCollections

@@ -3,10 +3,16 @@ package utxo
 import (
 	"fmt"
 
+<<<<<<< Updated upstream
 	"github.com/zoomy-network/zoomyd/domain/consensus/model/externalapi"
 	"github.com/zoomy-network/zoomyd/domain/consensus/utils/consensushashing"
 	"github.com/zoomy-network/zoomyd/domain/consensus/utils/transactionhelper"
+=======
+>>>>>>> Stashed changes
 	"github.com/pkg/errors"
+	"github.com/zoomy-network/zoomyd/domain/consensus/model/externalapi"
+	"github.com/zoomy-network/zoomyd/domain/consensus/utils/consensushashing"
+	"github.com/zoomy-network/zoomyd/domain/consensus/utils/transactionhelper"
 )
 
 type mutableUTXODiff struct {

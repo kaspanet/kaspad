@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+<<<<<<< Updated upstream
 	"github.com/zoomy-network/zoomyd/domain/consensus"
 	"github.com/zoomy-network/zoomyd/domain/consensus/model/externalapi"
 	"github.com/zoomy-network/zoomyd/domain/consensus/model/testapi"
@@ -16,7 +17,16 @@ import (
 	"github.com/zoomy-network/zoomyd/domain/consensus/utils/consensushashing"
 	"github.com/zoomy-network/zoomyd/domain/consensus/utils/testutils"
 	"github.com/zoomy-network/zoomyd/domain/consensus/utils/utxo"
+=======
+>>>>>>> Stashed changes
 	"github.com/pkg/errors"
+	"github.com/zoomy-network/zoomyd/domain/consensus"
+	"github.com/zoomy-network/zoomyd/domain/consensus/model/externalapi"
+	"github.com/zoomy-network/zoomyd/domain/consensus/model/testapi"
+	"github.com/zoomy-network/zoomyd/domain/consensus/ruleerrors"
+	"github.com/zoomy-network/zoomyd/domain/consensus/utils/consensushashing"
+	"github.com/zoomy-network/zoomyd/domain/consensus/utils/testutils"
+	"github.com/zoomy-network/zoomyd/domain/consensus/utils/utxo"
 )
 
 func addBlock(tc testapi.TestConsensus, parentHashes []*externalapi.DomainHash, t *testing.T) *externalapi.DomainHash {

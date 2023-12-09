@@ -13,8 +13,12 @@ import (
 	"github.com/zoomy-network/zoomyd/domain/consensus/utils/consensushashing"
 
 	"github.com/kaspanet/go-secp256k1"
+<<<<<<< Updated upstream
 	"github.com/zoomy-network/zoomyd/domain/consensus/model/externalapi"
+=======
+>>>>>>> Stashed changes
 	"github.com/pkg/errors"
+	"github.com/zoomy-network/zoomyd/domain/consensus/model/externalapi"
 
 	"github.com/zoomy-network/zoomyd/domain/dagconfig"
 	"github.com/zoomy-network/zoomyd/util"

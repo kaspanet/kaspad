@@ -1,6 +1,7 @@
 package protocol
 
 import (
+<<<<<<< Updated upstream
 	"github.com/zoomy-network/zoomyd/app/protocol/common"
 	"github.com/zoomy-network/zoomyd/app/protocol/flows/ready"
 	"github.com/zoomy-network/zoomyd/app/protocol/flows/v5"
@@ -15,7 +16,24 @@ import (
 	"github.com/zoomy-network/zoomyd/infrastructure/network/connmanager"
 	"github.com/zoomy-network/zoomyd/infrastructure/network/netadapter"
 	routerpkg "github.com/zoomy-network/zoomyd/infrastructure/network/netadapter/router"
+=======
+	"sync"
+	"sync/atomic"
+
+	"github.com/zoomy-network/zoomyd/app/protocol/common"
+	"github.com/zoomy-network/zoomyd/app/protocol/flows/ready"
+	v5 "github.com/zoomy-network/zoomyd/app/protocol/flows/v5"
+
+>>>>>>> Stashed changes
 	"github.com/pkg/errors"
+	"github.com/zoomy-network/zoomyd/app/appmessage"
+	"github.com/zoomy-network/zoomyd/app/protocol/flows/handshake"
+	peerpkg "github.com/zoomy-network/zoomyd/app/protocol/peer"
+	"github.com/zoomy-network/zoomyd/app/protocol/protocolerrors"
+	"github.com/zoomy-network/zoomyd/infrastructure/network/addressmanager"
+	"github.com/zoomy-network/zoomyd/infrastructure/network/connmanager"
+	"github.com/zoomy-network/zoomyd/infrastructure/network/netadapter"
+	routerpkg "github.com/zoomy-network/zoomyd/infrastructure/network/netadapter/router"
 )
 
 func (m *Manager) routerInitializer(router *routerpkg.Router, netConnection *netadapter.NetConnection) {

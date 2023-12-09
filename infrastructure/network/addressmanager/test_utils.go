@@ -4,9 +4,14 @@ import (
 	"net"
 	"strconv"
 
+<<<<<<< Updated upstream
 	"github.com/zoomy-network/zoomyd/app/appmessage"
 	"github.com/zoomy-network/zoomyd/domain/consensus/model/externalapi"
+=======
+>>>>>>> Stashed changes
 	"github.com/pkg/errors"
+	"github.com/zoomy-network/zoomyd/app/appmessage"
+	"github.com/zoomy-network/zoomyd/domain/consensus/model/externalapi"
 )
 
 // AddAddressByIP adds an address where we are given an ip:port and not a

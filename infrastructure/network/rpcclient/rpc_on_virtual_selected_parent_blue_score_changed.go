@@ -1,9 +1,14 @@
 package rpcclient
 
 import (
+<<<<<<< Updated upstream
 	"github.com/zoomy-network/zoomyd/app/appmessage"
 	routerpkg "github.com/zoomy-network/zoomyd/infrastructure/network/netadapter/router"
+=======
+>>>>>>> Stashed changes
 	"github.com/pkg/errors"
+	"github.com/zoomy-network/zoomyd/app/appmessage"
+	routerpkg "github.com/zoomy-network/zoomyd/infrastructure/network/netadapter/router"
 )
 
 // RegisterForVirtualSelectedParentBlueScoreChangedNotifications sends an RPC request respective to the function's

@@ -7,6 +7,7 @@ import (
 
 	"github.com/zoomy-network/zoomyd/domain/consensusreference"
 
+<<<<<<< Updated upstream
 	"github.com/zoomy-network/zoomyd/domain/consensus"
 	"github.com/zoomy-network/zoomyd/domain/consensus/model/externalapi"
 	"github.com/zoomy-network/zoomyd/domain/miningmanager"
@@ -14,7 +15,16 @@ import (
 	"github.com/zoomy-network/zoomyd/domain/prefixmanager"
 	"github.com/zoomy-network/zoomyd/domain/prefixmanager/prefix"
 	infrastructuredatabase "github.com/zoomy-network/zoomyd/infrastructure/db/database"
+=======
+>>>>>>> Stashed changes
 	"github.com/pkg/errors"
+	"github.com/zoomy-network/zoomyd/domain/consensus"
+	"github.com/zoomy-network/zoomyd/domain/consensus/model/externalapi"
+	"github.com/zoomy-network/zoomyd/domain/miningmanager"
+	"github.com/zoomy-network/zoomyd/domain/miningmanager/mempool"
+	"github.com/zoomy-network/zoomyd/domain/prefixmanager"
+	"github.com/zoomy-network/zoomyd/domain/prefixmanager/prefix"
+	infrastructuredatabase "github.com/zoomy-network/zoomyd/infrastructure/db/database"
 )
 
 // Domain provides a reference to the domain's external aps

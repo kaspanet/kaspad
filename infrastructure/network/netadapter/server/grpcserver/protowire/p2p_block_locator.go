@@ -1,9 +1,14 @@
 package protowire
 
 import (
+<<<<<<< Updated upstream
 	"github.com/zoomy-network/zoomyd/app/appmessage"
 	"github.com/zoomy-network/zoomyd/domain/consensus/model/externalapi"
+=======
+>>>>>>> Stashed changes
 	"github.com/pkg/errors"
+	"github.com/zoomy-network/zoomyd/app/appmessage"
+	"github.com/zoomy-network/zoomyd/domain/consensus/model/externalapi"
 )
 
 func (x *KaspadMessage_BlockLocator) toAppMessage() (appmessage.Message, error) {

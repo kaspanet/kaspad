@@ -1,10 +1,16 @@
 package dagtraversalmanager
 
 import (
+<<<<<<< Updated upstream
 	"github.com/zoomy-network/zoomyd/domain/consensus/model"
 	"github.com/zoomy-network/zoomyd/domain/consensus/model/externalapi"
 	"github.com/zoomy-network/zoomyd/domain/consensus/utils/hashset"
+=======
+>>>>>>> Stashed changes
 	"github.com/pkg/errors"
+	"github.com/zoomy-network/zoomyd/domain/consensus/model"
+	"github.com/zoomy-network/zoomyd/domain/consensus/model/externalapi"
+	"github.com/zoomy-network/zoomyd/domain/consensus/utils/hashset"
 )
 
 func (dtm *dagTraversalManager) AnticoneFromVirtualPOV(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash) (

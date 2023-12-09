@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+<<<<<<< Updated upstream
 	"github.com/zoomy-network/zoomyd/domain/consensus"
 	"github.com/zoomy-network/zoomyd/domain/consensus/model"
 	"github.com/zoomy-network/zoomyd/domain/consensus/model/externalapi"
@@ -19,7 +20,21 @@ import (
 	"github.com/zoomy-network/zoomyd/domain/consensus/utils/pow"
 	"github.com/zoomy-network/zoomyd/domain/consensus/utils/testutils"
 	"github.com/zoomy-network/zoomyd/util/difficulty"
+=======
+>>>>>>> Stashed changes
 	"github.com/pkg/errors"
+	"github.com/zoomy-network/zoomyd/domain/consensus"
+	"github.com/zoomy-network/zoomyd/domain/consensus/model"
+	"github.com/zoomy-network/zoomyd/domain/consensus/model/externalapi"
+	"github.com/zoomy-network/zoomyd/domain/consensus/ruleerrors"
+	"github.com/zoomy-network/zoomyd/domain/consensus/utils/blockheader"
+	"github.com/zoomy-network/zoomyd/domain/consensus/utils/consensushashing"
+	"github.com/zoomy-network/zoomyd/domain/consensus/utils/constants"
+	"github.com/zoomy-network/zoomyd/domain/consensus/utils/merkle"
+	"github.com/zoomy-network/zoomyd/domain/consensus/utils/mining"
+	"github.com/zoomy-network/zoomyd/domain/consensus/utils/pow"
+	"github.com/zoomy-network/zoomyd/domain/consensus/utils/testutils"
+	"github.com/zoomy-network/zoomyd/util/difficulty"
 )
 
 // TestPOW tests the validation of the block's POW.

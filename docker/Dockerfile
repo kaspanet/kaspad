@@ -24,8 +24,13 @@ WORKDIR /app
 
 RUN apk add --no-cache ca-certificates tini
 
+<<<<<<< Updated upstream
 COPY --from=build /go/src/github.com/zoomy-network/zoomyd/zoomyd /app/
 COPY --from=build /go/src/github.com/zoomy-network/zoomyd/infrastructure/config/sample-zoomyd.conf /app/
+=======
+COPY --from=build /go/src/github.com/zoomy-network/zoomyd/kaspad /app/
+COPY --from=build /go/src/github.com/zoomy-network/zoomyd/infrastructure/config/sample-kaspad.conf /app/
+>>>>>>> Stashed changes
 
 USER nobody
 ENTRYPOINT [ "/sbin/tini", "--" ]

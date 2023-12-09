@@ -2,13 +2,21 @@ package appmessage
 
 import (
 	"encoding/hex"
-	"github.com/pkg/errors"
 	"math/big"
+
+<<<<<<< Updated upstream
+	"github.com/zoomy-network/zoomyd/domain/consensus/utils/blockheader"
+	"github.com/zoomy-network/zoomyd/domain/consensus/utils/hashes"
+	"github.com/zoomy-network/zoomyd/domain/consensus/utils/utxo"
+
+=======
+	"github.com/pkg/errors"
 
 	"github.com/zoomy-network/zoomyd/domain/consensus/utils/blockheader"
 	"github.com/zoomy-network/zoomyd/domain/consensus/utils/hashes"
 	"github.com/zoomy-network/zoomyd/domain/consensus/utils/utxo"
 
+>>>>>>> Stashed changes
 	"github.com/zoomy-network/zoomyd/domain/consensus/model/externalapi"
 	"github.com/zoomy-network/zoomyd/domain/consensus/utils/subnetworks"
 	"github.com/zoomy-network/zoomyd/domain/consensus/utils/transactionid"

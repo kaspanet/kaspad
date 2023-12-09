@@ -1,8 +1,13 @@
 package appmessage
 
 import (
+<<<<<<< Updated upstream
 	"github.com/zoomy-network/zoomyd/domain/consensus/model/externalapi"
+=======
+>>>>>>> Stashed changes
 	"math/big"
+
+	"github.com/zoomy-network/zoomyd/domain/consensus/model/externalapi"
 )
 
 // MsgBlockWithTrustedData represents a kaspa BlockWithTrustedData message

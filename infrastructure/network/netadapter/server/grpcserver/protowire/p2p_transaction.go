@@ -3,8 +3,12 @@ package protowire
 import (
 	"math"
 
+<<<<<<< Updated upstream
 	"github.com/zoomy-network/zoomyd/app/appmessage"
+=======
+>>>>>>> Stashed changes
 	"github.com/pkg/errors"
+	"github.com/zoomy-network/zoomyd/app/appmessage"
 )
 
 func (x *KaspadMessage_Transaction) toAppMessage() (appmessage.Message, error) {

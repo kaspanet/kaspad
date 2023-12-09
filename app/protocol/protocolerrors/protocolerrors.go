@@ -1,8 +1,12 @@
 package protocolerrors
 
 import (
+<<<<<<< Updated upstream
 	"github.com/zoomy-network/zoomyd/domain/consensus/ruleerrors"
+=======
+>>>>>>> Stashed changes
 	"github.com/pkg/errors"
+	"github.com/zoomy-network/zoomyd/domain/consensus/ruleerrors"
 )
 
 // ProtocolError is an error that signifies a violation

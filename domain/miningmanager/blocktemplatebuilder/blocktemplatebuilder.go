@@ -1,6 +1,7 @@
 package blocktemplatebuilder
 
 import (
+<<<<<<< Updated upstream
 	"github.com/zoomy-network/zoomyd/domain/consensus/processes/coinbasemanager"
 	"github.com/zoomy-network/zoomyd/domain/consensus/utils/merkle"
 	"github.com/zoomy-network/zoomyd/domain/consensus/utils/transactionhelper"
@@ -15,7 +16,24 @@ import (
 	"github.com/zoomy-network/zoomyd/domain/consensus/ruleerrors"
 	"github.com/zoomy-network/zoomyd/domain/consensus/utils/subnetworks"
 	miningmanagerapi "github.com/zoomy-network/zoomyd/domain/miningmanager/model"
+=======
+	"math"
+	"sort"
+
+	"github.com/zoomy-network/zoomyd/domain/consensus/processes/coinbasemanager"
+	"github.com/zoomy-network/zoomyd/domain/consensus/utils/merkle"
+	"github.com/zoomy-network/zoomyd/domain/consensus/utils/transactionhelper"
+	"github.com/zoomy-network/zoomyd/domain/consensusreference"
+	"github.com/zoomy-network/zoomyd/util/mstime"
+
+	"github.com/zoomy-network/zoomyd/util/difficulty"
+
+>>>>>>> Stashed changes
 	"github.com/pkg/errors"
+	consensusexternalapi "github.com/zoomy-network/zoomyd/domain/consensus/model/externalapi"
+	"github.com/zoomy-network/zoomyd/domain/consensus/ruleerrors"
+	"github.com/zoomy-network/zoomyd/domain/consensus/utils/subnetworks"
+	miningmanagerapi "github.com/zoomy-network/zoomyd/domain/miningmanager/model"
 )
 
 type candidateTx struct {

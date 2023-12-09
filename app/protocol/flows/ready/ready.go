@@ -1,6 +1,7 @@
 package ready
 
 import (
+<<<<<<< Updated upstream
 	"github.com/zoomy-network/zoomyd/app/appmessage"
 	"github.com/zoomy-network/zoomyd/app/protocol/common"
 	"sync/atomic"
@@ -8,7 +9,17 @@ import (
 	peerpkg "github.com/zoomy-network/zoomyd/app/protocol/peer"
 	"github.com/zoomy-network/zoomyd/app/protocol/protocolerrors"
 	routerpkg "github.com/zoomy-network/zoomyd/infrastructure/network/netadapter/router"
+=======
+	"sync/atomic"
+
+	"github.com/zoomy-network/zoomyd/app/appmessage"
+	"github.com/zoomy-network/zoomyd/app/protocol/common"
+
+>>>>>>> Stashed changes
 	"github.com/pkg/errors"
+	peerpkg "github.com/zoomy-network/zoomyd/app/protocol/peer"
+	"github.com/zoomy-network/zoomyd/app/protocol/protocolerrors"
+	routerpkg "github.com/zoomy-network/zoomyd/infrastructure/network/netadapter/router"
 )
 
 // HandleReady notify the other peer that peer is ready for messages, and wait for the other peer

@@ -1,12 +1,20 @@
 package miningmanager
 
 import (
+<<<<<<< Updated upstream
 	"github.com/zoomy-network/zoomyd/domain/consensusreference"
 	"github.com/zoomy-network/zoomyd/domain/dagconfig"
 	"github.com/zoomy-network/zoomyd/domain/miningmanager/blocktemplatebuilder"
 	mempoolpkg "github.com/zoomy-network/zoomyd/domain/miningmanager/mempool"
+=======
+>>>>>>> Stashed changes
 	"sync"
 	"time"
+
+	"github.com/zoomy-network/zoomyd/domain/consensusreference"
+	"github.com/zoomy-network/zoomyd/domain/dagconfig"
+	"github.com/zoomy-network/zoomyd/domain/miningmanager/blocktemplatebuilder"
+	mempoolpkg "github.com/zoomy-network/zoomyd/domain/miningmanager/mempool"
 )
 
 // Factory instantiates new mining managers

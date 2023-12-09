@@ -1,6 +1,7 @@
 package blockvalidator
 
 import (
+<<<<<<< Updated upstream
 	"github.com/zoomy-network/zoomyd/domain/consensus/model"
 	"github.com/zoomy-network/zoomyd/domain/consensus/model/externalapi"
 	"github.com/zoomy-network/zoomyd/domain/consensus/ruleerrors"
@@ -8,7 +9,16 @@ import (
 	"github.com/zoomy-network/zoomyd/domain/consensus/utils/virtual"
 	"github.com/zoomy-network/zoomyd/infrastructure/db/database"
 	"github.com/zoomy-network/zoomyd/infrastructure/logger"
+=======
+>>>>>>> Stashed changes
 	"github.com/pkg/errors"
+	"github.com/zoomy-network/zoomyd/domain/consensus/model"
+	"github.com/zoomy-network/zoomyd/domain/consensus/model/externalapi"
+	"github.com/zoomy-network/zoomyd/domain/consensus/ruleerrors"
+	"github.com/zoomy-network/zoomyd/domain/consensus/utils/pow"
+	"github.com/zoomy-network/zoomyd/domain/consensus/utils/virtual"
+	"github.com/zoomy-network/zoomyd/infrastructure/db/database"
+	"github.com/zoomy-network/zoomyd/infrastructure/logger"
 )
 
 func (v *blockValidator) ValidatePruningPointViolationAndProofOfWorkAndDifficulty(stagingArea *model.StagingArea,

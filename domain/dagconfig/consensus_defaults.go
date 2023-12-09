@@ -1,8 +1,13 @@
 package dagconfig
 
 import (
+<<<<<<< Updated upstream
 	"github.com/zoomy-network/zoomyd/domain/consensus/utils/constants"
+=======
+>>>>>>> Stashed changes
 	"time"
+
+	"github.com/zoomy-network/zoomyd/domain/consensus/utils/constants"
 )
 
 // The documentation refers to the following constants which aren't explicated in the code:

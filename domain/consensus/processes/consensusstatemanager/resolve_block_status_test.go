@@ -2,6 +2,7 @@ package consensusstatemanager_test
 
 import (
 	"errors"
+<<<<<<< Updated upstream
 	"github.com/zoomy-network/zoomyd/domain/consensus/utils/utxo"
 	"testing"
 
@@ -11,6 +12,18 @@ import (
 
 	"github.com/zoomy-network/zoomyd/domain/consensus/utils/consensushashing"
 
+=======
+	"testing"
+
+	"github.com/zoomy-network/zoomyd/domain/consensus/utils/utxo"
+
+	"github.com/zoomy-network/zoomyd/domain/consensus/model"
+
+	"github.com/zoomy-network/zoomyd/domain/consensus/ruleerrors"
+
+	"github.com/zoomy-network/zoomyd/domain/consensus/utils/consensushashing"
+
+>>>>>>> Stashed changes
 	"github.com/zoomy-network/zoomyd/domain/consensus"
 	"github.com/zoomy-network/zoomyd/domain/consensus/model/externalapi"
 	"github.com/zoomy-network/zoomyd/domain/consensus/utils/testutils"

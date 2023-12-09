@@ -3,9 +3,14 @@ package serialization
 import (
 	"io"
 
+<<<<<<< Updated upstream
 	"github.com/zoomy-network/zoomyd/domain/consensus/model/externalapi"
 	"github.com/zoomy-network/zoomyd/util/binaryserializer"
+=======
+>>>>>>> Stashed changes
 	"github.com/pkg/errors"
+	"github.com/zoomy-network/zoomyd/domain/consensus/model/externalapi"
+	"github.com/zoomy-network/zoomyd/util/binaryserializer"
 )
 
 // errNoEncodingForType signifies that there's no encoding for the given type.

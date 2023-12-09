@@ -2,12 +2,20 @@ package blockvalidator
 
 import (
 	"fmt"
+<<<<<<< Updated upstream
 	"github.com/zoomy-network/zoomyd/domain/consensus/model"
 	"github.com/zoomy-network/zoomyd/domain/consensus/model/externalapi"
 	"github.com/zoomy-network/zoomyd/domain/consensus/ruleerrors"
 	"github.com/zoomy-network/zoomyd/domain/consensus/utils/consensushashing"
 	"github.com/zoomy-network/zoomyd/infrastructure/logger"
+=======
+>>>>>>> Stashed changes
 	"github.com/pkg/errors"
+	"github.com/zoomy-network/zoomyd/domain/consensus/model"
+	"github.com/zoomy-network/zoomyd/domain/consensus/model/externalapi"
+	"github.com/zoomy-network/zoomyd/domain/consensus/ruleerrors"
+	"github.com/zoomy-network/zoomyd/domain/consensus/utils/consensushashing"
+	"github.com/zoomy-network/zoomyd/infrastructure/logger"
 )
 
 // ValidateHeaderInContext validates block headers in the context of the current
