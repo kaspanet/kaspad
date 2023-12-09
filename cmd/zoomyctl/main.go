@@ -2,18 +2,11 @@ package main
 
 import (
 	"fmt"
-<<<<<<< Updated upstream:cmd/kaspactl/main.go
-	"github.com/zoomy-network/zoomyd/version"
-	"os"
-	"time"
-
-=======
 	"os"
 	"time"
 
 	"github.com/zoomy-network/zoomyd/version"
 
->>>>>>> Stashed changes:cmd/zoomyctl/main.go
 	"github.com/zoomy-network/zoomyd/infrastructure/network/netadapter/server/grpcserver/protowire"
 
 	"github.com/pkg/errors"

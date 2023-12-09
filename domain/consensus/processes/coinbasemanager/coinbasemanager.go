@@ -1,16 +1,6 @@
 package coinbasemanager
 
 import (
-<<<<<<< Updated upstream
-	"github.com/zoomy-network/zoomyd/domain/consensus/model"
-	"github.com/zoomy-network/zoomyd/domain/consensus/model/externalapi"
-	"github.com/zoomy-network/zoomyd/domain/consensus/utils/constants"
-	"github.com/zoomy-network/zoomyd/domain/consensus/utils/hashset"
-	"github.com/zoomy-network/zoomyd/domain/consensus/utils/subnetworks"
-	"github.com/zoomy-network/zoomyd/domain/consensus/utils/transactionhelper"
-	"github.com/zoomy-network/zoomyd/infrastructure/db/database"
-=======
->>>>>>> Stashed changes
 	"github.com/pkg/errors"
 	"github.com/zoomy-network/zoomyd/domain/consensus/model"
 	"github.com/zoomy-network/zoomyd/domain/consensus/model/externalapi"

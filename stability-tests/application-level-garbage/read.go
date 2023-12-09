@@ -3,11 +3,6 @@ package main
 import (
 	"encoding/json"
 
-<<<<<<< Updated upstream
-	"github.com/zoomy-network/zoomyd/domain/consensus/model/externalapi"
-	"github.com/zoomy-network/zoomyd/stability-tests/common"
-=======
->>>>>>> Stashed changes
 	"github.com/pkg/errors"
 	"github.com/zoomy-network/zoomyd/domain/consensus/model/externalapi"
 	"github.com/zoomy-network/zoomyd/stability-tests/common"

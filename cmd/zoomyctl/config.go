@@ -2,10 +2,6 @@ package main
 
 import (
 	"github.com/jessevdk/go-flags"
-<<<<<<< Updated upstream:cmd/kaspactl/config.go
-	"github.com/zoomy-network/zoomyd/infrastructure/config"
-=======
->>>>>>> Stashed changes:cmd/zoomyctl/config.go
 	"github.com/pkg/errors"
 	"github.com/zoomy-network/zoomyd/infrastructure/config"
 )

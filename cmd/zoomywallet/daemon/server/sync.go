@@ -7,10 +7,6 @@ import (
 
 	"github.com/zoomy-network/zoomyd/cmd/zoomywallet/libkaspawallet"
 
-<<<<<<< Updated upstream:cmd/kaspawallet/daemon/server/sync.go
-	"github.com/zoomy-network/zoomyd/app/appmessage"
-=======
->>>>>>> Stashed changes:cmd/zoomywallet/daemon/server/sync.go
 	"github.com/pkg/errors"
 	"github.com/zoomy-network/zoomyd/app/appmessage"
 )

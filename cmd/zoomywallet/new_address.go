@@ -3,10 +3,6 @@ package main
 import (
 	"context"
 	"fmt"
-<<<<<<< Updated upstream:cmd/kaspawallet/new_address.go
-=======
-
->>>>>>> Stashed changes:cmd/zoomywallet/new_address.go
 	"github.com/zoomy-network/zoomyd/cmd/zoomywallet/daemon/client"
 	"github.com/zoomy-network/zoomyd/cmd/zoomywallet/daemon/pb"
 )

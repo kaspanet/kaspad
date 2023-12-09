@@ -1,11 +1,7 @@
 syntax = "proto3";
 
 option go_package = "github.com/zoomy-network/zoomyd/cmd/zoomywallet/daemon/pb";
-<<<<<<< Updated upstream:cmd/kaspawallet/daemon/pb/kaspawalletd.proto
-package zoomywalletd;
-=======
 package kaspawalletd;
->>>>>>> Stashed changes:cmd/zoomywallet/daemon/pb/kaspawalletd.proto
 
 service zoomywalletd {
   rpc GetBalance (GetBalanceRequest) returns (GetBalanceResponse) {}

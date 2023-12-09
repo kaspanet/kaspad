@@ -1,10 +1,6 @@
 package ldb
 
 import (
-<<<<<<< Updated upstream
-	"github.com/zoomy-network/zoomyd/infrastructure/db/database"
-=======
->>>>>>> Stashed changes
 	"github.com/pkg/errors"
 	"github.com/syndtr/goleveldb/leveldb"
 	"github.com/zoomy-network/zoomyd/infrastructure/db/database"

@@ -3,13 +3,6 @@ package utxoindex
 import (
 	"encoding/binary"
 
-<<<<<<< Updated upstream
-	"github.com/zoomy-network/zoomyd/domain/consensus/database/binaryserialization"
-	"github.com/zoomy-network/zoomyd/domain/consensus/model/externalapi"
-	"github.com/zoomy-network/zoomyd/infrastructure/db/database"
-	"github.com/zoomy-network/zoomyd/infrastructure/logger"
-=======
->>>>>>> Stashed changes
 	"github.com/pkg/errors"
 	"github.com/zoomy-network/zoomyd/domain/consensus/database/binaryserialization"
 	"github.com/zoomy-network/zoomyd/domain/consensus/model/externalapi"

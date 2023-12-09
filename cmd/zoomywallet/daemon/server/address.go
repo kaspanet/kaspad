@@ -4,12 +4,6 @@ import (
 	"context"
 	"fmt"
 
-<<<<<<< Updated upstream:cmd/kaspawallet/daemon/server/address.go
-	"github.com/zoomy-network/zoomyd/cmd/zoomywallet/daemon/pb"
-	"github.com/zoomy-network/zoomyd/cmd/zoomywallet/libkaspawallet"
-	"github.com/zoomy-network/zoomyd/util"
-=======
->>>>>>> Stashed changes:cmd/zoomywallet/daemon/server/address.go
 	"github.com/pkg/errors"
 	"github.com/zoomy-network/zoomyd/cmd/zoomywallet/daemon/pb"
 	"github.com/zoomy-network/zoomyd/cmd/zoomywallet/libkaspawallet"

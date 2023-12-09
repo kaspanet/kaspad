@@ -8,10 +8,6 @@ import (
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
 
-<<<<<<< Updated upstream:cmd/kaspactl/command_parser.go
-	"github.com/zoomy-network/zoomyd/infrastructure/network/netadapter/server/grpcserver/protowire"
-=======
->>>>>>> Stashed changes:cmd/zoomyctl/command_parser.go
 	"github.com/pkg/errors"
 	"github.com/zoomy-network/zoomyd/infrastructure/network/netadapter/server/grpcserver/protowire"
 )

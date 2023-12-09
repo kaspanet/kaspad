@@ -1,13 +1,6 @@
 package mergedepthmanager
 
 import (
-<<<<<<< Updated upstream
-	"github.com/zoomy-network/zoomyd/domain/consensus/model"
-	"github.com/zoomy-network/zoomyd/domain/consensus/model/externalapi"
-	"github.com/zoomy-network/zoomyd/domain/consensus/ruleerrors"
-	"github.com/zoomy-network/zoomyd/infrastructure/db/database"
-=======
->>>>>>> Stashed changes
 	"github.com/pkg/errors"
 	"github.com/zoomy-network/zoomyd/domain/consensus/model"
 	"github.com/zoomy-network/zoomyd/domain/consensus/model/externalapi"

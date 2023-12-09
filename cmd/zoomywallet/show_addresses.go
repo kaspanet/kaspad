@@ -3,10 +3,6 @@ package main
 import (
 	"context"
 	"fmt"
-<<<<<<< Updated upstream:cmd/kaspawallet/show_addresses.go
-=======
-
->>>>>>> Stashed changes:cmd/zoomywallet/show_addresses.go
 	"github.com/zoomy-network/zoomyd/cmd/zoomywallet/daemon/client"
 	"github.com/zoomy-network/zoomyd/cmd/zoomywallet/daemon/pb"
 )

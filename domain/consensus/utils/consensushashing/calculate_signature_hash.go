@@ -1,13 +1,6 @@
 package consensushashing
 
 import (
-<<<<<<< Updated upstream
-	"github.com/zoomy-network/zoomyd/domain/consensus/model/externalapi"
-	"github.com/zoomy-network/zoomyd/domain/consensus/utils/hashes"
-	"github.com/zoomy-network/zoomyd/domain/consensus/utils/serialization"
-	"github.com/zoomy-network/zoomyd/domain/consensus/utils/subnetworks"
-=======
->>>>>>> Stashed changes
 	"github.com/pkg/errors"
 	"github.com/zoomy-network/zoomyd/domain/consensus/model/externalapi"
 	"github.com/zoomy-network/zoomyd/domain/consensus/utils/hashes"

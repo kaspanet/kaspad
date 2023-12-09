@@ -1,14 +1,6 @@
 package mempool
 
 import (
-<<<<<<< Updated upstream
-	"github.com/zoomy-network/zoomyd/domain/consensus/utils/consensushashing"
-	"github.com/zoomy-network/zoomyd/domain/consensus/utils/constants"
-	"sync"
-
-	"github.com/zoomy-network/zoomyd/domain/consensusreference"
-
-=======
 	"sync"
 
 	"github.com/zoomy-network/zoomyd/domain/consensus/utils/consensushashing"
@@ -16,7 +8,6 @@ import (
 
 	"github.com/zoomy-network/zoomyd/domain/consensusreference"
 
->>>>>>> Stashed changes
 	"github.com/zoomy-network/zoomyd/domain/consensus/model/externalapi"
 	miningmanagermodel "github.com/zoomy-network/zoomyd/domain/miningmanager/model"
 )

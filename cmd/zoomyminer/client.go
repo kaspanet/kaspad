@@ -1,13 +1,6 @@
 package main
 
 import (
-<<<<<<< Updated upstream:cmd/kaspaminer/client.go
-	"github.com/zoomy-network/zoomyd/app/appmessage"
-	"github.com/zoomy-network/zoomyd/infrastructure/logger"
-	"github.com/zoomy-network/zoomyd/infrastructure/network/rpcclient"
-	"github.com/pkg/errors"
-=======
->>>>>>> Stashed changes:cmd/zoomyminer/client.go
 	"time"
 
 	"github.com/pkg/errors"

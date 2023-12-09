@@ -17,12 +17,6 @@ import (
 
 	"github.com/zoomy-network/zoomyd/domain/consensus/utils/constants"
 
-<<<<<<< Updated upstream
-	"github.com/zoomy-network/zoomyd/domain/consensus/model/externalapi"
-	"github.com/zoomy-network/zoomyd/domain/consensus/utils/txscript"
-	"github.com/zoomy-network/zoomyd/util"
-=======
->>>>>>> Stashed changes
 	"github.com/pkg/errors"
 	"github.com/zoomy-network/zoomyd/domain/consensus/model/externalapi"
 	"github.com/zoomy-network/zoomyd/domain/consensus/utils/txscript"

@@ -1,12 +1,6 @@
 package serialization
 
 import (
-<<<<<<< Updated upstream
-	"github.com/zoomy-network/zoomyd/domain/consensus/model/externalapi"
-	"github.com/zoomy-network/zoomyd/domain/consensus/utils/utxo"
-	"github.com/pkg/errors"
-=======
->>>>>>> Stashed changes
 	"math"
 
 	"github.com/pkg/errors"

@@ -11,11 +11,6 @@ import (
 
 	"github.com/zoomy-network/zoomyd/domain/consensus/utils/utxo"
 
-<<<<<<< Updated upstream
-	"github.com/zoomy-network/zoomyd/domain/consensus/model/externalapi"
-	"github.com/zoomy-network/zoomyd/domain/miningmanager/mempool/model"
-=======
->>>>>>> Stashed changes
 	"github.com/pkg/errors"
 	"github.com/zoomy-network/zoomyd/domain/consensus/model/externalapi"
 	"github.com/zoomy-network/zoomyd/domain/miningmanager/mempool/model"

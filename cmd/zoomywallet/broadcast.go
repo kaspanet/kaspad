@@ -6,11 +6,6 @@ import (
 	"io/ioutil"
 	"strings"
 
-<<<<<<< Updated upstream:cmd/kaspawallet/broadcast.go
-	"github.com/zoomy-network/zoomyd/cmd/zoomywallet/daemon/client"
-	"github.com/zoomy-network/zoomyd/cmd/zoomywallet/daemon/pb"
-=======
->>>>>>> Stashed changes:cmd/zoomywallet/broadcast.go
 	"github.com/pkg/errors"
 	"github.com/zoomy-network/zoomyd/cmd/zoomywallet/daemon/client"
 	"github.com/zoomy-network/zoomyd/cmd/zoomywallet/daemon/pb"

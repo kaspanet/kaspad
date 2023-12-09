@@ -5,14 +5,6 @@
 package dagconfig
 
 import (
-<<<<<<< Updated upstream
-	"github.com/kaspanet/go-muhash"
-	"github.com/zoomy-network/zoomyd/domain/consensus/model/externalapi"
-	"github.com/zoomy-network/zoomyd/domain/consensus/utils/blockheader"
-	"github.com/zoomy-network/zoomyd/domain/consensus/utils/subnetworks"
-	"github.com/zoomy-network/zoomyd/domain/consensus/utils/transactionhelper"
-=======
->>>>>>> Stashed changes
 	"math/big"
 
 	"github.com/kaspanet/go-muhash"

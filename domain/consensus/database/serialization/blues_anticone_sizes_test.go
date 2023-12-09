@@ -1,10 +1,6 @@
 package serialization
 
 import (
-<<<<<<< Updated upstream
-	"github.com/zoomy-network/zoomyd/domain/consensus/model/externalapi"
-=======
->>>>>>> Stashed changes
 	"testing"
 
 	"github.com/zoomy-network/zoomyd/domain/consensus/model/externalapi"

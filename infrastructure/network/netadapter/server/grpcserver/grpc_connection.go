@@ -5,11 +5,6 @@ import (
 	"sync"
 	"sync/atomic"
 
-<<<<<<< Updated upstream
-	"github.com/zoomy-network/zoomyd/infrastructure/network/netadapter/router"
-	"github.com/zoomy-network/zoomyd/infrastructure/network/netadapter/server/grpcserver/protowire"
-=======
->>>>>>> Stashed changes
 	"github.com/pkg/errors"
 	"github.com/zoomy-network/zoomyd/infrastructure/network/netadapter/router"
 	"github.com/zoomy-network/zoomyd/infrastructure/network/netadapter/server/grpcserver/protowire"

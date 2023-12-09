@@ -2,20 +2,9 @@ package headersselectedchainstore
 
 import (
 	"encoding/binary"
-<<<<<<< Updated upstream
-	"github.com/zoomy-network/zoomyd/util/staging"
-
-	"github.com/zoomy-network/zoomyd/domain/consensus/database"
-	"github.com/zoomy-network/zoomyd/domain/consensus/database/binaryserialization"
-	"github.com/zoomy-network/zoomyd/domain/consensus/model"
-	"github.com/zoomy-network/zoomyd/domain/consensus/model/externalapi"
-	"github.com/zoomy-network/zoomyd/domain/consensus/utils/lrucache"
-	"github.com/zoomy-network/zoomyd/domain/consensus/utils/lrucacheuint64tohash"
-=======
 
 	"github.com/zoomy-network/zoomyd/util/staging"
 
->>>>>>> Stashed changes
 	"github.com/pkg/errors"
 	"github.com/zoomy-network/zoomyd/domain/consensus/database"
 	"github.com/zoomy-network/zoomyd/domain/consensus/database/binaryserialization"

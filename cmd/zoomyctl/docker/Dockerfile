@@ -14,11 +14,7 @@ RUN go mod download
 
 COPY . .
 
-<<<<<<< Updated upstream:cmd/kaspactl/docker/Dockerfile
-WORKDIR /go/src/github.com/zoomy-network/zoomyd/cmd/zoomyctl
-=======
 WORKDIR /go/src/github.com/zoomy-network/zoomyd/cmd/kaspactl
->>>>>>> Stashed changes:cmd/zoomyctl/docker/Dockerfile
 
 RUN GOOS=linux go build -a -installsuffix cgo -o zoomyctl .
 
@@ -28,11 +24,7 @@ WORKDIR /app
 
 RUN apk add --no-cache ca-certificates tini
 
-<<<<<<< Updated upstream:cmd/kaspactl/docker/Dockerfile
-COPY --from=build /go/src/github.com/zoomy-network/zoomyd/cmd/zoomyctl/zoomyctl /app/
-=======
 COPY --from=build /go/src/github.com/zoomy-network/zoomyd/cmd/kaspactl/kaspactl /app/
->>>>>>> Stashed changes:cmd/zoomyctl/docker/Dockerfile
 
 USER nobody
 ENTRYPOINT [ "/sbin/tini", "--" ]

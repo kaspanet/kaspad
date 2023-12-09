@@ -7,12 +7,6 @@ import (
 	"fmt"
 	"os"
 
-<<<<<<< Updated upstream:cmd/kaspawallet/keys/create.go
-	"github.com/zoomy-network/zoomyd/cmd/zoomywallet/libkaspawallet"
-	"github.com/zoomy-network/zoomyd/cmd/zoomywallet/utils"
-	"github.com/zoomy-network/zoomyd/domain/dagconfig"
-=======
->>>>>>> Stashed changes:cmd/zoomywallet/keys/create.go
 	"github.com/pkg/errors"
 	"github.com/tyler-smith/go-bip39"
 	"github.com/zoomy-network/zoomyd/cmd/zoomywallet/libkaspawallet"

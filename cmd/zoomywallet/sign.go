@@ -6,11 +6,6 @@ import (
 	"os"
 	"strings"
 
-<<<<<<< Updated upstream:cmd/kaspawallet/sign.go
-	"github.com/zoomy-network/zoomyd/cmd/zoomywallet/keys"
-	"github.com/zoomy-network/zoomyd/cmd/zoomywallet/libkaspawallet"
-=======
->>>>>>> Stashed changes:cmd/zoomywallet/sign.go
 	"github.com/pkg/errors"
 	"github.com/zoomy-network/zoomyd/cmd/zoomywallet/keys"
 	"github.com/zoomy-network/zoomyd/cmd/zoomywallet/libkaspawallet"

@@ -1,14 +1,6 @@
 package consensusstatemanager
 
 import (
-<<<<<<< Updated upstream
-	"github.com/zoomy-network/zoomyd/domain/consensus/model"
-	"github.com/zoomy-network/zoomyd/domain/consensus/model/externalapi"
-	"github.com/zoomy-network/zoomyd/infrastructure/logger"
-	"github.com/zoomy-network/zoomyd/util/staging"
-	"github.com/pkg/errors"
-=======
->>>>>>> Stashed changes
 	"sort"
 
 	"github.com/pkg/errors"

@@ -2,14 +2,9 @@ package mempool
 
 import (
 	"fmt"
-<<<<<<< Updated upstream
-	"github.com/zoomy-network/zoomyd/infrastructure/logger"
-
-=======
 
 	"github.com/zoomy-network/zoomyd/infrastructure/logger"
 
->>>>>>> Stashed changes
 	"github.com/zoomy-network/zoomyd/domain/consensus/model/externalapi"
 	"github.com/zoomy-network/zoomyd/domain/consensus/utils/consensushashing"
 )

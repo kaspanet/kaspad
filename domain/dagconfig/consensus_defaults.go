@@ -1,10 +1,6 @@
 package dagconfig
 
 import (
-<<<<<<< Updated upstream
-	"github.com/zoomy-network/zoomyd/domain/consensus/utils/constants"
-=======
->>>>>>> Stashed changes
 	"time"
 
 	"github.com/zoomy-network/zoomyd/domain/consensus/utils/constants"

@@ -2,11 +2,6 @@ package main
 
 import (
 	"fmt"
-<<<<<<< Updated upstream:cmd/kaspaminer/log.go
-	"github.com/zoomy-network/zoomyd/infrastructure/logger"
-	"github.com/zoomy-network/zoomyd/util/panics"
-=======
->>>>>>> Stashed changes:cmd/zoomyminer/log.go
 	"os"
 
 	"github.com/zoomy-network/zoomyd/infrastructure/logger"

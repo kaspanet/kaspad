@@ -2,13 +2,6 @@ package utxoindex
 
 import (
 	"encoding/binary"
-<<<<<<< Updated upstream
-	"github.com/zoomy-network/zoomyd/domain/consensus/database/serialization"
-	"github.com/zoomy-network/zoomyd/domain/consensus/model/externalapi"
-	"github.com/pkg/errors"
-	"google.golang.org/protobuf/proto"
-=======
->>>>>>> Stashed changes
 	"io"
 
 	"github.com/pkg/errors"

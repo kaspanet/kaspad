@@ -11,17 +11,10 @@ import (
 	"runtime"
 	"strings"
 
-<<<<<<< Updated upstream:cmd/kaspawallet/keys/keys.go
-	"github.com/zoomy-network/zoomyd/cmd/zoomywallet/utils"
-
-	"github.com/zoomy-network/zoomyd/domain/dagconfig"
-	"github.com/zoomy-network/zoomyd/util"
-=======
 	"github.com/gofrs/flock"
 
 	"github.com/zoomy-network/zoomyd/cmd/zoomywallet/utils"
 
->>>>>>> Stashed changes:cmd/zoomywallet/keys/keys.go
 	"github.com/pkg/errors"
 	"github.com/zoomy-network/zoomyd/domain/dagconfig"
 	"github.com/zoomy-network/zoomyd/util"

@@ -1,18 +1,6 @@
 package pruningmanager
 
 import (
-<<<<<<< Updated upstream
-	"github.com/zoomy-network/zoomyd/domain/consensus/model"
-	"github.com/zoomy-network/zoomyd/domain/consensus/model/externalapi"
-	"github.com/zoomy-network/zoomyd/domain/consensus/utils/consensushashing"
-	"github.com/zoomy-network/zoomyd/domain/consensus/utils/multiset"
-	"github.com/zoomy-network/zoomyd/domain/consensus/utils/utxo"
-	"github.com/zoomy-network/zoomyd/domain/consensus/utils/virtual"
-	"github.com/zoomy-network/zoomyd/infrastructure/db/database"
-	"github.com/zoomy-network/zoomyd/infrastructure/logger"
-	"github.com/zoomy-network/zoomyd/util/staging"
-=======
->>>>>>> Stashed changes
 	"github.com/pkg/errors"
 	"github.com/zoomy-network/zoomyd/domain/consensus/model"
 	"github.com/zoomy-network/zoomyd/domain/consensus/model/externalapi"

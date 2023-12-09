@@ -3,12 +3,6 @@ package serialization
 import (
 	"math"
 
-<<<<<<< Updated upstream:cmd/kaspawallet/libkaspawallet/serialization/serialization.go
-	"github.com/zoomy-network/zoomyd/cmd/zoomywallet/libkaspawallet/serialization/protoserialization"
-	"github.com/zoomy-network/zoomyd/domain/consensus/model/externalapi"
-	"github.com/zoomy-network/zoomyd/domain/consensus/utils/subnetworks"
-=======
->>>>>>> Stashed changes:cmd/zoomywallet/libkaspawallet/serialization/serialization.go
 	"github.com/pkg/errors"
 	"github.com/zoomy-network/zoomyd/cmd/zoomywallet/libkaspawallet/serialization/protoserialization"
 	"github.com/zoomy-network/zoomyd/domain/consensus/model/externalapi"

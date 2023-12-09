@@ -3,14 +3,6 @@ package main
 import (
 	"encoding/hex"
 	"fmt"
-<<<<<<< Updated upstream:cmd/kaspawallet/parse.go
-	"github.com/zoomy-network/zoomyd/cmd/zoomywallet/libkaspawallet/serialization"
-	"github.com/zoomy-network/zoomyd/domain/consensus/utils/consensushashing"
-	"github.com/zoomy-network/zoomyd/domain/consensus/utils/constants"
-	"github.com/zoomy-network/zoomyd/domain/consensus/utils/txscript"
-	"github.com/pkg/errors"
-=======
->>>>>>> Stashed changes:cmd/zoomywallet/parse.go
 	"io/ioutil"
 	"strings"
 

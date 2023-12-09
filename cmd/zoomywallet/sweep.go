@@ -6,24 +6,6 @@ import (
 	"fmt"
 
 	"github.com/kaspanet/go-secp256k1"
-<<<<<<< Updated upstream:cmd/kaspawallet/sweep.go
-	"github.com/zoomy-network/zoomyd/cmd/zoomywallet/daemon/client"
-	"github.com/zoomy-network/zoomyd/cmd/zoomywallet/daemon/pb"
-	"github.com/zoomy-network/zoomyd/cmd/zoomywallet/libkaspawallet"
-	"github.com/zoomy-network/zoomyd/cmd/zoomywallet/libkaspawallet/serialization"
-	"github.com/zoomy-network/zoomyd/cmd/zoomywallet/utils"
-	"github.com/zoomy-network/zoomyd/domain/consensus/model/externalapi"
-	"github.com/zoomy-network/zoomyd/domain/consensus/utils/consensushashing"
-	"github.com/zoomy-network/zoomyd/domain/consensus/utils/constants"
-	"github.com/zoomy-network/zoomyd/domain/consensus/utils/subnetworks"
-	"github.com/zoomy-network/zoomyd/domain/consensus/utils/txscript"
-	"github.com/zoomy-network/zoomyd/domain/consensus/utils/utxo"
-	"github.com/zoomy-network/zoomyd/domain/dagconfig"
-	"github.com/zoomy-network/zoomyd/domain/miningmanager/mempool"
-	"github.com/zoomy-network/zoomyd/util"
-	"github.com/zoomy-network/zoomyd/util/txmass"
-=======
->>>>>>> Stashed changes:cmd/zoomywallet/sweep.go
 	"github.com/pkg/errors"
 	"github.com/zoomy-network/zoomyd/cmd/zoomywallet/daemon/client"
 	"github.com/zoomy-network/zoomyd/cmd/zoomywallet/daemon/pb"

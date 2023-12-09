@@ -1,14 +1,6 @@
 package rpchandlers
 
 import (
-<<<<<<< Updated upstream
-	"github.com/zoomy-network/zoomyd/app/appmessage"
-	"github.com/zoomy-network/zoomyd/app/rpc/rpccontext"
-	"github.com/zoomy-network/zoomyd/domain/consensus/utils/consensushashing"
-	"github.com/zoomy-network/zoomyd/domain/miningmanager/mempool"
-	"github.com/zoomy-network/zoomyd/infrastructure/network/netadapter/router"
-=======
->>>>>>> Stashed changes
 	"github.com/pkg/errors"
 	"github.com/zoomy-network/zoomyd/app/appmessage"
 	"github.com/zoomy-network/zoomyd/app/rpc/rpccontext"

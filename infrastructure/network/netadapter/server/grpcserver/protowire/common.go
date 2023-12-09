@@ -7,11 +7,6 @@ import (
 	"github.com/zoomy-network/zoomyd/domain/consensus/utils/subnetworks"
 	"github.com/zoomy-network/zoomyd/domain/consensus/utils/transactionid"
 
-<<<<<<< Updated upstream
-	"github.com/zoomy-network/zoomyd/app/appmessage"
-	"github.com/zoomy-network/zoomyd/util/mstime"
-=======
->>>>>>> Stashed changes
 	"github.com/pkg/errors"
 	"github.com/zoomy-network/zoomyd/app/appmessage"
 	"github.com/zoomy-network/zoomyd/util/mstime"

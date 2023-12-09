@@ -2,11 +2,6 @@ package multiset
 
 import (
 	"github.com/kaspanet/go-muhash"
-<<<<<<< Updated upstream
-	"github.com/zoomy-network/zoomyd/domain/consensus/model"
-	"github.com/zoomy-network/zoomyd/domain/consensus/model/externalapi"
-=======
->>>>>>> Stashed changes
 	"github.com/pkg/errors"
 	"github.com/zoomy-network/zoomyd/domain/consensus/model"
 	"github.com/zoomy-network/zoomyd/domain/consensus/model/externalapi"

@@ -1,11 +1,6 @@
 package consensusstatemanager
 
 import (
-<<<<<<< Updated upstream
-	"github.com/zoomy-network/zoomyd/infrastructure/logger"
-	"github.com/zoomy-network/zoomyd/util/math"
-=======
->>>>>>> Stashed changes
 	"github.com/pkg/errors"
 	"github.com/zoomy-network/zoomyd/infrastructure/logger"
 	"github.com/zoomy-network/zoomyd/util/math"

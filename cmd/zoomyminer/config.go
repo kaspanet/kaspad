@@ -9,10 +9,6 @@ import (
 
 	"github.com/zoomy-network/zoomyd/infrastructure/config"
 
-<<<<<<< Updated upstream:cmd/kaspaminer/config.go
-	"github.com/zoomy-network/zoomyd/util"
-=======
->>>>>>> Stashed changes:cmd/zoomyminer/config.go
 	"github.com/pkg/errors"
 	"github.com/zoomy-network/zoomyd/util"
 

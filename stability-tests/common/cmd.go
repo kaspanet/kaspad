@@ -5,11 +5,6 @@ import (
 	"os/exec"
 	"strings"
 
-<<<<<<< Updated upstream
-	"github.com/zoomy-network/zoomyd/domain/dagconfig"
-	"github.com/zoomy-network/zoomyd/infrastructure/logger"
-=======
->>>>>>> Stashed changes
 	"github.com/pkg/errors"
 	"github.com/zoomy-network/zoomyd/domain/dagconfig"
 	"github.com/zoomy-network/zoomyd/infrastructure/logger"

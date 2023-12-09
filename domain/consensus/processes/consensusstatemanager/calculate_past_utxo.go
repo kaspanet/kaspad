@@ -1,12 +1,6 @@
 package consensusstatemanager
 
 import (
-<<<<<<< Updated upstream
-	"github.com/zoomy-network/zoomyd/domain/consensus/utils/consensushashing"
-	"github.com/zoomy-network/zoomyd/domain/consensus/utils/utxo"
-	"github.com/zoomy-network/zoomyd/infrastructure/logger"
-=======
->>>>>>> Stashed changes
 	"github.com/pkg/errors"
 	"github.com/zoomy-network/zoomyd/domain/consensus/utils/consensushashing"
 	"github.com/zoomy-network/zoomyd/domain/consensus/utils/utxo"

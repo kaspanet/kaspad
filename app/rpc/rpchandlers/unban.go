@@ -1,12 +1,6 @@
 package rpchandlers
 
 import (
-<<<<<<< Updated upstream
-	"github.com/zoomy-network/zoomyd/app/appmessage"
-	"github.com/zoomy-network/zoomyd/app/rpc/rpccontext"
-	"github.com/zoomy-network/zoomyd/infrastructure/network/netadapter/router"
-=======
->>>>>>> Stashed changes
 	"net"
 
 	"github.com/zoomy-network/zoomyd/app/appmessage"

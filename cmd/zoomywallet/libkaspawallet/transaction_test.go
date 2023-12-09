@@ -2,18 +2,11 @@ package libkaspawallet_test
 
 import (
 	"fmt"
-<<<<<<< Updated upstream:cmd/kaspawallet/libkaspawallet/transaction_test.go
-	"github.com/zoomy-network/zoomyd/domain/consensus/utils/constants"
-	"strings"
-	"testing"
-
-=======
 	"strings"
 	"testing"
 
 	"github.com/zoomy-network/zoomyd/domain/consensus/utils/constants"
 
->>>>>>> Stashed changes:cmd/zoomywallet/libkaspawallet/transaction_test.go
 	"github.com/zoomy-network/zoomyd/cmd/zoomywallet/libkaspawallet"
 	"github.com/zoomy-network/zoomyd/domain/consensus"
 	"github.com/zoomy-network/zoomyd/domain/consensus/model/externalapi"

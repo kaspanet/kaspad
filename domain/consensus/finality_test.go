@@ -2,16 +2,6 @@ package consensus_test
 
 import (
 	"fmt"
-<<<<<<< Updated upstream
-	"github.com/zoomy-network/zoomyd/domain/consensus"
-	"github.com/zoomy-network/zoomyd/domain/consensus/model"
-	"github.com/zoomy-network/zoomyd/domain/consensus/model/externalapi"
-	"github.com/zoomy-network/zoomyd/domain/consensus/model/testapi"
-	"github.com/zoomy-network/zoomyd/domain/consensus/ruleerrors"
-	"github.com/zoomy-network/zoomyd/domain/consensus/utils/consensushashing"
-	"github.com/zoomy-network/zoomyd/domain/consensus/utils/testutils"
-=======
->>>>>>> Stashed changes
 	"github.com/pkg/errors"
 	"github.com/zoomy-network/zoomyd/domain/consensus"
 	"github.com/zoomy-network/zoomyd/domain/consensus/model"

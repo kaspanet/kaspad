@@ -5,12 +5,6 @@ import (
 	"fmt"
 	"os"
 
-<<<<<<< Updated upstream:cmd/kaspawallet/create.go
-	"github.com/zoomy-network/zoomyd/cmd/zoomywallet/libkaspawallet"
-	"github.com/zoomy-network/zoomyd/cmd/zoomywallet/libkaspawallet/bip32"
-	"github.com/zoomy-network/zoomyd/cmd/zoomywallet/utils"
-=======
->>>>>>> Stashed changes:cmd/zoomywallet/create.go
 	"github.com/pkg/errors"
 	"github.com/zoomy-network/zoomyd/cmd/zoomywallet/libkaspawallet"
 	"github.com/zoomy-network/zoomyd/cmd/zoomywallet/libkaspawallet/bip32"

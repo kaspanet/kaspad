@@ -1,11 +1,6 @@
 package grpcclient
 
 import (
-<<<<<<< Updated upstream
-	"github.com/zoomy-network/zoomyd/app/appmessage"
-	"github.com/zoomy-network/zoomyd/infrastructure/network/netadapter/server/grpcserver/protowire"
-=======
->>>>>>> Stashed changes
 	"github.com/pkg/errors"
 	"github.com/zoomy-network/zoomyd/app/appmessage"
 	"github.com/zoomy-network/zoomyd/infrastructure/network/netadapter/server/grpcserver/protowire"

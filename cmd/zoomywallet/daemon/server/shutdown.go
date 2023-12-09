@@ -2,10 +2,6 @@ package server
 
 import (
 	"context"
-<<<<<<< Updated upstream:cmd/kaspawallet/daemon/server/shutdown.go
-=======
-
->>>>>>> Stashed changes:cmd/zoomywallet/daemon/server/shutdown.go
 	"github.com/zoomy-network/zoomyd/cmd/zoomywallet/daemon/pb"
 )
 

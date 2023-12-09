@@ -5,10 +5,6 @@ import (
 	"math"
 	"math/big"
 
-<<<<<<< Updated upstream
-	difficultyPackage "github.com/zoomy-network/zoomyd/util/difficulty"
-=======
->>>>>>> Stashed changes
 	"github.com/pkg/errors"
 	difficultyPackage "github.com/zoomy-network/zoomyd/util/difficulty"
 

@@ -3,12 +3,6 @@ package main
 import (
 	"sync/atomic"
 
-<<<<<<< Updated upstream
-	"github.com/zoomy-network/zoomyd/stability-tests/common"
-	"github.com/zoomy-network/zoomyd/util/panics"
-	"github.com/zoomy-network/zoomyd/util/profiling"
-=======
->>>>>>> Stashed changes
 	"github.com/pkg/errors"
 	"github.com/zoomy-network/zoomyd/stability-tests/common"
 	"github.com/zoomy-network/zoomyd/util/panics"

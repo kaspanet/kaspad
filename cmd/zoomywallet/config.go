@@ -3,10 +3,6 @@ package main
 import (
 	"os"
 
-<<<<<<< Updated upstream:cmd/kaspawallet/config.go
-	"github.com/zoomy-network/zoomyd/infrastructure/config"
-=======
->>>>>>> Stashed changes:cmd/zoomywallet/config.go
 	"github.com/pkg/errors"
 	"github.com/zoomy-network/zoomyd/infrastructure/config"
 

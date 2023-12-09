@@ -2,15 +2,6 @@ package consensusstatemanager_test
 
 import (
 	"fmt"
-<<<<<<< Updated upstream
-	"github.com/zoomy-network/zoomyd/domain/consensus/model"
-	"github.com/zoomy-network/zoomyd/domain/consensus/model/testapi"
-	"github.com/zoomy-network/zoomyd/domain/consensus/utils/consensushashing"
-	"testing"
-
-	"github.com/zoomy-network/zoomyd/domain/consensus/model/externalapi"
-
-=======
 	"testing"
 
 	"github.com/zoomy-network/zoomyd/domain/consensus/model"
@@ -19,7 +10,6 @@ import (
 
 	"github.com/zoomy-network/zoomyd/domain/consensus/model/externalapi"
 
->>>>>>> Stashed changes
 	"github.com/zoomy-network/zoomyd/domain/consensus"
 	"github.com/zoomy-network/zoomyd/domain/consensus/utils/testutils"
 )

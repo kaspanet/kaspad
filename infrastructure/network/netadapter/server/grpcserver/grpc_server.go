@@ -3,11 +3,6 @@ package grpcserver
 import (
 	"context"
 	"fmt"
-<<<<<<< Updated upstream
-	"github.com/zoomy-network/zoomyd/infrastructure/network/netadapter/server"
-	"github.com/zoomy-network/zoomyd/util/panics"
-=======
->>>>>>> Stashed changes
 	"github.com/pkg/errors"
 	"github.com/zoomy-network/zoomyd/infrastructure/network/netadapter/server"
 	"github.com/zoomy-network/zoomyd/util/panics"

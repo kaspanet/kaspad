@@ -1,33 +1,10 @@
 package miningmanager_test
 
 import (
-<<<<<<< Updated upstream
-	"github.com/zoomy-network/zoomyd/cmd/kaspawallet/libkaspawallet"
-	"github.com/zoomy-network/zoomyd/domain/consensusreference"
-	"github.com/zoomy-network/zoomyd/domain/miningmanager/model"
-	"github.com/zoomy-network/zoomyd/util"
-	"github.com/zoomy-network/zoomyd/version"
-=======
->>>>>>> Stashed changes
 	"reflect"
 	"strings"
 	"testing"
 
-<<<<<<< Updated upstream
-	"github.com/zoomy-network/zoomyd/domain/miningmanager/mempool"
-
-	"github.com/zoomy-network/zoomyd/domain/consensus"
-	"github.com/zoomy-network/zoomyd/domain/consensus/model/externalapi"
-	"github.com/zoomy-network/zoomyd/domain/consensus/model/testapi"
-	"github.com/zoomy-network/zoomyd/domain/consensus/utils/consensushashing"
-	"github.com/zoomy-network/zoomyd/domain/consensus/utils/constants"
-	"github.com/zoomy-network/zoomyd/domain/consensus/utils/subnetworks"
-	"github.com/zoomy-network/zoomyd/domain/consensus/utils/testutils"
-	"github.com/zoomy-network/zoomyd/domain/consensus/utils/transactionhelper"
-	"github.com/zoomy-network/zoomyd/domain/consensus/utils/txscript"
-	"github.com/zoomy-network/zoomyd/domain/consensus/utils/utxo"
-	"github.com/zoomy-network/zoomyd/domain/miningmanager"
-=======
 	"github.com/zoomy-network/zoomyd/cmd/zoomywallet/libkaspawallet"
 	"github.com/zoomy-network/zoomyd/domain/consensusreference"
 	"github.com/zoomy-network/zoomyd/domain/miningmanager/model"
@@ -36,7 +13,6 @@ import (
 
 	"github.com/zoomy-network/zoomyd/domain/miningmanager/mempool"
 
->>>>>>> Stashed changes
 	"github.com/pkg/errors"
 	"github.com/zoomy-network/zoomyd/domain/consensus"
 	"github.com/zoomy-network/zoomyd/domain/consensus/model/externalapi"

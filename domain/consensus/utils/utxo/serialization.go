@@ -4,12 +4,6 @@ import (
 	"bytes"
 	"io"
 
-<<<<<<< Updated upstream
-	"github.com/zoomy-network/zoomyd/domain/consensus/model/externalapi"
-	"github.com/zoomy-network/zoomyd/domain/consensus/utils/serialization"
-	"github.com/zoomy-network/zoomyd/domain/consensus/utils/transactionid"
-=======
->>>>>>> Stashed changes
 	"github.com/pkg/errors"
 	"github.com/zoomy-network/zoomyd/domain/consensus/model/externalapi"
 	"github.com/zoomy-network/zoomyd/domain/consensus/utils/serialization"

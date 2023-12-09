@@ -13,15 +13,6 @@ import (
 
 	"github.com/zoomy-network/zoomyd/util/profiling"
 
-<<<<<<< Updated upstream:cmd/kaspawallet/daemon/server/server.go
-	"github.com/zoomy-network/zoomyd/cmd/zoomywallet/daemon/pb"
-	"github.com/zoomy-network/zoomyd/cmd/zoomywallet/keys"
-	"github.com/zoomy-network/zoomyd/domain/dagconfig"
-	"github.com/zoomy-network/zoomyd/infrastructure/network/rpcclient"
-	"github.com/zoomy-network/zoomyd/infrastructure/os/signal"
-	"github.com/zoomy-network/zoomyd/util/panics"
-=======
->>>>>>> Stashed changes:cmd/zoomywallet/daemon/server/server.go
 	"github.com/pkg/errors"
 	"github.com/zoomy-network/zoomyd/cmd/zoomywallet/daemon/pb"
 	"github.com/zoomy-network/zoomyd/cmd/zoomywallet/keys"

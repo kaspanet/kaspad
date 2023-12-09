@@ -1,16 +1,6 @@
 package libkaspawallet
 
 import (
-<<<<<<< Updated upstream:cmd/kaspawallet/libkaspawallet/sign.go
-	"github.com/zoomy-network/zoomyd/cmd/zoomywallet/libkaspawallet/bip32"
-	"github.com/zoomy-network/zoomyd/cmd/zoomywallet/libkaspawallet/serialization"
-	"github.com/zoomy-network/zoomyd/domain/consensus/model/externalapi"
-	"github.com/zoomy-network/zoomyd/domain/consensus/utils/consensushashing"
-	"github.com/zoomy-network/zoomyd/domain/consensus/utils/txscript"
-	"github.com/zoomy-network/zoomyd/domain/consensus/utils/utxo"
-	"github.com/zoomy-network/zoomyd/domain/dagconfig"
-=======
->>>>>>> Stashed changes:cmd/zoomywallet/libkaspawallet/sign.go
 	"github.com/pkg/errors"
 	"github.com/zoomy-network/zoomyd/cmd/zoomywallet/libkaspawallet/bip32"
 	"github.com/zoomy-network/zoomyd/cmd/zoomywallet/libkaspawallet/serialization"

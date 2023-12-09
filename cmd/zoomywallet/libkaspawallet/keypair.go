@@ -6,12 +6,6 @@ import (
 	"strings"
 
 	"github.com/kaspanet/go-secp256k1"
-<<<<<<< Updated upstream:cmd/kaspawallet/libkaspawallet/keypair.go
-	"github.com/zoomy-network/zoomyd/cmd/zoomywallet/libkaspawallet/bip32"
-	"github.com/zoomy-network/zoomyd/domain/dagconfig"
-	"github.com/zoomy-network/zoomyd/util"
-=======
->>>>>>> Stashed changes:cmd/zoomywallet/libkaspawallet/keypair.go
 	"github.com/pkg/errors"
 	"github.com/zoomy-network/zoomyd/cmd/zoomywallet/libkaspawallet/bip32"
 	"github.com/zoomy-network/zoomyd/domain/dagconfig"

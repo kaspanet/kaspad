@@ -5,11 +5,6 @@ import (
 	"os"
 	"strconv"
 
-<<<<<<< Updated upstream
-	"github.com/zoomy-network/zoomyd/stability-tests/common"
-	"github.com/zoomy-network/zoomyd/stability-tests/common/mine"
-=======
->>>>>>> Stashed changes
 	"github.com/pkg/errors"
 	"github.com/zoomy-network/zoomyd/stability-tests/common"
 	"github.com/zoomy-network/zoomyd/stability-tests/common/mine"

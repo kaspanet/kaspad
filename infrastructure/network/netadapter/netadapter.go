@@ -4,15 +4,6 @@ import (
 	"sync"
 	"sync/atomic"
 
-<<<<<<< Updated upstream
-	"github.com/zoomy-network/zoomyd/app/appmessage"
-	"github.com/zoomy-network/zoomyd/infrastructure/config"
-	"github.com/zoomy-network/zoomyd/infrastructure/network/netadapter/id"
-	routerpkg "github.com/zoomy-network/zoomyd/infrastructure/network/netadapter/router"
-	"github.com/zoomy-network/zoomyd/infrastructure/network/netadapter/server"
-	"github.com/zoomy-network/zoomyd/infrastructure/network/netadapter/server/grpcserver"
-=======
->>>>>>> Stashed changes
 	"github.com/pkg/errors"
 	"github.com/zoomy-network/zoomyd/app/appmessage"
 	"github.com/zoomy-network/zoomyd/infrastructure/config"

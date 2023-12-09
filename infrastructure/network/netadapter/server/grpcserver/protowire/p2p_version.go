@@ -1,12 +1,6 @@
 package protowire
 
 import (
-<<<<<<< Updated upstream
-	"github.com/zoomy-network/zoomyd/app/appmessage"
-	"github.com/zoomy-network/zoomyd/infrastructure/network/netadapter/id"
-	"github.com/zoomy-network/zoomyd/util/mstime"
-=======
->>>>>>> Stashed changes
 	"github.com/pkg/errors"
 	"github.com/zoomy-network/zoomyd/app/appmessage"
 	"github.com/zoomy-network/zoomyd/infrastructure/network/netadapter/id"

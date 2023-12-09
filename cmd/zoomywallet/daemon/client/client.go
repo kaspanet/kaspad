@@ -2,10 +2,6 @@ package client
 
 import (
 	"context"
-<<<<<<< Updated upstream:cmd/kaspawallet/daemon/client/client.go
-	"github.com/zoomy-network/zoomyd/cmd/zoomywallet/daemon/server"
-=======
->>>>>>> Stashed changes:cmd/zoomywallet/daemon/client/client.go
 	"time"
 
 	"github.com/zoomy-network/zoomyd/cmd/zoomywallet/daemon/server"

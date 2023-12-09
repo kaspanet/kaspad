@@ -4,10 +4,6 @@ import (
 	"encoding/binary"
 
 	"github.com/kaspanet/go-secp256k1"
-<<<<<<< Updated upstream:cmd/kaspawallet/libkaspawallet/bip32/serialization.go
-	"github.com/zoomy-network/zoomyd/cmd/zoomywallet/libkaspawallet/bip32/base58"
-=======
->>>>>>> Stashed changes:cmd/zoomywallet/libkaspawallet/bip32/serialization.go
 	"github.com/pkg/errors"
 	"github.com/zoomy-network/zoomyd/cmd/zoomywallet/libkaspawallet/bip32/base58"
 )

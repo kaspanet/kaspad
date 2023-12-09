@@ -2,26 +2,12 @@ package main
 
 import (
 	nativeerrors "errors"
-<<<<<<< Updated upstream:cmd/kaspaminer/mineloop.go
-	"github.com/zoomy-network/zoomyd/version"
-=======
->>>>>>> Stashed changes:cmd/zoomyminer/mineloop.go
 	"math/rand"
 	"sync/atomic"
 	"time"
 
-<<<<<<< Updated upstream:cmd/kaspaminer/mineloop.go
-	"github.com/zoomy-network/zoomyd/app/appmessage"
-	"github.com/zoomy-network/zoomyd/cmd/zoomyminer/templatemanager"
-	"github.com/zoomy-network/zoomyd/domain/consensus/model/externalapi"
-	"github.com/zoomy-network/zoomyd/domain/consensus/utils/consensushashing"
-	"github.com/zoomy-network/zoomyd/domain/consensus/utils/pow"
-	"github.com/zoomy-network/zoomyd/infrastructure/network/netadapter/router"
-	"github.com/zoomy-network/zoomyd/util"
-=======
 	"github.com/zoomy-network/zoomyd/version"
 
->>>>>>> Stashed changes:cmd/zoomyminer/mineloop.go
 	"github.com/pkg/errors"
 	"github.com/zoomy-network/zoomyd/app/appmessage"
 	"github.com/zoomy-network/zoomyd/cmd/zoomyminer/templatemanager"

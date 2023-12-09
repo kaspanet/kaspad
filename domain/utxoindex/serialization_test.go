@@ -2,11 +2,6 @@ package utxoindex
 
 import (
 	"encoding/binary"
-<<<<<<< Updated upstream
-	"github.com/zoomy-network/zoomyd/domain/consensus/model/externalapi"
-	"github.com/pkg/errors"
-=======
->>>>>>> Stashed changes
 	"io"
 	"math/rand"
 	"testing"

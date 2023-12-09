@@ -4,10 +4,6 @@ import (
 	"strings"
 	"testing"
 
-<<<<<<< Updated upstream
-	"github.com/zoomy-network/zoomyd/app/protocol/protocolerrors"
-=======
->>>>>>> Stashed changes
 	"github.com/pkg/errors"
 	"github.com/zoomy-network/zoomyd/app/protocol/protocolerrors"
 )

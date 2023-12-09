@@ -3,11 +3,6 @@ package libkaspawallet
 import (
 	"fmt"
 
-<<<<<<< Updated upstream:cmd/kaspawallet/libkaspawallet/bip39.go
-	"github.com/zoomy-network/zoomyd/cmd/zoomywallet/libkaspawallet/bip32"
-	"github.com/zoomy-network/zoomyd/domain/dagconfig"
-=======
->>>>>>> Stashed changes:cmd/zoomywallet/libkaspawallet/bip39.go
 	"github.com/pkg/errors"
 	"github.com/tyler-smith/go-bip39"
 	"github.com/zoomy-network/zoomyd/cmd/zoomywallet/libkaspawallet/bip32"

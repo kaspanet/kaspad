@@ -1,12 +1,6 @@
 package templatemanager
 
 import (
-<<<<<<< Updated upstream:cmd/kaspaminer/templatemanager/templatemanager.go
-	"github.com/zoomy-network/zoomyd/app/appmessage"
-	"github.com/zoomy-network/zoomyd/domain/consensus/model/externalapi"
-	"github.com/zoomy-network/zoomyd/domain/consensus/utils/pow"
-=======
->>>>>>> Stashed changes:cmd/zoomyminer/templatemanager/templatemanager.go
 	"sync"
 
 	"github.com/zoomy-network/zoomyd/app/appmessage"

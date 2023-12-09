@@ -1,13 +1,6 @@
 package utxoindex
 
 import (
-<<<<<<< Updated upstream
-	"github.com/zoomy-network/zoomyd/domain"
-	"github.com/zoomy-network/zoomyd/domain/consensus/model/externalapi"
-	"github.com/zoomy-network/zoomyd/infrastructure/db/database"
-	"github.com/zoomy-network/zoomyd/infrastructure/logger"
-=======
->>>>>>> Stashed changes
 	"sync"
 
 	"github.com/zoomy-network/zoomyd/domain"

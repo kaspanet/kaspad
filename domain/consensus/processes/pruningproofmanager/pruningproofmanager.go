@@ -1,26 +1,6 @@
 package pruningproofmanager
 
 import (
-<<<<<<< Updated upstream
-	consensusDB "github.com/zoomy-network/zoomyd/domain/consensus/database"
-	"github.com/zoomy-network/zoomyd/domain/consensus/datastructures/blockheaderstore"
-	"github.com/zoomy-network/zoomyd/domain/consensus/datastructures/blockrelationstore"
-	"github.com/zoomy-network/zoomyd/domain/consensus/datastructures/ghostdagdatastore"
-	"github.com/zoomy-network/zoomyd/domain/consensus/datastructures/reachabilitydatastore"
-	"github.com/zoomy-network/zoomyd/domain/consensus/model"
-	"github.com/zoomy-network/zoomyd/domain/consensus/model/externalapi"
-	"github.com/zoomy-network/zoomyd/domain/consensus/processes/dagtopologymanager"
-	"github.com/zoomy-network/zoomyd/domain/consensus/processes/dagtraversalmanager"
-	"github.com/zoomy-network/zoomyd/domain/consensus/processes/ghostdagmanager"
-	"github.com/zoomy-network/zoomyd/domain/consensus/processes/reachabilitymanager"
-	"github.com/zoomy-network/zoomyd/domain/consensus/ruleerrors"
-	"github.com/zoomy-network/zoomyd/domain/consensus/utils/consensushashing"
-	"github.com/zoomy-network/zoomyd/domain/consensus/utils/hashset"
-	"github.com/zoomy-network/zoomyd/infrastructure/db/database"
-	"github.com/zoomy-network/zoomyd/infrastructure/logger"
-	"github.com/zoomy-network/zoomyd/util/staging"
-=======
->>>>>>> Stashed changes
 	"github.com/pkg/errors"
 	consensusDB "github.com/zoomy-network/zoomyd/domain/consensus/database"
 	"github.com/zoomy-network/zoomyd/domain/consensus/datastructures/blockheaderstore"
