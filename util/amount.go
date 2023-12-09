@@ -5,10 +5,11 @@
 package util
 
 import (
-	"github.com/pkg/errors"
-	"github.com/zoomy-network/zoomyd/domain/consensus/utils/constants"
 	"math"
 	"strconv"
+
+	"github.com/pkg/errors"
+	"github.com/zoomy-network/zoomyd/domain/consensus/utils/constants"
 )
 
 // AmountUnit describes a method of converting an Amount to something
@@ -34,19 +35,19 @@ const (
 func (u AmountUnit) String() string {
 	switch u {
 	case AmountMegaKAS:
-		return "MKAS"
+		return "MKX3"
 	case AmountKiloKAS:
-		return "kKAS"
+		return "kKX3"
 	case AmountKAS:
-		return "KAS"
+		return "KX3"
 	case AmountMilliKAS:
-		return "mKAS"
+		return "mKX3"
 	case AmountMicroKAS:
-		return "μKAS"
+		return "μKX3"
 	case AmountSompi:
 		return "Sompi"
 	default:
-		return "1e" + strconv.FormatInt(int64(u), 10) + " KAS"
+		return "1e" + strconv.FormatInt(int64(u), 10) + " KX3"
 	}
 }
 
@@ -84,7 +85,7 @@ func NewAmount(f float64) (Amount, error) {
 	case math.IsInf(f, 1):
 		fallthrough
 	case math.IsInf(f, -1):
-		return 0, errors.New("invalid kaspa amount")
+		return 0, errors.New("invalid zoomy amount")
 	}
 
 	return round(f * constants.SompiPerKaspa), nil
