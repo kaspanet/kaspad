@@ -5,25 +5,15 @@
 package appmessage
 
 import (
-<<<<<<< Updated upstream
-	"github.com/davecgh/go-spew/spew"
-	"github.com/zoomy-network/zoomyd/util/mstime"
-=======
->>>>>>> Stashed changes
 	"math"
 	"reflect"
 	"testing"
 
-<<<<<<< Updated upstream
-	"github.com/zoomy-network/zoomyd/domain/consensus/utils/subnetworks"
-
-=======
 	"github.com/davecgh/go-spew/spew"
 	"github.com/zoomy-network/zoomyd/util/mstime"
 
 	"github.com/zoomy-network/zoomyd/domain/consensus/utils/subnetworks"
 
->>>>>>> Stashed changes
 	"github.com/zoomy-network/zoomyd/domain/consensus/model/externalapi"
 )
 

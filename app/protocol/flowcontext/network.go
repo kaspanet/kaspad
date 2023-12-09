@@ -1,14 +1,6 @@
 package flowcontext
 
 import (
-<<<<<<< Updated upstream
-	"github.com/zoomy-network/zoomyd/app/appmessage"
-	"github.com/zoomy-network/zoomyd/app/protocol/common"
-	peerpkg "github.com/zoomy-network/zoomyd/app/protocol/peer"
-	"github.com/zoomy-network/zoomyd/infrastructure/network/connmanager"
-	"github.com/zoomy-network/zoomyd/infrastructure/network/netadapter"
-=======
->>>>>>> Stashed changes
 	"github.com/pkg/errors"
 	"github.com/zoomy-network/zoomyd/app/appmessage"
 	"github.com/zoomy-network/zoomyd/app/protocol/common"

@@ -1,16 +1,6 @@
 package blockrelay
 
 import (
-<<<<<<< Updated upstream
-	"github.com/zoomy-network/zoomyd/app/appmessage"
-	"github.com/zoomy-network/zoomyd/app/protocol/peer"
-	"github.com/zoomy-network/zoomyd/app/protocol/protocolerrors"
-	"github.com/zoomy-network/zoomyd/domain"
-	"github.com/zoomy-network/zoomyd/domain/consensus/model/externalapi"
-	"github.com/zoomy-network/zoomyd/infrastructure/config"
-	"github.com/zoomy-network/zoomyd/infrastructure/network/netadapter/router"
-=======
->>>>>>> Stashed changes
 	"sort"
 
 	"github.com/zoomy-network/zoomyd/app/appmessage"

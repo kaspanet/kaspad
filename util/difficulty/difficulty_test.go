@@ -2,10 +2,11 @@ package difficulty_test
 
 import (
 	"fmt"
-	"github.com/zoomy-network/zoomyd/domain/consensus"
 	"math"
 	"math/big"
 	"testing"
+
+	"github.com/zoomy-network/zoomyd/domain/consensus"
 
 	"github.com/zoomy-network/zoomyd/domain/consensus/utils/testutils"
 	"github.com/zoomy-network/zoomyd/domain/dagconfig"

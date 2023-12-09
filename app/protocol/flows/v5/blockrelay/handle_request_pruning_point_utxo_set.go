@@ -2,10 +2,7 @@ package blockrelay
 
 import (
 	"errors"
-<<<<<<< Updated upstream
-=======
 
->>>>>>> Stashed changes
 	"github.com/zoomy-network/zoomyd/app/appmessage"
 	"github.com/zoomy-network/zoomyd/app/protocol/common"
 	"github.com/zoomy-network/zoomyd/app/protocol/protocolerrors"

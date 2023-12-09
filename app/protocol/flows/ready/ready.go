@@ -1,21 +1,11 @@
 package ready
 
 import (
-<<<<<<< Updated upstream
-	"github.com/zoomy-network/zoomyd/app/appmessage"
-	"github.com/zoomy-network/zoomyd/app/protocol/common"
-	"sync/atomic"
-
-	peerpkg "github.com/zoomy-network/zoomyd/app/protocol/peer"
-	"github.com/zoomy-network/zoomyd/app/protocol/protocolerrors"
-	routerpkg "github.com/zoomy-network/zoomyd/infrastructure/network/netadapter/router"
-=======
 	"sync/atomic"
 
 	"github.com/zoomy-network/zoomyd/app/appmessage"
 	"github.com/zoomy-network/zoomyd/app/protocol/common"
 
->>>>>>> Stashed changes
 	"github.com/pkg/errors"
 	peerpkg "github.com/zoomy-network/zoomyd/app/protocol/peer"
 	"github.com/zoomy-network/zoomyd/app/protocol/protocolerrors"

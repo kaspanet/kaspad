@@ -1,11 +1,6 @@
 package common
 
 import (
-<<<<<<< Updated upstream
-	peerpkg "github.com/zoomy-network/zoomyd/app/protocol/peer"
-	routerpkg "github.com/zoomy-network/zoomyd/infrastructure/network/netadapter/router"
-=======
->>>>>>> Stashed changes
 	"time"
 
 	peerpkg "github.com/zoomy-network/zoomyd/app/protocol/peer"
