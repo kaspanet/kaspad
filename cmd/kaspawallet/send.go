@@ -10,7 +10,7 @@ import (
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/daemon/pb"
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/keys"
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/libkaspawallet"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
+	"github.com/kaspanet/kaspad/cmd/kaspawallet/utils"
 	"github.com/pkg/errors"
 )
 
@@ -35,7 +35,11 @@ func send(conf *sendConfig) error {
 
 	var sendAmountSompi uint64
 	if !conf.IsSendAll {
-		sendAmountSompi = uint64(conf.SendAmount * constants.SompiPerKaspa)
+		sendAmountSompi, err = utils.KasToSompi(conf.SendAmount)
+
+		if err != nil {
+			return err
+		}
 	}
 
 	createUnsignedTransactionsResponse, err :=
