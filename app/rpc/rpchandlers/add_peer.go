@@ -1,10 +1,10 @@
 package rpchandlers
 
 import (
-	"github.com/kaspanet/kaspad/app/appmessage"
-	"github.com/kaspanet/kaspad/app/rpc/rpccontext"
-	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
-	"github.com/kaspanet/kaspad/util/network"
+	"github.com/fabbez/topiad/app/appmessage"
+	"github.com/fabbez/topiad/app/rpc/rpccontext"
+	"github.com/fabbez/topiad/infrastructure/network/netadapter/router"
+	"github.com/fabbez/topiad/util/network"
 )
 
 // HandleAddPeer handles the respectively named RPC command
