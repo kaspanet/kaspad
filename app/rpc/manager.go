@@ -1,17 +1,17 @@
 package rpc
 
 import (
-	"github.com/kaspanet/kaspad/app/appmessage"
-	"github.com/kaspanet/kaspad/app/protocol"
-	"github.com/kaspanet/kaspad/app/rpc/rpccontext"
-	"github.com/kaspanet/kaspad/domain"
-	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
-	"github.com/kaspanet/kaspad/domain/utxoindex"
-	"github.com/kaspanet/kaspad/infrastructure/config"
-	"github.com/kaspanet/kaspad/infrastructure/logger"
-	"github.com/kaspanet/kaspad/infrastructure/network/addressmanager"
-	"github.com/kaspanet/kaspad/infrastructure/network/connmanager"
-	"github.com/kaspanet/kaspad/infrastructure/network/netadapter"
+	"github.com/fabbez/topiad/app/appmessage"
+	"github.com/fabbez/topiad/app/protocol"
+	"github.com/fabbez/topiad/app/rpc/rpccontext"
+	"github.com/fabbez/topiad/domain"
+	"github.com/fabbez/topiad/domain/consensus/model/externalapi"
+	"github.com/fabbez/topiad/domain/utxoindex"
+	"github.com/fabbez/topiad/infrastructure/config"
+	"github.com/fabbez/topiad/infrastructure/logger"
+	"github.com/fabbez/topiad/infrastructure/network/addressmanager"
+	"github.com/fabbez/topiad/infrastructure/network/connmanager"
+	"github.com/fabbez/topiad/infrastructure/network/netadapter"
 	"github.com/pkg/errors"
 )
 
