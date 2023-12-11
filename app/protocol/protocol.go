@@ -1,20 +1,20 @@
 package protocol
 
 import (
-	"github.com/kaspanet/kaspad/app/protocol/common"
-	"github.com/kaspanet/kaspad/app/protocol/flows/ready"
-	"github.com/kaspanet/kaspad/app/protocol/flows/v5"
+	"github.com/fabbez/topiad/app/protocol/common"
+	"github.com/fabbez/topiad/app/protocol/flows/ready"
+	"github.com/fabbez/topiad/app/protocol/flows/v5"
 	"sync"
 	"sync/atomic"
 
-	"github.com/kaspanet/kaspad/app/appmessage"
-	"github.com/kaspanet/kaspad/app/protocol/flows/handshake"
-	peerpkg "github.com/kaspanet/kaspad/app/protocol/peer"
-	"github.com/kaspanet/kaspad/app/protocol/protocolerrors"
-	"github.com/kaspanet/kaspad/infrastructure/network/addressmanager"
-	"github.com/kaspanet/kaspad/infrastructure/network/connmanager"
-	"github.com/kaspanet/kaspad/infrastructure/network/netadapter"
-	routerpkg "github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
+	"github.com/fabbez/topiad/app/appmessage"
+	"github.com/fabbez/topiad/app/protocol/flows/handshake"
+	peerpkg "github.com/fabbez/topiad/app/protocol/peer"
+	"github.com/fabbez/topiad/app/protocol/protocolerrors"
+	"github.com/fabbez/topiad/infrastructure/network/addressmanager"
+	"github.com/fabbez/topiad/infrastructure/network/connmanager"
+	"github.com/fabbez/topiad/infrastructure/network/netadapter"
+	routerpkg "github.com/fabbez/topiad/infrastructure/network/netadapter/router"
 	"github.com/pkg/errors"
 )
 
