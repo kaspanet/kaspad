@@ -4,25 +4,25 @@ import (
 	"fmt"
 	"sync/atomic"
 
-	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+	"github.com/fabbez/kaspad/domain/consensus/model/externalapi"
 
-	"github.com/kaspanet/kaspad/domain/miningmanager/mempool"
+	"github.com/fabbez/topiad/domain/miningmanager/mempool"
 
-	"github.com/kaspanet/kaspad/app/protocol"
-	"github.com/kaspanet/kaspad/app/rpc"
-	"github.com/kaspanet/kaspad/domain"
-	"github.com/kaspanet/kaspad/domain/consensus"
-	"github.com/kaspanet/kaspad/domain/utxoindex"
-	"github.com/kaspanet/kaspad/infrastructure/config"
-	infrastructuredatabase "github.com/kaspanet/kaspad/infrastructure/db/database"
-	"github.com/kaspanet/kaspad/infrastructure/network/addressmanager"
-	"github.com/kaspanet/kaspad/infrastructure/network/connmanager"
-	"github.com/kaspanet/kaspad/infrastructure/network/netadapter"
-	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/id"
-	"github.com/kaspanet/kaspad/util/panics"
+	"github.com/fabbez/topiad/app/protocol"
+	"github.com/fabbez/topiad/app/rpc"
+	"github.com/fabbez/topiad/domain"
+	"github.com/fabbez/topiad/domain/consensus"
+	"github.com/fabbez/topiad/domain/utxoindex"
+	"github.com/fabbez/topiad/infrastructure/config"
+	infrastructuredatabase "github.com/fabbez/topiad/infrastructure/db/database"
+	"github.com/fabbez/topiad/infrastructure/network/addressmanager"
+	"github.com/fabbez/topiad/infrastructure/network/connmanager"
+	"github.com/fabbez/topiad/infrastructure/network/netadapter"
+	"github.com/fabbez/topiad/infrastructure/network/netadapter/id"
+	"github.com/fabbez/topiad/util/panics"
 )
 
-// ComponentManager is a wrapper for all the kaspad services
+// ComponentManager is a wrapper for all the topiad services
 type ComponentManager struct {
 	cfg               *config.Config
 	addressManager    *addressmanager.AddressManager
@@ -34,14 +34,14 @@ type ComponentManager struct {
 	started, shutdown int32
 }
 
-// Start launches all the kaspad services.
+// Start launches all the topiad services.
 func (a *ComponentManager) Start() {
 	// Already started?
 	if atomic.AddInt32(&a.started, 1) != 1 {
 		return
 	}
 
-	log.Trace("Starting kaspad")
+	log.Trace("Starting topiad")
 
 	err := a.netAdapter.Start()
 	if err != nil {
@@ -51,7 +51,7 @@ func (a *ComponentManager) Start() {
 	a.connectionManager.Start()
 }
 
-// Stop gracefully shuts down all the kaspad services.
+// Stop gracefully shuts down all the topiad services.
 func (a *ComponentManager) Stop() {
 	// Make sure this only happens once.
 	if atomic.AddInt32(&a.shutdown, 1) != 1 {
@@ -59,7 +59,7 @@ func (a *ComponentManager) Stop() {
 		return
 	}
 
-	log.Warnf("Kaspad shutting down")
+	log.Warnf("topiad shutting down")
 
 	a.connectionManager.Stop()
 
