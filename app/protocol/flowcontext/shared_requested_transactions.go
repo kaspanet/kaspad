@@ -3,7 +3,7 @@ package flowcontext
 import (
 	"sync"
 
-	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+	"github.com/fabbez/topiad/domain/consensus/model/externalapi"
 )
 
 // SharedRequestedTransactions is a data structure that is shared between peers that
