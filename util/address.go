@@ -8,7 +8,7 @@ import (
 	"github.com/pkg/errors"
 	"golang.org/x/crypto/blake2b"
 
-	"github.com/kaspanet/kaspad/util/bech32"
+	"github.com/fabbez/topiad/util/bech32"
 )
 
 var (
@@ -118,7 +118,7 @@ type Address interface {
 	Prefix() Bech32Prefix
 
 	// IsForPrefix returns whether or not the address is associated with the
-	// passed kaspa network.
+	// passed topia network.
 	IsForPrefix(prefix Bech32Prefix) bool
 }
 
