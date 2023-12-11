@@ -3,9 +3,9 @@ package flowcontext
 import (
 	"time"
 
-	"github.com/kaspanet/kaspad/app/appmessage"
-	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
+	"github.com/fabbez/topiad/app/appmessage"
+	"github.com/fabbez/topiad/domain/consensus/model/externalapi"
+	"github.com/fabbez/topiad/domain/consensus/utils/consensushashing"
 )
 
 // TransactionIDPropagationInterval is the interval between transaction IDs propagations
