@@ -6,14 +6,14 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/topianet/topiad/domain/consensus/utils/blockheader"
-	"github.com/topianet/topiad/domain/consensus/utils/hashes"
-	"github.com/topianet/topiad/domain/consensus/utils/utxo"
+	"github.com/fabbez/topiad/domain/consensus/utils/blockheader"
+	"github.com/fabbez/topiad/domain/consensus/utils/hashes"
+	"github.com/fabbez/topiad/domain/consensus/utils/utxo"
 
-	"github.com/topianet/topiad/domain/consensus/model/externalapi"
-	"github.com/topianet/topiad/domain/consensus/utils/subnetworks"
-	"github.com/topianet/topiad/domain/consensus/utils/transactionid"
-	"github.com/topianet/topiad/util/mstime"
+	"github.com/fabbez/topiad/domain/consensus/model/externalapi"
+	"github.com/fabbez/topiad/domain/consensus/utils/subnetworks"
+	"github.com/fabbez/topiad/domain/consensus/utils/transactionid"
+	"github.com/fabbez/topiad/util/mstime"
 )
 
 // DomainBlockToMsgBlock converts an externalapi.DomainBlock to MsgBlock
