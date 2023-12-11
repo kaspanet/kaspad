@@ -1,12 +1,12 @@
 package handshake
 
 import (
-	"github.com/kaspanet/kaspad/app/appmessage"
-	"github.com/kaspanet/kaspad/app/protocol/common"
-	peerpkg "github.com/kaspanet/kaspad/app/protocol/peer"
-	"github.com/kaspanet/kaspad/app/protocol/protocolerrors"
-	"github.com/kaspanet/kaspad/infrastructure/logger"
-	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
+	"github.com/fabbez/topiad/app/appmessage"
+	"github.com/fabbez/topiad/app/protocol/common"
+	peerpkg "github.com/fabbez/topiad/app/protocol/peer"
+	"github.com/fabbez/topiad/app/protocol/protocolerrors"
+	"github.com/fabbez/topiad/infrastructure/logger"
+	"github.com/fabbez/topiad/infrastructure/network/netadapter/router"
 	"github.com/pkg/errors"
 )
 
