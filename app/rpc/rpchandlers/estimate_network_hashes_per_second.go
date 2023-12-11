@@ -1,11 +1,11 @@
 package rpchandlers
 
 import (
-	"github.com/kaspanet/kaspad/app/appmessage"
-	"github.com/kaspanet/kaspad/app/rpc/rpccontext"
-	"github.com/kaspanet/kaspad/domain/consensus/model"
-	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
-	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
+	"github.com/fabbez/topiad/app/appmessage"
+	"github.com/fabbez/topiad/app/rpc/rpccontext"
+	"github.com/fabbez/topiad/domain/consensus/model"
+	"github.com/fabbez/topiad/domain/consensus/model/externalapi"
+	"github.com/fabbez/topiad/infrastructure/network/netadapter/router"
 )
 
 // HandleEstimateNetworkHashesPerSecond handles the respectively named RPC command
