@@ -7,17 +7,17 @@ import (
 	"runtime"
 	"time"
 
-	"github.com/kaspanet/kaspad/infrastructure/config"
-	"github.com/kaspanet/kaspad/infrastructure/db/database"
-	"github.com/kaspanet/kaspad/infrastructure/db/database/ldb"
-	"github.com/kaspanet/kaspad/infrastructure/logger"
-	"github.com/kaspanet/kaspad/infrastructure/os/execenv"
-	"github.com/kaspanet/kaspad/infrastructure/os/limits"
-	"github.com/kaspanet/kaspad/infrastructure/os/signal"
-	"github.com/kaspanet/kaspad/infrastructure/os/winservice"
-	"github.com/kaspanet/kaspad/util/panics"
-	"github.com/kaspanet/kaspad/util/profiling"
-	"github.com/kaspanet/kaspad/version"
+	"github.com/fabbez/topiad/infrastructure/config"
+	"github.com/fabbez/topiad/infrastructure/db/database"
+	"github.com/fabbez/topiad/infrastructure/db/database/ldb"
+	"github.com/fabbez/topiad/infrastructure/logger"
+	"github.com/fabbez/topiad/infrastructure/os/execenv"
+	"github.com/fabbez/topiad/infrastructure/os/limits"
+	"github.com/fabbez/topiad/infrastructure/os/signal"
+	"github.com/fabbez/topiad/infrastructure/os/winservice"
+	"github.com/fabbez/topiad/util/panics"
+	"github.com/fabbez/topiad/util/profiling"
+	"github.com/fabbez/topiad/version"
 )
 
 const (
@@ -31,13 +31,13 @@ var desiredLimits = &limits.DesiredLimits{
 }
 
 var serviceDescription = &winservice.ServiceDescription{
-	Name:        "kaspadsvc",
-	DisplayName: "Kaspad Service",
+	Name:        "topiadsvc",
+	DisplayName: "topiad Service",
 	Description: "Downloads and stays synchronized with the Kaspa blockDAG and " +
 		"provides DAG services to applications.",
 }
 
-type kaspadApp struct {
+type topiadApp struct {
 	cfg *config.Config
 }
 
