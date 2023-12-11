@@ -3,8 +3,8 @@ package common
 import (
 	"time"
 
-	peerpkg "github.com/topianet/topiad/app/protocol/peer"
-	routerpkg "github.com/topianet/topiad/infrastructure/network/netadapter/router"
+	peerpkg "github.com/fabbez/topiad/app/protocol/peer"
+	routerpkg "github.com/fabbez/topiad/infrastructure/network/netadapter/router"
 
 	"github.com/pkg/errors"
 )
