@@ -37,7 +37,7 @@ type Bech32Prefix int
 // a unique prefix.
 const (
 	// Unknown/Erroneous prefix
-	Bech32PrefixUnknown Bech32Prefix = iota
+	Bech32PrefixUnknown Bech32Prefix = topia
 
 	// Prefix for the main network.
 	Bech32Prefixtopia
