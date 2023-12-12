@@ -1,10 +1,12 @@
 package mempool
 
 import (
+	"sync"
+
 	"github.com/kaspanet/kaspad/domain/consensus/ruleerrors"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
-	"sync"
+	"github.com/pkg/errors"
 
 	"github.com/kaspanet/kaspad/domain/consensusreference"
 
@@ -209,17 +211,7 @@ func (mp *mempool) RemoveInvalidTransactions(err *ruleerrors.ErrInvalidTransacti
 	defer mp.mtx.Unlock()
 
 	for _, tx := range err.InvalidTransactions {
-		ruleErr, success := tx.Error.(ruleerrors.RuleError)
-		if !success {
-			continue
-		}
-
-		inner := ruleErr.Unwrap()
-		removeRedeemers := true
-		if _, ok := inner.(ruleerrors.ErrMissingTxOut); ok {
-			removeRedeemers = false
-		}
-
+		removeRedeemers := !errors.As(tx.Error, &ruleerrors.ErrMissingTxOut{})
 		err := mp.removeTransaction(consensushashing.TransactionID(tx.Transaction), removeRedeemers)
 		if err != nil {
 			return err

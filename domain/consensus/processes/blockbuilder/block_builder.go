@@ -131,11 +131,12 @@ func (bb *blockBuilder) validateTransactions(stagingArea *model.StagingArea,
 	for _, transaction := range transactions {
 		err := bb.validateTransaction(stagingArea, transaction)
 		if err != nil {
-			if !errors.As(err, &ruleerrors.RuleError{}) {
+			ruleError := ruleerrors.RuleError{}
+			if !errors.As(err, &ruleError) {
 				return err
 			}
 			invalidTransactions = append(invalidTransactions,
-				ruleerrors.InvalidTransaction{Transaction: transaction, Error: err})
+				ruleerrors.InvalidTransaction{Transaction: transaction, Error: &ruleError})
 		}
 	}
 
