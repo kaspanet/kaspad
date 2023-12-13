@@ -1,8 +1,8 @@
 package consensusstatemanager
 
 import (
-	"github.com/kaspanet/kaspad/domain/consensus/model"
-	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+	"github.com/fabbez/topiad/domain/consensus/model"
+	"github.com/fabbez/topiad/domain/consensus/model/externalapi"
 )
 
 // consensusStateManager manages the node's consensus state
