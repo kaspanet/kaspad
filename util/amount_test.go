@@ -5,11 +5,11 @@
 package util_test
 
 import (
-	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
+	"github.com/fabbez/topiad/domain/consensus/utils/constants"
 	"math"
 	"testing"
 
-	. "github.com/kaspanet/kaspad/util"
+	. "github.com/fabbez/topiad/util"
 )
 
 func TestAmountCreation(t *testing.T) {
@@ -28,7 +28,7 @@ func TestAmountCreation(t *testing.T) {
 		},
 		{
 			name:     "max producible",
-			amount:   29e9,
+			amount:   58e9,
 			valid:    true,
 			expected: Amount(constants.MaxSompi),
 		},
@@ -105,8 +105,8 @@ func TestAmountUnitConversions(t *testing.T) {
 			name:      "MKAS",
 			amount:    Amount(constants.MaxSompi),
 			unit:      AmountMegaKAS,
-			converted: 29000,
-			s:         "29000 MKAS",
+			converted: 58000,
+			s:         "58000 MKAS",
 		},
 		{
 			name:      "kKAS",
