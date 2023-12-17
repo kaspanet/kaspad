@@ -42,6 +42,7 @@ type server struct {
 	isLogFinalProgressLineShown bool
 	maxUsedAddressesForLog      uint32
 	maxProcessedAddressesForLog uint32
+	validUsedOutpointsTime      time.Duration
 }
 
 // MaxDaemonSendMsgSize is the max send message size used for the daemon server.
@@ -49,7 +50,7 @@ type server struct {
 const MaxDaemonSendMsgSize = 100_000_000
 
 // Start starts the kaspawalletd server
-func Start(params *dagconfig.Params, listen, rpcServer string, keysFilePath string, profile string, timeout uint32) error {
+func Start(params *dagconfig.Params, listen, rpcServer string, keysFilePath string, profile string, timeout uint32, validUsedOutpointsTime uint32) error {
 	initLog(defaultLogFile, defaultErrLogFile)
 
 	defer panics.HandlePanic(log, "MAIN", nil)
@@ -95,6 +96,7 @@ func Start(params *dagconfig.Params, listen, rpcServer string, keysFilePath stri
 		isLogFinalProgressLineShown: false,
 		maxUsedAddressesForLog:      0,
 		maxProcessedAddressesForLog: 0,
+		validUsedOutpointsTime:      time.Duration(validUsedOutpointsTime) * time.Second,
 	}
 
 	log.Infof("Read, syncing the wallet...")
