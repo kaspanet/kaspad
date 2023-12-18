@@ -2,7 +2,7 @@ package pow
 
 import (
 	"encoding/binary"
-	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+	"github.com/fabbez/topiad/domain/consensus/model/externalapi"
 	"math/bits"
 )
 
