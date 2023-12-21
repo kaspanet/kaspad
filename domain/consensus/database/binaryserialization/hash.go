@@ -1,7 +1,7 @@
 package binaryserialization
 
 import (
-	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+	"github.com/fabbez/topiad/domain/consensus/model/externalapi"
 	"github.com/pkg/errors"
 )
 
