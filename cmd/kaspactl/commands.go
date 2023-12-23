@@ -5,42 +5,42 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/server/grpcserver/protowire"
+	"github.com/fabbez/topiad/infrastructure/network/netadapter/server/grpcserver/protowire"
 )
 
 var commandTypes = []reflect.Type{
-	reflect.TypeOf(protowire.KaspadMessage_AddPeerRequest{}),
-	reflect.TypeOf(protowire.KaspadMessage_GetConnectedPeerInfoRequest{}),
-	reflect.TypeOf(protowire.KaspadMessage_GetPeerAddressesRequest{}),
-	reflect.TypeOf(protowire.KaspadMessage_GetCurrentNetworkRequest{}),
-	reflect.TypeOf(protowire.KaspadMessage_GetInfoRequest{}),
+	reflect.TypeOf(protowire.topiadMessage_AddPeerRequest{}),
+	reflect.TypeOf(protowire.topiadMessage_GetConnectedPeerInfoRequest{}),
+	reflect.TypeOf(protowire.topiadMessage_GetPeerAddressesRequest{}),
+	reflect.TypeOf(protowire.topiadMessage_GetCurrentNetworkRequest{}),
+	reflect.TypeOf(protowire.topiadMessage_GetInfoRequest{}),
 
-	reflect.TypeOf(protowire.KaspadMessage_GetBlockRequest{}),
-	reflect.TypeOf(protowire.KaspadMessage_GetBlocksRequest{}),
-	reflect.TypeOf(protowire.KaspadMessage_GetHeadersRequest{}),
-	reflect.TypeOf(protowire.KaspadMessage_GetBlockCountRequest{}),
-	reflect.TypeOf(protowire.KaspadMessage_GetBlockDagInfoRequest{}),
-	reflect.TypeOf(protowire.KaspadMessage_GetSelectedTipHashRequest{}),
-	reflect.TypeOf(protowire.KaspadMessage_GetVirtualSelectedParentBlueScoreRequest{}),
-	reflect.TypeOf(protowire.KaspadMessage_GetVirtualSelectedParentChainFromBlockRequest{}),
-	reflect.TypeOf(protowire.KaspadMessage_ResolveFinalityConflictRequest{}),
-	reflect.TypeOf(protowire.KaspadMessage_EstimateNetworkHashesPerSecondRequest{}),
+	reflect.TypeOf(protowire.topiadMessage_GetBlockRequest{}),
+	reflect.TypeOf(protowire.topiadMessage_GetBlocksRequest{}),
+	reflect.TypeOf(protowire.topiadMessage_GetHeadersRequest{}),
+	reflect.TypeOf(protowire.topiadMessage_GetBlockCountRequest{}),
+	reflect.TypeOf(protowire.topiadMessage_GetBlockDagInfoRequest{}),
+	reflect.TypeOf(protowire.topiadMessage_GetSelectedTipHashRequest{}),
+	reflect.TypeOf(protowire.topiadMessage_GetVirtualSelectedParentBlueScoreRequest{}),
+	reflect.TypeOf(protowire.topiadMessage_GetVirtualSelectedParentChainFromBlockRequest{}),
+	reflect.TypeOf(protowire.topiadMessage_ResolveFinalityConflictRequest{}),
+	reflect.TypeOf(protowire.topiadMessage_EstimateNetworkHashesPerSecondRequest{}),
 
-	reflect.TypeOf(protowire.KaspadMessage_GetBlockTemplateRequest{}),
-	reflect.TypeOf(protowire.KaspadMessage_SubmitBlockRequest{}),
+	reflect.TypeOf(protowire.topiadMessage_GetBlockTemplateRequest{}),
+	reflect.TypeOf(protowire.topiadMessage_SubmitBlockRequest{}),
 
-	reflect.TypeOf(protowire.KaspadMessage_GetMempoolEntryRequest{}),
-	reflect.TypeOf(protowire.KaspadMessage_GetMempoolEntriesRequest{}),
-	reflect.TypeOf(protowire.KaspadMessage_GetMempoolEntriesByAddressesRequest{}),
+	reflect.TypeOf(protowire.topiadMessage_GetMempoolEntryRequest{}),
+	reflect.TypeOf(protowire.topiadMessage_GetMempoolEntriesRequest{}),
+	reflect.TypeOf(protowire.topiadMessage_GetMempoolEntriesByAddressesRequest{}),
 
-	reflect.TypeOf(protowire.KaspadMessage_SubmitTransactionRequest{}),
+	reflect.TypeOf(protowire.topiadMessage_SubmitTransactionRequest{}),
 
-	reflect.TypeOf(protowire.KaspadMessage_GetUtxosByAddressesRequest{}),
-	reflect.TypeOf(protowire.KaspadMessage_GetBalanceByAddressRequest{}),
-	reflect.TypeOf(protowire.KaspadMessage_GetCoinSupplyRequest{}),
+	reflect.TypeOf(protowire.topiadMessage_GetUtxosByAddressesRequest{}),
+	reflect.TypeOf(protowire.topiadMessage_GetBalanceByAddressRequest{}),
+	reflect.TypeOf(protowire.topiadMessage_GetCoinSupplyRequest{}),
 
-	reflect.TypeOf(protowire.KaspadMessage_BanRequest{}),
-	reflect.TypeOf(protowire.KaspadMessage_UnbanRequest{}),
+	reflect.TypeOf(protowire.topiadMessage_BanRequest{}),
+	reflect.TypeOf(protowire.topiadMessage_UnbanRequest{}),
 }
 
 type commandDescription struct {
