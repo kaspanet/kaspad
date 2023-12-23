@@ -30,9 +30,20 @@ func (x *KaspadMessage_GetInfoResponse) fromAppMessage(message *appmessage.GetIn
 		P2PId:         message.P2PID,
 		ServerVersion: message.ServerVersion,
 		MempoolSize:   message.MempoolSize,
+
 		IsUtxoIndexed: message.IsUtxoIndexed,
 		IsSynced:      message.IsSynced,
-		Error:         err,
+
+		MaxRPCClients:          message.MaxRPCClients,
+		NumberOfRPCConnections: message.NumberOfRPCConnections,
+		MaxP2PClients:          message.MaxP2PClients,
+		NumberOfP2PConnections: message.NumberOfP2PConnections,
+
+		BanDurationInMilliseconds: message.BanDurationInMilliseconds,
+
+		UptimeInMilliseconds: message.UptimeInMilliseconds,
+
+		Error: err,
 	}
 	return nil
 }
@@ -55,8 +66,18 @@ func (x *GetInfoResponseMessage) toAppMessage() (appmessage.Message, error) {
 		P2PID:         x.P2PId,
 		MempoolSize:   x.MempoolSize,
 		ServerVersion: x.ServerVersion,
+
 		IsUtxoIndexed: x.IsUtxoIndexed,
 		IsSynced:      x.IsSynced,
+
+		MaxRPCClients:          x.MaxRPCClients,
+		NumberOfRPCConnections: x.NumberOfRPCConnections,
+
+		MaxP2PClients:          x.MaxP2PClients,
+		NumberOfP2PConnections: x.NumberOfP2PConnections,
+
+		BanDurationInMilliseconds: x.BanDurationInMilliseconds,
+		UptimeInMilliseconds:      x.UptimeInMilliseconds,
 
 		Error: rpcErr,
 	}, nil
