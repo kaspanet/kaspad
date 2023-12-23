@@ -1,7 +1,7 @@
 syntax = "proto3";
 
-option go_package = "github.com/kaspanet/kaspad/cmd/kaspawallet/daemon/pb";
-package kaspawalletd;
+option go_package = "github.com/fabbez/topiad/cmd/topiawallet/daemon/pb";
+package topiawalletd;
 
 service kaspawalletd {
   rpc GetBalance (GetBalanceRequest) returns (GetBalanceResponse) {}
