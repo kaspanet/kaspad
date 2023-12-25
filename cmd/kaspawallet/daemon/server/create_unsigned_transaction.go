@@ -135,7 +135,11 @@ func (s *server) selectUTXOs(spendAmount uint64, isSendAll bool, feePerInput uin
 
 		fee := feePerInput * uint64(len(selectedUTXOs))
 		totalSpend := spendAmount + fee
-		if !isSendAll && totalValue >= totalSpend {
+		// Two break cases (if not send all):
+		// 		1. totalValue == totalSpend, so there's no change needed -> number of outputs = 1, so a single input is sufficient
+		// 		2. totalValue > totalSpend, so there will be change and 2 outputs, therefor in order to not struggle with new dust
+		// 		   rules we try and find at least 2 inputs (even though the next one is not necessary in terms of spend value)
+		if !isSendAll && (totalValue == totalSpend || (totalValue > totalSpend && len(selectedUTXOs) > 1)) {
 			break
 		}
 	}
