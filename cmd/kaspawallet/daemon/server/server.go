@@ -6,6 +6,7 @@ import (
 	"net"
 	"os"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
@@ -31,15 +32,17 @@ type server struct {
 	rpcClient *rpcclient.RPCClient
 	params    *dagconfig.Params
 
-	lock                sync.RWMutex
-	utxosSortedByAmount []*walletUTXO
-	nextSyncStartIndex  uint32
-	keysFile            *keys.File
-	shutdown            chan struct{}
-	forceSyncChan       chan struct{}
-	addressSet          walletAddressSet
-	txMassCalculator    *txmass.Calculator
-	usedOutpoints       map[externalapi.DomainOutpoint]time.Time
+	lock                            sync.RWMutex
+	utxosSortedByAmount             []*walletUTXO
+	nextSyncStartIndex              uint32
+	keysFile                        *keys.File
+	shutdown                        chan struct{}
+	forceSyncChan                   chan struct{}
+	startTimeOfLastCompletedRefresh time.Time
+	addressSet                      walletAddressSet
+	txMassCalculator                *txmass.Calculator
+	usedOutpoints                   map[externalapi.DomainOutpoint]time.Time
+	firstSyncDone                   atomic.Bool
 
 	isLogFinalProgressLineShown bool
 	maxUsedAddressesForLog      uint32

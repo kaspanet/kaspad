@@ -35,7 +35,6 @@ func (s *server) createUnsignedTransactions(address string, amount uint64, isSen
 	if !s.isSynced() {
 		return nil, errors.Errorf("wallet daemon is not synced yet, %s", s.formatSyncStateReport())
 	}
-
 	// make sure address string is correct before proceeding to a
 	// potentially long UTXO refreshment operation
 	toAddress, err := util.DecodeAddress(address, s.params.Prefix)
@@ -113,7 +112,9 @@ func (s *server) selectUTXOs(spendAmount uint64, isSendAll bool, feePerInput uin
 		}
 
 		if broadcastTime, ok := s.usedOutpoints[*utxo.Outpoint]; ok {
-			if time.Since(broadcastTime) > time.Minute {
+			// We want to free an outpoint from the used outpoints set if we refresh the UTXOs since it was
+			// marked as used, and it least one minute has passed.
+			if time.Since(broadcastTime) > time.Minute && s.startTimeOfLastCompletedRefresh.After(broadcastTime) {
 				delete(s.usedOutpoints, *utxo.Outpoint)
 			} else {
 				continue

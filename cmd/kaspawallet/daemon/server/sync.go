@@ -37,18 +37,18 @@ func (s *server) syncLoop() error {
 		return err
 	}
 
+	s.firstSyncDone.Store(true)
+	log.Infof("Wallet is synced and ready for operation")
+
 	for {
 		select {
 		case <-ticker.C:
-			err := s.sync()
-			if err != nil {
-				return err
-			}
 		case <-s.forceSyncChan:
-			err := s.sync()
-			if err != nil {
-				return err
-			}
+		}
+
+		err := s.sync()
+		if err != nil {
+			return err
 		}
 	}
 }
@@ -219,7 +219,7 @@ func (s *server) updateAddressesAndLastUsedIndexes(requestedAddressSet walletAdd
 }
 
 // updateUTXOSet clears the current UTXO set, and re-fills it with the given entries
-func (s *server) updateUTXOSet(entries []*appmessage.UTXOsByAddressesEntry, mempoolEntries []*appmessage.MempoolEntryByAddress) error {
+func (s *server) updateUTXOSet(entries []*appmessage.UTXOsByAddressesEntry, mempoolEntries []*appmessage.MempoolEntryByAddress, refreshStart time.Time) error {
 	utxos := make([]*walletUTXO, 0, len(entries))
 
 	exclude := make(map[appmessage.RPCOutpoint]struct{})
@@ -260,6 +260,7 @@ func (s *server) updateUTXOSet(entries []*appmessage.UTXOsByAddressesEntry, memp
 	sort.Slice(utxos, func(i, j int) bool { return utxos[i].UTXOEntry.Amount() > utxos[j].UTXOEntry.Amount() })
 
 	s.lock.Lock()
+	s.startTimeOfLastCompletedRefresh = refreshStart
 	s.utxosSortedByAmount = utxos
 	s.lock.Unlock()
 
@@ -267,6 +268,7 @@ func (s *server) updateUTXOSet(entries []*appmessage.UTXOsByAddressesEntry, memp
 }
 
 func (s *server) refreshUTXOs() error {
+	refreshStart := time.Now()
 	// It's important to check the mempool before calling `GetUTXOsByAddresses`:
 	// If we would do it the other way around an output can be spent in the mempool
 	// and not in consensus, and between the calls its spending transaction will be
@@ -282,11 +284,13 @@ func (s *server) refreshUTXOs() error {
 		return err
 	}
 
-	return s.updateUTXOSet(getUTXOsByAddressesResponse.Entries, mempoolEntriesByAddresses.Entries)
+	return s.updateUTXOSet(getUTXOsByAddressesResponse.Entries, mempoolEntriesByAddresses.Entries, refreshStart)
 }
 
 func (s *server) forceSync() {
-	if len(s.forceSyncChan) != 0 {
+	// Technically if two callers check the `if` simultaneously they will both spawn a
+	// goroutine, but we don't care about the small redundancy in such a rare case.
+	if len(s.forceSyncChan) == 0 {
 		go func() {
 			s.forceSyncChan <- struct{}{}
 		}()
@@ -294,7 +298,7 @@ func (s *server) forceSync() {
 }
 
 func (s *server) isSynced() bool {
-	return s.nextSyncStartIndex > s.maxUsedIndex()
+	return s.nextSyncStartIndex > s.maxUsedIndex() && s.firstSyncDone.Load()
 }
 
 func (s *server) formatSyncStateReport() string {
@@ -304,8 +308,11 @@ func (s *server) formatSyncStateReport() string {
 		maxUsedIndex = s.nextSyncStartIndex
 	}
 
-	return fmt.Sprintf("scanned %d out of %d addresses (%.2f%%)",
-		s.nextSyncStartIndex, maxUsedIndex, float64(s.nextSyncStartIndex)*100.0/float64(maxUsedIndex))
+	if s.nextSyncStartIndex < s.maxUsedIndex() {
+		return fmt.Sprintf("scanned %d out of %d addresses (%.2f%%)",
+			s.nextSyncStartIndex, maxUsedIndex, float64(s.nextSyncStartIndex)*100.0/float64(maxUsedIndex))
+	}
+	return "loading the wallet UTXO set"
 }
 
 func (s *server) updateSyncingProgressLog(currProcessedAddresses, currMaxUsedAddresses uint32) {
@@ -324,7 +331,7 @@ func (s *server) updateSyncingProgressLog(currProcessedAddresses, currMaxUsedAdd
 
 	if s.maxProcessedAddressesForLog >= s.maxUsedAddressesForLog {
 		if !s.isLogFinalProgressLineShown {
-			log.Infof("Wallet is synced, ready for queries")
+			log.Infof("Finished scanning recent addresses")
 			s.isLogFinalProgressLineShown = true
 		}
 	} else {
