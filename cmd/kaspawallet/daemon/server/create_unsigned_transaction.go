@@ -112,9 +112,12 @@ func (s *server) selectUTXOs(spendAmount uint64, isSendAll bool, feePerInput uin
 		}
 
 		if broadcastTime, ok := s.usedOutpoints[*utxo.Outpoint]; ok {
-			// We want to free an outpoint from the used outpoints set if we refresh the UTXOs since it was
-			// marked as used, and it least one minute has passed.
-			if time.Since(broadcastTime) > time.Minute && s.startTimeOfLastCompletedRefresh.After(broadcastTime) {
+			// If the node returned a UTXO we previously attempted to spend and enough time has passed, we assume
+			// that the network rejected or lost the previous transaction and allow a reuse. We set this time
+			// interval to a minute. 
+			// We also verify that a full refresh UTXO operation started after this time point and has already
+			// completed, in order to make sure that indeed this state reflects a state obtained following the required wait time.
+			if s.startTimeOfLastCompletedRefresh.After(broadcastTime.Add(time.Minute)) {
 				delete(s.usedOutpoints, *utxo.Outpoint)
 			} else {
 				continue
