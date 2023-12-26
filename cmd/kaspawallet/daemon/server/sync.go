@@ -286,7 +286,11 @@ func (s *server) refreshUTXOs() error {
 }
 
 func (s *server) forceSync() {
-	s.forceSyncChan <- struct{}{}
+	if len(s.forceSyncChan) != 0 {
+		go func() {
+			s.forceSyncChan <- struct{}{}
+		}()
+	}
 }
 
 func (s *server) isSynced() bool {
