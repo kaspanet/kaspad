@@ -31,7 +31,7 @@ type server struct {
 	pb.UnimplementedKaspawalletdServer
 
 	rpcClient           *rpcclient.RPCClient // RPC client for ongoing user requests
-	backgroundRpcClient *rpcclient.RPCClient // RPC client dedicated for address and UTXO background fetching
+	backgroundRPCClient *rpcclient.RPCClient // RPC client dedicated for address and UTXO background fetching
 	params              *dagconfig.Params
 
 	lock                            sync.RWMutex
@@ -96,7 +96,7 @@ func Start(params *dagconfig.Params, listen, rpcServer string, keysFilePath stri
 
 	serverInstance := &server{
 		rpcClient:                   rpcClient,
-		backgroundRpcClient:         backgroundRpcClient,
+		backgroundRPCClient:         backgroundRpcClient,
 		params:                      params,
 		utxosSortedByAmount:         []*walletUTXO{},
 		nextSyncStartIndex:          0,
