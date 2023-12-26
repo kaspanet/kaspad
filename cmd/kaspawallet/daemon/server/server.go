@@ -2,6 +2,7 @@ package server
 
 import (
 	"fmt"
+	"github.com/kaspanet/kaspad/version"
 	"net"
 	"os"
 	"sync"
@@ -59,6 +60,7 @@ func Start(params *dagconfig.Params, listen, rpcServer string, keysFilePath stri
 		profiling.Start(profile, log)
 	}
 
+	log.Infof("Version %s", version.Version())
 	listener, err := net.Listen("tcp", listen)
 	if err != nil {
 		return (errors.Wrapf(err, "Error listening to TCP on %s", listen))

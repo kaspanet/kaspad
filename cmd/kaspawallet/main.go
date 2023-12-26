@@ -1,10 +1,11 @@
 package main
 
-import "github.com/pkg/errors"
+import (
+	"github.com/pkg/errors"
+)
 
 func main() {
 	subCmd, config := parseCommandLine()
-
 	var err error
 	switch subCmd {
 	case createSubCmd:
@@ -31,6 +32,10 @@ func main() {
 		err = startDaemon(config.(*startDaemonConfig))
 	case sweepSubCmd:
 		err = sweep(config.(*sweepConfig))
+	case versionSubCmd:
+		showVersion()
+	case getDaemonVersionSubCmd:
+		err = getDaemonVersion(config.(*getDaemonVersionConfig))
 	default:
 		err = errors.Errorf("Unknown sub-command '%s'\n", subCmd)
 	}
