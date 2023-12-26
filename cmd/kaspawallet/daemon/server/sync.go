@@ -32,7 +32,7 @@ func (s *server) syncLoop() error {
 		return err
 	}
 
-	err = s.refreshExistingUTXOsWithLock()
+	err = s.refreshUTXOs()
 	if err != nil {
 		return err
 	}
@@ -64,7 +64,7 @@ func (s *server) sync() error {
 		return err
 	}
 
-	return s.refreshExistingUTXOsWithLock()
+	return s.refreshUTXOs()
 }
 
 const (
@@ -218,13 +218,6 @@ func (s *server) updateAddressesAndLastUsedIndexes(requestedAddressSet walletAdd
 	return s.keysFile.SetLastUsedInternalIndex(lastUsedInternalIndex)
 }
 
-func (s *server) refreshExistingUTXOsWithLock() error {
-	s.lock.Lock()
-	defer s.lock.Unlock()
-
-	return s.refreshUTXOs()
-}
-
 // updateUTXOSet clears the current UTXO set, and re-fills it with the given entries
 func (s *server) updateUTXOSet(entries []*appmessage.UTXOsByAddressesEntry, mempoolEntries []*appmessage.MempoolEntryByAddress) error {
 	utxos := make([]*walletUTXO, 0, len(entries))
@@ -266,7 +259,9 @@ func (s *server) updateUTXOSet(entries []*appmessage.UTXOsByAddressesEntry, memp
 
 	sort.Slice(utxos, func(i, j int) bool { return utxos[i].UTXOEntry.Amount() > utxos[j].UTXOEntry.Amount() })
 
+	s.lock.Lock()
 	s.utxosSortedByAmount = utxos
+	s.lock.Unlock()
 
 	return nil
 }
