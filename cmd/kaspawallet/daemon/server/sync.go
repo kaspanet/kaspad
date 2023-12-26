@@ -168,7 +168,7 @@ func (s *server) collectAddresses(start, end uint32) error {
 		return err
 	}
 
-	getBalancesByAddressesResponse, err := s.rpcClient.GetBalancesByAddresses(addressSet.strings())
+	getBalancesByAddressesResponse, err := s.backgroundRpcClient.GetBalancesByAddresses(addressSet.strings())
 	if err != nil {
 		return err
 	}
@@ -293,12 +293,12 @@ func (s *server) refreshUTXOs() error {
 	// and not in consensus, and between the calls its spending transaction will be
 	// added to consensus and removed from the mempool, so `getUTXOsByAddressesResponse`
 	// will include an obsolete output.
-	mempoolEntriesByAddresses, err := s.rpcClient.GetMempoolEntriesByAddresses(addresses, true, true)
+	mempoolEntriesByAddresses, err := s.backgroundRpcClient.GetMempoolEntriesByAddresses(addresses, true, true)
 	if err != nil {
 		return err
 	}
 
-	getUTXOsByAddressesResponse, err := s.rpcClient.GetUTXOsByAddresses(addresses)
+	getUTXOsByAddressesResponse, err := s.backgroundRpcClient.GetUTXOsByAddresses(addresses)
 	if err != nil {
 		return err
 	}

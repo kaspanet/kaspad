@@ -2,12 +2,13 @@ package server
 
 import (
 	"fmt"
-	"github.com/kaspanet/kaspad/version"
 	"net"
 	"os"
 	"sync"
 	"sync/atomic"
 	"time"
+
+	"github.com/kaspanet/kaspad/version"
 
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 
@@ -29,8 +30,9 @@ import (
 type server struct {
 	pb.UnimplementedKaspawalletdServer
 
-	rpcClient *rpcclient.RPCClient
-	params    *dagconfig.Params
+	rpcClient           *rpcclient.RPCClient // RPC client for ongoing user requests
+	backgroundRpcClient *rpcclient.RPCClient // RPC client dedicated for address and UTXO background fetching
+	params              *dagconfig.Params
 
 	lock                            sync.RWMutex
 	utxosSortedByAmount             []*walletUTXO
@@ -76,6 +78,10 @@ func Start(params *dagconfig.Params, listen, rpcServer string, keysFilePath stri
 	if err != nil {
 		return (errors.Wrapf(err, "Error connecting to RPC server %s", rpcServer))
 	}
+	backgroundRpcClient, err := connectToRPC(params, rpcServer, timeout)
+	if err != nil {
+		return (errors.Wrapf(err, "Error making a second connection to RPC server %s", rpcServer))
+	}
 
 	log.Infof("Connected, reading keys file %s...", keysFilePath)
 	keysFile, err := keys.ReadKeysFile(params, keysFilePath)
@@ -90,6 +96,7 @@ func Start(params *dagconfig.Params, listen, rpcServer string, keysFilePath stri
 
 	serverInstance := &server{
 		rpcClient:                   rpcClient,
+		backgroundRpcClient:         backgroundRpcClient,
 		params:                      params,
 		utxosSortedByAmount:         []*walletUTXO{},
 		nextSyncStartIndex:          0,
