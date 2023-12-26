@@ -54,11 +54,7 @@ func (s *server) broadcast(transactions [][]byte, isDomain bool) ([]string, erro
 		}
 	}
 
-	err = s.refreshUTXOs()
-	if err != nil {
-		return nil, err
-	}
-
+	s.forceSync()
 	return txIDs, nil
 }
 

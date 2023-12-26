@@ -43,11 +43,6 @@ func (s *server) createUnsignedTransactions(address string, amount uint64, isSen
 		return nil, err
 	}
 
-	err = s.refreshUTXOs()
-	if err != nil {
-		return nil, err
-	}
-
 	var fromAddresses []*walletAddress
 	for _, from := range fromAddressesString {
 		fromAddress, exists := s.addressSet[from]

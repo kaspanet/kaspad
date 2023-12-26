@@ -23,7 +23,7 @@ func (was walletAddressSet) strings() []string {
 	return addresses
 }
 
-func (s *server) sync() error {
+func (s *server) syncLoop() error {
 	ticker := time.NewTicker(time.Second)
 	defer ticker.Stop()
 
@@ -37,24 +37,34 @@ func (s *server) sync() error {
 		return err
 	}
 
-	for range ticker.C {
-		err = s.collectFarAddresses()
-		if err != nil {
-			return err
-		}
-
-		err = s.collectRecentAddresses()
-		if err != nil {
-			return err
-		}
-
-		err = s.refreshExistingUTXOsWithLock()
-		if err != nil {
-			return err
+	for {
+		select {
+		case <-ticker.C:
+			err := s.sync()
+			if err != nil {
+				return err
+			}
+		case <-s.forceSyncChan:
+			err := s.sync()
+			if err != nil {
+				return err
+			}
 		}
 	}
+}
 
-	return nil
+func (s *server) sync() error {
+	err := s.collectFarAddresses()
+	if err != nil {
+		return err
+	}
+
+	err = s.collectRecentAddresses()
+	if err != nil {
+		return err
+	}
+
+	return s.refreshExistingUTXOsWithLock()
 }
 
 const (
@@ -278,6 +288,10 @@ func (s *server) refreshUTXOs() error {
 	}
 
 	return s.updateUTXOSet(getUTXOsByAddressesResponse.Entries, mempoolEntriesByAddresses.Entries)
+}
+
+func (s *server) forceSync() {
+	s.forceSyncChan <- struct{}{}
 }
 
 func (s *server) isSynced() bool {

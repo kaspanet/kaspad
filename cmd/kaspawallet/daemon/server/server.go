@@ -36,6 +36,7 @@ type server struct {
 	nextSyncStartIndex  uint32
 	keysFile            *keys.File
 	shutdown            chan struct{}
+	forceSyncChan       chan struct{}
 	addressSet          walletAddressSet
 	txMassCalculator    *txmass.Calculator
 	usedOutpoints       map[externalapi.DomainOutpoint]time.Time
@@ -91,6 +92,7 @@ func Start(params *dagconfig.Params, listen, rpcServer string, keysFilePath stri
 		nextSyncStartIndex:          0,
 		keysFile:                    keysFile,
 		shutdown:                    make(chan struct{}),
+		forceSyncChan:               make(chan struct{}),
 		addressSet:                  make(walletAddressSet),
 		txMassCalculator:            txmass.NewCalculator(params.MassPerTxByte, params.MassPerScriptPubKeyByte, params.MassPerSigOp),
 		usedOutpoints:               map[externalapi.DomainOutpoint]time.Time{},
@@ -100,8 +102,8 @@ func Start(params *dagconfig.Params, listen, rpcServer string, keysFilePath stri
 	}
 
 	log.Infof("Read, syncing the wallet...")
-	spawn("serverInstance.sync", func() {
-		err := serverInstance.sync()
+	spawn("serverInstance.syncLoop", func() {
+		err := serverInstance.syncLoop()
 		if err != nil {
 			printErrorAndExit(errors.Wrap(err, "error syncing the wallet"))
 		}
