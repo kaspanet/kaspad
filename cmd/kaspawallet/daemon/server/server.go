@@ -78,7 +78,7 @@ func Start(params *dagconfig.Params, listen, rpcServer string, keysFilePath stri
 	if err != nil {
 		return (errors.Wrapf(err, "Error connecting to RPC server %s", rpcServer))
 	}
-	backgroundRpcClient, err := connectToRPC(params, rpcServer, timeout)
+	backgroundRPCClient, err := connectToRPC(params, rpcServer, timeout)
 	if err != nil {
 		return (errors.Wrapf(err, "Error making a second connection to RPC server %s", rpcServer))
 	}
@@ -96,7 +96,7 @@ func Start(params *dagconfig.Params, listen, rpcServer string, keysFilePath stri
 
 	serverInstance := &server{
 		rpcClient:                   rpcClient,
-		backgroundRPCClient:         backgroundRpcClient,
+		backgroundRPCClient:         backgroundRPCClient,
 		params:                      params,
 		utxosSortedByAmount:         []*walletUTXO{},
 		nextSyncStartIndex:          0,
