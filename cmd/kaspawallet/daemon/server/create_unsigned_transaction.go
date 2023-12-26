@@ -3,7 +3,6 @@ package server
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/daemon/pb"
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/libkaspawallet"
@@ -46,7 +45,7 @@ func (s *server) createUnsignedTransactions(address string, amount uint64, isSen
 	for _, from := range fromAddressesString {
 		fromAddress, exists := s.addressSet[from]
 		if !exists {
-			return nil, fmt.Errorf("Specified from address %s does not exists", from)
+			return nil, fmt.Errorf("specified from address %s does not exists", from)
 		}
 		fromAddresses = append(fromAddresses, fromAddress)
 	}
@@ -112,12 +111,7 @@ func (s *server) selectUTXOs(spendAmount uint64, isSendAll bool, feePerInput uin
 		}
 
 		if broadcastTime, ok := s.usedOutpoints[*utxo.Outpoint]; ok {
-			// If the node returned a UTXO we previously attempted to spend and enough time has passed, we assume
-			// that the network rejected or lost the previous transaction and allow a reuse. We set this time
-			// interval to a minute. 
-			// We also verify that a full refresh UTXO operation started after this time point and has already
-			// completed, in order to make sure that indeed this state reflects a state obtained following the required wait time.
-			if s.startTimeOfLastCompletedRefresh.After(broadcastTime.Add(time.Minute)) {
+			if s.usedOutpointHasExpired(broadcastTime) {
 				delete(s.usedOutpoints, *utxo.Outpoint)
 			} else {
 				continue

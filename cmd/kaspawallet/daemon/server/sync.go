@@ -218,6 +218,15 @@ func (s *server) updateAddressesAndLastUsedIndexes(requestedAddressSet walletAdd
 	return s.keysFile.SetLastUsedInternalIndex(lastUsedInternalIndex)
 }
 
+func (s *server) usedOutpointHasExpired(outpointBroadcastTime time.Time) bool {
+	// If the node returns a UTXO we previously attempted to spend and enough time has passed, we assume
+	// that the network rejected or lost the previous transaction and allow a reuse. We set this time
+	// interval to a minute.
+	// We also verify that a full refresh UTXO operation started after this time point and has already
+	// completed, in order to make sure that indeed this state reflects a state obtained following the required wait time.
+	return s.startTimeOfLastCompletedRefresh.After(outpointBroadcastTime.Add(time.Minute))
+}
+
 // updateUTXOSet clears the current UTXO set, and re-fills it with the given entries
 func (s *server) updateUTXOSet(entries []*appmessage.UTXOsByAddressesEntry, mempoolEntries []*appmessage.MempoolEntryByAddress, refreshStart time.Time) error {
 	utxos := make([]*walletUTXO, 0, len(entries))
@@ -262,6 +271,13 @@ func (s *server) updateUTXOSet(entries []*appmessage.UTXOsByAddressesEntry, memp
 	s.lock.Lock()
 	s.startTimeOfLastCompletedRefresh = refreshStart
 	s.utxosSortedByAmount = utxos
+
+	// Cleanup expired used outpoints to avoid a memory leak
+	for outpoint, broadcastTime := range s.usedOutpoints {
+		if s.usedOutpointHasExpired(broadcastTime) {
+			delete(s.usedOutpoints, outpoint)
+		}
+	}
 	s.lock.Unlock()
 
 	return nil
