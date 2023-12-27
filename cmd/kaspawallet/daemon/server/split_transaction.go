@@ -264,7 +264,7 @@ func (s *server) moreUTXOsForMergeTransaction(alreadySelectedUTXOs []*libkaspawa
 		if _, ok := alreadySelectedUTXOsMap[*utxo.Outpoint]; ok {
 			continue
 		}
-		if !isUTXOSpendable(utxo, dagInfo.VirtualDAAScore, s.params.BlockCoinbaseMaturity) {
+		if !s.isUTXOSpendable(utxo, dagInfo.VirtualDAAScore) {
 			continue
 		}
 		additionalUTXOs = append(additionalUTXOs, &libkaspawallet.UTXO{
