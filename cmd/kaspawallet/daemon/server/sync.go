@@ -255,6 +255,7 @@ func (s *server) updateUTXOSet(entries []*appmessage.UTXOsByAddressesEntry, memp
 			return err
 		}
 
+		// No need to lock for reading since the only writer of this set is on `syncLoop` on the same goroutine.
 		address, ok := s.addressSet[entry.Address]
 		if !ok {
 			return errors.Errorf("Got result from address %s even though it wasn't requested", entry.Address)
