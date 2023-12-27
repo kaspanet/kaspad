@@ -9,7 +9,6 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/pkg/errors"
-	"golang.org/x/exp/slices"
 )
 
 // TODO: Implement a better fee estimation mechanism
@@ -105,7 +104,7 @@ func (s *server) selectUTXOs(spendAmount uint64, isSendAll bool, feePerInput uin
 	}
 
 	for _, utxo := range s.utxosSortedByAmount {
-		if (fromAddresses != nil && !slices.Contains(fromAddresses, utxo.address)) ||
+		if (fromAddresses != nil && !walletAddressesContain(fromAddresses, utxo.address)) ||
 			!isUTXOSpendable(utxo, dagInfo.VirtualDAAScore, coinbaseMaturity) {
 			continue
 		}
@@ -152,4 +151,14 @@ func (s *server) selectUTXOs(spendAmount uint64, isSendAll bool, feePerInput uin
 	}
 
 	return selectedUTXOs, totalReceived, totalValue - totalSpend, nil
+}
+
+func walletAddressesContain(addresses []*walletAddress, contain *walletAddress) bool {
+	for _, address := range addresses {
+		if *address == *contain {
+			return true
+		}
+	}
+
+	return false
 }
