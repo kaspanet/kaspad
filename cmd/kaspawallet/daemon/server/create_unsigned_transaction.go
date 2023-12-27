@@ -98,14 +98,9 @@ func (s *server) selectUTXOs(spendAmount uint64, isSendAll bool, feePerInput uin
 		return nil, 0, 0, err
 	}
 
-	coinbaseMaturity := s.params.BlockCoinbaseMaturity
-	if dagInfo.NetworkName == "kaspa-testnet-11" {
-		coinbaseMaturity = 1000
-	}
-
 	for _, utxo := range s.utxosSortedByAmount {
 		if (fromAddresses != nil && !walletAddressesContain(fromAddresses, utxo.address)) ||
-			!isUTXOSpendable(utxo, dagInfo.VirtualDAAScore, coinbaseMaturity) {
+			!s.isUTXOSpendable(utxo, dagInfo.VirtualDAAScore) {
 			continue
 		}
 

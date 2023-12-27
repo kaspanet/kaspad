@@ -285,9 +285,9 @@ func (s *server) updateUTXOSet(entries []*appmessage.UTXOsByAddressesEntry, memp
 
 func (s *server) refreshUTXOs() error {
 	refreshStart := time.Now()
-	s.lock.Lock()
+
+	// No need to lock for reading since the only writer of this set is on `syncLoop` on the same goroutine.
 	addresses := s.addressSet.strings()
-	s.lock.Unlock()
 	// It's important to check the mempool before calling `GetUTXOsByAddresses`:
 	// If we would do it the other way around an output can be spent in the mempool
 	// and not in consensus, and between the calls its spending transaction will be
