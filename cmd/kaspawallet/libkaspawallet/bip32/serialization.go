@@ -2,8 +2,8 @@ package bip32
 
 import (
 	"encoding/binary"
-	"github.com/kaspanet/go-secp256k1"
-	"github.com/kaspanet/kaspad/cmd/kaspawallet/libkaspawallet/bip32/base58"
+	"github.com/fabbez/go-secp256k1"
+	"github.com/fabbez/topiad/cmd/kaspawallet/libkaspawallet/bip32/base58"
 	"github.com/pkg/errors"
 )
 
