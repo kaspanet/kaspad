@@ -1,9 +1,9 @@
 package main
 
 import (
-	"github.com/kaspanet/kaspad/app/appmessage"
-	"github.com/kaspanet/kaspad/infrastructure/logger"
-	"github.com/kaspanet/kaspad/infrastructure/network/rpcclient"
+	"github.com/fabbez/topiad/app/appmessage"
+	"github.com/fabbez/topiad/infrastructure/logger"
+	"github.com/fabbez/topiad/infrastructure/network/rpcclient"
 	"github.com/pkg/errors"
 	"time"
 )
