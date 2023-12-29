@@ -1,7 +1,7 @@
 syntax = "proto3";
 package protoserialization;
 
-option go_package = "github.com/kaspanet/kaspad/cmd/kaspawallet/libkaspawallet/serialization/protoserialization";
+option go_package = "github.com/fabbez/topiad/cmd/kaspawallet/libkaspawallet/serialization/protoserialization";
 
 message PartiallySignedTransaction{
   TransactionMessage tx = 1;
