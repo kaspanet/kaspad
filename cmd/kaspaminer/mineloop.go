@@ -2,18 +2,18 @@ package main
 
 import (
 	nativeerrors "errors"
-	"github.com/kaspanet/kaspad/version"
+	"github.com/fabbez/topiad/version"
 	"math/rand"
 	"sync/atomic"
 	"time"
 
-	"github.com/kaspanet/kaspad/app/appmessage"
-	"github.com/kaspanet/kaspad/cmd/kaspaminer/templatemanager"
-	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/pow"
-	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/router"
-	"github.com/kaspanet/kaspad/util"
+	"github.com/fabbez/topiad/app/appmessage"
+	"github.com/fabbez/topiad/cmd/kaspaminer/templatemanager"
+	"github.com/fabbez/topiad/domain/consensus/model/externalapi"
+	"github.com/fabbez/topiad/domain/consensus/utils/consensushashing"
+	"github.com/fabbez/topiad/domain/consensus/utils/pow"
+	"github.com/fabbez/topiad/infrastructure/network/netadapter/router"
+	"github.com/fabbez/topiad/util"
 	"github.com/pkg/errors"
 )
 
