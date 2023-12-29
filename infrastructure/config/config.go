@@ -18,21 +18,21 @@ import (
 
 	"github.com/btcsuite/go-socks/socks"
 	"github.com/jessevdk/go-flags"
-	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
-	"github.com/kaspanet/kaspad/domain/dagconfig"
-	"github.com/kaspanet/kaspad/infrastructure/logger"
-	"github.com/kaspanet/kaspad/util"
-	"github.com/kaspanet/kaspad/util/network"
-	"github.com/kaspanet/kaspad/version"
+	"github.com/fabbez/topiad/domain/consensus/model/externalapi"
+	"github.com/fabbez/topiad/domain/dagconfig"
+	"github.com/fabbez/topiad/infrastructure/logger"
+	"github.com/fabbez/topiad/util"
+	"github.com/fabbez/topiad/util/network"
+	"github.com/fabbez/topiad/version"
 	"github.com/pkg/errors"
 )
 
 const (
-	defaultConfigFilename      = "kaspad.conf"
+	defaultConfigFilename      = "topiad.conf"
 	defaultLogLevel            = "info"
 	defaultLogDirname          = "logs"
-	defaultLogFilename         = "kaspad.log"
-	defaultErrLogFilename      = "kaspad_err.log"
+	defaultLogFilename         = "topiad.log"
+	defaultErrLogFilename      = "topiad_err.log"
 	defaultTargetOutboundPeers = 8
 	defaultMaxInboundPeers     = 117
 	defaultBanDuration         = time.Hour * 24
@@ -51,14 +51,14 @@ const (
 	//DefaultMaxOrphanTxSize is the default maximum size for an orphan transaction
 	DefaultMaxOrphanTxSize  = 100_000
 	defaultSigCacheMaxSize  = 100_000
-	sampleConfigFilename    = "sample-kaspad.conf"
+	sampleConfigFilename    = "sample-topiad.conf"
 	defaultMaxUTXOCacheSize = 5_000_000_000
 	defaultProtocolVersion  = 5
 )
 
 var (
 	// DefaultAppDir is the default home directory for kaspad.
-	DefaultAppDir = util.AppDir("kaspad", false)
+	DefaultAppDir = util.AppDir("topiad", false)
 
 	defaultConfigFile  = filepath.Join(DefaultAppDir, defaultConfigFilename)
 	defaultDataDir     = filepath.Join(DefaultAppDir)
@@ -66,14 +66,14 @@ var (
 	defaultRPCCertFile = filepath.Join(DefaultAppDir, "rpc.cert")
 )
 
-//go:embed sample-kaspad.conf
+//go:embed sample-topiad.conf
 var sampleConfig string
 
 // RunServiceCommand is only set to a real function on Windows. It is used
 // to parse and execute service commands specified via the -s flag.
 var RunServiceCommand func(string) error
 
-// Flags defines the configuration options for kaspad.
+// Flags defines the configuration options for topiad.
 //
 // See loadConfig for details on the configuration load process.
 type Flags struct {
