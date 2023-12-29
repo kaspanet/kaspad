@@ -25,7 +25,7 @@ WORKDIR /app
 RUN apk add --no-cache ca-certificates tini
 
 COPY --from=build /go/src/github.com/fabbez/topiad/topiad /app/
-COPY --from=build /go/src/github.com/fabbez/topiad/infrastructure/config/sample-kaspad.conf /app/
+COPY --from=build /go/src/github.com/fabbez/topiad/infrastructure/config/sample-topiad.conf /app/
 
 USER nobody
 ENTRYPOINT [ "/sbin/tini", "--" ]
