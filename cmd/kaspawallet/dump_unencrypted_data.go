@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/kaspanet/kaspad/cmd/kaspawallet/keys"
-	"github.com/kaspanet/kaspad/cmd/kaspawallet/libkaspawallet"
-	"github.com/kaspanet/kaspad/cmd/kaspawallet/utils"
+	"github.com/fabbez/topiad/cmd/kaspawallet/keys"
+	"github.com/fabbez/topiad/cmd/kaspawallet/libkaspawallet"
+	"github.com/fabbez/topiad/cmd/kaspawallet/utils"
 
 	"github.com/pkg/errors"
 )
