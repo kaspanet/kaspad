@@ -3,7 +3,7 @@ package addressmanager
 import (
 	"net"
 
-	"github.com/kaspanet/kaspad/infrastructure/config"
+	"github.com/fabbez/topiad/infrastructure/config"
 )
 
 // Config is a descriptor which specifies the AddressManager instance configuration.
