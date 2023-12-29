@@ -4,17 +4,17 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/kaspanet/kaspad/util"
+	"github.com/fabbez/topiad/util"
 
-	"github.com/kaspanet/kaspad/version"
+	"github.com/fabbez/topiad/version"
 
 	"github.com/pkg/errors"
 
 	_ "net/http/pprof"
 
-	"github.com/kaspanet/kaspad/infrastructure/os/signal"
-	"github.com/kaspanet/kaspad/util/panics"
-	"github.com/kaspanet/kaspad/util/profiling"
+	"github.com/fabbez/topiad/infrastructure/os/signal"
+	"github.com/fabbez/topiad/util/panics"
+	"github.com/fabbez/topiad/util/profiling"
 )
 
 func main() {
