@@ -2,8 +2,8 @@ package main
 
 import (
 	"fmt"
-	"github.com/kaspanet/kaspad/infrastructure/logger"
-	"github.com/kaspanet/kaspad/util/panics"
+	"github.com/fabbez/topiad/infrastructure/logger"
+	"github.com/fabbez/topiad/util/panics"
 	"os"
 )
 
