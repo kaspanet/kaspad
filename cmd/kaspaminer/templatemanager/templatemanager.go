@@ -1,9 +1,9 @@
 package templatemanager
 
 import (
-	"github.com/kaspanet/kaspad/app/appmessage"
-	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
-	"github.com/kaspanet/kaspad/domain/consensus/utils/pow"
+	"github.com/fabbez/topiad/app/appmessage"
+	"github.com/fabbez/topiad/domain/consensus/model/externalapi"
+	"github.com/fabbez/topiad/domain/consensus/utils/pow"
 	"sync"
 )
 
