@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/fabezz/topiad/cmd/kaspawallet/daemon/pb"
+	"github.com/fabbez/topiad/cmd/kaspawallet/daemon/pb"
 	"github.com/fabbez/topiad/cmd/kaspawallet/libkaspawallet"
 	"github.com/fabbez/topiad/util"
 	"github.com/pkg/errors"
