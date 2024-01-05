@@ -88,8 +88,8 @@ func TestUTXOIndex(t *testing.T) {
 	// Submit a few transactions that spends some UTXOs
 	const transactionAmountToSpend = 5
 	for i := 0; i < transactionAmountToSpend; i++ {
-		rpcTransaction := buildTransactionForUTXOIndexTest(t, notificationEntries[i])
-		_, err = kaspad.rpcClient.SubmitTransaction(rpcTransaction, false)
+		rpcTransaction, transactionID := buildTransactionForUTXOIndexTest(t, notificationEntries[i])
+		_, err = kaspad.rpcClient.SubmitTransaction(rpcTransaction, transactionID, false)
 		if err != nil {
 			t.Fatalf("Error submitting transaction: %s", err)
 		}
@@ -171,7 +171,7 @@ func TestUTXOIndex(t *testing.T) {
 	}
 }
 
-func buildTransactionForUTXOIndexTest(t *testing.T, entry *appmessage.UTXOsByAddressesEntry) *appmessage.RPCTransaction {
+func buildTransactionForUTXOIndexTest(t *testing.T, entry *appmessage.UTXOsByAddressesEntry) (*appmessage.RPCTransaction, string) {
 	transactionIDBytes, err := hex.DecodeString(entry.Outpoint.TransactionID)
 	if err != nil {
 		t.Fatalf("Error decoding transaction ID: %s", err)
@@ -224,5 +224,5 @@ func buildTransactionForUTXOIndexTest(t *testing.T, entry *appmessage.UTXOsByAdd
 	msgTx.TxIn[0].SignatureScript = signatureScript
 
 	domainTransaction := appmessage.MsgTxToDomainTransaction(msgTx)
-	return appmessage.DomainTransactionToRPCTransaction(domainTransaction)
+	return appmessage.DomainTransactionToRPCTransaction(domainTransaction), consensushashing.TransactionID(domainTransaction).String()
 }

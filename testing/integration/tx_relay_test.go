@@ -53,7 +53,7 @@ func TestTxRelay(t *testing.T) {
 	msgTx := generateTx(t, secondBlock.Transactions[transactionhelper.CoinbaseTransactionIndex], payer, payee)
 	domainTransaction := appmessage.MsgTxToDomainTransaction(msgTx)
 	rpcTransaction := appmessage.DomainTransactionToRPCTransaction(domainTransaction)
-	response, err := payer.rpcClient.SubmitTransaction(rpcTransaction, false)
+	response, err := payer.rpcClient.SubmitTransaction(rpcTransaction, consensushashing.TransactionID(domainTransaction).String(), false)
 	if err != nil {
 		t.Fatalf("Error submitting transaction: %+v", err)
 	}
