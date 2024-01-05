@@ -28,7 +28,8 @@ func HandleSubmitTransaction(context *rpccontext.Context, _ *router.Router, requ
 		}
 
 		log.Debugf("Rejected transaction %s: %s", transactionID, err)
-		errorMessage := &appmessage.SubmitTransactionResponseMessage{}
+		// Return the ID also in the case of error, so that clients can match the response to the correct transaction submit request
+		errorMessage := appmessage.NewSubmitTransactionResponseMessage(transactionID.String())
 		errorMessage.Error = appmessage.RPCErrorf("Rejected transaction %s: %s", transactionID, err)
 		return errorMessage, nil
 	}

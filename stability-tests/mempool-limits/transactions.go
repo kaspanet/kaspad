@@ -86,7 +86,7 @@ func submitAnAmountOfTransactionsToTheMempool(t *testing.T, rpcClient *rpcclient
 
 	for i, transaction := range transactions {
 		rpcTransaction := appmessage.DomainTransactionToRPCTransaction(transaction)
-		_, err := rpcClient.SubmitTransaction(rpcTransaction, false)
+		_, err := rpcClient.SubmitTransaction(rpcTransaction, consensushashing.TransactionID(transaction).String(), false)
 		if err != nil {
 			if ignoreOrphanRejects && strings.Contains(err.Error(), "orphan") {
 				continue
