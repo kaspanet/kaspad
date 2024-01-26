@@ -15,7 +15,7 @@ type LRUCache struct {
 func New(capacity int, preallocate bool) *LRUCache {
 	var cache map[externalapi.DomainHash]interface{}
 	if preallocate {
-		cache = make(map[externalapi.DomainHash]interface{}, capacity+1)
+		cache = make(map[externalapi.DomainHash]interface{}, capacity)
 	} else {
 		cache = make(map[externalapi.DomainHash]interface{})
 	}
@@ -27,11 +27,10 @@ func New(capacity int, preallocate bool) *LRUCache {
 
 // Add adds an entry to the LRUCache
 func (c *LRUCache) Add(key *externalapi.DomainHash, value interface{}) {
-	c.cache[*key] = value
-
-	if len(c.cache) > c.capacity {
+	if len(c.cache) >= c.capacity {
 		c.evictRandom()
 	}
+	c.cache[*key] = value
 }
 
 // Get returns the entry for the given key, or (nil, false) otherwise

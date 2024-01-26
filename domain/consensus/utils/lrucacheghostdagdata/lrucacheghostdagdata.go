@@ -25,7 +25,7 @@ type LRUCache struct {
 func New(capacity int, preallocate bool) *LRUCache {
 	var cache map[lruKey]*externalapi.BlockGHOSTDAGData
 	if preallocate {
-		cache = make(map[lruKey]*externalapi.BlockGHOSTDAGData, capacity+1)
+		cache = make(map[lruKey]*externalapi.BlockGHOSTDAGData, capacity)
 	} else {
 		cache = make(map[lruKey]*externalapi.BlockGHOSTDAGData)
 	}
@@ -37,12 +37,12 @@ func New(capacity int, preallocate bool) *LRUCache {
 
 // Add adds an entry to the LRUCache
 func (c *LRUCache) Add(blockHash *externalapi.DomainHash, isTrustedData bool, value *externalapi.BlockGHOSTDAGData) {
-	key := newKey(blockHash, isTrustedData)
-	c.cache[key] = value
-
-	if len(c.cache) > c.capacity {
+	if len(c.cache) >= c.capacity {
 		c.evictRandom()
 	}
+
+	key := newKey(blockHash, isTrustedData)
+	c.cache[key] = value
 }
 
 // Get returns the entry for the given key, or (nil, false) otherwise
