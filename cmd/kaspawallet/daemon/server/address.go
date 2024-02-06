@@ -53,7 +53,7 @@ func (s *server) ShowAddresses(_ context.Context, request *pb.ShowAddressesReque
 		return nil, errors.Errorf("wallet daemon is not synced yet, %s", s.formatSyncStateReport())
 	}
 
-	addresses := make([]string, s.keysFile.LastUsedExternalIndex())
+	addresses := make([]string, 0, s.keysFile.LastUsedExternalIndex()+s.keysFile.LastUsedInternalIndex())
 	for i := uint32(1); i <= s.keysFile.LastUsedExternalIndex(); i++ {
 		walletAddr := &walletAddress{
 			index:         i,
@@ -65,7 +65,21 @@ func (s *server) ShowAddresses(_ context.Context, request *pb.ShowAddressesReque
 		if err != nil {
 			return nil, err
 		}
-		addresses[i-1] = address.String()
+		addresses = append(addresses, address.String())
+	}
+
+	for i := uint32(1); i <= s.keysFile.LastUsedInternalIndex(); i++ {
+		walletAddr := &walletAddress{
+			index:         i,
+			cosignerIndex: s.keysFile.CosignerIndex,
+			keyChain:      libkaspawallet.InternalKeychain,
+		}
+		path := s.walletAddressPath(walletAddr)
+		address, err := libkaspawallet.Address(s.params, s.keysFile.ExtendedPublicKeys, s.keysFile.MinimumSignatures, path, s.keysFile.ECDSA)
+		if err != nil {
+			return nil, err
+		}
+		addresses = append(addresses, address.String())
 	}
 
 	return &pb.ShowAddressesResponse{Address: addresses}, nil
