@@ -9,4 +9,4 @@ import (
 	"github.com/kaspanet/kaspad/infrastructure/logger"
 )
 
-var log = logger.RegisterSubSystem("KASD")
+var log = logger.RegisterSubSystem("BTCDAG")
