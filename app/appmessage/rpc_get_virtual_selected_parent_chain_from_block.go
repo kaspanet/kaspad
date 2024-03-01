@@ -6,6 +6,7 @@ type GetVirtualSelectedParentChainFromBlockRequestMessage struct {
 	baseMessage
 	StartHash                     string
 	IncludeAcceptedTransactionIDs bool
+	BatchSize                     uint64
 }
 
 // Command returns the protocol command string for the message
@@ -15,11 +16,12 @@ func (msg *GetVirtualSelectedParentChainFromBlockRequestMessage) Command() Messa
 
 // NewGetVirtualSelectedParentChainFromBlockRequestMessage returns a instance of the message
 func NewGetVirtualSelectedParentChainFromBlockRequestMessage(
-	startHash string, includeAcceptedTransactionIDs bool) *GetVirtualSelectedParentChainFromBlockRequestMessage {
+	startHash string, includeAcceptedTransactionIDs bool, batchSize uint64) *GetVirtualSelectedParentChainFromBlockRequestMessage {
 
 	return &GetVirtualSelectedParentChainFromBlockRequestMessage{
 		StartHash:                     startHash,
 		IncludeAcceptedTransactionIDs: includeAcceptedTransactionIDs,
+		BatchSize:                     batchSize,
 	}
 }
 
