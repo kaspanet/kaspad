@@ -2,6 +2,9 @@ package grpcserver
 
 import (
 	"context"
+	"net"
+	"time"
+
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/server"
 	"github.com/kaspanet/kaspad/infrastructure/network/netadapter/server/grpcserver/protowire"
 	"github.com/kaspanet/kaspad/util/panics"
@@ -9,9 +12,9 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/encoding/gzip"
 	"google.golang.org/grpc/peer"
-	"net"
-	"time"
 )
+
+// p2pServer is a gRCP server for internodes communication
 
 type p2pServer struct {
 	protowire.UnimplementedP2PServer
@@ -28,7 +31,7 @@ const p2pMaxInboundConnections = 0
 
 // NewP2PServer creates a new P2PServer
 func NewP2PServer(listeningAddresses []string) (server.P2PServer, error) {
-	gRPCServer := newGRPCServer(listeningAddresses, p2pMaxMessageSize, p2pMaxInboundConnections, "P2P")
+	gRPCServer := newGRPCServer(listeningAddresses, p2pMaxMessageSize, p2pMaxInboundConnections, "P2P", "none", "", "")
 	p2pServer := &p2pServer{gRPCServer: *gRPCServer}
 	protowire.RegisterP2PServer(gRPCServer.server, p2pServer)
 	return p2pServer, nil

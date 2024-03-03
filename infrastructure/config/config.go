@@ -54,6 +54,7 @@ const (
 	sampleConfigFilename    = "sample-kaspad.conf"
 	defaultMaxUTXOCacheSize = 5_000_000_000
 	defaultProtocolVersion  = 5
+	defaultRPCAuth          = "none"
 )
 
 var (
@@ -92,8 +93,9 @@ type Flags struct {
 	BanThreshold                    uint32        `long:"banthreshold" description:"Maximum allowed ban score before disconnecting and banning misbehaving peers."`
 	Whitelists                      []string      `long:"whitelist" description:"Add an IP network or IP that will not be banned. (eg. 192.168.1.0/24 or ::1)"`
 	RPCListeners                    []string      `long:"rpclisten" description:"Add an interface/port to listen for RPC connections (default port: 16110, testnet: 16210)"`
-	RPCCert                         string        `long:"rpccert" description:"File containing the certificate file"`
-	RPCKey                          string        `long:"rpckey" description:"File containing the certificate key"`
+	RPCAuth                         string        `long:"rpcauth" description:"RPC Authentication type to use: tls, none. Use tls option with RPCCert and RPCKey"`
+	RPCCert                         string        `long:"rpccert" description:"File containing the certificate file, for TLS"`
+	RPCKey                          string        `long:"rpckey" description:"File containing the certificate key, for TLS"`
 	RPCMaxClients                   int           `long:"rpcmaxclients" description:"Max number of RPC clients for standard connections"`
 	RPCMaxWebsockets                int           `long:"rpcmaxwebsockets" description:"Max number of RPC websocket connections"`
 	RPCMaxConcurrentReqs            int           `long:"rpcmaxconcurrentreqs" description:"Max number of concurrent RPC requests that may be processed concurrently"`
@@ -184,6 +186,7 @@ func defaultFlags() *Flags {
 		RPCMaxWebsockets:     defaultMaxRPCWebsockets,
 		RPCMaxConcurrentReqs: defaultMaxRPCConcurrentReqs,
 		AppDir:               defaultDataDir,
+		RPCAuth:              defaultRPCAuth,
 		RPCKey:               defaultRPCKeyFile,
 		RPCCert:              defaultRPCCertFile,
 		BlockMaxMass:         defaultBlockMaxMass,
@@ -203,6 +206,7 @@ func DefaultConfig() *Config {
 	return config
 }
 
+// Test
 // LoadConfig initializes and parses the config using a config file and command
 // line options.
 //
