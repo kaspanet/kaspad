@@ -14,6 +14,11 @@ import (
 // TODO: Implement a better fee estimation mechanism
 const feePerInput = 10000
 
+// The minimal change amount to target in order to avoid large storage mass (see KIP9 for more details).
+// By having at least 0.2KAS in the change output we make sure that every transaction with send value >= 0.2KAS
+// should succeed (at most 50K storage mass for each output, thus overall lower than standard mass upper bound which is 100K gram)
+const minChangeTarget = constants.SompiPerKaspa / 5
+
 func (s *server) CreateUnsignedTransactions(_ context.Context, request *pb.CreateUnsignedTransactionsRequest) (
 	*pb.CreateUnsignedTransactionsResponse, error,
 ) {
@@ -124,9 +129,10 @@ func (s *server) selectUTXOs(spendAmount uint64, isSendAll bool, feePerInput uin
 		totalSpend := spendAmount + fee
 		// Two break cases (if not send all):
 		// 		1. totalValue == totalSpend, so there's no change needed -> number of outputs = 1, so a single input is sufficient
-		// 		2. totalValue > totalSpend, so there will be change and 2 outputs, therefor in order to not struggle with new dust
-		// 		   rules we try and find at least 2 inputs (even though the next one is not necessary in terms of spend value)
-		if !isSendAll && (totalValue == totalSpend || (totalValue > totalSpend && len(selectedUTXOs) > 1)) {
+		// 		2. totalValue > totalSpend, so there will be change and 2 outputs, therefor in order to not struggle with --
+		//		   2.1 go-nodes dust patch we try and find at least 2 inputs (even though the next one is not necessary in terms of spend value)
+		// 		   2.2 KIP9 we try and make sure that the change amount is not too small
+		if !isSendAll && (totalValue == totalSpend || (totalValue >= totalSpend+minChangeTarget && len(selectedUTXOs) > 1)) {
 			break
 		}
 	}
