@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"github.com/pkg/errors"
 
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/daemon/pb"
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/libkaspawallet"
@@ -14,13 +15,15 @@ func (s *server) GetBalance(_ context.Context, _ *pb.GetBalanceRequest) (*pb.Get
 	s.lock.RLock()
 	defer s.lock.RUnlock()
 
+	if !s.isSynced() {
+		return nil, errors.Errorf("wallet daemon is not synced yet, %s", s.formatSyncStateReport())
+	}
+
 	dagInfo, err := s.rpcClient.GetBlockDAGInfo()
 	if err != nil {
 		return nil, err
 	}
 	daaScore := dagInfo.VirtualDAAScore
-	maturity := s.params.BlockCoinbaseMaturity
-
 	balancesMap := make(balancesMapType, 0)
 	for _, entry := range s.utxosSortedByAmount {
 		amount := entry.UTXOEntry.Amount()
@@ -30,7 +33,7 @@ func (s *server) GetBalance(_ context.Context, _ *pb.GetBalanceRequest) (*pb.Get
 			balances = new(balancesType)
 			balancesMap[address] = balances
 		}
-		if isUTXOSpendable(entry, daaScore, maturity) {
+		if s.isUTXOSpendable(entry, daaScore) {
 			balances.available += amount
 		} else {
 			balances.pending += amount
@@ -55,6 +58,8 @@ func (s *server) GetBalance(_ context.Context, _ *pb.GetBalanceRequest) (*pb.Get
 		pending += balances.pending
 	}
 
+	log.Infof("GetBalance request scanned %d UTXOs overall over %d addresses", len(s.utxosSortedByAmount), len(balancesMap))
+
 	return &pb.GetBalanceResponse{
 		Available:       available,
 		Pending:         pending,
@@ -62,9 +67,9 @@ func (s *server) GetBalance(_ context.Context, _ *pb.GetBalanceRequest) (*pb.Get
 	}, nil
 }
 
-func isUTXOSpendable(entry *walletUTXO, virtualDAAScore uint64, coinbaseMaturity uint64) bool {
+func (s *server) isUTXOSpendable(entry *walletUTXO, virtualDAAScore uint64) bool {
 	if !entry.UTXOEntry.IsCoinbase() {
 		return true
 	}
-	return entry.UTXOEntry.BlockDAAScore()+coinbaseMaturity < virtualDAAScore
+	return entry.UTXOEntry.BlockDAAScore()+s.coinbaseMaturity < virtualDAAScore
 }
