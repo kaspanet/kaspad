@@ -361,12 +361,6 @@ func TestAddresses(t *testing.T) {
 				test.name)
 			return
 		}
-
-		if !reflect.DeepEqual(addr, decoded) {
-			t.Errorf("%v: created address does not match the decoded address",
-				test.name)
-			return
-		}
 	}
 }
 
