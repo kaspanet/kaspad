@@ -355,10 +355,14 @@ message GetSubnetworkResponseMessage{
 }
 
 // GetVirtualSelectedParentChainFromBlockRequestMessage requests the virtual selected
-// parent chain from some startHash to this kaspad's current virtual
+// parent chain from some startHash to this kaspad's current virtual.
 message GetVirtualSelectedParentChainFromBlockRequestMessage{
   string startHash = 1;
   bool includeAcceptedTransactionIds = 2;
+
+  // If batchSize is specified and > 0, then the response will contain at most batchSize added blocks.
+  // Note: batchSize does not restrict the number of removed blocks.
+  uint64 batchSize = 3;
 }
 
 message AcceptedTransactionIds{
@@ -509,11 +513,20 @@ message StopNotifyingUtxosChangedResponseMessage {
   RPCError error = 1000;
 }
 
-// GetUtxosByAddressesRequestMessage requests all current UTXOs for the given kaspad addresses
+// GetUtxosByAddressesRequestMessage requests all current UTXOs for the given kaspad addresses.
+// Both batchDaaScoreStart, batchSize parameters allow querying the entries in a batched process
+// by using the DAA score of the last entry as a starting point for the next batch (note that some
+// duplications are possible on the bordering DAA score).
 //
 // This call is only available when this kaspad was started with `--utxoindex`
 message GetUtxosByAddressesRequestMessage {
   repeated string addresses = 1;
+
+  // If batchDaaScoreStart is specified it sends only entries starting from that DAA score (inclusive).
+  uint64 batchDaaScoreStart = 2;
+
+  // If batchSize is specified and > 0, the response will contain at most batchSize entries (by DAA score order).
+  uint64 batchSize = 3;
 }
 
 message GetUtxosByAddressesResponseMessage {
