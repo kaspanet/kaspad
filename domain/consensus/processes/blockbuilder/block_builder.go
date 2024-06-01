@@ -194,7 +194,7 @@ func (bb *blockBuilder) buildHeader(stagingArea *model.StagingArea, transactions
 		return nil, err
 	}
 
-	parents, err := bb.newBlockParents(stagingArea, daaScore)
+	parents, err := bb.newBlockParents(stagingArea)
 	if err != nil {
 		return nil, err
 	}
@@ -241,12 +241,12 @@ func (bb *blockBuilder) buildHeader(stagingArea *model.StagingArea, transactions
 	), nil
 }
 
-func (bb *blockBuilder) newBlockParents(stagingArea *model.StagingArea, daaScore uint64) ([]externalapi.BlockLevelParents, error) {
+func (bb *blockBuilder) newBlockParents(stagingArea *model.StagingArea) ([]externalapi.BlockLevelParents, error) {
 	virtualBlockRelations, err := bb.blockRelationStore.BlockRelation(bb.databaseContext, stagingArea, model.VirtualBlockHash)
 	if err != nil {
 		return nil, err
 	}
-	return bb.blockParentBuilder.BuildParents(stagingArea, daaScore, virtualBlockRelations.Parents)
+	return bb.blockParentBuilder.BuildParents(stagingArea, virtualBlockRelations.Parents)
 }
 
 func (bb *blockBuilder) newBlockTime(stagingArea *model.StagingArea) (int64, error) {
