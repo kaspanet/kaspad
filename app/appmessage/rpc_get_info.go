@@ -20,11 +20,17 @@ func NewGetInfoRequestMessage() *GetInfoRequestMessage {
 // its respective RPC message
 type GetInfoResponseMessage struct {
 	baseMessage
-	P2PID         string
-	MempoolSize   uint64
-	ServerVersion string
-	IsUtxoIndexed bool
-	IsSynced      bool
+	P2PID                     string
+	MempoolSize               uint64
+	ServerVersion             string
+	IsUtxoIndexed             bool
+	IsSynced                  bool
+	MaxRPCClients             int64
+	NumberOfRPCConnections    int64
+	MaxP2PClients             int64
+	NumberOfP2PConnections    int64
+	BanDurationInMilliseconds int64
+	UptimeInMilliseconds      int64
 
 	Error *RPCError
 }
@@ -35,12 +41,21 @@ func (msg *GetInfoResponseMessage) Command() MessageCommand {
 }
 
 // NewGetInfoResponseMessage returns a instance of the message
-func NewGetInfoResponseMessage(p2pID string, mempoolSize uint64, serverVersion string, isUtxoIndexed bool, isSynced bool) *GetInfoResponseMessage {
+func NewGetInfoResponseMessage(p2pID string, mempoolSize uint64, serverVersion string,
+	isUtxoIndexed bool, isSynced bool, maxRPCClients int64, numberOfRPCConnections int64,
+	maxP2PClients int64, numberOfP2PConnections int64, banDurationInMilliseconds int64,
+	uptimeInMilliseconds int64) *GetInfoResponseMessage {
 	return &GetInfoResponseMessage{
-		P2PID:         p2pID,
-		MempoolSize:   mempoolSize,
-		ServerVersion: serverVersion,
-		IsUtxoIndexed: isUtxoIndexed,
-		IsSynced:      isSynced,
+		P2PID:                     p2pID,
+		MempoolSize:               mempoolSize,
+		ServerVersion:             serverVersion,
+		IsUtxoIndexed:             isUtxoIndexed,
+		IsSynced:                  isSynced,
+		MaxRPCClients:             maxRPCClients,
+		NumberOfRPCConnections:    numberOfRPCConnections,
+		MaxP2PClients:             maxP2PClients,
+		NumberOfP2PConnections:    numberOfP2PConnections,
+		BanDurationInMilliseconds: banDurationInMilliseconds,
+		UptimeInMilliseconds:      uptimeInMilliseconds,
 	}
 }
