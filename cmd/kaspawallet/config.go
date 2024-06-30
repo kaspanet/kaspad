@@ -1,9 +1,10 @@
 package main
 
 import (
+	"os"
+
 	"github.com/kaspanet/kaspad/infrastructure/config"
 	"github.com/pkg/errors"
-	"os"
 
 	"github.com/jessevdk/go-flags"
 )
@@ -115,12 +116,13 @@ type newAddressConfig struct {
 }
 
 type startDaemonConfig struct {
-	KeysFile  string `long:"keys-file" short:"f" description:"Keys file location (default: ~/.kaspawallet/keys.json (*nix), %USERPROFILE%\\AppData\\Local\\Kaspawallet\\key.json (Windows))"`
-	Password  string `long:"password" short:"p" description:"Wallet password"`
-	RPCServer string `long:"rpcserver" short:"s" description:"RPC server to connect to"`
-	Listen    string `long:"listen" short:"l" description:"Address to listen on (default: 0.0.0.0:8082)"`
-	Timeout   uint32 `long:"wait-timeout" short:"w" description:"Waiting timeout for RPC calls, seconds (default: 30 s)"`
-	Profile   string `long:"profile" description:"Enable HTTP profiling on given port -- NOTE port must be between 1024 and 65536"`
+	KeysFile    string `long:"keys-file" short:"f" description:"Keys file location (default: ~/.kaspawallet/keys.json (*nix), %USERPROFILE%\\AppData\\Local\\Kaspawallet\\key.json (Windows))"`
+	Password    string `long:"password" short:"p" description:"Wallet password"`
+	RPCServer   string `long:"rpcserver" short:"s" description:"RPC server to connect to"`
+	Listen      string `long:"listen" short:"l" description:"Address to listen on (default: 0.0.0.0:8082)"`
+	Timeout     uint32 `long:"wait-timeout" short:"w" description:"Waiting timeout for RPC calls, seconds (default: 30 s)"`
+	Profile     string `long:"profile" description:"Enable HTTP profiling on given port -- NOTE port must be between 1024 and 65536"`
+	MinFeePerTx uint64 `long:"min-fee-per-tx" description:"Minimum fee per transaction (in sompis) (default: 0)"`
 	config.NetworkFlags
 }
 

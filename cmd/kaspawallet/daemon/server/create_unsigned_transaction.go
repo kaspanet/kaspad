@@ -126,6 +126,10 @@ func (s *server) selectUTXOs(spendAmount uint64, isSendAll bool, feePerInput uin
 		totalValue += utxo.UTXOEntry.Amount()
 
 		fee := feePerInput * uint64(len(selectedUTXOs))
+		if fee < s.minFeePerTx {
+			fee = s.minFeePerTx
+		}
+
 		totalSpend := spendAmount + fee
 		// Two break cases (if not send all):
 		// 		1. totalValue == totalSpend, so there's no change needed -> number of outputs = 1, so a single input is sufficient
@@ -138,6 +142,10 @@ func (s *server) selectUTXOs(spendAmount uint64, isSendAll bool, feePerInput uin
 	}
 
 	fee := feePerInput * uint64(len(selectedUTXOs))
+	if fee < s.minFeePerTx {
+		fee = s.minFeePerTx
+	}
+
 	var totalSpend uint64
 	if isSendAll {
 		totalSpend = totalValue

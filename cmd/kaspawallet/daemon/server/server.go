@@ -34,6 +34,7 @@ type server struct {
 	backgroundRPCClient *rpcclient.RPCClient // RPC client dedicated for address and UTXO background fetching
 	params              *dagconfig.Params
 	coinbaseMaturity    uint64 // Is different from default if we use testnet-11
+	minFeePerTx         uint64
 
 	lock                            sync.RWMutex
 	utxosSortedByAmount             []*walletUTXO
@@ -57,7 +58,7 @@ type server struct {
 const MaxDaemonSendMsgSize = 100_000_000
 
 // Start starts the kaspawalletd server
-func Start(params *dagconfig.Params, listen, rpcServer string, keysFilePath string, profile string, timeout uint32) error {
+func Start(params *dagconfig.Params, listen, rpcServer string, keysFilePath string, profile string, timeout uint32, minFeePerTx uint64) error {
 	initLog(defaultLogFile, defaultErrLogFile)
 
 	defer panics.HandlePanic(log, "MAIN", nil)
@@ -110,6 +111,7 @@ func Start(params *dagconfig.Params, listen, rpcServer string, keysFilePath stri
 		backgroundRPCClient:         backgroundRPCClient,
 		params:                      params,
 		coinbaseMaturity:            coinbaseMaturity,
+		minFeePerTx:                 minFeePerTx,
 		utxosSortedByAmount:         []*walletUTXO{},
 		nextSyncStartIndex:          0,
 		keysFile:                    keysFile,
