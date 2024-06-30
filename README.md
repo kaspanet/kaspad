@@ -1,3 +1,8 @@
+# DEPRECATED
+
+The reference full node was rewritten in Rust, and as a result the Go implementation is deprecated.
+
+As a result, any pull request or issue that will be opened will be closed without treatment, except for issues or pull requests related to kaspawallet, that at the moment is still maintained. In any other case, consider using the Rust implementation instead: https://github.com/kaspanet/rusty-kaspa 
 
 Kaspad
 ====
@@ -5,7 +10,7 @@ Kaspad
 [![ISC License](http://img.shields.io/badge/license-ISC-blue.svg)](https://choosealicense.com/licenses/isc/)
 [![GoDoc](https://img.shields.io/badge/godoc-reference-blue.svg)](http://godoc.org/github.com/kaspanet/kaspad)
 
-Kaspad is the reference full node Kaspa implementation written in Go (golang).
+Kaspad was the reference full node Kaspa implementation written in Go (golang).
 
 ## What is kaspa
 
