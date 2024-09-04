@@ -3,13 +3,17 @@ package main
 import (
 	"encoding/hex"
 	"fmt"
+	"io/ioutil"
+	"strings"
+
+	"github.com/kaspanet/kaspad/cmd/kaspawallet/daemon/server"
+	"github.com/kaspanet/kaspad/cmd/kaspawallet/keys"
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/libkaspawallet/serialization"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/txscript"
+	"github.com/kaspanet/kaspad/util/txmass"
 	"github.com/pkg/errors"
-	"io/ioutil"
-	"strings"
 )
 
 func parse(conf *parseConfig) error {
@@ -18,6 +22,11 @@ func parse(conf *parseConfig) error {
 	}
 	if conf.Transaction != "" && conf.TransactionFile != "" {
 		return errors.Errorf("Both --transaction and --transaction-file cannot be passed at the same time")
+	}
+
+	keysFile, err := keys.ReadKeysFile(conf.NetParams(), conf.KeysFile)
+	if err != nil {
+		return err
 	}
 
 	transactionHex := conf.Transaction
@@ -33,6 +42,8 @@ func parse(conf *parseConfig) error {
 	if err != nil {
 		return err
 	}
+
+	txMassCalculator := txmass.NewCalculator(conf.NetParams().MassPerTxByte, conf.NetParams().MassPerScriptPubKeyByte, conf.NetParams().MassPerSigOp)
 	for i, transaction := range transactions {
 
 		partiallySignedTransaction, err := serialization.DeserializePartiallySignedTransaction(transaction)
@@ -78,7 +89,15 @@ func parse(conf *parseConfig) error {
 		}
 		fmt.Println()
 
-		fmt.Printf("Fee:\t%d Sompi\n\n", allInputSompi-allOutputSompi)
+		fee := allInputSompi - allOutputSompi
+		fmt.Printf("Fee:\t%d Sompi\n\n", fee)
+		mass, err := server.EstimateMassAfterSignatures(partiallySignedTransaction, keysFile.ECDSA, keysFile.MinimumSignatures, txMassCalculator)
+		if err != nil {
+			return err
+		}
+
+		feeRate := float64(fee) / float64(mass)
+		fmt.Printf("Fee rate: %.2f Sompi/Gram\n", feeRate)
 	}
 
 	return nil

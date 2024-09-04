@@ -12,6 +12,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/utils/utxo"
 	"github.com/kaspanet/kaspad/domain/miningmanager/mempool"
 	"github.com/kaspanet/kaspad/util"
+	"github.com/kaspanet/kaspad/util/txmass"
 )
 
 // maybeAutoCompoundTransaction checks if a transaction's mass is higher that what is allowed for a standard
@@ -218,9 +219,13 @@ func (s *server) createSplitTransaction(transaction *serialization.PartiallySign
 }
 
 func (s *server) estimateMassAfterSignatures(transaction *serialization.PartiallySignedTransaction) (uint64, error) {
+	return EstimateMassAfterSignatures(transaction, s.keysFile.ECDSA, s.keysFile.MinimumSignatures, s.txMassCalculator)
+}
+
+func EstimateMassAfterSignatures(transaction *serialization.PartiallySignedTransaction, ecdsa bool, minimumSignatures uint32, txMassCalculator *txmass.Calculator) (uint64, error) {
 	transaction = transaction.Clone()
 	var signatureSize uint64
-	if s.keysFile.ECDSA {
+	if ecdsa {
 		signatureSize = secp256k1.SerializedECDSASignatureSize
 	} else {
 		signatureSize = secp256k1.SerializedSchnorrSignatureSize
@@ -228,7 +233,7 @@ func (s *server) estimateMassAfterSignatures(transaction *serialization.Partiall
 
 	for i, input := range transaction.PartiallySignedInputs {
 		for j, pubKeyPair := range input.PubKeySignaturePairs {
-			if uint32(j) >= s.keysFile.MinimumSignatures {
+			if uint32(j) >= minimumSignatures {
 				break
 			}
 			pubKeyPair.Signature = make([]byte, signatureSize+1) // +1 for SigHashType
@@ -236,12 +241,12 @@ func (s *server) estimateMassAfterSignatures(transaction *serialization.Partiall
 		transaction.Tx.Inputs[i].SigOpCount = byte(len(input.PubKeySignaturePairs))
 	}
 
-	transactionWithSignatures, err := libkaspawallet.ExtractTransactionDeserialized(transaction, s.keysFile.ECDSA)
+	transactionWithSignatures, err := libkaspawallet.ExtractTransactionDeserialized(transaction, ecdsa)
 	if err != nil {
 		return 0, err
 	}
 
-	return s.txMassCalculator.CalculateTransactionMass(transactionWithSignatures), nil
+	return txMassCalculator.CalculateTransactionMass(transactionWithSignatures), nil
 }
 
 func (s *server) moreUTXOsForMergeTransaction(alreadySelectedUTXOs []*libkaspawallet.UTXO, requiredAmount uint64, feeRate float64) (
