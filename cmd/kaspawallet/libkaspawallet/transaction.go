@@ -31,15 +31,10 @@ func CreateUnsignedTransaction(
 	extendedPublicKeys []string,
 	minimumSignatures uint32,
 	payments []*Payment,
-	selectedUTXOs []*UTXO) ([]byte, error) {
+	selectedUTXOs []*UTXO) (*serialization.PartiallySignedTransaction, error) {
 
 	sortPublicKeys(extendedPublicKeys)
-	unsignedTransaction, err := createUnsignedTransaction(extendedPublicKeys, minimumSignatures, payments, selectedUTXOs)
-	if err != nil {
-		return nil, err
-	}
-
-	return serialization.SerializePartiallySignedTransaction(unsignedTransaction)
+	return createUnsignedTransaction(extendedPublicKeys, minimumSignatures, payments, selectedUTXOs)
 }
 
 func multiSigRedeemScript(extendedPublicKeys []string, minimumSignatures uint32, path string, ecdsa bool) ([]byte, error) {

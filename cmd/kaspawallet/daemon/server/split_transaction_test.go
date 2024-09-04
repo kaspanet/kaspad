@@ -22,7 +22,7 @@ import (
 
 func TestEstimateMassAfterSignatures(t *testing.T) {
 	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
-		unsignedTransactionBytes, mnemonics, params, teardown := testEstimateMassIncreaseForSignaturesSetUp(t, consensusConfig)
+		unsignedTransaction, mnemonics, params, teardown := testEstimateMassIncreaseForSignaturesSetUp(t, consensusConfig)
 		defer teardown(false)
 
 		serverInstance := &server{
@@ -33,14 +33,14 @@ func TestEstimateMassAfterSignatures(t *testing.T) {
 			txMassCalculator: txmass.NewCalculator(params.MassPerTxByte, params.MassPerScriptPubKeyByte, params.MassPerSigOp),
 		}
 
-		unsignedTransaction, err := serialization.DeserializePartiallySignedTransaction(unsignedTransactionBytes)
-		if err != nil {
-			t.Fatalf("Error deserializing unsignedTransaction: %s", err)
-		}
-
 		estimatedMassAfterSignatures, err := serverInstance.estimateMassAfterSignatures(unsignedTransaction)
 		if err != nil {
 			t.Fatalf("Error from estimateMassAfterSignatures: %s", err)
+		}
+
+		unsignedTransactionBytes, err := serialization.SerializePartiallySignedTransaction(unsignedTransaction)
+		if err != nil {
+			t.Fatalf("Error deserializing unsignedTransaction: %s", err)
 		}
 
 		signedTxStep1Bytes, err := libkaspawallet.Sign(params, mnemonics[:1], unsignedTransactionBytes, false)
@@ -68,7 +68,7 @@ func TestEstimateMassAfterSignatures(t *testing.T) {
 }
 
 func testEstimateMassIncreaseForSignaturesSetUp(t *testing.T, consensusConfig *consensus.Config) (
-	[]byte, []string, *dagconfig.Params, func(keepDataDir bool)) {
+	*serialization.PartiallySignedTransaction, []string, *dagconfig.Params, func(keepDataDir bool)) {
 
 	consensusConfig.BlockCoinbaseMaturity = 0
 	params := &consensusConfig.Params

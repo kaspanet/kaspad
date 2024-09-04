@@ -11,7 +11,7 @@ func (s *server) Send(_ context.Context, request *pb.SendRequest) (*pb.SendRespo
 	defer s.lock.Unlock()
 
 	unsignedTransactions, err := s.createUnsignedTransactions(request.ToAddress, request.Amount, request.IsSendAll,
-		request.From, request.UseExistingChangeAddress)
+		request.From, request.UseExistingChangeAddress, request.FeeRate)
 
 	if err != nil {
 		return nil, err

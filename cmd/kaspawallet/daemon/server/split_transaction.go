@@ -20,14 +20,9 @@ import (
 // into a change address.
 // An additional `mergeTransaction` is generated - which merges the outputs of the above splits into a single output
 // paying to the original transaction's payee.
-func (s *server) maybeAutoCompoundTransaction(transactionBytes []byte, toAddress util.Address,
-	changeAddress util.Address, changeWalletAddress *walletAddress) ([][]byte, error) {
-	transaction, err := serialization.DeserializePartiallySignedTransaction(transactionBytes)
-	if err != nil {
-		return nil, err
-	}
-
-	splitTransactions, err := s.maybeSplitAndMergeTransaction(transaction, toAddress, changeAddress, changeWalletAddress)
+func (s *server) maybeAutoCompoundTransaction(transaction *serialization.PartiallySignedTransaction, toAddress util.Address,
+	changeAddress util.Address, changeWalletAddress *walletAddress, feeRate float64) ([][]byte, error) {
+	splitTransactions, err := s.maybeSplitAndMergeTransaction(transaction, toAddress, changeAddress, changeWalletAddress, feeRate)
 	if err != nil {
 		return nil, err
 	}
@@ -47,6 +42,7 @@ func (s *server) mergeTransaction(
 	toAddress util.Address,
 	changeAddress util.Address,
 	changeWalletAddress *walletAddress,
+	feeRate float64,
 ) (*serialization.PartiallySignedTransaction, error) {
 	numOutputs := len(originalTransaction.Tx.Outputs)
 	if numOutputs > 2 || numOutputs == 0 {
@@ -71,13 +67,18 @@ func (s *server) mergeTransaction(
 			DerivationPath: s.walletAddressPath(changeWalletAddress),
 		}
 		totalValue += output.Value
-		totalValue -= feePerInput
 	}
+	fee, err := s.estimateFee(utxos, feeRate)
+	if err != nil {
+		return nil, err
+	}
+
+	totalValue -= fee
 
 	if totalValue < sentValue {
 		// sometimes the fees from compound transactions make the total output higher than what's available from selected
 		// utxos, in such cases - find one more UTXO and use it.
-		additionalUTXOs, totalValueAdded, err := s.moreUTXOsForMergeTransaction(utxos, sentValue-totalValue)
+		additionalUTXOs, totalValueAdded, err := s.moreUTXOsForMergeTransaction(utxos, sentValue-totalValue, feeRate)
 		if err != nil {
 			return nil, err
 		}
@@ -96,17 +97,12 @@ func (s *server) mergeTransaction(
 		})
 	}
 
-	mergeTransactionBytes, err := libkaspawallet.CreateUnsignedTransaction(s.keysFile.ExtendedPublicKeys,
+	return libkaspawallet.CreateUnsignedTransaction(s.keysFile.ExtendedPublicKeys,
 		s.keysFile.MinimumSignatures, payments, utxos)
-	if err != nil {
-		return nil, err
-	}
-
-	return serialization.DeserializePartiallySignedTransaction(mergeTransactionBytes)
 }
 
 func (s *server) maybeSplitAndMergeTransaction(transaction *serialization.PartiallySignedTransaction, toAddress util.Address,
-	changeAddress util.Address, changeWalletAddress *walletAddress) ([]*serialization.PartiallySignedTransaction, error) {
+	changeAddress util.Address, changeWalletAddress *walletAddress, feeRate float64) ([]*serialization.PartiallySignedTransaction, error) {
 
 	transactionMass, err := s.estimateMassAfterSignatures(transaction)
 	if err != nil {
@@ -117,7 +113,7 @@ func (s *server) maybeSplitAndMergeTransaction(transaction *serialization.Partia
 		return []*serialization.PartiallySignedTransaction{transaction}, nil
 	}
 
-	splitCount, inputCountPerSplit, err := s.splitAndInputPerSplitCounts(transaction, transactionMass, changeAddress)
+	splitCount, inputCountPerSplit, err := s.splitAndInputPerSplitCounts(transaction, transactionMass, changeAddress, feeRate)
 	if err != nil {
 		return nil, err
 	}
@@ -127,19 +123,19 @@ func (s *server) maybeSplitAndMergeTransaction(transaction *serialization.Partia
 		startIndex := i * inputCountPerSplit
 		endIndex := startIndex + inputCountPerSplit
 		var err error
-		splitTransactions[i], err = s.createSplitTransaction(transaction, changeAddress, startIndex, endIndex)
+		splitTransactions[i], err = s.createSplitTransaction(transaction, changeAddress, startIndex, endIndex, feeRate)
 		if err != nil {
 			return nil, err
 		}
 	}
 
 	if len(splitTransactions) > 1 {
-		mergeTransaction, err := s.mergeTransaction(splitTransactions, transaction, toAddress, changeAddress, changeWalletAddress)
+		mergeTransaction, err := s.mergeTransaction(splitTransactions, transaction, toAddress, changeAddress, changeWalletAddress, feeRate)
 		if err != nil {
 			return nil, err
 		}
 		// Recursion will be 2-3 iterations deep even in the rarest` cases, so considered safe..
-		splitMergeTransaction, err := s.maybeSplitAndMergeTransaction(mergeTransaction, toAddress, changeAddress, changeWalletAddress)
+		splitMergeTransaction, err := s.maybeSplitAndMergeTransaction(mergeTransaction, toAddress, changeAddress, changeWalletAddress, feeRate)
 		if err != nil {
 			return nil, err
 		}
@@ -152,7 +148,7 @@ func (s *server) maybeSplitAndMergeTransaction(transaction *serialization.Partia
 
 // splitAndInputPerSplitCounts calculates the number of splits to create, and the number of inputs to assign per split.
 func (s *server) splitAndInputPerSplitCounts(transaction *serialization.PartiallySignedTransaction, transactionMass uint64,
-	changeAddress util.Address) (splitCount, inputsPerSplitCount int, err error) {
+	changeAddress util.Address, feeRate float64) (splitCount, inputsPerSplitCount int, err error) {
 
 	// Create a dummy transaction which is a clone of the original transaction, but without inputs,
 	// to calculate how much mass do all the inputs have
@@ -172,7 +168,7 @@ func (s *server) splitAndInputPerSplitCounts(transaction *serialization.Partiall
 
 	// Create another dummy transaction, this time one similar to the split transactions we wish to generate,
 	// but with 0 inputs, to calculate how much mass for inputs do we have available in the split transactions
-	splitTransactionWithoutInputs, err := s.createSplitTransaction(transaction, changeAddress, 0, 0)
+	splitTransactionWithoutInputs, err := s.createSplitTransaction(transaction, changeAddress, 0, 0, feeRate)
 	if err != nil {
 		return 0, 0, err
 	}
@@ -190,7 +186,7 @@ func (s *server) splitAndInputPerSplitCounts(transaction *serialization.Partiall
 }
 
 func (s *server) createSplitTransaction(transaction *serialization.PartiallySignedTransaction,
-	changeAddress util.Address, startIndex int, endIndex int) (*serialization.PartiallySignedTransaction, error) {
+	changeAddress util.Address, startIndex int, endIndex int, feeRate float64) (*serialization.PartiallySignedTransaction, error) {
 
 	selectedUTXOs := make([]*libkaspawallet.UTXO, 0, endIndex-startIndex)
 	totalSompi := uint64(0)
@@ -206,19 +202,19 @@ func (s *server) createSplitTransaction(transaction *serialization.PartiallySign
 		})
 
 		totalSompi += selectedUTXOs[i-startIndex].UTXOEntry.Amount()
-		totalSompi -= feePerInput
 	}
-	unsignedTransactionBytes, err := libkaspawallet.CreateUnsignedTransaction(s.keysFile.ExtendedPublicKeys,
+	fee, err := s.estimateFee(selectedUTXOs, feeRate)
+	if err != nil {
+		return nil, err
+	}
+
+	totalSompi -= fee
+	return libkaspawallet.CreateUnsignedTransaction(s.keysFile.ExtendedPublicKeys,
 		s.keysFile.MinimumSignatures,
 		[]*libkaspawallet.Payment{{
 			Address: changeAddress,
 			Amount:  totalSompi,
 		}}, selectedUTXOs)
-	if err != nil {
-		return nil, err
-	}
-
-	return serialization.DeserializePartiallySignedTransaction(unsignedTransactionBytes)
 }
 
 func (s *server) estimateMassAfterSignatures(transaction *serialization.PartiallySignedTransaction) (uint64, error) {
@@ -248,7 +244,7 @@ func (s *server) estimateMassAfterSignatures(transaction *serialization.Partiall
 	return s.txMassCalculator.CalculateTransactionMass(transactionWithSignatures), nil
 }
 
-func (s *server) moreUTXOsForMergeTransaction(alreadySelectedUTXOs []*libkaspawallet.UTXO, requiredAmount uint64) (
+func (s *server) moreUTXOsForMergeTransaction(alreadySelectedUTXOs []*libkaspawallet.UTXO, requiredAmount uint64, feeRate float64) (
 	additionalUTXOs []*libkaspawallet.UTXO, totalValueAdded uint64, err error) {
 
 	dagInfo, err := s.rpcClient.GetBlockDAGInfo()
@@ -258,6 +254,11 @@ func (s *server) moreUTXOsForMergeTransaction(alreadySelectedUTXOs []*libkaspawa
 	alreadySelectedUTXOsMap := make(map[externalapi.DomainOutpoint]struct{}, len(alreadySelectedUTXOs))
 	for _, alreadySelectedUTXO := range alreadySelectedUTXOs {
 		alreadySelectedUTXOsMap[*alreadySelectedUTXO.Outpoint] = struct{}{}
+	}
+
+	feePerInput, err := s.estimateFeePerInput(feeRate)
+	if err != nil {
+		return nil, 0, err
 	}
 
 	for _, utxo := range s.utxosSortedByAmount {

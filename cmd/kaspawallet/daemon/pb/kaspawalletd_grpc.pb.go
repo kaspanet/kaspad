@@ -29,9 +29,11 @@ type KaspawalletdClient interface {
 	NewAddress(ctx context.Context, in *NewAddressRequest, opts ...grpc.CallOption) (*NewAddressResponse, error)
 	Shutdown(ctx context.Context, in *ShutdownRequest, opts ...grpc.CallOption) (*ShutdownResponse, error)
 	Broadcast(ctx context.Context, in *BroadcastRequest, opts ...grpc.CallOption) (*BroadcastResponse, error)
-	// Since SendRequest contains a password - this command should only be used on a trusted or secure connection
+	// Since SendRequest contains a password - this command should only be used on
+	// a trusted or secure connection
 	Send(ctx context.Context, in *SendRequest, opts ...grpc.CallOption) (*SendResponse, error)
-	// Since SignRequest contains a password - this command should only be used on a trusted or secure connection
+	// Since SignRequest contains a password - this command should only be used on
+	// a trusted or secure connection
 	Sign(ctx context.Context, in *SignRequest, opts ...grpc.CallOption) (*SignResponse, error)
 	GetVersion(ctx context.Context, in *GetVersionRequest, opts ...grpc.CallOption) (*GetVersionResponse, error)
 }
@@ -145,9 +147,11 @@ type KaspawalletdServer interface {
 	NewAddress(context.Context, *NewAddressRequest) (*NewAddressResponse, error)
 	Shutdown(context.Context, *ShutdownRequest) (*ShutdownResponse, error)
 	Broadcast(context.Context, *BroadcastRequest) (*BroadcastResponse, error)
-	// Since SendRequest contains a password - this command should only be used on a trusted or secure connection
+	// Since SendRequest contains a password - this command should only be used on
+	// a trusted or secure connection
 	Send(context.Context, *SendRequest) (*SendResponse, error)
-	// Since SignRequest contains a password - this command should only be used on a trusted or secure connection
+	// Since SignRequest contains a password - this command should only be used on
+	// a trusted or secure connection
 	Sign(context.Context, *SignRequest) (*SignResponse, error)
 	GetVersion(context.Context, *GetVersionRequest) (*GetVersionResponse, error)
 	mustEmbedUnimplementedKaspawalletdServer()

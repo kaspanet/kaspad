@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"math"
 	"os"
 	"strings"
 
@@ -42,6 +43,15 @@ func send(conf *sendConfig) error {
 		}
 	}
 
+	feeRate := &pb.FeeRate{
+		FeeRate: &pb.FeeRate_Max{Max: math.MaxFloat64},
+	}
+	if conf.FeeRate > 0 {
+		feeRate.FeeRate = &pb.FeeRate_Exact{Exact: conf.FeeRate}
+	} else if conf.MaxFeeRate > 0 {
+		feeRate.FeeRate = &pb.FeeRate_Max{Max: conf.MaxFeeRate}
+	}
+
 	createUnsignedTransactionsResponse, err :=
 		daemonClient.CreateUnsignedTransactions(ctx, &pb.CreateUnsignedTransactionsRequest{
 			From:                     conf.FromAddresses,
@@ -49,6 +59,7 @@ func send(conf *sendConfig) error {
 			Amount:                   sendAmountSompi,
 			IsSendAll:                conf.IsSendAll,
 			UseExistingChangeAddress: conf.UseExistingChangeAddress,
+			FeeRate:                  feeRate,
 		})
 	if err != nil {
 		return err

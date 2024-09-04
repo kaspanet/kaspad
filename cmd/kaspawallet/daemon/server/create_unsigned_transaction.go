@@ -3,16 +3,16 @@ package server
 import (
 	"context"
 	"fmt"
+	"math"
 
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/daemon/pb"
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/libkaspawallet"
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/utxo"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/pkg/errors"
 )
-
-// TODO: Implement a better fee estimation mechanism
-const feePerInput = 10000
 
 // The minimal change amount to target in order to avoid large storage mass (see KIP9 for more details).
 // By having at least 0.2KAS in the change output we make sure that every transaction with send value >= 0.2KAS
@@ -26,7 +26,7 @@ func (s *server) CreateUnsignedTransactions(_ context.Context, request *pb.Creat
 	defer s.lock.Unlock()
 
 	unsignedTransactions, err := s.createUnsignedTransactions(request.Address, request.Amount, request.IsSendAll,
-		request.From, request.UseExistingChangeAddress)
+		request.From, request.UseExistingChangeAddress, request.FeeRate)
 	if err != nil {
 		return nil, err
 	}
@@ -34,10 +34,23 @@ func (s *server) CreateUnsignedTransactions(_ context.Context, request *pb.Creat
 	return &pb.CreateUnsignedTransactionsResponse{UnsignedTransactions: unsignedTransactions}, nil
 }
 
-func (s *server) createUnsignedTransactions(address string, amount uint64, isSendAll bool, fromAddressesString []string, useExistingChangeAddress bool) ([][]byte, error) {
+func (s *server) createUnsignedTransactions(address string, amount uint64, isSendAll bool, fromAddressesString []string, useExistingChangeAddress bool, feeRateOneOf *pb.FeeRate) ([][]byte, error) {
 	if !s.isSynced() {
 		return nil, errors.Errorf("wallet daemon is not synced yet, %s", s.formatSyncStateReport())
 	}
+
+	var feeRate float64
+	switch requestFeeRate := feeRateOneOf.FeeRate.(type) {
+	case *pb.FeeRate_Exact:
+		feeRate = requestFeeRate.Exact
+	case *pb.FeeRate_Max:
+		estimate, err := s.rpcClient.GetFeeEstimate()
+		if err != nil {
+			return nil, err
+		}
+		feeRate = math.Min(estimate.Estimate.NormalBuckets[0].Feerate, requestFeeRate.Max)
+	}
+
 	// make sure address string is correct before proceeding to a
 	// potentially long UTXO refreshment operation
 	toAddress, err := util.DecodeAddress(address, s.params.Prefix)
@@ -54,18 +67,18 @@ func (s *server) createUnsignedTransactions(address string, amount uint64, isSen
 		fromAddresses = append(fromAddresses, fromAddress)
 	}
 
-	selectedUTXOs, spendValue, changeSompi, err := s.selectUTXOs(amount, isSendAll, feePerInput, fromAddresses)
+	changeAddress, changeWalletAddress, err := s.changeAddress(useExistingChangeAddress, fromAddresses)
+	if err != nil {
+		return nil, err
+	}
+
+	selectedUTXOs, spendValue, changeSompi, err := s.selectUTXOs(amount, isSendAll, feeRate, fromAddresses)
 	if err != nil {
 		return nil, err
 	}
 
 	if len(selectedUTXOs) == 0 {
 		return nil, errors.Errorf("couldn't find funds to spend")
-	}
-
-	changeAddress, changeWalletAddress, err := s.changeAddress(useExistingChangeAddress, fromAddresses)
-	if err != nil {
-		return nil, err
 	}
 
 	payments := []*libkaspawallet.Payment{{
@@ -85,14 +98,14 @@ func (s *server) createUnsignedTransactions(address string, amount uint64, isSen
 		return nil, err
 	}
 
-	unsignedTransactions, err := s.maybeAutoCompoundTransaction(unsignedTransaction, toAddress, changeAddress, changeWalletAddress)
+	unsignedTransactions, err := s.maybeAutoCompoundTransaction(unsignedTransaction, toAddress, changeAddress, changeWalletAddress, feeRate)
 	if err != nil {
 		return nil, err
 	}
 	return unsignedTransactions, nil
 }
 
-func (s *server) selectUTXOs(spendAmount uint64, isSendAll bool, feePerInput uint64, fromAddresses []*walletAddress) (
+func (s *server) selectUTXOs(spendAmount uint64, isSendAll bool, feeRate float64, fromAddresses []*walletAddress) (
 	selectedUTXOs []*libkaspawallet.UTXO, totalReceived uint64, changeSompi uint64, err error) {
 
 	selectedUTXOs = []*libkaspawallet.UTXO{}
@@ -103,6 +116,7 @@ func (s *server) selectUTXOs(spendAmount uint64, isSendAll bool, feePerInput uin
 		return nil, 0, 0, err
 	}
 
+	var fee uint64
 	for _, utxo := range s.utxosSortedByAmount {
 		if (fromAddresses != nil && !walletAddressesContain(fromAddresses, utxo.address)) ||
 			!s.isUTXOSpendable(utxo, dagInfo.VirtualDAAScore) {
@@ -125,7 +139,11 @@ func (s *server) selectUTXOs(spendAmount uint64, isSendAll bool, feePerInput uin
 
 		totalValue += utxo.UTXOEntry.Amount()
 
-		fee := feePerInput * uint64(len(selectedUTXOs))
+		fee, err = s.estimateFee(selectedUTXOs, feeRate)
+		if err != nil {
+			return nil, 0, 0, err
+		}
+
 		totalSpend := spendAmount + fee
 		// Two break cases (if not send all):
 		// 		1. totalValue == totalSpend, so there's no change needed -> number of outputs = 1, so a single input is sufficient
@@ -137,7 +155,6 @@ func (s *server) selectUTXOs(spendAmount uint64, isSendAll bool, feePerInput uin
 		}
 	}
 
-	fee := feePerInput * uint64(len(selectedUTXOs))
 	var totalSpend uint64
 	if isSendAll {
 		totalSpend = totalValue
@@ -152,6 +169,80 @@ func (s *server) selectUTXOs(spendAmount uint64, isSendAll bool, feePerInput uin
 	}
 
 	return selectedUTXOs, totalReceived, totalValue - totalSpend, nil
+}
+
+func (s *server) estimateFee(selectedUTXOs []*libkaspawallet.UTXO, feeRate float64) (uint64, error) {
+	fakePubKey := [util.PublicKeySize]byte{}
+	fakeAddr, err := util.NewAddressPublicKey(fakePubKey[:], s.params.Prefix)
+	if err != nil {
+		return 0, err
+	}
+
+	mockPayments := []*libkaspawallet.Payment{
+		{
+			Address: fakeAddr,
+			Amount:  1,
+		},
+		{ // We're overestimating a bit by assuming that any transaction will have a change output
+			Address: fakeAddr,
+			Amount:  1,
+		},
+	}
+	mockTx, err := libkaspawallet.CreateUnsignedTransaction(s.keysFile.ExtendedPublicKeys,
+		s.keysFile.MinimumSignatures,
+		mockPayments, selectedUTXOs)
+	if err != nil {
+		return 0, err
+	}
+
+	mass, err := s.estimateMassAfterSignatures(mockTx)
+	if err != nil {
+		return 0, err
+	}
+
+	return uint64(float64(mass) * feeRate), nil
+}
+
+func (s *server) estimateFeePerInput(feeRate float64) (uint64, error) {
+	mockUTXO := &libkaspawallet.UTXO{
+		Outpoint: &externalapi.DomainOutpoint{
+			TransactionID: externalapi.DomainTransactionID{},
+			Index:         0,
+		},
+		UTXOEntry: utxo.NewUTXOEntry(1, &externalapi.ScriptPublicKey{
+			Script:  nil,
+			Version: 0,
+		}, false, 0),
+		DerivationPath: "m",
+	}
+
+	mockTx, err := libkaspawallet.CreateUnsignedTransaction(s.keysFile.ExtendedPublicKeys,
+		s.keysFile.MinimumSignatures,
+		nil, []*libkaspawallet.UTXO{mockUTXO})
+	if err != nil {
+		return 0, err
+	}
+
+	mass, err := s.estimateMassAfterSignatures(mockTx)
+	if err != nil {
+		return 0, err
+	}
+
+	mockTxWithoutUTXO, err := libkaspawallet.CreateUnsignedTransaction(s.keysFile.ExtendedPublicKeys,
+		s.keysFile.MinimumSignatures,
+		nil, nil)
+	if err != nil {
+		return 0, err
+	}
+
+	massWithoutUTXO, err := s.estimateMassAfterSignatures(mockTxWithoutUTXO)
+	if err != nil {
+		return 0, err
+	}
+
+	inputMass := mass - massWithoutUTXO
+
+	return uint64(float64(inputMass) * feeRate), nil
 }
 
 func walletAddressesContain(addresses []*walletAddress, contain *walletAddress) bool {
