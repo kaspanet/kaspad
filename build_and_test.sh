@@ -5,7 +5,7 @@ FLAGS=$@
 go version
 
 go get $FLAGS -t -d ./...
-GO111MODULE=off go get $FLAGS golang.org/x/lint/golint
+go install $FLAGS golang.org/x/lint/golint
 go install $FLAGS honnef.co/go/tools/cmd/staticcheck@latest
 
 test -z "$(go fmt ./...)"
