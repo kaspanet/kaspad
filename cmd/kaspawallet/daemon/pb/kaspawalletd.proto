@@ -13,6 +13,7 @@ service kaspawalletd {
   rpc NewAddress(NewAddressRequest) returns (NewAddressResponse) {}
   rpc Shutdown(ShutdownRequest) returns (ShutdownResponse) {}
   rpc Broadcast(BroadcastRequest) returns (BroadcastResponse) {}
+  rpc BroadcastRBF(BroadcastRequest) returns (BroadcastResponse) {}
   // Since SendRequest contains a password - this command should only be used on
   // a trusted or secure connection
   rpc Send(SendRequest) returns (SendResponse) {}
@@ -20,6 +21,7 @@ service kaspawalletd {
   // a trusted or secure connection
   rpc Sign(SignRequest) returns (SignResponse) {}
   rpc GetVersion(GetVersionRequest) returns (GetVersionResponse) {}
+  rpc BumpFee(BumpFeeRequest) returns (BumpFeeResponse) {}
 }
 
 message GetBalanceRequest {}
@@ -132,3 +134,16 @@ message SignResponse { repeated bytes signedTransactions = 1; }
 message GetVersionRequest {}
 
 message GetVersionResponse { string version = 1; }
+
+message BumpFeeRequest {
+  string password = 1;
+  repeated string from = 2;
+  bool useExistingChangeAddress = 3;
+  FeeRate feeRate = 4;
+  string txID = 5;
+}
+
+message BumpFeeResponse {
+  repeated bytes transactions = 1;
+  repeated string txIDs = 2;
+}

@@ -29,6 +29,7 @@ type KaspawalletdClient interface {
 	NewAddress(ctx context.Context, in *NewAddressRequest, opts ...grpc.CallOption) (*NewAddressResponse, error)
 	Shutdown(ctx context.Context, in *ShutdownRequest, opts ...grpc.CallOption) (*ShutdownResponse, error)
 	Broadcast(ctx context.Context, in *BroadcastRequest, opts ...grpc.CallOption) (*BroadcastResponse, error)
+	BroadcastRBF(ctx context.Context, in *BroadcastRequest, opts ...grpc.CallOption) (*BroadcastResponse, error)
 	// Since SendRequest contains a password - this command should only be used on
 	// a trusted or secure connection
 	Send(ctx context.Context, in *SendRequest, opts ...grpc.CallOption) (*SendResponse, error)
@@ -36,6 +37,7 @@ type KaspawalletdClient interface {
 	// a trusted or secure connection
 	Sign(ctx context.Context, in *SignRequest, opts ...grpc.CallOption) (*SignResponse, error)
 	GetVersion(ctx context.Context, in *GetVersionRequest, opts ...grpc.CallOption) (*GetVersionResponse, error)
+	BumpFee(ctx context.Context, in *BumpFeeRequest, opts ...grpc.CallOption) (*BumpFeeResponse, error)
 }
 
 type kaspawalletdClient struct {
@@ -109,6 +111,15 @@ func (c *kaspawalletdClient) Broadcast(ctx context.Context, in *BroadcastRequest
 	return out, nil
 }
 
+func (c *kaspawalletdClient) BroadcastRBF(ctx context.Context, in *BroadcastRequest, opts ...grpc.CallOption) (*BroadcastResponse, error) {
+	out := new(BroadcastResponse)
+	err := c.cc.Invoke(ctx, "/kaspawalletd.kaspawalletd/BroadcastRBF", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *kaspawalletdClient) Send(ctx context.Context, in *SendRequest, opts ...grpc.CallOption) (*SendResponse, error) {
 	out := new(SendResponse)
 	err := c.cc.Invoke(ctx, "/kaspawalletd.kaspawalletd/Send", in, out, opts...)
@@ -136,6 +147,15 @@ func (c *kaspawalletdClient) GetVersion(ctx context.Context, in *GetVersionReque
 	return out, nil
 }
 
+func (c *kaspawalletdClient) BumpFee(ctx context.Context, in *BumpFeeRequest, opts ...grpc.CallOption) (*BumpFeeResponse, error) {
+	out := new(BumpFeeResponse)
+	err := c.cc.Invoke(ctx, "/kaspawalletd.kaspawalletd/BumpFee", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // KaspawalletdServer is the server API for Kaspawalletd service.
 // All implementations must embed UnimplementedKaspawalletdServer
 // for forward compatibility
@@ -147,6 +167,7 @@ type KaspawalletdServer interface {
 	NewAddress(context.Context, *NewAddressRequest) (*NewAddressResponse, error)
 	Shutdown(context.Context, *ShutdownRequest) (*ShutdownResponse, error)
 	Broadcast(context.Context, *BroadcastRequest) (*BroadcastResponse, error)
+	BroadcastRBF(context.Context, *BroadcastRequest) (*BroadcastResponse, error)
 	// Since SendRequest contains a password - this command should only be used on
 	// a trusted or secure connection
 	Send(context.Context, *SendRequest) (*SendResponse, error)
@@ -154,6 +175,7 @@ type KaspawalletdServer interface {
 	// a trusted or secure connection
 	Sign(context.Context, *SignRequest) (*SignResponse, error)
 	GetVersion(context.Context, *GetVersionRequest) (*GetVersionResponse, error)
+	BumpFee(context.Context, *BumpFeeRequest) (*BumpFeeResponse, error)
 	mustEmbedUnimplementedKaspawalletdServer()
 }
 
@@ -182,6 +204,9 @@ func (UnimplementedKaspawalletdServer) Shutdown(context.Context, *ShutdownReques
 func (UnimplementedKaspawalletdServer) Broadcast(context.Context, *BroadcastRequest) (*BroadcastResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Broadcast not implemented")
 }
+func (UnimplementedKaspawalletdServer) BroadcastRBF(context.Context, *BroadcastRequest) (*BroadcastResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method BroadcastRBF not implemented")
+}
 func (UnimplementedKaspawalletdServer) Send(context.Context, *SendRequest) (*SendResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Send not implemented")
 }
@@ -190,6 +215,9 @@ func (UnimplementedKaspawalletdServer) Sign(context.Context, *SignRequest) (*Sig
 }
 func (UnimplementedKaspawalletdServer) GetVersion(context.Context, *GetVersionRequest) (*GetVersionResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetVersion not implemented")
+}
+func (UnimplementedKaspawalletdServer) BumpFee(context.Context, *BumpFeeRequest) (*BumpFeeResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method BumpFee not implemented")
 }
 func (UnimplementedKaspawalletdServer) mustEmbedUnimplementedKaspawalletdServer() {}
 
@@ -330,6 +358,24 @@ func _Kaspawalletd_Broadcast_Handler(srv interface{}, ctx context.Context, dec f
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Kaspawalletd_BroadcastRBF_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(BroadcastRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(KaspawalletdServer).BroadcastRBF(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/kaspawalletd.kaspawalletd/BroadcastRBF",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(KaspawalletdServer).BroadcastRBF(ctx, req.(*BroadcastRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _Kaspawalletd_Send_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(SendRequest)
 	if err := dec(in); err != nil {
@@ -384,6 +430,24 @@ func _Kaspawalletd_GetVersion_Handler(srv interface{}, ctx context.Context, dec 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Kaspawalletd_BumpFee_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(BumpFeeRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(KaspawalletdServer).BumpFee(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/kaspawalletd.kaspawalletd/BumpFee",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(KaspawalletdServer).BumpFee(ctx, req.(*BumpFeeRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Kaspawalletd_ServiceDesc is the grpc.ServiceDesc for Kaspawalletd service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -420,6 +484,10 @@ var Kaspawalletd_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _Kaspawalletd_Broadcast_Handler,
 		},
 		{
+			MethodName: "BroadcastRBF",
+			Handler:    _Kaspawalletd_BroadcastRBF_Handler,
+		},
+		{
 			MethodName: "Send",
 			Handler:    _Kaspawalletd_Send_Handler,
 		},
@@ -430,6 +498,10 @@ var Kaspawalletd_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetVersion",
 			Handler:    _Kaspawalletd_GetVersion_Handler,
+		},
+		{
+			MethodName: "BumpFee",
+			Handler:    _Kaspawalletd_BumpFee_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

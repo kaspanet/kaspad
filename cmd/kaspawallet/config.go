@@ -24,6 +24,9 @@ const (
 	startDaemonSubCmd               = "start-daemon"
 	versionSubCmd                   = "version"
 	getDaemonVersionSubCmd          = "get-daemon-version"
+	bumpFeeSubCmd                   = "bump-fee"
+	bumpFeeUnsignedSubCmd           = "bump-fee-unsigned"
+	broadcastReplacementSubCmd      = "broadcast-replacement"
 )
 
 const (
@@ -137,6 +140,29 @@ type dumpUnencryptedDataConfig struct {
 	config.NetworkFlags
 }
 
+type bumpFeeUnsignedConfig struct {
+	TxID                     string   `long:"txid" short:"i" description:"The transaction ID to bump the fee for"`
+	DaemonAddress            string   `long:"daemonaddress" short:"d" description:"Wallet daemon server to connect to"`
+	FromAddresses            []string `long:"from-address" short:"a" description:"Specific public address to send Kaspa from. Use multiple times to accept several addresses" required:"false"`
+	UseExistingChangeAddress bool     `long:"use-existing-change-address" short:"u" description:"Will use an existing change address (in case no change address was ever used, it will use a new one)"`
+	MaxFeeRate               float64  `long:"max-fee-rate" short:"m" description:"Maximum fee rate in Sompi/gram to use for the transaction. The wallet will take the maximum between the fee estimate from the connected node and this value."`
+	FeeRate                  float64  `long:"fee-rate" short:"r" description:"Fee rate in Sompi/gram to use for the transaction. This option will override any fee estimate from the connected node."`
+	config.NetworkFlags
+}
+
+type bumpFeeConfig struct {
+	TxID                     string   `long:"txid" short:"i" description:"The transaction ID to bump the fee for"`
+	KeysFile                 string   `long:"keys-file" short:"f" description:"Keys file location (default: ~/.kaspawallet/keys.json (*nix), %USERPROFILE%\\AppData\\Local\\Kaspawallet\\key.json (Windows))"`
+	Password                 string   `long:"password" short:"p" description:"Wallet password"`
+	DaemonAddress            string   `long:"daemonaddress" short:"d" description:"Wallet daemon server to connect to"`
+	FromAddresses            []string `long:"from-address" short:"a" description:"Specific public address to send Kaspa from. Repeat multiple times (adding -a before each) to accept several addresses" required:"false"`
+	UseExistingChangeAddress bool     `long:"use-existing-change-address" short:"u" description:"Will use an existing change address (in case no change address was ever used, it will use a new one)"`
+	MaxFeeRate               float64  `long:"max-fee-rate" short:"m" description:"Maximum fee rate in Sompi/gram to use for the transaction. The wallet will take the maximum between the fee estimate from the connected node and this value."`
+	FeeRate                  float64  `long:"fee-rate" short:"r" description:"Fee rate in Sompi/gram to use for the transaction. This option will override any fee estimate from the connected node."`
+	Verbose                  bool     `long:"show-serialized" short:"s" description:"Show a list of hex encoded sent transactions"`
+	config.NetworkFlags
+}
+
 type versionConfig struct {
 }
 
@@ -203,6 +229,12 @@ func parseCommandLine() (subCommand string, config interface{}) {
 	parser.AddCommand(versionSubCmd, "Get the wallet version", "Get the wallet version", &versionConfig{})
 	getDaemonVersionConf := &getDaemonVersionConfig{DaemonAddress: defaultListen}
 	parser.AddCommand(getDaemonVersionSubCmd, "Get the wallet daemon version", "Get the wallet daemon version", getDaemonVersionConf)
+	bumpFeeConf := &bumpFeeConfig{DaemonAddress: defaultListen}
+	parser.AddCommand(bumpFeeSubCmd, "Bump transaction fee (with signing and broadcast)", "Bump transaction fee (with signing and broadcast)", bumpFeeConf)
+	bumpFeeUnsignedConf := &bumpFeeUnsignedConfig{DaemonAddress: defaultListen}
+	parser.AddCommand(bumpFeeUnsignedSubCmd, "Bump transaction fee (without signing)", "Bump transaction fee (without signing)", bumpFeeUnsignedConf)
+	parser.AddCommand(broadcastReplacementSubCmd, "Broadcast the given transaction replacement",
+		"Broadcast the given transaction replacement", broadcastConf)
 
 	_, err := parser.Parse()
 	if err != nil {
@@ -273,6 +305,13 @@ func parseCommandLine() (subCommand string, config interface{}) {
 			printErrorAndExit(err)
 		}
 		config = broadcastConf
+	case broadcastReplacementSubCmd:
+		combineNetworkFlags(&broadcastConf.NetworkFlags, &cfg.NetworkFlags)
+		err := broadcastConf.ResolveNetwork(parser)
+		if err != nil {
+			printErrorAndExit(err)
+		}
+		config = broadcastConf
 	case parseSubCmd:
 		combineNetworkFlags(&parseConf.NetworkFlags, &cfg.NetworkFlags)
 		err := parseConf.ResolveNetwork(parser)
@@ -311,6 +350,20 @@ func parseCommandLine() (subCommand string, config interface{}) {
 	case versionSubCmd:
 	case getDaemonVersionSubCmd:
 		config = getDaemonVersionConf
+	case bumpFeeSubCmd:
+		combineNetworkFlags(&bumpFeeConf.NetworkFlags, &cfg.NetworkFlags)
+		err := bumpFeeConf.ResolveNetwork(parser)
+		if err != nil {
+			printErrorAndExit(err)
+		}
+		config = bumpFeeConf
+	case bumpFeeUnsignedSubCmd:
+		combineNetworkFlags(&bumpFeeConf.NetworkFlags, &cfg.NetworkFlags)
+		err := bumpFeeConf.ResolveNetwork(parser)
+		if err != nil {
+			printErrorAndExit(err)
+		}
+		config = bumpFeeUnsignedConf
 	}
 
 	return parser.Command.Active.Name, config

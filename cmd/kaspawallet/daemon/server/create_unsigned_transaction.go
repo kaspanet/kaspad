@@ -34,21 +34,30 @@ func (s *server) CreateUnsignedTransactions(_ context.Context, request *pb.Creat
 	return &pb.CreateUnsignedTransactionsResponse{UnsignedTransactions: unsignedTransactions}, nil
 }
 
-func (s *server) createUnsignedTransactions(address string, amount uint64, isSendAll bool, fromAddressesString []string, useExistingChangeAddress bool, feeRateOneOf *pb.FeeRate) ([][]byte, error) {
-	if !s.isSynced() {
-		return nil, errors.Errorf("wallet daemon is not synced yet, %s", s.formatSyncStateReport())
-	}
-
+func (s *server) calculateFeeRate(requestFeeRate *pb.FeeRate) (float64, error) {
 	var feeRate float64
-	switch requestFeeRate := feeRateOneOf.FeeRate.(type) {
+	switch requestFeeRate := requestFeeRate.FeeRate.(type) {
 	case *pb.FeeRate_Exact:
 		feeRate = requestFeeRate.Exact
 	case *pb.FeeRate_Max:
 		estimate, err := s.rpcClient.GetFeeEstimate()
 		if err != nil {
-			return nil, err
+			return 0, err
 		}
 		feeRate = math.Min(estimate.Estimate.NormalBuckets[0].Feerate, requestFeeRate.Max)
+	}
+
+	return feeRate, nil
+}
+
+func (s *server) createUnsignedTransactions(address string, amount uint64, isSendAll bool, fromAddressesString []string, useExistingChangeAddress bool, requestFeeRate *pb.FeeRate) ([][]byte, error) {
+	if !s.isSynced() {
+		return nil, errors.Errorf("wallet daemon is not synced yet, %s", s.formatSyncStateReport())
+	}
+
+	feeRate, err := s.calculateFeeRate(requestFeeRate)
+	if err != nil {
+		return nil, err
 	}
 
 	// make sure address string is correct before proceeding to a
@@ -107,8 +116,16 @@ func (s *server) createUnsignedTransactions(address string, amount uint64, isSen
 
 func (s *server) selectUTXOs(spendAmount uint64, isSendAll bool, feeRate float64, fromAddresses []*walletAddress) (
 	selectedUTXOs []*libkaspawallet.UTXO, totalReceived uint64, changeSompi uint64, err error) {
+	return s.selectUTXOsWithPreselected(nil, map[externalapi.DomainOutpoint]struct{}{}, spendAmount, isSendAll, feeRate, fromAddresses)
+}
 
-	selectedUTXOs = []*libkaspawallet.UTXO{}
+func (s *server) selectUTXOsWithPreselected(preSelectedUTXOs []*walletUTXO, allowUsed map[externalapi.DomainOutpoint]struct{}, spendAmount uint64, isSendAll bool, feeRate float64, fromAddresses []*walletAddress) (
+	selectedUTXOs []*libkaspawallet.UTXO, totalReceived uint64, changeSompi uint64, err error) {
+
+	preSelectedSet := make(map[externalapi.DomainOutpoint]struct{})
+	for _, utxo := range preSelectedUTXOs {
+		preSelectedSet[*utxo.Outpoint] = struct{}{}
+	}
 	totalValue := uint64(0)
 
 	dagInfo, err := s.rpcClient.GetBlockDAGInfo()
@@ -117,17 +134,25 @@ func (s *server) selectUTXOs(spendAmount uint64, isSendAll bool, feeRate float64
 	}
 
 	var fee uint64
-	for _, utxo := range s.utxosSortedByAmount {
+	iteration := func(utxo *walletUTXO, avoidPreselected bool) (bool, error) {
 		if (fromAddresses != nil && !walletAddressesContain(fromAddresses, utxo.address)) ||
 			!s.isUTXOSpendable(utxo, dagInfo.VirtualDAAScore) {
-			continue
+			return true, nil
 		}
 
 		if broadcastTime, ok := s.usedOutpoints[*utxo.Outpoint]; ok {
-			if s.usedOutpointHasExpired(broadcastTime) {
-				delete(s.usedOutpoints, *utxo.Outpoint)
-			} else {
-				continue
+			if _, ok := allowUsed[*utxo.Outpoint]; !ok {
+				if s.usedOutpointHasExpired(broadcastTime) {
+					delete(s.usedOutpoints, *utxo.Outpoint)
+				} else {
+					return true, nil
+				}
+			}
+		}
+
+		if avoidPreselected {
+			if _, ok := preSelectedSet[*utxo.Outpoint]; ok {
+				return true, nil
 			}
 		}
 
@@ -141,7 +166,7 @@ func (s *server) selectUTXOs(spendAmount uint64, isSendAll bool, feeRate float64
 
 		fee, err = s.estimateFee(selectedUTXOs, feeRate)
 		if err != nil {
-			return nil, 0, 0, err
+			return false, err
 		}
 
 		totalSpend := spendAmount + fee
@@ -151,7 +176,34 @@ func (s *server) selectUTXOs(spendAmount uint64, isSendAll bool, feeRate float64
 		//		   2.1 go-nodes dust patch we try and find at least 2 inputs (even though the next one is not necessary in terms of spend value)
 		// 		   2.2 KIP9 we try and make sure that the change amount is not too small
 		if !isSendAll && (totalValue == totalSpend || (totalValue >= totalSpend+minChangeTarget && len(selectedUTXOs) > 1)) {
+			return false, nil
+		}
+
+		return true, nil
+	}
+
+	shouldContinue := true
+	for _, utxo := range preSelectedUTXOs {
+		shouldContinue, err = iteration(utxo, false)
+		if err != nil {
+			return nil, 0, 0, err
+		}
+
+		if !shouldContinue {
 			break
+		}
+	}
+
+	if shouldContinue {
+		for _, utxo := range s.utxosSortedByAmount {
+			shouldContinue, err := iteration(utxo, true)
+			if err != nil {
+				return nil, 0, 0, err
+			}
+
+			if !shouldContinue {
+				break
+			}
 		}
 	}
 
