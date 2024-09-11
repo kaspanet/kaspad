@@ -25,7 +25,7 @@ func (s *server) BumpFee(_ context.Context, request *pb.BumpFeeRequest) (*pb.Bum
 		return nil, err
 	}
 
-	mass := s.txMassCalculator.CalculateTransactionMass(domainTx) // TODO: Does GetMempoolEntry already provide the mass?
+	mass := s.txMassCalculator.CalculateTransactionOverallMass(domainTx)
 	feeRate := float64(entry.Entry.Fee) / float64(mass)
 	newFeeRate, err := s.calculateFeeRate(request.FeeRate)
 	if err != nil {

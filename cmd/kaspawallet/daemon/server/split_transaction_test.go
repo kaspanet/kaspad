@@ -20,10 +20,61 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/utils/testutils"
 )
 
+func TestEstimateComputeMassAfterSignatures(t *testing.T) {
+	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
+		unsignedTransaction, mnemonics, params, teardown := testEstimateMassIncreaseForSignaturesSetUp(t, consensusConfig)
+		defer teardown(false)
+
+		serverInstance := &server{
+			params:           params,
+			keysFile:         &keys.File{MinimumSignatures: 2},
+			shutdown:         make(chan struct{}),
+			addressSet:       make(walletAddressSet),
+			txMassCalculator: txmass.NewCalculator(params.MassPerTxByte, params.MassPerScriptPubKeyByte, params.MassPerSigOp),
+		}
+
+		estimatedMassAfterSignatures, err := serverInstance.estimateComputeMassAfterSignatures(unsignedTransaction)
+		if err != nil {
+			t.Fatalf("Error from estimateMassAfterSignatures: %s", err)
+		}
+
+		unsignedTransactionBytes, err := serialization.SerializePartiallySignedTransaction(unsignedTransaction)
+		if err != nil {
+			t.Fatalf("Error deserializing unsignedTransaction: %s", err)
+		}
+
+		signedTxStep1Bytes, err := libkaspawallet.Sign(params, mnemonics[:1], unsignedTransactionBytes, false)
+		if err != nil {
+			t.Fatalf("Sign: %+v", err)
+		}
+
+		signedTxStep2Bytes, err := libkaspawallet.Sign(params, mnemonics[1:2], signedTxStep1Bytes, false)
+		if err != nil {
+			t.Fatalf("Sign: %+v", err)
+		}
+
+		extractedSignedTx, err := libkaspawallet.ExtractTransaction(signedTxStep2Bytes, false)
+		if err != nil {
+			t.Fatalf("ExtractTransaction: %+v", err)
+		}
+
+		actualMassAfterSignatures := serverInstance.txMassCalculator.CalculateTransactionMass(extractedSignedTx)
+
+		if estimatedMassAfterSignatures != actualMassAfterSignatures {
+			t.Errorf("Estimated mass after signatures: %d but actually got %d",
+				estimatedMassAfterSignatures, actualMassAfterSignatures)
+		}
+	})
+}
+
 func TestEstimateMassAfterSignatures(t *testing.T) {
 	testutils.ForAllNets(t, true, func(t *testing.T, consensusConfig *consensus.Config) {
 		unsignedTransaction, mnemonics, params, teardown := testEstimateMassIncreaseForSignaturesSetUp(t, consensusConfig)
 		defer teardown(false)
+
+		for i := range unsignedTransaction.Tx.Inputs {
+			unsignedTransaction.Tx.Inputs[i].UTXOEntry = utxo.NewUTXOEntry(1, &externalapi.ScriptPublicKey{}, false, 0)
+		}
 
 		serverInstance := &server{
 			params:           params,
@@ -58,7 +109,11 @@ func TestEstimateMassAfterSignatures(t *testing.T) {
 			t.Fatalf("ExtractTransaction: %+v", err)
 		}
 
-		actualMassAfterSignatures := serverInstance.txMassCalculator.CalculateTransactionMass(extractedSignedTx)
+		for i := range extractedSignedTx.Inputs {
+			extractedSignedTx.Inputs[i].UTXOEntry = utxo.NewUTXOEntry(1, &externalapi.ScriptPublicKey{}, false, 0)
+		}
+
+		actualMassAfterSignatures := serverInstance.txMassCalculator.CalculateTransactionOverallMass(extractedSignedTx)
 
 		if estimatedMassAfterSignatures != actualMassAfterSignatures {
 			t.Errorf("Estimated mass after signatures: %d but actually got %d",

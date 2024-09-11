@@ -275,7 +275,9 @@ func (s *server) estimateFeePerInput(feeRate float64) (uint64, error) {
 		return 0, err
 	}
 
-	mass, err := s.estimateMassAfterSignatures(mockTx)
+	// Here we use compute mass to avoid dividing by zero. This is ok since `s.estimateFeePerInput` is only used
+	// in the case of compound transactions that have a compute mass higher than its storage mass.
+	mass, err := s.estimateComputeMassAfterSignatures(mockTx)
 	if err != nil {
 		return 0, err
 	}
@@ -287,7 +289,7 @@ func (s *server) estimateFeePerInput(feeRate float64) (uint64, error) {
 		return 0, err
 	}
 
-	massWithoutUTXO, err := s.estimateMassAfterSignatures(mockTxWithoutUTXO)
+	massWithoutUTXO, err := s.estimateComputeMassAfterSignatures(mockTxWithoutUTXO)
 	if err != nil {
 		return 0, err
 	}

@@ -105,7 +105,7 @@ func (s *server) mergeTransaction(
 func (s *server) maybeSplitAndMergeTransaction(transaction *serialization.PartiallySignedTransaction, toAddress util.Address,
 	changeAddress util.Address, changeWalletAddress *walletAddress, feeRate float64) ([]*serialization.PartiallySignedTransaction, error) {
 
-	transactionMass, err := s.estimateMassAfterSignatures(transaction)
+	transactionMass, err := s.estimateComputeMassAfterSignatures(transaction)
 	if err != nil {
 		return nil, err
 	}
@@ -222,7 +222,11 @@ func (s *server) estimateMassAfterSignatures(transaction *serialization.Partiall
 	return EstimateMassAfterSignatures(transaction, s.keysFile.ECDSA, s.keysFile.MinimumSignatures, s.txMassCalculator)
 }
 
-func EstimateMassAfterSignatures(transaction *serialization.PartiallySignedTransaction, ecdsa bool, minimumSignatures uint32, txMassCalculator *txmass.Calculator) (uint64, error) {
+func (s *server) estimateComputeMassAfterSignatures(transaction *serialization.PartiallySignedTransaction) (uint64, error) {
+	return estimateComputeMassAfterSignatures(transaction, s.keysFile.ECDSA, s.keysFile.MinimumSignatures, s.txMassCalculator)
+}
+
+func createTransactionWithJunkFieldsForMassCalculation(transaction *serialization.PartiallySignedTransaction, ecdsa bool, minimumSignatures uint32, txMassCalculator *txmass.Calculator) (*externalapi.DomainTransaction, error) {
 	transaction = transaction.Clone()
 	var signatureSize uint64
 	if ecdsa {
@@ -241,12 +245,25 @@ func EstimateMassAfterSignatures(transaction *serialization.PartiallySignedTrans
 		transaction.Tx.Inputs[i].SigOpCount = byte(len(input.PubKeySignaturePairs))
 	}
 
-	transactionWithSignatures, err := libkaspawallet.ExtractTransactionDeserialized(transaction, ecdsa)
+	return libkaspawallet.ExtractTransactionDeserialized(transaction, ecdsa)
+}
+
+func estimateComputeMassAfterSignatures(transaction *serialization.PartiallySignedTransaction, ecdsa bool, minimumSignatures uint32, txMassCalculator *txmass.Calculator) (uint64, error) {
+	transactionWithSignatures, err := createTransactionWithJunkFieldsForMassCalculation(transaction, ecdsa, minimumSignatures, txMassCalculator)
 	if err != nil {
 		return 0, err
 	}
 
 	return txMassCalculator.CalculateTransactionMass(transactionWithSignatures), nil
+}
+
+func EstimateMassAfterSignatures(transaction *serialization.PartiallySignedTransaction, ecdsa bool, minimumSignatures uint32, txMassCalculator *txmass.Calculator) (uint64, error) {
+	transactionWithSignatures, err := createTransactionWithJunkFieldsForMassCalculation(transaction, ecdsa, minimumSignatures, txMassCalculator)
+	if err != nil {
+		return 0, err
+	}
+
+	return txMassCalculator.CalculateTransactionOverallMass(transactionWithSignatures), nil
 }
 
 func (s *server) moreUTXOsForMergeTransaction(alreadySelectedUTXOs []*libkaspawallet.UTXO, requiredAmount uint64, feeRate float64) (
