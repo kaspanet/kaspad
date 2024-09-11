@@ -2,6 +2,7 @@ package txmass
 
 import (
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/constants"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/transactionhelper"
 )
 
@@ -10,6 +11,9 @@ type Calculator struct {
 	massPerTxByte           uint64
 	massPerScriptPubKeyByte uint64
 	massPerSigOp            uint64
+
+	// The parameter for scaling inverse KAS value to mass units (KIP-0009)
+	storageMassParameter uint64
 }
 
 // NewCalculator creates a new instance of Calculator
@@ -18,6 +22,7 @@ func NewCalculator(massPerTxByte, massPerScriptPubKeyByte, massPerSigOp uint64) 
 		massPerTxByte:           massPerTxByte,
 		massPerScriptPubKeyByte: massPerScriptPubKeyByte,
 		massPerSigOp:            massPerSigOp,
+		storageMassParameter:    constants.SompiPerKaspa * 10_000,
 	}
 }
 
@@ -57,6 +62,75 @@ func (c *Calculator) CalculateTransactionMass(transaction *externalapi.DomainTra
 
 	// Sum all components of mass
 	return massForSize + massForScriptPubKey + massForSigOps
+}
+
+// CalculateTransactionStorageMass calculates the storage mass of the given transaction (see KIP-0009)
+func (c *Calculator) CalculateTransactionStorageMass(transaction *externalapi.DomainTransaction) uint64 {
+	if transactionhelper.IsCoinBase(transaction) {
+		return 0
+	}
+
+	outsLen := uint64(len(transaction.Outputs))
+	insLen := uint64(len(transaction.Inputs))
+
+	if insLen == 0 {
+		panic("Storage mass calculation expects at least one input")
+	}
+
+	harmonicOuts := uint64(0)
+	for _, output := range transaction.Outputs {
+		inverseOut := c.storageMassParameter / output.Value
+		if harmonicOuts+inverseOut < harmonicOuts {
+			// Overflow detected. This requires 10^7 outputs so is unrealistic for wallet usages.
+			// If this method is ever used for consensus, this case should be handled by returning an err
+			panic("Unexpected overflow in storage mass calculation")
+		}
+		harmonicOuts += inverseOut
+	}
+
+	if outsLen == 1 || insLen == 1 || (outsLen == 2 && insLen == 2) {
+		harmonicDiff := harmonicOuts
+		for _, input := range transaction.Inputs {
+			if input.UTXOEntry == nil {
+				panic("Storage mass calculation expects a fully populated transaction")
+			}
+			inverseIn := c.storageMassParameter / input.UTXOEntry.Amount()
+			if harmonicDiff < inverseIn {
+				harmonicDiff = 0
+			} else {
+				harmonicDiff -= inverseIn
+			}
+		}
+		return harmonicDiff
+	}
+
+	sumIns := uint64(0)
+	for _, input := range transaction.Inputs {
+		if input.UTXOEntry == nil {
+			panic("Storage mass calculation expects a fully populated transaction")
+		}
+		// Total supply is bounded, so a sum of existing UTXO entries cannot overflow (nor can it be zero)
+		sumIns += input.UTXOEntry.Amount()
+	}
+	meanIns := sumIns / insLen
+	inverseMeanIns := c.storageMassParameter / meanIns
+	arithmeticIns := insLen * inverseMeanIns
+
+	if arithmeticIns < inverseMeanIns {
+		// overflow (so subtraction would be negative)
+		return 0
+	}
+	if harmonicOuts < arithmeticIns {
+		// underflow
+		return 0
+	} else {
+		return harmonicOuts - arithmeticIns
+	}
+}
+
+// CalculateTransactionOverallMass calculates the overall mass of the transaction including compute and storage mass components (see KIP-0009)
+func (c *Calculator) CalculateTransactionOverallMass(transaction *externalapi.DomainTransaction) uint64 {
+	return max(c.CalculateTransactionMass(transaction), c.CalculateTransactionStorageMass(transaction))
 }
 
 // transactionEstimatedSerializedSize is the estimated size of a transaction in some
