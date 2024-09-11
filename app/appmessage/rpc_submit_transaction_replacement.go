@@ -23,7 +23,8 @@ func NewSubmitTransactionReplacementRequestMessage(transaction *RPCTransaction) 
 // its respective RPC message
 type SubmitTransactionReplacementResponseMessage struct {
 	baseMessage
-	TransactionID string
+	TransactionID       string
+	ReplacedTransaction *RPCTransaction
 
 	Error *RPCError
 }

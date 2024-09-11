@@ -37,18 +37,29 @@ func (s *server) BumpFee(_ context.Context, request *pb.BumpFeeRequest) (*pb.Bum
 	}
 
 	outpointsSet := make(map[externalapi.DomainOutpoint]struct{})
+	var maxUTXO *walletUTXO
 	for _, input := range domainTx.Inputs {
 		outpointsSet[input.PreviousOutpoint] = struct{}{}
-	}
-
-	var maxUTXO *walletUTXO
-	for _, utxo := range s.utxosSortedByAmount {
-		if _, ok := outpointsSet[*utxo.Outpoint]; !ok {
+		utxo, ok := s.mempoolExcludedUTXOs[input.PreviousOutpoint]
+		if !ok {
 			continue
 		}
 
 		if maxUTXO == nil || utxo.UTXOEntry.Amount() > maxUTXO.UTXOEntry.Amount() {
 			maxUTXO = utxo
+		}
+	}
+
+	if maxUTXO == nil {
+		// If we got here it means for some reason s.mempoolExcludedUTXOs is not up to date and we need to search for the UTXOs in s.utxosSortedByAmount
+		for _, utxo := range s.utxosSortedByAmount {
+			if _, ok := outpointsSet[*utxo.Outpoint]; !ok {
+				continue
+			}
+
+			if maxUTXO == nil || utxo.UTXOEntry.Amount() > maxUTXO.UTXOEntry.Amount() {
+				maxUTXO = utxo
+			}
 		}
 	}
 
@@ -93,7 +104,7 @@ func (s *server) BumpFee(_ context.Context, request *pb.BumpFeeRequest) (*pb.Bum
 		Amount:  spendValue,
 	}}
 	if changeSompi > 0 {
-		_, changeAddress, err := txscript.ExtractScriptPubKeyAddress(domainTx.Outputs[0].ScriptPublicKey, s.params)
+		changeAddress, _, err := s.changeAddress(request.UseExistingChangeAddress, fromAddresses)
 		if err != nil {
 			return nil, err
 		}

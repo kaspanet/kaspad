@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/libkaspawallet"
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/pkg/errors"
@@ -240,11 +241,8 @@ func (s *server) updateUTXOSet(entries []*appmessage.UTXOsByAddressesEntry, memp
 		}
 	}
 
+	mempoolExcludedUTXOs := make(map[externalapi.DomainOutpoint]*walletUTXO)
 	for _, entry := range entries {
-		if _, ok := exclude[*entry.Outpoint]; ok {
-			continue
-		}
-
 		outpoint, err := appmessage.RPCOutpointToDomainOutpoint(entry.Outpoint)
 		if err != nil {
 			return err
@@ -260,11 +258,22 @@ func (s *server) updateUTXOSet(entries []*appmessage.UTXOsByAddressesEntry, memp
 		if !ok {
 			return errors.Errorf("Got result from address %s even though it wasn't requested", entry.Address)
 		}
-		utxos = append(utxos, &walletUTXO{
+
+		utxo := &walletUTXO{
 			Outpoint:  outpoint,
 			UTXOEntry: utxoEntry,
 			address:   address,
-		})
+		}
+
+		if _, ok := exclude[*entry.Outpoint]; ok {
+			mempoolExcludedUTXOs[*outpoint] = utxo
+		} else {
+			utxos = append(utxos, &walletUTXO{
+				Outpoint:  outpoint,
+				UTXOEntry: utxoEntry,
+				address:   address,
+			})
+		}
 	}
 
 	sort.Slice(utxos, func(i, j int) bool { return utxos[i].UTXOEntry.Amount() > utxos[j].UTXOEntry.Amount() })
@@ -272,6 +281,7 @@ func (s *server) updateUTXOSet(entries []*appmessage.UTXOsByAddressesEntry, memp
 	s.lock.Lock()
 	s.startTimeOfLastCompletedRefresh = refreshStart
 	s.utxosSortedByAmount = utxos
+	s.mempoolExcludedUTXOs = mempoolExcludedUTXOs
 
 	// Cleanup expired used outpoints to avoid a memory leak
 	for outpoint, broadcastTime := range s.usedOutpoints {

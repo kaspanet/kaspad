@@ -46,8 +46,12 @@ func (x *KaspadMessage_SubmitTransactionReplacementResponse) fromAppMessage(mess
 		err = &RPCError{Message: message.Error.Message}
 	}
 	x.SubmitTransactionReplacementResponse = &SubmitTransactionReplacementResponseMessage{
-		TransactionId: message.TransactionID,
-		Error:         err,
+		TransactionId:       message.TransactionID,
+		ReplacedTransaction: &RpcTransaction{},
+		Error:               err,
+	}
+	if message.ReplacedTransaction != nil {
+		x.SubmitTransactionReplacementResponse.ReplacedTransaction.fromAppMessage(message.ReplacedTransaction)
 	}
 	return nil
 }
@@ -61,8 +65,13 @@ func (x *SubmitTransactionReplacementResponseMessage) toAppMessage() (appmessage
 	if err != nil && !errors.Is(err, errorNil) {
 		return nil, err
 	}
+	replacedTx, err := x.ReplacedTransaction.toAppMessage()
+	if err != nil {
+		return nil, err
+	}
 	return &appmessage.SubmitTransactionReplacementResponseMessage{
-		TransactionID: x.TransactionId,
-		Error:         rpcErr,
+		TransactionID:       x.TransactionId,
+		ReplacedTransaction: replacedTx,
+		Error:               rpcErr,
 	}, nil
 }
