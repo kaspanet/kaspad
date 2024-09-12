@@ -26,6 +26,7 @@ func (s *server) BroadcastRBF(_ context.Context, request *pb.BroadcastRequest) (
 	return &pb.BroadcastResponse{TxIDs: txIDs}, nil
 }
 
+// broadcastRBF assumes that all transactions depends on the first one
 func (s *server) broadcastRBF(transactions [][]byte, isDomain bool) ([]string, error) {
 
 	txIDs := make([]string, len(transactions))
@@ -46,9 +47,20 @@ func (s *server) broadcastRBF(transactions [][]byte, isDomain bool) ([]string, e
 			}
 		}
 
-		txIDs[i], err = sendTransactionRBF(s.rpcClient, tx)
-		if err != nil {
-			return nil, err
+		// Once the first transaction is added to the mempool, the transactions that depend
+		// on the replaced transaction will be removed, so there's no need to submit them
+		// as RBF transactions.
+		if i == 0 {
+			txIDs[i], err = sendTransactionRBF(s.rpcClient, tx)
+			if err != nil {
+				return nil, err
+			}
+		} else {
+			txIDs[i], err = sendTransaction(s.rpcClient, tx)
+			if err != nil {
+				return nil, err
+			}
+
 		}
 
 		for _, input := range tx.Inputs {

@@ -60,11 +60,20 @@ func (x *SubmitTransactionReplacementResponseMessage) toAppMessage() (appmessage
 	if x == nil {
 		return nil, errors.Wrapf(errorNil, "SubmitTransactionReplacementResponseMessage is nil")
 	}
-	rpcErr, err := x.Error.toAppMessage()
-	// Error is an optional field
-	if err != nil && !errors.Is(err, errorNil) {
-		return nil, err
+
+	if x.Error != nil {
+		rpcErr, err := x.Error.toAppMessage()
+		// Error is an optional field
+		if err != nil && !errors.Is(err, errorNil) {
+			return nil, err
+		}
+
+		return &appmessage.SubmitTransactionReplacementResponseMessage{
+			TransactionID: x.TransactionId,
+			Error:         rpcErr,
+		}, nil
 	}
+
 	replacedTx, err := x.ReplacedTransaction.toAppMessage()
 	if err != nil {
 		return nil, err
@@ -72,6 +81,5 @@ func (x *SubmitTransactionReplacementResponseMessage) toAppMessage() (appmessage
 	return &appmessage.SubmitTransactionReplacementResponseMessage{
 		TransactionID:       x.TransactionId,
 		ReplacedTransaction: replacedTx,
-		Error:               rpcErr,
 	}, nil
 }

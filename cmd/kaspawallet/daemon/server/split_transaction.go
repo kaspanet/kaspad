@@ -69,7 +69,8 @@ func (s *server) mergeTransaction(
 		}
 		totalValue += output.Value
 	}
-	fee, err := s.estimateFee(utxos, feeRate)
+	// We're overestimating a bit by assuming that any transaction will have a change output
+	fee, err := s.estimateFee(utxos, feeRate, true)
 	if err != nil {
 		return nil, err
 	}
@@ -204,12 +205,15 @@ func (s *server) createSplitTransaction(transaction *serialization.PartiallySign
 
 		totalSompi += selectedUTXOs[i-startIndex].UTXOEntry.Amount()
 	}
-	fee, err := s.estimateFee(selectedUTXOs, feeRate)
-	if err != nil {
-		return nil, err
+	if len(selectedUTXOs) != 0 {
+		fee, err := s.estimateFee(selectedUTXOs, feeRate, false)
+		if err != nil {
+			return nil, err
+		}
+
+		totalSompi -= fee
 	}
 
-	totalSompi -= fee
 	return libkaspawallet.CreateUnsignedTransaction(s.keysFile.ExtendedPublicKeys,
 		s.keysFile.MinimumSignatures,
 		[]*libkaspawallet.Payment{{

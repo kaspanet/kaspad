@@ -164,7 +164,8 @@ func (s *server) selectUTXOsWithPreselected(preSelectedUTXOs []*walletUTXO, allo
 
 		totalValue += utxo.UTXOEntry.Amount()
 
-		fee, err = s.estimateFee(selectedUTXOs, feeRate)
+		// We're overestimating a bit by assuming that any transaction will have a change output
+		fee, err = s.estimateFee(selectedUTXOs, feeRate, true)
 		if err != nil {
 			return false, err
 		}
@@ -223,23 +224,40 @@ func (s *server) selectUTXOsWithPreselected(preSelectedUTXOs []*walletUTXO, allo
 	return selectedUTXOs, totalReceived, totalValue - totalSpend, nil
 }
 
-func (s *server) estimateFee(selectedUTXOs []*libkaspawallet.UTXO, feeRate float64) (uint64, error) {
+func (s *server) estimateFee(selectedUTXOs []*libkaspawallet.UTXO, feeRate float64, assumeChange bool) (uint64, error) {
 	fakePubKey := [util.PublicKeySize]byte{}
 	fakeAddr, err := util.NewAddressPublicKey(fakePubKey[:], s.params.Prefix)
 	if err != nil {
 		return 0, err
 	}
 
-	mockPayments := []*libkaspawallet.Payment{
-		{
-			Address: fakeAddr,
-			Amount:  1,
-		},
-		{ // We're overestimating a bit by assuming that any transaction will have a change output
-			Address: fakeAddr,
-			Amount:  1,
-		},
+	totalValue := uint64(0)
+	for _, utxo := range selectedUTXOs {
+		totalValue += utxo.UTXOEntry.Amount()
 	}
+
+	// This is an approximation for the distribution of value between the recipient output and the change output.
+	var mockPayments []*libkaspawallet.Payment
+	if assumeChange {
+		mockPayments = []*libkaspawallet.Payment{
+			{
+				Address: fakeAddr,
+				Amount:  totalValue * 99 / 100,
+			},
+			{
+				Address: fakeAddr,
+				Amount:  totalValue / 100,
+			},
+		}
+	} else {
+		mockPayments = []*libkaspawallet.Payment{
+			{
+				Address: fakeAddr,
+				Amount:  totalValue,
+			},
+		}
+	}
+
 	mockTx, err := libkaspawallet.CreateUnsignedTransaction(s.keysFile.ExtendedPublicKeys,
 		s.keysFile.MinimumSignatures,
 		mockPayments, selectedUTXOs)

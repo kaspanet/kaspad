@@ -13,6 +13,7 @@ service kaspawalletd {
   rpc NewAddress(NewAddressRequest) returns (NewAddressResponse) {}
   rpc Shutdown(ShutdownRequest) returns (ShutdownResponse) {}
   rpc Broadcast(BroadcastRequest) returns (BroadcastResponse) {}
+  // BroadcastRBF assumes that all transactions depends on the first one
   rpc BroadcastRBF(BroadcastRequest) returns (BroadcastResponse) {}
   // Since SendRequest contains a password - this command should only be used on
   // a trusted or secure connection

@@ -25,6 +25,40 @@ func (s *server) BumpFee(_ context.Context, request *pb.BumpFeeRequest) (*pb.Bum
 		return nil, err
 	}
 
+	outpointsToInputs := make(map[externalapi.DomainOutpoint]*externalapi.DomainTransactionInput)
+	var maxUTXO *walletUTXO
+	for _, input := range domainTx.Inputs {
+		outpointsToInputs[input.PreviousOutpoint] = input
+		utxo, ok := s.mempoolExcludedUTXOs[input.PreviousOutpoint]
+		if !ok {
+			continue
+		}
+
+		input.UTXOEntry = utxo.UTXOEntry
+		if maxUTXO == nil || utxo.UTXOEntry.Amount() > maxUTXO.UTXOEntry.Amount() {
+			maxUTXO = utxo
+		}
+	}
+
+	if maxUTXO == nil {
+		// If we got here it means for some reason s.mempoolExcludedUTXOs is not up to date and we need to search for the UTXOs in s.utxosSortedByAmount
+		for _, utxo := range s.utxosSortedByAmount {
+			input, ok := outpointsToInputs[*utxo.Outpoint]
+			if !ok {
+				continue
+			}
+
+			input.UTXOEntry = utxo.UTXOEntry
+			if maxUTXO == nil || utxo.UTXOEntry.Amount() > maxUTXO.UTXOEntry.Amount() {
+				maxUTXO = utxo
+			}
+		}
+	}
+
+	if maxUTXO == nil {
+		return nil, errors.Errorf("no UTXOs were found for transaction %s. This probably means the transaction is already accepted", request.TxID)
+	}
+
 	mass := s.txMassCalculator.CalculateTransactionOverallMass(domainTx)
 	feeRate := float64(entry.Entry.Fee) / float64(mass)
 	newFeeRate, err := s.calculateFeeRate(request.FeeRate)
@@ -34,37 +68,6 @@ func (s *server) BumpFee(_ context.Context, request *pb.BumpFeeRequest) (*pb.Bum
 
 	if feeRate >= newFeeRate {
 		return nil, errors.Errorf("new fee rate (%f) is not higher than the current fee rate (%f)", newFeeRate, feeRate)
-	}
-
-	outpointsSet := make(map[externalapi.DomainOutpoint]struct{})
-	var maxUTXO *walletUTXO
-	for _, input := range domainTx.Inputs {
-		outpointsSet[input.PreviousOutpoint] = struct{}{}
-		utxo, ok := s.mempoolExcludedUTXOs[input.PreviousOutpoint]
-		if !ok {
-			continue
-		}
-
-		if maxUTXO == nil || utxo.UTXOEntry.Amount() > maxUTXO.UTXOEntry.Amount() {
-			maxUTXO = utxo
-		}
-	}
-
-	if maxUTXO == nil {
-		// If we got here it means for some reason s.mempoolExcludedUTXOs is not up to date and we need to search for the UTXOs in s.utxosSortedByAmount
-		for _, utxo := range s.utxosSortedByAmount {
-			if _, ok := outpointsSet[*utxo.Outpoint]; !ok {
-				continue
-			}
-
-			if maxUTXO == nil || utxo.UTXOEntry.Amount() > maxUTXO.UTXOEntry.Amount() {
-				maxUTXO = utxo
-			}
-		}
-	}
-
-	if maxUTXO == nil {
-		return nil, errors.Errorf("no UTXOs were found for transaction %s. This probably means the transaction is already accepted", request.TxID)
 	}
 
 	if len(domainTx.Outputs) == 0 || len(domainTx.Outputs) > 2 {
@@ -80,7 +83,11 @@ func (s *server) BumpFee(_ context.Context, request *pb.BumpFeeRequest) (*pb.Bum
 		fromAddresses = append(fromAddresses, fromAddress)
 	}
 
-	selectedUTXOs, spendValue, changeSompi, err := s.selectUTXOsWithPreselected([]*walletUTXO{maxUTXO}, outpointsSet, domainTx.Outputs[0].Value, false, newFeeRate, fromAddresses)
+	allowUsed := make(map[externalapi.DomainOutpoint]struct{})
+	for outpoint := range outpointsToInputs {
+		allowUsed[outpoint] = struct{}{}
+	}
+	selectedUTXOs, spendValue, changeSompi, err := s.selectUTXOsWithPreselected([]*walletUTXO{maxUTXO}, allowUsed, domainTx.Outputs[0].Value, false, newFeeRate, fromAddresses)
 	if err != nil {
 		return nil, err
 	}
@@ -121,7 +128,7 @@ func (s *server) BumpFee(_ context.Context, request *pb.BumpFeeRequest) (*pb.Bum
 		return nil, err
 	}
 
-	unsignedTransactions, err := s.maybeAutoCompoundTransaction(unsignedTransaction, toAddress, changeAddress, changeWalletAddress, feeRate)
+	unsignedTransactions, err := s.maybeAutoCompoundTransaction(unsignedTransaction, toAddress, changeAddress, changeWalletAddress, newFeeRate)
 	if err != nil {
 		return nil, err
 	}

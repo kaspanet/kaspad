@@ -21,10 +21,13 @@ func createUnsignedTransaction(conf *createUnsignedTransactionConfig) error {
 	ctx, cancel := context.WithTimeout(context.Background(), daemonTimeout)
 	defer cancel()
 
-	sendAmountSompi, err := utils.KasToSompi(conf.SendAmount)
+	var sendAmountSompi uint64
 
-	if err != nil {
-		return err
+	if !conf.IsSendAll {
+		sendAmountSompi, err = utils.KasToSompi(conf.SendAmount)
+		if err != nil {
+			return err
+		}
 	}
 
 	feeRate := &pb.FeeRate{
