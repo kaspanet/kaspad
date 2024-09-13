@@ -88,7 +88,7 @@ func bumpFee(conf *bumpFeeConfig) error {
 		}
 
 		chunk := signedTransactions[offset:end]
-		response, err := daemonClient.BroadcastRBF(broadcastCtx, &pb.BroadcastRequest{Transactions: chunk})
+		response, err := daemonClient.BroadcastReplacement(broadcastCtx, &pb.BroadcastRequest{Transactions: chunk})
 		if err != nil {
 			return err
 		}
