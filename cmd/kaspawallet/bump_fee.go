@@ -21,7 +21,7 @@ func bumpFee(conf *bumpFeeConfig) error {
 	}
 
 	if len(keysFile.ExtendedPublicKeys) > len(keysFile.EncryptedMnemonics) {
-		return errors.Errorf("Cannot use 'send' command for multisig wallet without all of the keys")
+		return errors.Errorf("Cannot use 'bump-fee' command for multisig wallet without all of the keys")
 	}
 
 	daemonClient, tearDown, err := client.Connect(conf.DaemonAddress)

@@ -26,7 +26,7 @@ func (s *server) BroadcastRBF(_ context.Context, request *pb.BroadcastRequest) (
 	return &pb.BroadcastResponse{TxIDs: txIDs}, nil
 }
 
-// broadcastRBF assumes that all transactions depends on the first one
+// broadcastRBF assumes that all transactions depend on the first one
 func (s *server) broadcastRBF(transactions [][]byte, isDomain bool) ([]string, error) {
 
 	txIDs := make([]string, len(transactions))

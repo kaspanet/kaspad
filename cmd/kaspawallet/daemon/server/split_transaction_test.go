@@ -35,7 +35,7 @@ func TestEstimateComputeMassAfterSignatures(t *testing.T) {
 
 		estimatedMassAfterSignatures, err := serverInstance.estimateComputeMassAfterSignatures(unsignedTransaction)
 		if err != nil {
-			t.Fatalf("Error from estimateMassAfterSignatures: %s", err)
+			t.Fatalf("Error from estimateComputeMassAfterSignatures: %s", err)
 		}
 
 		unsignedTransactionBytes, err := serialization.SerializePartiallySignedTransaction(unsignedTransaction)
