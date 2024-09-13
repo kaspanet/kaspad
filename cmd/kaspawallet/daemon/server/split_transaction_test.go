@@ -74,6 +74,10 @@ func TestEstimateMassAfterSignatures(t *testing.T) {
 
 		for i := range unsignedTransaction.Tx.Inputs {
 			unsignedTransaction.Tx.Inputs[i].UTXOEntry = utxo.NewUTXOEntry(1, &externalapi.ScriptPublicKey{}, false, 0)
+			unsignedTransaction.PartiallySignedInputs[i].PrevOutput = &externalapi.DomainTransactionOutput{
+				Value:           1,
+				ScriptPublicKey: &externalapi.ScriptPublicKey{},
+			}
 		}
 
 		serverInstance := &server{
