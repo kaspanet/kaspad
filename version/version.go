@@ -17,7 +17,7 @@ const (
 // appBuild is defined as a variable so it can be overridden during the build
 // process with '-ldflags "-X github.com/kaspanet/kaspad/version.appBuild=foo"' if needed.
 // It MUST only contain characters from validCharacters.
-var appBuild string = "rc2"
+var appBuild string = "rc3"
 
 var version = "" // string used for memoization of version
 
