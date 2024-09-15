@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"math"
 	"os"
 	"strings"
 
@@ -33,13 +32,21 @@ func bumpFee(conf *bumpFeeConfig) error {
 	ctx, cancel := context.WithTimeout(context.Background(), daemonTimeout)
 	defer cancel()
 
-	feePolicy := &pb.FeePolicy{
-		FeePolicy: &pb.FeePolicy_MaxFeeRate{MaxFeeRate: math.MaxFloat64},
-	}
+	var feePolicy *pb.FeePolicy
 	if conf.FeeRate > 0 {
-		feePolicy.FeePolicy = &pb.FeePolicy_ExactFeeRate{ExactFeeRate: conf.FeeRate}
+		feePolicy = &pb.FeePolicy{
+			FeePolicy: &pb.FeePolicy_ExactFeeRate{
+				ExactFeeRate: conf.FeeRate,
+			},
+		}
 	} else if conf.MaxFeeRate > 0 {
-		feePolicy.FeePolicy = &pb.FeePolicy_MaxFeeRate{MaxFeeRate: conf.MaxFeeRate}
+		feePolicy = &pb.FeePolicy{
+			FeePolicy: &pb.FeePolicy_MaxFeeRate{MaxFeeRate: conf.MaxFeeRate},
+		}
+	} else if conf.MaxFee > 0 {
+		feePolicy = &pb.FeePolicy{
+			FeePolicy: &pb.FeePolicy_MaxFee{MaxFee: conf.MaxFee},
+		}
 	}
 
 	createUnsignedTransactionsResponse, err :=

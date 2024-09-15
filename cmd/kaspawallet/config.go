@@ -68,6 +68,7 @@ type sendConfig struct {
 	UseExistingChangeAddress bool     `long:"use-existing-change-address" short:"u" description:"Will use an existing change address (in case no change address was ever used, it will use a new one)"`
 	MaxFeeRate               float64  `long:"max-fee-rate" short:"m" description:"Maximum fee rate in Sompi/gram to use for the transaction. The wallet will take the maximum between the fee estimate from the connected node and this value."`
 	FeeRate                  float64  `long:"fee-rate" short:"r" description:"Fee rate in Sompi/gram to use for the transaction. This option will override any fee estimate from the connected node."`
+	MaxFee                   uint64   `long:"max-fee" short:"x" description:"Maximum fee in Sompi (not Sompi/gram) to use for the transaction. The wallet will take the maximum between the fee estimate from the connected node and this value. If no other fee policy is specified, it will set the max fee to 1 KAS"`
 	Verbose                  bool     `long:"show-serialized" short:"s" description:"Show a list of hex encoded sent transactions"`
 	config.NetworkFlags
 }
@@ -87,6 +88,7 @@ type createUnsignedTransactionConfig struct {
 	UseExistingChangeAddress bool     `long:"use-existing-change-address" short:"u" description:"Will use an existing change address (in case no change address was ever used, it will use a new one)"`
 	MaxFeeRate               float64  `long:"max-fee-rate" short:"m" description:"Maximum fee rate in Sompi/gram to use for the transaction. The wallet will take the maximum between the fee estimate from the connected node and this value."`
 	FeeRate                  float64  `long:"fee-rate" short:"r" description:"Fee rate in Sompi/gram to use for the transaction. This option will override any fee estimate from the connected node."`
+	MaxFee                   uint64   `long:"max-fee" short:"x" description:"Maximum fee in Sompi (not Sompi/gram) to use for the transaction. The wallet will take the maximum between the fee estimate from the connected node and this value. If no other fee policy is specified, it will set the max fee to 1 KAS"`
 	config.NetworkFlags
 }
 
@@ -147,6 +149,7 @@ type bumpFeeUnsignedConfig struct {
 	UseExistingChangeAddress bool     `long:"use-existing-change-address" short:"u" description:"Will use an existing change address (in case no change address was ever used, it will use a new one)"`
 	MaxFeeRate               float64  `long:"max-fee-rate" short:"m" description:"Maximum fee rate in Sompi/gram to use for the transaction. The wallet will take the maximum between the fee estimate from the connected node and this value."`
 	FeeRate                  float64  `long:"fee-rate" short:"r" description:"Fee rate in Sompi/gram to use for the transaction. This option will override any fee estimate from the connected node."`
+	MaxFee                   uint64   `long:"max-fee" short:"x" description:"Maximum fee in Sompi (not Sompi/gram) to use for the transaction. The wallet will take the maximum between the fee estimate from the connected node and this value. If no other fee policy is specified, it will set the max fee to 1 KAS"`
 	config.NetworkFlags
 }
 
@@ -159,6 +162,7 @@ type bumpFeeConfig struct {
 	UseExistingChangeAddress bool     `long:"use-existing-change-address" short:"u" description:"Will use an existing change address (in case no change address was ever used, it will use a new one)"`
 	MaxFeeRate               float64  `long:"max-fee-rate" short:"m" description:"Maximum fee rate in Sompi/gram to use for the transaction. The wallet will take the maximum between the fee estimate from the connected node and this value."`
 	FeeRate                  float64  `long:"fee-rate" short:"r" description:"Fee rate in Sompi/gram to use for the transaction. This option will override any fee estimate from the connected node."`
+	MaxFee                   uint64   `long:"max-fee" short:"x" description:"Maximum fee in Sompi (not Sompi/gram) to use for the transaction. The wallet will take the maximum between the fee estimate from the connected node and this value. If no other fee policy is specified, it will set the max fee to 1 KAS"`
 	Verbose                  bool     `long:"show-serialized" short:"s" description:"Show a list of hex encoded sent transactions"`
 	config.NetworkFlags
 }

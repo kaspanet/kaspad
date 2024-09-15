@@ -45,7 +45,10 @@ func (s *server) calculateFeeLimits(requestFeePolicy *pb.FeePolicy) (feeRate flo
 	maxFee = math.MaxUint64
 	switch requestFeePolicy := requestFeePolicy.FeePolicy.(type) {
 	case *pb.FeePolicy_ExactFeeRate:
-		feeRate = math.Max(requestFeePolicy.ExactFeeRate, minFeeRate)
+		if feeRate < minFeeRate {
+			return 0, 0, errors.Errorf("requested fee rate is too low, minimum fee rate is %f", minFeeRate)
+		}
+		feeRate = requestFeePolicy.ExactFeeRate
 	case *pb.FeePolicy_MaxFeeRate:
 		estimate, err := s.rpcClient.GetFeeEstimate()
 		if err != nil {

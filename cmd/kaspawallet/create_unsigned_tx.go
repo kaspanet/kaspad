@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"math"
 	"os"
 
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/daemon/client"
@@ -30,13 +29,21 @@ func createUnsignedTransaction(conf *createUnsignedTransactionConfig) error {
 		}
 	}
 
-	feePolicy := &pb.FeePolicy{
-		FeePolicy: &pb.FeePolicy_MaxFeeRate{MaxFeeRate: math.MaxFloat64},
-	}
+	var feePolicy *pb.FeePolicy
 	if conf.FeeRate > 0 {
-		feePolicy.FeePolicy = &pb.FeePolicy_ExactFeeRate{ExactFeeRate: conf.FeeRate}
+		feePolicy = &pb.FeePolicy{
+			FeePolicy: &pb.FeePolicy_ExactFeeRate{
+				ExactFeeRate: conf.FeeRate,
+			},
+		}
 	} else if conf.MaxFeeRate > 0 {
-		feePolicy.FeePolicy = &pb.FeePolicy_MaxFeeRate{MaxFeeRate: conf.MaxFeeRate}
+		feePolicy = &pb.FeePolicy{
+			FeePolicy: &pb.FeePolicy_MaxFeeRate{MaxFeeRate: conf.MaxFeeRate},
+		}
+	} else if conf.MaxFee > 0 {
+		feePolicy = &pb.FeePolicy{
+			FeePolicy: &pb.FeePolicy_MaxFee{MaxFee: conf.MaxFee},
+		}
 	}
 
 	response, err := daemonClient.CreateUnsignedTransactions(ctx, &pb.CreateUnsignedTransactionsRequest{
