@@ -19,6 +19,9 @@ import (
 // should succeed (at most 50K storage mass for each output, thus overall lower than standard mass upper bound which is 100K gram)
 const minChangeTarget = constants.SompiPerKaspa / 5
 
+// The current minimal fee rate according to mempool standards
+const minFeeRate = 1.0
+
 func (s *server) CreateUnsignedTransactions(_ context.Context, request *pb.CreateUnsignedTransactionsRequest) (
 	*pb.CreateUnsignedTransactionsResponse, error,
 ) {
@@ -34,23 +37,36 @@ func (s *server) CreateUnsignedTransactions(_ context.Context, request *pb.Creat
 	return &pb.CreateUnsignedTransactionsResponse{UnsignedTransactions: unsignedTransactions}, nil
 }
 
-func (s *server) calculateFeeRate(requestFeePolicy *pb.FeePolicy) (float64, error) {
-	var feeRate float64
+func (s *server) calculateFeeLimits(requestFeePolicy *pb.FeePolicy) (feeRate float64, maxFee uint64, err error) {
+	feeRate = minFeeRate
+	maxFee = math.MaxUint64
 	switch requestFeePolicy := requestFeePolicy.FeePolicy.(type) {
 	case *pb.FeePolicy_ExactFeeRate:
-		feeRate = requestFeePolicy.ExactFeeRate
+		feeRate = math.Max(requestFeePolicy.ExactFeeRate, minFeeRate)
 	case *pb.FeePolicy_MaxFeeRate:
 		estimate, err := s.rpcClient.GetFeeEstimate()
 		if err != nil {
-			return 0, err
+			return 0, 0, err
 		}
 		feeRate = math.Min(estimate.Estimate.NormalBuckets[0].Feerate, requestFeePolicy.MaxFeeRate)
 	case *pb.FeePolicy_MaxFee:
-		// TODO
-		panic("todo")
+		estimate, err := s.rpcClient.GetFeeEstimate()
+		if err != nil {
+			return 0, 0, err
+		}
+		feeRate = estimate.Estimate.NormalBuckets[0].Feerate
+		maxFee = requestFeePolicy.MaxFee
+	case nil:
+		estimate, err := s.rpcClient.GetFeeEstimate()
+		if err != nil {
+			return 0, 0, err
+		}
+		feeRate = estimate.Estimate.NormalBuckets[0].Feerate
+		// Default to a bound of max 1 KAS as fee
+		maxFee = constants.SompiPerKaspa
 	}
 
-	return feeRate, nil
+	return feeRate, maxFee, nil
 }
 
 func (s *server) createUnsignedTransactions(address string, amount uint64, isSendAll bool, fromAddressesString []string, useExistingChangeAddress bool, requestFeePolicy *pb.FeePolicy) ([][]byte, error) {
@@ -58,7 +74,7 @@ func (s *server) createUnsignedTransactions(address string, amount uint64, isSen
 		return nil, errors.Errorf("wallet daemon is not synced yet, %s", s.formatSyncStateReport())
 	}
 
-	feeRate, err := s.calculateFeeRate(requestFeePolicy)
+	feeRate, maxFee, err := s.calculateFeeLimits(requestFeePolicy)
 	if err != nil {
 		return nil, err
 	}
@@ -84,7 +100,7 @@ func (s *server) createUnsignedTransactions(address string, amount uint64, isSen
 		return nil, err
 	}
 
-	selectedUTXOs, spendValue, changeSompi, err := s.selectUTXOs(amount, isSendAll, feeRate, fromAddresses)
+	selectedUTXOs, spendValue, changeSompi, err := s.selectUTXOs(amount, isSendAll, feeRate, maxFee, fromAddresses)
 	if err != nil {
 		return nil, err
 	}
@@ -110,19 +126,19 @@ func (s *server) createUnsignedTransactions(address string, amount uint64, isSen
 		return nil, err
 	}
 
-	unsignedTransactions, err := s.maybeAutoCompoundTransaction(unsignedTransaction, toAddress, changeAddress, changeWalletAddress, feeRate)
+	unsignedTransactions, err := s.maybeAutoCompoundTransaction(unsignedTransaction, toAddress, changeAddress, changeWalletAddress, feeRate, maxFee)
 	if err != nil {
 		return nil, err
 	}
 	return unsignedTransactions, nil
 }
 
-func (s *server) selectUTXOs(spendAmount uint64, isSendAll bool, feeRate float64, fromAddresses []*walletAddress) (
+func (s *server) selectUTXOs(spendAmount uint64, isSendAll bool, feeRate float64, maxFee uint64, fromAddresses []*walletAddress) (
 	selectedUTXOs []*libkaspawallet.UTXO, totalReceived uint64, changeSompi uint64, err error) {
-	return s.selectUTXOsWithPreselected(nil, map[externalapi.DomainOutpoint]struct{}{}, spendAmount, isSendAll, feeRate, fromAddresses)
+	return s.selectUTXOsWithPreselected(nil, map[externalapi.DomainOutpoint]struct{}{}, spendAmount, isSendAll, feeRate, maxFee, fromAddresses)
 }
 
-func (s *server) selectUTXOsWithPreselected(preSelectedUTXOs []*walletUTXO, allowUsed map[externalapi.DomainOutpoint]struct{}, spendAmount uint64, isSendAll bool, feeRate float64, fromAddresses []*walletAddress) (
+func (s *server) selectUTXOsWithPreselected(preSelectedUTXOs []*walletUTXO, allowUsed map[externalapi.DomainOutpoint]struct{}, spendAmount uint64, isSendAll bool, feeRate float64, maxFee uint64, fromAddresses []*walletAddress) (
 	selectedUTXOs []*libkaspawallet.UTXO, totalReceived uint64, changeSompi uint64, err error) {
 
 	preSelectedSet := make(map[externalapi.DomainOutpoint]struct{})
@@ -168,7 +184,7 @@ func (s *server) selectUTXOsWithPreselected(preSelectedUTXOs []*walletUTXO, allo
 		totalValue += utxo.UTXOEntry.Amount()
 
 		// We're overestimating a bit by assuming that any transaction will have a change output
-		fee, err = s.estimateFee(selectedUTXOs, feeRate, true)
+		fee, err = s.estimateFee(selectedUTXOs, feeRate, maxFee, true)
 		if err != nil {
 			return false, err
 		}
@@ -227,7 +243,7 @@ func (s *server) selectUTXOsWithPreselected(preSelectedUTXOs []*walletUTXO, allo
 	return selectedUTXOs, totalReceived, totalValue - totalSpend, nil
 }
 
-func (s *server) estimateFee(selectedUTXOs []*libkaspawallet.UTXO, feeRate float64, assumeChange bool) (uint64, error) {
+func (s *server) estimateFee(selectedUTXOs []*libkaspawallet.UTXO, feeRate float64, maxFee uint64, assumeChange bool) (uint64, error) {
 	fakePubKey := [util.PublicKeySize]byte{}
 	fakeAddr, err := util.NewAddressPublicKey(fakePubKey[:], s.params.Prefix)
 	if err != nil {
@@ -273,7 +289,7 @@ func (s *server) estimateFee(selectedUTXOs []*libkaspawallet.UTXO, feeRate float
 		return 0, err
 	}
 
-	return uint64(float64(mass) * feeRate), nil
+	return min(uint64(math.Ceil(float64(mass)*feeRate)), maxFee), nil
 }
 
 func (s *server) estimateFeePerInput(feeRate float64) (uint64, error) {

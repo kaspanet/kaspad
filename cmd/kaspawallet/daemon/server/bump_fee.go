@@ -61,7 +61,7 @@ func (s *server) BumpFee(_ context.Context, request *pb.BumpFeeRequest) (*pb.Bum
 
 	mass := s.txMassCalculator.CalculateTransactionOverallMass(domainTx)
 	feeRate := float64(entry.Entry.Fee) / float64(mass)
-	newFeeRate, err := s.calculateFeeRate(request.FeePolicy)
+	newFeeRate, maxFee, err := s.calculateFeeLimits(request.FeePolicy)
 	if err != nil {
 		return nil, err
 	}
@@ -87,7 +87,7 @@ func (s *server) BumpFee(_ context.Context, request *pb.BumpFeeRequest) (*pb.Bum
 	for outpoint := range outpointsToInputs {
 		allowUsed[outpoint] = struct{}{}
 	}
-	selectedUTXOs, spendValue, changeSompi, err := s.selectUTXOsWithPreselected([]*walletUTXO{maxUTXO}, allowUsed, domainTx.Outputs[0].Value, false, newFeeRate, fromAddresses)
+	selectedUTXOs, spendValue, changeSompi, err := s.selectUTXOsWithPreselected([]*walletUTXO{maxUTXO}, allowUsed, domainTx.Outputs[0].Value, false, newFeeRate, maxFee, fromAddresses)
 	if err != nil {
 		return nil, err
 	}
@@ -128,7 +128,7 @@ func (s *server) BumpFee(_ context.Context, request *pb.BumpFeeRequest) (*pb.Bum
 		return nil, err
 	}
 
-	unsignedTransactions, err := s.maybeAutoCompoundTransaction(unsignedTransaction, toAddress, changeAddress, changeWalletAddress, newFeeRate)
+	unsignedTransactions, err := s.maybeAutoCompoundTransaction(unsignedTransaction, toAddress, changeAddress, changeWalletAddress, newFeeRate, maxFee)
 	if err != nil {
 		return nil, err
 	}
