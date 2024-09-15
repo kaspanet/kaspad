@@ -37,7 +37,7 @@ func bumpFeeUnsigned(conf *bumpFeeUnsignedConfig) error {
 		TxID:                     conf.TxID,
 		From:                     conf.FromAddresses,
 		UseExistingChangeAddress: conf.UseExistingChangeAddress,
-		FeePolicy:                  feePolicy,
+		FeePolicy:                feePolicy,
 	})
 	if err != nil {
 		return err
