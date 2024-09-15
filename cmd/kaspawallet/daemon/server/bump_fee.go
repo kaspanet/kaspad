@@ -144,7 +144,7 @@ func (s *server) BumpFee(_ context.Context, request *pb.BumpFeeRequest) (*pb.Bum
 		return nil, err
 	}
 
-	txIDs, err := s.broadcastRBF(signedTransactions, false)
+	txIDs, err := s.broadcastReplacement(signedTransactions, false)
 	if err != nil {
 		return nil, err
 	}

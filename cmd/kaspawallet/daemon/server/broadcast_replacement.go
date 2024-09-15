@@ -14,11 +14,11 @@ import (
 	"github.com/pkg/errors"
 )
 
-func (s *server) BroadcastRBF(_ context.Context, request *pb.BroadcastRequest) (*pb.BroadcastResponse, error) {
+func (s *server) BroadcastReplacement(_ context.Context, request *pb.BroadcastRequest) (*pb.BroadcastResponse, error) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	txIDs, err := s.broadcastRBF(request.Transactions, request.IsDomain)
+	txIDs, err := s.broadcastReplacement(request.Transactions, request.IsDomain)
 	if err != nil {
 		return nil, err
 	}
@@ -26,8 +26,8 @@ func (s *server) BroadcastRBF(_ context.Context, request *pb.BroadcastRequest) (
 	return &pb.BroadcastResponse{TxIDs: txIDs}, nil
 }
 
-// broadcastRBF assumes that all transactions depend on the first one
-func (s *server) broadcastRBF(transactions [][]byte, isDomain bool) ([]string, error) {
+// broadcastReplacement assumes that all transactions depend on the first one
+func (s *server) broadcastReplacement(transactions [][]byte, isDomain bool) ([]string, error) {
 
 	txIDs := make([]string, len(transactions))
 	var tx *externalapi.DomainTransaction

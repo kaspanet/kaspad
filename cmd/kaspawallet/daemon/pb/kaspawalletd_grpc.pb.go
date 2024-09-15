@@ -29,7 +29,8 @@ type KaspawalletdClient interface {
 	NewAddress(ctx context.Context, in *NewAddressRequest, opts ...grpc.CallOption) (*NewAddressResponse, error)
 	Shutdown(ctx context.Context, in *ShutdownRequest, opts ...grpc.CallOption) (*ShutdownResponse, error)
 	Broadcast(ctx context.Context, in *BroadcastRequest, opts ...grpc.CallOption) (*BroadcastResponse, error)
-	BroadcastRBF(ctx context.Context, in *BroadcastRequest, opts ...grpc.CallOption) (*BroadcastResponse, error)
+	// BroadcastReplacement assumes that all transactions depend on the first one
+	BroadcastReplacement(ctx context.Context, in *BroadcastRequest, opts ...grpc.CallOption) (*BroadcastResponse, error)
 	// Since SendRequest contains a password - this command should only be used on
 	// a trusted or secure connection
 	Send(ctx context.Context, in *SendRequest, opts ...grpc.CallOption) (*SendResponse, error)
@@ -111,9 +112,9 @@ func (c *kaspawalletdClient) Broadcast(ctx context.Context, in *BroadcastRequest
 	return out, nil
 }
 
-func (c *kaspawalletdClient) BroadcastRBF(ctx context.Context, in *BroadcastRequest, opts ...grpc.CallOption) (*BroadcastResponse, error) {
+func (c *kaspawalletdClient) BroadcastReplacement(ctx context.Context, in *BroadcastRequest, opts ...grpc.CallOption) (*BroadcastResponse, error) {
 	out := new(BroadcastResponse)
-	err := c.cc.Invoke(ctx, "/kaspawalletd.kaspawalletd/BroadcastRBF", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/kaspawalletd.kaspawalletd/BroadcastReplacement", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -167,7 +168,8 @@ type KaspawalletdServer interface {
 	NewAddress(context.Context, *NewAddressRequest) (*NewAddressResponse, error)
 	Shutdown(context.Context, *ShutdownRequest) (*ShutdownResponse, error)
 	Broadcast(context.Context, *BroadcastRequest) (*BroadcastResponse, error)
-	BroadcastRBF(context.Context, *BroadcastRequest) (*BroadcastResponse, error)
+	// BroadcastReplacement assumes that all transactions depend on the first one
+	BroadcastReplacement(context.Context, *BroadcastRequest) (*BroadcastResponse, error)
 	// Since SendRequest contains a password - this command should only be used on
 	// a trusted or secure connection
 	Send(context.Context, *SendRequest) (*SendResponse, error)
@@ -204,8 +206,8 @@ func (UnimplementedKaspawalletdServer) Shutdown(context.Context, *ShutdownReques
 func (UnimplementedKaspawalletdServer) Broadcast(context.Context, *BroadcastRequest) (*BroadcastResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Broadcast not implemented")
 }
-func (UnimplementedKaspawalletdServer) BroadcastRBF(context.Context, *BroadcastRequest) (*BroadcastResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method BroadcastRBF not implemented")
+func (UnimplementedKaspawalletdServer) BroadcastReplacement(context.Context, *BroadcastRequest) (*BroadcastResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method BroadcastReplacement not implemented")
 }
 func (UnimplementedKaspawalletdServer) Send(context.Context, *SendRequest) (*SendResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Send not implemented")
@@ -358,20 +360,20 @@ func _Kaspawalletd_Broadcast_Handler(srv interface{}, ctx context.Context, dec f
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Kaspawalletd_BroadcastRBF_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Kaspawalletd_BroadcastReplacement_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(BroadcastRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(KaspawalletdServer).BroadcastRBF(ctx, in)
+		return srv.(KaspawalletdServer).BroadcastReplacement(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/kaspawalletd.kaspawalletd/BroadcastRBF",
+		FullMethod: "/kaspawalletd.kaspawalletd/BroadcastReplacement",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(KaspawalletdServer).BroadcastRBF(ctx, req.(*BroadcastRequest))
+		return srv.(KaspawalletdServer).BroadcastReplacement(ctx, req.(*BroadcastRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -484,8 +486,8 @@ var Kaspawalletd_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _Kaspawalletd_Broadcast_Handler,
 		},
 		{
-			MethodName: "BroadcastRBF",
-			Handler:    _Kaspawalletd_BroadcastRBF_Handler,
+			MethodName: "BroadcastReplacement",
+			Handler:    _Kaspawalletd_BroadcastReplacement_Handler,
 		},
 		{
 			MethodName: "Send",
