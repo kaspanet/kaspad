@@ -26,7 +26,7 @@ func (s *server) CreateUnsignedTransactions(_ context.Context, request *pb.Creat
 	defer s.lock.Unlock()
 
 	unsignedTransactions, err := s.createUnsignedTransactions(request.Address, request.Amount, request.IsSendAll,
-		request.From, request.UseExistingChangeAddress, request.FeeRate)
+		request.From, request.UseExistingChangeAddress, request.FeePolicy)
 	if err != nil {
 		return nil, err
 	}
@@ -34,28 +34,31 @@ func (s *server) CreateUnsignedTransactions(_ context.Context, request *pb.Creat
 	return &pb.CreateUnsignedTransactionsResponse{UnsignedTransactions: unsignedTransactions}, nil
 }
 
-func (s *server) calculateFeeRate(requestFeeRate *pb.FeeRate) (float64, error) {
+func (s *server) calculateFeeRate(requestFeePolicy *pb.FeePolicy) (float64, error) {
 	var feeRate float64
-	switch requestFeeRate := requestFeeRate.FeeRate.(type) {
-	case *pb.FeeRate_Exact:
-		feeRate = requestFeeRate.Exact
-	case *pb.FeeRate_Max:
+	switch requestFeePolicy := requestFeePolicy.FeePolicy.(type) {
+	case *pb.FeePolicy_ExactFeeRate:
+		feeRate = requestFeePolicy.ExactFeeRate
+	case *pb.FeePolicy_MaxFeeRate:
 		estimate, err := s.rpcClient.GetFeeEstimate()
 		if err != nil {
 			return 0, err
 		}
-		feeRate = math.Min(estimate.Estimate.NormalBuckets[0].Feerate, requestFeeRate.Max)
+		feeRate = math.Min(estimate.Estimate.NormalBuckets[0].Feerate, requestFeePolicy.MaxFeeRate)
+	case *pb.FeePolicy_MaxFee:
+		// TODO
+		panic("todo")
 	}
 
 	return feeRate, nil
 }
 
-func (s *server) createUnsignedTransactions(address string, amount uint64, isSendAll bool, fromAddressesString []string, useExistingChangeAddress bool, requestFeeRate *pb.FeeRate) ([][]byte, error) {
+func (s *server) createUnsignedTransactions(address string, amount uint64, isSendAll bool, fromAddressesString []string, useExistingChangeAddress bool, requestFeePolicy *pb.FeePolicy) ([][]byte, error) {
 	if !s.isSynced() {
 		return nil, errors.Errorf("wallet daemon is not synced yet, %s", s.formatSyncStateReport())
 	}
 
-	feeRate, err := s.calculateFeeRate(requestFeeRate)
+	feeRate, err := s.calculateFeeRate(requestFeePolicy)
 	if err != nil {
 		return nil, err
 	}

@@ -39,10 +39,11 @@ message AddressBalances {
   uint64 pending = 3;
 }
 
-message FeeRate {
-  oneof feeRate {
-    double max = 6;
-    double exact = 7;
+message FeePolicy {
+  oneof feePolicy {
+    double maxFeeRate = 6;
+    double exactFeeRate = 7;
+    uint64 maxFee = 8;
   }
 }
 
@@ -52,7 +53,7 @@ message CreateUnsignedTransactionsRequest {
   repeated string from = 3;
   bool useExistingChangeAddress = 4;
   bool isSendAll = 5;
-  FeeRate feeRate = 6;
+  FeePolicy feePolicy = 6;
 }
 
 message CreateUnsignedTransactionsResponse {
@@ -115,7 +116,7 @@ message SendRequest {
   repeated string from = 4;
   bool useExistingChangeAddress = 5;
   bool isSendAll = 6;
-  FeeRate feeRate = 7;
+  FeePolicy feePolicy = 7;
 }
 
 message SendResponse {
@@ -140,7 +141,7 @@ message BumpFeeRequest {
   string password = 1;
   repeated string from = 2;
   bool useExistingChangeAddress = 3;
-  FeeRate feeRate = 4;
+  FeePolicy feePolicy = 4;
   string txID = 5;
 }
 

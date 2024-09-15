@@ -30,13 +30,13 @@ func createUnsignedTransaction(conf *createUnsignedTransactionConfig) error {
 		}
 	}
 
-	feeRate := &pb.FeeRate{
-		FeeRate: &pb.FeeRate_Max{Max: math.MaxFloat64},
+	feePolicy := &pb.FeePolicy{
+		FeePolicy: &pb.FeePolicy_MaxFeeRate{MaxFeeRate: math.MaxFloat64},
 	}
 	if conf.FeeRate > 0 {
-		feeRate.FeeRate = &pb.FeeRate_Exact{Exact: conf.FeeRate}
+		feePolicy.FeePolicy = &pb.FeePolicy_ExactFeeRate{ExactFeeRate: conf.FeeRate}
 	} else if conf.MaxFeeRate > 0 {
-		feeRate.FeeRate = &pb.FeeRate_Max{Max: conf.MaxFeeRate}
+		feePolicy.FeePolicy = &pb.FeePolicy_MaxFeeRate{MaxFeeRate: conf.MaxFeeRate}
 	}
 
 	response, err := daemonClient.CreateUnsignedTransactions(ctx, &pb.CreateUnsignedTransactionsRequest{
@@ -45,7 +45,7 @@ func createUnsignedTransaction(conf *createUnsignedTransactionConfig) error {
 		Amount:                   sendAmountSompi,
 		IsSendAll:                conf.IsSendAll,
 		UseExistingChangeAddress: conf.UseExistingChangeAddress,
-		FeeRate:                  feeRate,
+		FeePolicy:                feePolicy,
 	})
 	if err != nil {
 		return err

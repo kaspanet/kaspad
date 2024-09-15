@@ -33,13 +33,13 @@ func bumpFee(conf *bumpFeeConfig) error {
 	ctx, cancel := context.WithTimeout(context.Background(), daemonTimeout)
 	defer cancel()
 
-	feeRate := &pb.FeeRate{
-		FeeRate: &pb.FeeRate_Max{Max: math.MaxFloat64},
+	feePolicy := &pb.FeePolicy{
+		FeePolicy: &pb.FeePolicy_MaxFeeRate{MaxFeeRate: math.MaxFloat64},
 	}
 	if conf.FeeRate > 0 {
-		feeRate.FeeRate = &pb.FeeRate_Exact{Exact: conf.FeeRate}
+		feePolicy.FeePolicy = &pb.FeePolicy_ExactFeeRate{ExactFeeRate: conf.FeeRate}
 	} else if conf.MaxFeeRate > 0 {
-		feeRate.FeeRate = &pb.FeeRate_Max{Max: conf.MaxFeeRate}
+		feePolicy.FeePolicy = &pb.FeePolicy_MaxFeeRate{MaxFeeRate: conf.MaxFeeRate}
 	}
 
 	createUnsignedTransactionsResponse, err :=
@@ -47,7 +47,7 @@ func bumpFee(conf *bumpFeeConfig) error {
 			TxID:                     conf.TxID,
 			From:                     conf.FromAddresses,
 			UseExistingChangeAddress: conf.UseExistingChangeAddress,
-			FeeRate:                  feeRate,
+			FeePolicy:                feePolicy,
 		})
 	if err != nil {
 		return err

@@ -61,7 +61,7 @@ func (s *server) BumpFee(_ context.Context, request *pb.BumpFeeRequest) (*pb.Bum
 
 	mass := s.txMassCalculator.CalculateTransactionOverallMass(domainTx)
 	feeRate := float64(entry.Entry.Fee) / float64(mass)
-	newFeeRate, err := s.calculateFeeRate(request.FeeRate)
+	newFeeRate, err := s.calculateFeeRate(request.FeePolicy)
 	if err != nil {
 		return nil, err
 	}
