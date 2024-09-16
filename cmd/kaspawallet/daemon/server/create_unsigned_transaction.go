@@ -43,6 +43,11 @@ func (s *server) CreateUnsignedTransactions(_ context.Context, request *pb.Creat
 func (s *server) calculateFeeLimits(requestFeePolicy *pb.FeePolicy) (feeRate float64, maxFee uint64, err error) {
 	feeRate = minFeeRate
 	maxFee = math.MaxUint64
+
+	if requestFeePolicy == nil {
+		requestFeePolicy = &pb.FeePolicy{}
+	}
+
 	switch requestFeePolicy := requestFeePolicy.FeePolicy.(type) {
 	case *pb.FeePolicy_ExactFeeRate:
 		feeRate = requestFeePolicy.ExactFeeRate
