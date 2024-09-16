@@ -360,13 +360,25 @@ func parseCommandLine() (subCommand string, config interface{}) {
 		if err != nil {
 			printErrorAndExit(err)
 		}
-		config = bumpFeeConf
-	case bumpFeeUnsignedSubCmd:
-		combineNetworkFlags(&bumpFeeConf.NetworkFlags, &cfg.NetworkFlags)
-		err := bumpFeeConf.ResolveNetwork(parser)
+
+		err = validateBumpFeeConfig(bumpFeeConf)
 		if err != nil {
 			printErrorAndExit(err)
 		}
+
+		config = bumpFeeConf
+	case bumpFeeUnsignedSubCmd:
+		combineNetworkFlags(&bumpFeeUnsignedConf.NetworkFlags, &cfg.NetworkFlags)
+		err := bumpFeeUnsignedConf.ResolveNetwork(parser)
+		if err != nil {
+			printErrorAndExit(err)
+		}
+
+		err = validateBumpFeeUnsignedConfig(bumpFeeUnsignedConf)
+		if err != nil {
+			printErrorAndExit(err)
+		}
+
 		config = bumpFeeUnsignedConf
 	}
 
@@ -388,8 +400,8 @@ func validateCreateUnsignedTransactionConf(conf *createUnsignedTransactionConfig
 		return errors.New("--fee-rate must be a positive number")
 	}
 
-	if conf.MaxFeeRate > 0 && conf.FeeRate > 0 {
-		return errors.New("at most one of '--max-fee-rate' or '--fee-rate' can be specified")
+	if boolToUint8(conf.MaxFeeRate > 0)+boolToUint8(conf.FeeRate > 0)+boolToUint8(conf.MaxFee > 0) > 1 {
+		return errors.New("at most one of '--max-fee-rate', '--fee-rate' or '--max-fee' can be specified")
 	}
 
 	return nil
@@ -410,11 +422,50 @@ func validateSendConfig(conf *sendConfig) error {
 		return errors.New("--fee-rate must be a positive number")
 	}
 
-	if conf.MaxFeeRate > 0 && conf.FeeRate > 0 {
-		return errors.New("at most one of '--max-fee-rate' or '--fee-rate' can be specified")
+	if boolToUint8(conf.MaxFeeRate > 0)+boolToUint8(conf.FeeRate > 0)+boolToUint8(conf.MaxFee > 0) > 1 {
+		return errors.New("at most one of '--max-fee-rate', '--fee-rate' or '--max-fee' can be specified")
 	}
 
 	return nil
+}
+
+func validateBumpFeeConfig(conf *bumpFeeConfig) error {
+	if conf.MaxFeeRate < 0 {
+		return errors.New("--max-fee-rate must be a positive number")
+	}
+
+	if conf.FeeRate < 0 {
+		return errors.New("--fee-rate must be a positive number")
+	}
+
+	if boolToUint8(conf.MaxFeeRate > 0)+boolToUint8(conf.FeeRate > 0)+boolToUint8(conf.MaxFee > 0) > 1 {
+		return errors.New("at most one of '--max-fee-rate', '--fee-rate' or '--max-fee' can be specified")
+	}
+
+	return nil
+}
+
+func validateBumpFeeUnsignedConfig(conf *bumpFeeUnsignedConfig) error {
+	if conf.MaxFeeRate < 0 {
+		return errors.New("--max-fee-rate must be a positive number")
+	}
+
+	if conf.FeeRate < 0 {
+		return errors.New("--fee-rate must be a positive number")
+	}
+
+	if boolToUint8(conf.MaxFeeRate > 0)+boolToUint8(conf.FeeRate > 0)+boolToUint8(conf.MaxFee > 0) > 1 {
+		return errors.New("at most one of '--max-fee-rate', '--fee-rate' or '--max-fee' can be specified")
+	}
+
+	return nil
+}
+
+func boolToUint8(b bool) uint8 {
+	if b {
+		return 1
+	}
+	return 0
 }
 
 func combineNetworkFlags(dst, src *config.NetworkFlags) {
