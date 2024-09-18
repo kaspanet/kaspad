@@ -200,7 +200,7 @@ func (s *server) selectUTXOsWithPreselected(preSelectedUTXOs []*walletUTXO, allo
 		if isSendAll {
 			estimatedRecipientValue = totalValue
 		}
-		
+
 		fee, err = s.estimateFee(selectedUTXOs, feeRate, maxFee, estimatedRecipientValue)
 		if err != nil {
 			return false, err
@@ -261,8 +261,8 @@ func (s *server) selectUTXOsWithPreselected(preSelectedUTXOs []*walletUTXO, allo
 }
 
 func (s *server) estimateFee(selectedUTXOs []*libkaspawallet.UTXO, feeRate float64, maxFee uint64, recipientValue uint64) (uint64, error) {
-	fakePubKey := [util.PublicKeySize]byte{}
-	fakeAddr, err := util.NewAddressPublicKey(fakePubKey[:], s.params.Prefix)
+	fakePubKey := [util.PublicKeySizeECDSA]byte{}
+	fakeAddr, err := util.NewAddressPublicKeyECDSA(fakePubKey[:], s.params.Prefix) // We assume the worst case where the recipient address is ECDSA. In this case the scriptPubKey will be the longest.
 	if err != nil {
 		return 0, err
 	}
