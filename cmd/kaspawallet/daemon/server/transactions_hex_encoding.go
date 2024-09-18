@@ -1,4 +1,4 @@
-package main
+package server
 
 import (
 	"encoding/hex"
@@ -9,7 +9,7 @@ import (
 // We use a separator that is not in the hex alphabet, but which will not split selection with a double click
 const hexTransactionsSeparator = "_"
 
-func encodeTransactionsToHex(transactions [][]byte) string {
+func EncodeTransactionsToHex(transactions [][]byte) string {
 	transactionsInHex := make([]string, len(transactions))
 	for i, transaction := range transactions {
 		transactionsInHex[i] = hex.EncodeToString(transaction)
@@ -17,7 +17,7 @@ func encodeTransactionsToHex(transactions [][]byte) string {
 	return strings.Join(transactionsInHex, hexTransactionsSeparator)
 }
 
-func decodeTransactionsFromHex(transactionsHex string) ([][]byte, error) {
+func DecodeTransactionsFromHex(transactionsHex string) ([][]byte, error) {
 	splitTransactionsHexes := strings.Split(transactionsHex, hexTransactionsSeparator)
 	transactions := make([][]byte, len(splitTransactionsHexes))
 

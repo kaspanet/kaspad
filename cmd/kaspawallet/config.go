@@ -1,9 +1,10 @@
 package main
 
 import (
+	"os"
+
 	"github.com/kaspanet/kaspad/infrastructure/config"
 	"github.com/pkg/errors"
-	"os"
 
 	"github.com/jessevdk/go-flags"
 )
@@ -23,6 +24,9 @@ const (
 	startDaemonSubCmd               = "start-daemon"
 	versionSubCmd                   = "version"
 	getDaemonVersionSubCmd          = "get-daemon-version"
+	bumpFeeSubCmd                   = "bump-fee"
+	bumpFeeUnsignedSubCmd           = "bump-fee-unsigned"
+	broadcastReplacementSubCmd      = "broadcast-replacement"
 )
 
 const (
@@ -62,6 +66,9 @@ type sendConfig struct {
 	SendAmount               string   `long:"send-amount" short:"v" description:"An amount to send in Kaspa (e.g. 1234.12345678)"`
 	IsSendAll                bool     `long:"send-all" description:"Send all the Kaspa in the wallet (mutually exclusive with --send-amount). If --from-address was used, will send all only from the specified addresses."`
 	UseExistingChangeAddress bool     `long:"use-existing-change-address" short:"u" description:"Will use an existing change address (in case no change address was ever used, it will use a new one)"`
+	MaxFeeRate               float64  `long:"max-fee-rate" short:"m" description:"Maximum fee rate in Sompi/gram to use for the transaction. The wallet will take the minimum between the fee rate estimate from the connected node and this value."`
+	FeeRate                  float64  `long:"fee-rate" short:"r" description:"Fee rate in Sompi/gram to use for the transaction. This option will override any fee estimate from the connected node."`
+	MaxFee                   uint64   `long:"max-fee" short:"x" description:"Maximum fee in Sompi (not Sompi/gram) to use for the transaction. The wallet will take the minimum between the fee estimate from the connected node and this value. If no other fee policy is specified, it will set the max fee to 1 KAS"`
 	Verbose                  bool     `long:"show-serialized" short:"s" description:"Show a list of hex encoded sent transactions"`
 	config.NetworkFlags
 }
@@ -79,6 +86,9 @@ type createUnsignedTransactionConfig struct {
 	SendAmount               string   `long:"send-amount" short:"v" description:"An amount to send in Kaspa (e.g. 1234.12345678)"`
 	IsSendAll                bool     `long:"send-all" description:"Send all the Kaspa in the wallet (mutually exclusive with --send-amount)"`
 	UseExistingChangeAddress bool     `long:"use-existing-change-address" short:"u" description:"Will use an existing change address (in case no change address was ever used, it will use a new one)"`
+	MaxFeeRate               float64  `long:"max-fee-rate" short:"m" description:"Maximum fee rate in Sompi/gram to use for the transaction. The wallet will take the minimum between the fee rate estimate from the connected node and this value."`
+	FeeRate                  float64  `long:"fee-rate" short:"r" description:"Fee rate in Sompi/gram to use for the transaction. This option will override any fee estimate from the connected node."`
+	MaxFee                   uint64   `long:"max-fee" short:"x" description:"Maximum fee in Sompi (not Sompi/gram) to use for the transaction. The wallet will take the minimum between the fee estimate from the connected node and this value. If no other fee policy is specified, it will set the max fee to 1 KAS"`
 	config.NetworkFlags
 }
 
@@ -98,6 +108,7 @@ type broadcastConfig struct {
 }
 
 type parseConfig struct {
+	KeysFile        string `long:"keys-file" short:"f" description:"Keys file location (default: ~/.kaspawallet/keys.json (*nix), %USERPROFILE%\\AppData\\Local\\Kaspawallet\\key.json (Windows))"`
 	Transaction     string `long:"transaction" short:"t" description:"The transaction to parse (encoded in hex)"`
 	TransactionFile string `long:"transaction-file" short:"F" description:"The file containing the transaction to parse (encoded in hex)"`
 	Verbose         bool   `long:"verbose" short:"v" description:"Verbose: show transaction inputs"`
@@ -128,6 +139,31 @@ type dumpUnencryptedDataConfig struct {
 	KeysFile string `long:"keys-file" short:"f" description:"Keys file location (default: ~/.kaspawallet/keys.json (*nix), %USERPROFILE%\\AppData\\Local\\Kaspawallet\\key.json (Windows))"`
 	Password string `long:"password" short:"p" description:"Wallet password"`
 	Yes      bool   `long:"yes" short:"y" description:"Assume \"yes\" to all questions"`
+	config.NetworkFlags
+}
+
+type bumpFeeUnsignedConfig struct {
+	TxID                     string   `long:"txid" short:"i" description:"The transaction ID to bump the fee for"`
+	DaemonAddress            string   `long:"daemonaddress" short:"d" description:"Wallet daemon server to connect to"`
+	FromAddresses            []string `long:"from-address" short:"a" description:"Specific public address to send Kaspa from. Use multiple times to accept several addresses" required:"false"`
+	UseExistingChangeAddress bool     `long:"use-existing-change-address" short:"u" description:"Will use an existing change address (in case no change address was ever used, it will use a new one)"`
+	MaxFeeRate               float64  `long:"max-fee-rate" short:"m" description:"Maximum fee rate in Sompi/gram to use for the transaction. The wallet will take the minimum between the fee rate estimate from the connected node and this value."`
+	FeeRate                  float64  `long:"fee-rate" short:"r" description:"Fee rate in Sompi/gram to use for the transaction. This option will override any fee estimate from the connected node."`
+	MaxFee                   uint64   `long:"max-fee" short:"x" description:"Maximum fee in Sompi (not Sompi/gram) to use for the transaction. The wallet will take the minimum between the fee estimate from the connected node and this value. If no other fee policy is specified, it will set the max fee to 1 KAS"`
+	config.NetworkFlags
+}
+
+type bumpFeeConfig struct {
+	TxID                     string   `long:"txid" short:"i" description:"The transaction ID to bump the fee for"`
+	KeysFile                 string   `long:"keys-file" short:"f" description:"Keys file location (default: ~/.kaspawallet/keys.json (*nix), %USERPROFILE%\\AppData\\Local\\Kaspawallet\\key.json (Windows))"`
+	Password                 string   `long:"password" short:"p" description:"Wallet password"`
+	DaemonAddress            string   `long:"daemonaddress" short:"d" description:"Wallet daemon server to connect to"`
+	FromAddresses            []string `long:"from-address" short:"a" description:"Specific public address to send Kaspa from. Repeat multiple times (adding -a before each) to accept several addresses" required:"false"`
+	UseExistingChangeAddress bool     `long:"use-existing-change-address" short:"u" description:"Will use an existing change address (in case no change address was ever used, it will use a new one)"`
+	MaxFeeRate               float64  `long:"max-fee-rate" short:"m" description:"Maximum fee rate in Sompi/gram to use for the transaction. The wallet will take the minimum between the fee rate estimate from the connected node and this value."`
+	FeeRate                  float64  `long:"fee-rate" short:"r" description:"Fee rate in Sompi/gram to use for the transaction. This option will override any fee estimate from the connected node."`
+	MaxFee                   uint64   `long:"max-fee" short:"x" description:"Maximum fee in Sompi (not Sompi/gram) to use for the transaction. The wallet will take the minimum between the fee estimate from the connected node and this value. If no other fee policy is specified, it will set the max fee to 1 KAS"`
+	Verbose                  bool     `long:"show-serialized" short:"s" description:"Show a list of hex encoded sent transactions"`
 	config.NetworkFlags
 }
 
@@ -197,6 +233,12 @@ func parseCommandLine() (subCommand string, config interface{}) {
 	parser.AddCommand(versionSubCmd, "Get the wallet version", "Get the wallet version", &versionConfig{})
 	getDaemonVersionConf := &getDaemonVersionConfig{DaemonAddress: defaultListen}
 	parser.AddCommand(getDaemonVersionSubCmd, "Get the wallet daemon version", "Get the wallet daemon version", getDaemonVersionConf)
+	bumpFeeConf := &bumpFeeConfig{DaemonAddress: defaultListen}
+	parser.AddCommand(bumpFeeSubCmd, "Bump transaction fee (with signing and broadcast)", "Bump transaction fee (with signing and broadcast)", bumpFeeConf)
+	bumpFeeUnsignedConf := &bumpFeeUnsignedConfig{DaemonAddress: defaultListen}
+	parser.AddCommand(bumpFeeUnsignedSubCmd, "Bump transaction fee (without signing)", "Bump transaction fee (without signing)", bumpFeeUnsignedConf)
+	parser.AddCommand(broadcastReplacementSubCmd, "Broadcast the given transaction replacement",
+		"Broadcast the given transaction replacement", broadcastConf)
 
 	_, err := parser.Parse()
 	if err != nil {
@@ -267,6 +309,13 @@ func parseCommandLine() (subCommand string, config interface{}) {
 			printErrorAndExit(err)
 		}
 		config = broadcastConf
+	case broadcastReplacementSubCmd:
+		combineNetworkFlags(&broadcastConf.NetworkFlags, &cfg.NetworkFlags)
+		err := broadcastConf.ResolveNetwork(parser)
+		if err != nil {
+			printErrorAndExit(err)
+		}
+		config = broadcastConf
 	case parseSubCmd:
 		combineNetworkFlags(&parseConf.NetworkFlags, &cfg.NetworkFlags)
 		err := parseConf.ResolveNetwork(parser)
@@ -305,6 +354,32 @@ func parseCommandLine() (subCommand string, config interface{}) {
 	case versionSubCmd:
 	case getDaemonVersionSubCmd:
 		config = getDaemonVersionConf
+	case bumpFeeSubCmd:
+		combineNetworkFlags(&bumpFeeConf.NetworkFlags, &cfg.NetworkFlags)
+		err := bumpFeeConf.ResolveNetwork(parser)
+		if err != nil {
+			printErrorAndExit(err)
+		}
+
+		err = validateBumpFeeConfig(bumpFeeConf)
+		if err != nil {
+			printErrorAndExit(err)
+		}
+
+		config = bumpFeeConf
+	case bumpFeeUnsignedSubCmd:
+		combineNetworkFlags(&bumpFeeUnsignedConf.NetworkFlags, &cfg.NetworkFlags)
+		err := bumpFeeUnsignedConf.ResolveNetwork(parser)
+		if err != nil {
+			printErrorAndExit(err)
+		}
+
+		err = validateBumpFeeUnsignedConfig(bumpFeeUnsignedConf)
+		if err != nil {
+			printErrorAndExit(err)
+		}
+
+		config = bumpFeeUnsignedConf
 	}
 
 	return parser.Command.Active.Name, config
@@ -316,6 +391,19 @@ func validateCreateUnsignedTransactionConf(conf *createUnsignedTransactionConfig
 
 		return errors.New("exactly one of '--send-amount' or '--all' must be specified")
 	}
+
+	if conf.MaxFeeRate < 0 {
+		return errors.New("--max-fee-rate must be a positive number")
+	}
+
+	if conf.FeeRate < 0 {
+		return errors.New("--fee-rate must be a positive number")
+	}
+
+	if boolToUint8(conf.MaxFeeRate > 0)+boolToUint8(conf.FeeRate > 0)+boolToUint8(conf.MaxFee > 0) > 1 {
+		return errors.New("at most one of '--max-fee-rate', '--fee-rate' or '--max-fee' can be specified")
+	}
+
 	return nil
 }
 
@@ -325,7 +413,59 @@ func validateSendConfig(conf *sendConfig) error {
 
 		return errors.New("exactly one of '--send-amount' or '--all' must be specified")
 	}
+
+	if conf.MaxFeeRate < 0 {
+		return errors.New("--max-fee-rate must be a positive number")
+	}
+
+	if conf.FeeRate < 0 {
+		return errors.New("--fee-rate must be a positive number")
+	}
+
+	if boolToUint8(conf.MaxFeeRate > 0)+boolToUint8(conf.FeeRate > 0)+boolToUint8(conf.MaxFee > 0) > 1 {
+		return errors.New("at most one of '--max-fee-rate', '--fee-rate' or '--max-fee' can be specified")
+	}
+
 	return nil
+}
+
+func validateBumpFeeConfig(conf *bumpFeeConfig) error {
+	if conf.MaxFeeRate < 0 {
+		return errors.New("--max-fee-rate must be a positive number")
+	}
+
+	if conf.FeeRate < 0 {
+		return errors.New("--fee-rate must be a positive number")
+	}
+
+	if boolToUint8(conf.MaxFeeRate > 0)+boolToUint8(conf.FeeRate > 0)+boolToUint8(conf.MaxFee > 0) > 1 {
+		return errors.New("at most one of '--max-fee-rate', '--fee-rate' or '--max-fee' can be specified")
+	}
+
+	return nil
+}
+
+func validateBumpFeeUnsignedConfig(conf *bumpFeeUnsignedConfig) error {
+	if conf.MaxFeeRate < 0 {
+		return errors.New("--max-fee-rate must be a positive number")
+	}
+
+	if conf.FeeRate < 0 {
+		return errors.New("--fee-rate must be a positive number")
+	}
+
+	if boolToUint8(conf.MaxFeeRate > 0)+boolToUint8(conf.FeeRate > 0)+boolToUint8(conf.MaxFee > 0) > 1 {
+		return errors.New("at most one of '--max-fee-rate', '--fee-rate' or '--max-fee' can be specified")
+	}
+
+	return nil
+}
+
+func boolToUint8(b bool) uint8 {
+	if b {
+		return 1
+	}
+	return 0
 }
 
 func combineNetworkFlags(dst, src *config.NetworkFlags) {

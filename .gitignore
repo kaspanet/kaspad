@@ -53,6 +53,7 @@ _testmain.go
 debug
 debug.test
 __debug_bin
+*__debug_*
 
 # CI
 version.txt

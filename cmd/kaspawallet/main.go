@@ -20,6 +20,8 @@ func main() {
 		err = sign(config.(*signConfig))
 	case broadcastSubCmd:
 		err = broadcast(config.(*broadcastConfig))
+	case broadcastReplacementSubCmd:
+		err = broadcastReplacement(config.(*broadcastConfig))
 	case parseSubCmd:
 		err = parse(config.(*parseConfig))
 	case showAddressesSubCmd:
@@ -36,6 +38,10 @@ func main() {
 		showVersion()
 	case getDaemonVersionSubCmd:
 		err = getDaemonVersion(config.(*getDaemonVersionConfig))
+	case bumpFeeSubCmd:
+		err = bumpFee(config.(*bumpFeeConfig))
+	case bumpFeeUnsignedSubCmd:
+		err = bumpFeeUnsigned(config.(*bumpFeeUnsignedConfig))
 	default:
 		err = errors.Errorf("Unknown sub-command '%s'\n", subCmd)
 	}

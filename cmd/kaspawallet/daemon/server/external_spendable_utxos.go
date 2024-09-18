@@ -21,7 +21,15 @@ func (s *server) GetExternalSpendableUTXOs(_ context.Context, request *pb.GetExt
 	if err != nil {
 		return nil, err
 	}
-	selectedUTXOs, err := s.selectExternalSpendableUTXOs(externalUTXOs, request.Address)
+
+	estimate, err := s.rpcClient.GetFeeEstimate()
+	if err != nil {
+		return nil, err
+	}
+
+	feeRate := estimate.Estimate.NormalBuckets[0].Feerate
+
+	selectedUTXOs, err := s.selectExternalSpendableUTXOs(externalUTXOs, feeRate)
 	if err != nil {
 		return nil, err
 	}
@@ -30,7 +38,7 @@ func (s *server) GetExternalSpendableUTXOs(_ context.Context, request *pb.GetExt
 	}, nil
 }
 
-func (s *server) selectExternalSpendableUTXOs(externalUTXOs *appmessage.GetUTXOsByAddressesResponseMessage, address string) ([]*pb.UtxosByAddressesEntry, error) {
+func (s *server) selectExternalSpendableUTXOs(externalUTXOs *appmessage.GetUTXOsByAddressesResponseMessage, feeRate float64) ([]*pb.UtxosByAddressesEntry, error) {
 	dagInfo, err := s.rpcClient.GetBlockDAGInfo()
 	if err != nil {
 		return nil, err
@@ -42,8 +50,13 @@ func (s *server) selectExternalSpendableUTXOs(externalUTXOs *appmessage.GetUTXOs
 	//we do not make because we do not know size, because of unspendable utxos
 	var selectedExternalUtxos []*pb.UtxosByAddressesEntry
 
+	feePerInput, err := s.estimateFeePerInput(feeRate)
+	if err != nil {
+		return nil, err
+	}
+
 	for _, entry := range externalUTXOs.Entries {
-		if !isExternalUTXOSpendable(entry, daaScore, maturity) {
+		if !isExternalUTXOSpendable(entry, daaScore, maturity, feePerInput) {
 			continue
 		}
 		selectedExternalUtxos = append(selectedExternalUtxos, libkaspawallet.AppMessageUTXOToKaspawalletdUTXO(entry))
@@ -52,7 +65,7 @@ func (s *server) selectExternalSpendableUTXOs(externalUTXOs *appmessage.GetUTXOs
 	return selectedExternalUtxos, nil
 }
 
-func isExternalUTXOSpendable(entry *appmessage.UTXOsByAddressesEntry, virtualDAAScore uint64, coinbaseMaturity uint64) bool {
+func isExternalUTXOSpendable(entry *appmessage.UTXOsByAddressesEntry, virtualDAAScore uint64, coinbaseMaturity uint64, feePerInput uint64) bool {
 	if !entry.UTXOEntry.IsCoinbase {
 		return true
 	} else if entry.UTXOEntry.Amount <= feePerInput {

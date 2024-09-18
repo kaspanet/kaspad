@@ -721,3 +721,221 @@ message GetCoinSupplyResponseMessage{
 
         RPCError error = 1000;
 }
+
+message PingRequestMessage{
+}
+
+message PingResponseMessage { RPCError error = 1000; }
+
+message ProcessMetrics {
+  uint64 residentSetSize = 1;
+  uint64 virtualMemorySize = 2;
+  uint32 coreNum = 3;
+  float cpuUsage = 4;
+  uint32 fdNum = 5;
+  uint64 diskIoReadBytes = 6;
+  uint64 diskIoWriteBytes = 7;
+  float diskIoReadPerSec = 8;
+  float diskIoWritePerSec = 9;
+}
+
+message ConnectionMetrics {
+  uint32 borshLiveConnections = 31;
+  uint64 borshConnectionAttempts = 32;
+  uint64 borshHandshakeFailures = 33;
+
+  uint32 jsonLiveConnections = 41;
+  uint64 jsonConnectionAttempts = 42;
+  uint64 jsonHandshakeFailures = 43;
+
+  uint32 activePeers = 51;
+}
+
+message BandwidthMetrics {
+  uint64 borshBytesTx = 61;
+  uint64 borshBytesRx = 62;
+  uint64 jsonBytesTx = 63;
+  uint64 jsonBytesRx = 64;
+  uint64 grpcP2pBytesTx = 65;
+  uint64 grpcP2pBytesRx = 66;
+  uint64 grpcUserBytesTx = 67;
+  uint64 grpcUserBytesRx = 68;
+}
+
+message ConsensusMetrics {
+  uint64 blocksSubmitted = 1;
+  uint64 headerCounts = 2;
+  uint64 depCounts = 3;
+  uint64 bodyCounts = 4;
+  uint64 txsCounts = 5;
+  uint64 chainBlockCounts = 6;
+  uint64 massCounts = 7;
+
+  uint64 blockCount = 11;
+  uint64 headerCount = 12;
+  uint64 mempoolSize = 13;
+  uint32 tipHashesCount = 14;
+  double difficulty = 15;
+  uint64 pastMedianTime = 16;
+  uint32 virtualParentHashesCount = 17;
+  uint64 virtualDaaScore = 18;
+}
+
+message StorageMetrics { uint64 storageSizeBytes = 1; }
+
+message GetConnectionsRequestMessage { bool includeProfileData = 1; }
+
+message ConnectionsProfileData {
+  double cpuUsage = 1;
+  uint64 memoryUsage = 2;
+}
+
+message GetConnectionsResponseMessage {
+  uint32 clients = 1;
+  uint32 peers = 2;
+  ConnectionsProfileData profileData = 3;
+  RPCError error = 1000;
+}
+
+message GetSystemInfoRequestMessage {}
+
+message GetSystemInfoResponseMessage {
+  string version = 1;
+  string systemId = 2;
+  string gitHash = 3;
+  uint32 coreNum = 4;
+  uint64 totalMemory = 5;
+  uint32 fdLimit = 6;
+  RPCError error = 1000;
+}
+
+message GetMetricsRequestMessage {
+  bool processMetrics = 1;
+  bool connectionMetrics = 2;
+  bool bandwidthMetrics = 3;
+  bool consensusMetrics = 4;
+  bool storageMetrics = 5;
+  bool customMetrics = 6;
+}
+
+message GetMetricsResponseMessage {
+  uint64 serverTime = 1;
+  ProcessMetrics processMetrics = 11;
+  ConnectionMetrics connectionMetrics = 12;
+  BandwidthMetrics bandwidthMetrics = 13;
+  ConsensusMetrics consensusMetrics = 14;
+  StorageMetrics storageMetrics = 15;
+  RPCError error = 1000;
+}
+
+message GetServerInfoRequestMessage {}
+
+message GetServerInfoResponseMessage {
+  uint32 rpcApiVersion = 1;
+  uint32 rpcApiRevision = 2;
+  string serverVersion = 3;
+  string networkId = 4;
+  bool hasUtxoIndex = 5;
+  bool isSynced = 6;
+  uint64 virtualDaaScore = 7;
+  RPCError error = 1000;
+}
+
+message GetSyncStatusRequestMessage {}
+
+message GetSyncStatusResponseMessage {
+  bool isSynced = 1;
+  RPCError error = 1000;
+}
+
+message GetDaaScoreTimestampEstimateRequestMessage {
+  repeated uint64 daaScores = 1;
+}
+
+message GetDaaScoreTimestampEstimateResponseMessage{
+  repeated uint64 timestamps = 1;
+  RPCError error = 1000;
+}
+
+message RpcFeerateBucket {
+  // Fee/mass of a transaction in `sompi/gram` units
+  double feerate = 1;
+  double estimatedSeconds = 2;
+}
+
+// Data required for making fee estimates.
+//
+// Feerate values represent fee/mass of a transaction in `sompi/gram` units.
+// Given a feerate value recommendation, calculate the required fee by
+// taking the transaction mass and multiplying it by feerate: `fee = feerate *
+// mass(tx)`
+message RpcFeeEstimate {
+  // Top-priority feerate bucket. Provides an estimation of the feerate required
+  // for sub-second DAG inclusion.
+  RpcFeerateBucket priority_bucket = 1;
+
+  // A vector of *normal* priority feerate values. The first value of this
+  // vector is guaranteed to exist and provide an estimation for sub-*minute*
+  // DAG inclusion. All other values will have shorter estimation times than all
+  // `lowBuckets` values. Therefor by chaining `[priority] | normal | low` and
+  // interpolating between them, one can compose a complete feerate function on
+  // the client side. The API makes an effort to sample enough "interesting"
+  // points on the feerate-to-time curve, so that the interpolation is
+  // meaningful.
+  repeated RpcFeerateBucket normalBuckets = 2;
+
+  // A vector of *low* priority feerate values. The first value of this vector
+  // is guaranteed to exist and provide an estimation for sub-*hour* DAG
+  // inclusion.
+  repeated RpcFeerateBucket lowBuckets = 3;
+}
+
+message RpcFeeEstimateVerboseExperimentalData {
+  uint64 mempoolReadyTransactionsCount = 1;
+  uint64 mempoolReadyTransactionsTotalMass = 2;
+  uint64 networkMassPerSecond = 3;
+
+  double nextBlockTemplateFeerateMin = 11;
+  double nextBlockTemplateFeerateMedian = 12;
+  double nextBlockTemplateFeerateMax = 13;
+}
+
+message GetFeeEstimateRequestMessage {}
+
+message GetFeeEstimateResponseMessage {
+  RpcFeeEstimate estimate = 1;
+  RPCError error = 1000;
+}
+
+message GetFeeEstimateExperimentalRequestMessage { bool verbose = 1; }
+
+message GetFeeEstimateExperimentalResponseMessage {
+  RpcFeeEstimate estimate = 1;
+  RpcFeeEstimateVerboseExperimentalData verbose = 2;
+
+  RPCError error = 1000;
+}
+
+message GetCurrentBlockColorRequestMessage { string hash = 1; }
+
+message GetCurrentBlockColorResponseMessage {
+  bool blue = 1;
+
+  RPCError error = 1000;
+}
+
+// SubmitTransactionReplacementRequestMessage submits a transaction to the
+// mempool, applying a mandatory Replace by Fee policy
+message SubmitTransactionReplacementRequestMessage {
+  RpcTransaction transaction = 1;
+}
+
+message SubmitTransactionReplacementResponseMessage {
+  // The transaction ID of the submitted transaction
+  string transactionId = 1;
+
+  // The previous transaction replaced in the mempool by the newly submitted one
+  RpcTransaction replacedTransaction = 2;
+
+  RPCError error = 1000;
+}

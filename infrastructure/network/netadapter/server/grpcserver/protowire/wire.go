@@ -968,6 +968,27 @@ func toRPCPayload(message appmessage.Message) (isKaspadMessage_Payload, error) {
 			return nil, err
 		}
 		return payload, nil
+	case *appmessage.GetFeeEstimateRequestMessage:
+		payload := new(KaspadMessage_GetFeeEstimateRequest)
+		err := payload.fromAppMessage(message)
+		if err != nil {
+			return nil, err
+		}
+		return payload, nil
+	case *appmessage.SubmitTransactionReplacementRequestMessage:
+		payload := new(KaspadMessage_SubmitTransactionReplacementRequest)
+		err := payload.fromAppMessage(message)
+		if err != nil {
+			return nil, err
+		}
+		return payload, nil
+	case *appmessage.SubmitTransactionReplacementResponseMessage:
+		payload := new(KaspadMessage_SubmitTransactionReplacementResponse)
+		err := payload.fromAppMessage(message)
+		if err != nil {
+			return nil, err
+		}
+		return payload, nil
 	default:
 		return nil, nil
 	}
