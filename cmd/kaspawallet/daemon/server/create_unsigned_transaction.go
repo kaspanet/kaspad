@@ -198,7 +198,7 @@ func (s *server) selectUTXOsWithPreselected(preSelectedUTXOs []*walletUTXO, allo
 		totalValue += utxo.UTXOEntry.Amount()
 
 		// We're overestimating a bit by assuming that any transaction will have a change output
-		fee, err = s.estimateFee(selectedUTXOs, feeRate, maxFee, true)
+		fee, err = s.estimateFee(selectedUTXOs, feeRate, maxFee, spendAmount)
 		if err != nil {
 			return false, err
 		}
@@ -257,7 +257,7 @@ func (s *server) selectUTXOsWithPreselected(preSelectedUTXOs []*walletUTXO, allo
 	return selectedUTXOs, totalReceived, totalValue - totalSpend, nil
 }
 
-func (s *server) estimateFee(selectedUTXOs []*libkaspawallet.UTXO, feeRate float64, maxFee uint64, assumeChange bool) (uint64, error) {
+func (s *server) estimateFee(selectedUTXOs []*libkaspawallet.UTXO, feeRate float64, maxFee uint64, recipientValue uint64) (uint64, error) {
 	fakePubKey := [util.PublicKeySize]byte{}
 	fakeAddr, err := util.NewAddressPublicKey(fakePubKey[:], s.params.Prefix)
 	if err != nil {
@@ -271,15 +271,15 @@ func (s *server) estimateFee(selectedUTXOs []*libkaspawallet.UTXO, feeRate float
 
 	// This is an approximation for the distribution of value between the recipient output and the change output.
 	var mockPayments []*libkaspawallet.Payment
-	if assumeChange {
+	if totalValue > recipientValue {
 		mockPayments = []*libkaspawallet.Payment{
 			{
 				Address: fakeAddr,
-				Amount:  totalValue * 99 / 100,
+				Amount:  recipientValue,
 			},
 			{
 				Address: fakeAddr,
-				Amount:  totalValue / 100,
+				Amount:  totalValue - recipientValue, // We ignore the fee since we expect it to be insignificant in mass calculation.
 			},
 		}
 	} else {

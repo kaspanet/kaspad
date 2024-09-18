@@ -72,7 +72,7 @@ func (s *server) mergeTransaction(
 		totalValue += output.Value
 	}
 	// We're overestimating a bit by assuming that any transaction will have a change output
-	fee, err := s.estimateFee(utxos, feeRate, maxFee, true)
+	fee, err := s.estimateFee(utxos, feeRate, maxFee, sentValue)
 	if err != nil {
 		return nil, err
 	}
@@ -253,7 +253,7 @@ func (s *server) createSplitTransaction(transaction *serialization.PartiallySign
 		totalSompi += selectedUTXOs[i-startIndex].UTXOEntry.Amount()
 	}
 	if len(selectedUTXOs) != 0 {
-		fee, err := s.estimateFee(selectedUTXOs, feeRate, maxFee, false)
+		fee, err := s.estimateFee(selectedUTXOs, feeRate, maxFee, totalSompi)
 		if err != nil {
 			return nil, err
 		}
