@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/daemon/pb"
+	"github.com/pkg/errors"
 )
 
 func (s *server) Send(_ context.Context, request *pb.SendRequest) (*pb.SendResponse, error) {
@@ -24,7 +25,7 @@ func (s *server) Send(_ context.Context, request *pb.SendRequest) (*pb.SendRespo
 
 	txIDs, err := s.broadcast(signedTransactions, false)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrapf(err, "error broadcasting transactions %s", EncodeTransactionsToHex(signedTransactions))
 	}
 
 	return &pb.SendResponse{TxIDs: txIDs, SignedTransactions: signedTransactions}, nil

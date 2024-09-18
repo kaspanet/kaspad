@@ -8,6 +8,7 @@ import (
 
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/daemon/client"
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/daemon/pb"
+	"github.com/kaspanet/kaspad/cmd/kaspawallet/daemon/server"
 	"github.com/pkg/errors"
 )
 
@@ -37,7 +38,7 @@ func broadcastReplacement(conf *broadcastConfig) error {
 		transactionsHex = strings.TrimSpace(string(transactionHexBytes))
 	}
 
-	transactions, err := decodeTransactionsFromHex(transactionsHex)
+	transactions, err := server.DecodeTransactionsFromHex(transactionsHex)
 	if err != nil {
 		return err
 	}

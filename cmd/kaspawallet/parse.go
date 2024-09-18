@@ -38,7 +38,7 @@ func parse(conf *parseConfig) error {
 		transactionHex = strings.TrimSpace(string(transactionHexBytes))
 	}
 
-	transactions, err := decodeTransactionsFromHex(transactionHex)
+	transactions, err := server.DecodeTransactionsFromHex(transactionHex)
 	if err != nil {
 		return err
 	}

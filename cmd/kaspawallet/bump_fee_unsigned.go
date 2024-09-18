@@ -7,6 +7,7 @@ import (
 
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/daemon/client"
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/daemon/pb"
+	"github.com/kaspanet/kaspad/cmd/kaspawallet/daemon/server"
 )
 
 func bumpFeeUnsigned(conf *bumpFeeUnsignedConfig) error {
@@ -51,7 +52,7 @@ func bumpFeeUnsigned(conf *bumpFeeUnsignedConfig) error {
 	}
 
 	fmt.Fprintln(os.Stderr, "Created unsigned transaction")
-	fmt.Println(encodeTransactionsToHex(response.Transactions))
+	fmt.Println(server.EncodeTransactionsToHex(response.Transactions))
 
 	return nil
 }
