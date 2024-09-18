@@ -196,9 +196,12 @@ func (s *server) selectUTXOsWithPreselected(preSelectedUTXOs []*walletUTXO, allo
 		})
 
 		totalValue += utxo.UTXOEntry.Amount()
-
-		// We're overestimating a bit by assuming that any transaction will have a change output
-		fee, err = s.estimateFee(selectedUTXOs, feeRate, maxFee, spendAmount)
+		estimatedRecipientValue := spendAmount
+		if isSendAll {
+			estimatedRecipientValue = totalValue
+		}
+		
+		fee, err = s.estimateFee(selectedUTXOs, feeRate, maxFee, estimatedRecipientValue)
 		if err != nil {
 			return false, err
 		}
