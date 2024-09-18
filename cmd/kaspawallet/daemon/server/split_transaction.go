@@ -23,6 +23,7 @@ import (
 // paying to the original transaction's payee.
 func (s *server) maybeAutoCompoundTransaction(transaction *serialization.PartiallySignedTransaction, toAddress util.Address,
 	changeAddress util.Address, changeWalletAddress *walletAddress, feeRate float64, maxFee uint64) ([][]byte, error) {
+
 	splitTransactions, err := s.maybeSplitAndMergeTransaction(transaction, toAddress, changeAddress, changeWalletAddress, feeRate, maxFee)
 	if err != nil {
 		return nil, err
@@ -104,8 +105,48 @@ func (s *server) mergeTransaction(
 		s.keysFile.MinimumSignatures, payments, utxos)
 }
 
+func (s *server) transactionFeeRate(psTx *serialization.PartiallySignedTransaction) (float64, error) {
+	totalOuts := 0
+	for _, output := range psTx.Tx.Outputs {
+		totalOuts += int(output.Value)
+	}
+
+	totalIns := 0
+	for _, input := range psTx.PartiallySignedInputs {
+		totalIns += int(input.PrevOutput.Value)
+	}
+
+	if totalIns < totalOuts {
+		return 0, errors.Errorf("Transaction don't have enough funds to pay for the outputs")
+	}
+	fee := totalIns - totalOuts
+	mass, err := s.estimateComputeMassAfterSignatures(psTx)
+	if err != nil {
+		return 0, err
+	}
+	return float64(fee) / float64(mass), nil
+}
+
+func (s *server) checkTransactionFeeRate(psTx *serialization.PartiallySignedTransaction, maxFee uint64) error {
+	feeRate, err := s.transactionFeeRate(psTx)
+	if err != nil {
+		return err
+	}
+
+	if feeRate < 1 {
+		return errors.Errorf("setting --max-fee to %d results in a fee rate of %f, which is below the minimum allowed fee rate of 1 sompi/gram", maxFee, feeRate)
+	}
+
+	return nil
+}
+
 func (s *server) maybeSplitAndMergeTransaction(transaction *serialization.PartiallySignedTransaction, toAddress util.Address,
 	changeAddress util.Address, changeWalletAddress *walletAddress, feeRate float64, maxFee uint64) ([]*serialization.PartiallySignedTransaction, error) {
+
+	err := s.checkTransactionFeeRate(transaction, maxFee)
+	if err != nil {
+		return nil, err
+	}
 
 	transactionMass, err := s.estimateComputeMassAfterSignatures(transaction)
 	if err != nil {
@@ -127,6 +168,11 @@ func (s *server) maybeSplitAndMergeTransaction(transaction *serialization.Partia
 		endIndex := startIndex + inputCountPerSplit
 		var err error
 		splitTransactions[i], err = s.createSplitTransaction(transaction, changeAddress, startIndex, endIndex, feeRate, maxFee)
+		if err != nil {
+			return nil, err
+		}
+
+		err = s.checkTransactionFeeRate(splitTransactions[i], maxFee)
 		if err != nil {
 			return nil, err
 		}
