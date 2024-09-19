@@ -2,6 +2,7 @@ package rpccontext
 
 import (
 	"encoding/hex"
+	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/txscript"
 	"github.com/kaspanet/kaspad/util"
 	"github.com/pkg/errors"
@@ -9,6 +10,38 @@ import (
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/domain/utxoindex"
 )
+
+// OutpointDAAScoreEntry is used for finding a batch of UTXO entries with consecutive DAA score
+type OutpointDAAScoreEntry struct {
+	DAAScore uint64
+	Outpoint externalapi.DomainOutpoint
+}
+
+// ConvertUTXOOutpointEntryBatchToUTXOsByAddressesEntries converts
+// a batch of UTXOOutpointEntryPairs to a slice of UTXOsByAddressesEntry
+func ConvertUTXOOutpointEntryBatchToUTXOsByAddressesEntries(
+	address string, pairs utxoindex.UTXOOutpointEntryPairs,
+	batch []OutpointDAAScoreEntry) []*appmessage.UTXOsByAddressesEntry {
+	utxosByAddressesEntries := make([]*appmessage.UTXOsByAddressesEntry, 0, len(batch))
+	for _, scoreEntry := range batch {
+		outpoint := scoreEntry.Outpoint
+		utxoEntry := pairs[outpoint]
+		utxosByAddressesEntries = append(utxosByAddressesEntries, &appmessage.UTXOsByAddressesEntry{
+			Address: address,
+			Outpoint: &appmessage.RPCOutpoint{
+				TransactionID: outpoint.TransactionID.String(),
+				Index:         outpoint.Index,
+			},
+			UTXOEntry: &appmessage.RPCUTXOEntry{
+				Amount:          utxoEntry.Amount(),
+				ScriptPublicKey: &appmessage.RPCScriptPublicKey{Script: hex.EncodeToString(utxoEntry.ScriptPublicKey().Script), Version: utxoEntry.ScriptPublicKey().Version},
+				BlockDAAScore:   utxoEntry.BlockDAAScore(),
+				IsCoinbase:      utxoEntry.IsCoinbase(),
+			},
+		})
+	}
+	return utxosByAddressesEntries
+}
 
 // ConvertUTXOOutpointEntryPairsToUTXOsByAddressesEntries converts
 // UTXOOutpointEntryPairs to a slice of UTXOsByAddressesEntry

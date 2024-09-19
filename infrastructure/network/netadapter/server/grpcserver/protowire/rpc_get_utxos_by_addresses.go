@@ -14,7 +14,9 @@ func (x *KaspadMessage_GetUtxosByAddressesRequest) toAppMessage() (appmessage.Me
 
 func (x *KaspadMessage_GetUtxosByAddressesRequest) fromAppMessage(message *appmessage.GetUTXOsByAddressesRequestMessage) error {
 	x.GetUtxosByAddressesRequest = &GetUtxosByAddressesRequestMessage{
-		Addresses: message.Addresses,
+		Addresses:          message.Addresses,
+		BatchDaaScoreStart: message.BatchDaaScoreStart,
+		BatchSize:          message.BatchSize,
 	}
 	return nil
 }
@@ -24,7 +26,9 @@ func (x *GetUtxosByAddressesRequestMessage) toAppMessage() (appmessage.Message, 
 		return nil, errors.Wrapf(errorNil, "GetUtxosByAddressesRequestMessage is nil")
 	}
 	return &appmessage.GetUTXOsByAddressesRequestMessage{
-		Addresses: x.Addresses,
+		Addresses:          x.Addresses,
+		BatchDaaScoreStart: x.BatchDaaScoreStart,
+		BatchSize:          x.BatchSize,
 	}, nil
 }
 

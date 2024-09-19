@@ -9,9 +9,9 @@ import (
 
 // HandleGetVirtualSelectedParentChainFromBlock handles the respectively named RPC command
 func HandleGetVirtualSelectedParentChainFromBlock(context *rpccontext.Context, _ *router.Router, request appmessage.Message) (appmessage.Message, error) {
-	getVirtualSelectedParentChainFromBlockRequest := request.(*appmessage.GetVirtualSelectedParentChainFromBlockRequestMessage)
+	chainRequest := request.(*appmessage.GetVirtualSelectedParentChainFromBlockRequestMessage)
 
-	startHash, err := externalapi.NewDomainHashFromString(getVirtualSelectedParentChainFromBlockRequest.StartHash)
+	startHash, err := externalapi.NewDomainHashFromString(chainRequest.StartHash)
 	if err != nil {
 		errorMessage := &appmessage.GetVirtualSelectedParentChainFromBlockResponseMessage{}
 		errorMessage.Error = appmessage.RPCErrorf("Could not parse startHash: %s", err)
@@ -22,14 +22,22 @@ func HandleGetVirtualSelectedParentChainFromBlock(context *rpccontext.Context, _
 	if err != nil {
 		response := &appmessage.GetVirtualSelectedParentChainFromBlockResponseMessage{}
 		response.Error = appmessage.RPCErrorf("Could not build virtual "+
-			"selected parent chain from %s: %s", getVirtualSelectedParentChainFromBlockRequest.StartHash, err)
+			"selected parent chain from %s: %s", chainRequest.StartHash, err)
 		return response, nil
 	}
 
+	if chainRequest.BatchSize > 0 && uint64(len(virtualSelectedParentChain.Added)) > chainRequest.BatchSize {
+		// Send at most `BatchSize` added chain blocks
+		virtualSelectedParentChain.Added = virtualSelectedParentChain.Added[:chainRequest.BatchSize]
+	}
+
 	chainChangedNotification, err := context.ConvertVirtualSelectedParentChainChangesToChainChangedNotificationMessage(
-		virtualSelectedParentChain, getVirtualSelectedParentChainFromBlockRequest.IncludeAcceptedTransactionIDs)
+		virtualSelectedParentChain, chainRequest.IncludeAcceptedTransactionIDs)
 	if err != nil {
-		return nil, err
+		response := &appmessage.GetVirtualSelectedParentChainFromBlockResponseMessage{}
+		response.Error = appmessage.RPCErrorf("Could not load acceptance data for virtual "+
+			"selected parent chain from %s: %s", chainRequest.StartHash, err)
+		return response, nil
 	}
 
 	response := appmessage.NewGetVirtualSelectedParentChainFromBlockResponseMessage(
