@@ -42,11 +42,13 @@ func NewNetAdapter(cfg *config.Config) (*NetAdapter, error) {
 	if err != nil {
 		return nil, err
 	}
+	// p2pServer is a gRCP server for internodes communication
 	p2pServer, err := grpcserver.NewP2PServer(cfg.Listeners)
 	if err != nil {
 		return nil, err
 	}
-	rpcServer, err := grpcserver.NewRPCServer(cfg.RPCListeners, cfg.RPCMaxClients)
+	// rpcServer is for gRCP miner, wallet and certain kaspactl utility communications
+	rpcServer, err := grpcserver.NewRPCServer(cfg.RPCListeners, cfg.RPCMaxClients, cfg.RPCAuth, cfg.RPCCert, cfg.RPCKey)
 	if err != nil {
 		return nil, err
 	}
