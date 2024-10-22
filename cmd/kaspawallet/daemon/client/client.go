@@ -2,8 +2,9 @@ package client
 
 import (
 	"context"
-	"github.com/kaspanet/kaspad/cmd/kaspawallet/daemon/server"
 	"time"
+
+	"github.com/kaspanet/kaspad/cmd/kaspawallet/daemon/server"
 
 	"github.com/pkg/errors"
 

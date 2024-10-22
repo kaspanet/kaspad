@@ -8,16 +8,14 @@ on:
     types: [opened, synchronize, edited]
 
 jobs:
-
   build:
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-        os: [ ubuntu-latest, macos-latest ]
+        os: [ubuntu-latest, macos-latest]
     name: Tests, ${{ matrix.os }}
     steps:
-
       - name: Fix CRLF on Windows
         if: runner.os == 'Windows'
         run: git config --global core.autocrlf false
@@ -33,8 +31,7 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v2
         with:
-          go-version: 1.19
-
+          go-version: 1.23
 
       # Source: https://github.com/actions/cache/blob/main/examples.md#go---modules
       - name: Go Cache
@@ -49,16 +46,14 @@ jobs:
         shell: bash
         run: ./build_and_test.sh -v
 
-
   stability-test-fast:
     runs-on: ubuntu-latest
     name: Fast stability tests, ${{ github.head_ref }}
     steps:
-
       - name: Setup Go
         uses: actions/setup-go@v2
         with:
-          go-version: 1.19
+          go-version: 1.23
 
       - name: Checkout
         uses: actions/checkout@v2
@@ -75,7 +70,6 @@ jobs:
         working-directory: stability-tests
         run: ./install_and_test.sh
 
-
   coverage:
     runs-on: ubuntu-latest
     name: Produce code coverage
@@ -86,7 +80,7 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v2
         with:
-          go-version: 1.19
+          go-version: 1.23
 
       - name: Delete the stability tests from coverage
         run: rm -r stability-tests

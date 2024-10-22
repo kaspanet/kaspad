@@ -17,7 +17,7 @@ func (x *KaspadMessage_GetCurrentNetworkResponse) toAppMessage() (appmessage.Mes
 	if x == nil {
 		return nil, errors.Wrapf(errorNil, "KaspadMessage_GetCurrentNetworkResponse is nil")
 	}
-	return x.toAppMessage()
+	return x.GetCurrentNetworkResponse.toAppMessage()
 }
 
 func (x *KaspadMessage_GetCurrentNetworkResponse) fromAppMessage(message *appmessage.GetCurrentNetworkResponseMessage) error {

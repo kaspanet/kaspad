@@ -8,10 +8,9 @@ import (
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/daemon/client"
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/daemon/pb"
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/daemon/server"
-	"github.com/kaspanet/kaspad/cmd/kaspawallet/utils"
 )
 
-func createUnsignedTransaction(conf *createUnsignedTransactionConfig) error {
+func bumpFeeUnsigned(conf *bumpFeeUnsignedConfig) error {
 	daemonClient, tearDown, err := client.Connect(conf.DaemonAddress)
 	if err != nil {
 		return err
@@ -21,13 +20,8 @@ func createUnsignedTransaction(conf *createUnsignedTransactionConfig) error {
 	ctx, cancel := context.WithTimeout(context.Background(), daemonTimeout)
 	defer cancel()
 
-	var sendAmountSompi uint64
-
-	if !conf.IsSendAll {
-		sendAmountSompi, err = utils.KasToSompi(conf.SendAmount)
-		if err != nil {
-			return err
-		}
+	if err != nil {
+		return err
 	}
 
 	var feePolicy *pb.FeePolicy
@@ -47,11 +41,9 @@ func createUnsignedTransaction(conf *createUnsignedTransactionConfig) error {
 		}
 	}
 
-	response, err := daemonClient.CreateUnsignedTransactions(ctx, &pb.CreateUnsignedTransactionsRequest{
+	response, err := daemonClient.BumpFee(ctx, &pb.BumpFeeRequest{
+		TxID:                     conf.TxID,
 		From:                     conf.FromAddresses,
-		Address:                  conf.ToAddress,
-		Amount:                   sendAmountSompi,
-		IsSendAll:                conf.IsSendAll,
 		UseExistingChangeAddress: conf.UseExistingChangeAddress,
 		FeePolicy:                feePolicy,
 	})
@@ -60,7 +52,7 @@ func createUnsignedTransaction(conf *createUnsignedTransactionConfig) error {
 	}
 
 	fmt.Fprintln(os.Stderr, "Created unsigned transaction")
-	fmt.Println(server.EncodeTransactionsToHex(response.UnsignedTransactions))
+	fmt.Println(server.EncodeTransactionsToHex(response.Transactions))
 
 	return nil
 }

@@ -10,18 +10,17 @@ import (
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/daemon/pb"
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/keys"
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/libkaspawallet"
-	"github.com/kaspanet/kaspad/cmd/kaspawallet/utils"
 	"github.com/pkg/errors"
 )
 
-func send(conf *sendConfig) error {
+func bumpFee(conf *bumpFeeConfig) error {
 	keysFile, err := keys.ReadKeysFile(conf.NetParams(), conf.KeysFile)
 	if err != nil {
 		return err
 	}
 
 	if len(keysFile.ExtendedPublicKeys) > len(keysFile.EncryptedMnemonics) {
-		return errors.Errorf("Cannot use 'send' command for multisig wallet without all of the keys")
+		return errors.Errorf("Cannot use 'bump-fee' command for multisig wallet without all of the keys")
 	}
 
 	daemonClient, tearDown, err := client.Connect(conf.DaemonAddress)
@@ -32,15 +31,6 @@ func send(conf *sendConfig) error {
 
 	ctx, cancel := context.WithTimeout(context.Background(), daemonTimeout)
 	defer cancel()
-
-	var sendAmountSompi uint64
-	if !conf.IsSendAll {
-		sendAmountSompi, err = utils.KasToSompi(conf.SendAmount)
-
-		if err != nil {
-			return err
-		}
-	}
 
 	var feePolicy *pb.FeePolicy
 	if conf.FeeRate > 0 {
@@ -60,11 +50,9 @@ func send(conf *sendConfig) error {
 	}
 
 	createUnsignedTransactionsResponse, err :=
-		daemonClient.CreateUnsignedTransactions(ctx, &pb.CreateUnsignedTransactionsRequest{
+		daemonClient.BumpFee(ctx, &pb.BumpFeeRequest{
+			TxID:                     conf.TxID,
 			From:                     conf.FromAddresses,
-			Address:                  conf.ToAddress,
-			Amount:                   sendAmountSompi,
-			IsSendAll:                conf.IsSendAll,
 			UseExistingChangeAddress: conf.UseExistingChangeAddress,
 			FeePolicy:                feePolicy,
 		})
@@ -84,8 +72,8 @@ func send(conf *sendConfig) error {
 		return err
 	}
 
-	signedTransactions := make([][]byte, len(createUnsignedTransactionsResponse.UnsignedTransactions))
-	for i, unsignedTransaction := range createUnsignedTransactionsResponse.UnsignedTransactions {
+	signedTransactions := make([][]byte, len(createUnsignedTransactionsResponse.Transactions))
+	for i, unsignedTransaction := range createUnsignedTransactionsResponse.Transactions {
 		signedTransaction, err := libkaspawallet.Sign(conf.NetParams(), mnemonics, unsignedTransaction, keysFile.ECDSA)
 		if err != nil {
 			return err
@@ -107,7 +95,7 @@ func send(conf *sendConfig) error {
 		}
 
 		chunk := signedTransactions[offset:end]
-		response, err := daemonClient.Broadcast(broadcastCtx, &pb.BroadcastRequest{Transactions: chunk})
+		response, err := daemonClient.BroadcastReplacement(broadcastCtx, &pb.BroadcastRequest{Transactions: chunk})
 		if err != nil {
 			return err
 		}
