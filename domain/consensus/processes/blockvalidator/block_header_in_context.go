@@ -26,21 +26,15 @@ func (v *blockValidator) ValidateHeaderInContext(stagingArea *model.StagingArea,
 		return err
 	}
 
-	if !hasValidatedHeader {
-		var logErr error
-		log.Debug(logger.NewLogClosure(func() string {
-			var ghostdagData *externalapi.BlockGHOSTDAGData
-			ghostdagData, logErr = v.ghostdagDataStores[0].Get(v.databaseContext, stagingArea, blockHash, false)
-			if err != nil {
-				return ""
-			}
+	ghostdagData, err := v.ghostdagDataStores[0].Get(v.databaseContext, stagingArea, blockHash, false)
+	if err != nil {
+		return err
+	}
 
+	if !hasValidatedHeader {
+		log.Debug(logger.NewLogClosure(func() string {
 			return fmt.Sprintf("block %s blue score is %d", blockHash, ghostdagData.BlueScore())
 		}))
-
-		if logErr != nil {
-			return logErr
-		}
 	}
 
 	err = v.validateMedianTime(stagingArea, header)
@@ -48,7 +42,7 @@ func (v *blockValidator) ValidateHeaderInContext(stagingArea *model.StagingArea,
 		return err
 	}
 
-	err = v.checkMergeSizeLimit(stagingArea, blockHash)
+	err = v.checkMergeSizeLimit(stagingArea, ghostdagData)
 	if err != nil {
 		return err
 	}
@@ -67,14 +61,12 @@ func (v *blockValidator) ValidateHeaderInContext(stagingArea *model.StagingArea,
 			return err
 		}
 	}
-
 	if !isBlockWithTrustedData {
 		err = v.checkIndirectParents(stagingArea, header)
 		if err != nil {
 			return err
 		}
 	}
-
 	err = v.mergeDepthManager.CheckBoundedMergeDepth(stagingArea, blockHash, isBlockWithTrustedData)
 	if err != nil {
 		return err
@@ -85,12 +77,12 @@ func (v *blockValidator) ValidateHeaderInContext(stagingArea *model.StagingArea,
 		return err
 	}
 
-	err = v.checkBlueWork(stagingArea, blockHash, header)
+	err = v.checkBlueWork(stagingArea, ghostdagData, header)
 	if err != nil {
 		return err
 	}
 
-	err = v.checkHeaderBlueScore(stagingArea, blockHash, header)
+	err = v.checkHeaderBlueScore(stagingArea, ghostdagData, header)
 	if err != nil {
 		return err
 	}
@@ -174,12 +166,7 @@ func (v *blockValidator) validateMedianTime(stagingArea *model.StagingArea, head
 	return nil
 }
 
-func (v *blockValidator) checkMergeSizeLimit(stagingArea *model.StagingArea, hash *externalapi.DomainHash) error {
-	ghostdagData, err := v.ghostdagDataStores[0].Get(v.databaseContext, stagingArea, hash, false)
-	if err != nil {
-		return err
-	}
-
+func (v *blockValidator) checkMergeSizeLimit(stagingArea *model.StagingArea, ghostdagData *externalapi.BlockGHOSTDAGData) error {
 	mergeSetSize := len(ghostdagData.MergeSetBlues()) + len(ghostdagData.MergeSetReds())
 
 	if uint64(mergeSetSize) > v.mergeSetSizeLimit {
@@ -191,7 +178,7 @@ func (v *blockValidator) checkMergeSizeLimit(stagingArea *model.StagingArea, has
 }
 
 func (v *blockValidator) checkIndirectParents(stagingArea *model.StagingArea, header externalapi.BlockHeader) error {
-	expectedParents, err := v.blockParentBuilder.BuildParents(stagingArea, header.DAAScore(), header.DirectParents())
+	expectedParents, err := v.blockParentBuilder.BuildParents(stagingArea, header.DirectParents())
 	if err != nil {
 		return err
 	}
@@ -216,13 +203,7 @@ func (v *blockValidator) checkDAAScore(stagingArea *model.StagingArea, blockHash
 	return nil
 }
 
-func (v *blockValidator) checkBlueWork(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash,
-	header externalapi.BlockHeader) error {
-
-	ghostdagData, err := v.ghostdagDataStores[0].Get(v.databaseContext, stagingArea, blockHash, false)
-	if err != nil {
-		return err
-	}
+func (v *blockValidator) checkBlueWork(stagingArea *model.StagingArea, ghostdagData *externalapi.BlockGHOSTDAGData, header externalapi.BlockHeader) error {
 	expectedBlueWork := ghostdagData.BlueWork()
 	if header.BlueWork().Cmp(expectedBlueWork) != 0 {
 		return errors.Wrapf(ruleerrors.ErrUnexpectedBlueWork, "block blue work of %d is not the expected value of %d", header.BlueWork(), expectedBlueWork)
@@ -230,16 +211,9 @@ func (v *blockValidator) checkBlueWork(stagingArea *model.StagingArea, blockHash
 	return nil
 }
 
-func (v *blockValidator) checkHeaderBlueScore(stagingArea *model.StagingArea, blockHash *externalapi.DomainHash,
-	header externalapi.BlockHeader) error {
-
-	ghostdagData, err := v.ghostdagDataStores[0].Get(v.databaseContext, stagingArea, blockHash, false)
-	if err != nil {
-		return err
-	}
+func (v *blockValidator) checkHeaderBlueScore(stagingArea *model.StagingArea, ghostdagData *externalapi.BlockGHOSTDAGData, header externalapi.BlockHeader) error {
 	if header.BlueScore() != ghostdagData.BlueScore() {
-		return errors.Wrapf(ruleerrors.ErrUnexpectedBlueWork, "block blue work of %d is not the expected "+
-			"value of %d", header.BlueWork(), ghostdagData.BlueScore())
+		return errors.Wrapf(ruleerrors.ErrUnexpectedBlueWork, "block blue score of %d is not the expected value of %d", header.BlueScore(), ghostdagData.BlueScore())
 	}
 	return nil
 }
