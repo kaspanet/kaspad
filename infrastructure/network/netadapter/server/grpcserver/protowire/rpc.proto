@@ -663,6 +663,12 @@ message GetInfoResponseMessage{
   string serverVersion = 3;
   bool isUtxoIndexed = 4;
   bool isSynced = 5;
+  int64 maxRPCClients = 6;
+  int64 numberOfRPCConnections = 7;
+  int64 maxP2PClients = 8;
+  int64 numberOfP2PConnections = 9;
+  int64 banDurationInMilliseconds = 10;
+  int64 uptimeInMilliseconds = 11;
   RPCError error = 1000;
 }
 
