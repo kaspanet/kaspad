@@ -50,6 +50,11 @@ func (flow *handleRelayedTransactionsFlow) start() error {
 			return err
 		}
 
+		if common.IsDNSSeeder() {
+			log.Debugf("IsDNSSeeder=true so skipping tx inv")
+			continue
+		}
+
 		isNearlySynced, err := flow.IsNearlySynced()
 		if err != nil {
 			return err
