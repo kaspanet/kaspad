@@ -126,6 +126,14 @@ func serializeTransaction(w io.Writer, tx *externalapi.DomainTransaction, encodi
 		return err
 	}
 
+	if tx.Mass > 0 { // Only serialize Mass if it's not zero
+		err = binaryserializer.PutUint64(w, tx.Mass)
+		if err != nil {
+			return err
+		}
+
+	}
+
 	return nil
 }
 
