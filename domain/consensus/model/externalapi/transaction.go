@@ -18,8 +18,9 @@ type DomainTransaction struct {
 	Gas          uint64
 	Payload      []byte
 
-	Fee  uint64
-	Mass uint64
+	Fee            uint64
+	Mass           uint64
+	MassCommitment uint64
 
 	// ID is a field that is used to cache the transaction ID.
 	// Always use consensushashing.TransactionID instead of accessing this field directly
