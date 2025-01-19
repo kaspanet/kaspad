@@ -48,23 +48,24 @@ func (tx *DomainTransaction) Clone() *DomainTransaction {
 	}
 
 	return &DomainTransaction{
-		Version:      tx.Version,
-		Inputs:       inputsClone,
-		Outputs:      outputsClone,
-		LockTime:     tx.LockTime,
-		SubnetworkID: *tx.SubnetworkID.Clone(),
-		Gas:          tx.Gas,
-		Payload:      payloadClone,
-		Fee:          tx.Fee,
-		Mass:         tx.Mass,
-		ID:           idClone,
+		Version:        tx.Version,
+		Inputs:         inputsClone,
+		Outputs:        outputsClone,
+		LockTime:       tx.LockTime,
+		SubnetworkID:   *tx.SubnetworkID.Clone(),
+		Gas:            tx.Gas,
+		Payload:        payloadClone,
+		Fee:            tx.Fee,
+		Mass:           tx.Mass,
+		MassCommitment: tx.MassCommitment,
+		ID:             idClone,
 	}
 }
 
 // If this doesn't compile, it means the type definition has been changed, so it's
 // an indication to update Equal and Clone accordingly.
 var _ = DomainTransaction{0, []*DomainTransactionInput{}, []*DomainTransactionOutput{}, 0,
-	DomainSubnetworkID{}, 0, []byte{}, 0, 0,
+	DomainSubnetworkID{}, 0, []byte{}, 0, 0, 0,
 	&DomainTransactionID{}}
 
 // Equal returns whether tx equals to other
@@ -110,6 +111,10 @@ func (tx *DomainTransaction) Equal(other *DomainTransaction) bool {
 	}
 
 	if !bytes.Equal(tx.Payload, other.Payload) {
+		return false
+	}
+
+	if tx.MassCommitment != other.MassCommitment {
 		return false
 	}
 
