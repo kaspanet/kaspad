@@ -110,6 +110,7 @@ func (x *RpcTransaction) toAppMessage() (*appmessage.RPCTransaction, error) {
 		SubnetworkID: x.SubnetworkId,
 		Gas:          x.Gas,
 		Payload:      x.Payload,
+		Mass:         x.Mass,
 		VerboseData:  verboseData,
 	}, nil
 }
@@ -138,6 +139,7 @@ func (x *RpcTransaction) fromAppMessage(transaction *appmessage.RPCTransaction) 
 		SubnetworkId: transaction.SubnetworkID,
 		Gas:          transaction.Gas,
 		Payload:      transaction.Payload,
+		Mass:         transaction.Mass,
 		VerboseData:  verboseData,
 	}
 }
