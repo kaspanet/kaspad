@@ -128,7 +128,7 @@ func serializeTransaction(w io.Writer, tx *externalapi.DomainTransaction, encodi
 
 	if includeMass {
 		if tx.MassCommitment > 0 { // For backward compatibility, serialize MassCommitment only if it's not zero
-			err = binaryserializer.PutUint64(w, tx.Mass)
+			err = binaryserializer.PutUint64(w, tx.MassCommitment)
 			if err != nil {
 				return err
 			}
