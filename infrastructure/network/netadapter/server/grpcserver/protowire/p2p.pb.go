@@ -229,7 +229,7 @@ type TransactionMessage struct {
 	SubnetworkId  *SubnetworkId          `protobuf:"bytes,5,opt,name=subnetworkId,proto3" json:"subnetworkId,omitempty"`
 	Gas           uint64                 `protobuf:"varint,6,opt,name=gas,proto3" json:"gas,omitempty"`
 	Payload       []byte                 `protobuf:"bytes,8,opt,name=payload,proto3" json:"payload,omitempty"`
-	Mass          uint64                 `protobuf:"varint,9,opt,name=mass,proto3" json:"mass,omitempty"` // <<< BPS10 - Add mass to TransactionMessage
+	Mass          uint64                 `protobuf:"varint,9,opt,name=mass,proto3" json:"mass,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }

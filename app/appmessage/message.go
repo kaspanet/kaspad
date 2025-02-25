@@ -167,6 +167,10 @@ const (
 	CmdGetFeeEstimateResponseMessage
 	CmdSubmitTransactionReplacementRequestMessage
 	CmdSubmitTransactionReplacementResponseMessage
+	CmdGetPruningWindowRootsRequestMessage
+	CmdGetPruningWindowRootsResponseMessage
+	CmdAddArchivalBlocksRequestMessage
+	CmdAddArchivalBlocksResponseMessage
 )
 
 // ProtocolMessageCommandToString maps all MessageCommands to their string representation
