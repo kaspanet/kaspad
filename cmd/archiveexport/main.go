@@ -9,17 +9,17 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus"
 	"github.com/kaspanet/kaspad/domain/consensus/model"
 	"github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
+	"github.com/kaspanet/kaspad/domain/consensus/utils/consensushashing"
 	"github.com/kaspanet/kaspad/infrastructure/config"
 	"github.com/kaspanet/kaspad/infrastructure/db/database"
 	"github.com/kaspanet/kaspad/infrastructure/network/rpcclient"
-	"github.com/kaspanet/kaspad/util/panics"
 	"github.com/kaspanet/kaspad/util/profiling"
 	"github.com/kaspanet/kaspad/version"
 	"github.com/pkg/errors"
 )
 
 func main() {
-	defer panics.HandlePanic(log, "MAIN", nil)
+	// defer panics.HandlePanic(log, "MAIN", nil)
 
 	cfg, err := parseConfig()
 	if err != nil {
@@ -43,10 +43,11 @@ func main() {
 
 func mainImpl(cfg *configFlags) error {
 	dataDir := filepath.Join(config.DefaultAppDir)
-	dbPath := filepath.Join(dataDir, "db")
+	dbPath := filepath.Join(dataDir, "kaspa-mainnet/datadir2")
 	consensusConfig := &consensus.Config{Params: *cfg.NetParams()}
 	factory := consensus.NewFactory()
 	factory.SetTestDataDir(dbPath)
+	factory.AutoSetActivePrefix(true)
 	tc, tearDownFunc, err := factory.NewTestConsensus(consensusConfig, "archiveexport")
 	if err != nil {
 		return err
@@ -73,15 +74,16 @@ func mainImpl(cfg *configFlags) error {
 	}
 
 	for _, root := range rootsResp.Roots {
+		log.Infof("Got root %s", root.Root)
+	}
+
+	for _, root := range rootsResp.Roots {
 		rootHash, err := externalapi.NewDomainHashFromString(root.Root)
 		if err != nil {
 			return err
 		}
 
-		rootHeader, err := tc.BlockHeaderStore().BlockHeader(tc.DatabaseContext(), model.NewStagingArea(), rootHash)
-		if database.IsNotFoundError(err) {
-			continue
-		}
+		log.Infof("Adding past of %s", rootHash)
 
 		if err != nil {
 			return err
@@ -93,10 +95,7 @@ func mainImpl(cfg *configFlags) error {
 
 		// TODO: Since GD data is not always available, we should extract the blue work from the header and use that for topological traversal
 		heap := tc.DAGTraversalManager().NewDownHeap(model.NewStagingArea())
-		for _, parent := range rootHeader.DirectParents() {
-			heap.Push(parent)
-			blockToChild[*parent] = *rootHash
-		}
+		heap.Push(rootHash)
 
 		visited := make(map[externalapi.DomainHash]struct{})
 		chunk := make([]*appmessage.ArchivalBlock, 0, 1000)
@@ -127,13 +126,21 @@ func mainImpl(cfg *configFlags) error {
 				return err
 			}
 
-			chunk = append(chunk, &appmessage.ArchivalBlock{
+			archivalBlock := &appmessage.ArchivalBlock{
 				Block: appmessage.DomainBlockToRPCBlock(block),
-				Child: blockToChild[*hash].String(),
-			})
+			}
+			if child, ok := blockToChild[*hash]; ok {
+				archivalBlock.Child = child.String()
+			}
+
+			chunk = append(chunk, archivalBlock)
+
+			if len(chunk) == 1 {
+				log.Infof("Added %s to chunk", consensushashing.BlockHash(block))
+			}
 
 			if len(chunk) == cap(chunk) {
-				_, err := rpcClient.AddArchivalBlocks(chunk)
+				err := sendChunk(rpcClient, chunk)
 				if err != nil {
 					return err
 				}
@@ -146,6 +153,39 @@ func mainImpl(cfg *configFlags) error {
 				blockToChild[*parent] = *hash
 			}
 		}
+
+		if len(chunk) > 0 {
+			sendChunk(rpcClient, chunk)
+		}
+	}
+
+	return nil
+}
+
+func sendChunk(rpcClient *rpcclient.RPCClient, chunk []*appmessage.ArchivalBlock) error {
+	log.Infof("Sending chunk")
+	_, err := rpcClient.AddArchivalBlocks(chunk)
+	if err != nil {
+		return err
+	}
+	log.Infof("Sent chunk")
+
+	// Checking existence of first block for sanity
+	block := chunk[0]
+	domainBlock, err := appmessage.RPCBlockToDomainBlock(block.Block)
+	if err != nil {
+		return err
+	}
+
+	blockHash := consensushashing.BlockHash(domainBlock)
+	log.Infof("Checking block %s", blockHash)
+	resp, err := rpcClient.GetBlock(blockHash.String(), true)
+	if err != nil {
+		return err
+	}
+
+	if len(resp.Block.Transactions) == 0 {
+		return errors.Errorf("Block %s has no transactions on the server", blockHash)
 	}
 
 	return nil

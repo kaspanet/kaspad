@@ -7,7 +7,7 @@ func (c *RPCClient) AddArchivalBlocks(blocks []*appmessage.ArchivalBlock) (*appm
 	if err != nil {
 		return nil, err
 	}
-	response, err := c.route(appmessage.CmdAddArchivalBlocksRequestMessage).DequeueWithTimeout(c.timeout)
+	response, err := c.route(appmessage.CmdAddArchivalBlocksResponseMessage).DequeueWithTimeout(c.timeout)
 	if err != nil {
 		return nil, err
 	}

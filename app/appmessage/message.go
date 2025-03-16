@@ -312,6 +312,10 @@ var RPCMessageCommandToString = map[MessageCommand]string{
 	CmdGetFeeEstimateResponseMessage:                              "GetFeeEstimateResponse",
 	CmdSubmitTransactionReplacementRequestMessage:                 "SubmitTransactionReplacementRequest",
 	CmdSubmitTransactionReplacementResponseMessage:                "SubmitTransactionReplacementResponse",
+	CmdGetPruningWindowRootsRequestMessage:                        "GetPruningWindowRootsRequestMessage",
+	CmdGetPruningWindowRootsResponseMessage:                       "GetPruningWindowRootsResponseMessage",
+	CmdAddArchivalBlocksRequestMessage:                            "AddArchivalBlocksRequestMessage",
+	CmdAddArchivalBlocksResponseMessage:                           "AddArchivalBlocksResponseMessage",
 }
 
 // Message is an interface that describes a kaspa message. A type that

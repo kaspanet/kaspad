@@ -46,7 +46,7 @@ func (x *KaspadMessage_AddArchivalBlocksRequest) fromAppMessage(message *appmess
 	}
 
 	x.AddArchivalBlocksRequest = &AddArchivalBlocksRequestMessage{
-		Blocks: make([]*ArchivalBlock, len(message.Blocks)),
+		Blocks: blocks,
 	}
 	return nil
 }
@@ -81,7 +81,7 @@ func (x *AddArchivalBlocksResponseMessage) toAppMessage() (appmessage.Message, e
 		return nil, err
 	}
 
-	return &appmessage.GetPruningWindowRootsResponseMessage{
+	return &appmessage.AddArchivalBlocksResponseMessage{
 		Error: rpcErr,
 	}, nil
 }

@@ -3,11 +3,11 @@ package rpcclient
 import "github.com/kaspanet/kaspad/app/appmessage"
 
 func (c *RPCClient) GetPruningWindowRoots() (*appmessage.GetPruningWindowRootsResponseMessage, error) {
-	err := c.rpcRouter.outgoingRoute().Enqueue(appmessage.NewGetPeerAddressesRequestMessage())
+	err := c.rpcRouter.outgoingRoute().Enqueue(&appmessage.GetPruningWindowRootsRequestMessage{})
 	if err != nil {
 		return nil, err
 	}
-	response, err := c.route(appmessage.CmdGetPruningWindowRootsRequestMessage).DequeueWithTimeout(c.timeout)
+	response, err := c.route(appmessage.CmdGetPruningWindowRootsResponseMessage).DequeueWithTimeout(c.timeout)
 	if err != nil {
 		return nil, err
 	}
