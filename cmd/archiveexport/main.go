@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/kaspanet/kaspad/app/appmessage"
 	"github.com/kaspanet/kaspad/domain/consensus"
@@ -77,6 +78,8 @@ func mainImpl(cfg *configFlags) error {
 		log.Infof("Got root %s", root.Root)
 	}
 
+	counterStart := time.Now()
+	counter := 0
 	for _, root := range rootsResp.Roots {
 		rootHash, err := externalapi.NewDomainHashFromString(root.Root)
 		if err != nil {
@@ -143,6 +146,14 @@ func mainImpl(cfg *configFlags) error {
 				err := sendChunk(rpcClient, chunk)
 				if err != nil {
 					return err
+				}
+				counter += len(chunk)
+				counterDuration := time.Since(counterStart)
+				if counterDuration > 10*time.Second {
+					rate := float64(counter) / counterDuration.Seconds()
+					log.Infof("Sent %d blocks in the last %.2f seconds (%.2f blocks/second)", counter, counterDuration.Seconds(), rate)
+					counterStart = time.Now()
+					counter = 0
 				}
 
 				chunk = chunk[:0]
