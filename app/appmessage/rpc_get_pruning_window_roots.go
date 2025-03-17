@@ -11,8 +11,8 @@ func (msg *GetPruningWindowRootsRequestMessage) Command() MessageCommand {
 	return CmdGetPruningWindowRootsRequestMessage
 }
 
-type PruningWindowRoot struct {
-	Root    string
+type PruningWindowRoots struct {
+	PPRoots []string
 	PPIndex uint64
 }
 
@@ -20,7 +20,7 @@ type PruningWindowRoot struct {
 // its respective RPC message
 type GetPruningWindowRootsResponseMessage struct {
 	baseMessage
-	Roots []*PruningWindowRoot
+	Roots []*PruningWindowRoots
 	Error *RPCError
 }
 

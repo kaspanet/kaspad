@@ -59,6 +59,18 @@ func NewDomainHashFromString(hashString string) (*DomainHash, error) {
 	return NewDomainHashFromByteSlice(hashBytes)
 }
 
+func NewDomainHashesFromStrings(hashStrings []string) ([]*DomainHash, error) {
+	hashes := make([]*DomainHash, len(hashStrings))
+	for i, hashString := range hashStrings {
+		hash, err := NewDomainHashFromString(hashString)
+		if err != nil {
+			return nil, err
+		}
+		hashes[i] = hash
+	}
+	return hashes, nil
+}
+
 // String returns the Hash as the hexadecimal string of the hash.
 func (hash DomainHash) String() string {
 	return hex.EncodeToString(hash.hashArray[:])

@@ -29,10 +29,10 @@ func (x *KaspadMessage_GetPruningWindowRootsResponse) fromAppMessage(message *ap
 		err = &RPCError{Message: message.Error.Message}
 	}
 
-	roots := make([]*PruningWindowRoot, len(message.Roots))
+	roots := make([]*PruningWindowRoots, len(message.Roots))
 	for i, root := range message.Roots {
-		roots[i] = &PruningWindowRoot{
-			Root:    root.Root,
+		roots[i] = &PruningWindowRoots{
+			PpRoots: root.PPRoots,
 			PpIndex: root.PPIndex,
 		}
 	}
@@ -55,10 +55,10 @@ func (x *GetPruningWindowRootsResponseMessage) toAppMessage() (appmessage.Messag
 		return nil, err
 	}
 
-	roots := make([]*appmessage.PruningWindowRoot, len(x.Roots))
+	roots := make([]*appmessage.PruningWindowRoots, len(x.Roots))
 	for i, root := range x.Roots {
-		roots[i] = &appmessage.PruningWindowRoot{
-			Root:    root.Root,
+		roots[i] = &appmessage.PruningWindowRoots{
+			PPRoots: root.PpRoots,
 			PPIndex: root.PpIndex,
 		}
 	}

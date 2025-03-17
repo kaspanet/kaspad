@@ -75,18 +75,18 @@ func mainImpl(cfg *configFlags) error {
 	}
 
 	for _, root := range rootsResp.Roots {
-		log.Infof("Got root %s", root.Root)
+		log.Infof("Got root %s", root.PPRoots)
 	}
 
 	counterStart := time.Now()
 	counter := 0
 	for _, root := range rootsResp.Roots {
-		rootHash, err := externalapi.NewDomainHashFromString(root.Root)
+		ppRoots, err := externalapi.NewDomainHashesFromStrings(root.PPRoots)
 		if err != nil {
 			return err
 		}
 
-		log.Infof("Adding past of %s", rootHash)
+		log.Infof("Adding past of %s", ppRoots)
 
 		if err != nil {
 			return err
@@ -98,7 +98,9 @@ func mainImpl(cfg *configFlags) error {
 
 		// TODO: Since GD data is not always available, we should extract the blue work from the header and use that for topological traversal
 		heap := tc.DAGTraversalManager().NewDownHeap(model.NewStagingArea())
-		heap.Push(rootHash)
+		for _, ppRoot := range ppRoots {
+			heap.Push(ppRoot)
+		}
 
 		visited := make(map[externalapi.DomainHash]struct{})
 		chunk := make([]*appmessage.ArchivalBlock, 0, 1000)
