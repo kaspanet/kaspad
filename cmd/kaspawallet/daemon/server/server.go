@@ -37,6 +37,7 @@ type server struct {
 
 	lock                            sync.RWMutex
 	utxosSortedByAmount             []*walletUTXO
+	mempoolExcludedUTXOs            map[externalapi.DomainOutpoint]*walletUTXO
 	nextSyncStartIndex              uint32
 	keysFile                        *keys.File
 	shutdown                        chan struct{}
@@ -111,6 +112,7 @@ func Start(params *dagconfig.Params, listen, rpcServer string, keysFilePath stri
 		params:                      params,
 		coinbaseMaturity:            coinbaseMaturity,
 		utxosSortedByAmount:         []*walletUTXO{},
+		mempoolExcludedUTXOs:        map[externalapi.DomainOutpoint]*walletUTXO{},
 		nextSyncStartIndex:          0,
 		keysFile:                    keysFile,
 		shutdown:                    make(chan struct{}),

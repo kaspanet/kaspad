@@ -6,6 +6,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/kaspanet/kaspad/cmd/kaspawallet/daemon/server"
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/keys"
 	"github.com/kaspanet/kaspad/cmd/kaspawallet/libkaspawallet"
 	"github.com/pkg/errors"
@@ -40,7 +41,7 @@ func sign(conf *signConfig) error {
 		}
 		transactionsHex = strings.TrimSpace(string(transactionHexBytes))
 	}
-	partiallySignedTransactions, err := decodeTransactionsFromHex(transactionsHex)
+	partiallySignedTransactions, err := server.DecodeTransactionsFromHex(transactionsHex)
 	if err != nil {
 		return err
 	}
@@ -72,6 +73,6 @@ func sign(conf *signConfig) error {
 		fmt.Fprintln(os.Stderr, "Successfully signed transaction")
 	}
 
-	fmt.Println(encodeTransactionsToHex(updatedPartiallySignedTransactions))
+	fmt.Println(server.EncodeTransactionsToHex(updatedPartiallySignedTransactions))
 	return nil
 }

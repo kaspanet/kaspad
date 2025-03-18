@@ -12,7 +12,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-func broadcast(conf *broadcastConfig) error {
+func broadcastReplacement(conf *broadcastConfig) error {
 	daemonClient, tearDown, err := client.Connect(conf.DaemonAddress)
 	if err != nil {
 		return err
@@ -43,7 +43,7 @@ func broadcast(conf *broadcastConfig) error {
 		return err
 	}
 
-	response, err := daemonClient.Broadcast(ctx, &pb.BroadcastRequest{Transactions: transactions})
+	response, err := daemonClient.BroadcastReplacement(ctx, &pb.BroadcastRequest{Transactions: transactions})
 	if err != nil {
 		return err
 	}

@@ -1,11 +1,15 @@
+# DEPRECATED
 
-Kaspad
-====
+The full node reference implementation was [rewritten in Rust](https://github.com/kaspanet/rusty-kaspa), as a result, the Go implementation is now deprecated.
+
+PLEASE NOTE: Any pull requests or issues that will be opened in this repository will be closed without treatment, except for issues or pull requests related to the kaspawallet, which remains maintained. In any other case, please use the [Rust implementation](https://github.com/kaspanet/rusty-kaspa) instead.
+
+# Kaspad
 
 [![ISC License](http://img.shields.io/badge/license-ISC-blue.svg)](https://choosealicense.com/licenses/isc/)
 [![GoDoc](https://img.shields.io/badge/godoc-reference-blue.svg)](http://godoc.org/github.com/kaspanet/kaspad)
 
-Kaspad is the reference full node Kaspa implementation written in Go (golang).
+Kaspad was the reference full node Kaspa implementation written in Go (golang).
 
 ## What is kaspa
 
@@ -13,7 +17,7 @@ Kaspa is an attempt at a proof-of-work cryptocurrency with instant confirmations
 
 ## Requirements
 
-Go 1.18 or later.
+Go 1.23 or later.
 
 ## Installation
 
@@ -40,7 +44,6 @@ $ go install . ./cmd/...
   not already add the bin directory to your system path during Go installation,
   you are encouraged to do so now.
 
-
 ## Getting Started
 
 Kaspad has several configuration options available to tweak how it runs, but all
@@ -51,6 +54,7 @@ $ kaspad
 ```
 
 ## Discord
+
 Join our discord server using the following link: https://discord.gg/YNYnNN5Pf2
 
 ## Issue Tracker

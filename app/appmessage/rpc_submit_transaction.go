@@ -52,6 +52,7 @@ type RPCTransaction struct {
 	SubnetworkID string
 	Gas          uint64
 	Payload      string
+	Mass         uint64
 	VerboseData  *RPCTransactionVerboseData
 }
 

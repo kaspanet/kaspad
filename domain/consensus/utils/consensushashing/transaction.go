@@ -27,7 +27,7 @@ func TransactionHash(tx *externalapi.DomainTransaction) *externalapi.DomainHash 
 	// Encode the header and hash everything prior to the number of
 	// transactions.
 	writer := hashes.NewTransactionHashWriter()
-	err := serializeTransaction(writer, tx, txEncodingFull)
+	err := serializeTransaction(writer, tx, txEncodingFull, true)
 	if err != nil {
 		// It seems like this could only happen if the writer returned an error.
 		// and this writer should never return an error (no allocations or possible failures)
@@ -52,7 +52,7 @@ func TransactionID(tx *externalapi.DomainTransaction) *externalapi.DomainTransac
 		encodingFlags = txEncodingExcludeSignatureScript
 	}
 	writer := hashes.NewTransactionIDWriter()
-	err := serializeTransaction(writer, tx, encodingFlags)
+	err := serializeTransaction(writer, tx, encodingFlags, false)
 	if err != nil {
 		// this writer never return errors (no allocations or possible failures) so errors can only come from validity checks,
 		// and we assume we never construct malformed transactions.
@@ -74,7 +74,7 @@ func TransactionIDs(txs []*externalapi.DomainTransaction) []*externalapi.DomainT
 	return txIDs
 }
 
-func serializeTransaction(w io.Writer, tx *externalapi.DomainTransaction, encodingFlags txEncoding) error {
+func serializeTransaction(w io.Writer, tx *externalapi.DomainTransaction, encodingFlags txEncoding, includeMass bool) error {
 	err := binaryserializer.PutUint16(w, tx.Version)
 	if err != nil {
 		return err
@@ -124,6 +124,15 @@ func serializeTransaction(w io.Writer, tx *externalapi.DomainTransaction, encodi
 	err = writeVarBytes(w, tx.Payload)
 	if err != nil {
 		return err
+	}
+
+	if includeMass {
+		if tx.MassCommitment > 0 { // For backward compatibility, serialize MassCommitment only if it's not zero
+			err = binaryserializer.PutUint64(w, tx.MassCommitment)
+			if err != nil {
+				return err
+			}
+		}
 	}
 
 	return nil
