@@ -123,9 +123,8 @@ func (c *Calculator) CalculateTransactionStorageMass(transaction *externalapi.Do
 	if harmonicOuts < arithmeticIns {
 		// underflow
 		return 0
-	} else {
-		return harmonicOuts - arithmeticIns
 	}
+	return harmonicOuts - arithmeticIns
 }
 
 // CalculateTransactionOverallMass calculates the overall mass of the transaction including compute and storage mass components (see KIP-0009)
