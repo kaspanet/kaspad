@@ -89,7 +89,7 @@ func (ctx *Context) PopulateBlockWithVerboseData(block *appmessage.RPCBlock, dom
 		}
 	}
 
-	if domainBlock == nil && blockInfo.BlockStatus == externalapi.StatusHeaderOnly {
+	if len(domainBlock.Transactions) == 0 {
 		return nil
 	}
 
