@@ -86,7 +86,7 @@ func New(cfg *config.Config, domain domain.Domain, addressManager *addressmanage
 	}
 }
 
-// Close signals to all flows the the protocol manager is closed.
+// Close signals to all flows the protocol manager is closed.
 func (f *FlowContext) Close() {
 	close(f.shutdownChan)
 }

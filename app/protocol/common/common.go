@@ -17,7 +17,7 @@ var ErrPeerWithSameIDExists = errors.New("ready peer with the same ID already ex
 
 type flowExecuteFunc func(peer *peerpkg.Peer)
 
-// Flow is a a data structure that is used in order to associate a p2p flow to some route in a router.
+// Flow is a data structure that is used in order to associate a p2p flow to some route in a router.
 type Flow struct {
 	Name        string
 	ExecuteFunc flowExecuteFunc
