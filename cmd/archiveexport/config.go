@@ -27,18 +27,21 @@ var (
 	defaultLogFile    = filepath.Join(defaultAppDir, defaultLogFilename)
 	defaultErrLogFile = filepath.Join(defaultAppDir, defaultErrLogFilename)
 	defaultRPCServer  = "localhost"
+	defaultDataDir    = filepath.Join(config.DefaultAppDir)
 )
 
 type configFlags struct {
 	ShowVersion bool   `short:"V" long:"version" description:"Display version information and exit"`
 	RPCServer   string `short:"s" long:"rpcserver" description:"RPC server to connect to"`
 	Profile     string `long:"profile" description:"Enable HTTP profiling on given port -- NOTE port must be between 1024 and 65536"`
+	AppDir      string `short:"b" long:"appdir" description:"Node datadir"`
 	config.NetworkFlags
 }
 
 func parseConfig() (*configFlags, error) {
 	cfg := &configFlags{
 		RPCServer: defaultRPCServer,
+		AppDir:    defaultDataDir,
 	}
 	parser := flags.NewParser(cfg, flags.PrintErrors|flags.HelpFlag)
 	_, err := parser.Parse()

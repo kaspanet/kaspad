@@ -43,11 +43,13 @@ func main() {
 }
 
 func mainImpl(cfg *configFlags) error {
-	dataDir := filepath.Join(config.DefaultAppDir)
-	dbPath := filepath.Join(dataDir, "kaspa-mainnet/datadir2")
+	appDir := config.CleanAndExpandPath(cfg.AppDir)
+	appDir = filepath.Join(appDir, cfg.NetParams().Name)
+	dataDir := filepath.Join(appDir, "datadir2")
+
 	consensusConfig := &consensus.Config{Params: *cfg.NetParams()}
 	factory := consensus.NewFactory()
-	factory.SetTestDataDir(dbPath)
+	factory.SetTestDataDir(dataDir)
 	factory.AutoSetActivePrefix(true)
 	tc, tearDownFunc, err := factory.NewTestConsensus(consensusConfig, "archiveexport")
 	if err != nil {
