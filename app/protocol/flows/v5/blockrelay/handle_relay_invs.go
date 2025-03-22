@@ -77,6 +77,11 @@ func (flow *handleRelayInvsFlow) start() error {
 			return err
 		}
 
+		if common.IsDNSSeeder() {
+			log.Debugf("IsDNSSeeder=true so skipping block inv")
+			continue
+		}
+
 		log.Debugf("Got relay inv for block %s", inv.Hash)
 
 		blockInfo, err := flow.Domain().Consensus().GetBlockInfo(inv.Hash)
