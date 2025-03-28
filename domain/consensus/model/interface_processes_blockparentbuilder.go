@@ -6,6 +6,5 @@ import "github.com/kaspanet/kaspad/domain/consensus/model/externalapi"
 // a given set of direct parents
 type BlockParentBuilder interface {
 	BuildParents(stagingArea *StagingArea,
-		daaScore uint64,
 		directParentHashes []*externalapi.DomainHash) ([]externalapi.BlockLevelParents, error)
 }
