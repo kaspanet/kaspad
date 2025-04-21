@@ -6,6 +6,7 @@ import (
 )
 
 func (x *KaspadMessage_AddArchivalBlocksRequest) toAppMessage() (appmessage.Message, error) {
+	panic("we need to implement acceptance data conversion")
 	if x == nil {
 		return nil, errors.Wrapf(errorNil, "KaspadMessage_AddArchivalBlocksRequest is nil")
 	}
@@ -32,7 +33,8 @@ func (x *KaspadMessage_AddArchivalBlocksRequest) fromAppMessage(message *appmess
 	blocks := make([]*ArchivalBlock, len(message.Blocks))
 	for i, block := range message.Blocks {
 		protoBlock := &ArchivalBlock{
-			Child: block.Child,
+			Child:          block.Child,
+			SelectedParent: block.SelectedParent,
 		}
 
 		if block.Block != nil {
@@ -42,12 +44,35 @@ func (x *KaspadMessage_AddArchivalBlocksRequest) fromAppMessage(message *appmess
 				return err
 			}
 		}
+
+		protoBlock.AcceptanceData = make([]*MergesetBlockAcceptanceData, len(block.AcceptanceData))
+		for j, acceptanceData := range block.AcceptanceData {
+			protoBlock.AcceptanceData[j] = &MergesetBlockAcceptanceData{}
+			protoBlock.AcceptanceData[j].fromAppMessage(acceptanceData)
+		}
 		blocks[i] = protoBlock
 	}
 
 	x.AddArchivalBlocksRequest = &AddArchivalBlocksRequestMessage{
 		Blocks: blocks,
 	}
+	return nil
+}
+
+func (x *MergesetBlockAcceptanceData) fromAppMessage(message *appmessage.MergesetBlockAcceptanceData) error {
+	if message == nil {
+		return errors.Wrapf(errorNil, "MergesetBlockAcceptanceData is nil")
+	}
+
+	x.BlockHash = message.BlockHash
+	x.AcceptedTxs = make([]*AcceptedTxEntry, len(message.AcceptedTxs))
+	for i, tx := range message.AcceptedTxs {
+		x.AcceptedTxs[i] = &AcceptedTxEntry{
+			TransactionId:    tx.TransactionID,
+			IndexWithinBlock: tx.IndexWithinBlock,
+		}
+	}
+
 	return nil
 }
 

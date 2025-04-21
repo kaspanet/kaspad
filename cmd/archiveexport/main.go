@@ -94,6 +94,10 @@ func mainImpl(cfg *configFlags) error {
 			return err
 		}
 
+		if int(root.PPIndex-1) >= len(ppHeaders) {
+			continue
+		}
+
 		nextPP := ppHeaders[root.PPIndex-1]
 
 		blockToChild := make(map[externalapi.DomainHash]externalapi.DomainHash)
@@ -138,6 +142,37 @@ func mainImpl(cfg *configFlags) error {
 			}
 			if child, ok := blockToChild[*hash]; ok {
 				archivalBlock.Child = child.String()
+			}
+
+			acceptanceData, err := tc.AcceptanceDataStore().Get(tc.DatabaseContext(), model.NewStagingArea(), hash)
+			isNotFoundErr := database.IsNotFoundError(err)
+			if !isNotFoundErr && err != nil {
+				return err
+			}
+
+			if blockGHOSTDAGData.SelectedParent() != model.VirtualGenesisBlockHash && !isNotFoundErr && len(acceptanceData) > 0 {
+				acceptanceDataRPC := make([]*appmessage.MergesetBlockAcceptanceData, 0, len(acceptanceData))
+				for _, data := range acceptanceData {
+					acceptedTxs := make([]*appmessage.AcceptedTxEntry, 0, len(data.TransactionAcceptanceData))
+					for i, tx := range data.TransactionAcceptanceData {
+						if !tx.IsAccepted {
+							continue
+						}
+
+						acceptedTxs = append(acceptedTxs, &appmessage.AcceptedTxEntry{
+							TransactionID:    consensushashing.TransactionID(tx.Transaction).String(),
+							IndexWithinBlock: uint32(i),
+						})
+					}
+
+					acceptanceDataRPC = append(acceptanceDataRPC, &appmessage.MergesetBlockAcceptanceData{
+						BlockHash:   data.BlockHash.String(),
+						AcceptedTxs: acceptedTxs,
+					})
+				}
+
+				archivalBlock.AcceptanceData = acceptanceDataRPC
+				archivalBlock.SelectedParent = blockGHOSTDAGData.SelectedParent().String()
 			}
 
 			chunk = append(chunk, archivalBlock)

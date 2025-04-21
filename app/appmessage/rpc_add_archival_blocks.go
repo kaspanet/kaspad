@@ -1,8 +1,20 @@
 package appmessage
 
+type AcceptedTxEntry struct {
+	TransactionID    string
+	IndexWithinBlock uint32
+}
+
+type MergesetBlockAcceptanceData struct {
+	BlockHash   string
+	AcceptedTxs []*AcceptedTxEntry
+}
+
 type ArchivalBlock struct {
-	Block *RPCBlock
-	Child string
+	Block          *RPCBlock
+	Child          string
+	AcceptanceData []*MergesetBlockAcceptanceData
+	SelectedParent string
 }
 
 // AddArchivalBlocksRequestMessage represents a request to add archival blocks
