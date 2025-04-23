@@ -210,7 +210,7 @@ func getOutputsHash(tx *externalapi.DomainTransaction, inputIndex int, hashType 
 }
 
 func getPayloadHash(tx *externalapi.DomainTransaction, reusedValues *SighashReusedValues) *externalapi.DomainHash {
-	if tx.SubnetworkID.Equal(&subnetworks.SubnetworkIDNative) {
+	if tx.SubnetworkID.Equal(&subnetworks.SubnetworkIDNative) && len(tx.Payload) == 0 {
 		return externalapi.NewZeroHash()
 	}
 
