@@ -41,6 +41,9 @@ var commandTypes = []reflect.Type{
 
 	reflect.TypeOf(protowire.KaspadMessage_BanRequest{}),
 	reflect.TypeOf(protowire.KaspadMessage_UnbanRequest{}),
+
+	reflect.TypeOf(protowire.KaspadMessage_GetPruningWindowRootsRequest{}),
+	reflect.TypeOf(protowire.KaspadMessage_AddArchivalBlocksRequest{}),
 }
 
 type commandDescription struct {

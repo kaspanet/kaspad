@@ -989,6 +989,34 @@ func toRPCPayload(message appmessage.Message) (isKaspadMessage_Payload, error) {
 			return nil, err
 		}
 		return payload, nil
+	case *appmessage.GetPruningWindowRootsRequestMessage:
+		payload := new(KaspadMessage_GetPruningWindowRootsRequest)
+		err := payload.fromAppMessage(message)
+		if err != nil {
+			return nil, err
+		}
+		return payload, nil
+	case *appmessage.GetPruningWindowRootsResponseMessage:
+		payload := new(KaspadMessage_GetPruningWindowRootsResponse)
+		err := payload.fromAppMessage(message)
+		if err != nil {
+			return nil, err
+		}
+		return payload, nil
+	case *appmessage.AddArchivalBlocksRequestMessage:
+		payload := new(KaspadMessage_AddArchivalBlocksRequest)
+		err := payload.fromAppMessage(message)
+		if err != nil {
+			return nil, err
+		}
+		return payload, nil
+	case *appmessage.AddArchivalBlocksResponseMessage:
+		payload := new(KaspadMessage_AddArchivalBlocksResponse)
+		err := payload.fromAppMessage(message)
+		if err != nil {
+			return nil, err
+		}
+		return payload, nil
 	default:
 		return nil, nil
 	}

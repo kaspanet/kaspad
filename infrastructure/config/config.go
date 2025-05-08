@@ -149,9 +149,9 @@ type ServiceOptions struct {
 	ServiceCommand string `short:"s" long:"service" description:"Service command {install, remove, start, stop}"`
 }
 
-// cleanAndExpandPath expands environment variables and leading ~ in the
+// CleanAndExpandPath expands environment variables and leading ~ in the
 // passed path, cleans the result, and returns it.
-func cleanAndExpandPath(path string) string {
+func CleanAndExpandPath(path string) string {
 	// Expand initial ~ to OS specific home directory.
 	if strings.HasPrefix(path, "~") {
 		homeDir := filepath.Dir(DefaultAppDir)
@@ -320,7 +320,7 @@ func LoadConfig() (*Config, error) {
 	}
 	cfg.RelayNonStd = relayNonStd
 
-	cfg.AppDir = cleanAndExpandPath(cfg.AppDir)
+	cfg.AppDir = CleanAndExpandPath(cfg.AppDir)
 	// Append the network type to the app directory so it is "namespaced"
 	// per network.
 	// All data is specific to a network, so namespacing the data directory
@@ -332,7 +332,7 @@ func LoadConfig() (*Config, error) {
 	if cfg.LogDir == "" {
 		cfg.LogDir = filepath.Join(cfg.AppDir, defaultLogDirname)
 	}
-	cfg.LogDir = cleanAndExpandPath(cfg.LogDir)
+	cfg.LogDir = CleanAndExpandPath(cfg.LogDir)
 
 	// Special show command to list supported subsystems and exit.
 	if cfg.LogLevel == "show" {

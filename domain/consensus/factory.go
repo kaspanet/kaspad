@@ -12,6 +12,7 @@ import (
 	"github.com/kaspanet/kaspad/domain/consensus/processes/blockparentbuilder"
 	parentssanager "github.com/kaspanet/kaspad/domain/consensus/processes/parentsmanager"
 	"github.com/kaspanet/kaspad/domain/consensus/processes/pruningproofmanager"
+	"github.com/kaspanet/kaspad/domain/prefixmanager"
 	"github.com/kaspanet/kaspad/util/staging"
 	"github.com/pkg/errors"
 
@@ -89,6 +90,8 @@ type Factory interface {
 	SetTestPreAllocateCache(preallocateCaches bool)
 	SetTestPastMedianTimeManager(medianTimeConstructor PastMedianTimeManagerConstructor)
 	SetTestDifficultyManager(difficultyConstructor DifficultyManagerConstructor)
+
+	AutoSetActivePrefix(value bool)
 }
 
 type factory struct {
@@ -98,6 +101,7 @@ type factory struct {
 	difficultyConstructor    DifficultyManagerConstructor
 	cacheSizeMiB             *int
 	preallocateCaches        *bool
+	autoCheckActivePrefix    bool
 }
 
 // NewFactory creates a new Consensus factory
@@ -106,6 +110,7 @@ func NewFactory() Factory {
 		ghostdagConstructor:      ghostdagmanager.New,
 		pastMedianTimeConsructor: pastmediantimemanager.New,
 		difficultyConstructor:    difficultymanager.New,
+		autoCheckActivePrefix:    false,
 	}
 }
 
@@ -588,8 +593,19 @@ func (f *factory) NewTestConsensus(config *Config, testName string) (
 		return nil, nil, err
 	}
 
-	testConsensusDBPrefix := &prefix.Prefix{}
-	consensusAsInterface, shouldMigrate, err := f.NewConsensus(config, db, testConsensusDBPrefix, nil)
+	prefix := &prefix.Prefix{}
+	if f.autoCheckActivePrefix {
+		activePrefix, exists, err := prefixmanager.ActivePrefix(db)
+		if err != nil {
+			return nil, nil, err
+		}
+
+		if exists {
+			prefix = activePrefix
+		}
+	}
+
+	consensusAsInterface, shouldMigrate, err := f.NewConsensus(config, db, prefix, nil)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -646,6 +662,11 @@ func (f *factory) SetTestLevelDBCacheSize(cacheSizeMiB int) {
 }
 func (f *factory) SetTestPreAllocateCache(preallocateCaches bool) {
 	f.preallocateCaches = &preallocateCaches
+}
+
+// AutoSetActivePrefix implements Factory.
+func (f *factory) AutoSetActivePrefix(value bool) {
+	f.autoCheckActivePrefix = value
 }
 
 func dagStores(config *Config,
