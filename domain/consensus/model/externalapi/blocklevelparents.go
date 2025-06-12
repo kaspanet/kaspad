@@ -1,5 +1,7 @@
 package externalapi
 
+import "slices"
+
 // BlockLevelParents represent the parents within a single super-block level
 // See https://github.com/kaspanet/research/issues/3 for further details
 type BlockLevelParents []*DomainHash
@@ -10,13 +12,7 @@ func (sl BlockLevelParents) Equal(other BlockLevelParents) bool {
 		return false
 	}
 	for _, thisHash := range sl {
-		found := false
-		for _, otherHash := range other {
-			if thisHash.Equal(otherHash) {
-				found = true
-				break
-			}
-		}
+		found := slices.ContainsFunc(other, thisHash.Equal)
 		if !found {
 			return false
 		}
