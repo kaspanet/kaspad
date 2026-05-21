@@ -33,7 +33,7 @@ type server struct {
 	rpcClient           *rpcclient.RPCClient // RPC client for ongoing user requests
 	backgroundRPCClient *rpcclient.RPCClient // RPC client dedicated for address and UTXO background fetching
 	params              *dagconfig.Params
-	coinbaseMaturity    uint64 // Is different from default if we use testnet-11
+	coinbaseMaturity    uint64 // Different from go-kaspad default following Crescendo
 
 	lock                            sync.RWMutex
 	utxosSortedByAmount             []*walletUTXO
@@ -96,15 +96,8 @@ func Start(params *dagconfig.Params, listen, rpcServer string, keysFilePath stri
 		return err
 	}
 
-	dagInfo, err := rpcClient.GetBlockDAGInfo()
-	if err != nil {
-		return nil
-	}
-
-	coinbaseMaturity := params.BlockCoinbaseMaturity
-	if dagInfo.NetworkName == "kaspa-testnet-11" {
-		coinbaseMaturity = 1000
-	}
+	// Post-Crescendo coinbase maturity
+	coinbaseMaturity := uint64(1000)
 
 	serverInstance := &server{
 		rpcClient:                   rpcClient,

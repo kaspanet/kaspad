@@ -2,8 +2,9 @@ package appmessage
 
 import (
 	"encoding/hex"
-	"github.com/pkg/errors"
 	"math/big"
+
+	"github.com/pkg/errors"
 
 	"github.com/kaspanet/kaspad/domain/consensus/utils/blockheader"
 	"github.com/kaspanet/kaspad/domain/consensus/utils/hashes"
@@ -213,14 +214,14 @@ func RPCTransactionToDomainTransaction(rpcTransaction *RPCTransaction) (*externa
 	}
 
 	return &externalapi.DomainTransaction{
-		Version:      rpcTransaction.Version,
-		Inputs:       inputs,
-		Outputs:      outputs,
-		LockTime:     rpcTransaction.LockTime,
-		SubnetworkID: *subnetworkID,
-		Gas:          rpcTransaction.Gas,
-		Mass:         rpcTransaction.Mass, // BPS10 add mass
-		Payload:      payload,
+		Version:        rpcTransaction.Version,
+		Inputs:         inputs,
+		Outputs:        outputs,
+		LockTime:       rpcTransaction.LockTime,
+		SubnetworkID:   *subnetworkID,
+		Gas:            rpcTransaction.Gas,
+		MassCommitment: rpcTransaction.Mass,
+		Payload:        payload,
 	}, nil
 }
 
@@ -288,7 +289,7 @@ func DomainTransactionToRPCTransaction(transaction *externalapi.DomainTransactio
 		LockTime:     transaction.LockTime,
 		SubnetworkID: subnetworkID,
 		Gas:          transaction.Gas,
-		Mass:         transaction.Mass, // <<< BPS10 add mass
+		Mass:         transaction.MassCommitment,
 		Payload:      payload,
 	}
 }

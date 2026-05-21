@@ -81,16 +81,16 @@ func (ctx *Context) PopulateBlockWithVerboseData(block *appmessage.RPCBlock, dom
 		block.VerboseData.SelectedParentHash = blockInfo.SelectedParent.String()
 	}
 
-	if blockInfo.BlockStatus == externalapi.StatusHeaderOnly {
-		return nil
-	}
-
 	// Get the block if we didn't receive it previously
 	if domainBlock == nil {
 		domainBlock, err = ctx.Domain.Consensus().GetBlockEvenIfHeaderOnly(blockHash)
 		if err != nil {
 			return err
 		}
+	}
+
+	if len(domainBlock.Transactions) == 0 {
+		return nil
 	}
 
 	transactionIDs := make([]string, len(domainBlock.Transactions))
