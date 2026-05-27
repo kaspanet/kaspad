@@ -190,6 +190,7 @@ func RPCTransactionToDomainTransaction(rpcTransaction *RPCTransaction) (*externa
 			SignatureScript:  signatureScript,
 			Sequence:         input.Sequence,
 			SigOpCount:       input.SigOpCount,
+			ComputeBudget:    input.ComputeBudget,
 		}
 	}
 	outputs := make([]*externalapi.DomainTransactionOutput, len(rpcTransaction.Outputs))
@@ -278,6 +279,7 @@ func DomainTransactionToRPCTransaction(transaction *externalapi.DomainTransactio
 			SignatureScript:  signatureScript,
 			Sequence:         input.Sequence,
 			SigOpCount:       input.SigOpCount,
+			ComputeBudget:    input.ComputeBudget,
 		}
 	}
 	outputs := make([]*RPCTransactionOutput, len(transaction.Outputs))

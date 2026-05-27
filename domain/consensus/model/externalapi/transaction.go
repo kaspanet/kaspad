@@ -139,13 +139,14 @@ type DomainTransactionInput struct {
 	SignatureScript  []byte
 	Sequence         uint64
 	SigOpCount       byte
+	ComputeBudget    uint32
 
 	UTXOEntry UTXOEntry
 }
 
 // If this doesn't compile, it means the type definition has been changed, so it's
 // an indication to update Equal and Clone accordingly.
-var _ = &DomainTransactionInput{DomainOutpoint{}, []byte{}, 0, 0, nil}
+var _ = &DomainTransactionInput{DomainOutpoint{}, []byte{}, 0, 0, 0, nil}
 
 // Equal returns whether input equals to other
 func (input *DomainTransactionInput) Equal(other *DomainTransactionInput) bool {
@@ -169,6 +170,10 @@ func (input *DomainTransactionInput) Equal(other *DomainTransactionInput) bool {
 		return false
 	}
 
+	if input.ComputeBudget != other.ComputeBudget {
+		return false
+	}
+
 	if input.UTXOEntry != nil && other.UTXOEntry != nil && !input.UTXOEntry.Equal(other.UTXOEntry) {
 		panic(errors.New("identical inputs should always have the same UTXO entry"))
 	}
@@ -186,6 +191,7 @@ func (input *DomainTransactionInput) Clone() *DomainTransactionInput {
 		SignatureScript:  signatureScriptClone,
 		Sequence:         input.Sequence,
 		SigOpCount:       input.SigOpCount,
+		ComputeBudget:    input.ComputeBudget,
 		UTXOEntry:        input.UTXOEntry,
 	}
 }
