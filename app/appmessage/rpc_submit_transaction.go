@@ -64,6 +64,7 @@ type RPCTransactionInput struct {
 	Sequence         uint64
 	SigOpCount       byte
 	VerboseData      *RPCTransactionInputVerboseData
+	ComputeBudget	 uint32
 }
 
 // RPCScriptPublicKey is a kaspad ScriptPublicKey representation
