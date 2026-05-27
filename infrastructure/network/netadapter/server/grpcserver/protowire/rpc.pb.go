@@ -20,12 +20,11 @@
 package protowire
 
 import (
+	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
+	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"
 	sync "sync"
 	unsafe "unsafe"
-
-	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
-	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 )
 
 const (
@@ -81,7 +80,7 @@ func (x SubmitBlockResponseMessage_RejectReason) Number() protoreflect.EnumNumbe
 
 // Deprecated: Use SubmitBlockResponseMessage_RejectReason.Descriptor instead.
 func (SubmitBlockResponseMessage_RejectReason) EnumDescriptor() ([]byte, []int) {
-	return file_rpc_proto_rawDescGZIP(), []int{17, 0}
+	return file_rpc_proto_rawDescGZIP(), []int{18, 0}
 }
 
 // RPCError represents a generic non-internal error.
@@ -733,6 +732,7 @@ type RpcTransactionOutput struct {
 	Amount          uint64                           `protobuf:"varint,1,opt,name=amount,proto3" json:"amount,omitempty"`
 	ScriptPublicKey *RpcScriptPublicKey              `protobuf:"bytes,2,opt,name=scriptPublicKey,proto3" json:"scriptPublicKey,omitempty"`
 	VerboseData     *RpcTransactionOutputVerboseData `protobuf:"bytes,3,opt,name=verboseData,proto3" json:"verboseData,omitempty"`
+	Covenant        *RpcCovenantBinding              `protobuf:"bytes,4,opt,name=covenant,proto3,oneof" json:"covenant,omitempty"`
 	unknownFields   protoimpl.UnknownFields
 	sizeCache       protoimpl.SizeCache
 }
@@ -788,6 +788,65 @@ func (x *RpcTransactionOutput) GetVerboseData() *RpcTransactionOutputVerboseData
 	return nil
 }
 
+func (x *RpcTransactionOutput) GetCovenant() *RpcCovenantBinding {
+	if x != nil {
+		return x.Covenant
+	}
+	return nil
+}
+
+type RpcCovenantBinding struct {
+	state            protoimpl.MessageState `protogen:"open.v1"`
+	AuthorizingInput uint32                 `protobuf:"varint,1,opt,name=authorizing_input,json=authorizingInput,proto3" json:"authorizing_input,omitempty"`
+	CovenantId       string                 `protobuf:"bytes,2,opt,name=covenant_id,json=covenantId,proto3" json:"covenant_id,omitempty"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
+}
+
+func (x *RpcCovenantBinding) Reset() {
+	*x = RpcCovenantBinding{}
+	mi := &file_rpc_proto_msgTypes[9]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RpcCovenantBinding) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RpcCovenantBinding) ProtoMessage() {}
+
+func (x *RpcCovenantBinding) ProtoReflect() protoreflect.Message {
+	mi := &file_rpc_proto_msgTypes[9]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RpcCovenantBinding.ProtoReflect.Descriptor instead.
+func (*RpcCovenantBinding) Descriptor() ([]byte, []int) {
+	return file_rpc_proto_rawDescGZIP(), []int{9}
+}
+
+func (x *RpcCovenantBinding) GetAuthorizingInput() uint32 {
+	if x != nil {
+		return x.AuthorizingInput
+	}
+	return 0
+}
+
+func (x *RpcCovenantBinding) GetCovenantId() string {
+	if x != nil {
+		return x.CovenantId
+	}
+	return ""
+}
+
 type RpcOutpoint struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	TransactionId string                 `protobuf:"bytes,1,opt,name=transactionId,proto3" json:"transactionId,omitempty"`
@@ -798,7 +857,7 @@ type RpcOutpoint struct {
 
 func (x *RpcOutpoint) Reset() {
 	*x = RpcOutpoint{}
-	mi := &file_rpc_proto_msgTypes[9]
+	mi := &file_rpc_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -810,7 +869,7 @@ func (x *RpcOutpoint) String() string {
 func (*RpcOutpoint) ProtoMessage() {}
 
 func (x *RpcOutpoint) ProtoReflect() protoreflect.Message {
-	mi := &file_rpc_proto_msgTypes[9]
+	mi := &file_rpc_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -823,7 +882,7 @@ func (x *RpcOutpoint) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RpcOutpoint.ProtoReflect.Descriptor instead.
 func (*RpcOutpoint) Descriptor() ([]byte, []int) {
-	return file_rpc_proto_rawDescGZIP(), []int{9}
+	return file_rpc_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *RpcOutpoint) GetTransactionId() string {
@@ -852,7 +911,7 @@ type RpcUtxoEntry struct {
 
 func (x *RpcUtxoEntry) Reset() {
 	*x = RpcUtxoEntry{}
-	mi := &file_rpc_proto_msgTypes[10]
+	mi := &file_rpc_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -864,7 +923,7 @@ func (x *RpcUtxoEntry) String() string {
 func (*RpcUtxoEntry) ProtoMessage() {}
 
 func (x *RpcUtxoEntry) ProtoReflect() protoreflect.Message {
-	mi := &file_rpc_proto_msgTypes[10]
+	mi := &file_rpc_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -877,7 +936,7 @@ func (x *RpcUtxoEntry) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RpcUtxoEntry.ProtoReflect.Descriptor instead.
 func (*RpcUtxoEntry) Descriptor() ([]byte, []int) {
-	return file_rpc_proto_rawDescGZIP(), []int{10}
+	return file_rpc_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *RpcUtxoEntry) GetAmount() uint64 {
@@ -921,7 +980,7 @@ type RpcTransactionVerboseData struct {
 
 func (x *RpcTransactionVerboseData) Reset() {
 	*x = RpcTransactionVerboseData{}
-	mi := &file_rpc_proto_msgTypes[11]
+	mi := &file_rpc_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -933,7 +992,7 @@ func (x *RpcTransactionVerboseData) String() string {
 func (*RpcTransactionVerboseData) ProtoMessage() {}
 
 func (x *RpcTransactionVerboseData) ProtoReflect() protoreflect.Message {
-	mi := &file_rpc_proto_msgTypes[11]
+	mi := &file_rpc_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -946,7 +1005,7 @@ func (x *RpcTransactionVerboseData) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RpcTransactionVerboseData.ProtoReflect.Descriptor instead.
 func (*RpcTransactionVerboseData) Descriptor() ([]byte, []int) {
-	return file_rpc_proto_rawDescGZIP(), []int{11}
+	return file_rpc_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *RpcTransactionVerboseData) GetTransactionId() string {
@@ -992,7 +1051,7 @@ type RpcTransactionInputVerboseData struct {
 
 func (x *RpcTransactionInputVerboseData) Reset() {
 	*x = RpcTransactionInputVerboseData{}
-	mi := &file_rpc_proto_msgTypes[12]
+	mi := &file_rpc_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1004,7 +1063,7 @@ func (x *RpcTransactionInputVerboseData) String() string {
 func (*RpcTransactionInputVerboseData) ProtoMessage() {}
 
 func (x *RpcTransactionInputVerboseData) ProtoReflect() protoreflect.Message {
-	mi := &file_rpc_proto_msgTypes[12]
+	mi := &file_rpc_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1017,7 +1076,7 @@ func (x *RpcTransactionInputVerboseData) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RpcTransactionInputVerboseData.ProtoReflect.Descriptor instead.
 func (*RpcTransactionInputVerboseData) Descriptor() ([]byte, []int) {
-	return file_rpc_proto_rawDescGZIP(), []int{12}
+	return file_rpc_proto_rawDescGZIP(), []int{13}
 }
 
 type RpcTransactionOutputVerboseData struct {
@@ -1030,7 +1089,7 @@ type RpcTransactionOutputVerboseData struct {
 
 func (x *RpcTransactionOutputVerboseData) Reset() {
 	*x = RpcTransactionOutputVerboseData{}
-	mi := &file_rpc_proto_msgTypes[13]
+	mi := &file_rpc_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1042,7 +1101,7 @@ func (x *RpcTransactionOutputVerboseData) String() string {
 func (*RpcTransactionOutputVerboseData) ProtoMessage() {}
 
 func (x *RpcTransactionOutputVerboseData) ProtoReflect() protoreflect.Message {
-	mi := &file_rpc_proto_msgTypes[13]
+	mi := &file_rpc_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1055,7 +1114,7 @@ func (x *RpcTransactionOutputVerboseData) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RpcTransactionOutputVerboseData.ProtoReflect.Descriptor instead.
 func (*RpcTransactionOutputVerboseData) Descriptor() ([]byte, []int) {
-	return file_rpc_proto_rawDescGZIP(), []int{13}
+	return file_rpc_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *RpcTransactionOutputVerboseData) GetScriptPublicKeyType() string {
@@ -1084,7 +1143,7 @@ type GetCurrentNetworkRequestMessage struct {
 
 func (x *GetCurrentNetworkRequestMessage) Reset() {
 	*x = GetCurrentNetworkRequestMessage{}
-	mi := &file_rpc_proto_msgTypes[14]
+	mi := &file_rpc_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1096,7 +1155,7 @@ func (x *GetCurrentNetworkRequestMessage) String() string {
 func (*GetCurrentNetworkRequestMessage) ProtoMessage() {}
 
 func (x *GetCurrentNetworkRequestMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_rpc_proto_msgTypes[14]
+	mi := &file_rpc_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1109,7 +1168,7 @@ func (x *GetCurrentNetworkRequestMessage) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetCurrentNetworkRequestMessage.ProtoReflect.Descriptor instead.
 func (*GetCurrentNetworkRequestMessage) Descriptor() ([]byte, []int) {
-	return file_rpc_proto_rawDescGZIP(), []int{14}
+	return file_rpc_proto_rawDescGZIP(), []int{15}
 }
 
 type GetCurrentNetworkResponseMessage struct {
@@ -1122,7 +1181,7 @@ type GetCurrentNetworkResponseMessage struct {
 
 func (x *GetCurrentNetworkResponseMessage) Reset() {
 	*x = GetCurrentNetworkResponseMessage{}
-	mi := &file_rpc_proto_msgTypes[15]
+	mi := &file_rpc_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1134,7 +1193,7 @@ func (x *GetCurrentNetworkResponseMessage) String() string {
 func (*GetCurrentNetworkResponseMessage) ProtoMessage() {}
 
 func (x *GetCurrentNetworkResponseMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_rpc_proto_msgTypes[15]
+	mi := &file_rpc_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1147,7 +1206,7 @@ func (x *GetCurrentNetworkResponseMessage) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetCurrentNetworkResponseMessage.ProtoReflect.Descriptor instead.
 func (*GetCurrentNetworkResponseMessage) Descriptor() ([]byte, []int) {
-	return file_rpc_proto_rawDescGZIP(), []int{15}
+	return file_rpc_proto_rawDescGZIP(), []int{16}
 }
 
 func (x *GetCurrentNetworkResponseMessage) GetCurrentNetwork() string {
@@ -1179,7 +1238,7 @@ type SubmitBlockRequestMessage struct {
 
 func (x *SubmitBlockRequestMessage) Reset() {
 	*x = SubmitBlockRequestMessage{}
-	mi := &file_rpc_proto_msgTypes[16]
+	mi := &file_rpc_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1191,7 +1250,7 @@ func (x *SubmitBlockRequestMessage) String() string {
 func (*SubmitBlockRequestMessage) ProtoMessage() {}
 
 func (x *SubmitBlockRequestMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_rpc_proto_msgTypes[16]
+	mi := &file_rpc_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1204,7 +1263,7 @@ func (x *SubmitBlockRequestMessage) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SubmitBlockRequestMessage.ProtoReflect.Descriptor instead.
 func (*SubmitBlockRequestMessage) Descriptor() ([]byte, []int) {
-	return file_rpc_proto_rawDescGZIP(), []int{16}
+	return file_rpc_proto_rawDescGZIP(), []int{17}
 }
 
 func (x *SubmitBlockRequestMessage) GetBlock() *RpcBlock {
@@ -1231,7 +1290,7 @@ type SubmitBlockResponseMessage struct {
 
 func (x *SubmitBlockResponseMessage) Reset() {
 	*x = SubmitBlockResponseMessage{}
-	mi := &file_rpc_proto_msgTypes[17]
+	mi := &file_rpc_proto_msgTypes[18]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1243,7 +1302,7 @@ func (x *SubmitBlockResponseMessage) String() string {
 func (*SubmitBlockResponseMessage) ProtoMessage() {}
 
 func (x *SubmitBlockResponseMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_rpc_proto_msgTypes[17]
+	mi := &file_rpc_proto_msgTypes[18]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1256,7 +1315,7 @@ func (x *SubmitBlockResponseMessage) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SubmitBlockResponseMessage.ProtoReflect.Descriptor instead.
 func (*SubmitBlockResponseMessage) Descriptor() ([]byte, []int) {
-	return file_rpc_proto_rawDescGZIP(), []int{17}
+	return file_rpc_proto_rawDescGZIP(), []int{18}
 }
 
 func (x *SubmitBlockResponseMessage) GetRejectReason() SubmitBlockResponseMessage_RejectReason {
@@ -1289,7 +1348,7 @@ type GetBlockTemplateRequestMessage struct {
 
 func (x *GetBlockTemplateRequestMessage) Reset() {
 	*x = GetBlockTemplateRequestMessage{}
-	mi := &file_rpc_proto_msgTypes[18]
+	mi := &file_rpc_proto_msgTypes[19]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1301,7 +1360,7 @@ func (x *GetBlockTemplateRequestMessage) String() string {
 func (*GetBlockTemplateRequestMessage) ProtoMessage() {}
 
 func (x *GetBlockTemplateRequestMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_rpc_proto_msgTypes[18]
+	mi := &file_rpc_proto_msgTypes[19]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1314,7 +1373,7 @@ func (x *GetBlockTemplateRequestMessage) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetBlockTemplateRequestMessage.ProtoReflect.Descriptor instead.
 func (*GetBlockTemplateRequestMessage) Descriptor() ([]byte, []int) {
-	return file_rpc_proto_rawDescGZIP(), []int{18}
+	return file_rpc_proto_rawDescGZIP(), []int{19}
 }
 
 func (x *GetBlockTemplateRequestMessage) GetPayAddress() string {
@@ -1347,7 +1406,7 @@ type GetBlockTemplateResponseMessage struct {
 
 func (x *GetBlockTemplateResponseMessage) Reset() {
 	*x = GetBlockTemplateResponseMessage{}
-	mi := &file_rpc_proto_msgTypes[19]
+	mi := &file_rpc_proto_msgTypes[20]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1359,7 +1418,7 @@ func (x *GetBlockTemplateResponseMessage) String() string {
 func (*GetBlockTemplateResponseMessage) ProtoMessage() {}
 
 func (x *GetBlockTemplateResponseMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_rpc_proto_msgTypes[19]
+	mi := &file_rpc_proto_msgTypes[20]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1372,7 +1431,7 @@ func (x *GetBlockTemplateResponseMessage) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetBlockTemplateResponseMessage.ProtoReflect.Descriptor instead.
 func (*GetBlockTemplateResponseMessage) Descriptor() ([]byte, []int) {
-	return file_rpc_proto_rawDescGZIP(), []int{19}
+	return file_rpc_proto_rawDescGZIP(), []int{20}
 }
 
 func (x *GetBlockTemplateResponseMessage) GetBlock() *RpcBlock {
@@ -1408,7 +1467,7 @@ type NotifyBlockAddedRequestMessage struct {
 
 func (x *NotifyBlockAddedRequestMessage) Reset() {
 	*x = NotifyBlockAddedRequestMessage{}
-	mi := &file_rpc_proto_msgTypes[20]
+	mi := &file_rpc_proto_msgTypes[21]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1420,7 +1479,7 @@ func (x *NotifyBlockAddedRequestMessage) String() string {
 func (*NotifyBlockAddedRequestMessage) ProtoMessage() {}
 
 func (x *NotifyBlockAddedRequestMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_rpc_proto_msgTypes[20]
+	mi := &file_rpc_proto_msgTypes[21]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1433,7 +1492,7 @@ func (x *NotifyBlockAddedRequestMessage) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use NotifyBlockAddedRequestMessage.ProtoReflect.Descriptor instead.
 func (*NotifyBlockAddedRequestMessage) Descriptor() ([]byte, []int) {
-	return file_rpc_proto_rawDescGZIP(), []int{20}
+	return file_rpc_proto_rawDescGZIP(), []int{21}
 }
 
 type NotifyBlockAddedResponseMessage struct {
@@ -1445,7 +1504,7 @@ type NotifyBlockAddedResponseMessage struct {
 
 func (x *NotifyBlockAddedResponseMessage) Reset() {
 	*x = NotifyBlockAddedResponseMessage{}
-	mi := &file_rpc_proto_msgTypes[21]
+	mi := &file_rpc_proto_msgTypes[22]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1457,7 +1516,7 @@ func (x *NotifyBlockAddedResponseMessage) String() string {
 func (*NotifyBlockAddedResponseMessage) ProtoMessage() {}
 
 func (x *NotifyBlockAddedResponseMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_rpc_proto_msgTypes[21]
+	mi := &file_rpc_proto_msgTypes[22]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1470,7 +1529,7 @@ func (x *NotifyBlockAddedResponseMessage) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use NotifyBlockAddedResponseMessage.ProtoReflect.Descriptor instead.
 func (*NotifyBlockAddedResponseMessage) Descriptor() ([]byte, []int) {
-	return file_rpc_proto_rawDescGZIP(), []int{21}
+	return file_rpc_proto_rawDescGZIP(), []int{22}
 }
 
 func (x *NotifyBlockAddedResponseMessage) GetError() *RPCError {
@@ -1493,7 +1552,7 @@ type BlockAddedNotificationMessage struct {
 
 func (x *BlockAddedNotificationMessage) Reset() {
 	*x = BlockAddedNotificationMessage{}
-	mi := &file_rpc_proto_msgTypes[22]
+	mi := &file_rpc_proto_msgTypes[23]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1505,7 +1564,7 @@ func (x *BlockAddedNotificationMessage) String() string {
 func (*BlockAddedNotificationMessage) ProtoMessage() {}
 
 func (x *BlockAddedNotificationMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_rpc_proto_msgTypes[22]
+	mi := &file_rpc_proto_msgTypes[23]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1518,7 +1577,7 @@ func (x *BlockAddedNotificationMessage) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BlockAddedNotificationMessage.ProtoReflect.Descriptor instead.
 func (*BlockAddedNotificationMessage) Descriptor() ([]byte, []int) {
-	return file_rpc_proto_rawDescGZIP(), []int{22}
+	return file_rpc_proto_rawDescGZIP(), []int{23}
 }
 
 func (x *BlockAddedNotificationMessage) GetBlock() *RpcBlock {
@@ -1538,7 +1597,7 @@ type GetPeerAddressesRequestMessage struct {
 
 func (x *GetPeerAddressesRequestMessage) Reset() {
 	*x = GetPeerAddressesRequestMessage{}
-	mi := &file_rpc_proto_msgTypes[23]
+	mi := &file_rpc_proto_msgTypes[24]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1550,7 +1609,7 @@ func (x *GetPeerAddressesRequestMessage) String() string {
 func (*GetPeerAddressesRequestMessage) ProtoMessage() {}
 
 func (x *GetPeerAddressesRequestMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_rpc_proto_msgTypes[23]
+	mi := &file_rpc_proto_msgTypes[24]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1563,7 +1622,7 @@ func (x *GetPeerAddressesRequestMessage) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetPeerAddressesRequestMessage.ProtoReflect.Descriptor instead.
 func (*GetPeerAddressesRequestMessage) Descriptor() ([]byte, []int) {
-	return file_rpc_proto_rawDescGZIP(), []int{23}
+	return file_rpc_proto_rawDescGZIP(), []int{24}
 }
 
 type GetPeerAddressesResponseMessage struct {
@@ -1577,7 +1636,7 @@ type GetPeerAddressesResponseMessage struct {
 
 func (x *GetPeerAddressesResponseMessage) Reset() {
 	*x = GetPeerAddressesResponseMessage{}
-	mi := &file_rpc_proto_msgTypes[24]
+	mi := &file_rpc_proto_msgTypes[25]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1589,7 +1648,7 @@ func (x *GetPeerAddressesResponseMessage) String() string {
 func (*GetPeerAddressesResponseMessage) ProtoMessage() {}
 
 func (x *GetPeerAddressesResponseMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_rpc_proto_msgTypes[24]
+	mi := &file_rpc_proto_msgTypes[25]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1602,7 +1661,7 @@ func (x *GetPeerAddressesResponseMessage) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetPeerAddressesResponseMessage.ProtoReflect.Descriptor instead.
 func (*GetPeerAddressesResponseMessage) Descriptor() ([]byte, []int) {
-	return file_rpc_proto_rawDescGZIP(), []int{24}
+	return file_rpc_proto_rawDescGZIP(), []int{25}
 }
 
 func (x *GetPeerAddressesResponseMessage) GetAddresses() []*GetPeerAddressesKnownAddressMessage {
@@ -1635,7 +1694,7 @@ type GetPeerAddressesKnownAddressMessage struct {
 
 func (x *GetPeerAddressesKnownAddressMessage) Reset() {
 	*x = GetPeerAddressesKnownAddressMessage{}
-	mi := &file_rpc_proto_msgTypes[25]
+	mi := &file_rpc_proto_msgTypes[26]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1647,7 +1706,7 @@ func (x *GetPeerAddressesKnownAddressMessage) String() string {
 func (*GetPeerAddressesKnownAddressMessage) ProtoMessage() {}
 
 func (x *GetPeerAddressesKnownAddressMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_rpc_proto_msgTypes[25]
+	mi := &file_rpc_proto_msgTypes[26]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1660,7 +1719,7 @@ func (x *GetPeerAddressesKnownAddressMessage) ProtoReflect() protoreflect.Messag
 
 // Deprecated: Use GetPeerAddressesKnownAddressMessage.ProtoReflect.Descriptor instead.
 func (*GetPeerAddressesKnownAddressMessage) Descriptor() ([]byte, []int) {
-	return file_rpc_proto_rawDescGZIP(), []int{25}
+	return file_rpc_proto_rawDescGZIP(), []int{26}
 }
 
 func (x *GetPeerAddressesKnownAddressMessage) GetAddr() string {
@@ -1680,7 +1739,7 @@ type GetSelectedTipHashRequestMessage struct {
 
 func (x *GetSelectedTipHashRequestMessage) Reset() {
 	*x = GetSelectedTipHashRequestMessage{}
-	mi := &file_rpc_proto_msgTypes[26]
+	mi := &file_rpc_proto_msgTypes[27]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1692,7 +1751,7 @@ func (x *GetSelectedTipHashRequestMessage) String() string {
 func (*GetSelectedTipHashRequestMessage) ProtoMessage() {}
 
 func (x *GetSelectedTipHashRequestMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_rpc_proto_msgTypes[26]
+	mi := &file_rpc_proto_msgTypes[27]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1705,7 +1764,7 @@ func (x *GetSelectedTipHashRequestMessage) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetSelectedTipHashRequestMessage.ProtoReflect.Descriptor instead.
 func (*GetSelectedTipHashRequestMessage) Descriptor() ([]byte, []int) {
-	return file_rpc_proto_rawDescGZIP(), []int{26}
+	return file_rpc_proto_rawDescGZIP(), []int{27}
 }
 
 type GetSelectedTipHashResponseMessage struct {
@@ -1718,7 +1777,7 @@ type GetSelectedTipHashResponseMessage struct {
 
 func (x *GetSelectedTipHashResponseMessage) Reset() {
 	*x = GetSelectedTipHashResponseMessage{}
-	mi := &file_rpc_proto_msgTypes[27]
+	mi := &file_rpc_proto_msgTypes[28]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1730,7 +1789,7 @@ func (x *GetSelectedTipHashResponseMessage) String() string {
 func (*GetSelectedTipHashResponseMessage) ProtoMessage() {}
 
 func (x *GetSelectedTipHashResponseMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_rpc_proto_msgTypes[27]
+	mi := &file_rpc_proto_msgTypes[28]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1743,7 +1802,7 @@ func (x *GetSelectedTipHashResponseMessage) ProtoReflect() protoreflect.Message 
 
 // Deprecated: Use GetSelectedTipHashResponseMessage.ProtoReflect.Descriptor instead.
 func (*GetSelectedTipHashResponseMessage) Descriptor() ([]byte, []int) {
-	return file_rpc_proto_rawDescGZIP(), []int{27}
+	return file_rpc_proto_rawDescGZIP(), []int{28}
 }
 
 func (x *GetSelectedTipHashResponseMessage) GetSelectedTipHash() string {
@@ -1774,7 +1833,7 @@ type GetMempoolEntryRequestMessage struct {
 
 func (x *GetMempoolEntryRequestMessage) Reset() {
 	*x = GetMempoolEntryRequestMessage{}
-	mi := &file_rpc_proto_msgTypes[28]
+	mi := &file_rpc_proto_msgTypes[29]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1786,7 +1845,7 @@ func (x *GetMempoolEntryRequestMessage) String() string {
 func (*GetMempoolEntryRequestMessage) ProtoMessage() {}
 
 func (x *GetMempoolEntryRequestMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_rpc_proto_msgTypes[28]
+	mi := &file_rpc_proto_msgTypes[29]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1799,7 +1858,7 @@ func (x *GetMempoolEntryRequestMessage) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetMempoolEntryRequestMessage.ProtoReflect.Descriptor instead.
 func (*GetMempoolEntryRequestMessage) Descriptor() ([]byte, []int) {
-	return file_rpc_proto_rawDescGZIP(), []int{28}
+	return file_rpc_proto_rawDescGZIP(), []int{29}
 }
 
 func (x *GetMempoolEntryRequestMessage) GetTxId() string {
@@ -1833,7 +1892,7 @@ type GetMempoolEntryResponseMessage struct {
 
 func (x *GetMempoolEntryResponseMessage) Reset() {
 	*x = GetMempoolEntryResponseMessage{}
-	mi := &file_rpc_proto_msgTypes[29]
+	mi := &file_rpc_proto_msgTypes[30]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1845,7 +1904,7 @@ func (x *GetMempoolEntryResponseMessage) String() string {
 func (*GetMempoolEntryResponseMessage) ProtoMessage() {}
 
 func (x *GetMempoolEntryResponseMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_rpc_proto_msgTypes[29]
+	mi := &file_rpc_proto_msgTypes[30]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1858,7 +1917,7 @@ func (x *GetMempoolEntryResponseMessage) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetMempoolEntryResponseMessage.ProtoReflect.Descriptor instead.
 func (*GetMempoolEntryResponseMessage) Descriptor() ([]byte, []int) {
-	return file_rpc_proto_rawDescGZIP(), []int{29}
+	return file_rpc_proto_rawDescGZIP(), []int{30}
 }
 
 func (x *GetMempoolEntryResponseMessage) GetEntry() *MempoolEntry {
@@ -1887,7 +1946,7 @@ type GetMempoolEntriesRequestMessage struct {
 
 func (x *GetMempoolEntriesRequestMessage) Reset() {
 	*x = GetMempoolEntriesRequestMessage{}
-	mi := &file_rpc_proto_msgTypes[30]
+	mi := &file_rpc_proto_msgTypes[31]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1899,7 +1958,7 @@ func (x *GetMempoolEntriesRequestMessage) String() string {
 func (*GetMempoolEntriesRequestMessage) ProtoMessage() {}
 
 func (x *GetMempoolEntriesRequestMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_rpc_proto_msgTypes[30]
+	mi := &file_rpc_proto_msgTypes[31]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1912,7 +1971,7 @@ func (x *GetMempoolEntriesRequestMessage) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetMempoolEntriesRequestMessage.ProtoReflect.Descriptor instead.
 func (*GetMempoolEntriesRequestMessage) Descriptor() ([]byte, []int) {
-	return file_rpc_proto_rawDescGZIP(), []int{30}
+	return file_rpc_proto_rawDescGZIP(), []int{31}
 }
 
 func (x *GetMempoolEntriesRequestMessage) GetIncludeOrphanPool() bool {
@@ -1939,7 +1998,7 @@ type GetMempoolEntriesResponseMessage struct {
 
 func (x *GetMempoolEntriesResponseMessage) Reset() {
 	*x = GetMempoolEntriesResponseMessage{}
-	mi := &file_rpc_proto_msgTypes[31]
+	mi := &file_rpc_proto_msgTypes[32]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1951,7 +2010,7 @@ func (x *GetMempoolEntriesResponseMessage) String() string {
 func (*GetMempoolEntriesResponseMessage) ProtoMessage() {}
 
 func (x *GetMempoolEntriesResponseMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_rpc_proto_msgTypes[31]
+	mi := &file_rpc_proto_msgTypes[32]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1964,7 +2023,7 @@ func (x *GetMempoolEntriesResponseMessage) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetMempoolEntriesResponseMessage.ProtoReflect.Descriptor instead.
 func (*GetMempoolEntriesResponseMessage) Descriptor() ([]byte, []int) {
-	return file_rpc_proto_rawDescGZIP(), []int{31}
+	return file_rpc_proto_rawDescGZIP(), []int{32}
 }
 
 func (x *GetMempoolEntriesResponseMessage) GetEntries() []*MempoolEntry {
@@ -1992,7 +2051,7 @@ type MempoolEntry struct {
 
 func (x *MempoolEntry) Reset() {
 	*x = MempoolEntry{}
-	mi := &file_rpc_proto_msgTypes[32]
+	mi := &file_rpc_proto_msgTypes[33]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2004,7 +2063,7 @@ func (x *MempoolEntry) String() string {
 func (*MempoolEntry) ProtoMessage() {}
 
 func (x *MempoolEntry) ProtoReflect() protoreflect.Message {
-	mi := &file_rpc_proto_msgTypes[32]
+	mi := &file_rpc_proto_msgTypes[33]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2017,7 +2076,7 @@ func (x *MempoolEntry) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MempoolEntry.ProtoReflect.Descriptor instead.
 func (*MempoolEntry) Descriptor() ([]byte, []int) {
-	return file_rpc_proto_rawDescGZIP(), []int{32}
+	return file_rpc_proto_rawDescGZIP(), []int{33}
 }
 
 func (x *MempoolEntry) GetFee() uint64 {
@@ -2051,7 +2110,7 @@ type GetConnectedPeerInfoRequestMessage struct {
 
 func (x *GetConnectedPeerInfoRequestMessage) Reset() {
 	*x = GetConnectedPeerInfoRequestMessage{}
-	mi := &file_rpc_proto_msgTypes[33]
+	mi := &file_rpc_proto_msgTypes[34]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2063,7 +2122,7 @@ func (x *GetConnectedPeerInfoRequestMessage) String() string {
 func (*GetConnectedPeerInfoRequestMessage) ProtoMessage() {}
 
 func (x *GetConnectedPeerInfoRequestMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_rpc_proto_msgTypes[33]
+	mi := &file_rpc_proto_msgTypes[34]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2076,7 +2135,7 @@ func (x *GetConnectedPeerInfoRequestMessage) ProtoReflect() protoreflect.Message
 
 // Deprecated: Use GetConnectedPeerInfoRequestMessage.ProtoReflect.Descriptor instead.
 func (*GetConnectedPeerInfoRequestMessage) Descriptor() ([]byte, []int) {
-	return file_rpc_proto_rawDescGZIP(), []int{33}
+	return file_rpc_proto_rawDescGZIP(), []int{34}
 }
 
 type GetConnectedPeerInfoResponseMessage struct {
@@ -2089,7 +2148,7 @@ type GetConnectedPeerInfoResponseMessage struct {
 
 func (x *GetConnectedPeerInfoResponseMessage) Reset() {
 	*x = GetConnectedPeerInfoResponseMessage{}
-	mi := &file_rpc_proto_msgTypes[34]
+	mi := &file_rpc_proto_msgTypes[35]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2101,7 +2160,7 @@ func (x *GetConnectedPeerInfoResponseMessage) String() string {
 func (*GetConnectedPeerInfoResponseMessage) ProtoMessage() {}
 
 func (x *GetConnectedPeerInfoResponseMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_rpc_proto_msgTypes[34]
+	mi := &file_rpc_proto_msgTypes[35]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2114,7 +2173,7 @@ func (x *GetConnectedPeerInfoResponseMessage) ProtoReflect() protoreflect.Messag
 
 // Deprecated: Use GetConnectedPeerInfoResponseMessage.ProtoReflect.Descriptor instead.
 func (*GetConnectedPeerInfoResponseMessage) Descriptor() ([]byte, []int) {
-	return file_rpc_proto_rawDescGZIP(), []int{34}
+	return file_rpc_proto_rawDescGZIP(), []int{35}
 }
 
 func (x *GetConnectedPeerInfoResponseMessage) GetInfos() []*GetConnectedPeerInfoMessage {
@@ -2153,7 +2212,7 @@ type GetConnectedPeerInfoMessage struct {
 
 func (x *GetConnectedPeerInfoMessage) Reset() {
 	*x = GetConnectedPeerInfoMessage{}
-	mi := &file_rpc_proto_msgTypes[35]
+	mi := &file_rpc_proto_msgTypes[36]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2165,7 +2224,7 @@ func (x *GetConnectedPeerInfoMessage) String() string {
 func (*GetConnectedPeerInfoMessage) ProtoMessage() {}
 
 func (x *GetConnectedPeerInfoMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_rpc_proto_msgTypes[35]
+	mi := &file_rpc_proto_msgTypes[36]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2178,7 +2237,7 @@ func (x *GetConnectedPeerInfoMessage) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetConnectedPeerInfoMessage.ProtoReflect.Descriptor instead.
 func (*GetConnectedPeerInfoMessage) Descriptor() ([]byte, []int) {
-	return file_rpc_proto_rawDescGZIP(), []int{35}
+	return file_rpc_proto_rawDescGZIP(), []int{36}
 }
 
 func (x *GetConnectedPeerInfoMessage) GetId() string {
@@ -2257,7 +2316,7 @@ type AddPeerRequestMessage struct {
 
 func (x *AddPeerRequestMessage) Reset() {
 	*x = AddPeerRequestMessage{}
-	mi := &file_rpc_proto_msgTypes[36]
+	mi := &file_rpc_proto_msgTypes[37]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2269,7 +2328,7 @@ func (x *AddPeerRequestMessage) String() string {
 func (*AddPeerRequestMessage) ProtoMessage() {}
 
 func (x *AddPeerRequestMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_rpc_proto_msgTypes[36]
+	mi := &file_rpc_proto_msgTypes[37]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2282,7 +2341,7 @@ func (x *AddPeerRequestMessage) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AddPeerRequestMessage.ProtoReflect.Descriptor instead.
 func (*AddPeerRequestMessage) Descriptor() ([]byte, []int) {
-	return file_rpc_proto_rawDescGZIP(), []int{36}
+	return file_rpc_proto_rawDescGZIP(), []int{37}
 }
 
 func (x *AddPeerRequestMessage) GetAddress() string {
@@ -2308,7 +2367,7 @@ type AddPeerResponseMessage struct {
 
 func (x *AddPeerResponseMessage) Reset() {
 	*x = AddPeerResponseMessage{}
-	mi := &file_rpc_proto_msgTypes[37]
+	mi := &file_rpc_proto_msgTypes[38]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2320,7 +2379,7 @@ func (x *AddPeerResponseMessage) String() string {
 func (*AddPeerResponseMessage) ProtoMessage() {}
 
 func (x *AddPeerResponseMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_rpc_proto_msgTypes[37]
+	mi := &file_rpc_proto_msgTypes[38]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2333,7 +2392,7 @@ func (x *AddPeerResponseMessage) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AddPeerResponseMessage.ProtoReflect.Descriptor instead.
 func (*AddPeerResponseMessage) Descriptor() ([]byte, []int) {
-	return file_rpc_proto_rawDescGZIP(), []int{37}
+	return file_rpc_proto_rawDescGZIP(), []int{38}
 }
 
 func (x *AddPeerResponseMessage) GetError() *RPCError {
@@ -2354,7 +2413,7 @@ type SubmitTransactionRequestMessage struct {
 
 func (x *SubmitTransactionRequestMessage) Reset() {
 	*x = SubmitTransactionRequestMessage{}
-	mi := &file_rpc_proto_msgTypes[38]
+	mi := &file_rpc_proto_msgTypes[39]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2366,7 +2425,7 @@ func (x *SubmitTransactionRequestMessage) String() string {
 func (*SubmitTransactionRequestMessage) ProtoMessage() {}
 
 func (x *SubmitTransactionRequestMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_rpc_proto_msgTypes[38]
+	mi := &file_rpc_proto_msgTypes[39]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2379,7 +2438,7 @@ func (x *SubmitTransactionRequestMessage) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SubmitTransactionRequestMessage.ProtoReflect.Descriptor instead.
 func (*SubmitTransactionRequestMessage) Descriptor() ([]byte, []int) {
-	return file_rpc_proto_rawDescGZIP(), []int{38}
+	return file_rpc_proto_rawDescGZIP(), []int{39}
 }
 
 func (x *SubmitTransactionRequestMessage) GetTransaction() *RpcTransaction {
@@ -2407,7 +2466,7 @@ type SubmitTransactionResponseMessage struct {
 
 func (x *SubmitTransactionResponseMessage) Reset() {
 	*x = SubmitTransactionResponseMessage{}
-	mi := &file_rpc_proto_msgTypes[39]
+	mi := &file_rpc_proto_msgTypes[40]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2419,7 +2478,7 @@ func (x *SubmitTransactionResponseMessage) String() string {
 func (*SubmitTransactionResponseMessage) ProtoMessage() {}
 
 func (x *SubmitTransactionResponseMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_rpc_proto_msgTypes[39]
+	mi := &file_rpc_proto_msgTypes[40]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2432,7 +2491,7 @@ func (x *SubmitTransactionResponseMessage) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SubmitTransactionResponseMessage.ProtoReflect.Descriptor instead.
 func (*SubmitTransactionResponseMessage) Descriptor() ([]byte, []int) {
-	return file_rpc_proto_rawDescGZIP(), []int{39}
+	return file_rpc_proto_rawDescGZIP(), []int{40}
 }
 
 func (x *SubmitTransactionResponseMessage) GetTransactionId() string {
@@ -2462,7 +2521,7 @@ type NotifyVirtualSelectedParentChainChangedRequestMessage struct {
 
 func (x *NotifyVirtualSelectedParentChainChangedRequestMessage) Reset() {
 	*x = NotifyVirtualSelectedParentChainChangedRequestMessage{}
-	mi := &file_rpc_proto_msgTypes[40]
+	mi := &file_rpc_proto_msgTypes[41]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2474,7 +2533,7 @@ func (x *NotifyVirtualSelectedParentChainChangedRequestMessage) String() string 
 func (*NotifyVirtualSelectedParentChainChangedRequestMessage) ProtoMessage() {}
 
 func (x *NotifyVirtualSelectedParentChainChangedRequestMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_rpc_proto_msgTypes[40]
+	mi := &file_rpc_proto_msgTypes[41]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2487,7 +2546,7 @@ func (x *NotifyVirtualSelectedParentChainChangedRequestMessage) ProtoReflect() p
 
 // Deprecated: Use NotifyVirtualSelectedParentChainChangedRequestMessage.ProtoReflect.Descriptor instead.
 func (*NotifyVirtualSelectedParentChainChangedRequestMessage) Descriptor() ([]byte, []int) {
-	return file_rpc_proto_rawDescGZIP(), []int{40}
+	return file_rpc_proto_rawDescGZIP(), []int{41}
 }
 
 func (x *NotifyVirtualSelectedParentChainChangedRequestMessage) GetIncludeAcceptedTransactionIds() bool {
@@ -2506,7 +2565,7 @@ type NotifyVirtualSelectedParentChainChangedResponseMessage struct {
 
 func (x *NotifyVirtualSelectedParentChainChangedResponseMessage) Reset() {
 	*x = NotifyVirtualSelectedParentChainChangedResponseMessage{}
-	mi := &file_rpc_proto_msgTypes[41]
+	mi := &file_rpc_proto_msgTypes[42]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2518,7 +2577,7 @@ func (x *NotifyVirtualSelectedParentChainChangedResponseMessage) String() string
 func (*NotifyVirtualSelectedParentChainChangedResponseMessage) ProtoMessage() {}
 
 func (x *NotifyVirtualSelectedParentChainChangedResponseMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_rpc_proto_msgTypes[41]
+	mi := &file_rpc_proto_msgTypes[42]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2531,7 +2590,7 @@ func (x *NotifyVirtualSelectedParentChainChangedResponseMessage) ProtoReflect() 
 
 // Deprecated: Use NotifyVirtualSelectedParentChainChangedResponseMessage.ProtoReflect.Descriptor instead.
 func (*NotifyVirtualSelectedParentChainChangedResponseMessage) Descriptor() ([]byte, []int) {
-	return file_rpc_proto_rawDescGZIP(), []int{41}
+	return file_rpc_proto_rawDescGZIP(), []int{42}
 }
 
 func (x *NotifyVirtualSelectedParentChainChangedResponseMessage) GetError() *RPCError {
@@ -2560,7 +2619,7 @@ type VirtualSelectedParentChainChangedNotificationMessage struct {
 
 func (x *VirtualSelectedParentChainChangedNotificationMessage) Reset() {
 	*x = VirtualSelectedParentChainChangedNotificationMessage{}
-	mi := &file_rpc_proto_msgTypes[42]
+	mi := &file_rpc_proto_msgTypes[43]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2572,7 +2631,7 @@ func (x *VirtualSelectedParentChainChangedNotificationMessage) String() string {
 func (*VirtualSelectedParentChainChangedNotificationMessage) ProtoMessage() {}
 
 func (x *VirtualSelectedParentChainChangedNotificationMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_rpc_proto_msgTypes[42]
+	mi := &file_rpc_proto_msgTypes[43]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2585,7 +2644,7 @@ func (x *VirtualSelectedParentChainChangedNotificationMessage) ProtoReflect() pr
 
 // Deprecated: Use VirtualSelectedParentChainChangedNotificationMessage.ProtoReflect.Descriptor instead.
 func (*VirtualSelectedParentChainChangedNotificationMessage) Descriptor() ([]byte, []int) {
-	return file_rpc_proto_rawDescGZIP(), []int{42}
+	return file_rpc_proto_rawDescGZIP(), []int{43}
 }
 
 func (x *VirtualSelectedParentChainChangedNotificationMessage) GetRemovedChainBlockHashes() []string {
@@ -2622,7 +2681,7 @@ type GetBlockRequestMessage struct {
 
 func (x *GetBlockRequestMessage) Reset() {
 	*x = GetBlockRequestMessage{}
-	mi := &file_rpc_proto_msgTypes[43]
+	mi := &file_rpc_proto_msgTypes[44]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2634,7 +2693,7 @@ func (x *GetBlockRequestMessage) String() string {
 func (*GetBlockRequestMessage) ProtoMessage() {}
 
 func (x *GetBlockRequestMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_rpc_proto_msgTypes[43]
+	mi := &file_rpc_proto_msgTypes[44]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2647,7 +2706,7 @@ func (x *GetBlockRequestMessage) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetBlockRequestMessage.ProtoReflect.Descriptor instead.
 func (*GetBlockRequestMessage) Descriptor() ([]byte, []int) {
-	return file_rpc_proto_rawDescGZIP(), []int{43}
+	return file_rpc_proto_rawDescGZIP(), []int{44}
 }
 
 func (x *GetBlockRequestMessage) GetHash() string {
@@ -2674,7 +2733,7 @@ type GetBlockResponseMessage struct {
 
 func (x *GetBlockResponseMessage) Reset() {
 	*x = GetBlockResponseMessage{}
-	mi := &file_rpc_proto_msgTypes[44]
+	mi := &file_rpc_proto_msgTypes[45]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2686,7 +2745,7 @@ func (x *GetBlockResponseMessage) String() string {
 func (*GetBlockResponseMessage) ProtoMessage() {}
 
 func (x *GetBlockResponseMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_rpc_proto_msgTypes[44]
+	mi := &file_rpc_proto_msgTypes[45]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2699,7 +2758,7 @@ func (x *GetBlockResponseMessage) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetBlockResponseMessage.ProtoReflect.Descriptor instead.
 func (*GetBlockResponseMessage) Descriptor() ([]byte, []int) {
-	return file_rpc_proto_rawDescGZIP(), []int{44}
+	return file_rpc_proto_rawDescGZIP(), []int{45}
 }
 
 func (x *GetBlockResponseMessage) GetBlock() *RpcBlock {
@@ -2728,7 +2787,7 @@ type GetSubnetworkRequestMessage struct {
 
 func (x *GetSubnetworkRequestMessage) Reset() {
 	*x = GetSubnetworkRequestMessage{}
-	mi := &file_rpc_proto_msgTypes[45]
+	mi := &file_rpc_proto_msgTypes[46]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2740,7 +2799,7 @@ func (x *GetSubnetworkRequestMessage) String() string {
 func (*GetSubnetworkRequestMessage) ProtoMessage() {}
 
 func (x *GetSubnetworkRequestMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_rpc_proto_msgTypes[45]
+	mi := &file_rpc_proto_msgTypes[46]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2753,7 +2812,7 @@ func (x *GetSubnetworkRequestMessage) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetSubnetworkRequestMessage.ProtoReflect.Descriptor instead.
 func (*GetSubnetworkRequestMessage) Descriptor() ([]byte, []int) {
-	return file_rpc_proto_rawDescGZIP(), []int{45}
+	return file_rpc_proto_rawDescGZIP(), []int{46}
 }
 
 func (x *GetSubnetworkRequestMessage) GetSubnetworkId() string {
@@ -2773,7 +2832,7 @@ type GetSubnetworkResponseMessage struct {
 
 func (x *GetSubnetworkResponseMessage) Reset() {
 	*x = GetSubnetworkResponseMessage{}
-	mi := &file_rpc_proto_msgTypes[46]
+	mi := &file_rpc_proto_msgTypes[47]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2785,7 +2844,7 @@ func (x *GetSubnetworkResponseMessage) String() string {
 func (*GetSubnetworkResponseMessage) ProtoMessage() {}
 
 func (x *GetSubnetworkResponseMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_rpc_proto_msgTypes[46]
+	mi := &file_rpc_proto_msgTypes[47]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2798,7 +2857,7 @@ func (x *GetSubnetworkResponseMessage) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetSubnetworkResponseMessage.ProtoReflect.Descriptor instead.
 func (*GetSubnetworkResponseMessage) Descriptor() ([]byte, []int) {
-	return file_rpc_proto_rawDescGZIP(), []int{46}
+	return file_rpc_proto_rawDescGZIP(), []int{47}
 }
 
 func (x *GetSubnetworkResponseMessage) GetGasLimit() uint64 {
@@ -2827,7 +2886,7 @@ type GetVirtualSelectedParentChainFromBlockRequestMessage struct {
 
 func (x *GetVirtualSelectedParentChainFromBlockRequestMessage) Reset() {
 	*x = GetVirtualSelectedParentChainFromBlockRequestMessage{}
-	mi := &file_rpc_proto_msgTypes[47]
+	mi := &file_rpc_proto_msgTypes[48]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2839,7 +2898,7 @@ func (x *GetVirtualSelectedParentChainFromBlockRequestMessage) String() string {
 func (*GetVirtualSelectedParentChainFromBlockRequestMessage) ProtoMessage() {}
 
 func (x *GetVirtualSelectedParentChainFromBlockRequestMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_rpc_proto_msgTypes[47]
+	mi := &file_rpc_proto_msgTypes[48]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2852,7 +2911,7 @@ func (x *GetVirtualSelectedParentChainFromBlockRequestMessage) ProtoReflect() pr
 
 // Deprecated: Use GetVirtualSelectedParentChainFromBlockRequestMessage.ProtoReflect.Descriptor instead.
 func (*GetVirtualSelectedParentChainFromBlockRequestMessage) Descriptor() ([]byte, []int) {
-	return file_rpc_proto_rawDescGZIP(), []int{47}
+	return file_rpc_proto_rawDescGZIP(), []int{48}
 }
 
 func (x *GetVirtualSelectedParentChainFromBlockRequestMessage) GetStartHash() string {
@@ -2879,7 +2938,7 @@ type AcceptedTransactionIds struct {
 
 func (x *AcceptedTransactionIds) Reset() {
 	*x = AcceptedTransactionIds{}
-	mi := &file_rpc_proto_msgTypes[48]
+	mi := &file_rpc_proto_msgTypes[49]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2891,7 +2950,7 @@ func (x *AcceptedTransactionIds) String() string {
 func (*AcceptedTransactionIds) ProtoMessage() {}
 
 func (x *AcceptedTransactionIds) ProtoReflect() protoreflect.Message {
-	mi := &file_rpc_proto_msgTypes[48]
+	mi := &file_rpc_proto_msgTypes[49]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2904,7 +2963,7 @@ func (x *AcceptedTransactionIds) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AcceptedTransactionIds.ProtoReflect.Descriptor instead.
 func (*AcceptedTransactionIds) Descriptor() ([]byte, []int) {
-	return file_rpc_proto_rawDescGZIP(), []int{48}
+	return file_rpc_proto_rawDescGZIP(), []int{49}
 }
 
 func (x *AcceptedTransactionIds) GetAcceptingBlockHash() string {
@@ -2938,7 +2997,7 @@ type GetVirtualSelectedParentChainFromBlockResponseMessage struct {
 
 func (x *GetVirtualSelectedParentChainFromBlockResponseMessage) Reset() {
 	*x = GetVirtualSelectedParentChainFromBlockResponseMessage{}
-	mi := &file_rpc_proto_msgTypes[49]
+	mi := &file_rpc_proto_msgTypes[50]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2950,7 +3009,7 @@ func (x *GetVirtualSelectedParentChainFromBlockResponseMessage) String() string 
 func (*GetVirtualSelectedParentChainFromBlockResponseMessage) ProtoMessage() {}
 
 func (x *GetVirtualSelectedParentChainFromBlockResponseMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_rpc_proto_msgTypes[49]
+	mi := &file_rpc_proto_msgTypes[50]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2963,7 +3022,7 @@ func (x *GetVirtualSelectedParentChainFromBlockResponseMessage) ProtoReflect() p
 
 // Deprecated: Use GetVirtualSelectedParentChainFromBlockResponseMessage.ProtoReflect.Descriptor instead.
 func (*GetVirtualSelectedParentChainFromBlockResponseMessage) Descriptor() ([]byte, []int) {
-	return file_rpc_proto_rawDescGZIP(), []int{49}
+	return file_rpc_proto_rawDescGZIP(), []int{50}
 }
 
 func (x *GetVirtualSelectedParentChainFromBlockResponseMessage) GetRemovedChainBlockHashes() []string {
@@ -3007,7 +3066,7 @@ type GetBlocksRequestMessage struct {
 
 func (x *GetBlocksRequestMessage) Reset() {
 	*x = GetBlocksRequestMessage{}
-	mi := &file_rpc_proto_msgTypes[50]
+	mi := &file_rpc_proto_msgTypes[51]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3019,7 +3078,7 @@ func (x *GetBlocksRequestMessage) String() string {
 func (*GetBlocksRequestMessage) ProtoMessage() {}
 
 func (x *GetBlocksRequestMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_rpc_proto_msgTypes[50]
+	mi := &file_rpc_proto_msgTypes[51]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3032,7 +3091,7 @@ func (x *GetBlocksRequestMessage) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetBlocksRequestMessage.ProtoReflect.Descriptor instead.
 func (*GetBlocksRequestMessage) Descriptor() ([]byte, []int) {
-	return file_rpc_proto_rawDescGZIP(), []int{50}
+	return file_rpc_proto_rawDescGZIP(), []int{51}
 }
 
 func (x *GetBlocksRequestMessage) GetLowHash() string {
@@ -3067,7 +3126,7 @@ type GetBlocksResponseMessage struct {
 
 func (x *GetBlocksResponseMessage) Reset() {
 	*x = GetBlocksResponseMessage{}
-	mi := &file_rpc_proto_msgTypes[51]
+	mi := &file_rpc_proto_msgTypes[52]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3079,7 +3138,7 @@ func (x *GetBlocksResponseMessage) String() string {
 func (*GetBlocksResponseMessage) ProtoMessage() {}
 
 func (x *GetBlocksResponseMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_rpc_proto_msgTypes[51]
+	mi := &file_rpc_proto_msgTypes[52]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3092,7 +3151,7 @@ func (x *GetBlocksResponseMessage) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetBlocksResponseMessage.ProtoReflect.Descriptor instead.
 func (*GetBlocksResponseMessage) Descriptor() ([]byte, []int) {
-	return file_rpc_proto_rawDescGZIP(), []int{51}
+	return file_rpc_proto_rawDescGZIP(), []int{52}
 }
 
 func (x *GetBlocksResponseMessage) GetBlockHashes() []string {
@@ -3126,7 +3185,7 @@ type GetBlockCountRequestMessage struct {
 
 func (x *GetBlockCountRequestMessage) Reset() {
 	*x = GetBlockCountRequestMessage{}
-	mi := &file_rpc_proto_msgTypes[52]
+	mi := &file_rpc_proto_msgTypes[53]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3138,7 +3197,7 @@ func (x *GetBlockCountRequestMessage) String() string {
 func (*GetBlockCountRequestMessage) ProtoMessage() {}
 
 func (x *GetBlockCountRequestMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_rpc_proto_msgTypes[52]
+	mi := &file_rpc_proto_msgTypes[53]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3151,7 +3210,7 @@ func (x *GetBlockCountRequestMessage) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetBlockCountRequestMessage.ProtoReflect.Descriptor instead.
 func (*GetBlockCountRequestMessage) Descriptor() ([]byte, []int) {
-	return file_rpc_proto_rawDescGZIP(), []int{52}
+	return file_rpc_proto_rawDescGZIP(), []int{53}
 }
 
 type GetBlockCountResponseMessage struct {
@@ -3165,7 +3224,7 @@ type GetBlockCountResponseMessage struct {
 
 func (x *GetBlockCountResponseMessage) Reset() {
 	*x = GetBlockCountResponseMessage{}
-	mi := &file_rpc_proto_msgTypes[53]
+	mi := &file_rpc_proto_msgTypes[54]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3177,7 +3236,7 @@ func (x *GetBlockCountResponseMessage) String() string {
 func (*GetBlockCountResponseMessage) ProtoMessage() {}
 
 func (x *GetBlockCountResponseMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_rpc_proto_msgTypes[53]
+	mi := &file_rpc_proto_msgTypes[54]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3190,7 +3249,7 @@ func (x *GetBlockCountResponseMessage) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetBlockCountResponseMessage.ProtoReflect.Descriptor instead.
 func (*GetBlockCountResponseMessage) Descriptor() ([]byte, []int) {
-	return file_rpc_proto_rawDescGZIP(), []int{53}
+	return file_rpc_proto_rawDescGZIP(), []int{54}
 }
 
 func (x *GetBlockCountResponseMessage) GetBlockCount() uint64 {
@@ -3224,7 +3283,7 @@ type GetBlockDagInfoRequestMessage struct {
 
 func (x *GetBlockDagInfoRequestMessage) Reset() {
 	*x = GetBlockDagInfoRequestMessage{}
-	mi := &file_rpc_proto_msgTypes[54]
+	mi := &file_rpc_proto_msgTypes[55]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3236,7 +3295,7 @@ func (x *GetBlockDagInfoRequestMessage) String() string {
 func (*GetBlockDagInfoRequestMessage) ProtoMessage() {}
 
 func (x *GetBlockDagInfoRequestMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_rpc_proto_msgTypes[54]
+	mi := &file_rpc_proto_msgTypes[55]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3249,7 +3308,7 @@ func (x *GetBlockDagInfoRequestMessage) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetBlockDagInfoRequestMessage.ProtoReflect.Descriptor instead.
 func (*GetBlockDagInfoRequestMessage) Descriptor() ([]byte, []int) {
-	return file_rpc_proto_rawDescGZIP(), []int{54}
+	return file_rpc_proto_rawDescGZIP(), []int{55}
 }
 
 type GetBlockDagInfoResponseMessage struct {
@@ -3270,7 +3329,7 @@ type GetBlockDagInfoResponseMessage struct {
 
 func (x *GetBlockDagInfoResponseMessage) Reset() {
 	*x = GetBlockDagInfoResponseMessage{}
-	mi := &file_rpc_proto_msgTypes[55]
+	mi := &file_rpc_proto_msgTypes[56]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3282,7 +3341,7 @@ func (x *GetBlockDagInfoResponseMessage) String() string {
 func (*GetBlockDagInfoResponseMessage) ProtoMessage() {}
 
 func (x *GetBlockDagInfoResponseMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_rpc_proto_msgTypes[55]
+	mi := &file_rpc_proto_msgTypes[56]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3295,7 +3354,7 @@ func (x *GetBlockDagInfoResponseMessage) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetBlockDagInfoResponseMessage.ProtoReflect.Descriptor instead.
 func (*GetBlockDagInfoResponseMessage) Descriptor() ([]byte, []int) {
-	return file_rpc_proto_rawDescGZIP(), []int{55}
+	return file_rpc_proto_rawDescGZIP(), []int{56}
 }
 
 func (x *GetBlockDagInfoResponseMessage) GetNetworkName() string {
@@ -3377,7 +3436,7 @@ type ResolveFinalityConflictRequestMessage struct {
 
 func (x *ResolveFinalityConflictRequestMessage) Reset() {
 	*x = ResolveFinalityConflictRequestMessage{}
-	mi := &file_rpc_proto_msgTypes[56]
+	mi := &file_rpc_proto_msgTypes[57]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3389,7 +3448,7 @@ func (x *ResolveFinalityConflictRequestMessage) String() string {
 func (*ResolveFinalityConflictRequestMessage) ProtoMessage() {}
 
 func (x *ResolveFinalityConflictRequestMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_rpc_proto_msgTypes[56]
+	mi := &file_rpc_proto_msgTypes[57]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3402,7 +3461,7 @@ func (x *ResolveFinalityConflictRequestMessage) ProtoReflect() protoreflect.Mess
 
 // Deprecated: Use ResolveFinalityConflictRequestMessage.ProtoReflect.Descriptor instead.
 func (*ResolveFinalityConflictRequestMessage) Descriptor() ([]byte, []int) {
-	return file_rpc_proto_rawDescGZIP(), []int{56}
+	return file_rpc_proto_rawDescGZIP(), []int{57}
 }
 
 func (x *ResolveFinalityConflictRequestMessage) GetFinalityBlockHash() string {
@@ -3421,7 +3480,7 @@ type ResolveFinalityConflictResponseMessage struct {
 
 func (x *ResolveFinalityConflictResponseMessage) Reset() {
 	*x = ResolveFinalityConflictResponseMessage{}
-	mi := &file_rpc_proto_msgTypes[57]
+	mi := &file_rpc_proto_msgTypes[58]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3433,7 +3492,7 @@ func (x *ResolveFinalityConflictResponseMessage) String() string {
 func (*ResolveFinalityConflictResponseMessage) ProtoMessage() {}
 
 func (x *ResolveFinalityConflictResponseMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_rpc_proto_msgTypes[57]
+	mi := &file_rpc_proto_msgTypes[58]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3446,7 +3505,7 @@ func (x *ResolveFinalityConflictResponseMessage) ProtoReflect() protoreflect.Mes
 
 // Deprecated: Use ResolveFinalityConflictResponseMessage.ProtoReflect.Descriptor instead.
 func (*ResolveFinalityConflictResponseMessage) Descriptor() ([]byte, []int) {
-	return file_rpc_proto_rawDescGZIP(), []int{57}
+	return file_rpc_proto_rawDescGZIP(), []int{58}
 }
 
 func (x *ResolveFinalityConflictResponseMessage) GetError() *RPCError {
@@ -3464,7 +3523,7 @@ type NotifyFinalityConflictsRequestMessage struct {
 
 func (x *NotifyFinalityConflictsRequestMessage) Reset() {
 	*x = NotifyFinalityConflictsRequestMessage{}
-	mi := &file_rpc_proto_msgTypes[58]
+	mi := &file_rpc_proto_msgTypes[59]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3476,7 +3535,7 @@ func (x *NotifyFinalityConflictsRequestMessage) String() string {
 func (*NotifyFinalityConflictsRequestMessage) ProtoMessage() {}
 
 func (x *NotifyFinalityConflictsRequestMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_rpc_proto_msgTypes[58]
+	mi := &file_rpc_proto_msgTypes[59]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3489,7 +3548,7 @@ func (x *NotifyFinalityConflictsRequestMessage) ProtoReflect() protoreflect.Mess
 
 // Deprecated: Use NotifyFinalityConflictsRequestMessage.ProtoReflect.Descriptor instead.
 func (*NotifyFinalityConflictsRequestMessage) Descriptor() ([]byte, []int) {
-	return file_rpc_proto_rawDescGZIP(), []int{58}
+	return file_rpc_proto_rawDescGZIP(), []int{59}
 }
 
 type NotifyFinalityConflictsResponseMessage struct {
@@ -3501,7 +3560,7 @@ type NotifyFinalityConflictsResponseMessage struct {
 
 func (x *NotifyFinalityConflictsResponseMessage) Reset() {
 	*x = NotifyFinalityConflictsResponseMessage{}
-	mi := &file_rpc_proto_msgTypes[59]
+	mi := &file_rpc_proto_msgTypes[60]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3513,7 +3572,7 @@ func (x *NotifyFinalityConflictsResponseMessage) String() string {
 func (*NotifyFinalityConflictsResponseMessage) ProtoMessage() {}
 
 func (x *NotifyFinalityConflictsResponseMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_rpc_proto_msgTypes[59]
+	mi := &file_rpc_proto_msgTypes[60]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3526,7 +3585,7 @@ func (x *NotifyFinalityConflictsResponseMessage) ProtoReflect() protoreflect.Mes
 
 // Deprecated: Use NotifyFinalityConflictsResponseMessage.ProtoReflect.Descriptor instead.
 func (*NotifyFinalityConflictsResponseMessage) Descriptor() ([]byte, []int) {
-	return file_rpc_proto_rawDescGZIP(), []int{59}
+	return file_rpc_proto_rawDescGZIP(), []int{60}
 }
 
 func (x *NotifyFinalityConflictsResponseMessage) GetError() *RPCError {
@@ -3545,7 +3604,7 @@ type FinalityConflictNotificationMessage struct {
 
 func (x *FinalityConflictNotificationMessage) Reset() {
 	*x = FinalityConflictNotificationMessage{}
-	mi := &file_rpc_proto_msgTypes[60]
+	mi := &file_rpc_proto_msgTypes[61]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3557,7 +3616,7 @@ func (x *FinalityConflictNotificationMessage) String() string {
 func (*FinalityConflictNotificationMessage) ProtoMessage() {}
 
 func (x *FinalityConflictNotificationMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_rpc_proto_msgTypes[60]
+	mi := &file_rpc_proto_msgTypes[61]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3570,7 +3629,7 @@ func (x *FinalityConflictNotificationMessage) ProtoReflect() protoreflect.Messag
 
 // Deprecated: Use FinalityConflictNotificationMessage.ProtoReflect.Descriptor instead.
 func (*FinalityConflictNotificationMessage) Descriptor() ([]byte, []int) {
-	return file_rpc_proto_rawDescGZIP(), []int{60}
+	return file_rpc_proto_rawDescGZIP(), []int{61}
 }
 
 func (x *FinalityConflictNotificationMessage) GetViolatingBlockHash() string {
@@ -3589,7 +3648,7 @@ type FinalityConflictResolvedNotificationMessage struct {
 
 func (x *FinalityConflictResolvedNotificationMessage) Reset() {
 	*x = FinalityConflictResolvedNotificationMessage{}
-	mi := &file_rpc_proto_msgTypes[61]
+	mi := &file_rpc_proto_msgTypes[62]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3601,7 +3660,7 @@ func (x *FinalityConflictResolvedNotificationMessage) String() string {
 func (*FinalityConflictResolvedNotificationMessage) ProtoMessage() {}
 
 func (x *FinalityConflictResolvedNotificationMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_rpc_proto_msgTypes[61]
+	mi := &file_rpc_proto_msgTypes[62]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3614,7 +3673,7 @@ func (x *FinalityConflictResolvedNotificationMessage) ProtoReflect() protoreflec
 
 // Deprecated: Use FinalityConflictResolvedNotificationMessage.ProtoReflect.Descriptor instead.
 func (*FinalityConflictResolvedNotificationMessage) Descriptor() ([]byte, []int) {
-	return file_rpc_proto_rawDescGZIP(), []int{61}
+	return file_rpc_proto_rawDescGZIP(), []int{62}
 }
 
 func (x *FinalityConflictResolvedNotificationMessage) GetFinalityBlockHash() string {
@@ -3633,7 +3692,7 @@ type ShutDownRequestMessage struct {
 
 func (x *ShutDownRequestMessage) Reset() {
 	*x = ShutDownRequestMessage{}
-	mi := &file_rpc_proto_msgTypes[62]
+	mi := &file_rpc_proto_msgTypes[63]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3645,7 +3704,7 @@ func (x *ShutDownRequestMessage) String() string {
 func (*ShutDownRequestMessage) ProtoMessage() {}
 
 func (x *ShutDownRequestMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_rpc_proto_msgTypes[62]
+	mi := &file_rpc_proto_msgTypes[63]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3658,7 +3717,7 @@ func (x *ShutDownRequestMessage) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ShutDownRequestMessage.ProtoReflect.Descriptor instead.
 func (*ShutDownRequestMessage) Descriptor() ([]byte, []int) {
-	return file_rpc_proto_rawDescGZIP(), []int{62}
+	return file_rpc_proto_rawDescGZIP(), []int{63}
 }
 
 type ShutDownResponseMessage struct {
@@ -3670,7 +3729,7 @@ type ShutDownResponseMessage struct {
 
 func (x *ShutDownResponseMessage) Reset() {
 	*x = ShutDownResponseMessage{}
-	mi := &file_rpc_proto_msgTypes[63]
+	mi := &file_rpc_proto_msgTypes[64]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3682,7 +3741,7 @@ func (x *ShutDownResponseMessage) String() string {
 func (*ShutDownResponseMessage) ProtoMessage() {}
 
 func (x *ShutDownResponseMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_rpc_proto_msgTypes[63]
+	mi := &file_rpc_proto_msgTypes[64]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3695,7 +3754,7 @@ func (x *ShutDownResponseMessage) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ShutDownResponseMessage.ProtoReflect.Descriptor instead.
 func (*ShutDownResponseMessage) Descriptor() ([]byte, []int) {
-	return file_rpc_proto_rawDescGZIP(), []int{63}
+	return file_rpc_proto_rawDescGZIP(), []int{64}
 }
 
 func (x *ShutDownResponseMessage) GetError() *RPCError {
@@ -3718,7 +3777,7 @@ type GetHeadersRequestMessage struct {
 
 func (x *GetHeadersRequestMessage) Reset() {
 	*x = GetHeadersRequestMessage{}
-	mi := &file_rpc_proto_msgTypes[64]
+	mi := &file_rpc_proto_msgTypes[65]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3730,7 +3789,7 @@ func (x *GetHeadersRequestMessage) String() string {
 func (*GetHeadersRequestMessage) ProtoMessage() {}
 
 func (x *GetHeadersRequestMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_rpc_proto_msgTypes[64]
+	mi := &file_rpc_proto_msgTypes[65]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3743,7 +3802,7 @@ func (x *GetHeadersRequestMessage) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetHeadersRequestMessage.ProtoReflect.Descriptor instead.
 func (*GetHeadersRequestMessage) Descriptor() ([]byte, []int) {
-	return file_rpc_proto_rawDescGZIP(), []int{64}
+	return file_rpc_proto_rawDescGZIP(), []int{65}
 }
 
 func (x *GetHeadersRequestMessage) GetStartHash() string {
@@ -3777,7 +3836,7 @@ type GetHeadersResponseMessage struct {
 
 func (x *GetHeadersResponseMessage) Reset() {
 	*x = GetHeadersResponseMessage{}
-	mi := &file_rpc_proto_msgTypes[65]
+	mi := &file_rpc_proto_msgTypes[66]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3789,7 +3848,7 @@ func (x *GetHeadersResponseMessage) String() string {
 func (*GetHeadersResponseMessage) ProtoMessage() {}
 
 func (x *GetHeadersResponseMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_rpc_proto_msgTypes[65]
+	mi := &file_rpc_proto_msgTypes[66]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3802,7 +3861,7 @@ func (x *GetHeadersResponseMessage) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetHeadersResponseMessage.ProtoReflect.Descriptor instead.
 func (*GetHeadersResponseMessage) Descriptor() ([]byte, []int) {
-	return file_rpc_proto_rawDescGZIP(), []int{65}
+	return file_rpc_proto_rawDescGZIP(), []int{66}
 }
 
 func (x *GetHeadersResponseMessage) GetHeaders() []string {
@@ -3834,7 +3893,7 @@ type NotifyUtxosChangedRequestMessage struct {
 
 func (x *NotifyUtxosChangedRequestMessage) Reset() {
 	*x = NotifyUtxosChangedRequestMessage{}
-	mi := &file_rpc_proto_msgTypes[66]
+	mi := &file_rpc_proto_msgTypes[67]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3846,7 +3905,7 @@ func (x *NotifyUtxosChangedRequestMessage) String() string {
 func (*NotifyUtxosChangedRequestMessage) ProtoMessage() {}
 
 func (x *NotifyUtxosChangedRequestMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_rpc_proto_msgTypes[66]
+	mi := &file_rpc_proto_msgTypes[67]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3859,7 +3918,7 @@ func (x *NotifyUtxosChangedRequestMessage) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use NotifyUtxosChangedRequestMessage.ProtoReflect.Descriptor instead.
 func (*NotifyUtxosChangedRequestMessage) Descriptor() ([]byte, []int) {
-	return file_rpc_proto_rawDescGZIP(), []int{66}
+	return file_rpc_proto_rawDescGZIP(), []int{67}
 }
 
 func (x *NotifyUtxosChangedRequestMessage) GetAddresses() []string {
@@ -3878,7 +3937,7 @@ type NotifyUtxosChangedResponseMessage struct {
 
 func (x *NotifyUtxosChangedResponseMessage) Reset() {
 	*x = NotifyUtxosChangedResponseMessage{}
-	mi := &file_rpc_proto_msgTypes[67]
+	mi := &file_rpc_proto_msgTypes[68]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3890,7 +3949,7 @@ func (x *NotifyUtxosChangedResponseMessage) String() string {
 func (*NotifyUtxosChangedResponseMessage) ProtoMessage() {}
 
 func (x *NotifyUtxosChangedResponseMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_rpc_proto_msgTypes[67]
+	mi := &file_rpc_proto_msgTypes[68]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3903,7 +3962,7 @@ func (x *NotifyUtxosChangedResponseMessage) ProtoReflect() protoreflect.Message 
 
 // Deprecated: Use NotifyUtxosChangedResponseMessage.ProtoReflect.Descriptor instead.
 func (*NotifyUtxosChangedResponseMessage) Descriptor() ([]byte, []int) {
-	return file_rpc_proto_rawDescGZIP(), []int{67}
+	return file_rpc_proto_rawDescGZIP(), []int{68}
 }
 
 func (x *NotifyUtxosChangedResponseMessage) GetError() *RPCError {
@@ -3927,7 +3986,7 @@ type UtxosChangedNotificationMessage struct {
 
 func (x *UtxosChangedNotificationMessage) Reset() {
 	*x = UtxosChangedNotificationMessage{}
-	mi := &file_rpc_proto_msgTypes[68]
+	mi := &file_rpc_proto_msgTypes[69]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3939,7 +3998,7 @@ func (x *UtxosChangedNotificationMessage) String() string {
 func (*UtxosChangedNotificationMessage) ProtoMessage() {}
 
 func (x *UtxosChangedNotificationMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_rpc_proto_msgTypes[68]
+	mi := &file_rpc_proto_msgTypes[69]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3952,7 +4011,7 @@ func (x *UtxosChangedNotificationMessage) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UtxosChangedNotificationMessage.ProtoReflect.Descriptor instead.
 func (*UtxosChangedNotificationMessage) Descriptor() ([]byte, []int) {
-	return file_rpc_proto_rawDescGZIP(), []int{68}
+	return file_rpc_proto_rawDescGZIP(), []int{69}
 }
 
 func (x *UtxosChangedNotificationMessage) GetAdded() []*UtxosByAddressesEntry {
@@ -3980,7 +4039,7 @@ type UtxosByAddressesEntry struct {
 
 func (x *UtxosByAddressesEntry) Reset() {
 	*x = UtxosByAddressesEntry{}
-	mi := &file_rpc_proto_msgTypes[69]
+	mi := &file_rpc_proto_msgTypes[70]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3992,7 +4051,7 @@ func (x *UtxosByAddressesEntry) String() string {
 func (*UtxosByAddressesEntry) ProtoMessage() {}
 
 func (x *UtxosByAddressesEntry) ProtoReflect() protoreflect.Message {
-	mi := &file_rpc_proto_msgTypes[69]
+	mi := &file_rpc_proto_msgTypes[70]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4005,7 +4064,7 @@ func (x *UtxosByAddressesEntry) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UtxosByAddressesEntry.ProtoReflect.Descriptor instead.
 func (*UtxosByAddressesEntry) Descriptor() ([]byte, []int) {
-	return file_rpc_proto_rawDescGZIP(), []int{69}
+	return file_rpc_proto_rawDescGZIP(), []int{70}
 }
 
 func (x *UtxosByAddressesEntry) GetAddress() string {
@@ -4044,7 +4103,7 @@ type StopNotifyingUtxosChangedRequestMessage struct {
 
 func (x *StopNotifyingUtxosChangedRequestMessage) Reset() {
 	*x = StopNotifyingUtxosChangedRequestMessage{}
-	mi := &file_rpc_proto_msgTypes[70]
+	mi := &file_rpc_proto_msgTypes[71]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4056,7 +4115,7 @@ func (x *StopNotifyingUtxosChangedRequestMessage) String() string {
 func (*StopNotifyingUtxosChangedRequestMessage) ProtoMessage() {}
 
 func (x *StopNotifyingUtxosChangedRequestMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_rpc_proto_msgTypes[70]
+	mi := &file_rpc_proto_msgTypes[71]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4069,7 +4128,7 @@ func (x *StopNotifyingUtxosChangedRequestMessage) ProtoReflect() protoreflect.Me
 
 // Deprecated: Use StopNotifyingUtxosChangedRequestMessage.ProtoReflect.Descriptor instead.
 func (*StopNotifyingUtxosChangedRequestMessage) Descriptor() ([]byte, []int) {
-	return file_rpc_proto_rawDescGZIP(), []int{70}
+	return file_rpc_proto_rawDescGZIP(), []int{71}
 }
 
 func (x *StopNotifyingUtxosChangedRequestMessage) GetAddresses() []string {
@@ -4088,7 +4147,7 @@ type StopNotifyingUtxosChangedResponseMessage struct {
 
 func (x *StopNotifyingUtxosChangedResponseMessage) Reset() {
 	*x = StopNotifyingUtxosChangedResponseMessage{}
-	mi := &file_rpc_proto_msgTypes[71]
+	mi := &file_rpc_proto_msgTypes[72]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4100,7 +4159,7 @@ func (x *StopNotifyingUtxosChangedResponseMessage) String() string {
 func (*StopNotifyingUtxosChangedResponseMessage) ProtoMessage() {}
 
 func (x *StopNotifyingUtxosChangedResponseMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_rpc_proto_msgTypes[71]
+	mi := &file_rpc_proto_msgTypes[72]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4113,7 +4172,7 @@ func (x *StopNotifyingUtxosChangedResponseMessage) ProtoReflect() protoreflect.M
 
 // Deprecated: Use StopNotifyingUtxosChangedResponseMessage.ProtoReflect.Descriptor instead.
 func (*StopNotifyingUtxosChangedResponseMessage) Descriptor() ([]byte, []int) {
-	return file_rpc_proto_rawDescGZIP(), []int{71}
+	return file_rpc_proto_rawDescGZIP(), []int{72}
 }
 
 func (x *StopNotifyingUtxosChangedResponseMessage) GetError() *RPCError {
@@ -4136,7 +4195,7 @@ type GetUtxosByAddressesRequestMessage struct {
 
 func (x *GetUtxosByAddressesRequestMessage) Reset() {
 	*x = GetUtxosByAddressesRequestMessage{}
-	mi := &file_rpc_proto_msgTypes[72]
+	mi := &file_rpc_proto_msgTypes[73]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4148,7 +4207,7 @@ func (x *GetUtxosByAddressesRequestMessage) String() string {
 func (*GetUtxosByAddressesRequestMessage) ProtoMessage() {}
 
 func (x *GetUtxosByAddressesRequestMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_rpc_proto_msgTypes[72]
+	mi := &file_rpc_proto_msgTypes[73]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4161,7 +4220,7 @@ func (x *GetUtxosByAddressesRequestMessage) ProtoReflect() protoreflect.Message 
 
 // Deprecated: Use GetUtxosByAddressesRequestMessage.ProtoReflect.Descriptor instead.
 func (*GetUtxosByAddressesRequestMessage) Descriptor() ([]byte, []int) {
-	return file_rpc_proto_rawDescGZIP(), []int{72}
+	return file_rpc_proto_rawDescGZIP(), []int{73}
 }
 
 func (x *GetUtxosByAddressesRequestMessage) GetAddresses() []string {
@@ -4181,7 +4240,7 @@ type GetUtxosByAddressesResponseMessage struct {
 
 func (x *GetUtxosByAddressesResponseMessage) Reset() {
 	*x = GetUtxosByAddressesResponseMessage{}
-	mi := &file_rpc_proto_msgTypes[73]
+	mi := &file_rpc_proto_msgTypes[74]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4193,7 +4252,7 @@ func (x *GetUtxosByAddressesResponseMessage) String() string {
 func (*GetUtxosByAddressesResponseMessage) ProtoMessage() {}
 
 func (x *GetUtxosByAddressesResponseMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_rpc_proto_msgTypes[73]
+	mi := &file_rpc_proto_msgTypes[74]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4206,7 +4265,7 @@ func (x *GetUtxosByAddressesResponseMessage) ProtoReflect() protoreflect.Message
 
 // Deprecated: Use GetUtxosByAddressesResponseMessage.ProtoReflect.Descriptor instead.
 func (*GetUtxosByAddressesResponseMessage) Descriptor() ([]byte, []int) {
-	return file_rpc_proto_rawDescGZIP(), []int{73}
+	return file_rpc_proto_rawDescGZIP(), []int{74}
 }
 
 func (x *GetUtxosByAddressesResponseMessage) GetEntries() []*UtxosByAddressesEntry {
@@ -4236,7 +4295,7 @@ type GetBalanceByAddressRequestMessage struct {
 
 func (x *GetBalanceByAddressRequestMessage) Reset() {
 	*x = GetBalanceByAddressRequestMessage{}
-	mi := &file_rpc_proto_msgTypes[74]
+	mi := &file_rpc_proto_msgTypes[75]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4248,7 +4307,7 @@ func (x *GetBalanceByAddressRequestMessage) String() string {
 func (*GetBalanceByAddressRequestMessage) ProtoMessage() {}
 
 func (x *GetBalanceByAddressRequestMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_rpc_proto_msgTypes[74]
+	mi := &file_rpc_proto_msgTypes[75]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4261,7 +4320,7 @@ func (x *GetBalanceByAddressRequestMessage) ProtoReflect() protoreflect.Message 
 
 // Deprecated: Use GetBalanceByAddressRequestMessage.ProtoReflect.Descriptor instead.
 func (*GetBalanceByAddressRequestMessage) Descriptor() ([]byte, []int) {
-	return file_rpc_proto_rawDescGZIP(), []int{74}
+	return file_rpc_proto_rawDescGZIP(), []int{75}
 }
 
 func (x *GetBalanceByAddressRequestMessage) GetAddress() string {
@@ -4281,7 +4340,7 @@ type GetBalanceByAddressResponseMessage struct {
 
 func (x *GetBalanceByAddressResponseMessage) Reset() {
 	*x = GetBalanceByAddressResponseMessage{}
-	mi := &file_rpc_proto_msgTypes[75]
+	mi := &file_rpc_proto_msgTypes[76]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4293,7 +4352,7 @@ func (x *GetBalanceByAddressResponseMessage) String() string {
 func (*GetBalanceByAddressResponseMessage) ProtoMessage() {}
 
 func (x *GetBalanceByAddressResponseMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_rpc_proto_msgTypes[75]
+	mi := &file_rpc_proto_msgTypes[76]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4306,7 +4365,7 @@ func (x *GetBalanceByAddressResponseMessage) ProtoReflect() protoreflect.Message
 
 // Deprecated: Use GetBalanceByAddressResponseMessage.ProtoReflect.Descriptor instead.
 func (*GetBalanceByAddressResponseMessage) Descriptor() ([]byte, []int) {
-	return file_rpc_proto_rawDescGZIP(), []int{75}
+	return file_rpc_proto_rawDescGZIP(), []int{76}
 }
 
 func (x *GetBalanceByAddressResponseMessage) GetBalance() uint64 {
@@ -4332,7 +4391,7 @@ type GetBalancesByAddressesRequestMessage struct {
 
 func (x *GetBalancesByAddressesRequestMessage) Reset() {
 	*x = GetBalancesByAddressesRequestMessage{}
-	mi := &file_rpc_proto_msgTypes[76]
+	mi := &file_rpc_proto_msgTypes[77]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4344,7 +4403,7 @@ func (x *GetBalancesByAddressesRequestMessage) String() string {
 func (*GetBalancesByAddressesRequestMessage) ProtoMessage() {}
 
 func (x *GetBalancesByAddressesRequestMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_rpc_proto_msgTypes[76]
+	mi := &file_rpc_proto_msgTypes[77]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4357,7 +4416,7 @@ func (x *GetBalancesByAddressesRequestMessage) ProtoReflect() protoreflect.Messa
 
 // Deprecated: Use GetBalancesByAddressesRequestMessage.ProtoReflect.Descriptor instead.
 func (*GetBalancesByAddressesRequestMessage) Descriptor() ([]byte, []int) {
-	return file_rpc_proto_rawDescGZIP(), []int{76}
+	return file_rpc_proto_rawDescGZIP(), []int{77}
 }
 
 func (x *GetBalancesByAddressesRequestMessage) GetAddresses() []string {
@@ -4378,7 +4437,7 @@ type BalancesByAddressEntry struct {
 
 func (x *BalancesByAddressEntry) Reset() {
 	*x = BalancesByAddressEntry{}
-	mi := &file_rpc_proto_msgTypes[77]
+	mi := &file_rpc_proto_msgTypes[78]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4390,7 +4449,7 @@ func (x *BalancesByAddressEntry) String() string {
 func (*BalancesByAddressEntry) ProtoMessage() {}
 
 func (x *BalancesByAddressEntry) ProtoReflect() protoreflect.Message {
-	mi := &file_rpc_proto_msgTypes[77]
+	mi := &file_rpc_proto_msgTypes[78]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4403,7 +4462,7 @@ func (x *BalancesByAddressEntry) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BalancesByAddressEntry.ProtoReflect.Descriptor instead.
 func (*BalancesByAddressEntry) Descriptor() ([]byte, []int) {
-	return file_rpc_proto_rawDescGZIP(), []int{77}
+	return file_rpc_proto_rawDescGZIP(), []int{78}
 }
 
 func (x *BalancesByAddressEntry) GetAddress() string {
@@ -4437,7 +4496,7 @@ type GetBalancesByAddressesResponseMessage struct {
 
 func (x *GetBalancesByAddressesResponseMessage) Reset() {
 	*x = GetBalancesByAddressesResponseMessage{}
-	mi := &file_rpc_proto_msgTypes[78]
+	mi := &file_rpc_proto_msgTypes[79]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4449,7 +4508,7 @@ func (x *GetBalancesByAddressesResponseMessage) String() string {
 func (*GetBalancesByAddressesResponseMessage) ProtoMessage() {}
 
 func (x *GetBalancesByAddressesResponseMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_rpc_proto_msgTypes[78]
+	mi := &file_rpc_proto_msgTypes[79]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4462,7 +4521,7 @@ func (x *GetBalancesByAddressesResponseMessage) ProtoReflect() protoreflect.Mess
 
 // Deprecated: Use GetBalancesByAddressesResponseMessage.ProtoReflect.Descriptor instead.
 func (*GetBalancesByAddressesResponseMessage) Descriptor() ([]byte, []int) {
-	return file_rpc_proto_rawDescGZIP(), []int{78}
+	return file_rpc_proto_rawDescGZIP(), []int{79}
 }
 
 func (x *GetBalancesByAddressesResponseMessage) GetEntries() []*BalancesByAddressEntry {
@@ -4489,7 +4548,7 @@ type GetVirtualSelectedParentBlueScoreRequestMessage struct {
 
 func (x *GetVirtualSelectedParentBlueScoreRequestMessage) Reset() {
 	*x = GetVirtualSelectedParentBlueScoreRequestMessage{}
-	mi := &file_rpc_proto_msgTypes[79]
+	mi := &file_rpc_proto_msgTypes[80]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4501,7 +4560,7 @@ func (x *GetVirtualSelectedParentBlueScoreRequestMessage) String() string {
 func (*GetVirtualSelectedParentBlueScoreRequestMessage) ProtoMessage() {}
 
 func (x *GetVirtualSelectedParentBlueScoreRequestMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_rpc_proto_msgTypes[79]
+	mi := &file_rpc_proto_msgTypes[80]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4514,7 +4573,7 @@ func (x *GetVirtualSelectedParentBlueScoreRequestMessage) ProtoReflect() protore
 
 // Deprecated: Use GetVirtualSelectedParentBlueScoreRequestMessage.ProtoReflect.Descriptor instead.
 func (*GetVirtualSelectedParentBlueScoreRequestMessage) Descriptor() ([]byte, []int) {
-	return file_rpc_proto_rawDescGZIP(), []int{79}
+	return file_rpc_proto_rawDescGZIP(), []int{80}
 }
 
 type GetVirtualSelectedParentBlueScoreResponseMessage struct {
@@ -4527,7 +4586,7 @@ type GetVirtualSelectedParentBlueScoreResponseMessage struct {
 
 func (x *GetVirtualSelectedParentBlueScoreResponseMessage) Reset() {
 	*x = GetVirtualSelectedParentBlueScoreResponseMessage{}
-	mi := &file_rpc_proto_msgTypes[80]
+	mi := &file_rpc_proto_msgTypes[81]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4539,7 +4598,7 @@ func (x *GetVirtualSelectedParentBlueScoreResponseMessage) String() string {
 func (*GetVirtualSelectedParentBlueScoreResponseMessage) ProtoMessage() {}
 
 func (x *GetVirtualSelectedParentBlueScoreResponseMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_rpc_proto_msgTypes[80]
+	mi := &file_rpc_proto_msgTypes[81]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4552,7 +4611,7 @@ func (x *GetVirtualSelectedParentBlueScoreResponseMessage) ProtoReflect() protor
 
 // Deprecated: Use GetVirtualSelectedParentBlueScoreResponseMessage.ProtoReflect.Descriptor instead.
 func (*GetVirtualSelectedParentBlueScoreResponseMessage) Descriptor() ([]byte, []int) {
-	return file_rpc_proto_rawDescGZIP(), []int{80}
+	return file_rpc_proto_rawDescGZIP(), []int{81}
 }
 
 func (x *GetVirtualSelectedParentBlueScoreResponseMessage) GetBlueScore() uint64 {
@@ -4581,7 +4640,7 @@ type NotifyVirtualSelectedParentBlueScoreChangedRequestMessage struct {
 
 func (x *NotifyVirtualSelectedParentBlueScoreChangedRequestMessage) Reset() {
 	*x = NotifyVirtualSelectedParentBlueScoreChangedRequestMessage{}
-	mi := &file_rpc_proto_msgTypes[81]
+	mi := &file_rpc_proto_msgTypes[82]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4593,7 +4652,7 @@ func (x *NotifyVirtualSelectedParentBlueScoreChangedRequestMessage) String() str
 func (*NotifyVirtualSelectedParentBlueScoreChangedRequestMessage) ProtoMessage() {}
 
 func (x *NotifyVirtualSelectedParentBlueScoreChangedRequestMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_rpc_proto_msgTypes[81]
+	mi := &file_rpc_proto_msgTypes[82]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4606,7 +4665,7 @@ func (x *NotifyVirtualSelectedParentBlueScoreChangedRequestMessage) ProtoReflect
 
 // Deprecated: Use NotifyVirtualSelectedParentBlueScoreChangedRequestMessage.ProtoReflect.Descriptor instead.
 func (*NotifyVirtualSelectedParentBlueScoreChangedRequestMessage) Descriptor() ([]byte, []int) {
-	return file_rpc_proto_rawDescGZIP(), []int{81}
+	return file_rpc_proto_rawDescGZIP(), []int{82}
 }
 
 type NotifyVirtualSelectedParentBlueScoreChangedResponseMessage struct {
@@ -4618,7 +4677,7 @@ type NotifyVirtualSelectedParentBlueScoreChangedResponseMessage struct {
 
 func (x *NotifyVirtualSelectedParentBlueScoreChangedResponseMessage) Reset() {
 	*x = NotifyVirtualSelectedParentBlueScoreChangedResponseMessage{}
-	mi := &file_rpc_proto_msgTypes[82]
+	mi := &file_rpc_proto_msgTypes[83]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4630,7 +4689,7 @@ func (x *NotifyVirtualSelectedParentBlueScoreChangedResponseMessage) String() st
 func (*NotifyVirtualSelectedParentBlueScoreChangedResponseMessage) ProtoMessage() {}
 
 func (x *NotifyVirtualSelectedParentBlueScoreChangedResponseMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_rpc_proto_msgTypes[82]
+	mi := &file_rpc_proto_msgTypes[83]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4643,7 +4702,7 @@ func (x *NotifyVirtualSelectedParentBlueScoreChangedResponseMessage) ProtoReflec
 
 // Deprecated: Use NotifyVirtualSelectedParentBlueScoreChangedResponseMessage.ProtoReflect.Descriptor instead.
 func (*NotifyVirtualSelectedParentBlueScoreChangedResponseMessage) Descriptor() ([]byte, []int) {
-	return file_rpc_proto_rawDescGZIP(), []int{82}
+	return file_rpc_proto_rawDescGZIP(), []int{83}
 }
 
 func (x *NotifyVirtualSelectedParentBlueScoreChangedResponseMessage) GetError() *RPCError {
@@ -4666,7 +4725,7 @@ type VirtualSelectedParentBlueScoreChangedNotificationMessage struct {
 
 func (x *VirtualSelectedParentBlueScoreChangedNotificationMessage) Reset() {
 	*x = VirtualSelectedParentBlueScoreChangedNotificationMessage{}
-	mi := &file_rpc_proto_msgTypes[83]
+	mi := &file_rpc_proto_msgTypes[84]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4678,7 +4737,7 @@ func (x *VirtualSelectedParentBlueScoreChangedNotificationMessage) String() stri
 func (*VirtualSelectedParentBlueScoreChangedNotificationMessage) ProtoMessage() {}
 
 func (x *VirtualSelectedParentBlueScoreChangedNotificationMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_rpc_proto_msgTypes[83]
+	mi := &file_rpc_proto_msgTypes[84]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4691,7 +4750,7 @@ func (x *VirtualSelectedParentBlueScoreChangedNotificationMessage) ProtoReflect(
 
 // Deprecated: Use VirtualSelectedParentBlueScoreChangedNotificationMessage.ProtoReflect.Descriptor instead.
 func (*VirtualSelectedParentBlueScoreChangedNotificationMessage) Descriptor() ([]byte, []int) {
-	return file_rpc_proto_rawDescGZIP(), []int{83}
+	return file_rpc_proto_rawDescGZIP(), []int{84}
 }
 
 func (x *VirtualSelectedParentBlueScoreChangedNotificationMessage) GetVirtualSelectedParentBlueScore() uint64 {
@@ -4713,7 +4772,7 @@ type NotifyVirtualDaaScoreChangedRequestMessage struct {
 
 func (x *NotifyVirtualDaaScoreChangedRequestMessage) Reset() {
 	*x = NotifyVirtualDaaScoreChangedRequestMessage{}
-	mi := &file_rpc_proto_msgTypes[84]
+	mi := &file_rpc_proto_msgTypes[85]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4725,7 +4784,7 @@ func (x *NotifyVirtualDaaScoreChangedRequestMessage) String() string {
 func (*NotifyVirtualDaaScoreChangedRequestMessage) ProtoMessage() {}
 
 func (x *NotifyVirtualDaaScoreChangedRequestMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_rpc_proto_msgTypes[84]
+	mi := &file_rpc_proto_msgTypes[85]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4738,7 +4797,7 @@ func (x *NotifyVirtualDaaScoreChangedRequestMessage) ProtoReflect() protoreflect
 
 // Deprecated: Use NotifyVirtualDaaScoreChangedRequestMessage.ProtoReflect.Descriptor instead.
 func (*NotifyVirtualDaaScoreChangedRequestMessage) Descriptor() ([]byte, []int) {
-	return file_rpc_proto_rawDescGZIP(), []int{84}
+	return file_rpc_proto_rawDescGZIP(), []int{85}
 }
 
 type NotifyVirtualDaaScoreChangedResponseMessage struct {
@@ -4750,7 +4809,7 @@ type NotifyVirtualDaaScoreChangedResponseMessage struct {
 
 func (x *NotifyVirtualDaaScoreChangedResponseMessage) Reset() {
 	*x = NotifyVirtualDaaScoreChangedResponseMessage{}
-	mi := &file_rpc_proto_msgTypes[85]
+	mi := &file_rpc_proto_msgTypes[86]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4762,7 +4821,7 @@ func (x *NotifyVirtualDaaScoreChangedResponseMessage) String() string {
 func (*NotifyVirtualDaaScoreChangedResponseMessage) ProtoMessage() {}
 
 func (x *NotifyVirtualDaaScoreChangedResponseMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_rpc_proto_msgTypes[85]
+	mi := &file_rpc_proto_msgTypes[86]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4775,7 +4834,7 @@ func (x *NotifyVirtualDaaScoreChangedResponseMessage) ProtoReflect() protoreflec
 
 // Deprecated: Use NotifyVirtualDaaScoreChangedResponseMessage.ProtoReflect.Descriptor instead.
 func (*NotifyVirtualDaaScoreChangedResponseMessage) Descriptor() ([]byte, []int) {
-	return file_rpc_proto_rawDescGZIP(), []int{85}
+	return file_rpc_proto_rawDescGZIP(), []int{86}
 }
 
 func (x *NotifyVirtualDaaScoreChangedResponseMessage) GetError() *RPCError {
@@ -4798,7 +4857,7 @@ type VirtualDaaScoreChangedNotificationMessage struct {
 
 func (x *VirtualDaaScoreChangedNotificationMessage) Reset() {
 	*x = VirtualDaaScoreChangedNotificationMessage{}
-	mi := &file_rpc_proto_msgTypes[86]
+	mi := &file_rpc_proto_msgTypes[87]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4810,7 +4869,7 @@ func (x *VirtualDaaScoreChangedNotificationMessage) String() string {
 func (*VirtualDaaScoreChangedNotificationMessage) ProtoMessage() {}
 
 func (x *VirtualDaaScoreChangedNotificationMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_rpc_proto_msgTypes[86]
+	mi := &file_rpc_proto_msgTypes[87]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4823,7 +4882,7 @@ func (x *VirtualDaaScoreChangedNotificationMessage) ProtoReflect() protoreflect.
 
 // Deprecated: Use VirtualDaaScoreChangedNotificationMessage.ProtoReflect.Descriptor instead.
 func (*VirtualDaaScoreChangedNotificationMessage) Descriptor() ([]byte, []int) {
-	return file_rpc_proto_rawDescGZIP(), []int{86}
+	return file_rpc_proto_rawDescGZIP(), []int{87}
 }
 
 func (x *VirtualDaaScoreChangedNotificationMessage) GetVirtualDaaScore() uint64 {
@@ -4847,7 +4906,7 @@ type NotifyPruningPointUTXOSetOverrideRequestMessage struct {
 
 func (x *NotifyPruningPointUTXOSetOverrideRequestMessage) Reset() {
 	*x = NotifyPruningPointUTXOSetOverrideRequestMessage{}
-	mi := &file_rpc_proto_msgTypes[87]
+	mi := &file_rpc_proto_msgTypes[88]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4859,7 +4918,7 @@ func (x *NotifyPruningPointUTXOSetOverrideRequestMessage) String() string {
 func (*NotifyPruningPointUTXOSetOverrideRequestMessage) ProtoMessage() {}
 
 func (x *NotifyPruningPointUTXOSetOverrideRequestMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_rpc_proto_msgTypes[87]
+	mi := &file_rpc_proto_msgTypes[88]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4872,7 +4931,7 @@ func (x *NotifyPruningPointUTXOSetOverrideRequestMessage) ProtoReflect() protore
 
 // Deprecated: Use NotifyPruningPointUTXOSetOverrideRequestMessage.ProtoReflect.Descriptor instead.
 func (*NotifyPruningPointUTXOSetOverrideRequestMessage) Descriptor() ([]byte, []int) {
-	return file_rpc_proto_rawDescGZIP(), []int{87}
+	return file_rpc_proto_rawDescGZIP(), []int{88}
 }
 
 type NotifyPruningPointUTXOSetOverrideResponseMessage struct {
@@ -4884,7 +4943,7 @@ type NotifyPruningPointUTXOSetOverrideResponseMessage struct {
 
 func (x *NotifyPruningPointUTXOSetOverrideResponseMessage) Reset() {
 	*x = NotifyPruningPointUTXOSetOverrideResponseMessage{}
-	mi := &file_rpc_proto_msgTypes[88]
+	mi := &file_rpc_proto_msgTypes[89]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4896,7 +4955,7 @@ func (x *NotifyPruningPointUTXOSetOverrideResponseMessage) String() string {
 func (*NotifyPruningPointUTXOSetOverrideResponseMessage) ProtoMessage() {}
 
 func (x *NotifyPruningPointUTXOSetOverrideResponseMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_rpc_proto_msgTypes[88]
+	mi := &file_rpc_proto_msgTypes[89]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4909,7 +4968,7 @@ func (x *NotifyPruningPointUTXOSetOverrideResponseMessage) ProtoReflect() protor
 
 // Deprecated: Use NotifyPruningPointUTXOSetOverrideResponseMessage.ProtoReflect.Descriptor instead.
 func (*NotifyPruningPointUTXOSetOverrideResponseMessage) Descriptor() ([]byte, []int) {
-	return file_rpc_proto_rawDescGZIP(), []int{88}
+	return file_rpc_proto_rawDescGZIP(), []int{89}
 }
 
 func (x *NotifyPruningPointUTXOSetOverrideResponseMessage) GetError() *RPCError {
@@ -4931,7 +4990,7 @@ type PruningPointUTXOSetOverrideNotificationMessage struct {
 
 func (x *PruningPointUTXOSetOverrideNotificationMessage) Reset() {
 	*x = PruningPointUTXOSetOverrideNotificationMessage{}
-	mi := &file_rpc_proto_msgTypes[89]
+	mi := &file_rpc_proto_msgTypes[90]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4943,7 +5002,7 @@ func (x *PruningPointUTXOSetOverrideNotificationMessage) String() string {
 func (*PruningPointUTXOSetOverrideNotificationMessage) ProtoMessage() {}
 
 func (x *PruningPointUTXOSetOverrideNotificationMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_rpc_proto_msgTypes[89]
+	mi := &file_rpc_proto_msgTypes[90]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4956,7 +5015,7 @@ func (x *PruningPointUTXOSetOverrideNotificationMessage) ProtoReflect() protoref
 
 // Deprecated: Use PruningPointUTXOSetOverrideNotificationMessage.ProtoReflect.Descriptor instead.
 func (*PruningPointUTXOSetOverrideNotificationMessage) Descriptor() ([]byte, []int) {
-	return file_rpc_proto_rawDescGZIP(), []int{89}
+	return file_rpc_proto_rawDescGZIP(), []int{90}
 }
 
 // StopNotifyingPruningPointUTXOSetOverrideRequestMessage unregisters this
@@ -4973,7 +5032,7 @@ type StopNotifyingPruningPointUTXOSetOverrideRequestMessage struct {
 
 func (x *StopNotifyingPruningPointUTXOSetOverrideRequestMessage) Reset() {
 	*x = StopNotifyingPruningPointUTXOSetOverrideRequestMessage{}
-	mi := &file_rpc_proto_msgTypes[90]
+	mi := &file_rpc_proto_msgTypes[91]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4985,7 +5044,7 @@ func (x *StopNotifyingPruningPointUTXOSetOverrideRequestMessage) String() string
 func (*StopNotifyingPruningPointUTXOSetOverrideRequestMessage) ProtoMessage() {}
 
 func (x *StopNotifyingPruningPointUTXOSetOverrideRequestMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_rpc_proto_msgTypes[90]
+	mi := &file_rpc_proto_msgTypes[91]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4998,7 +5057,7 @@ func (x *StopNotifyingPruningPointUTXOSetOverrideRequestMessage) ProtoReflect() 
 
 // Deprecated: Use StopNotifyingPruningPointUTXOSetOverrideRequestMessage.ProtoReflect.Descriptor instead.
 func (*StopNotifyingPruningPointUTXOSetOverrideRequestMessage) Descriptor() ([]byte, []int) {
-	return file_rpc_proto_rawDescGZIP(), []int{90}
+	return file_rpc_proto_rawDescGZIP(), []int{91}
 }
 
 type StopNotifyingPruningPointUTXOSetOverrideResponseMessage struct {
@@ -5010,7 +5069,7 @@ type StopNotifyingPruningPointUTXOSetOverrideResponseMessage struct {
 
 func (x *StopNotifyingPruningPointUTXOSetOverrideResponseMessage) Reset() {
 	*x = StopNotifyingPruningPointUTXOSetOverrideResponseMessage{}
-	mi := &file_rpc_proto_msgTypes[91]
+	mi := &file_rpc_proto_msgTypes[92]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5022,7 +5081,7 @@ func (x *StopNotifyingPruningPointUTXOSetOverrideResponseMessage) String() strin
 func (*StopNotifyingPruningPointUTXOSetOverrideResponseMessage) ProtoMessage() {}
 
 func (x *StopNotifyingPruningPointUTXOSetOverrideResponseMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_rpc_proto_msgTypes[91]
+	mi := &file_rpc_proto_msgTypes[92]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5035,7 +5094,7 @@ func (x *StopNotifyingPruningPointUTXOSetOverrideResponseMessage) ProtoReflect()
 
 // Deprecated: Use StopNotifyingPruningPointUTXOSetOverrideResponseMessage.ProtoReflect.Descriptor instead.
 func (*StopNotifyingPruningPointUTXOSetOverrideResponseMessage) Descriptor() ([]byte, []int) {
-	return file_rpc_proto_rawDescGZIP(), []int{91}
+	return file_rpc_proto_rawDescGZIP(), []int{92}
 }
 
 func (x *StopNotifyingPruningPointUTXOSetOverrideResponseMessage) GetError() *RPCError {
@@ -5055,7 +5114,7 @@ type BanRequestMessage struct {
 
 func (x *BanRequestMessage) Reset() {
 	*x = BanRequestMessage{}
-	mi := &file_rpc_proto_msgTypes[92]
+	mi := &file_rpc_proto_msgTypes[93]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5067,7 +5126,7 @@ func (x *BanRequestMessage) String() string {
 func (*BanRequestMessage) ProtoMessage() {}
 
 func (x *BanRequestMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_rpc_proto_msgTypes[92]
+	mi := &file_rpc_proto_msgTypes[93]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5080,7 +5139,7 @@ func (x *BanRequestMessage) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BanRequestMessage.ProtoReflect.Descriptor instead.
 func (*BanRequestMessage) Descriptor() ([]byte, []int) {
-	return file_rpc_proto_rawDescGZIP(), []int{92}
+	return file_rpc_proto_rawDescGZIP(), []int{93}
 }
 
 func (x *BanRequestMessage) GetIp() string {
@@ -5099,7 +5158,7 @@ type BanResponseMessage struct {
 
 func (x *BanResponseMessage) Reset() {
 	*x = BanResponseMessage{}
-	mi := &file_rpc_proto_msgTypes[93]
+	mi := &file_rpc_proto_msgTypes[94]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5111,7 +5170,7 @@ func (x *BanResponseMessage) String() string {
 func (*BanResponseMessage) ProtoMessage() {}
 
 func (x *BanResponseMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_rpc_proto_msgTypes[93]
+	mi := &file_rpc_proto_msgTypes[94]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5124,7 +5183,7 @@ func (x *BanResponseMessage) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BanResponseMessage.ProtoReflect.Descriptor instead.
 func (*BanResponseMessage) Descriptor() ([]byte, []int) {
-	return file_rpc_proto_rawDescGZIP(), []int{93}
+	return file_rpc_proto_rawDescGZIP(), []int{94}
 }
 
 func (x *BanResponseMessage) GetError() *RPCError {
@@ -5144,7 +5203,7 @@ type UnbanRequestMessage struct {
 
 func (x *UnbanRequestMessage) Reset() {
 	*x = UnbanRequestMessage{}
-	mi := &file_rpc_proto_msgTypes[94]
+	mi := &file_rpc_proto_msgTypes[95]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5156,7 +5215,7 @@ func (x *UnbanRequestMessage) String() string {
 func (*UnbanRequestMessage) ProtoMessage() {}
 
 func (x *UnbanRequestMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_rpc_proto_msgTypes[94]
+	mi := &file_rpc_proto_msgTypes[95]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5169,7 +5228,7 @@ func (x *UnbanRequestMessage) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UnbanRequestMessage.ProtoReflect.Descriptor instead.
 func (*UnbanRequestMessage) Descriptor() ([]byte, []int) {
-	return file_rpc_proto_rawDescGZIP(), []int{94}
+	return file_rpc_proto_rawDescGZIP(), []int{95}
 }
 
 func (x *UnbanRequestMessage) GetIp() string {
@@ -5188,7 +5247,7 @@ type UnbanResponseMessage struct {
 
 func (x *UnbanResponseMessage) Reset() {
 	*x = UnbanResponseMessage{}
-	mi := &file_rpc_proto_msgTypes[95]
+	mi := &file_rpc_proto_msgTypes[96]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5200,7 +5259,7 @@ func (x *UnbanResponseMessage) String() string {
 func (*UnbanResponseMessage) ProtoMessage() {}
 
 func (x *UnbanResponseMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_rpc_proto_msgTypes[95]
+	mi := &file_rpc_proto_msgTypes[96]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5213,7 +5272,7 @@ func (x *UnbanResponseMessage) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UnbanResponseMessage.ProtoReflect.Descriptor instead.
 func (*UnbanResponseMessage) Descriptor() ([]byte, []int) {
-	return file_rpc_proto_rawDescGZIP(), []int{95}
+	return file_rpc_proto_rawDescGZIP(), []int{96}
 }
 
 func (x *UnbanResponseMessage) GetError() *RPCError {
@@ -5232,7 +5291,7 @@ type GetInfoRequestMessage struct {
 
 func (x *GetInfoRequestMessage) Reset() {
 	*x = GetInfoRequestMessage{}
-	mi := &file_rpc_proto_msgTypes[96]
+	mi := &file_rpc_proto_msgTypes[97]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5244,7 +5303,7 @@ func (x *GetInfoRequestMessage) String() string {
 func (*GetInfoRequestMessage) ProtoMessage() {}
 
 func (x *GetInfoRequestMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_rpc_proto_msgTypes[96]
+	mi := &file_rpc_proto_msgTypes[97]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5257,7 +5316,7 @@ func (x *GetInfoRequestMessage) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetInfoRequestMessage.ProtoReflect.Descriptor instead.
 func (*GetInfoRequestMessage) Descriptor() ([]byte, []int) {
-	return file_rpc_proto_rawDescGZIP(), []int{96}
+	return file_rpc_proto_rawDescGZIP(), []int{97}
 }
 
 type GetInfoResponseMessage struct {
@@ -5274,7 +5333,7 @@ type GetInfoResponseMessage struct {
 
 func (x *GetInfoResponseMessage) Reset() {
 	*x = GetInfoResponseMessage{}
-	mi := &file_rpc_proto_msgTypes[97]
+	mi := &file_rpc_proto_msgTypes[98]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5286,7 +5345,7 @@ func (x *GetInfoResponseMessage) String() string {
 func (*GetInfoResponseMessage) ProtoMessage() {}
 
 func (x *GetInfoResponseMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_rpc_proto_msgTypes[97]
+	mi := &file_rpc_proto_msgTypes[98]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5299,7 +5358,7 @@ func (x *GetInfoResponseMessage) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetInfoResponseMessage.ProtoReflect.Descriptor instead.
 func (*GetInfoResponseMessage) Descriptor() ([]byte, []int) {
-	return file_rpc_proto_rawDescGZIP(), []int{97}
+	return file_rpc_proto_rawDescGZIP(), []int{98}
 }
 
 func (x *GetInfoResponseMessage) GetP2PId() string {
@@ -5354,7 +5413,7 @@ type EstimateNetworkHashesPerSecondRequestMessage struct {
 
 func (x *EstimateNetworkHashesPerSecondRequestMessage) Reset() {
 	*x = EstimateNetworkHashesPerSecondRequestMessage{}
-	mi := &file_rpc_proto_msgTypes[98]
+	mi := &file_rpc_proto_msgTypes[99]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5366,7 +5425,7 @@ func (x *EstimateNetworkHashesPerSecondRequestMessage) String() string {
 func (*EstimateNetworkHashesPerSecondRequestMessage) ProtoMessage() {}
 
 func (x *EstimateNetworkHashesPerSecondRequestMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_rpc_proto_msgTypes[98]
+	mi := &file_rpc_proto_msgTypes[99]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5379,7 +5438,7 @@ func (x *EstimateNetworkHashesPerSecondRequestMessage) ProtoReflect() protorefle
 
 // Deprecated: Use EstimateNetworkHashesPerSecondRequestMessage.ProtoReflect.Descriptor instead.
 func (*EstimateNetworkHashesPerSecondRequestMessage) Descriptor() ([]byte, []int) {
-	return file_rpc_proto_rawDescGZIP(), []int{98}
+	return file_rpc_proto_rawDescGZIP(), []int{99}
 }
 
 func (x *EstimateNetworkHashesPerSecondRequestMessage) GetWindowSize() uint32 {
@@ -5406,7 +5465,7 @@ type EstimateNetworkHashesPerSecondResponseMessage struct {
 
 func (x *EstimateNetworkHashesPerSecondResponseMessage) Reset() {
 	*x = EstimateNetworkHashesPerSecondResponseMessage{}
-	mi := &file_rpc_proto_msgTypes[99]
+	mi := &file_rpc_proto_msgTypes[100]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5418,7 +5477,7 @@ func (x *EstimateNetworkHashesPerSecondResponseMessage) String() string {
 func (*EstimateNetworkHashesPerSecondResponseMessage) ProtoMessage() {}
 
 func (x *EstimateNetworkHashesPerSecondResponseMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_rpc_proto_msgTypes[99]
+	mi := &file_rpc_proto_msgTypes[100]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5431,7 +5490,7 @@ func (x *EstimateNetworkHashesPerSecondResponseMessage) ProtoReflect() protorefl
 
 // Deprecated: Use EstimateNetworkHashesPerSecondResponseMessage.ProtoReflect.Descriptor instead.
 func (*EstimateNetworkHashesPerSecondResponseMessage) Descriptor() ([]byte, []int) {
-	return file_rpc_proto_rawDescGZIP(), []int{99}
+	return file_rpc_proto_rawDescGZIP(), []int{100}
 }
 
 func (x *EstimateNetworkHashesPerSecondResponseMessage) GetNetworkHashesPerSecond() uint64 {
@@ -5460,7 +5519,7 @@ type NotifyNewBlockTemplateRequestMessage struct {
 
 func (x *NotifyNewBlockTemplateRequestMessage) Reset() {
 	*x = NotifyNewBlockTemplateRequestMessage{}
-	mi := &file_rpc_proto_msgTypes[100]
+	mi := &file_rpc_proto_msgTypes[101]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5472,7 +5531,7 @@ func (x *NotifyNewBlockTemplateRequestMessage) String() string {
 func (*NotifyNewBlockTemplateRequestMessage) ProtoMessage() {}
 
 func (x *NotifyNewBlockTemplateRequestMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_rpc_proto_msgTypes[100]
+	mi := &file_rpc_proto_msgTypes[101]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5485,7 +5544,7 @@ func (x *NotifyNewBlockTemplateRequestMessage) ProtoReflect() protoreflect.Messa
 
 // Deprecated: Use NotifyNewBlockTemplateRequestMessage.ProtoReflect.Descriptor instead.
 func (*NotifyNewBlockTemplateRequestMessage) Descriptor() ([]byte, []int) {
-	return file_rpc_proto_rawDescGZIP(), []int{100}
+	return file_rpc_proto_rawDescGZIP(), []int{101}
 }
 
 type NotifyNewBlockTemplateResponseMessage struct {
@@ -5497,7 +5556,7 @@ type NotifyNewBlockTemplateResponseMessage struct {
 
 func (x *NotifyNewBlockTemplateResponseMessage) Reset() {
 	*x = NotifyNewBlockTemplateResponseMessage{}
-	mi := &file_rpc_proto_msgTypes[101]
+	mi := &file_rpc_proto_msgTypes[102]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5509,7 +5568,7 @@ func (x *NotifyNewBlockTemplateResponseMessage) String() string {
 func (*NotifyNewBlockTemplateResponseMessage) ProtoMessage() {}
 
 func (x *NotifyNewBlockTemplateResponseMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_rpc_proto_msgTypes[101]
+	mi := &file_rpc_proto_msgTypes[102]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5522,7 +5581,7 @@ func (x *NotifyNewBlockTemplateResponseMessage) ProtoReflect() protoreflect.Mess
 
 // Deprecated: Use NotifyNewBlockTemplateResponseMessage.ProtoReflect.Descriptor instead.
 func (*NotifyNewBlockTemplateResponseMessage) Descriptor() ([]byte, []int) {
-	return file_rpc_proto_rawDescGZIP(), []int{101}
+	return file_rpc_proto_rawDescGZIP(), []int{102}
 }
 
 func (x *NotifyNewBlockTemplateResponseMessage) GetError() *RPCError {
@@ -5544,7 +5603,7 @@ type NewBlockTemplateNotificationMessage struct {
 
 func (x *NewBlockTemplateNotificationMessage) Reset() {
 	*x = NewBlockTemplateNotificationMessage{}
-	mi := &file_rpc_proto_msgTypes[102]
+	mi := &file_rpc_proto_msgTypes[103]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5556,7 +5615,7 @@ func (x *NewBlockTemplateNotificationMessage) String() string {
 func (*NewBlockTemplateNotificationMessage) ProtoMessage() {}
 
 func (x *NewBlockTemplateNotificationMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_rpc_proto_msgTypes[102]
+	mi := &file_rpc_proto_msgTypes[103]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5569,7 +5628,7 @@ func (x *NewBlockTemplateNotificationMessage) ProtoReflect() protoreflect.Messag
 
 // Deprecated: Use NewBlockTemplateNotificationMessage.ProtoReflect.Descriptor instead.
 func (*NewBlockTemplateNotificationMessage) Descriptor() ([]byte, []int) {
-	return file_rpc_proto_rawDescGZIP(), []int{102}
+	return file_rpc_proto_rawDescGZIP(), []int{103}
 }
 
 type MempoolEntryByAddress struct {
@@ -5583,7 +5642,7 @@ type MempoolEntryByAddress struct {
 
 func (x *MempoolEntryByAddress) Reset() {
 	*x = MempoolEntryByAddress{}
-	mi := &file_rpc_proto_msgTypes[103]
+	mi := &file_rpc_proto_msgTypes[104]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5595,7 +5654,7 @@ func (x *MempoolEntryByAddress) String() string {
 func (*MempoolEntryByAddress) ProtoMessage() {}
 
 func (x *MempoolEntryByAddress) ProtoReflect() protoreflect.Message {
-	mi := &file_rpc_proto_msgTypes[103]
+	mi := &file_rpc_proto_msgTypes[104]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5608,7 +5667,7 @@ func (x *MempoolEntryByAddress) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MempoolEntryByAddress.ProtoReflect.Descriptor instead.
 func (*MempoolEntryByAddress) Descriptor() ([]byte, []int) {
-	return file_rpc_proto_rawDescGZIP(), []int{103}
+	return file_rpc_proto_rawDescGZIP(), []int{104}
 }
 
 func (x *MempoolEntryByAddress) GetAddress() string {
@@ -5643,7 +5702,7 @@ type GetMempoolEntriesByAddressesRequestMessage struct {
 
 func (x *GetMempoolEntriesByAddressesRequestMessage) Reset() {
 	*x = GetMempoolEntriesByAddressesRequestMessage{}
-	mi := &file_rpc_proto_msgTypes[104]
+	mi := &file_rpc_proto_msgTypes[105]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5655,7 +5714,7 @@ func (x *GetMempoolEntriesByAddressesRequestMessage) String() string {
 func (*GetMempoolEntriesByAddressesRequestMessage) ProtoMessage() {}
 
 func (x *GetMempoolEntriesByAddressesRequestMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_rpc_proto_msgTypes[104]
+	mi := &file_rpc_proto_msgTypes[105]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5668,7 +5727,7 @@ func (x *GetMempoolEntriesByAddressesRequestMessage) ProtoReflect() protoreflect
 
 // Deprecated: Use GetMempoolEntriesByAddressesRequestMessage.ProtoReflect.Descriptor instead.
 func (*GetMempoolEntriesByAddressesRequestMessage) Descriptor() ([]byte, []int) {
-	return file_rpc_proto_rawDescGZIP(), []int{104}
+	return file_rpc_proto_rawDescGZIP(), []int{105}
 }
 
 func (x *GetMempoolEntriesByAddressesRequestMessage) GetAddresses() []string {
@@ -5702,7 +5761,7 @@ type GetMempoolEntriesByAddressesResponseMessage struct {
 
 func (x *GetMempoolEntriesByAddressesResponseMessage) Reset() {
 	*x = GetMempoolEntriesByAddressesResponseMessage{}
-	mi := &file_rpc_proto_msgTypes[105]
+	mi := &file_rpc_proto_msgTypes[106]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5714,7 +5773,7 @@ func (x *GetMempoolEntriesByAddressesResponseMessage) String() string {
 func (*GetMempoolEntriesByAddressesResponseMessage) ProtoMessage() {}
 
 func (x *GetMempoolEntriesByAddressesResponseMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_rpc_proto_msgTypes[105]
+	mi := &file_rpc_proto_msgTypes[106]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5727,7 +5786,7 @@ func (x *GetMempoolEntriesByAddressesResponseMessage) ProtoReflect() protoreflec
 
 // Deprecated: Use GetMempoolEntriesByAddressesResponseMessage.ProtoReflect.Descriptor instead.
 func (*GetMempoolEntriesByAddressesResponseMessage) Descriptor() ([]byte, []int) {
-	return file_rpc_proto_rawDescGZIP(), []int{105}
+	return file_rpc_proto_rawDescGZIP(), []int{106}
 }
 
 func (x *GetMempoolEntriesByAddressesResponseMessage) GetEntries() []*MempoolEntryByAddress {
@@ -5752,7 +5811,7 @@ type GetCoinSupplyRequestMessage struct {
 
 func (x *GetCoinSupplyRequestMessage) Reset() {
 	*x = GetCoinSupplyRequestMessage{}
-	mi := &file_rpc_proto_msgTypes[106]
+	mi := &file_rpc_proto_msgTypes[107]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5764,7 +5823,7 @@ func (x *GetCoinSupplyRequestMessage) String() string {
 func (*GetCoinSupplyRequestMessage) ProtoMessage() {}
 
 func (x *GetCoinSupplyRequestMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_rpc_proto_msgTypes[106]
+	mi := &file_rpc_proto_msgTypes[107]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5777,7 +5836,7 @@ func (x *GetCoinSupplyRequestMessage) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetCoinSupplyRequestMessage.ProtoReflect.Descriptor instead.
 func (*GetCoinSupplyRequestMessage) Descriptor() ([]byte, []int) {
-	return file_rpc_proto_rawDescGZIP(), []int{106}
+	return file_rpc_proto_rawDescGZIP(), []int{107}
 }
 
 type GetCoinSupplyResponseMessage struct {
@@ -5792,7 +5851,7 @@ type GetCoinSupplyResponseMessage struct {
 
 func (x *GetCoinSupplyResponseMessage) Reset() {
 	*x = GetCoinSupplyResponseMessage{}
-	mi := &file_rpc_proto_msgTypes[107]
+	mi := &file_rpc_proto_msgTypes[108]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5804,7 +5863,7 @@ func (x *GetCoinSupplyResponseMessage) String() string {
 func (*GetCoinSupplyResponseMessage) ProtoMessage() {}
 
 func (x *GetCoinSupplyResponseMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_rpc_proto_msgTypes[107]
+	mi := &file_rpc_proto_msgTypes[108]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5817,7 +5876,7 @@ func (x *GetCoinSupplyResponseMessage) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetCoinSupplyResponseMessage.ProtoReflect.Descriptor instead.
 func (*GetCoinSupplyResponseMessage) Descriptor() ([]byte, []int) {
-	return file_rpc_proto_rawDescGZIP(), []int{107}
+	return file_rpc_proto_rawDescGZIP(), []int{108}
 }
 
 func (x *GetCoinSupplyResponseMessage) GetMaxSompi() uint64 {
@@ -5849,7 +5908,7 @@ type PingRequestMessage struct {
 
 func (x *PingRequestMessage) Reset() {
 	*x = PingRequestMessage{}
-	mi := &file_rpc_proto_msgTypes[108]
+	mi := &file_rpc_proto_msgTypes[109]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5861,7 +5920,7 @@ func (x *PingRequestMessage) String() string {
 func (*PingRequestMessage) ProtoMessage() {}
 
 func (x *PingRequestMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_rpc_proto_msgTypes[108]
+	mi := &file_rpc_proto_msgTypes[109]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5874,7 +5933,7 @@ func (x *PingRequestMessage) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PingRequestMessage.ProtoReflect.Descriptor instead.
 func (*PingRequestMessage) Descriptor() ([]byte, []int) {
-	return file_rpc_proto_rawDescGZIP(), []int{108}
+	return file_rpc_proto_rawDescGZIP(), []int{109}
 }
 
 type PingResponseMessage struct {
@@ -5886,7 +5945,7 @@ type PingResponseMessage struct {
 
 func (x *PingResponseMessage) Reset() {
 	*x = PingResponseMessage{}
-	mi := &file_rpc_proto_msgTypes[109]
+	mi := &file_rpc_proto_msgTypes[110]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5898,7 +5957,7 @@ func (x *PingResponseMessage) String() string {
 func (*PingResponseMessage) ProtoMessage() {}
 
 func (x *PingResponseMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_rpc_proto_msgTypes[109]
+	mi := &file_rpc_proto_msgTypes[110]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5911,7 +5970,7 @@ func (x *PingResponseMessage) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PingResponseMessage.ProtoReflect.Descriptor instead.
 func (*PingResponseMessage) Descriptor() ([]byte, []int) {
-	return file_rpc_proto_rawDescGZIP(), []int{109}
+	return file_rpc_proto_rawDescGZIP(), []int{110}
 }
 
 func (x *PingResponseMessage) GetError() *RPCError {
@@ -5938,7 +5997,7 @@ type ProcessMetrics struct {
 
 func (x *ProcessMetrics) Reset() {
 	*x = ProcessMetrics{}
-	mi := &file_rpc_proto_msgTypes[110]
+	mi := &file_rpc_proto_msgTypes[111]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5950,7 +6009,7 @@ func (x *ProcessMetrics) String() string {
 func (*ProcessMetrics) ProtoMessage() {}
 
 func (x *ProcessMetrics) ProtoReflect() protoreflect.Message {
-	mi := &file_rpc_proto_msgTypes[110]
+	mi := &file_rpc_proto_msgTypes[111]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5963,7 +6022,7 @@ func (x *ProcessMetrics) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ProcessMetrics.ProtoReflect.Descriptor instead.
 func (*ProcessMetrics) Descriptor() ([]byte, []int) {
-	return file_rpc_proto_rawDescGZIP(), []int{110}
+	return file_rpc_proto_rawDescGZIP(), []int{111}
 }
 
 func (x *ProcessMetrics) GetResidentSetSize() uint64 {
@@ -6044,7 +6103,7 @@ type ConnectionMetrics struct {
 
 func (x *ConnectionMetrics) Reset() {
 	*x = ConnectionMetrics{}
-	mi := &file_rpc_proto_msgTypes[111]
+	mi := &file_rpc_proto_msgTypes[112]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6056,7 +6115,7 @@ func (x *ConnectionMetrics) String() string {
 func (*ConnectionMetrics) ProtoMessage() {}
 
 func (x *ConnectionMetrics) ProtoReflect() protoreflect.Message {
-	mi := &file_rpc_proto_msgTypes[111]
+	mi := &file_rpc_proto_msgTypes[112]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6069,7 +6128,7 @@ func (x *ConnectionMetrics) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ConnectionMetrics.ProtoReflect.Descriptor instead.
 func (*ConnectionMetrics) Descriptor() ([]byte, []int) {
-	return file_rpc_proto_rawDescGZIP(), []int{111}
+	return file_rpc_proto_rawDescGZIP(), []int{112}
 }
 
 func (x *ConnectionMetrics) GetBorshLiveConnections() uint32 {
@@ -6137,7 +6196,7 @@ type BandwidthMetrics struct {
 
 func (x *BandwidthMetrics) Reset() {
 	*x = BandwidthMetrics{}
-	mi := &file_rpc_proto_msgTypes[112]
+	mi := &file_rpc_proto_msgTypes[113]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6149,7 +6208,7 @@ func (x *BandwidthMetrics) String() string {
 func (*BandwidthMetrics) ProtoMessage() {}
 
 func (x *BandwidthMetrics) ProtoReflect() protoreflect.Message {
-	mi := &file_rpc_proto_msgTypes[112]
+	mi := &file_rpc_proto_msgTypes[113]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6162,7 +6221,7 @@ func (x *BandwidthMetrics) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BandwidthMetrics.ProtoReflect.Descriptor instead.
 func (*BandwidthMetrics) Descriptor() ([]byte, []int) {
-	return file_rpc_proto_rawDescGZIP(), []int{112}
+	return file_rpc_proto_rawDescGZIP(), []int{113}
 }
 
 func (x *BandwidthMetrics) GetBorshBytesTx() uint64 {
@@ -6244,7 +6303,7 @@ type ConsensusMetrics struct {
 
 func (x *ConsensusMetrics) Reset() {
 	*x = ConsensusMetrics{}
-	mi := &file_rpc_proto_msgTypes[113]
+	mi := &file_rpc_proto_msgTypes[114]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6256,7 +6315,7 @@ func (x *ConsensusMetrics) String() string {
 func (*ConsensusMetrics) ProtoMessage() {}
 
 func (x *ConsensusMetrics) ProtoReflect() protoreflect.Message {
-	mi := &file_rpc_proto_msgTypes[113]
+	mi := &file_rpc_proto_msgTypes[114]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6269,7 +6328,7 @@ func (x *ConsensusMetrics) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ConsensusMetrics.ProtoReflect.Descriptor instead.
 func (*ConsensusMetrics) Descriptor() ([]byte, []int) {
-	return file_rpc_proto_rawDescGZIP(), []int{113}
+	return file_rpc_proto_rawDescGZIP(), []int{114}
 }
 
 func (x *ConsensusMetrics) GetBlocksSubmitted() uint64 {
@@ -6386,7 +6445,7 @@ type StorageMetrics struct {
 
 func (x *StorageMetrics) Reset() {
 	*x = StorageMetrics{}
-	mi := &file_rpc_proto_msgTypes[114]
+	mi := &file_rpc_proto_msgTypes[115]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6398,7 +6457,7 @@ func (x *StorageMetrics) String() string {
 func (*StorageMetrics) ProtoMessage() {}
 
 func (x *StorageMetrics) ProtoReflect() protoreflect.Message {
-	mi := &file_rpc_proto_msgTypes[114]
+	mi := &file_rpc_proto_msgTypes[115]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6411,7 +6470,7 @@ func (x *StorageMetrics) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use StorageMetrics.ProtoReflect.Descriptor instead.
 func (*StorageMetrics) Descriptor() ([]byte, []int) {
-	return file_rpc_proto_rawDescGZIP(), []int{114}
+	return file_rpc_proto_rawDescGZIP(), []int{115}
 }
 
 func (x *StorageMetrics) GetStorageSizeBytes() uint64 {
@@ -6430,7 +6489,7 @@ type GetConnectionsRequestMessage struct {
 
 func (x *GetConnectionsRequestMessage) Reset() {
 	*x = GetConnectionsRequestMessage{}
-	mi := &file_rpc_proto_msgTypes[115]
+	mi := &file_rpc_proto_msgTypes[116]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6442,7 +6501,7 @@ func (x *GetConnectionsRequestMessage) String() string {
 func (*GetConnectionsRequestMessage) ProtoMessage() {}
 
 func (x *GetConnectionsRequestMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_rpc_proto_msgTypes[115]
+	mi := &file_rpc_proto_msgTypes[116]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6455,7 +6514,7 @@ func (x *GetConnectionsRequestMessage) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetConnectionsRequestMessage.ProtoReflect.Descriptor instead.
 func (*GetConnectionsRequestMessage) Descriptor() ([]byte, []int) {
-	return file_rpc_proto_rawDescGZIP(), []int{115}
+	return file_rpc_proto_rawDescGZIP(), []int{116}
 }
 
 func (x *GetConnectionsRequestMessage) GetIncludeProfileData() bool {
@@ -6475,7 +6534,7 @@ type ConnectionsProfileData struct {
 
 func (x *ConnectionsProfileData) Reset() {
 	*x = ConnectionsProfileData{}
-	mi := &file_rpc_proto_msgTypes[116]
+	mi := &file_rpc_proto_msgTypes[117]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6487,7 +6546,7 @@ func (x *ConnectionsProfileData) String() string {
 func (*ConnectionsProfileData) ProtoMessage() {}
 
 func (x *ConnectionsProfileData) ProtoReflect() protoreflect.Message {
-	mi := &file_rpc_proto_msgTypes[116]
+	mi := &file_rpc_proto_msgTypes[117]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6500,7 +6559,7 @@ func (x *ConnectionsProfileData) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ConnectionsProfileData.ProtoReflect.Descriptor instead.
 func (*ConnectionsProfileData) Descriptor() ([]byte, []int) {
-	return file_rpc_proto_rawDescGZIP(), []int{116}
+	return file_rpc_proto_rawDescGZIP(), []int{117}
 }
 
 func (x *ConnectionsProfileData) GetCpuUsage() float64 {
@@ -6529,7 +6588,7 @@ type GetConnectionsResponseMessage struct {
 
 func (x *GetConnectionsResponseMessage) Reset() {
 	*x = GetConnectionsResponseMessage{}
-	mi := &file_rpc_proto_msgTypes[117]
+	mi := &file_rpc_proto_msgTypes[118]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6541,7 +6600,7 @@ func (x *GetConnectionsResponseMessage) String() string {
 func (*GetConnectionsResponseMessage) ProtoMessage() {}
 
 func (x *GetConnectionsResponseMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_rpc_proto_msgTypes[117]
+	mi := &file_rpc_proto_msgTypes[118]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6554,7 +6613,7 @@ func (x *GetConnectionsResponseMessage) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetConnectionsResponseMessage.ProtoReflect.Descriptor instead.
 func (*GetConnectionsResponseMessage) Descriptor() ([]byte, []int) {
-	return file_rpc_proto_rawDescGZIP(), []int{117}
+	return file_rpc_proto_rawDescGZIP(), []int{118}
 }
 
 func (x *GetConnectionsResponseMessage) GetClients() uint32 {
@@ -6593,7 +6652,7 @@ type GetSystemInfoRequestMessage struct {
 
 func (x *GetSystemInfoRequestMessage) Reset() {
 	*x = GetSystemInfoRequestMessage{}
-	mi := &file_rpc_proto_msgTypes[118]
+	mi := &file_rpc_proto_msgTypes[119]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6605,7 +6664,7 @@ func (x *GetSystemInfoRequestMessage) String() string {
 func (*GetSystemInfoRequestMessage) ProtoMessage() {}
 
 func (x *GetSystemInfoRequestMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_rpc_proto_msgTypes[118]
+	mi := &file_rpc_proto_msgTypes[119]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6618,7 +6677,7 @@ func (x *GetSystemInfoRequestMessage) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetSystemInfoRequestMessage.ProtoReflect.Descriptor instead.
 func (*GetSystemInfoRequestMessage) Descriptor() ([]byte, []int) {
-	return file_rpc_proto_rawDescGZIP(), []int{118}
+	return file_rpc_proto_rawDescGZIP(), []int{119}
 }
 
 type GetSystemInfoResponseMessage struct {
@@ -6636,7 +6695,7 @@ type GetSystemInfoResponseMessage struct {
 
 func (x *GetSystemInfoResponseMessage) Reset() {
 	*x = GetSystemInfoResponseMessage{}
-	mi := &file_rpc_proto_msgTypes[119]
+	mi := &file_rpc_proto_msgTypes[120]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6648,7 +6707,7 @@ func (x *GetSystemInfoResponseMessage) String() string {
 func (*GetSystemInfoResponseMessage) ProtoMessage() {}
 
 func (x *GetSystemInfoResponseMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_rpc_proto_msgTypes[119]
+	mi := &file_rpc_proto_msgTypes[120]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6661,7 +6720,7 @@ func (x *GetSystemInfoResponseMessage) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetSystemInfoResponseMessage.ProtoReflect.Descriptor instead.
 func (*GetSystemInfoResponseMessage) Descriptor() ([]byte, []int) {
-	return file_rpc_proto_rawDescGZIP(), []int{119}
+	return file_rpc_proto_rawDescGZIP(), []int{120}
 }
 
 func (x *GetSystemInfoResponseMessage) GetVersion() string {
@@ -6727,7 +6786,7 @@ type GetMetricsRequestMessage struct {
 
 func (x *GetMetricsRequestMessage) Reset() {
 	*x = GetMetricsRequestMessage{}
-	mi := &file_rpc_proto_msgTypes[120]
+	mi := &file_rpc_proto_msgTypes[121]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6739,7 +6798,7 @@ func (x *GetMetricsRequestMessage) String() string {
 func (*GetMetricsRequestMessage) ProtoMessage() {}
 
 func (x *GetMetricsRequestMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_rpc_proto_msgTypes[120]
+	mi := &file_rpc_proto_msgTypes[121]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6752,7 +6811,7 @@ func (x *GetMetricsRequestMessage) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetMetricsRequestMessage.ProtoReflect.Descriptor instead.
 func (*GetMetricsRequestMessage) Descriptor() ([]byte, []int) {
-	return file_rpc_proto_rawDescGZIP(), []int{120}
+	return file_rpc_proto_rawDescGZIP(), []int{121}
 }
 
 func (x *GetMetricsRequestMessage) GetProcessMetrics() bool {
@@ -6812,7 +6871,7 @@ type GetMetricsResponseMessage struct {
 
 func (x *GetMetricsResponseMessage) Reset() {
 	*x = GetMetricsResponseMessage{}
-	mi := &file_rpc_proto_msgTypes[121]
+	mi := &file_rpc_proto_msgTypes[122]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6824,7 +6883,7 @@ func (x *GetMetricsResponseMessage) String() string {
 func (*GetMetricsResponseMessage) ProtoMessage() {}
 
 func (x *GetMetricsResponseMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_rpc_proto_msgTypes[121]
+	mi := &file_rpc_proto_msgTypes[122]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6837,7 +6896,7 @@ func (x *GetMetricsResponseMessage) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetMetricsResponseMessage.ProtoReflect.Descriptor instead.
 func (*GetMetricsResponseMessage) Descriptor() ([]byte, []int) {
-	return file_rpc_proto_rawDescGZIP(), []int{121}
+	return file_rpc_proto_rawDescGZIP(), []int{122}
 }
 
 func (x *GetMetricsResponseMessage) GetServerTime() uint64 {
@@ -6897,7 +6956,7 @@ type GetServerInfoRequestMessage struct {
 
 func (x *GetServerInfoRequestMessage) Reset() {
 	*x = GetServerInfoRequestMessage{}
-	mi := &file_rpc_proto_msgTypes[122]
+	mi := &file_rpc_proto_msgTypes[123]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6909,7 +6968,7 @@ func (x *GetServerInfoRequestMessage) String() string {
 func (*GetServerInfoRequestMessage) ProtoMessage() {}
 
 func (x *GetServerInfoRequestMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_rpc_proto_msgTypes[122]
+	mi := &file_rpc_proto_msgTypes[123]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6922,7 +6981,7 @@ func (x *GetServerInfoRequestMessage) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetServerInfoRequestMessage.ProtoReflect.Descriptor instead.
 func (*GetServerInfoRequestMessage) Descriptor() ([]byte, []int) {
-	return file_rpc_proto_rawDescGZIP(), []int{122}
+	return file_rpc_proto_rawDescGZIP(), []int{123}
 }
 
 type GetServerInfoResponseMessage struct {
@@ -6941,7 +7000,7 @@ type GetServerInfoResponseMessage struct {
 
 func (x *GetServerInfoResponseMessage) Reset() {
 	*x = GetServerInfoResponseMessage{}
-	mi := &file_rpc_proto_msgTypes[123]
+	mi := &file_rpc_proto_msgTypes[124]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6953,7 +7012,7 @@ func (x *GetServerInfoResponseMessage) String() string {
 func (*GetServerInfoResponseMessage) ProtoMessage() {}
 
 func (x *GetServerInfoResponseMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_rpc_proto_msgTypes[123]
+	mi := &file_rpc_proto_msgTypes[124]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6966,7 +7025,7 @@ func (x *GetServerInfoResponseMessage) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetServerInfoResponseMessage.ProtoReflect.Descriptor instead.
 func (*GetServerInfoResponseMessage) Descriptor() ([]byte, []int) {
-	return file_rpc_proto_rawDescGZIP(), []int{123}
+	return file_rpc_proto_rawDescGZIP(), []int{124}
 }
 
 func (x *GetServerInfoResponseMessage) GetRpcApiVersion() uint32 {
@@ -7033,7 +7092,7 @@ type GetSyncStatusRequestMessage struct {
 
 func (x *GetSyncStatusRequestMessage) Reset() {
 	*x = GetSyncStatusRequestMessage{}
-	mi := &file_rpc_proto_msgTypes[124]
+	mi := &file_rpc_proto_msgTypes[125]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7045,7 +7104,7 @@ func (x *GetSyncStatusRequestMessage) String() string {
 func (*GetSyncStatusRequestMessage) ProtoMessage() {}
 
 func (x *GetSyncStatusRequestMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_rpc_proto_msgTypes[124]
+	mi := &file_rpc_proto_msgTypes[125]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7058,7 +7117,7 @@ func (x *GetSyncStatusRequestMessage) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetSyncStatusRequestMessage.ProtoReflect.Descriptor instead.
 func (*GetSyncStatusRequestMessage) Descriptor() ([]byte, []int) {
-	return file_rpc_proto_rawDescGZIP(), []int{124}
+	return file_rpc_proto_rawDescGZIP(), []int{125}
 }
 
 type GetSyncStatusResponseMessage struct {
@@ -7071,7 +7130,7 @@ type GetSyncStatusResponseMessage struct {
 
 func (x *GetSyncStatusResponseMessage) Reset() {
 	*x = GetSyncStatusResponseMessage{}
-	mi := &file_rpc_proto_msgTypes[125]
+	mi := &file_rpc_proto_msgTypes[126]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7083,7 +7142,7 @@ func (x *GetSyncStatusResponseMessage) String() string {
 func (*GetSyncStatusResponseMessage) ProtoMessage() {}
 
 func (x *GetSyncStatusResponseMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_rpc_proto_msgTypes[125]
+	mi := &file_rpc_proto_msgTypes[126]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7096,7 +7155,7 @@ func (x *GetSyncStatusResponseMessage) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetSyncStatusResponseMessage.ProtoReflect.Descriptor instead.
 func (*GetSyncStatusResponseMessage) Descriptor() ([]byte, []int) {
-	return file_rpc_proto_rawDescGZIP(), []int{125}
+	return file_rpc_proto_rawDescGZIP(), []int{126}
 }
 
 func (x *GetSyncStatusResponseMessage) GetIsSynced() bool {
@@ -7122,7 +7181,7 @@ type GetDaaScoreTimestampEstimateRequestMessage struct {
 
 func (x *GetDaaScoreTimestampEstimateRequestMessage) Reset() {
 	*x = GetDaaScoreTimestampEstimateRequestMessage{}
-	mi := &file_rpc_proto_msgTypes[126]
+	mi := &file_rpc_proto_msgTypes[127]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7134,7 +7193,7 @@ func (x *GetDaaScoreTimestampEstimateRequestMessage) String() string {
 func (*GetDaaScoreTimestampEstimateRequestMessage) ProtoMessage() {}
 
 func (x *GetDaaScoreTimestampEstimateRequestMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_rpc_proto_msgTypes[126]
+	mi := &file_rpc_proto_msgTypes[127]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7147,7 +7206,7 @@ func (x *GetDaaScoreTimestampEstimateRequestMessage) ProtoReflect() protoreflect
 
 // Deprecated: Use GetDaaScoreTimestampEstimateRequestMessage.ProtoReflect.Descriptor instead.
 func (*GetDaaScoreTimestampEstimateRequestMessage) Descriptor() ([]byte, []int) {
-	return file_rpc_proto_rawDescGZIP(), []int{126}
+	return file_rpc_proto_rawDescGZIP(), []int{127}
 }
 
 func (x *GetDaaScoreTimestampEstimateRequestMessage) GetDaaScores() []uint64 {
@@ -7167,7 +7226,7 @@ type GetDaaScoreTimestampEstimateResponseMessage struct {
 
 func (x *GetDaaScoreTimestampEstimateResponseMessage) Reset() {
 	*x = GetDaaScoreTimestampEstimateResponseMessage{}
-	mi := &file_rpc_proto_msgTypes[127]
+	mi := &file_rpc_proto_msgTypes[128]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7179,7 +7238,7 @@ func (x *GetDaaScoreTimestampEstimateResponseMessage) String() string {
 func (*GetDaaScoreTimestampEstimateResponseMessage) ProtoMessage() {}
 
 func (x *GetDaaScoreTimestampEstimateResponseMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_rpc_proto_msgTypes[127]
+	mi := &file_rpc_proto_msgTypes[128]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7192,7 +7251,7 @@ func (x *GetDaaScoreTimestampEstimateResponseMessage) ProtoReflect() protoreflec
 
 // Deprecated: Use GetDaaScoreTimestampEstimateResponseMessage.ProtoReflect.Descriptor instead.
 func (*GetDaaScoreTimestampEstimateResponseMessage) Descriptor() ([]byte, []int) {
-	return file_rpc_proto_rawDescGZIP(), []int{127}
+	return file_rpc_proto_rawDescGZIP(), []int{128}
 }
 
 func (x *GetDaaScoreTimestampEstimateResponseMessage) GetTimestamps() []uint64 {
@@ -7220,7 +7279,7 @@ type RpcFeerateBucket struct {
 
 func (x *RpcFeerateBucket) Reset() {
 	*x = RpcFeerateBucket{}
-	mi := &file_rpc_proto_msgTypes[128]
+	mi := &file_rpc_proto_msgTypes[129]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7232,7 +7291,7 @@ func (x *RpcFeerateBucket) String() string {
 func (*RpcFeerateBucket) ProtoMessage() {}
 
 func (x *RpcFeerateBucket) ProtoReflect() protoreflect.Message {
-	mi := &file_rpc_proto_msgTypes[128]
+	mi := &file_rpc_proto_msgTypes[129]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7245,7 +7304,7 @@ func (x *RpcFeerateBucket) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RpcFeerateBucket.ProtoReflect.Descriptor instead.
 func (*RpcFeerateBucket) Descriptor() ([]byte, []int) {
-	return file_rpc_proto_rawDescGZIP(), []int{128}
+	return file_rpc_proto_rawDescGZIP(), []int{129}
 }
 
 func (x *RpcFeerateBucket) GetFeerate() float64 {
@@ -7292,7 +7351,7 @@ type RpcFeeEstimate struct {
 
 func (x *RpcFeeEstimate) Reset() {
 	*x = RpcFeeEstimate{}
-	mi := &file_rpc_proto_msgTypes[129]
+	mi := &file_rpc_proto_msgTypes[130]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7304,7 +7363,7 @@ func (x *RpcFeeEstimate) String() string {
 func (*RpcFeeEstimate) ProtoMessage() {}
 
 func (x *RpcFeeEstimate) ProtoReflect() protoreflect.Message {
-	mi := &file_rpc_proto_msgTypes[129]
+	mi := &file_rpc_proto_msgTypes[130]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7317,7 +7376,7 @@ func (x *RpcFeeEstimate) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RpcFeeEstimate.ProtoReflect.Descriptor instead.
 func (*RpcFeeEstimate) Descriptor() ([]byte, []int) {
-	return file_rpc_proto_rawDescGZIP(), []int{129}
+	return file_rpc_proto_rawDescGZIP(), []int{130}
 }
 
 func (x *RpcFeeEstimate) GetPriorityBucket() *RpcFeerateBucket {
@@ -7355,7 +7414,7 @@ type RpcFeeEstimateVerboseExperimentalData struct {
 
 func (x *RpcFeeEstimateVerboseExperimentalData) Reset() {
 	*x = RpcFeeEstimateVerboseExperimentalData{}
-	mi := &file_rpc_proto_msgTypes[130]
+	mi := &file_rpc_proto_msgTypes[131]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7367,7 +7426,7 @@ func (x *RpcFeeEstimateVerboseExperimentalData) String() string {
 func (*RpcFeeEstimateVerboseExperimentalData) ProtoMessage() {}
 
 func (x *RpcFeeEstimateVerboseExperimentalData) ProtoReflect() protoreflect.Message {
-	mi := &file_rpc_proto_msgTypes[130]
+	mi := &file_rpc_proto_msgTypes[131]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7380,7 +7439,7 @@ func (x *RpcFeeEstimateVerboseExperimentalData) ProtoReflect() protoreflect.Mess
 
 // Deprecated: Use RpcFeeEstimateVerboseExperimentalData.ProtoReflect.Descriptor instead.
 func (*RpcFeeEstimateVerboseExperimentalData) Descriptor() ([]byte, []int) {
-	return file_rpc_proto_rawDescGZIP(), []int{130}
+	return file_rpc_proto_rawDescGZIP(), []int{131}
 }
 
 func (x *RpcFeeEstimateVerboseExperimentalData) GetMempoolReadyTransactionsCount() uint64 {
@@ -7433,7 +7492,7 @@ type GetFeeEstimateRequestMessage struct {
 
 func (x *GetFeeEstimateRequestMessage) Reset() {
 	*x = GetFeeEstimateRequestMessage{}
-	mi := &file_rpc_proto_msgTypes[131]
+	mi := &file_rpc_proto_msgTypes[132]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7445,7 +7504,7 @@ func (x *GetFeeEstimateRequestMessage) String() string {
 func (*GetFeeEstimateRequestMessage) ProtoMessage() {}
 
 func (x *GetFeeEstimateRequestMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_rpc_proto_msgTypes[131]
+	mi := &file_rpc_proto_msgTypes[132]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7458,7 +7517,7 @@ func (x *GetFeeEstimateRequestMessage) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetFeeEstimateRequestMessage.ProtoReflect.Descriptor instead.
 func (*GetFeeEstimateRequestMessage) Descriptor() ([]byte, []int) {
-	return file_rpc_proto_rawDescGZIP(), []int{131}
+	return file_rpc_proto_rawDescGZIP(), []int{132}
 }
 
 type GetFeeEstimateResponseMessage struct {
@@ -7471,7 +7530,7 @@ type GetFeeEstimateResponseMessage struct {
 
 func (x *GetFeeEstimateResponseMessage) Reset() {
 	*x = GetFeeEstimateResponseMessage{}
-	mi := &file_rpc_proto_msgTypes[132]
+	mi := &file_rpc_proto_msgTypes[133]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7483,7 +7542,7 @@ func (x *GetFeeEstimateResponseMessage) String() string {
 func (*GetFeeEstimateResponseMessage) ProtoMessage() {}
 
 func (x *GetFeeEstimateResponseMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_rpc_proto_msgTypes[132]
+	mi := &file_rpc_proto_msgTypes[133]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7496,7 +7555,7 @@ func (x *GetFeeEstimateResponseMessage) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetFeeEstimateResponseMessage.ProtoReflect.Descriptor instead.
 func (*GetFeeEstimateResponseMessage) Descriptor() ([]byte, []int) {
-	return file_rpc_proto_rawDescGZIP(), []int{132}
+	return file_rpc_proto_rawDescGZIP(), []int{133}
 }
 
 func (x *GetFeeEstimateResponseMessage) GetEstimate() *RpcFeeEstimate {
@@ -7522,7 +7581,7 @@ type GetFeeEstimateExperimentalRequestMessage struct {
 
 func (x *GetFeeEstimateExperimentalRequestMessage) Reset() {
 	*x = GetFeeEstimateExperimentalRequestMessage{}
-	mi := &file_rpc_proto_msgTypes[133]
+	mi := &file_rpc_proto_msgTypes[134]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7534,7 +7593,7 @@ func (x *GetFeeEstimateExperimentalRequestMessage) String() string {
 func (*GetFeeEstimateExperimentalRequestMessage) ProtoMessage() {}
 
 func (x *GetFeeEstimateExperimentalRequestMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_rpc_proto_msgTypes[133]
+	mi := &file_rpc_proto_msgTypes[134]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7547,7 +7606,7 @@ func (x *GetFeeEstimateExperimentalRequestMessage) ProtoReflect() protoreflect.M
 
 // Deprecated: Use GetFeeEstimateExperimentalRequestMessage.ProtoReflect.Descriptor instead.
 func (*GetFeeEstimateExperimentalRequestMessage) Descriptor() ([]byte, []int) {
-	return file_rpc_proto_rawDescGZIP(), []int{133}
+	return file_rpc_proto_rawDescGZIP(), []int{134}
 }
 
 func (x *GetFeeEstimateExperimentalRequestMessage) GetVerbose() bool {
@@ -7568,7 +7627,7 @@ type GetFeeEstimateExperimentalResponseMessage struct {
 
 func (x *GetFeeEstimateExperimentalResponseMessage) Reset() {
 	*x = GetFeeEstimateExperimentalResponseMessage{}
-	mi := &file_rpc_proto_msgTypes[134]
+	mi := &file_rpc_proto_msgTypes[135]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7580,7 +7639,7 @@ func (x *GetFeeEstimateExperimentalResponseMessage) String() string {
 func (*GetFeeEstimateExperimentalResponseMessage) ProtoMessage() {}
 
 func (x *GetFeeEstimateExperimentalResponseMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_rpc_proto_msgTypes[134]
+	mi := &file_rpc_proto_msgTypes[135]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7593,7 +7652,7 @@ func (x *GetFeeEstimateExperimentalResponseMessage) ProtoReflect() protoreflect.
 
 // Deprecated: Use GetFeeEstimateExperimentalResponseMessage.ProtoReflect.Descriptor instead.
 func (*GetFeeEstimateExperimentalResponseMessage) Descriptor() ([]byte, []int) {
-	return file_rpc_proto_rawDescGZIP(), []int{134}
+	return file_rpc_proto_rawDescGZIP(), []int{135}
 }
 
 func (x *GetFeeEstimateExperimentalResponseMessage) GetEstimate() *RpcFeeEstimate {
@@ -7626,7 +7685,7 @@ type GetCurrentBlockColorRequestMessage struct {
 
 func (x *GetCurrentBlockColorRequestMessage) Reset() {
 	*x = GetCurrentBlockColorRequestMessage{}
-	mi := &file_rpc_proto_msgTypes[135]
+	mi := &file_rpc_proto_msgTypes[136]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7638,7 +7697,7 @@ func (x *GetCurrentBlockColorRequestMessage) String() string {
 func (*GetCurrentBlockColorRequestMessage) ProtoMessage() {}
 
 func (x *GetCurrentBlockColorRequestMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_rpc_proto_msgTypes[135]
+	mi := &file_rpc_proto_msgTypes[136]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7651,7 +7710,7 @@ func (x *GetCurrentBlockColorRequestMessage) ProtoReflect() protoreflect.Message
 
 // Deprecated: Use GetCurrentBlockColorRequestMessage.ProtoReflect.Descriptor instead.
 func (*GetCurrentBlockColorRequestMessage) Descriptor() ([]byte, []int) {
-	return file_rpc_proto_rawDescGZIP(), []int{135}
+	return file_rpc_proto_rawDescGZIP(), []int{136}
 }
 
 func (x *GetCurrentBlockColorRequestMessage) GetHash() string {
@@ -7671,7 +7730,7 @@ type GetCurrentBlockColorResponseMessage struct {
 
 func (x *GetCurrentBlockColorResponseMessage) Reset() {
 	*x = GetCurrentBlockColorResponseMessage{}
-	mi := &file_rpc_proto_msgTypes[136]
+	mi := &file_rpc_proto_msgTypes[137]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7683,7 +7742,7 @@ func (x *GetCurrentBlockColorResponseMessage) String() string {
 func (*GetCurrentBlockColorResponseMessage) ProtoMessage() {}
 
 func (x *GetCurrentBlockColorResponseMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_rpc_proto_msgTypes[136]
+	mi := &file_rpc_proto_msgTypes[137]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7696,7 +7755,7 @@ func (x *GetCurrentBlockColorResponseMessage) ProtoReflect() protoreflect.Messag
 
 // Deprecated: Use GetCurrentBlockColorResponseMessage.ProtoReflect.Descriptor instead.
 func (*GetCurrentBlockColorResponseMessage) Descriptor() ([]byte, []int) {
-	return file_rpc_proto_rawDescGZIP(), []int{136}
+	return file_rpc_proto_rawDescGZIP(), []int{137}
 }
 
 func (x *GetCurrentBlockColorResponseMessage) GetBlue() bool {
@@ -7724,7 +7783,7 @@ type SubmitTransactionReplacementRequestMessage struct {
 
 func (x *SubmitTransactionReplacementRequestMessage) Reset() {
 	*x = SubmitTransactionReplacementRequestMessage{}
-	mi := &file_rpc_proto_msgTypes[137]
+	mi := &file_rpc_proto_msgTypes[138]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7736,7 +7795,7 @@ func (x *SubmitTransactionReplacementRequestMessage) String() string {
 func (*SubmitTransactionReplacementRequestMessage) ProtoMessage() {}
 
 func (x *SubmitTransactionReplacementRequestMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_rpc_proto_msgTypes[137]
+	mi := &file_rpc_proto_msgTypes[138]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7749,7 +7808,7 @@ func (x *SubmitTransactionReplacementRequestMessage) ProtoReflect() protoreflect
 
 // Deprecated: Use SubmitTransactionReplacementRequestMessage.ProtoReflect.Descriptor instead.
 func (*SubmitTransactionReplacementRequestMessage) Descriptor() ([]byte, []int) {
-	return file_rpc_proto_rawDescGZIP(), []int{137}
+	return file_rpc_proto_rawDescGZIP(), []int{138}
 }
 
 func (x *SubmitTransactionReplacementRequestMessage) GetTransaction() *RpcTransaction {
@@ -7772,7 +7831,7 @@ type SubmitTransactionReplacementResponseMessage struct {
 
 func (x *SubmitTransactionReplacementResponseMessage) Reset() {
 	*x = SubmitTransactionReplacementResponseMessage{}
-	mi := &file_rpc_proto_msgTypes[138]
+	mi := &file_rpc_proto_msgTypes[139]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7784,7 +7843,7 @@ func (x *SubmitTransactionReplacementResponseMessage) String() string {
 func (*SubmitTransactionReplacementResponseMessage) ProtoMessage() {}
 
 func (x *SubmitTransactionReplacementResponseMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_rpc_proto_msgTypes[138]
+	mi := &file_rpc_proto_msgTypes[139]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7797,7 +7856,7 @@ func (x *SubmitTransactionReplacementResponseMessage) ProtoReflect() protoreflec
 
 // Deprecated: Use SubmitTransactionReplacementResponseMessage.ProtoReflect.Descriptor instead.
 func (*SubmitTransactionReplacementResponseMessage) Descriptor() ([]byte, []int) {
-	return file_rpc_proto_rawDescGZIP(), []int{138}
+	return file_rpc_proto_rawDescGZIP(), []int{139}
 }
 
 func (x *SubmitTransactionReplacementResponseMessage) GetTransactionId() string {
@@ -7883,11 +7942,17 @@ const file_rpc_proto_rawDesc = "" +
 	"\rcomputeBudget\x18\x06 \x01(\rR\rcomputeBudget\"X\n" +
 	"\x12RpcScriptPublicKey\x12\x18\n" +
 	"\aversion\x18\x01 \x01(\rR\aversion\x12(\n" +
-	"\x0fscriptPublicKey\x18\x02 \x01(\tR\x0fscriptPublicKey\"\xc5\x01\n" +
+	"\x0fscriptPublicKey\x18\x02 \x01(\tR\x0fscriptPublicKey\"\x92\x02\n" +
 	"\x14RpcTransactionOutput\x12\x16\n" +
 	"\x06amount\x18\x01 \x01(\x04R\x06amount\x12G\n" +
 	"\x0fscriptPublicKey\x18\x02 \x01(\v2\x1d.protowire.RpcScriptPublicKeyR\x0fscriptPublicKey\x12L\n" +
-	"\vverboseData\x18\x03 \x01(\v2*.protowire.RpcTransactionOutputVerboseDataR\vverboseData\"I\n" +
+	"\vverboseData\x18\x03 \x01(\v2*.protowire.RpcTransactionOutputVerboseDataR\vverboseData\x12>\n" +
+	"\bcovenant\x18\x04 \x01(\v2\x1d.protowire.RpcCovenantBindingH\x00R\bcovenant\x88\x01\x01B\v\n" +
+	"\t_covenant\"b\n" +
+	"\x12RpcCovenantBinding\x12+\n" +
+	"\x11authorizing_input\x18\x01 \x01(\rR\x10authorizingInput\x12\x1f\n" +
+	"\vcovenant_id\x18\x02 \x01(\tR\n" +
+	"covenantId\"I\n" +
 	"\vRpcOutpoint\x12$\n" +
 	"\rtransactionId\x18\x01 \x01(\tR\rtransactionId\x12\x14\n" +
 	"\x05index\x18\x02 \x01(\rR\x05index\"\xb5\x01\n" +
@@ -8339,7 +8404,7 @@ func file_rpc_proto_rawDescGZIP() []byte {
 }
 
 var file_rpc_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_rpc_proto_msgTypes = make([]protoimpl.MessageInfo, 139)
+var file_rpc_proto_msgTypes = make([]protoimpl.MessageInfo, 140)
 var file_rpc_proto_goTypes = []any{
 	(SubmitBlockResponseMessage_RejectReason)(0), // 0: protowire.SubmitBlockResponseMessage.RejectReason
 	(*RPCError)(nil),                                                   // 1: protowire.RPCError
@@ -8351,136 +8416,137 @@ var file_rpc_proto_goTypes = []any{
 	(*RpcTransactionInput)(nil),                                        // 7: protowire.RpcTransactionInput
 	(*RpcScriptPublicKey)(nil),                                         // 8: protowire.RpcScriptPublicKey
 	(*RpcTransactionOutput)(nil),                                       // 9: protowire.RpcTransactionOutput
-	(*RpcOutpoint)(nil),                                                // 10: protowire.RpcOutpoint
-	(*RpcUtxoEntry)(nil),                                               // 11: protowire.RpcUtxoEntry
-	(*RpcTransactionVerboseData)(nil),                                  // 12: protowire.RpcTransactionVerboseData
-	(*RpcTransactionInputVerboseData)(nil),                             // 13: protowire.RpcTransactionInputVerboseData
-	(*RpcTransactionOutputVerboseData)(nil),                            // 14: protowire.RpcTransactionOutputVerboseData
-	(*GetCurrentNetworkRequestMessage)(nil),                            // 15: protowire.GetCurrentNetworkRequestMessage
-	(*GetCurrentNetworkResponseMessage)(nil),                           // 16: protowire.GetCurrentNetworkResponseMessage
-	(*SubmitBlockRequestMessage)(nil),                                  // 17: protowire.SubmitBlockRequestMessage
-	(*SubmitBlockResponseMessage)(nil),                                 // 18: protowire.SubmitBlockResponseMessage
-	(*GetBlockTemplateRequestMessage)(nil),                             // 19: protowire.GetBlockTemplateRequestMessage
-	(*GetBlockTemplateResponseMessage)(nil),                            // 20: protowire.GetBlockTemplateResponseMessage
-	(*NotifyBlockAddedRequestMessage)(nil),                             // 21: protowire.NotifyBlockAddedRequestMessage
-	(*NotifyBlockAddedResponseMessage)(nil),                            // 22: protowire.NotifyBlockAddedResponseMessage
-	(*BlockAddedNotificationMessage)(nil),                              // 23: protowire.BlockAddedNotificationMessage
-	(*GetPeerAddressesRequestMessage)(nil),                             // 24: protowire.GetPeerAddressesRequestMessage
-	(*GetPeerAddressesResponseMessage)(nil),                            // 25: protowire.GetPeerAddressesResponseMessage
-	(*GetPeerAddressesKnownAddressMessage)(nil),                        // 26: protowire.GetPeerAddressesKnownAddressMessage
-	(*GetSelectedTipHashRequestMessage)(nil),                           // 27: protowire.GetSelectedTipHashRequestMessage
-	(*GetSelectedTipHashResponseMessage)(nil),                          // 28: protowire.GetSelectedTipHashResponseMessage
-	(*GetMempoolEntryRequestMessage)(nil),                              // 29: protowire.GetMempoolEntryRequestMessage
-	(*GetMempoolEntryResponseMessage)(nil),                             // 30: protowire.GetMempoolEntryResponseMessage
-	(*GetMempoolEntriesRequestMessage)(nil),                            // 31: protowire.GetMempoolEntriesRequestMessage
-	(*GetMempoolEntriesResponseMessage)(nil),                           // 32: protowire.GetMempoolEntriesResponseMessage
-	(*MempoolEntry)(nil),                                               // 33: protowire.MempoolEntry
-	(*GetConnectedPeerInfoRequestMessage)(nil),                         // 34: protowire.GetConnectedPeerInfoRequestMessage
-	(*GetConnectedPeerInfoResponseMessage)(nil),                        // 35: protowire.GetConnectedPeerInfoResponseMessage
-	(*GetConnectedPeerInfoMessage)(nil),                                // 36: protowire.GetConnectedPeerInfoMessage
-	(*AddPeerRequestMessage)(nil),                                      // 37: protowire.AddPeerRequestMessage
-	(*AddPeerResponseMessage)(nil),                                     // 38: protowire.AddPeerResponseMessage
-	(*SubmitTransactionRequestMessage)(nil),                            // 39: protowire.SubmitTransactionRequestMessage
-	(*SubmitTransactionResponseMessage)(nil),                           // 40: protowire.SubmitTransactionResponseMessage
-	(*NotifyVirtualSelectedParentChainChangedRequestMessage)(nil),      // 41: protowire.NotifyVirtualSelectedParentChainChangedRequestMessage
-	(*NotifyVirtualSelectedParentChainChangedResponseMessage)(nil),     // 42: protowire.NotifyVirtualSelectedParentChainChangedResponseMessage
-	(*VirtualSelectedParentChainChangedNotificationMessage)(nil),       // 43: protowire.VirtualSelectedParentChainChangedNotificationMessage
-	(*GetBlockRequestMessage)(nil),                                     // 44: protowire.GetBlockRequestMessage
-	(*GetBlockResponseMessage)(nil),                                    // 45: protowire.GetBlockResponseMessage
-	(*GetSubnetworkRequestMessage)(nil),                                // 46: protowire.GetSubnetworkRequestMessage
-	(*GetSubnetworkResponseMessage)(nil),                               // 47: protowire.GetSubnetworkResponseMessage
-	(*GetVirtualSelectedParentChainFromBlockRequestMessage)(nil),       // 48: protowire.GetVirtualSelectedParentChainFromBlockRequestMessage
-	(*AcceptedTransactionIds)(nil),                                     // 49: protowire.AcceptedTransactionIds
-	(*GetVirtualSelectedParentChainFromBlockResponseMessage)(nil),      // 50: protowire.GetVirtualSelectedParentChainFromBlockResponseMessage
-	(*GetBlocksRequestMessage)(nil),                                    // 51: protowire.GetBlocksRequestMessage
-	(*GetBlocksResponseMessage)(nil),                                   // 52: protowire.GetBlocksResponseMessage
-	(*GetBlockCountRequestMessage)(nil),                                // 53: protowire.GetBlockCountRequestMessage
-	(*GetBlockCountResponseMessage)(nil),                               // 54: protowire.GetBlockCountResponseMessage
-	(*GetBlockDagInfoRequestMessage)(nil),                              // 55: protowire.GetBlockDagInfoRequestMessage
-	(*GetBlockDagInfoResponseMessage)(nil),                             // 56: protowire.GetBlockDagInfoResponseMessage
-	(*ResolveFinalityConflictRequestMessage)(nil),                      // 57: protowire.ResolveFinalityConflictRequestMessage
-	(*ResolveFinalityConflictResponseMessage)(nil),                     // 58: protowire.ResolveFinalityConflictResponseMessage
-	(*NotifyFinalityConflictsRequestMessage)(nil),                      // 59: protowire.NotifyFinalityConflictsRequestMessage
-	(*NotifyFinalityConflictsResponseMessage)(nil),                     // 60: protowire.NotifyFinalityConflictsResponseMessage
-	(*FinalityConflictNotificationMessage)(nil),                        // 61: protowire.FinalityConflictNotificationMessage
-	(*FinalityConflictResolvedNotificationMessage)(nil),                // 62: protowire.FinalityConflictResolvedNotificationMessage
-	(*ShutDownRequestMessage)(nil),                                     // 63: protowire.ShutDownRequestMessage
-	(*ShutDownResponseMessage)(nil),                                    // 64: protowire.ShutDownResponseMessage
-	(*GetHeadersRequestMessage)(nil),                                   // 65: protowire.GetHeadersRequestMessage
-	(*GetHeadersResponseMessage)(nil),                                  // 66: protowire.GetHeadersResponseMessage
-	(*NotifyUtxosChangedRequestMessage)(nil),                           // 67: protowire.NotifyUtxosChangedRequestMessage
-	(*NotifyUtxosChangedResponseMessage)(nil),                          // 68: protowire.NotifyUtxosChangedResponseMessage
-	(*UtxosChangedNotificationMessage)(nil),                            // 69: protowire.UtxosChangedNotificationMessage
-	(*UtxosByAddressesEntry)(nil),                                      // 70: protowire.UtxosByAddressesEntry
-	(*StopNotifyingUtxosChangedRequestMessage)(nil),                    // 71: protowire.StopNotifyingUtxosChangedRequestMessage
-	(*StopNotifyingUtxosChangedResponseMessage)(nil),                   // 72: protowire.StopNotifyingUtxosChangedResponseMessage
-	(*GetUtxosByAddressesRequestMessage)(nil),                          // 73: protowire.GetUtxosByAddressesRequestMessage
-	(*GetUtxosByAddressesResponseMessage)(nil),                         // 74: protowire.GetUtxosByAddressesResponseMessage
-	(*GetBalanceByAddressRequestMessage)(nil),                          // 75: protowire.GetBalanceByAddressRequestMessage
-	(*GetBalanceByAddressResponseMessage)(nil),                         // 76: protowire.GetBalanceByAddressResponseMessage
-	(*GetBalancesByAddressesRequestMessage)(nil),                       // 77: protowire.GetBalancesByAddressesRequestMessage
-	(*BalancesByAddressEntry)(nil),                                     // 78: protowire.BalancesByAddressEntry
-	(*GetBalancesByAddressesResponseMessage)(nil),                      // 79: protowire.GetBalancesByAddressesResponseMessage
-	(*GetVirtualSelectedParentBlueScoreRequestMessage)(nil),            // 80: protowire.GetVirtualSelectedParentBlueScoreRequestMessage
-	(*GetVirtualSelectedParentBlueScoreResponseMessage)(nil),           // 81: protowire.GetVirtualSelectedParentBlueScoreResponseMessage
-	(*NotifyVirtualSelectedParentBlueScoreChangedRequestMessage)(nil),  // 82: protowire.NotifyVirtualSelectedParentBlueScoreChangedRequestMessage
-	(*NotifyVirtualSelectedParentBlueScoreChangedResponseMessage)(nil), // 83: protowire.NotifyVirtualSelectedParentBlueScoreChangedResponseMessage
-	(*VirtualSelectedParentBlueScoreChangedNotificationMessage)(nil),   // 84: protowire.VirtualSelectedParentBlueScoreChangedNotificationMessage
-	(*NotifyVirtualDaaScoreChangedRequestMessage)(nil),                 // 85: protowire.NotifyVirtualDaaScoreChangedRequestMessage
-	(*NotifyVirtualDaaScoreChangedResponseMessage)(nil),                // 86: protowire.NotifyVirtualDaaScoreChangedResponseMessage
-	(*VirtualDaaScoreChangedNotificationMessage)(nil),                  // 87: protowire.VirtualDaaScoreChangedNotificationMessage
-	(*NotifyPruningPointUTXOSetOverrideRequestMessage)(nil),            // 88: protowire.NotifyPruningPointUTXOSetOverrideRequestMessage
-	(*NotifyPruningPointUTXOSetOverrideResponseMessage)(nil),           // 89: protowire.NotifyPruningPointUTXOSetOverrideResponseMessage
-	(*PruningPointUTXOSetOverrideNotificationMessage)(nil),             // 90: protowire.PruningPointUTXOSetOverrideNotificationMessage
-	(*StopNotifyingPruningPointUTXOSetOverrideRequestMessage)(nil),     // 91: protowire.StopNotifyingPruningPointUTXOSetOverrideRequestMessage
-	(*StopNotifyingPruningPointUTXOSetOverrideResponseMessage)(nil),    // 92: protowire.StopNotifyingPruningPointUTXOSetOverrideResponseMessage
-	(*BanRequestMessage)(nil),                                          // 93: protowire.BanRequestMessage
-	(*BanResponseMessage)(nil),                                         // 94: protowire.BanResponseMessage
-	(*UnbanRequestMessage)(nil),                                        // 95: protowire.UnbanRequestMessage
-	(*UnbanResponseMessage)(nil),                                       // 96: protowire.UnbanResponseMessage
-	(*GetInfoRequestMessage)(nil),                                      // 97: protowire.GetInfoRequestMessage
-	(*GetInfoResponseMessage)(nil),                                     // 98: protowire.GetInfoResponseMessage
-	(*EstimateNetworkHashesPerSecondRequestMessage)(nil),               // 99: protowire.EstimateNetworkHashesPerSecondRequestMessage
-	(*EstimateNetworkHashesPerSecondResponseMessage)(nil),              // 100: protowire.EstimateNetworkHashesPerSecondResponseMessage
-	(*NotifyNewBlockTemplateRequestMessage)(nil),                       // 101: protowire.NotifyNewBlockTemplateRequestMessage
-	(*NotifyNewBlockTemplateResponseMessage)(nil),                      // 102: protowire.NotifyNewBlockTemplateResponseMessage
-	(*NewBlockTemplateNotificationMessage)(nil),                        // 103: protowire.NewBlockTemplateNotificationMessage
-	(*MempoolEntryByAddress)(nil),                                      // 104: protowire.MempoolEntryByAddress
-	(*GetMempoolEntriesByAddressesRequestMessage)(nil),                 // 105: protowire.GetMempoolEntriesByAddressesRequestMessage
-	(*GetMempoolEntriesByAddressesResponseMessage)(nil),                // 106: protowire.GetMempoolEntriesByAddressesResponseMessage
-	(*GetCoinSupplyRequestMessage)(nil),                                // 107: protowire.GetCoinSupplyRequestMessage
-	(*GetCoinSupplyResponseMessage)(nil),                               // 108: protowire.GetCoinSupplyResponseMessage
-	(*PingRequestMessage)(nil),                                         // 109: protowire.PingRequestMessage
-	(*PingResponseMessage)(nil),                                        // 110: protowire.PingResponseMessage
-	(*ProcessMetrics)(nil),                                             // 111: protowire.ProcessMetrics
-	(*ConnectionMetrics)(nil),                                          // 112: protowire.ConnectionMetrics
-	(*BandwidthMetrics)(nil),                                           // 113: protowire.BandwidthMetrics
-	(*ConsensusMetrics)(nil),                                           // 114: protowire.ConsensusMetrics
-	(*StorageMetrics)(nil),                                             // 115: protowire.StorageMetrics
-	(*GetConnectionsRequestMessage)(nil),                               // 116: protowire.GetConnectionsRequestMessage
-	(*ConnectionsProfileData)(nil),                                     // 117: protowire.ConnectionsProfileData
-	(*GetConnectionsResponseMessage)(nil),                              // 118: protowire.GetConnectionsResponseMessage
-	(*GetSystemInfoRequestMessage)(nil),                                // 119: protowire.GetSystemInfoRequestMessage
-	(*GetSystemInfoResponseMessage)(nil),                               // 120: protowire.GetSystemInfoResponseMessage
-	(*GetMetricsRequestMessage)(nil),                                   // 121: protowire.GetMetricsRequestMessage
-	(*GetMetricsResponseMessage)(nil),                                  // 122: protowire.GetMetricsResponseMessage
-	(*GetServerInfoRequestMessage)(nil),                                // 123: protowire.GetServerInfoRequestMessage
-	(*GetServerInfoResponseMessage)(nil),                               // 124: protowire.GetServerInfoResponseMessage
-	(*GetSyncStatusRequestMessage)(nil),                                // 125: protowire.GetSyncStatusRequestMessage
-	(*GetSyncStatusResponseMessage)(nil),                               // 126: protowire.GetSyncStatusResponseMessage
-	(*GetDaaScoreTimestampEstimateRequestMessage)(nil),                 // 127: protowire.GetDaaScoreTimestampEstimateRequestMessage
-	(*GetDaaScoreTimestampEstimateResponseMessage)(nil),                // 128: protowire.GetDaaScoreTimestampEstimateResponseMessage
-	(*RpcFeerateBucket)(nil),                                           // 129: protowire.RpcFeerateBucket
-	(*RpcFeeEstimate)(nil),                                             // 130: protowire.RpcFeeEstimate
-	(*RpcFeeEstimateVerboseExperimentalData)(nil),                      // 131: protowire.RpcFeeEstimateVerboseExperimentalData
-	(*GetFeeEstimateRequestMessage)(nil),                               // 132: protowire.GetFeeEstimateRequestMessage
-	(*GetFeeEstimateResponseMessage)(nil),                              // 133: protowire.GetFeeEstimateResponseMessage
-	(*GetFeeEstimateExperimentalRequestMessage)(nil),                   // 134: protowire.GetFeeEstimateExperimentalRequestMessage
-	(*GetFeeEstimateExperimentalResponseMessage)(nil),                  // 135: protowire.GetFeeEstimateExperimentalResponseMessage
-	(*GetCurrentBlockColorRequestMessage)(nil),                         // 136: protowire.GetCurrentBlockColorRequestMessage
-	(*GetCurrentBlockColorResponseMessage)(nil),                        // 137: protowire.GetCurrentBlockColorResponseMessage
-	(*SubmitTransactionReplacementRequestMessage)(nil),                 // 138: protowire.SubmitTransactionReplacementRequestMessage
-	(*SubmitTransactionReplacementResponseMessage)(nil),                // 139: protowire.SubmitTransactionReplacementResponseMessage
+	(*RpcCovenantBinding)(nil),                                         // 10: protowire.RpcCovenantBinding
+	(*RpcOutpoint)(nil),                                                // 11: protowire.RpcOutpoint
+	(*RpcUtxoEntry)(nil),                                               // 12: protowire.RpcUtxoEntry
+	(*RpcTransactionVerboseData)(nil),                                  // 13: protowire.RpcTransactionVerboseData
+	(*RpcTransactionInputVerboseData)(nil),                             // 14: protowire.RpcTransactionInputVerboseData
+	(*RpcTransactionOutputVerboseData)(nil),                            // 15: protowire.RpcTransactionOutputVerboseData
+	(*GetCurrentNetworkRequestMessage)(nil),                            // 16: protowire.GetCurrentNetworkRequestMessage
+	(*GetCurrentNetworkResponseMessage)(nil),                           // 17: protowire.GetCurrentNetworkResponseMessage
+	(*SubmitBlockRequestMessage)(nil),                                  // 18: protowire.SubmitBlockRequestMessage
+	(*SubmitBlockResponseMessage)(nil),                                 // 19: protowire.SubmitBlockResponseMessage
+	(*GetBlockTemplateRequestMessage)(nil),                             // 20: protowire.GetBlockTemplateRequestMessage
+	(*GetBlockTemplateResponseMessage)(nil),                            // 21: protowire.GetBlockTemplateResponseMessage
+	(*NotifyBlockAddedRequestMessage)(nil),                             // 22: protowire.NotifyBlockAddedRequestMessage
+	(*NotifyBlockAddedResponseMessage)(nil),                            // 23: protowire.NotifyBlockAddedResponseMessage
+	(*BlockAddedNotificationMessage)(nil),                              // 24: protowire.BlockAddedNotificationMessage
+	(*GetPeerAddressesRequestMessage)(nil),                             // 25: protowire.GetPeerAddressesRequestMessage
+	(*GetPeerAddressesResponseMessage)(nil),                            // 26: protowire.GetPeerAddressesResponseMessage
+	(*GetPeerAddressesKnownAddressMessage)(nil),                        // 27: protowire.GetPeerAddressesKnownAddressMessage
+	(*GetSelectedTipHashRequestMessage)(nil),                           // 28: protowire.GetSelectedTipHashRequestMessage
+	(*GetSelectedTipHashResponseMessage)(nil),                          // 29: protowire.GetSelectedTipHashResponseMessage
+	(*GetMempoolEntryRequestMessage)(nil),                              // 30: protowire.GetMempoolEntryRequestMessage
+	(*GetMempoolEntryResponseMessage)(nil),                             // 31: protowire.GetMempoolEntryResponseMessage
+	(*GetMempoolEntriesRequestMessage)(nil),                            // 32: protowire.GetMempoolEntriesRequestMessage
+	(*GetMempoolEntriesResponseMessage)(nil),                           // 33: protowire.GetMempoolEntriesResponseMessage
+	(*MempoolEntry)(nil),                                               // 34: protowire.MempoolEntry
+	(*GetConnectedPeerInfoRequestMessage)(nil),                         // 35: protowire.GetConnectedPeerInfoRequestMessage
+	(*GetConnectedPeerInfoResponseMessage)(nil),                        // 36: protowire.GetConnectedPeerInfoResponseMessage
+	(*GetConnectedPeerInfoMessage)(nil),                                // 37: protowire.GetConnectedPeerInfoMessage
+	(*AddPeerRequestMessage)(nil),                                      // 38: protowire.AddPeerRequestMessage
+	(*AddPeerResponseMessage)(nil),                                     // 39: protowire.AddPeerResponseMessage
+	(*SubmitTransactionRequestMessage)(nil),                            // 40: protowire.SubmitTransactionRequestMessage
+	(*SubmitTransactionResponseMessage)(nil),                           // 41: protowire.SubmitTransactionResponseMessage
+	(*NotifyVirtualSelectedParentChainChangedRequestMessage)(nil),      // 42: protowire.NotifyVirtualSelectedParentChainChangedRequestMessage
+	(*NotifyVirtualSelectedParentChainChangedResponseMessage)(nil),     // 43: protowire.NotifyVirtualSelectedParentChainChangedResponseMessage
+	(*VirtualSelectedParentChainChangedNotificationMessage)(nil),       // 44: protowire.VirtualSelectedParentChainChangedNotificationMessage
+	(*GetBlockRequestMessage)(nil),                                     // 45: protowire.GetBlockRequestMessage
+	(*GetBlockResponseMessage)(nil),                                    // 46: protowire.GetBlockResponseMessage
+	(*GetSubnetworkRequestMessage)(nil),                                // 47: protowire.GetSubnetworkRequestMessage
+	(*GetSubnetworkResponseMessage)(nil),                               // 48: protowire.GetSubnetworkResponseMessage
+	(*GetVirtualSelectedParentChainFromBlockRequestMessage)(nil),       // 49: protowire.GetVirtualSelectedParentChainFromBlockRequestMessage
+	(*AcceptedTransactionIds)(nil),                                     // 50: protowire.AcceptedTransactionIds
+	(*GetVirtualSelectedParentChainFromBlockResponseMessage)(nil),      // 51: protowire.GetVirtualSelectedParentChainFromBlockResponseMessage
+	(*GetBlocksRequestMessage)(nil),                                    // 52: protowire.GetBlocksRequestMessage
+	(*GetBlocksResponseMessage)(nil),                                   // 53: protowire.GetBlocksResponseMessage
+	(*GetBlockCountRequestMessage)(nil),                                // 54: protowire.GetBlockCountRequestMessage
+	(*GetBlockCountResponseMessage)(nil),                               // 55: protowire.GetBlockCountResponseMessage
+	(*GetBlockDagInfoRequestMessage)(nil),                              // 56: protowire.GetBlockDagInfoRequestMessage
+	(*GetBlockDagInfoResponseMessage)(nil),                             // 57: protowire.GetBlockDagInfoResponseMessage
+	(*ResolveFinalityConflictRequestMessage)(nil),                      // 58: protowire.ResolveFinalityConflictRequestMessage
+	(*ResolveFinalityConflictResponseMessage)(nil),                     // 59: protowire.ResolveFinalityConflictResponseMessage
+	(*NotifyFinalityConflictsRequestMessage)(nil),                      // 60: protowire.NotifyFinalityConflictsRequestMessage
+	(*NotifyFinalityConflictsResponseMessage)(nil),                     // 61: protowire.NotifyFinalityConflictsResponseMessage
+	(*FinalityConflictNotificationMessage)(nil),                        // 62: protowire.FinalityConflictNotificationMessage
+	(*FinalityConflictResolvedNotificationMessage)(nil),                // 63: protowire.FinalityConflictResolvedNotificationMessage
+	(*ShutDownRequestMessage)(nil),                                     // 64: protowire.ShutDownRequestMessage
+	(*ShutDownResponseMessage)(nil),                                    // 65: protowire.ShutDownResponseMessage
+	(*GetHeadersRequestMessage)(nil),                                   // 66: protowire.GetHeadersRequestMessage
+	(*GetHeadersResponseMessage)(nil),                                  // 67: protowire.GetHeadersResponseMessage
+	(*NotifyUtxosChangedRequestMessage)(nil),                           // 68: protowire.NotifyUtxosChangedRequestMessage
+	(*NotifyUtxosChangedResponseMessage)(nil),                          // 69: protowire.NotifyUtxosChangedResponseMessage
+	(*UtxosChangedNotificationMessage)(nil),                            // 70: protowire.UtxosChangedNotificationMessage
+	(*UtxosByAddressesEntry)(nil),                                      // 71: protowire.UtxosByAddressesEntry
+	(*StopNotifyingUtxosChangedRequestMessage)(nil),                    // 72: protowire.StopNotifyingUtxosChangedRequestMessage
+	(*StopNotifyingUtxosChangedResponseMessage)(nil),                   // 73: protowire.StopNotifyingUtxosChangedResponseMessage
+	(*GetUtxosByAddressesRequestMessage)(nil),                          // 74: protowire.GetUtxosByAddressesRequestMessage
+	(*GetUtxosByAddressesResponseMessage)(nil),                         // 75: protowire.GetUtxosByAddressesResponseMessage
+	(*GetBalanceByAddressRequestMessage)(nil),                          // 76: protowire.GetBalanceByAddressRequestMessage
+	(*GetBalanceByAddressResponseMessage)(nil),                         // 77: protowire.GetBalanceByAddressResponseMessage
+	(*GetBalancesByAddressesRequestMessage)(nil),                       // 78: protowire.GetBalancesByAddressesRequestMessage
+	(*BalancesByAddressEntry)(nil),                                     // 79: protowire.BalancesByAddressEntry
+	(*GetBalancesByAddressesResponseMessage)(nil),                      // 80: protowire.GetBalancesByAddressesResponseMessage
+	(*GetVirtualSelectedParentBlueScoreRequestMessage)(nil),            // 81: protowire.GetVirtualSelectedParentBlueScoreRequestMessage
+	(*GetVirtualSelectedParentBlueScoreResponseMessage)(nil),           // 82: protowire.GetVirtualSelectedParentBlueScoreResponseMessage
+	(*NotifyVirtualSelectedParentBlueScoreChangedRequestMessage)(nil),  // 83: protowire.NotifyVirtualSelectedParentBlueScoreChangedRequestMessage
+	(*NotifyVirtualSelectedParentBlueScoreChangedResponseMessage)(nil), // 84: protowire.NotifyVirtualSelectedParentBlueScoreChangedResponseMessage
+	(*VirtualSelectedParentBlueScoreChangedNotificationMessage)(nil),   // 85: protowire.VirtualSelectedParentBlueScoreChangedNotificationMessage
+	(*NotifyVirtualDaaScoreChangedRequestMessage)(nil),                 // 86: protowire.NotifyVirtualDaaScoreChangedRequestMessage
+	(*NotifyVirtualDaaScoreChangedResponseMessage)(nil),                // 87: protowire.NotifyVirtualDaaScoreChangedResponseMessage
+	(*VirtualDaaScoreChangedNotificationMessage)(nil),                  // 88: protowire.VirtualDaaScoreChangedNotificationMessage
+	(*NotifyPruningPointUTXOSetOverrideRequestMessage)(nil),            // 89: protowire.NotifyPruningPointUTXOSetOverrideRequestMessage
+	(*NotifyPruningPointUTXOSetOverrideResponseMessage)(nil),           // 90: protowire.NotifyPruningPointUTXOSetOverrideResponseMessage
+	(*PruningPointUTXOSetOverrideNotificationMessage)(nil),             // 91: protowire.PruningPointUTXOSetOverrideNotificationMessage
+	(*StopNotifyingPruningPointUTXOSetOverrideRequestMessage)(nil),     // 92: protowire.StopNotifyingPruningPointUTXOSetOverrideRequestMessage
+	(*StopNotifyingPruningPointUTXOSetOverrideResponseMessage)(nil),    // 93: protowire.StopNotifyingPruningPointUTXOSetOverrideResponseMessage
+	(*BanRequestMessage)(nil),                                          // 94: protowire.BanRequestMessage
+	(*BanResponseMessage)(nil),                                         // 95: protowire.BanResponseMessage
+	(*UnbanRequestMessage)(nil),                                        // 96: protowire.UnbanRequestMessage
+	(*UnbanResponseMessage)(nil),                                       // 97: protowire.UnbanResponseMessage
+	(*GetInfoRequestMessage)(nil),                                      // 98: protowire.GetInfoRequestMessage
+	(*GetInfoResponseMessage)(nil),                                     // 99: protowire.GetInfoResponseMessage
+	(*EstimateNetworkHashesPerSecondRequestMessage)(nil),               // 100: protowire.EstimateNetworkHashesPerSecondRequestMessage
+	(*EstimateNetworkHashesPerSecondResponseMessage)(nil),              // 101: protowire.EstimateNetworkHashesPerSecondResponseMessage
+	(*NotifyNewBlockTemplateRequestMessage)(nil),                       // 102: protowire.NotifyNewBlockTemplateRequestMessage
+	(*NotifyNewBlockTemplateResponseMessage)(nil),                      // 103: protowire.NotifyNewBlockTemplateResponseMessage
+	(*NewBlockTemplateNotificationMessage)(nil),                        // 104: protowire.NewBlockTemplateNotificationMessage
+	(*MempoolEntryByAddress)(nil),                                      // 105: protowire.MempoolEntryByAddress
+	(*GetMempoolEntriesByAddressesRequestMessage)(nil),                 // 106: protowire.GetMempoolEntriesByAddressesRequestMessage
+	(*GetMempoolEntriesByAddressesResponseMessage)(nil),                // 107: protowire.GetMempoolEntriesByAddressesResponseMessage
+	(*GetCoinSupplyRequestMessage)(nil),                                // 108: protowire.GetCoinSupplyRequestMessage
+	(*GetCoinSupplyResponseMessage)(nil),                               // 109: protowire.GetCoinSupplyResponseMessage
+	(*PingRequestMessage)(nil),                                         // 110: protowire.PingRequestMessage
+	(*PingResponseMessage)(nil),                                        // 111: protowire.PingResponseMessage
+	(*ProcessMetrics)(nil),                                             // 112: protowire.ProcessMetrics
+	(*ConnectionMetrics)(nil),                                          // 113: protowire.ConnectionMetrics
+	(*BandwidthMetrics)(nil),                                           // 114: protowire.BandwidthMetrics
+	(*ConsensusMetrics)(nil),                                           // 115: protowire.ConsensusMetrics
+	(*StorageMetrics)(nil),                                             // 116: protowire.StorageMetrics
+	(*GetConnectionsRequestMessage)(nil),                               // 117: protowire.GetConnectionsRequestMessage
+	(*ConnectionsProfileData)(nil),                                     // 118: protowire.ConnectionsProfileData
+	(*GetConnectionsResponseMessage)(nil),                              // 119: protowire.GetConnectionsResponseMessage
+	(*GetSystemInfoRequestMessage)(nil),                                // 120: protowire.GetSystemInfoRequestMessage
+	(*GetSystemInfoResponseMessage)(nil),                               // 121: protowire.GetSystemInfoResponseMessage
+	(*GetMetricsRequestMessage)(nil),                                   // 122: protowire.GetMetricsRequestMessage
+	(*GetMetricsResponseMessage)(nil),                                  // 123: protowire.GetMetricsResponseMessage
+	(*GetServerInfoRequestMessage)(nil),                                // 124: protowire.GetServerInfoRequestMessage
+	(*GetServerInfoResponseMessage)(nil),                               // 125: protowire.GetServerInfoResponseMessage
+	(*GetSyncStatusRequestMessage)(nil),                                // 126: protowire.GetSyncStatusRequestMessage
+	(*GetSyncStatusResponseMessage)(nil),                               // 127: protowire.GetSyncStatusResponseMessage
+	(*GetDaaScoreTimestampEstimateRequestMessage)(nil),                 // 128: protowire.GetDaaScoreTimestampEstimateRequestMessage
+	(*GetDaaScoreTimestampEstimateResponseMessage)(nil),                // 129: protowire.GetDaaScoreTimestampEstimateResponseMessage
+	(*RpcFeerateBucket)(nil),                                           // 130: protowire.RpcFeerateBucket
+	(*RpcFeeEstimate)(nil),                                             // 131: protowire.RpcFeeEstimate
+	(*RpcFeeEstimateVerboseExperimentalData)(nil),                      // 132: protowire.RpcFeeEstimateVerboseExperimentalData
+	(*GetFeeEstimateRequestMessage)(nil),                               // 133: protowire.GetFeeEstimateRequestMessage
+	(*GetFeeEstimateResponseMessage)(nil),                              // 134: protowire.GetFeeEstimateResponseMessage
+	(*GetFeeEstimateExperimentalRequestMessage)(nil),                   // 135: protowire.GetFeeEstimateExperimentalRequestMessage
+	(*GetFeeEstimateExperimentalResponseMessage)(nil),                  // 136: protowire.GetFeeEstimateExperimentalResponseMessage
+	(*GetCurrentBlockColorRequestMessage)(nil),                         // 137: protowire.GetCurrentBlockColorRequestMessage
+	(*GetCurrentBlockColorResponseMessage)(nil),                        // 138: protowire.GetCurrentBlockColorResponseMessage
+	(*SubmitTransactionReplacementRequestMessage)(nil),                 // 139: protowire.SubmitTransactionReplacementRequestMessage
+	(*SubmitTransactionReplacementResponseMessage)(nil),                // 140: protowire.SubmitTransactionReplacementResponseMessage
 }
 var file_rpc_proto_depIdxs = []int32{
 	3,   // 0: protowire.RpcBlock.header:type_name -> protowire.RpcBlockHeader
@@ -8489,106 +8555,107 @@ var file_rpc_proto_depIdxs = []int32{
 	4,   // 3: protowire.RpcBlockHeader.parents:type_name -> protowire.RpcBlockLevelParents
 	7,   // 4: protowire.RpcTransaction.inputs:type_name -> protowire.RpcTransactionInput
 	9,   // 5: protowire.RpcTransaction.outputs:type_name -> protowire.RpcTransactionOutput
-	12,  // 6: protowire.RpcTransaction.verboseData:type_name -> protowire.RpcTransactionVerboseData
-	10,  // 7: protowire.RpcTransactionInput.previousOutpoint:type_name -> protowire.RpcOutpoint
-	13,  // 8: protowire.RpcTransactionInput.verboseData:type_name -> protowire.RpcTransactionInputVerboseData
+	13,  // 6: protowire.RpcTransaction.verboseData:type_name -> protowire.RpcTransactionVerboseData
+	11,  // 7: protowire.RpcTransactionInput.previousOutpoint:type_name -> protowire.RpcOutpoint
+	14,  // 8: protowire.RpcTransactionInput.verboseData:type_name -> protowire.RpcTransactionInputVerboseData
 	8,   // 9: protowire.RpcTransactionOutput.scriptPublicKey:type_name -> protowire.RpcScriptPublicKey
-	14,  // 10: protowire.RpcTransactionOutput.verboseData:type_name -> protowire.RpcTransactionOutputVerboseData
-	8,   // 11: protowire.RpcUtxoEntry.scriptPublicKey:type_name -> protowire.RpcScriptPublicKey
-	1,   // 12: protowire.GetCurrentNetworkResponseMessage.error:type_name -> protowire.RPCError
-	2,   // 13: protowire.SubmitBlockRequestMessage.block:type_name -> protowire.RpcBlock
-	0,   // 14: protowire.SubmitBlockResponseMessage.rejectReason:type_name -> protowire.SubmitBlockResponseMessage.RejectReason
-	1,   // 15: protowire.SubmitBlockResponseMessage.error:type_name -> protowire.RPCError
-	2,   // 16: protowire.GetBlockTemplateResponseMessage.block:type_name -> protowire.RpcBlock
-	1,   // 17: protowire.GetBlockTemplateResponseMessage.error:type_name -> protowire.RPCError
-	1,   // 18: protowire.NotifyBlockAddedResponseMessage.error:type_name -> protowire.RPCError
-	2,   // 19: protowire.BlockAddedNotificationMessage.block:type_name -> protowire.RpcBlock
-	26,  // 20: protowire.GetPeerAddressesResponseMessage.addresses:type_name -> protowire.GetPeerAddressesKnownAddressMessage
-	26,  // 21: protowire.GetPeerAddressesResponseMessage.bannedAddresses:type_name -> protowire.GetPeerAddressesKnownAddressMessage
-	1,   // 22: protowire.GetPeerAddressesResponseMessage.error:type_name -> protowire.RPCError
-	1,   // 23: protowire.GetSelectedTipHashResponseMessage.error:type_name -> protowire.RPCError
-	33,  // 24: protowire.GetMempoolEntryResponseMessage.entry:type_name -> protowire.MempoolEntry
-	1,   // 25: protowire.GetMempoolEntryResponseMessage.error:type_name -> protowire.RPCError
-	33,  // 26: protowire.GetMempoolEntriesResponseMessage.entries:type_name -> protowire.MempoolEntry
-	1,   // 27: protowire.GetMempoolEntriesResponseMessage.error:type_name -> protowire.RPCError
-	6,   // 28: protowire.MempoolEntry.transaction:type_name -> protowire.RpcTransaction
-	36,  // 29: protowire.GetConnectedPeerInfoResponseMessage.infos:type_name -> protowire.GetConnectedPeerInfoMessage
-	1,   // 30: protowire.GetConnectedPeerInfoResponseMessage.error:type_name -> protowire.RPCError
-	1,   // 31: protowire.AddPeerResponseMessage.error:type_name -> protowire.RPCError
-	6,   // 32: protowire.SubmitTransactionRequestMessage.transaction:type_name -> protowire.RpcTransaction
-	1,   // 33: protowire.SubmitTransactionResponseMessage.error:type_name -> protowire.RPCError
-	1,   // 34: protowire.NotifyVirtualSelectedParentChainChangedResponseMessage.error:type_name -> protowire.RPCError
-	49,  // 35: protowire.VirtualSelectedParentChainChangedNotificationMessage.acceptedTransactionIds:type_name -> protowire.AcceptedTransactionIds
-	2,   // 36: protowire.GetBlockResponseMessage.block:type_name -> protowire.RpcBlock
-	1,   // 37: protowire.GetBlockResponseMessage.error:type_name -> protowire.RPCError
-	1,   // 38: protowire.GetSubnetworkResponseMessage.error:type_name -> protowire.RPCError
-	49,  // 39: protowire.GetVirtualSelectedParentChainFromBlockResponseMessage.acceptedTransactionIds:type_name -> protowire.AcceptedTransactionIds
-	1,   // 40: protowire.GetVirtualSelectedParentChainFromBlockResponseMessage.error:type_name -> protowire.RPCError
-	2,   // 41: protowire.GetBlocksResponseMessage.blocks:type_name -> protowire.RpcBlock
-	1,   // 42: protowire.GetBlocksResponseMessage.error:type_name -> protowire.RPCError
-	1,   // 43: protowire.GetBlockCountResponseMessage.error:type_name -> protowire.RPCError
-	1,   // 44: protowire.GetBlockDagInfoResponseMessage.error:type_name -> protowire.RPCError
-	1,   // 45: protowire.ResolveFinalityConflictResponseMessage.error:type_name -> protowire.RPCError
-	1,   // 46: protowire.NotifyFinalityConflictsResponseMessage.error:type_name -> protowire.RPCError
-	1,   // 47: protowire.ShutDownResponseMessage.error:type_name -> protowire.RPCError
-	1,   // 48: protowire.GetHeadersResponseMessage.error:type_name -> protowire.RPCError
-	1,   // 49: protowire.NotifyUtxosChangedResponseMessage.error:type_name -> protowire.RPCError
-	70,  // 50: protowire.UtxosChangedNotificationMessage.added:type_name -> protowire.UtxosByAddressesEntry
-	70,  // 51: protowire.UtxosChangedNotificationMessage.removed:type_name -> protowire.UtxosByAddressesEntry
-	10,  // 52: protowire.UtxosByAddressesEntry.outpoint:type_name -> protowire.RpcOutpoint
-	11,  // 53: protowire.UtxosByAddressesEntry.utxoEntry:type_name -> protowire.RpcUtxoEntry
-	1,   // 54: protowire.StopNotifyingUtxosChangedResponseMessage.error:type_name -> protowire.RPCError
-	70,  // 55: protowire.GetUtxosByAddressesResponseMessage.entries:type_name -> protowire.UtxosByAddressesEntry
-	1,   // 56: protowire.GetUtxosByAddressesResponseMessage.error:type_name -> protowire.RPCError
-	1,   // 57: protowire.GetBalanceByAddressResponseMessage.error:type_name -> protowire.RPCError
-	1,   // 58: protowire.BalancesByAddressEntry.error:type_name -> protowire.RPCError
-	78,  // 59: protowire.GetBalancesByAddressesResponseMessage.entries:type_name -> protowire.BalancesByAddressEntry
-	1,   // 60: protowire.GetBalancesByAddressesResponseMessage.error:type_name -> protowire.RPCError
-	1,   // 61: protowire.GetVirtualSelectedParentBlueScoreResponseMessage.error:type_name -> protowire.RPCError
-	1,   // 62: protowire.NotifyVirtualSelectedParentBlueScoreChangedResponseMessage.error:type_name -> protowire.RPCError
-	1,   // 63: protowire.NotifyVirtualDaaScoreChangedResponseMessage.error:type_name -> protowire.RPCError
-	1,   // 64: protowire.NotifyPruningPointUTXOSetOverrideResponseMessage.error:type_name -> protowire.RPCError
-	1,   // 65: protowire.StopNotifyingPruningPointUTXOSetOverrideResponseMessage.error:type_name -> protowire.RPCError
-	1,   // 66: protowire.BanResponseMessage.error:type_name -> protowire.RPCError
-	1,   // 67: protowire.UnbanResponseMessage.error:type_name -> protowire.RPCError
-	1,   // 68: protowire.GetInfoResponseMessage.error:type_name -> protowire.RPCError
-	1,   // 69: protowire.EstimateNetworkHashesPerSecondResponseMessage.error:type_name -> protowire.RPCError
-	1,   // 70: protowire.NotifyNewBlockTemplateResponseMessage.error:type_name -> protowire.RPCError
-	33,  // 71: protowire.MempoolEntryByAddress.sending:type_name -> protowire.MempoolEntry
-	33,  // 72: protowire.MempoolEntryByAddress.receiving:type_name -> protowire.MempoolEntry
-	104, // 73: protowire.GetMempoolEntriesByAddressesResponseMessage.entries:type_name -> protowire.MempoolEntryByAddress
-	1,   // 74: protowire.GetMempoolEntriesByAddressesResponseMessage.error:type_name -> protowire.RPCError
-	1,   // 75: protowire.GetCoinSupplyResponseMessage.error:type_name -> protowire.RPCError
-	1,   // 76: protowire.PingResponseMessage.error:type_name -> protowire.RPCError
-	117, // 77: protowire.GetConnectionsResponseMessage.profileData:type_name -> protowire.ConnectionsProfileData
-	1,   // 78: protowire.GetConnectionsResponseMessage.error:type_name -> protowire.RPCError
-	1,   // 79: protowire.GetSystemInfoResponseMessage.error:type_name -> protowire.RPCError
-	111, // 80: protowire.GetMetricsResponseMessage.processMetrics:type_name -> protowire.ProcessMetrics
-	112, // 81: protowire.GetMetricsResponseMessage.connectionMetrics:type_name -> protowire.ConnectionMetrics
-	113, // 82: protowire.GetMetricsResponseMessage.bandwidthMetrics:type_name -> protowire.BandwidthMetrics
-	114, // 83: protowire.GetMetricsResponseMessage.consensusMetrics:type_name -> protowire.ConsensusMetrics
-	115, // 84: protowire.GetMetricsResponseMessage.storageMetrics:type_name -> protowire.StorageMetrics
-	1,   // 85: protowire.GetMetricsResponseMessage.error:type_name -> protowire.RPCError
-	1,   // 86: protowire.GetServerInfoResponseMessage.error:type_name -> protowire.RPCError
-	1,   // 87: protowire.GetSyncStatusResponseMessage.error:type_name -> protowire.RPCError
-	1,   // 88: protowire.GetDaaScoreTimestampEstimateResponseMessage.error:type_name -> protowire.RPCError
-	129, // 89: protowire.RpcFeeEstimate.priority_bucket:type_name -> protowire.RpcFeerateBucket
-	129, // 90: protowire.RpcFeeEstimate.normalBuckets:type_name -> protowire.RpcFeerateBucket
-	129, // 91: protowire.RpcFeeEstimate.lowBuckets:type_name -> protowire.RpcFeerateBucket
-	130, // 92: protowire.GetFeeEstimateResponseMessage.estimate:type_name -> protowire.RpcFeeEstimate
-	1,   // 93: protowire.GetFeeEstimateResponseMessage.error:type_name -> protowire.RPCError
-	130, // 94: protowire.GetFeeEstimateExperimentalResponseMessage.estimate:type_name -> protowire.RpcFeeEstimate
-	131, // 95: protowire.GetFeeEstimateExperimentalResponseMessage.verbose:type_name -> protowire.RpcFeeEstimateVerboseExperimentalData
-	1,   // 96: protowire.GetFeeEstimateExperimentalResponseMessage.error:type_name -> protowire.RPCError
-	1,   // 97: protowire.GetCurrentBlockColorResponseMessage.error:type_name -> protowire.RPCError
-	6,   // 98: protowire.SubmitTransactionReplacementRequestMessage.transaction:type_name -> protowire.RpcTransaction
-	6,   // 99: protowire.SubmitTransactionReplacementResponseMessage.replacedTransaction:type_name -> protowire.RpcTransaction
-	1,   // 100: protowire.SubmitTransactionReplacementResponseMessage.error:type_name -> protowire.RPCError
-	101, // [101:101] is the sub-list for method output_type
-	101, // [101:101] is the sub-list for method input_type
-	101, // [101:101] is the sub-list for extension type_name
-	101, // [101:101] is the sub-list for extension extendee
-	0,   // [0:101] is the sub-list for field type_name
+	15,  // 10: protowire.RpcTransactionOutput.verboseData:type_name -> protowire.RpcTransactionOutputVerboseData
+	10,  // 11: protowire.RpcTransactionOutput.covenant:type_name -> protowire.RpcCovenantBinding
+	8,   // 12: protowire.RpcUtxoEntry.scriptPublicKey:type_name -> protowire.RpcScriptPublicKey
+	1,   // 13: protowire.GetCurrentNetworkResponseMessage.error:type_name -> protowire.RPCError
+	2,   // 14: protowire.SubmitBlockRequestMessage.block:type_name -> protowire.RpcBlock
+	0,   // 15: protowire.SubmitBlockResponseMessage.rejectReason:type_name -> protowire.SubmitBlockResponseMessage.RejectReason
+	1,   // 16: protowire.SubmitBlockResponseMessage.error:type_name -> protowire.RPCError
+	2,   // 17: protowire.GetBlockTemplateResponseMessage.block:type_name -> protowire.RpcBlock
+	1,   // 18: protowire.GetBlockTemplateResponseMessage.error:type_name -> protowire.RPCError
+	1,   // 19: protowire.NotifyBlockAddedResponseMessage.error:type_name -> protowire.RPCError
+	2,   // 20: protowire.BlockAddedNotificationMessage.block:type_name -> protowire.RpcBlock
+	27,  // 21: protowire.GetPeerAddressesResponseMessage.addresses:type_name -> protowire.GetPeerAddressesKnownAddressMessage
+	27,  // 22: protowire.GetPeerAddressesResponseMessage.bannedAddresses:type_name -> protowire.GetPeerAddressesKnownAddressMessage
+	1,   // 23: protowire.GetPeerAddressesResponseMessage.error:type_name -> protowire.RPCError
+	1,   // 24: protowire.GetSelectedTipHashResponseMessage.error:type_name -> protowire.RPCError
+	34,  // 25: protowire.GetMempoolEntryResponseMessage.entry:type_name -> protowire.MempoolEntry
+	1,   // 26: protowire.GetMempoolEntryResponseMessage.error:type_name -> protowire.RPCError
+	34,  // 27: protowire.GetMempoolEntriesResponseMessage.entries:type_name -> protowire.MempoolEntry
+	1,   // 28: protowire.GetMempoolEntriesResponseMessage.error:type_name -> protowire.RPCError
+	6,   // 29: protowire.MempoolEntry.transaction:type_name -> protowire.RpcTransaction
+	37,  // 30: protowire.GetConnectedPeerInfoResponseMessage.infos:type_name -> protowire.GetConnectedPeerInfoMessage
+	1,   // 31: protowire.GetConnectedPeerInfoResponseMessage.error:type_name -> protowire.RPCError
+	1,   // 32: protowire.AddPeerResponseMessage.error:type_name -> protowire.RPCError
+	6,   // 33: protowire.SubmitTransactionRequestMessage.transaction:type_name -> protowire.RpcTransaction
+	1,   // 34: protowire.SubmitTransactionResponseMessage.error:type_name -> protowire.RPCError
+	1,   // 35: protowire.NotifyVirtualSelectedParentChainChangedResponseMessage.error:type_name -> protowire.RPCError
+	50,  // 36: protowire.VirtualSelectedParentChainChangedNotificationMessage.acceptedTransactionIds:type_name -> protowire.AcceptedTransactionIds
+	2,   // 37: protowire.GetBlockResponseMessage.block:type_name -> protowire.RpcBlock
+	1,   // 38: protowire.GetBlockResponseMessage.error:type_name -> protowire.RPCError
+	1,   // 39: protowire.GetSubnetworkResponseMessage.error:type_name -> protowire.RPCError
+	50,  // 40: protowire.GetVirtualSelectedParentChainFromBlockResponseMessage.acceptedTransactionIds:type_name -> protowire.AcceptedTransactionIds
+	1,   // 41: protowire.GetVirtualSelectedParentChainFromBlockResponseMessage.error:type_name -> protowire.RPCError
+	2,   // 42: protowire.GetBlocksResponseMessage.blocks:type_name -> protowire.RpcBlock
+	1,   // 43: protowire.GetBlocksResponseMessage.error:type_name -> protowire.RPCError
+	1,   // 44: protowire.GetBlockCountResponseMessage.error:type_name -> protowire.RPCError
+	1,   // 45: protowire.GetBlockDagInfoResponseMessage.error:type_name -> protowire.RPCError
+	1,   // 46: protowire.ResolveFinalityConflictResponseMessage.error:type_name -> protowire.RPCError
+	1,   // 47: protowire.NotifyFinalityConflictsResponseMessage.error:type_name -> protowire.RPCError
+	1,   // 48: protowire.ShutDownResponseMessage.error:type_name -> protowire.RPCError
+	1,   // 49: protowire.GetHeadersResponseMessage.error:type_name -> protowire.RPCError
+	1,   // 50: protowire.NotifyUtxosChangedResponseMessage.error:type_name -> protowire.RPCError
+	71,  // 51: protowire.UtxosChangedNotificationMessage.added:type_name -> protowire.UtxosByAddressesEntry
+	71,  // 52: protowire.UtxosChangedNotificationMessage.removed:type_name -> protowire.UtxosByAddressesEntry
+	11,  // 53: protowire.UtxosByAddressesEntry.outpoint:type_name -> protowire.RpcOutpoint
+	12,  // 54: protowire.UtxosByAddressesEntry.utxoEntry:type_name -> protowire.RpcUtxoEntry
+	1,   // 55: protowire.StopNotifyingUtxosChangedResponseMessage.error:type_name -> protowire.RPCError
+	71,  // 56: protowire.GetUtxosByAddressesResponseMessage.entries:type_name -> protowire.UtxosByAddressesEntry
+	1,   // 57: protowire.GetUtxosByAddressesResponseMessage.error:type_name -> protowire.RPCError
+	1,   // 58: protowire.GetBalanceByAddressResponseMessage.error:type_name -> protowire.RPCError
+	1,   // 59: protowire.BalancesByAddressEntry.error:type_name -> protowire.RPCError
+	79,  // 60: protowire.GetBalancesByAddressesResponseMessage.entries:type_name -> protowire.BalancesByAddressEntry
+	1,   // 61: protowire.GetBalancesByAddressesResponseMessage.error:type_name -> protowire.RPCError
+	1,   // 62: protowire.GetVirtualSelectedParentBlueScoreResponseMessage.error:type_name -> protowire.RPCError
+	1,   // 63: protowire.NotifyVirtualSelectedParentBlueScoreChangedResponseMessage.error:type_name -> protowire.RPCError
+	1,   // 64: protowire.NotifyVirtualDaaScoreChangedResponseMessage.error:type_name -> protowire.RPCError
+	1,   // 65: protowire.NotifyPruningPointUTXOSetOverrideResponseMessage.error:type_name -> protowire.RPCError
+	1,   // 66: protowire.StopNotifyingPruningPointUTXOSetOverrideResponseMessage.error:type_name -> protowire.RPCError
+	1,   // 67: protowire.BanResponseMessage.error:type_name -> protowire.RPCError
+	1,   // 68: protowire.UnbanResponseMessage.error:type_name -> protowire.RPCError
+	1,   // 69: protowire.GetInfoResponseMessage.error:type_name -> protowire.RPCError
+	1,   // 70: protowire.EstimateNetworkHashesPerSecondResponseMessage.error:type_name -> protowire.RPCError
+	1,   // 71: protowire.NotifyNewBlockTemplateResponseMessage.error:type_name -> protowire.RPCError
+	34,  // 72: protowire.MempoolEntryByAddress.sending:type_name -> protowire.MempoolEntry
+	34,  // 73: protowire.MempoolEntryByAddress.receiving:type_name -> protowire.MempoolEntry
+	105, // 74: protowire.GetMempoolEntriesByAddressesResponseMessage.entries:type_name -> protowire.MempoolEntryByAddress
+	1,   // 75: protowire.GetMempoolEntriesByAddressesResponseMessage.error:type_name -> protowire.RPCError
+	1,   // 76: protowire.GetCoinSupplyResponseMessage.error:type_name -> protowire.RPCError
+	1,   // 77: protowire.PingResponseMessage.error:type_name -> protowire.RPCError
+	118, // 78: protowire.GetConnectionsResponseMessage.profileData:type_name -> protowire.ConnectionsProfileData
+	1,   // 79: protowire.GetConnectionsResponseMessage.error:type_name -> protowire.RPCError
+	1,   // 80: protowire.GetSystemInfoResponseMessage.error:type_name -> protowire.RPCError
+	112, // 81: protowire.GetMetricsResponseMessage.processMetrics:type_name -> protowire.ProcessMetrics
+	113, // 82: protowire.GetMetricsResponseMessage.connectionMetrics:type_name -> protowire.ConnectionMetrics
+	114, // 83: protowire.GetMetricsResponseMessage.bandwidthMetrics:type_name -> protowire.BandwidthMetrics
+	115, // 84: protowire.GetMetricsResponseMessage.consensusMetrics:type_name -> protowire.ConsensusMetrics
+	116, // 85: protowire.GetMetricsResponseMessage.storageMetrics:type_name -> protowire.StorageMetrics
+	1,   // 86: protowire.GetMetricsResponseMessage.error:type_name -> protowire.RPCError
+	1,   // 87: protowire.GetServerInfoResponseMessage.error:type_name -> protowire.RPCError
+	1,   // 88: protowire.GetSyncStatusResponseMessage.error:type_name -> protowire.RPCError
+	1,   // 89: protowire.GetDaaScoreTimestampEstimateResponseMessage.error:type_name -> protowire.RPCError
+	130, // 90: protowire.RpcFeeEstimate.priority_bucket:type_name -> protowire.RpcFeerateBucket
+	130, // 91: protowire.RpcFeeEstimate.normalBuckets:type_name -> protowire.RpcFeerateBucket
+	130, // 92: protowire.RpcFeeEstimate.lowBuckets:type_name -> protowire.RpcFeerateBucket
+	131, // 93: protowire.GetFeeEstimateResponseMessage.estimate:type_name -> protowire.RpcFeeEstimate
+	1,   // 94: protowire.GetFeeEstimateResponseMessage.error:type_name -> protowire.RPCError
+	131, // 95: protowire.GetFeeEstimateExperimentalResponseMessage.estimate:type_name -> protowire.RpcFeeEstimate
+	132, // 96: protowire.GetFeeEstimateExperimentalResponseMessage.verbose:type_name -> protowire.RpcFeeEstimateVerboseExperimentalData
+	1,   // 97: protowire.GetFeeEstimateExperimentalResponseMessage.error:type_name -> protowire.RPCError
+	1,   // 98: protowire.GetCurrentBlockColorResponseMessage.error:type_name -> protowire.RPCError
+	6,   // 99: protowire.SubmitTransactionReplacementRequestMessage.transaction:type_name -> protowire.RpcTransaction
+	6,   // 100: protowire.SubmitTransactionReplacementResponseMessage.replacedTransaction:type_name -> protowire.RpcTransaction
+	1,   // 101: protowire.SubmitTransactionReplacementResponseMessage.error:type_name -> protowire.RPCError
+	102, // [102:102] is the sub-list for method output_type
+	102, // [102:102] is the sub-list for method input_type
+	102, // [102:102] is the sub-list for extension type_name
+	102, // [102:102] is the sub-list for extension extendee
+	0,   // [0:102] is the sub-list for field type_name
 }
 
 func init() { file_rpc_proto_init() }
@@ -8596,13 +8663,14 @@ func file_rpc_proto_init() {
 	if File_rpc_proto != nil {
 		return
 	}
+	file_rpc_proto_msgTypes[8].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_rpc_proto_rawDesc), len(file_rpc_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   139,
+			NumMessages:   140,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

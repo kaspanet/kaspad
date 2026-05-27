@@ -87,6 +87,12 @@ message RpcTransactionOutput {
   uint64 amount = 1;
   RpcScriptPublicKey scriptPublicKey = 2;
   RpcTransactionOutputVerboseData verboseData = 3;
+  optional RpcCovenantBinding covenant = 4;
+}
+
+message RpcCovenantBinding {
+  uint32 authorizing_input = 1;
+  string covenant_id = 2;
 }
 
 message RpcOutpoint {

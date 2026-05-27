@@ -64,7 +64,7 @@ type RPCTransactionInput struct {
 	Sequence         uint64
 	SigOpCount       byte
 	VerboseData      *RPCTransactionInputVerboseData
-	ComputeBudget	 uint32
+	ComputeBudget    uint32
 }
 
 // RPCScriptPublicKey is a kaspad ScriptPublicKey representation
@@ -79,6 +79,13 @@ type RPCTransactionOutput struct {
 	Amount          uint64
 	ScriptPublicKey *RPCScriptPublicKey
 	VerboseData     *RPCTransactionOutputVerboseData
+	Covenant        *RPCTransactionOutputCovenantBinding
+}
+
+// RPCTransactionOutputCovenantBinding is a covenant binding attached to an RPC transaction output.
+type RPCTransactionOutputCovenantBinding struct {
+	AuthorizingInput uint32
+	CovenantID       string
 }
 
 // RPCOutpoint is a kaspad outpoint representation meant to be used

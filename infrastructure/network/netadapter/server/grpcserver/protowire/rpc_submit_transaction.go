@@ -207,10 +207,18 @@ func (x *RpcTransactionOutput) toAppMessage() (*appmessage.RPCTransactionOutput,
 		}
 		verboseData = appMessageVerboseData
 	}
+	var covenant *appmessage.RPCTransactionOutputCovenantBinding
+	if x.Covenant != nil {
+		covenant = &appmessage.RPCTransactionOutputCovenantBinding{
+			AuthorizingInput: x.Covenant.AuthorizingInput,
+			CovenantID:       x.Covenant.CovenantId,
+		}
+	}
 	return &appmessage.RPCTransactionOutput{
 		Amount:          x.Amount,
 		ScriptPublicKey: scriptPublicKey,
 		VerboseData:     verboseData,
+		Covenant:        covenant,
 	}, nil
 }
 
@@ -222,10 +230,18 @@ func (x *RpcTransactionOutput) fromAppMessage(message *appmessage.RPCTransaction
 		verboseData = &RpcTransactionOutputVerboseData{}
 		verboseData.fromAppMessage(message.VerboseData)
 	}
+	var covenant *RpcCovenantBinding
+	if message.Covenant != nil {
+		covenant = &RpcCovenantBinding{
+			AuthorizingInput: message.Covenant.AuthorizingInput,
+			CovenantId:       message.Covenant.CovenantID,
+		}
+	}
 	*x = RpcTransactionOutput{
 		Amount:          message.Amount,
 		ScriptPublicKey: scriptPublicKey,
 		VerboseData:     verboseData,
+		Covenant:        covenant,
 	}
 }
 
