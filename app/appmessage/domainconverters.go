@@ -198,9 +198,17 @@ func RPCTransactionToDomainTransaction(rpcTransaction *RPCTransaction) (*externa
 		if err != nil {
 			return nil, err
 		}
+		var covenant *externalapi.DomainTransactionOutputCovenantBinding
+		if output.Covenant != nil {
+			covenant = &externalapi.DomainTransactionOutputCovenantBinding{
+				AuthorizingInput: output.Covenant.AuthorizingInput,
+				CovenantID:       output.Covenant.CovenantID,
+			}
+		}
 		outputs[i] = &externalapi.DomainTransactionOutput{
 			Value:           output.Amount,
 			ScriptPublicKey: &externalapi.ScriptPublicKey{Script: scriptPublicKey, Version: output.ScriptPublicKey.Version},
+			Covenant:        covenant,
 		}
 	}
 
@@ -275,9 +283,17 @@ func DomainTransactionToRPCTransaction(transaction *externalapi.DomainTransactio
 	outputs := make([]*RPCTransactionOutput, len(transaction.Outputs))
 	for i, output := range transaction.Outputs {
 		scriptPublicKey := hex.EncodeToString(output.ScriptPublicKey.Script)
+		var covenant *RPCTransactionOutputCovenantBinding
+		if output.Covenant != nil {
+			covenant = &RPCTransactionOutputCovenantBinding{
+				AuthorizingInput: output.Covenant.AuthorizingInput,
+				CovenantID:       output.Covenant.CovenantID,
+			}
+		}
 		outputs[i] = &RPCTransactionOutput{
 			Amount:          output.Value,
 			ScriptPublicKey: &RPCScriptPublicKey{Script: scriptPublicKey, Version: output.ScriptPublicKey.Version},
+			Covenant:        covenant,
 		}
 	}
 	subnetworkID := transaction.SubnetworkID.String()
