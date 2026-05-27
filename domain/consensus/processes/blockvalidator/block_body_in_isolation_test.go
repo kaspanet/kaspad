@@ -1079,8 +1079,8 @@ func initBlockWithInvalidBlockMass(consensusConfig *consensus.Config, tc testapi
 		Version: constants.MaxTransactionVersion,
 		Inputs:  []*externalapi.DomainTransactionInput{&txInput},
 		Outputs: []*externalapi.DomainTransactionOutput{{uint64(0xFFFF),
-			&externalapi.ScriptPublicKey{Script: []byte{1, 2}, Version: 0}}, {uint64(0xFFFF),
-			&externalapi.ScriptPublicKey{Script: []byte{1, 3}, Version: 0}}},
+			&externalapi.ScriptPublicKey{Script: []byte{1, 2}, Version: 0}, nil}, {uint64(0xFFFF),
+			&externalapi.ScriptPublicKey{Script: []byte{1, 3}, Version: 0}, nil}},
 		Payload: []byte{},
 	}
 
@@ -1126,8 +1126,8 @@ func initBlockWithDuplicateTransaction(consensusConfig *consensus.Config, tc tes
 		Version: 0,
 		Inputs:  []*externalapi.DomainTransactionInput{&txInput},
 		Outputs: []*externalapi.DomainTransactionOutput{{uint64(0xFFFF),
-			&externalapi.ScriptPublicKey{Script: []byte{1, 2}, Version: 0}}, {uint64(0xFFFF),
-			&externalapi.ScriptPublicKey{Script: []byte{1, 3}, Version: 0}}},
+			&externalapi.ScriptPublicKey{Script: []byte{1, 2}, Version: 0}, nil}, {uint64(0xFFFF),
+			&externalapi.ScriptPublicKey{Script: []byte{1, 3}, Version: 0}, nil}},
 		SubnetworkID: subnetworks.SubnetworkIDNative,
 	}
 
@@ -1173,8 +1173,8 @@ func initBlockWithMoreThanOneCoinbase(consensusConfig *consensus.Config, tc test
 		Version: 0,
 		Inputs:  []*externalapi.DomainTransactionInput{&txInput},
 		Outputs: []*externalapi.DomainTransactionOutput{{uint64(0xFFFF),
-			&externalapi.ScriptPublicKey{Script: []byte{1, 2}, Version: 0}}, {uint64(0xFFFF),
-			&externalapi.ScriptPublicKey{Script: []byte{1, 3}, Version: 0}}},
+			&externalapi.ScriptPublicKey{Script: []byte{1, 2}, Version: 0}, nil}, {uint64(0xFFFF),
+			&externalapi.ScriptPublicKey{Script: []byte{1, 3}, Version: 0}, nil}},
 		SubnetworkID: subnetworks.SubnetworkIDCoinbase,
 	}
 
@@ -1220,8 +1220,8 @@ func initBlockWithDoubleSpends(consensusConfig *consensus.Config, tc testapi.Tes
 		Version: 0,
 		Inputs:  []*externalapi.DomainTransactionInput{&txInput},
 		Outputs: []*externalapi.DomainTransactionOutput{{uint64(0xFFFF),
-			&externalapi.ScriptPublicKey{Script: []byte{1, 2}, Version: 0}}, {uint64(0xFFFF),
-			&externalapi.ScriptPublicKey{Script: []byte{1, 3}, Version: 0}}},
+			&externalapi.ScriptPublicKey{Script: []byte{1, 2}, Version: 0}, nil}, {uint64(0xFFFF),
+			&externalapi.ScriptPublicKey{Script: []byte{1, 3}, Version: 0}, nil}},
 		SubnetworkID: subnetworks.SubnetworkIDNative,
 	}
 	txInputSameOutpoint := externalapi.DomainTransactionInput{
@@ -1238,8 +1238,8 @@ func initBlockWithDoubleSpends(consensusConfig *consensus.Config, tc testapi.Tes
 		Version: 0,
 		Inputs:  []*externalapi.DomainTransactionInput{&txInputSameOutpoint},
 		Outputs: []*externalapi.DomainTransactionOutput{{uint64(0xFF),
-			&externalapi.ScriptPublicKey{Script: []byte{1, 2}, Version: 0}}, {uint64(0xFFFF),
-			&externalapi.ScriptPublicKey{Script: []byte{1, 3}, Version: 0}}},
+			&externalapi.ScriptPublicKey{Script: []byte{1, 2}, Version: 0}, nil}, {uint64(0xFFFF),
+			&externalapi.ScriptPublicKey{Script: []byte{1, 3}, Version: 0}, nil}},
 		SubnetworkID: subnetworks.SubnetworkIDNative,
 	}
 
@@ -1273,8 +1273,8 @@ func initBlockWithFirstTransactionDifferentThanCoinbase(consensusConfig *consens
 		Version: 0,
 		Inputs:  []*externalapi.DomainTransactionInput{&txInput},
 		Outputs: []*externalapi.DomainTransactionOutput{{uint64(0xFFFF),
-			&externalapi.ScriptPublicKey{Script: []byte{1, 2}, Version: 0}}, {uint64(0xFFFF),
-			&externalapi.ScriptPublicKey{Script: []byte{1, 3}, Version: 0}}},
+			&externalapi.ScriptPublicKey{Script: []byte{1, 2}, Version: 0}, nil}, {uint64(0xFFFF),
+			&externalapi.ScriptPublicKey{Script: []byte{1, 3}, Version: 0}, nil}},
 		SubnetworkID: subnetworks.SubnetworkIDNative,
 	}
 
