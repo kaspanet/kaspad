@@ -133,8 +133,8 @@ func (s *server) checkTransactionFeeRate(psTx *serialization.PartiallySignedTran
 		return err
 	}
 
-	if feeRate < 1 {
-		return errors.Errorf("setting --max-fee to %d results in a fee rate of %f, which is below the minimum allowed fee rate of 1 sompi/gram", maxFee, feeRate)
+	if feeRate < minFeeRate {
+		return errors.Errorf("setting --max-fee to %d results in a fee rate of %f, which is below the minimum allowed fee rate of %.1f sompi/gram", maxFee, feeRate, minFeeRate)
 	}
 
 	return nil

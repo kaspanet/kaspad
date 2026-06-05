@@ -23,7 +23,7 @@ import (
 const minChangeTarget = constants.SompiPerKaspa * 10
 
 // The current minimal fee rate according to mempool standards
-const minFeeRate = 1.0
+const minFeeRate = 100.0
 
 func (s *server) CreateUnsignedTransactions(_ context.Context, request *pb.CreateUnsignedTransactionsRequest) (
 	*pb.CreateUnsignedTransactionsResponse, error,
