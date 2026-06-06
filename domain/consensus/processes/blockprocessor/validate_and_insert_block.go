@@ -39,7 +39,7 @@ func (bp *blockProcessor) setBlockStatusAfterBlockValidation(
 			// the block.
 			if !isPruningPoint {
 				return externalapi.StatusInvalid, errors.Errorf("block %s that is not the pruning point is not expected to be valid "+
-					"before adding to to the consensus state manager", blockHash)
+					"before adding to the consensus state manager", blockHash)
 			}
 			log.Debugf("Block %s is the pruning point and has status %s, so leaving its status untouched",
 				blockHash, status)

@@ -187,7 +187,7 @@ func (vm *Engine) DisasmScript(idx int) (string, error) {
 }
 
 // CheckErrorCondition returns nil if the running script has ended and was
-// successful, leaving a a true boolean on the stack. An error otherwise,
+// successful, leaving a true boolean on the stack. An error otherwise,
 // including if the script has not finished.
 func (vm *Engine) CheckErrorCondition(finalScript bool) error {
 	// Check execution is actually done. When pc is past the end of script
