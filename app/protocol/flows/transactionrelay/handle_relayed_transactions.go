@@ -173,7 +173,7 @@ func (flow *handleRelayedTransactionsFlow) receiveTransactions(requestedTransact
 				expectedID, txID)
 		}
 
-		err = flow.Domain().MiningManager().ValidateAndInsertTransaction(tx, true)
+		err = flow.Domain().MiningManager().ValidateAndInsertTransaction(tx, 0, true)
 		if err != nil {
 			ruleErr := &mempool.RuleError{}
 			if !errors.As(err, ruleErr) {
