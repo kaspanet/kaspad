@@ -14,7 +14,7 @@ func (f *FlowContext) AddTransaction(tx *externalapi.DomainTransaction) error {
 	f.transactionsToRebroadcastLock.Lock()
 	defer f.transactionsToRebroadcastLock.Unlock()
 
-	err := f.Domain().MiningManager().ValidateAndInsertTransaction(tx, false)
+	err := f.Domain().MiningManager().ValidateAndInsertTransaction(tx, 0, false)
 	if err != nil {
 		return err
 	}

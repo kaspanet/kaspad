@@ -37,7 +37,7 @@ func TestValidateAndInsertTransaction(t *testing.T) {
 		transactionsToInsert := make([]*externalapi.DomainTransaction, 10)
 		for i := range transactionsToInsert {
 			transactionsToInsert[i] = createTransactionWithUTXOEntry(t, i)
-			err = miningManager.ValidateAndInsertTransaction(transactionsToInsert[i], true)
+			err = miningManager.ValidateAndInsertTransaction(transactionsToInsert[i], 0, true)
 			if err != nil {
 				t.Fatalf("ValidateAndInsertTransaction: %v", err)
 			}
@@ -60,7 +60,7 @@ func TestValidateAndInsertTransaction(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Error in createParentAndChildrenTransaction: %v", err)
 		}
-		err = miningManager.ValidateAndInsertTransaction(transactionNotAnOrphan, true)
+		err = miningManager.ValidateAndInsertTransaction(transactionNotAnOrphan, 0, true)
 		if err != nil {
 			t.Fatalf("ValidateAndInsertTransaction: %v", err)
 		}
@@ -83,7 +83,7 @@ func TestImmatureSpend(t *testing.T) {
 		miningFactory := miningmanager.NewFactory()
 		miningManager := miningFactory.NewMiningManager(tc, &consensusConfig.Params)
 		tx := createTransactionWithUTXOEntry(t, 0)
-		err = miningManager.ValidateAndInsertTransaction(tx, false)
+		err = miningManager.ValidateAndInsertTransaction(tx, 0, false)
 		txRuleError := &mempool.TxRuleError{}
 		if !errors.As(err, txRuleError) || txRuleError.RejectCode != mempool.RejectImmatureSpend {
 			t.Fatalf("Unexpected error %+v", err)
@@ -110,11 +110,11 @@ func TestInsertDoubleTransactionsToMempool(t *testing.T) {
 		miningFactory := miningmanager.NewFactory()
 		miningManager := miningFactory.NewMiningManager(tc, &consensusConfig.Params)
 		transaction := createTransactionWithUTXOEntry(t, 0)
-		err = miningManager.ValidateAndInsertTransaction(transaction, true)
+		err = miningManager.ValidateAndInsertTransaction(transaction, 0, true)
 		if err != nil {
 			t.Fatalf("ValidateAndInsertTransaction: %v", err)
 		}
-		err = miningManager.ValidateAndInsertTransaction(transaction, true)
+		err = miningManager.ValidateAndInsertTransaction(transaction, 0, true)
 		if err == nil || !strings.Contains(err.Error(), "already have transaction") {
 			t.Fatalf("ValidateAndInsertTransaction: %v", err)
 		}
@@ -138,7 +138,7 @@ func TestHandleNewBlockTransactions(t *testing.T) {
 		for i := range transactionsToInsert {
 			transaction := createTransactionWithUTXOEntry(t, i)
 			transactionsToInsert[i] = transaction
-			err = miningManager.ValidateAndInsertTransaction(transaction, true)
+			err = miningManager.ValidateAndInsertTransaction(transaction, 0, true)
 			if err != nil {
 				t.Fatalf("ValidateAndInsertTransaction: %v", err)
 			}
@@ -201,7 +201,7 @@ func TestDoubleSpends(t *testing.T) {
 		miningFactory := miningmanager.NewFactory()
 		miningManager := miningFactory.NewMiningManager(tc, &consensusConfig.Params)
 		transactionInTheMempool := createTransactionWithUTXOEntry(t, 0)
-		err = miningManager.ValidateAndInsertTransaction(transactionInTheMempool, true)
+		err = miningManager.ValidateAndInsertTransaction(transactionInTheMempool, 0, true)
 		if err != nil {
 			t.Fatalf("ValidateAndInsertTransaction: %v", err)
 		}
@@ -239,7 +239,7 @@ func TestOrphanTransactions(t *testing.T) {
 			t.Fatalf("Error in createArraysOfParentAndChildrenTransactions: %v", err)
 		}
 		for _, orphanTransaction := range childTransactions {
-			err = miningManager.ValidateAndInsertTransaction(orphanTransaction, true)
+			err = miningManager.ValidateAndInsertTransaction(orphanTransaction, 0, true)
 			if err != nil {
 				t.Fatalf("ValidateAndInsertTransaction: %v", err)
 			}
